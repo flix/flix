@@ -229,7 +229,7 @@ namespace Chain {
     pub def memberOf(a: a, c: Chain[a]): Bool with Eq[a] = match viewLeft(c) {
         case NoneLeft                 => false
         case SomeLeft(x, _) if x == a => true
-        case SomeLeft(_, xs)          => memberOf(a, viewLeft(xs))
+        case SomeLeft(_, xs)          => memberOf(a, xs)
     }
 
     ///
@@ -431,12 +431,11 @@ namespace Chain {
     ///
     /// The function `f` must be pure.
     ///
-    pub def exists(f: a -> Bool, c: Chain[a]): Bool =
-        def loop(cc) = match viewLeft(cc) {
-            case NoneLeft        => false
-            case SomeLeft(a, rs) => if (f(a)) true else loop(rs)
-        };
-        loop(c)
+    pub def exists(f: a -> Bool, c: Chain[a]): Bool = match viewLeft(c) {
+        case NoneLeft               => false
+        case SomeLeft(x, _) if f(x) => true
+        case SomeLeft(_, xs)        => exists(f, xs)
+    }
 
     ///
     /// Returns `true` if and only if all elements in `c` satisfy the predicate `f`.
