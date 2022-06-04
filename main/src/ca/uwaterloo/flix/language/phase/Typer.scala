@@ -1181,14 +1181,14 @@ object Typer {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           _ <- unifyTypeM(tpe2, regionType, loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkScopedRef(tpe1, regionVar, loc), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkRef(tpe1, regionVar, loc), loc)
           resultEff <- unifyTypeM(evar, Type.mkAnd(eff1, eff2, regionVar, loc), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expression.Deref(exp, tvar, evar, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc, Rigidity.Flexible, text = FallbackText("elm"))
         val regionVar = Type.freshVar(Kind.Bool, loc, Rigidity.Flexible, text = FallbackText("region"))
-        val refType = Type.mkScopedRef(elmVar, regionVar, loc)
+        val refType = Type.mkRef(elmVar, regionVar, loc)
 
         for {
           (constrs, tpe, eff) <- visitExp(exp)
@@ -1200,7 +1200,7 @@ object Typer {
       case KindedAst.Expression.Assign(exp1, exp2, evar, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc, Rigidity.Flexible, text = FallbackText("elm"))
         val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
-        val refType = Type.mkScopedRef(elmVar, regionVar, loc)
+        val refType = Type.mkRef(elmVar, regionVar, loc)
 
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
