@@ -112,7 +112,7 @@ object FormatType {
       case SimpleType.Int64 => true
       case SimpleType.BigInt => true
       case SimpleType.Str => true
-      case SimpleType.ScopedArray => true
+      case SimpleType.Array => true
       case SimpleType.ScopedRef => true
       case SimpleType.Channel => true
       case SimpleType.Lazy => true
@@ -169,7 +169,7 @@ object FormatType {
       case SimpleType.Int64 => "Int64"
       case SimpleType.BigInt => "BigInt"
       case SimpleType.Str => "String"
-      case SimpleType.ScopedArray => "Array"
+      case SimpleType.Array => "Array"
       case SimpleType.ScopedRef => "Ref"
       case SimpleType.Channel => "Channel"
       case SimpleType.Lazy => "Lazy"

@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.fmt
 
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Rigidity, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -65,7 +65,7 @@ object SimpleType {
 
   case object Str extends SimpleType
 
-  case object ScopedArray extends SimpleType
+  case object Array extends SimpleType
 
   case object ScopedRef extends SimpleType
 
@@ -386,7 +386,7 @@ object SimpleType {
           // Case 3: Too many args. Error.
           case _ :: _ :: _ => throw new OverAppliedType
         }
-      case TypeConstructor.ScopedArray => mkApply(ScopedArray, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.ScopedArray => mkApply(Array, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Channel => mkApply(Channel, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Tag(sym, tag) =>
