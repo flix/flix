@@ -29,10 +29,11 @@ trait Formatter {
     }
 
     def leftline: String = {
+      val numWidth = endLine.toString.length
       val sb = new StringBuilder()
       for (lineNo <- beginLine to endLine) {
         val currentLine = loc.lineAt(lineNo)
-        sb.append(lineNo)
+        sb.append(padLeft(numWidth, lineNo.toString))
           .append(" |")
           .append(red(">"))
           .append(" ")
@@ -70,6 +71,7 @@ trait Formatter {
 
   def underline(s: String): String
 
+  private def padLeft(width: Int, s: String): String = String.format("%" + width + "s", s)
 }
 
 object Formatter {

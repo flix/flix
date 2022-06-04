@@ -835,6 +835,12 @@ namespace Map {
         loop(empty())
 
     ///
+    /// Returns the set of tuples `(k, v)` where `v` is a value in `t` and `k => t`.
+    ///
+    pub def explode(m: Map[k, t[v]]): Set[(k, v)] with Foldable[t], Order[k], Order[v] =
+        foldLeftWithKey((acc, k, t) -> Foldable.toSet(t) |> Set.map(e -> (k, e)) |> Set.union(acc), Set.empty(), m)
+
+    ///
     /// Extracts a range of key-value pairs from the map `m`.
     ///
     /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
