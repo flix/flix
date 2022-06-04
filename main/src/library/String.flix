@@ -1121,8 +1121,8 @@ namespace String {
     def levenshteinDistanceHelper(s: String, t: String) : Int32 & Impure =
         let m = length(s);
         let n = length(t);
-        let v0 = Array.new(0, n + 1, static);
-        let v1 = Array.new(0, n + 1, static);
+        let v0 = Array.new(0, n + 1, Static);
+        let v1 = Array.new(0, n + 1, Static);
         forIndex(0, n, i -> v0[i] = i);
         forIndex(0, m - 1, i -> {
             v1[0] = i + 1;
@@ -1160,7 +1160,7 @@ namespace String {
     @Time(Int32.min(length(a), length(b))) @Space(Int32.min(length(a), length(b)))
     pub def zip(a: String, b: String): UnscopedArray[(Char, Char)] & Impure =
         let len = Int32.min(length(a), length(b));
-        Array.init(i -> (charAt(i, a), charAt(i, b)), len, static)
+        Array.init(i -> (charAt(i, a), charAt(i, b)), len, Static)
 
     ///
     /// Returns a string where the element at index `i` is `f(x, y)` where

@@ -1167,8 +1167,7 @@ namespace DelayList {
     @Experimental
     pub def toArray(l: DelayList[a], r: Region[r]): Array[a, r] \ Write(r) =
         let a = [$DEFAULT$; length(l)] @ r;
-        let f = (i, y) -> { a[i] = y; i + 1 };
-        foldLeft(f, 0, l);
+        foreach(match (y, i) -> a[i] = y, zipWithIndex(l));
         a
 
     ///

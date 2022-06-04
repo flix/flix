@@ -59,14 +59,14 @@ namespace Fixpoint/Ast {
     instance ToString[Datalog[v]] with ToString[v] {
         pub def toString(cs: Datalog[v]): String = match cs {
             case Datalog(facts, rules) =>
-                let sb = new StringBuilder(static);
+                let sb = new StringBuilder(Static);
                 StringBuilder.appendLinesWith!(ToString.toString, facts, sb);
                 StringBuilder.appendLinesWith!(ToString.toString, rules, sb);
                 StringBuilder.toString(sb)
             case Model(db) =>
                 use Fixpoint/Ram.toDenotation;
                 use Fixpoint.commaSeparate;
-                let sb = new StringBuilder(static);
+                let sb = new StringBuilder(Static);
                 Map.foreach(ramSym -> rel -> match toDenotation(ramSym) {
                     case Relational => Map.foreach(match Tuple(tuple) -> _ -> {
                         StringBuilder.appendLine!("${ramSym}(${commaSeparate(tuple)}).", sb)
@@ -77,7 +77,7 @@ namespace Fixpoint/Ast {
                 }, db);
                 StringBuilder.toString(sb)
             case Join(d1, d2) =>
-                let sb = new StringBuilder(static);
+                let sb = new StringBuilder(Static);
                 StringBuilder.appendLine!(ToString.toString(d1), sb);
                 StringBuilder.appendLine!(ToString.toString(d2), sb);
                 StringBuilder.toString(sb)

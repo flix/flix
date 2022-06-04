@@ -955,32 +955,32 @@ def indices07(): Bool & Impure =
 
 @test
 def flatMap01(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i, static), []);
+    let a = Array.flatMap(i -> Array.repeat(i, i, Static), []);
     Array.sameElements(a, []: UnscopedArray[Int32])
 
 @test
 def flatMap02(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i, static), [0]);
+    let a = Array.flatMap(i -> Array.repeat(i, i, Static), [0]);
     Array.sameElements(a, []: UnscopedArray[Int32])
 
 @test
 def flatMap03(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i, static), [1]);
+    let a = Array.flatMap(i -> Array.repeat(i, i, Static), [1]);
     Array.sameElements(a, [1])
 
 @test
 def flatMap04(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i, static), [2]);
+    let a = Array.flatMap(i -> Array.repeat(i, i, Static), [2]);
     Array.sameElements(a, [2,2])
 
 @test
 def flatMap05(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i, static), [1,2]);
+    let a = Array.flatMap(i -> Array.repeat(i, i, Static), [1,2]);
     Array.sameElements(a, [1,2,2])
 
 @test
 def flatMap06(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i, static), [2,3]);
+    let a = Array.flatMap(i -> Array.repeat(i, i, Static), [2,3]);
     Array.sameElements(a, [2,2,3,3,3])
 
     /////////////////////////////////////////////////////////////////////////////
@@ -5039,7 +5039,7 @@ def findIndices07(): Bool & Impure =
     @test
     def sortWith01!(): Bool = region r {
         let a = []: Array[Int32, _];
-        Array.sortWith(cmp, a);
+        Array.sortWith!(cmp, a);
         a `sameElements` []: Array[Int32, _]
     }
 
@@ -5494,142 +5494,142 @@ def findIndices07(): Bool & Impure =
 
     @test
     def copyOfRange01(): Bool & Impure =
-        Array.copyOfRange(0, 3, [true, false, true], static) `sameElements` [true, false, true]
+        Array.copyOfRange(0, 3, [true, false, true], Static) `sameElements` [true, false, true]
 
     @test
     def copyOfRange02(): Bool & Impure =
-        Array.copyOfRange(1, 3, [true, false, true], static) `sameElements` [false, true]
+        Array.copyOfRange(1, 3, [true, false, true], Static) `sameElements` [false, true]
 
     @test
     def copyOfRange03(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [true, false, true], static);
+        let a = Array.copyOfRange(2, 5, [true, false, true], Static);
         Array.length(a) == 3 and Array.memberOf(true, a)
 
     @test
     def copyOfRange04(): Bool & Impure =
-        Array.copyOfRange(0, 3, ['a', 'b', 'c'], static) `sameElements` ['a', 'b', 'c']
+        Array.copyOfRange(0, 3, ['a', 'b', 'c'], Static) `sameElements` ['a', 'b', 'c']
 
     @test
     def copyOfRange05(): Bool & Impure =
-        Array.copyOfRange(1, 3, ['a', 'b', 'c'], static) `sameElements` ['b', 'c']
+        Array.copyOfRange(1, 3, ['a', 'b', 'c'], Static) `sameElements` ['b', 'c']
 
     @test
     def copyOfRange06(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, ['a', 'b', 'c'], static);
+        let a = Array.copyOfRange(2, 5, ['a', 'b', 'c'], Static);
         Array.length(a) == 3 and Array.memberOf('c', a)
 
     @test
     def copyOfRange07(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1.0f32, 2.0f32, 3.0f32], static) `sameElements` [1.0f32, 2.0f32, 3.0f32]
+        Array.copyOfRange(0, 3, [1.0f32, 2.0f32, 3.0f32], Static) `sameElements` [1.0f32, 2.0f32, 3.0f32]
 
     @test
     def copyOfRange08(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1.0f32, 2.0f32, 3.0f32], static) `sameElements` [2.0f32, 3.0f32]
+        Array.copyOfRange(1, 3, [1.0f32, 2.0f32, 3.0f32], Static) `sameElements` [2.0f32, 3.0f32]
 
     @test
     def copyOfRange09(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1.0f32, 2.0f32, 3.0f32], static);
+        let a = Array.copyOfRange(2, 5, [1.0f32, 2.0f32, 3.0f32], Static);
         Array.length(a) == 3 and Array.memberOf(3.0f32, a)
 
     @test
     def copyOfRange10(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1.0f64, 2.0f64, 3.0f64], static) `sameElements` [1.0f64, 2.0f64, 3.0f64]
+        Array.copyOfRange(0, 3, [1.0f64, 2.0f64, 3.0f64], Static) `sameElements` [1.0f64, 2.0f64, 3.0f64]
 
     @test
     def copyOfRange11(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1.0f64, 2.0f64, 3.0f64], static) `sameElements` [2.0f64, 3.0f64]
+        Array.copyOfRange(1, 3, [1.0f64, 2.0f64, 3.0f64], Static) `sameElements` [2.0f64, 3.0f64]
 
     @test
     def copyOfRange12(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1.0f64, 2.0f64, 3.0f64], static);
+        let a = Array.copyOfRange(2, 5, [1.0f64, 2.0f64, 3.0f64], Static);
         Array.length(a) == 3 and Array.memberOf(3.0f64, a)
 
     @test
     def copyOfRange13(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1i8, 2i8, 3i8], static) `sameElements` [1i8, 2i8, 3i8]
+        Array.copyOfRange(0, 3, [1i8, 2i8, 3i8], Static) `sameElements` [1i8, 2i8, 3i8]
 
     @test
     def copyOfRange14(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1i8, 2i8, 3i8], static) `sameElements` [2i8, 3i8]
+        Array.copyOfRange(1, 3, [1i8, 2i8, 3i8], Static) `sameElements` [2i8, 3i8]
 
     @test
     def copyOfRange15(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1i8, 2i8, 3i8], static);
+        let a = Array.copyOfRange(2, 5, [1i8, 2i8, 3i8], Static);
         Array.length(a) == 3 and Array.memberOf(3i8, a)
 
     @test
     def copyOfRange16(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1i16, 2i16, 3i16], static) `sameElements` [1i16, 2i16, 3i16]
+        Array.copyOfRange(0, 3, [1i16, 2i16, 3i16], Static) `sameElements` [1i16, 2i16, 3i16]
 
     @test
     def copyOfRange17(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1i16, 2i16, 3i16], static) `sameElements` [2i16, 3i16]
+        Array.copyOfRange(1, 3, [1i16, 2i16, 3i16], Static) `sameElements` [2i16, 3i16]
 
     @test
     def copyOfRange18(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1i16, 2i16, 3i16], static);
+        let a = Array.copyOfRange(2, 5, [1i16, 2i16, 3i16], Static);
         Array.length(a) == 3 and Array.memberOf(3i16, a)
 
     @test
     def copyOfRange19(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1, 2, 3], static) `sameElements` [1, 2, 3]
+        Array.copyOfRange(0, 3, [1, 2, 3], Static) `sameElements` [1, 2, 3]
 
     @test
     def copyOfRange20(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1, 2, 3], static) `sameElements` [2, 3]
+        Array.copyOfRange(1, 3, [1, 2, 3], Static) `sameElements` [2, 3]
 
     @test
     def copyOfRange21(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1, 2, 3], static);
+        let a = Array.copyOfRange(2, 5, [1, 2, 3], Static);
         Array.length(a) == 3 and Array.memberOf(3, a)
 
     @test
     def copyOfRange22(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1i64, 2i64, 3i64], static) `sameElements` [1i64, 2i64, 3i64]
+        Array.copyOfRange(0, 3, [1i64, 2i64, 3i64], Static) `sameElements` [1i64, 2i64, 3i64]
 
     @test
     def copyOfRange23(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1i64, 2i64, 3i64], static) `sameElements` [2i64, 3i64]
+        Array.copyOfRange(1, 3, [1i64, 2i64, 3i64], Static) `sameElements` [2i64, 3i64]
 
     @test
     def copyOfRange24(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1i64, 2i64, 3i64], static);
+        let a = Array.copyOfRange(2, 5, [1i64, 2i64, 3i64], Static);
         Array.length(a) == 3 and Array.memberOf(3i64, a)
 
     @test
     def copyOfRange25(): Bool & Impure =
-        let a = Array.copyOfRange(0, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']], static);
+        let a = Array.copyOfRange(0, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']], Static);
         let b = [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']];
         Array.flatten(a) `sameElements` Array.flatten(b)
 
     @test
     def copyOfRange26(): Bool & Impure =
-        let a = Array.copyOfRange(1, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']], static);
+        let a = Array.copyOfRange(1, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']], Static);
         let b = [['d', 'e', 'f', 'g'], ['h']];
         Array.flatten(a) `sameElements` Array.flatten(b)
 
     @test
     def copyOfRange27(): Bool & Impure =
-        Array.copyOfRange(0, 3, [Some(1), Some(2), None], static) `sameElements` [Some(1), Some(2), None]
+        Array.copyOfRange(0, 3, [Some(1), Some(2), None], Static) `sameElements` [Some(1), Some(2), None]
 
     @test
     def copyOfRange28(): Bool & Impure =
-        Array.copyOfRange(1, 3, [Some(1), Some(2), None], static) `sameElements` [Some(2), None]
+        Array.copyOfRange(1, 3, [Some(1), Some(2), None], Static) `sameElements` [Some(2), None]
 
     @test
     def copyOfRange29(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [Some(1), Some(2), None], static);
+        let a = Array.copyOfRange(2, 5, [Some(1), Some(2), None], Static);
         Array.length(a) == 3 and Array.memberOf(None, a)
 
     @test
     def copyOfRange30(): Bool & Impure =
-        let a = Array.copyOfRange(0, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]], static);
+        let a = Array.copyOfRange(0, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]], Static);
         let b = [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]];
         Array.flatten(a) `sameElements` Array.flatten(b)
 
     @test
     def copyOfRange31(): Bool & Impure =
-        let a = Array.copyOfRange(1, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]], static);
+        let a = Array.copyOfRange(1, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]], Static);
         let b = [[Some('d'), Some('e'), Some('f'), Some('g')], [None]];
         Array.flatten(a) `sameElements` Array.flatten(b)
 
@@ -5661,7 +5661,7 @@ def findIndices07(): Bool & Impure =
         let a = [1, 2, 3];
         let iter = Array.toIterator(a);
         a[0] = 10000;
-        Iterator.toArray(iter, static) `sameElements` [1, 2, 3]
+        Iterator.toArray(iter, Static) `sameElements` [1, 2, 3]
     }
 
 
