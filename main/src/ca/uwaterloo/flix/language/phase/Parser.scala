@@ -102,7 +102,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Def |
       Declarations.Law |
       Declarations.Enum |
-      Declarations.OpaqueType |
       Declarations.TypeAlias |
       Declarations.Relation |
       Declarations.Lattice |
@@ -127,19 +126,19 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Def: Rule1[ParsedAst.Declaration.Def] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ OptTypeConstraintList ~ optWS ~ "=" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Declaration.Def
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ OptTypeConstraintList ~ optWS ~ "=" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Declaration.Def
     }
 
     def Sig: Rule1[ParsedAst.Declaration.Sig] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ OptTypeConstraintList ~ optional(optWS ~ "=" ~ optWS ~ Expressions.Stm) ~ SP ~> ParsedAst.Declaration.Sig
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ OptTypeConstraintList ~ optional(optWS ~ "=" ~ optWS ~ Expressions.Stm) ~ SP ~> ParsedAst.Declaration.Sig
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("law") ~ WS ~ Names.Definition ~ optWS ~ ":" ~ optWS ~ keyword("forall") ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ OptTypeConstraintList ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Law
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("law") ~ WS ~ Names.Definition ~ optWS ~ ":" ~ optWS ~ keyword("forall") ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ OptTypeConstraintList ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Law
     }
 
     def Op: Rule1[ParsedAst.Declaration.Op] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ OptTypeConstraintList ~ SP ~> ParsedAst.Declaration.Op
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ OptTypeConstraintList ~ SP ~> ParsedAst.Declaration.Op
     }
 
     def Enum: Rule1[ParsedAst.Declaration] = {
@@ -167,10 +166,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def OpaqueType: Rule1[ParsedAst.Declaration.OpaqueType] = rule {
-      Documentation ~ Modifiers ~ SP ~ keyword("opaque") ~ WS ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ Derivations ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.OpaqueType
-    }
-
     def TypeAlias: Rule1[ParsedAst.Declaration.TypeAlias] = rule {
       Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ keyword("alias") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.TypeAlias
     }
@@ -185,7 +180,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Class: Rule1[ParsedAst.Declaration] = {
       def Head = rule {
-        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("class") ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ TypeParam ~ optWS ~ "]" ~ OptTypeConstraintList
+        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("class") ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ TypeParam ~ optWS ~ "]" ~ optWS ~ OptTypeConstraintList
       }
 
       def EmptyBody = namedRule("ClassBody") {
@@ -206,12 +201,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def OptTypeConstraintList: Rule1[Seq[ParsedAst.TypeConstraint]] = rule {
-      optional(WS ~ keyword("with") ~ WS ~ oneOrMore(TypeConstraint).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.TypeConstraint]]) => o.getOrElse(Seq.empty))
+      optional(keyword("with") ~ WS ~ oneOrMore(TypeConstraint).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.TypeConstraint]]) => o.getOrElse(Seq.empty))
     }
 
     def Instance: Rule1[ParsedAst.Declaration] = {
       def Head = rule {
-        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ OptTypeConstraintList
+        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ optWS ~ OptTypeConstraintList
       }
 
       def EmptyBody = namedRule("InstanceBody") {
@@ -268,21 +263,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     SP ~ Names.Attribute ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Attribute
   }
 
-  def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.PurityOrEffect]] = rule {
-    Type ~ optional(optWS ~ PurityOrEffect)
+  def TypeAndEffect: Rule2[ParsedAst.Type, ParsedAst.PurityAndEffect] = rule {
+    Type ~ PurityAndEffect
   }
 
-  def PurityOrEffect: Rule1[ParsedAst.PurityOrEffect] = {
-    def Set: Rule1[ParsedAst.PurityOrEffect] = rule {
-      "\\" ~ optWS ~ Effects.EffectSetOrEmpty ~> ParsedAst.PurityOrEffect.Effect
-    }
-
-    def Bool: Rule1[ParsedAst.PurityOrEffect] = rule {
-      "&" ~ optWS ~ Type ~> ParsedAst.PurityOrEffect.Purity
-    }
-
+  def PurityAndEffect: Rule1[ParsedAst.PurityAndEffect] = {
     rule {
-      Set | Bool
+      optional(optWS ~ "&" ~ optWS ~ Type) ~ optional(optWS ~ "\\" ~ optWS ~ Effects.EffectSetOrEmpty) ~> ParsedAst.PurityAndEffect
     }
   }
 
@@ -621,29 +608,23 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       FAppend ~ optional(optWS ~ ":" ~ optWS ~ TypAndPurFragment ~ SP ~> ParsedAst.Expression.Ascribe)
     }
 
-    def TypAndPurFragment: Rule2[Option[ParsedAst.Type], Option[ParsedAst.Type]] = {
-      def SomeTyp: Rule1[Option[ParsedAst.Type]] = rule {
-        Type ~> ((tpe: ParsedAst.Type) => Some(tpe))
+    def TypAndPurFragment: Rule2[Option[ParsedAst.Type], ParsedAst.PurityAndEffect] = {
+
+      def PurAndEffOnly: Rule2[Option[ParsedAst.Type], ParsedAst.PurityAndEffect] = rule {
+        // lookahead for purity/effect syntax
+        &("&" | "\\") ~ push(None) ~ PurityAndEffect
       }
 
-      def SomePur: Rule1[Option[ParsedAst.Type]] = rule {
-        Type ~> ((tpe: ParsedAst.Type) => Some(tpe))
+      def SomeType: Rule1[Option[ParsedAst.Type]] = rule {
+        Type ~> ((o: ParsedAst.Type) => Some(o))
       }
 
-      def TypOnly: Rule2[Option[ParsedAst.Type], Option[ParsedAst.Type]] = rule {
-        SomeTyp ~ push(None)
-      }
-
-      def PurOnly: Rule2[Option[ParsedAst.Type], Option[ParsedAst.Type]] = rule {
-        push(None) ~ "&" ~ WS ~ SomePur
-      }
-
-      def TypAndPur: Rule2[Option[ParsedAst.Type], Option[ParsedAst.Type]] = rule {
-        SomeTyp ~ WS ~ "&" ~ WS ~ SomePur
+      def Both: Rule2[Option[ParsedAst.Type], ParsedAst.PurityAndEffect] = rule {
+        SomeType ~ PurityAndEffect
       }
 
       rule {
-        TypAndPur | TypOnly | PurOnly
+        PurAndEffOnly | Both
       }
     }
 
@@ -726,7 +707,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Static: Rule1[ParsedAst.Expression.Static] = rule {
-      SP ~ keyword("static") ~ SP ~> ParsedAst.Expression.Static
+      SP ~ keyword("Static") ~ SP ~> ParsedAst.Expression.Static
     }
 
     def Scope: Rule1[ParsedAst.Expression.Scope] = rule {
@@ -767,8 +748,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
       }
 
-      def Ascription: Rule2[ParsedAst.Type, ParsedAst.Type] = rule {
-        ":" ~ optWS ~ Type ~ optWS ~ "&" ~ optWS ~ Type
+      def Ascription: Rule2[ParsedAst.Type, ParsedAst.PurityAndEffect] = rule {
+        ":" ~ optWS ~ Type ~ PurityAndEffect
       }
 
       def Import: Rule1[ParsedAst.JvmOp] = rule {

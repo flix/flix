@@ -725,7 +725,7 @@ namespace TestDelayList {
     @test
     def foreach01(): Bool & Impure =
         let l = ENil;
-        let sb = new StringBuilder(static);
+        let sb = new StringBuilder(Static);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.foreach(fn, l);
         StringBuilder.toString(sb) == ""
@@ -733,7 +733,7 @@ namespace TestDelayList {
     @test
     def foreach02(): Bool & Impure =
         let l = LList(lazy ENil);
-        let sb = new StringBuilder(static);
+        let sb = new StringBuilder(Static);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.foreach(fn, l);
         StringBuilder.toString(sb) == ""
@@ -741,7 +741,7 @@ namespace TestDelayList {
     @test
     def foreach03(): Bool & Impure =
         let l = LCons(1, lazy LList(lazy ENil));
-        let sb = new StringBuilder(static);
+        let sb = new StringBuilder(Static);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.foreach(fn, l);
         StringBuilder.toString(sb) == "T"
@@ -749,7 +749,7 @@ namespace TestDelayList {
     @test
     def foreach04(): Bool & Impure =
         let l = LCons(-1, lazy LList(lazy ENil));
-        let sb = new StringBuilder(static);
+        let sb = new StringBuilder(Static);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.foreach(fn, l);
         StringBuilder.toString(sb) == "F"
@@ -757,7 +757,7 @@ namespace TestDelayList {
     @test
     def foreach05(): Bool & Impure =
         let l = ECons(1, LCons(-1, lazy ENil));
-        let sb = new StringBuilder(static);
+        let sb = new StringBuilder(Static);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.foreach(fn, l);
         StringBuilder.toString(sb) == "TF"

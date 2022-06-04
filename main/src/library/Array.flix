@@ -421,7 +421,7 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def flatMap(f: a -> Array[b] & ef, a: Array[a]): Array[b] & Impure =
         let len = length(a);
-        init(i -> f(a[i]), len, static) |> flatten
+        init(i -> f(a[i]), len, Static) |> flatten
 
     ///
     /// Returns the reverse of `a`.
@@ -586,7 +586,7 @@ namespace Array {
         match headArrays(arrs) {
             case None => []
             case Some(x) =>
-                let out = new(x, len, static);
+                let out = new(x, len, Static);
                 let overwrite = { (st, a) ->
                     let (pos,i) = st;
                     if (i == 0) {
@@ -882,7 +882,7 @@ namespace Array {
         match headArrays(arrs) {
             case None => []
             case Some(x) => {
-                let out = new(x, len, static);
+                let out = new(x, len, Static);
                 foldLeft((pos, a) -> arrayWrites(pos, a, out), 0, arrs);
                 out
             }
@@ -1354,17 +1354,17 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def findIndices(f: a -> Bool & ef, a: Array[a]): Array[Int32] & Impure =
         let len = length(a);
-        let l = new MutList(static);
+        let l = new MutList(Static);
         def loop(i) = {
             if (i >= len)
-                Nil
+                ()
             else {
                 if (f(a[i])) MutList.push!(i, l) else ();
                 loop(i + 1)
             }
         };
         loop(0);
-        MutList.toArray(l, static)
+        MutList.toArray(l, Static)
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.
@@ -1702,7 +1702,7 @@ namespace Array {
    ///
    pub def toIterator(a: ScopedArray[a, r]): Iterator[a] & Impure =
        let len = Array.length(a);
-       let copy = copyOfRange(0, len, a, static);
+       let copy = copyOfRange(0, len, a, Static);
        let i = ref 0;
        let done = () -> (deref i) >= len;
        let next = () -> {

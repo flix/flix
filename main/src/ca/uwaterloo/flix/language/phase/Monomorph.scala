@@ -962,6 +962,10 @@ object Monomorph {
 
     case Type.UnkindedVar(_, loc) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
 
+    case Type.UnkindedArrow(_, _, loc) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
+
+    case Type.ReadWrite(_, loc) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
+
     case Type.Ascribe(_, _, loc) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
   }
 

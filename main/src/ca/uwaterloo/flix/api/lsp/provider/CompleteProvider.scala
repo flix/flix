@@ -29,17 +29,44 @@ object CompleteProvider {
     */
   private val BlockList: List[String] = List("class", "def", "instance", "namespace")
 
+  def isAnnotationPrefix(word: Option[String]) = word match {
+      case None => false
+      case Some(w) => w.startsWith("@")
+    }
+
   /**
     * Returns a list of auto-complete suggestions.
     */
   def autoComplete(uri: String, pos: Position, line: Option[String], word: Option[String])(implicit index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
-    // Ordered by priority.
-    getVarSuggestions(uri, pos, line, word) ++
-      getDefAndSigSuggestions(uri, pos, line, word) ++
-      getInstanceSuggestions(uri, pos, line, word) ++
-      getWithSuggestions(uri, pos, line, word) ++
-      getKeywordCompletionItems(line, word) ++
-      getSnippetCompletionItems(line, word)
+    if(isAnnotationPrefix(word)) {
+      getAnnotationCompletionItems(line, word)
+    } else {
+      // Ordered by priority.
+      getVarSuggestions(uri, pos, line, word) ++
+        getDefAndSigSuggestions(uri, pos, line, word) ++
+        getInstanceSuggestions(uri, pos, line, word) ++
+        getWithSuggestions(uri, pos, line, word) ++
+        getKeywordCompletionItems(line, word) ++
+        getSnippetCompletionItems(line, word)
+    }
+  }
+
+  /**
+    * Returns a list of annotation completion items.
+    */
+  private def getAnnotationCompletionItems(line: Option[String], word: Option[String]): List[CompletionItem] = {
+    List(
+      CompletionItem("benchmark", "benchmark ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("test", "test ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("Deprecated", "Deprecated ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("Experimental", "Experimental ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("ParallelWhenPure", "ParallelWhenPure ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("Parallel", "Parallel ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("LazyWhenPure", "LazyWhenPure ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("Lazy", "Lazy ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("Space", "Space ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("Time", "Time ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil)
+    )
   }
 
   /**
@@ -198,6 +225,8 @@ object CompleteProvider {
         Type.Alias(sym, args, t, loc)
 
       case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable.")
+      case _: Type.UnkindedArrow => throw InternalCompilerException("Unexpected unkinded arrow.")
+      case _: Type.ReadWrite => throw InternalCompilerException("Unexpected unkinded type.")
       case _: Type.Ascribe => throw InternalCompilerException("Unexpected kind ascription.")
     }
 
