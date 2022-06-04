@@ -225,7 +225,7 @@ object TypeConstructor {
     */
   case object Array extends TypeConstructor {
     /**
-      * The shape of a reference is `Array[t, l]`.
+      * The shape of an array is `Array[t, l]`.
       */
     def kind: Kind = Kind.Star ->: Kind.Bool ->: Kind.Star
   }
