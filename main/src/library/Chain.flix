@@ -71,12 +71,12 @@ instance ToString[Chain[a]] with ToString[a] {
         let fn = () -> region r {
             let sb = new StringBuilder(r);
             StringBuilder.appendString!("Chain#{", sb);
-            Chain.foldLeft((acc, x) -> {
-                if (acc < 1)
+            Chain.foreach(match (x, i) -> {
+                if (i < 1)
                     StringBuilder.appendString!("${x}", sb)
                 else
-                    StringBuilder.appendString!(", ${x}", sb);
-                acc + 1}, 0, c);
+                    StringBuilder.appendString!(", ${x}", sb)
+                }, Chain.zipWithIndex(c));
             StringBuilder.appendString!("}", sb);
             StringBuilder.toString(sb)
         };
@@ -770,8 +770,7 @@ namespace Chain {
         case None => [] @ r
         case Some(x) =>
             let arr = [x; length(c)] @ r;
-            let f = (i, b) -> { arr[i] = b; i + 1 };
-            foldLeft(f, 0, c);
+            foreach(match (b, i) -> arr[i] = b, zipWithIndex(c));
             arr
         }
 
