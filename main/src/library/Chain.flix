@@ -467,12 +467,10 @@ namespace Chain {
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, c: Chain[a]): b & ef =
-        def loop(cc, acc) = match viewLeft(cc) {
-            case NoneLeft        => acc
-            case SomeLeft(a, rs) => loop(rs, f(acc, a))
-        };
-        loop(c, s)
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, c: Chain[a]): b & ef = match viewLeft(c) {
+        case NoneLeft        => s
+        case SomeLeft(x, xs) => foldLeft(f, f(s, x), xs)
+    }
 
     ///
     /// Applies `f` to a start value `s` and all elements in `c` going from right to left.
