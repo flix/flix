@@ -86,7 +86,7 @@ namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannel15(): Bool & Impure =
-        let c = chan UnscopedArray[Int32] 1;
+        let c = chan Array[Int32, Static] 1;
         c <- [1, 2, 3];
         2 == (<- c)[1]
 
@@ -184,7 +184,7 @@ namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannelWithSpawn15(): Bool & Impure =
-        let c = chan UnscopedArray[Int32] 1;
+        let c = chan Array[Int32, Static] 1;
         spawn c <- [1, 2, 3];
         2 == (<- c)[1]
 

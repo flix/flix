@@ -19,7 +19,7 @@ namespace Environment {
     /// Returns the arguments passed to the program via the command line.
     ///
     pub def getArgs(): List[String] =
-        import static dev.flix.runtime.Global.getArgs(): UnscopedArray[String] & Impure;
+        import static dev.flix.runtime.Global.getArgs(): Array[String, Static] & Impure;
         Array.toList(getArgs()) as & Pure
 
     ///

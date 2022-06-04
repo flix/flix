@@ -20,7 +20,7 @@ use Fixpoint/Ast.Denotation;
 namespace Fixpoint {
 
     enum Tuple[v] {
-        case Tuple(UnscopedArray[v])
+        case Tuple(Array[v, Static])
     }
 
     // NB: Unsafe instance.
@@ -40,7 +40,7 @@ namespace Fixpoint {
     }
 
     type alias Database[v] = MutMap[RamSym[v], MutMap[Tuple[v], v, Static], Static]
-    type alias SearchEnv[v] = (UnscopedArray[Tuple[v]], UnscopedArray[v])
+    type alias SearchEnv[v] = (Array[Tuple[v], Static], Array[v, Static])
 
     def interpret(stmt: RamStmt[v]): Database[v] & Impure with Order[v], ToString[v] =
         interpretWithDatabase(new MutMap(Static), stmt)
@@ -122,7 +122,7 @@ namespace Fixpoint {
             case _ => ()
         }
 
-    def evalQuery(env: SearchEnv[v], i: Int32, query: UnscopedArray[(Int32, RamTerm[v])], tuple: Tuple[v]): Comparison & Impure with Order[v], ToString[v] =
+    def evalQuery(env: SearchEnv[v], i: Int32, query: Array[(Int32, RamTerm[v]), Static], tuple: Tuple[v]): Comparison & Impure with Order[v], ToString[v] =
         if (i >= Array.length(query))
             EqualTo
         else {

@@ -3,7 +3,7 @@
 /// all overlapping intervals, and return an array of the non-overlapping
 /// intervals that cover all the intervals in the input.
 
-def merge(intervals: List[(Int32, Int32)]): UnscopedArray[(Int32, Int32)] & Pure =
+def merge(intervals: List[(Int32, Int32)]): Array[(Int32, Int32), Static] & Pure =
     let i = project intervals into Interval;
     let lp = #{
         /// [a, ..., c, ..., b, ..., d]

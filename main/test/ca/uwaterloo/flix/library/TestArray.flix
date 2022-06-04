@@ -408,13 +408,13 @@ namespace TestArray {
 
 @test
 def indices01(): Bool & Impure =
-    let a = Array.indices(0, []: UnscopedArray[Int32]);
-    Array.sameElements(a, []: UnscopedArray[Int32])
+    let a = Array.indices(0, []: Array[Int32, Static]);
+    Array.sameElements(a, []: Array[Int32, Static])
 
 @test
 def indices02(): Bool & Impure =
     let a = Array.indices(0, [1]);
-    Array.sameElements(a, []: UnscopedArray[Int32])
+    Array.sameElements(a, []: Array[Int32, Static])
 
 @test
 def indices03(): Bool & Impure =
@@ -424,7 +424,7 @@ def indices03(): Bool & Impure =
 @test
 def indices04(): Bool & Impure =
     let a = Array.indices(0, [1,2]);
-    Array.sameElements(a, []: UnscopedArray[Int32])
+    Array.sameElements(a, []: Array[Int32, Static])
 
 @test
 def indices05(): Bool & Impure =
@@ -956,12 +956,12 @@ def indices07(): Bool & Impure =
 @test
 def flatMap01(): Bool & Impure =
     let a = Array.flatMap(i -> Array.repeat(i, i, Static), []);
-    Array.sameElements(a, []: UnscopedArray[Int32])
+    Array.sameElements(a, []: Array[Int32, Static])
 
 @test
 def flatMap02(): Bool & Impure =
     let a = Array.flatMap(i -> Array.repeat(i, i, Static), [0]);
-    Array.sameElements(a, []: UnscopedArray[Int32])
+    Array.sameElements(a, []: Array[Int32, Static])
 
 @test
 def flatMap03(): Bool & Impure =
@@ -1780,22 +1780,22 @@ def flatMap06(): Bool & Impure =
 
     @test
     def intercalate01(): Bool & Impure = // crashes with regions
-        let a = Array.intercalate([]: UnscopedArray[Int32], []: UnscopedArray[UnscopedArray[Int32]]);
-        Array.sameElements(a, []: UnscopedArray[Int32])
+        let a = Array.intercalate([]: Array[Int32, Static], []: Array[Array[Int32, Static], Static]);
+        Array.sameElements(a, []: Array[Int32, Static])
 
 @test
 def intercalate02(): Bool & Impure =
-    let a = Array.intercalate([]: UnscopedArray[Int32], [[1]]);
+    let a = Array.intercalate([]: Array[Int32, Static], [[1]]);
     Array.sameElements(a, [1])
 
     @test
     def intercalate03(): Bool & Impure = // crashes with regions
-        let a = Array.intercalate([11,12,13], []: UnscopedArray[UnscopedArray[Int32]]);
-        Array.sameElements(a, []: UnscopedArray[Int32])
+        let a = Array.intercalate([11,12,13], []: Array[Array[Int32, Static], Static]);
+        Array.sameElements(a, []: Array[Int32, Static])
 
 @test
 def intercalate04(): Bool & Impure =
-    let a = Array.intercalate([]: UnscopedArray[Int32], [[1],[2,3]]);
+    let a = Array.intercalate([]: Array[Int32, Static], [[1],[2,3]]);
     Array.sameElements(a, [1,2,3])
 
 @test
@@ -1805,7 +1805,7 @@ def intercalate05(): Bool & Impure =
 
 @test
 def intercalate06(): Bool & Impure =
-    let a = Array.intercalate([]: UnscopedArray[Int32], [[1],[2,3],[4]]);
+    let a = Array.intercalate([]: Array[Int32, Static], [[1],[2,3],[4]]);
     Array.sameElements(a, [1,2,3,4])
 
 @test
@@ -2580,13 +2580,13 @@ def intercalate07(): Bool & Impure =
 
 @test
 def flatten01(): Bool & Impure =
-    let a = Array.flatten([]: UnscopedArray[UnscopedArray[Int32]]);
-    Array.sameElements(a, []: UnscopedArray[Int32])
+    let a = Array.flatten([]: Array[Array[Int32, Static], Static]);
+    Array.sameElements(a, []: Array[Int32, Static])
 
 @test
 def flatten02(): Bool & Impure =
-    let a = Array.flatten([[]]: UnscopedArray[UnscopedArray[Int32]]);
-    Array.sameElements(a, []: UnscopedArray[Int32])
+    let a = Array.flatten([[]]: Array[Array[Int32, Static], Static]);
+    Array.sameElements(a, []: Array[Int32, Static])
 
 @test
 def flatten03(): Bool & Impure =
@@ -2600,8 +2600,8 @@ def flatten04(): Bool & Impure =
 
 @test
 def flatten05(): Bool & Impure =
-    let a = Array.flatten([[],[]]: UnscopedArray[UnscopedArray[Int32]]);
-    Array.sameElements(a, []: UnscopedArray[Int32])
+    let a = Array.flatten([[],[]]: Array[Array[Int32, Static], Static]);
+    Array.sameElements(a, []: Array[Int32, Static])
 
 @test
 def flatten06(): Bool & Impure =
@@ -4276,13 +4276,13 @@ def flatten10(): Bool & Impure =
 
 @test
 def findIndices01(): Bool & Impure =
-    let a = Array.findIndices(i -> i > 2, []: UnscopedArray[Int32]);
-    Array.sameElements(a, []: UnscopedArray[Int32])
+    let a = Array.findIndices(i -> i > 2, []: Array[Int32, Static]);
+    Array.sameElements(a, []: Array[Int32, Static])
 
 @test
 def findIndices02(): Bool & Impure =
     let a = Array.findIndices(i -> i > 2, [1]);
-    Array.sameElements(a, []: UnscopedArray[Int32])
+    Array.sameElements(a, []: Array[Int32, Static])
 
 @test
 def findIndices03(): Bool & Impure =
@@ -4292,7 +4292,7 @@ def findIndices03(): Bool & Impure =
 @test
 def findIndices04(): Bool & Impure =
     let a = Array.findIndices(i -> i > 2, [1,2]);
-    Array.sameElements(a, [] : UnscopedArray[Int32])
+    Array.sameElements(a, [] : Array[Int32, Static])
 
 @test
 def findIndices05(): Bool & Impure =
@@ -5640,7 +5640,7 @@ def findIndices07(): Bool & Impure =
 
     @test
     def toIterator01(): Bool & Impure =
-        []: UnscopedArray[Int32] |> Array.toIterator |> Iterator.toList == Nil
+        []: Array[Int32, Static] |> Array.toIterator |> Iterator.toList == Nil
 
     @test
     def toIterator02(): Bool & Impure =
