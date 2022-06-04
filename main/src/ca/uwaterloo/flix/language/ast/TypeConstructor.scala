@@ -221,7 +221,7 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represent the type of scoped arrays.
+    * A type constructor that represent the type of arrays.
     */
   case object Array extends TypeConstructor {
     /**
@@ -231,7 +231,7 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represent the type of scoped references.
+    * A type constructor that represent the type of references.
     */
   case object Ref extends TypeConstructor {
     /**
