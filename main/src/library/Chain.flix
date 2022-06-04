@@ -532,14 +532,10 @@ namespace Chain {
     ///
     /// Returns `c` without the longest prefix that satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def dropWhileLeft(f: a -> Bool, c: Chain[a]): Chain[a] =
-        def loop(cc) = match viewLeft(cc) {
-            case SomeLeft(a, rs) if (f(a)) => loop(rs)
-            case _                         => cc
-        };
-        loop(c)
+    pub def dropWhileLeft(f: a -> Bool & ef, c: Chain[a]): Chain[a] & ef = match viewLeft(c) {
+        case SomeLeft(x, xs) if (f(x)) => dropWhileLeft(f, xs)
+        case _                         => c
+    }
 
     ///
     /// Returns `c` without the longest suffix that satisfies the predicate `f`.
