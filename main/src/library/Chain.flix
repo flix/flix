@@ -767,12 +767,11 @@ namespace Chain {
         // Note: Chains are considered equal if their (ordered) list of elements are equal.
         // Because they may have different shapes due to construction we use a view to
         // decide equality which imposes an order on the Chain.
-        def loop(cc1, cc2) = match (cc1, cc2) {
+        match (viewLeft(c1), viewLeft(c2)) {
             case (NoneLeft, NoneLeft)                           => true
-            case (SomeLeft(x, cx), SomeLeft(y, cy)) if (x == y) => loop(viewLeft(cx), viewLeft(cy))
+            case (SomeLeft(x, xs), SomeLeft(y, ys)) if (x == y) => equals(xs, ys)
             case _                                              => false
-        };
-        loop(viewLeft(c1), viewLeft(c2))
+        }
 
     ///
     /// Sort chain `c` so that elements are ordered from low to high according to their `Order` instance.
