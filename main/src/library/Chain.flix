@@ -690,12 +690,10 @@ namespace Chain {
     ///
     /// Applies `f` to every element of `c`.
     ///
-    pub def foreach(f: a -> Unit & ef, c: Chain[a]): Unit & ef =
-        def loop(cc) = match viewLeft(cc) {
-            case NoneLeft        => ()
-            case SomeLeft(a, rs) => f(a); loop(rs)
-        };
-        loop(c)
+    pub def foreach(f: a -> Unit & ef, c: Chain[a]): Unit & ef = match viewLeft(c) {
+        case NoneLeft => ()
+        case SomeLeft(x, xs) => f(x); foreach(f, xs)
+    }
 
     ///
     /// Returns `c` as a list.
@@ -737,7 +735,7 @@ namespace Chain {
     /// Returns the chain `c` as an array.
     ///
     pub def toArray(c: Chain[a], r: Region[r]): ScopedArray[a, r] \ Write(r) = match head(c) {
-        case None => [] @ r
+        case None    => [] @ r
         case Some(x) =>
             let arr = [x; length(c)] @ r;
             foreach(match (b, i) -> arr[i] = b, zipWithIndex(c));
