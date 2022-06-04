@@ -2365,6 +2365,7 @@ object Resolver {
     Class.forName(className, initialize, flix.jarLoader).toSuccess
   } catch {
     case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
+    case ex: NoClassDefFoundError => ResolutionError.MissingJvmDependency(className, ex.getMessage, loc).toFailure
   }
 
   /**
@@ -2379,6 +2380,7 @@ object Resolver {
       } catch {
         case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
         case ex: NoSuchMethodException => ResolutionError.UndefinedJvmConstructor(className, sig, clazz.getConstructors.toList, loc).toFailure
+        case ex: NoClassDefFoundError => ResolutionError.MissingJvmDependency(className, ex.getMessage, loc).toFailure
       }
     }
   }
@@ -2402,6 +2404,7 @@ object Resolver {
         case ex: NoSuchMethodException =>
           val candidateMethods = clazz.getMethods.filter(m => m.getName == methodName).toList
           ResolutionError.UndefinedJvmMethod(className, methodName, static, sig, candidateMethods, loc).toFailure
+        case ex: NoClassDefFoundError => ResolutionError.MissingJvmDependency(className, ex.getMessage, loc).toFailure
       }
     }
   }
@@ -2424,6 +2427,7 @@ object Resolver {
         case ex: NoSuchFieldException =>
           val candidateFields = clazz.getFields.toList
           ResolutionError.UndefinedJvmField(className, fieldName, static, candidateFields, loc).toFailure
+        case ex: NoClassDefFoundError => ResolutionError.MissingJvmDependency(className, ex.getMessage, loc).toFailure
       }
     }
   }

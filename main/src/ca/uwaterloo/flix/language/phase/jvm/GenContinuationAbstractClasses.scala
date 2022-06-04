@@ -32,8 +32,8 @@ object GenContinuationAbstractClasses {
   /**
     * Returns the set of continuation classes for the given set of types `ts`.
     */
-  def gen(ts: Iterable[BackendObjType.Continuation])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    ts.foldLeft(Map.empty[JvmName, JvmClass]) {
+  def gen(conts: Iterable[BackendObjType.Continuation])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+    conts.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, contType) =>
         macc + (contType.jvmName -> JvmClass(contType.jvmName, genByteCode(contType)))
     }

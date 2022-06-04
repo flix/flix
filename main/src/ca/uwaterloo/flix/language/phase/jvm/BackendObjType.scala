@@ -98,6 +98,8 @@ object BackendObjType {
   case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType {
     def continuation: BackendObjType.Continuation = Continuation(result.toErased)
 
+    def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, s"arg$index", args(index))
+
     def ResultField: InstanceField = continuation.ResultField
 
     def InvokeMethod: InstanceMethod = continuation.InvokeMethod
