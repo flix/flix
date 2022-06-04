@@ -233,7 +233,7 @@ object TypeConstructor {
   /**
     * A type constructor that represent the type of scoped references.
     */
-  case object ScopedRef extends TypeConstructor {
+  case object Ref extends TypeConstructor {
     /**
       * The shape of a reference is `ScopedRef[t, l]`.
       */

@@ -1689,7 +1689,7 @@ object Resolver {
       case "Channel" => Type.mkChannel(loc).toSuccess
       case "Lazy" => Type.mkLazy(loc).toSuccess
       case "Array" => Type.Cst(TypeConstructor.Array, loc).toSuccess
-      case "Ref" => Type.Cst(TypeConstructor.ScopedRef, loc).toSuccess
+      case "Ref" => Type.Cst(TypeConstructor.Ref, loc).toSuccess
       case "Region" => Type.Cst(TypeConstructor.Region, loc).toSuccess
 
       // Disambiguate type.
@@ -2475,7 +2475,7 @@ object Resolver {
 
       case TypeConstructor.UnkindedEnum(_) => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.ScopedRef => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.Ref => Class.forName("java.lang.Object").toSuccess
 
       case TypeConstructor.Tuple(_) => Class.forName("java.lang.Object").toSuccess
 

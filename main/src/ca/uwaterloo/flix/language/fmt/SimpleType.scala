@@ -404,7 +404,7 @@ object SimpleType {
       case TypeConstructor.KindedEnum(sym, kind) => mkApply(Name(sym.name), t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.UnkindedEnum(sym) => throw InternalCompilerException("Unexpected unkinded type.")
       case TypeConstructor.Native(clazz) => Name(clazz.getSimpleName)
-      case TypeConstructor.ScopedRef => mkApply(Ref, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.Ref => mkApply(Ref, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Tuple(l) =>
         val tpes = t.typeArguments.map(fromWellKindedType).padTo(l, Hole)
         Tuple(tpes)

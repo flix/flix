@@ -667,7 +667,7 @@ object Type {
     * Returns the type `ScopedRef[tpe, reg]` with the given source location `loc`.
     */
   def mkScopedRef(tpe: Type, reg: Type, loc: SourceLocation): Type =
-    Apply(Apply(Cst(TypeConstructor.ScopedRef, loc), tpe, loc), reg, loc)
+    Apply(Apply(Cst(TypeConstructor.Ref, loc), tpe, loc), reg, loc)
 
   /**
     * Constructs the pure arrow type A -> B.
