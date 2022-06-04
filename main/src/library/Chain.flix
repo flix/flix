@@ -582,9 +582,7 @@ namespace Chain {
     ///
     /// Returns the longest prefix of `c` that satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def takeWhileLeft(f: a -> Bool, c: Chain[a]): Chain[a] =
+    pub def takeWhileLeft(f: a -> Bool & ef, c: Chain[a]): Chain[a] & ef =
         def loop(cc, acc) = match viewLeft(cc) {
             case NoneLeft        => acc
             case SomeLeft(a, rs) => if (f(a)) loop(rs, snoc(acc, a)) else acc
@@ -594,9 +592,7 @@ namespace Chain {
     ///
     /// Returns the longest suffix of `c` that satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def takeWhileRight(f: a -> Bool, c: Chain[a]): Chain[a] =
+    pub def takeWhileRight(f: a -> Bool & ef, c: Chain[a]): Chain[a] & ef =
         def loop(cc, acc) = match viewRight(cc) {
             case SomeRight(rs, a) if (f(a)) => loop(rs, cons(a, acc))
             case _                          => acc
@@ -618,15 +614,13 @@ namespace Chain {
     ///
     /// Returns `None` if every element of `c` is `None`.
     ///
-    pub def findMap(f: a -> Option[b] & ef, c: Chain[a]): Option[b] & ef =
-        def loop(cc) = match viewLeft(cc) {
-            case NoneLeft        => None
-            case SomeLeft(a, rs) => match f(a) {
-                case None    => loop(rs)
-                case Some(v) => Some(v)
-            }
-        };
-        loop(c)
+    pub def findMap(f: a -> Option[b] & ef, c: Chain[a]): Option[b] & ef = match viewLeft(c) {
+        case NoneLeft        => None
+        case SomeLeft(x, xs) => match f(x) {
+            case None    => findMap(f, xs)
+            case Some(v) => Some(v)
+        }
+    }
 
     ///
     /// Returns a chain where the element at index `i` is `(a, b)` where
