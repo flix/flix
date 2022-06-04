@@ -94,15 +94,15 @@ namespace TestMutMap {
 
     @test
     def merge01(): Bool & Impure =
-        let m1 = new MutMap(static): MutMap[Int32, Int32, _];
-        let m2 = new MutMap(static): MutMap[Int32, Int32, _];
+        let m1 = new MutMap(Static): MutMap[Int32, Int32, _];
+        let m2 = new MutMap(Static): MutMap[Int32, Int32, _];
         MutMap.mergeWithKey!((_, v, _) -> v, m1, m2);
         MutMap.isEmpty(m2)
 
     @test
     def merge02(): Bool & Impure =
-        let m1 = new MutMap(static);
-        let m2 = new MutMap(static);
+        let m1 = new MutMap(Static);
+        let m2 = new MutMap(Static);
         MutMap.put!(1, 0, m1);
         MutMap.put!(2, 0, m2);
         MutMap.mergeWithKey!((_, v, _) -> v, m1, m2);
