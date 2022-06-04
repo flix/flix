@@ -151,7 +151,7 @@ class TestTyper extends FunSuite with TestUtils {
     // See https://github.com/flix/flix/issues/3634
     val input =
       """
-        |opaque type E[a: Type, ef: Bool] = Unit
+        |enum E[a: Type, ef: Bool](Unit)
         |def f(g: E[Int32, true]): Bool = ???
         |def mkE(): E[Int32, true] & ef = ???
         |

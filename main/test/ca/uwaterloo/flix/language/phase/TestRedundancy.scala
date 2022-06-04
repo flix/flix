@@ -306,7 +306,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace N {
-         |    opaque type USD = Int32
+         |    enum USD(Int32)
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -903,7 +903,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("RedundantTypeConstraint.Instance.01") {
     val input =
       """
-        |opaque type Box[a] = a
+        |enum Box[a](a)
         |
         |class C[a]
         |
@@ -918,7 +918,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("RedundantTypeConstraint.Instance.02") {
     val input =
       """
-        |opaque type Box[a] = a
+        |enum Box[a](a)
         |
         |class C[a]
         |
