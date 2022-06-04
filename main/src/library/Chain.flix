@@ -521,16 +521,13 @@ namespace Chain {
     /// Returns `c` if `n < 0`.
     ///
     pub def dropRight(n: Int32, c: Chain[a]): Chain[a] =
-        def loop(i, cc) = {
-            if (i <= 0)
-                cc
-            else
-                match viewRight(cc) {
-                    case NoneRight        => Empty
-                    case SomeRight(rs, _) => loop(i - 1, rs)
-                }
-        };
-        loop(n, c)
+        if (n <= 0)
+            c
+        else
+            match viewRight(c) {
+                case NoneRight        => Empty
+                case SomeRight(xs, _) => dropRight(n - 1, xs)
+            }
 
     ///
     /// Returns `c` without the longest prefix that satisfies the predicate `f`.
