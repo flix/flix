@@ -78,12 +78,10 @@ namespace Concurrent/Channel/Timer {
     def sleepAndSend(ns: Int64, c: Channel[Unit]): Unit & Impure =
         import static java.lang.Thread.sleep(Int64, Int32): Unit & Impure;
         if (ns < 0i64) {
-            sleep(0i64, 0i32);
-            c <- ()
+            sleep(0i64, 0i32); c <- ()
         } else {
             let millis = ns  /  1_000_000i64;
             let nanos  = ns mod 1_000_000i64;
-            sleep(millis, Int64.clampToInt32(nanos, 0i32, 1_000_000i32));
-            c <- ()
+            sleep(millis, Int64.clampToInt32(nanos, 0i32, 1_000_000i32)); c <- ()
         }
 }
