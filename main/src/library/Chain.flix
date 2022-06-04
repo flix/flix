@@ -226,20 +226,18 @@ namespace Chain {
     ///
     /// Returns `true` if and only if `c` contains the element `a`.
     ///
-    pub def memberOf(a: a, c: Chain[a]): Bool with Eq[a] =
-        def loop(v) = match v {
-            case NoneLeft                 => false
-            case SomeLeft(x, _) if x == a => true
-            case SomeLeft(_, xs)          => loop(viewLeft(xs))
-        };
-        loop(viewLeft(c))
+    pub def memberOf(a: a, c: Chain[a]): Bool with Eq[a] = match viewLeft(c) {
+        case NoneLeft                 => false
+        case SomeLeft(x, _) if x == a => true
+        case SomeLeft(_, xs)          => memberOf(a, viewLeft(xs))
+    }
 
     ///
     /// Optionally returns the position of `a` in `c`.
     ///
     pub def indexOf(a: a, c: Chain[a]): Option[Int32] with Eq[a] =
         def loop(v, acc) = match v {
-            case NoneLeft       => None
+            case NoneLeft        => None
             case SomeLeft(x, xs) => if (x == a) Some(acc) else loop(viewLeft(xs), acc + 1)
         };
         loop(viewLeft(c), 0)
