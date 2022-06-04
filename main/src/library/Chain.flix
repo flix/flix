@@ -477,12 +477,10 @@ namespace Chain {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, c: Chain[a]): b & ef =
-        def loop(cc, acc) = match viewRight(cc) {
-            case NoneRight        => acc
-            case SomeRight(rs, a) => loop(rs, f(a, acc))
-        };
-        loop(c, s)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, c: Chain[a]): b & ef = match viewRight(c) {
+        case NoneRight        => s
+        case SomeRight(xs, x) => foldRight(f, f(x, s), xs)
+    }
 
     ///
     /// Applies `f` to a start value `z` and all elements in `c` going from right to left.
