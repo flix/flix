@@ -46,7 +46,7 @@ object Weeder {
     "class", "def", "deref", "else", "enum", "false", "fix", "force",
     "if", "import", "inline", "instance", "into", "lat", "law", "lawful", "lazy", "let", "let*", "match",
     "namespace", "null", "opaque", "override", "pub", "ref", "region", "reify",
-    "reifyBool", "reifyEff", "reifyType", "rel", "sealed", "set", "spawn", "static", "true",
+    "reifyBool", "reifyEff", "reifyType", "rel", "sealed", "set", "spawn", "Static", "true",
     "type", "use", "where", "with", "|||", "~~~", "discard"
   )
 
@@ -103,8 +103,6 @@ object Weeder {
     case d: ParsedAst.Declaration.Law => visitLaw(d)
 
     case d: ParsedAst.Declaration.Enum => visitEnum(d)
-
-    case d: ParsedAst.Declaration.OpaqueType => visitOpaqueType(d)
 
     case d: ParsedAst.Declaration.TypeAlias => visitTypeAlias(d)
 
@@ -350,25 +348,6 @@ object Weeder {
     case ParsedAst.Case(_, ident, tpe0, _) =>
       val tpe = tpe0.map(visitType).getOrElse(WeededAst.Type.Unit(ident.loc))
       WeededAst.Case(enum, Name.mkTag(ident), tpe)
-  }
-
-  /**
-    * Performs weeding on the given opaque type declaration `d0`.
-    */
-  private def visitOpaqueType(d0: ParsedAst.Declaration.OpaqueType)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Enum], WeederError] = d0 match {
-    case ParsedAst.Declaration.OpaqueType(doc0, mod0, sp1, ident, tparams0, derives, tpe0, sp2) =>
-      /*
-       * Rewrites an opaque type to an enum declaration.
-       */
-      val doc = visitDoc(doc0)
-      val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
-      val tparamsVal = visitTypeParams(tparams0)
-
-      mapN(modVal, tparamsVal) {
-        case (mod, tparams) =>
-          val cases = Map(Name.mkTag(ident) -> WeededAst.Case(ident, Name.mkTag(ident), visitType(tpe0)))
-          List(WeededAst.Declaration.Enum(doc, Nil, mod, ident, tparams, derives.toList, cases, mkSL(sp1, sp2)))
-      }
   }
 
   /**
@@ -2659,10 +2638,10 @@ object Weeder {
 
   /**
     * Performs weeding on the given effect `ident`.
-    * Checks whether it is actually the keyword `static`.
+    * Checks whether it is actually the keyword `Static`.
     */
   private def visitEffectIdent(ident: Name.Ident): WeededAst.Type = {
-    if (ident.name == "static")
+    if (ident.name == "Static")
       WeededAst.Type.False(ident.loc)
     else
       WeededAst.Type.Var(ident, ident.loc)

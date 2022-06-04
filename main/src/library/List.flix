@@ -1156,8 +1156,7 @@ namespace List {
         case None    => [] @ r
         case Some(x) =>
             let a = [x; length(l)] @ r;
-            let f = (i, b) -> { a[i] = b; i + 1 };
-            foldLeft(f, 0, l);
+            foreach(match (b, i) -> a[i] = b, zipWithIndex(l));
             a
         }
 
