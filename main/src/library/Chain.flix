@@ -506,16 +506,13 @@ namespace Chain {
     /// Returns `c` if `n < 0`.
     ///
     pub def dropLeft(n: Int32, c: Chain[a]): Chain[a] =
-        def loop(i, cc) = {
-            if (i <= 0)
-                cc
-            else
-                match viewLeft(cc) {
-                    case NoneLeft        => Empty
-                    case SomeLeft(_, rs) => loop(i - 1, rs)
-                }
-        };
-        loop(n, c)
+        if (n <= 0)
+            c
+        else
+            match viewLeft(c) {
+                case NoneLeft        => Empty
+                case SomeLeft(_, xs) => dropLeft(n - 1, xs)
+            }
 
     ///
     /// Returns `c` without the last `n` elements.
