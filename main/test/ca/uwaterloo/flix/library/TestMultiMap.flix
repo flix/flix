@@ -388,9 +388,7 @@ namespace TestMultiMap {
     def removeWithValue01(): Bool = MultiMap.removeWithValue(1, 4, empty(): MultiMap[Int32, Int32]) == empty()
 
     @test
-    def removeWithValue02(): Bool & Impure =
-        println("removeWithValue02");
-        println(ToString.toString(MultiMap.removeWithValue(1, 4, singleton(1, 4))));
+    def removeWithValue02(): Bool =
         MultiMap.removeWithValue(1, 4, singleton(1, 4)) |> toAssocList == Nil
 
     @test
@@ -1256,5 +1254,58 @@ namespace TestMultiMap {
         MultiMap.toMap(singleton(1, 4) |> insert(2, 4) |> insert(1, 1) |> insert(3, 3))
             == Map#{1 => Set#{1, 4}, 2 => Set#{4}, 3 => Set#{3}}
 
+    /////////////////////////////////////////////////////////////////////////////
+    // foreach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foreach01(): Bool =
+        region r {
+            let rk = ref 0 @ r;
+            let rv = ref 0 @ r;
+            let m = empty(): MultiMap[Int32, Int32];
+            MultiMap.foreach((k, v) -> {rk := k; rv := v}, m);
+            deref rk == 0 and deref rv == 0
+        }
+
+    @test
+    def foreach02(): Bool =
+        region r {
+            let rk = ref 0;
+            let rv = ref 0;
+            let m = singleton(1, 4);
+            MultiMap.foreach((k, v) -> {rk := k; rv := v}, m);
+            deref rk == 1 and deref rv == 4
+        }
+
+    @test
+    def foreach03(): Bool =
+        region r {
+            let rk = ref 0 @ r;
+            let rv = ref 0 @ r;
+            let m = singleton(1, 4) |> insert(2, 4);
+            MultiMap.foreach((k, v) -> {rk := k; rv := v}, m);
+            deref rk == 2 and deref rv == 4
+        }
+
+    @test
+    def foreach04(): Bool =
+        region r {
+            let rk = ref 0 @ r;
+            let rv = ref 0 @ r;
+            let m = singleton(1, 4) |> insert(2, 4) |> insert(1, 1);
+            MultiMap.foreach((k, v) -> {rk := k; rv := v}, m);
+            deref rk == 2 and deref rv == 4
+        }
+
+    @test
+    def foreach05(): Bool =
+        region r {
+            let rk = ref 0;
+            let rv = ref 0;
+            let m = singleton(1, 4) |> insert(2, 4) |> insert(1, 1) |> insert(3, 3);
+            MultiMap.foreach((k, v) -> {rk := k; rv := v}, m);
+            deref rk == 3 and deref rv == 3
+        }
 
 }

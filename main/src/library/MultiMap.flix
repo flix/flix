@@ -35,18 +35,19 @@ instance ToString[MultiMap[k, v]] with ToString[k], ToString[v] {
         let fn = () -> region r {
             let MultiMap(m1) = m;
             let sb = new StringBuilder(r);
+            let first = ref true @ r;
             StringBuilder.appendString!("MultiMap#{", sb);
-            Map.foldLeftWithKey((acc, k, v) -> {
-                if (acc < 1)
+            Map.foreach((k, v) -> {
+                if (deref first) {
+                    first := false;
                     StringBuilder.appendString!("${k} => ${v}", sb)
-                else
-                    StringBuilder.appendString!(", ${k} => ${v}", sb);
-                acc + 1}, 0, m1);
+                } else
+                    StringBuilder.appendString!(", ${k} => ${v}", sb)
+                }, m1);
             StringBuilder.appendString!("}", sb);
             StringBuilder.toString(sb)
         };
         fn()
-
 }
 
 instance Hash[MultiMap[k, v]] with Hash[k], Hash[v] {
@@ -525,5 +526,12 @@ namespace MultiMap {
         m1
 
     // No traversable functions due to Order constraint that's outside the `Traversable` class.
+
+    ///
+    /// Applies `f` to every `(key, value)` of MultiMap `m`.
+    ///
+    pub def foreach(f: (k, v) -> Unit & ef, m: MultiMap[k, v]): Unit & ef =
+        let MultiMap(m1) = m;
+        Map.foreach((k, s) -> Set.foreach(f(k), s), m1)
 
 }
