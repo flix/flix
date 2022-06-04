@@ -488,12 +488,10 @@ namespace Chain {
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, c: Chain[a]): b & ef =
-        def loop(cc) = match viewLeft(cc) {
-            case NoneLeft        => z
-            case SomeLeft(x, rs) => f(x, _ -> loop(rs))
-        };
-        loop(c)
+    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, c: Chain[a]): b & ef = match viewLeft(c) {
+        case NoneLeft        => z
+        case SomeLeft(x, xs) => f(x, _ -> foldRightWithCont(f, z, xs))
+    }
 
     ///
     /// Returns the result of mapping each element and combining the results.
