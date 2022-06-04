@@ -444,12 +444,11 @@ namespace Chain {
     ///
     /// The function `f` must be pure.
     ///
-    pub def forall(f: a -> Bool, c: Chain[a]): Bool =
-        def loop(cc) = match viewLeft(cc) {
-            case NoneLeft        => true
-            case SomeLeft(a, rs) => if (not f(a)) false else loop(rs)
-        };
-        loop(c)
+    pub def forall(f: a -> Bool, c: Chain[a]): Bool = match viewLeft(c) {
+        case NoneLeft                   => true
+        case SomeLeft(x, _) if not f(x) => false
+        case SomeLeft(_, xs)            => forall(f, xs)
+    }
 
     ///
     /// Returns a list of every element in `c` that satisfies the predicate `f`.
