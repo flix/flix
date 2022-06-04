@@ -67,7 +67,7 @@ object SimpleType {
 
   case object Array extends SimpleType
 
-  case object ScopedRef extends SimpleType
+  case object Ref extends SimpleType
 
   case object Channel extends SimpleType
 
@@ -404,7 +404,7 @@ object SimpleType {
       case TypeConstructor.KindedEnum(sym, kind) => mkApply(Name(sym.name), t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.UnkindedEnum(sym) => throw InternalCompilerException("Unexpected unkinded type.")
       case TypeConstructor.Native(clazz) => Name(clazz.getSimpleName)
-      case TypeConstructor.ScopedRef => mkApply(ScopedRef, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.ScopedRef => mkApply(Ref, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Tuple(l) =>
         val tpes = t.typeArguments.map(fromWellKindedType).padTo(l, Hole)
         Tuple(tpes)
