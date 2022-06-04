@@ -759,7 +759,7 @@ object JvmOps {
     case MonoType.Int64 => Type.Int64
     case MonoType.BigInt => Type.BigInt
     case MonoType.Str => Type.Str
-    case MonoType.Array(elm) => Type.mkScopedArray(hackMonoType2Type(elm), Type.Impure, SourceLocation.Unknown)
+    case MonoType.Array(elm) => Type.mkArray(hackMonoType2Type(elm), Type.Impure, SourceLocation.Unknown)
     case MonoType.Lazy(tpe) => Type.mkLazy(hackMonoType2Type(tpe), SourceLocation.Unknown)
     case MonoType.Channel(elm) => Type.mkChannel(hackMonoType2Type(elm), SourceLocation.Unknown)
     case MonoType.Native(clazz) => Type.mkNative(clazz, SourceLocation.Unknown)

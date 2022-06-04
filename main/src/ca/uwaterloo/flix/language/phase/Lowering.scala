@@ -126,7 +126,7 @@ object Lowering {
     lazy val SolveType: Type = Type.mkPureArrow(Datalog, Datalog, SourceLocation.Unknown)
     lazy val MergeType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Datalog, SourceLocation.Unknown)
     lazy val FilterType: Type = Type.mkPureUncurriedArrow(List(PredSym, Datalog), Datalog, SourceLocation.Unknown)
-    lazy val RenameType: Type = Type.mkPureUncurriedArrow(List(Type.mkArray(PredSym, SourceLocation.Unknown), Datalog), Datalog, SourceLocation.Unknown)
+    lazy val RenameType: Type = Type.mkPureUncurriedArrow(List(Type.mkArray(PredSym, Type.False, SourceLocation.Unknown), Datalog), Datalog, SourceLocation.Unknown)
   }
 
   /**
@@ -545,7 +545,7 @@ object Lowering {
     case Expression.FixpointLambda(pparams, exp, _, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Rename)
       val defExp = Expression.Def(defn.sym, Types.RenameType, loc)
-      val predExps = mkArray(pparams.map(pparam => mkPredSym(pparam.pred)), Type.mkArray(Types.PredSym, loc), loc)
+      val predExps = mkArray(pparams.map(pparam => mkPredSym(pparam.pred)), Type.mkArray(Types.PredSym, Type.False, loc), loc)
       val argExps = predExps :: visitExp(exp) :: Nil
       val resultType = Types.Datalog
       Expression.Apply(defExp, argExps, resultType, eff, loc)
@@ -1242,7 +1242,7 @@ object Lowering {
     * Returns a pure array expression constructed from the given list of expressions `exps`.
     */
   private def mkArray(exps: List[Expression], elmType: Type, loc: SourceLocation): Expression = {
-    val tpe = Type.mkScopedArray(elmType, Type.Pure, loc)
+    val tpe = Type.mkArray(elmType, Type.Pure, loc)
     val eff = Type.Pure
     val reg = Expression.Unit(loc)
     Expression.ArrayLit(exps, reg, tpe, eff, loc)
