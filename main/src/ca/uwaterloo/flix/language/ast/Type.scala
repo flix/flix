@@ -634,8 +634,8 @@ object Type {
   /**
     * Returns the type `Array[tpe]` with the given optional source location `loc`.
     */
-  def mkArray(elmType: Type, loc: SourceLocation): Type =
-    Apply(Apply(Type.Cst(TypeConstructor.Array, loc), elmType, loc), Type.False, loc)
+  def mkArray(tpe: Type, loc: SourceLocation): Type =
+    Apply(Apply(Type.Cst(TypeConstructor.Array, loc), tpe, loc), Type.False, loc)
 
   /**
     * Returns the Channel type with the given source location `loc`.
