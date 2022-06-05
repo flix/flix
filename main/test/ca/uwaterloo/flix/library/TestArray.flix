@@ -62,17 +62,20 @@ namespace TestArray {
 
     @test
     def testPut01(): Bool = region r {
-        Array.put(42, 0, [1] @ r)[0] == 42
+        let a = ([1] @ r) !> Array.put(42, 0);
+        a[0] == 42
     }
 
     @test
     def testPut02(): Bool = region r {
-        Array.put(42, 1, [1, 2] @ r)[1] == 42
+        let a = ([1, 2] @ r) !> Array.put(42, 1);
+        a[1] == 42
     }
 
     @test
     def testPut03(): Bool = region r {
-        Array.put(42, 2, [1, 2, 3] @ r)[2] == 42
+        let a = ([1, 2, 3] @ r) !> Array.put(42, 2);
+        a[2] == 42
     }
 
     /////////////////////////////////////////////////////////////////////////////
