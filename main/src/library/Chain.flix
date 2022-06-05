@@ -429,9 +429,7 @@ namespace Chain {
     ///
     /// Returns `false` if `c` is empty.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def exists(f: a -> Bool, c: Chain[a]): Bool = match viewLeft(c) {
+    pub def exists(f: a -> Bool & ef, c: Chain[a]): Bool & ef = match viewLeft(c) {
         case NoneLeft               => false
         case SomeLeft(x, _) if f(x) => true
         case SomeLeft(_, xs)        => exists(f, xs)
@@ -442,9 +440,7 @@ namespace Chain {
     ///
     /// Returns `true` if `c` is empty.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def forall(f: a -> Bool, c: Chain[a]): Bool = match viewLeft(c) {
+    pub def forall(f: a -> Bool & ef, c: Chain[a]): Bool & ef = match viewLeft(c) {
         case NoneLeft                   => true
         case SomeLeft(x, _) if not f(x) => false
         case SomeLeft(_, xs)            => forall(f, xs)
