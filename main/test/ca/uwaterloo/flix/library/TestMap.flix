@@ -804,6 +804,23 @@ def foldRightWithKeyCont03(): Bool = Map.foldRightWithKeyCont((k, v, c) -> k + c
 def foldRightWithKeyCont04(): Bool = Map.foldRightWithKeyCont((k, v, c) -> k + c() + v, 0, Map#{1 => 2, 3 => 4, 5 => 6}) == 21
 
 /////////////////////////////////////////////////////////////////////////////
+// foldMapWithKey                                                          //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def foldWithKey01(): Bool = Map.foldMapWithKey((k, v) -> k + v, Map#{}) == 0
+
+@test
+def foldWithKey02(): Bool = Map.foldMapWithKey((k, v) -> k + v, Map#{1 => 2, 3 => 5}) == (1 + 2 + 3 + 5)
+
+@test
+def foldWithKey03(): Bool =
+    Map.foldMapWithKey((k, v) -> 2 * (k + v), Map#{1 => 2, 3 => 5}) == (2 * (1 + 2) + 2 * (3 + 5))
+
+@test
+def foldWithKey04(): Bool = Map.foldMapWithKey((k, v) -> "${k}" + v, Map#{1 => "a", 2 => "b"}) == "1a2b"
+
+/////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
