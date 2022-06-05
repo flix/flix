@@ -445,8 +445,8 @@ namespace Array {
             else {
                 let x = arr[i];
                 let y = arr[j];
-                discard put(y, i, arr);
-                discard put(x, j, arr);
+                put(y, i, arr);
+                put(x, j, arr);
                 loop(i + 1, j - 1)
             }
         };
