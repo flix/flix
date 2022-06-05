@@ -319,9 +319,7 @@ namespace MutSet {
     ///
     /// Returns `false` if `s` is the empty set.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def exists(f: a -> Bool, s: MutSet[a, r]): Bool \ { Read(r) } =
+    pub def exists(f: a -> Bool & ef, s: MutSet[a, r]): Bool \ { ef, Read(r) } =
         let MutSet(ms) = s;
         Set.exists(f, deref ms)
 
@@ -330,9 +328,7 @@ namespace MutSet {
     ///
     /// Returns `true` if `s` is the empty set.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def forall(f: a -> Bool, s: MutSet[a, r]): Bool \ { Read(r) } =
+    pub def forall(f: a -> Bool & ef, s: MutSet[a, r]): Bool \ { ef, Read(r) } =
         let MutSet(ms) = s;
         Set.forall(f, deref ms)
 
