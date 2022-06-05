@@ -714,6 +714,34 @@ object ResolutionError {
   }
 
   /**
+    * An error raised to indicate that a JVM class's dependency is missing.
+    *
+    * @param className  the name of the class.
+    * @param dependency the full path of the dependency.
+    * @param loc        the location where the error occurred.
+    */
+  case class MissingJvmDependency(className: String, dependency: String, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Missing dependency ${dependency} for JVM class ${className}."
+
+    /**
+      * Returns the formatted error message.
+      */
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Missing dependency ${dependency} for JVM class '${cyan(className)}'.
+         |
+         |${code(loc, s"missing dependency ${dependency}.")}
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raise to indicate a cycle in the class hierarchy.
     *
     * @param path the super class path from a class to itself.
