@@ -558,6 +558,14 @@ namespace Nel {
         (l |> toList |> List.toArray)(r)
 
     ///
+    /// Returns `l` as a MutDeque.
+    ///
+    pub def toMutDeque(l: Nel[a], r: Region[r]): MutDeque[a, r] \ Write(r) =
+        let d = new MutDeque(r);
+        foreach(x -> MutDeque.pushBack(x, d), l);
+        d
+
+    ///
     /// Applies `f` to every element of `l`.
     ///
     @Time(time(f)) @Space(space(f))
