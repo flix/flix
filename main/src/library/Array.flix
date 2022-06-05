@@ -78,8 +78,8 @@ namespace Array {
     /// Equivalent to the expression `a[i] = x`.
     ///
     @Time(1) @Space(1)
-    pub def put(x: a, i: Int32, a: ScopedArray[a, r]): ScopedArray[a, r] \ Write(r) =
-        a[i] = x; a
+    pub def put(x: a, i: Int32, a: ScopedArray[a, r]): Unit \ Write(r) =
+        a[i] = x
 
     ///
     /// Returns `true` if the given array `a` is empty.
@@ -893,10 +893,8 @@ namespace Array {
     ///
     /// Returns `false` if `arr` is empty.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def exists(f: a -> Bool, arr: ScopedArray[a, r]): Bool \ Read(r) =
+    pub def exists(f: a -> Bool & ef, arr: ScopedArray[a, r]): Bool \ { ef, Read(r) } =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)
@@ -914,7 +912,7 @@ namespace Array {
     /// Returns `true` if `arr` is empty.
     ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def forall(f: a -> Bool, arr: ScopedArray[a, r]): Bool \ Read(r) =
+    pub def forall(f: a -> Bool & ef, arr: ScopedArray[a, r]): Bool \ { ef, Read(r) } =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)

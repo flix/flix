@@ -433,7 +433,7 @@ namespace Nel {
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
     ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
-    pub def count(f: a -> Bool, l: Nel[a]): Int32 = match l {
+    pub def count(f: a -> Bool & ef, l: Nel[a]): Int32 & ef = match l {
         case Nel(x, xs) => (if (f(x)) 1 else 0) + List.count(f, xs)
     }
 
