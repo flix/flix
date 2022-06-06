@@ -571,7 +571,7 @@ object Monomorph {
       case Expression.Region(_, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
-      case Expression.Scope(_, _, _, _, _, loc) =>
+      case Expression.Scope(_, _, _, _, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
       case Expression.FixpointConstraintSet(_, _, _, loc) =>

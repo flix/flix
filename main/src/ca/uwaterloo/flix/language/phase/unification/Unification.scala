@@ -419,39 +419,38 @@ object Unification {
   /**
     * Purifies the given effect `eff` in the type inference monad.
     */
-  def purifyEffM(tvar: Type.KindedVar, eff: Type): InferMonad[Type] =
-    InferMonad { case (s, renv) => {
-      val purifiedEff = purify(tvar, s(eff))
-      Ok((s, renv, purifiedEff))
-    }
+  def purifyEffM(sym: Symbol.RegionSym, eff: Type): InferMonad[Type] =
+    InferMonad {
+      case (s, renv) =>
+        val purifiedEff = purify(sym, s(eff))
+        Ok((s, renv, purifiedEff))
     }
 
   /**
-    * Returns the given Boolean formula `tpe` with the (possibly rigid) type variable `tvar` replaced by `True`.
+    * Returns the given Boolean formula `tpe` with the symbol sym replaced by `True`.
     */
-  private def purify(tvar: Type.KindedVar, tpe: Type): Type = tpe.typeConstructor match {
-    case None => tpe match {
-      case t: Type.Var =>
-        if (tvar.sym == t.asKinded.sym) Type.True else tpe
-      case _ => throw InternalCompilerException(s"Unexpected type constructor: '$tpe'.")
-    }
-
+  private def purify(sym: Symbol.RegionSym, tpe: Type): Type = tpe.typeConstructor match {
+    case None => tpe
     case Some(tc) => tc match {
+      case TypeConstructor.Region(sym1) if sym == sym1 => Type.True
+
+      case TypeConstructor.Region(sym1) => tpe
+
       case TypeConstructor.True => Type.True
 
       case TypeConstructor.False => Type.False
 
       case TypeConstructor.Not =>
         val List(t) = tpe.typeArguments
-        BoolUnification.mkNot(purify(tvar, t))
+        BoolUnification.mkNot(purify(sym, t))
 
       case TypeConstructor.And =>
         val List(t1, t2) = tpe.typeArguments
-        BoolUnification.mkAnd(purify(tvar, t1), purify(tvar, t2))
+        BoolUnification.mkAnd(purify(sym, t1), purify(sym, t2))
 
       case TypeConstructor.Or =>
         val List(t1, t2) = tpe.typeArguments
-        BoolUnification.mkOr(purify(tvar, t1), purify(tvar, t2))
+        BoolUnification.mkOr(purify(sym, t1), purify(sym, t2))
 
       case _ => throw InternalCompilerException(s"Unexpected non-Boolean type constructor: '$tc'.")
     }
@@ -460,20 +459,21 @@ object Unification {
   /**
     * Ensures that the region variable `rvar` does not escape in the type `tpe` nor from the context.
     */
-  def noEscapeM(rvar: Type.KindedVar, tpe: Type): InferMonad[Unit] =
+  def noEscapeM(sym: Symbol.RegionSym, tpe: Type): InferMonad[Unit] =
     InferMonad { case (s, renv) =>
       // Apply the current substitution to `tpe`.
       val t = s(tpe)
 
       // Compute the type and effect variables that occur in `t`.
-      val fvs = t.typeVars
+      val syms = t.regionSyms
 
       // Ensure that `rvar` does not occur in `t` (e.g. being returned or as an effect).
-      if (fvs.contains(rvar)) {
-        Err(TypeError.RegionVarEscapes(rvar, t, rvar.loc))
+      if (syms.contains(sym)) {
+        Err(TypeError.RegionEscapes(sym, t, sym.loc))
       } else
         Ok((s, renv, ()))
     }
+
 
   /**
     * Sets the given variable as rigid in the type inference monad.

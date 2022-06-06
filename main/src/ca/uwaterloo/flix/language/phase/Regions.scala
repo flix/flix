@@ -18,12 +18,10 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
-
-import scala.collection.immutable.SortedSet
 
 /**
   * The region phase ensures that regions do not escape outside of their scope.
@@ -48,7 +46,7 @@ object Regions {
       case e => def0
     }
 
-  private def visitExp(exp0: Expression)(implicit scope: List[Type.KindedVar], flix: Flix): Validation[Unit, CompilationMessage] = exp0 match {
+  private def visitExp(exp0: Expression)(implicit scope: List[Symbol.RegionSym], flix: Flix): Validation[Unit, CompilationMessage] = exp0 match {
     case Expression.Unit(_) => ().toSuccess
 
     case Expression.Null(_, _) => ().toSuccess
@@ -120,8 +118,8 @@ object Regions {
     case Expression.Region(_, _) =>
       ().toSuccess
 
-    case Expression.Scope(_, regionVar, exp, tpe, _, loc) =>
-      flatMapN(visitExp(exp)(regionVar :: scope, flix)) {
+    case Expression.Scope(sym, _, _, exp, tpe, _, loc) =>
+      flatMapN(visitExp(exp)(sym :: scope, flix)) {
         case e => checkType(tpe, loc)
       }
 
@@ -378,28 +376,18 @@ object Regions {
   /**
     * Ensures that no region escapes inside `tpe`.
     */
-  private def checkType(tpe: Type, loc: SourceLocation)(implicit scope: List[Type.KindedVar]): Validation[Unit, CompilationMessage] = {
+  private def checkType(tpe: Type, loc: SourceLocation)(implicit scope: List[Symbol.RegionSym]): Validation[Unit, CompilationMessage] = {
     // Compute the region variables that escape.
-    val escapes = regionVarsOf(tpe) -- scope
+    val escapes = tpe.regionSyms -- scope
 
     // Return an error if a region variable escapes.
     if (escapes.nonEmpty) {
-      val rvar = escapes.head
-      return TypeError.RegionVarEscapes(rvar, tpe, loc).toFailure
+      val sym = escapes.head
+      return TypeError.RegionEscapes(sym, tpe, loc).toFailure
     }
 
     // Otherwise return success.
     ().toSuccess
-  }
-
-  /**
-    * Returns all region variables in the given type `tpe`.
-    */
-  private def regionVarsOf(tpe: Type): SortedSet[Type.KindedVar] = tpe.typeVars.filter {
-    case tvar =>
-      val isBool = tvar.sym.kind == Kind.Bool
-      val isRigid = tvar.sym.rigidity == Rigidity.Rigid
-      isBool && isRigid
   }
 
 }

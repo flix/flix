@@ -57,6 +57,20 @@ sealed trait Type {
   }
 
   /**
+    * Returns the region symbols in `this` type.
+    *
+    * Returns a sorted set to ensure that the compiler is deterministic.
+    */
+  def regionSyms: SortedSet[Symbol.RegionSym] = this match {
+    case Type.Cst(TypeConstructor.Region(sym), _) => SortedSet(sym)
+    case Type.Cst(_, _) => SortedSet.empty
+    case _: Type.Var => SortedSet.empty
+    case Type.Apply(tpe1, tpe2, _) => tpe1.regionSyms ++ tpe2.regionSyms
+    case Type.Ascribe(tpe, _, _) => tpe.regionSyms
+    case Type.Alias(_, _, tpe, _) => tpe.regionSyms
+  }
+
+  /**
     * Optionally returns the type constructor of `this` type.
     *
     * Return `None` if the type constructor is a variable.
@@ -937,10 +951,15 @@ object Type {
   def mkUnion(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.Union, loc), List(tpe1, tpe2), loc)
 
   /**
-    * Returns a Region type for the given region argument `r` with the given source location `loc`.
+    * Returns a region type for the given region symbol `sym`.
     */
-  def mkRegion(r: Type, loc: SourceLocation): Type =
-    Type.Apply(Type.Cst(TypeConstructor.Region, loc), r, loc)
+  def mkRegion(sym: Symbol.RegionSym, loc: SourceLocation): Type = Type.Cst(TypeConstructor.Region(sym), loc)
+
+  /**
+    * Returns a Region-to-Star type for the given region argument `r` with the given source location `loc`.
+    */
+  def mkRegionStar(r: Type, loc: SourceLocation): Type =
+    Type.Apply(Type.Cst(TypeConstructor.RegionToStar, loc), r, loc)
 
   /**
     * Returns the type `tpe1 => tpe2`.

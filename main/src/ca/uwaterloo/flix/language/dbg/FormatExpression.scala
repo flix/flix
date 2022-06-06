@@ -37,7 +37,7 @@ object FormatExpression {
     case TypedAst.Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) => s"Let($sym, $mod, $exp1, $exp2)"
     case TypedAst.Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) => s"LetRec($sym, $mod, $exp1, $exp2)"
     case TypedAst.Expression.Region(tpe, loc) => s"Region($tpe)"
-    case TypedAst.Expression.Scope(sym, regionVar, exp, tpe, eff, loc) => s"Scope($sym, $exp)"
+    case TypedAst.Expression.Scope(sym, _, _, exp, tpe, eff, loc) => s"Scope($sym, $exp)"
     case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => s"IfThenElse($exp1, $exp2, $exp3)"
     case TypedAst.Expression.Stm(exp1, exp2, _, _, _) => s"Stm($exp1, $exp2)"
     case TypedAst.Expression.Discard(exp, _, _) => s"Discard($exp)"

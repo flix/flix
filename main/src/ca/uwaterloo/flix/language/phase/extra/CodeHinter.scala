@@ -147,7 +147,7 @@ object CodeHinter {
 
     case Expression.Region(_, _) => Nil
 
-    case Expression.Scope(_, _, exp, _, _, _) =>
+    case Expression.Scope(_, _, _, exp, _, _, _) =>
       visitExp(exp)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>

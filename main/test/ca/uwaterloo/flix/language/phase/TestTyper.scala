@@ -1227,7 +1227,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.RegionVarEscapes](result)
+    expectError[TypeError.RegionEscapes](result)
   }
 
   test("Test.RegionVarEscapes.02") {
@@ -1244,7 +1244,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.RegionVarEscapes](result)
+    expectError[TypeError.RegionEscapes](result)
   }
 
   test("Test.RegionVarEscapes.03") {
@@ -1261,7 +1261,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.RegionVarEscapes](result)
+    expectError[TypeError.RegionEscapes](result)
   }
 
   test("Test.RegionVarEscapes.04") {
@@ -1281,7 +1281,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.RegionVarEscapes](result)
+    expectError[TypeError.RegionEscapes](result)
   }
 
 //  test("Test.RegionVarEscapes.05") {

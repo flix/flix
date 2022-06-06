@@ -83,7 +83,7 @@ object BoolUnification {
 
     // Eliminate all variables.
     try {
-      val subst = successiveVariableElimination(query, freeVars)
+      val subst = successiveVariableElimination(query, freeVars, 0)
 
       //    if (!subst.isEmpty) {
       //      val s = subst.toString
@@ -123,18 +123,21 @@ object BoolUnification {
   /**
     * Performs success variable elimination on the given boolean expression `f`.
     */
-  private def successiveVariableElimination(f: Type, fvs: List[Type.KindedVar])(implicit flix: Flix): Substitution = fvs match {
+  private def successiveVariableElimination(f: Type, fvs: List[Type.KindedVar], depth: Int)(implicit flix: Flix): Substitution = fvs match {
     case Nil =>
+      require(depth < 100) // MATT
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
-      if (!satisfiable(f))
+      val q = flexify(f)
+      if (!satisfiable(q, depth + 1))
         Substitution.empty
       else
         throw BooleanUnificationException
 
     case x :: xs =>
+      require(depth < 100) // MATT
       val t0 = Substitution.singleton(x.sym, Type.False)(f)
       val t1 = Substitution.singleton(x.sym, Type.True)(f)
-      val se = successiveVariableElimination(mkAnd(t0, t1), xs)
+      val se = successiveVariableElimination(mkAnd(t0, t1), xs, depth + 1)
 
       val f1 = BoolTable.minimizeType(mkOr(se(t0), mkAnd(x, mkNot(se(t1)))))
       val st = Substitution.singleton(x.sym, f1)
@@ -149,17 +152,28 @@ object BoolUnification {
   /**
     * Returns `true` if the given boolean formula `f` is satisfiable.
     */
-  private def satisfiable(f: Type)(implicit flix: Flix): Boolean = f match {
+  private def satisfiable(f: Type, depth: Int)(implicit flix: Flix): Boolean = f match {
     case Type.True => true
     case Type.False => false
     case _ =>
       val q = mkEq(f, Type.True)
       try {
-        successiveVariableElimination(q, q.typeVars.toList)
+        successiveVariableElimination(q, q.typeVars.toList, depth + 1)
         true
       } catch {
         case BooleanUnificationException => false
       }
+  }
+
+  // MATT docs
+  private def flexify(tpe0: Type): Type = tpe0 match {
+    case Type.KindedVar(sym, loc) => Type.KindedVar(sym.withRigidity(Rigidity.Flexible), loc)
+    case Type.UnkindedVar(sym, loc) => Type.UnkindedVar(sym.withRigidity(Rigidity.Flexible), loc)
+    case Type.Ascribe(tpe, kind, loc) => Type.Ascribe(flexify(tpe), kind, loc)
+    case Type.Cst(TypeConstructor.Region(sym), loc) => Type.KindedVar(new Symbol.KindedTypeVarSym(sym.id, Ast.VarText.SourceText(sym.text), Kind.Bool, Rigidity.Flexible, sym.loc), loc)
+    case Type.Cst(cst, loc) => Type.Cst(cst, loc)
+    case Type.Apply(tpe1, tpe2, loc) => Type.Apply(flexify(tpe1), flexify(tpe2), loc)
+    case Type.Alias(cst, args, tpe, loc) => Type.Alias(cst, args.map(flexify), flexify(tpe), loc)
   }
 
 
@@ -339,6 +353,9 @@ object BoolUnification {
 
     // (y ∧ x) ∨ x => x
     case (AND(_, x1), x2) if x1 == x2 => x1
+
+    // (x ∧ y) ∨ x => x
+    case (AND(x1, _), x2) if x1 == x2 => x1
 
     // x ∨ x => x
     case _ if tpe1 == tpe2 =>

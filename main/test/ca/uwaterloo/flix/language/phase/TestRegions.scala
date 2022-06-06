@@ -40,7 +40,7 @@ class TestRegions extends FunSuite with TestUtils {
         |    }
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.RegionVarEscapes](result)
+    expectError[TypeError.RegionEscapes](result)
   }
 
   test("RegionVarEscapes.02") {
@@ -60,7 +60,7 @@ class TestRegions extends FunSuite with TestUtils {
         |    }
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.RegionVarEscapes](result)
+    expectError[TypeError.RegionEscapes](result)
   }
 
 }

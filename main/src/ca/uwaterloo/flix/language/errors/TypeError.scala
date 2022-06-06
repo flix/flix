@@ -615,29 +615,29 @@ object TypeError {
   /**
     * An error indicating that a region variable escapes its scope.
     *
-    * @param rvar the region variable.
-    * @param tpe  the type wherein the region variable escapes.
-    * @param loc  the location where the error occurred.
+    * @param sym the region symbol.
+    * @param tpe the type wherein the region variable escapes.
+    * @param loc the location where the error occurred.
     */
-  case class RegionVarEscapes(rvar: Type.KindedVar, tpe: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = s"Region variable '${formatWellKindedType(rvar)}' escapes its scope."
+  case class RegionEscapes(sym: Symbol.RegionSym, tpe: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"Region symbol '${sym.text}' escapes its scope."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> The region variable '${red(formatWellKindedType(rvar))}' escapes its scope.
+         |>> The region symbol '${red(sym.text)}' escapes its scope.
          |
-         |${code(loc, "region variable escapes.")}
+         |${code(loc, "region symbol escapes.")}
          |
          |The escaping expression has type:
          |
          |  ${red(formatWellKindedType(tpe))}
          |
-         |which contains the region variable.
+         |which contains the region symbol.
          |
-         |The region variable was declared here:
+         |The region symbol was declared here:
          |
-         |${code(rvar.loc, "region variable declared here.")}
+         |${code(sym.loc, "region symbol declared here.")}
          |""".stripMargin
     }
 

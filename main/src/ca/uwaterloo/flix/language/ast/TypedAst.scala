@@ -181,7 +181,7 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
-    case class Scope(sym: Symbol.VarSym, regionVar: Type.KindedVar, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Scope(sym: Symbol.RegionSym, varSym: Symbol.VarSym, tvar: Type.KindedVar, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 

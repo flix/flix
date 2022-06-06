@@ -135,7 +135,7 @@ object NamedAst {
 
     case class Region(tpe: ca.uwaterloo.flix.language.ast.Type, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Scope(sym: Symbol.VarSym, regionVar: Symbol.UnkindedTypeVarSym, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class Scope(sym: Symbol.RegionSym, varSym: Symbol.VarSym, tvarSym: Symbol.UnkindedTypeVarSym, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Match(exp: NamedAst.Expression, rules: List[NamedAst.MatchRule], loc: SourceLocation) extends NamedAst.Expression
 

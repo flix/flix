@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
+import ca.uwaterloo.flix.language.ast.Symbol.RegionSym
 import ca.uwaterloo.flix.language.phase.{Kinder, Resolver, Typer}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -335,9 +336,16 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represent the type of regions.
+    * A type constructor representing a region constant.
     */
-  case object Region extends TypeConstructor {
+  case class Region(sym: RegionSym) extends TypeConstructor {
+    def kind: Kind = Kind.Bool
+  }
+
+  /**
+    * A type constructor converting a region to a Star type.
+    */
+  case object RegionToStar extends TypeConstructor {
     /**
       * The shape of a region is Region[l].
       */

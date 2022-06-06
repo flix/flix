@@ -77,7 +77,9 @@ object SimpleType {
 
   case object False extends SimpleType
 
-  case object Region extends SimpleType
+  case object RegionToStar extends SimpleType
+
+  case class Region(text: String, id: Int) extends SimpleType
 
   //////////
   // Records
@@ -510,7 +512,8 @@ object SimpleType {
         }
 
       case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(fromWellKindedType))
-      case TypeConstructor.Region => mkApply(Region, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.RegionToStar => mkApply(RegionToStar, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.Region(sym) => Region(sym.text, sym.id)
       case _: TypeConstructor.UnappliedAlias => throw InternalCompilerException("Unexpected unapplied alias.")
     }
   }

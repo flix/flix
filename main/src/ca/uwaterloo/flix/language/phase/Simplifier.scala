@@ -294,7 +294,7 @@ object Simplifier {
       case TypedAst.Expression.Region(_, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
-      case TypedAst.Expression.Scope(_, _, _, _, _, _) =>
+      case TypedAst.Expression.Scope(_, _, _, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
       case TypedAst.Expression.FixpointConstraintSet(_, _, _, _) =>
