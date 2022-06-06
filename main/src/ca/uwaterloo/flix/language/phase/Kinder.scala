@@ -81,9 +81,15 @@ object Kinder {
             traverse(insts)(visitInstance(_, taenv, root)).map(sym -> _)
         }))
 
-        mapN(enumsVal, classesVal, defsVal, instancesVal) {
-          case (enums, classes, defs, instances) =>
-            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, taenv, root.entryPoint, root.reachable, root.sources)
+        val effectsVal = Validation.sequence(ParOps.parMap(root.effects)({
+          pair: (Symbol.EffectSym, ResolvedAst.Effect) =>
+            val (sym, eff) = pair
+            visitEffect(eff, taenv, root).map(sym -> _)
+        }))
+
+        mapN(enumsVal, classesVal, defsVal, instancesVal, effectsVal) {
+          case (enums, classes, defs, instances, effects) =>
+            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, effects.toMap, taenv, root.entryPoint, root.reachable, root.sources)
         }
     }
 
@@ -209,6 +215,18 @@ object Kinder {
   }
 
   /**
+    * Performs kinding on the given effect declaration.
+    */
+  private def visitEffect(eff: ResolvedAst.Effect, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Effect, KindError] = eff match {
+    case ResolvedAst.Effect(doc, ann0, mod, sym, ops0, loc) =>
+      val annVal = traverse(ann0)(visitAnnotation(_, KindEnv.empty, Map.empty, taenv, root))
+      val opsVal = traverse(ops0)(visitOp(_, taenv, root))
+      mapN(annVal, opsVal) {
+        case (ann, ops) => KindedAst.Effect(doc, ann, mod, sym, ops, loc)
+      }
+  }
+
+  /**
     * Performs kinding on the all the definitions in the given root.
     */
   private def visitDefs(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, KindedAst.Def], KindError] = {
@@ -256,6 +274,22 @@ object Kinder {
           val expVal = traverse(exp0)(visitExp(_, kenv, senv, taenv, root))
           mapN(specVal, expVal) {
             case (spec, exp) => KindedAst.Sig(sym, spec, exp.headOption)
+          }
+      }
+  }
+
+  /**
+    * Performs kinding on the given effect operation under the given kind environment.
+    */
+  private def visitOp(op: ResolvedAst.Op, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Op, KindError] = op match {
+    case ResolvedAst.Op(sym, spec0) =>
+      val kenvVal = inferSpec(spec0, KindEnv.empty, taenv, root)
+      flatMapN(kenvVal) {
+        case kenv1 =>
+          val (kenv, senv) = split(kenv1)
+          val specVal = visitSpec(spec0, kenv, senv, taenv, root)
+          mapN(specVal) {
+            case spec => KindedAst.Op(sym, spec)
           }
       }
   }
