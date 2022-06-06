@@ -450,6 +450,8 @@ object Unification {
             (tpe, syms0, subst0)
         }
       case Type.UnkindedVar(sym, loc) => throw InternalCompilerException("unexpected unkinded type")
+      case Type.UnkindedArrow(purAndEff, arity, loc) => throw InternalCompilerException("unexpected unkinded type")
+      case Type.ReadWrite(tpe, loc) => throw InternalCompilerException("unexpected unkinded type")
       case Type.Ascribe(tpe, kind, loc) => throw InternalCompilerException("unexpected unkinded type")
       case Type.Cst(TypeConstructor.Region(sym), loc) if reg == sym => (Type.True, syms0, subst0)
       case Type.Cst(cst, loc) => (Type.Cst(cst, loc), syms0, subst0)
