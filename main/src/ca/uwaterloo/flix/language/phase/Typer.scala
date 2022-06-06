@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{ToFailure, mapN, traverse}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, mapN, traverse}
 import ca.uwaterloo.flix.util._
 
 import java.io.PrintWriter
@@ -1245,9 +1245,10 @@ object Typer {
 
       case KindedAst.Expression.TryWith(exp, eff, rules, loc) => visitExp(exp) // TODO actually infer
 
-      case KindedAst.Expression.Do(op, args, loc) => seqM(args.map(visitExp)).map(_.unzip3) // TODO actually infer
+      case KindedAst.Expression.Do(op, args, loc) => InferMonad.point((Nil: List[Ast.TypeConstraint], Type.Unit, Type.Pure)) // TODO actually infer
 
-      case KindedAst.Expression.Resume(args, loc) => seqM(args.map(visitExp)).map(_.unzip3) // TODO actually infer
+
+      case KindedAst.Expression.Resume(args, loc) => InferMonad.point((Nil: List[Ast.TypeConstraint], Type.Unit, Type.Pure)) // TODO actually infer
 
       case KindedAst.Expression.InvokeConstructor(constructor, args, loc) =>
         val classType = getFlixType(constructor.getDeclaringClass)
@@ -1818,7 +1819,9 @@ object Typer {
         val eff = declaredEff.getOrElse(e.eff)
         TypedAst.Expression.Cast(e, dt, de, tpe, eff, loc)
 
-      case KindedAst.Expression.Without(exp, eff, loc) => ??? // MATT hmmmm
+      case KindedAst.Expression.Without(exp, _, _) =>
+        // erase to the inner expression
+        visitExp(exp, subst0)
 
       case KindedAst.Expression.TryCatch(exp, rules, loc) =>
         val e = visitExp(exp, subst0)
@@ -1830,6 +1833,10 @@ object Typer {
         val tpe = rs.head.exp.tpe
         val eff = Type.mkAnd(e.eff :: rs.map(_.exp.eff), loc)
         TypedAst.Expression.TryCatch(e, rs, tpe, eff, loc)
+
+      case KindedAst.Expression.TryWith(exp, _, _, _) =>
+        // erase to the inner expression
+        visitExp(exp, subst0)
 
       case KindedAst.Expression.InvokeConstructor(constructor, args, loc) =>
         val as = args.map(visitExp(_, subst0))
