@@ -568,6 +568,12 @@ object Kinder {
           KindedAst.Expression.Cast(exp, declaredType.headOption, declaredPur, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
+    case ResolvedAst.Expression.Without(exp0, eff, loc) =>
+      val expVal = visitExp(exp0, kenv, senv, taenv, root)
+      mapN(expVal) {
+        case exp => KindedAst.Expression.Without(exp, eff, loc)
+      }
+
     case ResolvedAst.Expression.TryCatch(exp0, rules0, loc) =>
       val expVal = visitExp(exp0, kenv, senv, taenv, root)
       val rulesVal = traverse(rules0)(visitCatchRule(_, kenv, senv, taenv, root))
@@ -575,11 +581,24 @@ object Kinder {
         case (exp, rules) => KindedAst.Expression.TryCatch(exp, rules, loc)
       }
 
-    // TODO handle these
-    case ResolvedAst.Expression.Without(_, _, loc) => KindedAst.Expression.Hole(Symbol.mkHoleSym("Without"), Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
-    case ResolvedAst.Expression.TryWith(_, _, _, loc) => KindedAst.Expression.Hole(Symbol.mkHoleSym("TryWith"), Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
-    case ResolvedAst.Expression.Do(_, _, loc) => KindedAst.Expression.Hole(Symbol.mkHoleSym("Do"), Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
-    case ResolvedAst.Expression.Resume(_, loc) => KindedAst.Expression.Hole(Symbol.mkHoleSym("Resume"), Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
+    case ResolvedAst.Expression.TryWith(exp0, eff, rules0, loc) =>
+      val expVal = visitExp(exp0, kenv, senv, taenv, root)
+      val rulesVal = traverse(rules0)(visitHandlerRule(_, kenv, senv, taenv, root))
+      mapN(expVal, rulesVal) {
+        case (exp, rules) => KindedAst.Expression.TryWith(exp, eff, rules, loc)
+      }
+
+    case ResolvedAst.Expression.Do(op, args0, loc) =>
+      val argsVal = traverse(args0)(visitExp(_, kenv, senv, taenv, root))
+      mapN(argsVal) {
+        case args => KindedAst.Expression.Do(op, args, loc)
+      }
+
+    case ResolvedAst.Expression.Resume(args0, loc) =>
+      val argsVal = traverse(args0)(visitExp(_, kenv, senv, taenv, root))
+      mapN(argsVal) {
+        case args => KindedAst.Expression.Resume(args, loc)
+      }
 
     case ResolvedAst.Expression.InvokeConstructor(constructor, args0, loc) =>
       val argsVal = traverse(args0)(visitExp(_, kenv, senv, taenv, root))
@@ -766,6 +785,18 @@ object Kinder {
       val expVal = visitExp(exp0, kenv, senv, taenv, root)
       mapN(expVal) {
         exp => KindedAst.CatchRule(sym, clazz, exp)
+      }
+  }
+
+  /**
+    * Performs kinding on the given handler rule under the given kind environment.
+    */
+  private def visitHandlerRule(rule0: ResolvedAst.HandlerRule, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.HandlerRule, KindError] = rule0 match {
+    case ResolvedAst.HandlerRule(op, fparams0, exp0) =>
+      val fparamsVal = traverse(fparams0)(visitFormalParam(_, kenv, senv, taenv, root))
+      val expVal = visitExp(exp0, kenv, senv, taenv, root)
+      mapN(fparamsVal, expVal) {
+        case (fparams, exp) => KindedAst.HandlerRule(op, fparams, exp)
       }
   }
 

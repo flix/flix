@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 
 import java.lang.reflect.{Constructor, Field, Method}
-import scala.collection.immutable.List
 
 object KindedAst {
 
@@ -156,7 +155,15 @@ object KindedAst {
 
     case class Cast(exp: KindedAst.Expression, declaredType: Option[Type], declaredEff: Option[Type], tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
+    case class Without(exp: KindedAst.Expression, eff: Symbol.EffectSym, loc: SourceLocation) extends KindedAst.Expression
+
     case class TryCatch(exp: KindedAst.Expression, rules: List[KindedAst.CatchRule], loc: SourceLocation) extends KindedAst.Expression
+
+    case class TryWith(exp: KindedAst.Expression, eff: Symbol.EffectSym, rules: List[KindedAst.HandlerRule], loc: SourceLocation) extends KindedAst.Expression
+
+    case class Do(op: Symbol.OpSym, args: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
+
+    case class Resume(args: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
 
     case class InvokeConstructor(constructor: Constructor[_], args: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
 
@@ -317,6 +324,8 @@ object KindedAst {
   case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: KindedAst.Expression)
+
+  case class HandlerRule(op: Symbol.OpSym, fparams: List[KindedAst.FormalParam], exp: KindedAst.Expression)
 
   case class ChoiceRule(pat: List[KindedAst.ChoicePattern], exp: KindedAst.Expression)
 
