@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{ToFailure, mapN, traverse}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, mapN, traverse}
 import ca.uwaterloo.flix.util._
 
 import java.io.PrintWriter
@@ -1227,6 +1227,8 @@ object Typer {
           resultEff = declaredEff.getOrElse(actualEff)
         } yield (constrs, resultTyp, resultEff)
 
+      case KindedAst.Expression.Without(exp, eff, loc) => visitExp(exp) // TODO actually infer
+
       case KindedAst.Expression.TryCatch(exp, rules, loc) =>
         val rulesType = rules map {
           case KindedAst.CatchRule(sym, clazz, body) =>
@@ -1240,6 +1242,13 @@ object Typer {
           resultTyp <- unifyTypeM(tpe, ruleType, loc)
           resultEff = Type.mkAnd(eff :: ruleEffects, loc)
         } yield (constrs ++ ruleConstrs.flatten, resultTyp, resultEff)
+
+      case KindedAst.Expression.TryWith(exp, eff, rules, loc) => visitExp(exp) // TODO actually infer
+
+      case KindedAst.Expression.Do(op, args, loc) => InferMonad.point((Nil: List[Ast.TypeConstraint], Type.Unit, Type.Pure)) // TODO actually infer
+
+
+      case KindedAst.Expression.Resume(args, loc) => InferMonad.point((Nil: List[Ast.TypeConstraint], Type.Unit, Type.Pure)) // TODO actually infer
 
       case KindedAst.Expression.InvokeConstructor(constructor, args, loc) =>
         val classType = getFlixType(constructor.getDeclaringClass)
@@ -1810,6 +1819,8 @@ object Typer {
         val eff = declaredEff.getOrElse(e.eff)
         TypedAst.Expression.Cast(e, dt, de, tpe, eff, loc)
 
+      case KindedAst.Expression.Without(exp, _, _) => visitExp(exp, subst0) // TODO
+
       case KindedAst.Expression.TryCatch(exp, rules, loc) =>
         val e = visitExp(exp, subst0)
         val rs = rules map {
@@ -1820,6 +1831,13 @@ object Typer {
         val tpe = rs.head.exp.tpe
         val eff = Type.mkAnd(e.eff :: rs.map(_.exp.eff), loc)
         TypedAst.Expression.TryCatch(e, rs, tpe, eff, loc)
+
+      case KindedAst.Expression.TryWith(exp, _, _, _) => visitExp(exp, subst0) // TODO
+
+      case KindedAst.Expression.Do(_, _, loc) => TypedAst.Expression.Unit(loc) // TODO
+
+      case KindedAst.Expression.Resume(_, loc) => TypedAst.Expression.Unit(loc) // TODO
+
 
       case KindedAst.Expression.InvokeConstructor(constructor, args, loc) =>
         val as = args.map(visitExp(_, subst0))
@@ -2088,7 +2106,7 @@ object Typer {
 
       case KindedAst.Pattern.ArrayTailSpread(elms, varSym, tvar, loc) =>
         for {
-          elementTypes <- seqM(elms map visit);
+          elementTypes <- seqM(elms map visit)
           elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc)
           arrayType <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc)
           resultType <- unifyTypeM(varSym.tvar.ascribedWith(Kind.Star), arrayType, loc)
