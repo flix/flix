@@ -174,6 +174,11 @@ object BoolUnification {
     case Type.Cst(cst, loc) => Type.Cst(cst, loc)
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(flexify(tpe1), flexify(tpe2), loc)
     case Type.Alias(cst, args, tpe, loc) => Type.Alias(cst, args.map(flexify), flexify(tpe), loc)
+    case Type.ReadWrite(tpe, loc) => Type.ReadWrite(flexify(tpe), loc)
+    case Type.UnkindedArrow(Ast.PurityAndEffect(pur0, eff0), arity, loc) =>
+      val pur = pur0.map(flexify)
+      val eff = eff0.map(_.map(flexify))
+      Type.UnkindedArrow(Ast.PurityAndEffect(pur, eff), arity, loc)
   }
 
 

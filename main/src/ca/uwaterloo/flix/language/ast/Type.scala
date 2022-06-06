@@ -68,6 +68,11 @@ sealed trait Type {
     case Type.Apply(tpe1, tpe2, _) => tpe1.regionSyms ++ tpe2.regionSyms
     case Type.Ascribe(tpe, _, _) => tpe.regionSyms
     case Type.Alias(_, _, tpe, _) => tpe.regionSyms
+    case Type.ReadWrite(tpe, _) => tpe.regionSyms
+    case Type.UnkindedArrow(Ast.PurityAndEffect(pur, eff), _, _) =>
+      val list = pur.toList.flatMap(_.regionSyms) ++
+        eff.toList.flatMap(_.flatMap(_.regionSyms))
+      SortedSet.from(list)
   }
 
   /**
