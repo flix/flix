@@ -22,7 +22,7 @@ namespace Test/Exp/Effect {
     }
 
     // @test
-    pub def perform01(): Bool = {
+    pub def perform01(): Unit = {
         do Test/Exp/Effect/Fail.fail(":(")
     }
 
@@ -38,9 +38,9 @@ namespace Test/Exp/Effect {
     }
 
     // @test
-    pub def handlePerform01(): Bool = {
+    pub def handlePerform01(): Unit = {
         try do Test/Exp/Effect/Fail.fail("rats") with Fail {
-            def fail(_) = true
+            def fail(_) = ()
         }
     }
 

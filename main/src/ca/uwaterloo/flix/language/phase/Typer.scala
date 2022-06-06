@@ -1819,9 +1819,7 @@ object Typer {
         val eff = declaredEff.getOrElse(e.eff)
         TypedAst.Expression.Cast(e, dt, de, tpe, eff, loc)
 
-      case KindedAst.Expression.Without(exp, _, _) =>
-        // erase to the inner expression
-        visitExp(exp, subst0)
+      case KindedAst.Expression.Without(exp, _, _) => visitExp(exp, subst0) // TODO
 
       case KindedAst.Expression.TryCatch(exp, rules, loc) =>
         val e = visitExp(exp, subst0)
@@ -1834,9 +1832,12 @@ object Typer {
         val eff = Type.mkAnd(e.eff :: rs.map(_.exp.eff), loc)
         TypedAst.Expression.TryCatch(e, rs, tpe, eff, loc)
 
-      case KindedAst.Expression.TryWith(exp, _, _, _) =>
-        // erase to the inner expression
-        visitExp(exp, subst0)
+      case KindedAst.Expression.TryWith(exp, _, _, _) => visitExp(exp, subst0) // TODO
+
+      case KindedAst.Expression.Do(_, _, loc) => TypedAst.Expression.Unit(loc) // TODO
+
+      case KindedAst.Expression.Resume(_, loc) => TypedAst.Expression.Unit(loc) // TODO
+
 
       case KindedAst.Expression.InvokeConstructor(constructor, args, loc) =>
         val as = args.map(visitExp(_, subst0))
