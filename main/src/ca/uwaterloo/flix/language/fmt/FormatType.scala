@@ -22,7 +22,7 @@ object FormatType {
   /**
     * Transforms the given well-kinded type into a string.
     */
-  def formatWellKindedType(tpe: Type)(implicit audience: Audience): String = {
+  def formatWellKindedType(tpe: Type)(implicit audience: Audience, context: Context = new RawContext): String = {
     // TODO: Remove after we're confident in the formatter.
     try {
       format(SimpleType.fromWellKindedType(tpe))
@@ -42,7 +42,7 @@ object FormatType {
   /**
     * Transforms the given type into a string.
     */
-  private def format(tpe00: SimpleType)(implicit audience: Audience): String = {
+  private def format(tpe00: SimpleType)(implicit audience: Audience, context: Context): String = {
 
     /**
       * Wraps the given type with parentheses.
@@ -257,16 +257,17 @@ object FormatType {
         val strings = tpes.map(visit(_, Mode.Type))
         string + strings.mkString("[", ", ", "]")
       case SimpleType.Var(id, kind, rigidity, text) =>
+        val readableId = context.getReadableAlias(id)
         val prefix: String = kind match {
-          case Kind.Wild => "_" + id.toString
-          case Kind.Beef => "_b" + id.toString
-          case Kind.Star => "t" + id
-          case Kind.Bool => "b" + id
-          case Kind.Effect => "e" + id
-          case Kind.RecordRow => "r" + id
-          case Kind.SchemaRow => "s" + id
-          case Kind.Predicate => "'" + id.toString
-          case Kind.Arrow(_, _) => "'" + id.toString
+          case Kind.Wild => "_" + readableId.toString
+          case Kind.Beef => "_b" + readableId.toString
+          case Kind.Star => "t" + readableId
+          case Kind.Bool => "b" + readableId
+          case Kind.Effect => "e" + readableId
+          case Kind.RecordRow => "r" + readableId
+          case Kind.SchemaRow => "s" + readableId
+          case Kind.Predicate => "'" + readableId.toString
+          case Kind.Arrow(_, _) => "'" + readableId.toString
         }
         val suffix = rigidity match {
           case Rigidity.Flexible => ""
@@ -278,7 +279,7 @@ object FormatType {
           case Audience.External => text match {
             case VarText.Absent => string
             case VarText.SourceText(s) => s
-            case VarText.FallbackText(s) => "?" + s + id.toString
+            case VarText.FallbackText(s) => "?" + s + context.getReadableAlias(id).toString
           }
         }
 
@@ -299,5 +300,4 @@ object FormatType {
 
     case object Type extends Mode
   }
-
 }
