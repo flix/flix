@@ -28,7 +28,7 @@ class TestUnification extends FunSuite with TestUtils {
   implicit val flix: Flix = new Flix()
 
   val loc: SourceLocation = SourceLocation.Unknown
-  val renv: Map[Symbol.KindedTypeVarSym, Rigidity] = Map.empty
+  val renv: Rigidity.Env = Rigidity.emptyEnv
 
   /////////////////////////////////////////////////////////////////////////////
   // Substitutions                                                           //
@@ -142,91 +142,91 @@ class TestUnification extends FunSuite with TestUtils {
   }
 
   test("Unify.Var.01") {
-    val result = Unification.unifyTypes(Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc), Type.Unit)
+    val result = Unification.unifyTypes(Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc), Type.Unit, renv)
     assert(isOk(result))
   }
 
   test("Unify.Var.02") {
-    val result = Unification.unifyTypes(Type.Unit, Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc))
+    val result = Unification.unifyTypes(Type.Unit, Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc), renv)
     assert(isOk(result))
   }
 
   test("Unify.Var.03") {
-    val result = Unification.unifyTypes(Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc), Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc))
+    val result = Unification.unifyTypes(Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc), Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc), renv)
     assert(isOk(result))
   }
 
   test("Unify.Var.04") {
-    val result = Unification.unifyTypes(Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc), Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc))
+    val result = Unification.unifyTypes(Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc), Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc), renv)
     assert(isOk(result))
   }
 
   test("Unify.Unit") {
-    val result = Unification.unifyTypes(Type.Unit, Type.Unit)
+    val result = Unification.unifyTypes(Type.Unit, Type.Unit, renv)
     assert(isOk(result))
   }
 
   test("Unify.Bool") {
-    val result = Unification.unifyTypes(Type.Bool, Type.Bool)
+    val result = Unification.unifyTypes(Type.Bool, Type.Bool, renv)
     assert(isOk(result))
   }
 
   test("Unify.Char") {
-    val result = Unification.unifyTypes(Type.Char, Type.Char)
+    val result = Unification.unifyTypes(Type.Char, Type.Char, renv)
     assert(isOk(result))
   }
 
   test("Unify.Float32") {
-    val result = Unification.unifyTypes(Type.Float32, Type.Float32)
+    val result = Unification.unifyTypes(Type.Float32, Type.Float32, renv)
     assert(isOk(result))
   }
 
   test("Unify.Float64") {
-    val result = Unification.unifyTypes(Type.Float64, Type.Float64)
+    val result = Unification.unifyTypes(Type.Float64, Type.Float64, renv)
     assert(isOk(result))
   }
 
   test("Unify.Int8") {
-    val result = Unification.unifyTypes(Type.Int8, Type.Int8)
+    val result = Unification.unifyTypes(Type.Int8, Type.Int8, renv)
     assert(isOk(result))
   }
 
   test("Unify.Int16") {
-    val result = Unification.unifyTypes(Type.Int16, Type.Int16)
+    val result = Unification.unifyTypes(Type.Int16, Type.Int16, renv)
     assert(isOk(result))
   }
 
   test("Unify.Int32") {
-    val result = Unification.unifyTypes(Type.Int32, Type.Int32)
+    val result = Unification.unifyTypes(Type.Int32, Type.Int32, renv)
     assert(isOk(result))
   }
 
   test("Unify.Int64") {
-    val result = Unification.unifyTypes(Type.Int64, Type.Int64)
+    val result = Unification.unifyTypes(Type.Int64, Type.Int64, renv)
     assert(isOk(result))
   }
 
   test("Unify.BigInt") {
-    val result = Unification.unifyTypes(Type.BigInt, Type.BigInt)
+    val result = Unification.unifyTypes(Type.BigInt, Type.BigInt, renv)
     assert(isOk(result))
   }
 
   test("Unify.Str") {
-    val result = Unification.unifyTypes(Type.Str, Type.Str)
+    val result = Unification.unifyTypes(Type.Str, Type.Str, renv)
     assert(isOk(result))
   }
 
   test("Unify.01") {
     val tpe1 = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc)
     val tpe2 = Type.Bool
-    val result = Unification.unifyTypes(tpe1, tpe2).get
+    val result = Unification.unifyTypes(tpe1, tpe2, renv).get
     assertResult(Type.Bool)(result(tpe1))
   }
 
   test("Unify.02") {
     val tpe1 = Type.Bool
     val tpe2 = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc)
-    val result = Unification.unifyTypes(tpe1, tpe2).get
+    val result = Unification.unifyTypes(tpe1, tpe2, renv).get
     assertResult(Type.Bool)(result(tpe2))
   }
 
@@ -234,7 +234,7 @@ class TestUnification extends FunSuite with TestUtils {
     val A = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc)
     val tpe1 = Type.mkPureArrow(Type.Bool, Type.Char, loc)
     val tpe2 = Type.mkPureArrow(Type.Bool, A, loc)
-    val result = Unification.unifyTypes(tpe1, tpe2).get
+    val result = Unification.unifyTypes(tpe1, tpe2, renv).get
     assertResult(Type.Char)(result(A))
   }
 
@@ -242,7 +242,7 @@ class TestUnification extends FunSuite with TestUtils {
     val A = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc)
     val tpe1 = Type.mkPureArrow(Type.Bool, Type.Char, loc)
     val tpe2 = Type.mkPureArrow(Type.Bool, A, loc)
-    val result = Unification.unifyTypes(tpe1, tpe2).get
+    val result = Unification.unifyTypes(tpe1, tpe2, renv).get
     assertResult(Type.Char)(result(A))
   }
 
@@ -250,7 +250,7 @@ class TestUnification extends FunSuite with TestUtils {
     val A = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc)
     val tpe1 = Type.mkPureArrow(Type.Bool, Type.Char, loc)
     val tpe2 = A
-    val result = Unification.unifyTypes(tpe1, tpe2).get
+    val result = Unification.unifyTypes(tpe1, tpe2, renv).get
     assertResult(tpe1)(result(A))
   }
 
@@ -258,7 +258,7 @@ class TestUnification extends FunSuite with TestUtils {
     val A = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc)
     val tpe1 = A
     val tpe2 = Type.mkPureArrow(Type.Bool, Type.Char, loc)
-    val result = Unification.unifyTypes(tpe1, tpe2).get
+    val result = Unification.unifyTypes(tpe1, tpe2, renv).get
     assertResult(tpe2)(result(A))
   }
 
@@ -266,7 +266,7 @@ class TestUnification extends FunSuite with TestUtils {
     val A = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc)
     val tpe1 = Type.mkPureArrow(A, Type.Bool, loc)
     val tpe2 = Type.mkPureArrow(Type.Bool, A, loc)
-    val result = Unification.unifyTypes(tpe1, tpe2).get
+    val result = Unification.unifyTypes(tpe1, tpe2, renv).get
     assertResult(Type.Bool)(result(A))
   }
 
@@ -275,7 +275,7 @@ class TestUnification extends FunSuite with TestUtils {
     val B = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc)
     val tpe1 = Type.mkPureArrow(A, B, loc)
     val tpe2 = Type.mkPureArrow(Type.Bool, Type.Char, loc)
-    val result = Unification.unifyTypes(tpe1, tpe2).get
+    val result = Unification.unifyTypes(tpe1, tpe2, renv).get
     assertResult(Type.Bool)(result(A))
     assertResult(Type.Char)(result(B))
   }
@@ -285,7 +285,7 @@ class TestUnification extends FunSuite with TestUtils {
     val B = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc)
     val tpe1 = Type.mkPureArrow(Type.Bool, Type.Char, loc)
     val tpe2 = Type.mkPureArrow(A, B, loc)
-    val result = Unification.unifyTypes(tpe1, tpe2).get
+    val result = Unification.unifyTypes(tpe1, tpe2, renv).get
     assertResult(Type.Bool)(result(A))
     assertResult(Type.Char)(result(B))
   }
@@ -295,7 +295,7 @@ class TestUnification extends FunSuite with TestUtils {
     val B = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc)
     val tpe1 = Type.mkPureArrow(A, Type.Char, loc)
     val tpe2 = Type.mkPureArrow(Type.Bool, B, loc)
-    val result = Unification.unifyTypes(tpe1, tpe2).get
+    val result = Unification.unifyTypes(tpe1, tpe2, renv).get
     assertResult(Type.Bool)(result(A))
     assertResult(Type.Char)(result(B))
   }
@@ -306,7 +306,7 @@ class TestUnification extends FunSuite with TestUtils {
     val C = Type.KindedVar(new Symbol.KindedTypeVarSym(3, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc)
     val tpe1 = Type.mkPureArrow(A, B, loc)
     val tpe2 = Type.mkPureArrow(C, Type.Bool, loc)
-    val result = Unification.unifyTypes(tpe1, tpe2).get
+    val result = Unification.unifyTypes(tpe1, tpe2, renv).get
     assertResult(Type.Bool)(result(B))
     assertResult(C)(result(A))
   }
@@ -316,7 +316,7 @@ class TestUnification extends FunSuite with TestUtils {
     val field = Type.Bool
     val label = Name.Field("x", loc)
     val tpe2 = Type.mkRecord(Type.mkRecordRowExtend(label, field, tpe1, loc), loc)
-    val result = Unification.unifyTypes(tpe1, tpe2)
+    val result = Unification.unifyTypes(tpe1, tpe2, renv)
     assert(!isOk(result))
   }
 
@@ -325,21 +325,21 @@ class TestUnification extends FunSuite with TestUtils {
     val field = Type.mkRelation(List(Type.Bool), loc)
     val label = Name.Pred("X", loc)
     val tpe2 = Type.mkRecord(Type.mkSchemaRowExtend(label, field, tpe1, loc), loc)
-    val result = Unification.unifyTypes(tpe1, tpe2)
+    val result = Unification.unifyTypes(tpe1, tpe2, renv)
     assert(!isOk(result))
   }
 
   test("Unify.15") {
     val tpe1 = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc)
     val tpe2 = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.RecordRow, Rigidity.Rigid, loc), loc)
-    val result = Unification.unifyTypes(tpe1, tpe2)
+    val result = Unification.unifyTypes(tpe1, tpe2, renv)
     assert(isOk(result))
   }
 
   test("Unify.16") {
     val tpe1 = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Rigid, loc), loc)
     val tpe2 = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, Rigidity.Rigid, loc), loc)
-    val result = Unification.unifyTypes(tpe1, tpe2)
+    val result = Unification.unifyTypes(tpe1, tpe2, renv)
     assert(!isOk(result))
   }
 
