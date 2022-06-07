@@ -66,10 +66,10 @@ namespace TestIdentity {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool =
+    def foreach01(): Bool & Impure =
         let r = ref 21;
         ForEach.foreach(x -> r := x, Identity(1));
-        r == 1
+        deref r == 1
 
     /////////////////////////////////////////////////////////////////////////////
     // Foldable                                                                //
