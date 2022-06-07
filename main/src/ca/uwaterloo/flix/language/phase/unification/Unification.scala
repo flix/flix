@@ -476,6 +476,14 @@ object Unification {
     }
 
   /**
+    * Sets the given variable as rigid in the type inference monad.
+    */
+  def rigidifyM(rvar: Type.KindedVar): InferMonad[Unit] =
+    InferMonad {
+      case (s, renv) => Ok((s, renv + rvar.sym, ()))
+    }
+
+  /**
     * Returns true iff `tpe1` unifies with `tpe2`.
     */
   def unifiesWith(tpe1: Type, tpe2: Type, renv: Rigidity.Env)(implicit flix: Flix): Boolean = {
