@@ -22,8 +22,6 @@ import ca.uwaterloo.flix.language.fmt.FormatType.formatWellKindedType
 import ca.uwaterloo.flix.language.fmt._
 import ca.uwaterloo.flix.util.Formatter
 
-import scala.collection.mutable
-
 /**
   * A common super-type for type errors.
   */
