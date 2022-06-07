@@ -56,9 +56,7 @@ instance Functor[Map[k]] {
 }
 
 instance ForEach[Map[k]] {
-
     pub def foreach(f: a -> Unit & ef, m: Map[k, a]): Unit & ef = Map.foreach((_, v) -> f(v), m)
-
 }
 
 instance Foldable[Map[k]] {
