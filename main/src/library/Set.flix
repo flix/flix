@@ -66,7 +66,7 @@ instance MeetLattice[Set[a]] with Order[a] {
 }
 
 instance ForEach[Set] {
-    pub def foreach(f: a -> Unit & ef, s: Set[a]): Unit & ef = Set.foreach(f, l)
+    pub def foreach(f: a -> Unit & ef, s: Set[a]): Unit & ef = Set.foreach(f, s)
 }
 
 instance Foldable[Set] {

@@ -76,7 +76,7 @@ instance Monad[Nec] {
 }
 
 instance ForEach[Nec] {
-    pub def foreach(f: a -> Unit & ef, c: Nec[a]): Unit & ef = Nec.foreach(f, l)
+    pub def foreach(f: a -> Unit & ef, c: Nec[a]): Unit & ef = Nec.foreach(f, c)
 }
 
 instance Foldable[Nec] {

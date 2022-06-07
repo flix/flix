@@ -82,7 +82,7 @@ instance Monad[Option] {
 }
 
 instance ForEach[Option] {
-    pub def foreach(f: a -> Unit & ef, o: Option[a]): Unit & ef = Option.foreach(f, l)
+    pub def foreach(f: a -> Unit & ef, o: Option[a]): Unit & ef = Option.foreach(f, o)
 }
 
 instance Foldable[Option] {
