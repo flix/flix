@@ -709,7 +709,7 @@ object Monomorph {
       inst =>
         inst.defs.find {
           defn =>
-            defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, Map.empty) // TODO renv
+            defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, Rigidity.emptyEnv) // TODO renv
         }
     }
 
@@ -926,7 +926,7 @@ object Monomorph {
     // The substitutions used in the typer should really ensure this.
     val t1 = tpe1.map(_.withRigidity(Rigidity.Flexible))
     val t2 = tpe2.map(_.withRigidity(Rigidity.Flexible))
-    Unification.unifyTypes(t1, t2) match {
+    Unification.unifyTypes(t1, t2, Rigidity.emptyEnv) match {
       case Result.Ok(subst) =>
         StrictSubstitution(subst)
       case Result.Err(_) =>

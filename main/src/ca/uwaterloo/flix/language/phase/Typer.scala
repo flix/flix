@@ -227,7 +227,7 @@ object Typer {
           ///
           val initialSubst = getSubstFromParams(fparams0)
 
-          run(initialSubst, Map.empty) match { // TODO renv
+          run(initialSubst, Rigidity.emptyEnv) match { // TODO renv
             case Ok((subst0, renv0, (partialTconstrs, partialType))) =>
 
               // propogate the type variable names
@@ -411,7 +411,7 @@ object Typer {
       // Run the type inference monad with an empty substitution.
       //
       val initialSubst = Substitution.empty
-      result.run(initialSubst, Map.empty).toValidation.map { // TODO renv
+      result.run(initialSubst, Rigidity.emptyEnv).toValidation.map { // TODO renv
         case (subst, _, _) =>
           val es = exps.map(reassembleExp(_, root, subst))
           TypedAst.Annotation(name, es, loc)

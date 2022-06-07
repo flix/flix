@@ -47,12 +47,12 @@ object InferMonad {
 /**
   * A type inference state monad that maintains the current substitution and rigidity environment.
   */
-case class InferMonad[A](run: (Substitution, Map[Symbol.KindedTypeVarSym, Rigidity]) => Result[(Substitution, Map[Symbol.KindedTypeVarSym, Rigidity], A), TypeError]) {
+case class InferMonad[A](run: (Substitution, Rigidity.Env) => Result[(Substitution, Rigidity.Env, A), TypeError]) {
   /**
     * Applies the given function `f` to the value in the monad.
     */
   def map[B](f: A => B): InferMonad[B] = {
-    def runNext(s0: Substitution, renv0: Map[Symbol.KindedTypeVarSym, Rigidity]): Result[(Substitution, Map[Symbol.KindedTypeVarSym, Rigidity], B), TypeError] = {
+    def runNext(s0: Substitution, renv0: Rigidity.Env): Result[(Substitution, Rigidity.Env, B), TypeError] = {
       // Run the original function and map over its result (since it may have error'd).
       run(s0, renv0) map {
         case (s, renv, a) => (s, renv, f(a))
@@ -66,7 +66,7 @@ case class InferMonad[A](run: (Substitution, Map[Symbol.KindedTypeVarSym, Rigidi
     * Applies the given function `f` to the value in the monad.
     */
   def flatMap[B](f: A => InferMonad[B]): InferMonad[B] = {
-    def runNext(s0: Substitution, renv0: Map[Symbol.KindedTypeVarSym, Rigidity]): Result[(Substitution, Map[Symbol.KindedTypeVarSym, Rigidity], B), TypeError] = {
+    def runNext(s0: Substitution, renv0: Rigidity.Env): Result[(Substitution, Rigidity.Env, B), TypeError] = {
       // Run the original function and flatMap over its result (since it may have error'd).
       run(s0, renv0) flatMap {
         case (s, renv, a) => f(a) match {
@@ -83,7 +83,7 @@ case class InferMonad[A](run: (Substitution, Map[Symbol.KindedTypeVarSym, Rigidi
     * Applies the given function `f` to transform an error in the monad.
     */
   def transformError[B](f: TypeError => TypeError): InferMonad[A] = {
-    def runNext(s0: Substitution, renv0: Map[Symbol.KindedTypeVarSym, Rigidity]): Result[(Substitution, Map[Symbol.KindedTypeVarSym, Rigidity], A), TypeError] = {
+    def runNext(s0: Substitution, renv0: Rigidity.Env): Result[(Substitution, Rigidity.Env, A), TypeError] = {
       run(s0, renv0) match {
         case Ok(t) => Ok(t)
         case Err(e) => Err(f(e))

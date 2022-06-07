@@ -737,7 +737,7 @@ object JvmOps {
       enum0.cases.foldLeft(Set.empty[TagInfo]) {
         case (sacc, (_, Case(enumSym, tagName, uninstantiatedTagType, _))) =>
           // TODO: Magnus: It would be nice if this information could be stored somewhere...
-          val subst = Unification.unifyTypes(hackMonoType2Type(enum0.tpeDeprecated), hackMonoType2Type(tpe)).get
+          val subst = Unification.unifyTypes(hackMonoType2Type(enum0.tpeDeprecated), hackMonoType2Type(tpe), Rigidity.emptyEnv).get
           val tagType = subst(hackMonoType2Type(uninstantiatedTagType))
 
           sacc + TagInfo(enumSym, tagName.name, args, tpe, hackType2MonoType(tagType))

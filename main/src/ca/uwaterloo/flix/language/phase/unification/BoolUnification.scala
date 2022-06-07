@@ -29,7 +29,7 @@ object BoolUnification {
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  def unify(tpe1: Type, tpe2: Type, renv: Map[Symbol.KindedTypeVarSym, Rigidity])(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  def unify(tpe1: Type, tpe2: Type, renv: Rigidity.Env)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     ///
     /// Perform aggressive matching to optimize for common cases.
     ///
