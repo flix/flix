@@ -789,6 +789,7 @@ object Typer {
 
       case KindedAst.Expression.Scope(sym, regionVar, exp, evar, loc) =>
         for {
+          _ <- rigidifyM(regionVar)
           _ <- unifyTypeM(sym.tvar.ascribedWith(Kind.Star), Type.mkRegion(regionVar, loc), loc)
           (constrs, tpe, eff) <- visitExp(exp)
           purifiedEff <- purifyEffM(regionVar, eff)
