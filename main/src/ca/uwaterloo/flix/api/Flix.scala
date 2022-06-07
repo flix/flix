@@ -439,9 +439,9 @@ class Flix {
     */
   def mkMessages(errors: Seq[CompilationMessage]): List[String] = {
     if (options.explain || errors.length == 1)
-      errors.map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
+      errors.sortBy(_.loc).map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
     else
-      errors.map(cm => cm.message(formatter)).toList
+      errors.sortBy(_.loc).map(cm => cm.message(formatter)).toList
   }
 
   /**
