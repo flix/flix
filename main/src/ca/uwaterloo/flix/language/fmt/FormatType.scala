@@ -300,4 +300,5 @@ object FormatType {
 
     case object Type extends Mode
   }
+
 }
