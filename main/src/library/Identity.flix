@@ -54,7 +54,7 @@ instance Monad[Identity] {
 }
 
 instance ForEach[Identity] {
-    pub def foreach(f: a -> Unit & ef, t: t[a]): Unit & ef =
+    pub def foreach(f: a -> Unit & ef, x: Identity[a]): Unit & ef =
         let Identity(x1) = x;
         f(x1)
 }
