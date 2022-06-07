@@ -67,7 +67,9 @@ namespace TestIdentity {
 
     @test
     def foreach01(): Bool =
-        ForEach.foreach((x) -> x + 2, Identity(1)) == 3
+        let r = ref 21;
+        ForEach.foreach(x -> r := x, Identity(1));
+        r == 1
 
     /////////////////////////////////////////////////////////////////////////////
     // Foldable                                                                //
