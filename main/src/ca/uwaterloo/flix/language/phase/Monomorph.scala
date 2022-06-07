@@ -199,8 +199,14 @@ object Monomorph {
         // Specialize the body expression.
         val body = specialize(defn.impl.exp, env0, subst, def2def, defQueue)
 
+        // Specialize the inferred scheme
+        val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), body.eff, body.tpe, sym.loc.asSynthetic)
+        val tvars = base.typeVars.map(_.sym).toList
+        val tconstrs = Nil // type constraints are not used after monomorph
+        val scheme = Scheme(tvars, tconstrs, base)
+
         // Reassemble the definition.
-        specializedDefns.put(sym, defn.copy(spec = defn.spec.copy(fparams = fparams), impl = defn.impl.copy(exp = body)))
+        specializedDefns.put(sym, defn.copy(spec = defn.spec.copy(fparams = fparams), impl = defn.impl.copy(exp = body, inferredScheme = scheme)))
       }
 
       /*
