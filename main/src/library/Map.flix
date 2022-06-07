@@ -78,6 +78,24 @@ instance Monoid[Map[k, v]] with Order[k], Monoid[v] {
 
 instance CommutativeMonoid[Map[k, v]] with Order[k], CommutativeMonoid[v]
 
+instance LowerBound[Map[k, v]] {
+    pub def minValue(): Map[k, v] = Map.empty()
+}
+
+instance PartialOrder[Map[k, v]] with Order[k], Eq[v] {
+    pub def lessEqual(m1: Map[k, v], m2: Map[k, v]): Bool = m1 `Map.isSubmapOf` m2
+}
+
+instance JoinLattice[Map[k, v]]with Order[k], Eq[v], JoinLattice[v] {
+    pub def leastUpperBound(m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
+        Map.unionWith(JoinLattice.leastUpperBound, m1, m2)
+}
+
+instance MeetLattice[Map[k, v]] with Order[k], Eq[v], MeetLattice[v] {
+    pub def greatestLowerBound(m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
+        Map.intersectionWith(MeetLattice.greatestLowerBound, m1, m2)
+}
+
 namespace Map {
 
     ///

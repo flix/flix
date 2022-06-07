@@ -2446,4 +2446,20 @@ def query18(): Bool =
     def explode04(): Bool =
         Map.explode(Map#{1 => Set#{2, 3}, 2 => Set#{5, 6, 7}, 3 => Set#{0}}) == Set#{(1, 2), (1, 3), (2, 5), (2, 6), (2, 7), (3, 0)}
 
+    /////////////////////////////////////////////////////////////////////////////
+    // LowerBound.minValue                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def minValue01(): Bool =
+        LowerBound.minValue(): Map[Int32, Int32] == Map.empty()
+
+    /////////////////////////////////////////////////////////////////////////////
+    // PartialOrder.lessEqual                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def lessEqual01(): Bool =
+        PartialOrder.lessEqual(Map.empty(): Map[Int32, Int32], Map.empty(): Map[Int32, Int32])
+          
 }
