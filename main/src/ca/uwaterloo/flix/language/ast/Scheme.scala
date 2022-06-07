@@ -157,20 +157,23 @@ object Scheme {
     //
 
     // Instantiate every variable in `sc1` as flexible and make every free variable rigid.
-    val (tconstrs1, tpe1) = instantiate(sc1, InstantiateMode.Mixed)
+//    val (tconstrs1, tpe1) = instantiate(sc1, InstantiateMode.Mixed) // MATT
     val renv1 = sc1.base.typeVars.map(_.sym) -- sc1.quantifiers
 
     // Instantiate every variable in `sc2` as rigid and make every free variable rigid.
-    val (tconstrs2, tpe2) = instantiate(sc2, InstantiateMode.Rigid)
+//    val (tconstrs2, tpe2) = instantiate(sc2, InstantiateMode.Rigid) // MATT
     val renv2 = sc2.base.typeVars.map(_.sym)
 
     val renv = renv1 ++ renv2
 
     // Attempt to unify the two instantiated types.
     for {
-      subst <- Unification.unifyTypes(tpe1, tpe2, renv).toValidation
-      newTconstrs1 <- ClassEnvironment.reduce(tconstrs1.map(subst.apply), classEnv)
-      newTconstrs2 <- ClassEnvironment.reduce(tconstrs2.map(subst.apply), classEnv)
+      subst <- Unification.unifyTypes(sc1.base, sc2.base, renv).toValidation
+      newTconstrs1 <- ClassEnvironment.reduce(sc1.constraints.map(subst.apply), classEnv)
+      newTconstrs2 <- ClassEnvironment.reduce(sc2.constraints.map(subst.apply), classEnv)
+//      subst <- Unification.unifyTypes(tpe1, tpe2, renv).toValidation // MATT
+//      newTconstrs1 <- ClassEnvironment.reduce(tconstrs1.map(subst.apply), classEnv)
+//      newTconstrs2 <- ClassEnvironment.reduce(tconstrs2.map(subst.apply), classEnv)
       _ <- Validation.sequence(newTconstrs1.map(ClassEnvironment.entail(newTconstrs2, _, classEnv)))
     } yield ()
   }

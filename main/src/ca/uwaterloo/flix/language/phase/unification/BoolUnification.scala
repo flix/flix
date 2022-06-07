@@ -38,7 +38,8 @@ object BoolUnification {
     }
 
     tpe1 match {
-      case x: Type.KindedVar if x.sym.rigidity eq Rigidity.Flexible =>
+      case x: Type.KindedVar if !renv.contains(x.sym) =>
+//      case x: Type.KindedVar if x.sym.rigidity eq Rigidity.Flexible =>
         if (tpe2 eq Type.True)
           return Ok(Substitution.singleton(x.sym, Type.True))
         if (tpe2 eq Type.False)
@@ -49,7 +50,8 @@ object BoolUnification {
     }
 
     tpe2 match {
-      case y: Type.KindedVar if y.sym.rigidity eq Rigidity.Flexible =>
+      case y: Type.KindedVar if !renv.contains(y.sym) =>
+//      case y: Type.KindedVar if y.sym.rigidity eq Rigidity.Flexible =>
         if (tpe1 eq Type.True)
           return Ok(Substitution.singleton(y.sym, Type.True))
         if (tpe1 eq Type.False)
@@ -62,13 +64,13 @@ object BoolUnification {
     ///
     /// Run the expensive boolean unification algorithm.
     ///
-    booleanUnification(eraseAliases(tpe1), eraseAliases(tpe2))
+    booleanUnification(eraseAliases(tpe1), eraseAliases(tpe2), renv)
   }
 
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  private def booleanUnification(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  private def booleanUnification(tpe1: Type, tpe2: Type, renv: Rigidity.Env)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // The boolean expression we want to show is 0.
     val query = mkEq(tpe1, tpe2)
 
@@ -76,7 +78,8 @@ object BoolUnification {
     val typeVars = query.typeVars.toList
 
     // Compute the flexible variables.
-    val flexibleTypeVars = typeVars.filter(_.sym.rigidity == Rigidity.Flexible)
+    val flexibleTypeVars = typeVars.filterNot(tvar => renv.contains(tvar.sym))
+//    val flexibleTypeVars = typeVars.filter(_.sym.rigidity == Rigidity.Flexible)
 
     // Determine the order in which to eliminate the variables.
     val freeVars = computeVariableOrder(flexibleTypeVars)

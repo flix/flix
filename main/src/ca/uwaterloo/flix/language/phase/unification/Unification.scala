@@ -31,29 +31,42 @@ object Unification {
     if (x.sym == y.sym) {
       Result.Ok(Substitution.empty)
     } else {
-      (x.sym.rigidity, y.sym.rigidity) match {
+      (renv.contains(x.sym), renv.contains(y.sym)) match {
         // Case 1: x is flexible
-        case (Rigidity.Flexible, _) => Result.Ok(Substitution.singleton(x.sym, y))
+        case (false, _) => Result.Ok(Substitution.singleton(x.sym, y))
         // Case 2: y is flexible
-        case (_, Rigidity.Flexible) => Result.Ok(Substitution.singleton(y.sym, x))
+        case (_, false) => Result.Ok(Substitution.singleton(y.sym, x))
         // Case 3: both variables are rigid
-        case (Rigidity.Rigid, Rigidity.Rigid) => Result.Err(UnificationError.RigidVar(x, y))
+        case (true, true) => Result.Err(UnificationError.RigidVar(x, y))
       }
+//      (x.sym.rigidity, y.sym.rigidity) match {
+//        // Case 1: x is flexible
+//        case (Rigidity.Flexible, _) => Result.Ok(Substitution.singleton(x.sym, y))
+//        // Case 2: y is flexible
+//        case (_, Rigidity.Flexible) => Result.Ok(Substitution.singleton(y.sym, x))
+//        // Case 3: both variables are rigid
+//        case (Rigidity.Rigid, Rigidity.Rigid) => Result.Err(UnificationError.RigidVar(x, y))
+//      }
     }
   }
 
   /**
     * Unifies the given variable `x` with the given non-variable type `tpe`.
     */
-  private def unifyVar(x: Type.KindedVar, tpe: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  private def unifyVar(x: Type.KindedVar, tpe: Type, renv: Rigidity.Env)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // NB: The `tpe` type must be a non-var.
     if (tpe.isInstanceOf[Type.Var])
       throw InternalCompilerException(s"Unexpected variable type: '$tpe'.")
 
     // Check if `x` is rigid.
-    if (x.sym.rigidity == Rigidity.Rigid) {
+    if (renv.contains(x.sym)) {
       return Result.Err(UnificationError.RigidVar(x, tpe))
     }
+
+//    // Check if `x` is rigid.
+//    if (x.sym.rigidity == Rigidity.Rigid) {
+//      return Result.Err(UnificationError.RigidVar(x, tpe))
+//    }
 
     // Check if `x` occurs within `tpe`.
     if (tpe.typeVars contains x) {
@@ -75,13 +88,13 @@ object Unification {
         if (x.kind == Kind.Bool && tpe2.kind == Kind.Bool)
           BoolUnification.unify(x, tpe2, renv)
         else
-          unifyVar(x.asKinded, tpe2)
+          unifyVar(x.asKinded, tpe2, renv)
 
       case (_, x: Type.Var) =>
         if (x.kind == Kind.Bool && tpe1.kind == Kind.Bool)
           BoolUnification.unify(x, tpe1, renv)
         else
-          unifyVar(x.asKinded, tpe1)
+          unifyVar(x.asKinded, tpe1, renv)
 
       case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(Substitution.empty)
 
