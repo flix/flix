@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp._
@@ -466,3 +467,4 @@ object CompleteProvider {
     keywords.exists(keyword => line.exists(s => s.contains(keyword)))
 
 }
+*/

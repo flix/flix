@@ -28,66 +28,52 @@ object CompletionProvider {
   private implicit val audience: Audience = Audience.External
 
   def autoComplete(uri: String, pos: Position, source: Option[String])(implicit root: TypedAst.Root): JObject = {
-    val line = source.flatMap(lineAt(_, pos.line - 1))
-    val word = line.flatMap(wordAt(_, pos.character - 1))
-    println(s"word: $word")
+    val line = source.flatMap(lineAt(_, pos))
+    val context = line.flatMap(Context(_, pos))
 
-    val completions = CompletionList(isIncomplete = true, List())
-    ("status" -> "success") ~ ("result" -> completions.toJSON)
+    val completions = getCompletions(context.get)
+
+    ("status" -> "success") ~ ("result" -> CompletionList(isIncomplete = true, completions).toJSON)
   }
+
+  private def getCompletions(context: Context)(implicit root: TypedAst.Root): List[CompletionItem] = {
+    List(
+      CompletionItem(label = "foo",
+        filterText = context.word,
+        textEdit = TextEdit(context.range, "newtext"),
+        kind = CompletionItemKind.Keyword)
+    )
+  }
+
+  private object Context {
+    /**
+      * Characters that constitute a word.
+      * This is more permissive than the parser, but that's OK.
+      */
+    private val isWordChar = Letters.LegalLetter ++ Letters.OperatorLetter ++
+        Letters.MathLetter ++ Letters.GreekLetter ++ CharPredicate("@")
+
+    def apply(line: String, pos: Position) = {
+      val n = pos.character - 1
+      val (prefix, suffix) = line.splitAt(n)
+      val reversedPrefix = prefix.reverse
+      val wordStart = reversedPrefix.takeWhile(isWordChar).reverse
+      val wordEnd = suffix.takeWhile(isWordChar)
+      val word = wordStart + wordEnd
+      val start = n - wordStart.length
+      val end = n + wordEnd.length
+      val previousWord = reversedPrefix.dropWhile(isWordChar).dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
+      val range = Range(Position(pos.line - 1, start), Position(pos.line - 1, end))
+      Some(new Context(range, word, previousWord))
+    }
+  }
+
+  private case class Context(val range: Range, val word: String, val previousWord: String)
 
   /**
     * Optionally returns line number `n` in the string `s`.
     */
-  private def lineAt(s: String, n: Int): Option[String] = {
-    import java.io.{BufferedReader, StringReader}
-
-    val br = new BufferedReader(new StringReader(s))
-
-    var i = 0
-    var line = br.readLine()
-    while (line != null && i < n) {
-      line = br.readLine()
-      i = i + 1
-    }
-    Option(line)
-  }
-
-  /**
-    * Optionally returns the word at the given index `n` in the string `s`.
-    */
-  private def wordAt(s: String, n: Int): Option[(Int, Int, String)] = {
-    val isWordChar = Letters.LegalLetter ++ Letters.OperatorLetter ++
-      Letters.MathLetter ++ Letters.GreekLetter ++ CharPredicate("@")
-
-    // Bounds Check
-    if (!(0 <= n && n <= s.length)) {
-      return None
-    }
-
-    // Determine if the word is to the left of us, to the right of us, or out of bounds.
-    val leftOf = 0 < n && isWordChar(s.charAt(n - 1))
-    val rightOf = n < s.length && isWordChar(s.charAt(n))
-
-    val i = (leftOf, rightOf) match {
-      case (true, _) => n - 1
-      case (_, true) => n
-      case _ => return None
-    }
-
-    // Compute the beginning of the word.
-    var begin = i
-    while (0 < begin && isWordChar(s.charAt(begin - 1))) {
-      begin = begin - 1
-    }
-
-    // Compute the ending of the word.
-    var end = i
-    while (end < s.length && isWordChar(s.charAt(end))) {
-      end = end + 1
-    }
-
-    // Return the word.
-    Some((begin, end, s.substring(begin, end)))
+  private def lineAt(source: String, pos: Position): Option[String] = {
+    source.linesWithSeparators.slice(pos.line - 1, pos.line).toList.headOption   // https://stackoverflow.com/a/32994271/268371
   }
 }
