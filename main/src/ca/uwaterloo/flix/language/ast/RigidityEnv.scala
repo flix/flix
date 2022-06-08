@@ -17,6 +17,14 @@ package ca.uwaterloo.flix.language.ast
 
 import scala.collection.immutable.SortedSet
 
+
+object RigidityEnv {
+  /**
+    * The empty rigidity environment.
+    */
+  val empty: RigidityEnv = RigidityEnv(SortedSet.empty)
+}
+
 /**
   * Environment tracking the rigidity of type variables.
   *
@@ -50,11 +58,4 @@ case class RigidityEnv(s: SortedSet[Symbol.KindedTypeVarSym]) {
     * Marks the given `sym` as rigid in this environment.
     */
   def markRigid(sym: Symbol.KindedTypeVarSym): RigidityEnv = RigidityEnv(s + sym)
-}
-
-object RigidityEnv {
-  /**
-    * The empty rigidity environment.
-    */
-  val empty: RigidityEnv = RigidityEnv(SortedSet.empty)
 }
