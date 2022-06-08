@@ -271,14 +271,12 @@ namespace DelayList {
     /// Forces elements in `l` until the first element that does not satisfy the predicate `f` (inclusive).
     ///
     @Experimental
-    pub def forall(f: a -> Bool & ef, l: DelayList[a]): Bool & ef =
-        def loop(ll) = match ll {
-            case ENil         => true
-            case ECons(x, xs) => if (f(x)) loop(      xs) else false
-            case LCons(x, xs) => if (f(x)) loop(force xs) else false
-            case LList(xs)    => loop(force xs)
-        };
-        loop(l)
+    pub def forall(f: a -> Bool & ef, l: DelayList[a]): Bool & ef = match l {
+        case ENil         => true
+        case ECons(x, xs) => if (f(x)) forall(f,       xs) else false
+        case LCons(x, xs) => if (f(x)) forall(f, force xs) else false
+        case LList(xs)    =>           forall(f, force xs)
+    }
 
     ///
     /// Returns `true` if and only if `l` contains the element `x`.
