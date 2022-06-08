@@ -76,7 +76,7 @@ object BoolUnification {
     val typeVars = query.typeVars.toList
 
     // Compute the flexible variables.
-    val flexibleTypeVars = typeVars.filter(tvar => renv.isFlexible(tvar.sym))
+    val flexibleTypeVars = renv.getFlexibleVarsOf(typeVars)
 
     // Determine the order in which to eliminate the variables.
     val freeVars = computeVariableOrder(flexibleTypeVars)

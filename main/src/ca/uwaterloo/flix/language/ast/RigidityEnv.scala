@@ -55,6 +55,11 @@ case class RigidityEnv(s: SortedSet[Symbol.KindedTypeVarSym]) {
   def isFlexible(sym: Symbol.KindedTypeVarSym): Boolean = get(sym) == Rigidity.Flexible
 
   /**
+    * Returns the flexible vars from the given list.
+    */
+  def getFlexibleVarsOf(tvars: List[Type.KindedVar]): List[Type.KindedVar] = tvars.filter(tvar => isFlexible(tvar.sym))
+
+  /**
     * Marks the given `sym` as rigid in this environment.
     */
   def markRigid(sym: Symbol.KindedTypeVarSym): RigidityEnv = RigidityEnv(s + sym)
