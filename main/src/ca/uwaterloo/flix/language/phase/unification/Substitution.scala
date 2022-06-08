@@ -234,7 +234,7 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
       // Case 1: The variable is replaced. Need to process it.
       case Some(tpe) =>
         val rigidSym = sym0.withRigidity(Rigidity.Rigid)
-        unifyTypes(Type.KindedVar(rigidSym, sym0.loc), tpe, Rigidity.emptyEnv) match { // TODO we can use the empty renv here since we'll get rid of pivoting when renvs are activated
+        unifyTypes(Type.KindedVar(rigidSym, sym0.loc), tpe, Rigidity.emptyEnv) match { // MATT we can use the empty renv here since we'll get rid of pivoting when renvs are activated
           case Ok(rigidSubst) =>
             // de-rigidify the substitution
             val flexMap = rigidSubst.m.map {

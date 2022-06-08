@@ -300,6 +300,7 @@ object Typer {
               }
 
               // Pivot the substititution to keep the type parameters from being replaced
+              // MATT exploit renv to avoid requiring this
               val finalSubst = pivot(subst, tparams0)
 
               ///

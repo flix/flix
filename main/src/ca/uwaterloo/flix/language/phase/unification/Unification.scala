@@ -39,14 +39,6 @@ object Unification {
         // Case 3: both variables are rigid
         case (true, true) => Result.Err(UnificationError.RigidVar(x, y))
       }
-//      (x.sym.rigidity, y.sym.rigidity) match {
-//        // Case 1: x is flexible
-//        case (Rigidity.Flexible, _) => Result.Ok(Substitution.singleton(x.sym, y))
-//        // Case 2: y is flexible
-//        case (_, Rigidity.Flexible) => Result.Ok(Substitution.singleton(y.sym, x))
-//        // Case 3: both variables are rigid
-//        case (Rigidity.Rigid, Rigidity.Rigid) => Result.Err(UnificationError.RigidVar(x, y))
-//      }
     }
   }
 
@@ -62,11 +54,6 @@ object Unification {
     if (renv.contains(x.sym)) {
       return Result.Err(UnificationError.RigidVar(x, tpe))
     }
-
-//    // Check if `x` is rigid.
-//    if (x.sym.rigidity == Rigidity.Rigid) {
-//      return Result.Err(UnificationError.RigidVar(x, tpe))
-//    }
 
     // Check if `x` occurs within `tpe`.
     if (tpe.typeVars contains x) {

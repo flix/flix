@@ -39,7 +39,6 @@ object BoolUnification {
 
     tpe1 match {
       case x: Type.KindedVar if !renv.contains(x.sym) =>
-//      case x: Type.KindedVar if x.sym.rigidity eq Rigidity.Flexible =>
         if (tpe2 eq Type.True)
           return Ok(Substitution.singleton(x.sym, Type.True))
         if (tpe2 eq Type.False)
@@ -51,7 +50,6 @@ object BoolUnification {
 
     tpe2 match {
       case y: Type.KindedVar if !renv.contains(y.sym) =>
-//      case y: Type.KindedVar if y.sym.rigidity eq Rigidity.Flexible =>
         if (tpe1 eq Type.True)
           return Ok(Substitution.singleton(y.sym, Type.True))
         if (tpe1 eq Type.False)
@@ -79,7 +77,6 @@ object BoolUnification {
 
     // Compute the flexible variables.
     val flexibleTypeVars = typeVars.filterNot(tvar => renv.contains(tvar.sym))
-//    val flexibleTypeVars = typeVars.filter(_.sym.rigidity == Rigidity.Flexible)
 
     // Determine the order in which to eliminate the variables.
     val freeVars = computeVariableOrder(flexibleTypeVars)
@@ -129,6 +126,7 @@ object BoolUnification {
   private def successiveVariableElimination(f: Type, fvs: List[Type.KindedVar])(implicit flix: Flix): Substitution = fvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
+      // MATT no longer need to perform this conversion with renv
       val (_, q) = Scheme.instantiate(Scheme(f.typeVars.toList.map(_.sym), List.empty, f), InstantiateMode.Flexible)
       if (!satisfiable(q))
         Substitution.empty
@@ -158,6 +156,7 @@ object BoolUnification {
     case Type.False => false
     case _ =>
       // Make all variables flexible.
+      // MATT no longer need to perform this conversion with renv
       val f1 = f.map(tvar => tvar.withRigidity(Rigidity.Flexible))
       val q = mkEq(f1, Type.True)
       try {
