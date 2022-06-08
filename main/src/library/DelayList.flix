@@ -563,14 +563,12 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, l: DelayList[a]): b & ef =
-        def loop(ll, acc) = match ll {
-            case ENil         => acc
-            case ECons(x, xs) => loop(xs,       f(acc, x))
-            case LCons(x, xs) => loop(force xs, f(acc, x))
-            case LList(xs)    => loop(force xs, acc)
-        };
-        loop(l, s)
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, l: DelayList[a]): b & ef = match l {
+        case ENil         => s
+        case ECons(x, xs) => foldLeft(f, f(s, x),       xs)
+        case LCons(x, xs) => foldLeft(f, f(s, x), force xs)
+        case LList(xs)    => foldLeft(f,   s,     force xs)
+    }
 
     ///
     /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
