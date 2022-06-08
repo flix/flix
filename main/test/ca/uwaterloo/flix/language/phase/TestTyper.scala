@@ -30,10 +30,6 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.GeneralizationError](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -49,10 +45,6 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.GeneralizationError](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -68,10 +60,6 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.GeneralizationError](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -87,10 +75,6 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.GeneralizationError](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -101,10 +85,6 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.GeneralizationError](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -115,10 +95,6 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.GeneralizationError](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -129,10 +105,6 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.GeneralizationError](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -143,10 +115,6 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.GeneralizationError](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -160,10 +128,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.OccursCheckError](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -171,10 +135,6 @@ class TestTyper extends FunSuite with TestUtils {
     val input = "def foo(): {| x} = {a = 2} <+> {a = 2}"
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -182,10 +142,6 @@ class TestTyper extends FunSuite with TestUtils {
     val input = "def foo(): #{| x} = {a = 2} <+> {a = 2}"
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -193,10 +149,6 @@ class TestTyper extends FunSuite with TestUtils {
     val input = "def foo(): {a :: Int32} = {a = 2} <+> {a = 2}"
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -204,10 +156,6 @@ class TestTyper extends FunSuite with TestUtils {
     val input = "def foo(): String = solve \"hello\""
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -224,10 +172,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -239,10 +183,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.OverApplied](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -254,10 +194,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.OverApplied](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -270,10 +206,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.UnderApplied](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -286,10 +218,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.UnderApplied](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -297,10 +225,6 @@ class TestTyper extends FunSuite with TestUtils {
     val input = "def foo(a: _): _ = a"
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.GeneralizationError](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -308,10 +232,6 @@ class TestTyper extends FunSuite with TestUtils {
     val input = "def foo(a: Int32): _ = a"
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.GeneralizationError](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -319,10 +239,6 @@ class TestTyper extends FunSuite with TestUtils {
     val input = "def foo(a: Int32): Int32 & _ = a"
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.EffectGeneralizationError](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -330,10 +246,6 @@ class TestTyper extends FunSuite with TestUtils {
     val input = "def foo(g: Int32 -> Int32 & _): Int32 & _ = g(1)"
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.GeneralizationError](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -347,10 +259,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MissingInstance](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -364,10 +272,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MissingInstance](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -396,10 +300,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MissingInstance](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -428,10 +328,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MissingInstance](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -450,10 +346,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MissingInstance](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -468,10 +360,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MissingInstance](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -494,10 +382,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MissingInstance](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -519,10 +403,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MissingInstance](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -537,10 +417,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MissingEq](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -555,10 +431,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MissingOrder](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -573,10 +445,6 @@ class TestTyper extends FunSuite with TestUtils {
          |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MissingToString](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -588,10 +456,6 @@ class TestTyper extends FunSuite with TestUtils {
          |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MissingArrowInstance](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -614,10 +478,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -640,10 +500,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -666,10 +522,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -692,10 +544,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -718,10 +566,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -744,10 +588,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -770,10 +610,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -796,10 +632,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -822,10 +654,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -848,10 +676,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -874,10 +698,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -900,10 +720,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -926,10 +742,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -952,10 +764,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -979,10 +787,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1006,10 +810,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1033,10 +833,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1060,10 +856,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1088,10 +880,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1116,10 +904,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1143,10 +927,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1170,10 +950,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1197,10 +973,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1224,10 +996,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1251,10 +1019,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1278,10 +1042,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1301,10 +1061,6 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1324,10 +1080,6 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1353,10 +1105,6 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1382,10 +1130,6 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1398,10 +1142,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1428,10 +1168,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1457,10 +1193,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1486,10 +1218,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1501,10 +1229,6 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.ImpureDeclaredAsPure](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1516,10 +1240,6 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.ImpureDeclaredAsPure](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1531,10 +1251,6 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.EffectPolymorphicDeclaredAsPure](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1546,10 +1262,6 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.EffectPolymorphicDeclaredAsPure](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1561,10 +1273,6 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.EffectGeneralizationError](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1576,10 +1284,6 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.EffectGeneralizationError](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1598,10 +1302,6 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.RegionVarEscapes](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1620,10 +1320,6 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.RegionVarEscapes](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1642,10 +1338,6 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.RegionVarEscapes](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1667,10 +1359,6 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.RegionVarEscapes](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-
     }
   }
 
@@ -1691,10 +1379,6 @@ class TestTyper extends FunSuite with TestUtils {
 //      """.stripMargin
 //    val result = compile(input, Options.TestWithLibNix)
 //    expectError[TypeError.RegionVarEscapes](result)
-//    result match {
-//      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-//      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(Formatter.AnsiTerminalFormatter)))
-//
 //    }
 //  }
 
