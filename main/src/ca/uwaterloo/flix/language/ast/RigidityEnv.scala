@@ -19,6 +19,9 @@ import scala.collection.immutable.SortedSet
 
 /**
   * Environment tracking the rigidity of type variables.
+  *
+  * `s` holds the set of rigid variable symbols.
+  * All variables not in `s` are considered flexible.
   */
 case class RigidityEnv(s: SortedSet[Symbol.KindedTypeVarSym]) {
 
