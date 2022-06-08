@@ -12,3 +12,10 @@ namespace M {
 
     pub def f(): U = ???
 }
+
+namespace Test/Integ/Enum/TypeAlias {
+    pub type alias T[ef: Region] = Unit -> Bool & ef
+    enum E[ef: Region] {
+        case E(T[ef])
+    }
+}
