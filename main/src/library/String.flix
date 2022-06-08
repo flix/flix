@@ -1159,9 +1159,10 @@ namespace String {
     /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
     ///
     @Time(Int32.min(length(a), length(b))) @Space(Int32.min(length(a), length(b)))
-    pub def zip(a: String, b: String): Array[(Char, Char), Static] & Impure =
+    pub def zip(a: String, b: String): List[(Char, Char)] =
         let len = Int32.min(length(a), length(b));
-        Array.init(i -> (charAt(i, a), charAt(i, b)), len, Static)
+        // Array.init(i -> (charAt(i, a), charAt(i, b)), len, Static)
+        List.unfold(i -> if (i >= len) None else Some((charAt(i, a), charAt(i, b)), i + 1), 0)
 
     ///
     /// Returns a string where the element at index `i` is `f(x, y)` where
