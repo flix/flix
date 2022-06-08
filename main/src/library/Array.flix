@@ -1695,10 +1695,10 @@ namespace Array {
                 copy(arr, b, e) as ScopedArray[a, r2]
         }
 
-   ///
-   /// Returns an iterator over `a`.
-   ///
-   pub def toIterator(a: ScopedArray[a, r]): Iterator[a] & Impure =
+    ///
+    /// Returns an iterator over `a`.
+    ///
+    pub def toIterator(a: ScopedArray[a, r]): Iterator[a] & Impure =
        let len = Array.length(a);
        let copy = copyOfRange(0, len, a, Static);
        let i = ref 0;
@@ -1710,4 +1710,19 @@ namespace Array {
            x
        };
        Iterator(done, next)
+
+    ///
+    /// Shuffles `a` using the Fisher–Yates shuffle.
+    ///
+    pub def shuffle(r: Random.Random, a: ScopedArray[a, r]): Unit \ { Impure, Read(r), Write(r) } =
+        let len = Array.length(a);
+        def loop(i) = {
+            if (i > 0) {
+                let j = Random.nextNatWithMax(r, i + 1);
+                Array.swap!(i, j, a);
+                loop(i - 1)
+            } else ()
+        };
+        loop(len - 1)
+
 }
