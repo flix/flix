@@ -985,7 +985,7 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedBools](result)
   }
 
-  test("TestLeq.Choice.01") {
+  ignore("TestLeq.Choice.01") { // MATT
     val input =
       """
         |pub def foo(x: Choice[String, true, _]): Int32 =
@@ -1000,14 +1000,10 @@ class TestTyper extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter)))
-    }
     expectError[TypeError.GeneralizationError](result)
   }
 
-  test("TestLeq.Choice.02") {
+  ignore("TestLeq.Choice.02") { // MATT
     val input =
       """
         |pub def foo(x: Choice[String, _, true]): Int32 =

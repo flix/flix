@@ -2317,7 +2317,7 @@ object Typer {
     */
   private def getRigidityFromParams(params: List[KindedAst.FormalParam])(implicit flix: Flix): RigidityEnv = {
     params.flatMap(_.tpe.typeVars).foldLeft(RigidityEnv.empty) {
-      case (renv, tvar) => renv.withRigid(tvar.sym)
+      case (renv, tvar) => renv.markRigid(tvar.sym)
     }
   }
 
