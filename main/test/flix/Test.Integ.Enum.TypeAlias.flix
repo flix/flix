@@ -18,4 +18,9 @@ namespace Test/Integ/Enum/TypeAlias {
     enum E[ef: Region] {
         case E(T[ef])
     }
+
+    pub type alias Phantom[_: Type] = Bool
+    enum E2[a: Type] {
+        case E2(Phantom[a])
+    }
 }
