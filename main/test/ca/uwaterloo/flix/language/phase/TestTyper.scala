@@ -221,12 +221,6 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.EffectGeneralizationError](result)
   }
 
-  test("TestLeq.Wildcard.04") {
-    val input = "def foo(a: Int32): Int32 & _ = a"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectGeneralizationError](result)
-  }
-
   test("TestLeq.Wildcard.05") {
     val input = "def foo(g: Int32 -> Int32 & _): Int32 & _ = g(1)"
     val result = compile(input, Options.TestWithLibNix)
