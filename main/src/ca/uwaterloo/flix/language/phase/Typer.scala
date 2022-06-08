@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, mapN, traverse}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, mapN, traverse}
 import ca.uwaterloo.flix.util._
 
 import java.io.PrintWriter
@@ -227,7 +227,7 @@ object Typer {
           ///
           val initialSubst = getSubstFromParams(fparams0)
 
-          run(initialSubst, Rigidity.emptyEnv) match { // TODO renv
+          run(initialSubst, RigidityEnv.empty) match { // MATT renv
             case Ok((subst0, renv0, (partialTconstrs, partialType))) =>
 
               // propogate the type variable names
@@ -412,7 +412,7 @@ object Typer {
       // Run the type inference monad with an empty substitution.
       //
       val initialSubst = Substitution.empty
-      result.run(initialSubst, Rigidity.emptyEnv).toValidation.map { // TODO renv
+      result.run(initialSubst, RigidityEnv.empty).toValidation.map { // MATT renv
         case (subst, _, _) =>
           val es = exps.map(reassembleExp(_, root, subst))
           TypedAst.Annotation(name, es, loc)

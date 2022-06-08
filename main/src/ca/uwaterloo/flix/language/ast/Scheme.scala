@@ -162,7 +162,7 @@ object Scheme {
     // Mark every free and bound variable in `sc2` as rigid.
     val renv2 = sc2.base.typeVars.map(_.sym)
 
-    val renv = renv1 ++ renv2
+    val renv = RigidityEnv(renv1 ++ renv2)
 
     // Attempt to unify the two instantiated types.
     for {

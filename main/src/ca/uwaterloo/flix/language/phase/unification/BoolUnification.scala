@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
-import ca.uwaterloo.flix.language.ast.Type.{Bool, eraseAliases}
+import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -29,7 +29,7 @@ object BoolUnification {
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  def unify(tpe1: Type, tpe2: Type, renv: Rigidity.Env)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  def unify(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     ///
     /// Perform aggressive matching to optimize for common cases.
     ///
@@ -38,7 +38,7 @@ object BoolUnification {
     }
 
     tpe1 match {
-      case x: Type.KindedVar if !renv.contains(x.sym) =>
+      case x: Type.KindedVar if renv.isFlexible(x.sym) =>
         if (tpe2 eq Type.True)
           return Ok(Substitution.singleton(x.sym, Type.True))
         if (tpe2 eq Type.False)
@@ -49,7 +49,7 @@ object BoolUnification {
     }
 
     tpe2 match {
-      case y: Type.KindedVar if !renv.contains(y.sym) =>
+      case y: Type.KindedVar if renv.isFlexible(y.sym) =>
         if (tpe1 eq Type.True)
           return Ok(Substitution.singleton(y.sym, Type.True))
         if (tpe1 eq Type.False)
@@ -68,7 +68,7 @@ object BoolUnification {
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  private def booleanUnification(tpe1: Type, tpe2: Type, renv: Rigidity.Env)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  private def booleanUnification(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // The boolean expression we want to show is 0.
     val query = mkEq(tpe1, tpe2)
 
@@ -76,7 +76,7 @@ object BoolUnification {
     val typeVars = query.typeVars.toList
 
     // Compute the flexible variables.
-    val flexibleTypeVars = typeVars.filterNot(tvar => renv.contains(tvar.sym))
+    val flexibleTypeVars = typeVars.filter(tvar => renv.isRigid(tvar.sym))
 
     // Determine the order in which to eliminate the variables.
     val freeVars = computeVariableOrder(flexibleTypeVars)

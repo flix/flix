@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.ClassContext
-import ca.uwaterloo.flix.language.ast.{Ast, Rigidity, Scheme, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 
@@ -124,7 +124,7 @@ object ClassEnvironment {
       // MATT this should be possible in one go with a rigidity env
       for {
         _ <- Scheme.checkLessThanEqual(instSc, tconstrSc, Map.empty)
-        subst <- Unification.unifyTypes(inst.tpe, tconstr.arg, Rigidity.emptyEnv).toValidation
+        subst <- Unification.unifyTypes(inst.tpe, tconstr.arg, RigidityEnv.empty).toValidation
       } yield inst.tconstrs.map(subst(_))
     }
 

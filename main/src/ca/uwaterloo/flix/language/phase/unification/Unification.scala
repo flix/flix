@@ -26,18 +26,18 @@ object Unification {
   /**
     * Unify the two type variables `x` and `y`.
     */
-  private def unifyVars(x: Type.KindedVar, y: Type.KindedVar, renv: Rigidity.Env)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  private def unifyVars(x: Type.KindedVar, y: Type.KindedVar, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // Case 0: types are identical
     if (x.sym == y.sym) {
       Result.Ok(Substitution.empty)
     } else {
-      (renv.contains(x.sym), renv.contains(y.sym)) match {
+      (renv.get(x.sym), renv.get(y.sym)) match {
         // Case 1: x is flexible
-        case (false, _) => Result.Ok(Substitution.singleton(x.sym, y))
+        case (Rigidity.Flexible, _) => Result.Ok(Substitution.singleton(x.sym, y))
         // Case 2: y is flexible
-        case (_, false) => Result.Ok(Substitution.singleton(y.sym, x))
+        case (_, Rigidity.Flexible) => Result.Ok(Substitution.singleton(y.sym, x))
         // Case 3: both variables are rigid
-        case (true, true) => Result.Err(UnificationError.RigidVar(x, y))
+        case (Rigidity.Rigid, Rigidity.Rigid) => Result.Err(UnificationError.RigidVar(x, y))
       }
     }
   }
@@ -45,13 +45,13 @@ object Unification {
   /**
     * Unifies the given variable `x` with the given non-variable type `tpe`.
     */
-  private def unifyVar(x: Type.KindedVar, tpe: Type, renv: Rigidity.Env)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  private def unifyVar(x: Type.KindedVar, tpe: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // NB: The `tpe` type must be a non-var.
     if (tpe.isInstanceOf[Type.Var])
       throw InternalCompilerException(s"Unexpected variable type: '$tpe'.")
 
     // Check if `x` is rigid.
-    if (renv.contains(x.sym)) {
+    if (renv.isRigid(x.sym)) {
       return Result.Err(UnificationError.RigidVar(x, tpe))
     }
 
@@ -67,7 +67,7 @@ object Unification {
     * Unifies the two given types `tpe1` and `tpe2`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
-  def unifyTypes(tpe1: Type, tpe2: Type, renv: Rigidity.Env)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     (tpe1, tpe2) match {
       case (x: Type.Var, y: Type.Var) => unifyVars(x.asKinded, y.asKinded, renv)
 
@@ -126,7 +126,7 @@ object Unification {
   /**
     * Attempts to rewrite the given row type `rewrittenRow` such that it shares a first label with `staticRow`.
     */
-  private def rewriteRecordRow(rewrittenRow: Type, staticRow: Type, renv: Rigidity.Env)(implicit flix: Flix): Result[(Substitution, Type), UnificationError] = {
+  private def rewriteRecordRow(rewrittenRow: Type, staticRow: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, Type), UnificationError] = {
 
     def visit(row: Type): Result[(Substitution, Type), UnificationError] = (row, staticRow) match {
       case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(field2), _), fieldType2, _), restRow2, loc),
@@ -172,7 +172,7 @@ object Unification {
     * Attempts to rewrite the given row type `rewrittenRow` such that it shares a first label with `staticRow`.
     */
   // TODO: This is a copy of the above function. It would be nice if it could be the same function, but the shape of labels is different.
-  private def rewriteSchemaRow(rewrittenRow: Type, staticRow: Type, renv: Rigidity.Env)(implicit flix: Flix): Result[(Substitution, Type), UnificationError] = {
+  private def rewriteSchemaRow(rewrittenRow: Type, staticRow: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, Type), UnificationError] = {
 
     def visit(row: Type): Result[(Substitution, Type), UnificationError] = (row, staticRow) match {
       case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label2), _), fieldType2, _), restRow2, loc),
@@ -235,7 +235,7 @@ object Unification {
     * associated substitution into the type inference monad.
     */
   def unifyTypeM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
-    InferMonad((s: Substitution, renv: Rigidity.Env) => {
+    InferMonad((s: Substitution, renv: RigidityEnv) => {
       val type1 = s(tpe1)
       val type2 = s(tpe2)
       unifyTypes(type1, type2, renv) match {
@@ -308,7 +308,7 @@ object Unification {
   /**
     * Returns a [[TypeError.OverApplied]] or [[TypeError.UnderApplied]] type error, if applicable.
     */
-  private def getUnderOrOverAppliedError(arrowType: Type, argType: Type, fullType1: Type, fullType2: Type, renv: Rigidity.Env, loc: SourceLocation)(implicit flix: Flix): TypeError = {
+  private def getUnderOrOverAppliedError(arrowType: Type, argType: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
     val default = TypeError.MismatchedTypes(arrowType, argType, fullType1, fullType2, loc)
 
     arrowType match {
@@ -366,7 +366,7 @@ object Unification {
     * Unifies the two given Boolean formulas `tpe1` and `tpe2`.
     */
   def unifyBoolM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
-    InferMonad((s: Substitution, renv: Rigidity.Env) => {
+    InferMonad((s: Substitution, renv: RigidityEnv) => {
       val bf1 = s(tpe1)
       val bf2 = s(tpe2)
       BoolUnification.unify(bf1, bf2, renv) match {
@@ -480,13 +480,13 @@ object Unification {
     */
   def rigidifyM(rvar: Type.KindedVar): InferMonad[Unit] =
     InferMonad {
-      case (s, renv) => Ok((s, renv + rvar.sym, ()))
+      case (s, renv) => Ok((s, renv.withRigid(rvar.sym), ()))
     }
 
   /**
     * Returns true iff `tpe1` unifies with `tpe2`.
     */
-  def unifiesWith(tpe1: Type, tpe2: Type, renv: Rigidity.Env)(implicit flix: Flix): Boolean = {
+  def unifiesWith(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = {
     Unification.unifyTypes(tpe1, tpe2, renv) match {
       case Result.Ok(_) => true
       case Result.Err(_) => false
