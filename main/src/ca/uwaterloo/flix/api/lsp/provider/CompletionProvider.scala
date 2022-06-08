@@ -27,11 +27,11 @@ import org.parboiled2.CharPredicate
 object CompletionProvider {
   private implicit val audience: Audience = Audience.External
 
-  def autoComplete(uri: String, pos: Position, source: Option[String])(implicit root: TypedAst.Root): JObject = {
-    val line = source.flatMap(lineAt(_, pos))
-    val context = line.flatMap(Context(_, pos))
-
-    val completions = getCompletions(context.get)
+  def autoComplete(_uri: String, pos: Position, source: Option[String])(implicit root: TypedAst.Root): JObject = {
+    val completions = source.flatMap(Context(_, pos)) match {
+      case None => Nil
+      case Some(context) => getCompletions(context)
+    }
 
     ("status" -> "success") ~ ("result" -> CompletionList(isIncomplete = true, completions).toJSON)
   }
@@ -53,27 +53,23 @@ object CompletionProvider {
     private val isWordChar = Letters.LegalLetter ++ Letters.OperatorLetter ++
         Letters.MathLetter ++ Letters.GreekLetter ++ CharPredicate("@")
 
-    def apply(line: String, pos: Position) = {
-      val n = pos.character - 1
-      val (prefix, suffix) = line.splitAt(n)
-      val reversedPrefix = prefix.reverse
-      val wordStart = reversedPrefix.takeWhile(isWordChar).reverse
-      val wordEnd = suffix.takeWhile(isWordChar)
-      val word = wordStart + wordEnd
-      val start = n - wordStart.length
-      val end = n + wordEnd.length
-      val previousWord = reversedPrefix.dropWhile(isWordChar).dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
-      val range = Range(Position(pos.line - 1, start), Position(pos.line - 1, end))
-      Some(new Context(range, word, previousWord))
+    def apply(source: String, pos: Position) = {
+      val x = pos.character - 1
+      val y = pos.line - 1
+      for(line <- source.linesWithSeparators.slice(y, y + 1).toList.headOption) yield {
+        val (prefix, suffix) = line.splitAt(x)
+        val reversedPrefix = prefix.reverse
+        val wordStart = reversedPrefix.takeWhile(isWordChar).reverse
+        val wordEnd = suffix.takeWhile(isWordChar)
+        val word = wordStart + wordEnd
+        val start = x - wordStart.length
+        val end = x + wordEnd.length
+        val previousWord = reversedPrefix.dropWhile(isWordChar).dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
+        val range = Range(Position(y, start), Position(y, end))
+        new Context(range, word, previousWord)
+      }
     }
   }
 
-  private case class Context(val range: Range, val word: String, val previousWord: String)
-
-  /**
-    * Optionally returns line number `n` in the string `s`.
-    */
-  private def lineAt(source: String, pos: Position): Option[String] = {
-    source.linesWithSeparators.slice(pos.line - 1, pos.line).toList.headOption   // https://stackoverflow.com/a/32994271/268371
-  }
+  private class Context(val range: Range, val word: String, val previousWord: String)
 }
