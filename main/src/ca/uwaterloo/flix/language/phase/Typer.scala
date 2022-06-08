@@ -229,10 +229,7 @@ object Typer {
           val initialRenv = getRigidityFromParams(fparams0)
 
           run(initialSubst, initialRenv) match { // MATT renv
-            case Ok((subst0, renv0, (partialTconstrs, partialType))) =>
-
-              // propogate the type variable names
-              val subst = subst0.propagate
+            case Ok((subst, renv0, (partialTconstrs, partialType))) =>
 
               ///
               /// The partial type returned by the inference monad does not have the substitution applied.

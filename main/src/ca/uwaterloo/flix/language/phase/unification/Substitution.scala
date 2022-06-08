@@ -15,11 +15,8 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Rigidity, RigidityEnv, Scheme, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.unification.Unification.unifyTypes
+import ca.uwaterloo.flix.language.ast.{Ast, Scheme, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
 /**
   * Companion object for the [[Substitution]] class.
