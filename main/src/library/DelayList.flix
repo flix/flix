@@ -355,8 +355,7 @@ namespace DelayList {
     ///
     @Experimental @Lazy
     pub def repeat(x: a): DelayList[a] =
-        def loop() = LCons(x, lazy loop());
-        LList(lazy loop())
+        LCons(x, lazy repeat(x))
 
     ///
     /// Returns an infinite sequence of integers starting from and including `n`.
