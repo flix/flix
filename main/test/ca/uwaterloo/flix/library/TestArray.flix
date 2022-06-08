@@ -5808,4 +5808,36 @@ def findIndices07(): Bool & Impure =
         Array.sameElements(MutList.toArray(v, r), [] @ r)
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // shuffle                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def shuffle01(): Bool & Impure = region r {
+        let a = ([] @ r): ScopedArray[Int32, _];
+        Array.shuffle(Random.new(), a);
+        Array.length(a) == 0
+    }
+
+    @test
+    def shuffle02(): Bool & Impure = region r {
+        let a = ([0] @ r): ScopedArray[Int32, _];
+        Array.shuffle(Random.new(), a);
+        Array.length(a) == 1
+    }
+
+    @test
+    def shuffle03(): Bool & Impure = region r {
+        let a = ([0, 1, 2, 3] @ r): ScopedArray[Int32, _];
+        Array.shuffle(Random.new(), a);
+        Array.length(a) == 4
+    }
+
+    @test
+    def shuffle04(): Bool & Impure = region r {
+        let a = ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9] @ r): ScopedArray[Int32, _];
+        Array.shuffle(Random.new(), a);
+        Array.length(a) == 10 and Array.toSet(a) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+    }
+
 }
