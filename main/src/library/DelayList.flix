@@ -49,13 +49,13 @@ instance Order[DelayList[a]] with Order[a] {
         case (LList(xs)   ,            _) => (force xs) <=>        l2
         case (ECons(x, xs), ECons(y, ys)) =>
             let cmp = x <=> y;
-            if (cmp == EqualTo)         xs <=> ys         else cmp
+            if (cmp == EqualTo) xs <=> ys else cmp
         case (ECons(x, xs), LCons(y, ys)) =>
             let cmp = x <=> y;
-            if (cmp == EqualTo)         xs <=> (force ys) else cmp
+            if (cmp == EqualTo) xs <=> (force ys) else cmp
         case (LCons(x, xs), ECons(y, ys)) =>
             let cmp = x <=> y;
-            if (cmp == EqualTo) (force xs) <=>        ys  else cmp
+            if (cmp == EqualTo) (force xs) <=> ys  else cmp
         case (LCons(x, xs), LCons(y, ys)) =>
             let cmp = x <=> y;
             if (cmp == EqualTo) (force xs) <=> (force ys) else cmp
@@ -183,14 +183,12 @@ namespace DelayList {
     /// Does not force the tail of `l1`.
     ///
     @Experimental @Lazy
-    pub def append(l1: DelayList[a], l2: DelayList[a]): DelayList[a] =
-        def loop(ll) = match ll {
-            case ENil         => l2
-            case ECons(x, xs) => LCons(x, lazy loop(      xs))
-            case LCons(x, xs) => LCons(x, lazy loop(force xs))
-            case LList(xs)    => LList(   lazy loop(force xs))
-        };
-        loop(l1)
+    pub def append(l1: DelayList[a], l2: DelayList[a]): DelayList[a] = match l1 {
+        case ENil         => l2
+        case ECons(x, xs) => LCons(x, lazy append(      xs, l2))
+        case LCons(x, xs) => LCons(x, lazy append(force xs, l2))
+        case LList(xs)    => LList(   lazy append(force xs, l2))
+    }
 
     ///
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
