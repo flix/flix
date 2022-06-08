@@ -344,6 +344,23 @@ class TestUnification extends FunSuite with TestUtils {
     assert(!isOk(result))
   }
 
+  test("Unify.17") {
+    val tpe1 = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Rigid, loc), loc)
+    val tpe2 = Type.Unit
+    val renv = RigidityEnv.empty.markRigid(tpe1.sym)
+    val result = Unification.unifyTypes(tpe1, tpe2, renv)
+    assert(!isOk(result))
+  }
+
+  test("Unify.18") {
+    val tvar = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Rigid, loc), loc)
+    val tpe1 = Type.mkTuple(List(tvar, tvar), loc)
+    val tpe2 = Type.mkTuple(List(tvar, Type.Unit), loc)
+    val renv = RigidityEnv.empty.markRigid(tvar.sym)
+    val result = Unification.unifyTypes(tpe1, tpe2, renv)
+    assert(!isOk(result))
+  }
+
   test("unifyM.01") {
     val subst0 = Substitution.empty
     val result = Unification.unifyTypeM(Type.Bool, Type.Bool, loc).run(subst0, RigidityEnv.empty)
