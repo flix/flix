@@ -389,10 +389,11 @@ object Typer {
       } yield Type.Int32
 
       //
-      // Run the type inference monad with an empty substitution.
+      // Run the type inference monad with an empty substitution and rigidity env.
       //
       val initialSubst = Substitution.empty
-      result.run(initialSubst, RigidityEnv.empty).toValidation.map { // MATT renv
+      val renv = RigidityEnv.empty
+      result.run(initialSubst, renv).toValidation.map {
         case (subst, _, _) =>
           val es = exps.map(reassembleExp(_, root, subst))
           TypedAst.Annotation(name, es, loc)
