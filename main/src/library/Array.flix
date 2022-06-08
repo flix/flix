@@ -18,6 +18,10 @@ instance Scoped[ScopedArray[a]] {
     pub def regionOf(_: ScopedArray[a, r]): Region[r] = () as Region[r]
 }
 
+instance ForEach[Array] {
+    pub def foreach(f: a -> Unit & ef, arr: Array[a]): Unit & ef = Array.foreach(f, arr)
+}
+
 namespace Array {
 
     ///

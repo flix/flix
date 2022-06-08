@@ -21,7 +21,7 @@ pub enum DelayMap[k, v] {
 }
 
 instance ForEach[DelayMap[k]] {
-    pub def foreach(f: a -> Unit & ef, l: DelayMap[k, a]): Unit & ef = DelayList.foreach((_, v) -> f(v), l)
+    pub def foreach(f: a -> Unit & ef, l: DelayMap[k, a]): Unit & ef = DelayMap.foreach((_, v) -> f(v), l)
 }
 
 namespace DelayMap {
