@@ -222,35 +222,4 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
 
     Substitution(m2)
   }
-
-  /**
-    * Computes an equ-most general substitution with the given type variable as `rigid`.
-    *
-    * That is, the resulting subst has `sym = sym`.
-    * (which actually means `sym` does not appear in the substitution).
-    */
-  def pivot(sym0: Symbol.KindedTypeVarSym)(implicit flix: Flix): Substitution = {
-    val newSubst = m.get(sym0) match {
-      // Case 1: The variable is replaced. Need to process it.
-      case Some(tpe) =>
-        val rigidSym = sym0.withRigidity(Rigidity.Rigid)
-        unifyTypes(Type.KindedVar(rigidSym, sym0.loc), tpe, RigidityEnv.empty) match { // MATT we can use the empty renv here since we'll get rid of pivoting when renvs are activated
-          case Ok(rigidSubst) =>
-            // de-rigidify the substitution
-            val flexMap = rigidSubst.m.map {
-              case (k, v) =>
-                val v2 = v.map {
-                  case Type.KindedVar(sym, loc) if sym == rigidSym => Type.KindedVar(rigidSym.withRigidity(Rigidity.Flexible), loc)
-                  case otherVar => otherVar
-                }
-                (k, v2)
-            }
-            Substitution(flexMap)
-          case Err(_) => throw InternalCompilerException("Unexpected unification failure.")
-        }
-      // Case 2: The variable is not replaced. Nothing to do.
-      case None => Substitution.empty
-    }
-    newSubst @@ this.unbind(sym0)
-  }
 }

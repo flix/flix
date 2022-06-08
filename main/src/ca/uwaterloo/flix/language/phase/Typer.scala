@@ -300,15 +300,11 @@ object Typer {
                   }
               }
 
-              // Pivot the substititution to keep the type parameters from being replaced
-              // MATT exploit renv to avoid requiring this
-              val finalSubst = pivot(subst, tparams0)
-
               ///
               /// Compute the expression, type parameters, and formal parameters with the substitution applied everywhere.
               ///
-              val exp = reassembleExp(exp0, root, finalSubst)
-              val specVal = visitSpec(spec0, root, finalSubst)
+              val exp = reassembleExp(exp0, root, subst)
+              val specVal = visitSpec(spec0, root, subst)
 
               ///
               /// Compute a type scheme that matches the type variables that appear in the expression body.
@@ -317,8 +313,8 @@ object Typer {
               /// However, we require an even stronger property for the implementation to work. The inferred type scheme used in the rest of the
               /// compiler must *use the same type variables* in the scheme as in the body expression. Otherwise monomorphization et al. will break.
               ///
-              val finalInferredType = finalSubst(partialType)
-              val finalInferredTconstrs = partialTconstrs.map(finalSubst.apply)
+              val finalInferredType = subst(partialType)
+              val finalInferredTconstrs = partialTconstrs.map(subst.apply)
               val inferredScheme = Scheme(finalInferredType.typeVars.toList.map(_.sym), finalInferredTconstrs, finalInferredType)
 
               specVal map {
@@ -328,20 +324,6 @@ object Typer {
             case Err(e) => Validation.Failure(LazyList(e))
           }
       }
-  }
-
-  /**
-    * Computes an equ-most general substitution with the given `tparams` as rigid variables.
-    */
-  private def pivot(subst: Substitution, tparams: List[KindedAst.TypeParam])(implicit flix: Flix): Substitution = {
-    // We only pivot Boolean type variables
-    val boolTparams = tparams.filter(tparam => tparam.sym.kind == Kind.Bool)
-    boolTparams match {
-      // Case 1: exactly one boolean type parameter.
-      case tparam :: Nil => subst.pivot(tparam.sym)
-      // Case 2: multiple or zero boolean type parameters. No action
-      case _ => subst
-    }
   }
 
   /**
