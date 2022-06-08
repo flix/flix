@@ -226,8 +226,9 @@ object Typer {
           /// (or y) to determine the type of floating-point or integer operations.
           ///
           val initialSubst = getSubstFromParams(fparams0)
+          val initialRenv = getRigidityFromParams(fparams0)
 
-          run(initialSubst, RigidityEnv.empty) match { // MATT renv
+          run(initialSubst, initialRenv) match { // MATT renv
             case Ok((subst0, renv0, (partialTconstrs, partialType))) =>
 
               // propogate the type variable names
@@ -2308,6 +2309,15 @@ object Typer {
     (params zip declaredTypes).foldLeft(Substitution.empty) {
       case (macc, (KindedAst.FormalParam(sym, _, _, _), declaredType)) =>
         macc ++ Substitution.singleton(sym.tvar.sym.ascribedWith(Kind.Star), declaredType)
+    }
+  }
+
+  /**
+    * Collects all the type variables from the formal params and sets them as rigid.
+    */
+  private def getRigidityFromParams(params: List[KindedAst.FormalParam])(implicit flix: Flix): RigidityEnv = {
+    params.flatMap(_.tpe.typeVars).foldLeft(RigidityEnv.empty) {
+      case (renv, tvar) => renv.withRigid(tvar.sym)
     }
   }
 

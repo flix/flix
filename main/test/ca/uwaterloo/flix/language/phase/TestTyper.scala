@@ -1000,6 +1000,10 @@ class TestTyper extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
+    result match {
+      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
+      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message(ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter)))
+    }
     expectError[TypeError.GeneralizationError](result)
   }
 
