@@ -2459,7 +2459,82 @@ def query18(): Bool =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def lessEqual01(): Bool =
-        PartialOrder.lessEqual(Map.empty(): Map[Int32, Int32], Map.empty(): Map[Int32, Int32])
-          
+    def lessEqual01(): Bool = PartialOrder.lessEqual(Map.empty(): Map[Int32, Int32], Map.empty(): Map[Int32, Int32])
+
+    @test
+    def lessEqual02(): Bool = PartialOrder.lessEqual(Map.empty(): Map[Int32, Int32], Map.singleton(1, 1))
+
+    @test
+    def lessEqual03(): Bool = not PartialOrder.lessEqual(Map.singleton(1, 1), Map.empty(): Map[Int32, Int32])
+
+    @test
+    def lessEqual04(): Bool = PartialOrder.lessEqual(Map.singleton(1, 1), Map.singleton(1, 1))
+
+    @test
+    def lessEqual05(): Bool = not PartialOrder.lessEqual(Map.singleton(1, 1), Map.singleton(1, 10))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // JoinLattice.leastUpperBound                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def leastUpperBound01(): Bool =
+        JoinLattice.leastUpperBound(Map.empty(): Map[Int32, Int32], Map.empty(): Map[Int32, Int32]) == Map.empty(): Map[Int32, Int32]
+
+    @test
+    def leastUpperBound02(): Bool =
+        JoinLattice.leastUpperBound(Map.empty(): Map[Int32, Int32], Map.singleton(1, 1)) == Map.singleton(1, 1)
+
+    @test
+    def leastUpperBound03(): Bool =
+        JoinLattice.leastUpperBound(Map.singleton(1, 1), Map.empty(): Map[Int32, Int32]) == Map.singleton(1, 1)
+
+    @test
+    def leastUpperBound04(): Bool =
+        JoinLattice.leastUpperBound(Map.singleton(1, 1), Map.singleton(1, 1)) == Map.singleton(1, 1)
+
+    @test
+    def leastUpperBound05(): Bool =
+        JoinLattice.leastUpperBound(Map.singleton(1, 1), Map.singleton(1, 10)) == Map.singleton(1, 10)
+
+    @test
+    def leastUpperBound06(): Bool =
+        JoinLattice.leastUpperBound(Map.singleton(1, 1), Map.singleton(2, 2)) == Map#{1 => 1, 2 => 2}
+
+    @test
+    def leastUpperBound07(): Bool =
+        JoinLattice.leastUpperBound(Map.singleton(1, 1), Map#{1 => 10, 2 => 2}) == Map#{1 => 10, 2 => 2}
+
+    /////////////////////////////////////////////////////////////////////////////
+    // MeetLattice.greatestLowerBound                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def greatestLowerBound01(): Bool =
+        MeetLattice.greatestLowerBound(Map.empty(): Map[Int32, Int32], Map.empty(): Map[Int32, Int32]) == Map.empty(): Map[Int32, Int32]
+
+    @test
+    def greatestLowerBound02(): Bool =
+        MeetLattice.greatestLowerBound(Map.empty(): Map[Int32, Int32], Map.singleton(1, 1)) == Map.empty(): Map[Int32, Int32]
+
+    @test
+    def greatestLowerBound03(): Bool =
+        MeetLattice.greatestLowerBound(Map.singleton(1, 1), Map.empty(): Map[Int32, Int32]) == Map.empty(): Map[Int32, Int32]
+
+    @test
+    def greatestLowerBound04(): Bool =
+        MeetLattice.greatestLowerBound(Map.singleton(1, 1), Map.singleton(1, 1)) == Map.singleton(1, 1)
+
+    @test
+    def greatestLowerBound05(): Bool =
+        MeetLattice.greatestLowerBound(Map.singleton(1, 1), Map.singleton(1, 10)) == Map.singleton(1, 1)
+
+    @test
+    def greatestLowerBound06(): Bool =
+        MeetLattice.greatestLowerBound(Map.singleton(1, 1), Map.singleton(2, 2)) == Map.empty(): Map[Int32, Int32]
+
+    @test
+    def greatestLowerBound07(): Bool =
+        MeetLattice.greatestLowerBound(Map.singleton(1, 1), Map#{1 => 10, 2 => 2}) == Map.singleton(1, 1)
+
 }
