@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -130,7 +130,7 @@ object Instances {
       * Checks for overlap of instance types, assuming the instances are of the same class.
       */
     def checkOverlap(inst1: TypedAst.Instance, inst2: TypedAst.Instance)(implicit flix: Flix): Validation[Unit, InstanceError] = {
-      Unification.unifyTypes(generifyBools(inst1.tpe), inst2.tpe) match {
+      Unification.unifyTypes(generifyBools(inst1.tpe), inst2.tpe, RigidityEnv.empty) match {
         case Ok(_) =>
           Validation.Failure(LazyList(
             InstanceError.OverlappingInstances(inst1.sym.loc, inst2.sym.loc),
@@ -202,11 +202,11 @@ object Instances {
       * Finds an instance of the class for a given type.
       */
     def findInstanceForType(tpe: Type, clazz: Symbol.ClassSym): Option[(Ast.Instance, Substitution)] = {
-        val superInsts = root.classEnv.get(clazz).map(_.instances).getOrElse(Nil)
-        // lazily find the instance whose type unifies and save the substitution
-        superInsts.iterator.flatMap {
-          superInst => Unification.unifyTypes(tpe, superInst.tpe).toOption.map((superInst, _))
-        }.nextOption()
+      val superInsts = root.classEnv.get(clazz).map(_.instances).getOrElse(Nil)
+      // lazily find the instance whose type unifies and save the substitution
+      superInsts.iterator.flatMap {
+        superInst => Unification.unifyTypes(tpe, superInst.tpe, RigidityEnv.empty).toOption.map((superInst, _))
+      }.nextOption()
     }
 
     /**
