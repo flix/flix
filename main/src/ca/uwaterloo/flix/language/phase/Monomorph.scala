@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Kind, Name, Rigidity, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, Rigidity, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.ReificationError
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
@@ -199,8 +199,14 @@ object Monomorph {
         // Specialize the body expression.
         val body = specialize(defn.impl.exp, env0, subst, def2def, defQueue)
 
+        // Specialize the inferred scheme
+        val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), body.eff, body.tpe, sym.loc.asSynthetic)
+        val tvars = base.typeVars.map(_.sym).toList
+        val tconstrs = Nil // type constraints are not used after monomorph
+        val scheme = Scheme(tvars, tconstrs, base)
+
         // Reassemble the definition.
-        specializedDefns.put(sym, defn.copy(spec = defn.spec.copy(fparams = fparams), impl = defn.impl.copy(exp = body)))
+        specializedDefns.put(sym, defn.copy(spec = defn.spec.copy(fparams = fparams), impl = defn.impl.copy(exp = body, inferredScheme = scheme)))
       }
 
       /*
@@ -709,7 +715,7 @@ object Monomorph {
       inst =>
         inst.defs.find {
           defn =>
-            defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, Map.empty) // TODO renv
+            defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, RigidityEnv.empty)
         }
     }
 
@@ -926,7 +932,7 @@ object Monomorph {
     // The substitutions used in the typer should really ensure this.
     val t1 = tpe1.map(_.withRigidity(Rigidity.Flexible))
     val t2 = tpe2.map(_.withRigidity(Rigidity.Flexible))
-    Unification.unifyTypes(t1, t2) match {
+    Unification.unifyTypes(t1, t2, RigidityEnv.empty) match {
       case Result.Ok(subst) =>
         StrictSubstitution(subst)
       case Result.Err(_) =>
