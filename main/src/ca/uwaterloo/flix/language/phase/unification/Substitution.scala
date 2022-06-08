@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Rigidity, Scheme, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Rigidity, RigidityEnv, Scheme, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.Unification.unifyTypes
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -234,7 +234,7 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
       // Case 1: The variable is replaced. Need to process it.
       case Some(tpe) =>
         val rigidSym = sym0.withRigidity(Rigidity.Rigid)
-        unifyTypes(Type.KindedVar(rigidSym, sym0.loc), tpe) match {
+        unifyTypes(Type.KindedVar(rigidSym, sym0.loc), tpe, RigidityEnv.empty) match { // MATT we can use the empty renv here since we'll get rid of pivoting when renvs are activated
           case Ok(rigidSubst) =>
             // de-rigidify the substitution
             val flexMap = rigidSubst.m.map {
