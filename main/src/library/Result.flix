@@ -83,10 +83,8 @@ namespace Result {
     ///
     /// Returns `true` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `false`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def exists(f: t -> Bool, r: Result[t, e]): Bool = match r {
+    pub def exists(f: t -> Bool & ef, r: Result[t, e]): Bool & ef = match r {
         case Ok(t)  => f(t)
         case Err(_) => false
     }
@@ -95,10 +93,8 @@ namespace Result {
     /// Returns `true` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true` or if `r` is `Err(w)`.
     /// Otherwise returns `false`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def forall(f: t -> Bool, r: Result[t, e]): Bool = match r {
+    pub def forall(f: t -> Bool & ef, r: Result[t, e]): Bool & ef = match r {
         case Ok(t)  => f(t)
         case Err(_) => true
     }
@@ -134,10 +130,8 @@ namespace Result {
     ///
     /// Returns `1` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `0`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def count(f: t -> Bool, r: Result[t, e]): Int32 = match r {
+    pub def count(f: t -> Bool & ef, r: Result[t, e]): Int32 & ef = match r {
         case Ok(v)  => if (f(v)) 1 else 0
         case Err(_) => 0
     }

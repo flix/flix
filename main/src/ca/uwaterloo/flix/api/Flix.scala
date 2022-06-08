@@ -63,7 +63,7 @@ class Flix {
     */
   private var cachedParsedAst: ParsedAst.Root = ParsedAst.Root(Map.empty, None)
   private var cachedWeededAst: WeededAst.Root = WeededAst.Root(Map.empty, None, Set.empty)
-  private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty)
+  private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty)
   private var cachedResolvedAst: ResolvedAst.Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Set.empty, Map.empty)
   private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty, Map.empty)
 
@@ -439,9 +439,9 @@ class Flix {
     */
   def mkMessages(errors: Seq[CompilationMessage]): List[String] = {
     if (options.explain || errors.length == 1)
-      errors.map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
+      errors.sortBy(_.loc).map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
     else
-      errors.map(cm => cm.message(formatter)).toList
+      errors.sortBy(_.loc).map(cm => cm.message(formatter)).toList
   }
 
   /**

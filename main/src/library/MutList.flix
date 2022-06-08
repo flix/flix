@@ -125,7 +125,7 @@ namespace MutList {
     ///
     /// Returns `0` if the given mutable list `v` is empty.
     ///
-    pub def count(f: a -> Bool, v: MutList[a, r]): Int32 \ Read(r) =
+    pub def count(f: a -> Bool & ef, v: MutList[a, r]): Int32 \ { ef, Read(r) } =
         foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, v)
 
     ///
@@ -163,7 +163,7 @@ namespace MutList {
     ///
     /// Returns `false` if the given mutable list `v` is empty.
     ///
-    pub def exists(f: a -> Bool, v: MutList[a, r]): Bool \ Read(r) =
+    pub def exists(f: a -> Bool & ef, v: MutList[a, r]): Bool \ { ef, Read(r) } =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -180,7 +180,7 @@ namespace MutList {
     ///
     /// Returns `true` if the given mutable list `v` is empty.
     ///
-    pub def forall(f: a -> Bool, v: MutList[a, r]): Bool \ Read(r) =
+    pub def forall(f: a -> Bool & ef, v: MutList[a, r]): Bool \ { ef, Read(r) } =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;

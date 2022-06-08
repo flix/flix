@@ -487,6 +487,12 @@ namespace Map {
         RedBlackTree.foldRightWithCont(f, z, t)
 
     ///
+    /// Returns the result of mapping each key-value pair and combining the results.
+    ///
+    pub def foldMapWithKey(f: (k, v) -> b & ef, m: Map[k, v]): b & ef with Monoid[b] =
+        foldLeftWithKey((acc, k, v) -> Monoid.combine(acc, f(k, v)), Monoid.empty(), m)
+
+    ///
     /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(v1, v2), v3)..., vn))`

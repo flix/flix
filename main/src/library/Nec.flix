@@ -469,9 +469,7 @@ namespace Nec {
     ///
     /// Returns the number of elements in `c` that satisfy the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def count(f: a -> Bool, c: Nec[a]): Int32 =
+    pub def count(f: a -> Bool & ef, c: Nec[a]): Int32 & ef =
         def loop(c1: Nec[a], acc: Int32) = match viewLeft(c1) {
             case OneLeft(x)      => if (f(x)) acc + 1 else acc
             case SomeLeft(x, rs) => loop(rs, if (f(x)) acc + 1 else acc)

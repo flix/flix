@@ -1216,6 +1216,14 @@ namespace DelayList {
     }
 
     ///
+    /// Returns `l` as a MutDeque.
+    ///
+    pub def toMutDeque(l: DelayList[a], r: Region[r]): MutDeque[a, r] \ Write(r) =
+        let d = new MutDeque(r);
+        DelayList.foreach(x -> MutDeque.pushBack(x, d), l);
+        d
+
+    ///
     /// Returns the association list `l` as a map.
     ///
     /// If `l` contains multiple mappings with the same key, `toMap` does not

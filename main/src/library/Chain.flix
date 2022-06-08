@@ -226,20 +226,18 @@ namespace Chain {
     ///
     /// Returns `true` if and only if `c` contains the element `a`.
     ///
-    pub def memberOf(a: a, c: Chain[a]): Bool with Eq[a] =
-        def loop(v) = match v {
-            case NoneLeft                 => false
-            case SomeLeft(x, _) if x == a => true
-            case SomeLeft(_, xs)          => loop(viewLeft(xs))
-        };
-        loop(viewLeft(c))
+    pub def memberOf(a: a, c: Chain[a]): Bool with Eq[a] = match viewLeft(c) {
+        case NoneLeft                 => false
+        case SomeLeft(x, _) if x == a => true
+        case SomeLeft(_, xs)          => memberOf(a, xs)
+    }
 
     ///
     /// Optionally returns the position of `a` in `c`.
     ///
     pub def indexOf(a: a, c: Chain[a]): Option[Int32] with Eq[a] =
         def loop(v, acc) = match v {
-            case NoneLeft       => None
+            case NoneLeft        => None
             case SomeLeft(x, xs) => if (x == a) Some(acc) else loop(viewLeft(xs), acc + 1)
         };
         loop(viewLeft(c), 0)
@@ -431,28 +429,22 @@ namespace Chain {
     ///
     /// Returns `false` if `c` is empty.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def exists(f: a -> Bool, c: Chain[a]): Bool =
-        def loop(cc) = match viewLeft(cc) {
-            case NoneLeft        => false
-            case SomeLeft(a, rs) => if (f(a)) true else loop(rs)
-        };
-        loop(c)
+    pub def exists(f: a -> Bool & ef, c: Chain[a]): Bool & ef = match viewLeft(c) {
+        case NoneLeft               => false
+        case SomeLeft(x, _) if f(x) => true
+        case SomeLeft(_, xs)        => exists(f, xs)
+    }
 
     ///
     /// Returns `true` if and only if all elements in `c` satisfy the predicate `f`.
     ///
     /// Returns `true` if `c` is empty.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def forall(f: a -> Bool, c: Chain[a]): Bool =
-        def loop(cc) = match viewLeft(cc) {
-            case NoneLeft        => true
-            case SomeLeft(a, rs) => if (not f(a)) false else loop(rs)
-        };
-        loop(c)
+    pub def forall(f: a -> Bool & ef, c: Chain[a]): Bool & ef = match viewLeft(c) {
+        case NoneLeft                   => true
+        case SomeLeft(x, _) if not f(x) => false
+        case SomeLeft(_, xs)            => forall(f, xs)
+    }
 
     ///
     /// Returns a list of every element in `c` that satisfies the predicate `f`.
@@ -471,24 +463,20 @@ namespace Chain {
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, c: Chain[a]): b & ef =
-        def loop(cc, acc) = match viewLeft(cc) {
-            case NoneLeft        => acc
-            case SomeLeft(a, rs) => loop(rs, f(acc, a))
-        };
-        loop(c, s)
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, c: Chain[a]): b & ef = match viewLeft(c) {
+        case NoneLeft        => s
+        case SomeLeft(x, xs) => foldLeft(f, f(s, x), xs)
+    }
 
     ///
     /// Applies `f` to a start value `s` and all elements in `c` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, c: Chain[a]): b & ef =
-        def loop(cc, acc) = match viewRight(cc) {
-            case NoneRight        => acc
-            case SomeRight(rs, a) => loop(rs, f(a, acc))
-        };
-        loop(c, s)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, c: Chain[a]): b & ef = match viewRight(c) {
+        case NoneRight        => s
+        case SomeRight(xs, x) => foldRight(f, f(x, s), xs)
+    }
 
     ///
     /// Applies `f` to a start value `z` and all elements in `c` going from right to left.
@@ -496,12 +484,10 @@ namespace Chain {
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, c: Chain[a]): b & ef =
-        def loop(cc) = match viewLeft(cc) {
-            case NoneLeft        => z
-            case SomeLeft(x, rs) => f(x, _ -> loop(rs))
-        };
-        loop(c)
+    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, c: Chain[a]): b & ef = match viewLeft(c) {
+        case NoneLeft        => z
+        case SomeLeft(x, xs) => f(x, _ -> foldRightWithCont(f, z, xs))
+    }
 
     ///
     /// Returns the result of mapping each element and combining the results.
@@ -516,16 +502,13 @@ namespace Chain {
     /// Returns `c` if `n < 0`.
     ///
     pub def dropLeft(n: Int32, c: Chain[a]): Chain[a] =
-        def loop(i, cc) = {
-            if (i <= 0)
-                cc
-            else
-                match viewLeft(cc) {
-                    case NoneLeft        => Empty
-                    case SomeLeft(_, rs) => loop(i - 1, rs)
-                }
-        };
-        loop(n, c)
+        if (n <= 0)
+            c
+        else
+            match viewLeft(c) {
+                case NoneLeft        => Empty
+                case SomeLeft(_, xs) => dropLeft(n - 1, xs)
+            }
 
     ///
     /// Returns `c` without the last `n` elements.
@@ -534,40 +517,29 @@ namespace Chain {
     /// Returns `c` if `n < 0`.
     ///
     pub def dropRight(n: Int32, c: Chain[a]): Chain[a] =
-        def loop(i, cc) = {
-            if (i <= 0)
-                cc
-            else
-                match viewRight(cc) {
-                    case NoneRight        => Empty
-                    case SomeRight(rs, _) => loop(i - 1, rs)
-                }
-        };
-        loop(n, c)
+        if (n <= 0)
+            c
+        else
+            match viewRight(c) {
+                case NoneRight        => Empty
+                case SomeRight(xs, _) => dropRight(n - 1, xs)
+            }
 
     ///
     /// Returns `c` without the longest prefix that satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def dropWhileLeft(f: a -> Bool, c: Chain[a]): Chain[a] =
-        def loop(cc) = match viewLeft(cc) {
-            case SomeLeft(a, rs) if (f(a)) => loop(rs)
-            case _                         => cc
-        };
-        loop(c)
+    pub def dropWhileLeft(f: a -> Bool & ef, c: Chain[a]): Chain[a] & ef = match viewLeft(c) {
+        case SomeLeft(x, xs) if (f(x)) => dropWhileLeft(f, xs)
+        case _                         => c
+    }
 
     ///
     /// Returns `c` without the longest suffix that satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def dropWhileRight(f: a -> Bool, c: Chain[a]): Chain[a] =
-        def loop(cc) = match viewRight(cc) {
-            case SomeRight(rs, a) if (f(a)) => loop(rs)
-            case _                          => cc
-        };
-        loop(c)
+    pub def dropWhileRight(f: a -> Bool & ef, c: Chain[a]): Chain[a] & ef = match viewRight(c) {
+        case SomeRight(xs, x) if (f(x)) => dropWhileRight(f, xs)
+        case _                          => c
+    }
 
     ///
     /// Returns the first `n` elements of `c`.
@@ -606,9 +578,7 @@ namespace Chain {
     ///
     /// Returns the longest prefix of `c` that satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def takeWhileLeft(f: a -> Bool, c: Chain[a]): Chain[a] =
+    pub def takeWhileLeft(f: a -> Bool & ef, c: Chain[a]): Chain[a] & ef =
         def loop(cc, acc) = match viewLeft(cc) {
             case NoneLeft        => acc
             case SomeLeft(a, rs) => if (f(a)) loop(rs, snoc(acc, a)) else acc
@@ -618,9 +588,7 @@ namespace Chain {
     ///
     /// Returns the longest suffix of `c` that satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def takeWhileRight(f: a -> Bool, c: Chain[a]): Chain[a] =
+    pub def takeWhileRight(f: a -> Bool & ef, c: Chain[a]): Chain[a] & ef =
         def loop(cc, acc) = match viewRight(cc) {
             case SomeRight(rs, a) if (f(a)) => loop(rs, cons(a, acc))
             case _                          => acc
@@ -642,15 +610,13 @@ namespace Chain {
     ///
     /// Returns `None` if every element of `c` is `None`.
     ///
-    pub def findMap(f: a -> Option[b] & ef, c: Chain[a]): Option[b] & ef =
-        def loop(cc) = match viewLeft(cc) {
-            case NoneLeft        => None
-            case SomeLeft(a, rs) => match f(a) {
-                case None    => loop(rs)
-                case Some(v) => Some(v)
-            }
-        };
-        loop(c)
+    pub def findMap(f: a -> Option[b] & ef, c: Chain[a]): Option[b] & ef = match viewLeft(c) {
+        case NoneLeft        => None
+        case SomeLeft(x, xs) => match f(x) {
+            case None    => findMap(f, xs)
+            case Some(v) => Some(v)
+        }
+    }
 
     ///
     /// Returns a chain where the element at index `i` is `(a, b)` where
@@ -720,12 +686,10 @@ namespace Chain {
     ///
     /// Applies `f` to every element of `c`.
     ///
-    pub def foreach(f: a -> Unit & ef, c: Chain[a]): Unit & ef =
-        def loop(cc) = match viewLeft(cc) {
-            case NoneLeft        => ()
-            case SomeLeft(a, rs) => f(a); loop(rs)
-        };
-        loop(c)
+    pub def foreach(f: a -> Unit & ef, c: Chain[a]): Unit & ef = match viewLeft(c) {
+        case NoneLeft => ()
+        case SomeLeft(x, xs) => f(x); foreach(f, xs)
+    }
 
     ///
     /// Returns `c` as a list.
@@ -767,7 +731,7 @@ namespace Chain {
     /// Returns the chain `c` as an array.
     ///
     pub def toArray(c: Chain[a], r: Region[r]): Array[a, r] \ Write(r) = match head(c) {
-        case None => [] @ r
+        case None    => [] @ r
         case Some(x) =>
             let arr = [x; length(c)] @ r;
             foreach(match (b, i) -> arr[i] = b, zipWithIndex(c));
@@ -799,12 +763,11 @@ namespace Chain {
         // Note: Chains are considered equal if their (ordered) list of elements are equal.
         // Because they may have different shapes due to construction we use a view to
         // decide equality which imposes an order on the Chain.
-        def loop(cc1, cc2) = match (cc1, cc2) {
+        match (viewLeft(c1), viewLeft(c2)) {
             case (NoneLeft, NoneLeft)                           => true
-            case (SomeLeft(x, cx), SomeLeft(y, cy)) if (x == y) => loop(viewLeft(cx), viewLeft(cy))
+            case (SomeLeft(x, xs), SomeLeft(y, ys)) if (x == y) => equals(xs, ys)
             case _                                              => false
-        };
-        loop(viewLeft(c1), viewLeft(c2))
+        }
 
     ///
     /// Sort chain `c` so that elements are ordered from low to high according to their `Order` instance.

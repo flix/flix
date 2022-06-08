@@ -328,7 +328,7 @@ namespace String {
     /// Returns `None` if no character in `s` satisfies `f`.
     ///
     @Time(time(f) * length(s)) @Space(space(f))
-    pub def findIndexOfLeft(f: Char -> Bool, s: String): Option[Int32] =
+    pub def findIndexOfLeft(f: Char -> Bool & ef, s: String): Option[Int32] & ef =
         let len = length(s);
         def loop(i) = {
             if (i >= len)
@@ -699,7 +699,7 @@ namespace String {
     /// Returns `false` if `a` is empty.
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
-    pub def exists(f: Char -> Bool, s: String): Bool = match findIndexOfLeft(f, s) {
+    pub def exists(f: Char -> Bool & ef, s: String): Bool & ef = match findIndexOfLeft(f, s) {
         case None => false
         case Some(_) => true
     }
@@ -710,7 +710,7 @@ namespace String {
     /// Returns `true` if `s` is empty.
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
-    pub def forall(f: Char -> Bool, s: String): Bool = match findIndexOfLeft(x -> not (f(x)), s) {
+    pub def forall(f: Char -> Bool & ef, s: String): Bool & ef = match findIndexOfLeft(x -> not (f(x)), s) {
         case None => true
         case Some(_) => false
     }

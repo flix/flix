@@ -124,7 +124,7 @@ pub class Reducible[t: Type -> Type] {
     ///
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
     ///
-    pub def count(f: a -> Bool, t: t[a]): Int32 =
+    pub def count(f: a -> Bool & ef, t: t[a]): Int32 & ef =
         Reducible.foldLeft((acc, a) -> if (f(a)) 1 + acc else acc, 0, t)
 
     ///
