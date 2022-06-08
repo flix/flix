@@ -256,14 +256,12 @@ namespace DelayList {
     /// Forces elements of `l` until the predicate `f` is satisfied.
     ///
     @Experimental
-    pub def exists(f: a -> Bool & ef, l: DelayList[a]): Bool & ef =
-        def loop(ll) = match ll {
-            case ENil         => false
-            case ECons(x, xs) => if (f(x)) true else loop(      xs)
-            case LCons(x, xs) => if (f(x)) true else loop(force xs)
-            case LList(xs)    => loop(force xs)
-        };
-        loop(l)
+    pub def exists(f: a -> Bool & ef, l: DelayList[a]): Bool & ef = match l {
+        case ENil         => false
+        case ECons(x, xs) => if (f(x)) true else exists(f,       xs)
+        case LCons(x, xs) => if (f(x)) true else exists(f, force xs)
+        case LList(xs)    => exists(f, force xs)
+    }
 
     ///
     /// Returns `true` if and only if all elements in `l` satisfy the predicate `f`.
