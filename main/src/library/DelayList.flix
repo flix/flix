@@ -241,14 +241,12 @@ namespace DelayList {
     /// Does not force the tail of `l`.
     ///
     @Experimental @Lazy
-    pub def flatten(l: DelayList[DelayList[a]]): DelayList[a] =
-        def loop(ll) = match ll {
-            case ENil         => ENil
-            case ECons(x, xs) => append(x,  LList(lazy loop(      xs)))
-            case LCons(x, xs) => append(x,  LList(lazy loop(force xs)))
-            case LList(xs)    => LList(lazy loop(force xs))
-        };
-        if (isEmpty(l)) ENil else LList(lazy loop(l)) // Avoid returning `LList` if `l` is empty.
+    pub def flatten(l: DelayList[DelayList[a]]): DelayList[a] = match l {
+        case ENil         => ENil
+        case ECons(x, xs) => append(x, LList(lazy flatten(      xs)))
+        case LCons(x, xs) => append(x, LList(lazy flatten(force xs)))
+        case LList(xs)    => LList(lazy flatten(force xs))
+    }
 
     ///
     /// Returns `true` if and only if at least one element in `l` satisfies the predicate `f`.
