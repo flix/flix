@@ -37,11 +37,6 @@ case class RigidityEnv(s: SortedSet[Symbol.KindedTypeVarSym]) {
   }
 
   /**
-    * Marks the given `sym` as rigid in this environment.
-    */
-  def withRigid(sym: Symbol.KindedTypeVarSym): RigidityEnv = RigidityEnv(s + sym)
-
-  /**
     * Returns true iff the given `sym` is rigid according to this environment.
     */
   def isRigid(sym: Symbol.KindedTypeVarSym): Boolean = get(sym) == Rigidity.Rigid
@@ -50,6 +45,11 @@ case class RigidityEnv(s: SortedSet[Symbol.KindedTypeVarSym]) {
     * Returns true iff the given `sym` is flexible according to this environment.
     */
   def isFlexible(sym: Symbol.KindedTypeVarSym): Boolean = get(sym) == Rigidity.Flexible
+
+  /**
+    * Marks the given `sym` as rigid in this environment.
+    */
+  def markRigid(sym: Symbol.KindedTypeVarSym): RigidityEnv = RigidityEnv(s + sym)
 }
 
 object RigidityEnv {

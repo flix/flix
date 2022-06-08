@@ -331,7 +331,7 @@ class TestUnification extends FunSuite with TestUtils {
   test("Unify.15") {
     val tpe1 = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc)
     val tpe2 = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.RecordRow, Rigidity.Rigid, loc), loc)
-    val renv = RigidityEnv.empty.withRigid(tpe2.sym)
+    val renv = RigidityEnv.empty.markRigid(tpe2.sym)
     val result = Unification.unifyTypes(tpe1, tpe2, renv)
     assert(isOk(result))
   }
@@ -339,7 +339,7 @@ class TestUnification extends FunSuite with TestUtils {
   test("Unify.16") {
     val tpe1 = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Rigid, loc), loc)
     val tpe2 = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, Rigidity.Rigid, loc), loc)
-    val renv = RigidityEnv.empty.withRigid(tpe1.sym).withRigid(tpe2.sym)
+    val renv = RigidityEnv.empty.markRigid(tpe1.sym).markRigid(tpe2.sym)
     val result = Unification.unifyTypes(tpe1, tpe2, renv)
     assert(!isOk(result))
   }

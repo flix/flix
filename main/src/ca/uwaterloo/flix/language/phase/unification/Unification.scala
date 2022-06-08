@@ -480,7 +480,7 @@ object Unification {
     */
   def rigidifyM(rvar: Type.KindedVar): InferMonad[Unit] =
     InferMonad {
-      case (s, renv) => Ok((s, renv.withRigid(rvar.sym), ()))
+      case (s, renv) => Ok((s, renv.markRigid(rvar.sym), ()))
     }
 
   /**
