@@ -284,14 +284,12 @@ namespace DelayList {
     /// Forces elements until `x` is found.
     ///
     @Experimental
-    pub def memberOf(x: a, l: DelayList[a]): Bool with Eq[a] =
-        def loop(ll) = match ll {
-            case ENil          => false
-            case ECons(x1, xs) => x1 == x or loop(      xs)
-            case LCons(x1, xs) => x1 == x or loop(force xs)
-            case LList(xs)     =>            loop(force xs)
-        };
-        loop(l)
+    pub def memberOf(x: a, l: DelayList[a]): Bool with Eq[a] = match l {
+        case ENil          => false
+        case ECons(x1, xs) => if (x1 == x) true else memberOf(x,       xs)
+        case LCons(x1, xs) => if (x1 == x) true else memberOf(x, force xs)
+        case LList(xs)     =>                        memberOf(x, force xs)
+    }
 
     ///
     /// Optionally finds the smallest element of `l` according to the `Order` on `a`.
