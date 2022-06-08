@@ -386,14 +386,12 @@ namespace DelayList {
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
     @Lazy
-    def mapL(f: a -> b, l: DelayList[a]): DelayList[b] =
-        def loop(ll) = match ll {
-            case ENil         => ENil
-            case ECons(x, xs) => LCons(f(x), lazy loop(      xs))
-            case LCons(x, xs) => LCons(f(x), lazy loop(force xs))
-            case LList(xs)    => LList(      lazy loop(force xs))
-        };
-        if (isEmpty(l)) ENil else LList(lazy loop(l)) // Avoid returning `LList` if `l` is empty.
+    def mapL(f: a -> b, l: DelayList[a]): DelayList[b] = match l {
+        case ENil         => ENil
+        case ECons(x, xs) => LCons(f(x), lazy mapL(f,       xs))
+        case LCons(x, xs) => LCons(f(x), lazy mapL(f, force xs))
+        case LList(xs)    => LList(      lazy mapL(f, force xs))
+    }
 
     ///
     /// Returns the result of applying `f` to every element in `l`.
