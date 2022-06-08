@@ -985,7 +985,7 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedBools](result)
   }
 
-  ignore("TestLeq.Choice.01") { // MATT
+  test("Test.Choice.Param.01") {
     val input =
       """
         |pub def foo(x: Choice[String, true, _]): Int32 =
@@ -1000,10 +1000,10 @@ class TestTyper extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.MismatchedBools](result)
   }
 
-  ignore("TestLeq.Choice.02") { // MATT
+  test("Test.Choice.Param.02") {
     val input =
       """
         |pub def foo(x: Choice[String, _, true]): Int32 =
@@ -1018,7 +1018,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.MismatchedBools](result)
   }
 
   test("Test.Choice.Empty.01") {
