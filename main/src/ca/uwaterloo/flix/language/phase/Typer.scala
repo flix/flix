@@ -226,12 +226,10 @@ object Typer {
           /// (or y) to determine the type of floating-point or integer operations.
           ///
           val initialSubst = getSubstFromParams(fparams0)
+          val initialRenv = getRigidityFromParams(fparams0)
 
-          run(initialSubst, RigidityEnv.empty) match { // MATT renv
-            case Ok((subst0, renv0, (partialTconstrs, partialType))) =>
-
-              // propogate the type variable names
-              val subst = subst0.propagate
+          run(initialSubst, initialRenv) match {
+            case Ok((subst, renv0, (partialTconstrs, partialType))) =>
 
               ///
               /// The partial type returned by the inference monad does not have the substitution applied.
@@ -299,15 +297,11 @@ object Typer {
                   }
               }
 
-              // Pivot the substititution to keep the type parameters from being replaced
-              // MATT exploit renv to avoid requiring this
-              val finalSubst = pivot(subst, tparams0)
-
               ///
               /// Compute the expression, type parameters, and formal parameters with the substitution applied everywhere.
               ///
-              val exp = reassembleExp(exp0, root, finalSubst)
-              val specVal = visitSpec(spec0, root, finalSubst)
+              val exp = reassembleExp(exp0, root, subst)
+              val specVal = visitSpec(spec0, root, subst)
 
               ///
               /// Compute a type scheme that matches the type variables that appear in the expression body.
@@ -316,8 +310,8 @@ object Typer {
               /// However, we require an even stronger property for the implementation to work. The inferred type scheme used in the rest of the
               /// compiler must *use the same type variables* in the scheme as in the body expression. Otherwise monomorphization et al. will break.
               ///
-              val finalInferredType = finalSubst(partialType)
-              val finalInferredTconstrs = partialTconstrs.map(finalSubst.apply)
+              val finalInferredType = subst(partialType)
+              val finalInferredTconstrs = partialTconstrs.map(subst.apply)
               val inferredScheme = Scheme(finalInferredType.typeVars.toList.map(_.sym), finalInferredTconstrs, finalInferredType)
 
               specVal map {
@@ -327,20 +321,6 @@ object Typer {
             case Err(e) => Validation.Failure(LazyList(e))
           }
       }
-  }
-
-  /**
-    * Computes an equ-most general substitution with the given `tparams` as rigid variables.
-    */
-  private def pivot(subst: Substitution, tparams: List[KindedAst.TypeParam])(implicit flix: Flix): Substitution = {
-    // We only pivot Boolean type variables
-    val boolTparams = tparams.filter(tparam => tparam.sym.kind == Kind.Bool)
-    boolTparams match {
-      // Case 1: exactly one boolean type parameter.
-      case tparam :: Nil => subst.pivot(tparam.sym)
-      // Case 2: multiple or zero boolean type parameters. No action
-      case _ => subst
-    }
   }
 
   /**
@@ -409,10 +389,11 @@ object Typer {
       } yield Type.Int32
 
       //
-      // Run the type inference monad with an empty substitution.
+      // Run the type inference monad with an empty substitution and rigidity env.
       //
       val initialSubst = Substitution.empty
-      result.run(initialSubst, RigidityEnv.empty).toValidation.map { // MATT renv
+      val renv = RigidityEnv.empty
+      result.run(initialSubst, renv).toValidation.map {
         case (subst, _, _) =>
           val es = exps.map(reassembleExp(_, root, subst))
           TypedAst.Annotation(name, es, loc)
@@ -2308,6 +2289,15 @@ object Typer {
     (params zip declaredTypes).foldLeft(Substitution.empty) {
       case (macc, (KindedAst.FormalParam(sym, _, _, _), declaredType)) =>
         macc ++ Substitution.singleton(sym.tvar.sym.ascribedWith(Kind.Star), declaredType)
+    }
+  }
+
+  /**
+    * Collects all the type variables from the formal params and sets them as rigid.
+    */
+  private def getRigidityFromParams(params: List[KindedAst.FormalParam])(implicit flix: Flix): RigidityEnv = {
+    params.flatMap(_.tpe.typeVars).foldLeft(RigidityEnv.empty) {
+      case (renv, tvar) => renv.markRigid(tvar.sym)
     }
   }
 

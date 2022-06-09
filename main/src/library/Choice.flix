@@ -30,7 +30,7 @@ namespace Choice {
     /// Always returns `true`.
     ///
     @Experimental
-    pub def assertAbsent(c: Choice[_, true, false]): Bool = choose c {
+    pub def assertAbsent(c: Choice[s, true, false]): Bool = choose c {
         case Absent => true
     }
 
@@ -40,7 +40,7 @@ namespace Choice {
     /// Always returns `true`.
     ///
     @Experimental
-    pub def assertPresent(c: Choice[_, false, true]): Bool = choose c {
+    pub def assertPresent(c: Choice[s, false, true]): Bool = choose c {
         case Present(_) => true
     }
 
@@ -48,7 +48,7 @@ namespace Choice {
     /// Returns `true` if `c` is `Absent`.
     ///
     @Experimental
-    pub def isAbsent(c: Choice[_, _, _]): Bool = choose c {
+    pub def isAbsent(c: Choice[s, pres, abs]): Bool = choose c {
         case Absent     => true
         case Present(_) => false
     }
@@ -57,7 +57,7 @@ namespace Choice {
     /// Returns `true` if `c` is `Present`.
     ///
     @Experimental
-    pub def isPresent(c: Choice[_, _, _]): Bool = choose c {
+    pub def isPresent(c: Choice[s, pres, abs]): Bool = choose c {
         case Absent     => false
         case Present(_) => true
     }
@@ -75,7 +75,7 @@ namespace Choice {
     /// Returns `v` if `o` is `Present(v).` Otherwise returns `d`.
     ///
     @Experimental
-    pub def getWithDefault(d: s, c: Choice[s, _, _]): s =
+    pub def getWithDefault(d: s, c: Choice[s, pres, abs]): s =
         choose c {
             case Absent     => d
             case Present(v) => v
