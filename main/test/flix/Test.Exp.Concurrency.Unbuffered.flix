@@ -86,7 +86,7 @@ namespace Test/Exp/Concurrency/Unbuffered {
 
     @test
     def testUnbufferedChannelPutGet15(): Bool & Impure =
-        let c = chan Array[Int32] 0;
+        let c = chan Array[Int32, Static] 0;
         spawn c <- [1, 2, 3];
         2 == (<- c)[1]
 
@@ -184,7 +184,7 @@ namespace Test/Exp/Concurrency/Unbuffered {
 
     @test
     def testUnbufferedChannelGetPut15(): Unit & Impure =
-        let c = chan Array[Int32] 0;
+        let c = chan Array[Int32, Static] 0;
         spawn <- c;
         c <- [1, 2, 3]
 

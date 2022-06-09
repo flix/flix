@@ -105,7 +105,7 @@ instance Reducible[Nec] {
     override pub def memberOf(a: a, l: Nec[a]): Bool with Eq[a] = Nec.memberOf(a, l)
     override pub def dropWhile(f: a -> Bool & ef, l: Nec[a]): List[a] & ef = Nec.dropWhileLeft(f, l)
     override pub def takeWhile(f: a -> Bool & ef, l: Nec[a]): List[a] & ef = Nec.takeWhileLeft(f, l)
-    override pub def toArray(l: Nec[a], r: Region[r]): ScopedArray[a, r] \ Write(r) = Nec.toArray(l, r)
+    override pub def toArray(l: Nec[a], r: Region[r]): Array[a, r] \ Write(r) = Nec.toArray(l, r)
     override pub def toIterator(l: Nec[a]): Iterator[a] & Impure = Nec.toIterator(l)
     override pub def toList(l: Nec[a]): List[a] = Nec.toList(l)
 }
@@ -756,7 +756,7 @@ namespace Nec {
     ///
     /// Returns the Nec `c` as an array.
     ///
-    pub def toArray(c: Nec[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
+    pub def toArray(c: Nec[a], r: Region[r]): Array[a, r] \ Write(r) =
         let x = head(c);
         let arr = [x; length(c)] @ r;
         foreach(match (b, i) -> arr[i] = b, zipWithIndex(c));
@@ -792,7 +792,7 @@ namespace Nec {
     ///
     /// Helper for the `sort` functions.
     ///
-    def fromArray(arr: ScopedArray[a, r]): Option[Nec[a]] \ Read(r) =
+    def fromArray(arr: Array[a, r]): Option[Nec[a]] \ Read(r) =
         def loop(ix, end, acc) = if (ix >= end) acc else {let x = arr[ix]; loop(ix+1, end, snoc(acc, x))};
         let len = Array.length(arr);
         if (len < 1)

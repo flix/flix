@@ -112,8 +112,8 @@ object FormatType {
       case SimpleType.Int64 => true
       case SimpleType.BigInt => true
       case SimpleType.Str => true
-      case SimpleType.ScopedArray => true
-      case SimpleType.ScopedRef => true
+      case SimpleType.Array => true
+      case SimpleType.Ref => true
       case SimpleType.Channel => true
       case SimpleType.Lazy => true
       case SimpleType.True => true
@@ -169,8 +169,8 @@ object FormatType {
       case SimpleType.Int64 => "Int64"
       case SimpleType.BigInt => "BigInt"
       case SimpleType.Str => "String"
-      case SimpleType.ScopedArray => "ScopedArray"
-      case SimpleType.ScopedRef => "Ref"
+      case SimpleType.Array => "Array"
+      case SimpleType.Ref => "Ref"
       case SimpleType.Channel => "Channel"
       case SimpleType.Lazy => "Lazy"
       case SimpleType.True => mode match {
