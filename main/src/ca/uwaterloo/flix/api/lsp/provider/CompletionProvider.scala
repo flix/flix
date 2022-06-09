@@ -27,29 +27,30 @@ import org.parboiled2.CharPredicate
 object CompletionProvider {
   private implicit val audience: Audience = Audience.External
 
-  def autoComplete(_uri: String, pos: Position, source: Option[String])(implicit root: TypedAst.Root): JObject = {
-    val completions = source.flatMap(getContext(_, pos)) match {
+  def autoComplete(uri: String, pos: Position, source: Option[String])(implicit index: Index, root: TypedAst.Root): JObject = {
+    val completions = source.flatMap(getContext(_, uri, pos)) match {
       case None => Nil
-      case Some(context) => getCompletions()(context, root)
+      case Some(context) => getCompletions()(context, index, root)
     }
 
     ("status" -> "success") ~ ("result" -> CompletionList(isIncomplete = true, completions).toJSON)
   }
 
-  private def getCompletions()(implicit context: Context, root: TypedAst.Root): List[CompletionItem] = {
-    // These should be ordered from most specific to most generic
-    getSnippetCompletions() ++
-      getKeywordCompletions()
+  private def getCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): List[CompletionItem] = {
+    getKeywordCompletions() ++
+      getSnippetCompletions() ++
+      getVarCompletions()
   }
 
-  private def keywordCompletion(name: String)(implicit context: Context, root: TypedAst.Root) = {
+  private def keywordCompletion(name: String)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
     CompletionItem(label = name,
       filterText = name,
+      sortText = "9" + name,
       textEdit = TextEdit(context.range, name),
       kind = CompletionItemKind.Keyword)
   }
 
-  private def getKeywordCompletions()(implicit context: Context, root: TypedAst.Root): List[CompletionItem] = {
+  private def getKeywordCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): List[CompletionItem] = {
     // TODO: keyword-specific help text?
     List(
       // NB: Please keep the list alphabetically sorted.
@@ -122,16 +123,17 @@ object CompletionProvider {
     )
   }
 
-  private def snippetCompletion(name: String, snippet: String, documentation: String)(implicit context: Context, root: TypedAst.Root) = {
+  private def snippetCompletion(name: String, snippet: String, documentation: String)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
     CompletionItem(label = name,
       filterText = name,
+      sortText = "8" + name,
       textEdit = TextEdit(context.range, snippet),
       documentation = Some(documentation),
       insertTextFormat = InsertTextFormat.Snippet,
       kind = CompletionItemKind.Snippet)
   }
 
-  private def getSnippetCompletions()(implicit context: Context, root: TypedAst.Root): List[CompletionItem] = {
+  private def getSnippetCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): List[CompletionItem] = {
     List(
       // NB: Please keep the list alphabetically sorted.
       snippetCompletion("main", 
@@ -143,7 +145,32 @@ object CompletionProvider {
     )
   }
 
-  private case class Context(val range: Range, val word: String, val previousWord: String, val prefix: String)
+  private def varCompletion(sym: Symbol.VarSym, tpe: Type)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
+    CompletionItem(label = sym.text,
+      filterText = sym.text,
+      sortText = "5" + sym.text,
+      textEdit = TextEdit(context.range, sym.text),
+      detail = Some(FormatType.formatWellKindedType(tpe)),
+      kind = CompletionItemKind.Variable)
+  }
+
+  private def getVarCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): List[CompletionItem] = {
+    if (root == null) {
+      return Nil
+    }
+
+    ///
+    /// Find all local variables in the current uri with a given range.
+    ///
+    val iter = index.queryWithRange(context.uri, queryLine = context.range.start.line, beforeLine = 20, afterLine = 10).collect {
+      case Entity.LocalVar(sym, tpe) => varCompletion(sym, tpe)
+      case Entity.FormalParam(fparam) => varCompletion(fparam.sym, fparam.tpe)
+    }
+
+    iter.toList
+  }
+
+  private case class Context(uri: String, range: Range, word: String, previousWord: String, prefix: String)
 
   /**
     * Characters that constitute a word.
@@ -159,7 +186,7 @@ object CompletionProvider {
     * previousWord: The word before the above
     * prefix: The text from the start of the line up to the cursor
     */
-  private def getContext(source: String, pos: Position): Option[Context] = {
+  private def getContext(source: String, uri: String, pos: Position): Option[Context] = {
       val x = pos.character - 1
       val y = pos.line - 1
       for(line <- source.linesWithSeparators.slice(y, y + 1).toList.headOption) yield {
@@ -172,7 +199,7 @@ object CompletionProvider {
         val end = x + wordEnd.length
         val previousWord = reversedPrefix.dropWhile(isWordChar).dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
         val range = Range(Position(y, start), Position(y, end))
-        new Context(range, word, previousWord, prefix)
+        new Context(uri, range, word, previousWord, prefix)
       }
   }
 }

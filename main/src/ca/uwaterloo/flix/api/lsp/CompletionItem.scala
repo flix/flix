@@ -23,6 +23,7 @@ import org.json4s._
   *
   * @param label            The label of this completion item. By default also the text that is inserted when selecting this completion.
   * @param filterText       A string that should be used when filtering a set of completion items.
+  @ @param sortText         A string that should be used when sorting completion items
   * @param textEdit         An edit which is applied to a document when selecting this completion. *Note:* The range of the edit must be
   *                         a single line range and it must contain the position at which completion has been requested.
   * @param detail           A human-readable string with additional information about this item, like type or symbol information.
@@ -37,6 +38,7 @@ import org.json4s._
 case class CompletionItem(
   label: String, 
   filterText: String,
+  sortText: String,
   textEdit: TextEdit,
   detail: Option[String] = None, 
   documentation: Option[String] = None, 
@@ -47,6 +49,7 @@ case class CompletionItem(
   def toJSON: JValue =
     ("label" -> label) ~
       ("filterText" -> filterText) ~
+      ("sortText" -> sortText) ~
       ("textEdit" -> textEdit.toJSON) ~
       ("detail" -> detail) ~
       ("documentation" -> documentation) ~
