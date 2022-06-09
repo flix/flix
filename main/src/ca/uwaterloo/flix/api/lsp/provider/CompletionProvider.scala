@@ -30,19 +30,88 @@ object CompletionProvider {
   def autoComplete(_uri: String, pos: Position, source: Option[String])(implicit root: TypedAst.Root): JObject = {
     val completions = source.flatMap(getContext(_, pos)) match {
       case None => Nil
-      case Some(context) => getCompletions(context)
+      case Some(context) => getCompletions()(context, root)
     }
 
     ("status" -> "success") ~ ("result" -> CompletionList(isIncomplete = true, completions).toJSON)
   }
 
-  private def getCompletions(context: Context)(implicit root: TypedAst.Root): List[CompletionItem] = {
+  private def getCompletions()(implicit context: Context, root: TypedAst.Root): List[CompletionItem] = {
     List(
-      CompletionItem(label = "foo",
-        filterText = context.word,
-        textEdit = TextEdit(context.range, "newtext"),
-        kind = CompletionItemKind.Keyword)
+      keywordCompletion("@benchmark"),
+      keywordCompletion("@test"),
+      keywordCompletion("@Deprecated"),
+      keywordCompletion("@Experimental"),
+      keywordCompletion("@Parallel"),
+      keywordCompletion("@ParallelWhenPure"),
+      keywordCompletion("@Lazy"),
+      keywordCompletion("@LazyWhenPure"),
+      keywordCompletion("@Space"),
+      keywordCompletion("@Time"),
+      keywordCompletion("and"),
+      keywordCompletion("as"),
+      keywordCompletion("case"),
+      keywordCompletion("chan"),
+      keywordCompletion("choose"),
+      keywordCompletion("class"),
+      keywordCompletion("def"),
+      keywordCompletion("deref"),
+      keywordCompletion("discard"),
+      keywordCompletion("do"),
+      keywordCompletion("eff"),
+      keywordCompletion("else"),
+      keywordCompletion("enum"),
+      keywordCompletion("false"),
+      keywordCompletion("fix"),
+      keywordCompletion("forall"),
+      keywordCompletion("force"),
+      keywordCompletion("from"),
+      keywordCompletion("get"),
+      keywordCompletion("if"),
+      keywordCompletion("import"),
+      keywordCompletion("Impure"),
+      keywordCompletion("instance"),
+      keywordCompletion("into"),
+      keywordCompletion("lat"),
+      keywordCompletion("law"),
+      keywordCompletion("lazy"),
+      keywordCompletion("let"),
+      keywordCompletion("match"),
+      keywordCompletion("namespace"),
+      keywordCompletion("new"),
+      keywordCompletion("not"),
+      keywordCompletion("null"),
+      keywordCompletion("opaque"),
+      keywordCompletion("or"),
+      keywordCompletion("override"),
+      keywordCompletion("project"),
+      keywordCompletion("pub"),
+      keywordCompletion("Pure"),
+      keywordCompletion("query"),
+      keywordCompletion("Record"),
+      keywordCompletion("ref"),
+      keywordCompletion("region"),
+      keywordCompletion("rel"),
+      keywordCompletion("Schema"),
+      keywordCompletion("sealed"),
+      keywordCompletion("select"),
+      keywordCompletion("set"),
+      keywordCompletion("solve"),
+      keywordCompletion("spawn"),
+      keywordCompletion("true"),
+      keywordCompletion("try"),
+      keywordCompletion("type"),
+      keywordCompletion("use"),
+      keywordCompletion("where"),
+      keywordCompletion("with")
     )
+  }
+
+  private def keywordCompletion(name: String)(implicit context: Context, root: TypedAst.Root) = {
+    CompletionItem(label = name,
+      filterText = name,
+      textEdit = TextEdit(context.range, name),
+      kind = CompletionItemKind.Keyword)
   }
 
   private case class Context(val range: Range, val word: String, val previousWord: String, val prefix: String)
@@ -54,6 +123,13 @@ object CompletionProvider {
   private val isWordChar = Letters.LegalLetter ++ Letters.OperatorLetter ++
       Letters.MathLetter ++ Letters.GreekLetter ++ CharPredicate("@")
 
+  /**
+    * Given the source, and cursor position within it, find:
+    * range: The start and end position of the word underneath (or alongside) the cursor
+    * word: The word underneath (or alongside) the cursor
+    * previousWord: The word before the above
+    * prefix: The text from the start of the line up to the cursor
+    */
   private def getContext(source: String, pos: Position): Option[Context] = {
       val x = pos.character - 1
       val y = pos.line - 1
