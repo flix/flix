@@ -28,7 +28,7 @@ object CompletionProvider {
   private implicit val audience: Audience = Audience.External
 
   def autoComplete(_uri: String, pos: Position, source: Option[String])(implicit root: TypedAst.Root): JObject = {
-    val completions = source.flatMap(Context(_, pos)) match {
+    val completions = source.flatMap(getContext(_, pos)) match {
       case None => Nil
       case Some(context) => getCompletions(context)
     }
@@ -45,15 +45,16 @@ object CompletionProvider {
     )
   }
 
-  private object Context {
-    /**
-      * Characters that constitute a word.
-      * This is more permissive than the parser, but that's OK.
-      */
-    private val isWordChar = Letters.LegalLetter ++ Letters.OperatorLetter ++
-        Letters.MathLetter ++ Letters.GreekLetter ++ CharPredicate("@")
+  private class Context(val range: Range, val word: String, val previousWord: String)
 
-    def apply(source: String, pos: Position) = {
+  /**
+    * Characters that constitute a word.
+    * This is more permissive than the parser, but that's OK.
+    */
+  private val isWordChar = Letters.LegalLetter ++ Letters.OperatorLetter ++
+      Letters.MathLetter ++ Letters.GreekLetter ++ CharPredicate("@")
+
+  private def getContext(source: String, pos: Position): Option[Context] = {
       val x = pos.character - 1
       val y = pos.line - 1
       for(line <- source.linesWithSeparators.slice(y, y + 1).toList.headOption) yield {
@@ -68,8 +69,5 @@ object CompletionProvider {
         val range = Range(Position(y, start), Position(y, end))
         new Context(range, word, previousWord)
       }
-    }
   }
-
-  private class Context(val range: Range, val word: String, val previousWord: String)
 }
