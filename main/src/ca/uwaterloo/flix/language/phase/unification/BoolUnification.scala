@@ -126,9 +126,7 @@ object BoolUnification {
   private def successiveVariableElimination(f: Type, fvs: List[Type.KindedVar])(implicit flix: Flix): Substitution = fvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
-      // MATT no longer need to perform this conversion with renv
-      val (_, q) = Scheme.instantiate(Scheme(f.typeVars.toList.map(_.sym), List.empty, f), InstantiateMode.Flexible)
-      if (!satisfiable(q))
+      if (!satisfiable(f))
         Substitution.empty
       else
         throw BooleanUnificationException
@@ -155,10 +153,7 @@ object BoolUnification {
     case Type.True => true
     case Type.False => false
     case _ =>
-      // Make all variables flexible.
-      // MATT no longer need to perform this conversion with renv
-      val f1 = f.map(tvar => tvar.withRigidity(Rigidity.Flexible))
-      val q = mkEq(f1, Type.True)
+      val q = mkEq(f, Type.True)
       try {
         successiveVariableElimination(q, q.typeVars.toList)
         true
