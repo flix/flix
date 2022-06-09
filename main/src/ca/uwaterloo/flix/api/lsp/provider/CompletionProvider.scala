@@ -45,7 +45,7 @@ object CompletionProvider {
     )
   }
 
-  private class Context(val range: Range, val word: String, val previousWord: String)
+  private case class Context(val range: Range, val word: String, val previousWord: String, val prefix: String)
 
   /**
     * Characters that constitute a word.
@@ -67,7 +67,7 @@ object CompletionProvider {
         val end = x + wordEnd.length
         val previousWord = reversedPrefix.dropWhile(isWordChar).dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
         val range = Range(Position(y, start), Position(y, end))
-        new Context(range, word, previousWord)
+        new Context(range, word, previousWord, prefix)
       }
   }
 }
