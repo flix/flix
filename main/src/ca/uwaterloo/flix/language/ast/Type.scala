@@ -51,7 +51,7 @@ sealed trait Type {
     case Type.Cst(tc, _) => SortedSet.empty
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
     case Type.Ascribe(tpe, _, _) => tpe.typeVars
-    case Type.Alias(_, _, tpe, _) => tpe.typeVars
+    case Type.Alias(_, args, _, _) => args.flatMap(_.typeVars).to(SortedSet)
     case Type.UnkindedArrow(_, _, _) => SortedSet.empty
     case Type.ReadWrite(tpe, _) => tpe.typeVars
   }
