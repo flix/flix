@@ -24,6 +24,28 @@ import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 import org.parboiled2.CharPredicate
 
+/*
+ * CompletionProvider
+ *
+ * Takes a source file, along with the position of the cursor within that file, and returns a list of CompletionItems.
+ *
+ * https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_completion
+ *
+ * This list is not displayed to the user as-is, the client always both sorts and filters the list (or at least,
+ * VSCode does). Therefore we always need to provide both filterText (currently copied from label) and sortText.
+ *
+ * To ensure that completions are displayed "most useful" first, we preceed sortText with a number as follows:
+ *
+ * 1: High confidence completions (currently with and instance)
+ * 2: Def and Sig
+ * 5: Var
+ * 8: Snippets
+ * 9: Keywords
+ *
+ * Note that we use textEdit rather than insertText to avoid relying on VSCode's tokenisation, so we can ensure that
+ * we're consistent with Flix's parser.
+ */
+
 object CompletionProvider {
   private implicit val audience: Audience = Audience.External
 
@@ -75,7 +97,7 @@ object CompletionProvider {
   private def getSnippetCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): List[CompletionItem] = {
     List(
       // NB: Please keep the list alphabetically sorted.
-      snippetCompletion("main", 
+      snippetCompletion("main",
         "def main(): Unit & Impure = \n    println(\"Hello World!\")",
         "snippet for Hello World Program"),
       snippetCompletion("query",
