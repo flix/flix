@@ -125,9 +125,6 @@ object CompletionProvider {
       s"$name(${args.mkString(", ")}): $retTpe & $eff"
   }
 
-  private def getDefLabel(decl: TypedAst.Def): String =
-    getLabelForNameAndSpec(decl.sym.toString, decl.spec)
-
   private def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam]): String = {
     val args = fparams.zipWithIndex.map {
       case (fparam, idx) => "$" + s"{${idx + 1}:${fparam.sym.text}}"
@@ -137,7 +134,7 @@ object CompletionProvider {
 
   private def defCompletion(decl: TypedAst.Def)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
     val name = decl.sym.toString
-    CompletionItem(label = getDefLabel(decl),
+    CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
       filterText = context.word,
       sortText = "2" + name,
       textEdit = TextEdit(context.range, getApplySnippet(name, decl.spec.fparams)),
@@ -145,6 +142,18 @@ object CompletionProvider {
       documentation = Some(decl.spec.doc.text),
       insertTextFormat = InsertTextFormat.Snippet,
       kind = CompletionItemKind.Function)
+  }
+
+  private def sigCompletion(decl: TypedAst.Sig)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
+    val name = decl.sym.toString
+    CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
+      filterText = context.word,
+      sortText = "2" + name,
+      textEdit = TextEdit(context.range, getApplySnippet(name, decl.spec.fparams)),
+      detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
+      documentation = Some(decl.spec.doc.text),
+      insertTextFormat = InsertTextFormat.Snippet,
+      kind = CompletionItemKind.Interface)
   }
 
   /**
@@ -162,6 +171,21 @@ object CompletionProvider {
     isMatch && (isPublic || isInFile)
   }
 
+  /**
+    * Returns `true` if the given signature `sign` should be included in the suggestions.
+    */
+  private def matchesSig(sign: TypedAst.Sig, word: String, uri: String): Boolean = {
+    val isPublic = sign.spec.mod.isPublic
+    val isNamespace = word.nonEmpty && word.head.isUpper
+    val isMatch = if (isNamespace)
+                    sign.sym.toString.startsWith(word)
+                  else
+                    sign.sym.name.startsWith(word)
+    val isInFile = sign.sym.loc.source.name == uri
+
+    isMatch && (isPublic || isInFile)
+  }
+
   private def getDefAndSigCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     if (root == null) {
       return Nil
@@ -171,9 +195,8 @@ object CompletionProvider {
     val uri = context.uri
 
     val defSuggestions = root.defs.values.filter(matchesDef(_, word, uri)).map(defCompletion)
-    // val sigSuggestions = root.sigs.values.filter(matchesSig(_, word, uri)).map(getSigCompletionItem(withoutNS, _))
-    // (defSuggestions ++ sigSuggestions)
-    defSuggestions
+    val sigSuggestions = root.sigs.values.filter(matchesSig(_, word, uri)).map(sigCompletion)
+    defSuggestions ++ sigSuggestions
   }
 
   private case class Context(uri: String, range: Range, word: String, previousWord: String, prefix: String)
