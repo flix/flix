@@ -52,75 +52,13 @@ object CompletionProvider {
 
   private def getKeywordCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): List[CompletionItem] = {
     // TODO: keyword-specific help text?
-    List(
-      // NB: Please keep the list alphabetically sorted.
-      keywordCompletion("@benchmark"),
-      keywordCompletion("@test"),
-      keywordCompletion("@Deprecated"),
-      keywordCompletion("@Experimental"),
-      keywordCompletion("@Parallel"),
-      keywordCompletion("@ParallelWhenPure"),
-      keywordCompletion("@Lazy"),
-      keywordCompletion("@LazyWhenPure"),
-      keywordCompletion("@Space"),
-      keywordCompletion("@Time"),
-      keywordCompletion("and"),
-      keywordCompletion("as"),
-      keywordCompletion("case"),
-      keywordCompletion("chan"),
-      keywordCompletion("choose"),
-      keywordCompletion("class"),
-      keywordCompletion("def"),
-      keywordCompletion("deref"),
-      keywordCompletion("discard"),
-      keywordCompletion("do"),
-      keywordCompletion("eff"),
-      keywordCompletion("else"),
-      keywordCompletion("enum"),
-      keywordCompletion("false"),
-      keywordCompletion("fix"),
-      keywordCompletion("forall"),
-      keywordCompletion("force"),
-      keywordCompletion("from"),
-      keywordCompletion("get"),
-      keywordCompletion("if"),
-      keywordCompletion("import"),
-      keywordCompletion("Impure"),
-      keywordCompletion("instance"),
-      keywordCompletion("into"),
-      keywordCompletion("lat"),
-      keywordCompletion("law"),
-      keywordCompletion("lazy"),
-      keywordCompletion("let"),
-      keywordCompletion("match"),
-      keywordCompletion("namespace"),
-      keywordCompletion("new"),
-      keywordCompletion("not"),
-      keywordCompletion("null"),
-      keywordCompletion("opaque"),
-      keywordCompletion("or"),
-      keywordCompletion("override"),
-      keywordCompletion("project"),
-      keywordCompletion("pub"),
-      keywordCompletion("Pure"),
-      keywordCompletion("query"),
-      keywordCompletion("Record"),
-      keywordCompletion("ref"),
-      keywordCompletion("region"),
-      keywordCompletion("rel"),
-      keywordCompletion("Schema"),
-      keywordCompletion("sealed"),
-      keywordCompletion("select"),
-      keywordCompletion("set"),
-      keywordCompletion("solve"),
-      keywordCompletion("spawn"),
-      keywordCompletion("true"),
-      keywordCompletion("try"),
-      keywordCompletion("type"),
-      keywordCompletion("use"),
-      keywordCompletion("where"),
-      keywordCompletion("with")
-    )
+    // NB: Please keep the list alphabetically sorted.
+    List("@benchmark", "@Deprecated", "@Experimental", "@Parallel", "@ParallelWhenPure", "@Lazy", "@LazyWhenPure", "@Space", "@test", "@Time",
+      "and", "as", "case", "chan", "choose", "class", "def", "deref", "discard", "do", "eff", "else", "enum", "false", "fix", "forall",
+      "force", "from", "get", "if", "import", "Impure", "instance", "into", "lat", "law", "lazy", "let", "match", "namespace", "new",
+      "not", "null", "opaque", "or", "override", "project", "pub", "Pure", "query", "Record", "ref", "region", "rel", "Schema", "sealed",
+      "select", "set", "solve", "spawn", "true", "try", "type", "use", "where", "with"
+    ) map keywordCompletion
   }
 
   private def snippetCompletion(name: String, snippet: String, documentation: String)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
@@ -177,7 +115,7 @@ object CompletionProvider {
     * This is more permissive than the parser, but that's OK.
     */
   private val isWordChar = Letters.LegalLetter ++ Letters.OperatorLetter ++
-      Letters.MathLetter ++ Letters.GreekLetter ++ CharPredicate("@")
+      Letters.MathLetter ++ Letters.GreekLetter ++ CharPredicate("@/.")
 
   /**
     * Given the source, and cursor position within it, find:
