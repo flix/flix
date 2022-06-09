@@ -19,6 +19,13 @@ import org.json4s.JsonDSL._
 import org.json4s._
 
 /**
+  * Companion object of [[CompletionItem]].
+  */
+object CompletionItem {
+
+}
+
+/**
   * Represents a `CompletionItem` in LSP.
   *
   * @param label            The label of this completion item. By default also the text that is inserted when selecting this completion.
