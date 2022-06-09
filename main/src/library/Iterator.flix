@@ -125,6 +125,15 @@ namespace Iterator {
         done()
 
     ///
+    /// Returns true if the iterator is empty.
+    ///
+    /// Does **not** consume any elements of the iterator.
+    ///
+    pub def regIsEmpty(iter: RegionIterator[a, r]): Bool \ Read(r) =
+        let RegionIterator(done, _) = iter;
+        done()
+
+    ///
     /// Returns an iterator of all integers between `b` (inclusive) and `e` (exclusive).
     ///
     /// Returns an empty iterator if `b >= e`.
@@ -221,6 +230,14 @@ namespace Iterator {
     ///
     pub def toList(iter: Iterator[a]): List[a] & Impure =
         foldRight((a, acc) -> a :: acc, Nil, iter)
+
+    ///
+    /// Returns the contents of `iter` as a list.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def regToList(iter: RegionIterator[a, r]): List[a] \ Read(r) =
+        regFoldRight((a, acc) -> a :: acc, Nil, iter)
 
     ///
     /// Returns the contents of `iter` as a map.
@@ -472,6 +489,23 @@ namespace Iterator {
         loop(s)
 
     ///
+    /// Applies `f` to a start value `s` and all elements in `iter` going from left to right.
+    ///
+    /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def regFoldLeft(f: (b, a) -> b & ef, s: b, iter: RegionIterator[a, r]): b \ { ef, Read(r) } =
+        let RegionIterator(done, next) = iter;
+        def loop(acc) = {
+            if (done())
+                acc
+            else
+                loop(f(acc, next()))
+        };
+        loop(s)
+
+    ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
@@ -490,7 +524,25 @@ namespace Iterator {
         };
         loop(ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
                                // but the intermediate continuations are effect polymorphic
-
+    ///
+    /// Applies `f` to a start value `s` and all elements in `iter` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def regFoldRight(f: (a, b) -> b & ef, s: b, iter: RegionIterator[a, r]): b \ { ef, Read(r) } =
+        let RegionIterator(done, next) = iter;
+        def loop(k) = {
+            if (done())
+                k(s)
+            else {
+                let x = next();
+                loop(ks -> k(f(x, ks)))
+            }
+        };
+        loop(ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
+                               // but the intermediate continuations are effect polymorphic
     ///
     /// Applies `f` to a start value `z` and all elements in `iter` going from right to left.
     ///

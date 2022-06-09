@@ -46,8 +46,11 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def isEmpty01(): Bool & Impure = // empty
-        Iterator.empty() |> Iterator.isEmpty
+    def isEmpty01(): Bool = region r { // singleton
+        let iter = Iterator.regSingleton(r, 1);
+        invokeIsEmptyRegion(100, iter);
+        Iterator.regToList(iter) == 1 :: Nil
+    }
 
     @test
     def isEmpty02(): Bool & Impure = // singleton
@@ -143,6 +146,19 @@ namespace TestIterator {
                 ()
             else {
                 Iterator.isEmpty(iter);
+                loop(m - 1)
+            };
+        loop(n)
+
+    ///
+    /// Helper function that invokes `Iterator.isEmpty` `n` times.
+    ///
+    def invokeIsEmptyRegion(n: Int32, iter: RegionIterator[a, r]): Unit \ Read(r) =
+        def loop(m) =
+            if (m <= 0)
+                ()
+            else {
+                Iterator.regIsEmpty(iter);
                 loop(m - 1)
             };
         loop(n)
@@ -833,24 +849,28 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foldLeft01(): Bool & Impure =
-        let iter = List.toIterator(Nil);
-        Iterator.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, iter) == 100
+    def foldLeft01(): Bool = region r {
+        let iter = List.toRegionIterator(r, Nil);
+        Iterator.regFoldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, iter) == 100
+    }
 
     @test
-    def foldLeft02(): Bool & Impure =
-        let iter = List.toIterator(1 :: Nil);
-        Iterator.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, iter) == 198
+    def foldLeft02(): Bool = region r {
+        let iter = List.toRegionIterator(r, 1 :: Nil);
+        Iterator.regFoldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, iter) == 198
+    }
 
     @test
-    def foldLeft03(): Bool & Impure =
-        let iter = List.toIterator(1 :: 2 :: Nil);
-        Iterator.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, iter) == 196
+    def foldLeft03(): Bool = region r {
+        let iter = List.toRegionIterator(r, 1 :: 2 :: Nil);
+        Iterator.regFoldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, iter) == 196
+    }
 
     @test
-    def foldLeft04(): Bool & Impure =
-        let iter = List.toIterator(1 :: 2 :: 3 :: Nil);
-        Iterator.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, iter) == 386
+    def foldLeft04(): Bool = region r {
+        let iter = List.toRegionIterator(r, 1 :: 2 :: 3 :: Nil);
+        Iterator.regFoldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, iter) == 386
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -858,24 +878,29 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foldRight01(): Bool & Impure =
-        let iter = List.toIterator(Nil);
-        Iterator.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, iter) == 100
+    def foldRight01(): Bool = region r {
+        let iter = List.toRegionIterator(r, Nil);
+        Iterator.regFoldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, iter) == 100
+    }
 
     @test
-    def foldRight02(): Bool & Impure =
-        let iter = List.toIterator(1 :: Nil);
-        Iterator.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, iter) == 198
+    def foldRight02(): Bool = region r {
+        let iter = List.toRegionIterator(r, 1 :: Nil);
+        Iterator.regFoldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, iter) == 198
+    }
 
     @test
-    def foldRight03(): Bool & Impure =
-        let iter = List.toIterator(1 :: 2 :: Nil);
-        Iterator.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, iter) == 194
+    def foldRight03(): Bool = region r {
+        let iter = List.toRegionIterator(r, 1 :: 2 :: Nil);
+        Iterator.regFoldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, iter) == 194
+    }
 
     @test
-    def foldRight04(): Bool & Impure =
-        let iter = List.toIterator(1 :: 2 :: 3 :: Nil);
-        Iterator.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, iter) == 382
+    def foldRight04(): Bool = region r {
+        let iter = List.toRegionIterator(r, 1 :: 2 :: 3 :: Nil);
+        Iterator.regFoldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, iter) == 382
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRightWithCont                                                       //
