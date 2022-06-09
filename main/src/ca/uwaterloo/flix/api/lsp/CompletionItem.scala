@@ -28,6 +28,8 @@ import org.json4s._
   * @param detail           A human-readable string with additional information about this item, like type or symbol information.
   * @param documentation    A human-readable string that represents a doc-comment.
   * @param kind             The kind of this completion item. Based of the kind an icon is chosen by the editor. The standardized set of available values is defined in `CompletionItemKind`.
+  * @param insertTextFormat The format of the insert text. The format applies to both the `insertText` property and the `newText` property
+  *                         of a provided `textEdit`. If omitted defaults to `InsertTextFormat.PlainText`.
   * @param commitCharacters An optional set of characters that when pressed while this completion is active will accept it first and
   *                         then type that character. *Note* that all commit characters should have `length=1` and that superfluous characters
   *                         will be ignored.
@@ -39,6 +41,7 @@ case class CompletionItem(
   detail: Option[String] = None, 
   documentation: Option[String] = None, 
   kind: CompletionItemKind, 
+  insertTextFormat: InsertTextFormat = InsertTextFormat.PlainText,
   commitCharacters: List[String] = Nil) {
 
   def toJSON: JValue =
@@ -48,5 +51,6 @@ case class CompletionItem(
       ("detail" -> detail) ~
       ("documentation" -> documentation) ~
       ("kind" -> kind.toInt) ~
+      ("insertTextFormat" -> insertTextFormat.toInt) ~
       ("commitCharacters" -> commitCharacters)
 }

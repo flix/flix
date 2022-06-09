@@ -37,7 +37,22 @@ object CompletionProvider {
   }
 
   private def getCompletions()(implicit context: Context, root: TypedAst.Root): List[CompletionItem] = {
+    // These should be ordered from most specific to most generic
+    getSnippetCompletions() ++
+      getKeywordCompletions()
+  }
+
+  private def keywordCompletion(name: String)(implicit context: Context, root: TypedAst.Root) = {
+    CompletionItem(label = name,
+      filterText = name,
+      textEdit = TextEdit(context.range, name),
+      kind = CompletionItemKind.Keyword)
+  }
+
+  private def getKeywordCompletions()(implicit context: Context, root: TypedAst.Root): List[CompletionItem] = {
+    // TODO: keyword-specific help text?
     List(
+      // NB: Please keep the list alphabetically sorted.
       keywordCompletion("@benchmark"),
       keywordCompletion("@test"),
       keywordCompletion("@Deprecated"),
@@ -107,11 +122,25 @@ object CompletionProvider {
     )
   }
 
-  private def keywordCompletion(name: String)(implicit context: Context, root: TypedAst.Root) = {
+  private def snippetCompletion(name: String, snippet: String, documentation: String)(implicit context: Context, root: TypedAst.Root) = {
     CompletionItem(label = name,
       filterText = name,
-      textEdit = TextEdit(context.range, name),
-      kind = CompletionItemKind.Keyword)
+      textEdit = TextEdit(context.range, snippet),
+      documentation = Some(documentation),
+      insertTextFormat = InsertTextFormat.Snippet,
+      kind = CompletionItemKind.Snippet)
+  }
+
+  private def getSnippetCompletions()(implicit context: Context, root: TypedAst.Root): List[CompletionItem] = {
+    List(
+      // NB: Please keep the list alphabetically sorted.
+      snippetCompletion("main", 
+        "def main(): Unit & Impure = \n    println(\"Hello World!\")",
+        "snippet for Hello World Program"),
+      snippetCompletion("query",
+        "query ${1:db} select ${2:cols} from ${3:preds} ${4:where ${5:cond}}",
+        "snippet for query")
+    )
   }
 
   private case class Context(val range: Range, val word: String, val previousWord: String, val prefix: String)
