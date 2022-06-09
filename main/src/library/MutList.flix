@@ -22,7 +22,7 @@
 ///   - The capacity of the array is always 8 or more.
 ///
 pub enum MutList[a: Type, r: Region] {
-    case MutList(Ref[ScopedArray[a, r], r], Ref[Int32, r])
+    case MutList(Ref[Array[a, r], r], Ref[Int32, r])
 }
 
 instance Newable[MutList[a]] {
@@ -723,7 +723,7 @@ namespace MutList {
     ///
     /// Returns `v` as an array.
     ///
-    pub def toArray(v: MutList[a, r1], r2: Region[r2]): ScopedArray[a, r2] \ { Read(r1), Write(r2) } =
+    pub def toArray(v: MutList[a, r1], r2: Region[r2]): Array[a, r2] \ { Read(r1), Write(r2) } =
         let MutList(a, l) = v;
         Array.copyOfRange(0, deref l, deref a, r2)
 
