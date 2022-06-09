@@ -32,6 +32,20 @@ pub enum Iterator[a] {
     case Iterator(Done, Next[a])
 }
 
+///
+/// The type of the done function.
+///
+type alias RegionDone[ef: Region] = Unit -> Bool & ef
+
+///
+/// The type of the next function.
+///
+type alias RegionNext[a: Type, ef: Region] = Unit -> a & ef
+
+
+pub enum RegionIterator[a: Type, r: Region] {
+    case RegionIterator(RegionDone[r], RegionNext[a, r])
+}
 
 namespace Iterator {
 
@@ -61,12 +75,41 @@ namespace Iterator {
         Iterator(done, next)
 
     ///
+    /// Returns an iterator containing only a single element, `x`.
+    ///
+    pub def regSingleton(r: Region[r], x: a): RegionIterator[a, r] \ Write(r) =
+        let d = ref false @ r;
+        let done = () -> deref d;
+        let next = () -> {
+            if (done()) {
+                bug!("Empty Iterator!")
+            }
+            else {
+                d := true;
+                x
+            }
+        };
+        RegionIterator(done, next)
+
+    ///
     /// Returns `Some(x)` if `iter` is not empty. Returns `None` otherwise.
     ///
     /// Consumes the head element of `iter`.
     ///
     pub def next(iter: Iterator[a]): Option[a] & Impure =
         let Iterator(done, next) = iter;
+        if (done())
+            None
+        else
+            Some(next())
+
+    ///
+    /// Returns `Some(x)` if `iter` is not empty. Returns `None` otherwise.
+    ///
+    /// Consumes the head element of `iter`.
+    ///
+    pub def regNext(iter: RegionIterator[a, r]): Option[a] \ Read(r) =
+        let RegionIterator(done, next) = iter;
         if (done())
             None
         else

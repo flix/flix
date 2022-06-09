@@ -1326,6 +1326,23 @@ namespace List {
         Iterator(done, next)
 
     ///
+    /// Returns an iterator over `l`.
+    ///
+    pub def toRegionIterator(r: Region[r], l: List[a]): RegionIterator[a, r] \ Write(r) =
+        let cursor = ref l @ r;
+        let done = () -> match (deref cursor) {
+            case Nil => true
+            case _   => false
+        };
+        let next = () -> match (deref cursor) {
+            case Nil     => bug!("Empty Iterator!")
+            case x :: xs =>
+                cursor := xs;
+                x
+        };
+        RegionIterator(done, next)
+
+    ///
     /// Returns the association list `l` as a `DelayMap`.
     ///
     /// If `l` contains multiple mappings with the same key, `toDelayMap` does not

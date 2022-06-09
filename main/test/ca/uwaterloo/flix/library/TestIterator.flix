@@ -21,25 +21,24 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def next01(): Bool & Impure =
-        Iterator.empty() |> Iterator.next == None: Option[Int32]
+    def next01(): Bool = region r {
+        let iter = List.toRegionIterator(r, 1 :: Nil);
+        Iterator.regNext(iter) == Some(1)
+    }
 
     @test
-    def next02(): Bool & Impure =
-        let iter = List.toIterator(1 :: Nil);
-        Iterator.next(iter) == Some(1)
+    def next02(): Bool = region r {
+        let iter = List.toRegionIterator(r, 1 :: Nil);
+        Iterator.regNext(iter);
+        Iterator.regNext(iter) == None
+    }
 
     @test
-    def next03(): Bool & Impure =
-        let iter = List.toIterator(1 :: Nil);
-        Iterator.next(iter);
-        Iterator.next(iter) == None
-
-    @test
-    def next04(): Bool & Impure =
-        let iter = List.toIterator(1 :: 2 :: Nil);
-        Iterator.next(iter);
-        Iterator.next(iter) == Some(2)
+    def next03(): Bool = region r {
+        let iter = List.toRegionIterator(r, 1 :: 2 :: Nil);
+        Iterator.regNext(iter);
+        Iterator.regNext(iter) == Some(2)
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
