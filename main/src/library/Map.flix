@@ -29,7 +29,7 @@ instance Boxable[Map[k, v]] with Boxable[k], Boxable[v]
 
 instance ToString[Map[k, v]] with ToString[k], ToString[v] {
     pub def toString(m: Map[k, v]): String =
-        let s = Map.foldRightWithKey((k, v, c) -> "${k} => ${v}, ${c()}", "", m);
+        let s = Map.foldRightWithKey((k, v, acc) -> "${k} => ${v}, ${acc}", "", m);
         "Map#{${String.dropRight(2, s)}}"
 }
 
@@ -57,7 +57,8 @@ instance Functor[Map[k]] {
 
 instance Foldable[Map[k]] {
     pub def foldLeft(f: (b, v) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldLeft((acc, v) -> f(acc, v), s, m)
-    pub def foldRight(f: (v, Unit -> b & ef) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldRight(f, s, m)
+    pub def foldRight(f: (v, b) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldRight(f, s, m)
+    pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldRightWithCont(f, s, m)
 }
 
 instance Traversable[Map[k]] {
@@ -291,7 +292,7 @@ namespace Map {
     ///
     @Time(size(m)) @Space(size(m))
     pub def valuesOf(m: Map[k, v]): List[v] =
-        foldRight((v, c) -> v :: c(), Nil, m)
+        foldRight((v, acc) -> v :: acc, Nil, m)
 
     ///
     /// Updates `m` with `k => v`.
@@ -375,45 +376,36 @@ namespace Map {
     ///
     /// Alias for `findLeft`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
-    pub def find(f: (k, v) -> Bool, m: Map[k, v]): Option[(k, v)] = findLeft(f, m)
+    pub def find(f: (k, v) -> Bool & ef, m: Map[k, v]): Option[(k, v)] & ef = findLeft(f, m)
 
     ///
     /// Optionally returns the first mapping of `m` that satisfies the predicate `f` when searching from left to right.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
-    pub def findLeft(f: (k, v) -> Bool, m: Map[k, v]): Option[(k, v)] =
+    pub def findLeft(f: (k, v) -> Bool & ef, m: Map[k, v]): Option[(k, v)] & ef =
         let Map(t) = m;
         RedBlackTree.findLeft(f, t)
 
     ///
     /// Optionally returns the first mapping of `m` that satisfies the predicate `f` when searching from right to left.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
-    pub def findRight(f: (k, v) -> Bool, m: Map[k, v]): Option[(k, v)] =
+    pub def findRight(f: (k, v) -> Bool & ef, m: Map[k, v]): Option[(k, v)] & ef =
         let Map(t) = m;
         RedBlackTree.findRight(f, t)
+
     ///
     /// Returns a map of all mappings `k => v` in `m` where `v` satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(m)) @Space(space(f) * size(m))
-    pub def filter(f: v -> Bool, m: Map[k, v]): Map[k, v] with Order[k] = filterWithKey((_, v) -> f(v), m)
+    pub def filter(f: v -> Bool & ef, m: Map[k, v]): Map[k, v] & ef with Order[k] = filterWithKey((_, v) -> f(v), m)
 
     ///
     /// Returns a map of all mappings `k => v` in `m` where `(k, v)` satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(m)) @Space(space(f) * size(m))
-    pub def filterWithKey(f: (k, v) -> Bool, m: Map[k, v]): Map[k, v] with Order[k] =
+    pub def filterWithKey(f: (k, v) -> Bool & ef, m: Map[k, v]): Map[k, v] & ef with Order[k] =
         foldLeftWithKey((acc, k, v) -> if (f(k, v)) insert(k, v, acc) else acc, empty(), m)
 
     ///
@@ -462,20 +454,43 @@ namespace Map {
     /// Applies `f` to a start value `s` and all values in `m` going from right to left.
     ///
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
-    /// A `foldRight` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (v, Unit -> b & ef) -> b & ef, z: b, m: Map[k, v]): b & ef =
-        foldRightWithKey((_, v, c) -> f(v, c), z, m)
+    pub def foldRight(f: (v, b) -> b & ef, s: b, m: Map[k, v]): b & ef =
+        foldRightWithKey((_, v, acc) -> f(v, acc), s, m)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
-    /// A `foldRightWithKey` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithKey(f: (k, v, Unit -> b & ef) -> b & ef, z: b, m: Map[k, v]): b & ef =
+    pub def foldRightWithKey(f: (k, v, b) -> b & ef, s: b, m: Map[k, v]): b & ef =
         let Map(t) = m;
-        RedBlackTree.foldRight(f, z, t)
+        RedBlackTree.foldRight(f, s, t)
+
+    ///
+    /// Applies `f` to a start value `z` and all values in `m` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, z)))`.
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
+    ///
+    pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, z: b, m: Map[k, v]): b & ef =
+        foldRightWithKeyCont((_, v, c) -> f(v, c), z, m)
+
+    ///
+    /// Applies `f` to a start value `z` and all key-value pairs in `m` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, z)))`.
+    /// A `foldRightWithKeyCont` allows early termination by not calling the continuation.
+    ///
+    pub def foldRightWithKeyCont(f: (k, v, Unit -> b & ef) -> b & ef, z: b, m: Map[k, v]): b & ef =
+        let Map(t) = m;
+        RedBlackTree.foldRightWithCont(f, z, t)
+
+    ///
+    /// Returns the result of mapping each key-value pair and combining the results.
+    ///
+    pub def foldMapWithKey(f: (k, v) -> b & ef, m: Map[k, v]): b & ef with Monoid[b] =
+        foldLeftWithKey((acc, k, v) -> Monoid.combine(acc, f(k, v)), Monoid.empty(), m)
 
     ///
     /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
@@ -608,24 +623,42 @@ namespace Map {
     ///
     /// Returns `false` if `m` is the empty map.
     ///
-    /// The function `f` must be pure.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
-    pub def exists(f: (k, v) -> Bool, m: Map[k, v]): Bool =
+    @ParallelWhenPure @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
+    pub def exists(f: (k, v) -> Bool & ef, m: Map[k, v]): Bool & ef =
         let Map(t) = m;
-        RedBlackTree.exists(f, t)
+        let f1 = match (k, v) -> f(k, v);
+        def e() = RedBlackTree.exists(f, t);
+        reifyEff(f1) {
+            case Pure(g) =>
+                if (useParallelEvaluation(m))
+                    RedBlackTree.parExists(threads() - 1, (k, v) -> g((k, v)), t) as & Pure
+                else
+                    e()
+            case _ => e()
+        }
 
     ///
     /// Returns `true` if and only if all mappings in `m` satisfy the predicate `f`.
     ///
     /// Returns `true` if `m` is the empty map.
     ///
-    /// The function `f` must be pure.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
-    pub def forall(f: (k, v) -> Bool, m: Map[k, v]): Bool =
+    @ParallelWhenPure @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
+    pub def forall(f: (k, v) -> Bool & ef, m: Map[k, v]): Bool & ef =
         let Map(t) = m;
-        RedBlackTree.forall(f, t)
+        let f1 = match (k, v) -> f(k, v);
+        def fa() = RedBlackTree.forall(f, t);
+        reifyEff(f1) {
+            case Pure(g) =>
+                if (useParallelEvaluation(m))
+                    RedBlackTree.parForall(threads() - 1, (k, v) -> g((k, v)), t) as & Pure
+                else
+                    fa()
+            case _ => fa()
+        }
 
     ///
     /// Returns the left-biased union of `m1` and `m2`.
@@ -652,9 +685,9 @@ namespace Map {
         let Map(t1) = m1;
         let Map(t2) = m2;
         if (blackHeight(t1) < blackHeight(t2))
-            Map(foldRight((k, v, c) -> insertWith(f, k, v, c()), t2, t1))
+            Map(foldRight((k, v, acc) -> insertWith(f, k, v, acc), t2, t1))
         else
-            Map(foldRight((k, v, c) -> insertWith((_, v1, v2) -> f(k, v2, v1), k, v, c()), t1, t2))
+            Map(foldRight((k, v, acc) -> insertWith((_, v1, v2) -> f(k, v2, v1), k, v, acc), t1, t2))
 
     ///
     /// Returns the left-biased intersection of `m1` and `m2`.
@@ -678,7 +711,7 @@ namespace Map {
     @Time(time(f) * size(m1) * Int32.log2(size(m2))) @Space(space(f) * size(m1) *  Int32.log2(size(m2)))
     pub def intersectionWithKey(f: (k, v, v) -> v & ef, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & ef with Order[k] =
         let intersect = filterWithKey((k, _) -> memberOf(k, m1), m2);
-        foldRightWithKey((k, v, c) -> adjustWithKey((key, v1) -> f(key, v, v1), k, c()), intersect, m1)
+        foldRightWithKey((k, v, acc) -> adjustWithKey((key, v1) -> f(key, v, v1), k, acc), intersect, m1)
 
     ///
     /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
@@ -710,15 +743,15 @@ namespace Map {
     @Time(size(f) * size(m2) * Int32.log2(size(m1))) @Space(space(f) * size(m2) * Int32.log2(size(m1)))
     pub def differenceWithKey(f: (k, v, v) -> Option[v] & ef, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & ef with Order[k] =
         let diff = filterWithKey((k, _) -> not memberOf(k, m2), m1);
-        let g = (k, v, c) -> if (memberOf(k, m1))
+        let g = (k, v, acc) -> if (memberOf(k, m1))
                                 match get(k, m1) {
                                     case Some(v1) => match f(k, v1, v) {
-                                        case None => c()
-                                        case Some(w) => insert(k, w, c())
+                                        case None => acc
+                                        case Some(w) => insert(k, w, acc)
                                     }
                                     case None => unreachable!()
                                 }
-                             else c();
+                             else acc;
         foldRightWithKey(g, diff, m2)
 
     ///
@@ -735,15 +768,15 @@ namespace Map {
     /// Returns `m` as a mutable set.
     ///
     @Time(1) @Space(1)
-    pub def toMutMap(m: Map[k, v]): MutMap[k, v, Impure] & Impure =
-        MutMap(ref m) as MutMap[k, v, Impure]
+    pub def toMutMap(m: Map[k, v], r: Region[r]): MutMap[k, v, r] \ Write(r) =
+        MutMap(ref m @ r)
 
     ///
     /// Returns the map `m` as a list of key-value pairs.
     ///
     @Time(size(m)) @Space(size(m))
     pub def toList(m: Map[k, v]): List[(k, v)] =
-        foldRightWithKey((k, v, c) -> (k, v) :: c(), Nil, m)
+        foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, m)
 
     ///
     /// Returns the map `m` as a set of key-value pairs.
@@ -756,13 +789,19 @@ namespace Map {
     /// Returns the map `m` as a `DelayList` of key-value pairs.
     ///
     pub def toDelayList(m: Map[k, v]): DelayList[(k, v)] =
-        foldRightWithKey((k, v, c) -> ECons((k, v), c()), ENil, m)
+        foldRightWithKey((k, v, acc) -> ECons((k, v), acc), ENil, m)
 
     ///
     /// Returns the map `m` as a chain of key-value pairs.
     ///
     pub def toChain(m: Map[a, b]): Chain[(a, b)] with Order[a] =
         foldLeftWithKey((acc, k, v) -> Chain.snoc(acc, (k,v)), Chain.empty(), m)
+
+    ///
+    /// Returns a MultiMap where key `k` is mapped to the singleton set containing `v`.
+    ///
+    pub def toMultiMap(m: Map[k, v]): MultiMap[k, v] with Order[k], Order[v] =
+        MultiMap(Map.map(Set.singleton, m))
 
     ///
     /// Applies `f` to every element of `xs`.
@@ -800,6 +839,12 @@ namespace Map {
             case Some(k, v) => loop(insert(k, v, m))
         };
         loop(empty())
+
+    ///
+    /// Returns the set of tuples `(k, v)` where `v` is a value in `t` and `k => t`.
+    ///
+    pub def explode(m: Map[k, t[v]]): Set[(k, v)] with Foldable[t], Order[k], Order[v] =
+        foldLeftWithKey((acc, k, t) -> Foldable.toSet(t) |> Set.map(e -> (k, e)) |> Set.union(acc), Set.empty(), m)
 
     ///
     /// Extracts a range of key-value pairs from the map `m`.

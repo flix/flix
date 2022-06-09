@@ -250,7 +250,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)
 
     case Request.Hover(id, uri, pos) =>
-      ("id" -> id) ~ HoverProvider.processHover(uri, pos)(index, root)
+      ("id" -> id) ~ HoverProvider.processHover(uri, pos)(index, root, flix)
 
     case Request.Goto(id, uri, pos) =>
       ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, root)
@@ -381,7 +381,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * Optionally returns the word at the given index `n` in the string `s`.
     */
   private def wordAt(s: String, n: Int): Option[String] = {
-    def isValidChar(c: Char): Boolean = Character.isLetterOrDigit(c) || c == '.' || c == '/'
+    def isValidChar(c: Char): Boolean = Character.isLetterOrDigit(c) || c == '.' || c == '/' || c == '@'
 
     // Bounds Check
     if (!(0 <= n && n <= s.length)) {

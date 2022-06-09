@@ -62,7 +62,8 @@ namespace RedBlackTree {
 
     instance Foldable[RedBlackTree[k]] {
         pub def foldLeft(f: (b, v) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldLeft((acc, _, v) -> f(acc, v), s, t)
-        pub def foldRight(f: (v, Unit -> b & ef) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldRight((_, v, acc) -> f(v, acc), s, t)
+        pub def foldRight(f: (v, b) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldRight((_, v, acc) -> f(v, acc), s, t)
+        pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldRightWithCont((_, v, acc) -> f(v, acc), s, t)
     }
 
     instance Traversable[RedBlackTree[k]] {
@@ -124,7 +125,7 @@ namespace RedBlackTree {
     /// Returns `true` if and only if `t` is the empty tree.
     ///
     @Time(1) @Space(1)
-    pub def isEmpty(tree: RedBlackTree[k, v]): Bool = match tree {
+    pub def isEmpty(t: RedBlackTree[k, v]): Bool = match t {
         case Leaf => true
         case _    => false
     }
@@ -244,10 +245,8 @@ namespace RedBlackTree {
     ///
     /// Optionally returns the first key-value pair in `t` that satisfies the predicate `f` when searching from left to right.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
-    pub def findLeft(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Option[(k, v)] =
+    pub def findLeft(f: (k, v) -> Bool & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
         def loop(tt, sk) = match tt {
             case Node(_, a, k, v, b) => loop(a, kl -> match kl {
                 case None => if (f(k, v)) Some(k, v) else loop(b, kr -> match kr {
@@ -258,15 +257,13 @@ namespace RedBlackTree {
             })
             case _ => sk(None)
         };
-        loop(t, identity)
+        loop(t, k -> k as & ef)
 
     ///
     /// Optionally returns the first key-value pair in `t` that satisfies the predicate `f` when searching from right to left.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
-    pub def findRight(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Option[(k, v)] =
+    pub def findRight(f: (k, v) -> Bool & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
         def loop(tt, sk) = match tt {
             case Node(_, a, k, v, b) => loop(b, kr -> match kr {
                 case None => if (f(k, v)) Some(k, v) else loop(a, kl -> match kl {
@@ -277,7 +274,7 @@ namespace RedBlackTree {
             })
             case _ => sk(None)
         };
-        loop(t, identity)
+        loop(t, k -> k as & ef)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `t` going from left to right.
@@ -289,14 +286,23 @@ namespace RedBlackTree {
         case _                   => s
     }
 
+    /// Applies `f` to a start value `s` and all key-value pairs in `tree` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
+    ///
+    pub def foldRight(f: (k, v, b) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = match t {
+        case Node(_, a, k, v, b) => foldRight(f, f(k, v, foldRight(f, s, b)), a)
+        case _ => s
+    }
+
     ///
     /// Applies `f` to a start value `z` and all key-value pairs in `t` going from right to left.
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
-    /// A `foldRight` allows early termination by not calling the continuation.
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (k, v, Unit -> b & ef) -> b & ef, z: b, t: RedBlackTree[k, v]): b & ef = match t {
-        case Node(_, a, k, v, b) => foldRight(f, f(k, v, _ -> foldRight(f, z, b)), a)
+    pub def foldRightWithCont(f: (k, v, Unit -> b & ef) -> b & ef, z: b, t: RedBlackTree[k, v]): b & ef = match t {
+        case Node(_, a, k, v, b) => foldRightWithCont(f, f(k, v, _ -> foldRightWithCont(f, z, b)), a)
         case _ => z
     }
 
@@ -307,11 +313,11 @@ namespace RedBlackTree {
     ///
     /// Returns `None` if `t` is the empty tree.
     ///
-    pub def reduceLeft(f: (k, v, k, v) -> (k, v) & ef, tree: RedBlackTree[k, v]): Option[(k, v)] & ef =
+    pub def reduceLeft(f: (k, v, k, v) -> (k, v) & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
         foldLeft((x, k1, v1) -> match x {
             case Some((k2, v2)) => Some(f(k2, v2, k1, v1))
             case None           => Some(k1, v1)
-        }, None, tree)
+        }, None, t)
 
     ///
     /// Applies `f` to all key-value pairs in `t` going from right to left until a single pair `(k, v)` is obtained.
@@ -320,11 +326,11 @@ namespace RedBlackTree {
     ///
     /// Returns `None` if `t` is the empty tree.
     ///
-    pub def reduceRight(f: (k, v, k, v) -> (k, v) & ef, tree: RedBlackTree[k, v]): Option[(k, v)] & ef =
-        foldRight((k1, v1, c) -> match c() {
+    pub def reduceRight(f: (k, v, k, v) -> (k, v) & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
+        foldRight((k1, v1, acc) -> match acc {
             case Some((k2, v2)) => Some(f(k1, v1, k2, v2))
             case None           => Some(k1, v1)
-        }, None, tree)
+        }, None, t)
 
     ///
     /// Returns `true` if and only if at least one key-value pair in `t` satisfies the predicate `f`.
@@ -338,6 +344,51 @@ namespace RedBlackTree {
     }
 
     ///
+    /// Returns `true` if and only if at least one key-value pair in `t` satisfies the predicate `f`.
+    ///
+    /// Returns `false` if `t` is the empty tree.
+    ///
+    /// The function `f` must be pure.
+    ///
+    /// Traverses the tree `t` in parallel.
+    ///
+    @Parallel
+    pub def parExists(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool & Impure =
+        if (n <= 1)
+            seqExists(f, t)
+        else
+            match t {
+                case Node(_, a, k, v, b) =>
+                    let chanL = chan Bool 1;
+                    let chanR = chan Bool 1;
+                    if (f(k, v))
+                        true
+                    else {
+                        spawn (chanL <- parExists((n - 2) / 2, f, a)); // We divide the rest of the threads as follows:
+                        spawn (chanR <- parExists((n - 2) / 2, f, b)); // We spawn two new threads leaving us with n - 2
+                        let a1 = <- chanL;                             // that we distribute over the two spanned threads.
+                        let b1 = <- chanR;
+                        a1 or b1
+                    }
+                case _ => false
+            }
+
+    ///
+    /// Returns `true` if and only if at least one key-value pair in `t` satisfies the predicate `f`.
+    ///
+    /// Returns `false` if `t` is the empty tree.
+    ///
+    /// The function `f` must be pure.
+    ///
+    /// Note that this is equivalent to `exists` but for performance reasons -- to avoid
+    /// megamorphic calls -- we use a copy here.
+    ///
+    def seqExists(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool = match t {
+        case Node(_, a, k, v, b) => if (f(k, v)) true else seqExists(f, a) or seqExists(f, b)
+        case _                   => false
+    }
+
+    ///
     /// Returns `true` if and only if all key-value pairs in `t` satisfy the predicate `f`.
     ///
     /// Returns `true` if `t` is the empty tree.
@@ -345,6 +396,51 @@ namespace RedBlackTree {
     @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
     pub def forall(f: (k, v) -> Bool & ef, t: RedBlackTree[k, v]): Bool & ef = match t {
         case Node(_, a, k, v, b) => if (f(k, v)) forall(f, a) and forall(f, b) else false
+        case _                   => true
+    }
+
+    ///
+    /// Returns `true` if and only if all key-value pairs in `t` satisfy the predicate `f`.
+    ///
+    /// Returns `true` if `t` is the empty tree.
+    ///
+    /// The function `f` must be pure.
+    ///
+    /// Traverses the tree `t` in parallel.
+    ///
+    @Parallel
+    pub def parForall(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool & Impure =
+        if (n <= 1)
+            seqForall(f, t)
+        else
+            match t {
+                case Node(_, a, k, v, b) =>
+                    let chanL = chan Bool 1;
+                    let chanR = chan Bool 1;
+                    if (not f(k, v))
+                        false
+                    else {
+                        spawn (chanL <- parForall((n - 2) / 2, f, a)); // We divide the rest of the threads as follows:
+                        spawn (chanR <- parForall((n - 2) / 2, f, b)); // We spawn two new threads leaving us with n - 2
+                        let a1 = <- chanL;                             // that we distribute over the two spanned threads.
+                        let b1 = <- chanR;
+                        a1 and b1
+                    }
+                case _ => false
+            }
+
+    ///
+    /// Returns `true` if and only if all key-value pairs in `t` satisfy the predicate `f`.
+    ///
+    /// Returns `true` if `t` is the empty tree.
+    ///
+    /// The function `f` must be pure.
+    ///
+    /// Note that this is equivalent to `exists` but for performance reasons -- to avoid
+    /// megamorphic calls -- we use a copy here.
+    ///
+    def seqForall(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool = match t {
+        case Node(_, a, k, v, b) => if (f(k, v)) seqForall(f, a) and seqForall(f, b) else false
         case _                   => true
     }
 
@@ -463,7 +559,7 @@ namespace RedBlackTree {
     /// That is, the result is a list of all pairs `f(k, v)` where `p(k)` returns `Equal`.
     ///
     pub def query(p: k -> Comparison, f: (k, v) -> a & ef, t: RedBlackTree[k, v]): List[a] & ef = {
-        let buffer = MutList.new();
+        let buffer = new MutList(Static);
         let g = k -> v -> MutList.push!(f(k, v), buffer);
         queryWith(p, g, t);
         MutList.toList(buffer)
@@ -775,7 +871,7 @@ namespace RedBlackTree {
     /// Returns the tree `t` as a list. Elements are ordered from smallest (left) to largest (right).
     ///
     pub def toList(t: RedBlackTree[k, v]): List[(k, v)] =
-        RedBlackTree.foldRight((k, v, c) -> (k, v) :: c(), Nil, t)
+        RedBlackTree.foldRight((k, v, acc) -> (k, v) :: acc, Nil, t)
 
     ///
     /// Build a node applicatively.
@@ -893,12 +989,12 @@ namespace RedBlackTree {
     /// Returns the concatenation of the string representation of each key-value pair
     /// `k => v` in `t` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: (k, v) -> String & ef, sep: String, t: RedBlackTree[k, v]): String & ef = {
+    pub def joinWith(f: (k, v) -> String & ef, sep: String, t: RedBlackTree[k, v]): String & ef = region r {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(r);
         foreach((k, v) -> { append!(f(k, v), sb); append!(sep, sb) }, t);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
-    } as & ef
+    }
 
 }

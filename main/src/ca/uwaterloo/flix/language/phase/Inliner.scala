@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Root
 import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
-import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Purity, SemanticOperator, Symbol}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, UnaryOperator, LiftedAst, OccurrenceAst, Purity, SemanticOperator, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -132,26 +132,23 @@ object Inliner {
           }
       }
 
-    case OccurrenceAst.Expression.Closure(sym, freeVars, tpe, loc) =>
-      val fvs = freeVars.map {
-        case OccurrenceAst.FreeVar(s, varType) => LiftedAst.FreeVar(s, varType)
-      }
-      LiftedAst.Expression.Closure(sym, fvs, tpe, loc)
+    case OccurrenceAst.Expression.Closure(sym, closureArgs, tpe, loc) =>
+      val newClosureArgs = closureArgs.map(visitExp(_, subst0))
+      LiftedAst.Expression.Closure(sym, newClosureArgs, tpe, loc)
 
     case OccurrenceAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
       val as = args.map(visitExp(_, subst0))
       e match {
-        case LiftedAst.Expression.Closure(sym, freevars, _, _) =>
+        case LiftedAst.Expression.Closure(sym, closureArgs, _, _) =>
           val def1 = root.defs.apply(sym)
           // If `def1` is a single non-self call or
           // it is trivial
           // then inline the body of `def1`
           if (canInlineDef(def1)) {
             val e1 = rewriteTailCalls(def1.exp)
-            // Map for substituting formal parameters of a function with the freevars currently in scope
-            val env = def1.fparams.map(_.sym).zip(freevars.map(_.sym)).toMap
-            bindFormals(e1, def1.fparams.drop(freevars.length).map(_.sym), as, env)
+            // Map for substituting formal parameters of a function with the closureArgs currently in scope
+            bindFormals(e1, def1.fparams.map(_.sym), closureArgs ++ as, Map.empty)
           } else {
             LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
           }
@@ -177,15 +174,14 @@ object Inliner {
       val e = visitExp(exp, subst0)
       val as = args.map(visitExp(_, subst0))
       e match {
-        case LiftedAst.Expression.Closure(sym, freevars, _, _) =>
+        case LiftedAst.Expression.Closure(sym, closureArgs, _, _) =>
           val def1 = root.defs.apply(sym)
           // If `def1` is a single non-self call or
           // it is trivial
           // then inline the body of `def1`
           if (canInlineDef(def1)) {
             // Map for substituting formal parameters of a function with the freevars currently in scope
-            val env = def1.fparams.map(_.sym).zip(freevars.map(_.sym)).toMap
-            bindFormals(def1.exp, def1.fparams.drop(freevars.length).map(_.sym), as, env)
+            bindFormals(def1.exp, def1.fparams.map(_.sym), closureArgs ++ as, Map.empty)
           } else {
             LiftedAst.Expression.ApplyCloTail(e, as, tpe, purity, loc)
           }
@@ -213,32 +209,19 @@ object Inliner {
 
     case OccurrenceAst.Expression.Unary(sop, op, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      (sop, e) match {
-        case (SemanticOperator.BoolOp.Not, LiftedAst.Expression.False(_)) => LiftedAst.Expression.True(loc)
-        case (SemanticOperator.BoolOp.Not, LiftedAst.Expression.True(_)) => LiftedAst.Expression.False(loc)
-        case _ => LiftedAst.Expression.Unary(sop, op, e, tpe, purity, loc)
-      }
+      unaryFold(sop, op, e, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Binary(sop, op, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
-      (sop, e1, e2) match {
-        case (SemanticOperator.BoolOp.And, LiftedAst.Expression.False(_), _) => LiftedAst.Expression.False(loc)
-        case (SemanticOperator.BoolOp.And, _, LiftedAst.Expression.False(_)) if e1.purity == Pure => LiftedAst.Expression.False(loc)
-        case (SemanticOperator.BoolOp.Or, LiftedAst.Expression.True(_), _) => LiftedAst.Expression.True(loc)
-        case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.True(_)) if e1.purity == Pure => LiftedAst.Expression.True(loc)
-        case _ => LiftedAst.Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
-      }
+      binaryFold(sop, op, e1, e2, tpe, purity, loc)
 
     case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
       val e3 = visitExp(exp3, subst0)
-      e1 match {
-        case LiftedAst.Expression.True(_) => e2
-        case LiftedAst.Expression.False(_) => e3
-        case _ => LiftedAst.Expression.IfThenElse(e1, e2, e3, tpe, purity, loc)
-      }
+      reduceIfThenElse(e1, e2, e3, tpe, purity, loc)
+
 
     case OccurrenceAst.Expression.Branch(exp, branches, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
@@ -291,7 +274,11 @@ object Inliner {
 
     case OccurrenceAst.Expression.Is(sym, tag, exp, purity, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.Is(sym, tag, e, purity, loc)
+      val enum0 = root.enums(sym)
+      if (enum0.cases.size == 1 && e.purity == Pure)
+          LiftedAst.Expression.True(loc)
+      else
+        LiftedAst.Expression.Is(sym, tag, e, purity, loc)
 
     case OccurrenceAst.Expression.Tag(sym, tag, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
@@ -299,7 +286,11 @@ object Inliner {
 
     case OccurrenceAst.Expression.Untag(sym, tag, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.Untag(sym, tag, e, tpe, purity, loc)
+      // Inline expressions of the form Untag(Tag(e)) => e
+      e match {
+        case LiftedAst.Expression.Tag(_, _, innerExp, _, _, _) => innerExp
+        case _ => LiftedAst.Expression.Untag(sym, tag, e, tpe, purity, loc)
+      }
 
     case OccurrenceAst.Expression.Index(base, offset, tpe, purity, loc) =>
       val b = visitExp(base, subst0)
@@ -607,11 +598,9 @@ object Inliner {
 
     case OccurrenceAst.Expression.Var(sym, tpe, loc) => LiftedAst.Expression.Var(env0.getOrElse(sym, sym), tpe, loc)
 
-    case OccurrenceAst.Expression.Closure(sym, freeVars, tpe, loc) =>
-      val fvs = freeVars.map {
-        case OccurrenceAst.FreeVar(sym, tpe) => LiftedAst.FreeVar(env0.getOrElse(sym, sym), tpe)
-      }
-      LiftedAst.Expression.Closure(sym, fvs, tpe, loc)
+    case OccurrenceAst.Expression.Closure(sym, closureArgs, tpe, loc) =>
+      val newClosureArgs = closureArgs.map(substituteExp(_, env0))
+      LiftedAst.Expression.Closure(sym, newClosureArgs, tpe, loc)
 
     case OccurrenceAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
@@ -638,18 +627,18 @@ object Inliner {
 
     case OccurrenceAst.Expression.Unary(sop, op, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Unary(sop, op, e, tpe, purity, loc)
+      unaryFold(sop, op, e, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Binary(sop, op, exp1, exp2, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)
       val e2 = substituteExp(exp2, env0)
-      LiftedAst.Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
+      binaryFold(sop, op, e1, e2, tpe, purity, loc)
 
     case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)
       val e2 = substituteExp(exp2, env0)
       val e3 = substituteExp(exp3, env0)
-      LiftedAst.Expression.IfThenElse(e1, e2, e3, tpe, purity, loc)
+      reduceIfThenElse(e1, e2, e3, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Branch(exp, branches, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
@@ -842,5 +831,65 @@ object Inliner {
    */
   private def visitFormalParam(fparam: OccurrenceAst.FormalParam): LiftedAst.FormalParam = fparam match {
     case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
+  }
+
+  /**
+   * Performs boolean folding on a given unary expression with the logic:
+   * Folds not-true => false and not-false => true.
+   */
+  private def unaryFold(sop: SemanticOperator, op: UnaryOperator,  e: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression = {
+    (sop, e) match {
+      case (SemanticOperator.BoolOp.Not, LiftedAst.Expression.False(_)) => LiftedAst.Expression.True(loc)
+      case (SemanticOperator.BoolOp.Not, LiftedAst.Expression.True(_)) => LiftedAst.Expression.False(loc)
+      case _ => LiftedAst.Expression.Unary(sop, op, e, tpe, purity, loc)
+    }
+  }
+
+  /**
+   * Performs boolean folding on a given binary expression with the logic:
+   * Only fold if the expression removed is pure, and
+   * For Or-expressions,
+   * fold into true if either the left or right expression is true.
+   * if either the left or right expression is false, fold into the other expression.
+   * For And-expressions,
+   * fold into false, if either the left or right expression is false.
+   * if either the left or right expression is true, fold into the other expression.
+   */
+  private def binaryFold(sop: SemanticOperator, op: BinaryOperator, e1: LiftedAst.Expression, e2: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression = {
+    (sop, e1, e2) match {
+      case (SemanticOperator.BoolOp.And, LiftedAst.Expression.True(_), _) => e2
+      case (SemanticOperator.BoolOp.And, _, LiftedAst.Expression.True(_)) => e1
+      case (SemanticOperator.BoolOp.And, LiftedAst.Expression.False(_), _) => LiftedAst.Expression.False(loc)
+      case (SemanticOperator.BoolOp.And, _, LiftedAst.Expression.False(_)) if e1.purity == Pure => LiftedAst.Expression.False(loc)
+      case (SemanticOperator.BoolOp.Or, LiftedAst.Expression.False(_), _) => e2
+      case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.False(_)) => e1
+      case (SemanticOperator.BoolOp.Or, LiftedAst.Expression.True(_), _) => LiftedAst.Expression.True(loc)
+      case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.True(_)) if e1.purity == Pure => LiftedAst.Expression.True(loc)
+      case _ => LiftedAst.Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
+    }
+  }
+
+  /**
+   * If `outerCond` is always true then eliminate else branch
+   * If `outerThen` is always true then eliminate then branch
+   * Transforms expressions of the form
+   * if (c1) (if (c2) e else jump l1) else jump l1)
+   * to
+   * if (c1 and c2) e else jump l1)
+   */
+  private def reduceIfThenElse(outerCond: LiftedAst.Expression, outerThen: LiftedAst.Expression, outerElse: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression = outerCond match {
+    case LiftedAst.Expression.True(_) => outerThen
+    case LiftedAst.Expression.False(_) => outerElse
+    case _ =>
+      outerThen match {
+        case LiftedAst.Expression.IfThenElse(innerCond, innerThen, innerElse, _, _, _) =>
+          (outerElse, innerElse) match {
+            case (LiftedAst.Expression.JumpTo(sym1, _, _, _), LiftedAst.Expression.JumpTo(sym2, _, _, _)) if sym1 == sym2 =>
+              val andExp = LiftedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, outerCond, innerCond, outerCond.tpe, combine(outerCond.purity, innerCond.purity), loc)
+              LiftedAst.Expression.IfThenElse(andExp, innerThen, outerElse, tpe, purity, loc)
+            case _ => LiftedAst.Expression.IfThenElse(outerCond, outerThen, outerElse, tpe, purity, loc)
+          }
+        case _ => LiftedAst.Expression.IfThenElse(outerCond, outerThen, outerElse, tpe, purity, loc)
+      }
   }
 }

@@ -13,10 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+use Fixpoint.PredSymsOf;
+use Fixpoint/PredSymsOf.predSymsOf;
+use Fixpoint.SubstitutePredSym;
+use Fixpoint/SubstitutePredSym.substitute;
+use Fixpoint/Shared.PredSym;
 
 namespace Fixpoint/Ast {
     pub enum Constraint[v] {
-        case Constraint(HeadPredicate[v], Array[BodyPredicate[v]])
+        case Constraint(HeadPredicate[v], Array[BodyPredicate[v], Static])
+    }
+
+    instance PredSymsOf[Constraint[v]] {
+        pub def predSymsOf(x: Constraint[v]): Set[PredSym] = match x {
+            case Constraint(head, body) =>
+                let headSyms = predSymsOf(head);
+                let bodySyms = Array.map(predSymsOf, body) |> Array.toList;
+                headSyms ++ Monoid.fold(bodySyms)
+        } as & Pure
+    }
+
+    instance SubstitutePredSym[Constraint[v]] {
+        pub def substitute(x: Constraint[v], s: Map[PredSym, PredSym]): Constraint[v] = match x {
+            case Constraint(head, body) =>
+                let newHead = substitute(head, s);
+                let newBody = Array.map(p -> substitute(p, s), body);
+                Constraint(newHead, newBody)
+        } as & Pure
     }
 
     instance ToString[Constraint[v]] with ToString[v] {

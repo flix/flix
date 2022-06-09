@@ -156,3 +156,57 @@ def forwardPipe02(): Bool =
     let f = match (x, y) -> x + y;
     let r = (1, 2) |> f;
         r == 3
+
+/////////////////////////////////////////////////////////////////////////////
+// ||> (doublePipe)                                                    //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def doublePipe01(): Bool = ((1, 2) ||> Add.add) == 3
+
+@test
+def doublePipe02(): Bool = (("a", "b") ||> Add.add) == "ab"
+
+@test
+def doublePipe03(): Bool = (("abc", "def") ||> String.concat) == "abcdef"
+
+@test
+def doublePipe04(): Bool =
+    ((1 :: 2 :: 3 :: Nil, 4 :: 5 :: Nil) ||> List.append) == 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+
+@test
+def doublePipe05(): Bool = ((0, 5) ||> List.range) == 0 :: 1 :: 2 :: 3 :: 4 :: Nil
+
+/////////////////////////////////////////////////////////////////////////////
+// !> (imperativePipe)                                                     //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def imperativePipe01(): Bool = region r {
+        let m: MutList[Int32, _] = new MutList(r);
+        let f = (x) -> MutList.push!(x, m);
+        (4 !> f) == 4 and not MutList.isEmpty(m)
+    }
+
+@test
+def imperativePipe02(): Bool = region r {
+        let m: MutList[Int32, _] = new MutList(r);
+        let f = (x) -> MutList.push!(x, m);
+
+        let a = 4 !> f;
+        let b = 5 !> f;
+        let c = 7 !> f;
+        a == 4 and b == 5 and c == 7 and MutList.length(m) == 3
+    }
+
+@test
+def imperativePipe03(): Bool & Impure =
+    let a = ref 8;
+    let f = (x) -> a := x;
+    (2 !> f) == 2 and deref a == 2
+
+@test
+def imperativePipe04(): Bool & Impure =
+    let a = ref 8;
+    let f = (x) -> a := x;
+    (2 !> f) == 2 and (4 !> f) == 4 and deref a == 4

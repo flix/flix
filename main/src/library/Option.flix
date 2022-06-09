@@ -26,10 +26,38 @@ pub enum Option[t] with Eq, Order, ToString {
     case Some(t)
 }
 
+instance LowerBound[Option[t]] {
+    pub def minValue(_: Unit): Option[t] = None
+}
+
+instance PartialOrder[Option[t]] with PartialOrder[t] {
+    pub def lessEqual(x: Option[t], y: Option[t]): Bool = match (x,y) {
+       case (None, _)           => true
+       case (Some(a), Some(b))  => PartialOrder.lessEqual(a,b)
+       case _                   => false
+   }
+}
+
+instance JoinLattice[Option[t]] with JoinLattice[t] {
+    pub def leastUpperBound(x: Option[t], y: Option[t]): Option[t] = match (x,y) {
+       case (None, _)           => y
+       case (_, None)           => x
+       case (Some(a), Some(b))  => Some(JoinLattice.leastUpperBound(a,b))
+   }
+}
+
+instance MeetLattice[Option[t]] with MeetLattice[t] {
+    pub def greatestLowerBound(x: Option[t], y: Option[t]): Option[t] = match (x,y) {
+       case (None, _)           => None
+       case (_, None)           => None
+       case (Some(a), Some(b))  => Some(MeetLattice.greatestLowerBound(a, b))
+   }
+}
+
 instance Hash[Option[a]] with Hash[a] {
     pub def hash(o: Option[a]): Int32 = match o {
+        case None    => 1046527
         case Some(y) => 919 * Hash.hash(y)
-        case None => 1046527
     }
 }
 
@@ -55,7 +83,8 @@ instance Monad[Option] {
 
 instance Foldable[Option] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldLeft(f, s, o)
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRight(f, o, s)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRight(f, o, s)
+    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRightWithCont(f, o, s)
 }
 
 instance Traversable[Option] {
@@ -140,10 +169,8 @@ namespace Option {
     ///
     /// Returns `true` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `false`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def exists(f: a -> Bool, o: Option[a]): Bool = match o {
+    pub def exists(f: a -> Bool & ef, o: Option[a]): Bool & ef = match o {
         case None    => false
         case Some(v) => f(v)
     }
@@ -153,10 +180,8 @@ namespace Option {
     ///
     /// Otherwise returns `false`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def forall(f: a -> Bool, o: Option[a]): Bool = match o {
+    pub def forall(f: a -> Bool & ef, o: Option[a]): Bool & ef = match o {
         case None    => true
         case Some(v) => f(v)
     }
@@ -210,10 +235,8 @@ namespace Option {
     ///
     /// Returns `1` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `0`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def count(f: a -> Bool, o: Option[a]): Int32 = match o {
+    pub def count(f: a -> Bool & ef, o: Option[a]): Int32 & ef = match o {
         case None    => 0
         case Some(v) => if (f(v)) 1 else 0
     }
@@ -278,9 +301,17 @@ namespace Option {
     ///
     /// Returns `f(v, z)` if `o` is `Some(v)`. Otherwise returns `z`.
     ///
-    /// A `foldRight` allows early termination by not calling the continuation.
+    pub def foldRight(f: (a, b) -> b & ef, o: Option[a], z: b): b & ef = match o {
+        case None    => z
+        case Some(v) => f(v, z)
+    }
+
     ///
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, o: Option[a], z: b): b & ef = match o {
+    /// Returns `f(v, z)` if `o` is `Some(v)`. Otherwise returns `z`.
+    ///
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
+    ///
+    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, o: Option[a], z: b): b & ef = match o {
         case None    => z
         case Some(v) => f(v, _ -> z as & ef)
     }
@@ -397,13 +428,13 @@ namespace Option {
     /// Returns a map with elements of `s` as keys and `f` applied as values.
     ///
     pub def toMapWith(f: a -> b, s: Option[a]): Map[a, b] with Order[a] =
-        Option.foldRight((x, k) -> Map.insert(x, f(x), k()), s, Map.empty())
+        Option.foldRight((x, acc) -> Map.insert(x, f(x), acc), s, Map.empty())
 
     ///
     /// Returns the Option value `Ok(v)` if `o` is `Some(v)`. Otherwise returns `Err(e)`.
     ///
     @Time(1) @Space(1)
-    pub def toOk(o: Option[t], e: e): Result[t, e] = match o {
+    pub def toOk(e: e, o: Option[t]): Result[t, e] = match o {
         case None    => Err(e)
         case Some(a) => Ok(a)
     }
@@ -412,7 +443,7 @@ namespace Option {
     /// Returns the Option value `Err(e)` if `o` is `Some(e)`. Otherwise returns `Ok(d)`.
     ///
     @Time(1) @Space(1)
-    pub def toErr(o: Option[e], d: t): Result[t, e] = match o {
+    pub def toErr(d: t, o: Option[e]): Result[t, e] = match o {
         case None    => Ok(d)
         case Some(e) => Err(e)
     }
@@ -421,7 +452,7 @@ namespace Option {
     /// Returns the Validation value `Success(v)` if `o` is `Some(v)`. Otherwise lifts `e` into Validation's `Failure`.
     ///
     @Time(1) @Space(1)
-    pub def toSuccess(o: Option[t], e: e): Validation[t, e] = match o {
+    pub def toSuccess(e: e, o: Option[t]): Validation[t, e] = match o {
         case None    => Failure(Nec.singleton(e))
         case Some(a) => Success(a)
     }
@@ -430,7 +461,7 @@ namespace Option {
     /// Returns `e` into Validation's `Failure` if `o` is `Some(e)`. Otherwise returns `Success(d)`.
     ///
     @Time(1) @Space(1)
-    pub def toFailure(o: Option[e], d: t): Validation[t, e] = match o {
+    pub def toFailure(d: t, o: Option[e]): Validation[t, e] = match o {
         case None    => Success(d)
         case Some(e) => Failure(Nec.singleton(e))
     }

@@ -181,6 +181,11 @@ object Stratifier {
         case (e1, e2) => Expression.Stm(e1, e2, tpe, eff, loc)
       }
 
+    case Expression.Discard(exp, eff, loc) =>
+      visitExp(exp) map {
+        case e => Expression.Discard(e, eff, loc)
+      }
+
     case Expression.Match(exp, rules, tpe, eff, loc) =>
       val matchVal = visitExp(exp)
       val rulesVal = traverse(rules) {
@@ -383,11 +388,11 @@ object Stratifier {
           Expression.FixpointConstraintSet(cs, s, tpe, loc)
       }
 
-    case Expression.FixpointLambda(preds, exp, _, tpe, eff, loc) =>
+    case Expression.FixpointLambda(pparams, exp, _, tpe, eff, loc) =>
       // Compute the stratification.
       val stf = stratify(g, tpe, loc)
       mapN(stf) {
-        case s => Expression.FixpointLambda(preds, exp, s, tpe, eff, loc)
+        case s => Expression.FixpointLambda(pparams, exp, s, tpe, eff, loc)
       }
 
     case Expression.FixpointMerge(exp1, exp2, _, tpe, eff, loc) =>
@@ -534,6 +539,9 @@ object Stratifier {
 
     case Expression.Stm(exp1, exp2, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
+
+    case Expression.Discard(exp, _, _) =>
+      labelledGraphOfExp(exp)
 
     case Expression.Match(exp, rules, _, _, _) =>
       val dg = labelledGraphOfExp(exp)
@@ -786,7 +794,7 @@ object Stratifier {
     val isEqDenotation = l1.den == l2.den
     val isEqArity = l1.arity == l2.arity
     val isEqTermTypes = l1.terms.zip(l2.terms).forall {
-      case (t1, t2) => Unification.unifiesWith(t1, t2)
+      case (t1, t2) => Unification.unifiesWith(t1, t2, RigidityEnv.empty)
     }
 
     isEqPredicate && isEqDenotation && isEqArity && isEqTermTypes

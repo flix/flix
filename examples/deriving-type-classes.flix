@@ -18,7 +18,7 @@ type alias Year = Int32
 type alias Day = Int32
 
 /// The Date type derives the type classes Eq and Order
-opaque type Date with Eq, Order = (Year, Month, Day)
+enum Date(Year, Month, Day) with Eq, Order
 
 /// We implement our own instance of ToString for Date
 /// since we don't want the default "Date(1948, December, 10)"

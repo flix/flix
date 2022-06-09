@@ -28,7 +28,7 @@
 /// and the back index always points to the first empty index (going clockwise).
 ///
 pub enum MutDeque[a: Type, r: Region] {
-    case MutDeque(ScopedRef[ScopedArray[a, r], r], ScopedRef[Int32, r], ScopedRef[Int32, r])
+    case MutDeque(Ref[Array[a, r], r], Ref[Int32, r], Ref[Int32, r])
 }
 
 
@@ -66,12 +66,6 @@ namespace MutDeque {
     /// If the load factor exceeds or is equal to `maxLoadFactor` the array should be expanded.
     ///
     def maxLoadFactor(): Float32 = 3.0f32 / 4.0f32
-
-    ///
-    /// Returns an empty MutDeque.
-    ///
-    pub def empty(): MutDeque[a, Impure] & Impure =
-        MutDeque(ref [$DEFAULT$; minCapacity()], ref 0, ref 0)
 
     ///
     /// Returns an empty MutDeque.
@@ -148,12 +142,32 @@ namespace MutDeque {
         loop(front, back, s)
 
     ///
+    /// Applies `f` to a start value `s` and all elements in `d` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    pub def foldRight(f: (a, b) -> b & ef, s: b, d: MutDeque[a, r]): b \ { ef, Read(r) } =
+        let MutDeque(ar_, front_, back_) = d;
+        let ar = deref ar_;
+        let front = deref front_;
+        let back = deref back_;
+        let c = capacity(d) - 1;
+        def loop(i, e, acc) =
+            if (i == e)
+                acc
+            else {
+                let j = (i - 1) &&& c;
+                loop(j, e, f(ar[j], acc))
+            };
+        loop(back, front, s)
+
+    ///
     /// Applies `f` to a start value `z` and all elements in `d` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRight` allows early termination by not calling the continuation.
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (a, Unit -> b & ef and r) -> b & ef and r, s: b, d: MutDeque[a, r]): b \ { ef, Read(r) } =
+    pub def foldRightWithCont(f: (a, Unit -> b & ef and r) -> b & ef and r, s: b, d: MutDeque[a, r]): b \ { ef, Read(r) } =
         let MutDeque(ar_, front_, back_) = d;
         let ar = deref ar_;
         let front = deref front_;
@@ -166,6 +180,12 @@ namespace MutDeque {
                 f(ar[i], _ -> loop((i + 1) &&& c, e))
             };
         loop(front, back)
+
+    ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b & ef, d: MutDeque[a, r]): b \ { ef, Read(r) } with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), d)
 
     ///
     /// Returns `Some(x)` where `x` is the element at the front. Returns `None` if `d` is empty.
@@ -279,7 +299,7 @@ namespace MutDeque {
     ///
     /// Copies the elements from `a` to `a1`. Mutates the array `a1`.
     ///
-    def copyElements!(f: Int32, b: Int32, a: ScopedArray[a, r], a1: ScopedArray[a, r]): Unit \ { Read(r), Write(r) } =
+    def copyElements!(f: Int32, b: Int32, a: Array[a, r], a1: Array[a, r]): Unit \ { Read(r), Write(r) } =
         let c = Array.length(a);
         if (f < b) { // If this predicate is true the elements do not "wrap around" in the array, i.e. the elements are laid out sequentially from [0 .. b].
             Array.updateSequence!(0,     a[f .. b], a1)
@@ -324,25 +344,26 @@ namespace MutDeque {
     /// Returns `d` as a `List`.
     ///
     pub def toList(d: MutDeque[a, r]): List[a] \ Read(r) =
-        foldRight((x, k) -> x :: k(), Nil, d)
+        foldRight((x, acc) -> x :: acc, Nil, d)
 
     ///
     /// Returns the concatenation of the string representation
     /// of each element in `d` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, d: MutDeque[a, r]): String & Impure with ToString[a] =
-        joinWith(x -> ToString.toString(x), sep, d)
+    pub def join(sep: String, d: MutDeque[a, r]): String \ Read(r) with ToString[a] =
+        joinWith(ToString.toString, sep, d)
 
     ///
     /// Returns the concatenation of the string representation
     /// of each element in `d` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, d: MutDeque[a, r]): String & Impure =
+    pub def joinWith(f: a -> String & ef, sep: String, d: MutDeque[a, r]): String \ { ef, Read(r) } = region r1 {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(r1);
         foreach(x -> { append!(f(x), sb); append!(sep, sb) }, d);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
+    }
 
     ///
     /// Apply the effectful function `f` to all the elements in the MutDeque `d`.

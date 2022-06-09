@@ -229,8 +229,8 @@ object WeederError {
     * @param name the name of the parameter.
     * @param loc  the location of the formal parameter.
     */
-  case class IllegalFormalParameter(name: String, loc: SourceLocation) extends WeederError {
-    def summary: String = "The formal parameter must have a declared type."
+  case class MissingFormalParamAscription(name: String, loc: SourceLocation) extends WeederError {
+    def summary: String = "Missing type ascription. Type ascriptions are required for parameters here."
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -242,10 +242,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Explicitly declare the type of the formal parameter."
-    })
+    def explain(formatter: Formatter): Option[String] = None
 
   }
 
@@ -722,5 +719,152 @@ object WeederError {
       s"${underline("Tip:")} Try to find a new name that doesn't match one that is reserved."
     })
 
+  }
+
+  /**
+    * An error raised to indicate that type parameters are present on an effect or operation.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalEffectTypeParams(loc: SourceLocation) extends WeederError {
+    def summary: String = "Unexpected effect type parameters."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected effect type parameters.
+         |
+         |${code(loc, "unexpected effect type parameters")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Type parameters are not allowed on effects."
+    })
+  }
+
+  /**
+    * An error raised to indicate a use of resume outside an effect handler.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalResume(loc: SourceLocation) extends WeederError {
+    def summary: String = "Unexpected use of 'resume'. The 'resume' expression must occur in an effect handler."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected use of 'resume'. The 'resume' expression must occur in an effect handler.
+         |
+         |${code(loc, "unexpected use of 'resume'")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+
+  }
+
+  /**
+    * An error raised to indicate an illegal ascription on a formal parameter.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalFormalParamAscription(loc: SourceLocation) extends WeederError {
+    def summary: String = "Unexpected type ascription. Type ascriptions are not permitted on effect handler cases."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected type ascription. Type ascriptions are not permitted on effect handler cases.
+         |
+         |${code(loc, "unexpected type ascription")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate an illegal effect on an effect operation.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalOperationEffect(loc: SourceLocation) extends WeederError {
+    def summary: String = "Unexpected effect. Effect operations may not themselves have effects."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected effect. Effect operations may not themselves have effects.
+         |
+         |${code(loc, "unexpected effect")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate a non-Unit return type of an effect operation.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class NonUnitOperationType(loc: SourceLocation) extends WeederError {
+    def summary: String = "Non-Unit operation type. Effect operations must return Unit type."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Non-Unit operation type. Effect operations must return Unit type.
+         |
+         |${code(loc, "non-Unit operation type")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate an enum using both singleton and multiton syntaxes.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalEnum(loc: SourceLocation) extends WeederError {
+    def summary: String = "Unexpected enum format."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected enum format.
+         |
+         |${code(loc, "unexpected enum format")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"""This enum uses both the singleton syntax and the case syntax.
+         |
+         |Only one of the enum forms may be used.
+         |If you only need one case for the enum, use the singleton syntax:
+         |
+         |    enum E(Int32)
+         |
+         |If you need multiple cases, use the case syntax:
+         |
+         |    enum E {
+         |        case C1(Int32)
+         |        case C2(Bool)
+         |    }
+         |
+         |""".stripMargin
+    })
   }
 }

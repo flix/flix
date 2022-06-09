@@ -19,7 +19,7 @@ namespace Random {
     ///
     /// Returns `None` if the given array `a` is empty.
     ///
-    pub def choose(r: Random, a: Array[a]): Option[a] & Impure =
+    pub def choose(r: Random, a: Array[a, Static]): Option[a] & Impure =
         if (a.length == 0) {
             None
         } else {
@@ -87,6 +87,6 @@ namespace Random {
     ///
     /// Represents a random number generator.
     ///
-    pub opaque type Random = ##java.util.Random
+    pub enum Random(##java.util.Random)
 
 }

@@ -251,8 +251,8 @@ namespace TestRedBlackTree {
     def mapWithKey06(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
-        let a = MutList.new();
-        Map.mapWithKey((k, v) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); v }, m);
+        let a = new MutList(Static);
+        Map.mapWithKey((k, v) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
         MutList.toList(a) == range
 
     @test
@@ -321,6 +321,54 @@ namespace TestRedBlackTree {
     @test
     def neq01(): Bool =
         toRedBlackTree((1, 1) :: Nil) != RedBlackTree.empty()
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // parExists                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def parExists01(): Bool & Impure =
+        let l = List.range(1, 2001);
+        let Map(t) = List.zip(l, l) |> List.toMap;
+        RedBlackTree.parExists(threads() - 1, (k, v) -> k == 1002 and v == 1002, t)
+
+    @test
+    def parExists02(): Bool & Impure =
+        let l1 = List.range(1, 2001);
+        let l2 = List.range(-2000, 0);
+        let Map(t) = List.zip(l1, l2) |> List.toMap;
+        RedBlackTree.parExists(threads() - 1, (k, v) -> k == 1002 and v == -999, t)
+
+    @test
+    def parExists03(): Bool & Impure =
+        let l = List.range(1, 2001);
+        let Map(t) = List.zip(l, l) |> List.toMap;
+        not RedBlackTree.parExists(threads() - 1, (k, v) -> k < 0 or v > 3000, t)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // parForall                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def parForall01(): Bool & Impure =
+        let l = List.range(1, 2001);
+        let Map(t) = List.zip(l, l) |> List.toMap;
+        RedBlackTree.parForall(threads() - 1, (k, v) -> k == v, t)
+
+    @test
+    def parForall02(): Bool & Impure =
+        let l = List.range(1, 2001);
+        let Map(t) = List.zip(l, l) |> List.toMap;
+        not RedBlackTree.parForall(threads() - 1, (k, _) -> k == 1, t)
+
+    @test
+    def parForall03(): Bool & Impure =
+        let l1 = List.range(1, 2001);
+        let l2 = List.range(-2000, 0);
+        let Map(t) = List.zip(l1, l2) |> List.toMap;
+        RedBlackTree.parForall(threads() - 1, (k, v) -> k > v, t)
 
 
     /////////////////////////////////////////////////////////////////////////////

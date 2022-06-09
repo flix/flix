@@ -1,73 +1,73 @@
 namespace Test/Exp/Match/Array {
 
     @test
-    def testMatchEmptyUnitArray01(): Bool & Impure = match ([]: Array[Unit]) {
+    def testMatchEmptyUnitArray01(): Bool & Impure = match ([]: Array[Unit, Static]) {
         case [] => true
         case _  => false
     }
 
     @test
-    def testMatchEmptyBoolArray01(): Bool & Impure = match ([]: Array[Bool]) {
+    def testMatchEmptyBoolArray01(): Bool & Impure = match ([]: Array[Bool, Static]) {
         case [] => true
         case _  => false
     }
 
     @test
-    def testMatchEmptyCharArray01(): Bool & Impure = match ([]: Array[Char]) {
+    def testMatchEmptyCharArray01(): Bool & Impure = match ([]: Array[Char, Static]) {
         case [] => true
         case _  => false
     }
 
     @test
-    def testMatchEmptyFloat32Array01(): Bool & Impure = match ([]: Array[Float32]) {
+    def testMatchEmptyFloat32Array01(): Bool & Impure = match ([]: Array[Float32, Static]) {
         case [] => true
         case _  => false
     }
 
     @test
-    def testMatchEmptyFloat64Array01(): Bool & Impure = match ([]: Array[Float64]) {
+    def testMatchEmptyFloat64Array01(): Bool & Impure = match ([]: Array[Float64, Static]) {
         case [] => true
         case _  => false
     }
 
     @test
-    def testMatchEmptyInt8Array01(): Bool & Impure = match ([]: Array[Int8]) {
+    def testMatchEmptyInt8Array01(): Bool & Impure = match ([]: Array[Int8, Static]) {
         case [] => true
         case _  => false
     }
 
     @test
-    def testMatchEmptyInt16Array01(): Bool & Impure = match ([]: Array[Int16]) {
+    def testMatchEmptyInt16Array01(): Bool & Impure = match ([]: Array[Int16, Static]) {
         case [] => true
         case _  => false
     }
 
     @test
-    def testMatchEmptyInt64Array01(): Bool & Impure = match ([]: Array[Int64]) {
+    def testMatchEmptyInt64Array01(): Bool & Impure = match ([]: Array[Int64, Static]) {
         case [] => true
         case _  => false
     }
 
     @test
-    def testMatchEmptyStringArray01(): Bool & Impure = match ([]: Array[String]) {
+    def testMatchEmptyStringArray01(): Bool & Impure = match ([]: Array[String, Static]) {
         case [] => true
         case _  => false
     }
 
     @test
-    def testMatchEmptyBigIntArray01(): Bool & Impure = match ([]: Array[BigInt]) {
+    def testMatchEmptyBigIntArray01(): Bool & Impure = match ([]: Array[BigInt, Static]) {
         case [] => true
         case _  => false
     }
 
     @test
-    def testMatchEmptyOptionIntArray01(): Bool & Impure = match ([]: Array[Option[Int32]]) {
+    def testMatchEmptyOptionIntArray01(): Bool & Impure = match ([]: Array[Option[Int32], Static]) {
         case [] => true
         case _  => false
     }
 
     @test
-    def testMatchEmptyResultArray01(): Bool & Impure = match ([]: Array[Result[Int32,String]]) {
+    def testMatchEmptyResultArray01(): Bool & Impure = match ([]: Array[Result[Int32,String], Static]) {
         case [] => true
         case _  => false
     }
@@ -437,16 +437,6 @@ namespace Test/Exp/Match/Array {
     def testMatchResultArray4(): Bool & Impure = match [[Ok(42)],[Err(23)]] {
         case [[Ok(42)],[Err(23)]]  => true
         case _ => false
-    }
-
-    enum Option[t] {
-        case None,
-        case Some(t)
-    }
-
-    enum Result[t, e] {
-        case Ok(t),
-        case Err(e)
     }
 
 }

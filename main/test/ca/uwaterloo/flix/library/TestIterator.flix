@@ -53,31 +53,31 @@ namespace TestIterator {
     @test
     def isEmpty02(): Bool & Impure = // singleton
         let iter = Iterator.singleton(1);
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 1 :: Nil
 
     @test
     def isEmpty03(): Bool & Impure = // range
         let iter = Iterator.range(0, 100);
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == List.range(0, 100)
 
     @test
     def isEmpty04(): Bool & Impure = // repeat
         let iter = Iterator.repeat(2, 10);
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 10 :: 10 :: Nil
 
     @test
     def isEmpty05(): Bool & Impure = // lazyFilter
         let iter = (1 :: 2 :: 3 :: Nil) |> List.toIterator |> Iterator.filterL(i -> i < 3);
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 1 :: 2 :: Nil
 
     @test
     def isEmpty06(): Bool & Impure = // lazyMap
         let iter = (1 :: 2 :: 3 :: Nil) |> List.toIterator |> Iterator.mapL(i -> i + 1);
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 2 :: 3 :: 4 :: Nil
 
     @test
@@ -85,7 +85,7 @@ namespace TestIterator {
         let i1 = (1 :: 2 :: 3 :: Nil) |> List.toIterator;
         let i2 = (4 :: 5 :: 6 :: Nil) |> List.toIterator;
         let iter = Iterator.append(i1, i2);
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil
 
     @test
@@ -93,7 +93,7 @@ namespace TestIterator {
         let i1 = (1 :: 2 :: 3 :: Nil) |> List.toIterator;
         let i2 = (4 :: 5 :: 6 :: Nil) |> List.toIterator;
         let iter = Iterator.zip(i1, i2);
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == (1, 4) :: (2, 5) :: (3, 6) :: Nil
 
     @test
@@ -101,21 +101,21 @@ namespace TestIterator {
         let i1 = (1 :: 2 :: 3 :: Nil) |> List.toIterator;
         let i2 = (4 :: 5 :: 6 :: Nil) |> List.toIterator;
         let iter = Iterator.zipWithL((x, y) -> x + y, i1, i2);
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 5 :: 7 :: 9 :: Nil
 
     @test
     def isEmpty10(): Bool & Impure = // flatMap
         let i = (1 :: 2 :: 3 :: Nil) |> List.toIterator;
         let iter = Iterator.flatMap(x -> Iterator.singleton(x + 1), i);
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 2 :: 3 :: 4 :: Nil
 
     @test
     def isEmpty11(): Bool & Impure = // intersperse
         let i = (1 :: 2 :: 3 :: Nil) |> List.toIterator;
         let iter = Iterator.intersperse(5, i);
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 1 :: 5 :: 2 :: 5 :: 3 :: Nil
 
     @test
@@ -125,23 +125,23 @@ namespace TestIterator {
         let iterB1 = (2 :: 3 :: Nil) |> List.toIterator;
         let iterB  = (iterB0 :: iterB1 :: Nil) |> List.toIterator;
         let iter = Iterator.intercalate(iterA, iterB);
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 1 :: 11 :: 12 :: 13 :: 2 :: 3 :: Nil
 
     @test
     def isEmpty13(): Bool & Impure = // unfoldWithOk
         let Iterator(d, n) = List.toIterator(1 :: 2 :: 3 :: 4 :: 5 :: Nil);
         let iter = Iterator.unfoldWithOk(() -> if (d()) Err("Done") else Ok(n()));
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 1 :: 2 :: 3 :: 4 :: 5 :: Nil
 
     ///
     /// Helper function that invokes `Iterator.isEmpty` `n` times.
     ///
-    def invokeIsEmpty(n: Int32, iter: Iterator[a]): Bool & Impure =
+    def invokeIsEmpty(n: Int32, iter: Iterator[a]): Unit & Impure =
         def loop(m) =
             if (m <= 0)
-                true
+                ()
             else {
                 Iterator.isEmpty(iter);
                 loop(m - 1)
@@ -257,20 +257,24 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toArray01(): Bool & Impure =
-        Nil: List[Int32] |> List.toIterator |> Iterator.toArray `Array.sameElements` []
+    def toArray01(): Bool & Impure = region r {
+        (Nil: List[Int32] |> List.toIterator |> Iterator.toArray)(r) `Array.sameElements` [] @ r
+    }
 
     @test
-    def toArray02(): Bool & Impure =
-        Iterator.range(-10, -5) |> Iterator.toArray `Array.sameElements` [-10, -9, -8, -7, -6]
+    def toArray02(): Bool & Impure = region r {
+        (Iterator.range(-10, -5) |> Iterator.toArray)(r) `Array.sameElements` [-10, -9, -8, -7, -6] @ r
+    }
 
     @test
-    def toArray03(): Bool & Impure =
-        Iterator.repeat(3, 1) |> Iterator.toArray `Array.sameElements` [1, 1, 1]
+    def toArray03(): Bool & Impure = region r {
+        (Iterator.repeat(3, 1) |> Iterator.toArray)(r) `Array.sameElements` [1, 1, 1] @ r
+    }
 
     @test
-    def toArray04(): Bool & Impure =
-        Iterator.range(-100, 200) |> Iterator.toArray `Array.sameElements` Array.range(-100, 200)
+    def toArray04(): Bool & Impure = region r {
+        (Iterator.range(-100, 200) |> Iterator.toArray)(r) `Array.sameElements` Array.range(-100, 200, r)
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -857,22 +861,71 @@ namespace TestIterator {
     @test
     def foldRight01(): Bool & Impure =
         let iter = List.toIterator(Nil);
-        Iterator.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, iter) == 100
+        Iterator.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, iter) == 100
 
     @test
     def foldRight02(): Bool & Impure =
         let iter = List.toIterator(1 :: Nil);
-        Iterator.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, iter) == 198
+        Iterator.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, iter) == 198
 
     @test
     def foldRight03(): Bool & Impure =
         let iter = List.toIterator(1 :: 2 :: Nil);
-        Iterator.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, iter) == 194
+        Iterator.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, iter) == 194
 
     @test
     def foldRight04(): Bool & Impure =
         let iter = List.toIterator(1 :: 2 :: 3 :: Nil);
-        Iterator.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, iter) == 382
+        Iterator.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, iter) == 382
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRightWithCont                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRightWithCont01(): Bool & Impure =
+        let iter = List.toIterator(Nil);
+        Iterator.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, iter) == 100
+
+    @test
+    def foldRightWithCont02(): Bool & Impure =
+        let iter = List.toIterator(1 :: Nil);
+        Iterator.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, iter) == 198
+
+    @test
+    def foldRightWithCont03(): Bool & Impure =
+        let iter = List.toIterator(1 :: 2 :: Nil);
+        Iterator.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, iter) == 194
+
+    @test
+    def foldRightWithCont04(): Bool & Impure =
+        let iter = List.toIterator(1 :: 2 :: 3 :: Nil);
+        Iterator.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, iter) == 382
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool & Impure =
+        Iterator.foldMap(x -> 2 * x, List.toIterator(Nil)) == 0
+
+    @test
+    def foldMap02(): Bool & Impure =
+        Iterator.foldMap(x -> 2 * x, List.toIterator(1 :: 2 :: Nil)) == 6
+
+    @test
+    def foldMap03(): Bool & Impure =
+        Iterator.foldMap(x -> if(x == "a") "b" else x, List.toIterator("a" :: Nil)) == "b"
+
+    @test
+    def foldMap04(): Bool & Impure =
+        Iterator.foldMap(x -> if(x == "c") "b" else x, List.toIterator("a" :: "b" :: "c" :: Nil)) == "abb"
+
+    @test
+    def foldMap05(): Bool & Impure =
+        Iterator.foldMap(Int32.toString, List.toIterator(1 :: 2 :: 3 :: Nil)) == "123"
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1275,5 +1328,118 @@ namespace TestIterator {
     def joinWith04(): Bool & Impure =
         ("1" :: "2" :: "3" :: Nil) |> List.toIterator |>
             Iterator.joinWith(x -> x + x, ",") == "11,22,33"
+
+    /////////////////////////////////////////////////////////////////////////////
+    // filterMapL                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def filterMapL01(): Bool & Impure =
+        (Nil: List[Int32]) |> List.toIterator |>
+            Iterator.filterMapL(x -> if (x mod 2 == 0) Some(x) else None) |> Iterator.toList == Nil
+    @test
+    def filterMapL02(): Bool & Impure =
+        (1 :: Nil) |> List.toIterator |>
+            Iterator.filterMapL(x -> if (x mod 2 == 0) Some(x) else None) |> Iterator.toList == Nil
+
+    @test
+    def filterMapL03(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> List.toIterator |>
+            Iterator.filterMapL(x -> if (x mod 2 == 0) Some(x) else None) |> Iterator.toList == 2 :: Nil
+
+    @test
+    def filterMapL04(): Bool & Impure =
+        (1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> List.toIterator |>
+            Iterator.filterMapL(x -> if (x mod 2 == 0) Some(x) else None) |> Iterator.toList == 2 :: 4 :: 6 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // dropL                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def dropL01(): Bool & Impure =
+        (Nil: List[Int32]) |> List.toIterator |>
+            Iterator.dropL(1) |> Iterator.toList == Nil
+    @test
+    def dropL02(): Bool & Impure =
+        (1 :: Nil) |> List.toIterator |>
+            Iterator.dropL(1) |> Iterator.toList == Nil
+
+    @test
+    def dropL03(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> List.toIterator |>
+            Iterator.dropL(2) |>  Iterator.toList == 3 :: Nil
+
+    @test
+    def dropL04(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> List.toIterator |>
+            Iterator.dropL(3) |>  Iterator.toList == Nil
+
+    @test
+    def dropL05(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> List.toIterator |>
+            Iterator.dropL(4) |>  Iterator.toList == Nil
+
+    @test
+    def dropL06(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> List.toIterator |>
+            Iterator.dropL(0) |>  Iterator.toList == 1 :: 2 :: 3 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // dropWhileL                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def dropWhileL01(): Bool & Impure =
+        (Nil: List[Int32]) |> List.toIterator |>
+            Iterator.dropWhileL(x -> x < 3) |> Iterator.toList == Nil
+    @test
+    def dropWhileL02(): Bool & Impure =
+        (1 :: Nil) |> List.toIterator |>
+            Iterator.dropWhileL(x -> x < 3) |> Iterator.toList == Nil
+
+    @test
+    def dropWhileL03(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> List.toIterator |>
+            Iterator.dropWhileL(x -> x < 3) |>  Iterator.toList == 3 :: Nil
+
+    @test
+    def dropWhileL04(): Bool & Impure =
+        (1 :: 2 :: 3 :: 4 :: Nil) |> List.toIterator |>
+            Iterator.dropWhileL(x -> x < 3) |>  Iterator.toList == 3 :: 4 :: Nil
+
+    @test
+    def dropWhileL05(): Bool & Impure =
+        (1 :: 2 :: 3 :: 4 :: 0 :: Nil) |> List.toIterator |>
+            Iterator.dropWhileL(x -> x < 3) |>  Iterator.toList == 3 :: 4 :: 0 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toResultList                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toResultList01(): Bool & Impure =
+        (Nil: List[Result[Int32, String]]) |> List.toIterator |>
+            Iterator.toResultList == Ok(Nil)
+    @test
+    def toResultList02(): Bool & Impure =
+        ((Ok(1) :: Nil): List[Result[Int32, String]]) |> List.toIterator |>
+            Iterator.toResultList == Ok(1 :: Nil)
+
+    @test
+    def toResultList03(): Bool & Impure =
+        ((Ok(1) :: Ok(2) :: Ok(3) :: Nil): List[Result[Int32, String]]) |> List.toIterator |>
+            Iterator.toResultList == Ok(1 :: 2 :: 3 :: Nil)
+
+    @test
+    def toResultList04(): Bool & Impure =
+        (Ok(1) :: Ok(2) :: Ok(3) :: Err("four") :: Nil) |> List.toIterator |>
+            Iterator.toResultList == Err("four")
+
+    @test
+    def toResultList05(): Bool & Impure =
+        (Ok(1) :: Ok(2) :: Ok(3) :: Err("four") :: Err("zero") :: Nil) |> List.toIterator |>
+            Iterator.toResultList == Err("four")
 
 }

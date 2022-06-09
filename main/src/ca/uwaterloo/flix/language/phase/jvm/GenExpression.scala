@@ -106,22 +106,20 @@ object GenExpression {
     case Expression.Var(sym, tpe, _) =>
       readVar(sym, tpe, visitor)
 
-    case Expression.Closure(sym, freeVars, fnType, _, loc) =>
-      // ClosureInfo
-      val closure = ClosureInfo(sym, freeVars, fnType)
+    case Expression.Closure(sym, closureArgs, fnType, _, _) =>
       // JvmType of the closure
-      val jvmType = JvmOps.getClosureClassType(closure.sym, closure.tpe)
+      val jvmType = JvmOps.getClosureClassType(sym, fnType)
       // new closure instance
       visitor.visitTypeInsn(NEW, jvmType.name.toInternalName)
       // Duplicate
       visitor.visitInsn(DUP)
       visitor.visitMethodInsn(INVOKESPECIAL, jvmType.name.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
       // Capturing free args
-      for ((f, i) <- freeVars.zipWithIndex) {
+      for ((arg, i) <- closureArgs.zipWithIndex) {
+        val erasedArgType = JvmOps.getErasedJvmType(arg.tpe)
         visitor.visitInsn(DUP)
-        val v = Expression.Var(f.sym, f.tpe, loc)
-        compileExpression(v, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitFieldInsn(PUTFIELD, jvmType.name.toInternalName, s"clo$i", JvmOps.getErasedJvmType(f.tpe).toDescriptor)
+        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitFieldInsn(PUTFIELD, jvmType.name.toInternalName, s"clo$i", erasedArgType.toDescriptor)
       }
 
     case Expression.ApplyClo(exp, args, tpe, _) =>
@@ -953,10 +951,12 @@ object GenExpression {
       addSourceLine(visitor, loc)
       compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
       visitor.visitTypeInsn(CHECKCAST, JvmName.Channel.toInternalName)
-      visitor.visitInsn(DUP)
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
       AsmOps.boxIfPrim(visitor, JvmOps.getJvmType(exp2.tpe))
       visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Channel.toInternalName, "put", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
+      // push unit on the stack
+      visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
+
 
     case Expression.SelectChannel(rules, default, _, loc) =>
       addSourceLine(visitor, loc)

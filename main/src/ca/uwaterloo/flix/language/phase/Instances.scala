@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -82,7 +82,7 @@ object Instances {
       * * The same namespace as its type.
       */
     def checkOrphan(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
-      case TypedAst.Instance(_, _, sym, tpe, _, _, ns, _) => tpe.typeConstructor match {
+      case TypedAst.Instance(_, _, _, sym, tpe, _, _, ns, _) => tpe.typeConstructor match {
         // Case 1: Enum type in the same namespace as the instance: not an orphan
         case Some(TypeConstructor.KindedEnum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => ().toSuccess
         // Case 2: Any type in the class namespace: not an orphan
@@ -98,7 +98,7 @@ object Instances {
       * * all type arguments are variables or booleans
       */
     def checkSimple(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
-      case TypedAst.Instance(_, _, sym, tpe, _, _, _, _) => tpe match {
+      case TypedAst.Instance(_, _, _, sym, tpe, _, _, _, _) => tpe match {
         case _: Type.Cst => ().toSuccess
         case _: Type.KindedVar => InstanceError.ComplexInstanceType(tpe, sym, sym.loc).toFailure
         case _: Type.Apply =>
@@ -120,6 +120,8 @@ object Instances {
           }.map(_ => ())
         case Type.Alias(alias, _, _, _) => InstanceError.IllegalTypeAliasInstance(alias.sym, sym, sym.loc).toFailure
         case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type.")
+        case _: Type.UnkindedArrow => throw InternalCompilerException("Unexpected unkinded type.")
+        case _: Type.ReadWrite => throw InternalCompilerException("Unexpected unkinded type.")
         case _: Type.Ascribe => throw InternalCompilerException("Unexpected ascribe type.")
       }
     }
@@ -128,7 +130,7 @@ object Instances {
       * Checks for overlap of instance types, assuming the instances are of the same class.
       */
     def checkOverlap(inst1: TypedAst.Instance, inst2: TypedAst.Instance)(implicit flix: Flix): Validation[Unit, InstanceError] = {
-      Unification.unifyTypes(generifyBools(inst1.tpe), inst2.tpe) match {
+      Unification.unifyTypes(generifyBools(inst1.tpe), inst2.tpe, RigidityEnv.empty) match {
         case Ok(_) =>
           Validation.Failure(LazyList(
             InstanceError.OverlappingInstances(inst1.sym.loc, inst2.sym.loc),
@@ -149,6 +151,8 @@ object Instances {
       case Type.Apply(tpe1, tpe2, loc) => Type.Apply(generifyBools(tpe1), generifyBools(tpe2), loc)
       case Type.Alias(cst, args, tpe, loc) => Type.Alias(cst, args.map(generifyBools), generifyBools(tpe), loc)
       case _: Type.UnkindedVar => throw InternalCompilerException("unexpected unkinded type")
+      case _: Type.UnkindedArrow => throw InternalCompilerException("unexpected unkinded type")
+      case _: Type.ReadWrite => throw InternalCompilerException("unexpected unkinded type")
       case _: Type.Ascribe => throw InternalCompilerException("unexpected unkinded type")
     }
 
@@ -198,11 +202,11 @@ object Instances {
       * Finds an instance of the class for a given type.
       */
     def findInstanceForType(tpe: Type, clazz: Symbol.ClassSym): Option[(Ast.Instance, Substitution)] = {
-        val superInsts = root.classEnv.get(clazz).map(_.instances).getOrElse(Nil)
-        // lazily find the instance whose type unifies and save the substitution
-        superInsts.iterator.flatMap {
-          superInst => Unification.unifyTypes(tpe, superInst.tpe).toOption.map((superInst, _))
-        }.nextOption()
+      val superInsts = root.classEnv.get(clazz).map(_.instances).getOrElse(Nil)
+      // lazily find the instance whose type unifies and save the substitution
+      superInsts.iterator.flatMap {
+        superInst => Unification.unifyTypes(tpe, superInst.tpe, RigidityEnv.empty).toOption.map((superInst, _))
+      }.nextOption()
     }
 
     /**
@@ -210,7 +214,7 @@ object Instances {
       * and that the constraints on `inst` entail the constraints on the super instance.
       */
     def checkSuperInstances(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
-      case TypedAst.Instance(_, _, sym, tpe, tconstrs, _, _, _) =>
+      case TypedAst.Instance(_, _, _, sym, tpe, tconstrs, _, _, _) =>
         val superClasses = root.classEnv(sym.clazz).superClasses
         Validation.traverseX(superClasses) {
           superClass =>

@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
@@ -125,23 +124,23 @@ class TestStratifier extends FunSuite with TestUtils {
     // stratification error:
     // ... <- A <- B <-x A <- ...
     val input =
-      """
-        |pub opaque type A = Int32
-        |
-        |instance Eq[A] {
-        |  pub def eq(_a1: A, _a2: A): Bool =
-        |    let p1 = #{
-        |        B301(12).
-        |        A301(x) :- B301(x).
-        |    };
-        |    let p2 = #{
-        |        A301(15). C301(15).
-        |        B301(x) :- not A301(x), C301(x).
-        |    };
-        |    (query p1 select x from A301(x) |> Array.length) +
-        |    (query p2 select x from B301(x) |> Array.length)
-        |    > 0
-        |}
+    """
+      |pub enum A(Int32)
+      |
+      |instance Eq[A] {
+      |  pub def eq(_a1: A, _a2: A): Bool =
+      |    let p1 = #{
+      |        B301(12).
+      |        A301(x) :- B301(x).
+      |    };
+      |    let p2 = #{
+      |        A301(15). C301(15).
+      |        B301(x) :- not A301(x), C301(x).
+      |    };
+      |    (query p1 select x from A301(x) |> Array.length) +
+      |    (query p2 select x from B301(x) |> Array.length)
+      |    > 0
+      |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibAll)
     expectError[StratificationError](result)
@@ -230,6 +229,90 @@ class TestStratifier extends FunSuite with TestUtils {
         |  C(c, x) :- fix D(c; x).
         |  D(c; x) :- B(c; x).
         |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[StratificationError](result)
+  }
+
+  test("Stratification.15") {
+    val input =
+      """
+        |pub def f(): Int32 =
+        |    let p = #{
+        |        A(1; 2) :- fix A(2; 3).
+        |    };
+        |    let ans = query p select (a, b) from A(a; b);
+        |    Array.length(ans)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[StratificationError](result)
+  }
+
+  test("Stratification.16") {
+    val input =
+      """
+        |pub def f(): Int32 =
+        |    let p = #{
+        |        A(1; 2) :- A(2; 3), fix A(2; 3).
+        |    };
+        |    let ans = query p select (a, b) from A(a; b);
+        |    Array.length(ans)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[StratificationError](result)
+  }
+
+  test("Stratification.17") {
+    val input =
+      """
+        |pub def f(): Int32 =
+        |    let p = #{
+        |        A(1; 2) :- fix A(2; 3), A(2; 3).
+        |    };
+        |    let ans = query p select (a, b) from A(a; b);
+        |    Array.length(ans)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[StratificationError](result)
+  }
+
+  test("Stratification.18") {
+    val input =
+      """
+        |pub def f(): Int32 =
+        |    let p = #{
+        |        A(1; 2) :- not A(2; 3).
+        |    };
+        |    let ans = query p select (a, b) from A(a; b);
+        |    Array.length(ans)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[StratificationError](result)
+  }
+
+  test("Stratification.19") {
+    val input =
+      """
+        |pub def f(): Int32 =
+        |    let p = #{
+        |        A(1; 2) :- A(2; 3), not A(2; 3).
+        |    };
+        |    let ans = query p select (a, b) from A(a; b);
+        |    Array.length(ans)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[StratificationError](result)
+  }
+
+  test("Stratification.20") {
+    val input =
+      """
+        |pub def f(): Int32 =
+        |    let p = #{
+        |        A(1; 2) :- not A(2; 3), A(2; 3).
+        |    };
+        |    let ans = query p select (a, b) from A(a; b);
+        |    Array.length(ans)
       """.stripMargin
     val result = compile(input, Options.TestWithLibAll)
     expectError[StratificationError](result)

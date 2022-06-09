@@ -42,7 +42,7 @@ namespace Test/Exp/Jvm/InvokeStaticMethod {
 
     @test
     def testInvokeInterfaceStaticMethod02(): ##java.nio.file.Path & Impure =
-        import static java.nio.file.Path.of(String, Array[String]): ##java.nio.file.Path & Impure as of1;
+        import static java.nio.file.Path.of(String, Array[String, Static]): ##java.nio.file.Path & Impure as of1;
         try {
             of1("end", ["p1", "p2", "p3"])
         } catch {

@@ -146,6 +146,21 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedTypes](result)
   }
 
+  test("TestMismatchedTypes.Arrow.01") {
+    // Regression test.
+    // See https://github.com/flix/flix/issues/3634
+    val input =
+      """
+        |enum E[a: Type, ef: Bool](Unit)
+        |def f(g: E[Int32, true]): Bool = ???
+        |def mkE(): E[Int32, true] & ef = ???
+        |
+        |def g(): Bool = f(mkE)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
   test("TestOverApplied.01") {
     val input =
       """
@@ -201,12 +216,6 @@ class TestTyper extends FunSuite with TestUtils {
   }
 
   test("TestLeq.Wildcard.03") {
-    val input = "def foo(a: Int32): Int32 & _ = a"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectGeneralizationError](result)
-  }
-
-  test("TestLeq.Wildcard.04") {
     val input = "def foo(a: Int32): Int32 & _ = a"
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.EffectGeneralizationError](result)

@@ -29,17 +29,44 @@ object CompleteProvider {
     */
   private val BlockList: List[String] = List("class", "def", "instance", "namespace")
 
+  def isAnnotationPrefix(word: Option[String]) = word match {
+      case None => false
+      case Some(w) => w.startsWith("@")
+    }
+
   /**
     * Returns a list of auto-complete suggestions.
     */
   def autoComplete(uri: String, pos: Position, line: Option[String], word: Option[String])(implicit index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
-    // Ordered by priority.
-    getVarSuggestions(uri, pos, line, word) ++
-      getDefAndSigSuggestions(uri, pos, line, word) ++
-      getInstanceSuggestions(uri, pos, line, word) ++
-      getWithSuggestions(uri, pos, line, word) ++
-      getKeywordCompletionItems(line, word) ++
-      getSnippetCompletionItems(line, word)
+    if(isAnnotationPrefix(word)) {
+      getAnnotationCompletionItems(line, word)
+    } else {
+      // Ordered by priority.
+      getVarSuggestions(uri, pos, line, word) ++
+        getDefAndSigSuggestions(uri, pos, line, word) ++
+        getInstanceSuggestions(uri, pos, line, word) ++
+        getWithSuggestions(uri, pos, line, word) ++
+        getKeywordCompletionItems(line, word) ++
+        getSnippetCompletionItems(line, word)
+    }
+  }
+
+  /**
+    * Returns a list of annotation completion items.
+    */
+  private def getAnnotationCompletionItems(line: Option[String], word: Option[String]): List[CompletionItem] = {
+    List(
+      CompletionItem("benchmark", "benchmark ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("test", "test ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("Deprecated", "Deprecated ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("Experimental", "Experimental ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("ParallelWhenPure", "ParallelWhenPure ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("Parallel", "Parallel ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("LazyWhenPure", "LazyWhenPure ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("Lazy", "Lazy ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("Space", "Space ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("Time", "Time ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil)
+    )
   }
 
   /**
@@ -55,16 +82,17 @@ object CompleteProvider {
       // NB: Please keep the list alphabetically sorted.
 
       // Keywords:
-      CompletionItem("as", "as ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("alias", "alias ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("and", "and ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("as", "as ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("case", "case ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.Snippet, Nil),
       CompletionItem("chan", "chan ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("choose", "choose ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("class", "class ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("def", "def ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
-      CompletionItem("do", "do ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("deref", "deref ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("discard", "discard ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("do", "do ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("eff", "eff ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("else", "else ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("enum", "enum ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
@@ -80,13 +108,13 @@ object CompleteProvider {
       CompletionItem("into", "into ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("lat", "lat ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("law", "law ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
-      CompletionItem("let", "let ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("lazy", "lazy ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("let", "let ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("match", "match ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("namespace", "namespace ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
-      CompletionItem("null", "null ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
-      CompletionItem("not", "not ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("new", "new ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("not", "not ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("null", "null ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("opaque", "opaque ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("or", "or ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("override", "override ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
@@ -94,9 +122,9 @@ object CompleteProvider {
       CompletionItem("pub", "pub ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("Pure", "Pure ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("query", "query ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
-      CompletionItem("region", "region ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("Record", "Record ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("ref", "ref ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("region", "region ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("rel", "rel ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("Schema", "Schema ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("sealed", "sealed ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
@@ -108,8 +136,8 @@ object CompleteProvider {
       CompletionItem("try", "try ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("type", "type ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("use", "use ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
-      CompletionItem("with", "with ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("where", "where ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("with", "with ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
 
       // Types:
       CompletionItem("Bool", "Bool", None, Some("type"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
@@ -197,6 +225,8 @@ object CompleteProvider {
         Type.Alias(sym, args, t, loc)
 
       case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable.")
+      case _: Type.UnkindedArrow => throw InternalCompilerException("Unexpected unkinded arrow.")
+      case _: Type.ReadWrite => throw InternalCompilerException("Unexpected unkinded type.")
       case _: Type.Ascribe => throw InternalCompilerException("Unexpected kind ascription.")
     }
 

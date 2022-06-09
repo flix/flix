@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-instance Scoped[ScopedArray[a]] {
-    pub def regionOf(_: ScopedArray[a, r]): Region[r] = () as Region[r]
+instance Scoped[Array[a]] {
+    pub def regionOf(_: Array[a, r]): Region[r] = () as Region[r]
 }
 
 namespace Array {
@@ -23,7 +23,7 @@ namespace Array {
     ///
     /// Compares `a` and `b` lexicographically.
     ///
-    pub def compare(a: Array[v], b: Array[v]): Comparison & Impure with Order[v] =
+    pub def compare(a: Array[v, r1], b: Array[v, r2]): Comparison \ Read(r1, r2) with Order[v] =
         let len = Int32.min(Array.length(a), Array.length(b));
         def loop(i) = {
             if (i < len) {
@@ -45,11 +45,11 @@ namespace Array {
     ///
     /// Returns a string representation of the given array `a`.
     ///
-    pub def toString(a: Array[a]): String with ToString[a] =
+    pub def toString(a: Array[a, r]): String \ Read(r) with ToString[a] =
         def loop(i, acc) =
             if (i < a.length) {
-                if (i == 0) loop(i + 1, "${a[i]}") as & Pure
-                else loop(i + 1, "${acc}, ${a[i]}") as & Pure
+                if (i == 0) loop(i + 1, "${a[i]}")
+                else loop(i + 1, "${acc}, ${a[i]}")
             } else {
                 "[${acc}]"
             };
@@ -61,7 +61,8 @@ namespace Array {
     /// Equivalent to the expression `[x; l]`.
     ///
     @Time(l) @Space(l)
-    pub def new(x: a, l: Int32): Array[a] & Impure = [x; l]
+    pub def new(x: a, l: Int32, r: Region[r]): Array[a, r] \ Write(r) =
+        [x; l] @ r
 
     ///
     /// Returns the element at position `i` in the array `a`.
@@ -69,7 +70,7 @@ namespace Array {
     /// Equivalent to the expression `a[i]`.
     ///
     @Time(1) @Space(1)
-    pub def get(i: Int32, a: ScopedArray[a, r]): a \ Read(r) = a[i]
+    pub def get(i: Int32, a: Array[a, r]): a \ Read(r) = a[i]
 
     ///
     /// Stores the value `x` at position `i` in the array `a`.
@@ -77,19 +78,20 @@ namespace Array {
     /// Equivalent to the expression `a[i] = x`.
     ///
     @Time(1) @Space(1)
-    pub def put(x: a, i: Int32, a: Array[a]): Array[a] & Impure = a[i] = x; a
+    pub def put(x: a, i: Int32, a: Array[a, r]): Unit \ Write(r) =
+        a[i] = x
 
     ///
     /// Returns `true` if the given array `a` is empty.
     ///
     @Time(1) @Space(1)
-    pub def isEmpty(a: Array[a]): Bool = a.length == 0
+    pub def isEmpty(a: Array[a, r]): Bool = a.length == 0
 
     ///
     /// Returns the length of the array `a`.
     ///
     @Time(1) @Space(1)
-    pub def length(a: ScopedArray[a, r]): Int32 = a.length
+    pub def length(a: Array[a, r]): Int32 = a.length
 
     ///
     /// Returns a fresh array with the elements from the array `a` from index `b` (inclusive) until index `e` (exclusive).
@@ -97,13 +99,13 @@ namespace Array {
     /// Equivalent to the expression `a[b..e]`.
     ///
     @Time(e - b) @Space(e - b)
-    pub def slice(b: Int32, e: Int32, a: Array[a]): Array[a] & Impure = a[b..e]
+    pub def slice(b: Int32, e: Int32, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } = a[b..e]
 
     ///
     /// Returns the array `a` as a list.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def toList(a: Array[a]): List[a] & Impure =
+    pub def toList(a: Array[a, r]): List[a] \ Read(r) =
         def loop(i, acc) = {
             if (i == 0) {
                 acc
@@ -117,22 +119,19 @@ namespace Array {
     ///
     /// Returns the array `a` as a `DelayList`.
     ///
-    pub def toDelayList(a: Array[a]): DelayList[a] & Impure =
-        let cp = Array.copyOfRange(0, a.length, a);
-        def loop(i) = {
-            if (i == cp.length) {
-                ENil
-            } else {
-                let x = cp[i] as & Pure; // Note this cast is safe, since `cp` is a private copy of `a`.
-                LCons(x, lazy loop(i + 1))
-            }
+    pub def toDelayList(a: Array[a, r]): DelayList[a] \ Read(r) =
+        def loop(i, acc) = {
+            if (i < 0)
+                acc
+            else
+                loop(i - 1, ECons(a[i], acc))
         };
-        LList(lazy loop(0))
+        loop(a.length - 1, ENil)
 
     ///
     /// Returns the array `arr` as a chain.
     ///
-    pub def toChain(arr: Array[a]): Chain[a] & Impure =
+    pub def toChain(arr: Array[a, r]): Chain[a] \ Read(r) =
         def loop(i, acc) = {
             if (i == 0) {
                 acc
@@ -149,7 +148,7 @@ namespace Array {
     /// Returns `None` if `a` is empty.
     ///
     @Time(1) @Space(1)
-    pub def head(a: Array[a]): Option[a] & Impure =
+    pub def head(a: Array[a, r]): Option[a] \ Read(r) =
         if (length(a) > 0) Some(a[0]) else None
 
     ///
@@ -158,7 +157,7 @@ namespace Array {
     /// Returns `None` if `a` is empty.
     ///
     @Time(1) @Space(1)
-    pub def last(a: Array[a]): Option[a] & Impure =
+    pub def last(a: Array[a, r]): Option[a] \ Read(r) =
         let len = length(a);
         if (len > 0) Some(a[len-1]) else None
 
@@ -166,13 +165,13 @@ namespace Array {
     /// Return a new array, appending the elements `b` to elements of `a`.
     ///
     @Time(length(a) + length(b)) @Space(length(a) + length(b))
-    pub def append(a: Array[a], b: Array[a]): Array[a] & Impure =
+    pub def append(a: Array[a, r1], b: Array[a, r2]): Array[a, r1] \ { Read(r2), Write(r1) } =
         let len1 = length(a);
         let len2 = length(b);
         if (len1 == 0)
-            slice(0, len2, b)
+            copyOfRange(0, len2, b, Scoped.regionOf(a))
         else {
-            let out = new(a[0], len1 + len2);
+            let out = new(a[0], len1 + len2, Scoped.regionOf(a));
             updateSequence!(0, a, out);
             updateSequence!(len1, b, out);
             out
@@ -182,7 +181,7 @@ namespace Array {
     /// Returns `true` if and only if `a` contains the element `x`.
     ///
     @Time(length(a)) @Space(1)
-    pub def memberOf(x: a, a: Array[a]): Bool & Impure with Eq[a] =
+    pub def memberOf(x: a, a: Array[a, r]): Bool \ Read(r) with Eq[a] =
         exists(y -> y == x, a)
 
     ///
@@ -190,7 +189,7 @@ namespace Array {
     ///
     /// Returns `None` if `a` is empty.
     ///
-    pub def minimum(a: Array[a]): Option[a] & Impure with Order[a] =
+    pub def minimum(a: Array[a, r]): Option[a] \ Read(r) with Order[a] =
         reduceLeft(Order.min, a)
 
     ///
@@ -198,7 +197,7 @@ namespace Array {
     ///
     /// Returns `None` if `a` is empty.
     ///
-    pub def minimumBy(cmp: (a, a) -> Comparison, a: Array[a]): Option[a] & Impure =
+    pub def minimumBy(cmp: (a, a) -> Comparison, a: Array[a, r]): Option[a] \ Read(r) =
         reduceLeft(Order.minBy(cmp), a)
 
     ///
@@ -206,7 +205,7 @@ namespace Array {
     ///
     /// Returns `None` if `a` is empty.
     ///
-    pub def maximum(a: Array[a]): Option[a] & Impure with Order[a] =
+    pub def maximum(a: Array[a, r]): Option[a] \ Read(r) with Order[a] =
         reduceLeft(Order.max, a)
 
     ///
@@ -214,30 +213,29 @@ namespace Array {
     ///
     /// Returns `None` if `a` is empty.
     ///
-    pub def maximumBy(cmp: (a, a) -> Comparison, a: Array[a]): Option[a] & Impure =
+    pub def maximumBy(cmp: (a, a) -> Comparison, a: Array[a, r]): Option[a] \ Read(r) =
         reduceLeft(Order.maxBy(cmp), a)
 
     ///
     /// Alias for `IndexOfLeft`
     ///
     @Time(length(a)) @Space(1)
-    pub def indexOf(x: a, a: Array[a]): Option[Int32] & Impure with Eq[a] = indexOfLeft(x,a)
+    pub def indexOf(x: a, a: Array[a, r]): Option[Int32] \ Read(r) with Eq[a] =
+        indexOfLeft(x,a)
 
     ///
     /// Optionally returns the position of the first occurrence of `a` in `arr`
     /// searching from left to right.
     ///
     @Time(length(arr)) @Space(1)
-    pub def indexOfLeft(a: a, arr: Array[a]): Option[Int32] & Impure with Eq[a] =
+    pub def indexOfLeft(a: a, arr: Array[a, r]): Option[Int32] \ Read(r) with Eq[a] =
         def loop(i) = {
-            if (i >= arr.length) {
+            if (i >= arr.length)
                 -1
-            } else {
-                if (arr[i] == a)
-                    i
-                else
-                    loop(i + 1)
-            }
+            else if (arr[i] == a)
+                i
+            else
+                loop(i + 1)
         };
         let i = loop(0);
         if (i < 0) None else Some(i)
@@ -247,15 +245,14 @@ namespace Array {
     /// searching from right to left.
     ///
     @Time(length(arr)) @Space(1)
-    pub def indexOfRight(a: a, arr: Array[a]): Option[Int32] & Impure with Eq[a] =
+    pub def indexOfRight(a: a, arr: Array[a, r]): Option[Int32] \ Read(r) with Eq[a] =
         def loop(i) = {
             if (i < 0)
                 -1
+            else if (arr[i] == a)
+                i
             else
-                if (arr[i] == a)
-                    i
-                else
-                    loop(i - 1)
+                loop(i - 1)
         };
         let i = loop(length(arr) - 1);
         if (i < 0) None else Some(i)
@@ -264,38 +261,33 @@ namespace Array {
     /// Return the positions of the all the occurrences of `a` in `arr`.
     ///
     @Time(length(arr)) @Space(length(arr))
-    pub def indices(a: a, arr: Array[a]): Array[Int32] & Impure with Eq[a] =
+    pub def indices(a: a, arr: Array[a, Static]): Array[Int32, Static] & Impure with Eq[a] =
         findIndices(b -> a == b, arr)
 
     ///
     /// Alias for `findLeft`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def find(f: a -> Bool, arr: Array[a]): Option[a] & Impure = findLeft(f, arr)
+    pub def find(f: a -> Bool & ef, arr: Array[a, r]): Option[a] \ { ef, Read(r) } =
+        findLeft(f, arr)
 
     ///
     /// Optionally returns the first element of `a` that satisfies the predicate `f` when searching from left to right.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def findLeft(f: a -> Bool, arr: Array[a]): Option[a] & Impure =
-        match findIndexOfLeft(x -> f(x), arr) {
-            case None => None
+    pub def findLeft(f: a -> Bool & ef, arr: Array[a, r]): Option[a] \ { ef, Read(r) } =
+        match findIndexOfLeft(f, arr) {
+            case None    => None
             case Some(i) => Some(arr[i])
         }
 
     ///
     /// Optionally returns the first element of `xs` that satisfies the predicate `f` when searching from right to left.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def findRight(f: a -> Bool, arr: Array[a]): Option[a] & Impure =
+    pub def findRight(f: a -> Bool & ef, arr: Array[a, r]): Option[a] \ { ef, Read(r) } =
         match findIndexOfRight(x -> f(x), arr) {
-            case None => None
+            case None    => None
             case Some(i) => Some(arr[i])
         }
 
@@ -305,12 +297,12 @@ namespace Array {
     /// Returns `[]` if `b >= e`.
     ///
     @Time(e - b) @Space(e - b)
-    pub def range(b: Int32, e: Int32): Array[Int32] & Impure =
+    pub def range(b: Int32, e: Int32, r: Region[r]): Array[Int32, r] \ Write(r) =
         if (b >= e)
-            []
+            [] @ r
         else {
             let f = x -> x + b;
-            init(f, e-b)
+            init(f, e - b, r)
         }
 
     ///
@@ -319,25 +311,26 @@ namespace Array {
     /// Returns `[]` if `n <= 0`.
     ///
     @Time(n) @Space(n)
-    pub def repeat(n: Int32, x: a): Array[a] & Impure =
+    pub def repeat(n: Int32, x: a, r: Region[r]): Array[a, r] \ Write(r) =
         if (n <= 0)
-            []
+            [] @ r
         else
-            new(x, n)
+            new(x, n, r)
 
     ///
     /// Alias for `scanLeft`.
     ///
-    pub def scan(f: (b, a) -> b & ef, s: b, arr: Array[a]): Array[b] & Impure = scanLeft(f, s, arr)
+    pub def scan(f: (b, a) -> b & ef, s: b, arr: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
+        scanLeft(f, s, arr)
 
     ///
     /// Accumulates the result of applying `f` to `arr` going left to right.
     ///
     /// That is, the result is of the form: `[s , f(s, x1), f(f(s, x1), x2),  ...]`.
     ///
-    pub def scanLeft(f: (b, a) -> b & ef, s: b, arr: Array[a]): Array[b] & Impure =
+    pub def scanLeft(f: (b, a) -> b & ef, s: b, arr: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(arr) + 1;
-        let b = new(s, len);
+        let b = new(s, len, Scoped.regionOf(arr));
         def loop(i, acc) = {
             if (i >= len)
                 ()
@@ -355,9 +348,9 @@ namespace Array {
     ///
     /// That is, the result is of the form: `[..., f(xn-1, f(xn, s)), f(xn, s), s]`.
     ///
-    pub def scanRight(f: (a, b) -> b & ef, s: b, a: Array[a]): Array[b] & Impure =
+    pub def scanRight(f: (a, b) -> b & ef, s: b, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        let b = new(s, len + 1);
+        let b = new(s, len + 1, Scoped.regionOf(a));
         def loop(i, acc) = {
             if (i < 0)
                 ()
@@ -376,15 +369,15 @@ namespace Array {
     /// The result is a new array.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def map(f: a -> b & ef, a: Array[a]): Array[b] & Impure =
+    pub def map(f: a -> b & ef, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        init(i -> f(a[i]), len)
+        init(i -> f(a[i]), len, Scoped.regionOf(a))
 
     ///
     /// Apply `f` to every element in array `arr`. Array `arr` is mutated.
     ///
     @Time(time(f) * length(arr)) @Space(space(f) * length(arr))
-    pub def transform!(f: a -> a, arr: Array[a]): Unit & Impure =
+    pub def transform!(f: a -> a & ef, arr: Array[a, r]): Unit \ { ef, Read(r), Write(r) } =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)
@@ -402,15 +395,15 @@ namespace Array {
     /// That is, the result is of the form: `[ f(a[0], 0), f(a[1], 1), ... ]`.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def mapWithIndex(f: (a, Int32) -> b & ef, a: Array[a]): Array[b] & Impure =
+    pub def mapWithIndex(f: (a, Int32) -> b & ef, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        init(i -> f(a[i], i), len)
+        init(i -> f(a[i], i), len, Scoped.regionOf(a))
 
     ///
     /// Apply `f` to every element in array `a` along with that element's index. Array `a` is mutated.
     ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def transformWithIndex!(f: (a, Int32) -> a, arr: Array[a]): Unit & Impure =
+    pub def transformWithIndex!(f: (a, Int32) -> a & ef, arr: Array[a, r]): Unit \ { ef, Read(r), Write(r) } =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)
@@ -426,24 +419,24 @@ namespace Array {
     /// Returns the result of applying `f` to every element in `a` and concatenating the results.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def flatMap(f: a -> Array[b] & ef, a: Array[a]): Array[b] & Impure =
+    pub def flatMap(f: a -> Array[b, Static] & ef, a: Array[a, Static]): Array[b, Static] & Impure =
         let len = length(a);
-        init(i -> f(a[i]), len) |> flatten
+        init(i -> f(a[i]), len, Static) |> flatten
 
     ///
     /// Returns the reverse of `a`.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def reverse(a: Array[a]): Array[a] & Impure =
+    pub def reverse(a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
         let len = length(a);
         let end = len - 1;
-        init(i -> a[end - i], len)
+        init(i -> a[end - i], len, Scoped.regionOf(a))
 
     ///
     /// Reverse the array `arr`, mutating it in place.
     ///
     @Time(length(arr)) @Space(1)
-    pub def reverse!(arr: Array[a]): Unit & Impure =
+    pub def reverse!(arr: Array[a, r]): Unit \ { Read(r), Write(r) } =
         let len = length(arr);
         let halflen = len / 2;
         def loop(i, j) = {
@@ -463,10 +456,10 @@ namespace Array {
     /// Rotate the contents of array `arr` by `n` steps to the left.
     ///
     @Time(n) @Space(length(arr))
-    pub def rotateLeft(n: Int32, arr: Array[a]): Array[a] & Impure =
+    pub def rotateLeft(n: Int32, arr: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
         let len = length(arr);
         if (len < 1)
-            []
+            [] @ Scoped.regionOf(arr)
         else
             if (n < 0)
                 rotateRightHelper(Int32.abs(n), arr)
@@ -480,18 +473,18 @@ namespace Array {
     ///
     /// This is an explicit helper to avoid code duplication.
     ///
-    def rotateLeftHelper(n: Int32, arr: Array[a]): Array[a] & Impure =
+    def rotateLeftHelper(n: Int32, arr: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
         let len = length(arr);
         let f = i -> { let i1 = n + i; arr[i1 rem len] };
-        init(f, len)
+        init(f, len, Scoped.regionOf(arr))
 
     ///
     /// Rotate the contents of array `arr` by `n` steps to the right.
     ///
     @Time(n) @Space(length(arr))
-    pub def rotateRight(n: Int32, arr: Array[a]): Array[a] & Impure =
+    pub def rotateRight(n: Int32, arr: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
         if (length(arr) < 1)
-            []
+            [] @ Scoped.regionOf(arr)
         else
             if (n < 0)
                 rotateLeftHelper(Int32.abs(n), arr)
@@ -505,12 +498,12 @@ namespace Array {
     ///
     /// This is an explicit helper to avoid code duplication.
     ///
-    def rotateRightHelper(n: Int32, a: Array[a]): Array[a] & Impure =
+    def rotateRightHelper(n: Int32, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
         let len = length(a);
         let n1 = n rem len;
         let start = len - n1;
         let f = i -> { let i1 = start + i; a[i1 rem len]};
-        init(f, len)
+        init(f, len, Scoped.regionOf(a))
 
     ///
     /// Returns a copy of `a` with the element at index `i` replaced by `x`.
@@ -518,22 +511,22 @@ namespace Array {
     /// Returns a shallow copy of `a` if `i < 0` or `i > length(xs)-1`.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def update(i: Int32, x: a, a: Array[a]): Array[a] & Impure =
+    pub def update(i: Int32, x: a, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
         let f = ix -> if (ix == i) x else a[ix];
-        init(f, length(a))
+        init(f, length(a), Scoped.regionOf(a))
 
     ///
     /// Returns a copy of `a` with every occurrence of `from` replaced by `to`.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def replace(from: {from :: a}, to: {to :: a}, a: Array[a]): Array[a] & Impure with Eq[a] =
+    pub def replace(from: {from :: a}, to: {to :: a}, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } with Eq[a] =
         map(e -> if (e == from.from) to.to else e, a)
 
     ///
     /// Replace every occurrence of `from` by `to` in the array `a`, mutating it in place.
     ///
     @Time(length(a)) @Space(1)
-    pub def replace!(from: {from :: a}, to: {to :: a}, a: Array[a]): Unit & Impure with Eq[a] =
+    pub def replace!(from: {from :: a}, to: {to :: a}, a: Array[a, r]): Unit \ { Read(r), Write(r) } with Eq[a] =
         transform!(e -> if (e == from.from) to.to else e, a)
 
     ///
@@ -544,10 +537,10 @@ namespace Array {
     /// If patching occurs at index `i+j` in `b`, then the element at index `j` in `a` is used.
     ///
     @Time(n) @Space(length(b))
-    pub def patch(i: Int32, n: Int32, a: Array[a], b: Array[a]): Array[a] & Impure =
+    pub def patch(i: Int32, n: Int32, a: Array[a, r1], b: Array[a, r2]): Array[a, r2] \ { Read(r1, r2), Write(r2) } =
         let len1 = length(a);
         let size = if (n > len1) len1 else n;
-        let sub = slice(0, size, a);
+        let sub = copyOfRange(0, size, a, Scoped.regionOf(b));
         updateSequence(i, sub, b)
 
     ///
@@ -558,23 +551,24 @@ namespace Array {
     /// If patching occurs at index `i+j` in `b`, then the element at index `j` in `a` is used.
     ///
     @Time(n) @Space(1)
-    pub def patch!(i: Int32, n: Int32, a: Array[a], b: Array[a]): Unit & Impure =
+    pub def patch!(i: Int32, n: Int32, a: Array[a, r1], b: Array[a, r2]): Unit \ { Read(r1), Write(r2) } =
         let len1 = length(a);
         let size = if (n > len1) len1 else n;
-        let sub = slice(0, size, a);
+        let sub = copyOfRange(0, size, a, Scoped.regionOf(b));
         updateSequence!(i, sub, b)
 
     ///
     /// Returns `a` with `x` inserted between every two adjacent elements.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def intersperse(x: a, a: Array[a]): Array[a] & Impure =
+    pub def intersperse(x: a, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) }=
         let len1 = length(a);
         let len2 = len1 + len1 - 1;
+        let r = Scoped.regionOf(a);
         if (len2 <= 0)
-            []
+            [] @ r
         else {
-            let b = new(x, len2);
+            let b = new(x, len2, r);
             let f = { (v,i) -> let j = i + i; b[j] = v };
             foreachWithIndex(f, a);
             b
@@ -584,16 +578,16 @@ namespace Array {
     /// Returns the concatenation of the elements in `arrs` with the elements of `sep` inserted between every two adjacent elements.
     ///
     @Time(length(arrs)) @Space(length(arrs))
-    pub def intercalate(sep: Array[a], arrs: Array[Array[a]]): Array[a] & Impure =
+    pub def intercalate(sep: Array[a, Static], arrs: Array[Array[a, Static], Static]): Array[a, Static] & Impure =
         let count = length(arrs);
         let sepLength = length(sep);
         let sepCount = if (count < 2) 0 else count - 1;
         let len = sumLengths(arrs) + (sepCount * sepLength);
-        match headArrays(arrs){
+        match headArrays(arrs) {
             case None => []
             case Some(x) =>
-                let out = new(x, len);
-                let overwrite = { (a,st) ->
+                let out = new(x, len, Static);
+                let overwrite = { (st, a) ->
                     let (pos,i) = st;
                     if (i == 0) {
                         let pos1 = arrayWrites(0, a, out);
@@ -603,7 +597,7 @@ namespace Array {
                         let pos2 = arrayWrites(pos1, a, out);
                         (pos2, i+1)
                     }};
-                foreachAccum(overwrite, (0,0), arrs);
+                foldLeft(overwrite, (0, 0), arrs);
                 out
         }
 
@@ -614,7 +608,7 @@ namespace Array {
     ///
     /// Helper function for `intercalate` which needs to do sucessive writing.
     ///
-    def arrayWrites(pos: Int32, sub: Array[a], out: Array[a]): Int32 & Impure =
+    def arrayWrites(pos: Int32, sub: Array[a, r1], out: Array[a, r2]): Int32 \ { Read(r1), Write(r2) } =
         updateSequence!(pos, sub, out);
         pos + length(sub)
 
@@ -623,15 +617,15 @@ namespace Array {
     ///
     /// Helper function for `intercalate` and `flatten`.
     ///
-    def sumLengths(arrs: Array[Array[a]]): Int32 & Impure =
-        foldLeft((ac,a) -> ac + length(a), 0, arrs)
+    def sumLengths(arrs: Array[Array[a, r1], r2]): Int32 \ Read(r2) =
+        foldLeft((acc, a) -> acc + length(a), 0, arrs)
 
     ///
     /// Find the first non-empty array of an array of arrays (left-to-right).
     ///
     /// Helper function for `intercalate` and `flatten`.
     ///
-    def headArrays(arrs: Array[Array[a]]): Option[a] & Impure =
+    def headArrays(arrs: Array[Array[a, r1], r2]): Option[a] \ Read(r1, r2) =
         let len = length(arrs);
         def loop(i) = {
             if (i >= len)
@@ -650,29 +644,31 @@ namespace Array {
     /// Returns `a` if the dimensions of the elements of `a` are mismatched.
     ///
     @Time(length(a) * length(a)) @Space(length(a) * length(a))
-    pub def transpose(a: Array[Array[a]]): Array[Array[a]] & Impure =
+    pub def transpose(a: Array[Array[a, r1], r2]): Array[Array[a, r1], r2] \ { Read(r1, r2), Write(r1, r2) } =
         let ilen = length(a);
+        let r2 = Scoped.regionOf(a);
         if (ilen == 0)
-            []
+            [] @ r2
         else {
+            let r1 = Scoped.regionOf(a[0]);
             let jlen = length(a[0]);
             if (jlen == 0 or uniformHelper(a, jlen))
                 a
             else
-                init(i -> init(j -> a[j][i], ilen), jlen)
+                init(i -> init(j -> a[j][i], ilen, r1), jlen, r2)
         }
 
     ///
     /// Helper function for `transpose`.
     ///
-    def uniformHelper(a: Array[Array[a]], l: Int32): Bool & Impure =
+    def uniformHelper(a: Array[Array[a, r1], r2], l: Int32): Bool \ Read(r2) =
         exists(x -> length(x) != l, a)
 
     ///
     /// Returns `true` if and only if `a1` is a prefix of `a2`.
     ///
     @Time(length(a1)) @Space(1)
-    pub def isPrefixOf(a1: Array[a], a2: Array[a]): Bool & Impure with Eq[a] =
+    pub def isPrefixOf(a1: Array[a, r1], a2: Array[a, r2]): Bool \ Read(r1, r2) with Eq[a] =
         let len1 = length(a1);
         if (len1 > length(a2))
             false
@@ -680,11 +676,10 @@ namespace Array {
             def loop(i) = {
                 if (i >= len1)
                     true
+                else if (a1[i] != a2[i])
+                    false
                 else
-                    if (a1[i] != a2[i])
-                        false
-                    else
-                        loop(i + 1)
+                    loop(i + 1)
             };
             loop(0)
 
@@ -692,53 +687,49 @@ namespace Array {
     /// Returns `true` if and only if `a1` is a infix of `a2`.
     ///
     @Time(length(a1)) @Space(1)
-    pub def isInfixOf(a1: Array[a], a2: Array[a]): Bool & Impure with Eq[a] =
+    pub def isInfixOf(a1: Array[a, r1], a2: Array[a, r2]): Bool \ Read(r1, r2) with Eq[a] =
         let len1 = length(a1);
         let len2 = length(a2);
         if (len1 > len2)
             false
+        else if (len1 == 0)
+            true
         else
-            if (len1 == 0)
-                true
-            else
-                isInfixOfSearch(a1, a2, len1, len2, 0)
+            isInfixOfSearch(a1, a2, len1, len2, 0)
 
     ///
     /// Helper function for `isInfixOf` - scan a2 to find a match with first element of a1.
     ///
     /// Precondition: len1 (length of a1) > 0
     ///
-    def isInfixOfSearch(a1: Array[a], a2: Array[a], len1: Int32, len2: Int32, j: Int32): Bool & Impure with Eq[a] =
+    def isInfixOfSearch(a1: Array[a, r1], a2: Array[a, r2], len1: Int32, len2: Int32, j: Int32): Bool \ Read(r1, r2) with Eq[a] =
         if (j >= len2)
             false
+        else if (a1[0] == a2[j])
+            isInfixOfCheck(a1, a2, len1, len2, 1, j+1)
         else
-            if (a1[0] == a2[j])
-                isInfixOfCheck(a1, a2, len1, len2, 1, j+1)
-            else
-                isInfixOfSearch(a1, a2, len1, len2, j+1)
+            isInfixOfSearch(a1, a2, len1, len2, j+1)
 
     ///
     /// Helper function for `isInfixOf` - a1 has started matching, scan to see if it all matches.
     ///
-    def isInfixOfCheck(a1: Array[a], a2: Array[a], len1: Int32, len2: Int32, i: Int32, j: Int32): Bool & Impure with Eq[a] =
+    def isInfixOfCheck(a1: Array[a, r1], a2: Array[a, r2], len1: Int32, len2: Int32, i: Int32, j: Int32): Bool \ Read(r1, r2) with Eq[a] =
         if (i >= len1)
             // a1 exhausted, so success
             true
+        else if (j >= len2)
+            // a2 exhausted, a1 still trying to match, so failure
+            false
+        else if(a1[i] == a2[j])
+            isInfixOfCheck(a1, a2, len1, len2, i+1, j+1)
         else
-            if (j >= len2)
-                // a2 exhausted, a1 still trying to match, so failure
-                false
-            else
-                if(a1[i] == a2[j])
-                    isInfixOfCheck(a1, a2, len1, len2, i+1, j+1)
-                else
-                    isInfixOfSearch(a1, a2, len1, len2, j+1)
+            isInfixOfSearch(a1, a2, len1, len2, j+1)
 
     ///
     /// Returns `true` if and only if `a1` is a suffix of `a2`.
     ///
     @Time(length(a1)) @Space(1)
-    pub def isSuffixOf(a1: Array[a], a2: Array[a]): Bool & Impure with Eq[a] =
+    pub def isSuffixOf(a1: Array[a, r1], a2: Array[a, r2]): Bool \ Read(r1, r2) with Eq[a] =
         let len1 = length(a1);
         let len2 = length(a2);
         if (len1 > len2)
@@ -747,25 +738,24 @@ namespace Array {
             def loop(i, j) = {
                 if (i < 0)
                     true
+                else if (a1[i] != a2[j])
+                    false
                 else
-                    if (a1[i] != a2[j])
-                        false
-                    else
-                        loop(i - 1, j - 1)
+                    loop(i - 1, j - 1)
             };
             loop(len1 - 1, len2 - 1)
 
     ///
     /// Returns the result of applying `combine` to all the elements in `a`, using `empty` as the initial value.
     ///
-    pub def fold(arr: Array[a]): a & Impure with Monoid[a] = foldLeft(Monoid.combine, Monoid.empty(), arr)
+    pub def fold(arr: Array[a, r]): a \ Read(r) with Monoid[a] = foldLeft(Monoid.combine, Monoid.empty(), arr)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `a` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, a[0]), a[1])..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, arr: Array[a]): b & Impure =
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, arr: Array[a, r]): b \ { ef, Read(r) } =
         let len = length(arr);
         def loop(i, acc) = {
             if (i >= len)
@@ -780,7 +770,7 @@ namespace Array {
     ///
     /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, arr: Array[a]): b & Impure =
+    pub def foldRight(f: (a, b) -> b & ef, s: b, arr: Array[a, r]): b \ { ef, Read(r) } =
         def loop(i, acc) = {
             if (i < 0)
                 acc
@@ -790,11 +780,32 @@ namespace Array {
         loop(length(arr) - 1, s)
 
     ///
+    /// Applies `f` to a start value `z` and all elements in `a` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], z))...)`.
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
+    ///
+    pub def foldRightWithCont(f: (a, Unit -> b & ef and r) -> b & ef and r, z: b, arr: Array[a, r]): b \ { ef, Read(r) } =
+        def loop(i) = {
+            if (i == length(arr))
+                z
+            else
+                f(arr[i], _ -> loop(i + 1))
+        };
+        loop(0)
+
+    ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b & ef, arr: Array[a, Static]): b & Impure with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), arr)
+
+    ///
     /// Applies `f` to all elements in `a` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     ///
     /// Returns `None` if `a` is empty.
     ///
-    pub def reduceLeft(f: (a, a) ->  a & ef, a: Array[a]): Option[a] & Impure =
+    pub def reduceLeft(f: (a, a) ->  a & ef, a: Array[a, r]): Option[a] \ { ef, Read(r) } =
         let len = length(a);
         def loop(i, acc) = {
             if (i >= len)
@@ -812,7 +823,7 @@ namespace Array {
     ///
     /// Returns `None` if `arr` is empty.
     ///
-    pub def reduceRight(f: (a, a) -> a & ef, arr: Array[a]): Option[a] & Impure =
+    pub def reduceRight(f: (a, a) -> a & ef, arr: Array[a, r]): Option[a] \ { ef, Read(r) } =
         let len = length(arr);
         def loop(i, acc) = {
             if (i < 0)
@@ -829,25 +840,25 @@ namespace Array {
     /// Returns the number of elements in `a` that satisfy the predicate `f`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def count(f: a -> Bool, a: Array[a]): Int32 & Impure =
-        foldLeft((b,x) -> if (f(x)) b + 1 else b, 0, a) as & Impure
+    pub def count(f: a -> Bool & ef, a: Array[a, r]): Int32 \ { ef, Read(r) } =
+        foldLeft((b, x) -> if (f(x)) b + 1 else b, 0, a)
 
     ///
     /// Returns the sum of all elements in the array `a`.
     ///
-    pub def sum(a: Array[Int32]): Int32 & Impure =
+    pub def sum(a: Array[Int32, r]): Int32 \ Read(r) =
         foldLeft((acc, x) -> acc + x, 0, a)
 
     ///
     /// Returns the sum of all elements in the array `a` according to the function `f`.
     ///
-    pub def sumWith(f: a -> Int32 & ef, a: Array[a]): Int32 & Impure =
+    pub def sumWith(f: a -> Int32 & ef, a: Array[a, r]): Int32 \ { ef, Read(r) } =
         foldLeft((acc, x) -> acc + f(x), 0, a)
 
     ///
     /// Returns the product of all elements in the array `a`.
     ///
-    pub def product(a: Array[Int32]): Int32 & Impure =
+    pub def product(a: Array[Int32, r]): Int32 \ Read(r) =
         if (isEmpty(a))
             0
         else
@@ -856,7 +867,7 @@ namespace Array {
     ///
     /// Returns the product of all elements in the array `a` according to the function `f`.
     ///
-    pub def productWith(f: a -> Int32 & ef, a: Array[a]): Int32 & Impure =
+    pub def productWith(f: a -> Int32 & ef, a: Array[a, r]): Int32 \ { ef, Read(r) } =
         if (isEmpty(a))
             0
         else
@@ -866,13 +877,13 @@ namespace Array {
     /// Returns the concatenation of the arrays of in the array `arrs`.
     ///
     @Time(length(arrs)) @Space(length(arrs))
-    pub def flatten(arrs: Array[Array[a]]) : Array[a] & Impure =
+    pub def flatten(arrs: Array[Array[a, Static], Static]) : Array[a, Static] & Impure =
         let len = sumLengths(arrs);
         match headArrays(arrs) {
             case None => []
             case Some(x) => {
-                let out = new(x, len);
-                foreachAccum((a, pos) -> arrayWrites(pos, a, out), 0, arrs);
+                let out = new(x, len, Static);
+                foldLeft((pos, a) -> arrayWrites(pos, a, out), 0, arrs);
                 out
             }
         }
@@ -882,19 +893,16 @@ namespace Array {
     ///
     /// Returns `false` if `arr` is empty.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def exists(f: a -> Bool, arr: Array[a]): Bool & Impure =
+    pub def exists(f: a -> Bool & ef, arr: Array[a, r]): Bool \ { ef, Read(r) } =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)
                 false
+            else if (f(arr[i]))
+                true
             else
-                if (f(arr[i]) == true)
-                    true
-                else
-                    loop(i + 1)
+                loop(i + 1)
         };
         loop(0)
 
@@ -904,31 +912,29 @@ namespace Array {
     /// Returns `true` if `arr` is empty.
     ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def forall(f: a -> Bool, arr: Array[a]): Bool & Impure =
+    pub def forall(f: a -> Bool & ef, arr: Array[a, r]): Bool \ { ef, Read(r) } =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)
                 true
+            else if (f(arr[i]))
+                loop(i + 1)
             else
-                if (f(arr[i]) == false)
-                    false
-                else
-                    loop(i + 1)
+                false
         };
         loop(0)
 
     ///
     /// Returns an array of every element in `arr` that satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(arr)) @Space(space(f) * length(arr))
-    pub def filter(f: a -> Bool, arr: Array[a]): Array[a] & Impure =
+    pub def filter(f: a -> Bool & ef, arr: Array[a, r]): Array[a, r] \ { ef, Read(r), Write(r) } =
         let len = length(arr);
+        let r = Scoped.regionOf(arr);
         if (len < 1) {
-            []
+            [] @ r
         } else {
-            let out = new(arr[0], len);
+            let out = new(arr[0], len, r);
             def loop(i, j) = {
                 if (i >= len)
                     j
@@ -943,7 +949,7 @@ namespace Array {
                 }
             };
             let endPos = loop(0, 0);
-            slice(0, endPos, out)
+            copyOfRange(0, endPos, out, r)
         }
 
     ///
@@ -952,16 +958,15 @@ namespace Array {
     /// `a1` contains all elements of `a` that satisfy the predicate `f`.
     /// `a2` contains all elements of `a` that do not satisfy the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def partition(f: a -> Bool, a: Array[a]): (Array[a], Array[a]) & Impure =
-        let step = { (x, ac) ->
-            let (a1,a2) = ac;
+    pub def partition(f: a -> Bool & ef, a: Array[a, r]): (Array[a, r], Array[a, r]) \ { ef, Read(r), Write(r) } =
+        let step = { (x, acc) ->
+            let (a1, a2) = acc;
             if (f(x)) (x :: a1, a2) else (a1, x :: a2)
         };
-        let (xs,ys) = foldRight(step, (Nil,Nil), a);
-        (List.toArray(xs), List.toArray(ys))
+        let (xs, ys) = foldRight(step, (Nil, Nil), a);
+        let r = Scoped.regionOf(a);
+        (List.toArray(xs, r), List.toArray(ys, r))
 
     ///
     /// Returns a pair of arrays `(a1, a2)`.
@@ -969,12 +974,11 @@ namespace Array {
     /// `a1` is the longest prefix of `a` that satisfies the predicate `f`.
     /// `a2` is the remainder of `a`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(a)) @Space()
-    pub def span(f: a -> Bool, a: Array[a]): (Array[a], Array[a]) & Impure =
+    pub def span(f: a -> Bool & ef, a: Array[a, r]): (Array[a, r], Array[a, r]) \ { ef, Read(r), Write(r) }=
+        let r = Scoped.regionOf(a);
         match findIndexOfLeft(x -> not (f(x)), a) {
-            case None => (takeLeft(length(a), a), [])
+            case None    => (takeLeft(length(a), a), [] @ r)
             case Some(i) => (takeLeft(i, a), dropLeft(i, a))
         }
 
@@ -982,7 +986,8 @@ namespace Array {
     /// Alias for `dropLeft`.
     ///
     @Time(length(a) - n) @Space(length(a) - n)
-    pub def drop(n: Int32, a: Array[a]) : Array[a] & Impure = dropLeft(n, a)
+    pub def drop(n: Int32, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
+        dropLeft(n, a)
 
     ///
     /// Returns a copy of array `a`, dropping the first `n` elements.
@@ -990,13 +995,14 @@ namespace Array {
     /// Returns `[]` if `n > length(a)`.
     ///
     @Time(length(a) - n) @Space(length(a) - n)
-    pub def dropLeft(n: Int32, a: Array[a]) : Array[a] & Impure =
+    pub def dropLeft(n: Int32, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
         let len = length(a);
+        let r = Scoped.regionOf(a);
         if (n > len)
-            []
+            [] @ r
         else {
             let start = if (n < 0) 0 else n;
-            slice(start, len, a)
+            copyOfRange(start, len, a, r)
         }
 
     ///
@@ -1005,52 +1011,51 @@ namespace Array {
     /// Returns `[]` if `n > length(a)`.
     ///
     @Time(length(a) - n) @Space(length(a) - n)
-    pub def dropRight(n: Int32, a: Array[a]): Array[a] & Impure =
+    pub def dropRight(n: Int32, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
         let len = length(a);
         if (n >= len)
-            []
+            [] @ r
         else {
             let end = if (n < 0) len else len - n;
-            slice(0, end, a)
+            copyOfRange(0, end, a, r)
         }
 
     ///
     /// Alias for `dropWhileLeft`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def dropWhile(f: a -> Bool, a: Array[a]): Array[a] & Impure = dropWhileLeft(f, a)
+    pub def dropWhile(f: a -> Bool & ef, a: Array[a, r]): Array[a, r] \ { ef, Read(r), Write(r) } =
+        dropWhileLeft(f, a)
 
     ///
     /// Returns copy of array `a` without the longest prefix that satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def dropWhileLeft(f: a -> Bool, a: Array[a]): Array[a]  & Impure =
+    pub def dropWhileLeft(f: a -> Bool & ef, a: Array[a, r]): Array[a, r] \ { ef, Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
         match findIndexOfLeft(x -> not (f(x)), a) {
-            case None => []
+            case None    => [] @ r
             case Some(i) => dropLeft(i, a)
         }
 
     ///
     /// Returns copy of array `a` without the longest suffix that satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def dropWhileRight(f: a -> Bool, a: Array[a]): Array[a] & Impure =
+    pub def dropWhileRight(f: a -> Bool & ef, a: Array[a, r]): Array[a, r] \ { ef, Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
         match findIndexOfRight(x -> not (f(x)), a) {
-            case None => []
-            case Some(i) => slice(0, i + 1, a)
+            case None    => [] @ r
+            case Some(i) => copyOfRange(0, i + 1, a, r)
         }
 
     ///
     /// Alias for `takeLeft`.
     ///
     @Time(n) @Space(n)
-    pub def take(n: Int32, a: Array[a]) : Array[a] & Impure = takeLeft(n, a)
+    pub def take(n: Int32, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
+        takeLeft(n, a)
 
     ///
     /// Returns a fresh array taking first `n` elements of `a`.
@@ -1058,13 +1063,14 @@ namespace Array {
     /// Returns `a` if `n > length(xs)`.
     ///
     @Time(n) @Space(n)
-    pub def takeLeft(n: Int32, a: Array[a]) : Array[a] & Impure =
+    pub def takeLeft(n: Int32, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
         if (n <= 0)
-            []
+            [] @ r
         else {
             let len = length(a);
             let end = if (n > len) len else n;
-            slice(0, end, a)
+            copyOfRange(0, end, a, r)
         }
 
     ///
@@ -1073,13 +1079,14 @@ namespace Array {
     /// Returns `a` if `n > length(xs)`.
     ///
     @Time(n) @Space(n)
-    pub def takeRight(n: Int32, a: Array[a]) : Array[a] & Impure =
+    pub def takeRight(n: Int32, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
         if (n <= 0)
-            []
+            [] @ r
         else {
             let len = length(a);
             let start = if (n > len) 0 else len - n;
-            slice(start, len, a)
+            copyOfRange(start, len, a, r)
         }
 
     ///
@@ -1088,7 +1095,8 @@ namespace Array {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def takeWhile(f: a -> Bool, a: Array[a]): Array[a] & Impure = takeWhileLeft(f, a)
+    pub def takeWhile(f: a -> Bool & ef, a: Array[a, r]): Array[a, r] \ { ef, Read(r), Write(r) } =
+        takeWhileLeft(f, a)
 
     ///
     /// Returns the longest prefix of `a` that satisfies the predicate `f`.
@@ -1096,9 +1104,9 @@ namespace Array {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def takeWhileLeft(f: a -> Bool, a: Array[a]): Array[a] & Impure =
+    pub def takeWhileLeft(f: a -> Bool & ef, a: Array[a, r]): Array[a, r] \ { ef, Read(r), Write(r) } =
         match findIndexOfLeft(x -> not (f(x)), a) {
-            case None => a
+            case None    => a
             case Some(i) => takeLeft(i, a)
         }
 
@@ -1108,10 +1116,11 @@ namespace Array {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def takeWhileRight(f: a -> Bool, a: Array[a]): Array[a] & Impure =
+    pub def takeWhileRight(f: a -> Bool & ef, a: Array[a, r]): Array[a, r] \ { ef, Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
         match findIndexOfRight(x -> not (f(x)), a) {
-            case None => slice(0, length(a), a)
-            case Some(i) => slice(i + 1, length(a), a)
+            case None    => copyOfRange(0, length(a), a, r)
+            case Some(i) => copyOfRange(i + 1, length(a), a, r)
         }
 
     ///
@@ -1123,34 +1132,34 @@ namespace Array {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(a) * length(a)) @Space(space(f) * length(a))
-    pub def groupBy(f: (a, a) -> Bool, a: Array[a]): Array[Array[a]] & Impure =
+    pub def groupBy(f: (a, a) -> Bool, a: Array[a, r1], r2: Region[r2]): Array[Array[a, r2], r1] \ { Read(r1), Write(r1, r2) } =
         let xs = toList(a);
-        groupByHelper(f, xs, Nil) |> List.toArray
+        let r1 = Scoped.regionOf(a);
+        (groupByHelper(f, xs, Nil, r2) |> List.toArray)(r1)
 
     ///
     /// Helper function for `groupBy`.
     ///
-    def groupByHelper(f: (a, a) -> Bool, xs: List[a], ac: List[Array[a]]): List[Array[a]] & Impure = match xs {
-        case Nil => List.reverse(ac)
+    def groupByHelper(f: (a, a) -> Bool, xs: List[a], ac: List[Array[a, r]], r: Region[r]): List[Array[a, r]] \ Write(r) = match xs {
+        case Nil     => List.reverse(ac)
         case x :: rs =>
-            let (r1, r2) = extractHelper(f, rs, x :: Nil, Nil);
-            groupByHelper(f, r2, r1 :: ac)
+            let (r1, r2) = extractHelper(f, rs, x :: Nil, Nil, r);
+            groupByHelper(f, r2, r1 :: ac, r)
     }
 
     ///
     /// Helper function for `groupBy`.
     ///
-    def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a]): (Array[a], List[a]) & Impure = match xs {
+    def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a], r: Region[r]): (Array[a, r], List[a]) \ Write(r) = match xs {
         case Nil => {
-            let a = List.toArray(ps);
-            reverse!(a);
-            (a, List.reverse(ns))
+            let a = List.reverse(ps);
+            (List.toArray(a, r), List.reverse(ns))
         }
         case x :: rs =>
             if (agreeHelper(f, x, ps))
-                extractHelper(f, rs, x :: ps, ns)
+                extractHelper(f, rs, x :: ps, ns, r)
             else
-                extractHelper(f, rs, ps, x :: ns)
+                extractHelper(f, rs, ps, x :: ns, r)
     }
 
     ///
@@ -1172,9 +1181,9 @@ namespace Array {
     /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
     ///
     @Time(Int32.min(length(a), length(b))) @Space(Int32.min(length(a), length(b)))
-    pub def zip(a: Array[a], b: Array[b]): Array[(a,b)] & Impure =
+    pub def zip(a: Array[a, r1], b: Array[b, r2]): Array[(a, b), r2] \ { Read(r1, r2), Write(r2) } =
         let len = Int32.min(length(a), length(b));
-        init(i -> (a[i], b[i]), len)
+        init(i -> (a[i], b[i]), len, Scoped.regionOf(b))
 
     ///
     /// Returns an array where the element at index `i` is `f(x, y)` where
@@ -1183,23 +1192,24 @@ namespace Array {
     /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
     ///
     @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f) * Int32.min(length(a), length(b)))
-    pub def zipWith(f: (a, b) -> c & ef, a: Array[a], b: Array[b]): Array[c] & Impure =
+    pub def zipWith(f: (a, b) -> c & ef, a: Array[a, r1], b: Array[b, r2]): Array[c, r2] \ { ef, Read(r1, r2), Write(r2) } =
         let len = Int32.min(length(a), length(b));
-        init(i -> f(a[i], b[i]), len)
+        init(i -> f(a[i], b[i]), len, Scoped.regionOf(b))
 
     ///
     /// Returns a pair of arrays, the first containing all first components in `a`
     /// and the second containing all second components in `a`.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def unzip(a: Array[(a,b)]): (Array[a], Array[b]) & Impure =
-        init2(i -> a[i], length(a))
+    pub def unzip(a: Array[(a, b), r]): (Array[a, r], Array[b, r]) \ { Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
+        init2(i -> a[i], length(a), r, r)
 
     ///
     /// Alias for `foldLeft2`.
     ///
     @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f))
-    pub def fold2(f: (c, a, b) -> c & ef, c: c, a: Array[a], b: Array[b]): c & Impure =
+    pub def fold2(f: (c, a, b) -> c & ef, c: c, a: Array[a, r1], b: Array[b, r2]): c \ { ef, Read(r1, r2) } =
         foldLeft2(f, c, a, b)
 
     ///
@@ -1207,7 +1217,7 @@ namespace Array {
     /// starting with the initial value `c` and going from left to right.
     ///
     @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f))
-    pub def foldLeft2(f: (c, a, b) ->  c & ef, c: c, a: Array[a], b: Array[b]): c & Impure =
+    pub def foldLeft2(f: (c, a, b) ->  c & ef, c: c, a: Array[a, r1], b: Array[b, r2]): c \ { ef, Read(r1, r2) } =
         let lena = length(a);
         let lenb = length(b);
         def loop(i, acc) = {
@@ -1223,7 +1233,7 @@ namespace Array {
     /// starting with the initial value `c` and going from right to left.
     ///
     @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f))
-    pub def foldRight2(f: (a, b, c) -> c & ef, c: c, a: Array[a], b: Array[b]): c & Impure =
+    pub def foldRight2(f: (a, b, c) -> c & ef, c: c, a: Array[a, r1], b: Array[b, r2]): c \ { ef, Read(r1, r2) } =
         def loop(i, j, acc) = {
             if (i < 0 or j < 0)
                 acc
@@ -1238,10 +1248,11 @@ namespace Array {
     /// Collects the results of applying the partial function `f` to every element in `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def filterMap(f: a -> Option[b] & ef, a: Array[a]): Array[b] & Impure =
-        foldRight((x,xs) -> match f(x) {
-            case None => xs
-            case Some(b) => b :: xs }, Nil, a) |> List.toArray
+    pub def filterMap(f: a -> Option[b] & ef, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
+        (foldRight((x, xs) -> match f(x) {
+            case None    => xs
+            case Some(b) => b :: xs }, Nil, a) |> List.toArray)(r)
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `xs`.
@@ -1249,7 +1260,7 @@ namespace Array {
     /// Returns `None` if every element of `xs` is `None`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def findMap(f: a -> Option[b] & ef, a: Array[a]): Option[b] & Impure =
+    pub def findMap(f: a -> Option[b] & ef, a: Array[a, r]): Option[b] \ { ef, Read(r) } =
         let len = length(a);
         def loop(i) = {
             if (i >= len)
@@ -1267,7 +1278,8 @@ namespace Array {
     /// Returns the array `a` as a set.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def toSet(a: Array[a]): Set[a] & Impure with Order[a] = foldRight(Set.insert, Set.empty(), a)
+    pub def toSet(a: Array[a, r]): Set[a] \ Read(r) with Order[a] =
+        foldRight(Set.insert, Set.empty(), a)
 
     ///
     /// Returns the association list `xs` as a map.
@@ -1276,31 +1288,30 @@ namespace Array {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def toMap(a: Array[(a, b)]): Map[a, b] & Impure with Order[a] =
+    pub def toMap(a: Array[(a, b), r]): Map[a, b] \ Read(r) with Order[a] =
         foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), a)
 
     ///
     /// Returns the array `a` as a MutList.
     ///
-    pub def toMutList(a: Array[a]): MutList[a] & Impure =
+    pub def toMutList(a: Array[a, r1], r2: Region[r2]): MutList[a, r2] \ { Read(r1), Write(r2) } =
         let minCap = MutList.minCapacity();
         let len = length(a);
-        if (len < minCap)
-            MutList(ref copyOfRange(0, minCap, a), ref len)
-        else
-            MutList(ref a, ref length(a))
+        let c = Order.max(len, minCap);
+        MutList(ref copyOfRange(0, c, a, r2) @ r2, ref len @ r2)
 
     ///
     /// Alias for `findIndexOfLeft`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def findIndexOf(f: a -> Bool & ef, a: Array[a]): Option[Int32] & Impure = findIndexOfLeft(f,a)
+    pub def findIndexOf(f: a -> Bool & ef, a: Array[a, r]): Option[Int32] \ { ef, Read(r) } =
+        findIndexOfLeft(f,a)
 
     ///
     /// Optionally returns the position of the first element in `x` satisfying `f`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def findIndexOfLeft(f: a -> Bool & ef, a: Array[a]): Option[Int32] & Impure =
+    pub def findIndexOfLeft(f: a -> Bool & ef, a: Array[a, r]): Option[Int32] \ { ef, Read(r) } =
         let len = length(a);
         if (len < 1)
             None
@@ -1308,11 +1319,10 @@ namespace Array {
             def loop(i) = {
                 if (i >= len)
                     -1
+                else if (f(a[i]))
+                    i
                 else
-                    if (f(a[i]))
-                        i
-                    else
-                        loop(i + 1)
+                    loop(i + 1)
             };
             let i = loop(0);
             if (i < 0) None else Some(i)
@@ -1323,16 +1333,15 @@ namespace Array {
     /// searching from right to left.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def findIndexOfRight(f: a -> Bool & ef, a: Array[a]): Option[Int32] & Impure =
+    pub def findIndexOfRight(f: a -> Bool & ef, a: Array[a, r]): Option[Int32] \ { ef, Read(r) } =
         let len = length(a);
         def loop(i) = {
             if (i < 0)
                 -1
+            else if (f(a[i]))
+                i
             else
-                if (f(a[i]))
-                    i
-                else
-                    loop(i - 1)
+                loop(i - 1)
         };
         let i = loop(len - 1);
         if (i < 0) None else Some(i)
@@ -1341,30 +1350,30 @@ namespace Array {
     /// Returns the positions of the all the elements in `a` satisfying `f`.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def findIndices(f: a -> Bool & ef, a: Array[a]): Array[Int32] & Impure =
+    pub def findIndices(f: a -> Bool & ef, a: Array[a, Static]): Array[Int32, Static] & Impure =
         let len = length(a);
-        let l = MutList.new();
+        let l = new MutList(Static);
         def loop(i) = {
             if (i >= len)
-                Nil
+                ()
             else {
                 if (f(a[i])) MutList.push!(i, l) else ();
                 loop(i + 1)
             }
         };
         loop(0);
-        MutList.toArray(l)
+        MutList.toArray(l, Static)
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.
     ///
     @Time(time(f) * len) @Space(space(f) * len)
-    pub def init(f: Int32 -> a & ef, len: Int32): Array[a] & Impure =
+    pub def init(f: Int32 -> a & ef, len: Int32, r: Region[r]): Array[a, r] \ { ef, Write(r) } =
         if (len <= 0)
-            []
+            [] @ r
         else {
             let x = f(0);
-            let a = new(x, len);
+            let a = [x; len] @ r;
             def loop(i) = {
                 if (i < len) {
                     a[i] = f(i);
@@ -1380,13 +1389,13 @@ namespace Array {
     /// Build a pair of arrays of length `len` by applying `f` to the successive indices.
     ///
     @Time(time(f) * len) @Space(space(f) * len)
-    pub def init2(f: Int32 -> (a, b) & ef, len: Int32): (Array[a], Array[b]) & Impure =
+    pub def init2(f: Int32 -> (a, b) & ef, len: Int32, r1: Region[r1], r2: Region[r2]): (Array[a, r1], Array[b, r2]) \ { ef, Write(r1, r2) } =
         if (len <= 0)
-            ([], [])
+            ([] @ r1, [] @ r2)
         else {
             let (x, y) = f(0);
-            let arr = new(x, len);
-            let brr = new(y, len);
+            let arr = new(x, len, r1);
+            let brr = new(y, len, r2);
             def loop(i) = {
                 if (i < len) {
                     let (a, b) = f(i);
@@ -1404,7 +1413,7 @@ namespace Array {
     /// Returns `true` if arrays `a` and `b` have the same elements, i.e. are structurally equal.
     ///
     @Time(length(a)) @Space(1)
-    pub def sameElements(a: ScopedArray[a, r1], b: ScopedArray[a, r2]): Bool \ Read(r1, r2) with Eq[a] =
+    pub def sameElements(a: Array[a, r1], b: Array[a, r2]): Bool \ Read(r1, r2) with Eq[a] =
         let alen = length(a);
         let blen = length(b);
         def loop(i) = {
@@ -1425,7 +1434,7 @@ namespace Array {
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreach(f: a -> Unit & ef, a: Array[a]): Unit & Impure =
+    pub def foreach(f: a -> Unit & ef, a: Array[a, r]): Unit \ { ef, Read(r) } =
         let len = length(a);
         def loop(i) = {
             if (i >= len)
@@ -1444,7 +1453,7 @@ namespace Array {
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreachWithIndex(f: (a, Int32) -> Unit & ef, a: ScopedArray[a, r]): Unit \ { ef, Read(r), Write(r) } =
+    pub def foreachWithIndex(f: (a, Int32) -> Unit & ef, a: Array[a, r]): Unit \ { ef, Read(r) } =
         let len = length(a);
         def loop(i) = {
             if (i >= len)
@@ -1460,34 +1469,19 @@ namespace Array {
             loop(0)
 
     ///
-    /// Apply the effectful function `f` to all the elements in the array `a` and the accumulator `s`.
-    /// The function returns the final value of the accumulator `s`.
-    ///
-    @Time(time(f) * length(a)) @Space(space(f))
-    def foreachAccum(f: (a, b) -> b & ef, s: b, a: Array[a]): b & Impure =
-        let len = length(a);
-        def loop(i, acc) = {
-            if (i >= len)
-                acc
-            else
-                loop(i + 1, f(a[i], acc))
-        };
-        loop(0, s)
-
-    ///
     /// Returns a copy of `a` with the elements starting at index `i` replaced by `sub`.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def updateSequence(i: Int32, sub: Array[a], a: Array[a]): Array[a] & Impure =
+    pub def updateSequence(i: Int32, sub: Array[a, r1], a: Array[a, r2]): Array[a, r2] \ { Read(r1, r2), Write(r2) } =
         let end = i + length(sub);
         let f = ix -> if (ix >= i and ix < end) sub[ix - i] else a[ix];
-        init(f, length(a))
+        init(f, length(a), Scoped.regionOf(a))
 
     ///
     /// Update the mutable array `a` with the elements starting at index `i` replaced by `sub`.
     ///
     @Time(length(a)) @Space(1)
-    pub def updateSequence!(i: Int32, sub: ScopedArray[a, r], a: ScopedArray[a, r]): Unit \ { Read(r), Write(r) } =
+    pub def updateSequence!(i: Int32, sub: Array[a, r1], a: Array[a, r2]): Unit \ { Read(r1), Write(r2) } =
         let end = i + length(sub);
         let f = { (_,ix) ->
             if (ix >= i and ix < end)
@@ -1498,39 +1492,23 @@ namespace Array {
         foreachWithIndex(f, a)
 
     ///
-    /// Render the array `a` as a String. Elements are rendered with the
-    /// function `f` and seperated with the string `sep`.
-    ///
-    @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def formatWith(f: a -> String, sep: String, a: Array[a]): String & Impure =
-        let sb = StringBuilder.new();
-        let step = (x,i) ->
-            if (i == 0)
-                StringBuilder.appendString!(f(x), sb)
-            else {
-                StringBuilder.appendString!(sep, sb);
-                StringBuilder.appendString!(f(x), sb)
-            };
-        foreachWithIndex(step, a);
-        StringBuilder.toString(sb)
-
-    ///
     /// Returns the concatenation of the string representation
     /// of each element in `a` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, a: Array[a]): String & Impure with ToString[a] =
-        joinWith(x -> ToString.toString(x), sep, a)
+    pub def join(sep: String, a: Array[a, r]): String \ Read(r) with ToString[a] =
+        joinWith(ToString.toString, sep, a)
 
     ///
     /// Returns the concatenation of the string representation
     /// of each element in `a` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, a: Array[a]): String & Impure =
+    pub def joinWith(f: a -> String & ef, sep: String, a: Array[a, r]): String \ { ef, Read(r) } = region r1 {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(r1);
         foreach(x -> { append!(f(x), sb); append!(sep, sb) }, a);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
+    }
 
     ///
     /// Returns a sorted copy of array `a`, where the elements are ordered from low to high according to
@@ -1540,7 +1518,8 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(a: Array[a]): Array[a] & Impure with Order[a] = sortWith(Order.compare, a)
+    pub def sort(a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } with Order[a] =
+        sortWith(Order.compare, a)
 
     ///
     /// Returns a sorted copy of array `a`, where the elements are ordered from low to high according to
@@ -1550,7 +1529,8 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, a: Array[a]): Array[a] & Impure with Order[b] = sortWith(Order.compare `on` f, a)
+    pub def sortBy(f: a -> b, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } with Order[b] =
+        sortWith(Order.compare `on` f, a)
 
     ///
     /// Returns a sorted copy of array `a`, where the elements are ordered from low to high according to
@@ -1560,9 +1540,9 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, a: Array[a]): Array[a] & Impure =
+    pub def sortWith(cmp: (a,a) -> Comparison, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
         let len = length(a);
-        let b = slice(0, len, a);
+        let b = copyOfRange(0, len, a, Scoped.regionOf(a));
         sortWith!(cmp, b);
         b
 
@@ -1574,7 +1554,8 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort!(a: Array[a]): Unit & Impure with Order[a] = sortWith!(Order.compare, a)
+    pub def sort!(a: Array[a, r]): Unit \ { Read(r), Write(r) } with Order[a] =
+        sortWith!(Order.compare, a)
 
     ///
     /// Sort array `a` so that elements are ordered from low to high according to the `Order` instance for
@@ -1584,7 +1565,8 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy!(f: a -> b, a: Array[a]): Unit & Impure with Order[b] = sortWith!(Order.compare `on` f, a)
+    pub def sortBy!(f: a -> b, a: Array[a, r]): Unit \ { Read(r), Write(r) } with Order[b] =
+        sortWith!(Order.compare `on` f, a)
 
     ///
     /// Sort array `a` so that elements are ordered from low to high according to the comparison function `cmp`.
@@ -1594,7 +1576,8 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith!(cmp: (a,a) -> Comparison, a: Array[a]): Unit & Impure = sortWithin!(cmp, 0, length(a) - 1, a)
+    pub def sortWith!(cmp: (a,a) -> Comparison, a: Array[a, r]): Unit \ { Read(r), Write(r) } =
+        sortWithin!(cmp, 0, length(a) - 1, a)
 
     ///
     /// Sort array `a` between the indices `lo` and `hi` (both inclusive) so that elements in that range are ordered
@@ -1605,7 +1588,7 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWithin!(cmp: (a,a) -> Comparison, lo: Int32, hi: Int32, a: Array[a]): Unit & Impure =
+    pub def sortWithin!(cmp: (a,a) -> Comparison, lo: Int32, hi: Int32, a: Array[a, r]): Unit \ { Read(r), Write(r) }=
         if (lo >= hi)
             ()
         else {
@@ -1619,7 +1602,7 @@ namespace Array {
     ///
     /// Precondition: `i` and `j` are within bounds.
     ///
-    def swap!(a: Array[a], i: Int32, j: Int32): Unit & Impure =
+    pub def swap!(i: Int32, j: Int32, a: Array[a, r]): Unit \ { Read(r), Write(r) } =
         let x = a[i];
         let y = a[j];
         a[i] = y;
@@ -1629,16 +1612,16 @@ namespace Array {
     ///
     /// Partition step of the Quicksort algorithm.
     ///
-    def quicksortPartition(cmp: (a,a) -> Comparison, a: Array[a], lo: Int32, hi: Int32): Int32 & Impure =
+    def quicksortPartition(cmp: (a,a) -> Comparison, a: Array[a, r], lo: Int32, hi: Int32): Int32 \ { Read(r), Write(r) } =
         let pivot = a[hi];
         let i = forWithAccum(lo, hi, lo, (j,ix) ->
             if (cmp(a[j], pivot) == LessThan) {
-                swap!(a, ix, j);
+                swap!(ix, j, a);
                 ix+1
             } else
                 ix
             );
-        swap!(a, i, hi);
+        swap!(i, hi, a);
         i
 
     ///
@@ -1664,60 +1647,60 @@ namespace Array {
     /// If the range is valid and greater than the length of `a`, the resulting array with have the length of the range
     /// and include the specified range of `a`.
     ///
-    pub def copyOfRange(b: Int32, e: Int32, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
+    pub def copyOfRange(b: Int32, e: Int32, a: Array[a, r1], _: Region[r2]): Array[a, r2] \ { Read(r1), Write(r2) } =
         match (reifyType a) {
             case ErasedType =>
-                let arr = a as Array[##java.lang.Object];
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object], Int32, Int32): ScopedArray[##java.lang.Object, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
+                let arr = a as Array[##java.lang.Object, Static];
+                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, Static], Int32, Int32): Array[##java.lang.Object, r2] & r1 and r2 as copy;
+                copy(arr, b, e) as Array[a, r2]
             case ReifiedUnit =>
-                let arr = a as Array[Unit];
-                import static java.util.Arrays.copyOfRange(Array[Unit], Int32, Int32): ScopedArray[Unit, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
+                let arr = a as Array[Unit, Static];
+                import static java.util.Arrays.copyOfRange(Array[Unit, Static], Int32, Int32): Array[Unit, r2] & r1 and r2 as copy;
+                copy(arr, b, e) as Array[a, r2]
             case ReifiedBool =>
-                let arr = a as Array[Bool];
-                import static java.util.Arrays.copyOfRange(Array[Bool], Int32, Int32): ScopedArray[Bool, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
+                let arr = a as Array[Bool, Static];
+                import static java.util.Arrays.copyOfRange(Array[Bool, Static], Int32, Int32): Array[Bool, r2] & r1 and r2 as copy;
+                copy(arr, b, e) as Array[a, r2]
             case ReifiedChar =>
-                let arr = a as Array[Char];
-                import static java.util.Arrays.copyOfRange(Array[Char], Int32, Int32): ScopedArray[Char, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
+                let arr = a as Array[Char, Static];
+                import static java.util.Arrays.copyOfRange(Array[Char, Static], Int32, Int32): Array[Char, r2] & r1 and r2 as copy;
+                copy(arr, b, e) as Array[a, r2]
             case ReifiedFloat32 =>
-                let arr = a as Array[Float32];
-                import static java.util.Arrays.copyOfRange(Array[Float32], Int32, Int32): ScopedArray[Float32, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
+                let arr = a as Array[Float32, Static];
+                import static java.util.Arrays.copyOfRange(Array[Float32, Static], Int32, Int32): Array[Float32, r2] & r1 and r2 as copy;
+                copy(arr, b, e) as Array[a, r2]
             case ReifiedFloat64 =>
-                let arr = a as Array[Float64];
-                import static java.util.Arrays.copyOfRange(Array[Float64], Int32, Int32): ScopedArray[Float64, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
+                let arr = a as Array[Float64, Static];
+                import static java.util.Arrays.copyOfRange(Array[Float64, Static], Int32, Int32): Array[Float64, r2] & r1 and r2 as copy;
+                copy(arr, b, e) as Array[a, r2]
             case ReifiedInt8 =>
-                let arr = a as Array[Int8];
-                import static java.util.Arrays.copyOfRange(Array[Int8], Int32, Int32): ScopedArray[Int8, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
+                let arr = a as Array[Int8, Static];
+                import static java.util.Arrays.copyOfRange(Array[Int8, Static], Int32, Int32): Array[Int8, r2] & r1 and r2 as copy;
+                copy(arr, b, e) as Array[a, r2]
             case ReifiedInt16 =>
-                let arr = a as Array[Int16];
-                import static java.util.Arrays.copyOfRange(Array[Int16], Int32, Int32): ScopedArray[Int16, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
+                let arr = a as Array[Int16, Static];
+                import static java.util.Arrays.copyOfRange(Array[Int16, Static], Int32, Int32): Array[Int16, r2] & r1 and r2 as copy;
+                copy(arr, b, e) as Array[a, r2]
             case ReifiedInt32 =>
-                let arr = a as Array[Int32];
-                import static java.util.Arrays.copyOfRange(Array[Int32], Int32, Int32): ScopedArray[Int32, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
+                let arr = a as Array[Int32, Static];
+                import static java.util.Arrays.copyOfRange(Array[Int32, Static], Int32, Int32): Array[Int32, r2] & r1 and r2 as copy;
+                copy(arr, b, e) as Array[a, r2]
             case ReifiedInt64 =>
-                let arr = a as Array[Int64];
-                import static java.util.Arrays.copyOfRange(Array[Int64], Int32, Int32): ScopedArray[Int64, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
+                let arr = a as Array[Int64, Static];
+                import static java.util.Arrays.copyOfRange(Array[Int64, Static], Int32, Int32): Array[Int64, r2] & r1 and r2 as copy;
+                copy(arr, b, e) as Array[a, r2]
             case ReifiedArray(_) =>
-                let arr = a as Array[##java.lang.Object];
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object], Int32, Int32): ScopedArray[##java.lang.Object, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
+                let arr = a as Array[##java.lang.Object, Static];
+                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, Static], Int32, Int32): Array[##java.lang.Object, r2] & r1 and r2 as copy;
+                copy(arr, b, e) as Array[a, r2]
         }
 
    ///
    /// Returns an iterator over `a`.
    ///
-   pub def toIterator(a: Array[a]): Iterator[a] & Impure = {
+   pub def toIterator(a: Array[a, r]): Iterator[a] & Impure =
        let len = Array.length(a);
-       let copy = a[0 .. len];
+       let copy = copyOfRange(0, len, a, Static);
        let i = ref 0;
        let done = () -> (deref i) >= len;
        let next = () -> {
@@ -1727,5 +1710,4 @@ namespace Array {
            x
        };
        Iterator(done, next)
-   }
 }

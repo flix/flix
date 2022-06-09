@@ -91,6 +91,10 @@ object FormatType {
       case SimpleType.Not(_) => false
       case SimpleType.And(_) => false
       case SimpleType.Or(_) => false
+      case SimpleType.Complement(_) => false
+      case SimpleType.Union(_) => false
+      case SimpleType.Intersection(_) => false
+      case SimpleType.Difference(_, _) => false
       case SimpleType.PureArrow(_, _) => false
       case SimpleType.PolyArrow(_, _, _) => false
 
@@ -108,8 +112,8 @@ object FormatType {
       case SimpleType.Int64 => true
       case SimpleType.BigInt => true
       case SimpleType.Str => true
-      case SimpleType.ScopedArray => true
-      case SimpleType.ScopedRef => true
+      case SimpleType.Array => true
+      case SimpleType.Ref => true
       case SimpleType.Channel => true
       case SimpleType.Lazy => true
       case SimpleType.True => true
@@ -165,8 +169,8 @@ object FormatType {
       case SimpleType.Int64 => "Int64"
       case SimpleType.BigInt => "BigInt"
       case SimpleType.Str => "String"
-      case SimpleType.ScopedArray => "ScopedArray"
-      case SimpleType.ScopedRef => "ScopedRef"
+      case SimpleType.Array => "Array"
+      case SimpleType.Ref => "Ref"
       case SimpleType.Channel => "Channel"
       case SimpleType.Lazy => "Lazy"
       case SimpleType.True => mode match {
@@ -215,6 +219,14 @@ object FormatType {
       case SimpleType.Or(tpes) =>
         val strings = tpes.map(delimit(_, mode))
         strings.mkString(" or ")
+      case SimpleType.Complement(tpe) => s"~${delimit(tpe, mode)}"
+      case SimpleType.Union(tpes) =>
+        val strings = tpes.map(delimit(_, mode))
+        strings.mkString(" + ")
+      case SimpleType.Intersection(tpes) =>
+        val strings = tpes.map(delimit(_, mode))
+        strings.mkString(" & ")
+      case SimpleType.Difference(tpe1, tpe2) => s"${delimit(tpe1, mode)} - ${delimit(tpe2, mode)}"
       case SimpleType.RelationConstructor => "Relation"
       case SimpleType.Relation(tpes) =>
         val terms = tpes.map(visit(_, Mode.Type)).mkString(", ")
@@ -232,7 +244,7 @@ object FormatType {
         val argString = delimitFunctionArg(arg)
         val effString = visit(eff, Mode.Effect)
         val retString = delimit(ret, Mode.Type)
-        s"$argString ->{$effString} $retString"
+        s"$argString -> $retString & $effString"
       case SimpleType.TagConstructor(name) => name
       case SimpleType.Tag(name, args, ret) =>
         // NB: not putting too much care into tag formatting, as it should not show up
@@ -247,8 +259,10 @@ object FormatType {
       case SimpleType.Var(id, kind, rigidity, text) =>
         val prefix: String = kind match {
           case Kind.Wild => "_" + id.toString
+          case Kind.Beef => "_b" + id.toString
           case Kind.Star => "t" + id
           case Kind.Bool => "b" + id
+          case Kind.Effect => "e" + id
           case Kind.RecordRow => "r" + id
           case Kind.SchemaRow => "s" + id
           case Kind.Predicate => "'" + id.toString
