@@ -41,7 +41,8 @@ object CompletionProvider {
       getSnippetCompletions() ++
       getVarCompletions() ++
       getDefAndSigCompletions() ++
-      getWithCompletions()
+      getWithCompletions() ++
+      getInstanceCompletions()
   }
 
   private def keywordCompletion(name: String)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
@@ -220,6 +221,92 @@ object CompletionProvider {
     } else {
       Nil
     }
+  }
+
+  /**
+    * Returns a list of completion items based on type classes.
+    */
+  private def getInstanceCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+    if (root == null || context.previousWord != "instance") {
+      return Nil
+    }
+
+    /**
+      * Replaces the text in the given variable symbol `sym` everywhere in the type `tpe`
+      * with an equivalent variable symbol with the given `newText`.
+      */
+    def replaceText(tvar: Symbol.TypeVarSym, tpe: Type, newText: String): Type = tpe match {
+      case Type.KindedVar(sym, loc) if tvar == sym => Type.KindedVar(sym.withText(Ast.VarText.SourceText(newText)), loc)
+      case Type.KindedVar(_, _) => tpe
+      case Type.Cst(_, _) => tpe
+
+      case Type.Apply(tpe1, tpe2, loc) =>
+        val t1 = replaceText(tvar, tpe1, newText)
+        val t2 = replaceText(tvar, tpe2, newText)
+        Type.Apply(t1, t2, loc)
+
+      case Type.Alias(sym, args0, tpe0, loc) =>
+        val args = args0.map(replaceText(tvar, _, newText))
+        val t = replaceText(tvar, tpe0, newText)
+        Type.Alias(sym, args, t, loc)
+
+      case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable.")
+      case _: Type.UnkindedArrow => throw InternalCompilerException("Unexpected unkinded arrow.")
+      case _: Type.ReadWrite => throw InternalCompilerException("Unexpected unkinded type.")
+      case _: Type.Ascribe => throw InternalCompilerException("Unexpected kind ascription.")
+    }
+
+    /**
+      * Formats the given type `tpe`.
+      */
+    def fmtType(clazz: TypedAst.Class, tpe: Type, hole: String): String =
+      FormatType.formatWellKindedType(replaceText(clazz.tparam.sym, tpe, hole))
+
+    /**
+      * Formats the given class `clazz`.
+      */
+    def fmtClass(clazz: TypedAst.Class): String = {
+      s"class ${clazz.sym.name}[${clazz.tparam.name.name}]"
+    }
+
+    /**
+      * Formats the given formal parameters in `spec`.
+      */
+    def fmtFormalParams(clazz: TypedAst.Class, spec: TypedAst.Spec, hole: String): String =
+      spec.fparams.map {
+        case fparam => s"${fparam.sym.text}: ${fmtType(clazz, fparam.tpe, hole)}"
+      }.mkString(", ")
+
+    /**
+      * Formats the given signature `sig`.
+      */
+    def fmtSignature(clazz: TypedAst.Class, sig: TypedAst.Sig, hole: String): String = {
+      val fparams = fmtFormalParams(clazz, sig.spec, hole)
+      val retTpe = fmtType(clazz, sig.spec.retTpe, hole)
+      val eff = sig.spec.eff match {
+        case Type.Cst(TypeConstructor.True, _) => ""
+        case Type.Cst(TypeConstructor.False, _) => " & Impure"
+        case e => " & " + FormatType.formatWellKindedType(e)
+      }
+      s"    pub def ${sig.sym.name}($fparams): $retTpe$eff = ???"
+    }
+
+    root.classes.map {
+      case (_, clazz) =>
+        val hole = "${1:t}"
+        val classSym = clazz.sym
+        val signatures = clazz.signatures.filter(_.impl.isEmpty)
+        val body = signatures.map(s => fmtSignature(clazz, s, hole)).mkString("\n\n")
+        val completion = s"$classSym[$hole] {\n\n$body\n\n}\n"
+
+        CompletionItem(label = s"$classSym[...]",
+          sortText = s"1$classSym",
+          textEdit = TextEdit(context.range, completion),
+          detail = Some(fmtClass(clazz)),
+          documentation = Some(clazz.doc.text),
+          insertTextFormat = InsertTextFormat.Snippet,
+          kind = CompletionItemKind.Snippet)
+    }.toList
   }
 
   private case class Context(uri: String, range: Range, word: String, previousWord: String, prefix: String)
