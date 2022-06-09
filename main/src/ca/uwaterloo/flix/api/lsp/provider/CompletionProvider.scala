@@ -40,12 +40,12 @@ object CompletionProvider {
     getKeywordCompletions() ++
       getSnippetCompletions() ++
       getVarCompletions() ++
-      getDefAndSigCompletions()
+      getDefAndSigCompletions() ++
+      getWithCompletions()
   }
 
   private def keywordCompletion(name: String)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
     CompletionItem(label = name,
-      filterText = name,
       sortText = "9" + name,
       textEdit = TextEdit(context.range, name),
       kind = CompletionItemKind.Keyword)
@@ -64,7 +64,6 @@ object CompletionProvider {
 
   private def snippetCompletion(name: String, snippet: String, documentation: String)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
     CompletionItem(label = name,
-      filterText = name,
       sortText = "8" + name,
       textEdit = TextEdit(context.range, snippet),
       documentation = Some(documentation),
@@ -86,7 +85,6 @@ object CompletionProvider {
 
   private def varCompletion(sym: Symbol.VarSym, tpe: Type)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
     CompletionItem(label = sym.text,
-      filterText = sym.text,
       sortText = "5" + sym.text,
       textEdit = TextEdit(context.range, sym.text),
       detail = Some(FormatType.formatWellKindedType(tpe)),
@@ -135,7 +133,6 @@ object CompletionProvider {
   private def defCompletion(decl: TypedAst.Def)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
     val name = decl.sym.toString
     CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
-      filterText = context.word,
       sortText = "2" + name,
       textEdit = TextEdit(context.range, getApplySnippet(name, decl.spec.fparams)),
       detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
@@ -147,7 +144,6 @@ object CompletionProvider {
   private def sigCompletion(decl: TypedAst.Sig)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
     val name = decl.sym.toString
     CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
-      filterText = context.word,
       sortText = "2" + name,
       textEdit = TextEdit(context.range, getApplySnippet(name, decl.spec.fparams)),
       detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
@@ -197,6 +193,31 @@ object CompletionProvider {
     val defSuggestions = root.defs.values.filter(matchesDef(_, word, uri)).map(defCompletion)
     val sigSuggestions = root.sigs.values.filter(matchesSig(_, word, uri)).map(sigCompletion)
     defSuggestions ++ sigSuggestions
+  }
+
+  /**
+    * Returns a list of completion items based on with type class constraints.
+    */
+  private def getWithCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+    if (root == null) {
+      return Nil
+    }
+
+    val withPattern = raw".*\swith\s.*".r
+
+    if(withPattern matches context.prefix) {
+      root.classes.map {
+        case(_, clazz) =>
+          val name = clazz.sym.toString
+          CompletionItem(label = name,
+            sortText = "1" + name,
+            textEdit = TextEdit(context.range, name),
+            documentation = Some(clazz.doc.text),
+            kind = CompletionItemKind.Class)
+      }
+    } else {
+      Nil
+    }
   }
 
   private case class Context(uri: String, range: Range, word: String, previousWord: String, prefix: String)
