@@ -1108,7 +1108,7 @@ object Typer {
           (constrs2, tpe2, eff2) <- visitExp(exp)
           _ <- expectTypeM(expected = regionType, actual = tpe2, loc)
           elmTyp <- unifyTypeAllowEmptyM(elmTypes, Kind.Star, loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkScopedArray(elmTyp, regionVar, loc), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkArray(elmTyp, regionVar, loc), loc)
           resultEff <- unifyTypeM(evar, Type.mkAnd(Type.mkAnd(eff1, loc), eff2, regionVar, loc), loc)
         } yield (constrs1.flatten ++ constrs2, resultTyp, resultEff)
 
@@ -1121,7 +1121,7 @@ object Typer {
           (constrs3, tpe3, eff3) <- visitExp(exp3)
           _ <- expectTypeM(expected = regionType, actual = tpe3, loc)
           lenType <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkScopedArray(tpe1, regionVar, loc), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkArray(tpe1, regionVar, loc), loc)
           resultEff <- unifyTypeM(evar, Type.mkAnd(eff1, eff2, eff3, regionVar, loc), loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
 
@@ -1130,7 +1130,7 @@ object Typer {
         val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          _ <- expectTypeM(Type.mkScopedArray(elmVar, regionVar, loc), tpe, exp.loc)
+          _ <- expectTypeM(Type.mkArray(elmVar, regionVar, loc), tpe, exp.loc)
           resultTyp = Type.Int32
           resultEff = Type.Pure
           _ <- unbindVar(elmVar)
@@ -1142,7 +1142,7 @@ object Typer {
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
-          arrayType <- expectTypeM(expected = Type.mkScopedArray(tvar, regionVar, loc), actual = tpe1, exp1.loc)
+          arrayType <- expectTypeM(expected = Type.mkArray(tvar, regionVar, loc), actual = tpe1, exp1.loc)
           indexType <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
           resultEff = Type.mkAnd(regionVar, eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, tvar, resultEff)
@@ -1150,7 +1150,7 @@ object Typer {
       case KindedAst.Expression.ArrayStore(exp1, exp2, exp3, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
         val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
-        val arrayType = Type.mkScopedArray(elmVar, regionVar, loc)
+        val arrayType = Type.mkArray(elmVar, regionVar, loc)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -1165,7 +1165,7 @@ object Typer {
       case KindedAst.Expression.ArraySlice(exp1, exp2, exp3, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
         val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
-        val arrayType = Type.mkScopedArray(elmVar, regionVar, loc)
+        val arrayType = Type.mkArray(elmVar, regionVar, loc)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -1183,14 +1183,14 @@ object Typer {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           _ <- unifyTypeM(tpe2, regionType, loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkScopedRef(tpe1, regionVar, loc), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkRef(tpe1, regionVar, loc), loc)
           resultEff <- unifyTypeM(evar, Type.mkAnd(eff1, eff2, regionVar, loc), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expression.Deref(exp, tvar, evar, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc, Rigidity.Flexible, text = FallbackText("elm"))
         val regionVar = Type.freshVar(Kind.Bool, loc, Rigidity.Flexible, text = FallbackText("region"))
-        val refType = Type.mkScopedRef(elmVar, regionVar, loc)
+        val refType = Type.mkRef(elmVar, regionVar, loc)
 
         for {
           (constrs, tpe, eff) <- visitExp(exp)
@@ -1202,7 +1202,7 @@ object Typer {
       case KindedAst.Expression.Assign(exp1, exp2, evar, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc, Rigidity.Flexible, text = FallbackText("elm"))
         val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
-        val refType = Type.mkScopedRef(elmVar, regionVar, loc)
+        val refType = Type.mkRef(elmVar, regionVar, loc)
 
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
@@ -1509,7 +1509,7 @@ object Typer {
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           _ <- unifyTypeM(tpe1, expectedSchemaType, loc)
           _ <- unifyTypeM(tpe2, Type.mkSchema(freshRestSchemaVar, loc), loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkArray(freshTupleVar, loc), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkArray(freshTupleVar, Type.False, loc), loc)
           resultEff = Type.mkAnd(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -2103,14 +2103,14 @@ object Typer {
         for {
           elementTypes <- seqM(elms map visit)
           elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc)
-          resultType <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc)
+          resultType <- unifyTypeM(tvar, Type.mkArray(elementType, Type.False, loc), loc)
         } yield resultType
 
       case KindedAst.Pattern.ArrayTailSpread(elms, varSym, tvar, loc) =>
         for {
           elementTypes <- seqM(elms map visit)
           elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc)
-          arrayType <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc)
+          arrayType <- unifyTypeM(tvar, Type.mkArray(elementType, Type.False, loc), loc)
           resultType <- unifyTypeM(varSym.tvar.ascribedWith(Kind.Star), arrayType, loc)
         } yield resultType
 
@@ -2118,7 +2118,7 @@ object Typer {
         for {
           elementTypes <- seqM(elms map visit)
           elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc)
-          arrayType <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc)
+          arrayType <- unifyTypeM(tvar, Type.mkArray(elementType, Type.False, loc), loc)
           resultType <- unifyTypeM(varSym.tvar.ascribedWith(Kind.Star), arrayType, loc)
         } yield resultType
 
@@ -2218,7 +2218,7 @@ object Typer {
     case KindedAst.Predicate.Body.Loop(varSyms, exp, loc) =>
       // TODO: Use type classes instead of array?
       val tupleType = Type.mkTuple(varSyms.map(_.tvar.ascribedWith(Kind.Star)), loc)
-      val expectedType = Type.mkArray(tupleType, loc)
+      val expectedType = Type.mkArray(tupleType, Type.False, loc)
       for {
         (constrs, tpe, eff) <- inferExp(exp, root)
         expEff <- unifyBoolM(Type.Pure, eff, loc)
@@ -2371,7 +2371,7 @@ object Typer {
     else if (c.isArray) {
       val comp = c.getComponentType
       val elmType = getFlixType(comp)
-      Type.mkArray(elmType, SourceLocation.Unknown)
+      Type.mkArray(elmType, Type.False, SourceLocation.Unknown)
     }
     // otherwise native type
     else {
