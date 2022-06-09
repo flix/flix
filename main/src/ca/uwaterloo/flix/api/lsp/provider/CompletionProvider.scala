@@ -203,15 +203,17 @@ object CompletionProvider {
       return Nil
     }
 
-    val withPattern = raw".*\swith\s.*".r
+    val linePattern = raw".*enum.*\sw.*".r
+    val wordPattern = "wi?t?h?".r
 
-    if(withPattern matches context.prefix) {
+    if (linePattern matches context.prefix) {
       root.classes.map {
         case(_, clazz) =>
           val name = clazz.sym.toString
-          CompletionItem(label = name,
+          val completion = if (wordPattern matches context.word) s"with $name" else name
+          CompletionItem(label = completion,
             sortText = "1" + name,
-            textEdit = TextEdit(context.range, name),
+            textEdit = TextEdit(context.range, completion),
             documentation = Some(clazz.doc.text),
             kind = CompletionItemKind.Class)
       }
