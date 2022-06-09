@@ -1905,6 +1905,14 @@ object Resolver {
               Type.mkApply(applyAlias(alias, usedArgs, loc), extraArgs, tpe0.loc)
           }
         }
+      case Type.UnkindedArrow(purAndEff0, arity, loc) =>
+        val purAndEffVal = finishResolvePurityAndEffect(purAndEff0, taenv)
+        val argsVal = traverse(targs)(finishResolveType(_, taenv))
+        mapN(purAndEffVal, argsVal) {
+          case (purAndEff, args) =>
+            Type.mkApply(Type.UnkindedArrow(purAndEff, arity, loc), args, tpe0.loc)
+        }
+
       case _ =>
         traverse(targs)(finishResolveType(_, taenv)) map {
           resolvedArgs => Type.mkApply(baseType, resolvedArgs, tpe0.loc)
@@ -1937,7 +1945,7 @@ object Resolver {
   /**
     * Finishes resolution of the given purity and effect.
     */
-  private def finishResolvePurityAndEffect(purAndEff0: Ast.PurityAndEffect, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias])(implicit flix: Flix): Validation[Ast.PurityAndEffect, ResolutionError] = purAndEff0 match {
+  private def finishResolvePurityAndEffect(purAndEff0: Ast.PurityAndEffect, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]): Validation[Ast.PurityAndEffect, ResolutionError] = purAndEff0 match {
     case Ast.PurityAndEffect(pur0, eff0) =>
       val purVal = traverse(pur0)(finishResolveType(_, taenv)).map(_.headOption)
       val effVal = traverse(eff0)(effs => traverse(effs)(finishResolveType(_, taenv))).map(_.headOption)
