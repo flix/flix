@@ -39,7 +39,8 @@ object CompletionProvider {
   private def getCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): List[CompletionItem] = {
     getKeywordCompletions() ++
       getSnippetCompletions() ++
-      getVarCompletions()
+      getVarCompletions() ++
+      getDefAndSigCompletions()
   }
 
   private def keywordCompletion(name: String)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
@@ -106,6 +107,73 @@ object CompletionProvider {
     }
 
     iter.toList
+  }
+
+  private def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec): String = spec match {
+    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _) =>
+      val args = fparams.map {
+        fparam => s"${fparam.sym.text}: ${FormatType.formatWellKindedType(fparam.tpe)}"
+      }
+
+      val retTpe = FormatType.formatWellKindedType(retTpe0)
+      val eff = eff0 match {
+        case Type.Cst(TypeConstructor.True, _) => "Pure"
+        case Type.Cst(TypeConstructor.False, _) => "Impure"
+        case e => FormatType.formatWellKindedType(e)
+      }
+
+      s"$name(${args.mkString(", ")}): $retTpe & $eff"
+  }
+
+  private def getDefLabel(decl: TypedAst.Def): String =
+    getLabelForNameAndSpec(decl.sym.toString, decl.spec)
+
+  private def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam]): String = {
+    val args = fparams.zipWithIndex.map {
+      case (fparam, idx) => "$" + s"{${idx + 1}:${fparam.sym.text}}"
+    }
+    s"$name(${args.mkString(", ")})"
+  }
+
+  private def defCompletion(decl: TypedAst.Def)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
+    val name = decl.sym.toString
+    CompletionItem(label = getDefLabel(decl),
+      filterText = context.word,
+      sortText = "2" + name,
+      textEdit = TextEdit(context.range, getApplySnippet(name, decl.spec.fparams)),
+      detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
+      documentation = Some(decl.spec.doc.text),
+      insertTextFormat = InsertTextFormat.Snippet,
+      kind = CompletionItemKind.Function)
+  }
+
+  /**
+    * Returns `true` if the given definition `decl` should be included in the suggestions.
+    */
+  private def matchesDef(decl: TypedAst.Def, word: String, uri: String): Boolean = {
+    val isPublic = decl.spec.mod.isPublic
+    val isNamespace = word.nonEmpty && word.head.isUpper
+    val isMatch = if (isNamespace)
+                    decl.sym.toString.startsWith(word)
+                  else
+                    decl.sym.text.startsWith(word)
+    val isInFile = decl.sym.loc.source.name == uri
+
+    isMatch && (isPublic || isInFile)
+  }
+
+  private def getDefAndSigCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+    if (root == null) {
+      return Nil
+    }
+
+    val word = context.word
+    val uri = context.uri
+
+    val defSuggestions = root.defs.values.filter(matchesDef(_, word, uri)).map(defCompletion)
+    // val sigSuggestions = root.sigs.values.filter(matchesSig(_, word, uri)).map(getSigCompletionItem(withoutNS, _))
+    // (defSuggestions ++ sigSuggestions)
+    defSuggestions
   }
 
   private case class Context(uri: String, range: Range, word: String, previousWord: String, prefix: String)
