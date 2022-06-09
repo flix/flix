@@ -90,7 +90,7 @@ instance PartialOrder[Map[k, v]] with Order[k], Eq[v] {
     pub def lessEqual(m1: Map[k, v], m2: Map[k, v]): Bool = m1 `Map.isSubmapOf` m2
 }
 
-instance JoinLattice[Map[k, v]]with Order[k], Eq[v], JoinLattice[v] {
+instance JoinLattice[Map[k, v]] with Order[k], Eq[v], JoinLattice[v] {
     pub def leastUpperBound(m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
         Map.unionWith(JoinLattice.leastUpperBound, m1, m2)
 }
