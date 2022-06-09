@@ -228,7 +228,7 @@ object Typer {
           val initialSubst = getSubstFromParams(fparams0)
           val initialRenv = getRigidityFromParams(fparams0)
 
-          run(initialSubst, initialRenv) match { // MATT renv
+          run(initialSubst, initialRenv) match {
             case Ok((subst, renv0, (partialTconstrs, partialType))) =>
 
               ///
