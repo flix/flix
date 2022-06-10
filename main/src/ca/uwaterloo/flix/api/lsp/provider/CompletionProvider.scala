@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatScheme, FormatType}
 import ca.uwaterloo.flix.language.phase.Parser.Letters
+import ca.uwaterloo.flix.language.phase.Resolver.DerivableSyms
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
@@ -288,18 +289,43 @@ object CompletionProvider {
       return Nil
     }
 
-    val linePattern = raw".*enum.*\sw.*".r
+    // 
+    // When used with `enum`, `with` needs to be treated differently: we should only show derivable
+    // type classes, and we shouldn't include the type parameter
+    // 
+
+    val enumPattern = raw"\s*enum\s+(.*\s)wi?t?h?\s?.*".r
+    val withPattern = raw"\s*(def|instance|class)\s+(.*\s)wi?t?h?\s?.*".r
     val wordPattern = "wi?t?h?".r
 
-    if (linePattern matches context.prefix) {
-      root.classes.map {
-        case(_, clazz) =>
-          val name = clazz.sym.toString
-          val completion = if (wordPattern matches context.word) s"with $name" else name
-          CompletionItem(label = completion,
+    val currentWordIsWith = wordPattern matches context.word
+
+    if (enumPattern matches context.prefix) {
+      for {
+        (_, clazz) <- root.classes
+        sym = clazz.sym
+        if (DerivableSyms.contains(sym))
+        name = sym.toString
+        completion = if (currentWordIsWith) s"with $name" else name
+      } yield
+        CompletionItem(label = completion,
             sortText = "1" + name,
             textEdit = TextEdit(context.range, completion),
             documentation = Some(clazz.doc.text),
+            kind = CompletionItemKind.Class)
+    } else if (withPattern.matches(context.prefix) || currentWordIsWith) {
+      root.classes.map {
+        case(_, clazz) =>
+          val name = clazz.sym.toString
+          val hole = "${1:t}"
+          val application = s"$name[$hole]"
+          val completion = if (currentWordIsWith) s"with $application" else application
+          val label = if (currentWordIsWith) s"with $name[...]" else s"$name[...]"
+          CompletionItem(label = label,
+            sortText = "1" + name,
+            textEdit = TextEdit(context.range, completion),
+            documentation = Some(clazz.doc.text),
+            insertTextFormat = InsertTextFormat.Snippet,
             kind = CompletionItemKind.Class)
       }
     } else {
