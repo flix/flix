@@ -54,6 +54,10 @@ instance Monad[Chain] {
     pub def flatMap(f: a -> Chain[b] & ef, x : Chain[a]) : Chain[b] & ef = Chain.flatMap(f, x)
 }
 
+instance ForEach[Chain] {
+    pub def foreach(f: a -> Unit & ef, c: Chain[a]): Unit & ef = Chain.foreach(f, c)
+}
+
 instance Foldable[Chain] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldLeft(f, s, c)
     pub def foldRight(f: (a, b) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldRight(f, s, c)
@@ -730,7 +734,7 @@ namespace Chain {
     ///
     /// Returns the chain `c` as an array.
     ///
-    pub def toArray(c: Chain[a], r: Region[r]): ScopedArray[a, r] \ Write(r) = match head(c) {
+    pub def toArray(c: Chain[a], r: Region[r]): Array[a, r] \ Write(r) = match head(c) {
         case None    => [] @ r
         case Some(x) =>
             let arr = [x; length(c)] @ r;

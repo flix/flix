@@ -65,6 +65,10 @@ instance Monad[Nel] {
     pub def flatMap(f: a -> Nel[b] & ef, x : Nel[a]) : Nel[b] & ef = Nel.flatMap(f, x)
 }
 
+instance ForEach[Nel] {
+    pub def foreach(f: a -> Unit & ef, l: Nel[a]): Unit & ef = Nel.foreach(f, l)
+}
+
 instance Foldable[Nel] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldRight(f, s, l)
@@ -95,7 +99,7 @@ instance Reducible[Nel] {
     override pub def memberOf(a: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(a, l)
     override pub def dropWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef = Nel.dropWhile(f, l)
     override pub def takeWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef = Nel.takeWhile(f, l)
-    override pub def toArray(l: Nel[a], r: Region[r]): ScopedArray[a, r] \ Write(r) = Nel.toArray(l, r)
+    override pub def toArray(l: Nel[a], r: Region[r]): Array[a, r] \ Write(r) = Nel.toArray(l, r)
     override pub def toIterator(l: Nel[a]): Iterator[a] & Impure = Nel.toIterator(l)
     override pub def toList(l: Nel[a]): List[a] = Nel.toList(l)
 }
@@ -554,7 +558,7 @@ namespace Nel {
     ///
     /// Returns `l` as an array.
     ///
-    pub def toArray(l: Nel[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
+    pub def toArray(l: Nel[a], r: Region[r]): Array[a, r] \ Write(r) =
         (l |> toList |> List.toArray)(r)
 
     ///

@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.fmt
 
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Rigidity, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -65,9 +65,9 @@ object SimpleType {
 
   case object Str extends SimpleType
 
-  case object ScopedArray extends SimpleType
+  case object Array extends SimpleType
 
-  case object ScopedRef extends SimpleType
+  case object Ref extends SimpleType
 
   case object Channel extends SimpleType
 
@@ -386,7 +386,7 @@ object SimpleType {
           // Case 3: Too many args. Error.
           case _ :: _ :: _ => throw new OverAppliedType
         }
-      case TypeConstructor.ScopedArray => mkApply(ScopedArray, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Channel => mkApply(Channel, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Tag(sym, tag) =>
@@ -404,7 +404,7 @@ object SimpleType {
       case TypeConstructor.KindedEnum(sym, kind) => mkApply(Name(sym.name), t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.UnkindedEnum(sym) => throw InternalCompilerException("Unexpected unkinded type.")
       case TypeConstructor.Native(clazz) => Name(clazz.getSimpleName)
-      case TypeConstructor.ScopedRef => mkApply(ScopedRef, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.Ref => mkApply(Ref, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Tuple(l) =>
         val tpes = t.typeArguments.map(fromWellKindedType).padTo(l, Hole)
         Tuple(tpes)

@@ -156,4 +156,11 @@ namespace Test/Dec/TypeAlias {
     @test
     def testTypeAlias27(): W[Bool, Int32] = Z(Err(123))
 
+    ///
+    /// Type-level if-then-else
+    ///
+    type alias If[cond: Bool, t: Bool, f: Bool] = (cond and t) or (not cond and f)
+
+    @test
+    def testTypeAlias28(): Bool & If[e1, e2, e3] = true as & If[e1, e2, e3]
 }
