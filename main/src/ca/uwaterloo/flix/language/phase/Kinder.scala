@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
+import ca.uwaterloo.flix.language.phase.unification.BoolUnification
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, traverse}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -1134,7 +1135,7 @@ object Kinder {
           val effs = byKind.getOrElse(Kind.Effect, Nil)
 
           val pur = purs.reduceOption({
-            case (t1, t2) => Type.mkAnd(t1, t2, t1.loc)
+            case (t1, t2) => BoolUnification.mkAnd(t1, t2)
           }: (Type, Type) => Type).getOrElse(Type.Pure)
 
           val eff = effs.reduceOption({
