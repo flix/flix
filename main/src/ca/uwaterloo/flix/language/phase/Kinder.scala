@@ -1221,7 +1221,7 @@ object Kinder {
   private def inferType(tpe: Type, expectedKind: Kind, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = tpe.baseType match {
     // Case 1: the type constructor is a variable: all args are * and the constructor is * -> * -> * ... -> expectedType
     case tvar: Type.UnkindedVar =>
-      val kind = kenv0.map.get(tvar.sym) match {
+      val tyconKind = kenv0.map.get(tvar.sym) match {
         // Case 1.1: the type is not in the kenv: guess that it is Star -> Star -> ... -> ???.
         case None =>
           tpe.typeArguments.foldLeft(expectedKind) {
@@ -1231,8 +1231,9 @@ object Kinder {
         case Some(k) => k
       }
 
-      Validation.fold(tpe.typeArguments, KindEnv.singleton(tvar.sym -> kind)) {
-        case (acc, targ) => flatMapN(inferType(targ, Kind.Star, kenv0, taenv, root)) {
+      val args = Kind.kindArgs(tyconKind)
+      Validation.fold(tpe.typeArguments.zip(args), KindEnv.singleton(tvar.sym -> tyconKind)) {
+        case (acc, (targ, kind)) => flatMapN(inferType(targ, kind, kenv0, taenv, root)) {
           kenv => acc ++ kenv
         }
       }

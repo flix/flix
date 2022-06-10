@@ -42,6 +42,13 @@ namespace Test/Kind/Class {
                     pub def star(x: a): Int32 = let _: a = ???; ???
                 }
             }
+
+            namespace Mix {
+                // ensure we use `m`'s annotation
+                class CTypeBoolType[m: Type -> Bool -> Type] {
+                    pub def fAndM(f: a -> b & ef1, x: m[a, ef2]): m[b, ef1 and ef2]
+                }
+            }
         }
 
         namespace Law {
