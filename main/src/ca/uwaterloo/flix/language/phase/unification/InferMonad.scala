@@ -104,7 +104,7 @@ case class InferMonad[A](run: (Substitution, RigidityEnv) => Result[(Substitutio
   }
 
   // MATT for debugging
-  lazy val result = run(Substitution.empty, Map.empty).get
+  lazy val result = run(Substitution.empty, RigidityEnv.empty).get
 
   lazy val (subst, renv, value) = result
 
