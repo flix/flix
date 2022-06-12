@@ -1714,7 +1714,7 @@ namespace Array {
     ///
     /// Shuffles `a` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(r: Random.Random, a: ScopedArray[a, r]): Unit \ { Impure, Read(r), Write(r) } =
+    pub def shuffle(r: Random.Random, a: Array[a, r]): Unit \ { Impure, Read(r), Write(r) } =
         let len = Array.length(a);
         def loop(i) = {
             if (i > 0) {

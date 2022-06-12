@@ -5821,21 +5821,21 @@ def findIndices07(): Bool & Impure =
 
     @test
     def shuffle02(): Bool & Impure = region r {
-        let a = ([0] @ r): ScopedArray[Int32, _];
+        let a = ([0] @ r);
         Array.shuffle(Random.new(), a);
         Array.length(a) == 1 and Array.toSet(a) == Set#{0}
     }
 
     @test
     def shuffle03(): Bool & Impure = region r {
-        let a = ([0, 1, 2, 3] @ r): ScopedArray[Int32, _];
+        let a = ([0, 1, 2, 3] @ r);
         Array.shuffle(Random.new(), a);
         Array.length(a) == 4 and Array.toSet(a) == Set#{0, 1, 2, 3}
     }
 
     @test
     def shuffle04(): Bool & Impure = region r {
-        let a = ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9] @ r): ScopedArray[Int32, _];
+        let a = ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9] @ r);
         Array.shuffle(Random.new(), a);
         Array.length(a) == 10 and Array.toSet(a) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
     }
