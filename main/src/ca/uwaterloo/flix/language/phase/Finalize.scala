@@ -445,9 +445,9 @@ object Finalize {
 
             case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
-            case TypeConstructor.ScopedArray => MonoType.Array(args.head)
+            case TypeConstructor.Array => MonoType.Array(args.head)
 
-            case TypeConstructor.ScopedRef => MonoType.Ref(args.head)
+            case TypeConstructor.Ref => MonoType.Ref(args.head)
 
             case TypeConstructor.Region =>
               MonoType.Unit // TODO: Should be erased?

@@ -143,13 +143,13 @@ object Scheme {
   /**
     * Returns `Success` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
-  def checkLessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, UnificationError] = {
+  def checkLessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Substitution, UnificationError] = {
 
     ///
     /// Special Case: If `sc1` and `sc2` are syntactically the same then `sc1` must be less than or equal to `sc2`.
     ///
     if (sc1 == sc2) {
-      return ().toSuccess
+      return Substitution.empty.toSuccess
     }
 
     //
@@ -170,7 +170,7 @@ object Scheme {
       newTconstrs1 <- ClassEnvironment.reduce(sc1.constraints.map(subst.apply), classEnv)
       newTconstrs2 <- ClassEnvironment.reduce(sc2.constraints.map(subst.apply), classEnv)
       _ <- Validation.sequence(newTconstrs1.map(ClassEnvironment.entail(newTconstrs2, _, classEnv)))
-    } yield ()
+    } yield subst
   }
 
 }

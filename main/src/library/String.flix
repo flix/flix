@@ -65,9 +65,10 @@ namespace String {
     ///
     /// Splits the string `s` around matches of the regular expression `regex`.
     ///
-    pub def split(regex: {regex :: String}, s: String): List[String] =
-        import java.lang.String.split(String): Array[String] & Pure;
-        Array.toList(split(s, regex.regex)) as & Pure
+    pub def split(regex: {regex :: String}, s: String): List[String] = {
+        import java.lang.String.split(String): Array[String, Static] & Impure;
+        Array.toList(split(s, regex.regex))
+    } as & Pure
 
     ///
     /// Returns the lower case version of the string `s`.
@@ -113,7 +114,7 @@ namespace String {
     /// Returns the given string `s` as an array of characters.
     ///
     @Time(length(s)) @Space(length(s))
-    pub def toArray(s: String, r: Region[r]): ScopedArray[Char, r] \ Write(r) =
+    pub def toArray(s: String, r: Region[r]): Array[Char, r] \ Write(r) =
         Array.init(i -> charAt(i, s), length(s), r)
 
     ///
@@ -1148,7 +1149,7 @@ namespace String {
     ///
     /// Helper function for `levenshteinDistance`.
     ///
-    def arraySwap(a: Array[Int32], b : Array[Int32]): Unit & Impure =
+    def arraySwap(a: Array[Int32, Static], b : Array[Int32, Static]): Unit & Impure =
         forIndex(0, Array.length(a) - 1, {i ->  a[i] = b[i]})
 
     ///
@@ -1158,9 +1159,10 @@ namespace String {
     /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
     ///
     @Time(Int32.min(length(a), length(b))) @Space(Int32.min(length(a), length(b)))
-    pub def zip(a: String, b: String): Array[(Char, Char)] & Impure =
+    pub def zip(a: String, b: String): List[(Char, Char)] =
         let len = Int32.min(length(a), length(b));
-        Array.init(i -> (charAt(i, a), charAt(i, b)), len, Static)
+        // Array.init(i -> (charAt(i, a), charAt(i, b)), len, Static)
+        List.unfold(i -> if (i >= len) None else Some((charAt(i, a), charAt(i, b)), i + 1), 0)
 
     ///
     /// Returns a string where the element at index `i` is `f(x, y)` where
