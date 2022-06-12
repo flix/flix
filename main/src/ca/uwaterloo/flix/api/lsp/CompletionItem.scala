@@ -29,6 +29,9 @@ object CompletionItem {
   * Represents a `CompletionItem` in LSP.
   *
   * @param label            The label of this completion item. By default also the text that is inserted when selecting this completion.
+  @ @param sortText         A string that should be used when sorting completion items
+  * @param textEdit         An edit which is applied to a document when selecting this completion. *Note:* The range of the edit must be
+  *                         a single line range and it must contain the position at which completion has been requested.
   * @param detail           A human-readable string with additional information about this item, like type or symbol information.
   * @param documentation    A human-readable string that represents a doc-comment.
   * @param kind             The kind of this completion item. Based of the kind an icon is chosen by the editor. The standardized set of available values is defined in `CompletionItemKind`.
@@ -38,10 +41,20 @@ object CompletionItem {
   *                         then type that character. *Note* that all commit characters should have `length=1` and that superfluous characters
   *                         will be ignored.
   */
-case class CompletionItem(label: String, insertText: String, detail: Option[String], documentation: Option[String], kind: CompletionItemKind, insertTextFormat: InsertTextFormat, commitCharacters: List[String]) {
+case class CompletionItem(
+  label: String, 
+  sortText: String,
+  textEdit: TextEdit,
+  detail: Option[String] = None, 
+  documentation: Option[String] = None, 
+  kind: CompletionItemKind, 
+  insertTextFormat: InsertTextFormat = InsertTextFormat.PlainText,
+  commitCharacters: List[String] = Nil) {
+
   def toJSON: JValue =
     ("label" -> label) ~
-      ("insertText" -> insertText) ~
+      ("sortText" -> sortText) ~
+      ("textEdit" -> textEdit.toJSON) ~
       ("detail" -> detail) ~
       ("documentation" -> documentation) ~
       ("kind" -> kind.toInt) ~
