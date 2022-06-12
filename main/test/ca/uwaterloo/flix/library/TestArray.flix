@@ -5814,7 +5814,7 @@ def findIndices07(): Bool & Impure =
 
     @test
     def shuffle01(): Bool & Impure = region r {
-        let a = ([] @ r): ScopedArray[Int32, _];
+        let a = ([] @ r): Array[Int32, _];
         Array.shuffle(Random.new(), a);
         Array.length(a) == 0 and Array.toSet(a) == Set#{}
     }
