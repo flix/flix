@@ -239,10 +239,15 @@ object CompletionProvider {
     s"$name(${args.mkString(", ")})"
   }
 
+  private def getFilterTextForName(name: String): String = {
+    s"${name}("
+  }
+
   private def defCompletion(decl: TypedAst.Def)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
     val name = decl.sym.toString
     CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
       sortText = Priority.definition(name),
+      filterText = Some(getFilterTextForName(name)),
       textEdit = TextEdit(context.range, getApplySnippet(name, decl.spec.fparams)),
       detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
       documentation = Some(decl.spec.doc.text),
@@ -254,6 +259,7 @@ object CompletionProvider {
     val name = decl.sym.toString
     CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
       sortText = Priority.signature(name),
+      filterText = Some(getFilterTextForName(name)),
       textEdit = TextEdit(context.range, getApplySnippet(name, decl.spec.fparams)),
       detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
       documentation = Some(decl.spec.doc.text),
