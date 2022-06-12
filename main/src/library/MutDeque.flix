@@ -347,6 +347,20 @@ namespace MutDeque {
         foldRight((x, acc) -> x :: acc, Nil, d)
 
     ///
+    /// Returns `d` as an array.
+    ///
+    pub def toArray(d: MutDeque[a, r], r: Region[r]): Array[a, r] \ { Read(r), Write(r) } =
+        let MutDeque(a, f, b) = d;
+        let len = MutDeque.capacity(d);
+
+        let i = deref f;
+        let j = deref b;
+
+        if      (i == j) [] @ r
+        else if (i  < j) Array.slice(i, j, deref a)
+        else             Array.append(Array.slice(i, len, deref a), Array.slice(0, j, deref a))
+
+    ///
     /// Returns the concatenation of the string representation
     /// of each element in `d` with `sep` inserted between each element.
     ///
