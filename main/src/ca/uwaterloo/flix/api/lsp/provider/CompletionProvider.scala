@@ -25,32 +25,51 @@ import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 import org.parboiled2.CharPredicate
 
-/*
- * CompletionProvider
- *
- * Takes a source file, along with the position of the cursor within that file, and returns a list of CompletionItems.
- *
- * https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_completion
- *
- * This list is not displayed to the user as-is, the client always both sorts and filters the list (or at least,
- * VSCode does). Therefore we always need to provide both filterText (currently copied from label) and sortText.
- *
- * To ensure that completions are displayed "most useful" first, we preceed sortText with a number as follows:
- *
- * 1: High confidence completions (currently with and instance)
- * 2: Def and Sig
- * 5: Var
- * 8: Snippets
- * 9: Keywords
- *
- * Note that we use textEdit rather than insertText to avoid relying on VSCode's tokenisation, so we can ensure that
- * we're consistent with Flix's parser.
- */
-
+/** 
+  * CompletionProvider
+  *
+  * Takes a source file, along with the position of the cursor within that file, and returns a list of CompletionItems.
+  *
+  * https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_completion
+  *
+  * This list is not displayed to the user as-is, the client always both sorts and filters the list (or at least,
+  * VSCode does). Therefore we always need to provide both filterText (currently copied from label) and sortText.
+  *
+  * To ensure that completions are displayed "most useful" first, we preceed sortText with a number as follows:
+  *
+  * 1: High confidence completions (currently with and instance)
+  * 2: Def and Sig
+  * 5: Var
+  * 8: Snippets
+  * 9: Keywords
+  *
+  * Note that we use textEdit rather than insertText to avoid relying on VSCode's tokenisation, so we can ensure that
+  * we're consistent with Flix's parser.
+  */
 object CompletionProvider {
   private implicit val audience: Audience = Audience.External
 
+  //
+  // sortText priorities
+  //
+  object Priority {
+    def highest(name: String) = "1" + name
+    def definition(name: String) = "2" + name
+    def signature(name: String) = "2" + name
+    def variable(name: String) = "5" + name
+    def snippet(name: String) = "8" + name
+    def keyword(name: String) = "9" + name
+  }
+
+  /**
+    * Process a completion request.
+    */
   def autoComplete(uri: String, pos: Position, source: Option[String])(implicit index: Index, root: TypedAst.Root): JObject = {
+    //
+    // To the best of my knowledge, completions should never be Nil. It could only happen if source was None
+    // (what would having no source even mean?) or if the position represented by pos was invalid with respect
+    // to the source (which would imply a bug in VSCode?).
+    //
     val completions = source.flatMap(getContext(_, uri, pos)) match {
       case None => Nil
       case Some(context) => getCompletions()(context, index, root)
@@ -60,6 +79,10 @@ object CompletionProvider {
   }
 
   private def getCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): List[CompletionItem] = {
+    //
+    // The order of this list doesn't matter because suggestions are ordered
+    // through sortText
+    //
     getKeywordCompletions() ++
       getSnippetCompletions() ++
       getVarCompletions() ++
@@ -70,7 +93,7 @@ object CompletionProvider {
 
   private def keywordCompletion(name: String)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
     CompletionItem(label = name,
-      sortText = "9" + name,
+      sortText = Priority.keyword(name),
       textEdit = TextEdit(context.range, name),
       kind = CompletionItemKind.Keyword)
   }
@@ -150,7 +173,7 @@ object CompletionProvider {
 
   private def snippetCompletion(name: String, snippet: String, documentation: String)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
     CompletionItem(label = name,
-      sortText = "8" + name,
+      sortText = Priority.snippet(name),
       textEdit = TextEdit(context.range, snippet),
       documentation = Some(documentation),
       insertTextFormat = InsertTextFormat.Snippet,
@@ -171,7 +194,7 @@ object CompletionProvider {
 
   private def varCompletion(sym: Symbol.VarSym, tpe: Type)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
     CompletionItem(label = sym.text,
-      sortText = "5" + sym.text,
+      sortText = Priority.variable(sym.text),
       textEdit = TextEdit(context.range, sym.text),
       detail = Some(FormatType.formatWellKindedType(tpe)),
       kind = CompletionItemKind.Variable)
@@ -219,7 +242,7 @@ object CompletionProvider {
   private def defCompletion(decl: TypedAst.Def)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
     val name = decl.sym.toString
     CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
-      sortText = "2" + name,
+      sortText = Priority.definition(name),
       textEdit = TextEdit(context.range, getApplySnippet(name, decl.spec.fparams)),
       detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
       documentation = Some(decl.spec.doc.text),
@@ -230,7 +253,7 @@ object CompletionProvider {
   private def sigCompletion(decl: TypedAst.Sig)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
     val name = decl.sym.toString
     CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
-      sortText = "2" + name,
+      sortText = Priority.signature(name),
       textEdit = TextEdit(context.range, getApplySnippet(name, decl.spec.fparams)),
       detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
       documentation = Some(decl.spec.doc.text),
@@ -309,7 +332,7 @@ object CompletionProvider {
         completion = if (currentWordIsWith) s"with $name" else name
       } yield
         CompletionItem(label = completion,
-            sortText = "1" + name,
+            sortText = Priority.highest(name),
             textEdit = TextEdit(context.range, completion),
             documentation = Some(clazz.doc.text),
             kind = CompletionItemKind.Class)
@@ -322,7 +345,7 @@ object CompletionProvider {
           val completion = if (currentWordIsWith) s"with $application" else application
           val label = if (currentWordIsWith) s"with $name[...]" else s"$name[...]"
           CompletionItem(label = label,
-            sortText = "1" + name,
+            sortText = Priority.highest(name),
             textEdit = TextEdit(context.range, completion),
             documentation = Some(clazz.doc.text),
             insertTextFormat = InsertTextFormat.Snippet,
@@ -410,7 +433,7 @@ object CompletionProvider {
         val completion = s"$classSym[$hole] {\n\n$body\n\n}\n"
 
         CompletionItem(label = s"$classSym[...]",
-          sortText = s"1$classSym",
+          sortText = Priority.highest(classSym.toString),
           textEdit = TextEdit(context.range, completion),
           detail = Some(fmtClass(clazz)),
           documentation = Some(clazz.doc.text),
@@ -419,6 +442,13 @@ object CompletionProvider {
     }.toList
   }
 
+  /*
+   * @param uri          Source file URI (from client)
+   * @param range        Start and end position of the word underneath (or alongside) the cursor
+   * @param word         The word underneath (or alongside) the cursor
+   * @param previousWord The word before the above
+   * @param prefix       The text from the start of the line up to the cursor
+   */
   private case class Context(uri: String, range: Range, word: String, previousWord: String, prefix: String)
 
   /**
@@ -429,11 +459,7 @@ object CompletionProvider {
       Letters.MathLetter ++ Letters.GreekLetter ++ CharPredicate("@/.")
 
   /**
-    * Given the source, and cursor position within it, find:
-    * range: The start and end position of the word underneath (or alongside) the cursor
-    * word: The word underneath (or alongside) the cursor
-    * previousWord: The word before the above
-    * prefix: The text from the start of the line up to the cursor
+    * Find context from the source, and cursor position within it.
     */
   private def getContext(source: String, uri: String, pos: Position): Option[Context] = {
       val x = pos.character - 1
