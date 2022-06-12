@@ -115,8 +115,8 @@ object GenMainClass {
 
     // Save the args in `dev.flix.runtime.Global.setArgs(..)`.
     val setArgsDescriptor = s"(${AsmOps.getArrayType(JvmType.String)})${JvmType.Void.toDescriptor}"
-    main.visitMethodInsn(INVOKESTATIC, JvmName.Global.toInternalName,
-      GenGlobalClass.SetArgsMethodName, setArgsDescriptor, false)
+    main.visitMethodInsn(INVOKESTATIC, BackendObjType.Global.jvmName.toInternalName,
+      BackendObjType.Global.SetArgsMethod.name, setArgsDescriptor, false)
 
     // Push `Unit` on the stack.
     main.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName,

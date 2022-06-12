@@ -17,7 +17,7 @@
 ///
 /// A type class for data structures that can be folded.
 ///
-pub class Foldable[t : Type -> Type] {
+pub class Foldable[t : Type -> Type] with ForEach[t] {
 
     ///
     /// Left-associative fold of a structure.
@@ -198,7 +198,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns `t` as an array.
     ///
-    pub def toArray(t: t[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
+    pub def toArray(t: t[a], r: Region[r]): Array[a, r] \ Write(r) =
         let v = new MutList(r);
         Foldable.foreach(a -> MutList.push!(a, v), t);
         MutList.toArray(v, r)
