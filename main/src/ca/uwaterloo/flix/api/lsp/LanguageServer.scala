@@ -173,6 +173,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       case JString("lsp/workspaceSymbols") => Request.parseWorkspaceSymbols(json)
       case JString("lsp/uses") => Request.parseUses(json)
       case JString("lsp/semanticTokens") => Request.parseSemanticTokens(json)
+      case JString("lsp/inlayHints") => Request.parseInlayHint(json)
 
       case s => Err(s"Unsupported request: '$s'.")
     }

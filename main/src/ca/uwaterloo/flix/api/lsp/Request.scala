@@ -370,6 +370,14 @@ object Request {
     } yield Request.SemanticTokens(id, uri)
   }
 
+  def parseInlayHint(json: JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+      range <- Range.parse(json \\ "range")
+    } yield Request.InlayHint(id, uri, range)
+  }
+
   /**
     * Attempts to parse the `id` from the given JSON value `v`.
     */
