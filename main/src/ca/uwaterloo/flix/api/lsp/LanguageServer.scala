@@ -244,7 +244,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     case Request.Codelens(id, uri) =>
       ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(index, root)
 
-    case Request.Complete(id, uri, pos) => processComplete(id, uri, pos)
+    case Request.Complete(id, uri, pos) => 
+      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri))(index, root)
 
     case Request.Highlight(id, uri, pos) =>
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)
@@ -342,76 +343,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         t.printStackTrace(System.err)
         ("id" -> requestId) ~ ("status" -> "failure")
     }
-  }
-
-  /**
-    * Processes a complete request.
-    */
-  private def processComplete(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
-    val source = sources.get(uri)
-    val line = source.flatMap(lineAt(_, pos.line - 1))
-    val word = line.flatMap(wordAt(_, pos.character - 1))
-
-    val t = System.nanoTime()
-    val suggestions = CompleteProvider.autoComplete(uri, pos, line, word)(index, root)
-    // println(s"Found ${suggestions.size} suggestions for '$word' (elapsed: " + ((System.nanoTime() - t) / 1_000_000) + "ms)")
-
-    val result = CompletionList(isIncomplete = true, suggestions)
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.toJSON)
-  }
-
-  /**
-    * Optionally returns line number `n` in the string `s`.
-    */
-  private def lineAt(s: String, n: Int): Option[String] = {
-    import java.io.{BufferedReader, StringReader}
-
-    val br = new BufferedReader(new StringReader(s))
-
-    var i = 0
-    var line = br.readLine()
-    while (line != null && i < n) {
-      line = br.readLine()
-      i = i + 1
-    }
-    Option(line)
-  }
-
-  /**
-    * Optionally returns the word at the given index `n` in the string `s`.
-    */
-  private def wordAt(s: String, n: Int): Option[String] = {
-    def isValidChar(c: Char): Boolean = Character.isLetterOrDigit(c) || c == '.' || c == '/' || c == '@'
-
-    // Bounds Check
-    if (!(0 <= n && n <= s.length)) {
-      return None
-    }
-
-    // Determine if the word is to the left of us, to the right of us, or out of bounds.
-    val leftOf = 0 < n && isValidChar(s.charAt(n - 1))
-    val rightOf = n < s.length && isValidChar(s.charAt(n))
-
-    val i = (leftOf, rightOf) match {
-      case (true, _) => n - 1
-      case (_, true) => n
-      case _ => return None
-    }
-
-    // Compute the beginning of the word.
-    var begin = i
-    while (0 < begin && isValidChar(s.charAt(begin - 1))) {
-      begin = begin - 1
-    }
-
-    // Compute the ending of the word.
-    var end = i
-    while (end < s.length && isValidChar(s.charAt(end))) {
-      end = end + 1
-    }
-
-    // Return the word.
-    Some(s.substring(begin, end))
   }
 
   /**
