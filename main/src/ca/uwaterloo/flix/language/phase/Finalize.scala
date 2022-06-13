@@ -107,10 +107,11 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.Var(sym, t, loc)
 
-      case LiftedAst.Expression.Closure(sym, freeVars, tpe, loc) =>
-        val fvs = freeVars.map(visitFreeVar)
+      case LiftedAst.Expression.Closure(sym, closureArgs, tpe, loc) =>
         val t = visitType(tpe)
-        FinalAst.Expression.Closure(sym, fvs, getFunctionTypeTemporaryToBeRemoved(fvs, t), t, loc)
+        val newClosureArgs = closureArgs.map(visit)
+        val fnMonoType = getFunctionTypeTemporaryToBeRemoved(newClosureArgs, t)
+        FinalAst.Expression.Closure(sym, newClosureArgs, fnMonoType, t, loc)
 
       case LiftedAst.Expression.ApplyClo(exp, args, tpe, _, loc) =>
         val as = args map visit
@@ -387,11 +388,6 @@ object Finalize {
     FinalAst.FormalParam(p0.sym, tpe)
   }
 
-  private def visitFreeVar(v0: LiftedAst.FreeVar): FinalAst.FreeVar = {
-    val tpe = visitType(v0.tpe)
-    FinalAst.FreeVar(v0.sym, tpe)
-  }
-
   // TODO: Should be private
 
   /**
@@ -449,9 +445,9 @@ object Finalize {
 
             case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
-            case TypeConstructor.ScopedArray => MonoType.Array(args.head)
+            case TypeConstructor.Array => MonoType.Array(args.head)
 
-            case TypeConstructor.ScopedRef => MonoType.Ref(args.head)
+            case TypeConstructor.Ref => MonoType.Ref(args.head)
 
             case TypeConstructor.Region =>
               MonoType.Unit // TODO: Should be erased?
@@ -473,6 +469,16 @@ object Finalize {
             case TypeConstructor.And => MonoType.Unit
 
             case TypeConstructor.Or => MonoType.Unit
+
+            case TypeConstructor.Complement => MonoType.Unit
+
+            case TypeConstructor.Union => MonoType.Unit
+
+            case TypeConstructor.Intersection => MonoType.Unit
+
+            case TypeConstructor.Difference => MonoType.Unit
+
+            case TypeConstructor.Effect(_) => MonoType.Unit
 
             case TypeConstructor.UnkindedEnum(_) =>
               throw InternalCompilerException(s"Unexpected type: '$t0'.")
@@ -502,7 +508,7 @@ object Finalize {
   }
 
   // TODO: Deprecated
-  private def getFunctionTypeTemporaryToBeRemoved(fvs: List[FinalAst.FreeVar], tpe: MonoType): MonoType = tpe match {
+  private def getFunctionTypeTemporaryToBeRemoved(fvs: List[FinalAst.Expression], tpe: MonoType): MonoType = tpe match {
     case MonoType.Arrow(targs, tresult) =>
       val freeArgs = fvs.map(_.tpe)
       MonoType.Arrow(freeArgs ::: targs, tresult)

@@ -22,7 +22,7 @@
 ///   - The capacity of the array is always 8 or more.
 ///
 pub enum MutList[a: Type, r: Region] {
-    case MutList(ScopedRef[ScopedArray[a, r], r], ScopedRef[Int32, r])
+    case MutList(Ref[Array[a, r], r], Ref[Int32, r])
 }
 
 instance Newable[MutList[a]] {
@@ -125,7 +125,7 @@ namespace MutList {
     ///
     /// Returns `0` if the given mutable list `v` is empty.
     ///
-    pub def count(f: a -> Bool, v: MutList[a, r]): Int32 \ Read(r) =
+    pub def count(f: a -> Bool & ef, v: MutList[a, r]): Int32 \ { ef, Read(r) } =
         foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, v)
 
     ///
@@ -163,7 +163,7 @@ namespace MutList {
     ///
     /// Returns `false` if the given mutable list `v` is empty.
     ///
-    pub def exists(f: a -> Bool, v: MutList[a, r]): Bool \ Read(r) =
+    pub def exists(f: a -> Bool & ef, v: MutList[a, r]): Bool \ { ef, Read(r) } =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -180,7 +180,7 @@ namespace MutList {
     ///
     /// Returns `true` if the given mutable list `v` is empty.
     ///
-    pub def forall(f: a -> Bool, v: MutList[a, r]): Bool \ Read(r) =
+    pub def forall(f: a -> Bool & ef, v: MutList[a, r]): Bool \ { ef, Read(r) } =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -447,12 +447,33 @@ namespace MutList {
         loop(0, s)
 
     ///
+    /// Applies `f` to a start value `s` and all elements in `a` going from left to right.
+    ///
+    /// That is, the result is of the form: `f(...f(f(s, a[0]), a[1])..., xn)`.
+    ///
+    /// The implementation is tail recursive.
+    ///
+    pub def foldRight(f: (a, b) -> b & ef, s: b, v: MutList[a, r]): b \ { ef, Read(r) } =
+        let MutList(ra, rl) = v;
+        let a = deref ra;
+        let l = deref rl;
+        def loop(i, acc) = {
+            if (i < 0)
+                acc
+            else {
+                let s1 = f(a[i], acc);
+                loop(i - 1, s1)
+            }
+        };
+        loop(l - 1, s)
+
+    ///
     /// Applies `f` to a start value `z` and all elements in `a` going from left to right.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRight` allows early termination by not calling the continuation.
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (a, Unit -> b & ef and r) -> b & ef and r, z: b, v: MutList[a, r]): b \ { ef, Read(r) } =
+    pub def foldRightWithCont(f: (a, Unit -> b & ef and r) -> b & ef and r, z: b, v: MutList[a, r]): b \ { ef, Read(r) } =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -464,6 +485,12 @@ namespace MutList {
             }
         };
         loop(0)
+
+    ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b & ef, v: MutList[a, r]): b \ {ef, Read(r)} with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), v)
 
     ///
     /// Applies `f` to all elements in `v` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
@@ -481,7 +508,7 @@ namespace MutList {
     /// Returns `None` if `v` is empty.
     ///
     pub def reduceRight(f: (a, a) -> a & ef, v: MutList[a, r]): Option[a] \ { ef, Read(r) } =
-        foldRight((x, k) -> match k() {
+        foldRight((x, acc) -> match acc {
             case Some(y) => Some(f(x, y))
             case None => Some(x)
         }, None, v)
@@ -501,10 +528,11 @@ namespace MutList {
     pub def copy(v: MutList[a, r]): MutList[a, r] \ { Read(r), Write(r) } =
         let MutList(a, l) = v;
         let len = deref l;
+        let r = Scoped.regionOf(v);
         if (len > minCapacity())
-            MutList(ref Array.copyOfRange(0, len, deref a) @ Scoped.regionOf(v), ref len @ Scoped.regionOf(v))
+            MutList(ref Array.copyOfRange(0, len, deref a, r) @ r, ref len @ r)
         else
-            MutList(ref Array.copyOfRange(0, capacity(v), deref a) @ Scoped.regionOf(v), ref len @ Scoped.regionOf(v))
+            MutList(ref Array.copyOfRange(0, capacity(v), deref a, r) @ r, ref len @ r)
 
     ///
     /// Optionally removes and returns the last element in the given mutable list `v`.
@@ -546,7 +574,7 @@ namespace MutList {
         if (capacity(v) - len == 0)
             reserve!(len, v)
         else ();
-        let sub = Array.copyOfRange(i, len, deref a);
+        let sub = Array.copyOfRange(i, len, deref a, Scoped.regionOf(v));
         Array.updateSequence!(i + 1, sub, deref a);
         (deref a)[i] = x;
         l := len + 1
@@ -583,10 +611,16 @@ namespace MutList {
             ()
 
     ///
-    /// Appends `v2` to `v1` i.e. inserts all elements from `v2` into the end of `v1`.
+    /// Appends `m` to `v` i.e. inserts all elements from `m` into the end of `v`.
     ///
-    pub def append!(v1: MutList[a, r1], v2: MutList[a, r2]): Unit \ { Read(r1, r2), Write(r2) } =
-        foreach(x -> push!(x, v2), v1)
+    pub def pushAll!(m: m[a], v: MutList[a, r]): Unit \ { Read(r), Write(r) } with Foldable[m] =
+        Foldable.foreach(x -> MutList.push!(x, v), m)
+
+    ///
+    /// Appends `m` to `v` i.e. inserts all elements from `m` into the end of `v`.
+    ///
+    pub def append!(m: m[a], v: MutList[a, r]): Unit \ { Read(r), Write(r) } with Foldable[m] =
+        pushAll!(m, v)
 
     ///
     /// Removes all elements from the given mutable list `v` that do not satisfy the given predicate `f`.
@@ -638,7 +672,7 @@ namespace MutList {
         if (n < capv and capv != minCap) {
             let len = deref l;
             let newCap = Order.max(n, minCap);
-            a := Array.copyOfRange(0, newCap, deref a);
+            a := Array.copyOfRange(0, newCap, deref a, Scoped.regionOf(v));
             l := Order.min(len, newCap)
         }
         else ()
@@ -678,26 +712,34 @@ namespace MutList {
     ///
     pub def reserve!(n: Int32, v: MutList[a, r]): Unit \ { Read(r), Write(r) } =
         let MutList(a, l) = v;
-        a := Array.copyOfRange(0, (deref l) + n, deref a)
+        a := Array.copyOfRange(0, (deref l) + n, deref a, Scoped.regionOf(v))
 
     ///
     /// Returns `v` as an immutable list.
     ///
     pub def toList(v: MutList[a, r]): List[a] \ Read(r) =
-        foldRight((x, k) -> x :: k(), Nil, v)
+        foldRight((x, acc) -> x :: acc, Nil, v)
 
     ///
     /// Returns `v` as an array.
     ///
-    pub def toArray(v: MutList[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
+    pub def toArray(v: MutList[a, r1], r2: Region[r2]): Array[a, r2] \ { Read(r1), Write(r2) } =
         let MutList(a, l) = v;
-        Array.copyOfRange(0, deref l, deref a)
+        Array.copyOfRange(0, deref l, deref a, r2)
 
     ///
     /// Returns the mutable list `xs` as a chain.
     ///
     pub def toChain(xs: MutList[a, r]): Chain[a] \ Read(r) =
         foldLeft((ac, x) -> Chain.snoc(ac, x), Chain.empty(), xs)
+
+    ///
+    /// Returns `v` as a MutDeque.
+    ///
+    pub def toMutDeque(v: MutList[a, r1], r: Region[r2]): MutDeque[a, r2] \ { Read(r1), Write(r2) }  =
+        let d = new MutDeque(r);
+        MutList.foreach(x -> MutDeque.pushBack(x, d), v);
+        d
 
     ///
     /// Returns `true` if the mutable lists `v1` and `v2` have the same elements, i.e. are structurally equal.
@@ -720,12 +762,19 @@ namespace MutList {
         if (l1 == l2) loop(0) else false
 
     ///
-    /// Render `v` as a String. Elements are rendered with the
-    /// function `f` and separated with the string `sep`.
+    /// Returns the concatenation of the string representation
+    /// of each element in `v` with `sep` inserted between each element.
     ///
-    pub def formatWith(f: a -> String, sep: String, v: MutList[a, r]): String & Impure =
-        let sb = StringBuilder.new();
-        let step = (x,i) ->
+    pub def join(sep: String, v: MutList[a, r]): String \ Read(r) with ToString[a] =
+        joinWith(ToString.toString, sep, v)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `v` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWith(f: a -> String & ef, sep: String, v: MutList[a, r]): String \ { ef, Read(r) } = region r1 {
+        let sb = new StringBuilder(r1);
+        let step = (x, i) ->
             if (i == 0)
                 StringBuilder.appendString!(f(x), sb)
             else {
@@ -734,24 +783,7 @@ namespace MutList {
             };
         foreachWithIndex(step, v);
         StringBuilder.toString(sb)
-
-    ///
-    /// Returns the concatenation of the string representation
-    /// of each element in `v` with `sep` inserted between each element.
-    ///
-    pub def join(sep: String, v: MutList[a, r]): String & Impure with ToString[a] =
-        joinWith(x -> ToString.toString(x), sep, v)
-
-    ///
-    /// Returns the concatenation of the string representation
-    /// of each element in `v` according to `f` with `sep` inserted between each element.
-    ///
-    pub def joinWith(f: a -> String & ef, sep: String, v: MutList[a, r]): String & Impure =
-        use StringBuilder.append!;
-        let lastSep = String.length(sep);
-        let sb = StringBuilder.new();
-        foreach(x -> { append!(f(x), sb); append!(sep, sb) }, v);
-        StringBuilder.toString(sb) |> String.dropRight(lastSep)
+    }
 
     ///
     /// Applies `f` to all the elements in `v`.

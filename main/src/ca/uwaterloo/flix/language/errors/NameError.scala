@@ -69,7 +69,7 @@ object NameError {
     * @param loc1 the location of the first definition.
     * @param loc2 the location of the second definition.
     */
-  case class DuplicateDefOrSig(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
+  case class DuplicateLowerName(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate definition of '$name'."
 
     def message(formatter: Formatter): String = {
@@ -98,13 +98,13 @@ object NameError {
   }
 
   /**
-    * An error raised to indicate that the given def or sig `name` is used twice.
+    * An error raised to indicate that the given lowercase `name` is used twice.
     *
     * @param name the clashing name.
     * @param loc1 the location of the first use.
     * @param loc2 the location of the second use.
     */
-  case class DuplicateUseDefOrSig(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
+  case class DuplicateUseLower(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate use of '$name'."
 
     def message(formatter: Formatter): String = {
@@ -124,13 +124,13 @@ object NameError {
   }
 
   /**
-    * An error raised to indicate that the given type or class `name` is used twice.
+    * An error raised to indicate that the given uppercase `name` is used twice.
     *
     * @param name the clashing name.
     * @param loc1 the location of the first use.
     * @param loc2 the location of the second use.
     */
-  case class DuplicateUseTypeOrClass(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
+  case class DuplicateUseUpper(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate use of '$name'."
 
     def message(formatter: Formatter): String = {
@@ -176,19 +176,19 @@ object NameError {
   }
 
   /**
-    * An error raised to indicate that the given type alias or enum `name` is defined multiple times.
+    * An error raised to indicate that the given uppercase `name` is defined multiple times.
     *
     * @param name the name.
     * @param loc1 the location of the first definition.
     * @param loc2 the location of the second definition.
     */
-  case class DuplicateTypeOrClass(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    def summary: String = s"Duplicate type or class declaration '$name'."
+  case class DuplicateUpperName(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
+    def summary: String = s"Duplicate declaration '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Duplicate type or class declaration '${red(name)}'.
+         |>> Duplicate declaration '${red(name)}'.
          |
          |${code(loc1, "the first occurrence was here.")}
          |

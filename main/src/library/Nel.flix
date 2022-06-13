@@ -24,9 +24,7 @@ pub enum Nel[a] {
 instance Boxable[Nel[a]] with Boxable[a]
 
 instance ToString[Nel[a]] with ToString[a] {
-    pub def toString(l: Nel[a]): String = match l {
-        case Nel(x, xs) => "Nel(${x}, ${xs})"
-    }
+    pub def toString(l: Nel[a]): String = Nel.toString(l)
 }
 
 instance Hash[Nel[a]] with Hash[a] {
@@ -65,11 +63,14 @@ instance Monad[Nel] {
     pub def flatMap(f: a -> Nel[b] & ef, x : Nel[a]) : Nel[b] & ef = Nel.flatMap(f, x)
 }
 
+instance ForEach[Nel] {
+    pub def foreach(f: a -> Unit & ef, l: Nel[a]): Unit & ef = Nel.foreach(f, l)
+}
+
 instance Foldable[Nel] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldLeft(f, s, l)
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, s: b, l: Nel[a]): b & ef = match l {
-        case Nel(x, xs) => f(x, _ -> List.foldRight(f, s, xs))
-    }
+    pub def foldRight(f: (a, b) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldRight(f, s, l)
+    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldRightWithCont(f, s, l)
 }
 
 instance Traversable[Nel] {
@@ -96,7 +97,7 @@ instance Reducible[Nel] {
     override pub def memberOf(a: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(a, l)
     override pub def dropWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef = Nel.dropWhile(f, l)
     override pub def takeWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef = Nel.takeWhile(f, l)
-    override pub def toArray(l: Nel[a]): Array[a] & Impure = Nel.toArray(l)
+    override pub def toArray(l: Nel[a], r: Region[r]): Array[a, r] \ Write(r) = Nel.toArray(l, r)
     override pub def toIterator(l: Nel[a]): Iterator[a] & Impure = Nel.toIterator(l)
     override pub def toList(l: Nel[a]): List[a] = Nel.toList(l)
 }
@@ -106,6 +107,21 @@ instance SemiGroup[Nel[a]] {
 }
 
 namespace Nel {
+
+    ///
+    /// Returns a string representation of the given non-empty list `l`.
+    ///
+    pub def toString(l: Nel[a]): String with ToString[a] = region r {
+        let Nel(x, xs) = l;
+        let sb = new StringBuilder(r);
+        StringBuilder.appendString!("Nel(${x}, ", sb);
+
+        let list = List.toString(xs);
+        StringBuilder.appendString!(list, sb);
+        StringBuilder.appendString!(")", sb);
+
+        StringBuilder.toString(sb)
+    }
 
     ///
     /// Returns a new non-empty list containing the single element `x`.
@@ -355,14 +371,29 @@ namespace Nel {
     }
 
     ///
+    /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    pub def foldRight(f: (a, b) -> b & ef, s: b, l: Nel[a]): b & ef = match l {
+        case Nel(x, xs) => f(x, List.foldRight(f, s, xs))
+    }
+
+    ///
     /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRight` allows early termination by not calling the continuation.
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, l: Nel[a]): b & ef = match l {
-        case Nel(x, xs) => f(x, _ -> List.foldRight(f, z, xs))
+    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, l: Nel[a]): b & ef = match l {
+        case Nel(x, xs) => f(x, _ -> List.foldRightWithCont(f, z, xs))
     }
+
+    ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b & ef, l: Nel[a]): b & ef with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), l)
 
     ///
     /// Left-associative reduction of a structure.
@@ -419,7 +450,7 @@ namespace Nel {
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
     ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
-    pub def count(f: a -> Bool, l: Nel[a]): Int32 = match l {
+    pub def count(f: a -> Bool & ef, l: Nel[a]): Int32 & ef = match l {
         case Nel(x, xs) => (if (f(x)) 1 else 0) + List.count(f, xs)
     }
 
@@ -517,6 +548,19 @@ namespace Nel {
     }
 
     ///
+    /// Returns a new non-empty list where each element `e` is mapped to `(e, i)`
+    /// where `i` is the index of `e`.
+    ///
+    pub def zipWithIndex(l: Nel[a]): Nel[(a, Int32)] =
+        def loop(ll, k, i) = match ll {
+            case (x :: xs) => loop(xs, ks -> (k((x, i) :: ks)), i + 1)
+            case Nil       => k(Nil)
+        };
+        match l {
+            case Nel(x, xs) => Nel((x, 0), loop(xs, identity, 1))
+        }
+
+    ///
     /// Returns `l` as a normal list.
     ///
     @Time(1) @Space(1)
@@ -527,8 +571,16 @@ namespace Nel {
     ///
     /// Returns `l` as an array.
     ///
-    pub def toArray(l: Nel[a]): Array[a] & Impure =
-        l |> toList |> List.toArray
+    pub def toArray(l: Nel[a], r: Region[r]): Array[a, r] \ Write(r) =
+        (l |> toList |> List.toArray)(r)
+
+    ///
+    /// Returns `l` as a MutDeque.
+    ///
+    pub def toMutDeque(l: Nel[a], r: Region[r]): MutDeque[a, r] \ Write(r) =
+        let d = new MutDeque(r);
+        foreach(x -> MutDeque.pushBack(x, d), l);
+        d
 
     ///
     /// Applies `f` to every element of `l`.
@@ -546,12 +598,13 @@ namespace Nel {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(l: Nel[a]): Nel[a] with Order[a] =
-        let list = (l |> toArray |> Array.sort |> Array.toList) as & Pure;
+    pub def sort(l: Nel[a]): Nel[a] with Order[a] = region r {
+        let list = (toArray(l, r) |> Array.sort |> Array.toList);
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
         }
+    }
 
     ///
     /// Sort the non-empty list `l` so that elements are ordered from low to high according
@@ -561,12 +614,13 @@ namespace Nel {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, l: Nel[a]): Nel[a] with Order[b] =
-        let list = (l |> toArray |> Array.sortBy(f) |> Array.toList) as & Pure;
+    pub def sortBy(f: a -> b, l: Nel[a]): Nel[a] with Order[b] = region r {
+        let list = (toArray(l, r) |> Array.sortBy(f) |> Array.toList);
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
         }
+    }
 
     ///
     /// Sort the non-empty list `l` so that elements are ordered from low to high according
@@ -576,12 +630,13 @@ namespace Nel {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, l: Nel[a]): Nel[a] =
-        let list = (l |> toArray |> Array.sortWith(cmp) |> Array.toList) as & Pure;
+    pub def sortWith(cmp: (a,a) -> Comparison, l: Nel[a]): Nel[a] = region r {
+        let list = (toArray(l, r) |> Array.sortWith(cmp) |> Array.toList);
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
         }
+    }
 
     ///
     /// Returns an iterator over `l`.
@@ -614,7 +669,7 @@ namespace Nel {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     pub def toMapWith(f: a -> b, l: Nel[a]): Map[a, b] with Order[a] =
-        Nel.foldRight((x, k) -> Map.insert(x, f(x), k()), Map.empty(), l)
+        Nel.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), l)
 
     ///
     /// Returns the concatenation of the string representation

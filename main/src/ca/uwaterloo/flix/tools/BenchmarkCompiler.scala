@@ -90,13 +90,13 @@ object BenchmarkCompiler {
     // Compute a map from phase -> list of times.
     val phaseTimings = phases.flatten.groupMap(_.phase)(_.time)
 
-    // Compute a map from phase -> minimum time.
-    val phaseMinTime = phaseTimings.map {
-      case (phase, times) => (phase, times.min)
-    }.toList
+    // Compute a map from phase -> statistics.
+    val phaseStats = phaseTimings.map {
+      case (phase, times) => (phase, SummaryStatistics.from(times))
+    }
 
-    // Compute the sum of all the minimum times.
-    val totalMinTime = phaseMinTime.map(_._2).sum
+    // Compute the sum of all the average times.
+    val totalMean = phaseStats.values.map(_.mean).sum
 
     // The number of threads used.
     val threads = o.threads
@@ -116,24 +116,25 @@ object BenchmarkCompiler {
         ("threads" -> threads) ~
           ("lines" -> lines) ~
           ("iterations" -> N) ~
-          ("phases" -> phaseMinTime.map {
-            case (phase, time) => ("phase" -> phase) ~ ("time" -> time)
+          ("phases" -> phaseStats.map {
+            case (phase, time) => ("phase" -> phase) ~ ("time" -> time.mean)
           })
       val s = JsonMethods.pretty(JsonMethods.render(json))
       println(s)
     } else {
       println("====================== Flix Compiler Phases ======================")
       println()
-      println("Best runtime per phase (low to high):")
-      for ((phase, time) <- phaseMinTime.sortBy(_._2)) {
-        val msec = time.toDouble / 1_000_000.toDouble
-        val percent = 100.0 * (time.toDouble / totalMinTime.toDouble)
+      println("Mean runtime per phase (low to high):")
+      for ((phase, time) <- phaseStats.toList.sortBy(_._2.mean)) {
+        val msec = time.mean / 1_000_000.toDouble
+        val percent = 100.0 * (time.mean / totalMean)
         println(f"  $phase%-30s $msec%5.1f ms ($percent%04.1f%%)")
       }
       println()
       println(f"Finished $N iterations on $lines%,6d lines of code in $totalTime seconds.")
     }
   }
+
   /**
     * Computes the throughput of the compiler.
     */
@@ -243,5 +244,25 @@ object BenchmarkCompiler {
     flix.addSourceCode("TestSet.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestSet.flix"))
     flix.addSourceCode("TestValidation.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestValidation.flix"))
   }
+
+  case object SummaryStatistics {
+    /**
+      * Builds the summary statistics from the given data.
+      */
+    def from[T](data: Seq[T])(implicit numeric: Numeric[T]): SummaryStatistics = {
+      SummaryStatistics(
+        min = numeric.toDouble(data.min),
+        max = numeric.toDouble(data.max),
+        mean = StatUtils.avg(data),
+        median = StatUtils.median(data),
+        stdDev = StatUtils.stdDev(data)
+      )
+    }
+  }
+
+  /**
+    * A collection of summary statistics.
+    */
+  case class SummaryStatistics(min: Double, max: Double, mean: Double, median: Double, stdDev: Double)
 
 }

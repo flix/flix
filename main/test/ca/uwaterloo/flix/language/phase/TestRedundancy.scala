@@ -306,7 +306,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace N {
-         |    opaque type USD = Int32
+         |    enum USD(Int32)
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -805,7 +805,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("RedundantPurityCast.02") {
     val input =
       s"""
-         |pub def f(): Array[Int32] & Impure =
+         |pub def f(): Array[Int32, false] & Impure =
          |  let x = [1, 2, 3];
          |  x as & Pure
          |
@@ -903,7 +903,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("RedundantTypeConstraint.Instance.01") {
     val input =
       """
-        |opaque type Box[a] = a
+        |enum Box[a](a)
         |
         |class C[a]
         |
@@ -918,7 +918,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("RedundantTypeConstraint.Instance.02") {
     val input =
       """
-        |opaque type Box[a] = a
+        |enum Box[a](a)
         |
         |class C[a]
         |
@@ -979,5 +979,64 @@ class TestRedundancy extends FunSuite with TestUtils {
 
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.UnusedDefSym](result)
+  }
+
+  test("DiscardedPureValue.01") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let x = discard 2;
+        |    x
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.DiscardedPureValue](result)
+  }
+
+  test("DiscardedPureValue.02") {
+    val input =
+      """
+        |def fakePrint(_msg: a): Unit & Impure =
+        |    let _ = [2];
+        |    ()
+        |
+        |def f(g: a -> b & ef, x: a): b & ef = g(x)
+        |
+        |def h(): Unit & Impure = f(fakePrint, discard "hello")
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.DiscardedPureValue](result)
+  }
+
+  test("RedundantDiscard.01") {
+    val input =
+      """
+        |def fakePrint(_msg: a): Unit & Impure =
+        |    let _ = [2];
+        |    ()
+        |
+        |def f(): Unit & Impure =
+        |    discard fakePrint("hello")
+        |
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantDiscard](result)
+  }
+
+  test("RedundantDiscard.02") {
+    val input =
+      """
+        |def f(g: a -> b & ef, x: a): b & ef = g(x)
+        |
+        |def h(): Unit & Impure =
+        |    let arr = [()];
+        |    discard f((i: Int32) -> arr[i], 0)
+        |
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantDiscard](result)
   }
 }

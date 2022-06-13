@@ -30,23 +30,27 @@ namespace X {
     pub def f(): Bool = true
 }
 
-@test
-def testNamespace01(): Bool = A.f()
+namespace Test/Dec/Namespace {
 
-@test
-def testNamespace02(): Bool = A/B.f()
+    @test
+    def testNamespace01(): Bool = A.f()
 
-@test
-def testNamespace03(): Bool = A/B/C.f()
+    @test
+    def testNamespace02(): Bool = A/B.f()
 
-@test
-def testNamespace04(): Bool = A.g()
+    @test
+    def testNamespace03(): Bool = A/B/C.f()
 
-@test
-def testNamespace05(): Bool = A/B.g()
+    @test
+    def testNamespace04(): Bool = A.g()
 
-@test
-def testNamespace06(): Bool = A/B/C.g()
+    @test
+    def testNamespace05(): Bool = A/B.g()
 
-@test
-def testNamespace07(): Bool = X/Y/Z.f()
+    @test
+    def testNamespace06(): Bool = A/B/C.g()
+
+    @test
+    def testNamespace07(): Bool = X/Y/Z.f()
+
+}

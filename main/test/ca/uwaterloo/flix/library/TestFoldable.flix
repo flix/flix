@@ -21,7 +21,7 @@ namespace TestFoldable {
     /// To test foldLeftM, foldRightM, foreachM we want a monad with
     /// "side-effects" so we can log direction of travel.
 
-    opaque type Logger[i, a] = (Chain[i], a)
+    enum Logger[i, a](Chain[i], a)
 
     def tell(x: i): Logger[i, Unit] = Logger((Chain.singleton(x), ()))
 
@@ -53,6 +53,82 @@ namespace TestFoldable {
             Logger((Chain.append(w1, w2), b))
     }
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // head                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def head01(): Bool =
+        Foldable.head(Nil: List[String]) == None
+
+    @test
+    def head02(): Bool =
+        Foldable.head("a" :: Nil) == Some("a")
+
+    @test
+    def head03(): Bool =
+        Foldable.head("a" :: "b" :: Nil) == Some("a")
+
+    /////////////////////////////////////////////////////////////////////////////
+    // last                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def last01(): Bool =
+        Foldable.last(Nil: List[String]) == None
+
+    @test
+    def last02(): Bool =
+        Foldable.last("a" :: Nil) == Some("a")
+
+    @test
+    def last03(): Bool =
+        Foldable.last("a" :: "b" :: Nil) == Some("b")
+
+    /////////////////////////////////////////////////////////////////////////////
+    // findLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def findLeft01(): Bool =
+        Foldable.findLeft(x -> x mod 2 == 0, Nil: List[Int32]) == None
+
+    @test
+    def findLeft02(): Bool =
+        Foldable.findLeft(x -> x mod 2 == 0, 1 :: Nil) == None
+
+    @test
+    def findLeft03(): Bool =
+        Foldable.findLeft(x -> x mod 2 == 0, 1 :: 2 :: Nil) == Some(2)
+
+    @test
+    def findLeft04(): Bool =
+        Foldable.findLeft(x -> x mod 2 == 0, 1 :: 2 :: 3 :: 4 :: Nil) == Some(2)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool =
+        Foldable.foldMap(x -> 2 * x, Nil) == 0
+
+    @test
+    def foldMap02(): Bool =
+        Foldable.foldMap(x -> 2 * x, 1 :: 2 :: Nil) == 6
+
+    @test
+    def foldMap03(): Bool =
+        Foldable.foldMap(x -> if (x == "a") "b" else x, "a" :: Nil) == "b"
+
+    @test
+    def foldMap04(): Bool =
+        Foldable.foldMap(x -> if (x == "c") "b" else x, "a" :: "b" :: "c":: Nil) == "abb"
+
+    @test
+    def foldMap05(): Bool =
+        Foldable.foldMap(Int32.toString, 1 :: 2 :: 3 :: Nil) == "123"
 
     /////////////////////////////////////////////////////////////////////////////
     // fold                                                                    //
@@ -206,14 +282,14 @@ namespace TestFoldable {
 
     @test
     def toArray01(): Bool & Impure =
-        Array.sameElements(Foldable.toArray(Nel(1, Nil)), [1])
+        Array.sameElements(Foldable.toArray(Nel(1, Nil), Static), [1])
 
     @test
     def toArray02(): Bool & Impure =
-        Array.sameElements(Foldable.toArray(Nel(1, 2 :: 3 :: Nil)), [1, 2, 3])
+        Array.sameElements(Foldable.toArray(Nel(1, 2 :: 3 :: Nil), Static), [1, 2, 3])
 
     @test
     def toArray03(): Bool & Impure =
-        Array.sameElements(Foldable.toArray(Nel(1, 1 :: 2 :: 3 :: Nil)), [1, 1, 2, 3])
+        Array.sameElements(Foldable.toArray(Nel(1, 1 :: 2 :: 3 :: Nil), Static), [1, 1, 2, 3])
 
 }

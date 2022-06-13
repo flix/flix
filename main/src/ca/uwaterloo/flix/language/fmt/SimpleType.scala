@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.fmt
 
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Rigidity, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -65,9 +65,9 @@ object SimpleType {
 
   case object Str extends SimpleType
 
-  case object ScopedArray extends SimpleType
+  case object Array extends SimpleType
 
-  case object ScopedRef extends SimpleType
+  case object Ref extends SimpleType
 
   case object Channel extends SimpleType
 
@@ -155,6 +155,30 @@ object SimpleType {
     * A chain of types connected by `or`.
     */
   case class Or(tpes: List[SimpleType]) extends SimpleType
+
+  ////////////////
+  // Set Operators
+  ////////////////
+
+  /**
+    * Set complement.
+    */
+  case class Complement(tpe: SimpleType) extends SimpleType
+
+  /**
+    * A chain of types connected by `+`.
+    */
+  case class Union(tpes: List[SimpleType]) extends SimpleType
+
+  /**
+    * A chain of types connected by `&`.
+    */
+  case class Intersection(tpes: List[SimpleType]) extends SimpleType
+
+  /**
+    * Difference of two types.
+    */
+  case class Difference(tpe1: SimpleType, tpe2: SimpleType) extends SimpleType
 
   /////////////
   // Predicates
@@ -258,6 +282,8 @@ object SimpleType {
     case Type.KindedVar(sym, _) =>
       mkApply(Var(sym.id, sym.kind, sym.rigidity, sym.text), t.typeArguments.map(fromWellKindedType))
     case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type.")
+    case _: Type.UnkindedArrow => throw InternalCompilerException("Unexpected unkinded type.")
+    case _: Type.ReadWrite => throw InternalCompilerException("Unexpected unkinded type.")
     case _: Type.Ascribe => throw InternalCompilerException("Unexpected kind ascription.")
     case Type.Alias(cst, args, _, _) =>
       mkApply(Name(cst.sym.name), (args ++ t.typeArguments).map(fromWellKindedType))
@@ -360,7 +386,7 @@ object SimpleType {
           // Case 3: Too many args. Error.
           case _ :: _ :: _ => throw new OverAppliedType
         }
-      case TypeConstructor.ScopedArray => mkApply(ScopedArray, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Channel => mkApply(Channel, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Tag(sym, tag) =>
@@ -378,7 +404,7 @@ object SimpleType {
       case TypeConstructor.KindedEnum(sym, kind) => mkApply(Name(sym.name), t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.UnkindedEnum(sym) => throw InternalCompilerException("Unexpected unkinded type.")
       case TypeConstructor.Native(clazz) => Name(clazz.getSimpleName)
-      case TypeConstructor.ScopedRef => mkApply(ScopedRef, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.Ref => mkApply(Ref, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Tuple(l) =>
         val tpes = t.typeArguments.map(fromWellKindedType).padTo(l, Hole)
         Tuple(tpes)
@@ -437,6 +463,53 @@ object SimpleType {
           case _ :: _ :: _ :: _ => throw new OverAppliedType
         }
 
+      case TypeConstructor.Complement =>
+        t.typeArguments.map(fromWellKindedType) match {
+          case Nil => Complement(Hole)
+          case arg :: Nil => Complement(arg)
+          case _ :: _ :: _ => throw new OverAppliedType
+        }
+
+      case TypeConstructor.Union =>
+        // collapse into a chain of unions
+        t.typeArguments.map(fromWellKindedType).map(splitUnions) match {
+          // Case 1: No args. ? + ?
+          case Nil => Union(Hole :: Hole :: Nil)
+          // Case 2: One arg. Take the left and put a hole at the end: tpe1 + tpe2 + ?
+          case args :: Nil => Union(args :+ Hole)
+          // Case 3: Multiple args. Concatenate them: tpe1 + tpe2 + tpe3 + tpe4
+          case args1 :: args2 :: Nil => Union(args1 ++ args2)
+          // Case 4: Too many args. Error.
+          case _ :: _ :: _ :: _ => throw new OverAppliedType
+        }
+
+      case TypeConstructor.Intersection =>
+        // collapse into a chain of intersections
+        t.typeArguments.map(fromWellKindedType).map(splitIntersections) match {
+          // Case 1: No args. ? & ?
+          case Nil => Intersection(Hole :: Hole :: Nil)
+          // Case 2: One arg. Take the left and put a hole at the end: tpe1 & tpe2 & ?
+          case args :: Nil => Intersection(args :+ Hole)
+          // Case 3: Multiple args. Concatenate them: tpe1 & tpe2 & tpe3 & tpe4
+          case args1 :: args2 :: Nil => Intersection(args1 ++ args2)
+          // Case 4: Too many args. Error.
+          case _ :: _ :: _ :: _ => throw new OverAppliedType
+        }
+
+      case TypeConstructor.Difference =>
+        // NB we don't collapse the chain since difference is not commutative
+        t.typeArguments.map(fromWellKindedType) match {
+          // Case 1: No args. ? - ?
+          case Nil => Intersection(Hole :: Hole :: Nil)
+          // Case 2: One arg. Take the left and put a hole at the end: tpe1 - ?
+          case arg :: Nil => Intersection(arg :: Hole :: Nil)
+          // Case 3: Multiple args. Concatenate them: tpe1 - tpe2
+          case arg1 :: arg2 :: Nil => Intersection(arg1 :: arg2 :: Nil)
+          // Case 4: Too many args. Error.
+          case _ :: _ :: _ :: _ => throw new OverAppliedType
+        }
+
+      case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Region => mkApply(Region, t.typeArguments.map(fromWellKindedType))
       case _: TypeConstructor.UnappliedAlias => throw InternalCompilerException("Unexpected unapplied alias.")
     }
@@ -540,6 +613,24 @@ object SimpleType {
     */
   private def splitOrs(tpe: SimpleType): List[SimpleType] = tpe match {
     case Or(tpes) => tpes
+    case t => List(t)
+  }
+
+  /**
+    * Splits `t1 + t2` into `t1 :: t2 :: Nil`,
+    * and leaves non-union types as singletons.
+    */
+  private def splitUnions(tpe: SimpleType): List[SimpleType] = tpe match {
+    case Union(tpes) => tpes
+    case t => List(t)
+  }
+
+  /**
+    * Splits `t1 & t2` into `t1 :: t2 :: Nil`,
+    * and leaves non-intersection types as singletons.
+    */
+  private def splitIntersections(tpe: SimpleType): List[SimpleType] = tpe match {
+    case Intersection(tpes) => tpes
     case t => List(t)
   }
 

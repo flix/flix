@@ -20,6 +20,10 @@ pub enum DelayMap[k, v] {
     case DMap(RedBlackTree[k, Lazy[v]])
 }
 
+instance ForEach[DelayMap[k]] {
+    pub def foreach(f: a -> Unit & ef, l: DelayMap[k, a]): Unit & ef = DelayMap.foreach((_, v) -> f(v), l)
+}
+
 namespace DelayMap {
 
     ///
@@ -287,7 +291,7 @@ namespace DelayMap {
     ///
     @Experimental
     pub def valuesOf(m: DelayMap[k, v]): List[v] =
-        foldRight((v, c) -> v :: c(), Nil, m)
+        foldRight((v, acc) -> v :: acc, Nil, m)
 
     ///
     /// Removes the mapping `k` from the map `m`.
@@ -422,7 +426,7 @@ namespace DelayMap {
                         spawn (chanL <- parLoop((n - 2) / 2, a)); // We divide the rest of the threads as follows:
                         spawn (chanR <- parLoop((n - 2) / 2, b)); // We spawn two new threads leaving us with n - 2
                         let _ = force v;                          // that we distribute over the two spanned threads.
-                        let _ = <- chanL;
+                        <- chanL;
                         <- chanR
                     case _ => ()
                 }
@@ -488,9 +492,9 @@ namespace DelayMap {
         let DMap(ys) = m2;
         let f1 = (k, v1, v2) -> lazy (f(k, force v1, force v2));
         if (blackHeight(xs) < blackHeight(ys))
-            DMap(foldRight((k, v, c) -> insertWith(f1, k, v, c()), ys, xs))
+            DMap(foldRight((k, v, acc) -> insertWith(f1, k, v, acc), ys, xs))
         else
-            DMap(foldRight((k, v, c) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v, c()), xs, ys))
+            DMap(foldRight((k, v, acc) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v, acc), xs, ys))
 
     ///
     /// Helper function for `unionWithKey`. Applies `f` eagerly.
@@ -505,17 +509,17 @@ namespace DelayMap {
             };
         if (blackHeight(xs) < blackHeight(ys))
             let _ = parallelForce(m1);
-            DMap(foldRight((k, v, c) -> insertWith(f1, k, v, c()), ys, xs))
+            DMap(foldRight((k, v, acc) -> insertWith(f1, k, v, acc), ys, xs))
         else
             let _ = parallelForce(m2);
-            DMap(foldRight((k, v, c) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v, c()), xs, ys))
+            DMap(foldRight((k, v, acc) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v, acc), xs, ys))
 
     ///
     /// Returns the map `m` as a list of key-value pairs.
     ///
     @Experimental
     pub def toList(m: DelayMap[k, v]): List[(k, v)] =
-        foldRightWithKey((k, v, c) -> (k, v) :: c(), Nil, m)
+        foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, m)
 
     ///
     /// Applies `f` to a start value `s` and all values in `m` going from left to right.
@@ -539,14 +543,13 @@ namespace DelayMap {
         RedBlackTree.foldLeft(f1, s, t)
 
     ///
-    /// Applies `f` to a start value `z` and all values in `m` going from right to left.
+    /// Applies `f` to a start value `s` and all values in `m` going from right to left.
     ///
-    /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, z)))`.
-    /// A `foldRight` allows early termination by not calling the continuation.
+    /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
     ///
     @Experimental
-    pub def foldRight(f: (v, Unit -> b & ef) -> b & ef, z: b, m: DelayMap[k, v]): b & ef =
-        foldRightWithKey((_, v, c) -> f(v, c), z, m)
+    pub def foldRight(f: (v, b) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
+        foldRightWithKey((_, v, acc) -> f(v, acc), s, m)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
@@ -554,11 +557,34 @@ namespace DelayMap {
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     ///
     @Experimental
-    pub def foldRightWithKey(f: (k, v, Unit -> b & ef) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
+    pub def foldRightWithKey(f: (k, v, b) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
+        let _ = parallelForce(m);
+        let DMap(t) = m;
+        let f1 = (k1, v1, b1) -> f(k1, force v1, b1);
+        RedBlackTree.foldRight(f1, s, t)
+
+    ///
+    /// Applies `f` to a start value `z` and all values in `m` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, z)))`.
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
+    ///
+    @Experimental
+    pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, z: b, m: DelayMap[k, v]): b & ef =
+        foldRightWithKeyCont((_, v, c) -> f(v, c), z, m)
+
+    ///
+    /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
+    /// A `foldRightWithKeyCont` allows early termination by not calling the continuation.
+    ///
+    @Experimental
+    pub def foldRightWithKeyCont(f: (k, v, Unit -> b & ef) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
         let _ = parallelForce(m);
         let DMap(t) = m;
         let f1 = (k1, v1, c) -> f(k1, force v1, c);
-        RedBlackTree.foldRight(f1, s, t)
+        RedBlackTree.foldRightWithCont(f1, s, t)
 
     ///
     /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
@@ -704,8 +730,8 @@ namespace DelayMap {
     /// Returns `m` as a mutable set.
     ///
     @Experimental @Parallel
-    pub def toMutMap(m: DelayMap[k, v]): MutMap[k, v, Impure] & Impure =
-        MutMap(ref toMap(m)) as MutMap[k, v, Impure]
+    pub def toMutMap(m: DelayMap[k, v], r: Region[r]): MutMap[k, v, r] \ Write(r) =
+        MutMap(ref toMap(m) @ r)
 
     ///
     /// Returns the map `m` as a set of key-value pairs.
@@ -719,7 +745,7 @@ namespace DelayMap {
     ///
     @Experimental
     pub def toDelayList(m: DelayMap[k, v]): DelayList[(k, v)] =
-        foldRightWithKey((k, v, c) -> ECons((k, v), c()), ENil, m)
+        foldRightWithKey((k, v, acc) -> ECons((k, v), acc), ENil, m)
 
     ///
     /// Returns an iterator over all key-value pairs in `m`.

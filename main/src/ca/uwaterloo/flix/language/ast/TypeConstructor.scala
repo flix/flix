@@ -221,21 +221,21 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represent the type of scoped arrays.
+    * A type constructor that represent the type of arrays.
     */
-  case object ScopedArray extends TypeConstructor {
+  case object Array extends TypeConstructor {
     /**
-      * The shape of a reference is `ScopedArray[t, l]`.
+      * The shape of an array is `Array[t, l]`.
       */
     def kind: Kind = Kind.Star ->: Kind.Bool ->: Kind.Star
   }
 
   /**
-    * A type constructor that represent the type of scoped references.
+    * A type constructor that represent the type of references.
     */
-  case object ScopedRef extends TypeConstructor {
+  case object Ref extends TypeConstructor {
     /**
-      * The shape of a reference is `ScopedRef[t, l]`.
+      * The shape of a reference is `Ref[t, l]`.
       */
     def kind: Kind = Kind.Star ->: Kind.Bool ->: Kind.Star
   }
@@ -297,6 +297,41 @@ object TypeConstructor {
     */
   case object Or extends TypeConstructor {
     def kind: Kind = Kind.Bool ->: Kind.Bool ->: Kind.Bool
+  }
+
+  /**
+    * A type constructor that represents the complement of an effect set.
+    */
+  case object Complement extends TypeConstructor {
+    def kind: Kind = Kind.Effect ->: Kind.Effect
+  }
+
+  /**
+    * A type constructor that represents the union of two effect sets.
+    */
+  case object Union extends TypeConstructor {
+    def kind: Kind = Kind.Effect ->: Kind.Effect ->: Kind.Effect
+  }
+
+  /**
+    * A type constructor that represents the intersection of two effect sets.
+    */
+  case object Intersection extends TypeConstructor {
+    def kind: Kind = Kind.Effect ->: Kind.Effect ->: Kind.Effect
+  }
+
+  /**
+    * A type constructor that represents the difference of two effect sets.
+    */
+  case object Difference extends TypeConstructor {
+    def kind: Kind = Kind.Effect ->: Kind.Effect ->: Kind.Effect
+  }
+
+  /**
+    * A type constructor that represents a single effect.
+    */
+  case class Effect(sym: Symbol.EffectSym) extends TypeConstructor {
+    def kind: Kind = Kind.Effect
   }
 
   /**

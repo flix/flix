@@ -32,8 +32,8 @@ object GenContinuationAbstractClasses {
   /**
     * Returns the set of continuation classes for the given set of types `ts`.
     */
-  def gen(ts: Iterable[BackendObjType.Continuation])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    ts.foldLeft(Map.empty[JvmName, JvmClass]) {
+  def gen(conts: Iterable[BackendObjType.Continuation])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+    conts.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, contType) =>
         macc + (contType.jvmName -> JvmClass(contType.jvmName, genByteCode(contType)))
     }
@@ -58,7 +58,7 @@ object GenContinuationAbstractClasses {
     val cm = ClassMaker.mkAbstractClass(contType.jvmName, interfaces = List(JvmName.Runnable))
     cm.mkObjectConstructor(IsPublic)
     // essentially an abstract field
-    contType.ResultField.mkField(cm, IsPublic, NotFinal)
+    cm.mkField(contType.ResultField)
     contType.InvokeMethod.mkAbstractMethod(cm)
     contType.UnwindMethod.mkMethod(cm, genUnwindMethod(contType), IsPublic, IsFinal)
     cm.mkMethod(genRunMethod(contType), "run", NothingToVoid, IsPublic, IsFinal)
@@ -78,7 +78,7 @@ object GenContinuationAbstractClasses {
             currentCont.store()
         } ~
           previousCont.load() ~
-          contType.ResultField.getField() ~
+          GETFIELD(contType.ResultField) ~
           xReturn(contType.result)
       }
     }

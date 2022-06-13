@@ -89,6 +89,9 @@ object TypedAstOps {
       case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
+      case Expression.Discard(exp, _, _) =>
+        visitExp(exp, env0)
+
       case Expression.Match(matchExp, rules, tpe, eff, loc) =>
         val m = visitExp(matchExp, env0)
         rules.foldLeft(m) {
@@ -223,7 +226,7 @@ object TypedAstOps {
           case (macc, c) => macc ++ visitConstraint(c, env0)
         }
 
-      case Expression.FixpointLambda(preds, exp, stf, tpe, eff, loc) =>
+      case Expression.FixpointLambda(pparams, exp, stf, tpe, eff, loc) =>
         visitExp(exp, env0)
 
       case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>
@@ -365,6 +368,7 @@ object TypedAstOps {
     case Expression.Scope(_, _, exp, _, _, _) => sigSymsOf(exp)
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
     case Expression.Stm(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expression.Discard(exp, _, _) => sigSymsOf(exp)
     case Expression.Match(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ sigSymsOf(rule.guard))
     case Expression.Choose(exps, rules, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.Tag(_, _, exp, _, _, _) => sigSymsOf(exp)
@@ -509,6 +513,9 @@ object TypedAstOps {
 
     case Expression.Stm(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.Discard(exp, _, _) =>
+      freeVars(exp)
 
     case Expression.Match(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {

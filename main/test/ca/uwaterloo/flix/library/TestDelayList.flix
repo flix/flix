@@ -639,28 +639,84 @@ namespace TestDelayList {
 
     @test
     def foldRight01(): Bool =
-    	DelayList.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, ENil) == 100
+    	DelayList.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, ENil) == 100
 
     @test
     def foldRight02(): Bool =
-    	DelayList.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, LList(lazy ENil)) == 100
+    	DelayList.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, LList(lazy ENil)) == 100
 
     @test
     def foldRight03(): Bool =
-    	DelayList.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, LCons(1, lazy LList(lazy ENil))) == 198
+    	DelayList.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, LCons(1, lazy LList(lazy ENil))) == 198
 
     @test
     def foldRight04(): Bool =
-    	DelayList.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, ECons(1, LCons(2, lazy ENil))) == 194
+    	DelayList.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, ECons(1, LCons(2, lazy ENil))) == 194
 
     @test
     def foldRight05(): Bool =
-    	DelayList.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 382
+    	DelayList.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 382
 
     @test
     def foldRight06(): Bool =
-    	DelayList.foldRight((x, k) -> x :: k(), Nil, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == 1 :: 2 :: 3 :: Nil
+    	DelayList.foldRight((x, acc) -> x :: acc, Nil, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == 1 :: 2 :: 3 :: Nil
 
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRightWithCont                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRightWithCont01(): Bool =
+    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, ENil) == 100
+
+    @test
+    def foldRightWithCont02(): Bool =
+    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, LList(lazy ENil)) == 100
+
+    @test
+    def foldRightWithCont03(): Bool =
+    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, LCons(1, lazy LList(lazy ENil))) == 198
+
+    @test
+    def foldRightWithCont04(): Bool =
+    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, ECons(1, LCons(2, lazy ENil))) == 194
+
+    @test
+    def foldRightWithCont05(): Bool =
+    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 382
+
+    @test
+    def foldRightWithCont06(): Bool =
+    	DelayList.foldRightWithCont((x, k) -> x :: k(), Nil, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == 1 :: 2 :: 3 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool =
+    	DelayList.foldMap(x -> 2 * x, ENil) == 0
+
+    @test
+    def foldMap02(): Bool =
+    	DelayList.foldMap(x -> 2 * x, LList(lazy ENil)) == 0
+
+    @test
+    def foldMap03(): Bool =
+    	DelayList.foldMap(x -> 2 * x, LCons(1, lazy LList(lazy ENil))) == 2
+
+    @test
+    def foldMap04(): Bool =
+    	DelayList.foldMap(x -> 2 * x, ECons(1, LCons(2, lazy ENil))) == 6
+
+    @test
+    def foldMap05(): Bool =
+    	DelayList.foldMap(x -> 2 * x, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 12
+
+    @test
+    def foldMap06(): Bool =
+    	DelayList.foldMap(Int32.toString, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == "123"
 
     /////////////////////////////////////////////////////////////////////////////
     // foreach                                                                 //
@@ -669,7 +725,7 @@ namespace TestDelayList {
     @test
     def foreach01(): Bool & Impure =
         let l = ENil;
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(Static);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.foreach(fn, l);
         StringBuilder.toString(sb) == ""
@@ -677,7 +733,7 @@ namespace TestDelayList {
     @test
     def foreach02(): Bool & Impure =
         let l = LList(lazy ENil);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(Static);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.foreach(fn, l);
         StringBuilder.toString(sb) == ""
@@ -685,7 +741,7 @@ namespace TestDelayList {
     @test
     def foreach03(): Bool & Impure =
         let l = LCons(1, lazy LList(lazy ENil));
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(Static);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.foreach(fn, l);
         StringBuilder.toString(sb) == "T"
@@ -693,7 +749,7 @@ namespace TestDelayList {
     @test
     def foreach04(): Bool & Impure =
         let l = LCons(-1, lazy LList(lazy ENil));
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(Static);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.foreach(fn, l);
         StringBuilder.toString(sb) == "F"
@@ -701,7 +757,7 @@ namespace TestDelayList {
     @test
     def foreach05(): Bool & Impure =
         let l = ECons(1, LCons(-1, lazy ENil));
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(Static);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.foreach(fn, l);
         StringBuilder.toString(sb) == "TF"
@@ -712,24 +768,29 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toArray01(): Bool & Impure =
-    	DelayList.toArray(ENil: DelayList[Unit]) `Array.sameElements` []
+    def toArray01(): Bool = region r {
+    	DelayList.toArray(ENil: DelayList[Unit], r) `Array.sameElements` [] @ r
+    }
 
     @test
-    def toArray02(): Bool & Impure =
-    	DelayList.toArray(LList(lazy ENil): DelayList[Unit]) `Array.sameElements` []
+    def toArray02(): Bool = region r {
+    	DelayList.toArray(LList(lazy ENil): DelayList[Unit], r) `Array.sameElements` [] @ r
+    }
 
     @test
-    def toArray03(): Bool & Impure =
-    	DelayList.range(-100, 1000) |> DelayList.toArray `Array.sameElements` Array.range(-100, 1000, static)
+    def toArray03(): Bool = region r {
+        DelayList.toArray(DelayList.range(-100, 1000), r) `Array.sameElements` Array.range(-100, 1000, r)
+    }
 
     @test
-    def toArray04(): Bool & Impure =
-    	DelayList.toArray(LCons(1, lazy ENil)) `Array.sameElements` [1]
+    def toArray04(): Bool = region r {
+    	DelayList.toArray(LCons(1, lazy ENil), r) `Array.sameElements` [1] @ r
+    }
 
     @test
-    def toArray05(): Bool & Impure =
-    	DelayList.toArray(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) `Array.sameElements` [1, 2, 3]
+    def toArray05(): Bool = region r {
+    	DelayList.toArray(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil)))))), r) `Array.sameElements` [1, 2, 3] @ r
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -759,6 +820,46 @@ namespace TestDelayList {
     @test
     def toList06(): Bool =
     	DelayList.toList(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == 1 :: 2 :: 3 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toMutDeque                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutDeque01(): Bool = region r {
+    	let l = ENil: DelayList[Int32];
+        let d1 = DelayList.toMutDeque(l, r);
+
+        let d2 = new MutDeque(r);
+
+        d1 `MutDeque.sameElements` d2
+
+    }
+
+    @test
+    def toMutDeque02(): Bool = region r {
+    	let l = LList(lazy ENil): DelayList[Int32];
+        let d1 = DelayList.toMutDeque(l, r);
+
+        let d2 = new MutDeque(r);
+
+        d1 `MutDeque.sameElements` d2
+
+    }
+
+    @test
+    def toMutDeque03(): Bool = region r {
+    	let l = LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))));
+        let d1 = DelayList.toMutDeque(l, r);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushBack(1, d2);
+        MutDeque.pushBack(2, d2);
+        MutDeque.pushBack(3, d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1379,6 +1480,43 @@ namespace TestDelayList {
         DelayList.toList as & Impure;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // zipWithIndex                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithIndex01(): Bool =
+        DelayList.zipWithIndex(ENil: DelayList[Unit]) == ENil: DelayList[(Unit, Int32)]
+
+    @test
+    def zipWithIndex02(): Bool =
+        DelayList.zipWithIndex(ECons(1, ENil)) == ECons((1, 0), ENil)
+
+    @test
+    def zipWithIndex03(): Bool =
+        DelayList.zipWithIndex(LCons(1, lazy ENil)) == LCons((1, 0), lazy ENil)
+
+    @test
+    def zipWithIndex04(): Bool =
+        DelayList.zipWithIndex(LList(lazy ECons(1, ENil))) == LList(lazy ECons((1, 0), ENil))
+
+    @test
+    def zipWithIndex05(): Bool =
+        let l = DelayList.zipWithIndex(LList(lazy LList(lazy LCons(5, lazy ECons(7, ENil)))));
+        l == LList(lazy LList(lazy LCons((5, 0), lazy ECons((7, 1), ENil))))
+
+    @test
+    def zipWithIndex0(): Bool =
+        let l = DelayList.zipWithIndex(LList(lazy LCons(0, lazy LList(lazy
+            LCons(1, lazy LList(lazy LCons(2, lazy
+            LList(lazy LCons(3, lazy LList(lazy
+            LCons(4, lazy LList(lazy LCons(5, lazy
+            LList(lazy LCons(10, lazy LList(lazy ENil))))))))))))))));
+        l == LList(lazy LCons((0, 0), lazy LList(lazy
+            LCons((1, 1), lazy LList(lazy LCons((2, 2), lazy
+            LList(lazy LCons((3, 3), lazy LList(lazy
+            LCons((4, 4), lazy LList(lazy LCons((5, 5), lazy
+            LList(lazy LCons((10, 6), lazy LList(lazy ENil)))))))))))))))
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //

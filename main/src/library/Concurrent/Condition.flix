@@ -19,7 +19,7 @@ namespace Concurrent/Condition {
     ///
     /// A wrapper around a Java Condition.
     ///
-    pub opaque type Condition = ##java.util.concurrent.locks.Condition
+    pub enum Condition(##java.util.concurrent.locks.Condition)
 
     ///
     /// An enum reflecting the two exceptions occurring in condition methods, lock state errors and thread interruptions.

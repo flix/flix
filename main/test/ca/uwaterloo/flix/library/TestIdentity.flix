@@ -62,6 +62,16 @@ namespace TestIdentity {
         Monad.flatMap(x -> Identity(x+1), Identity(1)) == Identity(2)
 
     /////////////////////////////////////////////////////////////////////////////
+    // ForEach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foreach01(): Bool & Impure =
+        let r = ref 21;
+        ForEach.foreach(x -> r := x, Identity(1));
+        deref r == 1
+
+    /////////////////////////////////////////////////////////////////////////////
     // Foldable                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -71,7 +81,7 @@ namespace TestIdentity {
 
     @test
     def foldRight01(): Bool =
-        Foldable.foldRight((x, k) -> k() + x, 100, Identity(1)) == 101
+        Foldable.foldRight((x, acc) -> acc + x, 100, Identity(1)) == 101
 
     /////////////////////////////////////////////////////////////////////////////
     // Traversable                                                             //

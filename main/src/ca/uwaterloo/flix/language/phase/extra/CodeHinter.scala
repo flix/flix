@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.CodeHint
+import ca.uwaterloo.flix.language.phase.unification.BoolTable
 
 object CodeHinter {
 
@@ -29,7 +30,7 @@ object CodeHinter {
     */
   def run(root: TypedAst.Root, sources: Set[String])(implicit flix: Flix, index: Index): List[CodeHint] = {
     val classHints = root.classes.values.flatMap(visitClass(_)(root, index)).toList
-    val defsHints = root.defs.values.flatMap(visitDef(_)(root)).toList
+    val defsHints = root.defs.values.flatMap(visitDef(_)(root, flix)).toList
     val enumsHints = root.enums.values.flatMap(visitEnum(_)(root, index)).toList
     (classHints ++ defsHints ++ enumsHints).filter(include(_, sources))
   }
@@ -69,14 +70,14 @@ object CodeHinter {
   /**
     * Computes code quality hints for the given definition `def0`.
     */
-  private def visitDef(def0: TypedAst.Def)(implicit root: Root): List[CodeHint] = {
+  private def visitDef(def0: TypedAst.Def)(implicit root: Root, flix: Flix): List[CodeHint] = {
     visitExp(def0.impl.exp)
   }
 
   /**
     * Computes code quality hints for the given expression `exp0`.
     */
-  private def visitExp(exp0: Expression)(implicit root: Root): List[CodeHint] = exp0 match {
+  private def visitExp(exp0: Expression)(implicit root: Root, flix: Flix): List[CodeHint] = exp0 match {
     case Expression.Wild(_, _) => Nil
 
     case Expression.Var(_, _, _) => Nil
@@ -154,6 +155,9 @@ object CodeHinter {
 
     case Expression.Stm(exp1, exp2, _, eff, loc) =>
       checkEffect(eff, loc) ++ visitExp(exp1) ++ visitExp(exp2)
+
+    case Expression.Discard(exp, _, _) =>
+      visitExp(exp)
 
     case Expression.Match(matchExp, rules, _, _, _) =>
       visitExp(matchExp) ++ rules.flatMap {
@@ -298,26 +302,26 @@ object CodeHinter {
   /**
     * Computes code quality hints for the given list of expressions `exps`.
     */
-  private def visitExps(exps: List[Expression])(implicit root: Root): List[CodeHint] =
+  private def visitExps(exps: List[Expression])(implicit root: Root, flix: Flix): List[CodeHint] =
     exps.flatMap(visitExp)
 
   /**
     * Computes code quality hints for the given constraint `c`.
     */
-  private def visitConstraint(c: Constraint)(implicit root: Root): List[CodeHint] =
+  private def visitConstraint(c: Constraint)(implicit root: Root, flix: Flix): List[CodeHint] =
     visitHeadPredicate(c.head) ++ c.body.flatMap(visitBodyPredicate)
 
   /**
     * Computes code quality hints for the given head predicate `p`.
     */
-  private def visitHeadPredicate(p: TypedAst.Predicate.Head)(implicit root: Root): List[CodeHint] = p match {
+  private def visitHeadPredicate(p: TypedAst.Predicate.Head)(implicit root: Root, flix: Flix): List[CodeHint] = p match {
     case Head.Atom(_, _, terms, _, _) => visitExps(terms)
   }
 
   /**
     * Computes code quality hints for the given body predicate `p`.
     */
-  private def visitBodyPredicate(p: TypedAst.Predicate.Body)(implicit root: Root): List[CodeHint] = p match {
+  private def visitBodyPredicate(p: TypedAst.Predicate.Body)(implicit root: Root, flix: Flix): List[CodeHint] = p match {
     case Body.Atom(_, _, _, _, _, _, _) => Nil
     case Body.Guard(exp, _) => visitExp(exp)
     case Body.Loop(_, exp, _) => visitExp(exp)
@@ -365,11 +369,20 @@ object CodeHinter {
     *
     * NB: Not currently checked for every expression.
     */
-  private def checkEffect(tpe: Type, loc: SourceLocation): List[CodeHint] = {
-    if (nonTrivialEffect(tpe)) {
-      CodeHint.NonTrivialEffect(tpe, loc) :: Nil
-    } else {
+  private def checkEffect(tpe: Type, loc: SourceLocation)(implicit flix: Flix): List[CodeHint] = {
+    if (numberOfVarOccurs(tpe) < 5) {
+      // Case 1: Formula is small. Good.
       Nil
+    } else {
+      // Case 2: Formula is big. Try to minimize it.
+      val minType = BoolTable.minimizeType(tpe)
+      if (numberOfVarOccurs(minType) < 5) {
+        // Case 2.1: Formula is small. Good.
+        Nil
+      } else {
+        // Case 2.2: Formula is still big. Report a code hint.
+        CodeHint.NonTrivialEffect(minType, loc) :: Nil
+      }
     }
   }
 
@@ -454,8 +467,17 @@ object CodeHinter {
   private def isPureFunction(tpe: Type): Boolean = tpe.arrowEffectType == Type.Pure
 
   /**
-    * Returns `true` if the given effect `tpe` is non-trivial.
+    * Returns the total number of variable *occurrences* in the given type `tpe`.
     */
-  private def nonTrivialEffect(tpe: Type): Boolean = Type.size(tpe) > 5
+  private def numberOfVarOccurs(tpe: Type): Int = tpe match {
+    case Type.KindedVar(_, _) => 1
+    case Type.UnkindedVar(_, _) => 1
+    case Type.Ascribe(tpe, _, _) => numberOfVarOccurs(tpe)
+    case Type.Cst(_, _) => 0
+    case Type.Apply(tpe1, tpe2, _) => numberOfVarOccurs(tpe1) + numberOfVarOccurs(tpe2)
+    case Type.Alias(_, _, tpe, _) => numberOfVarOccurs(tpe)
+    case Type.UnkindedArrow(_, _, _) => 0
+    case Type.ReadWrite(_, _) => 0
+  }
 
 }

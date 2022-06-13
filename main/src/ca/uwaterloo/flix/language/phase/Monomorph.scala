@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.ReificationError
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
@@ -199,8 +199,14 @@ object Monomorph {
         // Specialize the body expression.
         val body = specialize(defn.impl.exp, env0, subst, def2def, defQueue)
 
+        // Specialize the inferred scheme
+        val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), body.eff, body.tpe, sym.loc.asSynthetic)
+        val tvars = base.typeVars.map(_.sym).toList
+        val tconstrs = Nil // type constraints are not used after monomorph
+        val scheme = Scheme(tvars, tconstrs, base)
+
         // Reassemble the definition.
-        specializedDefns.put(sym, defn.copy(spec = defn.spec.copy(fparams = fparams), impl = defn.impl.copy(exp = body)))
+        specializedDefns.put(sym, defn.copy(spec = defn.spec.copy(fparams = fparams), impl = defn.impl.copy(exp = body, inferredScheme = scheme)))
       }
 
       /*
@@ -367,6 +373,10 @@ object Monomorph {
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
         Expression.Stm(e1, e2, subst0(tpe), eff, loc)
+
+      case Expression.Discard(exp, eff, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.Discard(e, eff, loc)
 
       case Expression.Match(exp, rules, tpe, eff, loc) =>
         val rs = rules map {
@@ -705,7 +715,7 @@ object Monomorph {
       inst =>
         inst.defs.find {
           defn =>
-            defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe)
+            defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, RigidityEnv.empty)
         }
     }
 
@@ -898,7 +908,7 @@ object Monomorph {
           val tag = Name.Tag("ReifiedInt64", loc)
           Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
 
-        case TypeConstructor.ScopedArray =>
+        case TypeConstructor.Array =>
           val tag = Name.Tag("ReifiedArray", loc)
           val innerTpe = Type.eraseAliases(t0).typeArguments.head
           val innerExp = visit(innerTpe)
@@ -918,7 +928,7 @@ object Monomorph {
     * Unifies `tpe1` and `tpe2` which must be unifiable.
     */
   private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit flix: Flix): StrictSubstitution = {
-    Unification.unifyTypes(tpe1, tpe2) match {
+    Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty) match {
       case Result.Ok(subst) =>
         StrictSubstitution(subst)
       case Result.Err(_) =>
@@ -953,6 +963,10 @@ object Monomorph {
       Type.Alias(sym, as, t, loc)
 
     case Type.UnkindedVar(_, loc) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
+
+    case Type.UnkindedArrow(_, _, loc) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
+
+    case Type.ReadWrite(_, loc) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
 
     case Type.Ascribe(_, _, loc) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
   }

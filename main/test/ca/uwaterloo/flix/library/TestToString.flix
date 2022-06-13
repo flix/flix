@@ -357,26 +357,26 @@ namespace TestToString {
 
     @test
     def arrayToString01(): Bool & Impure =
-        toString(Array.range(0, 5, static)) == "[0, 1, 2, 3, 4]"
+        toString(Array.range(0, 5, Static)) == "[0, 1, 2, 3, 4]"
 
     @test
     def arrayToString02(): Bool & Impure =
-        toString(Array.range(0, 1, static)) == "[0]"
+        toString(Array.range(0, 1, Static)) == "[0]"
 
     @test
     def arrayToString03(): Bool & Impure =
-        toString(Array.new('a', 3)) == "[a, a, a]"
+        toString(Array.new('a', 3, Static)) == "[a, a, a]"
 
     @test
     def arrayToString04(): Bool & Impure =
-        toString(Array.range(1, 3, static)) == "[1, 2]"
+        toString(Array.range(1, 3, Static)) == "[1, 2]"
 
     @test
     def arrayToString05(): Bool & Impure =
-        toString(Array.new([1, 2, 3], 3)) == "[[1, 2, 3], [1, 2, 3], [1, 2, 3]]"
+        toString(Array.new([1, 2, 3], 3, Static)) == "[[1, 2, 3], [1, 2, 3], [1, 2, 3]]"
 
     @test
     def arrayToString06(): Bool & Impure =
-        toString(Array.range(0, 0, static)) == "[]"
+        toString(Array.range(0, 0, Static)) == "[]"
 
 }

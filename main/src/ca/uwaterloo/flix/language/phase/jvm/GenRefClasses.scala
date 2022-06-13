@@ -33,7 +33,7 @@ object GenRefClasses {
   private def genRefClass(refType: BackendObjType.Ref)(implicit root: Root, flix: Flix): Array[Byte] = {
     val cm = ClassMaker.mkClass(refType.jvmName, IsFinal)
 
-    refType.ValueField.mkField(cm, IsPublic, NotFinal)
+    cm.mkField(refType.ValueField)
     cm.mkObjectConstructor(IsPublic)
 
     cm.closeClassMaker()

@@ -189,6 +189,9 @@ object PatternExhaustiveness {
           _ <- checkPats(exp1, root)
           _ <- checkPats(exp2, root)
         } yield tast
+        case Expression.Discard(exp, _, _) => for {
+          _ <- checkPats(exp, root)
+        } yield tast
         case Expression.Match(exp, rules, _, _, _) => for {
           _ <- sequence(rules map { x => checkPats(x.exp, root) })
           _ <- checkRules(exp, rules, root)
@@ -736,8 +739,8 @@ object PatternExhaustiveness {
       case Some(TypeConstructor.Record) => 0
       case Some(TypeConstructor.Schema) => 0
       case Some(TypeConstructor.Arrow(length)) => length
-      case Some(TypeConstructor.ScopedArray) => 1
-      case Some(TypeConstructor.ScopedRef) => 0
+      case Some(TypeConstructor.Array) => 1
+      case Some(TypeConstructor.Ref) => 0
       case Some(TypeConstructor.Channel) => 1
       case Some(TypeConstructor.Lazy) => 1
       case Some(TypeConstructor.KindedEnum(sym, kind)) => 0 // TODO: Correct?

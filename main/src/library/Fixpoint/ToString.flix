@@ -19,6 +19,6 @@ namespace Fixpoint {
     /// Helper function to implement `ToString`.
     ///
     @Internal
-    pub def commaSeparate(a: Array[v]): String & Impure with ToString[v] =
-        Array.formatWith(ToString.toString, ", ", a)
+    pub def commaSeparate(a: Array[v, r]): String \ Read(r) with ToString[v] =
+        Array.join(", ", a)
 }

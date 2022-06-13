@@ -73,9 +73,14 @@ instance Monad[List] {
     pub def flatMap(f: a -> List[b] & ef, x : List[a]) : List[b] & ef = List.flatMap(f, x)
 }
 
+instance ForEach[List] {
+    pub def foreach(f: a -> Unit & ef, l: List[a]): Unit & ef = List.foreach(f, l)
+}
+
 instance Foldable[List] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: List[a]): b & ef = List.foldLeft(f, s, l)
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, s: b, l: List[a]): b & ef = List.foldRight(f, s, l)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, l: List[a]): b & ef = List.foldRight(f, s, l)
+    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, l: List[a]): b & ef = List.foldRightWithCont(f, s, l)
 }
 
 instance Traversable[List] {
@@ -101,16 +106,12 @@ namespace List {
     ///
     /// Renders the list `l` to a String.
     ///
-    pub def toString(l: List[a]): String with ToString[a] = toStringHelper(l) as & Pure
-
-    ///
-    /// Helper function for `toString`.
-    ///
-    def toStringHelper(l: List[a]): String & Impure with ToString[a] =
-        let sb = StringBuilder.new();
+    pub def toString(l: List[a]): String with ToString[a] = region r {
+        let sb = new StringBuilder(r);
         List.foreach(x -> StringBuilder.appendString!("${x} :: ", sb), l);
         StringBuilder.appendString!("Nil", sb);
         StringBuilder.toString(sb)
+    }
 
     ///
     /// Returns true if and only if `l` is the empty list, i.e. `Nil`.
@@ -162,18 +163,16 @@ namespace List {
     ///
     @Time(length(l1)) @Space(length(l1))
     pub def append(l1: List[a], l2: List[a]): List[a] =
-        foldRight((x, k) -> x :: k(), l2, l1)
+        foldRight((x, acc) -> x :: acc, l2, l1)
 
     ///
     /// Returns `true` if and only if `l` contains the element `x`.
     ///
     @Time(length(l)) @Space(1)
-    pub def memberOf(a: a, l: List[a]): Bool with Eq[a] =
-        def loop(ll) = match ll {
-            case Nil     => false
-            case x :: xs => if (a == x) true else loop(xs)
-        };
-        loop(l)
+    pub def memberOf(a: a, l: List[a]): Bool with Eq[a] = match l {
+        case Nil     => false
+        case x :: xs => if (a == x) true else memberOf(a, xs)
+    }
 
     ///
     /// Optionally finds the smallest element of `l` according to the `Order` on `a`.
@@ -208,14 +207,12 @@ namespace List {
         reduceLeft(Order.maxBy(cmp), l)
 
     ///
-    /// Returns the position of `x` in `l`.
+    /// Optionally returns the position of `x` in `l`.
     ///
-    /// Returns `-1` if `a` does not exist in `l`.
-    ///
-    pub def indexOf(a: a, l: List[a]): Int32 with Eq[a] =
+    pub def indexOf(a: a, l: List[a]): Option[Int32] with Eq[a] =
         def loop(ll, acc) = match ll {
-            case Nil     => -1
-            case x :: xs => if (a == x) acc else loop(xs, acc + 1)
+            case Nil     => None
+            case x :: xs => if (a == x) Some(acc) else loop(xs, acc + 1)
         };
         loop(l, 0)
 
@@ -229,12 +226,10 @@ namespace List {
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from left to right.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def findLeft(f: a -> Bool & ef, l: List[a]): Option[a] & ef =
-        def loop(ll) = match ll {
-            case Nil     => None
-            case x :: xs => if (f(x)) Some(x) else loop(xs)
-        };
-        loop(l)
+    pub def findLeft(f: a -> Bool & ef, l: List[a]): Option[a] & ef = match l {
+        case Nil     => None
+        case x :: xs => if (f(x)) Some(x) else findLeft(f, xs)
+    }
 
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
@@ -600,13 +595,11 @@ namespace List {
     /// Returns `true` if and only if `l1` is a prefix of `l2`.
     ///
     @Time(length(l1)) @Space(1)
-    pub def isPrefixOf(l1: List[a], l2: List[a]): Bool with Eq[a] =
-        def loop(ll1, ll2) = match (ll1, ll2) {
-            case (Nil, _)           => true
-            case (_, Nil)           => false
-            case (x :: xs, y :: ys) => if (x == y) loop(xs, ys) else false
-        };
-        loop(l1, l2)
+    pub def isPrefixOf(l1: List[a], l2: List[a]): Bool with Eq[a] = match (l1, l2) {
+        case (Nil, _)           => true
+        case (_, Nil)           => false
+        case (x :: xs, y :: ys) => if (x == y) isPrefixOf(xs, ys) else false
+    }
 
     ///
     /// Returns `true` if and only if `l1` is an infix of `l2`.
@@ -634,25 +627,34 @@ namespace List {
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, l: List[a]): b & ef =
-         def loop(ll, acc) = match ll {
-            case Nil     => acc
-            case x :: xs => loop(xs, f(acc, x))
-         };
-         loop(l, s)
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, l: List[a]): b & ef = match l {
+        case Nil     => s
+        case x :: xs => foldLeft(f, f(s, x), xs)
+    }
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    pub def foldRight(f: (a, b) -> b & ef, s: b, l: List[a]): b & ef =
+        def loop(ll, k) = match ll {
+            case Nil     => k(s)
+            case x :: xs => loop(xs, ks -> k(f(x, ks)))
+        };
+        loop(l, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
+                                  // but the intermediate continuations are effect polymorphic
 
     ///
     /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRight` allows early termination by not calling the continuation.
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, l: List[a]): b & ef =
-        def loop(ll) = match ll {
-            case Nil        => z
-            case x :: xs    => f(x, _ -> loop(xs))
-        };
-        loop(l)
+    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, l: List[a]): b & ef = match l {
+        case Nil     => z
+        case x :: xs => f(x, _ -> foldRightWithCont(f, z, xs))
+    }
 
     ///
     /// Applies `f` to all elements in `l` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
@@ -686,10 +688,8 @@ namespace List {
     ///
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
-    pub def count(f: a -> Bool, l: List[a]): Int32 =
+    pub def count(f: a -> Bool & ef, l: List[a]): Int32 & ef =
         foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, l)
 
     ///
@@ -710,7 +710,7 @@ namespace List {
     @Time(length(l)) @Space(length(l))
     pub def flatten(l: List[List[a]]): List[a] =
         def loop(ll, k) = match ll {
-            case Nil => k(Nil)
+            case Nil     => k(Nil)
             case x :: xs => loop(xs, ks -> k(x ::: ks))
         };
         loop(l, identity)
@@ -721,12 +721,10 @@ namespace List {
     /// Returns `false` if `l` is empty.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def exists(f: a -> Bool & ef, l: List[a]): Bool & ef =
-        def loop(ll) = match ll {
-            case Nil     => false
-            case x :: xs => if (f(x)) true else loop(xs)
-        };
-        loop(l)
+    pub def exists(f: a -> Bool & ef, l: List[a]): Bool & ef = match l {
+        case Nil     => false
+        case x :: xs => if (f(x)) true else exists(f, xs)
+    }
 
     ///
     /// Returns `true` if and only if all elements in `l` satisfy the predicate `f`.
@@ -734,12 +732,10 @@ namespace List {
     /// Returns `true` if `l` is empty.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def forall(f: a -> Bool & ef, l: List[a]): Bool & ef =
-        def loop(ll) = match ll {
-            case Nil     => true
-            case x :: xs => if (f(x)) loop(xs) else false
-        };
-        loop(l)
+    pub def forall(f: a -> Bool & ef, l: List[a]): Bool & ef = match l {
+        case Nil     => true
+        case x :: xs => if (f(x)) forall(f, xs) else false
+    }
 
     ///
     /// Returns a list of every element in `l` that satisfies the predicate `f`.
@@ -830,27 +826,20 @@ namespace List {
     /// Returns `l` if `n < 0`.
     ///
     @Time(n) @Space(length(l) - n)
-    pub def drop(n: Int32, l: List[a]): List[a] =
-        def loop(ll, i) =
-            if (i <= 0)
-                ll
-            else
-                match ll {
-                    case Nil     => Nil
-                    case _ :: xs => loop(xs, i - 1)
-                };
-        loop(l, n)
+    pub def drop(n: Int32, l: List[a]): List[a] = match l {
+        case _ if n <= 0 => l
+        case Nil         => Nil
+        case _ :: xs     => drop(n - 1, xs)
+    }
 
     ///
     /// Returns `l` without the longest prefix that satisfies the predicate `f`.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def dropWhile(f: a -> Bool & ef, l: List[a]): List[a] & ef =
-        def loop(ll) = match ll{
-            case Nil     => Nil
-            case x :: xs => if (f(x)) loop(xs) else ll
-        };
-        loop(l)
+    pub def dropWhile(f: a -> Bool & ef, l: List[a]): List[a] & ef = match l {
+        case Nil     => Nil
+        case x :: xs => if (f(x)) dropWhile(f, xs) else l
+    }
 
     ///
     /// Returns the first `n` elements of `l`.
@@ -924,12 +913,10 @@ namespace List {
     ///
     /// Helper function for `groupBy`.
     ///
-    def agreeHelper(f: (a, a) -> Bool, a: a, l: List[a]): Bool =
-        def loop(ll) = match ll {
-            case Nil     => true
-            case x :: xs => if (f(x, a) and f(a, x)) loop(xs) else false
-        };
-        loop(l)
+    def agreeHelper(f: (a, a) -> Bool, a: a, l: List[a]): Bool = match l {
+        case Nil     => true
+        case x :: xs => if (f(x, a) and f(a, x)) agreeHelper(f, a, xs) else false
+    }
 
     ///
     /// Returns a list where the element at index `i` is `(a, b)` where
@@ -960,6 +947,18 @@ namespace List {
             case _ => k(Nil)
         };
         loop(l1, l2, identity)
+
+    ///
+    /// Returns a list where each element `e` is mapped to `(e, i)` where `i`
+    /// is the index of `e`.
+    ///
+    @Time(length(l)) @Space(length(l))
+    pub def zipWithIndex(l: List[a]): List[(a, Int32)] =
+        def loop(ll, i, k) = match ll {
+            case Nil       => k(Nil)
+            case (x :: xs) => loop(xs, i + 1, ks -> k((x, i) :: ks))
+        };
+        loop(l, 0, identity)
 
     ///
     /// Returns a pair of lists, the first containing all first components in `l`
@@ -997,7 +996,7 @@ namespace List {
                 loop(xs, ys, zs, ks -> k(r :: ks))
             case _ => k(Nil)
         };
-        loop(l1, l2, l3, identity) as & ef // TODO: Why this cast?
+        loop(l1, l2, l3, identity)
 
     ///
     /// Returns a triple of lists, the first containing all first components in `l`
@@ -1022,12 +1021,10 @@ namespace List {
     /// starting with the initial value `c` and going from left to right.
     ///
     @Time(time(f) * Int32.min(length(l1), length(l2))) @Space(space(f) * Int32.min(length(l1), length(l2)))
-    pub def foldLeft2(f: (c, a, b) -> c & ef, c: c, l1: List[a], l2: List[b]): c & ef =
-        def loop(ll1, ll2, cc) = match (ll1, ll2) {
-            case (x :: xs, y :: ys) => loop(xs, ys, f(cc, x, y))
-            case _                  => cc
-        };
-        loop(l1, l2, c)
+    pub def foldLeft2(f: (c, a, b) -> c & ef, c: c, l1: List[a], l2: List[b]): c & ef = match (l1, l2) {
+        case (x :: xs, y :: ys) => foldLeft2(f, f(c, x, y), xs, ys)
+        case _                  => c
+    }
 
     ///
     /// Accumulates the result of applying `f` pairwise to the elements of `l1` and `l2`
@@ -1042,6 +1039,12 @@ namespace List {
         let len1 = length(l1);
         let len2 = length(l2);
         loop(drop(len1 - len2, l1), drop(len2 - len1, l2), ks -> ks as & ef)
+
+    ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b & ef, l: List[a]): b & ef with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), l)
 
     ///
     /// Collects the results of applying the partial function `f` to every element in `l`.
@@ -1063,37 +1066,13 @@ namespace List {
     /// Returns `None` if every element of `l` is `None`.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def findMap(f: a -> Option[b] & ef, l: List[a]): Option[b] & ef =
-        def loop(ll) = match ll {
-            case Nil     => None
-            case x :: xs => match f(x) {
-                case None    => loop(xs)
-                case Some(v) => Some(v)
-            }
-        };
-        loop(l)
-
-    ///
-    /// Render the list `l` as a String. Elements are rendered with the
-    /// function `f` and separated with the string `sep`.
-    ///
-    @Time(time(f) * length(l)) @Space(space(f) * length(l))
-    pub def formatWith(f: a -> String, sep: String, l: List[a]): String =
-        formatWithHelper(f, sep, l) as & Pure
-
-    ///
-    /// Helper function for `formatWith`.
-    ///
-    def formatWithHelper(f: a -> String, sep: String, l: List[a]): String & Impure =
-        let sb = StringBuilder.new();
-        match l {
-            case Nil     => ()
-            case x :: xs => {
-                StringBuilder.appendString!(f(x), sb);
-                foreach(x1 -> {StringBuilder.appendString!(sep, sb); StringBuilder.appendString!(f(x1), sb)}, xs)
-            }
-        };
-        StringBuilder.toString(sb)
+    pub def findMap(f: a -> Option[b] & ef, l: List[a]): Option[b] & ef = match l {
+        case Nil     => None
+        case x :: xs => match f(x) {
+            case None    => findMap(f, xs)
+            case Some(v) => Some(v)
+        }
+    }
 
     ///
     /// Returns the concatenation of the string representation
@@ -1124,18 +1103,26 @@ namespace List {
         List.foldLeft(Chain.snoc, Chain.empty(), l)
 
     ///
+    /// Returns `l` as a MutDeque.
+    ///
+    pub def toMutDeque(l: List[a], r: Region[r]): MutDeque[a, r] \ Write(r) =
+        let d = new MutDeque(r);
+        List.foreach(x -> MutDeque.pushBack(x, d), l);
+        d
+
+    ///
     /// Returns `l` as a mutable list.
     ///
-    pub def toMutList(l: List[a]): MutList[a, Impure] & Impure =
-        let v = new MutList(static);
-        foreach(x -> MutList.push!(x, v), l);
-        v
+    pub def toMutList(l: List[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
+        Array.toMutList(toArray(l, r2), r) // `Array.toMutList` respects the invariant of `MutList`
+    }
 
     ///
     /// Returns the list `l` as a set.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def toSet(l: List[a]): Set[a] with Order[a] = foldRight((x, k) -> Set.insert(x, k()), Set.empty(), l)
+    pub def toSet(l: List[a]): Set[a] with Order[a] =
+        foldRight((x, acc) -> Set.insert(x, acc), Set.empty(), l)
 
     ///
     /// Returns the association list `l` as a map.
@@ -1144,7 +1131,8 @@ namespace List {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def toMap(l: List[(a, b)]): Map[a, b] with Order[a] = foldRight((x, k) -> Map.insert(fst(x), snd(x), k()), Map.empty(), l)
+    pub def toMap(l: List[(a, b)]): Map[a, b] with Order[a] =
+        foldRight((x, acc) -> Map.insert(fst(x), snd(x), acc), Map.empty(), l)
 
     ///
     /// Returns a map with elements of `s` as keys and `f` applied as values.
@@ -1153,29 +1141,26 @@ namespace List {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     pub def toMapWith(f: a -> b, l: List[a]): Map[a, b] with Order[a] =
-            List.foldRight((x, k) -> Map.insert(x, f(x), k()), Map.empty(), l)
+        List.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), l)
 
     ///
     /// Applies `f` to every element of `l`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def foreach(f: a -> Unit & ef, l: List[a]): Unit & ef =
-        def loop(ll) = match ll {
-            case Nil     => ()
-            case x :: xs => f(x); loop(xs)
-        };
-        loop(l)
+    pub def foreach(f: a -> Unit & ef, l: List[a]): Unit & ef = match l {
+        case Nil     => ()
+        case x :: xs => f(x); foreach(f, xs)
+    }
 
     ///
     /// Returns the list `l` as an array.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def toArray(l: List[a]) : Array[a] & Impure = match head(l) {
-        case None    => []
+    pub def toArray(l: List[a], r: Region[r]): Array[a, r] \ Write(r) = match head(l) {
+        case None    => [] @ r
         case Some(x) =>
-            let a = Array.new(x, length(l));
-            let f = (i, b) -> { a[i] = b; i + 1 };
-            foldLeft(f, 0, l);
+            let a = [x; length(l)] @ r;
+            foreach(match (b, i) -> a[i] = b, zipWithIndex(l));
             a
         }
 
@@ -1206,8 +1191,9 @@ namespace List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(l: List[a]): List[a] with Order[a] =
-        (l |> toArray |> Array.sort |> Array.toList) as & Pure
+    pub def sort(l: List[a]): List[a] with Order[a] = region r {
+        toArray(l, r) |> Array.sort |> Array.toList
+    }
 
     /// Sort list `l` so that elements are ordered from low to high according to the `Order` instance
     /// for the values obtained by applying `f` to each element.
@@ -1216,8 +1202,9 @@ namespace List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, l: List[a]): List[a] with Order[b] =
-        (l |> toArray |> Array.sortBy(f) |> Array.toList) as & Pure
+    pub def sortBy(f: a -> b, l: List[a]): List[a] with Order[b] = region r {
+        toArray(l, r) |> Array.sortBy(f) |> Array.toList
+    }
 
     ///
     /// Sort list `l` so that elements are ordered from low to high according to the comparison function `cmp`.
@@ -1226,8 +1213,9 @@ namespace List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, l: List[a]): List[a] =
-        (l |> toArray |> Array.sortWith(cmp) |> Array.toList) as & Pure
+    pub def sortWith(cmp: (a,a) -> Comparison, l: List[a]): List[a] = region r {
+        toArray(l, r) |> Array.sortWith(cmp) |> Array.toList
+    }
 
     ///
     /// Build a list by applying `f` to the seed value `st`.
@@ -1304,24 +1292,12 @@ namespace List {
         def loop(ll1, ll2, k) = match ll1 {
             case Nil     => k(Nil)
             case x :: xs =>
-                if (memberOfWith(f, x, ll2))
+                if (exists(f(x), ll2))
                     loop(xs, ll2, k)
                 else
                     loop(xs, x :: ll2, ks -> k(x :: ks))
         };
         loop(l, Nil, identity)
-
-    ///
-    /// Helper function for `distinctWith`.
-    ///
-    /// This is a generalization of `memberOf` that uses the function `f` for comparison.
-    ///
-    def memberOfWith(f: (a, a) -> Bool, a: a, l: List[a]): Bool =
-        def loop(ll) = match ll {
-            case Nil     => false
-            case x :: xs => if (f(a, x)) true else loop(xs)
-        };
-        loop(l)
 
     ///
     /// Returns the sum of all elements in the list `l`.
@@ -1360,7 +1336,7 @@ namespace List {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     pub def toDelayMap(l: List[(a, b)]): DelayMap[a, b] with Order[a] =
-        List.foldRight((x, k) -> DelayMap.insert(fst(x), snd(x), k()), DelayMap.empty(), l)
+        List.foldRight((x, acc) -> DelayMap.insert(fst(x), snd(x), acc), DelayMap.empty(), l)
 
     ///
     /// Helper function for `traverse` and `sequence`.

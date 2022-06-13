@@ -59,7 +59,7 @@ object GenRecordEmptyClass {
 
     cm.mkStaticConstructor(genStaticConstructor())
     cm.mkObjectConstructor(IsPrivate)
-    RecordEmpty.InstanceField.mkStaticField(cm, IsPublic, IsFinal)
+    cm.mkField(RecordEmpty.InstanceField)
     RecordEmpty.LookupFieldMethod.mkMethod(cm, genLookupFieldMethod(), IsPublic, IsFinal)
     RecordEmpty.RestrictFieldMethod.mkMethod(cm, genRestrictFieldMethod(), IsPublic, IsFinal)
 
@@ -70,7 +70,7 @@ object GenRecordEmptyClass {
     NEW(RecordEmpty.jvmName) ~
       DUP() ~
       invokeConstructor(RecordEmpty.jvmName, MethodDescriptor.NothingToVoid) ~
-      RecordEmpty.InstanceField.putStaticField() ~
+      PUTSTATIC(RecordEmpty.InstanceField) ~
       RETURN()
 
   private def genLookupFieldMethod(): InstructionSet =

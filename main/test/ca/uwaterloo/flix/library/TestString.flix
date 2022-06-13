@@ -179,18 +179,25 @@ def lineSeparator02(): Bool =
     let newline = String.lineSeparator();
     String.length(newline) == 1 or String.length(newline) == 2
 
-/////////////////////////////////////////////////////////////////////////////
-// toArray                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // toArray                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def toArray01(): Bool & Impure = Array.sameElements(String.toArray(""), []: Array[Char])
+    @test
+    def toArray01(): Bool = region r {
+        Array.sameElements(String.toArray("", r), [] @ r)
+    }
 
-@test
-def toArray02(): Bool & Impure = Array.sameElements(String.toArray("ABC"), ['A', 'B', 'C'])
+    @test
+    def toArray02(): Bool = region r {
+        Array.sameElements(String.toArray("ABC", r), ['A', 'B', 'C'] @ r)
+    }
 
-@test
-def toArray03(): Bool & Impure = Array.sameElements(String.toArray("1 2 3"), ['1', ' ', '2', ' ', '3'])
+    @test
+    def toArray03(): Bool = region r {
+        Array.sameElements(String.toArray("1 2 3", r), ['1', ' ', '2', ' ', '3'] @ r)
+    }
+
 
 /////////////////////////////////////////////////////////////////////////////
 // init                                                                    //
@@ -1606,7 +1613,7 @@ def unfoldStringWithIter01(): Bool & Impure =
         else {
             let c1 = Char.fromInt32(deref x + 65);
             let c2 = Char.fromInt32(deref x + 97);
-            let s = List.formatWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
+            let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 1;
             Some(s)
         };
@@ -1621,7 +1628,7 @@ def unfoldStringWithIter02(): Bool & Impure =
         else {
             let c1 = Char.fromInt32(deref x + 65);
             let c2 = Char.fromInt32(deref x + 97);
-            let s = List.formatWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
+            let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 1;
             Some(s)
         };
@@ -1636,7 +1643,7 @@ def unfoldStringWithIter03(): Bool & Impure =
         else {
             let c1 = Char.fromInt32(deref x + 65);
             let c2 = Char.fromInt32(deref x + 97);
-            let s = List.formatWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
+            let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 1;
             Some(s)
         };
@@ -1651,7 +1658,7 @@ def unfoldStringWithIter04(): Bool & Impure =
         else {
             let c1 = Char.fromInt32(deref x + 65);
             let c2 = Char.fromInt32(deref x + 97);
-            let s = List.formatWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
+            let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 1;
             Some(s)
         };
@@ -1666,7 +1673,7 @@ def unfoldStringWithIter05(): Bool & Impure =
         else {
             let c1 = Char.fromInt32(deref x + 65);
             let c2 = Char.fromInt32(deref x + 97);
-            let s = List.formatWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
+            let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 1;
             Some(s)
         };
@@ -1681,7 +1688,7 @@ def unfoldStringWithIter06(): Bool & Impure =
         else {
             let c1 = Char.fromInt32(deref x + 65);
             let c2 = Char.fromInt32(deref x + 97);
-            let s = List.formatWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
+            let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 2;
             Some(s)
         };
@@ -2916,39 +2923,32 @@ def levenshteinDistance07(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def zip01(): Bool & Impure =
-    let a = String.zip("", "");
-    Array.sameElements(a, []: Array[(Char,Char)])
+def zip01(): Bool =
+    String.zip("", "") == Nil: List[(Char,Char)]
 
 @test
-def zip02(): Bool & Impure =
-    let a = String.zip("a", "");
-    Array.sameElements(a, []: Array[(Char, Char)])
+def zip02(): Bool =
+    String.zip("a", "") == Nil: List[(Char, Char)]
 
 @test
-def zip03(): Bool & Impure =
-    let a = String.zip("", "1");
-    Array.sameElements(a, []: Array[(Char, Char)])
+def zip03(): Bool =
+    String.zip("", "1") == Nil: List[(Char, Char)]
 
 @test
-def zip04(): Bool & Impure =
-    let a = String.zip("a", "1");
-    Array.sameElements(a, [('a', '1')])
+def zip04(): Bool =
+    String.zip("a", "1") == ('a', '1') :: Nil
 
 @test
-def zip05(): Bool & Impure =
-    let a = String.zip("ab", "12");
-    Array.sameElements(a, [('a', '1'), ('b', '2')])
+def zip05(): Bool =
+    String.zip("ab", "12") == ('a', '1') :: ('b', '2') :: Nil
 
 @test
-def zip06(): Bool & Impure =
-    let a = String.zip("abc", "123");
-    Array.sameElements(a, [('a', '1'), ('b', '2'), ('c', '3')])
+def zip06(): Bool =
+    String.zip("abc", "123") == ('a', '1') :: ('b', '2') :: ('c', '3') :: Nil
 
 @test
-def zip07(): Bool & Impure =
-    let a = String.zip("abcd", "1234");
-    Array.sameElements(a, [('a', '1'), ('b', '2'), ('c', '3'), ('d', '4')])
+def zip07(): Bool =
+    String.zip("abcd", "1234") == ('a', '1') :: ('b', '2') :: ('c', '3') :: ('d', '4') :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // zipWith                                                                 //

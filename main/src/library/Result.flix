@@ -83,10 +83,8 @@ namespace Result {
     ///
     /// Returns `true` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `false`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def exists(f: t -> Bool, r: Result[t, e]): Bool = match r {
+    pub def exists(f: t -> Bool & ef, r: Result[t, e]): Bool & ef = match r {
         case Ok(t)  => f(t)
         case Err(_) => false
     }
@@ -95,10 +93,8 @@ namespace Result {
     /// Returns `true` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true` or if `r` is `Err(w)`.
     /// Otherwise returns `false`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def forall(f: t -> Bool, r: Result[t, e]): Bool = match r {
+    pub def forall(f: t -> Bool & ef, r: Result[t, e]): Bool & ef = match r {
         case Ok(t)  => f(t)
         case Err(_) => true
     }
@@ -134,10 +130,8 @@ namespace Result {
     ///
     /// Returns `1` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `0`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def count(f: t -> Bool, r: Result[t, e]): Int32 = match r {
+    pub def count(f: t -> Bool & ef, r: Result[t, e]): Int32 & ef = match r {
         case Ok(v)  => if (f(v)) 1 else 0
         case Err(_) => 0
     }
@@ -195,10 +189,19 @@ namespace Result {
     ///
     /// Returns `f(v, z)` if `r` is `Ok(v)`. Otherwise returns `z`.
     ///
-    /// A `foldRight` allows early termination by not calling the continuation.
+    @Time(time(f)) @Space(space(f))
+    pub def foldRight(f: (t, a) -> a & ef, z: a, r: Result[t, e]): a & ef = match r {
+        case Ok(v)  => f(v, z)
+        case Err(_) => z
+    }
+
+    ///
+    /// Returns `f(v, z)` if `r` is `Ok(v)`. Otherwise returns `z`.
+    ///
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def foldRight(f: (t, Unit -> a & ef) -> a & ef, z: a, r: Result[t, e]): a & ef = match r {
+    pub def foldRightWithCont(f: (t, Unit -> a & ef) -> a & ef, z: a, r: Result[t, e]): a & ef = match r {
         case Ok(v)  => f(v, _ -> z as & ef)
         case Err(_) => z
     }
@@ -316,7 +319,7 @@ namespace Result {
     /// Returns a map with elements of `s` as keys and `f` applied as values.
     ///
     pub def toMapWith(f: a -> b, s: Result[a, a]): Map[a, b] with Order[a] =
-        Result.foldRight((x, k) -> Map.insert(x, f(x), k()), Map.empty(), s)
+        Result.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), s)
 
     ///
     /// Returns `Some(v)` if `r` is `Ok(v)`. Otherwise returns `None`.

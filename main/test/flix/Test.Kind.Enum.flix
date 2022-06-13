@@ -1,4 +1,4 @@
-namespace Test/Enum/Kinding {
+namespace Test/Kind/Enum {
     namespace Implicit {
         pub enum EStar[a] {
             case CStar1(a)
@@ -37,6 +37,11 @@ namespace Test/Enum/Kinding {
         pub enum ESchemaRow[a: SchemaRow] {
             case CSchemaRow1(#{ R | a })
         }
+
+        // TODO disabled during development
+//        pub enum EEffect[a: Eff] {
+//            case CEffect1(Int32 -> Int32 \ a)
+//        }
 
         // These pass kinding but cause a crash in the Finalizer.
 //        pub enum EStarToStar[a: Type -> Type] {

@@ -75,9 +75,14 @@ instance Monad[Nec] {
     pub def flatMap(f: a -> Nec[b] & ef, x : Nec[a]) : Nec[b] & ef = Nec.flatMap(f, x)
 }
 
+instance ForEach[Nec] {
+    pub def foreach(f: a -> Unit & ef, c: Nec[a]): Unit & ef = Nec.foreach(f, c)
+}
+
 instance Foldable[Nec] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, c: Nec[a]): b & ef = Nec.foldLeft(f, s, c)
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, s: b, c: Nec[a]): b & ef = Nec.foldRight(f, s, c)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, c: Nec[a]): b & ef = Nec.foldRight(f, s, c)
+    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, c: Nec[a]): b & ef = Nec.foldRightWithCont(f, s, c)
 }
 
 instance Traversable[Nec] {
@@ -100,7 +105,7 @@ instance Reducible[Nec] {
     override pub def memberOf(a: a, l: Nec[a]): Bool with Eq[a] = Nec.memberOf(a, l)
     override pub def dropWhile(f: a -> Bool & ef, l: Nec[a]): List[a] & ef = Nec.dropWhileLeft(f, l)
     override pub def takeWhile(f: a -> Bool & ef, l: Nec[a]): List[a] & ef = Nec.takeWhileLeft(f, l)
-    override pub def toArray(l: Nec[a]): Array[a] & Impure = Nec.toArray(l)
+    override pub def toArray(l: Nec[a], r: Region[r]): Array[a, r] \ Write(r) = Nec.toArray(l, r)
     override pub def toIterator(l: Nec[a]): Iterator[a] & Impure = Nec.toIterator(l)
     override pub def toList(l: Nec[a]): List[a] = Nec.toList(l)
 }
@@ -112,19 +117,19 @@ instance Iterable[Nec] {
 
 instance ToString[Nec[a]] with ToString[a] {
     pub def toString(c: Nec[a]): String =
-        let fn = () -> {
-            let sb = StringBuilder.new();
+        let fn = () -> region r {
+            let sb = new StringBuilder(r);
             StringBuilder.appendString!("Nec#{", sb);
-            Nec.foldLeft((acc, x) -> {
-                if (acc < 1)
+            Nec.foreach(match (x, i) -> {
+                if (i < 1)
                     StringBuilder.appendString!("${x}", sb)
                 else
-                    StringBuilder.appendString!(", ${x}", sb);
-                acc + 1}, 0, c);
+                    StringBuilder.appendString!(", ${x}", sb)
+                }, Nec.zipWithIndex(c));
             StringBuilder.appendString!("}", sb);
             StringBuilder.toString(sb)
         };
-        fn() as & Pure
+        fn()
 }
 
 
@@ -219,7 +224,7 @@ namespace Nec {
     ///
     /// Returns the length of `c`.
     ///
-    pub def length(c: Nec[a]): Int32 = foldRight((_, k) -> k() + 1, 0, c)
+    pub def length(c: Nec[a]): Int32 = foldRight((_, acc) -> acc + 1, 0, c)
 
     ///
     /// Returns a new Nec formed by appending the Necs `c1` and `c2`.
@@ -297,14 +302,12 @@ namespace Nec {
         reduceLeft(Order.maxBy(cmp), c)
 
     ///
-    /// Returns the position of `a` in `c`.
+    /// Optionally returns the position of `a` in `c`.
     ///
-    /// Returns `-1` if `a` does not exist in `c`.
-    ///
-    pub def indexOf(a: a, c: Nec[a]): Int32 with Eq[a] =
+    pub def indexOf(a: a, c: Nec[a]): Option[Int32] with Eq[a] =
         def loop(acc: Int32, c1: Nec[a]) = match viewLeft(c1) {
-            case OneLeft(x)      => if (x == a) acc else -1
-            case SomeLeft(x, c2) => if (x == a) acc else loop(acc + 1, c2)
+            case OneLeft(x)      => if (x == a) Some(acc) else None
+            case SomeLeft(x, c2) => if (x == a) Some(acc) else loop(acc + 1, c2)
         };
         loop(0, c)
 
@@ -470,9 +473,7 @@ namespace Nec {
     ///
     /// Returns the number of elements in `c` that satisfy the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def count(f: a -> Bool, c: Nec[a]): Int32 =
+    pub def count(f: a -> Bool & ef, c: Nec[a]): Int32 & ef =
         def loop(c1: Nec[a], acc: Int32) = match viewLeft(c1) {
             case OneLeft(x)      => if (f(x)) acc + 1 else acc
             case SomeLeft(x, rs) => loop(rs, if (f(x)) acc + 1 else acc)
@@ -562,15 +563,34 @@ namespace Nec {
     }
 
     ///
+    /// Applies `f` to a start value `s` and all elements in `c` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    pub def foldRight(f: (a, b) -> b & ef, s: b, c: Nec[a]): b & ef = match viewRight(c) {
+        case OneRight(x)      => f(x, s)
+        case SomeRight(rs, x) => {
+            let b = f(x, s);
+            foldRight(f, b, rs)
+        }
+    }
+
+    ///
     /// Applies `f` to a start value `z` and all elements in `c` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRight` allows early termination by not calling the continuation.
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, c: Nec[a]): b & ef = match viewLeft(c) {
+    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, c: Nec[a]): b & ef = match viewLeft(c) {
         case OneLeft(x)      => f(x, _ -> z as & ef)
-        case SomeLeft(x, rs) => f(x, _ -> foldRight(f, z, rs))
+        case SomeLeft(x, rs) => f(x, _ -> foldRightWithCont(f, z, rs))
     }
+
+    ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b & ef, c: Nec[a]): b & ef with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), c)
 
     ///
     /// Collects the results of applying the partial function `f` to every element in `c`.
@@ -646,6 +666,17 @@ namespace Nec {
         loop(c, (ks, ls) -> (ks, ls))
 
     ///
+    /// Returns a Nec where each element `e` is mapped to `(e, i)` where `i`
+    /// is the index of `e`.
+    ///
+    pub def zipWithIndex(c: Nec[a]): Nec[(a, Int32)] =
+        def loop(c1, k, i) = match viewLeft(c1) {
+            case OneLeft(x)      => k(NecOne(x, i))
+            case SomeLeft(x, rs) => loop(rs, ks -> k(cons((x, i), ks)), i + 1)
+        };
+        loop(c, k -> k, 0)
+
+    ///
     /// `mapAccumLeft` is a stateful version of `map`. The accumulating paramter `s` is updated at each
     /// step in a left-to-right traversal.
     ///
@@ -691,19 +722,19 @@ namespace Nec {
     /// Returns `c` as a list.
     ///
     pub def toList(c: Nec[a]): List[a] =
-        foldRight((x, k) -> x :: k(), Nil, c)
+        foldRight((x, acc) -> x :: acc, Nil, c)
 
     ///
     /// Returns `c` as a mutable list.
     ///
-    pub def toMutList(c: Nec[a]): MutList[a, Impure] & Impure =
-        toArray(c) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`
+    pub def toMutList(c: Nec[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
+        Array.toMutList(toArray(c, r2), r) // `Array.toMutList` respects the invariant of `MutList`
+    }
 
     ///
     /// Returns the list `c` as a set.
     ///
-    pub def toSet(c: Nec[a]): Set[a] with Order[a] = foldRight((x, k) -> Set.insert(x, k()), Set.empty(), c)
-
+    pub def toSet(c: Nec[a]): Set[a] with Order[a] = foldRight((x, acc) -> Set.insert(x, acc), Set.empty(), c)
 
     ///
     /// Returns the Nec of pairs `c` that represents an association list as a map.
@@ -711,7 +742,7 @@ namespace Nec {
     /// If `c` contains multiple mappings with the same key, `toMap` does not
     /// make any guarantees about which mapping will be in the resulting map.
     ///
-    pub def toMap(c: Nec[(a, b)]): Map[a, b] with Order[a] = foldRight((x, k) -> Map.insert(fst(x), snd(x), k()), Map.empty(), c)
+    pub def toMap(c: Nec[(a, b)]): Map[a, b] with Order[a] = foldRight((x, acc) -> Map.insert(fst(x), snd(x), acc), Map.empty(), c)
 
     ///
     /// Returns a map with elements of `l` as keys and `f` applied as values.
@@ -720,16 +751,15 @@ namespace Nec {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     pub def toMapWith(f: a -> b, l: Nec[a]): Map[a, b] with Order[a] =
-        foldRight((x, k) -> Map.insert(x, f(x), k()), Map.empty(), l)
+        foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), l)
 
     ///
     /// Returns the Nec `c` as an array.
     ///
-    pub def toArray(c: Nec[a]) : Array[a] & Impure =
+    pub def toArray(c: Nec[a], r: Region[r]): Array[a, r] \ Write(r) =
         let x = head(c);
-        let arr = Array.new(x, length(c));
-        let f = (i, b) -> { arr[i] = b; i + 1 };
-        foldLeft(f, 0, c);
+        let arr = [x; length(c)] @ r;
+        foreach(match (b, i) -> arr[i] = b, zipWithIndex(c));
         arr
 
     ///
@@ -762,7 +792,7 @@ namespace Nec {
     ///
     /// Helper for the `sort` functions.
     ///
-    def fromArray(arr: Array[a]): Option[Nec[a]] & Impure =
+    def fromArray(arr: Array[a, r]): Option[Nec[a]] \ Read(r) =
         def loop(ix, end, acc) = if (ix >= end) acc else {let x = arr[ix]; loop(ix+1, end, snoc(acc, x))};
         let len = Array.length(arr);
         if (len < 1)
@@ -780,12 +810,13 @@ namespace Nec {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(l: Nec[a]): Nec[a] with Order[a] =
-        let ans = (l |> toArray |> Array.sort |> fromArray) as & Pure;
+    pub def sort(c: Nec[a]): Nec[a] with Order[a] = region r {
+        let ans = (toArray(c, r) |> Array.sort |> fromArray);
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()
         }
+    }
 
 
     /// Sort Nec `c` so that elements are ordered from low to high according to the `Order` instance
@@ -795,12 +826,13 @@ namespace Nec {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, l: Nec[a]): Nec[a] with Order[b] =
-        let ans = (l |> toArray |> Array.sortBy(f) |> fromArray) as & Pure;
+    pub def sortBy(f: a -> b, c: Nec[a]): Nec[a] with Order[b] = region r {
+        let ans = (toArray(c, r) |> Array.sortBy(f) |> fromArray);
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()
         }
+    }
 
     ///
     /// Sort Nec `c` so that elements are ordered from low to high according to the comparison function `cmp`.
@@ -809,12 +841,13 @@ namespace Nec {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a, a) -> Comparison, l: Nec[a]): Nec[a] =
-        let ans = (l |> toArray |> Array.sortWith(cmp) |> fromArray) as & Pure;
+    pub def sortWith(cmp: (a, a) -> Comparison, c: Nec[a]): Nec[a] = region r {
+        let ans = (toArray(c, r) |> Array.sortWith(cmp) |> fromArray);
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()
         }
+    }
 
     ///
     /// Helper function for `traverse` and `sequence`.
@@ -885,7 +918,7 @@ namespace Nec {
     ///
     pub def reduceRight(f: (a, a) -> a & ef, c: Nec[a]): a & ef = match viewRight(c) {
         case OneRight(x)      => x
-        case SomeRight(xs, x) => foldRight((a, k) -> f(a, k()), x, xs)
+        case SomeRight(xs, x) => foldRight((a, acc) -> f(a, acc), x, xs)
     }
 
     ///
@@ -905,7 +938,7 @@ namespace Nec {
     ///
     pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, c: Nec[a]): b & (ef1 and ef2) = match viewRight(c) {
         case OneRight(x)      => g(x)
-        case SomeRight(xs, x) => foldRight((a, k) -> f(a, k()), g(x), xs)
+        case SomeRight(xs, x) => foldRight((a, acc) -> f(a, acc), g(x), xs)
     }
 
     ///

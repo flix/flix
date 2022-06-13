@@ -18,9 +18,11 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.mkName
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{InstanceField, InstanceMethod, InterfaceMethod, StaticField}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, RootPackage}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, MethodDescriptor, RootPackage}
 
 /**
   * Represents all Flix types that are objects on the JVM (array is an exception).
@@ -43,6 +45,8 @@ sealed trait BackendObjType {
     case BackendObjType.RecordExtend(_, value, _) => JvmName(RootPackage, mkName("RecordExtend", value))
     case BackendObjType.Record => JvmName(RootPackage, s"IRecord${Flix.Delimiter}")
     case BackendObjType.Native(className) => className
+    case BackendObjType.ReifiedSourceLocation => JvmName(DevFlixRuntime, "ReifiedSourceLocation")
+    case BackendObjType.Global => JvmName(DevFlixRuntime, "Global")
   }
 
   /**
@@ -76,7 +80,7 @@ object BackendObjType {
 
 
   case object Unit extends BackendObjType {
-    def InstanceField: StaticField = StaticField(this.jvmName, "INSTANCE", this.toTpe)
+    def InstanceField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, "INSTANCE", this.toTpe)
   }
 
   case object BigInt extends BackendObjType
@@ -88,7 +92,7 @@ object BackendObjType {
   case class Lazy(tpe: BackendType) extends BackendObjType
 
   case class Ref(tpe: BackendType) extends BackendObjType {
-    def ValueField: InstanceField = InstanceField(this.jvmName, "value", tpe)
+    def ValueField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "value", tpe)
   }
 
   case class Tuple(elms: List[BackendType]) extends BackendObjType
@@ -98,6 +102,8 @@ object BackendObjType {
   case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType {
     def continuation: BackendObjType.Continuation = Continuation(result.toErased)
 
+    def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, s"arg$index", args(index))
+
     def ResultField: InstanceField = continuation.ResultField
 
     def InvokeMethod: InstanceMethod = continuation.InvokeMethod
@@ -106,7 +112,7 @@ object BackendObjType {
   }
 
   case class Continuation(result: BackendType) extends BackendObjType {
-    def ResultField: InstanceField = InstanceField(this.jvmName, "result", result)
+    def ResultField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "result", result)
 
     def InvokeMethod: InstanceMethod = InstanceMethod(this.jvmName, "invoke", mkDescriptor()(this.toTpe))
 
@@ -116,7 +122,7 @@ object BackendObjType {
   case object RecordEmpty extends BackendObjType {
     def interface: BackendObjType.Record.type = Record
 
-    def InstanceField: StaticField = StaticField(this.jvmName, "INSTANCE", this.toTpe)
+    def InstanceField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, "INSTANCE", this.toTpe)
 
     def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName)
 
@@ -126,11 +132,11 @@ object BackendObjType {
   case class RecordExtend(field: String, value: BackendType, rest: BackendType) extends BackendObjType {
     def interface: BackendObjType.Record.type = Record
 
-    def LabelField: InstanceField = InstanceField(this.jvmName, "label", BackendObjType.String.toTpe)
+    def LabelField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "label", BackendObjType.String.toTpe)
 
-    def ValueField: InstanceField = InstanceField(this.jvmName, "value", value)
+    def ValueField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "value", value)
 
-    def RestField: InstanceField = InstanceField(this.jvmName, "rest", interface.toTpe)
+    def RestField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "rest", interface.toTpe)
 
     def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName)
 
@@ -154,9 +160,47 @@ object BackendObjType {
   //  case class Lattice(tpes: List[BackendType]) extends BackendObjType
 
   /**
-    * Represents a JVM type not represented in Flix like `java.lang.Object` or `dev.flix.runtime.ReifiedSourceLocation`.
+    * Represents a JVM type not represented in BackendObjType.
     * This should not be used for `java.lang.String` for example since `BackendObjType.String`
     * represents this type.
     */
   case class Native(className: JvmName) extends BackendObjType
+
+
+  case object ReifiedSourceLocation extends BackendObjType {
+    def ConstructorDescriptor: MethodDescriptor =
+      mkDescriptor(BackendObjType.String.toTpe, BackendType.Int32, BackendType.Int32, BackendType.Int32, BackendType.Int32)(VoidableType.Void)
+
+    def SourceField: InstanceField =
+      InstanceField(this.jvmName, IsPublic, IsFinal, "source", BackendObjType.String.toTpe)
+
+    def BeginLineField: InstanceField =
+      InstanceField(this.jvmName, IsPublic, IsFinal, "beginLine", BackendType.Int32)
+
+    def BeginColField: InstanceField =
+      InstanceField(this.jvmName, IsPublic, IsFinal, "beginCol", BackendType.Int32)
+
+    def EndLineField: InstanceField =
+      InstanceField(this.jvmName, IsPublic, IsFinal, "endLine", BackendType.Int32)
+
+    def EndColField: InstanceField =
+      InstanceField(this.jvmName, IsPublic, IsFinal, "endCol", BackendType.Int32)
+  }
+
+  case object Global extends BackendObjType {
+    def NewIdMethod: StaticMethod = StaticMethod(this.jvmName, "newId",
+      mkDescriptor()(BackendType.Int64))
+
+    def GetArgsMethod: StaticMethod = StaticMethod(this.jvmName, "getArgs",
+      mkDescriptor()(BackendType.Array(BackendObjType.String.toTpe)))
+
+    def SetArgsMethod: StaticMethod = StaticMethod(this.jvmName, "setArgs",
+      mkDescriptor(BackendType.Array(BackendObjType.String.toTpe))(VoidableType.Void))
+
+    def CounterField: StaticField =
+      StaticField(this.jvmName, IsPrivate, IsFinal, "counter", JvmName.AtomicLong.toTpe)
+
+    def ArgsField: StaticField = StaticField(this.jvmName, IsPrivate, IsFinal, "args",
+      BackendType.Array(BackendObjType.String.toTpe))
+  }
 }

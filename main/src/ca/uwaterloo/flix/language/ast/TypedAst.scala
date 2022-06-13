@@ -37,7 +37,7 @@ object TypedAst {
 
   case class Class(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: TypedAst.TypeParam, superClasses: List[Ast.TypeConstraint], signatures: List[TypedAst.Sig], laws: List[TypedAst.Def], loc: SourceLocation)
 
-  case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.InstanceSym, tpe: Type, tconstrs: List[Ast.TypeConstraint], defs: List[TypedAst.Def], ns: Name.NName, loc: SourceLocation)
+  case class Instance(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.InstanceSym, tpe: Type, tconstrs: List[Ast.TypeConstraint], defs: List[TypedAst.Def], ns: Name.NName, loc: SourceLocation)
 
   case class Sig(sym: Symbol.SigSym, spec: TypedAst.Spec, impl: Option[TypedAst.Impl])
 
@@ -187,6 +187,10 @@ object TypedAst {
 
     case class Stm(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
+    case class Discard(exp: TypedAst.Expression, eff: Type, loc: SourceLocation) extends TypedAst.Expression {
+      def tpe: Type = Type.mkUnit(loc)
+    }
+
     case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Choose(exps: List[TypedAst.Expression], rules: List[TypedAst.ChoiceRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
@@ -271,7 +275,7 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
-    case class FixpointLambda(preds: List[Name.Pred], exp: TypedAst.Expression, stf: Ast.Stratification, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class FixpointLambda(pparams: List[TypedAst.PredicateParam], exp: TypedAst.Expression, stf: Ast.Stratification, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class FixpointMerge(exp1: TypedAst.Expression, exp2: TypedAst.Expression, stf: Ast.Stratification, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -432,6 +436,8 @@ object TypedAst {
   }
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
+
+  case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: TypedAst.Expression)
 

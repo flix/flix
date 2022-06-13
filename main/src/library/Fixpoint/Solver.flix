@@ -21,8 +21,6 @@ use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.Denotation.{Relational, Latticenal};
 use Fixpoint/Ram.RamSym;
-use Fixpoint.PredSymsOf;
-use Fixpoint/PredSymsOf.predSymsOf;
 use Fixpoint/Shared.PredSym;
 use Fixpoint/Shared.PredSym.PredSym;
 
@@ -57,8 +55,7 @@ namespace Fixpoint {
             case Datalog(_) => compiler(d) |> interpret |> toModel
             case Model(_) => d
             case Join(Model(m), cs) =>
-                let ms = Map.map(mm -> MutMap(ref mm), m); // Was `let db = Map.map(Map.toMutMap, m) |> Map.toMutMap;`
-                let db = MutMap(ref ms);
+                let db = Static |> (Map.map(mm -> Map.toMutMap(mm, Static), m) |> Map.toMutMap);
                 compiler(cs) |> interpretWithDatabase(db) |> toModel
             case _ => bug!("Datalog normalization bug")
         };
@@ -112,12 +109,46 @@ namespace Fixpoint {
     } as & Pure
 
     ///
-    /// Returns the given Datalog program `d` with all predicates except `preds` renamed.
+    /// Renames every predicate symbol in `d` with a fresh name, except for those in `preds`.
     ///
     @Internal
-    pub def rename(_preds: Array[PredSym], d: Datalog[v]): Datalog[v] with Order[v], ToString[v] =
-        let _predSyms = predSymsOf(d);
-        d
+    pub def rename(preds: Array[PredSym, Static], d: Datalog[v]): Datalog[v] with Order[v], ToString[v] = {
+        use Fixpoint/PredSymsOf.predSymsOf;
+        use Fixpoint/SubstitutePredSym.substitute;
+
+        // Import a function that can create new ids.
+        import static dev.flix.runtime.Global.newId(): Int64 & Impure;
+
+        /// Determine all the predicate symbols in `d`.
+        let predSyms = predSymsOf(d);
+
+        /// Compute a substitition that assignes fresh names to all predicates except those in `preds`.
+        def f(macc, predSym) = {
+            if (Array.memberOf(predSym, preds)) {
+                // Case 1: Do not rename. Do not extend the map.
+                macc
+            } else {
+                // Case 2: Introduce a fresh name (index) for the prediate symbol.
+                let PredSym(name, _) = predSym;
+                let newPredSym = PredSym(name, newId() + 1i64); // We add one because the counter starts at zero.
+                Map.insert(predSym, newPredSym, macc)
+            }
+        };
+        let s = Set.foldLeft(f, Map.empty(), predSyms);
+
+        // Apply the computed substitution to the Datalog program `d`.
+        let r = substitute(d, s);
+
+        // Debugging
+        if (enableDebugging()) {
+            println(s);
+            println(d);
+            println(r)
+        } else ();
+
+        // Return the result.
+        r
+    } as & Pure
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -449,13 +480,13 @@ namespace Fixpoint {
              box(v15)]
         , p, ts) as & Pure
 
-    def projectIntoX[f: Type -> Type, t: Type, ef: Bool](f: t -> Array[Boxed] & ef, p: PredSym, ts: f[t]): Datalog[Boxed] & Impure with Foldable[f] =
-        let db = MutMap.empty();
+    def projectIntoX[f: Type -> Type, t: Type, ef: Bool](f: t -> Array[Boxed, Static] & ef, p: PredSym, ts: f[t]): Datalog[Boxed] & Impure with Foldable[f] =
+        let db = new MutMap(Static);
         Foldable.foldLeft(() -> t -> {
             let vs = f(t);
             let arity = Array.length(vs);
             let ramSym = RamSym.Full(p, arity, Denotation.Relational);
-            let rel = MutMap.getOrElsePut!(ramSym, MutMap.empty(), db);
+            let rel = MutMap.getOrElsePut!(ramSym, new MutMap(Static), db);
             MutMap.put!(Tuple(vs), $DEFAULT$, rel)
         }, (), ts);
         toModel(db)
@@ -464,14 +495,14 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts0(p: PredSym, d: Datalog[Boxed]): Array[v] with Boxable[v] =
+    pub def facts0(p: PredSym, d: Datalog[Boxed]): Array[v, Static] with Boxable[v] =
         factsOf(_ -> () as v, p, d) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts1(p: PredSym, d: Datalog[Boxed]): Array[v] with Boxable[v] =
+    pub def facts1(p: PredSym, d: Datalog[Boxed]): Array[v, Static] with Boxable[v] =
         let f = terms -> unbox(terms[0]);
         factsOf(f, p, d) as & Pure
 
@@ -479,7 +510,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts2(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2)] with Boxable[t1], Boxable[t2] =
+    pub def facts2(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2), Static] with Boxable[t1], Boxable[t2] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]));
         factsOf(f, p, d) as & Pure
 
@@ -487,7 +518,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts3(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3)] with Boxable[t1], Boxable[t2], Boxable[t3] =
+    pub def facts3(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3), Static] with Boxable[t1], Boxable[t2], Boxable[t3] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]));
         factsOf(f, p, d) as & Pure
 
@@ -495,7 +526,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts4(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4] =
+    pub def facts4(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]));
         factsOf(f, p, d) as & Pure
 
@@ -503,7 +534,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts5(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5] =
+    pub def facts5(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]));
         factsOf(f, p, d) as & Pure
 
@@ -511,7 +542,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts6(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6] =
+    pub def facts6(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]));
         factsOf(f, p, d) as & Pure
 
@@ -519,7 +550,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts7(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7] =
+    pub def facts7(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]));
         factsOf(f, p, d) as & Pure
 
@@ -527,7 +558,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts8(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8] =
+    pub def facts8(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]));
         factsOf(f, p, d) as & Pure
 
@@ -535,7 +566,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts9(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9] =
+    pub def facts9(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]), unbox(terms[8]));
         factsOf(f, p, d) as & Pure
 
@@ -543,7 +574,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts10(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10] =
+    pub def facts10(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]), unbox(terms[8]), unbox(terms[9]));
         factsOf(f, p, d) as & Pure
 
@@ -551,7 +582,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts11(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11] =
+    pub def facts11(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]), unbox(terms[8]), unbox(terms[9]), unbox(terms[10]));
         factsOf(f, p, d) as & Pure
 
@@ -559,7 +590,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts12(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12] =
+    pub def facts12(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]), unbox(terms[8]), unbox(terms[9]), unbox(terms[10]), unbox(terms[11]));
         factsOf(f, p, d) as & Pure
 
@@ -567,7 +598,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts13(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13] =
+    pub def facts13(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]), unbox(terms[8]), unbox(terms[9]), unbox(terms[10]), unbox(terms[11]), unbox(terms[12]));
         factsOf(f, p, d) as & Pure
 
@@ -575,7 +606,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts14(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14] =
+    pub def facts14(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]), unbox(terms[8]), unbox(terms[9]), unbox(terms[10]), unbox(terms[11]), unbox(terms[12]), unbox(terms[13]));
         factsOf(f, p, d) as & Pure
 
@@ -583,16 +614,16 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts15(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14], Boxable[t15] =
+    pub def facts15(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14], Boxable[t15] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]), unbox(terms[8]), unbox(terms[9]), unbox(terms[10]), unbox(terms[11]), unbox(terms[12]), unbox(terms[13]), unbox(terms[14]));
         factsOf(f, p, d) as & Pure
 
     ///
     /// Returns an array of facts associated with the given predicate symbol `p` in the given Datalog program `d`.
     ///
-    def factsOf(f: Array[v] -> t & ef, p: PredSym, d: Datalog[v]): Array[t] & Impure = match d {
+    def factsOf(f: Array[v, Static] -> t & ef, p: PredSym, d: Datalog[v]): Array[t, Static] & Impure = match d {
         case Datalog(_, cs) =>
-            let pFacts = new MutList(static);
+            let pFacts = new MutList(Static);
             Array.foreach(c -> match c {
                 case Constraint(HeadAtom(headPred, _, terms), []) =>
                     if (headPred == p)
@@ -602,10 +633,10 @@ namespace Fixpoint {
                         ()
                 case _ => ()
             }, cs);
-            MutList.toArray(pFacts)
+            MutList.toArray(pFacts, Static)
         case Model(db) =>
             use Fixpoint/Ram.toDenotation;
-            let pFacts = new MutList(static);
+            let pFacts = new MutList(Static);
             let query = ramSym -> match ramSym {
                 case RamSym.Full(predSym, _, _) => match predSym <=> p {
                     case EqualTo => EqualTo
@@ -623,11 +654,11 @@ namespace Fixpoint {
                                 tuple[i]
                             else
                                 lat
-                        }, Array.length(tuple) + 1, static);
+                        }, Array.length(tuple) + 1, Static);
                         MutList.push!(f(vs), pFacts)
                     }, rel)
             }, db);
-            MutList.toArray(pFacts)
+            MutList.toArray(pFacts, Static)
         case Join(d1, d2) => Array.append(factsOf(f, p, d1), factsOf(f, p, d2))
     }
 

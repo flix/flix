@@ -1,12 +1,7 @@
 ///
-/// Ref[t] is a type alias for a scoped ref with a global lifetime.
+/// Static is a type alias for false and denotes the global lifetime.
 ///
-pub type alias Ref[t] = ScopedRef[t, static]
-
-///
-/// Array[t] is a type alias for a scoped array with a global lifetime.
-///
-pub type alias Array[t] = ScopedArray[t, false]
+pub type alias Static = false
 
 ///
 /// The Reified Flix Bools.
@@ -110,7 +105,14 @@ pub def |>(x: a, f: a -> b & ef): b & ef = f(x)
 ///
 /// Given a pair `x` and a function `f` returns `f(x)`.
 ///
-pub def ||>(x: (a, b), f: ((a, b)) -> c & ef): c & ef = f(x)
+pub def ||>(x: (a, b), f: a -> (b -> c & ef)): c & ef = f(fst(x), snd(x))
+
+///
+/// Pipes the given value `x` into the function `f`.
+///
+/// Given a value `x` and a function `f` returns `x`.
+///
+pub def !>( x: a, f: a -> Unit & ef): a & ef = f(x); x
 
 ///
 /// Returns `true` if `x` implies `y` logically holds.

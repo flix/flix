@@ -139,7 +139,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given instance `inst0`.
     */
   private def visitInstance(inst0: TypedAst.Instance): Iterator[SemanticToken] = inst0 match {
-    case TypedAst.Instance(_, _, sym, tpe, tconstrs, defs, _, _) =>
+    case TypedAst.Instance(_, _, _, sym, tpe, tconstrs, defs, _, _) =>
       // NB: we use SemanticTokenType.Class because the OOP "Class" most directly corresponds to the FP "Instance"
       val t = SemanticToken(SemanticTokenType.Class, Nil, sym.loc)
       val st1 = Iterator(t)
@@ -323,6 +323,8 @@ object SemanticTokensProvider {
     case Expression.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
+    case Expression.Discard(exp, _, _) => visitExp(exp)
+
     case Expression.Match(matchExp, rules, _, _, _) =>
       val m = visitExp(matchExp)
       rules.foldLeft(m) {
@@ -447,10 +449,8 @@ object SemanticTokensProvider {
         case (acc, c) => acc ++ visitConstraint(c)
       }
 
-    case Expression.FixpointLambda(preds, exp, _, _, _, _) =>
-      preds.foldLeft(visitExp(exp)) {
-        case (acc, pred) => acc ++ Iterator(SemanticToken(SemanticTokenType.EnumMember, Nil, pred.loc))
-      }
+    case Expression.FixpointLambda(pparams, exp, _, _, _, _) =>
+      visitPredicateParams(pparams) ++ visitExp(exp)
 
     case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
@@ -565,7 +565,13 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
       Iterator(t) ++ args.flatMap(visitType).iterator
 
-    case Type.UnkindedVar(_, _) =>
+    case _: Type.UnkindedVar =>
+      throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+
+    case _: Type.UnkindedArrow =>
+      throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+
+    case _: Type.ReadWrite =>
       throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
   }
 
@@ -598,8 +604,8 @@ object SemanticTokensProvider {
     case TypeConstructor.Tag(_, _) => false
     case TypeConstructor.KindedEnum(_, _) => true
     case TypeConstructor.Native(_) => true
-    case TypeConstructor.ScopedArray => true
-    case TypeConstructor.ScopedRef => true
+    case TypeConstructor.Array => true
+    case TypeConstructor.Ref => true
     case TypeConstructor.Tuple(_) => false
     case TypeConstructor.Relation => false
     case TypeConstructor.Lattice => false
@@ -608,6 +614,11 @@ object SemanticTokensProvider {
     case TypeConstructor.Not => false
     case TypeConstructor.And => false
     case TypeConstructor.Or => false
+    case TypeConstructor.Complement => false
+    case TypeConstructor.Union => false
+    case TypeConstructor.Intersection => false
+    case TypeConstructor.Difference => false
+    case TypeConstructor.Effect(_) => false
     case TypeConstructor.Region => false
 
     case TypeConstructor.UnkindedEnum(_) => throw InternalCompilerException("Unexpected unkinded type.")
@@ -647,6 +658,23 @@ object SemanticTokensProvider {
     case FormalParam(sym, _, tpe, _) =>
       val o = getSemanticTokenType(sym, tpe)
       val t = SemanticToken(o, Nil, sym.loc)
+      Iterator(t) ++ visitType(tpe)
+  }
+
+  /**
+    * Returns all semantic tokens in the given predicate parameters `pparams0`.
+    */
+  private def visitPredicateParams(pparams0: List[PredicateParam]): Iterator[SemanticToken] =
+    pparams0.foldLeft(Iterator.empty[SemanticToken]) {
+      case (acc, fparam0) => acc ++ visitPredicateParam(fparam0)
+    }
+
+  /**
+    * Returns all semantic tokens in the given predicate parameter `pparam0`.
+    */
+  private def visitPredicateParam(pparam0: PredicateParam): Iterator[SemanticToken] = pparam0 match {
+    case PredicateParam(pred, tpe, _) =>
+      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, pred.loc)
       Iterator(t) ++ visitType(tpe)
   }
 

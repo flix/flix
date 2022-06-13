@@ -3,6 +3,19 @@ namespace TestNel {
     use Hash.hash;
 
     /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toString01(): Bool = Nel.toString(Nel(1, Nil)) == "Nel(1, Nil)"
+
+    @test
+    def toString02(): Bool = Nel.toString(Nel(1, 2 :: 3 :: 4 :: Nil)) == "Nel(1, 2 :: 3 :: 4 :: Nil)"
+
+    @test
+    def toString03(): Bool = Nel.toString(Nel('a', 'b' :: Nil)) == "Nel(a, b :: Nil)"
+
+    /////////////////////////////////////////////////////////////////////////////
     // singleton                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -360,13 +373,46 @@ namespace TestNel {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foldRight01(): Bool = Nel.foldRight((x, k) -> k() - x, 0, Nel(1, Nil)) == -1
+    def foldRight01(): Bool = Nel.foldRight((x, acc) -> acc - x, 0, Nel(1, Nil)) == -1
 
     @test
-    def foldRight02(): Bool = Nel.foldRight((x, k) -> k() - x, 0, Nel(1, 2 :: Nil)) == -3
+    def foldRight02(): Bool = Nel.foldRight((x, acc) -> acc - x, 0, Nel(1, 2 :: Nil)) == -3
 
     @test
-    def foldRight03(): Bool = Nel.foldRight((x, k) -> k() - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
+    def foldRight03(): Bool = Nel.foldRight((x, acc) -> acc - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRightWithCont                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRightWithCont01(): Bool = Nel.foldRightWithCont((x, k) -> k() - x, 0, Nel(1, Nil)) == -1
+
+    @test
+    def foldRightWithCont02(): Bool = Nel.foldRightWithCont((x, k) -> k() - x, 0, Nel(1, 2 :: Nil)) == -3
+
+    @test
+    def foldRightWithCont03(): Bool = Nel.foldRightWithCont((x, k) -> k() - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool =
+        Nel.foldMap(x -> 2 * x, Nel(1, 2 :: Nil)) == 6
+
+    @test
+    def foldMap02(): Bool =
+        Nel.foldMap(x -> if (x == "a") "b" else x, Nel("a", Nil)) == "b"
+
+    @test
+    def foldMap03(): Bool =
+        Nel.foldMap(x -> if (x == "c") "b" else x, Nel("a", "b" :: "c" :: Nil)) == "abb"
+
+    @test
+    def foldMap04(): Bool =
+        Nel.foldMap(Int32.toString, Nel(1, 2 :: 3 :: Nil)) == "123"
 
     /////////////////////////////////////////////////////////////////////////////
     // reduce                                                                  //
@@ -646,6 +692,26 @@ namespace TestNel {
     def unzip03(): Bool = Nel.unzip(Nel((1, 1), (2, 2) :: (3, 3) :: Nil)) == (Nel(1, 2 :: 3 :: Nil), Nel(1, 2 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
+    // zipWithIndex                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithIndex01(): Bool = Nel.zipWithIndex(Nel(1, Nil)) == Nel((1, 0), Nil)
+
+    @test
+    def zipWithIndex02(): Bool = Nel.zipWithIndex(Nel(1, 2 :: Nil)) == Nel((1, 0), (2, 1) :: Nil)
+
+    @test
+    def zipWithIndex03(): Bool = Nel.zipWithIndex(Nel(2, 1 :: Nil)) == Nel((2, 0), (1, 1) :: Nil)
+
+    @test
+    def zipWithIndex04(): Bool = Nel.zipWithIndex(Nel(1, 2 :: 3 :: Nil)) == Nel((1, 0), (2, 1) :: (3, 2) :: Nil)
+
+    @test
+    def zipWithIndex05(): Bool =
+        Nel.zipWithIndex(Nel(1, 2 :: 3 :: 4 :: 5 :: Nil)) == Nel((1, 0), (2, 1) :: (3, 2) :: (4, 3) :: (5, 4) :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -657,6 +723,64 @@ namespace TestNel {
 
     @test
     def toList03(): Bool = Nel.toList(Nel(1, 2 :: 3 :: Nil)) == 1 :: 2 :: 3 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toMutDeque                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutDeque01(): Bool = region r {
+        let l = Nel(1, 2 :: Nil);
+        let d1 = Nel.toMutDeque(l, r);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushBack(1, d2);
+        MutDeque.pushBack(2, d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque02(): Bool = region r {
+        let l = Nel(3, 1 :: 2 :: Nil);
+        let d1 = Nel.toMutDeque(l, r);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushBack(1, d2);
+        MutDeque.pushBack(2, d2);
+        MutDeque.pushFront(3, d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque03(): Bool = region r {
+        let l = Nel('a', 'b' :: 'c' :: Nil);
+        let d1 = Nel.toMutDeque(l, r);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushFront('c', d2);
+        MutDeque.pushFront('b', d2);
+        MutDeque.pushFront('a', d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foreach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foreach01(): Bool & Impure =
+        let r = ref 21;
+        Nel.foreach(x -> r := x, Nel.singleton(1));
+        1 == deref r
+
+    @test
+    def foreach02(): Bool & Impure =
+        let r = ref 21;
+        Nel.foreach(x -> r := x, Nel(1, 2 :: 3 :: Nil));
+        3 == deref r
 
     /////////////////////////////////////////////////////////////////////////////
     // hash                                                                    //

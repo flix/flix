@@ -27,7 +27,7 @@ object SourceLocation {
     import scala.math.Ordered.orderingToOrdered
 
     def compare(x: SourceLocation, y: SourceLocation): Int =
-      (x.source.name, x.beginLine, x.beginCol) compare(y.source.name, y.beginLine, y.beginCol)
+      (x.source.name, x.beginLine, x.beginCol, x.endLine, x.endCol).compare(y.source.name, y.beginLine, y.beginCol, y.endLine, y.endCol)
   }
 
 }

@@ -69,29 +69,29 @@ namespace Test/Exp/Interpolation {
         let x = "a";
         let y = "b";
         let z = "c";
-        "${toUpperCase(x)}${y}${z}" == "Abc"
+        "${String.toUpperCase(x)}${y}${z}" == "Abc"
 
     @test
     def interpolation13(): Bool =
         let x = "a";
         let y = "b";
         let z = "c";
-        "${x}${toUpperCase(y)}${z}" == "aBc"
+        "${x}${String.toUpperCase(y)}${z}" == "aBc"
 
     @test
     def interpolation14(): Bool =
         let x = "a";
         let y = "b";
         let z = "c";
-        "${x}${y}${toUpperCase(z)}" == "abC"
+        "${x}${y}${String.toUpperCase(z)}" == "abC"
 
     @test
     def interpolation15(): Bool =
-        "${toUpperCase("w")}" == "W"
+        "${String.toUpperCase("w")}" == "W"
 
     @test
     def interpolation16(): Bool =
-        "${toLowerCase("W")}" == "w"
+        "${String.toLowerCase("W")}" == "w"
 
     @test
     def interpolation17(): Bool =
@@ -201,24 +201,6 @@ namespace Test/Exp/Interpolation {
         case Blue
     }
 
-    pub enum Option[t] {
-        case None,
-        case Some(t)
-    }
-
-    pub enum Result[t, e] {
-        case Ok(t),
-        case Err(e)
-    }
-
-    def toLowerCase(s: String): String =
-        import java.lang.String.toLowerCase(): String & Pure;
-        (s |> toLowerCase)
-
-    def toUpperCase(s: String): String =
-        import java.lang.String.toUpperCase(): String & Pure;
-        (s |> toUpperCase)
-
 }
 
 ///pub class ToString[a] {
@@ -251,25 +233,5 @@ instance ToString[Test/Exp/Interpolation.Color] {
             case Red   => "r"
             case Green => "g"
             case Blue  => "b"
-        }
-}
-
-instance ToString[Test/Exp/Interpolation.Option[a]] with ToString[a] {
-    pub def toString(o: Test/Exp/Interpolation.Option[a]): String =
-        use Test/Exp/Interpolation.Option.None;
-        use Test/Exp/Interpolation.Option.Some;
-        match o {
-            case None       => "None"
-            case Some(v)    => "Some(${v})"
-        }
-}
-
-instance ToString[Test/Exp/Interpolation.Result[t, e]] with ToString[t], ToString[e] {
-    pub def toString(r: Test/Exp/Interpolation.Result[t, e]): String =
-        use Test/Exp/Interpolation.Result.Ok;
-        use Test/Exp/Interpolation.Result.Err;
-        match r {
-            case Ok(v)  => "Ok(${v})"
-            case Err(v) => "Err(${v})"
         }
 }

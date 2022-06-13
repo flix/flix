@@ -126,7 +126,7 @@ object Lowering {
     lazy val SolveType: Type = Type.mkPureArrow(Datalog, Datalog, SourceLocation.Unknown)
     lazy val MergeType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Datalog, SourceLocation.Unknown)
     lazy val FilterType: Type = Type.mkPureUncurriedArrow(List(PredSym, Datalog), Datalog, SourceLocation.Unknown)
-    lazy val RenameType: Type = Type.mkPureUncurriedArrow(List(Type.mkArray(PredSym, SourceLocation.Unknown), Datalog), Datalog, SourceLocation.Unknown)
+    lazy val RenameType: Type = Type.mkPureUncurriedArrow(List(Type.mkArray(PredSym, Type.False, SourceLocation.Unknown), Datalog), Datalog, SourceLocation.Unknown)
   }
 
   /**
@@ -174,11 +174,11 @@ object Lowering {
     * Lowers the given instance `inst0`.
     */
   private def visitInstance(inst0: Instance)(implicit root: Root, flix: Flix): Instance = inst0 match {
-    case Instance(doc, mod, sym, tpe0, tconstrs0, defs0, ns, loc) =>
+    case Instance(doc, ann, mod, sym, tpe0, tconstrs0, defs0, ns, loc) =>
       val tpe = visitType(tpe0)
       val tconstrs = tconstrs0.map(visitTypeConstraint)
       val defs = defs0.map(visitDef)
-      Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
+      Instance(doc, ann, mod, sym, tpe, tconstrs, defs, ns, loc)
   }
 
   /**
@@ -349,6 +349,10 @@ object Lowering {
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
       Expression.Stm(e1, e2, t, eff, loc)
+
+    case Expression.Discard(exp, eff, loc) =>
+      val e = visitExp(exp)
+      Expression.Discard(e, eff, loc)
 
     case Expression.Match(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -538,10 +542,10 @@ object Lowering {
     case Expression.FixpointConstraintSet(cs, _, _, loc) =>
       mkDatalog(cs, loc)
 
-    case Expression.FixpointLambda(preds, exp, _, _, eff, loc) =>
+    case Expression.FixpointLambda(pparams, exp, _, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Rename)
       val defExp = Expression.Def(defn.sym, Types.RenameType, loc)
-      val predExps = mkArray(preds.map(mkPredSym), Type.mkArray(Types.PredSym, loc), loc)
+      val predExps = mkArray(pparams.map(pparam => mkPredSym(pparam.pred)), Type.mkArray(Types.PredSym, Type.False, loc), loc)
       val argExps = predExps :: visitExp(exp) :: Nil
       val resultType = Types.Datalog
       Expression.Apply(defExp, argExps, resultType, eff, loc)
@@ -593,7 +597,7 @@ object Lowering {
       // Compute the arity of the predicate symbol.
       // The type is either of the form `Array[(a, b, c)]` or `Array[a]`.
       val arity = Type.eraseAliases(tpe) match {
-        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.ScopedArray, _), innerType, _), _, _) => innerType.typeConstructor match {
+        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), innerType, _), _, _) => innerType.typeConstructor match {
           case Some(TypeConstructor.Tuple(_)) => innerType.typeArguments.length
           case Some(TypeConstructor.Unit) => 0
           case _ => 1
@@ -728,6 +732,8 @@ object Lowering {
       case Type.Alias(sym, args, t, loc) => Type.Alias(sym, args.map(visit), visit(t), loc)
 
       case _: Type.UnkindedVar => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+      case _: Type.ReadWrite => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+      case _: Type.UnkindedArrow => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
       case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
     }
 
@@ -1051,7 +1057,7 @@ object Lowering {
   private def mkPredSym(pred: Name.Pred): Expression = pred match {
     case Name.Pred(sym, loc) =>
       val nameExp = Expression.Str(sym, loc)
-      val idExp = Expression.Int32(0, loc)
+      val idExp = Expression.Int64(0, loc)
       val inner = mkTuple(List(nameExp, idExp), loc)
       mkTag(Enums.PredSym, "PredSym", inner, Types.PredSym, loc)
   }
@@ -1236,7 +1242,7 @@ object Lowering {
     * Returns a pure array expression constructed from the given list of expressions `exps`.
     */
   private def mkArray(exps: List[Expression], elmType: Type, loc: SourceLocation): Expression = {
-    val tpe = Type.mkScopedArray(elmType, Type.Pure, loc)
+    val tpe = Type.mkArray(elmType, Type.Pure, loc)
     val eff = Type.Pure
     val reg = Expression.Unit(loc)
     Expression.ArrayLit(exps, reg, tpe, eff, loc)
@@ -1374,6 +1380,10 @@ object Lowering {
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
       Expression.Stm(e1, e2, tpe, eff, loc)
+
+    case Expression.Discard(exp, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Discard(e, eff, loc)
 
     case Expression.Match(_, _, _, _, _) => ??? // TODO
 
@@ -1519,9 +1529,9 @@ object Lowering {
       val e = substExp(exp, subst)
       Expression.Force(e, tpe, eff, loc)
 
-    case Expression.FixpointLambda(preds, exp, stf, tpe, eff, loc) =>
+    case Expression.FixpointLambda(pparams, exp, stf, tpe, eff, loc) =>
       val e = substExp(exp, subst)
-      Expression.FixpointLambda(preds, e, stf, tpe, eff, loc)
+      Expression.FixpointLambda(pparams, e, stf, tpe, eff, loc)
 
     case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>
       val e1 = substExp(exp1, subst)

@@ -31,13 +31,6 @@ import org.objectweb.asm.{ClassWriter, Opcodes}
 // TODO: There are further things you can constrain, fx. final classes have implicitly final methods.
 sealed trait ClassMaker {
   /**
-    * Creates a static field.
-    */
-  def mkStaticField(fieldName: String, fieldType: BackendType, v: Visibility, f: Final): Unit = {
-    makeField(fieldName, fieldType, v, f, IsStatic)
-  }
-
-  /**
     * Creates a static constructor.
     */
   def mkStaticConstructor(ins: InstructionSet): Unit =
@@ -67,6 +60,11 @@ sealed trait ClassMaker {
     field.visitEnd()
   }
 
+  def mkField(f: Field): Unit = f match {
+    case InstanceField(_, v, f, name, tpe) => makeField(name, tpe, v, f, NotStatic)
+    case StaticField(_, v, f, name, tpe) => makeField(name, tpe, v, f, IsStatic)
+  }
+
   protected def makeMethod(i: Option[InstructionSet], methodName: String, d: MethodDescriptor, v: Visibility, f: Final, s: Static, a: Abstract): Unit = {
     val m = v.toInt + f.toInt + s.toInt + a.toInt
     val mv = visitor.visitMethod(m, methodName, d.toDescriptor, null, null)
@@ -89,10 +87,6 @@ object ClassMaker {
   class InstanceClassMaker(cw: ClassWriter) extends ClassMaker {
     protected val visitor: ClassWriter = cw
 
-    def mkField(fieldName: String, fieldType: BackendType, v: Visibility, f: Final): Unit = {
-      makeField(fieldName, fieldType, v, f, NotStatic)
-    }
-
     def mkConstructor(ins: InstructionSet, d: MethodDescriptor, v: Visibility): Unit = {
       makeMethod(Some(ins), JvmName.ConstructorMethod, d, v, NotFinal, NotStatic, NotAbstract)
     }
@@ -109,10 +103,6 @@ object ClassMaker {
 
   class AbstractClassMaker(cw: ClassWriter) extends ClassMaker {
     protected val visitor: ClassWriter = cw
-
-    def mkField(fieldName: String, fieldType: BackendType, v: Visibility, f: Final): Unit = {
-      makeField(fieldName, fieldType, v, f, NotStatic)
-    }
 
     def mkConstructor(ins: InstructionSet, d: MethodDescriptor, v: Visibility): Unit = {
       makeMethod(Some(ins), JvmName.ConstructorMethod, d, v, NotFinal, NotStatic, NotAbstract)
@@ -229,33 +219,21 @@ object ClassMaker {
     case object NotInterface extends Interface
   }
 
-  sealed case class InstanceField(clazz: JvmName, name: String, tpe: BackendType) {
-    def mkField(cm: InstanceClassMaker, v: Visibility, f: Final): Unit =
-      cm.mkField(name, tpe, v, f)
+  sealed trait Field {
+    def clazz: JvmName
 
-    def mkField(cm: AbstractClassMaker, v: Visibility, f: Final): Unit =
-      cm.mkField(name, tpe, v, f)
+    def name: String
 
-    def putField(): InstructionSet =
-      PUTFIELD(clazz, name, tpe)
+    def tpe: BackendType
 
-    def getField(): InstructionSet =
-      GETFIELD(clazz, name, tpe)
+    def v: Visibility
+
+    def f: Final
   }
 
-  sealed case class StaticField(clazz: JvmName, name: String, tpe: BackendType) {
-    def mkStaticField(cm: InstanceClassMaker, v: Visibility, f: Final): Unit =
-      cm.mkStaticField(name, tpe, v, f)
+  sealed case class InstanceField(clazz: JvmName, v: Visibility, f: Final, name: String, tpe: BackendType) extends Field
 
-    def mkStaticField(cm: AbstractClassMaker, v: Visibility, f: Final): Unit =
-      cm.mkStaticField(name, tpe, v, f)
-
-    def putStaticField(): InstructionSet =
-      PUTSTATIC(clazz, name, tpe)
-
-    def getStaticField(): InstructionSet =
-      GETSTATIC(clazz, name, tpe)
-  }
+  sealed case class StaticField(clazz: JvmName, v: Visibility, f: Final, name: String, tpe: BackendType) extends Field
 
   sealed case class InstanceMethod(clazz: JvmName, name: String, d: MethodDescriptor) {
     def mkMethod(cm: InstanceClassMaker, ins: InstructionSet, v: Visibility, f: Final): Unit =

@@ -17,8 +17,8 @@
 namespace Fixpoint/Ram {
     pub enum RelOp[v] {
         case Search(RowVar, RamSym[v], RelOp[v])
-        case Query(RowVar, RamSym[v], Array[(Int32, RamTerm[v])], RelOp[v])
-        case Project(Array[RamTerm[v]], RamSym[v])
+        case Query(RowVar, RamSym[v], Array[(Int32, RamTerm[v]), Static], RelOp[v])
+        case Project(Array[RamTerm[v], Static], RamSym[v])
         case If(List[BoolExp[v]], RelOp[v])
     }
 
@@ -30,7 +30,7 @@ namespace Fixpoint/Ram {
                 case Search(var, ramSym, body) =>
                     "search ${var} ∈ ${ramSym} do${nl}${String.indent(4, "${body}")}end"
                 case Query(var, ramSym, prefixQuery, body) =>
-                    let query = Array.formatWith(match (i, term) -> {
+                    let query = Array.joinWith(match (i, term) -> {
                         ToString.toString(BoolExp.Eq(RamTerm.RowLoad(var, i), term))
                     }, " ∧ ", prefixQuery);
                     "query {${var} ∈ ${ramSym} | ${query}} do${nl}${String.indent(4, "${body}")}end"
