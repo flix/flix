@@ -106,7 +106,6 @@ object JvmType {
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Flix Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //
 
-  val ReifiedSourceLocation: JvmType.Reference = Reference(JvmName.ReifiedSourceLocation)
   val Unit: JvmType.Reference = Reference(BackendObjType.Unit.jvmName)
 
   //

@@ -805,7 +805,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("RedundantPurityCast.02") {
     val input =
       s"""
-         |pub def f(): Array[Int32] & Impure =
+         |pub def f(): Array[Int32, false] & Impure =
          |  let x = [1, 2, 3];
          |  x as & Pure
          |

@@ -28,9 +28,7 @@ pub enum Map[k, v] {
 instance Boxable[Map[k, v]] with Boxable[k], Boxable[v]
 
 instance ToString[Map[k, v]] with ToString[k], ToString[v] {
-    pub def toString(m: Map[k, v]): String =
-        let s = Map.foldRightWithKey((k, v, acc) -> "${k} => ${v}, ${acc}", "", m);
-        "Map#{${String.dropRight(2, s)}}"
+    pub def toString(m: Map[k, v]): String = Map.toString(m)
 }
 
 instance Hash[Map[k, v]] with Hash[k], Hash[v] {
@@ -53,6 +51,10 @@ instance Order[Map[k, v]] with Order[k], Order[v] {
 
 instance Functor[Map[k]] {
     pub def map(f: v1 -> v2 & ef, m: Map[k, v1]): Map[k, v2] & ef = Map.map(f, m)
+}
+
+instance ForEach[Map[k]] {
+    pub def foreach(f: a -> Unit & ef, m: Map[k, a]): Unit & ef = Map.foreach((_, v) -> f(v), m)
 }
 
 instance Foldable[Map[k]] {
@@ -78,7 +80,44 @@ instance Monoid[Map[k, v]] with Order[k], Monoid[v] {
 
 instance CommutativeMonoid[Map[k, v]] with Order[k], CommutativeMonoid[v]
 
+instance LowerBound[Map[k, v]] {
+    pub def minValue(): Map[k, v] = Map.empty()
+}
+
+instance PartialOrder[Map[k, v]] with Order[k], Eq[v] {
+    pub def lessEqual(m1: Map[k, v], m2: Map[k, v]): Bool = m1 `Map.isSubmapOf` m2
+}
+
+instance JoinLattice[Map[k, v]] with Order[k], Eq[v], JoinLattice[v] {
+    pub def leastUpperBound(m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
+        Map.unionWith(JoinLattice.leastUpperBound, m1, m2)
+}
+
+instance MeetLattice[Map[k, v]] with Order[k], Eq[v], MeetLattice[v] {
+    pub def greatestLowerBound(m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
+        Map.intersectionWith(MeetLattice.greatestLowerBound, m1, m2)
+}
+
 namespace Map {
+
+    ///
+    /// Returns a string representation of the given map `m`.
+    ///
+    pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region r {
+        let sb = new StringBuilder(r);
+        let first = ref true;
+
+        StringBuilder.appendString!("Map#{", sb);
+
+        let f = (k, v) -> {
+            if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
+            StringBuilder.appendString!("${k} => ${v}", sb)
+        };
+        Map.foreach(f, m);
+
+        StringBuilder.appendString!("}", sb);
+        StringBuilder.toString(sb)
+    }
 
     ///
     /// Returns the number of threads to use for parallel evaluation.
@@ -485,6 +524,12 @@ namespace Map {
     pub def foldRightWithKeyCont(f: (k, v, Unit -> b & ef) -> b & ef, z: b, m: Map[k, v]): b & ef =
         let Map(t) = m;
         RedBlackTree.foldRightWithCont(f, z, t)
+
+    ///
+    /// Returns the result of mapping each key-value pair and combining the results.
+    ///
+    pub def foldMapWithKey(f: (k, v) -> b & ef, m: Map[k, v]): b & ef with Monoid[b] =
+        foldLeftWithKey((acc, k, v) -> Monoid.combine(acc, f(k, v)), Monoid.empty(), m)
 
     ///
     /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.

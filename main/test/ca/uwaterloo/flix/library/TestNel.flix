@@ -3,6 +3,19 @@ namespace TestNel {
     use Hash.hash;
 
     /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toString01(): Bool = Nel.toString(Nel(1, Nil)) == "Nel(1, Nil)"
+
+    @test
+    def toString02(): Bool = Nel.toString(Nel(1, 2 :: 3 :: 4 :: Nil)) == "Nel(1, 2 :: 3 :: 4 :: Nil)"
+
+    @test
+    def toString03(): Bool = Nel.toString(Nel('a', 'b' :: Nil)) == "Nel(a, b :: Nil)"
+
+    /////////////////////////////////////////////////////////////////////////////
     // singleton                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -710,6 +723,64 @@ namespace TestNel {
 
     @test
     def toList03(): Bool = Nel.toList(Nel(1, 2 :: 3 :: Nil)) == 1 :: 2 :: 3 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toMutDeque                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutDeque01(): Bool = region r {
+        let l = Nel(1, 2 :: Nil);
+        let d1 = Nel.toMutDeque(l, r);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushBack(1, d2);
+        MutDeque.pushBack(2, d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque02(): Bool = region r {
+        let l = Nel(3, 1 :: 2 :: Nil);
+        let d1 = Nel.toMutDeque(l, r);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushBack(1, d2);
+        MutDeque.pushBack(2, d2);
+        MutDeque.pushFront(3, d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque03(): Bool = region r {
+        let l = Nel('a', 'b' :: 'c' :: Nil);
+        let d1 = Nel.toMutDeque(l, r);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushFront('c', d2);
+        MutDeque.pushFront('b', d2);
+        MutDeque.pushFront('a', d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foreach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foreach01(): Bool & Impure =
+        let r = ref 21;
+        Nel.foreach(x -> r := x, Nel.singleton(1));
+        1 == deref r
+
+    @test
+    def foreach02(): Bool & Impure =
+        let r = ref 21;
+        Nel.foreach(x -> r := x, Nel(1, 2 :: 3 :: Nil));
+        3 == deref r
 
     /////////////////////////////////////////////////////////////////////////////
     // hash                                                                    //

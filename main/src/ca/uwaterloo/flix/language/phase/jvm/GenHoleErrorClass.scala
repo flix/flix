@@ -26,9 +26,9 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescripto
 object GenHoleErrorClass {
 
   private val holeField: InstanceField =
-    InstanceField(JvmName.HoleError, "hole", BackendObjType.String.toTpe)
+    InstanceField(JvmName.HoleError, IsPublic, IsFinal, "hole", BackendObjType.String.toTpe)
   private val locationField: InstanceField =
-    InstanceField(JvmName.HoleError, "location", JvmName.ReifiedSourceLocation.toTpe)
+    InstanceField(JvmName.HoleError, IsPublic, IsFinal, "location", BackendObjType.ReifiedSourceLocation.toTpe)
 
   def gen()(implicit flix: Flix): Map[JvmName, JvmClass] = {
     Map(JvmName.HoleError -> JvmClass(JvmName.HoleError, genByteCode()))
@@ -37,11 +37,11 @@ object GenHoleErrorClass {
   private def genByteCode()(implicit flix: Flix): Array[Byte] = {
     val cm = ClassMaker.mkClass(JvmName.HoleError, IsFinal, JvmName.FlixError)
 
-    cm.mkConstructor(genConstructor(), mkDescriptor(BackendObjType.String.toTpe, JvmName.ReifiedSourceLocation.toTpe)(VoidableType.Void), IsPublic)
+    cm.mkConstructor(genConstructor(), mkDescriptor(BackendObjType.String.toTpe, BackendObjType.ReifiedSourceLocation.toTpe)(VoidableType.Void), IsPublic)
     cm.mkMethod(genEqualsMethod(), "equals", mkDescriptor(JvmName.Object.toTpe)(BackendType.Bool), IsPublic, NotFinal)
     cm.mkMethod(genHashCodeMethod(), "hashCode", mkDescriptor()(BackendType.Int32), IsPublic, NotFinal)
-    holeField.mkField(cm, IsPublic, IsFinal)
-    locationField.mkField(cm, IsPublic, IsFinal)
+    cm.mkField(holeField)
+    cm.mkField(locationField)
 
     cm.closeClassMaker()
   }
@@ -54,7 +54,7 @@ object GenHoleErrorClass {
       INVOKEVIRTUAL(clazz, "toString", mkDescriptor()(BackendObjType.String.toTpe))
 
     withName(1, BackendObjType.String.toTpe) { hole =>
-      withName(2, JvmName.ReifiedSourceLocation.toTpe) { loc =>
+      withName(2, BackendObjType.ReifiedSourceLocation.toTpe) { loc =>
         thisLoad() ~
           // create an error msg
           NEW(JvmName.StringBuilder) ~
@@ -63,12 +63,12 @@ object GenHoleErrorClass {
           pushString("Hole '") ~ stringBuilderAppend() ~
           hole.load() ~ stringBuilderAppend() ~
           pushString("' at ") ~ stringBuilderAppend() ~
-          loc.load() ~ toString(JvmName.ReifiedSourceLocation) ~ stringBuilderAppend() ~
+          loc.load() ~ toString(BackendObjType.ReifiedSourceLocation.jvmName) ~ stringBuilderAppend() ~
           toString(JvmName.StringBuilder) ~
           invokeConstructor(JvmName.FlixError, mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void)) ~
           // save the arguments locally
-          thisLoad() ~ hole.load() ~ holeField.putField() ~
-          thisLoad() ~ loc.load() ~ locationField.putField() ~
+          thisLoad() ~ hole.load() ~ PUTFIELD(holeField) ~
+          thisLoad() ~ loc.load() ~ PUTFIELD(locationField) ~
           RETURN()
       }
     }
@@ -95,13 +95,13 @@ object GenHoleErrorClass {
         other.load() ~ CHECKCAST(JvmName.HoleError) ~
         storeWithName(2, JvmName.HoleError.toTpe) { otherHoleError =>
           // compare the hole field
-          thisLoad() ~ holeField.getField() ~
-            otherHoleError.load() ~ holeField.getField() ~
+          thisLoad() ~ GETFIELD(holeField) ~
+            otherHoleError.load() ~ GETFIELD(holeField) ~
             objectEquals() ~
             ifTrue(Condition.EQ)(pushBool(false) ~ IRETURN()) ~
             // compare the location field
-            thisLoad() ~ locationField.getField() ~
-            otherHoleError.load() ~ locationField.getField() ~
+            thisLoad() ~ GETFIELD(locationField) ~
+            otherHoleError.load() ~ GETFIELD(locationField) ~
             objectEquals() ~
             IRETURN()
         }
@@ -114,12 +114,12 @@ object GenHoleErrorClass {
       // store hole
       DUP() ~
       ICONST_0() ~
-      thisLoad() ~ holeField.getField() ~
+      thisLoad() ~ GETFIELD(holeField) ~
       AASTORE() ~
       // store location
       DUP() ~
       ICONST_1() ~
-      thisLoad() ~ locationField.getField() ~
+      thisLoad() ~ GETFIELD(locationField) ~
       AASTORE() ~
       // hash the array
       INVOKESTATIC(JvmName.Objects, "hash", mkDescriptor(BackendType.Array(JvmName.Object.toTpe))(BackendType.Int32)) ~

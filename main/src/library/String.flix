@@ -65,9 +65,10 @@ namespace String {
     ///
     /// Splits the string `s` around matches of the regular expression `regex`.
     ///
-    pub def split(regex: {regex :: String}, s: String): List[String] =
-        import java.lang.String.split(String): Array[String] & Pure;
-        Array.toList(split(s, regex.regex)) as & Pure
+    pub def split(regex: {regex :: String}, s: String): List[String] = {
+        import java.lang.String.split(String): Array[String, Static] & Impure;
+        Array.toList(split(s, regex.regex))
+    } as & Pure
 
     ///
     /// Returns the lower case version of the string `s`.
@@ -113,7 +114,7 @@ namespace String {
     /// Returns the given string `s` as an array of characters.
     ///
     @Time(length(s)) @Space(length(s))
-    pub def toArray(s: String, r: Region[r]): ScopedArray[Char, r] \ Write(r) =
+    pub def toArray(s: String, r: Region[r]): Array[Char, r] \ Write(r) =
         Array.init(i -> charAt(i, s), length(s), r)
 
     ///
@@ -328,7 +329,7 @@ namespace String {
     /// Returns `None` if no character in `s` satisfies `f`.
     ///
     @Time(time(f) * length(s)) @Space(space(f))
-    pub def findIndexOfLeft(f: Char -> Bool, s: String): Option[Int32] =
+    pub def findIndexOfLeft(f: Char -> Bool & ef, s: String): Option[Int32] & ef =
         let len = length(s);
         def loop(i) = {
             if (i >= len)
@@ -699,7 +700,7 @@ namespace String {
     /// Returns `false` if `a` is empty.
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
-    pub def exists(f: Char -> Bool, s: String): Bool = match findIndexOfLeft(f, s) {
+    pub def exists(f: Char -> Bool & ef, s: String): Bool & ef = match findIndexOfLeft(f, s) {
         case None => false
         case Some(_) => true
     }
@@ -710,7 +711,7 @@ namespace String {
     /// Returns `true` if `s` is empty.
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
-    pub def forall(f: Char -> Bool, s: String): Bool = match findIndexOfLeft(x -> not (f(x)), s) {
+    pub def forall(f: Char -> Bool & ef, s: String): Bool & ef = match findIndexOfLeft(x -> not (f(x)), s) {
         case None => true
         case Some(_) => false
     }
@@ -1148,7 +1149,7 @@ namespace String {
     ///
     /// Helper function for `levenshteinDistance`.
     ///
-    def arraySwap(a: Array[Int32], b : Array[Int32]): Unit & Impure =
+    def arraySwap(a: Array[Int32, Static], b : Array[Int32, Static]): Unit & Impure =
         forIndex(0, Array.length(a) - 1, {i ->  a[i] = b[i]})
 
     ///
@@ -1158,9 +1159,10 @@ namespace String {
     /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
     ///
     @Time(Int32.min(length(a), length(b))) @Space(Int32.min(length(a), length(b)))
-    pub def zip(a: String, b: String): Array[(Char, Char)] & Impure =
+    pub def zip(a: String, b: String): List[(Char, Char)] =
         let len = Int32.min(length(a), length(b));
-        Array.init(i -> (charAt(i, a), charAt(i, b)), len, Static)
+        // Array.init(i -> (charAt(i, a), charAt(i, b)), len, Static)
+        List.unfold(i -> if (i >= len) None else Some((charAt(i, a), charAt(i, b)), i + 1), 0)
 
     ///
     /// Returns a string where the element at index `i` is `f(x, y)` where

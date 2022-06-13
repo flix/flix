@@ -24,9 +24,7 @@ pub enum Nel[a] {
 instance Boxable[Nel[a]] with Boxable[a]
 
 instance ToString[Nel[a]] with ToString[a] {
-    pub def toString(l: Nel[a]): String = match l {
-        case Nel(x, xs) => "Nel(${x}, ${xs})"
-    }
+    pub def toString(l: Nel[a]): String = Nel.toString(l)
 }
 
 instance Hash[Nel[a]] with Hash[a] {
@@ -65,6 +63,10 @@ instance Monad[Nel] {
     pub def flatMap(f: a -> Nel[b] & ef, x : Nel[a]) : Nel[b] & ef = Nel.flatMap(f, x)
 }
 
+instance ForEach[Nel] {
+    pub def foreach(f: a -> Unit & ef, l: Nel[a]): Unit & ef = Nel.foreach(f, l)
+}
+
 instance Foldable[Nel] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldRight(f, s, l)
@@ -95,7 +97,7 @@ instance Reducible[Nel] {
     override pub def memberOf(a: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(a, l)
     override pub def dropWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef = Nel.dropWhile(f, l)
     override pub def takeWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef = Nel.takeWhile(f, l)
-    override pub def toArray(l: Nel[a], r: Region[r]): ScopedArray[a, r] \ Write(r) = Nel.toArray(l, r)
+    override pub def toArray(l: Nel[a], r: Region[r]): Array[a, r] \ Write(r) = Nel.toArray(l, r)
     override pub def toIterator(l: Nel[a]): Iterator[a] & Impure = Nel.toIterator(l)
     override pub def toList(l: Nel[a]): List[a] = Nel.toList(l)
 }
@@ -105,6 +107,21 @@ instance SemiGroup[Nel[a]] {
 }
 
 namespace Nel {
+
+    ///
+    /// Returns a string representation of the given non-empty list `l`.
+    ///
+    pub def toString(l: Nel[a]): String with ToString[a] = region r {
+        let Nel(x, xs) = l;
+        let sb = new StringBuilder(r);
+        StringBuilder.appendString!("Nel(${x}, ", sb);
+
+        let list = List.toString(xs);
+        StringBuilder.appendString!(list, sb);
+        StringBuilder.appendString!(")", sb);
+
+        StringBuilder.toString(sb)
+    }
 
     ///
     /// Returns a new non-empty list containing the single element `x`.
@@ -433,7 +450,7 @@ namespace Nel {
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
     ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
-    pub def count(f: a -> Bool, l: Nel[a]): Int32 = match l {
+    pub def count(f: a -> Bool & ef, l: Nel[a]): Int32 & ef = match l {
         case Nel(x, xs) => (if (f(x)) 1 else 0) + List.count(f, xs)
     }
 
@@ -554,8 +571,16 @@ namespace Nel {
     ///
     /// Returns `l` as an array.
     ///
-    pub def toArray(l: Nel[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
+    pub def toArray(l: Nel[a], r: Region[r]): Array[a, r] \ Write(r) =
         (l |> toList |> List.toArray)(r)
+
+    ///
+    /// Returns `l` as a MutDeque.
+    ///
+    pub def toMutDeque(l: Nel[a], r: Region[r]): MutDeque[a, r] \ Write(r) =
+        let d = new MutDeque(r);
+        foreach(x -> MutDeque.pushBack(x, d), l);
+        d
 
     ///
     /// Applies `f` to every element of `l`.

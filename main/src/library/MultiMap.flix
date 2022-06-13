@@ -67,6 +67,10 @@ instance Order[MultiMap[k, v]] with Order[k], Order[v] {
         MultiMap.toList(x) <=> MultiMap.toList(y)
 }
 
+instance ForEach[MultiMap[k]] {
+    pub def foreach(f: a -> Unit & ef, m: MultiMap[k, a]): Unit & ef = MultiMap.foreach((_, v) -> f(v), m)
+}
+
 instance Foldable[MultiMap[k]] {
     pub def foldLeft(f: (b, v) -> b & ef, s: b, m: MultiMap[k, v]): b & ef = MultiMap.foldLeft((acc, v) -> f(acc, v), s, m)
     pub def foldRight(f: (v, b) -> b & ef, s: b, m: MultiMap[k, v]): b & ef = MultiMap.foldRight(f, s, m)
@@ -437,7 +441,7 @@ namespace MultiMap {
     ///
     /// Returns `false` if `m` is the empty MultiMap.
     ///
-    pub def exists(f: (k, v) -> Bool, m: MultiMap[k, v]): Bool =
+    pub def exists(f: (k, v) -> Bool & ef, m: MultiMap[k, v]): Bool & ef =
         let MultiMap(m1) = m;
         let outer = (k, vs) -> Set.exists(v -> f(k, v), vs);
         Map.exists(outer, m1)
@@ -447,7 +451,7 @@ namespace MultiMap {
     ///
     /// Returns `true` if `m` is the empty MultiMap.
     ///
-    pub def forall(f: (k, v) -> Bool, m: MultiMap[k, v]): Bool =
+    pub def forall(f: (k, v) -> Bool & ef, m: MultiMap[k, v]): Bool & ef =
         let MultiMap(m1) = m;
         let outer = (k, vs) -> Set.forall(v -> f(k, v), vs);
         Map.forall(outer, m1)

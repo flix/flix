@@ -17,7 +17,7 @@
 ///
 /// A type class for data structures that can be folded.
 ///
-pub class Foldable[t : Type -> Type] {
+pub class Foldable[t : Type -> Type] with ForEach[t] {
 
     ///
     /// Left-associative fold of a structure.
@@ -42,7 +42,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
     ///
-    pub def count(f: a -> Bool, t: t[a]): Int32 =
+    pub def count(f: a -> Bool & ef, t: t[a]): Int32 & ef =
         Foldable.foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, t)
 
     ///
@@ -198,7 +198,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns `t` as an array.
     ///
-    pub def toArray(t: t[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
+    pub def toArray(t: t[a], r: Region[r]): Array[a, r] \ Write(r) =
         let v = new MutList(r);
         Foldable.foreach(a -> MutList.push!(a, v), t);
         MutList.toArray(v, r)
