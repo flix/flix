@@ -22,7 +22,7 @@ namespace TestIterator {
 
     @test
     def next01(): Bool = region r {
-        Iterator.new(r) |> Iterator.regNext == None: Option[Int32]
+        new Iterator(r) |> Iterator.regNext == None: Option[Int32]
     }
 
     @test
@@ -52,7 +52,7 @@ namespace TestIterator {
 
     @test
     def isEmpty01(): Bool = region r { // empty
-        let iter = Iterator.new(r);
+        let iter = new Iterator(r);
         invokeIsEmptyRegion(100, iter);
         Iterator.regToList(iter) == Nil: List[Int32]
     }

@@ -47,15 +47,19 @@ pub enum RegionIterator[a: Type, r: Region] {
     case RegionIterator(RegionDone[r], RegionNext[a, r])
 }
 
+instance Newable[RegionIterator[a]] {
+    pub def new(r: Region[r]): RegionIterator[a, r] \ { Read(r), Write(r) } = Iterator.new(r)
+}
+
 namespace Iterator {
 
     ///
     /// Returns an empty iterator.
     ///
-    pub def new(_: Region[r]): RegionIterator[a, r] =
+    pub def new(_: Region[r]): RegionIterator[a, r] \ { Read(r), Write(r) } =
         let done = () -> true as \ Read(r);
         let next = () -> bug!("Empty Iterator!") as \ Read(r);
-        RegionIterator(done, next)
+        RegionIterator(done, next) as \ { Read(r), Write(r) }
 
     ///
     /// Returns an empty iterator.
