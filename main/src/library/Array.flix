@@ -45,15 +45,21 @@ namespace Array {
     ///
     /// Returns a string representation of the given array `a`.
     ///
-    pub def toString(a: Array[a, r]): String \ Read(r) with ToString[a] =
-        def loop(i, acc) =
-            if (i < a.length) {
-                if (i == 0) loop(i + 1, "${a[i]}")
-                else loop(i + 1, "${acc}, ${a[i]}")
-            } else {
-                "[${acc}]"
-            };
-        loop(0, "")
+    pub def toString(a: Array[a, r1]): String \ Read(r1) with ToString[a] = region r2 {
+        let sb = new StringBuilder(r2);
+        let first = ref true;
+
+        StringBuilder.appendString!("[", sb);
+
+        let f = (x) -> {
+            if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
+            StringBuilder.appendString!("${x}", sb)
+        };
+        Array.foreach(f, a);
+
+        StringBuilder.appendString!("]", sb);
+        StringBuilder.toString(sb)
+    }
 
     ///
     /// Returns a fresh array of length `l` filled with the element `x`.

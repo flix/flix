@@ -19,6 +19,30 @@ namespace TestArray {
     use Array.sameElements;
 
     /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toString01(): Bool = region r {
+        Array.toString(([] @ r): Array[Int32, _]) == "[]"
+    }
+
+    @test
+    def toString02(): Bool = region r {
+        Array.toString(([1] @ r)) == "[1]"
+    }
+
+    @test
+    def toString03(): Bool = region r {
+        Array.toString(([1, 2, 3, 4] @ r)) == "[1, 2, 3, 4]"
+    }
+
+    @test
+    def toString04(): Bool = region r {
+        Array.toString((['a', 'b', 'c', 'd'] @ r)) == "[a, b, c, d]"
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // new                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
