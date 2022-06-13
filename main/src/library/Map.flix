@@ -826,6 +826,14 @@ namespace Map {
         MultiMap(Map.map(Set.singleton, m))
 
     ///
+    /// Returns the map `m` as a MutDeque of key-value pairs.
+    ///
+    pub def toMutDeque(m: Map[k, v], r: Region[r]): MutDeque[(k, v), r] \ Write(r) =
+        let d = MutDeque.new(r);
+        foreach((k, v) -> MutDeque.pushBack((k, v), d), m);
+        d
+
+    ///
     /// Applies `f` to every element of `xs`.
     ///
     @Time(size(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
