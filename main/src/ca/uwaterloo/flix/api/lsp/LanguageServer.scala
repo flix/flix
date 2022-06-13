@@ -239,7 +239,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.RemJar(id, uri) =>
-      // No-op
+      // No-op (there is no easy way to remove a Jar from the JVM)
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.Version(id) => processVersion(id)
