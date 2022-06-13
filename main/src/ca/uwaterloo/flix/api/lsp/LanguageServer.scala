@@ -78,11 +78,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   val sources: mutable.Map[String, String] = mutable.Map.empty
 
   /**
-    * Sources which have been removed since the last check
-    */
-  val removedSources: mutable.Map[String, String] = mutable.Map.empty
-
-  /**
     * A map from package URIs to source code.
     */
   val packages: mutable.Map[String, List[String]] = mutable.Map.empty
@@ -201,12 +196,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   private def processRequest(request: Request)(implicit ws: WebSocket): JValue = request match {
     case Request.AddUri(id, uri, src) =>
       current = false
+      flix.addSourceCode(uri, src)
       sources += (uri -> src)
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.RemUri(id, uri) =>
       current = false
-      removedSources += (uri -> sources(uri))
+      flix.remSourceCode(uri, sources(uri))
       sources -= uri
       ("id" -> id) ~ ("status" -> "success")
 
@@ -227,6 +223,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       inputStream.close()
 
       packages += (uri -> items.toList)
+      println(s"packages: $packages")
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.RemPkg(id, uri) =>
@@ -289,16 +286,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * Processes a validate request.
     */
   private def processCheck(requestId: String)(implicit ws: WebSocket): JValue = {
-    // Remove any sources which were removed since the last check
-    for((uri, source) <- removedSources) {
-      flix.remSourceCode(uri, source)
-    }
-    removedSources.clear()
-
-    // Add sources.
-    for ((uri, source) <- sources) {
-      flix.addSourceCode(uri, source)
-    }
 
     // Add sources from packages.
     for ((uri, items) <- packages) {
