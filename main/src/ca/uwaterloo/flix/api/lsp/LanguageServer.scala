@@ -223,7 +223,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       inputStream.close()
 
       packages += (uri -> items.toList)
-      println(s"packages: $packages")
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.RemPkg(id, uri) =>
