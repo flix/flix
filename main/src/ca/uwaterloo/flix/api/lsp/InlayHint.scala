@@ -20,7 +20,7 @@ import org.json4s.JValue
 
 /**
   * Represent `InlayHint` in LSP.
-  * @since 3.17.0 - proposed state
+  * @since 3.17.0
   *
   * @param position     The position of this hint
   * @param label        The label of this hint. A human readable string or an array of
