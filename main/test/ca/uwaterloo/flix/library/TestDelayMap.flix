@@ -1142,66 +1142,6 @@ namespace TestDelayMap {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toMutDeque                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def toMutDeque01(): Bool = region r {
-        let m = (Map#{}: Map[Int32, Int32]) |> Map.toDelayMap;
-
-        let d = MutDeque.new(r): MutDeque[(Int32, Int32), _];
-
-        DelayMap.toMutDeque(m, r) `MutDeque.sameElements` d
-    }
-
-    @test
-    def toMutDeque02(): Bool = region r {
-        let m = Map#{1 => 2} |> Map.toDelayMap;
-
-        let d = new MutDeque(r);
-        MutDeque.pushBack((1, 2), d);
-
-        DelayMap.toMutDeque(m, r) `MutDeque.sameElements` d
-    }
-
-    @test
-    def toMutDeque03(): Bool = region r {
-        let m = Map#{1 => 2, 3 => 4} |> Map.toDelayMap;
-
-        let d = new MutDeque(r);
-        MutDeque.pushBack((1, 2), d);
-        MutDeque.pushBack((3, 4), d);
-
-        DelayMap.toMutDeque(m, r) `MutDeque.sameElements` d
-    }
-
-    @test
-    def toMutDeque04(): Bool = region r {
-        let m = Map#{1 => 2, 3 => 4, 5 => 6, 7 => 8} |> Map.toDelayMap;
-
-        let d = new MutDeque(r);
-        MutDeque.pushBack((5, 6), d);
-        MutDeque.pushBack((7, 8), d);
-        MutDeque.pushFront((3, 4), d);
-        MutDeque.pushFront((1, 2), d);
-
-        DelayMap.toMutDeque(m, r) `MutDeque.sameElements` d
-    }
-
-    @test
-    def toMutDeque05(): Bool = region r {
-        let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'} |> Map.toDelayMap;
-
-        let d = new MutDeque(r);
-        MutDeque.pushFront((3, 'c'), d);
-        MutDeque.pushFront((2, 'b'), d);
-        MutDeque.pushFront((1, 'a'), d);
-
-        DelayMap.toMutDeque(m, r) `MutDeque.sameElements` d
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // foldLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
