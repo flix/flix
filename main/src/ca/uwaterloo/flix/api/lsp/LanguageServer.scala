@@ -196,11 +196,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   private def processRequest(request: Request)(implicit ws: WebSocket): JValue = request match {
     case Request.AddUri(id, uri, src) =>
       current = false
+      flix.addSourceCode(uri, src)
       sources += (uri -> src)
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.RemUri(id, uri) =>
       current = false
+      flix.remSourceCode(uri, sources(uri))
       sources -= uri
       ("id" -> id) ~ ("status" -> "success")
 
@@ -283,10 +285,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * Processes a validate request.
     */
   private def processCheck(requestId: String)(implicit ws: WebSocket): JValue = {
-    // Add sources.
-    for ((uri, source) <- sources) {
-      flix.addSourceCode(uri, source)
-    }
 
     // Add sources from packages.
     for ((uri, items) <- packages) {
