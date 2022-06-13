@@ -155,6 +155,66 @@ namespace TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // toMutDeque                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutDeque01(): Bool = region r {
+        let a = ([] @ r): Array[Int32, _];
+        let d = new MutDeque(r): MutDeque[Int32, _];
+
+        Array.toMutDeque(a, r) `MutDeque.sameElements` d
+    }
+
+    @test
+    def toMutDeque02(): Bool = region r {
+        let a = ([1] @ r);
+
+        let d = new MutDeque(r);
+        MutDeque.pushBack(1, d);
+
+        Array.toMutDeque(a, r) `MutDeque.sameElements` d
+    }
+
+    @test
+    def toMutDeque03(): Bool = region r {
+        let a = ([1, 2, 3] @ r);
+
+        let d = new MutDeque(r);
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+
+        Array.toMutDeque(a, r) `MutDeque.sameElements` d
+    }
+
+    @test
+    def toMutDeque04(): Bool = region r {
+        let a = ([1, 2, 3, 4, 5] @ r);
+
+        let d = new MutDeque(r);
+        MutDeque.pushBack(3, d);
+        MutDeque.pushBack(4, d);
+        MutDeque.pushBack(5, d);
+        MutDeque.pushFront(2, d);
+        MutDeque.pushFront(1, d);
+
+        Array.toMutDeque(a, r) `MutDeque.sameElements` d
+    }
+
+    @test
+    def toMutDeque05(): Bool = region r {
+        let a = (['a', 'b', 'c'] @ r);
+
+        let d = new MutDeque(r);
+        MutDeque.pushFront('c', d);
+        MutDeque.pushFront('b', d);
+        MutDeque.pushFront('a', d);
+
+        Array.toMutDeque(a, r) `MutDeque.sameElements` d
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // head                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 

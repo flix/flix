@@ -143,6 +143,14 @@ namespace Array {
         loop(arr.length, Chain.empty())
 
     ///
+    /// Returns `a` as a MutDeque.
+    ///
+    pub def toMutDeque(a: Array[a, r1], r: Region[r2]): MutDeque[a, r2] \ { Read(r1), Write(r2) }  =
+        let d = new MutDeque(r);
+        Array.foreach(x -> MutDeque.pushBack(x, d), a);
+        d
+
+    ///
     /// Returns `Some(x)` if `x` is the first element of `a`.
     ///
     /// Returns `None` if `a` is empty.
