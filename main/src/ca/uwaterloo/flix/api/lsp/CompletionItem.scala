@@ -29,7 +29,9 @@ object CompletionItem {
   * Represents a `CompletionItem` in LSP.
   *
   * @param label            The label of this completion item. By default also the text that is inserted when selecting this completion.
-  @ @param sortText         A string that should be used when sorting completion items
+  * @param sortText         A string that should be used when sorting completion items
+  * @param filterText       A string that should be used when filtering a set of completion items. When `falsy` the label is used
+  *                         as the filter text for this item.
   * @param textEdit         An edit which is applied to a document when selecting this completion. *Note:* The range of the edit must be
   *                         a single line range and it must contain the position at which completion has been requested.
   * @param detail           A human-readable string with additional information about this item, like type or symbol information.
@@ -44,6 +46,7 @@ object CompletionItem {
 case class CompletionItem(
   label: String, 
   sortText: String,
+  filterText: Option[String] = None,
   textEdit: TextEdit,
   detail: Option[String] = None, 
   documentation: Option[String] = None, 
@@ -54,6 +57,7 @@ case class CompletionItem(
   def toJSON: JValue =
     ("label" -> label) ~
       ("sortText" -> sortText) ~
+      ("filterText" -> filterText) ~
       ("textEdit" -> textEdit.toJSON) ~
       ("detail" -> detail) ~
       ("documentation" -> documentation) ~

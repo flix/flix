@@ -300,6 +300,18 @@ class Flix {
   }
 
   /**
+    * Removes the given string `text` with the given `name`.
+    */
+  def remSourceCode(name: String, text: String): Flix = {
+    if (name == null)
+      throw new IllegalArgumentException("'name' must be non-null.")
+    if (text == null)
+      throw new IllegalArgumentException("'text' must be non-null.")
+    remInput(name, Input.Text(name, text, stable = false))
+    this
+  }
+
+  /**
     * Adds the given path `p` to the list of paths to be parsed.
     */
   def addSourcePath(p: String): Flix = {
