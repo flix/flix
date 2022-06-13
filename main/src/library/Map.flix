@@ -28,9 +28,7 @@ pub enum Map[k, v] {
 instance Boxable[Map[k, v]] with Boxable[k], Boxable[v]
 
 instance ToString[Map[k, v]] with ToString[k], ToString[v] {
-    pub def toString(m: Map[k, v]): String =
-        let s = Map.foldRightWithKey((k, v, acc) -> "${k} => ${v}, ${acc}", "", m);
-        "Map#{${String.dropRight(2, s)}}"
+    pub def toString(m: Map[k, v]): String = Map.toString(m)
 }
 
 instance Hash[Map[k, v]] with Hash[k], Hash[v] {
@@ -101,6 +99,25 @@ instance MeetLattice[Map[k, v]] with Order[k], Eq[v], MeetLattice[v] {
 }
 
 namespace Map {
+
+    ///
+    /// Returns a string representation of the given map `m`.
+    ///
+    pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region r {
+        let sb = new StringBuilder(r);
+        let first = ref true;
+
+        StringBuilder.appendString!("Map#{", sb);
+
+        let f = (k, v) -> {
+            if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
+            StringBuilder.appendString!("${k} => ${v}", sb)
+        };
+        Map.foreach(f, m);
+
+        StringBuilder.appendString!("}", sb);
+        StringBuilder.toString(sb)
+    }
 
     ///
     /// Returns the number of threads to use for parallel evaluation.
