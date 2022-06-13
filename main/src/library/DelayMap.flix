@@ -522,6 +522,15 @@ namespace DelayMap {
         foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, m)
 
     ///
+    /// Returns the map `m` as a MutDeque of key-value pairs.
+    ///
+    @Experimental
+    pub def toMutDeque(m: DelayMap[k, v], r: Region[r]): MutDeque[(k, v), r] \ Write(r) =
+        let d = MutDeque.new(r);
+        foreach((k, v) -> MutDeque.pushBack((k, v), d), m);
+        d
+
+    ///
     /// Applies `f` to a start value `s` and all values in `m` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, v1), v2)..., vn)`.
