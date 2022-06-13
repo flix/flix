@@ -15,11 +15,8 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Rigidity, RigidityEnv, Scheme, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.unification.Unification.unifyTypes
+import ca.uwaterloo.flix.language.ast.{Ast, Scheme, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
 /**
   * Companion object for the [[Substitution]] class.
@@ -165,95 +162,5 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
     }
 
     Substitution(newTypeMap.toMap) ++ this
-  }
-
-  /**
-    * Propagates type variable *names* within a substitution.
-    *
-    * During type inference we may construct bindings such as:
-    *
-    * x -> y
-    * u -> v
-    *
-    * Here `x` may have a name ("text") but `y` may not.
-    * Conversely, `v` may have a name ("text"), but not `u`.
-    *
-    * The idea is to propagate these names across these bindings.
-    *
-    * This process does *not* have to be transitive, because the substitution
-    * (if computed by inference) should already be transitive.
-    */
-  def propagate: Substitution = {
-    ///
-    /// A map from type variables (without a name) to a string name ("text").
-    ///
-    var replacement = Map.empty[Symbol.TypeVarSym, Ast.VarText]
-
-    //
-    // Compute all bindings where there is a name to be propagated.
-    //
-    for ((tvar1, tpe) <- m) {
-      tpe match {
-        case tvar2: Type.KindedVar =>
-          (tvar1.text, tvar2.sym.text) match {
-            case (text1, text2) if text1 isStrictlyLessPreciseThan text2 =>
-              replacement = replacement + (tvar1 -> text2)
-            case (text1, text2) if text2 isStrictlyLessPreciseThan text1 =>
-              replacement = replacement + (tvar2.sym -> text1)
-            case _ => // nop
-          }
-        case _ => // nop
-      }
-    }
-
-    /**
-      * A utility function to replace the text in `tvar` using the computed map.
-      */
-    def replace(tvar: Type.KindedVar): Type = replacement.get(tvar.sym) match {
-      case None => tvar
-      case Some(text) => tvar.withText(text)
-    }
-
-    ///
-    /// Computes the new substitution. It is equivalent to the old one, but with updated names.
-    ///
-    val m2 = m.foldLeft(Map.empty[Symbol.TypeVarSym, Type]) {
-      case (acc, (tvar, tpe)) =>
-        val t = tpe.map(replace)
-        acc + (tvar -> t)
-    }
-
-    Substitution(m2)
-  }
-
-  /**
-    * Computes an equ-most general substitution with the given type variable as `rigid`.
-    *
-    * That is, the resulting subst has `sym = sym`.
-    * (which actually means `sym` does not appear in the substitution).
-    */
-  def pivot(sym0: Symbol.KindedTypeVarSym)(implicit flix: Flix): Substitution = {
-    val newSubst = m.get(sym0) match {
-      // Case 1: The variable is replaced. Need to process it.
-      case Some(tpe) =>
-        val rigidSym = sym0.withRigidity(Rigidity.Rigid)
-        unifyTypes(Type.KindedVar(rigidSym, sym0.loc), tpe, RigidityEnv.empty) match { // MATT we can use the empty renv here since we'll get rid of pivoting when renvs are activated
-          case Ok(rigidSubst) =>
-            // de-rigidify the substitution
-            val flexMap = rigidSubst.m.map {
-              case (k, v) =>
-                val v2 = v.map {
-                  case Type.KindedVar(sym, loc) if sym == rigidSym => Type.KindedVar(rigidSym.withRigidity(Rigidity.Flexible), loc)
-                  case otherVar => otherVar
-                }
-                (k, v2)
-            }
-            Substitution(flexMap)
-          case Err(_) => throw InternalCompilerException("Unexpected unification failure.")
-        }
-      // Case 2: The variable is not replaced. Nothing to do.
-      case None => Substitution.empty
-    }
-    newSubst @@ this.unbind(sym0)
   }
 }

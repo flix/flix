@@ -44,7 +44,8 @@ object JvmName {
   object MethodDescriptor {
     val NothingToVoid: MethodDescriptor = MethodDescriptor(Nil, VoidableType.Void)
 
-    def mkDescriptor(argument: BackendType*)(result: VoidableType): MethodDescriptor = MethodDescriptor(argument.toList, result)
+    def mkDescriptor(argument: BackendType*)(result: VoidableType): MethodDescriptor =
+      MethodDescriptor(argument.toList, result)
   }
 
   /**
@@ -101,11 +102,9 @@ object JvmName {
 
   // TODO: These could be BackendObjType objects to allow method/field objects
   val FlixError: JvmName = JvmName(DevFlixRuntime, "FlixError")
-  val Global: JvmName = JvmName(DevFlixRuntime, "Global")
   val HoleError: JvmName = JvmName(DevFlixRuntime, "HoleError")
   val MatchError: JvmName = JvmName(DevFlixRuntime, "MatchError")
   val ProxyObject: JvmName = JvmName(DevFlixRuntime, "ProxyObject")
-  val ReifiedSourceLocation: JvmName = JvmName(DevFlixRuntime, "ReifiedSourceLocation")
   val SelectChoice: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "SelectChoice")
 
   // Deprecated: Should not be used in new code.

@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBranch, TrueBranch}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{InstanceField, StaticField}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
@@ -185,13 +186,13 @@ object BytecodeInstructions {
     f
   }
 
-  def GETFIELD(className: JvmName, fieldName: String, fieldType: BackendType): InstructionSet = f => {
-    f.visitFieldInstruction(Opcodes.GETFIELD, className, fieldName, fieldType)
+  def GETFIELD(field: InstanceField): InstructionSet = f => {
+    f.visitFieldInstruction(Opcodes.GETFIELD, field.clazz, field.name, field.tpe)
     f
   }
 
-  def GETSTATIC(className: JvmName, fieldName: String, fieldType: BackendType): InstructionSet = f => {
-    f.visitFieldInstruction(Opcodes.GETSTATIC, className, fieldName, fieldType)
+  def GETSTATIC(field: StaticField): InstructionSet = f => {
+    f.visitFieldInstruction(Opcodes.GETSTATIC, field.clazz, field.name, field.tpe)
     f
   }
 
@@ -290,13 +291,13 @@ object BytecodeInstructions {
     f
   }
 
-  def PUTFIELD(className: JvmName, fieldName: String, fieldType: BackendType): InstructionSet = f => {
-    f.visitFieldInstruction(Opcodes.PUTFIELD, className, fieldName, fieldType)
+  def PUTFIELD(field: InstanceField): InstructionSet = f => {
+    f.visitFieldInstruction(Opcodes.PUTFIELD, field.clazz, field.name, field.tpe)
     f
   }
 
-  def PUTSTATIC(className: JvmName, fieldName: String, fieldType: BackendType): InstructionSet = f => {
-    f.visitFieldInstruction(Opcodes.PUTSTATIC, className, fieldName, fieldType)
+  def PUTSTATIC(field: StaticField): InstructionSet = f => {
+    f.visitFieldInstruction(Opcodes.PUTSTATIC, field.clazz, field.name, field.tpe)
     f
   }
 

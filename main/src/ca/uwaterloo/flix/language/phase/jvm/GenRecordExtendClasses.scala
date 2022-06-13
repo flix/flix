@@ -66,9 +66,9 @@ object GenRecordExtendClasses {
 
     cm.mkObjectConstructor(IsPublic)
 
-    extendType.LabelField.mkField(cm, IsPublic, NotFinal)
-    extendType.ValueField.mkField(cm, IsPublic, NotFinal)
-    extendType.RestField.mkField(cm, IsPublic, NotFinal)
+    cm.mkField(extendType.LabelField)
+    cm.mkField(extendType.ValueField)
+    cm.mkField(extendType.RestField)
 
     extendType.LookupFieldMethod.mkMethod(cm, genLookupFieldMethod(extendType), IsPublic, IsFinal)
     extendType.RestrictFieldMethod.mkMethod(cm, genRestrictFieldMethod(extendType), IsPublic, IsFinal)
@@ -80,7 +80,7 @@ object GenRecordExtendClasses {
     * Compares the label of `this`and `ALOAD(1)` and executes the designated branch.
     */
   private def caseOnLabelEquality(extendType: BackendObjType.RecordExtend)(cases: Branch => InstructionSet): InstructionSet =
-    thisLoad() ~ extendType.LabelField.getField() ~
+    thisLoad() ~ GETFIELD(extendType.LabelField) ~
       ALOAD(1) ~
       INVOKEVIRTUAL(BackendObjType.String.jvmName, "equals", mkDescriptor(JvmName.Object.toTpe)(BackendType.Bool)) ~
       branch(Condition.Bool)(cases)
@@ -90,7 +90,7 @@ object GenRecordExtendClasses {
       case TrueBranch =>
         thisLoad() ~ ARETURN()
       case FalseBranch =>
-        thisLoad() ~ extendType.RestField.getField() ~
+        thisLoad() ~ GETFIELD(extendType.RestField) ~
           ALOAD(1) ~
           BackendObjType.Record.LookupFieldMethod.invokeInterface() ~
           ARETURN()
@@ -99,14 +99,14 @@ object GenRecordExtendClasses {
   private def genRestrictFieldMethod(extendType: BackendObjType.RecordExtend)(implicit root: Root, flix: Flix): InstructionSet =
     caseOnLabelEquality(extendType) {
       case TrueBranch =>
-        thisLoad() ~ extendType.RestField.getField() ~
+        thisLoad() ~ GETFIELD(extendType.RestField) ~
           ARETURN()
       case FalseBranch =>
         thisLoad() ~
-          DUP() ~ extendType.RestField.getField() ~
+          DUP() ~ GETFIELD(extendType.RestField) ~
           ALOAD(1) ~
           BackendObjType.Record.RestrictFieldMethod.invokeInterface() ~
-          extendType.RestField.putField() ~
+          PUTFIELD(extendType.RestField) ~
           thisLoad() ~ ARETURN()
     }
 }
