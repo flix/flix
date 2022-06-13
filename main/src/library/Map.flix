@@ -28,8 +28,7 @@ pub enum Map[k, v] {
 instance Boxable[Map[k, v]] with Boxable[k], Boxable[v]
 
 instance ToString[Map[k, v]] with ToString[k], ToString[v] {
-    pub def toString(m: Map[k, v]): String =
-        Map.toString(m)
+    pub def toString(m: Map[k, v]): String = Map.toString(m)
 }
 
 instance Hash[Map[k, v]] with Hash[k], Hash[v] {
