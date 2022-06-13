@@ -52,6 +52,14 @@ namespace Iterator {
     ///
     /// Returns an empty iterator.
     ///
+    pub def new(_: Region[r]): RegionIterator[a, r] =
+        let done = () -> true as \ Read(r);
+        let next = () -> bug!("Empty Iterator!") as \ Read(r);
+        RegionIterator(done, next)
+
+    ///
+    /// Returns an empty iterator.
+    ///
     pub def empty(): Iterator[a] =
         let done = () -> true as & Impure;
         let next = () -> bug!("Empty Iterator!") as & Impure;
