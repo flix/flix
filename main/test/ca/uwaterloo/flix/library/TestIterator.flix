@@ -306,23 +306,23 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toArray01(): Bool & Impure = region r {
-        (Nil: List[Int32] |> List.toIterator |> Iterator.toArray)(r) `Array.sameElements` [] @ r
+    def toArray01(): Bool = region r {
+        Nil: List[Int32] |> List.toRegionIterator(r) |> Iterator.regToArray(r) `Array.sameElements` [] @ r
     }
 
     @test
-    def toArray02(): Bool & Impure = region r {
-        (Iterator.range(-10, -5) |> Iterator.toArray)(r) `Array.sameElements` [-10, -9, -8, -7, -6] @ r
+    def toArray02(): Bool = region r {
+        Iterator.regRange(r, -10, -5) |> Iterator.regToArray(r) `Array.sameElements` [-10, -9, -8, -7, -6] @ r
     }
 
     @test
-    def toArray03(): Bool & Impure = region r {
-        (Iterator.repeat(3, 1) |> Iterator.toArray)(r) `Array.sameElements` [1, 1, 1] @ r
+    def toArray03(): Bool = region r {
+        Iterator.regRepeat(r, 3, 1) |> Iterator.regToArray(r) `Array.sameElements` [1, 1, 1] @ r
     }
 
     @test
-    def toArray04(): Bool & Impure = region r {
-        (Iterator.range(-100, 200) |> Iterator.toArray)(r) `Array.sameElements` Array.range(-100, 200, r)
+    def toArray04(): Bool = region r {
+        Iterator.regRange(r, -100, 200) |> Iterator.regToArray(r) `Array.sameElements` Array.range(-100, 200, r)
     }
 
 
@@ -573,18 +573,20 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool & Impure =
-        let r = ref 21;
-        Nil |> List.toIterator |>
-            Iterator.foreach(x -> r := x);
-        21 == deref r
+    def foreach01(): Bool = region r {
+        let res = ref 21 @ r;
+        Nil |> List.toRegionIterator(r) |>
+            Iterator.regForeach(x -> res := x);
+        21 == deref res
+    }
 
     @test
-    def foreach02(): Bool & Impure =
-        let r = ref 21;
-        (1 :: 2 :: 3 :: Nil) |> List.toIterator |>
-            Iterator.foreach(x -> r := x);
-        3 == deref r
+    def foreach02(): Bool = region r {
+        let res = ref 21 @ r;
+        (1 :: 2 :: 3 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regForeach(x -> res := x);
+        3 == deref res
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // lazyFilter                                                              //

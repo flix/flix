@@ -316,6 +316,17 @@ namespace Iterator {
         MutList.toArray(m, r)
 
     ///
+    /// Returns the contents of `iter` as an array.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def regToArray(r1: Region[r1], iter: RegionIterator[a, r2]): Array[a, r1] \ { Read(r2), Write(r1) } = region r0 {
+        let m = new MutList(r0);
+        regForeach(a -> MutList.push!(a, m), iter);
+        MutList.toArray(m, r1)
+    }
+
+    ///
     /// Returns the contents of `iter` as a list.
     ///
     /// Consumes the entire iterator.
@@ -408,6 +419,23 @@ namespace Iterator {
     ///
     pub def foreach(f: a -> Unit & ef, iter: Iterator[a]): Unit & Impure =
         let Iterator(done, next) = iter;
+        def loop() = {
+            if (done())
+                ()
+            else {
+                f(next());
+                loop()
+            }
+        };
+        loop()
+
+    ///
+    /// Applies `f` to every element of `iter`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def regForeach(f: a -> Unit & ef, iter: RegionIterator[a, r]): Unit \ { ef, Read(r) } =
+        let RegionIterator(done, next) = iter;
         def loop() = {
             if (done())
                 ()
