@@ -331,20 +331,19 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toMap01(): Bool & Impure =
-        Nil: List[(String, Int32)] |> List.toIterator |> Iterator.toMap == Map.empty()
+    def toMap01(): Bool = region r {
+        Map.empty() |> Map.toRegionIterator(r) |> Iterator.regToMap == Map.empty(): Map[Int32, Int32]
+    }
 
     @test
-    def toMap02(): Bool & Impure =
-        (("A", 1) :: ("B", 2) :: ("C", 3) :: ("D", 4) :: Nil)|>
-        List.toIterator |>
-        Iterator.toMap == Map#{"A" => 1, "B" => 2, "C" => 3, "D" => 4}
+    def toMap02(): Bool = region r {
+        Map#{"A" => 1, "B" => 2, "C" => 3, "D" => 4} |> Map.toRegionIterator(r) |> Iterator.regToMap == Map#{"A" => 1, "B" => 2, "C" => 3, "D" => 4}
+    }
 
     @test
-    def toMap03(): Bool & Impure =
-        let map = Map#{"1" => 2, "2" => 3, "3" => 4};
-        map |> Map.toList |> List.toIterator |> Iterator.toMap == map
-
+    def toMap03(): Bool = region r {
+        Map#{1 => 2, 2 => 3, 3 => 4} |> Map.toRegionIterator(r) |> Iterator.regToMap == Map#{1 => 2, 2 => 3, 3 => 4}
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //

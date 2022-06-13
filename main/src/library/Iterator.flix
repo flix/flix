@@ -351,6 +351,14 @@ namespace Iterator {
         foldLeft((acc, ab) -> Map.insert(fst(ab), snd(ab), acc), Map.empty(), iter)
 
     ///
+    /// Returns the contents of `iter` as a map.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def regToMap(iter: RegionIterator[(a, b), r]): Map[a, b] \ Read(r) with Order[a] =
+        regFoldLeft((acc, ab) -> Map.insert(fst(ab), snd(ab), acc), Map.empty(), iter)
+
+    ///
     /// Returns the contents of `iter` as a `Some(Nel)` if `iter` is not empty. Returns None otherwise.
     ///
     /// Consumes the entire iterator.

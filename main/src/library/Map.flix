@@ -908,6 +908,12 @@ namespace Map {
         List.toIterator(Map.query(_ -> EqualTo, m))
 
     ///
+    /// Returns an iterator over all key-value pairs in `m`.
+    ///
+    pub def toRegionIterator(r: Region[r], m: Map[k, v]): RegionIterator[(k, v), r] \ Write(r) =
+        List.toRegionIterator(r, Map.query(_ -> EqualTo, m))
+
+    ///
     /// Returns `m` as a `DelayMap`.
     ///
     pub def toDelayMap(m: Map[k, v]): DelayMap[k, v] = {
