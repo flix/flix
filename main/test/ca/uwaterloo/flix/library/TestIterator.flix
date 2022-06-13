@@ -175,30 +175,35 @@ namespace TestIterator {
             };
         loop(n)
 
+
     /////////////////////////////////////////////////////////////////////////////
     // range                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def range01(): Bool & Impure =
-        Iterator.range(0, 0) |> Iterator.toList == Nil
+    def range01(): Bool = region r {
+        Iterator.regRange(r, 0, 0) |> Iterator.regToList == Nil
+    }
 
     @test
-    def range02(): Bool & Impure =
-        Iterator.range(10, 0) |> Iterator.toList == Nil
+    def range02(): Bool = region r {
+        Iterator.regRange(r, 10, 0) |> Iterator.regToList == Nil
+    }
 
     @test
-    def range03(): Bool & Impure =
-        Iterator.range(1, 4) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    def range03(): Bool = region r {
+        Iterator.regRange(r, 1, 4) |> Iterator.regToList == 1 :: 2 :: 3 :: Nil
+    }
 
     @test
-    def range04(): Bool & Impure =
-        Iterator.range(-1, 2) |> Iterator.toList == -1 :: 0 :: 1 :: Nil
+    def range04(): Bool = region r {
+        Iterator.regRange(r, -1, 2) |> Iterator.regToList == -1 :: 0 :: 1 :: Nil
+    }
 
     @test
-    def range05(): Bool & Impure =
-        Iterator.range(-100, 200) |> Iterator.toList == List.range(-100, 200)
-
+    def range05(): Bool = region r {
+        Iterator.regRange(r, -100, 200) |> Iterator.regToList == List.range(-100, 200)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // repeat                                                                  //
