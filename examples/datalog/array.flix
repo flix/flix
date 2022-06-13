@@ -20,7 +20,7 @@ pub def arrayNeighbourhood(default: Int32, values: List[(Int32, Int32)], paramet
 #{ Neighbourhood(Int32, Int32, Int32, Int32) | r } =
 
     let defaultP = #{ Default(default). };
-    let valuesP = project values into Values;
+    let valuesP = inject values into Values;
     let parametersP = #{ Parameters(parameters). };
     let input = defaultP <+> valuesP <+> parametersP;
     let p = #{
@@ -54,7 +54,7 @@ pub def arrayNeighbourhood(default: Int32, values: List[(Int32, Int32)], paramet
         // element, and the elements surrounding it.
         Neighbourhood(i, l, c, r) :- Left(i, l), Element(i, c), Right(i, r).
     };
-    solve input, p project Neighbourhood
+    solve input, p inject Neighbourhood
 
 def main(): Unit & Impure =
     let values = (1, 13) :: (2, 21) :: (3, 34) :: (5, 55) :: (8, 89) :: Nil;
