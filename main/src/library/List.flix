@@ -73,6 +73,10 @@ instance Monad[List] {
     pub def flatMap(f: a -> List[b] & ef, x : List[a]) : List[b] & ef = List.flatMap(f, x)
 }
 
+instance ForEach[List] {
+    pub def foreach(f: a -> Unit & ef, l: List[a]): Unit & ef = List.foreach(f, l)
+}
+
 instance Foldable[List] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: List[a]): b & ef = List.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: List[a]): b & ef = List.foldRight(f, s, l)
@@ -1152,7 +1156,7 @@ namespace List {
     /// Returns the list `l` as an array.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def toArray(l: List[a], r: Region[r]): ScopedArray[a, r] \ Write(r) = match head(l) {
+    pub def toArray(l: List[a], r: Region[r]): Array[a, r] \ Write(r) = match head(l) {
         case None    => [] @ r
         case Some(x) =>
             let a = [x; length(l)] @ r;
