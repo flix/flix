@@ -44,9 +44,7 @@ instance Hash[Set[a]] with Hash[a] {
 }
 
 instance ToString[Set[a]] with ToString[a] {
-    pub def toString(s: Set[a]): String =
-        let st = Set.foldRight((x, acc) -> "${x}, ${acc}", "", s);
-        "Set#{${String.dropRight(2, st)}}"
+    pub def toString(s: Set[a]): String = Set.toString(s)
 }
 
 instance LowerBound[Set[a]] {
