@@ -299,6 +299,9 @@ class Flix {
     this
   }
 
+  /**
+    * Removes the given string `text` with the given `name`.
+    */
   def remSourceCode(name: String, text: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
