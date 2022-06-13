@@ -44,9 +44,7 @@ instance Hash[Set[a]] with Hash[a] {
 }
 
 instance ToString[Set[a]] with ToString[a] {
-    pub def toString(s: Set[a]): String =
-        let st = Set.foldRight((x, acc) -> "${x}, ${acc}", "", s);
-        "Set#{${String.dropRight(2, st)}}"
+    pub def toString(s: Set[a]): String = Set.toString(s)
 }
 
 instance LowerBound[Set[a]] {
@@ -88,6 +86,25 @@ instance Monoid[Set[a]] with Order[a] {
 instance CommutativeMonoid[Set[a]] with Order[a]
 
 namespace Set {
+
+    ///
+    /// Returns a string representation of the given set `s`.
+    ///
+    pub def toString(s: Set[a]): String with ToString[a] = region r {
+        let sb = new StringBuilder(r);
+        let first = ref true;
+
+        StringBuilder.appendString!("Set#{", sb);
+
+        let f = (x) -> {
+            if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
+            StringBuilder.appendString!("${x}", sb)
+        };
+        Set.foreach(f, s);
+
+        StringBuilder.appendString!("}", sb);
+        StringBuilder.toString(sb)
+    }
 
     ///
     /// Returns the number of threads to use for parallel evaluation.

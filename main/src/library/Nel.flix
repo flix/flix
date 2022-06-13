@@ -24,9 +24,7 @@ pub enum Nel[a] {
 instance Boxable[Nel[a]] with Boxable[a]
 
 instance ToString[Nel[a]] with ToString[a] {
-    pub def toString(l: Nel[a]): String = match l {
-        case Nel(x, xs) => "Nel(${x}, ${xs})"
-    }
+    pub def toString(l: Nel[a]): String = Nel.toString(l)
 }
 
 instance Hash[Nel[a]] with Hash[a] {
@@ -109,6 +107,21 @@ instance SemiGroup[Nel[a]] {
 }
 
 namespace Nel {
+
+    ///
+    /// Returns a string representation of the given non-empty list `l`.
+    ///
+    pub def toString(l: Nel[a]): String with ToString[a] = region r {
+        let Nel(x, xs) = l;
+        let sb = new StringBuilder(r);
+        StringBuilder.appendString!("Nel(${x}, ", sb);
+
+        let list = List.toString(xs);
+        StringBuilder.appendString!(list, sb);
+        StringBuilder.appendString!(")", sb);
+
+        StringBuilder.toString(sb)
+    }
 
     ///
     /// Returns a new non-empty list containing the single element `x`.
