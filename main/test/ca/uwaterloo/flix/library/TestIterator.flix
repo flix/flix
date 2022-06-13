@@ -236,28 +236,34 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def product01(): Bool & Impure =
-        Iterator.empty() |> Iterator.product == 0
+    def product01(): Bool = region r {
+        new Iterator(r) |> Iterator.regProduct == 0
+    }
 
     @test
-    def product02(): Bool & Impure =
-        List.toIterator(1 :: Nil) |> Iterator.product == 1
+    def product02(): Bool = region r {
+        List.toRegionIterator(r, 1 :: Nil) |> Iterator.regProduct == 1
+    }
 
     @test
-    def product03(): Bool & Impure =
-        List.toIterator(1 :: 2 :: 3 :: Nil) |> Iterator.product == 6
+    def product03(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 2 :: 3 :: Nil) |> Iterator.regProduct == 6
+    }
 
     @test
-    def product04(): Bool & Impure =
-        List.toIterator(1 :: 2 :: 3 :: -3 :: Nil) |> Iterator.product == -18
+    def product04(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 2 :: 3 :: -3 :: Nil) |> Iterator.regProduct == -18
+    }
 
     @test
-    def product05(): Bool & Impure =
-        List.toIterator(-1 :: -2 :: -3 :: -4 :: Nil) |> Iterator.product == 24
+    def product05(): Bool = region r {
+        List.toRegionIterator(r, -1 :: -2 :: -3 :: -4 :: Nil) |> Iterator.regProduct == 24
+    }
 
     @test
-    def product06(): Bool & Impure =
-        List.toIterator(10 :: -10 :: Nil) |> Iterator.product == -100
+    def product06(): Bool = region r {
+        List.toRegionIterator(r, 10 :: -10 :: Nil) |> Iterator.regProduct == -100
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -265,28 +271,34 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def productWith01(): Bool & Impure =
-        Iterator.empty() |> Iterator.productWith(x -> x + 1) == 0
+    def productWith01(): Bool = region r {
+        new Iterator(r) |> Iterator.regProductWith(x -> x + 1) == 0
+    }
 
     @test
-    def productWith02(): Bool & Impure =
-        List.toIterator(1 :: Nil) |> Iterator.productWith(x -> x + 1) == 2
+    def productWith02(): Bool = region r {
+        List.toRegionIterator(r, 1 :: Nil) |> Iterator.regProductWith(x -> x + 1) == 2
+    }
 
     @test
-    def productWith03(): Bool & Impure =
-        List.toIterator(1 :: 2 :: 3 :: Nil) |> Iterator.productWith(x -> x + 1) == 24
+    def productWith03(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 2 :: 3 :: Nil) |> Iterator.regProductWith(x -> x + 1) == 24
+    }
 
     @test
-    def productWith04(): Bool & Impure =
-        List.toIterator(1 :: 2 :: 3 :: -3 :: Nil) |> Iterator.productWith(x -> x + 1) == -48
+    def productWith04(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 2 :: 3 :: -3 :: Nil) |> Iterator.regProductWith(x -> x + 1) == -48
+    }
 
     @test
-    def productWith05(): Bool & Impure =
-        List.toIterator(-2 :: -3 :: -4 :: -5 :: Nil) |> Iterator.productWith(x -> x + 1) == 24
+    def productWith05(): Bool = region r {
+        List.toRegionIterator(r, -2 :: -3 :: -4 :: -5 :: Nil) |> Iterator.regProductWith(x -> x + 1) == 24
+    }
 
     @test
-    def productWith06(): Bool & Impure =
-        List.toIterator(10 :: -10 :: Nil) |> Iterator.productWith(x -> x + 1) == -99
+    def productWith06(): Bool = region r {
+        List.toRegionIterator(r, 10 :: -10 :: Nil) |> Iterator.regProductWith(x -> x + 1) == -99
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
