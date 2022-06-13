@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.{CompilationMessage, ast}
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
@@ -779,10 +779,10 @@ object Stratifier {
         case _ => throw InternalCompilerException(s"Unexpected non-denotation type constructor: '$tc'")
       }
       t.baseType match {
-      case Type.Cst(TypeConstructor.Tuple(_), _) => (t.typeArguments, den) // Multi-ary
-      case Type.Cst(TypeConstructor.Unit, _) => (Nil, den)
-      case _ => (List(t), den) // Unary
-    }
+        case Type.Cst(TypeConstructor.Tuple(_), _) => (t.typeArguments, den) // Multi-ary
+        case Type.Cst(TypeConstructor.Unit, _) => (Nil, den)
+        case _ => (List(t), den) // Unary
+      }
     case _: Type.Var =>
       // This could occur when querying or projecting a non-existent predicate
       (Nil, Denotation.Relational)
