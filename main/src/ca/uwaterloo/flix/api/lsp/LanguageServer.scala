@@ -228,6 +228,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.RemPkg(id, uri) =>
+      // clone is necessary because `remSourceCode` modifies `sources`
       for ((file, _) <- sources.clone()
            if file.startsWith(uri)) {
         remSourceCode(file)
