@@ -46,7 +46,7 @@ object Resolver {
   private val ToStringSym = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
   private val HashSym = new Symbol.ClassSym(Nil, "Hash", SourceLocation.Unknown)
 
-  private val DerivableSyms = List(BoxableSym, EqSym, OrderSym, ToStringSym, HashSym)
+  val DerivableSyms = List(BoxableSym, EqSym, OrderSym, ToStringSym, HashSym)
 
   /**
     * Performs name resolution on the given program `root`.

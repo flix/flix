@@ -72,4 +72,15 @@ namespace Test/Exp/Fixpoint/Constraint {
         R(x) :- A(x).
     }
 
+    @test
+    def testPredicateWithTypeVariableTerms01(): Bool & Impure = {
+        let p = #{ A(12). };
+        let query1 = query p select () from B();
+        let test1 = Array.compare(query1, []) == EqualTo;
+        let _test2 = solve p project C;
+        let query2 = query (solve p project D) select () from D();
+        let test3 = Array.compare(query2, []) == EqualTo;
+        test1 and test3
+    }
+
 }
