@@ -13,7 +13,7 @@ namespace TestNel {
     def toString02(): Bool = Nel.toString(Nel(1, 2 :: 3 :: 4 :: Nil)) == "Nel(1, 2 :: 3 :: 4 :: Nil)"
 
     @test
-    def toString03(): Bool = Nel.toString(Nel('a', 'b' :: Nil)) == "Nel('a', 'b' :: Nil)"
+    def toString03(): Bool = Nel.toString(Nel('a', 'b' :: Nil)) == "Nel(a, b :: Nil)"
 
     /////////////////////////////////////////////////////////////////////////////
     // singleton                                                               //
