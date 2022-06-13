@@ -515,22 +515,6 @@ namespace DelayMap {
             DMap(foldRight((k, v, acc) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v, acc), xs, ys))
 
     ///
-    /// Returns the map `m` as a list of key-value pairs.
-    ///
-    @Experimental
-    pub def toList(m: DelayMap[k, v]): List[(k, v)] =
-        foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, m)
-
-    ///
-    /// Returns the map `m` as a MutDeque of key-value pairs.
-    ///
-    @Experimental
-    pub def toMutDeque(m: DelayMap[k, v], r: Region[r]): MutDeque[(k, v), r] \ Write(r) =
-        let d = MutDeque.new(r);
-        foreach((k, v) -> MutDeque.pushBack((k, v), d), m);
-        d
-
-    ///
     /// Applies `f` to a start value `s` and all values in `m` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, v1), v2)..., vn)`.
@@ -727,6 +711,13 @@ namespace DelayMap {
         DMap(RedBlackTree.updateWith(f1, k, t))
 
     ///
+    /// Returns the map `m` as a list of key-value pairs.
+    ///
+    @Experimental
+    pub def toList(m: DelayMap[k, v]): List[(k, v)] =
+        foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, m)
+
+    ///
     /// Returns `m` as a Map, i.e. every value is forced.
     ///
     @Experimental @Parallel
@@ -734,6 +725,15 @@ namespace DelayMap {
         let _ = parallelForce(m);
         let DMap(t) = m;
         Map(RedBlackTree.mapWithKey((_, v) -> force v, t))
+
+    ///
+    /// Returns the map `m` as a MutDeque of key-value pairs.
+    ///
+    @Experimental
+    pub def toMutDeque(m: DelayMap[k, v], r: Region[r]): MutDeque[(k, v), r] \ Write(r) =
+        let d = MutDeque.new(r);
+        foreach((k, v) -> MutDeque.pushBack((k, v), d), m);
+        d
 
     ///
     /// Returns `m` as a mutable set.

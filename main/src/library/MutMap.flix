@@ -564,6 +564,14 @@ namespace MutMap {
         Map.toSet(deref mm)
 
     ///
+    /// Returns the mutable map `m` as a MutDeque of key-value pairs.
+    ///
+    pub def toMutDeque(m: MutMap[k, v, r1], r: Region[r2]): MutDeque[(k, v), r2] \ { Read(r1), Write(r2) } =
+        let d = MutDeque.new(r);
+        foreach((k, v) -> MutDeque.pushBack((k, v), d), m);
+        d
+
+    ///
     /// Applies `f` to every element in the mutable map `m`.
     ///
     pub def foreach(f: (k, v) -> Unit & ef, m: MutMap[k, v, r]): Unit \ { ef, Read(r) } =
