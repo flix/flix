@@ -20,7 +20,7 @@ namespace Test/Exp/New {
 
     @test
     def testNew04(): Unit = region r {
-        let l = new MutList(r);
+        let _ = new MutList(r): MutList[String, r];
         ()
     }
 
