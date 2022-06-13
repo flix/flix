@@ -209,6 +209,27 @@ namespace Iterator {
         Iterator(done, next)
 
     ///
+    /// Returns an iterator over an iterable with the element `x` repeated `n` times.
+    ///
+    /// Returns an empty iterator if `n < 0`.
+    ///
+    @Lazy
+    pub def regRepeat(r: Region[r], n: Int32, x: a): RegionIterator[a, r] \ Write(r) =
+        let i = ref 0 @ r;
+        let done = () -> deref i >= n;
+        let next = () -> {
+              let j = deref i;
+              if (j < n) {
+                i := j + 1;
+                x
+              }
+              else {
+                bug!("Empty Iterator!")
+              }
+            };
+        RegionIterator(done, next)
+
+    ///
     /// Returns the sum of all elements in the iterator `iter`.
     ///
     /// Consumes the entire iterator.
