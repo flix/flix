@@ -239,6 +239,21 @@ object CompletionProvider {
     s"$name(${args.mkString(", ")})"
   }
 
+  /**
+    * Under some circumstances, even though we set `isIncomplete`, which is supposed to opt-out
+    * of this behaviour, VSCode filters returned completions when the user types more text
+    * without calling the language server again (so it has no chance to return different
+    * completions).
+    *
+    * If we use `label` as filter text (which is the default), this can result in many false
+    * positives, e.g. if the user types "MyList[t", the "t" will result in many potential Def
+    * and Sig completions. If the user then types "]" VSCode will filter this list using the
+    * "word" "t]" which will match many of these completions (e.g. "Nec.tail(c: Nec[a]): ...").
+    *
+    * To avoid this behaviour, we set `filterText` for Def and Sig completions to be just the
+    * name. The "(" is there so that they still see completions if they enter the opening
+    * bracket of a function call (but not if they start filling in the argument list).
+    */
   private def getFilterTextForName(name: String): String = {
     s"${name}("
   }
