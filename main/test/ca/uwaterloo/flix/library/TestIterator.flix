@@ -532,41 +532,50 @@ namespace TestIterator {
         3 == deref res
     }
 
+
     /////////////////////////////////////////////////////////////////////////////
     // lazyFilter                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def lazyFilter01(): Bool & Impure =
-        List.toIterator(Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == Nil
+    def lazyFilter01(): Bool = region r {
+        List.toRegionIterator(r, Nil) |> Iterator.regFilterL(i -> i > 3) |> Iterator.regToList == Nil
+    }
 
     @test
-    def lazyFilter02(): Bool & Impure =
-        List.toIterator(2 :: Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == Nil
+    def lazyFilter02(): Bool = region r {
+        List.toRegionIterator(r, 2 :: Nil) |> Iterator.regFilterL(i -> i > 3) |> Iterator.regToList == Nil
+    }
 
     @test
-    def lazyFilter03(): Bool & Impure =
-        List.toIterator(4 :: Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == 4 :: Nil
+    def lazyFilter03(): Bool = region r {
+        List.toRegionIterator(r, 4 :: Nil) |> Iterator.regFilterL(i -> i > 3) |> Iterator.regToList == 4 :: Nil
+    }
 
     @test
-    def lazyFilter04(): Bool & Impure =
-        List.toIterator(1 :: 3 :: Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == Nil
+    def lazyFilter04(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 3 :: Nil) |> Iterator.regFilterL(i -> i > 3) |> Iterator.regToList == Nil
+    }
 
     @test
-    def lazyFilter05(): Bool & Impure =
-        List.toIterator(1 :: 8 :: Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == 8 :: Nil
+    def lazyFilter05(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 8 :: Nil) |> Iterator.regFilterL(i -> i > 3) |> Iterator.regToList == 8 :: Nil
+    }
 
     @test
-    def lazyFilter06(): Bool & Impure =
-        List.toIterator(8 :: 1 :: Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == 8 :: Nil
+    def lazyFilter06(): Bool = region r {
+        List.toRegionIterator(r, 8 :: 1 :: Nil) |> Iterator.regFilterL(i -> i > 3) |> Iterator.regToList == 8 :: Nil
+    }
 
     @test
-    def lazyFilter07(): Bool & Impure =
-        List.toIterator(8 :: 9 :: Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == 8 :: 9 :: Nil
+    def lazyFilter07(): Bool = region r {
+        List.toRegionIterator(r, 8 :: 9 :: Nil) |> Iterator.regFilterL(i -> i > 3) |> Iterator.regToList == 8 :: 9 :: Nil
+    }
 
     @test
-    def lazyFilter08(): Bool & Impure =
-        List.toIterator(1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == 4 :: 11 :: 17 :: Nil
+    def lazyFilter08(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil) |> Iterator.regFilterL(i -> i > 3) |> Iterator.regToList == 4 :: 11 :: 17 :: Nil
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
