@@ -132,8 +132,8 @@ namespace Fixpoint {
             let insert =
                 Array.foldRight(match (atom, rowVar) -> acc -> match atom {
                     case BodyAtom(bodySym, den, Polarity.Positive, _, terms) =>
-                        let arity = Array.length(terms);
-                        RelOp.Search(rowVar, RamSym.Full(bodySym, arity, den), acc)
+                        let arity1 = Array.length(terms);
+                        RelOp.Search(rowVar, RamSym.Full(bodySym, arity1, den), acc)
                     case _ => acc
                 }, loopBody, augBody) |>
                 RamStmt.Insert;
@@ -185,11 +185,11 @@ namespace Fixpoint {
                 let insert =
                     Array.foldRight(match (atom, rowVar) -> acc -> match atom {
                         case BodyAtom(bodySym, den, Polarity.Positive, _, terms) =>
-                            let arity = Array.length(terms);
+                            let arity1 = Array.length(terms);
                             let ramSym = if (rowVar == delta and isRelational(den)) {
-                                RamSym.Delta(bodySym, arity, den)
+                                RamSym.Delta(bodySym, arity1, den)
                             } else {
-                                RamSym.Full(bodySym, arity, den)
+                                RamSym.Full(bodySym, arity1, den)
                             };
                             RelOp.Search(rowVar, ramSym, acc)
                         case _ => acc
