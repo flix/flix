@@ -405,20 +405,20 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toSet01(): Bool & Impure =
-        List.toIterator(Nil: List[Int32]) |> Iterator.toSet == Set.empty()
+    def toSet01(): Bool = region r {
+        Set.empty() |> Set.toRegionIterator(r) |> Iterator.regToSet == Set.empty(): Set[Int32]
+    }
 
     @test
-    def toSet02(): Bool & Impure =
-        Set#{} |> Set.toList |> List.toIterator |> Iterator.toSet == Set.empty(): Set[String]
+    def toSet02(): Bool = region r {
+        Set#{"a", "b", "c", "d"} |> Set.toRegionIterator(r) |> Iterator.regToSet == Set#{"a", "b", "c", "d"}
+    }
 
     @test
-    def toSet03(): Bool & Impure =
-        Set#{"a", "b", "c", "d"} |> Set.toList |> List.toIterator |> Iterator.toSet == Set#{"a", "b", "c", "d"}
+    def toSet03(): Bool = region r {
+        Set.range(0, 10000) |> Set.toRegionIterator(r) |> Iterator.regToSet == Set.range(0, 10000)
+    }
 
-    @test
-    def toSet04(): Bool & Impure =
-        Set.range(0, 10000) |> Set.toList |> List.toIterator |> Iterator.toSet == Set.range(0, 10000)
 
     /////////////////////////////////////////////////////////////////////////////
     // filter (pure)                                                           //

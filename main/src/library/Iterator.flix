@@ -409,6 +409,12 @@ namespace Iterator {
         foldLeft((acc, a) -> Set.insert(a, acc), Set.empty(), iter)
 
     ///
+    /// Returns the contents of `iter` as a set. Consumes the entire iterator.
+    ///
+    pub def regToSet(iter: RegionIterator[a, r]): Set[a] \ Read(r) with Order[a] =
+        regFoldLeft((acc, a) -> Set.insert(a, acc), Set.empty(), iter)
+
+    ///
     /// Returns a list of every element in `iter` that satisfies the predicate `f`.
     ///
     /// Consumes the entire iterator.
