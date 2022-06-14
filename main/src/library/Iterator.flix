@@ -891,11 +891,11 @@ namespace Iterator {
                 let Iterator(d, _) = i;
                 if (d()) match intercalateForward(doneB, nextB) {
                     case None    => true
-                    case Some(i) =>
+                    case Some(i1) =>
                         if (doneB())
-                            cursor := Some(i)
+                            cursor := Some(i1)
                         else
-                            mkCursor(i);
+                            mkCursor(i1);
                         false
                 }
                 else
@@ -1076,7 +1076,7 @@ namespace Iterator {
         let Iterator(done, next) = iter;
         match dropWhileForward(f, done, next) {
             case None       => empty()
-            case Some(iter) => iter
+            case Some(iter1) => iter1
         }
 
 

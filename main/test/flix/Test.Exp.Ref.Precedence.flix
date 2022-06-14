@@ -1,23 +1,23 @@
 namespace Test/Exp/Ref/Precedence {
 
     @test
-    def testRefPrecedence01(): Bool = region r {
-        let l = ref ref 123 @ r @ r;
+    def testRefPrecedence01(): Bool = region reg {
+        let l = ref ref 123 @ reg @ reg;
         let r = deref deref l;
         r == 123
     }
 
     @test
-    def testRefPrecedence02(): Bool = region r {
-        let l = ref ref ref 123 @ r @ r @ r;
+    def testRefPrecedence02(): Bool = region reg {
+        let l = ref ref ref 123 @ reg @ reg @ reg;
         let r = deref deref deref l;
         r == 123
     }
 
     @test
-    def testRefPrecedence03(): Bool = region r {
-        let x = ref 123 @ r;
-        let y = ref 123 @ r;
+    def testRefPrecedence03(): Bool = region reg {
+        let x = ref 123 @ reg;
+        let y = ref 123 @ reg;
         let r = deref x + deref y;
         r == (123 + 123)
     }
