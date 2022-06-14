@@ -465,6 +465,24 @@ namespace Iterator {
         loop(identity)
 
     ///
+    /// Returns a list with `f` applied to every element in `iter`.
+    ///
+    /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def regMap(f: a -> b & ef, iter: RegionIterator[a, r]): List[b] \ { ef, Read(r) } =
+        let RegionIterator(done, next) = iter;
+        def loop(k) = {
+            if (done())
+                k(Nil)
+            else
+                let x = f(next());
+                loop(ks -> k(x :: ks))
+        };
+        loop(identity)
+
+    ///
     /// Applies `f` to every element of `iter`.
     ///
     /// Consumes the entire iterator.

@@ -466,83 +466,50 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // map (pure)                                                              //
+    // map                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def mapPure01(): Bool & Impure =
-        Nil |> List.toIterator |>
-            Iterator.map(i -> i > 2) == Nil
+    def map01(): Bool = region r {
+        Nil |> List.toRegionIterator(r) |>
+            Iterator.regMap(i -> i > 2) == Nil
+    }
 
     @test
-    def mapPure02(): Bool & Impure =
-        (1 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2) == false :: Nil
+    def map02(): Bool = region r {
+        (1 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regMap(i -> i > 2) == false :: Nil
+    }
 
     @test
-    def mapPure03(): Bool & Impure =
-        (3 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2) == true :: Nil
+    def map03(): Bool = region r {
+        (3 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regMap(i -> i > 2) == true :: Nil
+    }
 
     @test
-    def mapPure04(): Bool & Impure =
-        (1 :: 2 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2) == false :: false :: Nil
+    def map04(): Bool = region r {
+        (1 :: 2 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regMap(i -> i > 2) == false :: false :: Nil
+    }
 
     @test
-    def mapPure05(): Bool & Impure =
-        (1 :: 8 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2) == false :: true :: Nil
+    def map05(): Bool = region r {
+        (1 :: 8 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regMap(i -> i > 2) == false :: true :: Nil
+    }
 
     @test
-    def mapPure06(): Bool & Impure =
-        (8 :: 1 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2) == true :: false :: Nil
+    def map06(): Bool = region r {
+        (8 :: 1 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regMap(i -> i > 2) == true :: false :: Nil
+    }
 
     @test
-    def mapPure07(): Bool & Impure =
-        (7 :: 8 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2) == true :: true :: Nil
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // map (impure)                                                            //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def mapImpure01(): Bool & Impure =
-        Nil |> List.toIterator |>
-            Iterator.map(i -> i > 2 as & Impure) == Nil
-
-    @test
-    def mapImpure02(): Bool & Impure =
-        (1 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2 as & Impure) == false :: Nil
-
-    @test
-    def mapImpure03(): Bool & Impure =
-        (3 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2 as & Impure) == true :: Nil
-
-    @test
-    def mapImpure04(): Bool & Impure =
-        (1 :: 2 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2 as & Impure) == false :: false :: Nil
-
-    @test
-    def mapImpure05(): Bool & Impure =
-        (1 :: 8 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2 as & Impure) == false :: true :: Nil
-
-    @test
-    def mapImpure06(): Bool & Impure =
-        (8 :: 1 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2 as & Impure) == true :: false :: Nil
-
-    @test
-    def mapImpure07(): Bool & Impure =
-        (7 :: 8 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2 as & Impure) == true :: true :: Nil
+    def map07(): Bool = region r {
+        (7 :: 8 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regMap(i -> i > 2) == true :: true :: Nil
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
