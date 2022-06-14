@@ -94,7 +94,7 @@ object CompletionProvider {
   private def keywordCompletion(name: String)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
     CompletionItem(label = name,
       sortText = Priority.keyword(name),
-      textEdit = TextEdit(context.range, name),
+      textEdit = TextEdit(context.range, s"$name "),
       kind = CompletionItemKind.Keyword)
   }
 
