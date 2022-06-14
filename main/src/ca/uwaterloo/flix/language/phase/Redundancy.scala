@@ -368,7 +368,7 @@ object Redundancy {
       val env1 = env0 + sym
 
       // Visit the expression under the extended environment.
-      val innerUsed = visitExp(exp, env0, rc)
+      val innerUsed = visitExp(exp, env1, rc)
 
       // Check for shadowing.
       val shadowedVar = shadowing(sym, env0)
@@ -873,7 +873,7 @@ object Redundancy {
     /**
       * Updates `this` environment with a set of new variable symbols `varSyms`.
       */
-    def ++(vs: Iterable[Symbol.VarSym]): Env = vs.foldLeft(Env.empty) {
+    def ++(vs: Iterable[Symbol.VarSym]): Env = vs.foldLeft(this) {
       case (acc, sym) => acc + sym
     }
   }
