@@ -346,6 +346,25 @@ namespace TestIterator {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // toNel                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toNel01(): Bool = region r {
+        Nil |> List.toRegionIterator(r) |> Iterator.regToNel == None: Option[Nel[Int32]]
+    }
+
+    @test
+    def toNel02(): Bool = region r {
+        (1 :: Nil) |> List.toRegionIterator(r) |> Iterator.regToNel == Some(Nel(1, Nil))
+    }
+
+    @test
+    def toNel03(): Bool = region r {
+        Iterator.regRange(r, 0, 1000) |> Iterator.regToNel == Some(Nel(0, List.range(1, 1000)))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -364,23 +383,6 @@ namespace TestIterator {
     @test
     def toSet04(): Bool & Impure =
         Set.range(0, 10000) |> Set.toList |> List.toIterator |> Iterator.toSet == Set.range(0, 10000)
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toNel                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def toNel01(): Bool & Impure =
-        Nil |> List.toIterator |> Iterator.toNel == None: Option[Nel[Int32]]
-
-    @test
-    def toNel02(): Bool & Impure =
-        (1 :: Nil) |> List.toIterator |> Iterator.toNel == Some(Nel(1, Nil))
-
-    @test
-    def toNel03(): Bool & Impure =
-        Iterator.range(0, 1000) |> Iterator.toNel == Some(Nel(0, List.range(1, 1000)))
 
 
     /////////////////////////////////////////////////////////////////////////////

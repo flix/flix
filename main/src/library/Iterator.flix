@@ -369,6 +369,16 @@ namespace Iterator {
     }
 
     ///
+    /// Returns the contents of `iter` as a `Some(Nel)` if `iter` is not empty. Returns None otherwise.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def regToNel(iter: RegionIterator[a, r]): Option[Nel[a]] \ Read(r) = match regToList(iter) {
+        case Nil     => None
+        case x :: xs => Some(Nel(x, xs))
+    }
+
+    ///
     /// Returns the contents of `iter` as a nec.
     ///
     /// Consumes the entire iterator.
