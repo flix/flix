@@ -591,13 +591,13 @@ namespace MutList {
         let a = deref ra;
         let l = deref rl;
         let n = l - 1;
-        def loop(i) = {
-            if (i < n) {
-                a[i] = a[i + 1];
-                loop(i + 1)
+        def loop(i1) = {
+            if (i1 < n) {
+                a[i1] = a[i1 + 1];
+                loop(i1 + 1)
             }
-            else if (i == n) {
-                a[i] = $DEFAULT$
+            else if (i1 == n) {
+                a[i1] = $DEFAULT$
             }
             else
                 ()
