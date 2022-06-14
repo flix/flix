@@ -239,8 +239,8 @@ object CompletionProvider {
     */
   private def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam])(implicit context: Context): String = {
     val paramsToDrop = context.previousWord match {
-      case s if (s == "||>") => 2
-      case s if (s == "|>" || s == "!>") => 1
+      case "||>" => 2
+      case "|>" | "!>" => 1
       case _ => 0
     }
     val args = fparams.dropRight(paramsToDrop).zipWithIndex.map {
@@ -498,6 +498,21 @@ object CompletionProvider {
       Letters.MathLetter ++ Letters.GreekLetter ++ CharPredicate("@/.")
 
   /**
+    * Returns the word at the end of a string, discarding trailing whitespace first
+    */
+  private def getLastWord(s: String) = {
+    s.reverse.dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
+  }
+
+  /**
+    * Returns the second-to-last word at the end of a string, *not* discarding
+    * trailing whitespace first.
+    */
+  private def getSecondLastWord(s: String) = {
+    s.reverse.dropWhile(isWordChar).dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
+  }
+
+  /**
     * Find context from the source, and cursor position within it.
     */
   private def getContext(source: String, uri: String, pos: Position): Option[Context] = {
@@ -506,18 +521,17 @@ object CompletionProvider {
       val lines = source.linesWithSeparators.toList
       for(line <- lines.slice(y, y + 1).toList.headOption) yield {
         val (prefix, suffix) = line.splitAt(x)
-        val reversedPrefix = prefix.reverse
-        val wordStart = reversedPrefix.takeWhile(isWordChar).reverse
+        val wordStart = prefix.reverse.takeWhile(isWordChar).reverse
         val wordEnd = suffix.takeWhile(isWordChar)
         val word = wordStart + wordEnd
         val start = x - wordStart.length
         val end = x + wordEnd.length
-        val prevWord = reversedPrefix.dropWhile(isWordChar).dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
+        val prevWord = getSecondLastWord(prefix)
         val previousWord = if (prevWord.nonEmpty) {
           prevWord
         } else lines.slice(y - 1, y).toList.headOption match {
           case None => ""
-          case Some(s) => s.reverse.dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
+          case Some(s) => getLastWord(s)
         }
         val range = Range(Position(y, start), Position(y, end))
         new Context(uri, range, word, previousWord, prefix)
