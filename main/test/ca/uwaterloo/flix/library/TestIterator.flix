@@ -421,77 +421,48 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // filter (pure)                                                           //
+    // filter                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterPure01(): Bool & Impure =
-        Nil |> List.toIterator |> Iterator.filter(i -> i > 3) == Nil
+    def filter01(): Bool = region r {
+        Nil |> List.toRegionIterator(r) |> Iterator.regFilter(i -> i > 3) == Nil
+    }
 
     @test
-    def filterPure02(): Bool & Impure =
-        (2 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3) == Nil
+    def filter02(): Bool = region r {
+        (2 :: Nil) |> List.toRegionIterator(r) |> Iterator.regFilter(i -> i > 3) == Nil
+    }
 
     @test
-    def filterPure03(): Bool & Impure =
-        (4 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3) == 4 :: Nil
+    def filter03(): Bool = region r {
+        (4 :: Nil) |> List.toRegionIterator(r) |> Iterator.regFilter(i -> i > 3) == 4 :: Nil
+    }
 
     @test
-    def filterPure04(): Bool & Impure =
-        (1 :: 3 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3) == Nil
+    def filter04(): Bool = region r {
+        (1 :: 3 :: Nil) |> List.toRegionIterator(r) |> Iterator.regFilter(i -> i > 3) == Nil
+    }
 
     @test
-    def filterPure05(): Bool & Impure =
-        (1 :: 8 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3) == 8 :: Nil
+    def filter05(): Bool = region r {
+        (1 :: 8 :: Nil) |> List.toRegionIterator(r) |> Iterator.regFilter(i -> i > 3) == 8 :: Nil
+    }
 
     @test
-    def filterPure06(): Bool & Impure =
-        (8 :: 1 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3) == 8 :: Nil
+    def filter06(): Bool = region r {
+        (8 :: 1 :: Nil) |> List.toRegionIterator(r) |> Iterator.regFilter(i -> i > 3) == 8 :: Nil
+    }
 
     @test
-    def filterPure07(): Bool & Impure =
-        (8 :: 9 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3) == 8 :: 9 :: Nil
+    def filter07(): Bool = region r {
+        (8 :: 9 :: Nil) |> List.toRegionIterator(r) |> Iterator.regFilter(i -> i > 3) == 8 :: 9 :: Nil
+    }
 
     @test
-    def filterPure08(): Bool & Impure =
-        (1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3) == 4 :: 11 :: 17 :: Nil
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // filter (impure)                                                         //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def filterImpure01(): Bool & Impure =
-        Nil |> List.toIterator |> Iterator.filter(i -> i > 3 as & Impure) == Nil
-
-    @test
-    def filterImpure02(): Bool & Impure =
-        (2 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3 as & Impure) == Nil
-
-    @test
-    def filterImpure03(): Bool & Impure =
-        (4 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3 as & Impure) == 4 :: Nil
-
-    @test
-    def filterImpure04(): Bool & Impure =
-        (1 :: 3 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3 as & Impure) == Nil
-
-    @test
-    def filterImpure05(): Bool & Impure =
-        (1 :: 8 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3 as & Impure) == 8 :: Nil
-
-    @test
-    def filterImpure06(): Bool & Impure =
-        (8 :: 1 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3 as & Impure) == 8 :: Nil
-
-    @test
-    def filterImpure07(): Bool & Impure =
-        (8 :: 9 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3 as & Impure) == 8 :: 9 :: Nil
-
-    @test
-    def filterImpure08(): Bool & Impure =
-        (1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3 as & Impure) == 4 :: 11 :: 17 :: Nil
+    def filter08(): Bool = region r {
+        (1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil) |> List.toRegionIterator(r) |> Iterator.regFilter(i -> i > 3) == 4 :: 11 :: 17 :: Nil
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////

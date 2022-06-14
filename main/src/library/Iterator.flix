@@ -431,6 +431,22 @@ namespace Iterator {
         loop(identity)
 
     ///
+    /// Returns a list of every element in `iter` that satisfies the predicate `f`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def regFilter(f: a -> Bool & ef, iter: RegionIterator[a, r]): List[a] \ { ef, Read(r) } =
+        let RegionIterator(done, next) = iter;
+        def loop(k) = {
+            if (done())
+                k(Nil)
+            else
+                let x = next();
+                if (f(x)) loop(ks -> k(x :: ks)) else loop(k)
+        };
+        loop(identity)
+
+    ///
     /// Returns a list with `f` applied to every element in `iter`.
     ///
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
