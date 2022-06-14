@@ -216,7 +216,7 @@ namespace Iterator {
     ///
     pub def toMutDeque(iter: Iterator[a], r: Region[r]): MutDeque[a, r] & Impure  =
         let d = new MutDeque(r);
-        Iterator.foreach(x -> MutDeque.pushBack(x, d), iter);
+        foreach(x -> MutDeque.pushBack(x, d), iter);
         d
 
     ///
