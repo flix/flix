@@ -861,4 +861,13 @@ namespace Chain {
         };
         loop(c, Empty, 0)
 
+    ///
+    /// Shuffles `c` using the Fisher–Yates shuffle.
+    ///
+    pub def shuffle(rd: Random.Random, c: Chain[a]): Chain[a] & Impure = region r {
+        let arr = toArray(c, r);
+        Array.shuffle(rd, arr);
+        Array.toChain(arr)
+    }
+
 }
