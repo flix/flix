@@ -234,15 +234,22 @@ object CompletionProvider {
 
   /**
     * Generate a snippet which represents calling a function.
-    * Drops the last argument in the event that the function is in a pipeline
-    * (i.e. is preceeded by `|>`)
+    * Drops the last one or two arguments in the event that the function is in a pipeline
+    * (i.e. is preceeded by `|>`, `!>`, or `||>`)
     */
   private def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam])(implicit context: Context): String = {
-    val fparamsUsed = if (context.previousWord == "|>") fparams.dropRight(1) else fparams
-    val args = fparamsUsed.zipWithIndex.map {
+    val paramsToDrop = context.previousWord match {
+      case s if (s == "||>") => 2
+      case s if (s == "|>" || s == "!>") => 1
+      case _ => 0
+    }
+    val args = fparams.dropRight(paramsToDrop).zipWithIndex.map {
       case (fparam, idx) => "$" + s"{${idx + 1}:${fparam.sym.text}}"
     }
-    s"$name(${args.mkString(", ")})"
+    if (args.nonEmpty)
+      s"$name(${args.mkString(", ")})"
+    else
+      name
   }
 
   /**
