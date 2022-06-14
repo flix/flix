@@ -19,6 +19,30 @@ namespace TestArray {
     use Array.sameElements;
 
     /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toString01(): Bool = region r {
+        Array.toString(([] @ r): Array[Int32, _]) == "[]"
+    }
+
+    @test
+    def toString02(): Bool = region r {
+        Array.toString(([1] @ r)) == "[1]"
+    }
+
+    @test
+    def toString03(): Bool = region r {
+        Array.toString(([1, 2, 3, 4] @ r)) == "[1, 2, 3, 4]"
+    }
+
+    @test
+    def toString04(): Bool = region r {
+        Array.toString((['a', 'b', 'c', 'd'] @ r)) == "[a, b, c, d]"
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // new                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -5252,7 +5276,7 @@ def findIndices07(): Bool & Impure =
     }
 
     @test
-    def sortBy10(): Bool = region r {
+    def sortBy10(): Bool = region reg {
         Array.sortBy(r -> let R(x) = r; x.i, [R({i = 2, s = "A"}), R({i = 1, s = "B"}), R({i = 3, s = "C"})])
         `sameElements` [R({i = 1, s = "B"}), R({i = 2, s = "A"}), R({i = 3, s = "C"})]
     }
@@ -5806,6 +5830,38 @@ def findIndices07(): Bool & Impure =
         let _ = MutList.pop!(v);
         let _ = MutList.pop!(v);
         Array.sameElements(MutList.toArray(v, r), [] @ r)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // shuffle                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def shuffle01(): Bool & Impure = region r {
+        let a = ([] @ r): Array[Int32, _];
+        Array.shuffle(Random.new(), a);
+        Array.length(a) == 0 and Array.toSet(a) == Set#{}
+    }
+
+    @test
+    def shuffle02(): Bool & Impure = region r {
+        let a = ([0] @ r);
+        Array.shuffle(Random.new(), a);
+        Array.length(a) == 1 and Array.toSet(a) == Set#{0}
+    }
+
+    @test
+    def shuffle03(): Bool & Impure = region r {
+        let a = ([0, 1, 2, 3] @ r);
+        Array.shuffle(Random.new(), a);
+        Array.length(a) == 4 and Array.toSet(a) == Set#{0, 1, 2, 3}
+    }
+
+    @test
+    def shuffle04(): Bool & Impure = region r {
+        let a = ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9] @ r);
+        Array.shuffle(Random.new(), a);
+        Array.length(a) == 10 and Array.toSet(a) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
     }
 
 }
