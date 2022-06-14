@@ -110,6 +110,15 @@ instance Traversable[Option] {
 
 }
 
+instance FunctorFilter[Option] {
+    pub def filterMap(f: a -> Option[b] & ef, t: Option[a]): Option[b] & ef = Option.flatMap(f, t)
+
+    pub override def filter(f: a -> Bool & ef, t: Option[a]): Option[a] & ef = match t {
+        case None    => None
+        case Some(x) => if (f(x)) None else Some(x)
+    }
+}
+
 instance SemiGroup[Option[a]] with SemiGroup[a] {
     pub def combine(x: Option[a], y: Option[a]): Option[a] = match (x, y) {
         case (a, None)              => a

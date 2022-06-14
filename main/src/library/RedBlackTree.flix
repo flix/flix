@@ -78,6 +78,15 @@ namespace RedBlackTree {
             mapAWithKey((_, v) -> v, t)
     }
 
+    instance FunctorFilter[RedBlackTree[k]] with Order[k] {
+        pub def filterMap(f: a -> Option[b] & ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] & ef =
+            let step = (acc, k, a) -> match f(a) {
+                case Some(b) => insert(k, b, acc)
+                case None    => acc
+            };
+            foldLeft(step, empty(), t)
+    }
+
     ///
     /// The color of a red-black tree node.
     ///

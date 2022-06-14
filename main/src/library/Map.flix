@@ -68,6 +68,17 @@ instance Traversable[Map[k]] {
     pub override def sequence(t: Map[k, m[a]]): m[Map[k, a]] with Applicative[m] = Map.sequence(t)
 }
 
+instance FunctorFilter[Map[k]] with Order[k] {
+    pub def filterMap(f: a -> Option[b] & ef, m: Map[k, a]): Map[k, b] & ef =
+        let step = (acc, k, a) -> match f(a) {
+            case Some(b) => Map.insert(k, b, acc)
+            case None    => acc
+        };
+        Map.foldLeftWithKey(step, Map.empty(), m)
+
+    pub override def filter(f: a -> Bool & ef, m: Map[k, a]): Map[k, a] & ef = Map.filter(f, m)
+}
+
 instance SemiGroup[Map[k,v]] with Order[k], SemiGroup[v] {
     pub def combine(x: Map[k,v], y: Map[k,v]): Map[k,v] = Map.unionWith(SemiGroup.combine, x, y)
 }
