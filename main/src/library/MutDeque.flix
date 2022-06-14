@@ -400,4 +400,9 @@ namespace MutDeque {
         } else {
             loop(deref front)
         }
+    ///
+    /// Shuffles `a` using the Fisher–Yates shuffle.
+    ///
+    pub def shuffle(r: Random.Random, a: Array[a, r]): Unit & Impure
+
 }

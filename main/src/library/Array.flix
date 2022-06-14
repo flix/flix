@@ -1701,34 +1701,34 @@ namespace Array {
                 copy(arr, b, e) as Array[a, r2]
         }
 
-   ///
-   /// Returns an iterator over `a`.
-   ///
-   pub def toIterator(a: Array[a, r]): Iterator[a] & Impure =
-       let len = Array.length(a);
-       let copy = copyOfRange(0, len, a, Static);
-       let i = ref 0;
-       let done = () -> (deref i) >= len;
-       let next = () -> {
-           let j = deref i;
-           let x = copy[j];
-           i := j + 1;
-           x
-       };
-       Iterator(done, next)
+    ///
+    /// Returns an iterator over `a`.
+    ///
+    pub def toIterator(a: Array[a, r]): Iterator[a] & Impure =
+        let len = Array.length(a);
+        let copy = copyOfRange(0, len, a, Static);
+        let i = ref 0;
+        let done = () -> (deref i) >= len;
+        let next = () -> {
+            let j = deref i;
+            let x = copy[j];
+            i := j + 1;
+            x
+        };
+        Iterator(done, next)
 
-   ///
-   /// Shuffles `a` using the Fisher–Yates shuffle.
-   ///
-   pub def shuffle(r: Random.Random, a: Array[a, r]): Unit & Impure =
-       let len = Array.length(a);
-       def loop(i) = {
-           if (i > 0) {
-               let j = Random.nextNatWithMax(r, i + 1);
-               Array.swap!(i, j, a);
-               loop(i - 1)
-           } else ()
-       };
-       loop(len - 1)
+    ///
+    /// Shuffles `a` using the Fisher–Yates shuffle.
+    ///
+    pub def shuffle(r: Random.Random, a: Array[a, r]): Unit & Impure =
+        let len = Array.length(a);
+        def loop(i) = {
+            if (i > 0) {
+                let j = Random.nextNatWithMax(r, i + 1);
+                Array.swap!(i, j, a);
+                loop(i - 1)
+            } else ()
+        };
+        loop(len - 1)
 
 }
