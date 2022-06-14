@@ -17,6 +17,8 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider._
 import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
@@ -76,6 +78,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * A map from source URIs to source code.
     */
   val sources: mutable.Map[String, String] = mutable.Map.empty
+
+  var mostRecentPosition: Position = Position(0, 0)
 
   /**
     * The current AST root. The root is null until the source code is compiled.
@@ -253,6 +257,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(index, root)
 
     case Request.Complete(id, uri, pos) => 
+      mostRecentPosition = pos
       ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri))(index, root)
 
     case Request.Highlight(id, uri, pos) =>
@@ -287,6 +292,36 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
   }
 
+  private def sourceWithHole(source: String) = {
+    val lines = source.linesWithSeparators
+    val (prefix, rest) = lines.splitAt(mostRecentPosition.line - 1)
+    val line = rest.next()
+    val (linePrefix, lineRest) = line.splitAt(mostRecentPosition.character - 1)
+    (prefix ++ (linePrefix + " ??? " + lineRest) ++ rest).mkString
+  }
+
+  private def checkSource(): Validation[TypedAst.Root, CompilationMessage] = {
+    val result = flix.check()
+    result match {
+      case r: Success[_, _] => r
+
+      case Failure(errors) =>
+        val loc = errors.head.loc
+        val uri = loc.source.name
+        val tempSource = sourceWithHole(sources(uri))
+        val newResult = try {
+          flix.addSourceCode(uri, tempSource)
+          flix.check()
+        } finally {
+          flix.addSourceCode(uri, sources(uri))
+        }
+        newResult match {
+          case Success(_) => newResult
+          case Failure(_) => result
+        }
+    }
+  }
+
   /**
     * Processes a validate request.
     */
@@ -296,7 +331,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     val t = System.nanoTime()
     try {
       // Run the compiler up to the type checking phase.
-      flix.check() match {
+      checkSource() match {
         case Success(root) =>
           // Case 1: Compilation was successful. Build the reverse index.
           this.root = root
