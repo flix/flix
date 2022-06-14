@@ -232,8 +232,14 @@ object CompletionProvider {
       s"$name(${args.mkString(", ")}): $retTpe & $eff"
   }
 
-  private def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam]): String = {
-    val args = fparams.zipWithIndex.map {
+  /**
+    * Generate a snippet which represents calling a function.
+    * Drops the last argument in the event that the function is in a pipeline
+    * (i.e. is preceeded by `|>`)
+    */
+  private def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam])(implicit context: Context): String = {
+    val fparamsUsed = if (context.previousWord == "|>") fparams.dropRight(1) else fparams
+    val args = fparamsUsed.zipWithIndex.map {
       case (fparam, idx) => "$" + s"{${idx + 1}:${fparam.sym.text}}"
     }
     s"$name(${args.mkString(", ")})"
@@ -472,7 +478,7 @@ object CompletionProvider {
    * @param uri          Source file URI (from client)
    * @param range        Start and end position of the word underneath (or alongside) the cursor
    * @param word         The word underneath (or alongside) the cursor
-   * @param previousWord The word before the above
+   * @param previousWord The word before the above (note that this may be on either the current or previous line)
    * @param prefix       The text from the start of the line up to the cursor
    */
   private case class Context(uri: String, range: Range, word: String, previousWord: String, prefix: String)
@@ -490,7 +496,8 @@ object CompletionProvider {
   private def getContext(source: String, uri: String, pos: Position): Option[Context] = {
       val x = pos.character - 1
       val y = pos.line - 1
-      for(line <- source.linesWithSeparators.slice(y, y + 1).toList.headOption) yield {
+      val lines = source.linesWithSeparators.toList
+      for(line <- lines.slice(y, y + 1).toList.headOption) yield {
         val (prefix, suffix) = line.splitAt(x)
         val reversedPrefix = prefix.reverse
         val wordStart = reversedPrefix.takeWhile(isWordChar).reverse
@@ -498,7 +505,13 @@ object CompletionProvider {
         val word = wordStart + wordEnd
         val start = x - wordStart.length
         val end = x + wordEnd.length
-        val previousWord = reversedPrefix.dropWhile(isWordChar).dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
+        val prevWord = reversedPrefix.dropWhile(isWordChar).dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
+        val previousWord = if (prevWord.nonEmpty) {
+          prevWord
+        } else lines.slice(y - 1, y).toList.headOption match {
+          case None => ""
+          case Some(s) => s.reverse.dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
+        }
         val range = Range(Position(y, start), Position(y, end))
         new Context(uri, range, word, previousWord, prefix)
       }
