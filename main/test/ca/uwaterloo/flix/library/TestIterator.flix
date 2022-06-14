@@ -364,6 +364,42 @@ namespace TestIterator {
         Iterator.regRange(r, 0, 1000) |> Iterator.regToNel == Some(Nel(0, List.range(1, 1000)))
     }
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toNec                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toNec01(): Bool = region r {
+        let iter = List.toRegionIterator(r, Nil: List[Unit]);
+        Iterator.regToNec(iter) == None
+    }
+
+    @test
+    def toNec02(): Bool = region r {
+        let iter = List.toRegionIterator(r, 1 :: Nil);
+        Iterator.regToNec(iter) == Some(Nec.singleton(1))
+    }
+
+    @test
+    def toNec03(): Bool = region r {
+        let iter = List.toRegionIterator(r, 1 :: 2 :: Nil);
+        Iterator.regToNec(iter) == Some(Nec.cons(1, Nec.singleton(2)))
+    }
+
+    @test
+    def toNec04(): Bool = region r {
+        let iter = List.toRegionIterator(r, 1 :: 1 :: Nil);
+        Iterator.regToNec(iter) == Some(Nec.cons(1, Nec.singleton(1)))
+    }
+
+    @test
+    def toNec05(): Bool = region r {
+        let iter = List.toRegionIterator(r, 2 :: 1 :: Nil);
+        Iterator.regToNec(iter) == Some(Nec.cons(2, Nec.singleton(1)))
+    }
+
+
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
     /////////////////////////////////////////////////////////////////////////////
@@ -383,37 +419,6 @@ namespace TestIterator {
     @test
     def toSet04(): Bool & Impure =
         Set.range(0, 10000) |> Set.toList |> List.toIterator |> Iterator.toSet == Set.range(0, 10000)
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toNec                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def toNec01(): Bool & Impure =
-        let iter = List.toIterator(Nil: List[Unit]);
-        Iterator.toNec(iter) == None
-
-    @test
-    def toNec02(): Bool & Impure =
-        let iter = List.toIterator(1 :: Nil);
-        Iterator.toNec(iter) == Some(Nec.singleton(1))
-
-    @test
-    def toNec03(): Bool & Impure =
-        let iter = List.toIterator(1 :: 2 :: Nil);
-        Iterator.toNec(iter) == Some(Nec.cons(1, Nec.singleton(2)))
-
-    @test
-    def toNec04(): Bool & Impure =
-        let iter = List.toIterator(1 :: 1 :: Nil);
-        Iterator.toNec(iter) == Some(Nec.cons(1, Nec.singleton(1)))
-
-    @test
-    def toNec05(): Bool & Impure =
-        let iter = List.toIterator(2 :: 1 :: Nil);
-        Iterator.toNec(iter) == Some(Nec.cons(2, Nec.singleton(1)))
-
 
     /////////////////////////////////////////////////////////////////////////////
     // filter (pure)                                                           //

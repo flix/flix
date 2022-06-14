@@ -391,6 +391,18 @@ namespace Iterator {
         foldRight(f, None, iter)
 
     ///
+    /// Returns the contents of `iter` as a nec.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def regToNec(iter: RegionIterator[a, r]): Option[Nec[a]] \ Read(r) =
+        let f = (x, acc) -> match acc {
+            case None      => Some(Nec.singleton(x))
+            case Some(nec) => Some(Nec.cons(x, nec))
+        };
+        regFoldRight(f, None, iter)
+
+    ///
     /// Returns the contents of `iter` as a set. Consumes the entire iterator.
     ///
     pub def toSet(iter: Iterator[a]): Set[a] & Impure with Order[a] =
