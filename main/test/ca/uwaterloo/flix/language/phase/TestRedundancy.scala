@@ -269,6 +269,23 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedVar](result)
   }
 
+  test("ShadowedVar.Region.01") {
+    val input =
+      """
+        |def f(): Unit = {
+        |   region r {
+        |       let _ = [] @ r;
+        |       region r {
+        |           let _ = [] @ r;
+        |           ()
+        |       }
+        |   }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
   test("UnusedEnumSym.01") {
     val input =
       s"""

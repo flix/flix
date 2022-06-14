@@ -728,13 +728,7 @@ object Stratifier {
     @tailrec
     def visitType(tpe: Type, acc: Map[Name.Pred, Label]): Map[Name.Pred, Label] = tpe match {
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), predType, _), rest, _) =>
-        val terms = termTypes(predType)
-        val Type.Apply(Type.Cst(den, _), _, _) = predType // same partial match as termTypes
-        val labelDen = den match {
-          case TypeConstructor.Relation => Denotation.Relational
-          case TypeConstructor.Lattice => Denotation.Latticenal
-          case other => throw InternalCompilerException(s"Unexpected non-denotation type constructor: '$other'")
-        }
+        val (terms, labelDen) = termTypesAndDenotation(predType)
         val label = Label(pred, labelDen, terms.length, terms)
         visitType(rest, acc + (pred -> label))
       case _ => acc
@@ -751,12 +745,12 @@ object Stratifier {
     */
   private def labelledGraphOfConstraint(c: Constraint): LabelledGraph = c match {
     case Constraint(_, Predicate.Head.Atom(headPred, den, _, headTpe, _), body0, _) =>
-      val headTerms = termTypes(headTpe)
+      val (headTerms, _) = termTypesAndDenotation(headTpe)
 
       // We add all body predicates and the head to the labels of each edge
       val bodyLabels: Vector[Label] = body0.collect {
         case Body.Atom(bodyPred, den, _, _, _, bodyTpe, _) =>
-          val terms = termTypes(bodyTpe)
+          val (terms, _) = termTypesAndDenotation(bodyTpe)
           Label(bodyPred, den, terms.length, terms)
       }.toVector
 
@@ -777,12 +771,21 @@ object Stratifier {
   /**
     * Returns the term types of the given relational or latticenal type.
     */
-  private def termTypes(tpe: Type): List[Type] = eraseAliases(tpe) match {
-    case Type.Apply(Type.Cst(TypeConstructor.Relation | TypeConstructor.Lattice, _), t, _) => t.baseType match {
-      case Type.Cst(TypeConstructor.Tuple(_), _) => t.typeArguments // Multi-ary
-      case Type.Cst(TypeConstructor.Unit, _) => Nil
-      case _ => List(t) // Unary
-    }
+  private def termTypesAndDenotation(tpe: Type): (List[Type], Denotation) = eraseAliases(tpe) match {
+    case Type.Apply(Type.Cst(tc, _), t, _) =>
+      val den = tc match {
+        case TypeConstructor.Relation => Denotation.Relational
+        case TypeConstructor.Lattice => Denotation.Latticenal
+        case _ => throw InternalCompilerException(s"Unexpected non-denotation type constructor: '$tc'")
+      }
+      t.baseType match {
+        case Type.Cst(TypeConstructor.Tuple(_), _) => (t.typeArguments, den) // Multi-ary
+        case Type.Cst(TypeConstructor.Unit, _) => (Nil, den)
+        case _ => (List(t), den) // Unary
+      }
+    case _: Type.Var =>
+      // This could occur when querying or projecting a non-existent predicate
+      (Nil, Denotation.Relational)
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe.'")
   }
 

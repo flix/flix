@@ -653,7 +653,7 @@ object Weeder {
           val loc = mkSL(sp1, sp2).asSynthetic
 
           // The name of the lambda parameter.
-          val ident = Name.Ident(sp1, "pat" + Flix.Delimiter + "0", sp2)
+          val ident = Name.Ident(sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), sp2)
 
           // Construct the body of the lambda expression.
           val varOrRef = WeededAst.Expression.VarOrDefOrSig(ident, loc)
@@ -745,7 +745,7 @@ object Weeder {
           WeededAst.Expression.Apply(inner, List(value), loc)
         case (pat, value, body) =>
           // Full-blown pattern match.
-          val lambdaIdent = Name.Ident(sp1, "pat" + Flix.Delimiter + "0", sp2)
+          val lambdaIdent = Name.Ident(sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), sp2)
           val lambdaVar = WeededAst.Expression.VarOrDefOrSig(lambdaIdent, loc)
 
           val rule = WeededAst.MatchRule(pat, WeededAst.Expression.True(loc.asSynthetic), body)
