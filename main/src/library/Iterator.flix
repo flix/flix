@@ -51,6 +51,10 @@ instance Newable[RegionIterator[a]] {
     pub def new(r: Region[r]): RegionIterator[a, r] \ { Read(r), Write(r) } = Iterator.new(r)
 }
 
+instance Scoped[RegionIterator[a]] {
+    pub def regionOf(_: RegionIterator[a, r]): Region[r] = () as Region[r]
+}
+
 namespace Iterator {
 
     ///
