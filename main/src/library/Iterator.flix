@@ -763,6 +763,27 @@ namespace Iterator {
     /// Returns an iterator where the element at index `i` is `f(a, b)` where
     /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
     ///
+    /// Does *not* consume any elements from either iterator.
+    ///
+    /// If either `iterA` or `iterB` becomes depleted, then no further elements are added to the resulting list.
+    ///
+    /// The original iterators `iterA` and `iterB` should *not* be reused.
+    ///
+    /// An iterator should *never* be zipped with itself.
+    ///
+    @Lazy
+    pub def regZipWithL(f: (a, b) -> c, iterA: RegionIterator[a, r1], iterB: RegionIterator[b, r2]): RegionIterator[c, r1 and r2] =
+        let RegionIterator(done, next) = regZip(iterA, iterB);
+        let next1 = () -> {
+            let (x, y) = next();
+            f(x, y)
+        };
+        RegionIterator(done, next1)
+
+    ///
+    /// Returns an iterator where the element at index `i` is `f(a, b)` where
+    /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
+    ///
     /// Consumes the entire iterator.
     ///
     /// If either `iterA` or `iterB` becomes depleted, then no further elements are added to the resulting list.
@@ -773,6 +794,21 @@ namespace Iterator {
     ///
     pub def zipWith(f: (a, b) -> c & ef, iterA: Iterator[a], iterB: Iterator[b]): List[c] & Impure =
         zip(iterA, iterB) |> map(match (x, y) -> f(x, y))
+
+    ///
+    /// Returns an iterator where the element at index `i` is `f(a, b)` where
+    /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    /// If either `iterA` or `iterB` becomes depleted, then no further elements are added to the resulting list.
+    ///
+    /// The original iterators `iterA` and `iterB` should *not* be reused.
+    ///
+    /// An iterator should *never* be zipped with itself.
+    ///
+    pub def regZipWith(f: (a, b) -> c & ef, iterA: RegionIterator[a, r1], iterB: RegionIterator[b, r2]): List[c] \ { ef, Read(r1, r2) } =
+        regZip(iterA, iterB) |> regMap(match (x, y) -> f(x, y))
 
     ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from left to right.
