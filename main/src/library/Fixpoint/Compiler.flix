@@ -324,7 +324,7 @@ namespace Fixpoint {
                 case BodyAtom(bodySym, denotation, Polarity.Negative, _, terms) =>
                     let ramTerms = List.mapWithIndex(compileBodyTerm, terms);
                     let arity = List.length(ramTerms);
-                    BoolExp.NotMemberOf(???, RamSym.Full(bodySym, arity, denotation)) :: acc
+                    BoolExp.NotMemberOf(ramTerms |> List.toArray, RamSym.Full(bodySym, arity, denotation)) :: acc
                 case Guard0(f) =>
                     BoolExp.Guard0(f) :: acc
                 case Guard1(f, v) =>
