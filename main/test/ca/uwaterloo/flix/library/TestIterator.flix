@@ -623,44 +623,52 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def replace01(): Bool & Impure =
-        List.toIterator(Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == Nil
+    def replace01(): Bool = region r {
+        List.toRegionIterator(r, Nil) |>
+            Iterator.regReplace(from = 3, to = 4) |> Iterator.regToList == Nil
+    }
 
     @test
-    def replace02(): Bool & Impure =
-        List.toIterator(1 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 1 :: Nil
+    def replace02(): Bool = region r {
+        List.toRegionIterator(r, 1 :: Nil) |>
+            Iterator.regReplace(from = 3, to = 4) |> Iterator.regToList == 1 :: Nil
+    }
 
     @test
-    def replace03(): Bool & Impure =
-        List.toIterator(3 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: Nil
+    def replace03(): Bool = region r {
+        List.toRegionIterator(r, 3 :: Nil) |>
+            Iterator.regReplace(from = 3, to = 4) |> Iterator.regToList == 4 :: Nil
+    }
 
     @test
-    def replace04(): Bool & Impure =
-        List.toIterator(4 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: Nil
+    def replace04(): Bool = region r {
+        List.toRegionIterator(r, 4 :: Nil) |>
+            Iterator.regReplace(from = 3, to = 4) |> Iterator.regToList == 4 :: Nil
+    }
 
     @test
-    def replace05(): Bool & Impure =
-        List.toIterator(1 :: 2 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 1 :: 2 :: Nil
+    def replace05(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 2 :: Nil) |>
+            Iterator.regReplace(from = 3, to = 4) |> Iterator.regToList == 1 :: 2 :: Nil
+    }
 
     @test
-    def replace06(): Bool & Impure =
-        List.toIterator(1 :: 3 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 1 :: 4 :: Nil
+    def replace06(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 3 :: Nil) |>
+            Iterator.regReplace(from = 3, to = 4) |> Iterator.regToList == 1 :: 4 :: Nil
+    }
 
     @test
-    def replace07(): Bool & Impure =
-        List.toIterator(3 :: 4 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: 4 :: Nil
+    def replace07(): Bool = region r {
+        List.toRegionIterator(r, 3 :: 4 :: Nil) |>
+            Iterator.regReplace(from = 3, to = 4) |> Iterator.regToList == 4 :: 4 :: Nil
+    }
 
     @test
-    def replace08(): Bool & Impure =
-        List.toIterator(3 :: 3 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: 4 :: Nil
+    def replace08(): Bool = region r {
+        List.toRegionIterator(r, 3 :: 3 :: Nil) |>
+            Iterator.regReplace(from = 3, to = 4) |> Iterator.regToList == 4 :: 4 :: Nil
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////

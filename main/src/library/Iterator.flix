@@ -655,6 +655,20 @@ namespace Iterator {
         Iterator(done, next1)
 
     ///
+    /// Returns an iterator with every occurrence of `from` replaced by `to` in `iter`.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    @Lazy
+    pub def regReplace(from: {from :: a}, to: {to :: a}, iter: RegionIterator[a, r]): RegionIterator[a, r] with Eq[a] =
+        let RegionIterator(done, next) = iter;
+        let next1 = () -> {
+            let el = next();
+            if (el == from.from) to.to else el
+        };
+        RegionIterator(done, next1)
+
+    ///
     /// Returns `iterA` appended to `iterB`.
     ///
     /// Does *not* consume any elements from either iterator.
