@@ -903,6 +903,26 @@ namespace Iterator {
         loop()
 
     ///
+    /// Applies `f` to a start value `z` and all elements in `iter` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def regFoldRightWithCont(f: (a, Unit -> b \ { ef, Read(r) }) -> b & ef, z: b, iter: RegionIterator[a, r]): b \ { ef, Read(r) } =
+        let RegionIterator(done, next) = iter;
+        def loop() = {
+            if (done())
+                z
+            else {
+                let x = next();
+                f(x, _ -> loop())
+            }
+        };
+        loop()
+
+    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b & ef, iter: Iterator[a]): b & Impure with Monoid[b] =
