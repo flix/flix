@@ -136,7 +136,7 @@ class Shell(initialPaths: List[Path], options: Options) {
       """     __   _   _
         |    / _| | | (_)            Welcome to Flix __VERSION__
         |   | |_  | |  _  __  __
-        |   |  _| | | | | \ \/ /     Enter a command and hit return.
+        |   |  _| | | | | \ \/ /     Enter an expression to have it evaluated.
         |   | |   | | | |  >  <      Type ':help' for more information.
         |   |_|   |_| |_| /_/\_\     Type ':quit' or press 'ctrl + d' to exit.
       """.stripMargin
@@ -155,9 +155,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     */
   private def execute(cmd: Command)(implicit terminal: Terminal): Unit = cmd match {
     case Command.Nop => // nop
-    case Command.Run => execRun()
     case Command.Reload => execReload()
-    case Command.Warmup => execWarmup()
     case Command.Watch => execWatch()
     case Command.Unwatch => execUnwatch()
     case Command.Quit => execQuit()
@@ -165,20 +163,6 @@ class Shell(initialPaths: List[Path], options: Options) {
     case Command.Praise => execPraise()
     case Command.Eval(s) => execEval(s)
     case Command.Unknown(s) => execUnknown(s)
-  }
-
-  /**
-    * Executes the eval command.
-    */
-  private def execRun()(implicit terminal: Terminal): Unit = {
-    // Recompile the program.
-    execReload()
-
-    // Evaluate the main function and get the result.
-    this.compilationResult.getMain match {
-      case None => terminal.writer().println("No main function to run.")
-      case Some(main) => main(Array.empty)
-    }
   }
 
   /**
@@ -224,23 +208,6 @@ class Shell(initialPaths: List[Path], options: Options) {
 
     // Return the result.
     result
-  }
-
-  /**
-    * Warms up the compiler by running it multiple times.
-    */
-  private def execWarmup()(implicit terminal: Terminal): Unit = {
-    val elapsed = mutable.ListBuffer.empty[Duration]
-    for (_ <- 0 until WarmupIterations) {
-      val t = System.nanoTime()
-      execReload()
-      terminal.writer().print(".")
-      terminal.writer().flush()
-      val e = System.nanoTime()
-      elapsed += new Duration(e - t)
-    }
-    terminal.writer().println()
-    terminal.writer().println(s"Minimum = ${Duration.min(elapsed).fmt}, Maximum = ${Duration.max(elapsed).fmt}, Average = ${Duration.avg(elapsed).fmt})")
   }
 
   /**
@@ -290,12 +257,9 @@ class Shell(initialPaths: List[Path], options: Options) {
 
     w.println("  Command       Arguments         Purpose")
     w.println()
-    w.println("  :run                            Runs the main function.")
-    w.println("  :hole         <fqn>             Shows the hole context of <fqn>.")
     w.println("  :reload :r                      Recompiles every source file.")
-    w.println("  :warmup                         Warms up the compiler by running it multiple times.")
     w.println("  :watch :w                       Watches all source files for changes.")
-    w.println("  :unwatch                        Unwatches all source files for changes.")
+    w.println("  :unwatch :uw                    Unwatches all source files for changes.")
     w.println("  :quit :q                        Terminates the Flix shell.")
     w.println("  :help :h :?                     Shows this helpful information.")
     w.println()
@@ -351,7 +315,7 @@ class Shell(initialPaths: List[Path], options: Options) {
              |)
              |""".stripMargin
         flix.addSourceCode("<shell>", src)
-        execRun()
+        run()
 
       case Category.Unknown =>
         // The input is not recognized. Output an error message.
@@ -364,6 +328,20 @@ class Shell(initialPaths: List[Path], options: Options) {
     */
   private def execUnknown(s: String)(implicit terminal: Terminal): Unit = {
     terminal.writer().println(s"Unknown command '$s'. Try `:run` or `:help'.")
+  }
+
+  /**
+    * Executes the eval command.
+    */
+  private def run()(implicit terminal: Terminal): Unit = {
+    // Recompile the program.
+    execReload()
+
+    // Evaluate the main function and get the result.
+    this.compilationResult.getMain match {
+      case None => terminal.writer().println("No main function to run.")
+      case Some(main) => main(Array.empty)
+    }
   }
 
   /**
