@@ -315,7 +315,6 @@ class Shell(initialPaths: List[Path], options: Options) {
         // The name of the generated main function.
         val main = Symbol.mkDefnSym("shell1")
 
-        // The program is deliberately formatted to put s on its own line.
         val src =
           s"""def ${main.name}(): Unit & Impure =
              |println($s)
