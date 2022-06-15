@@ -676,52 +676,70 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def append01(): Bool & Impure =
-        let iter1 = List.toIterator(Nil: List[Unit]);
-        let iter2 = List.toIterator(Nil: List[Unit]);
-        Iterator.append(iter1, iter2) |> Iterator.toList == Nil
+    def append01(): Bool = region r {
+        let iter1 = List.toRegionIterator(r, Nil: List[Unit]);
+        let iter2 = List.toRegionIterator(r, Nil: List[Unit]);
+        Iterator.regAppend(iter1, iter2) |> Iterator.regToList == Nil
+    }
 
     @test
-    def append02(): Bool & Impure =
-        let iter1 = List.toIterator(Nil);
-        let iter2 = List.toIterator(1 :: Nil);
-        Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: Nil
+    def append02(): Bool = region r {
+        let iter1 = List.toRegionIterator(r, Nil);
+        let iter2 = List.toRegionIterator(r, 1 :: Nil);
+        Iterator.regAppend(iter1, iter2) |> Iterator.regToList == 1 :: Nil
+    }
 
     @test
-    def append03(): Bool & Impure =
-        let iter1 = List.toIterator(Nil);
-        let iter2 = List.toIterator(1 :: 2 :: Nil);
-        Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: 2 :: Nil
+    def append03(): Bool = region r {
+        let iter1 = List.toRegionIterator(r, Nil);
+        let iter2 = List.toRegionIterator(r, 1 :: 2 :: Nil);
+        Iterator.regAppend(iter1, iter2) |> Iterator.regToList == 1 :: 2 :: Nil
+    }
 
     @test
-    def append04(): Bool & Impure =
-        let iter1 = List.toIterator(1 :: Nil);
-        let iter2 = List.toIterator(Nil);
-        Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: Nil
+    def append04(): Bool = region r {
+        let iter1 = List.toRegionIterator(r, 1 :: Nil);
+        let iter2 = List.toRegionIterator(r, Nil);
+        Iterator.regAppend(iter1, iter2) |> Iterator.regToList == 1 :: Nil
+    }
 
     @test
-    def append05(): Bool & Impure =
-        let iter1 = List.toIterator(1 :: 2 :: Nil);
-        let iter2 = List.toIterator(Nil);
-        Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: 2 :: Nil
+    def append05(): Bool = region r {
+        let iter1 = List.toRegionIterator(r, 1 :: 2 :: Nil);
+        let iter2 = List.toRegionIterator(r, Nil);
+        Iterator.regAppend(iter1, iter2) |> Iterator.regToList == 1 :: 2 :: Nil
+    }
 
     @test
-    def append06(): Bool & Impure =
-        let iter1 = List.toIterator(1 :: Nil);
-        let iter2 = List.toIterator(2 :: Nil);
-        Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: 2 :: Nil
+    def append06(): Bool = region r {
+        let iter1 = List.toRegionIterator(r, 1 :: Nil);
+        let iter2 = List.toRegionIterator(r, 2 :: Nil);
+        Iterator.regAppend(iter1, iter2) |> Iterator.regToList == 1 :: 2 :: Nil
+    }
 
     @test
-    def append07(): Bool & Impure =
-        let iter1 = List.toIterator(1 :: 2 :: Nil);
-        let iter2 = List.toIterator(3 :: Nil);
-        Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    def append07(): Bool = region r {
+        let iter1 = List.toRegionIterator(r, 1 :: 2 :: Nil);
+        let iter2 = List.toRegionIterator(r, 3 :: Nil);
+        Iterator.regAppend(iter1, iter2) |> Iterator.regToList == 1 :: 2 :: 3 :: Nil
+    }
 
     @test
-    def append08(): Bool & Impure =
-        let iter1 = List.toIterator(1 :: Nil);
-        let iter2 = List.toIterator(2 :: 3 :: Nil);
-        Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    def append08(): Bool = region r {
+        let iter1 = List.toRegionIterator(r, 1 :: Nil);
+        let iter2 = List.toRegionIterator(r, 2 :: 3 :: Nil);
+        Iterator.regAppend(iter1, iter2) |> Iterator.regToList == 1 :: 2 :: 3 :: Nil
+    }
+
+    @test
+    def append09(): Bool = region r1 {
+        let iter1 = List.toRegionIterator(r1, 1 :: Nil);
+        region r2 {
+            let iter2 = List.toRegionIterator(r2, 2 :: 3 :: Nil);
+            Iterator.regAppend(iter1, iter2) |> Iterator.regToList == 1 :: 2 :: 3 :: Nil
+        }
+    }
+
 
 
     /////////////////////////////////////////////////////////////////////////////

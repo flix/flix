@@ -526,7 +526,7 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    /// The original iterator `iter` should not be reused.
+    /// The original iterator `iter` should **not** be reused.
     ///
     @Lazy
     pub def filterL(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
@@ -561,7 +561,7 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    /// The original iterator `iter` should not be reused.
+    /// The original iterator `iter` should **not** be reused.
     ///
     @Lazy
     pub def regFilterL(f: a -> Bool, iter: RegionIterator[a, r]): RegionIterator[a, r] \ { Read(r), Write(r) } =
@@ -673,7 +673,7 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from either iterator.
     ///
-    /// The original iterators `iterA` and `iterB` should not be reused.
+    /// The original iterators `iterA` and `iterB` should **not** be reused.
     ///
     @Lazy
     pub def append(iterA: Iterator[a], iterB: Iterator[a]): Iterator[a] =
@@ -684,6 +684,21 @@ namespace Iterator {
         Iterator(doneAB, nextAB)
 
     ///
+    /// Returns `iterB` appended to (the end of) `iterA`.
+    ///
+    /// Does *not* consume any elements from either iterator.
+    ///
+    /// The original iterators `iterA` and `iterB` should **not** be reused.
+    ///
+    @Lazy
+    pub def regAppend(iterA: RegionIterator[a, r1], iterB: RegionIterator[a, r2]): RegionIterator[a, r1 and r2] =
+        let RegionIterator(doneA, nextA) = iterA;
+        let RegionIterator(doneB, nextB) = iterB;
+        let doneAB = () -> doneA() and doneB();
+        let nextAB = () -> if (doneA()) nextB() else nextA();
+        RegionIterator(doneAB, nextAB)
+
+    ///
     /// Returns an iterator where the element at index `i` is `(a, b)` where
     /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
     ///
@@ -691,7 +706,7 @@ namespace Iterator {
     ///
     /// If either `iterA` or `iterB` is depleted, then no further elements are added to the resulting iterator.
     ///
-    /// The original iterators `iterA` and `iterB` should not be reused.
+    /// The original iterators `iterA` and `iterB` should **not** be reused.
     ///
     /// An iterator should never be zipped with itself.
     ///
@@ -711,7 +726,7 @@ namespace Iterator {
     ///
     /// If either `iterA` or `iterB` becomes depleted, then no further elements are added to the resulting list.
     ///
-    /// The original iterators `iterA` and `iterB` should not be reused.
+    /// The original iterators `iterA` and `iterB` should **not** be reused.
     ///
     /// An iterator should never be zipped with itself.
     ///
@@ -732,7 +747,7 @@ namespace Iterator {
     ///
     /// If either `iterA` or `iterB` becomes depleted, then no further elements are added to the resulting list.
     ///
-    /// The original iterators `iterA` and `iterB` should not be reused.
+    /// The original iterators `iterA` and `iterB` should **not** be reused.
     ///
     /// An iterator should never be zipped with itself.
     ///
@@ -1091,7 +1106,7 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    /// The original iterator `iter` should not be reused.
+    /// The original iterator `iter` should **not** be reused.
     ///
     @Lazy
     pub def filterMapL(f: a -> Option[b], iter: Iterator[a]): Iterator[b] & Impure =
@@ -1146,7 +1161,7 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    /// The original iterator `iter` should not be reused.
+    /// The original iterator `iter` should **not** be reused.
     ///
     @Lazy
     pub def dropL(n: Int32, iter: Iterator[a]): Iterator[a] & Impure =
@@ -1185,7 +1200,7 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    /// The original iterator `iter` should not be reused.
+    /// The original iterator `iter` should **not** be reused.
     ///
     def cons(e: a, iter: Iterator[a]): Iterator[a] & Impure =
         let Iterator(done, next) = iter;
@@ -1209,7 +1224,7 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    /// The original iterator `iter` should not be reused.
+    /// The original iterator `iter` should **not** be reused.
     ///
     @Lazy
     pub def dropWhileL(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
