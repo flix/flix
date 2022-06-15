@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.runtime.shell
 import ca.uwaterloo.flix.language.ast.Ast
 import ca.uwaterloo.flix.language.phase.Parser
 
-
 /**
   * A common super-type for the syntactic category of a source code fragment.
   */
