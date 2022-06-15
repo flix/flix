@@ -630,6 +630,17 @@ namespace Iterator {
         Iterator(done, next1)
 
     ///
+    /// Returns an iterator with every `f` lazily applied to each element in `iter`.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    @Lazy
+    pub def regMapL(f: a -> b, iter: RegionIterator[a, r]): RegionIterator[b, r] =
+        let RegionIterator(done, next) = iter;
+        let next1 = () -> f(next());
+        RegionIterator(done, next1)
+
+    ///
     /// Returns an iterator with every occurrence of `from` replaced by `to` in `iter`.
     ///
     /// Does *not* consume any elements from the iterator.

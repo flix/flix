@@ -583,32 +583,39 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def lazyMap01(): Bool & Impure =
-        List.toIterator(Nil) |> Iterator.mapL(i -> i > 2) |> Iterator.toList == Nil
+    def lazyMap01(): Bool = region r {
+        List.toRegionIterator(r, Nil) |> Iterator.regMapL(i -> i > 2) |> Iterator.regToList == Nil
+    }
 
     @test
-    def lazyMap02(): Bool & Impure =
-        List.toIterator(1 :: Nil) |> Iterator.mapL(i -> i > 2) |> Iterator.toList == false :: Nil
+    def lazyMap02(): Bool = region r {
+        List.toRegionIterator(r, 1 :: Nil) |> Iterator.regMapL(i -> i > 2) |> Iterator.regToList == false :: Nil
+    }
 
     @test
-    def lazyMap03(): Bool & Impure =
-        List.toIterator(3 :: Nil) |> Iterator.mapL(i -> i > 2) |> Iterator.toList == true :: Nil
+    def lazyMap03(): Bool = region r {
+        List.toRegionIterator(r, 3 :: Nil) |> Iterator.regMapL(i -> i > 2) |> Iterator.regToList == true :: Nil
+    }
 
     @test
-    def lazyMap04(): Bool & Impure =
-        List.toIterator(1 :: 2 :: Nil) |> Iterator.mapL(i -> i > 2) |> Iterator.toList == false :: false :: Nil
+    def lazyMap04(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 2 :: Nil) |> Iterator.regMapL(i -> i > 2) |> Iterator.regToList == false :: false :: Nil
+    }
 
     @test
-    def lazyMap05(): Bool & Impure =
-        List.toIterator(1 :: 8 :: Nil) |> Iterator.mapL(i -> i > 2) |> Iterator.toList == false :: true :: Nil
+    def lazyMap05(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 8 :: Nil) |> Iterator.regMapL(i -> i > 2) |> Iterator.regToList == false :: true :: Nil
+    }
 
     @test
-    def lazyMap06(): Bool & Impure =
-        List.toIterator(8 :: 1 :: Nil) |> Iterator.mapL(i -> i > 2) |> Iterator.toList == true :: false :: Nil
+    def lazyMap06(): Bool = region r {
+        List.toRegionIterator(r, 8 :: 1 :: Nil) |> Iterator.regMapL(i -> i > 2) |> Iterator.regToList == true :: false :: Nil
+    }
 
     @test
-    def lazyMap07(): Bool & Impure =
-        List.toIterator(7 :: 8 :: Nil) |> Iterator.mapL(i -> i > 2) |> Iterator.toList == true :: true :: Nil
+    def lazyMap07(): Bool = region r {
+        List.toRegionIterator(r, 7 :: 8 :: Nil) |> Iterator.regMapL(i -> i > 2) |> Iterator.regToList == true :: true :: Nil
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
