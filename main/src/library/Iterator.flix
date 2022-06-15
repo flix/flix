@@ -929,6 +929,12 @@ namespace Iterator {
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), iter)
 
     ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def regFoldMap(f: a -> b & ef, iter: RegionIterator[a, r]): b \ { ef, Read(r) } with Monoid[b] =
+        regFoldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), iter)
+
+    ///
     /// Applies `f` to all elements in `iter` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
