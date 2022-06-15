@@ -21,6 +21,7 @@ use Fixpoint.Tuple;
 use Fixpoint.Tuple.Tuple;
 use Fixpoint/Shared.PredSym;
 use Fixpoint/Ram.RamSym;
+use ToString.toString;
 
 namespace Fixpoint/Ast {
     pub enum Datalog[v] {
