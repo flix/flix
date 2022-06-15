@@ -951,6 +951,22 @@ namespace Iterator {
             Some(foldLeft(f, next(), iter))
 
     ///
+    /// Applies `f` to all elements in `iter` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    ///
+    /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
+    ///
+    /// Returns `None` if `iter` is empty.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def regReduceLeft(f: (a, a) -> a & ef, iter: RegionIterator[a, r]): Option[a] \ { ef, Read(r) } =
+        let RegionIterator(done, next) = iter;
+        if (done())
+            None
+        else
+            Some(regFoldLeft(f, next(), iter))
+
+    ///
     /// Returns an iterator over the results of `f`.
     ///
     /// If `f` returns `Ok(x)`, then the next element is `x`.

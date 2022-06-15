@@ -1033,29 +1033,34 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def reduceLeft01(): Bool & Impure =
-        let iter = List.toIterator(Nil: List[Int32]);
-        Iterator.reduceLeft((a, b) -> a - b, iter) == None
+    def reduceLeft01(): Bool = region r {
+        let iter = List.toRegionIterator(r, Nil: List[Int32]);
+        Iterator.regReduceLeft((a, b) -> a - b, iter) == None
+    }
 
     @test
-    def reduceLeft02(): Bool & Impure =
-        let iter = List.toIterator(1 :: Nil);
-        Iterator.reduceLeft((a, b) -> a - b, iter) == Some(1)
+    def reduceLeft02(): Bool = region r {
+        let iter = List.toRegionIterator(r, 1 :: Nil);
+        Iterator.regReduceLeft((a, b) -> a - b, iter) == Some(1)
+    }
 
     @test
-    def reduceLeft03(): Bool & Impure =
-        let iter = List.toIterator(1 :: 2 :: Nil);
-        Iterator.reduceLeft((a, b) -> a - b, iter) == Some(-1)
+    def reduceLeft03(): Bool = region r {
+        let iter = List.toRegionIterator(r, 1 :: 2 :: Nil);
+        Iterator.regReduceLeft((a, b) -> a - b, iter) == Some(-1)
+    }
 
     @test
-    def reduceLeft04(): Bool & Impure =
-        let iter = List.toIterator(1 :: 2 :: 3 :: Nil);
-        Iterator.reduceLeft((a, b) -> a - b, iter) == Some(-4)
+    def reduceLeft04(): Bool = region r {
+        let iter = List.toRegionIterator(r, 1 :: 2 :: 3 :: Nil);
+        Iterator.regReduceLeft((a, b) -> a - b, iter) == Some(-4)
+    }
 
     @test
-    def reduceLeft05(): Bool & Impure =
-        let iter = List.toIterator(1 :: 2 :: 3 :: 4 :: Nil);
-        Iterator.reduceLeft((a, b) -> a - b, iter) == Some(-8)
+    def reduceLeft05(): Bool = region r {
+        let iter = List.toRegionIterator(r, 1 :: 2 :: 3 :: 4 :: Nil);
+        Iterator.regReduceLeft((a, b) -> a - b, iter) == Some(-8)
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
