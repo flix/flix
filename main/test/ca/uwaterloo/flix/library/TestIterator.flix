@@ -1068,44 +1068,52 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def takeWhile01(): Bool & Impure =
-        List.toIterator(Nil: List[Int32]) |>
-            Iterator.takeWhile(i -> i > 3) == Nil
+    def takeWhile01(): Bool = region r {
+        List.toRegionIterator(r, Nil: List[Int32]) |>
+            Iterator.regTakeWhile(i -> i > 3) == Nil
+    }
 
     @test
-    def takeWhile02(): Bool & Impure =
-        List.toIterator(1 :: Nil) |>
-            Iterator.takeWhile(i -> i > 3) == Nil
+    def takeWhile02(): Bool = region r {
+        List.toRegionIterator(r, 1 :: Nil) |>
+            Iterator.regTakeWhile(i -> i > 3) == Nil
+    }
 
     @test
-    def takeWhile03(): Bool & Impure =
-        List.toIterator(4 :: Nil) |>
-            Iterator.takeWhile(i -> i > 3) == 4 :: Nil
+    def takeWhile03(): Bool = region r {
+        List.toRegionIterator(r, 4 :: Nil) |>
+            Iterator.regTakeWhile(i -> i > 3) == 4 :: Nil
+    }
 
     @test
-    def takeWhile04(): Bool & Impure =
-        List.toIterator(1 :: 2 :: Nil) |>
-            Iterator.takeWhile(i -> i > 3) == Nil
+    def takeWhile04(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 2 :: Nil) |>
+            Iterator.regTakeWhile(i -> i > 3) == Nil
+    }
 
     @test
-    def takeWhile05(): Bool & Impure =
-        List.toIterator(1 :: 5 :: Nil) |>
-            Iterator.takeWhile(i -> i > 3) == Nil
+    def takeWhile05(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 5 :: Nil) |>
+            Iterator.regTakeWhile(i -> i > 3) == Nil
+    }
 
     @test
-    def takeWhile06(): Bool & Impure =
-        List.toIterator(5 :: 1 :: Nil) |>
-            Iterator.takeWhile(i -> i > 3) == 5 :: Nil
+    def takeWhile06(): Bool = region r {
+        List.toRegionIterator(r, 5 :: 1 :: Nil) |>
+            Iterator.regTakeWhile(i -> i > 3) == 5 :: Nil
+    }
 
     @test
-    def takeWhile07(): Bool & Impure =
-        List.toIterator(5 :: 8 :: Nil) |>
-            Iterator.takeWhile(i -> i > 3) == 5 :: 8 :: Nil
+    def takeWhile07(): Bool = region r {
+        List.toRegionIterator(r, 5 :: 8 :: Nil) |>
+            Iterator.regTakeWhile(i -> i > 3) == 5 :: 8 :: Nil
+    }
 
     @test
-    def takeWhile08(): Bool & Impure =
-        List.toIterator(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil) |>
-            Iterator.takeWhile(i -> i > 3) == 4 :: 6 :: Nil
+    def takeWhile08(): Bool = region r {
+        List.toRegionIterator(r, 4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil) |>
+            Iterator.regTakeWhile(i -> i > 3) == 4 :: 6 :: Nil
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
