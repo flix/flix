@@ -871,7 +871,8 @@ namespace List {
         loop(l, identity)
 
     ///
-    /// Split the list `xs` at the position `n` returning the left (excluding position `n`) and right parts.
+    /// Split the list `xs` at the position `n` returning the left and right parts.
+    /// Position `n` is included in the right part.
     ///
     /// Example: `splitAt(2, 1::2::3::4::Nil)` returns `(1::2::Nil, 3::4::Nil)`
     ///
