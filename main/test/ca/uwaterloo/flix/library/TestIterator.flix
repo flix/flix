@@ -741,46 +741,60 @@ namespace TestIterator {
     }
 
 
-
     /////////////////////////////////////////////////////////////////////////////
     // zip                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def zip01(): Bool & Impure =
-        let iterA = Nil: List[Int32] |> List.toIterator;
-        let iterB = Iterator.repeat(1000, "b");
-        Iterator.zip(iterA, iterB) |> Iterator.toList == Nil
+    def zip01(): Bool = region r {
+        let iterA = Nil: List[Int32] |> List.toRegionIterator(r);
+        let iterB = Iterator.regRepeat(r, 1000, "b");
+        Iterator.regZip(iterA, iterB) |> Iterator.regToList == Nil
+    }
 
     @test
-    def zip02(): Bool & Impure =
-        let iterA = Nil: List[Int32] |> List.toIterator;
-        let iterB = Iterator.repeat(1000, "b");
-        Iterator.zip(iterB, iterA) |> Iterator.toList == Nil
+    def zip02(): Bool = region r {
+        let iterA = Nil: List[Int32] |> List.toRegionIterator(r);
+        let iterB = Iterator.regRepeat(r, 1000, "b");
+        Iterator.regZip(iterB, iterA) |> Iterator.regToList == Nil
+    }
 
     @test
-    def zip03(): Bool & Impure =
-        let iterA = Iterator.repeat(500,  "a");
-        let iterB = Iterator.repeat(1000, "b");
-        Iterator.zip(iterA, iterB) |> Iterator.toList == List.repeat(500, ("a", "b"))
+    def zip03(): Bool = region r {
+        let iterA = Iterator.regRepeat(r, 500,  "a");
+        let iterB = Iterator.regRepeat(r, 1000, "b");
+        Iterator.regZip(iterA, iterB) |> Iterator.regToList == List.repeat(500, ("a", "b"))
+    }
 
     @test
-    def zip04(): Bool & Impure =
-        let iterA = Iterator.repeat(1000, "a");
-        let iterB = Iterator.repeat(500,  "b");
-        Iterator.zip(iterA, iterB) |> Iterator.toList == List.repeat(500, ("a", "b"))
+    def zip04(): Bool = region r {
+        let iterA = Iterator.regRepeat(r, 1000, "a");
+        let iterB = Iterator.regRepeat(r, 500,  "b");
+        Iterator.regZip(iterA, iterB) |> Iterator.regToList == List.repeat(500, ("a", "b"))
+    }
 
     @test
-    def zip05(): Bool & Impure =
-        let iterA = Iterator.repeat(1000, "a");
-        let iterB = Iterator.repeat(1000, "b");
-        Iterator.zip(iterA, iterB) |> Iterator.toList == List.repeat(1000, ("a", "b"))
+    def zip05(): Bool = region r {
+        let iterA = Iterator.regRepeat(r, 1000, "a");
+        let iterB = Iterator.regRepeat(r, 1000, "b");
+        Iterator.regZip(iterA, iterB) |> Iterator.regToList == List.repeat(1000, ("a", "b"))
+    }
 
     @test
-    def zip06(): Bool & Impure =
-        let iterA = Iterator.range(0, 500);
-        let iterB = Iterator.repeat(1000, "b");
-        Iterator.zip(iterA, iterB) |> Iterator.toList == List.zip(List.range(0, 500), List.repeat(500, "b"))
+    def zip06(): Bool = region r {
+        let iterA = Iterator.regRange(r, 0, 500);
+        let iterB = Iterator.regRepeat(r, 1000, "b");
+        Iterator.regZip(iterA, iterB) |> Iterator.regToList == List.zip(List.range(0, 500), List.repeat(500, "b"))
+    }
+
+    @test
+    def zip07(): Bool = region r1 {
+        let iterA = Iterator.regRange(r1, 0, 500);
+        region r2 {
+            let iterB = Iterator.regRepeat(r2, 1000, "b");
+            Iterator.regZip(iterA, iterB) |> Iterator.regToList == List.zip(List.range(0, 500), List.repeat(500, "b"))
+        }
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
