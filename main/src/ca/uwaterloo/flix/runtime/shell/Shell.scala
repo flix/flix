@@ -17,7 +17,8 @@
 package ca.uwaterloo.flix.runtime.shell
 
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.ast.Ast
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.{Ast, TypedAst}
 import ca.uwaterloo.flix.language.fmt.Audience
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
@@ -49,6 +50,11 @@ class Shell(initialPaths: List[Path], options: Options) {
     * The mutable set of paths to load.
     */
   private val sourcePaths = mutable.Set.empty[Path] ++ initialPaths
+
+  /**
+    * The mutable list of source code fragments.
+    */
+  private val fragments = mutable.Stack.empty[String]
 
   /**
     * The set of changed sources.
@@ -157,6 +163,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     case Command.Quit => execQuit()
     case Command.Help => execHelp()
     case Command.Praise => execPraise()
+    case Command.Eval(s) => execEval(s)
     case Command.Unknown(s) => execUnknown(s)
   }
 
@@ -177,7 +184,7 @@ class Shell(initialPaths: List[Path], options: Options) {
   /**
     * Reloads every source path.
     */
-  private def execReload()(implicit terminal: Terminal): Unit = {
+  private def execReload()(implicit terminal: Terminal): Validation[TypedAst.Root, CompilationMessage] = {
     // Instantiate a fresh flix instance.
     this.flix.setOptions(options)
 
@@ -193,7 +200,8 @@ class Shell(initialPaths: List[Path], options: Options) {
     }
 
     // Compute the TypedAst and store it.
-    this.flix.check() match {
+    val result = this.flix.check()
+    result match {
       case Validation.Success(root) =>
 
         // Generate code.
@@ -214,6 +222,8 @@ class Shell(initialPaths: List[Path], options: Options) {
         terminal.writer().flush()
     }
 
+    // Return the result.
+    result
   }
 
   /**
@@ -297,6 +307,56 @@ class Shell(initialPaths: List[Path], options: Options) {
   private def execPraise()(implicit terminal: Terminal): Unit = {
     val w = terminal.writer()
     w.print(Toucan.leToucan())
+  }
+
+  /**
+    * Evaluates the given source code.
+    */
+  private def execEval(s: String)(implicit terminal: Terminal): Unit = {
+    val w = terminal.writer()
+
+    //
+    // Try to determine the category of the source line.
+    //
+    Category.categoryOf(s) match {
+      case Category.Decl =>
+        // The input is a declaration. Push it on the stack of fragments.
+        fragments.push(s)
+
+        // The name of the fragment is $n where n is the stack offset.
+        val name = "$" + fragments.length
+
+        // Add the source code fragment to Flix.
+        flix.addSourceCode(name, s)
+
+        // And try to compile!
+        execReload() match {
+          case Validation.Success(_) =>
+            // Compilation succeeded.
+            w.println("Declaration added.")
+          case Validation.Failure(_) =>
+            // Compilation failed. Ignore the last fragment.
+            fragments.pop()
+            flix.remSourceCode(name, s)
+            w.println("Declaration ignored due to previous error(s).")
+        }
+
+      case Category.Expr =>
+        // The input is an expression. Wrap it in main and run it.
+        // The program is deliberately formatted to put s on its own line.
+        val src =
+          s"""def main(): Unit & Impure =
+             |println(
+             |$s
+             |)
+             |""".stripMargin
+        flix.addSourceCode("<shell>", src)
+        execRun()
+
+      case Category.Unknown =>
+        // The input is not recognized. Output an error message.
+        w.println("Input input cannot be parsed as a declaration or expression.")
+    }
   }
 
   /**

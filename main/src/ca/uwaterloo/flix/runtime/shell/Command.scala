@@ -71,6 +71,11 @@ object Command {
   case object Praise extends Command
 
   /**
+    * Eval source code.
+    */
+  case class Eval(s: String) extends Command
+
+  /**
     * Unknown command.
     */
   case class Unknown(s: String) extends Command
@@ -139,7 +144,13 @@ object Command {
     if (input == ":praise")
       return Command.Praise
 
-    Command.Unknown(input)
+    //
+    // Eval or Unknown?
+    //
+    if (input.startsWith(":"))
+      Command.Unknown(input)
+    else
+      Command.Eval(input)
   }
 
 }
