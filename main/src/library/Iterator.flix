@@ -51,6 +51,10 @@ instance Newable[RegionIterator[a]] {
     pub def new(r: Region[r]): RegionIterator[a, r] \ { Read(r), Write(r) } = Iterator.new(r)
 }
 
+instance Scoped[RegionIterator[a]] {
+    pub def regionOf(_: RegionIterator[a, r]): Region[r] = () as Region[r]
+}
+
 namespace Iterator {
 
     ///
@@ -130,7 +134,7 @@ namespace Iterator {
     ///
     /// Returns true if the iterator is empty.
     ///
-    /// Does **not** consume any elements of the iterator.
+    /// Does *not* consume any elements of the iterator.
     ///
     pub def isEmpty(iter: Iterator[a]): Bool & Impure =
         let Iterator(done, _) = iter;
@@ -139,7 +143,7 @@ namespace Iterator {
     ///
     /// Returns true if the iterator is empty.
     ///
-    /// Does **not** consume any elements of the iterator.
+    /// Does *not* consume any elements of the iterator.
     ///
     pub def regIsEmpty(iter: RegionIterator[a, r]): Bool \ Read(r) =
         let RegionIterator(done, _) = iter;
@@ -369,6 +373,16 @@ namespace Iterator {
     }
 
     ///
+    /// Returns the contents of `iter` as a `Some(Nel)` if `iter` is not empty. Returns None otherwise.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def regToNel(iter: RegionIterator[a, r]): Option[Nel[a]] \ Read(r) = match regToList(iter) {
+        case Nil     => None
+        case x :: xs => Some(Nel(x, xs))
+    }
+
+    ///
     /// Returns the contents of `iter` as a nec.
     ///
     /// Consumes the entire iterator.
@@ -381,10 +395,28 @@ namespace Iterator {
         foldRight(f, None, iter)
 
     ///
+    /// Returns the contents of `iter` as a nec.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def regToNec(iter: RegionIterator[a, r]): Option[Nec[a]] \ Read(r) =
+        let f = (x, acc) -> match acc {
+            case None      => Some(Nec.singleton(x))
+            case Some(nec) => Some(Nec.cons(x, nec))
+        };
+        regFoldRight(f, None, iter)
+
+    ///
     /// Returns the contents of `iter` as a set. Consumes the entire iterator.
     ///
     pub def toSet(iter: Iterator[a]): Set[a] & Impure with Order[a] =
         foldLeft((acc, a) -> Set.insert(a, acc), Set.empty(), iter)
+
+    ///
+    /// Returns the contents of `iter` as a set. Consumes the entire iterator.
+    ///
+    pub def regToSet(iter: RegionIterator[a, r]): Set[a] \ Read(r) with Order[a] =
+        regFoldLeft((acc, a) -> Set.insert(a, acc), Set.empty(), iter)
 
     ///
     /// Returns a list of every element in `iter` that satisfies the predicate `f`.
@@ -403,6 +435,22 @@ namespace Iterator {
         loop(identity)
 
     ///
+    /// Returns a list of every element in `iter` that satisfies the predicate `f`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def regFilter(f: a -> Bool & ef, iter: RegionIterator[a, r]): List[a] \ { ef, Read(r) } =
+        let RegionIterator(done, next) = iter;
+        def loop(k) = {
+            if (done())
+                k(Nil)
+            else
+                let x = next();
+                if (f(x)) loop(ks -> k(x :: ks)) else loop(k)
+        };
+        loop(identity)
+
+    ///
     /// Returns a list with `f` applied to every element in `iter`.
     ///
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
@@ -411,6 +459,24 @@ namespace Iterator {
     ///
     pub def map(f: a -> b & ef, iter: Iterator[a]): List[b] & Impure =
         let Iterator(done, next) = iter;
+        def loop(k) = {
+            if (done())
+                k(Nil)
+            else
+                let x = f(next());
+                loop(ks -> k(x :: ks))
+        };
+        loop(identity)
+
+    ///
+    /// Returns a list with `f` applied to every element in `iter`.
+    ///
+    /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def regMap(f: a -> b & ef, iter: RegionIterator[a, r]): List[b] \ { ef, Read(r) } =
+        let RegionIterator(done, next) = iter;
         def loop(k) = {
             if (done())
                 k(Nil)
@@ -460,7 +526,7 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    /// The original iterator `iter` should not be reused.
+    /// The original iterator `iter` should *not* be reused.
     ///
     @Lazy
     pub def filterL(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
@@ -490,10 +556,59 @@ namespace Iterator {
         Iterator(done1, next1)
 
     ///
+    /// Returns an iterator with every element of the iterator `iter` that
+    /// satisfies the predicate `f`.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    /// The original iterator `iter` should *not* be reused.
+    ///
+    @Lazy
+    pub def regFilterL(f: a -> Bool, iter: RegionIterator[a, r]): RegionIterator[a, r] \ { Read(r), Write(r) } =
+        let RegionIterator(done, next) = iter;
+
+        // Allocate a reference to hold the next element.
+        let cursor = ref None @ Scoped.regionOf(iter);
+
+        let done1 = () -> match deref cursor {
+            case None => match regForward(f, done, next) {
+                case None    => true
+                case Some(x) =>
+                    // An element was found. Store it in the reference.
+                    cursor := Some(x);
+                    false
+            }
+            case Some(_) => false
+        };
+
+        let next1 = () -> match deref cursor {
+            case None    => bug!("Empty iterator")
+            case Some(x) =>
+                // An element is in the reference. Use it.
+                cursor := None;
+                x
+        };
+        RegionIterator(done1, next1)
+
+    ///
     /// Fast forwards the given iterator until the next element that satisfies
     /// the given predicate `f`. Returns it (if it exists).
     ///
     def forward(f: a -> Bool & ef, done: Done, next: Next[a]): Option[a] & Impure =
+        def loop() = {
+            if (done())
+                None
+            else
+                let e = next();
+                if (f(e)) Some(e) else loop()
+        };
+        loop()
+
+    ///
+    /// Fast forwards the given iterator until the next element that satisfies
+    /// the given predicate `f`. Returns it (if it exists).
+    ///
+    def regForward(f: a -> Bool, done: RegionDone[r], next: RegionNext[a, r]): Option[a] \ Read(r) =
         def loop() = {
             if (done())
                 None
@@ -515,6 +630,17 @@ namespace Iterator {
         Iterator(done, next1)
 
     ///
+    /// Returns an iterator with every `f` lazily applied to each element in `iter`.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    @Lazy
+    pub def regMapL(f: a -> b, iter: RegionIterator[a, r]): RegionIterator[b, r] =
+        let RegionIterator(done, next) = iter;
+        let next1 = () -> f(next());
+        RegionIterator(done, next1)
+
+    ///
     /// Returns an iterator with every occurrence of `from` replaced by `to` in `iter`.
     ///
     /// Does *not* consume any elements from the iterator.
@@ -529,11 +655,25 @@ namespace Iterator {
         Iterator(done, next1)
 
     ///
+    /// Returns an iterator with every occurrence of `from` replaced by `to` in `iter`.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    @Lazy
+    pub def regReplace(from: {from :: a}, to: {to :: a}, iter: RegionIterator[a, r]): RegionIterator[a, r] with Eq[a] =
+        let RegionIterator(done, next) = iter;
+        let next1 = () -> {
+            let el = next();
+            if (el == from.from) to.to else el
+        };
+        RegionIterator(done, next1)
+
+    ///
     /// Returns `iterA` appended to `iterB`.
     ///
     /// Does *not* consume any elements from either iterator.
     ///
-    /// The original iterators `iterA` and `iterB` should not be reused.
+    /// The original iterators `iterA` and `iterB` should *not* be reused.
     ///
     @Lazy
     pub def append(iterA: Iterator[a], iterB: Iterator[a]): Iterator[a] =
@@ -544,6 +684,21 @@ namespace Iterator {
         Iterator(doneAB, nextAB)
 
     ///
+    /// Returns `iterB` appended to (the end of) `iterA`.
+    ///
+    /// Does *not* consume any elements from either iterator.
+    ///
+    /// The original iterators `iterA` and `iterB` should *not* be reused.
+    ///
+    @Lazy
+    pub def regAppend(iterA: RegionIterator[a, r1], iterB: RegionIterator[a, r2]): RegionIterator[a, r1 and r2] =
+        let RegionIterator(doneA, nextA) = iterA;
+        let RegionIterator(doneB, nextB) = iterB;
+        let doneAB = () -> doneA() and doneB();
+        let nextAB = () -> if (doneA()) nextB() else nextA();
+        RegionIterator(doneAB, nextAB)
+
+    ///
     /// Returns an iterator where the element at index `i` is `(a, b)` where
     /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
     ///
@@ -551,9 +706,9 @@ namespace Iterator {
     ///
     /// If either `iterA` or `iterB` is depleted, then no further elements are added to the resulting iterator.
     ///
-    /// The original iterators `iterA` and `iterB` should not be reused.
+    /// The original iterators `iterA` and `iterB` should *not* be reused.
     ///
-    /// An iterator should never be zipped with itself.
+    /// An iterator should *never* be zipped with itself.
     ///
     @Lazy
     pub def zip(iterA: Iterator[a], iterB: Iterator[b]): Iterator[(a, b)] =
@@ -564,6 +719,26 @@ namespace Iterator {
         Iterator(doneAB, nextAB)
 
     ///
+    /// Returns an iterator where the element at index `i` is `(a, b)` where
+    /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
+    ///
+    /// Does *not* consume any elements from either iterator.
+    ///
+    /// If either `iterA` or `iterB` is depleted, then no further elements are added to the resulting iterator.
+    ///
+    /// The original iterators `iterA` and `iterB` should *not* be reused.
+    ///
+    /// An iterator should *never* be zipped with itself.
+    ///
+    @Lazy
+    pub def regZip(iterA: RegionIterator[a, r1], iterB: RegionIterator[b, r2]): RegionIterator[(a, b), r1 and r2] =
+        let RegionIterator(doneA, nextA) = iterA;
+        let RegionIterator(doneB, nextB) = iterB;
+        let doneAB = () -> doneA() or doneB();
+        let nextAB = () -> (nextA(), nextB());
+        RegionIterator(doneAB, nextAB)
+
+    ///
     /// Returns an iterator where the element at index `i` is `f(a, b)` where
     /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
     ///
@@ -571,9 +746,9 @@ namespace Iterator {
     ///
     /// If either `iterA` or `iterB` becomes depleted, then no further elements are added to the resulting list.
     ///
-    /// The original iterators `iterA` and `iterB` should not be reused.
+    /// The original iterators `iterA` and `iterB` should *not* be reused.
     ///
-    /// An iterator should never be zipped with itself.
+    /// An iterator should *never* be zipped with itself.
     ///
     @Lazy
     pub def zipWithL(f: (a, b) -> c, iterA: Iterator[a], iterB: Iterator[b]): Iterator[c] =
@@ -592,9 +767,9 @@ namespace Iterator {
     ///
     /// If either `iterA` or `iterB` becomes depleted, then no further elements are added to the resulting list.
     ///
-    /// The original iterators `iterA` and `iterB` should not be reused.
+    /// The original iterators `iterA` and `iterB` should *not* be reused.
     ///
-    /// An iterator should never be zipped with itself.
+    /// An iterator should *never* be zipped with itself.
     ///
     pub def zipWith(f: (a, b) -> c & ef, iterA: Iterator[a], iterB: Iterator[b]): List[c] & Impure =
         zip(iterA, iterB) |> map(match (x, y) -> f(x, y))
@@ -951,7 +1126,7 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    /// The original iterator `iter` should not be reused.
+    /// The original iterator `iter` should *not* be reused.
     ///
     @Lazy
     pub def filterMapL(f: a -> Option[b], iter: Iterator[a]): Iterator[b] & Impure =
@@ -1006,7 +1181,7 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    /// The original iterator `iter` should not be reused.
+    /// The original iterator `iter` should *not* be reused.
     ///
     @Lazy
     pub def dropL(n: Int32, iter: Iterator[a]): Iterator[a] & Impure =
@@ -1045,7 +1220,7 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    /// The original iterator `iter` should not be reused.
+    /// The original iterator `iter` should *not* be reused.
     ///
     def cons(e: a, iter: Iterator[a]): Iterator[a] & Impure =
         let Iterator(done, next) = iter;
@@ -1069,7 +1244,7 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    /// The original iterator `iter` should not be reused.
+    /// The original iterator `iter` should *not* be reused.
     ///
     @Lazy
     pub def dropWhileL(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =

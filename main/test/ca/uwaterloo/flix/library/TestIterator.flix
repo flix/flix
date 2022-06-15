@@ -346,41 +346,23 @@ namespace TestIterator {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // toSet                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def toSet01(): Bool & Impure =
-        List.toIterator(Nil: List[Int32]) |> Iterator.toSet == Set.empty()
-
-    @test
-    def toSet02(): Bool & Impure =
-        Set#{} |> Set.toList |> List.toIterator |> Iterator.toSet == Set.empty(): Set[String]
-
-    @test
-    def toSet03(): Bool & Impure =
-        Set#{"a", "b", "c", "d"} |> Set.toList |> List.toIterator |> Iterator.toSet == Set#{"a", "b", "c", "d"}
-
-    @test
-    def toSet04(): Bool & Impure =
-        Set.range(0, 10000) |> Set.toList |> List.toIterator |> Iterator.toSet == Set.range(0, 10000)
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // toNel                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toNel01(): Bool & Impure =
-        Nil |> List.toIterator |> Iterator.toNel == None: Option[Nel[Int32]]
+    def toNel01(): Bool = region r {
+        Nil |> List.toRegionIterator(r) |> Iterator.regToNel == None: Option[Nel[Int32]]
+    }
 
     @test
-    def toNel02(): Bool & Impure =
-        (1 :: Nil) |> List.toIterator |> Iterator.toNel == Some(Nel(1, Nil))
+    def toNel02(): Bool = region r {
+        (1 :: Nil) |> List.toRegionIterator(r) |> Iterator.regToNel == Some(Nel(1, Nil))
+    }
 
     @test
-    def toNel03(): Bool & Impure =
-        Iterator.range(0, 1000) |> Iterator.toNel == Some(Nel(0, List.range(1, 1000)))
+    def toNel03(): Bool = region r {
+        Iterator.regRange(r, 0, 1000) |> Iterator.regToNel == Some(Nel(0, List.range(1, 1000)))
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -388,183 +370,146 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toNec01(): Bool & Impure =
-        let iter = List.toIterator(Nil: List[Unit]);
-        Iterator.toNec(iter) == None
+    def toNec01(): Bool = region r {
+        let iter = List.toRegionIterator(r, Nil: List[Unit]);
+        Iterator.regToNec(iter) == None
+    }
 
     @test
-    def toNec02(): Bool & Impure =
-        let iter = List.toIterator(1 :: Nil);
-        Iterator.toNec(iter) == Some(Nec.singleton(1))
+    def toNec02(): Bool = region r {
+        let iter = List.toRegionIterator(r, 1 :: Nil);
+        Iterator.regToNec(iter) == Some(Nec.singleton(1))
+    }
 
     @test
-    def toNec03(): Bool & Impure =
-        let iter = List.toIterator(1 :: 2 :: Nil);
-        Iterator.toNec(iter) == Some(Nec.cons(1, Nec.singleton(2)))
+    def toNec03(): Bool = region r {
+        let iter = List.toRegionIterator(r, 1 :: 2 :: Nil);
+        Iterator.regToNec(iter) == Some(Nec.cons(1, Nec.singleton(2)))
+    }
 
     @test
-    def toNec04(): Bool & Impure =
-        let iter = List.toIterator(1 :: 1 :: Nil);
-        Iterator.toNec(iter) == Some(Nec.cons(1, Nec.singleton(1)))
+    def toNec04(): Bool = region r {
+        let iter = List.toRegionIterator(r, 1 :: 1 :: Nil);
+        Iterator.regToNec(iter) == Some(Nec.cons(1, Nec.singleton(1)))
+    }
 
     @test
-    def toNec05(): Bool & Impure =
-        let iter = List.toIterator(2 :: 1 :: Nil);
-        Iterator.toNec(iter) == Some(Nec.cons(2, Nec.singleton(1)))
+    def toNec05(): Bool = region r {
+        let iter = List.toRegionIterator(r, 2 :: 1 :: Nil);
+        Iterator.regToNec(iter) == Some(Nec.cons(2, Nec.singleton(1)))
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // filter (pure)                                                           //
+    // toSet                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterPure01(): Bool & Impure =
-        Nil |> List.toIterator |> Iterator.filter(i -> i > 3) == Nil
+    def toSet01(): Bool = region r {
+        Set.empty() |> Set.toRegionIterator(r) |> Iterator.regToSet == Set.empty(): Set[Int32]
+    }
 
     @test
-    def filterPure02(): Bool & Impure =
-        (2 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3) == Nil
+    def toSet02(): Bool = region r {
+        Set#{"a", "b", "c", "d"} |> Set.toRegionIterator(r) |> Iterator.regToSet == Set#{"a", "b", "c", "d"}
+    }
 
     @test
-    def filterPure03(): Bool & Impure =
-        (4 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3) == 4 :: Nil
-
-    @test
-    def filterPure04(): Bool & Impure =
-        (1 :: 3 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3) == Nil
-
-    @test
-    def filterPure05(): Bool & Impure =
-        (1 :: 8 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3) == 8 :: Nil
-
-    @test
-    def filterPure06(): Bool & Impure =
-        (8 :: 1 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3) == 8 :: Nil
-
-    @test
-    def filterPure07(): Bool & Impure =
-        (8 :: 9 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3) == 8 :: 9 :: Nil
-
-    @test
-    def filterPure08(): Bool & Impure =
-        (1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3) == 4 :: 11 :: 17 :: Nil
+    def toSet03(): Bool = region r {
+        Set.range(0, 10000) |> Set.toRegionIterator(r) |> Iterator.regToSet == Set.range(0, 10000)
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // filter (impure)                                                         //
+    // filter                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterImpure01(): Bool & Impure =
-        Nil |> List.toIterator |> Iterator.filter(i -> i > 3 as & Impure) == Nil
+    def filter01(): Bool = region r {
+        Nil |> List.toRegionIterator(r) |> Iterator.regFilter(i -> i > 3) == Nil
+    }
 
     @test
-    def filterImpure02(): Bool & Impure =
-        (2 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3 as & Impure) == Nil
+    def filter02(): Bool = region r {
+        (2 :: Nil) |> List.toRegionIterator(r) |> Iterator.regFilter(i -> i > 3) == Nil
+    }
 
     @test
-    def filterImpure03(): Bool & Impure =
-        (4 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3 as & Impure) == 4 :: Nil
+    def filter03(): Bool = region r {
+        (4 :: Nil) |> List.toRegionIterator(r) |> Iterator.regFilter(i -> i > 3) == 4 :: Nil
+    }
 
     @test
-    def filterImpure04(): Bool & Impure =
-        (1 :: 3 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3 as & Impure) == Nil
+    def filter04(): Bool = region r {
+        (1 :: 3 :: Nil) |> List.toRegionIterator(r) |> Iterator.regFilter(i -> i > 3) == Nil
+    }
 
     @test
-    def filterImpure05(): Bool & Impure =
-        (1 :: 8 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3 as & Impure) == 8 :: Nil
+    def filter05(): Bool = region r {
+        (1 :: 8 :: Nil) |> List.toRegionIterator(r) |> Iterator.regFilter(i -> i > 3) == 8 :: Nil
+    }
 
     @test
-    def filterImpure06(): Bool & Impure =
-        (8 :: 1 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3 as & Impure) == 8 :: Nil
+    def filter06(): Bool = region r {
+        (8 :: 1 :: Nil) |> List.toRegionIterator(r) |> Iterator.regFilter(i -> i > 3) == 8 :: Nil
+    }
 
     @test
-    def filterImpure07(): Bool & Impure =
-        (8 :: 9 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3 as & Impure) == 8 :: 9 :: Nil
+    def filter07(): Bool = region r {
+        (8 :: 9 :: Nil) |> List.toRegionIterator(r) |> Iterator.regFilter(i -> i > 3) == 8 :: 9 :: Nil
+    }
 
     @test
-    def filterImpure08(): Bool & Impure =
-        (1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3 as & Impure) == 4 :: 11 :: 17 :: Nil
+    def filter08(): Bool = region r {
+        (1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil) |> List.toRegionIterator(r) |> Iterator.regFilter(i -> i > 3) == 4 :: 11 :: 17 :: Nil
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // map (pure)                                                              //
+    // map                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def mapPure01(): Bool & Impure =
-        Nil |> List.toIterator |>
-            Iterator.map(i -> i > 2) == Nil
+    def map01(): Bool = region r {
+        Nil |> List.toRegionIterator(r) |>
+            Iterator.regMap(i -> i > 2) == Nil
+    }
 
     @test
-    def mapPure02(): Bool & Impure =
-        (1 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2) == false :: Nil
+    def map02(): Bool = region r {
+        (1 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regMap(i -> i > 2) == false :: Nil
+    }
 
     @test
-    def mapPure03(): Bool & Impure =
-        (3 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2) == true :: Nil
+    def map03(): Bool = region r {
+        (3 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regMap(i -> i > 2) == true :: Nil
+    }
 
     @test
-    def mapPure04(): Bool & Impure =
-        (1 :: 2 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2) == false :: false :: Nil
+    def map04(): Bool = region r {
+        (1 :: 2 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regMap(i -> i > 2) == false :: false :: Nil
+    }
 
     @test
-    def mapPure05(): Bool & Impure =
-        (1 :: 8 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2) == false :: true :: Nil
+    def map05(): Bool = region r {
+        (1 :: 8 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regMap(i -> i > 2) == false :: true :: Nil
+    }
 
     @test
-    def mapPure06(): Bool & Impure =
-        (8 :: 1 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2) == true :: false :: Nil
+    def map06(): Bool = region r {
+        (8 :: 1 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regMap(i -> i > 2) == true :: false :: Nil
+    }
 
     @test
-    def mapPure07(): Bool & Impure =
-        (7 :: 8 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2) == true :: true :: Nil
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // map (impure)                                                            //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def mapImpure01(): Bool & Impure =
-        Nil |> List.toIterator |>
-            Iterator.map(i -> i > 2 as & Impure) == Nil
-
-    @test
-    def mapImpure02(): Bool & Impure =
-        (1 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2 as & Impure) == false :: Nil
-
-    @test
-    def mapImpure03(): Bool & Impure =
-        (3 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2 as & Impure) == true :: Nil
-
-    @test
-    def mapImpure04(): Bool & Impure =
-        (1 :: 2 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2 as & Impure) == false :: false :: Nil
-
-    @test
-    def mapImpure05(): Bool & Impure =
-        (1 :: 8 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2 as & Impure) == false :: true :: Nil
-
-    @test
-    def mapImpure06(): Bool & Impure =
-        (8 :: 1 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2 as & Impure) == true :: false :: Nil
-
-    @test
-    def mapImpure07(): Bool & Impure =
-        (7 :: 8 :: Nil) |> List.toIterator |>
-            Iterator.map(i -> i > 2 as & Impure) == true :: true :: Nil
+    def map07(): Bool = region r {
+        (7 :: 8 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regMap(i -> i > 2) == true :: true :: Nil
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -587,41 +532,50 @@ namespace TestIterator {
         3 == deref res
     }
 
+
     /////////////////////////////////////////////////////////////////////////////
     // lazyFilter                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def lazyFilter01(): Bool & Impure =
-        List.toIterator(Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == Nil
+    def lazyFilter01(): Bool = region r {
+        List.toRegionIterator(r, Nil) |> Iterator.regFilterL(i -> i > 3) |> Iterator.regToList == Nil
+    }
 
     @test
-    def lazyFilter02(): Bool & Impure =
-        List.toIterator(2 :: Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == Nil
+    def lazyFilter02(): Bool = region r {
+        List.toRegionIterator(r, 2 :: Nil) |> Iterator.regFilterL(i -> i > 3) |> Iterator.regToList == Nil
+    }
 
     @test
-    def lazyFilter03(): Bool & Impure =
-        List.toIterator(4 :: Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == 4 :: Nil
+    def lazyFilter03(): Bool = region r {
+        List.toRegionIterator(r, 4 :: Nil) |> Iterator.regFilterL(i -> i > 3) |> Iterator.regToList == 4 :: Nil
+    }
 
     @test
-    def lazyFilter04(): Bool & Impure =
-        List.toIterator(1 :: 3 :: Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == Nil
+    def lazyFilter04(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 3 :: Nil) |> Iterator.regFilterL(i -> i > 3) |> Iterator.regToList == Nil
+    }
 
     @test
-    def lazyFilter05(): Bool & Impure =
-        List.toIterator(1 :: 8 :: Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == 8 :: Nil
+    def lazyFilter05(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 8 :: Nil) |> Iterator.regFilterL(i -> i > 3) |> Iterator.regToList == 8 :: Nil
+    }
 
     @test
-    def lazyFilter06(): Bool & Impure =
-        List.toIterator(8 :: 1 :: Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == 8 :: Nil
+    def lazyFilter06(): Bool = region r {
+        List.toRegionIterator(r, 8 :: 1 :: Nil) |> Iterator.regFilterL(i -> i > 3) |> Iterator.regToList == 8 :: Nil
+    }
 
     @test
-    def lazyFilter07(): Bool & Impure =
-        List.toIterator(8 :: 9 :: Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == 8 :: 9 :: Nil
+    def lazyFilter07(): Bool = region r {
+        List.toRegionIterator(r, 8 :: 9 :: Nil) |> Iterator.regFilterL(i -> i > 3) |> Iterator.regToList == 8 :: 9 :: Nil
+    }
 
     @test
-    def lazyFilter08(): Bool & Impure =
-        List.toIterator(1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == 4 :: 11 :: 17 :: Nil
+    def lazyFilter08(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil) |> Iterator.regFilterL(i -> i > 3) |> Iterator.regToList == 4 :: 11 :: 17 :: Nil
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -629,32 +583,39 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def lazyMap01(): Bool & Impure =
-        List.toIterator(Nil) |> Iterator.mapL(i -> i > 2) |> Iterator.toList == Nil
+    def lazyMap01(): Bool = region r {
+        List.toRegionIterator(r, Nil) |> Iterator.regMapL(i -> i > 2) |> Iterator.regToList == Nil
+    }
 
     @test
-    def lazyMap02(): Bool & Impure =
-        List.toIterator(1 :: Nil) |> Iterator.mapL(i -> i > 2) |> Iterator.toList == false :: Nil
+    def lazyMap02(): Bool = region r {
+        List.toRegionIterator(r, 1 :: Nil) |> Iterator.regMapL(i -> i > 2) |> Iterator.regToList == false :: Nil
+    }
 
     @test
-    def lazyMap03(): Bool & Impure =
-        List.toIterator(3 :: Nil) |> Iterator.mapL(i -> i > 2) |> Iterator.toList == true :: Nil
+    def lazyMap03(): Bool = region r {
+        List.toRegionIterator(r, 3 :: Nil) |> Iterator.regMapL(i -> i > 2) |> Iterator.regToList == true :: Nil
+    }
 
     @test
-    def lazyMap04(): Bool & Impure =
-        List.toIterator(1 :: 2 :: Nil) |> Iterator.mapL(i -> i > 2) |> Iterator.toList == false :: false :: Nil
+    def lazyMap04(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 2 :: Nil) |> Iterator.regMapL(i -> i > 2) |> Iterator.regToList == false :: false :: Nil
+    }
 
     @test
-    def lazyMap05(): Bool & Impure =
-        List.toIterator(1 :: 8 :: Nil) |> Iterator.mapL(i -> i > 2) |> Iterator.toList == false :: true :: Nil
+    def lazyMap05(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 8 :: Nil) |> Iterator.regMapL(i -> i > 2) |> Iterator.regToList == false :: true :: Nil
+    }
 
     @test
-    def lazyMap06(): Bool & Impure =
-        List.toIterator(8 :: 1 :: Nil) |> Iterator.mapL(i -> i > 2) |> Iterator.toList == true :: false :: Nil
+    def lazyMap06(): Bool = region r {
+        List.toRegionIterator(r, 8 :: 1 :: Nil) |> Iterator.regMapL(i -> i > 2) |> Iterator.regToList == true :: false :: Nil
+    }
 
     @test
-    def lazyMap07(): Bool & Impure =
-        List.toIterator(7 :: 8 :: Nil) |> Iterator.mapL(i -> i > 2) |> Iterator.toList == true :: true :: Nil
+    def lazyMap07(): Bool = region r {
+        List.toRegionIterator(r, 7 :: 8 :: Nil) |> Iterator.regMapL(i -> i > 2) |> Iterator.regToList == true :: true :: Nil
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -662,44 +623,52 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def replace01(): Bool & Impure =
-        List.toIterator(Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == Nil
+    def replace01(): Bool = region r {
+        List.toRegionIterator(r, Nil) |>
+            Iterator.regReplace(from = 3, to = 4) |> Iterator.regToList == Nil
+    }
 
     @test
-    def replace02(): Bool & Impure =
-        List.toIterator(1 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 1 :: Nil
+    def replace02(): Bool = region r {
+        List.toRegionIterator(r, 1 :: Nil) |>
+            Iterator.regReplace(from = 3, to = 4) |> Iterator.regToList == 1 :: Nil
+    }
 
     @test
-    def replace03(): Bool & Impure =
-        List.toIterator(3 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: Nil
+    def replace03(): Bool = region r {
+        List.toRegionIterator(r, 3 :: Nil) |>
+            Iterator.regReplace(from = 3, to = 4) |> Iterator.regToList == 4 :: Nil
+    }
 
     @test
-    def replace04(): Bool & Impure =
-        List.toIterator(4 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: Nil
+    def replace04(): Bool = region r {
+        List.toRegionIterator(r, 4 :: Nil) |>
+            Iterator.regReplace(from = 3, to = 4) |> Iterator.regToList == 4 :: Nil
+    }
 
     @test
-    def replace05(): Bool & Impure =
-        List.toIterator(1 :: 2 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 1 :: 2 :: Nil
+    def replace05(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 2 :: Nil) |>
+            Iterator.regReplace(from = 3, to = 4) |> Iterator.regToList == 1 :: 2 :: Nil
+    }
 
     @test
-    def replace06(): Bool & Impure =
-        List.toIterator(1 :: 3 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 1 :: 4 :: Nil
+    def replace06(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 3 :: Nil) |>
+            Iterator.regReplace(from = 3, to = 4) |> Iterator.regToList == 1 :: 4 :: Nil
+    }
 
     @test
-    def replace07(): Bool & Impure =
-        List.toIterator(3 :: 4 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: 4 :: Nil
+    def replace07(): Bool = region r {
+        List.toRegionIterator(r, 3 :: 4 :: Nil) |>
+            Iterator.regReplace(from = 3, to = 4) |> Iterator.regToList == 4 :: 4 :: Nil
+    }
 
     @test
-    def replace08(): Bool & Impure =
-        List.toIterator(3 :: 3 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: 4 :: Nil
+    def replace08(): Bool = region r {
+        List.toRegionIterator(r, 3 :: 3 :: Nil) |>
+            Iterator.regReplace(from = 3, to = 4) |> Iterator.regToList == 4 :: 4 :: Nil
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -707,52 +676,69 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def append01(): Bool & Impure =
-        let iter1 = List.toIterator(Nil: List[Unit]);
-        let iter2 = List.toIterator(Nil: List[Unit]);
-        Iterator.append(iter1, iter2) |> Iterator.toList == Nil
+    def append01(): Bool = region r {
+        let iter1 = List.toRegionIterator(r, Nil: List[Unit]);
+        let iter2 = List.toRegionIterator(r, Nil: List[Unit]);
+        Iterator.regAppend(iter1, iter2) |> Iterator.regToList == Nil
+    }
 
     @test
-    def append02(): Bool & Impure =
-        let iter1 = List.toIterator(Nil);
-        let iter2 = List.toIterator(1 :: Nil);
-        Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: Nil
+    def append02(): Bool = region r {
+        let iter1 = List.toRegionIterator(r, Nil);
+        let iter2 = List.toRegionIterator(r, 1 :: Nil);
+        Iterator.regAppend(iter1, iter2) |> Iterator.regToList == 1 :: Nil
+    }
 
     @test
-    def append03(): Bool & Impure =
-        let iter1 = List.toIterator(Nil);
-        let iter2 = List.toIterator(1 :: 2 :: Nil);
-        Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: 2 :: Nil
+    def append03(): Bool = region r {
+        let iter1 = List.toRegionIterator(r, Nil);
+        let iter2 = List.toRegionIterator(r, 1 :: 2 :: Nil);
+        Iterator.regAppend(iter1, iter2) |> Iterator.regToList == 1 :: 2 :: Nil
+    }
 
     @test
-    def append04(): Bool & Impure =
-        let iter1 = List.toIterator(1 :: Nil);
-        let iter2 = List.toIterator(Nil);
-        Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: Nil
+    def append04(): Bool = region r {
+        let iter1 = List.toRegionIterator(r, 1 :: Nil);
+        let iter2 = List.toRegionIterator(r, Nil);
+        Iterator.regAppend(iter1, iter2) |> Iterator.regToList == 1 :: Nil
+    }
 
     @test
-    def append05(): Bool & Impure =
-        let iter1 = List.toIterator(1 :: 2 :: Nil);
-        let iter2 = List.toIterator(Nil);
-        Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: 2 :: Nil
+    def append05(): Bool = region r {
+        let iter1 = List.toRegionIterator(r, 1 :: 2 :: Nil);
+        let iter2 = List.toRegionIterator(r, Nil);
+        Iterator.regAppend(iter1, iter2) |> Iterator.regToList == 1 :: 2 :: Nil
+    }
 
     @test
-    def append06(): Bool & Impure =
-        let iter1 = List.toIterator(1 :: Nil);
-        let iter2 = List.toIterator(2 :: Nil);
-        Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: 2 :: Nil
+    def append06(): Bool = region r {
+        let iter1 = List.toRegionIterator(r, 1 :: Nil);
+        let iter2 = List.toRegionIterator(r, 2 :: Nil);
+        Iterator.regAppend(iter1, iter2) |> Iterator.regToList == 1 :: 2 :: Nil
+    }
 
     @test
-    def append07(): Bool & Impure =
-        let iter1 = List.toIterator(1 :: 2 :: Nil);
-        let iter2 = List.toIterator(3 :: Nil);
-        Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    def append07(): Bool = region r {
+        let iter1 = List.toRegionIterator(r, 1 :: 2 :: Nil);
+        let iter2 = List.toRegionIterator(r, 3 :: Nil);
+        Iterator.regAppend(iter1, iter2) |> Iterator.regToList == 1 :: 2 :: 3 :: Nil
+    }
 
     @test
-    def append08(): Bool & Impure =
-        let iter1 = List.toIterator(1 :: Nil);
-        let iter2 = List.toIterator(2 :: 3 :: Nil);
-        Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    def append08(): Bool = region r {
+        let iter1 = List.toRegionIterator(r, 1 :: Nil);
+        let iter2 = List.toRegionIterator(r, 2 :: 3 :: Nil);
+        Iterator.regAppend(iter1, iter2) |> Iterator.regToList == 1 :: 2 :: 3 :: Nil
+    }
+
+    @test
+    def append09(): Bool = region r1 {
+        let iter1 = List.toRegionIterator(r1, 1 :: Nil);
+        region r2 {
+            let iter2 = List.toRegionIterator(r2, 2 :: 3 :: Nil);
+            Iterator.regAppend(iter1, iter2) |> Iterator.regToList == 1 :: 2 :: 3 :: Nil
+        }
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -760,40 +746,55 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def zip01(): Bool & Impure =
-        let iterA = Nil: List[Int32] |> List.toIterator;
-        let iterB = Iterator.repeat(1000, "b");
-        Iterator.zip(iterA, iterB) |> Iterator.toList == Nil
+    def zip01(): Bool = region r {
+        let iterA = Nil: List[Int32] |> List.toRegionIterator(r);
+        let iterB = Iterator.regRepeat(r, 1000, "b");
+        Iterator.regZip(iterA, iterB) |> Iterator.regToList == Nil
+    }
 
     @test
-    def zip02(): Bool & Impure =
-        let iterA = Nil: List[Int32] |> List.toIterator;
-        let iterB = Iterator.repeat(1000, "b");
-        Iterator.zip(iterB, iterA) |> Iterator.toList == Nil
+    def zip02(): Bool = region r {
+        let iterA = Nil: List[Int32] |> List.toRegionIterator(r);
+        let iterB = Iterator.regRepeat(r, 1000, "b");
+        Iterator.regZip(iterB, iterA) |> Iterator.regToList == Nil
+    }
 
     @test
-    def zip03(): Bool & Impure =
-        let iterA = Iterator.repeat(500,  "a");
-        let iterB = Iterator.repeat(1000, "b");
-        Iterator.zip(iterA, iterB) |> Iterator.toList == List.repeat(500, ("a", "b"))
+    def zip03(): Bool = region r {
+        let iterA = Iterator.regRepeat(r, 500,  "a");
+        let iterB = Iterator.regRepeat(r, 1000, "b");
+        Iterator.regZip(iterA, iterB) |> Iterator.regToList == List.repeat(500, ("a", "b"))
+    }
 
     @test
-    def zip04(): Bool & Impure =
-        let iterA = Iterator.repeat(1000, "a");
-        let iterB = Iterator.repeat(500,  "b");
-        Iterator.zip(iterA, iterB) |> Iterator.toList == List.repeat(500, ("a", "b"))
+    def zip04(): Bool = region r {
+        let iterA = Iterator.regRepeat(r, 1000, "a");
+        let iterB = Iterator.regRepeat(r, 500,  "b");
+        Iterator.regZip(iterA, iterB) |> Iterator.regToList == List.repeat(500, ("a", "b"))
+    }
 
     @test
-    def zip05(): Bool & Impure =
-        let iterA = Iterator.repeat(1000, "a");
-        let iterB = Iterator.repeat(1000, "b");
-        Iterator.zip(iterA, iterB) |> Iterator.toList == List.repeat(1000, ("a", "b"))
+    def zip05(): Bool = region r {
+        let iterA = Iterator.regRepeat(r, 1000, "a");
+        let iterB = Iterator.regRepeat(r, 1000, "b");
+        Iterator.regZip(iterA, iterB) |> Iterator.regToList == List.repeat(1000, ("a", "b"))
+    }
 
     @test
-    def zip06(): Bool & Impure =
-        let iterA = Iterator.range(0, 500);
-        let iterB = Iterator.repeat(1000, "b");
-        Iterator.zip(iterA, iterB) |> Iterator.toList == List.zip(List.range(0, 500), List.repeat(500, "b"))
+    def zip06(): Bool = region r {
+        let iterA = Iterator.regRange(r, 0, 500);
+        let iterB = Iterator.regRepeat(r, 1000, "b");
+        Iterator.regZip(iterA, iterB) |> Iterator.regToList == List.zip(List.range(0, 500), List.repeat(500, "b"))
+    }
+
+    @test
+    def zip07(): Bool = region r1 {
+        let iterA = Iterator.regRange(r1, 0, 500);
+        region r2 {
+            let iterB = Iterator.regRepeat(r2, 1000, "b");
+            Iterator.regZip(iterA, iterB) |> Iterator.regToList == List.zip(List.range(0, 500), List.repeat(500, "b"))
+        }
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
