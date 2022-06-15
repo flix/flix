@@ -232,11 +232,24 @@ object CompletionProvider {
       s"$name(${args.mkString(", ")}): $retTpe & $eff"
   }
 
-  private def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam]): String = {
-    val args = fparams.zipWithIndex.map {
+  /**
+    * Generate a snippet which represents calling a function.
+    * Drops the last one or two arguments in the event that the function is in a pipeline
+    * (i.e. is preceeded by `|>`, `!>`, or `||>`)
+    */
+  private def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam])(implicit context: Context): String = {
+    val paramsToDrop = context.previousWord match {
+      case "||>" => 2
+      case "|>" | "!>" => 1
+      case _ => 0
+    }
+    val args = fparams.dropRight(paramsToDrop).zipWithIndex.map {
       case (fparam, idx) => "$" + s"{${idx + 1}:${fparam.sym.text}}"
     }
-    s"$name(${args.mkString(", ")})"
+    if (args.nonEmpty)
+      s"$name(${args.mkString(", ")})"
+    else
+      name
   }
 
   /**
@@ -472,7 +485,7 @@ object CompletionProvider {
    * @param uri          Source file URI (from client)
    * @param range        Start and end position of the word underneath (or alongside) the cursor
    * @param word         The word underneath (or alongside) the cursor
-   * @param previousWord The word before the above
+   * @param previousWord The word before the above (note that this may be on either the current or previous line)
    * @param prefix       The text from the start of the line up to the cursor
    */
   private case class Context(uri: String, range: Range, word: String, previousWord: String, prefix: String)
@@ -485,20 +498,41 @@ object CompletionProvider {
       Letters.MathLetter ++ Letters.GreekLetter ++ CharPredicate("@/.")
 
   /**
+    * Returns the word at the end of a string, discarding trailing whitespace first
+    */
+  private def getLastWord(s: String) = {
+    s.reverse.dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
+  }
+
+  /**
+    * Returns the second-to-last word at the end of a string, *not* discarding
+    * trailing whitespace first.
+    */
+  private def getSecondLastWord(s: String) = {
+    s.reverse.dropWhile(isWordChar).dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
+  }
+
+  /**
     * Find context from the source, and cursor position within it.
     */
   private def getContext(source: String, uri: String, pos: Position): Option[Context] = {
       val x = pos.character - 1
       val y = pos.line - 1
-      for(line <- source.linesWithSeparators.slice(y, y + 1).toList.headOption) yield {
+      val lines = source.linesWithSeparators.toList
+      for(line <- lines.slice(y, y + 1).toList.headOption) yield {
         val (prefix, suffix) = line.splitAt(x)
-        val reversedPrefix = prefix.reverse
-        val wordStart = reversedPrefix.takeWhile(isWordChar).reverse
+        val wordStart = prefix.reverse.takeWhile(isWordChar).reverse
         val wordEnd = suffix.takeWhile(isWordChar)
         val word = wordStart + wordEnd
         val start = x - wordStart.length
         val end = x + wordEnd.length
-        val previousWord = reversedPrefix.dropWhile(isWordChar).dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
+        val prevWord = getSecondLastWord(prefix)
+        val previousWord = if (prevWord.nonEmpty) {
+          prevWord
+        } else lines.slice(y - 1, y).toList.headOption match {
+          case None => ""
+          case Some(s) => getLastWord(s)
+        }
         val range = Range(Position(y, start), Position(y, end))
         new Context(uri, range, word, previousWord, prefix)
       }
