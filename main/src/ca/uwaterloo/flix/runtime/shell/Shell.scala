@@ -323,8 +323,13 @@ class Shell(initialPaths: List[Path], options: Options) {
         // The input is a declaration. Push it on the stack of fragments.
         fragments.push(s)
 
-        // Add the source code to Flix with the name $n where n is the stack offset.
-        flix.addSourceCode("$" + fragments.length, s)
+        // The name of the fragment is $n where n is the stack offset.
+        val name = "$" + fragments.length
+
+        // Add the source code fragment to Flix.
+        flix.addSourceCode(name, s)
+
+        // And try to compile!
         execReload() match {
           case Validation.Success(_) =>
             // Compilation succeeded.
@@ -332,6 +337,8 @@ class Shell(initialPaths: List[Path], options: Options) {
           case Validation.Failure(_) =>
             // Compilation failed. Ignore the last fragment.
             fragments.pop()
+            flix.remSourceCode(name, s)
+            w.println("Declaration ignored due to previous error(s).")
         }
 
       case Category.Expr =>
