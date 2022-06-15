@@ -79,6 +79,13 @@ namespace Array {
     pub def get(i: Int32, a: Array[a, r]): a \ Read(r) = a[i]
 
     ///
+    /// Returns the element at position `i` in the array `a` if `i` is in-bounds.
+    ///
+    @Time(1) @Space(1)
+    pub def getOpt(i: Int32, a: Array[a, r]): Option[a] \ Read(r) =
+        if (0 <= i and i < length(a)) Some(a[i]) else None
+
+    ///
     /// Stores the value `x` at position `i` in the array `a`.
     ///
     /// Equivalent to the expression `a[i] = x`.

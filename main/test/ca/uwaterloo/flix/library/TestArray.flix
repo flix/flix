@@ -81,6 +81,40 @@ namespace TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // getOpt                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testGetOpt01(): Bool = region r {
+        Array.getOpt(0, [1, 2, 3] @ r) == Some(1)
+    }
+
+    @test
+    def testGetOpt02(): Bool = region r {
+        Array.getOpt(1, [1, 2, 3] @ r) == Some(2)
+    }
+
+    @test
+    def testGetOpt03(): Bool = region r {
+        Array.getOpt(2, [1, 2, 3] @ r) == Some(3)
+    }
+
+    @test
+    def testGetOpt04(): Bool = region r {
+        Array.getOpt(-1, [1, 2, 3] @ r) = None
+    }
+
+    @test
+    def testGetOpt05(): Bool = region r {
+        Array.getOpt(3, [1, 2, 3] @ r) = None
+    }
+
+    @test
+    def testGetOpt06(): Bool = region r {
+        Array.getOpt(Int32.maxValue, [1, 2, 3] @ r) = None
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // put                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
