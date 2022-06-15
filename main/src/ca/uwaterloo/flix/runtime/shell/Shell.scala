@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, TypedAst}
 import ca.uwaterloo.flix.language.fmt.Audience
-import ca.uwaterloo.flix.language.phase.Parser
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util._
@@ -319,7 +318,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     //
     // Try to determine the category of the source line.
     //
-    getCategory(s) match {
+    Category.categoryOf(s) match {
       case Category.Decl =>
         // The input is a declaration. Push it on the stack of fragments.
         fragments.push(s)
@@ -351,47 +350,6 @@ class Shell(initialPaths: List[Path], options: Options) {
         // The input is not recognized. Output an error message.
         w.println("Input input cannot be parsed as a declaration or expression.")
     }
-  }
-
-  /**
-    * Returns the syntactic category of the given source code string `s`.
-    */
-  private def getCategory(s: String): Category = {
-    val input = Ast.Input.Text("<shell>", s, stable = false)
-    val source = Ast.Source(input, s.toCharArray, stable = false)
-    val parser = new Parser(source)
-
-    val isDecl = parser.DeclarationEOI.run().isSuccess
-    val isExpr = parser.ExpressionEOI.run().isSuccess
-
-    if (isDecl && !isExpr)
-      Category.Decl
-    else if (!isDecl && isExpr)
-      Category.Expr
-    else
-      Category.Unknown
-  }
-
-  /**
-    * A common super-type for the syntactic category of a source code fragment.
-    */
-  private sealed trait Category
-
-  private object Category {
-    /**
-      * Represents source code that is a declaration.
-      */
-    case object Decl extends Category
-
-    /**
-      * Represents source code that is an expression.
-      */
-    case object Expr extends Category
-
-    /**
-      * Represents source code whose category cannot be determined.
-      */
-    case object Unknown extends Category
   }
 
   /**
