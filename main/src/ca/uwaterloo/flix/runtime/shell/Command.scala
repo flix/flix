@@ -31,19 +31,9 @@ object Command {
   case object Nop extends Command
 
   /**
-    * Executes the main function.
-    */
-  case object Run extends Command
-
-  /**
     * Reloads all source paths.
     */
   case object Reload extends Command
-
-  /**
-    * Warms up the compiler.
-    */
-  case object Warmup extends Command
 
   /**
     * Watches source paths for changes.
@@ -97,22 +87,10 @@ object Command {
       return Command.Nop
 
     //
-    // Run
-    //
-    if (input.startsWith(":run"))
-      return Command.Run
-
-    //
     // Reload
     //
     if (input == ":r" || input == ":reload")
       return Command.Reload
-
-    //
-    // Warmup
-    //
-    if (input == ":warmup")
-      return Command.Warmup
 
     //
     // Watch
@@ -123,7 +101,7 @@ object Command {
     //
     // Unwatch
     //
-    if (input == ":unwatch")
+    if (input == ":unwatch" || input == ":uw")
       return Command.Unwatch
 
     //
