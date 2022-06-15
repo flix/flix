@@ -145,6 +145,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Effect
   }
 
+  def DeclarationEOI: Rule1[ParsedAst.Declaration] = rule {
+    Declaration ~ EOI
+  }
+
   def UseDeclarations: Rule1[Seq[ParsedAst.Use]] = rule {
     // It is important for documentation comments that whitespace is not consumed if no uses are present
     (optWS ~ oneOrMore(Use ~ optWS ~ ";").separatedBy(optWS)) | push(Seq.empty)
@@ -483,6 +487,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   def Expression: Rule1[ParsedAst.Expression] = rule {
     Expressions.Assign
+  }
+
+  def ExpressionEOI: Rule1[ParsedAst.Expression] = rule {
+    Expression ~ EOI
   }
 
   object Expressions {
