@@ -877,6 +877,9 @@ namespace List {
 
     ///
     /// Split the list `xs` at the position `n` returning the left and right parts.
+    /// Position `n` is included in the right part.
+    ///
+    /// Example: `splitAt(2, 1::2::3::4::Nil)` returns `(1::2::Nil, 3::4::Nil)`
     ///
     /// Returns `(xs, Nil)` if `n > length(xs)`.
     /// Returns `(Nil, xs)` if `n < 0`.
@@ -1333,6 +1336,23 @@ namespace List {
             }
         };
         Iterator(done, next)
+
+    ///
+    /// Returns an iterator over `l`.
+    ///
+    pub def toRegionIterator(r: Region[r], l: List[a]): RegionIterator[a, r] \ Write(r) =
+        let cursor = ref l @ r;
+        let done = () -> match (deref cursor) {
+            case Nil => true
+            case _   => false
+        };
+        let next = () -> match (deref cursor) {
+            case Nil     => bug!("Empty Iterator!")
+            case x :: xs =>
+                cursor := xs;
+                x
+        };
+        RegionIterator(done, next)
 
     ///
     /// Returns the association list `l` as a `DelayMap`.
