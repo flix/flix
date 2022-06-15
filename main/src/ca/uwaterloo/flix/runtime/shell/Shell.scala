@@ -18,11 +18,12 @@ package ca.uwaterloo.flix.runtime.shell
 
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.fmt.Audience
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util._
+
 import org.jline.reader.{EndOfFileException, LineReaderBuilder, UserInterruptException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
@@ -34,12 +35,10 @@ import scala.jdk.CollectionConverters._
 
 class Shell(initialPaths: List[Path], options: Options) {
 
-  private implicit val audience: Audience = Audience.External
-
   /**
-    * The number of warmup iterations.
+    * The audience is always external.
     */
-  private val WarmupIterations = 80
+  private implicit val audience: Audience = Audience.External
 
   /**
     * The executor service.
@@ -50,6 +49,11 @@ class Shell(initialPaths: List[Path], options: Options) {
     * The mutable set of paths to load.
     */
   private val sourcePaths = mutable.Set.empty[Path] ++ initialPaths
+
+  /**
+    * The name of the current entry point.
+    */
+  private var entryPoint: Option[Symbol.DefnSym] = None
 
   /**
     * The mutable list of source code fragments.
@@ -170,7 +174,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     */
   private def execReload()(implicit terminal: Terminal): Validation[TypedAst.Root, CompilationMessage] = {
     // Instantiate a fresh flix instance.
-    this.flix.setOptions(options)
+    this.flix.setOptions(options.copy(entryPoint = entryPoint))
 
     // Add each path to Flix.
     for (path <- this.sourcePaths) {
@@ -297,29 +301,32 @@ class Shell(initialPaths: List[Path], options: Options) {
         execReload() match {
           case Validation.Success(_) =>
             // Compilation succeeded.
-            w.println("Declaration added.")
+            w.println("Ok.")
           case Validation.Failure(_) =>
             // Compilation failed. Ignore the last fragment.
             fragments.pop()
             flix.remSourceCode(name, s)
-            w.println("Declaration ignored due to previous error(s).")
+            w.println("Error: Declaration ignored due to previous error(s).")
         }
 
       case Category.Expr =>
         // The input is an expression. Wrap it in main and run it.
+
+        // The name of the generated main function.
+        val main = Symbol.mkDefnSym("shell1")
+
         // The program is deliberately formatted to put s on its own line.
         val src =
-          s"""def main(): Unit & Impure =
-             |println(
-             |$s
-             |)
+          s"""def ${main.name}(): Unit & Impure =
+             |println($s)
              |""".stripMargin
         flix.addSourceCode("<shell>", src)
+        entryPoint = Some(main)
         run()
 
       case Category.Unknown =>
         // The input is not recognized. Output an error message.
-        w.println("Input input cannot be parsed as a declaration or expression.")
+        w.println("Error: Input input cannot be parsed.")
     }
   }
 
