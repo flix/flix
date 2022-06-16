@@ -892,7 +892,7 @@ namespace Map {
     ///
     pub def query(p: k -> Comparison & ef, m: Map[k, v]): List[(k, v)] & ef =
         let Map(t) = m;
-        RedBlackTree.query(p, (k, v) -> (k, v), t)
+        RedBlackTree.query(p, (k, v) -> (k, v) as & ef, t)
 
     ///
     /// Applies `f` to all key-value pairs `(k, v)` from the map `m` where `p(k)` returns `EqualTo`.
