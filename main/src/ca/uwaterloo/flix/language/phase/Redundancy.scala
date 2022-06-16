@@ -393,7 +393,7 @@ object Redundancy {
       if (exp1.eff == Type.Pure)
         (us1 ++ us2) + UselessExpression(exp1.loc)
       else if (exp1.eff != Type.Pure && exp1.tpe != Type.Unit)
-        (us1 ++ us2) + discardedValue(exp1.loc)
+        (us1 ++ us2) + DiscardedValue(exp1.loc)
       else
         us1 ++ us2
 
