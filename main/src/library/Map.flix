@@ -69,13 +69,7 @@ instance Traversable[Map[k]] {
 }
 
 instance FunctorFilter[Map[k]] with Order[k] {
-    pub def filterMap(f: a -> Option[b] & ef, m: Map[k, a]): Map[k, b] & ef =
-        let step = (acc, k, a) -> match f(a) {
-            case Some(b) => Map.insert(k, b, acc)
-            case None    => acc
-        };
-        Map.foldLeftWithKey(step, Map.empty(), m)
-
+    pub def filterMap(f: a -> Option[b] & ef, m: Map[k, a]): Map[k, b] & ef = Map.filterMap(f, m)
     pub override def filter(f: a -> Bool & ef, m: Map[k, a]): Map[k, a] & ef = Map.filter(f, m)
 }
 
@@ -457,6 +451,28 @@ namespace Map {
     @Time(time(f) * size(m)) @Space(space(f) * size(m))
     pub def filterWithKey(f: (k, v) -> Bool & ef, m: Map[k, v]): Map[k, v] & ef with Order[k] =
         foldLeftWithKey((acc, k, v) -> if (f(k, v)) insert(k, v, acc) else acc, empty(), m)
+
+    ///
+    /// Returns a map of all mappings `k => v1` in `m` where applying the function `f` to `v` produces
+    /// a `Some(v1)`. Elements that produce `None` are discarded.
+    ///
+    pub def filterMap(f: a -> Option[b] & ef, m: Map[k, a]): Map[k, b] & ef with Order[k] =
+        let step = (acc, k, a) -> match f(a) {
+            case Some(b) => Map.insert(k, b, acc)
+            case None    => acc
+        };
+        Map.foldLeftWithKey(step, Map.empty(), m)
+
+    ///
+    /// Returns a map of all mappings `k => v1` in `m` where applying the function `f` to `(k, v)` produces
+    /// `Some(v1)`. Elements that produce `None` are discarded.
+    ///
+    pub def filterMapWithKey(f: (k, a) -> Option[b] & ef, m: Map[k, a]): Map[k, b] & ef with Order[k] =
+        let step = (acc, k, a) -> match f(k, a) {
+            case Some(b) => insert(k, b, acc)
+            case None    => acc
+        };
+        foldLeftWithKey(step, Map.empty(), m)
 
     ///
     /// Returns a map with mappings `k => f(v)` for every `k => v` in `m`.

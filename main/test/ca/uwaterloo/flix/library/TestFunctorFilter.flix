@@ -182,7 +182,7 @@ namespace TestFunctorFilter {
     @test
     def filterRedBlackTree03(): Bool =
         filter(isOdd, RedBlackTree.empty() |> RedBlackTree.insert(1, 1) |> RedBlackTree.insert(2, 2) |> RedBlackTree.insert(3, 3) |> RedBlackTree.insert(4, 4))
-            |> RedBlackTree.toList == (1, 1) :: (3, 3) :: Nil
+            |> RedBlackTree.toList |> List.sort == (1, 1) :: (3, 3) :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // filterMapRedBlackTree                                                   //
