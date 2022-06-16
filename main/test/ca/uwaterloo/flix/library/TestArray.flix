@@ -101,17 +101,17 @@ namespace TestArray {
 
     @test
     def testGetOpt04(): Bool = region r {
-        Array.getOpt(-1, [1, 2, 3] @ r) = None
+        Array.getOpt(-1, [1, 2, 3] @ r) == None
     }
 
     @test
     def testGetOpt05(): Bool = region r {
-        Array.getOpt(3, [1, 2, 3] @ r) = None
+        Array.getOpt(3, [1, 2, 3] @ r) == None
     }
 
     @test
     def testGetOpt06(): Bool = region r {
-        Array.getOpt(Int32.maxValue(), [1, 2, 3] @ r) = None
+        Array.getOpt(Int32.maxValue(), [1, 2, 3] @ r) == None
     }
 
     /////////////////////////////////////////////////////////////////////////////
