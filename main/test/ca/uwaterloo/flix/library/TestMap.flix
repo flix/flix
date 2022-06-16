@@ -1720,6 +1720,31 @@ def toList03(): Bool = Map.toList(Map#{1 => 2, 3 => 4}) == (1, 2) :: (3, 4) :: N
 def toList04(): Bool = Map.toList(Map#{1 => 2, 2 => 2, 3 => 4}) == (1, 2) :: (2, 2) :: (3, 4) :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
+// toMutDeque                                                              //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toMutDeque01(): Bool = region r {
+    let m: Map[Int32, Int32] = Map#{};
+    let d1 = Map.toMutDeque(m, r);
+
+    let d2 = new MutDeque(r);
+
+    d1 `MutDeque.sameElements` d2
+}
+
+@test
+def toMutDeque02(): Bool = region r {
+    let m = Map#{1 => 2};
+    let d1 = Map.toMutDeque(m, r);
+
+    let d2 = new MutDeque(r);
+    MutDeque.pushBack((1, 2), d2);
+
+    d1 `MutDeque.sameElements` d2
+}
+
+/////////////////////////////////////////////////////////////////////////////
 // eq                                                                      //
 /////////////////////////////////////////////////////////////////////////////
 @test
