@@ -395,27 +395,6 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toSet                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def toSet01(): Bool & Impure =
-        List.toIterator(Nil: List[Int32]) |> Iterator.toSet == Set.empty()
-
-    @test
-    def toSet02(): Bool & Impure =
-        Set#{} |> Set.toList |> List.toIterator |> Iterator.toSet == Set.empty(): Set[String]
-
-    @test
-    def toSet03(): Bool & Impure =
-        Set#{"a", "b", "c", "d"} |> Set.toList |> List.toIterator |> Iterator.toSet == Set#{"a", "b", "c", "d"}
-
-    @test
-    def toSet04(): Bool & Impure =
-        Set.range(0, 10000) |> Set.toList |> List.toIterator |> Iterator.toSet == Set.range(0, 10000)
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // toNel                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
