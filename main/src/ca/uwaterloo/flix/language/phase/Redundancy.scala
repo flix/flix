@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
@@ -390,9 +390,13 @@ object Redundancy {
       val us2 = visitExp(exp2, env0, rc)
 
       // Check for useless pure expressions.
-      if (exp1.eff == Type.Pure)
-        (us1 ++ us2) + UselessExpression(exp1.loc)
-      else
+      if (exp1.eff == Type.Pure) {
+        val error = exp1.tpe.typeConstructor match {
+          case Some(TypeConstructor.Arrow(_)) => UselessFunctionExpression(exp1.tpe, exp1.loc)
+          case _ => UselessExpression(exp1.tpe, exp1.loc)
+        }
+        (us1 ++ us2) + error
+      } else
         us1 ++ us2
 
     case Expression.Discard(exp, _, _) =>

@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.fmt.{Audience, FormatTypeConstraint}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.fmt.{Audience, FormatType, FormatTypeConstraint}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -312,15 +312,17 @@ object RedundancyError {
   /**
     * An error raised to indicate that an expression is useless.
     *
+    * @param tpe the type of the expression.
     * @param loc the location of the expression.
     */
-  case class UselessExpression(loc: SourceLocation) extends RedundancyError {
+  case class UselessExpression(tpe: Type, loc: SourceLocation) extends RedundancyError {
     def summary: String = "Useless expression."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
          |>> Useless expression: It has no side-effect(s) and its result is discarded.
+         |>> The expression has type '${FormatType.formatWellKindedType(tpe)}'
          |
          |${code(loc, "useless expression.")}
          |""".stripMargin
@@ -333,6 +335,38 @@ object RedundancyError {
          |  (1)  Use the result computed by the expression.
          |  (2)  Remove the expression statement.
          |  (3)  Introduce a let-binding with a wildcard name.
+         |
+         |""".stripMargin
+    })
+  }
+
+  /**
+    * An error raised to indicate that a function expression is useless.
+    *
+    * @param tpe the type of the expression.
+    * @param loc the location of the expression.
+    */
+  case class UselessFunctionExpression(tpe: Type, loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Useless function expression."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Useless function expression: It has no side-effect(s) and its result is discarded.
+         |>> The function has type '${FormatType.formatWellKindedType(tpe)}'
+         |
+         |${code(loc, "useless function expression.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+         |Possible fixes:
+         |
+         |  (1)  Give the function (additional) arguments.
+         |  (2)  Use the result computed by the expression.
+         |  (3)  Remove the expression statement.
+         |  (4)  Introduce a let-binding with a wildcard name.
          |
          |""".stripMargin
     })

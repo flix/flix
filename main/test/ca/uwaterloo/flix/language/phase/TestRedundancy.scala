@@ -794,6 +794,41 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UselessExpression](result)
   }
 
+  test("UselessFunctionExpression.01") {
+    val input =
+      s"""
+         |def f(): Unit =
+         |    x -> 123;
+         |    ()
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UselessFunctionExpression](result)
+  }
+
+  test("UselessFunctionExpression.02") {
+    val input =
+      s"""
+         |def f(): Unit =
+         |    f;
+         |    ()
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UselessFunctionExpression](result)
+  }
+
+  test("UselessFunctionExpression.03") {
+    val input =
+      s"""
+         |def hof(f: a -> b & e, x: a): b & e = f(x)
+         |
+         |def f(): Unit =
+         |    hof(x -> (x, 21));
+         |    ()
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UselessFunctionExpression](result)
+  }
+
   test("UnusedFormalParam.Instance.01") {
     val input =
       """
