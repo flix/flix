@@ -17,11 +17,13 @@
 package ca.uwaterloo.flix.runtime.shell
 
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.ast.Ast
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.fmt.Audience
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util._
+
 import org.jline.reader.{EndOfFileException, LineReaderBuilder, UserInterruptException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
@@ -33,12 +35,10 @@ import scala.jdk.CollectionConverters._
 
 class Shell(initialPaths: List[Path], options: Options) {
 
-  private implicit val audience: Audience = Audience.External
-
   /**
-    * The number of warmup iterations.
+    * The audience is always external.
     */
-  private val WarmupIterations = 80
+  private implicit val audience: Audience = Audience.External
 
   /**
     * The executor service.
@@ -49,6 +49,16 @@ class Shell(initialPaths: List[Path], options: Options) {
     * The mutable set of paths to load.
     */
   private val sourcePaths = mutable.Set.empty[Path] ++ initialPaths
+
+  /**
+    * The name of the current entry point.
+    */
+  private var entryPoint: Option[Symbol.DefnSym] = None
+
+  /**
+    * The mutable list of source code fragments.
+    */
+  private val fragments = mutable.Stack.empty[String]
 
   /**
     * The set of changed sources.
@@ -130,7 +140,7 @@ class Shell(initialPaths: List[Path], options: Options) {
       """     __   _   _
         |    / _| | | (_)            Welcome to Flix __VERSION__
         |   | |_  | |  _  __  __
-        |   |  _| | | | | \ \/ /     Enter a command and hit return.
+        |   |  _| | | | | \ \/ /     Enter an expression to have it evaluated.
         |   | |   | | | |  >  <      Type ':help' for more information.
         |   |_|   |_| |_| /_/\_\     Type ':quit' or press 'ctrl + d' to exit.
       """.stripMargin
@@ -149,37 +159,22 @@ class Shell(initialPaths: List[Path], options: Options) {
     */
   private def execute(cmd: Command)(implicit terminal: Terminal): Unit = cmd match {
     case Command.Nop => // nop
-    case Command.Run => execRun()
     case Command.Reload => execReload()
-    case Command.Warmup => execWarmup()
     case Command.Watch => execWatch()
     case Command.Unwatch => execUnwatch()
     case Command.Quit => execQuit()
     case Command.Help => execHelp()
     case Command.Praise => execPraise()
+    case Command.Eval(s) => execEval(s)
     case Command.Unknown(s) => execUnknown(s)
-  }
-
-  /**
-    * Executes the eval command.
-    */
-  private def execRun()(implicit terminal: Terminal): Unit = {
-    // Recompile the program.
-    execReload()
-
-    // Evaluate the main function and get the result.
-    this.compilationResult.getMain match {
-      case None => terminal.writer().println("No main function to run.")
-      case Some(main) => main(Array.empty)
-    }
   }
 
   /**
     * Reloads every source path.
     */
-  private def execReload()(implicit terminal: Terminal): Unit = {
+  private def execReload()(implicit terminal: Terminal): Validation[TypedAst.Root, CompilationMessage] = {
     // Instantiate a fresh flix instance.
-    this.flix.setOptions(options)
+    this.flix.setOptions(options.copy(entryPoint = entryPoint))
 
     // Add each path to Flix.
     for (path <- this.sourcePaths) {
@@ -193,7 +188,8 @@ class Shell(initialPaths: List[Path], options: Options) {
     }
 
     // Compute the TypedAst and store it.
-    this.flix.check() match {
+    val result = this.flix.check()
+    result match {
       case Validation.Success(root) =>
 
         // Generate code.
@@ -214,23 +210,8 @@ class Shell(initialPaths: List[Path], options: Options) {
         terminal.writer().flush()
     }
 
-  }
-
-  /**
-    * Warms up the compiler by running it multiple times.
-    */
-  private def execWarmup()(implicit terminal: Terminal): Unit = {
-    val elapsed = mutable.ListBuffer.empty[Duration]
-    for (_ <- 0 until WarmupIterations) {
-      val t = System.nanoTime()
-      execReload()
-      terminal.writer().print(".")
-      terminal.writer().flush()
-      val e = System.nanoTime()
-      elapsed += new Duration(e - t)
-    }
-    terminal.writer().println()
-    terminal.writer().println(s"Minimum = ${Duration.min(elapsed).fmt}, Maximum = ${Duration.max(elapsed).fmt}, Average = ${Duration.avg(elapsed).fmt})")
+    // Return the result.
+    result
   }
 
   /**
@@ -280,12 +261,9 @@ class Shell(initialPaths: List[Path], options: Options) {
 
     w.println("  Command       Arguments         Purpose")
     w.println()
-    w.println("  :run                            Runs the main function.")
-    w.println("  :hole         <fqn>             Shows the hole context of <fqn>.")
     w.println("  :reload :r                      Recompiles every source file.")
-    w.println("  :warmup                         Warms up the compiler by running it multiple times.")
     w.println("  :watch :w                       Watches all source files for changes.")
-    w.println("  :unwatch                        Unwatches all source files for changes.")
+    w.println("  :unwatch :uw                    Unwatches all source files for changes.")
     w.println("  :quit :q                        Terminates the Flix shell.")
     w.println("  :help :h :?                     Shows this helpful information.")
     w.println()
@@ -300,10 +278,76 @@ class Shell(initialPaths: List[Path], options: Options) {
   }
 
   /**
+    * Evaluates the given source code.
+    */
+  private def execEval(s: String)(implicit terminal: Terminal): Unit = {
+    val w = terminal.writer()
+
+    //
+    // Try to determine the category of the source line.
+    //
+    Category.categoryOf(s) match {
+      case Category.Decl =>
+        // The input is a declaration. Push it on the stack of fragments.
+        fragments.push(s)
+
+        // The name of the fragment is $n where n is the stack offset.
+        val name = "$" + fragments.length
+
+        // Add the source code fragment to Flix.
+        flix.addSourceCode(name, s)
+
+        // And try to compile!
+        execReload() match {
+          case Validation.Success(_) =>
+            // Compilation succeeded.
+            w.println("Ok.")
+          case Validation.Failure(_) =>
+            // Compilation failed. Ignore the last fragment.
+            fragments.pop()
+            flix.remSourceCode(name, s)
+            w.println("Error: Declaration ignored due to previous error(s).")
+        }
+
+      case Category.Expr =>
+        // The input is an expression. Wrap it in main and run it.
+
+        // The name of the generated main function.
+        val main = Symbol.mkDefnSym("shell1")
+
+        val src =
+          s"""def ${main.name}(): Unit & Impure =
+             |println($s)
+             |""".stripMargin
+        flix.addSourceCode("<shell>", src)
+        entryPoint = Some(main)
+        run()
+
+      case Category.Unknown =>
+        // The input is not recognized. Output an error message.
+        w.println("Error: Input input cannot be parsed.")
+    }
+  }
+
+  /**
     * Reports unknown command.
     */
   private def execUnknown(s: String)(implicit terminal: Terminal): Unit = {
     terminal.writer().println(s"Unknown command '$s'. Try `:run` or `:help'.")
+  }
+
+  /**
+    * Executes the eval command.
+    */
+  private def run()(implicit terminal: Terminal): Unit = {
+    // Recompile the program.
+    execReload()
+
+    // Evaluate the main function and get the result.
+    this.compilationResult.getMain match {
+      case None => terminal.writer().println("No main function to run.")
+      case Some(main) => main(Array.empty)
+    }
   }
 
   /**

@@ -610,6 +610,12 @@ namespace Set {
         List.toIterator(Set.toList(s))
 
     ///
+    /// Returns an iterator over `s`.
+    ///
+    pub def toRegionIterator(r: Region[r], s: Set[a]): RegionIterator[a, r] \ Write(r) =
+        toList(s) |> List.toRegionIterator(r)
+
+    ///
     /// Returns the concatenation of the string representation
     /// of each element in `s` with `sep` inserted between each element.
     ///

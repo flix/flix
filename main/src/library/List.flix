@@ -872,6 +872,9 @@ namespace List {
 
     ///
     /// Split the list `xs` at the position `n` returning the left and right parts.
+    /// Position `n` is included in the right part.
+    ///
+    /// Example: `splitAt(2, 1::2::3::4::Nil)` returns `(1::2::Nil, 3::4::Nil)`
     ///
     /// Returns `(xs, Nil)` if `n > length(xs)`.
     /// Returns `(Nil, xs)` if `n < 0`.
