@@ -274,9 +274,9 @@ class TestRedundancy extends FunSuite with TestUtils {
       """
         |def f(): Unit = {
         |   region r {
-        |       let _ = [] @ r;
+        |       discard [] @ r;
         |       region r {
-        |           let _ = [] @ r;
+        |           discard [] @ r;
         |           ()
         |       }
         |   }
