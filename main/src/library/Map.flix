@@ -890,14 +890,14 @@ namespace Map {
     ///
     /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison, m: Map[k, v]): List[(k, v)] =
+    pub def query(p: k -> Comparison & ef, m: Map[k, v]): List[(k, v)] & ef =
         let Map(t) = m;
         RedBlackTree.query(p, (k, v) -> (k, v), t)
 
     ///
     /// Applies `f` to all key-value pairs `(k, v)` from the map `m` where `p(k)` returns `EqualTo`.
     ///
-    pub def queryWith(p: k -> Comparison, f: (k, v) -> Unit & ef, m: Map[k, v]): Unit & ef =
+    pub def queryWith(p: k -> Comparison & ef, f: (k, v) -> Unit & ef, m: Map[k, v]): Unit & ef =
         let Map(t) = m;
         RedBlackTree.queryWith(p, f, t)
 

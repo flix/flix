@@ -547,7 +547,7 @@ namespace RedBlackTree {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: k -> Comparison, f: (k, v) -> Unit & ef, t: RedBlackTree[k, v]): Unit & ef = match t {
+    pub def queryWith(p: k -> Comparison & ef, f: (k, v) -> Unit & ef, t: RedBlackTree[k, v]): Unit & ef = match t {
         case Node(_, a, k, v, b) =>
             match p(k) {
                 case LessThan    => queryWith(p, f, b)
@@ -562,7 +562,7 @@ namespace RedBlackTree {
     ///
     /// That is, the result is a list of all pairs `f(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison, f: (k, v) -> a & ef, t: RedBlackTree[k, v]): List[a] & ef = {
+    pub def query(p: k -> Comparison & ef, f: (k, v) -> a & ef, t: RedBlackTree[k, v]): List[a] & ef = {
         let buffer = new MutList(Static);
         let g = k -> v -> MutList.push!(f(k, v), buffer);
         queryWith(p, g, t);
