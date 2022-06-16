@@ -56,6 +56,7 @@ object CompletionProvider {
     def highest(name: String) = "1" + name
     def definition(name: String) = "2" + name
     def signature(name: String) = "2" + name
+    def tname(name: String) = "3" + name
     def variable(name: String) = "5" + name
     def snippet(name: String) = "8" + name
     def keyword(name: String) = "9" + name
@@ -78,7 +79,7 @@ object CompletionProvider {
     ("status" -> "success") ~ ("result" -> CompletionList(isIncomplete = true, completions).toJSON)
   }
 
-  private def getCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): List[CompletionItem] = {
+  private def getCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     //
     // The order of this list doesn't matter because suggestions are ordered
     // through sortText
@@ -88,7 +89,8 @@ object CompletionProvider {
       getVarCompletions() ++
       getDefAndSigCompletions() ++
       getWithCompletions() ++
-      getInstanceCompletions()
+      getInstanceCompletions() ++
+      getTypeCompletions()
   }
 
   private def keywordCompletion(name: String)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
@@ -479,6 +481,78 @@ object CompletionProvider {
           insertTextFormat = InsertTextFormat.Snippet,
           kind = CompletionItemKind.Snippet)
     }.toList
+  }
+
+  private def formatTParamsSnippet(tparams: List[TypedAst.TypeParam]): String = {
+    tparams match {
+      case Nil => ""
+      case _ => tparams.zipWithIndex.map {
+                  case (tparam, idx) => "$" + s"{${idx + 1}:${tparam.name}}"
+                }.mkString("[", ", ", "]")
+    }
+  }
+
+  private def formatTParams(tparams: List[TypedAst.TypeParam]): String = {
+    tparams match {
+      case Nil => ""
+      case _ => tparams.map(_.name).mkString("[", ", ", "]")
+    }
+  }
+
+  val simpleTypeNames = List(
+    "Unit",
+    "Null",
+    "Bool",
+    "Char",
+    "Float32",
+    "Float64",
+    "Int8",
+    "Int16",
+    "Int32",
+    "Int64",
+    "BigInt",
+    "String",
+    "Array",
+    "Ref",
+    "Channel",
+    "Lazy"
+  )
+
+  private def getTypeCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+    if (root == null) {
+      return Nil
+    }
+
+    val enums = root.enums.map {
+      case (_, t) => 
+        val name = t.sym.name
+        CompletionItem(label = s"$name${formatTParams(t.tparams)}",
+          sortText = Priority.tname(name),
+          textEdit = TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"),
+          documentation = Some(t.doc.text),
+          insertTextFormat = InsertTextFormat.Snippet,
+          kind = CompletionItemKind.Enum)
+    }
+
+    val aliases = root.typeAliases.map {
+      case (_, t) => 
+        val name = t.sym.name
+        CompletionItem(label = s"$name${formatTParams(t.tparams)}",
+          sortText = Priority.tname(name),
+          textEdit = TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"),
+          documentation = Some(t.doc.text),
+          insertTextFormat = InsertTextFormat.Snippet,
+          kind = CompletionItemKind.Enum)
+    }
+
+    val simpleTypes = simpleTypeNames map { name =>
+      CompletionItem(label = name,
+        sortText = Priority.tname(name),
+        textEdit = TextEdit(context.range, name),
+        kind = CompletionItemKind.Enum)
+    }
+
+    enums ++ aliases ++ simpleTypes
   }
 
   /*
