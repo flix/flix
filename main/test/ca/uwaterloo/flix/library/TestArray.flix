@@ -111,7 +111,7 @@ namespace TestArray {
 
     @test
     def testGetOpt06(): Bool = region r {
-        Array.getOpt(Int32.maxValue, [1, 2, 3] @ r) = None
+        Array.getOpt(Int32.maxValue(), [1, 2, 3] @ r) = None
     }
 
     /////////////////////////////////////////////////////////////////////////////
