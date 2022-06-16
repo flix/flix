@@ -75,6 +75,41 @@ object Parser {
         ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SourceLocation.Unknown).toFailure
     }
   }
+
+  object Letters {
+    /**
+      * A lowercase letter.
+      */
+    val LowerLetter: CharPredicate = CharPredicate.LowerAlpha
+
+    /**
+      * An uppercase letter.
+      */
+    val UpperLetter: CharPredicate = CharPredicate.UpperAlpha
+
+    /**
+      * A greek letter.
+      */
+    val GreekLetter: CharPredicate = CharPredicate('\u0370' to '\u03FF')
+
+    /**
+      * A mathematical operator or arrow.
+      */
+    val MathLetter: CharPredicate =
+      CharPredicate('\u2200' to '\u22FF') ++ // Mathematical Operator
+        CharPredicate('\u2190' to '\u21FF') // Mathematical Arrow
+
+    /**
+      * An operator letter.
+      */
+    val OperatorLetter: CharPredicate = CharPredicate("+-*<>=!&|^$")
+
+    /**
+      * a (upper/lower case) letter, numeral, greek letter, or other legal character.
+      */
+    val LegalLetter: CharPredicate = CharPredicate.AlphaNum ++ "_" ++ "!"
+
+  }
 }
 
 /**
@@ -108,6 +143,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Class |
       Declarations.Instance |
       Declarations.Effect
+  }
+
+  def DeclarationEOI: Rule1[ParsedAst.Declaration] = rule {
+    Declaration ~ EOI
   }
 
   def UseDeclarations: Rule1[Seq[ParsedAst.Use]] = rule {
@@ -291,7 +330,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ Names.Namespace ~ atomic(".{") ~ zeroOrMore(NameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseMany
+        SP ~ Names.Namespace ~ atomic(".{") ~ optWS ~ zeroOrMore(NameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Use.UseMany
       }
     }
 
@@ -305,7 +344,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ Names.QualifiedType ~ atomic(".{") ~ zeroOrMore(TagAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyTag
+        SP ~ Names.QualifiedType ~ atomic(".{") ~ optWS ~ zeroOrMore(TagAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Use.UseManyTag
       }
     }
 
@@ -450,6 +489,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     Expressions.Assign
   }
 
+  def ExpressionEOI: Rule1[ParsedAst.Expression] = rule {
+    Expression ~ EOI
+  }
+
   object Expressions {
     def Stm: Rule1[ParsedAst.Expression] = rule {
       Expression ~ optional(optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.Stm)
@@ -531,6 +574,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Special: Rule1[ParsedAst.Expression] = {
+      import Parser.Letters
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved2: Rule1[String] = rule {
@@ -544,22 +588,22 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       // Match any two character operator which is not reserved.
       def UserOp2: Rule1[String] = rule {
-        !Reserved2 ~ capture(Names.OperatorLetter ~ Names.OperatorLetter)
+        !Reserved2 ~ capture(Letters.OperatorLetter ~ Letters.OperatorLetter)
       }
 
       // Match any three character operator which is not reserved.
       def UserOp3: Rule1[String] = rule {
-        !Reserved3 ~ capture(Names.OperatorLetter ~ Names.OperatorLetter ~ Names.OperatorLetter)
+        !Reserved3 ~ capture(Letters.OperatorLetter ~ Letters.OperatorLetter ~ Letters.OperatorLetter)
       }
 
       // Match any operator which has at least four characters.
       def UserOpN: Rule1[String] = rule {
-        capture(Names.OperatorLetter ~ Names.OperatorLetter ~ Names.OperatorLetter ~ oneOrMore(Names.OperatorLetter))
+        capture(Letters.OperatorLetter ~ Letters.OperatorLetter ~ Letters.OperatorLetter ~ oneOrMore(Letters.OperatorLetter))
       }
 
       // Match any mathematical operator or symbol.
       def MathOp: Rule1[String] = rule {
-        capture(Names.MathLetter)
+        capture(Letters.MathLetter)
       }
 
       // Capture the source positions around the operator.
@@ -1043,7 +1087,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ keyword("project") ~ WS ~ ExpressionPart ~ WS ~ keyword("into") ~ WS ~ ProjectPart ~ SP ~> ParsedAst.Expression.FixpointProjectInto
+        SP ~ (keyword("project") | keyword("inject")) ~ WS ~ ExpressionPart ~ WS ~ keyword("into") ~ WS ~ ProjectPart ~ SP ~> ParsedAst.Expression.FixpointProjectInto
       }
     }
 
@@ -1609,51 +1653,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Names                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   object Names {
-
-    /**
-      * A lowercase letter.
-      */
-    val LowerLetter: CharPredicate = CharPredicate.LowerAlpha
-
-    /**
-      * An uppercase letter.
-      */
-    val UpperLetter: CharPredicate = CharPredicate.UpperAlpha
-
-    /**
-      * A greek letter.
-      */
-    val GreekLetter: CharPredicate = CharPredicate('\u0370' to '\u03FF')
-
-    /**
-      * A mathematical operator or arrow.
-      */
-    val MathLetter: CharPredicate =
-      CharPredicate('\u2200' to '\u22FF') ++ // Mathematical Operator
-        CharPredicate('\u2190' to '\u21FF') // Mathematical Arrow
-
-    /**
-      * An operator letter.
-      */
-    val OperatorLetter: CharPredicate = CharPredicate("+-*<>=!&|^$")
-
-    /**
-      * a (upper/lower case) letter, numeral, greek letter, or other legal character.
-      */
-    val LegalLetter: CharPredicate = CharPredicate.AlphaNum ++ "_" ++ "!"
+    import Parser.Letters
 
     /**
       * A lowercase identifier is a lowercase letter optionally followed by any letter, underscore, or prime.
       */
     def LowerCaseName: Rule1[Name.Ident] = rule {
-      SP ~ capture(optional("_") ~ LowerLetter ~ zeroOrMore(LegalLetter)) ~ SP ~> Name.Ident
+      SP ~ capture(optional("_") ~ Letters.LowerLetter ~ zeroOrMore(Letters.LegalLetter)) ~ SP ~> Name.Ident
     }
 
     /**
       * An uppercase identifier is an uppercase letter optionally followed by any letter, underscore, or prime.
       */
     def UpperCaseName: Rule1[Name.Ident] = rule {
-      SP ~ capture(optional("_") ~ UpperLetter ~ zeroOrMore(LegalLetter)) ~ SP ~> Name.Ident
+      SP ~ capture(optional("_") ~ Letters.UpperLetter ~ zeroOrMore(Letters.LegalLetter)) ~ SP ~> Name.Ident
     }
 
     /**
@@ -1681,21 +1694,21 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       * A greek identifier.
       */
     def GreekName: Rule1[Name.Ident] = rule {
-      SP ~ capture(oneOrMore(GreekLetter)) ~ SP ~> Name.Ident
+      SP ~ capture(oneOrMore(Letters.GreekLetter)) ~ SP ~> Name.Ident
     }
 
     /**
       * A math identifier.
       */
     def MathName: Rule1[Name.Ident] = rule {
-      SP ~ capture(oneOrMore(MathLetter)) ~ SP ~> Name.Ident
+      SP ~ capture(oneOrMore(Letters.MathLetter)) ~ SP ~> Name.Ident
     }
 
     /**
       * An operator identifier.
       */
     def OperatorName: Rule1[Name.Ident] = rule {
-      SP ~ capture(oneOrMore(OperatorLetter)) ~ SP ~> Name.Ident
+      SP ~ capture(oneOrMore(Letters.OperatorLetter)) ~ SP ~> Name.Ident
     }
 
     /**
@@ -1793,7 +1806,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     * Reads the keyword and looks ahead to ensure there no legal letters immediately following.
     */
   def keyword(word: String): Rule0 = namedRule(s"${'"'}$word${'"'}") {
-    atomic(word) ~ !Names.LegalLetter
+    atomic(word) ~ !Parser.Letters.LegalLetter
   }
 
   /////////////////////////////////////////////////////////////////////////////

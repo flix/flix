@@ -17,44 +17,29 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.ReifiedSourceLocation
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.InstanceField
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 
 object GenReifiedSourceLocationClass {
 
-  private def mkInstanceField(fieldName: String, tpe: BackendType) =
-    InstanceField(JvmName.ReifiedSourceLocation, fieldName, tpe)
-
-  private val sourceField: InstanceField =
-    mkInstanceField("source", BackendObjType.String.toTpe)
-  private val beginLineField: InstanceField =
-    mkInstanceField("beginLine", BackendType.Int32)
-  private val beginColField: InstanceField =
-    mkInstanceField("beginCol", BackendType.Int32)
-  private val endLineField: InstanceField =
-    mkInstanceField("endLine", BackendType.Int32)
-  private val endColField: InstanceField =
-    mkInstanceField("endCol", BackendType.Int32)
-  val ConstructorDescriptor: MethodDescriptor = mkDescriptor(BackendObjType.String.toTpe, BackendType.Int32, BackendType.Int32, BackendType.Int32, BackendType.Int32)(VoidableType.Void)
-
   def gen()(implicit flix: Flix): Map[JvmName, JvmClass] = {
-    Map(JvmName.ReifiedSourceLocation -> JvmClass(JvmName.ReifiedSourceLocation, genByteCode()))
+    val name = BackendObjType.ReifiedSourceLocation.jvmName
+    Map(name -> JvmClass(name, genByteCode()))
   }
 
   private def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(JvmName.ReifiedSourceLocation, IsFinal)
+    val cm = ClassMaker.mkClass(ReifiedSourceLocation.jvmName, IsFinal)
 
-    sourceField.mkField(cm, IsPublic, IsFinal)
-    beginLineField.mkField(cm, IsPublic, IsFinal)
-    beginColField.mkField(cm, IsPublic, IsFinal)
-    endLineField.mkField(cm, IsPublic, IsFinal)
-    endColField.mkField(cm, IsPublic, IsFinal)
+    cm.mkField(ReifiedSourceLocation.SourceField)
+    cm.mkField(ReifiedSourceLocation.BeginLineField)
+    cm.mkField(ReifiedSourceLocation.BeginColField)
+    cm.mkField(ReifiedSourceLocation.EndLineField)
+    cm.mkField(ReifiedSourceLocation.EndColField)
 
-    cm.mkConstructor(genConstructor(), ConstructorDescriptor, IsPublic)
+    cm.mkConstructor(genConstructor(), ReifiedSourceLocation.ConstructorDescriptor, IsPublic)
     cm.mkMethod(genEqualsMethod(), "equals", mkDescriptor(JvmName.Object.toTpe)(BackendType.Bool), IsPublic, NotFinal)
     cm.mkMethod(genHashCodeMethod(), "hashCode", mkDescriptor()(BackendType.Int32), IsPublic, NotFinal)
     cm.mkMethod(genToStringMethod(), "toString", mkDescriptor()(BackendObjType.String.toTpe), IsPublic, NotFinal)
@@ -68,23 +53,23 @@ object GenReifiedSourceLocationClass {
       // store source
       thisLoad() ~
       ALOAD(1) ~
-      sourceField.putField() ~
+      PUTFIELD(ReifiedSourceLocation.SourceField) ~
       // store begin line
       thisLoad() ~
       ILOAD(2) ~
-      beginLineField.putField() ~
+      PUTFIELD(ReifiedSourceLocation.BeginLineField) ~
       // store begin col
       thisLoad() ~
       ILOAD(3) ~
-      beginColField.putField() ~
+      PUTFIELD(ReifiedSourceLocation.BeginColField) ~
       // store end line
       thisLoad() ~
       ILOAD(4) ~
-      endLineField.putField() ~
+      PUTFIELD(ReifiedSourceLocation.EndLineField) ~
       // store end col
       thisLoad() ~
       ILOAD(5) ~
-      endColField.putField() ~
+      PUTFIELD(ReifiedSourceLocation.EndColField) ~
       // return
       RETURN()
   }
@@ -99,12 +84,11 @@ object GenReifiedSourceLocationClass {
     // create string builder
     NEW(JvmName.StringBuilder) ~ DUP() ~ invokeConstructor(JvmName.StringBuilder) ~
       // build string
-      //TODO missing dups ???
-      DUP() ~ thisLoad() ~ sourceField.getField() ~ appendString() ~
+      DUP() ~ thisLoad() ~ GETFIELD(ReifiedSourceLocation.SourceField) ~ appendString() ~
       DUP() ~ pushString(":") ~ appendString() ~
-      DUP() ~ thisLoad() ~ beginLineField.getField() ~ appendInt() ~
+      DUP() ~ thisLoad() ~ GETFIELD(ReifiedSourceLocation.BeginLineField) ~ appendInt() ~
       DUP() ~ pushString(":") ~ appendString() ~
-      DUP() ~ thisLoad() ~ beginColField.getField() ~ appendInt() ~
+      DUP() ~ thisLoad() ~ GETFIELD(ReifiedSourceLocation.BeginColField) ~ appendInt() ~
       // create the string
       INVOKEVIRTUAL(JvmName.StringBuilder, "toString", mkDescriptor()(BackendObjType.String.toTpe)) ~
       ARETURN()
@@ -116,31 +100,31 @@ object GenReifiedSourceLocationClass {
 
     // create array
     ICONST_5() ~
-      ANEWARRAY(JvmName.Object) ~ // TODO this was Objects??
+      ANEWARRAY(JvmName.Object) ~
       // insert source
       DUP() ~
       ICONST_0() ~
-      thisLoad() ~ sourceField.getField() ~
+      thisLoad() ~ GETFIELD(ReifiedSourceLocation.SourceField) ~
       AASTORE() ~
       // insert begin line
       DUP() ~
       ICONST_1() ~
-      thisLoad() ~ beginLineField.getField() ~ boxInt() ~
+      thisLoad() ~ GETFIELD(ReifiedSourceLocation.BeginLineField) ~ boxInt() ~
       AASTORE() ~
       // insert begin col
       DUP() ~
       ICONST_2() ~
-      thisLoad() ~ beginColField.getField() ~ boxInt() ~
+      thisLoad() ~ GETFIELD(ReifiedSourceLocation.BeginColField) ~ boxInt() ~
       AASTORE() ~
       // insert end line
       DUP() ~
       ICONST_3() ~
-      thisLoad() ~ endLineField.getField() ~ boxInt() ~
+      thisLoad() ~ GETFIELD(ReifiedSourceLocation.EndLineField) ~ boxInt() ~
       AASTORE() ~
       // insert end col
       DUP() ~
       ICONST_4() ~
-      thisLoad() ~ endColField.getField() ~ boxInt() ~
+      thisLoad() ~ GETFIELD(ReifiedSourceLocation.EndColField) ~ boxInt() ~
       AASTORE() ~
       // hash the array
       INVOKESTATIC(JvmName.Objects, "hash", mkDescriptor(BackendType.Array(JvmName.Object.toTpe))(BackendType.Int32)) ~
@@ -163,22 +147,22 @@ object GenReifiedSourceLocationClass {
       ifTrue(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
       // check individual fields
       otherObj.load() ~
-      CHECKCAST(JvmName.ReifiedSourceLocation) ~
-      storeWithName(2, JvmName.ReifiedSourceLocation.toTpe) { otherLoc =>
-        thisLoad() ~ beginLineField.getField() ~
-          otherLoc.load() ~ beginLineField.getField() ~
+      CHECKCAST(BackendObjType.ReifiedSourceLocation.jvmName) ~
+      storeWithName(2, BackendObjType.ReifiedSourceLocation.toTpe) { otherLoc =>
+        thisLoad() ~ GETFIELD(ReifiedSourceLocation.BeginLineField) ~
+          otherLoc.load() ~ GETFIELD(ReifiedSourceLocation.BeginLineField) ~
           ifTrue(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
-          thisLoad() ~ beginColField.getField() ~
-          otherLoc.load() ~ beginColField.getField() ~
+          thisLoad() ~ GETFIELD(ReifiedSourceLocation.BeginColField) ~
+          otherLoc.load() ~ GETFIELD(ReifiedSourceLocation.BeginColField) ~
           ifTrue(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
-          thisLoad() ~ endLineField.getField() ~
-          otherLoc.load() ~ endLineField.getField() ~
+          thisLoad() ~ GETFIELD(ReifiedSourceLocation.EndLineField) ~
+          otherLoc.load() ~ GETFIELD(ReifiedSourceLocation.EndLineField) ~
           ifTrue(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
-          thisLoad() ~ endColField.getField() ~
-          otherLoc.load() ~ endColField.getField() ~
+          thisLoad() ~ GETFIELD(ReifiedSourceLocation.EndColField) ~
+          otherLoc.load() ~ GETFIELD(ReifiedSourceLocation.EndColField) ~
           ifTrue(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
-          thisLoad() ~ sourceField.getField() ~
-          otherLoc.load() ~ sourceField.getField() ~
+          thisLoad() ~ GETFIELD(ReifiedSourceLocation.SourceField) ~
+          otherLoc.load() ~ GETFIELD(ReifiedSourceLocation.SourceField) ~
           INVOKESTATIC(JvmName.Objects, "equals", mkDescriptor(JvmName.Object.toTpe, JvmName.Object.toTpe)(BackendType.Bool)) ~
           IRETURN()
       }

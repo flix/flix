@@ -55,8 +55,9 @@ object GenFunctionAbstractClasses {
 
     cm.mkConstructor(genConstructor(cont), MethodDescriptor.NothingToVoid, IsPublic)
 
-    for (argIndex <- arrow.args.indices)
-      arrow.ArgField(argIndex).mkField(cm, IsPublic, NotFinal)
+    for (argIndex <- arrow.args.indices) {
+      cm.mkField(arrow.ArgField(argIndex))
+    }
 
     cm.closeClassMaker()
   }

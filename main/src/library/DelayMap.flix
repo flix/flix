@@ -20,6 +20,10 @@ pub enum DelayMap[k, v] {
     case DMap(RedBlackTree[k, Lazy[v]])
 }
 
+instance ForEach[DelayMap[k]] {
+    pub def foreach(f: a -> Unit & ef, l: DelayMap[k, a]): Unit & ef = DelayMap.foreach((_, v) -> f(v), l)
+}
+
 namespace DelayMap {
 
     ///
@@ -690,10 +694,10 @@ namespace DelayMap {
     @Lazy
     def updateWithKeyL(f: (k, v) -> Option[v], k: k, m: DelayMap[k, v]): DelayMap[k, v] with Order[k] =
         let DMap(t) = m;
-        let f1 = (k, v) -> {
-            let res = lazy match f(k, force v) {
-                case Some(v1) => v1
-                case None     => force v
+        let f1 = (k1, v1) -> {
+            let res = lazy match f(k1, force v1) {
+                case Some(v2) => v2
+                case None     => force v1
             };
             Some(res)
         };
@@ -704,10 +708,10 @@ namespace DelayMap {
     ///
     def updateWithKeyE(f: (k, v) -> Option[v] & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         let DMap(t) = m;
-        let f1 = (k, v) -> {
-            let res = f(k, force v);
+        let f1 = (k1, v1) -> {
+            let res = f(k1, force v1);
             match res {
-                case Some(v1) => Some(lazy v1)
+                case Some(v2) => Some(lazy v2)
                 case None     => None
             }
         };

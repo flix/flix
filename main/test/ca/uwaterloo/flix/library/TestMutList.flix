@@ -1815,7 +1815,7 @@ namespace TestMutList {
 
     @test
     def sortWith01(): Bool = region r {
-        let a = MutList.sortWith(cmp, Array.toMutList(([] @ r): ScopedArray[Int32, _], r));
+        let a = MutList.sortWith(cmp, Array.toMutList(([] @ r): Array[Int32, _], r));
         a `sameElements` Array.toMutList([] @ r, r)
     }
 
@@ -1901,7 +1901,7 @@ namespace TestMutList {
 
     @test
     def sort01(): Bool = region r {
-        testSortVsSortWith(Array.toMutList([]: ScopedArray[Int32, _], r))
+        testSortVsSortWith(Array.toMutList([]: Array[Int32, _], r))
     }
 
     @test
@@ -1950,9 +1950,9 @@ namespace TestMutList {
 
     @test
     def sortWith01!(): Bool = region r {
-        let a = Array.toMutList([]: ScopedArray[Int32, _], r);
+        let a = Array.toMutList([]: Array[Int32, _], r);
         MutList.sortWith!(cmp, a);
-        a `sameElements` Array.toMutList([]: ScopedArray[Int32, _], r)
+        a `sameElements` Array.toMutList([]: Array[Int32, _], r)
     }
 
     @test
@@ -2051,7 +2051,7 @@ namespace TestMutList {
 
     @test
     def sort!01(): Bool = region r {
-        testSort!VsSortWith!(Array.toMutList([]: ScopedArray[Int32, _], r))
+        testSort!VsSortWith!(Array.toMutList([]: Array[Int32, _], r))
     }
 
     @test
@@ -2106,7 +2106,7 @@ namespace TestMutList {
 
     @test
     def sortBy01(): Bool = region r {
-        testSortByVsSort(Array.toMutList([]: ScopedArray[Int32, _], r))
+        testSortByVsSort(Array.toMutList([]: Array[Int32, _], r))
     }
 
     @test
@@ -2161,9 +2161,9 @@ namespace TestMutList {
     }
 
     @test
-    def sortBy10(): Bool = region r {
-        MutList.sortBy(r -> let R(x) = r; x.i, Array.toMutList([R({i = 2, s = "A"}), R({i = 1, s = "B"}), R({i = 3, s = "C"})] @ r, r))
-        `sameElements` Array.toMutList([R({i = 1, s = "B"}), R({i = 2, s = "A"}), R({i = 3, s = "C"})] @ r, r)
+    def sortBy10(): Bool = region reg {
+        MutList.sortBy(r -> let R(x) = r; x.i, Array.toMutList([R({i = 2, s = "A"}), R({i = 1, s = "B"}), R({i = 3, s = "C"})] @ reg, reg))
+        `sameElements` Array.toMutList([R({i = 1, s = "B"}), R({i = 2, s = "A"}), R({i = 3, s = "C"})] @ reg, reg)
     }
 
 
@@ -2181,7 +2181,7 @@ namespace TestMutList {
 
     @test
     def sortBy!01(): Bool = region r {
-        testSortBy!VsSortBy(Array.toMutList([]: ScopedArray[Int32, _], r))
+        testSortBy!VsSortBy(Array.toMutList([]: Array[Int32, _], r))
     }
 
     @test

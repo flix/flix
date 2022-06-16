@@ -823,6 +823,46 @@ namespace TestDelayList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // toMutDeque                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutDeque01(): Bool = region r {
+    	let l = ENil: DelayList[Int32];
+        let d1 = DelayList.toMutDeque(l, r);
+
+        let d2 = new MutDeque(r);
+
+        d1 `MutDeque.sameElements` d2
+
+    }
+
+    @test
+    def toMutDeque02(): Bool = region r {
+    	let l = LList(lazy ENil): DelayList[Int32];
+        let d1 = DelayList.toMutDeque(l, r);
+
+        let d2 = new MutDeque(r);
+
+        d1 `MutDeque.sameElements` d2
+
+    }
+
+    @test
+    def toMutDeque03(): Bool = region r {
+    	let l = LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))));
+        let d1 = DelayList.toMutDeque(l, r);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushBack(1, d2);
+        MutDeque.pushBack(2, d2);
+        MutDeque.pushBack(3, d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // toMap                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 

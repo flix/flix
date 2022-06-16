@@ -103,7 +103,7 @@ namespace Validation {
     /// Returns `false` if `v` is `Failure`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def exists(f: t -> Bool, v: Validation[t, e]): Bool = match v {
+    pub def exists(f: t -> Bool & ef, v: Validation[t, e]): Bool & ef = match v {
         case Success(t) => f(t)
         case Failure(_) => false
     }
@@ -112,7 +112,7 @@ namespace Validation {
     /// Returns `true` if `v` is `Success(t)` and `f(t)` is true or if `v` is `Failure`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def forall(f: t -> Bool, v: Validation[t, e]): Bool = match v {
+    pub def forall(f: t -> Bool & ef, v: Validation[t, e]): Bool & ef = match v {
         case Success(t) => f(t)
         case Failure(_) => true
     }

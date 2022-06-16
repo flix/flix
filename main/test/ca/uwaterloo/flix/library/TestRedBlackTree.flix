@@ -372,6 +372,25 @@ namespace TestRedBlackTree {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // foreach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foreach01(): Bool & Impure =
+        let r = ref 21;
+        let Map(t) = Map#{};
+        RedBlackTree.foreach((k, _) -> r := k, t);
+        21 == deref r
+
+    @test
+    def foreach02(): Bool & Impure =
+        let r = ref 21;
+        let Map(t) = Map#{1 => "Hello World!"};
+        RedBlackTree.foreach((k, _) -> r := k, t);
+        1 == deref r
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // sumValues                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
