@@ -148,10 +148,10 @@ namespace TestFunctorFilter {
     def filterOption01(): Bool = filter(isOdd, None: Option[Int32]) == None
 
     @test
-    def filterOption02(): Bool = filter(isOdd, Some(1)) == None
+    def filterOption02(): Bool = filter(isOdd, Some(1)) == Some(1)
 
     @test
-    def filterOption03(): Bool = filter(isOdd, Some(2)) == Some(2)
+    def filterOption03(): Bool = filter(isOdd, Some(2)) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // filterMapOption                                                         //
