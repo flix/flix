@@ -763,6 +763,27 @@ namespace Iterator {
     /// Returns an iterator where the element at index `i` is `f(a, b)` where
     /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
     ///
+    /// Does *not* consume any elements from either iterator.
+    ///
+    /// If either `iterA` or `iterB` becomes depleted, then no further elements are added to the resulting list.
+    ///
+    /// The original iterators `iterA` and `iterB` should *not* be reused.
+    ///
+    /// An iterator should *never* be zipped with itself.
+    ///
+    @Lazy
+    pub def regZipWithL(f: (a, b) -> c, iterA: RegionIterator[a, r1], iterB: RegionIterator[b, r2]): RegionIterator[c, r1 and r2] =
+        let RegionIterator(done, next) = regZip(iterA, iterB);
+        let next1 = () -> {
+            let (x, y) = next();
+            f(x, y)
+        };
+        RegionIterator(done, next1)
+
+    ///
+    /// Returns an iterator where the element at index `i` is `f(a, b)` where
+    /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
+    ///
     /// Consumes the entire iterator.
     ///
     /// If either `iterA` or `iterB` becomes depleted, then no further elements are added to the resulting list.
@@ -773,6 +794,21 @@ namespace Iterator {
     ///
     pub def zipWith(f: (a, b) -> c & ef, iterA: Iterator[a], iterB: Iterator[b]): List[c] & Impure =
         zip(iterA, iterB) |> map(match (x, y) -> f(x, y))
+
+    ///
+    /// Returns an iterator where the element at index `i` is `f(a, b)` where
+    /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    /// If either `iterA` or `iterB` becomes depleted, then no further elements are added to the resulting list.
+    ///
+    /// The original iterators `iterA` and `iterB` should *not* be reused.
+    ///
+    /// An iterator should *never* be zipped with itself.
+    ///
+    pub def regZipWith(f: (a, b) -> c & ef, iterA: RegionIterator[a, r1], iterB: RegionIterator[b, r2]): List[c] \ { ef, Read(r1, r2) } =
+        regZip(iterA, iterB) |> regMap(match (x, y) -> f(x, y))
 
     ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from left to right.
@@ -867,10 +903,36 @@ namespace Iterator {
         loop()
 
     ///
+    /// Applies `f` to a start value `z` and all elements in `iter` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def regFoldRightWithCont(f: (a, Unit -> b \ { ef, Read(r) }) -> b & ef, z: b, iter: RegionIterator[a, r]): b \ { ef, Read(r) } =
+        let RegionIterator(done, next) = iter;
+        def loop() = {
+            if (done())
+                z
+            else {
+                let x = next();
+                f(x, _ -> loop())
+            }
+        };
+        loop()
+
+    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b & ef, iter: Iterator[a]): b & Impure with Monoid[b] =
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), iter)
+
+    ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def regFoldMap(f: a -> b & ef, iter: RegionIterator[a, r]): b \ { ef, Read(r) } with Monoid[b] =
+        regFoldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), iter)
 
     ///
     /// Applies `f` to all elements in `iter` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
@@ -887,6 +949,22 @@ namespace Iterator {
             None
         else
             Some(foldLeft(f, next(), iter))
+
+    ///
+    /// Applies `f` to all elements in `iter` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    ///
+    /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
+    ///
+    /// Returns `None` if `iter` is empty.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def regReduceLeft(f: (a, a) -> a & ef, iter: RegionIterator[a, r]): Option[a] \ { ef, Read(r) } =
+        let RegionIterator(done, next) = iter;
+        if (done())
+            None
+        else
+            Some(regFoldLeft(f, next(), iter))
 
     ///
     /// Returns an iterator over the results of `f`.
@@ -922,6 +1000,22 @@ namespace Iterator {
     ///
     pub def takeWhile(f: a -> Bool & ef, iter: Iterator[a]): List[a] & Impure =
         let Iterator(done, next) = iter;
+        def loop(k) = {
+            if (done())
+                k(Nil)
+            else
+                let x = next();
+                if (f(x)) loop(ks -> k(x :: ks)) else k(Nil)
+        };
+        loop(identity)
+
+    ///
+    /// Returns the longest prefix of `iter` that satisfies the predicate `f`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def regTakeWhile(f: a -> Bool & ef, iter: RegionIterator[a, r]): List[a] \ { ef, Read(r) } =
+        let RegionIterator(done, next) = iter;
         def loop(k) = {
             if (done())
                 k(Nil)
