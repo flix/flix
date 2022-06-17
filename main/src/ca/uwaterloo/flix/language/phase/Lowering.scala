@@ -85,7 +85,7 @@ object Lowering {
     lazy val Comparison: Symbol.EnumSym = Symbol.mkEnumSym("Comparison")
     lazy val Boxed: Symbol.EnumSym = Symbol.mkEnumSym("Boxed")
 
-    lazy val FlixList: Symbol.EnumSym = Symbol.mkEnumSym("List")
+    lazy val FList: Symbol.EnumSym = Symbol.mkEnumSym("List")
   }
 
   private object Sigs {
@@ -121,7 +121,7 @@ object Lowering {
     lazy val Comparison: Type = Type.mkEnum(Enums.Comparison, Nil, SourceLocation.Unknown)
     lazy val Boxed: Type = Type.mkEnum(Enums.Boxed, Nil, SourceLocation.Unknown)
 
-    def flixList(t: Type): Type = Type.mkEnum(Enums.FlixList, List(t), SourceLocation.Unknown)
+    def mkList(t: Type): Type = Type.mkEnum(Enums.FList, List(t), SourceLocation.Unknown)
 
     //
     // Function Types.
@@ -1252,18 +1252,28 @@ object Lowering {
   }
 
   /**
-    * Returns a list expression constructed from the given list of expressions `exps`.
+    * Returns a list expression constructed from the given `exps` with type list of `elmType`.
     */
   private def mkList(exps: List[Expression], elmType: Type, loc: SourceLocation): Expression = {
-    val listType = Types.flixList(elmType)
-    val nil = mkTag(Enums.FlixList, "Nil", Expression.Unit(loc), listType, loc)
-    def consOf(elm: Expression, rest: Expression): Expression = {
-      val tuple = mkTuple(elm :: rest :: Nil, loc)
-      mkTag(Enums.FlixList, "Cons", tuple, listType, tuple.loc)
-    }
+    val nil = mkNil(elmType, loc)
     exps.foldRight(nil){
-      case (e, acc) => consOf(e, acc)
+      case (e, acc) => mkCons(e, acc, loc)
     }
+  }
+
+  /**
+    * Returns a `Nil` expression with type list of `elmType`.
+    */
+  private def mkNil(elmType: Type, loc: SourceLocation): Expression = {
+    mkTag(Enums.FList, "Nil", Expression.Unit(loc), Types.mkList(elmType), loc)
+  }
+
+  /**
+    * returns a `Cons(hd, tail)` expression with type `tail.tpe`.
+    */
+  private def mkCons(hd: Expression, tail: Expression, loc: SourceLocation): Expression = {
+    val tuple = mkTuple(hd :: tail :: Nil, loc)
+    mkTag(Enums.FList, "Cons", tuple, tail.tpe, loc)
   }
 
   /**
