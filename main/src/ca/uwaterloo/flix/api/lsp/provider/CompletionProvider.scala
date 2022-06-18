@@ -483,6 +483,9 @@ object CompletionProvider {
     }.toList
   }
 
+  /**
+    * Format type params in the right form to be inserted as a snippet
+    */
   private def formatTParamsSnippet(tparams: List[TypedAst.TypeParam]): String = {
     tparams match {
       case Nil => ""
@@ -492,6 +495,9 @@ object CompletionProvider {
     }
   }
 
+  /**
+    * Format type params in the right form to be displayed in the list of completions
+    */
   private def formatTParams(tparams: List[TypedAst.TypeParam]): String = {
     tparams match {
       case Nil => ""
@@ -518,6 +524,9 @@ object CompletionProvider {
     "Lazy"
   )
 
+  /**
+    * Completions for types (enums, aliases, and simple types)
+    */
   private def getTypeCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     if (root == null) {
       return Nil
