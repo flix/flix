@@ -708,4 +708,40 @@ namespace TestRedBlackTree {
         let Map(t) = Map#{0 => "1", 1 => "2", 2 => "2"};
         RedBlackTree.joinWith((k, v) -> "${k} => ${v}", ", ", t) == "0 => 1, 1 => 2, 2 => 2"
 
+    /////////////////////////////////////////////////////////////////////////////
+    // filter                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def filter01(): Bool =
+        RedBlackTree.filter(x -> x > 1, RedBlackTree.empty(): RedBlackTree.RedBlackTree[Int32, Int32]) == RedBlackTree.empty()
+
+    @test
+    def filter02(): Bool =
+        RedBlackTree.filter(x -> x > 1, RedBlackTree.empty() |> RedBlackTree.insert(1, 1)) == RedBlackTree.empty()
+
+    @test
+    def filter03(): Bool =
+        RedBlackTree.filter(x -> x > 1, RedBlackTree.empty() |> RedBlackTree.insert(1, 1) |> RedBlackTree.insert(2, 2) |> RedBlackTree.insert(3, 3) |> RedBlackTree.insert(4, 4))
+            |> RedBlackTree.toList |> List.sort == (2, 2) :: (3, 3) :: (4, 4) :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // filter                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def filterMap01(): Bool =
+        RedBlackTree.filterMap(x -> if (x > 1) Some("${x}") else None, RedBlackTree.empty(): RedBlackTree.RedBlackTree[Int32, Int32])
+            == RedBlackTree.empty()
+
+    @test
+    def filterMap02(): Bool =
+        RedBlackTree.filterMap(x -> if (x > 1) Some("${x}") else None, RedBlackTree.empty() |> RedBlackTree.insert(1, 1))
+            == RedBlackTree.empty()
+
+    @test
+    def filterMap03(): Bool =
+        RedBlackTree.filterMap(x -> if (x > 1) Some("${x}") else None, RedBlackTree.empty() |> RedBlackTree.insert(1, 1) |> RedBlackTree.insert(2, 2) |> RedBlackTree.insert(3, 3) |> RedBlackTree.insert(4, 4))
+            |> RedBlackTree.toList |> List.sort == (2, "2") :: (3, "3") :: (4, "4") :: Nil
+
 }

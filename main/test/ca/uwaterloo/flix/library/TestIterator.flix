@@ -346,6 +346,55 @@ namespace TestIterator {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // toMutDeque                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutDeque01(): Bool & Impure = region r {
+        let iter = Iterator.empty(): Iterator[Int32];
+        let d = new MutDeque(r): MutDeque[Int32, _];
+
+        Iterator.toMutDeque(iter, r) `MutDeque.sameElements` d
+    }
+
+    @test
+    def toMutDeque02(): Bool & Impure = region r {
+        let xs = 1 :: Nil;
+
+        let iter = List.toIterator(xs);
+
+        let d = new MutDeque(r);
+        List.foreach(x -> MutDeque.pushBack(x, d), xs);
+
+        Iterator.toMutDeque(iter, r) `MutDeque.sameElements` d
+    }
+
+    @test
+    def toMutDeque03(): Bool & Impure = region r {
+        let xs = 1 :: 2 :: Nil;
+
+        let iter = List.toIterator(xs);
+
+        let d = new MutDeque(r);
+        List.foreach(x -> MutDeque.pushBack(x, d), xs);
+
+        Iterator.toMutDeque(iter, r) `MutDeque.sameElements` d
+    }
+
+    @test
+    def toMutDeque04(): Bool & Impure = region r {
+        let xs = 1 :: 2 :: 3 :: Nil;
+
+        let iter = List.toIterator(xs);
+
+        let d = new MutDeque(r);
+        List.foreach(x -> MutDeque.pushBack(x, d), xs);
+
+        Iterator.toMutDeque(iter, r) `MutDeque.sameElements` d
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // toNel                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 

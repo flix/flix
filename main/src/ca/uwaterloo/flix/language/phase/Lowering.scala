@@ -84,6 +84,8 @@ object Lowering {
 
     lazy val Comparison: Symbol.EnumSym = Symbol.mkEnumSym("Comparison")
     lazy val Boxed: Symbol.EnumSym = Symbol.mkEnumSym("Boxed")
+
+    lazy val FList: Symbol.EnumSym = Symbol.mkEnumSym("List")
   }
 
   private object Sigs {
@@ -119,6 +121,7 @@ object Lowering {
     lazy val Comparison: Type = Type.mkEnum(Enums.Comparison, Nil, SourceLocation.Unknown)
     lazy val Boxed: Type = Type.mkEnum(Enums.Boxed, Nil, SourceLocation.Unknown)
 
+    def mkList(t: Type): Type = Type.mkEnum(Enums.FList, List(t), SourceLocation.Unknown)
 
     //
     // Function Types.
@@ -844,7 +847,7 @@ object Lowering {
       val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
       val polarityExp = mkPolarity(polarity, loc)
       val fixityExp = mkFixity(fixity, loc)
-      val termsExp = mkArray(terms.map(visitBodyTerm(cparams0, _)), Types.BodyTerm, loc)
+      val termsExp = mkList(terms.map(visitBodyTerm(cparams0, _)), Types.BodyTerm, loc)
       val innerExp = mkTuple(predSymExp :: denotationExp :: polarityExp :: fixityExp :: termsExp :: Nil, loc)
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
@@ -1246,6 +1249,31 @@ object Lowering {
     val eff = Type.Pure
     val reg = Expression.Unit(loc)
     Expression.ArrayLit(exps, reg, tpe, eff, loc)
+  }
+
+  /**
+    * Returns a list expression constructed from the given `exps` with type list of `elmType`.
+    */
+  private def mkList(exps: List[Expression], elmType: Type, loc: SourceLocation): Expression = {
+    val nil = mkNil(elmType, loc)
+    exps.foldRight(nil){
+      case (e, acc) => mkCons(e, acc, loc)
+    }
+  }
+
+  /**
+    * Returns a `Nil` expression with type list of `elmType`.
+    */
+  private def mkNil(elmType: Type, loc: SourceLocation): Expression = {
+    mkTag(Enums.FList, "Nil", Expression.Unit(loc), Types.mkList(elmType), loc)
+  }
+
+  /**
+    * returns a `Cons(hd, tail)` expression with type `tail.tpe`.
+    */
+  private def mkCons(hd: Expression, tail: Expression, loc: SourceLocation): Expression = {
+    val tuple = mkTuple(hd :: tail :: Nil, loc)
+    mkTag(Enums.FList, "Cons", tuple, tail.tpe, loc)
   }
 
   /**

@@ -407,6 +407,16 @@ namespace Iterator {
         regFoldRight(f, None, iter)
 
     ///
+    /// Returns the contents of `iter` as a MutDeque.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def toMutDeque(iter: Iterator[a], r: Region[r]): MutDeque[a, r] & Impure  =
+        let d = new MutDeque(r);
+        foreach(x -> MutDeque.pushBack(x, d), iter);
+        d
+        
+    ///
     /// Returns the contents of `iter` as a set. Consumes the entire iterator.
     ///
     pub def toSet(iter: Iterator[a]): Set[a] & Impure with Order[a] =
