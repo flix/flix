@@ -95,6 +95,11 @@ instance Iterable[DelayList] {
         DelayList.toIterator(l)
 }
 
+instance FunctorFilter[DelayList] {
+    pub def filterMap(f: a -> Option[b] & ef, x: DelayList[a]): DelayList[b] & ef = DelayList.filterMap(f, x)
+    pub override def filter(f: a -> Bool & ef, x: DelayList[a]): DelayList[a] & ef = DelayList.filter(f, x)
+}
+
 instance SemiGroup[DelayList[a]] {
     pub def combine(l1: DelayList[a], l2: DelayList[a]): DelayList[a] = DelayList.append(l1, l2)
 }
