@@ -653,6 +653,36 @@ def filterWithKey06(): Bool = Map.filterWithKey((k, v) -> k == v, Map#{1 => 1, 2
 def filterWithKey07(): Bool = Map.filterWithKey((k, v) -> k == v, Map#{1 => -1, 2 => -3}) == Map#{}
 
 /////////////////////////////////////////////////////////////////////////////
+// filterMap                                                               //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def filterMap01(): Bool = Map.filterMap(x -> if (x > 1) Some("${x}") else None, Map#{}: Map[Unit, _]) == Map#{}
+
+@test
+def filterMap02(): Bool = Map.filterMap(x -> if (x > 1) Some("${x}") else None, Map#{1 => 1}) == Map#{}
+
+@test
+def filterMap03(): Bool =
+    Map.filterMap(x -> if (x > 1) Some("${x}") else None, Map#{1 => 1, 2 => 2, 3 => 3, 4 => 4})
+        == Map#{2 => "2", 3 => "3", 4 => "4"}
+
+/////////////////////////////////////////////////////////////////////////////
+// filterMapWithKey                                                        //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def filterMapWithKey01(): Bool = Map.filterMapWithKey((k, v) -> if (k == v and v > 1) Some("${v}") else None, Map#{}: Map[Int32, Int32]) == Map#{}
+
+@test
+def filterMapWithKey02(): Bool = Map.filterMapWithKey((k, v) -> if (k == v and v > 1) Some("${v}") else None, Map#{1 => 1}) == Map#{}
+
+@test
+def filterMapWithKey03(): Bool =
+    Map.filterMapWithKey((k, v) -> if (k == v and v > 1) Some("${v}") else None, Map#{1 => 1, 2 => 2, 3 => 3, 4 => 4})
+        == Map#{2 => "2", 3 => "3", 4 => "4"}
+
+/////////////////////////////////////////////////////////////////////////////
 // map                                                                     //
 /////////////////////////////////////////////////////////////////////////////
 @test
