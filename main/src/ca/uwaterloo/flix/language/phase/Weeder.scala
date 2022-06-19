@@ -1485,7 +1485,7 @@ object Weeder {
           WeededAst.Expression.FixpointMerge(e1, e2, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.FixpointProjectInto(sp1, exps, idents, sp2) =>
+    case ParsedAst.Expression.FixpointInjectInto(sp1, exps, idents, sp2) =>
       val loc = mkSL(sp1, sp2)
 
       ///
@@ -1501,7 +1501,7 @@ object Weeder {
           es.zip(idents.toList).foldRight(init: WeededAst.Expression) {
             case ((exp, ident), acc) =>
               val pred = Name.mkPred(ident)
-              val innerExp = WeededAst.Expression.FixpointProjectIn(exp, pred, loc)
+              val innerExp = WeededAst.Expression.FixpointInject(exp, pred, loc)
               WeededAst.Expression.FixpointMerge(innerExp, acc, loc)
           }
       }
@@ -1601,7 +1601,7 @@ object Weeder {
           }
 
           // Extract the tuples of the result predicate.
-          WeededAst.Expression.FixpointProjectOut(pred, queryExp, dbExp, loc)
+          WeededAst.Expression.FixpointProject(pred, queryExp, dbExp, loc)
       }
 
     case ParsedAst.Expression.Reify(sp1, t0, sp2) =>
@@ -2847,7 +2847,7 @@ object Weeder {
     case ParsedAst.Expression.FixpointConstraintSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointLambda(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointCompose(e1, _, _) => leftMostSourcePosition(e1)
-    case ParsedAst.Expression.FixpointProjectInto(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.FixpointInjectInto(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.Reify(sp1, _, _) => sp1
