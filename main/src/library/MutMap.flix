@@ -584,7 +584,7 @@ namespace MutMap {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: k -> Comparison & ef, f: (k, v) -> Unit & ef, m: MutMap[k, v, r]): Unit \ { ef, Read(r) } =
+    pub def queryWith(p: k -> Comparison & ef1, f: (k, v) -> Unit & ef2, m: MutMap[k, v, r]): Unit & (ef1 and ef2) \ { Read(r) } =
         let MutMap(mm) = m;
         Map.queryWith(p, f, deref mm)
 
