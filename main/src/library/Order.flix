@@ -97,7 +97,7 @@ pub lawful class Order[a] with Eq[a] {
     ///
     /// Definition of the minimum function.
     ///
-    law min: forall(x: a, y: a). not ((x <= y) or (Order.min(x, y) == x)) and (not (y <= x) or (Order.min(x, y) == y))
+    law min: forall(x: a, y: a). (not (x <= y) or (Order.min(x, y) == x)) and (not (y <= x) or (Order.min(x, y) == y))
 
     ///
     /// Definition of the maximum function.
