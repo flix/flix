@@ -50,6 +50,28 @@ object CompletionProvider {
   private implicit val audience: Audience = Audience.External
 
   //
+  // This list manually maintained. If a new built-in type is added, it must be extended.
+  // Built-in types are typically descrbed in TypeConstructor, Namer and Resolver.
+  //
+  val builtinTypeNames = List(
+    "Unit",
+    "Bool",
+    "Char",
+    "Float32",
+    "Float64",
+    "Int8",
+    "Int16",
+    "Int32",
+    "Int64",
+    "BigInt",
+    "String",
+    "Array",
+    "Ref",
+    "Channel",
+    "Lazy"
+  )
+
+  //
   // sortText priorities
   //
   object Priority {
@@ -485,6 +507,7 @@ object CompletionProvider {
 
   /**
     * Format type params in the right form to be inserted as a snippet
+    * e.g. "[${1:a}, ${2:b}, ${3:c}]"
     */
   private def formatTParamsSnippet(tparams: List[TypedAst.TypeParam]): String = {
     tparams match {
@@ -497,6 +520,7 @@ object CompletionProvider {
 
   /**
     * Format type params in the right form to be displayed in the list of completions
+    * e.g. "[a, b, c]"
     */
   private def formatTParams(tparams: List[TypedAst.TypeParam]): String = {
     tparams match {
@@ -505,27 +529,8 @@ object CompletionProvider {
     }
   }
 
-  val simpleTypeNames = List(
-    "Unit",
-    "Null",
-    "Bool",
-    "Char",
-    "Float32",
-    "Float64",
-    "Int8",
-    "Int16",
-    "Int32",
-    "Int64",
-    "BigInt",
-    "String",
-    "Array",
-    "Ref",
-    "Channel",
-    "Lazy"
-  )
-
   /**
-    * Completions for types (enums, aliases, and simple types)
+    * Completions for types (enums, aliases, and built-in types)
     */
   private def getTypeCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     if (root == null) {
@@ -554,14 +559,14 @@ object CompletionProvider {
           kind = CompletionItemKind.Enum)
     }
 
-    val simpleTypes = simpleTypeNames map { name =>
+    val builtinTypes = builtinTypeNames map { name =>
       CompletionItem(label = name,
         sortText = Priority.tname(name),
         textEdit = TextEdit(context.range, name),
         kind = CompletionItemKind.Enum)
     }
 
-    enums ++ aliases ++ simpleTypes
+    enums ++ aliases ++ builtinTypes
   }
 
   /*
