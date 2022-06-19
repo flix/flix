@@ -28,9 +28,7 @@ pub enum Map[k, v] {
 instance Boxable[Map[k, v]] with Boxable[k], Boxable[v]
 
 instance ToString[Map[k, v]] with ToString[k], ToString[v] {
-    pub def toString(m: Map[k, v]): String =
-        let s = Map.foldRightWithKey((k, v, acc) -> "${k} => ${v}, ${acc}", "", m);
-        "Map#{${String.dropRight(2, s)}}"
+    pub def toString(m: Map[k, v]): String = Map.toString(m)
 }
 
 instance Hash[Map[k, v]] with Hash[k], Hash[v] {
@@ -70,6 +68,11 @@ instance Traversable[Map[k]] {
     pub override def sequence(t: Map[k, m[a]]): m[Map[k, a]] with Applicative[m] = Map.sequence(t)
 }
 
+instance FunctorFilter[Map[k]] with Order[k] {
+    pub def filterMap(f: a -> Option[b] & ef, m: Map[k, a]): Map[k, b] & ef = Map.filterMap(f, m)
+    pub override def filter(f: a -> Bool & ef, m: Map[k, a]): Map[k, a] & ef = Map.filter(f, m)
+}
+
 instance SemiGroup[Map[k,v]] with Order[k], SemiGroup[v] {
     pub def combine(x: Map[k,v], y: Map[k,v]): Map[k,v] = Map.unionWith(SemiGroup.combine, x, y)
 }
@@ -101,6 +104,25 @@ instance MeetLattice[Map[k, v]] with Order[k], Eq[v], MeetLattice[v] {
 }
 
 namespace Map {
+
+    ///
+    /// Returns a string representation of the given map `m`.
+    ///
+    pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region r {
+        let sb = new StringBuilder(r);
+        let first = ref true;
+
+        StringBuilder.appendString!("Map#{", sb);
+
+        let f = (k, v) -> {
+            if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
+            StringBuilder.appendString!("${k} => ${v}", sb)
+        };
+        Map.foreach(f, m);
+
+        StringBuilder.appendString!("}", sb);
+        StringBuilder.toString(sb)
+    }
 
     ///
     /// Returns the number of threads to use for parallel evaluation.
@@ -429,6 +451,28 @@ namespace Map {
     @Time(time(f) * size(m)) @Space(space(f) * size(m))
     pub def filterWithKey(f: (k, v) -> Bool & ef, m: Map[k, v]): Map[k, v] & ef with Order[k] =
         foldLeftWithKey((acc, k, v) -> if (f(k, v)) insert(k, v, acc) else acc, empty(), m)
+
+    ///
+    /// Returns a map of all mappings `k => v1` in `m` where applying the function `f` to `v` produces
+    /// a `Some(v1)`. Elements that produce `None` are discarded.
+    ///
+    pub def filterMap(f: a -> Option[b] & ef, m: Map[k, a]): Map[k, b] & ef with Order[k] =
+        let step = (acc, k, a) -> match f(a) {
+            case Some(b) => Map.insert(k, b, acc)
+            case None    => acc
+        };
+        Map.foldLeftWithKey(step, Map.empty(), m)
+
+    ///
+    /// Returns a map of all mappings `k => v1` in `m` where applying the function `f` to `(k, v)` produces
+    /// `Some(v1)`. Elements that produce `None` are discarded.
+    ///
+    pub def filterMapWithKey(f: (k, a) -> Option[b] & ef, m: Map[k, a]): Map[k, b] & ef with Order[k] =
+        let step = (acc, k, a) -> match f(k, a) {
+            case Some(b) => insert(k, b, acc)
+            case None    => acc
+        };
+        foldLeftWithKey(step, Map.empty(), m)
 
     ///
     /// Returns a map with mappings `k => f(v)` for every `k => v` in `m`.
@@ -889,6 +933,12 @@ namespace Map {
     ///
     pub def toIterator(m: Map[a, b]): Iterator[(a, b)] & Impure =
         List.toIterator(Map.query(_ -> EqualTo, m))
+
+    ///
+    /// Returns an iterator over all key-value pairs in `m`.
+    ///
+    pub def toRegionIterator(r: Region[r], m: Map[k, v]): RegionIterator[(k, v), r] \ Write(r) =
+        List.toRegionIterator(r, Map.query(_ -> EqualTo, m))
 
     ///
     /// Returns `m` as a `DelayMap`.

@@ -171,6 +171,7 @@ class Flix {
     "ForEach.flix" -> LocalResource.get("/src/library/ForEach.flix"),
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
+    "FunctorFilter.flix" -> LocalResource.get("/src/library/FunctorFilter.flix"),
     "Group.flix" -> LocalResource.get("/src/library/Group.flix"),
     "Identity.flix" -> LocalResource.get("/src/library/Identity.flix"),
     "Monad.flix" -> LocalResource.get("/src/library/Monad.flix"),
@@ -296,6 +297,18 @@ class Flix {
     if (text == null)
       throw new IllegalArgumentException("'text' must be non-null.")
     addInput(name, Input.Text(name, text, stable = false))
+    this
+  }
+
+  /**
+    * Removes the given string `text` with the given `name`.
+    */
+  def remSourceCode(name: String, text: String): Flix = {
+    if (name == null)
+      throw new IllegalArgumentException("'name' must be non-null.")
+    if (text == null)
+      throw new IllegalArgumentException("'text' must be non-null.")
+    remInput(name, Input.Text(name, text, stable = false))
     this
   }
 

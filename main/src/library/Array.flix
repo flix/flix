@@ -45,15 +45,21 @@ namespace Array {
     ///
     /// Returns a string representation of the given array `a`.
     ///
-    pub def toString(a: Array[a, r]): String \ Read(r) with ToString[a] =
-        def loop(i, acc) =
-            if (i < a.length) {
-                if (i == 0) loop(i + 1, "${a[i]}")
-                else loop(i + 1, "${acc}, ${a[i]}")
-            } else {
-                "[${acc}]"
-            };
-        loop(0, "")
+    pub def toString(a: Array[a, r1]): String \ Read(r1) with ToString[a] = region r2 {
+        let sb = new StringBuilder(r2);
+        let first = ref true;
+
+        StringBuilder.appendString!("[", sb);
+
+        let f = (x) -> {
+            if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
+            StringBuilder.appendString!("${x}", sb)
+        };
+        Array.foreach(f, a);
+
+        StringBuilder.appendString!("]", sb);
+        StringBuilder.toString(sb)
+    }
 
     ///
     /// Returns a fresh array of length `l` filled with the element `x`.
@@ -141,6 +147,14 @@ namespace Array {
             }
         };
         loop(arr.length, Chain.empty())
+
+    ///
+    /// Returns `a` as a MutDeque.
+    ///
+    pub def toMutDeque(a: Array[a, r1], r: Region[r2]): MutDeque[a, r2] \ { Read(r1), Write(r2) }  =
+        let d = new MutDeque(r);
+        foreach(x -> MutDeque.pushBack(x, d), a);
+        d
 
     ///
     /// Returns `Some(x)` if `x` is the first element of `a`.
@@ -1710,4 +1724,19 @@ namespace Array {
            x
        };
        Iterator(done, next)
+
+    ///
+    /// Shuffles `a` using the Fisher–Yates shuffle.
+    ///
+    pub def shuffle(r: Random.Random, a: Array[a, r]): Unit & Impure =
+        let len = Array.length(a);
+        def loop(i) = {
+            if (i > 0) {
+                let j = Random.nextNatWithMax(r, i + 1);
+                Array.swap!(i, j, a);
+                loop(i - 1)
+            } else ()
+        };
+        loop(len - 1)
+
 }
