@@ -38,7 +38,7 @@ pub lawful class JoinLattice[a] with PartialOrder[a] {
     /// the smallest element that is larger than its two arguments.
     ///
     law leastUpperBound2: forall(x: a, y: a, z: a).
-        (PartialOrder.lessEqual(x, z) and PartialOrder.lessEqual(y, z)) ==>
+        not (PartialOrder.lessEqual(x, z) and PartialOrder.lessEqual(y, z)) or
         PartialOrder.lessEqual(JoinLattice.leastUpperBound(x, y), z)
 
 }
