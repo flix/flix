@@ -217,9 +217,9 @@ object WeededAst {
 
     case class FixpointFilter(pred: Name.Pred, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class FixpointProjectIn(exp: WeededAst.Expression, pred: Name.Pred, loc: SourceLocation) extends WeededAst.Expression
+    case class FixpointInject(exp: WeededAst.Expression, pred: Name.Pred, loc: SourceLocation) extends WeededAst.Expression
 
-    case class FixpointProjectOut(pred: Name.Pred, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class FixpointProject(pred: Name.Pred, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Reify(t: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
 

@@ -1062,7 +1062,7 @@ object ParsedAst {
       * @param into the non-empty sequence of predicate symbols to project into.
       * @param sp2  the position of the last character in the expression.
       */
-    case class FixpointProjectInto(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], into: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointInjectInto(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], into: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Fixpoint Solve-Project expression.

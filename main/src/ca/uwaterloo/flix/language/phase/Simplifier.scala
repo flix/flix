@@ -312,10 +312,10 @@ object Simplifier {
       case TypedAst.Expression.FixpointFilter(_, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
-      case TypedAst.Expression.FixpointProjectIn(_, _, _, _, _) =>
+      case TypedAst.Expression.FixpointInject(_, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
-      case TypedAst.Expression.FixpointProjectOut(_, _, _, _, _) =>
+      case TypedAst.Expression.FixpointProject(_, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
       case TypedAst.Expression.Reify(_, _, _, _) =>

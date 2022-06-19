@@ -238,10 +238,10 @@ object TypedAstOps {
       case Expression.FixpointFilter(_, exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
-      case Expression.FixpointProjectIn(exp, _, tpe, eff, loc) =>
+      case Expression.FixpointInject(exp, _, tpe, eff, loc) =>
         visitExp(exp, env0)
 
-      case Expression.FixpointProjectOut(_, exp, tpe, eff, loc) =>
+      case Expression.FixpointProject(_, exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
       case Expression.Reify(_, _, _, _) =>
@@ -408,8 +408,8 @@ object TypedAstOps {
     case Expression.FixpointMerge(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.FixpointSolve(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointFilter(_, exp, _, _, _) => sigSymsOf(exp)
-    case Expression.FixpointProjectIn(exp, _, _, _, _) => sigSymsOf(exp)
-    case Expression.FixpointProjectOut(_, exp, _, _, _) => sigSymsOf(exp)
+    case Expression.FixpointInject(exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.FixpointProject(_, exp, _, _, _) => sigSymsOf(exp)
     case Expression.Reify(_, _, _, _) => Set.empty
     case Expression.ReifyType(_, _, _, _, _) => Set.empty
     case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
@@ -658,10 +658,10 @@ object TypedAstOps {
     case Expression.FixpointFilter(_, exp, _, _, _) =>
       freeVars(exp)
 
-    case Expression.FixpointProjectIn(exp, _, _, _, _) =>
+    case Expression.FixpointInject(exp, _, _, _, _) =>
       freeVars(exp)
 
-    case Expression.FixpointProjectOut(_, exp, _, _, _) =>
+    case Expression.FixpointProject(_, exp, _, _, _) =>
       freeVars(exp)
 
     case Expression.Reify(_, _, _, _) =>
