@@ -572,7 +572,7 @@ namespace RedBlackTree {
     pub def query(p: k -> Comparison & ef, f: (k, v) -> a & ef, t: RedBlackTree[k, v]): List[a] & ef = region r {
         let buffer = new MutList(r);
         let g = k -> v -> MutList.push!(f(k, v), buffer) as & ef;
-        queryWith2(p, g, t);
+        queryWith(p, g, t);
         MutList.toList(buffer)
     }
 
