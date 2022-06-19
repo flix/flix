@@ -1,6 +1,6 @@
 pub def heirsAndUsurpers(parents: List[(person, person)], emperors: List[person]): {heirs :: Array[person, Static], usurpers :: Array[person, Static]} with Boxable[person] =
-    let p = project parents into Parent;
-    let e = project emperors into Emperor;
+    let p = inject parents into Parent;
+    let e = inject emperors into Emperor;
     let lp = #{
         Ancestor(x, y) :- Parent(x, y), not Emperor(y).
         Ancestor(x, z) :- Ancestor(x, y), Parent(y, z), not Emperor(z).

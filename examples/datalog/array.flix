@@ -20,7 +20,7 @@ pub def arrayNeighbourhood(default: Int32, values: List[(Int32, Int32)], paramet
 #{ Neighbourhood(Int32, Int32, Int32, Int32) | r } =
 
     let defaultP = #{ Default(default). };
-    let valuesP = project values into Values;
+    let valuesP = inject values into Values;
     let parametersP = #{ Parameters(parameters). };
     let input = defaultP <+> valuesP <+> parametersP;
     let p = #{

@@ -1149,17 +1149,17 @@ object Resolver {
             e => ResolvedAst.Expression.FixpointFilter(pred, e, loc)
           }
 
-        case NamedAst.Expression.FixpointProjectIn(exp, pred, loc) =>
+        case NamedAst.Expression.FixpointInject(exp, pred, loc) =>
           val eVal = visitExp(exp, region)
           mapN(eVal) {
-            e => ResolvedAst.Expression.FixpointProjectIn(e, pred, loc)
+            e => ResolvedAst.Expression.FixpointInject(e, pred, loc)
           }
 
-        case NamedAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) =>
+        case NamedAst.Expression.FixpointProject(pred, exp1, exp2, loc) =>
           val e1Val = visitExp(exp1, region)
           val e2Val = visitExp(exp2, region)
           mapN(e1Val, e2Val) {
-            case (e1, e2) => ResolvedAst.Expression.FixpointProjectOut(pred, e1, e2, loc)
+            case (e1, e2) => ResolvedAst.Expression.FixpointProject(pred, e1, e2, loc)
           }
 
         case NamedAst.Expression.Reify(t0, loc) =>

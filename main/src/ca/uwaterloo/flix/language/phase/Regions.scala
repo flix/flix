@@ -352,12 +352,12 @@ object Regions {
         case e => checkType(tpe, loc)
       }
 
-    case Expression.FixpointProjectIn(exp, _, tpe, _, loc) =>
+    case Expression.FixpointInject(exp, _, tpe, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
 
-    case Expression.FixpointProjectOut(_, exp, tpe, _, loc) =>
+    case Expression.FixpointProject(_, exp, tpe, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
