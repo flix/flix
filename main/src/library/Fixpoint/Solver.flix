@@ -643,7 +643,7 @@ namespace Fixpoint {
                     case cmp => cmp
                 }
                 case _ => LessThan
-            } as & Impure;
+            };
             Map.queryWith(query, ramSym -> rel -> match toDenotation(ramSym) {
                 case Denotation.Relational =>
                     Map.foreach(match Tuple(tuple) -> _ -> MutList.push!(f(tuple), pFacts), rel)
