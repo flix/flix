@@ -69,6 +69,10 @@ instance Traversable[Chain] {
     pub override def sequence(t: Chain[m[a]]): m[Chain[a]] with Applicative[m] = Chain.sequence(t)
 }
 
+instance FunctorFilter[Chain] {
+    pub def filterMap(f: a -> Option[b] & ef, x: Chain[a]): Chain[b] & ef = Chain.filterMap(f, x)
+    pub override def filter(f: a -> Bool & ef, x: Chain[a]): Chain[a] & ef = Chain.filter(f, x)
+}
 
 instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String =
