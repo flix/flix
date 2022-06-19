@@ -1058,6 +1058,47 @@ namespace TestNec {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // toMutDeque                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutDeque01(): Bool = region r {
+        let c = singleton(1);
+        let d1 = Nec.toMutDeque(c, r);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushBack(1, d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque02(): Bool = region r {
+        let c = necOf2(1, 2);
+        let d1 = Nec.toMutDeque(c, r);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushFront(1, d2);
+        MutDeque.pushBack(2, d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque03(): Bool = region r {
+        let c = necOf3('a', 'b', 'c');
+        let d1 = Nec.toMutDeque(c, r);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushFront('b', d2);
+        MutDeque.pushBack('c', d2);
+        MutDeque.pushFront('a', d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // toMutList                                                               //
     /////////////////////////////////////////////////////////////////////////////
 

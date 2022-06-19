@@ -110,6 +110,11 @@ instance Traversable[Option] {
 
 }
 
+instance FunctorFilter[Option] {
+    pub def filterMap(f: a -> Option[b] & ef, o: Option[a]): Option[b] & ef = Option.flatMap(f, o)
+    pub override def filter(f: a -> Bool & ef, o: Option[a]): Option[a] & ef = Option.filter(f, o)
+}
+
 instance SemiGroup[Option[a]] with SemiGroup[a] {
     pub def combine(x: Option[a], y: Option[a]): Option[a] = match (x, y) {
         case (a, None)              => a
@@ -193,10 +198,8 @@ namespace Option {
     ///
     /// Returns `o` if `o` is `Some(v)` and the predicate `f(v)` is true. Otherwise returns `None`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def filter(f: a -> Bool, o: Option[a]): Option[a] = match o {
+    pub def filter(f: a -> Bool & ef, o: Option[a]): Option[a] & ef = match o {
         case None    => None
         case Some(v) => if (f(v)) o else None
     }
