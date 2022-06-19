@@ -562,12 +562,12 @@ namespace RedBlackTree {
     ///
     /// That is, the result is a list of all pairs `f(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison & ef, f: (k, v) -> a & ef, t: RedBlackTree[k, v]): List[a] & ef = {
-        let buffer = new MutList(Static);
+    pub def query(p: k -> Comparison & ef, f: (k, v) -> a & ef, t: RedBlackTree[k, v]): List[a] & ef = region r {
+        let buffer = new MutList(r);
         let g = k -> v -> MutList.push!(f(k, v), buffer) as & ef;
-        queryWith(p, g, t);
+        queryWith2(p, g, t);
         MutList.toList(buffer)
-    } as & ef
+    }
 
     ///
     /// Extracts `k => v` where `k` is the leftmost (i.e. smallest) key in the tree.
