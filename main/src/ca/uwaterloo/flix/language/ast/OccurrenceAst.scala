@@ -213,6 +213,8 @@ object OccurrenceAst {
 
     case class PutStaticField(field: Field, exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
+    case class NewObject(clazz: java.lang.Class[_], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+
     case class NewChannel(exp: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = Impure
     }

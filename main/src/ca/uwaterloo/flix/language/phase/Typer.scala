@@ -1296,6 +1296,11 @@ object Typer {
           resultEff = Type.Impure
         } yield (valueConstrs, resultTyp, resultEff)
 
+      case KindedAst.Expression.NewObject(clazz, loc) =>
+        val resultTyp = getFlixType(clazz)
+        val resultEff = Type.Impure
+        liftM(List.empty, resultTyp, resultEff)
+
       case KindedAst.Expression.NewChannel(exp, declaredType, loc) =>
         for {
           (constrs, tpe, _) <- visitExp(exp)
@@ -1864,6 +1869,11 @@ object Typer {
         val tpe = Type.Unit
         val eff = Type.Impure
         TypedAst.Expression.PutStaticField(field, e, tpe, eff, loc)
+
+      case KindedAst.Expression.NewObject(clazz, loc) =>
+        val tpe = getFlixType(clazz)
+        val eff = Type.Impure
+        TypedAst.Expression.NewObject(clazz, tpe, eff, loc)
 
       case KindedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp, subst0)
