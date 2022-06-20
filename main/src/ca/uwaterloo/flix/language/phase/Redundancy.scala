@@ -642,10 +642,10 @@ object Redundancy {
     case Expression.FixpointFilter(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.FixpointProjectIn(exp, _, _, _, _) =>
+    case Expression.FixpointInject(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.FixpointProjectOut(_, exp, _, _, _) =>
+    case Expression.FixpointProject(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
     case Expression.Reify(_, _, _, _) =>

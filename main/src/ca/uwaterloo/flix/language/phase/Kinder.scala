@@ -721,17 +721,17 @@ object Kinder {
         exp => KindedAst.Expression.FixpointFilter(pred, exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
-    case ResolvedAst.Expression.FixpointProjectIn(exp0, pred, loc) =>
+    case ResolvedAst.Expression.FixpointInject(exp0, pred, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, root)
       mapN(expVal) {
-        exp => KindedAst.Expression.FixpointProjectIn(exp, pred, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+        exp => KindedAst.Expression.FixpointInject(exp, pred, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
-    case ResolvedAst.Expression.FixpointProjectOut(pred, exp10, exp20, loc) =>
+    case ResolvedAst.Expression.FixpointProject(pred, exp10, exp20, loc) =>
       val exp1Val = visitExp(exp10, kenv0, senv, taenv, root)
       val exp2Val = visitExp(exp20, kenv0, senv, taenv, root)
       mapN(exp1Val, exp2Val) {
-        case (exp1, exp2) => KindedAst.Expression.FixpointProjectOut(pred, exp1, exp2, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+        case (exp1, exp2) => KindedAst.Expression.FixpointProject(pred, exp1, exp2, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.Reify(t0, loc) =>

@@ -574,7 +574,7 @@ object Lowering {
       val resultType = Types.Datalog
       Expression.Apply(defExp, argExps, resultType, eff, loc)
 
-    case Expression.FixpointProjectIn(exp, pred, _, eff, loc) =>
+    case Expression.FixpointInject(exp, pred, _, eff, loc) =>
       // Compute the arity of the functor F[(a, b, c)] or F[a].
       val arity = Type.eraseAliases(exp.tpe) match {
         case Type.Apply(_, innerType, _) => innerType.typeConstructor match {
@@ -586,7 +586,7 @@ object Lowering {
       }
 
       // Compute the symbol of the function.
-      val sym = Symbol.mkDefnSym(s"Fixpoint.projectInto$arity")
+      val sym = Symbol.mkDefnSym(s"Fixpoint.injectInto$arity")
 
       // The type of the function.
       val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, exp.tpe), Types.Datalog, loc)
@@ -596,7 +596,7 @@ object Lowering {
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
       Expression.Apply(defExp, argExps, Types.Datalog, eff, loc)
 
-    case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
+    case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
       // Compute the arity of the predicate symbol.
       // The type is either of the form `Array[(a, b, c)]` or `Array[a]`.
       val arity = Type.eraseAliases(tpe) match {
@@ -1574,13 +1574,13 @@ object Lowering {
       val e = substExp(exp, subst)
       Expression.FixpointFilter(pred, e, tpe, eff, loc)
 
-    case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) =>
+    case Expression.FixpointInject(exp, pred, tpe, eff, loc) =>
       val e = substExp(exp, subst)
-      Expression.FixpointProjectIn(e, pred, tpe, eff, loc)
+      Expression.FixpointInject(e, pred, tpe, eff, loc)
 
-    case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
+    case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
-      Expression.FixpointProjectOut(pred, e, tpe, eff, loc)
+      Expression.FixpointProject(pred, e, tpe, eff, loc)
 
     case Expression.Reify(t, tpe, eff, loc) =>
       Expression.Reify(t, tpe, eff, loc)
