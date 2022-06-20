@@ -35,14 +35,6 @@ import org.parboiled2.CharPredicate
   * This list is not displayed to the user as-is, the client always both sorts and filters the list (or at least,
   * VSCode does). Therefore we always need to provide both filterText (currently copied from label) and sortText.
   *
-  * To ensure that completions are displayed "most useful" first, we preceed sortText with a number as follows:
-  *
-  * 1: High confidence completions (currently with and instance)
-  * 2: Def and Sig
-  * 5: Var
-  * 8: Snippets
-  * 9: Keywords
-  *
   * Note that we use textEdit rather than insertText to avoid relying on VSCode's tokenisation, so we can ensure that
   * we're consistent with Flix's parser.
   */
@@ -72,16 +64,24 @@ object CompletionProvider {
   )
 
   //
-  // sortText priorities
+  // To ensure that completions are displayed "most useful" first, we preceed sortText with a number. Priorities
+  // differ depending on the type of completion, and can be boosted depending upon context (e.g. type completions
+  // are boosted if the cursor is preceeded by a ":")
+  //
+  // 1: High: completions which are only available within a very specific context
+  // 2: Boost: completions which are normally low priority, but the context makes them more likely
+  // 4: Snippet: snippets are relatively high priority because they're rare, and to be useful at all they need to be available
+  // 5: Local: local variables
+  // 7: Normal: completions that are relevant within no particular context
+  // 9: Low: completions that are unlikely to be relevant unless within a specific context
   //
   object Priority {
-    def highest(name: String) = "1" + name
-    def definition(name: String) = "2" + name
-    def signature(name: String) = "2" + name
-    def tname(name: String) = "3" + name
-    def variable(name: String) = "5" + name
-    def snippet(name: String) = "8" + name
-    def keyword(name: String) = "9" + name
+    def high(name: String) = "1" + name
+    def boost(name: String) = "2" + name
+    def snippet(name: String) = "4" + name
+    def local(name: String) = "5" + name
+    def normal(name: String) = "7" + name
+    def low(name: String) = "9" + name
   }
 
   /**
@@ -117,7 +117,7 @@ object CompletionProvider {
 
   private def keywordCompletion(name: String)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
     CompletionItem(label = name,
-      sortText = Priority.keyword(name),
+      sortText = Priority.normal(name),
       textEdit = TextEdit(context.range, s"$name "),
       kind = CompletionItemKind.Keyword)
   }
@@ -218,7 +218,7 @@ object CompletionProvider {
 
   private def varCompletion(sym: Symbol.VarSym, tpe: Type)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
     CompletionItem(label = sym.text,
-      sortText = Priority.variable(sym.text),
+      sortText = Priority.local(sym.text),
       textEdit = TextEdit(context.range, sym.text),
       detail = Some(FormatType.formatWellKindedType(tpe)),
       kind = CompletionItemKind.Variable)
@@ -298,7 +298,7 @@ object CompletionProvider {
   private def defCompletion(decl: TypedAst.Def)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
     val name = decl.sym.toString
     CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
-      sortText = Priority.definition(name),
+      sortText = Priority.normal(name),
       filterText = Some(getFilterTextForName(name)),
       textEdit = TextEdit(context.range, getApplySnippet(name, decl.spec.fparams)),
       detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
@@ -310,7 +310,7 @@ object CompletionProvider {
   private def sigCompletion(decl: TypedAst.Sig)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
     val name = decl.sym.toString
     CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
-      sortText = Priority.signature(name),
+      sortText = Priority.normal(name),
       filterText = Some(getFilterTextForName(name)),
       textEdit = TextEdit(context.range, getApplySnippet(name, decl.spec.fparams)),
       detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
@@ -395,7 +395,7 @@ object CompletionProvider {
         completion = if (currentWordIsWith) s"with $name" else name
       } yield
         CompletionItem(label = completion,
-            sortText = Priority.highest(name),
+            sortText = Priority.high(name),
             textEdit = TextEdit(context.range, completion),
             documentation = Some(clazz.doc.text),
             kind = CompletionItemKind.Class)
@@ -408,7 +408,7 @@ object CompletionProvider {
           val completion = if (currentWordIsWith) s"with $application" else application
           val label = if (currentWordIsWith) s"with $name[...]" else s"$name[...]"
           CompletionItem(label = label,
-            sortText = Priority.highest(name),
+            sortText = Priority.high(name),
             textEdit = TextEdit(context.range, completion),
             documentation = Some(clazz.doc.text),
             insertTextFormat = InsertTextFormat.Snippet,
@@ -496,7 +496,7 @@ object CompletionProvider {
         val completion = s"$classSym[$hole] {\n\n$body\n\n}\n"
 
         CompletionItem(label = s"$classSym[...]",
-          sortText = Priority.highest(classSym.toString),
+          sortText = Priority.high(classSym.toString),
           textEdit = TextEdit(context.range, completion),
           detail = Some(fmtClass(clazz)),
           documentation = Some(clazz.doc.text),
@@ -537,11 +537,15 @@ object CompletionProvider {
       return Nil
     }
 
+    // Boost priority if there's a colon immediately before the word the user's typing
+    val priorityBoost = raw".*:\s*[^\s]*".r
+    val priority = if (priorityBoost matches context.prefix) Priority.boost _ else Priority.low _
+
     val enums = root.enums.map {
       case (_, t) => 
         val name = t.sym.name
         CompletionItem(label = s"$name${formatTParams(t.tparams)}",
-          sortText = Priority.tname(name),
+          sortText = priority(name),
           textEdit = TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"),
           documentation = Some(t.doc.text),
           insertTextFormat = InsertTextFormat.Snippet,
@@ -552,7 +556,7 @@ object CompletionProvider {
       case (_, t) => 
         val name = t.sym.name
         CompletionItem(label = s"$name${formatTParams(t.tparams)}",
-          sortText = Priority.tname(name),
+          sortText = priority(name),
           textEdit = TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"),
           documentation = Some(t.doc.text),
           insertTextFormat = InsertTextFormat.Snippet,
@@ -561,7 +565,7 @@ object CompletionProvider {
 
     val builtinTypes = builtinTypeNames map { name =>
       CompletionItem(label = name,
-        sortText = Priority.tname(name),
+        sortText = priority(name),
         textEdit = TextEdit(context.range, name),
         kind = CompletionItemKind.Enum)
     }
