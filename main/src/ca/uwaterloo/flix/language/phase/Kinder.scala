@@ -644,6 +644,9 @@ object Kinder {
         exp => KindedAst.Expression.PutStaticField(field, exp, loc)
       }
 
+    case ResolvedAst.Expression.NewObject(clazz, loc) =>
+      KindedAst.Expression.NewObject(clazz, loc).toSuccess
+
     case ResolvedAst.Expression.NewChannel(exp0, tpe0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, root)
       val tpeVal = visitType(tpe0, Kind.Star, kenv0, senv, taenv, root)
