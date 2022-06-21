@@ -27,7 +27,7 @@ namespace Fixpoint/Ast {
         case Guard3(v -> v -> v -> Bool, VarSym, VarSym, VarSym)
         case Guard4(v -> v -> v -> v -> Bool, VarSym, VarSym, VarSym, VarSym)
         case Guard5(v -> v -> v -> v -> v -> Bool, VarSym, VarSym, VarSym, VarSym, VarSym)
-        case Loop1(v -> Array[v, Static])
+        case Loop1(v -> List[v])
     }
 
     instance PredSymsOf[BodyPredicate[v]] {
