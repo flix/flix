@@ -326,7 +326,7 @@ object RedundancyError {
          |
          |${code(loc, "useless expression.")}
          |
-         |The expression has type '${FormatType.formatWellKindedType(tpe)}'
+         |  The expression has type '${FormatType.formatWellKindedType(tpe)}'
          |""".stripMargin
     }
 
@@ -368,7 +368,7 @@ object RedundancyError {
          |
          |${code(loc, "the function is not fully-applied and hence has no effect.")}
          |
-         |The function has type '${FormatType.formatWellKindedType(tpe)}'
+         |  The function has type '${FormatType.formatWellKindedType(tpe)}'
          |""".stripMargin
     }
 
