@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatType, FormatTypeConstraint}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -322,9 +322,11 @@ object RedundancyError {
       import formatter._
       s"""${line(kind, source.name)}
          |>> Useless expression: It has no side-effect(s) and its result is discarded.
-         |>> The expression has type '${FormatType.formatWellKindedType(tpe)}'
+         | The expression has type '${FormatType.formatWellKindedType(tpe)}'
          |
          |${code(loc, "useless expression.")}
+         |
+         |The expression has type '${FormatType.formatWellKindedType(tpe)}'
          |""".stripMargin
     }
 
@@ -341,21 +343,32 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that a function expression is useless.
+    * An error raised to indicate that an impure function expression is useless
+    * is statement position.
     *
     * @param tpe the type of the expression.
     * @param loc the location of the expression.
     */
-  case class UselessFunctionExpression(tpe: Type, loc: SourceLocation) extends RedundancyError {
-    def summary: String = "Useless function expression."
+  case class UnderAppliedFunction(tpe: Type, loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Under applied function. Missing function argument(s)?"
+
+    private def applicationAdvice(tpe: Type): String = tpe.typeConstructor match {
+      case Some(TypeConstructor.Arrow(arity)) if arity > 0 =>
+        val typeStrings = tpe.arrowArgTypes.map(FormatType.formatWellKindedType).mkString(", ")
+        val pluralS = if (arity == 1) "s" else ""
+        s"Missing argument$pluralS of type: $typeStrings"
+      case _ => "Missing function argument(s)?"
+    }
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Useless function expression: It has no side-effect(s) and its result is discarded.
-         |>> The function has type '${FormatType.formatWellKindedType(tpe)}'
+         |>> Under applied function. ${applicationAdvice(tpe)}
          |
-         |${code(loc, "useless function expression.")}
+         |
+         |${code(loc, "the function is not fully-applied and hence has no effect.")}
+         |
+         |The function has type '${FormatType.formatWellKindedType(tpe)}'
          |""".stripMargin
     }
 

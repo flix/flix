@@ -390,14 +390,14 @@ object Redundancy {
       val us2 = visitExp(exp2, env0, rc)
 
       // Check for useless pure expressions.
-      if (exp1.eff == Type.Pure) {
-        val error = exp1.tpe.typeConstructor match {
-          case Some(TypeConstructor.Arrow(_)) => UselessFunctionExpression(exp1.tpe, exp1.loc)
-          case _ => UselessExpression(exp1.tpe, exp1.loc)
-        }
-        (us1 ++ us2) + error
-      } else
+      if (isUnderAppliedFunction(exp1)) {
+        // `isUnderAppliedFunction` implies `isUselessExpression` so this must be checked first.
+        (us1 ++ us2) + UnderAppliedFunction(exp1.tpe, exp1.loc)
+      } else if (isUselessExpression(exp1)) {
+        (us1 ++ us2) + UselessExpression(exp1.tpe, exp1.loc)
+      } else {
         us1 ++ us2
+      }
 
     case Expression.Discard(exp, _, _) =>
       val us = visitExp(exp, env0, rc)
@@ -752,6 +752,27 @@ object Redundancy {
         case (acc, varSym) => acc ++ Used.of(varSym)
       }
   }
+
+  /**
+    * Returns true if the expression is pure and of impure function type.
+    */
+  private def isUnderAppliedFunction(exp: Expression): Boolean = {
+    val isPure = exp.eff == Type.Pure
+    val isImpureFunction = exp.tpe.typeConstructor match {
+      case Some(TypeConstructor.Arrow(_)) => exp.tpe.arrowEffectType match {
+        case Type.Cst(TypeConstructor.True, _) => true
+        case _ => false
+      }
+      case _ => false
+    }
+    isPure && isImpureFunction
+  }
+
+  /**
+    * Returns true if the expression is pure.
+    */
+  private def isUselessExpression(exp: Expression): Boolean =
+    exp.eff == Type.Pure
 
   /**
     * Returns the free variables in the pattern `p0`.
