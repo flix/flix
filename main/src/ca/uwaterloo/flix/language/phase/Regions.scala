@@ -281,6 +281,9 @@ object Regions {
         case e => checkType(tpe, loc)
       }
 
+    case Expression.NewObject(_, _, _, _) =>
+      ().toSuccess
+
     case Expression.NewChannel(exp, tpe, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)

@@ -235,6 +235,9 @@ object VarNumbering {
       case Expression.PutStaticField(_, exp, _, _, _) =>
         visitExp(exp, i0)
 
+      case Expression.NewObject(_, _, _, _) =>
+        i0
+
       case Expression.NewChannel(exp, _, _) =>
         visitExp(exp, i0)
 

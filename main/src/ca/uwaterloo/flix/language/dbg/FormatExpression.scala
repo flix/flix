@@ -68,6 +68,7 @@ object FormatExpression {
     case TypedAst.Expression.PutField(field, exp1, exp2, tpe, eff, loc) => s"PutField($field, $exp1, $exp2)"
     case TypedAst.Expression.GetStaticField(field, tpe, eff, loc) => s"GetStaticField($field)"
     case TypedAst.Expression.PutStaticField(field, exp, tpe, eff, loc) => s"PutStaticField($field, $exp)"
+    case TypedAst.Expression.NewObject(clazz, tpe, eff, loc) => s"NewObject($clazz)"
     case TypedAst.Expression.NewChannel(exp, tpe, eff, loc) => s"NewChannel($exp)"
     case TypedAst.Expression.GetChannel(exp, tpe, eff, loc) => s"GetChannel($exp)"
     case TypedAst.Expression.PutChannel(exp1, exp2, tpe, eff, loc) => s"PutChannel($exp1, $exp2)"

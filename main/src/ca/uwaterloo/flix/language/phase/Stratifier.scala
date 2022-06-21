@@ -330,6 +330,8 @@ object Stratifier {
         case e => Expression.PutStaticField(field, e, tpe, eff, loc)
       }
 
+    case Expression.NewObject(_, _, _, _) => exp0.toSuccess
+
     case Expression.NewChannel(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.NewChannel(e, tpe, eff, loc)
@@ -644,6 +646,9 @@ object Stratifier {
 
     case Expression.PutStaticField(_, exp, _, _, _) =>
       labelledGraphOfExp(exp)
+
+    case Expression.NewObject(_, _, _, _) =>
+      LabelledGraph.empty
 
     case Expression.NewChannel(exp, _, _, _) =>
       labelledGraphOfExp(exp)
