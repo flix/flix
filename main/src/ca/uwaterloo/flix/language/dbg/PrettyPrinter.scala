@@ -402,6 +402,11 @@ object PrettyPrinter {
             " value " +
             visitExp(exp)
 
+        case Expression.NewObject(clazz, _, _, _) =>
+          "object " +
+            clazz.getName +
+            "{ }"
+
         case Expression.NewChannel(exp, tpe, loc) => "Channel" + " " + visitExp(exp)
 
         case Expression.PutChannel(exp1, exp2, tpe, loc) => visitExp(exp1) + " <- " + visitExp(exp2)

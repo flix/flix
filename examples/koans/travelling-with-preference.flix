@@ -1,6 +1,6 @@
 pub def travelWithLimitedBusses(trainConnections: List[(city, city)], busConnections: List[(city, city)], source: city, destination: city, maxBusTrips: Int32): Bool with Boxable[city] =
-    let tc = project trainConnections into Train;
-    let bc = project busConnections into Bus;
+    let tc = inject trainConnections into Train;
+    let bc = inject busConnections into Bus;
     let lp = #{
         Path(x, 0, y) :- Train(x, y).
         Path(x, busses, z) :- Path(x, busses, y), Train(y, z).

@@ -179,6 +179,8 @@ object KindedAst {
 
     case class PutStaticField(field: Field, exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
+    case class NewObject(clazz: java.lang.Class[_], loc: SourceLocation) extends KindedAst.Expression
+
     case class NewChannel(exp: KindedAst.Expression, tpe: Type, loc: SourceLocation) extends KindedAst.Expression
 
     case class GetChannel(exp: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
@@ -203,9 +205,9 @@ object KindedAst {
 
     case class FixpointFilter(pred: Name.Pred, exp: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
-    case class FixpointProjectIn(exp: KindedAst.Expression, pred: Name.Pred, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+    case class FixpointInject(exp: KindedAst.Expression, pred: Name.Pred, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
-    case class FixpointProjectOut(pred: Name.Pred, exp1: KindedAst.Expression, exp2: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+    case class FixpointProject(pred: Name.Pred, exp1: KindedAst.Expression, exp2: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
     case class Reify(t: Type, loc: SourceLocation) extends KindedAst.Expression
 

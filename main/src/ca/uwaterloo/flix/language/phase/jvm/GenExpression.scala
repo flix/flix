@@ -933,6 +933,11 @@ object GenExpression {
       // Push Unit on the stack.
       visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
+    case Expression.NewObject(_, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      visitor.visitInsn(ACONST_NULL)
+      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+
     case Expression.NewChannel(exp, _, loc) =>
       addSourceLine(visitor, loc)
       visitor.visitTypeInsn(NEW, JvmName.Channel.toInternalName)

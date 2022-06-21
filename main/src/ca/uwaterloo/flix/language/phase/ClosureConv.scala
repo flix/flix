@@ -265,6 +265,9 @@ object ClosureConv {
       val e = visitExp(exp)
       Expression.PutStaticField(field, e, tpe, purity, loc)
 
+    case Expression.NewObject(_, _, _, _) =>
+      exp0
+
     case Expression.NewChannel(exp, tpe, loc) =>
       val e = visitExp(exp)
       Expression.NewChannel(e, tpe, loc)
@@ -392,6 +395,8 @@ object ClosureConv {
     case Expression.GetStaticField(_, _, _, _) => mutable.LinkedHashSet.empty
 
     case Expression.PutStaticField(_, exp, _, _, _) => freeVars(exp)
+
+    case Expression.NewObject(_, _, _, _) => mutable.LinkedHashSet.empty
 
     case Expression.NewChannel(exp, _, _) => freeVars(exp)
 
@@ -645,6 +650,9 @@ object ClosureConv {
       case Expression.PutStaticField(field, exp, tpe, purity, loc) =>
         val e = visitExp(exp)
         Expression.PutStaticField(field, e, tpe, purity, loc)
+
+      case Expression.NewObject(_, _, _, _) =>
+        e
 
       case Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp)
