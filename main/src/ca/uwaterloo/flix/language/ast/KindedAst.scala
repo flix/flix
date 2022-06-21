@@ -203,9 +203,9 @@ object KindedAst {
 
     case class FixpointFilter(pred: Name.Pred, exp: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
-    case class FixpointProjectIn(exp: KindedAst.Expression, pred: Name.Pred, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+    case class FixpointInject(exp: KindedAst.Expression, pred: Name.Pred, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
-    case class FixpointProjectOut(pred: Name.Pred, exp1: KindedAst.Expression, exp2: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+    case class FixpointProject(pred: Name.Pred, exp1: KindedAst.Expression, exp2: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
     case class Reify(t: Type, loc: SourceLocation) extends KindedAst.Expression
 
