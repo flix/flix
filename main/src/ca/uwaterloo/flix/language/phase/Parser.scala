@@ -679,7 +679,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
-        Discard | UnaryLambda | FName | Tag | Hole
+        Discard | UnaryLambda | FName | Tag | Hole | NewObject
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
