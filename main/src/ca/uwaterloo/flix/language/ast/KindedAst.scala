@@ -179,6 +179,8 @@ object KindedAst {
 
     case class PutStaticField(field: Field, exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
+    case class NewObject(clazz: java.lang.Class[_], loc: SourceLocation) extends KindedAst.Expression
+
     case class NewChannel(exp: KindedAst.Expression, tpe: Type, loc: SourceLocation) extends KindedAst.Expression
 
     case class GetChannel(exp: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression

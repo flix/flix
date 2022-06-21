@@ -47,7 +47,7 @@ object Weeder {
     "if", "import", "inline", "instance", "into", "lat", "law", "lawful", "lazy", "let", "let*", "match",
     "namespace", "null", "opaque", "override", "pub", "ref", "region", "reify",
     "reifyBool", "reifyEff", "reifyType", "rel", "sealed", "set", "spawn", "Static", "true",
-    "type", "use", "where", "with", "|||", "~~~", "discard"
+    "type", "use", "where", "with", "|||", "~~~", "discard", "object"
   )
 
 
@@ -987,6 +987,10 @@ object Weeder {
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
       }
+
+    case ParsedAst.Expression.NewObject(sp1, className, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      WeededAst.Expression.NewObject(className.mkString("."), loc).toSuccess
 
     case ParsedAst.Expression.Static(sp1, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -2805,6 +2809,7 @@ object Weeder {
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.NewObject(sp1, _, _) => sp1
     case ParsedAst.Expression.Static(sp1, _) => sp1
     case ParsedAst.Expression.Scope(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
