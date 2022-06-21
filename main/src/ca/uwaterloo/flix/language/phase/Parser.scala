@@ -806,7 +806,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def NewObject: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("object") ~ WS ~ atomic("##") ~ Names.JavaName ~ SP ~ WS ~ "{" ~ optWS ~ "}" ~> ParsedAst.Expression.NewObject
+      SP ~ keyword("object") ~ WS ~ atomic("##") ~ Names.JavaName ~ optWS ~ "{" ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.NewObject
     }
 
     def Match: Rule1[ParsedAst.Expression.Match] = {

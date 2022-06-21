@@ -1,4 +1,4 @@
-namespace Test/Exp/Jvm/Object {
+namespace Test/Exp/Jvm/NewObject {
 
   @test
   def testImplementInterface01(): Bool & Impure =
