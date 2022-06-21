@@ -322,7 +322,6 @@ object RedundancyError {
       import formatter._
       s"""${line(kind, source.name)}
          |>> Useless expression: It has no side-effect(s) and its result is discarded.
-         | The expression has type '${FormatType.formatWellKindedType(tpe)}'
          |
          |${code(loc, "useless expression.")}
          |
