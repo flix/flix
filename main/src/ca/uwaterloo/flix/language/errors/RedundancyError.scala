@@ -365,7 +365,6 @@ object RedundancyError {
       s"""${line(kind, source.name)}
          |>> Under applied function. ${applicationAdvice(tpe)}
          |
-         |
          |${code(loc, "the function is not fully-applied and hence has no effect.")}
          |
          |  The function has type '${FormatType.formatWellKindedType(tpe)}'
