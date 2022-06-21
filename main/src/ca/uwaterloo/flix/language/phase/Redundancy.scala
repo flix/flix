@@ -28,6 +28,8 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
+import scala.annotation.tailrec
+
 /**
   * The Redundancy phase checks that declarations and expressions within the AST are used in a meaningful way.
   *
@@ -761,14 +763,11 @@ object Redundancy {
     */
   private def isUnderAppliedFunction(exp: Expression): Boolean = {
     val isPure = exp.eff == Type.Pure
-    val isImpureFunction = exp.tpe.typeConstructor match {
-      case Some(TypeConstructor.Arrow(_)) => exp.tpe.arrowEffectType match {
-        case Type.Cst(TypeConstructor.True, _) => true
-        case _ => false
-      }
+    val isNonPureFunction = exp.tpe.typeConstructor match {
+      case Some(TypeConstructor.Arrow(_)) => exp.tpe.curriedArrowEffectType != Type.Pure
       case _ => false
     }
-    isPure && isImpureFunction
+    isPure && isNonPureFunction
   }
 
   /**

@@ -352,12 +352,15 @@ object RedundancyError {
   case class UnderAppliedFunction(tpe: Type, loc: SourceLocation) extends RedundancyError {
     def summary: String = "Under applied function. Missing function argument(s)?"
 
-    private def applicationAdvice(tpe: Type): String = tpe.typeConstructor match {
-      case Some(TypeConstructor.Arrow(arity)) if arity > 0 =>
-        val typeStrings = tpe.arrowArgTypes.map(FormatType.formatWellKindedType).mkString(", ")
-        val pluralS = if (arity == 1) "s" else ""
-        s"Missing argument$pluralS of type: $typeStrings"
-      case _ => "Missing function argument(s)?"
+    private def applicationAdvice(tpe: Type): String = {
+      val arguments = tpe.curriedArrowArgTypes
+      if (arguments.isEmpty) { // fallback message
+        "Missing function argument(s)?"
+      } else {
+        val argumentStrings = arguments.map(t => s"'${FormatType.formatWellKindedType(t)}'").mkString(", ")
+        val pluralS = if (arguments.sizeIs == 1) "" else "s"
+        s"Missing argument$pluralS of type: $argumentStrings."
+      }
     }
 
     def message(formatter: Formatter): String = {

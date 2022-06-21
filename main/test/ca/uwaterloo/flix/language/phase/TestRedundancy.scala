@@ -798,7 +798,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       s"""
          |def f(): Unit =
-         |    x -> 123;
+         |    x -> [123] @ Static;
          |    ()
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -809,7 +809,8 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       s"""
          |def f(): Unit =
-         |    f;
+         |    def g(x, y) = [x, y] @ Static;
+         |    g;
          |    ()
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -819,10 +820,10 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnderAppliedFunction.03") {
     val input =
       s"""
-         |def hof(f: a -> b & e, x: a): b & e = f(x)
+         |def g(f: a -> b & e, x: a): b & e = f(x)
          |
          |def f(): Unit =
-         |    hof(x -> (x, 21));
+         |    g(x -> (x, ref 21 @ Static));
          |    ()
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)

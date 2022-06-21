@@ -161,13 +161,51 @@ sealed trait Type {
   }
 
   /**
+    * Returns the argument types of `this` curried arrow type.
+    * Returns `Nil` if `this` is not an arrow type.
+    *
+    * For example,
+    *
+    * {{{
+    * Int32                               =>     Nil
+    * Int32 -> String -> Int32            =>     List(Int32, String)
+    * (Int32, String) -> String -> Bool   =>     List(Int32, String, String)
+    * }}}
+    */
+  def curriedArrowArgTypes: List[Type] = typeConstructor match {
+    case Some(TypeConstructor.Arrow(_)) => arrowArgTypes ++ arrowResultType.curriedArrowArgTypes
+    case _ => Nil
+  }
+
+  /**
     * Returns the result type of `this` arrow type.
     *
     * NB: Assumes that `this` type is an arrow.
     */
   def arrowResultType: Type = typeConstructor match {
-    case Some(TypeConstructor.Arrow(n)) => typeArguments.last
+    case Some(TypeConstructor.Arrow(_)) => typeArguments.last
     case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
+  }
+
+  /**
+    * Returns the result type of `this` curried arrow type.
+    *
+    * For example,
+    *
+    * {{{
+    * Int32                               =>     throw
+    * Int32 -> String -> Int32            =>     Int32
+    * (Int32, String) -> String -> Bool   =>     Bool
+    * }}}
+    *
+    * NB: Assumes that `this` type is an arrow.
+    */
+  def curriedArrowResultType: Type = {
+    val resType = arrowResultType
+    resType.typeConstructor match {
+      case Some(TypeConstructor.Arrow(_)) => resType.curriedArrowResultType
+      case _ => resType
+    }
   }
 
   /**
@@ -176,8 +214,29 @@ sealed trait Type {
     * NB: Assumes that `this` type is an arrow.
     */
   def arrowEffectType: Type = typeConstructor match {
-    case Some(TypeConstructor.Arrow(n)) => typeArguments.head
+    case Some(TypeConstructor.Arrow(_)) => typeArguments.head
     case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
+  }
+
+  /**
+    * Returns the effect type of `this` curried arrow type.
+    *
+    * For example,
+    *
+    * {{{
+    * Int32                                        =>     throw
+    * Int32 -> String -> Int32 & Pure              =>     Pure
+    * (Int32, String) -> String -> Bool & Impure   =>     Impure
+    * }}}
+    *
+    * NB: Assumes that `this` type is an arrow.
+    */
+  def curriedArrowEffectType: Type = {
+    val resType = arrowResultType
+    resType.typeConstructor match {
+      case Some(TypeConstructor.Arrow(_)) => resType.curriedArrowEffectType
+      case _ => arrowEffectType
+    }
   }
 
   /**
