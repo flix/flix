@@ -657,10 +657,10 @@ object ParsedAst {
     case class LetImport(sp1: SourcePosition, op: ParsedAst.JvmOp, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * NewObject (create an anonymous object which implements a Java interface).
+      * NewObject (create an anonymous object which implements a Java interface or extends a Java class).
       *
       * @param sp1 the position of the first character in the expression.
-      * @param fqn the name of the Java interface.
+      * @param fqn the fully-qualified name of the Java interface or class.
       * @param sp2 the position of the last character in the expression.
       */
     case class NewObject(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) extends ParsedAst.Expression
