@@ -292,34 +292,56 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
   }
 
-  private def sourceWithHole(source: String) = {
-    val lines = source.linesWithSeparators
+  /**
+    * Given some source code, return a new version of the source code with " ???" inserted
+    * at the end of the line containing the cursor
+    */
+  private def sourceWithHole(source: String): Option[String] = {
+    val lines = source.linesIterator
     val (prefix, rest) = lines.splitAt(mostRecentPosition.line - 1)
-    val line = rest.next()
-    val (linePrefix, lineRest) = line.splitAt(mostRecentPosition.character - 1)
-    (prefix ++ (linePrefix + " ??? " + lineRest) ++ rest).mkString
+    rest.nextOption() flatMap {
+      case line => Some((prefix ++ List(line + " ???") ++ rest).mkString("\n"))
+    }
   }
 
+  /**
+    * Check the source for errors.
+    * 
+    * This implements a crude version of partial compliation as follows:
+    *
+    * In the event that the source does contain errors, try again, but with " ???" inserted
+    * at the end of the line the user is currently editing. If this succeeds, store the
+    * resulting AST and Index (so that subsequent completions can use them).
+    *
+    * Always returns the result of the first compilation (whether or not the second succeeds)
+    * so that the error messages presented to the user are correct.
+    */
   private def checkSource(): Validation[TypedAst.Root, CompilationMessage] = {
     val result = flix.check()
     result match {
-      case r: Success[_, _] => r
+      case Success(_) => // First compilation succeeded, so nothing to do
 
-      case Failure(errors) =>
-        val loc = errors.head.loc
-        val uri = loc.source.name
-        val tempSource = sourceWithHole(sources(uri))
-        val newResult = try {
-          flix.addSourceCode(uri, tempSource)
-          flix.check()
-        } finally {
-          flix.addSourceCode(uri, sources(uri))
-        }
-        newResult match {
-          case Success(_) => newResult
-          case Failure(_) => result
+      case Failure(errors) => // First compilation failed, so try again with "???" added
+        val uri = errors.head.loc.source.name
+        for (tempSource <- sourceWithHole(sources(uri))) {
+          val tempResult = try {
+            flix.addSourceCode(uri, tempSource)
+            flix.check()
+          } finally {
+            // Whatever happens put the original source back
+            flix.addSourceCode(uri, sources(uri))
+          }
+          tempResult match {
+            case Success(root) =>
+              this.root = root
+              this.index = Indexer.visitRoot(root)
+
+            case Failure(_) =>
+          }
         }
     }
+    // Return result of first compilation
+    result
   }
 
   /**
