@@ -15,12 +15,12 @@
  *  limitations under the License.
  */
 
-use Bool.==>;
-
 ///
 /// A type class for join semi lattices.
 ///
 pub lawful class JoinLattice[a] with PartialOrder[a] {
+
+    use Bool.==>;
 
     ///
     /// Returns the least upper bound of `x` and `y`.

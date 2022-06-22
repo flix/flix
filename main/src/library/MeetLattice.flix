@@ -14,14 +14,14 @@
  *  limitations under the License.
  */
 
-use Bool.==>;
-
 ///
 /// A type class for meet semi lattices.
 /// A Meet Lattice is pair of functions (⊑, ⊓) where ⊑ is a partial order and ⊓ satisfy two properties:
 /// lower-bound and greatest-lower-bound.
 ///
 pub lawful class MeetLattice[a] with PartialOrder[a] {
+
+    use Bool.==>;
 
     ///
     /// Returns the greatest lower bound of `x` and `y`.
