@@ -152,9 +152,9 @@ namespace Int32 {
     /// Helper function for `reverse`.
     ///
     @Time(1) @Space(1)
-    def swap(x: Int32, l: Int32, r: Int32): Int32 = match (getBit(x, l), getBit(x, r)) {
-        case (1, 0) => clearBit(setBit(x, r), l)
-        case (0, 1) => clearBit(setBit(x, l), r)
+    def swap(x: Int32, l: Int32, r: Int32): Int32 = match (getBit(position = l, x), getBit(position = r, x)) {
+        case (1, 0) => clearBit(position = l, setBit(position = r, x))
+        case (0, 1) => clearBit(position = r, setBit(position = l, x))
         case _ => x
     }
 
@@ -184,11 +184,11 @@ namespace Int32 {
     /// Otherwise recursively check the next bit in the same way.
     ///
     def oneBitPositionHelper(x: Int32, position: Int32, delta: Int32): Int32 = {
-        if      (position < 0)              -1
-        else if (position > size() - 1)     -1
-        else if (getBit(x, position) == 1)  position
-        else if (delta == 0)                -1
-        else                                oneBitPositionHelper(x, position + delta, delta)
+        if      (position < 0)                        -1
+        else if (position > size() - 1)               -1
+        else if (getBit(position = position, x) == 1) position
+        else if (delta == 0)                          -1
+        else                                          oneBitPositionHelper(x, position + delta, delta)
     }
 
     ///
@@ -242,8 +242,8 @@ namespace Int32 {
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def getBit(x: Int32, position: Int32): Int32 =
-        if ((x >>> position) rem 2 == 0) 0 else 1
+    pub def getBit(position: {position :: Int32}, x: Int32): Int32 =
+        if ((x >>> position.position) rem 2 == 0) 0 else 1
 
     ///
     /// Returns `x` with the bit at position `position` set (to 1).
@@ -251,7 +251,7 @@ namespace Int32 {
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def setBit(x: Int32, position: Int32): Int32 = x ||| (1 <<< position)
+    pub def setBit(position: {position :: Int32}, x: Int32): Int32 = x ||| (1 <<< position.position)
 
     ///
     /// Returns `x` with the bit at position `position` cleared (to 0).
@@ -259,7 +259,7 @@ namespace Int32 {
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def clearBit(x: Int32, position: Int32): Int32 = x &&& ~~~(1 <<< position)
+    pub def clearBit(position: {position :: Int32}, x: Int32): Int32 = x &&& ~~~(1 <<< position.position)
 
     ///
     /// Returns `x` with the bit at position `position` flipped.
@@ -267,7 +267,7 @@ namespace Int32 {
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def flipBit(x: Int32, position: Int32): Int32 = x ^^^ (1 <<< position)
+    pub def flipBit(position: {position :: Int32}, x: Int32): Int32 = x ^^^ (1 <<< position.position)
 
     ///
     /// Returns the integer binary logarithm of `x`.

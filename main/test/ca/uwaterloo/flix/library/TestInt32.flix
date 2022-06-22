@@ -482,142 +482,142 @@ namespace TestInt32 {
     // getBit                                                                  //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def getBit01(): Bool = Int32.getBit(-1, 5) == 1
+    def getBit01(): Bool = Int32.getBit(position = 5, -1) == 1
 
     @test
-    def getBit02(): Bool = Int32.getBit(-1000000, 31) == 1
+    def getBit02(): Bool = Int32.getBit(position = 31, -1000000) == 1
 
     @test
-    def getBit03(): Bool = Int32.getBit(2 ** 23, 23) == 1
+    def getBit03(): Bool = Int32.getBit(position = 23, 2 ** 23) == 1
 
     @test
-    def getBit04(): Bool = Int32.getBit(2 ** 23, 24) == 0
+    def getBit04(): Bool = Int32.getBit(position = 24, 2 ** 23) == 0
 
     @test
-    def getBit05(): Bool = Int32.getBit(2 ** 23, 22) == 0
+    def getBit05(): Bool = Int32.getBit(position = 22, 2 ** 23) == 0
 
     @test
-    def getBit06(): Bool = Int32.getBit(-1 - 2 ** 25, 25) == 0
+    def getBit06(): Bool = Int32.getBit(position = 25, -1 - 2 ** 25) == 0
 
     @test
-    def getBit07(): Bool = Int32.getBit(-1 - 2 ** 25, 26) == 1
+    def getBit07(): Bool = Int32.getBit(position = 26, -1 - 2 ** 25) == 1
 
     @test
-    def getBit08(): Bool = Int32.getBit(0, 15) == 0
+    def getBit08(): Bool = Int32.getBit(position = 15, 0) == 0
 
     /////////////////////////////////////////////////////////////////////////////
     // setBit                                                                  //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def setBit01(): Bool = Int32.setBit(0, 0) == 1
+    def setBit01(): Bool = Int32.setBit(position = 0, 0) == 1
 
     @test
-    def setBit02(): Bool = Int32.setBit(0, 1) == 2
+    def setBit02(): Bool = Int32.setBit(position = 1, 0) == 2
 
     @test
-    def setBit03(): Bool = Int32.setBit(0, 31) == -2147483648
+    def setBit03(): Bool = Int32.setBit(position = 31, 0) == -2147483648
 
     @test
-    def setBit04(): Bool = Int32.setBit(0, 30) == 1073741824
+    def setBit04(): Bool = Int32.setBit(position = 30, 0) == 1073741824
 
     @test
-    def setBit05(): Bool = Int32.setBit(-1418638422, 31) == -1418638422
+    def setBit05(): Bool = Int32.setBit(position = 31, -1418638422) == -1418638422
 
     @test
-    def setBit07(): Bool = Int32.setBit(-17, 4) == -1
+    def setBit07(): Bool = Int32.setBit(position = 4, -17) == -1
 
     @test
-    def setBit08(): Bool = Int32.setBit(-1025, 10) == -1
+    def setBit08(): Bool = Int32.setBit(position = 10, -1025) == -1
 
     @test
-    def setBit09(): Bool = Int32.setBit(-17, 31) == -17
+    def setBit09(): Bool = Int32.setBit(position = 31, -17) == -17
 
     @test
-    def setBit10(): Bool = Int32.setBit(-17, 30) == -17
+    def setBit10(): Bool = Int32.setBit(position = 30, -17) == -17
 
     @test
-    def setBit11(): Bool = Int32.setBit(0, 32) == 1
+    def setBit11(): Bool = Int32.setBit(position = 32, 0) == 1
 
     /////////////////////////////////////////////////////////////////////////////
     // clearBit                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def clearBit01(): Bool = Int32.clearBit(1, 0) == 0
+    def clearBit01(): Bool = Int32.clearBit(position = 0, 1) == 0
 
     @test
-    def clearBit02(): Bool = Int32.clearBit(1, 1) == 1
+    def clearBit02(): Bool = Int32.clearBit(position = 1, 1) == 1
 
     @test
-    def clearBit03(): Bool = Int32.clearBit(2, 1) == 0
+    def clearBit03(): Bool = Int32.clearBit(position = 1, 2) == 0
 
     @test
-    def clearBit04(): Bool = Int32.clearBit(2, 2) == 2
+    def clearBit04(): Bool = Int32.clearBit(position = 2, 2) == 2
 
     @test
-    def clearBit05(): Bool = Int32.clearBit(0, 31) == 0
+    def clearBit05(): Bool = Int32.clearBit(position = 31, 0) == 0
 
     @test
-    def clearBit06(): Bool = Int32.clearBit(0, 30) == 0
+    def clearBit06(): Bool = Int32.clearBit(position = 30, 0) == 0
 
     @test
-    def clearBit07(): Bool = Int32.clearBit(-2147483648, 31) == 0
+    def clearBit07(): Bool = Int32.clearBit(position = 31, -2147483648) == 0
 
     @test
-    def clearBit08(): Bool = Int32.clearBit(442931848, 27) == 308714120
+    def clearBit08(): Bool = Int32.clearBit(position = 27, 442931848) == 308714120
 
     @test
-    def clearBit09(): Bool = Int32.clearBit(-1, 0) == -2
+    def clearBit09(): Bool = Int32.clearBit(position = 0, -1) == -2
 
     @test
-    def clearBit10(): Bool = Int32.clearBit(-1, 1) == -3
+    def clearBit10(): Bool = Int32.clearBit(position = 1, -1) == -3
 
     @test
-    def clearBit11(): Bool = Int32.clearBit(-1, 5) == -33
+    def clearBit11(): Bool = Int32.clearBit(position = 5, -1) == -33
 
     @test
-    def clearBit12(): Bool = Int32.clearBit(-1, 31) == 2147483647
+    def clearBit12(): Bool = Int32.clearBit(position = 31, -1) == 2147483647
 
     @test
-    def clearBit13(): Bool = Int32.clearBit(-1, 32) == -2
+    def clearBit13(): Bool = Int32.clearBit(position = 32, -1) == -2
 
     /////////////////////////////////////////////////////////////////////////////
     // flipBit                                                                 //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def flipBit01(): Bool = Int32.flipBit(1, 0) == 0
+    def flipBit01(): Bool = Int32.flipBit(position = 0, 1) == 0
 
     @test
-    def flipBit02(): Bool = Int32.flipBit(1, 1) == 3
+    def flipBit02(): Bool = Int32.flipBit(position = 1, 1) == 3
 
     @test
-    def flipBit03(): Bool = Int32.flipBit(2, 1) == 0
+    def flipBit03(): Bool = Int32.flipBit(position = 1, 2) == 0
 
     @test
-    def flipBit04(): Bool = Int32.flipBit(2, 2) == 6
+    def flipBit04(): Bool = Int32.flipBit(position = 2, 2) == 6
 
     @test
-    def flipBit05(): Bool = Int32.flipBit(0, 31) == -2147483648
+    def flipBit05(): Bool = Int32.flipBit(position = 31, 0) == -2147483648
 
     @test
-    def flipBit06(): Bool = Int32.flipBit(0, 30) == 1073741824
+    def flipBit06(): Bool = Int32.flipBit(position = 30, 0) == 1073741824
 
     @test
-    def flipBit07(): Bool = Int32.flipBit(-2147483648, 31) == 0
+    def flipBit07(): Bool = Int32.flipBit(position = 31, -2147483648) == 0
 
     @test
-    def flipBit08(): Bool = Int32.flipBit(-1, 0) == -2
+    def flipBit08(): Bool = Int32.flipBit(position = 0, -1) == -2
 
     @test
-    def flipBit9(): Bool = Int32.flipBit(-1, 1) == -3
+    def flipBit9(): Bool = Int32.flipBit(position = 1, -1) == -3
 
     @test
-    def flipBit10(): Bool = Int32.flipBit(-1, 5) == -33
+    def flipBit10(): Bool = Int32.flipBit(position = 5, -1) == -33
 
     @test
-    def flipBit11(): Bool = Int32.flipBit(-1, 31) == 2147483647
+    def flipBit11(): Bool = Int32.flipBit(position = 31, -1) == 2147483647
 
     @test
-    def flipBit12(): Bool = Int32.flipBit(-1, 32) == -2
+    def flipBit12(): Bool = Int32.flipBit(position = 32, -1) == -2
 
     /////////////////////////////////////////////////////////////////////////////
     // log2                                                                    //
