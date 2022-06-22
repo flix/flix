@@ -170,7 +170,7 @@ namespace TestIterator {
             if (m <= 0)
                 ()
             else {
-                Iterator.regIsEmpty(iter);
+                discard Iterator.regIsEmpty(iter);
                 loop(m - 1)
             };
         loop(n)

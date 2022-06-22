@@ -35,7 +35,7 @@ namespace Test/Eff/Polymorphism {
     @test
     def testEffPoly07(): Bool =
         let f = x -> y -> {impure(); x and y};
-        discard f(true);
+        let _ = f(true);
         true
 
     @test
