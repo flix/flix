@@ -415,7 +415,7 @@ namespace Iterator {
         let d = new MutDeque(r);
         foreach(x -> MutDeque.pushBack(x, d), iter);
         d
-        
+
     ///
     /// Returns the contents of `iter` as a set. Consumes the entire iterator.
     ///
@@ -618,7 +618,7 @@ namespace Iterator {
     /// Fast forwards the given iterator until the next element that satisfies
     /// the given predicate `f`. Returns it (if it exists).
     ///
-    def regForward(f: a -> Bool, done: RegionDone[r], next: RegionNext[a, r]): Option[a] \ Read(r) =
+    def regForward(f: a -> Bool & ef, done: RegionDone[r], next: RegionNext[a, r]): Option[a] \ { ef, Read(r) } =
         def loop() = {
             if (done())
                 None
@@ -1045,6 +1045,18 @@ namespace Iterator {
         match forward(x -> not f(x), done, next) {
             case None    => Nil
             case Some(i) => i :: toList(iter)
+        }
+
+    ///
+    /// Returns `iter` without the longest prefix that satisfies the predicate `f`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def regDropWhile(f: a -> Bool & ef, iter: RegionIterator[a, r]): List[a] \ { ef, Read(r) }=
+        let RegionIterator(done, next) = iter;
+        match regForward(x -> not f(x), done, next) {
+            case None    => Nil
+            case Some(i) => i :: regToList(iter)
         }
 
     ///
