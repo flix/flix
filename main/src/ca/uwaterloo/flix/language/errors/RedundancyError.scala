@@ -338,7 +338,7 @@ object RedundancyError {
     })
   }
 
-  case class discardedValue(loc: SourceLocation) extends RedundancyError {
+  case class DiscardedValue(loc: SourceLocation) extends RedundancyError {
     def summary: String = "Non-unit expression value is implicitly discarded."
 
     def message(formatter: Formatter): String = {
