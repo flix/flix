@@ -413,7 +413,7 @@ namespace Int64 {
     ///
     /// Helper function for the `clamp` conversion functions.
     ///
-    def clamp(x: Int64, minimum: Int64, maximum: Int64): Int64 =
+    def clamp(minimum: {minimum :: Int64}, maximum: {maximum :: Int64}, x: Int64): Int64 =
         if (x < minimum)
              minimum
         else
@@ -428,7 +428,7 @@ namespace Int64 {
     /// Returns `x` clamped within the Int8 range `minimum` to `maximum`.
     ///
     @Time(1) @Space(1)
-    pub def clampToInt8(x: Int64, minimum: Int8, maximum: Int8): Int8 =
+    pub def clampToInt8(minimum: {minimum :: Int8}, maximum: {maximum :: Int8}, x: Int64): Int8 =
         import static java.lang.Long.valueOf(Int64): ##java.lang.Long & Pure;
         import java.lang.Long.byteValue(): Int8 & Pure;
         let mini64 = Int8.toInt64(minimum);
@@ -441,7 +441,7 @@ namespace Int64 {
     /// Returns `x` clamped within the Int16 range `minimum` to `maximum`.
     ///
     @Time(1) @Space(1)
-    pub def clampToInt16(x: Int64, minimum: Int16, maximum: Int16): Int16 =
+    pub def clampToInt16(minimum: {minimum :: Int16}, maximum: {maximum :: Int16}, x: Int64): Int16 =
         import static java.lang.Long.valueOf(Int64): ##java.lang.Long & Pure;
         import java.lang.Long.shortValue(): Int16 & Pure;
         let mini64 = Int16.toInt64(minimum);
@@ -455,7 +455,7 @@ namespace Int64 {
     /// Returns `x` clamped within the Int32 range `minimum` to `maximum`.
     ///
     @Time(1) @Space(1)
-    pub def clampToInt32(x: Int64, minimum: Int32, maximum: Int32): Int32 =
+    pub def clampToInt32(minimum: {minimum :: Int32}, maximum: {maximum :: Int32}, x: Int64): Int32 =
         import static java.lang.Long.valueOf(Int64): ##java.lang.Long & Pure;
         import java.lang.Long.intValue(): Int32 & Pure;
         let mini64 = Int32.toInt64(minimum);
