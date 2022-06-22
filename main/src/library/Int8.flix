@@ -281,7 +281,7 @@ namespace Int8 {
             0i8
         } else {
             let position = highestOneBitPosition(x);
-            Int32.clampToInt8(position, 0i8, Int8.maxValue())
+            Int32.clampToInt8(minimum = 0i8, maximum = Int8.maxValue(), position)
         }
 
     ///
