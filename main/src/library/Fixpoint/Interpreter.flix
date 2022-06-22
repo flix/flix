@@ -92,8 +92,7 @@ namespace Fixpoint {
                 }, MutMap.getWithDefault(ramSym, new MutMap(Static), db))
             case RelOp.Query(RowVar.Index(i), ramSym, query, body) =>
                 let (tupleEnv, latEnv) = env;
-                // TODO: Unsafe effect cast
-                MutMap.queryWith(evalQuery(env, query) as & Pure -> Comparison, t -> l -> {
+                MutMap.queryWith(evalQuery(env, query), t -> l -> {
                     tupleEnv[i] = t;
                     latEnv[i] = l;
                     evalOp(db, env, body)
