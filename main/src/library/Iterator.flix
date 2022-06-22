@@ -629,14 +629,11 @@ namespace Iterator {
     /// the given predicate `f`. Returns it (if it exists).
     ///
     def regForward(f: a -> Bool & ef, done: RegionDone[r], next: RegionNext[a, r]): Option[a] \ { ef, Read(r) } =
-        def loop() = {
-            if (done())
-                None
-            else
-                let e = next();
-                if (f(e)) Some(e) else loop()
-        };
-        loop()
+        if (done())
+            None
+        else
+            let e = next();
+            if (f(e)) Some(e) else regForward(f, done, next)
 
     ///
     /// Returns an iterator with every `f` lazily applied to each element in `iter`.
@@ -1291,8 +1288,8 @@ namespace Iterator {
         let RegionIterator(doneA, nextA) = iterA;
         let RegionIterator(doneB, nextB) = iterB;
         let r1 = Scoped.regionOf(iterA);
-        let r3 = Scoped.regionOf(iterB);
         let xs = ref Nil @ r1;
+        let r3 = Scoped.regionOf(iterB);
         let isReversed = ref false @ r1;
         let nextAA = () -> {
             let x = nextA();
@@ -1321,7 +1318,7 @@ namespace Iterator {
                 cursor := Some(regAppend(i, RegionIterator(doneAA, nextAA)))
         };
         let done1 = () -> match deref cursor {
-            case None    => match regIntercalateForward(doneB, nextB) {
+            case None    => match regForward(match RegionIterator(d, _) -> not d(), doneB, nextB) {
                 case None    => true
                 case Some(i) =>
                     if (doneB())
@@ -1332,7 +1329,7 @@ namespace Iterator {
             }
             case Some(i) =>
                 let RegionIterator(d, _) = i;
-                if (d()) match regIntercalateForward(doneB, nextB) {
+                if (d()) match regForward(match RegionIterator(d1, _) -> not d1(), doneB, nextB) {
                     case None     => true
                     case Some(i1) =>
                         if (doneB())
@@ -1364,16 +1361,6 @@ namespace Iterator {
                 if (d()) loop() else Some(Iterator(d, n))
         };
         loop()
-
-    ///
-    /// Forwards the iterator the first non-empty iterator produced by `next`.
-    ///
-    def regIntercalateForward(done: RegionDone[r1], next: RegionNext[RegionIterator[a, r2], r1]): Option[RegionIterator[a, r2]] \ Read(r1, r2) =
-        if(done())
-            None
-        else
-            let RegionIterator(d, n) = next();
-            if (d()) regIntercalateForward(done, next) else Some(RegionIterator(d, n))
 
     ///
     /// Returns the concatenation of the string representation
