@@ -145,6 +145,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Effect
   }
 
+  def DeclarationEOI: Rule1[ParsedAst.Declaration] = rule {
+    Declaration ~ EOI
+  }
+
   def UseDeclarations: Rule1[Seq[ParsedAst.Use]] = rule {
     // It is important for documentation comments that whitespace is not consumed if no uses are present
     (optWS ~ oneOrMore(Use ~ optWS ~ ";").separatedBy(optWS)) | push(Seq.empty)
@@ -326,7 +330,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ Names.Namespace ~ atomic(".{") ~ zeroOrMore(NameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseMany
+        SP ~ Names.Namespace ~ atomic(".{") ~ optWS ~ zeroOrMore(NameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Use.UseMany
       }
     }
 
@@ -340,7 +344,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ Names.QualifiedType ~ atomic(".{") ~ zeroOrMore(TagAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyTag
+        SP ~ Names.QualifiedType ~ atomic(".{") ~ optWS ~ zeroOrMore(TagAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Use.UseManyTag
       }
     }
 
@@ -483,6 +487,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   def Expression: Rule1[ParsedAst.Expression] = rule {
     Expressions.Assign
+  }
+
+  def ExpressionEOI: Rule1[ParsedAst.Expression] = rule {
+    Expression ~ EOI
   }
 
   object Expressions {
@@ -671,7 +679,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
-        Discard | UnaryLambda | FName | Tag | Hole
+        Discard | NewObject | UnaryLambda | FName | Tag | Hole
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -795,6 +803,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         SP ~ Import ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetImport
       }
+    }
+
+    def NewObject: Rule1[ParsedAst.Expression] = rule {
+      SP ~ keyword("object") ~ WS ~ atomic("##") ~ Names.JavaName ~ optWS ~ "{" ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.NewObject
     }
 
     def Match: Rule1[ParsedAst.Expression.Match] = {
@@ -1079,7 +1091,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ (keyword("project") | keyword("inject")) ~ WS ~ ExpressionPart ~ WS ~ keyword("into") ~ WS ~ ProjectPart ~ SP ~> ParsedAst.Expression.FixpointProjectInto
+        SP ~ (keyword("inject") | keyword("project")) ~ WS ~ ExpressionPart ~ WS ~ keyword("into") ~ WS ~ ProjectPart ~ SP ~> ParsedAst.Expression.FixpointInjectInto
       }
     }
 

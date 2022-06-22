@@ -644,6 +644,9 @@ object JvmOps {
       case Expression.PutStaticField(_, exp, _, _) =>
         visitExp(exp)
 
+      case Expression.NewObject(_, _, _) =>
+        Set.empty
+
       case Expression.NewChannel(exp, _, _) => visitExp(exp)
 
       case Expression.GetChannel(exp, _, _) => visitExp(exp)
@@ -1016,6 +1019,8 @@ object JvmOps {
       case Expression.GetStaticField(_, _, _) => Set.empty
 
       case Expression.PutStaticField(_, exp, _, _) => visitExp(exp)
+
+      case Expression.NewObject(_, _, _) => Set.empty
 
       case Expression.NewChannel(exp, _, _) => visitExp(exp)
 

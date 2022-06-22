@@ -400,6 +400,9 @@ object Inliner {
       val e = visitExp(exp, subst0)
       LiftedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
 
+    case OccurrenceAst.Expression.NewObject(clazz, tpe, purity, loc) =>
+      LiftedAst.Expression.NewObject(clazz, tpe, purity, loc)
+
     case OccurrenceAst.Expression.NewChannel(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
       LiftedAst.Expression.NewChannel(e, tpe, loc)
@@ -783,6 +786,9 @@ object Inliner {
     case OccurrenceAst.Expression.PutStaticField(field, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
       LiftedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
+
+    case OccurrenceAst.Expression.NewObject(clazz, tpe, purity, loc) =>
+      LiftedAst.Expression.NewObject(clazz, tpe, purity, loc)
 
     case OccurrenceAst.Expression.NewChannel(exp, tpe, loc) =>
       val e = substituteExp(exp, env0)

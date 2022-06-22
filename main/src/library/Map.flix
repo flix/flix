@@ -68,6 +68,11 @@ instance Traversable[Map[k]] {
     pub override def sequence(t: Map[k, m[a]]): m[Map[k, a]] with Applicative[m] = Map.sequence(t)
 }
 
+instance FunctorFilter[Map[k]] with Order[k] {
+    pub def filterMap(f: a -> Option[b] & ef, m: Map[k, a]): Map[k, b] & ef = Map.filterMap(f, m)
+    pub override def filter(f: a -> Bool & ef, m: Map[k, a]): Map[k, a] & ef = Map.filter(f, m)
+}
+
 instance SemiGroup[Map[k,v]] with Order[k], SemiGroup[v] {
     pub def combine(x: Map[k,v], y: Map[k,v]): Map[k,v] = Map.unionWith(SemiGroup.combine, x, y)
 }
@@ -446,6 +451,28 @@ namespace Map {
     @Time(time(f) * size(m)) @Space(space(f) * size(m))
     pub def filterWithKey(f: (k, v) -> Bool & ef, m: Map[k, v]): Map[k, v] & ef with Order[k] =
         foldLeftWithKey((acc, k, v) -> if (f(k, v)) insert(k, v, acc) else acc, empty(), m)
+
+    ///
+    /// Returns a map of all mappings `k => v1` in `m` where applying the function `f` to `v` produces
+    /// a `Some(v1)`. Elements that produce `None` are discarded.
+    ///
+    pub def filterMap(f: a -> Option[b] & ef, m: Map[k, a]): Map[k, b] & ef with Order[k] =
+        let step = (acc, k, a) -> match f(a) {
+            case Some(b) => Map.insert(k, b, acc)
+            case None    => acc
+        };
+        Map.foldLeftWithKey(step, Map.empty(), m)
+
+    ///
+    /// Returns a map of all mappings `k => v1` in `m` where applying the function `f` to `(k, v)` produces
+    /// `Some(v1)`. Elements that produce `None` are discarded.
+    ///
+    pub def filterMapWithKey(f: (k, a) -> Option[b] & ef, m: Map[k, a]): Map[k, b] & ef with Order[k] =
+        let step = (acc, k, a) -> match f(k, a) {
+            case Some(b) => insert(k, b, acc)
+            case None    => acc
+        };
+        foldLeftWithKey(step, Map.empty(), m)
 
     ///
     /// Returns a map with mappings `k => f(v)` for every `k => v` in `m`.
@@ -890,14 +917,14 @@ namespace Map {
     ///
     /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison, m: Map[k, v]): List[(k, v)] =
+    pub def query(p: k -> Comparison & ef, m: Map[k, v]): List[(k, v)] & ef =
         let Map(t) = m;
         RedBlackTree.query(p, (k, v) -> (k, v), t)
 
     ///
     /// Applies `f` to all key-value pairs `(k, v)` from the map `m` where `p(k)` returns `EqualTo`.
     ///
-    pub def queryWith(p: k -> Comparison, f: (k, v) -> Unit & ef, m: Map[k, v]): Unit & ef =
+    pub def queryWith(p: k -> Comparison & ef1, f: (k, v) -> Unit & ef2, m: Map[k, v]): Unit & (ef1 and ef2) =
         let Map(t) = m;
         RedBlackTree.queryWith(p, f, t)
 
