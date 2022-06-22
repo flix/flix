@@ -940,25 +940,25 @@ namespace TestInt64 {
     // clampToInt16                                                            //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def clampToInt1601(): Bool = Int64.clampToInt16(minimum = -100i16, maximum = 100i16. 0i64) == 0i16
+    def clampToInt1601(): Bool = Int64.clampToInt16(minimum = -100i16, maximum = 100i16, 0i64) == 0i16
 
     @test
-    def clampToInt1602(): Bool = Int64.clampToInt16(minimum = -100i16, maximum = 100i16. 100i64) == 100i16
+    def clampToInt1602(): Bool = Int64.clampToInt16(minimum = -100i16, maximum = 100i16, 100i64) == 100i16
 
     @test
-    def clampToInt1603(): Bool = Int64.clampToInt16(minimum = -100i16, maximum = 100i16. 101i64) == 100i16
+    def clampToInt1603(): Bool = Int64.clampToInt16(minimum = -100i16, maximum = 100i16, 101i64) == 100i16
 
     @test
-    def clampToInt1604(): Bool = Int64.clampToInt16(minimum = -100i16, maximum = 100i16. -100i64) == -100i16
+    def clampToInt1604(): Bool = Int64.clampToInt16(minimum = -100i16, maximum = 100i16, -100i64) == -100i16
 
     @test
-    def clampToInt1605(): Bool = Int64.clampToInt16(minimum = -100i16, maximum = 100i16. -101i64) == -100i16
+    def clampToInt1605(): Bool = Int64.clampToInt16(minimum = -100i16, maximum = 100i16, -101i64) == -100i16
 
     @test
-    def clampToInt1606(): Bool = Int64.clampToInt16(minimum = -100i16, maximum = 100i16. Int64.maxValue()) == 100i16
+    def clampToInt1606(): Bool = Int64.clampToInt16(minimum = -100i16, maximum = 100i16, Int64.maxValue()) == 100i16
 
     @test
-    def clampToInt1607(): Bool = Int64.clampToInt16(minimum = -100i16, maximum = 100i16. Int64.minValue()) == -100i16
+    def clampToInt1607(): Bool = Int64.clampToInt16(minimum = -100i16, maximum = 100i16, Int64.minValue()) == -100i16
 
     /////////////////////////////////////////////////////////////////////////////
     // clampToInt32                                                            //
