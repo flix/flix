@@ -155,9 +155,9 @@ namespace Int8 {
     ///
     /// Helper function for `reverse`.
     ///
-    def swap(x: Int8, l: Int32, r: Int32): Int8 = match (getBit(x, l), getBit(x, r)) {
-        case (1, 0) => clearBit(setBit(x, r), l)
-        case (0, 1) => clearBit(setBit(x, l), r)
+    def swap(x: Int8, l: Int32, r: Int32): Int8 = match (getBit(l, x), getBit(r, x)) {
+        case (1, 0) => clearBit(l, setBit(r, x))
+        case (0, 1) => clearBit(r, setBit(l, x))
         case _ => x
     }
 
@@ -189,7 +189,7 @@ namespace Int8 {
     def oneBitPositionHelper(x: Int8, position: Int32, delta: Int32): Int32 = {
         if      (position < 0)              -1
         else if (position > (size() - 1))   -1
-        else if (getBit(x, position) == 1)  position
+        else if (getBit(position, x) == 1)  position
         else if (delta == 0)                -1
         else                                oneBitPositionHelper(x, position + delta, delta)
     }
