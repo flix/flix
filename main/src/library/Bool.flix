@@ -69,4 +69,9 @@ namespace Bool {
     ///
     pub def or(x: Bool, y: Lazy[Bool]): Bool = if(x) x else force y
 
+    ///
+    /// Returns `true` if `x` implies `y` logically holds.
+    ///
+    pub def ==>(x: Bool, y: Bool): Bool = not x or y
+
 }
