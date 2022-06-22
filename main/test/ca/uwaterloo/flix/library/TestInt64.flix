@@ -545,37 +545,37 @@ namespace TestInt64 {
     // setBit                                                                  //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def setBit01(): Bool = Int64.setBit(0i64, 0) == 1i64
+    def setBit01(): Bool = Int64.setBit(0, 0i64) == 1i64
 
     @test
-    def setBit02(): Bool = Int64.setBit(0i64, 1) == 2i64
+    def setBit02(): Bool = Int64.setBit(1, 0i64) == 2i64
 
     @test
-    def setBit03(): Bool = Int64.setBit(0i64, 31) == 2147483648i64
+    def setBit03(): Bool = Int64.setBit(31, 0i64) == 2147483648i64
 
     @test
-    def setBit04(): Bool = Int64.setBit(0i64, 32) == 4294967296i64
+    def setBit04(): Bool = Int64.setBit(32, 0i64) == 4294967296i64
 
     @test
-    def setBit05(): Bool = Int64.setBit(-1418638422666i64, 31) == -1418638422666i64
+    def setBit05(): Bool = Int64.setBit(31, -1418638422666i64) == -1418638422666i64
 
     @test
-    def setBit07(): Bool = Int64.setBit(-17i64, 4) == -1i64
+    def setBit07(): Bool = Int64.setBit(4, -17i64) == -1i64
 
     @test
-    def setBit08(): Bool = Int64.setBit(-1025i64, 10) == -1i64
+    def setBit08(): Bool = Int64.setBit(10, -1025i64) == -1i64
 
     @test
-    def setBit09(): Bool = Int64.setBit(-17i64, 63) == -17i64
+    def setBit09(): Bool = Int64.setBit(63, -17i64) == -17i64
 
     @test
-    def setBit10(): Bool = Int64.setBit(-17i64, 30) == -17i64
+    def setBit10(): Bool = Int64.setBit(30, -17i64) == -17i64
 
     @test
-    def setBit11(): Bool = Int64.setBit(0i64, 63) == (1i64 <<< 63)
+    def setBit11(): Bool = Int64.setBit(63, 0i64) == (1i64 <<< 63)
 
     @test
-    def setBit12(): Bool = Int64.setBit(0i64, 64) == 1i64
+    def setBit12(): Bool = Int64.setBit(64, 0i64) == 1i64
 
     /////////////////////////////////////////////////////////////////////////////
     // clearBit                                                                //
