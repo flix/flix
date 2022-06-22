@@ -1186,6 +1186,27 @@ namespace Iterator {
         Iterator(done, next1)
 
     ///
+    /// Returns an iterator with `a` inserted between every of `iter`.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    @Lazy
+    pub def regIntersperse(x: a, iter: RegionIterator[a, r]): RegionIterator[a, r] \ Write(r) =
+        let RegionIterator(done, next) = iter;
+        let returnX = ref false @ Scoped.regionOf(iter);
+        let next1 = () -> {
+            if (deref returnX) {
+                returnX := false;
+                x
+            }
+            else {
+                returnX := true;
+                next()
+            }
+        };
+        RegionIterator(done, next1)
+
+    ///
     /// Returns the concatenation of the elements in `iterB` with the elements of `iterA` inserted between every two adjacent elements.
     ///
     /// That is, returns `b1 :: a1 ... an :: b2 :: ... bn-1 :: a1 :: ... :: an :: bn :: Nil`.

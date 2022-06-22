@@ -1274,34 +1274,39 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def intersperse01(): Bool & Impure =
-        List.toIterator(Nil) |>
-            Iterator.intersperse(11) |>
-            Iterator.toList == Nil
+    def intersperse01(): Bool = region r {
+        List.toRegionIterator(r, Nil) |>
+            Iterator.regIntersperse(11) |>
+            Iterator.regToList == Nil
+    }
 
     @test
-    def intersperse02(): Bool & Impure =
-        List.toIterator(1 :: Nil) |>
-            Iterator.intersperse(11) |>
-            Iterator.toList == 1 :: Nil
+    def intersperse02(): Bool = region r {
+        List.toRegionIterator(r, 1 :: Nil) |>
+            Iterator.regIntersperse(11) |>
+            Iterator.regToList == 1 :: Nil
+    }
 
     @test
-    def intersperse03(): Bool & Impure =
-        List.toIterator(1 :: 2 :: Nil) |>
-            Iterator.intersperse(11) |>
-            Iterator.toList == 1 :: 11 :: 2 :: Nil
+    def intersperse03(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 2 :: Nil) |>
+            Iterator.regIntersperse(11) |>
+            Iterator.regToList == 1 :: 11 :: 2 :: Nil
+    }
 
     @test
-    def intersperse04(): Bool & Impure =
-        List.toIterator(1 :: 2 :: 3 :: Nil) |>
-            Iterator.intersperse(11) |>
-            Iterator.toList == 1 :: 11 :: 2 :: 11 :: 3 :: Nil
+    def intersperse04(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 2 :: 3 :: Nil) |>
+            Iterator.regIntersperse(11) |>
+            Iterator.regToList == 1 :: 11 :: 2 :: 11 :: 3 :: Nil
+    }
 
     @test
-    def intersperse05(): Bool & Impure =
-        List.toIterator(1 :: 2 :: 3 :: 4 :: Nil) |>
-            Iterator.intersperse(11) |>
-            Iterator.toList == 1 :: 11 :: 2 :: 11 :: 3 :: 11 :: 4 :: Nil
+    def intersperse05(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 2 :: 3 :: 4 :: Nil) |>
+            Iterator.regIntersperse(11) |>
+            Iterator.regToList == 1 :: 11 :: 2 :: 11 :: 3 :: 11 :: 4 :: Nil
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
