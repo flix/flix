@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use Bool.==>;
+use Bool.{==>};
 
 ///
 /// A type class for equality and inequality.
