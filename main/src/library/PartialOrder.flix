@@ -14,12 +14,12 @@
  *  limitations under the License.
  */
 
+use Bool.==>;
+
 ///
 /// A Partial Order is a function ⊑ which satisfies three properties: reflexivity, anti-symmetry, and transitivity.
 ///
 pub lawful class PartialOrder[a] {
-
-    use Bool.==>;
 
     ///
     /// Returns `true` if `x` is smaller or equal to `y`.

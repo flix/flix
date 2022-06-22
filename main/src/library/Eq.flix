@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
+use Bool.==>;
+
 ///
 /// A type class for equality and inequality.
 ///
 pub lawful class Eq[a] {
-
-    use Bool.==>;
 
     ///
     /// Returns `true` if and only if `x` is equal to `y`.
