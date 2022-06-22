@@ -1301,6 +1301,15 @@ namespace Iterator {
 
     ///
     /// Returns the concatenation of the string representation
+    /// of each element in `iter` with `sep` inserted between each element.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def regJoin(sep: String, iter: RegionIterator[a, r]): String \ Read(r) with ToString[a] =
+        regJoinWith(ToString.toString, sep, iter)
+
+    ///
+    /// Returns the concatenation of the string representation
     /// of each element in `iter` according to `f` with `sep` inserted between each element.
     ///
     /// Consumes the entire iterator.
@@ -1310,6 +1319,20 @@ namespace Iterator {
         let lastSep = String.length(sep);
         let sb = new StringBuilder(r);
         foreach(x -> { append!(f(x), sb); append!(sep, sb) }, iter);
+        StringBuilder.toString(sb) |> String.dropRight(lastSep)
+    }
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `iter` according to `f` with `sep` inserted between each element.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def regJoinWith(f: a -> String & ef, sep: String, iter: RegionIterator[a, r]): String \ { ef, Read(r) } = region r {
+        use StringBuilder.append!;
+        let lastSep = String.length(sep);
+        let sb = new StringBuilder(r);
+        regForeach(x -> { append!(f(x), sb); append!(sep, sb) }, iter);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
 

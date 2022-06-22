@@ -1464,24 +1464,28 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def join01(): Bool & Impure =
-        (Nil: List[Int32]) |> List.toIterator |>
-            Iterator.join(",") == ""
+    def join01(): Bool = region r {
+        (Nil: List[Int32]) |> List.toRegionIterator(r) |>
+            Iterator.regJoin(",") == ""
+    }
 
     @test
-    def join02(): Bool & Impure =
-        (1 :: Nil) |> List.toIterator |>
-            Iterator.join(",") == "1"
+    def join02(): Bool = region r {
+        (1 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regJoin(",") == "1"
+    }
 
     @test
-    def join03(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toIterator |>
-            Iterator.join(",") == "1,2,3"
+    def join03(): Bool = region r {
+        (1 :: 2 :: 3 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regJoin(",") == "1,2,3"
+    }
 
     @test
-    def join04(): Bool & Impure =
-        ("1" :: "2" :: "3" :: Nil) |> List.toIterator |>
-            Iterator.join(",") == "1,2,3"
+    def join04(): Bool = region r {
+        ("1" :: "2" :: "3" :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regJoin(",") == "1,2,3"
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1489,24 +1493,29 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def joinWith01(): Bool & Impure =
-        (Nil: List[Int32]) |> List.toIterator |>
-            Iterator.joinWith(x -> "${x + 1}", ",") == ""
+    def joinWith01(): Bool = region r {
+        (Nil: List[Int32]) |> List.toRegionIterator(r) |>
+            Iterator.regJoinWith(x -> "${x + 1}", ",") == ""
+    }
 
     @test
-    def joinWith02(): Bool & Impure =
-        (1 :: Nil) |> List.toIterator |>
-            Iterator.joinWith(x -> "${x + 1}", ",") == "2"
+    def joinWith02(): Bool = region r {
+        (1 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regJoinWith(x -> "${x + 1}", ",") == "2"
+    }
 
     @test
-    def joinWith03(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toIterator |>
-            Iterator.joinWith(x -> "${x + 1}", ",") == "2,3,4"
+    def joinWith03(): Bool = region r {
+        (1 :: 2 :: 3 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regJoinWith(x -> "${x + 1}", ",") == "2,3,4"
+    }
 
     @test
-    def joinWith04(): Bool & Impure =
-        ("1" :: "2" :: "3" :: Nil) |> List.toIterator |>
-            Iterator.joinWith(x -> x + x, ",") == "11,22,33"
+    def joinWith04(): Bool = region r {
+        ("1" :: "2" :: "3" :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regJoinWith(x -> x + x, ",") == "11,22,33"
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // filterMapL                                                              //
