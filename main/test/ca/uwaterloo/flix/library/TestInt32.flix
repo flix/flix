@@ -209,43 +209,43 @@ namespace TestInt32 {
     // rotateLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def rotateLeft01(): Bool = Int32.rotateLeft(distance = 4, -1698265258, 4) == -1402440343
+    def rotateLeft01(): Bool = Int32.rotateLeft(distance = 4, -1698265258) == -1402440343
 
     @test
-    def rotateLeft02(): Bool = Int32.rotateLeft(distance = 5, -1836677290, 5) == 1355868882
+    def rotateLeft02(): Bool = Int32.rotateLeft(distance = 5, -1836677290) == 1355868882
 
     @test
-    def rotateLeft03(): Bool = Int32.rotateLeft(distance = 24, 1478293001, 24) == 156769526
+    def rotateLeft03(): Bool = Int32.rotateLeft(distance = 24, 1478293001) == 156769526
 
     @test
-    def rotateLeft04(): Bool = Int32.rotateLeft(distance = -36, -12267711, -36) == 536104180
+    def rotateLeft04(): Bool = Int32.rotateLeft(distance = -36, -12267711) == 536104180
 
     @test
-    def rotateLeft05(): Bool = Int32.rotateLeft(distance = 87, 0, 87) == 0
+    def rotateLeft05(): Bool = Int32.rotateLeft(distance = 87, 0) == 0
 
     @test
-    def rotateLeft06(): Bool = Int32.rotateLeft(distance = 87, -1, 87) == -1
+    def rotateLeft06(): Bool = Int32.rotateLeft(distance = 87, -1) == -1
 
     /////////////////////////////////////////////////////////////////////////////
     // rotateRight                                                             //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def rotateRight01(): Bool = Int32.rotateRight(distance = 4, -1698265258, 4) == 1772906613
+    def rotateRight01(): Bool = Int32.rotateRight(distance = 4, -1698265258) == 1772906613
 
     @test
-    def rotateRight02(): Bool = Int32.rotateRight(distance = 5, -1836677290, 5) == -1265355718
+    def rotateRight02(): Bool = Int32.rotateRight(distance = 5, -1836677290) == -1265355718
 
     @test
-    def rotateRight03(): Bool = Int32.rotateRight(distance = 24, 1478293001, 24) == 485886296
+    def rotateRight03(): Bool = Int32.rotateRight(distance = 24, 1478293001) == 485886296
 
     @test
-    def rotateRight04(): Bool = Int32.rotateRight(distance = -36, -12267711, -36) == -196283361
+    def rotateRight04(): Bool = Int32.rotateRight(distance = -36, -12267711) == -196283361
 
     @test
-    def rotateRight05(): Bool = Int32.rotateRight(distance = 87, 0, 87) == 0
+    def rotateRight05(): Bool = Int32.rotateRight(distance = 87, 0) == 0
 
     @test
-    def rotateRight06(): Bool = Int32.rotateRight(distance = 87, -1, 87) == -1
+    def rotateRight06(): Bool = Int32.rotateRight(distance = 87, -1) == -1
 
     /////////////////////////////////////////////////////////////////////////////
     // reverse                                                                 //
