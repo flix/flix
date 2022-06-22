@@ -14,7 +14,6 @@
  *  limitations under the License.
  */
 
-use Bool.==>;
 
 ///
 /// A Partial Order is a function ⊑ which satisfies three properties: reflexivity, anti-symmetry, and transitivity.
@@ -35,7 +34,7 @@ pub lawful class PartialOrder[a] {
     ///
     /// Transitivity: If `x` is lower or equal to `y` and `y` is lower equal to `z` then `x` must be lower or equal to `z`.
     ///
-    law transitivity: forall(x: a, y: a, z: a). (PartialOrder.lessEqual(x, y) and PartialOrder.lessEqual(y, z)) ==> PartialOrder.lessEqual(x, z)
+    law transitivity: forall(x: a, y: a, z: a). (PartialOrder.lessEqual(x, y) and PartialOrder.lessEqual(y, z)) Bool.==> PartialOrder.lessEqual(x, z)
 }
 
 instance PartialOrder[Int8] {

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-use Bool.==>;
 
 ///
 /// A type class for types with a total order.
@@ -84,12 +83,12 @@ pub lawful class Order[a] with Eq[a] {
     ///
     /// Antisymmetry: If `x` is lower or equal to `y` and `y` is lower or equal to `x` then `x` must be equal to `y`.
     ///
-    law symmetry: forall(x: a, y: a). ((x <= y) and (y <= x)) ==> (x == y)
+    law symmetry: forall(x: a, y: a). ((x <= y) and (y <= x)) Bool.==> (x == y)
 
     ///
     /// Transitivity: If `x` is lower or equal to `y` and `y` is lower equal to `z` then `x` must be lower or equal to `z`.
     ///
-    law transitivity: forall(x: a, y: a, z: a). ((x <= y) and (y <= z)) ==> (x <= z)
+    law transitivity: forall(x: a, y: a, z: a). ((x <= y) and (y <= z)) Bool.==> (x <= z)
 
     ///
     /// Totality: For each two elements `x` and `y` either `x` is lower or equal to `y` or the other way round.
@@ -99,12 +98,12 @@ pub lawful class Order[a] with Eq[a] {
     ///
     /// Definition of the minimum function.
     ///
-    law min: forall(x: a, y: a). ((x <= y) ==> (Order.min(x, y) == x)) and ((y <= x) ==> (Order.min(x, y) == y))
+    law min: forall(x: a, y: a). ((x <= y) Bool.==> (Order.min(x, y) == x)) and ((y <= x) Bool.==> (Order.min(x, y) == y))
 
     ///
     /// Definition of the maximum function.
     ///
-    law max: forall(x: a, y: a). ((y <= x) ==> (Order.max(x, y) == x)) and ((x <= y) ==> (Order.max(x, y) == y))
+    law max: forall(x: a, y: a). ((y <= x) Bool.==> (Order.max(x, y) == x)) and ((x <= y) Bool.==> (Order.max(x, y) == y))
 
     ///
     /// x < y is logically equivalent to not (y <= x).
@@ -125,7 +124,7 @@ pub lawful class Order[a] with Eq[a] {
     ///
     /// Definition of `compare` based on the defined total order.
     ///
-    law compare: forall(x: a, y: a). ((x < y) ==> (Order.compare(x, y) == LessThan)) and ((x == y) ==> (Order.compare(x, y) == EqualTo)) and ((x > y) ==> (Order.compare(x, y) == GreaterThan))
+    law compare: forall(x: a, y: a). ((x < y) Bool.==> (Order.compare(x, y) == LessThan)) and ((x == y) Bool.==> (Order.compare(x, y) == EqualTo)) and ((x > y) ==> (Order.compare(x, y) == GreaterThan))
 }
 
 namespace Order {

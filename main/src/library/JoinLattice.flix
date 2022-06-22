@@ -15,7 +15,6 @@
  *  limitations under the License.
  */
 
-use Bool.==>;
 
 ///
 /// A type class for join semi lattices.
@@ -40,7 +39,7 @@ pub lawful class JoinLattice[a] with PartialOrder[a] {
     /// the smallest element that is larger than its two arguments.
     ///
     law leastUpperBound2: forall(x: a, y: a, z: a).
-        (PartialOrder.lessEqual(x, z) and PartialOrder.lessEqual(y, z)) ==>
+        (PartialOrder.lessEqual(x, z) and PartialOrder.lessEqual(y, z)) Bool.==>
         PartialOrder.lessEqual(JoinLattice.leastUpperBound(x, y), z)
 
 }
