@@ -623,40 +623,40 @@ namespace TestInt64 {
     // flipBit                                                                 //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def flipBit01(): Bool = Int64.flipBit(1i64, 0) == 0i64
+    def flipBit01(): Bool = Int64.flipBit(0, 1i64) == 0i64
 
     @test
-    def flipBit02(): Bool = Int64.flipBit(1i64, 1) == 3i64
+    def flipBit02(): Bool = Int64.flipBit(1, 1i64) == 3i64
 
     @test
-    def flipBit03(): Bool = Int64.flipBit(2i64, 1) == 0i64
+    def flipBit03(): Bool = Int64.flipBit(1, 2i64) == 0i64
 
     @test
-    def flipBit04(): Bool = Int64.flipBit(2i64, 2) == 6i64
+    def flipBit04(): Bool = Int64.flipBit(2, 2i64) == 6i64
 
     @test
-    def flipBit05(): Bool = Int64.flipBit(0i64, 31) == 2147483648i64
+    def flipBit05(): Bool = Int64.flipBit(31, 0i64) == 2147483648i64
 
     @test
-    def flipBit06(): Bool = Int64.flipBit(0i64, 30) == 1073741824i64
+    def flipBit06(): Bool = Int64.flipBit(30, 0i64) == 1073741824i64
 
     @test
-    def flipBit07(): Bool = Int64.flipBit(1i64 <<< 63, 63) == 0i64
+    def flipBit07(): Bool = Int64.flipBit(63, 1i64 <<< 63) == 0i64
 
     @test
-    def flipBit08(): Bool = Int64.flipBit(-1i64, 0) == -2i64
+    def flipBit08(): Bool = Int64.flipBit(0, -1i64) == -2i64
 
     @test
-    def flipBit9(): Bool = Int64.flipBit(-1i64, 1) == -3i64
+    def flipBit9(): Bool = Int64.flipBit(1, -1i64) == -3i64
 
     @test
-    def flipBit10(): Bool = Int64.flipBit(-1i64, 5) == -33i64
+    def flipBit10(): Bool = Int64.flipBit(5, -1i64) == -33i64
 
     @test
-    def flipBit11(): Bool = Int64.flipBit(-1i64, 31) == (-1i64-(1i64 <<< 31))
+    def flipBit11(): Bool = Int64.flipBit(31, -1i64) == (-1i64-(1i64 <<< 31))
 
     @test
-    def flipBit12(): Bool = Int64.flipBit(-1i64, 64) == -2i64
+    def flipBit12(): Bool = Int64.flipBit(64, -1i64) == -2i64
 
     /////////////////////////////////////////////////////////////////////////////
     // log2                                                                    //
