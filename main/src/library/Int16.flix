@@ -281,7 +281,7 @@ namespace Int16 {
             0i16
         } else {
             let position = highestOneBitPosition(x);
-            Int32.clampToInt16(0i16, Int16.maxValue(), position)
+            Int32.clampToInt16(position, 0i16, Int16.maxValue())
         }
 
     ///
@@ -386,11 +386,11 @@ namespace Int16 {
     /// Helper function for the `clamp` conversion function.
     ///
     def clamp(minimum: {minimum :: Int16}, maximum: {maximum :: Int16}, x: Int16): Int16 =
-        if (x < minimum)
-             minimum
+        if (x < minimum.minimum)
+             minimum.minimum
         else
-            if (x > maximum)
-                maximum
+            if (x > maximum.maximum)
+                maximum.maximum
             else
                 x
 
@@ -403,8 +403,8 @@ namespace Int16 {
     pub def clampToInt8(minimum: {minimum :: Int8}, maximum: {maximum :: Int8}, x: Int16): Int8 =
         import static java.lang.Short.valueOf(Int16): ##java.lang.Short & Pure;
         import java.lang.Short.byteValue(): Int8 & Pure;
-        let mini16 = Int8.toInt16(minimum);
-        let maxi16 = Int8.toInt16(maximum);
+        let mini16 = Int8.toInt16(minimum.minimum);
+        let maxi16 = Int8.toInt16(maximum.maximum);
         (valueOf(clamp(minimum = mini16, maximum = maxi16, x)) |> byteValue)
 
 }
