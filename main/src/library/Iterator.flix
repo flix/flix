@@ -1278,6 +1278,81 @@ namespace Iterator {
         Iterator(done1, next1)
 
     ///
+    /// Returns the concatenation of the elements in `iterB` with the elements of `iterA` inserted between every two adjacent elements.
+    ///
+    /// That is, returns `b1 :: a1 ... an :: b2 :: ... bn-1 :: a1 :: ... :: an :: bn :: Nil`.
+    ///
+    /// Does *not* consume any elements from either iterator.
+    ///
+    /// The original iterators `iterA` and `iterB` should not be reused.
+    ///
+    @Lazy
+    pub def regIntercalate(iterA: RegionIterator[a, r1], iterB: RegionIterator[RegionIterator[a, r2], r3]): RegionIterator[a, r1 and r2 and r3] \ Write(r1, r3) =
+        let RegionIterator(doneA, nextA) = iterA;
+        let RegionIterator(doneB, nextB) = iterB;
+        let r1 = Scoped.regionOf(iterA);
+        let r3 = Scoped.regionOf(iterB);
+        let xs = ref Nil @ r1;
+        let isReversed = ref false @ r1;
+        let nextAA = () -> {
+            let x = nextA();
+            xs := x :: deref xs;
+            x
+        };
+        let doneAA = () -> {
+            if (doneA()) {
+                if (deref isReversed)
+                    ()
+                else {
+                    xs := List.reverse(deref xs);
+                    isReversed := true
+                };
+                true
+            }
+            else
+                false
+        };
+        let cursor = ref None @ r3;
+        let mkCursor = i -> { // Appends an iterator with the contents of `iterA`. Boolean formula: r1 and formula of i
+            if (deref isReversed)
+                // `iterA` has been consumed, so construct a new one from `xs`
+                cursor := Some(regAppend(i, List.toRegionIterator(r1, deref xs)))
+            else
+                cursor := Some(regAppend(i, RegionIterator(doneAA, nextAA)))
+        };
+        let done1 = () -> match deref cursor {
+            case None    => match regIntercalateForward(doneB, nextB) {
+                case None    => true
+                case Some(i) =>
+                    if (doneB())
+                        cursor := Some(regAppend(i, new RegionIterator(r1))) // Has Boolean formula r2 since it is the last iterator of `iterB`.
+                    else                                                     // Has to be appended with an empty iterator to satisfy formula `r1 and formula of i` in `mkCursor`
+                        mkCursor(i);                                         // Same reason for appending with empty iterator below
+                    false
+            }
+            case Some(i) =>
+                let RegionIterator(d, _) = i;
+                if (d()) match regIntercalateForward(doneB, nextB) {
+                    case None     => true
+                    case Some(i1) =>
+                        if (doneB())
+                            cursor := Some(regAppend(i1, new RegionIterator(r1)))
+                        else
+                            mkCursor(i1);
+                        false
+                }
+                else
+                    false
+        };
+        let next1 = () -> match deref cursor {
+            case None    => bug!("Empty Iterator!")
+            case Some(i) =>
+                let RegionIterator(_, n) = i;
+                n()
+        };
+        RegionIterator(done1, next1)
+
+    ///
     /// Forwards the iterator the first non-empty iterator produced by `next`.
     ///
     def intercalateForward(done: Done, next: Next[Iterator[a]]): Option[Iterator[a]] & Impure =
@@ -1289,6 +1364,16 @@ namespace Iterator {
                 if (d()) loop() else Some(Iterator(d, n))
         };
         loop()
+
+    ///
+    /// Forwards the iterator the first non-empty iterator produced by `next`.
+    ///
+    def regIntercalateForward(done: RegionDone[r1], next: RegionNext[RegionIterator[a, r2], r1]): Option[RegionIterator[a, r2]] \ Read(r1, r2) =
+        if(done())
+            None
+        else
+            let RegionIterator(d, n) = next();
+            if (d()) regIntercalateForward(done, next) else Some(RegionIterator(d, n))
 
     ///
     /// Returns the concatenation of the string representation

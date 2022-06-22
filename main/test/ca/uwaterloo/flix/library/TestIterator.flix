@@ -1314,63 +1314,104 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def intercalate01(): Bool & Impure =
-        let iterA = Nil |> List.toIterator;
-        let iterB = Nil |> List.toIterator;
-        Iterator.intercalate(iterA, iterB) |> Iterator.toList == Nil: List[Int32]
+    def intercalate01(): Bool = region r {
+        let iterA = Nil |> List.toRegionIterator(r);
+        let iterB = Nil |> List.toRegionIterator(r);
+        Iterator.regIntercalate(iterA, iterB) |> Iterator.regToList == Nil: List[Int32]
+    }
 
     @test
-    def intercalate02(): Bool & Impure =
-        let iterA  = Nil |> List.toIterator;
-        let iterB0 = (1 :: Nil) |> List.toIterator;
-        let iterB  = (iterB0 :: Nil) |> List.toIterator;
-        Iterator.intercalate(iterA, iterB) |>
-            Iterator.toList == 1 :: Nil
+    def intercalate02(): Bool = region r {
+        let iterA  = Nil |> List.toRegionIterator(r);
+        let iterB0 = (1 :: Nil) |> List.toRegionIterator(r);
+        let iterB  = (iterB0 :: Nil) |> List.toRegionIterator(r);
+        Iterator.regIntercalate(iterA, iterB) |>
+            Iterator.regToList == 1 :: Nil
+    }
 
     @test
-    def intercalate03(): Bool & Impure =
-        let iterA  = (11 :: 12 :: 13 :: Nil) |> List.toIterator;
-        let iterB  = Nil |> List.toIterator;
-        Iterator.intercalate(iterA, iterB) |>
-            Iterator.toList ==  Nil
+    def intercalate03(): Bool = region r {
+        let iterA = (11 :: 12 :: 13 :: Nil) |> List.toRegionIterator(r);
+        let iterB = Nil |> List.toRegionIterator(r);
+        Iterator.regIntercalate(iterA, iterB) |>
+            Iterator.regToList ==  Nil
+    }
 
     @test
-    def intercalate04(): Bool & Impure =
-        let iterA  = Nil |> List.toIterator;
-        let iterB0 = (1 :: Nil) |> List.toIterator;
-        let iterB1 = (2 :: 3 :: Nil) |> List.toIterator;
-        let iterB  = (iterB0 :: iterB1 :: Nil) |> List.toIterator;
-        Iterator.intercalate(iterA, iterB) |>
-            Iterator.toList == 1 :: 2 :: 3 :: Nil
+    def intercalate04(): Bool = region r {
+        let iterA  = Nil |> List.toRegionIterator(r);
+        let iterB0 = (1 :: Nil) |> List.toRegionIterator(r);
+        let iterB1 = (2 :: 3 :: Nil) |> List.toRegionIterator(r);
+        let iterB  = (iterB0 :: iterB1 :: Nil) |> List.toRegionIterator(r);
+        Iterator.regIntercalate(iterA, iterB) |>
+            Iterator.regToList == 1 :: 2 :: 3 :: Nil
+    }
 
     @test
-    def intercalate05(): Bool & Impure =
-        let iterA  = (11 :: 12 :: 13 :: Nil) |> List.toIterator;
-        let iterB0 = (1 :: Nil) |> List.toIterator;
-        let iterB1 = (2 :: 3 :: Nil) |> List.toIterator;
-        let iterB  = (iterB0 :: iterB1 :: Nil) |> List.toIterator;
-        Iterator.intercalate(iterA, iterB) |>
-            Iterator.toList == 1 :: 11 :: 12 :: 13 :: 2 :: 3 :: Nil
+    def intercalate05(): Bool = region r {
+        let iterA  = (11 :: 12 :: 13 :: Nil) |> List.toRegionIterator(r);
+        let iterB0 = (1 :: Nil) |> List.toRegionIterator(r);
+        let iterB1 = (2 :: 3 :: Nil) |> List.toRegionIterator(r);
+        let iterB  = (iterB0 :: iterB1 :: Nil) |> List.toRegionIterator(r);
+        Iterator.regIntercalate(iterA, iterB) |>
+            Iterator.regToList == 1 :: 11 :: 12 :: 13 :: 2 :: 3 :: Nil
+    }
 
     @test
-    def intercalate06(): Bool & Impure =
-        let iterA  = Nil |> List.toIterator;
-        let iterB0 = (1 :: Nil) |> List.toIterator;
-        let iterB1 = (2 :: 3 :: Nil) |> List.toIterator;
-        let iterB2 = (4 :: Nil) |> List.toIterator;
-        let iterB  = (iterB0 :: iterB1 :: iterB2 :: Nil) |> List.toIterator;
-        Iterator.intercalate(iterA, iterB) |>
-            Iterator.toList == 1 :: 2 :: 3 :: 4 :: Nil
+    def intercalate06(): Bool = region r {
+        let iterA  = Nil |> List.toRegionIterator(r);
+        let iterB0 = (1 :: Nil) |> List.toRegionIterator(r);
+        let iterB1 = (2 :: 3 :: Nil) |> List.toRegionIterator(r);
+        let iterB2 = (4 :: Nil) |> List.toRegionIterator(r);
+        let iterB  = (iterB0 :: iterB1 :: iterB2 :: Nil) |> List.toRegionIterator(r);
+        Iterator.regIntercalate(iterA, iterB) |>
+            Iterator.regToList == 1 :: 2 :: 3 :: 4 :: Nil
+    }
 
     @test
-    def intercalate07(): Bool & Impure =
-        let iterA  = (11 :: 12 :: 13 :: Nil) |> List.toIterator;
-        let iterB0 = (1 :: Nil) |> List.toIterator;
-        let iterB1 = (2 :: 3 :: Nil) |> List.toIterator;
-        let iterB2 = (4 :: Nil) |> List.toIterator;
-        let iterB  = (iterB0 :: iterB1 :: iterB2 :: Nil) |> List.toIterator;
-        Iterator.intercalate(iterA, iterB) |>
-            Iterator.toList == 1 :: 11 :: 12 :: 13 :: 2 :: 3 :: 11 :: 12 :: 13 :: 4 :: Nil
+    def intercalate07(): Bool = region r1 {
+        let iterA  = (11 :: 12 :: 13 :: Nil) |> List.toRegionIterator(r1);
+        region r2 {
+            let iterB0 = (1 :: Nil) |> List.toRegionIterator(r2);
+            let iterB1 = (2 :: 3 :: Nil) |> List.toRegionIterator(r2);
+            let iterB2 = (4 :: Nil) |> List.toRegionIterator(r2);
+            region r3 {
+                let iterB = (iterB0 :: iterB1 :: iterB2 :: Nil) |> List.toRegionIterator(r3);
+                Iterator.regIntercalate(iterA, iterB) |>
+                    Iterator.regToList == 1 :: 11 :: 12 :: 13 :: 2 :: 3 :: 11 :: 12 :: 13 :: 4 :: Nil
+            }
+        }
+    }
+
+    @test
+    def intercalate08(): Bool = region r1 {
+        let iterB0 = (1 :: Nil) |> List.toRegionIterator(r1);
+        let iterB1 = (2 :: 3 :: Nil) |> List.toRegionIterator(r1);
+        let iterB2 = (4 :: Nil) |> List.toRegionIterator(r1);
+        region r2 {
+            let iterB = (iterB0 :: iterB1 :: iterB2 :: Nil) |> List.toRegionIterator(r2);
+            region r3 {
+                let iterA = (11 :: 12 :: 13 :: Nil) |> List.toRegionIterator(r3);
+                Iterator.regIntercalate(iterA, iterB) |>
+                    Iterator.regToList == 1 :: 11 :: 12 :: 13 :: 2 :: 3 :: 11 :: 12 :: 13 :: 4 :: Nil
+            }
+        }
+    }
+
+    @test
+    def intercalate09(): Bool = region r1 {
+        let iterB0 = (1 :: Nil) |> List.toRegionIterator(r1);
+        let iterB1 = (2 :: 3 :: Nil) |> List.toRegionIterator(r1);
+        let iterB2 = (4 :: Nil) |> List.toRegionIterator(r1);
+        region r2 {
+            let iterB = (iterB0 :: iterB1 :: iterB2 :: Nil) |> List.toRegionIterator(r2);
+            region _ {
+                let iterA = (11 :: 12 :: 13 :: Nil) |> List.toRegionIterator(r1);
+                Iterator.regIntercalate(iterA, iterB) |>
+                    Iterator.regToList == 1 :: 11 :: 12 :: 13 :: 2 :: 3 :: 11 :: 12 :: 13 :: 4 :: Nil
+            }
+        }
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
