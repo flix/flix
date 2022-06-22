@@ -551,139 +551,139 @@ namespace TestInt16 {
     // getBit                                                                  //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def getBit01(): Bool = Int16.getBit(-1i16, 5) == 1
+    def getBit01(): Bool = Int16.getBit(5, -1i16) == 1
 
     @test
-    def getBit02(): Bool = Int16.getBit(-10000i16, 15) == 1
+    def getBit02(): Bool = Int16.getBit(15, -10000i16) == 1
 
     @test
-    def getBit03(): Bool = Int16.getBit(2i16 ** 12i16, 12) == 1
+    def getBit03(): Bool = Int16.getBit(12, 2i16 ** 12i16) == 1
 
     @test
-    def getBit04(): Bool = Int16.getBit(2i16 ** 12i16, 13) == 0
+    def getBit04(): Bool = Int16.getBit(13, 2i16 ** 12i16) == 0
 
     @test
-    def getBit05(): Bool = Int16.getBit(2i16 ** 12i16, 11) == 0
+    def getBit05(): Bool = Int16.getBit(11, 2i16 ** 12i16) == 0
 
     @test
-    def getBit06(): Bool = Int16.getBit(-1i16 - 2i16 ** 9i16, 9) == 0
+    def getBit06(): Bool = Int16.getBit(9, -1i16 - 2i16 ** 9i16) == 0
 
     @test
-    def getBit07(): Bool = Int16.getBit(-1i16 - 2i16 ** 9i16, 10) == 1
+    def getBit07(): Bool = Int16.getBit(10, -1i16 - 2i16 ** 9i16) == 1
 
     @test
-    def getBit08(): Bool = Int16.getBit(0i16, 15) == 0
+    def getBit08(): Bool = Int16.getBit(15, 0i16) == 0
 
     /////////////////////////////////////////////////////////////////////////////
     // setBit                                                                  //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def setBit01(): Bool = Int16.setBit(0i16, 0) == 1i16
+    def setBit01(): Bool = Int16.setBit(0, 0i16) == 1i16
 
     @test
-    def setBit02(): Bool = Int16.setBit(0i16, 1) == 2i16
+    def setBit02(): Bool = Int16.setBit(1, 0i16) == 2i16
 
     @test
-    def setBit03(): Bool = Int16.setBit(0i16, 15) == -32768i16
+    def setBit03(): Bool = Int16.setBit(15, 0i16) == -32768i16
 
     @test
-    def setBit04(): Bool = Int16.setBit(0i16, 16) == 0i16
+    def setBit04(): Bool = Int16.setBit(16, 0i16) == 0i16
 
     @test
-    def setBit05(): Bool = Int16.setBit(-1418i16, 31) == -1418i16
+    def setBit05(): Bool = Int16.setBit(31, -1418i16) == -1418i16
 
     @test
-    def setBit07(): Bool = Int16.setBit(-17i16, 4) == -1i16
+    def setBit07(): Bool = Int16.setBit(4, -17i16) == -1i16
 
     @test
-    def setBit08(): Bool = Int16.setBit(-1025i16, 10) == -1i16
+    def setBit08(): Bool = Int16.setBit(10, -1025i16) == -1i16
 
     @test
-    def setBit09(): Bool = Int16.setBit(-17i16, 63) == -17i16
+    def setBit09(): Bool = Int16.setBit(63, -17i16) == -17i16
 
     @test
-    def setBit10(): Bool = Int16.setBit(-17i16, 30) == -17i16
+    def setBit10(): Bool = Int16.setBit(30, -17i16) == -17i16
 
     /////////////////////////////////////////////////////////////////////////////
     // clearBit                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def clearBit01(): Bool = Int16.clearBit(1i16, 0) == 0i16
+    def clearBit01(): Bool = Int16.clearBit(0, 1i16) == 0i16
 
     @test
-    def clearBit02(): Bool = Int16.clearBit(1i16, 1) == 1i16
+    def clearBit02(): Bool = Int16.clearBit(1, 1i16) == 1i16
 
     @test
-    def clearBit03(): Bool = Int16.clearBit(2i16, 1) == 0i16
+    def clearBit03(): Bool = Int16.clearBit(1, 2i16) == 0i16
 
     @test
-    def clearBit04(): Bool = Int16.clearBit(2i16, 2) == 2i16
+    def clearBit04(): Bool = Int16.clearBit(2, 2i16) == 2i16
 
     @test
-    def clearBit05(): Bool = Int16.clearBit(0i16, 31) == 0i16
+    def clearBit05(): Bool = Int16.clearBit(31, 0i16) == 0i16
 
     @test
-    def clearBit06(): Bool = Int16.clearBit(0i16, 30) == 0i16
+    def clearBit06(): Bool = Int16.clearBit(30, 0i16) == 0i16
 
     @test
-    def clearBit07(): Bool = Int16.clearBit(1i16 <<< 15, 15) == 0i16
+    def clearBit07(): Bool = Int16.clearBit(15, 1i16 <<< 15) == 0i16
 
     @test
-    def clearBit08(): Bool = Int16.clearBit(27957i16, 11) == 25909i16
+    def clearBit08(): Bool = Int16.clearBit(11, 27957i16) == 25909i16
 
     @test
-    def clearBit09(): Bool = Int16.clearBit(-1i16, 0) == -2i16
+    def clearBit09(): Bool = Int16.clearBit(0, -1i16) == -2i16
 
     @test
-    def clearBit10(): Bool = Int16.clearBit(-1i16, 1) == -3i16
+    def clearBit10(): Bool = Int16.clearBit(1, -1i16) == -3i16
 
     @test
-    def clearBit11(): Bool = Int16.clearBit(-1i16, 5) == -33i16
+    def clearBit11(): Bool = Int16.clearBit(5, -1i16) == -33i16
 
     @test
-    def clearBit12(): Bool = Int16.clearBit(-1i16, 15) == ~~~(1i16 <<< 15)
+    def clearBit12(): Bool = Int16.clearBit(15, -1i16) == ~~~(1i16 <<< 15)
 
     @test
-    def clearBit13(): Bool = Int16.clearBit(-1i16, 32) == -2i16
+    def clearBit13(): Bool = Int16.clearBit(32, -1i16) == -2i16
 
     /////////////////////////////////////////////////////////////////////////////
     // flipBit                                                                 //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def flipBit01(): Bool = Int16.flipBit(1i16, 0) == 0i16
+    def flipBit01(): Bool = Int16.flipBit(0, 1i16) == 0i16
 
     @test
-    def flipBit02(): Bool = Int16.flipBit(1i16, 1) == 3i16
+    def flipBit02(): Bool = Int16.flipBit(1, 1i16) == 3i16
 
     @test
-    def flipBit03(): Bool = Int16.flipBit(2i16, 1) == 0i16
+    def flipBit03(): Bool = Int16.flipBit(1, 2i16) == 0i16
 
     @test
-    def flipBit04(): Bool = Int16.flipBit(2i16, 2) == 6i16
+    def flipBit04(): Bool = Int16.flipBit(2, 2i16) == 6i16
 
     @test
-    def flipBit05(): Bool = Int16.flipBit(0i16, 15) == -32768i16
+    def flipBit05(): Bool = Int16.flipBit(15, 0i16) == -32768i16
 
     @test
-    def flipBit06(): Bool = Int16.flipBit(0i16, 16) == 0i16
+    def flipBit06(): Bool = Int16.flipBit(16, 0i16) == 0i16
 
     @test
-    def flipBit07(): Bool = Int16.flipBit(1i16 <<< 15, 15) == 0i16
+    def flipBit07(): Bool = Int16.flipBit(15, 1i16 <<< 15) == 0i16
 
     @test
-    def flipBit08(): Bool = Int16.flipBit(-1i16, 0) == -2i16
+    def flipBit08(): Bool = Int16.flipBit(0, -1i16) == -2i16
 
     @test
-    def flipBit9(): Bool = Int16.flipBit(-1i16, 1) == -3i16
+    def flipBit9(): Bool = Int16.flipBit(1, -1i16) == -3i16
 
     @test
-    def flipBit10(): Bool = Int16.flipBit(-1i16, 5) == -33i16
+    def flipBit10(): Bool = Int16.flipBit(5, -1i16) == -33i16
 
     @test
-    def flipBit11(): Bool = Int16.flipBit(-1i16, 13) == (-1i16-(1i16 <<< 13))
+    def flipBit11(): Bool = Int16.flipBit(13, -1i16) == (-1i16-(1i16 <<< 13))
 
     @test
-    def flipBit12(): Bool = Int16.flipBit(-1i16, 32) == -2i16
+    def flipBit12(): Bool = Int16.flipBit(32, -1i16) == -2i16
 
     /////////////////////////////////////////////////////////////////////////////
     // log2                                                                    //
