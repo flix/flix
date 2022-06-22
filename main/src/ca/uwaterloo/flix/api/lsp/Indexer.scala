@@ -300,6 +300,9 @@ object Indexer {
     case Expression.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
+    case Expression.NewObject(_, _, _, _) =>
+      Index.occurrenceOf(exp0)
+
     case Expression.NewChannel(exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 

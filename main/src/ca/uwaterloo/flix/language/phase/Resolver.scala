@@ -1056,6 +1056,11 @@ object Resolver {
             case (field, e) => ResolvedAst.Expression.PutStaticField(field, e, loc)
           }
 
+        case NamedAst.Expression.NewObject(className, loc) =>
+          lookupJvmClass(className, loc) map {
+            case clazz => ResolvedAst.Expression.NewObject(clazz, loc)
+          }
+
         case NamedAst.Expression.NewChannel(exp, tpe, loc) =>
           val tVal = resolveType(tpe, taenv, ns0, root)
           val eVal = visitExp(exp, region)

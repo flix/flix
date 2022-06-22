@@ -201,6 +201,8 @@ object NamedAst {
 
     case class PutStaticField(className: String, fieldName: String, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
+    case class NewObject(className: String, loc: SourceLocation) extends NamedAst.Expression
+
     case class NewChannel(exp: NamedAst.Expression, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Expression
 
     case class GetChannel(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
