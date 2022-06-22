@@ -414,11 +414,11 @@ namespace Int64 {
     /// Helper function for the `clamp` conversion functions.
     ///
     def clamp(minimum: {minimum :: Int64}, maximum: {maximum :: Int64}, x: Int64): Int64 =
-        if (x < minimum)
-             minimum
+        if (x < minimum.minimum)
+             minimum.minimum
         else
-            if (x > maximum)
-                maximum
+            if (x > maximum.maximum)
+                maximum.maximum
             else
                 x
 
@@ -431,9 +431,9 @@ namespace Int64 {
     pub def clampToInt8(minimum: {minimum :: Int8}, maximum: {maximum :: Int8}, x: Int64): Int8 =
         import static java.lang.Long.valueOf(Int64): ##java.lang.Long & Pure;
         import java.lang.Long.byteValue(): Int8 & Pure;
-        let mini64 = Int8.toInt64(minimum);
-        let maxi64 = Int8.toInt64(maximum);
-        (valueOf(clamp(x, mini64, maxi64)) |> byteValue)
+        let mini64 = Int8.toInt64(minimum.minimum);
+        let maxi64 = Int8.toInt64(maximum.maximum);
+        (valueOf(clamp(minimum = mini64, maximum = maxi64, x)) |> byteValue)
 
     ///
     /// Convert `x` to an `Int16`.
@@ -444,9 +444,9 @@ namespace Int64 {
     pub def clampToInt16(minimum: {minimum :: Int16}, maximum: {maximum :: Int16}, x: Int64): Int16 =
         import static java.lang.Long.valueOf(Int64): ##java.lang.Long & Pure;
         import java.lang.Long.shortValue(): Int16 & Pure;
-        let mini64 = Int16.toInt64(minimum);
-        let maxi64 = Int16.toInt64(maximum);
-        (valueOf(clamp(x, mini64, maxi64)) |> shortValue)
+        let mini64 = Int16.toInt64(minimum.minimum);
+        let maxi64 = Int16.toInt64(maximum.maximum);
+        (valueOf(clamp(minimum = mini64, maximum = maxi64, x)) |> shortValue)
 
 
     ///
@@ -458,8 +458,8 @@ namespace Int64 {
     pub def clampToInt32(minimum: {minimum :: Int32}, maximum: {maximum :: Int32}, x: Int64): Int32 =
         import static java.lang.Long.valueOf(Int64): ##java.lang.Long & Pure;
         import java.lang.Long.intValue(): Int32 & Pure;
-        let mini64 = Int32.toInt64(minimum);
-        let maxi64 = Int32.toInt64(maximum);
-        (valueOf(clamp(x, mini64, maxi64)) |> intValue)
+        let mini64 = Int32.toInt64(minimum.minimum);
+        let maxi64 = Int32.toInt64(maximum.maximum);
+        (valueOf(clamp(minimum = mini64, maximum = maxi64, x)) |> intValue)
 
 }
