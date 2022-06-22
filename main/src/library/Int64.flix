@@ -114,16 +114,16 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def bitCount(x: Int64): Int32 = {
-        if      (x == 0i64)         0
-        else if (x rem 2i64 != 0i64)  bitCount(logicalRightShift(1, x)) + 1
-        else                        bitCount(logicalRightShift(1, x))
+        if      (x == 0i64)          0
+        else if (x rem 2i64 != 0i64) bitCount(logicalRightShift(1, x)) + 1
+        else                         bitCount(logicalRightShift(1, x))
     }
 
     ///
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` right by `distance` bits.
     ///
-    pub def rotateRight(x: Int64, distance: Int32): Int64 =
+    pub def rotateRight(distance: Int32, x: Int64): Int64 =
         (logicalRightShift(distance, x)) ||| (x <<< -distance)
 
     ///

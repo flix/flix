@@ -254,34 +254,34 @@ namespace TestInt64 {
     // rotateRight                                                             //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def rotateRight01(): Bool = Int64.rotateRight(-99991001265258663i64, 57) == 5647895911756442879i64
+    def rotateRight01(): Bool = Int64.rotateRight(57, -99991001265258663i64) == 5647895911756442879i64
 
     @test
-    def rotateRight02(): Bool = Int64.rotateRight(-983667729064i64, 40) == 1943538110990123007i64
+    def rotateRight02(): Bool = Int64.rotateRight(40, -983667729064i64) == 1943538110990123007i64
 
     @test
-    def rotateRight03(): Bool = Int64.rotateRight(-983667729064i64, -88) == 1943538110990123007i64
+    def rotateRight03(): Bool = Int64.rotateRight(-88, -983667729064i64) == 1943538110990123007i64
 
     @test
-    def rotateRight04(): Bool = Int64.rotateRight(1478293001i64, 41) == 12400820494532608i64
+    def rotateRight04(): Bool = Int64.rotateRight(41, 1478293001i64) == 12400820494532608i64
 
     @test
-    def rotateRight05(): Bool = Int64.rotateRight(1478293001i64, -23) == 12400820494532608i64
+    def rotateRight05(): Bool = Int64.rotateRight(-23, 1478293001i64) == 12400820494532608i64
 
     @test
-    def rotateRight06(): Bool = Int64.rotateRight(1478293001i64, 105) == 12400820494532608i64
+    def rotateRight06(): Bool = Int64.rotateRight(105, 1478293001i64) == 12400820494532608i64
 
     @test
-    def rotateRight07(): Bool = Int64.rotateRight(0i64, 87) == 0i64
+    def rotateRight07(): Bool = Int64.rotateRight(87, 0i64) == 0i64
 
     @test
-    def rotateRight08(): Bool = Int64.rotateRight(-1i64, 87) == -1i64
+    def rotateRight08(): Bool = Int64.rotateRight(87, -1i64) == -1i64
 
     @test
-    def rotateRight09(): Bool = Int64.rotateRight(-9223372036854775808i64, 3) == 1152921504606846976i64
+    def rotateRight09(): Bool = Int64.rotateRight(3, -9223372036854775808i64) == 1152921504606846976i64
 
     @test
-    def rotateRight10(): Bool = Int64.rotateRight(9223372036854775807i64, 2) == -2305843009213693953i64
+    def rotateRight10(): Bool = Int64.rotateRight(2, 9223372036854775807i64) == -2305843009213693953i64
 
     /////////////////////////////////////////////////////////////////////////////
     // reverse                                                                 //
