@@ -102,7 +102,7 @@ namespace Int16 {
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     @Time(1) @Space(1)
-    pub def logicalRightShift(x: Int16, distance: Int32): Int16 =
+    pub def logicalRightShift(distance: Int32, x: Int16): Int16 =
         if (x < 0i16 and distance rem 32 != 0)
             ((x >>> 1) &&& maxValue()) >>> (distance - 1)
         else
@@ -114,9 +114,9 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def bitCount(x: Int16): Int32 = {
-        if      (x == 0i16)         0
-        else if (x rem 2i16 != 0i16)  bitCount(logicalRightShift(x, 1)) + 1
-        else                        bitCount(logicalRightShift(x, 1))
+        if      (x == 0i16)          0
+        else if (x rem 2i16 != 0i16) bitCount(logicalRightShift(1, x)) + 1
+        else                         bitCount(logicalRightShift(1, x))
     }
 
     ///
@@ -124,20 +124,20 @@ namespace Int16 {
     /// binary representation of `x` right by `distance` bits.
     ///
     @Time(1) @Space(1)
-    pub def rotateRight(x: Int16, distance: Int32): Int16 =
+    pub def rotateRight(distance: Int32, x: Int16): Int16 =
         let rem = distance rem size();
         let rot = if (rem >= 0) rem else rem + size();
-        (logicalRightShift(x, rot)) ||| (x <<< (size() - rot))
+        (logicalRightShift(rot, x)) ||| (x <<< (size() - rot))
 
     ///
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` left by `distance` bits.
     ///
     @Time(1) @Space(1)
-    pub def rotateLeft(x: Int16, distance: Int32): Int16 =
+    pub def rotateLeft(distance: Int32, x: Int16): Int16 =
         let rem = distance rem size();
         let rot = if (rem >= 0) rem else rem + size();
-        (logicalRightShift(x, size() - rot)) ||| (x <<< rot)
+        (logicalRightShift(size() - rot, x)) ||| (x <<< rot)
 
     ///
     /// Returns the value obtained by reversing the bits in the

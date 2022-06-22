@@ -155,49 +155,49 @@ namespace TestInt16 {
     // logicalRightShift                                                       //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def logicalRightShift01(): Bool = Int16.logicalRightShift(2233i16, 4) == (2233i16 >>> 4)
+    def logicalRightShift01(): Bool = Int16.logicalRightShift(4, 2233i16) == (2233i16 >>> 4)
 
     @test
-    def logicalRightShift02(): Bool = Int16.logicalRightShift(32767i16, 33) == (32767i16 >>> 33)
+    def logicalRightShift02(): Bool = Int16.logicalRightShift(33, 32767i16) == (32767i16 >>> 33)
 
     @test
-    def logicalRightShift03(): Bool = Int16.logicalRightShift(2233i16, -8) == (2233i16 >>> -8)
+    def logicalRightShift03(): Bool = Int16.logicalRightShift(-8, 2233i16) == (2233i16 >>> -8)
 
     @test
-    def logicalRightShift04(): Bool = Int16.logicalRightShift(2233i16, 4) == (2233i16 >>> 4)
+    def logicalRightShift04(): Bool = Int16.logicalRightShift(4, 2233i16) == (2233i16 >>> 4)
 
     @test
-    def logicalRightShift05(): Bool = Int16.logicalRightShift(-1i16, 1) == 32767i16
+    def logicalRightShift05(): Bool = Int16.logicalRightShift(1, -1i16) == 32767i16
 
     @test
-    def logicalRightShift06(): Bool = Int16.logicalRightShift(-35i16, 4) == 4093i16
+    def logicalRightShift06(): Bool = Int16.logicalRightShift(4, -35i16) == 4093i16
 
     @test
-    def logicalRightShift07(): Bool = Int16.logicalRightShift(-2777i16, -2777) == 490i16
+    def logicalRightShift07(): Bool = Int16.logicalRightShift(-2777, -2777i16) == 490i16
 
     @test
-    def logicalRightShift08(): Bool = Int16.logicalRightShift(-233i16, 64) == -233i16
+    def logicalRightShift08(): Bool = Int16.logicalRightShift(64, -233i16) == -233i16
 
     @test
-    def logicalRightShift09(): Bool = Int16.logicalRightShift(-233i16, 63) == 0i16
+    def logicalRightShift09(): Bool = Int16.logicalRightShift(63, -233i16) == 0i16
 
     @test
-    def logicalRightShift10(): Bool = Int16.logicalRightShift(-27i16, 0) == -27i16
+    def logicalRightShift10(): Bool = Int16.logicalRightShift(0, -27i16) == -27i16
 
     @test
-    def logicalRightShift11(): Bool = Int16.logicalRightShift(32767i16, 1) == 16383i16
+    def logicalRightShift11(): Bool = Int16.logicalRightShift(1, 32767i16) == 16383i16
 
     @test
-    def logicalRightShift12(): Bool = Int16.logicalRightShift(32767i16, 17) == 0i16
+    def logicalRightShift12(): Bool = Int16.logicalRightShift(17, 32767i16) == 0i16
 
     @test
-    def logicalRightShift13(): Bool = Int16.logicalRightShift(32767i16, 16) == 0i16
+    def logicalRightShift13(): Bool = Int16.logicalRightShift(16, 32767i16) == 0i16
 
     @test
-    def logicalRightShift14(): Bool = Int16.logicalRightShift(-32768i16, 17) == 0i16
+    def logicalRightShift14(): Bool = Int16.logicalRightShift(17, -32768i16) == 0i16
 
     @test
-    def logicalRightShift15(): Bool = Int16.logicalRightShift(-32768i16, 16) == 0i16
+    def logicalRightShift15(): Bool = Int16.logicalRightShift(16, -32768i16) == 0i16
 
     /////////////////////////////////////////////////////////////////////////////
     // bitCount                                                                //
@@ -224,97 +224,97 @@ namespace TestInt16 {
     // rotateRight                                                             //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def rotateRight01(): Bool = Int16.rotateRight(0i16, 3) == 0i16
+    def rotateRight01(): Bool = Int16.rotateRight(3, 0i16) == 0i16
 
     @test
-    def rotateRight02(): Bool = Int16.rotateRight(0i16, 19) == 0i16
+    def rotateRight02(): Bool = Int16.rotateRight(19, 0i16) == 0i16
 
     @test
-    def rotateRight03(): Bool = Int16.rotateRight(0i16, -3) == 0i16
+    def rotateRight03(): Bool = Int16.rotateRight(-3, 0i16) == 0i16
 
     @test
-    def rotateRight04(): Bool = Int16.rotateRight(-1i16, 3) == -1i16
+    def rotateRight04(): Bool = Int16.rotateRight(-3, -1i16) == -1i16
 
     @test
-    def rotateRight05(): Bool = Int16.rotateRight(-1i16, 19) == -1i16
+    def rotateRight05(): Bool = Int16.rotateRight(19, -1i16) == -1i16
 
     @test
-    def rotateRight06(): Bool = Int16.rotateRight(-1i16, -3) == -1i16
+    def rotateRight06(): Bool = Int16.rotateRight(-3, -1i16) == -1i16
 
     @test
-    def rotateRight07(): Bool = Int16.rotateRight(8410i16, 3) == 17435i16
+    def rotateRight07(): Bool = Int16.rotateRight(3, 8410i16) == 17435i16
 
     @test
-    def rotateRight08(): Bool = Int16.rotateRight(8410i16, 19) == 17435i16
+    def rotateRight08(): Bool = Int16.rotateRight(19, 8410i16) == 17435i16
 
     @test
-    def rotateRight09(): Bool = Int16.rotateRight(8410i16, -13) == 17435i16
+    def rotateRight09(): Bool = Int16.rotateRight(-13, 8410i16) == 17435i16
 
     @test
-    def rotateRight10(): Bool = Int16.rotateRight(-14949i16, 10) == 26353i16
+    def rotateRight10(): Bool = Int16.rotateRight(10, -14949i16) == 26353i16
 
     @test
-    def rotateRight11(): Bool = Int16.rotateRight(-14949i16, 26) == 26353i16
+    def rotateRight11(): Bool = Int16.rotateRight(26, -14949i16) == 26353i16
 
     @test
-    def rotateRight12(): Bool = Int16.rotateRight(-14949i16, -6) == 26353i16
+    def rotateRight12(): Bool = Int16.rotateRight(-6, -14949i16) == 26353i16
 
     @test
-    def rotateRight13(): Bool = Int16.rotateRight(-6415i16, 6) == -14437i16
+    def rotateRight13(): Bool = Int16.rotateRight(6, -6415i16) == -14437i16
 
     @test
-    def rotateRight14(): Bool = Int16.rotateRight(-6415i16, 22) == -14437i16
+    def rotateRight14(): Bool = Int16.rotateRight(22, -6415i16) == -14437i16
 
     @test
-    def rotateRight15(): Bool = Int16.rotateRight(-6415i16, -10) == -14437i16
+    def rotateRight15(): Bool = Int16.rotateRight(-10, -6415i16) == -14437i16
 
     /////////////////////////////////////////////////////////////////////////////
     // rotateLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def rotateLeft01(): Bool = Int16.rotateLeft(0i16, 3) == 0i16
+    def rotateLeft01(): Bool = Int16.rotateLeft(3, 0i16) == 0i16
 
     @test
-    def rotateLeft02(): Bool = Int16.rotateLeft(0i16, 19) == 0i16
+    def rotateLeft02(): Bool = Int16.rotateLeft(19, 0i16) == 0i16
 
     @test
-    def rotateLeft03(): Bool = Int16.rotateLeft(0i16, -3) == 0i16
+    def rotateLeft03(): Bool = Int16.rotateLeft(-3, 0i16) == 0i16
 
     @test
-    def rotateLeft04(): Bool = Int16.rotateLeft(-1i16, 3) == -1i16
+    def rotateLeft04(): Bool = Int16.rotateLeft(3, -1i16) == -1i16
 
     @test
-    def rotateLeft05(): Bool = Int16.rotateLeft(-1i16, 19) == -1i16
+    def rotateLeft05(): Bool = Int16.rotateLeft(19, -1i16) == -1i16
 
     @test
-    def rotateLeft06(): Bool = Int16.rotateLeft(-1i16, -3) == -1i16
+    def rotateLeft06(): Bool = Int16.rotateLeft(-3, -1i16) == -1i16
 
     @test
-    def rotateLeft07(): Bool = Int16.rotateLeft(8410i16, 13) == 17435i16
+    def rotateLeft07(): Bool = Int16.rotateLeft(13, 8410i16) == 17435i16
 
     @test
-    def rotateLeft08(): Bool = Int16.rotateLeft(8410i16, 29) == 17435i16
+    def rotateLeft08(): Bool = Int16.rotateLeft(29, 8410i16) == 17435i16
 
     @test
-    def rotateLeft09(): Bool = Int16.rotateLeft(8410i16, -3) == 17435i16
+    def rotateLeft09(): Bool = Int16.rotateLeft(-3, 8410i16) == 17435i16
 
     @test
-    def rotateLeft10(): Bool = Int16.rotateLeft(-14949i16, 6) == 26353i16
+    def rotateLeft10(): Bool = Int16.rotateLeft(6, -14949i16) == 26353i16
 
     @test
-    def rotateLeft11(): Bool = Int16.rotateLeft(-14949i16, 22) == 26353i16
+    def rotateLeft11(): Bool = Int16.rotateLeft(22, -14949i16) == 26353i16
 
     @test
-    def rotateLeft12(): Bool = Int16.rotateLeft(-14949i16, -10) == 26353i16
+    def rotateLeft12(): Bool = Int16.rotateLeft(-10, -14949i16) == 26353i16
 
     @test
-    def rotateLeft13(): Bool = Int16.rotateLeft(-6415i16, 10) == -14437i16
+    def rotateLeft13(): Bool = Int16.rotateLeft(10, -6415i16) == -14437i16
 
     @test
-    def rotateLeft14(): Bool = Int16.rotateLeft(-6415i16, 26) == -14437i16
+    def rotateLeft14(): Bool = Int16.rotateLeft(26, -6415i16) == -14437i16
 
     @test
-    def rotateLeft15(): Bool = Int16.rotateLeft(-6415i16, -6) == -14437i16
+    def rotateLeft15(): Bool = Int16.rotateLeft(-6, -6415i16) == -14437i16
 
     /////////////////////////////////////////////////////////////////////////////
     // reverse                                                                 //
