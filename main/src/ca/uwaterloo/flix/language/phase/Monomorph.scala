@@ -529,6 +529,9 @@ object Monomorph {
         val e = visitExp(exp, env0)
         Expression.PutStaticField(field, e, tpe, eff, loc)
 
+      case Expression.NewObject(clazz, tpe, eff, loc) =>
+        Expression.NewObject(clazz, subst0(tpe), eff, loc)
+
       case Expression.NewChannel(exp, tpe, eff, loc) =>
         val e = visitExp(exp, env0)
         Expression.NewChannel(e, subst0(tpe), eff, loc)

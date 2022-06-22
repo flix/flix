@@ -505,6 +505,8 @@ object Lowering {
       val t = visitType(tpe)
       Expression.PutStaticField(field, e, t, eff, loc)
 
+    case Expression.NewObject(_, _, _, _) => exp0
+
     case Expression.NewChannel(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
@@ -1529,6 +1531,8 @@ object Lowering {
     case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       Expression.PutStaticField(field, e, tpe, eff, loc)
+
+    case Expression.NewObject(_, _, _, _) => exp0
 
     case Expression.NewChannel(exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
