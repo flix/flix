@@ -221,34 +221,34 @@ namespace TestInt64 {
     // rotateLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def rotateLeft01(): Bool = Int64.rotateLeft(-99991001265258663i64, 7) == 5647895911756442879i64
+    def rotateLeft01(): Bool = Int64.rotateLeft(7, -99991001265258663i64) == 5647895911756442879i64
 
     @test
-    def rotateLeft02(): Bool = Int64.rotateLeft(-983667729064i64, 24) == 1943538110990123007i64
+    def rotateLeft02(): Bool = Int64.rotateLeft(24, -983667729064i64) == 1943538110990123007i64
 
     @test
-    def rotateLeft03(): Bool = Int64.rotateLeft(-983667729064i64, -104) == 1943538110990123007i64
+    def rotateLeft03(): Bool = Int64.rotateLeft(-104, -983667729064i64) == 1943538110990123007i64
 
     @test
-    def rotateLeft04(): Bool = Int64.rotateLeft(1478293001i64, 23) == 12400820494532608i64
+    def rotateLeft04(): Bool = Int64.rotateLeft(23, 1478293001i64) == 12400820494532608i64
 
     @test
-    def rotateLeft05(): Bool = Int64.rotateLeft(1478293001i64, -41) == 12400820494532608i64
+    def rotateLeft05(): Bool = Int64.rotateLeft(-41, 1478293001i64) == 12400820494532608i64
 
     @test
-    def rotateLeft06(): Bool = Int64.rotateLeft(1478293001i64, 87) == 12400820494532608i64
+    def rotateLeft06(): Bool = Int64.rotateLeft(87, 1478293001i64) == 12400820494532608i64
 
     @test
-    def rotateLeft07(): Bool = Int64.rotateLeft(0i64, 87) == 0i64
+    def rotateLeft07(): Bool = Int64.rotateLeft(87, 0i64) == 0i64
 
     @test
-    def rotateLeft08(): Bool = Int64.rotateLeft(-1i64, 87) == -1i64
+    def rotateLeft08(): Bool = Int64.rotateLeft(87, -1i64) == -1i64
 
     @test
-    def rotateLeft09(): Bool = Int64.rotateLeft(-9223372036854775808i64, 3) == 4i64
+    def rotateLeft09(): Bool = Int64.rotateLeft(3, -9223372036854775808i64) == 4i64
 
     @test
-    def rotateLeft10(): Bool = Int64.rotateLeft(9223372036854775807i64, 2) == -3i64
+    def rotateLeft10(): Bool = Int64.rotateLeft(2, 9223372036854775807i64) == -3i64
 
     /////////////////////////////////////////////////////////////////////////////
     // rotateRight                                                             //

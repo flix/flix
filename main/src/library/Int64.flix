@@ -131,7 +131,7 @@ namespace Int64 {
     /// binary representation of `x` left by `distance` bits.
     ///
     @Time(1) @Space(1)
-    pub def rotateLeft(x: Int64, distance: Int32): Int64 =
+    pub def rotateLeft(distance: Int32, x: Int64): Int64 =
         (logicalRightShift(-distance, x)) ||| (x <<< distance)
 
     ///
