@@ -151,8 +151,8 @@ namespace Int64 {
     /// Helper function for `reverse`.
     ///
     def swap(x: Int64, l: Int32, r: Int32): Int64 = match (getBit(l, x), getBit(r, x)) {
-        case (1, 0) => clearBit(setBit(r, x), l)
-        case (0, 1) => clearBit(setBit(l, x), r)
+        case (1, 0) => clearBit(l, setBit(r, x))
+        case (0, 1) => clearBit(r, setBit(l, x))
         case _ => x
     }
 
@@ -256,7 +256,7 @@ namespace Int64 {
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def clearBit(x: Int64, position: Int32): Int64 = x &&& ~~~(1i64 <<< position)
+    pub def clearBit(position: Int32, x: Int64): Int64 = x &&& ~~~(1i64 <<< position)
 
     ///
     /// Returns `x` with the bit at position `position` flipped.

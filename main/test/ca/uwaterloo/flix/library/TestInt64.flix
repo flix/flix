@@ -581,43 +581,43 @@ namespace TestInt64 {
     // clearBit                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def clearBit01(): Bool = Int64.clearBit(1i64, 0) == 0i64
+    def clearBit01(): Bool = Int64.clearBit(0, 1i64) == 0i64
 
     @test
-    def clearBit02(): Bool = Int64.clearBit(1i64, 1) == 1i64
+    def clearBit02(): Bool = Int64.clearBit(1, 1i64) == 1i64
 
     @test
-    def clearBit03(): Bool = Int64.clearBit(2i64, 1) == 0i64
+    def clearBit03(): Bool = Int64.clearBit(1, 2i64) == 0i64
 
     @test
-    def clearBit04(): Bool = Int64.clearBit(2i64, 2) == 2i64
+    def clearBit04(): Bool = Int64.clearBit(2, 2i64) == 2i64
 
     @test
-    def clearBit05(): Bool = Int64.clearBit(0i64, 31) == 0i64
+    def clearBit05(): Bool = Int64.clearBit(31, 0i64) == 0i64
 
     @test
-    def clearBit06(): Bool = Int64.clearBit(0i64, 30) == 0i64
+    def clearBit06(): Bool = Int64.clearBit(30, 0i64) == 0i64
 
     @test
-    def clearBit07(): Bool = Int64.clearBit(1i64 <<< 63, 63) == 0i64
+    def clearBit07(): Bool = Int64.clearBit(63, 1i64 <<< 63) == 0i64
 
     @test
-    def clearBit08(): Bool = Int64.clearBit(442931848i64, 27) == 308714120i64
+    def clearBit08(): Bool = Int64.clearBit(27, 442931848i64) == 308714120i64
 
     @test
-    def clearBit09(): Bool = Int64.clearBit(-1i64, 0) == -2i64
+    def clearBit09(): Bool = Int64.clearBit(0, -1i64) == -2i64
 
     @test
-    def clearBit10(): Bool = Int64.clearBit(-1i64, 1) == -3i64
+    def clearBit10(): Bool = Int64.clearBit(1, -1i64) == -3i64
 
     @test
-    def clearBit11(): Bool = Int64.clearBit(-1i64, 5) == -33i64
+    def clearBit11(): Bool = Int64.clearBit(5, -1i64) == -33i64
 
     @test
-    def clearBit12(): Bool = Int64.clearBit(-1i64, 63) == ~~~(1i64 <<< 63)
+    def clearBit12(): Bool = Int64.clearBit(63, -1i64) == ~~~(1i64 <<< 63)
 
     @test
-    def clearBit13(): Bool = Int64.clearBit(-1i64, 64) == -2i64
+    def clearBit13(): Bool = Int64.clearBit(64, -1i64) == -2i64
 
     /////////////////////////////////////////////////////////////////////////////
     // flipBit                                                                 //
