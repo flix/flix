@@ -518,28 +518,28 @@ namespace TestInt64 {
     // getBit                                                                  //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def getBit01(): Bool = Int64.getBit(-1i64, 5) == 1
+    def getBit01(): Bool = Int64.getBit(5, -1i64) == 1
 
     @test
-    def getBit02(): Bool = Int64.getBit(-1000000i64, 63) == 1
+    def getBit02(): Bool = Int64.getBit(63, -1000000i64) == 1
 
     @test
-    def getBit03(): Bool = Int64.getBit(2i64 ** 59i64, 59) == 1
+    def getBit03(): Bool = Int64.getBit(59, 2i64 ** 59i64) == 1
 
     @test
-    def getBit04(): Bool = Int64.getBit(2i64 ** 59i64, 60) == 0
+    def getBit04(): Bool = Int64.getBit(60, 2i64 ** 59i64) == 0
 
     @test
-    def getBit05(): Bool = Int64.getBit(2i64 ** 59i64, 58) == 0
+    def getBit05(): Bool = Int64.getBit(58, 2i64 ** 59i64) == 0
 
     @test
-    def getBit06(): Bool = Int64.getBit(-1i64 - 2i64 ** 61i64, 61) == 0
+    def getBit06(): Bool = Int64.getBit(61, -1i64 - 2i64 ** 61i64) == 0
 
     @test
-    def getBit07(): Bool = Int64.getBit(-1i64 - 2i64 ** 61i64, 60) == 1
+    def getBit07(): Bool = Int64.getBit(60, -1i64 - 2i64 ** 61i64) == 1
 
     @test
-    def getBit08(): Bool = Int64.getBit(0i64, 55) == 0
+    def getBit08(): Bool = Int64.getBit(55, 0i64) == 0
 
     /////////////////////////////////////////////////////////////////////////////
     // setBit                                                                  //

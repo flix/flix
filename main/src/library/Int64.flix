@@ -150,7 +150,7 @@ namespace Int64 {
     ///
     /// Helper function for `reverse`.
     ///
-    def swap(x: Int64, l: Int32, r: Int32): Int64 = match (getBit(x, l), getBit(x, r)) {
+    def swap(x: Int64, l: Int32, r: Int32): Int64 = match (getBit(l, x), getBit(r, x)) {
         case (1, 0) => clearBit(setBit(x, r), l)
         case (0, 1) => clearBit(setBit(x, l), r)
         case _ => x
@@ -184,7 +184,7 @@ namespace Int64 {
     def oneBitPositionHelper(x: Int64, position: Int32, delta: Int32): Int32 = {
         if (position < 0)                   -1
         else if (position > (size() - 1))   -1
-        else if (getBit(x, position) == 1)  position
+        else if (getBit(position, x) == 1)  position
         else if (delta == 0)                -1
         else                                oneBitPositionHelper(x, position + delta, delta)
     }
@@ -239,7 +239,7 @@ namespace Int64 {
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit).
     ///
     @Time(1) @Space(1)
-    pub def getBit(x: Int64, position: Int32): Int32 =
+    pub def getBit(position: Int32, x: Int64): Int32 =
         if ((x >>> position) rem 2i64 == 0i64) 0 else 1
 
     ///
