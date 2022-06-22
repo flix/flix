@@ -245,6 +245,9 @@ object CodeHinter {
     case Expression.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
+    case Expression.NewObject(_, _, _, _) =>
+      Nil
+
     case Expression.NewChannel(exp, _, _, _) =>
       visitExp(exp)
 

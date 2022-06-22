@@ -137,6 +137,7 @@ object Statistics {
       case Expression.PutField(field, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.GetStaticField(field, tpe, eff, loc) => Counter.empty
       case Expression.PutStaticField(field, exp, tpe, eff, loc) => visitExp(exp)
+      case Expression.NewObject(clazz, tpe, eff, loc) => Counter.empty
       case Expression.NewChannel(exp, tpe, eff, loc) => visitExp(exp)
       case Expression.GetChannel(exp, tpe, eff, loc) => visitExp(exp)
       case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
