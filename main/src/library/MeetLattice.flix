@@ -40,7 +40,7 @@ pub lawful class MeetLattice[a] with PartialOrder[a] {
     /// largest element that is smaller than its two arguments.
     ///
     law greatestLowerBound2: forall(x: a, y: a, z: a).
-        (PartialOrder.lessEqual(z, x) and PartialOrder.lessEqual(z, y)) Bool.==>
+        (PartialOrder.lessEqual(z, x) and PartialOrder.lessEqual(z, y)) `Bool.==>`
         PartialOrder.lessEqual(z, MeetLattice.greatestLowerBound(x, y))
 
 }

@@ -38,12 +38,12 @@ pub lawful class Eq[a] {
     ///
     /// Symmetry: If `x` is equal to `y` then `y` must also be equal to `x`.
     ///
-    law symmetry: forall(x: a, y: a). (x == y) Bool.==> (y == x)
+    law symmetry: forall(x: a, y: a). (x == y) `Bool.==>` (y == x)
 
     ///
     /// Transitivity: If `x` is equal to `y` and `y` is equal to `z` then `x` must be equal to `z`.
     ///
-    law transitivity: forall(x: a, y: a, z: a). ((x == y) and (y == z)) Bool.==> (x == z)
+    law transitivity: forall(x: a, y: a, z: a). ((x == y) and (y == z)) `Bool.==>` (x == z)
 
     ///
     /// x != y is logically equivalent to not (x == y).
