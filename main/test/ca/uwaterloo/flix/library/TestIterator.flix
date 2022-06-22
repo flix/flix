@@ -345,52 +345,40 @@ namespace TestIterator {
         Map#{1 => 2, 2 => 3, 3 => 4} |> Map.toRegionIterator(r) |> Iterator.regToMap == Map#{1 => 2, 2 => 3, 3 => 4}
     }
 
+
     /////////////////////////////////////////////////////////////////////////////
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toMutDeque01(): Bool & Impure = region r {
-        let iter = Iterator.empty(): Iterator[Int32];
+    def toMutDeque01(): Bool = region r {
+        let iter = new RegionIterator(r): RegionIterator[Int32, r];
         let d = new MutDeque(r): MutDeque[Int32, _];
-
-        Iterator.toMutDeque(iter, r) `MutDeque.sameElements` d
+        Iterator.regToMutDeque(r, iter) `MutDeque.sameElements` d
     }
 
     @test
-    def toMutDeque02(): Bool & Impure = region r {
-        let xs = 1 :: Nil;
-
-        let iter = List.toIterator(xs);
-
+    def toMutDeque02(): Bool = region r {
+        let iter = List.toRegionIterator(r, 1 :: Nil);
         let d = new MutDeque(r);
-        List.foreach(x -> MutDeque.pushBack(x, d), xs);
-
-        Iterator.toMutDeque(iter, r) `MutDeque.sameElements` d
+        List.foreach(x -> MutDeque.pushBack(x, d), 1 :: Nil);
+        Iterator.regToMutDeque(r, iter) `MutDeque.sameElements` d
     }
 
     @test
-    def toMutDeque03(): Bool & Impure = region r {
-        let xs = 1 :: 2 :: Nil;
-
-        let iter = List.toIterator(xs);
-
+    def toMutDeque03(): Bool = region r {
+        let iter = List.toRegionIterator(r, 1 :: 2 :: Nil);
         let d = new MutDeque(r);
-        List.foreach(x -> MutDeque.pushBack(x, d), xs);
-
-        Iterator.toMutDeque(iter, r) `MutDeque.sameElements` d
+        List.foreach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: Nil);
+        Iterator.regToMutDeque(r, iter) `MutDeque.sameElements` d
     }
 
     @test
-    def toMutDeque04(): Bool & Impure = region r {
-        let xs = 1 :: 2 :: 3 :: Nil;
-
-        let iter = List.toIterator(xs);
-
+    def toMutDeque04(): Bool = region r {
+        let iter = List.toRegionIterator(r, 1 :: 2 :: 3 :: Nil);
         let d = new MutDeque(r);
-        List.foreach(x -> MutDeque.pushBack(x, d), xs);
-
-        Iterator.toMutDeque(iter, r) `MutDeque.sameElements` d
+        List.foreach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: 3 :: Nil);
+        Iterator.regToMutDeque(r, iter) `MutDeque.sameElements` d
     }
 
 
