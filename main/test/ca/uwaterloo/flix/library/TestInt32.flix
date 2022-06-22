@@ -155,34 +155,34 @@ namespace TestInt32 {
     // logicalRightShift                                                       //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def logicalRightShift01(): Bool = Int32.logicalRightShift(2233, 4) == (2233 >>> 4)
+    def logicalRightShift01(): Bool = Int32.logicalRightShift(distance = 4, 2233) == (2233 >>> 4)
 
     @test
-    def logicalRightShift02(): Bool = Int32.logicalRightShift(223366, 33) == (223366 >>> 33)
+    def logicalRightShift02(): Bool = Int32.logicalRightShift(distance = 33, 223366) == (223366 >>> 33)
 
     @test
-    def logicalRightShift03(): Bool = Int32.logicalRightShift(2233, -8) == (2233 >>> -8)
+    def logicalRightShift03(): Bool = Int32.logicalRightShift(distance = -8, 2233) == (2233 >>> -8)
 
     @test
-    def logicalRightShift04(): Bool = Int32.logicalRightShift(2233, 4) == (2233 >>> 4)
+    def logicalRightShift04(): Bool = Int32.logicalRightShift(distance = 4, 2233) == (2233 >>> 4)
 
     @test
-    def logicalRightShift05(): Bool = Int32.logicalRightShift(-1, 1) == 2147483647
+    def logicalRightShift05(): Bool = Int32.logicalRightShift(distance = 1, -1) == 2147483647
 
     @test
-    def logicalRightShift06(): Bool = Int32.logicalRightShift(-35, 4) == 268435453
+    def logicalRightShift06(): Bool = Int32.logicalRightShift(distance = 4, -35) == 268435453
 
     @test
-    def logicalRightShift07(): Bool = Int32.logicalRightShift(-2777, -2777) == 33554410
+    def logicalRightShift07(): Bool = Int32.logicalRightShift(distance = -2777, -2777) == 33554410
 
     @test
-    def logicalRightShift08(): Bool = Int32.logicalRightShift(-233, 64) == -233
+    def logicalRightShift08(): Bool = Int32.logicalRightShift(distance = 64, -233) == -233
 
     @test
-    def logicalRightShift09(): Bool = Int32.logicalRightShift(-27, 0) == -27
+    def logicalRightShift09(): Bool = Int32.logicalRightShift(distance = 0, -27) == -27
 
     @test
-    def logicalRightShift10(): Bool = Int32.logicalRightShift(2147483647, 1) == 1073741823
+    def logicalRightShift10(): Bool = Int32.logicalRightShift(distance = 1, 2147483647) == 1073741823
 
     /////////////////////////////////////////////////////////////////////////////
     // bitCount                                                                //
@@ -209,43 +209,43 @@ namespace TestInt32 {
     // rotateLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def rotateLeft01(): Bool = Int32.rotateLeft(-1698265258, 4) == -1402440343
+    def rotateLeft01(): Bool = Int32.rotateLeft(distance = 4, -1698265258, 4) == -1402440343
 
     @test
-    def rotateLeft02(): Bool = Int32.rotateLeft(-1836677290, 5) == 1355868882
+    def rotateLeft02(): Bool = Int32.rotateLeft(distance = 5, -1836677290, 5) == 1355868882
 
     @test
-    def rotateLeft03(): Bool = Int32.rotateLeft(1478293001, 24) == 156769526
+    def rotateLeft03(): Bool = Int32.rotateLeft(distance = 24, 1478293001, 24) == 156769526
 
     @test
-    def rotateLeft04(): Bool = Int32.rotateLeft(-12267711, -36) == 536104180
+    def rotateLeft04(): Bool = Int32.rotateLeft(distance = -36, -12267711, -36) == 536104180
 
     @test
-    def rotateLeft05(): Bool = Int32.rotateLeft(0, 87) == 0
+    def rotateLeft05(): Bool = Int32.rotateLeft(distance = 87, 0, 87) == 0
 
     @test
-    def rotateLeft06(): Bool = Int32.rotateLeft(-1, 87) == -1
+    def rotateLeft06(): Bool = Int32.rotateLeft(distance = 87, -1, 87) == -1
 
     /////////////////////////////////////////////////////////////////////////////
     // rotateRight                                                             //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def rotateRight01(): Bool = Int32.rotateRight(-1698265258, 4) == 1772906613
+    def rotateRight01(): Bool = Int32.rotateRight(distance = 4, -1698265258, 4) == 1772906613
 
     @test
-    def rotateRight02(): Bool = Int32.rotateRight(-1836677290, 5) == -1265355718
+    def rotateRight02(): Bool = Int32.rotateRight(distance = 5, -1836677290, 5) == -1265355718
 
     @test
-    def rotateRight03(): Bool = Int32.rotateRight(1478293001, 24) == 485886296
+    def rotateRight03(): Bool = Int32.rotateRight(distance = 24, 1478293001, 24) == 485886296
 
     @test
-    def rotateRight04(): Bool = Int32.rotateRight(-12267711, -36) == -196283361
+    def rotateRight04(): Bool = Int32.rotateRight(distance = -36, -12267711, -36) == -196283361
 
     @test
-    def rotateRight05(): Bool = Int32.rotateRight(0, 87) == 0
+    def rotateRight05(): Bool = Int32.rotateRight(distance = 87, 0, 87) == 0
 
     @test
-    def rotateRight06(): Bool = Int32.rotateRight(-1, 87) == -1
+    def rotateRight06(): Bool = Int32.rotateRight(distance = 87, -1, 87) == -1
 
     /////////////////////////////////////////////////////////////////////////////
     // reverse                                                                 //

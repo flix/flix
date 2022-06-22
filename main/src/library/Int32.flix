@@ -102,11 +102,11 @@ namespace Int32 {
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     @Time(1) @Space(1)
-    pub def logicalRightShift(x: Int32, distance: Int32): Int32 =
-        if (x < 0 and distance rem size() != 0)
-            ((x >>> 1) &&& maxValue()) >>> (distance - 1)
+    pub def logicalRightShift(distance: {distance :: Int32}, x: Int32): Int32 =
+        if (x < 0 and distance.distance rem size() != 0)
+            ((x >>> 1) &&& maxValue()) >>> (distance.distance - 1)
         else
-            x >>> distance
+            x >>> distance.distance
 
     ///
     /// Returns the number of one-bits in the two's complement binary
@@ -114,9 +114,9 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def bitCount(x: Int32): Int32 = {
-        if      (x == 0)        0
-        else if (x rem 2 != 0)    bitCount(logicalRightShift(x, 1)) + 1
-        else                    bitCount(logicalRightShift(x, 1))
+        if      (x == 0)       0
+        else if (x rem 2 != 0) bitCount(logicalRightShift(distance = 1, x)) + 1
+        else                   bitCount(logicalRightShift(distance = 1, x))
     }
 
     ///
@@ -124,16 +124,16 @@ namespace Int32 {
     /// binary representation of `x` right by `distance` bits.
     ///
     @Time(1) @Space(1)
-    pub def rotateRight(x: Int32, distance: Int32): Int32 =
-        (logicalRightShift(x, distance)) ||| (x <<< -distance)
+    pub def rotateRight(distance: {distance :: Int32}, x: Int32): Int32 =
+        (logicalRightShift(distance = distance.distance, x)) ||| (x <<< -distance.distance)
 
     ///
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` left by `distance` bits.
     ///
     @Time(1) @Space(1)
-    pub def rotateLeft(x: Int32, distance: Int32): Int32 =
-        (logicalRightShift(x, -distance)) ||| (x <<< distance)
+    pub def rotateLeft(distance: {distance :: Int32}, x: Int32): Int32 =
+        (logicalRightShift(distance = -distance.distance, x)) ||| (x <<< distance.distance)
 
     ///
     /// Returns the value obtained by reversing the bits in the
