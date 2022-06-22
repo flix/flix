@@ -155,37 +155,37 @@ namespace TestInt64 {
     // logicalRightShift                                                       //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def logicalRightShift01(): Bool = Int64.logicalRightShift(2233i64, 4) == (2233i64 >>> 4)
+    def logicalRightShift01(): Bool = Int64.logicalRightShift(4, 2233i64) == (2233i64 >>> 4)
 
     @test
-    def logicalRightShift02(): Bool = Int64.logicalRightShift(22336688888i64, 33) == (22336688888i64 >>> 33)
+    def logicalRightShift02(): Bool = Int64.logicalRightShift(33, 22336688888i64) == (22336688888i64 >>> 33)
 
     @test
-    def logicalRightShift03(): Bool = Int64.logicalRightShift(2233i64, -8) == (2233i64 >>> -8)
+    def logicalRightShift03(): Bool = Int64.logicalRightShift(-8, 2233i64) == (2233i64 >>> -8)
 
     @test
-    def logicalRightShift04(): Bool = Int64.logicalRightShift(2233i64, 4) == (2233i64 >>> 4)
+    def logicalRightShift04(): Bool = Int64.logicalRightShift(4, 2233i64) == (2233i64 >>> 4)
 
     @test
-    def logicalRightShift05(): Bool = Int64.logicalRightShift(-1i64, 1) == 9223372036854775807i64
+    def logicalRightShift05(): Bool = Int64.logicalRightShift(1, -1i64) == 9223372036854775807i64
 
     @test
-    def logicalRightShift06(): Bool = Int64.logicalRightShift(-35i64, 4) == 1152921504606846973i64
+    def logicalRightShift06(): Bool = Int64.logicalRightShift(4, -35i64) == 1152921504606846973i64
 
     @test
-    def logicalRightShift07(): Bool = Int64.logicalRightShift(-2777i64, -2777) == 33554431i64
+    def logicalRightShift07(): Bool = Int64.logicalRightShift(-2777, -2777i64) == 33554431i64
 
     @test
-    def logicalRightShift08(): Bool = Int64.logicalRightShift(-23328384858i64, 64) == -23328384858i64
+    def logicalRightShift08(): Bool = Int64.logicalRightShift(64, -23328384858i64) == -23328384858i64
 
     @test
-    def logicalRightShift09(): Bool = Int64.logicalRightShift(-27000000000000i64, 0) == -27000000000000i64
+    def logicalRightShift09(): Bool = Int64.logicalRightShift(0, -27000000000000i64) == -27000000000000i64
 
     @test
-    def logicalRightShift10(): Bool = Int64.logicalRightShift(9223372036854775807i64, 1) == 4611686018427387903i64
+    def logicalRightShift10(): Bool = Int64.logicalRightShift(1, 9223372036854775807i64) == 4611686018427387903i64
 
     @test
-    def logicalRightShift11(): Bool = Int64.logicalRightShift(-9223372036854775808i64, 1) == 4611686018427387904i64
+    def logicalRightShift11(): Bool = Int64.logicalRightShift(1, -9223372036854775808i64) == 4611686018427387904i64
 
     /////////////////////////////////////////////////////////////////////////////
     // bitCount                                                                //

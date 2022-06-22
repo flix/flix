@@ -102,7 +102,7 @@ namespace Int64 {
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     @Time(1) @Space(1)
-    pub def logicalRightShift(x: Int64, distance: Int32): Int64 =
+    pub def logicalRightShift(distance: Int32, x: Int64): Int64 =
         if (x < 0i64 and distance rem size() != 0)
             ((x >>> 1) &&& maxValue()) >>> (distance - 1)
         else
@@ -115,8 +115,8 @@ namespace Int64 {
     @Time(1) @Space(1)
     pub def bitCount(x: Int64): Int32 = {
         if      (x == 0i64)         0
-        else if (x rem 2i64 != 0i64)  bitCount(logicalRightShift(x, 1)) + 1
-        else                        bitCount(logicalRightShift(x, 1))
+        else if (x rem 2i64 != 0i64)  bitCount(logicalRightShift(1, x)) + 1
+        else                        bitCount(logicalRightShift(1, x))
     }
 
     ///
@@ -124,7 +124,7 @@ namespace Int64 {
     /// binary representation of `x` right by `distance` bits.
     ///
     pub def rotateRight(x: Int64, distance: Int32): Int64 =
-        (logicalRightShift(x, distance)) ||| (x <<< -distance)
+        (logicalRightShift(distance, x)) ||| (x <<< -distance)
 
     ///
     /// Returns the the value obtained by rotating the two's complement
@@ -132,7 +132,7 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def rotateLeft(x: Int64, distance: Int32): Int64 =
-        (logicalRightShift(x, -distance)) ||| (x <<< distance)
+        (logicalRightShift(-distance, x)) ||| (x <<< distance)
 
     ///
     /// Returns the value obtained by reversing the bits in the
