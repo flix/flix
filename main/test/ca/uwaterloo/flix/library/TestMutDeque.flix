@@ -878,6 +878,50 @@ namespace TestMutDeque {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // toArray                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toArray01(): Bool = region r {
+        let d = new MutDeque(r): MutDeque[Int32, _];
+
+        let a = MutDeque.toArray(d, r);
+        Array.sameElements(a, [] @ r)
+    }
+
+    @test
+    def toArray02(): Bool = region r {
+        let d = new MutDeque(r);
+        MutDeque.pushBack(1, d);
+
+        let a = MutDeque.toArray(d, r);
+        Array.sameElements(a, [1] @ r)
+    }
+
+    @test
+    def toArray03(): Bool = region r {
+        let d = new MutDeque(r);
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+
+        let a = MutDeque.toArray(d, r);
+        Array.sameElements(a, [1, 2] @ r)
+    }
+
+    @test
+    def toArray04(): Bool = region r {
+        let d = new MutDeque(r);
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushFront(3, d);
+        MutDeque.pushFront(4, d);
+
+        let a = MutDeque.toArray(d, r);
+        Array.sameElements(a, [4, 3, 1, 2] @ r)
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // join                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 

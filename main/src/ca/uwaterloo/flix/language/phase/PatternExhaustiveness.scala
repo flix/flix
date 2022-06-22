@@ -304,6 +304,9 @@ object PatternExhaustiveness {
             _ <- checkPats(exp, root)
           } yield tast
 
+        case Expression.NewObject(_, _, _, _) =>
+          tast.toSuccess
+
         case Expression.NewChannel(exp, _, _, _) => for {
           _ <- checkPats(exp, root)
         } yield tast
@@ -366,12 +369,12 @@ object PatternExhaustiveness {
             _ <- checkPats(exp, root)
           } yield tast
 
-        case Expression.FixpointProjectIn(exp, _, _, _, _) =>
+        case Expression.FixpointInject(exp, _, _, _, _) =>
           for {
             _ <- checkPats(exp, root)
           } yield tast
 
-        case Expression.FixpointProjectOut(_, exp, _, _, _) =>
+        case Expression.FixpointProject(_, exp, _, _, _) =>
           for {
             _ <- checkPats(exp, root)
           } yield tast
@@ -739,8 +742,8 @@ object PatternExhaustiveness {
       case Some(TypeConstructor.Record) => 0
       case Some(TypeConstructor.Schema) => 0
       case Some(TypeConstructor.Arrow(length)) => length
-      case Some(TypeConstructor.ScopedArray) => 1
-      case Some(TypeConstructor.ScopedRef) => 0
+      case Some(TypeConstructor.Array) => 1
+      case Some(TypeConstructor.Ref) => 0
       case Some(TypeConstructor.Channel) => 1
       case Some(TypeConstructor.Lazy) => 1
       case Some(TypeConstructor.KindedEnum(sym, kind)) => 0 // TODO: Correct?

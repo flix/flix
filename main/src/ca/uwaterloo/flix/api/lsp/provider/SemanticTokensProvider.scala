@@ -423,6 +423,9 @@ object SemanticTokensProvider {
     case Expression.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
+    case Expression.NewObject(_, _, _, _) =>
+      Iterator.empty
+
     case Expression.NewChannel(exp, _, _, _) => visitExp(exp)
 
     case Expression.GetChannel(exp, _, _, _) => visitExp(exp)
@@ -461,10 +464,10 @@ object SemanticTokensProvider {
     case Expression.FixpointFilter(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointProjectIn(exp, _, _, _, _) =>
+    case Expression.FixpointInject(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointProjectOut(_, exp, _, _, _) =>
+    case Expression.FixpointProject(_, exp, _, _, _) =>
       visitExp(exp)
 
     case Expression.Reify(_, _, _, _) => Iterator.empty
@@ -604,8 +607,8 @@ object SemanticTokensProvider {
     case TypeConstructor.Tag(_, _) => false
     case TypeConstructor.KindedEnum(_, _) => true
     case TypeConstructor.Native(_) => true
-    case TypeConstructor.ScopedArray => true
-    case TypeConstructor.ScopedRef => true
+    case TypeConstructor.Array => true
+    case TypeConstructor.Ref => true
     case TypeConstructor.Tuple(_) => false
     case TypeConstructor.Relation => false
     case TypeConstructor.Lattice => false

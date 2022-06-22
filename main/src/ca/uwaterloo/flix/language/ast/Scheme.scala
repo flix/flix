@@ -143,32 +143,34 @@ object Scheme {
   /**
     * Returns `Success` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
-  def checkLessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, UnificationError] = {
+  def checkLessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Substitution, UnificationError] = {
 
     ///
     /// Special Case: If `sc1` and `sc2` are syntactically the same then `sc1` must be less than or equal to `sc2`.
     ///
     if (sc1 == sc2) {
-      return ().toSuccess
+      return Substitution.empty.toSuccess
     }
 
     //
     // General Case: Compute if `sc1` <= `sc2`.
     //
 
-    // Instantiate every variable in `sc1` as flexible and make every free variable rigid.
-    val (tconstrs1, tpe1) = instantiate(sc1, InstantiateMode.Mixed)
+    // Mark every free variable in `sc1` as rigid.
+    val renv1 = RigidityEnv(sc1.base.typeVars.map(_.sym) -- sc1.quantifiers)
 
-    // Instantiate every variable in `sc2` as rigid and make every free variable rigid.
-    val (tconstrs2, tpe2) = instantiate(sc2, InstantiateMode.Rigid)
+    // Mark every free and bound variable in `sc2` as rigid.
+    val renv2 = RigidityEnv(sc2.base.typeVars.map(_.sym))
+
+    val renv = renv1 ++ renv2
 
     // Attempt to unify the two instantiated types.
     for {
-      subst <- Unification.unifyTypes(tpe1, tpe2).toValidation
-      newTconstrs1 <- ClassEnvironment.reduce(tconstrs1.map(subst.apply), classEnv)
-      newTconstrs2 <- ClassEnvironment.reduce(tconstrs2.map(subst.apply), classEnv)
+      subst <- Unification.unifyTypes(sc1.base, sc2.base, renv).toValidation
+      newTconstrs1 <- ClassEnvironment.reduce(sc1.constraints.map(subst.apply), classEnv)
+      newTconstrs2 <- ClassEnvironment.reduce(sc2.constraints.map(subst.apply), classEnv)
       _ <- Validation.sequence(newTconstrs1.map(ClassEnvironment.entail(newTconstrs2, _, classEnv)))
-    } yield ()
+    } yield subst
   }
 
 }

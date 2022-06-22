@@ -28,9 +28,7 @@ pub enum Map[k, v] {
 instance Boxable[Map[k, v]] with Boxable[k], Boxable[v]
 
 instance ToString[Map[k, v]] with ToString[k], ToString[v] {
-    pub def toString(m: Map[k, v]): String =
-        let s = Map.foldRightWithKey((k, v, acc) -> "${k} => ${v}, ${acc}", "", m);
-        "Map#{${String.dropRight(2, s)}}"
+    pub def toString(m: Map[k, v]): String = Map.toString(m)
 }
 
 instance Hash[Map[k, v]] with Hash[k], Hash[v] {
@@ -55,6 +53,10 @@ instance Functor[Map[k]] {
     pub def map(f: v1 -> v2 & ef, m: Map[k, v1]): Map[k, v2] & ef = Map.map(f, m)
 }
 
+instance ForEach[Map[k]] {
+    pub def foreach(f: a -> Unit & ef, m: Map[k, a]): Unit & ef = Map.foreach((_, v) -> f(v), m)
+}
+
 instance Foldable[Map[k]] {
     pub def foldLeft(f: (b, v) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldLeft((acc, v) -> f(acc, v), s, m)
     pub def foldRight(f: (v, b) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldRight(f, s, m)
@@ -64,6 +66,11 @@ instance Foldable[Map[k]] {
 instance Traversable[Map[k]] {
     pub def traverse(f: a -> m[b] & ef, t: Map[k, a]): m[Map[k, b]] & ef with Applicative[m] = Map.traverse(f, t)
     pub override def sequence(t: Map[k, m[a]]): m[Map[k, a]] with Applicative[m] = Map.sequence(t)
+}
+
+instance FunctorFilter[Map[k]] with Order[k] {
+    pub def filterMap(f: a -> Option[b] & ef, m: Map[k, a]): Map[k, b] & ef = Map.filterMap(f, m)
+    pub override def filter(f: a -> Bool & ef, m: Map[k, a]): Map[k, a] & ef = Map.filter(f, m)
 }
 
 instance SemiGroup[Map[k,v]] with Order[k], SemiGroup[v] {
@@ -78,7 +85,44 @@ instance Monoid[Map[k, v]] with Order[k], Monoid[v] {
 
 instance CommutativeMonoid[Map[k, v]] with Order[k], CommutativeMonoid[v]
 
+instance LowerBound[Map[k, v]] {
+    pub def minValue(): Map[k, v] = Map.empty()
+}
+
+instance PartialOrder[Map[k, v]] with Order[k], Eq[v] {
+    pub def lessEqual(m1: Map[k, v], m2: Map[k, v]): Bool = m1 `Map.isSubmapOf` m2
+}
+
+instance JoinLattice[Map[k, v]] with Order[k], Eq[v], JoinLattice[v] {
+    pub def leastUpperBound(m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
+        Map.unionWith(JoinLattice.leastUpperBound, m1, m2)
+}
+
+instance MeetLattice[Map[k, v]] with Order[k], Eq[v], MeetLattice[v] {
+    pub def greatestLowerBound(m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
+        Map.intersectionWith(MeetLattice.greatestLowerBound, m1, m2)
+}
+
 namespace Map {
+
+    ///
+    /// Returns a string representation of the given map `m`.
+    ///
+    pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region r {
+        let sb = new StringBuilder(r);
+        let first = ref true;
+
+        StringBuilder.appendString!("Map#{", sb);
+
+        let f = (k, v) -> {
+            if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
+            StringBuilder.appendString!("${k} => ${v}", sb)
+        };
+        Map.foreach(f, m);
+
+        StringBuilder.appendString!("}", sb);
+        StringBuilder.toString(sb)
+    }
 
     ///
     /// Returns the number of threads to use for parallel evaluation.
@@ -409,6 +453,28 @@ namespace Map {
         foldLeftWithKey((acc, k, v) -> if (f(k, v)) insert(k, v, acc) else acc, empty(), m)
 
     ///
+    /// Returns a map of all mappings `k => v1` in `m` where applying the function `f` to `v` produces
+    /// a `Some(v1)`. Elements that produce `None` are discarded.
+    ///
+    pub def filterMap(f: a -> Option[b] & ef, m: Map[k, a]): Map[k, b] & ef with Order[k] =
+        let step = (acc, k, a) -> match f(a) {
+            case Some(b) => Map.insert(k, b, acc)
+            case None    => acc
+        };
+        Map.foldLeftWithKey(step, Map.empty(), m)
+
+    ///
+    /// Returns a map of all mappings `k => v1` in `m` where applying the function `f` to `(k, v)` produces
+    /// `Some(v1)`. Elements that produce `None` are discarded.
+    ///
+    pub def filterMapWithKey(f: (k, a) -> Option[b] & ef, m: Map[k, a]): Map[k, b] & ef with Order[k] =
+        let step = (acc, k, a) -> match f(k, a) {
+            case Some(b) => insert(k, b, acc)
+            case None    => acc
+        };
+        foldLeftWithKey(step, Map.empty(), m)
+
+    ///
     /// Returns a map with mappings `k => f(v)` for every `k => v` in `m`.
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
@@ -485,6 +551,12 @@ namespace Map {
     pub def foldRightWithKeyCont(f: (k, v, Unit -> b & ef) -> b & ef, z: b, m: Map[k, v]): b & ef =
         let Map(t) = m;
         RedBlackTree.foldRightWithCont(f, z, t)
+
+    ///
+    /// Returns the result of mapping each key-value pair and combining the results.
+    ///
+    pub def foldMapWithKey(f: (k, v) -> b & ef, m: Map[k, v]): b & ef with Monoid[b] =
+        foldLeftWithKey((acc, k, v) -> Monoid.combine(acc, f(k, v)), Monoid.empty(), m)
 
     ///
     /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
@@ -845,14 +917,14 @@ namespace Map {
     ///
     /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison, m: Map[k, v]): List[(k, v)] =
+    pub def query(p: k -> Comparison & ef, m: Map[k, v]): List[(k, v)] & ef =
         let Map(t) = m;
         RedBlackTree.query(p, (k, v) -> (k, v), t)
 
     ///
     /// Applies `f` to all key-value pairs `(k, v)` from the map `m` where `p(k)` returns `EqualTo`.
     ///
-    pub def queryWith(p: k -> Comparison, f: (k, v) -> Unit & ef, m: Map[k, v]): Unit & ef =
+    pub def queryWith(p: k -> Comparison & ef1, f: (k, v) -> Unit & ef2, m: Map[k, v]): Unit & (ef1 and ef2) =
         let Map(t) = m;
         RedBlackTree.queryWith(p, f, t)
 
@@ -861,6 +933,12 @@ namespace Map {
     ///
     pub def toIterator(m: Map[a, b]): Iterator[(a, b)] & Impure =
         List.toIterator(Map.query(_ -> EqualTo, m))
+
+    ///
+    /// Returns an iterator over all key-value pairs in `m`.
+    ///
+    pub def toRegionIterator(r: Region[r], m: Map[k, v]): RegionIterator[(k, v), r] \ Write(r) =
+        List.toRegionIterator(r, Map.query(_ -> EqualTo, m))
 
     ///
     /// Returns `m` as a `DelayMap`.

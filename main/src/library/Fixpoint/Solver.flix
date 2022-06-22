@@ -112,7 +112,7 @@ namespace Fixpoint {
     /// Renames every predicate symbol in `d` with a fresh name, except for those in `preds`.
     ///
     @Internal
-    pub def rename(preds: Array[PredSym], d: Datalog[v]): Datalog[v] with Order[v], ToString[v] = {
+    pub def rename(preds: Array[PredSym, Static], d: Datalog[v]): Datalog[v] with Order[v], ToString[v] = {
         use Fixpoint/PredSymsOf.predSymsOf;
         use Fixpoint/SubstitutePredSym.substitute;
 
@@ -157,9 +157,9 @@ namespace Fixpoint {
     /// given the sequence `(t1), (t1')`.
     ///
     @Internal
-    pub def projectInto1[f: Type -> Type, t1: Type](p: PredSym, ts: f[(t1)]):
+    pub def injectInto1[f: Type -> Type, t1: Type](p: PredSym, ts: f[(t1)]):
         Datalog[Boxed] with Boxable[t1], Foldable[f] =
-        projectIntoX(match (v1) -> [box(v1)], p, ts) as & Pure
+        injectIntoX(match (v1) -> [box(v1)], p, ts) as & Pure
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -168,9 +168,9 @@ namespace Fixpoint {
     /// given the sequence `(t1, t2), (t1', t2')`.
     ///
     @Internal
-    pub def projectInto2[f: Type -> Type, t1: Type, t2: Type](p: PredSym, ts: f[(t1, t2)]):
+    pub def injectInto2[f: Type -> Type, t1: Type, t2: Type](p: PredSym, ts: f[(t1, t2)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Foldable[f] =
-        projectIntoX(match (v1, v2) ->
+        injectIntoX(match (v1, v2) ->
             [box(v1),
              box(v2)]
         , p, ts) as & Pure
@@ -182,9 +182,9 @@ namespace Fixpoint {
     /// given the sequence `(t1, t2, t3), (t1', t2', t3')`.
     ///
     @Internal
-    pub def projectInto3[f: Type -> Type, t1: Type, t2: Type, t3: Type](p: PredSym, ts: f[(t1, t2, t3)]):
+    pub def injectInto3[f: Type -> Type, t1: Type, t2: Type, t3: Type](p: PredSym, ts: f[(t1, t2, t3)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Foldable[f] =
-        projectIntoX(match (v1, v2, v3) ->
+        injectIntoX(match (v1, v2, v3) ->
             [box(v1),
              box(v2),
              box(v3)]
@@ -198,9 +198,9 @@ namespace Fixpoint {
     /// given the sequence `(t1, t2, t3, t4), (t1', t2', t3', t4')`.
     ///
     @Internal
-    pub def projectInto4[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type](p: PredSym, ts: f[(t1, t2, t3, t4)]):
+    pub def injectInto4[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type](p: PredSym, ts: f[(t1, t2, t3, t4)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Foldable[f] =
-        projectIntoX(match (v1, v2, v3, v4) ->
+        injectIntoX(match (v1, v2, v3, v4) ->
             [box(v1),
              box(v2),
              box(v3),
@@ -215,9 +215,9 @@ namespace Fixpoint {
     /// given the sequence `(t1, t2, t3, t4, t5), (t1', t2', t3', t4', t5')`.
     ///
     @Internal
-    pub def projectInto5[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5)]):
+    pub def injectInto5[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Foldable[f] =
-        projectIntoX(match (v1, v2, v3, v4, v5) ->
+        injectIntoX(match (v1, v2, v3, v4, v5) ->
             [box(v1),
              box(v2),
              box(v3),
@@ -233,9 +233,9 @@ namespace Fixpoint {
     /// given the sequence `(t1, t2, t3, t4, t5, t6), (t1', t2', t3', t4', t5', t6')`.
     ///
     @Internal
-    pub def projectInto6[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6)]):
+    pub def injectInto6[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Foldable[f] =
-        projectIntoX(match (v1, v2, v3, v4, v5, v6) ->
+        injectIntoX(match (v1, v2, v3, v4, v5, v6) ->
             [box(v1),
              box(v2),
              box(v3),
@@ -252,9 +252,9 @@ namespace Fixpoint {
     /// given the sequence `(t1, t2, t3, t4, t5, t6, t7), (t1', t2', t3', t4', t5', t6', t7')`.
     ///
     @Internal
-    pub def projectInto7[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7)]):
+    pub def injectInto7[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Foldable[f] =
-        projectIntoX(match (v1, v2, v3, v4, v5, v6, v7) ->
+        injectIntoX(match (v1, v2, v3, v4, v5, v6, v7) ->
             [box(v1),
              box(v2),
              box(v3),
@@ -273,9 +273,9 @@ namespace Fixpoint {
     /// `(t1, t2, t3, t4, t5, t6, t7, t8), (t1', t2', t3', t4', t5', t6', t7', t8')`.
     ///
     @Internal
-    pub def projectInto8[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8)]):
+    pub def injectInto8[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Foldable[f] =
-        projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8) ->
+        injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8) ->
             [box(v1),
              box(v2),
              box(v3),
@@ -295,9 +295,9 @@ namespace Fixpoint {
     /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9), (t1', t2', t3', t4', t5', t6', t7', t8', t9')`.
     ///
     @Internal
-    pub def projectInto9[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9)]):
+    pub def injectInto9[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Foldable[f] =
-        projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9) ->
+        injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9) ->
             [box(v1),
              box(v2),
              box(v3),
@@ -320,9 +320,9 @@ namespace Fixpoint {
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10')`.
     ///
     @Internal
-    pub def projectInto10[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)]):
+    pub def injectInto10[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Foldable[f] =
-        projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) ->
+        injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) ->
             [box(v1),
              box(v2),
              box(v3),
@@ -346,9 +346,9 @@ namespace Fixpoint {
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11')`.
     ///
     @Internal
-    pub def projectInto11[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)]):
+    pub def injectInto11[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Foldable[f] =
-        projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11) ->
+        injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11) ->
             [box(v1),
              box(v2),
              box(v3),
@@ -373,9 +373,9 @@ namespace Fixpoint {
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12')`.
     ///
     @Internal
-    pub def projectInto12[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)]):
+    pub def injectInto12[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Foldable[f] =
-        projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12) ->
+        injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12) ->
             [box(v1),
              box(v2),
              box(v3),
@@ -401,9 +401,9 @@ namespace Fixpoint {
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12', t13')`.
     ///
     @Internal
-    pub def projectInto13[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)]):
+    pub def injectInto13[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Foldable[f] =
-        projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13) ->
+        injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13) ->
             [box(v1),
              box(v2),
              box(v3),
@@ -430,9 +430,9 @@ namespace Fixpoint {
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12', t13', t14')`.
     ///
     @Internal
-    pub def projectInto14[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type, t14: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)]):
+    pub def injectInto14[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type, t14: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14], Foldable[f] =
-        projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14) ->
+        injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14) ->
             [box(v1),
              box(v2),
              box(v3),
@@ -460,9 +460,9 @@ namespace Fixpoint {
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12', t13', t14', t15')`.
     ///
     @Internal
-    pub def projectInto15[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type, t14: Type, t15: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)]):
+    pub def injectInto15[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type, t14: Type, t15: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14], Boxable[t15], Foldable[f] =
-        projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15) ->
+        injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15) ->
             [box(v1),
              box(v2),
              box(v3),
@@ -480,7 +480,7 @@ namespace Fixpoint {
              box(v15)]
         , p, ts) as & Pure
 
-    def projectIntoX[f: Type -> Type, t: Type, ef: Bool](f: t -> Array[Boxed] & ef, p: PredSym, ts: f[t]): Datalog[Boxed] & Impure with Foldable[f] =
+    def injectIntoX[f: Type -> Type, t: Type, ef: Bool](f: t -> Array[Boxed, Static] & ef, p: PredSym, ts: f[t]): Datalog[Boxed] & Impure with Foldable[f] =
         let db = new MutMap(Static);
         Foldable.foldLeft(() -> t -> {
             let vs = f(t);
@@ -495,14 +495,14 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts0(p: PredSym, d: Datalog[Boxed]): Array[v] with Boxable[v] =
+    pub def facts0(p: PredSym, d: Datalog[Boxed]): Array[v, Static] with Boxable[v] =
         factsOf(_ -> () as v, p, d) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts1(p: PredSym, d: Datalog[Boxed]): Array[v] with Boxable[v] =
+    pub def facts1(p: PredSym, d: Datalog[Boxed]): Array[v, Static] with Boxable[v] =
         let f = terms -> unbox(terms[0]);
         factsOf(f, p, d) as & Pure
 
@@ -510,7 +510,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts2(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2)] with Boxable[t1], Boxable[t2] =
+    pub def facts2(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2), Static] with Boxable[t1], Boxable[t2] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]));
         factsOf(f, p, d) as & Pure
 
@@ -518,7 +518,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts3(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3)] with Boxable[t1], Boxable[t2], Boxable[t3] =
+    pub def facts3(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3), Static] with Boxable[t1], Boxable[t2], Boxable[t3] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]));
         factsOf(f, p, d) as & Pure
 
@@ -526,7 +526,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts4(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4] =
+    pub def facts4(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]));
         factsOf(f, p, d) as & Pure
 
@@ -534,7 +534,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts5(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5] =
+    pub def facts5(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]));
         factsOf(f, p, d) as & Pure
 
@@ -542,7 +542,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts6(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6] =
+    pub def facts6(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]));
         factsOf(f, p, d) as & Pure
 
@@ -550,7 +550,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts7(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7] =
+    pub def facts7(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]));
         factsOf(f, p, d) as & Pure
 
@@ -558,7 +558,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts8(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8] =
+    pub def facts8(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]));
         factsOf(f, p, d) as & Pure
 
@@ -566,7 +566,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts9(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9] =
+    pub def facts9(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]), unbox(terms[8]));
         factsOf(f, p, d) as & Pure
 
@@ -574,7 +574,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts10(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10] =
+    pub def facts10(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]), unbox(terms[8]), unbox(terms[9]));
         factsOf(f, p, d) as & Pure
 
@@ -582,7 +582,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts11(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11] =
+    pub def facts11(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]), unbox(terms[8]), unbox(terms[9]), unbox(terms[10]));
         factsOf(f, p, d) as & Pure
 
@@ -590,7 +590,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts12(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12] =
+    pub def facts12(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]), unbox(terms[8]), unbox(terms[9]), unbox(terms[10]), unbox(terms[11]));
         factsOf(f, p, d) as & Pure
 
@@ -598,7 +598,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts13(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13] =
+    pub def facts13(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]), unbox(terms[8]), unbox(terms[9]), unbox(terms[10]), unbox(terms[11]), unbox(terms[12]));
         factsOf(f, p, d) as & Pure
 
@@ -606,7 +606,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts14(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14] =
+    pub def facts14(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]), unbox(terms[8]), unbox(terms[9]), unbox(terms[10]), unbox(terms[11]), unbox(terms[12]), unbox(terms[13]));
         factsOf(f, p, d) as & Pure
 
@@ -614,14 +614,14 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts15(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14], Boxable[t15] =
+    pub def facts15(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14], Boxable[t15] =
         let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]), unbox(terms[8]), unbox(terms[9]), unbox(terms[10]), unbox(terms[11]), unbox(terms[12]), unbox(terms[13]), unbox(terms[14]));
         factsOf(f, p, d) as & Pure
 
     ///
     /// Returns an array of facts associated with the given predicate symbol `p` in the given Datalog program `d`.
     ///
-    def factsOf(f: Array[v] -> t & ef, p: PredSym, d: Datalog[v]): Array[t] & Impure = match d {
+    def factsOf(f: Array[v, Static] -> t & ef, p: PredSym, d: Datalog[v]): Array[t, Static] & Impure = match d {
         case Datalog(_, cs) =>
             let pFacts = new MutList(Static);
             Array.foreach(c -> match c {

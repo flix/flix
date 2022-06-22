@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, MonoType, Name, Rigidity, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, MonoType, Name, Rigidity, RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.Finalize
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -644,6 +644,9 @@ object JvmOps {
       case Expression.PutStaticField(_, exp, _, _) =>
         visitExp(exp)
 
+      case Expression.NewObject(_, _, _) =>
+        Set.empty
+
       case Expression.NewChannel(exp, _, _) => visitExp(exp)
 
       case Expression.GetChannel(exp, _, _) => visitExp(exp)
@@ -737,7 +740,7 @@ object JvmOps {
       enum0.cases.foldLeft(Set.empty[TagInfo]) {
         case (sacc, (_, Case(enumSym, tagName, uninstantiatedTagType, _))) =>
           // TODO: Magnus: It would be nice if this information could be stored somewhere...
-          val subst = Unification.unifyTypes(hackMonoType2Type(enum0.tpeDeprecated), hackMonoType2Type(tpe)).get
+          val subst = Unification.unifyTypes(hackMonoType2Type(enum0.tpeDeprecated), hackMonoType2Type(tpe), RigidityEnv.empty).get
           val tagType = subst(hackMonoType2Type(uninstantiatedTagType))
 
           sacc + TagInfo(enumSym, tagName.name, args, tpe, hackType2MonoType(tagType))
@@ -759,11 +762,11 @@ object JvmOps {
     case MonoType.Int64 => Type.Int64
     case MonoType.BigInt => Type.BigInt
     case MonoType.Str => Type.Str
-    case MonoType.Array(elm) => Type.mkScopedArray(hackMonoType2Type(elm), Type.Impure, SourceLocation.Unknown)
+    case MonoType.Array(elm) => Type.mkArray(hackMonoType2Type(elm), Type.Impure, SourceLocation.Unknown)
     case MonoType.Lazy(tpe) => Type.mkLazy(hackMonoType2Type(tpe), SourceLocation.Unknown)
     case MonoType.Channel(elm) => Type.mkChannel(hackMonoType2Type(elm), SourceLocation.Unknown)
     case MonoType.Native(clazz) => Type.mkNative(clazz, SourceLocation.Unknown)
-    case MonoType.Ref(elm) => Type.mkScopedRef(hackMonoType2Type(elm), Type.False, SourceLocation.Unknown)
+    case MonoType.Ref(elm) => Type.mkRef(hackMonoType2Type(elm), Type.False, SourceLocation.Unknown)
     case MonoType.Arrow(targs, tresult) => Type.mkPureCurriedArrow(targs map hackMonoType2Type, hackMonoType2Type(tresult), SourceLocation.Unknown)
     case MonoType.Enum(sym, args) => Type.mkEnum(sym, args.map(hackMonoType2Type), SourceLocation.Unknown)
     case MonoType.Relation(attr) => Type.mkRelation(attr.map(hackMonoType2Type), SourceLocation.Unknown)
@@ -1016,6 +1019,8 @@ object JvmOps {
       case Expression.GetStaticField(_, _, _) => Set.empty
 
       case Expression.PutStaticField(_, exp, _, _) => visitExp(exp)
+
+      case Expression.NewObject(_, _, _) => Set.empty
 
       case Expression.NewChannel(exp, _, _) => visitExp(exp)
 

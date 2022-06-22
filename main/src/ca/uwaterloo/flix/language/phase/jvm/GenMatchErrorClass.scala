@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescripto
 object GenMatchErrorClass {
 
   private val locationField: InstanceField =
-    InstanceField(JvmName.MatchError, "location", JvmName.ReifiedSourceLocation.toTpe)
+    InstanceField(JvmName.MatchError, IsPublic, IsFinal, "location", BackendObjType.ReifiedSourceLocation.toTpe)
 
   /**
     * Creates a subclass of `dev.flix.runtime.FlixError` with a
@@ -40,9 +40,9 @@ object GenMatchErrorClass {
   private def genByteCode()(implicit flix: Flix): Array[Byte] = {
     val cm = ClassMaker.mkClass(JvmName.MatchError, IsFinal, superClass = JvmName.FlixError)
 
-    cm.mkConstructor(genConstructor(), mkDescriptor(JvmName.ReifiedSourceLocation.toTpe)(VoidableType.Void), IsPublic)
+    cm.mkConstructor(genConstructor(), mkDescriptor(BackendObjType.ReifiedSourceLocation.toTpe)(VoidableType.Void), IsPublic)
 
-    locationField.mkField(cm, IsPublic, IsFinal)
+    cm.mkField(locationField)
 
     // TODO: Are these ever used?
     cm.mkMethod(genEqualsMethod(), "equals", mkDescriptor(JvmName.Object.toTpe)(BackendType.Bool), IsPublic, NotFinal)
@@ -60,13 +60,13 @@ object GenMatchErrorClass {
       pushString("Non-exhaustive match at ") ~
       INVOKEVIRTUAL(JvmName.StringBuilder, "append", stringBuilderDescriptor) ~
       ALOAD(1) ~
-      INVOKEVIRTUAL(JvmName.ReifiedSourceLocation, "toString", mkDescriptor()(BackendObjType.String.toTpe)) ~
+      INVOKEVIRTUAL(BackendObjType.ReifiedSourceLocation.jvmName, "toString", mkDescriptor()(BackendObjType.String.toTpe)) ~
       INVOKEVIRTUAL(JvmName.StringBuilder, "append", stringBuilderDescriptor) ~
       INVOKEVIRTUAL(JvmName.StringBuilder, "toString", mkDescriptor()(BackendObjType.String.toTpe)) ~
       invokeConstructor(JvmName.FlixError, mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void)) ~
       thisLoad() ~
       ALOAD(1) ~
-      locationField.putField() ~
+      PUTFIELD(locationField) ~
       RETURN()
   }
 
@@ -87,8 +87,8 @@ object GenMatchErrorClass {
       // check individual fields
       ALOAD(1) ~ CHECKCAST(JvmName.MatchError) ~
       storeWithName(2, JvmName.MatchError.toTpe) { otherErr =>
-        thisLoad() ~ locationField.getField() ~
-          otherErr.load() ~ locationField.getField() ~
+        thisLoad() ~ GETFIELD(locationField) ~
+          otherErr.load() ~ GETFIELD(locationField) ~
           INVOKESTATIC(JvmName.Objects, "equals", mkDescriptor(JvmName.Object.toTpe, JvmName.Object.toTpe)(BackendType.Bool)) ~
           IRETURN()
       }
@@ -98,7 +98,7 @@ object GenMatchErrorClass {
     ICONST_1() ~ ANEWARRAY(JvmName.Object) ~
       DUP() ~
       ICONST_0() ~
-      thisLoad() ~ locationField.getField() ~
+      thisLoad() ~ GETFIELD(locationField) ~
       AASTORE() ~
       INVOKESTATIC(JvmName.Object, "hash", mkDescriptor(BackendType.Array(JvmName.Object.toTpe))(BackendType.Int32)) ~
       IRETURN()

@@ -63,7 +63,7 @@ class Flix {
     */
   private var cachedParsedAst: ParsedAst.Root = ParsedAst.Root(Map.empty, None)
   private var cachedWeededAst: WeededAst.Root = WeededAst.Root(Map.empty, None, Set.empty)
-  private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty)
+  private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty)
   private var cachedResolvedAst: ResolvedAst.Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Set.empty, Map.empty)
   private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty, Map.empty)
 
@@ -168,8 +168,10 @@ class Flix {
     "CommutativeMonoid.flix" -> LocalResource.get("/src/library/CommutativeMonoid.flix"),
     "CommutativeSemiGroup.flix" -> LocalResource.get("/src/library/CommutativeSemiGroup.flix"),
     "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
+    "ForEach.flix" -> LocalResource.get("/src/library/ForEach.flix"),
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
+    "FunctorFilter.flix" -> LocalResource.get("/src/library/FunctorFilter.flix"),
     "Group.flix" -> LocalResource.get("/src/library/Group.flix"),
     "Identity.flix" -> LocalResource.get("/src/library/Identity.flix"),
     "Monad.flix" -> LocalResource.get("/src/library/Monad.flix"),
@@ -295,6 +297,18 @@ class Flix {
     if (text == null)
       throw new IllegalArgumentException("'text' must be non-null.")
     addInput(name, Input.Text(name, text, stable = false))
+    this
+  }
+
+  /**
+    * Removes the given string `text` with the given `name`.
+    */
+  def remSourceCode(name: String, text: String): Flix = {
+    if (name == null)
+      throw new IllegalArgumentException("'name' must be non-null.")
+    if (text == null)
+      throw new IllegalArgumentException("'text' must be non-null.")
+    remInput(name, Input.Text(name, text, stable = false))
     this
   }
 
@@ -439,9 +453,9 @@ class Flix {
     */
   def mkMessages(errors: Seq[CompilationMessage]): List[String] = {
     if (options.explain || errors.length == 1)
-      errors.map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
+      errors.sortBy(_.loc).map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
     else
-      errors.map(cm => cm.message(formatter)).toList
+      errors.sortBy(_.loc).map(cm => cm.message(formatter)).toList
   }
 
   /**

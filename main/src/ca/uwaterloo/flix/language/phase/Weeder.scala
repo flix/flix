@@ -47,7 +47,7 @@ object Weeder {
     "if", "import", "inline", "instance", "into", "lat", "law", "lawful", "lazy", "let", "let*", "match",
     "namespace", "null", "opaque", "override", "pub", "ref", "region", "reify",
     "reifyBool", "reifyEff", "reifyType", "rel", "sealed", "set", "spawn", "Static", "true",
-    "type", "use", "where", "with", "|||", "~~~", "discard"
+    "type", "use", "where", "with", "|||", "~~~", "discard", "object"
   )
 
 
@@ -653,7 +653,7 @@ object Weeder {
           val loc = mkSL(sp1, sp2).asSynthetic
 
           // The name of the lambda parameter.
-          val ident = Name.Ident(sp1, "pat" + Flix.Delimiter + "0", sp2)
+          val ident = Name.Ident(sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), sp2)
 
           // Construct the body of the lambda expression.
           val varOrRef = WeededAst.Expression.VarOrDefOrSig(ident, loc)
@@ -745,7 +745,7 @@ object Weeder {
           WeededAst.Expression.Apply(inner, List(value), loc)
         case (pat, value, body) =>
           // Full-blown pattern match.
-          val lambdaIdent = Name.Ident(sp1, "pat" + Flix.Delimiter + "0", sp2)
+          val lambdaIdent = Name.Ident(sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), sp2)
           val lambdaVar = WeededAst.Expression.VarOrDefOrSig(lambdaIdent, loc)
 
           val rule = WeededAst.MatchRule(pat, WeededAst.Expression.True(loc.asSynthetic), body)
@@ -987,6 +987,10 @@ object Weeder {
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
       }
+
+    case ParsedAst.Expression.NewObject(sp1, className, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      WeededAst.Expression.NewObject(className.mkString("."), loc).toSuccess
 
     case ParsedAst.Expression.Static(sp1, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -1485,7 +1489,7 @@ object Weeder {
           WeededAst.Expression.FixpointMerge(e1, e2, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.FixpointProjectInto(sp1, exps, idents, sp2) =>
+    case ParsedAst.Expression.FixpointInjectInto(sp1, exps, idents, sp2) =>
       val loc = mkSL(sp1, sp2)
 
       ///
@@ -1501,7 +1505,7 @@ object Weeder {
           es.zip(idents.toList).foldRight(init: WeededAst.Expression) {
             case ((exp, ident), acc) =>
               val pred = Name.mkPred(ident)
-              val innerExp = WeededAst.Expression.FixpointProjectIn(exp, pred, loc)
+              val innerExp = WeededAst.Expression.FixpointInject(exp, pred, loc)
               WeededAst.Expression.FixpointMerge(innerExp, acc, loc)
           }
       }
@@ -1601,7 +1605,7 @@ object Weeder {
           }
 
           // Extract the tuples of the result predicate.
-          WeededAst.Expression.FixpointProjectOut(pred, queryExp, dbExp, loc)
+          WeededAst.Expression.FixpointProject(pred, queryExp, dbExp, loc)
       }
 
     case ParsedAst.Expression.Reify(sp1, t0, sp2) =>
@@ -2805,6 +2809,7 @@ object Weeder {
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.NewObject(sp1, _, _) => sp1
     case ParsedAst.Expression.Static(sp1, _) => sp1
     case ParsedAst.Expression.Scope(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
@@ -2847,7 +2852,7 @@ object Weeder {
     case ParsedAst.Expression.FixpointConstraintSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointLambda(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointCompose(e1, _, _) => leftMostSourcePosition(e1)
-    case ParsedAst.Expression.FixpointProjectInto(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.FixpointInjectInto(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.Reify(sp1, _, _) => sp1

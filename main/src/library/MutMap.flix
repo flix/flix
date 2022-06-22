@@ -522,9 +522,7 @@ namespace MutMap {
     ///
     /// Returns `false` if `m` is the empty map.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def exists(f: (k, v) -> Bool, m: MutMap[k, v, r]): Bool \ Read(r) =
+    pub def exists(f: (k, v) -> Bool & ef, m: MutMap[k, v, r]): Bool \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.exists(f, deref mm)
 
@@ -533,9 +531,7 @@ namespace MutMap {
     ///
     /// Returns `true` if `m` is the empty map.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def forall(f: (k, v) -> Bool, m: MutMap[k, v, r]): Bool \ Read(r) =
+    pub def forall(f: (k, v) -> Bool & ef, m: MutMap[k, v, r]): Bool \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.forall(f, deref mm)
 
@@ -579,7 +575,7 @@ namespace MutMap {
     ///
     /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison, m: MutMap[k, v, r]): List[(k, v)] \ Read(r) =
+    pub def query(p: k -> Comparison & ef, m: MutMap[k, v, r]): List[(k, v)] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.query(p, deref mm)
 
@@ -588,7 +584,7 @@ namespace MutMap {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: k -> Comparison, f: (k, v) -> Unit & ef, m: MutMap[k, v, r]): Unit \ { ef, Read(r) } =
+    pub def queryWith(p: k -> Comparison & ef1, f: (k, v) -> Unit & ef2, m: MutMap[k, v, r]): Unit & (ef1 and ef2) \ { Read(r) } =
         let MutMap(mm) = m;
         Map.queryWith(p, f, deref mm)
 

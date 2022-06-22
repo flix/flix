@@ -4,11 +4,6 @@
 pub type alias Static = false
 
 ///
-/// Array[t] is a type alias for a scoped array with a global lifetime.
-///
-pub type alias Array[t] = ScopedArray[t, Static]
-
-///
 /// The Reified Flix Bools.
 ///
 pub enum ReifiedBool with Eq, Order, ToString {

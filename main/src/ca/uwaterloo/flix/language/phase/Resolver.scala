@@ -46,7 +46,7 @@ object Resolver {
   private val ToStringSym = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
   private val HashSym = new Symbol.ClassSym(Nil, "Hash", SourceLocation.Unknown)
 
-  private val DerivableSyms = List(BoxableSym, EqSym, OrderSym, ToStringSym, HashSym)
+  val DerivableSyms = List(BoxableSym, EqSym, OrderSym, ToStringSym, HashSym)
 
   /**
     * Performs name resolution on the given program `root`.
@@ -1056,6 +1056,11 @@ object Resolver {
             case (field, e) => ResolvedAst.Expression.PutStaticField(field, e, loc)
           }
 
+        case NamedAst.Expression.NewObject(className, loc) =>
+          lookupJvmClass(className, loc) map {
+            case clazz => ResolvedAst.Expression.NewObject(clazz, loc)
+          }
+
         case NamedAst.Expression.NewChannel(exp, tpe, loc) =>
           val tVal = resolveType(tpe, taenv, ns0, root)
           val eVal = visitExp(exp, region)
@@ -1149,17 +1154,17 @@ object Resolver {
             e => ResolvedAst.Expression.FixpointFilter(pred, e, loc)
           }
 
-        case NamedAst.Expression.FixpointProjectIn(exp, pred, loc) =>
+        case NamedAst.Expression.FixpointInject(exp, pred, loc) =>
           val eVal = visitExp(exp, region)
           mapN(eVal) {
-            e => ResolvedAst.Expression.FixpointProjectIn(e, pred, loc)
+            e => ResolvedAst.Expression.FixpointInject(e, pred, loc)
           }
 
-        case NamedAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) =>
+        case NamedAst.Expression.FixpointProject(pred, exp1, exp2, loc) =>
           val e1Val = visitExp(exp1, region)
           val e2Val = visitExp(exp2, region)
           mapN(e1Val, e2Val) {
-            case (e1, e2) => ResolvedAst.Expression.FixpointProjectOut(pred, e1, e2, loc)
+            case (e1, e2) => ResolvedAst.Expression.FixpointProject(pred, e1, e2, loc)
           }
 
         case NamedAst.Expression.Reify(t0, loc) =>
@@ -1688,8 +1693,8 @@ object Resolver {
       case "String" => Type.mkString(loc).toSuccess
       case "Channel" => Type.mkChannel(loc).toSuccess
       case "Lazy" => Type.mkLazy(loc).toSuccess
-      case "ScopedArray" => Type.Cst(TypeConstructor.ScopedArray, loc).toSuccess
-      case "Ref" => Type.Cst(TypeConstructor.ScopedRef, loc).toSuccess
+      case "Array" => Type.Cst(TypeConstructor.Array, loc).toSuccess
+      case "Ref" => Type.Cst(TypeConstructor.Ref, loc).toSuccess
       case "Region" => Type.Cst(TypeConstructor.Region, loc).toSuccess
 
       // Disambiguate type.
@@ -1905,6 +1910,14 @@ object Resolver {
               Type.mkApply(applyAlias(alias, usedArgs, loc), extraArgs, tpe0.loc)
           }
         }
+      case Type.UnkindedArrow(purAndEff0, arity, loc) =>
+        val purAndEffVal = finishResolvePurityAndEffect(purAndEff0, taenv)
+        val argsVal = traverse(targs)(finishResolveType(_, taenv))
+        mapN(purAndEffVal, argsVal) {
+          case (purAndEff, args) =>
+            Type.mkApply(Type.UnkindedArrow(purAndEff, arity, loc), args, tpe0.loc)
+        }
+
       case _ =>
         traverse(targs)(finishResolveType(_, taenv)) map {
           resolvedArgs => Type.mkApply(baseType, resolvedArgs, tpe0.loc)
@@ -1937,7 +1950,7 @@ object Resolver {
   /**
     * Finishes resolution of the given purity and effect.
     */
-  private def finishResolvePurityAndEffect(purAndEff0: Ast.PurityAndEffect, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias])(implicit flix: Flix): Validation[Ast.PurityAndEffect, ResolutionError] = purAndEff0 match {
+  private def finishResolvePurityAndEffect(purAndEff0: Ast.PurityAndEffect, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]): Validation[Ast.PurityAndEffect, ResolutionError] = purAndEff0 match {
     case Ast.PurityAndEffect(pur0, eff0) =>
       val purVal = traverse(pur0)(finishResolveType(_, taenv)).map(_.headOption)
       val effVal = traverse(eff0)(effs => traverse(effs)(finishResolveType(_, taenv))).map(_.headOption)
@@ -2479,11 +2492,11 @@ object Resolver {
 
       case TypeConstructor.UnkindedEnum(_) => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.ScopedRef => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.Ref => Class.forName("java.lang.Object").toSuccess
 
       case TypeConstructor.Tuple(_) => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.ScopedArray =>
+      case TypeConstructor.Array =>
         Type.eraseAliases(tpe).typeArguments match {
           case elmTyp :: region :: Nil =>
             mapN(getJVMType(elmTyp, loc)) {

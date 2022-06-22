@@ -244,6 +244,9 @@ object Simplifier {
         val e = visitExp(exp)
         SimplifiedAst.Expression.PutStaticField(field, e, tpe, effectToPurity(eff), loc)
 
+      case TypedAst.Expression.NewObject(clazz, tpe, eff, loc) =>
+        SimplifiedAst.Expression.NewObject(clazz, tpe, effectToPurity(eff), loc)
+
       case TypedAst.Expression.NewChannel(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.NewChannel(e, tpe, loc)
@@ -312,10 +315,10 @@ object Simplifier {
       case TypedAst.Expression.FixpointFilter(_, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
-      case TypedAst.Expression.FixpointProjectIn(_, _, _, _, _) =>
+      case TypedAst.Expression.FixpointInject(_, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
-      case TypedAst.Expression.FixpointProjectOut(_, _, _, _, _) =>
+      case TypedAst.Expression.FixpointProject(_, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
       case TypedAst.Expression.Reify(_, _, _, _) =>
@@ -1019,6 +1022,8 @@ object Simplifier {
       case SimplifiedAst.Expression.PutStaticField(field, exp, tpe, purity, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
+
+      case SimplifiedAst.Expression.NewObject(_,_, _, _) => e
 
       case SimplifiedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp)

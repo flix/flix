@@ -73,6 +73,10 @@ instance Monad[List] {
     pub def flatMap(f: a -> List[b] & ef, x : List[a]) : List[b] & ef = List.flatMap(f, x)
 }
 
+instance ForEach[List] {
+    pub def foreach(f: a -> Unit & ef, l: List[a]): Unit & ef = List.foreach(f, l)
+}
+
 instance Foldable[List] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: List[a]): b & ef = List.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: List[a]): b & ef = List.foldRight(f, s, l)
@@ -82,6 +86,11 @@ instance Foldable[List] {
 instance Traversable[List] {
     pub def traverse(f: a -> m[b] & ef, t: List[a]): m[List[b]] & ef with Applicative[m] = List.traverse(f, t)
     pub override def sequence(t: List[m[a]]): m[List[a]] with Applicative[m] = List.sequence(t)
+}
+
+instance FunctorFilter[List] {
+    pub def filterMap(f: a -> Option[b] & ef, x: List[a]): List[b] & ef = List.filterMap(f, x)
+    pub override def filter(f: a -> Bool & ef, x: List[a]): List[a] & ef = List.filter(f, x)
 }
 
 instance SemiGroup[List[a]] {
@@ -684,10 +693,8 @@ namespace List {
     ///
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
-    pub def count(f: a -> Bool, l: List[a]): Int32 =
+    pub def count(f: a -> Bool & ef, l: List[a]): Int32 & ef =
         foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, l)
 
     ///
@@ -870,6 +877,9 @@ namespace List {
 
     ///
     /// Split the list `xs` at the position `n` returning the left and right parts.
+    /// Position `n` is included in the right part.
+    ///
+    /// Example: `splitAt(2, 1::2::3::4::Nil)` returns `(1::2::Nil, 3::4::Nil)`
     ///
     /// Returns `(xs, Nil)` if `n > length(xs)`.
     /// Returns `(Nil, xs)` if `n < 0`.
@@ -1154,7 +1164,7 @@ namespace List {
     /// Returns the list `l` as an array.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def toArray(l: List[a], r: Region[r]): ScopedArray[a, r] \ Write(r) = match head(l) {
+    pub def toArray(l: List[a], r: Region[r]): Array[a, r] \ Write(r) = match head(l) {
         case None    => [] @ r
         case Some(x) =>
             let a = [x; length(l)] @ r;
@@ -1326,6 +1336,23 @@ namespace List {
             }
         };
         Iterator(done, next)
+
+    ///
+    /// Returns an iterator over `l`.
+    ///
+    pub def toRegionIterator(r: Region[r], l: List[a]): RegionIterator[a, r] \ Write(r) =
+        let cursor = ref l @ r;
+        let done = () -> match (deref cursor) {
+            case Nil => true
+            case _   => false
+        };
+        let next = () -> match (deref cursor) {
+            case Nil     => bug!("Empty Iterator!")
+            case x :: xs =>
+                cursor := xs;
+                x
+        };
+        RegionIterator(done, next)
 
     ///
     /// Returns the association list `l` as a `DelayMap`.

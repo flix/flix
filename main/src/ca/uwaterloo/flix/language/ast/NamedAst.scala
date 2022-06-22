@@ -201,6 +201,8 @@ object NamedAst {
 
     case class PutStaticField(className: String, fieldName: String, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
+    case class NewObject(className: String, loc: SourceLocation) extends NamedAst.Expression
+
     case class NewChannel(exp: NamedAst.Expression, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Expression
 
     case class GetChannel(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
@@ -225,9 +227,9 @@ object NamedAst {
 
     case class FixpointFilter(pred: Name.Pred, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FixpointProjectIn(exp: NamedAst.Expression, pred: Name.Pred, loc: SourceLocation) extends NamedAst.Expression
+    case class FixpointInject(exp: NamedAst.Expression, pred: Name.Pred, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FixpointProjectOut(pred: Name.Pred, exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class FixpointProject(pred: Name.Pred, exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Reify(t: NamedAst.Type, loc: SourceLocation) extends NamedAst.Expression
 

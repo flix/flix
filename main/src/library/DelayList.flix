@@ -80,6 +80,10 @@ instance Traversable[DelayList] {
     pub override def sequence(l: DelayList[m[a]]): m[DelayList[a]] with Applicative[m] = DelayList.sequence(l)
 }
 
+instance ForEach[DelayList] {
+    pub def foreach(f: a -> Unit & ef, l: DelayList[a]): Unit & ef = DelayList.foreach(f, l)
+}
+
 instance Foldable[DelayList] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldRight(f, s, l)
@@ -89,6 +93,11 @@ instance Foldable[DelayList] {
 instance Iterable[DelayList] {
     pub def iterator(l: DelayList[a]): Iterator[a] & Impure =
         DelayList.toIterator(l)
+}
+
+instance FunctorFilter[DelayList] {
+    pub def filterMap(f: a -> Option[b] & ef, x: DelayList[a]): DelayList[b] & ef = DelayList.filterMap(f, x)
+    pub override def filter(f: a -> Bool & ef, x: DelayList[a]): DelayList[a] & ef = DelayList.filter(f, x)
 }
 
 instance SemiGroup[DelayList[a]] {
@@ -1165,7 +1174,7 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toArray(l: DelayList[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
+    pub def toArray(l: DelayList[a], r: Region[r]): Array[a, r] \ Write(r) =
         let a = [$DEFAULT$; length(l)] @ r;
         foreach(match (y, i) -> a[i] = y, zipWithIndex(l));
         a
@@ -1214,6 +1223,14 @@ namespace DelayList {
     pub def toMutList(l: DelayList[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
         Array.toMutList(toArray(l, r2), r) // `Array.toMutList` respects the invariant of `MutList`.
     }
+
+    ///
+    /// Returns `l` as a MutDeque.
+    ///
+    pub def toMutDeque(l: DelayList[a], r: Region[r]): MutDeque[a, r] \ Write(r) =
+        let d = new MutDeque(r);
+        DelayList.foreach(x -> MutDeque.pushBack(x, d), l);
+        d
 
     ///
     /// Returns the association list `l` as a map.
