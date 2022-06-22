@@ -548,139 +548,139 @@ namespace TestInt8 {
     // getBit                                                                  //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def getBit01(): Bool = Int8.getBit(-1i8, 5) == 1
+    def getBit01(): Bool = Int8.getBit(5, -1i8) == 1
 
     @test
-    def getBit02(): Bool = Int8.getBit(-100i8, 7) == 1
+    def getBit02(): Bool = Int8.getBit(7, -100i8) == 1
 
     @test
-    def getBit03(): Bool = Int8.getBit(2i8 ** 5i8, 5) == 1
+    def getBit03(): Bool = Int8.getBit(5, 2i8 ** 5i8) == 1
 
     @test
-    def getBit04(): Bool = Int8.getBit(2i8 ** 5i8, 6) == 0
+    def getBit04(): Bool = Int8.getBit(6, 2i8 ** 5i8) == 0
 
     @test
-    def getBit05(): Bool = Int8.getBit(2i8 ** 5i8, 4) == 0
+    def getBit05(): Bool = Int8.getBit(4, 2i8 ** 5i8) == 0
 
     @test
-    def getBit06(): Bool = Int8.getBit(-1i8 - 2i8 ** 4i8, 4) == 0
+    def getBit06(): Bool = Int8.getBit(4, -1i8 - 2i8 ** 4i8) == 0
 
     @test
-    def getBit07(): Bool = Int8.getBit(-1i8 - 2i8 ** 4i8, 5) == 1
+    def getBit07(): Bool = Int8.getBit(5, -1i8 - 2i8 ** 4i8) == 1
 
     @test
-    def getBit08(): Bool = Int8.getBit(0i8, 7) == 0
+    def getBit08(): Bool = Int8.getBit(7, 0i8) == 0
 
     /////////////////////////////////////////////////////////////////////////////
     // setBit                                                                  //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def setBit01(): Bool = Int8.setBit(0i8, 0) == 1i8
+    def setBit01(): Bool = Int8.setBit(0, 0i8) == 1i8
 
     @test
-    def setBit02(): Bool = Int8.setBit(0i8, 1) == 2i8
+    def setBit02(): Bool = Int8.setBit(1, 0i8) == 2i8
 
     @test
-    def setBit03(): Bool = Int8.setBit(0i8, 7) == -128i8
+    def setBit03(): Bool = Int8.setBit(7, 0i8) == -128i8
 
     @test
-    def setBit04(): Bool = Int8.setBit(0i8, 8) == 0i8
+    def setBit04(): Bool = Int8.setBit(8, 0i8) == 0i8
 
     @test
-    def setBit05(): Bool = Int8.setBit(-101i8, 31) == -101i8
+    def setBit05(): Bool = Int8.setBit(31, -101i8) == -101i8
 
     @test
-    def setBit07(): Bool = Int8.setBit(-17i8, 4) == -1i8
+    def setBit07(): Bool = Int8.setBit(4, -17i8) == -1i8
 
     @test
-    def setBit08(): Bool = Int8.setBit(-65i8, 6) == -1i8
+    def setBit08(): Bool = Int8.setBit(6, -65i8) == -1i8
 
     @test
-    def setBit09(): Bool = Int8.setBit(-17i8, 15) == -17i8
+    def setBit09(): Bool = Int8.setBit(15, -17i8) == -17i8
 
     @test
-    def setBit10(): Bool = Int8.setBit(-17i8, 30) == -17i8
+    def setBit10(): Bool = Int8.setBit(30, -17i8) == -17i8
 
     /////////////////////////////////////////////////////////////////////////////
     // clearBit                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def clearBit01(): Bool = Int8.clearBit(1i8, 0) == 0i8
+    def clearBit01(): Bool = Int8.clearBit(0, 1i8) == 0i8
 
     @test
-    def clearBit02(): Bool = Int8.clearBit(1i8, 1) == 1i8
+    def clearBit02(): Bool = Int8.clearBit(1, 1i8) == 1i8
 
     @test
-    def clearBit03(): Bool = Int8.clearBit(2i8, 1) == 0i8
+    def clearBit03(): Bool = Int8.clearBit(1, 2i8) == 0i8
 
     @test
-    def clearBit04(): Bool = Int8.clearBit(2i8, 2) == 2i8
+    def clearBit04(): Bool = Int8.clearBit(2, 2i8) == 2i8
 
     @test
-    def clearBit05(): Bool = Int8.clearBit(0i8, 31) == 0i8
+    def clearBit05(): Bool = Int8.clearBit(31, 0i8) == 0i8
 
     @test
-    def clearBit06(): Bool = Int8.clearBit(0i8, 30) == 0i8
+    def clearBit06(): Bool = Int8.clearBit(30, 0i8) == 0i8
 
     @test
-    def clearBit07(): Bool = Int8.clearBit(1i8 <<< 7, 7) == 0i8
+    def clearBit07(): Bool = Int8.clearBit(7, 1i8 <<< 7) == 0i8
 
     @test
-    def clearBit08(): Bool = Int8.clearBit(109i8, 3) == 101i8
+    def clearBit08(): Bool = Int8.clearBit(3, 109i8) == 101i8
 
     @test
-    def clearBit09(): Bool = Int8.clearBit(-1i8, 0) == -2i8
+    def clearBit09(): Bool = Int8.clearBit(0, -1i8) == -2i8
 
     @test
-    def clearBit10(): Bool = Int8.clearBit(-1i8, 1) == -3i8
+    def clearBit10(): Bool = Int8.clearBit(1, -1i8) == -3i8
 
     @test
-    def clearBit11(): Bool = Int8.clearBit(-1i8, 5) == -33i8
+    def clearBit11(): Bool = Int8.clearBit(5, -1i8) == -33i8
 
     @test
-    def clearBit12(): Bool = Int8.clearBit(-1i8, 7) == ~~~(1i8 <<< 7)
+    def clearBit12(): Bool = Int8.clearBit(7, -1i8) == ~~~(1i8 <<< 7)
 
     @test
-    def clearBit13(): Bool = Int8.clearBit(-1i8, 32) == -2i8
+    def clearBit13(): Bool = Int8.clearBit(32, -1i8) == -2i8
 
     /////////////////////////////////////////////////////////////////////////////
     // flipBit                                                                 //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def flipBit01(): Bool = Int8.flipBit(1i8, 0) == 0i8
+    def flipBit01(): Bool = Int8.flipBit(0, 1i8) == 0i8
 
     @test
-    def flipBit02(): Bool = Int8.flipBit(1i8, 1) == 3i8
+    def flipBit02(): Bool = Int8.flipBit(1, 1i8) == 3i8
 
     @test
-    def flipBit03(): Bool = Int8.flipBit(2i8, 1) == 0i8
+    def flipBit03(): Bool = Int8.flipBit(1, 2i8) == 0i8
 
     @test
-    def flipBit04(): Bool = Int8.flipBit(2i8, 2) == 6i8
+    def flipBit04(): Bool = Int8.flipBit(2, 2i8) == 6i8
 
     @test
-    def flipBit05(): Bool = Int8.flipBit(0i8, 7) == -128i8
+    def flipBit05(): Bool = Int8.flipBit(7, 0i8) == -128i8
 
     @test
-    def flipBit06(): Bool = Int8.flipBit(0i8, 8) == 0i8
+    def flipBit06(): Bool = Int8.flipBit(8, 0i8) == 0i8
 
     @test
-    def flipBit07(): Bool = Int8.flipBit(1i8 <<< 7, 7) == 0i8
+    def flipBit07(): Bool = Int8.flipBit(7, 1i8 <<< 7) == 0i8
 
     @test
-    def flipBit08(): Bool = Int8.flipBit(-1i8, 0) == -2i8
+    def flipBit08(): Bool = Int8.flipBit(0, -1i8) == -2i8
 
     @test
-    def flipBit9(): Bool = Int8.flipBit(-1i8, 1) == -3i8
+    def flipBit9(): Bool = Int8.flipBit(1, -1i8) == -3i8
 
     @test
-    def flipBit10(): Bool = Int8.flipBit(-1i8, 5) == -33i8
+    def flipBit10(): Bool = Int8.flipBit(5, -1i8) == -33i8
 
     @test
-    def flipBit11(): Bool = Int8.flipBit(-1i8, 5) == (-1i8-(1i8 <<< 5))
+    def flipBit11(): Bool = Int8.flipBit(5, -1i8) == (-1i8-(1i8 <<< 5))
 
     @test
-    def flipBit12(): Bool = Int8.flipBit(-1i8, 32) == -2i8
+    def flipBit12(): Bool = Int8.flipBit(32, -1i8) == -2i8
 
     /////////////////////////////////////////////////////////////////////////////
     // log2                                                                    //

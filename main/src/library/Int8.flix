@@ -244,7 +244,7 @@ namespace Int8 {
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def getBit(x: Int8, position: Int32): Int32 =
+    pub def getBit(position: Int32, x: Int8): Int32 =
         if ((x >>> position) rem 2i8 == 0i8) 0 else 1
 
     ///
@@ -253,7 +253,7 @@ namespace Int8 {
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def setBit(x: Int8, position: Int32): Int8 = x ||| (1i8 <<< position)
+    pub def setBit(position: Int32, x: Int8): Int8 = x ||| (1i8 <<< position)
 
     ///
     /// Returns `x` with the bit at position `position` cleared (to 0).
@@ -261,7 +261,7 @@ namespace Int8 {
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def clearBit(x: Int8, position: Int32): Int8 = x &&& ~~~(1i8 <<< position)
+    pub def clearBit(position: Int32, x: Int8): Int8 = x &&& ~~~(1i8 <<< position)
 
     ///
     /// Returns `x` with the bit at position `position` flipped.
@@ -269,7 +269,7 @@ namespace Int8 {
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def flipBit(x: Int8, position: Int32): Int8 = x ^^^ (1i8 <<< position)
+    pub def flipBit(position: Int32, x: Int8): Int8 = x ^^^ (1i8 <<< position)
 
     ///
     /// Returns the integer binary logarithm of `x`.
