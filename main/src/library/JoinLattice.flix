@@ -15,6 +15,8 @@
  *  limitations under the License.
  */
 
+use Bool.==>;
+
 ///
 /// A type class for join semi lattices.
 ///
