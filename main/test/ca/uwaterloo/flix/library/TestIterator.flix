@@ -232,6 +232,81 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool = region r {
+        List.toRegionIterator(r, Nil) |> Iterator.regSum == 0
+    }
+
+    @test
+    def sum02(): Bool = region r {
+        List.toRegionIterator(r, 1 :: Nil) |> Iterator.regSum == 1
+    }
+
+    @test
+    def sum03(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 2 :: 3 :: Nil) |> Iterator.regSum == 6
+    }
+
+    @test
+    def sum04(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 2 :: 3 :: -3 :: Nil) |> Iterator.regSum == 3
+    }
+
+    @test
+    def sum05(): Bool = region r {
+        List.toRegionIterator(r, -1 :: -2 :: -3 :: -4 :: Nil) |> Iterator.regSum == -10
+    }
+
+    @test
+    def sum06(): Bool = region r {
+        List.toRegionIterator(r, 10 :: -10 :: Nil) |> Iterator.regSum == 0
+    }
+
+    @test
+    def sum07(): Bool = region r {
+        Iterator.regRange(r, 1, 101) |> Iterator.regSum == 5050
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool = region r {
+        List.toRegionIterator(r, Nil) |> Iterator.regSumWith(x -> x + 1) == 0
+    }
+
+    @test
+    def sumWith02(): Bool = region r {
+        List.toRegionIterator(r, 1 :: Nil) |> Iterator.regSumWith(x -> x + 1) == 2
+    }
+
+    @test
+    def sumWith03(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 2 :: 3 :: Nil) |> Iterator.regSumWith(x -> x + 1) == 9
+    }
+
+    @test
+    def sumWith04(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 2 :: 3 :: -3 :: Nil) |> Iterator.regSumWith(x -> x + 1) == 7
+    }
+
+    @test
+    def sumWith05(): Bool = region r {
+        List.toRegionIterator(r, -1 :: -2 :: -3 :: -4 :: Nil) |> Iterator.regSumWith(x -> x + 1) == -6
+    }
+
+    @test
+    def sumWith06(): Bool = region r {
+        List.toRegionIterator(r, 10 :: -10 :: Nil) |> Iterator.regSumWith(x -> x + 1) == 2
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // product                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1436,68 +1511,6 @@ namespace TestIterator {
             List.toIterator;
         Iterator.unfoldWithOk(() -> { d(); n() }) |>
             Iterator.toList == 1 :: 2 :: 3 :: Nil
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // sum                                                                     //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def sum01(): Bool & Impure =
-        List.toIterator(Nil) |> Iterator.sum == 0
-
-    @test
-    def sum02(): Bool & Impure =
-        List.toIterator(1 :: Nil) |> Iterator.sum == 1
-
-    @test
-    def sum03(): Bool & Impure =
-        List.toIterator(1 :: 2 :: 3 :: Nil) |> Iterator.sum == 6
-
-    @test
-    def sum04(): Bool & Impure =
-        List.toIterator(1 :: 2 :: 3 :: -3 :: Nil) |> Iterator.sum == 3
-
-    @test
-    def sum05(): Bool & Impure =
-        List.toIterator(-1 :: -2 :: -3 :: -4 :: Nil) |> Iterator.sum == -10
-
-    @test
-    def sum06(): Bool & Impure =
-        List.toIterator(10 :: -10 :: Nil) |> Iterator.sum == 0
-
-    @test
-    def sum07(): Bool & Impure =
-        Iterator.range(1, 101) |> Iterator.sum == 5050
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // sumWith                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def sumWith01(): Bool & Impure =
-        List.toIterator(Nil) |> Iterator.sumWith(x -> x + 1) == 0
-
-    @test
-    def sumWith02(): Bool & Impure =
-        List.toIterator(1 :: Nil) |> Iterator.sumWith(x -> x + 1) == 2
-
-    @test
-    def sumWith03(): Bool & Impure =
-        List.toIterator(1 :: 2 :: 3 :: Nil) |> Iterator.sumWith(x -> x + 1) == 9
-
-    @test
-    def sumWith04(): Bool & Impure =
-        List.toIterator(1 :: 2 :: 3 :: -3 :: Nil) |> Iterator.sumWith(x -> x + 1) == 7
-
-    @test
-    def sumWith05(): Bool & Impure =
-        List.toIterator(-1 :: -2 :: -3 :: -4 :: Nil) |> Iterator.sumWith(x -> x + 1) == -6
-
-    @test
-    def sumWith06(): Bool & Impure =
-        List.toIterator(10 :: -10 :: Nil) |> Iterator.sumWith(x -> x + 1) == 2
 
 
     /////////////////////////////////////////////////////////////////////////////
