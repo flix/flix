@@ -575,7 +575,7 @@ namespace MutMap {
     ///
     /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison, m: MutMap[k, v, r]): List[(k, v)] \ Read(r) =
+    pub def query(p: k -> Comparison & ef, m: MutMap[k, v, r]): List[(k, v)] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.query(p, deref mm)
 
@@ -584,7 +584,7 @@ namespace MutMap {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: k -> Comparison, f: (k, v) -> Unit & ef, m: MutMap[k, v, r]): Unit \ { ef, Read(r) } =
+    pub def queryWith(p: k -> Comparison & ef1, f: (k, v) -> Unit & ef2, m: MutMap[k, v, r]): Unit & (ef1 and ef2) \ { Read(r) } =
         let MutMap(mm) = m;
         Map.queryWith(p, f, deref mm)
 

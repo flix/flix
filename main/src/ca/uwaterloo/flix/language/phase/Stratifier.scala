@@ -330,6 +330,8 @@ object Stratifier {
         case e => Expression.PutStaticField(field, e, tpe, eff, loc)
       }
 
+    case Expression.NewObject(_, _, _, _) => exp0.toSuccess
+
     case Expression.NewChannel(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.NewChannel(e, tpe, eff, loc)
@@ -416,14 +418,14 @@ object Stratifier {
         case e => Expression.FixpointFilter(pred, e, tpe, eff, loc)
       }
 
-    case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) =>
+    case Expression.FixpointInject(exp, pred, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.FixpointProjectIn(e, pred, tpe, eff, loc)
+        case e => Expression.FixpointInject(e, pred, tpe, eff, loc)
       }
 
-    case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
+    case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.FixpointProjectOut(pred, e, tpe, eff, loc)
+        case e => Expression.FixpointProject(pred, e, tpe, eff, loc)
       }
 
     case Expression.Reify(t, tpe, eff, loc) =>
@@ -645,6 +647,9 @@ object Stratifier {
     case Expression.PutStaticField(_, exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
+    case Expression.NewObject(_, _, _, _) =>
+      LabelledGraph.empty
+
     case Expression.NewChannel(exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
@@ -690,10 +695,10 @@ object Stratifier {
     case Expression.FixpointFilter(_, exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.FixpointProjectIn(exp, _, _, _, _) =>
+    case Expression.FixpointInject(exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.FixpointProjectOut(_, exp, _, _, _) =>
+    case Expression.FixpointProject(_, exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.Reify(_, _, _, _) =>
