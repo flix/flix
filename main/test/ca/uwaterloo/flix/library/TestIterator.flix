@@ -1211,46 +1211,62 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def flatMap01(): Bool & Impure =
-        List.toIterator(Nil) |>
-            Iterator.flatMap(i -> Iterator.repeat(i, i)) |>
-            Iterator.toList == Nil
+    def flatMap01(): Bool = region r {
+        List.toRegionIterator(r, Nil) |>
+            Iterator.regFlatMap(i -> Iterator.regRepeat(r, i, i)) |>
+            Iterator.regToList == Nil
+    }
 
     @test
-    def flatMap02(): Bool & Impure =
-        List.toIterator(0 :: Nil) |>
-            Iterator.flatMap(i -> Iterator.repeat(i, i)) |>
-            Iterator.toList == Nil
+    def flatMap02(): Bool = region r {
+        List.toRegionIterator(r, 0 :: Nil) |>
+            Iterator.regFlatMap(i -> Iterator.regRepeat(r, i, i)) |>
+            Iterator.regToList == Nil
+    }
 
     @test
-    def flatMap03(): Bool & Impure =
-        List.toIterator(1 :: Nil) |>
-            Iterator.flatMap(i -> Iterator.repeat(i, i)) |>
-            Iterator.toList == 1 :: Nil
+    def flatMap03(): Bool = region r {
+        List.toRegionIterator(r, 1 :: Nil) |>
+            Iterator.regFlatMap(i -> Iterator.regRepeat(r, i, i)) |>
+            Iterator.regToList == 1 :: Nil
+    }
 
     @test
-    def flatMap04(): Bool & Impure =
-        List.toIterator(2 :: Nil) |>
-            Iterator.flatMap(i -> Iterator.repeat(i, i)) |>
-            Iterator.toList == 2 :: 2 :: Nil
+    def flatMap04(): Bool = region r {
+        List.toRegionIterator(r, 2 :: Nil) |>
+            Iterator.regFlatMap(i -> Iterator.regRepeat(r, i, i)) |>
+            Iterator.regToList == 2 :: 2 :: Nil
+    }
 
     @test
-    def flatMap05(): Bool & Impure =
-        List.toIterator(1 :: 2 :: Nil) |>
-            Iterator.flatMap(i -> Iterator.repeat(i, i)) |>
-            Iterator.toList == 1 :: 2 :: 2 :: Nil
+    def flatMap05(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 2 :: Nil) |>
+            Iterator.regFlatMap(i -> Iterator.regRepeat(r, i, i)) |>
+            Iterator.regToList == 1 :: 2 :: 2 :: Nil
+    }
 
     @test
-    def flatMap06(): Bool & Impure =
-        List.toIterator(2 :: 3 :: Nil) |>
-            Iterator.flatMap(i -> Iterator.repeat(i, i)) |>
-            Iterator.toList == 2 :: 2 :: 3 :: 3 :: 3 :: Nil
+    def flatMap06(): Bool = region r {
+        List.toRegionIterator(r, 2 :: 3 :: Nil) |>
+            Iterator.regFlatMap(i -> Iterator.regRepeat(r, i, i)) |>
+            Iterator.regToList == 2 :: 2 :: 3 :: 3 :: 3 :: Nil
+    }
 
     @test
-    def flatMap07(): Bool & Impure =
-        List.toIterator(1 :: 2 :: 3 :: 4 :: Nil) |>
-            Iterator.flatMap(i -> if (i mod 2 == 0) Iterator.repeat(i, i) else Iterator.empty()) |>
-            Iterator.toList == 2 :: 2 :: 4 :: 4 :: 4 :: 4 :: Nil
+    def flatMap07(): Bool = region r {
+        List.toRegionIterator(r, 1 :: 2 :: 3 :: 4 :: Nil) |>
+            Iterator.regFlatMap(i -> if (i mod 2 == 0) Iterator.regRepeat(r, i, i) else new RegionIterator(r)) |>
+            Iterator.regToList == 2 :: 2 :: 4 :: 4 :: 4 :: 4 :: Nil
+    }
+
+    @test
+    def flatMap08(): Bool = region r1 {
+        region r2 {
+            List.toRegionIterator(r1, 1 :: 2 :: 3 :: 4 :: Nil) |>
+                Iterator.regFlatMap(i -> if (i mod 2 == 0) Iterator.regRepeat(r2, i, i) else new RegionIterator(r2)) |>
+                Iterator.regToList == 2 :: 2 :: 4 :: 4 :: 4 :: 4 :: Nil
+        }
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
