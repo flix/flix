@@ -529,6 +529,9 @@ object Monomorph {
         val e = visitExp(exp, env0)
         Expression.PutStaticField(field, e, tpe, eff, loc)
 
+      case Expression.NewObject(clazz, tpe, eff, loc) =>
+        Expression.NewObject(clazz, subst0(tpe), eff, loc)
+
       case Expression.NewChannel(exp, tpe, eff, loc) =>
         val e = visitExp(exp, env0)
         Expression.NewChannel(e, subst0(tpe), eff, loc)
@@ -589,10 +592,10 @@ object Monomorph {
       case Expression.FixpointFilter(_, _, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
-      case Expression.FixpointProjectIn(_, _, _, _, loc) =>
+      case Expression.FixpointInject(_, _, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
-      case Expression.FixpointProjectOut(_, _, _, _, loc) =>
+      case Expression.FixpointProject(_, _, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
       case Expression.Reify(t, _, _, loc) =>

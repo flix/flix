@@ -554,7 +554,7 @@ namespace RedBlackTree {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: k -> Comparison, f: (k, v) -> Unit & ef, t: RedBlackTree[k, v]): Unit & ef = match t {
+    pub def queryWith(p: k -> Comparison & ef1, f: (k, v) -> Unit & ef2, t: RedBlackTree[k, v]): Unit & (ef1 and ef2) = match t {
         case Node(_, a, k, v, b) =>
             match p(k) {
                 case LessThan    => queryWith(p, f, b)
@@ -569,12 +569,12 @@ namespace RedBlackTree {
     ///
     /// That is, the result is a list of all pairs `f(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison, f: (k, v) -> a & ef, t: RedBlackTree[k, v]): List[a] & ef = {
-        let buffer = new MutList(Static);
+    pub def query(p: k -> Comparison & ef1, f: (k, v) -> a & ef2, t: RedBlackTree[k, v]): List[a] & (ef1 and ef2) = region r {
+        let buffer = new MutList(r);
         let g = k -> v -> MutList.push!(f(k, v), buffer);
         queryWith(p, g, t);
         MutList.toList(buffer)
-    } as & ef
+    }
 
     ///
     /// Extracts `k => v` where `k` is the leftmost (i.e. smallest) key in the tree.

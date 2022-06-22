@@ -1296,6 +1296,11 @@ object Typer {
           resultEff = Type.Impure
         } yield (valueConstrs, resultTyp, resultEff)
 
+      case KindedAst.Expression.NewObject(clazz, loc) =>
+        val resultTyp = getFlixType(clazz)
+        val resultEff = Type.Impure
+        liftM(List.empty, resultTyp, resultEff)
+
       case KindedAst.Expression.NewChannel(exp, declaredType, loc) =>
         for {
           (constrs, tpe, _) <- visitExp(exp)
@@ -1451,7 +1456,7 @@ object Typer {
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.FixpointProjectIn(exp, pred, tvar, loc) =>
+      case KindedAst.Expression.FixpointInject(exp, pred, tvar, loc) =>
         //
         //  exp : F[freshElmType] where F is Foldable
         //  -------------------------------------------
@@ -1474,7 +1479,7 @@ object Typer {
           resultEff = eff
         } yield (boxable :: foldable :: constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.FixpointProjectOut(pred, exp1, exp2, tvar, loc) =>
+      case KindedAst.Expression.FixpointProject(pred, exp1, exp2, tvar, loc) =>
         //
         //  exp1: {$Result(freshRelOrLat, freshTupleVar) | freshRestSchemaVar }
         //  exp2: freshRestSchemaVar
@@ -1865,6 +1870,11 @@ object Typer {
         val eff = Type.Impure
         TypedAst.Expression.PutStaticField(field, e, tpe, eff, loc)
 
+      case KindedAst.Expression.NewObject(clazz, loc) =>
+        val tpe = getFlixType(clazz)
+        val eff = Type.Impure
+        TypedAst.Expression.NewObject(clazz, tpe, eff, loc)
+
       case KindedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp, subst0)
         val eff = Type.Impure
@@ -1939,12 +1949,12 @@ object Typer {
         val eff = e.eff
         TypedAst.Expression.FixpointFilter(pred, e, subst0(tvar), eff, loc)
 
-      case KindedAst.Expression.FixpointProjectIn(exp, pred, tvar, loc) =>
+      case KindedAst.Expression.FixpointInject(exp, pred, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = e.eff
-        TypedAst.Expression.FixpointProjectIn(e, pred, subst0(tvar), eff, loc)
+        TypedAst.Expression.FixpointInject(e, pred, subst0(tvar), eff, loc)
 
-      case KindedAst.Expression.FixpointProjectOut(pred, exp1, exp2, tvar, loc) =>
+      case KindedAst.Expression.FixpointProject(pred, exp1, exp2, tvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val stf = Stratification.empty
@@ -1956,7 +1966,7 @@ object Typer {
         // See Weeder for more details.
         val mergeExp = TypedAst.Expression.FixpointMerge(e1, e2, stf, e1.tpe, eff, loc)
         val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, e1.tpe, eff, loc)
-        TypedAst.Expression.FixpointProjectOut(pred, solveExp, tpe, eff, loc)
+        TypedAst.Expression.FixpointProject(pred, solveExp, tpe, eff, loc)
 
       case KindedAst.Expression.Reify(t0, loc) =>
         val t = subst0(t0)

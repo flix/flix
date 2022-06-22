@@ -679,7 +679,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
-        Discard | UnaryLambda | FName | Tag | Hole
+        Discard | NewObject | UnaryLambda | FName | Tag | Hole
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -803,6 +803,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         SP ~ Import ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetImport
       }
+    }
+
+    def NewObject: Rule1[ParsedAst.Expression] = rule {
+      SP ~ keyword("object") ~ WS ~ atomic("##") ~ Names.JavaName ~ optWS ~ "{" ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.NewObject
     }
 
     def Match: Rule1[ParsedAst.Expression.Match] = {
@@ -1087,7 +1091,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ (keyword("project") | keyword("inject")) ~ WS ~ ExpressionPart ~ WS ~ keyword("into") ~ WS ~ ProjectPart ~ SP ~> ParsedAst.Expression.FixpointProjectInto
+        SP ~ (keyword("inject") | keyword("project")) ~ WS ~ ExpressionPart ~ WS ~ keyword("into") ~ WS ~ ProjectPart ~ SP ~> ParsedAst.Expression.FixpointInjectInto
       }
     }
 

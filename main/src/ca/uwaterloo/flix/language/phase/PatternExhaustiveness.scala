@@ -304,6 +304,9 @@ object PatternExhaustiveness {
             _ <- checkPats(exp, root)
           } yield tast
 
+        case Expression.NewObject(_, _, _, _) =>
+          tast.toSuccess
+
         case Expression.NewChannel(exp, _, _, _) => for {
           _ <- checkPats(exp, root)
         } yield tast
@@ -366,12 +369,12 @@ object PatternExhaustiveness {
             _ <- checkPats(exp, root)
           } yield tast
 
-        case Expression.FixpointProjectIn(exp, _, _, _, _) =>
+        case Expression.FixpointInject(exp, _, _, _, _) =>
           for {
             _ <- checkPats(exp, root)
           } yield tast
 
-        case Expression.FixpointProjectOut(_, exp, _, _, _) =>
+        case Expression.FixpointProject(_, exp, _, _, _) =>
           for {
             _ <- checkPats(exp, root)
           } yield tast

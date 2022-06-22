@@ -1,5 +1,5 @@
 pub def unconnected(roads: List[(city, city)]): Array[(city, city), Static] with Boxable[city] =
-    let r = project roads into Road;
+    let r = inject roads into Road;
     let lp = #{
         City(x) :- Road(x, _).
         City(y) :- Road(_, y).

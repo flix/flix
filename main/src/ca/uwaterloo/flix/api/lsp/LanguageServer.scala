@@ -250,9 +250,12 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     case Request.Check(id) => processCheck(id)
 
     case Request.Codelens(id, uri) =>
-      ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(index, root)
+      if (current)
+        ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(index, root)
+      else
+        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
 
-    case Request.Complete(id, uri, pos) => 
+    case Request.Complete(id, uri, pos) =>
       ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri))(index, root)
 
     case Request.Highlight(id, uri, pos) =>
