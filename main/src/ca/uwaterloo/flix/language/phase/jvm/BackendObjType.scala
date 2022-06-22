@@ -18,11 +18,14 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.mkName
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch._
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, MethodDescriptor, RootPackage}
+import org.objectweb.asm.Opcodes
 
 /**
   * Represents all Flix types that are objects on the JVM (array is an exception).
@@ -106,7 +109,7 @@ object BackendObjType {
 
     def ResultField: InstanceField = continuation.ResultField
 
-    def InvokeMethod: InstanceMethod = continuation.InvokeMethod
+    def InvokeMethod: AbstractMethod = continuation.InvokeMethod
 
     def UnwindMethod: InstanceMethod = continuation.UnwindMethod
   }
@@ -114,9 +117,25 @@ object BackendObjType {
   case class Continuation(result: BackendType) extends BackendObjType {
     def ResultField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "result", result)
 
-    def InvokeMethod: InstanceMethod = InstanceMethod(this.jvmName, "invoke", mkDescriptor()(this.toTpe))
+    def InvokeMethod: AbstractMethod = AbstractMethod(this.jvmName, IsPublic, "invoke", mkDescriptor()(this.toTpe))
 
-    def UnwindMethod: InstanceMethod = InstanceMethod(this.jvmName, "unwind", mkDescriptor()(result))
+    def UnwindMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "unwind", mkDescriptor()(result), Some(
+      thisLoad() ~ storeWithName(1, this.toTpe) { currentCont =>
+        pushNull() ~ storeWithName(2, this.toTpe) { previousCont =>
+          doWhile(Condition.NONNULL) {
+            currentCont.load() ~
+              previousCont.store() ~
+              currentCont.load() ~
+              INVOKEVIRTUAL(this.InvokeMethod) ~
+              DUP() ~
+              currentCont.store()
+          } ~
+            previousCont.load() ~
+            GETFIELD(this.ResultField) ~
+            xReturn(this.result)
+        }
+      }
+    ))
   }
 
   case object RecordEmpty extends BackendObjType {
@@ -124,9 +143,15 @@ object BackendObjType {
 
     def InstanceField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, "INSTANCE", this.toTpe)
 
-    def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName)
+    def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName, IsFinal, {
+      Some(throwUnsupportedOperationException(
+        s"${BackendObjType.Record.LookupFieldMethod.name} method shouldn't be called"))
+    })
 
-    def RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName)
+    def RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName, IsFinal, {
+      Some(throwUnsupportedOperationException(
+        s"${BackendObjType.Record.RestrictFieldMethod.name} method shouldn't be called"))
+    })
   }
 
   case class RecordExtend(field: String, value: BackendType, rest: BackendType) extends BackendObjType {
@@ -138,9 +163,41 @@ object BackendObjType {
 
     def RestField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "rest", interface.toTpe)
 
-    def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName)
+    def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName, IsFinal, Some(
+      caseOnLabelEquality {
+        case TrueBranch =>
+          thisLoad() ~ ARETURN()
+        case FalseBranch =>
+          thisLoad() ~ GETFIELD(this.RestField) ~
+            ALOAD(1) ~
+            INVOKEINTERFACE(BackendObjType.Record.LookupFieldMethod) ~
+            ARETURN()
+      }
+    ))
 
-    def RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName)
+    def RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName, IsFinal, Some(
+      caseOnLabelEquality {
+        case TrueBranch =>
+          thisLoad() ~ GETFIELD(this.RestField) ~
+            ARETURN()
+        case FalseBranch =>
+          thisLoad() ~
+            DUP() ~ GETFIELD(this.RestField) ~
+            ALOAD(1) ~
+            INVOKEINTERFACE(BackendObjType.Record.RestrictFieldMethod) ~
+            PUTFIELD(this.RestField) ~
+            thisLoad() ~ ARETURN()
+      }
+    ))
+
+    /**
+      * Compares the label of `this`and `ALOAD(1)` and executes the designated branch.
+      */
+    private def caseOnLabelEquality(cases: Branch => InstructionSet): InstructionSet =
+      thisLoad() ~ GETFIELD(this.LabelField) ~
+        ALOAD(1) ~
+        INVOKEVIRTUAL(BackendObjType.String.jvmName, "equals", mkDescriptor(JvmName.Object.toTpe)(BackendType.Bool)) ~
+        branch(Condition.Bool)(cases)
   }
 
   case object Record extends BackendObjType {
@@ -188,19 +245,62 @@ object BackendObjType {
   }
 
   case object Global extends BackendObjType {
-    def NewIdMethod: StaticMethod = StaticMethod(this.jvmName, "newId",
-      mkDescriptor()(BackendType.Int64))
+    def NewIdMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "newId",
+      mkDescriptor()(BackendType.Int64), Some(
+        GETSTATIC(Global.CounterField) ~
+          INVOKEVIRTUAL(JvmName.AtomicLong, "getAndIncrement",
+            MethodDescriptor(Nil, BackendType.Int64)) ~
+          LRETURN()
+      ))
 
-    def GetArgsMethod: StaticMethod = StaticMethod(this.jvmName, "getArgs",
-      mkDescriptor()(BackendType.Array(BackendObjType.String.toTpe)))
+    def GetArgsMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "getArgs",
+      mkDescriptor()(BackendType.Array(BackendObjType.String.toTpe)), Some(
+        GETSTATIC(Global.ArgsField) ~
+          ARRAYLENGTH() ~
+          ANEWARRAY(BackendObjType.String.jvmName) ~
+          ASTORE(0) ~
+          // the new array is now created, now to copy the args
+          GETSTATIC(Global.ArgsField) ~
+          ICONST_0() ~
+          ALOAD(0) ~
+          ICONST_0() ~
+          GETSTATIC(Global.ArgsField) ~ ARRAYLENGTH() ~
+          arrayCopy() ~
+          ALOAD(0) ~
+          ARETURN()
+      ))
 
-    def SetArgsMethod: StaticMethod = StaticMethod(this.jvmName, "setArgs",
-      mkDescriptor(BackendType.Array(BackendObjType.String.toTpe))(VoidableType.Void))
+    def SetArgsMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "setArgs",
+      mkDescriptor(BackendType.Array(BackendObjType.String.toTpe))(VoidableType.Void), Some(
+        ALOAD(0) ~
+          ARRAYLENGTH() ~
+          ANEWARRAY(BackendObjType.String.jvmName) ~
+          ASTORE(1) ~
+          ALOAD(0) ~
+          ICONST_0() ~
+          ALOAD(1) ~
+          ICONST_0() ~
+          ALOAD(0) ~ ARRAYLENGTH() ~
+          arrayCopy() ~
+          ALOAD(1) ~ PUTSTATIC(Global.ArgsField) ~ RETURN()
+      ))
 
     def CounterField: StaticField =
       StaticField(this.jvmName, IsPrivate, IsFinal, "counter", JvmName.AtomicLong.toTpe)
 
     def ArgsField: StaticField = StaticField(this.jvmName, IsPrivate, IsFinal, "args",
       BackendType.Array(BackendObjType.String.toTpe))
+
+    private def arrayCopy(): InstructionSet = (f: F) => {
+      f.visitMethodInstruction(Opcodes.INVOKESTATIC, JvmName.System, "arraycopy",
+        MethodDescriptor(List(
+          JvmName.Object.toTpe,
+          BackendType.Int32,
+          JvmName.Object.toTpe,
+          BackendType.Int32,
+          BackendType.Int32
+        ), VoidableType.Void))
+      f
+    }
   }
 }
