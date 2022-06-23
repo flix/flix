@@ -1139,6 +1139,221 @@ object JvmOps {
   }
 
   /**
+    * Returns the set of all anonymous classes (NewObjects) in the given AST `root`.
+    */
+  def anonClassesOf(root: Root)(implicit flix: Flix): Set[Expression.NewObject] = {
+    /**
+      * Returns the set of anonymous classes which occur in the given definition `defn0`.
+      */
+    def visitDefn(defn: Def): Set[Expression.NewObject] = {
+      visitExp(defn.exp)
+    }
+
+    /**
+      * Returns the set of anonymouse classes which occur in the given expression `exp0`.
+      */
+    def visitExp(exp0: Expression): Set[Expression.NewObject] = (exp0 match {
+      case Expression.Unit(_) => Set.empty
+
+      case Expression.Null(_, _) => Set.empty
+
+      case Expression.True(_) => Set.empty
+
+      case Expression.False(_) => Set.empty
+
+      case Expression.Char(_, _) => Set.empty
+
+      case Expression.Float32(_, _) => Set.empty
+
+      case Expression.Float64(_, _) => Set.empty
+
+      case Expression.Int8(_, _) => Set.empty
+
+      case Expression.Int16(_, _) => Set.empty
+
+      case Expression.Int32(_, _) => Set.empty
+
+      case Expression.Int64(_, _) => Set.empty
+
+      case Expression.BigInt(_, _) => Set.empty
+
+      case Expression.Str(_, _) => Set.empty
+
+      case Expression.Var(_, _, _) => Set.empty
+
+      case Expression.Closure(_, closureArgs, _, _, _) => closureArgs.foldLeft(Set.empty[Expression.NewObject]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplyClo(exp, args, _, _) => args.foldLeft(visitExp(exp)) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplyDef(_, args, _, _) => args.foldLeft(Set.empty[Expression.NewObject]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplyCloTail(exp, args, _, _) => args.foldLeft(visitExp(exp)) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplyDefTail(_, args, _, _) => args.foldLeft(Set.empty[Expression.NewObject]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplySelfTail(_, _, args, _, _) => args.foldLeft(Set.empty[Expression.NewObject]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.Unary(_, _, exp, _, _) =>
+        visitExp(exp)
+
+      case Expression.Binary(_, _, exp1, exp2, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+      case Expression.Branch(exp, branches, _, _) => branches.foldLeft(visitExp(exp)) {
+        case (sacc, (_, e)) => sacc ++ visitExp(e)
+      }
+
+      case Expression.JumpTo(_, _, _) => Set.empty
+
+      case Expression.Let(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.Is(_, _, exp, _) => visitExp(exp)
+
+      case Expression.Tag(_, _, exp, _, _) => visitExp(exp)
+
+      case Expression.Untag(_, _, exp, _, _) => visitExp(exp)
+
+      case Expression.Index(base, _, _, _) => visitExp(base)
+
+      case Expression.Tuple(elms, _, _) => elms.foldLeft(Set.empty[Expression.NewObject]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.RecordEmpty(_, _) => Set.empty
+
+      case Expression.RecordSelect(exp, _, _, _) => visitExp(exp)
+
+      case Expression.RecordExtend(_, value, rest, _, _) => visitExp(value) ++ visitExp(rest)
+
+      case Expression.RecordRestrict(_, rest, _, _) => visitExp(rest)
+
+      case Expression.ArrayLit(elms, _, _) => elms.foldLeft(Set.empty[Expression.NewObject]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ArrayNew(elm, len, _, _) => visitExp(elm) ++ visitExp(len)
+
+      case Expression.ArrayLoad(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.ArrayStore(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+      case Expression.ArrayLength(exp, _, _) => visitExp(exp)
+
+      case Expression.ArraySlice(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+      case Expression.Ref(exp, _, _) => visitExp(exp)
+
+      case Expression.Deref(exp, _, _) => visitExp(exp)
+
+      case Expression.Assign(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.Cast(exp, _, _) => visitExp(exp)
+
+      case Expression.TryCatch(exp, rules, _, _) => rules.foldLeft(visitExp(exp)) {
+        case (sacc, CatchRule(_, _, body)) => sacc ++ visitExp(body)
+      }
+
+      case Expression.InvokeConstructor(_, args, _, _) => args.foldLeft(Set.empty[Expression.NewObject]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.InvokeMethod(_, exp, args, _, _) =>
+        args.foldLeft(visitExp(exp)) {
+          case (sacc, e) => sacc ++ visitExp(e)
+        }
+
+      case Expression.InvokeStaticMethod(_, args, _, _) => args.foldLeft(Set.empty[Expression.NewObject]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.GetField(_, exp, _, _) => visitExp(exp)
+
+      case Expression.PutField(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.GetStaticField(_, _, _) => Set.empty
+
+      case Expression.PutStaticField(_, exp, _, _) => visitExp(exp)
+
+      case obj: Expression.NewObject => Set(obj)
+
+      case Expression.NewChannel(exp, _, _) => visitExp(exp)
+
+      case Expression.GetChannel(exp, _, _) => visitExp(exp)
+
+      case Expression.PutChannel(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.SelectChannel(rules, default, _, _) =>
+        val rs = rules.foldLeft(Set.empty[Expression.NewObject])((old, rule) => old ++ visitExp(rule.chan) ++ visitExp(rule.exp))
+        val d = default.map(visitExp).getOrElse(Set.empty)
+        rs ++ d
+
+      case Expression.Spawn(exp, _, _) => visitExp(exp)
+
+      case Expression.Lazy(exp, _, _) => visitExp(exp)
+
+      case Expression.Force(exp, _, _) => visitExp(exp)
+
+      case Expression.HoleError(_, _, _) => Set.empty
+
+      case Expression.MatchError(_, _) => Set.empty
+
+      case Expression.BoxBool(exp, _) => visitExp(exp)
+
+      case Expression.BoxInt8(exp, _) => visitExp(exp)
+
+      case Expression.BoxInt16(exp, _) => visitExp(exp)
+
+      case Expression.BoxInt32(exp, _) => visitExp(exp)
+
+      case Expression.BoxInt64(exp, _) => visitExp(exp)
+
+      case Expression.BoxChar(exp, _) => visitExp(exp)
+
+      case Expression.BoxFloat32(exp, _) => visitExp(exp)
+
+      case Expression.BoxFloat64(exp, _) => visitExp(exp)
+
+      case Expression.UnboxBool(exp, _) => visitExp(exp)
+
+      case Expression.UnboxInt8(exp, _) => visitExp(exp)
+
+      case Expression.UnboxInt16(exp, _) => visitExp(exp)
+
+      case Expression.UnboxInt32(exp, _) => visitExp(exp)
+
+      case Expression.UnboxInt64(exp, _) => visitExp(exp)
+
+      case Expression.UnboxChar(exp, _) => visitExp(exp)
+
+      case Expression.UnboxFloat32(exp, _) => visitExp(exp)
+
+      case Expression.UnboxFloat64(exp, _) => visitExp(exp)
+    })
+
+    // Visit every definition.
+    root.defs.foldLeft(Set.empty[Expression.NewObject]) {
+      case (sacc, (_, defn)) => sacc ++ visitDefn(defn)
+    }
+  }
+
+  /**
     * Writes the given JVM class `clazz` to a sub path under the given `prefixPath`.
     *
     * For example, if the prefix path is `/tmp/` and the class name is Foo.Bar.Baz
