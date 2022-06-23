@@ -15,6 +15,7 @@
  */
 namespace Fixpoint/Shared {
 
+    @Internal
     pub enum PredSym with Eq, Order {
         case PredSym(String, Int64)
     }
