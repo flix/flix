@@ -136,6 +136,16 @@ object BackendObjType {
         }
       }
     ))
+
+    /**
+      * Called when spawned, should only be used by functions returning void.
+      */
+    def RunMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "run", MethodDescriptor.NothingToVoid, Some(
+      thisLoad() ~
+        INVOKEVIRTUAL(this.UnwindMethod) ~
+        xPop(this.result) ~
+        RETURN()
+    ))
   }
 
   case object RecordEmpty extends BackendObjType {
