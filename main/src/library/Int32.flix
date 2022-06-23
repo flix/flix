@@ -412,40 +412,40 @@ namespace Int32 {
     ///
     /// Helper function for the `clamp` conversion functions.
     ///
-    def clamp(minimum: {minimum :: Int32}, maximum: {maximum :: Int32}, x: Int32): Int32 =
-        if (x < minimum.minimum)
-             minimum.minimum
+    def clamp(min: {min :: Int32}, max: {max :: Int32}, x: Int32): Int32 =
+        if (x < min.min)
+             min.min
         else
-            if (x > maximum.maximum)
-                maximum.maximum
+            if (x > max.max)
+                max.max
             else
                 x
 
     ///
     /// Convert `x` to an `Int8`.
     ///
-    /// Returns `x` clamped within the Int8 range `minimum` to `maximum`.
+    /// Returns `x` clamped within the Int8 range `min` to `max`.
     ///
     @Time(1) @Space(1)
-    pub def clampToInt8(minimum: {minimum :: Int8}, maximum: {maximum :: Int8}, x: Int32): Int8 =
+    pub def clampToInt8(min: {min :: Int8}, max: {max :: Int8}, x: Int32): Int8 =
         import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer & Pure;
         import java.lang.Integer.byteValue(): Int8 & Pure;
-        let mini32 = Int8.toInt32(minimum.minimum);
-        let maxi32 = Int8.toInt32(maximum.maximum);
-        (valueOf(clamp(minimum = mini32, maximum = maxi32, x)) |> byteValue)
+        let mini32 = Int8.toInt32(min.min);
+        let maxi32 = Int8.toInt32(max.max);
+        (valueOf(clamp(min = mini32, max = maxi32, x)) |> byteValue)
 
 
     ///
     /// Convert `x` to an `Int16`.
     ///
-    /// Returns `x` clamped within the Int16 range `minimum` to `maximum`.
+    /// Returns `x` clamped within the Int16 range `min` to `max`.
     ///
     @Time(1) @Space(1)
-    pub def clampToInt16(minimum: {minimum :: Int16}, maximum: {maximum :: Int16}, x: Int32): Int16 =
+    pub def clampToInt16(min: {min :: Int16}, max: {max :: Int16}, x: Int32): Int16 =
         import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer & Pure;
         import java.lang.Integer.shortValue(): Int16 & Pure;
-        let mini32 = Int16.toInt32(minimum.minimum);
-        let maxi32 = Int16.toInt32(maximum.maximum);
-        (valueOf(clamp(minimum = mini32, maximum = maxi32, x)) |> shortValue)
+        let mini32 = Int16.toInt32(min.min);
+        let maxi32 = Int16.toInt32(max.max);
+        (valueOf(clamp(min = mini32, max = maxi32, x)) |> shortValue)
 
 }

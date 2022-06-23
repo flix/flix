@@ -871,48 +871,48 @@ namespace TestInt32 {
     // clampToInt8                                                             //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def clampToInt801(): Bool = Int32.clampToInt8(minimum = -100i8, maximum = 100i8, 0) == 0i8
+    def clampToInt801(): Bool = Int32.clampToInt8(min = -100i8, max = 100i8, 0) == 0i8
 
     @test
-    def clampToInt802(): Bool = Int32.clampToInt8(minimum = -100i8, maximum = 100i8, 100) == 100i8
+    def clampToInt802(): Bool = Int32.clampToInt8(min = -100i8, max = 100i8, 100) == 100i8
 
     @test
-    def clampToInt803(): Bool = Int32.clampToInt8(minimum = -100i8, maximum = 100i8, 101) == 100i8
+    def clampToInt803(): Bool = Int32.clampToInt8(min = -100i8, max = 100i8, 101) == 100i8
 
     @test
-    def clampToInt804(): Bool = Int32.clampToInt8(minimum = -100i8, maximum = 100i8, -100) == -100i8
+    def clampToInt804(): Bool = Int32.clampToInt8(min = -100i8, max = 100i8, -100) == -100i8
 
     @test
-    def clampToInt805(): Bool = Int32.clampToInt8(minimum = -100i8, maximum = 100i8, -101) == -100i8
+    def clampToInt805(): Bool = Int32.clampToInt8(min = -100i8, max = 100i8, -101) == -100i8
 
     @test
-    def clampToInt806(): Bool = Int32.clampToInt8(minimum = -100i8, maximum = 100i8, Int32.maxValue()) == 100i8
+    def clampToInt806(): Bool = Int32.clampToInt8(min = -100i8, max = 100i8, Int32.maxValue()) == 100i8
 
     @test
-    def clampToInt807(): Bool = Int32.clampToInt8(minimum = -100i8, maximum = 100i8, Int32.minValue()) == -100i8
+    def clampToInt807(): Bool = Int32.clampToInt8(min = -100i8, max = 100i8, Int32.minValue()) == -100i8
 
     /////////////////////////////////////////////////////////////////////////////
     // clampToInt16                                                            //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def clampToInt1601(): Bool = Int32.clampToInt16(minimum = -100i16, maximum = 100i16, 0) == 0i16
+    def clampToInt1601(): Bool = Int32.clampToInt16(min = -100i16, max = 100i16, 0) == 0i16
 
     @test
-    def clampToInt1602(): Bool = Int32.clampToInt16(minimum = -100i16, maximum = 100i16, 100) == 100i16
+    def clampToInt1602(): Bool = Int32.clampToInt16(min = -100i16, max = 100i16, 100) == 100i16
 
     @test
-    def clampToInt1603(): Bool = Int32.clampToInt16(minimum = -100i16, maximum = 100i16, 101) == 100i16
+    def clampToInt1603(): Bool = Int32.clampToInt16(min = -100i16, max = 100i16, 101) == 100i16
 
     @test
-    def clampToInt1604(): Bool = Int32.clampToInt16(minimum = -100i16, maximum = 100i16, -100) == -100i16
+    def clampToInt1604(): Bool = Int32.clampToInt16(min = -100i16, max = 100i16, -100) == -100i16
 
     @test
-    def clampToInt1605(): Bool = Int32.clampToInt16(minimum = -100i16, maximum = 100i16, -101) == -100i16
+    def clampToInt1605(): Bool = Int32.clampToInt16(min = -100i16, max = 100i16, -101) == -100i16
 
     @test
-    def clampToInt1606(): Bool = Int32.clampToInt16(minimum = -100i16, maximum = 100i16, Int32.maxValue()) == 100i16
+    def clampToInt1606(): Bool = Int32.clampToInt16(min = -100i16, max = 100i16, Int32.maxValue()) == 100i16
 
     @test
-    def clampToInt1607(): Bool = Int32.clampToInt16(minimum = -100i16, maximum = 100i16, Int32.minValue()) == -100i16
+    def clampToInt1607(): Bool = Int32.clampToInt16(min = -100i16, max = 100i16, Int32.minValue()) == -100i16
 
 }
