@@ -15,6 +15,23 @@
  */
 
 ///
+/// The type of the done function.
+///
+type alias ImpureDone = Unit -> Bool & Impure
+
+///
+/// The type of the next function.
+///
+type alias ImpureNext[a] = Unit -> a & Impure
+
+///
+/// An iterator is a stream of elements that are produced on demand.
+///
+pub enum ImpureIterator[a] {
+    case ImpureIterator(Done, Next[a])
+}
+
+///
 /// A type class for data structures that can be iterated.
 ///
 pub class Iterable[t: Type -> Type] {
@@ -22,6 +39,6 @@ pub class Iterable[t: Type -> Type] {
     ///
     /// Returns an iterator of `t`.
     ///
-    pub def iterator(t: t[a]): Iterator[a] & Impure
+    pub def iterator(t: t[a]): ImpureIterator[a] & Impure
 
 }
