@@ -781,14 +781,12 @@ namespace DelayList {
     /// Forces elements of `l` until the predicate `f` is satisfied.
     ///
     @Experimental
-    pub def findLeft(f: a -> Bool & ef, l: DelayList[a]): Option[a] & ef =
-        def loop(ll) = match ll {
-            case ENil         => None
-            case ECons(x, xs) => if (f(x)) Some(x) else loop(      xs)
-            case LCons(x, xs) => if (f(x)) Some(x) else loop(force xs)
-            case LList(xs)    => loop(force xs)
-        };
-        loop(l)
+    pub def findLeft(f: a -> Bool & ef, l: DelayList[a]): Option[a] & ef = match l {
+        case ENil         => None
+        case ECons(x, xs) => if (f(x)) Some(x) else findLeft(f,       xs)
+        case LCons(x, xs) => if (f(x)) Some(x) else findLeft(f, force xs)
+        case LList(xs)    =>                        findLeft(f, force xs)
+    }
 
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
