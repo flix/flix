@@ -1011,6 +1011,33 @@ namespace Iterator {
         Iterator(done, next)
 
     ///
+    /// Returns an iterator over the results of `f`.
+    ///
+    /// If `f` returns `Ok(x)`, then the next element is `x`.
+    ///
+    /// If `f` returns `Err(e)`, then the iterator is depleted.
+    ///
+    @Lazy
+    pub def regUnfoldWithOk(r: Region[r], f: Unit -> Result[a, b] & ef): RegionIterator[a, r and ef] \ Write(r) =
+        let cursor = ref None @ r;
+        let done = () -> match deref cursor {
+            case None    => match f() {
+                case Err(_) => true
+                case Ok(x)  =>
+                    cursor := Some(x);
+                    false
+            }
+            case Some(_) => false
+        };
+        let next = () -> match deref cursor {
+            case None    => bug!("Empty Iterator!")
+            case Some(x) =>
+                cursor := None;
+                x
+        } as & r and ef;
+        RegionIterator(done, next)
+
+    ///
     /// Returns the longest prefix of `iter` that satisfies the predicate `f`.
     ///
     /// Consumes the entire iterator.
@@ -1444,6 +1471,41 @@ namespace Iterator {
         Iterator(done1, next1)
 
     ///
+    /// Returns an iterator with every element of the iterator `iter` that
+    /// produces `Some(_)` the from the function `f`.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    /// The original iterator `iter` should *not* be reused.
+    ///
+    @Lazy
+    pub def regFilterMapL(f: a -> Option[b], iter: RegionIterator[a, r]): RegionIterator[b, r] \ Write(r) =
+        let RegionIterator(done, next) = iter;
+
+        // Allocate a reference to hold the next element.
+        let cursor = ref None @ Scoped.regionOf(iter);
+
+        let done1 = () -> match deref cursor {
+            case None => match regFilterMapForward(f, done, next) {
+                case None    => true
+                case Some(x) =>
+                    // An element was found. Store it in the reference.
+                    cursor := Some(x);
+                    false
+            }
+            case Some(_) => false
+        };
+
+        let next1 = () -> match deref cursor {
+            case None    => bug!("Empty iterator")
+            case Some(x) =>
+                // An element is in the reference. Use it.
+                cursor := None;
+                x
+        };
+        RegionIterator(done1, next1)
+
+    ///
     /// Fast forwards the given iterator until the next element that produces
     /// a `Some` given function `f`. Returns it if it exists, or `None`.
     ///
@@ -1459,6 +1521,21 @@ namespace Iterator {
                 }
         };
         loop()
+
+    ///
+    /// Fast forwards the given iterator until the next element that produces
+    /// a `Some` given function `f`. Returns it if it exists, or `None`.
+    ///
+    /// This implementation returns `f(x)` as opposed to `regForward` which returns `x`.
+    ///
+    def regFilterMapForward(f: a -> Option[b] & ef, done: RegionDone[r], next: RegionNext[a, r]): Option[b] \ { ef, Read(r) } =
+        if (done())
+            None
+        else
+            match f(next()) {
+                case    None => regFilterMapForward(f, done, next)
+                case Some(b) => Some(b)
+            }
 
     ///
     /// Returns `iter` without the first `n` elements.
@@ -1484,6 +1561,29 @@ namespace Iterator {
         }
 
     ///
+    /// Returns `iter` without the first `n` elements.
+    ///
+    /// Returns an empty iterator if `n > length(l)`.
+    /// Returns `iter` if `n < 0`.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    /// The original iterator `iter` should *not* be reused.
+    ///
+    @Lazy
+    pub def regDropL(n: Int32, iter: RegionIterator[a, r]): RegionIterator[a, r] \ Read(r) =
+        if (n <= 0)
+            iter
+        else
+            let RegionIterator(done, next) = iter;
+            region r2 {
+                let i = ref (n - 1) @ r2; // Subtract 1 since `regForward` consumes 1 element before applying `f`.
+                let f = _ -> if (deref i <= 0) true else { i := deref i - 1; false };
+                regForward(f, done, next)
+            };
+            iter
+
+    ///
     /// Fast forwards the given iterator n times
     ///
     def dropForward(n: Int32, done: Done, next: Next[a]): Option[Iterator[a]] & Impure =
@@ -1501,7 +1601,6 @@ namespace Iterator {
             }
         };
         loop()
-
 
     ///
     /// Cons element `e` at the front of iterator `iter`.
@@ -1542,6 +1641,34 @@ namespace Iterator {
             case Some(iter1) => iter1
         }
 
+    ///
+    /// Returns `iter` without the prefix of elements that satisfy
+    /// the predicate `f` dropped.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    /// The original iterator `iter` should *not* be reused.
+    ///
+    @Lazy
+    pub def regDropWhileL(f: a -> Bool, iter: RegionIterator[a, r]): RegionIterator[a, r] \ { Read(r), Write(r) } =
+        let RegionIterator(done, next) = iter;
+        let r = Scoped.regionOf(iter);
+        let front = ref None @ r;
+        let forwarded = ref false @ r;
+        let done1 = () -> if (deref forwarded) done() else match regForward(a -> not f(a), done, next) {
+            case None    => true
+            case Some(x) =>
+                front := Some(x);
+                forwarded := true;
+                false
+        };
+        let next1 = () -> match deref front {
+            case None    => next()
+            case Some(x) =>
+                front := None;
+                x
+        };
+        RegionIterator(done1, next1)
 
     ///
     /// Fast forwards the given iterator while applying f is true
@@ -1570,6 +1697,27 @@ namespace Iterator {
     ///
     pub def toResultList(iter: Iterator[Result[a, e]]): Result[List[a], e] & Impure =
         let Iterator(done, next) = iter;
+        def loop(fk, sk) = {
+            if (done())
+                sk(Nil)
+            else
+                match next() {
+                    case Ok(a)  => loop(fk, ks -> sk(a :: ks))
+                    case Err(e) => fk(e)
+                }
+        };
+        loop(e -> Err(e), ks -> Ok(ks))
+
+    ///
+    /// Returns the contents of `iter` as a list.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    /// If any stage of the iterator is `Err(e)` then `Err(e)` is returned (first fail).
+    /// If the iterator has no errors then the result is wrapped with `Ok`.
+    ///
+    pub def regToResultList(iter: RegionIterator[Result[a, e], r]): Result[List[a], e] \ Read(r) =
+        let RegionIterator(done, next) = iter;
         def loop(fk, sk) = {
             if (done())
                 sk(Nil)
