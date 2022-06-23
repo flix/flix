@@ -811,20 +811,18 @@ namespace DelayList {
     /// Forces elements of `l` until `f(x)` returns `Some(v)`.
     ///
     @Experimental
-    pub def findMap(f: a -> Option[b] & ef, l: DelayList[a]): Option[b] & ef =
-        def loop(ll) = match ll {
-            case ENil         => None
-            case ECons(x, xs) => match f(x) {
-                case None    => loop(xs)
-                case Some(v) => Some(v)
-            }
-            case LCons(x, xs) => match f(x) { // Same as above except `xs` is forced.
-                case None    => loop(force xs)
-                case Some(v) => Some(v)
-            }
-            case LList(xs) => loop(force xs)
-        };
-        loop(l)
+    pub def findMap(f: a -> Option[b] & ef, l: DelayList[a]): Option[b] & ef = match l {
+        case ENil         => None
+        case ECons(x, xs) => match f(x) {
+            case None    => findMap(f, xs)
+            case Some(v) => Some(v)
+        }
+        case LCons(x, xs) => match f(x) { // Same as above except `xs` is forced.
+            case None    => findMap(f, force xs)
+            case Some(v) => Some(v)
+        }
+        case LList(xs) => findMap(f, force xs)
+    }
 
     ///
     /// Returns `l` with `x` inserted between every two adjacent elements.
