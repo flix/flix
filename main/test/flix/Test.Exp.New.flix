@@ -99,15 +99,15 @@ namespace Test/Exp/New {
                 MutList.push!(1, l1);
                 MutList.push!(2, l2);
                 match (MutList.pop!(l1), MutList.pop!(l2)) {
-                    case Some(1, 2) => 1 + 2
-                    case None       => unreachable!()
+                    case (Some(1), Some(2)) => 1 + 2
+                    case _                  => unreachable!()
                 }
             }
         }
     }
 
     @test
-    def testNew11(): Int32 & Impure = region r {
+    def testNew11(): Int32 & Impure = region _ {
         region _ {
             region _ {
                 let l1 = new MutList(Static);
@@ -115,8 +115,8 @@ namespace Test/Exp/New {
                 MutList.push!(1, l1);
                 MutList.push!(2, l2);
                 match (MutList.pop!(l1), MutList.pop!(l2)) {
-                    case Some(1, 2) => 1 + 2
-                    case None       => unreachable!()
+                    case (Some(1), Some(2)) => 1 + 2
+                    case _                  => unreachable!()
                 }
             }
         }
@@ -131,8 +131,8 @@ namespace Test/Exp/New {
                 MutList.push!(1, l1);
                 MutList.push!(2, l2);
                 match (MutList.pop!(l1), MutList.pop!(l2)) {
-                    case Some(1, 2) => 1 + 2
-                    case None       => unreachable!()
+                    case (Some(1), Some(2)) => 1 + 2
+                    case _                  => unreachable!()
                 }
             }
         }
@@ -147,8 +147,8 @@ namespace Test/Exp/New {
                 let l2 = new MutList(r2);
                 MutList.push!(2, l2);
                 match (MutList.pop!(l1), MutList.pop!(l2)) {
-                    case Some(1, 2) => 1 + 2
-                    case None       => unreachable!()
+                    case (Some(1), Some(2)) => 1 + 2
+                    case _                  => unreachable!()
                 }
             }
         }
@@ -163,5 +163,54 @@ namespace Test/Exp/New {
         let m = new MutMap(Static);
         MutMap.put!(1, 1, m);
         m
+
+    @test
+    def testNew16(): MutMap[Int32, Int32, Static] & Impure =
+        let m = new MutMap(Static);
+        MutMap.put!(1, 1, m);
+        MutMap.put!(2, 1, m);
+        MutMap.put!(3, 1, m);
+        m
+
+    @test
+    def testNew17(): Unit = region r {
+        let _ = new MutMap(r): MutMap[Int32, String, r];
+        ()
+    }
+
+    @test
+    def testNew18(): Unit = region r {
+        let _ = new MutMap(r): MutMap[Int32, String, r];
+        let _ = new MutMap(r): MutMap[Int32, String, r];
+        let _ = new MutMap(r): MutMap[Int32, String, r];
+        ()
+    }
+
+    @test
+    def testNew19(): Unit & Impure = region r {
+        let _ = new MutMap(r): MutMap[Int32, String, r];
+        let _ = new MutMap(r): MutMap[Int32, String, r];
+        let _ = new MutMap(Static): MutMap[Int32, String, Static];
+        ()
+    }
+
+    @test
+    def testNew20(): Int32 & Impure =
+        let m = new MutMap(Static);
+        MutMap.put!(1, 1, m);
+        match MutMap.get(1, m) {
+            case Some(x) => x
+            case _       => unreachable!()
+        }
+
+    @test
+    def testNew21(): Int32 = region r {
+        let m = new MutMap(r);
+        MutMap.put!(1, 1, m);
+        match MutMap.get(1, m) {
+            case Some(x) => x
+            case _       => unreachable!()
+        }
+    }
 
 }
