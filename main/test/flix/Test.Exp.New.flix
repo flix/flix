@@ -161,7 +161,7 @@ namespace Test/Exp/New {
     @test
     def testNew15(): MutMap[Int32, Int32, Static] & Impure =
         let m = new MutMap(Static);
-        MutMap.put!(1, 1, l);
+        MutMap.put!(1, 1, m);
         m
 
 }
