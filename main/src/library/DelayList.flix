@@ -830,14 +830,12 @@ namespace DelayList {
     /// Does not force the tail of `l`.
     ///
     @Experimental @Lazy
-    pub def intersperse(x: a, l: DelayList[a]): DelayList[a] =
-        def loop(ll) = match ll {
-            case ENil           => ENil
-            case ECons(x1, xs)  => if (isEmpty(      xs)) ll else LCons(x1, lazy LCons(x, lazy loop(      xs)))
-            case LCons(x1, xs)  => if (isEmpty(force xs)) ll else LCons(x1, lazy LCons(x, lazy loop(force xs)))
-            case LList(xs)      => LList(lazy loop(force xs))
-        };
-        loop(l)
+    pub def intersperse(x: a, l: DelayList[a]): DelayList[a] = match l {
+        case ENil           => ENil
+        case ECons(x1, xs)  => if (isEmpty(      xs)) l else LCons(x1, lazy LCons(x, lazy intersperse(x,       xs)))
+        case LCons(x1, xs)  => if (isEmpty(force xs)) l else LCons(x1, lazy LCons(x, lazy intersperse(x, force xs)))
+        case LList(xs)      => LList(lazy intersperse(x, force xs))
+    }
 
     ///
     /// Returns the concatenation of the elements in `l2` with the elements
