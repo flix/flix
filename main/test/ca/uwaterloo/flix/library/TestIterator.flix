@@ -1604,33 +1604,40 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def dropL01(): Bool & Impure =
-        (Nil: List[Int32]) |> List.toIterator |>
-            Iterator.dropL(1) |> Iterator.toList == Nil
+    def dropL01(): Bool = region r {
+        (Nil: List[Int32]) |> List.toRegionIterator(r) |>
+            Iterator.regDropL(1) |> Iterator.regToList == Nil
+    }
     @test
-    def dropL02(): Bool & Impure =
-        (1 :: Nil) |> List.toIterator |>
-            Iterator.dropL(1) |> Iterator.toList == Nil
+    def dropL02(): Bool = region r {
+        (1 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regDropL(1) |> Iterator.regToList == Nil
+    }
 
     @test
-    def dropL03(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toIterator |>
-            Iterator.dropL(2) |>  Iterator.toList == 3 :: Nil
+    def dropL03(): Bool = region r {
+        (1 :: 2 :: 3 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regDropL(2) |> Iterator.regToList == 3 :: Nil
+    }
 
     @test
-    def dropL04(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toIterator |>
-            Iterator.dropL(3) |>  Iterator.toList == Nil
+    def dropL04(): Bool = region r {
+        (1 :: 2 :: 3 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regDropL(3) |> Iterator.regToList == Nil
+    }
 
     @test
-    def dropL05(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toIterator |>
-            Iterator.dropL(4) |>  Iterator.toList == Nil
+    def dropL05(): Bool = region r {
+        (1 :: 2 :: 3 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regDropL(4) |> Iterator.regToList == Nil
+    }
 
     @test
-    def dropL06(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toIterator |>
-            Iterator.dropL(0) |>  Iterator.toList == 1 :: 2 :: 3 :: Nil
+    def dropL06(): Bool = region r {
+        (1 :: 2 :: 3 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regDropL(0) |> Iterator.regToList == 1 :: 2 :: 3 :: Nil
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // dropWhileL                                                              //

@@ -1534,6 +1534,29 @@ namespace Iterator {
         }
 
     ///
+    /// Returns `iter` without the first `n` elements.
+    ///
+    /// Returns an empty iterator if `n > length(l)`.
+    /// Returns `iter` if `n < 0`.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    /// The original iterator `iter` should *not* be reused.
+    ///
+    @Lazy
+    pub def regDropL(n: Int32, iter: RegionIterator[a, r]): RegionIterator[a, r] \ Read(r) =
+        if (n <= 0)
+            iter
+        else
+            let RegionIterator(done, next) = iter;
+            region r2 {
+                let i = ref (n - 1) @ r2; // Subtract 1 since `regForward` consumes 1 element before applying `f`.
+                let f = _ -> if (deref i <= 0) true else { i := deref i - 1; false };
+                regForward(f, done, next)
+            };
+            iter
+
+    ///
     /// Fast forwards the given iterator n times
     ///
     def dropForward(n: Int32, done: Done, next: Next[a]): Option[Iterator[a]] & Impure =
