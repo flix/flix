@@ -18,14 +18,15 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst._
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.{MethodDescriptor, RootPackage}
 import ca.uwaterloo.flix.util.ParOps
+import org.objectweb.asm
 import org.objectweb.asm.Opcodes._
+import org.objectweb.asm.{ClassWriter, Label}
 
 /**
   * Generates bytecode for anonymous classes (created through NewObject)
   */
-
 object GenAnonymousClasses {
 
   /**
@@ -44,14 +45,35 @@ object GenAnonymousClasses {
     }, _ ++ _)
   }
 
+  /**
+    * Returns the bytecode for the anonoymous class
+    */
   private def genByteCode(className: JvmName,
                           obj: Expression.NewObject)(implicit root: Root, flix: Flix): Array[Byte] = {
     val visitor = AsmOps.mkClassWriter()
 
+    val superClass = JvmName.Object
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
-      null, Array(obj.clazz.getName))
+      superClass.toInternalName, Array(asm.Type.getInternalName(obj.clazz)))
+
+    compileConstructor(superClass, visitor)
 
     visitor.visitEnd()
     visitor.toByteArray
+  }
+
+  /**
+    * Constructor of the class
+    */
+  private def compileConstructor(superClass: JvmName, visitor: ClassWriter): Unit = {
+    val constructor = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
+
+    constructor.visitVarInsn(ALOAD, 0)
+    constructor.visitMethodInsn(INVOKESPECIAL, superClass.toInternalName, JvmName.ConstructorMethod,
+      MethodDescriptor.NothingToVoid.toDescriptor, false)
+    constructor.visitInsn(RETURN)
+
+    constructor.visitMaxs(999, 999)
+    constructor.visitEnd()
   }
 }
