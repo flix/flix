@@ -106,6 +106,12 @@ object BackendObjType {
   case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType {
     def continuation: BackendObjType.Continuation = Continuation(result.toErased)
 
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
+      thisLoad() ~
+        invokeConstructor(continuation.jvmName, MethodDescriptor.NothingToVoid) ~
+        RETURN()
+    ))
+
     def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, s"arg$index", args(index))
 
     def ResultField: InstanceField = continuation.ResultField
