@@ -166,7 +166,7 @@ sealed trait Type {
     * NB: Assumes that `this` type is an arrow.
     */
   def arrowResultType: Type = typeConstructor match {
-    case Some(TypeConstructor.Arrow(_)) => typeArguments.last
+    case Some(TypeConstructor.Arrow(n)) => typeArguments.last
     case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
   }
 
@@ -176,7 +176,7 @@ sealed trait Type {
     * NB: Assumes that `this` type is an arrow.
     */
   def arrowEffectType: Type = typeConstructor match {
-    case Some(TypeConstructor.Arrow(_)) => typeArguments.head
+    case Some(TypeConstructor.Arrow(n)) => typeArguments.head
     case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
   }
 
