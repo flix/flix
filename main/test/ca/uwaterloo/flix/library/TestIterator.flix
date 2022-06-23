@@ -1679,27 +1679,32 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toResultList01(): Bool & Impure =
-        (Nil: List[Result[Int32, String]]) |> List.toIterator |>
-            Iterator.toResultList == Ok(Nil)
+    def toResultList01(): Bool = region r {
+        (Nil: List[Result[Int32, String]]) |> List.toRegionIterator(r) |>
+            Iterator.regToResultList == Ok(Nil)
+    }
     @test
-    def toResultList02(): Bool & Impure =
-        ((Ok(1) :: Nil): List[Result[Int32, String]]) |> List.toIterator |>
-            Iterator.toResultList == Ok(1 :: Nil)
+    def toResultList02(): Bool = region r {
+        ((Ok(1) :: Nil): List[Result[Int32, String]]) |> List.toRegionIterator(r) |>
+            Iterator.regToResultList == Ok(1 :: Nil)
+    }
 
     @test
-    def toResultList03(): Bool & Impure =
-        ((Ok(1) :: Ok(2) :: Ok(3) :: Nil): List[Result[Int32, String]]) |> List.toIterator |>
-            Iterator.toResultList == Ok(1 :: 2 :: 3 :: Nil)
+    def toResultList03(): Bool = region r {
+        ((Ok(1) :: Ok(2) :: Ok(3) :: Nil): List[Result[Int32, String]]) |> List.toRegionIterator(r) |>
+            Iterator.regToResultList == Ok(1 :: 2 :: 3 :: Nil)
+    }
 
     @test
-    def toResultList04(): Bool & Impure =
-        (Ok(1) :: Ok(2) :: Ok(3) :: Err("four") :: Nil) |> List.toIterator |>
-            Iterator.toResultList == Err("four")
+    def toResultList04(): Bool = region r {
+        (Ok(1) :: Ok(2) :: Ok(3) :: Err("four") :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regToResultList == Err("four")
+    }
 
     @test
-    def toResultList05(): Bool & Impure =
-        (Ok(1) :: Ok(2) :: Ok(3) :: Err("four") :: Err("zero") :: Nil) |> List.toIterator |>
-            Iterator.toResultList == Err("four")
+    def toResultList05(): Bool = region r {
+        (Ok(1) :: Ok(2) :: Ok(3) :: Err("four") :: Err("zero") :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regToResultList == Err("four")
+    }
 
 }

@@ -1681,4 +1681,25 @@ namespace Iterator {
         };
         loop(e -> Err(e), ks -> Ok(ks))
 
+    ///
+    /// Returns the contents of `iter` as a list.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    /// If any stage of the iterator is `Err(e)` then `Err(e)` is returned (first fail).
+    /// If the iterator has no errors then the result is wrapped with `Ok`.
+    ///
+    pub def regToResultList(iter: RegionIterator[Result[a, e], r]): Result[List[a], e] \ Read(r) =
+        let RegionIterator(done, next) = iter;
+        def loop(fk, sk) = {
+            if (done())
+                sk(Nil)
+            else
+                match next() {
+                    case Ok(a)  => loop(fk, ks -> sk(a :: ks))
+                    case Err(e) => fk(e)
+                }
+        };
+        loop(e -> Err(e), ks -> Ok(ks))
+
 }
