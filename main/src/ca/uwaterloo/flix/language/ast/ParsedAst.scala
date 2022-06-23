@@ -657,6 +657,15 @@ object ParsedAst {
     case class LetImport(sp1: SourcePosition, op: ParsedAst.JvmOp, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * NewObject (create an anonymous object which implements a Java interface or extends a Java class).
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param fqn the fully-qualified name of the Java interface or class.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class NewObject(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Static Region Expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -1062,7 +1071,7 @@ object ParsedAst {
       * @param into the non-empty sequence of predicate symbols to project into.
       * @param sp2  the position of the last character in the expression.
       */
-    case class FixpointProjectInto(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], into: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointInjectInto(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], into: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Fixpoint Solve-Project expression.

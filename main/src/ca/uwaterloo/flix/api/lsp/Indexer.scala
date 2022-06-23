@@ -300,6 +300,9 @@ object Indexer {
     case Expression.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
+    case Expression.NewObject(_, _, _, _) =>
+      Index.occurrenceOf(exp0)
+
     case Expression.NewChannel(exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
@@ -341,10 +344,10 @@ object Indexer {
     case Expression.FixpointFilter(_, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.FixpointProjectIn(exp, _, _, _, _) =>
+    case Expression.FixpointInject(exp, _, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.FixpointProjectOut(_, exp, _, _, _) =>
+    case Expression.FixpointProject(_, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.Reify(t, _, _, _) =>

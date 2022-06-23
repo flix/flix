@@ -180,6 +180,8 @@ object ResolvedAst {
 
     case class PutStaticField(field: Field, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class NewObject(clazz: java.lang.Class[_], loc: SourceLocation) extends ResolvedAst.Expression
+
     case class NewChannel(exp: ResolvedAst.Expression, tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class GetChannel(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
@@ -204,9 +206,9 @@ object ResolvedAst {
 
     case class FixpointFilter(pred: Name.Pred, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class FixpointProjectIn(exp: ResolvedAst.Expression, pred: Name.Pred, loc: SourceLocation) extends ResolvedAst.Expression
+    case class FixpointInject(exp: ResolvedAst.Expression, pred: Name.Pred, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class FixpointProjectOut(pred: Name.Pred, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class FixpointProject(pred: Name.Pred, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Reify(t: Type, loc: SourceLocation) extends ResolvedAst.Expression
 

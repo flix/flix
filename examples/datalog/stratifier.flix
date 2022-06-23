@@ -33,7 +33,7 @@ namespace Stratifier {
         let pg: PrecedenceGraph = convertProgram(p);
         let (pos, neg) = partition(e -> match e {case (_, b, _) => b}, pg);
         let removeBool = triple -> match triple {case (a, _, b) => (a, b)};
-        let facts = project map(removeBool, pos), map(removeBool, neg) into PositiveDependencyEdge, NegativeDependencyEdge;
+        let facts = inject map(removeBool, pos), map(removeBool, neg) into PositiveDependencyEdge, NegativeDependencyEdge;
         let rules = #{
             Stratum(pd; 0) :- PositiveDependencyEdge(pd, _).
             Stratum(pd; 0) :- PositiveDependencyEdge(_, pd).

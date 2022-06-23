@@ -241,6 +241,9 @@ object Eraser {
     case FinalAst.Expression.PutStaticField(field, exp, tpe, loc) =>
       ErasedAst.Expression.PutStaticField(field, visitExp(exp), tpe, loc)
 
+    case FinalAst.Expression.NewObject(clazz, tpe, loc) =>
+      ErasedAst.Expression.NewObject(clazz, tpe, loc)
+
     case FinalAst.Expression.NewChannel(exp, tpe, loc) =>
       ErasedAst.Expression.NewChannel(visitExp(exp), tpe, loc)
 
