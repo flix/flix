@@ -1712,10 +1712,10 @@ namespace Array {
    ///
    /// Returns an iterator over `a`.
    ///
-   pub def toIterator(a: Array[a, r]): Iterator[a] & Impure =
+   pub def toIterator(r1: Region[r1], a: Array[a, r2]): Iterator[a, r1] \ { Read(r2), Write(r1) } =
        let len = Array.length(a);
-       let copy = copyOfRange(0, len, a, Static);
-       let i = ref 0;
+       let copy = copyOfRange(0, len, a, r1);
+       let i = ref 0 @ r1;
        let done = () -> (deref i) >= len;
        let next = () -> {
            let j = deref i;

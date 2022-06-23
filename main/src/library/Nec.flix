@@ -106,13 +106,13 @@ instance Reducible[Nec] {
     override pub def dropWhile(f: a -> Bool & ef, l: Nec[a]): List[a] & ef = Nec.dropWhileLeft(f, l)
     override pub def takeWhile(f: a -> Bool & ef, l: Nec[a]): List[a] & ef = Nec.takeWhileLeft(f, l)
     override pub def toArray(l: Nec[a], r: Region[r]): Array[a, r] \ Write(r) = Nec.toArray(l, r)
-    override pub def toIterator(l: Nec[a]): Iterator[a] & Impure = Nec.toIterator(l)
+    override pub def toIterator(r: Region[r], l: Nec[a]): Iterator[a, r] \ Write(r) = Nec.toIterator(r, l)
     override pub def toList(l: Nec[a]): List[a] = Nec.toList(l)
 }
 
 instance Iterable[Nec] {
-    pub def iterator(t: Nec[a]): Iterator[a] & Impure =
-        Nec.toIterator(t)
+    pub def iterator(t: Nec[a]): StaticIterator[a] & Impure =
+        Nec.toStaticIterator(t)
 }
 
 instance ToString[Nec[a]] with ToString[a] {
@@ -773,20 +773,28 @@ namespace Nec {
     ///
     /// Returns an iterator over `c`.
     ///
-    pub def toIterator(c: Nec[a]): Iterator[a] & Impure = toIteratorHelper(Some(viewLeft(c)))
+    pub def toStaticIterator(c: Nec[a]): StaticIterator[a] & Impure =
+        let Iterator(done, next) = toIterator(Static, c);
+        StaticIterator(done, next)
+
+    ///
+    /// Returns an iterator over `c`.
+    ///
+    pub def toIterator(r: Region[r], c: Nec[a]): Iterator[a, r] \ Write(r) =
+        toIteratorHelper(r, Some(viewLeft(c)))
 
     ///
     /// Returns an iterator over `l`.
     ///
-    def toIteratorHelper(vl: Option[ViewLeft[a]]): Iterator[a] & Impure =
-        let cursor = ref vl;
+    def toIteratorHelper(r: Region[r], vl: Option[ViewLeft[a]]): Iterator[a, r] \ Write(r) =
+        let cursor = ref vl @ r;
         let done = () -> match (deref cursor) {
             case None    => true
             case Some(_) => false
         };
         let next = () -> match (deref cursor) {
-            case None                 => bug!("Empty Iterator!")
-            case Some(OneLeft(x))     => {
+            case None             => bug!("Empty Iterator!")
+            case Some(OneLeft(x)) => {
                 cursor := None;
                 x
             }
