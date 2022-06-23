@@ -2377,17 +2377,20 @@ def query18(): Bool =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool & Impure =
-        Map.empty(): Map[Int32, Int32] |> Map.toIterator |> Iterator.toMap == Map.empty()
+    def toIterator01(): Bool = region r {
+        Map.empty(): Map[Int32, Int32] |> Map.toIterator(r) |> Iterator.toMap == Map.empty()
+    }
 
     @test
-    def toIterator02(): Bool & Impure =
-        Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4} |> Map.toIterator |> Iterator.toMap == Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4}
+    def toIterator02(): Bool = region r {
+        Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4} |> Map.toIterator(r) |> Iterator.toMap == Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4}
+    }
 
     @test
-    def toIterator03(): Bool & Impure =
+    def toIterator03(): Bool = region r {
         let l = List.range(0, 100);
-        List.zip(l, List.reverse(l)) |> List.toMap |> Map.toIterator |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
+        List.zip(l, List.reverse(l)) |> List.toMap |> Map.toIterator(r) |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////

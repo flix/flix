@@ -2679,16 +2679,19 @@ def distinctWith09(): Bool =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool & Impure =
-        Nil: List[Int32] |> List.toIterator |> Iterator.toList == Nil
+    def toIterator01(): Bool = region r {
+        Nil: List[Int32] |> List.toIterator(r) |> Iterator.toList == Nil
+    }
 
     @test
-    def toIterator02(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toIterator |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    def toIterator02(): Bool = region r {
+        (1 :: 2 :: 3 :: Nil) |> List.toIterator(r) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    }
 
     @test
-    def toIterator03(): Bool & Impure =
-        List.range(-100, 100) |> List.toIterator |> Iterator.toList == List.range(-100, 100)
+    def toIterator03(): Bool = region r {
+        List.range(-100, 100) |> List.toIterator(r) |> Iterator.toList == List.range(-100, 100)
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
