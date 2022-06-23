@@ -40,14 +40,11 @@ object GenGlobalClass {
     cm.mkObjectConstructor(IsPrivate)
     cm.mkStaticConstructor(genStaticConstructor())
     cm.mkField(Global.CounterField)
-    cm.mkStaticMethod(genNewIdMethod(), Global.NewIdMethod.name,
-      Global.NewIdMethod.d, IsPublic, IsFinal)
+    cm.mkStaticMethod(Global.NewIdMethod)
 
     cm.mkField(Global.ArgsField)
-    cm.mkStaticMethod(genGetArgsMethod(), Global.GetArgsMethod.name,
-      Global.GetArgsMethod.d, IsPublic, IsFinal)
-    cm.mkStaticMethod(genSetArgsMethod(), Global.SetArgsMethod.name,
-      Global.SetArgsMethod.d, IsPublic, IsFinal)
+    cm.mkStaticMethod(Global.GetArgsMethod)
+    cm.mkStaticMethod(Global.SetArgsMethod)
     cm.closeClassMaker()
   }
 
@@ -59,52 +56,4 @@ object GenGlobalClass {
       ANEWARRAY(BackendObjType.String.jvmName) ~
       PUTSTATIC(Global.ArgsField) ~
       RETURN()
-
-  private def genNewIdMethod()(implicit flix: Flix): InstructionSet =
-    GETSTATIC(Global.CounterField) ~
-      INVOKEVIRTUAL(JvmName.AtomicLong, "getAndIncrement",
-        MethodDescriptor(Nil, BackendType.Int64)) ~
-      LRETURN()
-
-  private def arrayCopy(): InstructionSet = (f: F) => {
-    f.visitMethodInstruction(Opcodes.INVOKESTATIC, JvmName.System, "arraycopy",
-      MethodDescriptor(List(
-        JvmName.Object.toTpe,
-        BackendType.Int32,
-        JvmName.Object.toTpe,
-        BackendType.Int32,
-        BackendType.Int32
-      ), VoidableType.Void))
-    f
-  }
-
-  private def genGetArgsMethod()(implicit flix: Flix): InstructionSet =
-    GETSTATIC(Global.ArgsField) ~
-      ARRAYLENGTH() ~
-      ANEWARRAY(BackendObjType.String.jvmName) ~
-      ASTORE(0) ~
-      // the new array is now created, now to copy the args
-      GETSTATIC(Global.ArgsField) ~
-      ICONST_0() ~
-      ALOAD(0) ~
-      ICONST_0() ~
-      GETSTATIC(Global.ArgsField) ~ ARRAYLENGTH() ~
-      arrayCopy() ~
-      ALOAD(0) ~
-      ARETURN()
-
-
-  private def genSetArgsMethod()(implicit flix: Flix): InstructionSet =
-    ALOAD(0) ~
-      ARRAYLENGTH() ~
-      ANEWARRAY(BackendObjType.String.jvmName) ~
-      ASTORE(1) ~
-      ALOAD(0) ~
-      ICONST_0() ~
-      ALOAD(1) ~
-      ICONST_0() ~
-      ALOAD(0) ~ ARRAYLENGTH() ~
-      arrayCopy() ~
-      ALOAD(1) ~ PUTSTATIC(Global.ArgsField) ~ RETURN()
-
 }
