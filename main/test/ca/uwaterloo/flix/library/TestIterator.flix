@@ -1494,23 +1494,26 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def unfoldWithOk01(): Bool & Impure =
-        let iter = Iterator.unfoldWithOk(() -> Err(0));
-        Iterator.toList(iter) == Nil: List[Int32]
+    def unfoldWithOk01(): Bool = region r {
+        let iter = Iterator.regUnfoldWithOk(r, () -> Err(0));
+        Iterator.regToList(iter) == Nil: List[Int32]
+    }
 
     @test
-    def unfoldWithOk02(): Bool & Impure =
-        let Iterator(d, n) = List.toIterator(1 :: 2 :: 3 :: 4 :: 5 :: Nil);
-        Iterator.unfoldWithOk(() -> if (d()) Err("Done") else Ok(n())) |>
-            Iterator.toList == 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+    def unfoldWithOk02(): Bool = region r {
+        let RegionIterator(d, n) = List.toRegionIterator(r, 1 :: 2 :: 3 :: 4 :: 5 :: Nil);
+        Iterator.regUnfoldWithOk(r, () -> if (d()) Err("Done") else Ok(n())) |>
+            Iterator.regToList == 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+        }
 
     @test
-    def unfoldWithOk03(): Bool & Impure =
-        let Iterator(d, n) = (1 :: 2 :: 3 :: 4 :: 5 :: Nil)   |>
+    def unfoldWithOk03(): Bool = region r {
+        let RegionIterator(d, n) = (1 :: 2 :: 3 :: 4 :: 5 :: Nil) |>
             List.map(x -> if (x == 4) Err("Done") else Ok(x)) |>
-            List.toIterator;
-        Iterator.unfoldWithOk(() -> { d(); n() }) |>
-            Iterator.toList == 1 :: 2 :: 3 :: Nil
+            List.toRegionIterator(r);
+        Iterator.regUnfoldWithOk(r, () -> { d(); n() }) |>
+            Iterator.regToList == 1 :: 2 :: 3 :: Nil
+        }
 
 
     /////////////////////////////////////////////////////////////////////////////
