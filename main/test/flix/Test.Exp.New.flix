@@ -29,8 +29,8 @@ namespace Test/Exp/New {
         let l = new MutList(r);
         MutList.push!(1, l);
         match MutList.pop!(l) {
-            case Some(x) => x
-            case None    => unreachable!()
+            case Some(1) => 1
+            case _       => unreachable!()
         }
     }
 
@@ -41,8 +41,8 @@ namespace Test/Exp/New {
                 let l = new MutList(r);
                 MutList.push!(1, l);
                 match MutList.pop!(l) {
-                    case Some(x) => x
-                    case None    => unreachable!()
+                    case Some(1) => 1
+                    case _       => unreachable!()
                 }
             }
         }
@@ -55,8 +55,8 @@ namespace Test/Exp/New {
                 let l = new MutList(r2);
                 MutList.push!(1, l);
                 match MutList.pop!(l) {
-                    case Some(x) => x
-                    case None    => unreachable!()
+                    case Some(1) => 1
+                    case _       => unreachable!()
                 }
             }
         }
@@ -69,8 +69,8 @@ namespace Test/Exp/New {
                 let l = new MutList(r3);
                 MutList.push!(1, l);
                 match MutList.pop!(l) {
-                    case Some(x) => x
-                    case None    => unreachable!()
+                    case Some(1) => 1
+                    case _       => unreachable!()
                 }
             }
         }
@@ -83,8 +83,8 @@ namespace Test/Exp/New {
                 let l = new MutList(Static);
                 MutList.push!(1, l);
                 match MutList.pop!(l) {
-                    case Some(x) => x
-                    case None    => unreachable!()
+                    case Some(1) => 1
+                    case _       => unreachable!()
                 }
             }
         }
@@ -199,7 +199,7 @@ namespace Test/Exp/New {
         let m = new MutMap(Static);
         MutMap.put!(1, 1, m);
         match MutMap.get(1, m) {
-            case Some(x) => x
+            case Some(1) => 1
             case _       => unreachable!()
         }
 
@@ -208,9 +208,66 @@ namespace Test/Exp/New {
         let m = new MutMap(r);
         MutMap.put!(1, 1, m);
         match MutMap.get(1, m) {
-            case Some(x) => x
+            case Some(1) => 1
             case _       => unreachable!()
         }
+    }
+
+    @test
+    def testNew22(): Int32 = region r1 {
+        let m1 = new MutMap(r1): MutMap[Int32, Int32, r1];
+            region r2 {
+                let m2 = new MutMap(r2): MutMap[Int32, Int32, r2];
+                let l = new MutList(r2): MutList[Int32, r2];
+                region _ {
+                    MutMap.put!(1, 1, m1);
+                    MutMap.put!(2, 2, m2);
+                    MutList.push!(3, l)
+                };
+                match MutList.pop!(l) {
+                    case Some(3) => 3
+                    case _       => unreachable!()
+                }
+            }
+    }
+
+    @test
+    def testNew23(): Int32 & Impure = region r1 {
+        let m1 = new MutMap(r1): MutMap[Int32, Int32, r1];
+            region r2 {
+                let m2 = new MutMap(Static): MutMap[Int32, Int32, Static];
+                let l = new MutList(r2): MutList[Int32, r2];
+                region _ {
+                    MutMap.put!(1, 1, m1);
+                    MutMap.put!(2, 2, m2);
+                    MutList.push!(3, l)
+                };
+                match MutList.pop!(l) {
+                    case Some(3) => 3
+                    case _       => unreachable!()
+                }
+            }
+    }
+
+    @test
+    def testNew24(): Int32 & Impure = region r1 {
+        let m1 = new MutMap(r1): MutMap[Int32, Int32, r1];
+            region r2 {
+                let m2 = new MutMap(r1): MutMap[Int32, Int32, r1];
+                let l = new MutList(r2): MutList[Int32, r2];
+                region _ {
+                    new MutList(Static): MutList[Unit, Static]
+                };
+                region _ {
+                    MutMap.put!(1, 1, m1);
+                    MutMap.put!(2, 2, m2);
+                    MutList.push!(3, l)
+                };
+                match MutList.pop!(l) {
+                    case Some(3) => 3
+                    case _       => unreachable!()
+                }
+            }
     }
 
 }
