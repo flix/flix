@@ -37,7 +37,7 @@ sealed trait ClassMaker {
   def mkStaticConstructor(ins: InstructionSet): Unit =
     makeMethod(Some(ins), JvmName.StaticConstructorMethod, MethodDescriptor.NothingToVoid, IsDefault, NotFinal, IsStatic, NotAbstract)
 
-  def mkStaticConstructor(c: StaticConstructor): Unit = {
+  def mkStaticConstructor(c: StaticConstructorMethod): Unit = {
     if (c.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class")
     makeMethod(c.ins, c.name, c.d, c.v, c.f, IsStatic, NotAbstract)
   }
@@ -122,6 +122,11 @@ object ClassMaker {
 
     def mkConstructor(ins: InstructionSet, d: MethodDescriptor, v: Visibility): Unit = {
       makeMethod(Some(ins), JvmName.ConstructorMethod, d, v, NotFinal, NotStatic, NotAbstract)
+    }
+
+    def mkConstructor(c: ConstructorMethod): Unit = {
+      if (c.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class")
+      makeMethod(c.ins, c.name, c.d, c.v, c.f, NotStatic, NotAbstract)
     }
 
     def mkObjectConstructor(v: Visibility): Unit = {
@@ -284,7 +289,7 @@ object ClassMaker {
     override def f: Final = NotFinal
   }
 
-  case class StaticConstructor(clazz: JvmName, ins: Option[InstructionSet]) extends Method {
+  case class StaticConstructorMethod(clazz: JvmName, ins: Option[InstructionSet]) extends Method {
     override def name: String = "<clinit>"
 
     override def d: MethodDescriptor = MethodDescriptor.NothingToVoid

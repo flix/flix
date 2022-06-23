@@ -935,8 +935,10 @@ object GenExpression {
 
     case Expression.NewObject(_, tpe, loc) =>
       addSourceLine(visitor, loc)
-      visitor.visitInsn(ACONST_NULL)
-      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+      val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, "HardcodedAnon").toInternalName
+      visitor.visitTypeInsn(NEW, className)
+      visitor.visitInsn(DUP)
+      visitor.visitMethodInsn(INVOKESPECIAL, className, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
 
     case Expression.NewChannel(exp, _, loc) =>
       addSourceLine(visitor, loc)

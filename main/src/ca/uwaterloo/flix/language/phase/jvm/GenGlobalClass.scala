@@ -38,22 +38,15 @@ object GenGlobalClass {
     val cm = ClassMaker.mkClass(Global.jvmName, IsFinal)
 
     cm.mkObjectConstructor(IsPrivate)
-    cm.mkStaticConstructor(genStaticConstructor())
+    cm.mkStaticConstructor(Global.StaticConstructor)
+
     cm.mkField(Global.CounterField)
     cm.mkStaticMethod(Global.NewIdMethod)
 
     cm.mkField(Global.ArgsField)
     cm.mkStaticMethod(Global.GetArgsMethod)
     cm.mkStaticMethod(Global.SetArgsMethod)
+
     cm.closeClassMaker()
   }
-
-  private def genStaticConstructor(): InstructionSet =
-    NEW(JvmName.AtomicLong) ~
-      DUP() ~ invokeConstructor(JvmName.AtomicLong) ~
-      PUTSTATIC(Global.CounterField) ~
-      ICONST_0() ~
-      ANEWARRAY(BackendObjType.String.jvmName) ~
-      PUTSTATIC(Global.ArgsField) ~
-      RETURN()
 }

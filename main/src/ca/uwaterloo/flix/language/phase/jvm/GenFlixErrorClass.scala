@@ -25,20 +25,15 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescripto
 object GenFlixErrorClass {
 
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    Map(JvmName.FlixError -> JvmClass(JvmName.FlixError, genByteCode()))
+    val className = BackendObjType.FlixError.jvmName
+    Map(className -> JvmClass(className, genByteCode()))
   }
 
   private def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkAbstractClass(JvmName.FlixError, JvmName.Error)
+    val cm = ClassMaker.mkAbstractClass(BackendObjType.FlixError.jvmName, JvmName.Error)
 
-    cm.mkConstructor(genConstructor(), mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void), IsPublic)
+    cm.mkConstructor(BackendObjType.FlixError.Constructor)
 
     cm.closeClassMaker()
   }
-
-  private def genConstructor()(implicit flix: Flix): InstructionSet =
-    thisLoad() ~
-      ALOAD(1) ~
-      invokeConstructor(JvmName.Error, mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void)) ~
-      RETURN()
 }
