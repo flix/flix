@@ -901,24 +901,22 @@ namespace DelayList {
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
     @Lazy
-    def spanL(f: a -> Bool, l: DelayList[a]): (DelayList[a], DelayList[a]) =
-        def loop(ll) = match ll {
-            case ENil         => (ENil, ENil)
-            case ECons(x, xs) =>
-                if (f(x))
-                    let t = lazy loop(xs);
-                    (LCons(x, lazy fst(force t)), LList(lazy snd(force t)))
-                else
-                    (ENil, ll)
-            case LCons(x, xs) => // Same as above except `xs` is forced.
-                if (f(x))
-                    let t = lazy loop(force xs);
-                    (LCons(x, lazy fst(force t)), LList(lazy snd(force t)))
-                else
-                    (ENil, ll)
-            case LList(xs) => loop(force xs)
-        };
-        loop(l)
+    def spanL(f: a -> Bool, l: DelayList[a]): (DelayList[a], DelayList[a]) = match l {
+        case ENil         => (ENil, ENil)
+        case ECons(x, xs) =>
+            if (f(x))
+                let t = lazy spanL(f, xs);
+                (LCons(x, lazy fst(force t)), LList(lazy snd(force t)))
+            else
+                (ENil, l)
+        case LCons(x, xs) => // Same as above except `xs` is forced.
+            if (f(x))
+                let t = lazy spanL(f, force xs);
+                (LCons(x, lazy fst(force t)), LList(lazy snd(force t)))
+            else
+                (ENil, l)
+        case LList(xs) => spanL(f, force xs)
+    }
 
     ///
     /// Helper function for `span`.
