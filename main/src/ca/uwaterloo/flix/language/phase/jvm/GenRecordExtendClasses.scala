@@ -70,43 +70,9 @@ object GenRecordExtendClasses {
     cm.mkField(extendType.ValueField)
     cm.mkField(extendType.RestField)
 
-    extendType.LookupFieldMethod.mkMethod(cm, genLookupFieldMethod(extendType), IsPublic, IsFinal)
-    extendType.RestrictFieldMethod.mkMethod(cm, genRestrictFieldMethod(extendType), IsPublic, IsFinal)
+    cm.mkMethod(extendType.LookupFieldMethod)
+    cm.mkMethod(extendType.RestrictFieldMethod)
 
     cm.closeClassMaker()
   }
-
-  /**
-    * Compares the label of `this`and `ALOAD(1)` and executes the designated branch.
-    */
-  private def caseOnLabelEquality(extendType: BackendObjType.RecordExtend)(cases: Branch => InstructionSet): InstructionSet =
-    thisLoad() ~ GETFIELD(extendType.LabelField) ~
-      ALOAD(1) ~
-      INVOKEVIRTUAL(BackendObjType.String.jvmName, "equals", mkDescriptor(JvmName.Object.toTpe)(BackendType.Bool)) ~
-      branch(Condition.Bool)(cases)
-
-  private def genLookupFieldMethod(extendType: BackendObjType.RecordExtend)(implicit root: Root, flix: Flix): InstructionSet =
-    caseOnLabelEquality(extendType) {
-      case TrueBranch =>
-        thisLoad() ~ ARETURN()
-      case FalseBranch =>
-        thisLoad() ~ GETFIELD(extendType.RestField) ~
-          ALOAD(1) ~
-          BackendObjType.Record.LookupFieldMethod.invokeInterface() ~
-          ARETURN()
-    }
-
-  private def genRestrictFieldMethod(extendType: BackendObjType.RecordExtend)(implicit root: Root, flix: Flix): InstructionSet =
-    caseOnLabelEquality(extendType) {
-      case TrueBranch =>
-        thisLoad() ~ GETFIELD(extendType.RestField) ~
-          ARETURN()
-      case FalseBranch =>
-        thisLoad() ~
-          DUP() ~ GETFIELD(extendType.RestField) ~
-          ALOAD(1) ~
-          BackendObjType.Record.RestrictFieldMethod.invokeInterface() ~
-          PUTFIELD(extendType.RestField) ~
-          thisLoad() ~ ARETURN()
-    }
 }

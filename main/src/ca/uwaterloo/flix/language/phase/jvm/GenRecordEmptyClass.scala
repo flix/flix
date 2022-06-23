@@ -60,8 +60,8 @@ object GenRecordEmptyClass {
     cm.mkStaticConstructor(genStaticConstructor())
     cm.mkObjectConstructor(IsPrivate)
     cm.mkField(RecordEmpty.InstanceField)
-    RecordEmpty.LookupFieldMethod.mkMethod(cm, genLookupFieldMethod(), IsPublic, IsFinal)
-    RecordEmpty.RestrictFieldMethod.mkMethod(cm, genRestrictFieldMethod(), IsPublic, IsFinal)
+    cm.mkMethod(RecordEmpty.LookupFieldMethod)
+    cm.mkMethod(RecordEmpty.RestrictFieldMethod)
 
     cm.closeClassMaker()
   }
@@ -72,20 +72,4 @@ object GenRecordEmptyClass {
       invokeConstructor(RecordEmpty.jvmName, MethodDescriptor.NothingToVoid) ~
       PUTSTATIC(RecordEmpty.InstanceField) ~
       RETURN()
-
-  private def genLookupFieldMethod(): InstructionSet =
-    throwUnsupportedOperationException(
-      s"${BackendObjType.Record.LookupFieldMethod.name} method shouldn't be called")
-
-  private def genRestrictFieldMethod(): InstructionSet =
-    throwUnsupportedOperationException(
-      s"${BackendObjType.Record.RestrictFieldMethod.name} method shouldn't be called")
-
-  private def throwUnsupportedOperationException(msg: String): InstructionSet =
-    NEW(JvmName.UnsupportedOperationException) ~
-      DUP() ~
-      pushString(msg) ~
-      INVOKESPECIAL(JvmName.UnsupportedOperationException, JvmName.ConstructorMethod,
-        mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void)) ~
-      ATHROW()
 }
