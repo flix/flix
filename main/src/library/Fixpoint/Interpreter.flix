@@ -110,7 +110,7 @@ namespace Fixpoint {
                         let (relKeys, latValList) = List.splitAt(len-1, keyList);
                         let key = Tuple(List.toArray(relKeys, Static));
                         let latVal = match List.head(latValList) {
-                            case None => ?emptyListOfTerms
+                            case None => bug!("Found predicate without terms")
                             case Some(k) => k
                         };
                         if (latVal `leq` bot) ()
