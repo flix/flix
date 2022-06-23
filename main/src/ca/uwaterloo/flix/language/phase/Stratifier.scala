@@ -330,6 +330,8 @@ object Stratifier {
         case e => Expression.PutStaticField(field, e, tpe, eff, loc)
       }
 
+    case Expression.NewObject(_, _, _, _) => exp0.toSuccess
+
     case Expression.NewChannel(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.NewChannel(e, tpe, eff, loc)
@@ -416,14 +418,14 @@ object Stratifier {
         case e => Expression.FixpointFilter(pred, e, tpe, eff, loc)
       }
 
-    case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) =>
+    case Expression.FixpointInject(exp, pred, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.FixpointProjectIn(e, pred, tpe, eff, loc)
+        case e => Expression.FixpointInject(e, pred, tpe, eff, loc)
       }
 
-    case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
+    case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.FixpointProjectOut(pred, e, tpe, eff, loc)
+        case e => Expression.FixpointProject(pred, e, tpe, eff, loc)
       }
 
     case Expression.Reify(t, tpe, eff, loc) =>
@@ -645,6 +647,9 @@ object Stratifier {
     case Expression.PutStaticField(_, exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
+    case Expression.NewObject(_, _, _, _) =>
+      LabelledGraph.empty
+
     case Expression.NewChannel(exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
@@ -690,10 +695,10 @@ object Stratifier {
     case Expression.FixpointFilter(_, exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.FixpointProjectIn(exp, _, _, _, _) =>
+    case Expression.FixpointInject(exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.FixpointProjectOut(_, exp, _, _, _) =>
+    case Expression.FixpointProject(_, exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.Reify(_, _, _, _) =>
@@ -728,13 +733,7 @@ object Stratifier {
     @tailrec
     def visitType(tpe: Type, acc: Map[Name.Pred, Label]): Map[Name.Pred, Label] = tpe match {
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), predType, _), rest, _) =>
-        val terms = termTypes(predType)
-        val Type.Apply(Type.Cst(den, _), _, _) = predType // same partial match as termTypes
-        val labelDen = den match {
-          case TypeConstructor.Relation => Denotation.Relational
-          case TypeConstructor.Lattice => Denotation.Latticenal
-          case other => throw InternalCompilerException(s"Unexpected non-denotation type constructor: '$other'")
-        }
+        val (terms, labelDen) = termTypesAndDenotation(predType)
         val label = Label(pred, labelDen, terms.length, terms)
         visitType(rest, acc + (pred -> label))
       case _ => acc
@@ -751,12 +750,12 @@ object Stratifier {
     */
   private def labelledGraphOfConstraint(c: Constraint): LabelledGraph = c match {
     case Constraint(_, Predicate.Head.Atom(headPred, den, _, headTpe, _), body0, _) =>
-      val headTerms = termTypes(headTpe)
+      val (headTerms, _) = termTypesAndDenotation(headTpe)
 
       // We add all body predicates and the head to the labels of each edge
       val bodyLabels: Vector[Label] = body0.collect {
         case Body.Atom(bodyPred, den, _, _, _, bodyTpe, _) =>
-          val terms = termTypes(bodyTpe)
+          val (terms, _) = termTypesAndDenotation(bodyTpe)
           Label(bodyPred, den, terms.length, terms)
       }.toVector
 
@@ -777,12 +776,21 @@ object Stratifier {
   /**
     * Returns the term types of the given relational or latticenal type.
     */
-  private def termTypes(tpe: Type): List[Type] = eraseAliases(tpe) match {
-    case Type.Apply(Type.Cst(TypeConstructor.Relation | TypeConstructor.Lattice, _), t, _) => t.baseType match {
-      case Type.Cst(TypeConstructor.Tuple(_), _) => t.typeArguments // Multi-ary
-      case Type.Cst(TypeConstructor.Unit, _) => Nil
-      case _ => List(t) // Unary
-    }
+  private def termTypesAndDenotation(tpe: Type): (List[Type], Denotation) = eraseAliases(tpe) match {
+    case Type.Apply(Type.Cst(tc, _), t, _) =>
+      val den = tc match {
+        case TypeConstructor.Relation => Denotation.Relational
+        case TypeConstructor.Lattice => Denotation.Latticenal
+        case _ => throw InternalCompilerException(s"Unexpected non-denotation type constructor: '$tc'")
+      }
+      t.baseType match {
+        case Type.Cst(TypeConstructor.Tuple(_), _) => (t.typeArguments, den) // Multi-ary
+        case Type.Cst(TypeConstructor.Unit, _) => (Nil, den)
+        case _ => (List(t), den) // Unary
+      }
+    case _: Type.Var =>
+      // This could occur when querying or projecting a non-existent predicate
+      (Nil, Denotation.Relational)
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe.'")
   }
 

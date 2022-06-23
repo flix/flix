@@ -515,13 +515,6 @@ namespace DelayMap {
             DMap(foldRight((k, v, acc) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v, acc), xs, ys))
 
     ///
-    /// Returns the map `m` as a list of key-value pairs.
-    ///
-    @Experimental
-    pub def toList(m: DelayMap[k, v]): List[(k, v)] =
-        foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, m)
-
-    ///
     /// Applies `f` to a start value `s` and all values in `m` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, v1), v2)..., vn)`.
@@ -694,10 +687,10 @@ namespace DelayMap {
     @Lazy
     def updateWithKeyL(f: (k, v) -> Option[v], k: k, m: DelayMap[k, v]): DelayMap[k, v] with Order[k] =
         let DMap(t) = m;
-        let f1 = (k, v) -> {
-            let res = lazy match f(k, force v) {
-                case Some(v1) => v1
-                case None     => force v
+        let f1 = (k1, v1) -> {
+            let res = lazy match f(k1, force v1) {
+                case Some(v2) => v2
+                case None     => force v1
             };
             Some(res)
         };
@@ -708,14 +701,21 @@ namespace DelayMap {
     ///
     def updateWithKeyE(f: (k, v) -> Option[v] & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         let DMap(t) = m;
-        let f1 = (k, v) -> {
-            let res = f(k, force v);
+        let f1 = (k1, v1) -> {
+            let res = f(k1, force v1);
             match res {
-                case Some(v1) => Some(lazy v1)
+                case Some(v2) => Some(lazy v2)
                 case None     => None
             }
         };
         DMap(RedBlackTree.updateWith(f1, k, t))
+
+    ///
+    /// Returns the map `m` as a list of key-value pairs.
+    ///
+    @Experimental
+    pub def toList(m: DelayMap[k, v]): List[(k, v)] =
+        foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, m)
 
     ///
     /// Returns `m` as a Map, i.e. every value is forced.

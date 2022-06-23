@@ -202,6 +202,9 @@ object Safety {
     case Expression.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
+    case Expression.NewObject(_, _, _, _) =>
+      Nil
+
     case Expression.NewChannel(exp, _, _, _) =>
       visitExp(exp)
 
@@ -241,10 +244,10 @@ object Safety {
     case Expression.FixpointFilter(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointProjectIn(exp, _, _, _, _) =>
+    case Expression.FixpointInject(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointProjectOut(_, exp, _, _, _) =>
+    case Expression.FixpointProject(_, exp, _, _, _) =>
       visitExp(exp)
 
     case Expression.Reify(_, _, _, _) => Nil

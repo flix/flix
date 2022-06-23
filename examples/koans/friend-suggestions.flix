@@ -1,5 +1,5 @@
 pub def friendSuggestions(friends: List[(person, person)]): Array[(person, person), Static] with Boxable[person] =
-    let f = project friends into Friend;
+    let f = inject friends into Friend;
     let lp = #{
         Suggestion(me, nf) :-
             Friend(me, f1), Friend(me, f2), Friend(me, f3),

@@ -368,7 +368,7 @@ object Redundancy {
       val env1 = env0 + sym
 
       // Visit the expression under the extended environment.
-      val innerUsed = visitExp(exp, env0, rc)
+      val innerUsed = visitExp(exp, env1, rc)
 
       // Check for shadowing.
       val shadowedVar = shadowing(sym, env0)
@@ -572,6 +572,9 @@ object Redundancy {
     case Expression.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
+    case Expression.NewObject(_, _, _, _) =>
+      Used.empty
+
     case Expression.NewChannel(exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
@@ -638,10 +641,10 @@ object Redundancy {
     case Expression.FixpointFilter(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.FixpointProjectIn(exp, _, _, _, _) =>
+    case Expression.FixpointInject(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.FixpointProjectOut(_, exp, _, _, _) =>
+    case Expression.FixpointProject(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
     case Expression.Reify(_, _, _, _) =>
@@ -873,7 +876,7 @@ object Redundancy {
     /**
       * Updates `this` environment with a set of new variable symbols `varSyms`.
       */
-    def ++(vs: Iterable[Symbol.VarSym]): Env = vs.foldLeft(Env.empty) {
+    def ++(vs: Iterable[Symbol.VarSym]): Env = vs.foldLeft(this) {
       case (acc, sym) => acc + sym
     }
   }

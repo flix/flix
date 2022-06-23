@@ -132,8 +132,8 @@ namespace Fixpoint {
             let insert =
                 Array.foldRight(match (atom, rowVar) -> acc -> match atom {
                     case BodyAtom(bodySym, den, Polarity.Positive, _, terms) =>
-                        let arity = Array.length(terms);
-                        RelOp.Search(rowVar, RamSym.Full(bodySym, arity, den), acc)
+                        let arity1 = List.length(terms);
+                        RelOp.Search(rowVar, RamSym.Full(bodySym, arity1, den), acc)
                     case _ => acc
                 }, loopBody, augBody) |>
                 RamStmt.Insert;
@@ -185,11 +185,11 @@ namespace Fixpoint {
                 let insert =
                     Array.foldRight(match (atom, rowVar) -> acc -> match atom {
                         case BodyAtom(bodySym, den, Polarity.Positive, _, terms) =>
-                            let arity = Array.length(terms);
+                            let arity1 = List.length(terms);
                             let ramSym = if (rowVar == delta and isRelational(den)) {
-                                RamSym.Delta(bodySym, arity, den)
+                                RamSym.Delta(bodySym, arity1, den)
                             } else {
-                                RamSym.Full(bodySym, arity, den)
+                                RamSym.Full(bodySym, arity1, den)
                             };
                             RelOp.Search(rowVar, ramSym, acc)
                         case _ => acc
@@ -269,13 +269,13 @@ namespace Fixpoint {
     def unifyVars(body: Array[(BodyPredicate[v], RowVar), Static]): Map[VarSym, RamTerm[v]] & Impure =
         Array.foldLeft(acc -> match (atom, rowVar) -> match atom {
             case BodyAtom(_, denotation, Polarity.Positive, _, terms) =>
-                Array.mapWithIndex(term -> i -> (term, i), terms) |>
-                Array.foldRight(match (term, i) -> match term {
+                List.mapWithIndex(term -> i -> (term, i), terms) |>
+                List.foldRight(match (term, i) -> match term {
                     case BodyTerm.Var(var) => match denotation {
                         case Denotation.Relational =>
                             Map.insertWith(_ -> t -> t, var, RamTerm.RowLoad(rowVar, i))
                         case Denotation.Latticenal(_, _, _, glb) =>
-                            if (i < Array.length(terms) - 1)
+                            if (i < List.length(terms) - 1)
                                 Map.insertWith(_ -> t -> t, var, RamTerm.RowLoad(rowVar, i))
                             else
                                 let f = t1 -> t2 -> RamTerm.Meet(glb, t1, t2);
@@ -311,20 +311,20 @@ namespace Fixpoint {
             };
             match atom {
                 case BodyAtom(_, denotation, Polarity.Positive, _, terms) =>
-                    Array.mapWithIndex(compileBodyTerm, terms) |>
-                    Array.mapWithIndex(t -> i -> match denotation {
+                    List.mapWithIndex(compileBodyTerm, terms) |>
+                    List.mapWithIndex(t -> i -> match denotation {
                         case Denotation.Relational => BoolExp.Eq(RamTerm.RowLoad(rowVar, i), t)
                         case Denotation.Latticenal(_, leq, _, _) =>
-                            if (i < Array.length(terms) - 1)
+                            if (i < List.length(terms) - 1)
                                 BoolExp.Eq(RamTerm.RowLoad(rowVar, i), t)
                             else
                                 BoolExp.Leq(leq, t, RamTerm.LoadLatVar(rowVar))
                     }) |>
-                    Array.foldRight(x -> xs -> x :: xs, acc)
+                    List.foldRight(x -> xs -> x :: xs, acc)
                 case BodyAtom(bodySym, denotation, Polarity.Negative, _, terms) =>
-                    let ramTerms = Array.mapWithIndex(compileBodyTerm, terms);
-                    let arity = Array.length(ramTerms);
-                    BoolExp.NotMemberOf(ramTerms, RamSym.Full(bodySym, arity, denotation)) :: acc
+                    let ramTerms = List.mapWithIndex(compileBodyTerm, terms);
+                    let arity = List.length(ramTerms);
+                    BoolExp.NotMemberOf(List.toArray(ramTerms, Static), RamSym.Full(bodySym, arity, denotation)) :: acc
                 case Guard0(f) =>
                     BoolExp.Guard0(f) :: acc
                 case Guard1(f, v) =>

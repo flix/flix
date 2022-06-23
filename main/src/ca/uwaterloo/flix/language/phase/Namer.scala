@@ -980,6 +980,9 @@ object Namer {
         case e => NamedAst.Expression.PutStaticField(className, fieldName, e, loc)
       }
 
+    case WeededAst.Expression.NewObject(className, loc) =>
+      NamedAst.Expression.NewObject(className, loc).toSuccess
+
     case WeededAst.Expression.NewChannel(exp, tpe, loc) =>
       mapN(visitExp(exp, env0, uenv0, tenv0), visitType(tpe, uenv0, tenv0)) {
         case (e, t) => NamedAst.Expression.NewChannel(e, t, loc)
@@ -1060,14 +1063,14 @@ object Namer {
         case e => NamedAst.Expression.FixpointFilter(ident, e, loc)
       }
 
-    case WeededAst.Expression.FixpointProjectIn(exp, pred, loc) =>
+    case WeededAst.Expression.FixpointInject(exp, pred, loc) =>
       mapN(visitExp(exp, env0, uenv0, tenv0)) {
-        case e => NamedAst.Expression.FixpointProjectIn(e, pred, loc)
+        case e => NamedAst.Expression.FixpointInject(e, pred, loc)
       }
 
-    case WeededAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) =>
+    case WeededAst.Expression.FixpointProject(pred, exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.FixpointProjectOut(pred, e1, e2, loc)
+        case (e1, e2) => NamedAst.Expression.FixpointProject(pred, e1, e2, loc)
       }
 
     case WeededAst.Expression.Reify(t0, loc) =>
@@ -1532,6 +1535,7 @@ object Namer {
     case WeededAst.Expression.PutField(_, _, exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.GetStaticField(_, _, _) => Nil
     case WeededAst.Expression.PutStaticField(_, _, exp, _) => freeVars(exp)
+    case WeededAst.Expression.NewObject(_, _) => Nil
     case WeededAst.Expression.NewChannel(exp, _, _) => freeVars(exp)
     case WeededAst.Expression.GetChannel(exp, _) => freeVars(exp)
     case WeededAst.Expression.PutChannel(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
@@ -1550,8 +1554,8 @@ object Namer {
     case WeededAst.Expression.FixpointMerge(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.FixpointSolve(exp, _) => freeVars(exp)
     case WeededAst.Expression.FixpointFilter(_, exp, _) => freeVars(exp)
-    case WeededAst.Expression.FixpointProjectIn(exp, _, _) => freeVars(exp)
-    case WeededAst.Expression.FixpointProjectOut(_, exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.FixpointInject(exp, _, _) => freeVars(exp)
+    case WeededAst.Expression.FixpointProject(_, exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Reify(_, _) => Nil
     case WeededAst.Expression.ReifyType(_, _, _) => Nil
     case WeededAst.Expression.ReifyEff(ident, exp1, exp2, exp3, _) => filterBoundVars(freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3), List(ident))

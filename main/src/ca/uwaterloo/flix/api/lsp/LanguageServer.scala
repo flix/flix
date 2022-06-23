@@ -78,16 +78,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   val sources: mutable.Map[String, String] = mutable.Map.empty
 
   /**
-    * A map from package URIs to source code.
-    */
-  val packages: mutable.Map[String, List[String]] = mutable.Map.empty
-
-  /**
-    * A set of JAR URIs.
-    */
-  val jars: mutable.Set[String] = mutable.Set.empty
-
-  /**
     * The current AST root. The root is null until the source code is compiled.
     */
   var root: Root = _
@@ -191,48 +181,66 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   }
 
   /**
+    * Add the given source code to the compiler
+    */
+  private def addSourceCode(uri: String, src: String) = {
+    current = false
+    flix.addSourceCode(uri, src)
+    sources += (uri -> src)
+  }
+
+  /**
+    * Remove the source code associated with the given uri from the compiler
+    */
+  private def remSourceCode(uri: String) = {
+    current = false
+    flix.remSourceCode(uri, sources(uri))
+    sources -= uri
+  }
+
+  /**
     * Process the request.
     */
   private def processRequest(request: Request)(implicit ws: WebSocket): JValue = request match {
     case Request.AddUri(id, uri, src) =>
-      current = false
-      sources += (uri -> src)
+      addSourceCode(uri, src)
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.RemUri(id, uri) =>
-      current = false
-      sources -= uri
+      remSourceCode(uri)
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.AddPkg(id, uri, data) =>
       // TODO: Possibly move into Input class?
       val inputStream = new ZipInputStream(new ByteArrayInputStream(data))
-      val items = mutable.ListBuffer.empty[String]
       var entry = inputStream.getNextEntry
       while (entry != null) {
         val name = entry.getName
         if (name.endsWith(".flix")) {
           val bytes = StreamOps.readAllBytes(inputStream)
           val src = new String(bytes, Charset.forName("UTF-8"))
-          items += src
+          addSourceCode(s"$uri/$name", src)
         }
         entry = inputStream.getNextEntry
       }
       inputStream.close()
 
-      packages += (uri -> items.toList)
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.RemPkg(id, uri) =>
-      packages -= uri
+      // clone is necessary because `remSourceCode` modifies `sources`
+      for ((file, _) <- sources.clone()
+           if file.startsWith(uri)) {
+        remSourceCode(file)
+      }
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.AddJar(id, uri) =>
-      jars += uri
+      flix.addJar(uri)
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.RemJar(id, uri) =>
-      jars -= uri
+      // No-op (there is no easy way to remove a Jar from the JVM)
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.Version(id) => processVersion(id)
@@ -242,9 +250,12 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     case Request.Check(id) => processCheck(id)
 
     case Request.Codelens(id, uri) =>
-      ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(index, root)
+      if (current)
+        ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(index, root)
+      else
+        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
 
-    case Request.Complete(id, uri, pos) => 
+    case Request.Complete(id, uri, pos) =>
       ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri))(index, root)
 
     case Request.Highlight(id, uri, pos) =>
@@ -283,22 +294,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * Processes a validate request.
     */
   private def processCheck(requestId: String)(implicit ws: WebSocket): JValue = {
-    // Add sources.
-    for ((uri, source) <- sources) {
-      flix.addSourceCode(uri, source)
-    }
-
-    // Add sources from packages.
-    for ((uri, items) <- packages) {
-      for (src <- items) {
-        flix.addSourceCode(uri, src)
-      }
-    }
-
-    // Add JARs.
-    for (uri <- jars) {
-      flix.addJar(uri)
-    }
 
     // Measure elapsed time.
     val t = System.nanoTime()
