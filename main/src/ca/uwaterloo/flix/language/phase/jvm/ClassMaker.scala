@@ -103,7 +103,7 @@ object ClassMaker {
     }
 
     def mkObjectConstructor(v: Visibility): Unit = {
-      val ins = thisLoad() ~ invokeConstructor(JvmName.Object, MethodDescriptor.NothingToVoid) ~ RETURN()
+      val ins = thisLoad() ~ INVOKESPECIAL(BackendObjType.JavaObject.Constructor) ~ RETURN()
       mkConstructor(ins, MethodDescriptor.NothingToVoid, v)
     }
 
@@ -125,7 +125,7 @@ object ClassMaker {
     }
 
     def mkObjectConstructor(v: Visibility): Unit = {
-      val ins = thisLoad() ~ invokeConstructor(JvmName.Object, MethodDescriptor.NothingToVoid) ~ RETURN()
+      val ins = thisLoad() ~ INVOKESPECIAL(BackendObjType.JavaObject.Constructor) ~ RETURN()
       mkConstructor(ins, MethodDescriptor.NothingToVoid, v)
     }
 
@@ -159,16 +159,16 @@ object ClassMaker {
     }
   }
 
-  def mkClass(className: JvmName, f: Final, superClass: JvmName = JvmName.Object, interfaces: List[JvmName] = Nil)(implicit flix: Flix): InstanceClassMaker = {
+  def mkClass(className: JvmName, f: Final, superClass: JvmName = BackendObjType.JavaObject.jvmName, interfaces: List[JvmName] = Nil)(implicit flix: Flix): InstanceClassMaker = {
     new InstanceClassMaker(mkClassWriter(className, IsPublic, f, NotAbstract, NotInterface, superClass, interfaces))
   }
 
-  def mkAbstractClass(className: JvmName, superClass: JvmName = JvmName.Object, interfaces: List[JvmName] = Nil)(implicit flix: Flix): AbstractClassMaker = {
+  def mkAbstractClass(className: JvmName, superClass: JvmName = BackendObjType.JavaObject.jvmName, interfaces: List[JvmName] = Nil)(implicit flix: Flix): AbstractClassMaker = {
     new AbstractClassMaker(mkClassWriter(className, IsPublic, NotFinal, IsAbstract, NotInterface, superClass, interfaces))
   }
 
   def mkInterface(interfaceName: JvmName, interfaces: List[JvmName] = Nil)(implicit flix: Flix): InterfaceMaker = {
-    new InterfaceMaker(mkClassWriter(interfaceName, IsPublic, NotFinal, IsAbstract, IsInterface, JvmName.Object, interfaces))
+    new InterfaceMaker(mkClassWriter(interfaceName, IsPublic, NotFinal, IsAbstract, IsInterface, BackendObjType.JavaObject.jvmName, interfaces))
   }
 
   private def mkClassWriter(name: JvmName, v: Visibility, f: Final, a: Abstract, i: Interface, superClass: JvmName, interfaces: List[JvmName])(implicit flix: Flix): ClassWriter = {
@@ -294,7 +294,9 @@ object ClassMaker {
     override def f: Final = NotFinal
   }
 
-  sealed case class InstanceMethod(clazz: JvmName, v: Visibility, f: Final, name: String, d: MethodDescriptor, ins: Option[InstructionSet]) extends Method
+  sealed case class InstanceMethod(clazz: JvmName, v: Visibility, f: Final, name: String, d: MethodDescriptor, ins: Option[InstructionSet]) extends Method {
+    def implementation(clazz: JvmName, ins: Option[InstructionSet]): InstanceMethod = InstanceMethod(clazz, v, f, name, d, ins)
+  }
 
   sealed case class InterfaceMethod(clazz: JvmName, name: String, d: MethodDescriptor) extends Method {
     override def f: Final = NotFinal

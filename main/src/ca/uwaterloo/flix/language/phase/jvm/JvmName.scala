@@ -86,7 +86,6 @@ object JvmName {
   val Function: JvmName = JvmName(List("java", "util", "function"), "Function")
   val Integer: JvmName = JvmName(JavaLang, "Integer")
   val Long: JvmName = JvmName(JavaLang, "Long")
-  val Object: JvmName = JvmName(JavaLang, "Object")
   val Objects: JvmName = JvmName(JavaLang, "Objects")
   val Runnable: JvmName = JvmName(JavaLang, "Runnable")
   val Short: JvmName = JvmName(JavaLang, "Short")

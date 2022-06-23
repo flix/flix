@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBranch, TrueBranch}
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{AbstractMethod, InstanceField, InstanceMethod, InterfaceMethod, StaticField, StaticMethod}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
@@ -244,6 +244,11 @@ object BytecodeInstructions {
 
   def INVOKESPECIAL(className: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = f => {
     f.visitMethodInstruction(Opcodes.INVOKESPECIAL, className, methodName, descriptor)
+    f
+  }
+
+  def INVOKESPECIAL(c: ConstructorMethod): InstructionSet = f => {
+    f.visitMethodInstruction(Opcodes.INVOKESPECIAL, c.clazz, c.name, c.d)
     f
   }
 

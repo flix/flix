@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.ReifiedSourceLocation
+import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.{JavaObject, ReifiedSourceLocation}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.IsFinal
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 
@@ -40,16 +40,16 @@ object GenReifiedSourceLocationClass {
     cm.mkField(ReifiedSourceLocation.EndColField)
 
     cm.mkConstructor(genConstructor(), ReifiedSourceLocation.ConstructorDescriptor, IsPublic)
-    cm.mkMethod(genEqualsMethod(), "equals", mkDescriptor(JvmName.Object.toTpe)(BackendType.Bool), IsPublic, NotFinal)
-    cm.mkMethod(genHashCodeMethod(), "hashCode", mkDescriptor()(BackendType.Int32), IsPublic, NotFinal)
-    cm.mkMethod(genToStringMethod(), "toString", mkDescriptor()(BackendObjType.String.toTpe), IsPublic, NotFinal)
+    cm.mkMethod(JavaObject.EqualsMethod.implementation(ReifiedSourceLocation.jvmName, Some(genEqualsMethod())))
+    cm.mkMethod(JavaObject.HashcodeMethod.implementation(ReifiedSourceLocation.jvmName, Some(genHashCodeMethod())))
+    cm.mkMethod(JavaObject.ToStringMethod.implementation(ReifiedSourceLocation.jvmName, Some(genToStringMethod())))
 
     cm.closeClassMaker()
   }
 
   private def genConstructor()(implicit flix: Flix): InstructionSet = {
     // call super constructor
-    thisLoad() ~ invokeConstructor(JvmName.Object) ~
+    thisLoad() ~ invokeConstructor(JavaObject.jvmName) ~
       // store source
       thisLoad() ~
       ALOAD(1) ~
@@ -90,7 +90,7 @@ object GenReifiedSourceLocationClass {
       DUP() ~ pushString(":") ~ appendString() ~
       DUP() ~ thisLoad() ~ GETFIELD(ReifiedSourceLocation.BeginColField) ~ appendInt() ~
       // create the string
-      INVOKEVIRTUAL(JvmName.StringBuilder, "toString", mkDescriptor()(BackendObjType.String.toTpe)) ~
+      INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
       ARETURN()
   }
 
@@ -100,7 +100,7 @@ object GenReifiedSourceLocationClass {
 
     // create array
     ICONST_5() ~
-      ANEWARRAY(JvmName.Object) ~
+      ANEWARRAY(JavaObject.jvmName) ~
       // insert source
       DUP() ~
       ICONST_0() ~
@@ -127,11 +127,11 @@ object GenReifiedSourceLocationClass {
       thisLoad() ~ GETFIELD(ReifiedSourceLocation.EndColField) ~ boxInt() ~
       AASTORE() ~
       // hash the array
-      INVOKESTATIC(JvmName.Objects, "hash", mkDescriptor(BackendType.Array(JvmName.Object.toTpe))(BackendType.Int32)) ~
+      INVOKESTATIC(JvmName.Objects, "hash", mkDescriptor(BackendType.Array(JavaObject.toTpe))(BackendType.Int32)) ~
       IRETURN()
   }
 
-  private def genEqualsMethod(): InstructionSet = withName(1, JvmName.Object.toTpe) { otherObj =>
+  private def genEqualsMethod(): InstructionSet = withName(1, JavaObject.toTpe) { otherObj =>
     // check exact equality
     thisLoad() ~
       otherObj.load() ~
@@ -141,9 +141,9 @@ object GenReifiedSourceLocationClass {
       ifTrue(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
       // the class equality
       thisLoad() ~
-      INVOKEVIRTUAL(JvmName.Object, "getClass", mkDescriptor()(JvmName.Class.toTpe)) ~
+      INVOKEVIRTUAL(BackendObjType.JavaObject.GetClassMethod) ~
       otherObj.load() ~
-      INVOKEVIRTUAL(JvmName.Object, "getClass", mkDescriptor()(JvmName.Class.toTpe)) ~
+      INVOKEVIRTUAL(BackendObjType.JavaObject.GetClassMethod) ~
       ifTrue(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
       // check individual fields
       otherObj.load() ~
@@ -163,7 +163,7 @@ object GenReifiedSourceLocationClass {
           ifTrue(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
           thisLoad() ~ GETFIELD(ReifiedSourceLocation.SourceField) ~
           otherLoc.load() ~ GETFIELD(ReifiedSourceLocation.SourceField) ~
-          INVOKESTATIC(JvmName.Objects, "equals", mkDescriptor(JvmName.Object.toTpe, JvmName.Object.toTpe)(BackendType.Bool)) ~
+          INVOKESTATIC(JvmName.Objects, "equals", mkDescriptor(JavaObject.toTpe, JavaObject.toTpe)(BackendType.Bool)) ~
           IRETURN()
       }
   }
