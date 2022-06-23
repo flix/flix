@@ -19,6 +19,7 @@ package ca.uwaterloo.flix
 import ca.uwaterloo.flix.api.lsp.LanguageServer
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.phase.Metrics
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools._
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
@@ -206,9 +207,13 @@ object Main {
       val metrics = flix.metrics()
       metrics match {
         case Validation.Success(metrics) =>
+          print(Metrics.latexHeader())
           for ((src, m) <- metrics) {
-            println(s"${src.name}\n$m")
+            //val sanity = s" CODE${m.sanityCheck()}"
+            println(s"  ${src.name} & $m")
           }
+          println(Metrics.latexEnd())
+          System.exit(1)
         case Validation.Failure(errors) =>
           flix.mkMessages(errors.sortBy(_.source.name))
             .foreach(println)
