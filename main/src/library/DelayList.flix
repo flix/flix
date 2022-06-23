@@ -846,14 +846,12 @@ namespace DelayList {
     /// Does not force the tail of `l2`.
     ///
     @Experimental @Lazy
-    pub def intercalate(l1: DelayList[a], l2: DelayList[DelayList[a]]): DelayList[a] =
-        def loop(ll) = match ll {
-            case ENil           => ENil
-            case ECons(x, xs)   => if (isEmpty(      xs)) x else append(append(x, l1), loop(      xs))
-            case LCons(x, xs)   => if (isEmpty(force xs)) x else append(append(x, l1), loop(force xs))
-            case LList(xs)      => LList(lazy loop(force xs))
-        };
-        if (isEmpty(l2)) ENil else LList(lazy loop(l2)) // Avoid returning `LList` if `l` is empty.
+    pub def intercalate(l1: DelayList[a], l2: DelayList[DelayList[a]]): DelayList[a] = match l2 {
+        case ENil           => ENil
+        case ECons(x, xs)   => if (isEmpty(      xs)) x else append(append(x, l1), intercalate(l1,       xs))
+        case LCons(x, xs)   => if (isEmpty(force xs)) x else append(append(x, l1), intercalate(l1, force xs))
+        case LList(xs)      =>                                          LList(lazy intercalate(l1, force xs))
+    }
 
     ///
     /// Returns a pair of lists `(l1, l2)` where:
