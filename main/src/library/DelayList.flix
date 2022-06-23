@@ -692,14 +692,12 @@ namespace DelayList {
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
     @Lazy
-    def filterL(f: a -> Bool, l: DelayList[a]): DelayList[a] =
-        def loop(ll) = match ll {
-            case ENil         => ENil
-            case ECons(x, xs) => if (f(x)) LCons(x, lazy loop(      xs)) else LList(lazy loop(      xs))
-            case LCons(x, xs) => if (f(x)) LCons(x, lazy loop(force xs)) else LList(lazy loop(force xs))
-            case LList(xs)    => LList(lazy loop(force xs))
-        };
-        loop(l)
+    def filterL(f: a -> Bool, l: DelayList[a]): DelayList[a] = match l {
+        case ENil         => ENil
+        case ECons(x, xs) => if (f(x)) LCons(x, lazy filterL(f,       xs)) else LList(lazy filterL(f,       xs))
+        case LCons(x, xs) => if (f(x)) LCons(x, lazy filterL(f, force xs)) else LList(lazy filterL(f, force xs))
+        case LList(xs)    =>              LList(lazy filterL(f, force xs))
+    }
 
     ///
     /// Returns a `DelayList` with every element in `l` that satisfies the predicate `f`.
