@@ -262,6 +262,16 @@ object BackendObjType {
   }
 
   case object Global extends BackendObjType {
+    def StaticConstructor: StaticConstructorMethod = StaticConstructorMethod(this.jvmName, Some(
+      NEW(JvmName.AtomicLong) ~
+        DUP() ~ invokeConstructor(JvmName.AtomicLong) ~
+        PUTSTATIC(Global.CounterField) ~
+        ICONST_0() ~
+        ANEWARRAY(BackendObjType.String.jvmName) ~
+        PUTSTATIC(Global.ArgsField) ~
+        RETURN()
+    ))
+
     def NewIdMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "newId",
       mkDescriptor()(BackendType.Int64), Some(
         GETSTATIC(Global.CounterField) ~
