@@ -19,6 +19,8 @@ use Fixpoint/Shared.PredSym;
 use ToString.toString;
 
 namespace Fixpoint/Ast {
+
+    @Internal
     pub enum BodyPredicate[v] {
         case BodyAtom(PredSym, Denotation[v], Polarity, Fixity, List[BodyTerm[v]])
         case Guard0(Unit -> Bool)
