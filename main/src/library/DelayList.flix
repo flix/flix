@@ -950,7 +950,7 @@ namespace DelayList {
     ///
     @Experimental @Lazy
     pub def drop(n: Int32, l: DelayList[a]): DelayList[a] =
-        def loop(i, ll) = {
+        def loop(i, ll) = { // Inner function used here to allow for early termination
             if (i < 1)
                 ll
             else
@@ -987,7 +987,7 @@ namespace DelayList {
     ///
     @Lazy
     def dropWhileL(f: a -> Bool, l: DelayList[a]): DelayList[a] =
-        def loop(ll) = match ll {
+        def loop(ll) = match ll { // Inner function used here to allow for early termination
             case ENil         => ENil
             case ECons(x, xs) => if (f(x)) loop(      xs) else ll
             case LCons(x, xs) => if (f(x)) loop(force xs) else ll
@@ -1002,14 +1002,12 @@ namespace DelayList {
     ///
     /// Applies `f` eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
-    def dropWhileE(f: a -> Bool & ef, l: DelayList[a]): DelayList[a] & ef =
-        def loop(ll) = match ll {
-            case ENil         => ENil
-            case ECons(x, xs) => if (f(x)) loop(      xs) else ll
-            case LCons(x, xs) => if (f(x)) loop(force xs) else ll
-            case LList(xs)    => loop(force xs)
-        };
-        loop(l)
+    def dropWhileE(f: a -> Bool & ef, l: DelayList[a]): DelayList[a] & ef = match l {
+        case ENil         => ENil
+        case ECons(x, xs) => if (f(x)) dropWhileE(f,       xs) else l
+        case LCons(x, xs) => if (f(x)) dropWhileE(f, force xs) else l
+        case LList(xs)    =>           dropWhileE(f, force xs)
+    }
 
     ///
     /// Returns the first `n` elements of `l`.
@@ -1018,7 +1016,7 @@ namespace DelayList {
     ///
     @Experimental @Lazy
     pub def take(n: Int32, l: DelayList[a]): DelayList[a] =
-        def loop(i, ll) = {
+        def loop(i, ll) = { // Inner function used here to allow for early termination
             if (i <= 0)
                 ENil
             else
@@ -1055,7 +1053,7 @@ namespace DelayList {
     ///
     @Lazy
     def takeWhileL(f: a -> Bool, l: DelayList[a]): DelayList[a] =
-        def loop(ll) = match ll {
+        def loop(ll) = match ll { // Inner function used here to allow for early termination
             case ENil         => ENil
             case ECons(x, xs) => if (f(x)) LCons(x, lazy loop(      xs)) else ENil
             case LCons(x, xs) => if (f(x)) LCons(x, lazy loop(force xs)) else ENil
@@ -1089,7 +1087,7 @@ namespace DelayList {
     ///
     @Experimental @Lazy
     pub def zip(l1: DelayList[a], l2: DelayList[b]): DelayList[(a, b)] =
-        def loop(ll1, ll2) = match (ll1, ll2) {
+        def loop(ll1, ll2) = match (ll1, ll2) { // Inner function used here to allow for early termination
             case (ENil, _) => ENil
             case (_, ENil) => ENil
             case (ECons(x, xs), ECons(y, ys)) => LCons((x, y), lazy loop(      xs,       ys))
