@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatType, FormatTypeConstraint}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -325,7 +325,7 @@ object RedundancyError {
          |
          |${code(loc, "useless expression.")}
          |
-         |  The expression has type '${FormatType.formatWellKindedType(tpe)}'
+         |The expression has type '${FormatType.formatWellKindedType(tpe)}'
          |""".stripMargin
     }
 
@@ -351,17 +351,6 @@ object RedundancyError {
   case class UnderAppliedFunction(tpe: Type, loc: SourceLocation) extends RedundancyError {
     def summary: String = "Under applied function. Missing function argument(s)?"
 
-    private def applicationAdvice(tpe: Type): String = {
-      val arguments = tpe.curriedArrowArgTypes
-      if (arguments.isEmpty) { // fallback message
-        "Missing function argument(s)?"
-      } else {
-        val argumentStrings = arguments.map(t => s"'${FormatType.formatWellKindedType(t)}'").mkString(", ")
-        val pluralS = if (arguments.sizeIs == 1) "" else "s"
-        s"Missing argument$pluralS of type: $argumentStrings."
-      }
-    }
-
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
@@ -369,7 +358,7 @@ object RedundancyError {
          |
          |${code(loc, "the function is not fully-applied and hence has no effect.")}
          |
-         |  The function has type '${FormatType.formatWellKindedType(tpe)}'
+         |The function has type '${FormatType.formatWellKindedType(tpe)}'
          |""".stripMargin
     }
 
@@ -384,6 +373,38 @@ object RedundancyError {
          |
          |""".stripMargin
     })
+
+    /**
+      * Creates an advice string about applied the arguments of the curried arrow `tpe`.
+      *
+      * OBS: If `tpe` is not arrow type then an exception is thrown.
+      */
+    private def applicationAdvice(tpe: Type): String = {
+      val arguments = curriedArrowArgTypes(tpe)
+      if (arguments.isEmpty) { // fallback message
+        "Missing function argument(s)?"
+      } else {
+        val argumentStrings = arguments.map(t => s"${FormatType.formatWellKindedType(t)}").mkString(", ")
+        s"Missing argument(s) of type: $argumentStrings."
+      }
+    }
+
+    /**
+      * Returns the argument types of `this` curried arrow type.
+      * Returns `Nil` if `this` is not an arrow type.
+      *
+      * For example,
+      *
+      * {{{
+      * Int32                               =>     Nil
+      * Int32 -> String -> Int32            =>     List(Int32, String)
+      * (Int32, String) -> String -> Bool   =>     List(Int32, String, String)
+      * }}}
+      */
+    private def curriedArrowArgTypes(tpe: Type): List[Type] = tpe.typeConstructor match {
+      case Some(TypeConstructor.Arrow(_)) => tpe.arrowArgTypes ++ curriedArrowArgTypes(tpe.arrowResultType)
+      case _ => Nil
+    }
   }
 
   /**
