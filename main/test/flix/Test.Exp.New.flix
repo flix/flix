@@ -34,4 +34,60 @@ namespace Test/Exp/New {
         }
     }
 
+    @test
+    def testNew06(): Int32 = region r {
+        region _ {
+            region _ {
+                let l = new MutList(r);
+                MutList.push!(1, l);
+                match MutList.pop!(l) {
+                    case Some(x) => x
+                    case None    => unreachable!()
+                }
+            }
+        }
+    }
+
+    @test
+    def testNew07(): Int32 = region _ {
+        region r2 {
+            region _ {
+                let l = new MutList(r2);
+                MutList.push!(1, l);
+                match MutList.pop!(l) {
+                    case Some(x) => x
+                    case None    => unreachable!()
+                }
+            }
+        }
+    }
+
+    @test
+    def testNew08(): Int32 = region _ {
+        region _ {
+            region r3 {
+                let l = new MutList(r3);
+                MutList.push!(1, l);
+                match MutList.pop!(l) {
+                    case Some(x) => x
+                    case None    => unreachable!()
+                }
+            }
+        }
+    }
+
+    @test
+    def testNew09(): Int32 & Impure = region _ {
+        region _ {
+            region _ {
+                let l = new MutList(Static);
+                MutList.push!(1, l);
+                match MutList.pop!(l) {
+                    case Some(x) => x
+                    case None    => unreachable!()
+                }
+            }
+        }
+    }
+
 }
