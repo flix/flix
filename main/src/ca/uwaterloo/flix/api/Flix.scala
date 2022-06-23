@@ -16,8 +16,9 @@
 
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.language.ast.Ast.Input
+import ca.uwaterloo.flix.language.ast.Ast.{Input, Source}
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.phase.Metrics
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
@@ -516,6 +517,34 @@ class Flix {
     case ex: InternalCompilerException =>
       CrashHandler.handleCrash(ex)(this)
       throw ex
+  }
+
+  def metrics(): Validation[Map[Source, Metrics.Metrics], CompilationMessage] = {
+    // Mark this object as implicit.
+    implicit val flix: Flix = this
+
+    // Initialize fork join pool.
+    initForkJoin()
+
+    // Reset the phase information.
+    phaseTimers = ListBuffer.empty
+
+    // The default entry point
+    val entryPoint = flix.options.entryPoint
+
+    val result = for {
+      afterReader <- Reader.run(getInputs)
+      afterParser <- Parser.run(afterReader, entryPoint, cachedParsedAst, changeSet)
+      res <- Metrics.run(afterParser)
+    } yield res
+
+    // Shutdown fork join pool.
+    shutdownForkJoin()
+
+    // Reset the progress bar.
+    progressBar.complete()
+
+    result
   }
 
   /**

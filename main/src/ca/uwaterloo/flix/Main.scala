@@ -94,7 +94,8 @@ object Main {
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
       xnobooltable = cmdOpts.xnobooltable,
       xstatistics = cmdOpts.xstatistics,
-      xstrictmono = cmdOpts.xstrictmono
+      xstrictmono = cmdOpts.xstrictmono,
+      xeffectMetrics = cmdOpts.xeffectMetrics
     )
 
     // Don't use progress bar if benchmarking.
@@ -182,6 +183,39 @@ object Main {
     if (cmdOpts.xbenchmarkThroughput) {
       BenchmarkCompiler.benchmarkThroughput(options)
       System.exit(0)
+    }
+
+    if (cmdOpts.xeffectMetrics) {
+      val flix = new Flix()
+      flix.setOptions(options)
+      for (file <- cmdOpts.files) {
+        val ext = file.getName.split('.').last
+        ext match {
+          case "flix" => flix.addSourcePath(file.toPath)
+          case "fpkg" => flix.addSourcePath(file.toPath)
+          case "jar" => flix.addJar(file.toPath)
+          case _ =>
+            Console.println(s"Unrecognized file extension: '$ext'.")
+            System.exit(1)
+        }
+      }
+      if (Formatter.hasColorSupport)
+        flix.setFormatter(AnsiTerminalFormatter)
+
+      // evaluate main.
+      val metrics = flix.metrics()
+      metrics match {
+        case Validation.Success(metrics) =>
+          for ((src, m) <- metrics) {
+            println(s"${src.name}\n$m")
+          }
+        case Validation.Failure(errors) =>
+          flix.mkMessages(errors.sortBy(_.source.name))
+            .foreach(println)
+          println()
+          println(s"Compilation failed with ${errors.length} error(s).")
+          System.exit(1)
+      }
     }
 
     // check if running in interactive mode.
@@ -279,6 +313,7 @@ object Main {
                      xnobooltable: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
+                     xeffectMetrics: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -436,6 +471,9 @@ object Main {
       opt[Unit]("Xstrictmono").action((_, c) => c.copy(xstrictmono = true)).
         text("[experimental] enable strict monomorphization.")
 
+      // Xmetrics
+      opt[Unit]("Xmetrics").action((_, c) => c.copy(xeffectMetrics = true)).
+        text("[experimental] prints effect metrics.")
       note("")
 
       // Input files.

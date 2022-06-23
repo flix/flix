@@ -41,7 +41,8 @@ object Options {
     xallowredundancies = false,
     xnobooltable = false,
     xstatistics = false,
-    xstrictmono = false
+    xstrictmono = false,
+    xeffectMetrics = false
   )
 
   /**
@@ -84,6 +85,7 @@ object Options {
   * @param xnobooltable       disable Boolean minimization via tabling.
   * @param xstatistics        enables statistics collection.
   * @param xstrictmono        enables strict monomorphization.
+  * @param xeffectMetrics      enables collection of effect use metrics.
   */
 case class Options(lib: LibLevel,
                    debug: Boolean,
@@ -102,6 +104,7 @@ case class Options(lib: LibLevel,
                    xnobooltable: Boolean,
                    xstatistics: Boolean,
                    xstrictmono: Boolean,
+                   xeffectMetrics: Boolean,
                   )
 
 /**
