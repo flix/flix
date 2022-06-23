@@ -1644,28 +1644,34 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def dropWhileL01(): Bool & Impure =
-        (Nil: List[Int32]) |> List.toIterator |>
-            Iterator.dropWhileL(x -> x < 3) |> Iterator.toList == Nil
-    @test
-    def dropWhileL02(): Bool & Impure =
-        (1 :: Nil) |> List.toIterator |>
-            Iterator.dropWhileL(x -> x < 3) |> Iterator.toList == Nil
+    def dropWhileL01(): Bool = region r {
+        (Nil: List[Int32]) |> List.toRegionIterator(r) |>
+            Iterator.regDropWhileL(x -> x < 3) |> Iterator.regToList == Nil
+    }
 
     @test
-    def dropWhileL03(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toIterator |>
-            Iterator.dropWhileL(x -> x < 3) |>  Iterator.toList == 3 :: Nil
+    def dropWhileL02(): Bool = region r {
+        (1 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regDropWhileL(x -> x < 3) |> Iterator.regToList == Nil
+    }
 
     @test
-    def dropWhileL04(): Bool & Impure =
-        (1 :: 2 :: 3 :: 4 :: Nil) |> List.toIterator |>
-            Iterator.dropWhileL(x -> x < 3) |>  Iterator.toList == 3 :: 4 :: Nil
+    def dropWhileL03(): Bool = region r {
+        (1 :: 2 :: 3 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regDropWhileL(x -> x < 3) |>  Iterator.regToList == 3 :: Nil
+    }
 
     @test
-    def dropWhileL05(): Bool & Impure =
-        (1 :: 2 :: 3 :: 4 :: 0 :: Nil) |> List.toIterator |>
-            Iterator.dropWhileL(x -> x < 3) |>  Iterator.toList == 3 :: 4 :: 0 :: Nil
+    def dropWhileL04(): Bool = region r {
+        (1 :: 2 :: 3 :: 4 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regDropWhileL(x -> x < 3) |>  Iterator.regToList == 3 :: 4 :: Nil
+    }
+
+    @test
+    def dropWhileL05(): Bool = region r {
+        (1 :: 2 :: 3 :: 4 :: 0 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regDropWhileL(x -> x < 3) |>  Iterator.regToList == 3 :: 4 :: 0 :: Nil
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////

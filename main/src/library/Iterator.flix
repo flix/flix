@@ -1575,7 +1575,6 @@ namespace Iterator {
         };
         loop()
 
-
     ///
     /// Cons element `e` at the front of iterator `iter`.
     ///
@@ -1615,6 +1614,34 @@ namespace Iterator {
             case Some(iter1) => iter1
         }
 
+    ///
+    /// Returns `iter` without the prefix of elements that satisfy
+    /// the predicate `f` dropped.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    /// The original iterator `iter` should *not* be reused.
+    ///
+    @Lazy
+    pub def regDropWhileL(f: a -> Bool, iter: RegionIterator[a, r]): RegionIterator[a, r] \ { Read(r), Write(r) } =
+        let RegionIterator(done, next) = iter;
+        let r = Scoped.regionOf(iter);
+        let front = ref None @ r;
+        let forwarded = ref false @ r;
+        let done1 = () -> if (deref forwarded) done() else match regForward(a -> not f(a), done, next) {
+            case None    => true
+            case Some(x) =>
+                front := Some(x);
+                forwarded := true;
+                false
+        };
+        let next1 = () -> match deref front {
+            case None    => next()
+            case Some(x) =>
+                front := None;
+                x
+        };
+        RegionIterator(done1, next1)
 
     ///
     /// Fast forwards the given iterator while applying f is true
