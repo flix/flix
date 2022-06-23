@@ -1576,23 +1576,28 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterMapL01(): Bool & Impure =
-        (Nil: List[Int32]) |> List.toIterator |>
-            Iterator.filterMapL(x -> if (x mod 2 == 0) Some(x) else None) |> Iterator.toList == Nil
+    def filterMapL01(): Bool = region r {
+        (Nil: List[Int32]) |> List.toRegionIterator(r) |>
+            Iterator.regFilterMapL(x -> if (x mod 2 == 0) Some(x) else None) |> Iterator.regToList == Nil
+    }
     @test
-    def filterMapL02(): Bool & Impure =
-        (1 :: Nil) |> List.toIterator |>
-            Iterator.filterMapL(x -> if (x mod 2 == 0) Some(x) else None) |> Iterator.toList == Nil
+    def filterMapL02(): Bool = region r {
+        (1 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regFilterMapL(x -> if (x mod 2 == 0) Some(x) else None) |> Iterator.regToList == Nil
+    }
 
     @test
-    def filterMapL03(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toIterator |>
-            Iterator.filterMapL(x -> if (x mod 2 == 0) Some(x) else None) |> Iterator.toList == 2 :: Nil
+    def filterMapL03(): Bool = region r {
+        (1 :: 2 :: 3 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regFilterMapL(x -> if (x mod 2 == 0) Some(x) else None) |> Iterator.regToList == 2 :: Nil
+    }
 
     @test
-    def filterMapL04(): Bool & Impure =
-        (1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> List.toIterator |>
-            Iterator.filterMapL(x -> if (x mod 2 == 0) Some(x) else None) |> Iterator.toList == 2 :: 4 :: 6 :: Nil
+    def filterMapL04(): Bool = region r {
+        (1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> List.toRegionIterator(r) |>
+            Iterator.regFilterMapL(x -> if (x mod 2 == 0) Some(x) else None) |> Iterator.regToList == 2 :: 4 :: 6 :: Nil
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // dropL                                                                   //

@@ -1444,6 +1444,41 @@ namespace Iterator {
         Iterator(done1, next1)
 
     ///
+    /// Returns an iterator with every element of the iterator `iter` that
+    /// produces `Some(_)` the from the function `f`.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    /// The original iterator `iter` should *not* be reused.
+    ///
+    @Lazy
+    pub def regFilterMapL(f: a -> Option[b], iter: RegionIterator[a, r]): RegionIterator[b, r] \ Write(r) =
+        let RegionIterator(done, next) = iter;
+
+        // Allocate a reference to hold the next element.
+        let cursor = ref None @ Scoped.regionOf(iter);
+
+        let done1 = () -> match deref cursor {
+            case None => match regFilterMapForward(f, done, next) {
+                case None    => true
+                case Some(x) =>
+                    // An element was found. Store it in the reference.
+                    cursor := Some(x);
+                    false
+            }
+            case Some(_) => false
+        };
+
+        let next1 = () -> match deref cursor {
+            case None    => bug!("Empty iterator")
+            case Some(x) =>
+                // An element is in the reference. Use it.
+                cursor := None;
+                x
+        };
+        RegionIterator(done1, next1)
+
+    ///
     /// Fast forwards the given iterator until the next element that produces
     /// a `Some` given function `f`. Returns it if it exists, or `None`.
     ///
@@ -1459,6 +1494,21 @@ namespace Iterator {
                 }
         };
         loop()
+
+    ///
+    /// Fast forwards the given iterator until the next element that produces
+    /// a `Some` given function `f`. Returns it if it exists, or `None`.
+    ///
+    /// This implementation returns `f(x)` as opposed to `regForward` which returns `x`.
+    ///
+    def regFilterMapForward(f: a -> Option[b] & ef, done: RegionDone[r], next: RegionNext[a, r]): Option[b] \ { ef, Read(r) } =
+        if (done())
+            None
+        else
+            match f(next()) {
+                case    None => regFilterMapForward(f, done, next)
+                case Some(b) => Some(b)
+            }
 
     ///
     /// Returns `iter` without the first `n` elements.
