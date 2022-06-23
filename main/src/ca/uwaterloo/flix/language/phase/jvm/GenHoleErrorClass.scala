@@ -35,7 +35,7 @@ object GenHoleErrorClass {
   }
 
   private def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(JvmName.HoleError, IsFinal, JvmName.FlixError)
+    val cm = ClassMaker.mkClass(JvmName.HoleError, IsFinal, BackendObjType.FlixError.jvmName)
 
     cm.mkConstructor(genConstructor(), mkDescriptor(BackendObjType.String.toTpe, BackendObjType.ReifiedSourceLocation.toTpe)(VoidableType.Void), IsPublic)
     cm.mkMethod(genEqualsMethod(), "equals", mkDescriptor(JvmName.Object.toTpe)(BackendType.Bool), IsPublic, NotFinal)
@@ -65,7 +65,7 @@ object GenHoleErrorClass {
           pushString("' at ") ~ stringBuilderAppend() ~
           loc.load() ~ toString(BackendObjType.ReifiedSourceLocation.jvmName) ~ stringBuilderAppend() ~
           toString(JvmName.StringBuilder) ~
-          invokeConstructor(JvmName.FlixError, mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void)) ~
+          INVOKESPECIAL(BackendObjType.FlixError.Constructor) ~
           // save the arguments locally
           thisLoad() ~ hole.load() ~ PUTFIELD(holeField) ~
           thisLoad() ~ loc.load() ~ PUTFIELD(locationField) ~

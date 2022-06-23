@@ -50,6 +50,7 @@ sealed trait BackendObjType {
     case BackendObjType.Native(className) => className
     case BackendObjType.ReifiedSourceLocation => JvmName(DevFlixRuntime, "ReifiedSourceLocation")
     case BackendObjType.Global => JvmName(DevFlixRuntime, "Global")
+    case BackendObjType.FlixError => JvmName(DevFlixRuntime, "FlixError")
   }
 
   /**
@@ -312,5 +313,15 @@ object BackendObjType {
         ), VoidableType.Void))
       f
     }
+  }
+
+  case object FlixError extends BackendObjType {
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, List(BackendObjType.String.toTpe), Some(
+      thisLoad() ~
+        ALOAD(1) ~
+        invokeConstructor(JvmName.Error, mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void)) ~
+        RETURN()
+    ))
   }
 }

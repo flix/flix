@@ -124,6 +124,11 @@ object ClassMaker {
       makeMethod(Some(ins), JvmName.ConstructorMethod, d, v, NotFinal, NotStatic, NotAbstract)
     }
 
+    def mkConstructor(c: ConstructorMethod): Unit = {
+      if (c.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class")
+      makeMethod(c.ins, c.name, c.d, c.v, c.f, NotStatic, NotAbstract)
+    }
+
     def mkObjectConstructor(v: Visibility): Unit = {
       val ins = thisLoad() ~ invokeConstructor(JvmName.Object, MethodDescriptor.NothingToVoid) ~ RETURN()
       mkConstructor(ins, MethodDescriptor.NothingToVoid, v)
