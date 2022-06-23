@@ -385,26 +385,26 @@ namespace Int16 {
     ///
     /// Helper function for the `clamp` conversion function.
     ///
-    def clamp(minimum: {minimum :: Int16}, maximum: {maximum :: Int16}, x: Int16): Int16 =
-        if (x < minimum.minimum)
-             minimum.minimum
+    def clamp(min: {min :: Int16}, max: {max :: Int16}, x: Int16): Int16 =
+        if (x < min.min)
+             min.min
         else
-            if (x > maximum.maximum)
-                maximum.maximum
+            if (x > max.max)
+                max.max
             else
                 x
 
     ///
     /// Convert `x` to an `Int8`.
     ///
-    /// Returns `x` clamped within the Int8 range `minimum` to `maximum`.
+    /// Returns `x` clamped within the Int8 range `min` to `max`.
     ///
     @Time(1) @Space(1)
-    pub def clampToInt8(minimum: {minimum :: Int8}, maximum: {maximum :: Int8}, x: Int16): Int8 =
+    pub def clampToInt8(min: {min :: Int8}, max: {max :: Int8}, x: Int16): Int8 =
         import static java.lang.Short.valueOf(Int16): ##java.lang.Short & Pure;
         import java.lang.Short.byteValue(): Int8 & Pure;
-        let mini16 = Int8.toInt16(minimum.minimum);
-        let maxi16 = Int8.toInt16(maximum.maximum);
-        (valueOf(clamp(minimum = mini16, maximum = maxi16, x)) |> byteValue)
+        let mini16 = Int8.toInt16(min.min);
+        let maxi16 = Int8.toInt16(max.max);
+        (valueOf(clamp(min = mini16, max = maxi16, x)) |> byteValue)
 
 }

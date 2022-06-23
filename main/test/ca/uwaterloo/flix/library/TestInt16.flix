@@ -907,27 +907,27 @@ namespace TestInt16 {
     // clampToInt8                                                             //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def clampToInt801(): Bool = Int16.clampToInt8(minimum = -100i8, maximum = 100i8, 0i16) == 0i8
+    def clampToInt801(): Bool = Int16.clampToInt8(min = -100i8, max = 100i8, 0i16) == 0i8
 
     @test
-    def clampToInt802(): Bool = Int16.clampToInt8(minimum = -100i8, maximum = 100i8, 100i16) == 100i8
+    def clampToInt802(): Bool = Int16.clampToInt8(min = -100i8, max = 100i8, 100i16) == 100i8
 
     @test
-    def clampToInt803(): Bool = Int16.clampToInt8(minimum = -100i8, maximum = 100i8, 101i16) == 100i8
+    def clampToInt803(): Bool = Int16.clampToInt8(min = -100i8, max = 100i8, 101i16) == 100i8
 
     @test
-    def clampToInt804(): Bool = Int16.clampToInt8(minimum = -100i8, maximum = 100i8, -100i16) == -100i8
+    def clampToInt804(): Bool = Int16.clampToInt8(min = -100i8, max = 100i8, -100i16) == -100i8
 
     @test
-    def clampToInt805(): Bool = Int16.clampToInt8(minimum = -100i8, maximum = 100i8, -101i16) == -100i8
+    def clampToInt805(): Bool = Int16.clampToInt8(min = -100i8, max = 100i8, -101i16) == -100i8
 
     @test
-    def clampToInt806(): Bool = Int16.clampToInt8(minimum = -100i8, maximum = 100i8, Int16.maxValue()) == 100i8
+    def clampToInt806(): Bool = Int16.clampToInt8(min = -100i8, max = 100i8, Int16.maxValue()) == 100i8
 
     @test
-    def clampToInt807(): Bool = Int16.clampToInt8(minimum = -100i8, maximum = 100i8, Int16.minValue()) == -100i8
+    def clampToInt807(): Bool = Int16.clampToInt8(min = -100i8, max = 100i8, Int16.minValue()) == -100i8
 
     @test
-    def clampToInt808(): Bool = Int16.clampToInt8(minimum = 10i8, maximum = 0i8, 5i16) == 10i8      // Bad range
+    def clampToInt808(): Bool = Int16.clampToInt8(min = 10i8, max = 0i8, 5i16) == 10i8      // Bad range
 
 }
