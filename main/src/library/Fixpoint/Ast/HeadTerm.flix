@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 namespace Fixpoint/Ast {
+
+    @Internal
     pub enum HeadTerm[v] {
         case Var(VarSym)
         case Lit(v)

@@ -27,6 +27,7 @@ namespace Fixpoint/Ast {
     /// - a least upper bound (a lub function).
     /// - a greatest lower bound (a glb function).
     ///
+    @Internal
     pub enum Denotation[v] {
         case Relational
         case Latticenal(v, v -> v -> Bool, v -> v -> v, v -> v -> v)

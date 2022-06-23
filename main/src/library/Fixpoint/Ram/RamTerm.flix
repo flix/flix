@@ -25,6 +25,7 @@ namespace Fixpoint/Ram {
     /// `LoadLatVar(x)` represents the lattice component in the tuple
     /// bound to the local variable `x`.
     ///
+    @Internal
     pub enum RamTerm[v] {
         case Lit(v)
         case RowLoad(RowVar, Int32)
