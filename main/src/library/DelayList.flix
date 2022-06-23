@@ -628,7 +628,7 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def foreach(f: a -> Unit & ef, l: DelayList[a]): Unit & ef = match ll {
+    pub def foreach(f: a -> Unit & ef, l: DelayList[a]): Unit & ef = match l {
         case ENil         => ()
         case ECons(x, xs) => f(x); foreach(f,       xs)
         case LCons(x, xs) => f(x); foreach(f, force xs)
@@ -645,14 +645,12 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def reduceLeft(f: (a, a) -> a & ef, l: DelayList[a]): Option[a] & ef =
-        def loop(ll) = match ll {
-            case ENil         => None
-            case ECons(x, xs) => Some(foldLeft(f, x,       xs))
-            case LCons(x, xs) => Some(foldLeft(f, x, force xs))
-            case LList(xs)    => loop(force xs)
-        };
-        loop(l)
+    pub def reduceLeft(f: (a, a) -> a & ef, l: DelayList[a]): Option[a] & ef = match l {
+        case ENil         => None
+        case ECons(x, xs) => Some(foldLeft(f, x,       xs))
+        case LCons(x, xs) => Some(foldLeft(f, x, force xs))
+        case LList(xs)    => reduceLeft(f, force xs)
+    }
 
     ///
     /// Applies `f` to all elements in `l` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
