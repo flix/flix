@@ -281,7 +281,7 @@ namespace Int16 {
             0i16
         } else {
             let position = highestOneBitPosition(x);
-            Int32.clampToInt16(minimum = 0i16, maximum = Int16.maxValue(), position)
+            Int32.clampToInt16(min = 0i16, max = Int16.maxValue(), position)
         }
 
     ///
