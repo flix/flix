@@ -50,6 +50,7 @@ sealed trait BackendObjType {
     case BackendObjType.Native(className) => className
     case BackendObjType.ReifiedSourceLocation => JvmName(DevFlixRuntime, "ReifiedSourceLocation")
     case BackendObjType.Global => JvmName(DevFlixRuntime, "Global")
+    case BackendObjType.FlixError => JvmName(DevFlixRuntime, "FlixError")
   }
 
   /**
@@ -105,6 +106,12 @@ object BackendObjType {
   case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType {
     def continuation: BackendObjType.Continuation = Continuation(result.toErased)
 
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
+      thisLoad() ~
+        invokeConstructor(continuation.jvmName, MethodDescriptor.NothingToVoid) ~
+        RETURN()
+    ))
+
     def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, s"arg$index", args(index))
 
     def ResultField: InstanceField = continuation.ResultField
@@ -135,6 +142,16 @@ object BackendObjType {
             xReturn(this.result)
         }
       }
+    ))
+
+    /**
+      * Called when spawned, should only be used by functions returning void.
+      */
+    def RunMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "run", MethodDescriptor.NothingToVoid, Some(
+      thisLoad() ~
+        INVOKEVIRTUAL(this.UnwindMethod) ~
+        xPop(this.result) ~
+        RETURN()
     ))
   }
 
@@ -245,6 +262,16 @@ object BackendObjType {
   }
 
   case object Global extends BackendObjType {
+    def StaticConstructor: StaticConstructorMethod = StaticConstructorMethod(this.jvmName, Some(
+      NEW(JvmName.AtomicLong) ~
+        DUP() ~ invokeConstructor(JvmName.AtomicLong) ~
+        PUTSTATIC(Global.CounterField) ~
+        ICONST_0() ~
+        ANEWARRAY(BackendObjType.String.jvmName) ~
+        PUTSTATIC(Global.ArgsField) ~
+        RETURN()
+    ))
+
     def NewIdMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "newId",
       mkDescriptor()(BackendType.Int64), Some(
         GETSTATIC(Global.CounterField) ~
@@ -302,5 +329,15 @@ object BackendObjType {
         ), VoidableType.Void))
       f
     }
+  }
+
+  case object FlixError extends BackendObjType {
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, List(BackendObjType.String.toTpe), Some(
+      thisLoad() ~
+        ALOAD(1) ~
+        invokeConstructor(JvmName.Error, mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void)) ~
+        RETURN()
+    ))
   }
 }

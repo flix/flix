@@ -61,14 +61,8 @@ object GenContinuationAbstractClasses {
     cm.mkField(contType.ResultField)
     cm.mkAbstractMethod(contType.InvokeMethod)
     cm.mkMethod(contType.UnwindMethod)
-    cm.mkMethod(genRunMethod(contType), "run", NothingToVoid, IsPublic, IsFinal)
+    cm.mkMethod(contType.RunMethod)
 
     cm.closeClassMaker()
   }
-
-  private def genRunMethod(contType: BackendObjType.Continuation): InstructionSet =
-    thisLoad() ~
-      INVOKEVIRTUAL(contType.UnwindMethod) ~
-      xPop(contType.result) ~
-      RETURN()
 }
