@@ -320,7 +320,7 @@ namespace Iterator {
     /// Fast forwards the given iterator until the next element that satisfies
     /// the given predicate `f`. Returns it (if it exists).
     ///
-    def forward(f: a -> Bool & ef, done: RegionDone[r], next: RegionNext[a, r]): Option[a] \ { ef, Read(r) } =
+    def forward(f: a -> Bool & ef, done: Done[r], next: Next[a, r]): Option[a] \ { ef, Read(r) } =
         if (done())
             None
         else
@@ -595,7 +595,7 @@ namespace Iterator {
     ///
     /// Forwards the given iterator to the first non-empty iterator produced by `f`.
     ///
-    def flatMapForward(f: a -> Iterator[b, r1] & ef, done: RegionDone[r2], next: RegionNext[a, r2]): Option[Iterator[b, r1]] \ { ef, Read(r1, r2) } =
+    def flatMapForward(f: a -> Iterator[b, r1] & ef, done: Done[r2], next: Next[a, r2]): Option[Iterator[b, r1]] \ { ef, Read(r1, r2) } =
         if (done())
             None
         else
@@ -762,7 +762,7 @@ namespace Iterator {
     ///
     /// This implementation returns `f(x)` as opposed to `forward` which returns `x`.
     ///
-    def filterMapForward(f: a -> Option[b] & ef, done: RegionDone[r], next: RegionNext[a, r]): Option[b] \ { ef, Read(r) } =
+    def filterMapForward(f: a -> Option[b] & ef, done: Done[r], next: Next[a, r]): Option[b] \ { ef, Read(r) } =
         if (done())
             None
         else
