@@ -602,8 +602,9 @@ namespace DelayList {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
     ///
-    /// Forces the entire list `l`.
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
+    ///
+    /// Calling the continuation forces the list `l`.
     ///
     @Experimental
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, l: DelayList[a]): b & ef =
@@ -627,14 +628,12 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def foreach(f: a -> Unit & ef, l: DelayList[a]): Unit & ef =
-        def loop(ll) = match ll {
-            case ENil         => ()
-            case ECons(x, xs) => f(x); loop(      xs)
-            case LCons(x, xs) => f(x); loop(force xs)
-            case LList(xs)    =>       loop(force xs)
-        };
-        loop(l)
+    pub def foreach(f: a -> Unit & ef, l: DelayList[a]): Unit & ef = match ll {
+        case ENil         => ()
+        case ECons(x, xs) => f(x); foreach(f,       xs)
+        case LCons(x, xs) => f(x); foreach(f, force xs)
+        case LList(xs)    =>       foreach(f, force xs)
+    }
 
     ///
     /// Applies `f` to all elements in `l` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
