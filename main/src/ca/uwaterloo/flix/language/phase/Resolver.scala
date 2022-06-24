@@ -1592,7 +1592,7 @@ object Resolver {
         // Case 1.1.1: Exact match found in the namespace.
         if (namespaceMatches.size == 1) {
           val enum = namespaceMatches.head
-          getEnumAccessibility(enum, ns0) match {
+          return getEnumAccessibility(enum, ns0) match {
             case Accessibility.Accessible => enum.toSuccess
             case Accessibility.NameAccessible => ??? // MATT opaque enum
             case Accessibility.Inaccessible =>
@@ -1621,7 +1621,7 @@ object Resolver {
         // Case 1.2.1: Exact match found in the root namespace.
         if (globalMatches.size == 1) {
           val enum = globalMatches.head
-          getEnumAccessibility(enum, ns0) match {
+          return getEnumAccessibility(enum, ns0) match {
             case Accessibility.Accessible => enum.toSuccess
             case Accessibility.NameAccessible => ??? // MATT opaque enum
             case Accessibility.Inaccessible =>
@@ -1660,7 +1660,7 @@ object Resolver {
             for ((enumTag, caze) <- enum.cases) {
               if (tag == enumTag) {
                 // Case 2.2.1: Tag found.
-                getEnumAccessibility(enum, ns0) match {
+                return getEnumAccessibility(enum, ns0) match {
                   case Accessibility.Accessible => enum.toSuccess
                   case Accessibility.NameAccessible => ??? // MATT opaque enum
                   case Accessibility.Inaccessible =>
