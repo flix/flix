@@ -268,6 +268,11 @@ object Ast {
     def isLawful: Boolean = mod contains Modifier.Lawful
 
     /**
+      * Returns `true` if these modifiers contain the opaque modifier.
+      */
+    def isOpaque: Boolean = mod contains Modifier.Lawful
+
+    /**
       * Returns `true` if these modifiers contain the override modifier.
       */
     def isOverride: Boolean = mod contains Modifier.Override
@@ -300,6 +305,11 @@ object Ast {
       * The lawful modifier.
       */
     case object Lawful extends Modifier
+
+    /**
+      * The opaque modifier.
+      */
+    case object Opaque extends Modifier
 
     /**
       * The override modifier.
