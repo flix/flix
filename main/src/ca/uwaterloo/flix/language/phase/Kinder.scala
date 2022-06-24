@@ -1181,7 +1181,7 @@ object Kinder {
       val fparamKenvsVal = traverse(fparams)(inferFormalParam(_, kenv, taenv, root))
       val tpeKenvVal = inferType(tpe, Kind.Star, kenv, taenv, root)
       val effKenvVal = inferPurityAndEffect(purAndEff, kenv, taenv, root)
-      val tconstrsKenvsVal = traverse(tconstrs)(inferTconstr(_, kenv, taenv, root))
+      val tconstrsKenvsVal = traverse(tconstrs)(inferTypeConstraint(_, kenv, taenv, root))
 
       flatMapN(fparamKenvsVal, tpeKenvVal, effKenvVal, tconstrsKenvsVal) {
         case (fparamKenvs, tpeKenv, effKenv, tconstrKenvs) =>
@@ -1200,8 +1200,8 @@ object Kinder {
   /**
     * Infers a kind environment from the given type constraint.
     */
-  private def inferTconstr(tconstr: ResolvedAst.TypeConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = tconstr match {
-    case ResolvedAst.TypeConstraint(head, tpe, loc) =>
+  private def inferTypeConstraint(tconstr: ResolvedAst.TypeConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = tconstr match {
+    case ResolvedAst.TypeConstraint(head, tpe, _) =>
       val kind = getClassKind(root.classes(head.sym))
       inferType(tpe, kind, kenv: KindEnv, taenv, root)
   }
