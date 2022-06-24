@@ -2153,7 +2153,7 @@ object Resolver {
     * | pub        | A    | A     | A     |
     * | pub sealed | A    | S     | S     |
     *
-    * (A: Accessible, N: Sealed, I: Inaccessible)
+    * (A: Accessible, S: Sealed, I: Inaccessible)
     */
   private def getClassAccessibility(class0: NamedAst.Class, ns0: Name.NName): ClassAccessibility = {
 
