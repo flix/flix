@@ -129,7 +129,7 @@ object Namer {
       /*
      * Definition.
      */
-      case decl@WeededAst.Declaration.Def(_, _, _, ident, _, _,  _, _, _, _, _, _) =>
+      case decl@WeededAst.Declaration.Def(_, _, _, ident, _, _, _, _, _, _, _) =>
         // Check if the definition already exists.
         val defsAndSigs = prog0.defsAndSigs.getOrElse(ns0, Map.empty)
         lookupLowerName(ident.name, ns0, prog0) match {
@@ -144,7 +144,7 @@ object Namer {
       /*
       * Law.
       */
-      case WeededAst.Declaration.Law(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, retTpe, eff0, tconstrs, loc) => ??? // TODO
+      case WeededAst.Declaration.Law(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, tconstrs, loc) => ??? // TODO
 
       /*
      * Enum.
@@ -438,7 +438,7 @@ object Namer {
     * Performs naming on the given signature declaration `sig` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
   private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName, classIdent: Name.Ident, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
-    case WeededAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, retTpe0, purAndEff0, tconstrs0, loc) =>
+    case WeededAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, purAndEff0, tconstrs0, loc) =>
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, uenv0, tenv0)
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
 
@@ -447,12 +447,11 @@ object Namer {
       val mod = visitModifiers(mod0, ns0)
       val fparamsVal = getFormalParams(fparams0, uenv0, tenv)
       val tpeVal = visitType(tpe0, uenv0, tenv)
-      val retTpeVal = visitType(retTpe0, uenv0, tenv)
       val purAndEffVal = visitPurityAndEffect(purAndEff0, uenv0, tenv)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))
 
-      flatMapN(sigTypeCheckVal, fparamsVal, tpeVal, retTpeVal, purAndEffVal, tconstrsVal) {
-        case (_, fparams, tpe, retTpe, purAndEff, tconstrs) =>
+      flatMapN(sigTypeCheckVal, fparamsVal, tpeVal, purAndEffVal, tconstrsVal) {
+        case (_, fparams, tpe, purAndEff, tconstrs) =>
 
           // Then visit the parts depending on the parameters
           val env0 = getVarEnv(fparams)
@@ -462,13 +461,12 @@ object Namer {
           mapN(annVal, expVal) {
             case (as, exp) =>
 
-              // Build the scheme, including the class type constraint.
+              // Add the class tconstr to the list
               val classTconstr = NamedAst.TypeConstraint(Name.mkQName(classIdent), NamedAst.Type.Var(classTparam.sym, classTparam.loc), classSym.loc)
-              val quantifiers = classTparam.sym :: tparams.tparams.map(_.sym)
-              val sc = NamedAst.Scheme(quantifiers, classTconstr :: tconstrs, tpe)
+              val allTconstrs = classTconstr :: tconstrs
 
               val sym = Symbol.mkSigSym(classSym, ident)
-              val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, retTpe, purAndEff, loc)
+              val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, tpe, purAndEff, allTconstrs, loc)
               NamedAst.Sig(sym, spec, exp.headOption)
           }
       }
@@ -489,7 +487,7 @@ object Namer {
     * Performs naming on the given definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`, with type constraints `tconstrs`.
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName, addedTconstrs: List[NamedAst.TypeConstraint], addedQuantifiers: List[Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
-    case WeededAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams0, exp, tpe0, retTpe0, purAndEff0, tconstrs0, loc) =>
+    case WeededAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams0, exp, tpe0, purAndEff0, tconstrs0, loc) =>
       flix.subtask(ident.name, sample = true)
 
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, uenv0, tenv0)
@@ -499,12 +497,11 @@ object Namer {
       val mod = visitModifiers(mod0, ns0)
       val fparamsVal = getFormalParams(fparams0, uenv0, tenv)
       val tpeVal = visitType(tpe0, uenv0, tenv)
-      val retTpeVal = visitType(retTpe0, uenv0, tenv)
       val purAndEffVal = visitPurityAndEffect(purAndEff0, uenv0, tenv)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))
 
-      flatMapN(fparamsVal, tpeVal, retTpeVal, purAndEffVal, tconstrsVal) {
-        case (fparams, tpe, retTpe, purAndEff, tconstrs) =>
+      flatMapN(fparamsVal, tpeVal, purAndEffVal, tconstrsVal) {
+        case (fparams, tpe, purAndEff, tconstrs) =>
 
           // Then visit the parts depending on the parameters
           val env0 = getVarEnv(fparams)
@@ -514,13 +511,11 @@ object Namer {
           mapN(annVal, expVal) {
             case (as, e) =>
 
-              // Build the scheme, including any instance parameters or type constraints
-              val quantifiers = addedQuantifiers ::: tparams.tparams.map(_.sym)
-              val schemeTconstrs = addedTconstrs ::: tconstrs
-              val sc = NamedAst.Scheme(quantifiers, schemeTconstrs, tpe)
+              // add the extra tconstrs
+              val allTconstrs = addedTconstrs ::: tconstrs
 
               val sym = Symbol.mkDefnSym(ns0, ident)
-              val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, retTpe, purAndEff, loc)
+              val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, tpe, purAndEff, allTconstrs, loc)
               NamedAst.Def(sym, spec, e)
           }
       }
@@ -551,11 +546,10 @@ object Namer {
       val mod = visitModifiers(mod0, ns0)
       val fparamsVal = getFormalParams(fparams0, uenv0, tenv)
       val tpeVal = visitType(tpe0, uenv0, tenv)
-      val retTpeVal = visitType(retTpe0, uenv0, tenv)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))
 
-      flatMapN(fparamsVal, tpeVal, retTpeVal, tconstrsVal) {
-        case (fparams, tpe, retTpe, tconstrs) =>
+      flatMapN(fparamsVal, tpeVal, tconstrsVal) {
+        case (fparams, tpe, tconstrs) =>
 
           // Then visit the parts depending on the parameters
           val env0 = getVarEnv(fparams)
@@ -564,15 +558,11 @@ object Namer {
           mapN(annVal) {
             ann =>
 
-              // Build the scheme, including the class type constraint.
-              val quantifiers = Nil // operations are monomorphic
-              val sc = NamedAst.Scheme(quantifiers, tconstrs, tpe)
-
               val tparams = NamedAst.TypeParams.Kinded(Nil) // operations are monomorphic
               val purAndEff = NamedAst.PurityAndEffect(None, None) // operations are pure
 
               val sym = Symbol.mkOpSym(effSym, ident)
-              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, sc, retTpe, purAndEff, loc)
+              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc)
               NamedAst.Op(sym, spec)
           }
       }

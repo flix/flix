@@ -299,19 +299,20 @@ object Kinder {
     * Performs kinding on the given spec under the given kind environment.
     */
   private def visitSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Spec, KindError] = spec0 match {
-    case ResolvedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, tpe0, purAndEff0, loc) =>
+    case ResolvedAst.Spec(doc, ann0, mod, tparams0, fparams0, tpe0, purAndEff0, tconstrs0, loc) =>
       val annVal = traverse(ann0)(visitAnnotation(_, kenv, Map.empty, taenv, root))
       val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv))
       val fparamsVal = traverse(fparams0)(visitFormalParam(_, kenv, senv, taenv, root))
       val tpeVal = visitType(tpe0, Kind.Star, kenv, senv, taenv, root)
       val purAndEffVal = visitPurityAndEffect(purAndEff0, kenv, senv, taenv, root)
-      val scVal = visitScheme(sc0, kenv, senv, taenv, root)
+      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, kenv, senv, taenv, root))
 
-      flatMapN(annVal, tparamsVal, fparamsVal, tpeVal, purAndEffVal) {
-        case (ann, tparams, fparams, tpe, (pur, eff)) => // TODO use eff
-          mapN(scVal) { // ascribe the scheme separately
-            sc => KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, pur, loc)
-          }
+      mapN(annVal, tparamsVal, fparamsVal, tpeVal, purAndEffVal, tconstrsVal) {
+        case (ann, tparams, fparams, tpe, (pur, eff), tconstrs) => // TODO use eff
+          val quantifiers = tparams.map(_.sym)
+          val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), pur, tpe, tpe.loc)
+          val sc = Scheme(quantifiers, tconstrs, base)
+          KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, loc)
       }
   }
 
@@ -1170,17 +1171,15 @@ object Kinder {
     * as in the case of a class type parameter used in a sig or law.
     */
   private def inferSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = spec0 match {
-    case ResolvedAst.Spec(_, _, _, _, fparams, sc, _, purAndEff, _) =>
-      val fparamKenvVal = Validation.fold(fparams, KindEnv.empty) {
-        case (acc, fparam) => flatMapN(inferFormalParam(fparam, kenv, taenv, root)) {
-          fparamKenv => acc ++ fparamKenv
-        }
-      }
-      val schemeKenvVal = inferScheme(sc, kenv, taenv, root)
+    case ResolvedAst.Spec(_, _, _, _, fparams, tpe, purAndEff, tconstrs, _) =>
+      val fparamKenvsVal = traverse(fparams)(inferFormalParam(_, kenv, taenv, root))
+      val tpeKenvVal = inferType(tpe, Kind.Star, kenv, taenv, root)
       val effKenvVal = inferPurityAndEffect(purAndEff, kenv, taenv, root)
+      val tconstrsKenvsVal = traverse(tconstrs)(inferTconstr(_, kenv, taenv, root))
 
-      flatMapN(fparamKenvVal, schemeKenvVal, effKenvVal) {
-        case (fparamKenv, schemeKenv, effKenv) => KindEnv.merge(fparamKenv, schemeKenv, effKenv, kenv)
+      flatMapN(fparamKenvsVal, tpeKenvVal, effKenvVal, tconstrsKenvsVal) {
+        case (fparamKenvs, tpeKenv, effKenv, tconstrKenvs) =>
+          KindEnv.merge(fparamKenvs ::: tpeKenv :: effKenv :: tconstrKenvs)
       }
 
   }
@@ -1293,14 +1292,14 @@ object Kinder {
     case Ast.PurityAndEffect(None, Some(effs)) =>
       val kenvsVal = traverse(effs)(inferType(_, Kind.Beef, kenv, taenv, root))
       flatMapN(kenvsVal) {
-        case kenvs => KindEnv.mergeAll(kenvs)
+        case kenvs => KindEnv.merge(kenvs)
       }
     // Case 4: Purity and Effect. Infer Purity as Bool and Effect as Effect.
     case Ast.PurityAndEffect(Some(pur), Some(effs)) =>
       val purKenvVal = inferType(pur, Kind.Bool, kenv, taenv, root)
       val effKenvsVal = traverse(effs)(inferType(_, Kind.Effect, kenv, taenv, root))
       flatMapN(purKenvVal, effKenvsVal) {
-        case (purKenv, effKenvs) => KindEnv.mergeAll(purKenv :: effKenvs)
+        case (purKenv, effKenvs) => KindEnv.merge(purKenv :: effKenvs)
       }
   }
 
@@ -1410,22 +1409,22 @@ object Kinder {
     *
     * For example,
     * let kenv = {
-    *   w -> Beef,
-    *   x -> Bool,
-    *   y -> Effect,
-    *   z -> Star
+    * w -> Beef,
+    * x -> Bool,
+    * y -> Effect,
+    * z -> Star
     * }
     * Then `split(kenv)` produces:
     * - a kind environment kenv1 = {
-    *     w -> Bool,
-    *     w' -> Effect,
-    *     x -> Bool,
-    *     y -> Effect,
-    *     z -> Star
-    *   }
+    * w -> Bool,
+    * w' -> Effect,
+    * x -> Bool,
+    * y -> Effect,
+    * z -> Star
+    * }
     * - a split environment senv = {
-    *     w -> w'
-    *   }
+    * w -> w'
+    * }
     *
     */
   private def split(kenv0: KindEnv)(implicit flix: Flix): (KindEnv, Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym]) = {
@@ -1460,12 +1459,7 @@ object Kinder {
     /**
       * Merges all the given kind environments.
       */
-    def merge(kenvs: KindEnv*): Validation[KindEnv, KindError] = mergeAll(kenvs.toList)
-
-    /**
-      * Merges all the given kind environments.
-      */
-    def mergeAll(kenvs: List[KindEnv]): Validation[KindEnv, KindError] = {
+    def merge(kenvs: List[KindEnv]): Validation[KindEnv, KindError] = {
       Validation.fold(kenvs, KindEnv.empty) {
         case (acc, kenv) => acc ++ kenv
       }
