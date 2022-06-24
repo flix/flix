@@ -37,7 +37,6 @@ sealed trait BackendObjType {
   val jvmName: JvmName = this match {
     case BackendObjType.Unit => JvmName(DevFlixRuntime, "Unit")
     case BackendObjType.BigInt => JvmName(List("java", "math"), "BigInteger")
-    case BackendObjType.String => JvmName(JavaLang, "String")
     case BackendObjType.Channel(_) => JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), mkName("Channel"))
     case BackendObjType.Lazy(tpe) => JvmName(RootPackage, mkName("Lazy", tpe))
     case BackendObjType.Ref(tpe) => JvmName(RootPackage, mkName("Ref", tpe))
@@ -51,7 +50,10 @@ sealed trait BackendObjType {
     case BackendObjType.ReifiedSourceLocation => JvmName(DevFlixRuntime, "ReifiedSourceLocation")
     case BackendObjType.Global => JvmName(DevFlixRuntime, "Global")
     case BackendObjType.FlixError => JvmName(DevFlixRuntime, "FlixError")
+    case BackendObjType.HoleError => JvmName(DevFlixRuntime, "HoleError")
+    // Java classes
     case BackendObjType.JavaObject => JvmName(JavaLang, "Object")
+    case BackendObjType.String => JvmName(JavaLang, "String")
   }
 
   /**
@@ -161,15 +163,15 @@ object BackendObjType {
 
     def InstanceField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, "INSTANCE", this.toTpe)
 
-    def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName, IsFinal, {
-      Some(throwUnsupportedOperationException(
-        s"${BackendObjType.Record.LookupFieldMethod.name} method shouldn't be called"))
-    })
+    def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName, IsFinal, Some(
+      throwUnsupportedOperationException(
+        s"${BackendObjType.Record.LookupFieldMethod.name} method shouldn't be called")
+    ))
 
-    def RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName, IsFinal, {
-      Some(throwUnsupportedOperationException(
-        s"${BackendObjType.Record.RestrictFieldMethod.name} method shouldn't be called"))
-    })
+    def RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName, IsFinal, Some(
+      throwUnsupportedOperationException(
+        s"${BackendObjType.Record.RestrictFieldMethod.name} method shouldn't be called")
+    ))
   }
 
   case class RecordExtend(field: String, value: BackendType, rest: BackendType) extends BackendObjType {
@@ -196,8 +198,7 @@ object BackendObjType {
     def RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName, IsFinal, Some(
       caseOnLabelEquality {
         case TrueBranch =>
-          thisLoad() ~ GETFIELD(this.RestField) ~
-            ARETURN()
+          thisLoad() ~ GETFIELD(this.RestField) ~ ARETURN()
         case FalseBranch =>
           thisLoad() ~
             DUP() ~ GETFIELD(this.RestField) ~
@@ -333,7 +334,6 @@ object BackendObjType {
   }
 
   case object FlixError extends BackendObjType {
-
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, List(BackendObjType.String.toTpe), Some(
       thisLoad() ~
         ALOAD(1) ~
@@ -342,7 +342,107 @@ object BackendObjType {
     ))
   }
 
+  case object HoleError extends BackendObjType {
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(BackendObjType.HoleError.jvmName, IsFinal, BackendObjType.FlixError.jvmName)
+
+      cm.mkConstructor(Constructor)
+      cm.mkField(HoleField)
+      cm.mkField(LocationField)
+      cm.mkMethod(EqualsMethod)
+      cm.mkMethod(HashCodeMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic,
+      List(BackendObjType.String.toTpe, BackendObjType.ReifiedSourceLocation.toTpe), Some(
+        withName(1, BackendObjType.String.toTpe) { hole =>
+          withName(2, BackendObjType.ReifiedSourceLocation.toTpe) { loc =>
+            thisLoad() ~
+              // create an error msg
+              NEW(JvmName.StringBuilder) ~
+              DUP() ~
+              invokeConstructor(JvmName.StringBuilder) ~
+              pushString("Hole '") ~ stringBuilderAppend() ~
+              hole.load() ~ stringBuilderAppend() ~
+              pushString("' at ") ~ stringBuilderAppend() ~
+              loc.load() ~ INVOKEVIRTUAL(BackendObjType.JavaObject.ToStringMethod) ~ stringBuilderAppend() ~
+              INVOKEVIRTUAL(BackendObjType.JavaObject.ToStringMethod) ~
+              INVOKESPECIAL(BackendObjType.FlixError.Constructor) ~
+              // save the arguments locally
+              thisLoad() ~ hole.load() ~ PUTFIELD(BackendObjType.HoleError.HoleField) ~
+              thisLoad() ~ loc.load() ~ PUTFIELD(BackendObjType.HoleError.LocationField) ~
+              RETURN()
+          }
+        }
+      ))
+
+    private def HoleField: InstanceField =
+      InstanceField(this.jvmName, IsPrivate, IsFinal, "hole", BackendObjType.String.toTpe)
+
+    private def LocationField: InstanceField =
+      InstanceField(this.jvmName, IsPrivate, IsFinal, "location", BackendObjType.ReifiedSourceLocation.toTpe)
+
+    private def EqualsMethod: InstanceMethod = BackendObjType.JavaObject.EqualsMethod.implementation(BackendObjType.HoleError.jvmName, Some(
+      withName(1, BackendObjType.JavaObject.toTpe) { other =>
+        // check exact equality
+        thisLoad() ~ other.load() ~
+          ifTrue(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
+          // check for null
+          other.load() ~
+          ifTrue(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
+          // check for class equality
+          thisLoad() ~
+          INVOKEVIRTUAL(BackendObjType.JavaObject.GetClassMethod) ~
+          other.load() ~
+          INVOKEVIRTUAL(BackendObjType.JavaObject.GetClassMethod) ~
+          ifTrue(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
+          // cast the other obj
+          other.load() ~ CHECKCAST(BackendObjType.HoleError.jvmName) ~
+          storeWithName(2, BackendObjType.HoleError.toTpe) { otherHoleError =>
+            // compare the hole field
+            thisLoad() ~ GETFIELD(BackendObjType.HoleError.HoleField) ~
+              otherHoleError.load() ~ GETFIELD(BackendObjType.HoleError.HoleField) ~
+              objectsEquals() ~
+              ifTrue(Condition.EQ)(pushBool(false) ~ IRETURN()) ~
+              // compare the location field
+              thisLoad() ~ GETFIELD(BackendObjType.HoleError.LocationField) ~
+              otherHoleError.load() ~ GETFIELD(BackendObjType.HoleError.LocationField) ~
+              objectsEquals() ~
+              IRETURN()
+          }
+      }
+    ))
+
+    private def HashCodeMethod: InstanceMethod = BackendObjType.JavaObject.HashcodeMethod.implementation(BackendObjType.HoleError.jvmName, Some(
+      ICONST_2() ~
+        ANEWARRAY(BackendObjType.JavaObject.jvmName) ~
+        // store hole
+        DUP() ~
+        ICONST_0() ~
+        thisLoad() ~ GETFIELD(BackendObjType.HoleError.HoleField) ~
+        AASTORE() ~
+        // store location
+        DUP() ~
+        ICONST_1() ~
+        thisLoad() ~ GETFIELD(BackendObjType.HoleError.LocationField) ~
+        AASTORE() ~
+        // hash the array
+        INVOKESTATIC(JvmName.Objects, "hash", mkDescriptor(BackendType.Array(BackendObjType.JavaObject.toTpe))(BackendType.Int32)) ~
+        IRETURN()
+    ))
+
+    private def stringBuilderAppend(): InstructionSet = INVOKEVIRTUAL(JvmName.StringBuilder, "append",
+      mkDescriptor(BackendObjType.String.toTpe)(JvmName.StringBuilder.toTpe))
+
+    private def objectsEquals(): InstructionSet = INVOKESTATIC(JvmName.Objects, "equals",
+      mkDescriptor(BackendObjType.JavaObject.toTpe, BackendObjType.JavaObject.toTpe)(BackendType.Bool))
+  }
+
+  //
   // Java Types
+  //
 
   case object JavaObject extends BackendObjType {
 
