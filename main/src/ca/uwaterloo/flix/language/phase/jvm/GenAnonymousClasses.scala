@@ -52,7 +52,7 @@ object GenAnonymousClasses {
                           obj: Expression.NewObject)(implicit root: Root, flix: Flix): Array[Byte] = {
     val visitor = AsmOps.mkClassWriter()
 
-    val superClass = JvmName.Object
+    val superClass = BackendObjType.JavaObject.jvmName
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
       superClass.toInternalName, Array(asm.Type.getInternalName(obj.clazz)))
 

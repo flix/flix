@@ -51,6 +51,7 @@ sealed trait BackendObjType {
     case BackendObjType.ReifiedSourceLocation => JvmName(DevFlixRuntime, "ReifiedSourceLocation")
     case BackendObjType.Global => JvmName(DevFlixRuntime, "Global")
     case BackendObjType.FlixError => JvmName(DevFlixRuntime, "FlixError")
+    case BackendObjType.JavaObject => JvmName(JavaLang, "Object")
   }
 
   /**
@@ -213,7 +214,7 @@ object BackendObjType {
     private def caseOnLabelEquality(cases: Branch => InstructionSet): InstructionSet =
       thisLoad() ~ GETFIELD(this.LabelField) ~
         ALOAD(1) ~
-        INVOKEVIRTUAL(BackendObjType.String.jvmName, "equals", mkDescriptor(JvmName.Object.toTpe)(BackendType.Bool)) ~
+        INVOKEVIRTUAL(BackendObjType.JavaObject.EqualsMethod) ~
         branch(Condition.Bool)(cases)
   }
 
@@ -321,9 +322,9 @@ object BackendObjType {
     private def arrayCopy(): InstructionSet = (f: F) => {
       f.visitMethodInstruction(Opcodes.INVOKESTATIC, JvmName.System, "arraycopy",
         MethodDescriptor(List(
-          JvmName.Object.toTpe,
+          BackendObjType.JavaObject.toTpe,
           BackendType.Int32,
-          JvmName.Object.toTpe,
+          BackendObjType.JavaObject.toTpe,
           BackendType.Int32,
           BackendType.Int32
         ), VoidableType.Void))
@@ -339,5 +340,24 @@ object BackendObjType {
         invokeConstructor(JvmName.Error, mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void)) ~
         RETURN()
     ))
+  }
+
+  // Java Types
+
+  case object JavaObject extends BackendObjType {
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, None)
+
+    def EqualsMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "equals",
+      mkDescriptor(BackendObjType.JavaObject.toTpe)(BackendType.Bool), None)
+
+    def HashcodeMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "hashCode",
+      mkDescriptor()(BackendType.Int32), None)
+
+    def ToStringMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "toString",
+      mkDescriptor()(BackendObjType.String.toTpe), None)
+
+    def GetClassMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "getClass",
+      mkDescriptor()(JvmName.Class.toTpe), None)
   }
 }
