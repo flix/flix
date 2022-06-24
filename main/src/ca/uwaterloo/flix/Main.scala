@@ -206,8 +206,9 @@ object Main {
       // evaluate main.
       val metrics = flix.metrics()
       metrics match {
-        case Validation.Success(metrics) =>
+        case Validation.Success((metrics, total)) =>
           print(Metrics.latexHeader())
+          println(s"  All files & $total")
           for ((src, m) <- metrics) {
             //val sanity = s" CODE${m.sanityCheck()}"
             println(s"  ${src.name} & $m")

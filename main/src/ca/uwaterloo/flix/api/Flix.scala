@@ -519,7 +519,7 @@ class Flix {
       throw ex
   }
 
-  def metrics(): Validation[Map[Source, Metrics.Metrics], CompilationMessage] = {
+  def metrics(): Validation[(Map[Source, Metrics.Metrics], Metrics.Metrics), CompilationMessage] = {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 

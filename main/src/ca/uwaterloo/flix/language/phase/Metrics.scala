@@ -272,8 +272,8 @@ object Metrics {
     combineOpts[Boolean](_ || _, purPart, efPart).getOrElse(false)
   }
 
-  def run(root: ParsedAst.Root)(implicit flix: Flix): Validation[Map[Source, Metrics], CompilationMessage] =
-    root.units.map {
+  def run(root: ParsedAst.Root)(implicit flix: Flix): Validation[(Map[Source, Metrics], Metrics), CompilationMessage] = {
+    val metrics = root.units.map {
       case (src, ParsedAst.CompilationUnit(_, _, decls, _)) =>
         val lines = src.data.count(_ == '\n')
         val pubDefs = decls.flatMap(getPubDefs)
@@ -290,6 +290,22 @@ object Metrics {
           lines, functions, pureFunctions, impureFunctions, effPolyFunctions,
           regionFunctions, regFunctions(_ == 1), regFunctions(_ == 2), regFunctions(_ >= 3))
         (src, metrics)
-    }.toSuccess
+    }
+    val total = metrics.values.reduce((m1, m2) => {
+      Metrics(
+        lines = m1.lines + m2.lines,
+        functions = m1.functions + m2.functions,
+        pureFunctions = m1.pureFunctions + m2.pureFunctions,
+        impureFunctions = m1.impureFunctions + m2.impureFunctions,
+        polyFunctions = m1.polyFunctions + m2.polyFunctions,
+        regionFunctions = m1.regionFunctions + m2.regionFunctions,
+        oneRegionFunctions = m1.oneRegionFunctions + m2.oneRegionFunctions,
+        twoRegionFunctions = m1.twoRegionFunctions + m2.twoRegionFunctions,
+        threePlusRegionFunctions = m1.threePlusRegionFunctions + m2.threePlusRegionFunctions
+      )
+    })
+
+    (metrics, total).toSuccess
+  }
 
 }
