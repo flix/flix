@@ -400,4 +400,13 @@ namespace MutDeque {
         } else {
             loop(deref front)
         }
+
+    ///
+    /// Shuffles a copy of `d` using the Fisher–Yates shuffle.
+    ///
+    pub def shuffle(rnd: Random.Random, d: MutDeque[a, r], r: Region[r]): MutDeque[a, r] & Impure =
+        let arr = toArray(d, r);
+        Array.shuffle(rnd, arr);
+        Array.toMutDeque(arr, r)
+
 }
