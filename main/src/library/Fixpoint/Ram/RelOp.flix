@@ -15,6 +15,8 @@
  */
 
 namespace Fixpoint/Ram {
+
+    @Internal
     pub enum RelOp[v] {
         case Search(RowVar, RamSym[v], RelOp[v])
         case Query(RowVar, RamSym[v], Array[(Int32, RamTerm[v]), Static], RelOp[v])
