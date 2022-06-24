@@ -19,10 +19,6 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.NotFinal
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 
 /**
   * Generates bytecode for the function abstract classes.
@@ -49,22 +45,12 @@ object GenFunctionAbstractClasses {
     //   public abstract Object arg1;
     //   public Fn2$Int$Obj$Bool() { ... }
     // }
+    val cm = ClassMaker.mkAbstractClass(arrow.jvmName, superClass = arrow.continuation.jvmName)
 
-    val cont = arrow.continuation
-    val cm = ClassMaker.mkAbstractClass(arrow.jvmName, superClass = cont.jvmName)
+    cm.mkConstructor(arrow.Constructor)
 
-    cm.mkConstructor(genConstructor(cont), MethodDescriptor.NothingToVoid, IsPublic)
-
-    for (argIndex <- arrow.args.indices) {
-      cm.mkField(arrow.ArgField(argIndex))
-    }
+    arrow.args.indices.foreach(argIndex => cm.mkField(arrow.ArgField(argIndex)))
 
     cm.closeClassMaker()
   }
-
-  private def genConstructor(cont: BackendObjType.Continuation): InstructionSet =
-    thisLoad() ~
-      invokeConstructor(cont.jvmName, MethodDescriptor.NothingToVoid) ~
-      RETURN()
-
 }

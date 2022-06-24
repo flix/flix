@@ -38,7 +38,7 @@ object GenMatchErrorClass {
   }
 
   private def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(JvmName.MatchError, IsFinal, superClass = JvmName.FlixError)
+    val cm = ClassMaker.mkClass(JvmName.MatchError, IsFinal, superClass = BackendObjType.FlixError.jvmName)
 
     cm.mkConstructor(genConstructor(), mkDescriptor(BackendObjType.ReifiedSourceLocation.toTpe)(VoidableType.Void), IsPublic)
 
@@ -63,7 +63,7 @@ object GenMatchErrorClass {
       INVOKEVIRTUAL(BackendObjType.JavaObject.ToStringMethod) ~
       INVOKEVIRTUAL(JvmName.StringBuilder, "append", stringBuilderDescriptor) ~
       INVOKEVIRTUAL(BackendObjType.JavaObject.ToStringMethod) ~
-      invokeConstructor(JvmName.FlixError, mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void)) ~
+      INVOKESPECIAL(BackendObjType.FlixError.Constructor) ~
       thisLoad() ~
       ALOAD(1) ~
       PUTFIELD(locationField) ~
