@@ -55,7 +55,7 @@ object GenNamespaceClasses {
 
     // Class header
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, namespaceClassType.name.toInternalName, null,
-      JvmName.Object.toInternalName, null)
+      BackendObjType.JavaObject.jvmName.toInternalName, null)
 
     // Adding an IFO field and a shim method for each function in `ns`
     for ((_, defn) <- ns.defs) {
@@ -131,7 +131,7 @@ object GenNamespaceClasses {
 
     constructor.visitCode()
     constructor.visitVarInsn(ALOAD, 0)
-    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>",
+    constructor.visitMethodInsn(INVOKESPECIAL, BackendObjType.JavaObject.jvmName.toInternalName, "<init>",
       AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
     constructor.visitInsn(RETURN)
 
