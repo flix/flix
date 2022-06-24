@@ -558,8 +558,9 @@ namespace Array {
     @Time(n) @Space(length(b))
     pub def patch(i: Int32, n: Int32, a: Array[a, r1], b: Array[a, r2]): Array[a, r2] \ { Read(r1, r2), Write(r2) } =
         let len1 = length(a);
+        let r = Scoped.regionOf(b);
         let size = if (n > len1) len1 else n;
-        let sub = copyOfRange(0, size, a, Scoped.regionOf(b));
+        let sub = copyOfRange(0, size, a, r);
         updateSequence(i, sub, b)
 
     ///
