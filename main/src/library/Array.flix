@@ -901,10 +901,11 @@ namespace Array {
     @Time(length(arrs)) @Space(length(arrs))
     pub def flatten(arrs: Array[Array[a, r], r]) : Array[a, r] \ { Read(r), Write(r) } =
         let len = sumLengths(arrs);
+        let r = Scoped.regionOf(arrs);
         match headArrays(arrs) {
-            case None => [] @ Scoped.regionOf(arrs)
+            case None => [] @ r
             case Some(x) => {
-                let out = new(x, len, Scoped.regionOf(arrs));
+                let out = new(x, len, r);
                 foldLeft((pos, a) -> arrayWrites(pos, a, out), 0, arrs);
                 out
             }
