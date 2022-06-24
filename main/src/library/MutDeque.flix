@@ -322,7 +322,7 @@ namespace MutDeque {
         Array.length(deref a)
 
     ///
-    /// Returns `true` if `MutDeque`s `a` and `b` have the same elements, i.e. are structurally equal.
+    /// Returns `true` if `MutDeque`s `a` and `b` have the same elements in the same order, i.e. are structurally equal.
     ///
     pub def sameElements(d1: MutDeque[t, r1], d2: MutDeque[t, r2]): Bool \ Read(r1, r2) with Eq[t] =
         let aSize = size(d1);
