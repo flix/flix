@@ -2275,7 +2275,7 @@ object Resolver {
     *
     * (A: Accessible, N: Name Accessible, I: Inaccessible)
     */
-  def getEnumAccessibility(enum0: NamedAst.Enum, ns0: Name.NName): Accessibility = {
+  private def getEnumAccessibility(enum0: NamedAst.Enum, ns0: Name.NName): Accessibility = {
 
     val enumNs = enum0.sym.namespace
     val accessingNs = ns0.idents.map(_.name)
