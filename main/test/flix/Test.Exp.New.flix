@@ -225,119 +225,227 @@ namespace Test/Exp/New {
         }
 
     @test
-    def testNew14(): MutMap[Int32, Int32, Static] & Impure =
+    def testNewMutMap1Region01(): MutMap[Int32, Int32, Static] & Impure =
         new MutMap(Static): MutMap[Int32, Int32, Static]
 
     @test
-    def testNew15(): MutMap[Int32, Int32, Static] & Impure =
+    def testNewMutMap1Region02(): MutMap[Int32, Int32, Static] & Impure =
         let m = new MutMap(Static);
         MutMap.put!(1, 1, m);
         m
 
     @test
-    def testNew16(): MutMap[Int32, Int32, Static] & Impure =
-        let m = new MutMap(Static);
-        MutMap.put!(1, 1, m);
-        MutMap.put!(2, 1, m);
-        MutMap.put!(3, 1, m);
-        m
-
-    @test
-    def testNew17(): Unit = region r {
-        let _ = new MutMap(r): MutMap[Int32, String, r];
-        ()
-    }
-
-    @test
-    def testNew18(): Unit = region r {
-        let _ = new MutMap(r): MutMap[Int32, String, r];
-        let _ = new MutMap(r): MutMap[Int32, String, r];
-        let _ = new MutMap(r): MutMap[Int32, String, r];
-        ()
-    }
-
-    @test
-    def testNew19(): Unit & Impure = region r {
-        let _ = new MutMap(r): MutMap[Int32, String, r];
-        let _ = new MutMap(r): MutMap[Int32, String, r];
-        let _ = new MutMap(Static): MutMap[Int32, String, Static];
-        ()
-    }
-
-    @test
-    def testNew20(): Int32 & Impure =
-        let m = new MutMap(Static);
-        MutMap.put!(1, 1, m);
-        match MutMap.get(1, m) {
-            case Some(1) => 1
-            case _       => unreachable!()
+    def testNewMutMap1Region03(): MutMap[Int32, String, Static] & Impure =
+        region _ {
+            new MutMap(Static): MutMap[Int32, String, Static]
         }
 
     @test
-    def testNew21(): Int32 = region r {
-        let m = new MutMap(r);
-        MutMap.put!(1, 1, m);
-        match MutMap.get(1, m) {
-            case Some(1) => 1
-            case _       => unreachable!()
+    def testNewMutMap1Region04(): Unit =
+        region r {
+            let _ = new MutMap(r): MutMap[Int32, String, r];
+            ()
         }
-    }
 
     @test
-    def testNew22(): Int32 = region r1 {
-        let m1 = new MutMap(r1): MutMap[Int32, Int32, r1];
-            region r2 {
-                let m2 = new MutMap(r2): MutMap[Int32, Int32, r2];
-                let l = new MutList(r2): MutList[Int32, r2];
-                region _ {
-                    MutMap.put!(1, 1, m1);
-                    MutMap.put!(2, 2, m2);
-                    MutList.push!(3, l)
-                };
-                match MutList.pop!(l) {
-                    case Some(3) => 3
+    def testNewMutMap1Region05(): Int32 =
+        region r {
+            let m = new MutMap(r);
+            MutMap.put!(1, 1, m);
+            match MutMap.get(1, m) {
+                case Some(1) => 1
+                case _       => unreachable!()
+            }
+        }
+
+    @test
+    def testNewMutMap2RegionsFlat01(): MutMap[Int32, Int32, Static] & Impure =
+        region _ {
+            new MutMap(Static): MutMap[Int32, String, Static]
+        };
+        region _ {
+            new MutMap(Static): MutMap[Int32, Int32, Static]
+        }
+
+    @test
+    def testNewMutMap2RegionsFlat02(): MutMap[Int32, Int32, Static] & Impure =
+        let _ = region r {
+            let _ = new MutMap(r): MutMap[Int32, String, r];
+            ()
+        };
+        region _ {
+            new MutMap(Static): MutMap[Int32, Int32, Static]
+        }
+
+    @test
+    def testNewMutMap2RegionsFlat03(): Unit & Impure =
+        region _ {
+            new MutMap(Static): MutMap[Int32, String, Static]
+        };
+        region r {
+            let _ = new MutMap(r): MutMap[Int32, Int32, r];
+            ()
+        }
+
+    @test
+    def testNewMutMap2RegionsFlat04(): Bool =
+        let res1 = region r {
+            let _ = new MutMap(r): MutMap[Int32, String, r];
+            ()
+        };
+        let res2 = region r {
+            let _ = new MutMap(r): MutMap[String, Int32, r];
+            ()
+        };
+        res1 == () and res1 == res2
+
+    @test
+    def testNewMutMap2RegionsFlat05(): Bool =
+        let res1 = region r {
+            let m = new MutMap(r);
+            MutMap.put!(1, 1, m);
+            match MutMap.get(1, m) {
+                case Some(1) => 1
+                case _       => unreachable!()
+            }
+        };
+        let res2 = region r {
+            let m = new MutMap(r);
+            MutMap.put!(1, 1, m);
+            match MutMap.get(1, m) {
+                case Some(1) => 1
+                case _       => unreachable!()
+            }
+        };
+        res1 + res2 == 2
+
+    @test
+    def testNewMutMap2RegionsNested01(): Int32 & Impure =
+        region _ {
+            region _ {
+                let m = new MutMap(Static);
+                MutMap.put!(1, 1, m);
+                match MutMap.get(1, m) {
+                    case Some(1) => 1
                     case _       => unreachable!()
                 }
             }
-    }
+        }
 
     @test
-    def testNew23(): Int32 & Impure = region r1 {
-        let m1 = new MutMap(r1): MutMap[Int32, Int32, r1];
-            region r2 {
-                let m2 = new MutMap(Static): MutMap[Int32, Int32, Static];
-                let l = new MutList(r2): MutList[Int32, r2];
-                region _ {
-                    MutMap.put!(1, 1, m1);
-                    MutMap.put!(2, 2, m2);
-                    MutList.push!(3, l)
-                };
-                match MutList.pop!(l) {
-                    case Some(3) => 3
+    def testNewMutMap2RegionsNested02(): Int32 =
+        region r {
+            region _ {
+                let m = new MutMap(r);
+                MutMap.put!(1, 1, m);
+                match MutMap.get(1, m) {
+                    case Some(1) => 1
                     case _       => unreachable!()
                 }
             }
-    }
+        }
 
     @test
-    def testNew24(): Int32 & Impure = region r1 {
-        let m1 = new MutMap(r1): MutMap[Int32, Int32, r1];
+    def testNewMutMap2RegionsNested03(): Int32 =
+        region _ {
             region r2 {
-                let m2 = new MutMap(r1): MutMap[Int32, Int32, r1];
-                let l = new MutList(r2): MutList[Int32, r2];
-                region _ {
-                    new MutList(Static): MutList[Unit, Static]
-                };
-                region _ {
-                    MutMap.put!(1, 1, m1);
-                    MutMap.put!(2, 2, m2);
-                    MutList.push!(3, l)
-                };
-                match MutList.pop!(l) {
-                    case Some(3) => 3
+                let m = new MutMap(r2);
+                MutMap.put!(1, 1, m);
+                match MutMap.get(1, m) {
+                    case Some(1) => 1
                     case _       => unreachable!()
                 }
             }
-    }
+        }
+
+    @test
+    def testNew2MutMaps2NestedRegions01(): Int32 & Impure =
+        region _ {
+            region _ {
+                let m1 = new MutMap(Static);
+                let m2 = new MutMap(Static);
+                MutMap.put!(1, 1, m1);
+                MutMap.put!(2, 2, m2);
+                match (MutMap.get(1, m1), MutMap.get(2, m2)) {
+                    case (Some(1), Some(2)) => 1 + 2
+                    case _                  => unreachable!()
+                }
+            }
+        }
+
+    @test
+    def testNew2MutMaps2NestedRegions02(): Int32 & Impure =
+        region r {
+            region _ {
+                let m1 = new MutMap(r);
+                let m2 = new MutMap(Static);
+                MutMap.put!(1, 1, m1);
+                MutMap.put!(2, 2, m2);
+                match (MutMap.get(1, m1), MutMap.get(2, m2)) {
+                    case (Some(1), Some(2)) => 1 + 2
+                    case _                  => unreachable!()
+                }
+            }
+        }
+
+    @test
+    def testNew2MutMaps2NestedRegions03(): Int32 =
+        region r {
+            region _ {
+                let m1 = new MutMap(r);
+                let m2 = new MutMap(r);
+                MutMap.put!(1, 1, m1);
+                MutMap.put!(2, 2, m2);
+                match (MutMap.get(1, m1), MutMap.get(2, m2)) {
+                    case (Some(1), Some(2)) => 1 + 2
+                    case _                  => unreachable!()
+                }
+            }
+        }
+
+    @test
+    def testNew2MutMaps2NestedRegions04(): Int32 =
+        region r1 {
+            region r2 {
+                let m1 = new MutMap(r1);
+                let m2 = new MutMap(r2);
+                MutMap.put!(1, 1, m1);
+                MutMap.put!(2, 2, m2);
+                match (MutMap.get(1, m1), MutMap.get(2, m2)) {
+                    case (Some(1), Some(2)) => 1 + 2
+                    case _                  => unreachable!()
+                }
+            }
+        }
+
+    @test
+    def testNew2MutMaps2NestedRegions05(): Int32 =
+        region r1 {
+            let m1 = new MutMap(r1);
+            MutMap.put!(1, 1, m1);
+            region r2 {
+                let m2 = new MutMap(r2);
+                MutMap.put!(2, 2, m2);
+                match (MutMap.get(1, m1), MutMap.get(2, m2)) {
+                    case (Some(1), Some(2)) => 1 + 2
+                    case _                  => unreachable!()
+                }
+            }
+        }
+
+    @test
+    def testNew2MutMaps2NestedRegions06(): Int32 =
+        region r1 {
+            let m1 = new MutMap(r1);
+            region r2 {
+                MutMap.put!(1, 1, m1);
+                let m2 = new MutMap(r2);
+                MutMap.put!(2, 2, m2);
+                match (MutMap.get(1, m1), MutMap.get(2, m2)) {
+                    case (Some(1), Some(2)) => 1 + 2
+                    case _                  => unreachable!()
+                }
+            }
+        }
 
 }
