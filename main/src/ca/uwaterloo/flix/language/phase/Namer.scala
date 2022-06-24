@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
+import ca.uwaterloo.flix.language.ast.NamedAst.TypeParams
 import ca.uwaterloo.flix.language.ast.WeededAst.ChoicePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
@@ -443,7 +444,7 @@ object Namer {
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
 
       // First visit all the top-level information
-      val sigTypeCheckVal = checkSigType(ident, classTparam, tpe0, ident.loc)
+      val sigTypeCheckVal = checkSigType(ident, classTparam, fparams0, tpe0, purAndEff0, ident.loc)
       val mod = visitModifiers(mod0, ns0)
       val fparamsVal = getFormalParams(fparams0, uenv0, tenv)
       val tpeVal = visitType(tpe0, uenv0, tenv)
@@ -475,8 +476,11 @@ object Namer {
   /**
     * Checks the type `tpe` of the signature to ensure that it contains the class type parameter `classTparam`.
     */
-  private def checkSigType(sigIdent: Name.Ident, classTparam: NamedAst.TypeParam, tpe: WeededAst.Type, loc: SourceLocation): Validation[Unit, NameError] = {
-    if (freeVars(tpe).exists(_.name == classTparam.name.name)) {
+  private def checkSigType(sigIdent: Name.Ident, classTparam: NamedAst.TypeParam, fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, purAndEff: WeededAst.PurityAndEffect, loc: SourceLocation): Validation[Unit, NameError] = {
+    val WeededAst.PurityAndEffect(pur, eff) = purAndEff
+    val tpes = fparams.flatMap(_.tpe) ::: tpe :: pur.toList ::: eff.getOrElse(Nil)
+    val tvars = tpes.flatMap(freeVars)
+    if (tvars.exists(tvar => tvar.name == classTparam.name.name)) {
       ().toSuccess
     } else {
       NameError.IllegalSignature(sigIdent, loc).toFailure
