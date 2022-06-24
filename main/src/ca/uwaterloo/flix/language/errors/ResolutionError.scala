@@ -255,10 +255,10 @@ object ResolutionError {
   }
 
   /**
-    * Inaccessible Enum Error.
+    * Opaque Enum Error.
     *
     * @param sym the enum symbol.
-    * @param ns  the namespace where the symbol is not accessible.
+    * @param ns  the namespace from which the enum is opaque.
     * @param loc the location where the error occurred.
     */
   case class OpaqueEnum(sym: Symbol.EnumSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
