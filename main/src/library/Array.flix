@@ -435,7 +435,8 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def flatMap(f: a -> Array[b, r] & ef, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        init(i -> f(a[i]), len, Scoped.regionOf(a)) |> flatten
+        let r = Scoped.regionOf(a);
+        init(i -> f(a[i]), len, r) |> flatten
 
     ///
     /// Returns the reverse of `a`.
