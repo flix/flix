@@ -180,13 +180,13 @@ namespace Array {
     ///
     @Time(length(a) + length(b)) @Space(length(a) + length(b))
     pub def append(a: Array[a, r1], b: Array[a, r2]): Array[a, r1] \ { Read(r2), Write(r1) } =
+        let r1 = Scoped.regionOf(a);
         let len1 = length(a);
         let len2 = length(b);
         if (len1 == 0)
-            copyOfRange(0, len2, b, Scoped.regionOf(a))
+            copyOfRange(0, len2, b, r1)
         else {
-            let out = new(a[0], len1 + len2, Scoped.regionOf(a));
-            updateSequence!(0, a, out);
+            let out = copyOfRange(0, len1 + len2, a, r1);
             updateSequence!(len1, b, out);
             out
         }
