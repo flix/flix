@@ -1206,7 +1206,8 @@ namespace Array {
     @Time(Int32.min(length(a), length(b))) @Space(Int32.min(length(a), length(b)))
     pub def zip(a: Array[a, r1], b: Array[b, r2]): Array[(a, b), r2] \ { Read(r1, r2), Write(r2) } =
         let len = Int32.min(length(a), length(b));
-        init(i -> (a[i], b[i]), len, Scoped.regionOf(b))
+        let r2 = Scoped.regionOf(b);
+        init(i -> (a[i], b[i]), len, r2)
 
     ///
     /// Returns an array where the element at index `i` is `f(x, y)` where
