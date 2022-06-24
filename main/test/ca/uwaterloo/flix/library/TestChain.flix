@@ -1754,4 +1754,36 @@ namespace TestChain {
     @test
     def zipWithIndex05(): Bool = Chain.zipWithIndex(List.toChain(1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil)) == List.toChain((1, 0) :: (4, 1) :: (11, 2) :: (2, 3) :: (-22, 4) :: (17, 5) :: Nil)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // shuffle                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def shuffle01(): Bool & Impure =
+        let l: List[Int32] = Nil;
+        let c = List.toChain(l) |> Chain.shuffle(Random.new());
+
+        Chain.length(c) == 0 and Chain.toSet(c) == Set#{}
+
+    @test
+    def shuffle02(): Bool & Impure =
+        let l = 1 :: Nil;
+        let c = List.toChain(l) |> Chain.shuffle(Random.new());
+
+        Chain.length(c) == 1 and Chain.toSet(c) == Set#{1}
+
+    @test
+    def shuffle03(): Bool & Impure =
+        let l = 1 :: 2 :: 3 :: Nil;
+        let c = List.toChain(l) |> Chain.shuffle(Random.new());
+
+        Chain.length(c) == 3 and Chain.toSet(c) == Set#{1, 2, 3}
+
+    @test
+    def shuffle04(): Bool & Impure =
+        let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
+        let c = List.toChain(l) |> Chain.shuffle(Random.new());
+
+        Chain.length(c) == 10 and Chain.toSet(c) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+
 }
