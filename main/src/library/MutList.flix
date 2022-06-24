@@ -749,7 +749,7 @@ namespace MutList {
         d
 
     ///
-    /// Returns `true` if the mutable lists `v1` and `v2` have the same elements, i.e. are structurally equal.
+    /// Returns `true` if the mutable lists `v1` and `v2` have the same elements in the same order, i.e. are structurally equal.
     ///
     pub def sameElements(v1: MutList[a, r1], v2: MutList[a, r2]): Bool \ Read(r1, r2) with Eq[a] =
         let MutList(ra1, rl1) = v1;

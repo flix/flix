@@ -1424,7 +1424,7 @@ namespace Array {
         }
 
     ///
-    /// Returns `true` if arrays `a` and `b` have the same elements, i.e. are structurally equal.
+    /// Returns `true` if arrays `a` and `b` have the same elements in the same order, i.e. are structurally equal.
     ///
     @Time(length(a)) @Space(1)
     pub def sameElements(a: Array[a, r1], b: Array[a, r2]): Bool \ Read(r1, r2) with Eq[a] =
