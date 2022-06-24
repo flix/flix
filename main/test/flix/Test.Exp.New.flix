@@ -19,14 +19,20 @@ namespace Test/Exp/New {
         l
 
     @test
-    def testNewMutList1Region04(): Unit =
+    def testNewMutList1Region05(): MutList[String, Static] & Impure =
+        region _ {
+            new MutList(Static): MutList[String, Static];
+        }
+
+    @test
+    def testNewMutList1Region06(): Unit =
         region r {
             let _ = new MutList(r): MutList[String, r];
             ()
         }
 
     @test
-    def testNewMutList1Region05(): Int32 =
+    def testNewMutList1Region07(): Int32 =
         region r {
             let l = new MutList(r);
             MutList.push!(1, l);
