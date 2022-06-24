@@ -1594,7 +1594,8 @@ object Resolver {
           val enum = namespaceMatches.head
           return getEnumAccessibility(enum, ns0) match {
             case EnumAccessibility.Accessible => enum.toSuccess
-            case EnumAccessibility.Opaque=> ??? // MATT opaque enum
+            case EnumAccessibility.Opaque =>
+              ResolutionError.OpaqueEnum(enum.sym, ns0, tag.loc).toFailure
             case EnumAccessibility.Inaccessible =>
               ResolutionError.InaccessibleEnum(enum.sym, ns0, tag.loc).toFailure
           }
@@ -1623,7 +1624,8 @@ object Resolver {
           val enum = globalMatches.head
           return getEnumAccessibility(enum, ns0) match {
             case EnumAccessibility.Accessible => enum.toSuccess
-            case EnumAccessibility.Opaque => ??? // MATT opaque enum
+            case EnumAccessibility.Opaque =>
+              ResolutionError.OpaqueEnum(enum.sym, ns0, tag.loc).toFailure
             case EnumAccessibility.Inaccessible =>
               ResolutionError.InaccessibleEnum(enum.sym, ns0, tag.loc).toFailure
           }
@@ -1662,7 +1664,8 @@ object Resolver {
                 // Case 2.2.1: Tag found.
                 return getEnumAccessibility(enum, ns0) match {
                   case EnumAccessibility.Accessible => enum.toSuccess
-                  case EnumAccessibility.Opaque => ??? // MATT opaque enum
+                  case EnumAccessibility.Opaque =>
+                    ResolutionError.OpaqueEnum(enum.sym, ns0, tag.loc).toFailure
                   case EnumAccessibility.Inaccessible =>
                     ResolutionError.InaccessibleEnum(enum.sym, ns0, tag.loc).toFailure
                 }
