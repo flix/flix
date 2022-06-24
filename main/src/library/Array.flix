@@ -490,8 +490,9 @@ namespace Array {
     ///
     def rotateLeftHelper(n: Int32, arr: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
         let len = length(arr);
+        let r = Scoped.regionOf(arr);
         let f = i -> { let i1 = n + i; arr[i1 rem len] };
-        init(f, len, Scoped.regionOf(arr))
+        init(f, len, r)
 
     ///
     /// Rotate the contents of array `arr` by `n` steps to the right.
