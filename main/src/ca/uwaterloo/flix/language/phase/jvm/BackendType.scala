@@ -64,7 +64,7 @@ sealed trait BackendType extends VoidableType {
   def toErased: BackendType = this match {
     case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 |
          BackendType.Int32 | BackendType.Int64 | BackendType.Float32 | BackendType.Float64 => this
-    case BackendType.Array(_) | BackendType.Reference(_) => JvmName.Object.toTpe
+    case BackendType.Array(_) | BackendType.Reference(_) => BackendObjType.JavaObject.toTpe
   }
 
   /**
@@ -114,7 +114,7 @@ object BackendType {
     * Contains all the primitive types and `Reference(Native(JvmName.Object))`.
     */
   def erasedTypes: List[BackendType] =
-    Bool :: Char :: Float32 :: Float64 :: Int8 :: Int16 :: Int32 :: Int64 :: JvmName.Object.toTpe :: Nil
+    Bool :: Char :: Float32 :: Float64 :: Int8 :: Int16 :: Int32 :: Int64 :: BackendObjType.JavaObject.toTpe :: Nil
 
   /**
     * Computes the erased `BackendType` based on the given `MonoType`.
@@ -132,6 +132,6 @@ object BackendType {
          MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) | MonoType.Enum(_, _) |
          MonoType.Arrow(_, _) | MonoType.RecordEmpty() | MonoType.RecordExtend(_, _, _) |
          MonoType.SchemaEmpty() | MonoType.SchemaExtend(_, _, _) | MonoType.Relation(_) |
-         MonoType.Lattice(_) | MonoType.Native(_) | MonoType.Var(_) => JvmName.Object.toTpe
+         MonoType.Lattice(_) | MonoType.Native(_) | MonoType.Var(_) => BackendObjType.JavaObject.toTpe
   }
 }
