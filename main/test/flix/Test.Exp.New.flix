@@ -153,8 +153,8 @@ namespace Test/Exp/New {
     def testNew2MutList2NestedRegions02(): Int32 & Impure =
         region r {
             region _ {
-                let l1 = new MutList(Static);
-                let l2 = new MutList(r);
+                let l1 = new MutList(r);
+                let l2 = new MutList(Static);
                 MutList.push!(1, l1);
                 MutList.push!(2, l2);
                 match (MutList.pop!(l1), MutList.pop!(l2)) {
