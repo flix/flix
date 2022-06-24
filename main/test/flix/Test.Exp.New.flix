@@ -11,28 +11,20 @@ namespace Test/Exp/New {
         l
 
     @test
-    def testNewMutList1Region03(): MutList[Int32, Static] & Impure =
-        let l = new MutList(Static);
-        MutList.push!(1, l);
-        MutList.push!(2, l);
-        MutList.push!(3, l);
-        l
-
-    @test
-    def testNewMutList1Region05(): MutList[String, Static] & Impure =
+    def testNewMutList1Region03(): MutList[String, Static] & Impure =
         region _ {
-            new MutList(Static): MutList[String, Static];
+            new MutList(Static): MutList[String, Static]
         }
 
     @test
-    def testNewMutList1Region06(): Unit =
+    def testNewMutList1Region04(): Unit =
         region r {
             let _ = new MutList(r): MutList[String, r];
             ()
         }
 
     @test
-    def testNewMutList1Region07(): Int32 =
+    def testNewMutList1Region05(): Int32 =
         region r {
             let l = new MutList(r);
             MutList.push!(1, l);
@@ -40,6 +32,15 @@ namespace Test/Exp/New {
                 case Some(1) => 1
                 case _       => unreachable!()
             }
+        }
+
+    @test
+    def testNewMutList2RegionsFlat01(): MutList[Int32, Static] & Impure =
+        region _ {
+            new MutList(Static): MutList[String, Static]
+        };
+        region _ {
+            new MutList(Static): MutList[Int32, Static]
         }
 
     @test
