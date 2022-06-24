@@ -1218,7 +1218,8 @@ namespace Array {
     @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f) * Int32.min(length(a), length(b)))
     pub def zipWith(f: (a, b) -> c & ef, a: Array[a, r1], b: Array[b, r2]): Array[c, r2] \ { ef, Read(r1, r2), Write(r2) } =
         let len = Int32.min(length(a), length(b));
-        init(i -> f(a[i], b[i]), len, Scoped.regionOf(b))
+        let r2 = Scoped.regionOf(b);
+        init(i -> f(a[i], b[i]), len, r2)
 
     ///
     /// Returns a pair of arrays, the first containing all first components in `a`
