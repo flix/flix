@@ -135,7 +135,7 @@ namespace Test/Exp/New {
         }
 
     @test
-    def testNew2MutList2NestedRegions01(): Int32 & Impure =
+    def testNew2MutLists2NestedRegions01(): Int32 & Impure =
         region _ {
             region _ {
                 let l1 = new MutList(Static);
@@ -150,7 +150,7 @@ namespace Test/Exp/New {
         }
 
     @test
-    def testNew2MutList2NestedRegions02(): Int32 & Impure =
+    def testNew2MutLists2NestedRegions02(): Int32 & Impure =
         region r {
             region _ {
                 let l1 = new MutList(r);
@@ -165,7 +165,7 @@ namespace Test/Exp/New {
         }
 
     @test
-    def testNew2MutList2NestedRegions03(): Int32 =
+    def testNew2MutLists2NestedRegions03(): Int32 =
         region r {
             region _ {
                 let l1 = new MutList(r);
@@ -180,7 +180,7 @@ namespace Test/Exp/New {
         }
 
     @test
-    def testNew2MutList2NestedRegions04(): Int32 =
+    def testNew2MutLists2NestedRegions04(): Int32 =
         region r1 {
             region r2 {
                 let l1 = new MutList(r1);
@@ -195,7 +195,7 @@ namespace Test/Exp/New {
         }
 
     @test
-    def testNew2MutList2NestedRegions05(): Int32 =
+    def testNew2MutLists2NestedRegions05(): Int32 =
         region r1 {
             let l1 = new MutList(r1);
             MutList.push!(1, l1);
@@ -210,7 +210,7 @@ namespace Test/Exp/New {
         }
 
     @test
-    def testNew2MutList2NestedRegions06(): Int32 =
+    def testNew2MutLists2NestedRegions06(): Int32 =
         region r1 {
             let l1 = new MutList(r1);
             region r2 {
