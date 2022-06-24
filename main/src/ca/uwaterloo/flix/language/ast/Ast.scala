@@ -270,7 +270,7 @@ object Ast {
     /**
       * Returns `true` if these modifiers contain the opaque modifier.
       */
-    def isOpaque: Boolean = mod contains Modifier.Lawful
+    def isOpaque: Boolean = mod contains Modifier.Opaque
 
     /**
       * Returns `true` if these modifiers contain the override modifier.
