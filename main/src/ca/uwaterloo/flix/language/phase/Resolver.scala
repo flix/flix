@@ -1585,7 +1585,7 @@ object Resolver {
 
         // Find all matching enums in the current namespace.
         val namespaceMatches = mutable.Set.empty[NamedAst.Enum]
-        for ((enumName, decl) <- root.enums.getShallow(ns0).getOrElse(Map.empty[Name.Tag, NamedAst.Enum])) { // MATT use entries thingy
+        for ((enumName, decl) <- root.enums.getShallow(ns0).getOrElse(Map.empty[Name.Tag, NamedAst.Enum])) {
           for ((enumTag, caze) <- decl.cases) {
             if (tag == enumTag) {
               namespaceMatches += decl
@@ -1613,7 +1613,7 @@ object Resolver {
 
         // Find all matching enums in the root namespace.
         val globalMatches = mutable.Set.empty[NamedAst.Enum]
-        for (decls <- root.enums.getShallow(Name.RootNS)) { // MATT use entries and flatten fors
+        for (decls <- root.enums.getShallow(Name.RootNS)) {
           for ((enumName, decl) <- decls) {
             for ((enumTag, caze) <- decl.cases) {
               if (tag == enumTag) {
@@ -1648,16 +1648,16 @@ object Resolver {
         // Case 2: The name is qualified.
 
         // Determine where to search for the enum.
-        val enumsInNS = if (qname.isUnqualified) {
+        val ns = if (qname.isUnqualified) {
           // The name is unqualified (e.g. Option.None) so search in the current namespace.
-          root.enums.getShallow(ns0).getOrElse(Map.empty[String, NamedAst.Enum]) // MATT simplify with DeepMap
+          ns0
         } else {
           // The name is qualified (e.g. Foo/Bar/Baz.Qux) so search in the Foo/Bar/Baz namespace.
-          root.enums.getShallow(qname.namespace).getOrElse(Map.empty[String, NamedAst.Enum]) // MATT simplify with DeepMap
+          qname.namespace
         }
 
         // Lookup the enum declaration.
-        enumsInNS.get(qname.ident.name) match {
+        root.enums.getDeep(ns, qname.ident.name) match {
           case None =>
             // Case 2.1: The enum does not exist.
             ResolutionError.UndefinedType(qname, ns0, qname.loc).toFailure
