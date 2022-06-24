@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
-import ca.uwaterloo.flix.language.ast.NamedAst.TypeParams
 import ca.uwaterloo.flix.language.ast.WeededAst.ChoicePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
@@ -136,7 +135,7 @@ object Namer {
         lookupLowerName(ident.name, ns0, prog0) match {
           // Case 1: Not used. Add it to the namespace
           case LookupResult.NotDefined =>
-            mapN(visitDef(decl, uenv0, Map.empty, ns0, Nil, Nil)) {
+            mapN(visitDef(decl, uenv0, Map.empty, ns0, Nil)) {
               defn => prog0.copy(defsAndSigs = prog0.defsAndSigs + (ns0 -> (defsAndSigs + (ident.name -> NamedAst.DefOrSig.Def(defn)))))
             }
           case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
@@ -393,7 +392,7 @@ object Namer {
       val annVal = traverse(ann0)(visitAnnotation(_, Map.empty, uenv0, tenv))
       val superClassesVal = traverse(superClasses0)(visitTypeConstraint(_, uenv0, tenv, ns0))
       val sigsVal = traverse(signatures)(visitSig(_, uenv0, tenv, ns0, ident, sym, tparam))
-      val lawsVal = traverse(laws0)(visitDef(_, uenv0, tenv, ns0, List(tconstr), List(tparam.sym)))
+      val lawsVal = traverse(laws0)(visitDef(_, uenv0, tenv, ns0, List(tconstr)))
 
       mapN(annVal, superClassesVal, sigsVal, lawsVal) {
         case (ann, superClasses, sigs, laws) =>
@@ -416,7 +415,7 @@ object Namer {
         case (ann, tpe, tconstrs) =>
           val qualifiedClass = getClassOrEffect(clazz, uenv0)
           val instTconstr = NamedAst.TypeConstraint(qualifiedClass, tpe, clazz.loc)
-          val defsVal = traverse(defs0)(visitDef(_, uenv0, tenv, ns0, List(instTconstr), tparams.tparams.map(_.sym)))
+          val defsVal = traverse(defs0)(visitDef(_, uenv0, tenv, ns0, List(instTconstr)))
           mapN(defsVal) {
             defs => NamedAst.Instance(doc, ann, mod, qualifiedClass, tpe, tconstrs, defs, loc)
           }
@@ -490,7 +489,7 @@ object Namer {
   /**
     * Performs naming on the given definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`, with type constraints `tconstrs`.
     */
-  private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName, addedTconstrs: List[NamedAst.TypeConstraint], addedQuantifiers: List[Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
+  private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName, addedTconstrs: List[NamedAst.TypeConstraint])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
     case WeededAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams0, exp, tpe0, purAndEff0, tconstrs0, loc) =>
       flix.subtask(ident.name, sample = true)
 
