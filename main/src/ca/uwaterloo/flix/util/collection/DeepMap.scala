@@ -15,16 +15,34 @@
  */
 package ca.uwaterloo.flix.util.collection
 
-// MATT docs everywhere
+/**
+  * Companion object for DeepMap
+  */
 object DeepMap {
+  /**
+    * Returns the empty DeepMap
+    */
   def empty[K1, K2, V]: DeepMap[K1, K2, V] = DeepMap(Map.empty)
 }
 
+/**
+  * A map with two levels of keys.
+  */
 case class DeepMap[K1, K2, V](m: Map[K1, Map[K2, V]]) {
+
+  /**
+    * Returns the inner map associated with key `k1`.
+    */
   def getShallow(k1: K1): Option[Map[K2, V]] = m.get(k1)
 
+  /**
+    * Returns the value associated with keys `k1` and `k2`.
+    */
   def getDeep(k1: K1, k2: K2): Option[V] = getShallow(k1).flatMap(_.get(k2))
 
+  /**
+    * Updates the value associated with keys `k1` and `k2`.
+    */
   def putDeep(k1: K1, k2: K2, v: V): DeepMap[K1, K2, V] = {
     val inner0 = getShallow(k1).getOrElse(Map.empty)
     val inner = inner0 + (k2 -> v)
@@ -32,6 +50,9 @@ case class DeepMap[K1, K2, V](m: Map[K1, Map[K2, V]]) {
     DeepMap(outer)
   }
 
+  /**
+    * Returns an iterable over the keys and their associated values.
+    */
   def entries: Iterable[(K1, K2, V)] = {
     for {
       (k1, inner) <- m
