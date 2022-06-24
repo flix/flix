@@ -44,6 +44,58 @@ namespace Test/Exp/New {
         }
 
     @test
+    def testNewMutList2RegionsFlat02(): MutList[Int32, Static] & Impure =
+        let _ = region r {
+            let _ = new MutList(r): MutList[String, r];
+            ()
+        };
+        region _ {
+            new MutList(Static): MutList[Int32, Static]
+        }
+
+    @test
+    def testNewMutList2RegionsFlat03(): Unit & Impure =
+        region _ {
+            new MutList(Static): MutList[String, Static]
+        };
+        region r {
+            let _ = new MutList(r): MutList[Int32, r];
+            ()
+        }
+
+    @test
+    def testNewMutList2RegionsFlat04(): Bool =
+        let res1 = region r {
+            let _ = new MutList(r): MutList[String, r];
+            ()
+        };
+        let res2 = region r {
+            let _ = new MutList(r): MutList[Int32, r];
+            ()
+        };
+        res1 == () and res1 == res2
+
+    @test
+    def testNewMutList2RegionsFlat05(): Bool =
+        let res1 = region r {
+            let l = new MutList(r);
+            MutList.push!(1, l);
+            match MutList.pop!(l) {
+                case Some(1) => 1
+                case _       => unreachable!()
+            }
+        };
+        let res2 = region r {
+            let l = new MutList(r);
+            MutList.push!(1, l);
+            match MutList.pop!(l) {
+                case Some(1) => 1
+                case _       => unreachable!()
+            }
+        };
+        res1 + res2 == 2
+
+    @test
     def testNewMutList2RegionsNested01(): Int32 & Impure =
         region _ {
             region _ {
