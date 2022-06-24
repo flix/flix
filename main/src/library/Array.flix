@@ -516,10 +516,11 @@ namespace Array {
     ///
     def rotateRightHelper(n: Int32, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
         let len = length(a);
+        let r = Scoped.regionOf(a);
         let n1 = n rem len;
         let start = len - n1;
         let f = i -> { let i1 = start + i; a[i1 rem len]};
-        init(f, len, Scoped.regionOf(a))
+        init(f, len, r)
 
     ///
     /// Returns a copy of `a` with the element at index `i` replaced by `x`.
