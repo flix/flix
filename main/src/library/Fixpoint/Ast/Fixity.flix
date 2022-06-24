@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 namespace Fixpoint/Ast {
+
+    @Internal
     pub enum Fixity {
         case Loose,
         case Fixed

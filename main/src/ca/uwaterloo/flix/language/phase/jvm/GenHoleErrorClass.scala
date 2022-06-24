@@ -35,11 +35,11 @@ object GenHoleErrorClass {
   }
 
   private def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(JvmName.HoleError, IsFinal, JvmName.FlixError)
+    val cm = ClassMaker.mkClass(JvmName.HoleError, IsFinal, BackendObjType.FlixError.jvmName)
 
     cm.mkConstructor(genConstructor(), mkDescriptor(BackendObjType.String.toTpe, BackendObjType.ReifiedSourceLocation.toTpe)(VoidableType.Void), IsPublic)
-    cm.mkMethod(genEqualsMethod(), "equals", mkDescriptor(JvmName.Object.toTpe)(BackendType.Bool), IsPublic, NotFinal)
-    cm.mkMethod(genHashCodeMethod(), "hashCode", mkDescriptor()(BackendType.Int32), IsPublic, NotFinal)
+    cm.mkMethod(BackendObjType.JavaObject.EqualsMethod.implementation(JvmName.HoleError, Some(genEqualsMethod())))
+    cm.mkMethod(BackendObjType.JavaObject.HashcodeMethod.implementation(JvmName.HoleError, Some(genHashCodeMethod())))
     cm.mkField(holeField)
     cm.mkField(locationField)
 
@@ -49,9 +49,6 @@ object GenHoleErrorClass {
   private def genConstructor(): InstructionSet = {
     def stringBuilderAppend(): InstructionSet = INVOKEVIRTUAL(JvmName.StringBuilder, "append",
       mkDescriptor(BackendObjType.String.toTpe)(JvmName.StringBuilder.toTpe))
-
-    def toString(clazz: JvmName): InstructionSet =
-      INVOKEVIRTUAL(clazz, "toString", mkDescriptor()(BackendObjType.String.toTpe))
 
     withName(1, BackendObjType.String.toTpe) { hole =>
       withName(2, BackendObjType.ReifiedSourceLocation.toTpe) { loc =>
@@ -63,9 +60,9 @@ object GenHoleErrorClass {
           pushString("Hole '") ~ stringBuilderAppend() ~
           hole.load() ~ stringBuilderAppend() ~
           pushString("' at ") ~ stringBuilderAppend() ~
-          loc.load() ~ toString(BackendObjType.ReifiedSourceLocation.jvmName) ~ stringBuilderAppend() ~
-          toString(JvmName.StringBuilder) ~
-          invokeConstructor(JvmName.FlixError, mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void)) ~
+          loc.load() ~ INVOKEVIRTUAL(BackendObjType.JavaObject.ToStringMethod) ~ stringBuilderAppend() ~
+          INVOKEVIRTUAL(BackendObjType.JavaObject.ToStringMethod) ~
+          INVOKESPECIAL(BackendObjType.FlixError.Constructor) ~
           // save the arguments locally
           thisLoad() ~ hole.load() ~ PUTFIELD(holeField) ~
           thisLoad() ~ loc.load() ~ PUTFIELD(locationField) ~
@@ -76,9 +73,9 @@ object GenHoleErrorClass {
 
   private def genEqualsMethod(): InstructionSet = {
     def objectEquals(): InstructionSet = INVOKESTATIC(JvmName.Objects, "equals",
-      mkDescriptor(JvmName.Object.toTpe, JvmName.Object.toTpe)(BackendType.Bool))
+      mkDescriptor(BackendObjType.JavaObject.toTpe, BackendObjType.JavaObject.toTpe)(BackendType.Bool))
 
-    withName(1, JvmName.Object.toTpe) { other =>
+    withName(1, BackendObjType.JavaObject.toTpe) { other =>
       // check exact equality
       thisLoad() ~ other.load() ~
         ifTrue(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
@@ -87,9 +84,9 @@ object GenHoleErrorClass {
         ifTrue(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
         // check for class equality
         thisLoad() ~
-        INVOKEVIRTUAL(JvmName.Object, "getClass", mkDescriptor()(JvmName.Class.toTpe)) ~
+        INVOKEVIRTUAL(BackendObjType.JavaObject.GetClassMethod) ~
         other.load() ~
-        INVOKEVIRTUAL(JvmName.Object, "getClass", mkDescriptor()(JvmName.Class.toTpe)) ~
+        INVOKEVIRTUAL(BackendObjType.JavaObject.GetClassMethod) ~
         ifTrue(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
         // cast the other obj
         other.load() ~ CHECKCAST(JvmName.HoleError) ~
@@ -110,7 +107,7 @@ object GenHoleErrorClass {
 
   private def genHashCodeMethod(): InstructionSet =
     ICONST_2() ~
-      ANEWARRAY(JvmName.Object) ~
+      ANEWARRAY(BackendObjType.JavaObject.jvmName) ~
       // store hole
       DUP() ~
       ICONST_0() ~
@@ -122,6 +119,6 @@ object GenHoleErrorClass {
       thisLoad() ~ GETFIELD(locationField) ~
       AASTORE() ~
       // hash the array
-      INVOKESTATIC(JvmName.Objects, "hash", mkDescriptor(BackendType.Array(JvmName.Object.toTpe))(BackendType.Int32)) ~
+      INVOKESTATIC(JvmName.Objects, "hash", mkDescriptor(BackendType.Array(BackendObjType.JavaObject.toTpe))(BackendType.Int32)) ~
       IRETURN()
 }
