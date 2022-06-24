@@ -1494,9 +1494,9 @@ object Resolver {
       case None => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
       case Some(clazz) =>
         getClassAccessibility(clazz, ns0) match {
-          case Accessibility.Accessible => clazz.toSuccess
-          case Accessibility.NameAccessible => ResolutionError.SealedClass(clazz.sym, ns0, qname.loc).toFailure
-          case Accessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
+          case ClassAccessibility.Accessible => clazz.toSuccess
+          case ClassAccessibility.Sealed => ResolutionError.SealedClass(clazz.sym, ns0, qname.loc).toFailure
+          case ClassAccessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
         }
     }
   }
@@ -1510,8 +1510,8 @@ object Resolver {
       case None => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
       case Some(clazz) =>
         getClassAccessibility(clazz, ns0) match {
-          case Accessibility.Accessible | Accessibility.NameAccessible => clazz.toSuccess
-          case Accessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
+          case ClassAccessibility.Accessible | ClassAccessibility.Sealed => clazz.toSuccess
+          case ClassAccessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
         }
     }
   }
@@ -1593,9 +1593,9 @@ object Resolver {
         if (namespaceMatches.size == 1) {
           val enum = namespaceMatches.head
           return getEnumAccessibility(enum, ns0) match {
-            case Accessibility.Accessible => enum.toSuccess
-            case Accessibility.NameAccessible => ??? // MATT opaque enum
-            case Accessibility.Inaccessible =>
+            case EnumAccessibility.Accessible => enum.toSuccess
+            case EnumAccessibility.Opaque=> ??? // MATT opaque enum
+            case EnumAccessibility.Inaccessible =>
               ResolutionError.InaccessibleEnum(enum.sym, ns0, tag.loc).toFailure
           }
         }
@@ -1622,9 +1622,9 @@ object Resolver {
         if (globalMatches.size == 1) {
           val enum = globalMatches.head
           return getEnumAccessibility(enum, ns0) match {
-            case Accessibility.Accessible => enum.toSuccess
-            case Accessibility.NameAccessible => ??? // MATT opaque enum
-            case Accessibility.Inaccessible =>
+            case EnumAccessibility.Accessible => enum.toSuccess
+            case EnumAccessibility.Opaque => ??? // MATT opaque enum
+            case EnumAccessibility.Inaccessible =>
               ResolutionError.InaccessibleEnum(enum.sym, ns0, tag.loc).toFailure
           }
         }
@@ -1661,9 +1661,9 @@ object Resolver {
               if (tag == enumTag) {
                 // Case 2.2.1: Tag found.
                 return getEnumAccessibility(enum, ns0) match {
-                  case Accessibility.Accessible => enum.toSuccess
-                  case Accessibility.NameAccessible => ??? // MATT opaque enum
-                  case Accessibility.Inaccessible =>
+                  case EnumAccessibility.Accessible => enum.toSuccess
+                  case EnumAccessibility.Opaque => ??? // MATT opaque enum
+                  case EnumAccessibility.Inaccessible =>
                     ResolutionError.InaccessibleEnum(enum.sym, ns0, tag.loc).toFailure
                 }
               }
@@ -2146,29 +2146,29 @@ object Resolver {
     * |            | same | child | other |
     * |------------|------|-------|-------|
     * | (none)     | A    | A     | I     |
-    * | sealed     | A    | N     | I     |
+    * | sealed     | A    | S     | I     |
     * | pub        | A    | A     | A     |
-    * | pub sealed | A    | N     | N     |
+    * | pub sealed | A    | S     | S     |
     *
-    * (A: Accessible, N: Name Accessible, I: Inaccessible)
+    * (A: Accessible, N: Sealed, I: Inaccessible)
     */
-  private def getClassAccessibility(class0: NamedAst.Class, ns0: Name.NName): Accessibility = {
+  private def getClassAccessibility(class0: NamedAst.Class, ns0: Name.NName): ClassAccessibility = {
 
     val classNs = class0.sym.namespace
     val accessingNs = ns0.idents.map(_.name)
 
     if (classNs == accessingNs) {
       // Case 1: We're in the same namespace: Accessible
-      Accessibility.Accessible
+      ClassAccessibility.Accessible
     } else if (!class0.mod.isPublic && !accessingNs.startsWith(classNs)) {
       // Case 2: The class is private and we're in unrelated namespaces: Inaccessible
-      Accessibility.Inaccessible
+      ClassAccessibility.Inaccessible
     } else if (class0.mod.isSealed) {
       // Case 3: The class is accessible but sealed
-      Accessibility.NameAccessible
+      ClassAccessibility.Sealed
     } else {
       // Case 4: The class is otherwise accessible
-      Accessibility.Accessible
+      ClassAccessibility.Accessible
     }
   }
 
@@ -2269,29 +2269,29 @@ object Resolver {
     * |            | same | child | other |
     * |------------|------|-------|-------|
     * | (none)     | A    | A     | I     |
-    * | opaque     | A    | N     | I     |
+    * | opaque     | A    | O     | I     |
     * | pub        | A    | A     | A     |
-    * | pub opaque | A    | N     | N     |
+    * | pub opaque | A    | O     | O     |
     *
-    * (A: Accessible, N: Name Accessible, I: Inaccessible)
+    * (A: Accessible, O: Opaque, I: Inaccessible)
     */
-  private def getEnumAccessibility(enum0: NamedAst.Enum, ns0: Name.NName): Accessibility = {
+  private def getEnumAccessibility(enum0: NamedAst.Enum, ns0: Name.NName): EnumAccessibility = {
 
     val enumNs = enum0.sym.namespace
     val accessingNs = ns0.idents.map(_.name)
 
     if (enumNs == accessingNs) {
       // Case 1: We're in the same namespace: Accessible
-      Accessibility.Accessible
+      EnumAccessibility.Accessible
     } else if (!enum0.mod.isPublic && !accessingNs.startsWith(enumNs)) {
       // Case 2: The enum is private and we're in unrelated namespaces: Inaccessible
-      Accessibility.Inaccessible
+      EnumAccessibility.Inaccessible
     } else if (enum0.mod.isOpaque) {
       // Case 3: The enum is accessible but opaque
-      Accessibility.NameAccessible
+      EnumAccessibility.Opaque
     } else {
       // Case 4: The enum is otherwise accessible
-      Accessibility.Accessible
+      EnumAccessibility.Accessible
     }
   }
   /**
@@ -2681,26 +2681,29 @@ object Resolver {
   }
 
   /**
-    * Enum describing the extent to which a declaration is accessible.
+    * Enum describing the extent to which a class is accessible.
     */
-  private sealed trait Accessibility
+  private sealed trait ClassAccessibility
 
-  private object Accessibility {
-    /**
-      * Indicates that the declaration is fully accessible.
-      */
-    case object Accessible extends Accessibility
+  private object ClassAccessibility {
+    case object Accessible extends ClassAccessibility
 
-    /**
-      * Indicates that the declaration's name is accessible,
-      * but that its components (e.g. enum cases, class sigs)
-      * are not accessible.
-      */
-    case object NameAccessible extends Accessibility
+    case object Sealed extends ClassAccessibility
 
-    /**
-      * Indicates that the declaration is not accessible.
-      */
-    case object Inaccessible extends Accessibility
+    case object Inaccessible extends ClassAccessibility
+  }
+
+
+  /**
+    * Enum describing the extent to which an enum is accessible.
+    */
+  private sealed trait EnumAccessibility
+
+  private object EnumAccessibility {
+    case object Accessible extends EnumAccessibility
+
+    case object Opaque extends EnumAccessibility
+
+    case object Inaccessible extends EnumAccessibility
   }
 }
