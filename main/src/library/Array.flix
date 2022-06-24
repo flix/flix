@@ -600,14 +600,15 @@ namespace Array {
     ///
     @Time(length(arrs)) @Space(length(arrs))
     pub def intercalate(sep: Array[a, r], arrs: Array[Array[a, r], r]): Array[a, r] \ { Read(r), Write(r) } =
+        let r = Scoped.regionOf(arrs);
         let count = length(arrs);
         let sepLength = length(sep);
         let sepCount = if (count < 2) 0 else count - 1;
         let len = sumLengths(arrs) + (sepCount * sepLength);
         match headArrays(arrs) {
-            case None    => [] @ Scoped.regionOf(arrs)
+            case None    => [] @ r
             case Some(x) =>
-                let out = new(x, len, Scoped.regionOf(arrs));
+                let out = new(x, len, r);
                 let overwrite = { (st, a) ->
                     let (pos,i) = st;
                     if (i == 0) {
