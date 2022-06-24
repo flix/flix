@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.WeededAst.ChoicePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.collection.DeepMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
@@ -42,13 +43,13 @@ object Namer {
 
     // make an empty program to fold over.
     val prog0 = NamedAst.Root(
-      classes = Map.empty,
-      instances = Map.empty,
-      defsAndSigs = Map.empty,
-      enums = Map.empty,
-      typeAliases = Map.empty,
-      effects = Map.empty,
-      ops = Map.empty,
+      classes = DeepMap.empty,
+      instances = DeepMap.empty,
+      defsAndSigs = DeepMap.empty,
+      enums = DeepMap.empty,
+      typeAliases = DeepMap.empty,
+      effects = DeepMap.empty,
+      ops = DeepMap.empty,
       entryPoint = program.entryPoint,
       sources = locations
     )
@@ -90,8 +91,6 @@ object Namer {
       case decl@WeededAst.Declaration.Class(_, _, _, ident, _, _, _, _, _) =>
         // Check if the class already exists.
         val sigNs = Name.extendNName(ns0, ident)
-        val defsAndSigs0 = prog0.defsAndSigs.getOrElse(sigNs, Map.empty)
-        val classes0 = prog0.classes.getOrElse(ns0, Map.empty)
         lookupUpperName(ident, ns0, prog0) match {
           case LookupResult.NotDefined =>
             // Case 1: The class does not already exist. Update it.
@@ -102,13 +101,12 @@ object Namer {
                 val sigsProgVal = Validation.fold(sigs, prog0) {
                   case (prog, sig) => lookupLowerName(sig.sym.name, sigNs, prog) match {
                     case LookupResult.NotDefined =>
-                      val defsAndSigsInNs = prog.defsAndSigs.getOrElse(sigNs, Map.empty) + (sig.sym.name -> NamedAst.DefOrSig.Sig(sig))
-                      prog.copy(defsAndSigs = prog.defsAndSigs + (sigNs -> defsAndSigsInNs)).toSuccess
+                      prog.copy(defsAndSigs = prog.defsAndSigs.putDeep(sigNs, sig.sym.name, NamedAst.DefOrSig.Sig(sig))).toSuccess
                     case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(sig.sym.name, sig.sym.loc, otherLoc)
                   }
                 }
                 sigsProgVal.map {
-                  prog => prog.copy(classes = prog0.classes + (ns0 -> (classes0 + (ident.name -> clazz))))
+                  prog => prog.copy(classes = prog0.classes.putDeep(ns0, ident.name, clazz))
                 }
             }
 
@@ -118,11 +116,10 @@ object Namer {
 
       case decl@WeededAst.Declaration.Instance(_, _, _, clazz, _, _, _, _) =>
         // duplication check must come after name resolution
-        val instances = prog0.instances.getOrElse(ns0, Map.empty)
         visitInstance(decl, uenv0, Map.empty, ns0) map {
           instance =>
-            val newInstanceList = instance :: instances.getOrElse(clazz.ident.name, Nil)
-            prog0.copy(instances = prog0.instances + (ns0 -> (instances + (clazz.ident.name -> newInstanceList))))
+            val newInstanceList = instance :: prog0.instances.getDeep(ns0, clazz.ident.name).getOrElse(Nil)
+            prog0.copy(instances = prog0.instances.putDeep(ns0, clazz.ident.name, newInstanceList))
         }
 
       /*
@@ -130,12 +127,11 @@ object Namer {
      */
       case decl@WeededAst.Declaration.Def(_, _, _, ident, _, _, _, _, _, _, _) =>
         // Check if the definition already exists.
-        val defsAndSigs = prog0.defsAndSigs.getOrElse(ns0, Map.empty)
         lookupLowerName(ident.name, ns0, prog0) match {
           // Case 1: Not used. Add it to the namespace
           case LookupResult.NotDefined =>
             mapN(visitDef(decl, uenv0, Map.empty, ns0, Nil)) {
-              defn => prog0.copy(defsAndSigs = prog0.defsAndSigs + (ns0 -> (defsAndSigs + (ident.name -> NamedAst.DefOrSig.Def(defn)))))
+              defn => prog0.copy(defsAndSigs = prog0.defsAndSigs.putDeep(ns0, ident.name, NamedAst.DefOrSig.Def(defn)))
             }
           case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
         }
@@ -149,14 +145,12 @@ object Namer {
      * Enum.
      */
       case enum0@WeededAst.Declaration.Enum(_, _, _, ident, _, _, _, _) =>
-        val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
         lookupUpperName(ident, ns0, prog0) match {
           case LookupResult.NotDefined =>
             // Case 1: The enum does not exist in the namespace. Update it.
             visitEnum(enum0, uenv0, ns0) map {
               enum =>
-                val enums = enums0 + (ident.name -> enum)
-                prog0.copy(enums = prog0.enums + (ns0 -> enums))
+                prog0.copy(enums = prog0.enums.putDeep(ns0, ident.name, enum))
             }
           // Case 2: The name is in use.
           case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
@@ -166,21 +160,18 @@ object Namer {
      * Type Alias.
      */
       case alias0@WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams0, tpe0, loc) =>
-        val typeAliases0 = prog0.typeAliases.getOrElse(ns0, Map.empty)
         lookupUpperName(ident, ns0, prog0) match {
           case LookupResult.NotDefined =>
             // Case 1: The type alias does not exist in the namespace. Add it.
             visitTypeAlias(alias0, uenv0, ns0) map {
               alias =>
-                val typeAliases = typeAliases0 + (ident.name -> alias)
-                prog0.copy(typeAliases = prog0.typeAliases + (ns0 -> typeAliases))
+                prog0.copy(typeAliases = prog0.typeAliases.putDeep(ns0, ident.name, alias))
             }
           // Case 2: The name is in use.
           case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
         }
 
       case decl@WeededAst.Declaration.Effect(_, _, _, ident, _, _) =>
-        val effs0 = prog0.effects.getOrElse(ns0, Map.empty)
         val opNs = Name.extendNName(ns0, ident)
         lookupUpperName(ident, ns0, prog0) match {
           case LookupResult.NotDefined =>
@@ -191,13 +182,12 @@ object Namer {
                 val opsProgVal = Validation.fold(ops, prog0) {
                   case (prog, op) => lookupLowerName(op.sym.name, opNs, prog) match {
                     case LookupResult.NotDefined =>
-                      val opsInNs = prog.ops.getOrElse(opNs, Map.empty) + (op.sym.name -> op)
-                      prog.copy(ops = prog.ops + (opNs -> opsInNs)).toSuccess
+                      prog.copy(ops = prog.ops.putDeep(opNs, op.sym.name, op)).toSuccess
                     case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(op.sym.name, op.sym.loc, otherLoc)
                   }
                 }
                 opsProgVal.map {
-                  prog => prog.copy(effects = prog0.effects + (ns0 -> (effs0 + (ident.name -> eff))))
+                  prog => prog.copy(effects = prog0.effects.putDeep(ns0, ident.name, eff))
                 }
             }
           // Case 2: The name is in use. Error
@@ -243,11 +233,11 @@ object Namer {
     * Looks up the uppercase name in the given namespace and root.
     */
   private def lookupUpperName(ident: Name.Ident, ns0: Name.NName, prog0: NamedAst.Root): NameLookupResult = {
-    val classes0 = prog0.classes.getOrElse(ns0, Map.empty)
-    val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
-    val typeAliases0 = prog0.typeAliases.getOrElse(ns0, Map.empty)
-    val effects0 = prog0.effects.getOrElse(ns0, Map.empty)
-    (classes0.get(ident.name), enums0.get(ident.name), typeAliases0.get(ident.name), effects0.get(ident.name)) match {
+    val classes0 = prog0.classes
+    val enums0 = prog0.enums
+    val typeAliases0 = prog0.typeAliases
+    val effects0 = prog0.effects
+    (classes0.getDeep(ns0, ident.name), enums0.getDeep(ns0, ident.name), typeAliases0.getDeep(ns0, ident.name), effects0.getDeep(ns0, ident.name)) match {
       // Case 1: The name is unused.
       case (None, None, None, None) => LookupResult.NotDefined
       // Case 2: A class with the name already exists.
@@ -267,9 +257,9 @@ object Namer {
     * Looks up the lowercase name in the given namespace and root.
     */
   private def lookupLowerName(name: String, ns0: Name.NName, prog0: NamedAst.Root): NameLookupResult = {
-    val defsAndSigs0 = prog0.defsAndSigs.getOrElse(ns0, Map.empty)
-    val ops0 = prog0.ops.getOrElse(ns0, Map.empty)
-    (defsAndSigs0.get(name), ops0.get(name)) match {
+    val defsAndSigs0 = prog0.defsAndSigs
+    val ops0 = prog0.ops
+    (defsAndSigs0.getDeep(ns0, name), ops0.getDeep(ns0, name)) match {
       // Case 1: The name is unused.
       case (None, None) => LookupResult.NotDefined
       // Case 2: A sig or def with the name already exists.

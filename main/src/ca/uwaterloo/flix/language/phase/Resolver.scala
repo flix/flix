@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.collection.DeepMap
 import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, ParOps, Validation}
 
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
@@ -59,29 +60,24 @@ object Resolver {
 
         val classesVal = resolveClasses(root, taenv, oldRoot, changeSet)
 
-        val instancesVal = root.instances.flatMap {
-          case (ns0, instances0) => instances0.map {
-            case (_, instances) => traverse(instances)(resolveInstance(_, taenv, ns0, root)) map {
+        val instancesVal = root.instances.entries.map {
+          case (ns0, _, instances) =>
+            traverse(instances)(resolveInstance(_, taenv, ns0, root)) map {
               case is => is.head.sym.clazz -> is
             }
-          }
         }
 
         val defsVal = resolveDefs(root, taenv, oldRoot, changeSet)
 
-        val enumsVal = root.enums.flatMap {
-          case (ns0, enums) => enums.map {
-            case (_, enum) => resolveEnum(enum, taenv, ns0, root) map {
-              case d => d.sym -> d
-            }
+        val enumsVal = root.enums.entries.map {
+          case (ns0, _, enum) => resolveEnum(enum, taenv, ns0, root) map {
+            case d => d.sym -> d
           }
         }
 
-        val effectsVal = root.effects.flatMap {
-          case (ns0, effects) => effects.map {
-            case (_, effect) => resolveEffect(effect, taenv, ns0, root) map {
-              case e => e.sym -> e
-            }
+        val effectsVal = root.effects.entries.map {
+          case (ns0, _, effect) => resolveEffect(effect, taenv, ns0, root) map {
+            case e => e.sym -> e
           }
         }
 
@@ -134,7 +130,7 @@ object Resolver {
     *   - a list of the aliases in a processing order,
     *     such that any alias only depends on those earlier in the list
     */
-  private def resolveTypeAliases(aliases0: Map[Name.NName, Map[String, NamedAst.TypeAlias]], root: NamedAst.Root)(implicit flix: Flix): Validation[(Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], List[Symbol.TypeAliasSym]), ResolutionError] = {
+  private def resolveTypeAliases(aliases0: DeepMap[Name.NName, String, NamedAst.TypeAlias], root: NamedAst.Root)(implicit flix: Flix): Validation[(Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], List[Symbol.TypeAliasSym]), ResolutionError] = {
 
     /**
       * Partially resolves the type alias.
@@ -208,10 +204,9 @@ object Resolver {
     }
 
     // Extract all the aliases and namespaces from the map.
-    val aliasesMap0 = for {
-      (ns, aliasesInNs) <- aliases0
-      (_, alias) <- aliasesInNs
-    } yield (alias, ns)
+    val aliasesMap0 = aliases0.entries.map {
+      case (ns, _, alias) => (alias, ns)
+    }
 
     // Partially resolve the aliases
     val semiAliasesVal = traverse(aliasesMap0) {
@@ -270,10 +265,9 @@ object Resolver {
     */
   private def resolveClasses(root: NamedAst.Root, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.ClassSym, ResolvedAst.Class], ResolutionError] = {
 
-    val rootClasses = for {
-      (ns, classes) <- root.classes
-      (_, clazz) <- classes
-    } yield clazz.sym -> (clazz, ns)
+    val rootClasses = root.classes.entries.map {
+      case (ns, _, clazz) => clazz.sym -> (clazz, ns)
+    }.toMap
 
     val (staleClasses, freshClasses) = changeSet.partition(rootClasses, oldRoot.classes)
 
@@ -346,12 +340,11 @@ object Resolver {
     }
 
     val rootDefs = for {
-      (ns, defsAndSigs) <- root.defsAndSigs
-      (_, defOrSig) <- defsAndSigs
+      (ns, _, defOrSig) <- root.defsAndSigs.entries
       defn <- getDef(defOrSig)
     } yield defn.sym -> (defn, ns)
 
-    val (staleDefs, freshDefs) = changeSet.partition(rootDefs, oldRoot.defs)
+    val (staleDefs, freshDefs) = changeSet.partition(rootDefs.toMap, oldRoot.defs)
 
     val results = ParOps.parMap(staleDefs.values) {
       case (defn, ns) => resolveDef(defn, taenv, ns, root)
@@ -1592,7 +1585,7 @@ object Resolver {
 
         // Find all matching enums in the current namespace.
         val namespaceMatches = mutable.Set.empty[NamedAst.Enum]
-        for ((enumName, decl) <- root.enums.getOrElse(ns0, Map.empty[Name.Tag, NamedAst.Enum])) {
+        for ((enumName, decl) <- root.enums.getShallow(ns0).getOrElse(Map.empty[Name.Tag, NamedAst.Enum])) { // MATT use entries thingy
           for ((enumTag, caze) <- decl.cases) {
             if (tag == enumTag) {
               namespaceMatches += decl
@@ -1620,7 +1613,7 @@ object Resolver {
 
         // Find all matching enums in the root namespace.
         val globalMatches = mutable.Set.empty[NamedAst.Enum]
-        for (decls <- root.enums.get(Name.RootNS)) {
+        for (decls <- root.enums.getShallow(Name.RootNS)) { // MATT use entries and flatten fors
           for ((enumName, decl) <- decls) {
             for ((enumTag, caze) <- decl.cases) {
               if (tag == enumTag) {
@@ -1657,10 +1650,10 @@ object Resolver {
         // Determine where to search for the enum.
         val enumsInNS = if (qname.isUnqualified) {
           // The name is unqualified (e.g. Option.None) so search in the current namespace.
-          root.enums.getOrElse(ns0, Map.empty[String, NamedAst.Enum])
+          root.enums.getShallow(ns0).getOrElse(Map.empty[String, NamedAst.Enum]) // MATT simplify with DeepMap
         } else {
           // The name is qualified (e.g. Foo/Bar/Baz.Qux) so search in the Foo/Bar/Baz namespace.
-          root.enums.getOrElse(qname.namespace, Map.empty[String, NamedAst.Enum])
+          root.enums.getShallow(qname.namespace).getOrElse(Map.empty[String, NamedAst.Enum]) // MATT simplify with DeepMap
         }
 
         // Lookup the enum declaration.
@@ -2044,10 +2037,10 @@ object Resolver {
       * Looks up the type in the given namespace.
       */
     def lookupIn(ns: Name.NName): TypeLookupResult = {
-      val enumsInNamespace = root.enums.getOrElse(ns, Map.empty)
-      val aliasesInNamespace = root.typeAliases.getOrElse(ns, Map.empty)
-      val effectsInNamespace = root.effects.getOrElse(ns, Map.empty)
-      (enumsInNamespace.get(qname.ident.name), aliasesInNamespace.get(qname.ident.name), effectsInNamespace.get(qname.ident.name)) match {
+      val enums = root.enums
+      val aliases = root.typeAliases
+      val effects = root.effects
+      (enums.getDeep(ns, qname.ident.name), aliases.getDeep(ns, qname.ident.name), effects.getDeep(ns, qname.ident.name)) match {
         case (None, None, None) =>
           // Case 1: name not found
           TypeLookupResult.NotFound
@@ -2079,38 +2072,19 @@ object Resolver {
   }
 
   /**
-    * Optionally returns the enum with the given `name` in the given namespace `ns0`.
-    */
-  private def lookupEnum(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.Enum] = {
-    if (qname.isUnqualified) {
-      // Case 1: The name is unqualified. Lookup in the current namespace.
-      val enumsInNamespace = root.enums.getOrElse(ns0, Map.empty)
-      enumsInNamespace.get(qname.ident.name) orElse {
-        // Case 1.1: The name was not found in the current namespace. Try the root namespace.
-        val enumsInRootNS = root.enums.getOrElse(Name.RootNS, Map.empty)
-        enumsInRootNS.get(qname.ident.name)
-      }
-    } else {
-      // Case 2: The name is qualified. Look it up in its namespace.
-      root.enums.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
-    }
-  }
-
-  /**
     * Optionally returns the type alias with the given `name` in the given namespace `ns0`.
     */
   private def lookupTypeAlias(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.TypeAlias] = {
     if (qname.isUnqualified) {
       // Case 1: The name is unqualified. Lookup in the current namespace.
-      val typeAliasesInNamespace = root.typeAliases.getOrElse(ns0, Map.empty)
+      val typeAliasesInNamespace = root.typeAliases.getShallow(ns0).getOrElse(Map.empty)
       typeAliasesInNamespace.get(qname.ident.name) orElse {
         // Case 1.1: The name was not found in the current namespace. Try the root namespace.
-        val typeAliasesInRootNS = root.typeAliases.getOrElse(Name.RootNS, Map.empty)
-        typeAliasesInRootNS.get(qname.ident.name)
+        root.typeAliases.getDeep(Name.RootNS, qname.ident.name)
       }
     } else {
       // Case 2: The name is qualified. Look it up in its namespace.
-      root.typeAliases.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+      root.typeAliases.getDeep(qname.namespace, qname.ident.name)
     }
   }
 
@@ -2129,10 +2103,10 @@ object Resolver {
   /**
     * Tries to lookup the name in the given namespace, using the given namespace map.
     */
-  private def tryLookupName[T](qname: Name.QName, ns0: Name.NName, map: Map[Name.NName, Map[String, T]]): Option[T] = {
+  private def tryLookupName[T](qname: Name.QName, ns0: Name.NName, map: DeepMap[Name.NName, String, T]): Option[T] = {
     if (qname.isUnqualified) {
       // Case 1: Unqualified name. Lookup in the current namespace.
-      val effOpt = map.getOrElse(ns0, Map.empty).get(qname.ident.name)
+      val effOpt = map.getDeep(ns0, qname.ident.name)
 
       effOpt match {
         case Some(eff) =>
@@ -2140,11 +2114,11 @@ object Resolver {
           Some(eff)
         case None =>
           // Case 1.1: Try the global namespace.
-          map.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name)
+          map.getDeep(Name.RootNS, qname.ident.name)
       }
     } else {
       // Case 2: Qualified. Lookup in the given namespace.
-      map.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+      map.getDeep(qname.namespace, qname.ident.name)
     }
   }
 

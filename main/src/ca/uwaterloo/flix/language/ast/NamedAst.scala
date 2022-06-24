@@ -18,16 +18,17 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
+import ca.uwaterloo.flix.util.collection.DeepMap
 
 object NamedAst {
 
-  case class Root(classes: Map[Name.NName, Map[String, NamedAst.Class]],
-                  instances: Map[Name.NName, Map[String, List[NamedAst.Instance]]],
-                  defsAndSigs: Map[Name.NName, Map[String, NamedAst.DefOrSig]],
-                  enums: Map[Name.NName, Map[String, NamedAst.Enum]],
-                  typeAliases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
-                  effects: Map[Name.NName, Map[String, NamedAst.Effect]],
-                  ops: Map[Name.NName, Map[String, NamedAst.Op]],
+  case class Root(classes: DeepMap[Name.NName, String, NamedAst.Class],
+                  instances: DeepMap[Name.NName, String, List[NamedAst.Instance]],
+                  defsAndSigs: DeepMap[Name.NName, String, NamedAst.DefOrSig],
+                  enums: DeepMap[Name.NName, String, NamedAst.Enum],
+                  typeAliases: DeepMap[Name.NName, String, NamedAst.TypeAlias],
+                  effects: DeepMap[Name.NName, String, NamedAst.Effect],
+                  ops: DeepMap[Name.NName, String, NamedAst.Op],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
