@@ -529,8 +529,10 @@ namespace Array {
     ///
     @Time(length(a)) @Space(length(a))
     pub def update(i: Int32, x: a, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
+        let len = length(a);
+        let r = Scoped.regionOf(a);
         let f = ix -> if (ix == i) x else a[ix];
-        init(f, length(a), Scoped.regionOf(a))
+        init(f, len, r)
 
     ///
     /// Returns a copy of `a` with every occurrence of `from` replaced by `to`.
