@@ -70,7 +70,7 @@ object GenLazyClasses {
     val visitor = AsmOps.mkClassWriter()
 
     // internal name of super
-    val superClass = JvmName.Object.toInternalName
+    val superClass = BackendObjType.JavaObject.jvmName.toInternalName
 
     // Initialize the visitor to create a class.
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null, superClass, null)
@@ -166,7 +166,7 @@ object GenLazyClasses {
     constructor.visitVarInsn(ALOAD, 0)
 
     // [] Call the super (java.lang.Object) constructor
-    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+    constructor.visitMethodInsn(INVOKESPECIAL, BackendObjType.JavaObject.jvmName.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
 
     // [this] save the argument to expression.
     constructor.visitVarInsn(ALOAD, 0)
