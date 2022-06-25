@@ -1378,7 +1378,8 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def findIndices(f: a -> Bool & ef, a: Array[a, r]): Array[Int32, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        let l = new MutList(Scoped.regionOf(a));
+        let r = Scoped.regionOf(a);
+        let l = new MutList(r);
         def loop(i) = {
             if (i >= len)
                 ()
@@ -1388,7 +1389,7 @@ namespace Array {
             }
         };
         loop(0);
-        MutList.toArray(l, Scoped.regionOf(a))
+        MutList.toArray(l, r)
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.
