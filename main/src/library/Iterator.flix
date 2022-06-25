@@ -1729,4 +1729,13 @@ namespace Iterator {
         };
         loop(e -> Err(e), ks -> Ok(ks))
 
+    ///
+    /// Shuffles `iter` using the Fisher–Yates shuffle.
+    ///
+    pub def shuffle(rnd: Random.Random, iter: Iterator[a]): Iterator[a] & Impure = region r {
+        let arr = toArray(iter, r);
+        Array.shuffle(rnd, arr);
+        Array.toIterator(arr)
+    }
+
 }
