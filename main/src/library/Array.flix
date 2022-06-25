@@ -1446,11 +1446,10 @@ namespace Array {
         def loop(i) = {
             if (i >= alen)
                 true
+            else if (a[i] != b[i])
+                false
             else
-                if (a[i] != b[i])
-                    false
-                else
-                    loop(i + 1)
+                loop(i + 1)
         };
         if (alen == blen)
             loop(0)
