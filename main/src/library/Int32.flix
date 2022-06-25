@@ -184,11 +184,11 @@ namespace Int32 {
     /// Otherwise recursively check the next bit in the same way.
     ///
     def oneBitPositionHelper(x: Int32, position: Int32, delta: Int32): Int32 = {
-        if      (position < 0)                        -1
-        else if (position > size() - 1)               -1
-        else if (getBit(position = position, x) == 1) position
-        else if (delta == 0)                          -1
-        else                                          oneBitPositionHelper(x, position + delta, delta)
+        if      (position < 0)                   -1
+        else if (position > size() - 1)          -1
+        else if (getBit(pos = position, x) == 1) position
+        else if (delta == 0)                     -1
+        else                                     oneBitPositionHelper(x, position + delta, delta)
     }
 
     ///
