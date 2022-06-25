@@ -1495,7 +1495,9 @@ namespace Array {
     pub def updateSequence(i: Int32, sub: Array[a, r1], a: Array[a, r2]): Array[a, r2] \ { Read(r1, r2), Write(r2) } =
         let end = i + length(sub);
         let f = ix -> if (ix >= i and ix < end) sub[ix - i] else a[ix];
-        init(f, length(a), Scoped.regionOf(a))
+        let len = length(a);
+        let r2 = Scoped.regionOf(a);
+        init(f, len, r2)
 
     ///
     /// Update the mutable array `a` with the elements starting at index `i` replaced by `sub`.
