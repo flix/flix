@@ -215,6 +215,58 @@ namespace Test/Exp/Regions {
         }
 
     @test
+    def testRegions1Region3Nested01(): Bool =
+        region r {
+            let a = [new MutMap(r); 8];
+            let l = new MutList(r);
+            MutList.push!([1; 8] @ r, l);
+            MutMap.put!(1, l, a[0]);
+            match MutMap.get(1, a[0]) {
+                case Some(k) => match MutList.pop!(k) {
+                    case Some(b) => b[0] == 1
+                    case _       => unreachable!()
+                }
+                case _       => unreachable!()
+            }
+        }
+
+    @test
+    def testRegions1Region3Nested02(): Bool =
+        region r {
+            let l = new MutList(r);
+            let a = [new MutMap(r); 8] @ r;
+            let l1 = new MutList(r);
+            MutList.push!(1, l1);
+            MutMap.put!(1, l1, a[0]);
+            MutList.push!(a, l);
+            match MutList.pop!(l) {
+                case Some(b) => match MutMap.get(1, b[0]) {
+                    case Some(k) => MutList.pop!(k) == Some(1)
+                    case _       => unreachable!()
+                }
+                case _       => unreachable!()
+            }
+        }
+
+    @test
+    def testRegions1Region3Nested03(): Bool =
+        region r {
+            let m = new MutMap(r);
+            let l = new MutList(r);
+            let a = [new MutMap(r); 8] @ r;
+            MutMap.put!(1, 1, a[0]);
+            MutList.push!(a, l);
+            MutMap.put!(1, l, m);
+            match MutMap.get(1, m) {
+                case Some(k) => match MutList.pop!(k) {
+                    case Some(b) => MutMap.get(1, b[0]) == Some(1)
+                    case _       => unreachable!()
+                }
+                case _       => unreachable!()
+            }
+        }
+
+    @test
     def testRegions2Regions01(): Bool & Impure =
         region _ {
             let a1 = [1; 8] @ Static;
