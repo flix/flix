@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.fmt.{Audience, FormatTypeConstraint}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.fmt.{Audience, FormatType, FormatTypeConstraint}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -312,9 +312,10 @@ object RedundancyError {
   /**
     * An error raised to indicate that an expression is useless.
     *
+    * @param tpe the type of the expression.
     * @param loc the location of the expression.
     */
-  case class UselessExpression(loc: SourceLocation) extends RedundancyError {
+  case class UselessExpression(tpe: Type, loc: SourceLocation) extends RedundancyError {
     def summary: String = "Useless expression."
 
     def message(formatter: Formatter): String = {
@@ -323,6 +324,8 @@ object RedundancyError {
          |>> Useless expression: It has no side-effect(s) and its result is discarded.
          |
          |${code(loc, "useless expression.")}
+         |
+         |The expression has type '${FormatType.formatWellKindedType(tpe)}'
          |""".stripMargin
     }
 
@@ -336,6 +339,72 @@ object RedundancyError {
          |
          |""".stripMargin
     })
+  }
+
+  /**
+    * An error raised to indicate that an impure function expression is useless
+    * is statement position.
+    *
+    * @param tpe the type of the expression.
+    * @param loc the location of the expression.
+    */
+  case class UnderAppliedFunction(tpe: Type, loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Under applied function. Missing function argument(s)?"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Under applied function. ${applicationAdvice(tpe)}
+         |
+         |${code(loc, "the function is not fully-applied and hence has no effect.")}
+         |
+         |The function has type '${FormatType.formatWellKindedType(tpe)}'
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+         |Possible fixes:
+         |
+         |  (1)  Give the function (additional) arguments.
+         |  (2)  Use the result computed by the expression.
+         |  (3)  Remove the expression statement.
+         |  (4)  Introduce a let-binding with a wildcard name.
+         |
+         |""".stripMargin
+    })
+
+    /**
+      * Creates an advice string about applied the arguments of the curried arrow `tpe`.
+      *
+      * OBS: If `tpe` is not arrow type then an exception is thrown.
+      */
+    private def applicationAdvice(tpe: Type): String = {
+      val arguments = curriedArrowArgTypes(tpe)
+      if (arguments.isEmpty) { // fallback message
+        "Missing function argument(s)?"
+      } else {
+        val argumentStrings = arguments.map(t => s"${FormatType.formatWellKindedType(t)}").mkString(", ")
+        s"Missing argument(s) of type: $argumentStrings."
+      }
+    }
+
+    /**
+      * Returns the argument types of `this` curried arrow type.
+      * Returns `Nil` if `this` is not an arrow type.
+      *
+      * For example,
+      *
+      * {{{
+      * Int32                               =>     Nil
+      * Int32 -> String -> Int32            =>     List(Int32, String)
+      * (Int32, String) -> String -> Bool   =>     List(Int32, String, String)
+      * }}}
+      */
+    private def curriedArrowArgTypes(tpe: Type): List[Type] = tpe.typeConstructor match {
+      case Some(TypeConstructor.Arrow(_)) => tpe.arrowArgTypes ++ curriedArrowArgTypes(tpe.arrowResultType)
+      case _ => Nil
+    }
   }
 
   /**

@@ -20,6 +20,8 @@ use Fixpoint/SubstitutePredSym.substitute;
 use Fixpoint/Shared.PredSym;
 
 namespace Fixpoint/Ast {
+
+    @Internal
     pub enum Constraint[v] {
         case Constraint(HeadPredicate[v], Array[BodyPredicate[v], Static])
     }

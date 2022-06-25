@@ -41,8 +41,8 @@ object GenRecordInterface {
   private def genByteCode()(implicit root: Root, flix: Flix): Array[Byte] = {
     val cm = ClassMaker.mkInterface(BackendObjType.Record.jvmName)
 
-    BackendObjType.Record.LookupFieldMethod.mkInterfaceMethod(cm)
-    BackendObjType.Record.RestrictFieldMethod.mkInterfaceMethod(cm)
+    cm.mkInterfaceMethod(BackendObjType.Record.LookupFieldMethod)
+    cm.mkInterfaceMethod(BackendObjType.Record.RestrictFieldMethod)
 
     cm.closeClassMaker()
   }
