@@ -1470,10 +1470,7 @@ namespace Array {
                 loop(i + 1)
             }
         };
-        if (len < 1)
-            ()
-        else
-            loop(0)
+        loop(0)
 
     ///
     /// Apply the effectful function `f` to all the elements in the array `a`.
