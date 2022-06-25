@@ -54,6 +54,30 @@ namespace Test/Exp/Regions {
         new MutMap(Static)
 
     @test
+    def testRegions0Regions2Nested01(): Array[MutMap[Int32, MutList[Int32, Static], Static], Static] & Impure =
+        []
+
+    @test
+    def testRegions0Regions2Nested02(): MutList[Array[MutMap[Int32, Int32, Static], Static], Static] & Impure =
+        new MutList(Static)
+
+    @test
+    def testRegions0Regions2Nested03(): MutMap[Int32, MutList[Array[Int32, Static], Static], Static] & Impure =
+        new MutMap(Static)
+
+    @test
+    def testRegions0Regions3Nested01(): Array[MutMap[Int32, MutList[Array[Int32, Static], Static], Static], Static] & Impure =
+        []
+
+    @test
+    def testRegions0Regions3Nested02(): MutList[Array[MutMap[Int32, MutList[Int32, Static], Static], Static], Static] & Impure =
+        new MutList(Static)
+
+    @test
+    def testRegions0Regions3Nested03(): MutMap[Int32, MutList[Array[MutMap[Int32, Int32, Static], Static], Static], Static] & Impure =
+        new MutMap(Static)
+
+    @test
     def testRegions1Region01(): Bool =
         region r {
             let a = [1; 8];
