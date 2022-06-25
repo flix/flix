@@ -1709,28 +1709,28 @@ namespace TestIterator {
     @test
     def shuffle01(): Bool & Impure =
         let l: List[Int32] = Nil;
-        let iter = List.toDelayList(l) |> DelayList.shuffle(Random.new());
+        let iter = List.toIterator(l) |> Iterator.shuffle(Random.new());
 
         Iterator.toSet(iter) == Set#{}
 
     @test
     def shuffle02(): Bool & Impure =
         let l = 1 :: Nil;
-        let iter = List.toDelayList(l) |> DelayList.shuffle(Random.new());
+        let iter = List.toIterator(l) |> Iterator.shuffle(Random.new());
 
         Iterator.toSet(iter) == Set#{1}
 
     @test
     def shuffle03(): Bool & Impure =
         let l = 1 :: 2 :: 3 :: Nil;
-        let iter = List.toDelayList(l) |> DelayList.shuffle(Random.new());
+        let iter = List.toIterator(l) |> Iterator.shuffle(Random.new());
 
         Iterator.toSet(iter) == Set#{1, 2, 3}
 
     @test
     def shuffle04(): Bool & Impure =
         let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
-        let iter = List.toDelayList(l) |> DelayList.shuffle(Random.new());
+        let iter = List.toIterator(l) |> Iterator.shuffle(Random.new());
 
         Iterator.toSet(iter) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 
