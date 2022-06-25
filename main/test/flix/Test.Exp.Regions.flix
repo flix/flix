@@ -1,5 +1,13 @@
 namespace Test/Exp/Regions {
 
+    ///
+    /// Helper function to create arrays.
+    /// Circumvents the problem of copying the *pointer*
+    /// to the same array in the expression `[[x; n]; m]`.
+    ///
+    def _mkArray(r: Region[r], x: a, n: Int32): Array[a, r] \ Write(r) =
+        [x; n] @ r
+
     // Uses references and regions (e.g. could just duplicate most test cases for both).
     // Test cases that use 0, 1, 2, and 3 nested regions.
     // Test cases that use 0, 1, 2, 3 data structures nested inside each other (e.g. array inside array inside array).
@@ -99,6 +107,40 @@ namespace Test/Exp/Regions {
             MutMap.put!(1, 1, m);
             MutMap.get(1, m) == Some(1)
         }
+
+    @test
+    def testRegions1Region1Nested01(): Bool & Impure =
+        region r {
+            let a = [new MutMap(Static); 8];
+            MutMap.put!(1, 1, a[0]);
+            MutMap.get(1, a[0]) == 1
+        }
+
+    @test
+    def testRegions1Region1Nested02(): Bool & Impure =
+        region r {
+            let l = new MutList(r);
+            MutList.push!([1; 8] @ Static, l);
+            match MutList.pop!(l) {
+                case Some(a) => a `Array.sameElements` [1; 8]
+                case _       => unreachable!()
+            }
+        }
+
+    @test
+    def testRegions1Region1Nested03(): Bool & Impure =
+        region r {
+            let m = new MutMap(r);
+            let l = new MutList(Static);
+            MutList.push!(1, l);
+            MutMap.put!(1, l, m);
+            match MutMap.get(1, m) {
+                case Some(x) => x `MutList.sameElements` l
+                case _       => unreachable!()
+            }
+        }
+
+        // todo add region based nesting of different levels
 
     @test
     def testRegions2Regions01(): Bool & Impure =
