@@ -6,16 +6,28 @@ namespace Test/Exp/Regions {
     // Test cases that mix both multiple regions and multiple data structures.
 
     @test
-    def testRegions0Regions01(): MutList[Int32, Static] & Impure =
-        new MutList(Static)
+    def testRegions0Regions01(): Array[Int32, Static] & Impure =
+        []
 
     @test
-    def testRegions0Regions02(): MutSet[Int32, Static] & Impure =
-        new MutSet(Static)
+    def testRegions0Regions02(): MutList[Int32, Static] & Impure =
+        new MutList(Static)
 
     @test
     def testRegions0Regions03(): MutMap[Int32, Int32, Static] & Impure =
         new MutMap(Static)
+
+    @test
+    def testRegions0RegionsReferences01(): Ref[Array[Int32, Static], Static] & Impure =
+        ref []
+
+    @test
+    def testRegions0RegionsReferences02(): Ref[MutList[Int32, Static], Static] & Impure =
+        ref new MutList(Static)
+
+    @test
+    def testRegions0RegionsReferences03(): Ref[MutMap[Int32, Int32, Static], Static] & Impure =
+        ref new MutMap(Static)
 
 
 }
