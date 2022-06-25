@@ -1486,10 +1486,7 @@ namespace Array {
                 loop(i + 1)
             }
         };
-        if (len < 1)
-            ()
-        else
-            loop(0)
+        loop(0)
 
     ///
     /// Returns a copy of `a` with the elements starting at index `i` replaced by `sub`.
