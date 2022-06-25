@@ -18,6 +18,29 @@ namespace Test/Exp/Regions {
         new MutMap(Static)
 
     @test
+    def testRegions1Region01(): Bool =
+        region r {
+            let a = [1; 8];
+            a[0] == 1
+        }
+
+    @test
+    def testRegions1Region02(): Bool =
+        region r {
+            let l = new MutList(r);
+            MutList.push!(1, l);
+            MutList.pop!(l) == Some(1)
+        }
+
+    @test
+    def testRegions1Region03(): Bool =
+        region r {
+            let m = new MutMap(r);
+            MutMap.put!(1, 1, m);
+            MutMap.get(1, m) == Some(1)
+        }
+
+    @test
     def testRegions0RegionsReferences01(): Ref[Array[Int32, Static], Static] & Impure =
         ref []
 
