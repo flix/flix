@@ -97,16 +97,16 @@ namespace Int32 {
     pub def signum(x: Int32): Int32 = compare(x, 0)
 
     ///
-    /// Returns the logical right shift of `x` by `distance`.
-    /// Only the rightmost 5 bits of `distance` are considered (ie. `distance rem 32`).
+    /// Returns the logical right shift of `x` by `dist`.
+    /// Only the rightmost 5 bits of `dist` are considered (ie. `dist rem 32`).
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     @Time(1) @Space(1)
-    pub def logicalRightShift(distance: {distance :: Int32}, x: Int32): Int32 =
-        if (x < 0 and distance.distance rem size() != 0)
-            ((x >>> 1) &&& maxValue()) >>> (distance.distance - 1)
+    pub def logicalRightShift(dist: {dist :: Int32}, x: Int32): Int32 =
+        if (x < 0 and dist.dist rem size() != 0)
+            ((x >>> 1) &&& maxValue()) >>> (dist.dist - 1)
         else
-            x >>> distance.distance
+            x >>> dist.dist
 
     ///
     /// Returns the number of one-bits in the two's complement binary
@@ -115,25 +115,25 @@ namespace Int32 {
     @Time(1) @Space(1)
     pub def bitCount(x: Int32): Int32 = {
         if      (x == 0)       0
-        else if (x rem 2 != 0) bitCount(logicalRightShift(distance = 1, x)) + 1
-        else                   bitCount(logicalRightShift(distance = 1, x))
+        else if (x rem 2 != 0) bitCount(logicalRightShift(dist = 1, x)) + 1
+        else                   bitCount(logicalRightShift(dist = 1, x))
     }
 
     ///
     /// Returns the the value obtained by rotating the two's complement
-    /// binary representation of `x` right by `distance` bits.
+    /// binary representation of `x` right by `dist` bits.
     ///
     @Time(1) @Space(1)
-    pub def rotateRight(distance: {distance :: Int32}, x: Int32): Int32 =
-        (logicalRightShift(distance = distance.distance, x)) ||| (x <<< -distance.distance)
+    pub def rotateRight(dist: {dist :: Int32}, x: Int32): Int32 =
+        (logicalRightShift(dist = dist.dist, x)) ||| (x <<< -dist.dist)
 
     ///
     /// Returns the the value obtained by rotating the two's complement
-    /// binary representation of `x` left by `distance` bits.
+    /// binary representation of `x` left by `dist` bits.
     ///
     @Time(1) @Space(1)
-    pub def rotateLeft(distance: {distance :: Int32}, x: Int32): Int32 =
-        (logicalRightShift(distance = -distance.distance, x)) ||| (x <<< distance.distance)
+    pub def rotateLeft(dist: {dist :: Int32}, x: Int32): Int32 =
+        (logicalRightShift(dist = -dist.dist, x)) ||| (x <<< dist.dist)
 
     ///
     /// Returns the value obtained by reversing the bits in the
@@ -152,9 +152,9 @@ namespace Int32 {
     /// Helper function for `reverse`.
     ///
     @Time(1) @Space(1)
-    def swap(x: Int32, l: Int32, r: Int32): Int32 = match (getBit(position = l, x), getBit(position = r, x)) {
-        case (1, 0) => clearBit(position = l, setBit(position = r, x))
-        case (0, 1) => clearBit(position = r, setBit(position = l, x))
+    def swap(x: Int32, l: Int32, r: Int32): Int32 = match (getBit(pos = l, x), getBit(pos = r, x)) {
+        case (1, 0) => clearBit(pos = l, setBit(pos = r, x))
+        case (0, 1) => clearBit(pos = r, setBit(pos = l, x))
         case _ => x
     }
 
@@ -237,37 +237,37 @@ namespace Int32 {
         if (x == 0) 32 else lowestOneBitPosition(x)
 
     ///
-    /// Returns the bit of `x` at `position` (either 0 or 1).
-    /// Considers the 5 rightmost bits of `position` (`position` mod 32).
+    /// Returns the bit of `x` at position `pos` (either 0 or 1).
+    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def getBit(position: {position :: Int32}, x: Int32): Int32 =
-        if ((x >>> position.position) rem 2 == 0) 0 else 1
+    pub def getBit(pos: {pos :: Int32}, x: Int32): Int32 =
+        if ((x >>> pos.pos) rem 2 == 0) 0 else 1
 
     ///
-    /// Returns `x` with the bit at position `position` set (to 1).
-    /// Considers the 5 rightmost bits of `position` (`position` mod 32).
+    /// Returns `x` with the bit at position `pos` set (to 1).
+    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def setBit(position: {position :: Int32}, x: Int32): Int32 = x ||| (1 <<< position.position)
+    pub def setBit(pos: {pos :: Int32}, x: Int32): Int32 = x ||| (1 <<< pos.pos)
 
     ///
-    /// Returns `x` with the bit at position `position` cleared (to 0).
-    /// Considers the 5 rightmost bits of `position` (`position` mod 32).
+    /// Returns `x` with the bit at position `pos` cleared (to 0).
+    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def clearBit(position: {position :: Int32}, x: Int32): Int32 = x &&& ~~~(1 <<< position.position)
+    pub def clearBit(pos: {pos :: Int32}, x: Int32): Int32 = x &&& ~~~(1 <<< pos.pos)
 
     ///
-    /// Returns `x` with the bit at position `position` flipped.
-    /// Considers the 5 rightmost bits of `position` (`position` mod 32).
+    /// Returns `x` with the bit at position `pos` flipped.
+    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def flipBit(position: {position :: Int32}, x: Int32): Int32 = x ^^^ (1 <<< position.position)
+    pub def flipBit(pos: {pos :: Int32}, x: Int32): Int32 = x ^^^ (1 <<< pos.pos)
 
     ///
     /// Returns the integer binary logarithm of `x`.
