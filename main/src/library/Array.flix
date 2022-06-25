@@ -1744,7 +1744,9 @@ namespace Array {
                 let j = Random.nextNatWithMax(rnd, i + 1);
                 Array.swap!(i, j, a);
                 loop(i - 1)
-            } else ()
+            }
+            else
+                ()
         };
         loop(len - 1)
 
