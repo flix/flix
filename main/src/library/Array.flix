@@ -1424,7 +1424,7 @@ namespace Array {
         }
 
     ///
-    /// Returns `true` if arrays `a` and `b` have the same elements, i.e. are structurally equal.
+    /// Returns `true` if arrays `a` and `b` have the same elements in the same order, i.e. are structurally equal.
     ///
     @Time(length(a)) @Space(1)
     pub def sameElements(a: Array[a, r1], b: Array[a, r2]): Bool \ Read(r1, r2) with Eq[a] =
@@ -1728,11 +1728,11 @@ namespace Array {
     ///
     /// Shuffles `a` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(r: Random.Random, a: Array[a, r]): Unit & Impure =
+    pub def shuffle(rnd: Random.Random, a: Array[a, r]): Unit & Impure =
         let len = Array.length(a);
         def loop(i) = {
             if (i > 0) {
-                let j = Random.nextNatWithMax(r, i + 1);
+                let j = Random.nextNatWithMax(rnd, i + 1);
                 Array.swap!(i, j, a);
                 loop(i - 1)
             } else ()
