@@ -1564,7 +1564,8 @@ namespace Array {
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
         let len = length(a);
-        let b = copyOfRange(0, len, a, Scoped.regionOf(a));
+        let r = Scoped.regionOf(a);
+        let b = copyOfRange(0, len, a, r);
         sortWith!(cmp, b);
         b
 
