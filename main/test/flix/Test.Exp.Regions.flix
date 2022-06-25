@@ -41,6 +41,43 @@ namespace Test/Exp/Regions {
         }
 
     @test
+    def testRegions2RegionsNested01(): Bool =
+        region r1 {
+            let a1 = [1; 8] @ r1;
+            a1[0] == 1 and 1 ==
+            region r2 {
+                let a2 = [1; 8] @ r2;
+                a2[0]
+            }
+        }
+
+    @test
+    def testRegions2RegionsNested02(): Bool =
+        region r1 {
+            let l1 = new MutList(r1);
+            MutList.push!(1, l1);
+            MutList.pop!(l1) == Some(1) and Some(1) ==
+            region r2 {
+                let l2 = new MutList(r2);
+                MutList.push!(1, l2);
+                MutList.pop!(l2)
+            }
+        }
+
+    @test
+    def testRegions2RegionsNested03(): Bool =
+        region r1 {
+            let m1 = new MutMap(r1);
+            MutMap.put!(1, 1, m1);
+            MutMap.get(1, m1) == Some(1) and Some(1) ==
+            region r2 {
+                let m2 = new MutMap(r2);
+                MutMap.put!(1, 1, m2);
+                MutMap.get(1, m2)
+            }
+        }
+
+    @test
     def testRegions0RegionsReferences01(): Ref[Array[Int32, Static], Static] & Impure =
         ref []
 
