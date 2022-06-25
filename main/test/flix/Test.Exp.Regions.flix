@@ -113,7 +113,7 @@ namespace Test/Exp/Regions {
         region r {
             let a = [new MutMap(Static); 8];
             MutMap.put!(1, 1, a[0]);
-            MutMap.get(1, a[0]) == 1
+            MutMap.get(1, a[0]) == Some(1)
         }
 
     @test
