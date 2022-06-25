@@ -275,7 +275,7 @@ namespace Array {
     /// Return the positions of the all the occurrences of `a` in `arr`.
     ///
     @Time(length(arr)) @Space(length(arr))
-    pub def indices(a: a, arr: Array[a, Static]): Array[Int32, Static] & Impure with Eq[a] =
+    pub def indices(a: a, arr: Array[a, r]): Array[Int32, r] \ { Read(r), Write(r) } with Eq[a] =
         findIndices(b -> a == b, arr)
 
     ///
@@ -433,9 +433,9 @@ namespace Array {
     /// Returns the result of applying `f` to every element in `a` and concatenating the results.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def flatMap(f: a -> Array[b, Static] & ef, a: Array[a, Static]): Array[b, Static] & Impure =
+    pub def flatMap(f: a -> Array[b, r] & ef, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        init(i -> f(a[i]), len, Static) |> flatten
+        init(i -> f(a[i]), len, Scoped.regionOf(a)) |> flatten
 
     ///
     /// Returns the reverse of `a`.
@@ -592,15 +592,15 @@ namespace Array {
     /// Returns the concatenation of the elements in `arrs` with the elements of `sep` inserted between every two adjacent elements.
     ///
     @Time(length(arrs)) @Space(length(arrs))
-    pub def intercalate(sep: Array[a, Static], arrs: Array[Array[a, Static], Static]): Array[a, Static] & Impure =
+    pub def intercalate(sep: Array[a, r], arrs: Array[Array[a, r], r]): Array[a, r] \ { Read(r), Write(r) } =
         let count = length(arrs);
         let sepLength = length(sep);
         let sepCount = if (count < 2) 0 else count - 1;
         let len = sumLengths(arrs) + (sepCount * sepLength);
         match headArrays(arrs) {
-            case None => []
+            case None    => [] @ Scoped.regionOf(arrs)
             case Some(x) =>
-                let out = new(x, len, Static);
+                let out = new(x, len, Scoped.regionOf(arrs));
                 let overwrite = { (st, a) ->
                     let (pos,i) = st;
                     if (i == 0) {
@@ -811,7 +811,7 @@ namespace Array {
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
-    pub def foldMap(f: a -> b & ef, arr: Array[a, Static]): b & Impure with Monoid[b] =
+    pub def foldMap(f: a -> b & ef, arr: Array[a, r]): b \ { ef, Read(r) } with Monoid[b] =
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), arr)
 
     ///
@@ -891,12 +891,12 @@ namespace Array {
     /// Returns the concatenation of the arrays of in the array `arrs`.
     ///
     @Time(length(arrs)) @Space(length(arrs))
-    pub def flatten(arrs: Array[Array[a, Static], Static]) : Array[a, Static] & Impure =
+    pub def flatten(arrs: Array[Array[a, r], r]) : Array[a, r] \ { Read(r), Write(r) } =
         let len = sumLengths(arrs);
         match headArrays(arrs) {
-            case None => []
+            case None => [] @ Scoped.regionOf(arrs)
             case Some(x) => {
-                let out = new(x, len, Static);
+                let out = new(x, len, Scoped.regionOf(arrs));
                 foldLeft((pos, a) -> arrayWrites(pos, a, out), 0, arrs);
                 out
             }
@@ -1364,9 +1364,9 @@ namespace Array {
     /// Returns the positions of the all the elements in `a` satisfying `f`.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def findIndices(f: a -> Bool & ef, a: Array[a, Static]): Array[Int32, Static] & Impure =
+    pub def findIndices(f: a -> Bool & ef, a: Array[a, r]): Array[Int32, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        let l = new MutList(Static);
+        let l = new MutList(Scoped.regionOf(a));
         def loop(i) = {
             if (i >= len)
                 ()
@@ -1376,7 +1376,7 @@ namespace Array {
             }
         };
         loop(0);
-        MutList.toArray(l, Static)
+        MutList.toArray(l, Scoped.regionOf(a))
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.
@@ -1424,7 +1424,7 @@ namespace Array {
         }
 
     ///
-    /// Returns `true` if arrays `a` and `b` have the same elements, i.e. are structurally equal.
+    /// Returns `true` if arrays `a` and `b` have the same elements in the same order, i.e. are structurally equal.
     ///
     @Time(length(a)) @Space(1)
     pub def sameElements(a: Array[a, r1], b: Array[a, r2]): Bool \ Read(r1, r2) with Eq[a] =
@@ -1709,30 +1709,30 @@ namespace Array {
                 copy(arr, b, e) as Array[a, r2]
         }
 
-   ///
-   /// Returns an iterator over `a`.
-   ///
-   pub def toIterator(a: Array[a, r]): Iterator[a] & Impure =
-       let len = Array.length(a);
-       let copy = copyOfRange(0, len, a, Static);
-       let i = ref 0;
-       let done = () -> (deref i) >= len;
-       let next = () -> {
-           let j = deref i;
-           let x = copy[j];
-           i := j + 1;
-           x
-       };
-       Iterator(done, next)
+    ///
+    /// Returns an iterator over `a`.
+    ///
+    pub def toIterator(a: Array[a, r]): Iterator[a] & Impure =
+        let len = Array.length(a);
+        let copy = copyOfRange(0, len, a, Static);
+        let i = ref 0;
+        let done = () -> (deref i) >= len;
+        let next = () -> {
+            let j = deref i;
+            let x = copy[j];
+            i := j + 1;
+            x
+        };
+        Iterator(done, next)
 
     ///
     /// Shuffles `a` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(r: Random.Random, a: Array[a, r]): Unit & Impure =
+    pub def shuffle(rnd: Random.Random, a: Array[a, r]): Unit & Impure =
         let len = Array.length(a);
         def loop(i) = {
             if (i > 0) {
-                let j = Random.nextNatWithMax(r, i + 1);
+                let j = Random.nextNatWithMax(rnd, i + 1);
                 Array.swap!(i, j, a);
                 loop(i - 1)
             } else ()

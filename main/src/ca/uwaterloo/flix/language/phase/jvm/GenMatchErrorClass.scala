@@ -38,15 +38,15 @@ object GenMatchErrorClass {
   }
 
   private def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(JvmName.MatchError, IsFinal, superClass = JvmName.FlixError)
+    val cm = ClassMaker.mkClass(JvmName.MatchError, IsFinal, superClass = BackendObjType.FlixError.jvmName)
 
     cm.mkConstructor(genConstructor(), mkDescriptor(BackendObjType.ReifiedSourceLocation.toTpe)(VoidableType.Void), IsPublic)
 
     cm.mkField(locationField)
 
     // TODO: Are these ever used?
-    cm.mkMethod(genEqualsMethod(), "equals", mkDescriptor(JvmName.Object.toTpe)(BackendType.Bool), IsPublic, NotFinal)
-    cm.mkMethod(genHashCodeMethod(), "hashCode", mkDescriptor()(BackendType.Int32), IsPublic, NotFinal)
+    cm.mkMethod(BackendObjType.JavaObject.EqualsMethod.implementation(JvmName.MatchError, Some(genEqualsMethod())))
+    cm.mkMethod(BackendObjType.JavaObject.HashcodeMethod.implementation(JvmName.MatchError, Some(genHashCodeMethod())))
 
     cm.closeClassMaker()
   }
@@ -60,17 +60,17 @@ object GenMatchErrorClass {
       pushString("Non-exhaustive match at ") ~
       INVOKEVIRTUAL(JvmName.StringBuilder, "append", stringBuilderDescriptor) ~
       ALOAD(1) ~
-      INVOKEVIRTUAL(BackendObjType.ReifiedSourceLocation.jvmName, "toString", mkDescriptor()(BackendObjType.String.toTpe)) ~
+      INVOKEVIRTUAL(BackendObjType.JavaObject.ToStringMethod) ~
       INVOKEVIRTUAL(JvmName.StringBuilder, "append", stringBuilderDescriptor) ~
-      INVOKEVIRTUAL(JvmName.StringBuilder, "toString", mkDescriptor()(BackendObjType.String.toTpe)) ~
-      invokeConstructor(JvmName.FlixError, mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void)) ~
+      INVOKEVIRTUAL(BackendObjType.JavaObject.ToStringMethod) ~
+      INVOKESPECIAL(BackendObjType.FlixError.Constructor) ~
       thisLoad() ~
       ALOAD(1) ~
       PUTFIELD(locationField) ~
       RETURN()
   }
 
-  private def genEqualsMethod(): InstructionSet = withName(1, JvmName.Object.toTpe) { otherObj =>
+  private def genEqualsMethod(): InstructionSet = withName(1, BackendObjType.JavaObject.toTpe) { otherObj =>
     // check exact equality
     thisLoad() ~
       otherObj.load() ~
@@ -80,26 +80,26 @@ object GenMatchErrorClass {
       ifTrue(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
       // the class equality
       thisLoad() ~
-      INVOKEVIRTUAL(JvmName.Object, "getClass", mkDescriptor()(JvmName.Class.toTpe)) ~
+      INVOKEVIRTUAL(BackendObjType.JavaObject.GetClassMethod) ~
       otherObj.load() ~
-      INVOKEVIRTUAL(JvmName.Object, "getClass", mkDescriptor()(JvmName.Class.toTpe)) ~
+      INVOKEVIRTUAL(BackendObjType.JavaObject.GetClassMethod) ~
       ifTrue(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
       // check individual fields
       ALOAD(1) ~ CHECKCAST(JvmName.MatchError) ~
       storeWithName(2, JvmName.MatchError.toTpe) { otherErr =>
         thisLoad() ~ GETFIELD(locationField) ~
           otherErr.load() ~ GETFIELD(locationField) ~
-          INVOKESTATIC(JvmName.Objects, "equals", mkDescriptor(JvmName.Object.toTpe, JvmName.Object.toTpe)(BackendType.Bool)) ~
+          INVOKESTATIC(JvmName.Objects, "equals", mkDescriptor(BackendObjType.JavaObject.toTpe, BackendObjType.JavaObject.toTpe)(BackendType.Bool)) ~
           IRETURN()
       }
   }
 
   private def genHashCodeMethod(): InstructionSet =
-    ICONST_1() ~ ANEWARRAY(JvmName.Object) ~
+    ICONST_1() ~ ANEWARRAY(BackendObjType.JavaObject.jvmName) ~
       DUP() ~
       ICONST_0() ~
       thisLoad() ~ GETFIELD(locationField) ~
       AASTORE() ~
-      INVOKESTATIC(JvmName.Object, "hash", mkDescriptor(BackendType.Array(JvmName.Object.toTpe))(BackendType.Int32)) ~
+      INVOKESTATIC(JvmName.Objects, "hash", mkDescriptor(BackendType.Array(BackendObjType.JavaObject.toTpe))(BackendType.Int32)) ~
       IRETURN()
 }

@@ -15,6 +15,8 @@
  */
 
 namespace Fixpoint/Ast {
+
+    @Internal
     pub enum VarSym with Eq, Order, ToString {
         case VarSym(String)
     }
