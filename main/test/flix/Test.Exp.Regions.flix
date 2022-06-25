@@ -18,6 +18,42 @@ namespace Test/Exp/Regions {
         new MutMap(Static)
 
     @test
+    def testRegions0Regions1Nested01(): Array[Array[Int32, Static], Static] & Impure =
+        []
+
+    @test
+    def testRegions0Regions1Nested02(): MutList[MutList[Int32, Static], Static] & Impure =
+        new MutList(Static)
+
+    @test
+    def testRegions0Regions1Nested03(): MutMap[Int32, MutMap[Int32, Int32, Static], Static] & Impure =
+        new MutMap(Static)
+
+    @test
+    def testRegions0Regions1Nested04(): Array[MutMap[Int32, Int32, Static], Static] & Impure =
+        []
+
+    @test
+    def testRegions0Regions1Nested05(): MutList[Array[Int32, Static], Static] & Impure =
+        new MutList(Static)
+
+    @test
+    def testRegions0Regions1Nested06(): MutMap[Int32, MutList[Int32, Static], Static] & Impure =
+        new MutMap(Static)
+
+    @test
+    def testRegions0Regions1Nested07(): Array[MutList[Int32, Static], Static] & Impure =
+        []
+
+    @test
+    def testRegions0Regions1Nested08(): MutList[MutMap[Int32, Int32, Static], Static] & Impure =
+        new MutList(Static)
+
+    @test
+    def testRegions0Regions1Nested09(): MutMap[Int32, Array[Int32, Static], Static] & Impure =
+        new MutMap(Static)
+
+    @test
     def testRegions1Region01(): Bool =
         region r {
             let a = [1; 8];
@@ -41,7 +77,7 @@ namespace Test/Exp/Regions {
         }
 
     @test
-    def testRegions2RegionsNested01(): Bool & Impure =
+    def testRegions2Regions01(): Bool & Impure =
         region _ {
             let a1 = [1; 8] @ Static;
             a1[0] == 1 and 1 ==
@@ -52,7 +88,7 @@ namespace Test/Exp/Regions {
         }
 
     @test
-    def testRegions2RegionsNested02(): Bool & Impure =
+    def testRegions2Regions02(): Bool & Impure =
         region _ {
             let l1 = new MutList(Static);
             MutList.push!(1, l1);
@@ -65,7 +101,7 @@ namespace Test/Exp/Regions {
         }
 
     @test
-    def testRegions2RegionsNested03(): Bool & Impure =
+    def testRegions2Regions03(): Bool & Impure =
         region _ {
             let m1 = new MutMap(Static);
             MutMap.put!(1, 1, m1);
@@ -77,7 +113,7 @@ namespace Test/Exp/Regions {
             }
         }
     @test
-    def testRegions2RegionsNested04(): Bool & Impure =
+    def testRegions2Regions04(): Bool & Impure =
         region r1 {
             let a1 = [1; 8] @ r1;
             a1[0] == 1 and 1 ==
@@ -88,7 +124,7 @@ namespace Test/Exp/Regions {
         }
 
     @test
-    def testRegions2RegionsNested05(): Bool & Impure =
+    def testRegions2Regions05(): Bool & Impure =
         region r1 {
             let l1 = new MutList(r1);
             MutList.push!(1, l1);
@@ -101,7 +137,7 @@ namespace Test/Exp/Regions {
         }
 
     @test
-    def testRegions2RegionsNested06(): Bool & Impure =
+    def testRegions2Regions06(): Bool & Impure =
         region r1 {
             let m1 = new MutMap(r1);
             MutMap.put!(1, 1, m1);
@@ -114,7 +150,7 @@ namespace Test/Exp/Regions {
         }
 
     @test
-    def testRegions2RegionsNested07(): Bool & Impure =
+    def testRegions2Regions07(): Bool & Impure =
         region _ {
             let a1 = [1; 8] @ Static;
             a1[0] == 1 and 1 ==
@@ -125,7 +161,7 @@ namespace Test/Exp/Regions {
         }
 
     @test
-    def testRegions2RegionsNested08(): Bool & Impure =
+    def testRegions2Regions08(): Bool & Impure =
         region _ {
             let l1 = new MutList(Static);
             MutList.push!(1, l1);
@@ -138,7 +174,7 @@ namespace Test/Exp/Regions {
         }
 
     @test
-    def testRegions2RegionsNested09(): Bool & Impure =
+    def testRegions2Regions09(): Bool & Impure =
         region _ {
             let m1 = new MutMap(Static);
             MutMap.put!(1, 1, m1);
@@ -151,7 +187,7 @@ namespace Test/Exp/Regions {
         }
 
     @test
-    def testRegions2RegionsNested10(): Bool =
+    def testRegions2Regions10(): Bool =
         region r1 {
             let a1 = [1; 8] @ r1;
             a1[0] == 1 and 1 ==
@@ -162,7 +198,7 @@ namespace Test/Exp/Regions {
         }
 
     @test
-    def testRegions2RegionsNested11(): Bool =
+    def testRegions2Regions11(): Bool =
         region r1 {
             let l1 = new MutList(r1);
             MutList.push!(1, l1);
@@ -175,7 +211,7 @@ namespace Test/Exp/Regions {
         }
 
     @test
-    def testRegions2RegionsNested12(): Bool =
+    def testRegions2Regions12(): Bool =
         region r1 {
             let m1 = new MutMap(r1);
             MutMap.put!(1, 1, m1);
@@ -188,7 +224,7 @@ namespace Test/Exp/Regions {
         }
 
     @test
-    def testRegions2RegionsNested13(): Bool =
+    def testRegions2Regions13(): Bool =
         region r1 {
             let a1 = [1; 8] @ r1;
             region r2 {
@@ -198,7 +234,7 @@ namespace Test/Exp/Regions {
         }
 
     @test
-    def testRegions2RegionsNested14(): Bool =
+    def testRegions2Regions14(): Bool =
         region r1 {
             let l1 = new MutList(r1);
 
@@ -211,7 +247,7 @@ namespace Test/Exp/Regions {
         }
 
     @test
-    def testRegions2RegionsNested15(): Bool =
+    def testRegions2Regions15(): Bool =
         region r1 {
             let m1 = new MutMap(r1);
             region r2 {
