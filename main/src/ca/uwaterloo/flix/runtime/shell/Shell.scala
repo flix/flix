@@ -28,12 +28,13 @@ import org.jline.reader.{EndOfFileException, LineReaderBuilder, UserInterruptExc
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
 import java.nio.file._
+import java.io.File
 import java.util.concurrent.Executors
 import java.util.logging.{Level, Logger}
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
-class Shell(initialPaths: List[Path], options: Options) {
+class Shell(source: Either[Path, Seq[File]], options: Options) {
 
   /**
     * The audience is always external.
@@ -41,14 +42,9 @@ class Shell(initialPaths: List[Path], options: Options) {
   private implicit val audience: Audience = Audience.External
 
   /**
-    * The executor service.
-    */
-  private val executorService = Executors.newSingleThreadExecutor()
-
-  /**
     * The mutable set of paths to load.
     */
-  private val sourcePaths = mutable.Set.empty[Path] ++ initialPaths
+  private val sourcePaths = mutable.Set.empty[Path]
 
   /**
     * The name of the current entry point.
@@ -61,11 +57,6 @@ class Shell(initialPaths: List[Path], options: Options) {
   private val fragments = mutable.Stack.empty[String]
 
   /**
-    * The set of changed sources.
-    */
-  private var changeSet: Set[Ast.Input] = Set.empty
-
-  /**
     * The Flix instance (the same instance is used for incremental compilation).
     */
   private val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
@@ -74,11 +65,6 @@ class Shell(initialPaths: List[Path], options: Options) {
     * The current compilation result (initialized on startup).
     */
   private var compilationResult: CompilationResult = _
-
-  /**
-    * The current watcher (if any).
-    */
-  private var watcher: WatcherThread = _
 
   /**
     * Continuously reads a line of input from the terminal, parses and executes it.
@@ -160,8 +146,6 @@ class Shell(initialPaths: List[Path], options: Options) {
   private def execute(cmd: Command)(implicit terminal: Terminal): Unit = cmd match {
     case Command.Nop => // nop
     case Command.Reload => execReload()
-    case Command.Watch => execWatch()
-    case Command.Unwatch => execUnwatch()
     case Command.Quit => execQuit()
     case Command.Help => execHelp()
     case Command.Praise => execPraise()
@@ -173,7 +157,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     * Reloads every source path.
     */
   private def execReload()(implicit terminal: Terminal): Validation[TypedAst.Root, CompilationMessage] = {
-    // Instantiate a fresh flix instance.
+
     this.flix.setOptions(options.copy(entryPoint = entryPoint))
 
     // Add each path to Flix.
@@ -215,38 +199,6 @@ class Shell(initialPaths: List[Path], options: Options) {
   }
 
   /**
-    * Watches source paths for changes.
-    */
-  private def execWatch()(implicit terminal: Terminal): Unit = {
-    // Check if the watcher is already initialized.
-    if (this.watcher != null) {
-      terminal.writer().println("Already watching for changes.")
-      return
-    }
-
-    // Compute the set of directories to watch.
-    val directories = sourcePaths.map(_.toAbsolutePath.getParent).toList
-
-    // Print debugging information.
-    terminal.writer().println("Watching Directories:")
-    for (directory <- directories) {
-      terminal.writer().println(s"  $directory")
-    }
-
-    this.watcher = new WatcherThread(directories)
-    this.watcher.start()
-  }
-
-  /**
-    * Unwatches source paths for changes.
-    */
-  private def execUnwatch()(implicit terminal: Terminal): Unit = {
-    this.watcher.interrupt()
-    this.watcher = null
-    terminal.writer().println("No longer watching for changes.")
-  }
-
-  /**
     * Exits the shell.
     */
   private def execQuit()(implicit terminal: Terminal): Unit = {
@@ -259,13 +211,11 @@ class Shell(initialPaths: List[Path], options: Options) {
   private def execHelp()(implicit terminal: Terminal): Unit = {
     val w = terminal.writer()
 
-    w.println("  Command       Arguments         Purpose")
+    w.println("  Command       Purpose")
     w.println()
-    w.println("  :reload :r                      Recompiles every source file.")
-    w.println("  :watch :w                       Watches all source files for changes.")
-    w.println("  :unwatch :uw                    Unwatches all source files for changes.")
-    w.println("  :quit :q                        Terminates the Flix shell.")
-    w.println("  :help :h :?                     Shows this helpful information.")
+    w.println("  :reload :r    Recompiles every source file.")
+    w.println("  :quit :q      Terminates the Flix shell.")
+    w.println("  :help :h :?   Shows this helpful information.")
     w.println()
   }
 
@@ -333,7 +283,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     * Reports unknown command.
     */
   private def execUnknown(s: String)(implicit terminal: Terminal): Unit = {
-    terminal.writer().println(s"Unknown command '$s'. Try `:run` or `:help'.")
+    terminal.writer().println(s"Unknown command '$s'. Try `:help'.")
   }
 
   /**
@@ -349,76 +299,5 @@ class Shell(initialPaths: List[Path], options: Options) {
       case Some(main) => main(Array.empty)
     }
   }
-
-  /**
-    * A thread to watch over changes in a collection of directories.
-    */
-  class WatcherThread(paths: List[Path])(implicit terminal: Terminal) extends Thread {
-
-    /**
-      * The minimum amount of time between runs of the compiler.
-      */
-    private val Delay: Long = 1000 * 1000 * 1000
-
-    // Initialize a new watcher service.
-    val watchService: WatchService = FileSystems.getDefault.newWatchService
-
-    // Register each directory.
-    for (path <- paths) {
-      if (Files.isDirectory(path)) {
-        path.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY)
-      }
-    }
-
-    override def run(): Unit = try {
-      // Record the last timestamp of a change.
-      var lastChanged = System.nanoTime()
-
-      // Loop until interrupted.
-      while (!Thread.currentThread().isInterrupted) {
-        // Wait for a set of events.
-        val watchKey = watchService.take()
-        // Iterate through each event.
-        val changed = mutable.ListBuffer.empty[Path]
-        for (event <- watchKey.pollEvents().asScala) {
-          // Check if a file with ".flix" extension changed.
-          val changedPath = event.context().asInstanceOf[Path]
-          if (changedPath.toString.endsWith(".flix")) {
-            changed += changedPath
-          }
-        }
-
-        if (changed.nonEmpty) {
-          // Update the change set.
-          changeSet = changed.map(Ast.Input.TxtFile).toSet
-
-          // Print information to the user.
-          terminal.writer().println()
-          terminal.writer().println(s"Recompiling. File(s) changed: ${changed.mkString(", ")}")
-          terminal.writer().print(prompt)
-          terminal.writer().flush()
-
-          // Check if sufficient time has passed since the last compilation.
-          val currentTime = System.nanoTime()
-          if ((currentTime - lastChanged) >= Delay) {
-            lastChanged = currentTime
-            // Allow a short delay before running the compiler.
-            Thread.sleep(50)
-            executorService.submit(new Runnable {
-              def run(): Unit = execReload()
-            })
-          }
-
-        }
-
-        // Reset the watch key.
-        watchKey.reset()
-      }
-    } catch {
-      case _: InterruptedException => // nop, shutdown.
-    }
-
-  }
-
 }
 

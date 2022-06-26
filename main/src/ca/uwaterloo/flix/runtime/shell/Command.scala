@@ -36,16 +36,6 @@ object Command {
   case object Reload extends Command
 
   /**
-    * Watches source paths for changes.
-    */
-  case object Watch extends Command
-
-  /**
-    * Unwatches source paths for changes.
-    */
-  case object Unwatch extends Command
-
-  /**
     * Terminates the shell.
     */
   case object Quit extends Command
@@ -91,18 +81,6 @@ object Command {
     //
     if (input == ":r" || input == ":reload")
       return Command.Reload
-
-    //
-    // Watch
-    //
-    if (input == ":watch" || input == ":w")
-      return Command.Watch
-
-    //
-    // Unwatch
-    //
-    if (input == ":unwatch" || input == ":uw")
-      return Command.Unwatch
 
     //
     // Quit
