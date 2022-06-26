@@ -599,7 +599,7 @@ namespace Nel {
     /// The sort implementation is a Quicksort.
     ///
     pub def sort(l: Nel[a]): Nel[a] with Order[a] = region r {
-        let list = (toArray(l, r) |> Array.sort |> Array.toList);
+        let list = (toArray(l, r) !> Array.sort! |> Array.toList);
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
@@ -615,7 +615,7 @@ namespace Nel {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, l: Nel[a]): Nel[a] with Order[b] = region r {
-        let list = (toArray(l, r) |> Array.sortBy(f) |> Array.toList);
+        let list = (toArray(l, r) !> Array.sortBy!(f) |> Array.toList);
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
@@ -631,7 +631,7 @@ namespace Nel {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, l: Nel[a]): Nel[a] = region r {
-        let list = (toArray(l, r) |> Array.sortWith(cmp) |> Array.toList);
+        let list = (toArray(l, r) !> Array.sortWith!(cmp) |> Array.toList);
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()

@@ -827,7 +827,7 @@ namespace Nec {
     /// The sort implementation is a Quicksort.
     ///
     pub def sort(c: Nec[a]): Nec[a] with Order[a] = region r {
-        let ans = (toArray(c, r) |> Array.sort |> fromArray);
+        let ans = (toArray(c, r) !> Array.sort! |> fromArray);
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()
@@ -843,7 +843,7 @@ namespace Nec {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, c: Nec[a]): Nec[a] with Order[b] = region r {
-        let ans = (toArray(c, r) |> Array.sortBy(f) |> fromArray);
+        let ans = (toArray(c, r) !> Array.sortBy!(f) |> fromArray);
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()
@@ -858,7 +858,7 @@ namespace Nec {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a, a) -> Comparison, c: Nec[a]): Nec[a] = region r {
-        let ans = (toArray(c, r) |> Array.sortWith(cmp) |> fromArray);
+        let ans = (toArray(c, r) !> Array.sortWith!(cmp) |> fromArray);
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()

@@ -1299,4 +1299,13 @@ namespace DelayList {
         loop(l, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
                                   // but the intermediate continuations are effect polymorphic.
 
+    ///
+    /// Shuffles `l` using the Fisher–Yates shuffle.
+    ///
+    pub def shuffle(rnd: Random.Random, l: DelayList[a]): DelayList[a] & Impure = region r {
+        let arr = toArray(l, r);
+        Array.shuffle(rnd, arr);
+        Array.toDelayList(arr)
+    }
+
 }
