@@ -1718,21 +1718,21 @@ namespace Array {
                 copy(arr, b, e) as Array[a, r2]
         }
 
-    ///
-    /// Returns an iterator over `a`.
-    ///
-    pub def toIterator(a: Array[a, r]): Iterator[a] & Impure =
-        let len = Array.length(a);
-        let copy = copyOfRange(0, len, a, Static);
-        let i = ref 0;
-        let done = () -> (deref i) >= len;
-        let next = () -> {
-            let j = deref i;
-            let x = copy[j];
-            i := j + 1;
-            x
-        };
-        Iterator(done, next)
+   ///
+   /// Returns an iterator over `a`.
+   ///
+   pub def toIterator(r1: Region[r1], a: Array[a, r2]): Iterator[a, r1] \ { Read(r2), Write(r1) } =
+       let len = Array.length(a);
+       let copy = copyOfRange(0, len, a, r1);
+       let i = ref 0 @ r1;
+       let done = () -> (deref i) >= len;
+       let next = () -> {
+           let j = deref i;
+           let x = copy[j];
+           i := j + 1;
+           x
+       };
+       Iterator(done, next)
 
     ///
     /// Shuffles `a` using the Fisher–Yates shuffle.

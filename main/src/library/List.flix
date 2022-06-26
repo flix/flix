@@ -102,8 +102,8 @@ instance Monoid[List[a]] {
 }
 
 instance Iterable[List] {
-    pub def iterator(t: List[a]): Iterator[a] & Impure =
-        List.toIterator(t)
+    pub def iterator(t: List[a]): StaticIterator[a] & Impure =
+        List.toStaticIterator(t)
 }
 
 namespace List {
@@ -1322,25 +1322,14 @@ namespace List {
     ///
     /// Returns an iterator over `l`.
     ///
-    pub def toIterator(l: List[a]): Iterator[a] & Impure =
-        let cursor = ref l;
-        let done = () -> match (deref cursor) {
-            case Nil => true
-            case _   => false
-        };
-        let next = () -> match (deref cursor) {
-            case Nil     => bug!("Empty Iterator!")
-            case x :: xs => {
-                cursor := xs;
-                x
-            }
-        };
-        Iterator(done, next)
+    pub def toStaticIterator(l: List[a]): StaticIterator[a] & Impure =
+        let Iterator(done, next) = toIterator(Static, l);
+        StaticIterator(done, next)
 
     ///
     /// Returns an iterator over `l`.
     ///
-    pub def toRegionIterator(r: Region[r], l: List[a]): RegionIterator[a, r] \ Write(r) =
+    pub def toIterator(r: Region[r], l: List[a]): Iterator[a, r] \ Write(r) =
         let cursor = ref l @ r;
         let done = () -> match (deref cursor) {
             case Nil => true
@@ -1352,7 +1341,7 @@ namespace List {
                 cursor := xs;
                 x
         };
-        RegionIterator(done, next)
+        Iterator(done, next)
 
     ///
     /// Returns the association list `l` as a `DelayMap`.
