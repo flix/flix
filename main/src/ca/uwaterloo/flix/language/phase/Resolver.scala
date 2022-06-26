@@ -383,18 +383,18 @@ object Resolver {
     * Performs name resolution on the given spec `s0` in the given namespace `ns0`.
     */
   def resolveSpec(s0: NamedAst.Spec, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
-    case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, retTpe0, purAndEff0, loc) =>
+    case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, tpe0, purAndEff0, tconstrs0, loc) =>
 
       val tparams = resolveTypeParams(tparams0, ns0, root)
       val fparamsVal = resolveFormalParams(fparams0, taenv, ns0, root)
       val annVal = traverse(ann0)(visitAnnotation(_, taenv, ns0, root))
-      val schemeVal = resolveScheme(sc0, taenv, ns0, root)
-      val retTpeVal = resolveType(retTpe0, taenv, ns0, root)
+      val tpeVal = resolveType(tpe0, taenv, ns0, root)
       val purAndEffVal = resolvePurityAndEffect(purAndEff0, taenv, ns0, root)
+      val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, taenv, ns0, root))
 
-      mapN(fparamsVal, annVal, schemeVal, retTpeVal, purAndEffVal) {
-        case (fparams, ann, scheme, retTpe, purAndEff) =>
-          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, retTpe, purAndEff, loc)
+      mapN(fparamsVal, annVal, tpeVal, purAndEffVal, tconstrsVal) {
+        case (fparams, ann, tpe, purAndEff, tconstrs) =>
+          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc)
       }
   }
 

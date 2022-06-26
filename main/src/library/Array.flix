@@ -180,13 +180,13 @@ namespace Array {
     ///
     @Time(length(a) + length(b)) @Space(length(a) + length(b))
     pub def append(a: Array[a, r1], b: Array[a, r2]): Array[a, r1] \ { Read(r2), Write(r1) } =
+        let r1 = Scoped.regionOf(a);
         let len1 = length(a);
         let len2 = length(b);
         if (len1 == 0)
-            copyOfRange(0, len2, b, Scoped.regionOf(a))
+            copyOfRange(0, len2, b, r1)
         else {
-            let out = new(a[0], len1 + len2, Scoped.regionOf(a));
-            updateSequence!(0, a, out);
+            let out = copyOfRange(0, len1 + len2, a, r1);
             updateSequence!(len1, b, out);
             out
         }
@@ -435,7 +435,8 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def flatMap(f: a -> Array[b, r] & ef, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        init(i -> f(a[i]), len, Scoped.regionOf(a)) |> flatten
+        let r = Scoped.regionOf(a);
+        init(i -> f(a[i]), len, r) |> flatten
 
     ///
     /// Returns the reverse of `a`.
@@ -489,8 +490,9 @@ namespace Array {
     ///
     def rotateLeftHelper(n: Int32, arr: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
         let len = length(arr);
+        let r = Scoped.regionOf(arr);
         let f = i -> { let i1 = n + i; arr[i1 rem len] };
-        init(f, len, Scoped.regionOf(arr))
+        init(f, len, r)
 
     ///
     /// Rotate the contents of array `arr` by `n` steps to the right.
@@ -514,10 +516,11 @@ namespace Array {
     ///
     def rotateRightHelper(n: Int32, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
         let len = length(a);
+        let r = Scoped.regionOf(a);
         let n1 = n rem len;
         let start = len - n1;
         let f = i -> { let i1 = start + i; a[i1 rem len]};
-        init(f, len, Scoped.regionOf(a))
+        init(f, len, r)
 
     ///
     /// Returns a copy of `a` with the element at index `i` replaced by `x`.
@@ -526,8 +529,10 @@ namespace Array {
     ///
     @Time(length(a)) @Space(length(a))
     pub def update(i: Int32, x: a, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
+        let len = length(a);
+        let r = Scoped.regionOf(a);
         let f = ix -> if (ix == i) x else a[ix];
-        init(f, length(a), Scoped.regionOf(a))
+        init(f, len, r)
 
     ///
     /// Returns a copy of `a` with every occurrence of `from` replaced by `to`.
@@ -553,8 +558,9 @@ namespace Array {
     @Time(n) @Space(length(b))
     pub def patch(i: Int32, n: Int32, a: Array[a, r1], b: Array[a, r2]): Array[a, r2] \ { Read(r1, r2), Write(r2) } =
         let len1 = length(a);
+        let r2 = Scoped.regionOf(b);
         let size = if (n > len1) len1 else n;
-        let sub = copyOfRange(0, size, a, Scoped.regionOf(b));
+        let sub = copyOfRange(0, size, a, r2);
         updateSequence(i, sub, b)
 
     ///
@@ -567,8 +573,9 @@ namespace Array {
     @Time(n) @Space(1)
     pub def patch!(i: Int32, n: Int32, a: Array[a, r1], b: Array[a, r2]): Unit \ { Read(r1), Write(r2) } =
         let len1 = length(a);
+        let r2 = Scoped.regionOf(b);
         let size = if (n > len1) len1 else n;
-        let sub = copyOfRange(0, size, a, Scoped.regionOf(b));
+        let sub = copyOfRange(0, size, a, r2);
         updateSequence!(i, sub, b)
 
     ///
@@ -593,14 +600,15 @@ namespace Array {
     ///
     @Time(length(arrs)) @Space(length(arrs))
     pub def intercalate(sep: Array[a, r], arrs: Array[Array[a, r], r]): Array[a, r] \ { Read(r), Write(r) } =
+        let r = Scoped.regionOf(arrs);
         let count = length(arrs);
         let sepLength = length(sep);
         let sepCount = if (count < 2) 0 else count - 1;
         let len = sumLengths(arrs) + (sepCount * sepLength);
         match headArrays(arrs) {
-            case None    => [] @ Scoped.regionOf(arrs)
+            case None    => [] @ r
             case Some(x) =>
-                let out = new(x, len, Scoped.regionOf(arrs));
+                let out = new(x, len, r);
                 let overwrite = { (st, a) ->
                     let (pos,i) = st;
                     if (i == 0) {
@@ -893,10 +901,11 @@ namespace Array {
     @Time(length(arrs)) @Space(length(arrs))
     pub def flatten(arrs: Array[Array[a, r], r]) : Array[a, r] \ { Read(r), Write(r) } =
         let len = sumLengths(arrs);
+        let r = Scoped.regionOf(arrs);
         match headArrays(arrs) {
-            case None => [] @ Scoped.regionOf(arrs)
+            case None => [] @ r
             case Some(x) => {
-                let out = new(x, len, Scoped.regionOf(arrs));
+                let out = new(x, len, r);
                 foldLeft((pos, a) -> arrayWrites(pos, a, out), 0, arrs);
                 out
             }
@@ -1197,7 +1206,8 @@ namespace Array {
     @Time(Int32.min(length(a), length(b))) @Space(Int32.min(length(a), length(b)))
     pub def zip(a: Array[a, r1], b: Array[b, r2]): Array[(a, b), r2] \ { Read(r1, r2), Write(r2) } =
         let len = Int32.min(length(a), length(b));
-        init(i -> (a[i], b[i]), len, Scoped.regionOf(b))
+        let r2 = Scoped.regionOf(b);
+        init(i -> (a[i], b[i]), len, r2)
 
     ///
     /// Returns an array where the element at index `i` is `f(x, y)` where
@@ -1208,7 +1218,8 @@ namespace Array {
     @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f) * Int32.min(length(a), length(b)))
     pub def zipWith(f: (a, b) -> c & ef, a: Array[a, r1], b: Array[b, r2]): Array[c, r2] \ { ef, Read(r1, r2), Write(r2) } =
         let len = Int32.min(length(a), length(b));
-        init(i -> f(a[i], b[i]), len, Scoped.regionOf(b))
+        let r2 = Scoped.regionOf(b);
+        init(i -> f(a[i], b[i]), len, r2)
 
     ///
     /// Returns a pair of arrays, the first containing all first components in `a`
@@ -1312,7 +1323,8 @@ namespace Array {
         let minCap = MutList.minCapacity();
         let len = length(a);
         let c = Order.max(len, minCap);
-        MutList(ref copyOfRange(0, c, a, r2) @ r2, ref len @ r2)
+        let copy = copyOfRange(0, c, a, r2);
+        MutList(ref copy @ r2, ref len @ r2)
 
     ///
     /// Alias for `findIndexOfLeft`.
@@ -1366,7 +1378,8 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def findIndices(f: a -> Bool & ef, a: Array[a, r]): Array[Int32, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        let l = new MutList(Scoped.regionOf(a));
+        let r = Scoped.regionOf(a);
+        let l = new MutList(r);
         def loop(i) = {
             if (i >= len)
                 ()
@@ -1376,7 +1389,7 @@ namespace Array {
             }
         };
         loop(0);
-        MutList.toArray(l, Scoped.regionOf(a))
+        MutList.toArray(l, r)
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.
@@ -1424,7 +1437,7 @@ namespace Array {
         }
 
     ///
-    /// Returns `true` if arrays `a` and `b` have the same elements, i.e. are structurally equal.
+    /// Returns `true` if arrays `a` and `b` have the same elements in the same order, i.e. are structurally equal.
     ///
     @Time(length(a)) @Space(1)
     pub def sameElements(a: Array[a, r1], b: Array[a, r2]): Bool \ Read(r1, r2) with Eq[a] =
@@ -1433,11 +1446,10 @@ namespace Array {
         def loop(i) = {
             if (i >= alen)
                 true
+            else if (a[i] != b[i])
+                false
             else
-                if (a[i] != b[i])
-                    false
-                else
-                    loop(i + 1)
+                loop(i + 1)
         };
         if (alen == blen)
             loop(0)
@@ -1458,10 +1470,7 @@ namespace Array {
                 loop(i + 1)
             }
         };
-        if (len < 1)
-            ()
-        else
-            loop(0)
+        loop(0)
 
     ///
     /// Apply the effectful function `f` to all the elements in the array `a`.
@@ -1477,10 +1486,7 @@ namespace Array {
                 loop(i + 1)
             }
         };
-        if (len < 1)
-            ()
-        else
-            loop(0)
+        loop(0)
 
     ///
     /// Returns a copy of `a` with the elements starting at index `i` replaced by `sub`.
@@ -1489,7 +1495,9 @@ namespace Array {
     pub def updateSequence(i: Int32, sub: Array[a, r1], a: Array[a, r2]): Array[a, r2] \ { Read(r1, r2), Write(r2) } =
         let end = i + length(sub);
         let f = ix -> if (ix >= i and ix < end) sub[ix - i] else a[ix];
-        init(f, length(a), Scoped.regionOf(a))
+        let len = length(a);
+        let r2 = Scoped.regionOf(a);
+        init(f, len, r2)
 
     ///
     /// Update the mutable array `a` with the elements starting at index `i` replaced by `sub`.
@@ -1556,7 +1564,8 @@ namespace Array {
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
         let len = length(a);
-        let b = copyOfRange(0, len, a, Scoped.regionOf(a));
+        let r = Scoped.regionOf(a);
+        let b = copyOfRange(0, len, a, r);
         sortWith!(cmp, b);
         b
 
@@ -1709,33 +1718,35 @@ namespace Array {
                 copy(arr, b, e) as Array[a, r2]
         }
 
-   ///
-   /// Returns an iterator over `a`.
-   ///
-   pub def toIterator(a: Array[a, r]): Iterator[a] & Impure =
-       let len = Array.length(a);
-       let copy = copyOfRange(0, len, a, Static);
-       let i = ref 0;
-       let done = () -> (deref i) >= len;
-       let next = () -> {
-           let j = deref i;
-           let x = copy[j];
-           i := j + 1;
-           x
-       };
-       Iterator(done, next)
+    ///
+    /// Returns an iterator over `a`.
+    ///
+    pub def toIterator(a: Array[a, r]): Iterator[a] & Impure =
+        let len = Array.length(a);
+        let copy = copyOfRange(0, len, a, Static);
+        let i = ref 0;
+        let done = () -> (deref i) >= len;
+        let next = () -> {
+            let j = deref i;
+            let x = copy[j];
+            i := j + 1;
+            x
+        };
+        Iterator(done, next)
 
     ///
     /// Shuffles `a` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(r: Random.Random, a: Array[a, r]): Unit & Impure =
+    pub def shuffle(rnd: Random.Random, a: Array[a, r]): Unit & Impure =
         let len = Array.length(a);
         def loop(i) = {
             if (i > 0) {
-                let j = Random.nextNatWithMax(r, i + 1);
+                let j = Random.nextNatWithMax(rnd, i + 1);
                 Array.swap!(i, j, a);
                 loop(i - 1)
-            } else ()
+            }
+            else
+                ()
         };
         loop(len - 1)
 
