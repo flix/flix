@@ -209,6 +209,24 @@ namespace TestFoldable {
         let xs = 1 :: 2 :: 3 :: 4 :: 5 :: Nil;
         runLogger(Foldable.foreachM(tell, xs)) == (1 :: 2 :: 3 :: 4 :: 5 :: Nil, ())
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toChain                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toChain01(): Bool =
+        Foldable.toChain(Nil: List[Int32]) == Chain.empty(): Chain[Int32]
+
+    @test
+    def toChain02(): Bool =
+        Foldable.toChain(1 :: 2 :: Nil) == List.toChain(1 :: 2 :: Nil)
+
+    @test
+    def toChain03(): Bool =
+        Foldable.toChain(Set#{0, 1, 2, 3, 4}) == List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: Nil)
+
+
     /////////////////////////////////////////////////////////////////////////////
     // toMapWith                                                               //
     /////////////////////////////////////////////////////////////////////////////

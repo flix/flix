@@ -190,6 +190,12 @@ pub class Foldable[t : Type -> Type] with ForEach[t] {
         Foldable.foldRight((x, acc) -> Some(Option.foldLeft((v, z) -> f(v, z), x, acc)), None, t)
 
     ///
+    /// Returns `t` as a chain.
+    ///
+    pub def toChain(t: t[a]): Chain[a] =
+        Foldable.foldLeft(Chain.snoc, Chain.empty(), t)
+
+    ///
     /// Returns `t` as an immutable list.
     ///
     pub def toList(t: t[a]): List[a] =
