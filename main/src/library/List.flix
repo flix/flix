@@ -1200,7 +1200,7 @@ namespace List {
     /// The sort implementation is a Quicksort.
     ///
     pub def sort(l: List[a]): List[a] with Order[a] = region r {
-        toArray(l, r) |> Array.sort |> Array.toList
+        toArray(l, r) !> Array.sort! |> Array.toList
     }
 
     /// Sort list `l` so that elements are ordered from low to high according to the `Order` instance
@@ -1211,7 +1211,7 @@ namespace List {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, l: List[a]): List[a] with Order[b] = region r {
-        toArray(l, r) |> Array.sortBy(f) |> Array.toList
+        toArray(l, r) !> Array.sortBy!(f) |> Array.toList
     }
 
     ///
@@ -1222,7 +1222,7 @@ namespace List {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, l: List[a]): List[a] = region r {
-        toArray(l, r) |> Array.sortWith(cmp) |> Array.toList
+        toArray(l, r) !> Array.sortWith!(cmp) |> Array.toList
     }
 
     ///
@@ -1409,5 +1409,14 @@ namespace List {
             case (Nil    , Nil    ) => k(Nil)
         };
         loop(l1, l2, identity)
+
+    ///
+    /// Shuffles `l` using the Fisher–Yates shuffle.
+    ///
+    pub def shuffle(rnd: Random.Random, l: List[a]): List[a] & Impure = region r {
+        let arr = toArray(l, r);
+        Array.shuffle(rnd, arr);
+        Array.toList(arr)
+    }
 
 }

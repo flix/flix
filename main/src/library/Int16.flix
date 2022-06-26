@@ -102,7 +102,7 @@ namespace Int16 {
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     @Time(1) @Space(1)
-    pub def logicalRightShift(x: Int16, distance: Int32): Int16 =
+    pub def logicalRightShift(distance: Int32, x: Int16): Int16 =
         if (x < 0i16 and distance rem 32 != 0)
             ((x >>> 1) &&& maxValue()) >>> (distance - 1)
         else
@@ -114,9 +114,9 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def bitCount(x: Int16): Int32 = {
-        if      (x == 0i16)         0
-        else if (x rem 2i16 != 0i16)  bitCount(logicalRightShift(x, 1)) + 1
-        else                        bitCount(logicalRightShift(x, 1))
+        if      (x == 0i16)          0
+        else if (x rem 2i16 != 0i16) bitCount(logicalRightShift(1, x)) + 1
+        else                         bitCount(logicalRightShift(1, x))
     }
 
     ///
@@ -124,20 +124,20 @@ namespace Int16 {
     /// binary representation of `x` right by `distance` bits.
     ///
     @Time(1) @Space(1)
-    pub def rotateRight(x: Int16, distance: Int32): Int16 =
+    pub def rotateRight(distance: Int32, x: Int16): Int16 =
         let rem = distance rem size();
         let rot = if (rem >= 0) rem else rem + size();
-        (logicalRightShift(x, rot)) ||| (x <<< (size() - rot))
+        (logicalRightShift(rot, x)) ||| (x <<< (size() - rot))
 
     ///
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` left by `distance` bits.
     ///
     @Time(1) @Space(1)
-    pub def rotateLeft(x: Int16, distance: Int32): Int16 =
+    pub def rotateLeft(distance: Int32, x: Int16): Int16 =
         let rem = distance rem size();
         let rot = if (rem >= 0) rem else rem + size();
-        (logicalRightShift(x, size() - rot)) ||| (x <<< rot)
+        (logicalRightShift(size() - rot, x)) ||| (x <<< rot)
 
     ///
     /// Returns the value obtained by reversing the bits in the
@@ -155,9 +155,9 @@ namespace Int16 {
     ///
     /// Helper function for `reverse`.
     ///
-    def swap(x: Int16, l: Int32, r: Int32): Int16 = match (getBit(x, l), getBit(x, r)) {
-        case (1, 0) => clearBit(setBit(x, r), l)
-        case (0, 1) => clearBit(setBit(x, l), r)
+    def swap(x: Int16, l: Int32, r: Int32): Int16 = match (getBit(l, x), getBit(r, x)) {
+        case (1, 0) => clearBit(l, setBit(r, x))
+        case (0, 1) => clearBit(r, setBit(l, x))
         case _ => x
     }
 
@@ -189,7 +189,7 @@ namespace Int16 {
     def oneBitPositionHelper(x: Int16, position: Int32, delta: Int32): Int32 = {
         if      (position < 0)              -1
         else if (position > (size() - 1))   -1
-        else if (getBit(x, position) == 1)  position
+        else if (getBit(position, x) == 1)  position
         else if (delta == 0)                -1
         else                                oneBitPositionHelper(x, position + delta, delta)
     }
@@ -244,7 +244,7 @@ namespace Int16 {
     /// The bits of x have positions: 0 (rightmost bit) - 15 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def getBit(x: Int16, position: Int32): Int32 =
+    pub def getBit(position: Int32, x: Int16): Int32 =
         if ((x >>> position) rem 2i16 == 0i16) 0 else 1
 
     ///
@@ -253,7 +253,7 @@ namespace Int16 {
     /// The bits of x have positions: 0 (rightmost bit) - 15 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def setBit(x: Int16, position: Int32): Int16 = x ||| (1i16 <<< position)
+    pub def setBit(position: Int32, x: Int16): Int16 = x ||| (1i16 <<< position)
 
     ///
     /// Returns `x` with the bit at position `position` cleared (to 0).
@@ -261,7 +261,7 @@ namespace Int16 {
     /// The bits of x have positions: 0 (rightmost bit) - 15 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def clearBit(x: Int16, position: Int32): Int16 = x &&& ~~~(1i16 <<< position)
+    pub def clearBit(position: Int32, x: Int16): Int16 = x &&& ~~~(1i16 <<< position)
 
     ///
     /// Returns `x` with the bit at position `position` flipped.
@@ -269,7 +269,7 @@ namespace Int16 {
     /// The bits of x have positions: 0 (rightmost bit) - 15 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def flipBit(x: Int16, position: Int32): Int16 = x ^^^ (1i16 <<< position)
+    pub def flipBit(position: Int32, x: Int16): Int16 = x ^^^ (1i16 <<< position)
 
     ///
     /// Returns the integer binary logarithm of `x`.
@@ -281,7 +281,7 @@ namespace Int16 {
             0i16
         } else {
             let position = highestOneBitPosition(x);
-            Int32.clampToInt16(position, 0i16, Int16.maxValue())
+            Int32.clampToInt16(min = 0i16, max = Int16.maxValue(), position)
         }
 
     ///
@@ -385,26 +385,26 @@ namespace Int16 {
     ///
     /// Helper function for the `clamp` conversion function.
     ///
-    def clamp(x: Int16, minimum: Int16, maximum: Int16): Int16 =
-        if (x < minimum)
-             minimum
+    def clamp(min: {min :: Int16}, max: {max :: Int16}, x: Int16): Int16 =
+        if (x < min.min)
+             min.min
         else
-            if (x > maximum)
-                maximum
+            if (x > max.max)
+                max.max
             else
                 x
 
     ///
     /// Convert `x` to an `Int8`.
     ///
-    /// Returns `x` clamped within the Int8 range `minimum` to `maximum`.
+    /// Returns `x` clamped within the Int8 range `min` to `max`.
     ///
     @Time(1) @Space(1)
-    pub def clampToInt8(x: Int16, minimum: Int8, maximum: Int8): Int8 =
+    pub def clampToInt8(min: {min :: Int8}, max: {max :: Int8}, x: Int16): Int8 =
         import static java.lang.Short.valueOf(Int16): ##java.lang.Short & Pure;
         import java.lang.Short.byteValue(): Int8 & Pure;
-        let mini16 = Int8.toInt16(minimum);
-        let maxi16 = Int8.toInt16(maximum);
-        (valueOf(clamp(x, mini16, maxi16)) |> byteValue)
+        let mini16 = Int8.toInt16(min.min);
+        let maxi16 = Int8.toInt16(max.max);
+        (valueOf(clamp(min = mini16, max = maxi16, x)) |> byteValue)
 
 }

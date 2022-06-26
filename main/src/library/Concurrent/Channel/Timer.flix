@@ -82,6 +82,6 @@ namespace Concurrent/Channel/Timer {
         } else {
             let millis = ns  /  1_000_000i64;
             let nanos  = ns mod 1_000_000i64;
-            sleep(millis, Int64.clampToInt32(nanos, 0i32, 1_000_000i32)); c <- ()
+            sleep(millis, Int64.clampToInt32(min = 0i32, max = 1_000_000i32, nanos)); c <- ()
         }
 }
