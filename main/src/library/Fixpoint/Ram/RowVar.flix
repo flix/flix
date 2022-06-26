@@ -15,6 +15,8 @@
  */
 
 namespace Fixpoint/Ram {
+
+    @Internal
     pub enum RowVar with Eq {
         case Named(String)
         case Index(Int32)
