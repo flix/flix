@@ -488,6 +488,44 @@ namespace Test/Exp/Regions {
         }
 
     @test
+    def testRegions2Regions1Nested04(): Bool =
+        region r1 {
+            region r2 {
+                let a: Array[MutMap[Int32, Int32, r1], r2] = [new MutMap(r1); 8] @ r2;
+                MutMap.put!(1, 1, a[0]);
+                MutMap.get(1, a[0]) == Some(1)
+            }
+        }
+
+    @test
+    def testRegions2Regions1Nested05(): Bool =
+        region r1 {
+            region r2 {
+                let l: MutList[Array[Int32, r1], r2] = new MutList(r2);
+                MutList.push!([1; 8] @ r1, l);
+                match MutList.pop!(l) {
+                    case Some(a) => a[0] == 1
+                    case _       => unreachable!()
+                }
+            }
+        }
+
+    @test
+    def testRegions2Regions1Nested06(): Bool =
+        region r1 {
+            let l = new MutList(r1);
+            region r2 {
+                let m: MutMap[Int32, MutList[Int32, r1], r2] = new MutMap(r2);
+                MutList.push!(1, l);
+                MutMap.put!(1, l, m);
+                match MutMap.get(1, m) {
+                    case Some(k) => MutList.get(0, k) == 1
+                    case _       => unreachable!()
+                }
+            } and MutList.get(0, l) == 1
+        }
+
+    @test
     def testRegions0RegionsReferences01(): Ref[Array[Int32, Static], Static] & Impure =
         ref []
 
