@@ -920,4 +920,13 @@ namespace MutList {
         let MutList(a, l) = v;
         Array.sortWithin!(cmp, 0, (deref l) - 1, deref a)
 
+    ///
+    /// Shuffles `v` using the Fisher–Yates shuffle.
+    ///
+    pub def shuffle(rnd: Random.Random, v: MutList[a, r1], r1: Region[r1]): MutList[a, r1] & Impure \ { Read(r1), Write(r1) } = region r2 {
+        let arr = toArray(v, r2);
+        Array.shuffle(rnd, arr);
+        Array.toMutList(arr, r1)
+    }
+
 }
