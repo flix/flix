@@ -79,6 +79,8 @@ object SimpleType {
 
   case object Region extends SimpleType
 
+  case object Empty extends SimpleType
+
   //////////
   // Records
   //////////
@@ -210,7 +212,7 @@ object SimpleType {
   /**
     * A function with an effect.
     */
-  case class PolyArrow(arg: SimpleType, eff: SimpleType, ret: SimpleType) extends SimpleType
+  case class PolyArrow(arg: SimpleType, pur: SimpleType, eff: SimpleType, ret: SimpleType) extends SimpleType
 
   ///////
   // Tags
@@ -306,19 +308,24 @@ object SimpleType {
         args match {
           // Case 1: No args. Fill everything with a hole.
           case Nil =>
-            val lastArrow: SimpleType = PolyArrow(Hole, Hole, Hole)
+            val lastArrow: SimpleType = PolyArrow(Hole, Hole, Hole, Hole)
             // NB: safe to subtract 2 since arity is always at least 2
             List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow)
-          // Case 2: Pure function.
-          case True :: tpes =>
+          // Case 2: Only applied to purity but not effect
+          case pur :: Nil =>
+            val lastArrow: SimpleType = PolyArrow(Hole, pur, Hole, Hole)
+            // NB: safe to subtract 2 since arity is always at least 2
+            List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow)
+          // Case 3: Pure function.
+          case True :: Empty :: tpes =>
             // NB: safe to reduce because arity is always at least 2
             tpes.padTo(arity, Hole).reduceRight(PureArrow)
           // Case 3: Impure function.
-          case eff :: tpes =>
+          case pur :: eff :: tpes =>
             // NB: safe to take last 2 because arity is always at least 2
             val allTpes = tpes.padTo(arity, Hole)
             val List(lastArg, ret) = allTpes.takeRight(2)
-            val lastArrow: SimpleType = PolyArrow(lastArg, eff, ret)
+            val lastArrow: SimpleType = PolyArrow(lastArg, pur, eff, ret)
             allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
         }
 
