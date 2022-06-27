@@ -245,7 +245,7 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def getBit(pos: {pos :: Int32}, x: Int16): Int32 =
-        if ((x >>> position) rem 2i16 == 0i16) 0 else 1
+        if ((x >>> pos.pos) rem 2i16 == 0i16) 0 else 1
 
     ///
     /// Returns `x` with the bit at position `pos` set (to 1).
