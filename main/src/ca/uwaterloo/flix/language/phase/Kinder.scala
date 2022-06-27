@@ -100,7 +100,7 @@ object Kinder {
     * Performs kinding on the given enum.
     */
   private def visitEnum(enum0: ResolvedAst.Enum, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Enum, KindError] = enum0 match {
-    case ResolvedAst.Enum(doc, ann, mod, sym, tparams0, derives, cases0, tpeDeprecated0, sc0, loc) =>
+    case ResolvedAst.Enum(doc, ann, mod, sym, tparams0, derives, cases0, tpeDeprecated0, loc) =>
       val kenv = getKindEnvFromTypeParamsDefaultStar(tparams0)
 
       val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv))
@@ -111,10 +111,9 @@ object Kinder {
         }
       }
       val tpeDeprecatedVal = visitType(tpeDeprecated0, Kind.Star, kenv, Map.empty, taenv, root)
-      val scVal = visitScheme(sc0, kenv, Map.empty, taenv, root)
 
-      mapN(annVal, tparamsVal, casesVal, tpeDeprecatedVal, scVal) {
-        case (ann, tparams, cases, tpeDeprecated, sc) => KindedAst.Enum(doc, ann, mod, sym, tparams, derives, cases.toMap, tpeDeprecated, sc, loc)
+      mapN(annVal, tparamsVal, casesVal, tpeDeprecatedVal) {
+        case (ann, tparams, cases, tpeDeprecated) => KindedAst.Enum(doc, ann, mod, sym, tparams, derives, cases.toMap, tpeDeprecated, loc)
       }
   }
 
@@ -1355,7 +1354,7 @@ object Kinder {
     * Gets the kind of the enum.
     */
   private def getEnumKind(enum0: ResolvedAst.Enum)(implicit flix: Flix): Kind = enum0 match {
-    case ResolvedAst.Enum(_, _, _, _, tparams, _, _, _, _, _) =>
+    case ResolvedAst.Enum(_, _, _, _, tparams, _, _, _, _) =>
       val kenv = getKindEnvFromTypeParamsDefaultStar(tparams)
       tparams.tparams.foldRight(Kind.Star: Kind) {
         case (tparam, acc) => kenv.map(tparam.sym) ->: acc
