@@ -90,6 +90,7 @@ object Monomorph {
             Type.True
         case Type.KindedVar(sym, _) if sym.kind == Kind.RecordRow => Type.RecordRowEmpty
         case Type.KindedVar(sym, _) if sym.kind == Kind.SchemaRow => Type.SchemaRowEmpty
+        case Type.KindedVar(sym, _) if sym.kind == Kind.Effect => Type.Empty
         case _ => Type.Unit
       }
     }
@@ -200,7 +201,7 @@ object Monomorph {
         val body = specialize(defn.impl.exp, env0, subst, def2def, defQueue)
 
         // Specialize the inferred scheme
-        val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), body.pur, body.tpe, sym.loc.asSynthetic)
+        val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), body.pur, Type.freshVar(Kind.Effect, body.loc.asSynthetic), body.tpe, sym.loc.asSynthetic) // TODO use eff
         val tvars = base.typeVars.map(_.sym).toList
         val tconstrs = Nil // type constraints are not used after monomorph
         val scheme = Scheme(tvars, tconstrs, base)
@@ -945,13 +946,15 @@ object Monomorph {
     * Flix does not erase normal types, but it does erase Boolean formulas.
     */
   private def eraseType(tpe: Type)(implicit flix: Flix): Type = tpe match {
-    case Type.KindedVar(_, loc) =>
+    case Type.KindedVar(_, loc) if tpe.kind == Kind.Bool =>
       if (flix.options.xstrictmono)
         throw UnexpectedNonConstBool(tpe, loc)
       else {
         // TODO: We should return Type.ErasedBool or something.
         Type.True
       }
+
+    case Type.KindedVar(_, _) if tpe.kind == Kind.Effect => Type.Empty // TODO UnexpectedNonConstEffect?
 
     case Type.Cst(_, _) => tpe
 

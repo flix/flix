@@ -518,6 +518,7 @@ object SimpleType {
 
       case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Region => mkApply(Region, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.Empty => SimpleType.Empty
       case _: TypeConstructor.UnappliedAlias => throw InternalCompilerException("Unexpected unapplied alias.")
     }
   }

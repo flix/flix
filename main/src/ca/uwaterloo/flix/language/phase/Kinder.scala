@@ -315,7 +315,7 @@ object Kinder {
       mapN(annVal, tparamsVal, fparamsVal, tpeVal, purAndEffVal, tconstrsVal) {
         case (ann, tparams, fparams, tpe, (pur, eff), tconstrs) =>
           val allQuantifiers = quantifiers ::: tparams.map(_.sym)
-          val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), pur, tpe, tpe.loc)
+          val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), pur, eff, tpe, tpe.loc)
           val sc = Scheme(allQuantifiers, tconstrs, base)
           KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, pur, eff, loc)
       }
