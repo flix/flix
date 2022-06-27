@@ -946,15 +946,13 @@ object Monomorph {
     * Flix does not erase normal types, but it does erase Boolean formulas.
     */
   private def eraseType(tpe: Type)(implicit flix: Flix): Type = tpe match {
-    case Type.KindedVar(_, loc) if tpe.kind == Kind.Bool =>
+    case Type.KindedVar(_, loc) =>
       if (flix.options.xstrictmono)
         throw UnexpectedNonConstBool(tpe, loc)
       else {
         // TODO: We should return Type.ErasedBool or something.
         Type.True
       }
-
-    case Type.KindedVar(_, _) if tpe.kind == Kind.Effect => Type.Empty // TODO UnexpectedNonConstEffect?
 
     case Type.Cst(_, _) => tpe
 
