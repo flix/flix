@@ -148,7 +148,10 @@ namespace Fixpoint {
     def prefixHelper(i: Int32, prefix: List[BoolExp[v]], rest: List[BoolExp[v]], eqs: List[List[BoolExp[v]]]): (List[BoolExp[v]], List[BoolExp[v]]) =
         match eqs {
             case e :: es =>
-                let (p, r) = List.partition(match BoolExp.Eq(RamTerm.RowLoad(_, j), _) -> i == j, e);
+                let (p, r) = List.partition(be -> match be {
+                    case BoolExp.Eq(RamTerm.RowLoad(_, j), _) => i == j
+                    case _ => ???
+                }, e);
                 prefixHelper(i + 1, prefix ::: p, rest ::: r, es)
             case Nil => (prefix, rest)
         }
