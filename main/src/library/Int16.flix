@@ -155,9 +155,9 @@ namespace Int16 {
     ///
     /// Helper function for `reverse`.
     ///
-    def swap(x: Int16, l: Int32, r: Int32): Int16 = match (getBit(l, x), getBit(r, x)) {
-        case (1, 0) => clearBit(l, setBit(r, x))
-        case (0, 1) => clearBit(r, setBit(l, x))
+    def swap(x: Int16, l: Int32, r: Int32): Int16 = match (getBit(pos = l, x), getBit(pos = r, x)) {
+        case (1, 0) => clearBit(pos = l, setBit(pos = r, x))
+        case (0, 1) => clearBit(pos = r, setBit(pos = l, x))
         case _ => x
     }
 
@@ -187,11 +187,11 @@ namespace Int16 {
     /// Otherwise recursively check the next bit in the same way.
     ///
     def oneBitPositionHelper(x: Int16, position: Int32, delta: Int32): Int32 = {
-        if      (position < 0)              -1
-        else if (position > (size() - 1))   -1
-        else if (getBit(position, x) == 1)  position
-        else if (delta == 0)                -1
-        else                                oneBitPositionHelper(x, position + delta, delta)
+        if      (position < 0)                   -1
+        else if (position > (size() - 1))        -1
+        else if (getBit(pos = position, x) == 1) position
+        else if (delta == 0)                     -1
+        else                                     oneBitPositionHelper(x, position + delta, delta)
     }
 
     ///
@@ -239,37 +239,37 @@ namespace Int16 {
         if (x == 0i16) size() else lowestOneBitPosition(x)
 
     ///
-    /// Returns the bit of `x` at `position` (either 0 or 1).
-    /// Considers the 5 rightmost bits of `position` (`position` mod 32).
+    /// Returns the bit of `x` at `pos` (either 0 or 1).
+    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 15 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def getBit(position: Int32, x: Int16): Int32 =
+    pub def getBit(pos: {pos :: Int32}, x: Int16): Int32 =
         if ((x >>> position) rem 2i16 == 0i16) 0 else 1
 
     ///
-    /// Returns `x` with the bit at position `position` set (to 1).
-    /// Considers the 5 rightmost bits of `position` (`position` mod 32).
+    /// Returns `x` with the bit at position `pos` set (to 1).
+    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 15 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def setBit(position: Int32, x: Int16): Int16 = x ||| (1i16 <<< position)
+    pub def setBit(pos: {pos :: Int32}, x: Int16): Int16 = x ||| (1i16 <<< pos.pos)
 
     ///
-    /// Returns `x` with the bit at position `position` cleared (to 0).
-    /// Considers the 5 rightmost bits of `position` (`position` mod 32).
+    /// Returns `x` with the bit at position `pos` cleared (to 0).
+    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 15 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def clearBit(position: Int32, x: Int16): Int16 = x &&& ~~~(1i16 <<< position)
+    pub def clearBit(pos: {pos :: Int32}, x: Int16): Int16 = x &&& ~~~(1i16 <<< pos.pos)
 
     ///
-    /// Returns `x` with the bit at position `position` flipped.
-    /// Considers the 5 rightmost bits of `position` (`position` mod 32).
+    /// Returns `x` with the bit at position `pos` flipped.
+    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 15 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def flipBit(position: Int32, x: Int16): Int16 = x ^^^ (1i16 <<< position)
+    pub def flipBit(pos: {pos :: Int32}, x: Int16): Int16 = x ^^^ (1i16 <<< pos.pos)
 
     ///
     /// Returns the integer binary logarithm of `x`.
