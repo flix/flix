@@ -1,5 +1,20 @@
 # Changelog
 
+Version 0.29.0:
+
+- Language: Added support for `opaque` enums (thanks Matt!)
+- Language: Added a specific error message for when a function is under applied (thanks Jonathan!)
+- Language: Added a specific error message about missing dependencies (thanks Matt!)
+- Language: Added syntactic sugar for singleton enums (thanks Matt!)
+- Compiler: Improved type and effect formatting (thanks Matt!)
+- Library: Refactored integer namespaces to use subject-last (thanks Nina!)
+- Library: Refactored all sort functions to internally use arrays (thanks Nina!)
+- Library: Refactored more functions to be effect polymorphic (thanks Nina!)
+- LSP: Added support for auto-completion of types (thanks Paul!)
+- LSP: Improved auto-completion prioritization (thanks Paul!)
+- LSP: Improved auto-completion in pipelines (thanks Paul!)
+- Tooling: Resurrected the REPL with more improvements to come (thanks Magnus!)
+
 Version 0.28.0:
 - Language: Allow any unit function to be used as main (thanks Matt, Jonathan, and Magnus!)
 - Language: Mark root namespace declarations as implicitly public (thanks Matt!)
