@@ -671,34 +671,34 @@ object Type {
   /**
     * Constructs the pure arrow type A -> B.
     */
-  def mkPureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Pure, b, loc)
+  def mkPureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Pure, Empty, b, loc)
 
   /**
     * Constructs the impure arrow type A ~> B.
     */
-  def mkImpureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Impure, b, loc)
+  def mkImpureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Impure, Empty, b, loc)
 
   /**
     * Constructs the arrow type A -> B & e.
     */
-  def mkArrowWithEffect(a: Type, e: Type, b: Type, loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.Arrow(2), loc), List(e, a, b), loc)
+  def mkArrowWithEffect(a: Type, p: Type, e: Type, b: Type, loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.Arrow(2), loc), List(p, e, a, b), loc)
 
   /**
     * Constructs the pure curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B.
     */
-  def mkPureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Pure, b, loc)
+  def mkPureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Pure, Empty, b, loc)
 
   /**
     * Constructs the impure curried arrow type A_1 -> (A_2  -> ... -> A_n) ~> B.
     */
-  def mkImpureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Impure, b, loc)
+  def mkImpureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Impure, Empty, b, loc)
 
   /**
     * Constructs the curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B & e.
     */
-  def mkCurriedArrowWithEffect(as: List[Type], e: Type, b: Type, loc: SourceLocation): Type = {
+  def mkCurriedArrowWithEffect(as: List[Type], p: Type, e: Type, b: Type, loc: SourceLocation): Type = {
     val a = as.last
-    val base = mkArrowWithEffect(a, e, b, loc)
+    val base = mkArrowWithEffect(a, p, e, b, loc)
     as.init.foldRight(base)(mkPureArrow(_, _, loc))
   }
 

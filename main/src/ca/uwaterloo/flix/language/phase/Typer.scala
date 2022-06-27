@@ -483,10 +483,11 @@ object Typer {
       case KindedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
         val argType = fparam.tpe
         val argTypeVar = fparam.sym.tvar.ascribedWith(Kind.Star)
+        val bodyEff = Type.Empty // TODO infer
         for {
           (constrs, bodyType, bodyPur) <- visitExp(exp)
           _ <- unifyTypeM(argType, argTypeVar, loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkArrowWithEffect(argType, bodyPur, bodyType, loc), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkArrowWithEffect(argType, bodyPur, bodyEff, bodyType, loc), loc)
         } yield (constrs, resultTyp, Type.Pure)
 
       case KindedAst.Expression.Apply(exp, exps, tvar, evar, loc) =>
@@ -755,8 +756,9 @@ object Typer {
         // Ensure that `exp1` is a lambda.
         val a = Type.freshVar(Kind.Star, loc, text = FallbackText("arg"))
         val b = Type.freshVar(Kind.Star, loc, text = FallbackText("result"))
-        val ef = Type.freshVar(Kind.Bool, loc, text = FallbackText("pur"))
-        val expectedType = Type.mkArrowWithEffect(a, ef, b, loc)
+        val p = Type.freshVar(Kind.Bool, loc, text = FallbackText("pur"))
+        val ef = Type.freshVar(Kind.Effect, loc, text = FallbackText("eff"))
+        val expectedType = Type.mkArrowWithEffect(a, p, ef, b, loc)
         for {
           (constrs1, tpe1, pur1) <- visitExp(exp1)
           (constrs2, tpe2, pur2) <- visitExp(exp2)
@@ -1519,8 +1521,9 @@ object Typer {
       case KindedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, loc) =>
         val a = Type.freshVar(Kind.Star, loc, text = FallbackText("arg"))
         val b = Type.freshVar(Kind.Star, loc, text = FallbackText("result"))
-        val ef = Type.freshVar(Kind.Bool, loc, text = FallbackText("pur"))
-        val polyLambdaType = Type.mkArrowWithEffect(a, ef, b, loc)
+        val p = Type.freshVar(Kind.Bool, loc, text = FallbackText("pur"))
+        val ef = Type.freshVar(Kind.Bool, loc, text = FallbackText("eff"))
+        val polyLambdaType = Type.mkArrowWithEffect(a, p, ef, b, loc)
         val pureLambdaType = Type.mkPureArrow(a, b, loc)
         for {
           (constrs1, tpe1, pur1) <- visitExp(exp1)
