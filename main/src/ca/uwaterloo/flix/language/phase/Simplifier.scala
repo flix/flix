@@ -483,7 +483,7 @@ object Simplifier {
       val nextLabel = (ruleLabels zip (ruleLabels.drop(1) ::: defaultLab :: Nil)).toMap
 
       //TODO Intermediate solution (which is correct, but imprecise): Compute the purity of every match rule in rules
-      val jumpPurity = combineAll(rules.map(r => effectToPurity(r.exp.eff)))
+      val jumpPurity = combineAll(rules.map(r => effectToPurity(r.exp.pur)))
 
       // Create a branch for each rule.
       val branches = (ruleLabels zip rules) map {
@@ -778,7 +778,7 @@ object Simplifier {
       //
       // Translate the match expressions.
       //
-      val exps = exps0.map(e => (visitExp(e), e.eff))
+      val exps = exps0.map(e => (visitExp(e), e.pur))
 
       //
       // Introduce a fresh variable for each match expression.
