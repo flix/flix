@@ -840,7 +840,7 @@ object Simplifier {
     //
     val defns = root.defs.map { case (k, v) => k -> visitDef(v) }
     val enums = root.enums.map {
-      case (k, TypedAst.Enum(_, ann, mod, sym, _, _, cases0, enumType, _, loc)) =>
+      case (k, TypedAst.Enum(_, ann, mod, sym, _, _, cases0, enumType, loc)) =>
         val cases = cases0 map {
           case (tag, TypedAst.Case(enumSym, tagName, tagType, _, tagLoc)) => tag -> SimplifiedAst.Case(enumSym, tagName, tagType, tagLoc)
         }
