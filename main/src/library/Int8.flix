@@ -125,7 +125,7 @@ namespace Int8 {
     ///
     @Time(1) @Space(1)
     pub def rotateRight(dist: {dist :: Int32}, x: Int8): Int8 =
-        let rem = distance rem size();
+        let rem = dist.dist rem size();
         let rot = if (rem >= 0) rem else rem + size();
         (logicalRightShift(dist = rot, x)) ||| (x <<< (size() - rot))
 
@@ -135,7 +135,7 @@ namespace Int8 {
     ///
     @Time(1) @Space(1)
     pub def rotateLeft(dist: {dist :: Int32}, x: Int8): Int8 =
-        let rem = distance rem size();
+        let rem = dist.dist rem size();
         let rot = if (rem >= 0) rem else rem + size();
         (logicalRightShift(dist = size() - rot, x)) ||| (x <<< rot)
 
