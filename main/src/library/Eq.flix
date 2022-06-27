@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use Bool.{==>};
+use Bool.{==>, <==>};
 
 ///
 /// A type class for equality and inequality.
@@ -49,7 +49,7 @@ pub lawful class Eq[a] {
     ///
     /// x != y is logically equivalent to not (x == y).
     ///
-    law inverseNeq: forall(x: a, y: a). (x != y) == (not (x == y))
+    law inverseNeq: forall(x: a, y: a). (x != y) <==> (not (x == y))
 }
 
 instance Eq[Unit] {

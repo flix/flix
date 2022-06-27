@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use Bool.{==>};
+use Bool.{==>, <==>};
 
 ///
 /// A type class for types with a total order.
@@ -110,17 +110,17 @@ pub lawful class Order[a] with Eq[a] {
     /// x < y is logically equivalent to not (y <= x).
     /// This law defines the associated strict total order "<" associated with "<=".
     ///
-    law strictTotalOrder: forall(x: a, y: a). (x < y) == (not (y <= x))
+    law strictTotalOrder: forall(x: a, y: a). (x < y) <==> (not (y <= x))
 
     ///
     /// This law defines ">" based on "<".
     ///
-    law inverseOrder1: forall(x: a, y: a). (x > y) == (y < x)
+    law inverseOrder1: forall(x: a, y: a). (x > y) <==> (y < x)
 
     ///
     /// This law defines ">=" based on "<=".
     ///
-    law inverseOrder2: forall(x: a, y: a). (x >= y) == (y <= x)
+    law inverseOrder2: forall(x: a, y: a). (x >= y) <==> (y <= x)
 
     ///
     /// Definition of `compare` based on the defined total order.

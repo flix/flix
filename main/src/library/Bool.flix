@@ -74,4 +74,9 @@ namespace Bool {
     ///
     pub def ==>(x: Bool, y: Bool): Bool = not x or y
 
+    ///
+    /// Returns true if `x` implies `y` and vise versa.
+    ///
+    pub def <==>(x: Bool, y: Bool): Bool = x == y
+
 }
