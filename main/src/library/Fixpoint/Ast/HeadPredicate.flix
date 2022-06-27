@@ -18,6 +18,8 @@ use Fixpoint.SubstitutePredSym;
 use Fixpoint/Shared.PredSym;
 
 namespace Fixpoint/Ast {
+
+    @Internal
     pub enum HeadPredicate[v] {
         case HeadAtom(PredSym, Denotation[v], Array[HeadTerm[v], Static])
     }
