@@ -785,7 +785,7 @@ object Redundancy {
     val resType = tpe.arrowResultType
     resType.typeConstructor match {
       case Some(TypeConstructor.Arrow(_)) => curriedArrowEffectType(resType)
-      case _ => tpe.arrowEffectType
+      case _ => tpe.arrowPurityType
     }
   }
 

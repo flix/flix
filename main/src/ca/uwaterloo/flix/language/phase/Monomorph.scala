@@ -620,7 +620,7 @@ object Monomorph {
 
       case Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, loc) =>
         // Magic!
-        val isPure = subst0(exp1.tpe).arrowEffectType match {
+        val isPure = subst0(exp1.tpe).arrowPurityType match {
           case Type.Cst(TypeConstructor.True, _) => true
           case _ => false
         }

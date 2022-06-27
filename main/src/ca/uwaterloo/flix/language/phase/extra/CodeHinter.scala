@@ -467,7 +467,7 @@ object CodeHinter {
   /**
     * Returns `true` if the given function type `tpe` is pure.
     */
-  private def isPureFunction(tpe: Type): Boolean = tpe.arrowEffectType == Type.Pure
+  private def isPureFunction(tpe: Type): Boolean = tpe.arrowPurityType == Type.Pure
 
   /**
     * Returns the total number of variable *occurrences* in the given type `tpe`.
