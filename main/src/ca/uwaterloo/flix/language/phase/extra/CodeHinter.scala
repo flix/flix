@@ -122,7 +122,7 @@ object CodeHinter {
     case Expression.Default(_, _) => Nil
 
     case Expression.Lambda(_, exp, _, _) =>
-      checkEffect(exp.eff, exp.loc) ++ visitExp(exp)
+      checkEffect(exp.pur, exp.loc) ++ visitExp(exp)
 
     case Expression.Apply(exp, exps, _, eff, loc) =>
       val hints0 = (exp, exps) match {

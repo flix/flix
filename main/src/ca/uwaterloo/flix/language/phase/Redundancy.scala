@@ -402,7 +402,7 @@ object Redundancy {
     case Expression.Discard(exp, _, _) =>
       val us = visitExp(exp, env0, rc)
 
-      if (exp.eff == Type.Pure)
+      if (exp.pur == Type.Pure)
         us + DiscardedPureValue(exp.loc)
       else if (exp.tpe == Type.Unit)
         us + RedundantDiscard(exp.loc)
@@ -534,7 +534,7 @@ object Redundancy {
       declaredEff match {
         case None => visitExp(exp, env0, rc)
         case Some(eff) =>
-          (eff, exp.eff) match {
+          (eff, exp.pur) match {
             case (Type.Pure, Type.Pure) =>
               visitExp(exp, env0, rc) + RedundantPurityCast(loc)
             case (tvar1: Type.KindedVar, tvar2: Type.KindedVar) if tvar1.sym == tvar2.sym =>
@@ -760,7 +760,7 @@ object Redundancy {
     * Returns true if the expression is pure and of impure function type.
     */
   private def isUnderAppliedFunction(exp: Expression): Boolean = {
-    val isPure = exp.eff == Type.Pure
+    val isPure = exp.pur == Type.Pure
     val isNonPureFunction = exp.tpe.typeConstructor match {
       case Some(TypeConstructor.Arrow(_)) => curriedArrowEffectType(exp.tpe) != Type.Pure
       case _ => false
@@ -793,7 +793,7 @@ object Redundancy {
     * Returns true if the expression is pure.
     */
   private def isUselessExpression(exp: Expression): Boolean =
-    exp.eff == Type.Pure
+    exp.pur == Type.Pure
 
   /**
     * Returns the free variables in the pattern `p0`.
