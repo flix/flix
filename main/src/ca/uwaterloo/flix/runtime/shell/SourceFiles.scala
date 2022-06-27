@@ -27,25 +27,40 @@ class SourceFiles(source: Either[Path, Seq[File]]) {
   var currentSources: Set[Path] = Set.empty
   var currentLibs: Set[Path] = Set.empty
 
+  var timestamps: Map[Path, Long] = Map.empty
+
   def addSourcesAndPackages(flix: Flix) = {
+    val previousSources = currentSources
+
     source match {
       case Left(path) =>
         val sourceFiles = getSourceFiles(path)
         val (packages, libraries) = getPackagesAndLibraries(path)
 
         currentSources = sourceFiles ++ packages
-        for (file <- currentSources)
-          flix.addSourcePath(file)
-
         currentLibs = libraries
-        for (file <- currentLibs)
-          flix.addJar(file)
-
+  
       case Right(files) =>
         currentSources = files.map(_.toPath).toSet
-        for (file <- currentSources)
-          flix.addSourcePath(file)
     }
+
+    for (file <- currentSources
+         if hasChanged(file))
+      flix.addSourcePath(file)
+
+    for (file <- currentLibs
+         if hasChanged(file))
+      flix.addJar(file)
+
+    val deletedSources = previousSources -- currentSources
+    for (file <- deletedSources)
+      flix.remSourcePath(file)
+
+    timestamps = (currentSources ++ currentLibs).map(f => f -> f.toFile.lastModified).toMap
+  }
+
+  private def hasChanged(file: Path) = {
+    !(timestamps contains file) || (timestamps(file) != file.toFile.lastModified())
   }
 
   private def filterByExt(files: Seq[Path], ext: String): Set[Path] = {
