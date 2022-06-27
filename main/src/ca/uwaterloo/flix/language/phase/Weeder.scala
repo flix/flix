@@ -296,7 +296,7 @@ object Weeder {
     case ParsedAst.Declaration.Enum(doc0, ann0, mods, sp1, ident, tparams0, tpe0, derives, cases0, sp2) =>
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann0)
-      val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
+      val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public, Ast.Modifier.Opaque))
       val tparamsVal = visitTypeParams(tparams0)
 
       val casesVal = (tpe0, cases0) match {
@@ -2174,6 +2174,7 @@ object Weeder {
   private def visitModifier(m: ParsedAst.Modifier, legalModifiers: Set[Ast.Modifier]): Validation[Ast.Modifier, WeederError] = {
     val modifier = m.name match {
       case "lawful" => Ast.Modifier.Lawful
+      case "opaque" => Ast.Modifier.Opaque
       case "override" => Ast.Modifier.Override
       case "pub" => Ast.Modifier.Public
       case "sealed" => Ast.Modifier.Sealed
