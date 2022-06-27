@@ -5770,29 +5770,31 @@ namespace TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool & Impure =
-        []: Array[Int32, Static] |> Array.toIterator |> Iterator.toList == Nil
-
-    @test
-    def toIterator02(): Bool & Impure =
-        [1, 2, 3] |> Array.toIterator |> Iterator.toList == 1 :: 2 :: 3 :: Nil
-
-    @test
-    def toIterator03(): Bool & Impure = region r {
-        (([1, 2, 3] @ r) |> Array.toIterator |> Iterator.toArray)(r) `sameElements` [1, 2, 3] @ r
+    def toIterator01(): Bool = region r {
+        []: Array[Int32, r] |> Array.toIterator(r) |> Iterator.toList == Nil
     }
 
     @test
-    def toIterator04(): Bool & Impure = region r {
-        (Array.range(-100, 100, r) |> Array.toIterator |> Iterator.toArray)(r) `sameElements` Array.range(-100, 100, r)
+    def toIterator02(): Bool = region r {
+        [1, 2, 3] |> Array.toIterator(r) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
     }
 
     @test
-    def toIterator05(): Bool & Impure = {
-        let a = [1, 2, 3];
-        let iter = Array.toIterator(a);
+    def toIterator03(): Bool = region r {
+        ([1, 2, 3] @ r) |> Array.toIterator(r) |> Iterator.toArray(r) `sameElements` [1, 2, 3] @ r
+    }
+
+    @test
+    def toIterator04(): Bool = region r {
+        Array.range(-100, 100, r) |> Array.toIterator(r) |> Iterator.toArray(r) `sameElements` Array.range(-100, 100, r)
+    }
+
+    @test
+    def toIterator05(): Bool = region r {
+        let a = [1, 2, 3] @ r;
+        let iter = Array.toIterator(r, a);
         a[0] = 10000;
-        Iterator.toArray(iter, Static) `sameElements` [1, 2, 3]
+        Iterator.toArray(r, iter) `sameElements` [1, 2, 3]
     }
 
 

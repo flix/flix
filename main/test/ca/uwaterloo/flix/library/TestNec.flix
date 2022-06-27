@@ -1216,13 +1216,16 @@ namespace TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool & Impure =
-        necOf3(1, 2, 3) |> Nec.toIterator |> Iterator.toNec == Some(necOf3(1, 2, 3))
+    def toIterator01(): Bool = region r {
+        necOf3(1, 2, 3) |> Nec.toIterator(r) |> Iterator.toNec == Some(necOf3(1, 2, 3))
+    }
 
     @test
-    def toIterator02(): Bool & Impure = match Nec.range(-100, 100) {
-        case Some(nec) => nec |> Nec.toIterator |> Iterator.toList == List.range(-100, 100)
-        case None      => unreachable!()
+    def toIterator02(): Bool = region r {
+        match Nec.range(-100, 100) {
+            case Some(nec) => nec |> Nec.toIterator(r) |> Iterator.toList == List.range(-100, 100)
+            case None      => unreachable!()
+        }
     }
 
 
