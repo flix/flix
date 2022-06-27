@@ -313,11 +313,11 @@ object Kinder {
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, kenv, senv, taenv, root))
 
       mapN(annVal, tparamsVal, fparamsVal, tpeVal, purAndEffVal, tconstrsVal) {
-        case (ann, tparams, fparams, tpe, (pur, eff), tconstrs) => // TODO use eff
+        case (ann, tparams, fparams, tpe, (pur, eff), tconstrs) =>
           val allQuantifiers = quantifiers ::: tparams.map(_.sym)
           val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), pur, tpe, tpe.loc)
           val sc = Scheme(allQuantifiers, tconstrs, base)
-          KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, pur, loc)
+          KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, pur, eff, loc)
       }
   }
 
@@ -565,8 +565,8 @@ object Kinder {
       val expectedTypeVal = traverse(expectedType0)(visitType(_, Kind.Star, kenv0, senv, taenv, root))
       val expectedPurAndEffVal = visitOptionalPurityAndEffect(expectedEff0, kenv0, senv, taenv, root)
       mapN(expVal, expectedTypeVal, expectedPurAndEffVal) {
-        case (exp, expectedType, (expectedPur, expectedEff)) => // TODO use expectedEff
-          KindedAst.Expression.Ascribe(exp, expectedType.headOption, expectedPur, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+        case (exp, expectedType, (expectedPur, expectedEff)) =>
+          KindedAst.Expression.Ascribe(exp, expectedType.headOption, expectedPur, expectedEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.Cast(exp0, declaredType0, declaredEff0, loc) =>
@@ -575,7 +575,7 @@ object Kinder {
       val declaredPurAndEffVal = visitOptionalPurityAndEffect(declaredEff0, kenv0, senv, taenv, root)
       mapN(expVal, declaredTypeVal, declaredPurAndEffVal) {
         case (exp, declaredType, (declaredPur, declaredEff)) =>
-          KindedAst.Expression.Cast(exp, declaredType.headOption, declaredPur, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+          KindedAst.Expression.Cast(exp, declaredType.headOption, declaredPur, declaredEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.Without(exp0, eff, loc) =>
@@ -1013,7 +1013,7 @@ object Kinder {
         case Some(_) =>
           val purAndEffVal = visitPurityAndEffect(purAndEff, kenv, senv, taenv, root)
           mapN(purAndEffVal) {
-            case (pur, eff) => Type.Apply(Type.Cst(TypeConstructor.Arrow(arity), loc), pur, loc) // TODO use eff
+            case (pur, eff) => Type.mkApply(Type.Cst(TypeConstructor.Arrow(arity), loc), List(pur, eff), loc)
           }
         case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
       }
@@ -1152,7 +1152,7 @@ object Kinder {
 
           val eff = effs.reduceOption({
             case (t1, t2) => Type.mkUnion(t1, t2, t1.loc)
-          }: (Type, Type) => Type).getOrElse(Type.Pure) // TODO should be effecty pure
+          }: (Type, Type) => Type).getOrElse(Type.Empty)
 
           (pur, eff)
       }

@@ -343,6 +343,11 @@ object Type {
     */
   val Or: Type = Type.Cst(TypeConstructor.Or, SourceLocation.Unknown)
 
+  /**
+    * Represents the Empty effect type.
+    */
+  val Empty: Type = Type.Cst(TypeConstructor.Empty, SourceLocation.Unknown)
+
   /////////////////////////////////////////////////////////////////////////////
   // Constructors                                                            //
   /////////////////////////////////////////////////////////////////////////////
