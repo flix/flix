@@ -102,11 +102,11 @@ namespace Int64 {
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     @Time(1) @Space(1)
-    pub def logicalRightShift(distance: Int32, x: Int64): Int64 =
-        if (x < 0i64 and distance rem size() != 0)
-            ((x >>> 1) &&& maxValue()) >>> (distance - 1)
+    pub def logicalRightShift(dist: {dist :: Int32}, x: Int64): Int64 =
+        if (x < 0i64 and dist.dist rem size() != 0)
+            ((x >>> 1) &&& maxValue()) >>> (dist.dist - 1)
         else
-            x >>> distance
+            x >>> dist.dist
 
     ///
     /// Returns the number of one-bits in the two's complement binary
@@ -115,24 +115,24 @@ namespace Int64 {
     @Time(1) @Space(1)
     pub def bitCount(x: Int64): Int32 = {
         if      (x == 0i64)          0
-        else if (x rem 2i64 != 0i64) bitCount(logicalRightShift(1, x)) + 1
-        else                         bitCount(logicalRightShift(1, x))
+        else if (x rem 2i64 != 0i64) bitCount(logicalRightShift(dist = 1, x)) + 1
+        else                         bitCount(logicalRightShift(dist = 1, x))
     }
 
     ///
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` right by `distance` bits.
     ///
-    pub def rotateRight(distance: Int32, x: Int64): Int64 =
-        (logicalRightShift(distance, x)) ||| (x <<< -distance)
+    pub def rotateRight(dist: {dist :: Int32}, x: Int64): Int64 =
+        (logicalRightShift(dist = dist.dist, x)) ||| (x <<< -dist.dist)
 
     ///
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` left by `distance` bits.
     ///
     @Time(1) @Space(1)
-    pub def rotateLeft(distance: Int32, x: Int64): Int64 =
-        (logicalRightShift(-distance, x)) ||| (x <<< distance)
+    pub def rotateLeft(dist: {dist :: Int32}, x: Int64): Int64 =
+        (logicalRightShift(dist = -dist.dist, x)) ||| (x <<< dist.dist)
 
     ///
     /// Returns the value obtained by reversing the bits in the

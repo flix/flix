@@ -102,11 +102,11 @@ namespace Int8 {
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     @Time(1) @Space(1)
-    pub def logicalRightShift(distance: Int32, x: Int8): Int8 =
-        if (x < 0i8 and distance rem 32 != 0)
-            ((x >>> 1) &&& maxValue()) >>> (distance - 1)
+    pub def logicalRightShift(dist: {dist :: Int32}, x: Int8): Int8 =
+        if (x < 0i8 and dist.dist rem 32 != 0)
+            ((x >>> 1) &&& maxValue()) >>> (dist.dist - 1)
         else
-            x >>> distance
+            x >>> dist.dist
 
     ///
     /// Returns the number of one-bits in the two's complement binary
@@ -115,8 +115,8 @@ namespace Int8 {
     @Time(1) @Space(1)
     pub def bitCount(x: Int8): Int32 = {
         if      (x == 0i8)         0
-        else if (x rem 2i8 != 0i8) bitCount(logicalRightShift(1, x)) + 1
-        else                       bitCount(logicalRightShift(1, x))
+        else if (x rem 2i8 != 0i8) bitCount(logicalRightShift(dist = 1, x)) + 1
+        else                       bitCount(logicalRightShift(dist = 1, x))
     }
 
     ///
@@ -124,20 +124,20 @@ namespace Int8 {
     /// binary representation of `x` right by `distance` bits.
     ///
     @Time(1) @Space(1)
-    pub def rotateRight(distance: Int32, x: Int8): Int8 =
+    pub def rotateRight(dist: {dist :: Int32}, x: Int8): Int8 =
         let rem = distance rem size();
         let rot = if (rem >= 0) rem else rem + size();
-        (logicalRightShift(rot, x)) ||| (x <<< (size() - rot))
+        (logicalRightShift(dist = rot, x)) ||| (x <<< (size() - rot))
 
     ///
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` left by `distance` bits.
     ///
     @Time(1) @Space(1)
-    pub def rotateLeft(distance: Int32, x: Int8): Int8 =
+    pub def rotateLeft(dist: {dist :: Int32}, x: Int8): Int8 =
         let rem = distance rem size();
         let rot = if (rem >= 0) rem else rem + size();
-        (logicalRightShift(size() - rot, x)) ||| (x <<< rot)
+        (logicalRightShift(dist = size() - rot, x)) ||| (x <<< rot)
 
     ///
     /// Returns the value obtained by reversing the bits in the
