@@ -2,7 +2,6 @@
 
 Version 0.29.0:
 
-- Language: Added support for `opaque` enums (thanks Matt!)
 - Language: Added syntactic sugar for singleton enums (thanks Matt!)
 - Language: Added a specific error message for when a function is under applied (thanks Jonathan!)
 - Language: Added a specific error message about missing dependencies (thanks Matt!)
@@ -302,6 +301,7 @@ Version 0.1:
 
 HEAD (in progress, not released):
 
+- Language: Added support for `opaque` enums (thanks Matt!)
 - Added a new file API (thanks Nina!)
 - Added `DelayList` and `DelayMap` (thanks Jakob!)
 - Added `Iterator` (thanks Jakob!)
