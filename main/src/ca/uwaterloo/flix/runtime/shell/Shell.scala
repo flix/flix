@@ -51,6 +51,8 @@ class Shell(source: Either[Path, Seq[File]], options: Options) {
     */
   private val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
 
+  private val sourceFiles = new SourceFiles(source)
+
   /**
     * Continuously reads a line of input from the terminal, parses and executes it.
     */
@@ -142,6 +144,7 @@ class Shell(source: Either[Path, Seq[File]], options: Options) {
     * Reloads every source path.
     */
   private def execReload()(implicit terminal: Terminal): Validation[CompilationResult, CompilationMessage] = {
+    sourceFiles.addSourcesAndPackages(flix)
 
     compile()
   }

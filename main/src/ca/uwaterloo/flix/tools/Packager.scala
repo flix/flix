@@ -518,7 +518,7 @@ object Packager {
   /**
     * Returns all files in the given path `p`.
     */
-  private def getAllFiles(p: Path): List[Path] = {
+  def getAllFiles(p: Path): List[Path] = {
     val visitor = new FileVisitor
     Files.walkFileTree(p, visitor)
     visitor.result.toList
