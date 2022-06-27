@@ -91,8 +91,8 @@ instance Foldable[DelayList] {
 }
 
 instance Iterable[DelayList] {
-    pub def iterator(l: DelayList[a]): Iterator[a] & Impure =
-        DelayList.toIterator(l)
+    pub def iterator(l: DelayList[a]): StaticIterator[a] & Impure =
+        DelayList.toStaticIterator(l)
 }
 
 instance FunctorFilter[DelayList] {
@@ -1151,8 +1151,18 @@ namespace DelayList {
     /// Does not force any elements of the list.
     ///
     @Experimental @Lazy
-    pub def toIterator(l: DelayList[a]): Iterator[a] & Impure =
-        let cursor = ref l;
+    pub def toStaticIterator(l: DelayList[a]): StaticIterator[a] & Impure =
+        let Iterator(done, next) = toIterator(Static, l);
+        StaticIterator(done, next)
+
+    ///
+    /// Returns `l` as an `Iterator`.
+    ///
+    /// Does not force any elements of the list.
+    ///
+    @Experimental @Lazy
+    pub def toIterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) =
+        let cursor = ref l @ r;
         let done = () -> match head(deref cursor) {
             case None    => true
             case Some(_) => false
@@ -1288,5 +1298,14 @@ namespace DelayList {
         };
         loop(l, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
                                   // but the intermediate continuations are effect polymorphic.
+
+    ///
+    /// Shuffles `l` using the Fisher–Yates shuffle.
+    ///
+    pub def shuffle(rnd: Random.Random, l: DelayList[a]): DelayList[a] & Impure = region r {
+        let arr = toArray(l, r);
+        Array.shuffle(rnd, arr);
+        Array.toDelayList(arr)
+    }
 
 }

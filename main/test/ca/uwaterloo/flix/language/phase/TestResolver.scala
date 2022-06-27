@@ -123,6 +123,42 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
+  test("OpaqueEnum.01") {
+    val input =
+      s"""
+         |namespace A {
+         |  pub opaque enum Color {
+         |    case Blu,
+         |    case Red
+         |  }
+         |}
+         |
+         |namespace B {
+         |  def g(): A.Color = A/Color.Red
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.OpaqueEnum](result)
+  }
+
+  test("OpaqueEnum.02") {
+    val input =
+      s"""
+         |namespace A {
+         |  def f(): A/B/C.Color = A/B/C/Color.Blu
+         |
+         |  namespace B/C {
+         |    pub opaque enum Color {
+         |      case Blu,
+         |      case Red
+         |    }
+         |  }
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.OpaqueEnum](result)
+  }
+
   test("InaccessibleType.01") {
     val input =
       s"""
