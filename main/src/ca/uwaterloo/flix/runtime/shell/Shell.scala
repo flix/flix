@@ -236,7 +236,7 @@ class Shell(source: Either[Path, Seq[File]], options: Options) {
   /**
     * Compile
     */
-private def compile(entryPoint: Option[Symbol.DefnSym] = None)(implicit terminal: Terminal): Validation[CompilationResult, CompilationMessage] = {
+  private def compile(entryPoint: Option[Symbol.DefnSym] = None)(implicit terminal: Terminal): Validation[CompilationResult, CompilationMessage] = {
 
     this.flix.setOptions(options.copy(entryPoint = entryPoint))
 
