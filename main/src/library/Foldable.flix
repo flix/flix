@@ -190,6 +190,15 @@ pub class Foldable[t : Type -> Type] with ForEach[t] {
         Foldable.foldRight((x, acc) -> Some(Option.foldLeft((v, z) -> f(v, z), x, acc)), None, t)
 
     ///
+    /// Returns `t` as an array.
+    ///
+    pub def toArray(t: t[a], r: Region[r]): Array[a, r] \ Write(r) = region r2 {
+        let l = new MutList(r2);
+        Foldable.foreach(a -> MutList.push!(a, l), t);
+        MutList.toArray(l, r)
+    }
+
+    ///
     /// Returns `t` as a chain.
     ///
     pub def toChain(t: t[a]): Chain[a] =
@@ -202,13 +211,14 @@ pub class Foldable[t : Type -> Type] with ForEach[t] {
         Foldable.foldRight((x, acc) -> x :: acc, Nil, t)
 
     ///
-    /// Returns `t` as an array.
+    /// Returns `t` as a MutDeque.
     ///
-    pub def toArray(t: t[a], r: Region[r]): Array[a, r] \ Write(r) = region r2 {
-        let l = new MutList(r2);
-        Foldable.foreach(a -> MutList.push!(a, l), t);
-        MutList.toArray(l, r)
-    }
+    pub def toMutDeque(t: t[a], r: Region[r]): MutDeque[a] \ Write(r) =
+        let d = new MutDeque(r);
+        Foldable.foreach(x -> MutDeque.pushBack(x, d), t);
+        d
+
+
 
     ///
     /// Returns an iterator over `t`.
