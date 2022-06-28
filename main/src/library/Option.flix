@@ -372,15 +372,13 @@ namespace Option {
     /// If `f` is successfully applied to all the elements in `l` the result is of the form:
     /// `Some(f(...f(f(s, x1), x2)..., xn))`.
     ///
-    pub def foldLeftM(f: (b, a) -> Option[b] & ef, s: b, l: List[a]): Option[b] & ef =
-        def loop(ll, acc) = match ll {
-            case Nil     => Some(acc)
-            case x :: xs => match f(acc, x) {
-                case Some(s1) => loop(xs, s1)
-                case None     => None
-            }
-        };
-        loop(l, s)
+    pub def foldLeftM(f: (b, a) -> Option[b] & ef, s: b, l: List[a]): Option[b] & ef = match l {
+        case Nil     => Some(s)
+        case x :: xs => match f(s, x) {
+            case Some(s1) => foldLeftM(f, s1, xs)
+            case None     => None
+        }
+    }
 
     ///
     /// Returns the result of applying `f` to a start value `s` and the elements in `l`
