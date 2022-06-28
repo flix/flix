@@ -105,11 +105,12 @@ object Metrics {
     case _: Declaration.TypeAlias => Nil
     case _: Declaration.Relation => Nil
     case _: Declaration.Lattice => Nil
-    case clazz: Declaration.Class => clazz.lawsAndSigs.flatMap {
-      case sig: Declaration.Sig => if (sig.mod.exists(mod => mod.name == "pub")) List(DefIsh(sig.ident.name, sig.tpe, sig.purAndEff)) else Nil
-      case _: Declaration.Law => Nil
-    }
-    case instance: Declaration.Instance => instance.defs.flatMap(getPubDefs)
+    case clazz: Declaration.Class => Nil
+//      clazz.lawsAndSigs.flatMap {
+//        case sig: Declaration.Sig => if (sig.mod.exists(mod => mod.name == "pub")) List(DefIsh(sig.ident.name, sig.tpe, sig.purAndEff)) else Nil
+//        case _: Declaration.Law => Nil
+//      }
+    case instance: Declaration.Instance => Nil // instance.defs.flatMap(getPubDefs)
     case _: Declaration.Effect => Nil
   }
 
