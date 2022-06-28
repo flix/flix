@@ -327,13 +327,13 @@ namespace Option {
     /// Returns `Some(v1 :: v2 :: ... :: vn)` if each of `xs_i` is `Some(v_i)`. Otherwise returns `None`.
     ///
     @Time(List.length(xs)) @Space(List.length(xs))
-    pub def sequence(xs: List[Option[a]]): Option[List[a]] =
-        def loop(ll, sk) = match ll {
-            case Nil            => sk(Nil)
+    pub def sequence(l: List[Option[a]]): Option[List[a]] =
+        def loop(ll, k) = match ll {
+            case Nil            => k(Nil)
             case None :: _      => None
-            case Some(y) :: rs  => loop(rs, ys -> sk(y :: ys))
+            case Some(x) :: xs  => loop(xs, ks -> k(x :: ks))
         };
-        loop(xs, ys -> Some(ys))
+        loop(l, ks -> Some(ks))
 
     ///
     /// Returns `Some(v1 :: v2 :: ... v :: vn)` if each of `f(l_i)` is `Some(v_i)`. Otherwise returns `None`.
