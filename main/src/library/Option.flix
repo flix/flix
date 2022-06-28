@@ -133,8 +133,8 @@ instance Monoid[Option[a]] with Monoid[a] {
 instance CommutativeMonoid[Option[a]] with CommutativeMonoid[a]
 
 instance Iterable[Option] {
-    pub def iterator(t: Option[a]): StaticIterator[a] & Impure =
-        Option.toStaticIterator(t)
+    pub def iterator(r: Region[r], t: Option[a]): Iterator[a, r] \ Write(r) =
+        Option.toIterator(r, t)
 }
 
 namespace Option {
@@ -577,13 +577,6 @@ namespace Option {
     @Time(time(f)) @Space(space(f))
     pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u & ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7], o8: Option[t8], o9: Option[t9], o10: Option[t10]): Option[u] & ef =
         ap(lift9(f, o1, o2, o3, o4, o5, o6, o7, o8, o9), o10)
-
-    ///
-    /// Returns an iterator over `o` with 1 element or an empty iterator if `o` is `None`.
-    ///
-    pub def toStaticIterator(o: Option[a]): StaticIterator[a] & Impure =
-        let Iterator(done, next) = toIterator(Static, o);
-        StaticIterator(done, next)
 
     ///
     /// Returns an iterator over `o` with 1 element or an empty iterator if `o` is `None`.
