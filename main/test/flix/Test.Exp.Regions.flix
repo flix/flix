@@ -1,13 +1,5 @@
 namespace Test/Exp/Regions {
 
-    ///
-    /// Helper function to create arrays.
-    /// Circumvents the problem of copying the *pointer*
-    /// to the same array in the expression `[[x; n]; m]`.
-    ///
-    def _mkArray(r: Region[r], x: a, n: Int32): Array[a, r] \ Write(r) =
-        [x; n] @ r
-
     // Uses references and regions (e.g. could just duplicate most test cases for both).
     // Test cases that use 0, 1, 2, and 3 nested regions.
     // Test cases that use 0, 1, 2, 3 data structures nested inside each other (e.g. array inside array inside array).
