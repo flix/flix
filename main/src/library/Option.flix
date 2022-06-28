@@ -133,8 +133,8 @@ instance Monoid[Option[a]] with Monoid[a] {
 instance CommutativeMonoid[Option[a]] with CommutativeMonoid[a]
 
 instance Iterable[Option] {
-    pub def iterator(t: Option[a]): StaticIterator[a] & Impure =
-        Option.toStaticIterator(t)
+    pub def iterator(r: Region[r], t: Option[a]): Iterator[a, r] \ Write(r) =
+        Option.toIterator(r, t)
 }
 
 namespace Option {
@@ -326,27 +326,27 @@ namespace Option {
     ///
     /// Returns `Some(v1 :: v2 :: ... :: vn)` if each of `xs_i` is `Some(v_i)`. Otherwise returns `None`.
     ///
-    @Time(List.length(xs)) @Space(List.length(xs))
-    pub def sequence(xs: List[Option[a]]): Option[List[a]] =
-        def loop(ll, sk) = match ll {
-            case Nil            => sk(Nil)
+    @Time(List.length(l)) @Space(List.length(l))
+    pub def sequence(l: List[Option[a]]): Option[List[a]] =
+        def loop(ll, k) = match ll {
+            case Nil            => k(Nil)
             case None :: _      => None
-            case Some(y) :: rs  => loop(rs, ys -> sk(y :: ys))
+            case Some(x) :: xs  => loop(xs, ks -> k(x :: ks))
         };
-        loop(xs, ys -> Some(ys))
+        loop(l, ks -> Some(ks))
 
     ///
     /// Returns `Some(v1 :: v2 :: ... v :: vn)` if each of `f(l_i)` is `Some(v_i)`. Otherwise returns `None`.
     ///
     pub def traverse(f: a -> Option[b] & ef, l: List[a]): Option[List[b]] & ef =
-        def loop(ll, sk) = match ll {
-            case Nil     => sk(Nil)
+        def loop(ll, k) = match ll {
+            case Nil     => k(Nil)
             case x :: xs => match f(x) {
                 case None    => None
-                case Some(y) => loop(xs, ys -> sk(y :: ys))
+                case Some(y) => loop(xs, ys -> k(y :: ys))
             }
         };
-        loop(l, ys -> Some(ys))
+        loop(l, ks -> Some(ks))
 
     ///
     /// Returns `Some()` if each of `f(l_i)` is `Some(_)`. Otherwise returns `None`.
@@ -354,15 +354,13 @@ namespace Option {
     /// This function is the "forgetful" version of `traverse`, use it when the you want the effect
     /// of applying `f` to each element but do not care about collecting the results.
     ///
-    pub def traverseX(f: a -> Option[b] & ef, l: List[a]): Option[Unit] & ef =
-        def loop(ll) = match ll {
-            case Nil     => Some()
-            case x :: xs => match f(x) {
-                case None    => None
-                case Some(_) => loop(xs)
-            }
-        };
-        loop(l)
+    pub def traverseX(f: a -> Option[b] & ef, l: List[a]): Option[Unit] & ef = match l {
+        case Nil     => Some()
+        case x :: xs => match f(x) {
+            case None    => None
+            case Some(_) => traverseX(f, xs)
+        }
+    }
 
     ///
     /// Returns the result of applying `f` to a start value `s` and the elements in `l`
@@ -374,15 +372,13 @@ namespace Option {
     /// If `f` is successfully applied to all the elements in `l` the result is of the form:
     /// `Some(f(...f(f(s, x1), x2)..., xn))`.
     ///
-    pub def foldLeftM(f: (b, a) -> Option[b] & ef, s: b, l: List[a]): Option[b] & ef =
-        def loop(ll, acc) = match ll {
-            case Nil     => Some(acc)
-            case x :: xs => match f(acc, x) {
-                case Some(s1) => loop(xs, s1)
-                case None     => None
-            }
-        };
-        loop(l, s)
+    pub def foldLeftM(f: (b, a) -> Option[b] & ef, s: b, l: List[a]): Option[b] & ef = match l {
+        case Nil     => Some(s)
+        case x :: xs => match f(s, x) {
+            case Some(s1) => foldLeftM(f, s1, xs)
+            case None     => None
+        }
+    }
 
     ///
     /// Returns the result of applying `f` to a start value `s` and the elements in `l`
@@ -581,13 +577,6 @@ namespace Option {
     @Time(time(f)) @Space(space(f))
     pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u & ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7], o8: Option[t8], o9: Option[t9], o10: Option[t10]): Option[u] & ef =
         ap(lift9(f, o1, o2, o3, o4, o5, o6, o7, o8, o9), o10)
-
-    ///
-    /// Returns an iterator over `o` with 1 element or an empty iterator if `o` is `None`.
-    ///
-    pub def toStaticIterator(o: Option[a]): StaticIterator[a] & Impure =
-        let Iterator(done, next) = toIterator(Static, o);
-        StaticIterator(done, next)
 
     ///
     /// Returns an iterator over `o` with 1 element or an empty iterator if `o` is `None`.
