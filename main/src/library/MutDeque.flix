@@ -329,11 +329,9 @@ namespace MutDeque {
         let bSize = size(d2);
         if (aSize == bSize) {
             let MutDeque(aArray, aFront, aBack) = d1;
-            let aCap = capacity(d1);
             let MutDeque(bArray, bFront, bBack) = d2;
-            let bCap = capacity(d2);
-            let a1 = [$DEFAULT$; aCap] @ Scoped.regionOf(d1);
-            let b1 = [$DEFAULT$; bCap] @ Scoped.regionOf(d2);
+            let a1 = [$DEFAULT$; aSize] @ Scoped.regionOf(d1);
+            let b1 = [$DEFAULT$; bSize] @ Scoped.regionOf(d2);
             copyElements!(deref aFront, deref aBack, deref aArray, a1);
             copyElements!(deref bFront, deref bBack, deref bArray, b1);
             Array.sameElements(a1, b1)
