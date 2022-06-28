@@ -102,6 +102,10 @@ object ClassMaker {
       makeMethod(Some(ins), JvmName.ConstructorMethod, d, v, NotFinal, NotStatic, NotAbstract)
     }
 
+    def mkConstructor(c: ConstructorMethod): Unit = {
+      makeMethod(c.ins, JvmName.ConstructorMethod, c.d, c.v, c.f, NotStatic, NotAbstract)
+    }
+
     def mkObjectConstructor(v: Visibility): Unit = {
       val ins = thisLoad() ~ INVOKESPECIAL(BackendObjType.JavaObject.Constructor) ~ RETURN()
       mkConstructor(ins, MethodDescriptor.NothingToVoid, v)

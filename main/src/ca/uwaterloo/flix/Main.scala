@@ -151,6 +151,12 @@ object Main {
           val result = Packager.test(cwd, o)
           System.exit(getCode(result))
 
+        case Command.Repl =>
+          val source = if (cmdOpts.files.isEmpty) Left(cwd) else Right(cmdOpts.files)
+          val shell = new Shell(cmdOpts.files.toList.map(_.toPath), options)
+          shell.loop()
+          System.exit(0)
+
         case Command.Install(project) =>
           val o = options.copy(progress = false)
           val result = Packager.install(project, cwd, o)
@@ -224,9 +230,8 @@ object Main {
       }
     }
 
-    // check if running in interactive mode.
-    val interactive = cmdOpts.interactive || (cmdOpts.command == Command.None && cmdOpts.files.isEmpty)
-    if (interactive) {
+    // check if we should start a REPL
+    if (cmdOpts.command == Command.None && cmdOpts.files.isEmpty) {
       val shell = new Shell(cmdOpts.files.toList.map(_.toPath), options)
       shell.loop()
       System.exit(0)
@@ -303,7 +308,6 @@ object Main {
                      documentor: Boolean = false,
                      entryPoint: Option[String] = None,
                      explain: Boolean = false,
-                     interactive: Boolean = false,
                      json: Boolean = false,
                      listen: Option[Int] = None,
                      lsp: Option[Int] = None,
@@ -347,6 +351,8 @@ object Main {
 
     case object Test extends Command
 
+    case object Repl extends Command
+
     case class Install(project: String) extends Command
 
   }
@@ -386,6 +392,8 @@ object Main {
 
       cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  runs the tests for the current project.")
 
+      cmd("repl").action((_, c) => c.copy(command = Command.Repl)).text("  starts a repl for the current project, or provided Flix source files.")
+
       cmd("install").text("  installs the Flix package from the given GitHub <owner>/<repo>")
         .children(
           arg[String]("project").action((project, c) => c.copy(command = Command.Install(project)))
@@ -411,9 +419,6 @@ object Main {
         text("provides suggestions on how to solve a problem")
 
       help("help").text("prints this usage information.")
-
-      opt[Unit]("interactive").action((_, c) => c.copy(interactive = true)).
-        text("enables interactive mode.")
 
       opt[Unit]("json").action((_, c) => c.copy(json = true)).
         text("enables json output.")

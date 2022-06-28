@@ -133,8 +133,8 @@ instance Monoid[Option[a]] with Monoid[a] {
 instance CommutativeMonoid[Option[a]] with CommutativeMonoid[a]
 
 instance Iterable[Option] {
-    pub def iterator(t: Option[a]): Iterator[a] & Impure =
-        Option.toIterator(t)
+    pub def iterator(t: Option[a]): StaticIterator[a] & Impure =
+        Option.toStaticIterator(t)
 }
 
 namespace Option {
@@ -585,9 +585,16 @@ namespace Option {
     ///
     /// Returns an iterator over `o` with 1 element or an empty iterator if `o` is `None`.
     ///
-    pub def toIterator(o: Option[a]): Iterator[a] & Impure = match o {
-        case None    => Iterator.empty()
-        case Some(x) => Iterator.singleton(x)
+    pub def toStaticIterator(o: Option[a]): StaticIterator[a] & Impure =
+        let Iterator(done, next) = toIterator(Static, o);
+        StaticIterator(done, next)
+
+    ///
+    /// Returns an iterator over `o` with 1 element or an empty iterator if `o` is `None`.
+    ///
+    pub def toIterator(r: Region[r], o: Option[a]): Iterator[a, r] \ Write(r) = match o {
+        case None    => new Iterator(r)
+        case Some(x) => Iterator.singleton(r, x)
     }
 
 }
