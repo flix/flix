@@ -130,7 +130,7 @@ namespace Fixpoint {
             let join = compileBody(env, augBody);
             let loopBody = RelOp.If(join, projection);
             let insert =
-                Array.foldRight(match (atom, rowVar) -> acc -> match atom {
+                List.foldRight(match (atom, rowVar) -> acc -> match atom {
                     case BodyAtom(bodySym, den, Polarity.Positive, _, terms) =>
                         let arity1 = List.length(terms);
                         RelOp.Search(rowVar, RamSym.Full(bodySym, arity1, den), acc)
@@ -183,7 +183,7 @@ namespace Fixpoint {
             let loopBody = RelOp.If(BoolExp.NotMemberOf(ramTerms, RamSym.Full(headSym, arity, headDen)) :: join, projection);
             let compile = delta -> { // `delta` designates the focused atom.
                 let insert =
-                    Array.foldRight(match (atom, rowVar) -> acc -> match atom {
+                    List.foldRight(match (atom, rowVar) -> acc -> match atom {
                         case BodyAtom(bodySym, den, Polarity.Positive, _, terms) =>
                             let arity1 = List.length(terms);
                             let ramSym = if (rowVar == delta and isRelational(den)) {
@@ -198,16 +198,16 @@ namespace Fixpoint {
                 MutList.push!(insert, stmts)
             };
 
-            let positiveAtoms = Array.filter(match (atom, _) -> match atom {
+            let positiveAtoms = List.filter(match (atom, _) -> match atom {
                 case BodyAtom(_, _, Polarity.Positive, _, _) => true
                 case _ => false
             }, augBody);
             if (enableDebugging()) {
                 let comment = RamStmt.Comment(ToString.toString(rule));
                 MutList.push!(comment, stmts);
-                Array.foreach(match (_, rowVar) -> compile(rowVar), positiveAtoms)
+                List.foreach(match (_, rowVar) -> compile(rowVar), positiveAtoms)
             } else {
-                Array.foreach(match (_, rowVar) -> compile(rowVar), positiveAtoms)
+                List.foreach(match (_, rowVar) -> compile(rowVar), positiveAtoms)
             }
     }
 
@@ -251,8 +251,8 @@ namespace Fixpoint {
     ///
     /// Note that row variables not unique across rules.
     ///
-    def augmentBody(body: Array[BodyPredicate[v], Static]): Array[(BodyPredicate[v], RowVar), Static] & Impure =
-        Array.mapWithIndex(atom -> i -> match atom {
+    def augmentBody(body: List[BodyPredicate[v]]): List[(BodyPredicate[v], RowVar)] =
+        List.mapWithIndex(atom -> i -> match atom {
             case BodyAtom(predSym, _, Polarity.Positive, _, _) => (atom, RowVar.Named("${predSym}$${i}"))
             case _ => (atom, RowVar.Named("IfYouSeeThisYouFoundABug"))
         }, body)
@@ -266,8 +266,8 @@ namespace Fixpoint {
     /// `x` is mapped to B$1[0] because `x` occurs positively in the second atom.
     /// `s` is mapped to the glb of all its positive occurences because it is latticenal.
     ///
-    def unifyVars(body: Array[(BodyPredicate[v], RowVar), Static]): Map[VarSym, RamTerm[v]] & Impure =
-        Array.foldLeft(acc -> match (atom, rowVar) -> match atom {
+    def unifyVars(body: List[(BodyPredicate[v], RowVar)]): Map[VarSym, RamTerm[v]] =
+        List.foldLeft(acc -> match (atom, rowVar) -> match atom {
             case BodyAtom(_, denotation, Polarity.Positive, _, terms) =>
                 List.mapWithIndex(term -> i -> (term, i), terms) |>
                 List.foldRight(match (term, i) -> match term {
@@ -302,8 +302,8 @@ namespace Fixpoint {
     /// (2) comes from the negative atom `not A(x)`.
     /// (3) is a function call that computes the expression `x > 0`.
     ///
-    def compileBody(env: Map[VarSym, RamTerm[v]], body: Array[(BodyPredicate[v], RowVar), Static]): List[BoolExp[v]] & Impure =
-        Array.foldRight(match (atom, rowVar) -> acc ->
+    def compileBody(env: Map[VarSym, RamTerm[v]], body: List[(BodyPredicate[v], RowVar)]): List[BoolExp[v]] & Impure =
+        List.foldRight(match (atom, rowVar) -> acc ->
             let compileBodyTerm = term -> j -> match term {
                 case BodyTerm.Wild      => RamTerm.RowLoad(rowVar, j)
                 case BodyTerm.Var(var)  => unwrap(Map.get(var, env))

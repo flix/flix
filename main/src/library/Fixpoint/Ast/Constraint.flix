@@ -23,25 +23,25 @@ namespace Fixpoint/Ast {
 
     @Internal
     pub enum Constraint[v] {
-        case Constraint(HeadPredicate[v], Array[BodyPredicate[v], Static])
+        case Constraint(HeadPredicate[v], List[BodyPredicate[v]])
     }
 
     instance PredSymsOf[Constraint[v]] {
         pub def predSymsOf(x: Constraint[v]): Set[PredSym] = match x {
             case Constraint(head, body) =>
                 let headSyms = predSymsOf(head);
-                let bodySyms = Array.map(predSymsOf, body) |> Array.toList;
+                let bodySyms = List.map(predSymsOf, body);
                 headSyms ++ Monoid.fold(bodySyms)
-        } as & Pure
+        }
     }
 
     instance SubstitutePredSym[Constraint[v]] {
         pub def substitute(x: Constraint[v], s: Map[PredSym, PredSym]): Constraint[v] = match x {
             case Constraint(head, body) =>
                 let newHead = substitute(head, s);
-                let newBody = Array.map(p -> substitute(p, s), body);
+                let newBody = List.map(p -> substitute(p, s), body);
                 Constraint(newHead, newBody)
-        } as & Pure
+        }
     }
 
     instance ToString[Constraint[v]] with ToString[v] {
@@ -49,10 +49,10 @@ namespace Fixpoint/Ast {
             use Fixpoint.commaSeparate;
             match c {
                 case Constraint(head, body) =>
-                    if (Array.length(body) == 0)
+                    if (List.length(body) == 0)
                         "${head}."
                     else
-                        "${head} :- ${commaSeparate(body)}."
-            } as & Pure
+                        "${head} :- ${body |> List.join(", ")}."
+            }
     }
 }
