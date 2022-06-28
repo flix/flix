@@ -354,15 +354,13 @@ namespace Option {
     /// This function is the "forgetful" version of `traverse`, use it when the you want the effect
     /// of applying `f` to each element but do not care about collecting the results.
     ///
-    pub def traverseX(f: a -> Option[b] & ef, l: List[a]): Option[Unit] & ef =
-        def loop(ll) = match ll {
-            case Nil     => Some()
-            case x :: xs => match f(x) {
-                case None    => None
-                case Some(_) => loop(xs)
-            }
-        };
-        loop(l)
+    pub def traverseX(f: a -> Option[b] & ef, l: List[a]): Option[Unit] & ef = match l {
+        case Nil     => Some()
+        case x :: xs => match f(x) {
+            case None    => None
+            case Some(_) => traverseX(f, xs)
+        }
+    }
 
     ///
     /// Returns the result of applying `f` to a start value `s` and the elements in `l`
