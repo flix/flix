@@ -79,8 +79,8 @@ instance Traversable[Nel] {
 }
 
 instance Iterable[Nel] {
-    pub def iterator(t: Nel[a]): StaticIterator[a] & Impure =
-        Nel.toStaticIterator(t)
+    pub def iterator(r: Region[r], t: Nel[a]): Iterator[a, r] \ Write(r) =
+        Nel.toIterator(r, t)
 }
 instance Reducible[Nel] {
     pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b & (ef1 and ef2) = Nel.reduceLeftTo(f, g, l)
@@ -637,13 +637,6 @@ namespace Nel {
             case _       => unreachable!()
         }
     }
-
-    ///
-    /// Returns an iterator over `l`.
-    ///
-    pub def toStaticIterator(l: Nel[a]): StaticIterator[a] & Impure =
-       let Iterator(done, next) = toIterator(Static, l);
-       StaticIterator(done, next)
 
     ///
     /// Returns an iterator over `l`.
