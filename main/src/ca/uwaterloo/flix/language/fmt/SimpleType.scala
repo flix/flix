@@ -79,6 +79,8 @@ object SimpleType {
 
   case object Region extends SimpleType
 
+  case object Empty extends SimpleType
+
   //////////
   // Records
   //////////
@@ -208,9 +210,19 @@ object SimpleType {
   case class PureArrow(arg: SimpleType, ret: SimpleType) extends SimpleType
 
   /**
+    * A function with a purity.
+    */
+  case class PolyPurArrow(arg: SimpleType, pur: SimpleType, ret: SimpleType) extends SimpleType
+
+  /**
     * A function with an effect.
     */
-  case class PolyArrow(arg: SimpleType, eff: SimpleType, ret: SimpleType) extends SimpleType
+  case class PolyEffArrow(arg: SimpleType, eff: SimpleType, ret: SimpleType) extends SimpleType
+
+  /**
+    * A function with effect and purity.
+    */
+  case class PolyPurAndEffArrow(arg: SimpleType, pur: SimpleType, eff: SimpleType, ret: SimpleType) extends SimpleType
 
   ///////
   // Tags
@@ -306,19 +318,43 @@ object SimpleType {
         args match {
           // Case 1: No args. Fill everything with a hole.
           case Nil =>
-            val lastArrow: SimpleType = PolyArrow(Hole, Hole, Hole)
+            val lastArrow: SimpleType = PolyPurAndEffArrow(Hole, Hole, Hole, Hole)
             // NB: safe to subtract 2 since arity is always at least 2
             List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow)
-          // Case 2: Pure function.
-          case True :: tpes =>
+
+          // Case 2: Only applied to purity but not effect
+          case pur :: Nil =>
+            val lastArrow: SimpleType = PolyPurAndEffArrow(Hole, pur, Hole, Hole)
+            // NB: safe to subtract 2 since arity is always at least 2
+            List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow)
+
+          // Case 3: Pure function.
+          case True :: Empty :: tpes =>
             // NB: safe to reduce because arity is always at least 2
             tpes.padTo(arity, Hole).reduceRight(PureArrow)
-          // Case 3: Impure function.
-          case eff :: tpes =>
+
+          // Case 4: Impure in effect only.
+          case True :: eff :: tpes =>
             // NB: safe to take last 2 because arity is always at least 2
             val allTpes = tpes.padTo(arity, Hole)
             val List(lastArg, ret) = allTpes.takeRight(2)
-            val lastArrow: SimpleType = PolyArrow(lastArg, eff, ret)
+            val lastArrow: SimpleType = PolyEffArrow(lastArg, eff, ret)
+            allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
+
+          // Case 5: Impure in purity only.
+          case pur :: Empty :: tpes =>
+            // NB: safe to take last 2 because arity is always at least 2
+            val allTpes = tpes.padTo(arity, Hole)
+            val List(lastArg, ret) = allTpes.takeRight(2)
+            val lastArrow: SimpleType = PolyPurArrow(lastArg, pur, ret)
+            allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
+
+          // Case 6: Impure function.
+          case pur :: eff :: tpes =>
+            // NB: safe to take last 2 because arity is always at least 2
+            val allTpes = tpes.padTo(arity, Hole)
+            val List(lastArg, ret) = allTpes.takeRight(2)
+            val lastArrow: SimpleType = PolyPurAndEffArrow(lastArg, pur, eff, ret)
             allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
         }
 
@@ -511,6 +547,7 @@ object SimpleType {
 
       case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Region => mkApply(Region, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.Empty => SimpleType.Empty
       case _: TypeConstructor.UnappliedAlias => throw InternalCompilerException("Unexpected unapplied alias.")
     }
   }
