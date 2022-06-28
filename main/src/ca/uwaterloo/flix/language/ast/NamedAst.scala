@@ -389,8 +389,6 @@ object NamedAst {
 
   }
 
-  case class Scheme(quantifiers: List[Symbol.UnkindedTypeVarSym], tconstrs: List[NamedAst.TypeConstraint], base: NamedAst.Type)
-
   sealed trait TypeParams {
     val tparams: List[NamedAst.TypeParam]
   }
