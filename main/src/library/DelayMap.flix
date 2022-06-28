@@ -727,6 +727,15 @@ namespace DelayMap {
         Map(RedBlackTree.mapWithKey((_, v) -> force v, t))
 
     ///
+    /// Returns the map `m` as a MutDeque of key-value pairs.
+    ///
+    @Experimental
+    pub def toMutDeque(m: DelayMap[k, v], r: Region[r]): MutDeque[(k, v), r] \ Write(r) =
+        let d = MutDeque.new(r);
+        foreach((k, v) -> MutDeque.pushBack((k, v), d), m);
+        d
+
+    ///
     /// Returns `m` as a mutable set.
     ///
     @Experimental @Parallel
