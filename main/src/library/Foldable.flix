@@ -250,9 +250,9 @@ pub class Foldable[t : Type -> Type] with ForEach[t] {
     ///
     /// Returns the set `s` as a `MutSet`.
     ///
-    pub def toMutSet(t: t[a], r: Region[r]): MutSet[a] with Order[a] \ Write(r) =
+    pub def toMutSet(t: t[a], r: Region[r]): MutSet[a, r] \ Write(r) with Order[a] =
         let s = new MutSet(r);
-        Foldable.foreach(x -> add!(x, s), t);
+        Foldable.foreach(x -> MutSet.add!(x, s), t);
         s
 
     ///
@@ -266,6 +266,14 @@ pub class Foldable[t : Type -> Type] with ForEach[t] {
     ///
     pub def toMapWith(f: a -> b, s: t[a]): Map[a, b] with Order[a] =
         Foldable.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), s)
+
+    ///
+    /// Returns the set `s` as a `MutMap`.
+    ///
+    pub def toMutMap(t: t[(k, v)], r: Region[r]): MutMap[k, v, r] \ Write(r) with Order[k] =
+        let m = new MutMap(r);
+        Foldable.foreach(x -> let (k, v) = x; MutMap.put!(k, v, m), t);
+        m
 
     ///
     /// Returns `t` without the longest prefix that satisfies the predicate `f`.

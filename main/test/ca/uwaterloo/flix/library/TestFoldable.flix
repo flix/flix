@@ -326,6 +326,43 @@ namespace TestFoldable {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // toMutMap                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutMap01(): Bool = region r {
+        let l = Nil: List[(Unit, Unit)];
+        let m = Foldable.toMutMap(l, r);
+
+        l == MutMap.toList(m)
+    }
+
+    @test
+    def toMutMap02(): Bool = region r {
+        let l = (1, 2) :: (3, 4) :: Nil;
+        let m = Foldable.toMutMap(l, r);
+
+        l == MutMap.toList(m)
+    }
+
+    @test
+    def toMutMap03(): Bool = region r {
+        let l = (3, 4) :: (1, 4) :: (2, 3) :: Nil;
+        let m = Foldable.toMutMap(l, r);
+
+        l == MutMap.toList(m)
+    }
+
+    @test
+    def toMutMap04(): Bool = region r {
+        let l = (1, 'a') :: (2, 'b') :: (3, 'c') :: Nil;
+        let m = Foldable.toMutMap(l, r);
+
+        l == MutMap.toList(m)
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // join                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
