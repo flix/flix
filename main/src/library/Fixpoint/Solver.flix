@@ -625,7 +625,7 @@ namespace Fixpoint {
         case Datalog(_, cs) =>
             let pFacts = new MutList(Static);
             Array.foreach(c -> match c {
-                case Constraint(HeadAtom(headPred, _, terms), []) =>
+                case Constraint(HeadAtom(headPred, _, terms), Nil) =>
                     if (headPred == p)
                         let vs = Array.map(headTermValue, terms);
                         MutList.push!(f(vs), pFacts)
