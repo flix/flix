@@ -2679,16 +2679,19 @@ def distinctWith09(): Bool =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool & Impure =
-        Nil: List[Int32] |> List.toIterator |> Iterator.toList == Nil
+    def toIterator01(): Bool = region r {
+        Nil: List[Int32] |> List.toIterator(r) |> Iterator.toList == Nil
+    }
 
     @test
-    def toIterator02(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toIterator |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    def toIterator02(): Bool = region r {
+        (1 :: 2 :: 3 :: Nil) |> List.toIterator(r) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    }
 
     @test
-    def toIterator03(): Bool & Impure =
-        List.range(-100, 100) |> List.toIterator |> Iterator.toList == List.range(-100, 100)
+    def toIterator03(): Bool = region r {
+        List.range(-100, 100) |> List.toIterator(r) |> Iterator.toList == List.range(-100, 100)
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2730,5 +2733,39 @@ def distinctWith09(): Bool =
         let l1 = 4 :: 5 :: Nil;
         let l2 = 2 :: 3 :: 6 :: 7 :: Nil;
         List.merge(l1, l2) == 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // shuffle                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def shuffle01(): Bool & Impure =
+        let l: List[Int32] = Nil;
+        List.shuffle(Random.new(), l);
+
+        List.length(l) == 0 and List.toSet(l) == Set#{}
+
+    @test
+    def shuffle02(): Bool & Impure =
+        let l = 1 :: Nil;
+        List.shuffle(Random.new(), l);
+
+        List.length(l) == 1 and List.toSet(l) == Set#{1}
+
+    @test
+    def shuffle03(): Bool & Impure =
+        let l = 1 :: 2 :: 3 :: Nil;
+        List.shuffle(Random.new(), l);
+
+        List.length(l) == 3 and List.toSet(l) == Set#{1, 2, 3}
+
+    @test
+    def shuffle04(): Bool & Impure =
+        let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
+        List.shuffle(Random.new(), l);
+
+        List.length(l) == 10 and List.toSet(l) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+
 
 }

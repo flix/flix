@@ -53,7 +53,7 @@ object GenEnumInterfaces {
     val visitor = AsmOps.mkClassWriter()
 
     // The super class of the generated interface.
-    val superClass = JvmName.Object.toInternalName
+    val superClass = BackendObjType.JavaObject.jvmName.toInternalName
 
     // The interface header.
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, interfaceType.name.toInternalName, null, superClass, Array())

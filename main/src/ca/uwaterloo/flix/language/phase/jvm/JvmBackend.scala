@@ -70,6 +70,11 @@ object JvmBackend {
       // TODO: all the type collection above should maybe have its own subphase
 
       //
+      // Compute the set of anonymous classes (NewObjects) in the program.
+      //
+      val anonClassDefs = JvmOps.anonClassesOf(root)
+
+      //
       // Generate the main class.
       //
       val mainClass = GenMainClass.gen()
@@ -145,6 +150,11 @@ object JvmBackend {
       val lazyClasses = GenLazyClasses.gen(types)
 
       //
+      // Generate anonymous classes.
+      //
+      val anonClasses = GenAnonymousClasses.gen(anonClassDefs)
+
+      //
       // Generate the Unit class.
       //
       val unitClass = GenUnitClass.gen()
@@ -193,6 +203,7 @@ object JvmBackend {
         recordExtendClasses,
         refClasses,
         lazyClasses,
+        anonClasses,
         unitClass,
         flixErrorClass,
         rslClass,

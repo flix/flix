@@ -1644,20 +1644,23 @@ namespace TestDelayMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool & Impure =
+    def toIterator01(): Bool = region r {
         Map.empty(): Map[Int32, Int32] |> Map.toDelayMap |>
-            DelayMap.toIterator |> Iterator.toMap == Map.empty()
+            DelayMap.toIterator(r) |> Iterator.toMap == Map.empty()
+    }
 
     @test
-    def toIterator02(): Bool & Impure =
+    def toIterator02(): Bool = region r {
         Map#{"A" => 1, "B" => 2, "C" => 3, "D" => 4} |> Map.toDelayMap |>
-            DelayMap.toIterator |> Iterator.toMap == Map#{"A" => 1, "B" => 2, "C" => 3, "D" => 4}
+            DelayMap.toIterator(r) |> Iterator.toMap == Map#{"A" => 1, "B" => 2, "C" => 3, "D" => 4}
+    }
 
     @test
-    def toIterator03(): Bool & Impure =
+    def toIterator03(): Bool = region r {
         let l = List.range(0, 100);
         List.zip(l, List.reverse(l)) |> List.toMap |> Map.toDelayMap |>
-            DelayMap.toIterator |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
+            DelayMap.toIterator(r) |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////

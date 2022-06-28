@@ -50,11 +50,10 @@ namespace Fixpoint {
                 case RelOp.Search(varB, relB, RelOp.Project(tuple, relA)) =>
                     use Fixpoint/Ram.arityOf;
                     let isCopy =
-                        Array.map(t -> match t {
+                        List.map(t -> match t {
                             case RamTerm.RowLoad(var, i) => if (varB == var) i else -1
                             case _ => -1
-                        }, tuple) |>
-                        Array.sameElements(Array.range(0, arityOf(relB), Static));
+                        }, tuple) == List.range(0, arityOf(relB));
                     if (isCopy)
                         Some(RamStmt.Merge(relB, relA))
                     else

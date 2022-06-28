@@ -1307,20 +1307,24 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIter01(): Bool & Impure =
-    	DelayList.toIterator(ENil: DelayList[Unit]) |> Iterator.toList == Nil
+    def toIter01(): Bool = region r {
+    	DelayList.toIterator(r, ENil: DelayList[Unit]) |> Iterator.toList == Nil
+    }
 
     @test
-    def toIter02(): Bool & Impure =
-    	DelayList.toIterator(LList(lazy ENil): DelayList[Unit]) |> Iterator.toList == Nil
+    def toIter02(): Bool = region r {
+    	DelayList.toIterator(r, LList(lazy ENil): DelayList[Unit]) |> Iterator.toList == Nil
+    }
 
     @test
-    def toIter06(): Bool & Impure =
-    	DelayList.toIterator(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    def toIter06(): Bool = region r {
+    	DelayList.toIterator(r, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    }
 
     @test
-    def toIter09(): Bool & Impure =
-    	DelayList.range(-100, 100) |> DelayList.toIterator |> Iterator.toList == List.range(-100, 100)
+    def toIter09(): Bool = region r {
+    	DelayList.range(-100, 100) |> DelayList.toIterator(r) |> Iterator.toList == List.range(-100, 100)
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2932,5 +2936,37 @@ namespace TestDelayList {
         let f = List.toDelayList((x -> x + 1) :: (x -> x * 2) :: Nil);
         let l = List.toDelayList(0 :: 4 :: Nil);
         DelayList.ap(f, l) |> DelayList.toList == 1 :: 5 :: 0 :: 8 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // shuffle                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def shuffle01(): Bool & Impure =
+        let l1: List[Int32] = Nil;
+        let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
+
+        DelayList.length(l2) == 0 and DelayList.toSet(l2) == Set#{}
+
+    @test
+    def shuffle02(): Bool & Impure =
+        let l1 = 1 :: Nil;
+        let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
+
+        DelayList.length(l2) == 1 and DelayList.toSet(l2) == Set#{1}
+
+    @test
+    def shuffle03(): Bool & Impure =
+        let l1 = 1 :: 2 :: 3 :: Nil;
+        let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
+
+        DelayList.length(l2) == 3 and DelayList.toSet(l2) == Set#{1, 2, 3}
+
+    @test
+    def shuffle04(): Bool & Impure =
+        let l1 = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
+        let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
+
+        DelayList.length(l2) == 10 and DelayList.toSet(l2) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 
 }

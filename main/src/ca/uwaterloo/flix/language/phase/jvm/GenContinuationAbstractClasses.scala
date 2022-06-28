@@ -59,33 +59,10 @@ object GenContinuationAbstractClasses {
     cm.mkObjectConstructor(IsPublic)
     // essentially an abstract field
     cm.mkField(contType.ResultField)
-    contType.InvokeMethod.mkAbstractMethod(cm)
-    contType.UnwindMethod.mkMethod(cm, genUnwindMethod(contType), IsPublic, IsFinal)
-    cm.mkMethod(genRunMethod(contType), "run", NothingToVoid, IsPublic, IsFinal)
+    cm.mkAbstractMethod(contType.InvokeMethod)
+    cm.mkMethod(contType.UnwindMethod)
+    cm.mkMethod(contType.RunMethod)
 
     cm.closeClassMaker()
   }
-
-  private def genUnwindMethod(contType: BackendObjType.Continuation): InstructionSet =
-    thisLoad() ~ storeWithName(1, contType.toTpe) { currentCont =>
-      pushNull() ~ storeWithName(2, contType.toTpe) { previousCont =>
-        doWhile(Condition.NONNULL) {
-          currentCont.load() ~
-            previousCont.store() ~
-            currentCont.load() ~
-            contType.InvokeMethod.invoke() ~
-            DUP() ~
-            currentCont.store()
-        } ~
-          previousCont.load() ~
-          GETFIELD(contType.ResultField) ~
-          xReturn(contType.result)
-      }
-    }
-
-  private def genRunMethod(contType: BackendObjType.Continuation): InstructionSet =
-    thisLoad() ~
-      contType.UnwindMethod.invoke() ~
-      xPop(contType.result) ~
-      RETURN()
 }

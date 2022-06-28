@@ -379,7 +379,7 @@ namespace File {
     ///
     /// Returns an iterator of the given file `f`
     ///
-    pub def readLinesIter(f: String): Iterator[Result[String, String]] & Impure =
+    pub def readLinesIter(f: String): Iterator[Result[String, String], Static] & Impure =
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path & Impure;
@@ -409,7 +409,7 @@ namespace File {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String & Impure;
-                Iterator.singleton(Err(getMessage(ex)))
+                Iterator.singleton(Static, Err(getMessage(ex)))
         }
 
     ///
@@ -417,7 +417,7 @@ namespace File {
     /// The options `opts` to apply consists of
     /// `charSet` - the specific charset to be used to decode the bytes.
     ///
-    pub def readLinesIterWith(opts: {charSet :: String}, f: String): Iterator[Result[String, String]] & Impure =
+    pub def readLinesIterWith(opts: {charSet :: String}, f: String): Iterator[Result[String, String], Static] & Impure =
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path & Impure;
@@ -448,7 +448,7 @@ namespace File {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String & Impure;
-                Iterator.singleton(Err(getMessage(ex)))
+                Iterator.singleton(Static, Err(getMessage(ex)))
         }
 
     ///
@@ -519,7 +519,7 @@ namespace File {
     ///
     /// Returns an iterator of the bytes in the given `file` in chunks of size `chunkSize`.
     ///
-    pub def readChunks(f: String, chunkSize: Int32): Iterator[Result[Array[Int8, Static], String]] & Impure =
+    pub def readChunks(f: String, chunkSize: Int32): Iterator[Result[Array[Int8, Static], String], Static] & Impure =
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
             import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream & Impure as newInputStream;
@@ -550,7 +550,7 @@ namespace File {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String & Impure;
-                Iterator.singleton(Err(getMessage(ex)))
+                Iterator.singleton(Static, Err(getMessage(ex)))
         }
 
     ///
@@ -873,7 +873,7 @@ namespace File {
     ///
     /// Does not recursively traverse the directory.
     ///
-    pub def listWithIter(f: String): Result[Iterator[String], String] & Impure =
+    pub def listWithIter(f: String): Result[Iterator[String, Static], String] & Impure =
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path & Impure;
@@ -900,7 +900,7 @@ namespace File {
     ///
     /// Recursively traverses the directory.
     ///
-    pub def walk(f: String): Result[Iterator[String], String] & Impure =
+    pub def walk(f: String): Result[Iterator[String, Static], String] & Impure =
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path & Impure;
@@ -924,7 +924,7 @@ namespace File {
     ///
     /// Converts a Java iterator to a Flix Iterator.
     ///
-    def fromJavaIter(iter: ##java.util.Iterator): Iterator[a] =
+    def fromJavaIter(iter: ##java.util.Iterator): Iterator[a, Static] =
         import java.util.Iterator.hasNext(): Bool & Impure;
         import java.util.Iterator.next(): a & Impure as getNext;
 

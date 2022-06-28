@@ -661,7 +661,7 @@ object GenExpression {
       visitor.visitInsn(DUP)
       // Instantiating a new array of type jvmType
       if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
-        visitor.visitTypeInsn(ANEWARRAY, JvmName.Object.toInternalName)
+        visitor.visitTypeInsn(ANEWARRAY, BackendObjType.JavaObject.jvmName.toInternalName)
       } else { // Happens if the inner type is a primitive type
         visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
       }
@@ -935,8 +935,10 @@ object GenExpression {
 
     case Expression.NewObject(_, tpe, loc) =>
       addSourceLine(visitor, loc)
-      visitor.visitInsn(ACONST_NULL)
-      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+      val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, "HardcodedAnon").toInternalName
+      visitor.visitTypeInsn(NEW, className)
+      visitor.visitInsn(DUP)
+      visitor.visitMethodInsn(INVOKESPECIAL, className, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
 
     case Expression.NewChannel(exp, _, loc) =>
       addSourceLine(visitor, loc)
@@ -1504,7 +1506,7 @@ object GenExpression {
     sop match {
       case StringOp.Eq | StringOp.Neq =>
         // String can be compared using Object's `equal` method
-        visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Object.toInternalName, "equals",
+        visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.JavaObject.jvmName.toInternalName, "equals",
           AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), false)
         visitor.visitInsn(ICONST_1)
         visitor.visitJumpInsn(intOp, condElse)
