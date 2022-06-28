@@ -207,7 +207,7 @@ class Shell(source: Either[Path, Seq[File]], options: Options) {
           case Validation.Failure(_) =>
             // Compilation failed. Ignore the last fragment.
             fragments.pop()
-            flix.remSourceCode(name, s)
+            flix.remSourceCode(name)
             w.println("Error: Declaration ignored due to previous error(s).")
         }
 
