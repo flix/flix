@@ -1259,7 +1259,13 @@ object Typer {
           resultEff = declaredEff.getOrElse(actualEff)
         } yield (constrs, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.Without(exp, pur, loc) => visitExp(exp) // TODO actually infer
+      case KindedAst.Expression.Without(exp, sym, loc) =>
+        val effType = Type.Cst(TypeConstructor.Effect(sym), loc)
+        val expected = Type.mkDifference(Type.freshVar(Kind.Effect, loc), effType, loc)
+        for {
+          (tconstrs, tpe, pur, eff) <- visitExp(exp)
+          _ <- expectTypeM(expected = expected, actual = eff, exp.loc)
+        } yield (tconstrs, tpe, pur, expected)
 
       case KindedAst.Expression.TryCatch(exp, rules, loc) =>
         val rulesType = rules map {
@@ -1276,7 +1282,7 @@ object Typer {
           resultEff = Type.mkUnion(eff :: ruleEffs, loc)
         } yield (constrs ++ ruleConstrs.flatten, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.TryWith(exp, pur, rules, tvar, loc) => visitExp(exp) // TODO actually infer
+      case KindedAst.Expression.TryWith(exp, sym, rules, tvar, loc) => visitExp(exp) // TODO actually infer
 
       case KindedAst.Expression.Do(op, args, loc) => InferMonad.point((Nil: List[Ast.TypeConstraint], Type.Unit, Type.Pure, Type.Empty)) // TODO actually infer
 
