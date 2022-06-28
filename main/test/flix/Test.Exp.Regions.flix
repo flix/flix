@@ -615,6 +615,21 @@ namespace Test/Exp/Regions {
         }
 
     @test
+    def testRegions3Regions01(): Bool & Impure =
+        region r1 {
+            let a = [1; 8] @ r1;
+            region r2 {
+                let l = new MutList(r2);
+                region _ {
+                    let m = new MutMap(Static);
+                    MutList.push!(1, l);
+                    MutMap.put!(1, 1, m);
+                    a[0] == 1 and MutList.pop!(l) == Some(1) and MutMap.get(1, m) == Some(1)
+                }
+            }
+        }
+
+    @test
     def testRegions0RegionsReferences01(): Ref[Array[Int32, Static], Static] & Impure =
         ref []
 
