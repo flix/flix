@@ -28,12 +28,13 @@ import org.jline.reader.{EndOfFileException, LineReaderBuilder, UserInterruptExc
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
 import java.nio.file._
+import java.io.File
 import java.util.concurrent.Executors
 import java.util.logging.{Level, Logger}
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
-class Shell(initialPaths: List[Path], options: Options) {
+class Shell(source: Either[Path, Seq[File]], options: Options) {
 
   /**
     * The audience is always external.
@@ -41,39 +42,16 @@ class Shell(initialPaths: List[Path], options: Options) {
   private implicit val audience: Audience = Audience.External
 
   /**
-    * The executor service.
-    */
-  private val executorService = Executors.newSingleThreadExecutor()
-
-  /**
-    * The mutable set of paths to load.
-    */
-  private val sourcePaths = mutable.Set.empty[Path] ++ initialPaths
-
-  /**
-    * The name of the current entry point.
-    */
-  private var entryPoint: Option[Symbol.DefnSym] = None
-
-  /**
     * The mutable list of source code fragments.
     */
   private val fragments = mutable.Stack.empty[String]
-
-  /**
-    * The set of changed sources.
-    */
-  private var changeSet: Set[Ast.Input] = Set.empty
 
   /**
     * The Flix instance (the same instance is used for incremental compilation).
     */
   private val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
 
-  /**
-    * The current compilation result (initialized on startup).
-    */
-  private var compilationResult: CompilationResult = _
+  private val sourceFiles = new SourceFiles(source)
 
   /**
     * Continuously reads a line of input from the terminal, parses and executes it.
@@ -165,46 +143,11 @@ class Shell(initialPaths: List[Path], options: Options) {
   /**
     * Reloads every source path.
     */
-  private def execReload()(implicit terminal: Terminal): Validation[TypedAst.Root, CompilationMessage] = {
-    // Instantiate a fresh flix instance.
-    this.flix.setOptions(options.copy(entryPoint = entryPoint))
+  private def execReload()(implicit terminal: Terminal): Validation[CompilationResult, CompilationMessage] = {
+    sourceFiles.addSourcesAndPackages(flix)
+    fragments.clear()
 
-    // Add each path to Flix.
-    for (path <- this.sourcePaths) {
-      val ext = path.toFile.getName.split('.').last
-      ext match {
-        case "flix" => flix.addSourcePath(path)
-        case "fpkg" => flix.addSourcePath(path)
-        case "jar" => flix.addJar(path)
-        case _ => throw new IllegalStateException(s"Unrecognized file extension: '$ext'.")
-      }
-    }
-
-    // Compute the TypedAst and store it.
-    val result = this.flix.check()
-    result match {
-      case Validation.Success(root) =>
-
-        // Generate code.
-        flix.codeGen(root) match {
-          case Validation.Success(m) =>
-            compilationResult = m
-          case Validation.Failure(errors) =>
-            for (error <- errors) {
-              terminal.writer().print(error)
-            }
-        }
-      case Validation.Failure(errors) =>
-        terminal.writer().println()
-        flix.mkMessages(errors)
-          .foreach(terminal.writer().print)
-        terminal.writer().println()
-        terminal.writer().print(prompt)
-        terminal.writer().flush()
-    }
-
-    // Return the result.
-    result
+    compile()
   }
 
   /**
@@ -220,11 +163,11 @@ class Shell(initialPaths: List[Path], options: Options) {
   private def execHelp()(implicit terminal: Terminal): Unit = {
     val w = terminal.writer()
 
-    w.println("  Command       Arguments         Purpose")
+    w.println("  Command       Purpose")
     w.println()
-    w.println("  :reload :r                      Recompiles every source file.")
-    w.println("  :quit :q                        Terminates the Flix shell.")
-    w.println("  :help :h :?                     Shows this helpful information.")
+    w.println("  :reload :r    Recompiles every source file.")
+    w.println("  :quit :q      Terminates the Flix shell.")
+    w.println("  :help :h :?   Shows this helpful information.")
     w.println()
   }
 
@@ -257,7 +200,7 @@ class Shell(initialPaths: List[Path], options: Options) {
         flix.addSourceCode(name, s)
 
         // And try to compile!
-        execReload() match {
+        compile() match {
           case Validation.Success(_) =>
             // Compilation succeeded.
             w.println("Ok.")
@@ -279,8 +222,9 @@ class Shell(initialPaths: List[Path], options: Options) {
              |println($s)
              |""".stripMargin
         flix.addSourceCode("<shell>", src)
-        entryPoint = Some(main)
-        run()
+        run(main)
+        // Remove immediately so it doesn't confuse subsequent compilations (e.g. reloads or declarations)
+        flix.remSourceCode("<shell>", src)
 
       case Category.Unknown =>
         // The input is not recognized. Output an error message.
@@ -292,20 +236,46 @@ class Shell(initialPaths: List[Path], options: Options) {
     * Reports unknown command.
     */
   private def execUnknown(s: String)(implicit terminal: Terminal): Unit = {
-    terminal.writer().println(s"Unknown command '$s'. Try `:run` or `:help'.")
+    terminal.writer().println(s"Unknown command '$s'. Try `:help'.")
   }
 
   /**
-    * Executes the eval command.
+    * Compile
     */
-  private def run()(implicit terminal: Terminal): Unit = {
-    // Recompile the program.
-    execReload()
+  private def compile(entryPoint: Option[Symbol.DefnSym] = None)(implicit terminal: Terminal): Validation[CompilationResult, CompilationMessage] = {
 
-    // Evaluate the main function and get the result.
-    this.compilationResult.getMain match {
-      case None => terminal.writer().println("No main function to run.")
-      case Some(main) => main(Array.empty)
+    this.flix.setOptions(options.copy(entryPoint = entryPoint))
+
+    val result = this.flix.compile()
+    result match {
+      case Validation.Success(result) =>
+
+      case Validation.Failure(errors) =>
+        for (error <- errors) {
+          terminal.writer().print(error)
+        }
+    }
+
+    // Return the result.
+    result
+  }
+
+  /**
+    * Run the given main function
+    */
+  private def run(main: Symbol.DefnSym)(implicit terminal: Terminal): Unit = {
+    // Recompile the program.
+    compile(Some(main)) match {
+      case Validation.Success(result) =>
+        result.getMain match {
+          case Some(m) => 
+            // Evaluate the main function
+            m(Array.empty)
+          
+          case None =>
+        }
+
+      case Validation.Failure(_) =>
     }
   }
 }
