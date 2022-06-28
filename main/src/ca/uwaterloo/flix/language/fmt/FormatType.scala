@@ -96,7 +96,9 @@ object FormatType {
       case SimpleType.Intersection(_) => false
       case SimpleType.Difference(_, _) => false
       case SimpleType.PureArrow(_, _) => false
-      case SimpleType.PolyArrow(_, _, _) => false
+      case SimpleType.PolyEffArrow(_, _, _) => false
+      case SimpleType.PolyPurArrow(_, _, _) => false
+      case SimpleType.PolyPurAndEffArrow(_, _, _, _) => false
 
       // delimited types
       case SimpleType.Hole => true
@@ -119,6 +121,7 @@ object FormatType {
       case SimpleType.True => true
       case SimpleType.False => true
       case SimpleType.Region => true
+      case SimpleType.Empty => true
       case SimpleType.RecordConstructor(_) => true
       case SimpleType.Record(_) => true
       case SimpleType.RecordExtend(_, _) => true
@@ -175,13 +178,14 @@ object FormatType {
       case SimpleType.Lazy => "Lazy"
       case SimpleType.True => mode match {
         case Mode.Type => "true"
-        case Mode.Effect => "Pure"
+        case Mode.Purity => "Pure"
       }
       case SimpleType.False => mode match {
         case Mode.Type => "false"
-        case Mode.Effect => "Impure"
+        case Mode.Purity => "Impure"
       }
       case SimpleType.Region => "Region"
+      case SimpleType.Empty => "Empty"
       case SimpleType.Record(fields) =>
         val fieldString = fields.map(visitRecordFieldType).mkString(", ")
         s"{ $fieldString }"
@@ -240,11 +244,22 @@ object FormatType {
         val argString = delimitFunctionArg(arg)
         val retString = delimit(ret, Mode.Type)
         s"$argString -> $retString"
-      case SimpleType.PolyArrow(arg, eff, ret) =>
+      case SimpleType.PolyEffArrow(arg, eff, ret) =>
         val argString = delimitFunctionArg(arg)
-        val effString = visit(eff, Mode.Effect)
+        val effString = visit(eff, Mode.Type)
         val retString = delimit(ret, Mode.Type)
-        s"$argString -> $retString & $effString"
+        s"$argString -> $retString \\ $effString"
+      case SimpleType.PolyPurArrow(arg, pur, ret) =>
+        val argString = delimitFunctionArg(arg)
+        val purString = visit(pur, Mode.Purity)
+        val retString = delimit(ret, Mode.Type)
+        s"$argString -> $retString & $purString"
+      case SimpleType.PolyPurAndEffArrow(arg, pur, eff, ret) =>
+        val argString = delimitFunctionArg(arg)
+        val purString = visit(pur, Mode.Purity)
+        val effString = visit(eff, Mode.Type)
+        val retString = delimit(ret, Mode.Type)
+        s"$argString -> $retString & $purString \\ $effString"
       case SimpleType.TagConstructor(name) => name
       case SimpleType.Tag(name, args, ret) =>
         // NB: not putting too much care into tag formatting, as it should not show up
@@ -295,7 +310,7 @@ object FormatType {
   private sealed trait Mode
 
   private object Mode {
-    case object Effect extends Mode
+    case object Purity extends Mode
 
     case object Type extends Mode
   }
