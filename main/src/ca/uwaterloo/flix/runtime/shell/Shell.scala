@@ -51,6 +51,9 @@ class Shell(source: Either[Path, Seq[File]], options: Options) {
     */
   private val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
 
+  /**
+    * The source files currently loaded.
+    */
   private val sourceFiles = new SourceFiles(source)
 
   /**
@@ -144,7 +147,11 @@ class Shell(source: Either[Path, Seq[File]], options: Options) {
     * Reloads every source path.
     */
   private def execReload()(implicit terminal: Terminal): Validation[CompilationResult, CompilationMessage] = {
+
+    // Scan the disk to find changes, and add source to the flix object
     sourceFiles.addSourcesAndPackages(flix)
+    
+    // Remove any previous definitions, as they may no longer be valid against the new source
     fragments.clear()
 
     compile()

@@ -31,11 +31,16 @@ import scala.collection.mutable
   */
 class SourceFiles(source: Either[Path, Seq[File]]) {
 
+  // The sources and libraries currently loaded
   var currentSources: Set[Path] = Set.empty
   var currentLibs: Set[Path] = Set.empty
 
+  // Timestamps at the point the sources were loaded
   var timestamps: Map[Path, Long] = Map.empty
 
+  /**
+    * Scan the disk for changes, and reload anything that's changed
+    */
   def addSourcesAndPackages(flix: Flix) = {
     val previousSources = currentSources
 
@@ -52,8 +57,11 @@ class SourceFiles(source: Either[Path, Seq[File]]) {
     }
 
     for (file <- currentSources
-         if hasChanged(file))
-      addSourceCode(flix, file)
+         if hasChanged(file)) {
+      val bytes = Files.readAllBytes(file)
+      val str = new String(bytes, flix.defaultCharset)
+      flix.addSourceCode(file.toString(), str)
+    }
 
     for (file <- currentLibs
          if hasChanged(file))
@@ -61,25 +69,9 @@ class SourceFiles(source: Either[Path, Seq[File]]) {
 
     val deletedSources = previousSources -- currentSources
     for (file <- deletedSources)
-      remSourceCode(flix, file)
+      flix.remSourceCode(file.toString)
 
     timestamps = (currentSources ++ currentLibs).map(f => f -> f.toFile.lastModified).toMap
-  }
-
-  /**
-    * Given the path to a file, read it into memory and add it to `flix`
-    */
-  private def addSourceCode(flix: Flix, file: Path): Unit = {
-    val bytes = Files.readAllBytes(file)
-    val str = new String(bytes, flix.defaultCharset)
-    flix.addSourceCode(file.toString(), str)
-  }
-
-  /**
-    * Remove a source file from `flix`
-    */
-  private def remSourceCode(flix: Flix, file: Path) = {
-    flix.remSourceCode(file.toString)
   }
 
   /**
