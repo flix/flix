@@ -201,7 +201,6 @@ pub class Foldable[t : Type -> Type] with ForEach[t] {
     pub def toList(t: t[a]): List[a] =
         Foldable.foldRight((x, acc) -> x :: acc, Nil, t)
 
-
     ///
     /// Returns `t` as an array.
     ///

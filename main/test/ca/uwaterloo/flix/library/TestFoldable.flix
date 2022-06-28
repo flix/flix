@@ -228,6 +228,43 @@ namespace TestFoldable {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // toMutDeque                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutDeque01(): Bool = region r {
+        let l = Nil: List[Unit];
+        let d = Foldable.toMutDeque(l, r);
+
+        l == MutDeque.toList(d)
+    }
+
+    @test
+    def toMutDeque02(): Bool = region r {
+        let l = 1 :: 2 :: Nil;
+        let d = Foldable.toMutDeque(l, r);
+
+        l == MutDeque.toList(d)
+    }
+
+    @test
+    def toMutDeque03(): Bool = region r {
+        let l = 3 :: 1 :: 2 :: Nil;
+        let d = Foldable.toMutDeque(l, r);
+
+        l == MutDeque.toList(d)
+    }
+
+    @test
+    def toMutDeque04(): Bool = region r {
+        let l = 'a' :: 'b' :: 'c' :: Nil;
+        let d = Foldable.toMutDeque(l, r);
+
+        l == MutDeque.toList(d)
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // toMapWith                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
