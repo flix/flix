@@ -87,6 +87,13 @@ object Symbol {
   /**
     * Returns a label symbol with the given text.
     */
+  def freshRegionSym(text: String, loc: SourceLocation)(implicit flix: Flix): RegionSym = {
+    new RegionSym(flix.genSym.freshId(), text, loc)
+  }
+
+  /**
+    * Returns a label symbol with the given text.
+    */
   def freshLabel(text: String)(implicit flix: Flix): LabelSym = {
     new LabelSym(flix.genSym.freshId(), text)
   }
@@ -581,6 +588,34 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = eff.toString + "." + name
+  }
+
+  /**
+    * Region Symbol.
+    */
+  final class RegionSym(val id: Int, val text: String, val loc: SourceLocation) extends Ordered[RegionSym] {
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: RegionSym => this.id == that.id
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = Objects.hash(id)
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = text + Flix.Delimiter + id
+
+    /**
+      * Compares the given region symbols' IDs.
+      */
+    override def compare(that: RegionSym): Int = this.id.compare(that.id)
   }
 
   /**

@@ -314,8 +314,8 @@ object SemanticTokensProvider {
     case Expression.Region(_, _) =>
       Iterator.empty
 
-    case Expression.Scope(sym, _, exp, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
+    case Expression.Scope(_, varSym, _, exp, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Variable, Nil, varSym.loc)
       Iterator(t) ++ visitExp(exp)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
@@ -623,8 +623,9 @@ object SemanticTokensProvider {
     case TypeConstructor.Intersection => false
     case TypeConstructor.Difference => false
     case TypeConstructor.Effect(_) => false
-    case TypeConstructor.Region => false
     case TypeConstructor.Empty => false
+    case TypeConstructor.RegionToStar => false
+    case TypeConstructor.Region(_) => false
 
     case TypeConstructor.UnkindedEnum(_) => throw InternalCompilerException("Unexpected unkinded type.")
     case TypeConstructor.UnappliedAlias(_) => throw InternalCompilerException("Unexpected unkinded type.")

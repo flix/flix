@@ -725,10 +725,10 @@ object Resolver {
         case NamedAst.Expression.Region(tpe, loc) =>
           ResolvedAst.Expression.Region(tpe, loc).toSuccess
 
-        case NamedAst.Expression.Scope(sym, regionVar, exp, loc) =>
-          val eVal = visitExp(exp, Some(sym))
+        case NamedAst.Expression.Scope(sym, varSym, tvarSym, exp, loc) =>
+          val eVal = visitExp(exp, Some(varSym))
           mapN(eVal) {
-            e => ResolvedAst.Expression.Scope(sym, regionVar, e, loc)
+            e => ResolvedAst.Expression.Scope(sym, varSym, tvarSym, e, loc)
           }
 
         case NamedAst.Expression.Match(exp, rules, loc) =>
@@ -1703,7 +1703,7 @@ object Resolver {
       case "Lazy" => Type.mkLazy(loc).toSuccess
       case "Array" => Type.Cst(TypeConstructor.Array, loc).toSuccess
       case "Ref" => Type.Cst(TypeConstructor.Ref, loc).toSuccess
-      case "Region" => Type.Cst(TypeConstructor.Region, loc).toSuccess
+      case "Region" => Type.Cst(TypeConstructor.RegionToStar, loc).toSuccess
 
       // Disambiguate type.
       case typeName =>
@@ -2666,7 +2666,7 @@ object Resolver {
           ResolvedAst.Expression.Var(sym, sym.tvar, sym.loc)
         case None =>
           // Case 2.2: Use the global region.
-          val tpe = Type.mkRegion(Type.False, loc)
+          val tpe = Type.mkRegionStar(Type.False, loc)
           ResolvedAst.Expression.Region(tpe, loc)
       }
   }

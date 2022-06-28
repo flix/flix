@@ -989,7 +989,7 @@ object Weeder {
 
     case ParsedAst.Expression.Static(sp1, sp2) =>
       val loc = mkSL(sp1, sp2)
-      val tpe = Type.mkRegion(Type.False, loc)
+      val tpe = Type.mkRegionStar(Type.False, loc)
       WeededAst.Expression.Region(tpe, loc).toSuccess
 
     case ParsedAst.Expression.Scope(sp1, ident, exp, sp2) =>
@@ -2967,7 +2967,7 @@ object Weeder {
     * Returns the region expression `region` if it is non-None. Otherwise returns the global region.
     */
   private def getRegionOrDefault(region: Option[WeededAst.Expression], loc: SourceLocation): WeededAst.Expression = {
-    val tpe = Type.mkRegion(Type.False, loc)
+    val tpe = Type.mkRegionStar(Type.False, loc)
     val exp = WeededAst.Expression.Region(tpe, loc)
     region.getOrElse(exp)
   }

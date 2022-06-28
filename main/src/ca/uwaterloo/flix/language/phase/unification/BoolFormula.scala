@@ -121,10 +121,14 @@ object BoolFormula {
   /**
     * Converts the given type `tpe` to a Boolean formula under the given variable substitution map `m`.
     *
-    * The map `m` must bind each free type variable in `tpe` to a Boolean variable.
+    * The map `m` must bind each free type variable and constant in `tpe` to a Boolean variable.
     */
-  def fromType(tpe: Type, m: Bimap[Symbol.KindedTypeVarSym, Int]): BoolFormula = tpe match {
-    case Type.KindedVar(sym, _) => m.getForward(sym) match {
+  def fromType(tpe: Type, m: Bimap[RegionOrVar, Int]): BoolFormula = tpe match {
+    case Type.KindedVar(sym, _) => m.getForward(RegionOrVar.Var(sym)) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.")
+      case Some(x) => Var(x)
+    }
+    case Type.Cst(TypeConstructor.Region(sym), _) => m.getForward(RegionOrVar.Region(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.")
       case Some(x) => Var(x)
     }
@@ -141,16 +145,23 @@ object BoolFormula {
     *
     * The map `m` must bind each free variable in `f` to a type variable.
     */
-  def toType(f: BoolFormula, m: Bimap[Symbol.KindedTypeVarSym, Int], loc: SourceLocation): Type = f match {
+  def toType(f: BoolFormula, m: Bimap[RegionOrVar, Int], loc: SourceLocation): Type = f match {
     case True => Type.True
     case False => Type.False
     case Var(x) => m.getBackward(x) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.")
-      case Some(sym) => Type.KindedVar(sym, loc)
+      case Some(RegionOrVar.Var(sym)) => Type.KindedVar(sym, loc)
+      case Some(RegionOrVar.Region(sym)) => Type.mkRegion(sym, loc)
     }
     case Neg(f1) => Type.mkNot(toType(f1, m, loc), loc)
     case Conj(t1, t2) => Type.mkAnd(toType(t1, m, loc), toType(t2, m, loc), loc)
     case Disj(t1, t2) => Type.mkOr(toType(t1, m, loc), toType(t2, m, loc), loc)
+  }
+
+  sealed trait RegionOrVar
+  object RegionOrVar {
+    case class Var(sym: Symbol.KindedTypeVarSym) extends RegionOrVar
+    case class Region(sym: Symbol.RegionSym) extends RegionOrVar
   }
 
 }

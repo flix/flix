@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 import ca.uwaterloo.flix.language.dbg.{FormatExpression, FormatPattern}
 
 import java.lang.reflect.{Constructor, Field, Method}
-import scala.collection.immutable.List
 
 object TypedAst {
 
@@ -181,7 +180,7 @@ object TypedAst {
       def pur: Type = Type.Pure
     }
 
-    case class Scope(sym: Symbol.VarSym, regionVar: Type.KindedVar, exp: TypedAst.Expression, tpe: Type, pur: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Scope(sym: Symbol.RegionSym, varSym: Symbol.VarSym, tvar: Type.KindedVar, exp: TypedAst.Expression, tpe: Type, pur: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, pur: Type, loc: SourceLocation) extends TypedAst.Expression
 

@@ -80,7 +80,7 @@ object TypedAstOps {
       case Expression.Region(_, _) =>
         Map.empty
 
-      case Expression.Scope(_, _, exp, _, _, _) =>
+      case Expression.Scope(_, _, _, exp, _, _, _) =>
         visitExp(exp, env0)
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
@@ -368,7 +368,7 @@ object TypedAstOps {
     case Expression.Let(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.LetRec(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Region(_, _) => Set.empty
-    case Expression.Scope(_, _, exp, _, _, _) => sigSymsOf(exp)
+    case Expression.Scope(_, _, _, exp, _, _, _) => sigSymsOf(exp)
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
     case Expression.Stm(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Discard(exp, _, _) => sigSymsOf(exp)
@@ -509,8 +509,8 @@ object TypedAstOps {
     case Expression.Region(_, _) =>
       Map.empty
 
-    case Expression.Scope(sym, _, exp, _, _, _) =>
-      freeVars(exp) - sym
+    case Expression.Scope(_, varSym, _, exp, _, _, _) =>
+      freeVars(exp) - varSym
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)

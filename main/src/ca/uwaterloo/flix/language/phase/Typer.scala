@@ -30,7 +30,6 @@ import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, mapN, traverse}
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.collection.ListOps.unzip4
 
 import java.io.PrintWriter
@@ -799,14 +798,17 @@ object Typer {
       case KindedAst.Expression.Region(tpe, _) =>
         liftM(Nil, tpe, Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Scope(sym, regionVar, exp, evar, loc) =>
+      case KindedAst.Expression.Scope(sym, varSym, tvar, exp, evar, loc) =>
+        if (sym.id == 23280) {
+          println("debug")
+        }
         for {
-          _ <- rigidifyM(regionVar)
-          _ <- unifyTypeM(sym.tvar.ascribedWith(Kind.Star), Type.mkRegion(regionVar, loc), loc)
+          _ <- unifyTypeM(tvar, Type.mkRegion(sym, sym.loc), loc)
+          _ <- unifyTypeM(varSym.tvar.ascribedWith(Kind.Star), Type.mkRegionStar(tvar, loc), loc)
           (constrs, tpe, pur, eff) <- visitExp(exp)
-          purifiedPur <- purifyEffM(regionVar, pur)
+          purifiedPur <- purifyEffM(sym, pur)
           resultPur <- unifyTypeM(evar, purifiedPur, loc)
-          _ <- noEscapeM(regionVar, tpe)
+          _ <- noEscapeM(sym, tpe)
           resultTyp = tpe
           resultEff = eff
         } yield (constrs, resultTyp, resultPur, resultEff)
@@ -1123,7 +1125,7 @@ object Typer {
 
       case KindedAst.Expression.ArrayLit(exps, exp, tvar, evar, loc) =>
         val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
-        val regionType = Type.mkRegion(regionVar, loc)
+        val regionType = Type.mkRegionStar(regionVar, loc)
         for {
           (constrs1, elmTypes, pur1, eff1) <- seqM(exps.map(visitExp)).map(unzip4)
           (constrs2, tpe2, pur2, eff2) <- visitExp(exp)
@@ -1136,7 +1138,7 @@ object Typer {
 
       case KindedAst.Expression.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>
         val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
-        val regionType = Type.mkRegion(regionVar, loc)
+        val regionType = Type.mkRegionStar(regionVar, loc)
         for {
           (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
@@ -1205,7 +1207,7 @@ object Typer {
 
       case KindedAst.Expression.Ref(exp1, exp2, tvar, evar, loc) =>
         val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
-        val regionType = Type.mkRegion(regionVar, loc)
+        val regionType = Type.mkRegionStar(regionVar, loc)
         for {
           (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
@@ -1740,11 +1742,11 @@ object Typer {
       case KindedAst.Expression.Region(tpe, loc) =>
         TypedAst.Expression.Region(tpe, loc)
 
-      case KindedAst.Expression.Scope(sym, regionVar, exp, evar, loc) =>
+      case KindedAst.Expression.Scope(sym, varSym, regionVar, exp, evar, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = e.tpe
         val pur = subst0(evar)
-        TypedAst.Expression.Scope(sym, regionVar, e, tpe, pur, loc)
+        TypedAst.Expression.Scope(sym, varSym, regionVar, e, tpe, pur, loc)
 
       case KindedAst.Expression.Match(matchExp, rules, loc) =>
         val e1 = visitExp(matchExp, subst0)

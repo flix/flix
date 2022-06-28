@@ -120,8 +120,9 @@ object FormatType {
       case SimpleType.Lazy => true
       case SimpleType.True => true
       case SimpleType.False => true
-      case SimpleType.Region => true
       case SimpleType.Empty => true
+      case SimpleType.RegionToStar => true
+      case SimpleType.Region(_, _) => true
       case SimpleType.RecordConstructor(_) => true
       case SimpleType.Record(_) => true
       case SimpleType.RecordExtend(_, _) => true
@@ -184,8 +185,13 @@ object FormatType {
         case Mode.Type => "false"
         case Mode.Purity => "Impure"
       }
-      case SimpleType.Region => "Region"
       case SimpleType.Empty => "Empty"
+      case SimpleType.RegionToStar => "Region"
+      case SimpleType.Region(text, id) =>
+        audience match {
+          case Audience.Internal => s"@${id}"
+          case Audience.External => s"${text}"
+        }
       case SimpleType.Record(fields) =>
         val fieldString = fields.map(visitRecordFieldType).mkString(", ")
         s"{ $fieldString }"

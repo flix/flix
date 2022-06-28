@@ -91,6 +91,7 @@ case class InferMonad[A](run: (Substitution, RigidityEnv) => Result[(Substitutio
     }
 
     InferMonad(runNext)
+
   }
 
   // TODO: Necessary for pattern matching?
@@ -100,5 +101,20 @@ case class InferMonad[A](run: (Substitution, RigidityEnv) => Result[(Substitutio
       case Ok((subst, renv, t)) => if (f(t)) Ok((subst, renv, t)) else Ok((subst, renv, t))
       case Err(e) => Err(e)
     }
+  }
+
+  // MATT for debugging
+  lazy val result = run(Substitution.empty, RigidityEnv.empty).get
+
+  lazy val (subst, renv, value) = result
+
+  /**
+    * toString for debugging.
+    * Eagerly evaluates the substitution.
+    *
+    * Must not be called from non-debugging code.
+    */
+  override def toString: String = {
+    result.toString
   }
 }

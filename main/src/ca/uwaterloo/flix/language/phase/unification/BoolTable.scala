@@ -96,11 +96,12 @@ object BoolTable {
     }
 
     // Compute the variables in `tpe`.
-    val tvars = tpe.typeVars.map(_.sym).toList
+    val tvars = tpe.typeVars.toList.map(tvar => BoolFormula.RegionOrVar.Var(tvar.sym))
+    val regions = tpe.regionSyms.toList.map(BoolFormula.RegionOrVar.Region)
 
-    // Construct a bi-directional map from type variables to indices.
+    // Construct a bi-directional map from type variables and regions to indices.
     // The idea is that the first variable becomes x0, the next x1, and so forth.
-    val m = tvars.zipWithIndex.foldLeft(Bimap.empty[Symbol.KindedTypeVarSym, Variable]) {
+    val m = (tvars ++ regions).zipWithIndex.foldLeft(Bimap.empty[BoolFormula.RegionOrVar, Variable]) {
       case (macc, (sym, x)) => macc + (sym -> x)
     }
 

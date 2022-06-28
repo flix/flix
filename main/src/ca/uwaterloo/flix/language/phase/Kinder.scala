@@ -432,14 +432,14 @@ object Kinder {
     case ResolvedAst.Expression.Region(tpe, loc) =>
       KindedAst.Expression.Region(tpe, loc).toSuccess
 
-    case ResolvedAst.Expression.Scope(sym, regionVar, exp0, loc) =>
-      val rv = Type.KindedVar(regionVar.ascribedWith(Kind.Bool), loc)
+    case ResolvedAst.Expression.Scope(sym, varSym, tvarSym, exp0, loc) =>
+      val tvar = Type.KindedVar(tvarSym.ascribedWith(Kind.Bool), loc)
       val evar = Type.freshVar(Kind.Bool, loc.asSynthetic)
-      flatMapN(kenv0 + (regionVar -> Kind.Bool)) {
+      flatMapN(kenv0 + (tvarSym -> Kind.Bool)) {
         case kenv =>
           val expVal = visitExp(exp0, kenv, senv, taenv, root)
           mapN(expVal) {
-            exp => KindedAst.Expression.Scope(sym, rv, exp, evar, loc)
+            exp => KindedAst.Expression.Scope(sym, varSym, tvar, exp, evar, loc)
           }
       }
 

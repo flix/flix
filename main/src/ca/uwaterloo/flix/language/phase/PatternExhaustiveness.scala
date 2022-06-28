@@ -155,7 +155,7 @@ object PatternExhaustiveness {
       case Expression.Let(_, _, exp1, exp2, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
       case Expression.LetRec(_, _, exp1, exp2, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
       case Expression.Region(_, _) => ().toSuccess
-      case Expression.Scope(_, _, exp, _, _, _) => visitExp(exp, root)
+      case Expression.Scope(_, _, _, exp, _, _, _) => visitExp(exp, root)
       case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => traverseX(List(exp1, exp2, exp3))(visitExp(_, root))
       case Expression.Stm(exp1, exp2, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
       case Expression.Discard(exp, _, _) => visitExp(exp, root)

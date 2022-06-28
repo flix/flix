@@ -166,9 +166,9 @@ object Stratifier {
     case Expression.Region(_, _) =>
       exp0.toSuccess
 
-    case Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
+    case Expression.Scope(sym, varSym, tvar, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Scope(sym, regionVar, e, tpe, eff, loc)
+        case e => Expression.Scope(sym, varSym, tvar, e, tpe, eff, loc)
       }
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
@@ -533,7 +533,7 @@ object Stratifier {
     case Expression.Region(_, _) =>
       LabelledGraph.empty
 
-    case Expression.Scope(_, _, exp, _, _, _) =>
+    case Expression.Scope(_, _, _, exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>

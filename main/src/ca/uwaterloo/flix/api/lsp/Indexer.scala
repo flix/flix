@@ -195,9 +195,9 @@ object Indexer {
     case Expression.Region(_, _) =>
       Index.occurrenceOf(exp0)
 
-    case Expression.Scope(sym, _, exp, _, _, loc) =>
-      val tpe = Type.mkRegion(sym.tvar.ascribedWith(Kind.Bool), loc)
-      Index.occurrenceOf(sym, tpe) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
+    case Expression.Scope(_, varSym, _, exp, _, _, loc) =>
+      val tpe = Type.mkRegionStar(varSym.tvar.ascribedWith(Kind.Bool), loc)
+      Index.occurrenceOf(varSym, tpe) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)

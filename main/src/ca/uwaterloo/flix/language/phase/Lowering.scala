@@ -332,12 +332,12 @@ object Lowering {
       // Introduce a Unit value to represent the Region value.
       Expression.Unit(loc)
 
-    case Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
+    case Expression.Scope(_, varSym, regionVar, exp, tpe, eff, loc) =>
       // Introduce a Unit value to represent the Region value.
       val mod = Ast.Modifiers.Empty
       val e1 = Expression.Unit(loc)
       val e2 = visitExp(exp)
-      Expression.Let(sym, mod, e1, e2, tpe, eff, loc)
+      Expression.Let(varSym, mod, e1, e2, tpe, eff, loc)
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -1394,10 +1394,10 @@ object Lowering {
     case Expression.Region(tpe, loc) =>
       Expression.Region(tpe, loc)
 
-    case Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
-      val s = subst.getOrElse(sym, sym)
+    case Expression.Scope(sym, varSym, tvar, exp, tpe, eff, loc) =>
+      val v = subst.getOrElse(varSym, varSym)
       val e = substExp(exp, subst)
-      Expression.Scope(s, regionVar, e, tpe, eff, loc)
+      Expression.Scope(sym, v, tvar, e, tpe, eff, loc)
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = substExp(exp1, subst)

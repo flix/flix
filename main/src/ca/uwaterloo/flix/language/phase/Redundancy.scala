@@ -363,21 +363,21 @@ object Redundancy {
     case Expression.Region(_, _) =>
       Used.empty
 
-    case Expression.Scope(sym, _, exp, _, _, _) =>
+    case Expression.Scope(_, varSym, _, exp, _, _, _) =>
       // Extend the environment with the variable symbol.
-      val env1 = env0 + sym
+      val env1 = env0 + varSym
 
       // Visit the expression under the extended environment.
       val innerUsed = visitExp(exp, env1, rc)
 
       // Check for shadowing.
-      val shadowedVar = shadowing(sym, env0)
+      val shadowedVar = shadowing(varSym, env0)
 
       // Check if the let-bound variable symbol is dead in exp.
-      if (deadVarSym(sym, innerUsed))
-        (innerUsed ++ shadowedVar) - sym + UnusedVarSym(sym)
+      if (deadVarSym(varSym, innerUsed))
+        (innerUsed ++ shadowedVar) - varSym + UnusedVarSym(varSym)
       else
-        (innerUsed ++ shadowedVar) - sym
+        (innerUsed ++ shadowedVar) - varSym
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)
