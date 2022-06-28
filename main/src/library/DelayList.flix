@@ -91,8 +91,8 @@ instance Foldable[DelayList] {
 }
 
 instance Iterable[DelayList] {
-    pub def iterator(l: DelayList[a]): StaticIterator[a] & Impure =
-        DelayList.toStaticIterator(l)
+    pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) =
+        DelayList.toIterator(r, l)
 }
 
 instance FunctorFilter[DelayList] {
@@ -1144,16 +1144,6 @@ namespace DelayList {
         let a = [$DEFAULT$; length(l)] @ r;
         foreach(match (y, i) -> a[i] = y, zipWithIndex(l));
         a
-
-    ///
-    /// Returns `l` as an `Iterator`.
-    ///
-    /// Does not force any elements of the list.
-    ///
-    @Experimental @Lazy
-    pub def toStaticIterator(l: DelayList[a]): StaticIterator[a] & Impure =
-        let Iterator(done, next) = toIterator(Static, l);
-        StaticIterator(done, next)
 
     ///
     /// Returns `l` as an `Iterator`.
