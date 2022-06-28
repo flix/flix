@@ -731,9 +731,8 @@ namespace DelayMap {
     ///
     @Experimental
     pub def toMutDeque(m: DelayMap[k, v], r: Region[r]): MutDeque[(k, v), r] \ Write(r) =
-        let d = MutDeque.new(r);
-        DelayMap.foreach((k, v) -> MutDeque.pushBack((k, v), d), m);
-        d
+        let m1 = DelayMap.toMap(m);
+        Map.toMutDeque(m1, r)
 
     ///
     /// Returns `m` as a mutable set.
