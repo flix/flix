@@ -325,20 +325,25 @@ namespace MutDeque {
     /// Returns `true` if `MutDeque`s `a` and `b` have the same elements, i.e. are structurally equal.
     ///
     pub def sameElements(d1: MutDeque[t, r1], d2: MutDeque[t, r2]): Bool \ Read(r1, r2) with Eq[t] =
-        let aSize = size(d1);
-        let bSize = size(d2);
-        if (aSize == bSize) {
-            let MutDeque(aArray, aFront, aBack) = d1;
-            let aCap = capacity(d1);
-            let MutDeque(bArray, bFront, bBack) = d2;
-            let bCap = capacity(d2);
-            let a1 = [$DEFAULT$; aCap] @ Scoped.regionOf(d1);
-            let b1 = [$DEFAULT$; bCap] @ Scoped.regionOf(d2);
-            copyElements!(deref aFront, deref aBack, deref aArray, a1);
-            copyElements!(deref bFront, deref bBack, deref bArray, b1);
-            Array.sameElements(a1, b1)
+        let d1Empty = isEmpty(d1);
+        let d2Empty = isEmpty(d2);
+        if (not (d1Empty or d2Empty)) {
+            let aSize = size(d1);
+            let bSize = size(d2);
+            if (aSize == bSize) {
+                let MutDeque(aArray, aFront, aBack) = d1;
+                let aCap = capacity(d1);
+                let MutDeque(bArray, bFront, bBack) = d2;
+                let bCap = capacity(d2);
+                let a1 = [$DEFAULT$; aCap] @ Scoped.regionOf(d1);
+                let b1 = [$DEFAULT$; bCap] @ Scoped.regionOf(d2);
+                copyElements!(deref aFront, deref aBack, deref aArray, a1);
+                copyElements!(deref bFront, deref bBack, deref bArray, b1);
+                Array.sameElements(a1, b1)
+            } else
+                false
         } else
-            false
+            d1Empty and d2Empty
 
     ///
     /// Returns `d` as a `List`.
