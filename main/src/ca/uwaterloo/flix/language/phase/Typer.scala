@@ -163,7 +163,7 @@ object Typer {
     * Performs type inference and reassembly on the given Spec `spec`.
     */
   private def visitSpec(spec: KindedAst.Spec, root: KindedAst.Root, subst: Substitution)(implicit flix: Flix): Validation[TypedAst.Spec, TypeError] = spec match {
-    case KindedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc, tpe, pur, loc) =>
+    case KindedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc, tpe, pur, eff, loc) => // TODO handle eff
       val annVal = visitAnnotations(ann0, root)
       val tparams = getTypeParams(tparams0)
       val fparams = getFormalParams(fparams0, subst)
@@ -200,14 +200,14 @@ object Typer {
     * Infers the type of the given definition `defn0`.
     */
   private def typeCheckDecl(spec0: KindedAst.Spec, exp0: KindedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], loc: SourceLocation)(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
-    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, tpe, pur, _) =>
+    case KindedAst.Spec(_, _, _, _, fparams0, sc, _, _, _, _) =>
 
       ///
       /// Infer the type of the expression `exp0`.
       ///
       val result = for {
         (inferredConstrs, inferredTyp, inferredPur) <- inferExp(exp0, root)
-      } yield (inferredConstrs, Type.mkUncurriedArrowWithEffect(fparams0.map(_.tpe), inferredPur, inferredTyp, loc))
+      } yield (inferredConstrs, Type.mkUncurriedArrowWithEffect(fparams0.map(_.tpe), inferredPur, Type.Empty, inferredTyp, loc)) // TODO use eff
 
 
       // Add the assumed constraints to the declared scheme
@@ -483,19 +483,21 @@ object Typer {
       case KindedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
         val argType = fparam.tpe
         val argTypeVar = fparam.sym.tvar.ascribedWith(Kind.Star)
+        val bodyEff = Type.Empty // TODO infer
         for {
           (constrs, bodyType, bodyPur) <- visitExp(exp)
           _ <- unifyTypeM(argType, argTypeVar, loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkArrowWithEffect(argType, bodyPur, bodyType, loc), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkArrowWithEffect(argType, bodyPur, bodyEff, bodyType, loc), loc)
         } yield (constrs, resultTyp, Type.Pure)
 
       case KindedAst.Expression.Apply(exp, exps, tvar, evar, loc) =>
         val lambdaBodyType = Type.freshVar(Kind.Star, loc, text = FallbackText("result"))
         val lambdaBodyPur = Type.freshVar(Kind.Bool, loc, text = FallbackText("pur"))
+        val lambdaBodyEff = Type.freshVar(Kind.Effect, loc, text = FallbackText("eff"))
         for {
           (constrs1, tpe, pur) <- visitExp(exp)
           (constrs2, tpes, purs) <- seqM(exps.map(visitExp)).map(_.unzip3)
-          lambdaType <- unifyTypeM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyPur, lambdaBodyType, loc), loc)
+          lambdaType <- unifyTypeM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyPur, lambdaBodyEff, lambdaBodyType, loc), loc)
           resultTyp <- unifyTypeM(tvar, lambdaBodyType, loc)
           resultPur <- unifyBoolM(evar, Type.mkAnd(lambdaBodyPur :: pur :: purs, loc), loc)
           _ <- unbindVar(lambdaBodyType) // NB: Safe to unbind since the variable is not used elsewhere.
@@ -755,8 +757,9 @@ object Typer {
         // Ensure that `exp1` is a lambda.
         val a = Type.freshVar(Kind.Star, loc, text = FallbackText("arg"))
         val b = Type.freshVar(Kind.Star, loc, text = FallbackText("result"))
-        val ef = Type.freshVar(Kind.Bool, loc, text = FallbackText("pur"))
-        val expectedType = Type.mkArrowWithEffect(a, ef, b, loc)
+        val p = Type.freshVar(Kind.Bool, loc, text = FallbackText("pur"))
+        val ef = Type.freshVar(Kind.Effect, loc, text = FallbackText("eff"))
+        val expectedType = Type.mkArrowWithEffect(a, p, ef, b, loc)
         for {
           (constrs1, tpe1, pur1) <- visitExp(exp1)
           (constrs2, tpe2, pur2) <- visitExp(exp2)
@@ -1194,7 +1197,7 @@ object Typer {
           resultPur <- unifyTypeM(evar, Type.mkAnd(pur1, pur2, regionVar, loc), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultPur)
 
-      case KindedAst.Expression.Ascribe(exp, expectedTyp, expectedPur, tvar, loc) =>
+      case KindedAst.Expression.Ascribe(exp, expectedTyp, expectedPur, expectedEff, tvar, loc) => // TODO handle eff
         // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
         for {
           (constrs, actualTyp, actualPur) <- visitExp(exp)
@@ -1202,7 +1205,7 @@ object Typer {
           resultPur <- expectTypeM(expected = expectedPur.getOrElse(Type.freshVar(Kind.Bool, loc, text = FallbackText("pur"))), actual = actualPur, loc)
         } yield (constrs, resultTyp, resultPur)
 
-      case KindedAst.Expression.Cast(exp, declaredTyp, declaredPur, tvar, loc) =>
+      case KindedAst.Expression.Cast(exp, declaredTyp, declaredPur, declaredEff, tvar, loc) => // TODO handle eff
         // A cast expression is unsound; the type system assumes the declared type is correct.
         for {
           (constrs, actualTyp, actualPur) <- visitExp(exp)
@@ -1519,8 +1522,9 @@ object Typer {
       case KindedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, loc) =>
         val a = Type.freshVar(Kind.Star, loc, text = FallbackText("arg"))
         val b = Type.freshVar(Kind.Star, loc, text = FallbackText("result"))
-        val ef = Type.freshVar(Kind.Bool, loc, text = FallbackText("pur"))
-        val polyLambdaType = Type.mkArrowWithEffect(a, ef, b, loc)
+        val p = Type.freshVar(Kind.Bool, loc, text = FallbackText("pur"))
+        val ef = Type.freshVar(Kind.Bool, loc, text = FallbackText("eff"))
+        val polyLambdaType = Type.mkArrowWithEffect(a, p, ef, b, loc)
         val pureLambdaType = Type.mkPureArrow(a, b, loc)
         for {
           (constrs1, tpe1, pur1) <- visitExp(exp1)
@@ -1790,16 +1794,16 @@ object Typer {
         val pur = subst0(evar)
         TypedAst.Expression.Assign(e1, e2, tpe, pur, loc)
 
-      case KindedAst.Expression.Ascribe(exp, _, _, tvar, loc) =>
+      case KindedAst.Expression.Ascribe(exp, _, _, _, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val pur = e.pur
         TypedAst.Expression.Ascribe(e, subst0(tvar), pur, loc)
 
-      case KindedAst.Expression.Cast(KindedAst.Expression.Null(_), _, _, tvar, loc) =>
+      case KindedAst.Expression.Cast(KindedAst.Expression.Null(_), _, _, _, tvar, loc) =>
         val t = subst0(tvar)
         TypedAst.Expression.Null(t, loc)
 
-      case KindedAst.Expression.Cast(exp, declaredType, declaredPur, tvar, loc) =>
+      case KindedAst.Expression.Cast(exp, declaredType, declaredPur, declaredEff, tvar, loc) => // TODO handle eff
         val e = visitExp(exp, subst0)
         val dt = declaredType.map(tpe => subst0(tpe))
         val de = declaredPur.map(pur => subst0(pur))
