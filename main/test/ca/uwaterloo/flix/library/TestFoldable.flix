@@ -263,6 +263,42 @@ namespace TestFoldable {
         l == MutDeque.toList(d)
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toMutSet                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutSet01(): Bool = region r {
+        let s1 = Set#{}: Set[Int32];
+        let s2 = Foldable.toMutSet(s1, r);
+
+        s1 == MutSet.toSet(s2)
+    }
+
+    @test
+    def toMutSet02(): Bool = region r {
+        let s1 = Set#{1, 2};
+        let s2 = Foldable.toMutSet(s1, r);
+
+        s1 == MutSet.toSet(s2)
+    }
+
+    @test
+    def toMutSet03(): Bool = region r {
+        let s1 = Set#{1, 2, 3};
+        let s2 = Foldable.toMutSet(s1, r);
+
+        s1 == MutSet.toSet(s2)
+    }
+
+    @test
+    def toMutSet04(): Bool = region r {
+        let s1 = Set#{'a', 'b', 'c'};
+        let s2 = Foldable.toMutSet(s1, r);
+
+        s1 == MutSet.toSet(s2)
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // toMapWith                                                               //

@@ -227,9 +227,9 @@ pub class Foldable[t : Type -> Type] with ForEach[t] {
         Iterator(done, next)
 
     ///
-    /// Returns `t` as a MutDeque.
+    /// Returns `t` as a `MutDeque`.
     ///
-    pub def toMutDeque(t: t[a], r: Region[r]): MutDeque[a] \ Write(r) =
+    pub def toMutDeque(t: t[a], r: Region[r]): MutDeque[a, r] \ Write(r) =
         let d = new MutDeque(r);
         Foldable.foreach(x -> MutDeque.pushBack(x, d), t);
         d
@@ -246,6 +246,14 @@ pub class Foldable[t : Type -> Type] with ForEach[t] {
     ///
     pub def toSet(t: t[a]): Set[a] with Order[a] =
         Foldable.foldRight((x, acc) -> Set.insert(x, acc), Set.empty(), t)
+
+    ///
+    /// Returns the set `s` as a `MutSet`.
+    ///
+    pub def toMutSet(t: t[a], r: Region[r]): MutSet[a] with Order[a] \ Write(r) =
+        let s = new MutSet(r);
+        Foldable.foreach(x -> add!(x, s), t);
+        s
 
     ///
     /// Returns `t` as a map.
