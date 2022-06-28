@@ -194,7 +194,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     */
   private def remSourceCode(uri: String) = {
     current = false
-    flix.remSourceCode(uri, sources(uri))
+    flix.remSourceCode(uri)
     sources -= uri
   }
 
