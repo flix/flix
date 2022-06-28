@@ -14,19 +14,8 @@
  * limitations under the License.
  */
 
-///
-/// The type of the done function.
-///
-type alias Done[ef: Region] = Unit -> Bool & ef
-
-///
-/// The type of the next function.
-///
-type alias Next[a: Type, ef: Region] = Unit -> a & ef
-
-
 pub enum Iterator[a: Type, r: Region] {
-    case Iterator(Done[r], Next[a, r])
+    case Iterator(Iterator.Done[r], Iterator.Next[a, r])
 }
 
 instance Newable[Iterator[a]] {
@@ -38,6 +27,16 @@ instance Scoped[Iterator[a]] {
 }
 
 namespace Iterator {
+
+    ///
+    /// The type of the done function.
+    ///
+    pub type alias Done[ef: Region] = Unit -> Bool & ef
+
+    ///
+    /// The type of the next function.
+    ///
+    pub type alias Next[a: Type, ef: Region] = Unit -> a & ef
 
     ///
     /// Returns an empty iterator.
