@@ -34,11 +34,6 @@ pub enum ReifiedType with Eq, Order, ToString {
 ///
 pub def identity(x: a): a = x
 
-///
-/// Returns the constant function with return value `y`.
-/// That is, returns `f` such that `f(x) = y` for all inputs `x`.
-///
-pub def constant(y: a): b -> a = _ -> y
 
 ///
 /// Returns the function `f` with input arguments swapped.
@@ -51,18 +46,6 @@ pub def flip(f: (a, b) -> c & ef): (b, a) -> c & ef = (x, y) -> f(y, x)
 /// inputs transformed by `g`.
 ///
 pub def on(f: (b, b) -> c & ef1, g: a -> b & ef2, x: a, y: a): c & (ef1 and ef2) = f(g(x), g(y))
-
-///
-/// Returns the result of currying the function `f`.
-/// That is, given the function `f: (a, b) -> c`, returns a function `a -> b -> c`
-///
-pub def curry(f: (a, b) -> c & ef): a -> (b -> c & ef) = x -> y -> f(x, y)
-
-///
-/// Returns the result of uncurrying the function `f`.
-/// That is, given the function `f: a -> b -> c`, returns a function `(a, b) -> c`
-///
-pub def uncurry(f: a -> (b -> c & ef1) & ef2): ((a, b)) -> c & (ef1 and ef2) = match (x, y) -> f(x, y)
 
 ///
 /// Returns the first component of `t`.
@@ -113,16 +96,6 @@ pub def ||>(x: (a, b), f: a -> (b -> c & ef)): c & ef = f(fst(x), snd(x))
 /// Given a value `x` and a function `f` returns `x`.
 ///
 pub def !>( x: a, f: a -> Unit & ef): a & ef = f(x); x
-
-///
-/// Returns `true` if `x` implies `y` logically holds.
-///
-pub def ==>(x: Bool, y: Bool): Bool = not x or y
-
-///
-/// Returns true if `x` implies `y` and vise versa.
-///
-pub def <==>(x: Bool, y: Bool): Bool = x == y
 
 ///
 /// Converts `x` to a string and prints it to standard out.

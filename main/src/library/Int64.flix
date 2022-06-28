@@ -102,11 +102,11 @@ namespace Int64 {
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     @Time(1) @Space(1)
-    pub def logicalRightShift(distance: Int32, x: Int64): Int64 =
-        if (x < 0i64 and distance rem size() != 0)
-            ((x >>> 1) &&& maxValue()) >>> (distance - 1)
+    pub def logicalRightShift(dist: {dist :: Int32}, x: Int64): Int64 =
+        if (x < 0i64 and dist.dist rem size() != 0)
+            ((x >>> 1) &&& maxValue()) >>> (dist.dist - 1)
         else
-            x >>> distance
+            x >>> dist.dist
 
     ///
     /// Returns the number of one-bits in the two's complement binary
@@ -115,24 +115,24 @@ namespace Int64 {
     @Time(1) @Space(1)
     pub def bitCount(x: Int64): Int32 = {
         if      (x == 0i64)          0
-        else if (x rem 2i64 != 0i64) bitCount(logicalRightShift(1, x)) + 1
-        else                         bitCount(logicalRightShift(1, x))
+        else if (x rem 2i64 != 0i64) bitCount(logicalRightShift(dist = 1, x)) + 1
+        else                         bitCount(logicalRightShift(dist = 1, x))
     }
 
     ///
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` right by `distance` bits.
     ///
-    pub def rotateRight(distance: Int32, x: Int64): Int64 =
-        (logicalRightShift(distance, x)) ||| (x <<< -distance)
+    pub def rotateRight(dist: {dist :: Int32}, x: Int64): Int64 =
+        (logicalRightShift(dist = dist.dist, x)) ||| (x <<< -dist.dist)
 
     ///
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` left by `distance` bits.
     ///
     @Time(1) @Space(1)
-    pub def rotateLeft(distance: Int32, x: Int64): Int64 =
-        (logicalRightShift(-distance, x)) ||| (x <<< distance)
+    pub def rotateLeft(dist: {dist :: Int32}, x: Int64): Int64 =
+        (logicalRightShift(dist = -dist.dist, x)) ||| (x <<< dist.dist)
 
     ///
     /// Returns the value obtained by reversing the bits in the
@@ -150,9 +150,9 @@ namespace Int64 {
     ///
     /// Helper function for `reverse`.
     ///
-    def swap(x: Int64, l: Int32, r: Int32): Int64 = match (getBit(l, x), getBit(r, x)) {
-        case (1, 0) => clearBit(l, setBit(r, x))
-        case (0, 1) => clearBit(r, setBit(l, x))
+    def swap(x: Int64, l: Int32, r: Int32): Int64 = match (getBit(pos = l, x), getBit(pos = r, x)) {
+        case (1, 0) => clearBit(pos = l, setBit(pos = r, x))
+        case (0, 1) => clearBit(pos = r, setBit(pos = l, x))
         case _ => x
     }
 
@@ -182,11 +182,11 @@ namespace Int64 {
     /// Otherwise recursively check the next bit in the same way.
     ///
     def oneBitPositionHelper(x: Int64, position: Int32, delta: Int32): Int32 = {
-        if (position < 0)                   -1
-        else if (position > (size() - 1))   -1
-        else if (getBit(position, x) == 1)  position
-        else if (delta == 0)                -1
-        else                                oneBitPositionHelper(x, position + delta, delta)
+        if (position < 0)                        -1
+        else if (position > (size() - 1))        -1
+        else if (getBit(pos = position, x) == 1) position
+        else if (delta == 0)                     -1
+        else                                     oneBitPositionHelper(x, position + delta, delta)
     }
 
     ///
@@ -239,8 +239,8 @@ namespace Int64 {
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit).
     ///
     @Time(1) @Space(1)
-    pub def getBit(position: Int32, x: Int64): Int32 =
-        if ((x >>> position) rem 2i64 == 0i64) 0 else 1
+    pub def getBit(pos: {pos :: Int32}, x: Int64): Int32 =
+        if ((x >>> pos.pos) rem 2i64 == 0i64) 0 else 1
 
     ///
     /// Returns `x` with the bit at position `position` set (to 1).
@@ -248,7 +248,7 @@ namespace Int64 {
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def setBit(position: Int32, x: Int64): Int64 = x ||| (1i64 <<< position)
+    pub def setBit(pos: {pos :: Int32}, x: Int64): Int64 = x ||| (1i64 <<< pos.pos)
 
     ///
     /// Returns `x` with the bit at position `position` cleared (to 0).
@@ -256,7 +256,7 @@ namespace Int64 {
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def clearBit(position: Int32, x: Int64): Int64 = x &&& ~~~(1i64 <<< position)
+    pub def clearBit(pos: {pos :: Int32}, x: Int64): Int64 = x &&& ~~~(1i64 <<< pos.pos)
 
     ///
     /// Returns `x` with the bit at position `position` flipped.
@@ -264,7 +264,7 @@ namespace Int64 {
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def flipBit(position: Int32, x: Int64): Int64 = x ^^^ (1i64 <<< position)
+    pub def flipBit(pos: {pos :: Int32}, x: Int64): Int64 = x ^^^ (1i64 <<< pos.pos)
 
     ///
     /// Returns the integer binary logarithm of `x`.

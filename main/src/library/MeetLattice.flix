@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+use Bool.{==>};
+
 ///
 /// A type class for meet semi lattices.
 /// A Meet Lattice is pair of functions (⊑, ⊓) where ⊑ is a partial order and ⊓ satisfy two properties:
