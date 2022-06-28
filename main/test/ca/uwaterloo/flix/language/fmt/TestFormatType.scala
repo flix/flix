@@ -382,7 +382,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatPartialType.Arrow.External.01") {
-    val tpe = Type.Apply(Type.Cst(TypeConstructor.Arrow(2), loc), Type.Pure, loc)
+    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(2), loc), List(Type.Pure, Type.Empty), loc)
 
     val expected = "? -> ?"
     val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
@@ -391,7 +391,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatPartialType.Arrow.External.02") {
-    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(3), loc), List(Type.Impure, Type.Str), loc)
+    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(3), loc), List(Type.Impure, Type.Empty, Type.Str), loc)
 
     val expected = "String -> (? -> ? & Impure)"
     val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
@@ -402,7 +402,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatPartialType.Arrow.External.03") {
     val tpe = Type.Cst(TypeConstructor.Arrow(4), loc)
 
-    val expected = "? -> (? -> (? -> ? & ?))"
+    val expected = "? -> (? -> (? -> ? & ? \\ ?))"
     val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
