@@ -843,4 +843,16 @@ namespace Test/Exp/Regions {
     def testRegions0RegionsReferences03(): Ref[MutMap[Int32, Int32, Static], Static] & Impure =
         ref new MutMap(Static)
 
+    @test
+    def testRegions0RegionsReferences04(): Ref[Ref[Array[Int32, Static], Static], Static] & Impure =
+        ref ref []
+
+    @test
+    def testRegions0RegionsReferences05(): Ref[Ref[Ref[MutList[Int32, Static], Static], Static], Static] & Impure =
+        ref ref ref new MutList(Static)
+
+    @test
+    def testRegions0RegionsReferences06(): Ref[MutMap[Ref[Int32, Static], Ref[Array[Ref[Int32, Static], Static], Static], Static], Static] & Impure =
+        ref new MutMap(Static)
+
 }
