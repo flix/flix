@@ -326,7 +326,7 @@ namespace Option {
     ///
     /// Returns `Some(v1 :: v2 :: ... :: vn)` if each of `xs_i` is `Some(v_i)`. Otherwise returns `None`.
     ///
-    @Time(List.length(xs)) @Space(List.length(xs))
+    @Time(List.length(l)) @Space(List.length(l))
     pub def sequence(l: List[Option[a]]): Option[List[a]] =
         def loop(ll, k) = match ll {
             case Nil            => k(Nil)
@@ -339,14 +339,14 @@ namespace Option {
     /// Returns `Some(v1 :: v2 :: ... v :: vn)` if each of `f(l_i)` is `Some(v_i)`. Otherwise returns `None`.
     ///
     pub def traverse(f: a -> Option[b] & ef, l: List[a]): Option[List[b]] & ef =
-        def loop(ll, sk) = match ll {
-            case Nil     => sk(Nil)
+        def loop(ll, k) = match ll {
+            case Nil     => k(Nil)
             case x :: xs => match f(x) {
                 case None    => None
-                case Some(y) => loop(xs, ys -> sk(y :: ys))
+                case Some(y) => loop(xs, ys -> k(y :: ys))
             }
         };
-        loop(l, ys -> Some(ys))
+        loop(l, ks -> Some(ks))
 
     ///
     /// Returns `Some()` if each of `f(l_i)` is `Some(_)`. Otherwise returns `None`.
