@@ -152,7 +152,7 @@ class Shell(source: Either[Path, Seq[File]], options: Options) {
     sourceFiles.addSourcesAndPackages(flix)
     
     // Remove any previous definitions, as they may no longer be valid against the new source
-    fragments.clear()
+    clearFragments()
 
     compile()
   }
@@ -237,6 +237,13 @@ class Shell(source: Either[Path, Seq[File]], options: Options) {
         // The input is not recognized. Output an error message.
         w.println("Error: Input input cannot be parsed.")
     }
+  }
+
+  private def clearFragments() = {
+    for(i <- 0 to fragments.length;
+        name = "$" + i)
+      flix.remSourceCode(name)
+    fragments.clear()
   }
 
   /**
