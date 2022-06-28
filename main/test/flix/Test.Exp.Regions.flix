@@ -855,4 +855,41 @@ namespace Test/Exp/Regions {
     def testRegions0RegionsReferences06(): Ref[MutMap[Ref[Int32, Static], Ref[Array[Ref[Int32, Static], Static], Static], Static], Static] & Impure =
         ref new MutMap(Static)
 
+    @test
+    def testRegions1RegionReferences01(): Bool & Impure =
+        region r {
+            let a = ref ([1; 8] @ r) @ Static;
+            (deref a)[0] == 1
+        }
+
+    @test
+    def testRegions1RegionReferences02(): Bool & Impure =
+        region r {
+            let a = [ref 1 @ Static; 8];
+            deref a[0] == 1
+        }
+
+    @test
+    def testRegions1RegionReferences03(): Bool =
+        region r {
+            let a = [ref 1 @ r; 8];
+            deref a[0] == 1
+        }
+
+    @test
+    def testRegions1RegionReferences04(): Bool =
+        region r {
+            let l = ref new MutList(r) @ r;
+            MutList.push!(1, deref l);
+            MutList.pop!(deref l) == Some(1)
+        }
+
+    @test
+    def testRegions1RegionReferences05(): Bool =
+        region r {
+            let m = ref new MutMap(r) @ r;
+            MutMap.put!(1, 1, deref m);
+            MutMap.get(1, deref m) == Some(1)
+        }
+
 }
