@@ -79,7 +79,7 @@ class SourceFiles(source: Either[Path, Seq[File]]) {
     * Remove a source file from `flix`
     */
   private def remSourceCode(flix: Flix, file: Path) = {
-    flix.remSourceCode(file.toString, "dummy")
+    flix.remSourceCode(file.toString)
   }
 
   /**

@@ -224,7 +224,7 @@ class Shell(source: Either[Path, Seq[File]], options: Options) {
         flix.addSourceCode("<shell>", src)
         run(main)
         // Remove immediately so it doesn't confuse subsequent compilations (e.g. reloads or declarations)
-        flix.remSourceCode("<shell>", src)
+        flix.remSourceCode("<shell>")
 
       case Category.Unknown =>
         // The input is not recognized. Output an error message.
