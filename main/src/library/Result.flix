@@ -437,10 +437,11 @@ namespace Result {
     ///
     /// Returns an iterator over `r` with 1 element or an empty iterator if `r` is `Err`.
     ///
-    pub def toIterator(reg: Region[r], res: Result[t, e]): Iterator[t, r] \ Write(r) = match res {
-        case Err(_) => new Iterator(reg)
-        case Ok(x)  => Iterator.singleton(reg, x)
-    }
+    pub def toIterator(region: { region :: Region[r] }, result: { result :: Result[t, e] }): Iterator[t, r] \ Write(r) =
+        match result.result {
+            case Err(_) => new Iterator(region.region)
+            case Ok(x)  => Iterator.singleton(region.region, x)
+        }
 
     ///
     /// Returns `Ok(x)` if `f` was invoked without throwing an exception.

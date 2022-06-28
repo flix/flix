@@ -772,17 +772,17 @@ def lift1012(): Bool = Result.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2
 
     @test
     def toIterator01(): Bool = region r {
-        Err(1): Result[Int32, Int32] |> Result.toIterator(r) |> Iterator.toList == Nil
+        { result = Err(1): Result[Int32, Int32] } |> Result.toIterator(region = r) |> Iterator.toList == Nil
     }
 
     @test
     def toIterator02(): Bool = region r {
-        Ok(1) |> Result.toIterator(r) |> Iterator.toList == 1 :: Nil
+        { result = Ok(1) } |> Result.toIterator(region = r) |> Iterator.toList == 1 :: Nil
     }
 
     @test
     def toIterator03(): Bool = region r {
-        Ok(1 :: 2 :: 3 :: Nil) |> Result.toIterator(r) |> Iterator.toList == (1 :: 2 :: 3 :: Nil) :: Nil
+        { result = Ok(1 :: 2 :: 3 :: Nil) } |> Result.toIterator(region = r) |> Iterator.toList == (1 :: 2 :: 3 :: Nil) :: Nil
     }
 
 }
