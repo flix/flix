@@ -213,13 +213,12 @@ object Main {
       val metrics = flix.metrics()
       metrics match {
         case Validation.Success((metrics, total)) =>
-          print(Metrics.latexHeader())
-          println(s"  All files & $total")
+          print(Metrics.csvHeader())
+          println(s"All files, $total")
           for ((src, m) <- metrics) {
             //val sanity = s" CODE${m.sanityCheck()}"
-            println(s"  ${src.name} & $m")
+            println(s"${src.name}, $m")
           }
-          println(Metrics.latexEnd())
           System.exit(1)
         case Validation.Failure(errors) =>
           flix.mkMessages(errors.sortBy(_.source.name))

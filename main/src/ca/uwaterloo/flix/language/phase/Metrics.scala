@@ -21,6 +21,8 @@ object Metrics {
     override def toString: String = {
       def mkData(data: Int): String = f"$data%5d"
 
+      def mkDataNoSpace(data: Int): String = f"$data%d"
+
       def mkS(tag: String, data: Int): String = f"${tag + ":"}%25s$data%5d"
 
       def mkSPercent(tag: String, data: Int, outOf: Int): String = f"${mkS(tag, data)}%s (${(100 * data) / (1.0 * outOf)}%3.0f${"%"}%s)"
@@ -53,7 +55,20 @@ object Metrics {
           Nil
       val latexOutput = latexOutputLines.mkString(" & ") + "\\\\\\hline"
 
-      latexOutput
+      val csvOutputLines =
+        mkDataNoSpace(lines) ::
+          mkDataNoSpace(functions) ::
+          mkDataNoSpace(pureFunctions) ::
+          mkDataNoSpace(impureFunctions) ::
+          mkDataNoSpace(polyFunctions) ::
+          mkDataNoSpace(regionFunctions) ::
+          mkDataNoSpace(oneRegionFunctions) ::
+          mkDataNoSpace(twoRegionFunctions) ::
+          mkDataNoSpace(threePlusRegionFunctions) ::
+          Nil
+      val csvOutput = csvOutputLines.mkString(", ")
+
+      csvOutput
     }
 
     def sanityCheck(): Int = {
@@ -68,6 +83,11 @@ object Metrics {
        |\\begin{tabular}{|l|l|r|r|r|r|r|r|r|r|}
        |  \\hline
        |  file & lines & total & pure & impure & efpoly & regef & regef1 & regef2 & regef3+ \\\\\\hline
+       |""".stripMargin
+
+  def csvHeader(): String =
+    s"""
+       |file, lines, total, pure, impure, efpoly, regef, regef1, regef2, regef3+
        |""".stripMargin
 
   def latexEnd(): String =
