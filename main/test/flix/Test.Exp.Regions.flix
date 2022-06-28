@@ -863,21 +863,7 @@ namespace Test/Exp/Regions {
         }
 
     @test
-    def testRegions1RegionReferences02(): Bool & Impure =
-        region r {
-            let a = [ref 1 @ Static; 8];
-            deref a[0] == 1
-        }
-
-    @test
-    def testRegions1RegionReferences03(): Bool =
-        region r {
-            let a = [ref 1 @ r; 8];
-            deref a[0] == 1
-        }
-
-    @test
-    def testRegions1RegionReferences04(): Bool =
+    def testRegions1RegionReferences02(): Bool =
         region r {
             let l = ref new MutList(r) @ r;
             MutList.push!(1, deref l);
@@ -885,7 +871,7 @@ namespace Test/Exp/Regions {
         }
 
     @test
-    def testRegions1RegionReferences05(): Bool =
+    def testRegions1RegionReferences03(): Bool =
         region r {
             let m = ref new MutMap(r) @ r;
             MutMap.put!(1, 1, deref m);
