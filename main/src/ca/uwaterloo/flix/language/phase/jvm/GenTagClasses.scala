@@ -109,7 +109,7 @@ object GenTagClasses {
     val visitor = AsmOps.mkClassWriter()
 
     // The super class of the generated class.
-    val superClass = JvmName.Object.toInternalName
+    val superClass = BackendObjType.JavaObject.jvmName.toInternalName
 
     // The interfaces implemented by the generated class.
     val implementedInterfaces = Array(superType.name.toInternalName)
@@ -186,7 +186,7 @@ object GenTagClasses {
     constructor.visitVarInsn(ALOAD, 0)
 
     // Call the super (java.lang.Object) constructor
-    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>",
+    constructor.visitMethodInsn(INVOKESPECIAL, BackendObjType.JavaObject.jvmName.toInternalName, "<init>",
       AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
 
     // Load instruction for type of `value`

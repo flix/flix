@@ -196,7 +196,7 @@ object EntryPoint {
       fparams = List(TypedAst.FormalParam(argSym, Ast.Modifiers.Empty, Type.Unit, SourceLocation.Unknown)),
       declaredScheme = EntryPointScheme,
       retTpe = Type.Unit,
-      eff = Type.Impure,
+      pur = Type.Impure,
       loc = SourceLocation.Unknown
     )
 
@@ -205,7 +205,7 @@ object EntryPoint {
     val func = TypedAst.Expression.Def(oldEntryPoint.sym, oldEntryPoint.spec.declaredScheme.base, SourceLocation.Unknown)
 
     // func()
-    val call = TypedAst.Expression.Apply(func, List(TypedAst.Expression.Unit(SourceLocation.Unknown)), oldEntryPoint.spec.declaredScheme.base.arrowResultType, oldEntryPoint.spec.declaredScheme.base.arrowEffectType, SourceLocation.Unknown)
+    val call = TypedAst.Expression.Apply(func, List(TypedAst.Expression.Unit(SourceLocation.Unknown)), oldEntryPoint.spec.declaredScheme.base.arrowResultType, oldEntryPoint.spec.declaredScheme.base.arrowPurityType, SourceLocation.Unknown)
 
     // one of:
     // printUnlessUnit(func(args))

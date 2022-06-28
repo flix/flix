@@ -67,7 +67,7 @@ object GenMainClass {
     val visitor = AsmOps.mkClassWriter()
 
     // internal name of super
-    val superClass = JvmName.Object.toInternalName
+    val superClass = BackendObjType.JavaObject.jvmName.toInternalName
 
     // Initialize the visitor to create a class.
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL,

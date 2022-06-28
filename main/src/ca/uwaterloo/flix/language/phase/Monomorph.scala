@@ -200,7 +200,7 @@ object Monomorph {
         val body = specialize(defn.impl.exp, env0, subst, def2def, defQueue)
 
         // Specialize the inferred scheme
-        val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), body.eff, body.tpe, sym.loc.asSynthetic)
+        val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), body.pur, body.tpe, sym.loc.asSynthetic)
         val tvars = base.typeVars.map(_.sym).toList
         val tconstrs = Nil // type constraints are not used after monomorph
         val scheme = Scheme(tvars, tconstrs, base)
@@ -620,7 +620,7 @@ object Monomorph {
 
       case Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, loc) =>
         // Magic!
-        val isPure = subst0(exp1.tpe).arrowEffectType match {
+        val isPure = subst0(exp1.tpe).arrowPurityType match {
           case Type.Cst(TypeConstructor.True, _) => true
           case _ => false
         }
@@ -632,7 +632,7 @@ object Monomorph {
 
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env1)
-          Expression.Let(freshSym, Modifiers.Empty, e1, e2, e2.tpe, e2.eff, loc)
+          Expression.Let(freshSym, Modifiers.Empty, e1, e2, e2.tpe, e2.pur, loc)
         } else {
           visitExp(exp3, env0)
         }

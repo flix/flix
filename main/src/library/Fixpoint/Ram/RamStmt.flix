@@ -17,6 +17,8 @@
 use Fixpoint/Ast.Constraint;
 
 namespace Fixpoint/Ram {
+
+    @Internal
     pub enum RamStmt[v] {
         case Insert(RelOp[v])
         case Merge(RamSym[v], RamSym[v])

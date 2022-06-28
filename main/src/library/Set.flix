@@ -606,14 +606,8 @@ namespace Set {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def toIterator(s: Set[a]): Iterator[a] & Impure =
-        List.toIterator(Set.toList(s))
-
-    ///
-    /// Returns an iterator over `s`.
-    ///
-    pub def toRegionIterator(r: Region[r], s: Set[a]): RegionIterator[a, r] \ Write(r) =
-        toList(s) |> List.toRegionIterator(r)
+    pub def toIterator(r: Region[r], s: Set[a]): Iterator[a, r] \ Write(r) =
+        toList(s) |> List.toIterator(r)
 
     ///
     /// Returns the concatenation of the string representation

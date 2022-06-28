@@ -145,7 +145,7 @@ namespace Benchmark {
         if (cost == 0i64)
             maxIterations()
         else
-            Int64.clampToInt32(budget / cost, minIterations(), maxIterations())
+            Int64.clampToInt32(min = minIterations(), max = maxIterations(), budget / cost)
 
     ///
     /// Prints the benchmark header.
