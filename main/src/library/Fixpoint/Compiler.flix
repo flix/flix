@@ -126,7 +126,7 @@ namespace Fixpoint {
             let env = unifyVars(augBody);
             let ramTerms = Array.map(compileHeadTerm(env), headTerms);
             let arity = Array.length(ramTerms);
-            let projection = RelOp.Project(ramTerms, RamSym.Full(headSym, arity, headDen));
+            let projection = RelOp.Project(ramTerms |> Array.toList, RamSym.Full(headSym, arity, headDen));
             let join = compileBody(env, augBody);
             let loopBody = RelOp.If(join, projection);
             let insert =
@@ -178,7 +178,7 @@ namespace Fixpoint {
             let env = unifyVars(augBody);
             let ramTerms = Array.map(compileHeadTerm(env), headTerms);
             let arity = Array.length(ramTerms);
-            let projection = RelOp.Project(ramTerms, RamSym.New(headSym, arity, headDen));
+            let projection = RelOp.Project(ramTerms |> Array.toList, RamSym.New(headSym, arity, headDen));
             let join = compileBody(env, augBody);
             let loopBody = RelOp.If(BoolExp.NotMemberOf(ramTerms, RamSym.Full(headSym, arity, headDen)) :: join, projection);
             let compile = delta -> { // `delta` designates the focused atom.

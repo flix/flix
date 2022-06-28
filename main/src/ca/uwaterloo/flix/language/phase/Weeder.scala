@@ -160,10 +160,8 @@ object Weeder {
 
       mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, tconstrsVal, expVal) {
         case (as, mod, _, _, tparams, fparams, tconstrs, exp) =>
-          val ts = fparams.map(_.tpe.get)
-          val retTpe = visitType(tpe0)
-          val tpe = WeededAst.Type.Arrow(ts, purAndEff, retTpe, ident.loc)
-          List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, retTpe, purAndEff, tconstrs, mkSL(sp1, sp2)))
+          val tpe = visitType(tpe0)
+          List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, purAndEff, tconstrs, mkSL(sp1, sp2)))
       }
   }
 
@@ -221,10 +219,8 @@ object Weeder {
 
       mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, expVal, tconstrsVal) {
         case (as, mod, _, _, tparams, fparams, exp, tconstrs) =>
-          val ts = fparams.map(_.tpe.get)
-          val retTpe = visitType(tpe0)
-          val tpe = WeededAst.Type.Arrow(ts, purAndEff, retTpe, ident.loc)
-          List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, retTpe, purAndEff, tconstrs, mkSL(sp1, sp2)))
+          val tpe = visitType(tpe0)
+          List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, purAndEff, tconstrs, mkSL(sp1, sp2)))
       }
   }
 
@@ -246,9 +242,8 @@ object Weeder {
         case (ann, mod, _, tparams, fs, exp, tconstrs) =>
           val ts = fs.map(_.tpe.get)
           val purAndEff = WeededAst.PurityAndEffect(None, None)
-          val retTpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
-          val tpe = WeededAst.Type.Arrow(ts, purAndEff, retTpe, ident.loc)
-          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, tpe, retTpe, purAndEff, tconstrs, mkSL(sp1, sp2)))
+          val tpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
+          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, tpe, purAndEff, tconstrs, mkSL(sp1, sp2)))
       }
   }
 
@@ -301,7 +296,7 @@ object Weeder {
     case ParsedAst.Declaration.Enum(doc0, ann0, mods, sp1, ident, tparams0, tpe0, derives, cases0, sp2) =>
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann0)
-      val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
+      val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public, Ast.Modifier.Opaque))
       val tparamsVal = visitTypeParams(tparams0)
 
       val casesVal = (tpe0, cases0) match {
@@ -2179,6 +2174,7 @@ object Weeder {
   private def visitModifier(m: ParsedAst.Modifier, legalModifiers: Set[Ast.Modifier]): Validation[Ast.Modifier, WeederError] = {
     val modifier = m.name match {
       case "lawful" => Ast.Modifier.Lawful
+      case "opaque" => Ast.Modifier.Opaque
       case "override" => Ast.Modifier.Override
       case "pub" => Ast.Modifier.Public
       case "sealed" => Ast.Modifier.Sealed

@@ -102,8 +102,8 @@ instance Monoid[List[a]] {
 }
 
 instance Iterable[List] {
-    pub def iterator(t: List[a]): Iterator[a] & Impure =
-        List.toIterator(t)
+    pub def iterator(t: List[a]): StaticIterator[a] & Impure =
+        List.toStaticIterator(t)
 }
 
 namespace List {
@@ -1200,7 +1200,7 @@ namespace List {
     /// The sort implementation is a Quicksort.
     ///
     pub def sort(l: List[a]): List[a] with Order[a] = region r {
-        toArray(l, r) |> Array.sort |> Array.toList
+        toArray(l, r) !> Array.sort! |> Array.toList
     }
 
     /// Sort list `l` so that elements are ordered from low to high according to the `Order` instance
@@ -1211,7 +1211,7 @@ namespace List {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, l: List[a]): List[a] with Order[b] = region r {
-        toArray(l, r) |> Array.sortBy(f) |> Array.toList
+        toArray(l, r) !> Array.sortBy!(f) |> Array.toList
     }
 
     ///
@@ -1222,7 +1222,7 @@ namespace List {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, l: List[a]): List[a] = region r {
-        toArray(l, r) |> Array.sortWith(cmp) |> Array.toList
+        toArray(l, r) !> Array.sortWith!(cmp) |> Array.toList
     }
 
     ///
@@ -1322,25 +1322,14 @@ namespace List {
     ///
     /// Returns an iterator over `l`.
     ///
-    pub def toIterator(l: List[a]): Iterator[a] & Impure =
-        let cursor = ref l;
-        let done = () -> match (deref cursor) {
-            case Nil => true
-            case _   => false
-        };
-        let next = () -> match (deref cursor) {
-            case Nil     => bug!("Empty Iterator!")
-            case x :: xs => {
-                cursor := xs;
-                x
-            }
-        };
-        Iterator(done, next)
+    pub def toStaticIterator(l: List[a]): StaticIterator[a] & Impure =
+        let Iterator(done, next) = toIterator(Static, l);
+        StaticIterator(done, next)
 
     ///
     /// Returns an iterator over `l`.
     ///
-    pub def toRegionIterator(r: Region[r], l: List[a]): RegionIterator[a, r] \ Write(r) =
+    pub def toIterator(r: Region[r], l: List[a]): Iterator[a, r] \ Write(r) =
         let cursor = ref l @ r;
         let done = () -> match (deref cursor) {
             case Nil => true
@@ -1352,7 +1341,7 @@ namespace List {
                 cursor := xs;
                 x
         };
-        RegionIterator(done, next)
+        Iterator(done, next)
 
     ///
     /// Returns the association list `l` as a `DelayMap`.
@@ -1409,5 +1398,14 @@ namespace List {
             case (Nil    , Nil    ) => k(Nil)
         };
         loop(l1, l2, identity)
+
+    ///
+    /// Shuffles `l` using the Fisher–Yates shuffle.
+    ///
+    pub def shuffle(rnd: Random.Random, l: List[a]): List[a] & Impure = region r {
+        let arr = toArray(l, r);
+        Array.shuffle(rnd, arr);
+        Array.toList(arr)
+    }
 
 }

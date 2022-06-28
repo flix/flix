@@ -20,6 +20,8 @@ use Fixpoint/Ast.Denotation;
 use Fixpoint/Shared.PredSym;
 
 namespace Fixpoint/Ram {
+
+    @Internal
     pub enum RamSym[v] {
         case Full(PredSym, Int32, Denotation[v])
         case Delta(PredSym, Int32, Denotation[v])

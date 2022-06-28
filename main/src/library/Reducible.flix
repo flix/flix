@@ -266,8 +266,9 @@ pub class Reducible[t: Type -> Type] {
     ///
     /// Returns an iterator over `t`.
     ///
-    pub def toIterator(t: t[a]): Iterator[a] & Impure =
-        Reducible.toArray(t, Static) |> Array.toIterator
+    pub def toIterator(r: Region[r], t: t[a]): Iterator[a, r] \ Write(r) = region r2 {
+        Reducible.toArray(t, r2) |> Array.toIterator(r)
+    }
 
     ///
     /// Returns `t` as a list.

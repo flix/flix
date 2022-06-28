@@ -102,11 +102,11 @@ namespace Int8 {
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     @Time(1) @Space(1)
-    pub def logicalRightShift(distance: Int32, x: Int8): Int8 =
-        if (x < 0i8 and distance rem 32 != 0)
-            ((x >>> 1) &&& maxValue()) >>> (distance - 1)
+    pub def logicalRightShift(dist: {dist :: Int32}, x: Int8): Int8 =
+        if (x < 0i8 and dist.dist rem 32 != 0)
+            ((x >>> 1) &&& maxValue()) >>> (dist.dist - 1)
         else
-            x >>> distance
+            x >>> dist.dist
 
     ///
     /// Returns the number of one-bits in the two's complement binary
@@ -115,8 +115,8 @@ namespace Int8 {
     @Time(1) @Space(1)
     pub def bitCount(x: Int8): Int32 = {
         if      (x == 0i8)         0
-        else if (x rem 2i8 != 0i8) bitCount(logicalRightShift(1, x)) + 1
-        else                       bitCount(logicalRightShift(1, x))
+        else if (x rem 2i8 != 0i8) bitCount(logicalRightShift(dist = 1, x)) + 1
+        else                       bitCount(logicalRightShift(dist = 1, x))
     }
 
     ///
@@ -124,20 +124,20 @@ namespace Int8 {
     /// binary representation of `x` right by `distance` bits.
     ///
     @Time(1) @Space(1)
-    pub def rotateRight(distance: Int32, x: Int8): Int8 =
-        let rem = distance rem size();
+    pub def rotateRight(dist: {dist :: Int32}, x: Int8): Int8 =
+        let rem = dist.dist rem size();
         let rot = if (rem >= 0) rem else rem + size();
-        (logicalRightShift(rot, x)) ||| (x <<< (size() - rot))
+        (logicalRightShift(dist = rot, x)) ||| (x <<< (size() - rot))
 
     ///
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` left by `distance` bits.
     ///
     @Time(1) @Space(1)
-    pub def rotateLeft(distance: Int32, x: Int8): Int8 =
-        let rem = distance rem size();
+    pub def rotateLeft(dist: {dist :: Int32}, x: Int8): Int8 =
+        let rem = dist.dist rem size();
         let rot = if (rem >= 0) rem else rem + size();
-        (logicalRightShift(size() - rot, x)) ||| (x <<< rot)
+        (logicalRightShift(dist = size() - rot, x)) ||| (x <<< rot)
 
     ///
     /// Returns the value obtained by reversing the bits in the
@@ -155,9 +155,9 @@ namespace Int8 {
     ///
     /// Helper function for `reverse`.
     ///
-    def swap(x: Int8, l: Int32, r: Int32): Int8 = match (getBit(l, x), getBit(r, x)) {
-        case (1, 0) => clearBit(l, setBit(r, x))
-        case (0, 1) => clearBit(r, setBit(l, x))
+    def swap(x: Int8, l: Int32, r: Int32): Int8 = match (getBit(pos = l, x), getBit(pos = r, x)) {
+        case (1, 0) => clearBit(pos = l, setBit(pos = r, x))
+        case (0, 1) => clearBit(pos = r, setBit(pos = l, x))
         case _ => x
     }
 
@@ -187,11 +187,11 @@ namespace Int8 {
     /// Otherwise recursively check the next bit in the same way.
     ///
     def oneBitPositionHelper(x: Int8, position: Int32, delta: Int32): Int32 = {
-        if      (position < 0)              -1
-        else if (position > (size() - 1))   -1
-        else if (getBit(position, x) == 1)  position
-        else if (delta == 0)                -1
-        else                                oneBitPositionHelper(x, position + delta, delta)
+        if      (position < 0)                   -1
+        else if (position > (size() - 1))        -1
+        else if (getBit(pos = position, x) == 1) position
+        else if (delta == 0)                     -1
+        else                                     oneBitPositionHelper(x, position + delta, delta)
     }
 
     ///
@@ -239,37 +239,37 @@ namespace Int8 {
         if (x == 0i8) size() else lowestOneBitPosition(x)
 
     ///
-    /// Returns the bit of `x` at `position` (either 0 or 1).
-    /// Considers the 5 rightmost bits of `position` (`position` mod 32).
+    /// Returns the bit of `x` at `pos` (either 0 or 1).
+    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def getBit(position: Int32, x: Int8): Int32 =
-        if ((x >>> position) rem 2i8 == 0i8) 0 else 1
+    pub def getBit(pos: {pos :: Int32}, x: Int8): Int32 =
+        if ((x >>> pos.pos) rem 2i8 == 0i8) 0 else 1
 
     ///
-    /// Returns `x` with the bit at position `position` set (to 1).
-    /// Considers the 5 rightmost bits of `position` (`position` mod 32).
+    /// Returns `x` with the bit at position `pos` set (to 1).
+    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def setBit(position: Int32, x: Int8): Int8 = x ||| (1i8 <<< position)
+    pub def setBit(pos: {pos :: Int32}, x: Int8): Int8 = x ||| (1i8 <<< pos.pos)
 
     ///
-    /// Returns `x` with the bit at position `position` cleared (to 0).
-    /// Considers the 5 rightmost bits of `position` (`position` mod 32).
+    /// Returns `x` with the bit at position `pos` cleared (to 0).
+    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def clearBit(position: Int32, x: Int8): Int8 = x &&& ~~~(1i8 <<< position)
+    pub def clearBit(pos: {pos :: Int32}, x: Int8): Int8 = x &&& ~~~(1i8 <<< pos.pos)
 
     ///
-    /// Returns `x` with the bit at position `position` flipped.
-    /// Considers the 5 rightmost bits of `position` (`position` mod 32).
+    /// Returns `x` with the bit at position `pos` flipped.
+    /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def flipBit(position: Int32, x: Int8): Int8 = x ^^^ (1i8 <<< position)
+    pub def flipBit(pos: {pos :: Int32}, x: Int8): Int8 = x ^^^ (1i8 <<< pos.pos)
 
     ///
     /// Returns the integer binary logarithm of `x`.
@@ -281,7 +281,7 @@ namespace Int8 {
             0i8
         } else {
             let position = highestOneBitPosition(x);
-            Int32.clampToInt8(position, 0i8, Int8.maxValue())
+            Int32.clampToInt8(min = 0i8, max = Int8.maxValue(), position)
         }
 
     ///
