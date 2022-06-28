@@ -537,11 +537,10 @@ namespace Nel {
     /// and the second containing all second components in `l`.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def unzip(l: Nel[(a, b)]): (Nel[a], Nel[b]) = match l {
-        case Nel((a, b), xs) =>
-            let (l1, l2) = List.unzip(xs);
-            (Nel(a, l1), Nel(b, l2))
-    }
+    pub def unzip(l: Nel[(a, b)]): (Nel[a], Nel[b]) =
+        let Nel((a, b), xs) = l;
+        let (l1, l2) = List.unzip(xs);
+        (Nel(a, l1), Nel(b, l2))
 
     ///
     /// Returns a new non-empty list where each element `e` is mapped to `(e, i)`
