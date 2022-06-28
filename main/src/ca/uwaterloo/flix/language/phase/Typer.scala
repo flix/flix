@@ -1068,7 +1068,7 @@ object Typer {
           (elementConstrs, elementTypes, elementPurs, elementEffs) <- seqM(elms.map(visitExp)).map(unzip4)
           resultPur = Type.mkAnd(elementPurs, loc)
           resultEff = Type.mkUnion(elementEffs, loc)
-        } yield (elementConstrs.flatten, Type.mkTuple(elementTypes, loc), resultPur)
+        } yield (elementConstrs.flatten, Type.mkTuple(elementTypes, loc), resultPur, resultEff)
 
       case KindedAst.Expression.RecordEmpty(loc) =>
         liftM(List.empty, Type.mkRecord(Type.RecordRowEmpty, loc), Type.Pure, Type.Empty)
@@ -1213,7 +1213,7 @@ object Typer {
           resultTyp <- unifyTypeM(tvar, Type.mkRef(tpe1, regionVar, loc), loc)
           resultPur <- unifyTypeM(evar, Type.mkAnd(pur1, pur2, regionVar, loc), loc)
           resultEff = Type.mkUnion(eff1, eff2, loc) // MATT need evar?
-        } yield (constrs1 ++ constrs2, resultTyp, resultPur)
+        } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.Deref(exp, tvar, evar, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc, Rigidity.Flexible, text = FallbackText("elm"))
