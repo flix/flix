@@ -42,7 +42,7 @@ object HoverProvider {
 
             case Expression.Sig(sym, _, loc) => hoverSig(sym, loc)
 
-            case _ => hoverTypAndEff(exp.tpe, exp.eff, exp.loc)
+            case _ => hoverTypAndEff(exp.tpe, exp.pur, exp.loc)
           }
 
         case Entity.FormalParam(fparam) => hoverType(fparam.tpe, fparam.loc)

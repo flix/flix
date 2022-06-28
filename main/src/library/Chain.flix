@@ -785,7 +785,7 @@ namespace Chain {
     /// The sort implementation is a Quicksort.
     ///
     pub def sort(c: Chain[a]): Chain[a] with Order[a] = region r {
-        toArray(c, r) |> Array.sort |> Array.toChain
+        toArray(c, r) !> Array.sort! |> Array.toChain
     }
 
     /// Sort chain `c` so that elements are ordered from low to high according to the `Order` instance
@@ -796,7 +796,7 @@ namespace Chain {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, c: Chain[a]): Chain[a] with Order[b] = region r {
-        toArray(c, r) |> Array.sortBy(f) |> Array.toChain
+        toArray(c, r) !> Array.sortBy!(f) |> Array.toChain
     }
 
     ///
@@ -807,7 +807,7 @@ namespace Chain {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, c: Chain[a]): Chain[a] = region r {
-        toArray(c, r) |> Array.sortWith(cmp) |> Array.toChain
+        toArray(c, r) !> Array.sortWith!(cmp) |> Array.toChain
     }
 
     ///
@@ -864,5 +864,14 @@ namespace Chain {
             case SomeLeft(a, rs) => loop(rs, snoc(acc, (a, i)), i + 1)
         };
         loop(c, Empty, 0)
+
+    ///
+    /// Shuffles `c` using the Fisher–Yates shuffle.
+    ///
+    pub def shuffle(rnd: Random.Random, c: Chain[a]): Chain[a] & Impure = region r {
+        let arr = toArray(c, r);
+        Array.shuffle(rnd, arr);
+        Array.toChain(arr)
+    }
 
 }

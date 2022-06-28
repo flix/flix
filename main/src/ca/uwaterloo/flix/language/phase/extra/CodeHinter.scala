@@ -122,7 +122,7 @@ object CodeHinter {
     case Expression.Default(_, _) => Nil
 
     case Expression.Lambda(_, exp, _, _) =>
-      checkEffect(exp.eff, exp.loc) ++ visitExp(exp)
+      checkEffect(exp.pur, exp.loc) ++ visitExp(exp)
 
     case Expression.Apply(exp, exps, _, eff, loc) =>
       val hints0 = (exp, exps) match {
@@ -467,7 +467,7 @@ object CodeHinter {
   /**
     * Returns `true` if the given function type `tpe` is pure.
     */
-  private def isPureFunction(tpe: Type): Boolean = tpe.arrowEffectType == Type.Pure
+  private def isPureFunction(tpe: Type): Boolean = tpe.arrowPurityType == Type.Pure
 
   /**
     * Returns the total number of variable *occurrences* in the given type `tpe`.

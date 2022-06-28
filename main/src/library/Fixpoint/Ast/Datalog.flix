@@ -23,6 +23,8 @@ use Fixpoint/Shared.PredSym;
 use Fixpoint/Ram.RamSym;
 
 namespace Fixpoint/Ast {
+
+    @Internal
     pub enum Datalog[v] {
         case Datalog(Array[Constraint[v], Static], Array[Constraint[v], Static])
         case Model(Map[RamSym[v], Map[Tuple[v], v]])

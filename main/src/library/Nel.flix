@@ -79,8 +79,8 @@ instance Traversable[Nel] {
 }
 
 instance Iterable[Nel] {
-    pub def iterator(t: Nel[a]): Iterator[a] & Impure =
-        Nel.toIterator(t)
+    pub def iterator(t: Nel[a]): StaticIterator[a] & Impure =
+        Nel.toStaticIterator(t)
 }
 instance Reducible[Nel] {
     pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b & (ef1 and ef2) = Nel.reduceLeftTo(f, g, l)
@@ -98,7 +98,7 @@ instance Reducible[Nel] {
     override pub def dropWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef = Nel.dropWhile(f, l)
     override pub def takeWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef = Nel.takeWhile(f, l)
     override pub def toArray(l: Nel[a], r: Region[r]): Array[a, r] \ Write(r) = Nel.toArray(l, r)
-    override pub def toIterator(l: Nel[a]): Iterator[a] & Impure = Nel.toIterator(l)
+    override pub def toIterator(r: Region[r], l: Nel[a]): Iterator[a, r] \ Write(r) = Nel.toIterator(r, l)
     override pub def toList(l: Nel[a]): List[a] = Nel.toList(l)
 }
 
@@ -599,7 +599,7 @@ namespace Nel {
     /// The sort implementation is a Quicksort.
     ///
     pub def sort(l: Nel[a]): Nel[a] with Order[a] = region r {
-        let list = (toArray(l, r) |> Array.sort |> Array.toList);
+        let list = (toArray(l, r) !> Array.sort! |> Array.toList);
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
@@ -615,7 +615,7 @@ namespace Nel {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, l: Nel[a]): Nel[a] with Order[b] = region r {
-        let list = (toArray(l, r) |> Array.sortBy(f) |> Array.toList);
+        let list = (toArray(l, r) !> Array.sortBy!(f) |> Array.toList);
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
@@ -631,7 +631,7 @@ namespace Nel {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, l: Nel[a]): Nel[a] = region r {
-        let list = (toArray(l, r) |> Array.sortWith(cmp) |> Array.toList);
+        let list = (toArray(l, r) !> Array.sortWith!(cmp) |> Array.toList);
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
@@ -641,9 +641,16 @@ namespace Nel {
     ///
     /// Returns an iterator over `l`.
     ///
-    pub def toIterator(l: Nel[a]): Iterator[a] & Impure =
+    pub def toStaticIterator(l: Nel[a]): StaticIterator[a] & Impure =
+       let Iterator(done, next) = toIterator(Static, l);
+       StaticIterator(done, next)
+
+    ///
+    /// Returns an iterator over `l`.
+    ///
+    pub def toIterator(r: Region[r], l: Nel[a]): Iterator[a, r] \ Write(r) =
        let Nel(x, xs) = l;
-       List.toIterator(x :: xs)
+       List.toIterator(r, x :: xs)
 
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the

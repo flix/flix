@@ -107,7 +107,7 @@ object GenTupleClasses {
     val visitor = AsmOps.mkClassWriter()
 
     // internal name of super
-    val superClass = JvmName.Object.toInternalName
+    val superClass = BackendObjType.JavaObject.jvmName.toInternalName
 
     // Initialize the visitor to create a class.
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null, superClass, null)
@@ -160,7 +160,7 @@ object GenTupleClasses {
 
     // Creating an array of objected
     method.visitLdcInsn(fields.length)
-    method.visitTypeInsn(ANEWARRAY, JvmName.Object.toInternalName)
+    method.visitTypeInsn(ANEWARRAY, BackendObjType.JavaObject.jvmName.toInternalName)
 
     // Putting boxed of value on the array
     fields.zipWithIndex.foreach { case (field, ind) =>
@@ -203,7 +203,7 @@ object GenTupleClasses {
     constructor.visitVarInsn(ALOAD, 0)
 
     // Call the super (java.lang.Object) constructor
-    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+    constructor.visitMethodInsn(INVOKESPECIAL, BackendObjType.JavaObject.jvmName.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
 
     var offset: Int = 1
 
