@@ -188,16 +188,15 @@ object Lowering {
     * Lowers the given enum `enum0`.
     */
   private def visitEnum(enum0: Enum)(implicit root: Root, flix: Flix): Enum = enum0 match {
-    case Enum(doc, ann, mod, sym, tparams, derives, cases0, tpeDeprecated0, sc0, loc) =>
-      val tpeDeprecated = visitType(tpeDeprecated0)
-      val sc = visitScheme(sc0)
+    case Enum(doc, ann, mod, sym, tparams, derives, cases0, tpe0, loc) =>
+      val tpe = visitType(tpe0)
       val cases = cases0.map {
         case (_, Case(caseSym, tag, caseTpeDeprecated0, caseSc0, loc)) =>
           val caseTpeDeprecated = visitType(caseTpeDeprecated0)
           val caseSc = visitScheme(caseSc0)
           (tag, Case(caseSym, tag, caseTpeDeprecated, caseSc, loc))
       }
-      Enum(doc, ann, mod, sym, tparams, derives, cases, tpeDeprecated, sc, loc)
+      Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc)
   }
 
   /**
