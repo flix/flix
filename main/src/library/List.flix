@@ -102,8 +102,8 @@ instance Monoid[List[a]] {
 }
 
 instance Iterable[List] {
-    pub def iterator(t: List[a]): StaticIterator[a] & Impure =
-        List.toStaticIterator(t)
+    pub def iterator(r: Region[r], t: List[a]): Iterator[a, r] \ Write(r) =
+        List.toIterator(r, t)
 }
 
 namespace List {
@@ -1318,13 +1318,6 @@ namespace List {
     ///
     pub def sumWith(f: a -> Int32 & ef, l: List[a]): Int32 & ef =
         Foldable.sumWith(f, l)
-
-    ///
-    /// Returns an iterator over `l`.
-    ///
-    pub def toStaticIterator(l: List[a]): StaticIterator[a] & Impure =
-        let Iterator(done, next) = toIterator(Static, l);
-        StaticIterator(done, next)
 
     ///
     /// Returns an iterator over `l`.
