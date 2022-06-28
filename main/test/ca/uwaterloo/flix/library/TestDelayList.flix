@@ -1307,20 +1307,24 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIter01(): Bool & Impure =
-    	DelayList.toIterator(ENil: DelayList[Unit]) |> Iterator.toList == Nil
+    def toIter01(): Bool = region r {
+    	DelayList.toIterator(r, ENil: DelayList[Unit]) |> Iterator.toList == Nil
+    }
 
     @test
-    def toIter02(): Bool & Impure =
-    	DelayList.toIterator(LList(lazy ENil): DelayList[Unit]) |> Iterator.toList == Nil
+    def toIter02(): Bool = region r {
+    	DelayList.toIterator(r, LList(lazy ENil): DelayList[Unit]) |> Iterator.toList == Nil
+    }
 
     @test
-    def toIter06(): Bool & Impure =
-    	DelayList.toIterator(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    def toIter06(): Bool = region r {
+    	DelayList.toIterator(r, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    }
 
     @test
-    def toIter09(): Bool & Impure =
-    	DelayList.range(-100, 100) |> DelayList.toIterator |> Iterator.toList == List.range(-100, 100)
+    def toIter09(): Bool = region r {
+    	DelayList.range(-100, 100) |> DelayList.toIterator(r) |> Iterator.toList == List.range(-100, 100)
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
