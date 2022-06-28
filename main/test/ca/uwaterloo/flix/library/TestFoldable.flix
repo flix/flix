@@ -347,7 +347,7 @@ namespace TestFoldable {
 
     @test
     def toMutMap03(): Bool = region r {
-        let l = (3, 4) :: (1, 4) :: (2, 3) :: Nil;
+        let l = (1, 4) :: (2, 3) :: (3, 4) :: Nil;
         let m = Foldable.toMutMap(l, r);
 
         l == MutMap.toList(m)
