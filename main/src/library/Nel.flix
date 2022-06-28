@@ -263,14 +263,10 @@ namespace Nel {
     ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
     pub def mapWithIndex(f: (a, Int32) -> b & ef, l: Nel[a]): Nel[b] & ef =
-        def loop(i, ll, k) = match ll {
-            case Nil     => k(Nil)
-            case x :: xs =>
-                let y = f(x, i);
-                loop(i + 1, xs, ks -> k(y :: ks))
-        };
-        match l {
-            case Nel(x, xs) => Nel(f(x, 0), loop(1, xs, identity))
+        let Nel(x, xs) = l;
+        match List.mapWithIndex(f, x :: xs) {
+            case y :: ys => Nel(y, ys)
+            case _       => unreachable!()
         }
 
     ///
