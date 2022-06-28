@@ -69,6 +69,10 @@ object Unification {
   // NB: The order of cases has been determined by code coverage analysis.
   def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     (tpe1, tpe2) match {
+
+      // TODO tmp hack to work around effects
+      case _ if (tpe1.kind == Kind.Effect && tpe2.kind == Kind.Effect) => Result.Ok(Substitution.empty)
+
       case (x: Type.Var, y: Type.Var) => unifyVars(x.asKinded, y.asKinded, renv)
 
       case (x: Type.Var, _) =>
