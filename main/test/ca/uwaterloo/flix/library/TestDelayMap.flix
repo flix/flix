@@ -1669,7 +1669,7 @@ namespace TestDelayMap {
 
     @test
     def toMutDeque01(): Bool = region r {
-        let m: Map[Int32, Int32] = Map#{} |> Map.toDelayMap;
+        let m: DelayMap[Int32, Int32] = Map#{} |> Map.toDelayMap;
         let d1 = DelayMap.toMutDeque(m, r);
 
         let d2 = new MutDeque(r);
