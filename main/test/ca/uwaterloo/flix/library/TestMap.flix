@@ -724,7 +724,7 @@ def mapWithKey06(): Bool & Impure =
     let range = List.range(0, 2000);
     let m = List.zip(range, range) |> List.toMap;
     let a = new MutList(Static);
-    Map.mapWithKey((k, v) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
+    discard Map.mapWithKey((k, v) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
     MutList.toList(a) == range
 
 
@@ -939,7 +939,7 @@ def count08(): Bool & Impure =
     let range = List.range(0, 2000);
     let m = List.zip(range, range) |> List.toMap;
     let a = new MutList(Static);
-    Map.count((k, _) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); true }, m);
+    discard Map.count((k, _) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); true }, m);
     MutList.toList(a) == range
 
 
@@ -1059,7 +1059,7 @@ def count08(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(Static);
-        Map.sumWith((k, _) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
+        discard Map.sumWith((k, _) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
         MutList.toList(a) == range
 
 
@@ -1169,7 +1169,7 @@ def count08(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(Static);
-        Map.productWith((k, _) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
+        discard Map.productWith((k, _) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
         MutList.toList(a) == range
 
 
@@ -2179,7 +2179,7 @@ def query18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(Static);
-        Map.minimumKeyBy((x, y) -> { let b = new MutList(Static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
+        discard Map.minimumKeyBy((x, y) -> { let b = new MutList(Static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
@@ -2231,7 +2231,7 @@ def query18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, List.reverse(range)) |> List.toMap;
         let a = new MutList(Static);
-        Map.minimumValueBy((x, y) -> { let b = new MutList(Static); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
+        discard Map.minimumValueBy((x, y) -> { let b = new MutList(Static); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.reverse(List.range(1, 2000)) // The first / left most value is ignored
 
 
@@ -2273,7 +2273,7 @@ def query18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(Static);
-        Map.maximumKeyBy((x, y) -> { let b = new MutList(Static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
+        discard Map.maximumKeyBy((x, y) -> { let b = new MutList(Static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
@@ -2315,7 +2315,7 @@ def query18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(Static);
-        Map.maximumValueBy((x, y) -> { let b = new MutList(Static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
+        discard Map.maximumValueBy((x, y) -> { let b = new MutList(Static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
