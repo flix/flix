@@ -717,7 +717,7 @@ namespace File {
             let fileStream = newFileStream(javaFile);
             let printWriter = newPrintWriter(fileStream as ##java.io.OutputStream);
 
-            let dataAsArray = Foldable.toArray(data, Static);
+            let dataAsArray = Foldable.toArray(Static, data);
             write(fileStream, dataAsArray);
             close(printWriter);
 
@@ -754,7 +754,7 @@ namespace File {
             let fileStream = newFileStream(javaFile, true);
             let printWriter = newPrintWriter(fileStream as ##java.io.OutputStream);
 
-            let dataAsArray = Foldable.toArray(data, Static);
+            let dataAsArray = Foldable.toArray(Static, data);
             write(fileStream, dataAsArray);
 
             close(printWriter);
