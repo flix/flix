@@ -330,11 +330,10 @@ namespace String {
         def loop(i) = {
             if (i >= len)
                 -1
+            else if (f(charAt(i, s)))
+                i
             else
-                if (f(charAt(i, s)))
-                    i
-                else
-                    loop(i+1)
+                loop(i + 1)
         };
         let i = loop(0);
         if (i < 0) None else Some(i)
@@ -349,11 +348,10 @@ namespace String {
         def loop(i) = {
             if (i < 0)
                 -1
+            else if (f(charAt(i, s)))
+                i
             else
-                if (f(charAt(i, s)))
-                    i
-                else
-                    loop(i-1)
+                loop(i - 1)
         };
         let end = length(s) - 1;
         let i = loop(end);
@@ -371,14 +369,14 @@ namespace String {
             if (i >= len)
                 k(Nil)
             else if (f(charAt(i, s)))
-                loop(i+1, ks -> k(i :: ks))
+                loop(i + 1, ks -> k(i :: ks))
             else
-                loop(i+1, k)
+                loop(i + 1, k)
         };
         loop(0, identity)
 
     ///
-    /// Returns the positions of the all the occurences of `substr` in `s`.
+    /// Returns the positions of the all the occurrences of `substr` in `s`.
     ///
     /// Returns `Nil` if `substr` is the empty string.
     ///
