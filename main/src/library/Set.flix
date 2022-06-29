@@ -149,6 +149,22 @@ namespace Set {
         Set(RedBlackTree.insert(x, (), t))
 
     ///
+    /// Removes `x` from `s`.
+    ///
+    @Time(Int32.log2(size(s))) @Space(Int32.log2(size(s)))
+    pub def remove(x: a, s: Set[a]): Set[a] with Order[a] =
+        let Set(t) = s;
+        Set(RedBlackTree.remove(x, t))
+
+    ///
+    /// Returns true if and only if `s` is the empty set.
+    ///
+    @Time(1) @Space(1)
+    pub def isEmpty(s: Set[a]): Bool =
+        let Set(t) = s;
+        RedBlackTree.isEmpty(t)
+
+    ///
     /// Returns the singleton set containing `x`.
     ///
     /// `Set#{x}` is syntactic sugar for `singleton` (`Set#{x} = singleton(x)`).
@@ -170,22 +186,6 @@ namespace Set {
                 loop(i + 1, insert(i, s))
         };
         loop(b, empty())
-
-    ///
-    /// Removes `x` from `s`.
-    ///
-    @Time(Int32.log2(size(s))) @Space(Int32.log2(size(s)))
-    pub def remove(x: a, s: Set[a]): Set[a] with Order[a] =
-        let Set(t) = s;
-        Set(RedBlackTree.remove(x, t))
-
-    ///
-    /// Returns true if and only if `s` is the empty set.
-    ///
-    @Time(1) @Space(1)
-    pub def isEmpty(s: Set[a]): Bool =
-        let Set(t) = s;
-        RedBlackTree.isEmpty(t)
 
     ///
     /// Returns true if and only if `x` is a member of `s`.
