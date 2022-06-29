@@ -290,7 +290,7 @@ namespace String {
     ///
     /// If `b` or `e` are out-of-bounds, return the empty string.
     ///
-    pub def slice(b: Int32, e: Int32, s: String): String  = try {
+    pub def slice(b: Int32, e: Int32, s: String): String = try {
         import java.lang.String.substring(Int32, Int32): String & Pure;
         substring(s, b, e)
     } catch {
