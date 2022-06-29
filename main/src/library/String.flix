@@ -254,8 +254,8 @@ namespace String {
     /// Note - use `isSubmatch` to search for a substring.
     ///
     pub def isMatch(regex: {regex :: String}, s: String): Bool =
+        import java.lang.String.matches(String): Bool & Pure;
         try {
-            import java.lang.String.matches(String): Bool & Pure;
             matches(s, regex.regex)
         } catch {
             case _: ##java.util.regex.PatternSyntaxException => false
@@ -265,16 +265,17 @@ namespace String {
     /// Returns `true` if the string `s` is matched by the regular expression `regex` at any point.
     ///
     pub def isSubmatch(regex: {regex :: String}, s: String): Bool =
-        isSubmatchHelper(regex.regex, s) as & Pure
+        isSubmatchHelper(regex.regex, s)
 
     ///
     /// Helper function for `isSubmatch`.
     ///
-    def isSubmatchHelper(pattern: String, s: String): Bool & Impure =
+    def isSubmatchHelper(pattern: String, s: String): Bool = region r {
+        import static java.util.regex.Pattern.compile(String): ##java.util.regex.Pattern \ Write(r);
+        import java.util.regex.Pattern.matcher(##java.lang.CharSequence): ##java.util.regex.Matcher \ Read(r);
+        import java.util.regex.Matcher.find(Int32): Bool \ Write(r);
+        let _ = r; // This avoids a redundancy error.
         try {
-            import static java.util.regex.Pattern.compile(String): ##java.util.regex.Pattern & Impure;
-            import java.util.regex.Pattern.matcher(##java.lang.CharSequence): ##java.util.regex.Matcher & Impure;
-            import java.util.regex.Matcher.find(Int32): Bool & Impure;
             let cs1 = s as ##java.lang.CharSequence;
             let p1 = compile(pattern);
             let m1 = matcher(p1, cs1);
@@ -282,6 +283,7 @@ namespace String {
         } catch {
             case _: ##java.util.regex.PatternSyntaxException => false
         }
+    }
 
     ///
     /// Returns the substring of `s` from index `b` (inclusive) to index `e` (exclusive).
