@@ -416,7 +416,6 @@ namespace String {
         let len = length(s);
         if (n >= len) s else slice(len - n, len, s)
 
-
     ///
     /// Alias for `dropLeft`.
     ///
@@ -435,7 +434,6 @@ namespace String {
         else
             slice(n, length(s), s)
 
-
     ///
     /// Drop the last `n` characters of string `s` from the right.
     ///
@@ -443,10 +441,11 @@ namespace String {
     ///
     @Time(length(s) - n) @Space(length(s) - n)
     pub def dropRight(n: Int32, s: String): String =
-        if (n > 0) {
+        if (n > 0)
             let len = length(s);
             slice(0, len - n, s)
-        } else s
+        else
+            s
 
     ///
     /// Alias for `takeWileLeft`.
@@ -463,7 +462,7 @@ namespace String {
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def takeWhileLeft(f: Char -> Bool, s: String): String =
         match findIndexOfLeft(x -> not (f(x)), s) {
-            case None => s
+            case None    => s
             case Some(i) => take(i, s)
         }
 
@@ -476,8 +475,8 @@ namespace String {
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def takeWhileRight(f: Char -> Bool, s: String): String =
         match findIndexOfRight(x -> not (f(x)), s) {
-            case None => s
-            case Some(i) => slice(i+1, length(s), s)
+            case None    => s
+            case Some(i) => slice(i + 1, length(s), s)
         }
 
     ///
@@ -495,7 +494,7 @@ namespace String {
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def dropWhileLeft(f: Char -> Bool, s: String): String =
         match findIndexOfLeft(x -> not (f(x)), s) {
-            case None => ""
+            case None    => ""
             case Some(i) => sliceRight(i, s)
         }
 
@@ -508,7 +507,7 @@ namespace String {
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def dropWhileRight(f: Char -> Bool, s: String): String =
         match findIndexOfRight(x -> not (f(x)), s) {
-            case None => ""
+            case None    => ""
             case Some(i) => sliceLeft(i + 1, s)     // must include i
         }
 
@@ -521,9 +520,9 @@ namespace String {
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def dropWhileAround(f: Char -> Bool, s: String): String =
         match (findIndexOfLeft(x -> not (f(x)), s), findIndexOfRight(x -> not (f(x)), s)) {
-            case (None, None) => ""
-            case (Some(l), None) => sliceRight(l, s)
-            case (None, Some(r)) => sliceLeft(r, s)
+            case (None, None)       => ""
+            case (Some(l), None)    => sliceRight(l, s)
+            case (None, Some(r))    => sliceLeft(r, s)
             case (Some(l), Some(r)) => slice(l, r + 1, s)
         }
 
@@ -551,10 +550,9 @@ namespace String {
         def loop(acc, i) = {
             if (i >= len)
                 acc
-            else {
+            else
                 let acc1 = f(acc, charAt(i, s));
-                loop(acc1, i+1)
-            }
+                loop(acc1, i + 1)
         };
         loop(x, 0)
 
@@ -565,10 +563,9 @@ namespace String {
         def loop(acc, i) = {
             if (i < 0)
                 acc
-            else {
+            else
                 let acc1 = f(charAt(i, s), acc);
-                loop(acc1, i-1)
-            }
+                loop(acc1, i - 1)
         };
         let end = length(s) - 1;
         loop(x, end)
@@ -582,10 +579,9 @@ namespace String {
         def loop(acc, i) = {
             if (i >= len)
                 acc
-            else {
+            else
                 let acc1 = f(acc, charAt(i, s), charAt(i, t));
-                loop(acc1, i+1)
-            }
+                loop(acc1, i + 1)
         };
         loop(x, 0)
 
