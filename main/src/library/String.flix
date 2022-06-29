@@ -928,7 +928,7 @@ namespace String {
     @Time(length(s)) @Space(length(s))
     pub def words(s: String): List[String] = match trim(s) {
         case s1 if isEmpty(s1) => Nil
-        case s1 => split({regex = "\\s+"}, s1)
+        case s1                => split({regex = "\\s+"}, s1)
     }
 
     ///
