@@ -256,15 +256,13 @@ namespace Result {
     /// If `f` is successfully applied to all elements in `l` the result is of the form:
     /// `Ok(f(...f(f(s, x1), x2)..., xn))`.
     ///
-    pub def foldLeftM(f: (b, a) -> Result[b, e] & ef, s: b, l: List[a]): Result[b, e] & ef =
-        def loop(ll, acc) = match ll {
-            case Nil     => Ok(acc)
-            case x :: xs => match f(acc, x) {
-                case Ok(s1) => loop(xs, s1)
-                case Err(e) => Err(e)
-            }
-        };
-        loop(l, s)
+    pub def foldLeftM(f: (b, a) -> Result[b, e] & ef, s: b, l: List[a]): Result[b, e] & ef = match l {
+        case Nil     => Ok(s)
+        case x :: xs => match f(s, x) {
+            case Ok(s1) => foldLeftM(f, s1, xs)
+            case Err(e) => Err(e)
+        }
+    }
 
     ///
     /// Returns the result of applying `f` to a start value `s` and the elements in `l`
