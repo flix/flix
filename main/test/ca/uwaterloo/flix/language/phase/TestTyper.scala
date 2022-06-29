@@ -1272,7 +1272,7 @@ class TestTyper extends FunSuite with TestUtils {
         |        region r {
         |            let x = ref 123 @ r;
         |            w -> {
-        |                let _ = deref x;
+        |                discard deref x;
         |                w
         |            }
         |        }

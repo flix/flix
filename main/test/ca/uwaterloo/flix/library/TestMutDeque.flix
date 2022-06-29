@@ -84,8 +84,8 @@ namespace TestMutDeque {
         MutDeque.pushFront(1, d);
         MutDeque.pushFront(1, d);
 
-        MutDeque.popFront(d);
-        MutDeque.popFront(d);
+        discard MutDeque.popFront(d);
+        discard MutDeque.popFront(d);
 
         MutDeque.size(d) == 2
 
@@ -100,10 +100,10 @@ namespace TestMutDeque {
         MutDeque.pushFront(1, d);
         MutDeque.pushFront(1, d);
 
-        MutDeque.popFront(d);
-        MutDeque.popFront(d);
-        MutDeque.popFront(d);
-        MutDeque.popFront(d);
+        discard MutDeque.popFront(d);
+        discard MutDeque.popFront(d);
+        discard MutDeque.popFront(d);
+        discard MutDeque.popFront(d);
 
         MutDeque.size(d) == 0
     }
@@ -112,7 +112,7 @@ namespace TestMutDeque {
     def size07(): Bool = region r {
         let d = new MutDeque(r);
         MutDeque.pushFront(1, d);
-        MutDeque.popBack(d);
+        discard MutDeque.popBack(d);
         MutDeque.size(d) == 0
     }
 
@@ -120,7 +120,7 @@ namespace TestMutDeque {
     def size08(): Bool = region r {
         let d = new MutDeque(r);
         MutDeque.pushBack(1, d);
-        MutDeque.popFront(d);
+        discard MutDeque.popFront(d);
         MutDeque.size(d) == 0
     }
 
@@ -145,7 +145,7 @@ namespace TestMutDeque {
     def isEmpty03(): Bool = region r {
         let d = new MutDeque(r);
         MutDeque.pushBack(1, d);
-        MutDeque.popBack(d);
+        discard MutDeque.popBack(d);
         MutDeque.isEmpty(d)
     }
 
@@ -160,7 +160,7 @@ namespace TestMutDeque {
     def isEmpty05(): Bool = region r {
         let d = new MutDeque(r);
         MutDeque.pushFront(1, d);
-        MutDeque.popFront(d);
+        discard MutDeque.popFront(d);
         MutDeque.isEmpty(d)
     }
 
