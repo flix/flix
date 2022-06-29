@@ -24,12 +24,22 @@ import java.io.File
 import scala.collection.mutable
 
 /**
+  * The location from which source files should be loaded
+  */
+sealed trait SourceProvider
+
+case object SourceProvider {
+  case class ProjectPath(path: Path) extends SourceProvider
+  case class SourceFileList(files: Seq[File]) extends SourceProvider
+}
+
+/**
   * Represents the source files loaded by the REPL
   *
   * @param source Either a path representing the current directory (if the REPL is started with no arguments)
   *               or a seqence of files (if the REPL is started with a list of file to load)
   */
-class SourceFiles(source: Either[Path, Seq[File]]) {
+class SourceFiles(sourceProvider: SourceProvider) {
 
   // The sources and libraries currently loaded
   var currentSources: Set[Path] = Set.empty
@@ -44,15 +54,15 @@ class SourceFiles(source: Either[Path, Seq[File]]) {
   def addSourcesAndPackages(flix: Flix) = {
     val previousSources = currentSources
 
-    source match {
-      case Left(path) =>
+    sourceProvider match {
+      case SourceProvider.ProjectPath(path) =>
         val sourceFiles = getSourceFiles(path)
         val (packages, libraries) = getPackagesAndLibraries(path)
 
         currentSources = sourceFiles ++ packages
         currentLibs = libraries
   
-      case Right(files) =>
+      case SourceProvider.SourceFileList(files) =>
         currentSources = files.map(_.toPath).toSet
     }
 

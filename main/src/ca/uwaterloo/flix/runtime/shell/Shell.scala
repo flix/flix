@@ -34,7 +34,7 @@ import java.util.logging.{Level, Logger}
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
-class Shell(source: Either[Path, Seq[File]], options: Options) {
+class Shell(sourceProvider: SourceProvider, options: Options) {
 
   /**
     * The audience is always external.
@@ -54,7 +54,7 @@ class Shell(source: Either[Path, Seq[File]], options: Options) {
   /**
     * The source files currently loaded.
     */
-  private val sourceFiles = new SourceFiles(source)
+  private val sourceFiles = new SourceFiles(sourceProvider)
 
   /**
     * Continuously reads a line of input from the terminal, parses and executes it.
@@ -239,10 +239,12 @@ class Shell(source: Either[Path, Seq[File]], options: Options) {
     }
   }
 
+  /**
+    * Removes all code fragments, restoring the REPL to an initial state
+    */
   private def clearFragments() = {
-    for(i <- 0 to fragments.length;
-        name = "$" + i)
-      flix.remSourceCode(name)
+    for(i <- 0 to fragments.length)
+      flix.remSourceCode("$" + i)
     fragments.clear()
   }
 
@@ -254,15 +256,16 @@ class Shell(source: Either[Path, Seq[File]], options: Options) {
   }
 
   /**
-    * Compile
+    * Compiles the current files and packages (first time from scratch, subsequent times incrementally)
     */
   private def compile(entryPoint: Option[Symbol.DefnSym] = None)(implicit terminal: Terminal): Validation[CompilationResult, CompilationMessage] = {
 
+    // Set the main entry point if there is one (i.e. if the programmer wrote an expression)
     this.flix.setOptions(options.copy(entryPoint = entryPoint))
 
     val result = this.flix.compile()
     result match {
-      case Validation.Success(result) =>
+      case Validation.Success(result) => // Compilation successful, no-op
 
       case Validation.Failure(errors) =>
         for (msg <- flix.mkMessages(errors)) {
@@ -271,7 +274,6 @@ class Shell(source: Either[Path, Seq[File]], options: Options) {
         terminal.writer().println()
     }
 
-    // Return the result.
     result
   }
 

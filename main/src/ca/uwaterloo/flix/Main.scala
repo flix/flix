@@ -19,7 +19,7 @@ package ca.uwaterloo.flix
 import ca.uwaterloo.flix.api.lsp.LanguageServer
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.runtime.shell.Shell
+import ca.uwaterloo.flix.runtime.shell.{Shell, SourceProvider}
 import ca.uwaterloo.flix.tools._
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util._
@@ -150,7 +150,7 @@ object Main {
           System.exit(getCode(result))
 
         case Command.Repl =>
-          val source = if (cmdOpts.files.isEmpty) Left(cwd) else Right(cmdOpts.files)
+          val source = if (cmdOpts.files.isEmpty) SourceProvider.ProjectPath(cwd) else SourceProvider.SourceFileList(cmdOpts.files)
           val shell = new Shell(source, options)
           shell.loop()
           System.exit(0)
@@ -192,7 +192,7 @@ object Main {
 
     // check if we should start a REPL
     if (cmdOpts.command == Command.None && cmdOpts.files.isEmpty) {
-      val shell = new Shell(Left(cwd), options)
+      val shell = new Shell(SourceProvider.ProjectPath(cwd), options)
       shell.loop()
       System.exit(0)
     }
