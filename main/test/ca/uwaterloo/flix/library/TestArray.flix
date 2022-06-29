@@ -187,7 +187,7 @@ namespace TestArray {
         let a = ([] @ r): Array[Int32, _];
         let d = new MutDeque(r): MutDeque[Int32, _];
 
-        Array.toMutDeque(a, r) `MutDeque.sameElements` d
+        Array.toMutDeque(r, a) `MutDeque.sameElements` d
     }
 
     @test
@@ -197,7 +197,7 @@ namespace TestArray {
         let d = new MutDeque(r);
         MutDeque.pushBack(1, d);
 
-        Array.toMutDeque(a, r) `MutDeque.sameElements` d
+        Array.toMutDeque(r, a) `MutDeque.sameElements` d
     }
 
     @test
@@ -209,7 +209,7 @@ namespace TestArray {
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
 
-        Array.toMutDeque(a, r) `MutDeque.sameElements` d
+        Array.toMutDeque(r, a) `MutDeque.sameElements` d
     }
 
     @test
@@ -223,7 +223,7 @@ namespace TestArray {
         MutDeque.pushFront(2, d);
         MutDeque.pushFront(1, d);
 
-        Array.toMutDeque(a, r) `MutDeque.sameElements` d
+        Array.toMutDeque(r, a) `MutDeque.sameElements` d
     }
 
     @test
@@ -235,7 +235,7 @@ namespace TestArray {
         MutDeque.pushFront('b', d);
         MutDeque.pushFront('a', d);
 
-        Array.toMutDeque(a, r) `MutDeque.sameElements` d
+        Array.toMutDeque(r, a) `MutDeque.sameElements` d
     }
 
     /////////////////////////////////////////////////////////////////////////////
