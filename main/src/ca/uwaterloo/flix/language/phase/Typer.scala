@@ -1282,7 +1282,49 @@ object Typer {
           resultEff = Type.mkUnion(eff :: ruleEffs, loc)
         } yield (constrs ++ ruleConstrs.flatten, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.TryWith(exp, sym, rules, tvar, loc) => visitExp(exp) // TODO actually infer
+      case KindedAst.Expression.TryWith(exp, sym, rules, tvar, loc) =>
+        val effect = root.effects(sym)
+        val ops = effect.ops.map(op => op.sym -> op).toMap
+
+        def unifyFormalParams(expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam]): InferMonad[Unit] = {
+          if (expected.length != actual.length) {
+            ??? // invalid type param count
+          } else {
+            val fparams = (expected zip actual) map {
+              case (ex, ac) =>
+                for {
+                  tpe <- expectTypeM(expected = ex.tpe, actual = ac.tpe, ac.loc)
+                } yield ()
+            }
+            seqM(fparams).map(_ => ())
+          }
+        }
+
+        def visitHandlerRule(rule: KindedAst.HandlerRule): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = rule match {
+          case KindedAst.HandlerRule(op, actualFparams, body) =>
+            // Don't need to generalize since ops are monomorphic
+            // Don't need to handle unknown op because resolver would have caught this
+            ops(op) match {
+              case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, expectedTpe, expectedPur, expectedEff, _)) =>
+                for {
+                  _ <- unifyFormalParams(expected = expectedFparams, actual = actualFparams)
+                  (actualTconstrs, actualTpe, actualPur, actualEff) <- visitExp(body)
+                  resultTpe <- expectTypeM(expected = expectedTpe, actual = actualTpe, body.loc)
+                  resultPur <- expectTypeM(expected = expectedPur, actual = actualPur, body.loc) // MATT improve error message for this
+                  resultEff <- expectTypeM(expected = expectedEff, actual = actualEff, body.loc)
+                } yield (actualTconstrs, resultTpe, resultPur, resultEff)
+            }
+        }
+
+        val effType = Type.Cst(TypeConstructor.Effect(sym), loc)
+        for {
+          (tconstrs, tpe, pur, eff) <- visitExp(exp)
+          (tconstrss, _, purs, effs) <- seqM(rules.map(visitHandlerRule)).map(unzip4)
+          resultTconstrs = (tconstrs :: tconstrss).flatten
+          resultTpe = unifyTypeM(tvar, tpe, loc)
+          resultPur = Type.mkAnd(pur :: purs, loc)
+          resultEff = Type.mkUnion(Type.mkDifference(eff, effType, loc) :: effs, loc)
+        } yield (resultTconstrs, resultTpe, resultPur, resultEff)
 
       case KindedAst.Expression.Do(op, args, loc) => InferMonad.point((Nil: List[Ast.TypeConstraint], Type.Unit, Type.Pure, Type.Empty)) // TODO actually infer
 
