@@ -204,7 +204,7 @@ namespace String {
     @Time(length(s)) @Space(length(s))
     pub def reverse(s: String) : String =
         let start = length(s) - 1;
-        init(i -> charAt(start - i, s), start+1)
+        init(i -> charAt(start - i, s), start + 1)
 
     ///
     /// Rotate the contents of string `s` by `n` steps to the left.
