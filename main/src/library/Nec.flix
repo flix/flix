@@ -727,7 +727,7 @@ namespace Nec {
     ///
     /// Returns `c` as a MutDeque.
     ///
-    pub def toMutDeque(c: Nec[a], r: Region[r]): MutDeque[a, r] \ Write(r)  =
+    pub def toMutDeque(r: Region[r], c: Nec[a]): MutDeque[a, r] \ Write(r)  =
         let d = new MutDeque(r);
         foreach(x -> MutDeque.pushBack(x, d), c);
         d

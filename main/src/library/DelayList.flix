@@ -1193,7 +1193,7 @@ namespace DelayList {
     ///
     /// Returns `l` as a MutDeque.
     ///
-    pub def toMutDeque(l: DelayList[a], r: Region[r]): MutDeque[a, r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], l: DelayList[a]): MutDeque[a, r] \ Write(r) =
         let d = new MutDeque(r);
         DelayList.foreach(x -> MutDeque.pushBack(x, d), l);
         d

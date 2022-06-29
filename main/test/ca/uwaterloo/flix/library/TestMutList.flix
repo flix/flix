@@ -1759,7 +1759,7 @@ namespace TestMutList {
         let l = new MutList(r): MutList[Int32, _];
         let d = new MutDeque(r): MutDeque[Int32, _];
 
-        MutList.toMutDeque(l, r) `MutDeque.sameElements` d
+        MutList.toMutDeque(r, l) `MutDeque.sameElements` d
     }
 
     @test
@@ -1772,7 +1772,7 @@ namespace TestMutList {
         let d = new MutDeque(r);
         List.foreach(x -> MutDeque.pushBack(x, d), xs);
 
-        MutList.toMutDeque(l, r) `MutDeque.sameElements` d
+        MutList.toMutDeque(r, l) `MutDeque.sameElements` d
     }
 
     @test
@@ -1785,7 +1785,7 @@ namespace TestMutList {
         let d = new MutDeque(r);
         List.foreach(x -> MutDeque.pushBack(x, d), xs);
 
-        MutList.toMutDeque(l, r) `MutDeque.sameElements` d
+        MutList.toMutDeque(r, l) `MutDeque.sameElements` d
     }
 
     @test
@@ -1798,7 +1798,7 @@ namespace TestMutList {
         let d = new MutDeque(r);
         List.foreach(x -> MutDeque.pushBack(x, d), xs);
 
-        MutList.toMutDeque(l, r) `MutDeque.sameElements` d
+        MutList.toMutDeque(r, l) `MutDeque.sameElements` d
     }
 
 
