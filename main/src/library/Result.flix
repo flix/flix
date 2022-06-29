@@ -238,15 +238,13 @@ namespace Result {
     /// This function is the "forgetful" version of `traverse`, use it when the you want the effect
     /// of applying `f` to each element but do not care about collecting the results.
     ///
-    pub def traverseX(f: a -> Result[b, e] & ef, l: List[a]): Result[Unit, e] & ef =
-        def loop(ll) = match ll {
-            case Nil     => Ok()
-            case x :: xs => match f(x) {
-                case Ok(_)  => loop(xs)
-                case Err(e) => Err(e)
-            }
-        };
-        loop(l)
+    pub def traverseX(f: a -> Result[b, e] & ef, l: List[a]): Result[Unit, e] & ef = match l {
+        case Nil     => Ok()
+        case x :: xs => match f(x) {
+            case Ok(_)  => traverseX(f, xs)
+            case Err(e) => Err(e)
+        }
+    }
 
     ///
     /// Returns the result of applying `f` to a start value `s` and the elements in `l`
