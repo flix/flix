@@ -213,12 +213,10 @@ namespace String {
     pub def rotateLeft(n: Int32, s: String): String =
         if (length(s) < 1)
             ""
-        else {
-            if (n < 0)
-                rotateRightHelper(Int32.abs(n), s)
-            else
-                rotateLeftHelper(n, s)
-        }
+        else if (n < 0)
+            rotateRightHelper(Int32.abs(n), s)
+        else
+            rotateLeftHelper(n, s)
 
     ///
     /// Helper function for `rotateLeft`, `n` must be positive.
@@ -235,12 +233,11 @@ namespace String {
     pub def rotateRight(n: Int32, s: String): String =
         if (length(s) < 1)
             ""
-        else {
-            if (n < 0)
-                rotateLeftHelper(Int32.abs(n), s)
-            else
-                rotateRightHelper(n, s)
-        }
+        else if (n < 0)
+            rotateLeftHelper(Int32.abs(n), s)
+        else
+            rotateRightHelper(n, s)
+
     ///
     /// Helper function for `rotateRight`, `n` must be positive.
     ///
