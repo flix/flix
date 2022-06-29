@@ -705,6 +705,17 @@ object ParsedAst {
     case class Choose(sp1: SourcePosition, star: Boolean, exps: Seq[ParsedAst.Expression], rules: Seq[ChoiceRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * ForEach Expression.
+      *
+      * @param sp1     the position of the first character in the expression.
+      * @param pat     the pattern on the left hand side.
+      * @param genExp  the generator expression.
+      * @param bodyExp the body expression.
+      * @param sp2     the position of the last character in the expression.
+      */
+    case class ForEach(sp1: SourcePosition, pat: ParsedAst.Pattern, genExp: ParsedAst.Expression, bodyExp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Tag Expression.
       *
       * @param sp1  the position of the first character in the expression.

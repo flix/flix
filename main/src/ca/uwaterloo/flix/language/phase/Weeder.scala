@@ -699,6 +699,10 @@ object Weeder {
         case e => WeededAst.Expression.Discard(e, loc)
       }
 
+    case ParsedAst.Expression.ForEach(sp1, pat, exp1, exp2, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      ???
+
     case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe, exp1, exp2, sp2) =>
       //
       // Rewrites a let-match to a regular let-binding or a full-blown pattern match.
