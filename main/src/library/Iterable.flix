@@ -15,23 +15,6 @@
  */
 
 ///
-/// The type of the done function.
-///
-type alias StaticDone = Unit -> Bool & Impure
-
-///
-/// The type of the next function.
-///
-type alias StaticNext[a] = Unit -> a & Impure
-
-///
-/// An iterator is a stream of elements that are produced on demand.
-///
-pub enum StaticIterator[a] {
-    case StaticIterator(StaticDone, StaticNext[a])
-}
-
-///
 /// A type class for data structures that can be iterated.
 ///
 pub class Iterable[t: Type -> Type] {
@@ -39,6 +22,6 @@ pub class Iterable[t: Type -> Type] {
     ///
     /// Returns an iterator of `t`.
     ///
-    pub def iterator(t: t[a]): StaticIterator[a] & Impure
+    pub def iterator(r: Region[r], t: t[a]): Iterator[a, r] \ Write(r)
 
 }

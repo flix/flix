@@ -34,14 +34,14 @@ namespace TestIterator {
     @test
     def next03(): Bool = region r {
         let iter = List.toIterator(r, 1 :: Nil);
-        Iterator.next(iter);
+        discard Iterator.next(iter);
         Iterator.next(iter) == None
     }
 
     @test
     def next04(): Bool = region r {
         let iter = List.toIterator(r, 1 :: 2 :: Nil);
-        Iterator.next(iter);
+        discard Iterator.next(iter);
         Iterator.next(iter) == Some(2)
     }
 
@@ -162,7 +162,7 @@ namespace TestIterator {
             if (m <= 0)
                 ()
             else {
-                Iterator.isEmpty(iter);
+                discard Iterator.isEmpty(iter);
                 loop(m - 1)
             };
         loop(n)

@@ -17,7 +17,7 @@ namespace Test/Eff/Polymorphism {
 
     @test
     def testEffPoly04(): Bool & Impure =
-        let f = flip(flip((x, y) -> {[1, 2, 3]; x and y}));
+        let f = flip(flip((x, y) -> {discard [1, 2, 3]; x and y}));
         f(true, true)
 
     @test
@@ -41,7 +41,7 @@ namespace Test/Eff/Polymorphism {
     @test
     def testEffPoly08(): Bool & Impure =
         let f = x -> {impure(); y -> x and y};
-        let _ = f(true);
+        discard f(true);
         true
 
     @test
@@ -115,7 +115,7 @@ namespace Test/Eff/Polymorphism {
     def testEffPoly22(): Bool -> (Bool -> Bool & Impure) & Impure =
         x -> {impure(); y -> {impure(); x and y}}
 
-    def impure(): Unit & Impure = () as & Impure
+    def impure(): Unit & Impure = discard [42]; ()
 
     def flip(f: (a, b) -> c & e): (b, a) -> c & e = (x, y) -> f(y, x)
 

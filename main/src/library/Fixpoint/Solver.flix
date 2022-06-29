@@ -45,7 +45,7 @@ namespace Fixpoint {
     ///
     @Internal
     def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] & Impure with Order[v], ToString[v] =
-        let _ = notifyPreSolve(d, stf);
+        notifyPreSolve(d, stf);
         let compiler = cs ->
             compile(cs, stf) |>
             simplifyStmt |>
@@ -59,7 +59,7 @@ namespace Fixpoint {
                 compiler(cs) |> interpretWithDatabase(db) |> toModel
             case _ => bug!("Datalog normalization bug")
         };
-        let _ = notifyPostSolve(model);
+        notifyPostSolve(model);
         model
 
     ///
@@ -625,7 +625,7 @@ namespace Fixpoint {
         case Datalog(_, cs) =>
             let pFacts = new MutList(Static);
             Array.foreach(c -> match c {
-                case Constraint(HeadAtom(headPred, _, terms), []) =>
+                case Constraint(HeadAtom(headPred, _, terms), Nil) =>
                     if (headPred == p)
                         let vs = Array.map(headTermValue, terms);
                         MutList.push!(f(vs), pFacts)

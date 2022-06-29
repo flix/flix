@@ -37,11 +37,9 @@ namespace Fixpoint/Ram {
                     }, " ∧ ", prefixQuery);
                     "query {${var} ∈ ${ramSym} | ${query}} do${nl}${String.indent(4, "${body}")}end"
                 case Project(terms, ramSym) =>
-                    "project (${terms |> List.map(ToString.toString) |> String.intercalate(", ")}) into ${ramSym}"
+                    "project (${terms |> List.join(", ")}) into ${ramSym}"
                 case If(test, then) =>
-                    let tst =
-                        List.map(ToString.toString, test) |>
-                        String.intercalate(" ∧ ");
+                    let tst = test |> List.join(" ∧ ");
                     "if(${tst}) then${nl}${String.indent(4, "${then}")}end"
             }
     }

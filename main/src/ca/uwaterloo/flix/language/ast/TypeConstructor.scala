@@ -101,7 +101,7 @@ object TypeConstructor {
     * A type constructor that represents the type of functions.
     */
   case class Arrow(arity: Int) extends TypeConstructor {
-    def kind: Kind = Kind.Bool ->: Kind.mkArrow(arity)
+    def kind: Kind = Kind.Bool ->: Kind.Effect ->: Kind.mkArrow(arity)
   }
 
   /**
@@ -331,6 +331,13 @@ object TypeConstructor {
     * A type constructor that represents a single effect.
     */
   case class Effect(sym: Symbol.EffectSym) extends TypeConstructor {
+    def kind: Kind = Kind.Effect
+  }
+
+  /**
+    * A type constructor that represents the empty effect.
+    */
+  case object Empty extends TypeConstructor {
     def kind: Kind = Kind.Effect
   }
 
