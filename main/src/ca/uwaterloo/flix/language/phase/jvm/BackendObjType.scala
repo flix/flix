@@ -51,6 +51,7 @@ sealed trait BackendObjType {
     case BackendObjType.Global => JvmName(DevFlixRuntime, "Global")
     case BackendObjType.FlixError => JvmName(DevFlixRuntime, "FlixError")
     case BackendObjType.HoleError => JvmName(DevFlixRuntime, "HoleError")
+    case BackendObjType.MatchError => JvmName(DevFlixRuntime, "MatchError")
     // Java classes
     case BackendObjType.JavaObject => JvmName(JavaLang, "Object")
     case BackendObjType.String => JvmName(JavaLang, "String")
@@ -438,6 +439,73 @@ object BackendObjType {
 
     private def objectsEquals(): InstructionSet = INVOKESTATIC(JvmName.Objects, "equals",
       mkDescriptor(BackendObjType.JavaObject.toTpe, BackendObjType.JavaObject.toTpe)(BackendType.Bool))
+  }
+
+  case object MatchError extends BackendObjType {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(MatchError.jvmName, IsFinal, superClass = FlixError.jvmName)
+
+      cm.mkConstructor(Constructor)
+
+      cm.mkField(LocationField)
+
+      cm.mkMethod(EqualsMethod)
+      cm.mkMethod(HashCodeMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = ConstructorMethod(MatchError.jvmName, IsPublic, List(ReifiedSourceLocation.toTpe), Some(
+      thisLoad() ~
+        NEW(JvmName.StringBuilder) ~
+        DUP() ~ invokeConstructor(JvmName.StringBuilder) ~
+        pushString("Non-exhaustive match at ") ~
+        INVOKEVIRTUAL(JvmName.StringBuilder, "append", mkDescriptor(String.toTpe)(JvmName.StringBuilder.toTpe)) ~
+        ALOAD(1) ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+        INVOKEVIRTUAL(JvmName.StringBuilder, "append", mkDescriptor(String.toTpe)(JvmName.StringBuilder.toTpe)) ~
+        INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+        INVOKESPECIAL(FlixError.Constructor) ~
+        thisLoad() ~
+        ALOAD(1) ~
+        PUTFIELD(MatchError.LocationField) ~
+        RETURN()
+    ))
+
+    def LocationField: InstanceField = InstanceField(this.jvmName, IsPublic, IsFinal, "location", ReifiedSourceLocation.toTpe)
+
+    private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(
+      withName(1, JavaObject.toTpe) { otherObj =>
+        // check exact equality
+        thisLoad() ~
+          otherObj.load() ~
+          ifTrue(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
+          // check `other == null`
+          otherObj.load() ~
+          ifTrue(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
+          // the class equality
+          thisLoad() ~
+          INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
+          otherObj.load() ~
+          INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
+          ifTrue(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
+          // check individual fields
+          ALOAD(1) ~ CHECKCAST(this.jvmName) ~
+          storeWithName(2, this.toTpe) { otherErr =>
+            thisLoad() ~ GETFIELD(LocationField) ~
+              otherErr.load() ~ GETFIELD(MatchError.LocationField) ~
+              INVOKESTATIC(JvmName.Objects, "equals", mkDescriptor(JavaObject.toTpe, JavaObject.toTpe)(BackendType.Bool)) ~
+              IRETURN()
+          }
+      }
+    ))
+
+    private def HashCodeMethod: InstanceMethod = JavaObject.HashcodeMethod.implementation(this.jvmName, Some(
+      ICONST_1() ~ ANEWARRAY(JavaObject.jvmName) ~
+        DUP() ~ ICONST_0() ~ thisLoad() ~ GETFIELD(LocationField) ~ AASTORE() ~
+        INVOKESTATIC(JvmName.Objects, "hash", mkDescriptor(BackendType.Array(JavaObject.toTpe))(BackendType.Int32)) ~
+        IRETURN()
+    ))
   }
 
   //
