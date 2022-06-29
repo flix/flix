@@ -858,7 +858,6 @@ namespace String {
         StringBuilder.toString(sb)
     }
 
-
     ///
     /// Strip every indented line in string `s` by `n` spaces. `n` must be greater than `0`.
     /// Note, tabs are counted as a single space.
@@ -888,7 +887,7 @@ namespace String {
             else if (not Char.isWhiteSpace(charAt(ix, s1)))
                 sliceRight(ix, s1)
             else
-                loop(s1, ix+1)
+                loop(s1, ix + 1)
         };
         let step = s1 -> {
             let line = loop(s1, 0);
@@ -916,12 +915,7 @@ namespace String {
     /// ending the result string with the system dependent line separator.
     ///
     @Time(List.length(a)) @Space(List.length(a))
-    pub def unlines(a: List[String]): String = unlinesHelper(a)
-
-    ///
-    /// Helper function for `unlines`.
-    ///
-    def unlinesHelper(a: List[String]): String = region r {
+    pub def unlines(a: List[String]): String = region r {
         let sb = new StringBuilder(r);
         List.foreach(x -> StringBuilder.appendLine!(x, sb), a);
         StringBuilder.toString(sb)
