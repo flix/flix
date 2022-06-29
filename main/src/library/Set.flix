@@ -141,6 +141,14 @@ namespace Set {
     pub def empty(): Set[a] = Set(RedBlackTree.empty())
 
     ///
+    /// Adds `x` to `s`.
+    ///
+    @Time(Int32.log2(size(s))) @Space(Int32.log2(size(s)))
+    pub def insert(x: a, s: Set[a]): Set[a] with Order[a] =
+        let Set(t) = s;
+        Set(RedBlackTree.insert(x, (), t))
+
+    ///
     /// Returns the singleton set containing `x`.
     ///
     /// `Set#{x}` is syntactic sugar for `singleton` (`Set#{x} = singleton(x)`).
@@ -162,14 +170,6 @@ namespace Set {
                 loop(i + 1, insert(i, s))
         };
         loop(b, empty())
-
-    ///
-    /// Adds `x` to `s`.
-    ///
-    @Time(Int32.log2(size(s))) @Space(Int32.log2(size(s)))
-    pub def insert(x: a, s: Set[a]): Set[a] with Order[a] =
-        let Set(t) = s;
-        Set(RedBlackTree.insert(x, (), t))
 
     ///
     /// Removes `x` from `s`.
