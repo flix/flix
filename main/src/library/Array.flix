@@ -619,7 +619,7 @@ namespace Array {
                         let pos2 = arrayWrites(pos1, a, out);
                         (pos2, i+1)
                     }};
-                foldLeft(overwrite, (0, 0), arrs);
+                discard foldLeft(overwrite, (0, 0), arrs);
                 out
         }
 
@@ -906,7 +906,7 @@ namespace Array {
             case None => [] @ r
             case Some(x) => {
                 let out = new(x, len, r);
-                foldLeft((pos, a) -> arrayWrites(pos, a, out), 0, arrs);
+                discard foldLeft((pos, a) -> arrayWrites(pos, a, out), 0, arrs);
                 out
             }
         }
