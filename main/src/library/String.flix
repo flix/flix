@@ -690,7 +690,7 @@ namespace String {
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def exists(f: Char -> Bool & ef, s: String): Bool & ef = match findIndexOfLeft(f, s) {
-        case None => false
+        case None    => false
         case Some(_) => true
     }
 
@@ -701,7 +701,7 @@ namespace String {
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def forall(f: Char -> Bool & ef, s: String): Bool & ef = match findIndexOfLeft(x -> not (f(x)), s) {
-        case None => true
+        case None    => true
         case Some(_) => false
     }
 
