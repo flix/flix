@@ -214,7 +214,7 @@ pub class Foldable[t : Type -> Type] with ForEach[t] {
     /// Returns an iterator over `t`.
     ///
     pub def toIterator(r: Region[r], t: t[a]): Iterator[a, r] \ Write(r) =
-        let arr = Foldable.toArray(t, r);
+        let arr = Foldable.toArray(r, t);
         let len = Array.length(arr);
         let i = ref 0 @ r;
         let done = () -> (deref i) >= len;
@@ -238,7 +238,7 @@ pub class Foldable[t : Type -> Type] with ForEach[t] {
     /// Returns `t` as a mutable list.
     ///
     pub def toMutList(r: Region[r], t: t[a]): MutList[a, r] \ Write(r) = region r2 {
-        Array.toMutList(Foldable.toArray(t, r2), r)
+        Array.toMutList(Foldable.toArray(r2, t), r)
     }
 
     ///
