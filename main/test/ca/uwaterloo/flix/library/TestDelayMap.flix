@@ -1669,8 +1669,8 @@ namespace TestDelayMap {
 
     @test
     def toMutDeque01(): Bool = region r {
-        let m: DelayMap[Int32, Int32] = Map#{} |> Map.toDelayMap;
-        let d1 = DelayMap.toMutDeque(m, r);
+        let m = (Map#{}: Map[Unit, Unit]) |> Map.toDelayMap;
+        let d1 = DelayMap.toMutDeque(r, m);
 
         let d2 = new MutDeque(r);
 
@@ -1680,7 +1680,7 @@ namespace TestDelayMap {
     @test
     def toMutDeque02(): Bool = region r {
         let m = Map#{1 => 2} |> Map.toDelayMap;
-        let d1 = DelayMap.toMutDeque(m, r);
+        let d1 = DelayMap.toMutDeque(r, m);
 
         let d2 = new MutDeque(r);
         MutDeque.pushBack((1, 2), d2);
@@ -1691,7 +1691,7 @@ namespace TestDelayMap {
     @test
     def toMutDeque03(): Bool = region r {
         let m = Map#{1 => 2, 3 => 4, 5 => 6} |> Map.toDelayMap;
-        let d1 = DelayMap.toMutDeque(m, r);
+        let d1 = DelayMap.toMutDeque(r, m);
 
         let d2 = new MutDeque(r);
         MutDeque.pushBack((3, 4), d2);
@@ -1704,7 +1704,7 @@ namespace TestDelayMap {
     @test
     def toMutDeque04(): Bool = region r {
         let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'} |> Map.toDelayMap;
-        let d1 = DelayMap.toMutDeque(m, r);
+        let d1 = DelayMap.toMutDeque(r, m);
 
         let d2 = new MutDeque(r);
         MutDeque.pushFront((3, 'c'), d2);
