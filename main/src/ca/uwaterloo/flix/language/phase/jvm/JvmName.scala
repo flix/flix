@@ -99,7 +99,6 @@ object JvmName {
 
   val DevFlixRuntime: List[String] = List("dev", "flix", "runtime")
 
-  val MatchError: JvmName = JvmName(DevFlixRuntime, "MatchError")
   val ProxyObject: JvmName = JvmName(DevFlixRuntime, "ProxyObject")
   val SelectChoice: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "SelectChoice")
 
