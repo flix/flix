@@ -1683,7 +1683,7 @@ namespace TestDelayMap {
         let d1 = DelayMap.toMutDeque(r, m);
 
         let d2 = new MutDeque(r);
-        MutDeque.pushBack((1, 2), d2);
+        MutDeque.pushFront((1, 2), d2);
 
         d1 `MutDeque.sameElements` d2
     }
