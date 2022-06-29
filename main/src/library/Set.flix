@@ -135,7 +135,7 @@ namespace Set {
     ///
     /// Returns the empty set.
     ///
-    /// `Set#{}` is syntactic sugar for `empty` (`Set#{} = empty()`).
+    /// `Set#{}` is syntactic sugar for `empty` i.e. `Set#{} == empty()`.
     ///
     @Time(1) @Space(1)
     pub def empty(): Set[a] = Set(RedBlackTree.empty())
@@ -167,7 +167,7 @@ namespace Set {
     ///
     /// Returns the singleton set containing `x`.
     ///
-    /// `Set#{x}` is syntactic sugar for `singleton` (`Set#{x} = singleton(x)`).
+    /// `Set#{x}` is syntactic sugar for `singleton` i.e. `Set#{x} == singleton(x)`.
     ///
     @Time(1) @Space(1)
     pub def singleton(x: a): Set[a] with Order[a] = insert(x, empty())
