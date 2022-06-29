@@ -65,10 +65,11 @@ namespace String {
     ///
     /// Splits the string `s` around matches of the regular expression `regex`.
     ///
-    pub def split(regex: {regex :: String}, s: String): List[String] = {
-        import java.lang.String.split(String): Array[String, Static] & Impure;
+    pub def split(regex: {regex :: String}, s: String): List[String] = region r {
+        import java.lang.String.split(String): Array[String, r] \ Write(r);
+        let _ = r; // This avoids a redundancy error.
         Array.toList(split(s, regex.regex))
-    } as & Pure
+    }
 
     ///
     /// Returns the lower case version of the string `s`.
