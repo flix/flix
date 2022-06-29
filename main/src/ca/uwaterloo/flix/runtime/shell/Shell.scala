@@ -265,9 +265,10 @@ class Shell(source: Either[Path, Seq[File]], options: Options) {
       case Validation.Success(result) =>
 
       case Validation.Failure(errors) =>
-        for (error <- errors) {
-          terminal.writer().print(error)
+        for (msg <- flix.mkMessages(errors)) {
+          terminal.writer().print(msg)
         }
+        terminal.writer().println()
     }
 
     // Return the result.
