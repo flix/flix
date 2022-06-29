@@ -235,7 +235,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
 
       case Category.Unknown =>
         // The input is not recognized. Output an error message.
-        w.println("Error: Input input cannot be parsed.")
+        w.println("Error: Input cannot be parsed.")
     }
   }
 
