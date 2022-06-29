@@ -207,7 +207,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
         flix.addSourceCode(name, s)
 
         // And try to compile!
-        compile() match {
+        compile(progress = false) match {
           case Validation.Success(_) =>
             // Compilation succeeded.
             w.println("Ok.")
@@ -258,10 +258,10 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
   /**
     * Compiles the current files and packages (first time from scratch, subsequent times incrementally)
     */
-  private def compile(entryPoint: Option[Symbol.DefnSym] = None)(implicit terminal: Terminal): Validation[CompilationResult, CompilationMessage] = {
+  private def compile(entryPoint: Option[Symbol.DefnSym] = None, progress: Boolean = true)(implicit terminal: Terminal): Validation[CompilationResult, CompilationMessage] = {
 
     // Set the main entry point if there is one (i.e. if the programmer wrote an expression)
-    this.flix.setOptions(options.copy(entryPoint = entryPoint))
+    this.flix.setOptions(options.copy(entryPoint = entryPoint, progress = progress))
 
     val result = this.flix.compile()
     result match {
@@ -282,7 +282,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     */
   private def run(main: Symbol.DefnSym)(implicit terminal: Terminal): Unit = {
     // Recompile the program.
-    compile(Some(main)) match {
+    compile(entryPoint = Some(main), progress = false) match {
       case Validation.Success(result) =>
         result.getMain match {
           case Some(m) => 
