@@ -595,10 +595,9 @@ namespace String {
         def loop(acc, i, j) = {
             if (i < 0 or j < 0)
                 acc
-            else {
+            else
                 let acc1 = f(charAt(i, s), charAt(j, t), acc);
-                loop(acc1, i-1, j-1)
-            }
+                loop(acc1, i - 1, j - 1)
         };
         loop(x, sn, tn)
 
