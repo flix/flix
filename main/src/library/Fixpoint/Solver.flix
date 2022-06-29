@@ -505,7 +505,7 @@ namespace Fixpoint {
     pub def facts1(p: PredSym, d: Datalog[Boxed]): Array[v, Static] with Boxable[v] =
         let f = terms -> match terms {
             case hd :: _ =>
-                unbox(hd) 
+                unbox(hd)
             case _ => unreachable!()
         };
        List.toArray(factsOf(f, p, d), Static) as & Pure
@@ -682,8 +682,8 @@ namespace Fixpoint {
     /// Returns an array of facts associated with the given predicate symbol `p` in the given Datalog program `d`.
     ///
     def factsOf(f: List[v] -> t & ef, p: PredSym, d: Datalog[v]): List[t] & Impure = match d {
-        case Datalog(_, cs) => region r {
-            let pFacts = new MutList(r);
+        case Datalog(_, cs) =>
+            let pFacts = new MutList(Static);
             Array.foreach(c -> match c {
                 case Constraint(HeadAtom(headPred, _, terms), Nil) =>
                     if (headPred == p)
@@ -693,10 +693,9 @@ namespace Fixpoint {
                 case _ => ()
             }, cs);
             pFacts |> MutList.toList
-        }
-        case Model(db) => region r {
+        case Model(db) =>
             use Fixpoint/Ram.toDenotation;
-            let pFacts = new MutList(r);
+            let pFacts = new MutList(Static);
             let query = ramSym -> match ramSym {
                 case RamSym.Full(predSym, _, _) => match predSym <=> p {
                     case EqualTo => EqualTo
@@ -714,12 +713,11 @@ namespace Fixpoint {
                                 tuple[i]
                             else
                                 lat
-                        }, Array.length(tuple) + 1, r);
+                        }, Array.length(tuple) + 1, Static);
                         MutList.push!(f(vs |> Array.toList), pFacts)
                     }, rel)
             }, db);
             pFacts |> MutList.toList
-        }
         case Join(d1, d2) => List.append(factsOf(f, p, d1), factsOf(f, p, d2))
     }
 
