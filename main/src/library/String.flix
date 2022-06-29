@@ -121,28 +121,26 @@ namespace String {
     /// Build a string of length `len` by applying `f` to the successive indices.
     ///
     @Time(time(f) * len) @Space(space(f) * len)
-    pub def init(f: Int32 -> Char & ef, len: Int32): String & ef = initHelper(f, len)
+    pub def init(f: Int32 -> Char & ef, len: Int32): String & ef =
+        if (len <= 0) "" else initHelper(f, len)
 
     ///
     /// Helper function for `init`.
     ///
+    /// Assumes that `len > 0`.
+    ///
     def initHelper(f: Int32 -> Char & ef, len: Int32): String & ef = region r {
-        if (len <= 0)
-            ""
-        else {
-            let sb = new StringBuilder(r);
-            def loop(i) = {
-                if (i >= len)
-                    ()
-                else {
-                    let c = f(i);
-                    StringBuilder.append!(c, sb);
-                    loop(i+1)
-                }
-            };
-            loop(0);
-            StringBuilder.toString(sb)
-        }
+        let sb = new StringBuilder(r);
+        def loop(i) = {
+            if (i >= len)
+                StringBuilder.toString(sb)
+            else {
+                let c = f(i);
+                StringBuilder.append!(c, sb);
+                loop(i + 1)
+            }
+        };
+        loop(0)
     }
 
     ///
