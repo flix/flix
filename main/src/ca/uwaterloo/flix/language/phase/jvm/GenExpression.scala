@@ -717,6 +717,8 @@ object GenExpression {
       val MonoType.Ref(refValueType) = exp.tpe
       val backendRefType = BackendObjType.Ref(BackendType.toErasedBackendType(refValueType))
 
+      // Cast the ref
+      visitor.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
       // Dereference the expression
       visitor.visitFieldInsn(GETFIELD, classType.name.toInternalName, backendRefType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
       // Cast underlying value to the correct type if the underlying type is Object
