@@ -319,8 +319,6 @@ namespace String {
         case len => slice(b, len, s)
     }
 
-
-
     ///
     /// Optionally returns the position of the first character in `x` satisfying `f`.
     ///
