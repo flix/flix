@@ -822,7 +822,7 @@ object Lowering {
   private def visitConstraint(c0: Constraint)(implicit root: Root, flix: Flix): Expression = c0 match {
     case Constraint(cparams, head, body, loc) =>
       val headExp = visitHeadPred(cparams, head)
-      val bodyExp = mkArray(body.map(visitBodyPred(cparams, _)), Types.BodyPredicate, loc)
+      val bodyExp = mkList(body.map(visitBodyPred(cparams, _)), Types.BodyPredicate, loc)
       val innerExp = mkTuple(headExp :: bodyExp :: Nil, loc)
       mkTag(Enums.Constraint, "Constraint", innerExp, Types.Constraint, loc)
   }
