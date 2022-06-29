@@ -24,7 +24,7 @@ namespace Fixpoint/Ram {
         case Merge(RamSym[v], RamSym[v])
         case Assign(RamSym[v], RamSym[v])
         case Purge(RamSym[v])
-        case Seq(Array[RamStmt[v], Static])
+        case Seq(List[RamStmt[v]])
         case Until(List[BoolExp[v]], RamStmt[v])
         case Comment(String)
     }
@@ -37,11 +37,11 @@ namespace Fixpoint/Ram {
                 case Merge(src, dst) => "merge ${src} into ${dst}"
                 case Assign(lhs, rhs) => "${lhs} := ${rhs}"
                 case Purge(ramSym) => "purge ${ramSym}"
-                case Seq(xs) => Array.join(";${nl}", xs)
+                case Seq(xs) => List.join(";${nl}", xs)
                 case Until(test, body) =>
-                    let tst = List.map(ToString.toString, test) |> String.intercalate(" Λ ");
+                    let tst = test |> List.join(" Λ ");
                     "until(${tst}) do${nl}${String.indent(4, "${body}")}end"
                 case Comment(comment) => "// ${comment}"
-            } as & Pure
+            }
     }
 }

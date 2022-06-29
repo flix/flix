@@ -79,8 +79,8 @@ instance Traversable[Nel] {
 }
 
 instance Iterable[Nel] {
-    pub def iterator(t: Nel[a]): StaticIterator[a] & Impure =
-        Nel.toStaticIterator(t)
+    pub def iterator(r: Region[r], t: Nel[a]): Iterator[a, r] \ Write(r) =
+        Nel.toIterator(r, t)
 }
 instance Reducible[Nel] {
     pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b & (ef1 and ef2) = Nel.reduceLeftTo(f, g, l)
@@ -263,14 +263,10 @@ namespace Nel {
     ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
     pub def mapWithIndex(f: (a, Int32) -> b & ef, l: Nel[a]): Nel[b] & ef =
-        def loop(i, ll, k) = match ll {
-            case Nil     => k(Nil)
-            case x :: xs =>
-                let y = f(x, i);
-                loop(i + 1, xs, ks -> k(y :: ks))
-        };
-        match l {
-            case Nel(x, xs) => Nel(f(x, 0), loop(1, xs, identity))
+        let Nel(x, xs) = l;
+        match List.mapWithIndex(f, x :: xs) {
+            case y :: ys => Nel(y, ys)
+            case _       => unreachable!()
         }
 
     ///
@@ -541,11 +537,10 @@ namespace Nel {
     /// and the second containing all second components in `l`.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def unzip(l: Nel[(a, b)]): (Nel[a], Nel[b]) = match l {
-        case Nel((a, b), xs) =>
-            let (l1, l2) = List.unzip(xs);
-            (Nel(a, l1), Nel(b, l2))
-    }
+    pub def unzip(l: Nel[(a, b)]): (Nel[a], Nel[b]) =
+        let Nel((a, b), xs) = l;
+        let (l1, l2) = List.unzip(xs);
+        (Nel(a, l1), Nel(b, l2))
 
     ///
     /// Returns a new non-empty list where each element `e` is mapped to `(e, i)`
@@ -577,7 +572,7 @@ namespace Nel {
     ///
     /// Returns `l` as a MutDeque.
     ///
-    pub def toMutDeque(l: Nel[a], r: Region[r]): MutDeque[a, r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], l: Nel[a]): MutDeque[a, r] \ Write(r) =
         let d = new MutDeque(r);
         foreach(x -> MutDeque.pushBack(x, d), l);
         d
@@ -637,13 +632,6 @@ namespace Nel {
             case _       => unreachable!()
         }
     }
-
-    ///
-    /// Returns an iterator over `l`.
-    ///
-    pub def toStaticIterator(l: Nel[a]): StaticIterator[a] & Impure =
-       let Iterator(done, next) = toIterator(Static, l);
-       StaticIterator(done, next)
 
     ///
     /// Returns an iterator over `l`.

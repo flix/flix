@@ -111,8 +111,8 @@ instance Reducible[Nec] {
 }
 
 instance Iterable[Nec] {
-    pub def iterator(t: Nec[a]): StaticIterator[a] & Impure =
-        Nec.toStaticIterator(t)
+    pub def iterator(r: Region[r], t: Nec[a]): Iterator[a, r] \ Write(r) =
+        Nec.toIterator(r, t)
 }
 
 instance ToString[Nec[a]] with ToString[a] {
@@ -727,7 +727,7 @@ namespace Nec {
     ///
     /// Returns `c` as a MutDeque.
     ///
-    pub def toMutDeque(c: Nec[a], r: Region[r]): MutDeque[a, r] \ Write(r)  =
+    pub def toMutDeque(r: Region[r], c: Nec[a]): MutDeque[a, r] \ Write(r)  =
         let d = new MutDeque(r);
         foreach(x -> MutDeque.pushBack(x, d), c);
         d
@@ -769,13 +769,6 @@ namespace Nec {
         let arr = [x; length(c)] @ r;
         foreach(match (b, i) -> arr[i] = b, zipWithIndex(c));
         arr
-
-    ///
-    /// Returns an iterator over `c`.
-    ///
-    pub def toStaticIterator(c: Nec[a]): StaticIterator[a] & Impure =
-        let Iterator(done, next) = toIterator(Static, c);
-        StaticIterator(done, next)
 
     ///
     /// Returns an iterator over `c`.

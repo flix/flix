@@ -20,37 +20,11 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 
-/**
-  * Generates bytecode for the function abstract classes.
-  */
 object GenFunctionAbstractClasses {
-
-  /**
-    * Returns the set of function abstract classes for the given set of types `ts`.
-    */
   def gen(arrows: Iterable[BackendObjType.Arrow])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     arrows.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, arrow) =>
-        macc + (arrow.jvmName -> JvmClass(arrow.jvmName, genFunctionalInterface(arrow)))
+        macc + (arrow.jvmName -> JvmClass(arrow.jvmName, arrow.genByteCode()))
     }
-  }
-
-  /**
-    * Returns the function abstract class of the given type `arrow`.
-    */
-  private def genFunctionalInterface(arrow: BackendObjType.Arrow)(implicit root: Root, flix: Flix): Array[Byte] = {
-    // (Int, String) -> Bool example:
-    // public abstract class Fn2$Int$Obj$Bool extends Cont$Bool {
-    //   public abstract int arg0;
-    //   public abstract Object arg1;
-    //   public Fn2$Int$Obj$Bool() { ... }
-    // }
-    val cm = ClassMaker.mkAbstractClass(arrow.jvmName, superClass = arrow.continuation.jvmName)
-
-    cm.mkConstructor(arrow.Constructor)
-
-    arrow.args.indices.foreach(argIndex => cm.mkField(arrow.ArgField(argIndex)))
-
-    cm.closeClassMaker()
   }
 }

@@ -83,8 +83,8 @@ namespace Fixpoint {
         case Join(d1, d2) => Monoid.combine(mkDepGraph(d1), mkDepGraph(d2))
     }
 
-    def precedenceHelper(cnst: Constraint[v]): PrecedenceGraph & Impure = match cnst {
-        case Constraint(head, body) => Array.fold(Array.map(mkDepEdge(head), body))
+    def precedenceHelper(cnst: Constraint[v]): PrecedenceGraph = match cnst {
+        case Constraint(head, body) => List.fold(List.map(mkDepEdge(head), body))
     }
 
     ///

@@ -263,6 +263,43 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](result)
   }
 
+  test("Pattern.Nested.03") {
+    val input =
+      """
+        |enum List[t] {
+        |    case Nil,
+        |    case Cons(t, List[t])
+        |}
+        |
+        |def f(l: List[Int32]): Int32 = {
+        |    match (match l { case Nil => Nil }) {
+        |        case _ => 42
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NonExhaustiveMatchError](result)
+  }
+
+  test("Pattern.Nested.04") {
+    val input =
+      """
+        |enum List[t] {
+        |    case Nil,
+        |    case Cons(t, List[t])
+        |}
+        |
+        |def f(l: List[Int32]): Int32 = {
+        |    match l {
+        |        case _ if (match Nil { case Nil => true }) => 53
+        |        case _ => 42
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NonExhaustiveMatchError](result)
+  }
+
   test("Pattern.Instance.01") {
     val input =
       """

@@ -102,8 +102,8 @@ instance Monoid[List[a]] {
 }
 
 instance Iterable[List] {
-    pub def iterator(t: List[a]): StaticIterator[a] & Impure =
-        List.toStaticIterator(t)
+    pub def iterator(r: Region[r], t: List[a]): Iterator[a, r] \ Write(r) =
+        List.toIterator(r, t)
 }
 
 namespace List {
@@ -1113,7 +1113,7 @@ namespace List {
     ///
     /// Returns `l` as a MutDeque.
     ///
-    pub def toMutDeque(l: List[a], r: Region[r]): MutDeque[a, r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], l: List[a]): MutDeque[a, r] \ Write(r) =
         let d = new MutDeque(r);
         List.foreach(x -> MutDeque.pushBack(x, d), l);
         d
@@ -1318,13 +1318,6 @@ namespace List {
     ///
     pub def sumWith(f: a -> Int32 & ef, l: List[a]): Int32 & ef =
         Foldable.sumWith(f, l)
-
-    ///
-    /// Returns an iterator over `l`.
-    ///
-    pub def toStaticIterator(l: List[a]): StaticIterator[a] & Impure =
-        let Iterator(done, next) = toIterator(Static, l);
-        StaticIterator(done, next)
 
     ///
     /// Returns an iterator over `l`.

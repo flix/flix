@@ -301,14 +301,12 @@ class Flix {
   }
 
   /**
-    * Removes the given string `text` with the given `name`.
+    * Removes the source code with the given `name`.
     */
-  def remSourceCode(name: String, text: String): Flix = {
+  def remSourceCode(name: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
-    if (text == null)
-      throw new IllegalArgumentException("'text' must be non-null.")
-    remInput(name, Input.Text(name, text, stable = false))
+    remInput(name, Input.Text(name, "", stable = false))
     this
   }
 

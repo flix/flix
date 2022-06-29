@@ -157,6 +157,7 @@ object Deriver {
         ),
         tpe = Type.mkBool(loc),
         pur = Type.Cst(TypeConstructor.True, loc),
+        eff = Type.Cst(TypeConstructor.Empty, loc),
         loc = loc
       )
   }
@@ -348,6 +349,7 @@ object Deriver {
         ),
         tpe = Type.mkEnum(comparisonEnumSym, Kind.Star, loc),
         pur = Type.Cst(TypeConstructor.True, loc),
+        eff = Type.Cst(TypeConstructor.Empty, loc),
         loc = loc
       )
   }
@@ -514,6 +516,7 @@ object Deriver {
         ),
         tpe = Type.mkString(loc),
         pur = Type.Cst(TypeConstructor.True, loc),
+        eff = Type.Cst(TypeConstructor.Empty, loc),
         loc = loc
       )
   }
@@ -651,6 +654,7 @@ object Deriver {
         ),
         tpe = Type.mkInt32(loc),
         pur = Type.Cst(TypeConstructor.True, loc),
+        eff = Type.Cst(TypeConstructor.Empty, loc),
         loc = loc
       )
   }
