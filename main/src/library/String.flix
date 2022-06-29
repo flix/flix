@@ -172,7 +172,7 @@ namespace String {
     ///
     @Time(List.length(xs)) @Space(List.length(xs))
     pub def intercalateChar(sep: Char, xs: List[String]): String = match xs {
-        case Nil => ""
+        case Nil     => ""
         case x :: rs => region r {
             let sb = new StringBuilder(r);
             StringBuilder.appendString!(x, sb);
