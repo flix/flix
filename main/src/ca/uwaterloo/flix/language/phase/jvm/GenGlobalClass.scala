@@ -18,35 +18,12 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.Global
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final._
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility._
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
-import org.objectweb.asm.Opcodes
 
 /**
-  * A copy of this generated class has to be maintained at main/src/dev/flix/runtime/Global.java.
+  * OBS: A copy of this generated class has to be maintained at main/src/dev/flix/runtime/Global.java.
   */
 object GenGlobalClass {
-
   def gen()(implicit flix: Flix): Map[JvmName, JvmClass] = {
-    val name = Global.jvmName
-    Map(name -> JvmClass(name, genByteCode()))
-  }
-
-  private def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(Global.jvmName, IsFinal)
-
-    cm.mkObjectConstructor(IsPrivate)
-    cm.mkStaticConstructor(Global.StaticConstructor)
-
-    cm.mkField(Global.CounterField)
-    cm.mkStaticMethod(Global.NewIdMethod)
-
-    cm.mkField(Global.ArgsField)
-    cm.mkStaticMethod(Global.GetArgsMethod)
-    cm.mkStaticMethod(Global.SetArgsMethod)
-
-    cm.closeClassMaker()
+    Map(Global.jvmName -> JvmClass(Global.jvmName, Global.genByteCode()))
   }
 }
