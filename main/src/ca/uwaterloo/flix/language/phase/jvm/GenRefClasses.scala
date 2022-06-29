@@ -17,10 +17,9 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 
 object GenRefClasses {
-  def gen(ts: Iterable[BackendObjType.Ref])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(ts: Iterable[BackendObjType.Ref])(implicit flix: Flix): Map[JvmName, JvmClass] = {
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, refType) =>
         macc + (refType.jvmName -> JvmClass(refType.jvmName, refType.genByteCode()))
