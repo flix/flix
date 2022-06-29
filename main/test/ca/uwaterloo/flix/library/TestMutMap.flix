@@ -103,8 +103,8 @@ namespace TestMutMap {
     def merge02(): Bool & Impure =
         let m1 = new MutMap(Static);
         let m2 = new MutMap(Static);
-        let _ = MutMap.put!(1, 0, m1);
-        let _ = MutMap.put!(2, 0, m2);
+        MutMap.put!(1, 0, m1);
+        MutMap.put!(2, 0, m2);
         MutMap.mergeWithKey!((_, v, _) -> v, m1, m2);
         MutMap.memberOf(1, m2) and MutMap.memberOf(2, m2)
 
