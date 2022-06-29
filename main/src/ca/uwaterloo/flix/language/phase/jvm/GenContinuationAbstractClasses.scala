@@ -18,51 +18,12 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ErasedAst.Root
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.{NothingToVoid, mkDescriptor}
 
-/**
-  * Generates bytecode for the continuation classes.
-  */
 object GenContinuationAbstractClasses {
-
-  /**
-    * Returns the set of continuation classes for the given set of types `ts`.
-    */
-  def gen(conts: Iterable[BackendObjType.Continuation])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(conts: Iterable[BackendObjType.Continuation])(implicit flix: Flix): Map[JvmName, JvmClass] = {
     conts.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, contType) =>
-        macc + (contType.jvmName -> JvmClass(contType.jvmName, genByteCode(contType)))
+        macc + (contType.jvmName -> JvmClass(contType.jvmName, contType.genByteCode()))
     }
-  }
-
-  /**
-    * Returns the bytecode for the given continuation class.
-    */
-  private def genByteCode(contType: BackendObjType.Continuation)(implicit root: Root, flix: Flix): Array[Byte] = {
-
-    // Pseudo code to generate:
-    //
-    // public abstract class Cont$Bool implements java.lang.Runnable {
-    //   public "abstract" boolean result;
-    //   public Cont$Bool() { ... }
-    //   public abstract Cont$Bool invoke();
-    //   public final boolean unwind();
-    //   public final boolean run();
-    // }
-    //
-
-    val cm = ClassMaker.mkAbstractClass(contType.jvmName, interfaces = List(JvmName.Runnable))
-    cm.mkObjectConstructor(IsPublic)
-    // essentially an abstract field
-    cm.mkField(contType.ResultField)
-    cm.mkAbstractMethod(contType.InvokeMethod)
-    cm.mkMethod(contType.UnwindMethod)
-    cm.mkMethod(contType.RunMethod)
-
-    cm.closeClassMaker()
   }
 }

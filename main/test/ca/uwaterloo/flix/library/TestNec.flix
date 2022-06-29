@@ -1064,7 +1064,7 @@ namespace TestNec {
     @test
     def toMutDeque01(): Bool = region r {
         let c = singleton(1);
-        let d1 = Nec.toMutDeque(c, r);
+        let d1 = Nec.toMutDeque(r, c);
 
         let d2 = new MutDeque(r);
         MutDeque.pushBack(1, d2);
@@ -1075,7 +1075,7 @@ namespace TestNec {
     @test
     def toMutDeque02(): Bool = region r {
         let c = necOf2(1, 2);
-        let d1 = Nec.toMutDeque(c, r);
+        let d1 = Nec.toMutDeque(r, c);
 
         let d2 = new MutDeque(r);
         MutDeque.pushFront(1, d2);
@@ -1087,7 +1087,7 @@ namespace TestNec {
     @test
     def toMutDeque03(): Bool = region r {
         let c = necOf3('a', 'b', 'c');
-        let d1 = Nec.toMutDeque(c, r);
+        let d1 = Nec.toMutDeque(r, c);
 
         let d2 = new MutDeque(r);
         MutDeque.pushFront('b', d2);
