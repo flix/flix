@@ -557,9 +557,9 @@ namespace Set {
     ///
     /// Returns `s` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], s: Set[a]): MutDeque[(k, v), r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], s: Set[a]): MutDeque[a, r] \ Write(r) =
         let d = new MutDeque(r);
-        Set.foreach(x -> MutDeque.pushBack(x, d), m);
+        Set.foreach(x -> MutDeque.pushBack(x, d), s);
         d
 
     ///
