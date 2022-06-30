@@ -38,7 +38,21 @@ namespace Graph {
     ///
     /// Returns the vertices that are reachable from the origin `o` in the graph `g`.
     ///
-    pub def reachable(o: String, g: m[(t, t)]): Set[t] = ???
+    pub def reachable(o: t, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] = {
+        let edges = inject g into Edge;
+        let reachability = #{
+            // A node can reach itself.
+            Reachable(o).
+            // Directly reachable.
+            Reachable(n) :- Edge(o, n).
+            // if `o` can reach `m` and `m` can reach `n` then `o` can
+            // also reach `n`. This adds node pairs to the relational
+            // that is reachable using any number of nodes.
+            Reachable(n) :- Reachable(m), Edge(m, n).
+        };
+        let x = query edges, reachability select dst from Reachable(dst);
+        Array.toSet(x)
+    } as & Pure
 
     ///
     /// Returns the vertices that are unreachable from the origin `o` in the graph `g`.
