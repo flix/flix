@@ -694,13 +694,18 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, iter: Iterator[a, r]): String \ { ef, Read(r) } = region r {
-        use StringBuilder.append!;
-        let lastSep = String.length(sep);
-        let sb = new StringBuilder(r);
-        foreach(x -> { append!(f(x), sb); append!(sep, sb) }, iter);
-        StringBuilder.toString(sb) |> String.dropRight(lastSep)
-    }
+    pub def joinWith(f: a -> String & ef, sep: String, iter: Iterator[a, r]): String \ { ef, Read(r) } =
+        let Iterator(done, next) = iter;
+        if (done())
+            ""
+        else
+            region r {
+                let sb = new StringBuilder(r);
+                let g = x -> { StringBuilder.append!(sep, sb); StringBuilder.append!(f(x), sb) };
+                StringBuilder.append!(f(next()), sb); // Safe to call next, done was check above.
+                foreach(g, iter);
+                StringBuilder.toString(sb)
+            }
 
     ///
     /// Returns an iterator with every element of the iterator `iter` that
