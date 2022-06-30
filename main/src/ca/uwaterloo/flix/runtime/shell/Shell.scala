@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util._
 
-import org.jline.reader.{EndOfFileException, LineReaderBuilder, UserInterruptException}
+import org.jline.reader.{EndOfFileException, LineReader, LineReaderBuilder, UserInterruptException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
 import java.nio.file._
@@ -80,6 +80,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
       .appName("flix")
       .terminal(terminal)
       .build()
+    reader.setOpt(LineReader.Option.DISABLE_EVENT_EXPANSION)
 
     // Print the welcome banner.
     printWelcomeBanner()
