@@ -83,7 +83,7 @@ namespace Validation {
     /// Returns `t` if `v` is `Success(t).` Otherwise returns `d`.
     ///
     @Time(1) @Space(1)
-    pub def getWithDefault( d: t, v: Validation[t, e]): t = match v {
+    pub def getWithDefault(d: t, v: Validation[t, e]): t = match v {
         case Success(t) => t
         case Failure(_) => d
     }
@@ -132,15 +132,10 @@ namespace Validation {
     /// Otherwise returns `Failure(e1 :: ... :: en)` with all of the failures concatenated.
     ///
     pub def sequence(l: List[Validation[t, e]]): Validation[List[t], e] =
-        def loopFailure(ll, acc) = match ll {
-            case Nil              => Failure(acc)
-            case Success(_) :: xs => loopFailure(xs, acc)
-            case Failure(e) :: xs => loopFailure(xs, Nec.append(acc, e))
-        };
         def loop(ll, k) = match ll {
             case Nil              => k(Nil)
             case Success(x) :: xs => loop(xs, ks -> k(x :: ks))
-            case Failure(e) :: xs => loopFailure(xs, e)
+            case Failure(e) :: xs => collectFailuresWith(identity, xs, e)
         };
         loop(l, ks -> Success(ks))
 
@@ -150,18 +145,11 @@ namespace Validation {
     /// Otherwise returns `Failure(e1 :: ... :: en)` with all of the failures concatenated.
     ///
     pub def traverse(f: a -> Validation[b, e] & ef, l: List[a]): Validation[List[b], e] & ef =
-        def loopFailure(ll, acc) = match ll {
-            case Nil     => Failure(acc)
-            case x :: xs => match f(x) {
-                case Success(_) => loopFailure(xs, acc)
-                case Failure(y) => loopFailure(xs, Nec.append(acc, y))
-            }
-        };
         def loop(ll, k) = match ll {
             case Nil     => k(Nil)
             case x :: xs => match f(x) {
                 case Success(y) => loop(xs, ks -> k(y :: ks))
-                case Failure(y) => loopFailure(xs, y)
+                case Failure(y) => collectFailuresWith(f, xs, y)
             }
         };
         loop(l, ks -> Success(ks))
@@ -174,22 +162,24 @@ namespace Validation {
     /// This function is the "forgetful" version of `traverse`, use it when the you want the effect
     /// of applying `f` to each element but do not care about collecting the results.
     ///
-    pub def traverseX(f: a -> Validation[b, e] & ef, l: List[a]): Validation[Unit, e] & ef =
-        def loopFailure(ll, acc) = match ll {
-            case Nil     => Failure(acc)
-            case x :: xs => match f(x) {
-                case Success(_) => loopFailure(xs, acc)
-                case Failure(e) => loopFailure(xs, Nec.append(acc, e))
-            }
-        };
-        def loop(ll) = match ll {
-            case Nil     => Success()
-            case x :: xs => match f(x) {
-                case Success(_) => loop(xs)
-                case Failure(e) => loopFailure(xs, e)
-            }
-        };
-        loop(l)
+    pub def traverseX(f: a -> Validation[b, e] & ef, l: List[a]): Validation[Unit, e] & ef = match l {
+        case Nil     => Success()
+        case x :: xs => match f(x) {
+            case Success(_) => traverseX(f, xs)
+            case Failure(e) => collectFailuresWith(f, xs, e)
+        }
+    }
+
+    ///
+    /// Helper function for `sequence`, `traverse` and `traverseX`. Collects a chain of failures.
+    ///
+    def collectFailuresWith(f: a -> Validation[b, e] & ef, l: List[a], acc: Nec[e]): Validation[c, e] & ef = match l {
+        case Nil     => Failure(acc)
+        case x :: xs => match f(x) {
+            case Success(_) => collectFailuresWith(f, xs, acc)
+            case Failure(e) => collectFailuresWith(f, xs, Nec.append(acc, e))
+        }
+    }
 
     ///
     /// Converts a Validation to an Option.
