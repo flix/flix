@@ -454,7 +454,7 @@ object Kinder {
 
     case ResolvedAst.Expression.Choose(star, exps0, rules0, loc) =>
       val expsVal = traverse(exps0)(visitExp(_, kenv0, senv, taenv, henv0, root))
-      val rulesVal = traverse(rules0)(visitChoiceRule(_, kenv0, senv, taenv, root))
+      val rulesVal = traverse(rules0)(visitChoiceRule(_, kenv0, senv, taenv, henv0, root))
       mapN(expsVal, rulesVal) {
         case (exps, rules) => KindedAst.Expression.Choose(star, exps, rules, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
@@ -687,7 +687,7 @@ object Kinder {
       }
 
     case ResolvedAst.Expression.SelectChannel(rules0, default0, loc) =>
-      val rulesVal = traverse(rules0)(visitSelectChannelRule(_, kenv0, senv, taenv, root))
+      val rulesVal = traverse(rules0)(visitSelectChannelRule(_, kenv0, senv, taenv, henv0, root))
       val defaultVal = traverse(default0)(visitExp(_, kenv0, senv, taenv, henv0, root))
       mapN(rulesVal, defaultVal) {
         case (rules, default) => KindedAst.Expression.SelectChannel(rules, default.headOption, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
@@ -895,11 +895,11 @@ object Kinder {
   /**
     * Performs kinding on the given constraint under the given kind environment.
     */
-  private def visitConstraint(constraint0: ResolvedAst.Constraint, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Constraint, KindError] = constraint0 match {
+  private def visitConstraint(constraint0: ResolvedAst.Constraint, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[Type.KindedVar], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Constraint, KindError] = constraint0 match {
     case ResolvedAst.Constraint(cparams0, head0, body0, loc) =>
       val cparamsVal = traverse(cparams0)(visitConstraintParam(_, kenv, root))
-      val headVal = visitHeadPredicate(head0, kenv, senv, taenv, root)
-      val bodyVal = traverse(body0)(visitBodyPredicate(_, kenv, senv, taenv, root))
+      val headVal = visitHeadPredicate(head0, kenv, senv, taenv, henv, root)
+      val bodyVal = traverse(body0)(visitBodyPredicate(_, kenv, senv, taenv, henv, root))
       mapN(cparamsVal, headVal, bodyVal) {
         case (cparams, head, body) => KindedAst.Constraint(cparams, head, body, loc)
       }
