@@ -80,81 +80,81 @@ namespace Test/Exp/Fixpoint/Solve/Lattice {
     }
 
     @test
-    def testFixpointLattice01(): Bool & Impure =
+    def testFixpointLattice01(): Bool =
         let m = solve #{
             LocalVar((); Top). LocalVar((); Top). LocalVar((); Top). LocalVar((); Top).
         };
         let ans = query m select t from LocalVar(_; t);
-        ans.length == 1 and ans[0] == Top
+        List.length(ans) == 1 and List.head(ans) == Some(Top)
 
     @test
-    def testFixpointLattice02(): Bool & Impure =
+    def testFixpointLattice02(): Bool =
         let m = solve #{
             LocalVar((); Bot). LocalVar((); Top). LocalVar((); Bot). LocalVar((); Top).
         };
         let ans = query m select t from LocalVar(_; t);
-        ans.length == 1 and ans[0] == Top
+        ans.length == 1 and List.head(ans) == Some(Top)
 
     @test
-    def testFixpointLattice03(): Bool & Impure =
+    def testFixpointLattice03(): Bool =
         let m = solve #{
             LocalVar((); Cst(39)).
         };
         let ans = query m select t from LocalVar(_; t);
-        ans.length == 1 and ans[0] == Cst(39)
+        List.length(ans) == 1 and List.head(ans) == Some(Cst(39))
 
     @test
-    def testFixpointLattice04(): Bool & Impure =
+    def testFixpointLattice04(): Bool =
         let m = solve #{
             LocalVar((); Cst(39)). LocalVar((); Bot).
         };
         let ans = query m select t from LocalVar(_; t);
-        ans.length == 1 and ans[0] == Cst(39)
+        List.length(ans) == 1 and List.head(ans) == Some(Cst(39))
 
     @test
-    def testFixpointLattice05(): Bool & Impure =
+    def testFixpointLattice05(): Bool =
         let m = solve #{
             LocalVar((); Cst(39)). LocalVar((); Cst(39)).
         };
         let ans = query m select t from LocalVar(_; t);
-        ans.length == 1 and ans[0] == Cst(39)
+        List.length(ans) == 1 and List.head(ans) == Some(Cst(39))
 
     @test
-    def testFixpointLattice06(): Bool & Impure =
+    def testFixpointLattice06(): Bool =
         let m = solve #{
             LocalVar((); Cst(39)). LocalVar((); Cst(12)).
         };
         let ans = query m select t from LocalVar(_; t);
-        ans.length == 1 and ans[0] == Top
+        List.length(ans) == 1 and List.head(ans) == Some(Top)
 
     @test
-    def testFixpointLattice07(): Bool & Impure =
+    def testFixpointLattice07(): Bool =
         let m = solve #{
             LocalVar((); Cst(39)). LocalVar((); Cst(12)). LocalVar((); Bot).
         };
         let ans = query m select t from LocalVar(_; t);
-        ans.length == 1 and ans[0] == Top
+        List.length(ans) == 1 and List.head(ans) == Some(Top)
 
     @test
-    def testFixpointLattice08(): Bool & Impure =
+    def testFixpointLattice08(): Bool =
         let m = solve #{
             LitStm("a", 39).
             LocalVar(x; Cst(c)) :- LitStm(x, c).
         };
         let ans = query m select t from LocalVar(_; t);
-        ans.length == 1 and ans[0] == Cst(39)
+        List.length(ans) == 1 and List.head(ans) == Some(Cst(39))
 
     @test
-    def testFixpointLattice09(): Bool & Impure =
+    def testFixpointLattice09(): Bool =
         let m = solve #{
             LitStm("a", 39). LitStm("a", 345).
             LocalVar(x; Cst(c)) :- LitStm(x, c).
         };
         let ans = query m select t from LocalVar(_; t);
-        ans.length == 1 and ans[0] == Top
+        List.length(ans) == 1 and List.head(ans) == Some(Top)
 
     @test
-    def testFixpointLattice10(): Bool & Impure =
+    def testFixpointLattice10(): Bool =
         let m = solve #{
             LitStm("a", 39).
             AddStm("r", "a", "a").
@@ -163,10 +163,10 @@ namespace Test/Exp/Fixpoint/Solve/Lattice {
 
         };
         let ans = query m select t from LocalVar("r"; t);
-        ans.length == 1 and ans[0] == Cst(39+39)
+        List.length(ans) == 1 and List.head(ans) == Some(Cst(39+39))
 
     @test
-    def testFixpointLattice11(): Bool & Impure =
+    def testFixpointLattice11(): Bool =
         let m = solve #{
             LitStm("a", 39).
             LitStm("b", 12).
@@ -175,6 +175,6 @@ namespace Test/Exp/Fixpoint/Solve/Lattice {
             LocalVar(r; sum(v1, v2)) :- AddStm(r, x, y), LocalVar(x; v1), LocalVar(y; v2).
         };
         let ans = query m select t from LocalVar("r"; t);
-        ans.length == 1 and ans[0] == Cst(39+12)
+        List.length(ans) == 1 and List.head(ans) == Some(Cst(39+12))
 
 }

@@ -1,6 +1,6 @@
 namespace Test/Exp/Fixpoint/Lambda {
 
-    pub def testLambdaCopy01(): Bool & Impure = {
+    pub def testLambdaCopy01(): Bool = {
         let p1 = #(Input, Output) -> #{
             Local(x) :- Input(x).
             Output(x) :- Local(x).
@@ -8,10 +8,10 @@ namespace Test/Exp/Fixpoint/Lambda {
         let p2 = #{
             Input(1). Input(2). Input(3).
         };
-        query p1, p2 select x from Output(x) |> Array.memberOf(2)
+        query p1, p2 select x from Output(x) |> List.memberOf(2)
     }
 
-    pub def testLambdaCopy02(): Bool & Impure = {
+    pub def testLambdaCopy02(): Bool = {
         let p1 = #(Input, Output) -> #{
             Local1(x) :- Input(x).
             Local2(x) :- Local1(x).
@@ -20,10 +20,10 @@ namespace Test/Exp/Fixpoint/Lambda {
         let p2 = #{
             Input(1). Input(2). Input(3).
         };
-        query p1, p2 select x from Output(x) |> Array.memberOf(2)
+        query p1, p2 select x from Output(x) |> List.memberOf(2)
     }
 
-    pub def testLambdaMultipleLocals01(): Bool & Impure = {
+    pub def testLambdaMultipleLocals01(): Bool = {
         let p1 = #(Input, Output) -> #{
             Local("abc").
             Local("def").
@@ -33,10 +33,10 @@ namespace Test/Exp/Fixpoint/Lambda {
             Input(1). Input(2). Input(3).
             Local(1). Local(2). Local(3).
         };
-        query p1, p2 select x from Local(x) |> Array.memberOf(2)
+        query p1, p2 select x from Local(x) |> List.memberOf(2)
     }
 
-    pub def testLambdaMultipleLocals02(): Bool & Impure = {
+    pub def testLambdaMultipleLocals02(): Bool = {
         let p1 = #(A) -> #{
             Local("abc").
             A(42) :- Local("abc").
@@ -48,47 +48,47 @@ namespace Test/Exp/Fixpoint/Lambda {
         let p3 = #{
             R(x) :- A(x), B(x).
         };
-        query p1, p2, p3 select x from R(x) |> Array.memberOf(42)
+        query p1, p2, p3 select x from R(x) |> List.memberOf(42)
     }
 
-    pub def testLambdaLambda01(): Bool & Impure = {
+    pub def testLambdaLambda01(): Bool = {
         let p1 = #{
             A(1). B(1). C(1).
         };
         let p2 = #(A, B, C) -> p1;
         let p3 = #(A, B) -> p2;
         let p4 = #(A) -> p3;
-        query p4 select x from A(x) |> Array.memberOf(1)
+        query p4 select x from A(x) |> List.memberOf(1)
     }
 
-    pub def testLambdaLambda02(): Bool & Impure = {
+    pub def testLambdaLambda02(): Bool = {
         let p1 = #{
             A(1). B(1). C(1).
         };
         let p2 = #(A, B, C) -> p1;
         let p3 = #(A, B) -> p2;
         let p4 = #(A) -> p3;
-        not (query p4 select x from B(x) |> Array.memberOf(1))
+        not (query p4 select x from B(x) |> List.memberOf(1))
     }
 
-    pub def testLambdaLambda03(): Bool & Impure = {
+    pub def testLambdaLambda03(): Bool = {
         let p1 = #{
             A(1). B(1). C(1).
         };
         let p2 = #(A, B, C) -> p1;
         let p3 = #(A, B) -> p2;
         let p4 = #(A) -> p3;
-        not (query p4 select x from C(x) |> Array.memberOf(1))
+        not (query p4 select x from C(x) |> List.memberOf(1))
     }
 
-    pub def testLambdaLambda04(): Bool & Impure = {
+    pub def testLambdaLambda04(): Bool = {
         let p1 = #{
             A(1). B(1). C(1).
             R(42) :- A(x), B(x), C(x).
         };
         let p2 = #(R, A, B) -> p1;
         let p3 = #(R, A) -> p2;
-        query p3 select x from R(x) |> Array.memberOf(42)
+        query p3 select x from R(x) |> List.memberOf(42)
     }
 
     pub def testStratification01(): Bool =
@@ -102,17 +102,17 @@ namespace Test/Exp/Fixpoint/Lambda {
         };
         not (query p1, p2 select (x, y) from A(x), B(y) |> Array.isEmpty)
 
-    pub def testPolymorphism01(): Bool & Impure =
-        query poly(123), poly("abc") select x from R(x) |> Array.memberOf("OK")
+    pub def testPolymorphism01(): Bool =
+        query poly(123), poly("abc") select x from R(x) |> List.memberOf("OK")
 
-    pub def testPolymorphism02(): Bool & Impure =
-        query poly(123), poly(456) select x from R(x) |> Array.memberOf("OK")
+    pub def testPolymorphism02(): Bool =
+        query poly(123), poly(456) select x from R(x) |> List.memberOf("OK")
 
-    pub def testPolymorphism03(): Bool & Impure =
-        query poly(123), poly("abc") select x from R(x) |> Array.memberOf("OK")
+    pub def testPolymorphism03(): Bool =
+        query poly(123), poly("abc") select x from R(x) |> List.memberOf("OK")
 
-    pub def testPolymorphism04(): Bool & Impure =
-        query poly(123), poly("abc"), poly(true) select x from R(x) |> Array.memberOf("OK")
+    pub def testPolymorphism04(): Bool =
+        query poly(123), poly("abc"), poly(true) select x from R(x) |> List.memberOf("OK")
 
     def poly(x: a): #{ R(String) } with Boxable[a] =
         #(R) -> #{
@@ -124,26 +124,26 @@ namespace Test/Exp/Fixpoint/Lambda {
         let p = #(A(Int32)) -> #{
             A(123).
         };
-        not (query p select x from A(x) |> Array.isEmpty)
+        not (query p select x from A(x) |> List.isEmpty)
 
     pub def testTypedLambda02(): Bool =
         let p = #(A(Int32, String)) -> #{
             A(123, "Hello World").
         };
-        not (query p select x from A(x) |> Array.isEmpty)
+        not (query p select x from A(x) |> List.isEmpty)
 
     pub def testTypedLambda03(): Bool =
         let p = #(A(Int32, Int32), B(String, String)) -> #{
             A(123, 456).
             B("hello", "World").
         };
-        not (query p select x from A(x) |> Array.isEmpty)
+        not (query p select x from A(x) |> List.isEmpty)
 
     pub def testTypedLambda04(): Bool =
         let p = #(L(String; Int32)) -> #{
             L("a"; 1).
             L("a"; 2).
         };
-        not (query p select (x, y) from L(x; y) |> Array.isEmpty)
+        not (query p select (x, y) from L(x; y) |> List.isEmpty)
 
 }
