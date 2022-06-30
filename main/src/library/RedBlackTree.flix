@@ -314,7 +314,7 @@ namespace RedBlackTree {
     ///
     pub def foldRightWithCont(f: (k, v, Unit -> b & ef) -> b & ef, z: b, t: RedBlackTree[k, v]): b & ef = match t {
         case Node(_, a, k, v, b) => foldRightWithCont(f, f(k, v, _ -> foldRightWithCont(f, z, b)), a)
-        case _ => z
+        case _                   => z
     }
 
     ///
@@ -759,7 +759,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parSumWith(n: Int32, f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 & Impure = {
+    pub def parSumWith(n: Int32, f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 & Impure =
         if (n <= 1)
             seqSumWith(f, t)
         else
@@ -776,7 +776,6 @@ namespace RedBlackTree {
                     let b1 = <- chanR;
                     a1 + v1 + b1
             }
-    }
 
     ///
     /// Returns the sum of all key-value pairs `k => v` in the tree `t`
