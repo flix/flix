@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util._
 
-import org.jline.reader.{EndOfFileException, LineReaderBuilder, UserInterruptException}
+import org.jline.reader.{EndOfFileException, LineReader, LineReaderBuilder, UserInterruptException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
 import java.nio.file._
@@ -57,6 +57,11 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
   private val sourceFiles = new SourceFiles(sourceProvider)
 
   /**
+    * Is this the first compile
+    */
+  private var isFirstCompile = true
+
+  /**
     * Continuously reads a line of input from the terminal, parses and executes it.
     */
   def loop(): Unit = {
@@ -75,6 +80,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
       .appName("flix")
       .terminal(terminal)
       .build()
+    reader.setOpt(LineReader.Option.DISABLE_EVENT_EXPANSION)
 
     // Print the welcome banner.
     printWelcomeBanner()
@@ -154,7 +160,9 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     // Remove any previous definitions, as they may no longer be valid against the new source
     clearFragments()
 
-    compile()
+    val result = compile(progress = isFirstCompile)
+    isFirstCompile = false
+    result
   }
 
   /**
