@@ -899,17 +899,18 @@ namespace Test/Exp/Regions {
             MutMap.put!(1, 1, (deref a)[0]);
             MutMap.get(1, (deref a)[0]) == Some(1)
         }
-/*
+
     @test
     def testRegions1Region1NestedReferences02(): Bool & Impure =
         region r {
-            let l = new MutList(r);
-            MutList.push!([1; 8] @ Static, l);
-            match MutList.pop!(l) {
-                case Some(a) => a `Array.sameElements` [1; 8]
+            let l = ref new MutList(r) @ Static; // Static reference to a MutList in region r
+            MutList.push!(ref ([1; 8] @ Static) @ Static, deref l);
+            match MutList.pop!(deref l) {
+                case Some(a) => (deref a) `Array.sameElements` [1; 8]
                 case _       => unreachable!()
             }
         }
+/*
 
     @test
     def testRegions1Region1NestedReferences03(): Bool & Impure =
