@@ -159,11 +159,11 @@ object KindedAst {
 
     case class TryCatch(exp: KindedAst.Expression, rules: List[KindedAst.CatchRule], loc: SourceLocation) extends KindedAst.Expression
 
-    case class TryWith(exp: KindedAst.Expression, eff: Symbol.EffectSym, rules: List[KindedAst.HandlerRule], loc: SourceLocation) extends KindedAst.Expression
+    case class TryWith(exp: KindedAst.Expression, eff: Symbol.EffectSym, rules: List[KindedAst.HandlerRule], tvar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
     case class Do(op: Symbol.OpSym, args: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
 
-    case class Resume(args: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
+    case class Resume(args: List[KindedAst.Expression], tvar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
     case class InvokeConstructor(constructor: Constructor[_], args: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
 

@@ -30,7 +30,6 @@ import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, mapN, traverse}
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.collection.ListOps.unzip4
 
 import java.io.PrintWriter
@@ -1278,11 +1277,11 @@ object Typer {
           resultEff = Type.mkUnion(eff :: ruleEffs, loc)
         } yield (constrs ++ ruleConstrs.flatten, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.TryWith(exp, pur, rules, loc) => visitExp(exp) // TODO actually infer
+      case KindedAst.Expression.TryWith(exp, pur, rules, tvar, loc) => visitExp(exp) // TODO actually infer
 
       case KindedAst.Expression.Do(op, args, loc) => InferMonad.point((Nil: List[Ast.TypeConstraint], Type.Unit, Type.Pure, Type.Empty)) // TODO actually infer
 
-      case KindedAst.Expression.Resume(args, loc) => InferMonad.point((Nil: List[Ast.TypeConstraint], Type.Unit, Type.Pure, Type.Empty)) // TODO actually infer
+      case KindedAst.Expression.Resume(args, tvar, loc) => InferMonad.point((Nil: List[Ast.TypeConstraint], Type.Unit, Type.Pure, Type.Empty)) // TODO actually infer
 
       case KindedAst.Expression.InvokeConstructor(constructor, args, loc) =>
         val classType = getFlixType(constructor.getDeclaringClass)
@@ -1895,11 +1894,11 @@ object Typer {
         val pur = Type.mkAnd(e.pur :: rs.map(_.exp.pur), loc)
         TypedAst.Expression.TryCatch(e, rs, tpe, pur, loc)
 
-      case KindedAst.Expression.TryWith(exp, _, _, _) => visitExp(exp, subst0) // TODO
+      case KindedAst.Expression.TryWith(exp, _, _, _, _) => visitExp(exp, subst0) // TODO
 
       case KindedAst.Expression.Do(_, _, loc) => TypedAst.Expression.Unit(loc) // TODO
 
-      case KindedAst.Expression.Resume(_, loc) => TypedAst.Expression.Unit(loc) // TODO
+      case KindedAst.Expression.Resume(_, _, loc) => TypedAst.Expression.Unit(loc) // TODO
 
 
       case KindedAst.Expression.InvokeConstructor(constructor, args, loc) =>
