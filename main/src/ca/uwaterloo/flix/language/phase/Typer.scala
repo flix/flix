@@ -1321,7 +1321,7 @@ object Typer {
           (tconstrs, tpe, pur, eff) <- visitExp(exp)
           (tconstrss, _, purs, effs) <- seqM(rules.map(visitHandlerRule)).map(unzip4)
           resultTconstrs = (tconstrs :: tconstrss).flatten
-          resultTpe = unifyTypeM(tvar, tpe, loc)
+          resultTpe <- unifyTypeM(tvar, tpe, loc)
           resultPur = Type.mkAnd(pur :: purs, loc)
           resultEff = Type.mkUnion(Type.mkDifference(eff, effType, loc) :: effs, loc)
         } yield (resultTconstrs, resultTpe, resultPur, resultEff)
