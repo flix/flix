@@ -268,17 +268,10 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foreach(f: a -> Unit & ef, iter: Iterator[a, r]): Unit \ { ef, Read(r) } =
-        let Iterator(done, next) = iter;
-        def loop() = {
-            if (done())
-                ()
-            else {
-                f(next());
-                loop()
-            }
-        };
-        loop()
+    pub def foreach(f: a -> Unit & ef, iter: Iterator[a, r]): Unit \ { ef, Read(r) } = match iter {
+        case Iterator(done, _) if done() => ()
+        case Iterator(_, next)           => f(next()); foreach(f, iter)
+    }
 
     ///
     /// Returns an iterator with every element of the iterator `iter` that
@@ -429,15 +422,10 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, iter: Iterator[a, r]): b \ { ef, Read(r) } =
-        let Iterator(done, next) = iter;
-        def loop(acc) = {
-            if (done())
-                acc
-            else
-                loop(f(acc, next()))
-        };
-        loop(s)
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, iter: Iterator[a, r]): b \ { ef, Read(r) } = match iter {
+        case Iterator(done, _) if done() => s
+        case Iterator(_, next)           => foldLeft(f, f(s, next()), iter)
+    }
 
     ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from right to left.
@@ -467,16 +455,10 @@ namespace Iterator {
     /// Consumes the entire iterator.
     ///
     pub def foldRightWithCont(f: (a, Unit -> b \ { ef, Read(r) }) -> b & ef, z: b, iter: Iterator[a, r]): b \ { ef, Read(r) } =
-        let Iterator(done, next) = iter;
-        def loop() = {
-            if (done())
-                z
-            else {
-                let x = next();
-                f(x, _ -> loop())
-            }
-        };
-        loop()
+        match iter {
+            case Iterator(done, _) if done() => z
+            case Iterator(_, next)           => f(next(), _ -> foldRightWithCont(f, z, iter))
+        }
 
     ///
     /// Returns the result of mapping each element and combining the results.
@@ -712,13 +694,18 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, iter: Iterator[a, r]): String \ { ef, Read(r) } = region r {
-        use StringBuilder.append!;
-        let lastSep = String.length(sep);
-        let sb = new StringBuilder(r);
-        foreach(x -> { append!(f(x), sb); append!(sep, sb) }, iter);
-        StringBuilder.toString(sb) |> String.dropRight(lastSep)
-    }
+    pub def joinWith(f: a -> String & ef, sep: String, iter: Iterator[a, r]): String \ { ef, Read(r) } =
+        let Iterator(done, next) = iter;
+        if (done())
+            ""
+        else
+            region r {
+                let sb = new StringBuilder(r);
+                let g = x -> { StringBuilder.append!(sep, sb); StringBuilder.append!(f(x), sb) };
+                StringBuilder.append!(f(next()), sb); // Safe to call next, done was check above.
+                foreach(g, iter);
+                StringBuilder.toString(sb)
+            }
 
     ///
     /// Returns an iterator with every element of the iterator `iter` that
