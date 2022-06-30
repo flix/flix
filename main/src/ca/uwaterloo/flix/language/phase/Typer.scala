@@ -1360,7 +1360,7 @@ object Typer {
         }
 
       case KindedAst.Expression.Resume(args, argTvar, retTvar, loc) => {
-        val arg = args.head // MATT change this in parser
+        val arg = args.headOption.getOrElse(KindedAst.Expression.Unit(loc)) // MATT ugly hack; change this in parser
         for {
           (tconstrs, tpe, pur, eff) <- visitExp(arg)
           resultTconstrs = tconstrs
