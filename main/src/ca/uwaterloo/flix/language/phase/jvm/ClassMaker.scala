@@ -29,24 +29,11 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.{ClassWriter, Opcodes}
 
 
-// TODO: There are further things you can constrain, fx. final classes have implicitly final methods.
+// TODO: There are further things you can constrain and assert, e.g. final classes have implicitly final methods.
 sealed trait ClassMaker {
-  /**
-    * Creates a static constructor.
-    */
-  def mkStaticConstructor(ins: InstructionSet): Unit =
-    makeMethod(Some(ins), JvmName.StaticConstructorMethod, MethodDescriptor.NothingToVoid, IsDefault, NotFinal, IsStatic, NotAbstract)
-
   def mkStaticConstructor(c: StaticConstructorMethod): Unit = {
     if (c.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class")
     makeMethod(c.ins, c.name, c.d, c.v, c.f, IsStatic, NotAbstract)
-  }
-
-  /**
-    * Creates a static constructor.
-    */
-  def mkStaticMethod(ins: InstructionSet, methodName: String, d: MethodDescriptor, v: Visibility, f: Final): Unit = {
-    makeMethod(Some(ins), methodName, d, v, f, IsStatic, NotAbstract)
   }
 
   def mkStaticMethod(m: StaticMethod): Unit = {
@@ -106,15 +93,6 @@ object ClassMaker {
       makeMethod(c.ins, JvmName.ConstructorMethod, c.d, c.v, c.f, NotStatic, NotAbstract)
     }
 
-    def mkObjectConstructor(v: Visibility): Unit = {
-      val ins = thisLoad() ~ INVOKESPECIAL(BackendObjType.JavaObject.Constructor) ~ RETURN()
-      mkConstructor(ins, MethodDescriptor.NothingToVoid, v)
-    }
-
-    def mkMethod(ins: InstructionSet, methodName: String, d: MethodDescriptor, v: Visibility, f: Final): Unit = {
-      makeMethod(Some(ins), methodName, d, v, f, NotStatic, NotAbstract)
-    }
-
     def mkMethod(m: InstanceMethod): Unit = {
       if (m.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class")
       makeMethod(m.ins, m.name, m.d, m.v, m.f, NotStatic, NotAbstract)
@@ -124,31 +102,14 @@ object ClassMaker {
   class AbstractClassMaker(cw: ClassWriter) extends ClassMaker {
     protected val visitor: ClassWriter = cw
 
-    def mkConstructor(ins: InstructionSet, d: MethodDescriptor, v: Visibility): Unit = {
-      makeMethod(Some(ins), JvmName.ConstructorMethod, d, v, NotFinal, NotStatic, NotAbstract)
-    }
-
     def mkConstructor(c: ConstructorMethod): Unit = {
       if (c.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class")
       makeMethod(c.ins, c.name, c.d, c.v, c.f, NotStatic, NotAbstract)
     }
 
-    def mkObjectConstructor(v: Visibility): Unit = {
-      val ins = thisLoad() ~ INVOKESPECIAL(BackendObjType.JavaObject.Constructor) ~ RETURN()
-      mkConstructor(ins, MethodDescriptor.NothingToVoid, v)
-    }
-
-    def mkMethod(ins: InstructionSet, methodName: String, d: MethodDescriptor, v: Visibility, f: Final): Unit = {
-      makeMethod(Some(ins), methodName, d, v, f, NotStatic, NotAbstract)
-    }
-
     def mkMethod(m: InstanceMethod): Unit = {
       if (m.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class")
       makeMethod(m.ins, m.name, m.d, m.v, m.f, NotStatic, NotAbstract)
-    }
-
-    def mkAbstractMethod(methodName: String, d: MethodDescriptor): Unit = {
-      makeAbstractMethod(methodName, d)
     }
 
     def mkAbstractMethod(m: AbstractMethod): Unit = {
@@ -158,10 +119,6 @@ object ClassMaker {
 
   class InterfaceMaker(cw: ClassWriter) extends ClassMaker {
     protected val visitor: ClassWriter = cw
-
-    def mkAbstractMethod(methodName: String, d: MethodDescriptor): Unit = {
-      makeAbstractMethod(methodName, d)
-    }
 
     def mkInterfaceMethod(m: InterfaceMethod): Unit = {
       makeAbstractMethod(m.name, m.d)

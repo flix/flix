@@ -1113,7 +1113,7 @@ namespace List {
     ///
     /// Returns `l` as a MutDeque.
     ///
-    pub def toMutDeque(l: List[a], r: Region[r]): MutDeque[a, r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], l: List[a]): MutDeque[a, r] \ Write(r) =
         let d = new MutDeque(r);
         List.foreach(x -> MutDeque.pushBack(x, d), l);
         d

@@ -17,33 +17,10 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ErasedAst.Root
+import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.Record
 
-/**
-  * Generates bytecode for the record interface.
-  */
 object GenRecordInterface {
-  /**
-    * Returns a Map with a single entry, for the record interface
-    */
-  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    Map(BackendObjType.Record.jvmName -> JvmClass(BackendObjType.Record.jvmName, genByteCode()))
-  }
-
-  /**
-    * This method will generate code for a record interface.
-    * There is a lookupField method which returns the Record (Object) with the given label
-    * There is also a restrictField which given a label removes said label from the record.
-    * After creating a record object using a record class,
-    * the class type should never be used to reference to that object and this interface should be used for all interactions
-    * with that object.
-    */
-  private def genByteCode()(implicit root: Root, flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkInterface(BackendObjType.Record.jvmName)
-
-    cm.mkInterfaceMethod(BackendObjType.Record.LookupFieldMethod)
-    cm.mkInterfaceMethod(BackendObjType.Record.RestrictFieldMethod)
-
-    cm.closeClassMaker()
+  def gen()(implicit flix: Flix): Map[JvmName, JvmClass] = {
+    Map(Record.jvmName -> JvmClass(Record.jvmName, Record.genByteCode()))
   }
 }
