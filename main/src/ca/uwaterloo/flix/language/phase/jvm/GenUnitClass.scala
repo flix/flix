@@ -17,11 +17,10 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ErasedAst.Root
+import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.Unit
 
 object GenUnitClass {
-  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    val unit = BackendObjType.Unit
-    Map(unit.jvmName -> JvmClass(unit.jvmName, unit.genByteCode()))
+  def gen()(implicit flix: Flix): Map[JvmName, JvmClass] = {
+    Map(Unit.jvmName -> JvmClass(Unit.jvmName, Unit.genByteCode()))
   }
 }

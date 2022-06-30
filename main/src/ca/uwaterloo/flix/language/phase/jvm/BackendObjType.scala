@@ -55,6 +55,8 @@ sealed trait BackendObjType {
     // Java classes
     case BackendObjType.JavaObject => JvmName(JavaLang, "Object")
     case BackendObjType.String => JvmName(JavaLang, "String")
+    case BackendObjType.StringBuilder => JvmName(JavaLang, "StringBuilder")
+    case BackendObjType.Objects => JvmName(JavaLang, "Objects")
   }
 
   /**
@@ -244,7 +246,7 @@ object BackendObjType {
 
   case class RecordExtend(field: String, value: BackendType, rest: BackendType) extends BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, interfaces = List(this.interface.jvmName))
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, interfaces = List(Record.jvmName))
 
       cm.mkConstructor(Constructor)
       cm.mkField(LabelField)
@@ -260,15 +262,13 @@ object BackendObjType {
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
     ))
 
-    def interface: Record.type = Record
-
     def LabelField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "label", String.toTpe)
 
     def ValueField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "value", value)
 
-    def RestField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "rest", interface.toTpe)
+    def RestField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "rest", Record.toTpe)
 
-    def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName, IsFinal, Some(
+    def LookupFieldMethod: InstanceMethod = Record.LookupFieldMethod.implementation(this.jvmName, IsFinal, Some(
       caseOnLabelEquality {
         case TrueBranch =>
           thisLoad() ~ ARETURN()
@@ -280,7 +280,7 @@ object BackendObjType {
       }
     ))
 
-    def RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName, IsFinal, Some(
+    def RestrictFieldMethod: InstanceMethod = Record.RestrictFieldMethod.implementation(this.jvmName, IsFinal, Some(
       caseOnLabelEquality {
         case TrueBranch =>
           thisLoad() ~ GETFIELD(RestField) ~ ARETURN()
@@ -358,7 +358,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic,
       List(String.toTpe, BackendType.Int32, BackendType.Int32, BackendType.Int32, BackendType.Int32), Some(
-        thisLoad() ~ invokeConstructor(JavaObject.jvmName) ~
+        thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~
           thisLoad() ~ ALOAD(1) ~ PUTFIELD(SourceField) ~
           thisLoad() ~ ILOAD(2) ~ PUTFIELD(BeginLineField) ~
           thisLoad() ~ ILOAD(3) ~ PUTFIELD(BeginColField) ~
@@ -384,13 +384,13 @@ object BackendObjType {
 
     private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(
       // create string builder
-      NEW(JvmName.StringBuilder) ~ DUP() ~ invokeConstructor(JvmName.StringBuilder) ~
+      NEW(StringBuilder.jvmName) ~ DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
         // build string
-        thisLoad() ~ GETFIELD(SourceField) ~ appendString() ~
-        pushString(":") ~ appendString() ~
-        thisLoad() ~ GETFIELD(BeginLineField) ~ appendInt() ~
-        pushString(":") ~ appendString() ~
-        thisLoad() ~ GETFIELD(BeginColField) ~ appendInt() ~
+        thisLoad() ~ GETFIELD(SourceField) ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        pushString(":") ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        thisLoad() ~ GETFIELD(BeginLineField) ~ INVOKEVIRTUAL(StringBuilder.AppendInt32Method) ~
+        pushString(":") ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        thisLoad() ~ GETFIELD(BeginColField) ~ INVOKEVIRTUAL(StringBuilder.AppendInt32Method) ~
         // create the string
         INVOKEVIRTUAL(JavaObject.ToStringMethod) ~ ARETURN()
     ))
@@ -428,7 +428,7 @@ object BackendObjType {
               ifTrue(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
               thisLoad() ~ GETFIELD(SourceField) ~
               otherLoc.load() ~ GETFIELD(SourceField) ~
-              INVOKESTATIC(JvmName.Objects, "equals", mkDescriptor(JavaObject.toTpe, JavaObject.toTpe)(BackendType.Bool)) ~
+              INVOKESTATIC(Objects.EqualsMethod) ~
               IRETURN()
           }
       }
@@ -441,18 +441,12 @@ object BackendObjType {
         DUP() ~ ICONST_2() ~ thisLoad() ~ GETFIELD(BeginColField) ~ boxInt() ~ AASTORE() ~
         DUP() ~ ICONST_3() ~ thisLoad() ~ GETFIELD(EndLineField) ~ boxInt() ~ AASTORE() ~
         DUP() ~ ICONST_4() ~ thisLoad() ~ GETFIELD(EndColField) ~ boxInt() ~ AASTORE() ~
-        INVOKESTATIC(JvmName.Objects, "hash", mkDescriptor(BackendType.Array(JavaObject.toTpe))(BackendType.Int32)) ~
+        INVOKESTATIC(Objects.HashMethod) ~
         IRETURN()
     ))
 
     private def boxInt(): InstructionSet = INVOKESTATIC(JvmName.Integer, "valueOf",
       mkDescriptor(BackendType.Int32)(JvmName.Integer.toTpe))
-
-    private def appendString(): InstructionSet = INVOKEVIRTUAL(JvmName.StringBuilder, "append",
-      mkDescriptor(String.toTpe)(JvmName.StringBuilder.toTpe))
-
-    private def appendInt(): InstructionSet = INVOKEVIRTUAL(JvmName.StringBuilder, "append",
-      mkDescriptor(BackendType.Int32)(JvmName.StringBuilder.toTpe))
   }
 
   case object Global extends BackendObjType {
@@ -478,7 +472,7 @@ object BackendObjType {
 
     def StaticConstructor: StaticConstructorMethod = StaticConstructorMethod(this.jvmName, Some(
       NEW(JvmName.AtomicLong) ~
-        DUP() ~ invokeConstructor(JvmName.AtomicLong) ~
+        DUP() ~ invokeConstructor(JvmName.AtomicLong, MethodDescriptor.NothingToVoid) ~
         PUTSTATIC(CounterField) ~
         ICONST_0() ~
         ANEWARRAY(String.jvmName) ~
@@ -569,12 +563,12 @@ object BackendObjType {
           withName(2, ReifiedSourceLocation.toTpe) { loc =>
             thisLoad() ~
               // create an error msg
-              NEW(JvmName.StringBuilder) ~
-              DUP() ~ invokeConstructor(JvmName.StringBuilder) ~
-              pushString("Hole '") ~ stringBuilderAppend() ~
-              hole.load() ~ stringBuilderAppend() ~
-              pushString("' at ") ~ stringBuilderAppend() ~
-              loc.load() ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~ stringBuilderAppend() ~
+              NEW(StringBuilder.jvmName) ~
+              DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
+              pushString("Hole '") ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+              hole.load() ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+              pushString("' at ") ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+              loc.load() ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
               INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
               INVOKESPECIAL(FlixError.Constructor) ~
               // save the arguments locally
@@ -607,16 +601,16 @@ object BackendObjType {
           ifTrue(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
           // cast the other obj
           other.load() ~ CHECKCAST(this.jvmName) ~
-          storeWithName(2, this.toTpe) { otherHoleError =>
+          storeWithName(2, HoleError.toTpe) { otherHoleError =>
             // compare the hole field
             thisLoad() ~ GETFIELD(HoleField) ~
               otherHoleError.load() ~ GETFIELD(HoleField) ~
-              objectsEquals() ~
+              INVOKESTATIC(Objects.EqualsMethod) ~
               ifTrue(Condition.EQ)(pushBool(false) ~ IRETURN()) ~
               // compare the location field
               thisLoad() ~ GETFIELD(LocationField) ~
               otherHoleError.load() ~ GETFIELD(LocationField) ~
-              objectsEquals() ~
+              INVOKESTATIC(Objects.EqualsMethod) ~
               IRETURN()
           }
       }
@@ -630,15 +624,9 @@ object BackendObjType {
         // store location
         DUP() ~ ICONST_1() ~ thisLoad() ~ GETFIELD(LocationField) ~ AASTORE() ~
         // hash the array
-        INVOKESTATIC(JvmName.Objects, "hash", mkDescriptor(BackendType.Array(JavaObject.toTpe))(BackendType.Int32)) ~
+        INVOKESTATIC(Objects.HashMethod) ~
         IRETURN()
     ))
-
-    private def stringBuilderAppend(): InstructionSet = INVOKEVIRTUAL(JvmName.StringBuilder, "append",
-      mkDescriptor(String.toTpe)(JvmName.StringBuilder.toTpe))
-
-    private def objectsEquals(): InstructionSet = INVOKESTATIC(JvmName.Objects, "equals",
-      mkDescriptor(JavaObject.toTpe, JavaObject.toTpe)(BackendType.Bool))
   }
 
   case object MatchError extends BackendObjType {
@@ -658,12 +646,12 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(MatchError.jvmName, IsPublic, List(ReifiedSourceLocation.toTpe), Some(
       thisLoad() ~
-        NEW(JvmName.StringBuilder) ~
-        DUP() ~ invokeConstructor(JvmName.StringBuilder) ~
+        NEW(StringBuilder.jvmName) ~
+        DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
         pushString("Non-exhaustive match at ") ~
-        INVOKEVIRTUAL(JvmName.StringBuilder, "append", mkDescriptor(String.toTpe)(JvmName.StringBuilder.toTpe)) ~
+        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
         ALOAD(1) ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
-        INVOKEVIRTUAL(JvmName.StringBuilder, "append", mkDescriptor(String.toTpe)(JvmName.StringBuilder.toTpe)) ~
+        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
         INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
         INVOKESPECIAL(FlixError.Constructor) ~
         thisLoad() ~
@@ -694,7 +682,7 @@ object BackendObjType {
           storeWithName(2, this.toTpe) { otherErr =>
             thisLoad() ~ GETFIELD(LocationField) ~
               otherErr.load() ~ GETFIELD(MatchError.LocationField) ~
-              INVOKESTATIC(JvmName.Objects, "equals", mkDescriptor(JavaObject.toTpe, JavaObject.toTpe)(BackendType.Bool)) ~
+              INVOKESTATIC(Objects.EqualsMethod) ~
               IRETURN()
           }
       }
@@ -703,7 +691,7 @@ object BackendObjType {
     private def HashCodeMethod: InstanceMethod = JavaObject.HashcodeMethod.implementation(this.jvmName, Some(
       ICONST_1() ~ ANEWARRAY(JavaObject.jvmName) ~
         DUP() ~ ICONST_0() ~ thisLoad() ~ GETFIELD(LocationField) ~ AASTORE() ~
-        INVOKESTATIC(JvmName.Objects, "hash", mkDescriptor(BackendType.Array(JavaObject.toTpe))(BackendType.Int32)) ~
+        INVOKESTATIC(Objects.HashMethod) ~
         IRETURN()
     ))
   }
@@ -727,5 +715,27 @@ object BackendObjType {
 
     def GetClassMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "getClass",
       mkDescriptor()(JvmName.Class.toTpe), None)
+  }
+
+  case object StringBuilder extends BackendObjType {
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, None)
+
+    def AppendStringMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "append",
+      mkDescriptor(String.toTpe)(StringBuilder.toTpe), None)
+
+    def AppendInt32Method: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "append",
+      mkDescriptor(BackendType.Int32)(StringBuilder.toTpe), None)
+
+  }
+
+  case object Objects extends BackendObjType {
+
+    def EqualsMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "equals",
+      mkDescriptor(JavaObject.toTpe, JavaObject.toTpe)(BackendType.Bool), None)
+
+    def HashMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "hash",
+      mkDescriptor(BackendType.Array(JavaObject.toTpe))(BackendType.Int32), None)
+
   }
 }

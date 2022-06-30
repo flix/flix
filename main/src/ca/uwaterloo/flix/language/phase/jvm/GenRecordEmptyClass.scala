@@ -18,11 +18,10 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.RecordEmpty
 
 object GenRecordEmptyClass {
-  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen()(implicit flix: Flix): Map[JvmName, JvmClass] = {
     Map(RecordEmpty.jvmName -> JvmClass(RecordEmpty.jvmName, RecordEmpty.genByteCode()))
   }
 }
