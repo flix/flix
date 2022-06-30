@@ -1214,9 +1214,9 @@ namespace String {
     def toChunksHelper(size: Int32, s: String): List[String] =
         let len = length(s);
         let step = pos -> match pos {
-            case i if i >= len          => None
-            case i if i + size >= len   => Some(sliceRight(i, s), len)
-            case i                      => Some(slice(i, i + size, s), i + size)
+            case i if i >= len        => None
+            case i if i + size >= len => Some(sliceRight(i, s), len)
+            case i                    => Some(slice(i, i + size, s), i + size)
         };
         List.unfold(step, 0)
 
@@ -1226,7 +1226,7 @@ namespace String {
     ///
     pub def breakOnLeft(substr: {substr :: String}, s: String): (String, String) =
         match indexOfLeft({substr = substr.substr}, s) {
-            case None => (s, "")
+            case None    => (s, "")
             case Some(i) => (sliceLeft(i, s), sliceRight(i, s))
         }
 
@@ -1237,7 +1237,7 @@ namespace String {
     pub def breakOnRight(substr: {substr :: String}, s: String): (String, String) =
         let sublen = length(substr.substr);
         match indexOfRight({substr = substr.substr}, s) {
-            case None => (s, "")
+            case None    => (s, "")
             case Some(i) => (sliceLeft(i + sublen, s), sliceRight(i + sublen, s))
         }
 
@@ -1246,11 +1246,9 @@ namespace String {
     ///
     pub def countSubstring(substr: {substr :: String}, s: String): Int32 =
         let sublen = length(substr.substr);
-        def loop(offset, count) = {
-            match indexOfLeftWithOffset({substr = substr.substr}, {offset = offset}, s) {
+        def loop(offset, count) = match indexOfLeftWithOffset(substr = substr.substr, offset = offset, s) {
             case None    => count
             case Some(i) => loop(i + sublen, count + 1)
-            }
         };
         if (sublen <= 0)
             0
@@ -1261,7 +1259,7 @@ namespace String {
     /// Returns `Some(suffix)` of string `s` if its prefix matches `substr`.
     ///
     pub def stripPrefix(substr: {substr :: String}, s: String): Option[String] =
-        if (not startsWith({prefix = substr.substr}, s))
+        if (not startsWith(prefix = substr.substr, s))
             None
         else
             Some(dropLeft(length(substr.substr), s))
@@ -1270,7 +1268,7 @@ namespace String {
     /// Returns `Some(prefix)` of string `s` if its suffix matches `substr`.
     ///
     pub def stripSuffix(substr: {substr :: String}, s: String): Option[String] =
-        if (not endsWith({suffix = substr.substr}, s))
+        if (not endsWith(suffix = substr.substr, s))
             None
         else
             Some(dropRight(length(substr.substr), s))
