@@ -911,7 +911,7 @@ namespace String {
             split({regex = "\\R"}, s)
 
     ///
-    /// Join the array of strings `a` separating each pair of strings and
+    /// Join the list of strings `a` separating each pair of strings and
     /// ending the result string with the system dependent line separator.
     ///
     @Time(List.length(a)) @Space(List.length(a))
