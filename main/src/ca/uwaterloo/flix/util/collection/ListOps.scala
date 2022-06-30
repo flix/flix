@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Jonathan Lindegaard Starup
+ * Copyright 2022 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.util.collection
 
-package ca.uwaterloo.flix.language.phase.jvm
+/**
+  * Operations on lists.
+  */
+object ListOps {
 
-import ca.uwaterloo.flix.api.Flix
-
-object GenRefClasses {
-  def gen(ts: Iterable[BackendObjType.Ref])(implicit flix: Flix): Map[JvmName, JvmClass] = {
-    ts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, refType) =>
-        macc + (refType.jvmName -> JvmClass(refType.jvmName, refType.genByteCode()))
+  /**
+    * Unzips the given list of 4-tuples into 4 lists.
+    */
+  def unzip4[T1, T2, T3, T4](list: List[(T1, T2, T3, T4)]): (List[T1], List[T2], List[T3], List[T4]) = {
+    list.foldRight((Nil: List[T1], Nil: List[T2], Nil: List[T3], Nil: List[T4])) {
+      case ((h1, h2, h3, h4), (t1, t2, t3, t4)) => (h1 :: t1, h2 :: t2, h3 :: t3, h4 :: t4)
     }
   }
 }

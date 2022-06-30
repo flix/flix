@@ -121,7 +121,6 @@ object BytecodeInstructions {
     f
   }
 
-  // TODO: All JvmNames could be BackendObjTypes
   def ANEWARRAY(className: JvmName): InstructionSet = f => {
     f.visitTypeInstruction(Opcodes.ANEWARRAY, className)
     f
@@ -374,7 +373,7 @@ object BytecodeInstructions {
     f
   }
 
-  def invokeConstructor(className: JvmName, descriptor: MethodDescriptor = MethodDescriptor.NothingToVoid): InstructionSet =
+  def invokeConstructor(className: JvmName, descriptor: MethodDescriptor): InstructionSet =
     INVOKESPECIAL(className, JvmName.ConstructorMethod, descriptor)
 
   def nop(): InstructionSet =

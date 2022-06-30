@@ -829,7 +829,7 @@ namespace TestDelayList {
     @test
     def toMutDeque01(): Bool = region r {
     	let l = ENil: DelayList[Int32];
-        let d1 = DelayList.toMutDeque(l, r);
+        let d1 = DelayList.toMutDeque(r, l);
 
         let d2 = new MutDeque(r);
 
@@ -840,7 +840,7 @@ namespace TestDelayList {
     @test
     def toMutDeque02(): Bool = region r {
     	let l = LList(lazy ENil): DelayList[Int32];
-        let d1 = DelayList.toMutDeque(l, r);
+        let d1 = DelayList.toMutDeque(r, l);
 
         let d2 = new MutDeque(r);
 
@@ -851,7 +851,7 @@ namespace TestDelayList {
     @test
     def toMutDeque03(): Bool = region r {
     	let l = LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))));
-        let d1 = DelayList.toMutDeque(l, r);
+        let d1 = DelayList.toMutDeque(r, l);
 
         let d2 = new MutDeque(r);
         MutDeque.pushBack(1, d2);

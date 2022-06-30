@@ -17,10 +17,10 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.HoleError
 
 object GenHoleErrorClass {
   def gen()(implicit flix: Flix): Map[JvmName, JvmClass] = {
-    val holeError = BackendObjType.HoleError
-    Map(holeError.jvmName -> JvmClass(holeError.jvmName, holeError.genByteCode()))
+    Map(HoleError.jvmName -> JvmClass(HoleError.jvmName, HoleError.genByteCode()))
   }
 }

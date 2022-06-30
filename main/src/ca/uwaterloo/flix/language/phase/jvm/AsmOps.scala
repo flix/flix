@@ -401,7 +401,7 @@ object AsmOps {
     mv.visitLdcInsn(loc.beginCol)
     mv.visitLdcInsn(loc.endLine)
     mv.visitLdcInsn(loc.endCol)
-    mv.visitMethodInsn(INVOKESPECIAL, RslType.jvmName.toInternalName, JvmName.ConstructorMethod, RslType.ConstructorDescriptor.toDescriptor, false)
+    mv.visitMethodInsn(INVOKESPECIAL, RslType.jvmName.toInternalName, JvmName.ConstructorMethod, RslType.Constructor.d.toDescriptor, false)
   }
 
   /**

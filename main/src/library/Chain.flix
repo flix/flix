@@ -708,7 +708,7 @@ namespace Chain {
     ///
     /// Returns `c` as a MutDeque.
     ///
-    pub def toMutDeque(c: Chain[a], r: Region[r]): MutDeque[a, r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], c: Chain[a]): MutDeque[a, r] \ Write(r) =
         let d = new MutDeque(r);
         Chain.foreach(x -> MutDeque.pushBack(x, d), c);
         d
