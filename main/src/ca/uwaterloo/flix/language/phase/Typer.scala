@@ -1301,15 +1301,20 @@ object Typer {
         }
 
         def visitHandlerRule(rule: KindedAst.HandlerRule): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = rule match {
-          case KindedAst.HandlerRule(op, actualFparams, body) =>
+          case KindedAst.HandlerRule(op, actualFparams, body, opTvar) =>
             // Don't need to generalize since ops are monomorphic
             // Don't need to handle unknown op because resolver would have caught this
             ops(op) match {
-              case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, expectedTpe, expectedPur, expectedEff, _)) =>
+              case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, opTpe, expectedPur, expectedEff, _)) =>
                 for {
                   _ <- unifyFormalParams(expected = expectedFparams, actual = actualFparams)
                   (actualTconstrs, actualTpe, actualPur, actualEff) <- visitExp(body)
-                  resultTpe <- expectTypeM(expected = expectedTpe, actual = actualTpe, body.loc)
+
+                  // unify the operation return type with its tvar
+                  _ <- unifyTypeM(opTpe, opTvar, body.loc)
+
+                  // unify the handler result type with the whole block's tvar
+                  resultTpe <- expectTypeM(expected = tvar, actual = actualTpe, body.loc)
                   resultPur <- expectTypeM(expected = expectedPur, actual = actualPur, body.loc) // MATT improve error message for this
                   resultEff <- expectTypeM(expected = expectedEff, actual = actualEff, body.loc)
                 } yield (actualTconstrs, resultTpe, resultPur, resultEff)
