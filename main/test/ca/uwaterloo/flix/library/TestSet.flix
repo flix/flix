@@ -1195,9 +1195,9 @@ def toMutDeque03(): Bool = region r {
     let d1 = Set.toMutDeque(r, s);
 
     let d2 = new MutDeque(r);
-    MutDeque.pushBack(1, d2);
     MutDeque.pushBack(3, d2);
-    MutDeque.pushFront(6, d2);
+    MutDeque.pushBack(6, d2);
+    MutDeque.pushFront(1, d2);
 
     d1 `MutDeque.sameElements` d2
 }
