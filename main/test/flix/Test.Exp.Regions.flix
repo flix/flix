@@ -910,20 +910,20 @@ namespace Test/Exp/Regions {
                 case _       => unreachable!()
             }
         }
-/*
 
     @test
     def testRegions1Region1NestedReferences03(): Bool & Impure =
         region r {
             let m = new MutMap(r);
-            let l = new MutList(Static);
-            MutList.push!(1, l);
+            let l = ref new MutList(Static) @ r;
+            MutList.push!(1, deref l);
             MutMap.put!(1, l, m);
             match MutMap.get(1, m) {
-                case Some(x) => x `MutList.sameElements` l
+                case Some(x) => deref x `MutList.sameElements` deref l
                 case _       => unreachable!()
             }
         }
+/*
 
     @test
     def testRegions1Region1NestedReferences04(): Bool =
