@@ -943,4 +943,46 @@ namespace Test/Exp/Regions {
             }
         }
 
+    @test
+    def testRegions1Region2NestedReferences01(): Bool & Impure =
+        region r {
+            let a = ref [ref new MutMap(r) @ r; 8] @ Static;
+            let l = ref new MutList(r) @ r;
+            MutList.push!(1, deref l);
+            MutMap.put!(1, l, deref (deref a)[0]);
+            match MutMap.get(1, deref (deref a)[0]) {
+                case Some(k) => MutList.pop!(deref k) == Some(1)
+                case _       => unreachable!()
+            }
+        }
+/*
+    @test
+    def testRegions1Region2NestedReferences02(): Bool =
+        region r {
+            let l = new MutList(r);
+            let a = [new MutMap(r); 8] @ r;
+            MutMap.put!(1, 1, a[0]);
+            MutList.push!(a, l);
+            match MutList.pop!(l) {
+                case Some(b) => MutMap.get(1, b[0]) == Some(1)
+                case _       => unreachable!()
+            }
+        }
+
+    @test
+    def testRegions1Region2NestedReferences03(): Bool =
+        region r {
+            let m = new MutMap(r);
+            let l = new MutList(r);
+            MutList.push!([1; 8] @ r, l);
+            MutMap.put!(1, l, m);
+            match MutMap.get(1, m) {
+                case Some(k) => match MutList.pop!(k) {
+                    case Some(a) => a[0] == 1
+                    case _       => unreachable!()
+                }
+                case _       => unreachable!()
+            }
+        }
+*/
 }
