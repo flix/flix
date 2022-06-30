@@ -872,7 +872,7 @@ namespace Map {
     ///
     /// Returns `m` as a MutDeque.
     ///
-    pub def toMutDeque(m: Map[k, v], r: Region[r]): MutDeque[(k, v), r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], m: Map[k, v]): MutDeque[(k, v), r] \ Write(r) =
         let d = new MutDeque(r);
         Map.foreach((k, v) -> MutDeque.pushBack((k, v), d), m);
         d
