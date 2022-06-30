@@ -268,17 +268,10 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foreach(f: a -> Unit & ef, iter: Iterator[a, r]): Unit \ { ef, Read(r) } =
-        let Iterator(done, next) = iter;
-        def loop() = {
-            if (done())
-                ()
-            else {
-                f(next());
-                loop()
-            }
-        };
-        loop()
+    pub def foreach(f: a -> Unit & ef, iter: Iterator[a, r]): Unit \ { ef, Read(r) } = match iter {
+        case Iterator(done, _) if done() => ()
+        case Iterator(_, next)           => f(next()); foreach(f, iter)
+    }
 
     ///
     /// Returns an iterator with every element of the iterator `iter` that
