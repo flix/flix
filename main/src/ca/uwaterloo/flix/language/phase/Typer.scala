@@ -1359,7 +1359,17 @@ object Typer {
           } yield (resultTconstrs, resultTpe, resultPur, resultEff)
         }
 
-      case KindedAst.Expression.Resume(args, argTvar, retTvar, loc) => InferMonad.point((Nil: List[Ast.TypeConstraint], Type.Unit, Type.Pure, Type.Empty)) // TODO actually infer
+      case KindedAst.Expression.Resume(args, argTvar, retTvar, loc) => {
+        val arg = args.head // MATT change this in parser
+        for {
+          (tconstrs, tpe, pur, eff) <- visitExp(arg)
+          resultTconstrs = tconstrs
+          _ <- expectTypeM(expected = argTvar, actual = tpe, arg.loc)
+          resultTpe = retTvar
+          resultPur = pur
+          resultEff = eff
+        } yield (resultTconstrs, resultTpe, resultPur, resultEff)
+      }
 
       case KindedAst.Expression.InvokeConstructor(constructor, args, loc) =>
         val classType = getFlixType(constructor.getDeclaringClass)
