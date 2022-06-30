@@ -1330,6 +1330,7 @@ object Typer {
         val effect = root.effects(op.eff)
         val operation = effect.ops.find(_.sym == op)
           .getOrElse(throw InternalCompilerException(s"Unexpected missing operation $op in effect ${op.eff}"))
+        val effTpe = Type.Cst(TypeConstructor.Effect(op.eff), loc)
 
         def visitArg(arg: KindedAst.Expression, fparam: KindedAst.FormalParam): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = {
           for {
@@ -1341,10 +1342,16 @@ object Typer {
         if (operation.spec.fparams.length != args.length) {
           ??? // bad number of args
         } else {
-
+          val argM = (args zip operation.spec.fparams) map {
+            case (arg, fparam) => visitArg(arg, fparam)
+          }
           for {
-            (tconstrss, tpes, purs, effs) <- seqM((args zip operation.spec.fparams)
-          } yield ()
+            (tconstrss, _, purs, effs) <- seqM(argM).map(unzip4)
+            resultTconstrs = tconstrss.flatten
+            resultTpe = operation.spec.tpe
+            resultPur = Type.mkAnd(operation.spec.pur :: purs, loc)
+            resultEff = Type.mkUnion(effTpe :: operation.spec.eff :: effs, loc)
+          } yield (resultTconstrs, resultTpe, resultPur, resultEff)
         }
 
       case KindedAst.Expression.Resume(args, argTvar, retTvar, loc) => InferMonad.point((Nil: List[Ast.TypeConstraint], Type.Unit, Type.Pure, Type.Empty)) // TODO actually infer
