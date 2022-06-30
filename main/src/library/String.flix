@@ -932,16 +932,11 @@ namespace String {
     }
 
     ///
-    /// Join the array of strings `a` separating each pair of strings with a
+    /// Join the array of strings `l` separating each pair of strings with a
     /// single space character.
     ///
-    @Time(List.length(a)) @Space(List.length(a))
-    pub def unwords(a: List[String]): String = unwordsHelper(a)
-
-    ///
-    /// Helper function for `unlines`.
-    ///
-    def unwordsHelper(xs: List[String]): String = region r {
+    @Time(List.length(l)) @Space(List.length(l))
+    pub def unwords(l: List[String]): String = region r {
         let sb = new StringBuilder(r);
         let first = ref true;
         let step = s ->
@@ -952,7 +947,7 @@ namespace String {
                 StringBuilder.append!(' ', sb);
                 StringBuilder.appendString!(s, sb)
             };
-        List.foreach(step, xs);
+        List.foreach(step, l);
         StringBuilder.toString(sb)
     }
 
