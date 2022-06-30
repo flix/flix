@@ -598,14 +598,12 @@ object Kinder {
       // and for the operation result (same as resume argument)
       // and set the handled env
       val tvar = Type.freshVar(Kind.Star, loc)
-      val opTvar = Type.freshVar(Kind.Star, loc)
-      val henv = Some((opTvar, tvar))
 
       // use the old henv for the handled expression
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
 
       // use the new henv for the handler
-      val rulesVal = traverse(rules0)(visitHandlerRule(_, kenv0, senv, taenv, henv, root))
+      val rulesVal = traverse(rules0)(visitHandlerRule(_, kenv0, senv, taenv, tvar, root))
       mapN(expVal, rulesVal) {
         case (exp, rules) => KindedAst.Expression.TryWith(exp, eff, rules, tvar, loc)
       }
@@ -819,12 +817,17 @@ object Kinder {
   /**
     * Performs kinding on the given handler rule under the given kind environment.
     */
-  private def visitHandlerRule(rule0: ResolvedAst.HandlerRule, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.KindedVar, Type.KindedVar)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.HandlerRule, KindError] = rule0 match {
+  private def visitHandlerRule(rule0: ResolvedAst.HandlerRule, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], hTvar: Type.KindedVar, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.HandlerRule, KindError] = rule0 match {
     case ResolvedAst.HandlerRule(op, fparams0, exp0) =>
+      // create a new type variable for the op return type (same as resume argument type)
+      val tvar = Type.freshVar(Kind.Star, exp0.loc)
+
+      val henv = Some((tvar, hTvar))
+
       val fparamsVal = traverse(fparams0)(visitFormalParam(_, kenv, senv, taenv, root))
       val expVal = visitExp(exp0, kenv, senv, taenv, henv, root)
       mapN(fparamsVal, expVal) {
-        case (fparams, exp) => KindedAst.HandlerRule(op, fparams, exp)
+        case (fparams, exp) => KindedAst.HandlerRule(op, fparams, exp, tvar)
       }
   }
 

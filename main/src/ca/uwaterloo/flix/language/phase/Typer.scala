@@ -1277,7 +1277,7 @@ object Typer {
           resultEff = Type.mkUnion(eff :: ruleEffs, loc)
         } yield (constrs ++ ruleConstrs.flatten, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.TryWith(exp, pur, rules, opTvar, tvar, loc) => visitExp(exp) // TODO actually infer
+      case KindedAst.Expression.TryWith(exp, pur, rules, tvar, loc) => visitExp(exp) // TODO actually infer
 
       case KindedAst.Expression.Do(op, args, loc) => InferMonad.point((Nil: List[Ast.TypeConstraint], Type.Unit, Type.Pure, Type.Empty)) // TODO actually infer
 

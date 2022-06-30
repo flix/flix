@@ -159,7 +159,7 @@ object KindedAst {
 
     case class TryCatch(exp: KindedAst.Expression, rules: List[KindedAst.CatchRule], loc: SourceLocation) extends KindedAst.Expression
 
-    case class TryWith(exp: KindedAst.Expression, eff: Symbol.EffectSym, rules: List[KindedAst.HandlerRule], opTvar: Type.KindedVar, tvar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+    case class TryWith(exp: KindedAst.Expression, eff: Symbol.EffectSym, rules: List[KindedAst.HandlerRule], tvar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
     case class Do(op: Symbol.OpSym, args: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
 
@@ -327,7 +327,7 @@ object KindedAst {
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: KindedAst.Expression)
 
-  case class HandlerRule(op: Symbol.OpSym, fparams: List[KindedAst.FormalParam], exp: KindedAst.Expression)
+  case class HandlerRule(op: Symbol.OpSym, fparams: List[KindedAst.FormalParam], exp: KindedAst.Expression, tvar: Type.KindedVar)
 
   case class ChoiceRule(pat: List[KindedAst.ChoicePattern], exp: KindedAst.Expression)
 
