@@ -931,30 +931,16 @@ namespace Test/Exp/Regions {
             MutMap.put!(1, 1, deref ((deref a)[0]));
             MutMap.get(1, deref ((deref a)[0])) == Some(1)
         }
-/*
 
     @test
     def testRegions1Region1NestedReferences05(): Bool =
         region r {
-            let l = new MutList(r);
-            MutList.push!([1; 8] @ r, l);
-            match MutList.pop!(l) {
+            let l = ref new MutList(r) @ r;
+            MutList.push!([1; 8] @ r, deref l);
+            match MutList.pop!(deref l) {
                 case Some(a) => a `Array.sameElements` [1; 8]
                 case _       => unreachable!()
             }
         }
 
-    @test
-    def testRegions1Region1NestedReferences06(): Bool =
-        region r {
-            let m = new MutMap(r);
-            let l = new MutList(r);
-            MutList.push!(1, l);
-            MutMap.put!(1, l, m);
-            match MutMap.get(1, m) {
-                case Some(x) => x `MutList.sameElements` l
-                case _       => unreachable!()
-            }
-        }
-*/
 }
