@@ -1288,7 +1288,7 @@ object Typer {
 
         def unifyFormalParams(expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam]): InferMonad[Unit] = {
           if (expected.length != actual.length) {
-            ??? // invalid type param count
+            ??? // MATT invalid type param count
           } else {
             val fparams = (expected zip actual) map {
               case (ex, ac) =>
@@ -1326,7 +1326,26 @@ object Typer {
           resultEff = Type.mkUnion(Type.mkDifference(eff, effType, loc) :: effs, loc)
         } yield (resultTconstrs, resultTpe, resultPur, resultEff)
 
-      case KindedAst.Expression.Do(op, args, loc) => InferMonad.point((Nil: List[Ast.TypeConstraint], Type.Unit, Type.Pure, Type.Empty)) // TODO actually infer
+      case KindedAst.Expression.Do(op, args, loc) =>
+        val effect = root.effects(op.eff)
+        val operation = effect.ops.find(_.sym == op)
+          .getOrElse(throw InternalCompilerException(s"Unexpected missing operation $op in effect ${op.eff}"))
+
+        def visitArg(arg: KindedAst.Expression, fparam: KindedAst.FormalParam): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = {
+          for {
+            (tconstrs, tpe, pur, eff) <- visitExp(arg)
+            _ <- expectTypeM(expected = fparam.tpe, tpe, arg.loc)
+          } yield (tconstrs, tpe, pur, eff)
+        }
+
+        if (operation.spec.fparams.length != args.length) {
+          ??? // bad number of args
+        } else {
+
+          for {
+            (tconstrss, tpes, purs, effs) <- seqM((args zip operation.spec.fparams)
+          } yield ()
+        }
 
       case KindedAst.Expression.Resume(args, argTvar, retTvar, loc) => InferMonad.point((Nil: List[Ast.TypeConstraint], Type.Unit, Type.Pure, Type.Empty)) // TODO actually infer
 
