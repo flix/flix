@@ -100,7 +100,7 @@ namespace Test/Exp/Fixpoint/Lambda {
             Q(2).
             B(x) :- Q(x), not A(x).
         };
-        not (query p1, p2 select (x, y) from A(x), B(y) |> Array.isEmpty)
+        not (query p1, p2 select (x, y) from A(x), B(y) |> List.isEmpty)
 
     pub def testPolymorphism01(): Bool =
         query poly(123), poly("abc") select x from R(x) |> List.memberOf("OK")

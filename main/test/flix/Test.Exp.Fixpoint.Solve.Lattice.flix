@@ -93,7 +93,7 @@ namespace Test/Exp/Fixpoint/Solve/Lattice {
             LocalVar((); Bot). LocalVar((); Top). LocalVar((); Bot). LocalVar((); Top).
         };
         let ans = query m select t from LocalVar(_; t);
-        ans.length == 1 and List.head(ans) == Some(Top)
+        List.length(ans) == 1 and List.head(ans) == Some(Top)
 
     @test
     def testFixpointLattice03(): Bool =
