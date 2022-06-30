@@ -121,10 +121,16 @@ namespace RedBlackTree {
     /// Returns the number of nodes in `t`.
     ///
     @Time(size(t)) @Space(Int32.log2(size(t)))
-    pub def size(t: RedBlackTree[k, v]): Int32 = match t {
-        case Node(_, a, _, _, b) => 1 + size(a) + size(b)
-        case _                   => 0
-    }
+    pub def size(t: RedBlackTree[k, v]): Int32 =
+        if (useParallelEvaluation(t))
+            parCount(threads() - 1, (_, _) -> true, t) as & Pure
+        else {
+            def loop(tt, k) = match tt {
+                case Node(_, a, _, _, b) => loop(a, ks -> k(loop(b, ys -> ks + ys + 1)))
+                case _                   => k(0)
+            };
+            loop(t, identity)
+        }
 
     ///
     /// Returns the empty tree.
@@ -691,7 +697,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parCount(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 & Impure = {
+    pub def parCount(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 & Impure =
         if (n <= 1)
             seqCount(f, t)
         else
@@ -708,7 +714,6 @@ namespace RedBlackTree {
                     let b1 = <- chanR;
                     a1 + v1 + b1
             }
-    }
 
     ///
     /// Applies `f` over the tree `t` sequentially from left to right and returns the number of elements
