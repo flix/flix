@@ -1171,7 +1171,7 @@ def toMapWith05(): Bool =
 @test
 def toMutDeque01(): Bool = region r {
     let s: Set[Int32] = Set#{};
-    let d1 = Set.toMutDeque(r, m);
+    let d1 = Set.toMutDeque(r, s);
 
     let d2 = new MutDeque(r);
 
