@@ -923,15 +923,15 @@ namespace Test/Exp/Regions {
                 case _       => unreachable!()
             }
         }
-/*
 
     @test
     def testRegions1Region1NestedReferences04(): Bool =
         region r {
-            let a = [new MutMap(r); 8];
-            MutMap.put!(1, 1, a[0]);
-            MutMap.get(1, a[0]) == Some(1)
+            let a = ref ([ref new MutMap(r) @ r; 8] @ r) @ r;
+            MutMap.put!(1, 1, deref ((deref a)[0]));
+            MutMap.get(1, deref ((deref a)[0])) == Some(1)
         }
+/*
 
     @test
     def testRegions1Region1NestedReferences05(): Bool =
