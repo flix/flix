@@ -1155,7 +1155,7 @@ object Typer {
           (constrs, tpe, pur, eff) <- visitExp(exp)
           _ <- expectTypeM(Type.mkArray(elmVar, regionVar, loc), tpe, exp.loc)
           resultTyp = Type.Int32
-          resultPur = Type.Pure
+          resultPur = pur
           resultEff = eff
           _ <- unbindVar(elmVar)
           _ <- unbindVar(regionVar)
