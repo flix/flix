@@ -936,19 +936,15 @@ namespace String {
     /// single space character.
     ///
     @Time(List.length(l)) @Space(List.length(l))
-    pub def unwords(l: List[String]): String = region r {
-        let sb = new StringBuilder(r);
-        let first = ref true;
-        let step = s ->
-            if (deref first == true) {
-                first := false;
-                StringBuilder.appendString!(s, sb)
-            } else {
-                StringBuilder.append!(' ', sb);
-                StringBuilder.appendString!(s, sb)
-            };
-        List.foreach(step, l);
-        StringBuilder.toString(sb)
+    pub def unwords(l: List[String]): String = match l {
+        case Nil     => ""
+        case x :: xs => region r {
+            let sb = new StringBuilder(r);
+            StringBuilder.appendString!(x, sb);
+            let f = s -> { StringBuilder.append!(' ', sb); StringBuilder.appendString!(s, sb) };
+            List.foreach(f, xs);
+            StringBuilder.toString(sb)
+        }
     }
 
     ///
@@ -957,7 +953,7 @@ namespace String {
     pub def indexOf(substr: {substr :: String}, s: String): Option[Int32] = indexOfLeft({substr = substr.substr}, s)
 
     ///
-    /// Return the index of the first occurence of `substr` in `s` from the left.
+    /// Return the index of the first occurrence of `substr` in `s` from the left.
     ///
     /// If `substr` is not present in `s` return None.
     ///
