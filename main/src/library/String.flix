@@ -969,7 +969,7 @@ namespace String {
         }
 
     ///
-    /// Return the index of the first occurence of `substr` in `s` from the right.
+    /// Return the index of the first occurrence of `substr` in `s` from the right.
     ///
     /// If `substr` is not present in `s` return None.
     ///
@@ -1013,7 +1013,7 @@ namespace String {
                 if (c1 != c2)
                     takeLeft(ix, s1)
                 else
-                    loop(ix+1)
+                    loop(ix + 1)
             }
         };
         loop(0)
@@ -1036,7 +1036,7 @@ namespace String {
                     if (c1 != c2)
                         takeRight(acc, s1)
                     else
-                        loop(i-1, j-1, acc+1)
+                        loop(i - 1, j - 1, acc + 1)
                 }
             };
             let start1 = length(s1) - 1;
@@ -1085,19 +1085,11 @@ namespace String {
     /// string `s` into string `t`.
     ///
     @Time(length(s) * length(t)) @Space(length(s) * length(t))
-    pub def levenshteinDistance(s: String, t: String) : Int32 = levenshteinDistanceHelper(s, t) as & Pure
-
-    ///
-    /// Helper function for `levenshteinDistance`.
-    ///
-    /// This is the Wikipedia two-matrix rows algorithm:
-    /// https://en.wikipedia.org/wiki/Levenshtein_distance#Iterative_with_two_matrix_rows
-    ///
-    def levenshteinDistanceHelper(s: String, t: String) : Int32 & Impure =
+    pub def levenshteinDistance(s: String, t: String): Int32 = region r {
         let m = length(s);
         let n = length(t);
-        let v0 = Array.new(0, n + 1, Static);
-        let v1 = Array.new(0, n + 1, Static);
+        let v0 = Array.new(0, n + 1, r);
+        let v1 = Array.new(0, n + 1, r);
         forIndex(0, n, i -> v0[i] = i);
         forIndex(0, m - 1, i -> {
             v1[0] = i + 1;
@@ -1108,9 +1100,10 @@ namespace String {
                 let c = v0[j] + substitutionCost;
                 v1[j + 1] = Int32.min(a, Int32.min(b, c))
             });
-            arraySwap(v0,v1)
+            arraySwap(v0, v1)
         });
         v0[n]
+    }
 
     ///
     /// Helper function for `levenshteinDistance`.
@@ -1123,7 +1116,7 @@ namespace String {
     ///
     /// Helper function for `levenshteinDistance`.
     ///
-    def arraySwap(a: Array[Int32, Static], b : Array[Int32, Static]): Unit & Impure =
+    def arraySwap(a: Array[Int32, r1], b : Array[Int32, r2]): Unit \ { Read(r2), Write(r1) } =
         forIndex(0, Array.length(a) - 1, {i ->  a[i] = b[i]})
 
     ///
@@ -1135,7 +1128,6 @@ namespace String {
     @Time(Int32.min(length(a), length(b))) @Space(Int32.min(length(a), length(b)))
     pub def zip(a: String, b: String): List[(Char, Char)] =
         let len = Int32.min(length(a), length(b));
-        // Array.init(i -> (charAt(i, a), charAt(i, b)), len, Static)
         List.unfold(i -> if (i >= len) None else Some((charAt(i, a), charAt(i, b)), i + 1), 0)
 
     ///
