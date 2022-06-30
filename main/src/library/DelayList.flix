@@ -91,8 +91,8 @@ instance Foldable[DelayList] {
 }
 
 instance Iterable[DelayList] {
-    pub def iterator(l: DelayList[a]): StaticIterator[a] & Impure =
-        DelayList.toStaticIterator(l)
+    pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) =
+        DelayList.toIterator(r, l)
 }
 
 instance FunctorFilter[DelayList] {
@@ -1151,16 +1151,6 @@ namespace DelayList {
     /// Does not force any elements of the list.
     ///
     @Experimental @Lazy
-    pub def toStaticIterator(l: DelayList[a]): StaticIterator[a] & Impure =
-        let Iterator(done, next) = toIterator(Static, l);
-        StaticIterator(done, next)
-
-    ///
-    /// Returns `l` as an `Iterator`.
-    ///
-    /// Does not force any elements of the list.
-    ///
-    @Experimental @Lazy
     pub def toIterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) =
         let cursor = ref l @ r;
         let done = () -> match head(deref cursor) {
@@ -1203,7 +1193,7 @@ namespace DelayList {
     ///
     /// Returns `l` as a MutDeque.
     ///
-    pub def toMutDeque(l: DelayList[a], r: Region[r]): MutDeque[a, r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], l: DelayList[a]): MutDeque[a, r] \ Write(r) =
         let d = new MutDeque(r);
         DelayList.foreach(x -> MutDeque.pushBack(x, d), l);
         d

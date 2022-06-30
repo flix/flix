@@ -59,7 +59,7 @@ namespace Benchmark {
     /// Runs all benchmarks in `bs`. Attempts to spend no more than `budget` time.
     ///
     @Experimental
-    pub def runWithBudget(bs: Array[Benchmark, Static], budget: Int64): Int32 & Impure =
+    pub def runWithBudget(bs: Array[Benchmark, r], budget: Int64): Int32 & Impure =
         if (bs.length == 0) {
             println("No benchmarks");
             1
@@ -82,7 +82,7 @@ namespace Benchmark {
     ///
     /// Runs every benchmark in `bs` once and estimates its duration.
     ///
-    def warmupAndEstimate(bs: Array[Benchmark, Static]): Array[(Benchmark, Int64), Static] & Impure = {
+    def warmupAndEstimate(bs: Array[Benchmark, r]): Array[(Benchmark, Int64), r] & Impure = {
         print("Warmup: ");
         bs |> Array.map(b -> {
             let time = runBenchmarkOnce(b);
@@ -94,7 +94,7 @@ namespace Benchmark {
     ///
     /// Runs all the given benchmarks with estimates `bs` and the given time `budget`.
     ///
-    def runAll(bs: Array[(Benchmark, Int64), Static], budget: Int64): Unit & Impure = {
+    def runAll(bs: Array[(Benchmark, Int64), r], budget: Int64): Unit & Impure = {
         let budgetPerBenchmark = budget / (Int32.toInt64(bs.length));
         bs |> Array.foreach(match (b, cost) ->
             let iters = iterations(cost, budgetPerBenchmark);
@@ -109,7 +109,7 @@ namespace Benchmark {
         import static java.lang.System.nanoTime(): Int64 & Impure;
         let Benchmark(r) = b;
         let t = nanoTime();
-        let _ = loop(r.f, n);
+        loop(r.f, n);
         let e = nanoTime() - t;
         Success({name = r.name, rounds = n, total = e})
 
@@ -123,7 +123,7 @@ namespace Benchmark {
         let Benchmark(r) = b;
         import static java.lang.System.nanoTime(): Int64 & Impure;
         let t = nanoTime();
-        let _ = (r.f)();
+        (r.f)() as & Impure;
         (nanoTime() - t) / scaleFactor()
 
     ///
@@ -133,7 +133,7 @@ namespace Benchmark {
         if (n == 0)
             ()
         else {
-            f() as & Impure;
+            discard f() as & Impure;
             loop(f, n - 1)
         }
 

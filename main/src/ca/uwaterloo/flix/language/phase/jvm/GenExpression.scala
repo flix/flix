@@ -717,6 +717,8 @@ object GenExpression {
       val MonoType.Ref(refValueType) = exp.tpe
       val backendRefType = BackendObjType.Ref(BackendType.toErasedBackendType(refValueType))
 
+      // Cast the ref
+      visitor.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
       // Dereference the expression
       visitor.visitFieldInsn(GETFIELD, classType.name.toInternalName, backendRefType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
       // Cast underlying value to the correct type if the underlying type is Object
@@ -1130,7 +1132,7 @@ object GenExpression {
 
     case Expression.MatchError(_, loc) =>
       addSourceLine(visitor, loc)
-      AsmOps.compileThrowFlixError(visitor, JvmName.MatchError, loc)
+      AsmOps.compileThrowFlixError(visitor, BackendObjType.MatchError.jvmName, loc)
 
     case Expression.BoxBool(exp, loc) =>
       addSourceLine(visitor, loc)

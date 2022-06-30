@@ -405,6 +405,6 @@ namespace MutDeque {
     pub def shuffle(rnd: Random.Random, d: MutDeque[a, r], r: Region[r]): MutDeque[a, r] & Impure =
         let arr = toArray(d, r);
         Array.shuffle(rnd, arr);
-        Array.toMutDeque(arr, r)
+        Array.toMutDeque(r, arr)
 
 }

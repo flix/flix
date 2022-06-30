@@ -1892,7 +1892,7 @@ def findMap08(): Bool = List.findMap(i -> if (i rem 2 == 0) Some(i/2) else None,
 @test
 def toMutDeque01(): Bool = region r {
     let l = Nil: List[Unit];
-    let d = List.toMutDeque(l, r);
+    let d = List.toMutDeque(r, l);
 
     l == MutDeque.toList(d)
 }
@@ -1900,7 +1900,7 @@ def toMutDeque01(): Bool = region r {
 @test
 def toMutDeque02(): Bool = region r {
     let l = 1 :: 2 :: Nil;
-    let d = List.toMutDeque(l, r);
+    let d = List.toMutDeque(r, l);
 
     l == MutDeque.toList(d)
 }
@@ -1908,7 +1908,7 @@ def toMutDeque02(): Bool = region r {
 @test
 def toMutDeque03(): Bool = region r {
     let l = 3 :: 1 :: 2 :: Nil;
-    let d = List.toMutDeque(l, r);
+    let d = List.toMutDeque(r, l);
 
     l == MutDeque.toList(d)
 }
@@ -1916,7 +1916,7 @@ def toMutDeque03(): Bool = region r {
 @test
 def toMutDeque04(): Bool = region r {
     let l = 'a' :: 'b' :: 'c' :: Nil;
-    let d = List.toMutDeque(l, r);
+    let d = List.toMutDeque(r, l);
 
     l == MutDeque.toList(d)
 }
@@ -2741,31 +2741,31 @@ def distinctWith09(): Bool =
 
     @test
     def shuffle01(): Bool & Impure =
-        let l: List[Int32] = Nil;
-        List.shuffle(Random.new(), l);
+        let l1: List[Int32] = Nil;
+        let l2 = List.shuffle(Random.new(), l1);
 
-        List.length(l) == 0 and List.toSet(l) == Set#{}
+        List.length(l2) == 0 and List.toSet(l2) == Set#{}
 
     @test
     def shuffle02(): Bool & Impure =
-        let l = 1 :: Nil;
-        List.shuffle(Random.new(), l);
+        let l1 = 1 :: Nil;
+        let l2 = List.shuffle(Random.new(), l1);
 
-        List.length(l) == 1 and List.toSet(l) == Set#{1}
+        List.length(l2) == 1 and List.toSet(l2) == Set#{1}
 
     @test
     def shuffle03(): Bool & Impure =
-        let l = 1 :: 2 :: 3 :: Nil;
-        List.shuffle(Random.new(), l);
+        let l1 = 1 :: 2 :: 3 :: Nil;
+        let l2 = List.shuffle(Random.new(), l1);
 
-        List.length(l) == 3 and List.toSet(l) == Set#{1, 2, 3}
+        List.length(l2) == 3 and List.toSet(l2) == Set#{1, 2, 3}
 
     @test
     def shuffle04(): Bool & Impure =
-        let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
-        List.shuffle(Random.new(), l);
+        let l1 = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
+        let l2 = List.shuffle(Random.new(), l1);
 
-        List.length(l) == 10 and List.toSet(l) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+        List.length(l2) == 10 and List.toSet(l2) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 
 
 }

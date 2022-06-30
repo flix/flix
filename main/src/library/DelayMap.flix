@@ -410,7 +410,7 @@ namespace DelayMap {
         use RedBlackTree.RedBlackTree.Node;
         def seqLoop(tt) = match tt {
             case Node(_, a, _, v, b) =>
-                let _ = seqLoop(a);
+                seqLoop(a);
                 let _ = force v;
                 seqLoop(b)
             case _ => ()
