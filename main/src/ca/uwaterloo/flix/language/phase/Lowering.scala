@@ -223,10 +223,10 @@ object Lowering {
     * Lowers the given `spec0`.
     */
   private def visitSpec(spec0: Spec)(implicit root: Root, flix: Flix): Spec = spec0 match {
-    case Spec(doc, ann, mod, tparams, fparams, declaredScheme, retTpe, eff, loc) =>
+    case Spec(doc, ann, mod, tparams, fparams, declaredScheme, retTpe, pur, eff, loc) =>
       val fs = fparams.map(visitFormalParam)
       val ds = visitScheme(declaredScheme)
-      Spec(doc, ann, mod, tparams, fs, ds, retTpe, eff, loc)
+      Spec(doc, ann, mod, tparams, fs, ds, retTpe, pur, eff, loc)
   }
 
   /**
