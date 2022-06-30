@@ -1306,6 +1306,7 @@ object Typer {
             // Don't need to handle unknown op because resolver would have caught this
             ops(op) match {
               case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, opTpe, expectedPur, expectedEff, _)) =>
+                println(opTpe) // MATT debug
                 for {
                   _ <- unifyFormalParams(expected = expectedFparams, actual = actualFparams)
                   (actualTconstrs, actualTpe, actualPur, actualEff) <- visitExp(body)
