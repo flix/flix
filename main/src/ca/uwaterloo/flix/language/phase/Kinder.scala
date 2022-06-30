@@ -712,7 +712,7 @@ object Kinder {
       }
 
     case ResolvedAst.Expression.FixpointConstraintSet(cs0, loc) =>
-      val csVal = traverse(cs0)(visitConstraint(_, kenv0, senv, taenv, root))
+      val csVal = traverse(cs0)(visitConstraint(_, kenv0, senv, taenv, henv0, root))
       mapN(csVal) {
         cs => KindedAst.Expression.FixpointConstraintSet(cs, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
