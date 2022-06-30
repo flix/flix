@@ -18,9 +18,8 @@ namespace Graph {
     ///
     /// Returns the transitive closure of the graph `g`.
     ///
-    pub def closure(g: m[(t, t)]): Set[(t, t)] & Impure with Foldable[m], Boxable[t] =
+    pub def closure(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
-
         let reachability = #{
             // All nodes can reach themselves.
             Reachable(n1, n1) :- Edge(n1, _).
@@ -34,6 +33,7 @@ namespace Graph {
         };
         let x = query edges, reachability select (src, dst) from Reachable(src, dst);
         Array.toSet(x)
+    } as & Pure                         // TODO : delete cast when query uses regions
 
     ///
     /// Returns the vertices that are reachable from the origin `o` in the graph `g`.

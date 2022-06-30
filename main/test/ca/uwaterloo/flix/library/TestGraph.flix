@@ -5,7 +5,7 @@ namespace TestGraph {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def closure01(): Bool & Impure =
+    def closure01(): Bool =
         let s1 = Set#{(1, 2)};
         let _graphString =
             " ┌─┐   ┌─┐ " ::
@@ -16,7 +16,7 @@ namespace TestGraph {
         Graph.closure(s1) == s2
 
     @test
-    def closure02(): Bool & Impure =
+    def closure02(): Bool =
         let s1 = Set#{(1, 2), (3, 4)};
         let _graphString =
             " ┌─┐   ┌─┐ " ::
@@ -30,7 +30,7 @@ namespace TestGraph {
         Graph.closure(s1) == s2
 
     @test
-    def closure03(): Bool & Impure =
+    def closure03(): Bool =
         let s1 = Set#{(1, 2), (2, 3)};
         let _graphString =
             " ┌─┐   ┌─┐ " ::
@@ -45,7 +45,7 @@ namespace TestGraph {
         Graph.closure(s1) == s2
 
     @test
-    def closure04(): Bool & Impure =
+    def closure04(): Bool =
         let s1 = Set#{(1, 2), (2, 3), (3, 4)};
         let _graphString =
             " ┌─┐   ┌─┐ " ::
