@@ -52,55 +52,6 @@ namespace Graph {
         };
         let x = query edges, reachability select dst from Reachable(dst);
         Array.toSet(x)
-    } as & Pure
-
-    ///
-    /// Returns the vertices that are unreachable from the origin `o` in the graph `g`.
-    ///
-    pub def unreachable(o: String, g: m[(t, t)]): Set[t] = ???
-
-    ///
-    /// Returns `true` if there is a path from `src` to `dst` in the graph `g`.
-    ///
-    pub def isConnected(src: String, dst: String, g: m[(t, t)]): Set[t] = ???
-
-    ///
-    /// Returns the strongly connected components of the graph `g`.
-    ///
-    pub def stronglyConnectedComponents(g: m[(t, t)]): List[Set[t]] = ???
-
-    ///
-    /// Returns the topological sort of the graph `g`.
-    ///
-    pub def topologicalSort(g: m[(t, t)]): Option[List[t]] = ???
-
-    ///
-    /// ...
-    ///
-    pub def isCyclic(g: m[(t, t)]): Bool = ???
-
-    ///
-    /// Returns the shortest distance from `src` to `dst` in the graph `g`.
-    ///
-    pub def distance(src: String, dst: String, g: m[(t, t)]): d /*with LatticeStuff[d]*/ = ???
-
-    ///
-    /// Returns the shortest distance from `o` to every other vertex in the graph `g`.
-    ///
-    pub def distances(o: String, g: m[(t, d, t)]): Map[String, d] /*with LatticeStuff[d]*/ = ???
-
-    ///
-    /// Returns the given graph `g` as a GraphViz dot string.
-    ///
-    pub def toGraphViz(g: m[(t, d, t)]): String = ???
-
-    ///
-    /// Returns the undirected graph of the given directed graph.
-    ///
-    pub def toUndirected(g: m[(t, t)]): m[(t, t)] = ???
-
-
-    /// Minimum spanning tree?
-
+    } as & Pure                         // TODO : delete cast when query uses regions
 
 }
