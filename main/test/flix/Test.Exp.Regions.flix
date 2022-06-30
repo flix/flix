@@ -1018,24 +1018,23 @@ namespace Test/Exp/Regions {
                 case _       => unreachable!()
             }
         }
-/*
 
     @test
     def testRegions1Region3NestedReferences03(): Bool =
         region r {
-            let m = new MutMap(r);
-            let l = new MutList(r);
-            let a = [new MutMap(r); 8] @ r;
-            MutMap.put!(1, 1, a[0]);
-            MutList.push!(a, l);
-            MutMap.put!(1, l, m);
-            match MutMap.get(1, m) {
-                case Some(k) => match MutList.pop!(k) {
-                    case Some(b) => MutMap.get(1, b[0]) == Some(1)
+            let m = ref new MutMap(r) @ r;
+            let l = ref new MutList(r) @ r;
+            let a = ref [ref new MutMap(r) @ r; 8] @ r @ r;
+            MutMap.put!(1, 1, deref (deref a)[0]);
+            MutList.push!(a, deref l);
+            MutMap.put!(1, l, deref m);
+            match MutMap.get(1, deref m) {
+                case Some(k) => match MutList.pop!(deref k) {
+                    case Some(b) => MutMap.get(1, deref (deref b)[0]) == Some(1)
                     case _       => unreachable!()
                 }
                 case _       => unreachable!()
             }
         }
-*/
+
 }
