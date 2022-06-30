@@ -122,15 +122,11 @@ namespace RedBlackTree {
     ///
     @Time(size(t)) @Space(Int32.log2(size(t)))
     pub def size(t: RedBlackTree[k, v]): Int32 =
-        if (useParallelEvaluation(t))
-            parCount(threads() - 1, (_, _) -> true, t) as & Pure
-        else {
-            def loop(tt, k) = match tt {
-                case Node(_, a, _, _, b) => loop(a, ks -> k(loop(b, ys -> ks + ys + 1)))
-                case _                   => k(0)
-            };
-            loop(t, identity)
-        }
+        def loop(tt, k) = match tt {
+            case Node(_, a, _, _, b) => loop(a, ks -> k(loop(b, ys -> ks + ys + 1)))
+            case _                   => k(0)
+        };
+        loop(t, identity)
 
     ///
     /// Returns the empty tree.
