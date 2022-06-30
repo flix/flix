@@ -946,8 +946,8 @@ namespace Test/Exp/Regions {
     @test
     def testRegions1Region2NestedReferences01(): Bool & Impure =
         region r {
-            let a = ref [ref new MutMap(r) @ r; 8] @ Static;
-            let l = ref new MutList(r) @ r;
+            let a = ref [ref new MutMap(r) @ Static; 8] @ Static;
+            let l = ref new MutList(r) @ Static;
             MutList.push!(1, deref l);
             MutMap.put!(1, l, deref (deref a)[0]);
             match MutMap.get(1, deref (deref a)[0]) {
@@ -955,16 +955,16 @@ namespace Test/Exp/Regions {
                 case _       => unreachable!()
             }
         }
-/*
+
     @test
-    def testRegions1Region2NestedReferences02(): Bool =
+    def testRegions1Region2NestedReferences02(): Bool & Impure =
         region r {
-            let l = new MutList(r);
-            let a = [new MutMap(r); 8] @ r;
-            MutMap.put!(1, 1, a[0]);
-            MutList.push!(a, l);
-            match MutList.pop!(l) {
-                case Some(b) => MutMap.get(1, b[0]) == Some(1)
+            let l = ref new MutList(r) @ Static;
+            let a = ref [ref new MutMap(r) @ r; 8] @ r @ r;
+            MutMap.put!(1, 1, deref (deref a)[0]);
+            MutList.push!(a, deref l);
+            match MutList.pop!(deref l) {
+                case Some(b) => MutMap.get(1, deref (deref b)[0]) == Some(1)
                 case _       => unreachable!()
             }
         }
@@ -972,17 +972,17 @@ namespace Test/Exp/Regions {
     @test
     def testRegions1Region2NestedReferences03(): Bool =
         region r {
-            let m = new MutMap(r);
-            let l = new MutList(r);
-            MutList.push!([1; 8] @ r, l);
-            MutMap.put!(1, l, m);
-            match MutMap.get(1, m) {
-                case Some(k) => match MutList.pop!(k) {
-                    case Some(a) => a[0] == 1
+            let m = ref new MutMap(r) @ r;
+            let l = ref new MutList(r) @ r;
+            MutList.push!(ref [1; 8] @ r @ r, deref l);
+            MutMap.put!(1, l, deref m);
+            match MutMap.get(1, deref m) {
+                case Some(k) => match MutList.pop!(deref k) {
+                    case Some(a) => (deref a)[0] == 1
                     case _       => unreachable!()
                 }
                 case _       => unreachable!()
             }
         }
-*/
+
 }
