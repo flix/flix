@@ -986,11 +986,11 @@ namespace Test/Exp/Regions {
         }
 
     @test
-    def testRegions1Region3NestedReferences01(): Bool =
+    def testRegions1Region3NestedReferences01(): Bool & Impure =
         region r {
-            let a = ref [ref new MutMap(r) @ r; 8] @ r;
-            let l = ref new MutList(r) @ r;
-            MutList.push!(ref [1; 8] @ r @ r, deref l);
+            let a = ref [ref new MutMap(r) @ Static; 8] @ r @ Static;
+            let l = ref new MutList(r) @ Static;
+            MutList.push!(ref [1; 8] @ r @ Static, deref l);
             MutMap.put!(1, l, deref (deref a)[0]);
             match MutMap.get(1, deref (deref a)[0]) {
                 case Some(k) => match MutList.pop!(deref k) {
@@ -1000,24 +1000,25 @@ namespace Test/Exp/Regions {
                 case _       => unreachable!()
             }
         }
-/*
+
     @test
-    def testRegions1Region3NestedReferences02(): Bool =
+    def testRegions1Region3NestedReferences02(): Bool & Impure =
         region r {
-            let l = new MutList(r);
-            let a = [new MutMap(r); 8] @ r;
-            let l1 = new MutList(r);
-            MutList.push!(1, l1);
-            MutMap.put!(1, l1, a[0]);
-            MutList.push!(a, l);
-            match MutList.pop!(l) {
-                case Some(b) => match MutMap.get(1, b[0]) {
-                    case Some(k) => MutList.pop!(k) == Some(1)
+            let l = ref new MutList(r) @ r;
+            let a = ref [ref new MutMap(r) @ r; 8] @ r @ r;
+            let l1 = ref new MutList(r) @ Static;
+            MutList.push!(1, deref l1);
+            MutMap.put!(1, l1, deref (deref a)[0]);
+            MutList.push!(a, deref l);
+            match MutList.pop!(deref l) {
+                case Some(b) => match MutMap.get(1, deref (deref b)[0]) {
+                    case Some(k) => MutList.pop!(deref k) == Some(1)
                     case _       => unreachable!()
                 }
                 case _       => unreachable!()
             }
         }
+/*
 
     @test
     def testRegions1Region3NestedReferences03(): Bool =
