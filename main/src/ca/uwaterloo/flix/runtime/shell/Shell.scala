@@ -62,6 +62,14 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
   private var isFirstCompile = true
 
   /**
+    * Remove any backslashes from escaped new lines from the given string
+    */
+  def unescapeLine(s: String) = {
+    val escapedLineEnd = raw"\\\n".r
+    escapedLineEnd.replaceAllIn(s, "\n")
+  }
+
+  /**
     * Continuously reads a line of input from the terminal, parses and executes it.
     */
   def loop(): Unit = {
@@ -78,6 +86,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     val reader = LineReaderBuilder
       .builder()
       .appName("flix")
+      .parser(new ShellParser)
       .terminal(terminal)
       .build()
     reader.setOpt(LineReader.Option.DISABLE_EVENT_EXPANSION)
@@ -92,7 +101,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
       // Repeatedly try to read an input from the line reader.
       while (!Thread.currentThread().isInterrupted) {
         // Try to read a command.
-        val line = reader.readLine(prompt)
+        val line = unescapeLine(reader.readLine(prompt))
 
         // Parse the command.
         val cmd = Command.parse(line)
