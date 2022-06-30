@@ -241,13 +241,13 @@ object CompletionProvider {
   }
 
   private def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec): String = spec match {
-    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _) =>
+    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, pur0, eff0, _) => // TODO use eff
       val args = fparams.map {
         fparam => s"${fparam.sym.text}: ${FormatType.formatWellKindedType(fparam.tpe)}"
       }
 
       val retTpe = FormatType.formatWellKindedType(retTpe0)
-      val eff = eff0 match {
+      val eff = pur0 match {
         case Type.Cst(TypeConstructor.True, _) => "Pure"
         case Type.Cst(TypeConstructor.False, _) => "Impure"
         case e => FormatType.formatWellKindedType(e)

@@ -939,7 +939,19 @@ object Type {
     *
     * Must not be used before kinding.
     */
-  def mkUnion(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.Union, loc), List(tpe1, tpe2), loc)
+  def mkUnion(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
+    case (Empty, t) => t
+    case (t, Empty) => t
+    case _ => mkApply(Type.Cst(TypeConstructor.Union, loc), List(tpe1, tpe2), loc)
+  }
+
+  /**
+    * Returns the union of all the given types.
+    */
+  def mkUnion(tpes: List[Type], loc: SourceLocation): Type = tpes match {
+    case Nil => Type.Empty
+    case (x :: xs) => mkUnion(x, mkUnion(xs, loc), loc)
+  }
 
   /**
     * Returns a Region type for the given region argument `r` with the given source location `loc`.
