@@ -572,7 +572,7 @@ namespace Nel {
     ///
     /// Returns `l` as a MutDeque.
     ///
-    pub def toMutDeque(l: Nel[a], r: Region[r]): MutDeque[a, r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], l: Nel[a]): MutDeque[a, r] \ Write(r) =
         let d = new MutDeque(r);
         foreach(x -> MutDeque.pushBack(x, d), l);
         d

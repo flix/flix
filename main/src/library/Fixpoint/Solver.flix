@@ -45,7 +45,7 @@ namespace Fixpoint {
     ///
     @Internal
     def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] & Impure with Order[v], ToString[v] =
-        let _ = notifyPreSolve(d, stf);
+        notifyPreSolve(d, stf);
         let compiler = cs ->
             compile(cs, stf) |>
             simplifyStmt |>
@@ -59,7 +59,7 @@ namespace Fixpoint {
                 compiler(cs) |> interpretWithDatabase(db) |> toModel
             case _ => bug!("Datalog normalization bug")
         };
-        let _ = notifyPostSolve(model);
+        notifyPostSolve(model);
         model
 
     ///
@@ -496,144 +496,203 @@ namespace Fixpoint {
     ///
     @Internal
     pub def facts0(p: PredSym, d: Datalog[Boxed]): Array[v, Static] with Boxable[v] =
-        factsOf(_ -> () as v, p, d) as & Pure
+        List.toArray(factsOf(_ -> () as v, p, d), Static) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
     pub def facts1(p: PredSym, d: Datalog[Boxed]): Array[v, Static] with Boxable[v] =
-        let f = terms -> unbox(terms[0]);
-        factsOf(f, p, d) as & Pure
+        let f = terms -> match terms {
+            case hd :: _ =>
+                unbox(hd)
+            case _ => unreachable!()
+        };
+       List.toArray(factsOf(f, p, d), Static) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
     pub def facts2(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2), Static] with Boxable[t1], Boxable[t2] =
-        let f = terms -> (unbox(terms[0]), unbox(terms[1]));
-        factsOf(f, p, d) as & Pure
+        let f = terms -> match terms {
+            case v0 :: v1 :: _ =>
+                (unbox(v0), unbox(v1))
+            case _ => unreachable!()
+        };
+        List.toArray(factsOf(f, p, d), Static) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
     pub def facts3(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3), Static] with Boxable[t1], Boxable[t2], Boxable[t3] =
-        let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]));
-        factsOf(f, p, d) as & Pure
+        let f = terms -> match terms {
+            case v0 :: v1 :: v2 :: _ =>
+                (unbox(v0), unbox(v1), unbox(v2))
+            case _ => unreachable!()
+        };
+        List.toArray(factsOf(f, p, d), Static) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
     pub def facts4(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4] =
-        let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]));
-        factsOf(f, p, d) as & Pure
+        let f = terms -> match terms {
+            case v0 :: v1 :: v2 :: v3 :: _ =>
+                (unbox(v0), unbox(v1), unbox(v2), unbox(v3))
+            case _ => unreachable!()
+        };
+        List.toArray(factsOf(f, p, d), Static) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
     pub def facts5(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5] =
-        let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]));
-        factsOf(f, p, d) as & Pure
+        let f = terms -> match terms {
+            case v0 :: v1 :: v2 :: v3 :: v4 :: _ =>
+                (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4))
+            case _ => unreachable!()
+        };
+        List.toArray(factsOf(f, p, d), Static) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
     pub def facts6(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6] =
-        let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]));
-        factsOf(f, p, d) as & Pure
+        let f = terms -> match terms {
+            case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: _ =>
+                (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5))
+            case _ => unreachable!()
+        };
+        List.toArray(factsOf(f, p, d), Static) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
     pub def facts7(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7] =
-        let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]));
-        factsOf(f, p, d) as & Pure
+        let f = terms -> match terms {
+            case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: _ =>
+                (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6))
+            case _ => unreachable!()
+        };
+        List.toArray(factsOf(f, p, d), Static) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
     pub def facts8(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8] =
-        let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]));
-        factsOf(f, p, d) as & Pure
+        let f = terms -> match terms {
+            case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: _ =>
+                (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7))
+            case _ => unreachable!()
+        };
+        List.toArray(factsOf(f, p, d), Static) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
     pub def facts9(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9] =
-        let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]), unbox(terms[8]));
-        factsOf(f, p, d) as & Pure
+        let f = terms -> match terms {
+            case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: _ =>
+                (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8))
+            case _ => unreachable!()
+        };
+        List.toArray(factsOf(f, p, d), Static) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
     pub def facts10(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10] =
-        let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]), unbox(terms[8]), unbox(terms[9]));
-        factsOf(f, p, d) as & Pure
+        let f = terms -> match terms {
+            case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: _ =>
+                (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9))
+            case _ => unreachable!()
+        };
+        List.toArray(factsOf(f, p, d), Static) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
     pub def facts11(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11] =
-        let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]), unbox(terms[8]), unbox(terms[9]), unbox(terms[10]));
-        factsOf(f, p, d) as & Pure
+        let f = terms -> match terms {
+            case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: v10 :: _ =>
+                (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10))
+            case _ => unreachable!()
+        };
+        List.toArray(factsOf(f, p, d), Static) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
     pub def facts12(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12] =
-        let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]), unbox(terms[8]), unbox(terms[9]), unbox(terms[10]), unbox(terms[11]));
-        factsOf(f, p, d) as & Pure
+        let f = terms -> match terms {
+            case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: v10 :: v11 :: _ =>
+                (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10), unbox(v11))
+            case _ => unreachable!()
+        };
+        List.toArray(factsOf(f, p, d), Static) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
     pub def facts13(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13] =
-        let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]), unbox(terms[8]), unbox(terms[9]), unbox(terms[10]), unbox(terms[11]), unbox(terms[12]));
-        factsOf(f, p, d) as & Pure
+        let f = terms -> match terms {
+            case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: v10 :: v11 :: v12 :: _ =>
+                (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10), unbox(v11), unbox(v12))
+            case _ => unreachable!()
+        };
+        List.toArray(factsOf(f, p, d), Static) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
     pub def facts14(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14] =
-        let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]), unbox(terms[8]), unbox(terms[9]), unbox(terms[10]), unbox(terms[11]), unbox(terms[12]), unbox(terms[13]));
-        factsOf(f, p, d) as & Pure
+        let f = terms -> match terms {
+            case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: v10 :: v11 :: v12 :: v13 :: _ =>
+                (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10), unbox(v11), unbox(v12), unbox(v13))
+            case _ => unreachable!()
+        };
+        List.toArray(factsOf(f, p, d), Static) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
     pub def facts15(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15), Static] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14], Boxable[t15] =
-        let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]), unbox(terms[5]), unbox(terms[6]), unbox(terms[7]), unbox(terms[8]), unbox(terms[9]), unbox(terms[10]), unbox(terms[11]), unbox(terms[12]), unbox(terms[13]), unbox(terms[14]));
-        factsOf(f, p, d) as & Pure
+        let f = terms -> match terms {
+            case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: v10 :: v11 :: v12 :: v13 :: v14 :: _ =>
+                (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10), unbox(v11), unbox(v12), unbox(v13), unbox(v14))
+            case _ => unreachable!()
+        };
+        List.toArray(factsOf(f, p, d), Static) as & Pure
 
     ///
     /// Returns an array of facts associated with the given predicate symbol `p` in the given Datalog program `d`.
     ///
-    def factsOf(f: Array[v, Static] -> t & ef, p: PredSym, d: Datalog[v]): Array[t, Static] & Impure = match d {
+    def factsOf(f: List[v] -> t & ef, p: PredSym, d: Datalog[v]): List[t] & Impure = match d {
         case Datalog(_, cs) =>
             let pFacts = new MutList(Static);
             Array.foreach(c -> match c {
                 case Constraint(HeadAtom(headPred, _, terms), Nil) =>
                     if (headPred == p)
-                        let vs = Array.map(headTermValue, terms);
+                        let vs = List.map(headTermValue, terms);
                         MutList.push!(f(vs), pFacts)
-                    else
-                        ()
+                    else ()
                 case _ => ()
             }, cs);
-            MutList.toArray(pFacts, Static)
+            pFacts |> MutList.toList
         case Model(db) =>
             use Fixpoint/Ram.toDenotation;
             let pFacts = new MutList(Static);
@@ -646,7 +705,7 @@ namespace Fixpoint {
             };
             Map.queryWith(query, ramSym -> rel -> match toDenotation(ramSym) {
                 case Denotation.Relational =>
-                    Map.foreach(match Tuple(tuple) -> _ -> MutList.push!(f(tuple), pFacts), rel)
+                    Map.foreach(match Tuple(tuple) -> _ -> MutList.push!(f(tuple |> Array.toList), pFacts), rel)
                 case Denotation.Latticenal(_) =>
                     Map.foreach(match Tuple(tuple) -> lat -> {
                         let vs = Array.init(i -> {
@@ -655,11 +714,11 @@ namespace Fixpoint {
                             else
                                 lat
                         }, Array.length(tuple) + 1, Static);
-                        MutList.push!(f(vs), pFacts)
+                        MutList.push!(f(vs |> Array.toList), pFacts)
                     }, rel)
             }, db);
-            MutList.toArray(pFacts, Static)
-        case Join(d1, d2) => Array.append(factsOf(f, p, d1), factsOf(f, p, d2))
+            pFacts |> MutList.toList
+        case Join(d1, d2) => List.append(factsOf(f, p, d1), factsOf(f, p, d2))
     }
 
     ///

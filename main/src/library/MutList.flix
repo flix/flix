@@ -743,8 +743,8 @@ namespace MutList {
     ///
     /// Returns `v` as a MutDeque.
     ///
-    pub def toMutDeque(v: MutList[a, r1], r: Region[r2]): MutDeque[a, r2] \ { Read(r1), Write(r2) }  =
-        let d = new MutDeque(r);
+    pub def toMutDeque(r1: Region[r1], v: MutList[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1) }  =
+        let d = new MutDeque(r1);
         MutList.foreach(x -> MutDeque.pushBack(x, d), v);
         d
 
