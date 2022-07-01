@@ -858,16 +858,19 @@ namespace TestReducible {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toArray01(): Bool & Impure =
-        Array.sameElements(Reducible.toArray(Nel(1, Nil), Static), [1])
+    def toArray01(): Bool = region r {
+        Array.sameElements(Reducible.toArray(r, Nel(1, Nil)), [1])
+    }
 
     @test
-    def toArray02(): Bool & Impure =
-        Array.sameElements(Reducible.toArray(Nel(1, 2 :: 3 :: Nil), Static), [1, 2, 3])
+    def toArray02(): Bool = region r {
+        Array.sameElements(Reducible.toArray(r, Nel(1, 2 :: 3 :: Nil)), [1, 2, 3])
+    }
 
     @test
-    def toArray03(): Bool & Impure =
-        Array.sameElements(Reducible.toArray(Nel(1, 1 :: 2 :: 3 :: Nil), Static), [1, 1, 2, 3])
+    def toArray03(): Bool = region r {
+        Array.sameElements(Reducible.toArray(r, Nel(1, 1 :: 2 :: 3 :: Nil)), [1, 1, 2, 3])
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////

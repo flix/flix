@@ -717,7 +717,7 @@ namespace Chain {
     /// Returns `c` as a mutable list.
     ///
     pub def toMutList(c: Chain[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
-        Array.toMutList(toArray(c, r2), r) // `Array.toMutList` respects the invariant of `MutList`
+        Array.toMutList(toArray(r2, c), r) // `Array.toMutList` respects the invariant of `MutList`
     }
 
     ///
@@ -738,7 +738,7 @@ namespace Chain {
     ///
     /// Returns the chain `c` as an array.
     ///
-    pub def toArray(c: Chain[a], r: Region[r]): Array[a, r] \ Write(r) = match head(c) {
+    pub def toArray(r: Region[r], c: Chain[a]): Array[a, r] \ Write(r) = match head(c) {
         case None    => [] @ r
         case Some(x) =>
             let arr = [x; length(c)] @ r;
@@ -785,7 +785,7 @@ namespace Chain {
     /// The sort implementation is a Quicksort.
     ///
     pub def sort(c: Chain[a]): Chain[a] with Order[a] = region r {
-        toArray(c, r) !> Array.sort! |> Array.toChain
+        toArray(r, c) !> Array.sort! |> Array.toChain
     }
 
     /// Sort chain `c` so that elements are ordered from low to high according to the `Order` instance
@@ -796,7 +796,7 @@ namespace Chain {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, c: Chain[a]): Chain[a] with Order[b] = region r {
-        toArray(c, r) !> Array.sortBy!(f) |> Array.toChain
+        toArray(r, c) !> Array.sortBy!(f) |> Array.toChain
     }
 
     ///
@@ -807,7 +807,7 @@ namespace Chain {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, c: Chain[a]): Chain[a] = region r {
-        toArray(c, r) !> Array.sortWith!(cmp) |> Array.toChain
+        toArray(r, c) !> Array.sortWith!(cmp) |> Array.toChain
     }
 
     ///
@@ -869,7 +869,7 @@ namespace Chain {
     /// Shuffles `c` using the Fisher–Yates shuffle.
     ///
     pub def shuffle(rnd: Random.Random, c: Chain[a]): Chain[a] & Impure = region r {
-        let arr = toArray(c, r);
+        let arr = toArray(r, c);
         Array.shuffle(rnd, arr);
         Array.toChain(arr)
     }

@@ -375,16 +375,17 @@ namespace MutDeque {
     ///
     /// Returns `d` as an array.
     ///
-    pub def toArray(d: MutDeque[a, r], r: Region[r]): Array[a, r] \ { Read(r), Write(r) } =
+    pub def toArray(r1: Region[r1], d: MutDeque[a, r2]): Array[a, r1] \ { Read(r2), Write(r1) } =
         let MutDeque(a, f, b) = d;
         let len = MutDeque.capacity(d);
-
         let i = deref f;
         let j = deref b;
-
-        if      (i == j) [] @ r
-        else if (i  < j) Array.slice(i, j, deref a)
-        else             Array.append(Array.slice(i, len, deref a), Array.slice(0, j, deref a))
+        if (i == j)
+            [] @ r1
+        else if (i  < j)
+            Array.copyOfRange(i, j, deref a, r1)
+        else
+            Array.append(Array.copyOfRange(i, len, deref a, r1), Array.copyOfRange(0, j, deref a, r1))
 
     ///
     /// Returns the concatenation of the string representation
@@ -431,7 +432,7 @@ namespace MutDeque {
     /// Shuffles a copy of `d` using the Fisher–Yates shuffle.
     ///
     pub def shuffle(rnd: Random.Random, d: MutDeque[a, r], r: Region[r]): MutDeque[a, r] & Impure =
-        let arr = toArray(d, r);
+        let arr = toArray(r, d);
         Array.shuffle(rnd, arr);
         Array.toMutDeque(r, arr)
 

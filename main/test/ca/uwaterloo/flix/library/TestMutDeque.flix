@@ -985,7 +985,7 @@ namespace TestMutDeque {
     def toArray01(): Bool = region r {
         let d = new MutDeque(r): MutDeque[Int32, _];
 
-        let a = MutDeque.toArray(d, r);
+        let a = MutDeque.toArray(r, d);
         Array.sameElements(a, [] @ r)
     }
 
@@ -994,7 +994,7 @@ namespace TestMutDeque {
         let d = new MutDeque(r);
         MutDeque.pushBack(1, d);
 
-        let a = MutDeque.toArray(d, r);
+        let a = MutDeque.toArray(r, d);
         Array.sameElements(a, [1] @ r)
     }
 
@@ -1004,7 +1004,7 @@ namespace TestMutDeque {
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
 
-        let a = MutDeque.toArray(d, r);
+        let a = MutDeque.toArray(r, d);
         Array.sameElements(a, [1, 2] @ r)
     }
 
@@ -1016,7 +1016,7 @@ namespace TestMutDeque {
         MutDeque.pushFront(3, d);
         MutDeque.pushFront(4, d);
 
-        let a = MutDeque.toArray(d, r);
+        let a = MutDeque.toArray(r, d);
         Array.sameElements(a, [4, 3, 1, 2] @ r)
     }
 

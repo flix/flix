@@ -777,7 +777,7 @@ namespace DelayMap {
         let _ = parallelForce(m);
         let DMap(t) = m;
         let f1 = (k, v) -> f(k, force v);
-        RedBlackTree.foreach(f1 as & Impure, t) as & ef
+        RedBlackTree.foreach(f1, t)
 
     ///
     /// Returns the sum of all values in `m`.
