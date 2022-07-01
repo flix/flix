@@ -115,7 +115,7 @@ namespace String {
     /// Returns the given string `s` as an array of characters.
     ///
     @Time(length(s)) @Space(length(s))
-    pub def toArray(s: String, r: Region[r]): Array[Char, r] \ Write(r) =
+    pub def toArray(r: Region[r], s: String): Array[Char, r] \ Write(r) =
         Array.init(i -> charAt(i, s), length(s), r)
 
     ///
@@ -161,7 +161,7 @@ namespace String {
     @Time(length(sep) * List.length(xs)) @Space(length(sep) * List.length(xs))
     pub def intercalate(sep: String, xs: List[String]): String = region r {
         let sb = new StringBuilder(r);
-        let arr = List.toArray(xs, r);
+        let arr = List.toArray(r, xs);
         StringBuilder.intercalate!(sep, arr, sb);
         StringBuilder.toString(sb)
     }
