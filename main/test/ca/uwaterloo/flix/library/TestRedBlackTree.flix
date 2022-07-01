@@ -251,8 +251,8 @@ namespace TestRedBlackTree {
     def mapWithKey06(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
-        let a = new MutList(static);
-        Map.mapWithKey((k, v) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(b, a); v }, m);
+        let a = new MutList(Static);
+        discard Map.mapWithKey((k, v) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
         MutList.toList(a) == range
 
     @test
@@ -369,6 +369,25 @@ namespace TestRedBlackTree {
         let l2 = List.range(-2000, 0);
         let Map(t) = List.zip(l1, l2) |> List.toMap;
         RedBlackTree.parForall(threads() - 1, (k, v) -> k > v, t)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foreach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foreach01(): Bool & Impure =
+        let r = ref 21;
+        let Map(t) = Map#{};
+        RedBlackTree.foreach((k, _) -> r := k, t);
+        21 == deref r
+
+    @test
+    def foreach02(): Bool & Impure =
+        let r = ref 21;
+        let Map(t) = Map#{1 => "Hello World!"};
+        RedBlackTree.foreach((k, _) -> r := k, t);
+        1 == deref r
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -688,5 +707,41 @@ namespace TestRedBlackTree {
     def joinWith04(): Bool =
         let Map(t) = Map#{0 => "1", 1 => "2", 2 => "2"};
         RedBlackTree.joinWith((k, v) -> "${k} => ${v}", ", ", t) == "0 => 1, 1 => 2, 2 => 2"
+
+    /////////////////////////////////////////////////////////////////////////////
+    // filter                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def filter01(): Bool =
+        RedBlackTree.filter(x -> x > 1, RedBlackTree.empty(): RedBlackTree.RedBlackTree[Int32, Int32]) == RedBlackTree.empty()
+
+    @test
+    def filter02(): Bool =
+        RedBlackTree.filter(x -> x > 1, RedBlackTree.empty() |> RedBlackTree.insert(1, 1)) == RedBlackTree.empty()
+
+    @test
+    def filter03(): Bool =
+        RedBlackTree.filter(x -> x > 1, RedBlackTree.empty() |> RedBlackTree.insert(1, 1) |> RedBlackTree.insert(2, 2) |> RedBlackTree.insert(3, 3) |> RedBlackTree.insert(4, 4))
+            |> RedBlackTree.toList |> List.sort == (2, 2) :: (3, 3) :: (4, 4) :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // filter                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def filterMap01(): Bool =
+        RedBlackTree.filterMap(x -> if (x > 1) Some("${x}") else None, RedBlackTree.empty(): RedBlackTree.RedBlackTree[Int32, Int32])
+            == RedBlackTree.empty()
+
+    @test
+    def filterMap02(): Bool =
+        RedBlackTree.filterMap(x -> if (x > 1) Some("${x}") else None, RedBlackTree.empty() |> RedBlackTree.insert(1, 1))
+            == RedBlackTree.empty()
+
+    @test
+    def filterMap03(): Bool =
+        RedBlackTree.filterMap(x -> if (x > 1) Some("${x}") else None, RedBlackTree.empty() |> RedBlackTree.insert(1, 1) |> RedBlackTree.insert(2, 2) |> RedBlackTree.insert(3, 3) |> RedBlackTree.insert(4, 4))
+            |> RedBlackTree.toList |> List.sort == (2, "2") :: (3, "3") :: (4, "4") :: Nil
 
 }

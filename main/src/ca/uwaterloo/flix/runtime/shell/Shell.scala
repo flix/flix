@@ -17,43 +17,34 @@
 package ca.uwaterloo.flix.runtime.shell
 
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.ast.Ast
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.fmt.Audience
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util._
-import org.jline.reader.{EndOfFileException, LineReaderBuilder, UserInterruptException}
+
+import org.jline.reader.{EndOfFileException, LineReader, LineReaderBuilder, UserInterruptException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
 import java.nio.file._
+import java.io.File
 import java.util.concurrent.Executors
 import java.util.logging.{Level, Logger}
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
-class Shell(initialPaths: List[Path], options: Options) {
+class Shell(sourceProvider: SourceProvider, options: Options) {
 
+  /**
+    * The audience is always external.
+    */
   private implicit val audience: Audience = Audience.External
 
   /**
-    * The number of warmup iterations.
+    * The mutable list of source code fragments.
     */
-  private val WarmupIterations = 80
-
-  /**
-    * The executor service.
-    */
-  private val executorService = Executors.newSingleThreadExecutor()
-
-  /**
-    * The mutable set of paths to load.
-    */
-  private val sourcePaths = mutable.Set.empty[Path] ++ initialPaths
-
-  /**
-    * The set of changed sources.
-    */
-  private var changeSet: Set[Ast.Input] = Set.empty
+  private val fragments = mutable.Stack.empty[String]
 
   /**
     * The Flix instance (the same instance is used for incremental compilation).
@@ -61,14 +52,14 @@ class Shell(initialPaths: List[Path], options: Options) {
   private val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
 
   /**
-    * The current compilation result (initialized on startup).
+    * The source files currently loaded.
     */
-  private var compilationResult: CompilationResult = _
+  private val sourceFiles = new SourceFiles(sourceProvider)
 
   /**
-    * The current watcher (if any).
+    * Is this the first compile
     */
-  private var watcher: WatcherThread = _
+  private var isFirstCompile = true
 
   /**
     * Continuously reads a line of input from the terminal, parses and executes it.
@@ -89,6 +80,7 @@ class Shell(initialPaths: List[Path], options: Options) {
       .appName("flix")
       .terminal(terminal)
       .build()
+    reader.setOpt(LineReader.Option.DISABLE_EVENT_EXPANSION)
 
     // Print the welcome banner.
     printWelcomeBanner()
@@ -130,7 +122,7 @@ class Shell(initialPaths: List[Path], options: Options) {
       """     __   _   _
         |    / _| | | (_)            Welcome to Flix __VERSION__
         |   | |_  | |  _  __  __
-        |   |  _| | | | | \ \/ /     Enter a command and hit return.
+        |   |  _| | | | | \ \/ /     Enter an expression to have it evaluated.
         |   | |   | | | |  >  <      Type ':help' for more information.
         |   |_|   |_| |_| /_/\_\     Type ':quit' or press 'ctrl + d' to exit.
       """.stripMargin
@@ -149,120 +141,28 @@ class Shell(initialPaths: List[Path], options: Options) {
     */
   private def execute(cmd: Command)(implicit terminal: Terminal): Unit = cmd match {
     case Command.Nop => // nop
-    case Command.Run => execRun()
     case Command.Reload => execReload()
-    case Command.Warmup => execWarmup()
-    case Command.Watch => execWatch()
-    case Command.Unwatch => execUnwatch()
     case Command.Quit => execQuit()
     case Command.Help => execHelp()
     case Command.Praise => execPraise()
+    case Command.Eval(s) => execEval(s)
     case Command.Unknown(s) => execUnknown(s)
-  }
-
-  /**
-    * Executes the eval command.
-    */
-  private def execRun()(implicit terminal: Terminal): Unit = {
-    // Recompile the program.
-    execReload()
-
-    // Evaluate the main function and get the result.
-    this.compilationResult.getMain match {
-      case None => terminal.writer().println("No main function to run.")
-      case Some(main) => main(Array.empty)
-    }
   }
 
   /**
     * Reloads every source path.
     */
-  private def execReload()(implicit terminal: Terminal): Unit = {
-    // Instantiate a fresh flix instance.
-    this.flix.setOptions(options)
+  private def execReload()(implicit terminal: Terminal): Validation[CompilationResult, CompilationMessage] = {
 
-    // Add each path to Flix.
-    for (path <- this.sourcePaths) {
-      val ext = path.toFile.getName.split('.').last
-      ext match {
-        case "flix" => flix.addSourcePath(path)
-        case "fpkg" => flix.addSourcePath(path)
-        case "jar" => flix.addJar(path)
-        case _ => throw new IllegalStateException(s"Unrecognized file extension: '$ext'.")
-      }
-    }
+    // Scan the disk to find changes, and add source to the flix object
+    sourceFiles.addSourcesAndPackages(flix)
+    
+    // Remove any previous definitions, as they may no longer be valid against the new source
+    clearFragments()
 
-    // Compute the TypedAst and store it.
-    this.flix.check() match {
-      case Validation.Success(root) =>
-
-        // Generate code.
-        flix.codeGen(root) match {
-          case Validation.Success(m) =>
-            compilationResult = m
-          case Validation.Failure(errors) =>
-            for (error <- errors) {
-              terminal.writer().print(error)
-            }
-        }
-      case Validation.Failure(errors) =>
-        terminal.writer().println()
-        flix.mkMessages(errors)
-          .foreach(terminal.writer().print)
-        terminal.writer().println()
-        terminal.writer().print(prompt)
-        terminal.writer().flush()
-    }
-
-  }
-
-  /**
-    * Warms up the compiler by running it multiple times.
-    */
-  private def execWarmup()(implicit terminal: Terminal): Unit = {
-    val elapsed = mutable.ListBuffer.empty[Duration]
-    for (_ <- 0 until WarmupIterations) {
-      val t = System.nanoTime()
-      execReload()
-      terminal.writer().print(".")
-      terminal.writer().flush()
-      val e = System.nanoTime()
-      elapsed += new Duration(e - t)
-    }
-    terminal.writer().println()
-    terminal.writer().println(s"Minimum = ${Duration.min(elapsed).fmt}, Maximum = ${Duration.max(elapsed).fmt}, Average = ${Duration.avg(elapsed).fmt})")
-  }
-
-  /**
-    * Watches source paths for changes.
-    */
-  private def execWatch()(implicit terminal: Terminal): Unit = {
-    // Check if the watcher is already initialized.
-    if (this.watcher != null) {
-      terminal.writer().println("Already watching for changes.")
-      return
-    }
-
-    // Compute the set of directories to watch.
-    val directories = sourcePaths.map(_.toAbsolutePath.getParent).toList
-
-    // Print debugging information.
-    terminal.writer().println("Watching Directories:")
-    for (directory <- directories) {
-      terminal.writer().println(s"  $directory")
-    }
-
-    this.watcher = new WatcherThread(directories)
-    this.watcher.start()
-  }
-
-  /**
-    * Unwatches source paths for changes.
-    */
-  private def execUnwatch()(implicit terminal: Terminal): Unit = {
-    this.watcher.interrupt()
-    this.watcher = null
-    terminal.writer().println("No longer watching for changes.")
+    val result = compile(progress = isFirstCompile)
+    isFirstCompile = false
+    result
   }
 
   /**
@@ -278,16 +178,11 @@ class Shell(initialPaths: List[Path], options: Options) {
   private def execHelp()(implicit terminal: Terminal): Unit = {
     val w = terminal.writer()
 
-    w.println("  Command       Arguments         Purpose")
+    w.println("  Command       Purpose")
     w.println()
-    w.println("  :run                            Runs the main function.")
-    w.println("  :hole         <fqn>             Shows the hole context of <fqn>.")
-    w.println("  :reload :r                      Recompiles every source file.")
-    w.println("  :warmup                         Warms up the compiler by running it multiple times.")
-    w.println("  :watch :w                       Watches all source files for changes.")
-    w.println("  :unwatch                        Unwatches all source files for changes.")
-    w.println("  :quit :q                        Terminates the Flix shell.")
-    w.println("  :help :h :?                     Shows this helpful information.")
+    w.println("  :reload :r    Recompiles every source file.")
+    w.println("  :quit :q      Terminates the Flix shell.")
+    w.println("  :help :h :?   Shows this helpful information.")
     w.println()
   }
 
@@ -300,81 +195,112 @@ class Shell(initialPaths: List[Path], options: Options) {
   }
 
   /**
-    * Reports unknown command.
+    * Evaluates the given source code.
     */
-  private def execUnknown(s: String)(implicit terminal: Terminal): Unit = {
-    terminal.writer().println(s"Unknown command '$s'. Try `:run` or `:help'.")
+  private def execEval(s: String)(implicit terminal: Terminal): Unit = {
+    val w = terminal.writer()
+
+    //
+    // Try to determine the category of the source line.
+    //
+    Category.categoryOf(s) match {
+      case Category.Decl =>
+        // The input is a declaration. Push it on the stack of fragments.
+        fragments.push(s)
+
+        // The name of the fragment is $n where n is the stack offset.
+        val name = "$" + fragments.length
+
+        // Add the source code fragment to Flix.
+        flix.addSourceCode(name, s)
+
+        // And try to compile!
+        compile(progress = false) match {
+          case Validation.Success(_) =>
+            // Compilation succeeded.
+            w.println("Ok.")
+          case Validation.Failure(_) =>
+            // Compilation failed. Ignore the last fragment.
+            fragments.pop()
+            flix.remSourceCode(name)
+            w.println("Error: Declaration ignored due to previous error(s).")
+        }
+
+      case Category.Expr =>
+        // The input is an expression. Wrap it in main and run it.
+
+        // The name of the generated main function.
+        val main = Symbol.mkDefnSym("shell1")
+
+        val src =
+          s"""def ${main.name}(): Unit & Impure =
+             |println($s)
+             |""".stripMargin
+        flix.addSourceCode("<shell>", src)
+        run(main)
+        // Remove immediately so it doesn't confuse subsequent compilations (e.g. reloads or declarations)
+        flix.remSourceCode("<shell>")
+
+      case Category.Unknown =>
+        // The input is not recognized. Output an error message.
+        w.println("Error: Input cannot be parsed.")
+    }
   }
 
   /**
-    * A thread to watch over changes in a collection of directories.
+    * Removes all code fragments, restoring the REPL to an initial state
     */
-  class WatcherThread(paths: List[Path])(implicit terminal: Terminal) extends Thread {
-
-    /**
-      * The minimum amount of time between runs of the compiler.
-      */
-    private val Delay: Long = 1000 * 1000 * 1000
-
-    // Initialize a new watcher service.
-    val watchService: WatchService = FileSystems.getDefault.newWatchService
-
-    // Register each directory.
-    for (path <- paths) {
-      if (Files.isDirectory(path)) {
-        path.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY)
-      }
-    }
-
-    override def run(): Unit = try {
-      // Record the last timestamp of a change.
-      var lastChanged = System.nanoTime()
-
-      // Loop until interrupted.
-      while (!Thread.currentThread().isInterrupted) {
-        // Wait for a set of events.
-        val watchKey = watchService.take()
-        // Iterate through each event.
-        val changed = mutable.ListBuffer.empty[Path]
-        for (event <- watchKey.pollEvents().asScala) {
-          // Check if a file with ".flix" extension changed.
-          val changedPath = event.context().asInstanceOf[Path]
-          if (changedPath.toString.endsWith(".flix")) {
-            changed += changedPath
-          }
-        }
-
-        if (changed.nonEmpty) {
-          // Update the change set.
-          changeSet = changed.map(Ast.Input.TxtFile).toSet
-
-          // Print information to the user.
-          terminal.writer().println()
-          terminal.writer().println(s"Recompiling. File(s) changed: ${changed.mkString(", ")}")
-          terminal.writer().print(prompt)
-          terminal.writer().flush()
-
-          // Check if sufficient time has passed since the last compilation.
-          val currentTime = System.nanoTime()
-          if ((currentTime - lastChanged) >= Delay) {
-            lastChanged = currentTime
-            // Allow a short delay before running the compiler.
-            Thread.sleep(50)
-            executorService.submit(new Runnable {
-              def run(): Unit = execReload()
-            })
-          }
-
-        }
-
-        // Reset the watch key.
-        watchKey.reset()
-      }
-    } catch {
-      case _: InterruptedException => // nop, shutdown.
-    }
-
+  private def clearFragments() = {
+    for(i <- 0 to fragments.length)
+      flix.remSourceCode("$" + i)
+    fragments.clear()
   }
 
-}
+  /**
+    * Reports unknown command.
+    */
+  private def execUnknown(s: String)(implicit terminal: Terminal): Unit = {
+    terminal.writer().println(s"Unknown command '$s'. Try `:help'.")
+  }
 
+  /**
+    * Compiles the current files and packages (first time from scratch, subsequent times incrementally)
+    */
+  private def compile(entryPoint: Option[Symbol.DefnSym] = None, progress: Boolean = true)(implicit terminal: Terminal): Validation[CompilationResult, CompilationMessage] = {
+
+    // Set the main entry point if there is one (i.e. if the programmer wrote an expression)
+    this.flix.setOptions(options.copy(entryPoint = entryPoint, progress = progress))
+
+    val result = this.flix.compile()
+    result match {
+      case Validation.Success(result) => // Compilation successful, no-op
+
+      case Validation.Failure(errors) =>
+        for (msg <- flix.mkMessages(errors)) {
+          terminal.writer().print(msg)
+        }
+        terminal.writer().println()
+    }
+
+    result
+  }
+
+  /**
+    * Run the given main function
+    */
+  private def run(main: Symbol.DefnSym)(implicit terminal: Terminal): Unit = {
+    // Recompile the program.
+    compile(entryPoint = Some(main), progress = false) match {
+      case Validation.Success(result) =>
+        result.getMain match {
+          case Some(m) => 
+            // Evaluate the main function
+            m(Array.empty)
+          
+          case None =>
+        }
+
+      case Validation.Failure(_) =>
+    }
+  }
+}

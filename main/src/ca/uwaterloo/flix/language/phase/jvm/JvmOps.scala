@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, MonoType, Name, Rigidity, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, MonoType, Name, Rigidity, RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.Finalize
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -644,6 +644,9 @@ object JvmOps {
       case Expression.PutStaticField(_, exp, _, _) =>
         visitExp(exp)
 
+      case Expression.NewObject(_, _, _) =>
+        Set.empty
+
       case Expression.NewChannel(exp, _, _) => visitExp(exp)
 
       case Expression.GetChannel(exp, _, _) => visitExp(exp)
@@ -737,7 +740,7 @@ object JvmOps {
       enum0.cases.foldLeft(Set.empty[TagInfo]) {
         case (sacc, (_, Case(enumSym, tagName, uninstantiatedTagType, _))) =>
           // TODO: Magnus: It would be nice if this information could be stored somewhere...
-          val subst = Unification.unifyTypes(hackMonoType2Type(enum0.tpeDeprecated), hackMonoType2Type(tpe)).get
+          val subst = Unification.unifyTypes(hackMonoType2Type(enum0.tpeDeprecated), hackMonoType2Type(tpe), RigidityEnv.empty).get
           val tagType = subst(hackMonoType2Type(uninstantiatedTagType))
 
           sacc + TagInfo(enumSym, tagName.name, args, tpe, hackType2MonoType(tagType))
@@ -759,11 +762,11 @@ object JvmOps {
     case MonoType.Int64 => Type.Int64
     case MonoType.BigInt => Type.BigInt
     case MonoType.Str => Type.Str
-    case MonoType.Array(elm) => Type.mkScopedArray(hackMonoType2Type(elm), Type.Impure, SourceLocation.Unknown)
+    case MonoType.Array(elm) => Type.mkArray(hackMonoType2Type(elm), Type.Impure, SourceLocation.Unknown)
     case MonoType.Lazy(tpe) => Type.mkLazy(hackMonoType2Type(tpe), SourceLocation.Unknown)
     case MonoType.Channel(elm) => Type.mkChannel(hackMonoType2Type(elm), SourceLocation.Unknown)
     case MonoType.Native(clazz) => Type.mkNative(clazz, SourceLocation.Unknown)
-    case MonoType.Ref(elm) => Type.mkScopedRef(hackMonoType2Type(elm), Type.False, SourceLocation.Unknown)
+    case MonoType.Ref(elm) => Type.mkRef(hackMonoType2Type(elm), Type.False, SourceLocation.Unknown)
     case MonoType.Arrow(targs, tresult) => Type.mkPureCurriedArrow(targs map hackMonoType2Type, hackMonoType2Type(tresult), SourceLocation.Unknown)
     case MonoType.Enum(sym, args) => Type.mkEnum(sym, args.map(hackMonoType2Type), SourceLocation.Unknown)
     case MonoType.Relation(attr) => Type.mkRelation(attr.map(hackMonoType2Type), SourceLocation.Unknown)
@@ -843,11 +846,12 @@ object JvmOps {
     }
 
   /**
-    * Returns the set of continuation types in `types` without searching recursively.
+    * Returns the set of function types in `types` without searching recursively.
     */
-  def getContinuationsOf(types: Iterable[MonoType])(implicit flix: Flix, root: Root): Set[BackendObjType.Continuation] =
-    types.foldLeft(Set.empty[BackendObjType.Continuation]) {
-      case (acc, MonoType.Arrow(_, result)) => acc + BackendObjType.Continuation(BackendType.toErasedBackendType(result))
+  def getArrowsOf(types: Iterable[MonoType])(implicit flix: Flix, root: Root): Set[BackendObjType.Arrow] =
+    types.foldLeft(Set.empty[BackendObjType.Arrow]) {
+      case (acc, MonoType.Arrow(args, result)) =>
+        acc + BackendObjType.Arrow(args.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(result))
       case (acc, _) => acc
     }
 
@@ -1016,6 +1020,8 @@ object JvmOps {
 
       case Expression.PutStaticField(_, exp, _, _) => visitExp(exp)
 
+      case Expression.NewObject(_, _, _) => Set.empty
+
       case Expression.NewChannel(exp, _, _) => visitExp(exp)
 
       case Expression.GetChannel(exp, _, _) => visitExp(exp)
@@ -1129,6 +1135,221 @@ object JvmOps {
       case MonoType.Lattice(attr) => attr.flatMap(nestedTypesOf).toSet + tpe
       case MonoType.Native(_) => Set(tpe)
       case MonoType.Var(_) => Set.empty
+    }
+  }
+
+  /**
+    * Returns the set of all anonymous classes (NewObjects) in the given AST `root`.
+    */
+  def anonClassesOf(root: Root)(implicit flix: Flix): Set[Expression.NewObject] = {
+    /**
+      * Returns the set of anonymous classes which occur in the given definition `defn0`.
+      */
+    def visitDefn(defn: Def): Set[Expression.NewObject] = {
+      visitExp(defn.exp)
+    }
+
+    /**
+      * Returns the set of anonymouse classes which occur in the given expression `exp0`.
+      */
+    def visitExp(exp0: Expression): Set[Expression.NewObject] = (exp0 match {
+      case Expression.Unit(_) => Set.empty
+
+      case Expression.Null(_, _) => Set.empty
+
+      case Expression.True(_) => Set.empty
+
+      case Expression.False(_) => Set.empty
+
+      case Expression.Char(_, _) => Set.empty
+
+      case Expression.Float32(_, _) => Set.empty
+
+      case Expression.Float64(_, _) => Set.empty
+
+      case Expression.Int8(_, _) => Set.empty
+
+      case Expression.Int16(_, _) => Set.empty
+
+      case Expression.Int32(_, _) => Set.empty
+
+      case Expression.Int64(_, _) => Set.empty
+
+      case Expression.BigInt(_, _) => Set.empty
+
+      case Expression.Str(_, _) => Set.empty
+
+      case Expression.Var(_, _, _) => Set.empty
+
+      case Expression.Closure(_, closureArgs, _, _, _) => closureArgs.foldLeft(Set.empty[Expression.NewObject]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplyClo(exp, args, _, _) => args.foldLeft(visitExp(exp)) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplyDef(_, args, _, _) => args.foldLeft(Set.empty[Expression.NewObject]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplyCloTail(exp, args, _, _) => args.foldLeft(visitExp(exp)) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplyDefTail(_, args, _, _) => args.foldLeft(Set.empty[Expression.NewObject]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplySelfTail(_, _, args, _, _) => args.foldLeft(Set.empty[Expression.NewObject]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.Unary(_, _, exp, _, _) =>
+        visitExp(exp)
+
+      case Expression.Binary(_, _, exp1, exp2, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+      case Expression.Branch(exp, branches, _, _) => branches.foldLeft(visitExp(exp)) {
+        case (sacc, (_, e)) => sacc ++ visitExp(e)
+      }
+
+      case Expression.JumpTo(_, _, _) => Set.empty
+
+      case Expression.Let(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.Is(_, _, exp, _) => visitExp(exp)
+
+      case Expression.Tag(_, _, exp, _, _) => visitExp(exp)
+
+      case Expression.Untag(_, _, exp, _, _) => visitExp(exp)
+
+      case Expression.Index(base, _, _, _) => visitExp(base)
+
+      case Expression.Tuple(elms, _, _) => elms.foldLeft(Set.empty[Expression.NewObject]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.RecordEmpty(_, _) => Set.empty
+
+      case Expression.RecordSelect(exp, _, _, _) => visitExp(exp)
+
+      case Expression.RecordExtend(_, value, rest, _, _) => visitExp(value) ++ visitExp(rest)
+
+      case Expression.RecordRestrict(_, rest, _, _) => visitExp(rest)
+
+      case Expression.ArrayLit(elms, _, _) => elms.foldLeft(Set.empty[Expression.NewObject]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ArrayNew(elm, len, _, _) => visitExp(elm) ++ visitExp(len)
+
+      case Expression.ArrayLoad(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.ArrayStore(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+      case Expression.ArrayLength(exp, _, _) => visitExp(exp)
+
+      case Expression.ArraySlice(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+      case Expression.Ref(exp, _, _) => visitExp(exp)
+
+      case Expression.Deref(exp, _, _) => visitExp(exp)
+
+      case Expression.Assign(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.Cast(exp, _, _) => visitExp(exp)
+
+      case Expression.TryCatch(exp, rules, _, _) => rules.foldLeft(visitExp(exp)) {
+        case (sacc, CatchRule(_, _, body)) => sacc ++ visitExp(body)
+      }
+
+      case Expression.InvokeConstructor(_, args, _, _) => args.foldLeft(Set.empty[Expression.NewObject]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.InvokeMethod(_, exp, args, _, _) =>
+        args.foldLeft(visitExp(exp)) {
+          case (sacc, e) => sacc ++ visitExp(e)
+        }
+
+      case Expression.InvokeStaticMethod(_, args, _, _) => args.foldLeft(Set.empty[Expression.NewObject]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.GetField(_, exp, _, _) => visitExp(exp)
+
+      case Expression.PutField(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.GetStaticField(_, _, _) => Set.empty
+
+      case Expression.PutStaticField(_, exp, _, _) => visitExp(exp)
+
+      case obj: Expression.NewObject => Set(obj)
+
+      case Expression.NewChannel(exp, _, _) => visitExp(exp)
+
+      case Expression.GetChannel(exp, _, _) => visitExp(exp)
+
+      case Expression.PutChannel(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.SelectChannel(rules, default, _, _) =>
+        val rs = rules.foldLeft(Set.empty[Expression.NewObject])((old, rule) => old ++ visitExp(rule.chan) ++ visitExp(rule.exp))
+        val d = default.map(visitExp).getOrElse(Set.empty)
+        rs ++ d
+
+      case Expression.Spawn(exp, _, _) => visitExp(exp)
+
+      case Expression.Lazy(exp, _, _) => visitExp(exp)
+
+      case Expression.Force(exp, _, _) => visitExp(exp)
+
+      case Expression.HoleError(_, _, _) => Set.empty
+
+      case Expression.MatchError(_, _) => Set.empty
+
+      case Expression.BoxBool(exp, _) => visitExp(exp)
+
+      case Expression.BoxInt8(exp, _) => visitExp(exp)
+
+      case Expression.BoxInt16(exp, _) => visitExp(exp)
+
+      case Expression.BoxInt32(exp, _) => visitExp(exp)
+
+      case Expression.BoxInt64(exp, _) => visitExp(exp)
+
+      case Expression.BoxChar(exp, _) => visitExp(exp)
+
+      case Expression.BoxFloat32(exp, _) => visitExp(exp)
+
+      case Expression.BoxFloat64(exp, _) => visitExp(exp)
+
+      case Expression.UnboxBool(exp, _) => visitExp(exp)
+
+      case Expression.UnboxInt8(exp, _) => visitExp(exp)
+
+      case Expression.UnboxInt16(exp, _) => visitExp(exp)
+
+      case Expression.UnboxInt32(exp, _) => visitExp(exp)
+
+      case Expression.UnboxInt64(exp, _) => visitExp(exp)
+
+      case Expression.UnboxChar(exp, _) => visitExp(exp)
+
+      case Expression.UnboxFloat32(exp, _) => visitExp(exp)
+
+      case Expression.UnboxFloat64(exp, _) => visitExp(exp)
+    })
+
+    // Visit every definition.
+    root.defs.foldLeft(Set.empty[Expression.NewObject]) {
+      case (sacc, (_, defn)) => sacc ++ visitDefn(defn)
     }
   }
 

@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
@@ -368,7 +368,7 @@ object Redundancy {
       val env1 = env0 + sym
 
       // Visit the expression under the extended environment.
-      val innerUsed = visitExp(exp, env0, rc)
+      val innerUsed = visitExp(exp, env1, rc)
 
       // Check for shadowing.
       val shadowedVar = shadowing(sym, env0)
@@ -390,15 +390,19 @@ object Redundancy {
       val us2 = visitExp(exp2, env0, rc)
 
       // Check for useless pure expressions.
-      if (exp1.eff == Type.Pure)
-        (us1 ++ us2) + UselessExpression(exp1.loc)
-      else
+      if (isUnderAppliedFunction(exp1)) {
+        // `isUnderAppliedFunction` implies `isUselessExpression` so this must be checked first.
+        (us1 ++ us2) + UnderAppliedFunction(exp1.tpe, exp1.loc)
+      } else if (isUselessExpression(exp1)) {
+        (us1 ++ us2) + UselessExpression(exp1.tpe, exp1.loc)
+      } else {
         us1 ++ us2
+      }
 
     case Expression.Discard(exp, _, _) =>
       val us = visitExp(exp, env0, rc)
 
-      if (exp.eff == Type.Pure)
+      if (exp.pur == Type.Pure)
         us + DiscardedPureValue(exp.loc)
       else if (exp.tpe == Type.Unit)
         us + RedundantDiscard(exp.loc)
@@ -530,7 +534,7 @@ object Redundancy {
       declaredEff match {
         case None => visitExp(exp, env0, rc)
         case Some(eff) =>
-          (eff, exp.eff) match {
+          (eff, exp.pur) match {
             case (Type.Pure, Type.Pure) =>
               visitExp(exp, env0, rc) + RedundantPurityCast(loc)
             case (tvar1: Type.KindedVar, tvar2: Type.KindedVar) if tvar1.sym == tvar2.sym =>
@@ -571,6 +575,9 @@ object Redundancy {
 
     case Expression.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
+
+    case Expression.NewObject(_, _, _, _) =>
+      Used.empty
 
     case Expression.NewChannel(exp, _, _, _) =>
       visitExp(exp, env0, rc)
@@ -638,10 +645,10 @@ object Redundancy {
     case Expression.FixpointFilter(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.FixpointProjectIn(exp, _, _, _, _) =>
+    case Expression.FixpointInject(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.FixpointProjectOut(_, exp, _, _, _) =>
+    case Expression.FixpointProject(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
     case Expression.Reify(_, _, _, _) =>
@@ -748,6 +755,45 @@ object Redundancy {
         case (acc, varSym) => acc ++ Used.of(varSym)
       }
   }
+
+  /**
+    * Returns true if the expression is pure and of impure function type.
+    */
+  private def isUnderAppliedFunction(exp: Expression): Boolean = {
+    val isPure = exp.pur == Type.Pure
+    val isNonPureFunction = exp.tpe.typeConstructor match {
+      case Some(TypeConstructor.Arrow(_)) => curriedArrowEffectType(exp.tpe) != Type.Pure
+      case _ => false
+    }
+    isPure && isNonPureFunction
+  }
+
+  /**
+    * Returns the effect type of `this` curried arrow type.
+    *
+    * For example,
+    *
+    * {{{
+    * Int32                                        =>     throw
+    * Int32 -> String -> Int32 & Pure              =>     Pure
+    * (Int32, String) -> String -> Bool & Impure   =>     Impure
+    * }}}
+    *
+    * NB: Assumes that `this` type is an arrow.
+    */
+  private def curriedArrowEffectType(tpe: Type): Type = {
+    val resType = tpe.arrowResultType
+    resType.typeConstructor match {
+      case Some(TypeConstructor.Arrow(_)) => curriedArrowEffectType(resType)
+      case _ => tpe.arrowPurityType
+    }
+  }
+
+  /**
+    * Returns true if the expression is pure.
+    */
+  private def isUselessExpression(exp: Expression): Boolean =
+    exp.pur == Type.Pure
 
   /**
     * Returns the free variables in the pattern `p0`.
@@ -873,7 +919,7 @@ object Redundancy {
     /**
       * Updates `this` environment with a set of new variable symbols `varSyms`.
       */
-    def ++(vs: Iterable[Symbol.VarSym]): Env = vs.foldLeft(Env.empty) {
+    def ++(vs: Iterable[Symbol.VarSym]): Env = vs.foldLeft(this) {
       case (acc, sym) => acc + sym
     }
   }

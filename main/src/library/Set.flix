@@ -44,9 +44,7 @@ instance Hash[Set[a]] with Hash[a] {
 }
 
 instance ToString[Set[a]] with ToString[a] {
-    pub def toString(s: Set[a]): String =
-        let st = Set.foldRight((x, acc) -> "${x}, ${acc}", "", s);
-        "Set#{${String.dropRight(2, st)}}"
+    pub def toString(s: Set[a]): String = Set.toString(s)
 }
 
 instance LowerBound[Set[a]] {
@@ -63,6 +61,10 @@ instance JoinLattice[Set[a]] with Order[a] {
 
 instance MeetLattice[Set[a]] with Order[a] {
     pub def greatestLowerBound(s1: Set[a], s2: Set[a]): Set[a] = s1 `Set.intersection` s2
+}
+
+instance ForEach[Set] {
+    pub def foreach(f: a -> Unit & ef, s: Set[a]): Unit & ef = Set.foreach(f, s)
 }
 
 instance Foldable[Set] {
@@ -84,6 +86,25 @@ instance Monoid[Set[a]] with Order[a] {
 instance CommutativeMonoid[Set[a]] with Order[a]
 
 namespace Set {
+
+    ///
+    /// Returns a string representation of the given set `s`.
+    ///
+    pub def toString(s: Set[a]): String with ToString[a] = region r {
+        let sb = new StringBuilder(r);
+        let first = ref true;
+
+        StringBuilder.appendString!("Set#{", sb);
+
+        let f = (x) -> {
+            if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
+            StringBuilder.appendString!("${x}", sb)
+        };
+        Set.foreach(f, s);
+
+        StringBuilder.appendString!("}", sb);
+        StringBuilder.toString(sb)
+    }
 
     ///
     /// Returns the number of threads to use for parallel evaluation.
@@ -114,33 +135,10 @@ namespace Set {
     ///
     /// Returns the empty set.
     ///
-    /// `Set#{}` is syntactic sugar for `empty` (`Set#{} = empty()`).
+    /// `Set#{}` is syntactic sugar for `empty` i.e. `Set#{} == empty()`.
     ///
     @Time(1) @Space(1)
     pub def empty(): Set[a] = Set(RedBlackTree.empty())
-
-    ///
-    /// Returns the singleton set containing `x`.
-    ///
-    /// `Set#{x}` is syntactic sugar for `singleton` (`Set#{x} = singleton(x)`).
-    ///
-    @Time(1) @Space(1)
-    pub def singleton(x: a): Set[a] with Order[a] = insert(x, empty())
-
-    ///
-    /// Returns a set of all integers between `b` (inclusive) and `e` (exclusive).
-    ///
-    /// Returns `empty()` if `b >= e`.
-    ///
-    @Time(e - b) @Space(e - b)
-    pub def range(b: Int32, e: Int32): Set[Int32] =
-        def loop(i, s) = {
-            if (i >= e)
-                s
-            else
-                loop(i + 1, insert(i, s))
-        };
-        loop(b, empty())
 
     ///
     /// Adds `x` to `s`.
@@ -165,6 +163,29 @@ namespace Set {
     pub def isEmpty(s: Set[a]): Bool =
         let Set(t) = s;
         RedBlackTree.isEmpty(t)
+
+    ///
+    /// Returns the singleton set containing `x`.
+    ///
+    /// `Set#{x}` is syntactic sugar for `singleton` i.e. `Set#{x} == singleton(x)`.
+    ///
+    @Time(1) @Space(1)
+    pub def singleton(x: a): Set[a] with Order[a] = insert(x, empty())
+
+    ///
+    /// Returns a set of all integers between `b` (inclusive) and `e` (exclusive).
+    ///
+    /// Returns `empty()` if `b >= e`.
+    ///
+    @Time(e - b) @Space(e - b)
+    pub def range(b: Int32, e: Int32): Set[Int32] =
+        def loop(i, s) = {
+            if (i >= e)
+                s
+            else
+                loop(i + 1, insert(i, s))
+        };
+        loop(b, empty())
 
     ///
     /// Returns true if and only if `x` is a member of `s`.
@@ -253,28 +274,22 @@ namespace Set {
     ///
     /// Alias for `findLeft`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(s)) @Space(space(f) * Int32.log2(size(s)))
-    pub def find(f: a -> Bool, s: Set[a]): Option[a] = findLeft(f, s)
+    pub def find(f: a -> Bool & ef, s: Set[a]): Option[a] & ef = findLeft(f, s)
 
     ///
     /// Optionally returns the first element of `s` that satisfies the predicate `f` when searching from left to right.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(s)) @Space(space(f) * Int32.log2(size(s)))
-    pub def findLeft(f: a -> Bool, s: Set[a]): Option[a] =
+    pub def findLeft(f: a -> Bool & ef, s: Set[a]): Option[a] & ef =
         let Set(t) = s;
         RedBlackTree.findLeft((x, _) -> f(x), t) |> Option.map(fst)
 
     ///
     /// Optionally returns the first element of `s` that satisfies the predicate `f` when searching from right to left.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(s)) @Space(space(f) * Int32.log2(size(s)))
-    pub def findRight(f: a -> Bool, s: Set[a]): Option[a] =
+    pub def findRight(f: a -> Bool & ef, s: Set[a]): Option[a] & ef =
         let Set(t) = s;
         RedBlackTree.findRight((x, _) -> f(x), t) |> Option.map(fst)
 
@@ -310,6 +325,12 @@ namespace Set {
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, s: Set[a]): b & ef =
         let Set(t) = s;
         RedBlackTree.foldRightWithCont((k, _, c) -> f(k, c), z, t)
+
+    ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b & ef, s: Set[a]): b & ef with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), s)
 
     ///
     /// Applies `f` to all elements in `s` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
@@ -407,10 +428,8 @@ namespace Set {
     ///
     /// Returns `false` if `s` is the empty set.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(s)) @Space(space(f) * Int32.log2(size(s)))
-    pub def exists(f: a -> Bool, s: Set[a]): Bool =
+    pub def exists(f: a -> Bool & ef, s: Set[a]): Bool & ef =
         let Set(t) = s;
         RedBlackTree.exists((x, _) -> f(x), t)
 
@@ -419,10 +438,8 @@ namespace Set {
     ///
     /// Returns `true` if `s` is the empty set.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(s)) @Space(space(f) * Int32.log2(size(s)))
-    pub def forall(f: a -> Bool, s: Set[a]): Bool =
+    pub def forall(f: a -> Bool & ef, s: Set[a]): Bool & ef =
         let Set(t) = s;
         RedBlackTree.forall((x, _) -> f(x), t)
 
@@ -464,10 +481,8 @@ namespace Set {
     ///
     /// Returns the set of all elements of `s` that satisfy the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(s)) @Space(space(f) * size(s))
-    pub def filter(f: a -> Bool, s: Set[a]): Set[a] with Order[a] =
+    pub def filter(f: a -> Bool & ef, s: Set[a]): Set[a] & ef with Order[a] =
         foldLeft((acc, x) -> if (f(x)) insert(x, acc) else acc, empty(), s)
 
     ///
@@ -500,10 +515,8 @@ namespace Set {
     /// `s1` contains all elements of `s` that satisfy the predicate `f`.
     /// `s2` contains all elements of `s` that do not satisfy the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(size(s) * Int32.log2(size(s))) @Space(size(s) * Int32.log2(size(s)))
-    pub def partition(f: a -> Bool, s: Set[a]): (Set[a], Set[a]) with Order[a] =
+    pub def partition(f: a -> Bool & ef, s: Set[a]): (Set[a], Set[a]) & ef with Order[a] =
         foldLeft((acc, x) ->
             let (a, b) = acc;
             if (f(x))
@@ -540,6 +553,14 @@ namespace Set {
     ///
     pub def toMapWith(f: a -> b, s: Set[a]): Map[a, b] with Order[a] =
         Set.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), s)
+
+    ///
+    /// Returns `s` as a MutDeque.
+    ///
+    pub def toMutDeque(r: Region[r], s: Set[a]): MutDeque[a, r] \ Write(r) =
+        let d = new MutDeque(r);
+        Set.foreach(x -> MutDeque.pushBack(x, d), s);
+        d
 
     ///
     /// Returns the set `s` as a `MutSet`.
@@ -593,8 +614,8 @@ namespace Set {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def toIterator(s: Set[a]): Iterator[a] & Impure =
-        List.toIterator(Set.toList(s))
+    pub def toIterator(r: Region[r], s: Set[a]): Iterator[a, r] \ Write(r) =
+        toList(s) |> List.toIterator(r)
 
     ///
     /// Returns the concatenation of the string representation

@@ -127,7 +127,7 @@ object EntryPoint {
     * Returns a flag indicating whether the args should be passed to this function or ignored.
     */
   private def checkEntryPointArgs(defn: TypedAst.Def, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
-    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _), _) =>
+    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _), _) =>
       val unitSc = Scheme.generalize(Nil, Type.Unit)
 
       // First check that there's exactly one argument.
@@ -159,7 +159,7 @@ object EntryPoint {
     * Returns a flag indicating whether the result should be printed, cast, or unchanged.
     */
   private def checkEntryPointResult(defn: TypedAst.Def, root: TypedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
-    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _), _) =>
+    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _), _) =>
       val resultTpe = declaredScheme.base.arrowResultType
       val unitSc = Scheme.generalize(Nil, Type.Unit)
       val resultSc = Scheme.generalize(Nil, resultTpe)
@@ -196,7 +196,8 @@ object EntryPoint {
       fparams = List(TypedAst.FormalParam(argSym, Ast.Modifiers.Empty, Type.Unit, SourceLocation.Unknown)),
       declaredScheme = EntryPointScheme,
       retTpe = Type.Unit,
-      eff = Type.Impure,
+      pur = Type.Impure,
+      eff = Type.Empty,
       loc = SourceLocation.Unknown
     )
 
@@ -205,7 +206,7 @@ object EntryPoint {
     val func = TypedAst.Expression.Def(oldEntryPoint.sym, oldEntryPoint.spec.declaredScheme.base, SourceLocation.Unknown)
 
     // func()
-    val call = TypedAst.Expression.Apply(func, List(TypedAst.Expression.Unit(SourceLocation.Unknown)), oldEntryPoint.spec.declaredScheme.base.arrowResultType, oldEntryPoint.spec.declaredScheme.base.arrowEffectType, SourceLocation.Unknown)
+    val call = TypedAst.Expression.Apply(func, List(TypedAst.Expression.Unit(SourceLocation.Unknown)), oldEntryPoint.spec.declaredScheme.base.arrowResultType, oldEntryPoint.spec.declaredScheme.base.arrowPurityType, SourceLocation.Unknown)
 
     // one of:
     // printUnlessUnit(func(args))

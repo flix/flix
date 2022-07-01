@@ -122,7 +122,7 @@ object CodeHinter {
     case Expression.Default(_, _) => Nil
 
     case Expression.Lambda(_, exp, _, _) =>
-      checkEffect(exp.eff, exp.loc) ++ visitExp(exp)
+      checkEffect(exp.pur, exp.loc) ++ visitExp(exp)
 
     case Expression.Apply(exp, exps, _, eff, loc) =>
       val hints0 = (exp, exps) match {
@@ -245,6 +245,9 @@ object CodeHinter {
     case Expression.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
+    case Expression.NewObject(_, _, _, _) =>
+      Nil
+
     case Expression.NewChannel(exp, _, _, _) =>
       visitExp(exp)
 
@@ -283,10 +286,10 @@ object CodeHinter {
     case Expression.FixpointFilter(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointProjectIn(exp, _, _, _, _) =>
+    case Expression.FixpointInject(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointProjectOut(_, exp, _, _, _) =>
+    case Expression.FixpointProject(_, exp, _, _, _) =>
       visitExp(exp)
 
     case Expression.Reify(_, _, _, _) =>
@@ -464,7 +467,7 @@ object CodeHinter {
   /**
     * Returns `true` if the given function type `tpe` is pure.
     */
-  private def isPureFunction(tpe: Type): Boolean = tpe.arrowEffectType == Type.Pure
+  private def isPureFunction(tpe: Type): Boolean = tpe.arrowPurityType == Type.Pure
 
   /**
     * Returns the total number of variable *occurrences* in the given type `tpe`.
@@ -476,6 +479,8 @@ object CodeHinter {
     case Type.Cst(_, _) => 0
     case Type.Apply(tpe1, tpe2, _) => numberOfVarOccurs(tpe1) + numberOfVarOccurs(tpe2)
     case Type.Alias(_, _, tpe, _) => numberOfVarOccurs(tpe)
+    case Type.UnkindedArrow(_, _, _) => 0
+    case Type.ReadWrite(_, _) => 0
   }
 
 }

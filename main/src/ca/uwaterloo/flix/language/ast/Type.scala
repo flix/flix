@@ -51,7 +51,9 @@ sealed trait Type {
     case Type.Cst(tc, _) => SortedSet.empty
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
     case Type.Ascribe(tpe, _, _) => tpe.typeVars
-    case Type.Alias(_, _, tpe, _) => tpe.typeVars
+    case Type.Alias(_, args, _, _) => args.flatMap(_.typeVars).to(SortedSet)
+    case Type.UnkindedArrow(_, _, _) => SortedSet.empty
+    case Type.ReadWrite(tpe, _) => tpe.typeVars
   }
 
   /**
@@ -81,6 +83,8 @@ sealed trait Type {
     case Type.Apply(t1, _, _) => t1.typeConstructor
     case Type.Ascribe(tpe, _, _) => tpe.typeConstructor
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructor
+    case Type.UnkindedArrow(_, _, _) => None
+    case Type.ReadWrite(_, _) => None
   }
 
   /**
@@ -109,6 +113,8 @@ sealed trait Type {
     case Type.Apply(t1, t2, _) => t1.typeConstructors ::: t2.typeConstructors
     case Type.Ascribe(tpe, _, _) => tpe.typeConstructors
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructors
+    case Type.UnkindedArrow(_, _, _) => Nil
+    case Type.ReadWrite(_, _) => Nil
   }
 
   /**
@@ -140,6 +146,8 @@ sealed trait Type {
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(tpe1.map(f), tpe2.map(f), loc)
     case Type.Ascribe(tpe, kind, loc) => Type.Ascribe(tpe.map(f), kind, loc)
     case Type.Alias(sym, args, tpe, loc) => Type.Alias(sym, args.map(_.map(f)), tpe.map(f), loc)
+    case Type.UnkindedArrow(_, _, _) => this
+    case Type.ReadWrite(tpe, loc) => Type.ReadWrite(tpe.map(f), loc)
   }
 
   /**
@@ -148,7 +156,7 @@ sealed trait Type {
     * NB: Assumes that `this` type is an arrow.
     */
   def arrowArgTypes: List[Type] = typeConstructor match {
-    case Some(TypeConstructor.Arrow(n)) => typeArguments.drop(1).dropRight(1)
+    case Some(TypeConstructor.Arrow(n)) => typeArguments.drop(2).dropRight(1)
     case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
   }
 
@@ -167,7 +175,7 @@ sealed trait Type {
     *
     * NB: Assumes that `this` type is an arrow.
     */
-  def arrowEffectType: Type = typeConstructor match {
+  def arrowPurityType: Type = typeConstructor match {
     case Some(TypeConstructor.Arrow(n)) => typeArguments.head
     case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
   }
@@ -182,6 +190,8 @@ sealed trait Type {
     case Type.Ascribe(tpe, _, _) => tpe.size
     case Type.Apply(tpe1, tpe2, _) => tpe1.size + tpe2.size + 1
     case Type.Alias(_, _, tpe, _) => tpe.size
+    case Type.UnkindedArrow(_, _, _) => 1
+    case Type.ReadWrite(tpe, _) => tpe.size + 1
   }
 
   /**
@@ -332,6 +342,11 @@ object Type {
     * NB: This type has kind: * -> (* -> *).
     */
   val Or: Type = Type.Cst(TypeConstructor.Or, SourceLocation.Unknown)
+
+  /**
+    * Represents the Empty effect type.
+    */
+  val Empty: Type = Type.Cst(TypeConstructor.Empty, SourceLocation.Unknown)
 
   /////////////////////////////////////////////////////////////////////////////
   // Constructors                                                            //
@@ -511,6 +526,22 @@ object Type {
   }
 
   /**
+    * An unkinded arrow, holding a yet-unsplit purity and effect.
+    */
+  @EliminatedBy(Kinder.getClass)
+  case class UnkindedArrow(purAndEff: Ast.PurityAndEffect, arity: Int, loc: SourceLocation) extends Type with BaseType {
+    def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type")
+  }
+
+  /**
+    * A type representing a read or write to a region.
+    */
+  @EliminatedBy(Kinder.getClass)
+  case class ReadWrite(tpe: Type, loc: SourceLocation) extends Type with BaseType {
+    def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type")
+  }
+
+  /**
     * A constructor for a type alias. (Not a valid type by itself).
     */
   case class AliasConstructor(sym: Symbol.TypeAliasSym, loc: SourceLocation)
@@ -606,12 +637,6 @@ object Type {
   def mkFalse(loc: SourceLocation): Type = Type.Cst(TypeConstructor.False, loc)
 
   /**
-    * Returns the type `Array[tpe]` with the given optional source location `loc`.
-    */
-  def mkArray(elmType: Type, loc: SourceLocation): Type =
-    Apply(Apply(Type.Cst(TypeConstructor.ScopedArray, loc), elmType, loc), Type.False, loc)
-
-  /**
     * Returns the Channel type with the given source location `loc`.
     */
   def mkChannel(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Channel, loc)
@@ -632,66 +657,66 @@ object Type {
   def mkLazy(tpe: Type, loc: SourceLocation): Type = Type.Apply(Type.Cst(TypeConstructor.Lazy, loc), tpe, loc)
 
   /**
-    * Returns the type `ScopedArray[tpe, reg]` with the given source location `loc`.
+    * Returns the type `Array[tpe, reg]` with the given source location `loc`.
     */
-  def mkScopedArray(tpe: Type, reg: Type, loc: SourceLocation): Type =
-    Apply(Apply(Cst(TypeConstructor.ScopedArray, loc), tpe, loc), reg, loc)
+  def mkArray(tpe: Type, reg: Type, loc: SourceLocation): Type =
+    Apply(Apply(Cst(TypeConstructor.Array, loc), tpe, loc), reg, loc)
 
   /**
-    * Returns the type `ScopedRef[tpe, reg]` with the given source location `loc`.
+    * Returns the type `Ref[tpe, reg]` with the given source location `loc`.
     */
-  def mkScopedRef(tpe: Type, reg: Type, loc: SourceLocation): Type =
-    Apply(Apply(Cst(TypeConstructor.ScopedRef, loc), tpe, loc), reg, loc)
+  def mkRef(tpe: Type, reg: Type, loc: SourceLocation): Type =
+    Apply(Apply(Cst(TypeConstructor.Ref, loc), tpe, loc), reg, loc)
 
   /**
     * Constructs the pure arrow type A -> B.
     */
-  def mkPureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Pure, b, loc)
+  def mkPureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Pure, Empty, b, loc)
 
   /**
     * Constructs the impure arrow type A ~> B.
     */
-  def mkImpureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Impure, b, loc)
+  def mkImpureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Impure, Empty, b, loc)
 
   /**
     * Constructs the arrow type A -> B & e.
     */
-  def mkArrowWithEffect(a: Type, e: Type, b: Type, loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.Arrow(2), loc), List(e, a, b), loc)
+  def mkArrowWithEffect(a: Type, p: Type, e: Type, b: Type, loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.Arrow(2), loc), List(p, e, a, b), loc)
 
   /**
     * Constructs the pure curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B.
     */
-  def mkPureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Pure, b, loc)
+  def mkPureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Pure, Empty, b, loc)
 
   /**
     * Constructs the impure curried arrow type A_1 -> (A_2  -> ... -> A_n) ~> B.
     */
-  def mkImpureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Impure, b, loc)
+  def mkImpureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Impure, Empty, b, loc)
 
   /**
     * Constructs the curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B & e.
     */
-  def mkCurriedArrowWithEffect(as: List[Type], e: Type, b: Type, loc: SourceLocation): Type = {
+  def mkCurriedArrowWithEffect(as: List[Type], p: Type, e: Type, b: Type, loc: SourceLocation): Type = {
     val a = as.last
-    val base = mkArrowWithEffect(a, e, b, loc)
+    val base = mkArrowWithEffect(a, p, e, b, loc)
     as.init.foldRight(base)(mkPureArrow(_, _, loc))
   }
 
   /**
     * Constructs the pure uncurried arrow type (A_1, ..., A_n) -> B.
     */
-  def mkPureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Pure, b, loc)
+  def mkPureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Pure, Empty, b, loc)
 
   /**
     * Constructs the impure uncurried arrow type (A_1, ..., A_n) ~> B.
     */
-  def mkImpureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Impure, b, loc)
+  def mkImpureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Impure, Empty, b, loc)
 
   /**
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
     */
-  def mkUncurriedArrowWithEffect(as: List[Type], e: Type, b: Type, loc: SourceLocation): Type = {
-    val arrow = Type.Apply(Type.Cst(TypeConstructor.Arrow(as.length + 1), loc), e, loc)
+  def mkUncurriedArrowWithEffect(as: List[Type], p: Type, e: Type, b: Type, loc: SourceLocation): Type = {
+    val arrow = mkApply(Type.Cst(TypeConstructor.Arrow(as.length + 1), loc), List(p, e), loc)
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x, loc)
     }
@@ -910,6 +935,25 @@ object Type {
   }
 
   /**
+    * Returns the type `tpe1 + tpe2`
+    *
+    * Must not be used before kinding.
+    */
+  def mkUnion(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
+    case (Empty, t) => t
+    case (t, Empty) => t
+    case _ => mkApply(Type.Cst(TypeConstructor.Union, loc), List(tpe1, tpe2), loc)
+  }
+
+  /**
+    * Returns the union of all the given types.
+    */
+  def mkUnion(tpes: List[Type], loc: SourceLocation): Type = tpes match {
+    case Nil => Type.Empty
+    case (x :: xs) => mkUnion(x, mkUnion(xs, loc), loc)
+  }
+
+  /**
     * Returns a Region type for the given region argument `r` with the given source location `loc`.
     */
   def mkRegion(r: Type, loc: SourceLocation): Type =
@@ -928,18 +972,6 @@ object Type {
   def mkEquiv(x: Type, y: Type, loc: SourceLocation): Type = mkOr(mkAnd(x, y, loc), mkAnd(Type.mkNot(x, loc), Type.mkNot(y, loc), loc), loc)
 
   /**
-    * Returns the size of the given type `tpe`.
-    */
-  def size(tpe: Type): Int = tpe match {
-    case KindedVar(_, _) => 1
-    case UnkindedVar(_, _) => 1
-    case Ascribe(tpe, _, _) => 1 + size(tpe)
-    case Cst(_, _) => 1
-    case Apply(tpe1, tpe2, _) => size(tpe1) + size(tpe2)
-    case Alias(sym, args, tpe, loc) => size(tpe)
-  }
-
-  /**
     * Replace type aliases with the types they represent.
     * In general, this function should be used in back-end phases
     * to clear all aliases for easier processing.
@@ -950,6 +982,8 @@ object Type {
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Type.Alias(_, _, tpe, _) => eraseAliases(tpe)
     case Type.Ascribe(tpe, kind, loc) => Type.Ascribe(tpe, kind, loc)
+    case _: Type.UnkindedArrow => t
+    case Type.ReadWrite(tpe, loc) => Type.ReadWrite(eraseAliases(tpe), loc)
   }
 
   /**

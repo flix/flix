@@ -16,8 +16,11 @@
 use Fixpoint/Shared.PredSym;
 
 namespace Fixpoint/Ast {
-    pub opaque type PrecedenceGraph = Set[PrecedenceEdge]
 
+    @Internal
+    pub enum PrecedenceGraph(Set[PrecedenceEdge])
+
+    @Internal
     pub enum PrecedenceEdge with Eq, Order {
         case StrongEdge(PredSym, PredSym)
         case WeakEdge(PredSym, PredSym)

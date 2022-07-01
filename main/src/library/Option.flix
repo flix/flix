@@ -81,6 +81,10 @@ instance Monad[Option] {
     pub def flatMap(f: a -> Option[b] & ef, x : Option[a]) : Option[b] & ef = Option.flatMap(f, x)
 }
 
+instance ForEach[Option] {
+    pub def foreach(f: a -> Unit & ef, o: Option[a]): Unit & ef = Option.foreach(f, o)
+}
+
 instance Foldable[Option] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldLeft(f, s, o)
     pub def foldRight(f: (a, b) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRight(f, o, s)
@@ -106,6 +110,11 @@ instance Traversable[Option] {
 
 }
 
+instance FunctorFilter[Option] {
+    pub def filterMap(f: a -> Option[b] & ef, o: Option[a]): Option[b] & ef = Option.flatMap(f, o)
+    pub override def filter(f: a -> Bool & ef, o: Option[a]): Option[a] & ef = Option.filter(f, o)
+}
+
 instance SemiGroup[Option[a]] with SemiGroup[a] {
     pub def combine(x: Option[a], y: Option[a]): Option[a] = match (x, y) {
         case (a, None)              => a
@@ -124,8 +133,8 @@ instance Monoid[Option[a]] with Monoid[a] {
 instance CommutativeMonoid[Option[a]] with CommutativeMonoid[a]
 
 instance Iterable[Option] {
-    pub def iterator(t: Option[a]): Iterator[a] & Impure =
-        Option.toIterator(t)
+    pub def iterator(r: Region[r], t: Option[a]): Iterator[a, r] \ Write(r) =
+        Option.toIterator(r, t)
 }
 
 namespace Option {
@@ -169,10 +178,8 @@ namespace Option {
     ///
     /// Returns `true` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `false`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def exists(f: a -> Bool, o: Option[a]): Bool = match o {
+    pub def exists(f: a -> Bool & ef, o: Option[a]): Bool & ef = match o {
         case None    => false
         case Some(v) => f(v)
     }
@@ -182,10 +189,8 @@ namespace Option {
     ///
     /// Otherwise returns `false`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def forall(f: a -> Bool, o: Option[a]): Bool = match o {
+    pub def forall(f: a -> Bool & ef, o: Option[a]): Bool & ef = match o {
         case None    => true
         case Some(v) => f(v)
     }
@@ -193,10 +198,8 @@ namespace Option {
     ///
     /// Returns `o` if `o` is `Some(v)` and the predicate `f(v)` is true. Otherwise returns `None`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def filter(f: a -> Bool, o: Option[a]): Option[a] = match o {
+    pub def filter(f: a -> Bool & ef, o: Option[a]): Option[a] & ef = match o {
         case None    => None
         case Some(v) => if (f(v)) o else None
     }
@@ -239,10 +242,8 @@ namespace Option {
     ///
     /// Returns `1` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `0`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def count(f: a -> Bool, o: Option[a]): Int32 = match o {
+    pub def count(f: a -> Bool & ef, o: Option[a]): Int32 & ef = match o {
         case None    => 0
         case Some(v) => if (f(v)) 1 else 0
     }
@@ -325,27 +326,27 @@ namespace Option {
     ///
     /// Returns `Some(v1 :: v2 :: ... :: vn)` if each of `xs_i` is `Some(v_i)`. Otherwise returns `None`.
     ///
-    @Time(List.length(xs)) @Space(List.length(xs))
-    pub def sequence(xs: List[Option[a]]): Option[List[a]] =
-        def loop(ll, sk) = match ll {
-            case Nil            => sk(Nil)
+    @Time(List.length(l)) @Space(List.length(l))
+    pub def sequence(l: List[Option[a]]): Option[List[a]] =
+        def loop(ll, k) = match ll {
+            case Nil            => k(Nil)
             case None :: _      => None
-            case Some(y) :: rs  => loop(rs, ys -> sk(y :: ys))
+            case Some(x) :: xs  => loop(xs, ks -> k(x :: ks))
         };
-        loop(xs, ys -> Some(ys))
+        loop(l, ks -> Some(ks))
 
     ///
     /// Returns `Some(v1 :: v2 :: ... v :: vn)` if each of `f(l_i)` is `Some(v_i)`. Otherwise returns `None`.
     ///
     pub def traverse(f: a -> Option[b] & ef, l: List[a]): Option[List[b]] & ef =
-        def loop(ll, sk) = match ll {
-            case Nil     => sk(Nil)
+        def loop(ll, k) = match ll {
+            case Nil     => k(Nil)
             case x :: xs => match f(x) {
                 case None    => None
-                case Some(y) => loop(xs, ys -> sk(y :: ys))
+                case Some(y) => loop(xs, ys -> k(y :: ys))
             }
         };
-        loop(l, ys -> Some(ys))
+        loop(l, ks -> Some(ks))
 
     ///
     /// Returns `Some()` if each of `f(l_i)` is `Some(_)`. Otherwise returns `None`.
@@ -353,15 +354,13 @@ namespace Option {
     /// This function is the "forgetful" version of `traverse`, use it when the you want the effect
     /// of applying `f` to each element but do not care about collecting the results.
     ///
-    pub def traverseX(f: a -> Option[b] & ef, l: List[a]): Option[Unit] & ef =
-        def loop(ll) = match ll {
-            case Nil     => Some()
-            case x :: xs => match f(x) {
-                case None    => None
-                case Some(_) => loop(xs)
-            }
-        };
-        loop(l)
+    pub def traverseX(f: a -> Option[b] & ef, l: List[a]): Option[Unit] & ef = match l {
+        case Nil     => Some()
+        case x :: xs => match f(x) {
+            case None    => None
+            case Some(_) => traverseX(f, xs)
+        }
+    }
 
     ///
     /// Returns the result of applying `f` to a start value `s` and the elements in `l`
@@ -373,15 +372,13 @@ namespace Option {
     /// If `f` is successfully applied to all the elements in `l` the result is of the form:
     /// `Some(f(...f(f(s, x1), x2)..., xn))`.
     ///
-    pub def foldLeftM(f: (b, a) -> Option[b] & ef, s: b, l: List[a]): Option[b] & ef =
-        def loop(ll, acc) = match ll {
-            case Nil     => Some(acc)
-            case x :: xs => match f(acc, x) {
-                case Some(s1) => loop(xs, s1)
-                case None     => None
-            }
-        };
-        loop(l, s)
+    pub def foldLeftM(f: (b, a) -> Option[b] & ef, s: b, l: List[a]): Option[b] & ef = match l {
+        case Nil     => Some(s)
+        case x :: xs => match f(s, x) {
+            case Some(s1) => foldLeftM(f, s1, xs)
+            case None     => None
+        }
+    }
 
     ///
     /// Returns the result of applying `f` to a start value `s` and the elements in `l`
@@ -584,9 +581,9 @@ namespace Option {
     ///
     /// Returns an iterator over `o` with 1 element or an empty iterator if `o` is `None`.
     ///
-    pub def toIterator(o: Option[a]): Iterator[a] & Impure = match o {
-        case None    => Iterator.empty()
-        case Some(x) => Iterator.singleton(x)
+    pub def toIterator(r: Region[r], o: Option[a]): Iterator[a, r] \ Write(r) = match o {
+        case None    => new Iterator(r)
+        case Some(x) => Iterator.singleton(r, x)
     }
 
 }

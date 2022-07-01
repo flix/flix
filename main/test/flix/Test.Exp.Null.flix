@@ -10,7 +10,7 @@ namespace Test/Exp/Null {
     def testNullString01(): String = null as String
 
     @test
-    def testNullArray01(): Array[String] = null as Array[String]
+    def testNullArray01(): Array[String, Static] = null as Array[String, Static]
 
     @test
     def testNullChannel01(): Channel[String] = null as Channel[String]
@@ -31,7 +31,7 @@ namespace Test/Exp/Null {
     def testNullRecord05(): {fstName :: String, lstName :: String} = {fstName = null as String, lstName = null as String}
 
     @test
-    def testNullRef01(): Ref[String] = null as Ref[String]
+    def testNullRef01(): Ref[String, Static] = null as Ref[String, Static]
 
     @test
     def testNullTuple01(): (String, String) = null as (String, String)

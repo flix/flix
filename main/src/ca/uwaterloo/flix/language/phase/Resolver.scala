@@ -46,7 +46,7 @@ object Resolver {
   private val ToStringSym = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
   private val HashSym = new Symbol.ClassSym(Nil, "Hash", SourceLocation.Unknown)
 
-  private val DerivableSyms = List(BoxableSym, EqSym, OrderSym, ToStringSym, HashSym)
+  val DerivableSyms = List(BoxableSym, EqSym, OrderSym, ToStringSym, HashSym)
 
   /**
     * Performs name resolution on the given program `root`.
@@ -158,6 +158,8 @@ object Resolver {
       case Type.Cst(TypeConstructor.UnappliedAlias(sym), _) => sym :: Nil
       case Type.Cst(_, _) => Nil
       case Type.Apply(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
+      case _: Type.UnkindedArrow => Nil
+      case Type.ReadWrite(tpe, loc) => getAliasUses(tpe)
       case _: Type.Alias => throw InternalCompilerException("unexpected applied alias")
     }
 
@@ -381,18 +383,18 @@ object Resolver {
     * Performs name resolution on the given spec `s0` in the given namespace `ns0`.
     */
   def resolveSpec(s0: NamedAst.Spec, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
-    case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, retTpe0, pur0, eff0, loc) => // TODO handle eff
+    case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, tpe0, purAndEff0, tconstrs0, loc) =>
 
       val tparams = resolveTypeParams(tparams0, ns0, root)
       val fparamsVal = resolveFormalParams(fparams0, taenv, ns0, root)
       val annVal = traverse(ann0)(visitAnnotation(_, taenv, ns0, root))
-      val schemeVal = resolveScheme(sc0, taenv, ns0, root)
-      val retTpeVal = resolveType(retTpe0, taenv, ns0, root)
-      val purVal = resolveType(pur0, taenv, ns0, root)
+      val tpeVal = resolveType(tpe0, taenv, ns0, root)
+      val purAndEffVal = resolvePurityAndEffect(purAndEff0, taenv, ns0, root)
+      val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, taenv, ns0, root))
 
-      mapN(fparamsVal, annVal, schemeVal, retTpeVal, purVal) {
-        case (fparams, ann, scheme, retTpe, pur) =>
-          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, retTpe, pur, loc)
+      mapN(fparamsVal, annVal, tpeVal, purAndEffVal, tconstrsVal) {
+        case (fparams, ann, tpe, purAndEff, tconstrs) =>
+          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc)
       }
   }
 
@@ -408,8 +410,7 @@ object Resolver {
       val tpeVal = resolveType(tpe0, taenv, ns0, root)
       mapN(annVal, derivesVal, casesVal, tpeVal) {
         case (ann, derives, cases, tpe) =>
-          val sc = ResolvedAst.Scheme(tparams.tparams.map(_.sym), Nil, tpe)
-          ResolvedAst.Enum(doc, ann, mod, sym, tparams, derives, cases.toMap, tpe, sc, loc)
+          ResolvedAst.Enum(doc, ann, mod, sym, tparams, derives, cases.toMap, tpe, loc)
       }
   }
 
@@ -417,7 +418,7 @@ object Resolver {
     * Performs name resolution on the given case `caze0` in the given namespace `ns0`.
     */
   private def resolveCase(caze0: (Name.Tag, NamedAst.Case), enum0: NamedAst.Enum, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix) = (enum0, caze0) match {
-    case (NamedAst.Enum(doc, ann, mod, sym, tparams, _, _, _, loc), (name, NamedAst.Case(enumIdent, tag, tpe0))) =>
+    case (NamedAst.Enum(_, _, _, sym, tparams, _, _, _, _), (name, NamedAst.Case(enumIdent, tag, tpe0))) =>
       val tpeVal = resolveType(tpe0, taenv, ns0, root)
       mapN(tpeVal) {
         tpe =>
@@ -929,10 +930,7 @@ object Resolver {
             case None => (None: Option[Type]).toSuccess
             case Some(t) => mapN(resolveType(t, taenv, ns0, root))(x => Some(x))
           }
-          val expectedEffVal = expectedEff match {
-            case None => (None: Option[Type]).toSuccess
-            case Some(f) => mapN(resolveType(f, taenv, ns0, root))(x => Some(x))
-          }
+          val expectedEffVal = resolvePurityAndEffect(expectedEff, taenv, ns0, root)
 
           val eVal = visitExp(exp, region)
           mapN(eVal, expectedTypVal, expectedEffVal) {
@@ -945,10 +943,7 @@ object Resolver {
             case None => (None: Option[Type]).toSuccess
             case Some(t) => mapN(resolveType(t, taenv, ns0, root))(x => Some(x))
           }
-          val declaredEffVal = declaredEff match {
-            case None => (None: Option[Type]).toSuccess
-            case Some(f) => mapN(resolveType(f, taenv, ns0, root))(x => Some(x))
-          }
+          val declaredEffVal = resolvePurityAndEffect(declaredEff, taenv, ns0, root)
 
           val eVal = visitExp(exp, region)
           mapN(eVal, declaredTypVal, declaredEffVal) {
@@ -1060,6 +1055,11 @@ object Resolver {
             case (field, e) => ResolvedAst.Expression.PutStaticField(field, e, loc)
           }
 
+        case NamedAst.Expression.NewObject(className, loc) =>
+          lookupJvmClass(className, loc) map {
+            case clazz => ResolvedAst.Expression.NewObject(clazz, loc)
+          }
+
         case NamedAst.Expression.NewChannel(exp, tpe, loc) =>
           val tVal = resolveType(tpe, taenv, ns0, root)
           val eVal = visitExp(exp, region)
@@ -1153,17 +1153,17 @@ object Resolver {
             e => ResolvedAst.Expression.FixpointFilter(pred, e, loc)
           }
 
-        case NamedAst.Expression.FixpointProjectIn(exp, pred, loc) =>
+        case NamedAst.Expression.FixpointInject(exp, pred, loc) =>
           val eVal = visitExp(exp, region)
           mapN(eVal) {
-            e => ResolvedAst.Expression.FixpointProjectIn(e, pred, loc)
+            e => ResolvedAst.Expression.FixpointInject(e, pred, loc)
           }
 
-        case NamedAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) =>
+        case NamedAst.Expression.FixpointProject(pred, exp1, exp2, loc) =>
           val e1Val = visitExp(exp1, region)
           val e2Val = visitExp(exp2, region)
           mapN(e1Val, e2Val) {
-            case (e1, e2) => ResolvedAst.Expression.FixpointProjectOut(pred, e1, e2, loc)
+            case (e1, e2) => ResolvedAst.Expression.FixpointProject(pred, e1, e2, loc)
           }
 
         case NamedAst.Expression.Reify(t0, loc) =>
@@ -1385,17 +1385,6 @@ object Resolver {
   }
 
   /**
-    * Performs name resolution on the given scheme `sc0`.
-    */
-  def resolveScheme(sc0: NamedAst.Scheme, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Scheme, ResolutionError] = {
-    val baseVal = resolveType(sc0.base, taenv, ns0, root)
-    val tconstrsVal = sequence(sc0.tconstrs.map(resolveTypeConstraint(_, taenv, ns0, root)))
-    mapN(baseVal, tconstrsVal) {
-      case (base, tconstrs) => ResolvedAst.Scheme(sc0.quantifiers, tconstrs, base)
-    }
-  }
-
-  /**
     * Performs name resolution on the given type constraint `tconstr0`.
     */
   def resolveTypeConstraint(tconstr0: NamedAst.TypeConstraint, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.TypeConstraint, ResolutionError] = tconstr0 match {
@@ -1493,9 +1482,9 @@ object Resolver {
       case None => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
       case Some(clazz) =>
         getClassAccessibility(clazz, ns0) match {
-          case Accessibility.Accessible => clazz.toSuccess
-          case Accessibility.Sealed => ResolutionError.SealedClass(clazz.sym, ns0, qname.loc).toFailure
-          case Accessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
+          case ClassAccessibility.Accessible => clazz.toSuccess
+          case ClassAccessibility.Sealed => ResolutionError.SealedClass(clazz.sym, ns0, qname.loc).toFailure
+          case ClassAccessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
         }
     }
   }
@@ -1509,8 +1498,8 @@ object Resolver {
       case None => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
       case Some(clazz) =>
         getClassAccessibility(clazz, ns0) match {
-          case Accessibility.Accessible | Accessibility.Sealed => clazz.toSuccess
-          case Accessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
+          case ClassAccessibility.Accessible | ClassAccessibility.Sealed => clazz.toSuccess
+          case ClassAccessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
         }
     }
   }
@@ -1545,7 +1534,7 @@ object Resolver {
     val opOpt = tryLookupName(qname, ns0, root.ops)
 
     opOpt match {
-      case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
+      case None => ResolutionError.UndefinedOp(qname, qname.loc).toFailure
       case Some(op) =>
         if (isOpAccessible(op, ns0)) {
           op.toSuccess
@@ -1562,7 +1551,9 @@ object Resolver {
     val opOpt = eff.ops.find(o => o.sym.name == ident.name)
     opOpt match {
       case None =>
-        ResolutionError.UndefinedOp(eff.sym, ident, ident.loc).toFailure
+        val nname = eff.sym.namespace :+ eff.sym.name
+        val qname = Name.mkQName(nname, ident.name, SourcePosition.Unknown, SourcePosition.Unknown)
+        ResolutionError.UndefinedOp(qname, ident.loc).toFailure
       case Some(op) => op.toSuccess
     }
   }
@@ -1588,7 +1579,14 @@ object Resolver {
 
         // Case 1.1.1: Exact match found in the namespace.
         if (namespaceMatches.size == 1) {
-          return getEnumIfAccessible(namespaceMatches.head, ns0, tag.loc)
+          val enum = namespaceMatches.head
+          return getEnumAccessibility(enum, ns0) match {
+            case EnumAccessibility.Accessible => enum.toSuccess
+            case EnumAccessibility.Opaque =>
+              ResolutionError.OpaqueEnum(enum.sym, ns0, tag.loc).toFailure
+            case EnumAccessibility.Inaccessible =>
+              ResolutionError.InaccessibleEnum(enum.sym, ns0, tag.loc).toFailure
+          }
         }
 
         // Case 1.1.2: Multiple matches found in the namespace.
@@ -1611,7 +1609,14 @@ object Resolver {
 
         // Case 1.2.1: Exact match found in the root namespace.
         if (globalMatches.size == 1) {
-          return getEnumIfAccessible(globalMatches.head, ns0, tag.loc)
+          val enum = globalMatches.head
+          return getEnumAccessibility(enum, ns0) match {
+            case EnumAccessibility.Accessible => enum.toSuccess
+            case EnumAccessibility.Opaque =>
+              ResolutionError.OpaqueEnum(enum.sym, ns0, tag.loc).toFailure
+            case EnumAccessibility.Inaccessible =>
+              ResolutionError.InaccessibleEnum(enum.sym, ns0, tag.loc).toFailure
+          }
         }
 
         // Case 1.2.2: Multiple matches found in the root namespace.
@@ -1640,12 +1645,18 @@ object Resolver {
           case None =>
             // Case 2.1: The enum does not exist.
             ResolutionError.UndefinedType(qname, ns0, qname.loc).toFailure
-          case Some(enumDecl) =>
+          case Some(enum) =>
             // Case 2.2: Enum declaration found. Look for the tag.
-            for ((enumTag, caze) <- enumDecl.cases) {
+            for ((enumTag, caze) <- enum.cases) {
               if (tag == enumTag) {
                 // Case 2.2.1: Tag found.
-                return getEnumIfAccessible(enumDecl, ns0, tag.loc)
+                return getEnumAccessibility(enum, ns0) match {
+                  case EnumAccessibility.Accessible => enum.toSuccess
+                  case EnumAccessibility.Opaque =>
+                    ResolutionError.OpaqueEnum(enum.sym, ns0, tag.loc).toFailure
+                  case EnumAccessibility.Inaccessible =>
+                    ResolutionError.InaccessibleEnum(enum.sym, ns0, tag.loc).toFailure
+                }
               }
             }
 
@@ -1690,8 +1701,8 @@ object Resolver {
       case "String" => Type.mkString(loc).toSuccess
       case "Channel" => Type.mkChannel(loc).toSuccess
       case "Lazy" => Type.mkLazy(loc).toSuccess
-      case "ScopedArray" => Type.Cst(TypeConstructor.ScopedArray, loc).toSuccess
-      case "ScopedRef" => Type.Cst(TypeConstructor.ScopedRef, loc).toSuccess
+      case "Array" => Type.Cst(TypeConstructor.Array, loc).toSuccess
+      case "Ref" => Type.Cst(TypeConstructor.Ref, loc).toSuccess
       case "Region" => Type.Cst(TypeConstructor.Region, loc).toSuccess
 
       // Disambiguate type.
@@ -1795,12 +1806,12 @@ object Resolver {
         }
       }
 
-    case NamedAst.Type.Arrow(tparams0, pur0, eff0, tresult0, loc) => // TODO handle eff0
+    case NamedAst.Type.Arrow(tparams0, purAndEff0, tresult0, loc) =>
       val tparamsVal = traverse(tparams0)(semiResolveType(_, ns0, root))
       val tresultVal = semiResolveType(tresult0, ns0, root)
-      val purVal = semiResolveType(pur0, ns0, root)
-      mapN(tparamsVal, tresultVal, purVal) {
-        case (tparams, tresult, pur) => Type.mkUncurriedArrowWithEffect(tparams, pur, tresult, loc)
+      val purAndEffVal = semiResolvePurityAndEffect(purAndEff0, ns0, root)
+      mapN(tparamsVal, tresultVal, purAndEffVal) {
+        case (tparams, tresult, purAndEff) => mkUncurriedArrowWithEffect(tparams, purAndEff, tresult, loc)
       }
 
     case NamedAst.Type.Apply(base0, targ0, loc) =>
@@ -1851,9 +1862,15 @@ object Resolver {
         case (t1, t2) => mkDifference(t1, t2, loc)
       }
 
-    case _: NamedAst.Type.Read | _: NamedAst.Type.Write =>
-      // TODO not handling region effect types yet
-      Type.mkTrue(SourceLocation.Unknown).toSuccess
+    case NamedAst.Type.Read(tpe, loc) =>
+      mapN(semiResolveType(tpe, ns0, root)) {
+        case t => Type.ReadWrite(t, loc)
+      }
+
+    case NamedAst.Type.Write(tpe, loc) =>
+      mapN(semiResolveType(tpe, ns0, root)) {
+        case t => Type.ReadWrite(t, loc)
+      }
 
     case NamedAst.Type.Ascribe(tpe, kind, loc) =>
       mapN(semiResolveType(tpe, ns0, root)) {
@@ -1901,6 +1918,14 @@ object Resolver {
               Type.mkApply(applyAlias(alias, usedArgs, loc), extraArgs, tpe0.loc)
           }
         }
+      case Type.UnkindedArrow(purAndEff0, arity, loc) =>
+        val purAndEffVal = finishResolvePurityAndEffect(purAndEff0, taenv)
+        val argsVal = traverse(targs)(finishResolveType(_, taenv))
+        mapN(purAndEffVal, argsVal) {
+          case (purAndEff, args) =>
+            Type.mkApply(Type.UnkindedArrow(purAndEff, arity, loc), args, tpe0.loc)
+        }
+
       case _ =>
         traverse(targs)(finishResolveType(_, taenv)) map {
           resolvedArgs => Type.mkApply(baseType, resolvedArgs, tpe0.loc)
@@ -1915,6 +1940,39 @@ object Resolver {
     val tVal = semiResolveType(tpe0, ns0, root)
     flatMapN(tVal) {
       t => finishResolveType(t, taenv)
+    }
+  }
+
+  /**
+    * Partially resolves the given purity and effect.
+    */
+  private def semiResolvePurityAndEffect(purAndEff0: NamedAst.PurityAndEffect, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Ast.PurityAndEffect, ResolutionError] = purAndEff0 match {
+    case NamedAst.PurityAndEffect(pur0, eff0) =>
+      val purVal = traverse(pur0)(semiResolveType(_, ns0, root)).map(_.headOption)
+      val effVal = traverse(eff0)(effs => traverse(effs)(semiResolveType(_, ns0, root))).map(_.headOption)
+      mapN(purVal, effVal) {
+        case (pur, eff) => Ast.PurityAndEffect(pur, eff)
+      }
+  }
+
+  /**
+    * Finishes resolution of the given purity and effect.
+    */
+  private def finishResolvePurityAndEffect(purAndEff0: Ast.PurityAndEffect, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]): Validation[Ast.PurityAndEffect, ResolutionError] = purAndEff0 match {
+    case Ast.PurityAndEffect(pur0, eff0) =>
+      val purVal = traverse(pur0)(finishResolveType(_, taenv)).map(_.headOption)
+      val effVal = traverse(eff0)(effs => traverse(effs)(finishResolveType(_, taenv))).map(_.headOption)
+      mapN(purVal, effVal) {
+        case (pur, eff) => Ast.PurityAndEffect(pur, eff)
+      }
+  }
+
+  /**
+    * Performs name resolution on the given purity and effect `purAndEff0` in the given namespace `ns0`.
+    */
+  private def resolvePurityAndEffect(purAndEff0: NamedAst.PurityAndEffect, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Ast.PurityAndEffect, ResolutionError] = {
+    flatMapN(semiResolvePurityAndEffect(purAndEff0, ns0, root)) {
+      case purAndEff => finishResolvePurityAndEffect(purAndEff, taenv)
     }
   }
 
@@ -2043,7 +2101,7 @@ object Resolver {
     val effOpt = tryLookupName(qname, ns0, root.effects)
 
     effOpt match {
-      case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
+      case None => ResolutionError.UndefinedEffect(qname, ns0, qname.loc).toFailure
       case Some(eff) => getEffectIfAccessible(eff, ns0, qname.loc)
     }
   }
@@ -2085,23 +2143,23 @@ object Resolver {
     *
     * (A: Accessible, S: Sealed, I: Inaccessible)
     */
-  private def getClassAccessibility(class0: NamedAst.Class, ns0: Name.NName): Accessibility = {
+  private def getClassAccessibility(class0: NamedAst.Class, ns0: Name.NName): ClassAccessibility = {
 
     val classNs = class0.sym.namespace
     val accessingNs = ns0.idents.map(_.name)
 
     if (classNs == accessingNs) {
       // Case 1: We're in the same namespace: Accessible
-      Accessibility.Accessible
+      ClassAccessibility.Accessible
     } else if (!class0.mod.isPublic && !accessingNs.startsWith(classNs)) {
       // Case 2: The class is private and we're in unrelated namespaces: Inaccessible
-      Accessibility.Inaccessible
+      ClassAccessibility.Inaccessible
     } else if (class0.mod.isSealed) {
       // Case 3: The class is accessible but sealed
-      Accessibility.Sealed
+      ClassAccessibility.Sealed
     } else {
       // Case 4: The class is otherwise accessible
-      Accessibility.Accessible
+      ClassAccessibility.Accessible
     }
   }
 
@@ -2193,6 +2251,40 @@ object Resolver {
     false
   }
 
+  /**
+    * Determines if the enum is accessible from the namespace.
+    *
+    * Accessibility depends on the modifiers on the enum
+    * and the accessing namespace's relation to the enum namespace:
+    *
+    * |            | same | child | other |
+    * |------------|------|-------|-------|
+    * | (none)     | A    | A     | I     |
+    * | opaque     | A    | O     | I     |
+    * | pub        | A    | A     | A     |
+    * | pub opaque | A    | O     | O     |
+    *
+    * (A: Accessible, O: Opaque, I: Inaccessible)
+    */
+  private def getEnumAccessibility(enum0: NamedAst.Enum, ns0: Name.NName): EnumAccessibility = {
+
+    val enumNs = enum0.sym.namespace
+    val accessingNs = ns0.idents.map(_.name)
+
+    if (enumNs == accessingNs) {
+      // Case 1: We're in the same namespace: Accessible
+      EnumAccessibility.Accessible
+    } else if (!enum0.mod.isPublic && !accessingNs.startsWith(enumNs)) {
+      // Case 2: The enum is private and we're in unrelated namespaces: Inaccessible
+      EnumAccessibility.Inaccessible
+    } else if (enum0.mod.isOpaque) {
+      // Case 3: The enum is accessible but opaque
+      EnumAccessibility.Opaque
+    } else {
+      // Case 4: The enum is otherwise accessible
+      EnumAccessibility.Accessible
+    }
+  }
   /**
     * Successfully returns the given `enum0` if it is accessible from the given namespace `ns0`.
     *
@@ -2328,6 +2420,7 @@ object Resolver {
     Class.forName(className, initialize, flix.jarLoader).toSuccess
   } catch {
     case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
+    case ex: NoClassDefFoundError => ResolutionError.MissingJvmDependency(className, ex.getMessage, loc).toFailure
   }
 
   /**
@@ -2342,6 +2435,7 @@ object Resolver {
       } catch {
         case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
         case ex: NoSuchMethodException => ResolutionError.UndefinedJvmConstructor(className, sig, clazz.getConstructors.toList, loc).toFailure
+        case ex: NoClassDefFoundError => ResolutionError.MissingJvmDependency(className, ex.getMessage, loc).toFailure
       }
     }
   }
@@ -2365,6 +2459,7 @@ object Resolver {
         case ex: NoSuchMethodException =>
           val candidateMethods = clazz.getMethods.filter(m => m.getName == methodName).toList
           ResolutionError.UndefinedJvmMethod(className, methodName, static, sig, candidateMethods, loc).toFailure
+        case ex: NoClassDefFoundError => ResolutionError.MissingJvmDependency(className, ex.getMessage, loc).toFailure
       }
     }
   }
@@ -2387,6 +2482,7 @@ object Resolver {
         case ex: NoSuchFieldException =>
           val candidateFields = clazz.getFields.toList
           ResolutionError.UndefinedJvmField(className, fieldName, static, candidateFields, loc).toFailure
+        case ex: NoClassDefFoundError => ResolutionError.MissingJvmDependency(className, ex.getMessage, loc).toFailure
       }
     }
   }
@@ -2438,11 +2534,11 @@ object Resolver {
 
       case TypeConstructor.UnkindedEnum(_) => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.ScopedRef => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.Ref => Class.forName("java.lang.Object").toSuccess
 
       case TypeConstructor.Tuple(_) => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.ScopedArray =>
+      case TypeConstructor.Array =>
         Type.eraseAliases(tpe).typeArguments match {
           case elmTyp :: region :: Nil =>
             mapN(getJVMType(elmTyp, loc)) {
@@ -2545,6 +2641,17 @@ object Resolver {
   private def mkDifference(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.Difference, loc), List(tpe1, tpe2), loc)
 
   /**
+    * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
+    */
+  def mkUncurriedArrowWithEffect(as: List[Type], e: Ast.PurityAndEffect, b: Type, loc: SourceLocation): Type = {
+    val arrow = Type.UnkindedArrow(e, as.length + 1, loc)
+    val inner = as.foldLeft(arrow: Type) {
+      case (acc, x) => Type.Apply(acc, x, loc)
+    }
+    Type.Apply(inner, b, loc)
+  }
+
+  /**
     * Returns either the explicit region (if present), the current region (if present), or the global region.
     */
   private def getExplicitOrImplicitRegion(explicitRegion: Option[ResolvedAst.Expression], currentRegion: Option[Symbol.VarSym], loc: SourceLocation): ResolvedAst.Expression = explicitRegion match {
@@ -2567,13 +2674,27 @@ object Resolver {
   /**
     * Enum describing the extent to which a class is accessible.
     */
-  private sealed trait Accessibility
+  private sealed trait ClassAccessibility
 
-  private object Accessibility {
-    case object Accessible extends Accessibility
+  private object ClassAccessibility {
+    case object Accessible extends ClassAccessibility
 
-    case object Sealed extends Accessibility
+    case object Sealed extends ClassAccessibility
 
-    case object Inaccessible extends Accessibility
+    case object Inaccessible extends ClassAccessibility
+  }
+
+
+  /**
+    * Enum describing the extent to which an enum is accessible.
+    */
+  private sealed trait EnumAccessibility
+
+  private object EnumAccessibility {
+    case object Accessible extends EnumAccessibility
+
+    case object Opaque extends EnumAccessibility
+
+    case object Inaccessible extends EnumAccessibility
   }
 }

@@ -59,7 +59,7 @@ namespace TestReducible {
                 l := a :: acc :: deref l;
             0
         };
-        Reducible.reduceLeft(f, Nel(3, 2 :: 1 :: Nil));
+        discard Reducible.reduceLeft(f, Nel(3, 2 :: 1 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
 
 
@@ -106,7 +106,7 @@ namespace TestReducible {
                 l := a :: acc :: deref l;
             0
         };
-        Reducible.reduceRight(f, Nel(1, 2 :: 3 :: Nil));
+        discard Reducible.reduceRight(f, Nel(1, 2 :: 3 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
 
 
@@ -175,7 +175,7 @@ namespace TestReducible {
     @test
     def foldLeft07(): Bool & Impure =
         let l = ref Nil;
-        Reducible.foldLeft((_, x) -> { l := x :: deref l; x == 1 }, false, Nel(3, 2 :: 1 :: Nil));
+        discard Reducible.foldLeft((_, x) -> { l := x :: deref l; x == 1 }, false, Nel(3, 2 :: 1 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
 
 
@@ -210,7 +210,7 @@ namespace TestReducible {
     @test
     def foldRight07(): Bool & Impure =
         let l = ref Nil;
-        Reducible.foldRight((x, _) -> { l := x :: deref l; x == 1 }, false, Nel(1, 2 :: 3 :: Nil));
+        discard Reducible.foldRight((x, _) -> { l := x :: deref l; x == 1 }, false, Nel(1, 2 :: 3 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
 
 
@@ -245,7 +245,7 @@ namespace TestReducible {
     @test
     def foldRightWithCont07(): Bool & Impure =
         let l = ref Nil;
-        Reducible.foldRightWithCont((x, _) -> { l := x :: deref l; x == 1 }, false, Nel(1, 2 :: 3 :: Nil));
+        discard Reducible.foldRightWithCont((x, _) -> { l := x :: deref l; x == 1 }, false, Nel(1, 2 :: 3 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
 
 
@@ -600,7 +600,7 @@ namespace TestReducible {
     @test
     def findLeft07(): Bool & Impure =
         let l = ref Nil;
-        Reducible.findLeft(x -> { l := x :: deref l; x == 1 }, Nel(3, 2 :: 1 :: Nil));
+        discard Reducible.findLeft(x -> { l := x :: deref l; x == 1 }, Nel(3, 2 :: 1 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
 
 
@@ -635,7 +635,7 @@ namespace TestReducible {
     @test
     def findRight07(): Bool & Impure =
         let l = ref Nil;
-        Reducible.findRight(x -> { l := x :: deref l; x == 1 }, Nel(1, 2 :: 3 :: Nil));
+        discard Reducible.findRight(x -> { l := x :: deref l; x == 1 }, Nel(1, 2 :: 3 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
 
 
@@ -858,16 +858,19 @@ namespace TestReducible {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toArray01(): Bool & Impure =
-        Array.sameElements(Reducible.toArray(Nel(1, Nil), static), [1])
+    def toArray01(): Bool = region r {
+        Array.sameElements(Reducible.toArray(r, Nel(1, Nil)), [1])
+    }
 
     @test
-    def toArray02(): Bool & Impure =
-        Array.sameElements(Reducible.toArray(Nel(1, 2 :: 3 :: Nil), static), [1, 2, 3])
+    def toArray02(): Bool = region r {
+        Array.sameElements(Reducible.toArray(r, Nel(1, 2 :: 3 :: Nil)), [1, 2, 3])
+    }
 
     @test
-    def toArray03(): Bool & Impure =
-        Array.sameElements(Reducible.toArray(Nel(1, 1 :: 2 :: 3 :: Nil), static), [1, 1, 2, 3])
+    def toArray03(): Bool = region r {
+        Array.sameElements(Reducible.toArray(r, Nel(1, 1 :: 2 :: 3 :: Nil)), [1, 1, 2, 3])
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -875,16 +878,19 @@ namespace TestReducible {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool & Impure =
-        Reducible.toIterator(Nel(1, Nil)) |> Iterator.toList == 1 :: Nil
+    def toIterator01(): Bool = region r {
+        Reducible.toIterator(r, Nel(1, Nil)) |> Iterator.toList == 1 :: Nil
+    }
 
     @test
-    def toIterator02(): Bool & Impure =
-        Reducible.toIterator(Nel(1, 2 :: 3 :: Nil)) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    def toIterator02(): Bool = region r {
+        Reducible.toIterator(r, Nel(1, 2 :: 3 :: Nil)) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    }
 
     @test
-    def toIterator03(): Bool & Impure =
-        Reducible.toIterator(Nel(1, 1 :: 2 :: 3 :: Nil)) |> Iterator.toList == 1 :: 1 :: 2 :: 3 :: Nil
+    def toIterator03(): Bool = region r {
+        Reducible.toIterator(r, Nel(1, 1 :: 2 :: 3 :: Nil)) |> Iterator.toList == 1 :: 1 :: 2 :: 3 :: Nil
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////

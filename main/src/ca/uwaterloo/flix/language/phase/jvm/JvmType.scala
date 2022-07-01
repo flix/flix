@@ -97,16 +97,14 @@ object JvmType {
 
   val AtomicLong: JvmType.Reference = Reference(JvmName.AtomicLong)
   val BigInteger: JvmType.Reference = Reference(BackendObjType.BigInt.jvmName)
-  val Class: JvmType.Reference = Reference(JvmName.Class)
   val Function: JvmType.Reference = Reference(JvmName.Function)
-  val Object: JvmType.Reference = Reference(JvmName.Object)
+  val Object: JvmType.Reference = Reference(BackendObjType.JavaObject.jvmName)
   val String: JvmType.Reference = Reference(BackendObjType.String.jvmName)
 
   //
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Flix Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //
 
-  val ReifiedSourceLocation: JvmType.Reference = Reference(JvmName.ReifiedSourceLocation)
   val Unit: JvmType.Reference = Reference(BackendObjType.Unit.jvmName)
 
   //

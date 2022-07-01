@@ -653,6 +653,36 @@ def filterWithKey06(): Bool = Map.filterWithKey((k, v) -> k == v, Map#{1 => 1, 2
 def filterWithKey07(): Bool = Map.filterWithKey((k, v) -> k == v, Map#{1 => -1, 2 => -3}) == Map#{}
 
 /////////////////////////////////////////////////////////////////////////////
+// filterMap                                                               //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def filterMap01(): Bool = Map.filterMap(x -> if (x > 1) Some("${x}") else None, Map#{}: Map[Unit, _]) == Map#{}
+
+@test
+def filterMap02(): Bool = Map.filterMap(x -> if (x > 1) Some("${x}") else None, Map#{1 => 1}) == Map#{}
+
+@test
+def filterMap03(): Bool =
+    Map.filterMap(x -> if (x > 1) Some("${x}") else None, Map#{1 => 1, 2 => 2, 3 => 3, 4 => 4})
+        == Map#{2 => "2", 3 => "3", 4 => "4"}
+
+/////////////////////////////////////////////////////////////////////////////
+// filterMapWithKey                                                        //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def filterMapWithKey01(): Bool = Map.filterMapWithKey((k, v) -> if (k == v and v > 1) Some("${v}") else None, Map#{}: Map[Int32, Int32]) == Map#{}
+
+@test
+def filterMapWithKey02(): Bool = Map.filterMapWithKey((k, v) -> if (k == v and v > 1) Some("${v}") else None, Map#{1 => 1}) == Map#{}
+
+@test
+def filterMapWithKey03(): Bool =
+    Map.filterMapWithKey((k, v) -> if (k == v and v > 1) Some("${v}") else None, Map#{1 => 1, 2 => 2, 3 => 3, 4 => 4})
+        == Map#{2 => "2", 3 => "3", 4 => "4"}
+
+/////////////////////////////////////////////////////////////////////////////
 // map                                                                     //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -693,8 +723,8 @@ def mapWithKey05(): Bool = Map.mapWithKey((k, v) -> k + v, Map#{2 => -1, 5 => 15
 def mapWithKey06(): Bool & Impure =
     let range = List.range(0, 2000);
     let m = List.zip(range, range) |> List.toMap;
-    let a = new MutList(static);
-    Map.mapWithKey((k, v) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(b, a); v }, m);
+    let a = new MutList(Static);
+    discard Map.mapWithKey((k, v) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
     MutList.toList(a) == range
 
 
@@ -804,6 +834,23 @@ def foldRightWithKeyCont03(): Bool = Map.foldRightWithKeyCont((k, v, c) -> k + c
 def foldRightWithKeyCont04(): Bool = Map.foldRightWithKeyCont((k, v, c) -> k + c() + v, 0, Map#{1 => 2, 3 => 4, 5 => 6}) == 21
 
 /////////////////////////////////////////////////////////////////////////////
+// foldMapWithKey                                                          //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def foldMapWithKey01(): Bool = Map.foldMapWithKey((k, v) -> k + v, Map#{}) == 0
+
+@test
+def foldMapWithKey02(): Bool = Map.foldMapWithKey((k, v) -> k + v, Map#{1 => 2, 3 => 5}) == (1 + 2 + 3 + 5)
+
+@test
+def foldMapWithKey03(): Bool =
+    Map.foldMapWithKey((k, v) -> 2 * (k + v), Map#{1 => 2, 3 => 5}) == (2 * (1 + 2) + 2 * (3 + 5))
+
+@test
+def foldMapWithKey04(): Bool = Map.foldMapWithKey((k, v) -> "${k}" + v, Map#{1 => "a", 2 => "b"}) == "1a2b"
+
+/////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -891,8 +938,8 @@ def count07(): Bool = Map.count((k, v) -> k == v, Map#{1 => 1, 2 => 2}) == 2
 def count08(): Bool & Impure =
     let range = List.range(0, 2000);
     let m = List.zip(range, range) |> List.toMap;
-    let a = new MutList(static);
-    Map.count((k, _) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(b, a); true }, m);
+    let a = new MutList(Static);
+    discard Map.count((k, _) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); true }, m);
     MutList.toList(a) == range
 
 
@@ -1011,8 +1058,8 @@ def count08(): Bool & Impure =
     def sumWith07(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
-        let a = new MutList(static);
-        Map.sumWith((k, _) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(b, a); 1 }, m);
+        let a = new MutList(Static);
+        discard Map.sumWith((k, _) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
         MutList.toList(a) == range
 
 
@@ -1121,8 +1168,8 @@ def count08(): Bool & Impure =
     def productWith07(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
-        let a = new MutList(static);
-        Map.productWith((k, _) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(b, a); 1 }, m);
+        let a = new MutList(Static);
+        discard Map.productWith((k, _) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
         MutList.toList(a) == range
 
 
@@ -1703,6 +1750,57 @@ def toList03(): Bool = Map.toList(Map#{1 => 2, 3 => 4}) == (1, 2) :: (3, 4) :: N
 def toList04(): Bool = Map.toList(Map#{1 => 2, 2 => 2, 3 => 4}) == (1, 2) :: (2, 2) :: (3, 4) :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
+// toMutDeque                                                              //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toMutDeque01(): Bool = region r {
+    let m: Map[Int32, Int32] = Map#{};
+    let d1 = Map.toMutDeque(r, m);
+
+    let d2 = new MutDeque(r);
+
+    d1 `MutDeque.sameElements` d2
+}
+
+@test
+def toMutDeque02(): Bool = region r {
+    let m = Map#{1 => 2};
+    let d1 = Map.toMutDeque(r, m);
+
+    let d2 = new MutDeque(r);
+    MutDeque.pushBack((1, 2), d2);
+
+    d1 `MutDeque.sameElements` d2
+}
+
+@test
+def toMutDeque03(): Bool = region r {
+    let m = Map#{1 => 2, 3 => 4, 5 => 6};
+    let d1 = Map.toMutDeque(r, m);
+
+    let d2 = new MutDeque(r);
+    MutDeque.pushBack((3, 4), d2);
+    MutDeque.pushBack((5, 6), d2);
+    MutDeque.pushFront((1, 2), d2);
+
+    d1 `MutDeque.sameElements` d2
+}
+
+@test
+def toMutDeque04(): Bool = region r {
+    let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'};
+    let d1 = Map.toMutDeque(r, m);
+
+    let d2 = new MutDeque(r);
+    MutDeque.pushFront((3, 'c'), d2);
+    MutDeque.pushFront((2, 'b'), d2);
+    MutDeque.pushFront((1, 'a'), d2);
+
+    d1 `MutDeque.sameElements` d2
+}
+
+/////////////////////////////////////////////////////////////////////////////
 // eq                                                                      //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -2131,8 +2229,8 @@ def query18(): Bool =
     def minimumKeyBy05(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
-        let a = new MutList(static);
-        Map.minimumKeyBy((x, y) -> { let b = new MutList(static); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, m);
+        let a = new MutList(Static);
+        discard Map.minimumKeyBy((x, y) -> { let b = new MutList(Static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
@@ -2183,8 +2281,8 @@ def query18(): Bool =
     def minimumValueBy06(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, List.reverse(range)) |> List.toMap;
-        let a = new MutList(static);
-        Map.minimumValueBy((x, y) -> { let b = new MutList(static); MutList.push!(x, b); MutList.append!(b, a); x <=> y }, m);
+        let a = new MutList(Static);
+        discard Map.minimumValueBy((x, y) -> { let b = new MutList(Static); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.reverse(List.range(1, 2000)) // The first / left most value is ignored
 
 
@@ -2225,8 +2323,8 @@ def query18(): Bool =
     def maximumKeyBy05(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
-        let a = new MutList(static);
-        Map.maximumKeyBy((x, y) -> { let b = new MutList(static); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, m);
+        let a = new MutList(Static);
+        discard Map.maximumKeyBy((x, y) -> { let b = new MutList(Static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
@@ -2267,8 +2365,8 @@ def query18(): Bool =
     def maximumValueBy05(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
-        let a = new MutList(static);
-        Map.maximumValueBy((x, y) -> { let b = new MutList(static); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, m);
+        let a = new MutList(Static);
+        discard Map.maximumValueBy((x, y) -> { let b = new MutList(Static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
@@ -2310,21 +2408,40 @@ def query18(): Bool =
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // toMultiMap                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMultiMap01(): Bool =
+        Map.toMultiMap(Map#{}: Map[Int32, Char]) |> MultiMap.toAscList == Nil
+
+    @test
+    def toMultiMap02(): Bool =
+        Map.toMultiMap(Map#{1 => 'a'}) |> MultiMap.toAscList == (1, 'a') :: Nil
+
+    @test
+    def toMultiMap03(): Bool =
+        Map.toMultiMap(Map#{1 => 'a', 2 => 'b'}) |> MultiMap.toAscList == (1, 'a') :: (2, 'b') :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
     // toIterator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool & Impure =
-        Map.empty(): Map[Int32, Int32] |> Map.toIterator |> Iterator.toMap == Map.empty()
+    def toIterator01(): Bool = region r {
+        Map.empty(): Map[Int32, Int32] |> Map.toIterator(r) |> Iterator.toMap == Map.empty()
+    }
 
     @test
-    def toIterator02(): Bool & Impure =
-        Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4} |> Map.toIterator |> Iterator.toMap == Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4}
+    def toIterator02(): Bool = region r {
+        Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4} |> Map.toIterator(r) |> Iterator.toMap == Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4}
+    }
 
     @test
-    def toIterator03(): Bool & Impure =
+    def toIterator03(): Bool = region r {
         let l = List.range(0, 100);
-        List.zip(l, List.reverse(l)) |> List.toMap |> Map.toIterator |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
+        List.zip(l, List.reverse(l)) |> List.toMap |> Map.toIterator(r) |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2391,5 +2508,117 @@ def query18(): Bool =
     def joinWith04(): Bool =
         Map#{0 => "1", 1 => "2", 2 => "2"} |>
             Map.joinWith((k, v) -> "${k} => ${v}", ", ") == "0 => 1, 1 => 2, 2 => 2"
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // explode                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def explode01(): Bool =
+        Map.explode(Map#{1 => Set#{2, 3}}) == Set#{(1, 2), (1, 3)}
+
+    @test
+    def explode02(): Bool =
+        Map.explode(Map#{1 => Set#{2, 3}, 2 => Set#{2, 3}}) == Set#{(1, 2), (1, 3), (2, 2), (2, 3)}
+
+    @test
+    def explode03(): Bool =
+        Map.explode(Map#{1 => Set#{2, 3}, 2 => Set#{5, 6, 7}}) == Set#{(1, 2), (1, 3), (2, 5), (2, 6), (2, 7)}
+
+    @test
+    def explode04(): Bool =
+        Map.explode(Map#{1 => Set#{2, 3}, 2 => Set#{5, 6, 7}, 3 => Set#{0}}) == Set#{(1, 2), (1, 3), (2, 5), (2, 6), (2, 7), (3, 0)}
+
+    /////////////////////////////////////////////////////////////////////////////
+    // LowerBound.minValue                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def minValue01(): Bool =
+        LowerBound.minValue(): Map[Int32, Int32] == Map.empty()
+
+    /////////////////////////////////////////////////////////////////////////////
+    // PartialOrder.lessEqual                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def lessEqual01(): Bool = PartialOrder.lessEqual(Map.empty(): Map[Int32, Int32], Map.empty(): Map[Int32, Int32])
+
+    @test
+    def lessEqual02(): Bool = PartialOrder.lessEqual(Map.empty(): Map[Int32, Int32], Map.singleton(1, 1))
+
+    @test
+    def lessEqual03(): Bool = not PartialOrder.lessEqual(Map.singleton(1, 1), Map.empty(): Map[Int32, Int32])
+
+    @test
+    def lessEqual04(): Bool = PartialOrder.lessEqual(Map.singleton(1, 1), Map.singleton(1, 1))
+
+    @test
+    def lessEqual05(): Bool = not PartialOrder.lessEqual(Map.singleton(1, 1), Map.singleton(1, 10))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // JoinLattice.leastUpperBound                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def leastUpperBound01(): Bool =
+        JoinLattice.leastUpperBound(Map.empty(): Map[Int32, Int32], Map.empty(): Map[Int32, Int32]) == Map.empty(): Map[Int32, Int32]
+
+    @test
+    def leastUpperBound02(): Bool =
+        JoinLattice.leastUpperBound(Map.empty(): Map[Int32, Int32], Map.singleton(1, 1)) == Map.singleton(1, 1)
+
+    @test
+    def leastUpperBound03(): Bool =
+        JoinLattice.leastUpperBound(Map.singleton(1, 1), Map.empty(): Map[Int32, Int32]) == Map.singleton(1, 1)
+
+    @test
+    def leastUpperBound04(): Bool =
+        JoinLattice.leastUpperBound(Map.singleton(1, 1), Map.singleton(1, 1)) == Map.singleton(1, 1)
+
+    @test
+    def leastUpperBound05(): Bool =
+        JoinLattice.leastUpperBound(Map.singleton(1, 1), Map.singleton(1, 10)) == Map.singleton(1, 10)
+
+    @test
+    def leastUpperBound06(): Bool =
+        JoinLattice.leastUpperBound(Map.singleton(1, 1), Map.singleton(2, 2)) == Map#{1 => 1, 2 => 2}
+
+    @test
+    def leastUpperBound07(): Bool =
+        JoinLattice.leastUpperBound(Map.singleton(1, 1), Map#{1 => 10, 2 => 2}) == Map#{1 => 10, 2 => 2}
+
+    /////////////////////////////////////////////////////////////////////////////
+    // MeetLattice.greatestLowerBound                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def greatestLowerBound01(): Bool =
+        MeetLattice.greatestLowerBound(Map.empty(): Map[Int32, Int32], Map.empty(): Map[Int32, Int32]) == Map.empty(): Map[Int32, Int32]
+
+    @test
+    def greatestLowerBound02(): Bool =
+        MeetLattice.greatestLowerBound(Map.empty(): Map[Int32, Int32], Map.singleton(1, 1)) == Map.empty(): Map[Int32, Int32]
+
+    @test
+    def greatestLowerBound03(): Bool =
+        MeetLattice.greatestLowerBound(Map.singleton(1, 1), Map.empty(): Map[Int32, Int32]) == Map.empty(): Map[Int32, Int32]
+
+    @test
+    def greatestLowerBound04(): Bool =
+        MeetLattice.greatestLowerBound(Map.singleton(1, 1), Map.singleton(1, 1)) == Map.singleton(1, 1)
+
+    @test
+    def greatestLowerBound05(): Bool =
+        MeetLattice.greatestLowerBound(Map.singleton(1, 1), Map.singleton(1, 10)) == Map.singleton(1, 1)
+
+    @test
+    def greatestLowerBound06(): Bool =
+        MeetLattice.greatestLowerBound(Map.singleton(1, 1), Map.singleton(2, 2)) == Map.empty(): Map[Int32, Int32]
+
+    @test
+    def greatestLowerBound07(): Bool =
+        MeetLattice.greatestLowerBound(Map.singleton(1, 1), Map#{1 => 10, 2 => 2}) == Map.singleton(1, 1)
 
 }

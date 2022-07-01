@@ -172,7 +172,7 @@ object Packager {
     flix.check() match {
       case Validation.Success(_) => ().toOk
       case Validation.Failure(errors) =>
-        errors.foreach(e => println(e.message(flix.getFormatter)))
+        flix.mkMessages(errors).foreach(println _)
         Result.Err(1)
     }
   }
@@ -199,7 +199,7 @@ object Packager {
     flix.compile() match {
       case Validation.Success(r) => Result.Ok(r)
       case Validation.Failure(errors) =>
-        errors.foreach(e => println(e.message(flix.getFormatter)))
+        flix.mkMessages(errors).foreach(println _)
         1.toErr
     }
   }
@@ -398,7 +398,7 @@ object Packager {
   /**
     * Returns `true` if the given path `p` appears to be a flix project path.
     */
-  private def isProjectPath(p: Path): Boolean =
+  def isProjectPath(p: Path): Boolean =
     Files.exists(getSourceDirectory(p)) &&
       Files.exists(getTestDirectory(p)) &&
       Files.exists(getHistoryFile(p)) &&
@@ -428,17 +428,17 @@ object Packager {
   /**
     * Returns the path to the library directory relative to the given path `p`.
     */
-  private def getLibraryDirectory(p: Path): Path = p.resolve("./lib/").normalize()
+  def getLibraryDirectory(p: Path): Path = p.resolve("./lib/").normalize()
 
   /**
     * Returns the path to the source directory relative to the given path `p`.
     */
-  private def getSourceDirectory(p: Path): Path = p.resolve("./src/").normalize()
+  def getSourceDirectory(p: Path): Path = p.resolve("./src/").normalize()
 
   /**
     * Returns the path to the test directory relative to the given path `p`.
     */
-  private def getTestDirectory(p: Path): Path = p.resolve("./test/").normalize()
+  def getTestDirectory(p: Path): Path = p.resolve("./test/").normalize()
 
   /**
     * Returns the path to the HISTORY file relative to the given path `p`.
@@ -518,7 +518,7 @@ object Packager {
   /**
     * Returns all files in the given path `p`.
     */
-  private def getAllFiles(p: Path): List[Path] = {
+  def getAllFiles(p: Path): List[Path] = {
     val visitor = new FileVisitor
     Files.walkFileTree(p, visitor)
     visitor.result.toList

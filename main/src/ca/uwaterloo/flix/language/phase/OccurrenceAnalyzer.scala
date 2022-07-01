@@ -408,6 +408,9 @@ object OccurrenceAnalyzer {
       val (e, o) = visitExp(sym0, exp)
       (OccurrenceAst.Expression.PutStaticField(field, e, tpe, purity, loc), o.increaseSizeByOne())
 
+    case Expression.NewObject(clazz, tpe, purity, loc) =>
+      (OccurrenceAst.Expression.NewObject(clazz, tpe, purity, loc), OccurInfo.One)
+
     case Expression.NewChannel(exp, tpe, loc) =>
       val (e, o) = visitExp(sym0, exp)
       (OccurrenceAst.Expression.NewChannel(e, tpe, loc), o.increaseSizeByOne())

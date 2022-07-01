@@ -60,6 +60,10 @@ namespace RedBlackTree {
         pub def map(f: a -> b & ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] & ef = mapWithKey((_, v) -> f(v), t)
     }
 
+    instance ForEach[RedBlackTree[k]] {
+        pub def foreach(f: a -> Unit & ef, t: RedBlackTree[k, a]): Unit & ef = foreach((_, a) -> f(a), t)
+    }
+
     instance Foldable[RedBlackTree[k]] {
         pub def foldLeft(f: (b, v) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldLeft((acc, _, v) -> f(acc, v), s, t)
         pub def foldRight(f: (v, b) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldRight((_, v, acc) -> f(v, acc), s, t)
@@ -73,6 +77,13 @@ namespace RedBlackTree {
         pub override def sequence(t: RedBlackTree[k, m[a]]): m[RedBlackTree[k, a]] with Applicative[m] =
             mapAWithKey((_, v) -> v, t)
     }
+
+
+    instance FunctorFilter[RedBlackTree[k]] with Order[k] {
+        pub def filterMap(f: a -> Option[b] & ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] & ef = filterMapImplementation(f, t)
+        pub override def filter(f: a -> Bool & ef, t: RedBlackTree[k, a]): RedBlackTree[k, a] & ef = filterImplementation(f, t)
+    }
+
 
     ///
     /// The color of a red-black tree node.
@@ -110,10 +121,12 @@ namespace RedBlackTree {
     /// Returns the number of nodes in `t`.
     ///
     @Time(size(t)) @Space(Int32.log2(size(t)))
-    pub def size(t: RedBlackTree[k, v]): Int32 = match t {
-        case Node(_, a, _, _, b) => 1 + size(a) + size(b)
-        case _                   => 0
-    }
+    pub def size(t: RedBlackTree[k, v]): Int32 =
+        def loop(tt, k) = match tt {
+            case Node(_, a, _, _, b) => loop(a, ks -> k(loop(b, ys -> ks + ys + 1)))
+            case _                   => k(0)
+        };
+        loop(t, identity)
 
     ///
     /// Returns the empty tree.
@@ -245,10 +258,8 @@ namespace RedBlackTree {
     ///
     /// Optionally returns the first key-value pair in `t` that satisfies the predicate `f` when searching from left to right.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
-    pub def findLeft(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Option[(k, v)] =
+    pub def findLeft(f: (k, v) -> Bool & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
         def loop(tt, sk) = match tt {
             case Node(_, a, k, v, b) => loop(a, kl -> match kl {
                 case None => if (f(k, v)) Some(k, v) else loop(b, kr -> match kr {
@@ -259,15 +270,13 @@ namespace RedBlackTree {
             })
             case _ => sk(None)
         };
-        loop(t, identity)
+        loop(t, k -> k as & ef)
 
     ///
     /// Optionally returns the first key-value pair in `t` that satisfies the predicate `f` when searching from right to left.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
-    pub def findRight(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Option[(k, v)] =
+    pub def findRight(f: (k, v) -> Bool & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
         def loop(tt, sk) = match tt {
             case Node(_, a, k, v, b) => loop(b, kr -> match kr {
                 case None => if (f(k, v)) Some(k, v) else loop(a, kl -> match kl {
@@ -278,7 +287,7 @@ namespace RedBlackTree {
             })
             case _ => sk(None)
         };
-        loop(t, identity)
+        loop(t, k -> k as & ef)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `t` going from left to right.
@@ -307,7 +316,7 @@ namespace RedBlackTree {
     ///
     pub def foldRightWithCont(f: (k, v, Unit -> b & ef) -> b & ef, z: b, t: RedBlackTree[k, v]): b & ef = match t {
         case Node(_, a, k, v, b) => foldRightWithCont(f, f(k, v, _ -> foldRightWithCont(f, z, b)), a)
-        case _ => z
+        case _                   => z
     }
 
     ///
@@ -547,7 +556,7 @@ namespace RedBlackTree {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: k -> Comparison, f: (k, v) -> Unit & ef, t: RedBlackTree[k, v]): Unit & ef = match t {
+    pub def queryWith(p: k -> Comparison & ef1, f: (k, v) -> Unit & ef2, t: RedBlackTree[k, v]): Unit & (ef1 and ef2) = match t {
         case Node(_, a, k, v, b) =>
             match p(k) {
                 case LessThan    => queryWith(p, f, b)
@@ -562,12 +571,12 @@ namespace RedBlackTree {
     ///
     /// That is, the result is a list of all pairs `f(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison, f: (k, v) -> a & ef, t: RedBlackTree[k, v]): List[a] & ef = {
-        let buffer = new MutList(static);
+    pub def query(p: k -> Comparison & ef1, f: (k, v) -> a & ef2, t: RedBlackTree[k, v]): List[a] & (ef1 and ef2) = region r {
+        let buffer = new MutList(r);
         let g = k -> v -> MutList.push!(f(k, v), buffer);
         queryWith(p, g, t);
         MutList.toList(buffer)
-    } as & ef
+    }
 
     ///
     /// Extracts `k => v` where `k` is the leftmost (i.e. smallest) key in the tree.
@@ -684,7 +693,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parCount(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 & Impure = {
+    pub def parCount(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 & Impure =
         if (n <= 1)
             seqCount(f, t)
         else
@@ -701,7 +710,6 @@ namespace RedBlackTree {
                     let b1 = <- chanR;
                     a1 + v1 + b1
             }
-    }
 
     ///
     /// Applies `f` over the tree `t` sequentially from left to right and returns the number of elements
@@ -752,7 +760,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parSumWith(n: Int32, f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 & Impure = {
+    pub def parSumWith(n: Int32, f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 & Impure =
         if (n <= 1)
             seqSumWith(f, t)
         else
@@ -769,7 +777,6 @@ namespace RedBlackTree {
                     let b1 = <- chanR;
                     a1 + v1 + b1
             }
-    }
 
     ///
     /// Returns the sum of all key-value pairs `k => v` in the tree `t`
@@ -1001,4 +1008,37 @@ namespace RedBlackTree {
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
 
+    ///
+    /// Returns a new copy of tree `t` with just the nodes that satisfy the predicate `f`.
+    ///
+    pub def filter(f: v -> Bool & ef, t: RedBlackTree[k, v]): RedBlackTree[k, v] & ef with Order[k] =
+        filterImplementation(f, t)
+
+    ///
+    /// Temporary hack!
+    /// A concrete implementation of `filter` that the `FunctorFilter` instance can use.
+    /// If `FunctorFilter.filter` calls `filter` it appears to invoke a cycle and the concrete
+    /// implementation is never called.
+    ///
+    def filterImplementation(f: v -> Bool & ef, t: RedBlackTree[k, v]): RedBlackTree[k, v] & ef with Order[k] =
+        foldLeft((acc, k, v) -> if (f(v)) insert(k, v, acc) else acc, empty(), t)
+
+    ///
+    /// Collects the results of applying the partial function `f` to every element in `t`.
+    /// This traverses tree `t` and produces a new tree with just nodes where applying f
+    /// produces `Some(_)`.
+    ///
+    pub def filterMap(f: a -> Option[b] & ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] & ef with Order[k] =
+        filterMapImplementation(f, t)
+
+    ///
+    /// Temporary hack!
+    /// A concrete implementation of `filterMap` that the `FunctorFilter` instance can use.
+    ///
+    def filterMapImplementation(f: a -> Option[b] & ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] & ef with Order[k] =
+        let step = (acc, k, a) -> match f(a) {
+            case Some(b) => insert(k, b, acc)
+            case None    => acc
+        };
+        foldLeft(step, empty(), t)
 }

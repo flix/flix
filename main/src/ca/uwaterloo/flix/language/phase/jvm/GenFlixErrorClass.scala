@@ -18,27 +18,10 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
+import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.FlixError
 
 object GenFlixErrorClass {
-
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    Map(JvmName.FlixError -> JvmClass(JvmName.FlixError, genByteCode()))
+    Map(FlixError.jvmName -> JvmClass(FlixError.jvmName, FlixError.genByteCode()))
   }
-
-  private def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkAbstractClass(JvmName.FlixError, JvmName.Error)
-
-    cm.mkConstructor(genConstructor(), mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void), IsPublic)
-
-    cm.closeClassMaker()
-  }
-
-  private def genConstructor()(implicit flix: Flix): InstructionSet =
-    thisLoad() ~
-      ALOAD(1) ~
-      invokeConstructor(JvmName.Error, mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void)) ~
-      RETURN()
 }

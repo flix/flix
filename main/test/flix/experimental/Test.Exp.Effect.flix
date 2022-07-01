@@ -22,7 +22,7 @@ namespace Test/Exp/Effect {
     }
 
     // @test
-    pub def perform01(): Bool = {
+    pub def perform01(): Unit = {
         do Test/Exp/Effect/Fail.fail(":(")
     }
 
@@ -38,9 +38,9 @@ namespace Test/Exp/Effect {
     }
 
     // @test
-    pub def handlePerform01(): Bool = {
+    pub def handlePerform01(): Unit = {
         try do Test/Exp/Effect/Fail.fail("rats") with Fail {
-            def fail(_) = true
+            def fail(_) = ()
         }
     }
 
@@ -54,15 +54,15 @@ namespace Test/Exp/Effect {
         }
     }
 
-    pub def singleEffect(): Bool \ Flip = ??? as & _
+    pub def singleEffect(): Bool \ Fail = ??? as & _
 
-    pub def complementEffect(): Bool \ ~Flip = ??? as & _
+    pub def complementEffect(): Bool \ ~Fail = ??? as & _
 
-    pub def unionEffect(): Bool \ Flip + Fail = ??? as & _
+    pub def unionEffect(): Bool \ Fail + Fail = ??? as & _
 
-    pub def intersectionEffect(): Bool \ Flip & Fail = ??? as & _
+    pub def intersectionEffect(): Bool \ Fail & Fail = ??? as & _
 
-    pub def differenceEffect(): Bool \ Flip - Fail = ??? as & _
+    pub def differenceEffect(): Bool \ Fail - Fail = ??? as & _
 
     pub def singlePolyEffect(): Bool \ ef1 = ??? as & ef1
 
@@ -76,9 +76,9 @@ namespace Test/Exp/Effect {
 
     pub def effectSet01(): Bool \ { Fail } = ??? as & _
 
-    pub def effectSet02(): Bool \ { Flip, Fail } = ??? as & _
+    pub def effectSet02(): Bool \ { Fail, Fail } = ??? as & _
 
-    pub def effectSet03(): Bool \ { Flip, Fail, Console } = ??? as & _
+    pub def effectSet03(): Bool \ { Fail, Fail, Console } = ??? as & _
 
     pub def effectSet04(): Bool \ {} = ??? as & _
 

@@ -3,15 +3,15 @@ namespace Stratifier {
     use List.{map, flatMap, partition};
     use Array.toMap;
 
-    opaque type Program = List[Constraint]
-    opaque type Constraint = (HeadAtom, List[BodyAtom])
-    opaque type Atom = PredicateSymbol
-    opaque type HeadAtom = Atom
+    enum Program(List[Constraint])
+    enum Constraint((HeadAtom, List[BodyAtom]))
+    enum Atom(PredicateSymbol)
+    enum HeadAtom(Atom)
     enum BodyAtom {
         case Positive(Atom)
         case Negative(Atom)
     }
-    opaque type PredicateSymbol with Boxable, ToString, Eq, Order = String
+    enum PredicateSymbol(String) with Boxable, ToString, Eq, Order
 
     // A :- B leads to (A, true, B)
     type alias PrecedenceEdge = (PredicateSymbol, Bool, PredicateSymbol)
@@ -33,7 +33,7 @@ namespace Stratifier {
         let pg: PrecedenceGraph = convertProgram(p);
         let (pos, neg) = partition(e -> match e {case (_, b, _) => b}, pg);
         let removeBool = triple -> match triple {case (a, _, b) => (a, b)};
-        let facts = project map(removeBool, pos), map(removeBool, neg) into PositiveDependencyEdge, NegativeDependencyEdge;
+        let facts = inject map(removeBool, pos), map(removeBool, neg) into PositiveDependencyEdge, NegativeDependencyEdge;
         let rules = #{
             Stratum(pd; 0) :- PositiveDependencyEdge(pd, _).
             Stratum(pd; 0) :- PositiveDependencyEdge(_, pd).

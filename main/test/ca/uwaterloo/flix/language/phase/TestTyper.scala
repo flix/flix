@@ -146,19 +146,19 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedTypes](result)
   }
 
-  test("TestMismatchedTypes.Arrow.01") {
+  test("TestUnderApplied.Arrow.01") {
     // Regression test.
     // See https://github.com/flix/flix/issues/3634
     val input =
-      """
-        |opaque type E[a: Type, ef: Bool] = Unit
-        |def f(g: E[Int32, true]): Bool = ???
-        |def mkE(): E[Int32, true] & ef = ???
-        |
-        |def g(): Bool = f(mkE)
-        |""".stripMargin
+    """
+      |enum E[a: Type, ef: Bool](Unit)
+      |def f(g: E[Int32, true]): Bool = ???
+      |def mkE(): E[Int32, true] & ef = ???
+      |
+      |def g(): Bool = f(mkE)
+      |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedTypes](result)
+    expectError[TypeError.UnderApplied](result)
   }
 
   test("TestOverApplied.01") {
@@ -216,12 +216,6 @@ class TestTyper extends FunSuite with TestUtils {
   }
 
   test("TestLeq.Wildcard.03") {
-    val input = "def foo(a: Int32): Int32 & _ = a"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectGeneralizationError](result)
-  }
-
-  test("TestLeq.Wildcard.04") {
     val input = "def foo(a: Int32): Int32 & _ = a"
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.EffectGeneralizationError](result)
@@ -991,7 +985,7 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedBools](result)
   }
 
-  test("TestLeq.Choice.01") {
+  test("Test.Choice.Param.01") {
     val input =
       """
         |pub def foo(x: Choice[String, true, _]): Int32 =
@@ -1006,10 +1000,10 @@ class TestTyper extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.MismatchedBools](result)
   }
 
-  test("TestLeq.Choice.02") {
+  test("Test.Choice.Param.02") {
     val input =
       """
         |pub def foo(x: Choice[String, _, true]): Int32 =
@@ -1024,7 +1018,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.MismatchedBools](result)
   }
 
   test("Test.Choice.Empty.01") {
@@ -1179,6 +1173,18 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.ImpureDeclaredAsPure](result)
   }
 
+  test("Test.ImpureDeclaredAsPure.03") {
+    // Regression test. See https://github.com/flix/flix/issues/4062
+    val input =
+      """
+        |def mkArray(): Array[Int32, Static] & Impure = []
+        |
+        |def zero(): Int32 & Pure = mkArray().length
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.ImpureDeclaredAsPure](result)
+  }
+
   test("Test.EffectPolymorphicDeclaredAsPure.01") {
     val input =
       """
@@ -1278,7 +1284,7 @@ class TestTyper extends FunSuite with TestUtils {
         |        region r {
         |            let x = ref 123 @ r;
         |            w -> {
-        |                let _ = deref x;
+        |                discard deref x;
         |                w
         |            }
         |        }
@@ -1307,6 +1313,7 @@ class TestTyper extends FunSuite with TestUtils {
 //      """.stripMargin
 //    val result = compile(input, Options.TestWithLibNix)
 //    expectError[TypeError.RegionVarEscapes](result)
+//    }
 //  }
 
 }

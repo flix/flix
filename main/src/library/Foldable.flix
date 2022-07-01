@@ -17,7 +17,7 @@
 ///
 /// A type class for data structures that can be folded.
 ///
-pub class Foldable[t : Type -> Type] {
+pub class Foldable[t : Type -> Type] with ForEach[t] {
 
     ///
     /// Left-associative fold of a structure.
@@ -42,7 +42,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
     ///
-    pub def count(f: a -> Bool, t: t[a]): Int32 =
+    pub def count(f: a -> Bool & ef, t: t[a]): Int32 & ef =
         Foldable.foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, t)
 
     ///
@@ -127,7 +127,7 @@ pub class Foldable[t : Type -> Type] {
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b & ef, t: t[a]): b & ef with Monoid[b] =
-        Foldable.foldLeft((acc, x) -> Monoid.combine(f(x), acc), Monoid.empty(), t)
+        Foldable.foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), t)
 
     ///
     /// Returns true if and only if `t` is empty.
@@ -190,6 +190,12 @@ pub class Foldable[t : Type -> Type] {
         Foldable.foldRight((x, acc) -> Some(Option.foldLeft((v, z) -> f(v, z), x, acc)), None, t)
 
     ///
+    /// Returns `t` as a chain.
+    ///
+    pub def toChain(t: t[a]): Chain[a] =
+        Foldable.foldRight((x, acc) -> Chain.cons(x, acc), Chain.empty(), t)
+
+    ///
     /// Returns `t` as an immutable list.
     ///
     pub def toList(t: t[a]): List[a] =
@@ -198,18 +204,19 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns `t` as an array.
     ///
-    pub def toArray(t: t[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
-        let v = new MutList(r);
-        Foldable.foreach(a -> MutList.push!(a, v), t);
-        MutList.toArray(v, r)
+    pub def toArray(r: Region[r], t: t[a]): Array[a, r] \ Write(r) = region r2 {
+        let l = new MutList(r2);
+        Foldable.foreach(a -> MutList.push!(a, l), t);
+        MutList.toArray(r, l)
+    }
 
     ///
     /// Returns an iterator over `t`.
     ///
-    pub def toIterator(t: t[a]): Iterator[a] & Impure =
-        let arr = Foldable.toArray(t, static);
+    pub def toIterator(r: Region[r], t: t[a]): Iterator[a, r] \ Write(r) =
+        let arr = Foldable.toArray(r, t);
         let len = Array.length(arr);
-        let i = ref 0;
+        let i = ref 0 @ r;
         let done = () -> (deref i) >= len;
         let next = () -> {
             let j = deref i;
@@ -220,10 +227,18 @@ pub class Foldable[t : Type -> Type] {
         Iterator(done, next)
 
     ///
+    /// Returns `t` as a `MutDeque`.
+    ///
+    pub def toMutDeque(r: Region[r], t: t[a]): MutDeque[a, r] \ Write(r) =
+        let d = new MutDeque(r);
+        Foldable.foreach(x -> MutDeque.pushBack(x, d), t);
+        d
+
+    ///
     /// Returns `t` as a mutable list.
     ///
-    pub def toMutList(t: t[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
-        Array.toMutList(Foldable.toArray(t, r2), r)
+    pub def toMutList(r: Region[r], t: t[a]): MutList[a, r] \ Write(r) = region r2 {
+        Array.toMutList(Foldable.toArray(r2, t), r)
     }
 
     ///
@@ -231,6 +246,14 @@ pub class Foldable[t : Type -> Type] {
     ///
     pub def toSet(t: t[a]): Set[a] with Order[a] =
         Foldable.foldRight((x, acc) -> Set.insert(x, acc), Set.empty(), t)
+
+    ///
+    /// Returns the set `s` as a `MutSet`.
+    ///
+    pub def toMutSet(r: Region[r], t: t[a]): MutSet[a, r] \ Write(r) with Order[a] =
+        let s = new MutSet(r);
+        Foldable.foreach(x -> MutSet.add!(x, s), t);
+        s
 
     ///
     /// Returns `t` as a map.
@@ -243,6 +266,14 @@ pub class Foldable[t : Type -> Type] {
     ///
     pub def toMapWith(f: a -> b, s: t[a]): Map[a, b] with Order[a] =
         Foldable.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), s)
+
+    ///
+    /// Returns the set `s` as a `MutMap`.
+    ///
+    pub def toMutMap(r: Region[r], t: t[(k, v)]): MutMap[k, v, r] \ Write(r) with Order[k] =
+        let m = new MutMap(r);
+        Foldable.foreach(x -> let (k, v) = x; MutMap.put!(k, v, m), t);
+        m
 
     ///
     /// Returns `t` without the longest prefix that satisfies the predicate `f`.

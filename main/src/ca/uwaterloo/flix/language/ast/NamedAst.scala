@@ -49,7 +49,7 @@ object NamedAst {
 
   case class Def(sym: Symbol.DefnSym, spec: NamedAst.Spec, exp: NamedAst.Expression)
 
-  case class Spec(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, retTpe: NamedAst.Type, pur: NamedAst.Type, eff: NamedAst.Type, loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], retTpe: NamedAst.Type, purAndEff: PurityAndEffect, tconstrs: List[NamedAst.TypeConstraint], loc: SourceLocation)
 
   case class Enum(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: NamedAst.TypeParams, derives: List[Name.QName], cases: Map[Name.Tag, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation)
 
@@ -173,9 +173,9 @@ object NamedAst {
 
     case class Assign(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Ascribe(exp: NamedAst.Expression, expectedType: Option[NamedAst.Type], expectedEff: Option[NamedAst.Type], loc: SourceLocation) extends NamedAst.Expression
+    case class Ascribe(exp: NamedAst.Expression, expectedType: Option[NamedAst.Type], expectedEff: NamedAst.PurityAndEffect, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Cast(exp: NamedAst.Expression, declaredType: Option[NamedAst.Type], declaredEff: Option[NamedAst.Type], loc: SourceLocation) extends NamedAst.Expression
+    case class Cast(exp: NamedAst.Expression, declaredType: Option[NamedAst.Type], declaredEff: NamedAst.PurityAndEffect, loc: SourceLocation) extends NamedAst.Expression
 
     case class Without(exp: NamedAst.Expression, eff: Name.QName, loc: SourceLocation) extends NamedAst.Expression
 
@@ -201,6 +201,8 @@ object NamedAst {
 
     case class PutStaticField(className: String, fieldName: String, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
+    case class NewObject(className: String, loc: SourceLocation) extends NamedAst.Expression
+
     case class NewChannel(exp: NamedAst.Expression, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Expression
 
     case class GetChannel(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
@@ -225,9 +227,9 @@ object NamedAst {
 
     case class FixpointFilter(pred: Name.Pred, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FixpointProjectIn(exp: NamedAst.Expression, pred: Name.Pred, loc: SourceLocation) extends NamedAst.Expression
+    case class FixpointInject(exp: NamedAst.Expression, pred: Name.Pred, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FixpointProjectOut(pred: Name.Pred, exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class FixpointProject(pred: Name.Pred, exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Reify(t: NamedAst.Type, loc: SourceLocation) extends NamedAst.Expression
 
@@ -357,7 +359,7 @@ object NamedAst {
 
     case class Lattice(tpes: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
 
-    case class Arrow(tparams: List[NamedAst.Type], pur: NamedAst.Type, eff: NamedAst.Type, tresult: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+    case class Arrow(tparams: List[NamedAst.Type], purAndEff: NamedAst.PurityAndEffect, tresult: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Apply(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
@@ -379,15 +381,13 @@ object NamedAst {
 
     case class Difference(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
-    case class Read(reg: Name.Ident, loc: SourceLocation) extends NamedAst.Type
+    case class Read(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
-    case class Write(reg: Name.Ident, loc: SourceLocation) extends NamedAst.Type
+    case class Write(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Ascribe(tpe: NamedAst.Type, kind: Kind, loc: SourceLocation) extends NamedAst.Type
 
   }
-
-  case class Scheme(quantifiers: List[Symbol.UnkindedTypeVarSym], tconstrs: List[NamedAst.TypeConstraint], base: NamedAst.Type)
 
   sealed trait TypeParams {
     val tparams: List[NamedAst.TypeParam]
@@ -461,4 +461,5 @@ object NamedAst {
 
   case class TypeConstraint(clazz: Name.QName, tpe: NamedAst.Type, loc: SourceLocation)
 
+  case class PurityAndEffect(pur: Option[Type], eff: Option[List[Type]])
 }

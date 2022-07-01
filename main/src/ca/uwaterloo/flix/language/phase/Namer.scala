@@ -129,13 +129,13 @@ object Namer {
       /*
      * Definition.
      */
-      case decl@WeededAst.Declaration.Def(_, _, _, ident, _, _, _, _, _, _, _, _, _) =>
+      case decl@WeededAst.Declaration.Def(_, _, _, ident, _, _, _, _, _, _, _) =>
         // Check if the definition already exists.
         val defsAndSigs = prog0.defsAndSigs.getOrElse(ns0, Map.empty)
         lookupLowerName(ident.name, ns0, prog0) match {
           // Case 1: Not used. Add it to the namespace
           case LookupResult.NotDefined =>
-            mapN(visitDef(decl, uenv0, Map.empty, ns0, Nil, Nil)) {
+            mapN(visitDef(decl, uenv0, Map.empty, ns0, Nil)) {
               defn => prog0.copy(defsAndSigs = prog0.defsAndSigs + (ns0 -> (defsAndSigs + (ident.name -> NamedAst.DefOrSig.Def(defn)))))
             }
           case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
@@ -144,7 +144,7 @@ object Namer {
       /*
       * Law.
       */
-      case WeededAst.Declaration.Law(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, retTpe, eff0, tconstrs, loc) => ??? // TODO
+      case WeededAst.Declaration.Law(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, tconstrs, loc) => ??? // TODO
 
       /*
      * Enum.
@@ -333,7 +333,7 @@ object Namer {
       val sym = Symbol.mkEnumSym(ns0, ident)
 
       // Compute the type parameters.
-      val tparams = getTypeParams(tparams0, uenv0)
+      val tparams = getTypeParams(tparams0)
 
       val tenv = tparams.tparams.map(kv => kv.name.name -> kv.sym).toMap
       val quantifiers = tparams.tparams.map(_.sym).map(sym => NamedAst.Type.Var(sym, sym.loc))
@@ -369,7 +369,7 @@ object Namer {
   private def visitTypeAlias(alias0: WeededAst.Declaration.TypeAlias, uenv0: UseEnv, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.TypeAlias, NameError] = alias0 match {
     case WeededAst.Declaration.TypeAlias(doc, mod0, ident, tparams0, tpe0, loc) =>
       val mod = visitModifiers(mod0, ns0)
-      val tparams = getTypeParams(tparams0, uenv0)
+      val tparams = getTypeParams(tparams0)
       val tenv = getTypeEnv(tparams.tparams)
       mapN(visitType(tpe0, uenv0, tenv)) {
         tpe =>
@@ -392,7 +392,7 @@ object Namer {
       val annVal = traverse(ann0)(visitAnnotation(_, Map.empty, uenv0, tenv))
       val superClassesVal = traverse(superClasses0)(visitTypeConstraint(_, uenv0, tenv, ns0))
       val sigsVal = traverse(signatures)(visitSig(_, uenv0, tenv, ns0, ident, sym, tparam))
-      val lawsVal = traverse(laws0)(visitDef(_, uenv0, tenv, ns0, List(tconstr), List(tparam.sym)))
+      val lawsVal = traverse(laws0)(visitDef(_, uenv0, tenv, ns0, List(tconstr)))
 
       mapN(annVal, superClassesVal, sigsVal, lawsVal) {
         case (ann, superClasses, sigs, laws) =>
@@ -415,7 +415,7 @@ object Namer {
         case (ann, tpe, tconstrs) =>
           val qualifiedClass = getClassOrEffect(clazz, uenv0)
           val instTconstr = NamedAst.TypeConstraint(qualifiedClass, tpe, clazz.loc)
-          val defsVal = traverse(defs0)(visitDef(_, uenv0, tenv, ns0, List(instTconstr), tparams.tparams.map(_.sym)))
+          val defsVal = traverse(defs0)(visitDef(_, uenv0, tenv, ns0, List(instTconstr)))
           mapN(defsVal) {
             defs => NamedAst.Instance(doc, ann, mod, qualifiedClass, tpe, tconstrs, defs, loc)
           }
@@ -438,22 +438,20 @@ object Namer {
     * Performs naming on the given signature declaration `sig` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
   private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName, classIdent: Name.Ident, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
-    case WeededAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, retTpe0, pur0, eff0, tconstrs0, loc) =>
-      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, uenv0, tenv0)
+    case WeededAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, purAndEff0, tconstrs0, loc) =>
+      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, purAndEff0, uenv0, tenv0)
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
 
       // First visit all the top-level information
-      val sigTypeCheckVal = checkSigType(ident, classTparam, tpe0, ident.loc)
+      val sigTypeCheckVal = checkSigType(ident, classTparam, fparams0, tpe0, purAndEff0, ident.loc)
       val mod = visitModifiers(mod0, ns0)
       val fparamsVal = getFormalParams(fparams0, uenv0, tenv)
       val tpeVal = visitType(tpe0, uenv0, tenv)
-      val retTpeVal = visitType(retTpe0, uenv0, tenv)
-      val purVal = visitType(pur0, uenv0, tenv)
-      val effVal = visitType(eff0, uenv0, tenv)
+      val purAndEffVal = visitPurityAndEffect(purAndEff0, uenv0, tenv)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))
 
-      flatMapN(sigTypeCheckVal, fparamsVal, tpeVal, retTpeVal, purVal, effVal, tconstrsVal) {
-        case (_, fparams, tpe, retTpe, pur, eff, tconstrs) =>
+      flatMapN(sigTypeCheckVal, fparamsVal, tpeVal, purAndEffVal, tconstrsVal) {
+        case (_, fparams, tpe, purAndEff, tconstrs) =>
 
           // Then visit the parts depending on the parameters
           val env0 = getVarEnv(fparams)
@@ -463,13 +461,12 @@ object Namer {
           mapN(annVal, expVal) {
             case (as, exp) =>
 
-              // Build the scheme, including the class type constraint.
+              // Add the class tconstr to the list
               val classTconstr = NamedAst.TypeConstraint(Name.mkQName(classIdent), NamedAst.Type.Var(classTparam.sym, classTparam.loc), classSym.loc)
-              val quantifiers = classTparam.sym :: tparams.tparams.map(_.sym)
-              val sc = NamedAst.Scheme(quantifiers, classTconstr :: tconstrs, tpe)
+              val allTconstrs = classTconstr :: tconstrs
 
               val sym = Symbol.mkSigSym(classSym, ident)
-              val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, retTpe, pur, eff, loc)
+              val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, tpe, purAndEff, allTconstrs, loc)
               NamedAst.Sig(sym, spec, exp.headOption)
           }
       }
@@ -478,8 +475,11 @@ object Namer {
   /**
     * Checks the type `tpe` of the signature to ensure that it contains the class type parameter `classTparam`.
     */
-  private def checkSigType(sigIdent: Name.Ident, classTparam: NamedAst.TypeParam, tpe: WeededAst.Type, loc: SourceLocation): Validation[Unit, NameError] = {
-    if (freeVars(tpe).exists(_.name == classTparam.name.name)) {
+  private def checkSigType(sigIdent: Name.Ident, classTparam: NamedAst.TypeParam, fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, purAndEff: WeededAst.PurityAndEffect, loc: SourceLocation): Validation[Unit, NameError] = {
+    val WeededAst.PurityAndEffect(pur, eff) = purAndEff
+    val tpes = fparams.flatMap(_.tpe) ::: tpe :: pur.toList ::: eff.getOrElse(Nil)
+    val tvars = tpes.flatMap(freeVars)
+    if (tvars.exists(tvar => tvar.name == classTparam.name.name)) {
       ().toSuccess
     } else {
       NameError.IllegalSignature(sigIdent, loc).toFailure
@@ -489,24 +489,22 @@ object Namer {
   /**
     * Performs naming on the given definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`, with type constraints `tconstrs`.
     */
-  private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName, addedTconstrs: List[NamedAst.TypeConstraint], addedQuantifiers: List[Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
-    case WeededAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams0, exp, tpe0, retTpe0, pur0, eff0, tconstrs0, loc) =>
+  private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName, addedTconstrs: List[NamedAst.TypeConstraint])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
+    case WeededAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams0, exp, tpe0, purAndEff0, tconstrs0, loc) =>
       flix.subtask(ident.name, sample = true)
 
-      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, uenv0, tenv0)
+      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, purAndEff0, uenv0, tenv0)
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
 
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
       val fparamsVal = getFormalParams(fparams0, uenv0, tenv)
       val tpeVal = visitType(tpe0, uenv0, tenv)
-      val retTpeVal = visitType(retTpe0, uenv0, tenv)
-      val purVal = visitType(pur0, uenv0, tenv)
-      val effVal = visitType(eff0, uenv0, tenv)
+      val purAndEffVal = visitPurityAndEffect(purAndEff0, uenv0, tenv)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))
 
-      flatMapN(fparamsVal, tpeVal, retTpeVal, purVal, effVal, tconstrsVal) {
-        case (fparams, tpe, retTpe, pur, eff, tconstrs) =>
+      flatMapN(fparamsVal, tpeVal, purAndEffVal, tconstrsVal) {
+        case (fparams, tpe, purAndEff, tconstrs) =>
 
           // Then visit the parts depending on the parameters
           val env0 = getVarEnv(fparams)
@@ -516,13 +514,11 @@ object Namer {
           mapN(annVal, expVal) {
             case (as, e) =>
 
-              // Build the scheme, including any instance parameters or type constraints
-              val quantifiers = addedQuantifiers ::: tparams.tparams.map(_.sym)
-              val schemeTconstrs = addedTconstrs ::: tconstrs
-              val sc = NamedAst.Scheme(quantifiers, schemeTconstrs, tpe)
+              // add the extra tconstrs
+              val allTconstrs = addedTconstrs ::: tconstrs
 
               val sym = Symbol.mkDefnSym(ns0, ident)
-              val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, retTpe, pur, eff, loc)
+              val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, tpe, purAndEff, allTconstrs, loc)
               NamedAst.Def(sym, spec, e)
           }
       }
@@ -553,11 +549,10 @@ object Namer {
       val mod = visitModifiers(mod0, ns0)
       val fparamsVal = getFormalParams(fparams0, uenv0, tenv)
       val tpeVal = visitType(tpe0, uenv0, tenv)
-      val retTpeVal = visitType(retTpe0, uenv0, tenv)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))
 
-      flatMapN(fparamsVal, tpeVal, retTpeVal, tconstrsVal) {
-        case (fparams, tpe, retTpe, tconstrs) =>
+      flatMapN(fparamsVal, tpeVal, tconstrsVal) {
+        case (fparams, tpe, tconstrs) =>
 
           // Then visit the parts depending on the parameters
           val env0 = getVarEnv(fparams)
@@ -566,16 +561,11 @@ object Namer {
           mapN(annVal) {
             ann =>
 
-              // Build the scheme, including the class type constraint.
-              val quantifiers = Nil // operations are monomorphic
-              val sc = NamedAst.Scheme(quantifiers, tconstrs, tpe)
-
               val tparams = NamedAst.TypeParams.Kinded(Nil) // operations are monomorphic
-              val pur = NamedAst.Type.True(ident.loc) // operations are pure
-              val eff = NamedAst.Type.True(ident.loc) // operations are pure
+              val purAndEff = NamedAst.PurityAndEffect(None, None) // operations are pure
 
               val sym = Symbol.mkOpSym(effSym, ident)
-              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, sc, retTpe, pur, eff, loc)
+              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc)
               NamedAst.Op(sym, spec)
           }
       }
@@ -866,10 +856,7 @@ object Namer {
         case None => (None: Option[NamedAst.Type]).toSuccess
         case Some(t) => mapN(visitType(t, uenv0, tenv0))(x => Some(x))
       }
-      val expectedEffVal = expectedEff match {
-        case None => (None: Option[NamedAst.Type]).toSuccess
-        case Some(f) => mapN(visitType(f, uenv0, tenv0))(x => Some(x))
-      }
+      val expectedEffVal = visitPurityAndEffect(expectedEff, uenv0, tenv0)
 
       mapN(expVal, expectedTypVal, expectedEffVal) {
         case (e, t, f) => NamedAst.Expression.Ascribe(e, t, f, loc)
@@ -881,10 +868,7 @@ object Namer {
         case None => (None: Option[NamedAst.Type]).toSuccess
         case Some(t) => mapN(visitType(t, uenv0, tenv0))(x => Some(x))
       }
-      val declaredEffVal = declaredEff match {
-        case None => (None: Option[NamedAst.Type]).toSuccess
-        case Some(f) => mapN(visitType(f, uenv0, tenv0))(x => Some(x))
-      }
+      val declaredEffVal = visitPurityAndEffect(declaredEff, uenv0, tenv0)
 
       mapN(expVal, declaredTypVal, declaredEffVal) {
         case (e, t, f) => NamedAst.Expression.Cast(e, t, f, loc)
@@ -989,6 +973,9 @@ object Namer {
         case e => NamedAst.Expression.PutStaticField(className, fieldName, e, loc)
       }
 
+    case WeededAst.Expression.NewObject(className, loc) =>
+      NamedAst.Expression.NewObject(className, loc).toSuccess
+
     case WeededAst.Expression.NewChannel(exp, tpe, loc) =>
       mapN(visitExp(exp, env0, uenv0, tenv0), visitType(tpe, uenv0, tenv0)) {
         case (e, t) => NamedAst.Expression.NewChannel(e, t, loc)
@@ -1069,14 +1056,14 @@ object Namer {
         case e => NamedAst.Expression.FixpointFilter(ident, e, loc)
       }
 
-    case WeededAst.Expression.FixpointProjectIn(exp, pred, loc) =>
+    case WeededAst.Expression.FixpointInject(exp, pred, loc) =>
       mapN(visitExp(exp, env0, uenv0, tenv0)) {
-        case e => NamedAst.Expression.FixpointProjectIn(e, pred, loc)
+        case e => NamedAst.Expression.FixpointInject(e, pred, loc)
       }
 
-    case WeededAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) =>
+    case WeededAst.Expression.FixpointProject(pred, exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.FixpointProjectOut(pred, e1, e2, loc)
+        case (e1, e2) => NamedAst.Expression.FixpointProject(pred, e1, e2, loc)
       }
 
     case WeededAst.Expression.Reify(t0, loc) =>
@@ -1358,13 +1345,12 @@ object Namer {
     case WeededAst.Type.Native(fqn, loc) =>
       NamedAst.Type.Native(fqn, loc).toSuccess
 
-    case WeededAst.Type.Arrow(tparams0, pur0, eff0, tresult0, loc) =>
+    case WeededAst.Type.Arrow(tparams0, purAndEff0, tresult0, loc) =>
       val tparamsVal = traverse(tparams0)(visitType(_, uenv0, tenv0))
-      val purVal = visitType(pur0, uenv0, tenv0)
-      val effVal = visitType(eff0, uenv0, tenv0)
+      val purAndEffVal = visitPurityAndEffect(purAndEff0, uenv0, tenv0)
       val tresultVal = visitType(tresult0, uenv0, tenv0)
-      mapN(tparamsVal, purVal, effVal, tresultVal) {
-        case (tparams, pur, eff, tresult) => NamedAst.Type.Arrow(tparams, pur, eff, tresult, loc)
+      mapN(tparamsVal, purAndEffVal, tresultVal) {
+        case (tparams, purAndEff, tresult) => NamedAst.Type.Arrow(tparams, purAndEff, tresult, loc)
       }
 
     case WeededAst.Type.Apply(tpe1, tpe2, loc) =>
@@ -1413,14 +1399,22 @@ object Namer {
         case (t1, t2) => NamedAst.Type.Difference(t1, t2, loc)
       }
 
-    case WeededAst.Type.Read(reg, loc) => NamedAst.Type.Read(reg, loc).toSuccess
+    case WeededAst.Type.Read(tpe, loc) =>
+      mapN(visitType(tpe, uenv0, tenv0)) {
+        case t => NamedAst.Type.Read(t, loc)
+      }
 
-    case WeededAst.Type.Write(reg, loc) => NamedAst.Type.Write(reg, loc).toSuccess
+    case WeededAst.Type.Write(tpe, loc) =>
+      mapN(visitType(tpe, uenv0, tenv0)) {
+        case t => NamedAst.Type.Write(t, loc)
+      }
 
     case WeededAst.Type.Ascribe(tpe, kind, loc) =>
       mapN(visitType(tpe, uenv0, tenv0)) {
         t => NamedAst.Type.Ascribe(t, kind, loc)
       }
+
+    case _: WeededAst.Type.Set => ??? // TODO handle
   }
 
   /**
@@ -1444,6 +1438,18 @@ object Namer {
     case "pure" => true
     case "impure" => true
     case _ => false
+  }
+
+  /**
+    * Performs naming on the given purity and effect.
+    */
+  private def visitPurityAndEffect(purAndEff: WeededAst.PurityAndEffect, uenv: UseEnv, tenv: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.PurityAndEffect, NameError] = purAndEff match {
+    case WeededAst.PurityAndEffect(pur0, eff0) =>
+      val purVal = traverse(pur0)(visitType(_, uenv, tenv)).map(_.headOption)
+      val effVal = traverse(eff0)(effs => traverse(effs)(visitType(_, uenv, tenv))).map(_.headOption)
+      mapN(purVal, effVal) {
+        case (pur, eff) => NamedAst.PurityAndEffect(pur, eff)
+      }
   }
 
   /**
@@ -1522,6 +1528,7 @@ object Namer {
     case WeededAst.Expression.PutField(_, _, exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.GetStaticField(_, _, _) => Nil
     case WeededAst.Expression.PutStaticField(_, _, exp, _) => freeVars(exp)
+    case WeededAst.Expression.NewObject(_, _) => Nil
     case WeededAst.Expression.NewChannel(exp, _, _) => freeVars(exp)
     case WeededAst.Expression.GetChannel(exp, _) => freeVars(exp)
     case WeededAst.Expression.PutChannel(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
@@ -1540,8 +1547,8 @@ object Namer {
     case WeededAst.Expression.FixpointMerge(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.FixpointSolve(exp, _) => freeVars(exp)
     case WeededAst.Expression.FixpointFilter(_, exp, _) => freeVars(exp)
-    case WeededAst.Expression.FixpointProjectIn(exp, _, _) => freeVars(exp)
-    case WeededAst.Expression.FixpointProjectOut(_, exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.FixpointInject(exp, _, _) => freeVars(exp)
+    case WeededAst.Expression.FixpointProject(_, exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Reify(_, _) => Nil
     case WeededAst.Expression.ReifyType(_, _, _) => Nil
     case WeededAst.Expression.ReifyEff(ident, exp1, exp2, exp3, _) => filterBoundVars(freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3), List(ident))
@@ -1609,7 +1616,7 @@ object Namer {
     case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Native(fqm, loc) => Nil
-    case WeededAst.Type.Arrow(tparams, pur, eff, tresult, loc) => tparams.flatMap(freeVars) ::: freeVars(pur) ::: freeVars(tresult)
+    case WeededAst.Type.Arrow(tparams, WeededAst.PurityAndEffect(pur, eff), tresult, loc) => tparams.flatMap(freeVars) ::: pur.toList.flatMap(freeVars) ::: eff.toList.flatMap(_.flatMap(freeVars)) ::: freeVars(tresult)
     case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.True(loc) => Nil
     case WeededAst.Type.False(loc) => Nil
@@ -1620,8 +1627,9 @@ object Namer {
     case WeededAst.Type.Union(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.Intersection(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.Difference(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
-    case WeededAst.Type.Read(ident, loc) => ident :: Nil
-    case WeededAst.Type.Write(ident, loc) => ident :: Nil
+    case WeededAst.Type.Read(tpe, loc) => freeVars(tpe)
+    case WeededAst.Type.Write(tpe, loc) => freeVars(tpe)
+    case WeededAst.Type.Set(_, _) => ??? // TODO handle
     case WeededAst.Type.Ascribe(tpe, _, _) => freeVars(tpe)
   }
 
@@ -1645,21 +1653,20 @@ object Namer {
       case WeededAst.Type.Relation(ts, loc) => ts.flatMap(visit)
       case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(visit)
       case WeededAst.Type.Native(fqm, loc) => Nil
-      case WeededAst.Type.Arrow(tparams, pur, eff, tresult, loc) => tparams.flatMap(visit) ::: visit(pur) ::: visit(eff) ::: visit(tresult)
+      case WeededAst.Type.Arrow(tparams, WeededAst.PurityAndEffect(pur, eff), tresult, loc) => tparams.flatMap(visit) ::: pur.toList.flatMap(visit) ::: eff.toList.flatMap(_.flatMap(visit)) ::: visit(tresult)
       case WeededAst.Type.Apply(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
       case WeededAst.Type.True(loc) => Nil
       case WeededAst.Type.False(loc) => Nil
       case WeededAst.Type.Not(tpe, loc) => visit(tpe)
       case WeededAst.Type.And(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
       case WeededAst.Type.Or(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
-      case WeededAst.Type.Complement(tpe, loc) => freeVars(tpe)
-      case WeededAst.Type.Union(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
-      case WeededAst.Type.Intersection(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
-      case WeededAst.Type.Difference(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
-      case WeededAst.Type.Read(ident, loc) if tenv.contains(ident.name) => Nil
-      case WeededAst.Type.Read(ident, loc) => Nil
-      case WeededAst.Type.Write(ident, loc) if tenv.contains(ident.name) => Nil
-      case WeededAst.Type.Write(ident, loc) => Nil
+      case WeededAst.Type.Complement(tpe, loc) => visit(tpe)
+      case WeededAst.Type.Union(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
+      case WeededAst.Type.Intersection(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
+      case WeededAst.Type.Difference(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
+      case WeededAst.Type.Read(tpe, loc) => visit(tpe)
+      case WeededAst.Type.Write(tpe, loc) => visit(tpe)
+      case WeededAst.Type.Set(_, _) => ??? // TODO handle
       case WeededAst.Type.Ascribe(tpe, _, _) => visit(tpe)
     }
 
@@ -1792,10 +1799,10 @@ object Namer {
   /**
     * Performs naming on the given type parameters `tparam0` from the given cases `cases`.
     */
-  private def getTypeParams(tparams0: WeededAst.TypeParams, uenv0: UseEnv)(implicit flix: Flix): NamedAst.TypeParams = {
+  private def getTypeParams(tparams0: WeededAst.TypeParams)(implicit flix: Flix): NamedAst.TypeParams = {
     tparams0 match {
       case WeededAst.TypeParams.Elided => NamedAst.TypeParams.Kinded(Nil)
-      case WeededAst.TypeParams.Unkinded(tparams) => getExplicitTypeParams(tparams, uenv0)
+      case WeededAst.TypeParams.Unkinded(tparams) => getExplicitTypeParams(tparams)
       case WeededAst.TypeParams.Kinded(tparams) => getExplicitKindedTypeParams(tparams)
     }
   }
@@ -1804,10 +1811,10 @@ object Namer {
   /**
     * Performs naming on the given type parameters `tparams0` from the given formal params `fparams` and overall type `tpe`.
     */
-  private def getTypeParamsFromFormalParams(tparams0: WeededAst.TypeParams, fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, uenv: UseEnv, tenv: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): NamedAst.TypeParams = {
+  private def getTypeParamsFromFormalParams(tparams0: WeededAst.TypeParams, fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, purAndEff: WeededAst.PurityAndEffect, uenv: UseEnv, tenv: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): NamedAst.TypeParams = {
     tparams0 match {
-      case WeededAst.TypeParams.Elided => getImplicitTypeParamsFromFormalParams(fparams, tpe, tenv)
-      case WeededAst.TypeParams.Unkinded(tparams0) => getExplicitTypeParams(tparams0, uenv)
+      case WeededAst.TypeParams.Elided => getImplicitTypeParamsFromFormalParams(fparams, tpe, purAndEff, tenv)
+      case WeededAst.TypeParams.Unkinded(tparams0) => getExplicitTypeParams(tparams0)
       case WeededAst.TypeParams.Kinded(tparams0) => getExplicitKindedTypeParams(tparams0)
 
     }
@@ -1827,7 +1834,7 @@ object Namer {
   /**
     * Returns the explicit unkinded type parameters from the given type parameter names and implicit type parameters.
     */
-  private def getExplicitTypeParams(tparams0: List[WeededAst.TypeParam.Unkinded], uenv0: UseEnv)(implicit flix: Flix): NamedAst.TypeParams.Unkinded = {
+  private def getExplicitTypeParams(tparams0: List[WeededAst.TypeParam.Unkinded])(implicit flix: Flix): NamedAst.TypeParams.Unkinded = {
     val tparams = tparams0.map {
       case WeededAst.TypeParam.Unkinded(ident) =>
         NamedAst.TypeParam.Unkinded(ident, mkTypeVarSym(ident), ident.loc)
@@ -1849,16 +1856,20 @@ object Namer {
   /**
     * Returns the implicit type parameters constructed from the given formal parameters and type.
     */
-  private def getImplicitTypeParamsFromFormalParams(fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, tenv: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): NamedAst.TypeParams = {
+  private def getImplicitTypeParamsFromFormalParams(fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, purAndEff: WeededAst.PurityAndEffect, tenv: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): NamedAst.TypeParams = {
     // Compute the type variables that occur in the formal parameters.
     val fparamTvars = fparams.flatMap {
       case WeededAst.FormalParam(_, _, Some(tpe), _) => freeVarsInTenv(tpe, tenv)
       case WeededAst.FormalParam(_, _, None, _) => Nil
     }
 
-    val returnTvars = freeVarsInTenv(tpe, tenv)
+    val tpeTvars = freeVarsInTenv(tpe, tenv)
 
-    val tparams = (fparamTvars ++ returnTvars).distinct.map {
+    val WeededAst.PurityAndEffect(pur, eff) = purAndEff
+    val purTvars = pur.toList.flatMap(freeVarsInTenv(_, tenv))
+    val effTvars = eff.getOrElse(Nil).flatMap(freeVarsInTenv(_, tenv))
+
+    val tparams = (fparamTvars ::: tpeTvars ::: purTvars ::: effTvars).distinct.map {
       ident => NamedAst.TypeParam.Unkinded(ident, mkTypeVarSym(ident), ident.loc)
     }
 

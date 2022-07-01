@@ -269,6 +269,23 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedVar](result)
   }
 
+  test("ShadowedVar.Region.01") {
+    val input =
+      """
+        |def f(): Unit = {
+        |   region r {
+        |       discard [] @ r;
+        |       region r {
+        |           discard [] @ r;
+        |           ()
+        |       }
+        |   }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
   test("UnusedEnumSym.01") {
     val input =
       s"""
@@ -306,7 +323,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace N {
-         |    opaque type USD = Int32
+         |    enum USD(Int32)
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -777,6 +794,42 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UselessExpression](result)
   }
 
+  test("UnderAppliedFunction.01") {
+    val input =
+      s"""
+         |def f(): Unit =
+         |    x -> [123] @ Static;
+         |    ()
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnderAppliedFunction](result)
+  }
+
+  test("UnderAppliedFunction.02") {
+    val input =
+      s"""
+         |def f(): Unit =
+         |    def g(x, y) = [x, y] @ Static;
+         |    g;
+         |    ()
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnderAppliedFunction](result)
+  }
+
+  test("UnderAppliedFunction.03") {
+    val input =
+      s"""
+         |def hof(f: a -> b & e, x: a): b & e = f(x)
+         |
+         |def f(): Unit =
+         |    hof(x -> (x, ref 21 @ Static));
+         |    ()
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnderAppliedFunction](result)
+  }
+
   test("UnusedFormalParam.Instance.01") {
     val input =
       """
@@ -805,7 +858,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("RedundantPurityCast.02") {
     val input =
       s"""
-         |pub def f(): Array[Int32] & Impure =
+         |pub def f(): Array[Int32, false] & Impure =
          |  let x = [1, 2, 3];
          |  x as & Pure
          |
@@ -903,7 +956,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("RedundantTypeConstraint.Instance.01") {
     val input =
       """
-        |opaque type Box[a] = a
+        |enum Box[a](a)
         |
         |class C[a]
         |
@@ -918,7 +971,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("RedundantTypeConstraint.Instance.02") {
     val input =
       """
-        |opaque type Box[a] = a
+        |enum Box[a](a)
         |
         |class C[a]
         |
@@ -997,7 +1050,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       """
         |def fakePrint(_msg: a): Unit & Impure =
-        |    let _ = [2];
+        |    discard [2];
         |    ()
         |
         |def f(g: a -> b & ef, x: a): b & ef = g(x)
@@ -1013,7 +1066,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       """
         |def fakePrint(_msg: a): Unit & Impure =
-        |    let _ = [2];
+        |    discard [2];
         |    ()
         |
         |def f(): Unit & Impure =

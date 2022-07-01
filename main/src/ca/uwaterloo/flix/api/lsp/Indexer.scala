@@ -70,20 +70,21 @@ object Indexer {
     * Returns a reverse index for the given `spec`.
     */
   private def visitSpec(spec: Spec): Index = spec match {
-    case Spec(_, _, _, tparams, fparams, declaredScheme, retTpe, eff, _) =>
+    case Spec(_, _, _, tparams, fparams, declaredScheme, retTpe, pur, eff, _) =>
       val idx1 = traverse(tparams)(visitTypeParam)
       val idx2 = traverse(fparams)(visitFormalParam)
       val idx3 = traverse(declaredScheme.constraints)(visitTypeConstraint)
       val idx4 = visitType(retTpe)
-      val idx5 = visitType(eff)
-      idx1 ++ idx2 ++ idx3 ++ idx4 ++ idx5
+      val idx5 = visitType(pur)
+      val idx6 = visitType(eff)
+      idx1 ++ idx2 ++ idx3 ++ idx4 ++ idx5 ++ idx6
   }
 
   /**
     * Returns a reverse index for the given enum `enum0`.
     */
   private def visitEnum(enum0: Enum): Index = enum0 match {
-    case Enum(_, _, _, _, tparams, derives, cases, _, _, _) =>
+    case Enum(_, _, _, _, tparams, derives, cases, _, _) =>
       val idx0 = Index.occurrenceOf(enum0)
       val idx1 = traverse(tparams)(visitTypeParam)
       val idx2 = traverse(derives) {
@@ -300,6 +301,9 @@ object Indexer {
     case Expression.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
+    case Expression.NewObject(_, _, _, _) =>
+      Index.occurrenceOf(exp0)
+
     case Expression.NewChannel(exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
@@ -341,10 +345,10 @@ object Indexer {
     case Expression.FixpointFilter(_, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.FixpointProjectIn(exp, _, _, _, _) =>
+    case Expression.FixpointInject(exp, _, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.FixpointProjectOut(_, exp, _, _, _) =>
+    case Expression.FixpointProject(_, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.Reify(t, _, _, _) =>
@@ -458,6 +462,8 @@ object Indexer {
     case Type.Alias(_, _, tpe, _) => visitType(tpe) // TODO index TypeAlias
     case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type: $tpe0.")
     case _: Type.UnkindedVar => throw InternalCompilerException(s"Unexpected type: $tpe0.")
+    case _: Type.UnkindedArrow => throw InternalCompilerException(s"Unexpected type: $tpe0.")
+    case _: Type.ReadWrite => throw InternalCompilerException(s"Unexpected type: $tpe0.")
   }
 
   /**

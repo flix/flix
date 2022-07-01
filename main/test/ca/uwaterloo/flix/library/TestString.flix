@@ -185,17 +185,17 @@ def lineSeparator02(): Bool =
 
     @test
     def toArray01(): Bool = region r {
-        Array.sameElements(String.toArray("", r), [] @ r)
+        Array.sameElements(String.toArray(r, ""), [] @ r)
     }
 
     @test
     def toArray02(): Bool = region r {
-        Array.sameElements(String.toArray("ABC", r), ['A', 'B', 'C'] @ r)
+        Array.sameElements(String.toArray(r, "ABC"), ['A', 'B', 'C'] @ r)
     }
 
     @test
     def toArray03(): Bool = region r {
-        Array.sameElements(String.toArray("1 2 3", r), ['1', ' ', '2', ' ', '3'] @ r)
+        Array.sameElements(String.toArray(r, "1 2 3"), ['1', ' ', '2', ' ', '3'] @ r)
     }
 
 
@@ -2923,39 +2923,32 @@ def levenshteinDistance07(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def zip01(): Bool & Impure =
-    let a = String.zip("", "");
-    Array.sameElements(a, []: Array[(Char,Char)])
+def zip01(): Bool =
+    String.zip("", "") == Nil: List[(Char,Char)]
 
 @test
-def zip02(): Bool & Impure =
-    let a = String.zip("a", "");
-    Array.sameElements(a, []: Array[(Char, Char)])
+def zip02(): Bool =
+    String.zip("a", "") == Nil: List[(Char, Char)]
 
 @test
-def zip03(): Bool & Impure =
-    let a = String.zip("", "1");
-    Array.sameElements(a, []: Array[(Char, Char)])
+def zip03(): Bool =
+    String.zip("", "1") == Nil: List[(Char, Char)]
 
 @test
-def zip04(): Bool & Impure =
-    let a = String.zip("a", "1");
-    Array.sameElements(a, [('a', '1')])
+def zip04(): Bool =
+    String.zip("a", "1") == ('a', '1') :: Nil
 
 @test
-def zip05(): Bool & Impure =
-    let a = String.zip("ab", "12");
-    Array.sameElements(a, [('a', '1'), ('b', '2')])
+def zip05(): Bool =
+    String.zip("ab", "12") == ('a', '1') :: ('b', '2') :: Nil
 
 @test
-def zip06(): Bool & Impure =
-    let a = String.zip("abc", "123");
-    Array.sameElements(a, [('a', '1'), ('b', '2'), ('c', '3')])
+def zip06(): Bool =
+    String.zip("abc", "123") == ('a', '1') :: ('b', '2') :: ('c', '3') :: Nil
 
 @test
-def zip07(): Bool & Impure =
-    let a = String.zip("abcd", "1234");
-    Array.sameElements(a, [('a', '1'), ('b', '2'), ('c', '3'), ('d', '4')])
+def zip07(): Bool =
+    String.zip("abcd", "1234") == ('a', '1') :: ('b', '2') :: ('c', '3') :: ('d', '4') :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // zipWith                                                                 //

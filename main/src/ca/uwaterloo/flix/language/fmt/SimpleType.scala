@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.fmt
 
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Rigidity, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -65,9 +65,9 @@ object SimpleType {
 
   case object Str extends SimpleType
 
-  case object ScopedArray extends SimpleType
+  case object Array extends SimpleType
 
-  case object ScopedRef extends SimpleType
+  case object Ref extends SimpleType
 
   case object Channel extends SimpleType
 
@@ -78,6 +78,8 @@ object SimpleType {
   case object False extends SimpleType
 
   case object Region extends SimpleType
+
+  case object Empty extends SimpleType
 
   //////////
   // Records
@@ -208,9 +210,19 @@ object SimpleType {
   case class PureArrow(arg: SimpleType, ret: SimpleType) extends SimpleType
 
   /**
+    * A function with a purity.
+    */
+  case class PolyPurArrow(arg: SimpleType, pur: SimpleType, ret: SimpleType) extends SimpleType
+
+  /**
     * A function with an effect.
     */
-  case class PolyArrow(arg: SimpleType, eff: SimpleType, ret: SimpleType) extends SimpleType
+  case class PolyEffArrow(arg: SimpleType, eff: SimpleType, ret: SimpleType) extends SimpleType
+
+  /**
+    * A function with effect and purity.
+    */
+  case class PolyPurAndEffArrow(arg: SimpleType, pur: SimpleType, eff: SimpleType, ret: SimpleType) extends SimpleType
 
   ///////
   // Tags
@@ -282,6 +294,8 @@ object SimpleType {
     case Type.KindedVar(sym, _) =>
       mkApply(Var(sym.id, sym.kind, sym.rigidity, sym.text), t.typeArguments.map(fromWellKindedType))
     case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type.")
+    case _: Type.UnkindedArrow => throw InternalCompilerException("Unexpected unkinded type.")
+    case _: Type.ReadWrite => throw InternalCompilerException("Unexpected unkinded type.")
     case _: Type.Ascribe => throw InternalCompilerException("Unexpected kind ascription.")
     case Type.Alias(cst, args, _, _) =>
       mkApply(Name(cst.sym.name), (args ++ t.typeArguments).map(fromWellKindedType))
@@ -304,19 +318,43 @@ object SimpleType {
         args match {
           // Case 1: No args. Fill everything with a hole.
           case Nil =>
-            val lastArrow: SimpleType = PolyArrow(Hole, Hole, Hole)
+            val lastArrow: SimpleType = PolyPurAndEffArrow(Hole, Hole, Hole, Hole)
             // NB: safe to subtract 2 since arity is always at least 2
             List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow)
-          // Case 2: Pure function.
-          case True :: tpes =>
+
+          // Case 2: Only applied to purity but not effect
+          case pur :: Nil =>
+            val lastArrow: SimpleType = PolyPurAndEffArrow(Hole, pur, Hole, Hole)
+            // NB: safe to subtract 2 since arity is always at least 2
+            List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow)
+
+          // Case 3: Pure function.
+          case True :: Empty :: tpes =>
             // NB: safe to reduce because arity is always at least 2
             tpes.padTo(arity, Hole).reduceRight(PureArrow)
-          // Case 3: Impure function.
-          case eff :: tpes =>
+
+          // Case 4: Impure in effect only.
+          case True :: eff :: tpes =>
             // NB: safe to take last 2 because arity is always at least 2
             val allTpes = tpes.padTo(arity, Hole)
             val List(lastArg, ret) = allTpes.takeRight(2)
-            val lastArrow: SimpleType = PolyArrow(lastArg, eff, ret)
+            val lastArrow: SimpleType = PolyEffArrow(lastArg, eff, ret)
+            allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
+
+          // Case 5: Impure in purity only.
+          case pur :: Empty :: tpes =>
+            // NB: safe to take last 2 because arity is always at least 2
+            val allTpes = tpes.padTo(arity, Hole)
+            val List(lastArg, ret) = allTpes.takeRight(2)
+            val lastArrow: SimpleType = PolyPurArrow(lastArg, pur, ret)
+            allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
+
+          // Case 6: Impure function.
+          case pur :: eff :: tpes =>
+            // NB: safe to take last 2 because arity is always at least 2
+            val allTpes = tpes.padTo(arity, Hole)
+            val List(lastArg, ret) = allTpes.takeRight(2)
+            val lastArrow: SimpleType = PolyPurAndEffArrow(lastArg, pur, eff, ret)
             allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
         }
 
@@ -384,7 +422,7 @@ object SimpleType {
           // Case 3: Too many args. Error.
           case _ :: _ :: _ => throw new OverAppliedType
         }
-      case TypeConstructor.ScopedArray => mkApply(ScopedArray, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Channel => mkApply(Channel, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Tag(sym, tag) =>
@@ -402,7 +440,7 @@ object SimpleType {
       case TypeConstructor.KindedEnum(sym, kind) => mkApply(Name(sym.name), t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.UnkindedEnum(sym) => throw InternalCompilerException("Unexpected unkinded type.")
       case TypeConstructor.Native(clazz) => Name(clazz.getSimpleName)
-      case TypeConstructor.ScopedRef => mkApply(ScopedRef, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.Ref => mkApply(Ref, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Tuple(l) =>
         val tpes = t.typeArguments.map(fromWellKindedType).padTo(l, Hole)
         Tuple(tpes)
@@ -509,6 +547,7 @@ object SimpleType {
 
       case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Region => mkApply(Region, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.Empty => SimpleType.Empty
       case _: TypeConstructor.UnappliedAlias => throw InternalCompilerException("Unexpected unapplied alias.")
     }
   }

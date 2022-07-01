@@ -63,7 +63,7 @@ class Flix {
     */
   private var cachedParsedAst: ParsedAst.Root = ParsedAst.Root(Map.empty, None)
   private var cachedWeededAst: WeededAst.Root = WeededAst.Root(Map.empty, None, Set.empty)
-  private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty)
+  private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty)
   private var cachedResolvedAst: ResolvedAst.Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Set.empty, Map.empty)
   private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty, Map.empty)
 
@@ -94,6 +94,7 @@ class Flix {
     "BitwiseXor.flix" -> LocalResource.get("/src/library/BitwiseXor.flix"),
     "BitwiseShl.flix" -> LocalResource.get("/src/library/BitwiseShl.flix"),
     "BitwiseShr.flix" -> LocalResource.get("/src/library/BitwiseShr.flix"),
+    "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
 
     // Built-in
     "Eq.flix" -> LocalResource.get("/src/library/Eq.flix"),
@@ -123,7 +124,6 @@ class Flix {
   private val standardLibrary = List(
     "Array.flix" -> LocalResource.get("/src/library/Array.flix"),
     "Benchmark.flix" -> LocalResource.get("/src/library/Benchmark.flix"),
-    "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
@@ -152,6 +152,7 @@ class Flix {
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
     "System.flix" -> LocalResource.get("/src/library/System.flix"),
+    "MultiMap.flix" -> LocalResource.get("/src/library/MultiMap.flix"),
 
     "MutDeque.flix" -> LocalResource.get("/src/library/MutDeque.flix"),
     "MutList.flix" -> LocalResource.get("/src/library/MutList.flix"),
@@ -167,8 +168,10 @@ class Flix {
     "CommutativeMonoid.flix" -> LocalResource.get("/src/library/CommutativeMonoid.flix"),
     "CommutativeSemiGroup.flix" -> LocalResource.get("/src/library/CommutativeSemiGroup.flix"),
     "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
+    "ForEach.flix" -> LocalResource.get("/src/library/ForEach.flix"),
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
+    "FunctorFilter.flix" -> LocalResource.get("/src/library/FunctorFilter.flix"),
     "Group.flix" -> LocalResource.get("/src/library/Group.flix"),
     "Identity.flix" -> LocalResource.get("/src/library/Identity.flix"),
     "Monad.flix" -> LocalResource.get("/src/library/Monad.flix"),
@@ -294,6 +297,16 @@ class Flix {
     if (text == null)
       throw new IllegalArgumentException("'text' must be non-null.")
     addInput(name, Input.Text(name, text, stable = false))
+    this
+  }
+
+  /**
+    * Removes the source code with the given `name`.
+    */
+  def remSourceCode(name: String): Flix = {
+    if (name == null)
+      throw new IllegalArgumentException("'name' must be non-null.")
+    remInput(name, Input.Text(name, "", stable = false))
     this
   }
 
@@ -438,9 +451,9 @@ class Flix {
     */
   def mkMessages(errors: Seq[CompilationMessage]): List[String] = {
     if (options.explain || errors.length == 1)
-      errors.map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
+      errors.sortBy(_.loc).map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
     else
-      errors.map(cm => cm.message(formatter)).toList
+      errors.sortBy(_.loc).map(cm => cm.message(formatter)).toList
   }
 
   /**

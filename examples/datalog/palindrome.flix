@@ -29,8 +29,8 @@ def longestPalindromeSequence(s: String): Option[(Int32, Int32)] & Impure = {
             String.charAt(i, s) == String.charAt(j, s)
         else false
     };
-    // Project the indices of the string into a predicate
-    let indices = project Iterator.range(0, length) |> Iterator.toList into StringIndex;
+    // Inject the indices of the string into a predicate
+    let indices = inject Iterator.range(Static, 0, length) |> Iterator.toList into StringIndex;
     let p = #{
         // A single char is a palindrome of length 1
         LongestPalindrome(i, i; 1) :- StringIndex(i).

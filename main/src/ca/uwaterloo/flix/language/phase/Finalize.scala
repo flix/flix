@@ -329,6 +329,10 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.PutStaticField(field, e, t, loc)
 
+      case LiftedAst.Expression.NewObject(clazz, tpe, _, loc) =>
+        val t = visitType(tpe)
+        FinalAst.Expression.NewObject(clazz, t, loc)
+
       case LiftedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
@@ -445,16 +449,16 @@ object Finalize {
 
             case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
-            case TypeConstructor.ScopedArray => MonoType.Array(args.head)
+            case TypeConstructor.Array => MonoType.Array(args.head)
 
-            case TypeConstructor.ScopedRef => MonoType.Ref(args.head)
+            case TypeConstructor.Ref => MonoType.Ref(args.head)
 
             case TypeConstructor.Region =>
               MonoType.Unit // TODO: Should be erased?
 
             case TypeConstructor.Tuple(l) => MonoType.Tuple(args)
 
-            case TypeConstructor.Arrow(l) => MonoType.Arrow(args.drop(1).init, args.last)
+            case TypeConstructor.Arrow(l) => MonoType.Arrow(args.drop(2).init, args.last)
 
             case TypeConstructor.RecordRowExtend(field) => MonoType.RecordExtend(field.name, args.head, args(1))
 
@@ -479,6 +483,8 @@ object Finalize {
             case TypeConstructor.Difference => MonoType.Unit
 
             case TypeConstructor.Effect(_) => MonoType.Unit
+
+            case TypeConstructor.Empty => MonoType.Unit
 
             case TypeConstructor.UnkindedEnum(_) =>
               throw InternalCompilerException(s"Unexpected type: '$t0'.")

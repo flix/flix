@@ -17,106 +17,13 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final._
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.StaticField
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility._
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
-import org.objectweb.asm.Opcodes
+import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.Global
 
 /**
-  * A copy of this generated class has to be maintained at main/src/dev/flix/runtime/Global.java.
+  * OBS: A copy of this generated class has to be maintained at main/src/dev/flix/runtime/Global.java.
   */
 object GenGlobalClass {
-
-  private val newIdMethodName: String = "newId"
-  private val counterField: StaticField =
-    StaticField(JvmName.Global, "counter", JvmName.AtomicLong.toTpe)
-
-  private val getArgsMethodName: String = "getArgs"
-  val SetArgsMethodName: String = "setArgs"
-  private val argsField: StaticField = StaticField(JvmName.Global, "args",
-    BackendType.Array(BackendObjType.String.toTpe))
-
   def gen()(implicit flix: Flix): Map[JvmName, JvmClass] = {
-    Map(JvmName.Global -> JvmClass(JvmName.Global, genByteCode()))
+    Map(Global.jvmName -> JvmClass(Global.jvmName, Global.genByteCode()))
   }
-
-  private def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(JvmName.Global, IsFinal)
-
-    cm.mkObjectConstructor(IsPrivate)
-    cm.mkStaticConstructor(genStaticConstructor())
-    counterField.mkStaticField(cm, IsPrivate, IsFinal)
-    cm.mkStaticMethod(genNewIdMethod(), newIdMethodName,
-      MethodDescriptor(Nil, BackendType.Int64),
-      IsPublic, IsFinal)
-
-    argsField.mkStaticField(cm, IsPrivate, NotFinal)
-    val stringArrayType = BackendType.Array(BackendObjType.String.toTpe)
-    cm.mkStaticMethod(genGetArgsMethod(), getArgsMethodName,
-      MethodDescriptor(Nil, stringArrayType),
-      IsPublic, IsFinal)
-    cm.mkStaticMethod(genSetArgsMethod(), SetArgsMethodName,
-      MethodDescriptor(List(stringArrayType), VoidableType.Void),
-      IsPublic, IsFinal)
-    cm.closeClassMaker()
-  }
-
-  private def genStaticConstructor(): InstructionSet =
-    NEW(JvmName.AtomicLong) ~
-      DUP() ~ invokeConstructor(JvmName.AtomicLong) ~
-      counterField.putStaticField() ~
-      ICONST_0() ~
-      ANEWARRAY(BackendObjType.String.jvmName) ~
-      argsField.putStaticField() ~
-      RETURN()
-
-  private def genNewIdMethod()(implicit flix: Flix): InstructionSet =
-    counterField.getStaticField() ~
-      INVOKEVIRTUAL(JvmName.AtomicLong, "getAndIncrement",
-        MethodDescriptor(Nil, BackendType.Int64)) ~
-      LRETURN()
-
-  private def arrayCopy(): InstructionSet = (f: F) => {
-    f.visitMethodInstruction(Opcodes.INVOKESTATIC, JvmName.System, "arraycopy",
-      MethodDescriptor(List(
-        JvmName.Object.toTpe,
-        BackendType.Int32,
-        JvmName.Object.toTpe,
-        BackendType.Int32,
-        BackendType.Int32
-      ), VoidableType.Void))
-    f
-  }
-
-  private def genGetArgsMethod()(implicit flix: Flix): InstructionSet =
-    argsField.getStaticField() ~
-      ARRAYLENGTH() ~
-      ANEWARRAY(BackendObjType.String.jvmName) ~
-      ASTORE(0) ~
-      // the new array is now created, now to copy the args
-      argsField.getStaticField() ~
-      ICONST_0() ~
-      ALOAD(0) ~
-      ICONST_0() ~
-      argsField.getStaticField() ~ ARRAYLENGTH() ~
-      arrayCopy() ~
-      ALOAD(0) ~
-      ARETURN()
-
-
-  private def genSetArgsMethod()(implicit flix: Flix): InstructionSet =
-    ALOAD(0) ~
-      ARRAYLENGTH() ~
-      ANEWARRAY(BackendObjType.String.jvmName) ~
-      ASTORE(1) ~
-      ALOAD(0) ~
-      ICONST_0() ~
-      ALOAD(1) ~
-      ICONST_0() ~
-      ALOAD(0) ~ ARRAYLENGTH() ~
-      arrayCopy() ~
-      ALOAD(1) ~ argsField.putStaticField() ~ RETURN()
-
 }

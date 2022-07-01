@@ -661,7 +661,7 @@ object GenExpression {
       visitor.visitInsn(DUP)
       // Instantiating a new array of type jvmType
       if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
-        visitor.visitTypeInsn(ANEWARRAY, JvmName.Object.toInternalName)
+        visitor.visitTypeInsn(ANEWARRAY, BackendObjType.JavaObject.jvmName.toInternalName)
       } else { // Happens if the inner type is a primitive type
         visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
       }
@@ -717,6 +717,8 @@ object GenExpression {
       val MonoType.Ref(refValueType) = exp.tpe
       val backendRefType = BackendObjType.Ref(BackendType.toErasedBackendType(refValueType))
 
+      // Cast the ref
+      visitor.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
       // Dereference the expression
       visitor.visitFieldInsn(GETFIELD, classType.name.toInternalName, backendRefType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
       // Cast underlying value to the correct type if the underlying type is Object
@@ -933,6 +935,13 @@ object GenExpression {
       // Push Unit on the stack.
       visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
+    case Expression.NewObject(_, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, "HardcodedAnon").toInternalName
+      visitor.visitTypeInsn(NEW, className)
+      visitor.visitInsn(DUP)
+      visitor.visitMethodInsn(INVOKESPECIAL, className, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+
     case Expression.NewChannel(exp, _, loc) =>
       addSourceLine(visitor, loc)
       visitor.visitTypeInsn(NEW, JvmName.Channel.toInternalName)
@@ -1123,7 +1132,7 @@ object GenExpression {
 
     case Expression.MatchError(_, loc) =>
       addSourceLine(visitor, loc)
-      AsmOps.compileThrowFlixError(visitor, JvmName.MatchError, loc)
+      AsmOps.compileThrowFlixError(visitor, BackendObjType.MatchError.jvmName, loc)
 
     case Expression.BoxBool(exp, loc) =>
       addSourceLine(visitor, loc)
@@ -1499,7 +1508,7 @@ object GenExpression {
     sop match {
       case StringOp.Eq | StringOp.Neq =>
         // String can be compared using Object's `equal` method
-        visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Object.toInternalName, "equals",
+        visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.JavaObject.jvmName.toInternalName, "equals",
           AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), false)
         visitor.visitInsn(ICONST_1)
         visitor.visitJumpInsn(intOp, condElse)

@@ -22,7 +22,7 @@ namespace TestStringBuilder {
 
     @test
     def new01(): StringBuilder[Impure] & Impure =
-        StringBuilder.new(static) // Must be Impure, otherwise the StringBuilder would escape its region
+        StringBuilder.new(Static) // Must be Impure, otherwise the StringBuilder would escape its region
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -428,7 +428,7 @@ def appendLines04!(): Bool = region r {
 @test
 def appendLinesWith01!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.appendLinesWith!(Int32.toString, ([] @ r): ScopedArray[Int32, _], sb);
+    StringBuilder.appendLinesWith!(Int32.toString, ([] @ r): Array[Int32, _], sb);
     StringBuilder.toString(sb) == ""
 }
 

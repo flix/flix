@@ -22,6 +22,6 @@ pub class Iterable[t: Type -> Type] {
     ///
     /// Returns an iterator of `t`.
     ///
-    pub def iterator(t: t[a]): Iterator[a] & Impure
+    pub def iterator(r: Region[r], t: t[a]): Iterator[a, r] \ Write(r)
 
 }

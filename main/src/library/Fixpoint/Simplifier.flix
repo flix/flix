@@ -33,7 +33,7 @@ namespace Fixpoint {
     ///     end
     ///
     def simplifyStmt(stmt: RamStmt[v]): RamStmt[v] & Impure =
-        Option.getWithDefault(RamStmt.Seq([]), simplifyHelper(Set#{}, stmt))
+        Option.getWithDefault(RamStmt.Seq(Nil), simplifyHelper(Set#{}, stmt))
 
     def simplifyHelper(stratum: Set[RamSym[v]], stmt: RamStmt[v]): Option[RamStmt[v]] & Impure = match stmt {
         case RamStmt.Insert(op) =>
@@ -50,11 +50,10 @@ namespace Fixpoint {
                 case RelOp.Search(varB, relB, RelOp.Project(tuple, relA)) =>
                     use Fixpoint/Ram.arityOf;
                     let isCopy =
-                        Array.map(t -> match t {
+                        List.map(t -> match t {
                             case RamTerm.RowLoad(var, i) => if (varB == var) i else -1
                             case _ => -1
-                        }, tuple) |>
-                        Array.sameElements(Array.range(0, arityOf(relB), static));
+                        }, tuple) == List.range(0, arityOf(relB));
                     if (isCopy)
                         Some(RamStmt.Merge(relB, relA))
                     else
@@ -65,7 +64,7 @@ namespace Fixpoint {
         case RamStmt.Assign(_, _) => Some(stmt)
         case RamStmt.Purge(_) => Some(stmt)
         case RamStmt.Seq(xs) =>
-            Some(RamStmt.Seq(Array.filterMap(simplifyHelper(stratum), xs)))
+            Some(RamStmt.Seq(List.filterMap(simplifyHelper(stratum), xs)))
         case RamStmt.Until(test, body) =>
             let newStratum = List.foldLeft(acc -> e -> match e {
                 case BoolExp.Empty(ramSym) => Set.insert(ramSym, acc)

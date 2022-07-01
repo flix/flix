@@ -17,7 +17,7 @@
 ///
 /// Represents a StringBuilder.
 ///
-opaque type StringBuilder[_: Region] = ##java.lang.StringBuilder
+enum StringBuilder[_: Region](##java.lang.StringBuilder)
 
 instance Newable[StringBuilder] {
     pub def new(r: Region[r]): StringBuilder[r] \ Write(r) = StringBuilder.new(r)
@@ -50,7 +50,7 @@ namespace StringBuilder {
     pub def appendString!(s: String, sb: StringBuilder[r]): Unit \ Write(r) =
         import java.lang.StringBuilder.append(String): ##java.lang.StringBuilder & r;
         let StringBuilder(msb) = sb;
-        msb `append` s;
+        discard msb `append` s;
         ()
 
     ///
@@ -76,19 +76,19 @@ namespace StringBuilder {
     ///
     /// Appends each string in the array `a` to the string builder `sb`.
     ///
-    pub def appendLines!(a: ScopedArray[String, r1], sb: StringBuilder[r2]): Unit \ { Read(r1), Write(r2) } =
+    pub def appendLines!(a: Array[String, r1], sb: StringBuilder[r2]): Unit \ { Read(r1), Write(r2) } =
         Array.foreach(x -> appendLine!(x, sb), a)
 
     ///
     /// Appends `f(x)` for each x in array `a` to the string builder `sb`.
     ///
-    pub def appendLinesWith!(f: a -> String & ef, a: ScopedArray[a, r1], sb: StringBuilder[r2]): Unit \ { ef, Read(r1), Write(r2) } =
+    pub def appendLinesWith!(f: a -> String & ef, a: Array[a, r1], sb: StringBuilder[r2]): Unit \ { ef, Read(r1), Write(r2) } =
         Array.foreach(x -> appendLineWith!(f, x, sb), a)
 
     ///
     /// Append the array of strings `a` separating each pair of string with `sep` to the StringBuilder `sb`.
     ///
-    pub def intercalate!(sep: String, a: ScopedArray[String, r1], sb: StringBuilder[r2]): Unit \ { Read(r1), Write(r2) } =
+    pub def intercalate!(sep: String, a: Array[String, r1], sb: StringBuilder[r2]): Unit \ { Read(r1), Write(r2) } =
         let append1! = (s,i) ->
             if (i > 0) {
                 appendString!(sep, sb);

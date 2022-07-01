@@ -3,6 +3,19 @@ namespace TestNel {
     use Hash.hash;
 
     /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toString01(): Bool = Nel.toString(Nel(1, Nil)) == "Nel(1, Nil)"
+
+    @test
+    def toString02(): Bool = Nel.toString(Nel(1, 2 :: 3 :: 4 :: Nil)) == "Nel(1, 2 :: 3 :: 4 :: Nil)"
+
+    @test
+    def toString03(): Bool = Nel.toString(Nel('a', 'b' :: Nil)) == "Nel(a, b :: Nil)"
+
+    /////////////////////////////////////////////////////////////////////////////
     // singleton                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -382,6 +395,26 @@ namespace TestNel {
     def foldRightWithCont03(): Bool = Nel.foldRightWithCont((x, k) -> k() - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
 
     /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool =
+        Nel.foldMap(x -> 2 * x, Nel(1, 2 :: Nil)) == 6
+
+    @test
+    def foldMap02(): Bool =
+        Nel.foldMap(x -> if (x == "a") "b" else x, Nel("a", Nil)) == "b"
+
+    @test
+    def foldMap03(): Bool =
+        Nel.foldMap(x -> if (x == "c") "b" else x, Nel("a", "b" :: "c" :: Nil)) == "abb"
+
+    @test
+    def foldMap04(): Bool =
+        Nel.foldMap(Int32.toString, Nel(1, 2 :: 3 :: Nil)) == "123"
+
+    /////////////////////////////////////////////////////////////////////////////
     // reduce                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -692,6 +725,64 @@ namespace TestNel {
     def toList03(): Bool = Nel.toList(Nel(1, 2 :: 3 :: Nil)) == 1 :: 2 :: 3 :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
+    // toMutDeque                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutDeque01(): Bool = region r {
+        let l = Nel(1, 2 :: Nil);
+        let d1 = Nel.toMutDeque(r, l);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushBack(1, d2);
+        MutDeque.pushBack(2, d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque02(): Bool = region r {
+        let l = Nel(3, 1 :: 2 :: Nil);
+        let d1 = Nel.toMutDeque(r, l);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushBack(1, d2);
+        MutDeque.pushBack(2, d2);
+        MutDeque.pushFront(3, d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque03(): Bool = region r {
+        let l = Nel('a', 'b' :: 'c' :: Nil);
+        let d1 = Nel.toMutDeque(r, l);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushFront('c', d2);
+        MutDeque.pushFront('b', d2);
+        MutDeque.pushFront('a', d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foreach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foreach01(): Bool & Impure =
+        let r = ref 21;
+        Nel.foreach(x -> r := x, Nel.singleton(1));
+        1 == deref r
+
+    @test
+    def foreach02(): Bool & Impure =
+        let r = ref 21;
+        Nel.foreach(x -> r := x, Nel(1, 2 :: 3 :: Nil));
+        3 == deref r
+
+    /////////////////////////////////////////////////////////////////////////////
     // hash                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -877,12 +968,14 @@ namespace TestNel {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool & Impure =
-        Nel(1, 2 :: 3 :: Nil) |> Nel.toIterator |> Iterator.toNel == Some(Nel(1, 2 :: 3 :: Nil))
+    def toIterator01(): Bool = region r {
+        Nel(1, 2 :: 3 :: Nil) |> Nel.toIterator(r) |> Iterator.toNel == Some(Nel(1, 2 :: 3 :: Nil))
+    }
 
     @test
-    def toIterator02(): Bool & Impure =
-        Nel(-100, List.range(-99, 100)) |> Nel.toIterator |> Iterator.toList == List.range(-100, 100)
+    def toIterator02(): Bool = region r {
+        Nel(-100, List.range(-99, 100)) |> Nel.toIterator(r) |> Iterator.toList == List.range(-100, 100)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // toMapWith                                                               //

@@ -155,7 +155,7 @@ object SemanticTokensProvider {
     * Returns tokens for the symbol, the type parameters, the derivations, and the cases.
     */
   private def visitEnum(enum0: TypedAst.Enum): Iterator[SemanticToken] = enum0 match {
-    case TypedAst.Enum(_, _, _, sym, tparams, derives, cases, _, _, _) =>
+    case TypedAst.Enum(_, _, _, sym, tparams, derives, cases, _, _) =>
       val t = SemanticToken(SemanticTokenType.Enum, Nil, sym.loc)
       val st1 = Iterator(t)
       val st2 = visitTypeParams(tparams)
@@ -205,13 +205,14 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given `spec`.
     */
   private def visitSpec(spec: Spec): Iterator[SemanticToken] = spec match {
-    case Spec(_, _, _, tparams, fparams, sc, retTpe, eff, _) =>
+    case Spec(_, _, _, tparams, fparams, sc, retTpe, pur, eff, _) =>
       val st1 = visitTypeParams(tparams)
       val st2 = visitFormalParams(fparams)
       val st3 = sc.constraints.iterator.flatMap(visitTypeConstraint)
       val st4 = visitType(retTpe)
-      val st5 = visitType(eff)
-      st1 ++ st2 ++ st3 ++ st4 ++ st5
+      val st5 = visitType(pur)
+      val st6 = visitType(eff)
+      st1 ++ st2 ++ st3 ++ st4 ++ st5 ++ st6
   }
 
   /**
@@ -423,6 +424,9 @@ object SemanticTokensProvider {
     case Expression.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
+    case Expression.NewObject(_, _, _, _) =>
+      Iterator.empty
+
     case Expression.NewChannel(exp, _, _, _) => visitExp(exp)
 
     case Expression.GetChannel(exp, _, _, _) => visitExp(exp)
@@ -461,10 +465,10 @@ object SemanticTokensProvider {
     case Expression.FixpointFilter(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointProjectIn(exp, _, _, _, _) =>
+    case Expression.FixpointInject(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointProjectOut(_, exp, _, _, _) =>
+    case Expression.FixpointProject(_, exp, _, _, _) =>
       visitExp(exp)
 
     case Expression.Reify(_, _, _, _) => Iterator.empty
@@ -565,7 +569,13 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
       Iterator(t) ++ args.flatMap(visitType).iterator
 
-    case Type.UnkindedVar(_, _) =>
+    case _: Type.UnkindedVar =>
+      throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+
+    case _: Type.UnkindedArrow =>
+      throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+
+    case _: Type.ReadWrite =>
       throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
   }
 
@@ -598,8 +608,8 @@ object SemanticTokensProvider {
     case TypeConstructor.Tag(_, _) => false
     case TypeConstructor.KindedEnum(_, _) => true
     case TypeConstructor.Native(_) => true
-    case TypeConstructor.ScopedArray => true
-    case TypeConstructor.ScopedRef => true
+    case TypeConstructor.Array => true
+    case TypeConstructor.Ref => true
     case TypeConstructor.Tuple(_) => false
     case TypeConstructor.Relation => false
     case TypeConstructor.Lattice => false
@@ -614,6 +624,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Difference => false
     case TypeConstructor.Effect(_) => false
     case TypeConstructor.Region => false
+    case TypeConstructor.Empty => false
 
     case TypeConstructor.UnkindedEnum(_) => throw InternalCompilerException("Unexpected unkinded type.")
     case TypeConstructor.UnappliedAlias(_) => throw InternalCompilerException("Unexpected unkinded type.")

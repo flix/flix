@@ -41,13 +41,13 @@ def chainAppendMany(xs: Chain[a], ys: List[Chain[a]]): Chain[a] = match ys {
 ///////////////////////////////////////////////////////////////////////////////
 /// ofArray                                                               ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def listOfArray(l: Array[Int32]): Benchmark =
+pub def listOfArray(l: Array[Int32, r]): Benchmark =
     defBenchmark("List.ofArray", () -> {
         l |>
         Array.toList
     } as & Pure)
 
-pub def chainOfArray(l: Array[Int32]): Benchmark =
+pub def chainOfArray(l: Array[Int32, r]): Benchmark =
     defBenchmark("Chain.ofArray", () -> {
         l |>
         Array.toChain
@@ -57,14 +57,14 @@ pub def chainOfArray(l: Array[Int32]): Benchmark =
 ///////////////////////////////////////////////////////////////////////////////
 /// cons                                                                    ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def listCons(l: Array[Int32]): Benchmark =
+pub def listCons(l: Array[Int32, r]): Benchmark =
     defBenchmark("List.cons", () -> {
         l |>
         Array.toList |>
         listConsMany(Nil)
     } as & Pure)
 
-pub def chainCons(l: Array[Int32]): Benchmark =
+pub def chainCons(l: Array[Int32, r]): Benchmark =
     defBenchmark("Chain.cons", () -> {
         l |>
         Array.toList |>
@@ -74,14 +74,14 @@ pub def chainCons(l: Array[Int32]): Benchmark =
 ///////////////////////////////////////////////////////////////////////////////
 /// snoc                                                                    ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def listSnoc(l: Array[Int32]): Benchmark =
+pub def listSnoc(l: Array[Int32, r]): Benchmark =
     defBenchmark("List.snoc", () -> {
         l |>
         Array.toList |>
         listSnocMany(Nil)
     } as & Pure)
 
-pub def chainSnoc(l: Array[Int32]): Benchmark =
+pub def chainSnoc(l: Array[Int32, r]): Benchmark =
     defBenchmark("Chain.snoc", () -> {
         l |>
         Array.toList |>
@@ -91,13 +91,13 @@ pub def chainSnoc(l: Array[Int32]): Benchmark =
 ///////////////////////////////////////////////////////////////////////////////
 /// append                                                                    ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def listAppend(l: Array[Int32]): Benchmark =
+pub def listAppend(l: Array[Int32, r]): Benchmark =
     defBenchmark("List.append", () -> {
         let l1 = Array.toList(l);
         listAppendMany(l1, List.map(List.repeat(3), l1))
     } as & Pure)
 
-pub def chainAppend(l: Array[Int32]): Benchmark =
+pub def chainAppend(l: Array[Int32, r]): Benchmark =
     defBenchmark("Chain.append", () -> {
         let c1 = Array.toChain(l);
         let l1 = Array.toList(l);
@@ -108,8 +108,8 @@ pub def chainAppend(l: Array[Int32]): Benchmark =
 ///////////////////////////////////////////////////////////////////////////////
 /// Chain Suite                                                             ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def chainSuite(n: Int32): Array[Benchmark] & Impure =
-    let l = Array.range(1, n, static);
+pub def chainSuite(n: Int32, r: Region[r]): Array[Benchmark, r] \ Write(r) =
+    let l = Array.range(1, n, r);
     [
         // Consing and Array.toList / Array.toChain should be pretty much the same
 
@@ -124,11 +124,11 @@ pub def chainSuite(n: Int32): Array[Benchmark] & Impure =
         chainCons(l),
         chainSnoc(l),
         chainAppend(l)
-    ]
+    ] @ r
 
-def main() : Unit & Impure =
-    let s1 = chainSuite(1000);
+def main() : Unit & Impure = region r {
+    let s1 = chainSuite(1000, r);
     Benchmark.runWithBudget(s1, 250_000_000_000i64);
     ()
-
+}
 

@@ -31,29 +31,9 @@ object Command {
   case object Nop extends Command
 
   /**
-    * Executes the main function.
-    */
-  case object Run extends Command
-
-  /**
     * Reloads all source paths.
     */
   case object Reload extends Command
-
-  /**
-    * Warms up the compiler.
-    */
-  case object Warmup extends Command
-
-  /**
-    * Watches source paths for changes.
-    */
-  case object Watch extends Command
-
-  /**
-    * Unwatches source paths for changes.
-    */
-  case object Unwatch extends Command
 
   /**
     * Terminates the shell.
@@ -69,6 +49,11 @@ object Command {
     * Praise Le Toucan.
     */
   case object Praise extends Command
+
+  /**
+    * Eval source code.
+    */
+  case class Eval(s: String) extends Command
 
   /**
     * Unknown command.
@@ -92,34 +77,11 @@ object Command {
       return Command.Nop
 
     //
-    // Run
-    //
-    if (input.startsWith(":run"))
-      return Command.Run
-
-    //
     // Reload
     //
     if (input == ":r" || input == ":reload")
       return Command.Reload
 
-    //
-    // Warmup
-    //
-    if (input == ":warmup")
-      return Command.Warmup
-
-    //
-    // Watch
-    //
-    if (input == ":watch" || input == ":w")
-      return Command.Watch
-
-    //
-    // Unwatch
-    //
-    if (input == ":unwatch")
-      return Command.Unwatch
 
     //
     // Quit
@@ -139,7 +101,13 @@ object Command {
     if (input == ":praise")
       return Command.Praise
 
-    Command.Unknown(input)
+    //
+    // Eval or Unknown?
+    //
+    if (input.startsWith(":"))
+      Command.Unknown(input)
+    else
+      Command.Eval(input)
   }
 
 }

@@ -1,49 +1,49 @@
-namespace Test/Dec/OpaqueType {
+namespace Test/Dec/Enum/Singleton {
 
     /**
-     * An opaque type for degrees celsius.
+     * An enum for degrees celsius.
      */
-    opaque type Celsius = Int32
+    enum Celsius(Int32)
 
     /**
-     * An opaque type for degrees fahrenheit.
+     * An enum for degrees fahrenheit.
      */
-    opaque type Fahrenheit = Int32
+    enum Fahrenheit(Int32)
 
     /**
-     * An opaque type for united states dollars.
+     * An enum for united states dollars.
      */
-    opaque type USD = Float64
+    enum USD(Float64)
 
     /**
-     * An opaque type for canadian dollars.
+     * An enum for canadian dollars.
      */
-    opaque type CAD = Float64
+    enum CAD(Float64)
 
     /**
-     * An opaque type for an Option.
+     * An enum for an Option.
      */
-    opaque type A = Option[Int32]
+    enum A(Option[Int32])
 
     /**
-     * An opaque type for a Result.
+     * An enum for a Result.
      */
-    opaque type B = Result[Int32, String]
+    enum B(Result[Int32, String])
 
     /**
-     * An opaque type for a polymorphic pair.
+     * An enum for a polymorphic pair.
      */
-    opaque type Pair[a, b] = (a, b)
+    enum Pair[a, b](a, b)
 
     /**
-     * An opaque type for a polymorphic Result.
+     * An enum for a polymorphic Result.
      */
-    opaque type C[a] = Result[a, Int32]
+    enum C[a](Result[a, Int32])
 
     /**
-     * An opaque type for a polymorphic Result.
+     * An enum for a polymorphic Result.
      */
-    opaque type D[a, b, c] = Result[a, Result[b, c]]
+    enum D[a, b, c](Result[a, Result[b, c]])
 
     @test
     def testOpaqueType01(): Celsius = Celsius(123)
@@ -158,14 +158,14 @@ namespace Test/Dec/OpaqueType {
     type alias Z[a] = Option[a]
 
     /**
-     * An opaque type for with a type alias.
+     * An enum for with a type alias.
      */
-    opaque type U = Option[X]
+    enum U(Option[X])
 
     /**
-     * An opaque type for with a type alias.
+     * An enum for with a type alias.
      */
-    opaque type V = Result[X, Y]
+    enum V(Result[X, Y])
 
     @test
     def testOpaqueType26(): U = U(None)

@@ -57,6 +57,12 @@ class TestMain extends FunSuite {
     assert(opts.command == Main.Command.Test)
   }
 
+  test("repl") {
+    val args = Array("repl")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Repl)
+  }
+
   test("--args --abc --def") {
     val args = Array("--args", "--abc --def")
     val opts = Main.parseCmdOpts(args).get
@@ -86,12 +92,6 @@ class TestMain extends FunSuite {
     val args = Array("--entrypoint", "foo", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.entryPoint.nonEmpty)
-  }
-
-  test("--interactive") {
-    val args = Array("--interactive", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.interactive)
   }
 
   test("--json") {

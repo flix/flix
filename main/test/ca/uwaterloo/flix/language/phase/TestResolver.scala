@@ -123,6 +123,42 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
+  test("OpaqueEnum.01") {
+    val input =
+      s"""
+         |namespace A {
+         |  pub opaque enum Color {
+         |    case Blu,
+         |    case Red
+         |  }
+         |}
+         |
+         |namespace B {
+         |  def g(): A.Color = A/Color.Red
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.OpaqueEnum](result)
+  }
+
+  test("OpaqueEnum.02") {
+    val input =
+      s"""
+         |namespace A {
+         |  def f(): A/B/C.Color = A/B/C/Color.Blu
+         |
+         |  namespace B/C {
+         |    pub opaque enum Color {
+         |      case Blu,
+         |      case Red
+         |    }
+         |  }
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.OpaqueEnum](result)
+  }
+
   test("InaccessibleType.01") {
     val input =
       s"""
@@ -414,6 +450,50 @@ class TestResolver extends FunSuite with TestUtils {
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
+  }
+
+  test("UndefinedEffect.01") {
+    val input =
+      """
+        |def f(): Unit = try () with E {
+        |    def op() = resume()
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedEffect](result)
+  }
+
+  test("UndefinedOp.01") {
+    val input =
+      """
+        |def f(): Unit = do E.op()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedOp](result)
+  }
+
+  test("UndefinedOp.02") {
+    val input =
+      """
+        |eff E
+        |
+        |def f(): Unit = do E.op()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedOp](result)
+  }
+
+  test("UndefinedOp.03") {
+    val input =
+      """
+        |eff E
+        |
+        |def f(): Unit = try () with E {
+        |    def op() = resume()
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedOp](result)
   }
 
   test("UndefinedClass.01") {
@@ -773,6 +853,25 @@ class TestResolver extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
   }
+
+  test("UndefinedType.05") {
+    val input =
+      """
+        |def f(): Unit \ E = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedType](result)
+  }
+
+  test("UndefinedType.06") {
+    val input =
+      """
+        |def f(x: a -> b \ E): Unit = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedType](result)
+  }
+
 
   test("CyclicClassHierarchy.01") {
     val input = "class A[a] with A[a]"

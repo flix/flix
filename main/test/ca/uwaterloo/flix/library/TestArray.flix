@@ -19,6 +19,30 @@ namespace TestArray {
     use Array.sameElements;
 
     /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toString01(): Bool = region r {
+        Array.toString(([] @ r): Array[Int32, _]) == "[]"
+    }
+
+    @test
+    def toString02(): Bool = region r {
+        Array.toString(([1] @ r)) == "[1]"
+    }
+
+    @test
+    def toString03(): Bool = region r {
+        Array.toString(([1, 2, 3, 4] @ r)) == "[1, 2, 3, 4]"
+    }
+
+    @test
+    def toString04(): Bool = region r {
+        Array.toString((['a', 'b', 'c', 'd'] @ r)) == "[a, b, c, d]"
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // new                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -62,17 +86,20 @@ namespace TestArray {
 
     @test
     def testPut01(): Bool = region r {
-        Array.put(42, 0, [1] @ r)[0] == 42
+        let a = ([1] @ r) !> Array.put(42, 0);
+        a[0] == 42
     }
 
     @test
     def testPut02(): Bool = region r {
-        Array.put(42, 1, [1, 2] @ r)[1] == 42
+        let a = ([1, 2] @ r) !> Array.put(42, 1);
+        a[1] == 42
     }
 
     @test
     def testPut03(): Bool = region r {
-        Array.put(42, 2, [1, 2, 3] @ r)[2] == 42
+        let a = ([1, 2, 3] @ r) !> Array.put(42, 2);
+        a[2] == 42
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -138,7 +165,7 @@ namespace TestArray {
 
     @test
     def testToList01(): Bool = region r {
-        Array.toList([]: ScopedArray[Unit, _]) == Nil
+        Array.toList([]: Array[Unit, _]) == Nil
     }
 
     @test
@@ -152,12 +179,72 @@ namespace TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // toMutDeque                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutDeque01(): Bool = region r {
+        let a = ([] @ r): Array[Int32, _];
+        let d = new MutDeque(r): MutDeque[Int32, _];
+
+        Array.toMutDeque(r, a) `MutDeque.sameElements` d
+    }
+
+    @test
+    def toMutDeque02(): Bool = region r {
+        let a = ([1] @ r);
+
+        let d = new MutDeque(r);
+        MutDeque.pushBack(1, d);
+
+        Array.toMutDeque(r, a) `MutDeque.sameElements` d
+    }
+
+    @test
+    def toMutDeque03(): Bool = region r {
+        let a = ([1, 2, 3] @ r);
+
+        let d = new MutDeque(r);
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+
+        Array.toMutDeque(r, a) `MutDeque.sameElements` d
+    }
+
+    @test
+    def toMutDeque04(): Bool = region r {
+        let a = ([1, 2, 3, 4, 5] @ r);
+
+        let d = new MutDeque(r);
+        MutDeque.pushBack(3, d);
+        MutDeque.pushBack(4, d);
+        MutDeque.pushBack(5, d);
+        MutDeque.pushFront(2, d);
+        MutDeque.pushFront(1, d);
+
+        Array.toMutDeque(r, a) `MutDeque.sameElements` d
+    }
+
+    @test
+    def toMutDeque05(): Bool = region r {
+        let a = (['a', 'b', 'c'] @ r);
+
+        let d = new MutDeque(r);
+        MutDeque.pushFront('c', d);
+        MutDeque.pushFront('b', d);
+        MutDeque.pushFront('a', d);
+
+        Array.toMutDeque(r, a) `MutDeque.sameElements` d
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // head                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
     def head01(): Bool = region r {
-        Array.head([]: ScopedArray[Int32, _]) == None
+        Array.head([]: Array[Int32, _]) == None
     }
 
     @test
@@ -205,31 +292,31 @@ namespace TestArray {
 
     @test
     def append01(): Bool = region r {
-        let a = Array.append([]: ScopedArray[Int32, _], []: ScopedArray[Int32, _]);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        let a = Array.append([]: Array[Int32, _], []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def append02(): Bool = region r {
-        let a = Array.append([]: ScopedArray[Int32, _], [1]);
+        let a = Array.append([]: Array[Int32, _], [1]);
         Array.sameElements(a, [1])
     }
 
     @test
     def append03(): Bool = region r {
-        let a = Array.append([]: ScopedArray[Int32, _], [1,2]);
+        let a = Array.append([]: Array[Int32, _], [1,2]);
         Array.sameElements(a, [1,2])
     }
 
     @test
     def append04(): Bool = region r {
-        let a = Array.append([1], []: ScopedArray[Int32, _]);
+        let a = Array.append([1], []: Array[Int32, _]);
         Array.sameElements(a, [1])
     }
 
     @test
     def append05(): Bool = region r {
-        let a = Array.append([1,2], []: ScopedArray[Int32, _]);
+        let a = Array.append([1,2], []: Array[Int32, _]);
         Array.sameElements(a, [1,2])
     }
 
@@ -257,7 +344,7 @@ namespace TestArray {
 
     @test
     def memberOf01(): Bool = region r {
-        Array.memberOf(0, []: ScopedArray[Int32, _]) == false
+        Array.memberOf(0, []: Array[Int32, _]) == false
     }
 
     @test
@@ -296,7 +383,7 @@ namespace TestArray {
 
     @test
     def indexOf01(): Bool = region r {
-        Array.indexOf(0, []: ScopedArray[Int32, _]) == None
+        Array.indexOf(0, []: Array[Int32, _]) == None
     }
 
     @test
@@ -330,7 +417,7 @@ namespace TestArray {
 
     @test
     def indexOfLeft01(): Bool = region r {
-        Array.indexOfLeft(0, []: ScopedArray[Int32, _]) == None
+        Array.indexOfLeft(0, []: Array[Int32, _]) == None
     }
 
     @test
@@ -369,7 +456,7 @@ namespace TestArray {
 
     @test
     def indexOfRight01(): Bool = region r {
-        Array.indexOfRight(0, []: ScopedArray[Int32, _]) == None
+        Array.indexOfRight(0, []: Array[Int32, _]) == None
     }
 
     @test
@@ -402,45 +489,51 @@ namespace TestArray {
         Array.indexOfRight(1, [1,1]) == Some(1)
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// indices                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // indices                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def indices01(): Bool & Impure =
-    let a = Array.indices(0, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def indices01(): Bool = region r {
+        let a = Array.indices(0, []: Array[Int32, r]);
+        Array.sameElements(a, []: Array[Int32, r])
+    }
 
-@test
-def indices02(): Bool & Impure =
-    let a = Array.indices(0, [1]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def indices02(): Bool = region r {
+        let a = Array.indices(0, [1]);
+        Array.sameElements(a, []: Array[Int32, r])
+    }
 
-@test
-def indices03(): Bool & Impure =
-    let a = Array.indices(1, [1]);
-    Array.sameElements(a, [0])
+    @test
+    def indices03(): Bool = region r {
+        let a = Array.indices(1, [1]);
+        Array.sameElements(a, [0])
+    }
 
-@test
-def indices04(): Bool & Impure =
-    let a = Array.indices(0, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def indices04(): Bool = region r {
+        let a = Array.indices(0, [1,2]);
+        Array.sameElements(a, []: Array[Int32, r])
+    }
 
-@test
-def indices05(): Bool & Impure =
-    let a = Array.indices(1, [1,2]);
-    Array.sameElements(a, [0])
+    @test
+    def indices05(): Bool = region r {
+        let a = Array.indices(1, [1,2]);
+        Array.sameElements(a, [0])
+    }
 
-@test
-def indices06(): Bool & Impure =
-    let a = Array.indices(2, [1,2]);
-    Array.sameElements(a, [1])
+    @test
+    def indices06(): Bool = region r {
+        let a = Array.indices(2, [1,2]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def indices07(): Bool & Impure =
-    let a = Array.indices(1, [1,1]);
-    Array.sameElements(a, [0,1])
-
+    @test
+    def indices07(): Bool = region r {
+        let a = Array.indices(1, [1,1]);
+        Array.sameElements(a, [0,1])
+    }
     /////////////////////////////////////////////////////////////////////////////
     // find                                                                    //
     /////////////////////////////////////////////////////////////////////////////
@@ -565,13 +658,13 @@ def indices07(): Bool & Impure =
     @test
     def range01(): Bool = region r {
         let a = Array.range(1, 0, r);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def range02(): Bool = region r {
         let a = Array.range(1, 1, r);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
@@ -605,13 +698,13 @@ def indices07(): Bool & Impure =
     @test
     def repeat01(): Bool = region r {
         let a = Array.repeat(-1, 1, r);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def repeat02(): Bool = region r {
         let a = Array.repeat(0, 1, r);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
@@ -638,43 +731,43 @@ def indices07(): Bool & Impure =
 
     @test
     def scan01(): Bool = region r {
-        let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, []);
+        let a = Array.scan((i, b) -> if (b) i + 1 else i + 2, 1, []);
         Array.sameElements(a, [1])
     }
 
     @test
     def scan02(): Bool = region r {
-        let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [false]);
+        let a = Array.scan((i, b) -> if (b) i + 1 else i + 2, 1, [false]);
         Array.sameElements(a, [1,3])
     }
 
     @test
     def scan03(): Bool = region r {
-        let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [true]);
+        let a = Array.scan((i, b) -> if (b) i + 1 else i + 2, 1, [true]);
         Array.sameElements(a, [1,2])
     }
 
     @test
     def scan04(): Bool = region r {
-        let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [false,false]);
+        let a = Array.scan((i, b) -> if (b) i + 1 else i + 2, 1, [false,false]);
         Array.sameElements(a, [1,3,5])
     }
 
     @test
     def scan05(): Bool = region r {
-        let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [false,true]);
+        let a = Array.scan((i, b) -> if (b) i + 1 else i + 2, 1, [false,true]);
         Array.sameElements(a, [1,3,4])
     }
 
     @test
     def scan06(): Bool = region r {
-        let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [true,false]);
+        let a = Array.scan((i, b) -> if (b) i + 1 else i + 2, 1, [true,false]);
         Array.sameElements(a, [1,2,4])
     }
 
     @test
     def scan07(): Bool = region r {
-        let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [true,true]);
+        let a = Array.scan((i, b) -> if (b) i + 1 else i + 2, 1, [true,true]);
         Array.sameElements(a, [1,2,3])
     }
 
@@ -684,43 +777,43 @@ def indices07(): Bool & Impure =
 
     @test
     def scanLeft01(): Bool = region r {
-        let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, []: ScopedArray[Bool, _]);
+        let a = Array.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, []: Array[Bool, _]);
         Array.sameElements(a, [1])
     }
 
     @test
     def scanLeft02(): Bool = region r {
-        let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [false]);
+        let a = Array.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, [false]);
         Array.sameElements(a, [1,3])
     }
 
     @test
     def scanLeft03(): Bool = region r {
-        let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [true]);
+        let a = Array.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, [true]);
         Array.sameElements(a, [1,2])
     }
 
     @test
     def scanLeft04(): Bool = region r {
-        let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [false,false]);
+        let a = Array.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, [false,false]);
         Array.sameElements(a, [1,3,5])
     }
 
     @test
     def scanLeft05(): Bool = region r {
-        let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [false,true]);
+        let a = Array.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, [false,true]);
         Array.sameElements(a, [1,3,4])
     }
 
     @test
     def scanLeft06(): Bool = region r {
-        let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [true,false]);
+        let a = Array.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, [true,false]);
         Array.sameElements(a, [1,2,4])
     }
 
     @test
     def scanLeft07(): Bool = region r {
-        let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [true,true]);
+        let a = Array.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, [true,true]);
         Array.sameElements(a, [1,2,3])
     }
 
@@ -730,43 +823,43 @@ def indices07(): Bool & Impure =
 
     @test
     def scanRight01(): Bool = region r {
-        let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, []);
+        let a = Array.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, []);
         Array.sameElements(a, [1])
     }
 
     @test
     def scanRight02(): Bool = region r {
-        let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [false]);
+        let a = Array.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, [false]);
         Array.sameElements(a, [3,1])
     }
 
     @test
     def scanRight03(): Bool = region r {
-        let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [true]);
+        let a = Array.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, [true]);
         Array.sameElements(a, [2,1])
     }
 
     @test
     def scanRight04(): Bool = region r {
-        let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [false,false]);
+        let a = Array.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, [false,false]);
         Array.sameElements(a, [5,3,1])
     }
 
     @test
     def scanRight05(): Bool = region r {
-        let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [false,true]);
+        let a = Array.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, [false,true]);
         Array.sameElements(a, [4,2,1])
     }
 
     @test
     def scanRight06(): Bool = region r {
-        let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [true,false]);
+        let a = Array.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, [true,false]);
         Array.sameElements(a, [4,3,1])
     }
 
     @test
     def scanRight07(): Bool = region r {
-        let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [true,true]);
+        let a = Array.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, [true,true]);
         Array.sameElements(a, [3,2,1])
     }
 
@@ -777,7 +870,7 @@ def indices07(): Bool & Impure =
     @test
     def map01(): Bool = region r {
         let a = Array.map(i -> i > 2, []);
-        Array.sameElements(a, []: ScopedArray[Bool, _])
+        Array.sameElements(a, []: Array[Bool, _])
     }
 
     @test
@@ -822,9 +915,9 @@ def indices07(): Bool & Impure =
 
     @test
     def transform01!(): Bool = region r {
-        let a: ScopedArray[Int32, _] = [];
+        let a: Array[Int32, _] = [];
         Array.transform!(x -> x+1, a);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
@@ -855,7 +948,7 @@ def indices07(): Bool & Impure =
     @test
     def mapWithIndex01(): Bool = region r {
         let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, []);
-        Array.sameElements(a, []: ScopedArray[Bool, _])
+        Array.sameElements(a, []: Array[Bool, _])
     }
 
     @test
@@ -900,9 +993,9 @@ def indices07(): Bool & Impure =
 
     @test
     def transformWithIndex01!(): Bool = region r {
-        let a = []: ScopedArray[Int32, _];
+        let a = []: Array[Int32, _];
         Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
@@ -947,39 +1040,47 @@ def indices07(): Bool & Impure =
         Array.sameElements(a, [17,8,9])
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// flatMap                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // flatMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def flatMap01(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i, static), []);
-    Array.sameElements(a, []: Array[Int32])
+    // depends on flatten
 
-@test
-def flatMap02(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i, static), [0]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def flatMap01(): Bool = region r {
+        let a = Array.flatMap(i -> Array.repeat(i, i, r), []);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
 
-@test
-def flatMap03(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i, static), [1]);
-    Array.sameElements(a, [1])
+    @test
+    def flatMap02(): Bool = region r {
+        let a = Array.flatMap(i -> Array.repeat(i, i, r), [0]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
 
-@test
-def flatMap04(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i, static), [2]);
-    Array.sameElements(a, [2,2])
+    @test
+    def flatMap03(): Bool = region r {
+        let a = Array.flatMap(i -> Array.repeat(i, i, r), [1]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def flatMap05(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i, static), [1,2]);
-    Array.sameElements(a, [1,2,2])
+    @test
+    def flatMap04(): Bool = region r {
+        let a = Array.flatMap(i -> Array.repeat(i, i, r), [2]);
+        Array.sameElements(a, [2,2])
+    }
 
-@test
-def flatMap06(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i, static), [2,3]);
-    Array.sameElements(a, [2,2,3,3,3])
+    @test
+    def flatMap05(): Bool = region r {
+        let a = Array.flatMap(i -> Array.repeat(i, i, r), [1,2]);
+        Array.sameElements(a, [1,2,2])
+    }
+
+    @test
+    def flatMap06(): Bool = region r {
+        let a = Array.flatMap(i -> Array.repeat(i, i, r), [2,3]);
+        Array.sameElements(a, [2,2,3,3,3])
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // reverse                                                                 //
@@ -987,8 +1088,8 @@ def flatMap06(): Bool & Impure =
 
     @test
     def reverse01(): Bool = region r {
-        let a = Array.reverse([]: ScopedArray[Int32, _]);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        let a = Array.reverse([]: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
@@ -1027,9 +1128,9 @@ def flatMap06(): Bool & Impure =
 
     @test
     def reverse01!(): Bool = region r {
-        let a: ScopedArray[Int32, _] = [];
+        let a: Array[Int32, _] = [];
         Array.reverse!(a);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
@@ -1073,14 +1174,14 @@ def flatMap06(): Bool & Impure =
 
     @test
     def rotateLeft01(): Bool = region r {
-        let a = Array.rotateLeft(0, []: ScopedArray[Int32, _]);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        let a = Array.rotateLeft(0, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def rotateLeft02(): Bool = region r {
-        let a = Array.rotateLeft(1, []: ScopedArray[Int32, _]);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        let a = Array.rotateLeft(1, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
@@ -1143,14 +1244,14 @@ def flatMap06(): Bool & Impure =
 
     @test
     def rotateRight01(): Bool = region r {
-        let a = Array.rotateRight(0, []: ScopedArray[Int32, _]);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        let a = Array.rotateRight(0, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def rotateRight02(): Bool = region r {
-        let a = Array.rotateRight(1, []: ScopedArray[Int32, _]);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        let a = Array.rotateRight(1, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
@@ -1213,8 +1314,8 @@ def flatMap06(): Bool & Impure =
 
     @test
     def update01(): Bool = region r {
-        let a = Array.update(0, 2, []: ScopedArray[Int32, _]);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        let a = Array.update(0, 2, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
@@ -1260,7 +1361,7 @@ def flatMap06(): Bool & Impure =
     @test
     def replace01(): Bool = region r {
         let a = Array.replace(from = 3, to = 4, []);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
@@ -1311,9 +1412,9 @@ def flatMap06(): Bool & Impure =
 
     @test
     def replace01!(): Bool = region r {
-        let a: ScopedArray[Int32, _] = [];
+        let a: Array[Int32, _] = [];
         Array.replace!(from = 3, to = 4, a);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
@@ -1371,14 +1472,14 @@ def flatMap06(): Bool & Impure =
 
     @test
     def patch01(): Bool = region r {
-        let a = Array.patch(0, 0, []: ScopedArray[Int32, _], []: ScopedArray[Int32, _]);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        let a = Array.patch(0, 0, []: Array[Int32, _], []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def patch02(): Bool = region r {
         let a = Array.patch(0, 2, [1,2], []);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
@@ -1543,16 +1644,16 @@ def flatMap06(): Bool & Impure =
 
     @test
     def patch01!(): Bool = region r {
-        let a = []: ScopedArray[Int32, _];
-        Array.patch!(0, 0, []: ScopedArray[Int32, _], a);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        let a = []: Array[Int32, _];
+        Array.patch!(0, 0, []: Array[Int32, _], a);
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def patch02!(): Bool = region r {
-        let a = []: ScopedArray[Int32, _];
+        let a = []: Array[Int32, _];
         Array.patch!(0, 2, [1,2], a);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
@@ -1744,7 +1845,7 @@ def flatMap06(): Bool & Impure =
     @test
     def intersperse01(): Bool = region r {
         let a = Array.intersperse(11, []);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
@@ -1772,44 +1873,51 @@ def flatMap06(): Bool & Impure =
     }
 
 
-/////////////////////////////////////////////////////////////////////////////
-// intercalate                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // intercalate                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def intercalate01(): Bool & Impure =
-    let a = Array.intercalate([]: Array[Int32], []: Array[Array[Int32]]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def intercalate01(): Bool = region r {
+        let a = Array.intercalate([]: Array[Int32, r], []: Array[Array[Int32, r], r]);
+        Array.sameElements(a, []: Array[Int32, r])
+    }
 
-@test
-def intercalate02(): Bool & Impure =
-    let a = Array.intercalate([]: Array[Int32], [[1]]);
-    Array.sameElements(a, [1])
+    @test
+    def intercalate02(): Bool = region r {
+        let a = Array.intercalate([]: Array[Int32, r], [[1]]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def intercalate03(): Bool & Impure =
-    let a = Array.intercalate([11,12,13], []: Array[Array[Int32]]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def intercalate03(): Bool = region r {
+        let a = Array.intercalate([11,12,13], []: Array[Array[Int32, r], r]);
+        Array.sameElements(a, []: Array[Int32, r])
+    }
 
-@test
-def intercalate04(): Bool & Impure =
-    let a = Array.intercalate([]: Array[Int32], [[1],[2,3]]);
-    Array.sameElements(a, [1,2,3])
+    @test
+    def intercalate04(): Bool = region r {
+        let a = Array.intercalate([]: Array[Int32, r], [[1],[2,3]]);
+        Array.sameElements(a, [1,2,3])
+    }
 
-@test
-def intercalate05(): Bool & Impure =
-    let a = Array.intercalate([11,12,13], [[1],[2,3]]);
-    Array.sameElements(a, [1,11,12,13,2,3])
+    @test
+    def intercalate05(): Bool = region r {
+        let a = Array.intercalate([11,12,13], [[1],[2,3]]);
+        Array.sameElements(a, [1,11,12,13,2,3])
+    }
 
-@test
-def intercalate06(): Bool & Impure =
-    let a = Array.intercalate([]: Array[Int32], [[1],[2,3],[4]]);
-    Array.sameElements(a, [1,2,3,4])
+    @test
+    def intercalate06(): Bool = region r {
+        let a = Array.intercalate([]: Array[Int32, r], [[1],[2,3],[4]]);
+        Array.sameElements(a, [1,2,3,4])
+    }
 
-@test
-def intercalate07(): Bool & Impure =
-    let a = Array.intercalate([11,12,13], [[1],[2,3],[4]]);
-    Array.sameElements(a, [1,11,12,13,2,3,11,12,13,4])
+    @test
+    def intercalate07(): Bool = region r {
+        let a = Array.intercalate([11,12,13], [[1],[2,3],[4]]);
+        Array.sameElements(a, [1,11,12,13,2,3,11,12,13,4])
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // transpose                                                               //
@@ -1824,21 +1932,21 @@ def intercalate07(): Bool & Impure =
 
     @test
     def transpose02(): Bool = region r {
-        let a: ScopedArray[ScopedArray[Int32, _], _] = Array.transpose([[]]);
+        let a: Array[Array[Int32, _], _] = Array.transpose([[]]);
         let b = Array.toList(a) |> List.map(Array.toList);
         b == Nil :: Nil
     }
 
     @test
     def transpose03(): Bool = region r {
-        let a: ScopedArray[ScopedArray[Int32, _], _] = Array.transpose([[], []]);
+        let a: Array[Array[Int32, _], _] = Array.transpose([[], []]);
         let b = Array.toList(a) |> List.map(Array.toList);
         b == Nil :: Nil :: Nil
     }
 
     @test
     def transpose04(): Bool = region r {
-        let a: ScopedArray[ScopedArray[Int32, _], _] = Array.transpose([[], [], []]);
+        let a: Array[Array[Int32, _], _] = Array.transpose([[], [], []]);
         let b = Array.toList(a) |> List.map(Array.toList);
         b == Nil :: Nil :: Nil :: Nil
     }
@@ -1975,17 +2083,17 @@ def intercalate07(): Bool & Impure =
 
     @test
     def isPrefixOf01(): Bool = region r {
-        Array.isPrefixOf([]: ScopedArray[Int32, _], []: ScopedArray[Int32, _])
+        Array.isPrefixOf([]: Array[Int32, _], []: Array[Int32, _])
     }
 
     @test
     def isPrefixOf02(): Bool = region r {
-        Array.isPrefixOf([1], []: ScopedArray[Int32, _]) == false
+        Array.isPrefixOf([1], []: Array[Int32, _]) == false
     }
 
     @test
     def isPrefixOf03(): Bool = region r {
-        Array.isPrefixOf([]: ScopedArray[Int32, _], [1])
+        Array.isPrefixOf([]: Array[Int32, _], [1])
     }
 
     @test
@@ -2005,7 +2113,7 @@ def intercalate07(): Bool & Impure =
 
     @test
     def isPrefixOf07(): Bool = region r {
-        Array.isPrefixOf([]: ScopedArray[Int32, _], [1,2])
+        Array.isPrefixOf([]: Array[Int32, _], [1,2])
     }
 
     @test
@@ -2044,17 +2152,17 @@ def intercalate07(): Bool & Impure =
 
     @test
     def isInfixOf01(): Bool = region r {
-        Array.isInfixOf([]: ScopedArray[Int32, _], []: ScopedArray[Int32, _])
+        Array.isInfixOf([]: Array[Int32, _], []: Array[Int32, _])
     }
 
     @test
     def isInfixOf02(): Bool = region r {
-        Array.isInfixOf([1], []: ScopedArray[Int32, _]) == false
+        Array.isInfixOf([1], []: Array[Int32, _]) == false
     }
 
     @test
     def isInfixOf03(): Bool = region r {
-        Array.isInfixOf([]: ScopedArray[Int32, _], [1])
+        Array.isInfixOf([]: Array[Int32, _], [1])
     }
 
     @test
@@ -2074,7 +2182,7 @@ def intercalate07(): Bool & Impure =
 
     @test
     def isInfixOf07(): Bool = region r {
-        Array.isInfixOf([]: ScopedArray[Int32, _], [1,2])
+        Array.isInfixOf([]: Array[Int32, _], [1,2])
     }
 
     @test
@@ -2113,17 +2221,17 @@ def intercalate07(): Bool & Impure =
 
     @test
     def isSuffixOf01(): Bool = region r {
-        Array.isSuffixOf([]: ScopedArray[Int32, _], []: ScopedArray[Int32, _])
+        Array.isSuffixOf([]: Array[Int32, _], []: Array[Int32, _])
     }
 
     @test
     def isSuffixOf02(): Bool = region r {
-        Array.isSuffixOf([1], []: ScopedArray[Int32, _]) == false
+        Array.isSuffixOf([1], []: Array[Int32, _]) == false
     }
 
     @test
     def isSuffixOf03(): Bool = region r {
-        Array.isSuffixOf([]: ScopedArray[Int32, _], [1])
+        Array.isSuffixOf([]: Array[Int32, _], [1])
     }
 
     @test
@@ -2143,7 +2251,7 @@ def intercalate07(): Bool & Impure =
 
     @test
     def isSuffixOf07(): Bool = region r {
-        Array.isSuffixOf([]: ScopedArray[Int32, _], [1,2])
+        Array.isSuffixOf([]: Array[Int32, _], [1,2])
     }
 
     @test
@@ -2182,7 +2290,7 @@ def intercalate07(): Bool & Impure =
 
     @test
     def testSameElements01(): Bool = region r {
-        ([]: ScopedArray[Int32, _]) `sameElements` ([]: ScopedArray[Int32, _])
+        ([]: Array[Int32, _]) `sameElements` ([]: Array[Int32, _])
     }
 
     @test
@@ -2226,7 +2334,7 @@ def intercalate07(): Bool & Impure =
 
     @test
     def testCompare01(): Bool = region r {
-        ([]: ScopedArray[Int32, _]) `Array.compare` ([]: ScopedArray[Int32, _]) == EqualTo
+        ([]: Array[Int32, _]) `Array.compare` ([]: Array[Int32, _]) == EqualTo
     }
 
     @test
@@ -2295,7 +2403,7 @@ def intercalate07(): Bool & Impure =
 
     @test
     def fold01(): Bool = region r {
-        Array.fold([]: ScopedArray[Unit, _]) == ()
+        Array.fold([]: Array[Unit, _]) == ()
     }
 
     @test
@@ -2386,12 +2494,41 @@ def intercalate07(): Bool & Impure =
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool = region r {
+        Array.foldMap(x -> 2 * x, []) == 0
+    }
+
+    @test
+    def foldMap02(): Bool = region r {
+        Array.foldMap(x -> 2 * x, [1, 2]) == 6
+    }
+
+    @test
+    def foldMap03(): Bool = region r {
+        Array.foldMap(x -> if (x == "a") "b" else x, ["a"]) == "b"
+    }
+
+    @test
+    def foldMap04(): Bool = region r {
+        Array.foldMap(x -> if (x == "c") "b" else x, ["a", "b", "c"]) == "abb"
+    }
+
+    @test
+    def foldMap05(): Bool = region r {
+        Array.foldMap(Int32.toString, [1, 2, 3]) == "123"
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
     def reduceLeft01(): Bool = region r {
-        Array.reduceLeft((a, b) -> a - b, []: ScopedArray[Int32, _]) == None
+        Array.reduceLeft((a, b) -> a - b, []: Array[Int32, _]) == None
     }
 
     @test
@@ -2420,7 +2557,7 @@ def intercalate07(): Bool & Impure =
 
     @test
     def reduceRight01(): Bool = region r {
-        Array.reduceRight((a, b) -> a - b, []: ScopedArray[Int32, _]) == None
+        Array.reduceRight((a, b) -> a - b, []: Array[Int32, _]) == None
     }
 
     @test
@@ -2552,68 +2689,76 @@ def intercalate07(): Bool & Impure =
         Array.productWith(x -> x + 1, [10, -10]) == -99
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // flatten                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// flatten                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    @test
+    def flatten01(): Bool = region r {
+        let a = Array.flatten([]: Array[Array[Int32, r], r]);
+        Array.sameElements(a, []: Array[Int32, r])
+    }
 
-@test
-def flatten01(): Bool & Impure =
-    let a = Array.flatten([]: Array[Array[Int32]]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def flatten02(): Bool = region r {
+        let a = Array.flatten([[]]: Array[Array[Int32, r], r]);
+        Array.sameElements(a, []: Array[Int32, r])
+    }
 
-@test
-def flatten02(): Bool & Impure =
-    let a = Array.flatten([[]]: Array[Array[Int32]]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def flatten03(): Bool = region r {
+        let a = Array.flatten([[1]]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def flatten03(): Bool & Impure =
-    let a = Array.flatten([[1]]);
-    Array.sameElements(a, [1])
+    @test
+    def flatten04(): Bool = region r {
+        let a= Array.flatten([[1,2]]);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def flatten04(): Bool & Impure =
-    let a= Array.flatten([[1,2]]);
-    Array.sameElements(a, [1,2])
+    @test
+    def flatten05(): Bool = region r {
+        let a = Array.flatten([[],[]]: Array[Array[Int32, r], r]);
+        Array.sameElements(a, []: Array[Int32, r])
+    }
 
-@test
-def flatten05(): Bool & Impure =
-    let a = Array.flatten([[],[]]: Array[Array[Int32]]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def flatten06(): Bool = region r {
+        let a = Array.flatten([[1],[]]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def flatten06(): Bool & Impure =
-    let a = Array.flatten([[1],[]]);
-    Array.sameElements(a, [1])
+    @test
+    def flatten07(): Bool = region r {
+        let a = Array.flatten([[],[1]]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def flatten07(): Bool & Impure =
-    let a = Array.flatten([[],[1]]);
-    Array.sameElements(a, [1])
+    @test
+    def flatten08(): Bool = region r {
+        let a = Array.flatten([[1],[2]]);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def flatten08(): Bool & Impure =
-    let a = Array.flatten([[1],[2]]);
-    Array.sameElements(a, [1,2])
+    @test
+    def flatten09(): Bool = region r {
+        let a = Array.flatten([[1,2],[3,4,5]]);
+        Array.sameElements(a, [1,2,3,4,5])
+    }
 
-@test
-def flatten09(): Bool & Impure =
-    let a = Array.flatten([[1,2],[3,4,5]]);
-    Array.sameElements(a, [1,2,3,4,5])
-
-@test
-def flatten10(): Bool & Impure =
-    let a = Array.flatten([[1],[2,3],[4]]);
-    Array.sameElements(a, [1,2,3,4])
-
+    @test
+    def flatten10(): Bool = region r {
+        let a = Array.flatten([[1],[2,3],[4]]);
+        Array.sameElements(a, [1,2,3,4])
+    }
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
     def exists01(): Bool = region r {
-        Array.exists(i -> i > 3, []: ScopedArray[Int32, _]) == false
+        Array.exists(i -> i > 3, []: Array[Int32, _]) == false
     }
 
     @test
@@ -2656,1185 +2801,1481 @@ def flatten10(): Bool & Impure =
         Array.exists(i -> i > 3, [1,9,3]) == true
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// forall                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def forall01(): Bool & Impure = Array.forall(i -> i > 3, []: Array[Int32]) == true
-
-@test
-def forall02(): Bool & Impure = Array.forall(i -> i > 3, [1]) == false
-
-@test
-def forall03(): Bool & Impure = Array.forall(i -> i > 3, [5]) == true
-
-@test
-def forall04(): Bool & Impure = Array.forall(i -> i > 3, [1,2]) == false
-
-@test
-def forall05(): Bool & Impure = Array.forall(i -> i > 3, [1,6]) == false
-
-@test
-def forall06(): Bool & Impure = Array.forall(i -> i > 3, [6,1]) == false
-
-@test
-def forall07(): Bool & Impure = Array.forall(i -> i > 3, [16,6]) == true
-
-@test
-def forall08(): Bool & Impure = Array.forall(i -> i > 3, [1,-9,3]) == false
-
-@test
-def forall09(): Bool & Impure = Array.forall(i -> i > 3, [1,9,3]) == false
-
-@test
-def forall10(): Bool & Impure = Array.forall(i -> i > 3, [11,9,31]) == true
-
-/////////////////////////////////////////////////////////////////////////////
-// filter                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def filter01(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def filter02(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, [2]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def filter03(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, [4]);
-    Array.sameElements(a, [4])
-
-@test
-def filter04(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, [1,3]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def filter05(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, [1,8]);
-    Array.sameElements(a, [8])
-
-@test
-def filter06(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, [8,1]);
-    Array.sameElements(a, [8])
-
-@test
-def filter07(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, [8,9]);
-    Array.sameElements(a, [8,9])
-
-@test
-def filter08(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, [1,4,11,2,-22,17]);
-    Array.sameElements(a, [4,11,17])
-
-/////////////////////////////////////////////////////////////////////////////
-// partition                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def partition01(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, []: Array[Int32])
-
-@test
-def partition02(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, [1]);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, [1])
-
-@test
-def partition03(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, [4]);
-    Array.sameElements(a, [4]) and Array.sameElements(b, []: Array[Int32])
-
-@test
-def partition04(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, [1,2]);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, [1,2])
-
-@test
-def partition05(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, [1,5]);
-    Array.sameElements(a, [5]) and Array.sameElements(b, [1])
-
-@test
-def partition06(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, [5,1]);
-    Array.sameElements(a, [5]) and Array.sameElements(b, [1])
-
-@test
-def partition07(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, [5,8]);
-    Array.sameElements(a, [5,8]) and Array.sameElements(b, []: Array[Int32])
-
-@test
-def partition08(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, [4, -3, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [4, 16, 7, 7]) and Array.sameElements(b, [-3, -5, 1, 2, 1])
-
-/////////////////////////////////////////////////////////////////////////////
-// span                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def span01(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, []: Array[Int32])
-
-@test
-def span02(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, [1]);
-    Array.sameElements(a,[]: Array[Int32]) and Array.sameElements(b, [1])
-
-@test
-def span03(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, [4]);
-    Array.sameElements(a, [4]) and Array.sameElements(b, []: Array[Int32])
-
-@test
-def span04(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, [1,2]);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, [1,2])
-
-@test
-def span05(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, [1,5]);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, [1,5])
-
-@test
-def span06(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, [5,1]);
-    Array.sameElements(a, [5]) and Array.sameElements(b, [1])
-
-@test
-def span07(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, [5,8]);
-    Array.sameElements(a, [5,8]) and Array.sameElements(b, []: Array[Int32])
-
-@test
-def span08(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [4, 6]) and Array.sameElements(b, [-3, 11, -5, 1, 2, 16, 7, 1, 7])
-
-/////////////////////////////////////////////////////////////////////////////
-// drop                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def drop01(): Bool & Impure =
-    let a = Array.drop(-1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def drop02(): Bool & Impure =
-    let a = Array.drop(0, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def drop03(): Bool & Impure =
-    let a = Array.drop(1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def drop04(): Bool & Impure =
-    let a = Array.drop(-1, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def drop05(): Bool & Impure =
-    let a = Array.drop(0, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def drop06(): Bool & Impure =
-    let a = Array.drop(1, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def drop07(): Bool & Impure =
-    let a = Array.drop(2, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def drop08(): Bool & Impure =
-    let a = Array.drop(0, [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def drop09(): Bool & Impure =
-    let a = Array.drop(1, [1,2]);
-    Array.sameElements(a, [2])
-
-@test
-def drop10(): Bool & Impure =
-    let a = Array.drop(2, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def drop11(): Bool & Impure =
-    let a = Array.drop(2, [1,2,3,4,5,6]);
-    Array.sameElements(a, [3,4,5,6])
-
-@test
-def drop12(): Bool & Impure =
-    let a = Array.drop(4, [1,2,3,4,5,6]);
-    Array.sameElements(a, [5,6])
-
-/////////////////////////////////////////////////////////////////////////////
-// dropLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def dropLeft01(): Bool & Impure =
-    let a = Array.dropLeft(-1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropLeft02(): Bool & Impure =
-    let a = Array.dropLeft(0, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropLeft03(): Bool & Impure =
-    let a = Array.dropLeft(1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropLeft04(): Bool & Impure =
-    let a = Array.dropLeft(-1, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def dropLeft05(): Bool & Impure =
-    let a = Array.dropLeft(0, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def dropLeft06(): Bool & Impure =
-    let a = Array.dropLeft(1, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropLeft07(): Bool & Impure =
-    let a = Array.dropLeft(2, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropLeft08(): Bool & Impure =
-    let a = Array.dropLeft(0, [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def dropLeft09(): Bool & Impure =
-    let a = Array.dropLeft(1, [1,2]);
-    Array.sameElements(a, [2])
-
-@test
-def dropLeft10(): Bool & Impure =
-    let a = Array.dropLeft(2, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropLeft11(): Bool & Impure =
-    let a = Array.dropLeft(2, [1,2,3,4,5,6]);
-    Array.sameElements(a, [3,4,5,6])
-
-@test
-def dropLeft12(): Bool & Impure =
-    let a = Array.dropLeft(4, [1,2,3,4,5,6]);
-    Array.sameElements(a, [5,6])
-
-/////////////////////////////////////////////////////////////////////////////
-// dropRight                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def dropRight01(): Bool & Impure =
-    let a = Array.dropRight(-1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropRight02(): Bool & Impure =
-    let a = Array.dropRight(0, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropRight03(): Bool & Impure =
-    let a = Array.dropRight(1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropRight04(): Bool & Impure =
-    let a = Array.dropRight(-1, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def dropRight05(): Bool & Impure =
-    let a = Array.dropRight(0, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def dropRight06(): Bool & Impure =
-    let a = Array.dropRight(1, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropRight07(): Bool & Impure =
-    let a = Array.dropRight(2, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropRight08(): Bool & Impure =
-    let a = Array.dropRight(0, [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def dropRight09(): Bool & Impure =
-    let a = Array.dropRight(1, [1,2]);
-    Array.sameElements(a, [1])
-
-@test
-def dropRight10(): Bool & Impure =
-    let a = Array.dropRight(2, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropRight11(): Bool & Impure =
-    let a = Array.dropRight(2, [1,2,3,4,5,6]);
-    Array.sameElements(a, [1,2,3,4])
-
-@test
-def dropRight12(): Bool & Impure =
-    let a = Array.dropRight(4, [1,2,3,4,5,6]);
-    Array.sameElements(a, [1,2])
-
-/////////////////////////////////////////////////////////////////////////////
-// dropWhile                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def dropWhile01(): Bool & Impure =
-    let a = Array.dropWhile(i -> i > 3, []);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropWhile02(): Bool & Impure =
-    let a = Array.dropWhile(i -> i > 3, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def dropWhile03(): Bool & Impure =
-    let a = Array.dropWhile(i -> i > 3, [4]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropWhile04(): Bool & Impure =
-    let a = Array.dropWhile(i -> i > 3, [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def dropWhile05(): Bool & Impure =
-    let a = Array.dropWhile(i -> i > 3, [1,5]);
-    Array.sameElements(a, [1,5])
-
-@test
-def dropWhile06(): Bool & Impure =
-    let a = Array.dropWhile(i -> i > 3, [5,1]);
-    Array.sameElements(a, [1])
-
-@test
-def dropWhile07(): Bool & Impure =
-    let a = Array.dropWhile(i -> i > 3, [5,8]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropWhile08(): Bool & Impure =
-    let a = Array.dropWhile(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [-3, 11, -5, 1, 2, 16, 7, 1, 7])
-
-/////////////////////////////////////////////////////////////////////////////
-// dropWhileLeft                                                           //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def dropWhileLeft01(): Bool & Impure =
-    let a = Array.dropWhileLeft(i -> i > 3, []);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropWhileLeft02(): Bool & Impure =
-    let a = Array.dropWhileLeft(i -> i > 3, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def dropWhileLeft03(): Bool & Impure =
-    let a = Array.dropWhileLeft(i -> i > 3, [4]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropWhileLeft04(): Bool & Impure =
-    let a = Array.dropWhileLeft(i -> i > 3, [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def dropWhileLeft05(): Bool & Impure =
-    let a = Array.dropWhileLeft(i -> i > 3, [1,5]);
-    Array.sameElements(a, [1,5])
-
-@test
-def dropWhileLeft06(): Bool & Impure =
-    let a = Array.dropWhileLeft(i -> i > 3, [5,1]);
-    Array.sameElements(a, [1])
-
-@test
-def dropWhileLeft07(): Bool & Impure =
-    let a = Array.dropWhileLeft(i -> i > 3, [5,8]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropWhileLeft08(): Bool & Impure =
-    let a = Array.dropWhileLeft(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [-3, 11, -5, 1, 2, 16, 7, 1, 7])
-
-/////////////////////////////////////////////////////////////////////////////
-// dropWhileRight                                                          //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def dropWhileRight01(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, []);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropWhileRight02(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def dropWhileRight03(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, [4]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropWhileRight04(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def dropWhileRight05(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, [1,5]);
-    Array.sameElements(a, [1])
-
-@test
-def dropWhileRight06(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, [5,1]);
-    Array.sameElements(a, [5,1])
-
-@test
-def dropWhileRight07(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, [5,8]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def dropWhileRight08(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1])
-
-/////////////////////////////////////////////////////////////////////////////
-// take                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def take01(): Bool & Impure =
-    let a = Array.take(-1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def take02(): Bool & Impure =
-    let a = Array.take(0, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def take03(): Bool & Impure =
-    let a = Array.take(1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def take04(): Bool & Impure =
-    let a = Array.take(-1, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def take05(): Bool & Impure =
-    let a = Array.take(0, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def take06(): Bool & Impure =
-    let a = Array.take(1, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def take07(): Bool & Impure =
-    let a = Array.take(2, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def take08(): Bool & Impure =
-    let a = Array.take(0, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def take09(): Bool & Impure =
-    let a = Array.take(1, [1,2]);
-    Array.sameElements(a, [1])
-
-@test
-def take10(): Bool & Impure =
-    let a = Array.take(2, [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def take11(): Bool & Impure =
-    let a = Array.take(2, [1,2,3,4,5,6]);
-    Array.sameElements(a, [1,2])
-
-@test
-def take12(): Bool & Impure =
-    let a = Array.take(4, [1,2,3,4,5,6]);
-    Array.sameElements(a, [1,2,3,4])
-
-/////////////////////////////////////////////////////////////////////////////
-// takeLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def takeLeft01(): Bool & Impure =
-    let a = Array.takeLeft(-1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeLeft02(): Bool & Impure =
-    let a = Array.takeLeft(0, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeLeft03(): Bool & Impure =
-    let a = Array.takeLeft(1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeLeft04(): Bool & Impure =
-    let a = Array.takeLeft(-1, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeLeft05(): Bool & Impure =
-    let a = Array.takeLeft(0, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeLeft06(): Bool & Impure =
-    let a = Array.takeLeft(1, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def takeLeft07(): Bool & Impure =
-    let a = Array.takeLeft(2, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def takeLeft08(): Bool & Impure =
-    let a = Array.takeLeft(0, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeLeft09(): Bool & Impure =
-    let a = Array.takeLeft(1, [1,2]);
-    Array.sameElements(a, [1])
-
-@test
-def takeLeft10(): Bool & Impure =
-    let a = Array.takeLeft(2, [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def takeLeft11(): Bool & Impure =
-    let a = Array.takeLeft(2, [1,2,3,4,5,6]);
-    Array.sameElements(a, [1,2])
-
-@test
-def takeLeft12(): Bool & Impure =
-    let a = Array.takeLeft(4, [1,2,3,4,5,6]);
-    Array.sameElements(a, [1,2,3,4])
-
-/////////////////////////////////////////////////////////////////////////////
-// takeRight                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def takeRight01(): Bool & Impure =
-    let a = Array.takeRight(-1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeRight02(): Bool & Impure =
-    let a = Array.takeRight(0, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeRight03(): Bool & Impure =
-    let a = Array.takeRight(1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeRight04(): Bool & Impure =
-    let a = Array.takeRight(-1, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeRight05(): Bool & Impure =
-    let a = Array.takeRight(0, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeRight06(): Bool & Impure =
-    let a = Array.takeRight(1, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def takeRight07(): Bool & Impure =
-    let a = Array.takeRight(2, [1]);
-    Array.sameElements(a, [1])
-
-@test
-def takeRight08(): Bool & Impure =
-    let a = Array.takeRight(0, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeRight09(): Bool & Impure =
-    let a = Array.takeRight(1, [1,2]);
-    Array.sameElements(a, [2])
-
-@test
-def takeRight10(): Bool & Impure =
-    let a = Array.takeRight(2, [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def takeRight11(): Bool & Impure =
-    let a = Array.takeRight(2, [1,2,3,4,5,6]);
-    Array.sameElements(a, [5,6])
-
-@test
-def takeRight12(): Bool & Impure =
-    let a = Array.takeRight(4, [1,2,3,4,5,6]);
-    Array.sameElements(a, [3,4,5,6])
-
-/////////////////////////////////////////////////////////////////////////////
-// takeWhile                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def takeWhile01(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhile02(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhile03(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, [4]);
-    Array.sameElements(a, [4])
-
-@test
-def takeWhile04(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhile05(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, [1,5]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhile06(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, [5,1]);
-    Array.sameElements(a, [5])
-
-@test
-def takeWhile07(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, [5,8]);
-    Array.sameElements(a, [5,8])
-
-@test
-def takeWhile08(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [4, 6])
-
-/////////////////////////////////////////////////////////////////////////////
-// takeWhileLeft                                                           //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def takeWhileLeft01(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhileLeft02(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhileLeft03(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, [4]);
-    Array.sameElements(a, [4])
-
-@test
-def takeWhileLeft04(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhileLeft05(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, [1,5]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhileLeft06(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, [5,1]);
-    Array.sameElements(a, [5])
-
-@test
-def takeWhileLeft07(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, [5,8]);
-    Array.sameElements(a, [5,8])
-
-@test
-def takeWhileLeft08(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [4, 6])
-
-/////////////////////////////////////////////////////////////////////////////
-// takeWhileRight                                                          //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def takeWhileRight01(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhileRight02(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhileRight03(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, [4]);
-    Array.sameElements(a, [4])
-
-@test
-def takeWhileRight04(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhileRight05(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, [1,5]);
-    Array.sameElements(a, [5])
-
-@test
-def takeWhileRight06(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, [5,1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def takeWhileRight07(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, [5,8]);
-    Array.sameElements(a, [5,8])
-
-@test
-def takeWhileRight08(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [7])
-
-/////////////////////////////////////////////////////////////////////////////
-// groupBy                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def groupBy01(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > 3 or b > 8, []: Array[Int32]);
-    let xs = Array.toList(arr) |> List.map(Array.toList);
-    xs == Nil
-
-@test
-def groupBy02(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1]);
-    let xs = Array.toList(arr) |> List.map(Array.toList);
-    xs == (1 :: Nil) :: Nil
-
-@test
-def groupBy03(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1,4]);
-    let xs = Array.toList(arr) |> List.map(Array.toList);
-    xs == (1 :: Nil) :: (4 :: Nil) :: Nil
-
-@test
-def groupBy04(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1,9]);
-    let xs = Array.toList(arr) |> List.map(Array.toList);
-    xs == (1 :: 9 :: Nil) :: Nil
-
-@test
-def groupBy05(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1, 4, 7, 6, 9, 2, 4, 4, 8, 16]);
-    let xs = Array.toList(arr) |> List.map(Array.toList);
-    xs == (1 :: 9 :: 16 :: Nil) :: (4 :: 7 :: 6 :: 4 :: 4 :: 8 :: Nil) :: (2 :: Nil) :: Nil
-
-@test
-def groupBy06(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > -6 or a*b >= 0, [-1, -11, 4, -11, 0, 8, 2, 1, -3, -24]);
-    let xs = Array.toList(arr) |> List.map(Array.toList);
-    xs == (-1 :: -11 :: -11 :: 0 :: -3 :: -24 :: Nil) :: (4 :: 8 :: 2 :: 1 :: Nil) :: Nil
-
-@test
-def groupBy07(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a < 0 or (a > 10 or (b > 10 or a == b)), [-5, 6, 11, 8, 8, -11, -1, 0, 4, -1]);
-    let xs = Array.toList(arr) |> List.map(Array.toList);
-    xs == (-5 :: 11 :: -11 :: -1 :: -1 :: Nil) :: (6 :: Nil) :: (8 :: 8 :: Nil) :: (0 :: Nil) :: (4 :: Nil) :: Nil
-
-/////////////////////////////////////////////////////////////////////////////
-// zip                                                                     //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def zip01(): Bool & Impure =
-    let a = Array.zip([]: Array[Int32], []: Array[Int32]);
-    Array.sameElements(a, []: Array[(Int32,Int32)])
-
-@test
-def zip02(): Bool & Impure =
-    let a = Array.zip([1], []: Array[Int32]);
-    Array.sameElements(a, []: Array[(Int32,Int32)])
-
-@test
-def zip03(): Bool & Impure =
-    let a = Array.zip([]: Array[Int32], [2]);
-    Array.sameElements(a, []: Array[(Int32,Int32)])
-
-@test
-def zip04(): Bool & Impure =
-    let a = Array.zip([1], [2]);
-    Array.sameElements(a, [(1, 2)])
-
-@test
-def zip05(): Bool & Impure =
-    let a = Array.zip([1,3], [2,4]);
-    Array.sameElements(a, [(1, 2), (3, 4)])
-
-@test
-def zip06(): Bool & Impure =
-    let a = Array.zip([1,3,5], [2,4,6]);
-    Array.sameElements(a, [(1, 2), (3, 4), (5, 6)])
-
-@test
-def zip07(): Bool & Impure =
-    let a = Array.zip([1,3,5,7], [2,4,6,8]);
-    Array.sameElements(a, [(1, 2), (3, 4), (5, 6), (7, 8)])
-
-/////////////////////////////////////////////////////////////////////////////
-// zipWith                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def zipWith01(): Bool & Impure =
-    let arr = Array.zipWith((a, b) -> if (b) a+1 else a, []: Array[Int32], []: Array[Bool]);
-    Array.sameElements(arr, []: Array[Int32])
-
-@test
-def zipWith02(): Bool & Impure =
-    let arr = Array.zipWith((a, b) -> if (b) a+1 else a, [1], []: Array[Bool]);
-    Array.sameElements(arr, []: Array[Int32])
-
-@test
-def zipWith03(): Bool & Impure =
-    let arr = Array.zipWith((a, b) -> if (b) a+1 else a, []: Array[Int32], [true]);
-    Array.sameElements(arr, []: Array[Int32])
-
-@test
-def zipWith04(): Bool & Impure =
-    let arr = Array.zipWith((a, b) -> if (b) a+1 else a, [1], [true]);
-    Array.sameElements(arr, [2])
-
-@test
-def zipWith05(): Bool & Impure =
-    let arr = Array.zipWith((a, b) -> if (b) a+1 else a, [1], [false]);
-    Array.sameElements(arr, [1])
-
-@test
-def zipWith06(): Bool & Impure =
-    let arr = Array.zipWith((a, b) -> if (b) a+1 else a,
-                    [1, 2, 3, 4, 5, 6, 7, 8],
-                    [false, true, true, false, false, true, true, true]);
-    Array.sameElements(arr, [1, 3, 4, 4, 5, 7, 8, 9])
-
-/////////////////////////////////////////////////////////////////////////////
-// unzip                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def unzip01(): Bool & Impure =
-    let (a,b) = Array.unzip([]: Array[(Unit, Unit)]);
-    Array.sameElements(a, []) and Array.sameElements(b, [])
-
-@test
-def unzip02(): Bool & Impure =
-    let (a,b) = Array.unzip([(1, true)]);
-    Array.sameElements(a, [1]) and Array.sameElements(b, [true])
-
-@test
-def unzip03(): Bool & Impure =
-    let (a,b) = Array.unzip([(1, true), (2, true)]);
-    Array.sameElements(a, [1,2])  and Array.sameElements(b, [true,true])
-
-@test
-def unzip04(): Bool & Impure =
-    let (a,b) = Array.unzip([(1, true), (2, true), (3, false)]);
-    Array.sameElements(a, [1,2,3]) and Array.sameElements(b, [true,true,false])
-
-/////////////////////////////////////////////////////////////////////////////
-// fold2                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def fold201(): Bool & Impure = Array.fold2((c, a, b) -> if (b) a+c else a*c, 4, []: Array[Int32], []: Array[Bool]) == 4
-
-@test
-def fold202(): Bool & Impure = Array.fold2((c, a, b) -> if (b) a+c else a*c, 4, [1], []) == 4
-
-@test
-def fold203(): Bool & Impure = Array.fold2((c, a, b) -> if (b) a+c else a*c, 4, [], [true]) == 4
-
-@test
-def fold204(): Bool & Impure = Array.fold2((c, a, b) -> if (b) a+c else a*c, 4, [2], [true]) == 6
-
-@test
-def fold205(): Bool & Impure = Array.fold2((c, a, b) -> if (b) a+c else a*c, 4, [2], [false]) == 8
-
-@test
-def fold206(): Bool & Impure = Array.fold2((c, a, b) -> if (b) a+c else a*c, 4, [3,2], [true,true]) == 9
-
-@test
-def fold207(): Bool & Impure = Array.fold2((c, a, b) -> if (b) a+c else a*c, 4, [3,2], [true,false]) == 14
-
-@test
-def fold208(): Bool & Impure = Array.fold2((c, a, b) -> if (b) a+c else a*c, 4, [3,2], [false,true]) == 14
-
-@test
-def fold209(): Bool & Impure = Array.fold2((c, a, b) -> if (b) a+c else a*c, 4, [3,2], [false,false]) == 24
-
-@test
-def fold210(): Bool & Impure = Array.fold2((c, a, b) -> if (b) a+c else a*c, 4, [6,-4,3,2],
-                    [true,false,false,true]) == -118
-
-/////////////////////////////////////////////////////////////////////////////
-// foldLeft2                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def foldLeft201(): Bool & Impure = Array.foldLeft2((c, a, b) -> if (b) a+c else a*c, 4, []: Array[Int32], []: Array[Bool]) == 4
-
-@test
-def foldLeft202(): Bool & Impure = Array.foldLeft2((c, a, b) -> if (b) a+c else a*c, 4, [1], []: Array[Bool]) == 4
-
-@test
-def foldLeft203(): Bool & Impure = Array.foldLeft2((c, a, b) -> if (b) a+c else a*c, 4, []: Array[Int32], [true]) == 4
-
-@test
-def foldLeft204(): Bool & Impure = Array.foldLeft2((c, a, b) -> if (b) a+c else a*c, 4, [2], [true]) == 6
-
-@test
-def foldLeft205(): Bool & Impure = Array.foldLeft2((c, a, b) -> if (b) a+c else a*c, 4, [2], [false]) == 8
-
-@test
-def foldLeft206(): Bool & Impure = Array.foldLeft2((c, a, b) -> if (b) a+c else a*c, 4, [3,2], [true,true]) == 9
-
-@test
-def foldLeft207(): Bool & Impure = Array.foldLeft2((c, a, b) -> if (b) a+c else a*c, 4, [3,2], [true,false]) == 14
-
-@test
-def foldLeft208(): Bool & Impure = Array.foldLeft2((c, a, b) -> if (b) a+c else a*c, 4, [3,2], [false,true]) == 14
-
-@test
-def foldLeft209(): Bool & Impure = Array.foldLeft2((c, a, b) -> if (b) a+c else a*c, 4, [3,2], [false,false]) == 24
-
-@test
-def foldLeft210(): Bool & Impure = Array.foldLeft2((c, a, b) -> if (b) a+c else a*c, 4, [6,-4,3,2],
-                        [true,false,false,true]) == -118
-
-/////////////////////////////////////////////////////////////////////////////
-// foldRight2                                                              //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def foldRight201(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, []: Array[Int32], []: Array[Bool]) == 4
-
-@test
-def foldRight202(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, [1], []: Array[Bool]) == 4
-
-@test
-def foldRight203(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, []: Array[Int32], [true]) == 4
-
-@test
-def foldRight204(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, [2], [true]) == 6
-
-@test
-def foldRight205(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, [2], [false]) == 8
-
-@test
-def foldRight206(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, [3,2], [true,true]) == 9
-
-@test
-def foldRight207(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, [3,2], [true,false]) == 11
-
-@test
-def foldRight208(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, [3,2], [false,true]) == 18
-
-@test
-def foldRight209(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, [3,2], [false,false]) == 24
-
-@test
-def foldRight210(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, [6,-4,3,2],
-                         [true,false,false,true]) == -66
-
-/////////////////////////////////////////////////////////////////////////////
-// filterMap                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def filterMap01(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def filterMap02(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def filterMap03(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [2]);
-    Array.sameElements(a, [1])
-
-@test
-def filterMap04(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,3]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def filterMap05(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,4]);
-    Array.sameElements(a, [2])
-
-@test
-def filterMap06(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [6,-1]);
-    Array.sameElements(a, [3])
-
-@test
-def filterMap07(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [8,6]);
-    Array.sameElements(a, [4,3])
-
-@test
-def filterMap08(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [0,1,2,3,4,5,10]);
-    Array.sameElements(a, [0,1,2,5])
-
-/////////////////////////////////////////////////////////////////////////////
-// findMap                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def findMap01(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, []: Array[Int32]) == None
-
-@test
-def findMap02(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1]) == None
-
-@test
-def findMap03(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [2]) == Some(1)
-
-@test
-def findMap04(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,3]) == None
-
-@test
-def findMap05(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,4]) == Some(2)
-
-@test
-def findMap06(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [6,-1]) == Some(3)
-
-@test
-def findMap07(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [8,6]) == Some(4)
-
-@test
-def findMap08(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [0,1,2,3,4,5,10]) == Some(0)
-
-/////////////////////////////////////////////////////////////////////////////
-// toSet                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def toSet01(): Bool & Impure = Array.toSet([]: Array[Int32]) == Set#{}
-
-@test
-def toSet02(): Bool & Impure = Array.toSet([1]) == Set#{1}
-
-@test
-def toSet03(): Bool & Impure = Array.toSet([1,2]) == Set#{1, 2}
-
-@test
-def toSet04(): Bool & Impure = Array.toSet([1,1]) == Set#{1}
-
-@test
-def toSet05(): Bool & Impure = Array.toSet([1,2,3]) == Set#{1, 2, 3}
-
-@test
-def toSet06(): Bool & Impure = Array.toSet([1,2,1]) == Set#{1, 2}
-
-@test
-def toSet07(): Bool & Impure = Array.toSet([1,1,2]) == Set#{1, 2}
-
-@test
-def toSet08(): Bool & Impure = Array.toSet([2,1,2,3,4,5,6,3,3]) == Set#{1, 2, 3, 4, 5, 6}
-
-/////////////////////////////////////////////////////////////////////////////
-// toMap                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def toMap01(): Bool & Impure = Array.toMap([]: Array[(Int32, Bool)]) == Map#{}
-
-@test
-def toMap02(): Bool & Impure = Array.toMap([(1, true)]) == Map#{1 => true}
-
-@test
-def toMap03(): Bool & Impure = Array.toMap([(1, true), (2, false)]) == Map#{1 => true, 2 => false}
-
-@test
-def toMap04(): Bool & Impure = Array.toMap([(1, true), (1, false)]) == Map#{1 => true}
+    /////////////////////////////////////////////////////////////////////////////
+    // forall                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forall01(): Bool = region r {
+        Array.forall(i -> i > 3, []: Array[Int32, _]) == true
+    }
+
+    @test
+    def forall02(): Bool = region r {
+        Array.forall(i -> i > 3, [1]) == false
+    }
+
+    @test
+    def forall03(): Bool = region r {
+        Array.forall(i -> i > 3, [5]) == true
+    }
+
+    @test
+    def forall04(): Bool = region r {
+        Array.forall(i -> i > 3, [1,2]) == false
+    }
+
+    @test
+    def forall05(): Bool = region r {
+        Array.forall(i -> i > 3, [1,6]) == false
+    }
+
+    @test
+    def forall06(): Bool = region r {
+        Array.forall(i -> i > 3, [6,1]) == false
+    }
+
+    @test
+    def forall07(): Bool = region r {
+        Array.forall(i -> i > 3, [16,6]) == true
+    }
+
+    @test
+    def forall08(): Bool = region r {
+        Array.forall(i -> i > 3, [1,-9,3]) == false
+    }
+
+    @test
+    def forall09(): Bool = region r {
+        Array.forall(i -> i > 3, [1,9,3]) == false
+    }
+
+    @test
+    def forall10(): Bool = region r {
+        Array.forall(i -> i > 3, [11,9,31]) == true
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // filter                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def filter01(): Bool = region r {
+        let a = Array.filter(i -> i > 3, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def filter02(): Bool = region r {
+        let a = Array.filter(i -> i > 3, [2]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def filter03(): Bool = region r {
+        let a = Array.filter(i -> i > 3, [4]);
+        Array.sameElements(a, [4])
+    }
+
+    @test
+    def filter04(): Bool = region r {
+        let a = Array.filter(i -> i > 3, [1,3]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def filter05(): Bool = region r {
+        let a = Array.filter(i -> i > 3, [1,8]);
+        Array.sameElements(a, [8])
+    }
+
+    @test
+    def filter06(): Bool = region r {
+        let a = Array.filter(i -> i > 3, [8,1]);
+        Array.sameElements(a, [8])
+    }
+
+    @test
+    def filter07(): Bool = region r {
+        let a = Array.filter(i -> i > 3, [8,9]);
+        Array.sameElements(a, [8,9])
+    }
+
+    @test
+    def filter08(): Bool = region r {
+        let a = Array.filter(i -> i > 3, [1,4,11,2,-22,17]);
+        Array.sameElements(a, [4,11,17])
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // partition                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def partition01(): Bool = region r {
+        let (a,b) = Array.partition(i -> i > 3, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _]) and Array.sameElements(b, []: Array[Int32, _])
+    }
+
+    @test
+    def partition02(): Bool = region r {
+        let (a,b) = Array.partition(i -> i > 3, [1]);
+        Array.sameElements(a, []: Array[Int32, _]) and Array.sameElements(b, [1])
+    }
+
+    @test
+    def partition03(): Bool = region r {
+        let (a,b) = Array.partition(i -> i > 3, [4]);
+        Array.sameElements(a, [4]) and Array.sameElements(b, []: Array[Int32, _])
+    }
+
+    @test
+    def partition04(): Bool = region r {
+        let (a,b) = Array.partition(i -> i > 3, [1,2]);
+        Array.sameElements(a, []: Array[Int32, _]) and Array.sameElements(b, [1,2])
+    }
+
+    @test
+    def partition05(): Bool = region r {
+        let (a,b) = Array.partition(i -> i > 3, [1,5]);
+        Array.sameElements(a, [5]) and Array.sameElements(b, [1])
+    }
+
+    @test
+    def partition06(): Bool = region r {
+        let (a,b) = Array.partition(i -> i > 3, [5,1]);
+        Array.sameElements(a, [5]) and Array.sameElements(b, [1])
+    }
+
+    @test
+    def partition07(): Bool = region r {
+        let (a,b) = Array.partition(i -> i > 3, [5,8]);
+        Array.sameElements(a, [5,8]) and Array.sameElements(b, []: Array[Int32, _])
+    }
+
+    @test
+    def partition08(): Bool = region r {
+        let (a,b) = Array.partition(i -> i > 3, [4, -3, -5, 1, 2, 16, 7, 1, 7]);
+        Array.sameElements(a, [4, 16, 7, 7]) and Array.sameElements(b, [-3, -5, 1, 2, 1])
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // span                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def span01(): Bool = region r {
+        let (a,b) = Array.span(i -> i > 3, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _]) and Array.sameElements(b, []: Array[Int32, _])
+    }
+
+    @test
+    def span02(): Bool = region r {
+        let (a,b) = Array.span(i -> i > 3, [1]);
+        Array.sameElements(a,[]: Array[Int32, _]) and Array.sameElements(b, [1])
+    }
+
+    @test
+    def span03(): Bool = region r {
+        let (a,b) = Array.span(i -> i > 3, [4]);
+        Array.sameElements(a, [4]) and Array.sameElements(b, []: Array[Int32, _])
+    }
+
+    @test
+    def span04(): Bool = region r {
+        let (a,b) = Array.span(i -> i > 3, [1,2]);
+        Array.sameElements(a, []: Array[Int32, _]) and Array.sameElements(b, [1,2])
+    }
+
+    @test
+    def span05(): Bool = region r {
+        let (a,b) = Array.span(i -> i > 3, [1,5]);
+        Array.sameElements(a, []: Array[Int32, _]) and Array.sameElements(b, [1,5])
+    }
+
+    @test
+    def span06(): Bool = region r {
+        let (a,b) = Array.span(i -> i > 3, [5,1]);
+        Array.sameElements(a, [5]) and Array.sameElements(b, [1])
+    }
+
+    @test
+    def span07(): Bool = region r {
+        let (a,b) = Array.span(i -> i > 3, [5,8]);
+        Array.sameElements(a, [5,8]) and Array.sameElements(b, []: Array[Int32, _])
+    }
+
+    @test
+    def span08(): Bool = region r {
+        let (a,b) = Array.span(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
+        Array.sameElements(a, [4, 6]) and Array.sameElements(b, [-3, 11, -5, 1, 2, 16, 7, 1, 7])
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // drop                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def drop01(): Bool = region r {
+        let a = Array.drop(-1, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def drop02(): Bool = region r {
+        let a = Array.drop(0, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def drop03(): Bool = region r {
+        let a = Array.drop(1, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def drop04(): Bool = region r {
+        let a = Array.drop(-1, [1]);
+        Array.sameElements(a, [1])
+    }
+
+    @test
+    def drop05(): Bool = region r {
+        let a = Array.drop(0, [1]);
+        Array.sameElements(a, [1])
+    }
+
+    @test
+    def drop06(): Bool = region r {
+        let a = Array.drop(1, [1]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def drop07(): Bool = region r {
+        let a = Array.drop(2, [1]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def drop08(): Bool = region r {
+        let a = Array.drop(0, [1,2]);
+        Array.sameElements(a, [1,2])
+    }
+
+    @test
+    def drop09(): Bool = region r {
+        let a = Array.drop(1, [1,2]);
+        Array.sameElements(a, [2])
+    }
+
+    @test
+    def drop10(): Bool = region r {
+        let a = Array.drop(2, [1,2]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def drop11(): Bool = region r {
+        let a = Array.drop(2, [1,2,3,4,5,6]);
+        Array.sameElements(a, [3,4,5,6])
+    }
+
+    @test
+    def drop12(): Bool = region r {
+        let a = Array.drop(4, [1,2,3,4,5,6]);
+        Array.sameElements(a, [5,6])
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // dropLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def dropLeft01(): Bool = region r {
+        let a = Array.dropLeft(-1, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def dropLeft02(): Bool = region r {
+        let a = Array.dropLeft(0, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def dropLeft03(): Bool = region r {
+        let a = Array.dropLeft(1, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def dropLeft04(): Bool = region r {
+        let a = Array.dropLeft(-1, [1]);
+        Array.sameElements(a, [1])
+    }
+
+    @test
+    def dropLeft05(): Bool = region r {
+        let a = Array.dropLeft(0, [1]);
+        Array.sameElements(a, [1])
+    }
+
+    @test
+    def dropLeft06(): Bool = region r {
+        let a = Array.dropLeft(1, [1]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def dropLeft07(): Bool = region r {
+        let a = Array.dropLeft(2, [1]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def dropLeft08(): Bool = region r {
+        let a = Array.dropLeft(0, [1,2]);
+        Array.sameElements(a, [1,2])
+    }
+
+    @test
+    def dropLeft09(): Bool = region r {
+        let a = Array.dropLeft(1, [1,2]);
+        Array.sameElements(a, [2])
+    }
+
+    @test
+    def dropLeft10(): Bool = region r {
+        let a = Array.dropLeft(2, [1,2]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def dropLeft11(): Bool = region r {
+        let a = Array.dropLeft(2, [1,2,3,4,5,6]);
+        Array.sameElements(a, [3,4,5,6])
+    }
+
+    @test
+    def dropLeft12(): Bool = region r {
+        let a = Array.dropLeft(4, [1,2,3,4,5,6]);
+        Array.sameElements(a, [5,6])
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // dropRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def dropRight01(): Bool = region r {
+        let a = Array.dropRight(-1, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def dropRight02(): Bool = region r {
+        let a = Array.dropRight(0, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def dropRight03(): Bool = region r {
+        let a = Array.dropRight(1, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def dropRight04(): Bool = region r {
+        let a = Array.dropRight(-1, [1]);
+        Array.sameElements(a, [1])
+    }
+
+    @test
+    def dropRight05(): Bool = region r {
+        let a = Array.dropRight(0, [1]);
+        Array.sameElements(a, [1])
+    }
+
+    @test
+    def dropRight06(): Bool = region r {
+        let a = Array.dropRight(1, [1]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def dropRight07(): Bool = region r {
+        let a = Array.dropRight(2, [1]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def dropRight08(): Bool = region r {
+        let a = Array.dropRight(0, [1,2]);
+        Array.sameElements(a, [1,2])
+    }
+
+    @test
+    def dropRight09(): Bool = region r {
+        let a = Array.dropRight(1, [1,2]);
+        Array.sameElements(a, [1])
+    }
+
+    @test
+    def dropRight10(): Bool = region r {
+        let a = Array.dropRight(2, [1,2]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def dropRight11(): Bool = region r {
+        let a = Array.dropRight(2, [1,2,3,4,5,6]);
+        Array.sameElements(a, [1,2,3,4])
+    }
+
+    @test
+    def dropRight12(): Bool = region r {
+        let a = Array.dropRight(4, [1,2,3,4,5,6]);
+        Array.sameElements(a, [1,2])
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // dropWhile                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def dropWhile01(): Bool = region r {
+        let a = Array.dropWhile(i -> i > 3, []);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def dropWhile02(): Bool = region r {
+        let a = Array.dropWhile(i -> i > 3, [1]);
+        Array.sameElements(a, [1])
+    }
+
+    @test
+    def dropWhile03(): Bool = region r {
+        let a = Array.dropWhile(i -> i > 3, [4]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def dropWhile04(): Bool = region r {
+        let a = Array.dropWhile(i -> i > 3, [1,2]);
+        Array.sameElements(a, [1,2])
+    }
+
+    @test
+    def dropWhile05(): Bool = region r {
+        let a = Array.dropWhile(i -> i > 3, [1,5]);
+        Array.sameElements(a, [1,5])
+    }
+
+    @test
+    def dropWhile06(): Bool = region r {
+        let a = Array.dropWhile(i -> i > 3, [5,1]);
+        Array.sameElements(a, [1])
+    }
+
+    @test
+    def dropWhile07(): Bool = region r {
+        let a = Array.dropWhile(i -> i > 3, [5,8]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def dropWhile08(): Bool = region r {
+        let a = Array.dropWhile(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
+        Array.sameElements(a, [-3, 11, -5, 1, 2, 16, 7, 1, 7])
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // dropWhileLeft                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def dropWhileLeft01(): Bool = region r {
+        let a = Array.dropWhileLeft(i -> i > 3, []);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def dropWhileLeft02(): Bool = region r {
+        let a = Array.dropWhileLeft(i -> i > 3, [1]);
+        Array.sameElements(a, [1])
+    }
+
+    @test
+    def dropWhileLeft03(): Bool = region r {
+        let a = Array.dropWhileLeft(i -> i > 3, [4]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def dropWhileLeft04(): Bool = region r {
+        let a = Array.dropWhileLeft(i -> i > 3, [1,2]);
+        Array.sameElements(a, [1,2])
+    }
+
+    @test
+    def dropWhileLeft05(): Bool = region r {
+        let a = Array.dropWhileLeft(i -> i > 3, [1,5]);
+        Array.sameElements(a, [1,5])
+    }
+
+    @test
+    def dropWhileLeft06(): Bool = region r {
+        let a = Array.dropWhileLeft(i -> i > 3, [5,1]);
+        Array.sameElements(a, [1])
+    }
+
+    @test
+    def dropWhileLeft07(): Bool = region r {
+        let a = Array.dropWhileLeft(i -> i > 3, [5,8]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def dropWhileLeft08(): Bool = region r {
+        let a = Array.dropWhileLeft(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
+        Array.sameElements(a, [-3, 11, -5, 1, 2, 16, 7, 1, 7])
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // dropWhileRight                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def dropWhileRight01(): Bool = region r {
+        let a = Array.dropWhileRight(i -> i > 3, []);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def dropWhileRight02(): Bool = region r {
+        let a = Array.dropWhileRight(i -> i > 3, [1]);
+        Array.sameElements(a, [1])
+    }
+
+    @test
+    def dropWhileRight03(): Bool = region r {
+        let a = Array.dropWhileRight(i -> i > 3, [4]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def dropWhileRight04(): Bool = region r {
+        let a = Array.dropWhileRight(i -> i > 3, [1,2]);
+        Array.sameElements(a, [1,2])
+    }
+
+    @test
+    def dropWhileRight05(): Bool = region r {
+        let a = Array.dropWhileRight(i -> i > 3, [1,5]);
+        Array.sameElements(a, [1])
+    }
+
+    @test
+    def dropWhileRight06(): Bool = region r {
+        let a = Array.dropWhileRight(i -> i > 3, [5,1]);
+        Array.sameElements(a, [5,1])
+    }
+
+    @test
+    def dropWhileRight07(): Bool = region r {
+        let a = Array.dropWhileRight(i -> i > 3, [5,8]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def dropWhileRight08(): Bool = region r {
+        let a = Array.dropWhileRight(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
+        Array.sameElements(a, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1])
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // take                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def take01(): Bool = region r {
+        let a = Array.take(-1, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def take02(): Bool = region r {
+        let a = Array.take(0, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def take03(): Bool = region r {
+        let a = Array.take(1, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def take04(): Bool = region r {
+        let a = Array.take(-1, [1]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def take05(): Bool = region r {
+        let a = Array.take(0, [1]);
+        Array.sameElements(a, []: Array[Int32, _])
+
+    }
+    @test
+    def take06(): Bool = region r {
+        let a = Array.take(1, [1]);
+        Array.sameElements(a, [1])
+
+    }
+    @test
+    def take07(): Bool = region r {
+        let a = Array.take(2, [1]);
+        Array.sameElements(a, [1])
+
+    }
+    @test
+    def take08(): Bool = region r {
+        let a = Array.take(0, [1,2]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def take09(): Bool = region r {
+        let a = Array.take(1, [1,2]);
+        Array.sameElements(a, [1])
+    }
+
+    @test
+    def take10(): Bool = region r {
+        let a = Array.take(2, [1,2]);
+        Array.sameElements(a, [1,2])
+    }
+
+    @test
+    def take11(): Bool = region r {
+        let a = Array.take(2, [1,2,3,4,5,6]);
+        Array.sameElements(a, [1,2])
+    }
+
+    @test
+    def take12(): Bool = region r {
+        let a = Array.take(4, [1,2,3,4,5,6]);
+        Array.sameElements(a, [1,2,3,4])
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // takeLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def takeLeft01(): Bool = region r {
+        let a = Array.takeLeft(-1, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeLeft02(): Bool = region r {
+        let a = Array.takeLeft(0, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeLeft03(): Bool = region r {
+        let a = Array.takeLeft(1, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeLeft04(): Bool = region r {
+        let a = Array.takeLeft(-1, [1]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeLeft05(): Bool = region r {
+        let a = Array.takeLeft(0, [1]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeLeft06(): Bool = region r {
+        let a = Array.takeLeft(1, [1]);
+        Array.sameElements(a, [1])
+    }
+
+    @test
+    def takeLeft07(): Bool = region r {
+        let a = Array.takeLeft(2, [1]);
+        Array.sameElements(a, [1])
+    }
+
+    @test
+    def takeLeft08(): Bool = region r {
+        let a = Array.takeLeft(0, [1,2]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeLeft09(): Bool = region r {
+        let a = Array.takeLeft(1, [1,2]);
+        Array.sameElements(a, [1])
+    }
+
+    @test
+    def takeLeft10(): Bool = region r {
+        let a = Array.takeLeft(2, [1,2]);
+        Array.sameElements(a, [1,2])
+    }
+
+    @test
+    def takeLeft11(): Bool = region r {
+        let a = Array.takeLeft(2, [1,2,3,4,5,6]);
+        Array.sameElements(a, [1,2])
+    }
+
+    @test
+    def takeLeft12(): Bool = region r {
+        let a = Array.takeLeft(4, [1,2,3,4,5,6]);
+        Array.sameElements(a, [1,2,3,4])
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // takeRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def takeRight01(): Bool = region r {
+        let a = Array.takeRight(-1, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeRight02(): Bool = region r {
+        let a = Array.takeRight(0, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeRight03(): Bool = region r {
+        let a = Array.takeRight(1, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeRight04(): Bool = region r {
+        let a = Array.takeRight(-1, [1]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeRight05(): Bool = region r {
+        let a = Array.takeRight(0, [1]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeRight06(): Bool = region r {
+        let a = Array.takeRight(1, [1]);
+        Array.sameElements(a, [1])
+    }
+
+    @test
+    def takeRight07(): Bool = region r {
+        let a = Array.takeRight(2, [1]);
+        Array.sameElements(a, [1])
+    }
+
+    @test
+    def takeRight08(): Bool = region r {
+        let a = Array.takeRight(0, [1,2]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeRight09(): Bool = region r {
+        let a = Array.takeRight(1, [1,2]);
+        Array.sameElements(a, [2])
+    }
+
+    @test
+    def takeRight10(): Bool = region r {
+        let a = Array.takeRight(2, [1,2]);
+        Array.sameElements(a, [1,2])
+    }
+
+    @test
+    def takeRight11(): Bool = region r {
+        let a = Array.takeRight(2, [1,2,3,4,5,6]);
+        Array.sameElements(a, [5,6])
+    }
+
+    @test
+    def takeRight12(): Bool = region r {
+        let a = Array.takeRight(4, [1,2,3,4,5,6]);
+        Array.sameElements(a, [3,4,5,6])
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // takeWhile                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def takeWhile01(): Bool = region r {
+        let a = Array.takeWhile(i -> i > 3, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeWhile02(): Bool = region r {
+        let a = Array.takeWhile(i -> i > 3, [1]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeWhile03(): Bool = region r {
+        let a = Array.takeWhile(i -> i > 3, [4]);
+        Array.sameElements(a, [4])
+    }
+
+    @test
+    def takeWhile04(): Bool = region r {
+        let a = Array.takeWhile(i -> i > 3, [1,2]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeWhile05(): Bool = region r {
+        let a = Array.takeWhile(i -> i > 3, [1,5]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeWhile06(): Bool = region r {
+        let a = Array.takeWhile(i -> i > 3, [5,1]);
+        Array.sameElements(a, [5])
+    }
+
+    @test
+    def takeWhile07(): Bool = region r {
+        let a = Array.takeWhile(i -> i > 3, [5,8]);
+        Array.sameElements(a, [5,8])
+    }
+
+    @test
+    def takeWhile08(): Bool = region r {
+        let a = Array.takeWhile(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
+        Array.sameElements(a, [4, 6])
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // takeWhileLeft                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def takeWhileLeft01(): Bool = region r {
+        let a = Array.takeWhileLeft(i -> i > 3, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeWhileLeft02(): Bool = region r {
+        let a = Array.takeWhileLeft(i -> i > 3, [1]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeWhileLeft03(): Bool = region r {
+        let a = Array.takeWhileLeft(i -> i > 3, [4]);
+        Array.sameElements(a, [4])
+    }
+
+    @test
+    def takeWhileLeft04(): Bool = region r {
+        let a = Array.takeWhileLeft(i -> i > 3, [1,2]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeWhileLeft05(): Bool = region r {
+        let a = Array.takeWhileLeft(i -> i > 3, [1,5]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeWhileLeft06(): Bool = region r {
+        let a = Array.takeWhileLeft(i -> i > 3, [5,1]);
+        Array.sameElements(a, [5])
+    }
+
+    @test
+    def takeWhileLeft07(): Bool = region r {
+        let a = Array.takeWhileLeft(i -> i > 3, [5,8]);
+        Array.sameElements(a, [5,8])
+    }
+
+    @test
+    def takeWhileLeft08(): Bool = region r {
+        let a = Array.takeWhileLeft(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
+        Array.sameElements(a, [4, 6])
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // takeWhileRight                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def takeWhileRight01(): Bool = region r {
+        let a = Array.takeWhileRight(i -> i > 3, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeWhileRight02(): Bool = region r {
+        let a = Array.takeWhileRight(i -> i > 3, [1]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeWhileRight03(): Bool = region r {
+        let a = Array.takeWhileRight(i -> i > 3, [4]);
+        Array.sameElements(a, [4])
+    }
+
+    @test
+    def takeWhileRight04(): Bool = region r {
+        let a = Array.takeWhileRight(i -> i > 3, [1,2]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeWhileRight05(): Bool = region r {
+        let a = Array.takeWhileRight(i -> i > 3, [1,5]);
+        Array.sameElements(a, [5])
+    }
+
+    @test
+    def takeWhileRight06(): Bool = region r {
+        let a = Array.takeWhileRight(i -> i > 3, [5,1]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def takeWhileRight07(): Bool = region r {
+        let a = Array.takeWhileRight(i -> i > 3, [5,8]);
+        Array.sameElements(a, [5,8])
+    }
+
+    @test
+    def takeWhileRight08(): Bool = region r {
+        let a = Array.takeWhileRight(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
+        Array.sameElements(a, [7])
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // groupBy                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def groupBy01(): Bool = region r {
+        let arr = Array.groupBy((a, b) -> a > 3 or b > 8, []: Array[Int32, _], r);
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        xs == Nil
+    }
+
+    @test
+    def groupBy02(): Bool = region r {
+        let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1], r);
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        xs == (1 :: Nil) :: Nil
+    }
+
+    @test
+    def groupBy03(): Bool = region r {
+        let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1,4], r);
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        xs == (1 :: Nil) :: (4 :: Nil) :: Nil
+    }
+
+    @test
+    def groupBy04(): Bool = region r {
+        let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1,9], r);
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        xs == (1 :: 9 :: Nil) :: Nil
+    }
+
+    @test
+    def groupBy05(): Bool = region r {
+        let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1, 4, 7, 6, 9, 2, 4, 4, 8, 16], r);
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        xs == (1 :: 9 :: 16 :: Nil) :: (4 :: 7 :: 6 :: 4 :: 4 :: 8 :: Nil) :: (2 :: Nil) :: Nil
+    }
+
+    @test
+    def groupBy06(): Bool = region r {
+        let arr = Array.groupBy((a, b) -> a > -6 or a*b >= 0, [-1, -11, 4, -11, 0, 8, 2, 1, -3, -24], r);
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        xs == (-1 :: -11 :: -11 :: 0 :: -3 :: -24 :: Nil) :: (4 :: 8 :: 2 :: 1 :: Nil) :: Nil
+    }
+
+    @test
+    def groupBy07(): Bool = region r {
+        let arr = Array.groupBy((a, b) -> a < 0 or (a > 10 or (b > 10 or a == b)), [-5, 6, 11, 8, 8, -11, -1, 0, 4, -1], r);
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        xs == (-5 :: 11 :: -11 :: -1 :: -1 :: Nil) :: (6 :: Nil) :: (8 :: 8 :: Nil) :: (0 :: Nil) :: (4 :: Nil) :: Nil
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // zip                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zip01(): Bool = region r {
+        let a = Array.zip([]: Array[Int32, _], []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[(Int32, Int32), _])
+    }
+
+    @test
+    def zip02(): Bool = region r {
+        let a = Array.zip([1], []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[(Int32, Int32), _])
+    }
+
+    @test
+    def zip03(): Bool = region r {
+        let a = Array.zip([]: Array[Int32, _], [2]);
+        Array.sameElements(a, []: Array[(Int32, Int32), _])
+    }
+
+    @test
+    def zip04(): Bool = region r {
+        let a = Array.zip([1], [2]);
+        Array.sameElements(a, [(1, 2)])
+    }
+
+    @test
+    def zip05(): Bool = region r {
+        let a = Array.zip([1,3], [2,4]);
+        Array.sameElements(a, [(1, 2), (3, 4)])
+    }
+
+    @test
+    def zip06(): Bool = region r {
+        let a = Array.zip([1,3,5], [2,4,6]);
+        Array.sameElements(a, [(1, 2), (3, 4), (5, 6)])
+    }
+
+    @test
+    def zip07(): Bool = region r {
+        let a = Array.zip([1,3,5,7], [2,4,6,8]);
+        Array.sameElements(a, [(1, 2), (3, 4), (5, 6), (7, 8)])
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // zipWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWith01(): Bool = region r {
+        let arr = Array.zipWith((a, b) -> if (b) a + 1 else a, []: Array[Int32, _], []: Array[Bool, _]);
+        Array.sameElements(arr, []: Array[Int32, _])
+    }
+
+    @test
+    def zipWith02(): Bool = region r {
+        let arr = Array.zipWith((a, b) -> if (b) a + 1 else a, [1], []: Array[Bool, _]);
+        Array.sameElements(arr, []: Array[Int32, _])
+    }
+
+    @test
+    def zipWith03(): Bool = region r {
+        let arr = Array.zipWith((a, b) -> if (b) a + 1 else a, []: Array[Int32, _], [true]);
+        Array.sameElements(arr, []: Array[Int32, _])
+    }
+
+    @test
+    def zipWith04(): Bool = region r {
+        let arr = Array.zipWith((a, b) -> if (b) a + 1 else a, [1], [true]);
+        Array.sameElements(arr, [2])
+    }
+
+    @test
+    def zipWith05(): Bool = region r {
+        let arr = Array.zipWith((a, b) -> if (b) a + 1 else a, [1], [false]);
+        Array.sameElements(arr, [1])
+    }
+
+    @test
+    def zipWith06(): Bool = region r {
+        let arr = Array.zipWith((a, b) -> if (b) a + 1 else a,
+                        [1, 2, 3, 4, 5, 6, 7, 8],
+                        [false, true, true, false, false, true, true, true]);
+        Array.sameElements(arr, [1, 3, 4, 4, 5, 7, 8, 9])
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // unzip                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def unzip01(): Bool = region r {
+        let (a,b) = Array.unzip([]: Array[(Unit, Unit), _]);
+        Array.sameElements(a, []) and Array.sameElements(b, [])
+    }
+
+    @test
+    def unzip02(): Bool = region r {
+        let (a,b) = Array.unzip([(1, true)]);
+        Array.sameElements(a, [1]) and Array.sameElements(b, [true])
+    }
+
+    @test
+    def unzip03(): Bool = region r {
+        let (a,b) = Array.unzip([(1, true), (2, true)]);
+        Array.sameElements(a, [1,2])  and Array.sameElements(b, [true,true])
+    }
+
+    @test
+    def unzip04(): Bool = region r {
+        let (a,b) = Array.unzip([(1, true), (2, true), (3, false)]);
+        Array.sameElements(a, [1,2,3]) and Array.sameElements(b, [true,true,false])
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // fold2                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def fold201(): Bool = region r {
+        Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, []: Array[Int32, _], []: Array[Bool, _]) == 4
+    }
+
+    @test
+    def fold202(): Bool = region r {
+        Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, [1], []) == 4
+    }
+
+    @test
+    def fold203(): Bool = region r {
+        Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, [], [true]) == 4
+    }
+
+    @test
+    def fold204(): Bool = region r {
+        Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, [2], [true]) == 6
+    }
+
+    @test
+    def fold205(): Bool = region r {
+        Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, [2], [false]) == 8
+    }
+
+    @test
+    def fold206(): Bool = region r {
+        Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, [3,2], [true,true]) == 9
+    }
+
+    @test
+    def fold207(): Bool = region r {
+        Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, [3,2], [true,false]) == 14
+    }
+
+    @test
+    def fold208(): Bool = region r {
+        Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, [3,2], [false,true]) == 14
+    }
+
+    @test
+    def fold209(): Bool = region r {
+        Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, [3,2], [false,false]) == 24
+    }
+
+    @test
+    def fold210(): Bool = region r {
+        Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, [6,-4,3,2],
+            [true,false,false,true]) == -118
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeft2                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldLeft201(): Bool = region r {
+        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, []: Array[Int32, _], []: Array[Bool, _]) == 4
+    }
+
+    @test
+    def foldLeft202(): Bool = region r {
+        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, [1], []: Array[Bool, _]) == 4
+    }
+
+    @test
+    def foldLeft203(): Bool = region r {
+        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, []: Array[Int32, _], [true]) == 4
+    }
+
+    @test
+    def foldLeft204(): Bool = region r {
+        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, [2], [true]) == 6
+    }
+
+    @test
+    def foldLeft205(): Bool = region r {
+        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, [2], [false]) == 8
+    }
+
+    @test
+    def foldLeft206(): Bool = region r {
+        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, [3,2], [true,true]) == 9
+    }
+
+    @test
+    def foldLeft207(): Bool = region r {
+        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, [3,2], [true,false]) == 14
+    }
+
+    @test
+    def foldLeft208(): Bool = region r {
+        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, [3,2], [false,true]) == 14
+    }
+
+    @test
+    def foldLeft209(): Bool = region r {
+        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, [3,2], [false,false]) == 24
+    }
+
+    @test
+    def foldLeft210(): Bool = region r {
+        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, [6,-4,3,2],
+            [true,false,false,true]) == -118
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRight2                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRight201(): Bool = region r {
+        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, []: Array[Int32, _], []: Array[Bool, _]) == 4
+    }
+
+    @test
+    def foldRight202(): Bool = region r {
+        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [1], []: Array[Bool, _]) == 4
+    }
+
+    @test
+    def foldRight203(): Bool = region r {
+        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, []: Array[Int32, _], [true]) == 4
+    }
+
+    @test
+    def foldRight204(): Bool = region r {
+        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [2], [true]) == 6
+    }
+
+    @test
+    def foldRight205(): Bool = region r {
+        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [2], [false]) == 8
+    }
+
+    @test
+    def foldRight206(): Bool = region r {
+        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [3,2], [true,true]) == 9
+    }
+
+    @test
+    def foldRight207(): Bool = region r {
+        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [3,2], [true,false]) == 11
+    }
+
+    @test
+    def foldRight208(): Bool = region r {
+        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [3,2], [false,true]) == 18
+    }
+
+    @test
+    def foldRight209(): Bool = region r {
+        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [3,2], [false,false]) == 24
+    }
+
+    @test
+    def foldRight210(): Bool = region r {
+        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [6,-4,3,2],
+            [true,false,false,true]) == -66
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // filterMap                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def filterMap01(): Bool = region r {
+        let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, []: Array[Int32, _]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def filterMap02(): Bool = region r {
+        let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def filterMap03(): Bool = region r {
+        let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [2]);
+        Array.sameElements(a, [1])
+    }
+
+    @test
+    def filterMap04(): Bool = region r {
+        let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,3]);
+        Array.sameElements(a, []: Array[Int32, _])
+    }
+
+    @test
+    def filterMap05(): Bool = region r {
+        let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,4]);
+        Array.sameElements(a, [2])
+    }
+
+    @test
+    def filterMap06(): Bool = region r {
+        let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [6,-1]);
+        Array.sameElements(a, [3])
+    }
+
+    @test
+    def filterMap07(): Bool = region r {
+        let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [8,6]);
+        Array.sameElements(a, [4,3])
+    }
+
+    @test
+    def filterMap08(): Bool = region r {
+        let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [0,1,2,3,4,5,10]);
+        Array.sameElements(a, [0,1,2,5])
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // findMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def findMap01(): Bool = region r {
+        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, []: Array[Int32, _]) == None
+    }
+
+    @test
+    def findMap02(): Bool = region r {
+        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1]) == None
+    }
+
+    @test
+    def findMap03(): Bool = region r {
+        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [2]) == Some(1)
+    }
+
+    @test
+    def findMap04(): Bool = region r {
+        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,3]) == None
+    }
+
+    @test
+    def findMap05(): Bool = region r {
+        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,4]) == Some(2)
+    }
+
+    @test
+    def findMap06(): Bool = region r {
+        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [6,-1]) == Some(3)
+    }
+
+    @test
+    def findMap07(): Bool = region r {
+        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [8,6]) == Some(4)
+    }
+
+    @test
+    def findMap08(): Bool = region r {
+        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [0,1,2,3,4,5,10]) == Some(0)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toSet                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toSet01(): Bool = region r {
+        Array.toSet([]: Array[Int32, _]) == Set#{}
+    }
+
+    @test
+    def toSet02(): Bool = region r {
+        Array.toSet([1]) == Set#{1}
+    }
+
+    @test
+    def toSet03(): Bool = region r {
+        Array.toSet([1,2]) == Set#{1, 2}
+    }
+
+    @test
+    def toSet04(): Bool = region r {
+        Array.toSet([1,1]) == Set#{1}
+    }
+
+    @test
+    def toSet05(): Bool = region r {
+        Array.toSet([1,2,3]) == Set#{1, 2, 3}
+    }
+
+    @test
+    def toSet06(): Bool = region r {
+        Array.toSet([1,2,1]) == Set#{1, 2}
+    }
+
+    @test
+    def toSet07(): Bool = region r {
+        Array.toSet([1,1,2]) == Set#{1, 2}
+    }
+
+    @test
+    def toSet08(): Bool = region r {
+        Array.toSet([2,1,2,3,4,5,6,3,3]) == Set#{1, 2, 3, 4, 5, 6}
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toMap                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMap01(): Bool = region r {
+        Array.toMap([]: Array[(Int32, Bool), _]) == Map#{}
+    }
+
+    @test
+    def toMap02(): Bool = region r {
+        Array.toMap([(1, true)]) == Map#{1 => true}
+    }
+
+    @test
+    def toMap03(): Bool = region r {
+        Array.toMap([(1, true), (2, false)]) == Map#{1 => true, 2 => false}
+    }
+
+    @test
+    def toMap04(): Bool = region r {
+        Array.toMap([(1, true), (1, false)]) == Map#{1 => true}
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // findIndexOf                                                             //
@@ -3842,7 +4283,7 @@ def toMap04(): Bool & Impure = Array.toMap([(1, true), (1, false)]) == Map#{1 =>
 
     @test
     def findIndexOf01(): Bool = region r {
-        Array.findIndexOf(i -> i > 2, []: ScopedArray[Int32, _]) == None
+        Array.findIndexOf(i -> i > 2, []: Array[Int32, _]) == None
     }
 
     @test
@@ -3881,7 +4322,7 @@ def toMap04(): Bool & Impure = Array.toMap([(1, true), (1, false)]) == Map#{1 =>
 
     @test
     def findIndexOfLeft01(): Bool = region r {
-        Array.findIndexOfLeft(i -> i > 2, []: ScopedArray[Int32, _]) == None
+        Array.findIndexOfLeft(i -> i > 2, []: Array[Int32, _]) == None
     }
 
     @test
@@ -3920,7 +4361,7 @@ def toMap04(): Bool & Impure = Array.toMap([(1, true), (1, false)]) == Map#{1 =>
 
     @test
     def findIndexOfRight01(): Bool = region r {
-        Array.findIndexOfRight(i -> i > 2, []: ScopedArray[Int32, _]) == None
+        Array.findIndexOfRight(i -> i > 2, []: Array[Int32, _]) == None
     }
 
     @test
@@ -3953,44 +4394,51 @@ def toMap04(): Bool & Impure = Array.toMap([(1, true), (1, false)]) == Map#{1 =>
         Array.findIndexOfRight(i -> i > 2, [6,7]) == Some(1)
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// findIndices                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // findIndices                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def findIndices01(): Bool & Impure =
-    let a = Array.findIndices(i -> i > 2, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def findIndices01(): Bool = region r {
+        let a = Array.findIndices(i -> i > 2, []: Array[Int32, r]);
+        Array.sameElements(a, []: Array[Int32, r])
+    }
 
-@test
-def findIndices02(): Bool & Impure =
-    let a = Array.findIndices(i -> i > 2, [1]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def findIndices02(): Bool = region r {
+        let a = Array.findIndices(i -> i > 2, [1]);
+        Array.sameElements(a, []: Array[Int32, r])
+    }
 
-@test
-def findIndices03(): Bool & Impure =
-    let a = Array.findIndices(i -> i > 2, [3]);
-    Array.sameElements(a, [0])
+    @test
+    def findIndices03(): Bool = region r {
+        let a = Array.findIndices(i -> i > 2, [3]);
+        Array.sameElements(a, [0])
+    }
 
-@test
-def findIndices04(): Bool & Impure =
-    let a = Array.findIndices(i -> i > 2, [1,2]);
-    Array.sameElements(a, [] : Array[Int32])
+    @test
+    def findIndices04(): Bool = region r {
+        let a = Array.findIndices(i -> i > 2, [1,2]);
+        Array.sameElements(a, [] : Array[Int32, r])
+    }
 
-@test
-def findIndices05(): Bool & Impure =
-    let a = Array.findIndices(i -> i > 2, [6,-6]);
-    Array.sameElements(a, [0])
+    @test
+    def findIndices05(): Bool = region r {
+        let a = Array.findIndices(i -> i > 2, [6,-6]);
+        Array.sameElements(a, [0])
+    }
 
-@test
-def findIndices06(): Bool & Impure =
-    let a = Array.findIndices(i -> i > 2, [-6,6]);
-    Array.sameElements(a, [1])
+    @test
+    def findIndices06(): Bool = region r {
+        let a = Array.findIndices(i -> i > 2, [-6,6]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def findIndices07(): Bool & Impure =
-    let a = Array.findIndices(i -> i > 2, [6,7]);
-    Array.sameElements(a, [0,1])
+    @test
+    def findIndices07(): Bool = region r {
+        let a = Array.findIndices(i -> i > 2, [6,7]);
+        Array.sameElements(a, [0,1])
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // init                                                                    //
@@ -3999,13 +4447,13 @@ def findIndices07(): Bool & Impure =
     @test
     def init01(): Bool = region r {
         let a = Array.init(x -> x, 0, r);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def init02(): Bool = region r {
         let a = Array.init(x -> x, -1, r);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
@@ -4026,34 +4474,39 @@ def findIndices07(): Bool & Impure =
         Array.length(a) == 50
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// init2                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // init2                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def init201(): Bool & Impure =
-    let (a,b) = Array.init2(x -> (x,true), 0);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, []: Array[Bool])
+    @test
+    def init201(): Bool = region r {
+        let (a,b) = Array.init2(x -> (x, true), 0, r, r);
+        Array.sameElements(a, []: Array[Int32, _]) and Array.sameElements(b, []: Array[Bool, _])
+    }
 
-@test
-def init202(): Bool & Impure =
-    let (a,b) = Array.init2(x -> (x,true), -1);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, []: Array[Bool])
+    @test
+    def init202(): Bool = region r {
+        let (a,b) = Array.init2(x -> (x, true), -1, r, r);
+        Array.sameElements(a, []: Array[Int32, _]) and Array.sameElements(b, []: Array[Bool, _])
+    }
 
-@test
-def init203(): Bool & Impure =
-    let (a,b) = Array.init2(x -> (x,true), 1);
-    Array.sameElements(a, [0]) and Array.sameElements(b, [true])
+    @test
+    def init203(): Bool = region r {
+        let (a,b) = Array.init2(x -> (x, true), 1, r, r);
+        Array.sameElements(a, [0]) and Array.sameElements(b, [true])
+    }
 
-@test
-def init204(): Bool & Impure =
-    let (a,b) = Array.init2(x -> (x,true), 2);
-    Array.sameElements(a, [0,1]) and Array.sameElements(b, [true, true])
+    @test
+    def init204(): Bool = region r {
+        let (a,b) = Array.init2(x -> (x, true), 2, r, r);
+        Array.sameElements(a, [0,1]) and Array.sameElements(b, [true, true])
+    }
 
-@test
-def init205(): Bool & Impure =
-    let (a,b) = Array.init2(x -> (x,true), 50);
-    Array.length(a) == 50 and Array.length(b) == 50
+    @test
+    def init205(): Bool = region r {
+        let (a,b) = Array.init2(x -> (x, true), 50, r, r);
+        Array.length(a) == 50 and Array.length(b) == 50
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -4062,50 +4515,50 @@ def init205(): Bool & Impure =
 
     @test
     def sameElements01(): Bool = region r {
-        let a = []: ScopedArray[Int32, _];
-        let b = []: ScopedArray[Int32, _];
+        let a = []: Array[Int32, _];
+        let b = []: Array[Int32, _];
         Array.sameElements(a,b) == true
     }
 
     @test
     def sameElements02(): Bool = region r {
-        let a = [1]: ScopedArray[Int32, _];
-        let b = []: ScopedArray[Int32, _];
+        let a = [1]: Array[Int32, _];
+        let b = []: Array[Int32, _];
         Array.sameElements(a,b) == false
     }
 
     @test
     def sameElements03(): Bool = region r {
-        let a = []: ScopedArray[Int32, _];
-        let b = [1]: ScopedArray[Int32, _];
+        let a = []: Array[Int32, _];
+        let b = [1]: Array[Int32, _];
         Array.sameElements(a,b) == false
     }
 
     @test
     def sameElements04(): Bool = region r {
-        let a = [1]: ScopedArray[Int32, _];
-        let b = [1]: ScopedArray[Int32, _];
+        let a = [1]: Array[Int32, _];
+        let b = [1]: Array[Int32, _];
         Array.sameElements(a,b) == true
     }
 
     @test
     def sameElements05(): Bool = region r {
-        let a = [1]: ScopedArray[Int32, _];
-        let b = [0]: ScopedArray[Int32, _];
+        let a = [1]: Array[Int32, _];
+        let b = [0]: Array[Int32, _];
         Array.sameElements(a,b) == false
     }
 
     @test
     def sameElements06(): Bool = region r {
-        let a = [1,2]: ScopedArray[Int32, _];
-        let b = [1,2]: ScopedArray[Int32, _];
+        let a = [1,2]: Array[Int32, _];
+        let b = [1,2]: Array[Int32, _];
         Array.sameElements(a,b) == true
     }
 
     @test
     def sameElements07(): Bool = region r {
-        let a = [1,2]: ScopedArray[Int32, _];
-        let b = [2,1]: ScopedArray[Int32, _];
+        let a = [1,2]: Array[Int32, _];
+        let b = [2,1]: Array[Int32, _];
         Array.sameElements(a,b) == false
     }
 
@@ -4115,7 +4568,7 @@ def init205(): Bool & Impure =
 
     @test
     def foreach01(): Bool = region r {
-        let a = []: ScopedArray[Int32, _];
+        let a = []: Array[Int32, _];
         let sb = new StringBuilder(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.foreach(fn, a);
@@ -4155,7 +4608,7 @@ def init205(): Bool & Impure =
 
     @test
     def foreachWithIndex01(): Bool = region r {
-        let a = []: ScopedArray[Float32, _];
+        let a = []: Array[Float32, _];
         let sb = new StringBuilder(r);
         let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.foreachWithIndex(fn, a);
@@ -4204,14 +4657,14 @@ def init205(): Bool & Impure =
 
     @test
     def updateSequence01(): Bool = region r {
-         let a = Array.updateSequence(0, []: ScopedArray[Int32, _], []: ScopedArray[Int32, _]);
-         Array.sameElements(a, []: ScopedArray[Int32, _])
+         let a = Array.updateSequence(0, []: Array[Int32, _], []: Array[Int32, _]);
+         Array.sameElements(a, []: Array[Int32, _])
      }
 
     @test
     def updateSequence02(): Bool = region r {
         let a = Array.updateSequence(0, [1,2], []);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
@@ -4376,16 +4829,16 @@ def init205(): Bool & Impure =
 
     @test
     def updateSequence01!(): Bool = region r {
-         let a = []: ScopedArray[Int32, _];
-         Array.updateSequence!(0, []: ScopedArray[Int32, _], a);
-         Array.sameElements(a, []: ScopedArray[Int32, _])
+         let a = []: Array[Int32, _];
+         Array.updateSequence!(0, []: Array[Int32, _], a);
+         Array.sameElements(a, []: Array[Int32, _])
      }
 
     @test
     def updateSequence02!(): Bool = region r {
-        let a = []: ScopedArray[Int32, _];
+        let a = []: Array[Int32, _];
         Array.updateSequence!(0, [1,2], a);
-        Array.sameElements(a, []: ScopedArray[Int32, _])
+        Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
@@ -4582,8 +5035,8 @@ def init205(): Bool & Impure =
 
     @test
     def sortWith01(): Bool = region r {
-        let a = Array.sortWith(cmp, []: ScopedArray[Int32, _]);
-        a `sameElements` []: ScopedArray[Int32, _]
+        let a = Array.sortWith(cmp, []: Array[Int32, _]);
+        a `sameElements` []: Array[Int32, _]
     }
 
     @test
@@ -4662,12 +5115,12 @@ def init205(): Bool & Impure =
     // sort                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSortVsSortWith(a: ScopedArray[Int32, r]): Bool \ { Read(r), Write(r) } =
+    def testSortVsSortWith(a: Array[Int32, r]): Bool \ { Read(r), Write(r) } =
         Array.sort(a) `sameElements` Array.sortWith(cmp, a)
 
     @test
     def sort01(): Bool = region r {
-        testSortVsSortWith([]: ScopedArray[Int32, _])
+        testSortVsSortWith([]: Array[Int32, _])
     }
 
     @test
@@ -4716,9 +5169,9 @@ def init205(): Bool & Impure =
 
     @test
     def sortWith01!(): Bool = region r {
-        let a = []: ScopedArray[Int32, _];
-        Array.sortWith(cmp, a);
-        a `sameElements` []: ScopedArray[Int32, _]
+        let a = []: Array[Int32, _];
+        Array.sortWith!(cmp, a);
+        a `sameElements` []: Array[Int32, _]
     }
 
     @test
@@ -4809,7 +5262,7 @@ def init205(): Bool & Impure =
     // sort!                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSort!VsSortWith!(a: ScopedArray[Int32, r]): Bool \ { Read(r), Write(r) } =
+    def testSort!VsSortWith!(a: Array[Int32, r]): Bool \ { Read(r), Write(r) } =
         let b = Array.slice(0, Array.length(a), a);
         let c = Array.slice(0, Array.length(a), a);
         Array.sort!(b);
@@ -4818,7 +5271,7 @@ def init205(): Bool & Impure =
 
     @test
     def sort!01(): Bool = region r {
-        testSort!VsSortWith!([]: ScopedArray[Int32, _])
+        testSort!VsSortWith!([]: Array[Int32, _])
     }
 
     @test
@@ -4865,14 +5318,14 @@ def init205(): Bool & Impure =
     // sortBy                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSortByVsSort(a: ScopedArray[Int32, r]): Bool \ { Read(r), Write(r) } =
+    def testSortByVsSort(a: Array[Int32, r]): Bool \ { Read(r), Write(r) } =
         (Array.sortBy(identity, a) `sameElements` Array.sort(a)) and
         (Array.sortBy(x -> 4 * x + 7, a) `sameElements` Array.sort(a)) and
         (Array.sortBy(x -> -x, a) `sameElements` Array.sortWith(flip(cmp),a))
 
     @test
     def sortBy01(): Bool = region r {
-        testSortByVsSort([]: ScopedArray[Int32, _])
+        testSortByVsSort([]: Array[Int32, _])
     }
 
     @test
@@ -4927,7 +5380,7 @@ def init205(): Bool & Impure =
     }
 
     @test
-    def sortBy10(): Bool = region r {
+    def sortBy10(): Bool = region reg {
         Array.sortBy(r -> let R(x) = r; x.i, [R({i = 2, s = "A"}), R({i = 1, s = "B"}), R({i = 3, s = "C"})])
         `sameElements` [R({i = 1, s = "B"}), R({i = 2, s = "A"}), R({i = 3, s = "C"})]
     }
@@ -4936,7 +5389,7 @@ def init205(): Bool & Impure =
     // sortBy!                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSortBy!VsSortBy(a: ScopedArray[Int32, r]) : Bool \ { Read(r), Write(r) } =
+    def testSortBy!VsSortBy(a: Array[Int32, r]) : Bool \ { Read(r), Write(r) } =
         let b = Array.slice(0, Array.length(a), a);
         let c = Array.slice(0, Array.length(a), a);
         Array.sortBy!(identity, b);
@@ -4946,7 +5399,7 @@ def init205(): Bool & Impure =
 
     @test
     def sortBy!01(): Bool = region r {
-        testSortBy!VsSortBy([]: ScopedArray[Int32, _])
+        testSortBy!VsSortBy([]: Array[Int32, _])
     }
 
     @test
@@ -4995,7 +5448,7 @@ def init205(): Bool & Impure =
 
     @test
     def minimumBy01(): Bool = region r {
-        Array.minimumBy((x, y) -> x <=> y, []: ScopedArray[Int32, _]) == None
+        Array.minimumBy((x, y) -> x <=> y, []: Array[Int32, _]) == None
     }
 
     @test
@@ -5021,7 +5474,7 @@ def init205(): Bool & Impure =
 
     @test
     def maximumBy01(): Bool = region r {
-        Array.maximumBy((x, y) -> x <=> y, []: ScopedArray[Int32, _]) == None
+        Array.maximumBy((x, y) -> x <=> y, []: Array[Int32, _]) == None
     }
 
     @test
@@ -5122,7 +5575,7 @@ def init205(): Bool & Impure =
 
     @test
     def toDelayList01(): Bool = region r {
-        ([] @ r): ScopedArray[Unit, _] |> Array.toDelayList == DelayList.empty()
+        ([] @ r): Array[Unit, _] |> Array.toDelayList == DelayList.empty()
     }
 
     @test
@@ -5137,7 +5590,7 @@ def init205(): Bool & Impure =
 
     @test
     def toDelayList04(): Bool = region r {
-        (Array.range(-1000, 1000, r) |> Array.toDelayList |> DelayList.toArray)(r) `sameElements` Array.range(-1000, 1000, r)
+        Array.range(-1000, 1000, r) |> Array.toDelayList |> DelayList.toArray(r) `sameElements` Array.range(-1000, 1000, r)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -5146,7 +5599,7 @@ def init205(): Bool & Impure =
 
     @test
     def toChain01(): Bool = region r {
-        Array.toChain([]: ScopedArray[Unit, _]) == Chain.empty(): Chain[Unit]
+        Array.toChain([]: Array[Unit, _]) == Chain.empty(): Chain[Unit]
     }
 
     @test
@@ -5172,142 +5625,142 @@ def init205(): Bool & Impure =
 
     @test
     def copyOfRange01(): Bool & Impure =
-        Array.copyOfRange(0, 3, [true, false, true], static) `sameElements` [true, false, true]
+        Array.copyOfRange(0, 3, [true, false, true], Static) `sameElements` [true, false, true]
 
     @test
     def copyOfRange02(): Bool & Impure =
-        Array.copyOfRange(1, 3, [true, false, true], static) `sameElements` [false, true]
+        Array.copyOfRange(1, 3, [true, false, true], Static) `sameElements` [false, true]
 
     @test
     def copyOfRange03(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [true, false, true], static);
+        let a = Array.copyOfRange(2, 5, [true, false, true], Static);
         Array.length(a) == 3 and Array.memberOf(true, a)
 
     @test
     def copyOfRange04(): Bool & Impure =
-        Array.copyOfRange(0, 3, ['a', 'b', 'c'], static) `sameElements` ['a', 'b', 'c']
+        Array.copyOfRange(0, 3, ['a', 'b', 'c'], Static) `sameElements` ['a', 'b', 'c']
 
     @test
     def copyOfRange05(): Bool & Impure =
-        Array.copyOfRange(1, 3, ['a', 'b', 'c'], static) `sameElements` ['b', 'c']
+        Array.copyOfRange(1, 3, ['a', 'b', 'c'], Static) `sameElements` ['b', 'c']
 
     @test
     def copyOfRange06(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, ['a', 'b', 'c'], static);
+        let a = Array.copyOfRange(2, 5, ['a', 'b', 'c'], Static);
         Array.length(a) == 3 and Array.memberOf('c', a)
 
     @test
     def copyOfRange07(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1.0f32, 2.0f32, 3.0f32], static) `sameElements` [1.0f32, 2.0f32, 3.0f32]
+        Array.copyOfRange(0, 3, [1.0f32, 2.0f32, 3.0f32], Static) `sameElements` [1.0f32, 2.0f32, 3.0f32]
 
     @test
     def copyOfRange08(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1.0f32, 2.0f32, 3.0f32], static) `sameElements` [2.0f32, 3.0f32]
+        Array.copyOfRange(1, 3, [1.0f32, 2.0f32, 3.0f32], Static) `sameElements` [2.0f32, 3.0f32]
 
     @test
     def copyOfRange09(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1.0f32, 2.0f32, 3.0f32], static);
+        let a = Array.copyOfRange(2, 5, [1.0f32, 2.0f32, 3.0f32], Static);
         Array.length(a) == 3 and Array.memberOf(3.0f32, a)
 
     @test
     def copyOfRange10(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1.0f64, 2.0f64, 3.0f64], static) `sameElements` [1.0f64, 2.0f64, 3.0f64]
+        Array.copyOfRange(0, 3, [1.0f64, 2.0f64, 3.0f64], Static) `sameElements` [1.0f64, 2.0f64, 3.0f64]
 
     @test
     def copyOfRange11(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1.0f64, 2.0f64, 3.0f64], static) `sameElements` [2.0f64, 3.0f64]
+        Array.copyOfRange(1, 3, [1.0f64, 2.0f64, 3.0f64], Static) `sameElements` [2.0f64, 3.0f64]
 
     @test
     def copyOfRange12(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1.0f64, 2.0f64, 3.0f64], static);
+        let a = Array.copyOfRange(2, 5, [1.0f64, 2.0f64, 3.0f64], Static);
         Array.length(a) == 3 and Array.memberOf(3.0f64, a)
 
     @test
     def copyOfRange13(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1i8, 2i8, 3i8], static) `sameElements` [1i8, 2i8, 3i8]
+        Array.copyOfRange(0, 3, [1i8, 2i8, 3i8], Static) `sameElements` [1i8, 2i8, 3i8]
 
     @test
     def copyOfRange14(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1i8, 2i8, 3i8], static) `sameElements` [2i8, 3i8]
+        Array.copyOfRange(1, 3, [1i8, 2i8, 3i8], Static) `sameElements` [2i8, 3i8]
 
     @test
     def copyOfRange15(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1i8, 2i8, 3i8], static);
+        let a = Array.copyOfRange(2, 5, [1i8, 2i8, 3i8], Static);
         Array.length(a) == 3 and Array.memberOf(3i8, a)
 
     @test
     def copyOfRange16(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1i16, 2i16, 3i16], static) `sameElements` [1i16, 2i16, 3i16]
+        Array.copyOfRange(0, 3, [1i16, 2i16, 3i16], Static) `sameElements` [1i16, 2i16, 3i16]
 
     @test
     def copyOfRange17(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1i16, 2i16, 3i16], static) `sameElements` [2i16, 3i16]
+        Array.copyOfRange(1, 3, [1i16, 2i16, 3i16], Static) `sameElements` [2i16, 3i16]
 
     @test
     def copyOfRange18(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1i16, 2i16, 3i16], static);
+        let a = Array.copyOfRange(2, 5, [1i16, 2i16, 3i16], Static);
         Array.length(a) == 3 and Array.memberOf(3i16, a)
 
     @test
     def copyOfRange19(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1, 2, 3], static) `sameElements` [1, 2, 3]
+        Array.copyOfRange(0, 3, [1, 2, 3], Static) `sameElements` [1, 2, 3]
 
     @test
     def copyOfRange20(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1, 2, 3], static) `sameElements` [2, 3]
+        Array.copyOfRange(1, 3, [1, 2, 3], Static) `sameElements` [2, 3]
 
     @test
     def copyOfRange21(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1, 2, 3], static);
+        let a = Array.copyOfRange(2, 5, [1, 2, 3], Static);
         Array.length(a) == 3 and Array.memberOf(3, a)
 
     @test
     def copyOfRange22(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1i64, 2i64, 3i64], static) `sameElements` [1i64, 2i64, 3i64]
+        Array.copyOfRange(0, 3, [1i64, 2i64, 3i64], Static) `sameElements` [1i64, 2i64, 3i64]
 
     @test
     def copyOfRange23(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1i64, 2i64, 3i64], static) `sameElements` [2i64, 3i64]
+        Array.copyOfRange(1, 3, [1i64, 2i64, 3i64], Static) `sameElements` [2i64, 3i64]
 
     @test
     def copyOfRange24(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1i64, 2i64, 3i64], static);
+        let a = Array.copyOfRange(2, 5, [1i64, 2i64, 3i64], Static);
         Array.length(a) == 3 and Array.memberOf(3i64, a)
 
     @test
     def copyOfRange25(): Bool & Impure =
-        let a = Array.copyOfRange(0, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']], static);
+        let a = Array.copyOfRange(0, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']], Static);
         let b = [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']];
         Array.flatten(a) `sameElements` Array.flatten(b)
 
     @test
     def copyOfRange26(): Bool & Impure =
-        let a = Array.copyOfRange(1, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']], static);
+        let a = Array.copyOfRange(1, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']], Static);
         let b = [['d', 'e', 'f', 'g'], ['h']];
         Array.flatten(a) `sameElements` Array.flatten(b)
 
     @test
     def copyOfRange27(): Bool & Impure =
-        Array.copyOfRange(0, 3, [Some(1), Some(2), None], static) `sameElements` [Some(1), Some(2), None]
+        Array.copyOfRange(0, 3, [Some(1), Some(2), None], Static) `sameElements` [Some(1), Some(2), None]
 
     @test
     def copyOfRange28(): Bool & Impure =
-        Array.copyOfRange(1, 3, [Some(1), Some(2), None], static) `sameElements` [Some(2), None]
+        Array.copyOfRange(1, 3, [Some(1), Some(2), None], Static) `sameElements` [Some(2), None]
 
     @test
     def copyOfRange29(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [Some(1), Some(2), None], static);
+        let a = Array.copyOfRange(2, 5, [Some(1), Some(2), None], Static);
         Array.length(a) == 3 and Array.memberOf(None, a)
 
     @test
     def copyOfRange30(): Bool & Impure =
-        let a = Array.copyOfRange(0, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]], static);
+        let a = Array.copyOfRange(0, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]], Static);
         let b = [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]];
         Array.flatten(a) `sameElements` Array.flatten(b)
 
     @test
     def copyOfRange31(): Bool & Impure =
-        let a = Array.copyOfRange(1, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]], static);
+        let a = Array.copyOfRange(1, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]], Static);
         let b = [[Some('d'), Some('e'), Some('f'), Some('g')], [None]];
         Array.flatten(a) `sameElements` Array.flatten(b)
 
@@ -5317,29 +5770,31 @@ def init205(): Bool & Impure =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool & Impure =
-        []: Array[Int32] |> Array.toIterator |> Iterator.toList == Nil
-
-    @test
-    def toIterator02(): Bool & Impure =
-        [1, 2, 3] |> Array.toIterator |> Iterator.toList == 1 :: 2 :: 3 :: Nil
-
-    @test
-    def toIterator03(): Bool & Impure = region r {
-        (([1, 2, 3] @ r) |> Array.toIterator |> Iterator.toArray)(r) `sameElements` [1, 2, 3] @ r
+    def toIterator01(): Bool = region r {
+        []: Array[Int32, r] |> Array.toIterator(r) |> Iterator.toList == Nil
     }
 
     @test
-    def toIterator04(): Bool & Impure = region r {
-        (Array.range(-100, 100, r) |> Array.toIterator |> Iterator.toArray)(r) `sameElements` Array.range(-100, 100, r)
+    def toIterator02(): Bool = region r {
+        [1, 2, 3] |> Array.toIterator(r) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
     }
 
     @test
-    def toIterator05(): Bool & Impure = {
-        let a = [1, 2, 3];
-        let iter = Array.toIterator(a);
+    def toIterator03(): Bool = region r {
+        ([1, 2, 3] @ r) |> Array.toIterator(r) |> Iterator.toArray(r) `sameElements` [1, 2, 3] @ r
+    }
+
+    @test
+    def toIterator04(): Bool = region r {
+        Array.range(-100, 100, r) |> Array.toIterator(r) |> Iterator.toArray(r) `sameElements` Array.range(-100, 100, r)
+    }
+
+    @test
+    def toIterator05(): Bool = region r {
+        let a = [1, 2, 3] @ r;
+        let iter = Array.toIterator(r, a);
         a[0] = 10000;
-        Iterator.toArray(iter, static) `sameElements` [1, 2, 3]
+        Iterator.toArray(r, iter) `sameElements` [1, 2, 3]
     }
 
 
@@ -5348,20 +5803,24 @@ def init205(): Bool & Impure =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def join01(): Bool & Impure =
-        Array.join(",", []: Array[Int32]) == ""
+    def join01(): Bool = region r {
+        Array.join(",", ([] @ r): Array[Int32, _]) == ""
+    }
 
     @test
-    def join02(): Bool & Impure =
-        Array.join(",", [1]) == "1"
+    def join02(): Bool = region r {
+        Array.join(",", [1] @ r) == "1"
+    }
 
     @test
-    def join03(): Bool & Impure =
-        Array.join(",", [1, 2, 3]) == "1,2,3"
+    def join03(): Bool = region r {
+        Array.join(",", [1, 2, 3] @ r) == "1,2,3"
+    }
 
     @test
-    def join04(): Bool & Impure =
-        Array.join(",", ["1", "2", "3"]) == "1,2,3"
+    def join04(): Bool = region r {
+        Array.join(",", ["1", "2", "3"] @ r) == "1,2,3"
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -5369,57 +5828,66 @@ def init205(): Bool & Impure =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def joinWith01(): Bool & Impure =
-        Array.joinWith(x -> "${x + 1}", ",", []) == ""
+    def joinWith01(): Bool = region r {
+        Array.joinWith(x -> "${x + 1}", ",", [] @ r) == ""
+    }
 
     @test
-    def joinWith02(): Bool & Impure =
-        Array.joinWith(x -> "${x + 1}", ",", [1]) == "2"
+    def joinWith02(): Bool = region r {
+        Array.joinWith(x -> "${x + 1}", ",", [1] @ r) == "2"
+    }
 
     @test
-    def joinWith03(): Bool & Impure =
-        Array.joinWith(x -> "${x + 1}", ",", [1, 2, 3]) == "2,3,4"
+    def joinWith03(): Bool = region r {
+        Array.joinWith(x -> "${x + 1}", ",", [1, 2, 3] @ r) == "2,3,4"
+    }
 
     @test
-    def joinWith04(): Bool & Impure =
-        Array.joinWith(x -> x + x, ",", ["1", "2", "3"]) == "11,22,33"
+    def joinWith04(): Bool = region r {
+        Array.joinWith(x -> x + x, ",", ["1", "2", "3"] @ r) == "11,22,33"
+    }
 
     @test
-    def joinWith05(): Bool & Impure =
-        let a: Array[Int32] = [];
+    def joinWith05(): Bool = region r {
+        let a: Array[Int32, _] = [] @ r;
         let s = Array.joinWith(Int32.toString, ",", a);
         s == ""
+    }
 
     @test
-    def joinWith06(): Bool & Impure =
-        let a = [1];
+    def joinWith06(): Bool = region r {
+        let a = [1] @ r;
         let s = Array.joinWith(Int32.toString, ",", a);
         s == "1"
+    }
 
     @test
-    def joinWith07(): Bool & Impure =
-        let a = [1,2];
+    def joinWith07(): Bool = region r {
+        let a = [1,2] @ r;
         let s = Array.joinWith(Int32.toString, ",", a);
         s == "1,2"
+    }
 
     @test
-    def joinWith08(): Bool & Impure =
-        let a = [1,2,3];
+    def joinWith08(): Bool = region r {
+        let a = [1,2,3] @ r;
         let s = Array.joinWith(Int32.toString, ",", a);
         s == "1,2,3"
+    }
 
     @test
-    def joinWith09(): Bool & Impure =
-        let a = [1,2,3];
+    def joinWith09(): Bool = region r {
+        let a = [1,2,3] @ r;
         let s = Array.joinWith(Int32.toString, "", a);
         s == "123"
+    }
 
     @test
-    def joinWith10(): Bool & Impure =
-        let a = [1,2,3];
+    def joinWith10(): Bool = region r {
+        let a = [1,2,3] @ r;
         let s = Array.joinWith(Int32.toString, "..", a);
         s == "1..2..3"
-
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -5428,7 +5896,7 @@ def init205(): Bool & Impure =
 
     @test
     def toMutList01(): Bool = region r {
-        MutList.sameElements(Array.toMutList(([] @ r): ScopedArray[Int32, _], r), new MutList(r))
+        MutList.sameElements(Array.toMutList(([] @ r): Array[Int32, _], r), new MutList(r))
     }
 
     @test
@@ -5456,18 +5924,50 @@ def init205(): Bool & Impure =
     def toMutList05(): Bool = region r {
         let v = Array.toMutList([1, 2, 3] @ r, r);
         MutList.push!(4, v);
-        Array.sameElements(MutList.toArray(v, r), [1, 2, 3, 4] @ r)
+        Array.sameElements(MutList.toArray(r, v), [1, 2, 3, 4] @ r)
     }
 
     @test
     def toMutList06(): Bool = region r {
         let v = Array.toMutList([1, 2, 3] @ r, r);
         MutList.push!(4, v);
-        let _ = MutList.pop!(v);
-        let _ = MutList.pop!(v);
-        let _ = MutList.pop!(v);
-        let _ = MutList.pop!(v);
-        Array.sameElements(MutList.toArray(v, r), [] @ r)
+        discard MutList.pop!(v);
+        discard MutList.pop!(v);
+        discard MutList.pop!(v);
+        discard MutList.pop!(v);
+        Array.sameElements(MutList.toArray(r, v), [] @ r)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // shuffle                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def shuffle01(): Bool & Impure = region r {
+        let a = ([] @ r): Array[Int32, _];
+        Array.shuffle(Random.new(), a);
+        Array.length(a) == 0 and Array.toSet(a) == Set#{}
+    }
+
+    @test
+    def shuffle02(): Bool & Impure = region r {
+        let a = ([0] @ r);
+        Array.shuffle(Random.new(), a);
+        Array.length(a) == 1 and Array.toSet(a) == Set#{0}
+    }
+
+    @test
+    def shuffle03(): Bool & Impure = region r {
+        let a = ([0, 1, 2, 3] @ r);
+        Array.shuffle(Random.new(), a);
+        Array.length(a) == 4 and Array.toSet(a) == Set#{0, 1, 2, 3}
+    }
+
+    @test
+    def shuffle04(): Bool & Impure = region r {
+        let a = ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9] @ r);
+        Array.shuffle(Random.new(), a);
+        Array.length(a) == 10 and Array.toSet(a) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
     }
 
 }

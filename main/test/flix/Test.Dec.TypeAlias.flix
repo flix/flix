@@ -106,32 +106,32 @@ namespace Test/Dec/TypeAlias {
     def testTypeAlias20(): E[Int32] = Err("Hello World")
 
     /**
-     * An opaque type for Int.
+     * An enum for Int.
      */
-    opaque type X = Int32
+    enum X(Int32)
 
     /**
-     * An opaque type for Option.
+     * An enum for Option.
      */
-    opaque type Y[a] = Option[a]
+    enum Y[a](Option[a])
 
     /**
-     * An opaque type for Result.
+     * An enum for Result.
      */
-    opaque type Z[a, b] = Result[a, b]
+    enum Z[a, b](Result[a, b])
 
     /**
-     * A type alias for an opaque type.
+     * A type alias for an enum.
      */
     type alias U = X
 
     /**
-     * A type alias for a polymorphic opaque type.
+     * A type alias for a polymorphic enum.
      */
     type alias V[a] = Y[a]
 
     /**
-     * A type alias for a polymorphic opaque type.
+     * A type alias for a polymorphic enum.
      */
     type alias W[a, b] = Z[a, b]
 
@@ -156,4 +156,11 @@ namespace Test/Dec/TypeAlias {
     @test
     def testTypeAlias27(): W[Bool, Int32] = Z(Err(123))
 
+    ///
+    /// Type-level if-then-else
+    ///
+    type alias If[cond: Bool, t: Bool, f: Bool] = (cond and t) or (not cond and f)
+
+    @test
+    def testTypeAlias28(): Bool & If[e1, e2, e3] = true as & If[e1, e2, e3]
 }

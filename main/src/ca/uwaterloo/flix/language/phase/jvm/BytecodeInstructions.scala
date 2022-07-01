@@ -17,7 +17,9 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBranch, TrueBranch}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
 object BytecodeInstructions {
@@ -119,7 +121,6 @@ object BytecodeInstructions {
     f
   }
 
-  // TODO: All JvmNames could be BackendObjTypes
   def ANEWARRAY(className: JvmName): InstructionSet = f => {
     f.visitTypeInstruction(Opcodes.ANEWARRAY, className)
     f
@@ -185,13 +186,13 @@ object BytecodeInstructions {
     f
   }
 
-  def GETFIELD(className: JvmName, fieldName: String, fieldType: BackendType): InstructionSet = f => {
-    f.visitFieldInstruction(Opcodes.GETFIELD, className, fieldName, fieldType)
+  def GETFIELD(field: InstanceField): InstructionSet = f => {
+    f.visitFieldInstruction(Opcodes.GETFIELD, field.clazz, field.name, field.tpe)
     f
   }
 
-  def GETSTATIC(className: JvmName, fieldName: String, fieldType: BackendType): InstructionSet = f => {
-    f.visitFieldInstruction(Opcodes.GETSTATIC, className, fieldName, fieldType)
+  def GETSTATIC(field: StaticField): InstructionSet = f => {
+    f.visitFieldInstruction(Opcodes.GETSTATIC, field.clazz, field.name, field.tpe)
     f
   }
 
@@ -235,8 +236,18 @@ object BytecodeInstructions {
     f
   }
 
+  def INVOKEINTERFACE(m: InterfaceMethod): InstructionSet = f => {
+    f.visitMethodInstruction(Opcodes.INVOKEINTERFACE, m.clazz, m.name, m.d)
+    f
+  }
+
   def INVOKESPECIAL(className: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = f => {
     f.visitMethodInstruction(Opcodes.INVOKESPECIAL, className, methodName, descriptor)
+    f
+  }
+
+  def INVOKESPECIAL(c: ConstructorMethod): InstructionSet = f => {
+    f.visitMethodInstruction(Opcodes.INVOKESPECIAL, c.clazz, c.name, c.d)
     f
   }
 
@@ -245,8 +256,23 @@ object BytecodeInstructions {
     f
   }
 
+  def INVOKESTATIC(m: StaticMethod): InstructionSet = f => {
+    f.visitMethodInstruction(Opcodes.INVOKESTATIC, m.clazz, m.name, m.d)
+    f
+  }
+
   def INVOKEVIRTUAL(className: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = f => {
     f.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, className, methodName, descriptor)
+    f
+  }
+
+  def INVOKEVIRTUAL(m: AbstractMethod): InstructionSet = f => {
+    f.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, m.clazz, m.name, m.d)
+    f
+  }
+
+  def INVOKEVIRTUAL(m: InstanceMethod): InstructionSet = f => {
+    f.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, m.clazz, m.name, m.d)
     f
   }
 
@@ -290,13 +316,13 @@ object BytecodeInstructions {
     f
   }
 
-  def PUTFIELD(className: JvmName, fieldName: String, fieldType: BackendType): InstructionSet = f => {
-    f.visitFieldInstruction(Opcodes.PUTFIELD, className, fieldName, fieldType)
+  def PUTFIELD(field: InstanceField): InstructionSet = f => {
+    f.visitFieldInstruction(Opcodes.PUTFIELD, field.clazz, field.name, field.tpe)
     f
   }
 
-  def PUTSTATIC(className: JvmName, fieldName: String, fieldType: BackendType): InstructionSet = f => {
-    f.visitFieldInstruction(Opcodes.PUTSTATIC, className, fieldName, fieldType)
+  def PUTSTATIC(field: StaticField): InstructionSet = f => {
+    f.visitFieldInstruction(Opcodes.PUTSTATIC, field.clazz, field.name, field.tpe)
     f
   }
 
@@ -347,7 +373,7 @@ object BytecodeInstructions {
     f
   }
 
-  def invokeConstructor(className: JvmName, descriptor: MethodDescriptor = MethodDescriptor.NothingToVoid): InstructionSet =
+  def invokeConstructor(className: JvmName, descriptor: MethodDescriptor): InstructionSet =
     INVOKESPECIAL(className, JvmName.ConstructorMethod, descriptor)
 
   def nop(): InstructionSet =
@@ -370,6 +396,14 @@ object BytecodeInstructions {
   // TODO: this should be "wrong" if used on F in a static context
   def thisLoad(): InstructionSet =
     ALOAD(0)
+
+  def throwUnsupportedOperationException(msg: String): InstructionSet =
+    NEW(JvmName.UnsupportedOperationException) ~
+      DUP() ~
+      pushString(msg) ~
+      INVOKESPECIAL(JvmName.UnsupportedOperationException, JvmName.ConstructorMethod,
+        mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void)) ~
+      ATHROW()
 
   def withName(index: Int, tpe: BackendType)(body: Variable => InstructionSet): InstructionSet =
     body(new Variable(tpe, index))

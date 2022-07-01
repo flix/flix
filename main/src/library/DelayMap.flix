@@ -20,6 +20,10 @@ pub enum DelayMap[k, v] {
     case DMap(RedBlackTree[k, Lazy[v]])
 }
 
+instance ForEach[DelayMap[k]] {
+    pub def foreach(f: a -> Unit & ef, l: DelayMap[k, a]): Unit & ef = DelayMap.foreach((_, v) -> f(v), l)
+}
+
 namespace DelayMap {
 
     ///
@@ -406,7 +410,7 @@ namespace DelayMap {
         use RedBlackTree.RedBlackTree.Node;
         def seqLoop(tt) = match tt {
             case Node(_, a, _, v, b) =>
-                let _ = seqLoop(a);
+                seqLoop(a);
                 let _ = force v;
                 seqLoop(b)
             case _ => ()
@@ -422,7 +426,7 @@ namespace DelayMap {
                         spawn (chanL <- parLoop((n - 2) / 2, a)); // We divide the rest of the threads as follows:
                         spawn (chanR <- parLoop((n - 2) / 2, b)); // We spawn two new threads leaving us with n - 2
                         let _ = force v;                          // that we distribute over the two spanned threads.
-                        let _ = <- chanL;
+                        <- chanL;
                         <- chanR
                     case _ => ()
                 }
@@ -509,13 +513,6 @@ namespace DelayMap {
         else
             let _ = parallelForce(m2);
             DMap(foldRight((k, v, acc) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v, acc), xs, ys))
-
-    ///
-    /// Returns the map `m` as a list of key-value pairs.
-    ///
-    @Experimental
-    pub def toList(m: DelayMap[k, v]): List[(k, v)] =
-        foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, m)
 
     ///
     /// Applies `f` to a start value `s` and all values in `m` going from left to right.
@@ -690,10 +687,10 @@ namespace DelayMap {
     @Lazy
     def updateWithKeyL(f: (k, v) -> Option[v], k: k, m: DelayMap[k, v]): DelayMap[k, v] with Order[k] =
         let DMap(t) = m;
-        let f1 = (k, v) -> {
-            let res = lazy match f(k, force v) {
-                case Some(v1) => v1
-                case None     => force v
+        let f1 = (k1, v1) -> {
+            let res = lazy match f(k1, force v1) {
+                case Some(v2) => v2
+                case None     => force v1
             };
             Some(res)
         };
@@ -704,14 +701,21 @@ namespace DelayMap {
     ///
     def updateWithKeyE(f: (k, v) -> Option[v] & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         let DMap(t) = m;
-        let f1 = (k, v) -> {
-            let res = f(k, force v);
+        let f1 = (k1, v1) -> {
+            let res = f(k1, force v1);
             match res {
-                case Some(v1) => Some(lazy v1)
+                case Some(v2) => Some(lazy v2)
                 case None     => None
             }
         };
         DMap(RedBlackTree.updateWith(f1, k, t))
+
+    ///
+    /// Returns the map `m` as a list of key-value pairs.
+    ///
+    @Experimental
+    pub def toList(m: DelayMap[k, v]): List[(k, v)] =
+        foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, m)
 
     ///
     /// Returns `m` as a Map, i.e. every value is forced.
@@ -747,9 +751,9 @@ namespace DelayMap {
     /// Returns an iterator over all key-value pairs in `m`.
     ///
     @Experimental
-    pub def toIterator(m: DelayMap[a, b]): Iterator[(a, b)] & Impure with Order[a] =
+    pub def toIterator(r: Region[r], m: DelayMap[a, b]): Iterator[(a, b), r] \ Write(r) with Order[a] =
         let keys = keysOf(m) |> Set.toList;
-        let cursor = ref keys;
+        let cursor = ref keys @ r;
         let done = () -> match deref cursor {
             case Nil => true
             case _   => false
@@ -773,7 +777,7 @@ namespace DelayMap {
         let _ = parallelForce(m);
         let DMap(t) = m;
         let f1 = (k, v) -> f(k, force v);
-        RedBlackTree.foreach(f1 as & Impure, t) as & ef
+        RedBlackTree.foreach(f1, t)
 
     ///
     /// Returns the sum of all values in `m`.

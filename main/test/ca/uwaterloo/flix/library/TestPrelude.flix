@@ -27,18 +27,6 @@ def identity02(): Bool = identity(true) == true
 def identity03(): Bool = identity(6ii) == 6ii
 
 /////////////////////////////////////////////////////////////////////////////
-// constant                                                                //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def constant01(): Bool = (true |> constant(5)) == 5
-
-@test
-def constant02(): Bool = (5 |> constant(true)) == true
-
-@test
-def constant03(): Bool = (Nil |> constant(2ii)) == 2ii
-
-/////////////////////////////////////////////////////////////////////////////
 // flip                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -60,52 +48,6 @@ def flip03(): Bool =
 def flip04(): Bool =
     let f = flip((x, y) -> x / y);
     f(3, 10) == 3
-
-/////////////////////////////////////////////////////////////////////////////
-// curry                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def curry01(): Bool =
-    let f = curry((x, y) -> x - y);
-    (4 |> f(5)) == 1
-
-@test
-def curry02(): Bool =
-    let f = curry((x, y) -> x - y);
-    (5 |> f(4)) == -1
-
-@test
-def curry03(): Bool =
-    let f = curry((x, y) -> x / y);
-    (3 |> f(10)) == 3
-
-@test
-def curry04(): Bool =
-    let f = curry((x, y) -> x / y);
-    (10 |> f(3)) == 0
-
-/////////////////////////////////////////////////////////////////////////////
-// uncurry                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def uncurry01(): Bool =
-    let f = uncurry(x -> y -> x - y);
-    f((5, 4)) == 1
-
-@test
-def uncurry02(): Bool =
-    let f = uncurry(x -> y -> x - y);
-    f((4, 5)) == -1
-
-@test
-def uncurry03(): Bool =
-    let f = uncurry(x -> y -> x / y);
-    f((10, 3)) == 3
-
-@test
-def uncurry04(): Bool =
-    let f = uncurry(x -> y -> x / y);
-    f((3, 10)) == 0
 
 /////////////////////////////////////////////////////////////////////////////
 // fst                                                                     //
@@ -156,3 +98,57 @@ def forwardPipe02(): Bool =
     let f = match (x, y) -> x + y;
     let r = (1, 2) |> f;
         r == 3
+
+/////////////////////////////////////////////////////////////////////////////
+// ||> (doublePipe)                                                    //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def doublePipe01(): Bool = ((1, 2) ||> Add.add) == 3
+
+@test
+def doublePipe02(): Bool = (("a", "b") ||> Add.add) == "ab"
+
+@test
+def doublePipe03(): Bool = (("abc", "def") ||> String.concat) == "abcdef"
+
+@test
+def doublePipe04(): Bool =
+    ((1 :: 2 :: 3 :: Nil, 4 :: 5 :: Nil) ||> List.append) == 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+
+@test
+def doublePipe05(): Bool = ((0, 5) ||> List.range) == 0 :: 1 :: 2 :: 3 :: 4 :: Nil
+
+/////////////////////////////////////////////////////////////////////////////
+// !> (imperativePipe)                                                     //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def imperativePipe01(): Bool = region r {
+        let m: MutList[Int32, _] = new MutList(r);
+        let f = (x) -> MutList.push!(x, m);
+        (4 !> f) == 4 and not MutList.isEmpty(m)
+    }
+
+@test
+def imperativePipe02(): Bool = region r {
+        let m: MutList[Int32, _] = new MutList(r);
+        let f = (x) -> MutList.push!(x, m);
+
+        let a = 4 !> f;
+        let b = 5 !> f;
+        let c = 7 !> f;
+        a == 4 and b == 5 and c == 7 and MutList.length(m) == 3
+    }
+
+@test
+def imperativePipe03(): Bool & Impure =
+    let a = ref 8;
+    let f = (x) -> a := x;
+    (2 !> f) == 2 and deref a == 2
+
+@test
+def imperativePipe04(): Bool & Impure =
+    let a = ref 8;
+    let f = (x) -> a := x;
+    (2 !> f) == 2 and (4 !> f) == 4 and deref a == 4

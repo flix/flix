@@ -124,7 +124,7 @@ pub class Reducible[t: Type -> Type] {
     ///
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
     ///
-    pub def count(f: a -> Bool, t: t[a]): Int32 =
+    pub def count(f: a -> Bool & ef, t: t[a]): Int32 & ef =
         Reducible.foldLeft((acc, a) -> if (f(a)) 1 + acc else acc, 0, t)
 
     ///
@@ -258,16 +258,17 @@ pub class Reducible[t: Type -> Type] {
     ///
     /// Returns `t` as an array.
     ///
-    pub def toArray(t: t[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
+    pub def toArray(r: Region[r], t: t[a]): Array[a, r] \ Write(r) =
         let v = new MutList(r);
         Reducible.foldLeft((_, a) -> MutList.push!(a, v), (), t);
-        MutList.toArray(v, r)
+        MutList.toArray(r, v)
 
     ///
     /// Returns an iterator over `t`.
     ///
-    pub def toIterator(t: t[a]): Iterator[a] & Impure =
-        Reducible.toArray(t, static) |> Array.toIterator
+    pub def toIterator(r: Region[r], t: t[a]): Iterator[a, r] \ Write(r) = region r2 {
+        Reducible.toArray(r2, t) |> Array.toIterator(r)
+    }
 
     ///
     /// Returns `t` as a list.

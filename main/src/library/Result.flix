@@ -83,10 +83,8 @@ namespace Result {
     ///
     /// Returns `true` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `false`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def exists(f: t -> Bool, r: Result[t, e]): Bool = match r {
+    pub def exists(f: t -> Bool & ef, r: Result[t, e]): Bool & ef = match r {
         case Ok(t)  => f(t)
         case Err(_) => false
     }
@@ -95,10 +93,8 @@ namespace Result {
     /// Returns `true` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true` or if `r` is `Err(w)`.
     /// Otherwise returns `false`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def forall(f: t -> Bool, r: Result[t, e]): Bool = match r {
+    pub def forall(f: t -> Bool & ef, r: Result[t, e]): Bool & ef = match r {
         case Ok(t)  => f(t)
         case Err(_) => true
     }
@@ -134,10 +130,8 @@ namespace Result {
     ///
     /// Returns `1` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `0`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def count(f: t -> Bool, r: Result[t, e]): Int32 = match r {
+    pub def count(f: t -> Bool & ef, r: Result[t, e]): Int32 & ef = match r {
         case Ok(v)  => if (f(v)) 1 else 0
         case Err(_) => 0
     }
@@ -244,15 +238,13 @@ namespace Result {
     /// This function is the "forgetful" version of `traverse`, use it when the you want the effect
     /// of applying `f` to each element but do not care about collecting the results.
     ///
-    pub def traverseX(f: a -> Result[b, e] & ef, l: List[a]): Result[Unit, e] & ef =
-        def loop(ll) = match ll {
-            case Nil     => Ok()
-            case x :: xs => match f(x) {
-                case Ok(_)  => loop(xs)
-                case Err(e) => Err(e)
-            }
-        };
-        loop(l)
+    pub def traverseX(f: a -> Result[b, e] & ef, l: List[a]): Result[Unit, e] & ef = match l {
+        case Nil     => Ok()
+        case x :: xs => match f(x) {
+            case Ok(_)  => traverseX(f, xs)
+            case Err(e) => Err(e)
+        }
+    }
 
     ///
     /// Returns the result of applying `f` to a start value `s` and the elements in `l`
@@ -264,15 +256,13 @@ namespace Result {
     /// If `f` is successfully applied to all elements in `l` the result is of the form:
     /// `Ok(f(...f(f(s, x1), x2)..., xn))`.
     ///
-    pub def foldLeftM(f: (b, a) -> Result[b, e] & ef, s: b, l: List[a]): Result[b, e] & ef =
-        def loop(ll, acc) = match ll {
-            case Nil     => Ok(acc)
-            case x :: xs => match f(acc, x) {
-                case Ok(s1) => loop(xs, s1)
-                case Err(e) => Err(e)
-            }
-        };
-        loop(l, s)
+    pub def foldLeftM(f: (b, a) -> Result[b, e] & ef, s: b, l: List[a]): Result[b, e] & ef = match l {
+        case Nil     => Ok(s)
+        case x :: xs => match f(s, x) {
+            case Ok(s1) => foldLeftM(f, s1, xs)
+            case Err(e) => Err(e)
+        }
+    }
 
     ///
     /// Returns the result of applying `f` to a start value `s` and the elements in `l`
@@ -443,9 +433,9 @@ namespace Result {
     ///
     /// Returns an iterator over `r` with 1 element or an empty iterator if `r` is `Err`.
     ///
-    pub def toIterator(r: Result[t, e]): Iterator[t] & Impure = match r {
-        case Err(_) => Iterator.empty()
-        case Ok(x)  => Iterator.singleton(x)
+    pub def toIterator(reg: Region[reg], r: Result[t, e]): Iterator[t, reg] \ Write(reg) = match r {
+        case Err(_) => new Iterator(reg)
+        case Ok(x)  => Iterator.singleton(reg, x)
     }
 
     ///

@@ -84,6 +84,8 @@ object Lowering {
 
     lazy val Comparison: Symbol.EnumSym = Symbol.mkEnumSym("Comparison")
     lazy val Boxed: Symbol.EnumSym = Symbol.mkEnumSym("Boxed")
+
+    lazy val FList: Symbol.EnumSym = Symbol.mkEnumSym("List")
   }
 
   private object Sigs {
@@ -119,6 +121,7 @@ object Lowering {
     lazy val Comparison: Type = Type.mkEnum(Enums.Comparison, Nil, SourceLocation.Unknown)
     lazy val Boxed: Type = Type.mkEnum(Enums.Boxed, Nil, SourceLocation.Unknown)
 
+    def mkList(t: Type): Type = Type.mkEnum(Enums.FList, List(t), SourceLocation.Unknown)
 
     //
     // Function Types.
@@ -126,7 +129,7 @@ object Lowering {
     lazy val SolveType: Type = Type.mkPureArrow(Datalog, Datalog, SourceLocation.Unknown)
     lazy val MergeType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Datalog, SourceLocation.Unknown)
     lazy val FilterType: Type = Type.mkPureUncurriedArrow(List(PredSym, Datalog), Datalog, SourceLocation.Unknown)
-    lazy val RenameType: Type = Type.mkPureUncurriedArrow(List(Type.mkArray(PredSym, SourceLocation.Unknown), Datalog), Datalog, SourceLocation.Unknown)
+    lazy val RenameType: Type = Type.mkPureUncurriedArrow(List(Type.mkArray(PredSym, Type.False, SourceLocation.Unknown), Datalog), Datalog, SourceLocation.Unknown)
   }
 
   /**
@@ -185,16 +188,15 @@ object Lowering {
     * Lowers the given enum `enum0`.
     */
   private def visitEnum(enum0: Enum)(implicit root: Root, flix: Flix): Enum = enum0 match {
-    case Enum(doc, ann, mod, sym, tparams, derives, cases0, tpeDeprecated0, sc0, loc) =>
-      val tpeDeprecated = visitType(tpeDeprecated0)
-      val sc = visitScheme(sc0)
+    case Enum(doc, ann, mod, sym, tparams, derives, cases0, tpe0, loc) =>
+      val tpe = visitType(tpe0)
       val cases = cases0.map {
         case (_, Case(caseSym, tag, caseTpeDeprecated0, caseSc0, loc)) =>
           val caseTpeDeprecated = visitType(caseTpeDeprecated0)
           val caseSc = visitScheme(caseSc0)
           (tag, Case(caseSym, tag, caseTpeDeprecated, caseSc, loc))
       }
-      Enum(doc, ann, mod, sym, tparams, derives, cases, tpeDeprecated, sc, loc)
+      Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc)
   }
 
   /**
@@ -221,10 +223,10 @@ object Lowering {
     * Lowers the given `spec0`.
     */
   private def visitSpec(spec0: Spec)(implicit root: Root, flix: Flix): Spec = spec0 match {
-    case Spec(doc, ann, mod, tparams, fparams, declaredScheme, retTpe, eff, loc) =>
+    case Spec(doc, ann, mod, tparams, fparams, declaredScheme, retTpe, pur, eff, loc) =>
       val fs = fparams.map(visitFormalParam)
       val ds = visitScheme(declaredScheme)
-      Spec(doc, ann, mod, tparams, fs, ds, retTpe, eff, loc)
+      Spec(doc, ann, mod, tparams, fs, ds, retTpe, pur, eff, loc)
   }
 
   /**
@@ -502,6 +504,8 @@ object Lowering {
       val t = visitType(tpe)
       Expression.PutStaticField(field, e, t, eff, loc)
 
+    case Expression.NewObject(_, _, _, _) => exp0
+
     case Expression.NewChannel(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
@@ -545,7 +549,7 @@ object Lowering {
     case Expression.FixpointLambda(pparams, exp, _, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Rename)
       val defExp = Expression.Def(defn.sym, Types.RenameType, loc)
-      val predExps = mkArray(pparams.map(pparam => mkPredSym(pparam.pred)), Type.mkArray(Types.PredSym, loc), loc)
+      val predExps = mkArray(pparams.map(pparam => mkPredSym(pparam.pred)), Type.mkArray(Types.PredSym, Type.False, loc), loc)
       val argExps = predExps :: visitExp(exp) :: Nil
       val resultType = Types.Datalog
       Expression.Apply(defExp, argExps, resultType, eff, loc)
@@ -571,7 +575,7 @@ object Lowering {
       val resultType = Types.Datalog
       Expression.Apply(defExp, argExps, resultType, eff, loc)
 
-    case Expression.FixpointProjectIn(exp, pred, _, eff, loc) =>
+    case Expression.FixpointInject(exp, pred, _, eff, loc) =>
       // Compute the arity of the functor F[(a, b, c)] or F[a].
       val arity = Type.eraseAliases(exp.tpe) match {
         case Type.Apply(_, innerType, _) => innerType.typeConstructor match {
@@ -583,7 +587,7 @@ object Lowering {
       }
 
       // Compute the symbol of the function.
-      val sym = Symbol.mkDefnSym(s"Fixpoint.projectInto$arity")
+      val sym = Symbol.mkDefnSym(s"Fixpoint.injectInto$arity")
 
       // The type of the function.
       val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, exp.tpe), Types.Datalog, loc)
@@ -593,11 +597,11 @@ object Lowering {
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
       Expression.Apply(defExp, argExps, Types.Datalog, eff, loc)
 
-    case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
+    case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
       // Compute the arity of the predicate symbol.
       // The type is either of the form `Array[(a, b, c)]` or `Array[a]`.
       val arity = Type.eraseAliases(tpe) match {
-        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.ScopedArray, _), innerType, _), _, _) => innerType.typeConstructor match {
+        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), innerType, _), _, _) => innerType.typeConstructor match {
           case Some(TypeConstructor.Tuple(_)) => innerType.typeArguments.length
           case Some(TypeConstructor.Unit) => 0
           case _ => 1
@@ -732,6 +736,8 @@ object Lowering {
       case Type.Alias(sym, args, t, loc) => Type.Alias(sym, args.map(visit), visit(t), loc)
 
       case _: Type.UnkindedVar => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+      case _: Type.ReadWrite => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+      case _: Type.UnkindedArrow => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
       case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
     }
 
@@ -816,7 +822,7 @@ object Lowering {
   private def visitConstraint(c0: Constraint)(implicit root: Root, flix: Flix): Expression = c0 match {
     case Constraint(cparams, head, body, loc) =>
       val headExp = visitHeadPred(cparams, head)
-      val bodyExp = mkArray(body.map(visitBodyPred(cparams, _)), Types.BodyPredicate, loc)
+      val bodyExp = mkList(body.map(visitBodyPred(cparams, _)), Types.BodyPredicate, loc)
       val innerExp = mkTuple(headExp :: bodyExp :: Nil, loc)
       mkTag(Enums.Constraint, "Constraint", innerExp, Types.Constraint, loc)
   }
@@ -828,7 +834,7 @@ object Lowering {
     case Head.Atom(pred, den, terms, _, loc) =>
       val predSymExp = mkPredSym(pred)
       val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
-      val termsExp = mkArray(terms.map(visitHeadTerm(cparams0, _)), Types.HeadTerm, loc)
+      val termsExp = mkList(terms.map(visitHeadTerm(cparams0, _)), Types.HeadTerm, loc)
       val innerExp = mkTuple(predSymExp :: denotationExp :: termsExp :: Nil, loc)
       mkTag(Enums.HeadPredicate, "HeadAtom", innerExp, Types.HeadPredicate, loc)
   }
@@ -842,7 +848,7 @@ object Lowering {
       val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
       val polarityExp = mkPolarity(polarity, loc)
       val fixityExp = mkFixity(fixity, loc)
-      val termsExp = mkArray(terms.map(visitBodyTerm(cparams0, _)), Types.BodyTerm, loc)
+      val termsExp = mkList(terms.map(visitBodyTerm(cparams0, _)), Types.BodyTerm, loc)
       val innerExp = mkTuple(predSymExp :: denotationExp :: polarityExp :: fixityExp :: termsExp :: Nil, loc)
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
@@ -1240,10 +1246,35 @@ object Lowering {
     * Returns a pure array expression constructed from the given list of expressions `exps`.
     */
   private def mkArray(exps: List[Expression], elmType: Type, loc: SourceLocation): Expression = {
-    val tpe = Type.mkScopedArray(elmType, Type.Pure, loc)
+    val tpe = Type.mkArray(elmType, Type.Pure, loc)
     val eff = Type.Pure
     val reg = Expression.Unit(loc)
     Expression.ArrayLit(exps, reg, tpe, eff, loc)
+  }
+
+  /**
+    * Returns a list expression constructed from the given `exps` with type list of `elmType`.
+    */
+  private def mkList(exps: List[Expression], elmType: Type, loc: SourceLocation): Expression = {
+    val nil = mkNil(elmType, loc)
+    exps.foldRight(nil){
+      case (e, acc) => mkCons(e, acc, loc)
+    }
+  }
+
+  /**
+    * Returns a `Nil` expression with type list of `elmType`.
+    */
+  private def mkNil(elmType: Type, loc: SourceLocation): Expression = {
+    mkTag(Enums.FList, "Nil", Expression.Unit(loc), Types.mkList(elmType), loc)
+  }
+
+  /**
+    * returns a `Cons(hd, tail)` expression with type `tail.tpe`.
+    */
+  private def mkCons(hd: Expression, tail: Expression, loc: SourceLocation): Expression = {
+    val tuple = mkTuple(hd :: tail :: Nil, loc)
+    mkTag(Enums.FList, "Cons", tuple, tail.tpe, loc)
   }
 
   /**
@@ -1500,6 +1531,8 @@ object Lowering {
       val e = substExp(exp, subst)
       Expression.PutStaticField(field, e, tpe, eff, loc)
 
+    case Expression.NewObject(_, _, _, _) => exp0
+
     case Expression.NewChannel(exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       Expression.NewChannel(e, tpe, eff, loc)
@@ -1544,13 +1577,13 @@ object Lowering {
       val e = substExp(exp, subst)
       Expression.FixpointFilter(pred, e, tpe, eff, loc)
 
-    case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) =>
+    case Expression.FixpointInject(exp, pred, tpe, eff, loc) =>
       val e = substExp(exp, subst)
-      Expression.FixpointProjectIn(e, pred, tpe, eff, loc)
+      Expression.FixpointInject(e, pred, tpe, eff, loc)
 
-    case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
+    case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
-      Expression.FixpointProjectOut(pred, e, tpe, eff, loc)
+      Expression.FixpointProject(pred, e, tpe, eff, loc)
 
     case Expression.Reify(t, tpe, eff, loc) =>
       Expression.Reify(t, tpe, eff, loc)

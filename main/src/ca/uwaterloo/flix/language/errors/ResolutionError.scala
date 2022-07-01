@@ -255,6 +255,36 @@ object ResolutionError {
   }
 
   /**
+    * Opaque Enum Error.
+    *
+    * @param sym the enum symbol.
+    * @param ns  the namespace from which the enum is opaque.
+    * @param loc the location where the error occurred.
+    */
+  case class OpaqueEnum(sym: Symbol.EnumSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = "Opaque."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Enum '${red(sym.toString)}' is opaque from the namespace '${cyan(ns.toString)}'.
+         |
+         |${code(loc, "opaque enum.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"""Opaque enums cannot be constructed or destructed outside their declaring namespace.
+         |
+         |${underline("Tip:")} Use helper functions from the enum's namespace.
+         |""".stripMargin
+    })
+
+  }
+
+  /**
     * Inaccessible Type Alias Error.
     *
     * @param sym the type alias symbol.
@@ -453,19 +483,18 @@ object ResolutionError {
   }
 
   /**
-    * Undefined Sig Error.
+    * Undefined Op Error.
     *
-    * @param eff the effect.
-    * @param op  the unresolved operation.
-    * @param loc the location where the error occurred.
+    * @param qname the qualified name of the operation.
+    * @param loc   the location where the error occurred.
     */
-  case class UndefinedOp(eff: Symbol.EffectSym, op: Name.Ident, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedOp(qname: Name.QName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Undefined operation."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Undefined operation '${red(op.name)}' in effect '${red(eff.toString)}'.
+         |>> Undefined operation '${red(qname.toString)}'.'.
          |
          |${code(loc, "operation not found")}
          |
@@ -475,6 +504,32 @@ object ResolutionError {
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Possible typo or non-existent operation?"
+    })
+  }
+
+  /**
+    * Undefined Effect Error.
+    *
+    * @param qn  the unresolved effect.
+    * @param ns  the current namespace.
+    * @param loc the location where the error occurred.
+    */
+  case class UndefinedEffect(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = "Undefined effect."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined effect '${red(qn.toString)}'.
+         |
+         |${code(loc, "effect not found")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Possible typo or non-existent effect?"
     })
 
   }
@@ -686,6 +741,34 @@ object ResolutionError {
       * Returns a formatted string with helpful suggestions.
       */
     def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that a JVM class's dependency is missing.
+    *
+    * @param className  the name of the class.
+    * @param dependency the full path of the dependency.
+    * @param loc        the location where the error occurred.
+    */
+  case class MissingJvmDependency(className: String, dependency: String, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Missing dependency ${dependency} for JVM class ${className}."
+
+    /**
+      * Returns the formatted error message.
+      */
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Missing dependency ${dependency} for JVM class '${cyan(className)}'.
+         |
+         |${code(loc, s"missing dependency ${dependency}.")}
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**

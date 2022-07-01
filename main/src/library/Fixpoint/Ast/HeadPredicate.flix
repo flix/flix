@@ -18,8 +18,10 @@ use Fixpoint.SubstitutePredSym;
 use Fixpoint/Shared.PredSym;
 
 namespace Fixpoint/Ast {
+
+    @Internal
     pub enum HeadPredicate[v] {
-        case HeadAtom(PredSym, Denotation[v], Array[HeadTerm[v]])
+        case HeadAtom(PredSym, Denotation[v], List[HeadTerm[v]])
     }
 
     instance PredSymsOf[HeadPredicate[v]] {
@@ -40,12 +42,13 @@ namespace Fixpoint/Ast {
         pub def toString(head: HeadPredicate[v]): String =
             use Fixpoint.commaSeparate;
             match head {
-                case HeadAtom(predSym, Relational, terms) => "${predSym}(${commaSeparate(terms)})"
+                case HeadAtom(predSym, Relational, terms) => "${predSym}(${terms |> List.join(", ")})"
                 case HeadAtom(predSym, Latticenal(_), terms) =>
-                    let len = Array.length(terms);
-                    let k = terms[0..len-1];
-                    let l = terms[len-1];
-                    "${predSym}(${commaSeparate(k)}; ${l})"
-            } as & Pure
+                    let (keyTerms, latticeTerms) = List.splitAt(List.length(terms)-1, terms);
+                    match List.head(latticeTerms) {
+                        case None    => "${predSym}(${keyTerms |> List.join(", ")})"
+                        case Some(l) => "${predSym}(${keyTerms |> List.join(", ")}; ${l})"
+                    }
+            }
     }
 }
