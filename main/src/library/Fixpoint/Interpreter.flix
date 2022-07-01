@@ -101,14 +101,14 @@ namespace Fixpoint {
                 let rel = MutMap.getOrElsePut!(ramSym, new MutMap(Static), db);
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>
-                        let tuple = Tuple(List.toArray(List.map(evalTerm(env), terms), Static));
+                        let tuple = Tuple(List.toArray(Static, List.map(evalTerm(env), terms)));
                         MutMap.put!(tuple, $DEFAULT$, rel)
                     case Denotation.Latticenal(bot, leq, lub, _) =>
                         // assume that length(terms) > 0
                         let len = List.length(terms);
                         let keyList = terms |> List.map(evalTerm(env));
                         let (relKeys, latValList) = List.splitAt(len-1, keyList);
-                        let key = Tuple(List.toArray(relKeys, Static));
+                        let key = Tuple(List.toArray(Static, relKeys));
                         let latVal = match List.head(latValList) {
                             case None => bug!("Found predicate without terms")
                             case Some(k) => k

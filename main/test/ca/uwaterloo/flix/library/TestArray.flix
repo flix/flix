@@ -5590,7 +5590,7 @@ namespace TestArray {
 
     @test
     def toDelayList04(): Bool = region r {
-        (Array.range(-1000, 1000, r) |> Array.toDelayList |> DelayList.toArray)(r) `sameElements` Array.range(-1000, 1000, r)
+        Array.range(-1000, 1000, r) |> Array.toDelayList |> DelayList.toArray(r) `sameElements` Array.range(-1000, 1000, r)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -5924,7 +5924,7 @@ namespace TestArray {
     def toMutList05(): Bool = region r {
         let v = Array.toMutList([1, 2, 3] @ r, r);
         MutList.push!(4, v);
-        Array.sameElements(MutList.toArray(v, r), [1, 2, 3, 4] @ r)
+        Array.sameElements(MutList.toArray(r, v), [1, 2, 3, 4] @ r)
     }
 
     @test
@@ -5935,7 +5935,7 @@ namespace TestArray {
         discard MutList.pop!(v);
         discard MutList.pop!(v);
         discard MutList.pop!(v);
-        Array.sameElements(MutList.toArray(v, r), [] @ r)
+        Array.sameElements(MutList.toArray(r, v), [] @ r)
     }
 
     /////////////////////////////////////////////////////////////////////////////

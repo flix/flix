@@ -1509,24 +1509,24 @@ namespace TestChain {
     @test
     def toArray01(): Bool = region r {
         let c: Chain[Int32] = Chain.empty();
-        Array.sameElements(Chain.toArray(c, r), [] @ r)
+        Array.sameElements(Chain.toArray(r, c), [] @ r)
     }
 
     @test
     def toArray02(): Bool = region r {
-        let a = Chain.toArray(Chain.singleton(1), r);
+        let a = Chain.toArray(r, Chain.singleton(1));
         Array.sameElements(a, [1] @ r)
     }
 
     @test
     def toArray03(): Bool = region r {
-        let a = Chain.toArray(List.toChain(1 :: 2 :: Nil), r);
+        let a = Chain.toArray(r, List.toChain(1 :: 2 :: Nil));
         Array.sameElements(a, [1, 2] @ r)
     }
 
     @test
     def toArray04(): Bool = region r {
-        let a = Chain.toArray(List.toChain(1 :: 2 :: 3 :: Nil), r);
+        let a = Chain.toArray(r, List.toChain(1 :: 2 :: 3 :: Nil));
         Array.sameElements(a, [1, 2, 3] @ r)
     }
 
