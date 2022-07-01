@@ -4,7 +4,7 @@ namespace TestGraph {
     def graph01(): Set[(Int32, Int32)] =
         let _graphString =
             " ┌─┐   ┌─┐ " ::
-            " │1├─>─┤2│ " ::
+            " │1├─→─┤2│ " ::
             " └─┘   └─┘ " ::
             Nil;
         Set#{(1, 2)}
