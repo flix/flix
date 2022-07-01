@@ -172,7 +172,7 @@ namespace Iterator {
     pub def toArray(r1: Region[r1], iter: Iterator[a, r2]): Array[a, r1] \ { Read(r2), Write(r1) } = region r0 {
         let m = new MutList(r0);
         foreach(a -> MutList.push!(a, m), iter);
-        MutList.toArray(m, r1)
+        MutList.toArray(r1, m)
     }
 
     ///
