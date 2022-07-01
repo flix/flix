@@ -201,7 +201,7 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadLinesIterWithWith01(): Bool & Impure =
+    def testReadLinesIterWith01(): Bool & Impure =
         match readLinesIterWith({charSet = "utf8"}, "./LICENSE.md") {
             case Iterator(_, next) => Result.isOk(next())
         }
@@ -211,23 +211,26 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadBytes01(): Bool & Impure =
-        Result.isOk(readBytes("./LICENSE.md"))
+    def testReadBytes01(): Bool & Impure = region r {
+        Result.isOk(readBytes(r, "./LICENSE.md"))
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // readBytesWith                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadBytesWith01(): Bool & Impure =
-        Result.isOk(readBytesWith({offset = 2i64, count = 2}, "./LICENSE.md"))
+    def testReadBytesWith01(): Bool & Impure = region r {
+        Result.isOk(readBytesWith(r, {offset = 2i64, count = 2}, "./LICENSE.md"))
+    }
 
     @test
-    def testReadBytesWith02(): Bool & Impure =
-        match readBytesWith({offset = 2i64, count = 2}, "./LICENSE.md") {
+    def testReadBytesWith02(): Bool & Impure = region r {
+        match readBytesWith(r, {offset = 2i64, count = 2}, "./LICENSE.md") {
             case Ok(v) => v.length == 2
             case _ => false
         }
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // readChunks                                                              //

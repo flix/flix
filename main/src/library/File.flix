@@ -456,11 +456,11 @@ namespace File {
     ///
     /// Returns an array of all the bytes in the given file `f`.
     ///
-    pub def readBytes(f: String): Result[Array[Int8, Static], String] & Impure =
+    pub def readBytes(_: Region[r], f: String): Result[Array[Int8, r], String] & Impure =
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path & Impure;
-            import static java.nio.file.Files.readAllBytes(##java.nio.file.Path): Array[Int8, Static] & Impure;
+            import static java.nio.file.Files.readAllBytes(##java.nio.file.Path): Array[Int8, r] \ { Write(r), Impure };
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -479,17 +479,17 @@ namespace File {
     /// `offset` - the start offset in the given file `f`.
     /// `count` - the number of bytes read.
     ///
-    pub def readBytesWith(opts: {offset :: Int64, count :: Int32}, f: String): Result[Array[Int8, Static], String] & Impure =
+    pub def readBytesWith(r: Region[r], opts: {offset :: Int64, count :: Int32}, f: String): Result[Array[Int8, r], String] & Impure =
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
             import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream & Impure as newInputStream;
             import java.io.FileInputStream.skip(Int64): Int64 & Impure;
-            import java.io.FileInputStream.read(Array[Int8, Static], Int32, Int32): Int32 & Impure;
+            import java.io.FileInputStream.read(Array[Int8, r], Int32, Int32): Int32 \ { Write(r), Impure };
 
             let javaFile = newFile(f);
             let stream = newInputStream(javaFile);
             discard skip(stream, opts.offset);
-            let bytes = [0i8; opts.count];
+            let bytes = [0i8; opts.count] @ r;
             let numberRead = read(stream, bytes, 0, opts.count);
 
             let res = readBytesWithHelper(bytes, numberRead, opts.count);
@@ -505,14 +505,15 @@ namespace File {
     /// Helper function for `readBytesWith`.
     /// Returns an array that corresponds to the bytes actually read from the stream.
     ///
-    def readBytesWithHelper(bytes: Array[Int8, Static], numberRead: Int32, count: Int32): Array[Int8, Static] & Impure =
+    def readBytesWithHelper(bytes: Array[Int8, r], numberRead: Int32, count: Int32): Array[Int8, r] \ { Read(r), Write(r) } =
+        let r = Scoped.regionOf(bytes);
         let nothingRead = (numberRead == -1);
         if (nothingRead) {
-            []
+            [] @ r
         } else {
             let countBiggest = numberRead < count;
             if (countBiggest) {
-                Array.slice(0, numberRead, bytes)
+                Array.copyOfRange(0, numberRead, bytes, r)
             } else {
                 bytes
             }
