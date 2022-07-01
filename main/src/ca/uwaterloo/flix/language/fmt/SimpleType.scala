@@ -249,7 +249,7 @@ object SimpleType {
   /**
     * A type variable.
     */
-  case class Var(id: Int, kind: Kind, rigidity: Rigidity, text: Ast.VarText) extends SimpleType
+  case class Var(id: Int, kind: Kind, isRegion: Boolean, text: Ast.VarText) extends SimpleType
 
   /**
     * A tuple.
@@ -292,7 +292,7 @@ object SimpleType {
    */
   def fromWellKindedType(t: Type): SimpleType = t.baseType match {
     case Type.KindedVar(sym, _) =>
-      mkApply(Var(sym.id, sym.kind, sym.rigidity, sym.text), t.typeArguments.map(fromWellKindedType))
+      mkApply(Var(sym.id, sym.kind, sym.isRegion, sym.text), t.typeArguments.map(fromWellKindedType))
     case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type.")
     case _: Type.UnkindedArrow => throw InternalCompilerException("Unexpected unkinded type.")
     case _: Type.ReadWrite => throw InternalCompilerException("Unexpected unkinded type.")
