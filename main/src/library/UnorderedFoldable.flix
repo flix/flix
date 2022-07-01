@@ -31,6 +31,16 @@ pub class UnorderedFoldable[t : Type -> Type] with ForEach[t] {
     ///
     pub def foldRight(f: (a, b) -> b & ef, s: b, t: t[a]): b & ef
 
-    law commutative: forall(f: (b, a) -> b, s: b, t: t[a]) with Eq[b] . UnorderedFoldable.foldLeft(f, s, t) == UnorderedFoldable.foldRight((a, s) -> f(s, a), s, t)
+    ///
+    /// Right-associative fold of a structure.
+    /// Applies `f` to a start value `s` and all elements in `t` going from right to left.
+    ///
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
+    ///
+    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, t: t[a]): b & ef
+
+    law commutative1: forall(f: (b, a) -> b, s: b, t: t[a]) with Eq[b] . UnorderedFoldable.foldLeft(f, s, t) == UnorderedFoldable.foldRight((a, s) -> f(s, a), s, t)
+
+    law commutative2: forall(f: (a, b) -> b, s: b, t: t[a]) with Eq[b] . UnorderedFoldable.foldRight(f, s, t) == UnorderedFoldable.foldRightWithCont((a, k) -> f(a, k()), s, t)
 
 }
