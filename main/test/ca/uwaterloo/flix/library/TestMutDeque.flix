@@ -344,6 +344,31 @@ namespace TestMutDeque {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // peekFront                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def peekFront01(): Bool = region r {
+        let d = new MutDeque(r): MutDeque[Int32, r];
+        MutDeque.peekFront(d) == None
+    }
+
+    @test
+    def peekFront02(): Bool = region r {
+        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+        MutDeque.peekFront(d) == Some(1)
+    }
+
+    @test
+    def peekFront03(): Bool = region r {
+        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+        discard MutDeque.popFront(d);
+        discard MutDeque.popFront(d);
+        MutDeque.peekFront(d) == Some(3)
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // sameElements                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
