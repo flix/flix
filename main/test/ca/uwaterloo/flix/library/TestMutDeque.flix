@@ -362,9 +362,34 @@ namespace TestMutDeque {
     @test
     def peekFront03(): Bool = region r {
         let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+        MutDeque.peekFront(d) == Some(1) and
+        MutDeque.peekFront(d) == Some(1) and
+        MutDeque.peekFront(d) == Some(1)
+    }
+
+    @test
+    def peekFront04(): Bool = region r {
+        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
         discard MutDeque.popFront(d);
         discard MutDeque.popFront(d);
         MutDeque.peekFront(d) == Some(3)
+    }
+
+    @test
+    def peekFront05(): Bool = region r {
+        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+        discard MutDeque.popFront(d);
+        discard MutDeque.popBack(d);
+        MutDeque.peekFront(d) == Some(2)
+    }
+
+    @test
+    def peekFront06(): Bool = region r {
+        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+        discard MutDeque.popFront(d);
+        discard MutDeque.popFront(d);
+        discard MutDeque.popFront(d);
+        MutDeque.peekFront(d) == None
     }
 
 
