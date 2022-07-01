@@ -498,6 +498,7 @@ namespace Fixpoint {
     pub def facts0(p: PredSym, d: Datalog[Boxed]): List[v] with Boxable[v] =
         factsOf(_ -> () as v, p, d) as & Pure
 
+
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
