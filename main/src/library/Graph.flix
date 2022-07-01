@@ -16,7 +16,7 @@
 namespace Graph {
 
     ///
-    /// Returns the transitive closure of the graph `g`.
+    /// Returns the transitive closure of the directed graph `g`.
     ///
     pub def closure(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
@@ -24,27 +24,23 @@ namespace Graph {
             // All nodes can reach themselves.
             Reachable(n1, n1) :- Edge(n1, _).
             Reachable(n2, n2) :- Edge(_, n2).
-            // `n1` can reach `n2` by using an edge.
-            Reachable(n1, n2) :- Edge(n1, n2).
             // if `n1` can reach `m` and `m` can reach `n2` then `n1` can
             // also reach `n2`. This adds node pairs to the relational
             // that is reachable using any number of nodes.
-            Reachable(n1, n2) :- Reachable(n1, m), Reachable(m, n2).
+            Reachable(n1, n2) :- Reachable(n1, m), Edge(m, n2).
         };
         let x = query edges, reachability select (src, dst) from Reachable(src, dst);
         Array.toSet(x)
     } as & Pure                         // TODO : delete cast when query uses regions
 
     ///
-    /// Returns the vertices that are reachable from the origin `o` in the graph `g`.
+    /// Returns the vertices that are reachable from the `origin` in the graph `g`.
     ///
-    pub def reachable(o: t, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] = {
+    pub def reachable(origin: t, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
         let reachability = #{
             // A node can reach itself.
-            Reachable(o).
-            // Directly reachable.
-            Reachable(n) :- Edge(o, n).
+            Reachable(origin).
             // if `o` can reach `m` and `m` can reach `n` then `o` can
             // also reach `n`. This adds node pairs to the relational
             // that is reachable using any number of nodes.
