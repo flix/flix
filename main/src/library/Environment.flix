@@ -20,23 +20,25 @@ namespace Environment {
     ///
     pub def getArgs(): List[String] = region r {
         import static dev.flix.runtime.Global.getArgs(): Array[String, r] \ Write(r);
-        let _ = r; // Avoids redundancy error
+        let _ = r; // Avoids redundancy error.
         Array.toList(getArgs())
     }
 
     ///
     /// Returns an map of the current system environment.
     ///
-    pub def getEnv(): Map[String, String] =
-        import static java.lang.System.getenv(): ##java.util.Map & Impure;
-        import java.util.Map.entrySet(): ##java.util.Set & Impure;
-        import java.util.Set.iterator(): ##java.util.Iterator & Impure;
+    pub def getEnv(): Map[String, String] = region r {
+        import static java.lang.System.getenv(): ##java.util.Map \ Write(r);
+        import java.util.Map.entrySet(): ##java.util.Set \ { Read(r), Write(r) };
+        import java.util.Set.iterator(): ##java.util.Iterator \ { Read(r), Write(r) };
+        let _ = r; // Avoids redundancy error.
         try {
             let iter = getenv() |> entrySet |> iterator;
             getEnvHelper(iter, Map.empty())
         } catch {
             case _:##java.lang.Exception => Map.empty()
-        } as & Pure
+        }
+    }
 
     ///
     /// Returns the value of the specified environment variable.
@@ -128,11 +130,11 @@ namespace Environment {
         import java.lang.Runtime.availableProcessors(): Int32 & Pure;
         (getRuntime() |> availableProcessors)
 
-    def getEnvHelper(iter: ##java.util.Iterator, m: Map[String, String]): Map[String, String] & Impure =
-        import java.util.Iterator.hasNext(): Bool & Impure;
-        import java.util.Iterator.next(): ##java.lang.Object & Impure;
-        import java.util.Map$Entry.getKey(): ##java.lang.Object & Impure;
-        import java.util.Map$Entry.getValue(): ##java.lang.Object & Impure;
+    def getEnvHelper(iter: ##java.util.Iterator, m: Map[String, String]): Map[String, String] =
+        import java.util.Iterator.hasNext(): Bool & Pure;
+        import java.util.Iterator.next(): ##java.lang.Object & Pure;
+        import java.util.Map$Entry.getKey(): ##java.lang.Object & Pure;
+        import java.util.Map$Entry.getValue(): ##java.lang.Object & Pure;
         if (hasNext(iter))
             let entry = next(iter) as ##java.util.Map$Entry;
             let key = getKey(entry) as String;
