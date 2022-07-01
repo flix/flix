@@ -106,23 +106,24 @@ namespace File {
     ///
     /// Returns the BasicFileAttributes of the file `f`.
     ///
-    def getAttributes(f: String): Result[##java.nio.file.attribute.BasicFileAttributes, String] & Impure =
+    def getAttributes(f: String): Result[##java.nio.file.attribute.BasicFileAttributes, String] & Impure = region r {
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path & Impure;
-            import static java.nio.file.Files.readAttributes(##java.nio.file.Path, ##java.lang.Class, Array[##java.nio.file.LinkOption, Static]): ##java.nio.file.attribute.BasicFileAttributes & Impure;
+            import static java.nio.file.Files.readAttributes(##java.nio.file.Path, ##java.lang.Class, Array[##java.nio.file.LinkOption, r]): ##java.nio.file.attribute.BasicFileAttributes \ { Read(r), Impure };
             import static java.lang.Class.forName(String): ##java.lang.Class & Impure;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let classOfAttributes = forName("java.nio.file.attribute.BasicFileAttributes");
 
-            Ok(readAttributes(javaPath, classOfAttributes, []))
+            Ok(readAttributes(javaPath, classOfAttributes, [] @ r))
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
+    }
 
     ///
     /// Returns the type of the given file `f`.
@@ -201,11 +202,11 @@ namespace File {
     ///
     /// Returns `true` if the given file `f` is a regular file.
     ///
-    pub def isRegularFile(f: String): Result[Bool, String] & Impure =
+    pub def isRegularFile(f: String): Result[Bool, String] & Impure = region r {
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path & Impure;
-            import static java.nio.file.Files.isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption, Static]): Bool & Impure;
+            import static java.nio.file.Files.isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption, r]): Bool \ { Read(r), Impure };
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let isRegular = isRegularFile(javaPath, []);
@@ -215,6 +216,7 @@ namespace File {
                 import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
+    }
 
     ///
     /// Returns `true` if the given file `f` is readable.
