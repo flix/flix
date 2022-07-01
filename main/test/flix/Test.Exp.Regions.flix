@@ -1073,4 +1073,38 @@ namespace Test/Exp/Regions {
             }
         }
 
+    @test
+    def testRegions2RegionsReferences04(): Bool =
+        region r1 {
+            region r2 {
+                let m1 = ref new MutMap(r1) @ r2;
+                let m2 = ref new MutMap(r2) @ r1;
+                MutMap.put!(1, 1, deref m1);
+                MutMap.put!(1, 1, deref m2);
+                MutMap.get(1, deref m1) == Some(1) and Some(1) == MutMap.get(1, deref m2)
+            }
+        }
+
+    @test
+    def testRegions2RegionsReferences05(): Bool =
+        region r1 {
+            region r2 {
+                let a1 = ref [1; 8] @ r1 @ r2;
+                let a2 = ref [1; 8] @ r2 @ r2;
+                (deref a1)[0] == 1 and 1 == (deref a2)[0]
+            }
+        }
+
+    @test
+    def testRegions2RegionsReferences06(): Bool =
+        region r1 {
+            region r2 {
+                let l1 = ref new MutList(r1) @ r1;
+                let l2 = ref new MutList(r2) @ r1;
+                MutList.push!(1, deref l1);
+                MutList.push!(1, deref l2);
+                MutList.pop!(deref l1) == Some(1) and Some(1) == MutList.pop!(deref l2)
+            }
+        }
+
 }
