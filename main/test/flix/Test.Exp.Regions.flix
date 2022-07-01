@@ -1200,4 +1200,56 @@ namespace Test/Exp/Regions {
             }
         }
 
+    @test
+    def testRegions2Regions3NestedReferences01(): Bool =
+        region r1 {
+            region r2 {
+                let a: Ref[Array[Ref[MutMap[Int32, Ref[MutList[Ref[Array[Int32, r1], r1], r1], r1], r2], r2], r2], r2] = ref [ref new MutMap(r2) @ r2; 8] @ r2 @ r2;
+                let l = ref new MutList(r1) @ r1;
+                MutList.push!(ref [1; 8] @ r1 @ r1, deref l);
+                MutMap.put!(1, l, deref (deref a)[0]);
+                match MutMap.get(1, deref (deref a)[0]) {
+                    case Some(k) => (deref MutList.get(0, deref k))[0] == 1
+                    case _       => unreachable!()
+                }
+            }
+        }
+
+    @test
+    def testRegions2Regions3NestedReferences02(): Bool =
+        region r1 {
+            region r2 {
+                let l: Ref[MutList[Ref[Array[Ref[MutMap[Int32, Ref[MutList[Int32, r2], r1], r2], r1], r1], r2], r2], r1] = ref new MutList(r2) @ r1;
+                let a = ref [ref new MutMap(r2) @ r1; 8] @ r1 @ r2;
+                MutList.push!(a, deref l);
+                let l2 = ref new MutList(r2) @ r1;
+                MutMap.put!(1, l2, deref (deref a)[0]); // Mutate a[0], the MutList `l` above should also be updated by this
+                MutList.push!(1, deref l2);
+                match MutList.pop!(deref l) {
+                    case Some(b) => match MutMap.get(1, deref (deref b)[0]) {
+                        case Some(k) => MutList.get(0, deref k) == 1
+                        case _       => unreachable!()
+                    }
+                    case _       => unreachable!()
+                }
+            }
+        }
+
+    @test
+    def testRegions2Regions3NestedReferences03(): Bool =
+        region r1 {
+            region r2 {
+                let m: Ref[MutMap[Int32, Ref[MutList[Ref[Array[Ref[MutMap[Int32, Int32, r2], r1], r2], r1], r1], r2], r1], r2] = ref new MutMap(r1) @ r2;
+                let l = ref new MutList(r1) @ r2;
+                let a = ref [ref new MutMap(r2) @ r1; 8] @ r2 @ r1;
+                MutList.push!(a, deref l);
+                MutMap.put!(1, 1, deref (deref a)[0]); // Mutate the innermost nested MutMap
+                MutMap.put!(1, l, deref m);
+                match MutMap.get(1, deref m) {
+                    case Some(k) => (deref (deref MutList.get(0, deref k))[0]) |> MutMap.get(1) == Some(1)
+                    case _       => unreachable!()
+                }
+            }
+        }
+
 }
