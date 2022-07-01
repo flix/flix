@@ -644,4 +644,17 @@ object TypeError {
     def explain(formatter: Formatter): Option[String] = None
   }
 
+  case class InvalidOpParamCount(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends TypeError {
+    override def summary: String = s"Expected $expected parameters but found"
+
+    /**
+      * Returns the formatted error message.
+      */
+    override def message(formatter: Formatter): String = ???
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain(formatter: Formatter): Option[String] = ???
+  }
 }
