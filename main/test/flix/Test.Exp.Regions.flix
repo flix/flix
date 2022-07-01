@@ -1116,15 +1116,15 @@ namespace Test/Exp/Regions {
                 MutMap.get(1, deref (deref a)[0]) == Some(1)
             }
         }
-/*
+
     @test
     def testRegions2Regions1NestedReferences02(): Bool =
         region r1 {
             region r2 {
-                let l: MutList[Array[Int32, r2], r1] = new MutList(r1);
-                MutList.push!([1; 8] @ r2, l);
-                match MutList.pop!(l) {
-                    case Some(a) => a[0] == 1
+                let l: Ref[MutList[Ref[Array[Int32, r2], r1], r1], r1] = ref new MutList(r1) @ r1;
+                MutList.push!(ref [1; 8] @ r2 @ r1, deref l);
+                match MutList.pop!(deref l) {
+                    case Some(a) => (deref a)[0] == 1
                     case _       => unreachable!()
                 }
             }
@@ -1134,12 +1134,12 @@ namespace Test/Exp/Regions {
     def testRegions2Regions1NestedReferences03(): Bool =
         region r1 {
             region r2 {
-                let m: MutMap[Int32, MutList[Int32, r2], r1] = new MutMap(r1);
-                let l = new MutList(r2);
-                MutList.push!(1, l);
-                MutMap.put!(1, l, m);
-                match MutMap.get(1, m) {
-                    case Some(k) => MutList.pop!(k) == Some(1)
+                let m: Ref[Ref[MutMap[Int32, Ref[MutList[Int32, r2], r1], r1], r1], r2] = ref ref new MutMap(r1) @ r1 @ r2;
+                let l = ref new MutList(r2) @ r1;
+                MutList.push!(1, deref l);
+                MutMap.put!(1, l, deref deref m);
+                match MutMap.get(1, deref deref m) {
+                    case Some(k) => MutList.pop!(deref k) == Some(1)
                     case _       => unreachable!()
                 }
             }
@@ -1149,38 +1149,10 @@ namespace Test/Exp/Regions {
     def testRegions2Regions1NestedReferences04(): Bool =
         region r1 {
             region r2 {
-                let a: Array[MutMap[Int32, Int32, r1], r2] = [new MutMap(r1); 8] @ r2;
-                MutMap.put!(1, 1, a[0]);
-                MutMap.get(1, a[0]) == Some(1)
+                let a: Ref[Array[Ref[MutMap[Int32, Int32, r1], r2], r2], r2] = ref [ref new MutMap(r1) @ r2; 8] @ r2 @ r2;
+                MutMap.put!(1, 1, deref (deref a)[0]);
+                MutMap.get(1, deref (deref a)[0]) == Some(1)
             }
         }
 
-    @test
-    def testRegions2Regions1NestedReferences05(): Bool =
-        region r1 {
-            region r2 {
-                let l: MutList[Array[Int32, r1], r2] = new MutList(r2);
-                MutList.push!([1; 8] @ r1, l);
-                match MutList.pop!(l) {
-                    case Some(a) => a[0] == 1
-                    case _       => unreachable!()
-                }
-            }
-        }
-
-    @test
-    def testRegions2Regions1NestedReferences06(): Bool =
-        region r1 {
-            let l = new MutList(r1);
-            region r2 {
-                let m: MutMap[Int32, MutList[Int32, r1], r2] = new MutMap(r2);
-                MutList.push!(1, l);
-                MutMap.put!(1, l, m);
-                match MutMap.get(1, m) {
-                    case Some(k) => MutList.get(0, k) == 1
-                    case _       => unreachable!()
-                }
-            } and MutList.get(0, l) == 1
-        }
-*/
 }
