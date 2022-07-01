@@ -989,7 +989,7 @@ namespace Array {
         };
         let (xs, ys) = foldRight(step, (Nil, Nil), a);
         let r = Scoped.regionOf(a);
-        (List.toArray(xs, r), List.toArray(ys, r))
+        (List.toArray(r, xs), List.toArray(r, ys))
 
     ///
     /// Returns a pair of arrays `(a1, a2)`.
@@ -1158,7 +1158,7 @@ namespace Array {
     pub def groupBy(f: (a, a) -> Bool, a: Array[a, r1], r2: Region[r2]): Array[Array[a, r2], r1] \ { Read(r1), Write(r1, r2) } =
         let xs = toList(a);
         let r1 = Scoped.regionOf(a);
-        (groupByHelper(f, xs, Nil, r2) |> List.toArray)(r1)
+        groupByHelper(f, xs, Nil, r2) |> List.toArray(r1)
 
     ///
     /// Helper function for `groupBy`.
@@ -1176,7 +1176,7 @@ namespace Array {
     def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a], r: Region[r]): (Array[a, r], List[a]) \ Write(r) = match xs {
         case Nil => {
             let a = List.reverse(ps);
-            (List.toArray(a, r), List.reverse(ns))
+            (List.toArray(r, a), List.reverse(ns))
         }
         case x :: rs =>
             if (agreeHelper(f, x, ps))
@@ -1275,9 +1275,9 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def filterMap(f: a -> Option[b] & ef, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let r = Scoped.regionOf(a);
-        (foldRight((x, xs) -> match f(x) {
+        foldRight((x, xs) -> match f(x) {
             case None    => xs
-            case Some(b) => b :: xs }, Nil, a) |> List.toArray)(r)
+            case Some(b) => b :: xs }, Nil, a) |> List.toArray(r)
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `xs`.
@@ -1389,7 +1389,7 @@ namespace Array {
             }
         };
         loop(0);
-        MutList.toArray(l, r)
+        MutList.toArray(r, l)
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.
