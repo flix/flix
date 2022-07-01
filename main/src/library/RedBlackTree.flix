@@ -121,10 +121,12 @@ namespace RedBlackTree {
     /// Returns the number of nodes in `t`.
     ///
     @Time(size(t)) @Space(Int32.log2(size(t)))
-    pub def size(t: RedBlackTree[k, v]): Int32 = match t {
-        case Node(_, a, _, _, b) => 1 + size(a) + size(b)
-        case _                   => 0
-    }
+    pub def size(t: RedBlackTree[k, v]): Int32 =
+        def loop(tt, k) = match tt {
+            case Node(_, a, _, _, b) => loop(a, ks -> k(loop(b, ys -> ks + ys + 1)))
+            case _                   => k(0)
+        };
+        loop(t, identity)
 
     ///
     /// Returns the empty tree.
@@ -314,7 +316,7 @@ namespace RedBlackTree {
     ///
     pub def foldRightWithCont(f: (k, v, Unit -> b & ef) -> b & ef, z: b, t: RedBlackTree[k, v]): b & ef = match t {
         case Node(_, a, k, v, b) => foldRightWithCont(f, f(k, v, _ -> foldRightWithCont(f, z, b)), a)
-        case _ => z
+        case _                   => z
     }
 
     ///
@@ -691,7 +693,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parCount(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 & Impure = {
+    pub def parCount(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 & Impure =
         if (n <= 1)
             seqCount(f, t)
         else
@@ -708,7 +710,6 @@ namespace RedBlackTree {
                     let b1 = <- chanR;
                     a1 + v1 + b1
             }
-    }
 
     ///
     /// Applies `f` over the tree `t` sequentially from left to right and returns the number of elements
@@ -759,7 +760,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parSumWith(n: Int32, f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 & Impure = {
+    pub def parSumWith(n: Int32, f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 & Impure =
         if (n <= 1)
             seqSumWith(f, t)
         else
@@ -776,7 +777,6 @@ namespace RedBlackTree {
                     let b1 = <- chanR;
                     a1 + v1 + b1
             }
-    }
 
     ///
     /// Returns the sum of all key-value pairs `k => v` in the tree `t`
