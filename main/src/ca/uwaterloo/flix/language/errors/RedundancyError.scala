@@ -341,15 +341,22 @@ object RedundancyError {
     })
   }
 
-  case class DiscardedValue(loc: SourceLocation) extends RedundancyError {
+  /**
+    * An error raised to indicate that a non-unit impure expression is used as a statement.
+    * @param tpe the type of the expression.
+    * @param loc the location of the expression.
+    */
+  case class DiscardedValue(tpe: Type, loc: SourceLocation) extends RedundancyError {
     def summary: String = "Non-unit expression value is implicitly discarded."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Implicitly discarded value: The non-unit expression value is not used.
+         |>> Unused non-unit value: The impure expression value is not used.
          |
          |${code(loc, "discarded value.")}
+         |
+         |The expression has type '${FormatType.formatWellKindedType(tpe)}'
          |""".stripMargin
     }
 
