@@ -41,9 +41,9 @@ namespace Graph {
         let reachability = #{
             // A node can reach itself.
             Reachable(origin).
-            // if `o` can reach `m` and `m` can reach `n` then `o` can
-            // also reach `n`. This adds node pairs to the relational
-            // that is reachable using any number of nodes.
+            // If `origin` can reach `m` and there is an edge from `m` to `n`
+            // then `origin` can also reach `n`. This adds all node pairs to
+            // the relational that are reachable using any number of nodes.
             Reachable(n) :- Reachable(m), Edge(m, n).
         };
         let x = query edges, reachability select dst from Reachable(dst);
