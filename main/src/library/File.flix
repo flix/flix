@@ -104,7 +104,7 @@ namespace File {
         }
 
     ///
-    /// Returns the BacisFileAttributes of the file `f`.
+    /// Returns the BasicFileAttributes of the file `f`.
     ///
     def getAttributes(f: String): Result[##java.nio.file.attribute.BasicFileAttributes, String] & Impure =
         try {
