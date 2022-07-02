@@ -65,14 +65,16 @@ pub class UnorderedFoldable[t : Type -> Type] with ForEach[t] {
         UnorderedFoldable.exists(y -> x == y, t)
 
     ///
-    /// Returns the number of elements in `t` that satisfy the predicate `f`.
-    ///
-    pub def count(f: a -> Bool & ef, t: t[a]): Bool = ???
-
-    ///
     /// Returns the number of elements in `t`.
     ///
-    pub def size(t: t[a]): Bool = ???
+    pub def size(t: t[a]): Int32 =
+        UnorderedFoldable.foldMap(_ -> 1, t)
+
+    ///
+    /// Returns the number of elements in `t` that satisfy the predicate `f`.
+    ///
+    pub def count(f: a -> Bool & ef, t: t[a]): Int32 & ef =
+        UnorderedFoldable.foldMap(a -> if (f(a)) 1 else 0, t)
 
 }
 
