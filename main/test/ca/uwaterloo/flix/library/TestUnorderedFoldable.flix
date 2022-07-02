@@ -37,7 +37,7 @@ namespace TestUnorderedFoldable {
 
     @test
     def fold04(): Bool =
-        UnorderedFoldable.fold(Set#{(1, 2), (3, 4)}) == 10
+        UnorderedFoldable.fold(Set#{(1, 2), (3, 4)}) == (4, 6)
 
 
     /////////////////////////////////////////////////////////////////////////////

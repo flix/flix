@@ -36,7 +36,7 @@ pub class UnorderedFoldable[t : Type -> Type] with ForEach[t] {
     /// Returns true if and only if `t` is empty.
     ///
     pub def isEmpty(t: t[a]): Bool =
-        UnorderedFoldable.exists(_ -> true, t)
+        UnorderedFoldable.forall(_ -> false, t)
 
     ///
     /// Returns `true` if and only if at least one element in `t` satisfies the predicate `f`.
