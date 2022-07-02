@@ -35,21 +35,25 @@ pub class UnorderedFoldable[t : Type -> Type] with ForEach[t] {
     ///
     /// Returns true if and only if `t` is empty.
     ///
-    pub def isEmpty(t: t[a]): Bool = ???
+    pub def isEmpty(t: t[a]): Bool =
+        UnorderedFoldable.exists(_ -> true, t)
 
     ///
     /// Returns `true` if and only if at least one element in `t` satisfies the predicate `f`.
     ///
     /// Returns `false` if `t` is empty.
     ///
-    pub def exists(f: a -> Bool & ef, t: t[a]): Bool & ef = ???
+    pub def exists(f: a -> Bool & ef, t: t[a]): Bool & ef =
+        use UnorderedFoldable.OrBool.OrBool;
+        let OrBool(x) = UnorderedFoldable.foldMap(a -> OrBool(f(a)), t);
+        x
 
     ///
     /// Returns `true` if and only if all elements in `t` satisfy the predicate `f`.
     ///
     /// Returns `true` if `t` is empty.
     ///
-    pub def forall(f: a -> Bool & ef, t: t[a]): Bool & ef = ???
+    pub def forall(f: a -> Bool & ef, t: t[a]): Bool = ???
 
     ///
     /// Returns `true` if and only if the element `x` is in `t`.
@@ -59,11 +63,30 @@ pub class UnorderedFoldable[t : Type -> Type] with ForEach[t] {
     ///
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
     ///
-    pub def count(f: a -> Bool & ef, t: t[a]): Bool & ef = ???
+    pub def count(f: a -> Bool & ef, t: t[a]): Bool = ???
 
     ///
     /// Returns the number of elements in `t`.
     ///
     pub def size(t: t[a]): Bool = ???
+
+}
+
+namespace UnorderedFoldable {
+
+    @Internal
+    pub enum OrBool(Bool)
+
+    instance SemiGroup[OrBool] {
+        pub def combine(x: OrBool, y: OrBool): OrBool = match (x, y) {
+            case (OrBool(a), OrBool(b)) => OrBool(a or b)
+        }
+    }
+
+    instance Monoid[OrBool] {
+        pub def empty(): OrBool = OrBool(false)
+    }
+
+    instance CommutativeMonoid[OrBool]
 
 }
