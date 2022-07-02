@@ -1319,12 +1319,12 @@ namespace Array {
     ///
     /// Returns the array `a` as a MutList.
     ///
-    pub def toMutList(a: Array[a, r1], r2: Region[r2]): MutList[a, r2] \ { Read(r1), Write(r2) } =
+    pub def toMutList(r1: Region[r1], a: Array[a, r2]): MutList[a, r1] \ { Read(r2), Write(r1) } =
         let minCap = MutList.minCapacity();
         let len = length(a);
         let c = Order.max(len, minCap);
-        let copy = copyOfRange(0, c, a, r2);
-        MutList(ref copy @ r2, ref len @ r2)
+        let copy = copyOfRange(0, c, a, r1);
+        MutList(ref copy @ r1, ref len @ r1)
 
     ///
     /// Alias for `findIndexOfLeft`.
