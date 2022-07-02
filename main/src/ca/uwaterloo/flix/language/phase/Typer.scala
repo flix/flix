@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
-import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
@@ -422,7 +421,7 @@ object Typer {
 
       case KindedAst.Expression.Def(sym, tvar, loc) =>
         val defn = root.defs(sym)
-        val (tconstrs0, defType) = Scheme.instantiate(defn.spec.sc, InstantiateMode.Flexible)
+        val (tconstrs0, defType) = Scheme.instantiate(defn.spec.sc)
         for {
           resultTyp <- unifyTypeM(tvar, defType, loc)
           tconstrs = tconstrs0.map(_.copy(loc = loc))
@@ -431,7 +430,7 @@ object Typer {
       case KindedAst.Expression.Sig(sym, tvar, loc) =>
         // find the declared signature corresponding to this symbol
         val sig = root.classes(sym.clazz).sigs(sym)
-        val (tconstrs0, sigType) = Scheme.instantiate(sig.spec.sc, InstantiateMode.Flexible)
+        val (tconstrs0, sigType) = Scheme.instantiate(sig.spec.sc)
         for {
           resultTyp <- unifyTypeM(tvar, sigType, loc)
           tconstrs = tconstrs0.map(_.copy(loc = loc))
@@ -1047,7 +1046,7 @@ object Typer {
           val caze = decl.cases(tag)
 
           // Instantiate the type scheme of the case.
-          val (_, tagType) = Scheme.instantiate(caze.sc, InstantiateMode.Flexible)
+          val (_, tagType) = Scheme.instantiate(caze.sc)
 
           //
           // The tag type can be thought of as a function from the type of variant to the type of the enum.
@@ -1215,8 +1214,8 @@ object Typer {
         } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.Deref(exp, tvar, evar, loc) =>
-        val elmVar = Type.freshVar(Kind.Star, loc, Rigidity.Flexible, text = FallbackText("elm"))
-        val regionVar = Type.freshVar(Kind.Bool, loc, Rigidity.Flexible, text = FallbackText("region"))
+        val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
         val refType = Type.mkRef(elmVar, regionVar, loc)
 
         for {
@@ -1228,7 +1227,7 @@ object Typer {
         } yield (constrs, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.Assign(exp1, exp2, evar, loc) =>
-        val elmVar = Type.freshVar(Kind.Star, loc, Rigidity.Flexible, text = FallbackText("elm"))
+        val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
         val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
         val refType = Type.mkRef(elmVar, regionVar, loc)
 
@@ -2147,7 +2146,7 @@ object Typer {
         val caze = decl.cases(tag)
 
         // Instantiate the type scheme of the case.
-        val (_, tagType) = Scheme.instantiate(caze.sc, InstantiateMode.Flexible)
+        val (_, tagType) = Scheme.instantiate(caze.sc)
 
         //
         // The tag type can be thought of as a function from the type of variant to the type of the enum.
