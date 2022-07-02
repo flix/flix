@@ -926,7 +926,7 @@ namespace MutList {
     pub def shuffle(rnd: Random.Random, v: MutList[a, r1], r1: Region[r1]): MutList[a, r1] & Impure \ { Read(r1), Write(r1) } = region r2 {
         let arr = toArray(r2, v);
         Array.shuffle(rnd, arr);
-        Array.toMutList(arr, r1)
+        Array.toMutList(r1, arr)
     }
 
 }

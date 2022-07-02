@@ -344,6 +344,106 @@ namespace TestMutDeque {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // peekFront                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def peekFront01(): Bool = region r {
+        let d = new MutDeque(r): MutDeque[Int32, r];
+        MutDeque.peekFront(d) == None
+    }
+
+    @test
+    def peekFront02(): Bool = region r {
+        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+        MutDeque.peekFront(d) == Some(1)
+    }
+
+    @test
+    def peekFront03(): Bool = region r {
+        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+        MutDeque.peekFront(d) == Some(1) and
+        MutDeque.peekFront(d) == Some(1) and
+        MutDeque.peekFront(d) == Some(1)
+    }
+
+    @test
+    def peekFront04(): Bool = region r {
+        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+        discard MutDeque.popFront(d);
+        discard MutDeque.popFront(d);
+        MutDeque.peekFront(d) == Some(3)
+    }
+
+    @test
+    def peekFront05(): Bool = region r {
+        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+        discard MutDeque.popFront(d);
+        discard MutDeque.popBack(d);
+        MutDeque.peekFront(d) == Some(2)
+    }
+
+    @test
+    def peekFront06(): Bool = region r {
+        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+        discard MutDeque.popFront(d);
+        discard MutDeque.popFront(d);
+        discard MutDeque.popFront(d);
+        MutDeque.peekFront(d) == None
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // peekBack                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def peekBack01(): Bool = region r {
+        let d = new MutDeque(r): MutDeque[Int32, r];
+        MutDeque.peekBack(d) == None
+    }
+
+    @test
+    def peekBack02(): Bool = region r {
+        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+        MutDeque.peekBack(d) == Some(3)
+    }
+
+    @test
+    def peekBack03(): Bool = region r {
+        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+        MutDeque.peekBack(d) == Some(3) and
+        MutDeque.peekBack(d) == Some(3) and
+        MutDeque.peekBack(d) == Some(3)
+    }
+
+    @test
+    def peekBack04(): Bool = region r {
+        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+        discard MutDeque.popBack(d);
+        discard MutDeque.popBack(d);
+        MutDeque.peekBack(d) == Some(1)
+    }
+
+    @test
+    def peekBack05(): Bool = region r {
+        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+        discard MutDeque.popBack(d);
+        discard MutDeque.popFront(d);
+        MutDeque.peekBack(d) == Some(2)
+    }
+
+    @test
+    def peekBack06(): Bool = region r {
+        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+        discard MutDeque.popBack(d);
+        discard MutDeque.popBack(d);
+        discard MutDeque.popBack(d);
+        MutDeque.peekBack(d) == None
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // sameElements                                                            //
     /////////////////////////////////////////////////////////////////////////////
 

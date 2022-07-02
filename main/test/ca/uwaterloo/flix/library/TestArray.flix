@@ -5896,14 +5896,14 @@ namespace TestArray {
 
     @test
     def toMutList01(): Bool = region r {
-        MutList.sameElements(Array.toMutList(([] @ r): Array[Int32, _], r), new MutList(r))
+        MutList.sameElements(Array.toMutList(r, ([] @ r): Array[Int32, r]), new MutList(r))
     }
 
     @test
     def toMutList02(): Bool = region r {
         let v = new MutList(r);
         MutList.push!(1, v);
-        MutList.sameElements(Array.toMutList([1] @ r, r), v)
+        MutList.sameElements(Array.toMutList(r, [1] @ r), v)
     }
 
     @test
@@ -5912,24 +5912,24 @@ namespace TestArray {
         MutList.push!(1, v);
         MutList.push!(2, v);
         MutList.push!(3, v);
-        MutList.sameElements(Array.toMutList([1, 2, 3] @ r, r), v)
+        MutList.sameElements(Array.toMutList(r, [1, 2, 3] @ r), v)
     }
 
     @test
     def toMutList04(): Bool = region r {
-        MutList.sameElements((Array.range(0, 100, r) |> Array.toMutList)(r), MutList.range(0, 100, r))
+        MutList.sameElements((Array.range(0, 100, r) |> Array.toMutList(r)), MutList.range(0, 100, r))
     }
 
     @test
     def toMutList05(): Bool = region r {
-        let v = Array.toMutList([1, 2, 3] @ r, r);
+        let v = Array.toMutList(r, [1, 2, 3] @ r);
         MutList.push!(4, v);
         Array.sameElements(MutList.toArray(r, v), [1, 2, 3, 4] @ r)
     }
 
     @test
     def toMutList06(): Bool = region r {
-        let v = Array.toMutList([1, 2, 3] @ r, r);
+        let v = Array.toMutList(r, [1, 2, 3] @ r);
         MutList.push!(4, v);
         discard MutList.pop!(v);
         discard MutList.pop!(v);

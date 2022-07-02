@@ -244,6 +244,32 @@ namespace MutDeque {
         expand!(d)                     // Optionally expand `d`.
 
     ///
+    /// Optionally returns the front element. Does *not* remove it.
+    ///
+    pub def peekFront(d: MutDeque[a, r]): Option[a] \ Read(r) =
+        let MutDeque(a, f, b) = d;
+        let f1 = deref f;
+        let b1 = deref b;
+        if (f1 == b1)
+            None
+        else
+            Some((deref a)[f1])
+
+    ///
+    /// Optionally returns the back element. Does *not* remove it.
+    ///
+    pub def peekBack(d: MutDeque[a, r]): Option[a] \ Read(r) =
+        let MutDeque(a, f, b) = d;
+        let f1 = deref f;
+        let b1 = deref b;
+        if (f1 == b1)
+            None
+        else
+            let c = capacity(d) - 1;
+            let i = (b1 - 1) &&& c;
+            Some((deref a)[i])
+
+    ///
     /// Doubles the capacity of `d` if the load factor is greater than or equal to `maxLoadFactor`.
     ///
     def expand!(d: MutDeque[a, r]): Unit \ { Read(r), Write(r) } =
@@ -329,11 +355,9 @@ namespace MutDeque {
         let bSize = size(d2);
         if (aSize == bSize) {
             let MutDeque(aArray, aFront, aBack) = d1;
-            let aCap = capacity(d1);
             let MutDeque(bArray, bFront, bBack) = d2;
-            let bCap = capacity(d2);
-            let a1 = [$DEFAULT$; aCap] @ Scoped.regionOf(d1);
-            let b1 = [$DEFAULT$; bCap] @ Scoped.regionOf(d2);
+            let a1 = [$DEFAULT$; aSize] @ Scoped.regionOf(d1);
+            let b1 = [$DEFAULT$; bSize] @ Scoped.regionOf(d2);
             copyElements!(deref aFront, deref aBack, deref aArray, a1);
             copyElements!(deref bFront, deref bBack, deref bArray, b1);
             Array.sameElements(a1, b1)
