@@ -555,6 +555,14 @@ namespace Set {
         Set.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), s)
 
     ///
+    /// Returns `s` as a MutDeque.
+    ///
+    pub def toMutDeque(r: Region[r], s: Set[a]): MutDeque[a, r] \ Write(r) =
+        let d = new MutDeque(r);
+        Set.foreach(x -> MutDeque.pushBack(x, d), s);
+        d
+
+    ///
     /// Returns the set `s` as a `MutSet`.
     ///
     pub def toMutSet(s: Set[a], r: Region[r]): MutSet[a, r] \ Write(r) =

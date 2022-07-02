@@ -1319,12 +1319,12 @@ namespace Array {
     ///
     /// Returns the array `a` as a MutList.
     ///
-    pub def toMutList(a: Array[a, r1], r2: Region[r2]): MutList[a, r2] \ { Read(r1), Write(r2) } =
+    pub def toMutList(r1: Region[r1], a: Array[a, r2]): MutList[a, r1] \ { Read(r2), Write(r1) } =
         let minCap = MutList.minCapacity();
         let len = length(a);
         let c = Order.max(len, minCap);
-        let copy = copyOfRange(0, c, a, r2);
-        MutList(ref copy @ r2, ref len @ r2)
+        let copy = copyOfRange(0, c, a, r1);
+        MutList(ref copy @ r1, ref len @ r1)
 
     ///
     /// Alias for `findIndexOfLeft`.
@@ -1673,48 +1673,48 @@ namespace Array {
     pub def copyOfRange(b: Int32, e: Int32, a: Array[a, r1], _: Region[r2]): Array[a, r2] \ { Read(r1), Write(r2) } =
         match (reifyType a) {
             case ErasedType =>
-                let arr = a as Array[##java.lang.Object, Static];
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, Static], Int32, Int32): Array[##java.lang.Object, r2] & r1 and r2 as copy;
+                let arr = a as Array[##java.lang.Object, r1];
+                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedUnit =>
-                let arr = a as Array[Unit, Static];
-                import static java.util.Arrays.copyOfRange(Array[Unit, Static], Int32, Int32): Array[Unit, r2] & r1 and r2 as copy;
+                let arr = a as Array[Unit, r1];
+                import static java.util.Arrays.copyOfRange(Array[Unit, r1], Int32, Int32): Array[Unit, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedBool =>
-                let arr = a as Array[Bool, Static];
-                import static java.util.Arrays.copyOfRange(Array[Bool, Static], Int32, Int32): Array[Bool, r2] & r1 and r2 as copy;
+                let arr = a as Array[Bool, r1];
+                import static java.util.Arrays.copyOfRange(Array[Bool, r1], Int32, Int32): Array[Bool, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedChar =>
-                let arr = a as Array[Char, Static];
-                import static java.util.Arrays.copyOfRange(Array[Char, Static], Int32, Int32): Array[Char, r2] & r1 and r2 as copy;
+                let arr = a as Array[Char, r1];
+                import static java.util.Arrays.copyOfRange(Array[Char, r1], Int32, Int32): Array[Char, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedFloat32 =>
-                let arr = a as Array[Float32, Static];
-                import static java.util.Arrays.copyOfRange(Array[Float32, Static], Int32, Int32): Array[Float32, r2] & r1 and r2 as copy;
+                let arr = a as Array[Float32, r1];
+                import static java.util.Arrays.copyOfRange(Array[Float32, r1], Int32, Int32): Array[Float32, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedFloat64 =>
-                let arr = a as Array[Float64, Static];
-                import static java.util.Arrays.copyOfRange(Array[Float64, Static], Int32, Int32): Array[Float64, r2] & r1 and r2 as copy;
+                let arr = a as Array[Float64, r1];
+                import static java.util.Arrays.copyOfRange(Array[Float64, r1], Int32, Int32): Array[Float64, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedInt8 =>
-                let arr = a as Array[Int8, Static];
-                import static java.util.Arrays.copyOfRange(Array[Int8, Static], Int32, Int32): Array[Int8, r2] & r1 and r2 as copy;
+                let arr = a as Array[Int8, r1];
+                import static java.util.Arrays.copyOfRange(Array[Int8, r1], Int32, Int32): Array[Int8, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedInt16 =>
-                let arr = a as Array[Int16, Static];
-                import static java.util.Arrays.copyOfRange(Array[Int16, Static], Int32, Int32): Array[Int16, r2] & r1 and r2 as copy;
+                let arr = a as Array[Int16, r1];
+                import static java.util.Arrays.copyOfRange(Array[Int16, r1], Int32, Int32): Array[Int16, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedInt32 =>
-                let arr = a as Array[Int32, Static];
-                import static java.util.Arrays.copyOfRange(Array[Int32, Static], Int32, Int32): Array[Int32, r2] & r1 and r2 as copy;
+                let arr = a as Array[Int32, r1];
+                import static java.util.Arrays.copyOfRange(Array[Int32, r1], Int32, Int32): Array[Int32, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedInt64 =>
-                let arr = a as Array[Int64, Static];
-                import static java.util.Arrays.copyOfRange(Array[Int64, Static], Int32, Int32): Array[Int64, r2] & r1 and r2 as copy;
+                let arr = a as Array[Int64, r1];
+                import static java.util.Arrays.copyOfRange(Array[Int64, r1], Int32, Int32): Array[Int64, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedArray(_) =>
-                let arr = a as Array[##java.lang.Object, Static];
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, Static], Int32, Int32): Array[##java.lang.Object, r2] & r1 and r2 as copy;
+                let arr = a as Array[##java.lang.Object, r1];
+                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
         }
 
