@@ -15,32 +15,21 @@
  */
 
 ///
-/// A type class for data commutative structures that can be folded.
+/// A type class for unordered data structures that can be folded.
 ///
 pub class UnorderedFoldable[t : Type -> Type] with ForEach[t] {
 
     ///
-    /// Left-associative fold of a structure.
-    /// Applies `f` to a start value `s` and all elements in `t` going from left to right.
+    /// Unordered fold of `t`.
+    /// Applies `f` to all elements in `t` and combines the results
+    /// i.e. `CommutativeMonoid.combine(f(a))` for all `a` in `t`.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, t: t[a]): b & ef
+    pub def foldMap(f: a -> b & ef, t: t[a]): b & ef with CommutativeMonoid[b]
 
     ///
-    /// Right-associative fold of a structure.
-    /// Applies `f` to a start value `s` and all elements in `t` going from right to left.
+    /// Returns the result of applying `CommutativeMonoid.combine` to all the elements in `t`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, t: t[a]): b & ef
-
-    ///
-    /// Right-associative fold of a structure.
-    /// Applies `f` to a start value `s` and all elements in `t` going from right to left.
-    ///
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, t: t[a]): b & ef
-
-    law commutative1: forall(f: (b, a) -> b, s: b, t: t[a]) with Eq[b] . UnorderedFoldable.foldLeft(f, s, t) == UnorderedFoldable.foldRight((a, s) -> f(s, a), s, t)
-
-    law commutative2: forall(f: (a, b) -> b, s: b, t: t[a]) with Eq[b] . UnorderedFoldable.foldRight(f, s, t) == UnorderedFoldable.foldRightWithCont((a, k) -> f(a, k()), s, t)
+    pub def fold(t: t[a]): a with CommutativeMonoid[a] =
+        UnorderedFoldable.foldMap(identity, t)
 
 }
