@@ -207,7 +207,7 @@ pub class Foldable[t : Type -> Type] with ForEach[t] {
     pub def toArray(r: Region[r], t: t[a]): Array[a, r] \ Write(r) = region r2 {
         let l = new MutList(r2);
         Foldable.foreach(a -> MutList.push!(a, l), t);
-        MutList.toArray(l, r)
+        MutList.toArray(r, l)
     }
 
     ///
@@ -238,7 +238,7 @@ pub class Foldable[t : Type -> Type] with ForEach[t] {
     /// Returns `t` as a mutable list.
     ///
     pub def toMutList(r: Region[r], t: t[a]): MutList[a, r] \ Write(r) = region r2 {
-        Array.toMutList(Foldable.toArray(r2, t), r)
+        Array.toMutList(r, Foldable.toArray(r2, t))
     }
 
     ///

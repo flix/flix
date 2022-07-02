@@ -258,16 +258,16 @@ pub class Reducible[t: Type -> Type] {
     ///
     /// Returns `t` as an array.
     ///
-    pub def toArray(t: t[a], r: Region[r]): Array[a, r] \ Write(r) =
+    pub def toArray(r: Region[r], t: t[a]): Array[a, r] \ Write(r) =
         let v = new MutList(r);
         Reducible.foldLeft((_, a) -> MutList.push!(a, v), (), t);
-        MutList.toArray(v, r)
+        MutList.toArray(r, v)
 
     ///
     /// Returns an iterator over `t`.
     ///
     pub def toIterator(r: Region[r], t: t[a]): Iterator[a, r] \ Write(r) = region r2 {
-        Reducible.toArray(t, r2) |> Array.toIterator(r)
+        Reducible.toArray(r2, t) |> Array.toIterator(r)
     }
 
     ///

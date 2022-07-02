@@ -1104,21 +1104,21 @@ namespace TestNec {
 
     @test
     def toMutList01(): Bool = region r {
-        let m1 = Nec.toMutList(singleton(1), r);
+        let m1 = Nec.toMutList(r, singleton(1));
         let m2 = MutList.range(1, 2, r);
         MutList.sameElements(m1, m2)
     }
 
     @test
     def toMutList02(): Bool = region r {
-        let m1 = Nec.toMutList(necOf2(1, 2), r);
+        let m1 = Nec.toMutList(r, necOf2(1, 2));
         let m2 = MutList.range(1, 3, r);
         MutList.sameElements(m1, m2)
     }
 
     @test
     def toMutList03(): Bool = region r {
-        let m1 = Nec.toMutList(necOf3(1, 2, 3), r);
+        let m1 = Nec.toMutList(r, necOf3(1, 2, 3));
         let m2 = MutList.range(1, 4, r);
         MutList.sameElements(m1, m2)
     }
@@ -1188,25 +1188,25 @@ namespace TestNec {
 
     @test
     def toArray01(): Bool = region r {
-        let a = Nec.toArray(singleton(1), r);
+        let a = Nec.toArray(r, singleton(1));
         Array.sameElements(a, [1] @ r)
     }
 
     @test
     def toArray02(): Bool = region r {
-        let a = Nec.toArray(necOf2(1, 2), r);
+        let a = Nec.toArray(r, necOf2(1, 2));
         Array.sameElements(a, [1, 2] @ r)
     }
 
     @test
     def toArray03(): Bool = region r {
-        let a = Nec.toArray(necOf3(1, 2, 3), r);
+        let a = Nec.toArray(r, necOf3(1, 2, 3));
         Array.sameElements(a, [1, 2, 3] @ r)
     }
 
     @test
     def toArray04(): Bool = region r {
-        let a = Nec.toArray(necOf3(3, 2, 3), r);
+        let a = Nec.toArray(r, necOf3(3, 2, 3));
         Array.sameElements(a, [3, 2, 3] @ r)
     }
 
