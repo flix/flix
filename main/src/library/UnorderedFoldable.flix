@@ -32,4 +32,38 @@ pub class UnorderedFoldable[t : Type -> Type] with ForEach[t] {
     pub def fold(t: t[a]): a with CommutativeMonoid[a] =
         UnorderedFoldable.foldMap(identity, t)
 
+    ///
+    /// Returns true if and only if `t` is empty.
+    ///
+    pub def isEmpty(t: t[a]): Bool = ???
+
+    ///
+    /// Returns `true` if and only if at least one element in `t` satisfies the predicate `f`.
+    ///
+    /// Returns `false` if `t` is empty.
+    ///
+    pub def exists(f: a -> Bool & ef, t: t[a]): Bool & ef = ???
+
+    ///
+    /// Returns `true` if and only if all elements in `t` satisfy the predicate `f`.
+    ///
+    /// Returns `true` if `t` is empty.
+    ///
+    pub def forall(f: a -> Bool & ef, t: t[a]): Bool & ef = ???
+
+    ///
+    /// Returns `true` if and only if the element `x` is in `t`.
+    ///
+    pub def memberOf(x: a, t: t[a]): Bool with Eq[a] = ???
+
+    ///
+    /// Returns the number of elements in `t` that satisfy the predicate `f`.
+    ///
+    pub def count(f: a -> Bool & ef, t: t[a]): Bool & ef = ???
+
+    ///
+    /// Returns the number of elements in `t`.
+    ///
+    pub def size(t: t[a]): Bool = ???
+
 }
