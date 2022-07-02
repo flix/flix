@@ -1121,8 +1121,8 @@ namespace List {
     ///
     /// Returns `l` as a mutable list.
     ///
-    pub def toMutList(l: List[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
-        Array.toMutList(toArray(r2, l), r) // `Array.toMutList` respects the invariant of `MutList`
+    pub def toMutList(r: Region[r], l: List[a]): MutList[a, r] \ Write(r) = region r2 {
+        Array.toMutList(r, toArray(r2, l)) // `Array.toMutList` respects the invariant of `MutList`
     }
 
     ///
