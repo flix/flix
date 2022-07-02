@@ -53,12 +53,16 @@ pub class UnorderedFoldable[t : Type -> Type] with ForEach[t] {
     ///
     /// Returns `true` if `t` is empty.
     ///
-    pub def forall(f: a -> Bool & ef, t: t[a]): Bool = ???
+    pub def forall(f: a -> Bool & ef, t: t[a]): Bool & ef =
+        use UnorderedFoldable.AndBool.AndBool;
+        let AndBool(x) = UnorderedFoldable.foldMap(a -> AndBool(f(a)), t);
+        x
 
     ///
     /// Returns `true` if and only if the element `x` is in `t`.
     ///
-    pub def memberOf(x: a, t: t[a]): Bool with Eq[a] = ???
+    pub def memberOf(x: a, t: t[a]): Bool with Eq[a] =
+        UnorderedFoldable.exists(y -> x == y, t)
 
     ///
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
@@ -88,5 +92,21 @@ namespace UnorderedFoldable {
     }
 
     instance CommutativeMonoid[OrBool]
+
+
+    @Internal
+    pub enum AndBool(Bool)
+
+    instance SemiGroup[AndBool] {
+        pub def combine(x: AndBool, y: AndBool): AndBool = match (x, y) {
+            case (AndBool(a), AndBool(b)) => AndBool(a and b)
+        }
+    }
+
+    instance Monoid[AndBool] {
+        pub def empty(): AndBool = AndBool(true)
+    }
+
+    instance CommutativeMonoid[AndBool]
 
 }
