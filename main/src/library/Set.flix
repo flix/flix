@@ -85,6 +85,10 @@ instance Monoid[Set[a]] with Order[a] {
 
 instance CommutativeMonoid[Set[a]] with Order[a]
 
+instance UnorderedFoldable[Set] {
+    pub def foldMap(f: a -> b & ef, s: Set[a]): b & ef with CommutativeMonoid[b] = Set.foldMap(f, s)
+}
+
 namespace Set {
 
     ///
