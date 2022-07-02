@@ -105,7 +105,7 @@ instance Reducible[Nec] {
     override pub def memberOf(a: a, l: Nec[a]): Bool with Eq[a] = Nec.memberOf(a, l)
     override pub def dropWhile(f: a -> Bool & ef, l: Nec[a]): List[a] & ef = Nec.dropWhileLeft(f, l)
     override pub def takeWhile(f: a -> Bool & ef, l: Nec[a]): List[a] & ef = Nec.takeWhileLeft(f, l)
-    override pub def toArray(l: Nec[a], r: Region[r]): Array[a, r] \ Write(r) = Nec.toArray(l, r)
+    override pub def toArray(r: Region[r], l: Nec[a]): Array[a, r] \ Write(r) = Nec.toArray(r, l)
     override pub def toIterator(r: Region[r], l: Nec[a]): Iterator[a, r] \ Write(r) = Nec.toIterator(r, l)
     override pub def toList(l: Nec[a]): List[a] = Nec.toList(l)
 }
@@ -735,8 +735,8 @@ namespace Nec {
     ///
     /// Returns `c` as a mutable list.
     ///
-    pub def toMutList(c: Nec[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
-        Array.toMutList(toArray(c, r2), r) // `Array.toMutList` respects the invariant of `MutList`
+    pub def toMutList(r: Region[r], c: Nec[a]): MutList[a, r] \ Write(r) = region r2 {
+        Array.toMutList(r, toArray(r2, c)) // `Array.toMutList` respects the invariant of `MutList`
     }
 
     ///
@@ -764,7 +764,7 @@ namespace Nec {
     ///
     /// Returns the Nec `c` as an array.
     ///
-    pub def toArray(c: Nec[a], r: Region[r]): Array[a, r] \ Write(r) =
+    pub def toArray(r: Region[r], c: Nec[a]): Array[a, r] \ Write(r) =
         let x = head(c);
         let arr = [x; length(c)] @ r;
         foreach(match (b, i) -> arr[i] = b, zipWithIndex(c));
@@ -820,7 +820,7 @@ namespace Nec {
     /// The sort implementation is a Quicksort.
     ///
     pub def sort(c: Nec[a]): Nec[a] with Order[a] = region r {
-        let ans = (toArray(c, r) !> Array.sort! |> fromArray);
+        let ans = toArray(r, c) !> Array.sort! |> fromArray;
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()
@@ -836,7 +836,7 @@ namespace Nec {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, c: Nec[a]): Nec[a] with Order[b] = region r {
-        let ans = (toArray(c, r) !> Array.sortBy!(f) |> fromArray);
+        let ans = toArray(r, c) !> Array.sortBy!(f) |> fromArray;
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()
@@ -851,7 +851,7 @@ namespace Nec {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a, a) -> Comparison, c: Nec[a]): Nec[a] = region r {
-        let ans = (toArray(c, r) !> Array.sortWith!(cmp) |> fromArray);
+        let ans = toArray(r, c) !> Array.sortWith!(cmp) |> fromArray;
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()

@@ -1140,7 +1140,7 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toArray(l: DelayList[a], r: Region[r]): Array[a, r] \ Write(r) =
+    pub def toArray(r: Region[r], l: DelayList[a]): Array[a, r] \ Write(r) =
         let a = [$DEFAULT$; length(l)] @ r;
         foreach(match (y, i) -> a[i] = y, zipWithIndex(l));
         a
@@ -1186,8 +1186,8 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toMutList(l: DelayList[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
-        Array.toMutList(toArray(l, r2), r) // `Array.toMutList` respects the invariant of `MutList`.
+    pub def toMutList(r: Region[r], l: DelayList[a]): MutList[a, r] \ Write(r) = region r2 {
+        Array.toMutList(r, toArray(r2, l)) // `Array.toMutList` respects the invariant of `MutList`.
     }
 
     ///
@@ -1293,7 +1293,7 @@ namespace DelayList {
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
     pub def shuffle(rnd: Random.Random, l: DelayList[a]): DelayList[a] & Impure = region r {
-        let arr = toArray(l, r);
+        let arr = toArray(r, l);
         Array.shuffle(rnd, arr);
         Array.toDelayList(arr)
     }

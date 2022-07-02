@@ -1121,8 +1121,8 @@ namespace List {
     ///
     /// Returns `l` as a mutable list.
     ///
-    pub def toMutList(l: List[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
-        Array.toMutList(toArray(l, r2), r) // `Array.toMutList` respects the invariant of `MutList`
+    pub def toMutList(r: Region[r], l: List[a]): MutList[a, r] \ Write(r) = region r2 {
+        Array.toMutList(r, toArray(r2, l)) // `Array.toMutList` respects the invariant of `MutList`
     }
 
     ///
@@ -1164,7 +1164,7 @@ namespace List {
     /// Returns the list `l` as an array.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def toArray(l: List[a], r: Region[r]): Array[a, r] \ Write(r) = match head(l) {
+    pub def toArray(r: Region[r], l: List[a]): Array[a, r] \ Write(r) = match head(l) {
         case None    => [] @ r
         case Some(x) =>
             let a = [x; length(l)] @ r;
@@ -1200,7 +1200,7 @@ namespace List {
     /// The sort implementation is a Quicksort.
     ///
     pub def sort(l: List[a]): List[a] with Order[a] = region r {
-        toArray(l, r) !> Array.sort! |> Array.toList
+        toArray(r, l) !> Array.sort! |> Array.toList
     }
 
     /// Sort list `l` so that elements are ordered from low to high according to the `Order` instance
@@ -1211,7 +1211,7 @@ namespace List {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, l: List[a]): List[a] with Order[b] = region r {
-        toArray(l, r) !> Array.sortBy!(f) |> Array.toList
+        toArray(r, l) !> Array.sortBy!(f) |> Array.toList
     }
 
     ///
@@ -1222,7 +1222,7 @@ namespace List {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, l: List[a]): List[a] = region r {
-        toArray(l, r) !> Array.sortWith!(cmp) |> Array.toList
+        toArray(r, l) !> Array.sortWith!(cmp) |> Array.toList
     }
 
     ///
@@ -1396,7 +1396,7 @@ namespace List {
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
     pub def shuffle(rnd: Random.Random, l: List[a]): List[a] & Impure = region r {
-        let arr = toArray(l, r);
+        let arr = toArray(r, l);
         Array.shuffle(rnd, arr);
         Array.toList(arr)
     }
