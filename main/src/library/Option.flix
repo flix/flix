@@ -125,12 +125,15 @@ instance SemiGroup[Option[a]] with SemiGroup[a] {
 
 instance CommutativeSemiGroup[Option[a]] with CommutativeSemiGroup[a]
 
-
 instance Monoid[Option[a]] with Monoid[a] {
     pub def empty(): Option[a] = None
 }
 
 instance CommutativeMonoid[Option[a]] with CommutativeMonoid[a]
+
+instance UnorderedFoldable[Option] {
+    pub def foldMap(f: a -> b & ef, o: Option[a]): b & ef with CommutativeMonoid[b] = Option.foldMap(f, o)
+}
 
 instance Iterable[Option] {
     pub def iterator(r: Region[r], t: Option[a]): Iterator[a, r] \ Write(r) =
@@ -322,6 +325,12 @@ namespace Option {
         case None    => z
         case Some(v) => f(v, _ -> z as & ef)
     }
+
+    ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b & ef, o: Option[a]): b & ef with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), o)
 
     ///
     /// Returns `Some(v1 :: v2 :: ... :: vn)` if each of `xs_i` is `Some(v_i)`. Otherwise returns `None`.
