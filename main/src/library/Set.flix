@@ -575,7 +575,7 @@ namespace Set {
     ///
     /// Returns the set `s` as a `MutSet`.
     ///
-    pub def toMutSet(s: Set[a], r: Region[r]): MutSet[a, r] \ Write(r) =
+    pub def toMutSet(r: Region[r], s: Set[a]): MutSet[a, r] \ Write(r) =
         MutSet(ref s @ r)
 
     ///
