@@ -1547,7 +1547,7 @@ namespace TestMutList {
     }
 
     @test
-    def foreachWithIndex03(): Bool = region {
+    def foreachWithIndex03(): Bool = region r {
         let v = MutList.range(r, 0, 5);
         let sb = new StringBuilder(r);
         let f = (x, _) -> if (x rem 2 == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
