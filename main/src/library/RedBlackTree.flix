@@ -70,6 +70,13 @@ namespace RedBlackTree {
         pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldRightWithCont((_, v, acc) -> f(v, acc), s, t)
     }
 
+    instance UnorderedFoldable[RedBlackTree[k]] {
+        pub def foldMap(f: v -> b & ef, t: RedBlackTree[k, v]): b & ef with CommutativeMonoid[b] = RedBlackTree.foldMap(_ -> f, t)
+        override pub def isEmpty(t: RedBlackTree[k, v]): Bool = RedBlackTree.isEmpty(t)
+        override pub def exists(f: v -> Bool & ef, t: RedBlackTree[k, v]): Bool & ef = RedBlackTree.exists(_ -> f, t)
+        override pub def forall(f: v -> Bool & ef, t: RedBlackTree[k, v]): Bool & ef = RedBlackTree.forall(_ -> f, t)
+    }
+
     instance Traversable[RedBlackTree[k]] {
         pub def traverse(f: a -> m[b] & ef, t: RedBlackTree[k, a]): m[RedBlackTree[k, b]] & ef with Applicative[m] =
             mapAWithKey((_, v) -> f(v), t)
@@ -77,7 +84,6 @@ namespace RedBlackTree {
         pub override def sequence(t: RedBlackTree[k, m[a]]): m[RedBlackTree[k, a]] with Applicative[m] =
             mapAWithKey((_, v) -> v, t)
     }
-
 
     instance FunctorFilter[RedBlackTree[k]] with Order[k] {
         pub def filterMap(f: a -> Option[b] & ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] & ef = filterMapImplementation(f, t)
@@ -299,6 +305,7 @@ namespace RedBlackTree {
         case _                   => s
     }
 
+    ///
     /// Applies `f` to a start value `s` and all key-value pairs in `tree` going from right to left.
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
@@ -307,6 +314,12 @@ namespace RedBlackTree {
         case Node(_, a, k, v, b) => foldRight(f, f(k, v, foldRight(f, s, b)), a)
         case _ => s
     }
+
+    ///
+    /// Returns the result of mapping each key-value pair and combining the results.
+    ///
+    pub def foldMap(f: (k, v) -> b & ef, t: RedBlackTree[k, v]): b & ef with Monoid[b] =
+        foldLeft((acc, k, v) -> Monoid.combine(acc, f(k, v)), Monoid.empty(), t)
 
     ///
     /// Applies `f` to a start value `z` and all key-value pairs in `t` going from right to left.

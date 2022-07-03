@@ -91,6 +91,10 @@ instance Foldable[Option] {
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRightWithCont(f, o, s)
 }
 
+instance UnorderedFoldable[Option] {
+    pub def foldMap(f: a -> b & ef, o: Option[a]): b & ef with CommutativeMonoid[b] = Option.foldMap(f, o)
+}
+
 instance Traversable[Option] {
     pub def traverse(f: a -> m[b] & ef, t: Option[a]): m[Option[b]] & ef with Applicative[m] =
         use Applicative.{point};
@@ -124,7 +128,6 @@ instance SemiGroup[Option[a]] with SemiGroup[a] {
 }
 
 instance CommutativeSemiGroup[Option[a]] with CommutativeSemiGroup[a]
-
 
 instance Monoid[Option[a]] with Monoid[a] {
     pub def empty(): Option[a] = None
@@ -322,6 +325,12 @@ namespace Option {
         case None    => z
         case Some(v) => f(v, _ -> z as & ef)
     }
+
+    ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b & ef, o: Option[a]): b & ef with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), o)
 
     ///
     /// Returns `Some(v1 :: v2 :: ... :: vn)` if each of `xs_i` is `Some(v_i)`. Otherwise returns `None`.

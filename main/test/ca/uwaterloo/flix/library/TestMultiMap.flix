@@ -717,6 +717,56 @@ namespace TestMultiMap {
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3) |> insert(1, 2)) == (1, 1) :: (1, 2) :: (1, 4) :: (2, 2) :: (3, 3) :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
+    // foldMapWithKey                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMapWithKey01(): Bool =
+        MultiMap.foldMapWithKey((k, v) -> k + v, MultiMap(Map#{})) == 0
+
+    @test
+    def foldMapWithKey02(): Bool =
+        MultiMap.foldMapWithKey((k, v) -> k + v, MultiMap(Map#{1 => Set#{2}, 3 => Set#{5}})) == (1 + 2 + 3 + 5)
+
+    @test
+    def foldMapWithKey03(): Bool =
+        MultiMap.foldMapWithKey((k, v) -> k + v, MultiMap(Map#{1 => Set#{2, 3}, 4 => Set#{5}})) == (1 + 2 + 1 + 3 + 4 + 5)
+
+    @test
+    def foldMapWithKey04(): Bool =
+        MultiMap.foldMapWithKey((k, v) -> 2 * (k + v), MultiMap(Map#{1 => Set#{2}, 3 => Set#{5}})) == (2 * (1 + 2) + 2 * (3 + 5))
+
+    @test
+    def foldMapWithKey05(): Bool =
+        MultiMap.foldMapWithKey((k, v) -> 2 * (k + v), MultiMap(Map#{1 => Set#{2, 3}, 4 => Set#{5}})) == ((2 * (1 + 2)) + (2 * (1 + 3)) + 2 * (4 + 5))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool =
+        MultiMap.foldMap(v -> v + 1, MultiMap(Map#{})) == 0
+
+    @test
+    def foldMap02(): Bool =
+        MultiMap.foldMap(v -> v + 1, MultiMap(Map#{1 => Set#{2}, 3 => Set#{5}})) == (2 + 1) + (5 + 1)
+
+    @test
+    def foldMap03(): Bool =
+        MultiMap.foldMap(v -> v + 1, MultiMap(Map#{1 => Set#{2, 3}, 4 => Set#{5}})) == (2 + 1) + (3 + 1) + (5 + 1)
+
+    @test
+    def foldMap04(): Bool =
+        MultiMap.foldMap(v -> 2 * v, MultiMap(Map#{1 => Set#{2}, 3 => Set#{5}})) == (2 * 2) + (2 * 5)
+
+    @test
+    def foldMap05(): Bool =
+        MultiMap.foldMap(v -> 2 * v, MultiMap(Map#{1 => Set#{2, 3}, 4 => Set#{5}})) == (2 * 2) + (2 * 3) + (2 * 5)
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
