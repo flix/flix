@@ -798,7 +798,7 @@ object JvmOps {
   private def hackType2MonoType(tpe: Type): MonoType = Finalize.visitType(tpe)
 
   // TODO: Remove
-  private def hackId2TypeVarSym(id: Int): Symbol.KindedTypeVarSym = new Symbol.KindedTypeVarSym(id, Ast.VarText.Absent, Kind.Wild, Rigidity.Flexible, SourceLocation.Unknown)
+  private def hackId2TypeVarSym(id: Int): Symbol.KindedTypeVarSym = new Symbol.KindedTypeVarSym(id, Ast.VarText.Absent, Kind.Wild, isRegion = false, SourceLocation.Unknown)
 
   /**
     * Returns the tag info for the given `tpe` and `tag`

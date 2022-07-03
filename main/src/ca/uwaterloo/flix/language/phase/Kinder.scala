@@ -1440,7 +1440,7 @@ object Kinder {
   private def split(kenv0: KindEnv)(implicit flix: Flix): (KindEnv, Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym]) = {
     val (kenv, senv) = kenv0.map.foldLeft((Map.empty[Symbol.UnkindedTypeVarSym, Kind], Map.empty[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym])) {
       case ((kenvAcc, senvAcc), (sym, Kind.Beef)) =>
-        val effSym = Symbol.freshUnkindedTypeVarSym(sym.text, sym.rigidity, sym.loc)
+        val effSym = Symbol.freshUnkindedTypeVarSym(sym.text, sym.isRegion, sym.loc)
         val kenv = kenvAcc + (effSym -> Kind.Effect) + (sym -> Kind.Bool)
         val senv = senvAcc + (sym -> effSym)
         (kenv, senv)

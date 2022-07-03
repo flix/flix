@@ -369,11 +369,6 @@ object Type {
     def withText(text: Ast.VarText): Var
 
     /**
-      * Returns the same type variable with the given rigidity.
-      */
-    def withRigidity(rigidity: Rigidity): Var
-
-    /**
       * Casts this type variable to a kinded type variable.
       */
     def asKinded: Type.KindedVar = this match {
@@ -404,8 +399,6 @@ object Type {
 
     override def withText(text: Ast.VarText): KindedVar = KindedVar(sym.withText(text), loc)
 
-    override def withRigidity(rigidity: Rigidity): KindedVar = KindedVar(sym.withRigidity(rigidity), loc)
-
     /**
       * Returns `true` if `this` type variable is equal to `o`.
       */
@@ -432,8 +425,6 @@ object Type {
   case class UnkindedVar(sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends Type with Var with BaseType with Ordered[Type.UnkindedVar] {
 
     override def withText(text: Ast.VarText): UnkindedVar = UnkindedVar(sym.withText(text), loc)
-
-    override def withRigidity(rigidity: Rigidity): UnkindedVar = UnkindedVar(sym.withRigidity(rigidity), loc)
 
     /**
       * Returns `true` if `this` type variable is equal to `o`.
@@ -553,16 +544,16 @@ object Type {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(k: Kind, loc: SourceLocation, r: Rigidity = Rigidity.Flexible, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): Type.KindedVar = {
-    val sym = Symbol.freshKindedTypeVarSym(text, k, r, loc)
+  def freshVar(k: Kind, loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): Type.KindedVar = {
+    val sym = Symbol.freshKindedTypeVarSym(text, k, isRegion, loc)
     Type.KindedVar(sym, loc)
   }
 
   /**
     * Returns a fresh unkinded type variable of the given kind `k` and rigidity `r`.
     */
-  def freshUnkindedVar(loc: SourceLocation, r: Rigidity = Rigidity.Flexible, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): Type.UnkindedVar = {
-    val sym = Symbol.freshUnkindedTypeVarSym(text, r, loc)
+  def freshUnkindedVar(loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): Type.UnkindedVar = {
+    val sym = Symbol.freshUnkindedTypeVarSym(text, isRegion, loc)
     Type.UnkindedVar(sym, loc)
   }
 
