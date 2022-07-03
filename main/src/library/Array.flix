@@ -1158,34 +1158,34 @@ namespace Array {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(a) * length(a)) @Space(space(f) * length(a))
-    pub def groupBy(f: (a, a) -> Bool, a: Array[a, r1], r2: Region[r2]): Array[Array[a, r2], r1] \ { Read(r1), Write(r1, r2) } =
+    pub def groupBy(r1: Region[r1], f: (a, a) -> Bool, a: Array[a, r2]): Array[Array[a, r1], r2] \ { Read(r2), Write(r2, r1) } =
         let xs = toList(a);
-        let r1 = Scoped.regionOf(a);
-        groupByHelper(f, xs, Nil, r2) |> List.toArray(r1)
+        let r2 = Scoped.regionOf(a);
+        groupByHelper(r1, f, xs, Nil) |> List.toArray(r2)
 
     ///
     /// Helper function for `groupBy`.
     ///
-    def groupByHelper(f: (a, a) -> Bool, xs: List[a], ac: List[Array[a, r]], r: Region[r]): List[Array[a, r]] \ Write(r) = match xs {
+    def groupByHelper(r: Region[r], f: (a, a) -> Bool, xs: List[a], ac: List[Array[a, r]]): List[Array[a, r]] \ Write(r) = match xs {
         case Nil     => List.reverse(ac)
         case x :: rs =>
-            let (r1, r2) = extractHelper(f, rs, x :: Nil, Nil, r);
-            groupByHelper(f, r2, r1 :: ac, r)
+            let (r1, r2) = extractHelper(r, f, rs, x :: Nil, Nil);
+            groupByHelper(r, f, r2, r1 :: ac)
     }
 
     ///
     /// Helper function for `groupBy`.
     ///
-    def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a], r: Region[r]): (Array[a, r], List[a]) \ Write(r) = match xs {
+    def extractHelper(r: Region[r], f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a]): (Array[a, r], List[a]) \ Write(r) = match xs {
         case Nil => {
             let a = List.reverse(ps);
             (List.toArray(r, a), List.reverse(ns))
         }
         case x :: rs =>
             if (agreeHelper(f, x, ps))
-                extractHelper(f, rs, x :: ps, ns, r)
+                extractHelper(r, f, rs, x :: ps, ns)
             else
-                extractHelper(f, rs, ps, x :: ns, r)
+                extractHelper(r, f, rs, ps, x :: ns)
     }
 
     ///
