@@ -21,6 +21,7 @@ pub class UnorderedFoldable[t : Type -> Type] with ForEach[t] {
 
     ///
     /// Unordered fold of `t`.
+    ///
     /// Applies `f` to all elements in `t` and combines the results
     /// i.e. `CommutativeMonoid.combine(f(a))` for all `a` in `t`.
     ///
@@ -44,8 +45,8 @@ pub class UnorderedFoldable[t : Type -> Type] with ForEach[t] {
     /// Returns `false` if `t` is empty.
     ///
     pub def exists(f: a -> Bool & ef, t: t[a]): Bool & ef =
-        use UnorderedFoldable.OrBool.OrBool;
-        let OrBool(x) = UnorderedFoldable.foldMap(a -> OrBool(f(a)), t);
+        use SemiGroup.Any.Any;
+        let Any(x) = UnorderedFoldable.foldMap(a -> Any(f(a)), t);
         x
 
     ///
@@ -54,8 +55,8 @@ pub class UnorderedFoldable[t : Type -> Type] with ForEach[t] {
     /// Returns `true` if `t` is empty.
     ///
     pub def forall(f: a -> Bool & ef, t: t[a]): Bool & ef =
-        use UnorderedFoldable.AndBool.AndBool;
-        let AndBool(x) = UnorderedFoldable.foldMap(a -> AndBool(f(a)), t);
+        use SemiGroup.All.All;
+        let All(x) = UnorderedFoldable.foldMap(a -> All(f(a)), t);
         x
 
     ///
@@ -75,40 +76,5 @@ pub class UnorderedFoldable[t : Type -> Type] with ForEach[t] {
     ///
     pub def count(f: a -> Bool & ef, t: t[a]): Int32 & ef =
         UnorderedFoldable.foldMap(a -> if (f(a)) 1 else 0, t)
-
-}
-
-namespace UnorderedFoldable {
-
-    @Internal
-    pub enum OrBool(Bool)
-
-    instance SemiGroup[OrBool] {
-        pub def combine(x: OrBool, y: OrBool): OrBool = match (x, y) {
-            case (OrBool(a), OrBool(b)) => OrBool(a or b)
-        }
-    }
-
-    instance Monoid[OrBool] {
-        pub def empty(): OrBool = OrBool(false)
-    }
-
-    instance CommutativeMonoid[OrBool]
-
-
-    @Internal
-    pub enum AndBool(Bool)
-
-    instance SemiGroup[AndBool] {
-        pub def combine(x: AndBool, y: AndBool): AndBool = match (x, y) {
-            case (AndBool(a), AndBool(b)) => AndBool(a and b)
-        }
-    }
-
-    instance Monoid[AndBool] {
-        pub def empty(): AndBool = AndBool(true)
-    }
-
-    instance CommutativeMonoid[AndBool]
 
 }
