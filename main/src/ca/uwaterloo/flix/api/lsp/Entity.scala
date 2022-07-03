@@ -21,6 +21,10 @@ import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, TypedAst}
 sealed trait Entity {
   def loc: SourceLocation
 
+  /**
+    * Returns `true` if the given range `range` is fully included in `this` entity
+    * (i.e. the given range must start later and end earlier.)
+    */
   def isInRange(range: Range): Boolean = {
     ((this.loc.endLine < range.end.line) || (this.loc.endLine == range.end.line && this.loc.endCol <= range.end.character)) &&
       ((this.loc.beginLine > range.start.line) || (this.loc.beginLine == range.start.line && this.loc.beginCol >= range.start.character))
