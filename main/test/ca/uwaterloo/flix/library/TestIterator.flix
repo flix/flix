@@ -1014,6 +1014,35 @@ namespace TestIterator {
         }
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // zipWithIndex                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithIndex01(): Bool = region r {
+        Iterator.zipWithIndex(new Iterator(r): Iterator[Int32, r]) |> Iterator.toList == Nil
+    }
+
+    @test
+    def zipWithIndex02(): Bool = region r {
+        Iterator.zipWithIndex(Iterator.singleton(r, 2)) |> Iterator.toList == (2, 0) :: Nil
+    }
+
+    @test
+    def zipWithIndex03(): Bool = region r {
+        Iterator.zipWithIndex(List.toIterator(r, 1 :: 8 :: Nil)) |> Iterator.toList == (1, 0) :: (8, 1) :: Nil
+    }
+
+    @test
+    def zipWithIndex04(): Bool = region r {
+        Iterator.zipWithIndex(List.toIterator(r, 8 :: 1 :: Nil)) |> Iterator.toList == (8, 0) :: (1, 1) :: Nil
+    }
+
+    @test
+    def zipWithIndex05(): Bool = region r {
+        Iterator.zipWithIndex(List.toIterator(r, 1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil)) |> Iterator.toList == (1, 0) :: (4, 1) :: (11, 2) :: (2, 3) :: (-22, 4) :: (17, 5) :: Nil
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // foldLeft                                                                //
