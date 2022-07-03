@@ -5917,7 +5917,7 @@ namespace TestArray {
 
     @test
     def toMutList04(): Bool = region r {
-        MutList.sameElements((Array.range(0, 100, r) |> Array.toMutList(r)), MutList.range(0, 100, r))
+        MutList.sameElements((Array.range(0, 100, r) |> Array.toMutList(r)), MutList.range(r, 0, 100))
     }
 
     @test
