@@ -1486,36 +1486,40 @@ namespace TestMutList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool & Impure =
-        let v = new MutList(Static);
-        let sb = new StringBuilder(Static);
+    def foreach01(): Bool = region r {
+        let v = new MutList(r);
+        let sb = new StringBuilder(r);
         let f = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreach(f, v);
         StringBuilder.toString(sb) == ""
+    }
 
     @test
-    def foreach02(): Bool & Impure =
-        let v = MutList.range(r, 0, 5, Sta);
-        let sb = new StringBuilder(Static);
+    def foreach02(): Bool = region r {
+        let v = MutList.range(r, 0, 5);
+        let sb = new StringBuilder(r);
         let f = x -> if (x rem 2 == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreach(f, v);
         StringBuilder.toString(sb) == "TFTFT"
+    }
 
     @test
-    def foreach03(): Bool & Impure =
-        let v = MutList.range(r, 0, 2, Sta);
-        let sb = new StringBuilder(Static);
+    def foreach03(): Bool = region r {
+        let v = MutList.range(r, 0, 2);
+        let sb = new StringBuilder(r);
         let f = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreach(f, v);
         StringBuilder.toString(sb) == "FT"
+    }
 
     @test
-    def foreach04(): Bool & Impure =
-        let v = MutList.range(r, 0, 2, Sta);
-        let sb = new StringBuilder(Static);
+    def foreach04(): Bool = region r {
+        let v = MutList.range(r, 0, 2);
+        let sb = new StringBuilder(r);
         let f = x -> if (x < 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreach(f, v);
         StringBuilder.toString(sb) == "FF"
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1534,20 +1538,22 @@ namespace TestMutList {
     }
 
     @test
-    def foreachWithIndex02(): Bool & Impure = // Impure due to StringBuilder
-        let v = MutList.range(r, 1, 4, Sta);
-        let sb = new StringBuilder(Static);
+    def foreachWithIndex02(): Bool = region r {
+        let v = MutList.range(r, 1, 4);
+        let sb = new StringBuilder(r);
         let f = (x, i) -> if (x rem 2 == 1 and i == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreachWithIndex(f, v);
         StringBuilder.toString(sb) == "TFF"
+    }
 
     @test
-    def foreachWithIndex03(): Bool & Impure = // Impure due to StringBuilder
-        let v = MutList.range(r, 0, 5, Sta);
-        let sb = new StringBuilder(Static);
+    def foreachWithIndex03(): Bool = region {
+        let v = MutList.range(r, 0, 5);
+        let sb = new StringBuilder(r);
         let f = (x, _) -> if (x rem 2 == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreachWithIndex(f, v);
         StringBuilder.toString(sb) == "TFTFT"
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
