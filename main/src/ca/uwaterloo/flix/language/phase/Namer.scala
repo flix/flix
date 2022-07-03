@@ -714,7 +714,7 @@ object Namer {
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
 
       // Introduce a rigid region variable for the region.
-      val regionVar = Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(sym.text), Rigidity.Rigid, loc)
+      val regionVar = Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(sym.text), isRegion = true, loc)
 
       val env1 = env0 + (ident.name -> sym)
       val tenv1 = tenv0 + (ident.name -> regionVar)
@@ -1256,7 +1256,7 @@ object Namer {
         NameError.SuspiciousTypeVarName(ident.name, loc).toFailure
       } else if (ident.isWild) {
         // Wild idents will not be in the environment. Create a tvar instead.
-        NamedAst.Type.Var(Symbol.freshUnkindedTypeVarSym(Ast.VarText.Absent, Rigidity.Flexible, loc), loc).toSuccess
+        NamedAst.Type.Var(Symbol.freshUnkindedTypeVarSym(Ast.VarText.Absent, isRegion = false, loc), loc).toSuccess
       } else {
         tenv0.get(ident.name) match {
           case None => NameError.UndefinedTypeVar(ident.name, loc).toFailure
@@ -1950,7 +1950,7 @@ object Namer {
     * Creates a flexible unkinded type variable symbol from the given ident.
     */
   private def mkTypeVarSym(ident: Name.Ident)(implicit flix: Flix): Symbol.UnkindedTypeVarSym = {
-    Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(ident.name), Rigidity.Flexible, ident.loc)
+    Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(ident.name), isRegion = false, ident.loc)
   }
 
 

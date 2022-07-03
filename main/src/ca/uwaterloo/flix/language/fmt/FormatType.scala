@@ -271,7 +271,7 @@ object FormatType {
         val string = visit(tpe, Mode.Type)
         val strings = tpes.map(visit(_, Mode.Type))
         string + strings.mkString("[", ", ", "]")
-      case SimpleType.Var(id, kind, rigidity, text) =>
+      case SimpleType.Var(id, kind, isRegion, text) =>
         val prefix: String = kind match {
           case Kind.Wild => "_" + id.toString
           case Kind.Beef => "_b" + id.toString
@@ -283,9 +283,10 @@ object FormatType {
           case Kind.Predicate => "'" + id.toString
           case Kind.Arrow(_, _) => "'" + id.toString
         }
-        val suffix = rigidity match {
-          case Rigidity.Flexible => ""
-          case Rigidity.Rigid => "!"
+        val suffix = if (isRegion) {
+          "!"
+        } else {
+          ""
         }
         val string = prefix + suffix
         audience match {

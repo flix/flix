@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Rigidity, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor}
 import org.scalatest.FunSuite
 
 class TestFormatType extends FunSuite with TestUtils {
@@ -34,7 +34,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatType.Record.External.02") {
-    val rest = Type.KindedVar(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.RecordRow, Rigidity.Rigid, loc), loc)
+    val rest = Type.KindedVar(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.RecordRow, isRegion = true, loc), loc)
     val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, rest, loc), loc)
 
     val expected = "{ x :: Int32 | r0! }"
@@ -53,7 +53,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatType.RecordRow.External.02") {
-    val rest = Type.KindedVar(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.RecordRow, Rigidity.Rigid, loc), loc)
+    val rest = Type.KindedVar(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.RecordRow, isRegion = true, loc), loc)
     val tpe = Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, rest, loc)
 
     val expected = "( x :: Int32 | r0! )"
@@ -91,7 +91,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatType.Arrow.External.01") {
-    val paramType = Type.KindedVar(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, Rigidity.Rigid, loc), loc)
+    val paramType = Type.KindedVar(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val tpe = Type.mkArrowWithEffect(paramType, Type.Pure, Type.Empty, paramType, loc)
 
     val expected = "t0! -> t0!"
@@ -101,9 +101,9 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatType.Arrow.External.02") {
-    val paramType = Type.KindedVar(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, Rigidity.Rigid, loc), loc)
-    val returnType = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Rigid, loc), loc)
-    val effectType = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Bool, Rigidity.Rigid, loc), loc)
+    val paramType = Type.KindedVar(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
+    val returnType = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
+    val effectType = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Bool, isRegion = true, loc), loc)
     val tpe = Type.mkArrowWithEffect(paramType, effectType, Type.Empty, returnType, loc)
 
     val expected = "t0! -> t1! & b2!"
@@ -113,8 +113,8 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatType.Arrow.External.03") {
-    val paramType = Type.KindedVar(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, Rigidity.Rigid, loc), loc)
-    val returnType = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Rigid, loc), loc)
+    val paramType = Type.KindedVar(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
+    val returnType = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val tpe = Type.mkArrowWithEffect(paramType, Type.Impure, Type.Empty, returnType, loc)
 
     val expected = "t0! -> t1! & Impure"
@@ -133,7 +133,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatType.Arrow.External.05") {
-    val eff = Type.mkAnd(Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Bool, Rigidity.Flexible, loc), loc), Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Bool, Rigidity.Flexible, loc), loc), loc)
+    val eff = Type.mkAnd(Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Bool, isRegion = false, loc), loc), Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Bool, isRegion = false, loc), loc), loc)
     val tpe = Type.mkArrowWithEffect(Type.BigInt, eff, Type.Empty, Type.Bool, loc)
 
     val expected = "BigInt -> Bool & b1 and b2"
@@ -165,7 +165,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatType.Schema.External.02") {
     val latticeType1 = Type.mkLattice(List(Type.Str, Type.Bool), loc)
     val latticeType2 = Type.mkLattice(List(Type.Int32, Type.Str), loc)
-    val restType = Type.KindedVar(new Symbol.KindedTypeVarSym(5, Ast.VarText.Absent, Kind.SchemaRow, Rigidity.Flexible, loc), loc)
+    val restType = Type.KindedVar(new Symbol.KindedTypeVarSym(5, Ast.VarText.Absent, Kind.SchemaRow, isRegion = false, loc), loc)
     val tpe = Type.mkSchema(Type.mkSchemaRowExtend(Name.Pred("A", loc), latticeType1, Type.mkSchemaRowExtend(Name.Pred("B", loc), latticeType2, restType, loc), loc), loc)
 
     val expected = "#{ A(String; Bool), B(Int32; String) | s5 }"
@@ -187,7 +187,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatType.SchemaRow.External.02") {
     val latticeType1 = Type.mkLattice(List(Type.Str, Type.Bool), loc)
     val latticeType2 = Type.mkLattice(List(Type.Int32, Type.Str), loc)
-    val restType = Type.KindedVar(new Symbol.KindedTypeVarSym(5, Ast.VarText.Absent, Kind.SchemaRow, Rigidity.Flexible, loc), loc)
+    val restType = Type.KindedVar(new Symbol.KindedTypeVarSym(5, Ast.VarText.Absent, Kind.SchemaRow, isRegion = false, loc), loc)
     val tpe = Type.mkSchemaRowExtend(Name.Pred("A", loc), latticeType1, Type.mkSchemaRowExtend(Name.Pred("B", loc), latticeType2, restType, loc), loc)
 
     val expected = "#( A(String; Bool), B(Int32; String) | s5 )"
@@ -229,9 +229,9 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatType.Enum.External.07") {
-    val tvar1 = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc)
-    val tvar2 = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc)
-    val tvar3 = Type.KindedVar(new Symbol.KindedTypeVarSym(3, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc)
+    val tvar1 = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
+    val tvar2 = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
+    val tvar3 = Type.KindedVar(new Symbol.KindedTypeVarSym(3, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
     val tpe = Type.mkEnum(Symbol.mkEnumSym("Triplet"), List(tvar1, tvar2, tvar3), loc)
 
     val expected = "Triplet[t1, t2, t3]"
@@ -250,7 +250,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatType.Record.Internal.02") {
-    val rest = Type.KindedVar(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.RecordRow, Rigidity.Rigid, loc), loc)
+    val rest = Type.KindedVar(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.RecordRow, isRegion = true, loc), loc)
     val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, rest, loc), loc)
 
     val expected = "{ x :: Int32 | r0! }"
@@ -260,7 +260,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatType.Arrow.Internal.01") {
-    val paramType = Type.KindedVar(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, Rigidity.Rigid, loc), loc)
+    val paramType = Type.KindedVar(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val tpe = Type.mkArrowWithEffect(paramType, Type.Pure, Type.Empty, paramType, loc)
 
     val expected = "t0! -> t0!"
@@ -270,9 +270,9 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatType.Arrow.Internal.02") {
-    val paramType = Type.KindedVar(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, Rigidity.Rigid, loc), loc)
-    val returnType = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Rigid, loc), loc)
-    val effectType = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Bool, Rigidity.Rigid, loc), loc)
+    val paramType = Type.KindedVar(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
+    val returnType = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
+    val effectType = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Bool, isRegion = true, loc), loc)
     val tpe = Type.mkArrowWithEffect(paramType, effectType, Type.Empty, returnType, loc)
 
     val expected = "t0! -> t1! & b2!"
@@ -294,7 +294,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatType.Schema.Internal.02") {
     val latticeType1 = Type.mkLattice(List(Type.Str, Type.Bool), loc)
     val latticeType2 = Type.mkLattice(List(Type.Int32, Type.Str), loc)
-    val restType = Type.KindedVar(new Symbol.KindedTypeVarSym(5, Ast.VarText.Absent, Kind.SchemaRow, Rigidity.Flexible, loc), loc)
+    val restType = Type.KindedVar(new Symbol.KindedTypeVarSym(5, Ast.VarText.Absent, Kind.SchemaRow, isRegion = false, loc), loc)
     val tpe = Type.mkSchema(Type.mkSchemaRowExtend(Name.Pred("A", loc), latticeType1, Type.mkSchemaRowExtend(Name.Pred("B", loc), latticeType2, restType, loc), loc), loc)
 
     val expected = "#{ A(String; Bool), B(Int32; String) | s5 }"
@@ -304,9 +304,9 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatType.Enum.Internal.07") {
-    val tvar1 = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc)
-    val tvar2 = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc)
-    val tvar3 = Type.KindedVar(new Symbol.KindedTypeVarSym(3, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc)
+    val tvar1 = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
+    val tvar2 = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
+    val tvar3 = Type.KindedVar(new Symbol.KindedTypeVarSym(3, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
     val tpe = Type.mkEnum(Symbol.mkEnumSym("Triplet"), List(tvar1, tvar2, tvar3), loc)
 
     val expected = "Triplet[t1, t2, t3]"
@@ -316,9 +316,9 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatType.Boolean.External.01") {
-    val tvar1 = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.SourceText("a"), Kind.Bool, Rigidity.Flexible, loc), loc)
-    val tvar2 = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.SourceText("b"), Kind.Bool, Rigidity.Flexible, loc), loc)
-    val tvar3 = Type.KindedVar(new Symbol.KindedTypeVarSym(3, Ast.VarText.SourceText("c"), Kind.Bool, Rigidity.Flexible, loc), loc)
+    val tvar1 = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.SourceText("a"), Kind.Bool, isRegion = false, loc), loc)
+    val tvar2 = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.SourceText("b"), Kind.Bool, isRegion = false, loc), loc)
+    val tvar3 = Type.KindedVar(new Symbol.KindedTypeVarSym(3, Ast.VarText.SourceText("c"), Kind.Bool, isRegion = false, loc), loc)
     val tpe = Type.mkAnd(List(tvar1, tvar2, tvar3), loc)
 
     val expected = "a and b and c"
@@ -439,8 +439,8 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatType.Var.External.01") {
-    val m = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.SourceText("m"), Kind.Star ->: Kind.Star, Rigidity.Flexible, loc), loc)
-    val a = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.SourceText("a"), Kind.Star, Rigidity.Flexible, loc), loc)
+    val m = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.SourceText("m"), Kind.Star ->: Kind.Star, isRegion = false, loc), loc)
+    val a = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.SourceText("a"), Kind.Star, isRegion = false, loc), loc)
 
     val ma = Type.mkApply(m, List(a), loc)
 

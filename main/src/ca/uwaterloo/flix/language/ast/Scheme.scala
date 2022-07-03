@@ -25,30 +25,6 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 object Scheme {
 
   /**
-    * A common super-type that controls how quantified and free variables are instantiated.
-    */
-  sealed trait InstantiateMode
-
-  object InstantiateMode {
-
-    /**
-      * Instantiated variables are marked as flexible. Free variables are left unchanged.
-      */
-    case object Flexible extends InstantiateMode
-
-    /**
-      * Instantiated variables are marked as rigid. Free variables are marked as rigid (regardless of their prior rigidity).
-      */
-    case object Rigid extends InstantiateMode
-
-    /**
-      * Instantiated variables are marked as flexible. Free variables are marked as rigid (regardless of their prior rigidity).
-      */
-    case object Mixed extends InstantiateMode
-
-  }
-
-  /**
     * Instantiate one of the variables in the scheme, adding new quantifiers as needed.
     */
   def partiallyInstantiate(sc: Scheme, quantifier: Symbol.KindedTypeVarSym, value: Type)(implicit flix: Flix): Scheme = sc match {
@@ -64,10 +40,8 @@ object Scheme {
 
   /**
     * Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables.
-    *
-    * The `mode` control the rigidity of quantified and free variables.
     */
-  def instantiate(sc: Scheme, mode: InstantiateMode)(implicit flix: Flix): (List[Ast.TypeConstraint], Type) = {
+  def instantiate(sc: Scheme)(implicit flix: Flix): (List[Ast.TypeConstraint], Type) = {
     // Compute the base type.
     val baseType = sc.base
 
@@ -77,12 +51,7 @@ object Scheme {
     val freshVars = sc.quantifiers.foldLeft(Map.empty[Int, Type.KindedVar]) {
       case (macc, tvar) =>
         // Determine the rigidity of the fresh type variable.
-        val rigidity = mode match {
-          case InstantiateMode.Flexible => Rigidity.Flexible
-          case InstantiateMode.Rigid => Rigidity.Rigid
-          case InstantiateMode.Mixed => Rigidity.Flexible
-        }
-        macc + (tvar.id -> Type.freshVar(tvar.kind, tvar.loc, rigidity, Ast.VarText.Absent))
+        macc + (tvar.id -> Type.freshVar(tvar.kind, tvar.loc, tvar.isRegion, Ast.VarText.Absent))
     }
 
     /**
@@ -93,12 +62,7 @@ object Scheme {
         freshVars.get(sym.id) match {
           case None =>
             // Determine the rigidity of the free type variable.
-            val newRigidity = mode match {
-              case InstantiateMode.Flexible => sym.rigidity
-              case InstantiateMode.Rigid => Rigidity.Rigid
-              case InstantiateMode.Mixed => Rigidity.Rigid
-            }
-            Type.KindedVar(sym.withRigidity(newRigidity), loc)
+            Type.KindedVar(sym, loc)
           case Some(tvar) => tvar
         }
     }
