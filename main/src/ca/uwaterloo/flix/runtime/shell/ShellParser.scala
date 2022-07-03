@@ -22,7 +22,14 @@ import org.jline.reader.Parser.ParseContext
 import scala.jdk.CollectionConverters._
 
 /**
-  * Minimal implementation of `ParsedLine`, necessary to keep jline happy
+  * Minimal implementation of `ParsedLine`, necessary to keep jline happy.
+  * 
+  * JLine uses these values to implement syntax highlighting, line continuation on 
+  * unclosed string, brackets, etc. Because we have all of this functionality 
+  * switched off, we just need to return something that conforms to the `ParsedLine`
+  * interface.
+  * 
+  * https://github.com/jline/jline3/blob/master/reader/src/main/java/org/jline/reader/ParsedLine.java
   */
 class Parsed(s: String) extends ParsedLine {
 
