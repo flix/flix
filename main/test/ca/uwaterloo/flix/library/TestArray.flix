@@ -692,36 +692,36 @@ namespace TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // repeat                                                                  //
+    // repeat r,
     /////////////////////////////////////////////////////////////////////////////
 
     @test
     def repeat01(): Bool = region r {
-        let a = Array.repeat(-1, 1, r);
+        let a = Array.repeat(r, -1, 1);
         Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def repeat02(): Bool = region r {
-        let a = Array.repeat(0, 1, r);
+        let a = Array.repeat(r, 0, 1);
         Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def repeat03(): Bool = region r {
-        let a = Array.repeat(1, 1, r);
+        let a = Array.repeat(r, 1, 1);
         Array.sameElements(a, [1])
     }
 
     @test
     def repeat04(): Bool = region r {
-        let a = Array.repeat(2, 1, r);
+        let a = Array.repeat(r, 2, 1);
         Array.sameElements(a, [1,1])
     }
 
     @test
     def repeat05(): Bool = region r {
-        let a = Array.repeat(3, 1, r);
+        let a = Array.repeat(r, 3, 1);
         Array.sameElements(a, [1,1,1])
     }
 
@@ -1048,37 +1048,37 @@ namespace TestArray {
 
     @test
     def flatMap01(): Bool = region r {
-        let a = Array.flatMap(i -> Array.repeat(i, i, r), []);
+        let a = Array.flatMap(i -> Array.repeat(r, i, i), []);
         Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def flatMap02(): Bool = region r {
-        let a = Array.flatMap(i -> Array.repeat(i, i, r), [0]);
+        let a = Array.flatMap(i -> Array.repeat(r, i, i), [0]);
         Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def flatMap03(): Bool = region r {
-        let a = Array.flatMap(i -> Array.repeat(i, i, r), [1]);
+        let a = Array.flatMap(i -> Array.repeat(r, i, i), [1]);
         Array.sameElements(a, [1])
     }
 
     @test
     def flatMap04(): Bool = region r {
-        let a = Array.flatMap(i -> Array.repeat(i, i, r), [2]);
+        let a = Array.flatMap(i -> Array.repeat(r, i, i), [2]);
         Array.sameElements(a, [2,2])
     }
 
     @test
     def flatMap05(): Bool = region r {
-        let a = Array.flatMap(i -> Array.repeat(i, i, r), [1,2]);
+        let a = Array.flatMap(i -> Array.repeat(r, i, i), [1,2]);
         Array.sameElements(a, [1,2,2])
     }
 
     @test
     def flatMap06(): Bool = region r {
-        let a = Array.flatMap(i -> Array.repeat(i, i, r), [2,3]);
+        let a = Array.flatMap(i -> Array.repeat(r, i, i), [2,3]);
         Array.sameElements(a, [2,2,3,3,3])
     }
 

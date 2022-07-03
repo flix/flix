@@ -325,7 +325,7 @@ namespace Array {
     /// Returns `[]` if `n <= 0`.
     ///
     @Time(n) @Space(n)
-    pub def repeat(n: Int32, x: a, r: Region[r]): Array[a, r] \ Write(r) =
+    pub def repeat(r: Region[r], n: Int32, x: a): Array[a, r] \ Write(r) =
         if (n <= 0)
             [] @ r
         else
