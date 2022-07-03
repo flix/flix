@@ -77,6 +77,13 @@ instance Foldable[MultiMap[k]] {
     pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, s: b, m: MultiMap[k, v]): b & ef = MultiMap.foldRightWithCont(f, s, m)
 }
 
+instance UnorderedFoldable[MultiMap[k]] {
+    pub def foldMap(f: v -> b & ef, m: MultiMap[k, v]): b & ef with CommutativeMonoid[b] = MultiMap.foldMap(f, m)
+    override pub def isEmpty(m: MultiMap[k, v]): Bool = MultiMap.isEmpty(m)
+    override pub def exists(f: v -> Bool & ef, m: MultiMap[k, v]): Bool & ef = MultiMap.exists(_ -> f, m)
+    override pub def forall(f: v -> Bool & ef, m: MultiMap[k, v]): Bool & ef = MultiMap.forall(_ -> f, m)
+}
+
 instance SemiGroup[MultiMap[k,v]] with Order[k], Order[v] {
     pub def combine(x: MultiMap[k,v], y: MultiMap[k,v]): MultiMap[k,v] = MultiMap.union(x, y)
 }
@@ -328,6 +335,18 @@ namespace MultiMap {
     pub def foldRightWithKeyCont(f: (k, v, Unit -> b & ef) -> b & ef, z: b, m: MultiMap[k, v]): b & ef =
         let MultiMap(m1) = m;
         Map.foldRightWithKeyCont((k, vs, b1) -> Set.foldRightWithCont((v1, fac) -> f(k, v1, fac), b1(), vs), z, m1)
+
+    ///
+    /// Returns the result of mapping each key-value pair and combining the results.
+    ///
+    pub def foldMapWithKey(f: (k, v) -> b & ef, m: MultiMap[k, v]): b & ef with Monoid[b] =
+        foldLeftWithKey((acc, k, v) -> Monoid.combine(acc, f(k, v)), Monoid.empty(), m)
+
+    ///
+    /// Returns the result of mapping each value and combining the results.
+    ///
+    pub def foldMap(f: v -> b & ef, m: MultiMap[k, v]): b & ef with Monoid[b] =
+        foldMapWithKey(_ -> f, m)
 
     ///
     /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
