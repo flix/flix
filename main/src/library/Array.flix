@@ -1228,7 +1228,7 @@ namespace Array {
     @Time(length(a)) @Space(length(a))
     pub def unzip(a: Array[(a, b), r]): (Array[a, r], Array[b, r]) \ { Read(r), Write(r) } =
         let r = Scoped.regionOf(a);
-        init2(i -> a[i], length(a), r, r)
+        init2(r, r, i -> a[i], length(a))
 
     ///
     /// Alias for `foldLeft2`.
@@ -1416,7 +1416,7 @@ namespace Array {
     /// Build a pair of arrays of length `len` by applying `f` to the successive indices.
     ///
     @Time(time(f) * len) @Space(space(f) * len)
-    pub def init2(f: Int32 -> (a, b) & ef, len: Int32, r1: Region[r1], r2: Region[r2]): (Array[a, r1], Array[b, r2]) \ { ef, Write(r1, r2) } =
+    pub def init2(r1: Region[r1], r2: Region[r2], f: Int32 -> (a, b) & ef, len: Int32): (Array[a, r1], Array[b, r2]) \ { ef, Write(r1, r2) } =
         if (len <= 0)
             ([] @ r1, [] @ r2)
         else {
