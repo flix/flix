@@ -116,7 +116,7 @@ namespace String {
     ///
     @Time(length(s)) @Space(length(s))
     pub def toArray(r: Region[r], s: String): Array[Char, r] \ Write(r) =
-        Array.init(i -> charAt(i, s), length(s), r)
+        Array.init(r, i -> charAt(i, s), length(s))
 
     ///
     /// Build a string of length `len` by applying `f` to the successive indices.

@@ -4446,31 +4446,31 @@ namespace TestArray {
 
     @test
     def init01(): Bool = region r {
-        let a = Array.init(x -> x, 0, r);
+        let a = Array.init(r, x -> x, 0);
         Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def init02(): Bool = region r {
-        let a = Array.init(x -> x, -1, r);
+        let a = Array.init(r, x -> x, -1);
         Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def init03(): Bool = region r {
-        let a = Array.init(x -> x, 1, r);
+        let a = Array.init(r, x -> x, 1);
         Array.sameElements(a, [0])
     }
 
     @test
     def init04(): Bool = region r {
-        let a = Array.init(x -> x, 2, r);
+        let a = Array.init(r, x -> x, 2);
         Array.sameElements(a, [0,1])
     }
 
     @test
     def init05(): Bool = region r {
-        let a = Array.init(x -> x, 50, r);
+        let a = Array.init(r, x -> x, 50);
         Array.length(a) == 50
     }
 

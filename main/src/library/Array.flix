@@ -316,7 +316,7 @@ namespace Array {
             [] @ r
         else {
             let f = x -> x + b;
-            init(f, e - b, r)
+            init(r, f, e - b)
         }
 
     ///
@@ -385,7 +385,8 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def map(f: a -> b & ef, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        init(i -> f(a[i]), len, Scoped.regionOf(a))
+        let r = Scoped.regionOf(a);
+        init(r, i -> f(a[i]), len)
 
     ///
     /// Apply `f` to every element in array `arr`. Array `arr` is mutated.
@@ -411,7 +412,8 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def mapWithIndex(f: (a, Int32) -> b & ef, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        init(i -> f(a[i], i), len, Scoped.regionOf(a))
+        let r = Scoped.regionOf(a);
+        init(r, i -> f(a[i], i), len)
 
     ///
     /// Apply `f` to every element in array `a` along with that element's index. Array `a` is mutated.
@@ -436,7 +438,7 @@ namespace Array {
     pub def flatMap(f: a -> Array[b, r] & ef, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
         let r = Scoped.regionOf(a);
-        init(i -> f(a[i]), len, r) |> flatten
+        init(r, i -> f(a[i]), len) |> flatten
 
     ///
     /// Returns the reverse of `a`.
@@ -445,7 +447,8 @@ namespace Array {
     pub def reverse(a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
         let len = length(a);
         let end = len - 1;
-        init(i -> a[end - i], len, Scoped.regionOf(a))
+        let r = Scoped.regionOf(a);
+        init(r, i -> a[end - i], len)
 
     ///
     /// Reverse the array `arr`, mutating it in place.
@@ -492,7 +495,7 @@ namespace Array {
         let len = length(arr);
         let r = Scoped.regionOf(arr);
         let f = i -> { let i1 = n + i; arr[i1 rem len] };
-        init(f, len, r)
+        init(r, f, len)
 
     ///
     /// Rotate the contents of array `arr` by `n` steps to the right.
@@ -520,7 +523,7 @@ namespace Array {
         let n1 = n rem len;
         let start = len - n1;
         let f = i -> { let i1 = start + i; a[i1 rem len]};
-        init(f, len, r)
+        init(r, f, len)
 
     ///
     /// Returns a copy of `a` with the element at index `i` replaced by `x`.
@@ -532,7 +535,7 @@ namespace Array {
         let len = length(a);
         let r = Scoped.regionOf(a);
         let f = ix -> if (ix == i) x else a[ix];
-        init(f, len, r)
+        init(r, f, len)
 
     ///
     /// Returns a copy of `a` with every occurrence of `from` replaced by `to`.
@@ -677,7 +680,7 @@ namespace Array {
             if (jlen == 0 or uniformHelper(a, jlen))
                 a
             else
-                init(i -> init(j -> a[j][i], ilen, r1), jlen, r2)
+                init(r2, i -> init(r1, j -> a[j][i], ilen), jlen)
         }
 
     ///
@@ -1207,7 +1210,7 @@ namespace Array {
     pub def zip(a: Array[a, r1], b: Array[b, r2]): Array[(a, b), r2] \ { Read(r1, r2), Write(r2) } =
         let len = Int32.min(length(a), length(b));
         let r2 = Scoped.regionOf(b);
-        init(i -> (a[i], b[i]), len, r2)
+        init(r2, i -> (a[i], b[i]), len)
 
     ///
     /// Returns an array where the element at index `i` is `f(x, y)` where
@@ -1219,7 +1222,7 @@ namespace Array {
     pub def zipWith(f: (a, b) -> c & ef, a: Array[a, r1], b: Array[b, r2]): Array[c, r2] \ { ef, Read(r1, r2), Write(r2) } =
         let len = Int32.min(length(a), length(b));
         let r2 = Scoped.regionOf(b);
-        init(i -> f(a[i], b[i]), len, r2)
+        init(r2, i -> f(a[i], b[i]), len)
 
     ///
     /// Returns a pair of arrays, the first containing all first components in `a`
@@ -1395,7 +1398,7 @@ namespace Array {
     /// Build an array of length `len` by applying `f` to the successive indices.
     ///
     @Time(time(f) * len) @Space(space(f) * len)
-    pub def init(f: Int32 -> a & ef, len: Int32, r: Region[r]): Array[a, r] \ { ef, Write(r) } =
+    pub def init(r: Region[r], f: Int32 -> a & ef, len: Int32): Array[a, r] \ { ef, Write(r) } =
         if (len <= 0)
             [] @ r
         else {
@@ -1497,7 +1500,7 @@ namespace Array {
         let f = ix -> if (ix >= i and ix < end) sub[ix - i] else a[ix];
         let len = length(a);
         let r2 = Scoped.regionOf(a);
-        init(f, len, r2)
+        init(r2, f, len)
 
     ///
     /// Update the mutable array `a` with the elements starting at index `i` replaced by `sub`.
