@@ -847,7 +847,7 @@ namespace Map {
     /// Returns `m` as a mutable set.
     ///
     @Time(1) @Space(1)
-    pub def toMutMap(m: Map[k, v], r: Region[r]): MutMap[k, v, r] \ Write(r) =
+    pub def toMutMap(r: Region[r], m: Map[k, v]): MutMap[k, v, r] \ Write(r) =
         MutMap(ref m @ r)
 
     ///
