@@ -73,6 +73,16 @@ instance Foldable[Set] {
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldRightWithCont(f, s, s1)
 }
 
+instance UnorderedFoldable[Set] {
+    pub def foldMap(f: a -> b & ef, s: Set[a]): b & ef with CommutativeMonoid[b] = Set.foldMap(f, s)
+    override pub def isEmpty(s: Set[a]): Bool = Set.isEmpty(s)
+    override pub def exists(f: a -> Bool & ef, s: Set[a]): Bool & ef = Set.exists(f, s)
+    override pub def forall(f: a -> Bool & ef, s: Set[a]): Bool & ef = Set.forall(f, s)
+
+    @ParallelWhenPure
+    override pub def count(f: a -> Bool & ef, s: Set[a]): Int32 & ef = Set.count(f, s)
+}
+
 instance SemiGroup[Set[a]] with Order[a] {
     pub def combine(x: Set[a], y: Set[a]): Set[a] = Set.union(x,y)
 }
@@ -84,10 +94,6 @@ instance Monoid[Set[a]] with Order[a] {
 }
 
 instance CommutativeMonoid[Set[a]] with Order[a]
-
-instance UnorderedFoldable[Set] {
-    pub def foldMap(f: a -> b & ef, s: Set[a]): b & ef with CommutativeMonoid[b] = Set.foldMap(f, s)
-}
 
 namespace Set {
 
