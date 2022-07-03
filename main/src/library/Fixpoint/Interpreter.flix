@@ -77,7 +77,7 @@ namespace Fixpoint {
     def allocEnv(depth: Int32, relOp: RelOp[v]): SearchEnv[v] & Impure = match relOp {
         case RelOp.Search(_, _, body) => allocEnv(depth + 1, body)
         case RelOp.Query(_, _, _, body) => allocEnv(depth + 1, body)
-        case RelOp.Project(_) => (Array.new(Tuple([]), depth, Static), Array.new($DEFAULT$, depth, Static))
+        case RelOp.Project(_) => (Array.new(Static, Tuple([]), depth), Array.new(Static, $DEFAULT$, depth))
         case RelOp.If(_, then) => allocEnv(depth, then)
     }
 

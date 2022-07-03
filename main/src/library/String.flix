@@ -1088,8 +1088,8 @@ namespace String {
     pub def levenshteinDistance(s: String, t: String): Int32 = region r {
         let m = length(s);
         let n = length(t);
-        let v0 = Array.new(0, n + 1, r);
-        let v1 = Array.new(0, n + 1, r);
+        let v0 = Array.new(r, 0, n + 1);
+        let v1 = Array.new(r, 0, n + 1);
         forIndex(0, n, i -> v0[i] = i);
         forIndex(0, m - 1, i -> {
             v1[0] = i + 1;

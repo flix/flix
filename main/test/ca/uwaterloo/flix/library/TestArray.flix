@@ -48,17 +48,17 @@ namespace TestArray {
 
     @test
     def testNew01(): Bool = region r {
-        Array.new(42, 10, r)[0] == 42
+        Array.new(r, 42, 10)[0] == 42
     }
 
     @test
     def testNew02(): Bool = region r {
-        Array.new(42, 10, r)[5] == 42
+        Array.new(r, 42, 10)[5] == 42
     }
 
     @test
     def testNew03(): Bool = region r {
-        Array.new(42, 10, r)[9] == 42
+        Array.new(r, 42, 10)[9] == 42
     }
 
     /////////////////////////////////////////////////////////////////////////////
