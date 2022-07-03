@@ -36,7 +36,7 @@ object InlayHintProvider {
   private def getTypeHint(loc: SourceLocation, tpe: Type): InlayHint = {
     val pos = Position(loc.endLine, loc.endCol)
     val label = FormatType.formatWellKindedType(tpe)(Audience.External)
-    InlayHint(pos, label, Some(InlayHintKind.Type), None, "", paddingRight = true)
+    InlayHint(pos, label, Some(InlayHintKind.Type), Nil, "")
   }
 
 }

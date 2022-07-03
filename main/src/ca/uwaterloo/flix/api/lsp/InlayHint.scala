@@ -46,12 +46,12 @@ import org.json4s.JValue
   *                     background color of the hint itself. That means padding can be used
   *                     to visually align/separate an inlay hint.
   */
-case class InlayHint(position: Position, label: String, kind: Option[InlayHintKind], textEdits: Option[List[TextEdit]], tooltip: String, paddingLeft: Boolean = false, paddingRight: Boolean = false) {
+case class InlayHint(position: Position, label: String, kind: Option[InlayHintKind], textEdits: List[TextEdit], tooltip: String, paddingLeft: Boolean = false, paddingRight: Boolean = false) {
   def toJSON: JValue =
     ("position" -> position.toJSON) ~
       ("label" -> label) ~
       ("kind" -> kind.map(_.toJSON).orNull) ~
-      ("textEdits" -> textEdits.map(textEdit => textEdit.map(_.toJSON)).orNull) ~
+      ("textEdits" -> textEdits.map(_.toJSON)) ~
       ("tooltip" -> tooltip) ~
       ("paddingLeft" -> paddingLeft) ~
       ("paddingRight" -> paddingRight)
