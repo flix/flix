@@ -73,6 +73,14 @@ instance Foldable[Nel] {
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldRightWithCont(f, s, l)
 }
 
+instance UnorderedFoldable[Nel] {
+    pub def foldMap(f: a -> b & ef, l: Nel[a]): b & ef with CommutativeMonoid[b] = Nel.foldMap(f, l)
+    override pub def isEmpty(_: Nel[a]): Bool = false
+    override pub def exists(f: a -> Bool & ef, l: Nel[a]): Bool & ef = Nel.exists(f, l)
+    override pub def forall(f: a -> Bool & ef, l: Nel[a]): Bool & ef = Nel.forall(f, l)
+    override pub def memberOf(x: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(x, l)
+}
+
 instance Traversable[Nel] {
     pub def traverse(f: a -> m[b] & ef, t: Nel[a]): m[Nel[b]] & ef with Applicative[m] = Nel.traverse(f, t)
     pub override def sequence(t: Nel[m[a]]): m[Nel[a]] with Applicative[m] = Nel.sequence(t)

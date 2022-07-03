@@ -64,6 +64,14 @@ instance Foldable[Chain] {
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldRightWithCont(f, s, c)
 }
 
+instance UnorderedFoldable[Chain] {
+    pub def foldMap(f: a -> b & ef, c: Chain[a]): b & ef with CommutativeMonoid[b] = Chain.foldMap(f, c)
+    override pub def isEmpty(c: Chain[a]): Bool = Chain.isEmpty(c)
+    override pub def exists(f: a -> Bool & ef, c: Chain[a]): Bool & ef = Chain.exists(f, c)
+    override pub def forall(f: a -> Bool & ef, c: Chain[a]): Bool & ef = Chain.forall(f, c)
+    override pub def memberOf(x: a, c: Chain[a]): Bool with Eq[a] = Chain.memberOf(x, c)
+}
+
 instance Traversable[Chain] {
     pub def traverse(f: a -> m[b] & ef, t: Chain[a]): m[Chain[b]] & ef with Applicative[m] = Chain.traverse(f, t)
     pub override def sequence(t: Chain[m[a]]): m[Chain[a]] with Applicative[m] = Chain.sequence(t)

@@ -85,6 +85,14 @@ instance Foldable[Nec] {
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, c: Nec[a]): b & ef = Nec.foldRightWithCont(f, s, c)
 }
 
+instance UnorderedFoldable[Nec] {
+    pub def foldMap(f: a -> b & ef, c: Nec[a]): b & ef with CommutativeMonoid[b] = Nec.foldMap(f, c)
+    override pub def isEmpty(_: Nec[a]): Bool = false
+    override pub def exists(f: a -> Bool & ef, c: Nec[a]): Bool & ef = Nec.exists(f, c)
+    override pub def forall(f: a -> Bool & ef, c: Nec[a]): Bool & ef = Nec.forall(f, c)
+    override pub def memberOf(x: a, c: Nec[a]): Bool with Eq[a] = Nec.memberOf(x, c)
+}
+
 instance Traversable[Nec] {
     pub def traverse(f: a -> m[b] & ef, t: Nec[a]): m[Nec[b]] & ef with Applicative[m] = Nec.traverse(f, t)
     pub override def sequence(t: Nec[m[a]]): m[Nec[a]] with Applicative[m] = Nec.sequence(t)
