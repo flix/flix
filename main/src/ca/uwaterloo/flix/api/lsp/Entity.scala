@@ -22,8 +22,8 @@ sealed trait Entity {
   def loc: SourceLocation
 
   def isInRange(range: Range): Boolean = {
-    this.loc.endLine <= range.end.line && this.loc.endCol <= range.end.character &&
-      this.loc.beginLine >= range.start.line && this.loc.beginCol >= range.start.character
+    ((this.loc.endLine < range.end.line) || (this.loc.endLine == range.end.line && this.loc.endCol <= range.end.character)) &&
+      ((this.loc.beginLine > range.start.line) || (this.loc.beginLine == range.start.line && this.loc.beginCol >= range.start.character))
   }
 }
 
