@@ -91,6 +91,10 @@ instance Foldable[Option] {
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRightWithCont(f, o, s)
 }
 
+instance UnorderedFoldable[Option] {
+    pub def foldMap(f: a -> b & ef, o: Option[a]): b & ef with CommutativeMonoid[b] = Option.foldMap(f, o)
+}
+
 instance Traversable[Option] {
     pub def traverse(f: a -> m[b] & ef, t: Option[a]): m[Option[b]] & ef with Applicative[m] =
         use Applicative.{point};
@@ -130,10 +134,6 @@ instance Monoid[Option[a]] with Monoid[a] {
 }
 
 instance CommutativeMonoid[Option[a]] with CommutativeMonoid[a]
-
-instance UnorderedFoldable[Option] {
-    pub def foldMap(f: a -> b & ef, o: Option[a]): b & ef with CommutativeMonoid[b] = Option.foldMap(f, o)
-}
 
 instance Iterable[Option] {
     pub def iterator(r: Region[r], t: Option[a]): Iterator[a, r] \ Write(r) =
