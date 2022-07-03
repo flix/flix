@@ -184,9 +184,9 @@ namespace Array {
         let len1 = length(a);
         let len2 = length(b);
         if (len1 == 0)
-            copyOfRange(0, len2, b, r1)
+            copyOfRange(r1, 0, len2, b)
         else {
-            let out = copyOfRange(0, len1 + len2, a, r1);
+            let out = copyOfRange(r1, 0, len1 + len2, a);
             updateSequence!(len1, b, out);
             out
         }
@@ -560,7 +560,7 @@ namespace Array {
         let len1 = length(a);
         let r2 = Scoped.regionOf(b);
         let size = if (n > len1) len1 else n;
-        let sub = copyOfRange(0, size, a, r2);
+        let sub = copyOfRange(r2, 0, size, a);
         updateSequence(i, sub, b)
 
     ///
@@ -575,7 +575,7 @@ namespace Array {
         let len1 = length(a);
         let r2 = Scoped.regionOf(b);
         let size = if (n > len1) len1 else n;
-        let sub = copyOfRange(0, size, a, r2);
+        let sub = copyOfRange(r2, 0, size, a);
         updateSequence!(i, sub, b)
 
     ///
@@ -972,7 +972,7 @@ namespace Array {
                 }
             };
             let endPos = loop(0, 0);
-            copyOfRange(0, endPos, out, r)
+            copyOfRange(r, 0, endPos, out)
         }
 
     ///
@@ -1025,7 +1025,7 @@ namespace Array {
             [] @ r
         else {
             let start = if (n < 0) 0 else n;
-            copyOfRange(start, len, a, r)
+            copyOfRange(r, start, len, a)
         }
 
     ///
@@ -1041,7 +1041,7 @@ namespace Array {
             [] @ r
         else {
             let end = if (n < 0) len else len - n;
-            copyOfRange(0, end, a, r)
+            copyOfRange(r, 0, end, a)
         }
 
     ///
@@ -1070,7 +1070,7 @@ namespace Array {
         let r = Scoped.regionOf(a);
         match findIndexOfRight(x -> not (f(x)), a) {
             case None    => [] @ r
-            case Some(i) => copyOfRange(0, i + 1, a, r)
+            case Some(i) => copyOfRange(r, 0, i + 1, a)
         }
 
     ///
@@ -1093,7 +1093,7 @@ namespace Array {
         else {
             let len = length(a);
             let end = if (n > len) len else n;
-            copyOfRange(0, end, a, r)
+            copyOfRange(r, 0, end, a)
         }
 
     ///
@@ -1109,7 +1109,7 @@ namespace Array {
         else {
             let len = length(a);
             let start = if (n > len) 0 else len - n;
-            copyOfRange(start, len, a, r)
+            copyOfRange(r, start, len, a)
         }
 
     ///
@@ -1142,8 +1142,8 @@ namespace Array {
     pub def takeWhileRight(f: a -> Bool & ef, a: Array[a, r]): Array[a, r] \ { ef, Read(r), Write(r) } =
         let r = Scoped.regionOf(a);
         match findIndexOfRight(x -> not (f(x)), a) {
-            case None    => copyOfRange(0, length(a), a, r)
-            case Some(i) => copyOfRange(i + 1, length(a), a, r)
+            case None    => copyOfRange(r, 0, length(a), a)
+            case Some(i) => copyOfRange(r, i + 1, length(a), a)
         }
 
     ///
@@ -1323,7 +1323,7 @@ namespace Array {
         let minCap = MutList.minCapacity();
         let len = length(a);
         let c = Order.max(len, minCap);
-        let copy = copyOfRange(0, c, a, r1);
+        let copy = copyOfRange(r1, 0, c, a);
         MutList(ref copy @ r1, ref len @ r1)
 
     ///
@@ -1565,7 +1565,7 @@ namespace Array {
     pub def sortWith(cmp: (a,a) -> Comparison, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
         let len = length(a);
         let r = Scoped.regionOf(a);
-        let b = copyOfRange(0, len, a, r);
+        let b = copyOfRange(r, 0, len, a);
         sortWith!(cmp, b);
         b
 
@@ -1670,7 +1670,7 @@ namespace Array {
     /// If the range is valid and greater than the length of `a`, the resulting array with have the length of the range
     /// and include the specified range of `a`.
     ///
-    pub def copyOfRange(b: Int32, e: Int32, a: Array[a, r1], _: Region[r2]): Array[a, r2] \ { Read(r1), Write(r2) } =
+    pub def copyOfRange(_: Region[r2], b: Int32, e: Int32, a: Array[a, r1]): Array[a, r2] \ { Read(r1), Write(r2) } =
         match (reifyType a) {
             case ErasedType =>
                 let arr = a as Array[##java.lang.Object, r1];
@@ -1723,7 +1723,7 @@ namespace Array {
    ///
    pub def toIterator(r1: Region[r1], a: Array[a, r2]): Iterator[a, r1] \ { Read(r2), Write(r1) } =
        let len = Array.length(a);
-       let copy = copyOfRange(0, len, a, r1);
+       let copy = copyOfRange(r1, 0, len, a);
        let i = ref 0 @ r1;
        let done = () -> (deref i) >= len;
        let next = () -> {
