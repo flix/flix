@@ -896,13 +896,15 @@ namespace RedBlackTree {
     ///
     pub def toList(t: RedBlackTree[k, v]): List[(k, v)] =
         RedBlackTree.foldRight((k, v, acc) -> (k, v) :: acc, Nil, t)
-/*
+
     ///
-    /// Returns the tree `t` as a list. Elements are ordered from smallest (left) to largest (right).
+    /// Returns the tree `t` as a MutDeque. Elements are ordered from smallest (left) to largest (right).
     ///
-    pub def toList(t: RedBlackTree[k, v]): List[(k, v)] =
-        RedBlackTree.foldRight((k, v, acc) -> (k, v) :: acc, Nil, t)
-*/
+    pub def toMutDeque(r: Region[r], t: RedBlackTree[k, v]): MutDeque[(k, v), r] \ Write(r) =
+        let d = new MutDeque(r);
+        RedBlackTree.foreach((k, v) -> let x = (k, v); MutDeque.pushBack(x, d), t);
+        d
+
     ///
     /// Build a node applicatively.
     ///
