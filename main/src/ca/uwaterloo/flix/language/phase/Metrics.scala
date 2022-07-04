@@ -18,6 +18,9 @@ object Metrics {
   case class Metrics(lines: Int, functions: Int, pureFunctions: Int, impureFunctions: Int, polyFunctions: Int, regionFunctions: Int,
                      oneRegionFunctions: Int, twoRegionFunctions: Int, threePlusRegionFunctions: Int) {
 
+    def isEmpty: Boolean = /* lines == 0 && */ functions == 0 && pureFunctions == 0 && impureFunctions == 0 && polyFunctions == 0 && regionFunctions == 0 &&
+      oneRegionFunctions == 0 && twoRegionFunctions == 0 && threePlusRegionFunctions == 0
+
     override def toString: String = {
       def mkData(data: Int): String = f"$data%5d"
 
@@ -311,7 +314,7 @@ object Metrics {
           lines, functions, pureFunctions, impureFunctions, effPolyFunctions,
           regionFunctions, regFunctions(_ == 1), regFunctions(_ == 2), regFunctions(_ >= 3))
         (src, metrics)
-    }
+    }.filterNot{case (_, metrics) => metrics.isEmpty}
     val total = metrics.values.reduce((m1, m2) => {
       Metrics(
         lines = m1.lines + m2.lines,

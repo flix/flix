@@ -18,7 +18,7 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.lsp.LanguageServer
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol}
 import ca.uwaterloo.flix.language.phase.Metrics
 import ca.uwaterloo.flix.runtime.shell.{Shell, SourceProvider}
 import ca.uwaterloo.flix.tools._
@@ -211,6 +211,8 @@ object Main {
       if (Formatter.hasColorSupport)
         flix.setFormatter(AnsiTerminalFormatter)
 
+      def srcString(src: Ast.Source): String = src.name.stripSuffix(".flix")
+
       // evaluate main.
       val metrics = flix.metrics()
       metrics match {
@@ -219,7 +221,7 @@ object Main {
           //println(s"All files, $total")
           for ((src, m) <- metrics) {
             //val sanity = s" CODE${m.sanityCheck()}"
-            println(s"${src.name}, $m")
+            println(s"${srcString(src)}, $m")
           }
           System.exit(1)
         case Validation.Failure(errors) =>
