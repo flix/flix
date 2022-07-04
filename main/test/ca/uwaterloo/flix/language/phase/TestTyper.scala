@@ -1316,4 +1316,46 @@ class TestTyper extends FunSuite with TestUtils {
 //    }
 //  }
 
+  test("Test.InvalidOpParamCount.Do.01") {
+    val input =
+      """
+        |eff E {
+        |    pub def op(x: String): Unit
+        |}
+        |
+        |def foo(): Unit \ E = do E.op()
+        |""".stripMargin
+        val result = compile(input, Options.TestWithLibNix)
+        expectError[TypeError.InvalidOpParamCount](result)
+  }
+
+  test("Test.InvalidOpParamCount.Do.02") {
+    val input =
+      """
+        |eff E {
+        |    pub def op(x: String): Unit
+        |}
+        |
+        |def foo(): Unit \ E = do E.op("hello", "world")
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.InvalidOpParamCount](result)
+  }
+
+  test("Test.InvalidOpParamCount.Handler.01") {
+    val input =
+      """
+        |eff E {
+        |    pub def op(x: String): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    try () with E {
+        |        def op(x, y) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.InvalidOpParamCount](result)
+  }
 }
