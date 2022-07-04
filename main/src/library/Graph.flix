@@ -79,6 +79,6 @@ namespace Graph {
     /// Returns `true` if there is a path from `src` to `dst` in the directed graph `g`.
     ///
     pub def isConnected(src: {src :: t}, dst: {dst :: t}, g: m[(t, t)]): Bool with Foldable[m], Boxable[t] =
-        closure(g) |> Set.exists(x -> (src.src, dst.dst) == x)
+        reachable(src.src, g) |> Set.exists(x -> dst.dst == x)
 
 }
