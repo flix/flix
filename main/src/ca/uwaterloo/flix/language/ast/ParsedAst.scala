@@ -708,11 +708,11 @@ object ParsedAst {
       * ForEach Expression.
       *
       * @param sp1  the position of the first character in the expression.
-      * @param exp1 the iterator generator expressions.
-      * @param exp2 the body expression.
+      * @param gens the iterator generator expressions.
+      * @param exp  the body expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class ForEach(sp1: SourcePosition, exp1: Seq[ForEachGenerator], exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ForEach(sp1: SourcePosition, gens: Seq[ForEachGenerator], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Tag Expression.

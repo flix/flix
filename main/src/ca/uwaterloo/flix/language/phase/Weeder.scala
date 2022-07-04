@@ -688,14 +688,14 @@ object Weeder {
         case e => WeededAst.Expression.Discard(e, loc)
       }
 
-    case ParsedAst.Expression.ForEach(sp1, gens, exp2, sp2) =>
+    case ParsedAst.Expression.ForEach(sp1, gens, exp, sp2) =>
       //
       // Rewrites a foreach loop to Foreach.foreach call.
       //
 
       val fqn = "ForEach.foreach"
 
-      mapN(visitExp(exp2, senv)) {
+      mapN(visitExp(exp, senv)) {
         case e => gens.foldRight(e) {
           case (g, acc) => (visitPattern(g.pat), visitExp(g.exp, senv)) match {
             case (Success(p), Success(ge)) =>
