@@ -223,10 +223,10 @@ object Lowering {
     * Lowers the given `spec0`.
     */
   private def visitSpec(spec0: Spec)(implicit root: Root, flix: Flix): Spec = spec0 match {
-    case Spec(doc, ann, mod, tparams, fparams, declaredScheme, retTpe, eff, loc) =>
+    case Spec(doc, ann, mod, tparams, fparams, declaredScheme, retTpe, pur, eff, loc) =>
       val fs = fparams.map(visitFormalParam)
       val ds = visitScheme(declaredScheme)
-      Spec(doc, ann, mod, tparams, fs, ds, retTpe, eff, loc)
+      Spec(doc, ann, mod, tparams, fs, ds, retTpe, pur, eff, loc)
   }
 
   /**
@@ -834,7 +834,7 @@ object Lowering {
     case Head.Atom(pred, den, terms, _, loc) =>
       val predSymExp = mkPredSym(pred)
       val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
-      val termsExp = mkArray(terms.map(visitHeadTerm(cparams0, _)), Types.HeadTerm, loc)
+      val termsExp = mkList(terms.map(visitHeadTerm(cparams0, _)), Types.HeadTerm, loc)
       val innerExp = mkTuple(predSymExp :: denotationExp :: termsExp :: Nil, loc)
       mkTag(Enums.HeadPredicate, "HeadAtom", innerExp, Types.HeadPredicate, loc)
   }

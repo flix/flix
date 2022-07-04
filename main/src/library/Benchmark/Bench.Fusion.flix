@@ -11,31 +11,24 @@ use Benchmark.defBenchmark;
 ///////////////////////////////////////////////////////////////////////////////
 /// length                                                                  ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def listLength(l: Array[Int32, Static]): Benchmark =
+pub def listLength(l: Array[Int32, r]): Benchmark =
     defBenchmark("List.length", () -> {
         l |>
         Array.toList |>
         List.length
     } as & Pure)
 
-pub def delayListLength(l: Array[Int32, Static]): Benchmark =
+pub def delayListLength(l: Array[Int32, r]): Benchmark =
     defBenchmark("DelayList.length", () -> {
         l |>
         Array.toDelayList |>
         DelayList.length
     } as & Pure)
 
-pub def streamLength(l: Array[Int32, Static]): Benchmark =
-    defBenchmark("Stream.length", () -> {
-        l |>
-        Array.toStream |>
-        Stream.length
-    })
-
 ///////////////////////////////////////////////////////////////////////////////
 /// filter length                                                           ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def listFilterLength(l: Array[Int32, Static]): Benchmark =
+pub def listFilterLength(l: Array[Int32, r]): Benchmark =
     defBenchmark("List.filterLength", () -> {
         l |>
         Array.toList |>
@@ -43,7 +36,7 @@ pub def listFilterLength(l: Array[Int32, Static]): Benchmark =
         List.length
     } as & Pure)
 
-pub def delayListFilterLength(l: Array[Int32, Static]): Benchmark =
+pub def delayListFilterLength(l: Array[Int32, r]): Benchmark =
     defBenchmark("DelayList.filterLength", () -> {
         l |>
         Array.toDelayList |>
@@ -51,18 +44,10 @@ pub def delayListFilterLength(l: Array[Int32, Static]): Benchmark =
         DelayList.length
     } as & Pure)
 
-pub def streamFilterLength(l: Array[Int32, Static]): Benchmark =
-    defBenchmark("Stream.filterLength", () -> {
-        l |>
-        Array.toStream |>
-        Stream.filter(x -> x rem 2 == 0) |>
-        Stream.length
-    } as & Pure)
-
 ///////////////////////////////////////////////////////////////////////////////
 /// filter map length                                                       ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def listFilterMapLength(l: Array[Int32, Static]): Benchmark =
+pub def listFilterMapLength(l: Array[Int32, r]): Benchmark =
     defBenchmark("List.filterMapLength", () -> {
         l |>
         Array.toList |>
@@ -71,7 +56,7 @@ pub def listFilterMapLength(l: Array[Int32, Static]): Benchmark =
         List.length
     } as & Pure)
 
-pub def delayListFilterMapLength(l: Array[Int32, Static]): Benchmark =
+pub def delayListFilterMapLength(l: Array[Int32, r]): Benchmark =
     defBenchmark("DelayList.filterMapLength", () -> {
         l |>
         Array.toDelayList |>
@@ -80,43 +65,27 @@ pub def delayListFilterMapLength(l: Array[Int32, Static]): Benchmark =
         DelayList.length
     } as & Pure)
 
-pub def streamFilterMapLength(l: Array[Int32, Static]): Benchmark =
-    defBenchmark("Stream.filterMapLength", () -> {
-        l |>
-        Array.toStream |>
-        Stream.filter(x -> x rem 2 == 0) |>
-        Stream.map(x -> x * x) |>
-        Stream.length
-    } as & Pure)
-
 ///////////////////////////////////////////////////////////////////////////////
 /// sum                                                                     ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def listSum(l: Array[Int32, Static]): Benchmark =
+pub def listSum(l: Array[Int32, r]): Benchmark =
     defBenchmark("List.sum", () -> {
         l |>
         Array.toList |>
         List.sum
     } as & Pure)
 
-pub def delayListSum(l: Array[Int32, Static]): Benchmark =
+pub def delayListSum(l: Array[Int32, r]): Benchmark =
     defBenchmark("DelayList.sum", () -> {
         l |>
         Array.toDelayList |>
         DelayList.sum
     } as & Pure)
 
-pub def streamSum(l: Array[Int32, Static]): Benchmark =
-    defBenchmark("Stream.sum", () -> {
-        l |>
-        Array.toStream |>
-        Stream.sum
-    } as & Pure)
-
 ///////////////////////////////////////////////////////////////////////////////
 /// filter sum                                                              ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def listFilterSum(l: Array[Int32, Static]): Benchmark =
+pub def listFilterSum(l: Array[Int32, r]): Benchmark =
     defBenchmark("List.filterSum", () -> {
         l |>
         Array.toList |>
@@ -124,7 +93,7 @@ pub def listFilterSum(l: Array[Int32, Static]): Benchmark =
         List.sum
     } as & Pure)
 
-pub def delayListFilterSum(l: Array[Int32, Static]): Benchmark =
+pub def delayListFilterSum(l: Array[Int32, r]): Benchmark =
     defBenchmark("DelayList.filterSum", () -> {
         l |>
         Array.toDelayList |>
@@ -132,18 +101,10 @@ pub def delayListFilterSum(l: Array[Int32, Static]): Benchmark =
         DelayList.sum
     } as & Pure)
 
-pub def streamFilterSum(l: Array[Int32, Static]): Benchmark =
-    defBenchmark("Stream.filterSum", () -> {
-        l |>
-        Array.toStream |>
-        Stream.filter(x -> x rem 2 == 0) |>
-        Stream.sum
-    } as & Pure)
-
 ///////////////////////////////////////////////////////////////////////////////
 /// filter map sum                                                          ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def listFilterMapSum(l: Array[Int32, Static]): Benchmark =
+pub def listFilterMapSum(l: Array[Int32, r]): Benchmark =
     defBenchmark("List.filterMapSum", () -> {
         l |>
         Array.toList |>
@@ -152,7 +113,7 @@ pub def listFilterMapSum(l: Array[Int32, Static]): Benchmark =
         List.sum
     } as & Pure)
 
-pub def delayListFilterMapSum(l: Array[Int32, Static]): Benchmark =
+pub def delayListFilterMapSum(l: Array[Int32, r]): Benchmark =
     defBenchmark("DelayList.filterMapSum", () -> {
         l |>
         Array.toDelayList |>
@@ -161,19 +122,10 @@ pub def delayListFilterMapSum(l: Array[Int32, Static]): Benchmark =
         DelayList.sum
     } as & Pure)
 
-pub def streamFilterMapSum(l: Array[Int32, Static]): Benchmark =
-    defBenchmark("Stream.filterMapSum", () -> {
-        l |>
-        Array.toStream |>
-        Stream.filter(x -> x rem 2 == 0) |>
-        Stream.map(x -> x * x) |>
-        Stream.sum
-    } as & Pure)
-
 ///////////////////////////////////////////////////////////////////////////////
 /// filter8                                                                 ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def listFilter8(l: Array[Int32, Static]): Benchmark =
+pub def listFilter8(l: Array[Int32, r]): Benchmark =
     defBenchmark("List.filter8", () -> {
         l |>
         Array.toList |>
@@ -188,7 +140,7 @@ pub def listFilter8(l: Array[Int32, Static]): Benchmark =
         List.length
     } as & Pure)
 
-pub def delayListFilter8(l: Array[Int32, Static]): Benchmark =
+pub def delayListFilter8(l: Array[Int32, r]): Benchmark =
     defBenchmark("DelayList.filter8", () -> {
         l |>
         Array.toDelayList |>
@@ -203,25 +155,10 @@ pub def delayListFilter8(l: Array[Int32, Static]): Benchmark =
         DelayList.length
     } as & Pure)
 
-pub def streamFilter8(l: Array[Int32, Static]): Benchmark =
-    defBenchmark("Stream.filter8", () -> {
-        l |>
-        Array.toStream |>
-        Stream.filter(x -> x > 1) |>
-        Stream.filter(x -> x > 2) |>
-        Stream.filter(x -> x > 3) |>
-        Stream.filter(x -> x > 4) |>
-        Stream.filter(x -> x > 5) |>
-        Stream.filter(x -> x > 6) |>
-        Stream.filter(x -> x > 7) |>
-        Stream.filter(x -> x > 8) |>
-        Stream.length
-    } as & Pure)
-
 ///////////////////////////////////////////////////////////////////////////////
 /// map8                                                                    ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def listMap8(l: Array[Int32, Static]): Benchmark =
+pub def listMap8(l: Array[Int32, r]): Benchmark =
     defBenchmark("List.map8", () -> {
         l |>
         Array.toList |>
@@ -236,7 +173,7 @@ pub def listMap8(l: Array[Int32, Static]): Benchmark =
         List.length
     } as & Pure)
 
-pub def delayListMap8(l: Array[Int32, Static]): Benchmark =
+pub def delayListMap8(l: Array[Int32, r]): Benchmark =
     defBenchmark("DelayList.map8", () -> {
         l |>
         Array.toDelayList |>
@@ -251,25 +188,10 @@ pub def delayListMap8(l: Array[Int32, Static]): Benchmark =
         DelayList.length
     } as & Pure)
 
-pub def streamMap8(l: Array[Int32, Static]): Benchmark =
-    defBenchmark("Stream.map8", () -> {
-        l |>
-        Array.toStream |>
-        Stream.map(x -> x + 1) |>
-        Stream.map(x -> x + 2) |>
-        Stream.map(x -> x + 3) |>
-        Stream.map(x -> x + 4) |>
-        Stream.map(x -> x + 5) |>
-        Stream.map(x -> x + 6) |>
-        Stream.map(x -> x + 7) |>
-        Stream.map(x -> x + 8) |>
-        Stream.length
-    } as & Pure)
-
 ///////////////////////////////////////////////////////////////////////////////
 /// flatMap take sum                                                        ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def listFlatMapTakeSum(l: Array[Int32, Static]): Benchmark =
+pub def listFlatMapTakeSum(l: Array[Int32, r]): Benchmark =
     let l2 = List.range(1, 10);
     defBenchmark("List.flatMapTakeSum", () -> {
         l |>
@@ -279,7 +201,7 @@ pub def listFlatMapTakeSum(l: Array[Int32, Static]): Benchmark =
         List.sum
     } as & Pure)
 
-pub def delayListFlatMapTakeSum(l: Array[Int32, Static]): Benchmark =
+pub def delayListFlatMapTakeSum(l: Array[Int32, r]): Benchmark =
     let l2 = DelayList.range(1, 10);
     defBenchmark("DelayList.flatMapTakeSum", () -> {
         l |>
@@ -289,20 +211,10 @@ pub def delayListFlatMapTakeSum(l: Array[Int32, Static]): Benchmark =
         DelayList.sum
     } as & Pure)
 
-pub def streamFlatMapTakeSum(l: Array[Int32, Static]): Benchmark =
-    let l2 = Stream.range(1, 10);
-    defBenchmark("Stream.flatMapTakeSum", () -> {
-        l |>
-        Array.toStream |>
-        Stream.flatMapL(x -> Stream.map(y -> x * y, l2)) |>
-        Stream.take(100_000) |>  // TODO
-        Stream.sum
-    } as & Pure)
-
 ///////////////////////////////////////////////////////////////////////////////
 /// cartesian                                                               ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def listCartesian(l: Array[Int32, Static]): Benchmark =
+pub def listCartesian(l: Array[Int32, r]): Benchmark =
     let l2 = List.range(1, 10);
     defBenchmark("List.cartesian", () -> {
         l |>
@@ -311,22 +223,13 @@ pub def listCartesian(l: Array[Int32, Static]): Benchmark =
         List.sum
     } as & Pure)
 
-pub def delayListCartesian(l: Array[Int32, Static]): Benchmark =
+pub def delayListCartesian(l: Array[Int32, r]): Benchmark =
     let l2 = DelayList.range(1, 10);
     defBenchmark("DelayList.cartesian", () -> {
         l |>
         Array.toDelayList |>
         DelayList.flatMap(x -> DelayList.map(y -> x * y, l2)) |>
         DelayList.sum
-    } as & Pure)
-
-pub def streamCartesian(l: Array[Int32, Static]): Benchmark =
-    let l2 = Stream.range(1, 10);
-    defBenchmark("Stream.cartesian", () -> {
-        l |>
-        Array.toStream |>
-        Stream.flatMapL(x -> Stream.map(y -> x * y, l2)) |>
-        Stream.sum
     } as & Pure)
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -336,15 +239,15 @@ pub def streamCartesian(l: Array[Int32, Static]): Benchmark =
 ///
 /// Returns a list of `n` concatenated lists with elements from `1` to `1_000`.
 ///
-pub def input(n: Int32): Array[Int32, Static] & Impure =
-    Array.range(1, n, Static) |>
-    Array.flatMap(_ -> Array.range(1, 1_000, Static))
+pub def input(n: Int32, r: Region[r]): Array[Int32, r] \ Write(r) =
+    Array.range(1, n, r) |>
+    Array.flatMap(_ -> Array.range(1, 1_000, r))
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Biboudis Suite                                                          ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def biboudisSuite(n: Int32): Array[Benchmark, Static] & Impure =
-    let l = input(n);
+pub def biboudisSuite(n: Int32, r: Region[r]): Array[Benchmark, r] \ Write(r) =
+    let l = input(n, r);
     [
         // List
         listLength(l),
@@ -368,57 +271,12 @@ pub def biboudisSuite(n: Int32): Array[Benchmark, Static] & Impure =
         delayListFilter8(l),
         delayListMap8(l),
         delayListFlatMapTakeSum(l),
-        delayListCartesian(l),
+        delayListCartesian(l)
 
-        // Stream
-        streamLength(l),
-        streamFilterLength(l),
-        streamFilterMapLength(l),
-        streamSum(l),
-        streamFilterSum(l),
-        streamFilterMapSum(l),
-        streamFilter8(l),
-        streamMap8(l),
-        streamFlatMapTakeSum(l),
-        streamCartesian(l)
+    ] @ r
 
-    ]
-
-def main() : Unit & Impure =
-    let s1 = biboudisSuite(100);
+def main() : Unit & Impure = region r {
+    let s1 = biboudisSuite(100, r);
     Benchmark.runWithBudget(s1, 250_000_000_000i64);
     ()
-
-
-// TODO: Remove
-namespace Stream {
-
-    pub def sum(s: Stream[a, s]): Int32 =
-        let Stream(next0, s0) = s;
-        sumAcc(next0, s0, 0)
-
-    def sumAcc(next0: s -> Step[a, s], s0: s, acc: Int32): Int32 =
-        match next0(s0) {
-            case Done           => acc
-            case Skip(s1)       => sumAcc(next0, s1, acc)
-            case Yield(_, s1)   => sumAcc(next0, s1, acc + 1)
-        }
-
-    pub def flatMapL(f: a -> Stream[a, sb], s0: Stream[a, sa]): Stream[a, (sa, Option[Stream[a, sb]])] =
-        let Stream(nexta, sa0) = s0;
-        let next = s -> match s {
-            case (sa, None) => match nexta(sa) {
-                case Done           => Done
-                case Skip(sa1)      => Skip((sa1, None))
-                case Yield(a, sa1)  => Skip((sa1, Some(f(a))))
-            }
-            case (sa, Some(Stream(nextb, sb))) => match nextb(sb) {
-                case Done           => Skip(    (sa, None))
-                case Skip(sb1)      => Skip(    (sa, Some(Stream(nextb, sb1))))
-                case Yield(b, sb1)  => Yield(b, (sa, Some(Stream(nextb, sb1))))
-            }
-        };
-        Stream(next, (sa0, None))
-
-
 }

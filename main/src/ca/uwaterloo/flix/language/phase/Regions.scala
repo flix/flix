@@ -401,8 +401,8 @@ object Regions {
   private def regionVarsOf(tpe: Type): SortedSet[Type.KindedVar] = tpe.typeVars.filter {
     case tvar =>
       val isBool = tvar.sym.kind == Kind.Bool
-      val isRigid = tvar.sym.rigidity == Rigidity.Rigid
-      isBool && isRigid
+      val isRegion = tvar.sym.isRegion
+      isBool && isRegion
   }
 
 }

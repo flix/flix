@@ -1132,7 +1132,7 @@ object GenExpression {
 
     case Expression.MatchError(_, loc) =>
       addSourceLine(visitor, loc)
-      AsmOps.compileThrowFlixError(visitor, JvmName.MatchError, loc)
+      AsmOps.compileThrowFlixError(visitor, BackendObjType.MatchError.jvmName, loc)
 
     case Expression.BoxBool(exp, loc) =>
       addSourceLine(visitor, loc)

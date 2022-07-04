@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Jonathan Lindegaard Starup
+ * Copyright 2022 Nicola Dardanis
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.api.lsp
+import org.json4s.{JInt, JValue}
 
-package ca.uwaterloo.flix.language.phase.jvm
-
-import ca.uwaterloo.flix.api.Flix
-
-object GenRefClasses {
-  def gen(ts: Iterable[BackendObjType.Ref])(implicit flix: Flix): Map[JvmName, JvmClass] = {
-    ts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, refType) =>
-        macc + (refType.jvmName -> JvmClass(refType.jvmName, refType.genByteCode()))
-    }
+/**
+  * Represents an `InlayHintKind` in LSP.
+  */
+sealed trait InlayHintKind {
+  def toJSON: JValue = this match {
+    case InlayHintKind.Type => JInt(1)
+    case InlayHintKind.Parameter => JInt(2)
   }
+}
+
+object InlayHintKind {
+  /**
+    * An inlay hint that for a type annotation.
+    */
+  case object Type extends InlayHintKind
+  /**
+    * An inlay hint that is for a parameter.
+    */
+  case object Parameter extends InlayHintKind
 }

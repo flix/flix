@@ -44,7 +44,7 @@ namespace Fixpoint {
                     let ruleStratum = Map.getWithDefault(p, 0, strat);
                     Map.insertWith(List.append, ruleStratum, rule :: Nil)
             }, Map#{}, rules) |>
-            Map.foreach(_ -> (x -> List.toArray(x, Static)) >> compileStratum(stmts));
+            Map.foreach(_ -> (x -> List.toArray(Static, x)) >> compileStratum(stmts));
             RamStmt.Seq(MutList.toList(stmts))
         case _ => bug!("Datalog normalization bug")
     }
@@ -69,7 +69,7 @@ namespace Fixpoint {
     ///
     def compileStratum(stmts: MutList[RamStmt[v], Static], stratum: Array[Constraint[v], Static]): Unit & Impure with ToString[v] =
         let idb = Array.foldRight(match Constraint(HeadAtom(pred, den, terms), _) -> {
-            let arity = Array.length(terms);
+            let arity = List.length(terms);
             Map.insert(pred, (arity, den))
         }, Map#{}, stratum);
         let loopBody = new MutList(Static);
@@ -124,9 +124,9 @@ namespace Fixpoint {
         case Constraint(HeadAtom(headSym, headDen, headTerms), body) =>
             let augBody = augmentBody(body);
             let env = unifyVars(augBody);
-            let ramTerms = Array.map(compileHeadTerm(env), headTerms);
-            let arity = Array.length(ramTerms);
-            let projection = RelOp.Project(ramTerms |> Array.toList, RamSym.Full(headSym, arity, headDen));
+            let ramTerms = List.map(compileHeadTerm(env), headTerms);
+            let arity = List.length(ramTerms);
+            let projection = RelOp.Project(ramTerms, RamSym.Full(headSym, arity, headDen));
             let join = compileBody(env, augBody);
             let loopBody = RelOp.If(join, projection);
             let insert =
@@ -176,11 +176,11 @@ namespace Fixpoint {
         case Constraint(HeadAtom(headSym, headDen, headTerms), body) =>
             let augBody = augmentBody(body);
             let env = unifyVars(augBody);
-            let ramTerms = Array.map(compileHeadTerm(env), headTerms);
-            let arity = Array.length(ramTerms);
-            let projection = RelOp.Project(ramTerms |> Array.toList, RamSym.New(headSym, arity, headDen));
+            let ramTerms = List.map(compileHeadTerm(env), headTerms);
+            let arity = List.length(ramTerms);
+            let projection = RelOp.Project(ramTerms, RamSym.New(headSym, arity, headDen));
             let join = compileBody(env, augBody);
-            let loopBody = RelOp.If(BoolExp.NotMemberOf(ramTerms, RamSym.Full(headSym, arity, headDen)) :: join, projection);
+            let loopBody = RelOp.If(BoolExp.NotMemberOf(List.toArray(Static, ramTerms), RamSym.Full(headSym, arity, headDen)) :: join, projection);
             let compile = delta -> { // `delta` designates the focused atom.
                 let insert =
                     List.foldRight(match (atom, rowVar) -> acc -> match atom {
@@ -324,7 +324,7 @@ namespace Fixpoint {
                 case BodyAtom(bodySym, denotation, Polarity.Negative, _, terms) =>
                     let ramTerms = List.mapWithIndex(compileBodyTerm, terms);
                     let arity = List.length(ramTerms);
-                    BoolExp.NotMemberOf(List.toArray(ramTerms, Static), RamSym.Full(bodySym, arity, denotation)) :: acc
+                    BoolExp.NotMemberOf(List.toArray(Static, ramTerms), RamSym.Full(bodySym, arity, denotation)) :: acc
                 case Guard0(f) =>
                     BoolExp.Guard0(f) :: acc
                 case Guard1(f, v) =>

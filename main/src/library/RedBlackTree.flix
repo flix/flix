@@ -70,6 +70,13 @@ namespace RedBlackTree {
         pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldRightWithCont((_, v, acc) -> f(v, acc), s, t)
     }
 
+    instance UnorderedFoldable[RedBlackTree[k]] {
+        pub def foldMap(f: v -> b & ef, t: RedBlackTree[k, v]): b & ef with CommutativeMonoid[b] = RedBlackTree.foldMap(_ -> f, t)
+        override pub def isEmpty(t: RedBlackTree[k, v]): Bool = RedBlackTree.isEmpty(t)
+        override pub def exists(f: v -> Bool & ef, t: RedBlackTree[k, v]): Bool & ef = RedBlackTree.exists(_ -> f, t)
+        override pub def forall(f: v -> Bool & ef, t: RedBlackTree[k, v]): Bool & ef = RedBlackTree.forall(_ -> f, t)
+    }
+
     instance Traversable[RedBlackTree[k]] {
         pub def traverse(f: a -> m[b] & ef, t: RedBlackTree[k, a]): m[RedBlackTree[k, b]] & ef with Applicative[m] =
             mapAWithKey((_, v) -> f(v), t)
@@ -77,7 +84,6 @@ namespace RedBlackTree {
         pub override def sequence(t: RedBlackTree[k, m[a]]): m[RedBlackTree[k, a]] with Applicative[m] =
             mapAWithKey((_, v) -> v, t)
     }
-
 
     instance FunctorFilter[RedBlackTree[k]] with Order[k] {
         pub def filterMap(f: a -> Option[b] & ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] & ef = filterMapImplementation(f, t)
@@ -121,10 +127,12 @@ namespace RedBlackTree {
     /// Returns the number of nodes in `t`.
     ///
     @Time(size(t)) @Space(Int32.log2(size(t)))
-    pub def size(t: RedBlackTree[k, v]): Int32 = match t {
-        case Node(_, a, _, _, b) => 1 + size(a) + size(b)
-        case _                   => 0
-    }
+    pub def size(t: RedBlackTree[k, v]): Int32 =
+        def loop(tt, k) = match tt {
+            case Node(_, a, _, _, b) => loop(a, ks -> k(loop(b, ys -> ks + ys + 1)))
+            case _                   => k(0)
+        };
+        loop(t, identity)
 
     ///
     /// Returns the empty tree.
@@ -297,6 +305,7 @@ namespace RedBlackTree {
         case _                   => s
     }
 
+    ///
     /// Applies `f` to a start value `s` and all key-value pairs in `tree` going from right to left.
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
@@ -307,6 +316,12 @@ namespace RedBlackTree {
     }
 
     ///
+    /// Returns the result of mapping each key-value pair and combining the results.
+    ///
+    pub def foldMap(f: (k, v) -> b & ef, t: RedBlackTree[k, v]): b & ef with Monoid[b] =
+        foldLeft((acc, k, v) -> Monoid.combine(acc, f(k, v)), Monoid.empty(), t)
+
+    ///
     /// Applies `f` to a start value `z` and all key-value pairs in `t` going from right to left.
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
@@ -314,7 +329,7 @@ namespace RedBlackTree {
     ///
     pub def foldRightWithCont(f: (k, v, Unit -> b & ef) -> b & ef, z: b, t: RedBlackTree[k, v]): b & ef = match t {
         case Node(_, a, k, v, b) => foldRightWithCont(f, f(k, v, _ -> foldRightWithCont(f, z, b)), a)
-        case _ => z
+        case _                   => z
     }
 
     ///
@@ -691,7 +706,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parCount(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 & Impure = {
+    pub def parCount(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 & Impure =
         if (n <= 1)
             seqCount(f, t)
         else
@@ -708,7 +723,6 @@ namespace RedBlackTree {
                     let b1 = <- chanR;
                     a1 + v1 + b1
             }
-    }
 
     ///
     /// Applies `f` over the tree `t` sequentially from left to right and returns the number of elements
@@ -759,7 +773,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parSumWith(n: Int32, f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 & Impure = {
+    pub def parSumWith(n: Int32, f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 & Impure =
         if (n <= 1)
             seqSumWith(f, t)
         else
@@ -776,7 +790,6 @@ namespace RedBlackTree {
                     let b1 = <- chanR;
                     a1 + v1 + b1
             }
-    }
 
     ///
     /// Returns the sum of all key-value pairs `k => v` in the tree `t`

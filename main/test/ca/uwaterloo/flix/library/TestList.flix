@@ -1892,7 +1892,7 @@ def findMap08(): Bool = List.findMap(i -> if (i rem 2 == 0) Some(i/2) else None,
 @test
 def toMutDeque01(): Bool = region r {
     let l = Nil: List[Unit];
-    let d = List.toMutDeque(l, r);
+    let d = List.toMutDeque(r, l);
 
     l == MutDeque.toList(d)
 }
@@ -1900,7 +1900,7 @@ def toMutDeque01(): Bool = region r {
 @test
 def toMutDeque02(): Bool = region r {
     let l = 1 :: 2 :: Nil;
-    let d = List.toMutDeque(l, r);
+    let d = List.toMutDeque(r, l);
 
     l == MutDeque.toList(d)
 }
@@ -1908,7 +1908,7 @@ def toMutDeque02(): Bool = region r {
 @test
 def toMutDeque03(): Bool = region r {
     let l = 3 :: 1 :: 2 :: Nil;
-    let d = List.toMutDeque(l, r);
+    let d = List.toMutDeque(r, l);
 
     l == MutDeque.toList(d)
 }
@@ -1916,7 +1916,7 @@ def toMutDeque03(): Bool = region r {
 @test
 def toMutDeque04(): Bool = region r {
     let l = 'a' :: 'b' :: 'c' :: Nil;
-    let d = List.toMutDeque(l, r);
+    let d = List.toMutDeque(r, l);
 
     l == MutDeque.toList(d)
 }
@@ -2010,26 +2010,25 @@ def foreach02(): Bool & Impure =
 
     @test
     def toArray01(): Bool = region r {
-        let xs: List[Int32] = Nil;
-        let a = List.toArray(xs, r);
+        let a = List.toArray(r, Nil): Array[Int32, r];
         Array.sameElements(a, [] @ r)
     }
 
     @test
     def toArray02(): Bool = region r {
-        let a = List.toArray(1 :: Nil, r);
+        let a = List.toArray(r, 1 :: Nil);
         Array.sameElements(a, [1] @ r)
     }
 
     @test
     def toArray03(): Bool = region r {
-        let a = List.toArray(1 :: 2 :: Nil, r);
+        let a = List.toArray(r, 1 :: 2 :: Nil);
         Array.sameElements(a, [1, 2] @ r)
     }
 
     @test
     def toArray04(): Bool = region r {
-        let a = List.toArray(1 :: 2 :: 3 :: Nil, r);
+        let a = List.toArray(r, 1 :: 2 :: 3 :: Nil);
         Array.sameElements(a, [1, 2, 3] @ r)
     }
 

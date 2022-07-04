@@ -19,7 +19,7 @@ package ca.uwaterloo.flix
 import ca.uwaterloo.flix.api.lsp.LanguageServer
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.runtime.shell.Shell
+import ca.uwaterloo.flix.runtime.shell.{Shell, SourceProvider}
 import ca.uwaterloo.flix.tools._
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util._
@@ -107,10 +107,10 @@ object Main {
       options = options.copy(progress = false)
     }
 
+    val cwd = Paths.get(".").toAbsolutePath.normalize()
+
     // check if command was passed.
     try {
-      val cwd = Paths.get(".").toAbsolutePath.normalize()
-
       cmdOpts.command match {
         case Command.None =>
         // nop, continue
@@ -150,8 +150,8 @@ object Main {
           System.exit(getCode(result))
 
         case Command.Repl =>
-          val source = if (cmdOpts.files.isEmpty) Left(cwd) else Right(cmdOpts.files)
-          val shell = new Shell(cmdOpts.files.toList.map(_.toPath), options)
+          val source = if (cmdOpts.files.isEmpty) SourceProvider.ProjectPath(cwd) else SourceProvider.SourceFileList(cmdOpts.files)
+          val shell = new Shell(source, options)
           shell.loop()
           System.exit(0)
 
@@ -192,7 +192,7 @@ object Main {
 
     // check if we should start a REPL
     if (cmdOpts.command == Command.None && cmdOpts.files.isEmpty) {
-      val shell = new Shell(cmdOpts.files.toList.map(_.toPath), options)
+      val shell = new Shell(SourceProvider.ProjectPath(cwd), options)
       shell.loop()
       System.exit(0)
     }

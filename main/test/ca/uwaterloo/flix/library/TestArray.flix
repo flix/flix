@@ -187,7 +187,7 @@ namespace TestArray {
         let a = ([] @ r): Array[Int32, _];
         let d = new MutDeque(r): MutDeque[Int32, _];
 
-        Array.toMutDeque(a, r) `MutDeque.sameElements` d
+        Array.toMutDeque(r, a) `MutDeque.sameElements` d
     }
 
     @test
@@ -197,7 +197,7 @@ namespace TestArray {
         let d = new MutDeque(r);
         MutDeque.pushBack(1, d);
 
-        Array.toMutDeque(a, r) `MutDeque.sameElements` d
+        Array.toMutDeque(r, a) `MutDeque.sameElements` d
     }
 
     @test
@@ -209,7 +209,7 @@ namespace TestArray {
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
 
-        Array.toMutDeque(a, r) `MutDeque.sameElements` d
+        Array.toMutDeque(r, a) `MutDeque.sameElements` d
     }
 
     @test
@@ -223,7 +223,7 @@ namespace TestArray {
         MutDeque.pushFront(2, d);
         MutDeque.pushFront(1, d);
 
-        Array.toMutDeque(a, r) `MutDeque.sameElements` d
+        Array.toMutDeque(r, a) `MutDeque.sameElements` d
     }
 
     @test
@@ -235,7 +235,7 @@ namespace TestArray {
         MutDeque.pushFront('b', d);
         MutDeque.pushFront('a', d);
 
-        Array.toMutDeque(a, r) `MutDeque.sameElements` d
+        Array.toMutDeque(r, a) `MutDeque.sameElements` d
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -5590,7 +5590,7 @@ namespace TestArray {
 
     @test
     def toDelayList04(): Bool = region r {
-        (Array.range(-1000, 1000, r) |> Array.toDelayList |> DelayList.toArray)(r) `sameElements` Array.range(-1000, 1000, r)
+        Array.range(-1000, 1000, r) |> Array.toDelayList |> DelayList.toArray(r) `sameElements` Array.range(-1000, 1000, r)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -5896,14 +5896,14 @@ namespace TestArray {
 
     @test
     def toMutList01(): Bool = region r {
-        MutList.sameElements(Array.toMutList(([] @ r): Array[Int32, _], r), new MutList(r))
+        MutList.sameElements(Array.toMutList(r, ([] @ r): Array[Int32, r]), new MutList(r))
     }
 
     @test
     def toMutList02(): Bool = region r {
         let v = new MutList(r);
         MutList.push!(1, v);
-        MutList.sameElements(Array.toMutList([1] @ r, r), v)
+        MutList.sameElements(Array.toMutList(r, [1] @ r), v)
     }
 
     @test
@@ -5912,30 +5912,30 @@ namespace TestArray {
         MutList.push!(1, v);
         MutList.push!(2, v);
         MutList.push!(3, v);
-        MutList.sameElements(Array.toMutList([1, 2, 3] @ r, r), v)
+        MutList.sameElements(Array.toMutList(r, [1, 2, 3] @ r), v)
     }
 
     @test
     def toMutList04(): Bool = region r {
-        MutList.sameElements((Array.range(0, 100, r) |> Array.toMutList)(r), MutList.range(0, 100, r))
+        MutList.sameElements((Array.range(0, 100, r) |> Array.toMutList(r)), MutList.range(0, 100, r))
     }
 
     @test
     def toMutList05(): Bool = region r {
-        let v = Array.toMutList([1, 2, 3] @ r, r);
+        let v = Array.toMutList(r, [1, 2, 3] @ r);
         MutList.push!(4, v);
-        Array.sameElements(MutList.toArray(v, r), [1, 2, 3, 4] @ r)
+        Array.sameElements(MutList.toArray(r, v), [1, 2, 3, 4] @ r)
     }
 
     @test
     def toMutList06(): Bool = region r {
-        let v = Array.toMutList([1, 2, 3] @ r, r);
+        let v = Array.toMutList(r, [1, 2, 3] @ r);
         MutList.push!(4, v);
         discard MutList.pop!(v);
         discard MutList.pop!(v);
         discard MutList.pop!(v);
         discard MutList.pop!(v);
-        Array.sameElements(MutList.toArray(v, r), [] @ r)
+        Array.sameElements(MutList.toArray(r, v), [] @ r)
     }
 
     /////////////////////////////////////////////////////////////////////////////

@@ -389,6 +389,30 @@ namespace TestRedBlackTree {
         RedBlackTree.foreach((k, _) -> r := k, t);
         1 == deref r
 
+    /////////////////////////////////////////////////////////////////////////////
+    // foldMapWithKey                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool =
+        let Map(t) = Map#{};
+        RedBlackTree.foldMap((k, v) -> k + v, t) == 0
+
+    @test
+    def foldMap02(): Bool =
+        let Map(t) = Map#{1 => 2, 3 => 5};
+        RedBlackTree.foldMap((k, v) -> k + v, t) == (1 + 2 + 3 + 5)
+
+    @test
+    def foldMap03(): Bool =
+        let Map(t) = Map#{1 => 2, 3 => 5};
+        RedBlackTree.foldMap((k, v) -> 2 * (k + v), t) == (2 * (1 + 2) + 2 * (3 + 5))
+
+    @test
+    def foldMap04(): Bool =
+        let Map(t) = Map#{1 => "a", 2 => "b"};
+        RedBlackTree.foldMap((k, v) -> "${k}" + v, t) == "1a2b"
+
 
     /////////////////////////////////////////////////////////////////////////////
     // sumValues                                                               //

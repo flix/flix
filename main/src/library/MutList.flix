@@ -730,9 +730,9 @@ namespace MutList {
     ///
     /// Returns `v` as an array.
     ///
-    pub def toArray(v: MutList[a, r1], r2: Region[r2]): Array[a, r2] \ { Read(r1), Write(r2) } =
+    pub def toArray(r1: Region[r1], v: MutList[a, r2]): Array[a, r1] \ { Read(r2), Write(r1) } =
         let MutList(a, l) = v;
-        Array.copyOfRange(0, deref l, deref a, r2)
+        Array.copyOfRange(0, deref l, deref a, r1)
 
     ///
     /// Returns the mutable list `xs` as a chain.
@@ -743,8 +743,8 @@ namespace MutList {
     ///
     /// Returns `v` as a MutDeque.
     ///
-    pub def toMutDeque(v: MutList[a, r1], r: Region[r2]): MutDeque[a, r2] \ { Read(r1), Write(r2) }  =
-        let d = new MutDeque(r);
+    pub def toMutDeque(r1: Region[r1], v: MutList[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1) }  =
+        let d = new MutDeque(r1);
         MutList.foreach(x -> MutDeque.pushBack(x, d), v);
         d
 
@@ -924,9 +924,9 @@ namespace MutList {
     /// Shuffles `v` using the Fisher–Yates shuffle.
     ///
     pub def shuffle(rnd: Random.Random, v: MutList[a, r1], r1: Region[r1]): MutList[a, r1] & Impure \ { Read(r1), Write(r1) } = region r2 {
-        let arr = toArray(v, r2);
+        let arr = toArray(r2, v);
         Array.shuffle(rnd, arr);
-        Array.toMutList(arr, r1)
+        Array.toMutList(r1, arr)
     }
 
 }

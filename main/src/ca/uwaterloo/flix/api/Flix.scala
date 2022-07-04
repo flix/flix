@@ -179,6 +179,7 @@ class Flix {
     "Reducible.flix" -> LocalResource.get("/src/library/Reducible.flix"),
     "SemiGroup.flix" -> LocalResource.get("/src/library/SemiGroup.flix"),
     "Traversable.flix" -> LocalResource.get("/src/library/Traversable.flix"),
+    "UnorderedFoldable.flix" -> LocalResource.get("/src/library/UnorderedFoldable.flix"),
 
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
 
@@ -229,6 +230,8 @@ class Flix {
     "Fixpoint/Ram/RowVar.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RowVar.flix"),
 
     "Fixpoint/Shared/PredSym.flix" -> LocalResource.get("/src/library/Fixpoint/Shared/PredSym.flix"),
+
+    "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
   )
 
   /**

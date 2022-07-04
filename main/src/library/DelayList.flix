@@ -90,6 +90,14 @@ instance Foldable[DelayList] {
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldRightWithCont(f, s, l)
 }
 
+instance UnorderedFoldable[DelayList] {
+    pub def foldMap(f: a -> b & ef, l: DelayList[a]): b & ef with CommutativeMonoid[b] = DelayList.foldMap(f, l)
+    override pub def isEmpty(l: DelayList[a]): Bool = DelayList.isEmpty(l)
+    override pub def exists(f: a -> Bool & ef, l: DelayList[a]): Bool & ef = DelayList.exists(f, l)
+    override pub def forall(f: a -> Bool & ef, l: DelayList[a]): Bool & ef = DelayList.forall(f, l)
+    override pub def memberOf(x: a, l: DelayList[a]): Bool with Eq[a] = DelayList.memberOf(x, l)
+}
+
 instance Iterable[DelayList] {
     pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) =
         DelayList.toIterator(r, l)
@@ -1140,7 +1148,7 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toArray(l: DelayList[a], r: Region[r]): Array[a, r] \ Write(r) =
+    pub def toArray(r: Region[r], l: DelayList[a]): Array[a, r] \ Write(r) =
         let a = [$DEFAULT$; length(l)] @ r;
         foreach(match (y, i) -> a[i] = y, zipWithIndex(l));
         a
@@ -1186,14 +1194,14 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toMutList(l: DelayList[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
-        Array.toMutList(toArray(l, r2), r) // `Array.toMutList` respects the invariant of `MutList`.
+    pub def toMutList(r: Region[r], l: DelayList[a]): MutList[a, r] \ Write(r) = region r2 {
+        Array.toMutList(r, toArray(r2, l)) // `Array.toMutList` respects the invariant of `MutList`.
     }
 
     ///
     /// Returns `l` as a MutDeque.
     ///
-    pub def toMutDeque(l: DelayList[a], r: Region[r]): MutDeque[a, r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], l: DelayList[a]): MutDeque[a, r] \ Write(r) =
         let d = new MutDeque(r);
         DelayList.foreach(x -> MutDeque.pushBack(x, d), l);
         d
@@ -1293,7 +1301,7 @@ namespace DelayList {
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
     pub def shuffle(rnd: Random.Random, l: DelayList[a]): DelayList[a] & Impure = region r {
-        let arr = toArray(l, r);
+        let arr = toArray(r, l);
         Array.shuffle(rnd, arr);
         Array.toDelayList(arr)
     }

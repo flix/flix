@@ -73,6 +73,14 @@ instance Foldable[Nel] {
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldRightWithCont(f, s, l)
 }
 
+instance UnorderedFoldable[Nel] {
+    pub def foldMap(f: a -> b & ef, l: Nel[a]): b & ef with CommutativeMonoid[b] = Nel.foldMap(f, l)
+    override pub def isEmpty(_: Nel[a]): Bool = false
+    override pub def exists(f: a -> Bool & ef, l: Nel[a]): Bool & ef = Nel.exists(f, l)
+    override pub def forall(f: a -> Bool & ef, l: Nel[a]): Bool & ef = Nel.forall(f, l)
+    override pub def memberOf(x: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(x, l)
+}
+
 instance Traversable[Nel] {
     pub def traverse(f: a -> m[b] & ef, t: Nel[a]): m[Nel[b]] & ef with Applicative[m] = Nel.traverse(f, t)
     pub override def sequence(t: Nel[m[a]]): m[Nel[a]] with Applicative[m] = Nel.sequence(t)
@@ -97,7 +105,7 @@ instance Reducible[Nel] {
     override pub def memberOf(a: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(a, l)
     override pub def dropWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef = Nel.dropWhile(f, l)
     override pub def takeWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef = Nel.takeWhile(f, l)
-    override pub def toArray(l: Nel[a], r: Region[r]): Array[a, r] \ Write(r) = Nel.toArray(l, r)
+    override pub def toArray(r: Region[r], l: Nel[a]): Array[a, r] \ Write(r) = Nel.toArray(r, l)
     override pub def toIterator(r: Region[r], l: Nel[a]): Iterator[a, r] \ Write(r) = Nel.toIterator(r, l)
     override pub def toList(l: Nel[a]): List[a] = Nel.toList(l)
 }
@@ -566,13 +574,13 @@ namespace Nel {
     ///
     /// Returns `l` as an array.
     ///
-    pub def toArray(l: Nel[a], r: Region[r]): Array[a, r] \ Write(r) =
-        (l |> toList |> List.toArray)(r)
+    pub def toArray(r: Region[r], l: Nel[a]): Array[a, r] \ Write(r) =
+        l |> toList |> List.toArray(r)
 
     ///
     /// Returns `l` as a MutDeque.
     ///
-    pub def toMutDeque(l: Nel[a], r: Region[r]): MutDeque[a, r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], l: Nel[a]): MutDeque[a, r] \ Write(r) =
         let d = new MutDeque(r);
         foreach(x -> MutDeque.pushBack(x, d), l);
         d
@@ -594,7 +602,7 @@ namespace Nel {
     /// The sort implementation is a Quicksort.
     ///
     pub def sort(l: Nel[a]): Nel[a] with Order[a] = region r {
-        let list = (toArray(l, r) !> Array.sort! |> Array.toList);
+        let list = toArray(r, l) !> Array.sort! |> Array.toList;
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
@@ -610,7 +618,7 @@ namespace Nel {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, l: Nel[a]): Nel[a] with Order[b] = region r {
-        let list = (toArray(l, r) !> Array.sortBy!(f) |> Array.toList);
+        let list = toArray(r, l) !> Array.sortBy!(f) |> Array.toList;
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
@@ -626,7 +634,7 @@ namespace Nel {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, l: Nel[a]): Nel[a] = region r {
-        let list = (toArray(l, r) !> Array.sortWith!(cmp) |> Array.toList);
+        let list = toArray(r, l) !> Array.sortWith!(cmp) |> Array.toList;
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()

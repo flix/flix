@@ -1173,6 +1173,18 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.ImpureDeclaredAsPure](result)
   }
 
+  test("Test.ImpureDeclaredAsPure.03") {
+    // Regression test. See https://github.com/flix/flix/issues/4062
+    val input =
+      """
+        |def mkArray(): Array[Int32, Static] & Impure = []
+        |
+        |def zero(): Int32 & Pure = mkArray().length
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.ImpureDeclaredAsPure](result)
+  }
+
   test("Test.EffectPolymorphicDeclaredAsPure.01") {
     val input =
       """
