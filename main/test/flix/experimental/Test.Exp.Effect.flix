@@ -10,9 +10,9 @@ namespace Test/Exp/Effect {
     }
 
     // @test
-    pub def handleEff02(): Bool = {
-        try true with Fail {
-            def fail(_) = resume(false)
+    pub def handleEff02(): Unit = {
+        try () with Fail {
+            def fail(_) = resume()
         }
     }
 

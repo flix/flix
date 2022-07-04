@@ -788,7 +788,7 @@ namespace Iterator {
             iter
         else
             let Iterator(done, next) = iter;
-            region r2 {
+            discard region r2 {
                 let i = ref (n - 1) @ r2; // Subtract 1 since `forward` consumes 1 element before applying `f`.
                 let f = _ -> if (deref i <= 0) true else { i := deref i - 1; false };
                 forward(f, done, next)
