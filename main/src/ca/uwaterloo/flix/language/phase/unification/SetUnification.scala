@@ -26,7 +26,7 @@ import scala.annotation.tailrec
 object SetUnification {
 
   /**
-    * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
+    * Returns the most general unifier of the two given set formulas `tpe1` and `tpe2`.
     */
   def unify(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     ///
@@ -65,7 +65,7 @@ object SetUnification {
   }
 
   /**
-    * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
+    * Returns the most general unifier of the two given set formulas `tpe1` and `tpe2`.
     */
   private def booleanUnification(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // The boolean expression we want to show is 0.
@@ -95,7 +95,7 @@ object SetUnification {
 
       Ok(subst)
     } catch {
-      case BooleanUnificationException => Err(UnificationError.MismatchedBools(tpe1, tpe2))
+      case SetUnificationException => Err(UnificationError.MismatchedBools(tpe1, tpe2)) // TODO make setty
     }
   }
 
@@ -129,7 +129,7 @@ object SetUnification {
       if (!satisfiable(f))
         Substitution.empty
       else
-        throw BooleanUnificationException
+        throw SetUnificationException
 
     case x :: xs =>
       val t0 = Substitution.singleton(x.sym, Type.Empty)(f)
@@ -146,7 +146,7 @@ object SetUnification {
   /**
     * An exception thrown to indicate that boolean unification failed.
     */
-  private case object BooleanUnificationException extends RuntimeException
+  private case object SetUnificationException extends RuntimeException
 
   /**
     * Returns `true` if the given boolean formula `f` is satisfiable.
@@ -160,18 +160,18 @@ object SetUnification {
         successiveVariableElimination(q, q.typeVars.toList)
         true
       } catch {
-        case BooleanUnificationException => false
+        case SetUnificationException => false
       }
   }
 
 
   /**
-    * To unify two Boolean formulas p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
+    * To unify two set formulas p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
     */
   private def mkEq(p: Type, q: Type): Type = mkUnion(mkIntersection(p, mkComplement(q)), mkIntersection(mkComplement(p), q))
 
   /**
-    * Returns the negation of the Boolean formula `tpe0`.
+    * Returns the negation of the set formula `tpe0`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
   def mkComplement(tpe0: Type): Type = tpe0 match {
@@ -196,7 +196,7 @@ object SetUnification {
   }
 
   /**
-    * Returns the conjunction of the two Boolean formulas `tpe1` and `tpe2`.
+    * Returns the conjunction of the two set formulas `tpe1` and `tpe2`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
   @tailrec
@@ -291,7 +291,7 @@ object SetUnification {
   }
 
   /**
-    * Returns the disjunction of the two Boolean formulas `tpe1` and `tpe2`.
+    * Returns the disjunction of the two set formulas `tpe1` and `tpe2`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
   @tailrec
