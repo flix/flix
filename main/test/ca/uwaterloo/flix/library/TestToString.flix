@@ -364,16 +364,18 @@ namespace TestToString {
         toString(Array.range(0, 1, Static)) == "[0]"
 
     @test
-    def arrayToString03(): Bool & Impure =
-        toString(Array.new('a', 3, Static)) == "[a, a, a]"
+    def arrayToString03(): Bool = region r {
+        toString(Array.new(r, 'a', 3)) == "[a, a, a]"
+    }
 
     @test
     def arrayToString04(): Bool & Impure =
         toString(Array.range(1, 3, Static)) == "[1, 2]"
 
     @test
-    def arrayToString05(): Bool & Impure =
-        toString(Array.new([1, 2, 3], 3, Static)) == "[[1, 2, 3], [1, 2, 3], [1, 2, 3]]"
+    def arrayToString05(): Bool = region r {
+        toString(Array.new(r, [1, 2, 3], 3)) == "[[1, 2, 3], [1, 2, 3], [1, 2, 3]]"
+    }
 
     @test
     def arrayToString06(): Bool & Impure =

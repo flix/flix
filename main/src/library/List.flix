@@ -83,6 +83,14 @@ instance Foldable[List] {
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, l: List[a]): b & ef = List.foldRightWithCont(f, s, l)
 }
 
+instance UnorderedFoldable[List] {
+    pub def foldMap(f: a -> b & ef, l: List[a]): b & ef with CommutativeMonoid[b] = List.foldMap(f, l)
+    override pub def isEmpty(l: List[a]): Bool = List.isEmpty(l)
+    override pub def exists(f: a -> Bool & ef, l: List[a]): Bool & ef = List.exists(f, l)
+    override pub def forall(f: a -> Bool & ef, l: List[a]): Bool & ef = List.forall(f, l)
+    override pub def memberOf(x: a, l: List[a]): Bool with Eq[a] = List.memberOf(x, l)
+}
+
 instance Traversable[List] {
     pub def traverse(f: a -> m[b] & ef, t: List[a]): m[List[b]] & ef with Applicative[m] = List.traverse(f, t)
     pub override def sequence(t: List[m[a]]): m[List[a]] with Applicative[m] = List.sequence(t)
