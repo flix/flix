@@ -694,15 +694,16 @@ object Weeder {
       //
 
       val fqn = "ForEach.foreach"
+      val loc = mkSL(sp1, sp2).asSynthetic
+      val patVals = traverse(gens)(g => visitPattern(g.pat))
+      val expVals = traverse(gens)(g => visitExp(g.exp, senv))
 
-      mapN(visitExp(exp, senv)) {
-        case e => gens.foldRight(e) {
-          case (g, acc) => (visitPattern(g.pat), visitExp(g.exp, senv)) match {
-            case (Success(p), Success(ge)) =>
-              val lambda = mkLambdaMatch(g.sp1, p, acc, g.sp2)
-              val fparams = List(lambda, ge)
-              mkApplyFqn(fqn, fparams, ge.loc.asSynthetic)
-          }
+      mapN(patVals, expVals, visitExp(exp, senv)) {
+        case (ps, e1s, e2) => ps.zip(e1s).foldRight(e2) {
+          case ((p, e), acc) =>
+            val lambda = mkLambdaMatch(sp1, p, acc, sp2)
+            val fparams = List(lambda, e)
+            mkApplyFqn(fqn, fparams, loc)
         }
       }
 
