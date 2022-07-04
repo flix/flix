@@ -3,7 +3,7 @@ namespace Test/Exp/Foreach {
     @test
     def testForeach01(): Bool = region r {
         let y = ref 0 @ r;
-        foreach (x <- 1 :: Nil) y := x + 1;
+        foreach (x <- 1 :: Nil) y := x + 1; // ForEach.foreach(match y -> y := x + 1, 1 :: Nil)
         deref y == 2
     }
 
@@ -11,7 +11,7 @@ namespace Test/Exp/Foreach {
     def testForeach02(): Bool = region r {
         let y = ref 0 @ r;
         foreach (x <- 1 :: Nil)
-            y := x + 1;
+            y := x + 1; // ForEach.foreach(match y -> y := x + 1, 1 :: Nil)
         deref y == 2
     }
 
