@@ -1628,7 +1628,18 @@ object Weeder {
       }
   }
 
-  private def mkLambdaMatch(sp1: SourcePosition, p: WeededAst.Pattern, e: WeededAst.Expression, sp2: SourcePosition)(implicit flix: Flix) = {
+  /**
+    * Returns a match lambda, i.e. a lambda with a pattern match on its arguments.
+    *
+    * This is also known as `ParsedAst.Expression.LambdaMatch`
+    *
+    * @param sp1 the position of the first character in the expression
+    * @param p   the pattern of the parameter
+    * @param e   the body of the lambda
+    * @param sp2 the position of the last character in the expression
+    * @return A lambda that matches on its parameter i.e. a `WeededAst.Expression.Lambda` that has a pattern match in its body.
+    */
+  private def mkLambdaMatch(sp1: SourcePosition, p: WeededAst.Pattern, e: WeededAst.Expression, sp2: SourcePosition)(implicit flix: Flix): WeededAst.Expression.Lambda = {
     val loc = mkSL(sp1, sp2).asSynthetic
 
     // The name of the lambda parameter.
