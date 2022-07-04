@@ -146,7 +146,7 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedTypes](result)
   }
 
-  test("TestUnderApplied.Arrow.01") {
+  test("TestMismatchedTypes.05") {
     // Regression test.
     // See https://github.com/flix/flix/issues/3634
     val input =
@@ -158,7 +158,7 @@ class TestTyper extends FunSuite with TestUtils {
       |def g(): Bool = f(mkE)
       |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.UnderApplied](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
   test("TestOverApplied.01") {
