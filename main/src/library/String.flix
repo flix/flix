@@ -116,7 +116,7 @@ namespace String {
     ///
     @Time(length(s)) @Space(length(s))
     pub def toArray(r: Region[r], s: String): Array[Char, r] \ Write(r) =
-        Array.init(i -> charAt(i, s), length(s), r)
+        Array.init(r, i -> charAt(i, s), length(s))
 
     ///
     /// Build a string of length `len` by applying `f` to the successive indices.
@@ -1088,8 +1088,8 @@ namespace String {
     pub def levenshteinDistance(s: String, t: String): Int32 = region r {
         let m = length(s);
         let n = length(t);
-        let v0 = Array.new(0, n + 1, r);
-        let v1 = Array.new(0, n + 1, r);
+        let v0 = Array.new(r, 0, n + 1);
+        let v1 = Array.new(r, 0, n + 1);
         forIndex(0, n, i -> v0[i] = i);
         forIndex(0, m - 1, i -> {
             v1[0] = i + 1;
