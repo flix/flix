@@ -502,8 +502,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("discard") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Discard
     }
 
+    def ForEachGenerator: Rule1[ParsedAst.ForEachGenerator] = rule {
+      SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForEachGenerator
+    }
+
     def ForEach: Rule1[ParsedAst.Expression.ForEach] = rule {
-      SP ~ keyword("foreach") ~ optWS ~ "(" ~ optWS ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ForEach
+      SP ~ keyword("foreach") ~ optWS ~ "(" ~ optWS ~ oneOrMore(ForEachGenerator).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ForEach
     }
 
     def Assign: Rule1[ParsedAst.Expression] = rule {

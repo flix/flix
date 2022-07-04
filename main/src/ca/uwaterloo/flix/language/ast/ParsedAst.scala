@@ -708,12 +708,11 @@ object ParsedAst {
       * ForEach Expression.
       *
       * @param sp1  the position of the first character in the expression.
-      * @param pat  the pattern on the left hand side.
-      * @param exp1 the generator expression.
+      * @param exp1 the iterator generator expressions.
       * @param exp2 the body expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class ForEach(sp1: SourcePosition, pat: ParsedAst.Pattern, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ForEach(sp1: SourcePosition, exp1: Seq[ForEachGenerator], exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Tag Expression.
@@ -2156,4 +2155,15 @@ object ParsedAst {
     * Represents an optional purity and optional effect.
     */
   case class PurityAndEffect(pur: Option[Type], eff: Option[EffectSet])
+
+  /**
+    * A foreach expression generator, i.e. `x <- xs`.
+    *
+    * @param sp1 the position of the first character in the expression.
+    * @param pat the pattern on the left hand side.
+    * @param exp the iterable expression.
+    * @param sp2 the position of the last character in the expression.
+    */
+  case class ForEachGenerator(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition)
+
 }
