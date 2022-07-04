@@ -550,6 +550,13 @@ namespace MutMap {
         deref mm
 
     ///
+    /// Returns `m` as a MutDeque.
+    ///
+    pub def toMutDeque(r1: Region[r1], m: MutMap[k, v, r2]): MutDeque[(k, v), r] \ { Read(r2), Write(r1) } =
+        let MutMap(mm) = m;
+        Map.toMutDeque(r1, deref mm)
+
+    ///
     /// Returns the mutable map `m` as a list of key-value pairs.
     ///
     pub def toList(m: MutMap[k, v, r]): List[(k, v)] \ Read(r) =

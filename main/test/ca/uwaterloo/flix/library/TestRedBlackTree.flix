@@ -773,8 +773,8 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toMutDeque01(): Bool = region {
-        let t = RedBlackTree.empty(): RedBlackTree.RedBlackTree[Int32, Int32]);
+    def toMutDeque01(): Bool = region r {
+        let t = RedBlackTree.empty(): RedBlackTree.RedBlackTree[Int32, Int32];
         let d1 = RedBlackTree.toMutDeque(r, t);
 
         let d2 = new MutDeque(r);
@@ -783,7 +783,7 @@ namespace TestRedBlackTree {
     }
 
     @test
-    def toMutDeque02(): Bool = region {
+    def toMutDeque02(): Bool = region r {
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 1);
         let d1 = RedBlackTree.toMutDeque(r, t);
 
@@ -794,7 +794,7 @@ namespace TestRedBlackTree {
     }
 
     @test
-    def toMutDeque03(): Bool = region {
+    def toMutDeque03(): Bool = region r {
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 1) |> RedBlackTree.insert(2, 2)
                                      |> RedBlackTree.insert(3, 3) |> RedBlackTree.insert(4, 4);
         let d1 = RedBlackTree.toMutDeque(r, t);
@@ -809,7 +809,7 @@ namespace TestRedBlackTree {
     }
 
     @test
-    def toMutDeque04(): Bool = region {
+    def toMutDeque04(): Bool = region r {
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b')
                                      |> RedBlackTree.insert(3, 'c') |> RedBlackTree.insert(4, 'd');
         let d1 = RedBlackTree.toMutDeque(r, t);
