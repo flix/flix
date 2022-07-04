@@ -381,9 +381,9 @@ namespace MutDeque {
         if (i == j)
             [] @ r1
         else if (i  < j)
-            Array.copyOfRange(i, j, deref a, r1)
+            Array.copyOfRange(r1, i, j, deref a)
         else
-            Array.append(Array.copyOfRange(i, len, deref a, r1), Array.copyOfRange(0, j, deref a, r1))
+            Array.append(Array.copyOfRange(r1, i, len, deref a), Array.copyOfRange(r1, 0, j, deref a))
 
     ///
     /// Returns the concatenation of the string representation

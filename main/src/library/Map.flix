@@ -63,6 +63,13 @@ instance Foldable[Map[k]] {
     pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldRightWithCont(f, s, m)
 }
 
+instance UnorderedFoldable[Map[k]] {
+    pub def foldMap(f: v -> b & ef, m: Map[k, v]): b & ef with CommutativeMonoid[b] = Map.foldMap(f, m)
+    override pub def isEmpty(m: Map[k, v]): Bool = Map.isEmpty(m)
+    override pub def exists(f: v -> Bool & ef, m: Map[k, v]): Bool & ef = Map.exists(_ -> f, m)
+    override pub def forall(f: v -> Bool & ef, m: Map[k, v]): Bool & ef = Map.forall(_ -> f, m)
+}
+
 instance Traversable[Map[k]] {
     pub def traverse(f: a -> m[b] & ef, t: Map[k, a]): m[Map[k, b]] & ef with Applicative[m] = Map.traverse(f, t)
     pub override def sequence(t: Map[k, m[a]]): m[Map[k, a]] with Applicative[m] = Map.sequence(t)
@@ -559,6 +566,12 @@ namespace Map {
         foldLeftWithKey((acc, k, v) -> Monoid.combine(acc, f(k, v)), Monoid.empty(), m)
 
     ///
+    /// Returns the result of mapping each value and combining the results.
+    ///
+    pub def foldMap(f: v -> b & ef, m: Map[k, v]): b & ef with Monoid[b] =
+        foldMapWithKey(_ -> f, m)
+
+    ///
     /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(v1, v2), v3)..., vn))`
@@ -834,7 +847,7 @@ namespace Map {
     /// Returns `m` as a mutable set.
     ///
     @Time(1) @Space(1)
-    pub def toMutMap(m: Map[k, v], r: Region[r]): MutMap[k, v, r] \ Write(r) =
+    pub def toMutMap(r: Region[r], m: Map[k, v]): MutMap[k, v, r] \ Write(r) =
         MutMap(ref m @ r)
 
     ///

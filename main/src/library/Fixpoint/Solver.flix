@@ -55,7 +55,7 @@ namespace Fixpoint {
             case Datalog(_) => compiler(d) |> interpret |> toModel
             case Model(_) => d
             case Join(Model(m), cs) =>
-                let db = Static |> (Map.map(mm -> Map.toMutMap(mm, Static), m) |> Map.toMutMap);
+                let db = Map.map(Map.toMutMap(Static), m) |> Map.toMutMap(Static);
                 compiler(cs) |> interpretWithDatabase(db) |> toModel
             case _ => bug!("Datalog normalization bug")
         };
@@ -708,12 +708,12 @@ namespace Fixpoint {
                     Map.foreach(match Tuple(tuple) -> _ -> MutList.push!(f(tuple |> Array.toList), pFacts), rel)
                 case Denotation.Latticenal(_) =>
                     Map.foreach(match Tuple(tuple) -> lat -> {
-                        let vs = Array.init(i -> {
+                        let vs = Array.init(Static, i -> {
                             if (i < Array.length(tuple))
                                 tuple[i]
                             else
                                 lat
-                        }, Array.length(tuple) + 1, Static);
+                        }, Array.length(tuple) + 1);
                         MutList.push!(f(vs |> Array.toList), pFacts)
                     }, rel)
             }, db);
