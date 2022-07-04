@@ -688,22 +688,23 @@ object Weeder {
         case e => WeededAst.Expression.Discard(e, loc)
       }
 
-    case ParsedAst.Expression.ForEach(sp1, pat, exp1, exp2, sp2) =>
+    case ParsedAst.Expression.ForEach(sp1, gens, exp2, sp2) =>
       //
       // Rewrites a foreach loop to Foreach.foreach call.
       //
-      val loc = mkSL(sp1, sp2).asSynthetic
-      val patVal = visitPattern(pat)
-      val exp1Val = visitExp(exp1, senv)
-      val exp2Val = visitExp(exp2, senv)
+
       val fqn = "ForEach.foreach"
 
-      mapN(patVal, exp1Val, exp2Val) {
-        case (p, e1, e2) =>
-          val lambda = mkLambdaMatch(sp1, p, e2, sp2)
-          mkApplyFqn(fqn, List(lambda, e1), loc)
+      mapN(visitExp(exp2, senv)) {
+        case e => gens.foldRight(e) {
+          case (g, acc) => (visitPattern(g.pat), visitExp(g.exp, senv)) match {
+            case (Success(p), Success(ge)) =>
+              val lambda = mkLambdaMatch(g.sp1, p, acc, g.sp2)
+              val fparams = List(lambda, ge)
+              mkApplyFqn(fqn, fparams, ge.loc.asSynthetic)
+          }
+        }
       }
-
 
     case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe, exp1, exp2, sp2) =>
       //
@@ -2833,7 +2834,7 @@ object Weeder {
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Stm(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Discard(sp1, _, _) => sp1
-    case ParsedAst.Expression.ForEach(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.ForEach(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _) => sp1
