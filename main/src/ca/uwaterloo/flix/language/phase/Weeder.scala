@@ -698,21 +698,13 @@ object Weeder {
       val exp2Val = visitExp(exp2, senv)
       val fqn = "ForEach.foreach"
 
-
-      // TODO: Refactor this to outer scope
-      def onlyVars(ps: List[WeededAst.Pattern]): Boolean = ps match {
-        case Nil => true
-        case WeededAst.Pattern.Var(_, _) :: xs => onlyVars(xs)
-        case _ => false
-      }
-
       mapN(patVal, exp1Val, exp2Val) {
         case (WeededAst.Pattern.Var(ident, patLoc), generator, body) =>
           val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, patLoc.asSynthetic)
           val lambda = WeededAst.Expression.Lambda(fparam, body, body.loc.asSynthetic)
           mkApplyFqn(fqn, List(lambda, generator), loc)
 
-        case (WeededAst.Pattern.Tuple(pats, patLoc), generator, body) if onlyVars(pats) =>
+        case (WeededAst.Pattern.Tuple(pats, patLoc), generator, body) =>
           val tuple = WeededAst.Pattern.Tuple(pats, patLoc.asSynthetic)
           val lambda = mkLambdaMatch(sp1, tuple, body, sp2)
           mkApplyFqn(fqn, List(lambda, generator), loc)
