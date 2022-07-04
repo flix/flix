@@ -700,8 +700,20 @@ object Weeder {
       }
 
     case ParsedAst.Expression.ForEach(sp1, pat, exp1, exp2, sp2) =>
+      //
+      // Rewrites a foreach loop to Foreach.foreach call.
+      //
       val loc = mkSL(sp1, sp2)
-      ???
+      val patVal = visitPattern(pat)
+      val exp1Val = visitExp(exp1, senv)
+      val exp2Val = visitExp(exp2, senv)
+      mapN(patVal, exp1Val, exp2Val) {
+        case (WeededAst.Pattern.Var(ident, patLoc), generator, body) =>
+          // loc.asSynthetic?
+          val lambda = WeededAst.Expression.Lambda(WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, patLoc), body, body.loc)
+          mkApplyFqn("ForEach.foreach", List(lambda, generator), loc)
+      }
+
 
     case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe, exp1, exp2, sp2) =>
       //
@@ -2805,6 +2817,7 @@ object Weeder {
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Stm(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Discard(sp1, _, _) => sp1
+    case ParsedAst.Expression.ForEach(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _) => sp1

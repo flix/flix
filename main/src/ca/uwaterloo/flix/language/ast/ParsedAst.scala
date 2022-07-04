@@ -707,13 +707,13 @@ object ParsedAst {
     /**
       * ForEach Expression.
       *
-      * @param sp1     the position of the first character in the expression.
-      * @param pat     the pattern on the left hand side.
-      * @param genExp  the generator expression.
-      * @param bodyExp the body expression.
-      * @param sp2     the position of the last character in the expression.
+      * @param sp1  the position of the first character in the expression.
+      * @param pat  the pattern on the left hand side.
+      * @param exp1 the generator expression.
+      * @param exp2 the body expression.
+      * @param sp2  the position of the last character in the expression.
       */
-    case class ForEach(sp1: SourcePosition, pat: ParsedAst.Pattern, genExp: ParsedAst.Expression, bodyExp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ForEach(sp1: SourcePosition, pat: ParsedAst.Pattern, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Tag Expression.
