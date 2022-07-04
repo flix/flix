@@ -48,4 +48,16 @@ namespace Test/Exp/Foreach {
         deref z == 4
     }
 
+    @test
+    def testForeach07(): Bool = region r {
+        let z = ref 0 @ r;
+        let q = ref 1 @ r;
+        let l = (1, 2) :: (3, 4) :: Nil;
+        foreach ((x, y) <- l) {
+            q := deref q + x;
+            z := deref z + x + y
+        };
+        deref z + deref q == 15
+    }
+
 }
