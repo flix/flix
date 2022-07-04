@@ -502,6 +502,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("discard") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Discard
     }
 
+    def ForEach: Rule1[ParsedAst.Expression.ForEach] = rule {
+      SP ~ keyword("foreach") ~ optWS ~ "(" ~ optWS ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ForEach
+    }
+
     def Assign: Rule1[ParsedAst.Expression] = rule {
       PutChannel ~ optional(optWS ~ operatorX(":=") ~ optWS ~ PutChannel ~ SP ~> ParsedAst.Expression.Assign)
     }
@@ -679,7 +683,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
-        Discard | NewObject | UnaryLambda | FName | Tag | Hole
+        Discard | ForEach | NewObject | UnaryLambda | FName | Tag | Hole
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -1661,6 +1665,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Names                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   object Names {
+
     import Parser.Letters
 
     /**

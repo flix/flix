@@ -644,18 +644,7 @@ object Weeder {
        */
       mapN(visitPattern(pat), visitExp(exp, senv)) {
         case (p, e) =>
-          val loc = mkSL(sp1, sp2).asSynthetic
-
-          // The name of the lambda parameter.
-          val ident = Name.Ident(sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), sp2)
-
-          // Construct the body of the lambda expression.
-          val varOrRef = WeededAst.Expression.VarOrDefOrSig(ident, loc)
-          val rule = WeededAst.MatchRule(p, WeededAst.Expression.True(loc), e)
-
-          val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, loc)
-          val body = WeededAst.Expression.Match(varOrRef, List(rule), loc)
-          WeededAst.Expression.Lambda(fparam, body, loc)
+          mkLambdaMatch(sp1, p, e, sp2)
       }
 
     case ParsedAst.Expression.Unary(sp1, op, exp, sp2) =>
@@ -697,6 +686,23 @@ object Weeder {
       visitExp(exp, senv) map {
         case e => WeededAst.Expression.Discard(e, loc)
       }
+
+    case ParsedAst.Expression.ForEach(sp1, pat, exp1, exp2, sp2) =>
+      //
+      // Rewrites a foreach loop to Foreach.foreach call.
+      //
+      val loc = mkSL(sp1, sp2).asSynthetic
+      val patVal = visitPattern(pat)
+      val exp1Val = visitExp(exp1, senv)
+      val exp2Val = visitExp(exp2, senv)
+      val fqn = "ForEach.foreach"
+
+      mapN(patVal, exp1Val, exp2Val) {
+        case (p, e1, e2) =>
+          val lambda = mkLambdaMatch(sp1, p, e2, sp2)
+          mkApplyFqn(fqn, List(lambda, e1), loc)
+      }
+
 
     case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe, exp1, exp2, sp2) =>
       //
@@ -1619,6 +1625,32 @@ object Weeder {
         case (e1, e2, e3) =>
           WeededAst.Expression.ReifyEff(ident, e1, e2, e3, mkSL(sp1, sp2))
       }
+  }
+
+  /**
+    * Returns a match lambda, i.e. a lambda with a pattern match on its arguments.
+    *
+    * This is also known as `ParsedAst.Expression.LambdaMatch`
+    *
+    * @param sp1 the position of the first character in the expression
+    * @param p   the pattern of the parameter
+    * @param e   the body of the lambda
+    * @param sp2 the position of the last character in the expression
+    * @return A lambda that matches on its parameter i.e. a `WeededAst.Expression.Lambda` that has a pattern match in its body.
+    */
+  private def mkLambdaMatch(sp1: SourcePosition, p: WeededAst.Pattern, e: WeededAst.Expression, sp2: SourcePosition)(implicit flix: Flix): WeededAst.Expression.Lambda = {
+    val loc = mkSL(sp1, sp2).asSynthetic
+
+    // The name of the lambda parameter.
+    val ident = Name.Ident(sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), sp2)
+
+    // Construct the body of the lambda expression.
+    val varOrRef = WeededAst.Expression.VarOrDefOrSig(ident, loc)
+    val rule = WeededAst.MatchRule(p, WeededAst.Expression.True(loc), e)
+
+    val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, loc)
+    val body = WeededAst.Expression.Match(varOrRef, List(rule), loc)
+    WeededAst.Expression.Lambda(fparam, body, loc)
   }
 
   /**
@@ -2800,6 +2832,7 @@ object Weeder {
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Stm(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Discard(sp1, _, _) => sp1
+    case ParsedAst.Expression.ForEach(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _) => sp1
