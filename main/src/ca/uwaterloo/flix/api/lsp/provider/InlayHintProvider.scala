@@ -27,17 +27,23 @@ object InlayHintProvider {
     index.queryByRange(uri, range) match {
       case Nil => Nil
       case entities => entities.foldLeft(Nil: List[InlayHint]) {
-        case (acc, LocalVar(sym, tpe)) => getTypeHint(sym.loc, tpe) :: acc
+        case (acc, LocalVar(sym, tpe)) => getTypeHint(sym.loc, tpe) match {
+          case Some(hint) => hint :: acc
+          case None => acc
+        }
         case (acc, _) => acc
       }
     }
   }
 
-  private def getTypeHint(loc: SourceLocation, tpe: Type): InlayHint = {
-    val pos = Position(loc.endLine - 1, loc.endCol - 1)
-    val label = ": " + FormatType.formatWellKindedType(tpe)(Audience.External)
-    InlayHint(pos, label, Some(InlayHintKind.Type), Nil, "")
+  private def getTypeHint(loc: SourceLocation, tpe: Type): Option[InlayHint] = {
+    if (tpe.loc.isSynthetic || tpe.loc == SourceLocation.Unknown) {
+      val pos = Position(loc.endLine - 1, loc.endCol - 1)
+      val label = ": " + FormatType.formatWellKindedType(tpe)(Audience.External)
+      Some(InlayHint(pos, label, Some(InlayHintKind.Type), Nil, ""))
+    } else {
+      None
+    }
   }
 
 }
-

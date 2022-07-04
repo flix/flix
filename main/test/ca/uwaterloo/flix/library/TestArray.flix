@@ -48,17 +48,17 @@ namespace TestArray {
 
     @test
     def testNew01(): Bool = region r {
-        Array.new(42, 10, r)[0] == 42
+        Array.new(r, 42, 10)[0] == 42
     }
 
     @test
     def testNew02(): Bool = region r {
-        Array.new(42, 10, r)[5] == 42
+        Array.new(r, 42, 10)[5] == 42
     }
 
     @test
     def testNew03(): Bool = region r {
-        Array.new(42, 10, r)[9] == 42
+        Array.new(r, 42, 10)[9] == 42
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -692,36 +692,36 @@ namespace TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // repeat                                                                  //
+    // repeat r,
     /////////////////////////////////////////////////////////////////////////////
 
     @test
     def repeat01(): Bool = region r {
-        let a = Array.repeat(-1, 1, r);
+        let a = Array.repeat(r, -1, 1);
         Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def repeat02(): Bool = region r {
-        let a = Array.repeat(0, 1, r);
+        let a = Array.repeat(r, 0, 1);
         Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def repeat03(): Bool = region r {
-        let a = Array.repeat(1, 1, r);
+        let a = Array.repeat(r, 1, 1);
         Array.sameElements(a, [1])
     }
 
     @test
     def repeat04(): Bool = region r {
-        let a = Array.repeat(2, 1, r);
+        let a = Array.repeat(r, 2, 1);
         Array.sameElements(a, [1,1])
     }
 
     @test
     def repeat05(): Bool = region r {
-        let a = Array.repeat(3, 1, r);
+        let a = Array.repeat(r, 3, 1);
         Array.sameElements(a, [1,1,1])
     }
 
@@ -1048,37 +1048,37 @@ namespace TestArray {
 
     @test
     def flatMap01(): Bool = region r {
-        let a = Array.flatMap(i -> Array.repeat(i, i, r), []);
+        let a = Array.flatMap(i -> Array.repeat(r, i, i), []);
         Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def flatMap02(): Bool = region r {
-        let a = Array.flatMap(i -> Array.repeat(i, i, r), [0]);
+        let a = Array.flatMap(i -> Array.repeat(r, i, i), [0]);
         Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def flatMap03(): Bool = region r {
-        let a = Array.flatMap(i -> Array.repeat(i, i, r), [1]);
+        let a = Array.flatMap(i -> Array.repeat(r, i, i), [1]);
         Array.sameElements(a, [1])
     }
 
     @test
     def flatMap04(): Bool = region r {
-        let a = Array.flatMap(i -> Array.repeat(i, i, r), [2]);
+        let a = Array.flatMap(i -> Array.repeat(r, i, i), [2]);
         Array.sameElements(a, [2,2])
     }
 
     @test
     def flatMap05(): Bool = region r {
-        let a = Array.flatMap(i -> Array.repeat(i, i, r), [1,2]);
+        let a = Array.flatMap(i -> Array.repeat(r, i, i), [1,2]);
         Array.sameElements(a, [1,2,2])
     }
 
     @test
     def flatMap06(): Bool = region r {
-        let a = Array.flatMap(i -> Array.repeat(i, i, r), [2,3]);
+        let a = Array.flatMap(i -> Array.repeat(r, i, i), [2,3]);
         Array.sameElements(a, [2,2,3,3,3])
     }
 
@@ -3785,49 +3785,49 @@ namespace TestArray {
 
     @test
     def groupBy01(): Bool = region r {
-        let arr = Array.groupBy((a, b) -> a > 3 or b > 8, []: Array[Int32, _], r);
+        let arr = Array.groupBy(r, (a, b) -> a > 3 or b > 8, []: Array[Int32, r]);
         let xs = Array.toList(arr) |> List.map(Array.toList);
         xs == Nil
     }
 
     @test
     def groupBy02(): Bool = region r {
-        let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1], r);
+        let arr = Array.groupBy(r, (a, b) -> a > 3 or b > 8, [1]);
         let xs = Array.toList(arr) |> List.map(Array.toList);
         xs == (1 :: Nil) :: Nil
     }
 
     @test
     def groupBy03(): Bool = region r {
-        let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1,4], r);
+        let arr = Array.groupBy(r, (a, b) -> a > 3 or b > 8, [1,4]);
         let xs = Array.toList(arr) |> List.map(Array.toList);
         xs == (1 :: Nil) :: (4 :: Nil) :: Nil
     }
 
     @test
     def groupBy04(): Bool = region r {
-        let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1,9], r);
+        let arr = Array.groupBy(r, (a, b) -> a > 3 or b > 8, [1,9]);
         let xs = Array.toList(arr) |> List.map(Array.toList);
         xs == (1 :: 9 :: Nil) :: Nil
     }
 
     @test
     def groupBy05(): Bool = region r {
-        let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1, 4, 7, 6, 9, 2, 4, 4, 8, 16], r);
+        let arr = Array.groupBy(r, (a, b) -> a > 3 or b > 8, [1, 4, 7, 6, 9, 2, 4, 4, 8, 16]);
         let xs = Array.toList(arr) |> List.map(Array.toList);
         xs == (1 :: 9 :: 16 :: Nil) :: (4 :: 7 :: 6 :: 4 :: 4 :: 8 :: Nil) :: (2 :: Nil) :: Nil
     }
 
     @test
     def groupBy06(): Bool = region r {
-        let arr = Array.groupBy((a, b) -> a > -6 or a*b >= 0, [-1, -11, 4, -11, 0, 8, 2, 1, -3, -24], r);
+        let arr = Array.groupBy(r, (a, b) -> a > -6 or a*b >= 0, [-1, -11, 4, -11, 0, 8, 2, 1, -3, -24]);
         let xs = Array.toList(arr) |> List.map(Array.toList);
         xs == (-1 :: -11 :: -11 :: 0 :: -3 :: -24 :: Nil) :: (4 :: 8 :: 2 :: 1 :: Nil) :: Nil
     }
 
     @test
     def groupBy07(): Bool = region r {
-        let arr = Array.groupBy((a, b) -> a < 0 or (a > 10 or (b > 10 or a == b)), [-5, 6, 11, 8, 8, -11, -1, 0, 4, -1], r);
+        let arr = Array.groupBy(r, (a, b) -> a < 0 or (a > 10 or (b > 10 or a == b)), [-5, 6, 11, 8, 8, -11, -1, 0, 4, -1]);
         let xs = Array.toList(arr) |> List.map(Array.toList);
         xs == (-5 :: 11 :: -11 :: -1 :: -1 :: Nil) :: (6 :: Nil) :: (8 :: 8 :: Nil) :: (0 :: Nil) :: (4 :: Nil) :: Nil
     }
@@ -4446,31 +4446,31 @@ namespace TestArray {
 
     @test
     def init01(): Bool = region r {
-        let a = Array.init(x -> x, 0, r);
+        let a = Array.init(r, x -> x, 0);
         Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def init02(): Bool = region r {
-        let a = Array.init(x -> x, -1, r);
+        let a = Array.init(r, x -> x, -1);
         Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def init03(): Bool = region r {
-        let a = Array.init(x -> x, 1, r);
+        let a = Array.init(r, x -> x, 1);
         Array.sameElements(a, [0])
     }
 
     @test
     def init04(): Bool = region r {
-        let a = Array.init(x -> x, 2, r);
+        let a = Array.init(r, x -> x, 2);
         Array.sameElements(a, [0,1])
     }
 
     @test
     def init05(): Bool = region r {
-        let a = Array.init(x -> x, 50, r);
+        let a = Array.init(r, x -> x, 50);
         Array.length(a) == 50
     }
 
@@ -4480,31 +4480,31 @@ namespace TestArray {
 
     @test
     def init201(): Bool = region r {
-        let (a,b) = Array.init2(x -> (x, true), 0, r, r);
+        let (a,b) = Array.init2(r, r, x -> (x, true), 0);
         Array.sameElements(a, []: Array[Int32, _]) and Array.sameElements(b, []: Array[Bool, _])
     }
 
     @test
     def init202(): Bool = region r {
-        let (a,b) = Array.init2(x -> (x, true), -1, r, r);
+        let (a,b) = Array.init2(r, r, x -> (x, true), -1);
         Array.sameElements(a, []: Array[Int32, _]) and Array.sameElements(b, []: Array[Bool, _])
     }
 
     @test
     def init203(): Bool = region r {
-        let (a,b) = Array.init2(x -> (x, true), 1, r, r);
+        let (a,b) = Array.init2(r, r, x -> (x, true), 1);
         Array.sameElements(a, [0]) and Array.sameElements(b, [true])
     }
 
     @test
     def init204(): Bool = region r {
-        let (a,b) = Array.init2(x -> (x, true), 2, r, r);
+        let (a,b) = Array.init2(r, r, x -> (x, true), 2);
         Array.sameElements(a, [0,1]) and Array.sameElements(b, [true, true])
     }
 
     @test
     def init205(): Bool = region r {
-        let (a,b) = Array.init2(x -> (x, true), 50, r, r);
+        let (a,b) = Array.init2(r, r, x -> (x, true), 50);
         Array.length(a) == 50 and Array.length(b) == 50
     }
 
@@ -5625,142 +5625,142 @@ namespace TestArray {
 
     @test
     def copyOfRange01(): Bool & Impure =
-        Array.copyOfRange(0, 3, [true, false, true], Static) `sameElements` [true, false, true]
+        Array.copyOfRange(Static, 0, 3, [true, false, true]) `sameElements` [true, false, true]
 
     @test
     def copyOfRange02(): Bool & Impure =
-        Array.copyOfRange(1, 3, [true, false, true], Static) `sameElements` [false, true]
+        Array.copyOfRange(Static, 1, 3, [true, false, true]) `sameElements` [false, true]
 
     @test
     def copyOfRange03(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [true, false, true], Static);
+        let a = Array.copyOfRange(Static, 2, 5, [true, false, true]);
         Array.length(a) == 3 and Array.memberOf(true, a)
 
     @test
     def copyOfRange04(): Bool & Impure =
-        Array.copyOfRange(0, 3, ['a', 'b', 'c'], Static) `sameElements` ['a', 'b', 'c']
+        Array.copyOfRange(Static, 0, 3, ['a', 'b', 'c']) `sameElements` ['a', 'b', 'c']
 
     @test
     def copyOfRange05(): Bool & Impure =
-        Array.copyOfRange(1, 3, ['a', 'b', 'c'], Static) `sameElements` ['b', 'c']
+        Array.copyOfRange(Static, 1, 3, ['a', 'b', 'c']) `sameElements` ['b', 'c']
 
     @test
     def copyOfRange06(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, ['a', 'b', 'c'], Static);
+        let a = Array.copyOfRange(Static, 2, 5, ['a', 'b', 'c']);
         Array.length(a) == 3 and Array.memberOf('c', a)
 
     @test
     def copyOfRange07(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1.0f32, 2.0f32, 3.0f32], Static) `sameElements` [1.0f32, 2.0f32, 3.0f32]
+        Array.copyOfRange(Static, 0, 3, [1.0f32, 2.0f32, 3.0f32]) `sameElements` [1.0f32, 2.0f32, 3.0f32]
 
     @test
     def copyOfRange08(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1.0f32, 2.0f32, 3.0f32], Static) `sameElements` [2.0f32, 3.0f32]
+        Array.copyOfRange(Static, 1, 3, [1.0f32, 2.0f32, 3.0f32]) `sameElements` [2.0f32, 3.0f32]
 
     @test
     def copyOfRange09(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1.0f32, 2.0f32, 3.0f32], Static);
+        let a = Array.copyOfRange(Static, 2, 5, [1.0f32, 2.0f32, 3.0f32]);
         Array.length(a) == 3 and Array.memberOf(3.0f32, a)
 
     @test
     def copyOfRange10(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1.0f64, 2.0f64, 3.0f64], Static) `sameElements` [1.0f64, 2.0f64, 3.0f64]
+        Array.copyOfRange(Static, 0, 3, [1.0f64, 2.0f64, 3.0f64]) `sameElements` [1.0f64, 2.0f64, 3.0f64]
 
     @test
     def copyOfRange11(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1.0f64, 2.0f64, 3.0f64], Static) `sameElements` [2.0f64, 3.0f64]
+        Array.copyOfRange(Static, 1, 3, [1.0f64, 2.0f64, 3.0f64]) `sameElements` [2.0f64, 3.0f64]
 
     @test
     def copyOfRange12(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1.0f64, 2.0f64, 3.0f64], Static);
+        let a = Array.copyOfRange(Static, 2, 5, [1.0f64, 2.0f64, 3.0f64]);
         Array.length(a) == 3 and Array.memberOf(3.0f64, a)
 
     @test
     def copyOfRange13(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1i8, 2i8, 3i8], Static) `sameElements` [1i8, 2i8, 3i8]
+        Array.copyOfRange(Static, 0, 3, [1i8, 2i8, 3i8]) `sameElements` [1i8, 2i8, 3i8]
 
     @test
     def copyOfRange14(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1i8, 2i8, 3i8], Static) `sameElements` [2i8, 3i8]
+        Array.copyOfRange(Static, 1, 3, [1i8, 2i8, 3i8]) `sameElements` [2i8, 3i8]
 
     @test
     def copyOfRange15(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1i8, 2i8, 3i8], Static);
+        let a = Array.copyOfRange(Static, 2, 5, [1i8, 2i8, 3i8]);
         Array.length(a) == 3 and Array.memberOf(3i8, a)
 
     @test
     def copyOfRange16(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1i16, 2i16, 3i16], Static) `sameElements` [1i16, 2i16, 3i16]
+        Array.copyOfRange(Static, 0, 3, [1i16, 2i16, 3i16]) `sameElements` [1i16, 2i16, 3i16]
 
     @test
     def copyOfRange17(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1i16, 2i16, 3i16], Static) `sameElements` [2i16, 3i16]
+        Array.copyOfRange(Static, 1, 3, [1i16, 2i16, 3i16]) `sameElements` [2i16, 3i16]
 
     @test
     def copyOfRange18(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1i16, 2i16, 3i16], Static);
+        let a = Array.copyOfRange(Static, 2, 5, [1i16, 2i16, 3i16]);
         Array.length(a) == 3 and Array.memberOf(3i16, a)
 
     @test
     def copyOfRange19(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1, 2, 3], Static) `sameElements` [1, 2, 3]
+        Array.copyOfRange(Static, 0, 3, [1, 2, 3]) `sameElements` [1, 2, 3]
 
     @test
     def copyOfRange20(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1, 2, 3], Static) `sameElements` [2, 3]
+        Array.copyOfRange(Static, 1, 3, [1, 2, 3]) `sameElements` [2, 3]
 
     @test
     def copyOfRange21(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1, 2, 3], Static);
+        let a = Array.copyOfRange(Static, 2, 5, [1, 2, 3]);
         Array.length(a) == 3 and Array.memberOf(3, a)
 
     @test
     def copyOfRange22(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1i64, 2i64, 3i64], Static) `sameElements` [1i64, 2i64, 3i64]
+        Array.copyOfRange(Static, 0, 3, [1i64, 2i64, 3i64]) `sameElements` [1i64, 2i64, 3i64]
 
     @test
     def copyOfRange23(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1i64, 2i64, 3i64], Static) `sameElements` [2i64, 3i64]
+        Array.copyOfRange(Static, 1, 3, [1i64, 2i64, 3i64]) `sameElements` [2i64, 3i64]
 
     @test
     def copyOfRange24(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [1i64, 2i64, 3i64], Static);
+        let a = Array.copyOfRange(Static, 2, 5, [1i64, 2i64, 3i64]);
         Array.length(a) == 3 and Array.memberOf(3i64, a)
 
     @test
     def copyOfRange25(): Bool & Impure =
-        let a = Array.copyOfRange(0, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']], Static);
+        let a = Array.copyOfRange(Static, 0, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']]);
         let b = [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']];
         Array.flatten(a) `sameElements` Array.flatten(b)
 
     @test
     def copyOfRange26(): Bool & Impure =
-        let a = Array.copyOfRange(1, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']], Static);
+        let a = Array.copyOfRange(Static, 1, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']]);
         let b = [['d', 'e', 'f', 'g'], ['h']];
         Array.flatten(a) `sameElements` Array.flatten(b)
 
     @test
     def copyOfRange27(): Bool & Impure =
-        Array.copyOfRange(0, 3, [Some(1), Some(2), None], Static) `sameElements` [Some(1), Some(2), None]
+        Array.copyOfRange(Static, 0, 3, [Some(1), Some(2), None]) `sameElements` [Some(1), Some(2), None]
 
     @test
     def copyOfRange28(): Bool & Impure =
-        Array.copyOfRange(1, 3, [Some(1), Some(2), None], Static) `sameElements` [Some(2), None]
+        Array.copyOfRange(Static, 1, 3, [Some(1), Some(2), None]) `sameElements` [Some(2), None]
 
     @test
     def copyOfRange29(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [Some(1), Some(2), None], Static);
+        let a = Array.copyOfRange(Static, 2, 5, [Some(1), Some(2), None]);
         Array.length(a) == 3 and Array.memberOf(None, a)
 
     @test
     def copyOfRange30(): Bool & Impure =
-        let a = Array.copyOfRange(0, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]], Static);
+        let a = Array.copyOfRange(Static, 0, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]);
         let b = [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]];
         Array.flatten(a) `sameElements` Array.flatten(b)
 
     @test
     def copyOfRange31(): Bool & Impure =
-        let a = Array.copyOfRange(1, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]], Static);
+        let a = Array.copyOfRange(Static, 1, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]);
         let b = [[Some('d'), Some('e'), Some('f'), Some('g')], [None]];
         Array.flatten(a) `sameElements` Array.flatten(b)
 
@@ -5917,7 +5917,7 @@ namespace TestArray {
 
     @test
     def toMutList04(): Bool = region r {
-        MutList.sameElements((Array.range(0, 100, r) |> Array.toMutList(r)), MutList.range(0, 100, r))
+        MutList.sameElements((Array.range(0, 100, r) |> Array.toMutList(r)), MutList.range(r, 0, 100))
     }
 
     @test
