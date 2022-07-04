@@ -50,4 +50,29 @@ namespace Graph {
         Array.toSet(x)
     } as & Pure                         // TODO : delete cast when query uses regions
 
+    ///
+    /// Returns the vertices that are unreachable from the `origin` in the directed graph `g`.
+    ///
+    pub def unreachable(origin: t, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] = {
+        let edges = inject g into Edge;
+        let reachability = #{
+            // A node can reach itself.
+            Reachable(origin).
+            // If `origin` can reach `m` and there is an edge from `m` to `n`
+            // then `origin` can also reach `n`. This adds all node pairs to
+            // the relational that are reachable using any number of nodes.
+            Reachable(n) :- Reachable(m), Edge(m, n).
+        };
+        let unreachablility = #{
+            // If there is an Edge to a node that is not Reachable from origin
+            // then it is unreachable.
+            UnReachable(n) :- Edge(_, n), not Reachable(n).
+            // If there is an Edge from a node that is not Reachable from origin
+            // then it is unreachable.
+            UnReachable(n) :- Edge(n, _), not Reachable(n).
+        };
+        let x = query edges, reachability, unreachablility select dst from UnReachable(dst);
+        Array.toSet(x)
+    } as & Pure                         // TODO : delete cast when query uses regions
+
 }
