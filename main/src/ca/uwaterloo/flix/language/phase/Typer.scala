@@ -817,7 +817,11 @@ object Typer {
         for {
           (constrs, tpe, pur, eff) <- visitExp(exp)
           patternTypes <- inferPatterns(patterns, root)
-          patternType <- unifyTypeM(tpe :: patternTypes, loc)
+          patternType <- (patterns, patternTypes) match {
+            case (Nil, _) | (_, Nil) => throw InternalCompilerException("Unexpected empty pattern match list")
+            case (headPat :: Nil, headType :: Nil) => unifyTypeM(headType, tpe, headPat.loc)
+            case (_, nonEmptyTypeList) => unifyTypeM(tpe :: nonEmptyTypeList, loc)
+          }
           (guardConstrs, guardTypes, guardPurs, guardEffs) <- seqM(guards map visitExp).map(unzip4)
           guardType <- unifyTypeM(Type.Bool :: guardTypes, loc)
           (bodyConstrs, bodyTypes, bodyPurs, bodyEffs) <- seqM(bodies map visitExp).map(unzip4)
