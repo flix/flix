@@ -145,8 +145,15 @@ namespace Test/Exp/Foreach {
 
     @test
     def testForeach16(): Bool = region r {
+        let z = ref "" @ r;
+        foreach (x <- "1" :: "2" :: Nil) foreach(y <- "3" :: "4" :: Nil) z := deref z + "(${x} * ${y}) + ";
+        deref z == "(1 * 3) + (1 * 4) + (2 * 3) + (2 * 4) + "
+    }
+
+    @test
+    def testForeach17(): Bool = region r {
         let y = ref 0 @ r;
-        foreach(   x <- 1 :: Nil   )y := x + 1; // ForEach.foreach(match y -> y := x + 1, 1 :: Nil)
+        foreach(   x     <-      1 :: Nil   )y := x + 1; // ForEach.foreach(match y -> y := x + 1, 1 :: Nil)
         deref y == 2
     }
 
