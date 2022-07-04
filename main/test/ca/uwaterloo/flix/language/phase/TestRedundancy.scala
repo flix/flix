@@ -1093,7 +1093,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.RedundantDiscard](result)
   }
 
-  test("DiscardedImpureNonUnitValue.01") {
+  test("DiscardedValue.01") {
     val input =
       """
         |def f(): Unit = region r {
@@ -1107,7 +1107,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.DiscardedValue](result)
   }
 
-  test("DiscardedImpureNonUnitValue.02") {
+  test("DiscardedValue.02") {
     val input =
       """
         |def f(g: Int32 -> Int32 & ef): Unit & ef = {

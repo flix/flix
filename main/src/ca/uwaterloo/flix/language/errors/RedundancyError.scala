@@ -343,6 +343,7 @@ object RedundancyError {
 
   /**
     * An error raised to indicate that a non-unit impure expression is used as a statement.
+    *
     * @param tpe the type of the expression.
     * @param loc the location of the expression.
     */
