@@ -896,7 +896,13 @@ namespace RedBlackTree {
     ///
     pub def toList(t: RedBlackTree[k, v]): List[(k, v)] =
         RedBlackTree.foldRight((k, v, acc) -> (k, v) :: acc, Nil, t)
-
+/*
+    ///
+    /// Returns the tree `t` as a list. Elements are ordered from smallest (left) to largest (right).
+    ///
+    pub def toList(t: RedBlackTree[k, v]): List[(k, v)] =
+        RedBlackTree.foldRight((k, v, acc) -> (k, v) :: acc, Nil, t)
+*/
     ///
     /// Build a node applicatively.
     ///

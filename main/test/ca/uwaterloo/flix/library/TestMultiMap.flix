@@ -1305,6 +1305,62 @@ namespace TestMultiMap {
             == Map#{1 => Set#{1, 4}, 2 => Set#{4}, 3 => Set#{3}}
 
     /////////////////////////////////////////////////////////////////////////////
+    // toMutDeque                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutDeque01(): Bool = region r {
+        let d1 = MultiMap.toMutDeque(r, empty(): MultiMap[Int32, Int32])
+        let d2 = new MutDeque(r);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque02(): Bool = region {
+        let d1 = MultiMap.toMutDeque(singleton(1, 4));
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushBack((1, Set#{4}), d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque03(): Bool = region r {
+        let d1 = MultiMap.toMutDeque(singleton(1, 4) |> insert(2, 4));
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushBack((1, Set#{4}), d2);
+        MutDeque.pushBack((2, Set#{4}), d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque04(): Bool = region r {
+        let d1 = MultiMap.toMutDeque(singleton(1, 4) |> insert(2, 4) |> insert(1, 1));
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushBack((1, Set#{1, 4}), d2);
+        MutDeque.pushBack((2, Set#{4}), d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque05(): Bool = region r {
+        let d1 = MultiMap.toMutDeque(singleton(1, 4) |> insert(2, 4) |> insert(1, 1) |> insert(3, 3));
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushBack((1, Set#{1, 4}), d2);
+        MutDeque.pushBack((2, Set#{4}), d2);
+        MutDeque.pushBack((3, Set#{3}), d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // foreach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
