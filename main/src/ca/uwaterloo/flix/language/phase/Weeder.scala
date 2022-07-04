@@ -276,7 +276,7 @@ object Weeder {
       val identVal = visitName(ident)
       val tparamsVal = requireNoTypeParams(tparams0)
       val fparamsVal = visitFormalParams(fparamsOpt0, Presence.Required)
-      val retTpe = visitType(tpe0)
+      val tpe = visitType(tpe0)
       val unitVal = requireUnit(tpe0, ident.loc)
       val purAndEffVal = requireNoEffect(purAndEff0, ident.loc)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
@@ -284,8 +284,7 @@ object Weeder {
         case (ann, mod, _, _, _, fparams, _, _, tconstrs) =>
           val ts = fparams.map(_.tpe.get)
           val purAndEff = WeededAst.PurityAndEffect(None, None)
-          val tpe = WeededAst.Type.Arrow(ts, purAndEff, retTpe, ident.loc)
-          WeededAst.Declaration.Op(doc, ann, mod, ident, fparams, tpe, retTpe, tconstrs, mkSL(sp1, sp2));
+          WeededAst.Declaration.Op(doc, ann, mod, ident, fparams, tpe, tconstrs, mkSL(sp1, sp2));
       }
   }
 

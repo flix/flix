@@ -121,8 +121,10 @@ object BoolUnification {
 
   /**
     * Performs success variable elimination on the given boolean expression `f`.
+    *
+    * `flexvs` is the list of remaining flexible variables in the expression.
     */
-  private def successiveVariableElimination(f: Type, fvs: List[Type.KindedVar])(implicit flix: Flix): Substitution = fvs match {
+  private def successiveVariableElimination(f: Type, flexvs: List[Type.KindedVar])(implicit flix: Flix): Substitution = flexvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
       if (!satisfiable(f))
@@ -146,7 +148,8 @@ object BoolUnification {
   private case object BooleanUnificationException extends RuntimeException
 
   /**
-    * Returns `true` if the given boolean formula `f` is satisfiable.
+    * Returns `true` if the given boolean formula `f` is satisfiable
+    * when ALL variables in the formula are flexible.
     */
   private def satisfiable(f: Type)(implicit flix: Flix): Boolean = f match {
     case Type.True => true

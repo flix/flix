@@ -90,5 +90,5 @@ def main(): Unit & Impure =
 
     def pad(s) = ToString.toString(s) |> String.padLeft(15, ' ');
     result |>
-        Array.map(match (c1, c2) -> "${pad(c1)} <--> ${c2}") |>
-        Array.foreach(println)
+        List.map(match (c1, c2) -> "${pad(c1)} <--> ${c2}") |>
+        List.foreach(println)
