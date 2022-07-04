@@ -552,7 +552,7 @@ namespace MutMap {
     ///
     /// Returns `m` as a MutDeque.
     ///
-    pub def toMutDeque(r1: Region[r1], m: MutMap[k, v, r2]): MutDeque[(k, v), r] \ { Read(r2), Write(r1) } =
+    pub def toMutDeque(r1: Region[r1], m: MutMap[k, v, r2]): MutDeque[(k, v), r1] \ { Read(r2), Write(r1) } =
         let MutMap(mm) = m;
         Map.toMutDeque(r1, deref mm)
 
