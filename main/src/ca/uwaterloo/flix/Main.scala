@@ -216,7 +216,7 @@ object Main {
       metrics match {
         case Validation.Success((metrics, total)) =>
           print(Metrics.csvHeader())
-          println(s"All files, $total")
+          //println(s"All files, $total")
           for ((src, m) <- metrics) {
             //val sanity = s" CODE${m.sanityCheck()}"
             println(s"${src.name}, $m")
