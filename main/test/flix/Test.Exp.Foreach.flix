@@ -143,4 +143,11 @@ namespace Test/Exp/Foreach {
         deref z == (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10
     }
 
+    @test
+    def testForeach16(): Bool = region r {
+        let y = ref 0 @ r;
+        foreach(   x <- 1 :: Nil   )y := x + 1; // ForEach.foreach(match y -> y := x + 1, 1 :: Nil)
+        deref y == 2
+    }
+
 }

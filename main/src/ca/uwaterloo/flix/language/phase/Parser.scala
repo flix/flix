@@ -503,7 +503,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ForEach: Rule1[ParsedAst.Expression.ForEach] = rule {
-      SP ~ keyword("foreach") ~ optWS ~ "(" ~ optWS ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ optWS ~ ")" ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForEach
+      SP ~ keyword("foreach") ~ optWS ~ "(" ~ optWS ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ForEach
     }
 
     def Assign: Rule1[ParsedAst.Expression] = rule {
