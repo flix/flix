@@ -708,12 +708,12 @@ namespace Fixpoint {
                     Map.foreach(match Tuple(tuple) -> _ -> MutList.push!(f(tuple |> Array.toList), pFacts), rel)
                 case Denotation.Latticenal(_) =>
                     Map.foreach(match Tuple(tuple) -> lat -> {
-                        let vs = Array.init(i -> {
+                        let vs = Array.init(Static, i -> {
                             if (i < Array.length(tuple))
                                 tuple[i]
                             else
                                 lat
-                        }, Array.length(tuple) + 1, Static);
+                        }, Array.length(tuple) + 1);
                         MutList.push!(f(vs |> Array.toList), pFacts)
                     }, rel)
             }, db);

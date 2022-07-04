@@ -202,6 +202,16 @@ case class Index(m: Map[(String, Int), List[Entity]],
   }
 
   /**
+    * Returns the expressions in the document at the given `uri` in the given range `range`.
+    */
+  def queryByRange(uri: String, range: Range): List[Entity] = {
+    (range.start.line to range.end.line).flatMap { line =>
+      m.getOrElse((uri, line), Nil)
+    }.filter { entity => entity.isInRange(range) }.toList
+  }
+
+
+  /**
     * Returns all entities in the document at the given `uri`.
     */
   def query(uri: String): Iterable[Entity] = {
