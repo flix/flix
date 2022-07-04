@@ -1286,14 +1286,14 @@ object Typer {
         val effect = root.effects(sym)
         val ops = effect.ops.map(op => op.sym -> op).toMap
 
-        def unifyFormalParams(expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam]): InferMonad[Unit] = {
+        def unifyFormalParams(op: Symbol.OpSym, expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam]): InferMonad[Unit] = {
           if (expected.length != actual.length) {
-            ??? // MATT invalid type param count
+            InferMonad.errPoint(TypeError.InvalidOpParamCount(op, expected = expected.length, actual = actual.length, loc))
           } else {
             val fparams = (expected zip actual) map {
               case (ex, ac) =>
                 for {
-                  tpe <- expectTypeM(expected = ex.tpe, actual = ac.tpe, ac.loc)
+                  _ <- expectTypeM(expected = ex.tpe, actual = ac.tpe, ac.loc)
                 } yield ()
             }
             seqM(fparams).map(_ => ())
@@ -1307,7 +1307,7 @@ object Typer {
             ops(op) match {
               case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, opTpe, expectedPur, expectedEff, _)) =>
                 for {
-                  _ <- unifyFormalParams(expected = expectedFparams, actual = actualFparams)
+                  _ <- unifyFormalParams(op, expected = expectedFparams, actual = actualFparams)
                   (actualTconstrs, actualTpe, actualPur, actualEff) <- visitExp(body)
 
                   // unify the operation return type with its tvar
@@ -1345,7 +1345,7 @@ object Typer {
         }
 
         if (operation.spec.fparams.length != args.length) {
-          ??? // bad number of args
+          InferMonad.errPoint(TypeError.InvalidOpParamCount(op, expected = operation.spec.fparams.length, actual = args.length, loc))
         } else {
           val argM = (args zip operation.spec.fparams) map {
             case (arg, fparam) => visitArg(arg, fparam)
