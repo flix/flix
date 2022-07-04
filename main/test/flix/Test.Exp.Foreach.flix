@@ -60,4 +60,87 @@ namespace Test/Exp/Foreach {
         deref z + deref q == 15
     }
 
+    @test
+    def testForeach08(): Bool = region r {
+        let z = ref 0 @ r;
+        foreach (x <- 1 :: 2 :: Nil)
+            foreach(y <- 3 :: 4 :: Nil)
+                z := deref z + x + y;
+        deref z == (3 + 1) + (4 + 1) + (3 + 2) + (4 + 2)
+    }
+
+    @test
+    def testForeach09(): Bool = region r {
+        let z = ref 0 @ r;
+        foreach (x <- 1 :: 2 :: Nil)
+            foreach(y <- 3 :: 4 :: Nil)
+                foreach(_ <- List.range(0, 10))
+                    z := deref z + (x * y);
+        deref z == (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10
+    }
+
+    @test
+    def testForeach10(): Bool = region r {
+        let z = ref 0 @ r;
+        foreach (x <- 1 :: 2 :: Nil) {
+            foreach(y <- 3 :: 4 :: Nil)
+                foreach(_ <- List.range(0, 10))
+                    z := deref z + (x * y)
+        };
+        deref z == (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10
+    }
+
+    @test
+    def testForeach11(): Bool = region r {
+        let z = ref 0 @ r;
+        foreach (x <- 1 :: 2 :: Nil) {
+            foreach(y <- 3 :: 4 :: Nil) {
+                foreach(_ <- List.range(0, 10))
+                    z := deref z + (x * y)
+            }
+        };
+        deref z == (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10
+    }
+
+    @test
+    def testForeach12(): Bool = region r {
+        let z = ref 0 @ r;
+        foreach (x <- 1 :: 2 :: Nil) {
+            foreach(y <- 3 :: 4 :: Nil) {
+                foreach(_ <- List.range(0, 10)) {
+                    z := deref z + (x * y)
+                }
+            }
+        };
+        deref z == (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10
+    }
+
+    @test
+    def testForeach13(): Bool = region r {
+        let z = ref 0 @ r;
+        foreach (x <- 1 :: 2 :: Nil) {
+            foreach(y <- 3 :: 4 :: Nil) {
+                foreach(_ <- List.range(0, 10)) z := deref z + (x * y)
+            }
+        };
+        deref z == (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10
+    }
+
+    @test
+    def testForeach14(): Bool = region r {
+        let z = ref 0 @ r;
+        foreach (x <- 1 :: 2 :: Nil) {
+            foreach(y <- 3 :: 4 :: Nil)
+                foreach(_ <- List.range(0, 10)) z := deref z + (x * y)
+        };
+        deref z == (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10
+    }
+
+    @test
+    def testForeach15(): Bool = region r {
+        let z = ref 0 @ r;
+        foreach (x <- 1 :: 2 :: Nil) foreach(y <- 3 :: 4 :: Nil) foreach(_ <- List.range(0, 10)) z := deref z + (x * y);
+        deref z == (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10
+    }
+
 }
