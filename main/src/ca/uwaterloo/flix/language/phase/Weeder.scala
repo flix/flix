@@ -160,10 +160,8 @@ object Weeder {
 
       mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, tconstrsVal, expVal) {
         case (as, mod, _, _, tparams, fparams, tconstrs, exp) =>
-          val ts = fparams.map(_.tpe.get)
-          val retTpe = visitType(tpe0)
-          val tpe = WeededAst.Type.Arrow(ts, purAndEff, retTpe, ident.loc)
-          List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, retTpe, purAndEff, tconstrs, mkSL(sp1, sp2)))
+          val tpe = visitType(tpe0)
+          List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, purAndEff, tconstrs, mkSL(sp1, sp2)))
       }
   }
 
@@ -221,10 +219,8 @@ object Weeder {
 
       mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, expVal, tconstrsVal) {
         case (as, mod, _, _, tparams, fparams, exp, tconstrs) =>
-          val ts = fparams.map(_.tpe.get)
-          val retTpe = visitType(tpe0)
-          val tpe = WeededAst.Type.Arrow(ts, purAndEff, retTpe, ident.loc)
-          List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, retTpe, purAndEff, tconstrs, mkSL(sp1, sp2)))
+          val tpe = visitType(tpe0)
+          List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, purAndEff, tconstrs, mkSL(sp1, sp2)))
       }
   }
 
@@ -246,9 +242,8 @@ object Weeder {
         case (ann, mod, _, tparams, fs, exp, tconstrs) =>
           val ts = fs.map(_.tpe.get)
           val purAndEff = WeededAst.PurityAndEffect(None, None)
-          val retTpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
-          val tpe = WeededAst.Type.Arrow(ts, purAndEff, retTpe, ident.loc)
-          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, tpe, retTpe, purAndEff, tconstrs, mkSL(sp1, sp2)))
+          val tpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
+          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, tpe, purAndEff, tconstrs, mkSL(sp1, sp2)))
       }
   }
 
@@ -301,7 +296,7 @@ object Weeder {
     case ParsedAst.Declaration.Enum(doc0, ann0, mods, sp1, ident, tparams0, tpe0, derives, cases0, sp2) =>
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann0)
-      val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
+      val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public, Ast.Modifier.Opaque))
       val tparamsVal = visitTypeParams(tparams0)
 
       val casesVal = (tpe0, cases0) match {
@@ -650,18 +645,7 @@ object Weeder {
        */
       mapN(visitPattern(pat), visitExp(exp, senv)) {
         case (p, e) =>
-          val loc = mkSL(sp1, sp2).asSynthetic
-
-          // The name of the lambda parameter.
-          val ident = Name.Ident(sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), sp2)
-
-          // Construct the body of the lambda expression.
-          val varOrRef = WeededAst.Expression.VarOrDefOrSig(ident, loc)
-          val rule = WeededAst.MatchRule(p, WeededAst.Expression.True(loc), e)
-
-          val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, loc)
-          val body = WeededAst.Expression.Match(varOrRef, List(rule), loc)
-          WeededAst.Expression.Lambda(fparam, body, loc)
+          mkLambdaMatch(sp1, p, e, sp2)
       }
 
     case ParsedAst.Expression.Unary(sp1, op, exp, sp2) =>
@@ -703,6 +687,23 @@ object Weeder {
       visitExp(exp, senv) map {
         case e => WeededAst.Expression.Discard(e, loc)
       }
+
+    case ParsedAst.Expression.ForEach(sp1, pat, exp1, exp2, sp2) =>
+      //
+      // Rewrites a foreach loop to Foreach.foreach call.
+      //
+      val loc = mkSL(sp1, sp2).asSynthetic
+      val patVal = visitPattern(pat)
+      val exp1Val = visitExp(exp1, senv)
+      val exp2Val = visitExp(exp2, senv)
+      val fqn = "ForEach.foreach"
+
+      mapN(patVal, exp1Val, exp2Val) {
+        case (p, e1, e2) =>
+          val lambda = mkLambdaMatch(sp1, p, e2, sp2)
+          mkApplyFqn(fqn, List(lambda, e1), loc)
+      }
+
 
     case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe, exp1, exp2, sp2) =>
       //
@@ -1628,6 +1629,32 @@ object Weeder {
   }
 
   /**
+    * Returns a match lambda, i.e. a lambda with a pattern match on its arguments.
+    *
+    * This is also known as `ParsedAst.Expression.LambdaMatch`
+    *
+    * @param sp1 the position of the first character in the expression
+    * @param p   the pattern of the parameter
+    * @param e   the body of the lambda
+    * @param sp2 the position of the last character in the expression
+    * @return A lambda that matches on its parameter i.e. a `WeededAst.Expression.Lambda` that has a pattern match in its body.
+    */
+  private def mkLambdaMatch(sp1: SourcePosition, p: WeededAst.Pattern, e: WeededAst.Expression, sp2: SourcePosition)(implicit flix: Flix): WeededAst.Expression.Lambda = {
+    val loc = mkSL(sp1, sp2).asSynthetic
+
+    // The name of the lambda parameter.
+    val ident = Name.Ident(sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), sp2)
+
+    // Construct the body of the lambda expression.
+    val varOrRef = WeededAst.Expression.VarOrDefOrSig(ident, loc)
+    val rule = WeededAst.MatchRule(p, WeededAst.Expression.True(loc), e)
+
+    val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, loc)
+    val body = WeededAst.Expression.Match(varOrRef, List(rule), loc)
+    WeededAst.Expression.Lambda(fparam, body, loc)
+  }
+
+  /**
     * Performs weeding on the given argument.
     *
     * Named arguments are transformed into records.
@@ -2179,6 +2206,7 @@ object Weeder {
   private def visitModifier(m: ParsedAst.Modifier, legalModifiers: Set[Ast.Modifier]): Validation[Ast.Modifier, WeederError] = {
     val modifier = m.name match {
       case "lawful" => Ast.Modifier.Lawful
+      case "opaque" => Ast.Modifier.Opaque
       case "override" => Ast.Modifier.Override
       case "pub" => Ast.Modifier.Public
       case "sealed" => Ast.Modifier.Sealed
@@ -2805,6 +2833,7 @@ object Weeder {
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Stm(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Discard(sp1, _, _) => sp1
+    case ParsedAst.Expression.ForEach(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _) => sp1

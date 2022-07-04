@@ -502,12 +502,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("discard") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Discard
     }
 
+    def ForEach: Rule1[ParsedAst.Expression.ForEach] = rule {
+      SP ~ keyword("foreach") ~ optWS ~ "(" ~ optWS ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ForEach
+    }
+
     def Assign: Rule1[ParsedAst.Expression] = rule {
       PutChannel ~ optional(optWS ~ operatorX(":=") ~ optWS ~ PutChannel ~ SP ~> ParsedAst.Expression.Assign)
     }
 
     def PutChannel: Rule1[ParsedAst.Expression] = rule {
-      LogicalOr ~ zeroOrMore(optWS ~ operatorX("<-") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.PutChannel)
+      LogicalOr ~ optional(optWS ~ operatorX("<-") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.PutChannel)
     }
 
     def LogicalOr: Rule1[ParsedAst.Expression] = {
@@ -679,7 +683,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
-        Discard | NewObject | UnaryLambda | FName | Tag | Hole
+        Discard | ForEach | NewObject | UnaryLambda | FName | Tag | Hole
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -1628,6 +1632,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ capture(keyword("lawful")) ~ SP ~> ParsedAst.Modifier
     }
 
+    def Opaque: Rule1[ParsedAst.Modifier] = rule {
+      SP ~ capture(keyword("opaque")) ~ SP ~> ParsedAst.Modifier
+    }
+
     def Override: Rule1[ParsedAst.Modifier] = rule {
       SP ~ capture(keyword("override")) ~ SP ~> ParsedAst.Modifier
     }
@@ -1641,7 +1649,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Modifier: Rule1[ParsedAst.Modifier] = rule {
-      Inline | Lawful | Override | Public | Sealed
+      Inline | Lawful | Opaque | Override | Public | Sealed
     }
 
     rule {
@@ -1657,6 +1665,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Names                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   object Names {
+
     import Parser.Letters
 
     /**

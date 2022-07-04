@@ -379,7 +379,7 @@ object AsmOps {
     */
   def compileThrowHoleError(mv: MethodVisitor, hole: String, loc: SourceLocation): Unit = {
     compileReifiedSourceLocation(mv, loc)
-    val className = JvmName.HoleError
+    val className = BackendObjType.HoleError.jvmName
     mv.visitTypeInsn(NEW, className.toInternalName)
     mv.visitInsn(DUP2)
     mv.visitInsn(SWAP)
@@ -401,7 +401,7 @@ object AsmOps {
     mv.visitLdcInsn(loc.beginCol)
     mv.visitLdcInsn(loc.endLine)
     mv.visitLdcInsn(loc.endCol)
-    mv.visitMethodInsn(INVOKESPECIAL, RslType.jvmName.toInternalName, JvmName.ConstructorMethod, RslType.ConstructorDescriptor.toDescriptor, false)
+    mv.visitMethodInsn(INVOKESPECIAL, RslType.jvmName.toInternalName, JvmName.ConstructorMethod, RslType.Constructor.d.toDescriptor, false)
   }
 
   /**

@@ -146,7 +146,7 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedTypes](result)
   }
 
-  test("TestMismatchedTypes.Arrow.01") {
+  test("TestUnderApplied.Arrow.01") {
     // Regression test.
     // See https://github.com/flix/flix/issues/3634
     val input =
@@ -158,7 +158,7 @@ class TestTyper extends FunSuite with TestUtils {
       |def g(): Bool = f(mkE)
       |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedTypes](result)
+    expectError[TypeError.UnderApplied](result)
   }
 
   test("TestOverApplied.01") {
@@ -1173,6 +1173,18 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.ImpureDeclaredAsPure](result)
   }
 
+  test("Test.ImpureDeclaredAsPure.03") {
+    // Regression test. See https://github.com/flix/flix/issues/4062
+    val input =
+      """
+        |def mkArray(): Array[Int32, Static] & Impure = []
+        |
+        |def zero(): Int32 & Pure = mkArray().length
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.ImpureDeclaredAsPure](result)
+  }
+
   test("Test.EffectPolymorphicDeclaredAsPure.01") {
     val input =
       """
@@ -1272,7 +1284,7 @@ class TestTyper extends FunSuite with TestUtils {
         |        region r {
         |            let x = ref 123 @ r;
         |            w -> {
-        |                let _ = deref x;
+        |                discard deref x;
         |                w
         |            }
         |        }

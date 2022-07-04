@@ -731,7 +731,7 @@ namespace TestNel {
     @test
     def toMutDeque01(): Bool = region r {
         let l = Nel(1, 2 :: Nil);
-        let d1 = Nel.toMutDeque(l, r);
+        let d1 = Nel.toMutDeque(r, l);
 
         let d2 = new MutDeque(r);
         MutDeque.pushBack(1, d2);
@@ -743,7 +743,7 @@ namespace TestNel {
     @test
     def toMutDeque02(): Bool = region r {
         let l = Nel(3, 1 :: 2 :: Nil);
-        let d1 = Nel.toMutDeque(l, r);
+        let d1 = Nel.toMutDeque(r, l);
 
         let d2 = new MutDeque(r);
         MutDeque.pushBack(1, d2);
@@ -756,7 +756,7 @@ namespace TestNel {
     @test
     def toMutDeque03(): Bool = region r {
         let l = Nel('a', 'b' :: 'c' :: Nil);
-        let d1 = Nel.toMutDeque(l, r);
+        let d1 = Nel.toMutDeque(r, l);
 
         let d2 = new MutDeque(r);
         MutDeque.pushFront('c', d2);
@@ -968,12 +968,14 @@ namespace TestNel {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool & Impure =
-        Nel(1, 2 :: 3 :: Nil) |> Nel.toIterator |> Iterator.toNel == Some(Nel(1, 2 :: 3 :: Nil))
+    def toIterator01(): Bool = region r {
+        Nel(1, 2 :: 3 :: Nil) |> Nel.toIterator(r) |> Iterator.toNel == Some(Nel(1, 2 :: 3 :: Nil))
+    }
 
     @test
-    def toIterator02(): Bool & Impure =
-        Nel(-100, List.range(-99, 100)) |> Nel.toIterator |> Iterator.toList == List.range(-100, 100)
+    def toIterator02(): Bool = region r {
+        Nel(-100, List.range(-99, 100)) |> Nel.toIterator(r) |> Iterator.toList == List.range(-100, 100)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // toMapWith                                                               //

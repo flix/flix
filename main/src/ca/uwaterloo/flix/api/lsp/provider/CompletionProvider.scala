@@ -25,7 +25,7 @@ import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 import org.parboiled2.CharPredicate
 
-/** 
+/**
   * CompletionProvider
   *
   * Takes a source file, along with the position of the cursor within that file, and returns a list of CompletionItems.
@@ -126,71 +126,71 @@ object CompletionProvider {
     // TODO: keyword-specific help text?
     // NB: Please keep the list alphabetically sorted.
     List(
-      "@benchmark", 
-      "@Deprecated", 
-      "@Experimental", 
-      "@Parallel", 
-      "@ParallelWhenPure", 
-      "@Lazy", 
-      "@LazyWhenPure", 
-      "@Space", 
-      "@test", 
+      "@benchmark",
+      "@Deprecated",
+      "@Experimental",
+      "@Parallel",
+      "@ParallelWhenPure",
+      "@Lazy",
+      "@LazyWhenPure",
+      "@Space",
+      "@test",
       "@Time",
-      "and", 
-      "as", 
-      "case", 
-      "chan", 
-      "choose", 
-      "class", 
-      "def", 
-      "deref", 
-      "discard", 
-      "do", 
-      "eff", 
-      "else", 
-      "enum", 
-      "false", 
-      "fix", 
+      "and",
+      "as",
+      "case",
+      "chan",
+      "choose",
+      "class",
+      "def",
+      "deref",
+      "discard",
+      "do",
+      "eff",
+      "else",
+      "enum",
+      "false",
+      "fix",
       "forall",
-      "force", 
-      "from", 
-      "get", 
-      "if", 
-      "import", 
-      "Impure", 
-      "instance", 
-      "into", 
-      "lat", 
-      "law", 
-      "lazy", 
-      "let", 
-      "match", 
-      "namespace", 
+      "force",
+      "from",
+      "get",
+      "if",
+      "import",
+      "Impure",
+      "instance",
+      "into",
+      "lat",
+      "law",
+      "lazy",
+      "let",
+      "match",
+      "namespace",
       "new",
-      "not", 
-      "null", 
-      "opaque", 
-      "or", 
-      "override", 
-      "project", 
-      "pub", 
-      "Pure", 
-      "query", 
-      "Record", 
-      "ref", 
-      "region", 
-      "rel", 
-      "Schema", 
+      "not",
+      "null",
+      "opaque",
+      "or",
+      "override",
+      "project",
+      "pub",
+      "Pure",
+      "query",
+      "Record",
+      "ref",
+      "region",
+      "rel",
+      "Schema",
       "sealed",
-      "select", 
-      "set", 
-      "solve", 
-      "spawn", 
-      "true", 
-      "try", 
-      "type", 
-      "use", 
-      "where", 
+      "select",
+      "set",
+      "solve",
+      "spawn",
+      "true",
+      "try",
+      "type",
+      "use",
+      "where",
       "with"
     ) map keywordCompletion
   }
@@ -241,13 +241,13 @@ object CompletionProvider {
   }
 
   private def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec): String = spec match {
-    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _) =>
+    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, pur0, eff0, _) => // TODO use eff
       val args = fparams.map {
         fparam => s"${fparam.sym.text}: ${FormatType.formatWellKindedType(fparam.tpe)}"
       }
 
       val retTpe = FormatType.formatWellKindedType(retTpe0)
-      val eff = eff0 match {
+      val eff = pur0 match {
         case Type.Cst(TypeConstructor.True, _) => "Pure"
         case Type.Cst(TypeConstructor.False, _) => "Impure"
         case e => FormatType.formatWellKindedType(e)
@@ -375,10 +375,10 @@ object CompletionProvider {
       return Nil
     }
 
-    // 
+    //
     // When used with `enum`, `with` needs to be treated differently: we should only show derivable
     // type classes, and we shouldn't include the type parameter
-    // 
+    //
 
     val enumPattern = raw"\s*enum\s+(.*\s)wi?t?h?\s?.*".r
     val withPattern = raw"\s*(def|instance|class)\s+(.*\s)wi?t?h?\s?.*".r
@@ -479,12 +479,12 @@ object CompletionProvider {
     def fmtSignature(clazz: TypedAst.Class, sig: TypedAst.Sig, hole: String): String = {
       val fparams = fmtFormalParams(clazz, sig.spec, hole)
       val retTpe = fmtType(clazz, sig.spec.retTpe, hole)
-      val eff = sig.spec.eff match {
+      val pur = sig.spec.pur match {
         case Type.Cst(TypeConstructor.True, _) => ""
         case Type.Cst(TypeConstructor.False, _) => " & Impure"
         case e => " & " + FormatType.formatWellKindedType(e)
       }
-      s"    pub def ${sig.sym.name}($fparams): $retTpe$eff = ???"
+      s"    pub def ${sig.sym.name}($fparams): $retTpe$pur = ???"
     }
 
     root.classes.map {
@@ -542,7 +542,7 @@ object CompletionProvider {
     val priority = if (priorityBoost matches context.prefix) Priority.boost _ else Priority.low _
 
     val enums = root.enums.map {
-      case (_, t) => 
+      case (_, t) =>
         val name = t.sym.name
         CompletionItem(label = s"$name${formatTParams(t.tparams)}",
           sortText = priority(name),
@@ -553,7 +553,7 @@ object CompletionProvider {
     }
 
     val aliases = root.typeAliases.map {
-      case (_, t) => 
+      case (_, t) =>
         val name = t.sym.name
         CompletionItem(label = s"$name${formatTParams(t.tparams)}",
           sortText = priority(name),

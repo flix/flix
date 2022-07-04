@@ -1394,22 +1394,22 @@ namespace TestChain {
 
     @test
     def toMutList01(): Bool = region r {
-        Chain.toMutList(Chain.empty(): Chain[Int32], r) `MutList.sameElements` List.toMutList(Nil, r): MutList[Int32, _]
+        Chain.toMutList(r, Chain.empty(): Chain[Int32]) `MutList.sameElements` List.toMutList(r, Nil): MutList[Int32, r]
     }
 
     @test
     def toMutList02(): Bool = region r {
-        Chain.toMutList(Chain.singleton(1), r) `MutList.sameElements` List.toMutList(1 :: Nil, r)
+        Chain.toMutList(r, Chain.singleton(1)) `MutList.sameElements` List.toMutList(r, 1 :: Nil)
     }
 
     @test
     def toMutList03(): Bool = region r {
-        Chain.toMutList(List.toChain(1 :: 2 :: Nil), r) `MutList.sameElements` List.toMutList(1 :: 2 :: Nil, r)
+        Chain.toMutList(r, List.toChain(1 :: 2 :: Nil)) `MutList.sameElements` List.toMutList(r, 1 :: 2 :: Nil)
     }
 
     @test
     def toMutList04(): Bool = region r {
-        Chain.toMutList(List.toChain(1 :: 2 :: 3 :: Nil), r) `MutList.sameElements` List.toMutList(1 :: 2 :: 3 :: Nil, r)
+        Chain.toMutList(r, List.toChain(1 :: 2 :: 3 :: Nil)) `MutList.sameElements` List.toMutList(r, 1 :: 2 :: 3 :: Nil)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1419,7 +1419,7 @@ namespace TestChain {
     @test
     def toMutDeque01(): Bool = region r {
         let c = Chain.empty(): Chain[Int32];
-        let d1 = Chain.toMutDeque(c, r);
+        let d1 = Chain.toMutDeque(r, c);
 
         let d2 = new MutDeque(r);
 
@@ -1429,7 +1429,7 @@ namespace TestChain {
     @test
     def toMutDeque02(): Bool = region r {
         let c = Chain.singleton(1);
-        let d1 = Chain.toMutDeque(c, r);
+        let d1 = Chain.toMutDeque(r, c);
 
         let d2 = new MutDeque(r);
         MutDeque.pushBack(1, d2);
@@ -1440,7 +1440,7 @@ namespace TestChain {
     @test
     def toMutDeque03(): Bool = region r {
         let c = List.toChain(1 :: 2 :: Nil);
-        let d1 = Chain.toMutDeque(c, r);
+        let d1 = Chain.toMutDeque(r, c);
 
         let d2 = new MutDeque(r);
         MutDeque.pushFront(1, d2);
@@ -1452,7 +1452,7 @@ namespace TestChain {
     @test
     def toMutDeque04(): Bool = region r {
         let c = List.toChain('a' :: 'b' :: 'c' :: Nil);
-        let d1 = Chain.toMutDeque(c, r);
+        let d1 = Chain.toMutDeque(r, c);
 
         let d2 = new MutDeque(r);
         MutDeque.pushFront('b', d2);
@@ -1509,24 +1509,24 @@ namespace TestChain {
     @test
     def toArray01(): Bool = region r {
         let c: Chain[Int32] = Chain.empty();
-        Array.sameElements(Chain.toArray(c, r), [] @ r)
+        Array.sameElements(Chain.toArray(r, c), [] @ r)
     }
 
     @test
     def toArray02(): Bool = region r {
-        let a = Chain.toArray(Chain.singleton(1), r);
+        let a = Chain.toArray(r, Chain.singleton(1));
         Array.sameElements(a, [1] @ r)
     }
 
     @test
     def toArray03(): Bool = region r {
-        let a = Chain.toArray(List.toChain(1 :: 2 :: Nil), r);
+        let a = Chain.toArray(r, List.toChain(1 :: 2 :: Nil));
         Array.sameElements(a, [1, 2] @ r)
     }
 
     @test
     def toArray04(): Bool = region r {
-        let a = Chain.toArray(List.toChain(1 :: 2 :: 3 :: Nil), r);
+        let a = Chain.toArray(r, List.toChain(1 :: 2 :: 3 :: Nil));
         Array.sameElements(a, [1, 2, 3] @ r)
     }
 
@@ -1753,5 +1753,37 @@ namespace TestChain {
 
     @test
     def zipWithIndex05(): Bool = Chain.zipWithIndex(List.toChain(1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil)) == List.toChain((1, 0) :: (4, 1) :: (11, 2) :: (2, 3) :: (-22, 4) :: (17, 5) :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // shuffle                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def shuffle01(): Bool & Impure =
+        let l: List[Int32] = Nil;
+        let c = List.toChain(l) |> Chain.shuffle(Random.new());
+
+        Chain.length(c) == 0 and Chain.toSet(c) == Set#{}
+
+    @test
+    def shuffle02(): Bool & Impure =
+        let l = 1 :: Nil;
+        let c = List.toChain(l) |> Chain.shuffle(Random.new());
+
+        Chain.length(c) == 1 and Chain.toSet(c) == Set#{1}
+
+    @test
+    def shuffle03(): Bool & Impure =
+        let l = 1 :: 2 :: 3 :: Nil;
+        let c = List.toChain(l) |> Chain.shuffle(Random.new());
+
+        Chain.length(c) == 3 and Chain.toSet(c) == Set#{1, 2, 3}
+
+    @test
+    def shuffle04(): Bool & Impure =
+        let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
+        let c = List.toChain(l) |> Chain.shuffle(Random.new());
+
+        Chain.length(c) == 10 and Chain.toSet(c) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 
 }

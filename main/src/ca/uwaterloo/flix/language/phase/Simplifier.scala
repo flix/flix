@@ -275,14 +275,14 @@ object Simplifier {
       case TypedAst.Expression.Spawn(exp, tpe, eff, loc) =>
         // Wrap the expression in a closure: () -> tpe & eff
         val e = visitExp(exp)
-        val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, eff, e.tpe, loc)
+        val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, eff, Type.Empty, e.tpe, loc) // TODO use eff
         val lambdaExp = SimplifiedAst.Expression.Lambda(List(), e, lambdaTyp, loc)
         SimplifiedAst.Expression.Spawn(lambdaExp, tpe, loc)
 
       case TypedAst.Expression.Lazy(exp, tpe, loc) =>
         // Wrap the expression in a closure: () -> tpe & Pure
         val e = visitExp(exp)
-        val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, Type.Pure, e.tpe, loc)
+        val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, Type.Pure, Type.Empty, e.tpe, loc)
         val lambdaExp = SimplifiedAst.Expression.Lambda(List(), e, lambdaTyp, loc)
         SimplifiedAst.Expression.Lazy(lambdaExp, tpe, loc)
 
@@ -483,7 +483,7 @@ object Simplifier {
       val nextLabel = (ruleLabels zip (ruleLabels.drop(1) ::: defaultLab :: Nil)).toMap
 
       //TODO Intermediate solution (which is correct, but imprecise): Compute the purity of every match rule in rules
-      val jumpPurity = combineAll(rules.map(r => effectToPurity(r.exp.eff)))
+      val jumpPurity = combineAll(rules.map(r => effectToPurity(r.exp.pur)))
 
       // Create a branch for each rule.
       val branches = (ruleLabels zip rules) map {
@@ -778,7 +778,7 @@ object Simplifier {
       //
       // Translate the match expressions.
       //
-      val exps = exps0.map(e => (visitExp(e), e.eff))
+      val exps = exps0.map(e => (visitExp(e), e.pur))
 
       //
       // Introduce a fresh variable for each match expression.
@@ -840,7 +840,7 @@ object Simplifier {
     //
     val defns = root.defs.map { case (k, v) => k -> visitDef(v) }
     val enums = root.enums.map {
-      case (k, TypedAst.Enum(_, ann, mod, sym, _, _, cases0, enumType, _, loc)) =>
+      case (k, TypedAst.Enum(_, ann, mod, sym, _, _, cases0, enumType, loc)) =>
         val cases = cases0 map {
           case (tag, TypedAst.Case(enumSym, tagName, tagType, _, tagLoc)) => tag -> SimplifiedAst.Case(enumSym, tagName, tagType, tagLoc)
         }

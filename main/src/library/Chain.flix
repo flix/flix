@@ -64,6 +64,14 @@ instance Foldable[Chain] {
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldRightWithCont(f, s, c)
 }
 
+instance UnorderedFoldable[Chain] {
+    pub def foldMap(f: a -> b & ef, c: Chain[a]): b & ef with CommutativeMonoid[b] = Chain.foldMap(f, c)
+    override pub def isEmpty(c: Chain[a]): Bool = Chain.isEmpty(c)
+    override pub def exists(f: a -> Bool & ef, c: Chain[a]): Bool & ef = Chain.exists(f, c)
+    override pub def forall(f: a -> Bool & ef, c: Chain[a]): Bool & ef = Chain.forall(f, c)
+    override pub def memberOf(x: a, c: Chain[a]): Bool with Eq[a] = Chain.memberOf(x, c)
+}
+
 instance Traversable[Chain] {
     pub def traverse(f: a -> m[b] & ef, t: Chain[a]): m[Chain[b]] & ef with Applicative[m] = Chain.traverse(f, t)
     pub override def sequence(t: Chain[m[a]]): m[Chain[a]] with Applicative[m] = Chain.sequence(t)
@@ -708,7 +716,7 @@ namespace Chain {
     ///
     /// Returns `c` as a MutDeque.
     ///
-    pub def toMutDeque(c: Chain[a], r: Region[r]): MutDeque[a, r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], c: Chain[a]): MutDeque[a, r] \ Write(r) =
         let d = new MutDeque(r);
         Chain.foreach(x -> MutDeque.pushBack(x, d), c);
         d
@@ -716,8 +724,8 @@ namespace Chain {
     ///
     /// Returns `c` as a mutable list.
     ///
-    pub def toMutList(c: Chain[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
-        Array.toMutList(toArray(c, r2), r) // `Array.toMutList` respects the invariant of `MutList`
+    pub def toMutList(r: Region[r], c: Chain[a]): MutList[a, r] \ Write(r) = region r2 {
+        Array.toMutList(r, toArray(r2, c)) // `Array.toMutList` respects the invariant of `MutList`
     }
 
     ///
@@ -738,7 +746,7 @@ namespace Chain {
     ///
     /// Returns the chain `c` as an array.
     ///
-    pub def toArray(c: Chain[a], r: Region[r]): Array[a, r] \ Write(r) = match head(c) {
+    pub def toArray(r: Region[r], c: Chain[a]): Array[a, r] \ Write(r) = match head(c) {
         case None    => [] @ r
         case Some(x) =>
             let arr = [x; length(c)] @ r;
@@ -785,7 +793,7 @@ namespace Chain {
     /// The sort implementation is a Quicksort.
     ///
     pub def sort(c: Chain[a]): Chain[a] with Order[a] = region r {
-        toArray(c, r) |> Array.sort |> Array.toChain
+        toArray(r, c) !> Array.sort! |> Array.toChain
     }
 
     /// Sort chain `c` so that elements are ordered from low to high according to the `Order` instance
@@ -796,7 +804,7 @@ namespace Chain {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, c: Chain[a]): Chain[a] with Order[b] = region r {
-        toArray(c, r) |> Array.sortBy(f) |> Array.toChain
+        toArray(r, c) !> Array.sortBy!(f) |> Array.toChain
     }
 
     ///
@@ -807,7 +815,7 @@ namespace Chain {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, c: Chain[a]): Chain[a] = region r {
-        toArray(c, r) |> Array.sortWith(cmp) |> Array.toChain
+        toArray(r, c) !> Array.sortWith!(cmp) |> Array.toChain
     }
 
     ///
@@ -864,5 +872,14 @@ namespace Chain {
             case SomeLeft(a, rs) => loop(rs, snoc(acc, (a, i)), i + 1)
         };
         loop(c, Empty, 0)
+
+    ///
+    /// Shuffles `c` using the Fisher–Yates shuffle.
+    ///
+    pub def shuffle(rnd: Random.Random, c: Chain[a]): Chain[a] & Impure = region r {
+        let arr = toArray(r, c);
+        Array.shuffle(rnd, arr);
+        Array.toChain(arr)
+    }
 
 }

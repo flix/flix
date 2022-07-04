@@ -86,10 +86,8 @@ object JvmName {
   val Function: JvmName = JvmName(List("java", "util", "function"), "Function")
   val Integer: JvmName = JvmName(JavaLang, "Integer")
   val Long: JvmName = JvmName(JavaLang, "Long")
-  val Objects: JvmName = JvmName(JavaLang, "Objects")
   val Runnable: JvmName = JvmName(JavaLang, "Runnable")
   val Short: JvmName = JvmName(JavaLang, "Short")
-  val StringBuilder: JvmName = JvmName(JavaLang, "StringBuilder")
   val System: JvmName = JvmName(JavaLang, "System")
   val UnsupportedOperationException: JvmName = JvmName(JavaLang, "UnsupportedOperationException")
 
@@ -99,9 +97,6 @@ object JvmName {
 
   val DevFlixRuntime: List[String] = List("dev", "flix", "runtime")
 
-  // TODO: These could be BackendObjType objects to allow method/field objects
-  val HoleError: JvmName = JvmName(DevFlixRuntime, "HoleError")
-  val MatchError: JvmName = JvmName(DevFlixRuntime, "MatchError")
   val ProxyObject: JvmName = JvmName(DevFlixRuntime, "ProxyObject")
   val SelectChoice: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "SelectChoice")
 

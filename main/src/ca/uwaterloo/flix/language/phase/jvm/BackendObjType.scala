@@ -37,7 +37,6 @@ sealed trait BackendObjType {
   val jvmName: JvmName = this match {
     case BackendObjType.Unit => JvmName(DevFlixRuntime, "Unit")
     case BackendObjType.BigInt => JvmName(List("java", "math"), "BigInteger")
-    case BackendObjType.String => JvmName(JavaLang, "String")
     case BackendObjType.Channel(_) => JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), mkName("Channel"))
     case BackendObjType.Lazy(tpe) => JvmName(RootPackage, mkName("Lazy", tpe))
     case BackendObjType.Ref(tpe) => JvmName(RootPackage, mkName("Ref", tpe))
@@ -51,7 +50,13 @@ sealed trait BackendObjType {
     case BackendObjType.ReifiedSourceLocation => JvmName(DevFlixRuntime, "ReifiedSourceLocation")
     case BackendObjType.Global => JvmName(DevFlixRuntime, "Global")
     case BackendObjType.FlixError => JvmName(DevFlixRuntime, "FlixError")
+    case BackendObjType.HoleError => JvmName(DevFlixRuntime, "HoleError")
+    case BackendObjType.MatchError => JvmName(DevFlixRuntime, "MatchError")
+    // Java classes
     case BackendObjType.JavaObject => JvmName(JavaLang, "Object")
+    case BackendObjType.String => JvmName(JavaLang, "String")
+    case BackendObjType.StringBuilder => JvmName(JavaLang, "StringBuilder")
+    case BackendObjType.Objects => JvmName(JavaLang, "Objects")
   }
 
   /**
@@ -85,6 +90,27 @@ object BackendObjType {
 
 
   case object Unit extends BackendObjType {
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkClass(this.jvmName, IsFinal)
+
+      cm.mkStaticConstructor(StaticConstructor)
+      cm.mkConstructor(Constructor)
+      cm.mkField(InstanceField)
+
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
+      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
+    ))
+
+    def StaticConstructor: StaticConstructorMethod = StaticConstructorMethod(this.jvmName, Some(
+      NEW(this.jvmName) ~
+        DUP() ~ INVOKESPECIAL(Constructor) ~
+        PUTSTATIC(InstanceField) ~
+        RETURN()
+    ))
+
     def InstanceField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, "INSTANCE", this.toTpe)
   }
 
@@ -97,6 +123,19 @@ object BackendObjType {
   case class Lazy(tpe: BackendType) extends BackendObjType
 
   case class Ref(tpe: BackendType) extends BackendObjType {
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
+
+      cm.mkField(ValueField)
+      cm.mkConstructor(Constructor)
+
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
+      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
+    ))
+
     def ValueField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "value", tpe)
   }
 
@@ -105,24 +144,41 @@ object BackendObjType {
   //case class Enum(sym: Symbol.EnumSym, args: List[BackendType]) extends BackendObjType
 
   case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType {
-    def continuation: BackendObjType.Continuation = Continuation(result.toErased)
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkAbstractClass(this.jvmName, superClass = continuation.jvmName)
+
+      cm.mkConstructor(Constructor)
+      args.indices.foreach(argIndex => cm.mkField(ArgField(argIndex)))
+
+      cm.closeClassMaker()
+    }
+
+    def continuation: Continuation = Continuation(result.toErased)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
-      thisLoad() ~
-        invokeConstructor(continuation.jvmName, MethodDescriptor.NothingToVoid) ~
-        RETURN()
+      thisLoad() ~ INVOKESPECIAL(continuation.Constructor) ~ RETURN()
     ))
 
     def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, s"arg$index", args(index))
-
-    def ResultField: InstanceField = continuation.ResultField
-
-    def InvokeMethod: AbstractMethod = continuation.InvokeMethod
-
-    def UnwindMethod: InstanceMethod = continuation.UnwindMethod
   }
 
   case class Continuation(result: BackendType) extends BackendObjType {
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkAbstractClass(this.jvmName, interfaces = List(JvmName.Runnable))
+
+      cm.mkConstructor(Constructor)
+      cm.mkField(ResultField)
+      cm.mkAbstractMethod(InvokeMethod)
+      cm.mkMethod(UnwindMethod)
+      cm.mkMethod(RunMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
+      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
+    ))
+
     def ResultField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "result", result)
 
     def InvokeMethod: AbstractMethod = AbstractMethod(this.jvmName, IsPublic, "invoke", mkDescriptor()(this.toTpe))
@@ -131,16 +187,11 @@ object BackendObjType {
       thisLoad() ~ storeWithName(1, this.toTpe) { currentCont =>
         pushNull() ~ storeWithName(2, this.toTpe) { previousCont =>
           doWhile(Condition.NONNULL) {
-            currentCont.load() ~
-              previousCont.store() ~
-              currentCont.load() ~
-              INVOKEVIRTUAL(this.InvokeMethod) ~
-              DUP() ~
-              currentCont.store()
+            currentCont.load() ~ previousCont.store() ~
+              currentCont.load() ~ INVOKEVIRTUAL(InvokeMethod) ~
+              DUP() ~ currentCont.store()
           } ~
-            previousCont.load() ~
-            GETFIELD(this.ResultField) ~
-            xReturn(this.result)
+            previousCont.load() ~ GETFIELD(ResultField) ~ xReturn(this.result)
         }
       }
     ))
@@ -149,61 +200,96 @@ object BackendObjType {
       * Called when spawned, should only be used by functions returning void.
       */
     def RunMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "run", MethodDescriptor.NothingToVoid, Some(
-      thisLoad() ~
-        INVOKEVIRTUAL(this.UnwindMethod) ~
-        xPop(this.result) ~
+      thisLoad() ~ INVOKEVIRTUAL(UnwindMethod) ~ xPop(this.result) ~
         RETURN()
     ))
   }
 
   case object RecordEmpty extends BackendObjType {
-    def interface: BackendObjType.Record.type = Record
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, interfaces = List(this.interface.jvmName))
+
+      cm.mkStaticConstructor(StaticConstructor)
+      cm.mkConstructor(Constructor)
+      cm.mkField(InstanceField)
+      cm.mkMethod(LookupFieldMethod)
+      cm.mkMethod(RestrictFieldMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
+      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
+    ))
+
+    def StaticConstructor: StaticConstructorMethod = StaticConstructorMethod(this.jvmName, Some(
+      NEW(this.jvmName) ~
+        DUP() ~ INVOKESPECIAL(Constructor) ~
+        PUTSTATIC(InstanceField) ~
+        RETURN()
+    ))
+
+    def interface: Record.type = Record
 
     def InstanceField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, "INSTANCE", this.toTpe)
 
-    def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName, IsFinal, {
-      Some(throwUnsupportedOperationException(
-        s"${BackendObjType.Record.LookupFieldMethod.name} method shouldn't be called"))
-    })
+    def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName, IsFinal, Some(
+      throwUnsupportedOperationException(
+        s"${Record.LookupFieldMethod.name} method shouldn't be called")
+    ))
 
-    def RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName, IsFinal, {
-      Some(throwUnsupportedOperationException(
-        s"${BackendObjType.Record.RestrictFieldMethod.name} method shouldn't be called"))
-    })
+    def RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName, IsFinal, Some(
+      throwUnsupportedOperationException(
+        s"${Record.RestrictFieldMethod.name} method shouldn't be called")
+    ))
   }
 
   case class RecordExtend(field: String, value: BackendType, rest: BackendType) extends BackendObjType {
-    def interface: BackendObjType.Record.type = Record
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, interfaces = List(Record.jvmName))
 
-    def LabelField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "label", BackendObjType.String.toTpe)
+      cm.mkConstructor(Constructor)
+      cm.mkField(LabelField)
+      cm.mkField(ValueField)
+      cm.mkField(RestField)
+      cm.mkMethod(LookupFieldMethod)
+      cm.mkMethod(RestrictFieldMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
+      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
+    ))
+
+    def LabelField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "label", String.toTpe)
 
     def ValueField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "value", value)
 
-    def RestField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "rest", interface.toTpe)
+    def RestField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "rest", Record.toTpe)
 
-    def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName, IsFinal, Some(
+    def LookupFieldMethod: InstanceMethod = Record.LookupFieldMethod.implementation(this.jvmName, IsFinal, Some(
       caseOnLabelEquality {
         case TrueBranch =>
           thisLoad() ~ ARETURN()
         case FalseBranch =>
-          thisLoad() ~ GETFIELD(this.RestField) ~
+          thisLoad() ~ GETFIELD(RestField) ~
             ALOAD(1) ~
-            INVOKEINTERFACE(BackendObjType.Record.LookupFieldMethod) ~
+            INVOKEINTERFACE(Record.LookupFieldMethod) ~
             ARETURN()
       }
     ))
 
-    def RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName, IsFinal, Some(
+    def RestrictFieldMethod: InstanceMethod = Record.RestrictFieldMethod.implementation(this.jvmName, IsFinal, Some(
       caseOnLabelEquality {
         case TrueBranch =>
-          thisLoad() ~ GETFIELD(this.RestField) ~
-            ARETURN()
+          thisLoad() ~ GETFIELD(RestField) ~ ARETURN()
         case FalseBranch =>
           thisLoad() ~
-            DUP() ~ GETFIELD(this.RestField) ~
+            DUP() ~ GETFIELD(RestField) ~
             ALOAD(1) ~
-            INVOKEINTERFACE(BackendObjType.Record.RestrictFieldMethod) ~
-            PUTFIELD(this.RestField) ~
+            INVOKEINTERFACE(Record.RestrictFieldMethod) ~
+            PUTFIELD(RestField) ~
             thisLoad() ~ ARETURN()
       }
     ))
@@ -212,18 +298,27 @@ object BackendObjType {
       * Compares the label of `this`and `ALOAD(1)` and executes the designated branch.
       */
     private def caseOnLabelEquality(cases: Branch => InstructionSet): InstructionSet =
-      thisLoad() ~ GETFIELD(this.LabelField) ~
+      thisLoad() ~ GETFIELD(LabelField) ~
         ALOAD(1) ~
-        INVOKEVIRTUAL(BackendObjType.JavaObject.EqualsMethod) ~
+        INVOKEVIRTUAL(JavaObject.EqualsMethod) ~
         branch(Condition.Bool)(cases)
   }
 
   case object Record extends BackendObjType {
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkInterface(this.jvmName)
+
+      cm.mkInterfaceMethod(LookupFieldMethod)
+      cm.mkInterfaceMethod(RestrictFieldMethod)
+
+      cm.closeClassMaker()
+    }
+
     def LookupFieldMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "lookupField",
-      mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.Record.toTpe))
+      mkDescriptor(String.toTpe)(this.toTpe))
 
     def RestrictFieldMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "restrictField",
-      mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.Record.toTpe))
+      mkDescriptor(String.toTpe)(this.toTpe))
   }
 
   // case object SchemaEmpty extends BackendObjType
@@ -243,11 +338,37 @@ object BackendObjType {
 
 
   case object ReifiedSourceLocation extends BackendObjType {
-    def ConstructorDescriptor: MethodDescriptor =
-      mkDescriptor(BackendObjType.String.toTpe, BackendType.Int32, BackendType.Int32, BackendType.Int32, BackendType.Int32)(VoidableType.Void)
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
+
+      cm.mkConstructor(Constructor)
+
+      cm.mkField(SourceField)
+      cm.mkField(BeginLineField)
+      cm.mkField(BeginColField)
+      cm.mkField(EndLineField)
+      cm.mkField(EndColField)
+
+      cm.mkMethod(EqualsMethod)
+      cm.mkMethod(HashCodeMethod)
+      cm.mkMethod(ToStringMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic,
+      List(String.toTpe, BackendType.Int32, BackendType.Int32, BackendType.Int32, BackendType.Int32), Some(
+        thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~
+          thisLoad() ~ ALOAD(1) ~ PUTFIELD(SourceField) ~
+          thisLoad() ~ ILOAD(2) ~ PUTFIELD(BeginLineField) ~
+          thisLoad() ~ ILOAD(3) ~ PUTFIELD(BeginColField) ~
+          thisLoad() ~ ILOAD(4) ~ PUTFIELD(EndLineField) ~
+          thisLoad() ~ ILOAD(5) ~ PUTFIELD(EndColField) ~
+          RETURN()
+      ))
 
     def SourceField: InstanceField =
-      InstanceField(this.jvmName, IsPublic, IsFinal, "source", BackendObjType.String.toTpe)
+      InstanceField(this.jvmName, IsPublic, IsFinal, "source", String.toTpe)
 
     def BeginLineField: InstanceField =
       InstanceField(this.jvmName, IsPublic, IsFinal, "beginLine", BackendType.Int32)
@@ -260,104 +381,361 @@ object BackendObjType {
 
     def EndColField: InstanceField =
       InstanceField(this.jvmName, IsPublic, IsFinal, "endCol", BackendType.Int32)
+
+    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(
+      // create string builder
+      NEW(StringBuilder.jvmName) ~ DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
+        // build string
+        thisLoad() ~ GETFIELD(SourceField) ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        pushString(":") ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        thisLoad() ~ GETFIELD(BeginLineField) ~ INVOKEVIRTUAL(StringBuilder.AppendInt32Method) ~
+        pushString(":") ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        thisLoad() ~ GETFIELD(BeginColField) ~ INVOKEVIRTUAL(StringBuilder.AppendInt32Method) ~
+        // create the string
+        INVOKEVIRTUAL(JavaObject.ToStringMethod) ~ ARETURN()
+    ))
+
+    private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(
+      withName(1, JavaObject.toTpe) { otherObj =>
+        // check exact equality
+        thisLoad() ~
+          otherObj.load() ~
+          ifTrue(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
+          // check `other == null`
+          otherObj.load() ~
+          ifTrue(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
+          // the class equality
+          thisLoad() ~
+          INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
+          otherObj.load() ~
+          INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
+          ifTrue(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
+          // check individual fields
+          otherObj.load() ~
+          CHECKCAST(this.jvmName) ~
+          storeWithName(2, this.toTpe) { otherLoc =>
+            thisLoad() ~ GETFIELD(BeginLineField) ~
+              otherLoc.load() ~ GETFIELD(BeginLineField) ~
+              ifTrue(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
+              thisLoad() ~ GETFIELD(BeginColField) ~
+              otherLoc.load() ~ GETFIELD(BeginColField) ~
+              ifTrue(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
+              thisLoad() ~ GETFIELD(EndLineField) ~
+              otherLoc.load() ~ GETFIELD(EndLineField) ~
+              ifTrue(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
+              thisLoad() ~ GETFIELD(EndColField) ~
+              otherLoc.load() ~ GETFIELD(EndColField) ~
+              ifTrue(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
+              thisLoad() ~ GETFIELD(SourceField) ~
+              otherLoc.load() ~ GETFIELD(SourceField) ~
+              INVOKESTATIC(Objects.EqualsMethod) ~
+              IRETURN()
+          }
+      }
+    ))
+
+    private def HashCodeMethod: InstanceMethod = JavaObject.HashcodeMethod.implementation(this.jvmName, Some(
+      ICONST_5() ~ ANEWARRAY(JavaObject.jvmName) ~
+        DUP() ~ ICONST_0() ~ thisLoad() ~ GETFIELD(SourceField) ~ AASTORE() ~
+        DUP() ~ ICONST_1() ~ thisLoad() ~ GETFIELD(BeginLineField) ~ boxInt() ~ AASTORE() ~
+        DUP() ~ ICONST_2() ~ thisLoad() ~ GETFIELD(BeginColField) ~ boxInt() ~ AASTORE() ~
+        DUP() ~ ICONST_3() ~ thisLoad() ~ GETFIELD(EndLineField) ~ boxInt() ~ AASTORE() ~
+        DUP() ~ ICONST_4() ~ thisLoad() ~ GETFIELD(EndColField) ~ boxInt() ~ AASTORE() ~
+        INVOKESTATIC(Objects.HashMethod) ~
+        IRETURN()
+    ))
+
+    private def boxInt(): InstructionSet = INVOKESTATIC(JvmName.Integer, "valueOf",
+      mkDescriptor(BackendType.Int32)(JvmName.Integer.toTpe))
   }
 
   case object Global extends BackendObjType {
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
+
+      cm.mkConstructor(Constructor)
+      cm.mkStaticConstructor(StaticConstructor)
+
+      cm.mkField(CounterField)
+      cm.mkStaticMethod(NewIdMethod)
+
+      cm.mkField(ArgsField)
+      cm.mkStaticMethod(GetArgsMethod)
+      cm.mkStaticMethod(SetArgsMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
+      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
+    ))
+
     def StaticConstructor: StaticConstructorMethod = StaticConstructorMethod(this.jvmName, Some(
       NEW(JvmName.AtomicLong) ~
-        DUP() ~ invokeConstructor(JvmName.AtomicLong) ~
-        PUTSTATIC(Global.CounterField) ~
+        DUP() ~ invokeConstructor(JvmName.AtomicLong, MethodDescriptor.NothingToVoid) ~
+        PUTSTATIC(CounterField) ~
         ICONST_0() ~
-        ANEWARRAY(BackendObjType.String.jvmName) ~
-        PUTSTATIC(Global.ArgsField) ~
+        ANEWARRAY(String.jvmName) ~
+        PUTSTATIC(ArgsField) ~
         RETURN()
     ))
 
     def NewIdMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "newId",
       mkDescriptor()(BackendType.Int64), Some(
-        GETSTATIC(Global.CounterField) ~
+        GETSTATIC(CounterField) ~
           INVOKEVIRTUAL(JvmName.AtomicLong, "getAndIncrement",
             MethodDescriptor(Nil, BackendType.Int64)) ~
           LRETURN()
       ))
 
     def GetArgsMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "getArgs",
-      mkDescriptor()(BackendType.Array(BackendObjType.String.toTpe)), Some(
-        GETSTATIC(Global.ArgsField) ~
-          ARRAYLENGTH() ~
-          ANEWARRAY(BackendObjType.String.jvmName) ~
-          ASTORE(0) ~
+      mkDescriptor()(BackendType.Array(String.toTpe)), Some(
+        GETSTATIC(ArgsField) ~ ARRAYLENGTH() ~ ANEWARRAY(String.jvmName) ~ ASTORE(0) ~
           // the new array is now created, now to copy the args
-          GETSTATIC(Global.ArgsField) ~
+          GETSTATIC(ArgsField) ~
           ICONST_0() ~
           ALOAD(0) ~
           ICONST_0() ~
-          GETSTATIC(Global.ArgsField) ~ ARRAYLENGTH() ~
+          GETSTATIC(ArgsField) ~ ARRAYLENGTH() ~
           arrayCopy() ~
-          ALOAD(0) ~
-          ARETURN()
+          ALOAD(0) ~ ARETURN()
       ))
 
     def SetArgsMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "setArgs",
-      mkDescriptor(BackendType.Array(BackendObjType.String.toTpe))(VoidableType.Void), Some(
-        ALOAD(0) ~
-          ARRAYLENGTH() ~
-          ANEWARRAY(BackendObjType.String.jvmName) ~
-          ASTORE(1) ~
+      mkDescriptor(BackendType.Array(String.toTpe))(VoidableType.Void), Some(
+        ALOAD(0) ~ ARRAYLENGTH() ~ ANEWARRAY(String.jvmName) ~ ASTORE(1) ~
           ALOAD(0) ~
           ICONST_0() ~
           ALOAD(1) ~
           ICONST_0() ~
           ALOAD(0) ~ ARRAYLENGTH() ~
           arrayCopy() ~
-          ALOAD(1) ~ PUTSTATIC(Global.ArgsField) ~ RETURN()
+          ALOAD(1) ~ PUTSTATIC(ArgsField) ~ RETURN()
       ))
 
     def CounterField: StaticField =
       StaticField(this.jvmName, IsPrivate, IsFinal, "counter", JvmName.AtomicLong.toTpe)
 
-    def ArgsField: StaticField = StaticField(this.jvmName, IsPrivate, IsFinal, "args",
-      BackendType.Array(BackendObjType.String.toTpe))
+    def ArgsField: StaticField =
+      StaticField(this.jvmName, IsPrivate, IsFinal, "args", BackendType.Array(String.toTpe))
 
     private def arrayCopy(): InstructionSet = (f: F) => {
       f.visitMethodInstruction(Opcodes.INVOKESTATIC, JvmName.System, "arraycopy",
-        MethodDescriptor(List(
-          BackendObjType.JavaObject.toTpe,
-          BackendType.Int32,
-          BackendObjType.JavaObject.toTpe,
-          BackendType.Int32,
-          BackendType.Int32
-        ), VoidableType.Void))
+        MethodDescriptor(List(JavaObject.toTpe, BackendType.Int32, JavaObject.toTpe, BackendType.Int32,
+          BackendType.Int32), VoidableType.Void))
       f
     }
   }
 
   case object FlixError extends BackendObjType {
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkAbstractClass(this.jvmName, JvmName.Error)
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, List(BackendObjType.String.toTpe), Some(
+      cm.mkConstructor(Constructor)
+
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, List(String.toTpe), Some(
       thisLoad() ~
         ALOAD(1) ~
-        invokeConstructor(JvmName.Error, mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void)) ~
+        invokeConstructor(JvmName.Error, mkDescriptor(String.toTpe)(VoidableType.Void)) ~
         RETURN()
     ))
   }
 
+  case object HoleError extends BackendObjType {
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, FlixError.jvmName)
+
+      cm.mkConstructor(Constructor)
+      cm.mkField(HoleField)
+      cm.mkField(LocationField)
+      cm.mkMethod(EqualsMethod)
+      cm.mkMethod(HashCodeMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic,
+      List(String.toTpe, ReifiedSourceLocation.toTpe), Some(
+        withName(1, String.toTpe) { hole =>
+          withName(2, ReifiedSourceLocation.toTpe) { loc =>
+            thisLoad() ~
+              // create an error msg
+              NEW(StringBuilder.jvmName) ~
+              DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
+              pushString("Hole '") ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+              hole.load() ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+              pushString("' at ") ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+              loc.load() ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+              INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+              INVOKESPECIAL(FlixError.Constructor) ~
+              // save the arguments locally
+              thisLoad() ~ hole.load() ~ PUTFIELD(HoleField) ~
+              thisLoad() ~ loc.load() ~ PUTFIELD(LocationField) ~
+              RETURN()
+          }
+        }
+      ))
+
+    private def HoleField: InstanceField =
+      InstanceField(this.jvmName, IsPrivate, IsFinal, "hole", String.toTpe)
+
+    private def LocationField: InstanceField =
+      InstanceField(this.jvmName, IsPrivate, IsFinal, "location", ReifiedSourceLocation.toTpe)
+
+    private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(
+      withName(1, JavaObject.toTpe) { other =>
+        // check exact equality
+        thisLoad() ~ other.load() ~
+          ifTrue(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
+          // check for null
+          other.load() ~
+          ifTrue(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
+          // check for class equality
+          thisLoad() ~
+          INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
+          other.load() ~
+          INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
+          ifTrue(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
+          // cast the other obj
+          other.load() ~ CHECKCAST(this.jvmName) ~
+          storeWithName(2, HoleError.toTpe) { otherHoleError =>
+            // compare the hole field
+            thisLoad() ~ GETFIELD(HoleField) ~
+              otherHoleError.load() ~ GETFIELD(HoleField) ~
+              INVOKESTATIC(Objects.EqualsMethod) ~
+              ifTrue(Condition.EQ)(pushBool(false) ~ IRETURN()) ~
+              // compare the location field
+              thisLoad() ~ GETFIELD(LocationField) ~
+              otherHoleError.load() ~ GETFIELD(LocationField) ~
+              INVOKESTATIC(Objects.EqualsMethod) ~
+              IRETURN()
+          }
+      }
+    ))
+
+    private def HashCodeMethod: InstanceMethod = JavaObject.HashcodeMethod.implementation(this.jvmName, Some(
+      ICONST_2() ~
+        ANEWARRAY(JavaObject.jvmName) ~
+        // store hole
+        DUP() ~ ICONST_0() ~ thisLoad() ~ GETFIELD(HoleField) ~ AASTORE() ~
+        // store location
+        DUP() ~ ICONST_1() ~ thisLoad() ~ GETFIELD(LocationField) ~ AASTORE() ~
+        // hash the array
+        INVOKESTATIC(Objects.HashMethod) ~
+        IRETURN()
+    ))
+  }
+
+  case object MatchError extends BackendObjType {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(MatchError.jvmName, IsFinal, superClass = FlixError.jvmName)
+
+      cm.mkConstructor(Constructor)
+
+      cm.mkField(LocationField)
+
+      cm.mkMethod(EqualsMethod)
+      cm.mkMethod(HashCodeMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = ConstructorMethod(MatchError.jvmName, IsPublic, List(ReifiedSourceLocation.toTpe), Some(
+      thisLoad() ~
+        NEW(StringBuilder.jvmName) ~
+        DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
+        pushString("Non-exhaustive match at ") ~
+        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        ALOAD(1) ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+        INVOKESPECIAL(FlixError.Constructor) ~
+        thisLoad() ~
+        ALOAD(1) ~
+        PUTFIELD(MatchError.LocationField) ~
+        RETURN()
+    ))
+
+    def LocationField: InstanceField = InstanceField(this.jvmName, IsPublic, IsFinal, "location", ReifiedSourceLocation.toTpe)
+
+    private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(
+      withName(1, JavaObject.toTpe) { otherObj =>
+        // check exact equality
+        thisLoad() ~
+          otherObj.load() ~
+          ifTrue(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
+          // check `other == null`
+          otherObj.load() ~
+          ifTrue(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
+          // the class equality
+          thisLoad() ~
+          INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
+          otherObj.load() ~
+          INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
+          ifTrue(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
+          // check individual fields
+          ALOAD(1) ~ CHECKCAST(this.jvmName) ~
+          storeWithName(2, this.toTpe) { otherErr =>
+            thisLoad() ~ GETFIELD(LocationField) ~
+              otherErr.load() ~ GETFIELD(MatchError.LocationField) ~
+              INVOKESTATIC(Objects.EqualsMethod) ~
+              IRETURN()
+          }
+      }
+    ))
+
+    private def HashCodeMethod: InstanceMethod = JavaObject.HashcodeMethod.implementation(this.jvmName, Some(
+      ICONST_1() ~ ANEWARRAY(JavaObject.jvmName) ~
+        DUP() ~ ICONST_0() ~ thisLoad() ~ GETFIELD(LocationField) ~ AASTORE() ~
+        INVOKESTATIC(Objects.HashMethod) ~
+        IRETURN()
+    ))
+  }
+
+  //
   // Java Types
+  //
 
   case object JavaObject extends BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, None)
 
     def EqualsMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "equals",
-      mkDescriptor(BackendObjType.JavaObject.toTpe)(BackendType.Bool), None)
+      mkDescriptor(JavaObject.toTpe)(BackendType.Bool), None)
 
     def HashcodeMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "hashCode",
       mkDescriptor()(BackendType.Int32), None)
 
     def ToStringMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "toString",
-      mkDescriptor()(BackendObjType.String.toTpe), None)
+      mkDescriptor()(String.toTpe), None)
 
     def GetClassMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "getClass",
       mkDescriptor()(JvmName.Class.toTpe), None)
+  }
+
+  case object StringBuilder extends BackendObjType {
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, None)
+
+    def AppendStringMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "append",
+      mkDescriptor(String.toTpe)(StringBuilder.toTpe), None)
+
+    def AppendInt32Method: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "append",
+      mkDescriptor(BackendType.Int32)(StringBuilder.toTpe), None)
+
+  }
+
+  case object Objects extends BackendObjType {
+
+    def EqualsMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "equals",
+      mkDescriptor(JavaObject.toTpe, JavaObject.toTpe)(BackendType.Bool), None)
+
+    def HashMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "hash",
+      mkDescriptor(BackendType.Array(JavaObject.toTpe))(BackendType.Int32), None)
+
   }
 }

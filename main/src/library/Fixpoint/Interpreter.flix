@@ -46,7 +46,7 @@ namespace Fixpoint {
         interpretWithDatabase(new MutMap(Static), stmt)
 
     def interpretWithDatabase(db: Database[v], stmt: RamStmt[v]): Database[v] & Impure with Order[v], ToString[v] =
-        let _ = notifyPreInterpret(stmt);
+        notifyPreInterpret(stmt);
         evalStmt(db, stmt);
         db
 
@@ -63,7 +63,7 @@ namespace Fixpoint {
         case RamStmt.Assign(lhs, rhs) =>
             MutMap.put!(lhs, MutMap.getWithDefault(rhs, new MutMap(Static), db), db)
         case RamStmt.Purge(ramSym) => MutMap.remove!(ramSym, db)
-        case RamStmt.Seq(stmts) => Array.foreach(evalStmt(db), stmts)
+        case RamStmt.Seq(stmts) => List.foreach(evalStmt(db), stmts)
         case RamStmt.Until(test, body) =>
             if (evalBoolExp(db, ([], []), test)) {
                 ()
@@ -77,7 +77,7 @@ namespace Fixpoint {
     def allocEnv(depth: Int32, relOp: RelOp[v]): SearchEnv[v] & Impure = match relOp {
         case RelOp.Search(_, _, body) => allocEnv(depth + 1, body)
         case RelOp.Query(_, _, _, body) => allocEnv(depth + 1, body)
-        case RelOp.Project(_) => (Array.new(Tuple([]), depth, Static), Array.new($DEFAULT$, depth, Static))
+        case RelOp.Project(_) => (Array.new(Static, Tuple([]), depth), Array.new(Static, $DEFAULT$, depth))
         case RelOp.If(_, then) => allocEnv(depth, then)
     }
 
@@ -92,8 +92,7 @@ namespace Fixpoint {
                 }, MutMap.getWithDefault(ramSym, new MutMap(Static), db))
             case RelOp.Query(RowVar.Index(i), ramSym, query, body) =>
                 let (tupleEnv, latEnv) = env;
-                // TODO: Unsafe effect cast
-                MutMap.queryWith(evalQuery(env, 0, query) as Fixpoint.Tuple[v] -> Comparison, t -> l -> {
+                MutMap.queryWith(evalQuery(env, query), t -> l -> {
                     tupleEnv[i] = t;
                     latEnv[i] = l;
                     evalOp(db, env, body)
@@ -102,16 +101,20 @@ namespace Fixpoint {
                 let rel = MutMap.getOrElsePut!(ramSym, new MutMap(Static), db);
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>
-                        let tuple = Tuple(Array.map(evalTerm(env), terms));
+                        let tuple = Tuple(List.toArray(Static, List.map(evalTerm(env), terms)));
                         MutMap.put!(tuple, $DEFAULT$, rel)
                     case Denotation.Latticenal(bot, leq, lub, _) =>
-                        let len = Array.length(terms);
-                        let key = Tuple(Array.init(i -> evalTerm(env, terms[i]), len - 1, Static));
-                        let lat = evalTerm(env, terms[len - 1]);
-                        if (lat `leq` bot)
-                            ()
-                        else
-                            MutMap.putWith!(lub, key, lat, rel)
+                        // assume that length(terms) > 0
+                        let len = List.length(terms);
+                        let keyList = terms |> List.map(evalTerm(env));
+                        let (relKeys, latValList) = List.splitAt(len-1, keyList);
+                        let key = Tuple(List.toArray(Static, relKeys));
+                        let latVal = match List.head(latValList) {
+                            case None => bug!("Found predicate without terms")
+                            case Some(k) => k
+                        };
+                        if (latVal `leq` bot) ()
+                        else MutMap.putWith!(lub, key, latVal, rel)
                 }
             case RelOp.If(test, then) =>
                 if (evalBoolExp(db, env, test)) {
@@ -122,13 +125,11 @@ namespace Fixpoint {
             case _ => ()
         }
 
-    def evalQuery(env: SearchEnv[v], i: Int32, query: Array[(Int32, RamTerm[v]), Static], tuple: Tuple[v]): Comparison & Impure with Order[v], ToString[v] =
-        if (i >= Array.length(query))
-            EqualTo
-        else {
-            let (j, t) = query[i];
-            match (valueAt(tuple, j)) <=> evalTerm(env, t) {
-                case EqualTo => evalQuery(env, i+1, query, tuple)
+    def evalQuery(env: SearchEnv[v], query: List[(Int32, RamTerm[v])], tuple: Tuple[v]): Comparison & Impure with Order[v], ToString[v] =
+        match query {
+            case Nil => EqualTo
+            case (j, t) :: tl => match valueAt(tuple, j) <=> evalTerm(env, t) {
+                case EqualTo => evalQuery(env, tl, tuple)
                 case cmp => cmp
             }
         }
@@ -145,7 +146,7 @@ namespace Fixpoint {
                         not MutMap.memberOf(tuple, rel)
                     case Denotation.Latticenal(bot, leq, _, _) =>
                         let len = Array.length(terms);
-                        let key = Tuple(Array.init(i -> evalTerm(env, terms[i]), len - 1, Static));
+                        let key = Tuple(Array.init(Static, i -> evalTerm(env, terms[i]), len - 1));
                         let lat = evalTerm(env, terms[len - 1]);
                         not (lat `leq` MutMap.getWithDefault(key, bot, rel))
                 }

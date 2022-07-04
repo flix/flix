@@ -101,4 +101,10 @@ namespace Test/Exp/Ref/Deref {
         let l = ref Err("Goodbye World!") @ r;
         deref l: Ref[Result[Unit, _], _] == Err("Goodbye World!")
     }
+
+    @test
+    def testDeref18(): Bool = region r {
+        let a = [ref 1 @ r];
+        deref a[0] == 1
+    }
 }

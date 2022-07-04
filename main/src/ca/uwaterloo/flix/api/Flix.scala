@@ -95,6 +95,7 @@ class Flix {
     "BitwiseXor.flix" -> LocalResource.get("/src/library/BitwiseXor.flix"),
     "BitwiseShl.flix" -> LocalResource.get("/src/library/BitwiseShl.flix"),
     "BitwiseShr.flix" -> LocalResource.get("/src/library/BitwiseShr.flix"),
+    "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
 
     // Built-in
     "Eq.flix" -> LocalResource.get("/src/library/Eq.flix"),
@@ -124,7 +125,6 @@ class Flix {
   private val standardLibrary = List(
     "Array.flix" -> LocalResource.get("/src/library/Array.flix"),
     "Benchmark.flix" -> LocalResource.get("/src/library/Benchmark.flix"),
-    "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
@@ -180,6 +180,7 @@ class Flix {
     "Reducible.flix" -> LocalResource.get("/src/library/Reducible.flix"),
     "SemiGroup.flix" -> LocalResource.get("/src/library/SemiGroup.flix"),
     "Traversable.flix" -> LocalResource.get("/src/library/Traversable.flix"),
+    "UnorderedFoldable.flix" -> LocalResource.get("/src/library/UnorderedFoldable.flix"),
 
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
 
@@ -230,6 +231,8 @@ class Flix {
     "Fixpoint/Ram/RowVar.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RowVar.flix"),
 
     "Fixpoint/Shared/PredSym.flix" -> LocalResource.get("/src/library/Fixpoint/Shared/PredSym.flix"),
+
+    "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
   )
 
   /**
@@ -302,14 +305,12 @@ class Flix {
   }
 
   /**
-    * Removes the given string `text` with the given `name`.
+    * Removes the source code with the given `name`.
     */
-  def remSourceCode(name: String, text: String): Flix = {
+  def remSourceCode(name: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
-    if (text == null)
-      throw new IllegalArgumentException("'text' must be non-null.")
-    remInput(name, Input.Text(name, text, stable = false))
+    remInput(name, Input.Text(name, "", stable = false))
     this
   }
 

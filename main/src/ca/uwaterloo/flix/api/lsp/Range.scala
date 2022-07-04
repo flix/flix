@@ -16,6 +16,8 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
 import org.json4s.JsonDSL._
 import org.json4s._
@@ -31,6 +33,18 @@ object Range {
   def from(loc: SourceLocation): Range = {
     // NB: LSP line and column numbers are zero-indexed.
     Range(Position(loc.beginLine - 1, loc.beginCol - 1), Position(loc.endLine - 1, loc.endCol - 1))
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[Range]].
+    */
+  def parse(json: JValue): Result[Range, String] = {
+    val startResult = Position.parse(json \\ "start")
+    val endResult = Position.parse(json \\ "end")
+    for {
+      start <- startResult
+      end <- endResult
+    } yield Range(start, end)
   }
 
 }

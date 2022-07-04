@@ -724,7 +724,7 @@ def mapWithKey06(): Bool & Impure =
     let range = List.range(0, 2000);
     let m = List.zip(range, range) |> List.toMap;
     let a = new MutList(Static);
-    Map.mapWithKey((k, v) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
+    discard Map.mapWithKey((k, v) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
     MutList.toList(a) == range
 
 
@@ -851,6 +851,26 @@ def foldMapWithKey03(): Bool =
 def foldMapWithKey04(): Bool = Map.foldMapWithKey((k, v) -> "${k}" + v, Map#{1 => "a", 2 => "b"}) == "1a2b"
 
 /////////////////////////////////////////////////////////////////////////////
+// foldMap                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def foldMap01(): Bool =
+    Map.foldMap(v -> v + 1, Map#{}) == 0
+
+@test
+def foldMap02(): Bool =
+    Map.foldMap(v -> v + 1, Map#{1 => 2, 3 => 5}) == (2 + 1) + (5 + 1)
+
+@test
+def foldMap03(): Bool =
+    Map.foldMap(v -> 2 * v, Map#{1 => 2, 3 => 5}) == (2 * 2) + (2 * 5)
+
+@test
+def foldMap04(): Bool =
+    Map.foldMap(v -> "x" + v, Map#{1 => "a", 2 => "b"}) == "xaxb"
+
+/////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -939,7 +959,7 @@ def count08(): Bool & Impure =
     let range = List.range(0, 2000);
     let m = List.zip(range, range) |> List.toMap;
     let a = new MutList(Static);
-    Map.count((k, _) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); true }, m);
+    discard Map.count((k, _) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); true }, m);
     MutList.toList(a) == range
 
 
@@ -1059,7 +1079,7 @@ def count08(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(Static);
-        Map.sumWith((k, _) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
+        discard Map.sumWith((k, _) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
         MutList.toList(a) == range
 
 
@@ -1169,7 +1189,7 @@ def count08(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(Static);
-        Map.productWith((k, _) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
+        discard Map.productWith((k, _) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
         MutList.toList(a) == range
 
 
@@ -1750,6 +1770,57 @@ def toList03(): Bool = Map.toList(Map#{1 => 2, 3 => 4}) == (1, 2) :: (3, 4) :: N
 def toList04(): Bool = Map.toList(Map#{1 => 2, 2 => 2, 3 => 4}) == (1, 2) :: (2, 2) :: (3, 4) :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
+// toMutDeque                                                              //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toMutDeque01(): Bool = region r {
+    let m: Map[Int32, Int32] = Map#{};
+    let d1 = Map.toMutDeque(r, m);
+
+    let d2 = new MutDeque(r);
+
+    d1 `MutDeque.sameElements` d2
+}
+
+@test
+def toMutDeque02(): Bool = region r {
+    let m = Map#{1 => 2};
+    let d1 = Map.toMutDeque(r, m);
+
+    let d2 = new MutDeque(r);
+    MutDeque.pushBack((1, 2), d2);
+
+    d1 `MutDeque.sameElements` d2
+}
+
+@test
+def toMutDeque03(): Bool = region r {
+    let m = Map#{1 => 2, 3 => 4, 5 => 6};
+    let d1 = Map.toMutDeque(r, m);
+
+    let d2 = new MutDeque(r);
+    MutDeque.pushBack((3, 4), d2);
+    MutDeque.pushBack((5, 6), d2);
+    MutDeque.pushFront((1, 2), d2);
+
+    d1 `MutDeque.sameElements` d2
+}
+
+@test
+def toMutDeque04(): Bool = region r {
+    let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'};
+    let d1 = Map.toMutDeque(r, m);
+
+    let d2 = new MutDeque(r);
+    MutDeque.pushFront((3, 'c'), d2);
+    MutDeque.pushFront((2, 'b'), d2);
+    MutDeque.pushFront((1, 'a'), d2);
+
+    d1 `MutDeque.sameElements` d2
+}
+
+/////////////////////////////////////////////////////////////////////////////
 // eq                                                                      //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -2179,7 +2250,7 @@ def query18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(Static);
-        Map.minimumKeyBy((x, y) -> { let b = new MutList(Static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
+        discard Map.minimumKeyBy((x, y) -> { let b = new MutList(Static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
@@ -2231,7 +2302,7 @@ def query18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, List.reverse(range)) |> List.toMap;
         let a = new MutList(Static);
-        Map.minimumValueBy((x, y) -> { let b = new MutList(Static); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
+        discard Map.minimumValueBy((x, y) -> { let b = new MutList(Static); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.reverse(List.range(1, 2000)) // The first / left most value is ignored
 
 
@@ -2273,7 +2344,7 @@ def query18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(Static);
-        Map.maximumKeyBy((x, y) -> { let b = new MutList(Static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
+        discard Map.maximumKeyBy((x, y) -> { let b = new MutList(Static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
@@ -2315,7 +2386,7 @@ def query18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(Static);
-        Map.maximumValueBy((x, y) -> { let b = new MutList(Static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
+        discard Map.maximumValueBy((x, y) -> { let b = new MutList(Static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
@@ -2377,17 +2448,20 @@ def query18(): Bool =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool & Impure =
-        Map.empty(): Map[Int32, Int32] |> Map.toIterator |> Iterator.toMap == Map.empty()
+    def toIterator01(): Bool = region r {
+        Map.empty(): Map[Int32, Int32] |> Map.toIterator(r) |> Iterator.toMap == Map.empty()
+    }
 
     @test
-    def toIterator02(): Bool & Impure =
-        Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4} |> Map.toIterator |> Iterator.toMap == Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4}
+    def toIterator02(): Bool = region r {
+        Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4} |> Map.toIterator(r) |> Iterator.toMap == Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4}
+    }
 
     @test
-    def toIterator03(): Bool & Impure =
+    def toIterator03(): Bool = region r {
         let l = List.range(0, 100);
-        List.zip(l, List.reverse(l)) |> List.toMap |> Map.toIterator |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
+        List.zip(l, List.reverse(l)) |> List.toMap |> Map.toIterator(r) |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////

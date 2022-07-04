@@ -19,8 +19,8 @@ namespace Fixpoint/Ram {
     @Internal
     pub enum RelOp[v] {
         case Search(RowVar, RamSym[v], RelOp[v])
-        case Query(RowVar, RamSym[v], Array[(Int32, RamTerm[v]), Static], RelOp[v])
-        case Project(Array[RamTerm[v], Static], RamSym[v])
+        case Query(RowVar, RamSym[v], List[(Int32, RamTerm[v])], RelOp[v])
+        case Project(List[RamTerm[v]], RamSym[v])
         case If(List[BoolExp[v]], RelOp[v])
     }
 
@@ -32,17 +32,15 @@ namespace Fixpoint/Ram {
                 case Search(var, ramSym, body) =>
                     "search ${var} ∈ ${ramSym} do${nl}${String.indent(4, "${body}")}end"
                 case Query(var, ramSym, prefixQuery, body) =>
-                    let query = Array.joinWith(match (i, term) -> {
+                    let query = List.joinWith(match (i, term) -> {
                         ToString.toString(BoolExp.Eq(RamTerm.RowLoad(var, i), term))
                     }, " ∧ ", prefixQuery);
                     "query {${var} ∈ ${ramSym} | ${query}} do${nl}${String.indent(4, "${body}")}end"
                 case Project(terms, ramSym) =>
-                    "project (${commaSeparate(terms)}) into ${ramSym}"
+                    "project (${terms |> List.join(", ")}) into ${ramSym}"
                 case If(test, then) =>
-                    let tst =
-                        List.map(ToString.toString, test) |>
-                        String.intercalate(" ∧ ");
+                    let tst = test |> List.join(" ∧ ");
                     "if(${tst}) then${nl}${String.indent(4, "${then}")}end"
-            } as & Pure
+            }
     }
 }

@@ -92,13 +92,13 @@ namespace TestDelayMap {
     @test
     def insertWithFusion01(): Bool & Impure =
         let l = ref Nil;
-        List.toDelayMap((1, 1) :: Nil) |>
-        DelayMap.insertWith((v, _) -> { l := "a" :: deref l; v }, 1, 1) |>
-        DelayMap.insertWith((v, _) -> { l := "a" :: deref l; v }, 1, 1) |>
-        DelayMap.insertWith((v, _) -> { l := "a" :: deref l; v }, 1, 1) |>
-        DelayMap.insertWith((v, _) -> { l := "b" :: deref l; v }, 1, 1) |>
-        DelayMap.insertWith((v, _) -> { l := "b" :: deref l; v }, 1, 1) |>
-        DelayMap.insertWith((v, _) -> { l := "b" :: deref l; v }, 1, 1);
+        discard List.toDelayMap((1, 1) :: Nil) |>
+            DelayMap.insertWith((v, _) -> { l := "a" :: deref l; v }, 1, 1) |>
+            DelayMap.insertWith((v, _) -> { l := "a" :: deref l; v }, 1, 1) |>
+            DelayMap.insertWith((v, _) -> { l := "a" :: deref l; v }, 1, 1) |>
+            DelayMap.insertWith((v, _) -> { l := "b" :: deref l; v }, 1, 1) |>
+            DelayMap.insertWith((v, _) -> { l := "b" :: deref l; v }, 1, 1) |>
+            DelayMap.insertWith((v, _) -> { l := "b" :: deref l; v }, 1, 1);
         List.reverse(deref l) == "a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil
 
     //@test
@@ -159,7 +159,7 @@ namespace TestDelayMap {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap |> Map.toDelayMap;
         let a = new MutList(Static);
-        DelayMap.count((k, _) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); true }, m);
+        discard DelayMap.count((k, _) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); true }, m);
         MutList.toList(a) == range
 
 
@@ -265,9 +265,9 @@ namespace TestDelayMap {
     @test
     def mapFusion01(): Bool & Impure =
         let l = ref Nil;
-        ((1, 1) :: (2, 2) :: (3, 3) :: Nil) |> List.toDelayMap |>
-        DelayMap.map(v -> { l := "a" :: deref l; v }) |>
-        DelayMap.map(v -> { l := "b" :: deref l; v });
+        discard ((1, 1) :: (2, 2) :: (3, 3) :: Nil) |> List.toDelayMap |>
+            DelayMap.map(v -> { l := "a" :: deref l; v }) |>
+            DelayMap.map(v -> { l := "b" :: deref l; v });
         List.reverse(deref l) == "a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil
 
     //@test
@@ -754,9 +754,9 @@ namespace TestDelayMap {
     @test
     def unionWithKeyFusion01(): Bool & Impure =
         let l = ref Nil;
-        Map#{1 => 1, 2 => 2, 3 => 3} |> Map.toDelayMap |>
-        DelayMap.unionWithKey((_, _, v) -> { l := "a" :: deref l; v }, Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3})) |>
-        DelayMap.unionWithKey((_, _, v) -> { l := "b" :: deref l; v }, Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3}));
+        discard Map#{1 => 1, 2 => 2, 3 => 3} |> Map.toDelayMap |>
+            DelayMap.unionWithKey((_, _, v) -> { l := "a" :: deref l; v }, Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3})) |>
+            DelayMap.unionWithKey((_, _, v) -> { l := "b" :: deref l; v }, Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3}));
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     //@test
@@ -1047,7 +1047,7 @@ namespace TestDelayMap {
     @test
     def updateWithKeyFusion01(): Bool & Impure =
         let l = ref Nil;
-        Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3}) |>
+        discard Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3}) |>
             DelayMap.updateWithKey((_, v) -> { l := "a" :: deref l; Some(v) }, 1) |>
             DelayMap.updateWithKey((_, v) -> { l := "a" :: deref l; Some(v) }, 2) |>
             DelayMap.updateWithKey((_, v) -> { l := "a" :: deref l; Some(v) }, 3) |>
@@ -1644,20 +1644,23 @@ namespace TestDelayMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool & Impure =
+    def toIterator01(): Bool = region r {
         Map.empty(): Map[Int32, Int32] |> Map.toDelayMap |>
-            DelayMap.toIterator |> Iterator.toMap == Map.empty()
+            DelayMap.toIterator(r) |> Iterator.toMap == Map.empty()
+    }
 
     @test
-    def toIterator02(): Bool & Impure =
+    def toIterator02(): Bool = region r {
         Map#{"A" => 1, "B" => 2, "C" => 3, "D" => 4} |> Map.toDelayMap |>
-            DelayMap.toIterator |> Iterator.toMap == Map#{"A" => 1, "B" => 2, "C" => 3, "D" => 4}
+            DelayMap.toIterator(r) |> Iterator.toMap == Map#{"A" => 1, "B" => 2, "C" => 3, "D" => 4}
+    }
 
     @test
-    def toIterator03(): Bool & Impure =
+    def toIterator03(): Bool = region r {
         let l = List.range(0, 100);
         List.zip(l, List.reverse(l)) |> List.toMap |> Map.toDelayMap |>
-            DelayMap.toIterator |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
+            DelayMap.toIterator(r) |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1776,7 +1779,7 @@ namespace TestDelayMap {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap |> Map.toDelayMap;
         let a = new MutList(Static);
-        DelayMap.sumWith((k, _) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 0 }, m);
+        discard DelayMap.sumWith((k, _) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 0 }, m);
         MutList.toList(a) == range
 
 
@@ -1886,7 +1889,7 @@ namespace TestDelayMap {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap |> Map.toDelayMap;
         let a = new MutList(Static);
-        DelayMap.productWith((k, _) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
+        discard DelayMap.productWith((k, _) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
         MutList.toList(a) == range
 
 

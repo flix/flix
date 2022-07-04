@@ -410,7 +410,7 @@ namespace DelayMap {
         use RedBlackTree.RedBlackTree.Node;
         def seqLoop(tt) = match tt {
             case Node(_, a, _, v, b) =>
-                let _ = seqLoop(a);
+                seqLoop(a);
                 let _ = force v;
                 seqLoop(b)
             case _ => ()
@@ -730,7 +730,7 @@ namespace DelayMap {
     /// Returns `m` as a mutable set.
     ///
     @Experimental @Parallel
-    pub def toMutMap(m: DelayMap[k, v], r: Region[r]): MutMap[k, v, r] \ Write(r) =
+    pub def toMutMap(r: Region[r], m: DelayMap[k, v]): MutMap[k, v, r] \ Write(r) =
         MutMap(ref toMap(m) @ r)
 
     ///
@@ -751,9 +751,9 @@ namespace DelayMap {
     /// Returns an iterator over all key-value pairs in `m`.
     ///
     @Experimental
-    pub def toIterator(m: DelayMap[a, b]): Iterator[(a, b)] & Impure with Order[a] =
+    pub def toIterator(r: Region[r], m: DelayMap[a, b]): Iterator[(a, b), r] \ Write(r) with Order[a] =
         let keys = keysOf(m) |> Set.toList;
-        let cursor = ref keys;
+        let cursor = ref keys @ r;
         let done = () -> match deref cursor {
             case Nil => true
             case _   => false
@@ -777,7 +777,7 @@ namespace DelayMap {
         let _ = parallelForce(m);
         let DMap(t) = m;
         let f1 = (k, v) -> f(k, force v);
-        RedBlackTree.foreach(f1 as & Impure, t) as & ef
+        RedBlackTree.foreach(f1, t)
 
     ///
     /// Returns the sum of all values in `m`.

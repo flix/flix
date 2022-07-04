@@ -45,9 +45,9 @@ namespace Array {
     ///
     /// Returns a string representation of the given array `a`.
     ///
-    pub def toString(a: Array[a, r1]): String \ Read(r1) with ToString[a] = region r2 {
+    pub def toString(a: Array[a, r]): String \ Read(r) with ToString[a] = region r2 {
         let sb = new StringBuilder(r2);
-        let first = ref true;
+        let first = ref true @ r2;
 
         StringBuilder.appendString!("[", sb);
 
@@ -67,7 +67,7 @@ namespace Array {
     /// Equivalent to the expression `[x; l]`.
     ///
     @Time(l) @Space(l)
-    pub def new(x: a, l: Int32, r: Region[r]): Array[a, r] \ Write(r) =
+    pub def new(r: Region[r], x: a, l: Int32): Array[a, r] \ Write(r) =
         [x; l] @ r
 
     ///
@@ -151,8 +151,8 @@ namespace Array {
     ///
     /// Returns `a` as a MutDeque.
     ///
-    pub def toMutDeque(a: Array[a, r1], r: Region[r2]): MutDeque[a, r2] \ { Read(r1), Write(r2) }  =
-        let d = new MutDeque(r);
+    pub def toMutDeque(r1: Region[r1], a: Array[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1) }  =
+        let d = new MutDeque(r1);
         foreach(x -> MutDeque.pushBack(x, d), a);
         d
 
@@ -180,13 +180,13 @@ namespace Array {
     ///
     @Time(length(a) + length(b)) @Space(length(a) + length(b))
     pub def append(a: Array[a, r1], b: Array[a, r2]): Array[a, r1] \ { Read(r2), Write(r1) } =
+        let r1 = Scoped.regionOf(a);
         let len1 = length(a);
         let len2 = length(b);
         if (len1 == 0)
-            copyOfRange(0, len2, b, Scoped.regionOf(a))
+            copyOfRange(r1, 0, len2, b)
         else {
-            let out = new(a[0], len1 + len2, Scoped.regionOf(a));
-            updateSequence!(0, a, out);
+            let out = copyOfRange(r1, 0, len1 + len2, a);
             updateSequence!(len1, b, out);
             out
         }
@@ -316,7 +316,7 @@ namespace Array {
             [] @ r
         else {
             let f = x -> x + b;
-            init(f, e - b, r)
+            init(r, f, e - b)
         }
 
     ///
@@ -325,11 +325,11 @@ namespace Array {
     /// Returns `[]` if `n <= 0`.
     ///
     @Time(n) @Space(n)
-    pub def repeat(n: Int32, x: a, r: Region[r]): Array[a, r] \ Write(r) =
+    pub def repeat(r: Region[r], n: Int32, x: a): Array[a, r] \ Write(r) =
         if (n <= 0)
             [] @ r
         else
-            new(x, n, r)
+            new(r, x, n)
 
     ///
     /// Alias for `scanLeft`.
@@ -344,7 +344,8 @@ namespace Array {
     ///
     pub def scanLeft(f: (b, a) -> b & ef, s: b, arr: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(arr) + 1;
-        let b = new(s, len, Scoped.regionOf(arr));
+        let r = Scoped.regionOf(arr);
+        let b = new(r, s, len);
         def loop(i, acc) = {
             if (i >= len)
                 ()
@@ -364,7 +365,8 @@ namespace Array {
     ///
     pub def scanRight(f: (a, b) -> b & ef, s: b, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        let b = new(s, len + 1, Scoped.regionOf(a));
+        let r = Scoped.regionOf(a);
+        let b = new(r, s, len + 1);
         def loop(i, acc) = {
             if (i < 0)
                 ()
@@ -385,7 +387,8 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def map(f: a -> b & ef, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        init(i -> f(a[i]), len, Scoped.regionOf(a))
+        let r = Scoped.regionOf(a);
+        init(r, i -> f(a[i]), len)
 
     ///
     /// Apply `f` to every element in array `arr`. Array `arr` is mutated.
@@ -411,7 +414,8 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def mapWithIndex(f: (a, Int32) -> b & ef, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        init(i -> f(a[i], i), len, Scoped.regionOf(a))
+        let r = Scoped.regionOf(a);
+        init(r, i -> f(a[i], i), len)
 
     ///
     /// Apply `f` to every element in array `a` along with that element's index. Array `a` is mutated.
@@ -435,7 +439,8 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def flatMap(f: a -> Array[b, r] & ef, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        init(i -> f(a[i]), len, Scoped.regionOf(a)) |> flatten
+        let r = Scoped.regionOf(a);
+        init(r, i -> f(a[i]), len) |> flatten
 
     ///
     /// Returns the reverse of `a`.
@@ -444,7 +449,8 @@ namespace Array {
     pub def reverse(a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
         let len = length(a);
         let end = len - 1;
-        init(i -> a[end - i], len, Scoped.regionOf(a))
+        let r = Scoped.regionOf(a);
+        init(r, i -> a[end - i], len)
 
     ///
     /// Reverse the array `arr`, mutating it in place.
@@ -489,8 +495,9 @@ namespace Array {
     ///
     def rotateLeftHelper(n: Int32, arr: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
         let len = length(arr);
+        let r = Scoped.regionOf(arr);
         let f = i -> { let i1 = n + i; arr[i1 rem len] };
-        init(f, len, Scoped.regionOf(arr))
+        init(r, f, len)
 
     ///
     /// Rotate the contents of array `arr` by `n` steps to the right.
@@ -514,10 +521,11 @@ namespace Array {
     ///
     def rotateRightHelper(n: Int32, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
         let len = length(a);
+        let r = Scoped.regionOf(a);
         let n1 = n rem len;
         let start = len - n1;
         let f = i -> { let i1 = start + i; a[i1 rem len]};
-        init(f, len, Scoped.regionOf(a))
+        init(r, f, len)
 
     ///
     /// Returns a copy of `a` with the element at index `i` replaced by `x`.
@@ -526,8 +534,10 @@ namespace Array {
     ///
     @Time(length(a)) @Space(length(a))
     pub def update(i: Int32, x: a, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
+        let len = length(a);
+        let r = Scoped.regionOf(a);
         let f = ix -> if (ix == i) x else a[ix];
-        init(f, length(a), Scoped.regionOf(a))
+        init(r, f, len)
 
     ///
     /// Returns a copy of `a` with every occurrence of `from` replaced by `to`.
@@ -553,8 +563,9 @@ namespace Array {
     @Time(n) @Space(length(b))
     pub def patch(i: Int32, n: Int32, a: Array[a, r1], b: Array[a, r2]): Array[a, r2] \ { Read(r1, r2), Write(r2) } =
         let len1 = length(a);
+        let r2 = Scoped.regionOf(b);
         let size = if (n > len1) len1 else n;
-        let sub = copyOfRange(0, size, a, Scoped.regionOf(b));
+        let sub = copyOfRange(r2, 0, size, a);
         updateSequence(i, sub, b)
 
     ///
@@ -567,8 +578,9 @@ namespace Array {
     @Time(n) @Space(1)
     pub def patch!(i: Int32, n: Int32, a: Array[a, r1], b: Array[a, r2]): Unit \ { Read(r1), Write(r2) } =
         let len1 = length(a);
+        let r2 = Scoped.regionOf(b);
         let size = if (n > len1) len1 else n;
-        let sub = copyOfRange(0, size, a, Scoped.regionOf(b));
+        let sub = copyOfRange(r2, 0, size, a);
         updateSequence!(i, sub, b)
 
     ///
@@ -582,7 +594,7 @@ namespace Array {
         if (len2 <= 0)
             [] @ r
         else {
-            let b = new(x, len2, r);
+            let b = new(r, x, len2);
             let f = { (v,i) -> let j = i + i; b[j] = v };
             foreachWithIndex(f, a);
             b
@@ -593,14 +605,15 @@ namespace Array {
     ///
     @Time(length(arrs)) @Space(length(arrs))
     pub def intercalate(sep: Array[a, r], arrs: Array[Array[a, r], r]): Array[a, r] \ { Read(r), Write(r) } =
+        let r = Scoped.regionOf(arrs);
         let count = length(arrs);
         let sepLength = length(sep);
         let sepCount = if (count < 2) 0 else count - 1;
         let len = sumLengths(arrs) + (sepCount * sepLength);
         match headArrays(arrs) {
-            case None    => [] @ Scoped.regionOf(arrs)
+            case None    => [] @ r
             case Some(x) =>
-                let out = new(x, len, Scoped.regionOf(arrs));
+                let out = new(r, x, len);
                 let overwrite = { (st, a) ->
                     let (pos,i) = st;
                     if (i == 0) {
@@ -611,7 +624,7 @@ namespace Array {
                         let pos2 = arrayWrites(pos1, a, out);
                         (pos2, i+1)
                     }};
-                foldLeft(overwrite, (0, 0), arrs);
+                discard foldLeft(overwrite, (0, 0), arrs);
                 out
         }
 
@@ -669,7 +682,7 @@ namespace Array {
             if (jlen == 0 or uniformHelper(a, jlen))
                 a
             else
-                init(i -> init(j -> a[j][i], ilen, r1), jlen, r2)
+                init(r2, i -> init(r1, j -> a[j][i], ilen), jlen)
         }
 
     ///
@@ -893,11 +906,12 @@ namespace Array {
     @Time(length(arrs)) @Space(length(arrs))
     pub def flatten(arrs: Array[Array[a, r], r]) : Array[a, r] \ { Read(r), Write(r) } =
         let len = sumLengths(arrs);
+        let r = Scoped.regionOf(arrs);
         match headArrays(arrs) {
-            case None => [] @ Scoped.regionOf(arrs)
+            case None => [] @ r
             case Some(x) => {
-                let out = new(x, len, Scoped.regionOf(arrs));
-                foldLeft((pos, a) -> arrayWrites(pos, a, out), 0, arrs);
+                let out = new(r, x, len);
+                discard foldLeft((pos, a) -> arrayWrites(pos, a, out), 0, arrs);
                 out
             }
         }
@@ -948,7 +962,7 @@ namespace Array {
         if (len < 1) {
             [] @ r
         } else {
-            let out = new(arr[0], len, r);
+            let out = new(r, arr[0], len);
             def loop(i, j) = {
                 if (i >= len)
                     j
@@ -963,7 +977,7 @@ namespace Array {
                 }
             };
             let endPos = loop(0, 0);
-            copyOfRange(0, endPos, out, r)
+            copyOfRange(r, 0, endPos, out)
         }
 
     ///
@@ -980,7 +994,7 @@ namespace Array {
         };
         let (xs, ys) = foldRight(step, (Nil, Nil), a);
         let r = Scoped.regionOf(a);
-        (List.toArray(xs, r), List.toArray(ys, r))
+        (List.toArray(r, xs), List.toArray(r, ys))
 
     ///
     /// Returns a pair of arrays `(a1, a2)`.
@@ -1016,7 +1030,7 @@ namespace Array {
             [] @ r
         else {
             let start = if (n < 0) 0 else n;
-            copyOfRange(start, len, a, r)
+            copyOfRange(r, start, len, a)
         }
 
     ///
@@ -1032,7 +1046,7 @@ namespace Array {
             [] @ r
         else {
             let end = if (n < 0) len else len - n;
-            copyOfRange(0, end, a, r)
+            copyOfRange(r, 0, end, a)
         }
 
     ///
@@ -1061,7 +1075,7 @@ namespace Array {
         let r = Scoped.regionOf(a);
         match findIndexOfRight(x -> not (f(x)), a) {
             case None    => [] @ r
-            case Some(i) => copyOfRange(0, i + 1, a, r)
+            case Some(i) => copyOfRange(r, 0, i + 1, a)
         }
 
     ///
@@ -1084,7 +1098,7 @@ namespace Array {
         else {
             let len = length(a);
             let end = if (n > len) len else n;
-            copyOfRange(0, end, a, r)
+            copyOfRange(r, 0, end, a)
         }
 
     ///
@@ -1100,7 +1114,7 @@ namespace Array {
         else {
             let len = length(a);
             let start = if (n > len) 0 else len - n;
-            copyOfRange(start, len, a, r)
+            copyOfRange(r, start, len, a)
         }
 
     ///
@@ -1133,8 +1147,8 @@ namespace Array {
     pub def takeWhileRight(f: a -> Bool & ef, a: Array[a, r]): Array[a, r] \ { ef, Read(r), Write(r) } =
         let r = Scoped.regionOf(a);
         match findIndexOfRight(x -> not (f(x)), a) {
-            case None    => copyOfRange(0, length(a), a, r)
-            case Some(i) => copyOfRange(i + 1, length(a), a, r)
+            case None    => copyOfRange(r, 0, length(a), a)
+            case Some(i) => copyOfRange(r, i + 1, length(a), a)
         }
 
     ///
@@ -1146,34 +1160,34 @@ namespace Array {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(a) * length(a)) @Space(space(f) * length(a))
-    pub def groupBy(f: (a, a) -> Bool, a: Array[a, r1], r2: Region[r2]): Array[Array[a, r2], r1] \ { Read(r1), Write(r1, r2) } =
+    pub def groupBy(r1: Region[r1], f: (a, a) -> Bool, a: Array[a, r2]): Array[Array[a, r1], r2] \ { Read(r2), Write(r2, r1) } =
         let xs = toList(a);
-        let r1 = Scoped.regionOf(a);
-        (groupByHelper(f, xs, Nil, r2) |> List.toArray)(r1)
+        let r2 = Scoped.regionOf(a);
+        groupByHelper(r1, f, xs, Nil) |> List.toArray(r2)
 
     ///
     /// Helper function for `groupBy`.
     ///
-    def groupByHelper(f: (a, a) -> Bool, xs: List[a], ac: List[Array[a, r]], r: Region[r]): List[Array[a, r]] \ Write(r) = match xs {
+    def groupByHelper(r: Region[r], f: (a, a) -> Bool, xs: List[a], ac: List[Array[a, r]]): List[Array[a, r]] \ Write(r) = match xs {
         case Nil     => List.reverse(ac)
         case x :: rs =>
-            let (r1, r2) = extractHelper(f, rs, x :: Nil, Nil, r);
-            groupByHelper(f, r2, r1 :: ac, r)
+            let (r1, r2) = extractHelper(r, f, rs, x :: Nil, Nil);
+            groupByHelper(r, f, r2, r1 :: ac)
     }
 
     ///
     /// Helper function for `groupBy`.
     ///
-    def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a], r: Region[r]): (Array[a, r], List[a]) \ Write(r) = match xs {
+    def extractHelper(r: Region[r], f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a]): (Array[a, r], List[a]) \ Write(r) = match xs {
         case Nil => {
             let a = List.reverse(ps);
-            (List.toArray(a, r), List.reverse(ns))
+            (List.toArray(r, a), List.reverse(ns))
         }
         case x :: rs =>
             if (agreeHelper(f, x, ps))
-                extractHelper(f, rs, x :: ps, ns, r)
+                extractHelper(r, f, rs, x :: ps, ns)
             else
-                extractHelper(f, rs, ps, x :: ns, r)
+                extractHelper(r, f, rs, ps, x :: ns)
     }
 
     ///
@@ -1197,7 +1211,8 @@ namespace Array {
     @Time(Int32.min(length(a), length(b))) @Space(Int32.min(length(a), length(b)))
     pub def zip(a: Array[a, r1], b: Array[b, r2]): Array[(a, b), r2] \ { Read(r1, r2), Write(r2) } =
         let len = Int32.min(length(a), length(b));
-        init(i -> (a[i], b[i]), len, Scoped.regionOf(b))
+        let r2 = Scoped.regionOf(b);
+        init(r2, i -> (a[i], b[i]), len)
 
     ///
     /// Returns an array where the element at index `i` is `f(x, y)` where
@@ -1208,7 +1223,8 @@ namespace Array {
     @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f) * Int32.min(length(a), length(b)))
     pub def zipWith(f: (a, b) -> c & ef, a: Array[a, r1], b: Array[b, r2]): Array[c, r2] \ { ef, Read(r1, r2), Write(r2) } =
         let len = Int32.min(length(a), length(b));
-        init(i -> f(a[i], b[i]), len, Scoped.regionOf(b))
+        let r2 = Scoped.regionOf(b);
+        init(r2, i -> f(a[i], b[i]), len)
 
     ///
     /// Returns a pair of arrays, the first containing all first components in `a`
@@ -1217,7 +1233,7 @@ namespace Array {
     @Time(length(a)) @Space(length(a))
     pub def unzip(a: Array[(a, b), r]): (Array[a, r], Array[b, r]) \ { Read(r), Write(r) } =
         let r = Scoped.regionOf(a);
-        init2(i -> a[i], length(a), r, r)
+        init2(r, r, i -> a[i], length(a))
 
     ///
     /// Alias for `foldLeft2`.
@@ -1264,9 +1280,9 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def filterMap(f: a -> Option[b] & ef, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let r = Scoped.regionOf(a);
-        (foldRight((x, xs) -> match f(x) {
+        foldRight((x, xs) -> match f(x) {
             case None    => xs
-            case Some(b) => b :: xs }, Nil, a) |> List.toArray)(r)
+            case Some(b) => b :: xs }, Nil, a) |> List.toArray(r)
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `xs`.
@@ -1308,11 +1324,12 @@ namespace Array {
     ///
     /// Returns the array `a` as a MutList.
     ///
-    pub def toMutList(a: Array[a, r1], r2: Region[r2]): MutList[a, r2] \ { Read(r1), Write(r2) } =
+    pub def toMutList(r1: Region[r1], a: Array[a, r2]): MutList[a, r1] \ { Read(r2), Write(r1) } =
         let minCap = MutList.minCapacity();
         let len = length(a);
         let c = Order.max(len, minCap);
-        MutList(ref copyOfRange(0, c, a, r2) @ r2, ref len @ r2)
+        let copy = copyOfRange(r1, 0, c, a);
+        MutList(ref copy @ r1, ref len @ r1)
 
     ///
     /// Alias for `findIndexOfLeft`.
@@ -1366,7 +1383,8 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def findIndices(f: a -> Bool & ef, a: Array[a, r]): Array[Int32, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        let l = new MutList(Scoped.regionOf(a));
+        let r = Scoped.regionOf(a);
+        let l = new MutList(r);
         def loop(i) = {
             if (i >= len)
                 ()
@@ -1376,13 +1394,13 @@ namespace Array {
             }
         };
         loop(0);
-        MutList.toArray(l, Scoped.regionOf(a))
+        MutList.toArray(r, l)
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.
     ///
     @Time(time(f) * len) @Space(space(f) * len)
-    pub def init(f: Int32 -> a & ef, len: Int32, r: Region[r]): Array[a, r] \ { ef, Write(r) } =
+    pub def init(r: Region[r], f: Int32 -> a & ef, len: Int32): Array[a, r] \ { ef, Write(r) } =
         if (len <= 0)
             [] @ r
         else {
@@ -1403,13 +1421,13 @@ namespace Array {
     /// Build a pair of arrays of length `len` by applying `f` to the successive indices.
     ///
     @Time(time(f) * len) @Space(space(f) * len)
-    pub def init2(f: Int32 -> (a, b) & ef, len: Int32, r1: Region[r1], r2: Region[r2]): (Array[a, r1], Array[b, r2]) \ { ef, Write(r1, r2) } =
+    pub def init2(r1: Region[r1], r2: Region[r2], f: Int32 -> (a, b) & ef, len: Int32): (Array[a, r1], Array[b, r2]) \ { ef, Write(r1, r2) } =
         if (len <= 0)
             ([] @ r1, [] @ r2)
         else {
             let (x, y) = f(0);
-            let arr = new(x, len, r1);
-            let brr = new(y, len, r2);
+            let arr = new(r1, x, len);
+            let brr = new(r2, y, len);
             def loop(i) = {
                 if (i < len) {
                     let (a, b) = f(i);
@@ -1424,7 +1442,7 @@ namespace Array {
         }
 
     ///
-    /// Returns `true` if arrays `a` and `b` have the same elements, i.e. are structurally equal.
+    /// Returns `true` if arrays `a` and `b` have the same elements in the same order, i.e. are structurally equal.
     ///
     @Time(length(a)) @Space(1)
     pub def sameElements(a: Array[a, r1], b: Array[a, r2]): Bool \ Read(r1, r2) with Eq[a] =
@@ -1433,11 +1451,10 @@ namespace Array {
         def loop(i) = {
             if (i >= alen)
                 true
+            else if (a[i] != b[i])
+                false
             else
-                if (a[i] != b[i])
-                    false
-                else
-                    loop(i + 1)
+                loop(i + 1)
         };
         if (alen == blen)
             loop(0)
@@ -1458,10 +1475,7 @@ namespace Array {
                 loop(i + 1)
             }
         };
-        if (len < 1)
-            ()
-        else
-            loop(0)
+        loop(0)
 
     ///
     /// Apply the effectful function `f` to all the elements in the array `a`.
@@ -1477,10 +1491,7 @@ namespace Array {
                 loop(i + 1)
             }
         };
-        if (len < 1)
-            ()
-        else
-            loop(0)
+        loop(0)
 
     ///
     /// Returns a copy of `a` with the elements starting at index `i` replaced by `sub`.
@@ -1489,7 +1500,9 @@ namespace Array {
     pub def updateSequence(i: Int32, sub: Array[a, r1], a: Array[a, r2]): Array[a, r2] \ { Read(r1, r2), Write(r2) } =
         let end = i + length(sub);
         let f = ix -> if (ix >= i and ix < end) sub[ix - i] else a[ix];
-        init(f, length(a), Scoped.regionOf(a))
+        let len = length(a);
+        let r2 = Scoped.regionOf(a);
+        init(r2, f, len)
 
     ///
     /// Update the mutable array `a` with the elements starting at index `i` replaced by `sub`.
@@ -1556,7 +1569,8 @@ namespace Array {
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
         let len = length(a);
-        let b = copyOfRange(0, len, a, Scoped.regionOf(a));
+        let r = Scoped.regionOf(a);
+        let b = copyOfRange(r, 0, len, a);
         sortWith!(cmp, b);
         b
 
@@ -1661,61 +1675,61 @@ namespace Array {
     /// If the range is valid and greater than the length of `a`, the resulting array with have the length of the range
     /// and include the specified range of `a`.
     ///
-    pub def copyOfRange(b: Int32, e: Int32, a: Array[a, r1], _: Region[r2]): Array[a, r2] \ { Read(r1), Write(r2) } =
+    pub def copyOfRange(_: Region[r2], b: Int32, e: Int32, a: Array[a, r1]): Array[a, r2] \ { Read(r1), Write(r2) } =
         match (reifyType a) {
             case ErasedType =>
-                let arr = a as Array[##java.lang.Object, Static];
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, Static], Int32, Int32): Array[##java.lang.Object, r2] & r1 and r2 as copy;
+                let arr = a as Array[##java.lang.Object, r1];
+                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedUnit =>
-                let arr = a as Array[Unit, Static];
-                import static java.util.Arrays.copyOfRange(Array[Unit, Static], Int32, Int32): Array[Unit, r2] & r1 and r2 as copy;
+                let arr = a as Array[Unit, r1];
+                import static java.util.Arrays.copyOfRange(Array[Unit, r1], Int32, Int32): Array[Unit, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedBool =>
-                let arr = a as Array[Bool, Static];
-                import static java.util.Arrays.copyOfRange(Array[Bool, Static], Int32, Int32): Array[Bool, r2] & r1 and r2 as copy;
+                let arr = a as Array[Bool, r1];
+                import static java.util.Arrays.copyOfRange(Array[Bool, r1], Int32, Int32): Array[Bool, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedChar =>
-                let arr = a as Array[Char, Static];
-                import static java.util.Arrays.copyOfRange(Array[Char, Static], Int32, Int32): Array[Char, r2] & r1 and r2 as copy;
+                let arr = a as Array[Char, r1];
+                import static java.util.Arrays.copyOfRange(Array[Char, r1], Int32, Int32): Array[Char, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedFloat32 =>
-                let arr = a as Array[Float32, Static];
-                import static java.util.Arrays.copyOfRange(Array[Float32, Static], Int32, Int32): Array[Float32, r2] & r1 and r2 as copy;
+                let arr = a as Array[Float32, r1];
+                import static java.util.Arrays.copyOfRange(Array[Float32, r1], Int32, Int32): Array[Float32, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedFloat64 =>
-                let arr = a as Array[Float64, Static];
-                import static java.util.Arrays.copyOfRange(Array[Float64, Static], Int32, Int32): Array[Float64, r2] & r1 and r2 as copy;
+                let arr = a as Array[Float64, r1];
+                import static java.util.Arrays.copyOfRange(Array[Float64, r1], Int32, Int32): Array[Float64, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedInt8 =>
-                let arr = a as Array[Int8, Static];
-                import static java.util.Arrays.copyOfRange(Array[Int8, Static], Int32, Int32): Array[Int8, r2] & r1 and r2 as copy;
+                let arr = a as Array[Int8, r1];
+                import static java.util.Arrays.copyOfRange(Array[Int8, r1], Int32, Int32): Array[Int8, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedInt16 =>
-                let arr = a as Array[Int16, Static];
-                import static java.util.Arrays.copyOfRange(Array[Int16, Static], Int32, Int32): Array[Int16, r2] & r1 and r2 as copy;
+                let arr = a as Array[Int16, r1];
+                import static java.util.Arrays.copyOfRange(Array[Int16, r1], Int32, Int32): Array[Int16, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedInt32 =>
-                let arr = a as Array[Int32, Static];
-                import static java.util.Arrays.copyOfRange(Array[Int32, Static], Int32, Int32): Array[Int32, r2] & r1 and r2 as copy;
+                let arr = a as Array[Int32, r1];
+                import static java.util.Arrays.copyOfRange(Array[Int32, r1], Int32, Int32): Array[Int32, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedInt64 =>
-                let arr = a as Array[Int64, Static];
-                import static java.util.Arrays.copyOfRange(Array[Int64, Static], Int32, Int32): Array[Int64, r2] & r1 and r2 as copy;
+                let arr = a as Array[Int64, r1];
+                import static java.util.Arrays.copyOfRange(Array[Int64, r1], Int32, Int32): Array[Int64, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedArray(_) =>
-                let arr = a as Array[##java.lang.Object, Static];
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, Static], Int32, Int32): Array[##java.lang.Object, r2] & r1 and r2 as copy;
+                let arr = a as Array[##java.lang.Object, r1];
+                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
         }
 
    ///
    /// Returns an iterator over `a`.
    ///
-   pub def toIterator(a: Array[a, r]): Iterator[a] & Impure =
+   pub def toIterator(r1: Region[r1], a: Array[a, r2]): Iterator[a, r1] \ { Read(r2), Write(r1) } =
        let len = Array.length(a);
-       let copy = copyOfRange(0, len, a, Static);
-       let i = ref 0;
+       let copy = copyOfRange(r1, 0, len, a);
+       let i = ref 0 @ r1;
        let done = () -> (deref i) >= len;
        let next = () -> {
            let j = deref i;
@@ -1728,14 +1742,16 @@ namespace Array {
     ///
     /// Shuffles `a` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(r: Random.Random, a: Array[a, r]): Unit & Impure =
+    pub def shuffle(rnd: Random.Random, a: Array[a, r]): Unit & Impure =
         let len = Array.length(a);
         def loop(i) = {
             if (i > 0) {
-                let j = Random.nextNatWithMax(r, i + 1);
+                let j = Random.nextNatWithMax(rnd, i + 1);
                 Array.swap!(i, j, a);
                 loop(i - 1)
-            } else ()
+            }
+            else
+                ()
         };
         loop(len - 1)
 

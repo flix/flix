@@ -465,7 +465,7 @@ namespace Test/Exp/ArrayLoad {
     @test
     def testArrayLoad79(): Unit = region r {
         let x = [[1 :: Nil] @ r, [3 :: Nil] @ r] @ r;
-        let _ = x[0];
+        discard x[0];
         ()
     }
 }

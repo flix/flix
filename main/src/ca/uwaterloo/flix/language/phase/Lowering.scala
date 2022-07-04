@@ -188,16 +188,15 @@ object Lowering {
     * Lowers the given enum `enum0`.
     */
   private def visitEnum(enum0: Enum)(implicit root: Root, flix: Flix): Enum = enum0 match {
-    case Enum(doc, ann, mod, sym, tparams, derives, cases0, tpeDeprecated0, sc0, loc) =>
-      val tpeDeprecated = visitType(tpeDeprecated0)
-      val sc = visitScheme(sc0)
+    case Enum(doc, ann, mod, sym, tparams, derives, cases0, tpe0, loc) =>
+      val tpe = visitType(tpe0)
       val cases = cases0.map {
         case (_, Case(caseSym, tag, caseTpeDeprecated0, caseSc0, loc)) =>
           val caseTpeDeprecated = visitType(caseTpeDeprecated0)
           val caseSc = visitScheme(caseSc0)
           (tag, Case(caseSym, tag, caseTpeDeprecated, caseSc, loc))
       }
-      Enum(doc, ann, mod, sym, tparams, derives, cases, tpeDeprecated, sc, loc)
+      Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc)
   }
 
   /**
@@ -224,10 +223,10 @@ object Lowering {
     * Lowers the given `spec0`.
     */
   private def visitSpec(spec0: Spec)(implicit root: Root, flix: Flix): Spec = spec0 match {
-    case Spec(doc, ann, mod, tparams, fparams, declaredScheme, retTpe, eff, loc) =>
+    case Spec(doc, ann, mod, tparams, fparams, declaredScheme, retTpe, pur, eff, loc) =>
       val fs = fparams.map(visitFormalParam)
       val ds = visitScheme(declaredScheme)
-      Spec(doc, ann, mod, tparams, fs, ds, retTpe, eff, loc)
+      Spec(doc, ann, mod, tparams, fs, ds, retTpe, pur, eff, loc)
   }
 
   /**
@@ -823,7 +822,7 @@ object Lowering {
   private def visitConstraint(c0: Constraint)(implicit root: Root, flix: Flix): Expression = c0 match {
     case Constraint(cparams, head, body, loc) =>
       val headExp = visitHeadPred(cparams, head)
-      val bodyExp = mkArray(body.map(visitBodyPred(cparams, _)), Types.BodyPredicate, loc)
+      val bodyExp = mkList(body.map(visitBodyPred(cparams, _)), Types.BodyPredicate, loc)
       val innerExp = mkTuple(headExp :: bodyExp :: Nil, loc)
       mkTag(Enums.Constraint, "Constraint", innerExp, Types.Constraint, loc)
   }
@@ -835,7 +834,7 @@ object Lowering {
     case Head.Atom(pred, den, terms, _, loc) =>
       val predSymExp = mkPredSym(pred)
       val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
-      val termsExp = mkArray(terms.map(visitHeadTerm(cparams0, _)), Types.HeadTerm, loc)
+      val termsExp = mkList(terms.map(visitHeadTerm(cparams0, _)), Types.HeadTerm, loc)
       val innerExp = mkTuple(predSymExp :: denotationExp :: termsExp :: Nil, loc)
       mkTag(Enums.HeadPredicate, "HeadAtom", innerExp, Types.HeadPredicate, loc)
   }

@@ -244,6 +244,32 @@ namespace MutDeque {
         expand!(d)                     // Optionally expand `d`.
 
     ///
+    /// Optionally returns the front element. Does *not* remove it.
+    ///
+    pub def peekFront(d: MutDeque[a, r]): Option[a] \ Read(r) =
+        let MutDeque(a, f, b) = d;
+        let f1 = deref f;
+        let b1 = deref b;
+        if (f1 == b1)
+            None
+        else
+            Some((deref a)[f1])
+
+    ///
+    /// Optionally returns the back element. Does *not* remove it.
+    ///
+    pub def peekBack(d: MutDeque[a, r]): Option[a] \ Read(r) =
+        let MutDeque(a, f, b) = d;
+        let f1 = deref f;
+        let b1 = deref b;
+        if (f1 == b1)
+            None
+        else
+            let c = capacity(d) - 1;
+            let i = (b1 - 1) &&& c;
+            Some((deref a)[i])
+
+    ///
     /// Doubles the capacity of `d` if the load factor is greater than or equal to `maxLoadFactor`.
     ///
     def expand!(d: MutDeque[a, r]): Unit \ { Read(r), Write(r) } =
@@ -322,18 +348,16 @@ namespace MutDeque {
         Array.length(deref a)
 
     ///
-    /// Returns `true` if `MutDeque`s `a` and `b` have the same elements, i.e. are structurally equal.
+    /// Returns `true` if `MutDeque`s `a` and `b` have the same elements in the same order, i.e. are structurally equal.
     ///
     pub def sameElements(d1: MutDeque[t, r1], d2: MutDeque[t, r2]): Bool \ Read(r1, r2) with Eq[t] =
         let aSize = size(d1);
         let bSize = size(d2);
         if (aSize == bSize) {
             let MutDeque(aArray, aFront, aBack) = d1;
-            let aCap = capacity(d1);
             let MutDeque(bArray, bFront, bBack) = d2;
-            let bCap = capacity(d2);
-            let a1 = [$DEFAULT$; aCap] @ Scoped.regionOf(d1);
-            let b1 = [$DEFAULT$; bCap] @ Scoped.regionOf(d2);
+            let a1 = [$DEFAULT$; aSize] @ Scoped.regionOf(d1);
+            let b1 = [$DEFAULT$; bSize] @ Scoped.regionOf(d2);
             copyElements!(deref aFront, deref aBack, deref aArray, a1);
             copyElements!(deref bFront, deref bBack, deref bArray, b1);
             Array.sameElements(a1, b1)
@@ -349,16 +373,17 @@ namespace MutDeque {
     ///
     /// Returns `d` as an array.
     ///
-    pub def toArray(d: MutDeque[a, r], r: Region[r]): Array[a, r] \ { Read(r), Write(r) } =
+    pub def toArray(r1: Region[r1], d: MutDeque[a, r2]): Array[a, r1] \ { Read(r2), Write(r1) } =
         let MutDeque(a, f, b) = d;
         let len = MutDeque.capacity(d);
-
         let i = deref f;
         let j = deref b;
-
-        if      (i == j) [] @ r
-        else if (i  < j) Array.slice(i, j, deref a)
-        else             Array.append(Array.slice(i, len, deref a), Array.slice(0, j, deref a))
+        if (i == j)
+            [] @ r1
+        else if (i  < j)
+            Array.copyOfRange(r1, i, j, deref a)
+        else
+            Array.append(Array.copyOfRange(r1, i, len, deref a), Array.copyOfRange(r1, 0, j, deref a))
 
     ///
     /// Returns the concatenation of the string representation
@@ -400,4 +425,13 @@ namespace MutDeque {
         } else {
             loop(deref front)
         }
+
+    ///
+    /// Shuffles a copy of `d` using the Fisher–Yates shuffle.
+    ///
+    pub def shuffle(rnd: Random.Random, d: MutDeque[a, r], r: Region[r]): MutDeque[a, r] & Impure =
+        let arr = toArray(r, d);
+        Array.shuffle(rnd, arr);
+        Array.toMutDeque(r, arr)
+
 }

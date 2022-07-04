@@ -73,6 +73,12 @@ instance Foldable[Identity] {
         f(x1, _ -> s as & ef)
 }
 
+instance UnorderedFoldable[Identity] {
+    pub def foldMap(f: a -> b & ef, x: Identity[a]): b & ef with CommutativeMonoid[b] =
+        let Identity(x1) = x;
+        f(x1)
+}
+
 instance Traversable[Identity] {
     pub def traverse(f: a -> m[b] & ef, x: Identity[a]): m[Identity[b]] & ef with Applicative[m] =
         let Identity(x1) = x;

@@ -173,6 +173,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       case JString("lsp/workspaceSymbols") => Request.parseWorkspaceSymbols(json)
       case JString("lsp/uses") => Request.parseUses(json)
       case JString("lsp/semanticTokens") => Request.parseSemanticTokens(json)
+      case JString("lsp/inlayHints") => Request.parseInlayHint(json)
 
       case s => Err(s"Unsupported request: '$s'.")
     }
@@ -194,7 +195,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     */
   private def remSourceCode(uri: String) = {
     current = false
-    flix.remSourceCode(uri, sources(uri))
+    flix.remSourceCode(uri)
     sources -= uri
   }
 
@@ -287,6 +288,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         ("id" -> id) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, root)
       else
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ("data" -> Nil))
+
+    case Request.InlayHint(id, uri, range) =>
+      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, root).map(_.toJSON))
 
   }
 

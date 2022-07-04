@@ -69,7 +69,7 @@ namespace Fixpoint {
         case RamStmt.Merge(_, _) => stmt
         case RamStmt.Assign(_, _) => stmt
         case RamStmt.Purge(_) => stmt
-        case RamStmt.Seq(xs) => RamStmt.Seq(Array.map(queryStmt, xs))
+        case RamStmt.Seq(xs) => RamStmt.Seq(List.map(queryStmt, xs))
         case RamStmt.Until(test, body) => RamStmt.Until(test, queryStmt(body))
         case RamStmt.Comment(_) => stmt
     }
@@ -113,11 +113,10 @@ namespace Fixpoint {
                     (search, ground)
             else
                 let query =
-                    (List.map(x -> match x {
+                    List.map(x -> match x {
                         case Eq(RamTerm.RowLoad(_, j), rhs) => (j, rhs)
                         case _ => ???
-                    }, prefixQuery) |>
-                    List.toArray)(Static);
+                    }, prefixQuery);
                 if (List.isEmpty(test))
                     let search = RelOp.Query(var, ramSym, query, innerOp);
                     (search, ground)
@@ -149,7 +148,10 @@ namespace Fixpoint {
     def prefixHelper(i: Int32, prefix: List[BoolExp[v]], rest: List[BoolExp[v]], eqs: List[List[BoolExp[v]]]): (List[BoolExp[v]], List[BoolExp[v]]) =
         match eqs {
             case e :: es =>
-                let (p, r) = List.partition(match BoolExp.Eq(RamTerm.RowLoad(_, j), _) -> i == j, e);
+                let (p, r) = List.partition(be -> match be {
+                    case BoolExp.Eq(RamTerm.RowLoad(_, j), _) => i == j
+                    case _ => ???
+                }, e);
                 prefixHelper(i + 1, prefix ::: p, rest ::: r, es)
             case Nil => (prefix, rest)
         }

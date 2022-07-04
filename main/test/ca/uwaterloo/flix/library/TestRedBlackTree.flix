@@ -252,7 +252,7 @@ namespace TestRedBlackTree {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(Static);
-        Map.mapWithKey((k, v) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
+        discard Map.mapWithKey((k, v) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
         MutList.toList(a) == range
 
     @test
@@ -388,6 +388,30 @@ namespace TestRedBlackTree {
         let Map(t) = Map#{1 => "Hello World!"};
         RedBlackTree.foreach((k, _) -> r := k, t);
         1 == deref r
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldMapWithKey                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool =
+        let Map(t) = Map#{};
+        RedBlackTree.foldMap((k, v) -> k + v, t) == 0
+
+    @test
+    def foldMap02(): Bool =
+        let Map(t) = Map#{1 => 2, 3 => 5};
+        RedBlackTree.foldMap((k, v) -> k + v, t) == (1 + 2 + 3 + 5)
+
+    @test
+    def foldMap03(): Bool =
+        let Map(t) = Map#{1 => 2, 3 => 5};
+        RedBlackTree.foldMap((k, v) -> 2 * (k + v), t) == (2 * (1 + 2) + 2 * (3 + 5))
+
+    @test
+    def foldMap04(): Bool =
+        let Map(t) = Map#{1 => "a", 2 => "b"};
+        RedBlackTree.foldMap((k, v) -> "${k}" + v, t) == "1a2b"
 
 
     /////////////////////////////////////////////////////////////////////////////

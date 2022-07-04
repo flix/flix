@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+use Bool.{==>, <==>};
+
 ///
 /// A type class for types with a total order.
 ///

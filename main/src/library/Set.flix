@@ -73,6 +73,16 @@ instance Foldable[Set] {
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldRightWithCont(f, s, s1)
 }
 
+instance UnorderedFoldable[Set] {
+    pub def foldMap(f: a -> b & ef, s: Set[a]): b & ef with CommutativeMonoid[b] = Set.foldMap(f, s)
+    override pub def isEmpty(s: Set[a]): Bool = Set.isEmpty(s)
+    override pub def exists(f: a -> Bool & ef, s: Set[a]): Bool & ef = Set.exists(f, s)
+    override pub def forall(f: a -> Bool & ef, s: Set[a]): Bool & ef = Set.forall(f, s)
+
+    @ParallelWhenPure
+    override pub def count(f: a -> Bool & ef, s: Set[a]): Int32 & ef = Set.count(f, s)
+}
+
 instance SemiGroup[Set[a]] with Order[a] {
     pub def combine(x: Set[a], y: Set[a]): Set[a] = Set.union(x,y)
 }
@@ -135,33 +145,10 @@ namespace Set {
     ///
     /// Returns the empty set.
     ///
-    /// `Set#{}` is syntactic sugar for `empty` (`Set#{} = empty()`).
+    /// `Set#{}` is syntactic sugar for `empty` i.e. `Set#{} == empty()`.
     ///
     @Time(1) @Space(1)
     pub def empty(): Set[a] = Set(RedBlackTree.empty())
-
-    ///
-    /// Returns the singleton set containing `x`.
-    ///
-    /// `Set#{x}` is syntactic sugar for `singleton` (`Set#{x} = singleton(x)`).
-    ///
-    @Time(1) @Space(1)
-    pub def singleton(x: a): Set[a] with Order[a] = insert(x, empty())
-
-    ///
-    /// Returns a set of all integers between `b` (inclusive) and `e` (exclusive).
-    ///
-    /// Returns `empty()` if `b >= e`.
-    ///
-    @Time(e - b) @Space(e - b)
-    pub def range(b: Int32, e: Int32): Set[Int32] =
-        def loop(i, s) = {
-            if (i >= e)
-                s
-            else
-                loop(i + 1, insert(i, s))
-        };
-        loop(b, empty())
 
     ///
     /// Adds `x` to `s`.
@@ -186,6 +173,29 @@ namespace Set {
     pub def isEmpty(s: Set[a]): Bool =
         let Set(t) = s;
         RedBlackTree.isEmpty(t)
+
+    ///
+    /// Returns the singleton set containing `x`.
+    ///
+    /// `Set#{x}` is syntactic sugar for `singleton` i.e. `Set#{x} == singleton(x)`.
+    ///
+    @Time(1) @Space(1)
+    pub def singleton(x: a): Set[a] with Order[a] = insert(x, empty())
+
+    ///
+    /// Returns a set of all integers between `b` (inclusive) and `e` (exclusive).
+    ///
+    /// Returns `empty()` if `b >= e`.
+    ///
+    @Time(e - b) @Space(e - b)
+    pub def range(b: Int32, e: Int32): Set[Int32] =
+        def loop(i, s) = {
+            if (i >= e)
+                s
+            else
+                loop(i + 1, insert(i, s))
+        };
+        loop(b, empty())
 
     ///
     /// Returns true if and only if `x` is a member of `s`.
@@ -555,9 +565,17 @@ namespace Set {
         Set.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), s)
 
     ///
+    /// Returns `s` as a MutDeque.
+    ///
+    pub def toMutDeque(r: Region[r], s: Set[a]): MutDeque[a, r] \ Write(r) =
+        let d = new MutDeque(r);
+        Set.foreach(x -> MutDeque.pushBack(x, d), s);
+        d
+
+    ///
     /// Returns the set `s` as a `MutSet`.
     ///
-    pub def toMutSet(s: Set[a], r: Region[r]): MutSet[a, r] \ Write(r) =
+    pub def toMutSet(r: Region[r], s: Set[a]): MutSet[a, r] \ Write(r) =
         MutSet(ref s @ r)
 
     ///
@@ -606,14 +624,8 @@ namespace Set {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def toIterator(s: Set[a]): Iterator[a] & Impure =
-        List.toIterator(Set.toList(s))
-
-    ///
-    /// Returns an iterator over `s`.
-    ///
-    pub def toRegionIterator(r: Region[r], s: Set[a]): RegionIterator[a, r] \ Write(r) =
-        toList(s) |> List.toRegionIterator(r)
+    pub def toIterator(r: Region[r], s: Set[a]): Iterator[a, r] \ Write(r) =
+        toList(s) |> List.toIterator(r)
 
     ///
     /// Returns the concatenation of the string representation

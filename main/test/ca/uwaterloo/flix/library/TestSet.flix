@@ -503,7 +503,7 @@ def count08(): Bool & Impure =
     let range = List.range(0, 2000);
     let s = range |> List.toSet;
     let a = new MutList(Static);
-    Set.count(x -> { let b = new MutList(Static); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); true }, s);
+    discard Set.count(x -> { let b = new MutList(Static); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); true }, s);
     MutList.toList(a) == range
 
 
@@ -573,7 +573,7 @@ def count08(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = range |> List.toSet;
         let a = new MutList(Static);
-        Set.sumWith(k -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
+        discard Set.sumWith(k -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
         MutList.toList(a) == range
 
 
@@ -639,7 +639,7 @@ def count08(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = range |> List.toSet;
         let a = new MutList(Static);
-        Set.productWith(k -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
+        discard Set.productWith(k -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
         MutList.toList(a) == range
 
 
@@ -993,7 +993,7 @@ def map16(): Bool & Impure =
     let range = List.range(0, 2000);
     let s = List.toSet(range);
     let a = new MutList(Static);
-    Set.map(x -> { let b = new MutList(Static); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); x }, s);
+    discard Set.map(x -> { let b = new MutList(Static); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); x }, s);
     MutList.toList(a) == range
 
 
@@ -1163,6 +1163,58 @@ def toMapWith04(): Bool =
 @test
 def toMapWith05(): Bool =
     Set.toMapWith(x -> x + 10, Set#{7, 1, 3, 6}) == Map#{1 => 11, 3 => 13, 6 => 16, 7 => 17}
+
+/////////////////////////////////////////////////////////////////////////////
+// toMutDeque                                                              //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toMutDeque01(): Bool = region r {
+    let s: Set[Int32] = Set#{};
+    let d1 = Set.toMutDeque(r, s);
+
+    let d2 = new MutDeque(r);
+
+    d1 `MutDeque.sameElements` d2
+}
+
+@test
+def toMutDeque02(): Bool = region r {
+    let s = Set#{1};
+    let d1 = Set.toMutDeque(r, s);
+
+    let d2 = new MutDeque(r);
+    MutDeque.pushBack(1, d2);
+
+    d1 `MutDeque.sameElements` d2
+}
+
+@test
+def toMutDeque03(): Bool = region r {
+    let s = Set#{1, 3, 6};
+    let d1 = Set.toMutDeque(r, s);
+
+    let d2 = new MutDeque(r);
+    MutDeque.pushBack(3, d2);
+    MutDeque.pushBack(6, d2);
+    MutDeque.pushFront(1, d2);
+
+    d1 `MutDeque.sameElements` d2
+}
+
+@test
+def toMutDeque04(): Bool = region r {
+    let s = Set#{7, 1, 3, 6};
+    let d1 = Set.toMutDeque(r, s);
+
+    let d2 = new MutDeque(r);
+    MutDeque.pushFront(7, d2);
+    MutDeque.pushFront(6, d2);
+    MutDeque.pushFront(3, d2);
+    MutDeque.pushFront(1, d2);
+
+    d1 `MutDeque.sameElements` d2
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // eq                                                                      //
@@ -1429,7 +1481,7 @@ def unfoldWithIter06(): Bool & Impure =
     def minimumBy05(): Bool & Impure =
         let s = List.range(0, 2000) |> List.toSet;
         let a = new MutList(Static);
-        Set.minimumBy((x, y) -> { let b = new MutList(Static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, s);
+        discard Set.minimumBy((x, y) -> { let b = new MutList(Static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, s);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
@@ -1488,16 +1540,19 @@ def unfoldWithIter06(): Bool & Impure =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool & Impure =
-        Set.empty(): Set[Int32] |> Set.toIterator |> Iterator.toSet == Set.empty()
+    def toIterator01(): Bool = region r {
+        Set.empty(): Set[Int32] |> Set.toIterator(r) |> Iterator.toSet == Set.empty()
+    }
 
     @test
-    def toIterator02(): Bool & Impure =
-        Set#{1, 2, 3, 4} |> Set.toIterator |> Iterator.toSet == Set#{1, 2, 3, 4}
+    def toIterator02(): Bool = region r {
+        Set#{1, 2, 3, 4} |> Set.toIterator(r) |> Iterator.toSet == Set#{1, 2, 3, 4}
+    }
 
     @test
-    def toIterator03(): Bool & Impure =
-        Set.range(0, 100) |> Set.toIterator |> Iterator.toSet == Set.range(0, 100)
+    def toIterator03(): Bool = region r {
+        Set.range(0, 100) |> Set.toIterator(r) |> Iterator.toSet == Set.range(0, 100)
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////

@@ -61,12 +61,12 @@ namespace Fixpoint/Ast {
             };
             match body {
                 case BodyAtom(predSym, Relational, p, f, terms) =>
-                    "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${terms |> List.map(toString) |> String.intercalate(", ")})"
+                    "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${terms |> List.join(", ")})"
                 case BodyAtom(predSym, Latticenal(_), p, f, terms) =>
                     let (keyTerms, latticeTerms) = List.splitAt(List.length(terms)-1, terms);
                     match List.head(latticeTerms) {
                         case None    => "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}()"
-                        case Some(l) => "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${keyTerms |> List.map(toString) |> String.intercalate(", ")}; ${l})"
+                        case Some(l) => "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${keyTerms |> List.join(", ")}; ${l})"
                     }
                 case Guard0(_) => "<clo>()"
                 case Guard1(_, v) => "<clo>(${v})"
