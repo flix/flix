@@ -75,4 +75,10 @@ namespace Graph {
         Array.toSet(x)
     } as & Pure                         // TODO : delete cast when query uses regions
 
+    ///
+    /// Returns `true` if there is a path from `src` to `dst` in the directed graph `g`.
+    ///
+    pub def isConnected(src: {src :: t}, dst: {dst :: t}, g: m[(t, t)]): Bool with Foldable[m], Boxable[t] =
+        closure(g) |> Set.exists(x -> (src.src, dst.dst) == x)
+
 }

@@ -160,4 +160,34 @@ namespace TestGraph {
         Graph.unreachable(3, s1) == Set#{1, 2}
 
 
+    /////////////////////////////////////////////////////////////////////////////
+    // isConnected                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def isConnected01(): Bool =
+        let s1 = graph01();
+        Graph.isConnected(src = 1, dst = 2, s1)
+
+    @test
+    def isConnected02(): Bool =
+        let s1 = graph01();
+        not Graph.isConnected(src = 2, dst = 1, s1)
+
+    @test
+    def isConnected03(): Bool =
+        let s1 = graph02();
+        not Graph.isConnected(src = 1, dst = 3, s1)
+
+    @test
+    def isConnected04(): Bool =
+        let s1 = graph03();
+        Graph.isConnected(src = 1, dst = 3, s1)
+
+    @test
+    def isConnected05(): Bool =
+        let s1 = graph04();
+        Graph.isConnected(src = 2, dst = 4, s1)
+
+
 }
