@@ -645,18 +645,7 @@ object Weeder {
        */
       mapN(visitPattern(pat), visitExp(exp, senv)) {
         case (p, e) =>
-          val loc = mkSL(sp1, sp2).asSynthetic
-
-          // The name of the lambda parameter.
-          val ident = Name.Ident(sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), sp2)
-
-          // Construct the body of the lambda expression.
-          val varOrRef = WeededAst.Expression.VarOrDefOrSig(ident, loc)
-          val rule = WeededAst.MatchRule(p, WeededAst.Expression.True(loc), e)
-
-          val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, loc)
-          val body = WeededAst.Expression.Match(varOrRef, List(rule), loc)
-          WeededAst.Expression.Lambda(fparam, body, loc)
+          mkLambdaMatch(sp1, p, e, sp2)
       }
 
     case ParsedAst.Expression.Unary(sp1, op, exp, sp2) =>
@@ -703,15 +692,30 @@ object Weeder {
       //
       // Rewrites a foreach loop to Foreach.foreach call.
       //
-      val loc = mkSL(sp1, sp2)
+      val loc = mkSL(sp1, sp2).asSynthetic
       val patVal = visitPattern(pat)
       val exp1Val = visitExp(exp1, senv)
       val exp2Val = visitExp(exp2, senv)
+      val fqn = "ForEach.foreach"
+
+
+      // TODO: Refactor this to outer scope
+      def onlyVars(ps: List[WeededAst.Pattern]): Boolean = ps match {
+        case Nil => true
+        case WeededAst.Pattern.Var(_, _) :: xs => onlyVars(xs)
+        case _ => false
+      }
+
       mapN(patVal, exp1Val, exp2Val) {
         case (WeededAst.Pattern.Var(ident, patLoc), generator, body) =>
-          // loc.asSynthetic?
-          val lambda = WeededAst.Expression.Lambda(WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, patLoc), body, body.loc)
-          mkApplyFqn("ForEach.foreach", List(lambda, generator), loc)
+          val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, patLoc.asSynthetic)
+          val lambda = WeededAst.Expression.Lambda(fparam, body, body.loc.asSynthetic)
+          mkApplyFqn(fqn, List(lambda, generator), loc)
+
+        case (WeededAst.Pattern.Tuple(pats, patLoc), generator, body) if onlyVars(pats) =>
+          val tuple = WeededAst.Pattern.Tuple(pats, patLoc.asSynthetic)
+          val lambda = mkLambdaMatch(sp1, tuple, body, sp2)
+          mkApplyFqn(fqn, List(lambda, generator), loc)
       }
 
 
@@ -1636,6 +1640,21 @@ object Weeder {
         case (e1, e2, e3) =>
           WeededAst.Expression.ReifyEff(ident, e1, e2, e3, mkSL(sp1, sp2))
       }
+  }
+
+  private def mkLambdaMatch(sp1: SourcePosition, p: WeededAst.Pattern, e: WeededAst.Expression, sp2: SourcePosition)(implicit flix: Flix) = {
+    val loc = mkSL(sp1, sp2).asSynthetic
+
+    // The name of the lambda parameter.
+    val ident = Name.Ident(sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), sp2)
+
+    // Construct the body of the lambda expression.
+    val varOrRef = WeededAst.Expression.VarOrDefOrSig(ident, loc)
+    val rule = WeededAst.MatchRule(p, WeededAst.Expression.True(loc), e)
+
+    val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, loc)
+    val body = WeededAst.Expression.Match(varOrRef, List(rule), loc)
+    WeededAst.Expression.Lambda(fparam, body, loc)
   }
 
   /**
