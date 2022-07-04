@@ -730,7 +730,7 @@ namespace DelayMap {
     /// Returns `m` as a mutable set.
     ///
     @Experimental @Parallel
-    pub def toMutMap(m: DelayMap[k, v], r: Region[r]): MutMap[k, v, r] \ Write(r) =
+    pub def toMutMap(r: Region[r], m: DelayMap[k, v]): MutMap[k, v, r] \ Write(r) =
         MutMap(ref toMap(m) @ r)
 
     ///
@@ -785,7 +785,7 @@ namespace DelayMap {
         let _ = parallelForce(m);
         let DMap(t) = m;
         let f1 = (k, v) -> f(k, force v);
-        RedBlackTree.foreach(f1 as & Impure, t) as & ef
+        RedBlackTree.foreach(f1, t)
 
     ///
     /// Returns the sum of all values in `m`.

@@ -172,7 +172,7 @@ namespace Iterator {
     pub def toArray(r1: Region[r1], iter: Iterator[a, r2]): Array[a, r1] \ { Read(r2), Write(r1) } = region r0 {
         let m = new MutList(r0);
         foreach(a -> MutList.push!(a, m), iter);
-        MutList.toArray(m, r1)
+        MutList.toArray(r1, m)
     }
 
     ///
@@ -401,19 +401,34 @@ namespace Iterator {
         Iterator(done, next1)
 
     ///
-    /// Returns an iterator where the element at index `i` is `f(a, b)` where
+    /// Returns a list where the element at index `i` is `f(a, b)` where
     /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
     ///
     /// Consumes the entire iterator.
-    ///
-    /// If either `iterA` or `iterB` becomes depleted, then no further elements are added to the resulting list.
-    ///
-    /// The original iterators `iterA` and `iterB` should *not* be reused.
     ///
     /// An iterator should *never* be zipped with itself.
     ///
     pub def zipWith(f: (a, b) -> c & ef, iterA: Iterator[a, r1], iterB: Iterator[b, r2]): List[c] \ { ef, Read(r1, r2) } =
         zip(iterA, iterB) |> map(match (x, y) -> f(x, y))
+
+    ///
+    /// Returns an iterator where the element at index `i` is `(a, i)` where
+    /// `a` is the element at index `i` in `iter`.
+    ///
+    /// Does *not* consume any elements from either iterator.
+    ///
+    /// The original iterator `iter` should *not* be reused.
+    ///
+    @Lazy
+    pub def zipWithIndex(iter: Iterator[a, r]): Iterator[(a, Int32), r] \ Write(r) =
+        let Iterator(done, next) = iter;
+        let i = ref 0 @ Scoped.regionOf(iter);
+        let next1 = () -> {
+            let x = (next(), deref i);
+            i := deref i + 1;
+            x
+        };
+        Iterator(done, next1)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from left to right.

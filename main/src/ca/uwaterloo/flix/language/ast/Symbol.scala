@@ -73,15 +73,15 @@ object Symbol {
   /**
     * Returns a fresh type variable symbol with the given text.
     */
-  def freshKindedTypeVarSym(text: Ast.VarText, kind: Kind, rigidity: Rigidity, loc: SourceLocation)(implicit flix: Flix): KindedTypeVarSym = {
-    new KindedTypeVarSym(flix.genSym.freshId(), text, kind, rigidity, loc)
+  def freshKindedTypeVarSym(text: Ast.VarText, kind: Kind, isRegion: Boolean, loc: SourceLocation)(implicit flix: Flix): KindedTypeVarSym = {
+    new KindedTypeVarSym(flix.genSym.freshId(), text, kind, isRegion, loc)
   }
 
   /**
     * Returns a fresh type variable symbol with the given text.
     */
-  def freshUnkindedTypeVarSym(text: Ast.VarText, rigidity: Rigidity, loc: SourceLocation)(implicit flix: Flix): UnkindedTypeVarSym = {
-    new UnkindedTypeVarSym(flix.genSym.freshId(), text, rigidity, loc)
+  def freshUnkindedTypeVarSym(text: Ast.VarText, isRegion: Boolean, loc: SourceLocation)(implicit flix: Flix): UnkindedTypeVarSym = {
+    new UnkindedTypeVarSym(flix.genSym.freshId(), text, isRegion: Boolean, loc)
   }
 
   /**
@@ -241,7 +241,7 @@ object Symbol {
     val id: Int
     val text: Ast.VarText
     val loc: SourceLocation
-    val rigidity: Rigidity
+    val isRegion: Boolean
 
 
     /**
@@ -257,11 +257,6 @@ object Symbol {
       * Returns the same symbol with the given text.
       */
     def withText(text: Ast.VarText): TypeVarSym
-
-    /**
-      * Returns the same symbol with the given rigidity.
-      */
-    def withRigidity(rigidity: Rigidity): TypeVarSym
 
     override def src: Ast.Source = loc.source
 
@@ -288,7 +283,7 @@ object Symbol {
   /**
     * Kinded type variable symbol.
     */
-  final class KindedTypeVarSym(val id: Int, val text: Ast.VarText, val kind: Kind, val rigidity: Rigidity, val loc: SourceLocation) extends TypeVarSym with Ordered[KindedTypeVarSym] {
+  final class KindedTypeVarSym(val id: Int, val text: Ast.VarText, val kind: Kind, val isRegion: Boolean, val loc: SourceLocation) extends TypeVarSym with Ordered[KindedTypeVarSym] {
 
     /**
       * Returns `true` if `this` variable is non-synthetic.
@@ -298,11 +293,9 @@ object Symbol {
     /**
       * Returns the same symbol with the given kind.
       */
-    def withKind(newKind: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, newKind, rigidity, loc)
+    def withKind(newKind: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, newKind, isRegion, loc)
 
-    override def withText(newText: Ast.VarText): KindedTypeVarSym = new KindedTypeVarSym(id, newText, kind, rigidity, loc)
-
-    override def withRigidity(newRigidity: Rigidity): KindedTypeVarSym = new KindedTypeVarSym(id, text, kind, newRigidity, loc)
+    override def withText(newText: Ast.VarText): KindedTypeVarSym = new KindedTypeVarSym(id, newText, kind, isRegion, loc)
 
     override def compare(that: KindedTypeVarSym): Int = that.id - this.id
   }
@@ -310,16 +303,14 @@ object Symbol {
   /**
     * Unkinded type variable symbol.
     */
-  final class UnkindedTypeVarSym(val id: Int, val text: Ast.VarText, val rigidity: Rigidity, val loc: SourceLocation) extends TypeVarSym with Ordered[UnkindedTypeVarSym] {
+  final class UnkindedTypeVarSym(val id: Int, val text: Ast.VarText, val isRegion: Boolean, val loc: SourceLocation) extends TypeVarSym with Ordered[UnkindedTypeVarSym] {
 
-    override def withText(newText: Ast.VarText): UnkindedTypeVarSym = new UnkindedTypeVarSym(id, newText, rigidity, loc)
-
-    override def withRigidity(newRigidity: Rigidity): UnkindedTypeVarSym = new UnkindedTypeVarSym(id, text, newRigidity, loc)
+    override def withText(newText: Ast.VarText): UnkindedTypeVarSym = new UnkindedTypeVarSym(id, newText, isRegion, loc)
 
     /**
       * Ascribes this UnkindedTypeVarSym with the given kind.
       */
-    def ascribedWith(k: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, k, rigidity, loc)
+    def ascribedWith(k: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, k, isRegion, loc)
 
     override def compare(that: UnkindedTypeVarSym): Int = that.id - this.id
   }

@@ -55,7 +55,7 @@ namespace Fixpoint {
             case Datalog(_) => compiler(d) |> interpret |> toModel
             case Model(_) => d
             case Join(Model(m), cs) =>
-                let db = Static |> (Map.map(mm -> Map.toMutMap(mm, Static), m) |> Map.toMutMap);
+                let db = Map.map(Map.toMutMap(Static), m) |> Map.toMutMap(Static);
                 compiler(cs) |> interpretWithDatabase(db) |> toModel
             case _ => bug!("Datalog normalization bug")
         };
@@ -496,7 +496,7 @@ namespace Fixpoint {
     ///
     @Internal
     pub def facts0(p: PredSym, d: Datalog[Boxed]): Array[v, Static] with Boxable[v] =
-        List.toArray(factsOf(_ -> () as v, p, d), Static) as & Pure
+        List.toArray(Static, factsOf(_ -> () as v, p, d)) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -508,7 +508,7 @@ namespace Fixpoint {
                 unbox(hd)
             case _ => unreachable!()
         };
-       List.toArray(factsOf(f, p, d), Static) as & Pure
+       List.toArray(Static, factsOf(f, p, d)) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -520,7 +520,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1))
             case _ => unreachable!()
         };
-        List.toArray(factsOf(f, p, d), Static) as & Pure
+        List.toArray(Static, factsOf(f, p, d)) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -532,7 +532,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2))
             case _ => unreachable!()
         };
-        List.toArray(factsOf(f, p, d), Static) as & Pure
+        List.toArray(Static, factsOf(f, p, d)) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -544,7 +544,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3))
             case _ => unreachable!()
         };
-        List.toArray(factsOf(f, p, d), Static) as & Pure
+        List.toArray(Static, factsOf(f, p, d)) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -556,7 +556,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4))
             case _ => unreachable!()
         };
-        List.toArray(factsOf(f, p, d), Static) as & Pure
+        List.toArray(Static, factsOf(f, p, d)) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -568,7 +568,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5))
             case _ => unreachable!()
         };
-        List.toArray(factsOf(f, p, d), Static) as & Pure
+        List.toArray(Static, factsOf(f, p, d)) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -580,7 +580,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6))
             case _ => unreachable!()
         };
-        List.toArray(factsOf(f, p, d), Static) as & Pure
+        List.toArray(Static, factsOf(f, p, d)) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -592,7 +592,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7))
             case _ => unreachable!()
         };
-        List.toArray(factsOf(f, p, d), Static) as & Pure
+        List.toArray(Static, factsOf(f, p, d)) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -604,7 +604,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8))
             case _ => unreachable!()
         };
-        List.toArray(factsOf(f, p, d), Static) as & Pure
+        List.toArray(Static, factsOf(f, p, d)) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -616,7 +616,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9))
             case _ => unreachable!()
         };
-        List.toArray(factsOf(f, p, d), Static) as & Pure
+        List.toArray(Static, factsOf(f, p, d)) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -628,7 +628,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10))
             case _ => unreachable!()
         };
-        List.toArray(factsOf(f, p, d), Static) as & Pure
+        List.toArray(Static, factsOf(f, p, d)) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -640,7 +640,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10), unbox(v11))
             case _ => unreachable!()
         };
-        List.toArray(factsOf(f, p, d), Static) as & Pure
+        List.toArray(Static, factsOf(f, p, d)) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -652,7 +652,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10), unbox(v11), unbox(v12))
             case _ => unreachable!()
         };
-        List.toArray(factsOf(f, p, d), Static) as & Pure
+        List.toArray(Static, factsOf(f, p, d)) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -664,7 +664,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10), unbox(v11), unbox(v12), unbox(v13))
             case _ => unreachable!()
         };
-        List.toArray(factsOf(f, p, d), Static) as & Pure
+        List.toArray(Static, factsOf(f, p, d)) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -676,7 +676,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10), unbox(v11), unbox(v12), unbox(v13), unbox(v14))
             case _ => unreachable!()
         };
-        List.toArray(factsOf(f, p, d), Static) as & Pure
+        List.toArray(Static, factsOf(f, p, d)) as & Pure
 
     ///
     /// Returns an array of facts associated with the given predicate symbol `p` in the given Datalog program `d`.
