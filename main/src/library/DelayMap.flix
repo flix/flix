@@ -770,12 +770,12 @@ namespace DelayMap {
         Iterator(done, next)
 
     ///
-    /// Returns `m` as a MutDeque.
+    /// Returns the map `m` as a MutDeque of key-value pairs.
     ///
+    @Experimental
     pub def toMutDeque(r: Region[r], m: DelayMap[k, v]): MutDeque[(k, v), r] \ Write(r) =
-        let d = new MutDeque(r);
-        DelayMap.foreach((k, v) -> MutDeque.pushBack((k, v), d), m);
-        d
+        let m1 = DelayMap.toMap(m);
+        Map.toMutDeque(r, m1)
 
     ///
     /// Applies `f` to every element of `xs`.

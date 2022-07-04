@@ -1676,7 +1676,7 @@ namespace TestDelayMap {
 
         d1 `MutDeque.sameElements` d2
     }
-/*
+
     @test
     def toMutDeque02(): Bool = region r {
         let m = Map#{1 => 2} |> Map.toDelayMap;
@@ -1687,7 +1687,7 @@ namespace TestDelayMap {
 
         d1 `MutDeque.sameElements` d2
     }
-*/
+
     @test
     def toMutDeque03(): Bool = region r {
         let m = Map#{1 => 2, 3 => 4, 5 => 6} |> Map.toDelayMap;
