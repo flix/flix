@@ -75,5 +75,5 @@ def main(): Unit & Impure =
     println("The neighbourhood, N, is defined out of bounds to be the default value ${default}");
     println("This is shown as '..., N(i-1), N(i), N(i+1), ...");
     neighbourhood |>
-        Array.map(match (i, l, c, r) -> "${i}: ..., ${l}, ${c}, ${r}, ...") |>
-        Array.foreach(println)
+        List.map(match (i, l, c, r) -> "${i}: ..., ${l}, ${c}, ${r}, ...") |>
+        List.foreach(println)

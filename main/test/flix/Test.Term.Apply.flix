@@ -72,96 +72,96 @@ namespace Test/Term/Apply {
     }
 
     @test
-    def testTermApply11(): Bool & Impure =
+    def testTermApply11(): Bool =
         let f = zer;
         let p = #{
             R(f()).
         };
         let m = query p select x from R(x);
-        Array.memberOf(0, m)
+        List.memberOf(0, m)
 
     @test
-    def testTermApply12(): Bool & Impure =
+    def testTermApply12(): Bool =
         let f = one;
         let p = #{
             R(f()).
         };
         let m = query p select x from R(x);
-        Array.memberOf(1, m)
+        List.memberOf(1, m)
 
     @test
-    def testTermApply13(): Bool & Impure =
+    def testTermApply13(): Bool =
         let f = two;
         let p = solve #{
             R(f()).
         };
         let m = query p select x from R(x);
-        Array.memberOf(2, m)
+        List.memberOf(2, m)
 
     @test
-    def testTermApply14(): Bool & Impure =
+    def testTermApply14(): Bool =
         let f = inc;
         let p = #{
             A(1). A(2). A(3).
             R(f(x)) :- A(x).
         };
         let m = query p select x from R(x);
-        Array.memberOf(4, m)
+        List.memberOf(4, m)
 
     @test
-    def testTermApply15(): Bool & Impure =
+    def testTermApply15(): Bool =
         let f = dec;
         let p = #{
             A(1). A(2). A(3).
             R(f(x)) :- A(x).
         };
         let m = query p select x from R(x);
-        Array.memberOf(0, m)
+        List.memberOf(0, m)
 
     @test
-    def testTermApply16(): Bool & Impure =
+    def testTermApply16(): Bool =
         let f = add;
         let p = solve #{
             A(1). A(2). A(3).
             R(f(x, y)) :- A(x), A(y).
         };
         let m = query p select x from R(x);
-        Array.memberOf(6, m)
+        List.memberOf(6, m)
 
     @test
-    def testTermApply17(): Bool & Impure =
+    def testTermApply17(): Bool =
         let m = query ho1(inc) select x from R(x);
-        Array.memberOf(4, m)
+        List.memberOf(4, m)
 
     @test
-    def testTermApply18(): Bool & Impure =
+    def testTermApply18(): Bool =
         let m = query ho1(dec) select x from R(x);
-        Array.memberOf(0, m)
+        List.memberOf(0, m)
 
     @test
-    def testTermApply19(): Bool & Impure =
+    def testTermApply19(): Bool =
         let m = query ho2(add) select x from R(x);
-        Array.memberOf(6, m)
+        List.memberOf(6, m)
 
     @test
-    def testTermApply20(): Bool & Impure =
+    def testTermApply20(): Bool =
         let m = query ho3(inc) select x from P(x);
-        Array.memberOf(4, m)
+        List.memberOf(4, m)
 
     @test
-    def testTermApply21(): Bool & Impure =
+    def testTermApply21(): Bool =
         let m = query ho3(dec) select x from P(x);
-        Array.memberOf(0, m)
+        List.memberOf(0, m)
 
     @test
-    def testTermApply22(): Bool & Impure =
+    def testTermApply22(): Bool =
         let m = query ho3(_ -> true) select x from P(x);
-        Array.memberOf(true, m)
+        List.memberOf(true, m)
 
     @test
-    def testTermApply23(): Bool & Impure =
+    def testTermApply23(): Bool =
         let m = query ho3(_ -> "hello") select x from P(x);
-        Array.memberOf("hello", m)
+        List.memberOf("hello", m)
 
     pub def zer(): Int32 = 0
     pub def one(): Int32 = 1

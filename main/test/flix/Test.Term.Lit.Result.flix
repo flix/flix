@@ -1,27 +1,27 @@
 namespace Test/Term/Lit/Result {
 
     @test
-    def testLitResult01(): Bool & Impure =
+    def testLitResult01(): Bool =
         let p = #{
             A(Ok(123): Result[Int32, Int32]).
             B(Ok(123): Result[Int32, Int32]).
             R(x) :- A(x), B(x).
         };
         let r = query p select x from R(x);
-        Array.memberOf(Ok(123), r)
+        List.memberOf(Ok(123), r)
 
     @test
-    def testLitResult02(): Bool & Impure =
+    def testLitResult02(): Bool =
         let p = #{
             A(Ok("Hello World"): Result[String, Int32]).
             B(Ok("Hello World"): Result[String, Int32]).
             R(x) :- A(x), B(x).
         };
         let r = query p select x from R(x);
-        Array.memberOf(Ok("Hello World"), r)
+        List.memberOf(Ok("Hello World"), r)
 
     @test
-    def testLitResult03(): Bool & Impure =
+    def testLitResult03(): Bool =
         let p = #{
             A(Ok(123)).
             B(Ok(123)).
@@ -30,6 +30,6 @@ namespace Test/Term/Lit/Result {
             R(x) :- A(x), B(x).
         };
         let r = query p select x from R(x);
-        Array.memberOf(Ok(123), r)
+        List.memberOf(Ok(123), r)
 
 }

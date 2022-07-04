@@ -1,7 +1,7 @@
 namespace Test/Exp/Fixpoint {
 
     @test
-    def testSemiNaive01(): Bool & Impure =
+    def testSemiNaive01(): Bool =
         let db = #{
             Goal("x").
             Edge("y", "x").
@@ -21,7 +21,7 @@ namespace Test/Exp/Fixpoint {
             L(y; Set#{x}) :- Edge(y, x), Win(x).
             Win(x) :- A(x, n), L(x; s), if Set.size(s) >= n.
         };
-        let result = query db, pr select x from Win(x) |> Array.toSet;
+        let result = query db, pr select x from Win(x) |> List.toSet;
         result == Set#{"x", "y", "w"}
 
 }
