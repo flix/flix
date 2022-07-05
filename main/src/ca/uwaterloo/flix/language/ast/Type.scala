@@ -348,6 +348,11 @@ object Type {
     */
   val Empty: Type = Type.Cst(TypeConstructor.Empty, SourceLocation.Unknown)
 
+  /**
+    * Represents the All effect type.
+    */
+  val All: Type = Type.Cst(TypeConstructor.All, SourceLocation.Unknown)
+
   /////////////////////////////////////////////////////////////////////////////
   // Constructors                                                            //
   /////////////////////////////////////////////////////////////////////////////
@@ -926,6 +931,17 @@ object Type {
   }
 
   /**
+    * Returns the complement of the given type.
+    *
+    * Must not be used before kinding.
+    */
+  def mkComplement(tpe: Type, loc: SourceLocation): Type = tpe match {
+    case Type.Empty => Type.All
+    case Type.All => Type.Empty
+    case t => Type.Apply(Type.Cst(TypeConstructor.Complement, loc), t, loc)
+  }
+
+  /**
     * Returns the type `tpe1 + tpe2`
     *
     * Must not be used before kinding.
@@ -933,23 +949,50 @@ object Type {
   def mkUnion(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
     case (Empty, t) => t
     case (t, Empty) => t
+    case (All, t) => All
+    case (t, All) => All
     case _ => mkApply(Type.Cst(TypeConstructor.Union, loc), List(tpe1, tpe2), loc)
   }
 
   /**
     * Returns the union of all the given types.
+    *
+    * Must not be used before kinding.
     */
   def mkUnion(tpes: List[Type], loc: SourceLocation): Type = tpes match {
     case Nil => Type.Empty
-    case (x :: xs) => mkUnion(x, mkUnion(xs, loc), loc)
+    case x :: xs => mkUnion(x, mkUnion(xs, loc), loc)
   }
 
   /**
-    * Returns the type `tpe1 - tpe2`
+    * Returns the type `tpe1 & tpe2`
+    *
+    * Must not be used before kinding.
     */
-  def mkDifference(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = {
-    mkApply(Type.Cst(TypeConstructor.Difference, loc), List(tpe1, tpe2), loc)
+  def mkIntersection(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
+    case (Empty, _) => Empty
+    case (_, Empty) => Empty
+    case (All, t) => t
+    case (t, All) => t
+    case _ => mkApply(Type.Cst(TypeConstructor.Intersection, loc), List(tpe1, tpe2), loc)
   }
+
+  /**
+    * Returns the intersection of all the given types.
+    *
+    * Must not be used before kinding.
+    */
+  def mkIntersection(tpes: List[Type], loc: SourceLocation): Type = tpes match {
+    case Nil => Type.All
+    case x :: xs => mkIntersection(x, mkIntersection(xs, loc), loc)
+  }
+
+  /**
+    * Returns the difference of the given types.
+    *
+    * Must not be used before kinding.
+    */
+  def mkDifference(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = mkIntersection(tpe1, mkComplement(tpe2, loc), loc)
 
   /**
     * Returns a Region type for the given region argument `r` with the given source location `loc`.

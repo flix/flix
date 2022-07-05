@@ -68,6 +68,13 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
             case Type.Cst(TypeConstructor.Not, _) => BoolUnification.mkNot(y)
             case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => BoolUnification.mkAnd(x, y)
             case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => BoolUnification.mkOr(x, y)
+
+            // Simplify set expressions
+            case Type.Cst(TypeConstructor.Complement, _) => SetUnification.mkComplement(y)
+            case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) => SetUnification.mkIntersection(x, y)
+            case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) => SetUnification.mkUnion(x, y)
+
+            // Else just apply
             case x => Type.Apply(x, y, loc)
           }
         case Type.Alias(sym, args0, tpe0, loc) =>

@@ -342,6 +342,13 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represents the set of all effects.
+    */
+  case object All extends TypeConstructor {
+    def kind: Kind = Kind.Effect
+  }
+
+  /**
     * A type constructor that represent the type of regions.
     */
   case object Region extends TypeConstructor {
