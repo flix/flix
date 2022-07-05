@@ -998,10 +998,10 @@ object Resolver {
             case (o, es) => ResolvedAst.Expression.Do(o.sym, es, loc)
           }
 
-        case NamedAst.Expression.Resume(exps, loc) =>
-          val expsVal = traverse(exps)(visitExp(_, region))
-          mapN(expsVal) {
-            es => ResolvedAst.Expression.Resume(es, loc)
+        case NamedAst.Expression.Resume(exp, loc) =>
+          val expVal = visitExp(exp, region)
+          mapN(expVal) {
+            e => ResolvedAst.Expression.Resume(e, loc)
           }
 
         case NamedAst.Expression.InvokeConstructor(className, args, sig, loc) =>

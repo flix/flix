@@ -861,7 +861,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Resume: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("resume") ~ ArgumentList ~ SP ~> ParsedAst.Expression.Resume
+      SP ~ keyword("resume") ~ Argument ~ SP ~> ParsedAst.Expression.Resume
     }
 
     def Try: Rule1[ParsedAst.Expression] = {
