@@ -707,12 +707,13 @@ object ParsedAst {
     /**
       * ForEach Expression.
       *
-      * @param sp1  the position of the first character in the expression.
-      * @param gens the iterator generator expressions.
-      * @param exp  the body expression.
-      * @param sp2  the position of the last character in the expression.
+      * @param sp1   the position of the first character in the expression.
+      * @param gens  the iterator generator expressions.
+      * @param guard the optional guard of the expression.
+      * @param exp   the body expression.
+      * @param sp2   the position of the last character in the expression.
       */
-    case class ForEach(sp1: SourcePosition, gens: Seq[ForEachGenerator], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ForEach(sp1: SourcePosition, gens: Seq[ForEachGenerator], guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Tag Expression.
@@ -955,9 +956,9 @@ object ParsedAst {
     /**
       * Resume Expression.
       *
-      * @param sp1  the position of the first character in the expression.
+      * @param sp1 the position of the first character in the expression.
       * @param arg the argument to the continuation.
-      * @param sp2  the position of the last character in the expression.
+      * @param sp2 the position of the last character in the expression.
       */
     case class Resume(sp1: SourcePosition, arg: ParsedAst.Argument, sp2: SourcePosition) extends Expression
 
