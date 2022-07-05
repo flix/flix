@@ -1,7 +1,7 @@
 namespace Test/Exp/Foreach {
 
     //
-    // Note that some of these tests are poorly on purpose to test parsing is correct.
+    // Note that some of these tests are poorly formatted on purpose to test parsing.
     //
 
     @test
