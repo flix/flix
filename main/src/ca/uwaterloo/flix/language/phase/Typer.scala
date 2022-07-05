@@ -1359,17 +1359,15 @@ object Typer {
           } yield (resultTconstrs, resultTpe, resultPur, resultEff)
         }
 
-      case KindedAst.Expression.Resume(args, argTvar, retTvar, loc) => {
-        val arg = args.headOption.getOrElse(KindedAst.Expression.Unit(loc)) // MATT ugly hack; change this in parser
+      case KindedAst.Expression.Resume(exp, argTvar, retTvar, loc) =>
         for {
-          (tconstrs, tpe, pur, eff) <- visitExp(arg)
+          (tconstrs, tpe, pur, eff) <- visitExp(exp)
           resultTconstrs = tconstrs
-          _ <- expectTypeM(expected = argTvar, actual = tpe, arg.loc)
+          _ <- expectTypeM(expected = argTvar, actual = tpe, exp.loc)
           resultTpe = retTvar
           resultPur = pur
           resultEff = eff
         } yield (resultTconstrs, resultTpe, resultPur, resultEff)
-      }
 
       case KindedAst.Expression.InvokeConstructor(constructor, args, loc) =>
         val classType = getFlixType(constructor.getDeclaringClass)

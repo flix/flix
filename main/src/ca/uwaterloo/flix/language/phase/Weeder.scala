@@ -687,22 +687,24 @@ object Weeder {
         case e => WeededAst.Expression.Discard(e, loc)
       }
 
-    case ParsedAst.Expression.ForEach(sp1, pat, exp1, exp2, sp2) =>
+    case ParsedAst.Expression.ForEach(sp1, gens, exp, sp2) =>
       //
       // Rewrites a foreach loop to Foreach.foreach call.
       //
-      val loc = mkSL(sp1, sp2).asSynthetic
-      val patVal = visitPattern(pat)
-      val exp1Val = visitExp(exp1, senv)
-      val exp2Val = visitExp(exp2, senv)
+
       val fqn = "ForEach.foreach"
+      val loc = mkSL(sp1, sp2).asSynthetic
+      val patVals = traverse(gens)(g => visitPattern(g.pat))
+      val expVals = traverse(gens)(g => visitExp(g.exp, senv))
 
-      mapN(patVal, exp1Val, exp2Val) {
-        case (p, e1, e2) =>
-          val lambda = mkLambdaMatch(sp1, p, e2, sp2)
-          mkApplyFqn(fqn, List(lambda, e1), loc)
+      mapN(patVals, expVals, visitExp(exp, senv)) {
+        case (ps, e1s, e2) => ps.zip(e1s).foldRight(e2) {
+          case ((p, e), acc) =>
+            val lambda = mkLambdaMatch(sp1, p, acc, sp2)
+            val fparams = List(lambda, e)
+            mkApplyFqn(fqn, fparams, loc)
+        }
       }
-
 
     case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe, exp1, exp2, sp2) =>
       //
@@ -1367,7 +1369,7 @@ object Weeder {
         args => WeededAst.Expression.Do(op, args, loc)
       }
 
-    case ParsedAst.Expression.Resume(sp1, args0, sp2) =>
+    case ParsedAst.Expression.Resume(sp1, arg0, sp2) =>
       val loc = mkSL(sp1, sp2)
 
       // ensure we are in a handler
@@ -1378,9 +1380,9 @@ object Weeder {
         case SyntacticEnv.Top => WeederError.IllegalResume(loc).toFailure
       }
 
-      val argsVal = traverse(args0)(visitArgument(_, senv))
-      mapN(handlerVal, argsVal) {
-        case (_, args) => WeededAst.Expression.Resume(args, loc)
+      val argVal = visitArgument(arg0, senv)
+      mapN(handlerVal, argVal) {
+        case (_, arg) => WeededAst.Expression.Resume(arg, loc)
       }
 
     case ParsedAst.Expression.Try(sp1, exp, ParsedAst.CatchOrHandler.Catch(rules), sp2) =>
@@ -2832,7 +2834,7 @@ object Weeder {
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Stm(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Discard(sp1, _, _) => sp1
-    case ParsedAst.Expression.ForEach(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.ForEach(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _) => sp1

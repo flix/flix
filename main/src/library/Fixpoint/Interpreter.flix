@@ -142,13 +142,17 @@ namespace Fixpoint {
                 let rel = MutMap.getWithDefault(ramSym, new MutMap(Static), db);
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>
-                        let tuple = Tuple(Array.map(evalTerm(env), terms));
+                        let tuple = Tuple(List.map(evalTerm(env), terms) |> List.toArray(Static));
                         not MutMap.memberOf(tuple, rel)
                     case Denotation.Latticenal(bot, leq, _, _) =>
-                        let len = Array.length(terms);
-                        let key = Tuple(Array.init(Static, i -> evalTerm(env, terms[i]), len - 1));
-                        let lat = evalTerm(env, terms[len - 1]);
-                        not (lat `leq` MutMap.getWithDefault(key, bot, rel))
+                        let len = List.length(terms);
+                        let (keyTerms, latTermList) = terms |> List.map(evalTerm(env)) |> List.splitAt(len - 1);
+                        let key = Tuple(keyTerms |> List.toArray(Static));
+                        let latTerm = match List.head(latTermList) {
+                            case None => bug!("Found predicate without terms")
+                            case Some(hd) => hd
+                        };
+                        not (latTerm `leq` MutMap.getWithDefault(key, bot, rel))
                 }
             case BoolExp.Eq(lhs, rhs) =>
                 evalTerm(env, lhs) == evalTerm(env, rhs)

@@ -502,8 +502,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("discard") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Discard
     }
 
-    def ForEach: Rule1[ParsedAst.Expression.ForEach] = rule {
-      SP ~ keyword("foreach") ~ optWS ~ "(" ~ optWS ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ForEach
+    def ForEach: Rule1[ParsedAst.Expression.ForEach] = {
+      def ForEachGenerator: Rule1[ParsedAst.ForEachGenerator] = rule {
+        SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForEachGenerator
+      }
+
+      rule {
+        SP ~ keyword("foreach") ~ optWS ~ "(" ~ optWS ~ oneOrMore(ForEachGenerator).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ForEach
+      }
     }
 
     def Assign: Rule1[ParsedAst.Expression] = rule {
@@ -861,7 +867,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Resume: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("resume") ~ ArgumentList ~ SP ~> ParsedAst.Expression.Resume
+      SP ~ keyword("resume") ~ Argument ~ SP ~> ParsedAst.Expression.Resume
     }
 
     def Try: Rule1[ParsedAst.Expression] = {
