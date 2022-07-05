@@ -693,17 +693,7 @@ object Weeder {
       //
       val fqn = "ForEach.foreach"
       val loc = mkSL(sp1, sp2).asSynthetic
-
-      sealed trait Generator
-      case class Iterator(sp1: SourcePosition, pat: WeededAst.Pattern, exp: WeededAst.Expression, sp2: SourcePosition) extends Generator
-      case class Guard(sp1: SourcePosition, guard: WeededAst.Expression, sp2: SourcePosition) extends Generator
-
-      val genVals = traverse(gens) {
-        case ParsedAst.ForEachIterator(sp11, pat, exp, sp12) => mapN(visitPattern(pat), visitExp(exp, senv)) {
-          case (p, e) => Iterator(sp11, p, e, sp12)
-        }
-        case ParsedAst.ForEachGuard(sp11, guard, sp12) => mapN(visitExp(guard, senv))(g => Guard(sp11, g, sp12))
-      }
+      val genVals = mkForEachGenerators(gens)
 
       mapN(genVals, visitExp(exp, senv)) {
         case (gs, e0) => gs.foldRight(e0) {
@@ -1639,6 +1629,15 @@ object Weeder {
         case (e1, e2, e3) =>
           WeededAst.Expression.ReifyEff(ident, e1, e2, e3, mkSL(sp1, sp2))
       }
+  }
+
+  private def mkForEachGenerators(gens: Seq[ParsedAst.ForEachGenerator]) = {
+    traverse(gens) {
+      case ParsedAst.ForEachIterator(sp11, pat, exp, sp12) => mapN(visitPattern(pat), visitExp(exp, senv)) {
+        case (p, e) => Iterator(sp11, p, e, sp12)
+      }
+      case ParsedAst.ForEachGuard(sp11, guard, sp12) => mapN(visitExp(guard, senv))(g => Guard(sp11, g, sp12))
+    }
   }
 
   /**
@@ -3017,6 +3016,31 @@ object Weeder {
     val exp = WeededAst.Expression.Region(tpe, loc)
     region.getOrElse(exp)
   }
+
+  /**
+    * Helper trait for `ForEach`.
+    */
+  sealed trait ForEachGenerator
+
+  /**
+    * Represents a `foreach` iterator, i.e. `x <- xs`.
+    *
+    * @param sp1 the first character of the iterator.
+    * @param pat the pattern of the iterator.
+    * @param exp the iterable expression.
+    * @param sp2 the last character of the iterator.
+    */
+  case class Iterator(sp1: SourcePosition, pat: WeededAst.Pattern, exp: WeededAst.Expression, sp2: SourcePosition) extends ForEachGenerator
+
+  /**
+    * Represents a `foreach` guard, i.e. `if x > 1`.
+    *
+    * @param sp1   the first character of the guard.
+    * @param guard the guard expression.
+    * @param sp2   the last character of the guard.
+    */
+  case class Guard(sp1: SourcePosition, guard: WeededAst.Expression, sp2: SourcePosition) extends ForEachGenerator
+
 
   /**
     * The syntactic environment of an expression.
