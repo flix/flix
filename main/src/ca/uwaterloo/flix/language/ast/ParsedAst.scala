@@ -2159,10 +2159,10 @@ object ParsedAst {
   /**
     * A foreach expression generator, i.e. `x <- xs`.
     *
-    * @param sp1 the position of the first character in the expression.
+    * @param sp1 the position of the first character in the generator.
     * @param pat the pattern on the left hand side.
     * @param exp the iterable expression.
-    * @param sp2 the position of the last character in the expression.
+    * @param sp2 the position of the last character in the generator.
     */
   case class ForEachGenerator(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition)
 
