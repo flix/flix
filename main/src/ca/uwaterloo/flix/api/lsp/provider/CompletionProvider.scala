@@ -16,7 +16,9 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp._
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatScheme, FormatType}
 import ca.uwaterloo.flix.language.phase.Parser.Letters
 import ca.uwaterloo.flix.language.phase.Resolver.DerivableSyms
@@ -92,16 +94,16 @@ object CompletionProvider {
   /**
     * Process a completion request.
     */
-  def autoComplete(uri: String, pos: Position, source: Option[String])(implicit index: Index, root: TypedAst.Root): JObject = {
+  def autoComplete(uri: String, pos: Position, source: Option[String], currentErrors: List[CompilationMessage])(implicit index: Index, root: TypedAst.Root): JObject = {
     //
     // To the best of my knowledge, completions should never be Nil. It could only happen if source was None
     // (what would having no source even mean?) or if the position represented by pos was invalid with respect
     // to the source (which would imply a bug in VSCode?).
     //
-    val completions = source.flatMap(getContext(_, uri, pos)) match {
+    val completions = (source.flatMap(getContext(_, uri, pos)) match {
       case None => Nil
-      case Some(context) => getCompletions()(context, index, root)
-    }
+      case Some(context) => getCompletions()(context, index, root) ++ getCompletionsFromErrors(currentErrors)(context, index, root)
+    })
 
     ("status" -> "success") ~ ("result" -> CompletionList(isIncomplete = true, completions).toJSON)
   }
@@ -118,6 +120,26 @@ object CompletionProvider {
       getWithCompletions() ++
       getInstanceCompletions() ++
       getTypeCompletions()
+  }
+
+  private def getCompletionsFromErrors(errors: List[CompilationMessage])(implicit context: Context, index: Index, root: TypedAst.Root): Iterator[CompletionItem] = {
+    val undefinedNames = errors.collect {
+      case m: ResolutionError.UndefinedName => m
+    }
+    undefinedNames.headOption match {
+      case None => Iterator.empty
+      case Some(error) =>
+        // TODO: Here we would be smart.
+        // In particular, we wound enrich the ResolutionError.UndefinedName class to know what variables are in scope.
+        // We would then create a completion item foreach.
+        // But instead of doing that we just return a dummy item for now.
+        val item = CompletionItem(label = "dummy",
+          sortText = Priority.local("dummy"),
+          textEdit = TextEdit(context.range, s"dummy "),
+          detail = Some("dummy"),
+          kind = CompletionItemKind.Variable)
+        Iterator(item)
+    }
   }
 
   private def keywordCompletion(name: String)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
@@ -333,6 +355,7 @@ object CompletionProvider {
         case Ast.Annotation.Internal(_) => true
         case _ => false
       })
+
     val isPublic = decl.spec.mod.isPublic && !isInternal(decl)
     val isNamespace = word.nonEmpty && word.head.isUpper
     val isMatch = if (isNamespace)
