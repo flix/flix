@@ -1583,62 +1583,62 @@ namespace TestIterator {
 
     @test
     def takeL01(): Bool = region r {
-        List.toIterator(r, Nil: List[Unit]) |> Iterator.take(-1) |> Iterator.toList == Nil
+        List.toIterator(r, Nil: List[Unit]) |> Iterator.takeL(-1) |> Iterator.toList == Nil
     }
 
     @test
     def takeL02(): Bool = region r {
-        List.toIterator(r, Nil: List[Unit]) |> Iterator.take(0) |> Iterator.toList == Nil
+        List.toIterator(r, Nil: List[Unit]) |> Iterator.takeL(0) |> Iterator.toList == Nil
     }
 
     @test
     def takeL03(): Bool = region r {
-        List.toIterator(r, Nil: List[Unit]) |> Iterator.take(1) |> Iterator.toList == Nil
+        List.toIterator(r, Nil: List[Unit]) |> Iterator.takeL(1) |> Iterator.toList == Nil
     }
 
     @test
     def takeL04(): Bool = region r {
-        List.toIterator(r, 1 :: Nil) |> Iterator.take(-1) |> Iterator.toList == Nil
+        List.toIterator(r, 1 :: Nil) |> Iterator.takeL(-1) |> Iterator.toList == Nil
     }
 
     @test
     def takeL05(): Bool = region r {
-        List.toIterator(r, 1 :: Nil) |> Iterator.take(0) |> Iterator.toList == Nil
+        List.toIterator(r, 1 :: Nil) |> Iterator.takeL(0) |> Iterator.toList == Nil
     }
 
     @test
     def takeL06(): Bool = region r {
-        List.toIterator(r, 1 :: Nil) |> Iterator.take(1) |> Iterator.toList == 1 :: Nil
+        List.toIterator(r, 1 :: Nil) |> Iterator.takeL(1) |> Iterator.toList == 1 :: Nil
     }
 
     @test
     def takeL07(): Bool = region r {
-        List.toIterator(r, 1 :: Nil) |> Iterator.take(2) |> Iterator.toList == 1 :: Nil
+        List.toIterator(r, 1 :: Nil) |> Iterator.takeL(2) |> Iterator.toList == 1 :: Nil
     }
 
     @test
     def takeL08(): Bool = region r {
-        List.toIterator(r, 1 :: 2 :: Nil) |> Iterator.take(0) |> Iterator.toList == Nil
+        List.toIterator(r, 1 :: 2 :: Nil) |> Iterator.takeL(0) |> Iterator.toList == Nil
     }
 
     @test
     def takeL09(): Bool = region r {
-        List.toIterator(r, 1 :: 2 :: Nil) |> Iterator.take(1) |> Iterator.toList == 1 :: Nil
+        List.toIterator(r, 1 :: 2 :: Nil) |> Iterator.takeL(1) |> Iterator.toList == 1 :: Nil
     }
 
     @test
     def takeL10(): Bool = region r {
-        List.toIterator(r, 1 :: 2 :: Nil) |> Iterator.take(2) |> Iterator.toList == 1 :: 2 :: Nil
+        List.toIterator(r, 1 :: 2 :: Nil) |> Iterator.takeL(2) |> Iterator.toList == 1 :: 2 :: Nil
     }
 
     @test
     def takeL11(): Bool = region r {
-        List.toIterator(r, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> Iterator.take(2) |> Iterator.toList == 1 :: 2 :: Nil
+        List.toIterator(r, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> Iterator.takeL(2) |> Iterator.toList == 1 :: 2 :: Nil
     }
 
     @test
     def takeL12(): Bool = region r {
-        List.toIterator(r, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> Iterator.take(4) |> Iterator.toList == 1 :: 2 :: 3 :: 4 :: Nil
+        List.toIterator(r, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> Iterator.takeL(4) |> Iterator.toList == 1 :: 2 :: 3 :: 4 :: Nil
     }
 
 
