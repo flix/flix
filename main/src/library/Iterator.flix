@@ -527,10 +527,25 @@ namespace Iterator {
     ///
     /// Returns `iter` without the first `n` elements.
     ///
+    /// Returns an empty iterator if `n` is larger than the number of elements in `iter`.
+    /// Returns `iter` if `n < 0`.
+    ///
     /// Does *not* consume any elements from the iterator.
     ///
+    /// The original iterator `iter` should *not* be reused.
+    ///
     @Lazy
-    pub def drop(n: Int32, iter: Iterator[a, r]): Iterator[a, r] = ???
+    pub def dropL(n: Int32, iter: Iterator[a, r]): Iterator[a, r] \ Read(r) =
+        if (n <= 0)
+            iter
+        else
+            let Iterator(done, next) = iter;
+            discard region r2 {
+                let i = ref (n - 1) @ r2; // Subtract 1 since `forward` consumes 1 element before applying `f`.
+                let f = _ -> if (deref i <= 0) true else { i := deref i - 1; false };
+                forward(f, done, next)
+            };
+            iter
 
     ///
     /// Returns `iter` with the first `n` elements.
@@ -540,8 +555,10 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
+    /// The original iterator `iter` should *not* be reused.
+    ///
     @Lazy
-    pub def take(n: Int32, iter: Iterator[a, r]): Iterator[a, r] \ Write(r) =
+    pub def takeL(n: Int32, iter: Iterator[a, r]): Iterator[a, r] \ Write(r) =
         let r = Scoped.regionOf(iter);
         if (n < 0)
             new Iterator(r)
@@ -803,29 +820,6 @@ namespace Iterator {
                 case None    => filterMapForward(f, done, next)
                 case Some(b) => Some(b)
             }
-
-    ///
-    /// Returns `iter` without the first `n` elements.
-    ///
-    /// Returns an empty iterator if `n > length(l)`.
-    /// Returns `iter` if `n < 0`.
-    ///
-    /// Does *not* consume any elements from the iterator.
-    ///
-    /// The original iterator `iter` should *not* be reused.
-    ///
-    @Lazy
-    pub def dropL(n: Int32, iter: Iterator[a, r]): Iterator[a, r] \ Read(r) =
-        if (n <= 0)
-            iter
-        else
-            let Iterator(done, next) = iter;
-            discard region r2 {
-                let i = ref (n - 1) @ r2; // Subtract 1 since `forward` consumes 1 element before applying `f`.
-                let f = _ -> if (deref i <= 0) true else { i := deref i - 1; false };
-                forward(f, done, next)
-            };
-            iter
 
     ///
     /// Returns `iter` without the prefix of elements that satisfy
