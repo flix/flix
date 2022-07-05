@@ -532,7 +532,8 @@ class Flix {
     val result = for {
       afterDocumentor <- Documentor.run(typedAst)
       afterLowering <- Lowering.run(afterDocumentor)
-      afterMonomorph <- Monomorph.run(afterLowering)
+      afterEarlyTreeShaker <- EarlyTreeShaker.run(afterLowering)
+      afterMonomorph <- Monomorph.run(afterEarlyTreeShaker)
       afterSimplifier <- Simplifier.run(afterMonomorph)
       afterClosureConv <- ClosureConv.run(afterSimplifier)
       afterLambdaLift <- LambdaLift.run(afterClosureConv)
