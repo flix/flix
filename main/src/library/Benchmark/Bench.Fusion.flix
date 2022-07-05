@@ -240,8 +240,8 @@ pub def delayListCartesian(l: Array[Int32, r]): Benchmark =
 /// Returns a list of `n` concatenated lists with elements from `1` to `1_000`.
 ///
 pub def input(n: Int32, r: Region[r]): Array[Int32, r] \ Write(r) =
-    Array.range(1, n, r) |>
-    Array.flatMap(_ -> Array.range(1, 1_000, r))
+    Array.range(r, 1, n) |>
+    Array.flatMap(_ -> Array.range(r, 1, 1_000))
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Biboudis Suite                                                          ///
