@@ -687,25 +687,25 @@ object Weeder {
         case e => WeededAst.Expression.Discard(e, loc)
       }
 
-    case ParsedAst.Expression.ForEach(sp1, gens, exp, sp2) =>
+    case ParsedAst.Expression.ForEach(sp1, gens, exp, sp2) => ???
       //
       // Rewrites a foreach loop to Foreach.foreach call.
       //
+    /*
+          val fqn = "ForEach.foreach"
+          val loc = mkSL(sp1, sp2).asSynthetic
+          val patVals = traverse(gens)(g => visitPattern(g.pat))
+          val expVals = traverse(gens)(g => visitExp(g.exp, senv))
 
-      val fqn = "ForEach.foreach"
-      val loc = mkSL(sp1, sp2).asSynthetic
-      val patVals = traverse(gens)(g => visitPattern(g.pat))
-      val expVals = traverse(gens)(g => visitExp(g.exp, senv))
-
-      mapN(patVals, expVals, visitExp(exp, senv)) {
-        case (ps, e1s, e2) => ps.zip(e1s).foldRight(e2) {
-          case ((p, e), acc) =>
-            val lambda = mkLambdaMatch(sp1, p, acc, sp2)
-            val fparams = List(lambda, e)
-            mkApplyFqn(fqn, fparams, loc)
-        }
-      }
-
+          mapN(patVals, expVals, visitExp(exp, senv)) {
+            case (ps, e1s, e2) => ps.zip(e1s).foldRight(e2) {
+              case ((p, e), acc) =>
+                val lambda = mkLambdaMatch(sp1, p, acc, sp2)
+                val fparams = List(lambda, e)
+                mkApplyFqn(fqn, fparams, loc)
+            }
+          }
+    */
     case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe, exp1, exp2, sp2) =>
       //
       // Rewrites a let-match to a regular let-binding or a full-blown pattern match.
