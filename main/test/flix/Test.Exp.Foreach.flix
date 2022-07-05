@@ -250,7 +250,7 @@ namespace Test/Exp/Foreach {
     def testForeach28(): Bool = region r {
         let z = ref 0 @ r;
         foreach(  x <- 1 :: 2 :: Nil  ;   y  <-  3 :: 4 :: Nil;  if x > 1 and y > 3)z := deref z + (x * y);
-        deref z == (3 * 1) + (4 * 1) + (3 * 2) + (4 * 2)
+        deref z == 4 * 2
     }
 
     @test
@@ -259,7 +259,7 @@ namespace Test/Exp/Foreach {
         foreach (x <- 1 :: 2 :: Nil;
                  y <- 3 :: 4 :: Nil; if x > 1 and y > 3)
                     z := deref z + (x * y);
-        deref z == (3 * 1) + (4 * 1) + (3 * 2) + (4 * 2)
+        deref z == 4 * 2
     }
 
     @test
@@ -297,39 +297,31 @@ namespace Test/Exp/Foreach {
     }
 
     @test
-    def testForeach34(): Bool = region r {
-        let z = ref 0 @ r;
-        foreach (x <- 1 :: 2 :: Nil;y <- 3 :: 4 :: Nil)
-                    z := deref z + (x * y);
-        deref z == (3 * 1) + (4 * 1) + (3 * 2) + (4 * 2)
-    }
-
-    @test
     def testForeach35(): Bool = region r {
         let z = ref 0 @ r;
         foreach(  x <- 1 :: 2 :: Nil  ;   if x > 1 ;   y  <-  3 :: 4 :: Nil;if y > 3)z := deref z + (x * y);
-        deref z == (3 * 1) + (4 * 1) + (3 * 2) + (4 * 2)
+        deref z == 4 * 2
     }
 
     @test
     def testForeach36(): Bool = region r {
         let z = ref 0 @ r;
         foreach (x <- 1 :: 2 :: Nil;if x > 1; y <- 3 :: 4 :: Nil; if y > 3) z := deref z + (x * y);
-        deref z == (3 * 1) + (4 * 1) + (3 * 2) + (4 * 2)
+        deref z == 4 * 2
     }
 
     @test
     def testForeach37(): Bool = region r {
         let z = ref 0 @ r;
         foreach (x <- 1 :: 2 :: Nil; if x > 1; y <- 3 :: 4 :: Nil; if y > 3) z := deref z + (x * y);
-        deref z == (3 * 1) + (4 * 1) + (3 * 2) + (4 * 2)
+        deref z == 4 * 2
     }
 
     @test
     def testForeach38(): Bool = region r {
         let z = ref 0 @ r;
         foreach (x <- 1 :: 2 :: Nil; if x > 1; y <- 3 :: 4 :: Nil) z := deref z + (x * y);
-        deref z == (3 * 1) + (4 * 1) + (3 * 2) + (4 * 2)
+        deref z == (3 * 2) + (4 * 2)
     }
 
 }
