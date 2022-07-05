@@ -3,23 +3,18 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.ParsedAst.{Declaration, Effect, EffectSet, Type}
+import ca.uwaterloo.flix.language.ast.ParsedAst.{Argument, CatchOrHandler, Declaration, Effect, EffectSet, Expression, ForeachFragment, InterpolationPart, RecordOp, Type}
 import ca.uwaterloo.flix.language.ast.{Name, ParsedAst}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 
 object Metrics {
 
-  /* TODO Questions:
-      * Should type-classes and instances be included?
-      * Should private defs be counted?
-   */
-
   case class Metrics(lines: Int, functions: Int, pureFunctions: Int, impureFunctions: Int, polyFunctions: Int, regionFunctions: Int,
-                     oneRegionFunctions: Int, twoRegionFunctions: Int, threePlusRegionFunctions: Int) {
+                     oneRegionFunctions: Int, twoRegionFunctions: Int, threePlusRegionFunctions: Int, regionUses: Int) {
 
     def isEmpty: Boolean = /* lines == 0 && */ functions == 0 && pureFunctions == 0 && impureFunctions == 0 && polyFunctions == 0 && regionFunctions == 0 &&
-      oneRegionFunctions == 0 && twoRegionFunctions == 0 && threePlusRegionFunctions == 0
+      oneRegionFunctions == 0 && twoRegionFunctions == 0 && threePlusRegionFunctions == 0 && regionUses == 0
 
     override def toString: String = {
       def mkData(data: Int): String = f"$data%5d"
@@ -42,6 +37,7 @@ object Metrics {
           mkSPercent("1 region functions", oneRegionFunctions, regionFunctions) ::
           mkSPercent("2 region functions", twoRegionFunctions, regionFunctions) ::
           mkSPercent("+3 region functions", threePlusRegionFunctions, regionFunctions) ::
+          mkSPercent("region intros", regionUses, functions) ::
           Nil
       val terminalOutput = terminalOutputLines.mkString("\n")
 
@@ -55,6 +51,7 @@ object Metrics {
           mkSPercentNoName(oneRegionFunctions, regionFunctions) ::
           mkSPercentNoName(twoRegionFunctions, regionFunctions) ::
           mkSPercentNoName(threePlusRegionFunctions, regionFunctions) ::
+          mkSPercentNoName(regionUses, functions) ::
           Nil
       val latexOutput = latexOutputLines.mkString(" & ") + "\\\\\\hline"
 
@@ -68,6 +65,7 @@ object Metrics {
           mkDataNoSpace(oneRegionFunctions) ::
           mkDataNoSpace(twoRegionFunctions) ::
           mkDataNoSpace(threePlusRegionFunctions) ::
+          mkDataNoSpace(regionUses) ::
           Nil
       val csvOutput = csvOutputLines.mkString(", ")
 
@@ -83,14 +81,14 @@ object Metrics {
 
   def latexHeader(): String =
     s"""
-       |\\begin{tabular}{|l|l|r|r|r|r|r|r|r|r|}
+       |\\begin{tabular}{|l|l|r|r|r|r|r|r|r|r|r|}
        |  \\hline
-       |  file & lines & total & pure & impure & efpoly & regef & regef1 & regef2 & regef3+ \\\\\\hline
+       |  file & lines & total & pure & impure & efpoly & regef & regef1 & regef2 & regef3+ & region intros\\\\\\hline
        |""".stripMargin
 
   def csvHeader(): String =
     s"""
-       |file, lines, total, pure, impure, efpoly, regef, regef1, regef2, regef3+
+       |file, lines, total, pure, impure, efpoly, regef, regef1, regef2, regef3+, reg intro
        |""".stripMargin
 
   def latexEnd(): String =
@@ -98,11 +96,11 @@ object Metrics {
        |\n\\end{tabular}
        |""".stripMargin
 
-  case class DefIsh(name: String, tpe: ParsedAst.Type, purAndEff: ParsedAst.PurityAndEffect)
+  sealed case class DefIsh(name: String, exp: ParsedAst.Expression, tpe: ParsedAst.Type, purAndEff: ParsedAst.PurityAndEffect)
 
   private def getPubDefs(decl: ParsedAst.Declaration): Seq[DefIsh] = decl match {
     case ns: Declaration.Namespace => ns.decls.flatMap(getPubDefs)
-    case ddef: Declaration.Def => if (ddef.mod.exists(mod => mod.name == "pub")) List(DefIsh(ddef.ident.name, ddef.tpe, ddef.purAndEff)) else Nil
+    case ddef: Declaration.Def => if (ddef.mod.exists(mod => mod.name == "pub")) List(DefIsh(ddef.ident.name, ddef.exp, ddef.tpe, ddef.purAndEff)) else Nil
     case _: Declaration.Law => Nil
     case _: Declaration.Enum => Nil
     case _: Declaration.TypeAlias => Nil
@@ -296,6 +294,116 @@ object Metrics {
     combineOpts[Boolean](_ || _, purPart, efPart).getOrElse(false)
   }
 
+  private def introducesRegion(defIsh: DefIsh): Boolean = {
+    def visitSelectChannelRule(value: ParsedAst.SelectChannelRule): Boolean =
+      visitExp(value.chan) || visitExp(value.exp)
+    def visitCatchRule(value: ParsedAst.CatchRule): Boolean =
+      visitExp(value.exp)
+    def visitHandlerRule(value: ParsedAst.HandlerRule): Boolean =
+      visitExp(value.exp)
+    def visitCatchOrHandler(value: ParsedAst.CatchOrHandler): Boolean = value match {
+      case CatchOrHandler.Catch(rules) => rules.exists(visitCatchRule)
+      case CatchOrHandler.Handler(eff, rules) => rules.exists(_.exists(visitHandlerRule))
+    }
+    def visitInterpolationPart(value: ParsedAst.InterpolationPart): Boolean = value match {
+      case InterpolationPart.ExpPart(sp1, exp, sp2) => exp.exists(visitExp)
+      case InterpolationPart.StrPart(sp1, chars, sp2) => false
+    }
+    def visitRecordOp(value: ParsedAst.RecordOp): Boolean = value match {
+      case RecordOp.Extend(sp1, field, exp, sp2) => visitExp(exp)
+      case RecordOp.Restrict(sp1, field, sp2) => false
+      case RecordOp.Update(sp1, field, exp, sp2) => visitExp(exp)
+    }
+    def visitRecordField(value: ParsedAst.RecordField): Boolean =
+      visitExp(value.value)
+    def visitForeachFragment(value: ParsedAst.ForeachFragment): Boolean = value match {
+      case ForeachFragment.ForEach(sp1, pat, exp, sp2) => visitExp(exp)
+      case ForeachFragment.Guard(sp1, guard, sp2) => visitExp(guard)
+    }
+    def visitChoiceRule(value: ParsedAst.ChoiceRule): Boolean =
+      visitExp(value.exp)
+    def visitMatchRule(value: ParsedAst.MatchRule): Boolean =
+      value.guard.exists(visitExp) || visitExp(value.exp)
+    def visitArg(value: ParsedAst.Argument): Boolean = value match {
+      case Argument.Named(name, exp, sp2) => visitExp(exp)
+      case Argument.Unnamed(exp) => visitExp(exp)
+    }
+    def visitExp(exp: ParsedAst.Expression): Boolean = exp match {
+      case Expression.Scope(sp1, ident, exp, sp2) => true
+
+      case Expression.SName(sp1, name, sp2) => false
+      case Expression.QName(sp1, name, sp2) => false
+      case Expression.Hole(sp1, ident, sp2) => false
+      case Expression.Use(sp1, use, exp, sp2) => false
+      case Expression.Lit(sp1, lit, sp2) => false
+      case Expression.Intrinsic(sp1, op, exps, sp2) => exps.exists(visitArg)
+      case Expression.Apply(lambda, args, sp2) => visitExp(lambda) || args.exists(visitArg)
+      case Expression.Infix(e1, name, e2, sp2) => visitExp(e1) || visitExp(e2)
+      case Expression.Binary(exp1, op, exp2, sp2) => visitExp(exp1) || visitExp(exp2)
+      case Expression.Lambda(sp1, fparams, exp, sp2) => visitExp(exp)
+      case Expression.LambdaMatch(sp1, pat, exp, sp2) => visitExp(exp)
+      case Expression.Unary(sp1, op, exp, sp2) => visitExp(exp)
+      case Expression.IfThenElse(sp1, exp1, exp2, exp3, sp2) => visitExp(exp1) || visitExp(exp2) || visitExp(exp3)
+      case Expression.Stm(exp1, exp2, sp2) => visitExp(exp1) || visitExp(exp2)
+      case Expression.Discard(sp1, exp, sp2) => visitExp(exp)
+      case Expression.LetMatch(sp1, mod, pat, tpe, exp1, exp2, sp2) => visitExp(exp1) || visitExp(exp2)
+      case Expression.LetMatchStar(sp1, pat, tpe, exp1, exp2, sp2) => visitExp(exp1) || visitExp(exp2)
+      case Expression.LetRecDef(sp1, ident, fparams, exp1, exp2, sp2) => visitExp(exp1) || visitExp(exp2)
+      case Expression.LetImport(sp1, op, exp, sp2) => visitExp(exp)
+      case Expression.NewObject(sp1, fqn, sp2) => false
+      case Expression.Static(sp1, sp2) => false
+      case Expression.Match(sp1, exp, rules, sp2) => visitExp(exp) || rules.exists(visitMatchRule)
+      case Expression.Choose(sp1, star, exps, rules, sp2) => exps.exists(visitExp) || rules.exists(visitChoiceRule)
+      case Expression.ForEach(sp1, frags, exp, sp2) => frags.exists(visitForeachFragment) || visitExp(exp)
+      case Expression.Tag(sp1, name, exp, sp2) => exp.exists(visitExp)
+      case Expression.Tuple(sp1, elms, sp2) => elms.exists(visitExp)
+      case Expression.RecordLit(sp1, fields, sp2) => fields.exists(visitRecordField)
+      case Expression.RecordSelect(exp, field, sp2) => visitExp(exp)
+      case Expression.RecordSelectLambda(sp1, field, sp2) => false
+      case Expression.RecordOperation(sp1, ops, rest, sp2) => ops.exists(visitRecordOp) || visitExp(rest)
+      case Expression.New(sp1, qname, exp, sp2) => exp.exists(visitExp)
+      case Expression.ArrayLit(sp1, exps, exp, sp2) => exps.exists(visitExp) || exp.exists(visitExp)
+      case Expression.ArrayNew(sp1, exp1, exp2, exp3, sp2) => visitExp(exp1) || visitExp(exp2) || exp3.exists(visitExp)
+      case Expression.ArrayLoad(base, index, sp2) => visitExp(base) || visitExp(index)
+      case Expression.ArrayStore(base, indexes, elm, sp2) => visitExp(base) || indexes.exists(visitExp) || visitExp(elm)
+      case Expression.ArraySlice(base, beginIndex, endIndex, sp2) => visitExp(base) || beginIndex.exists(visitExp) || endIndex.exists(visitExp)
+      case Expression.FNil(sp1, sp2) => false
+      case Expression.FCons(exp1, sp1, sp2, exp2) => visitExp(exp1) || visitExp(exp2)
+      case Expression.FAppend(exp1, sp1, sp2, exp2) => visitExp(exp1) || visitExp(exp2)
+      case Expression.FSet(sp1, sp2, exps) => exps.exists(visitExp)
+      case Expression.FMap(sp1, sp2, exps) => exps.exists(p => visitExp(p._1) || visitExp(p._2))
+      case Expression.Interpolation(sp1, parts, sp2) => parts.exists(visitInterpolationPart)
+      case Expression.Ref(sp1, exp1, exp2, sp2) => visitExp(exp1) || exp2.exists(visitExp)
+      case Expression.Deref(sp1, exp, sp2) => visitExp(exp)
+      case Expression.Assign(exp1, exp2, sp2) => visitExp(exp1) || visitExp(exp2)
+      case Expression.Ascribe(exp, tpe, purAndEff, sp2) => visitExp(exp)
+      case Expression.Cast(exp, tpe, purAndEff, sp2) => visitExp(exp)
+      case Expression.Without(exp, eff, sp2) => visitExp(exp)
+      case Expression.Do(sp1, op, args, sp2) => args.exists(visitArg)
+      case Expression.Resume(sp1, arg, sp2) => visitArg(arg)
+      case Expression.Try(sp1, exp, catchOrHandler, sp2) => visitExp(exp) || visitCatchOrHandler(catchOrHandler)
+      case Expression.NewChannel(sp1, tpe, exp, sp2) => visitExp(exp)
+      case Expression.GetChannel(sp1, exp, sp2) => visitExp(exp)
+      case Expression.PutChannel(exp1, exp2, sp2) => visitExp(exp1) || visitExp(exp2)
+      case Expression.SelectChannel(sp1, rules, default, sp2) => rules.exists(visitSelectChannelRule) || default.exists(visitExp)
+      case Expression.Spawn(sp1, exp, sp2) => visitExp(exp)
+      case Expression.Lazy(sp1, exp, sp2) => visitExp(exp)
+      case Expression.Force(sp1, exp, sp2) => visitExp(exp)
+      case Expression.FixpointConstraint(sp1, con, sp2) => false // im lazy
+      case Expression.FixpointConstraintSet(sp1, cs, sp2) => false
+      case Expression.FixpointLambda(sp1, pparams, exp, sp2) => false
+      case Expression.FixpointCompose(exp1, exp2, sp2) => false
+      case Expression.FixpointInjectInto(sp1, exps, into, sp2) => false
+      case Expression.FixpointSolveWithProject(sp1, exps, idents, sp2) => false
+      case Expression.FixpointQueryWithSelect(sp1, exps, selects, from, whereExp, sp2) => false
+      case Expression.Reify(sp1, t, sp2) => false
+      case Expression.ReifyBool(sp1, t, sp2) => false
+      case Expression.ReifyType(sp1, t, sp2) => false
+      case Expression.ReifyPurity(sp1, exp1, ident, exp2, exp3, sp2) => visitExp(exp1) || visitExp(exp2) || visitExp(exp3)
+    }
+    visitExp(defIsh.exp)
+  }
+
   def run(root: ParsedAst.Root)(implicit flix: Flix): Validation[(Map[Source, Metrics], Metrics), CompilationMessage] = {
     val metrics = root.units.map {
       case (src, ParsedAst.CompilationUnit(_, _, decls, _)) =>
@@ -304,6 +412,7 @@ object Metrics {
         val functions = pubDefs.length
         val pureFunctions = pubDefs.count(isPure)
         val impureFunctions = pubDefs.count(isImpure)
+        val regionUses = pubDefs.count(introducesRegion)
 
         def regFunctions(f: Int => Boolean): Int = pubDefs.count(d => f(isRegionInvolved(d).size))
 
@@ -312,7 +421,7 @@ object Metrics {
 
         val metrics: Metrics = Metrics(
           lines, functions, pureFunctions, impureFunctions, effPolyFunctions,
-          regionFunctions, regFunctions(_ == 1), regFunctions(_ == 2), regFunctions(_ >= 3))
+          regionFunctions, regFunctions(_ == 1), regFunctions(_ == 2), regFunctions(_ >= 3), regionUses = regionUses)
         (src, metrics)
     }.filterNot{case (_, metrics) => metrics.isEmpty}
     val total = metrics.values.reduce((m1, m2) => {
@@ -325,7 +434,8 @@ object Metrics {
         regionFunctions = m1.regionFunctions + m2.regionFunctions,
         oneRegionFunctions = m1.oneRegionFunctions + m2.oneRegionFunctions,
         twoRegionFunctions = m1.twoRegionFunctions + m2.twoRegionFunctions,
-        threePlusRegionFunctions = m1.threePlusRegionFunctions + m2.threePlusRegionFunctions
+        threePlusRegionFunctions = m1.threePlusRegionFunctions + m2.threePlusRegionFunctions,
+        regionUses = m1.regionUses + m2.regionUses
       )
     })
 
