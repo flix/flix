@@ -707,12 +707,12 @@ object ParsedAst {
     /**
       * ForEach Expression.
       *
-      * @param sp1  the position of the first character in the expression.
-      * @param gens the foreach fragments.
-      * @param exp  the body expression.
-      * @param sp2  the position of the last character in the expression.
+      * @param sp1   the position of the first character in the expression.
+      * @param frags the foreach fragments.
+      * @param exp   the body expression.
+      * @param sp2   the position of the last character in the expression.
       */
-    case class ForEach(sp1: SourcePosition, gens: Seq[Fragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ForEach(sp1: SourcePosition, frags: Seq[Fragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Tag Expression.
