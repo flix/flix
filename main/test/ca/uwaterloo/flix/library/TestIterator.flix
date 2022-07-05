@@ -1538,6 +1538,111 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // dropL                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def dropL01(): Bool = region r {
+        (Nil: List[Int32]) |> List.toIterator(r) |>
+            Iterator.dropL(1) |> Iterator.toList == Nil
+    }
+    @test
+    def dropL02(): Bool = region r {
+        (1 :: Nil) |> List.toIterator(r) |>
+            Iterator.dropL(1) |> Iterator.toList == Nil
+    }
+
+    @test
+    def dropL03(): Bool = region r {
+        (1 :: 2 :: 3 :: Nil) |> List.toIterator(r) |>
+            Iterator.dropL(2) |> Iterator.toList == 3 :: Nil
+    }
+
+    @test
+    def dropL04(): Bool = region r {
+        (1 :: 2 :: 3 :: Nil) |> List.toIterator(r) |>
+            Iterator.dropL(3) |> Iterator.toList == Nil
+    }
+
+    @test
+    def dropL05(): Bool = region r {
+        (1 :: 2 :: 3 :: Nil) |> List.toIterator(r) |>
+            Iterator.dropL(4) |> Iterator.toList == Nil
+    }
+
+    @test
+    def dropL06(): Bool = region r {
+        (1 :: 2 :: 3 :: Nil) |> List.toIterator(r) |>
+            Iterator.dropL(0) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // take                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def takeL01(): Bool = region r {
+        List.toIterator(r, Nil: List[Unit]) |> Iterator.takeL(-1) |> Iterator.toList == Nil
+    }
+
+    @test
+    def takeL02(): Bool = region r {
+        List.toIterator(r, Nil: List[Unit]) |> Iterator.takeL(0) |> Iterator.toList == Nil
+    }
+
+    @test
+    def takeL03(): Bool = region r {
+        List.toIterator(r, Nil: List[Unit]) |> Iterator.takeL(1) |> Iterator.toList == Nil
+    }
+
+    @test
+    def takeL04(): Bool = region r {
+        List.toIterator(r, 1 :: Nil) |> Iterator.takeL(-1) |> Iterator.toList == Nil
+    }
+
+    @test
+    def takeL05(): Bool = region r {
+        List.toIterator(r, 1 :: Nil) |> Iterator.takeL(0) |> Iterator.toList == Nil
+    }
+
+    @test
+    def takeL06(): Bool = region r {
+        List.toIterator(r, 1 :: Nil) |> Iterator.takeL(1) |> Iterator.toList == 1 :: Nil
+    }
+
+    @test
+    def takeL07(): Bool = region r {
+        List.toIterator(r, 1 :: Nil) |> Iterator.takeL(2) |> Iterator.toList == 1 :: Nil
+    }
+
+    @test
+    def takeL08(): Bool = region r {
+        List.toIterator(r, 1 :: 2 :: Nil) |> Iterator.takeL(0) |> Iterator.toList == Nil
+    }
+
+    @test
+    def takeL09(): Bool = region r {
+        List.toIterator(r, 1 :: 2 :: Nil) |> Iterator.takeL(1) |> Iterator.toList == 1 :: Nil
+    }
+
+    @test
+    def takeL10(): Bool = region r {
+        List.toIterator(r, 1 :: 2 :: Nil) |> Iterator.takeL(2) |> Iterator.toList == 1 :: 2 :: Nil
+    }
+
+    @test
+    def takeL11(): Bool = region r {
+        List.toIterator(r, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> Iterator.takeL(2) |> Iterator.toList == 1 :: 2 :: Nil
+    }
+
+    @test
+    def takeL12(): Bool = region r {
+        List.toIterator(r, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> Iterator.takeL(4) |> Iterator.toList == 1 :: 2 :: 3 :: 4 :: Nil
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // join                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1620,46 +1725,6 @@ namespace TestIterator {
     def filterMapL04(): Bool = region r {
         (1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> List.toIterator(r) |>
             Iterator.filterMapL(x -> if (x mod 2 == 0) Some(x) else None) |> Iterator.toList == 2 :: 4 :: 6 :: Nil
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // dropL                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def dropL01(): Bool = region r {
-        (Nil: List[Int32]) |> List.toIterator(r) |>
-            Iterator.dropL(1) |> Iterator.toList == Nil
-    }
-    @test
-    def dropL02(): Bool = region r {
-        (1 :: Nil) |> List.toIterator(r) |>
-            Iterator.dropL(1) |> Iterator.toList == Nil
-    }
-
-    @test
-    def dropL03(): Bool = region r {
-        (1 :: 2 :: 3 :: Nil) |> List.toIterator(r) |>
-            Iterator.dropL(2) |> Iterator.toList == 3 :: Nil
-    }
-
-    @test
-    def dropL04(): Bool = region r {
-        (1 :: 2 :: 3 :: Nil) |> List.toIterator(r) |>
-            Iterator.dropL(3) |> Iterator.toList == Nil
-    }
-
-    @test
-    def dropL05(): Bool = region r {
-        (1 :: 2 :: 3 :: Nil) |> List.toIterator(r) |>
-            Iterator.dropL(4) |> Iterator.toList == Nil
-    }
-
-    @test
-    def dropL06(): Bool = region r {
-        (1 :: 2 :: 3 :: Nil) |> List.toIterator(r) |>
-            Iterator.dropL(0) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
     }
 
 
