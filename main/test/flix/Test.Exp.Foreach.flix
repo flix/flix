@@ -325,4 +325,11 @@ namespace Test/Exp/Foreach {
         deref z == (3 * 1) + (4 * 1) + (3 * 2) + (4 * 2)
     }
 
+    @test
+    def testForeach38(): Bool = region r {
+        let z = ref 0 @ r;
+        foreach (x <- 1 :: 2 :: Nil; if x > 1; y <- 3 :: 4 :: Nil) z := deref z + (x * y);
+        deref z == (3 * 1) + (4 * 1) + (3 * 2) + (4 * 2)
+    }
+
 }
