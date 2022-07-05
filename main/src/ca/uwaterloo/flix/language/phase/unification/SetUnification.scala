@@ -138,7 +138,6 @@ object SetUnification {
     */
   private def successiveVariableElimination(f: Type, fvs: List[Type.KindedVar])(implicit flix: Flix): Substitution = fvs match {
     case Nil =>
-      println(f)
       // Determine if f is unsatisfiable when all (rigid) variables and constants are made flexible.
       if (!satisfiable(deconst(f)))
         Substitution.empty
