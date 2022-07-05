@@ -692,20 +692,20 @@ object Weeder {
       // Rewrites a foreach loop to Foreach.foreach call.
       //
       val fqn = "ForEach.foreach"
-      val loc = mkSL(sp1, sp2).asSynthetic
-      val genVals = mkForEachGenerators(gens, senv)
-
-      mapN(genVals, visitExp(exp, senv)) {
-        case (gs, e0) => gs.foldRight(e0) {
-          case (Iterator(sp11, p, e1, sp12), acc) =>
-            val lambda = mkLambdaMatch(sp11, p, acc, sp12)
-            val fparams = List(lambda, e1)
-            mkApplyFqn(fqn, fparams, loc)
-
-          case (Guard(sp11, g, sp12), acc) =>
-            val loc1 = mkSL(sp11, sp12)
-            WeededAst.Expression.IfThenElse(g, acc, WeededAst.Expression.Unit(loc1), loc1)
-        }
+      foldRight(gens)(visitExp(exp, senv)) {
+        case (ParsedAst.ForEachIterator(sp11, pat, e1, sp12), e0) =>
+          mapN(visitPattern(pat), visitExp(e1, senv)) {
+            case (p, e2) =>
+              val loc = mkSL(sp11, sp12).asSynthetic
+              val lambda = mkLambdaMatch(sp11, p, e0, sp12)
+              val fparams = List(lambda, e2)
+              mkApplyFqn(fqn, fparams, loc)
+          }
+        case (ParsedAst.ForEachGuard(sp11, e1, sp12), e0) =>
+          mapN(visitExp(e1, senv)) { e2 =>
+            val loc = mkSL(sp11, sp12).asSynthetic
+            WeededAst.Expression.IfThenElse(e2, e0, WeededAst.Expression.Unit(loc), loc)
+          }
       }
 
     case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe, exp1, exp2, sp2) =>
@@ -1629,15 +1629,6 @@ object Weeder {
         case (e1, e2, e3) =>
           WeededAst.Expression.ReifyEff(ident, e1, e2, e3, mkSL(sp1, sp2))
       }
-  }
-
-  private def mkForEachGenerators(gens: Seq[ParsedAst.ForEachGenerator], senv: SyntacticEnv)(implicit flix: Flix): Validation[List[ForEachGenerator], WeederError] = {
-    traverse(gens) {
-      case ParsedAst.ForEachIterator(sp11, pat, exp, sp12) => mapN(visitPattern(pat), visitExp(exp, senv)) {
-        case (p, e) => Iterator(sp11, p, e, sp12)
-      }
-      case ParsedAst.ForEachGuard(sp11, guard, sp12) => mapN(visitExp(guard, senv))(g => Guard(sp11, g, sp12))
-    }
   }
 
   /**
@@ -3016,31 +3007,6 @@ object Weeder {
     val exp = WeededAst.Expression.Region(tpe, loc)
     region.getOrElse(exp)
   }
-
-  /**
-    * Helper trait for `ForEach`.
-    */
-  sealed trait ForEachGenerator
-
-  /**
-    * Represents a `foreach` iterator, i.e. `x <- xs`.
-    *
-    * @param sp1 the first character of the iterator.
-    * @param pat the pattern of the iterator.
-    * @param exp the iterable expression.
-    * @param sp2 the last character of the iterator.
-    */
-  case class Iterator(sp1: SourcePosition, pat: WeededAst.Pattern, exp: WeededAst.Expression, sp2: SourcePosition) extends ForEachGenerator
-
-  /**
-    * Represents a `foreach` guard, i.e. `if x > 1`.
-    *
-    * @param sp1   the first character of the guard.
-    * @param guard the guard expression.
-    * @param sp2   the last character of the guard.
-    */
-  case class Guard(sp1: SourcePosition, guard: WeededAst.Expression, sp2: SourcePosition) extends ForEachGenerator
-
 
   /**
     * The syntactic environment of an expression.
