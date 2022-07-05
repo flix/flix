@@ -389,7 +389,7 @@ namespace TestIterator {
 
     @test
     def toArray04(): Bool = region r {
-        Iterator.range(r, -100, 200) |> Iterator.toArray(r) `Array.sameElements` Array.range(-100, 200, r)
+        Iterator.range(r, -100, 200) |> Iterator.toArray(r) `Array.sameElements` Array.range(r, -100, 200)
     }
 
 
