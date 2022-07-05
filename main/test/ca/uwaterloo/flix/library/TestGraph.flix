@@ -216,7 +216,7 @@ namespace TestGraph {
     @test
     def isConnected07(): Bool =
         let s1 = graph05();
-        Graph.isConnected(src = 4, dst = 1, s1)
+        Graph.isConnected(src = 4, dst = 1, s1) == false
 
 
 }
