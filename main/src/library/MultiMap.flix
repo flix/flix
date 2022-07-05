@@ -548,6 +548,13 @@ namespace MultiMap {
         let MultiMap(m1) = m;
         m1
 
+    ///
+    /// Returns the MultiMap `m` as a list of singleton key-value pairs in ascending order.
+    ///
+    pub def toMutDeque(r: Region[r], m: MultiMap[k, v]): MutDeque[(k, Set[v]), r] \ Write(r) =
+        let MultiMap(m1) = m;
+        Map.toMutDeque(r, m1)
+
     // No traversable functions due to Order constraint that's outside the `Traversable` class.
 
     ///

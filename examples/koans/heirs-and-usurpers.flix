@@ -1,4 +1,4 @@
-pub def heirsAndUsurpers(parents: List[(person, person)], emperors: List[person]): {heirs :: Array[person, Static], usurpers :: Array[person, Static]} with Boxable[person] =
+pub def heirsAndUsurpers(parents: List[(person, person)], emperors: List[person]): {heirs :: List[person], usurpers :: List[person]} with Boxable[person] =
     let p = inject parents into Parent;
     let e = inject emperors into Emperor;
     let lp = #{

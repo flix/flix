@@ -1263,7 +1263,13 @@ object Typer {
           resultEff = declaredEff.getOrElse(actualEff)
         } yield (constrs, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.Without(exp, pur, loc) => visitExp(exp) // TODO actually infer
+      case KindedAst.Expression.Without(exp, sym, loc) =>
+        val effType = Type.Cst(TypeConstructor.Effect(sym), loc)
+        val expected = Type.mkDifference(Type.freshVar(Kind.Effect, loc), effType, loc)
+        for {
+          (tconstrs, tpe, pur, eff) <- visitExp(exp)
+          _ <- expectTypeM(expected = expected, actual = eff, exp.loc)
+        } yield (tconstrs, tpe, pur, expected)
 
       case KindedAst.Expression.TryCatch(exp, rules, loc) =>
         val rulesType = rules map {
@@ -1280,11 +1286,94 @@ object Typer {
           resultEff = Type.mkUnion(eff :: ruleEffs, loc)
         } yield (constrs ++ ruleConstrs.flatten, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.TryWith(exp, pur, rules, tvar, loc) => visitExp(exp) // TODO actually infer
+      case KindedAst.Expression.TryWith(exp, sym, rules, tvar, loc) =>
+        val effect = root.effects(sym)
+        val ops = effect.ops.map(op => op.sym -> op).toMap
 
-      case KindedAst.Expression.Do(op, args, loc) => InferMonad.point((Nil: List[Ast.TypeConstraint], Type.Unit, Type.Pure, Type.Empty)) // TODO actually infer
+        def unifyFormalParams(op: Symbol.OpSym, expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam]): InferMonad[Unit] = {
+          if (expected.length != actual.length) {
+            InferMonad.errPoint(TypeError.InvalidOpParamCount(op, expected = expected.length, actual = actual.length, loc))
+          } else {
+            val fparams = (expected zip actual) map {
+              case (ex, ac) =>
+                for {
+                  _ <- expectTypeM(expected = ex.tpe, actual = ac.tpe, ac.loc)
+                } yield ()
+            }
+            seqM(fparams).map(_ => ())
+          }
+        }
 
-      case KindedAst.Expression.Resume(args, argTvar, retTvar, loc) => InferMonad.point((Nil: List[Ast.TypeConstraint], Type.Unit, Type.Pure, Type.Empty)) // TODO actually infer
+        def visitHandlerRule(rule: KindedAst.HandlerRule): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = rule match {
+          case KindedAst.HandlerRule(op, actualFparams, body, opTvar) =>
+            // Don't need to generalize since ops are monomorphic
+            // Don't need to handle unknown op because resolver would have caught this
+            ops(op) match {
+              case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, opTpe, expectedPur, expectedEff, _)) =>
+                for {
+                  _ <- unifyFormalParams(op, expected = expectedFparams, actual = actualFparams)
+                  (actualTconstrs, actualTpe, actualPur, actualEff) <- visitExp(body)
+
+                  // unify the operation return type with its tvar
+                  _ <- unifyTypeM(opTpe, opTvar, body.loc)
+
+                  // unify the handler result type with the whole block's tvar
+                  resultTpe <- expectTypeM(expected = tvar, actual = actualTpe, body.loc)
+                  resultPur <- expectTypeM(expected = expectedPur, actual = actualPur, body.loc) // MATT improve error message for this
+                  resultEff <- expectTypeM(expected = expectedEff, actual = actualEff, body.loc)
+                } yield (actualTconstrs, resultTpe, resultPur, resultEff)
+            }
+        }
+
+        val effType = Type.Cst(TypeConstructor.Effect(sym), loc)
+        for {
+          (tconstrs, tpe, pur, eff) <- visitExp(exp)
+          (tconstrss, _, purs, effs) <- seqM(rules.map(visitHandlerRule)).map(unzip4)
+          resultTconstrs = (tconstrs :: tconstrss).flatten
+          resultTpe <- unifyTypeM(tvar, tpe, loc)
+          resultPur = Type.mkAnd(pur :: purs, loc)
+          resultEff = Type.mkUnion(Type.mkDifference(eff, effType, loc) :: effs, loc)
+        } yield (resultTconstrs, resultTpe, resultPur, resultEff)
+
+      case KindedAst.Expression.Do(op, args, loc) =>
+        val effect = root.effects(op.eff)
+        val operation = effect.ops.find(_.sym == op)
+          .getOrElse(throw InternalCompilerException(s"Unexpected missing operation $op in effect ${op.eff}"))
+        val effTpe = Type.Cst(TypeConstructor.Effect(op.eff), loc)
+
+        def visitArg(arg: KindedAst.Expression, fparam: KindedAst.FormalParam): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = {
+          for {
+            (tconstrs, tpe, pur, eff) <- visitExp(arg)
+            _ <- expectTypeM(expected = fparam.tpe, tpe, arg.loc)
+          } yield (tconstrs, tpe, pur, eff)
+        }
+
+        if (operation.spec.fparams.length != args.length) {
+          InferMonad.errPoint(TypeError.InvalidOpParamCount(op, expected = operation.spec.fparams.length, actual = args.length, loc))
+        } else {
+          val argM = (args zip operation.spec.fparams) map {
+            case (arg, fparam) => visitArg(arg, fparam)
+          }
+          for {
+            (tconstrss, _, purs, effs) <- seqM(argM).map(unzip4)
+            resultTconstrs = tconstrss.flatten
+            resultTpe = operation.spec.tpe
+            resultPur = Type.mkAnd(operation.spec.pur :: purs, loc)
+            resultEff = Type.mkUnion(effTpe :: operation.spec.eff :: effs, loc)
+          } yield (resultTconstrs, resultTpe, resultPur, resultEff)
+        }
+
+      case KindedAst.Expression.Resume(args, argTvar, retTvar, loc) => {
+        val arg = args.headOption.getOrElse(KindedAst.Expression.Unit(loc)) // MATT ugly hack; change this in parser
+        for {
+          (tconstrs, tpe, pur, eff) <- visitExp(arg)
+          resultTconstrs = tconstrs
+          _ <- expectTypeM(expected = argTvar, actual = tpe, arg.loc)
+          resultTpe = retTvar
+          resultPur = pur
+          resultEff = eff
+        } yield (resultTconstrs, resultTpe, resultPur, resultEff)
+      }
 
       case KindedAst.Expression.InvokeConstructor(constructor, args, loc) =>
         val classType = getFlixType(constructor.getDeclaringClass)
@@ -1569,7 +1658,7 @@ object Typer {
           (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
           _ <- unifyTypeM(tpe1, expectedSchemaType, loc)
           _ <- unifyTypeM(tpe2, Type.mkSchema(freshRestSchemaVar, loc), loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkArray(freshTupleVar, Type.False, loc), loc)
+          resultTyp <- unifyTypeM(tvar, mkList(freshTupleVar, loc), loc)
           resultPur = Type.mkAnd(pur1, pur2, loc)
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
@@ -1631,6 +1720,9 @@ object Typer {
 
     visitExp(exp0)
   }
+
+  private def mkList(t: Type, loc: SourceLocation): Type =
+    Type.mkEnum(Symbol.mkEnumSym("List"), List(t), loc)
 
   /**
     * Applies the given substitution `subst0` to the given expression `exp0`.

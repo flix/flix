@@ -30,8 +30,8 @@ namespace Graph {
             Reachable(n1, n2) :- Reachable(n1, m), Edge(m, n2).
         };
         let x = query edges, reachability select (src, dst) from Reachable(src, dst);
-        Array.toSet(x)
-    } as & Pure                         // TODO : delete cast when query uses regions
+        List.toSet(x)
+    }
 
     ///
     /// Returns the vertices that are reachable from the `origin` in the directed graph `g`.
@@ -47,7 +47,7 @@ namespace Graph {
             Reachable(n) :- Reachable(m), Edge(m, n).
         };
         let x = query edges, reachability select dst from Reachable(dst);
-        Array.toSet(x)
-    } as & Pure                         // TODO : delete cast when query uses regions
+        List.toSet(x)
+    }
 
 }
