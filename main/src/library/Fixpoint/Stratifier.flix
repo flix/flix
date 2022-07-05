@@ -32,7 +32,7 @@ namespace Fixpoint {
     ///
     def stratify(d: Datalog[v]): Map[PredSym, Int32] & Impure = match d {
         case Datalog(_, rules) =>
-            Array.foldRight(match Constraint(HeadAtom(p, _, _), _) -> Map.insert(p, 0), Map#{}, rules) |>
+            List.foldRight(match Constraint(HeadAtom(p, _, _), _) -> Map.insert(p, 0), Map#{}, rules) |>
             stratifyHelper(mkDepGraph(d))
         case Model(_) => Map#{} // Models contain only facts.
         case Join(d1, d2) => Map.unionWith(Int32.max, stratify(d1), stratify(d2))
@@ -78,7 +78,7 @@ namespace Fixpoint {
     }
 
     def mkDepGraph(d: Datalog[v]): PrecedenceGraph & Impure = match d {
-        case Datalog(_, rules) => Array.fold(Array.map(precedenceHelper, rules))
+        case Datalog(_, rules) => List.fold(List.map(precedenceHelper, rules))
         case Model(_) => Monoid.empty()
         case Join(d1, d2) => Monoid.combine(mkDepGraph(d1), mkDepGraph(d2))
     }
