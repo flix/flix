@@ -1543,7 +1543,7 @@ namespace TestIterator {
 
     @test
     def take01(): Bool = region r {
-        List.toIterator(r,, Nil: List[Unit]) |> Iterator.take(-1 |> Iterator.toList) == Nil
+        List.toIterator(r, Nil: List[Unit]) |> Iterator.take(-1) |> Iterator.toList == Nil
     }
 
     @test
@@ -1558,7 +1558,7 @@ namespace TestIterator {
 
     @test
     def take04(): Bool = region r {
-        List.toIterator(r,, 1 :: Nil) |> Iterator.take(-1 |> Iterator.toList) == Nil
+        List.toIterator(r, 1 :: Nil) |> Iterator.take(-1) |> Iterator.toList == Nil
     }
 
     @test
