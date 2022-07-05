@@ -108,7 +108,7 @@ pub def chainAppend(l: Array[Int32, r]): Benchmark =
 ///////////////////////////////////////////////////////////////////////////////
 /// Chain Suite                                                             ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def chainSuite(n: Int32, r: Region[r]): Array[Benchmark, r] \ Write(r) =
+pub def chainSuite(r: Region[r], n: Int32): Array[Benchmark, r] \ Write(r) =
     let l = Array.range(r, 1, n);
     [
         // Consing and Array.toList / Array.toChain should be pretty much the same
@@ -127,7 +127,7 @@ pub def chainSuite(n: Int32, r: Region[r]): Array[Benchmark, r] \ Write(r) =
     ] @ r
 
 def main() : Unit & Impure = region r {
-    let s1 = chainSuite(1000, r);
+    let s1 = chainSuite(r, 1000);
     Benchmark.runWithBudget(s1, 250_000_000_000i64);
     ()
 }

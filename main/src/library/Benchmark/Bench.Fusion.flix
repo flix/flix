@@ -239,15 +239,15 @@ pub def delayListCartesian(l: Array[Int32, r]): Benchmark =
 ///
 /// Returns a list of `n` concatenated lists with elements from `1` to `1_000`.
 ///
-pub def input(n: Int32, r: Region[r]): Array[Int32, r] \ Write(r) =
+pub def input(r: Region[r], n: Int32): Array[Int32, r] \ Write(r) =
     Array.range(r, 1, n) |>
     Array.flatMap(_ -> Array.range(r, 1, 1_000))
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Biboudis Suite                                                          ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def biboudisSuite(n: Int32, r: Region[r]): Array[Benchmark, r] \ Write(r) =
-    let l = input(n, r);
+pub def biboudisSuite(r: Region[r], n: Int32): Array[Benchmark, r] \ Write(r) =
+    let l = input(r, n);
     [
         // List
         listLength(l),
@@ -276,7 +276,7 @@ pub def biboudisSuite(n: Int32, r: Region[r]): Array[Benchmark, r] \ Write(r) =
     ] @ r
 
 def main() : Unit & Impure = region r {
-    let s1 = biboudisSuite(100, r);
+    let s1 = biboudisSuite(r, 100);
     Benchmark.runWithBudget(s1, 250_000_000_000i64);
     ()
 }
