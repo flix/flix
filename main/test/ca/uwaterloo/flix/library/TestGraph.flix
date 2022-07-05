@@ -116,7 +116,7 @@ namespace TestGraph {
     @test
     def reachable01(): Bool =
         let s1 = graph01();
-        Graph.reachable(1, s1) == Set#{}
+        Graph.reachable(1, s1) == Set#{1}
 
     @test
     def reachable02(): Bool =
@@ -142,6 +142,11 @@ namespace TestGraph {
     def reachable06(): Bool =
         let s1 = graph05();
         Graph.reachable(3, s1) == Set#{3, 4}
+
+    @test
+    def reachable07(): Bool =
+        let s1 = graph05();
+        Graph.reachable(5, s1) == Set#{5}
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -177,6 +182,11 @@ namespace TestGraph {
     def unreachable06(): Bool =
         let s1 = graph05();
         Graph.unreachable(3, s1) == Set#{1, 2}
+
+    @test
+    def unreachable07(): Bool =
+        let s1 = graph05();
+        Graph.unreachable(5, s1) == Set#{1, 2, 3, 4}
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -217,6 +227,11 @@ namespace TestGraph {
     def isConnected07(): Bool =
         let s1 = graph05();
         Graph.isConnected(src = 4, dst = 1, s1) == false
+
+    @test
+    def isConnected08(): Bool =
+        let s1 = graph05();
+        Graph.isConnected(src = 5, dst = 6, s1) == false
 
 
 }
