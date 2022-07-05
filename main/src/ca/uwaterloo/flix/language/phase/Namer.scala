@@ -544,7 +544,7 @@ object Namer {
     * Performs naming on the given effect operation `op0` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
   private def visitOp(op0: WeededAst.Declaration.Op, uenv0: UseEnv, tenv: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName, effSym: Symbol.EffectSym)(implicit flix: Flix): Validation[NamedAst.Op, NameError] = op0 match {
-    case WeededAst.Declaration.Op(doc, ann0, mod0, ident, fparams0, tpe0, retTpe0, tconstrs0, loc) =>
+    case WeededAst.Declaration.Op(doc, ann0, mod0, ident, fparams0, tpe0, tconstrs0, loc) =>
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
       val fparamsVal = getFormalParams(fparams0, uenv0, tenv)
@@ -927,10 +927,10 @@ object Namer {
         exps => NamedAst.Expression.Do(op, exps, loc)
       }
 
-    case WeededAst.Expression.Resume(exps0, loc) =>
-      val expsVal = traverse(exps0)(visitExp(_, env0, uenv0, tenv0))
-      mapN(expsVal) {
-        exps => NamedAst.Expression.Resume(exps, loc)
+    case WeededAst.Expression.Resume(exp, loc) =>
+      val expVal = visitExp(exp, env0, uenv0, tenv0)
+      mapN(expVal) {
+        e => NamedAst.Expression.Resume(e, loc)
       }
 
     case WeededAst.Expression.InvokeConstructor(className, args, sig, loc) =>
@@ -1512,7 +1512,7 @@ object Namer {
     case WeededAst.Expression.Cast(exp, _, _, _) => freeVars(exp)
     case WeededAst.Expression.Without(exp, _, _) => freeVars(exp)
     case WeededAst.Expression.Do(_, exps, _) => exps.flatMap(freeVars)
-    case WeededAst.Expression.Resume(exps, _) => exps.flatMap(freeVars)
+    case WeededAst.Expression.Resume(exp, _) => freeVars(exp)
     case WeededAst.Expression.TryWith(exp, _, rules, _) =>
       rules.foldLeft(freeVars(exp)) {
         case (fvs, WeededAst.HandlerRule(_, fparams, body)) => fvs ++ filterBoundVars(freeVars(body), fparams.map(_.ident))

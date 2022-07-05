@@ -1092,4 +1092,31 @@ class TestRedundancy extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.RedundantDiscard](result)
   }
+
+  test("DiscardedValue.01") {
+    val input =
+      """
+        |def f(): Unit = region r {
+        |    let arr = [2] @ r;
+        |    arr[0];
+        |    ()
+        |}
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.DiscardedValue](result)
+  }
+
+  test("DiscardedValue.02") {
+    val input =
+      """
+        |def f(g: Int32 -> Int32 & ef): Unit & ef = {
+        |    g(2);
+        |    ()
+        |}
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.DiscardedValue](result)
+  }
 }
