@@ -185,7 +185,7 @@ namespace TestGraph {
 
     @test
     def isConnected01(): Bool =
-        let s1 = graph02();
+        let s1 = graph01();
         Graph.isConnected(src = 1, dst = 2, s1) == false
 
     @test
@@ -201,7 +201,7 @@ namespace TestGraph {
     @test
     def isConnected04(): Bool =
         let s1 = graph03();
-        not Graph.isConnected(src = 1, dst = 3, s1)
+        Graph.isConnected(src = 1, dst = 3, s1) == false
 
     @test
     def isConnected05(): Bool =
@@ -212,6 +212,11 @@ namespace TestGraph {
     def isConnected06(): Bool =
         let s1 = graph05();
         Graph.isConnected(src = 2, dst = 4, s1)
+
+    @test
+    def isConnected07(): Bool =
+        let s1 = graph05();
+        Graph.isConnected(src = 4, dst = 1, s1)
 
 
 }
