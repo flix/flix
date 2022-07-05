@@ -175,10 +175,18 @@ object EarlyTreeShaker {
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Let(sym, mod, exp1, exp2, tpe, pur, loc) => ???
-    case Expression.LetRec(sym, mod, exp1, exp2, tpe, pur, loc) => ???
-    case Expression.Region(tpe, loc) => ???
-    case Expression.Scope(sym, regionVar, exp, tpe, pur, loc) => ???
+    case Expression.Let(sym, _, exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expression.LetRec(sym, _, exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expression.Region(_, _) =>
+      Set.empty
+
+    case Expression.Scope(sym, _, exp, _, _, _) =>
+      visitExp(exp)
+
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, loc) => ???
     case Expression.Stm(exp1, exp2, tpe, pur, loc) => ???
     case Expression.Discard(exp, pur, loc) => ???
