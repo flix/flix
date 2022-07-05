@@ -1440,16 +1440,27 @@ object Kinder {
   private def split(kenv0: KindEnv)(implicit flix: Flix): (KindEnv, Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym]) = {
     val (kenv, senv) = kenv0.map.foldLeft((Map.empty[Symbol.UnkindedTypeVarSym, Kind], Map.empty[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym])) {
       case ((kenvAcc, senvAcc), (sym, Kind.Beef)) =>
-        val effSym = Symbol.freshUnkindedTypeVarSym(sym.text, sym.isRegion, sym.loc)
+        val effSym = Symbol.freshUnkindedTypeVarSym(prime(sym.text), sym.isRegion, sym.loc)
+
         val kenv = kenvAcc + (effSym -> Kind.Effect) + (sym -> Kind.Bool)
         val senv = senvAcc + (sym -> effSym)
         (kenv, senv)
+
       case ((kenvAcc, senvAcc), (sym, kind)) =>
         val kenv = kenvAcc + (sym -> kind)
         val senv = senvAcc
         (kenv, senv)
     }
     (KindEnv(kenv), senv)
+  }
+
+  /**
+    * Adds a prime symbol to the vartext.
+    */
+  private def prime(text: Ast.VarText): Ast.VarText = text match {
+    case Ast.VarText.Absent => Ast.VarText.Absent
+    case Ast.VarText.SourceText(s) => Ast.VarText.SourceText(s + "'")
+    case Ast.VarText.FallbackText(s) => Ast.VarText.FallbackText(s + "'")
   }
 
   /**
