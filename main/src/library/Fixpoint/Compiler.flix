@@ -38,8 +38,8 @@ namespace Fixpoint {
     def compile(d: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] & Impure with ToString[v] = match d {
         case Datalog(facts, rules) =>
             let stmts = new MutList(Static);
-            Array.foreach(compileRule(stmts), facts);
-            Array.foldRight(rule -> match rule {
+            List.foreach(compileRule(stmts), facts);
+            List.foldRight(rule -> match rule {
                 case Constraint(HeadAtom(p, _, _), _) =>
                     let ruleStratum = Map.getWithDefault(p, 0, strat);
                     Map.insertWith(List.append, ruleStratum, rule :: Nil)

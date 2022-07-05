@@ -809,10 +809,10 @@ object Lowering {
     val factExps = cs.filter(c => c.body.isEmpty).map(visitConstraint)
     val ruleExps = cs.filter(c => c.body.nonEmpty).map(visitConstraint)
 
-    val factArrayExp = mkArray(factExps, Types.Constraint, loc)
-    val ruleArrayExp = mkArray(ruleExps, Types.Constraint, loc)
+    val factListExp = mkList(factExps, Types.Constraint, loc)
+    val ruleListExp = mkList(ruleExps, Types.Constraint, loc)
 
-    val innerExp = mkTuple(List(factArrayExp, ruleArrayExp), loc)
+    val innerExp = mkTuple(List(factListExp, ruleListExp), loc)
     mkTag(Enums.Datalog, "Datalog", innerExp, Types.Datalog, loc)
   }
 

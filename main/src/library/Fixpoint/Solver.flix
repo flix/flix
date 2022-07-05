@@ -70,7 +70,7 @@ namespace Fixpoint {
     @Internal
     pub def union(d1: Datalog[v], d2: Datalog[v]): Datalog[v] with Order[v] = match (d1, d2) {
         case (Datalog(edb1, idb1), Datalog(edb2, idb2)) =>
-            Datalog(Array.append(edb1, edb2), Array.append(idb1, idb2))
+            Datalog(List.append(edb1, edb2), List.append(idb1, idb2))
         case (Model(db1), Model(db2)) =>
             use Fixpoint/Ram.toDenotation;
             let union = ramSym -> match toDenotation(ramSym) {
@@ -85,7 +85,7 @@ namespace Fixpoint {
         case (Join(model, datalog), Model(_)) => Join(union(model, d2), datalog)
         case (Model(_), Join(model, datalog)) => Join(union(model, d1), datalog)
         case (Join(x, y), Join(z, w)) => Join(union(x, z), union(y, w))
-    } as & Pure
+    }
 
     ///
     /// Project all facts in the given Datalog program `d` that has `p` in its head.
@@ -93,8 +93,8 @@ namespace Fixpoint {
     @Internal
     pub def project(p: PredSym, d: Datalog[v]): Datalog[v] with Order[v] = match d {
         case Datalog(facts, _) =>
-            let pFacts = Array.filter(match Constraint(HeadAtom(head, _, _), _) -> head == p, facts);
-            Datalog(pFacts, [])
+            let pFacts = List.filter(match Constraint(HeadAtom(head, _, _), _) -> head == p, facts);
+            Datalog(pFacts, Nil)
         case Model(db) =>
             Map.query(ramSym -> match ramSym {
                 case RamSym.Full(predSym, _, _) => match predSym <=> p {
@@ -106,7 +106,7 @@ namespace Fixpoint {
             List.toMap |>
             Model
         case Join(d1, d2) => union(project(p, d1), project(p, d2))
-    } as & Pure
+    }
 
     ///
     /// Renames every predicate symbol in `d` with a fresh name, except for those in `preds`.
@@ -685,7 +685,7 @@ namespace Fixpoint {
     def factsOf(f: List[v] -> t & ef, p: PredSym, d: Datalog[v]): List[t] & Impure = match d {
         case Datalog(_, cs) =>
             let pFacts = new MutList(Static);
-            Array.foreach(c -> match c {
+            List.foreach(c -> match c {
                 case Constraint(HeadAtom(headPred, _, terms), Nil) =>
                     if (headPred == p)
                         let vs = List.map(headTermValue, terms);
