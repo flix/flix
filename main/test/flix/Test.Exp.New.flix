@@ -19,7 +19,7 @@ namespace Test/Exp/New {
     @test
     def testNewMutList1Region04(): Unit =
         region r {
-            let _ = new MutList(r): MutList[String, r];
+            discard new MutList(r): MutList[String, r];
             ()
         }
 
@@ -36,7 +36,7 @@ namespace Test/Exp/New {
 
     @test
     def testNewMutList2RegionsFlat01(): MutList[Int32, Static] & Impure =
-        region _ {
+        discard region _ {
             new MutList(Static): MutList[String, Static]
         };
         region _ {
@@ -46,7 +46,7 @@ namespace Test/Exp/New {
     @test
     def testNewMutList2RegionsFlat02(): MutList[Int32, Static] & Impure =
         let _ = region r {
-            let _ = new MutList(r): MutList[String, r];
+            discard new MutList(r): MutList[String, r];
             ()
         };
         region _ {
@@ -55,22 +55,22 @@ namespace Test/Exp/New {
 
     @test
     def testNewMutList2RegionsFlat03(): Unit & Impure =
-        region _ {
+        discard region _ {
             new MutList(Static): MutList[String, Static]
         };
         region r {
-            let _ = new MutList(r): MutList[Int32, r];
+            discard new MutList(r): MutList[Int32, r];
             ()
         }
 
     @test
     def testNewMutList2RegionsFlat04(): Bool =
         let res1 = region r {
-            let _ = new MutList(r): MutList[String, r];
+            discard new MutList(r): MutList[String, r];
             ()
         };
         let res2 = region r {
-            let _ = new MutList(r): MutList[Int32, r];
+            discard new MutList(r): MutList[Int32, r];
             ()
         };
         res1 == () and res1 == res2
@@ -243,7 +243,7 @@ namespace Test/Exp/New {
     @test
     def testNewMutMap1Region04(): Unit =
         region r {
-            let _ = new MutMap(r): MutMap[Int32, String, r];
+            discard new MutMap(r): MutMap[Int32, String, r];
             ()
         }
 
@@ -260,7 +260,7 @@ namespace Test/Exp/New {
 
     @test
     def testNewMutMap2RegionsFlat01(): MutMap[Int32, Int32, Static] & Impure =
-        region _ {
+        discard region _ {
             new MutMap(Static): MutMap[Int32, String, Static]
         };
         region _ {
@@ -270,7 +270,7 @@ namespace Test/Exp/New {
     @test
     def testNewMutMap2RegionsFlat02(): MutMap[Int32, Int32, Static] & Impure =
         let _ = region r {
-            let _ = new MutMap(r): MutMap[Int32, String, r];
+            discard new MutMap(r): MutMap[Int32, String, r];
             ()
         };
         region _ {
@@ -279,22 +279,22 @@ namespace Test/Exp/New {
 
     @test
     def testNewMutMap2RegionsFlat03(): Unit & Impure =
-        region _ {
+        discard region _ {
             new MutMap(Static): MutMap[Int32, String, Static]
         };
         region r {
-            let _ = new MutMap(r): MutMap[Int32, Int32, r];
+            discard new MutMap(r): MutMap[Int32, Int32, r];
             ()
         }
 
     @test
     def testNewMutMap2RegionsFlat04(): Bool =
         let res1 = region r {
-            let _ = new MutMap(r): MutMap[Int32, String, r];
+            discard new MutMap(r): MutMap[Int32, String, r];
             ()
         };
         let res2 = region r {
-            let _ = new MutMap(r): MutMap[String, Int32, r];
+            discard new MutMap(r): MutMap[String, Int32, r];
             ()
         };
         res1 == () and res1 == res2

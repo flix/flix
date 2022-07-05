@@ -96,6 +96,9 @@ object PrettyExpression {
     case Expression.Stm(exp1, exp2, _, _, _) =>
       s"${pretty(exp1); pretty(exp2)}"
 
+    case Expression.Discard(exp, _, _) =>
+      s"discard ${pretty(exp)}"
+
     //
     //    case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //

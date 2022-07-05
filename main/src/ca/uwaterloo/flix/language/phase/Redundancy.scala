@@ -395,6 +395,8 @@ object Redundancy {
         (us1 ++ us2) + UnderAppliedFunction(exp1.tpe, exp1.loc)
       } else if (isUselessExpression(exp1)) {
         (us1 ++ us2) + UselessExpression(exp1.tpe, exp1.loc)
+      } else if (isImpureDiscardedValue(exp1)) {
+        (us1 ++ us2) + DiscardedValue(exp1.tpe, exp1.loc)
       } else {
         us1 ++ us2
       }
@@ -794,6 +796,12 @@ object Redundancy {
     */
   private def isUselessExpression(exp: Expression): Boolean =
     exp.pur == Type.Pure
+
+  /**
+    * Returns true if the expression is not pure and not unit type.
+    */
+  private def isImpureDiscardedValue(exp: Expression): Boolean =
+    exp.pur != Type.Pure && exp.tpe != Type.Unit
 
   /**
     * Returns the free variables in the pattern `p0`.
