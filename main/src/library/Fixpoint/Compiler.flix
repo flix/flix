@@ -180,7 +180,7 @@ namespace Fixpoint {
             let arity = List.length(ramTerms);
             let projection = RelOp.Project(ramTerms, RamSym.New(headSym, arity, headDen));
             let join = compileBody(env, augBody);
-            let loopBody = RelOp.If(BoolExp.NotMemberOf(List.toArray(Static, ramTerms), RamSym.Full(headSym, arity, headDen)) :: join, projection);
+            let loopBody = RelOp.If(BoolExp.NotMemberOf(ramTerms, RamSym.Full(headSym, arity, headDen)) :: join, projection);
             let compile = delta -> { // `delta` designates the focused atom.
                 let insert =
                     List.foldRight(match (atom, rowVar) -> acc -> match atom {
@@ -302,7 +302,7 @@ namespace Fixpoint {
     /// (2) comes from the negative atom `not A(x)`.
     /// (3) is a function call that computes the expression `x > 0`.
     ///
-    def compileBody(env: Map[VarSym, RamTerm[v]], body: List[(BodyPredicate[v], RowVar)]): List[BoolExp[v]] & Impure =
+    def compileBody(env: Map[VarSym, RamTerm[v]], body: List[(BodyPredicate[v], RowVar)]): List[BoolExp[v]] =
         List.foldRight(match (atom, rowVar) -> acc ->
             let compileBodyTerm = term -> j -> match term {
                 case BodyTerm.Wild      => RamTerm.RowLoad(rowVar, j)
@@ -324,7 +324,7 @@ namespace Fixpoint {
                 case BodyAtom(bodySym, denotation, Polarity.Negative, _, terms) =>
                     let ramTerms = List.mapWithIndex(compileBodyTerm, terms);
                     let arity = List.length(ramTerms);
-                    BoolExp.NotMemberOf(List.toArray(Static, ramTerms), RamSym.Full(bodySym, arity, denotation)) :: acc
+                    BoolExp.NotMemberOf(ramTerms, RamSym.Full(bodySym, arity, denotation)) :: acc
                 case Guard0(f) =>
                     BoolExp.Guard0(f) :: acc
                 case Guard1(f, v) =>
