@@ -687,7 +687,7 @@ object Weeder {
         case e => WeededAst.Expression.Discard(e, loc)
       }
 
-    case ParsedAst.Expression.ForEach(sp1, gens, guard, exp, sp2) =>
+    case ParsedAst.Expression.ForEach(sp1, gens, exp, sp2) =>
       //
       // Rewrites a foreach loop to Foreach.foreach call.
       //
@@ -2834,7 +2834,7 @@ object Weeder {
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Stm(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Discard(sp1, _, _) => sp1
-    case ParsedAst.Expression.ForEach(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.ForEach(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _) => sp1
