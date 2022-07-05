@@ -157,4 +157,46 @@ namespace Test/Exp/Foreach {
         deref y == 2
     }
 
+    @test
+    def testForeach18(): Bool = region r {
+        let z = ref 0 @ r;
+        foreach (x <- 1 :: 2 :: Nil;y <- 3 :: 4 :: Nil)
+                    z := deref z + (x * y);
+        deref z == (3 * 1) + (4 * 1) + (3 * 2) + (4 * 2)
+    }
+
+    @test
+    def testForeach19(): Bool = region r {
+        let z = ref 0 @ r;
+        foreach(  x <- 1 :: 2 :: Nil  ;   y  <-  3 :: 4 :: Nil )z := deref z + (x * y);
+        deref z == (3 * 1) + (4 * 1) + (3 * 2) + (4 * 2)
+    }
+
+    @test
+    def testForeach20(): Bool = region r {
+        let z = ref 0 @ r;
+        foreach (x <- 1 :: 2 :: Nil;
+                 y <- 3 :: 4 :: Nil)
+                    z := deref z + (x * y);
+        deref z == (3 * 1) + (4 * 1) + (3 * 2) + (4 * 2)
+    }
+
+    @test
+    def testForeach21(): Bool = region r {
+        let z = ref 0 @ r;
+        foreach (x <- 1 :: 2 :: Nil;
+                 y <- 3 :: 4 :: Nil;
+                 _ <- List.range(0, 10)) {
+                    z := deref z + (x * y)
+        };
+        deref z == (3 * 1) * 10 + (4 * 1) * 10 + (3 * 2) * 10 + (4 * 2) * 10
+    }
+
+    @test
+    def testForeach22(): Bool = region r {
+        let z = ref "" @ r;
+        foreach (x <- "1" :: "2" :: Nil; y <- "3" :: "4" :: Nil) z := deref z + "(${x} * ${y}) + ";
+        deref z == "(1 * 3) + (1 * 4) + (2 * 3) + (2 * 4) + "
+    }
+
 }
