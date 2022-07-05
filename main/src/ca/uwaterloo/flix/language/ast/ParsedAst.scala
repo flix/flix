@@ -708,7 +708,7 @@ object ParsedAst {
       * ForEach Expression.
       *
       * @param sp1  the position of the first character in the expression.
-      * @param gens the foreach generators.
+      * @param gens the foreach fragments.
       * @param exp  the body expression.
       * @param sp2  the position of the last character in the expression.
       */
@@ -2164,21 +2164,21 @@ object ParsedAst {
   object Fragment {
 
     /**
-      * A foreach expression generator, i.e. `x <- xs`.
+      * A foreach fragment, i.e. `x <- xs`.
       *
-      * @param sp1 the position of the first character in the generator.
+      * @param sp1 the position of the first character in the fragment.
       * @param pat the pattern on the left hand side.
       * @param exp the iterable expression.
-      * @param sp2 the position of the last character in the generator.
+      * @param sp2 the position of the last character in the fragment.
       */
     case class ForEach(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition) extends Fragment
 
     /**
-      * A foreach expression generator, i.e. `x <- xs`.
+      * A foreach guard fragment, i.e. `x <- xs`.
       *
-      * @param sp1   the position of the first character in the generator.
+      * @param sp1   the position of the first character in the fragment.
       * @param guard the optional guard.
-      * @param sp2   the position of the last character in the generator.
+      * @param sp2   the position of the last character in the fragment.
       */
     case class Guard(sp1: SourcePosition, guard: ParsedAst.Expression, sp2: SourcePosition) extends Fragment
 
