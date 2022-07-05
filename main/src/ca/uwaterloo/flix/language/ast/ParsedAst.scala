@@ -712,7 +712,7 @@ object ParsedAst {
       * @param exp  the body expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class ForEach(sp1: SourcePosition, gens: Seq[ForEachGenerator], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ForEach(sp1: SourcePosition, gens: Seq[Fragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Tag Expression.
@@ -2156,26 +2156,32 @@ object ParsedAst {
     */
   case class PurityAndEffect(pur: Option[Type], eff: Option[EffectSet])
 
-
-  sealed trait ForEachGenerator
-
   /**
-    * A foreach expression generator, i.e. `x <- xs`.
-    *
-    * @param sp1 the position of the first character in the generator.
-    * @param pat the pattern on the left hand side.
-    * @param exp the iterable expression.
-    * @param sp2 the position of the last character in the generator.
+    * Represents a super type for `for`-expression fragments.
     */
-  case class ForEachIterator(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition) extends ForEachGenerator
+  sealed trait Fragment
 
-  /**
-    * A foreach expression generator, i.e. `x <- xs`.
-    *
-    * @param sp1   the position of the first character in the generator.
-    * @param guard the optional guard.
-    * @param sp2   the position of the last character in the generator.
-    */
-  case class ForEachGuard(sp1: SourcePosition, guard: ParsedAst.Expression, sp2: SourcePosition) extends ForEachGenerator
+  object Fragment {
+
+    /**
+      * A foreach expression generator, i.e. `x <- xs`.
+      *
+      * @param sp1 the position of the first character in the generator.
+      * @param pat the pattern on the left hand side.
+      * @param exp the iterable expression.
+      * @param sp2 the position of the last character in the generator.
+      */
+    case class ForEach(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition) extends Fragment
+
+    /**
+      * A foreach expression generator, i.e. `x <- xs`.
+      *
+      * @param sp1   the position of the first character in the generator.
+      * @param guard the optional guard.
+      * @param sp2   the position of the last character in the generator.
+      */
+    case class Guard(sp1: SourcePosition, guard: ParsedAst.Expression, sp2: SourcePosition) extends Fragment
+
+  }
 
 }

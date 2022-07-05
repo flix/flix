@@ -687,13 +687,13 @@ object Weeder {
         case e => WeededAst.Expression.Discard(e, loc)
       }
 
-    case ParsedAst.Expression.ForEach(sp1, gens, exp, sp2) =>
+    case ParsedAst.Expression.ForEach(_, gens, exp, _) =>
       //
       // Rewrites a foreach loop to Foreach.foreach call.
       //
       val fqn = "ForEach.foreach"
       foldRight(gens)(visitExp(exp, senv)) {
-        case (ParsedAst.ForEachIterator(sp11, pat, e1, sp12), e0) =>
+        case (ParsedAst.Fragment.ForEach(sp11, pat, e1, sp12), e0) =>
           mapN(visitPattern(pat), visitExp(e1, senv)) {
             case (p, e2) =>
               val loc = mkSL(sp11, sp12).asSynthetic
@@ -701,7 +701,7 @@ object Weeder {
               val fparams = List(lambda, e2)
               mkApplyFqn(fqn, fparams, loc)
           }
-        case (ParsedAst.ForEachGuard(sp11, e1, sp12), e0) =>
+        case (ParsedAst.Fragment.Guard(sp11, e1, sp12), e0) =>
           mapN(visitExp(e1, senv)) { e2 =>
             val loc = mkSL(sp11, sp12).asSynthetic
             WeededAst.Expression.IfThenElse(e2, e0, WeededAst.Expression.Unit(loc), loc)

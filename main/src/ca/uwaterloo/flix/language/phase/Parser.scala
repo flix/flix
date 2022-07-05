@@ -504,20 +504,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def ForEach: Rule1[ParsedAst.Expression.ForEach] = {
 
-      def ForEachIterator: Rule1[ParsedAst.ForEachIterator] = rule {
-        SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForEachIterator
+      def ForEachFragment: Rule1[ParsedAst.Fragment.ForEach] = rule {
+        SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.Fragment.ForEach
       }
 
-      def ForEachGuard: Rule1[ParsedAst.ForEachGuard] = rule {
-        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.ForEachGuard
+      def GuardFragment: Rule1[ParsedAst.Fragment.Guard] = rule {
+        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.Fragment.Guard
       }
 
-      def ForEachGenerator: Rule1[ParsedAst.ForEachGenerator] = rule {
-        ForEachIterator | ForEachGuard
+      def Fragment: Rule1[ParsedAst.Fragment] = rule {
+        ForEachFragment | GuardFragment
       }
 
       rule {
-        SP ~ keyword("foreach") ~ optWS ~ "(" ~ optWS ~ oneOrMore(ForEachGenerator).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ForEach
+        SP ~ keyword("foreach") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Fragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ForEach
       }
     }
 
