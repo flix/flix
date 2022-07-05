@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 
 object SetUnification {
 
@@ -61,7 +62,20 @@ object SetUnification {
     ///
     /// Run the expensive boolean unification algorithm.
     ///
-    booleanUnification(eraseAliases(tpe1), eraseAliases(tpe2), renv)
+    booleanUnification(simplify(eraseAliases(tpe1)), simplify(eraseAliases(tpe2)), renv)
+  }
+
+  /**
+    * Simplifies the type, removing trivial redundancies and the Difference construct.
+    */
+  private def simplify(tpe: Type): Type = tpe match {
+    case COMPLEMENT(tpe1) => mkComplement(tpe1)
+    case UNION(tpe1, tpe2) => mkUnion(tpe1, tpe2)
+    case INTERSECTION(tpe1, tpe2) => mkIntersection(tpe1, tpe2)
+    case DIFFERENCE(tpe1, tpe2) => mkDifference(tpe1, tpe2)
+    case _: Type.Var => tpe
+    case _: Type.Cst => tpe
+    case Type.Apply(tpe1, tpe2, loc) => Type.Apply(simplify(tpe1), simplify(tpe2), loc)
   }
 
   /**
@@ -120,13 +134,13 @@ object SetUnification {
   }
 
   /**
-    * Performs success variable elimination on the given boolean expression `f`.
+    * Performs successive variable elimination on the given set expression `f`.
     */
   private def successiveVariableElimination(f: Type, fvs: List[Type.KindedVar])(implicit flix: Flix): Substitution = fvs match {
     case Nil =>
       println(f)
-      // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
-      if (!satisfiable(f))
+      // Determine if f is unsatisfiable when all (rigid) variables and constants are made flexible.
+      if (!satisfiable(deconst(f)))
         Substitution.empty
       else
         throw SetUnificationException
@@ -136,11 +150,40 @@ object SetUnification {
       val t1 = Substitution.singleton(x.sym, Type.All)(f)
       val se = successiveVariableElimination(mkIntersection(t0, t1), xs)
 
-//      val f1 = BoolTable.minimizeType(mkUnion(se(t0), mkIntersection(x, mkComplement(se(t1)))))
+      //      val f1 = BoolTable.minimizeType(mkUnion(se(t0), mkIntersection(x, mkComplement(se(t1)))))
       // TODO enable minimization
       val f1 = mkUnion(se(t0), mkIntersection(x, mkComplement(se(t1))))
       val st = Substitution.singleton(x.sym, f1)
       st ++ se
+  }
+
+  /**
+    * Transforms effect constants in the type into variables.
+    */
+  private def deconst(t0: Type)(implicit flix: Flix): Type = {
+    val eenv = mutable.Map.empty[Symbol.EffectSym, Type]
+
+    def visit(t: Type): Type = t match {
+      case Type.Cst(TypeConstructor.Effect(sym), loc) =>
+        eenv.getOrElseUpdate(sym, Type.freshVar(Kind.Effect, loc, text = Ast.VarText.SourceText(sym.name)))
+
+      case COMPLEMENT(tpe) => mkComplement(visit(tpe))
+      case INTERSECTION(tpe1, tpe2) => mkIntersection(visit(tpe1), visit(tpe2))
+      case UNION(tpe1, tpe2) => mkUnion(visit(tpe1), visit(tpe2))
+
+      case Type.Apply(tpe1, tpe2, loc) => Type.Apply(visit(tpe1), visit(tpe2), loc)
+
+      case tpe: Type.Cst => tpe
+      case tpe: Type.KindedVar => tpe
+      case tpe: Type.UnkindedVar => tpe
+
+      case _: Type.Alias => throw InternalCompilerException("Unexpected type alias.")
+      case _: Type.UnkindedArrow => throw InternalCompilerException("Unexpected unkinded type.")
+      case _: Type.ReadWrite => throw InternalCompilerException("Unexpected unkinded type.")
+      case _: Type.Ascribe => throw InternalCompilerException("Unexpected unkinded type.")
+    }
+
+    visit(t0)
   }
 
   /**
@@ -357,6 +400,11 @@ object SetUnification {
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, tpe1.loc), tpe1, tpe1.loc), tpe2, tpe1.loc)
   }
 
+  /**
+    * Returns the difference of the given types.
+    */
+  def mkDifference(tpe1: Type, tpe2: Type): Type = mkIntersection(tpe1, mkComplement(tpe2))
+
   private object COMPLEMENT {
     @inline
     def unapply(tpe: Type): Option[Type] = tpe match {
@@ -377,6 +425,14 @@ object SetUnification {
     @inline
     def unapply(tpe: Type): Option[(Type, Type)] = tpe match {
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _) => Some((x, y))
+      case _ => None
+    }
+  }
+
+  private object DIFFERENCE {
+    @inline
+    def unapply(tpe: Type): Option[(Type, Type)] = tpe match {
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y, _) => Some((x, y))
       case _ => None
     }
   }
