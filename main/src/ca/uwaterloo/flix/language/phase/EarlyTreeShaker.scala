@@ -24,6 +24,8 @@ import ca.uwaterloo.flix.language.ast.{Ast, Symbol, TypedAst}
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
+import scala.annotation.tailrec
+
 /**
   * The Tree Shaking phase removes all unused function definitions.
   *
@@ -78,16 +80,18 @@ object EarlyTreeShaker {
     reachable
   }
 
+  @tailrec
   private def isBenchmark(l: List[Annotation]): Boolean = l match {
     case Nil => false
     case Ast.Annotation.Benchmark(_) :: _ => true
     case _ :: xs => isBenchmark(xs)
   }
 
+  @tailrec
   private def isTest(l: List[Annotation]): Boolean = l match {
     case Nil => false
     case Ast.Annotation.Test(_) :: _ => true
-    case _ :: xs => isBenchmark(xs)
+    case _ :: xs => isTest(xs)
   }
 
   /**
