@@ -1538,6 +1538,71 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // take                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def take01(): Bool = region r {
+        List.toIterator(r,, Nil: List[Unit]) |> Iterator.take(-1 |> Iterator.toList) == Nil
+    }
+
+    @test
+    def take02(): Bool = region r {
+        List.toIterator(r, Nil: List[Unit]) |> Iterator.take(0) |> Iterator.toList == Nil
+    }
+
+    @test
+    def take03(): Bool = region r {
+        List.toIterator(r, Nil: List[Unit]) |> Iterator.take(1) |> Iterator.toList == Nil
+    }
+
+    @test
+    def take04(): Bool = region r {
+        List.toIterator(r,, 1 :: Nil) |> Iterator.take(-1 |> Iterator.toList) == Nil
+    }
+
+    @test
+    def take05(): Bool = region r {
+        List.toIterator(r, 1 :: Nil) |> Iterator.take(0) |> Iterator.toList == Nil
+    }
+
+    @test
+    def take06(): Bool = region r {
+        List.toIterator(r, 1 :: Nil) |> Iterator.take(1) |> Iterator.toList == 1 :: Nil
+    }
+
+    @test
+    def take07(): Bool = region r {
+        List.toIterator(r, 1 :: Nil) |> Iterator.take(2) |> Iterator.toList == 1 :: Nil
+    }
+
+    @test
+    def take08(): Bool = region r {
+        List.toIterator(r, 1 :: 2 :: Nil) |> Iterator.take(0) |> Iterator.toList == Nil
+    }
+
+    @test
+    def take09(): Bool = region r {
+        List.toIterator(r, 1 :: 2 :: Nil) |> Iterator.take(1) |> Iterator.toList == 1 :: Nil
+    }
+
+    @test
+    def take10(): Bool = region r {
+        List.toIterator(r, 1 :: 2 :: Nil) |> Iterator.take(2) |> Iterator.toList == 1 :: 2 :: Nil
+    }
+
+    @test
+    def take11(): Bool = region r {
+        List.toIterator(r, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> Iterator.take(2) |> Iterator.toList == 1 :: 2 :: Nil
+    }
+
+    @test
+    def take12(): Bool = region r {
+        List.toIterator(r, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> Iterator.take(4) |> Iterator.toList == 1 :: 2 :: 3 :: 4 :: Nil
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // join                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 

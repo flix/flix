@@ -525,6 +525,38 @@ namespace Iterator {
         Iterator(done, next)
 
     ///
+    /// Returns `iter` without the first `n` elements.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    @Lazy
+    pub def drop(n: Int32, iter: Iterator[a, r]): Iterator[a, r] = ???
+
+    ///
+    /// Returns `iter` with the first `n` elements.
+    ///
+    /// Returns `iter` if `n` is larger than the number of elements in `iter`.
+    /// Returns an empty iterator if `n < 0`.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    @Lazy
+    pub def take(n: Int32, iter: Iterator[a, r]): Iterator[a, r] \ Write(r) =
+        let r = Scoped.regionOf(iter);
+        if (n < 0)
+            new Iterator(r)
+        else
+            let Iterator(done, next) = iter;
+            let i = ref 0 @ r;
+            let done1 = () -> done() or (deref i) >= n;
+            let next1 = () -> {
+                let x = next();
+                i := deref i + 1;
+                x
+            };
+            Iterator(done1, next1)
+
+    ///
     /// Returns the longest prefix of `iter` that satisfies the predicate `f`.
     ///
     /// Consumes the entire iterator.
