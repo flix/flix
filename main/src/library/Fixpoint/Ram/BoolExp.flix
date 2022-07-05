@@ -19,7 +19,7 @@ namespace Fixpoint/Ram {
     @Internal
     pub enum BoolExp[v] {
         case Empty(RamSym[v])
-        case NotMemberOf(Array[RamTerm[v], Static], RamSym[v])
+        case NotMemberOf(List[RamTerm[v]], RamSym[v])
         case Eq(RamTerm[v], RamTerm[v])
         case Leq(v -> v -> Bool, RamTerm[v], RamTerm[v])
         case Guard0(Unit -> Bool)
@@ -35,7 +35,7 @@ namespace Fixpoint/Ram {
             use Fixpoint.commaSeparate;
             match exp {
                 case Empty(ramSym) => "${ramSym} == ∅"
-                case NotMemberOf(terms, ramSym) => "(${commaSeparate(terms)}) ∉ ${ramSym}"
+                case NotMemberOf(terms, ramSym) => "(${terms |> List.join(", ")}) ∉ ${ramSym}"
                 case Eq(lhs, rhs) => "${lhs} == ${rhs}"
                 case Leq(_, lhs, rhs) => "${lhs} ≤ ${rhs}"
                 case Guard0(_) => "<clo>()"
@@ -44,6 +44,6 @@ namespace Fixpoint/Ram {
                 case Guard3(_, v1, v2, v3) => "<clo>(${v1}, ${v2}, ${v3})"
                 case Guard4(_, v1, v2, v3, v4) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
                 case Guard5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
-            } as & Pure
+            }
     }
 }
