@@ -18,7 +18,7 @@ namespace Graph {
     ///
     /// Returns the transitive closure of the directed graph `g`.
     ///
-    pub def closure(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Boxable[t] = {
+    pub def closure(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Boxable[t] =
         let edges = inject g into Edge;
         let reachability = #{
             // All nodes can reach themselves.
@@ -31,29 +31,27 @@ namespace Graph {
         };
         let x = query edges, reachability select (src, dst) from Reachable(src, dst);
         List.toSet(x)
-    }
 
     ///
-    /// Returns the vertices that are reachable from the `origin` in the directed graph `g`.
+    /// Returns the vertices that are reachable from the `src` in the directed graph `g`.
     ///
-    pub def reachable(origin: t, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] = {
+    pub def reachable(src: t, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] =
         let edges = inject g into Edge;
         let reachability = #{
             // A node can reach itself.
-            Reachable(origin).
-            // If `origin` can reach `m` and there is an edge from `m` to `n`
-            // then `origin` can also reach `n`. This adds all node pairs to
+            Reachable(src).
+            // If `src` can reach `m` and there is an edge from `m` to `n`
+            // then `src` can also reach `n`. This adds all node pairs to
             // the relational that are reachable using any number of nodes.
             Reachable(n) :- Reachable(m), Edge(m, n).
         };
         let x = query edges, reachability select dst from Reachable(dst);
         List.toSet(x)
-    }
 
     ///
-    /// Returns the vertices that are unreachable from the `origin` in the directed graph `g`.
+    /// Returns the vertices that are unreachable from the `src` in the directed graph `g`.
     ///
-    pub def unreachable(origin: t, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] =
+    pub def unreachable(src: t, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] =
         let edges = inject g into Edge;
         let nodes = #{
             Node(x) :- Edge(x, _).
@@ -61,14 +59,14 @@ namespace Graph {
         };
         let reachability = #{
             // A node can reach itself.
-            Reachable(origin).
-            // If `origin` can reach `m` and there is an edge from `m` to `n`
-            // then `origin` can also reach `n`. This adds all node pairs to
+            Reachable(src).
+            // If `src` can reach `m` and there is an edge from `m` to `n`
+            // then `src` can also reach `n`. This adds all node pairs to
             // the relational that are reachable using any number of nodes.
             Reachable(n) :- Reachable(m), Edge(m, n).
         };
         let unreachablility = #{
-            // If there is a node that is not Reachable from origin then it is unreachable.
+            // If there is a node that is not Reachable from src then it is unreachable.
             UnReachable(x) :- Node(x), not Reachable(x).
         };
         let x = query edges, nodes, reachability, unreachablility select dst from UnReachable(dst);
