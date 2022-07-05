@@ -53,8 +53,12 @@ namespace Graph {
     ///
     /// Returns the vertices that are unreachable from the `origin` in the directed graph `g`.
     ///
-    pub def unreachable(origin: t, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] = {
+    pub def unreachable(origin: t, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] =
         let edges = inject g into Edge;
+        let nodes = #{
+            Node(x) :- Edge(x, _).
+            Node(x) :- Edge(_, x).
+        };
         let reachability = #{
             // A node can reach itself.
             Reachable(origin).
@@ -64,16 +68,11 @@ namespace Graph {
             Reachable(n) :- Reachable(m), Edge(m, n).
         };
         let unreachablility = #{
-            // If there is an Edge to a node that is not Reachable from origin
-            // then it is unreachable.
-            UnReachable(n) :- Edge(_, n), not Reachable(n).
-            // If there is an Edge from a node that is not Reachable from origin
-            // then it is unreachable.
-            UnReachable(n) :- Edge(n, _), not Reachable(n).
+            // If there is a node that is not Reachable from origin then it is unreachable.
+            UnReachable(x) :- Node(x), not Reachable(x).
         };
-        let x = query edges, reachability, unreachablility select dst from UnReachable(dst);
-        Array.toSet(x)
-    } as & Pure                         // TODO : delete cast when query uses regions
+        let x = query edges, nodes, reachability, unreachablility select dst from UnReachable(dst);
+        List.toSet(x)
 
     ///
     /// Returns `true` if there is a path from `src` to `dst` in the directed graph `g`.
