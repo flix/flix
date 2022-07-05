@@ -313,12 +313,12 @@ object Unification {
     arrowType match {
       case Type.Apply(_, resultType, _) =>
         if (Unification.unifiesWith(resultType, argType, renv)) {
-          arrowType.typeArguments.lift(1) match {
+          arrowType.typeArguments.lift(2) match {
             case None => default
             case Some(excessArgument) => TypeError.OverApplied(excessArgument, fullType1, fullType2, loc)
           }
         } else {
-          arrowType.typeArguments.lift(1) match {
+          arrowType.typeArguments.lift(2) match {
             case None => default
             case Some(missingArgument) => TypeError.UnderApplied(missingArgument, fullType1, fullType2, loc)
           }

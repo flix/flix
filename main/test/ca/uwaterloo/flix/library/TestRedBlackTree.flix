@@ -768,4 +768,59 @@ namespace TestRedBlackTree {
         RedBlackTree.filterMap(x -> if (x > 1) Some("${x}") else None, RedBlackTree.empty() |> RedBlackTree.insert(1, 1) |> RedBlackTree.insert(2, 2) |> RedBlackTree.insert(3, 3) |> RedBlackTree.insert(4, 4))
             |> RedBlackTree.toList |> List.sort == (2, "2") :: (3, "3") :: (4, "4") :: Nil
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toMutDeque                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutDeque01(): Bool = region r {
+        let t = RedBlackTree.empty(): RedBlackTree.RedBlackTree[Int32, Int32];
+        let d1 = RedBlackTree.toMutDeque(r, t);
+
+        let d2 = new MutDeque(r);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque02(): Bool = region r {
+        let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 1);
+        let d1 = RedBlackTree.toMutDeque(r, t);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushBack((1, 1), d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque03(): Bool = region r {
+        let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 1) |> RedBlackTree.insert(2, 2)
+                                     |> RedBlackTree.insert(3, 3) |> RedBlackTree.insert(4, 4);
+        let d1 = RedBlackTree.toMutDeque(r, t);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushBack((2, 2), d2);
+        MutDeque.pushBack((3, 3), d2);
+        MutDeque.pushBack((4, 4), d2);
+        MutDeque.pushFront((1, 1), d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque04(): Bool = region r {
+        let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b')
+                                     |> RedBlackTree.insert(3, 'c') |> RedBlackTree.insert(4, 'd');
+        let d1 = RedBlackTree.toMutDeque(r, t);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushFront((4, 'd'), d2);
+        MutDeque.pushFront((3, 'c'), d2);
+        MutDeque.pushFront((2, 'b'), d2);
+        MutDeque.pushFront((1, 'a'), d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
 }

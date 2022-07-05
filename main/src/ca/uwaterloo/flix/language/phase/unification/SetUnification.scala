@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020 Magnus Madsen
+ *  Copyright 2022 Matthew Lutze
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,10 +23,10 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import scala.annotation.tailrec
 
-object BoolUnification {
+object SetUnification {
 
   /**
-    * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
+    * Returns the most general unifier of the two given set formulas `tpe1` and `tpe2`.
     */
   def unify(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     ///
@@ -38,10 +38,10 @@ object BoolUnification {
 
     tpe1 match {
       case x: Type.KindedVar if renv.isFlexible(x.sym) =>
-        if (tpe2 eq Type.True)
-          return Ok(Substitution.singleton(x.sym, Type.True))
-        if (tpe2 eq Type.False)
-          return Ok(Substitution.singleton(x.sym, Type.False))
+        if (tpe2 eq Type.All)
+          return Ok(Substitution.singleton(x.sym, Type.All))
+        if (tpe2 eq Type.Empty)
+          return Ok(Substitution.singleton(x.sym, Type.Empty))
 
       case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable")
       case _ => // nop
@@ -49,10 +49,10 @@ object BoolUnification {
 
     tpe2 match {
       case y: Type.KindedVar if renv.isFlexible(y.sym) =>
-        if (tpe1 eq Type.True)
-          return Ok(Substitution.singleton(y.sym, Type.True))
-        if (tpe1 eq Type.False)
-          return Ok(Substitution.singleton(y.sym, Type.False))
+        if (tpe1 eq Type.All)
+          return Ok(Substitution.singleton(y.sym, Type.All))
+        if (tpe1 eq Type.Empty)
+          return Ok(Substitution.singleton(y.sym, Type.Empty))
 
       case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable")
       case _ => // nop
@@ -65,7 +65,7 @@ object BoolUnification {
   }
 
   /**
-    * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
+    * Returns the most general unifier of the two given set formulas `tpe1` and `tpe2`.
     */
   private def booleanUnification(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // The boolean expression we want to show is 0.
@@ -95,7 +95,7 @@ object BoolUnification {
 
       Ok(subst)
     } catch {
-      case BooleanUnificationException => Err(UnificationError.MismatchedBools(tpe1, tpe2))
+      case SetUnificationException => Err(UnificationError.MismatchedBools(tpe1, tpe2)) // TODO make setty
     }
   }
 
@@ -121,23 +121,24 @@ object BoolUnification {
 
   /**
     * Performs success variable elimination on the given boolean expression `f`.
-    *
-    * `flexvs` is the list of remaining flexible variables in the expression.
     */
-  private def successiveVariableElimination(f: Type, flexvs: List[Type.KindedVar])(implicit flix: Flix): Substitution = flexvs match {
+  private def successiveVariableElimination(f: Type, fvs: List[Type.KindedVar])(implicit flix: Flix): Substitution = fvs match {
     case Nil =>
+      println(f)
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
       if (!satisfiable(f))
         Substitution.empty
       else
-        throw BooleanUnificationException
+        throw SetUnificationException
 
     case x :: xs =>
-      val t0 = Substitution.singleton(x.sym, Type.False)(f)
-      val t1 = Substitution.singleton(x.sym, Type.True)(f)
-      val se = successiveVariableElimination(mkAnd(t0, t1), xs)
+      val t0 = Substitution.singleton(x.sym, Type.Empty)(f)
+      val t1 = Substitution.singleton(x.sym, Type.All)(f)
+      val se = successiveVariableElimination(mkIntersection(t0, t1), xs)
 
-      val f1 = BoolTable.minimizeType(mkOr(se(t0), mkAnd(x, mkNot(se(t1)))))
+//      val f1 = BoolTable.minimizeType(mkUnion(se(t0), mkIntersection(x, mkComplement(se(t1)))))
+      // TODO enable minimization
+      val f1 = mkUnion(se(t0), mkIntersection(x, mkComplement(se(t1))))
       val st = Substitution.singleton(x.sym, f1)
       st ++ se
   }
@@ -145,137 +146,136 @@ object BoolUnification {
   /**
     * An exception thrown to indicate that boolean unification failed.
     */
-  private case object BooleanUnificationException extends RuntimeException
+  private case object SetUnificationException extends RuntimeException
 
   /**
-    * Returns `true` if the given boolean formula `f` is satisfiable
-    * when ALL variables in the formula are flexible.
+    * Returns `true` if the given boolean formula `f` is satisfiable.
     */
   private def satisfiable(f: Type)(implicit flix: Flix): Boolean = f match {
-    case Type.True => true
-    case Type.False => false
+    case Type.All => true
+    case Type.Empty => false
     case _ =>
-      val q = mkEq(f, Type.True)
+      val q = mkEq(f, Type.All)
       try {
         successiveVariableElimination(q, q.typeVars.toList)
         true
       } catch {
-        case BooleanUnificationException => false
+        case SetUnificationException => false
       }
   }
 
 
   /**
-    * To unify two Boolean formulas p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
+    * To unify two set formulas p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
     */
-  private def mkEq(p: Type, q: Type): Type = mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
+  private def mkEq(p: Type, q: Type): Type = mkUnion(mkIntersection(p, mkComplement(q)), mkIntersection(mkComplement(p), q))
 
   /**
-    * Returns the negation of the Boolean formula `tpe0`.
+    * Returns the negation of the set formula `tpe0`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
-  def mkNot(tpe0: Type): Type = tpe0 match {
-    case Type.True =>
-      Type.False
+  def mkComplement(tpe0: Type): Type = tpe0 match {
+    case Type.All =>
+      Type.Empty
 
-    case Type.False =>
-      Type.True
+    case Type.Empty =>
+      Type.All
 
-    case NOT(x) =>
+    case COMPLEMENT(x) =>
       x
 
     // ¬(¬x ∨ y) => x ∧ ¬y
-    case OR(NOT(x), y) =>
-      mkAnd(x, mkNot(y))
+    case UNION(COMPLEMENT(x), y) =>
+      mkIntersection(x, mkComplement(y))
 
     // ¬(x ∨ ¬y) => ¬x ∧ y
-    case OR(x, NOT(y)) =>
-      mkAnd(mkNot(x), y)
+    case UNION(x, COMPLEMENT(y)) =>
+      mkIntersection(mkComplement(x), y)
 
-    case _ => Type.Apply(Type.Not, tpe0, tpe0.loc)
+    case _ => Type.Apply(Type.Cst(TypeConstructor.Complement, tpe0.loc), tpe0, tpe0.loc)
   }
 
   /**
-    * Returns the conjunction of the two Boolean formulas `tpe1` and `tpe2`.
+    * Returns the conjunction of the two set formulas `tpe1` and `tpe2`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
   @tailrec
-  def mkAnd(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
+  def mkIntersection(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
     // T ∧ x => x
-    case (Type.True, _) =>
+    case (Type.All, _) =>
       tpe2
 
     // x ∧ T => x
-    case (_, Type.True) =>
+    case (_, Type.All) =>
       tpe1
 
     // F ∧ x => F
-    case (Type.False, _) =>
-      Type.False
+    case (Type.Empty, _) =>
+      Type.Empty
 
     // x ∧ F => F
-    case (_, Type.False) =>
-      Type.False
+    case (_, Type.Empty) =>
+      Type.Empty
 
     // ¬x ∧ (x ∨ y) => ¬x ∧ y
-    case (NOT(x1), OR(x2, y)) if x1 == x2 =>
-      mkAnd(mkNot(x1), y)
+    case (COMPLEMENT(x1), UNION(x2, y)) if x1 == x2 =>
+      mkIntersection(mkComplement(x1), y)
 
     // x ∧ ¬x => F
-    case (x1, NOT(x2)) if x1 == x2 =>
-      Type.False
+    case (x1, COMPLEMENT(x2)) if x1 == x2 =>
+      Type.Empty
 
     // ¬x ∧ x => F
-    case (NOT(x1), x2) if x1 == x2 =>
-      Type.False
+    case (COMPLEMENT(x1), x2) if x1 == x2 =>
+      Type.Empty
 
     // x ∧ (x ∧ y) => (x ∧ y)
-    case (x1, AND(x2, y)) if x1 == x2 =>
-      mkAnd(x1, y)
+    case (x1, INTERSECTION(x2, y)) if x1 == x2 =>
+      mkIntersection(x1, y)
 
     // x ∧ (y ∧ x) => (x ∧ y)
-    case (x1, AND(y, x2)) if x1 == x2 =>
-      mkAnd(x1, y)
+    case (x1, INTERSECTION(y, x2)) if x1 == x2 =>
+      mkIntersection(x1, y)
 
     // (x ∧ y) ∧ x) => (x ∧ y)
-    case (AND(x1, y), x2) if x1 == x2 =>
-      mkAnd(x1, y)
+    case (INTERSECTION(x1, y), x2) if x1 == x2 =>
+      mkIntersection(x1, y)
 
     // (x ∧ y) ∧ y) => (x ∧ y)
-    case (AND(x, y1), y2) if y1 == y2 =>
-      mkAnd(x, y1)
+    case (INTERSECTION(x, y1), y2) if y1 == y2 =>
+      mkIntersection(x, y1)
 
     // x ∧ (x ∨ y) => x
-    case (x1, OR(x2, _)) if x1 == x2 =>
+    case (x1, UNION(x2, _)) if x1 == x2 =>
       x1
 
     // (x ∨ y) ∧ x => x
-    case (OR(x1, _), x2) if x1 == x2 =>
+    case (UNION(x1, _), x2) if x1 == x2 =>
       x1
 
     // x ∧ (y ∧ ¬x) => F
-    case (x1, AND(_, NOT(x2))) if x1 == x2 =>
-      Type.False
+    case (x1, INTERSECTION(_, COMPLEMENT(x2))) if x1 == x2 =>
+      Type.Empty
 
     // (¬x ∧ y) ∧ x => F
-    case (AND(NOT(x1), _), x2) if x1 == x2 =>
-      Type.False
+    case (INTERSECTION(COMPLEMENT(x1), _), x2) if x1 == x2 =>
+      Type.Empty
 
     // x ∧ ¬(x ∨ y) => F
-    case (x1, NOT(OR(x2, _))) if x1 == x2 =>
-      Type.False
+    case (x1, COMPLEMENT(UNION(x2, _))) if x1 == x2 =>
+      Type.Empty
 
     // ¬(x ∨ y) ∧ x => F
-    case (NOT(OR(x1, _)), x2) if x1 == x2 =>
-      Type.False
+    case (COMPLEMENT(UNION(x1, _)), x2) if x1 == x2 =>
+      Type.Empty
 
     // x ∧ (¬x ∧ y) => F
-    case (x1, AND(NOT(x2), _)) if x1 == x2 =>
-      Type.False
+    case (x1, INTERSECTION(COMPLEMENT(x2), _)) if x1 == x2 =>
+      Type.Empty
 
     // (¬x ∧ y) ∧ x => F
-    case (AND(NOT(x1), _), x2) if x1 == x2 =>
-      Type.False
+    case (INTERSECTION(COMPLEMENT(x1), _), x2) if x1 == x2 =>
+      Type.Empty
 
     // x ∧ x => x
     case _ if tpe1 == tpe2 => tpe1
@@ -287,60 +287,60 @@ object BoolUnification {
       //        println(s.substring(0, Math.min(len, 300)))
       //      }
 
-      Type.Apply(Type.Apply(Type.And, tpe1, tpe1.loc), tpe2, tpe1.loc)
+      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, tpe1.loc), tpe1, tpe1.loc), tpe2, tpe1.loc)
   }
 
   /**
-    * Returns the disjunction of the two Boolean formulas `tpe1` and `tpe2`.
+    * Returns the disjunction of the two set formulas `tpe1` and `tpe2`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
   @tailrec
-  def mkOr(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
+  def mkUnion(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
     // T ∨ x => T
-    case (Type.True, _) =>
-      Type.True
+    case (Type.All, _) =>
+      Type.All
 
     // F ∨ y => y
-    case (Type.False, _) =>
+    case (Type.Empty, _) =>
       tpe2
 
     // x ∨ T => T
-    case (_, Type.True) =>
-      Type.True
+    case (_, Type.All) =>
+      Type.All
 
     // x ∨ F => x
-    case (_, Type.False) =>
+    case (_, Type.Empty) =>
       tpe1
 
     // x ∨ (y ∨ x) => x ∨ y
-    case (x1, OR(y, x2)) if x1 == x2 =>
-      mkOr(x1, y)
+    case (x1, UNION(y, x2)) if x1 == x2 =>
+      mkUnion(x1, y)
 
     // (x ∨ y) ∨ x => x ∨ y
-    case (OR(x1, y), x2) if x1 == x2 =>
-      mkOr(x1, y)
+    case (UNION(x1, y), x2) if x1 == x2 =>
+      mkUnion(x1, y)
 
     // ¬x ∨ x => T
-    case (NOT(x), y) if x == y =>
-      Type.True
+    case (COMPLEMENT(x), y) if x == y =>
+      Type.All
 
     // x ∨ ¬x => T
-    case (x, NOT(y)) if x == y =>
-      Type.True
+    case (x, COMPLEMENT(y)) if x == y =>
+      Type.All
 
     // (¬x ∨ y) ∨ x) => T
-    case (OR(NOT(x), _), y) if x == y =>
-      Type.True
+    case (UNION(COMPLEMENT(x), _), y) if x == y =>
+      Type.All
 
     // x ∨ (¬x ∨ y) => T
-    case (x, OR(NOT(y), _)) if x == y =>
-      Type.True
+    case (x, UNION(COMPLEMENT(y), _)) if x == y =>
+      Type.All
 
     // x ∨ (y ∧ x) => x
-    case (x1, AND(_, x2)) if x1 == x2 => x1
+    case (x1, INTERSECTION(_, x2)) if x1 == x2 => x1
 
     // (y ∧ x) ∨ x => x
-    case (AND(_, x1), x2) if x1 == x2 => x1
+    case (INTERSECTION(_, x1), x2) if x1 == x2 => x1
 
     // x ∨ x => x
     case _ if tpe1 == tpe2 =>
@@ -354,29 +354,29 @@ object BoolUnification {
       //                println(s.substring(0, Math.min(len, 300)))
       //              }
 
-      Type.Apply(Type.Apply(Type.Or, tpe1, tpe1.loc), tpe2, tpe1.loc)
+      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, tpe1.loc), tpe1, tpe1.loc), tpe2, tpe1.loc)
   }
 
-  private object NOT {
+  private object COMPLEMENT {
     @inline
     def unapply(tpe: Type): Option[Type] = tpe match {
-      case Type.Apply(Type.Cst(TypeConstructor.Not, _), x, _) => Some(x)
+      case Type.Apply(Type.Cst(TypeConstructor.Complement, _), x, _) => Some(x)
       case _ => None
     }
   }
 
-  private object AND {
+  private object INTERSECTION {
     @inline
     def unapply(tpe: Type): Option[(Type, Type)] = tpe match {
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), x, _), y, _) => Some((x, y))
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y, _) => Some((x, y))
       case _ => None
     }
   }
 
-  private object OR {
+  private object UNION {
     @inline
     def unapply(tpe: Type): Option[(Type, Type)] = tpe match {
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _), y, _) => Some((x, y))
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _) => Some((x, y))
       case _ => None
     }
   }

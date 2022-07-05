@@ -1532,7 +1532,7 @@ namespace TestIterator {
         let Iterator(d, n) = (1 :: 2 :: 3 :: 4 :: 5 :: Nil) |>
             List.map(x -> if (x == 4) Err("Done") else Ok(x)) |>
             List.toIterator(r);
-        Iterator.unfoldWithOk(r, () -> { d(); n() }) |>
+        Iterator.unfoldWithOk(r, () -> { discard d(); n() }) |>
             Iterator.toList == 1 :: 2 :: 3 :: Nil
         }
 

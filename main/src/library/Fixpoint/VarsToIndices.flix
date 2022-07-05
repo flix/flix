@@ -49,11 +49,11 @@ namespace Fixpoint {
                  RelOp.If(List.map(lowerExp(rowVars), test), lowerOp(then, rowVars, depth))
         }
 
-    def lowerExp(rowVars: Map[RowVar, RowVar], exp: BoolExp[v]): BoolExp[v] & Impure =
+    def lowerExp(rowVars: Map[RowVar, RowVar], exp: BoolExp[v]): BoolExp[v] =
         match exp {
             case BoolExp.Empty(_) => exp
             case BoolExp.NotMemberOf(terms, ramSym) =>
-                 BoolExp.NotMemberOf(Array.map(lowerTerm(rowVars), terms), ramSym)
+                 BoolExp.NotMemberOf(List.map(lowerTerm(rowVars), terms), ramSym)
             case BoolExp.Eq(lhs, rhs) =>
                  BoolExp.Eq(lowerTerm(rowVars, lhs), lowerTerm(rowVars, rhs))
             case BoolExp.Leq(f, lhs, rhs) =>
