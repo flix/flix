@@ -701,6 +701,7 @@ object Weeder {
               val fparams = List(lambda, e2)
               mkApplyFqn(fqn, fparams, loc)
           }
+
         case (ParsedAst.Fragment.Guard(sp11, e1, sp12), e0) =>
           mapN(visitExp(e1, senv)) { e2 =>
             val loc = mkSL(sp11, sp12).asSynthetic
