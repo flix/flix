@@ -377,6 +377,13 @@ namespace MutSet {
         Set.toMap(deref ms)
 
     ///
+    /// Returns the mutable set `s` as a MutDeque.
+    ///
+    pub def toMutDeque(r1: Region[r1], s: MutSet[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1) } =
+        let MutSet(ms) = s;
+        Set.toMutDeque(r1, deref ms)
+
+    ///
     /// Applies `f` to every element of the mutable set `s`.
     ///
     pub def foreach(f: a -> Unit & ef, s: MutSet[a, r]): Unit \ { ef, Read(r) } =

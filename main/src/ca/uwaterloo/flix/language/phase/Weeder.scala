@@ -1369,7 +1369,7 @@ object Weeder {
         args => WeededAst.Expression.Do(op, args, loc)
       }
 
-    case ParsedAst.Expression.Resume(sp1, args0, sp2) =>
+    case ParsedAst.Expression.Resume(sp1, arg0, sp2) =>
       val loc = mkSL(sp1, sp2)
 
       // ensure we are in a handler
@@ -1380,9 +1380,9 @@ object Weeder {
         case SyntacticEnv.Top => WeederError.IllegalResume(loc).toFailure
       }
 
-      val argsVal = traverse(args0)(visitArgument(_, senv))
-      mapN(handlerVal, argsVal) {
-        case (_, args) => WeededAst.Expression.Resume(args, loc)
+      val argVal = visitArgument(arg0, senv)
+      mapN(handlerVal, argVal) {
+        case (_, arg) => WeededAst.Expression.Resume(arg, loc)
       }
 
     case ParsedAst.Expression.Try(sp1, exp, ParsedAst.CatchOrHandler.Catch(rules), sp2) =>
