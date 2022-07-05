@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol, TypedAst}
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
@@ -70,16 +70,24 @@ object EarlyTreeShaker {
     //
     // (b) A function annotated with @benchmark or @test is always reachable.
     //
-    /*
     for ((sym, defn) <- root.defs) {
-      val isBenchmark = defn.ann.isBenchmark
-      val isTest = defn.ann.isTest
-      if (isBenchmark || isTest) {
+      if (isBenchmark(defn.spec.ann) || isTest(defn.spec.ann)) {
         reachable = reachable + sym
       }
     }
-  */
     reachable
+  }
+
+  private def isBenchmark(l: List[Annotation]): Boolean = l match {
+    case Nil => false
+    case Ast.Annotation.Benchmark(_) :: _ => true
+    case _ :: xs => isBenchmark(xs)
+  }
+
+  private def isTest(l: List[Annotation]): Boolean = l match {
+    case Nil => false
+    case Ast.Annotation.Test(_) :: _ => true
+    case _ :: xs => isBenchmark(xs)
   }
 
   /**
@@ -152,11 +160,17 @@ object EarlyTreeShaker {
       Set(sym)
 
     case Expression.Lambda(fparam, exp, _, _) =>
-      Set(fparam.sym) ++ visitExp(exp) // What to do with the symbols here?
+      visitExp(exp)
 
-    case Expression.Apply(exp, exps, tpe, pur, loc) => ???
-    case Expression.Unary(sop, exp, tpe, pur, loc) => ???
-    case Expression.Binary(sop, exp1, exp2, tpe, pur, loc) => ???
+    case Expression.Apply(exp, exps, _, _, _) =>
+      visitExp(exp) ++ visitExps(exps)
+
+    case Expression.Unary(_, exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.Binary(_, exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
     case Expression.Let(sym, mod, exp1, exp2, tpe, pur, loc) => ???
     case Expression.LetRec(sym, mod, exp1, exp2, tpe, pur, loc) => ???
     case Expression.Region(tpe, loc) => ???
