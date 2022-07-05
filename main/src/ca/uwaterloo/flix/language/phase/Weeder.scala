@@ -693,7 +693,7 @@ object Weeder {
       //
       val fqn = "ForEach.foreach"
       val loc = mkSL(sp1, sp2).asSynthetic
-      val genVals = mkForEachGenerators(gens)
+      val genVals = mkForEachGenerators(gens, senv)
 
       mapN(genVals, visitExp(exp, senv)) {
         case (gs, e0) => gs.foldRight(e0) {
@@ -1631,7 +1631,7 @@ object Weeder {
       }
   }
 
-  private def mkForEachGenerators(gens: Seq[ParsedAst.ForEachGenerator]) = {
+  private def mkForEachGenerators(gens: Seq[ParsedAst.ForEachGenerator], senv: SyntacticEnv)(implicit flix: Flix): Validation[List[ForEachGenerator], WeederError] = {
     traverse(gens) {
       case ParsedAst.ForEachIterator(sp11, pat, exp, sp12) => mapN(visitPattern(pat), visitExp(exp, senv)) {
         case (p, e) => Iterator(sp11, p, e, sp12)
