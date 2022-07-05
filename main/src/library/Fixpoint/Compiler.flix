@@ -35,17 +35,18 @@ namespace Fixpoint {
     /// This means to compile all rules in stratum 0, then stratum 1 and so on.
     /// A rule belongs to the same stratum as its head predicate.
     ///
-    def compile(d: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] & Impure with ToString[v] = match d {
-        case Datalog(facts, rules) =>
-            let stmts = new MutList(Static);
+    def compile(d: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] with ToString[v] = match d {
+        case Datalog(facts, rules) => region r {
+            let stmts = new MutList(r);
             List.foreach(compileRule(stmts), facts);
             List.foldRight(rule -> match rule {
                 case Constraint(HeadAtom(p, _, _), _) =>
                     let ruleStratum = Map.getWithDefault(p, 0, strat);
                     Map.insertWith(List.append, ruleStratum, rule :: Nil)
             }, Map#{}, rules) |>
-            Map.foreach(_ -> (x -> List.toArray(Static, x)) >> compileStratum(stmts));
+            Map.foreach(_ -> (x -> List.toArray(r, x)) >> compileStratum(stmts));
             RamStmt.Seq(MutList.toList(stmts))
+        }
         case _ => bug!("Datalog normalization bug")
     }
 
@@ -67,12 +68,12 @@ namespace Fixpoint {
     /// Note that Eval-Rule is the code emitted by `compileRule`
     /// and Eval-Rule-Incr is the code emitted by `compileRuleIncr`.
     ///
-    def compileStratum(stmts: MutList[RamStmt[v], Static], stratum: Array[Constraint[v], Static]): Unit & Impure with ToString[v] =
+    def compileStratum(stmts: MutList[RamStmt[v], r1], stratum: Array[Constraint[v], r2]): Unit & (r1 and r2) with ToString[v] = region r {
         let idb = Array.foldRight(match Constraint(HeadAtom(pred, den, terms), _) -> {
             let arity = List.length(terms);
             Map.insert(pred, (arity, den))
         }, Map#{}, stratum);
-        let loopBody = new MutList(Static);
+        let loopBody = new MutList(r);
         Array.foreach(compileRule(stmts), stratum);
         Map.foreach(predSym -> match (arity, den) -> {
             let full = RamSym.Full(predSym, arity, den);
@@ -105,6 +106,7 @@ namespace Fixpoint {
         let untilBody = RamStmt.Seq(MutList.toList(loopBody));
         let fixpoint = RamStmt.Until(loopTest, untilBody);
         MutList.push!(fixpoint, stmts)
+    }
 
     ///
     /// Compile `rule` into a join loop. A join loop is a nested loop.
@@ -120,7 +122,7 @@ namespace Fixpoint {
     ///         end
     ///     end
     ///
-    def compileRule(stmts: MutList[RamStmt[v], Static], rule: Constraint[v]): Unit & Impure with ToString[v] = match rule {
+    def compileRule(stmts: MutList[RamStmt[v], r], rule: Constraint[v]): Unit & r with ToString[v] = match rule {
         case Constraint(HeadAtom(headSym, headDen, headTerms), body) =>
             let augBody = augmentBody(body);
             let env = unifyVars(augBody);
@@ -172,7 +174,7 @@ namespace Fixpoint {
     /// Note that there are two join loops, because there are two positive atoms.
     /// Also note how in the first loop, `B` is the focused atom and `C` is focused in the second loop.
     ///
-    def compileRuleIncr(stmts: MutList[RamStmt[v], Static], rule: Constraint[v]): Unit & Impure with ToString[v] = match rule {
+    def compileRuleIncr(stmts: MutList[RamStmt[v], r], rule: Constraint[v]): Unit & r with ToString[v] = match rule {
         case Constraint(HeadAtom(headSym, headDen, headTerms), body) =>
             let augBody = augmentBody(body);
             let env = unifyVars(augBody);

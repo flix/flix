@@ -112,7 +112,7 @@ namespace Fixpoint {
     /// Renames every predicate symbol in `d` with a fresh name, except for those in `preds`.
     ///
     @Internal
-    pub def rename(preds: Array[PredSym, Static], d: Datalog[v]): Datalog[v] with Order[v], ToString[v] = {
+    pub def rename(preds: List[PredSym], d: Datalog[v]): Datalog[v] with Order[v], ToString[v] = {
         use Fixpoint/PredSymsOf.predSymsOf;
         use Fixpoint/SubstitutePredSym.substitute;
 
@@ -124,13 +124,13 @@ namespace Fixpoint {
 
         /// Compute a substitition that assignes fresh names to all predicates except those in `preds`.
         def f(macc, predSym) = {
-            if (Array.memberOf(predSym, preds)) {
+            if (List.memberOf(predSym, preds)) {
                 // Case 1: Do not rename. Do not extend the map.
                 macc
             } else {
                 // Case 2: Introduce a fresh name (index) for the prediate symbol.
                 let PredSym(name, _) = predSym;
-                let newPredSym = PredSym(name, newId() + 1i64); // We add one because the counter starts at zero.
+                let newPredSym = PredSym(name, (newId() + 1i64) as & Pure); // We add one because the counter starts at zero.
                 Map.insert(predSym, newPredSym, macc)
             }
         };
@@ -140,15 +140,15 @@ namespace Fixpoint {
         let r = substitute(d, s);
 
         // Debugging
-        if (enableDebugging()) {
+        let _ = if (enableDebugging()) {
             println(s);
             println(d);
             println(r)
-        } else ();
+        } as & Pure else ();
 
         // Return the result.
         r
-    } as & Pure
+    }
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -496,7 +496,7 @@ namespace Fixpoint {
     ///
     @Internal
     pub def facts0(p: PredSym, d: Datalog[Boxed]): List[v] with Boxable[v] =
-        factsOf(_ -> () as v, p, d) as & Pure
+        factsOf(_ -> () as v, p, d)
 
 
     ///
@@ -509,7 +509,7 @@ namespace Fixpoint {
                 unbox(hd)
             case _ => unreachable!()
         };
-       factsOf(f, p, d) as & Pure
+       factsOf(f, p, d)
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -521,7 +521,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1))
             case _ => unreachable!()
         };
-        factsOf(f, p, d) as & Pure
+        factsOf(f, p, d)
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -533,7 +533,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2))
             case _ => unreachable!()
         };
-        factsOf(f, p, d) as & Pure
+        factsOf(f, p, d)
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -545,7 +545,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3))
             case _ => unreachable!()
         };
-        factsOf(f, p, d) as & Pure
+        factsOf(f, p, d)
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -557,7 +557,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4))
             case _ => unreachable!()
         };
-        factsOf(f, p, d) as & Pure
+        factsOf(f, p, d)
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -569,7 +569,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5))
             case _ => unreachable!()
         };
-        factsOf(f, p, d) as & Pure
+        factsOf(f, p, d)
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -581,7 +581,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6))
             case _ => unreachable!()
         };
-        factsOf(f, p, d) as & Pure
+        factsOf(f, p, d)
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -593,7 +593,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7))
             case _ => unreachable!()
         };
-        factsOf(f, p, d) as & Pure
+        factsOf(f, p, d)
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -605,7 +605,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8))
             case _ => unreachable!()
         };
-        factsOf(f, p, d) as & Pure
+        factsOf(f, p, d)
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -617,7 +617,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9))
             case _ => unreachable!()
         };
-        factsOf(f, p, d) as & Pure
+        factsOf(f, p, d)
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -629,7 +629,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10))
             case _ => unreachable!()
         };
-        factsOf(f, p, d) as & Pure
+        factsOf(f, p, d)
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -641,7 +641,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10), unbox(v11))
             case _ => unreachable!()
         };
-        factsOf(f, p, d) as & Pure
+        factsOf(f, p, d)
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -653,7 +653,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10), unbox(v11), unbox(v12))
             case _ => unreachable!()
         };
-        factsOf(f, p, d) as & Pure
+        factsOf(f, p, d)
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -665,7 +665,7 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10), unbox(v11), unbox(v12), unbox(v13))
             case _ => unreachable!()
         };
-        factsOf(f, p, d) as & Pure
+        factsOf(f, p, d)
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -677,14 +677,14 @@ namespace Fixpoint {
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10), unbox(v11), unbox(v12), unbox(v13), unbox(v14))
             case _ => unreachable!()
         };
-        factsOf(f, p, d) as & Pure
+        factsOf(f, p, d)
 
     ///
     /// Returns an array of facts associated with the given predicate symbol `p` in the given Datalog program `d`.
     ///
-    def factsOf(f: List[v] -> t & ef, p: PredSym, d: Datalog[v]): List[t] & Impure = match d {
-        case Datalog(_, cs) =>
-            let pFacts = new MutList(Static);
+    def factsOf(f: List[v] -> t & ef, p: PredSym, d: Datalog[v]): List[t] & ef = match d {
+        case Datalog(_, cs) => region r {
+            let pFacts = new MutList(r);
             List.foreach(c -> match c {
                 case Constraint(HeadAtom(headPred, _, terms), Nil) =>
                     if (headPred == p)
@@ -694,9 +694,10 @@ namespace Fixpoint {
                 case _ => ()
             }, cs);
             pFacts |> MutList.toList
-        case Model(db) =>
+        }
+        case Model(db) => region r {
             use Fixpoint/Ram.toDenotation;
-            let pFacts = new MutList(Static);
+            let pFacts = new MutList(r);
             let query = ramSym -> match ramSym {
                 case RamSym.Full(predSym, _, _) => match predSym <=> p {
                     case EqualTo => EqualTo
@@ -706,19 +707,21 @@ namespace Fixpoint {
             };
             Map.queryWith(query, ramSym -> rel -> match toDenotation(ramSym) {
                 case Denotation.Relational =>
-                    Map.foreach(match Tuple(tuple) -> _ -> MutList.push!(f(tuple |> Array.toList), pFacts), rel)
+                    Map.foreach(match Tuple(tuple) -> _ -> MutList.push!(f(Array.toList(tuple) as & Pure), pFacts), rel)
                 case Denotation.Latticenal(_) =>
                     Map.foreach(match Tuple(tuple) -> lat -> {
-                        let vs = Array.init(Static, i -> {
+                        let it = Iterator.range(r, 0, Array.length(tuple) + 1);
+                        let vs = it |> Iterator.map(i -> {
                             if (i < Array.length(tuple))
-                                tuple[i]
+                                tuple[i] as & Pure
                             else
                                 lat
-                        }, Array.length(tuple) + 1);
-                        MutList.push!(f(vs |> Array.toList), pFacts)
+                        });
+                        MutList.push!(f(vs), pFacts)
                     }, rel)
             }, db);
             pFacts |> MutList.toList
+        }
         case Join(d1, d2) => List.append(factsOf(f, p, d1), factsOf(f, p, d2))
     }
 

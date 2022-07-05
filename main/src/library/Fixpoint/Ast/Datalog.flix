@@ -60,30 +60,33 @@ namespace Fixpoint/Ast {
 
     instance ToString[Datalog[v]] with ToString[v] {
         pub def toString(cs: Datalog[v]): String = match cs {
-            case Datalog(facts, rules) =>
-                let sb = new StringBuilder(Static);
+            case Datalog(facts, rules) => region r {
+                let sb = new StringBuilder(r);
                 let appendConstraint = f -> StringBuilder.appendLineWith!(ToString.toString, f, sb);
                 List.foreach(appendConstraint, facts);
                 List.foreach(appendConstraint, rules);
                 StringBuilder.toString(sb)
-            case Model(db) =>
+            }
+            case Model(db) => region r {
                 use Fixpoint/Ram.toDenotation;
                 use Fixpoint.commaSeparate;
-                let sb = new StringBuilder(Static);
+                let sb = new StringBuilder(r);
                 Map.foreach(ramSym -> rel -> match toDenotation(ramSym) {
                     case Relational => Map.foreach(match Tuple(tuple) -> _ -> {
-                        StringBuilder.appendLine!("${ramSym}(${commaSeparate(tuple)}).", sb)
+                        StringBuilder.appendLine!("${ramSym}(${commaSeparate(tuple) as & Pure}).", sb)
                     }, rel)
                     case Latticenal(_) => Map.foreach(match Tuple(tuple) -> lat -> {
-                        StringBuilder.appendLine!("${ramSym}(${commaSeparate(tuple)}; ${lat}).", sb)
+                        StringBuilder.appendLine!("${ramSym}(${commaSeparate(tuple) as & Pure}; ${lat}).", sb)
                     }, rel)
                 }, db);
                 StringBuilder.toString(sb)
-            case Join(d1, d2) =>
-                let sb = new StringBuilder(Static);
+            }
+            case Join(d1, d2) => region r {
+                let sb = new StringBuilder(r);
                 StringBuilder.appendLine!(ToString.toString(d1), sb);
                 StringBuilder.appendLine!(ToString.toString(d2), sb);
                 StringBuilder.toString(sb)
-        } as & Pure
+            }
+        }
     }
 }
