@@ -64,8 +64,6 @@ def main(): Unit & Impure =
     List.toIterator(Static, l) |>
     Iterator.foreach(match x -> q := x :: deref q);
 
-    println("z == q? ${deref z == deref q}");
-
     ///
     /// This is true in particular for nested
     /// foreach-loops.
@@ -90,10 +88,6 @@ def main(): Unit & Impure =
         List.toIterator(Static, k) |>
         Iterator.foreach(match b -> v := b :: deref v)
     });
-
-    println("w == l with k prepended to every element of l");
-    println("w == ${deref w}? ${deref w == 6 :: 5 :: 4 :: 3 :: 6 :: 5 :: 4 :: 2 :: 6 :: 5 :: 4 :: 1 :: Nil}");
-    println("w == v? ${deref w == deref v}");
 
     ///
     /// We can even simplify nested loops
@@ -121,10 +115,6 @@ def main(): Unit & Impure =
         Iterator.foreach(match b -> e1 := (a, b) :: deref e1)
     });
 
-    println("e contains all combinations of pairs from l and k");
-    println("e (sorted) == ${List.sortBy(match (a, _) -> a, deref e)}");
-    println("e == e1? ${deref e == deref e1}");
-
     ///
     /// Finally, we can also include guards
     /// in our loop.
@@ -145,7 +135,6 @@ def main(): Unit & Impure =
              b <- List.toIterator(Static, k);
              if b < 6)
                 c := (a, b) :: deref c;
-
 
     ///
     /// Alternatively, we can put a single guard
@@ -182,8 +171,14 @@ def main(): Unit & Impure =
         })
     });
 
+    println("z == q? ${deref z == deref q}");
+    println("w == l with k prepended to every element of l");
+    println("w == ${deref w}? ${deref w == 6 :: 5 :: 4 :: 3 :: 6 :: 5 :: 4 :: 2 :: 6 :: 5 :: 4 :: 1 :: Nil}");
+    println("w == v? ${deref w == deref v}");
+    println("e contains all combinations of pairs from l and k");
+    println("e (sorted) == ${List.sortBy(match (a, _) -> a, deref e)}");
+    println("e == e1? ${deref e == deref e1}");
     println("c contains all combinations of pairs from l and k excluding 1 and 6");
     println("c (sorted) == ${List.sortBy(match (a, _) -> a, deref c)}");
     println("c == d? ${deref c == deref d}");
     println("c == cf? ${deref c == deref cf}")
-
