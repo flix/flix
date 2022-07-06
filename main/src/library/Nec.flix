@@ -803,8 +803,7 @@ namespace Nec {
         Iterator(done, next)
 
     ///
-    /// Returns an iterator over `c` zipped with the indices of the elements,
-    /// i.e. an alias for `toIterator(r, c) |> Iterator.zipWithIndex`.
+    /// Returns an iterator over `c` zipped with the indices of the elements.
     ///
     pub def enumerator(r: Region[r], c: Nec[a]): Iterator[(a, Int32), r] \ Write(r) =
         toIterator(r, c) |> Iterator.zipWithIndex

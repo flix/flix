@@ -1341,8 +1341,7 @@ namespace List {
         Iterator(done, next)
 
     ///
-    /// Returns an iterator over `l` zipped with the indices of the elements,
-    /// i.e. an alias for `toIterator(r, l) |> Iterator.zipWithIndex`.
+    /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
     pub def enumerator(r: Region[r], l: List[a]): Iterator[(a, Int32), r] \ Write(r) =
         toIterator(r, l) |> Iterator.zipWithIndex
