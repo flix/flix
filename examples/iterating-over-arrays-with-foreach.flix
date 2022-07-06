@@ -16,8 +16,8 @@ def copy!(in: { in :: Array[a, r1] }, out: { out :: Array[a, r2] }): Unit \ { Re
         /// elements.
         /// We add some guards to our loop
         /// so we avoid out of bounds errors.
-        foreach((x, i) <- Array.enumerator(r, in.in);
-                if i < out.out.length; if not Array.isEmpty(in.in)) {
+        foreach ((x, i) <- Array.enumerator(r, in.in);
+                 if i < out.out.length; if not Array.isEmpty(in.in)) {
                     (out.out)[i] = x
         }
     }
