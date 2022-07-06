@@ -667,37 +667,37 @@ namespace TestArray {
 
     @test
     def range01(): Bool = region r {
-        let a = Array.range(1, 0, r);
+        let a = Array.range(r, 1, 0);
         Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def range02(): Bool = region r {
-        let a = Array.range(1, 1, r);
+        let a = Array.range(r, 1, 1);
         Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def range03(): Bool = region r {
-        let a = Array.range(1, 2, r);
+        let a = Array.range(r, 1, 2);
         Array.sameElements(a, [1])
     }
 
     @test
     def range04(): Bool = region r {
-        let a = Array.range(1, 3, r);
+        let a = Array.range(r, 1, 3);
         Array.sameElements(a, [1,2])
     }
 
     @test
     def range05(): Bool = region r {
-        let a = Array.range(1, 4, r);
+        let a = Array.range(r, 1, 4);
         Array.sameElements(a, [1,2,3])
     }
 
     @test
     def range06(): Bool = region r {
-        let a = Array.range(-1, 3, r);
+        let a = Array.range(r, -1, 3);
         Array.sameElements(a, [-1,0,1,2])
     }
 
@@ -5463,17 +5463,17 @@ namespace TestArray {
 
     @test
     def minimumBy02(): Bool = region r {
-        Array.minimumBy((x, y) -> x <=> y, Array.range(0, 5, r)) == Some(0)
+        Array.minimumBy((x, y) -> x <=> y, Array.range(r, 0, 5)) == Some(0)
     }
 
     @test
     def minimumBy03(): Bool = region r {
-        Array.minimumBy((x, y) -> x <=> y, Array.range(4, 10, r)) == Some(4)
+        Array.minimumBy((x, y) -> x <=> y, Array.range(r, 4, 10)) == Some(4)
     }
 
     @test
     def minimumBy04(): Bool = region r {
-        let a = Array.range(10, 20, r);
+        let a = Array.range(r, 10, 20);
         a[5] = -22;
         Array.minimumBy((x, y) -> x <=> y, a) == Some(-22)
     }
@@ -5489,17 +5489,17 @@ namespace TestArray {
 
     @test
     def maximumBy02(): Bool = region r {
-        Array.maximumBy((x, y) -> x <=> y, Array.range(0, 5, r)) == Some(4)
+        Array.maximumBy((x, y) -> x <=> y, Array.range(r, 0, 5)) == Some(4)
     }
 
     @test
     def maximumBy03(): Bool = region r {
-        Array.maximumBy((x, y) -> x <=> y, Array.range(4, 10, r)) == Some(9)
+        Array.maximumBy((x, y) -> x <=> y, Array.range(r, 4, 10)) == Some(9)
     }
 
     @test
     def maximumBy04(): Bool = region r {
-        let a = Array.range(10, 20, r);
+        let a = Array.range(r, 10, 20);
         a[5] = 42;
         Array.maximumBy((x, y) -> x <=> y, a) == Some(42)
     }
@@ -5540,7 +5540,7 @@ namespace TestArray {
 
     @test
     def sum07(): Bool = region r {
-        Array.range(1, 101, r) |> Array.sum == 5050
+        Array.range(r, 1, 101) |> Array.sum == 5050
     }
 
 
@@ -5595,12 +5595,12 @@ namespace TestArray {
 
     @test
     def toDelayList03(): Bool = region r {
-        Array.range(-1000, 1000, r) |> Array.toDelayList == DelayList.range(-1000, 1000)
+        Array.range(r, -1000, 1000) |> Array.toDelayList == DelayList.range(-1000, 1000)
     }
 
     @test
     def toDelayList04(): Bool = region r {
-        Array.range(-1000, 1000, r) |> Array.toDelayList |> DelayList.toArray(r) `sameElements` Array.range(-1000, 1000, r)
+        Array.range(r, -1000, 1000) |> Array.toDelayList |> DelayList.toArray(r) `sameElements` Array.range(r, -1000, 1000)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -5796,7 +5796,7 @@ namespace TestArray {
 
     @test
     def toIterator04(): Bool = region r {
-        Array.range(-100, 100, r) |> Array.toIterator(r) |> Iterator.toArray(r) `sameElements` Array.range(-100, 100, r)
+        Array.range(r, -100, 100) |> Array.toIterator(r) |> Iterator.toArray(r) `sameElements` Array.range(r, -100, 100)
     }
 
     @test
@@ -5927,7 +5927,7 @@ namespace TestArray {
 
     @test
     def toMutList04(): Bool = region r {
-        MutList.sameElements((Array.range(0, 100, r) |> Array.toMutList(r)), MutList.range(r, 0, 100))
+        MutList.sameElements((Array.range(r, 0, 100) |> Array.toMutList(r)), MutList.range(r, 0, 100))
     }
 
     @test

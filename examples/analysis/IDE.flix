@@ -132,7 +132,7 @@ namespace IDE {
 
         (m |> Fixpoint.unsafePrint) as & Impure; // NB: Just for debugging.
 
-        query p, f1, f2 select (n, d, l) from Results(n, d; l) |> Array.toList
+        query p, f1, f2 select (n, d, l) from Results(n, d; l)
 
 }
 

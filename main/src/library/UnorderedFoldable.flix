@@ -17,7 +17,7 @@
 ///
 /// A type class for unordered data structures that can be folded.
 ///
-pub class UnorderedFoldable[t : Type -> Type] with ForEach[t] {
+pub class UnorderedFoldable[t : Type -> Type] {
 
     ///
     /// Unordered fold of `t`.

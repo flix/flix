@@ -356,12 +356,14 @@ namespace TestToString {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def arrayToString01(): Bool & Impure =
-        toString(Array.range(0, 5, Static)) == "[0, 1, 2, 3, 4]"
+    def arrayToString01(): Bool = region r {
+        toString(Array.range(r, 0, 5)) == "[0, 1, 2, 3, 4]"
+    }
 
     @test
-    def arrayToString02(): Bool & Impure =
-        toString(Array.range(0, 1, Static)) == "[0]"
+    def arrayToString02(): Bool = region r {
+        toString(Array.range(r, 0, 1)) == "[0]"
+    }
 
     @test
     def arrayToString03(): Bool = region r {
@@ -369,8 +371,9 @@ namespace TestToString {
     }
 
     @test
-    def arrayToString04(): Bool & Impure =
-        toString(Array.range(1, 3, Static)) == "[1, 2]"
+    def arrayToString04(): Bool = region r {
+        toString(Array.range(r, 1, 3)) == "[1, 2]"
+    }
 
     @test
     def arrayToString05(): Bool = region r {
@@ -378,7 +381,8 @@ namespace TestToString {
     }
 
     @test
-    def arrayToString06(): Bool & Impure =
-        toString(Array.range(0, 0, Static)) == "[]"
+    def arrayToString06(): Bool = region r {
+        toString(Array.range(r, 0, 0)) == "[]"
+    }
 
 }

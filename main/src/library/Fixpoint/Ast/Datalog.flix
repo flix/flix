@@ -26,7 +26,7 @@ namespace Fixpoint/Ast {
 
     @Internal
     pub enum Datalog[v] {
-        case Datalog(Array[Constraint[v], Static], Array[Constraint[v], Static])
+        case Datalog(List[Constraint[v]], List[Constraint[v]])
         case Model(Map[RamSym[v], Map[Tuple[v], v]])
         case Join(Datalog[v], Datalog[v])
     }
@@ -34,19 +34,19 @@ namespace Fixpoint/Ast {
     instance PredSymsOf[Datalog[v]] {
         pub def predSymsOf(x: Datalog[v]): Set[PredSym] = match x {
             case Datalog(facts, rules) =>
-                let factSyms = facts |> Array.map(predSymsOf) |> Array.toList |> Monoid.fold;
-                let ruleSyms = rules |> Array.map(predSymsOf) |> Array.toList |> Monoid.fold;
+                let factSyms = facts |> List.map(predSymsOf) |> Monoid.fold;
+                let ruleSyms = rules |> List.map(predSymsOf) |> Monoid.fold;
                 factSyms ++ ruleSyms
             case Model(m)              => Map.keysOf(m) |> Set.toList |> List.map(predSymsOf) |> Monoid.fold
             case Join(v1, v2)          => predSymsOf(v1) ++ predSymsOf(v2)
-        } as & Pure
+        }
     }
 
     instance SubstitutePredSym[Datalog[v]] {
         pub def substitute(x: Datalog[v], s: Map[PredSym, PredSym]): Datalog[v] = match x {
             case Datalog(facts, rules) =>
-                let newFacts = Array.map(c -> substitute(c, s), facts);
-                let newRules = Array.map(c -> substitute(c, s), rules);
+                let newFacts = List.map(c -> substitute(c, s), facts);
+                let newRules = List.map(c -> substitute(c, s), rules);
                 Datalog(newFacts, newRules)
             case Model(m) =>
                 def f(macc, sym, v) = {
@@ -55,34 +55,38 @@ namespace Fixpoint/Ast {
                 };
                 Model(Map.foldLeftWithKey(f, Map.empty(), m))
             case Join(v1, v2) => Join(substitute(v1, s), substitute(v2, s))
-        } as & Pure
+        }
     }
 
     instance ToString[Datalog[v]] with ToString[v] {
         pub def toString(cs: Datalog[v]): String = match cs {
-            case Datalog(facts, rules) =>
-                let sb = new StringBuilder(Static);
-                StringBuilder.appendLinesWith!(ToString.toString, facts, sb);
-                StringBuilder.appendLinesWith!(ToString.toString, rules, sb);
+            case Datalog(facts, rules) => region r {
+                let sb = new StringBuilder(r);
+                let appendConstraint = f -> StringBuilder.appendLineWith!(ToString.toString, f, sb);
+                List.foreach(appendConstraint, facts);
+                List.foreach(appendConstraint, rules);
                 StringBuilder.toString(sb)
-            case Model(db) =>
+            }
+            case Model(db) => region r {
                 use Fixpoint/Ram.toDenotation;
                 use Fixpoint.commaSeparate;
-                let sb = new StringBuilder(Static);
+                let sb = new StringBuilder(r);
                 Map.foreach(ramSym -> rel -> match toDenotation(ramSym) {
                     case Relational => Map.foreach(match Tuple(tuple) -> _ -> {
-                        StringBuilder.appendLine!("${ramSym}(${commaSeparate(tuple)}).", sb)
+                        StringBuilder.appendLine!("${ramSym}(${commaSeparate(tuple) as & Pure}).", sb)
                     }, rel)
                     case Latticenal(_) => Map.foreach(match Tuple(tuple) -> lat -> {
-                        StringBuilder.appendLine!("${ramSym}(${commaSeparate(tuple)}; ${lat}).", sb)
+                        StringBuilder.appendLine!("${ramSym}(${commaSeparate(tuple) as & Pure}; ${lat}).", sb)
                     }, rel)
                 }, db);
                 StringBuilder.toString(sb)
-            case Join(d1, d2) =>
-                let sb = new StringBuilder(Static);
+            }
+            case Join(d1, d2) => region r {
+                let sb = new StringBuilder(r);
                 StringBuilder.appendLine!(ToString.toString(d1), sb);
                 StringBuilder.appendLine!(ToString.toString(d2), sb);
                 StringBuilder.toString(sb)
-        } as & Pure
+            }
+        }
     }
 }

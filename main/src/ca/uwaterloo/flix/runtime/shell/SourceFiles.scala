@@ -56,11 +56,13 @@ class SourceFiles(sourceProvider: SourceProvider) {
 
     sourceProvider match {
       case SourceProvider.ProjectPath(path) =>
-        val sourceFiles = getSourceFiles(path)
-        val (packages, libraries) = getPackagesAndLibraries(path)
+        if (Packager.isProjectPath(path)) {
+          val sourceFiles = getSourceFiles(path)
+          val (packages, libraries) = getPackagesAndLibraries(path)
 
-        currentSources = sourceFiles ++ packages
-        currentLibs = libraries
+          currentSources = sourceFiles ++ packages
+          currentLibs = libraries
+        }
   
       case SourceProvider.SourceFileList(files) =>
         currentSources = files.map(_.toPath).toSet

@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Rigidity, RigidityEnv, Symbol}
+import ca.uwaterloo.flix.language.ast.RigidityEnv
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -26,9 +26,14 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 object InferMonad {
 
   /**
-    * Lifts the given value `a` into the type inference monad.
+    * Lifts the given value `x` into the type inference monad.
     */
-  def point[a](x: a): InferMonad[a] = InferMonad { case (s, renv) => Ok((s, renv, x)) }
+  def point[A](x: A): InferMonad[A] = InferMonad { case (s, renv) => Ok((s, renv, x)) }
+
+  /**
+    * Lifts the given error `err` into the type inference monad.
+    */
+  def errPoint[A](err: TypeError): InferMonad[A] = InferMonad { case _ => Err(err) }
 
   /**
     * Collects the result of each type inference monad in `ts` going left to right.

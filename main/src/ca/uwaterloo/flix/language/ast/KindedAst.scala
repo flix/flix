@@ -163,7 +163,7 @@ object KindedAst {
 
     case class Do(op: Symbol.OpSym, args: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
 
-    case class Resume(args: List[KindedAst.Expression], argTvar: Type.KindedVar, retTvar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+    case class Resume(exp: KindedAst.Expression, argTvar: Type.KindedVar, retTvar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
     case class InvokeConstructor(constructor: Constructor[_], args: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
 

@@ -38,7 +38,7 @@ namespace MutSet {
     ///
     /// Returns the singleton set containing `x`.
     ///
-    pub def singleton(x: a, r: Region[r]): MutSet[a, r] \ Write(r) with Order[a] =
+    pub def singleton(r: Region[r], x: a): MutSet[a, r] \ Write(r) with Order[a] =
         MutSet(ref Set.singleton(x) @ r)
 
     ///
@@ -375,6 +375,13 @@ namespace MutSet {
     pub def toMap(s: MutSet[(a, b), r]): Map[a, b] \ { Read(r) } with Order[a] =
         let MutSet(ms) = s;
         Set.toMap(deref ms)
+
+    ///
+    /// Returns the mutable set `s` as a MutDeque.
+    ///
+    pub def toMutDeque(r1: Region[r1], s: MutSet[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1) } =
+        let MutSet(ms) = s;
+        Set.toMutDeque(r1, deref ms)
 
     ///
     /// Applies `f` to every element of the mutable set `s`.

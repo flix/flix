@@ -185,7 +185,7 @@ object NamedAst {
 
     case class Do(op: Name.QName, args: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
-    case class Resume(args: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
+    case class Resume(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class InvokeConstructor(className: String, args: List[NamedAst.Expression], sig: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Expression
 

@@ -67,10 +67,6 @@ instance Order[MultiMap[k, v]] with Order[k], Order[v] {
         MultiMap.toList(x) <=> MultiMap.toList(y)
 }
 
-instance ForEach[MultiMap[k]] {
-    pub def foreach(f: a -> Unit & ef, m: MultiMap[k, a]): Unit & ef = MultiMap.foreach((_, v) -> f(v), m)
-}
-
 instance Foldable[MultiMap[k]] {
     pub def foldLeft(f: (b, v) -> b & ef, s: b, m: MultiMap[k, v]): b & ef = MultiMap.foldLeft((acc, v) -> f(acc, v), s, m)
     pub def foldRight(f: (v, b) -> b & ef, s: b, m: MultiMap[k, v]): b & ef = MultiMap.foldRight(f, s, m)
@@ -547,6 +543,13 @@ namespace MultiMap {
     pub def toMap(m: MultiMap[k, v]): Map[k, Set[v]] =
         let MultiMap(m1) = m;
         m1
+
+    ///
+    /// Returns the MultiMap `m` as a list of singleton key-value pairs in ascending order.
+    ///
+    pub def toMutDeque(r: Region[r], m: MultiMap[k, v]): MutDeque[(k, Set[v]), r] \ Write(r) =
+        let MultiMap(m1) = m;
+        Map.toMutDeque(r, m1)
 
     // No traversable functions due to Order constraint that's outside the `Traversable` class.
 
