@@ -7,7 +7,7 @@ namespace Test/Exp/Foreach {
     @test
     def testForeach01(): Bool = region r {
         let y = ref 0 @ r;
-        foreach (x <- List.toIterator(r, 1 :: Nil)) y := x + 1; // ForEach.foreach(match x -> y := x + 1, 1 :: Nil))
+        foreach (x <- List.toIterator(r, 1 :: Nil)) y := x + 1; // Iterator.foreach(match x -> y := x + 1, 1 :: Nil))
         deref y == 2
     }
 
@@ -15,14 +15,14 @@ namespace Test/Exp/Foreach {
     def testForeach02(): Bool = region r {
         let y = ref 0 @ r;
         foreach (x <- List.toIterator(r, 1 :: Nil))
-            y := x + 1; // ForEach.foreach(match x -> y := x + 1, 1 :: Nil))
+            y := x + 1; // Iterator.foreach(match x -> y := x + 1, 1 :: Nil))
         deref y == 2
     }
 
     @test
     def testForeach03(): Bool = region r {
         let z = ref 0 @ r;
-        foreach ((x, y) <- List.toIterator(r, (1, 2) :: (3, 4) :: Nil)) z := deref z + x + y; // ForEach.foreach(match (x, y) -> z := deref z + x + y, (1, 2) :: (3, 4) :: Nil))
+        foreach ((x, y) <- List.toIterator(r, (1, 2) :: (3, 4) :: Nil)) z := deref z + x + y; // Iterator.foreach(match (x, y) -> z := deref z + x + y, (1, 2) :: (3, 4) :: Nil))
         deref z == 10
     }
 
@@ -30,7 +30,7 @@ namespace Test/Exp/Foreach {
     def testForeach04(): Bool = region r {
         let z = ref 0 @ r;
         foreach ((x, y) <- List.toIterator(r, (1, 2) :: (3, 4) :: Nil))
-            z := deref z + x + y; // ForEach.foreach(match (x, y) -> z := deref z + x + y, (1, 2) :: (3, 4) :: Nil))
+            z := deref z + x + y; // Iterator.foreach(match (x, y) -> z := deref z + x + y, (1, 2) :: (3, 4) :: Nil))
         deref z == 10
     }
 
@@ -39,7 +39,7 @@ namespace Test/Exp/Foreach {
         let z = ref 0 @ r;
         let l = (1, 2) :: (3, 4) :: Nil;
         foreach ((x, y) <- List.toIterator(r, l))
-            z := deref z + x + y; // ForEach.foreach(match (x, y) -> z := deref z + x + y, l)
+            z := deref z + x + y; // Iterator.foreach(match (x, y) -> z := deref z + x + y, l)
         deref z == 10
     }
 
@@ -48,7 +48,7 @@ namespace Test/Exp/Foreach {
         let z = ref 0 @ r;
         let l = (1, 2) :: (3, 4) :: Nil;
         foreach ((x, _) <- List.toIterator(r, l))
-            z := deref z + x; // ForEach.foreach(match (x, _) -> z := deref z + x, l)
+            z := deref z + x; // Iterator.foreach(match (x, _) -> z := deref z + x, l)
         deref z == 4
     }
 
@@ -157,7 +157,7 @@ namespace Test/Exp/Foreach {
     @test
     def testForeach17(): Bool = region r {
         let y = ref 0 @ r;
-        foreach(   x     <- List.toIterator(r,      1 :: Nil)   )y := x + 1; // ForEach.foreach(match x -> y := x + 1, 1 :: Nil))
+        foreach(   x     <- List.toIterator(r,      1 :: Nil)   )y := x + 1; // Iterator.foreach(match x -> y := x + 1, 1 :: Nil))
         deref y == 2
     }
 
@@ -206,7 +206,7 @@ namespace Test/Exp/Foreach {
     @test
     def testForeach23(): Bool = region r {
         let y = ref 0 @ r;
-        foreach (x <- List.toIterator(r, 1 :: 2 :: 3 :: Nil); if x > 1) y := deref y + x; // ForEach.foreach(match x -> if (x > 1) y := deref y + x else (), 1 :: 2 :: 3 :: Nil))
+        foreach (x <- List.toIterator(r, 1 :: 2 :: 3 :: Nil); if x > 1) y := deref y + x; // Iterator.foreach(match x -> if (x > 1) y := deref y + x else (), 1 :: 2 :: 3 :: Nil))
         deref y == 5
     }
 
@@ -215,7 +215,7 @@ namespace Test/Exp/Foreach {
         let y = ref 0 @ r;
         foreach (x <- List.toIterator(r, 1 :: 2 :: 3 :: Nil);
                  if x > 1)
-                    y := deref y + x; // ForEach.foreach(match x -> if (x > 1) y := deref y + x else (), 1 :: 2 :: 3 :: Nil))
+                    y := deref y + x; // Iterator.foreach(match x -> if (x > 1) y := deref y + x else (), 1 :: 2 :: 3 :: Nil))
         deref y == 5
     }
 
@@ -224,7 +224,7 @@ namespace Test/Exp/Foreach {
         let y = ref 0 @ r;
         foreach (x <- List.toIterator(r, 1 :: 2 :: 3 :: Nil);
                  if x > 1) {
-                    y := deref y + x // ForEach.foreach(match x -> if (x > 1) y := deref y + x else (), 1 :: 2 :: 3 :: Nil))
+                    y := deref y + x // Iterator.foreach(match x -> if (x > 1) y := deref y + x else (), 1 :: 2 :: 3 :: Nil))
         };
         deref y == 5
     }
@@ -233,7 +233,7 @@ namespace Test/Exp/Foreach {
     def testForeach26(): Bool = region r {
         let y = ref 0 @ r;
         foreach (x <- List.toIterator(r, 1 :: 2 :: 3 :: Nil); if x > 1) {
-            y := deref y + x // ForEach.foreach(match x -> if (x > 1) y := deref y + x else (), 1 :: 2 :: 3 :: Nil))
+            y := deref y + x // Iterator.foreach(match x -> if (x > 1) y := deref y + x else (), 1 :: 2 :: 3 :: Nil))
         };
         deref y == 5
     }
@@ -283,7 +283,7 @@ namespace Test/Exp/Foreach {
     @test
     def testForeach32(): Bool = region r {
         let y = ref 0 @ r;
-        foreach (x <- List.toIterator(r, 1 :: 2 :: 3 :: Nil); if x > 1) y := deref y + x; // ForEach.foreach(match x -> if (x > 1) y := deref y + x else (), 1 :: 2 :: 3 :: Nil))
+        foreach (x <- List.toIterator(r, 1 :: 2 :: 3 :: Nil); if x > 1) y := deref y + x; // Iterator.foreach(match x -> if (x > 1) y := deref y + x else (), 1 :: 2 :: 3 :: Nil))
         deref y == 5
     }
 
@@ -292,7 +292,7 @@ namespace Test/Exp/Foreach {
         let y = ref 0 @ r;
         foreach (x <- List.toIterator(r, 1 :: 2 :: 3 :: Nil);
                  if x > 1)
-                    y := deref y + x; // ForEach.foreach(match x -> if (x > 1) y := deref y + x else (), 1 :: 2 :: 3 :: Nil))
+                    y := deref y + x; // Iterator.foreach(match x -> if (x > 1) y := deref y + x else (), 1 :: 2 :: 3 :: Nil))
         deref y == 5
     }
 
