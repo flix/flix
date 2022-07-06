@@ -628,6 +628,15 @@ namespace Set {
         toList(s) |> List.toIterator(r)
 
     ///
+    /// Returns an enumerator over on `c`.
+    ///
+    /// `Enumerator` is an alias for an iterator
+    /// zipped with its indices, i.e. `zipWithIndex(iter)`.
+    ///
+    pub def enumerator(r: Region[r], s: Set[a]): Enumerator[a, r] \ Write(r) =
+        toIterator(r, s) |> Iterator.zipWithIndex
+
+    ///
     /// Returns the concatenation of the string representation
     /// of each element in `s` with `sep` inserted between each element.
     ///
