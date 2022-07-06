@@ -67,7 +67,7 @@ namespace MutList {
         if (i >= deref l or i < 0)
             None
         else
-            Some(Array.nth(i, deref a)
+            Array.nth(i, deref a)
 
     ///
     /// Returns the number of elements in the given mutable list `v`.

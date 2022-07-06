@@ -122,12 +122,12 @@ namespace TestMutList {
     }
 
     @test
-    def nth06(): Bool = region r {
+    def nth07(): Bool = region r {
         MutList.nth(-30, MutList.range(r, 0, 42)) == None
     }
 
     @test
-    def nth07(): Bool = region r {
+    def nth08(): Bool = region r {
         MutList.nth(50, MutList.range(r, 0, 42)) == None
     }
 
