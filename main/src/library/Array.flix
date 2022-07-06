@@ -1741,6 +1741,12 @@ namespace Array {
        Iterator(done, next)
 
     ///
+    /// Returns an iterator over `a` zipped with the indices of the elements.
+    ///
+    pub def enumerator(r1: Region[r1], a: Array[a, r2]): Iterator[(a, Int32), r1] \ { Read(r2), Write(r1) } =
+        iterator(r1, a) |> Iterator.zipWithIndex
+
+    ///
     /// Shuffles `a` using the Fisher–Yates shuffle.
     ///
     pub def shuffle(rnd: Random.Random, a: Array[a, r]): Unit & Impure =
