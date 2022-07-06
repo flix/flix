@@ -18,11 +18,10 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Symbol, TypedAst}
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import scala.annotation.tailrec
 
@@ -100,6 +99,26 @@ object EarlyTreeShaker {
   private def visitSym(sym: Symbol.DefnSym, root: Root): Set[Symbol.DefnSym] = root.defs.get(sym) match {
     case None => Set.empty
     case Some(defn) => visitExp(defn.impl.exp)
+  }
+
+  private def visitMatchRules(rules: List[MatchRule]): Set[Symbol.DefnSym] = {
+    @tailrec
+    def loop(r: List[MatchRule], acc: Set[Symbol.DefnSym]): Set[Symbol.DefnSym] = r match {
+      case Nil => acc
+      case x :: xs => loop(xs, visitExp(x.exp) ++ visitExp(x.guard) ++ acc)
+    }
+
+    loop(rules, Set())
+  }
+
+  private def visitChoiceRules(rules: List[ChoiceRule]): Set[Symbol.DefnSym] = {
+    @tailrec
+    def loop(r: List[ChoiceRule], acc: Set[Symbol.DefnSym]): Set[Symbol.DefnSym] = r match {
+      case Nil => acc
+      case x :: xs => loop(xs, visitExp(x.exp) ++ acc)
+    }
+
+    loop(rules, Set())
   }
 
   /**
@@ -187,11 +206,21 @@ object EarlyTreeShaker {
     case Expression.Scope(sym, _, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, loc) => ???
-    case Expression.Stm(exp1, exp2, tpe, pur, loc) => ???
-    case Expression.Discard(exp, pur, loc) => ???
-    case Expression.Match(exp, rules, tpe, pur, loc) => ???
-    case Expression.Choose(exps, rules, tpe, pur, loc) => ???
+    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+    case Expression.Stm(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expression.Discard(exp, _, _) =>
+      visitExp(exp)
+
+    case Expression.Match(exp, rules, tpe, pur, loc) =>
+      visitExp(exp) ++ visitMatchRules(rules)
+
+    case Expression.Choose(exps, rules, _, _, _) =>
+      visitExps(exps) ++ visitChoiceRules(rules)
+
     case Expression.Tag(sym, tag, exp, tpe, pur, loc) => ???
     case Expression.Tuple(elms, tpe, pur, loc) => ???
     case Expression.RecordEmpty(tpe, loc) => ???
