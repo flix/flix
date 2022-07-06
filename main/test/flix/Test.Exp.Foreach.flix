@@ -327,7 +327,7 @@ namespace Test/Exp/Foreach {
     @test
     def testForeach39(): Bool = region r {
         let z = ref 0 @ r;
-        foreach (x <- List.toIterator(r, 1 :: 2 :: Nil); y <- List.toIterator(r, 3 :: 4 :: Nil); if y > 3; if x > 1) z := deref z + (x * y);
+        foreach (x <- List.iterator(r, 1 :: 2 :: Nil); y <- List.iterator(r, 3 :: 4 :: Nil); if y > 3; if x > 1) z := deref z + (x * y);
         deref z == 4 * 2
     }
 
