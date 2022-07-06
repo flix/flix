@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.ParsedAst.{Argument, CatchOrHandler, Declaration, Effect, EffectSet, Expression, ForeachFragment, InterpolationPart, RecordOp, Type}
+import ca.uwaterloo.flix.language.ast.ParsedAst._
 import ca.uwaterloo.flix.language.ast.{Name, ParsedAst}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation.ToSuccess
@@ -107,10 +107,10 @@ object Metrics {
     case _: Declaration.Relation => Nil
     case _: Declaration.Lattice => Nil
     case clazz: Declaration.Class => Nil
-//      clazz.lawsAndSigs.flatMap {
-//        case sig: Declaration.Sig => if (sig.mod.exists(mod => mod.name == "pub")) List(DefIsh(sig.ident.name, sig.tpe, sig.purAndEff)) else Nil
-//        case _: Declaration.Law => Nil
-//      }
+    //      clazz.lawsAndSigs.flatMap {
+    //        case sig: Declaration.Sig => if (sig.mod.exists(mod => mod.name == "pub")) List(DefIsh(sig.ident.name, sig.tpe, sig.purAndEff)) else Nil
+    //        case _: Declaration.Law => Nil
+    //      }
     case instance: Declaration.Instance => Nil // instance.defs.flatMap(getPubDefs)
     case _: Declaration.Effect => Nil
   }
@@ -151,7 +151,7 @@ object Metrics {
           case _ => Some(false)
         }
         case EffectSet.Pure(_, _) => Some(false)
-        case EffectSet.Set(_, effs, _) => Some(effs.forall {
+        case EffectSet.Set(_, effs, _) => Some(effs.exists {
           case Effect.Impure(_, _) => true
           case _ => false
         })
@@ -219,7 +219,7 @@ object Metrics {
             case Effect.Read(sp1, regs, sp2) => regs.toSet
             case Effect.Write(sp1, regs, sp2) => regs.toSet
             case Effect.Var(sp1, ident, sp2) => Set()
-            case Effect.Impure(sp1, sp2) => ???
+            case Effect.Impure(sp1, sp2) => Set()
             case Effect.Eff(sp1, name, sp2) => ???
             case Effect.Complement(sp1, eff, sp2) => ???
             case Effect.Union(eff1, effs) => ???
@@ -297,37 +297,48 @@ object Metrics {
   private def introducesRegion(defIsh: DefIsh): Boolean = {
     def visitSelectChannelRule(value: ParsedAst.SelectChannelRule): Boolean =
       visitExp(value.chan) || visitExp(value.exp)
+
     def visitCatchRule(value: ParsedAst.CatchRule): Boolean =
       visitExp(value.exp)
+
     def visitHandlerRule(value: ParsedAst.HandlerRule): Boolean =
       visitExp(value.exp)
+
     def visitCatchOrHandler(value: ParsedAst.CatchOrHandler): Boolean = value match {
       case CatchOrHandler.Catch(rules) => rules.exists(visitCatchRule)
       case CatchOrHandler.Handler(eff, rules) => rules.exists(_.exists(visitHandlerRule))
     }
+
     def visitInterpolationPart(value: ParsedAst.InterpolationPart): Boolean = value match {
       case InterpolationPart.ExpPart(sp1, exp, sp2) => exp.exists(visitExp)
       case InterpolationPart.StrPart(sp1, chars, sp2) => false
     }
+
     def visitRecordOp(value: ParsedAst.RecordOp): Boolean = value match {
       case RecordOp.Extend(sp1, field, exp, sp2) => visitExp(exp)
       case RecordOp.Restrict(sp1, field, sp2) => false
       case RecordOp.Update(sp1, field, exp, sp2) => visitExp(exp)
     }
+
     def visitRecordField(value: ParsedAst.RecordField): Boolean =
       visitExp(value.value)
+
     def visitForeachFragment(value: ParsedAst.ForeachFragment): Boolean = value match {
       case ForeachFragment.ForEach(sp1, pat, exp, sp2) => visitExp(exp)
       case ForeachFragment.Guard(sp1, guard, sp2) => visitExp(guard)
     }
+
     def visitChoiceRule(value: ParsedAst.ChoiceRule): Boolean =
       visitExp(value.exp)
+
     def visitMatchRule(value: ParsedAst.MatchRule): Boolean =
       value.guard.exists(visitExp) || visitExp(value.exp)
+
     def visitArg(value: ParsedAst.Argument): Boolean = value match {
       case Argument.Named(name, exp, sp2) => visitExp(exp)
       case Argument.Unnamed(exp) => visitExp(exp)
     }
+
     def visitExp(exp: ParsedAst.Expression): Boolean = exp match {
       case Expression.Scope(sp1, ident, exp, sp2) => true
 
@@ -401,6 +412,7 @@ object Metrics {
       case Expression.ReifyType(sp1, t, sp2) => false
       case Expression.ReifyPurity(sp1, exp1, ident, exp2, exp3, sp2) => visitExp(exp1) || visitExp(exp2) || visitExp(exp3)
     }
+
     visitExp(defIsh.exp)
   }
 
@@ -423,7 +435,7 @@ object Metrics {
           lines, functions, pureFunctions, impureFunctions, effPolyFunctions,
           regionFunctions, regFunctions(_ == 1), regFunctions(_ == 2), regFunctions(_ >= 3), regionUses = regionUses)
         (src, metrics)
-    }.filterNot{case (_, metrics) => metrics.isEmpty}
+    }.filterNot { case (_, metrics) => metrics.isEmpty }
     val total = metrics.values.reduce((m1, m2) => {
       Metrics(
         lines = m1.lines + m2.lines,
