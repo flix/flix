@@ -1345,7 +1345,7 @@ namespace List {
         Iterator(done, next)
 
     ///
-    /// Returns an enumerator based on `l`.
+    /// Returns an enumerator over on `l`.
     ///
     /// `Enumerator` is an alias for an iterator
     /// zipped with its indices, i.e. `zipWithIndex(iter)`.
