@@ -538,11 +538,11 @@ object SimpleType {
         // NB we don't collapse the chain since difference is not commutative
         t.typeArguments.map(fromWellKindedType) match {
           // Case 1: No args. ? - ?
-          case Nil => Intersection(Hole :: Hole :: Nil)
+          case Nil => Difference(Hole, Hole)
           // Case 2: One arg. Take the left and put a hole at the end: tpe1 - ?
-          case arg :: Nil => Intersection(arg :: Hole :: Nil)
+          case arg :: Nil => Difference(arg, Hole)
           // Case 3: Multiple args. Concatenate them: tpe1 - tpe2
-          case arg1 :: arg2 :: Nil => Intersection(arg1 :: arg2 :: Nil)
+          case arg1 :: arg2 :: Nil => Difference(arg1, arg2)
           // Case 4: Too many args. Error.
           case _ :: _ :: _ :: _ => throw new OverAppliedType
         }

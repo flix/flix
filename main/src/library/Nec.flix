@@ -95,8 +95,8 @@ instance Traversable[Nec] {
 }
 
 instance Reducible[Nec] {
-    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nec[a]): b & (ef1 and ef2) = Nec.reduceLeftTo(f, g, l)
-    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, l: Nec[a]): b & (ef1 and ef2) = Nec.reduceRightTo(f, g, l)
+    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nec[a]): b \ {ef1, ef2} = Nec.reduceLeftTo(f, g, l)
+    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, l: Nec[a]): b \ {ef1, ef2} = Nec.reduceRightTo(f, g, l)
     override pub def head(l: Nec[a]): a = Nec.head(l)
     override pub def last(l: Nec[a]): a = Nec.last(l)
     override pub def init(l: Nec[a]): List[a] = Nec.init(l)
@@ -945,7 +945,7 @@ namespace Nec {
     /// Applies `g` to the initial element of `c` and combines it
     /// with the remainder of `c` using `f` going from left to right.
     ///
-    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, c: Nec[a]): b & (ef1 and ef2) = match viewLeft(c) {
+    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, c: Nec[a]): b \ {ef1, ef2} = match viewLeft(c) {
         case OneLeft(x)      => g(x)
         case SomeLeft(x, xs) => foldLeft(f, g(x), xs)
     }
@@ -955,7 +955,7 @@ namespace Nec {
     /// Applies `g` to the initial element of `c` and combines it
     /// with the remainder of `c` using `f` going from right to left.
     ///
-    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, c: Nec[a]): b & (ef1 and ef2) = match viewRight(c) {
+    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, c: Nec[a]): b \ {ef1, ef2} = match viewRight(c) {
         case OneRight(x)      => g(x)
         case SomeRight(xs, x) => foldRight((a, acc) -> f(a, acc), g(x), xs)
     }

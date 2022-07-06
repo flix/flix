@@ -87,8 +87,8 @@ instance Iterable[Nel] {
         Nel.iterator(r, t)
 }
 instance Reducible[Nel] {
-    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b & (ef1 and ef2) = Nel.reduceLeftTo(f, g, l)
-    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b & (ef1 and ef2) = Nel.reduceRightTo(f, g, l)
+    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b \ {ef1, ef2} = Nel.reduceLeftTo(f, g, l)
+    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b \ {ef1, ef2} = Nel.reduceRightTo(f, g, l)
     override pub def head(l: Nel[a]): a = Nel.head(l)
     override pub def last(l: Nel[a]): a = Nel.last(l)
     override pub def init(l: Nel[a]): List[a] = Nel.init(l)
@@ -400,7 +400,7 @@ namespace Nel {
     /// Applies `g` to the initial element of `l` and combines it
     /// with the remainder of `l` using `f` going from left to right.
     ///
-    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b & (ef1 and ef2) = match l {
+    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b \ {ef1, ef2} = match l {
         case Nel(x, xs) => List.foldLeft(f, g(x), xs)
     }
 
@@ -409,14 +409,14 @@ namespace Nel {
     /// Applies `g` to the initial element of `l` and combines it
     /// with the remainder of `l` using `f` going from right to left.
     ///
-    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b & (ef1 and ef2) =
+    pub def reduceRightTo(f: (a, b) -> b & ef1 \ ef1_, g: a -> b & ef2 \ ef2_, l: Nel[a]): b & (ef1 and ef2) \ (ef1_ + ef2_) =
         def loop(ll, k) = match ll {
             case x :: Nil => k(g(x))
             case x :: xs  => loop(xs, ks -> k(f(x, ks)))
             case _        => unreachable!()
         };
         let Nel(x, xs) = l;
-        loop(x :: xs, ks -> ks as & (ef1 and ef2))
+        loop(x :: xs, ks -> ks as & (ef1 and ef2) \ (ef1_ + ef2_))
 
     ///
     /// Applies `combine` to all elements in `l` until a single value is obtained.
