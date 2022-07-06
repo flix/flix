@@ -283,6 +283,7 @@ object Main {
                      xnobooltable: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
+                     xeffects: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -440,6 +441,9 @@ object Main {
       // Xstrictmono
       opt[Unit]("Xstrictmono").action((_, c) => c.copy(xstrictmono = true)).
         text("[experimental] enable strict monomorphization.")
+
+      opt[Unit]("Xeffects").action((_, c) => c.copy(xeffects = true)).
+        text("[experimental] enable set effects")
 
       note("")
 
