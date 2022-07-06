@@ -50,4 +50,47 @@ namespace Graph {
         List.toSet(x)
     }
 
+    ///
+    /// Returns the strongly connected components of the directed graph `g`.
+    ///
+    pub def stronglyConnectedComponents(g: m[(t, t)]): List[Set[t]] with Foldable[m], Boxable[t] =
+        let edges = inject g into Edge;
+        let nodes = #{
+            Node(x) :- Edge(x, _).
+            Node(x) :- Edge(_, x).
+        };
+        let reachability = #{
+            // All nodes can reach themselves.
+            Reachable(n1, n1) :- Edge(n1, _).
+            Reachable(n2, n2) :- Edge(_, n2).
+            // If `n1` can reach `m` and there is an edge from `m` to `n2`
+            // then `n1` can also reach `n2`. This adds all node pairs to
+            // the relational that are reachable using any number of nodes.
+            Reachable(n1, n2) :- Reachable(n1, m), Edge(m, n2).
+        };
+        let connected = #{
+            // If `n1` can reach `n2` and `n2` can reach `n1`
+            // then they are part of the same strongly connected component.
+            Connected(n1, n2) :- Reachable(n1, n2), Reachable(n2, n1).
+        };
+
+        let allNodes = query edges, nodes select x from Node(x);
+
+        // Find every node that is part of the strongly connected component with `x`.
+        let f = (x) -> {
+            query edges, reachability, connected select dst from Connected(src, dst) where src == x
+        };
+
+        let f1 = (acc, x) -> {
+            let (acc1, visited) = acc;
+            if (Set.memberOf(x, visited)) {
+                acc
+            } else {
+                let stronglyConnected = Set.insert(x, List.toSet(f(x)));
+                (stronglyConnected :: acc1, Set.union(visited, stronglyConnected))
+            }
+        };
+
+        fst(List.foldLeft(f1, (Nil, Set.empty()), allNodes))
+
 }

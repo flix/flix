@@ -112,5 +112,50 @@ namespace TestGraph {
         let s2 = Set#{3, 4};
         Graph.reachable(3, s1) == s2
 
+    /////////////////////////////////////////////////////////////////////////////
+    // stronglyConnectedComponents01                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def stronglyConnectedComponents01(): Bool =
+        let g = graph01();
+        let s = Nil;
+        Graph.stronglyConnectedComponents(g) == s
+
+    @test
+    def stronglyConnectedComponents02(): Bool =
+        let g = graph02();
+        let s = Set#{2} :: Set#{1} :: Nil;
+        Graph.stronglyConnectedComponents(g) == s
+
+    @test
+    def stronglyConnectedComponents03(): Bool =
+        let g = graph03();
+        let s = Set#{4} :: Set#{3} :: Set#{2} :: Set#{1} :: Nil;
+        Graph.stronglyConnectedComponents(g) == s
+
+    @test
+    def stronglyConnectedComponents04(): Bool =
+        let g = graph04();
+        let s = Set#{3} :: Set#{2} :: Set#{1} :: Nil;
+        Graph.stronglyConnectedComponents(g) == s
+
+    @test
+    def stronglyConnectedComponents05(): Bool =
+        let g = graph05();
+        let s = Set#{4} :: Set#{3} :: Set#{2} :: Set#{1} :: Nil;
+        Graph.stronglyConnectedComponents(g) == s
+
+    @test
+    def stronglyConnectedComponents06(): Bool =
+        let g = graph06();
+        let s = Set#{1, 2, 3, 4} :: Nil;
+        Graph.stronglyConnectedComponents(g) == s
+
+    @test
+    def stronglyConnectedComponents07(): Bool =
+        let g = graph07();
+        let s = Set#{5, 6} :: Set#{1, 2, 3, 4} :: Nil;
+        Graph.stronglyConnectedComponents(g) == s
 
 }
