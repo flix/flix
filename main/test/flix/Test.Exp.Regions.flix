@@ -556,10 +556,7 @@ namespace Test/Exp/Regions {
                 MutList.push!([1; 8] @ r2, l);
                 MutMap.put!(1, l, m);
                 match MutMap.get(1, m) {
-                    case Some(k) => match MutList.nth(0, k) {
-                        case Some(k1) => k1[0] == 1
-                        case _        => unreachable!()
-                    }
+                    case Some(k) => MutList.nth(0, k) |> Option.flatMap(Array.nth(0)) == Some(1)
                     case _       => unreachable!()
                 }
             }
@@ -574,10 +571,7 @@ namespace Test/Exp/Regions {
                 MutList.push!([1; 8] @ r1, l);
                 MutMap.put!(1, l, a[0]);
                 match MutMap.get(1, a[0]) {
-                    case Some(k) => match MutList.nth(0, k) {
-                        case Some(k1) => k1[0] == 1
-                        case _        => unreachable!()
-                    }
+                    case Some(k) => MutList.nth(0, k) |> Option.flatMap(Array.nth(0)) == Some(1)
                     case _       => unreachable!()
                 }
             }
@@ -614,10 +608,8 @@ namespace Test/Exp/Regions {
                 MutMap.put!(1, 1, a[0]); // Mutate the innermost nested MutMap
                 MutMap.put!(1, l, m);
                 match MutMap.get(1, m) {
-                    case Some(k) => match MutList.nth(0, k) {
-                        case Some(k1) => k1[0] |> MutMap.get(1) == Some(1)
-                        case _        => unreachable!()
-                    }
+                    case Some(k) => MutList.nth(0, k) |> Option.flatMap(Array.nth(0))
+                                                      |> Option.flatMap(MutMap.get(1)) == Some(1)
                     case _       => unreachable!()
                 }
             }
@@ -775,10 +767,7 @@ namespace Test/Exp/Regions {
                     MutMap.put!(1, l, m);
                     MutList.push!([1; 8] @ r1, l);
                     match MutMap.get(1, m) {
-                        case Some(k) => match MutList.nth(0, k) {
-                            case Some(k1) => k1[0] == 1
-                            case _        => unreachable!()
-                        }
+                        case Some(k) => MutList.nth(0, k) |> Option.flatMap(Array.nth(0)) == Some(1)
                         case _       => unreachable!()
                     }
                 }
@@ -795,10 +784,7 @@ namespace Test/Exp/Regions {
                     MutMap.put!(1, l, a[0]);
                     MutList.push!([1; 8] @ Static, l);
                     match MutMap.get(1, a[0]) {
-                        case Some(k) => match MutList.nth(0, k) {
-                            case Some(k1) => k1[0] == 1
-                            case _        => unreachable!()
-                        }
+                        case Some(k) => MutList.nth(0, k) |> Option.flatMap(Array.nth(0)) == Some(1)
                         case _       => unreachable!()
                     }
                 }
@@ -839,10 +825,7 @@ namespace Test/Exp/Regions {
                     MutList.push!(a, l);
                     MutMap.put!(1, 1, a[0]);
                     match MutMap.get(1, m) {
-                        case Some(k) => match MutList.nth(0, k) {
-                            case Some(k1) => k1[0] |> MutMap.get(1) == Some(1)
-                            case _        => unreachable!()
-                        }
+                        case Some(k) => MutList.nth(0, k) |> Option.flatMap(Array.nth(0)) |> Option.flatMap(MutMap.get(1)) == Some(1)
                         case _       => unreachable!()
                     }
                 }
@@ -1212,11 +1195,7 @@ namespace Test/Exp/Regions {
                 MutList.push!(ref [1; 8] @ r2 @ r2, deref l);
                 MutMap.put!(1, l, deref m);
                 match MutMap.get(1, deref m) {
-                    case Some(k) => match MutList.nth(0, deref k) {
-                        case Some(k1) => (deref k1)[0] == 1
-                        case _       => unreachable!()
-
-                    }
+                    case Some(k) => MutList.nth(0, deref k) |> Option.flatMap(arr -> Array.nth(0, deref arr)) == Some(1)
                     case _       => unreachable!()
                 }
             }
@@ -1231,10 +1210,7 @@ namespace Test/Exp/Regions {
                 MutList.push!(ref [1; 8] @ r1 @ r1, deref l);
                 MutMap.put!(1, l, deref (deref a)[0]);
                 match MutMap.get(1, deref (deref a)[0]) {
-                    case Some(k) => match MutList.nth(0, deref k) {
-                        case Some(k1) => (deref k1)[0] == 1
-                        case _        => unreachable!()
-                    }
+                    case Some(k) => MutList.nth(0, deref k) |> Option.flatMap(arr -> Array.nth(0, deref arr)) == Some(1)
                     case _       => unreachable!()
                 }
             }
@@ -1271,10 +1247,8 @@ namespace Test/Exp/Regions {
                 MutMap.put!(1, 1, deref (deref a)[0]); // Mutate the innermost nested MutMap
                 MutMap.put!(1, l, deref m);
                 match MutMap.get(1, deref m) {
-                    case Some(k) => match MutList.nth(0, deref k) {
-                        case Some(k1) => deref (deref k1)[0] |> MutMap.get(1) == Some(1)
-                        case _       => unreachable!()
-                    }
+                    case Some(k) => MutList.nth(0, deref k) |> Option.flatMap(arr -> Array.nth(0, deref arr))
+                                                            |> Option.flatMap(m1 -> MutMap.get(1, deref m1)) == Some(1)
                     case _       => unreachable!()
                 }
             }
@@ -1432,10 +1406,7 @@ namespace Test/Exp/Regions {
                     MutMap.put!(1, l, deref m);
                     MutList.push!(ref [1; 8] @ r1 @ r2, deref l);
                     match MutMap.get(1, deref m) {
-                        case Some(k) => match MutList.nth(0, deref k) {
-                            case Some(k1) => (deref k1)[0] == 1
-                            case _       => unreachable!()
-                        }
+                        case Some(k) => MutList.nth(0, deref k) |> Option.flatMap(arr -> Array.nth(0, deref arr)) == Some(1)
                         case _       => unreachable!()
                     }
                 }
@@ -1452,10 +1423,7 @@ namespace Test/Exp/Regions {
                     MutMap.put!(1, l, deref (deref a)[0]);
                     MutList.push!(ref [1; 8] @ Static @ r1, deref l);
                     match MutMap.get(1, deref (deref a)[0]) {
-                        case Some(k) => match MutList.nth(0, deref k) {
-                            case Some(k1) => (deref k1)[0] == 1
-                            case _       => unreachable!()
-                        }
+                        case Some(k) => MutList.nth(0, deref k) |> Option.flatMap(arr -> Array.nth(0, deref arr)) == Some(1)
                         case _       => unreachable!()
                     }
                 }
@@ -1496,10 +1464,8 @@ namespace Test/Exp/Regions {
                     MutList.push!(a, deref l);
                     MutMap.put!(1, 1, deref (deref a)[0]);
                     match MutMap.get(1, deref m) {
-                        case Some(k) => match MutList.nth(0, deref k) {
-                            case Some(k1) => deref (deref k1)[0] |> MutMap.get(1) == Some(1)
-                            case _        => unreachable!()
-                        }
+                        case Some(k) => MutList.nth(0, deref k) |> Option.flatMap(arr -> Array.nth(0, deref arr))
+                                                                |> Option.flatMap(m1 -> MutMap.get(1, deref m1)) == Some(1)
                         case _       => unreachable!()
                     }
                 }
@@ -1519,10 +1485,8 @@ namespace Test/Exp/Regions {
                     MutList.push!(a, deref l);
                     MutMap.put!(1, 1, deref deref deref deref (deref a)[0]);
                     match MutMap.get(1, deref deref deref deref m) {
-                        case Some(k) => match MutList.nth(0, deref k) {
-                            case Some(k1) => deref deref deref deref (deref k1)[0] |> MutMap.get(1) == Some(1)
-                            case _        => unreachable!()
-                        }
+                        case Some(k) => MutList.nth(0, deref k) |> Option.flatMap(arr -> Array.nth(0, deref arr))
+                                                                |> Option.flatMap(m1 -> MutMap.get(1, deref deref deref deref m1)) == Some(1)
                         case _       => unreachable!()
                     }
                 }
