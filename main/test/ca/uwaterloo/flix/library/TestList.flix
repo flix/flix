@@ -2694,6 +2694,35 @@ def distinctWith09(): Bool =
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // enumerate                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def enumerate01(): Bool = region r {
+        let z = ref Nil @ r;
+        let l = Nil;
+        foreach ((x, i) <- List.enumerator(r, l)) z := (x, i) :: deref z;
+        List.reverse(deref z) == Nil: List[(Int32, Int32)]
+    }
+
+    @test
+    def enumerate02(): Bool = region r {
+        let z = ref Nil @ r;
+        let l = 1 :: 2 :: 3 :: Nil;
+        foreach ((x, i) <- List.enumerator(r, l)) z := (x, i) :: deref z;
+        List.reverse(deref z) == (1, 0) :: (2, 1) :: (3, 2) :: Nil
+    }
+
+    @test
+    def enumerate03(): Bool = region r {
+        let z = ref Nil @ r;
+        let l = List.range(100, 200);
+        foreach ((x, i) <- List.enumerator(r, l)) z := (x, i) :: deref z;
+        List.reverse(deref z) == List.zip(l, List.range(0, 100))
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // merge                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 

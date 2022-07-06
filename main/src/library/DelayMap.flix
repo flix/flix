@@ -20,10 +20,6 @@ pub enum DelayMap[k, v] {
     case DMap(RedBlackTree[k, Lazy[v]])
 }
 
-instance ForEach[DelayMap[k]] {
-    pub def foreach(f: a -> Unit & ef, l: DelayMap[k, a]): Unit & ef = DelayMap.foreach((_, v) -> f(v), l)
-}
-
 namespace DelayMap {
 
     ///
@@ -768,6 +764,14 @@ namespace DelayMap {
                 }
         };
         Iterator(done, next)
+
+    ///
+    /// Returns the map `m` as a MutDeque of key-value pairs.
+    ///
+    @Experimental
+    pub def toMutDeque(r: Region[r], m: DelayMap[k, v]): MutDeque[(k, v), r] \ Write(r) =
+        let m1 = DelayMap.toMap(m);
+        Map.toMutDeque(r, m1)
 
     ///
     /// Applies `f` to every element of `xs`.

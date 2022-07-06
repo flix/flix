@@ -81,10 +81,6 @@ instance Monad[Option] {
     pub def flatMap(f: a -> Option[b] & ef, x : Option[a]) : Option[b] & ef = Option.flatMap(f, x)
 }
 
-instance ForEach[Option] {
-    pub def foreach(f: a -> Unit & ef, o: Option[a]): Unit & ef = Option.foreach(f, o)
-}
-
 instance Foldable[Option] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldLeft(f, s, o)
     pub def foldRight(f: (a, b) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRight(f, o, s)
@@ -594,5 +590,11 @@ namespace Option {
         case None    => new Iterator(r)
         case Some(x) => Iterator.singleton(r, x)
     }
+
+    ///
+    /// Returns an iterator over `o` zipped with the indices of the elements.
+    ///
+    pub def enumerator(r: Region[r], o: Option[a]): Iterator[(a, Int32), r] \ Write(r) =
+        toIterator(r, o) |> Iterator.zipWithIndex
 
 }

@@ -38,7 +38,7 @@ namespace MutMap {
     ///
     /// Returns the singleton map where key `k` is mapped to value `v`.
     ///
-    pub def singleton(k: k, v: v, r: Region[r]): MutMap[k, v, r] \ Write(r) with Order[k] =
+    pub def singleton(r: Region[r], k: k, v: v): MutMap[k, v, r] \ Write(r) with Order[k] =
         MutMap(ref Map.singleton(k, v) @ r)
 
     ///
@@ -548,6 +548,13 @@ namespace MutMap {
     pub def toMap(m: MutMap[k, v, r]): Map[k, v] \ Read(r) =
         let MutMap(mm) = m;
         deref mm
+
+    ///
+    /// Returns `m` as a MutDeque.
+    ///
+    pub def toMutDeque(r1: Region[r1], m: MutMap[k, v, r2]): MutDeque[(k, v), r1] \ { Read(r2), Write(r1) } =
+        let MutMap(mm) = m;
+        Map.toMutDeque(r1, deref mm)
 
     ///
     /// Returns the mutable map `m` as a list of key-value pairs.

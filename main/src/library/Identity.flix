@@ -53,12 +53,6 @@ instance Monad[Identity] {
         f(x1)
 }
 
-instance ForEach[Identity] {
-    pub def foreach(f: a -> Unit & ef, x: Identity[a]): Unit & ef =
-        let Identity(x1) = x;
-        f(x1)
-}
-
 instance Foldable[Identity] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, x: Identity[a]): b & ef =
         let Identity(x1) = x;

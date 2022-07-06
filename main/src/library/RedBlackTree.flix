@@ -60,10 +60,6 @@ namespace RedBlackTree {
         pub def map(f: a -> b & ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] & ef = mapWithKey((_, v) -> f(v), t)
     }
 
-    instance ForEach[RedBlackTree[k]] {
-        pub def foreach(f: a -> Unit & ef, t: RedBlackTree[k, a]): Unit & ef = foreach((_, a) -> f(a), t)
-    }
-
     instance Foldable[RedBlackTree[k]] {
         pub def foldLeft(f: (b, v) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldLeft((acc, _, v) -> f(acc, v), s, t)
         pub def foldRight(f: (v, b) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldRight((_, v, acc) -> f(v, acc), s, t)
@@ -896,6 +892,14 @@ namespace RedBlackTree {
     ///
     pub def toList(t: RedBlackTree[k, v]): List[(k, v)] =
         RedBlackTree.foldRight((k, v, acc) -> (k, v) :: acc, Nil, t)
+
+    ///
+    /// Returns the tree `t` as a MutDeque. Elements are ordered from smallest (left) to largest (right).
+    ///
+    pub def toMutDeque(r: Region[r], t: RedBlackTree[k, v]): MutDeque[(k, v), r] \ Write(r) =
+        let d = new MutDeque(r);
+        RedBlackTree.foreach((k, v) -> let x = (k, v); MutDeque.pushBack(x, d), t);
+        d
 
     ///
     /// Build a node applicatively.

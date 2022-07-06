@@ -164,7 +164,7 @@ object ResolvedAst {
 
     case class Do(op: Symbol.OpSym, args: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Resume(args: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
+    case class Resume(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class InvokeConstructor(constructor: Constructor[_], args: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
