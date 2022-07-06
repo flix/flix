@@ -38,7 +38,7 @@ namespace MutMap {
     ///
     /// Returns the singleton map where key `k` is mapped to value `v`.
     ///
-    pub def singleton(k: k, v: v, r: Region[r]): MutMap[k, v, r] \ Write(r) with Order[k] =
+    pub def singleton(r: Region[r], k: k, v: v): MutMap[k, v, r] \ Write(r) with Order[k] =
         MutMap(ref Map.singleton(k, v) @ r)
 
     ///

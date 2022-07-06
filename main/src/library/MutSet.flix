@@ -38,7 +38,7 @@ namespace MutSet {
     ///
     /// Returns the singleton set containing `x`.
     ///
-    pub def singleton(x: a, r: Region[r]): MutSet[a, r] \ Write(r) with Order[a] =
+    pub def singleton(r: Region[r], x: a): MutSet[a, r] \ Write(r) with Order[a] =
         MutSet(ref Set.singleton(x) @ r)
 
     ///
