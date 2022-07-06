@@ -766,6 +766,12 @@ namespace DelayMap {
         Iterator(done, next)
 
     ///
+    /// Returns an iterator over key-value pairs of `m` zipped with the indices of the elements.
+    ///
+    pub def enumerator(r: Region[r], m: DelayMap[k, v]): Iterator[((k, v), Int32), r] \ Write(r) with Order[k] =
+        iterator(r, m) |> Iterator.zipWithIndex
+
+    ///
     /// Returns the map `m` as a MutDeque of key-value pairs.
     ///
     @Experimental
