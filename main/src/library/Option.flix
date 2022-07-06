@@ -591,4 +591,10 @@ namespace Option {
         case Some(x) => Iterator.singleton(r, x)
     }
 
+    ///
+    /// Returns an iterator over `o` zipped with the indices of the elements.
+    ///
+    pub def enumerator(r: Region[r], o: Option[a]): Iterator[(a, Int32), r] \ Write(r) =
+        toIterator(r, o) |> Iterator.zipWithIndex
+
 }

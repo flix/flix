@@ -431,6 +431,12 @@ namespace Iterator {
         Iterator(done, next1)
 
     ///
+    /// Alias for `zipWithIndex`.
+    ///
+    pub def enumerator(iter: Iterator[a, r]): Iterator[(a, Int32), r] \ Write(r) =
+        zipWithIndex(iter)
+
+    ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.

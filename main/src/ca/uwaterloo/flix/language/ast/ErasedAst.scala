@@ -176,7 +176,9 @@ object ErasedAst {
 
     case class PutStaticField(field: Field, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
-    case class NewObject(clazz: java.lang.Class[_], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class NewObject(clazz: java.lang.Class[_], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression {
+      final val name = s"Anon${this.hashCode}"
+    }
 
     case class NewChannel(exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
