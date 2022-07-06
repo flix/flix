@@ -201,6 +201,9 @@ object Typer {
     */
   private def typeCheckDecl(spec0: KindedAst.Spec, exp0: KindedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], loc: SourceLocation)(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
     case KindedAst.Spec(_, _, _, _, fparams0, sc, _, _, _, _) =>
+      if (spec0.doc.text.contains("Returns the concatenation of the string representation")) {
+        println("debug") // MATT
+      }
 
       ///
       /// Infer the type of the expression `exp0`.
