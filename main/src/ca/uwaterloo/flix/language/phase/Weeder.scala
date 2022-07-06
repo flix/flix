@@ -692,7 +692,7 @@ object Weeder {
       // Rewrites a foreach loop to Foreach.foreach call.
       //
 
-      val fqn = "ForEach.foreach"
+      val fqn = "Iterator.foreach"
 
       foldRight(frags)(visitExp(exp, senv)) {
         case (ParsedAst.ForeachFragment.ForEach(sp11, pat, e1, sp12), e0) =>
