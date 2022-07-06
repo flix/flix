@@ -439,6 +439,12 @@ namespace Result {
     }
 
     ///
+    /// Returns an iterator over `r` zipped with the indices of the elements.
+    ///
+    pub def enumerator(reg: Region[reg], r: Result[t, e]): Iterator[(t, Int32), reg] \ Write(reg) =
+        toIterator(reg, r) |> Iterator.zipWithIndex
+
+    ///
     /// Returns `Ok(x)` if `f` was invoked without throwing an exception.
     ///
     /// If `f` throws a Java `RuntimeException`, `Err(e)` is returned
