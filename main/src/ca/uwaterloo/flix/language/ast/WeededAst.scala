@@ -177,7 +177,7 @@ object WeededAst {
 
     case class Do(op: Name.QName, exps: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Resume(exps: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+    case class Resume(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class InvokeConstructor(className: String, args: List[WeededAst.Expression], sig: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Expression
 
