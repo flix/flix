@@ -1345,6 +1345,15 @@ namespace List {
         Iterator(done, next)
 
     ///
+    /// Returns an enumerator based on `l`.
+    ///
+    /// `Enumerator` is an alias for an iterator
+    /// zipped with its indices, i.e. `zipWithIndex(iter)`.
+    ///
+    pub def enumerator(r: Region[r], l: List[a]): Enumerator[a, r] \ Write(r) =
+        toIterator(r, l) |> Iterator.zipWithIndex
+
+    ///
     /// Returns the association list `l` as a `DelayMap`.
     ///
     /// If `l` contains multiple mappings with the same key, `toDelayMap` does not
