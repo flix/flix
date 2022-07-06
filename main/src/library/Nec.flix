@@ -803,6 +803,12 @@ namespace Nec {
         Iterator(done, next)
 
     ///
+    /// Returns an iterator over `c` zipped with the indices of the elements.
+    ///
+    pub def enumerator(r: Region[r], c: Nec[a]): Iterator[(a, Int32), r] \ Write(r) =
+        toIterator(r, c) |> Iterator.zipWithIndex
+
+    ///
     /// Helper for the `sort` functions.
     ///
     def fromArray(arr: Array[a, r]): Option[Nec[a]] \ Read(r) =

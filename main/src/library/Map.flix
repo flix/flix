@@ -952,6 +952,12 @@ namespace Map {
         List.toIterator(r, Map.query(_ -> EqualTo, m))
 
     ///
+    /// Returns an iterator over key-value pairs in `m` zipped with the indices of the elements.
+    ///
+    pub def enumerator(r: Region[r], m: Map[k, v]): Iterator[((k, v), Int32), r] \ Write(r) =
+        toIterator(r, m) |> Iterator.zipWithIndex
+
+    ///
     /// Returns `m` as a `DelayMap`.
     ///
     pub def toDelayMap(m: Map[k, v]): DelayMap[k, v] = {
