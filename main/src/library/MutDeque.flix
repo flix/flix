@@ -415,7 +415,10 @@ namespace MutDeque {
             if (i == deref back) {
                 ()
             } else {
-                f(Array.get(i, deref a));
+                match Array.nth(i, deref a) {
+                    case Some(x) => f(x)
+                    case None    => bug!("An error occurred in MutDeque.foreach!")
+                };
                 loop((i + 1) &&& c)
             }
         };
