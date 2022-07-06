@@ -1156,7 +1156,7 @@ namespace TestMutDeque {
     def shuffle01(): Bool & Impure = region r {
         let l: List[Int32] = Nil;
         let d1 = List.toMutDeque(r, l);
-        let d2 = MutDeque.shuffle(Random.new(), d1, r);
+        let d2 = MutDeque.shuffle(r, Random.new(), d1);
 
         MutDeque.size(d2) == 0 and d2 |> MutDeque.toList |> List.toSet == Set#{}
     }
@@ -1165,7 +1165,7 @@ namespace TestMutDeque {
     def shuffle02(): Bool & Impure = region r {
         let l = 1 :: Nil;
         let d1 = List.toMutDeque(r, l);
-        let d2 = MutDeque.shuffle(Random.new(), d1, r);
+        let d2 = MutDeque.shuffle(r, Random.new(), d1);
 
         MutDeque.size(d2) == 1 and d2 |> MutDeque.toList |> List.toSet == Set#{1}
     }
@@ -1174,7 +1174,7 @@ namespace TestMutDeque {
     def shuffle03(): Bool & Impure = region r {
         let l = 1 :: 2 :: 3 :: Nil;
         let d1 = List.toMutDeque(r, l);
-        let d2 = MutDeque.shuffle(Random.new(), d1, r);
+        let d2 = MutDeque.shuffle(r, Random.new(), d1);
 
         MutDeque.size(d2) == 3 and d2 |> MutDeque.toList |> List.toSet == Set#{1, 2, 3}
     }
@@ -1183,7 +1183,7 @@ namespace TestMutDeque {
     def shuffle04(): Bool & Impure = region r {
         let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
         let d1 = List.toMutDeque(r, l);
-        let d2 = MutDeque.shuffle(Random.new(), d1, r);
+        let d2 = MutDeque.shuffle(r, Random.new(), d1);
 
         MutDeque.size(d2) == 10 and
             d2 |> MutDeque.toList |> List.toSet == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}

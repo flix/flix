@@ -431,6 +431,12 @@ namespace Iterator {
         Iterator(done, next1)
 
     ///
+    /// Alias for `zipWithIndex`.
+    ///
+    pub def enumerator(iter: Iterator[a, r]): Iterator[(a, Int32), r] \ Write(r) =
+        zipWithIndex(iter)
+
+    ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
@@ -523,6 +529,55 @@ namespace Iterator {
                 x
         } as & r and ef;
         Iterator(done, next)
+
+    ///
+    /// Returns `iter` without the first `n` elements.
+    ///
+    /// Returns an empty iterator if `n` is larger than the number of elements in `iter`.
+    /// Returns `iter` if `n < 0`.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    /// The original iterator `iter` should *not* be reused.
+    ///
+    @Lazy
+    pub def dropL(n: Int32, iter: Iterator[a, r]): Iterator[a, r] \ Read(r) =
+        if (n <= 0)
+            iter
+        else
+            let Iterator(done, next) = iter;
+            discard region r2 {
+                let i = ref (n - 1) @ r2; // Subtract 1 since `forward` consumes 1 element before applying `f`.
+                let f = _ -> if (deref i <= 0) true else { i := deref i - 1; false };
+                forward(f, done, next)
+            };
+            iter
+
+    ///
+    /// Returns `iter` with the first `n` elements.
+    ///
+    /// Returns `iter` if `n` is larger than the number of elements in `iter`.
+    /// Returns an empty iterator if `n < 0`.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    /// The original iterator `iter` should *not* be reused.
+    ///
+    @Lazy
+    pub def takeL(n: Int32, iter: Iterator[a, r]): Iterator[a, r] \ Write(r) =
+        let r = Scoped.regionOf(iter);
+        if (n < 0)
+            new Iterator(r)
+        else
+            let Iterator(done, next) = iter;
+            let i = ref 0 @ r;
+            let done1 = () -> done() or (deref i) >= n;
+            let next1 = () -> {
+                let x = next();
+                i := deref i + 1;
+                x
+            };
+            Iterator(done1, next1)
 
     ///
     /// Returns the longest prefix of `iter` that satisfies the predicate `f`.
@@ -771,29 +826,6 @@ namespace Iterator {
                 case None    => filterMapForward(f, done, next)
                 case Some(b) => Some(b)
             }
-
-    ///
-    /// Returns `iter` without the first `n` elements.
-    ///
-    /// Returns an empty iterator if `n > length(l)`.
-    /// Returns `iter` if `n < 0`.
-    ///
-    /// Does *not* consume any elements from the iterator.
-    ///
-    /// The original iterator `iter` should *not* be reused.
-    ///
-    @Lazy
-    pub def dropL(n: Int32, iter: Iterator[a, r]): Iterator[a, r] \ Read(r) =
-        if (n <= 0)
-            iter
-        else
-            let Iterator(done, next) = iter;
-            region r2 {
-                let i = ref (n - 1) @ r2; // Subtract 1 since `forward` consumes 1 element before applying `f`.
-                let f = _ -> if (deref i <= 0) true else { i := deref i - 1; false };
-                forward(f, done, next)
-            };
-            iter
 
     ///
     /// Returns `iter` without the prefix of elements that satisfy

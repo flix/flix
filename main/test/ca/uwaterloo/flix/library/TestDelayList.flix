@@ -779,7 +779,7 @@ namespace TestDelayList {
 
     @test
     def toArray03(): Bool = region r {
-        DelayList.toArray(r, DelayList.range(-100, 1000))`Array.sameElements` Array.range(-100, 1000, r)
+        DelayList.toArray(r, DelayList.range(-100, 1000))`Array.sameElements` Array.range(r, -100, 1000)
     }
 
     @test

@@ -1,4 +1,4 @@
-pub def orphansAndZombies(processes: List[(processId, String, processId)], rootId: processId): {orphans :: Array[processId, Static], zombies :: Array[processId, Static]} with Boxable[processId] =
+pub def orphansAndZombies(processes: List[(processId, String, processId)], rootId: processId): {orphans :: List[processId], zombies :: List[processId]} with Boxable[processId] =
     let p = inject processes into Process;
     let lp = #{
         Zombie(pid) :- Process(pid, "dead", parent), Process(parent, "alive", _).

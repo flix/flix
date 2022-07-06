@@ -53,10 +53,6 @@ instance Functor[Map[k]] {
     pub def map(f: v1 -> v2 & ef, m: Map[k, v1]): Map[k, v2] & ef = Map.map(f, m)
 }
 
-instance ForEach[Map[k]] {
-    pub def foreach(f: a -> Unit & ef, m: Map[k, a]): Unit & ef = Map.foreach((_, v) -> f(v), m)
-}
-
 instance Foldable[Map[k]] {
     pub def foldLeft(f: (b, v) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldLeft((acc, v) -> f(acc, v), s, m)
     pub def foldRight(f: (v, b) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldRight(f, s, m)
@@ -954,6 +950,12 @@ namespace Map {
     ///
     pub def toIterator(r: Region[r], m: Map[k, v]): Iterator[(k, v), r] \ Write(r) =
         List.toIterator(r, Map.query(_ -> EqualTo, m))
+
+    ///
+    /// Returns an iterator over key-value pairs in `m` zipped with the indices of the elements.
+    ///
+    pub def enumerator(r: Region[r], m: Map[k, v]): Iterator[((k, v), Int32), r] \ Write(r) =
+        toIterator(r, m) |> Iterator.zipWithIndex
 
     ///
     /// Returns `m` as a `DelayMap`.
