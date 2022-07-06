@@ -71,12 +71,13 @@ namespace Array {
         [x; l] @ r
 
     ///
-    /// Returns the element at position `i` in the array `a`.
+    /// Optionally returns the element at position `i` in the array `a`.
     ///
-    /// Equivalent to the expression `a[i]`.
-    ///
-    @Time(1) @Space(1)
-    pub def get(i: Int32, a: Array[a, r]): a \ Read(r) = a[i]
+    pub def nth(i: Int32, a: Array[a, r]): Option[a] \ Read(r) =
+        if (0 <= i and i < Array.length(a))
+            Some(a[i])
+        else
+            None
 
     ///
     /// Stores the value `x` at position `i` in the array `a`.
@@ -1726,7 +1727,7 @@ namespace Array {
    ///
    /// Returns an iterator over `a`.
    ///
-   pub def toIterator(r1: Region[r1], a: Array[a, r2]): Iterator[a, r1] \ { Read(r2), Write(r1) } =
+   pub def iterator(r1: Region[r1], a: Array[a, r2]): Iterator[a, r1] \ { Read(r2), Write(r1) } =
        let len = Array.length(a);
        let copy = copyOfRange(r1, 0, len, a);
        let i = ref 0 @ r1;

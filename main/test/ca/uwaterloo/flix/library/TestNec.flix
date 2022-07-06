@@ -1212,18 +1212,18 @@ namespace TestNec {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toIterator                                                              //
+    // iterator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool = region r {
-        necOf3(1, 2, 3) |> Nec.toIterator(r) |> Iterator.toNec == Some(necOf3(1, 2, 3))
+    def iterator01(): Bool = region r {
+        necOf3(1, 2, 3) |> Nec.iterator(r) |> Iterator.toNec == Some(necOf3(1, 2, 3))
     }
 
     @test
-    def toIterator02(): Bool = region r {
+    def iterator02(): Bool = region r {
         match Nec.range(-100, 100) {
-            case Some(nec) => nec |> Nec.toIterator(r) |> Iterator.toList == List.range(-100, 100)
+            case Some(nec) => nec |> Nec.iterator(r) |> Iterator.toList == List.range(-100, 100)
             case None      => unreachable!()
         }
     }

@@ -82,6 +82,56 @@ namespace TestMutList {
 
     // TODO
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // nth                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def nth01(): Bool = region r {
+        MutList.nth(0, new MutList(r): MutList[Int32, _]) == None
+    }
+
+    @test
+    def nth02(): Bool = region r {
+        let v = new MutList(r);
+        MutList.push!(42, v);
+        MutList.nth(0, v) == Some(42)
+    }
+
+    @test
+    def nth03(): Bool = region r {
+        let v = new MutList(r);
+        MutList.push!(42, v);
+        MutList.nth(1, v) == None
+    }
+
+    @test
+    def nth04(): Bool = region r {
+        MutList.nth(1, MutList.range(r, 0, 2)) == Some(1)
+    }
+
+    @test
+    def nth05(): Bool = region r {
+        MutList.nth(3, MutList.range(r, 0, 4)) == Some(3)
+    }
+
+    @test
+    def nth06(): Bool = region r {
+        MutList.nth(30, MutList.range(r, 0, 42)) == Some(30)
+    }
+
+    @test
+    def nth07(): Bool = region r {
+        MutList.nth(-30, MutList.range(r, 0, 42)) == None
+    }
+
+    @test
+    def nth08(): Bool = region r {
+        MutList.nth(50, MutList.range(r, 0, 42)) == None
+    }
+
+
     /////////////////////////////////////////////////////////////////////////////
     // length                                                                  //
     /////////////////////////////////////////////////////////////////////////////
@@ -992,7 +1042,7 @@ namespace TestMutList {
         MutList.push!(42, v);
         MutList.push!(31, v);
         MutList.push!(1019, v);
-        MutList.length(v) == 3 and MutList.get(0, v) == 42 and MutList.get(1, v) == 31 and MutList.get(2, v) == 1019
+        MutList.length(v) == 3 and MutList.nth(0, v) == Some(42) and MutList.nth(1, v) == Some(31) and MutList.nth(2, v) == Some(1019)
     }
 
     @test
@@ -1002,7 +1052,7 @@ namespace TestMutList {
         MutList.push!(0, v);
         MutList.push!(0, v);
         MutList.push!(0, v);
-        MutList.length(v) == 4 and MutList.get(0, v) == 0 and MutList.get(1, v) == 0 and MutList.get(2, v) == 0 and MutList.get(3, v) == 0
+        MutList.length(v) == 4 and MutList.nth(0, v) == Some(0) and MutList.nth(1, v) == Some(0) and MutList.nth(2, v) == Some(0) and MutList.nth(3, v) == Some(0)
     }
 
 
@@ -1070,7 +1120,7 @@ namespace TestMutList {
         MutList.insert!(98, 1, v);
         MutList.insert!(99, 2, v);
         MutList.insert!(107, 1, v);
-        MutList.length(v) == 4 and MutList.get(1, v) == 107
+        MutList.length(v) == 4 and MutList.nth(1, v) == Some(107)
     }
 
     @test
@@ -1684,7 +1734,7 @@ namespace TestMutList {
         let v = Array.toMutList(r, [1, 2, 3]);
         let a = MutList.toArray(r, v);
         a[1] = 42;
-        MutList.get(1, v) == 2
+        MutList.nth(1, v) == Some(2)
     }
 
     @test
