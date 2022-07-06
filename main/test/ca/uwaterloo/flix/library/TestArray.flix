@@ -62,22 +62,27 @@ namespace TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // get                                                                     //
+    // nth                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testGet01(): Bool = region r {
-        Array.get(0, [1, 2, 3] @ r) == 1
+    def testNth01(): Bool = region r {
+        Array.nth(0, [1, 2, 3] @ r) == Some(1)
     }
 
     @test
-    def testGet02(): Bool = region r {
-        Array.get(1, [1, 2, 3] @ r) == 2
+    def testNth02(): Bool = region r {
+        Array.nth(1, [1, 2, 3] @ r) == Some(2)
     }
 
     @test
-    def testGet03(): Bool = region r {
-        Array.get(2, [1, 2, 3] @ r) == 3
+    def testNth03(): Bool = region r {
+        Array.nth(2, [1, 2, 3] @ r) == Some(3)
+    }
+
+    @test
+    def testNth04(): Bool = region r {
+        Array.nth(3, [1, 2, 3] @ r) == None
     }
 
     /////////////////////////////////////////////////////////////////////////////

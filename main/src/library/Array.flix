@@ -71,12 +71,13 @@ namespace Array {
         [x; l] @ r
 
     ///
-    /// Returns the element at position `i` in the array `a`.
+    /// Optionally returns the element at position `i` in the array `a`.
     ///
-    /// Equivalent to the expression `a[i]`.
-    ///
-    @Time(1) @Space(1)
-    pub def get(i: Int32, a: Array[a, r]): a \ Read(r) = a[i]
+    pub def nth(i: Int32, a: Array[a, r]): Option[a] \ Read(r) =
+        if (i >= Array.length(a))
+            None
+        else
+            Some(a[i])
 
     ///
     /// Stores the value `x` at position `i` in the array `a`.
