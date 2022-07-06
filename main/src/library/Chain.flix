@@ -78,6 +78,11 @@ instance FunctorFilter[Chain] {
     pub override def filter(f: a -> Bool & ef, x: Chain[a]): Chain[a] & ef = Chain.filter(f, x)
 }
 
+instance Iterable[Chain] {
+    pub def iterator(r: Region[r], c: Chain[a]): Iterator[a, r] \ Write(r) =
+        Chain.iterator(r, c)
+}
+
 instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String =
         let fn = () -> region r {
@@ -749,6 +754,30 @@ namespace Chain {
             foreach(match (b, i) -> arr[i] = b, zipWithIndex(c));
             arr
         }
+
+    ///
+    /// Returns an iterator over `c`.
+    ///
+    pub def iterator(r: Region[r], c: Chain[a]): Iterator[a, r] \ Write(r) =
+        let cursor = ref viewLeft(c) @ r;
+        let done = () -> match (deref cursor) {
+            case NoneLeft    => true
+            case SomeLeft(_) => false
+        };
+        let next = () -> match (deref cursor) {
+            case NoneLeft        => bug!("Empty Iterator!")
+            case SomeLeft(x, xs) => {
+                cursor := viewLeft(xs);
+                x
+            }
+        };
+        Iterator(done, next)
+
+    ///
+    /// Returns an iterator over `c` zipped with the indices of the elements.
+    ///
+    pub def enumerator(r: Region[r], c: Chain[a]): Iterator[(a, Int32), r] \ Write(r) =
+        iterator(r, c) |> Iterator.zipWithIndex
 
     ///
     /// Returns the chain `c` as a Nel.

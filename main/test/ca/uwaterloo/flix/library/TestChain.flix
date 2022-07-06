@@ -1530,6 +1530,47 @@ namespace TestChain {
         Array.sameElements(a, [1, 2, 3] @ r)
     }
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // iterator                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def iterator01(): Bool = region r {
+        Chain.empty() |> Chain.iterator(r) |> Iterator.toList == Nil: List[Int32]
+    }
+
+    @test
+    def iterator02(): Bool = region r {
+        List.toChain(1 :: 2 :: 3 :: Nil) |> Chain.iterator(r) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    }
+
+    @test
+    def iterator03(): Bool = region r {
+        Chain.range(-100, 100) |> Chain.iterator(r) |> Iterator.toList == List.range(-100, 100)
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // enumerator                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def enumerator01(): Bool = region r {
+        Chain.empty() |> Chain.enumerator(r) |> Iterator.toList == Nil: List[(Int32, Int32)]
+    }
+
+    @test
+    def enumerator02(): Bool = region r {
+        List.toChain(1 :: 2 :: 3 :: Nil) |> Chain.enumerator(r) |> Iterator.toList == (1, 0) :: (2, 1) :: (3, 2) :: Nil
+    }
+
+    @test
+    def enumerator03(): Bool = region r {
+        Chain.range(-100, 100) |> Chain.enumerator(r) |> Iterator.toList == List.range(-100, 100) |> List.zipWithIndex
+    }
+
+
     /////////////////////////////////////////////////////////////////////////////
     // toNel                                                                   //
     /////////////////////////////////////////////////////////////////////////////
