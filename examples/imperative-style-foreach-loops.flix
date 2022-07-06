@@ -167,7 +167,7 @@ def main(): Unit & Impure =
     /// references and other imperative features,
     /// where functional-style syntax may cumbersome
     /// to read.
-    /// They are equivalent to functional calls so
+    /// They are equivalent to function calls so
     /// there is no difference in performance.
     /// You can nest them, either explicitly or in
     /// the same parenthesis, match on the exact pattern
@@ -186,3 +186,4 @@ def main(): Unit & Impure =
     println("c (sorted) == ${List.sortBy(match (a, _) -> a, deref c)}");
     println("c == d? ${deref c == deref d}");
     println("c == cf? ${deref c == deref cf}")
+
