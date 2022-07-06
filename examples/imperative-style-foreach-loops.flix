@@ -25,7 +25,7 @@ def main(): Unit & Impure =
     /// On the right side of the arrow we get
     /// an iterator over `l`.
     ///
-    foreach (x <- List.toIterator(Static, l))
+    foreach (x <- List.iterator(Static, l))
         println(x);
 
     ///
@@ -50,7 +50,7 @@ def main(): Unit & Impure =
     /// of type unit.
     ///
     let z = ref Nil;
-    foreach (x <- List.toIterator(Static, l))
+    foreach (x <- List.iterator(Static, l))
         z := x :: deref z;
 
     ///
@@ -61,7 +61,7 @@ def main(): Unit & Impure =
     /// to read than `foreach` function calls.
     ///
     let q = ref Nil;
-    List.toIterator(Static, l) |>
+    List.iterator(Static, l) |>
     Iterator.foreach(match x -> q := x :: deref q);
 
     ///
@@ -70,9 +70,9 @@ def main(): Unit & Impure =
     ///
     let k = 4 :: 5 :: 6 :: Nil;
     let w = ref Nil;
-    foreach (a <- List.toIterator(Static, l)) {
+    foreach (a <- List.iterator(Static, l)) {
         w := a :: deref w;
-        foreach (b <- List.toIterator(Static, k))
+        foreach (b <- List.iterator(Static, k))
             w := b :: deref w
     };
 
@@ -82,10 +82,10 @@ def main(): Unit & Impure =
     /// below.
     ///
     let v = ref Nil;
-    List.toIterator(Static, l) |>
+    List.iterator(Static, l) |>
     Iterator.foreach(match a -> {
         v := a :: deref v;
-        List.toIterator(Static, k) |>
+        List.iterator(Static, k) |>
         Iterator.foreach(match b -> v := b :: deref v)
     });
 
@@ -100,8 +100,8 @@ def main(): Unit & Impure =
     /// some experience with Scala's for-loops.
     ///
     let e = ref Nil;
-    foreach (a <- List.toIterator(Static, l);
-             b <- List.toIterator(Static, k))
+    foreach (a <- List.iterator(Static, l);
+             b <- List.iterator(Static, k))
                 e := (a, b) :: deref e;
 
     ///
@@ -109,9 +109,9 @@ def main(): Unit & Impure =
     /// has a bit more visual noise.
     ///
     let e1 = ref Nil;
-    List.toIterator(Static, l) |>
+    List.iterator(Static, l) |>
     Iterator.foreach(match a -> {
-        List.toIterator(Static, k) |>
+        List.iterator(Static, k) |>
         Iterator.foreach(match b -> e1 := (a, b) :: deref e1)
     });
 
@@ -130,9 +130,9 @@ def main(): Unit & Impure =
     /// for-loops.
     ///
     let c = ref Nil;
-    foreach (a <- List.toIterator(Static, l);
+    foreach (a <- List.iterator(Static, l);
              if a > 1;
-             b <- List.toIterator(Static, k);
+             b <- List.iterator(Static, k);
              if b < 6)
                 c := (a, b) :: deref c;
 
@@ -141,8 +141,8 @@ def main(): Unit & Impure =
     /// at the end of the parenthesis.
     ///
     let d = ref Nil;
-    foreach (a <- List.toIterator(Static, l);
-             b <- List.toIterator(Static, k);
+    foreach (a <- List.iterator(Static, l);
+             b <- List.iterator(Static, k);
              if a > 1 and b < 6)
                 d := (a, b) :: deref d;
 
@@ -163,9 +163,9 @@ def main(): Unit & Impure =
     /// and include guards.
     ///
     let cf = ref Nil;
-    List.toIterator(Static, l) |>
+    List.iterator(Static, l) |>
     Iterator.foreach(match a -> {
-        List.toIterator(Static, k) |>
+        List.iterator(Static, k) |>
         Iterator.foreach(match b -> {
             if (a > 1 and b < 6) cf := (a, b) :: deref cf else ()
         })
