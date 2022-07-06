@@ -747,7 +747,7 @@ namespace DelayMap {
     /// Returns an iterator over all key-value pairs in `m`.
     ///
     @Experimental
-    pub def toIterator(r: Region[r], m: DelayMap[a, b]): Iterator[(a, b), r] \ Write(r) with Order[a] =
+    pub def iterator(r: Region[r], m: DelayMap[a, b]): Iterator[(a, b), r] \ Write(r) with Order[a] =
         let keys = keysOf(m) |> Set.toList;
         let cursor = ref keys @ r;
         let done = () -> match deref cursor {
