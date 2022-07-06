@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-import java.util.Objects
+import java.util.{Comparator, Objects}
 
 object Symbol {
 
@@ -526,7 +526,7 @@ object Symbol {
   /**
     * Effect symbol.
     */
-  final class EffectSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable {
+  final class EffectSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Ordered[EffectSym] {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -549,6 +549,13 @@ object Symbol {
       * Returns the source of `this`.
       */
     override def src: Ast.Source = loc.source
+
+    /**
+      * Compares `this` and `that` effect sym.
+      *
+      * Fairly arbitrary comparison since the purpose is to allow for mapping the object.
+      */
+    override def compare(that: EffectSym): Int = this.toString.compare(that.toString)
   }
 
   /**

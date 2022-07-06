@@ -941,21 +941,21 @@ namespace Map {
     ///
     /// Applies `f` to all key-value pairs `(k, v)` from the map `m` where `p(k)` returns `EqualTo`.
     ///
-    pub def queryWith(p: k -> Comparison & ef1, f: (k, v) -> Unit & ef2, m: Map[k, v]): Unit & (ef1 and ef2) =
+    pub def queryWith(p: k -> Comparison & ef1, f: (k, v) -> Unit & ef2, m: Map[k, v]): Unit \ { ef1, ef2 } =
         let Map(t) = m;
         RedBlackTree.queryWith(p, f, t)
 
     ///
     /// Returns an iterator over all key-value pairs in `m`.
     ///
-    pub def toIterator(r: Region[r], m: Map[k, v]): Iterator[(k, v), r] \ Write(r) =
-        List.toIterator(r, Map.query(_ -> EqualTo, m))
+    pub def iterator(r: Region[r], m: Map[k, v]): Iterator[(k, v), r] \ Write(r) =
+        List.iterator(r, Map.query(_ -> EqualTo, m))
 
     ///
     /// Returns an iterator over key-value pairs in `m` zipped with the indices of the elements.
     ///
     pub def enumerator(r: Region[r], m: Map[k, v]): Iterator[((k, v), Int32), r] \ Write(r) =
-        toIterator(r, m) |> Iterator.zipWithIndex
+        iterator(r, m) |> Iterator.zipWithIndex
 
     ///
     /// Returns `m` as a `DelayMap`.

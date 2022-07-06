@@ -1727,7 +1727,7 @@ namespace Array {
    ///
    /// Returns an iterator over `a`.
    ///
-   pub def toIterator(r1: Region[r1], a: Array[a, r2]): Iterator[a, r1] \ { Read(r2), Write(r1) } =
+   pub def iterator(r1: Region[r1], a: Array[a, r2]): Iterator[a, r1] \ { Read(r2), Write(r1) } =
        let len = Array.length(a);
        let copy = copyOfRange(r1, 0, len, a);
        let i = ref 0 @ r1;
@@ -1739,6 +1739,12 @@ namespace Array {
            x
        };
        Iterator(done, next)
+
+    ///
+    /// Returns an iterator over `a` zipped with the indices of the elements.
+    ///
+    pub def enumerator(r1: Region[r1], a: Array[a, r2]): Iterator[(a, Int32), r1] \ { Read(r2), Write(r1) } =
+        iterator(r1, a) |> Iterator.zipWithIndex
 
     ///
     /// Shuffles `a` using the Fisher–Yates shuffle.

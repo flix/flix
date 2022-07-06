@@ -713,7 +713,7 @@ namespace Iterator {
         let mkCursor = i -> { // Appends an iterator with the contents of `iterA`. Boolean formula: r1 and formula of i
             if (deref isReversed)
                 // `iterA` has been consumed, so construct a new one from `xs`
-                cursor := Some(append(i, List.toIterator(r1, deref xs)))
+                cursor := Some(append(i, List.iterator(r1, deref xs)))
             else
                 cursor := Some(append(i, Iterator(doneAA, nextAA)))
         };
