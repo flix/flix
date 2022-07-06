@@ -1042,7 +1042,7 @@ namespace TestMutList {
         MutList.push!(42, v);
         MutList.push!(31, v);
         MutList.push!(1019, v);
-        MutList.length(v) == 3 and MutList.nth(0, v) == 42 and MutList.nth(1, v) == 31 and MutList.nth(2, v) == 1019
+        MutList.length(v) == 3 and MutList.nth(0, v) == Some(42) and MutList.nth(1, v) == Some(31) and MutList.nth(2, v) == Some(1019)
     }
 
     @test
@@ -1052,7 +1052,7 @@ namespace TestMutList {
         MutList.push!(0, v);
         MutList.push!(0, v);
         MutList.push!(0, v);
-        MutList.length(v) == 4 and MutList.nth(0, v) == 0 and MutList.nth(1, v) == 0 and MutList.nth(2, v) == 0 and MutList.nth(3, v) == 0
+        MutList.length(v) == 4 and MutList.nth(0, v) == Some(0) and MutList.nth(1, v) == Some(0) and MutList.nth(2, v) == Some(0) and MutList.nth(3, v) == Some(0)
     }
 
 
@@ -1120,7 +1120,7 @@ namespace TestMutList {
         MutList.insert!(98, 1, v);
         MutList.insert!(99, 2, v);
         MutList.insert!(107, 1, v);
-        MutList.length(v) == 4 and MutList.nth(1, v) == 107
+        MutList.length(v) == 4 and MutList.nth(1, v) == Some(107)
     }
 
     @test
@@ -1734,7 +1734,7 @@ namespace TestMutList {
         let v = Array.toMutList(r, [1, 2, 3]);
         let a = MutList.toArray(r, v);
         a[1] = 42;
-        MutList.nth(1, v) == 2
+        MutList.nth(1, v) == Some(2)
     }
 
     @test
