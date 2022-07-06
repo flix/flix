@@ -74,10 +74,10 @@ namespace Array {
     /// Optionally returns the element at position `i` in the array `a`.
     ///
     pub def nth(i: Int32, a: Array[a, r]): Option[a] \ Read(r) =
-        if (i >= Array.length(a) or i < 0)
-            None
-        else
+        if (0 <= i and i < Array.length(a))
             Some(a[i])
+        else
+            None
 
     ///
     /// Stores the value `x` at position `i` in the array `a`.

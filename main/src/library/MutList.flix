@@ -64,10 +64,10 @@ namespace MutList {
     ///
     pub def nth(i: Int32, v: MutList[a, r]): Option[a] \ Read(r) =
         let MutList(a, l) = v;
-        if (i >= deref l or i < 0)
-            None
-        else
+        if (0 <= i and i < deref l)
             Array.nth(i, deref a)
+        else
+            None
 
     ///
     /// Returns the number of elements in the given mutable list `v`.

@@ -417,7 +417,7 @@ namespace MutDeque {
             } else {
                 match Array.nth(i, deref a) {
                     case Some(x) => f(x)
-                    case None => ()
+                    case None    => bug!("An error occurred in MutDeque.foreach!")
                 };
                 loop((i + 1) &&& c)
             }
