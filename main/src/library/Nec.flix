@@ -807,6 +807,15 @@ namespace Nec {
         Iterator(done, next)
 
     ///
+    /// Returns an enumerator over on `c`.
+    ///
+    /// `Enumerator` is an alias for an iterator
+    /// zipped with its indices, i.e. `zipWithIndex(iter)`.
+    ///
+    pub def enumerator(r: Region[r], c: Nec[a]): Enumerator[a, r] \ Write(r) =
+        toIterator(r, c) |> Iterator.zipWithIndex
+
+    ///
     /// Helper for the `sort` functions.
     ///
     def fromArray(arr: Array[a, r]): Option[Nec[a]] \ Read(r) =
