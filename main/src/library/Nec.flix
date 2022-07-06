@@ -110,13 +110,13 @@ instance Reducible[Nec] {
     override pub def dropWhile(f: a -> Bool & ef, l: Nec[a]): List[a] & ef = Nec.dropWhileLeft(f, l)
     override pub def takeWhile(f: a -> Bool & ef, l: Nec[a]): List[a] & ef = Nec.takeWhileLeft(f, l)
     override pub def toArray(r: Region[r], l: Nec[a]): Array[a, r] \ Write(r) = Nec.toArray(r, l)
-    override pub def toIterator(r: Region[r], l: Nec[a]): Iterator[a, r] \ Write(r) = Nec.toIterator(r, l)
+    override pub def iterator(r: Region[r], l: Nec[a]): Iterator[a, r] \ Write(r) = Nec.iterator(r, l)
     override pub def toList(l: Nec[a]): List[a] = Nec.toList(l)
 }
 
 instance Iterable[Nec] {
     pub def iterator(r: Region[r], t: Nec[a]): Iterator[a, r] \ Write(r) =
-        Nec.toIterator(r, t)
+        Nec.iterator(r, t)
 }
 
 instance ToString[Nec[a]] with ToString[a] {
@@ -777,13 +777,13 @@ namespace Nec {
     ///
     /// Returns an iterator over `c`.
     ///
-    pub def toIterator(r: Region[r], c: Nec[a]): Iterator[a, r] \ Write(r) =
-        toIteratorHelper(r, Some(viewLeft(c)))
+    pub def iterator(r: Region[r], c: Nec[a]): Iterator[a, r] \ Write(r) =
+        iteratorHelper(r, Some(viewLeft(c)))
 
     ///
     /// Returns an iterator over `l`.
     ///
-    def toIteratorHelper(r: Region[r], vl: Option[ViewLeft[a]]): Iterator[a, r] \ Write(r) =
+    def iteratorHelper(r: Region[r], vl: Option[ViewLeft[a]]): Iterator[a, r] \ Write(r) =
         let cursor = ref vl @ r;
         let done = () -> match (deref cursor) {
             case None    => true
@@ -806,7 +806,7 @@ namespace Nec {
     /// Returns an iterator over `c` zipped with the indices of the elements.
     ///
     pub def enumerator(r: Region[r], c: Nec[a]): Iterator[(a, Int32), r] \ Write(r) =
-        toIterator(r, c) |> Iterator.zipWithIndex
+        iterator(r, c) |> Iterator.zipWithIndex
 
     ///
     /// Helper for the `sort` functions.

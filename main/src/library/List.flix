@@ -107,7 +107,7 @@ instance Monoid[List[a]] {
 
 instance Iterable[List] {
     pub def iterator(r: Region[r], t: List[a]): Iterator[a, r] \ Write(r) =
-        List.toIterator(r, t)
+        List.iterator(r, t)
 }
 
 namespace List {
@@ -1326,7 +1326,7 @@ namespace List {
     ///
     /// Returns an iterator over `l`.
     ///
-    pub def toIterator(r: Region[r], l: List[a]): Iterator[a, r] \ Write(r) =
+    pub def iterator(r: Region[r], l: List[a]): Iterator[a, r] \ Write(r) =
         let cursor = ref l @ r;
         let done = () -> match (deref cursor) {
             case Nil => true
@@ -1344,7 +1344,7 @@ namespace List {
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
     pub def enumerator(r: Region[r], l: List[a]): Iterator[(a, Int32), r] \ Write(r) =
-        toIterator(r, l) |> Iterator.zipWithIndex
+        iterator(r, l) |> Iterator.zipWithIndex
 
     ///
     /// Returns the association list `l` as a `DelayMap`.

@@ -1640,26 +1640,26 @@ namespace TestDelayMap {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toIterator                                                              //
+    // iterator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool = region r {
+    def iterator01(): Bool = region r {
         Map.empty(): Map[Int32, Int32] |> Map.toDelayMap |>
-            DelayMap.toIterator(r) |> Iterator.toMap == Map.empty()
+            DelayMap.iterator(r) |> Iterator.toMap == Map.empty()
     }
 
     @test
-    def toIterator02(): Bool = region r {
+    def iterator02(): Bool = region r {
         Map#{"A" => 1, "B" => 2, "C" => 3, "D" => 4} |> Map.toDelayMap |>
-            DelayMap.toIterator(r) |> Iterator.toMap == Map#{"A" => 1, "B" => 2, "C" => 3, "D" => 4}
+            DelayMap.iterator(r) |> Iterator.toMap == Map#{"A" => 1, "B" => 2, "C" => 3, "D" => 4}
     }
 
     @test
-    def toIterator03(): Bool = region r {
+    def iterator03(): Bool = region r {
         let l = List.range(0, 100);
         List.zip(l, List.reverse(l)) |> List.toMap |> Map.toDelayMap |>
-            DelayMap.toIterator(r) |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
+            DelayMap.iterator(r) |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
     }
 
 

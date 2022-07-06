@@ -948,14 +948,14 @@ namespace Map {
     ///
     /// Returns an iterator over all key-value pairs in `m`.
     ///
-    pub def toIterator(r: Region[r], m: Map[k, v]): Iterator[(k, v), r] \ Write(r) =
-        List.toIterator(r, Map.query(_ -> EqualTo, m))
+    pub def iterator(r: Region[r], m: Map[k, v]): Iterator[(k, v), r] \ Write(r) =
+        List.iterator(r, Map.query(_ -> EqualTo, m))
 
     ///
     /// Returns an iterator over key-value pairs in `m` zipped with the indices of the elements.
     ///
     pub def enumerator(r: Region[r], m: Map[k, v]): Iterator[((k, v), Int32), r] \ Write(r) =
-        toIterator(r, m) |> Iterator.zipWithIndex
+        iterator(r, m) |> Iterator.zipWithIndex
 
     ///
     /// Returns `m` as a `DelayMap`.
