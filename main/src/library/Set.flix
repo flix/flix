@@ -624,12 +624,10 @@ namespace Set {
         toList(s) |> List.toIterator(r)
 
     ///
-    /// Returns an enumerator over on `c`.
+    /// Returns an iterator over `s` zipped with the indices of the elements,
+    /// i.e. an alias for `toIterator(r, s) |> Iterator.zipWithIndex`.
     ///
-    /// `Enumerator` is an alias for an iterator
-    /// zipped with its indices, i.e. `zipWithIndex(iter)`.
-    ///
-    pub def enumerator(r: Region[r], s: Set[a]): Enumerator[a, r] \ Write(r) =
+    pub def enumerator(r: Region[r], s: Set[a]): Iterator[(a, Int32), r] \ Write(r) =
         toIterator(r, s) |> Iterator.zipWithIndex
 
     ///

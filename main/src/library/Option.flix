@@ -592,12 +592,10 @@ namespace Option {
     }
 
     ///
-    /// Returns an enumerator over on `c`.
+    /// Returns an iterator over `o` zipped with the indices of the elements,
+    /// i.e. an alias for `toIterator(r, o) |> Iterator.zipWithIndex`.
     ///
-    /// `Enumerator` is an alias for an iterator
-    /// zipped with its indices, i.e. `zipWithIndex(iter)`.
-    ///
-    pub def enumerator(r: Region[r], o: Option[a]): Enumerator[a, r] \ Write(r) =
+    pub def enumerator(r: Region[r], o: Option[a]): Iterator[(a, Int32), r] \ Write(r) =
         toIterator(r, o) |> Iterator.zipWithIndex
 
 }

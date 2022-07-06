@@ -952,12 +952,10 @@ namespace Map {
         List.toIterator(r, Map.query(_ -> EqualTo, m))
 
     ///
-    /// Returns an enumerator over on `m`.
+    /// Returns an iterator over key-value pairs in `m` zipped with the indices of the elements,
+    /// i.e. an alias for `toIterator(r, m) |> Iterator.zipWithIndex`.
     ///
-    /// `Enumerator` is an alias for an iterator
-    /// zipped with its indices, i.e. `zipWithIndex(iter)`.
-    ///
-    pub def enumerator(r: Region[r], m: Map[k, v]): Enumerator[(k, v), r] \ Write(r) =
+    pub def enumerator(r: Region[r], m: Map[k, v]): Iterator[((k, v), Int32), r] \ Write(r) =
         toIterator(r, m) |> Iterator.zipWithIndex
 
     ///
