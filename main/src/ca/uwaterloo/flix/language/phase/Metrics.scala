@@ -31,9 +31,9 @@ object Metrics {
         mkS("lines", lines) ::
           mkS("total pub functions", functions) ::
           mkSPercent("pure functions", pureFunctions, functions) ::
-          mkSPercent("impure functions", impureFunctions, functions) ::
           mkSPercent("effect poly functions", polyFunctions, functions) ::
           mkSPercent("region functions", regionFunctions, functions) ::
+          mkSPercent("impure functions", impureFunctions, functions) ::
           mkSPercent("1 region functions", oneRegionFunctions, regionFunctions) ::
           mkSPercent("2 region functions", twoRegionFunctions, regionFunctions) ::
           mkSPercent("+3 region functions", threePlusRegionFunctions, regionFunctions) ::
@@ -45,9 +45,9 @@ object Metrics {
         mkData(lines) ::
           mkData(functions) ::
           mkSPercentNoName(pureFunctions, functions) ::
-          mkSPercentNoName(impureFunctions, functions) ::
           mkSPercentNoName(polyFunctions, functions) ::
           mkSPercentNoName(regionFunctions, functions) ::
+          mkSPercentNoName(impureFunctions, functions) ::
           mkSPercentNoName(oneRegionFunctions, regionFunctions) ::
           mkSPercentNoName(twoRegionFunctions, regionFunctions) ::
           mkSPercentNoName(threePlusRegionFunctions, regionFunctions) ::
@@ -59,9 +59,9 @@ object Metrics {
         mkDataNoSpace(lines) ::
           mkDataNoSpace(functions) ::
           mkDataNoSpace(pureFunctions) ::
-          mkDataNoSpace(impureFunctions) ::
           mkDataNoSpace(polyFunctions) ::
           mkDataNoSpace(regionFunctions) ::
+          mkDataNoSpace(impureFunctions) ::
           mkDataNoSpace(oneRegionFunctions) ::
           mkDataNoSpace(twoRegionFunctions) ::
           mkDataNoSpace(threePlusRegionFunctions) ::
@@ -83,12 +83,12 @@ object Metrics {
     s"""
        |\\begin{tabular}{|l|l|r|r|r|r|r|r|r|r|r|}
        |  \\hline
-       |  file & lines & total & pure & impure & efpoly & regef & regef1 & regef2 & regef3+ & region intros\\\\\\hline
+       |  file & lines & total & pure & efpoly & regef & impure & regef1 & regef2 & regef3+ & region intros\\\\\\hline
        |""".stripMargin
 
   def csvHeader(): String =
     s"""
-       |file, lines, total, pure, impure, efpoly, regef, regef1, regef2, regef3+, reg intro
+       |file, lines, total, pure, efpoly, regef, impure, regef1, regef2, regef3+, reg intro
        |""".stripMargin
 
   def latexEnd(): String =
@@ -158,12 +158,7 @@ object Metrics {
       }
       case None => None
     }
-    (purPart, efPart) match {
-      case (Some(true), Some(true)) => true
-      case (None, Some(true)) => true
-      case (Some(true), None) => true
-      case _ => false
-    }
+    combineOpts[Boolean](_ || _, purPart, efPart).getOrElse(false)
   }
 
   private def combineOpts[T](comb: (T, T) => T, opt1: Option[T], opt2: Option[T]): Option[T] = (opt1, opt2) match {
@@ -423,13 +418,14 @@ object Metrics {
         val pubDefs = decls.flatMap(getPubDefs)
         val functions = pubDefs.length
         val pureFunctions = pubDefs.count(isPure)
+        val nonImpureFunctions = pubDefs.filterNot(isImpure)
         val impureFunctions = pubDefs.count(isImpure)
         val regionUses = pubDefs.count(introducesRegion)
 
-        def regFunctions(f: Int => Boolean): Int = pubDefs.count(d => f(isRegionInvolved(d).size))
+        def regFunctions(f: Int => Boolean): Int = nonImpureFunctions.count(d => f(isRegionInvolved(d).size))
 
         val regionFunctions = regFunctions(i => i > 0)
-        val effPolyFunctions = pubDefs.filterNot(d => isRegionInvolved(d).nonEmpty).count(isEffPoly)
+        val effPolyFunctions = nonImpureFunctions.filterNot(d => isRegionInvolved(d).nonEmpty).count(isEffPoly)
 
         val metrics: Metrics = Metrics(
           lines, functions, pureFunctions, impureFunctions, effPolyFunctions,

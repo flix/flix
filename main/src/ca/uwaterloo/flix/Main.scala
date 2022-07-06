@@ -217,10 +217,12 @@ object Main {
       val metrics = flix.metrics()
       metrics match {
         case Validation.Success((metrics, total)) =>
+          val mList = metrics.toList.sortBy{case (src, m) => srcString(src)}
           print(Metrics.csvHeader())
           //println(s"All files, $total")
-          for ((src, m) <- metrics) {
-            //val sanity = s" CODE${m.sanityCheck()}"
+          for ((src, m) <- mList) {
+            val sanity = m.sanityCheck()
+            if (sanity != 0) println(s"ERROR IN ${src.name}")
             println(s"${srcString(src)}, $m")
           }
           System.exit(1)
