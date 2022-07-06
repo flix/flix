@@ -89,7 +89,7 @@ namespace TestMutList {
 
     @test
     def nth01(): Bool = region r {
-        MutList.nth(0, new MutList(r)) == None
+        MutList.nth(0, new MutList(r): MutList[Int32, _]) == None
     }
 
     @test
@@ -118,7 +118,7 @@ namespace TestMutList {
 
     @test
     def nth06(): Bool = region r {
-        MutList.nth(30, MutList.range(r, 0, 42)) == 30
+        MutList.nth(30, MutList.range(r, 0, 42)) == Some(30)
     }
 
     @test
