@@ -60,14 +60,14 @@ namespace MutList {
         MutList(ref Array.init(r, f, c) @ r, ref d @ r)
 
     ///
-    /// Returns the element at position `i` in the mutable list `v`.
+    /// Optionally returns the element at position `i` in the mutable list `v`.
     ///
-    pub def get(i: Int32, v: MutList[a, r]): a \ Read(r) =
+    pub def nth(i: Int32, v: MutList[a, r]): Option[a] \ Read(r) =
         let MutList(a, l) = v;
-        if (i >= deref l)
-            bug!("Invalid argument ${i}")
+        if (0 <= i and i < deref l)
+            Array.nth(i, deref a)
         else
-            (deref a)[i]
+            None
 
     ///
     /// Returns the number of elements in the given mutable list `v`.
