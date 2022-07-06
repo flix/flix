@@ -1404,6 +1404,11 @@ object Kinder {
     case Type.Apply(Type.Cst(TypeConstructor.And, _), arg, _) => Type.mkAnd(arg, t2, loc)
     case Type.Apply(Type.Cst(TypeConstructor.Or, _), arg, _) => Type.mkOr(arg, t2, loc)
     case Type.Cst(TypeConstructor.Not, _) => Type.mkNot(t2, loc)
+
+    case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), arg, _) => Type.mkIntersection(arg, t2, loc)
+    case Type.Apply(Type.Cst(TypeConstructor.Union, _), arg, _) => Type.mkUnion(arg, t2, loc)
+    case Type.Cst(TypeConstructor.Complement, _) => Type.mkComplement(t2, loc)
+
     case t => Type.Apply(t, t2, loc)
   }
 
