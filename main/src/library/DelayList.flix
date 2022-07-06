@@ -1174,6 +1174,15 @@ namespace DelayList {
         Iterator(done, next)
 
     ///
+    /// Returns an enumerator based on `l`.
+    ///
+    /// `Enumerator` is an alias for an iterator
+    /// zipped with its indices, i.e. `zipWithIndex(iter)`.
+    ///
+    pub def enumerator(r: Region[r], l: DelayList[a]): Enumerator[a, r] \ Write(r) =
+        toIterator(r, l) |> Iterator.zipWithIndex
+
+    ///
     /// Returns `l` as a `List`.
     ///
     /// Forces the entire list `l`.
