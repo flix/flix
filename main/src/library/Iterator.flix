@@ -26,6 +26,8 @@ instance Scoped[Iterator[a]] {
     pub def regionOf(_: Iterator[a, r]): Region[r] = () as Region[r]
 }
 
+type alias Enumerator[a: Type, r: Region] = Iterator[(a, Int32), r]
+
 namespace Iterator {
 
     ///
@@ -429,6 +431,15 @@ namespace Iterator {
             x
         };
         Iterator(done, next1)
+
+    ///
+    /// Returns an enumerator based on `iter`.
+    ///
+    /// `Enumerator` is an alias for an iterator
+    /// zipped with its indices, i.e. `zipWithIndex(iter)`.
+    ///
+    pub def enumerator(iter: Iterator[a, r]): Enumerator[a, r] \ Write(r) =
+        zipWithIndex(iter)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from left to right.
