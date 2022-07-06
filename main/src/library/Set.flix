@@ -63,10 +63,6 @@ instance MeetLattice[Set[a]] with Order[a] {
     pub def greatestLowerBound(s1: Set[a], s2: Set[a]): Set[a] = s1 `Set.intersection` s2
 }
 
-instance ForEach[Set] {
-    pub def foreach(f: a -> Unit & ef, s: Set[a]): Unit & ef = Set.foreach(f, s)
-}
-
 instance Foldable[Set] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldLeft(f, s, s1)
     pub def foldRight(f: (a, b) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldRight(f, s, s1)
@@ -626,6 +622,12 @@ namespace Set {
     ///
     pub def toIterator(r: Region[r], s: Set[a]): Iterator[a, r] \ Write(r) =
         toList(s) |> List.toIterator(r)
+
+    ///
+    /// Returns an iterator over `s` zipped with the indices of the elements.
+    ///
+    pub def enumerator(r: Region[r], s: Set[a]): Iterator[(a, Int32), r] \ Write(r) =
+        toIterator(r, s) |> Iterator.zipWithIndex
 
     ///
     /// Returns the concatenation of the string representation

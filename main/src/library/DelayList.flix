@@ -80,10 +80,6 @@ instance Traversable[DelayList] {
     pub override def sequence(l: DelayList[m[a]]): m[DelayList[a]] with Applicative[m] = DelayList.sequence(l)
 }
 
-instance ForEach[DelayList] {
-    pub def foreach(f: a -> Unit & ef, l: DelayList[a]): Unit & ef = DelayList.foreach(f, l)
-}
-
 instance Foldable[DelayList] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldRight(f, s, l)
@@ -1172,6 +1168,12 @@ namespace DelayList {
                 x
         };
         Iterator(done, next)
+
+    ///
+    /// Returns an iterator over `l` zipped with the indices of the elements.
+    ///
+    pub def enumerator(r: Region[r], l: DelayList[a]): Iterator[(a, Int32), r] \ Write(r) =
+        toIterator(r, l) |> Iterator.zipWithIndex
 
     ///
     /// Returns `l` as a `List`.
