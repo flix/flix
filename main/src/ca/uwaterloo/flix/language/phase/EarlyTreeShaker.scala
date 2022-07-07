@@ -251,6 +251,7 @@ object EarlyTreeShaker {
 
     case Expression.ArrayLength(base, _, _, _) =>
       visitExp(base)
+
     case Expression.ArrayStore(base, index, elm, _, _) =>
       visitExp(base) ++ visitExp(index) ++ visitExp(elm)
 
