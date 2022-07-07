@@ -103,46 +103,9 @@ object EarlyTreeShaker {
     case Some(defn) => visitExp(defn.impl.exp)
   }
 
-  private def visitMatchRules(rules: List[MatchRule]): Set[Symbol.DefnSym] = {
-    @tailrec
-    def loop(r: List[MatchRule], acc: Set[Symbol.DefnSym]): Set[Symbol.DefnSym] = r match {
-      case Nil => acc
-      case x :: xs => loop(xs, visitExp(x.exp) ++ visitExp(x.guard) ++ acc)
-    }
-
-    loop(rules, Set.empty)
-  }
-
-  private def visitChoiceRules(rules: List[ChoiceRule]): Set[Symbol.DefnSym] = {
-    @tailrec
-    def loop(r: List[ChoiceRule], acc: Set[Symbol.DefnSym]): Set[Symbol.DefnSym] = r match {
-      case Nil => acc
-      case x :: xs => loop(xs, visitExp(x.exp) ++ acc)
-    }
-
-    loop(rules, Set.empty)
-  }
-
-  def visitCatchRules(rules: List[CatchRule]): Set[Symbol.DefnSym] = {
-    @tailrec
-    def loop(r: List[CatchRule], acc: Set[Symbol.DefnSym]): Set[Symbol.DefnSym] = r match {
-      case Nil => acc
-      case x :: xs => loop(xs, visitExp(x.exp) ++ acc)
-    }
-
-    loop(rules, Set.empty)
-  }
-
-  def visitChannelRules(rules: List[SelectChannelRule]): Set[Symbol.DefnSym] = {
-    @tailrec
-    def loop(r: List[SelectChannelRule], acc: Set[Symbol.DefnSym]): Set[Symbol.DefnSym] = r match {
-      case Nil => acc
-      case x :: xs => loop(xs, visitExp(x.chan) ++ visitExp(x.exp) ++ acc)
-    }
-
-    loop(rules, Set.empty)
-  }
-
+  /**
+    * Returns the symbols reachable from the given list of constraints `constraints`.
+    */
   def visitConstraints(constraints: List[Constraint]): Set[Symbol.DefnSym] = {
     def visitHead(h: Head): Set[Symbol.DefnSym] = h match {
       case Head.Atom(_, _, terms, _, _) => visitExps(terms)
@@ -156,13 +119,7 @@ object EarlyTreeShaker {
       }
     }
 
-    @tailrec
-    def loop(cs: List[Constraint], acc: Set[Symbol.DefnSym]): Set[Symbol.DefnSym] = cs match {
-      case Nil => acc
-      case x :: xs => loop(xs, visitHead(x.head) ++ visitBody(x.body) ++ acc)
-    }
-
-    loop(constraints, Set.empty)
+    constraints.foldLeft(Set.empty: Set[Symbol.DefnSym])((acc, c) => visitHead(c.head) ++ visitBody(c.body) ++ acc)
   }
 
   /**
@@ -260,12 +217,12 @@ object EarlyTreeShaker {
       visitExp(exp)
 
     case Expression.Match(exp, rules, _, _, _, _) =>
-      visitExp(exp) ++ visitMatchRules(rules)
+      visitExp(exp) ++ visitExps(rules.map(_.exp)) ++ visitExps(rules.map(_.guard))
 
     case Expression.Choose(exps, rules, _, _, _, _) =>
-      visitExps(exps) ++ visitChoiceRules(rules)
+      visitExps(exps) ++ visitExps(rules.map(_.exp))
 
-    case Expression.Tag(sym, _, exp, _, _, _, _) =>
+    case Expression.Tag(_, _, exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.Tuple(elms, _, _, _, _) =>
@@ -316,7 +273,7 @@ object EarlyTreeShaker {
       visitExp(exp)
 
     case Expression.TryCatch(exp, rules, _, _, _, _) =>
-      visitExp(exp) ++ visitCatchRules(rules)
+      visitExp(exp) ++ visitExps(rules.map(_.exp))
 
     case Expression.InvokeConstructor(_, args, _, _, _, _) =>
       visitExps(args)
@@ -352,7 +309,7 @@ object EarlyTreeShaker {
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.SelectChannel(rules, default, _, _, _, _) =>
-      visitChannelRules(rules) ++ default.map(visitExp).getOrElse(Set.empty)
+      visitExps(rules.map(_.chan)) ++ visitExps(rules.map(_.exp)) ++ default.map(visitExp).getOrElse(Set.empty)
 
     case Expression.Spawn(exp, _, _, _, _) =>
       visitExp(exp)
