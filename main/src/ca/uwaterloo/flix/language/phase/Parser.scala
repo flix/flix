@@ -502,7 +502,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("discard") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Discard
     }
 
-    def ForEach: Rule1[ParsedAst.Expression.ForEach] = {
+    def ForEach: Rule1[ParsedAst.Expression.ForEach] = { // add yield rule
 
       def ForEachFragment: Rule1[ParsedAst.ForeachFragment.ForEach] = rule {
         SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForeachFragment.ForEach
@@ -518,6 +518,21 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         SP ~ keyword("foreach") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Fragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ForEach
+      }
+    }
+
+    def ForYield: Rule1[ParsedAst.Expression.ForYield] = {
+
+      def ForYieldFragment: Rule1[ParsedAst.ForYieldFragment.ForYield] = rule {
+        SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForYieldFragment.ForYield
+      }
+
+      def Fragment: Rule1[ParsedAst.ForYieldFragment] = rule {
+        ForYieldFragment // Add guard fragment later
+      }
+
+      rule {
+        SP ~ keyword("for") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Fragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ForYield
       }
     }
 
@@ -698,7 +713,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
-        Discard | ForEach | NewObject | UnaryLambda | FName | Tag | Hole
+        Discard | ForYield | ForEach | NewObject | UnaryLambda | FName | Tag | Hole
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {

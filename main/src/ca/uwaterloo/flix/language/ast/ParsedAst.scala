@@ -714,6 +714,8 @@ object ParsedAst {
       */
     case class ForEach(sp1: SourcePosition, frags: Seq[ForeachFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
+    case class ForYield(sp1: SourcePosition, frags: Seq[ForYieldFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
     /**
       * Tag Expression.
       *
@@ -2182,6 +2184,12 @@ object ParsedAst {
       */
     case class Guard(sp1: SourcePosition, guard: ParsedAst.Expression, sp2: SourcePosition) extends ForeachFragment
 
+  }
+
+  sealed trait ForYieldFragment
+
+  object ForYieldFragment {
+    case class ForYield(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition) extends ForYieldFragment
   }
 
 }
