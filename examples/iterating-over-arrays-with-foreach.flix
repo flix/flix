@@ -4,7 +4,7 @@ def main(): Unit & Impure =
 
     region r { // Declare a new region.
 
-        // Create two arrays at the new region r.
+        // Create two arrays in the new region r.
         let xs = [1, 2, 3, 4] @ r;
         let ys = [1, 2, 3, 4] @ r;
 
