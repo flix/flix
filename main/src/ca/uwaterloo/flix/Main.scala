@@ -219,12 +219,13 @@ object Main {
         case Validation.Success((metrics, total)) =>
           val mList = metrics.toList.sortBy{case (src, m) => srcString(src)}
           print(Metrics.csvHeader())
-          //println(s"All files, $total")
+          println(s"All files, $total")
           for ((src, m) <- mList) {
             val sanity = m.sanityCheck()
             if (sanity != 0) println(s"ERROR IN ${src.name}")
             println(s"${srcString(src)}, $m")
           }
+          // println(Metrics.latexEnd())
           System.exit(1)
         case Validation.Failure(errors) =>
           flix.mkMessages(errors.sortBy(_.source.name))

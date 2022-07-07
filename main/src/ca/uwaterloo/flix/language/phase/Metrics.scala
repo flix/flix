@@ -42,16 +42,16 @@ object Metrics {
       val terminalOutput = terminalOutputLines.mkString("\n")
 
       val latexOutputLines =
-        mkData(lines) ::
-          mkData(functions) ::
-          mkSPercentNoName(pureFunctions, functions) ::
-          mkSPercentNoName(polyFunctions, functions) ::
-          mkSPercentNoName(regionFunctions, functions) ::
-          mkSPercentNoName(impureFunctions, functions) ::
-          mkSPercentNoName(oneRegionFunctions, regionFunctions) ::
-          mkSPercentNoName(twoRegionFunctions, regionFunctions) ::
-          mkSPercentNoName(threePlusRegionFunctions, regionFunctions) ::
-          mkSPercentNoName(regionUses, functions) ::
+        mkDataNoSpace(lines) ::
+          mkDataNoSpace(functions) ::
+          mkDataNoSpace(pureFunctions) ::
+          mkDataNoSpace(polyFunctions) ::
+          mkDataNoSpace(regionFunctions) ::
+          mkDataNoSpace(impureFunctions) ::
+          mkDataNoSpace(oneRegionFunctions) ::
+          mkDataNoSpace(twoRegionFunctions) ::
+          mkDataNoSpace(threePlusRegionFunctions) ::
+          mkDataNoSpace(regionUses) ::
           Nil
       val latexOutput = latexOutputLines.mkString(" & ") + "\\\\\\hline"
 
