@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.{Entity, Index, MarkupContent, MarkupKind, Posi
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Root}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt._
-import ca.uwaterloo.flix.language.phase.unification.BoolTable
+import ca.uwaterloo.flix.language.phase.unification.{BoolTable, SetTable}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
@@ -42,7 +42,7 @@ object HoverProvider {
 
             case Expression.Sig(sym, _, loc) => hoverSig(sym, loc)
 
-            case _ => hoverTypAndEff(exp.tpe, exp.pur, exp.loc)
+            case _ => hoverTypAndEff(exp.tpe, exp.pur, exp.eff, exp.loc)
           }
 
         case Entity.FormalParam(fparam) => hoverType(fparam.tpe, fparam.loc)
@@ -72,11 +72,12 @@ object HoverProvider {
     ("status" -> "success") ~ ("result" -> result)
   }
 
-  private def hoverTypAndEff(tpe: Type, eff: Type, loc: SourceLocation)(implicit index: Index, root: Root, flix: Flix): JObject = {
-    val minEff = BoolTable.minimizeType(eff)
+  private def hoverTypAndEff(tpe: Type, pur: Type, eff: Type, loc: SourceLocation)(implicit index: Index, root: Root, flix: Flix): JObject = {
+    val minPur = BoolTable.minimizeType(pur)
+    val minEff = SetTable.minimizeType(eff)
     val markup =
       s"""```flix
-         |${formatTypAndEff(tpe, minEff)}
+         |${formatTypAndEff(tpe, minPur, minEff)}
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
@@ -115,14 +116,15 @@ object HoverProvider {
     ("status" -> "success") ~ ("result" -> result)
   }
 
-  private def formatTypAndEff(tpe0: Type, eff0: Type): String = {
+  private def formatTypAndEff(tpe0: Type, pur0: Type, eff0: Type): String = {
     val t = FormatType.formatWellKindedType(tpe0)
-    val e = eff0 match {
+    val p = pur0 match {
       case Type.Cst(TypeConstructor.True, _) => "Pure"
       case Type.Cst(TypeConstructor.False, _) => "Impure"
-      case eff => FormatType.formatWellKindedType(eff)
+      case pur => FormatType.formatWellKindedType(pur)
     }
-    s"$t & $e"
+    val e = FormatType.formatWellKindedType(eff0)
+    s"$t & $p \\ $e"
   }
 
   private def hoverKind(t: Type)(implicit index: Index, root: Root): JObject = {
