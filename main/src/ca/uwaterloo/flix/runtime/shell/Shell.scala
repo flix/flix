@@ -67,11 +67,11 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
   def unescapeLine(s: String) = {
 
     // (?s) enables dotall mode (so . matches newlines)
-    val threeBackslashes = raw"(?s)\\\\\\\n(.*)\n\\\\\\".r
+    val twoBackslashes = raw"(?s)\\\\\n(.*)\n\\\\".r
 
     s match {
-      // First, check for a string with three backslashes at start and end
-      case threeBackslashes(s) => s
+      // First, check for a string with two backslashes at start and end
+      case twoBackslashes(s) => s
 
       // If not, then replace all escaped line endings with \n
       case _ =>

@@ -51,11 +51,11 @@ class ShellParser extends Parser {
 
       val lines = s.linesIterator.toList
 
-      // If the input starts with three backslashes on a line ...
-      if (lines.headOption == Some("\\\\\\")) {
+      // If the input starts with two backslashes on a line ...
+      if (lines.headOption == Some("\\\\")) {
 
-        // ... and doesn't end with three backslashes on a line, throw `EOFError` to trigger line continuation
-        if (!(lines.size > 1 && lines.last == "\\\\\\"))
+        // ... and doesn't end with two backslashes on a line, throw `EOFError` to trigger line continuation
+        if (!(lines.size > 1 && lines.last == "\\\\"))
           throw new EOFError(-1, -1, "Escaped new line", "newline")
       } else {      
 
