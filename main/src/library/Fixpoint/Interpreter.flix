@@ -16,27 +16,63 @@
 
 use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar, toDenotation};
 use Fixpoint/Ast.Denotation;
+use Fixpoint/Tuple.Tuple;
 
 namespace Fixpoint {
+    namespace Tuple {
 
-    enum Tuple[v] {
-        case Tuple(Array[v, Static])
-    }
+        ///
+        /// Uses unsafe immutable array internally for performance.
+        ///
+        pub opaque enum Tuple[v] {
+            case Tuple(Array[v, Static])
+        }
 
-    // NB: Unsafe instance.
-    instance Eq[Tuple[v]] with Eq[v] {
-        pub def eq(x: Tuple[v], y: Tuple[v]): Bool =
-            let Tuple(a) = x;
-            let Tuple(b) = y;
-            Array.sameElements(a, b) as & Pure
-    }
+        // NB: Unsafe instance.
+        instance Eq[Tuple[v]] with Eq[v] {
+            pub def eq(x: Tuple[v], y: Tuple[v]): Bool =
+                let Tuple(a) = x;
+                let Tuple(b) = y;
+                Array.sameElements(a, b) as & Pure
+        }
 
-    // NB: Unsafe instance.
-    instance Order[Tuple[v]] with Order[v] {
-        pub def compare(x: Tuple[v], y: Tuple[v]): Comparison =
-            let Tuple(a) = x;
-            let Tuple(b) = y;
-            Array.compare(a, b) as & Pure
+        // NB: Unsafe instance.
+        instance Order[Tuple[v]] with Order[v] {
+            pub def compare(x: Tuple[v], y: Tuple[v]): Comparison =
+                let Tuple(a) = x;
+                let Tuple(b) = y;
+                Array.compare(a, b) as & Pure
+        }
+
+        ///
+        /// Creates an empty tuple consisting of the elements in `l`.
+        ///
+        pub def new(l: f[v]): Tuple[v] with Foldable[f] =
+            Tuple(Foldable.toArray(Static, l)) as & Pure
+
+        ///
+        /// Converts `t` to a list.
+        ///
+        pub def toList(t: Tuple[v]): List[v] = {
+            let Tuple(a) = t;
+            Array.toList(a)
+        } as & Pure
+
+        ///
+        /// Returns the length of `t`.
+        ///
+        pub def length(t: Tuple[v]): Int32 =
+            let Tuple(a) = t;
+            Array.length(a)
+
+        ///
+        /// Returns the value at index `i` in `t`.
+        /// Throws a runtime exception if `v` is out of bounds.
+        ///
+        pub def valueAt(t: Tuple[v], v: Int32): v = {
+            let Tuple(a) = t;
+            a[v]
+        } as & Pure
     }
 
     type alias Database[v] = MutMap[RamSym[v], MutMap[Tuple[v], v, Static], Static]
@@ -77,7 +113,7 @@ namespace Fixpoint {
     def allocEnv(depth: Int32, relOp: RelOp[v]): SearchEnv[v] & Impure = match relOp {
         case RelOp.Search(_, _, body) => allocEnv(depth + 1, body)
         case RelOp.Query(_, _, _, body) => allocEnv(depth + 1, body)
-        case RelOp.Project(_) => (Array.new(Static, Tuple([]), depth), Array.new(Static, $DEFAULT$, depth))
+        case RelOp.Project(_) => (Array.new(Static, Fixpoint/Tuple.new(Nil), depth), Array.new(Static, $DEFAULT$, depth))
         case RelOp.If(_, then) => allocEnv(depth, then)
     }
 
@@ -101,14 +137,14 @@ namespace Fixpoint {
                 let rel = MutMap.getOrElsePut!(ramSym, new MutMap(Static), db);
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>
-                        let tuple = Tuple(List.toArray(Static, List.map(evalTerm(env), terms)));
+                        let tuple = Fixpoint/Tuple.new(List.map(evalTerm(env), terms));
                         MutMap.put!(tuple, $DEFAULT$, rel)
                     case Denotation.Latticenal(bot, leq, lub, _) =>
                         // assume that length(terms) > 0
                         let len = List.length(terms);
                         let keyList = terms |> List.map(evalTerm(env));
                         let (relKeys, latValList) = List.splitAt(len-1, keyList);
-                        let key = Tuple(List.toArray(Static, relKeys));
+                        let key = Fixpoint/Tuple.new(relKeys);
                         let latVal = match List.head(latValList) {
                             case None => bug!("Found predicate without terms")
                             case Some(k) => k
@@ -128,7 +164,7 @@ namespace Fixpoint {
     def evalQuery(env: SearchEnv[v], query: List[(Int32, RamTerm[v])], tuple: Tuple[v]): Comparison & Impure with Order[v], ToString[v] =
         match query {
             case Nil => EqualTo
-            case (j, t) :: tl => match valueAt(tuple, j) <=> evalTerm(env, t) {
+            case (j, t) :: tl => match Fixpoint/Tuple.valueAt(tuple, j) <=> evalTerm(env, t) {
                 case EqualTo => evalQuery(env, tl, tuple)
                 case cmp => cmp
             }
@@ -142,12 +178,12 @@ namespace Fixpoint {
                 let rel = MutMap.getWithDefault(ramSym, new MutMap(Static), db);
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>
-                        let tuple = Tuple(List.map(evalTerm(env), terms) |> List.toArray(Static));
+                        let tuple = Fixpoint/Tuple.new(List.map(evalTerm(env), terms));
                         not MutMap.memberOf(tuple, rel)
                     case Denotation.Latticenal(bot, leq, _, _) =>
                         let len = List.length(terms);
                         let (keyTerms, latTermList) = terms |> List.map(evalTerm(env)) |> List.splitAt(len - 1);
-                        let key = Tuple(keyTerms |> List.toArray(Static));
+                        let key = Fixpoint/Tuple.new(keyTerms);
                         let latTerm = match List.head(latTermList) {
                             case None => bug!("Found predicate without terms")
                             case Some(hd) => hd
@@ -191,7 +227,7 @@ namespace Fixpoint {
         case RamTerm.Lit(v) => v
         case RamTerm.RowLoad(RowVar.Index(i), index) =>
             let (tupleEnv, _) = env;
-            valueAt(tupleEnv[i], index)
+            Fixpoint/Tuple.valueAt(tupleEnv[i], index)
         case RamTerm.LoadLatVar(RowVar.Index(i)) =>
             let (_, latEnv) = env;
             latEnv[i]
@@ -226,12 +262,4 @@ namespace Fixpoint {
             f(v1)(v2)(v3)(v4)(v5)
         case _ => bug!("Illegal term ${term}")
     }
-
-    ///
-    /// Unpacks the given tuple `t` and returns the value at index `i`.
-    ///
-    def valueAt(t: Tuple[v], v: Int32): v & Impure =
-        let Tuple(a) = t;
-        a[v]
-
 }
