@@ -299,283 +299,283 @@ object Lowering {
       val t = visitType(tpe)
       Expression.Lambda(p, e, t, loc)
 
-    case Expression.Apply(exp, exps, tpe, eff, loc) =>
+    case Expression.Apply(exp, exps, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val es = visitExps(exps)
       val t = visitType(tpe)
-      Expression.Apply(e, es, t, eff, loc)
+      Expression.Apply(e, es, t, pur, eff, loc)
 
-    case Expression.Unary(sop, exp, tpe, eff, loc) =>
+    case Expression.Unary(sop, exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.Unary(sop, e, t, eff, loc)
+      Expression.Unary(sop, e, t, pur, eff, loc)
 
-    case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+    case Expression.Binary(sop, exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      Expression.Binary(sop, e1, e2, t, eff, loc)
+      Expression.Binary(sop, e1, e2, t, pur, eff, loc)
 
-    case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
+    case Expression.Let(sym, mod, exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      Expression.Let(sym, mod, e1, e2, t, eff, loc)
+      Expression.Let(sym, mod, e1, e2, t, pur, eff, loc)
 
-    case Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
+    case Expression.LetRec(sym, mod, exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      Expression.LetRec(sym, mod, e1, e2, t, eff, loc)
+      Expression.LetRec(sym, mod, e1, e2, t, pur, eff, loc)
 
     case Expression.Region(_, loc) =>
       // Introduce a Unit value to represent the Region value.
       Expression.Unit(loc)
 
-    case Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
+    case Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) =>
       // Introduce a Unit value to represent the Region value.
       val mod = Ast.Modifiers.Empty
       val e1 = Expression.Unit(loc)
       val e2 = visitExp(exp)
-      Expression.Let(sym, mod, e1, e2, tpe, eff, loc)
+      Expression.Let(sym, mod, e1, e2, tpe, pur, eff, loc)
 
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
       val t = visitType(tpe)
-      Expression.IfThenElse(e1, e2, e3, t, eff, loc)
+      Expression.IfThenElse(e1, e2, e3, t, pur, eff, loc)
 
-    case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
+    case Expression.Stm(exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      Expression.Stm(e1, e2, t, eff, loc)
+      Expression.Stm(e1, e2, t, pur, eff, loc)
 
-    case Expression.Discard(exp, eff, loc) =>
+    case Expression.Discard(exp, pur, eff, loc) =>
       val e = visitExp(exp)
-      Expression.Discard(e, eff, loc)
+      Expression.Discard(e, pur, eff, loc)
 
-    case Expression.Match(exp, rules, tpe, eff, loc) =>
+    case Expression.Match(exp, rules, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitMatchRule)
       val t = visitType(tpe)
-      Expression.Match(e, rs, t, eff, loc)
+      Expression.Match(e, rs, t, pur, eff, loc)
 
-    case Expression.Choose(exps, rules, tpe, eff, loc) =>
+    case Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
       val es = visitExps(exps)
       val rs = rules.map(visitChoiceRule)
       val t = visitType(tpe)
-      Expression.Choose(es, rs, t, eff, loc)
+      Expression.Choose(es, rs, t, pur, eff, loc)
 
-    case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
+    case Expression.Tag(sym, tag, exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.Tag(sym, tag, e, t, eff, loc)
+      Expression.Tag(sym, tag, e, t, pur, eff, loc)
 
-    case Expression.Tuple(elms, tpe, eff, loc) =>
+    case Expression.Tuple(elms, tpe, pur, eff, loc) =>
       val es = visitExps(elms)
       val t = visitType(tpe)
-      Expression.Tuple(es, t, eff, loc)
+      Expression.Tuple(es, t, pur, eff, loc)
 
     case Expression.RecordEmpty(tpe, loc) =>
       val t = visitType(tpe)
       Expression.RecordEmpty(t, loc)
 
-    case Expression.RecordSelect(exp, field, tpe, eff, loc) =>
+    case Expression.RecordSelect(exp, field, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.RecordSelect(e, field, t, eff, loc)
+      Expression.RecordSelect(e, field, t, pur, eff, loc)
 
-    case Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
+    case Expression.RecordExtend(field, value, rest, tpe, pur, eff, loc) =>
       val v = visitExp(value)
       val r = visitExp(rest)
       val t = visitType(tpe)
-      Expression.RecordExtend(field, v, r, t, eff, loc)
+      Expression.RecordExtend(field, v, r, t, pur, eff, loc)
 
-    case Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
+    case Expression.RecordRestrict(field, rest, tpe, pur, eff, loc) =>
       val r = visitExp(rest)
       val t = visitType(tpe)
-      Expression.RecordRestrict(field, r, t, eff, loc)
+      Expression.RecordRestrict(field, r, t, pur, eff, loc)
 
-    case Expression.ArrayLit(exps, exp, tpe, eff, loc) =>
+    case Expression.ArrayLit(exps, exp, tpe, pur, eff, loc) =>
       val es = visitExps(exps)
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.ArrayLit(es, e, t, eff, loc)
+      Expression.ArrayLit(es, e, t, pur, eff, loc)
 
-    case Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
+    case Expression.ArrayNew(exp1, exp2, exp3, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
       val t = visitType(tpe)
-      Expression.ArrayNew(e1, e2, e3, t, eff, loc)
+      Expression.ArrayNew(e1, e2, e3, t, pur, eff, loc)
 
-    case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
+    case Expression.ArrayLoad(base, index, tpe, pur, eff, loc) =>
       val b = visitExp(base)
       val i = visitExp(index)
       val t = visitType(tpe)
-      Expression.ArrayLoad(b, i, t, eff, loc)
+      Expression.ArrayLoad(b, i, t, pur, eff, loc)
 
-    case Expression.ArrayLength(base, eff, loc) =>
+    case Expression.ArrayLength(base, pur, eff, loc) =>
       val b = visitExp(base)
-      Expression.ArrayLength(b, eff, loc)
+      Expression.ArrayLength(b, pur, eff, loc)
 
-    case Expression.ArrayStore(base, index, elm, loc) =>
+    case Expression.ArrayStore(base, index, elm, eff, loc) =>
       val b = visitExp(base)
       val i = visitExp(index)
       val e = visitExp(elm)
-      Expression.ArrayStore(b, i, e, loc)
+      Expression.ArrayStore(b, i, e, eff, loc)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) =>
       val b = visitExp(base)
       val bi = visitExp(beginIndex)
       val ei = visitExp(endIndex)
       val t = visitType(tpe)
-      Expression.ArraySlice(b, bi, ei, t, loc)
+      Expression.ArraySlice(b, bi, ei, t, eff, loc)
 
-    case Expression.Ref(exp1, exp2, tpe, eff, loc) =>
+    case Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      Expression.Ref(e1, e2, t, eff, loc)
+      Expression.Ref(e1, e2, t, pur, eff, loc)
 
-    case Expression.Deref(exp, tpe, eff, loc) =>
+    case Expression.Deref(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.Deref(e, t, eff, loc)
+      Expression.Deref(e, t, pur, eff, loc)
 
-    case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
+    case Expression.Assign(exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      Expression.Assign(e1, e2, t, eff, loc)
+      Expression.Assign(e1, e2, t, pur, eff, loc)
 
-    case Expression.Ascribe(exp, tpe, eff, loc) =>
+    case Expression.Ascribe(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.Ascribe(e, t, eff, loc)
+      Expression.Ascribe(e, t, pur, eff, loc)
 
-    case Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+    case Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val dt = declaredType.map(visitType)
       val t = visitType(tpe)
-      Expression.Cast(e, dt, declaredEff, t, eff, loc)
+      Expression.Cast(e, dt, declaredPur, declaredEff, t, pur, eff, loc)
 
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+    case Expression.TryCatch(exp, rules, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitCatchRule)
       val t = visitType(tpe)
-      Expression.TryCatch(e, rs, t, eff, loc)
+      Expression.TryCatch(e, rs, t, pur, eff, loc)
 
-    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
+    case Expression.InvokeConstructor(constructor, args, tpe, pur, eff, loc) =>
       val as = visitExps(args)
       val t = visitType(tpe)
-      Expression.InvokeConstructor(constructor, as, t, eff, loc)
+      Expression.InvokeConstructor(constructor, as, t, pur, eff, loc)
 
-    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
+    case Expression.InvokeMethod(method, exp, args, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val as = visitExps(args)
       val t = visitType(tpe)
-      Expression.InvokeMethod(method, e, as, t, eff, loc)
+      Expression.InvokeMethod(method, e, as, t, pur, eff, loc)
 
-    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
+    case Expression.InvokeStaticMethod(method, args, tpe, pur, eff, loc) =>
       val as = visitExps(args)
       val t = visitType(tpe)
-      Expression.InvokeStaticMethod(method, as, t, eff, loc)
+      Expression.InvokeStaticMethod(method, as, t, pur, eff, loc)
 
-    case Expression.GetField(field, exp, tpe, eff, loc) =>
+    case Expression.GetField(field, exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.GetField(field, e, t, eff, loc)
+      Expression.GetField(field, e, t, pur, eff, loc)
 
-    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
+    case Expression.PutField(field, exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      Expression.PutField(field, e1, e2, t, eff, loc)
+      Expression.PutField(field, e1, e2, t, pur, eff, loc)
 
-    case Expression.GetStaticField(field, tpe, eff, loc) =>
+    case Expression.GetStaticField(field, tpe, pur, eff, loc) =>
       val t = visitType(tpe)
-      Expression.GetStaticField(field, t, eff, loc)
+      Expression.GetStaticField(field, t, pur, eff, loc)
 
-    case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
+    case Expression.PutStaticField(field, exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.PutStaticField(field, e, t, eff, loc)
+      Expression.PutStaticField(field, e, t, pur, eff, loc)
 
-    case Expression.NewObject(_, _, _, _) => exp0
+    case Expression.NewObject(_, _, _, _, _) => exp0
 
-    case Expression.NewChannel(exp, tpe, eff, loc) =>
+    case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.NewChannel(e, t, eff, loc)
+      Expression.NewChannel(e, t, pur, eff, loc)
 
-    case Expression.GetChannel(exp, tpe, eff, loc) =>
+    case Expression.GetChannel(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.GetChannel(e, t, eff, loc)
+      Expression.GetChannel(e, t, pur, eff, loc)
 
-    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+    case Expression.PutChannel(exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      Expression.PutChannel(e1, e2, t, eff, loc)
+      Expression.PutChannel(e1, e2, t, pur, eff, loc)
 
-    case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
+    case Expression.SelectChannel(rules, default, tpe, pur, eff, loc) =>
       val rs = rules.map(visitSelectChannelRule)
       val d = default.map(visitExp)
       val t = visitType(tpe)
-      Expression.SelectChannel(rs, d, t, eff, loc)
+      Expression.SelectChannel(rs, d, t, pur, eff, loc)
 
-    case Expression.Spawn(exp, tpe, eff, loc) =>
+    case Expression.Spawn(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.Spawn(e, t, eff, loc)
+      Expression.Spawn(e, t, pur, eff, loc)
 
     case Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       Expression.Lazy(e, t, loc)
 
-    case Expression.Force(exp, tpe, eff, loc) =>
+    case Expression.Force(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.Force(e, t, eff, loc)
+      Expression.Force(e, t, pur, eff, loc)
 
     case Expression.FixpointConstraintSet(cs, _, _, loc) =>
       mkDatalog(cs, loc)
 
-    case Expression.FixpointLambda(pparams, exp, _, _, eff, loc) =>
+    case Expression.FixpointLambda(pparams, exp, _, _, pur, eff, loc) =>
       val defn = Defs.lookup(Defs.Rename)
       val defExp = Expression.Def(defn.sym, Types.RenameType, loc)
       val predExps = mkList(pparams.map(pparam => mkPredSym(pparam.pred)), Types.mkList(Types.PredSym, loc), loc)
       val argExps = predExps :: visitExp(exp) :: Nil
       val resultType = Types.Datalog
-      Expression.Apply(defExp, argExps, resultType, eff, loc)
+      Expression.Apply(defExp, argExps, resultType, pur, eff, loc)
 
-    case Expression.FixpointMerge(exp1, exp2, _, _, eff, loc) =>
+    case Expression.FixpointMerge(exp1, exp2, _, _, pur, eff, loc) =>
       val defn = Defs.lookup(Defs.Merge)
       val defExp = Expression.Def(defn.sym, Types.MergeType, loc)
       val argExps = visitExp(exp1) :: visitExp(exp2) :: Nil
       val resultType = Types.Datalog
-      Expression.Apply(defExp, argExps, resultType, eff, loc)
+      Expression.Apply(defExp, argExps, resultType, pur, eff, loc)
 
-    case Expression.FixpointSolve(exp, _, _, eff, loc) =>
+    case Expression.FixpointSolve(exp, _, _, pur, eff, loc) =>
       val defn = Defs.lookup(Defs.Solve)
       val defExp = Expression.Def(defn.sym, Types.SolveType, loc)
       val argExps = visitExp(exp) :: Nil
       val resultType = Types.Datalog
-      Expression.Apply(defExp, argExps, resultType, eff, loc)
+      Expression.Apply(defExp, argExps, resultType, pur, eff, loc)
 
-    case Expression.FixpointFilter(pred, exp, _, eff, loc) =>
+    case Expression.FixpointFilter(pred, exp, _, pur, eff, loc) =>
       val defn = Defs.lookup(Defs.Filter)
       val defExp = Expression.Def(defn.sym, Types.FilterType, loc)
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
       val resultType = Types.Datalog
-      Expression.Apply(defExp, argExps, resultType, eff, loc)
+      Expression.Apply(defExp, argExps, resultType, pur, eff, loc)
 
-    case Expression.FixpointInject(exp, pred, _, eff, loc) =>
+    case Expression.FixpointInject(exp, pred, _, pur, eff, loc) =>
       // Compute the arity of the functor F[(a, b, c)] or F[a].
       val arity = Type.eraseAliases(exp.tpe) match {
         case Type.Apply(_, innerType, _) => innerType.typeConstructor match {
@@ -595,9 +595,9 @@ object Lowering {
       // Put everything together.
       val defExp = Expression.Def(sym, defTpe, loc)
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
-      Expression.Apply(defExp, argExps, Types.Datalog, eff, loc)
+      Expression.Apply(defExp, argExps, Types.Datalog, pur, eff, loc)
 
-    case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
+    case Expression.FixpointProject(pred, exp, tpe, pur, eff, loc) =>
       // Compute the arity of the predicate symbol.
       // The type is either of the form `Array[(a, b, c)]` or `Array[a]`.
       val arity = Type.eraseAliases(tpe) match {
@@ -618,24 +618,24 @@ object Lowering {
       // Put everything together.
       val defExp = Expression.Def(sym, defTpe, loc)
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
-      Expression.Apply(defExp, argExps, tpe, eff, loc)
+      Expression.Apply(defExp, argExps, tpe, pur, eff, loc)
 
-    case Expression.Reify(t0, tpe0, eff, loc) =>
+    case Expression.Reify(t0, tpe0, pur, eff, loc) =>
       val t = visitType(t0)
       val tpe = visitType(tpe0)
-      Expression.Reify(t, tpe, eff, loc)
+      Expression.Reify(t, tpe, pur, eff, loc)
 
-    case Expression.ReifyType(t0, k, tpe0, eff, loc) =>
+    case Expression.ReifyType(t0, k, tpe0, pur, eff, loc) =>
       val t = visitType(t0)
       val tpe = visitType(tpe0)
-      Expression.ReifyType(t, k, tpe, eff, loc)
+      Expression.ReifyType(t, k, tpe, pur, eff, loc)
 
-    case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+    case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, pur, eff, loc) =>
       val t = visitType(tpe)
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
-      Expression.ReifyEff(sym, e1, e2, e3, t, eff, loc)
+      Expression.ReifyEff(sym, e1, e2, e3, t, pur, eff, loc)
 
   }
 
