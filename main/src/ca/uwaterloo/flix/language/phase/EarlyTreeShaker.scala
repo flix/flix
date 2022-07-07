@@ -121,6 +121,16 @@ object EarlyTreeShaker {
     loop(rules, Set())
   }
 
+  def visitCatchRules(rules: List[CatchRule]): Set[Symbol.DefnSym] = {
+    @tailrec
+    def loop(r: List[CatchRule], acc: Set[Symbol.DefnSym]): Set[Symbol.DefnSym] = r match {
+      case Nil => acc
+      case x :: xs => loop(xs, visitExp(x.exp) ++ acc)
+    }
+
+    loop(rules, Set())
+  }
+
   /**
     * Returns the function symbols reachable from the given expression `e0`.
     */
@@ -215,55 +225,89 @@ object EarlyTreeShaker {
     case Expression.Discard(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.Match(exp, rules, tpe, pur, loc) =>
+    case Expression.Match(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitMatchRules(rules)
 
     case Expression.Choose(exps, rules, _, _, _) =>
       visitExps(exps) ++ visitChoiceRules(rules)
 
-    case Expression.Tag(sym, tag, exp, tpe, pur, loc) => ???
-    case Expression.Tuple(elms, tpe, pur, loc) => ???
-    case Expression.RecordEmpty(tpe, loc) => ???
-    case Expression.RecordSelect(exp, field, tpe, pur, loc) => ???
-    case Expression.RecordExtend(field, value, rest, tpe, pur, loc) => ???
-    case Expression.RecordRestrict(field, rest, tpe, pur, loc) => ???
-    case Expression.ArrayLit(exps, exp, tpe, pur, loc) => ???
-    case Expression.ArrayNew(exp1, exp2, exp3, tpe, pur, loc) => ???
-    case Expression.ArrayLoad(base, index, tpe, pur, loc) => ???
-    case Expression.ArrayLength(base, pur, loc) => ???
-    case Expression.ArrayStore(base, index, elm, loc) => ???
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => ???
-    case Expression.Ref(exp1, exp2, tpe, pur, loc) => ???
-    case Expression.Deref(exp, tpe, pur, loc) => ???
-    case Expression.Assign(exp1, exp2, tpe, pur, loc) => ???
-    case Expression.Ascribe(exp, tpe, pur, loc) => ???
-    case Expression.Cast(exp, declaredType, declaredEff, tpe, pur, loc) => ???
-    case Expression.TryCatch(exp, rules, tpe, pur, loc) => ???
-    case Expression.InvokeConstructor(constructor, args, tpe, pur, loc) => ???
-    case Expression.InvokeMethod(method, exp, args, tpe, pur, loc) => ???
-    case Expression.InvokeStaticMethod(method, args, tpe, pur, loc) => ???
-    case Expression.GetField(field, exp, tpe, pur, loc) => ???
-    case Expression.PutField(field, exp1, exp2, tpe, pur, loc) => ???
-    case Expression.GetStaticField(field, tpe, pur, loc) => ???
-    case Expression.PutStaticField(field, exp, tpe, pur, loc) => ???
-    case Expression.NewObject(clazz, tpe, pur, loc) => ???
-    case Expression.NewChannel(exp, tpe, pur, loc) => ???
-    case Expression.GetChannel(exp, tpe, pur, loc) => ???
-    case Expression.PutChannel(exp1, exp2, tpe, pur, loc) => ???
-    case Expression.SelectChannel(rules, default, tpe, pur, loc) => ???
-    case Expression.Spawn(exp, tpe, pur, loc) => ???
-    case Expression.Lazy(exp, tpe, loc) => ???
-    case Expression.Force(exp, tpe, pur, loc) => ???
-    case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => ???
-    case Expression.FixpointLambda(pparams, exp, stf, tpe, pur, loc) => ???
-    case Expression.FixpointMerge(exp1, exp2, stf, tpe, pur, loc) => ???
-    case Expression.FixpointSolve(exp, stf, tpe, pur, loc) => ???
-    case Expression.FixpointFilter(pred, exp, tpe, pur, loc) => ???
-    case Expression.FixpointInject(exp, pred, tpe, pur, loc) => ???
-    case Expression.FixpointProject(pred, exp, tpe, pur, loc) => ???
-    case Expression.Reify(t, tpe, pur, loc) => ???
-    case Expression.ReifyType(t, k, tpe, pur, loc) => ???
-    case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, pur, loc) => ???
+    case Expression.Tag(sym, _, exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.Tuple(elms, _, _, _) =>
+      visitExps(elms)
+
+    case Expression.RecordEmpty(_, _) =>
+      Set.empty
+
+    case Expression.RecordSelect(exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.RecordExtend(_, value, rest, _, _, _) =>
+      visitExp(value) ++ visitExp(rest)
+
+    case Expression.RecordRestrict(_, rest, _, _, _) =>
+      visitExp(rest)
+
+    case Expression.ArrayLit(exps, exp, _, _, _) =>
+      visitExps(exps) ++ visitExp(exp)
+
+    case Expression.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+    case Expression.ArrayLoad(base, index, _, _, _) =>
+      visitExp(base) ++ visitExp(index)
+
+    case Expression.ArrayLength(base, _, _) =>
+      visitExp(base)
+    case Expression.ArrayStore(base, index, elm, _) =>
+      visitExp(base) ++ visitExp(index) ++ visitExp(elm)
+
+    case Expression.ArraySlice(base, beginIndex, endIndex, _, _) =>
+      visitExp(base) ++ visitExp(beginIndex) ++ visitExp(endIndex)
+
+    case Expression.Ref(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expression.Deref(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.Assign(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expression.Ascribe(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.Cast(exp, _, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.TryCatch(exp, rules, _, _, _) =>
+      visitExp(exp) ++ visitCatchRules(rules)
+    case Expression.InvokeConstructor(constructor, args, _, _, _) => ???
+    case Expression.InvokeMethod(method, exp, args, _, _, _) => ???
+    case Expression.InvokeStaticMethod(method, args, _, _, _) => ???
+    case Expression.GetField(field, exp, _, _, _) => ???
+    case Expression.PutField(field, exp1, exp2, _, _, _) => ???
+    case Expression.GetStaticField(field, _, _, _) => ???
+    case Expression.PutStaticField(field, exp, _, _, _) => ???
+    case Expression.NewObject(clazz, _, _, _) => ???
+    case Expression.NewChannel(exp, _, _, _) => ???
+    case Expression.GetChannel(exp, _, _, _) => ???
+    case Expression.PutChannel(exp1, exp2, _, _, _) => ???
+    case Expression.SelectChannel(rules, default, _, _, _) => ???
+    case Expression.Spawn(exp, _, _, _) => ???
+    case Expression.Lazy(exp, _, _) => ???
+    case Expression.Force(exp, _, _, _) => ???
+    case Expression.FixpointConstraintSet(cs, stf, _, _) => ???
+    case Expression.FixpointLambda(pparams, exp, stf, _, _, _) => ???
+    case Expression.FixpointMerge(exp1, exp2, stf, _, _, _) => ???
+    case Expression.FixpointSolve(exp, stf, _, _, _) => ???
+    case Expression.FixpointFilter(pred, exp, _, _, _) => ???
+    case Expression.FixpointInject(exp, pred, _, _, _) => ???
+    case Expression.FixpointProject(pred, exp, _, _, _) => ???
+    case Expression.Reify(t, _, _, _) => ???
+    case Expression.ReifyType(t, k, _, _, _) => ???
+    case Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, _) => ???
   }
 
   /**
