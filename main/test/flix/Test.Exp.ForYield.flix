@@ -34,13 +34,12 @@ namespace Test/Exp/ForYield {
                  z <- 4 :: 5 :: Nil)
                     yield (x, y, z);
         l == (1, 0, 4) :: (1, 0, 5) :: (2, 1, 4) :: (2, 1, 5) :: (3, 2, 4) :: (3, 2, 5) :: Nil
-/*
+
     @test
-    def testForYield05(): Bool =
+    def testForYield06(): Bool =
         let l =
             for (x <- 1 :: 2 :: 3 :: Nil)
                 for (y <- 4 :: 5 :: Nil)
                     yield (x, y);
         l == (1, 4) :: (1, 5) :: (2, 4) :: (2, 5) :: (3, 4) :: (3, 5) :: Nil
-*/
 }
