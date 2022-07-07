@@ -44,20 +44,30 @@ namespace Fixpoint {
                 Array.compare(a, b) as & Pure
         }
 
+        ///
+        /// Creates an empty tuple consisting of the elements in `l`.
+        ///
         pub def new(l: f[v]): Tuple[v] with Foldable[f] =
             Tuple(Foldable.toArray(Static, l)) as & Pure
 
+        ///
+        /// Converts `t` to a list.
+        ///
         pub def toList(t: Tuple[v]): List[v] = {
             let Tuple(a) = t;
             Array.toList(a)
         } as & Pure
 
+        ///
+        /// Returns the length of `t`.
+        ///
         pub def length(t: Tuple[v]): Int32 =
             let Tuple(a) = t;
             Array.length(a)
 
         ///
-        /// Unpacks the given tuple `t` and returns the value at index `i`.
+        /// Returns the value at index `i` in `t`.
+        /// Throws a runtime exception if `v` is out of bounds.
         ///
         pub def valueAt(t: Tuple[v], v: Int32): v = {
             let Tuple(a) = t;
