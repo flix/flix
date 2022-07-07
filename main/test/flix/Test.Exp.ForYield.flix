@@ -52,4 +52,15 @@ namespace Test/Exp/ForYield {
                 for (y <- 4 :: 5 :: Nil)
                     yield (x, y);
         l == ((1, 4) :: (1, 5) :: Nil) :: ((2, 4) :: (2, 5) :: Nil) :: ((3, 4) :: (3, 5) :: Nil) :: Nil
+
+    @test
+    def testForYield08(): Bool = region r {
+        let l1 = ref Nil @ r;
+        let l2 =
+            for (x <- 1 :: 2 :: 3 :: Nil) yield {
+                l1 := x :: deref l1;
+                x
+            };
+        List.reverse(deref l1) == l2
+        }
 }
