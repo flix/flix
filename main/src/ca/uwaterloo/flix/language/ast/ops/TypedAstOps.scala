@@ -168,10 +168,28 @@ object TypedAstOps {
       case Expression.Cast(exp, _, _, _, _, _, _, _) =>
         visitExp(exp, env0)
 
+      case Expression.Without(exp, _, _, _, _, _) =>
+        visitExp(exp, env0)
+
       case Expression.TryCatch(exp, rules, _, _, _, loc) =>
         rules.foldLeft(visitExp(exp, env0)) {
           case (macc, CatchRule(sym, clazz, body)) => macc ++ visitExp(body, env0 + (sym -> Type.mkNative(null, loc)))
         }
+
+      case Expression.TryWith(exp, _, rules, _, _, _, _) =>
+        rules.foldLeft(visitExp(exp, env0)) {
+          case (macc, HandlerRule(_, fparams, body)) =>
+            val env1 = fparams.map(fparam => fparam.sym -> fparam.tpe)
+            macc ++ visitExp(body, env0 ++ env1)
+        }
+
+      case Expression.Do(_, exps, _, _, _) =>
+        exps.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
+          case (macc, exp) => macc ++ visitExp(exp, env0)
+        }
+
+      case Expression.Resume(exp, _, _) =>
+        visitExp(exp, env0)
 
       case Expression.InvokeConstructor(_, args, _, _, _, _) =>
         args.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
