@@ -5,7 +5,7 @@ def main(): Unit & Impure =
 
     region r { // Declare a new region.
 
-        // Create a string we want to characters of.
+        // Create a string to separate characters of.
         let s = "Flix is cool!";
 
         // Array to store 8 chars in.
