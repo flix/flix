@@ -95,8 +95,8 @@ instance Traversable[Nec] {
 }
 
 instance Reducible[Nec] {
-    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nec[a]): b & (ef1 and ef2) = Nec.reduceLeftTo(f, g, l)
-    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, l: Nec[a]): b & (ef1 and ef2) = Nec.reduceRightTo(f, g, l)
+    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nec[a]): b \ {ef1, ef2} = Nec.reduceLeftTo(f, g, l)
+    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, l: Nec[a]): b \ {ef1, ef2} = Nec.reduceRightTo(f, g, l)
     override pub def head(l: Nec[a]): a = Nec.head(l)
     override pub def last(l: Nec[a]): a = Nec.last(l)
     override pub def init(l: Nec[a]): List[a] = Nec.init(l)
@@ -110,13 +110,13 @@ instance Reducible[Nec] {
     override pub def dropWhile(f: a -> Bool & ef, l: Nec[a]): List[a] & ef = Nec.dropWhileLeft(f, l)
     override pub def takeWhile(f: a -> Bool & ef, l: Nec[a]): List[a] & ef = Nec.takeWhileLeft(f, l)
     override pub def toArray(r: Region[r], l: Nec[a]): Array[a, r] \ Write(r) = Nec.toArray(r, l)
-    override pub def toIterator(r: Region[r], l: Nec[a]): Iterator[a, r] \ Write(r) = Nec.toIterator(r, l)
+    override pub def iterator(r: Region[r], l: Nec[a]): Iterator[a, r] \ Write(r) = Nec.iterator(r, l)
     override pub def toList(l: Nec[a]): List[a] = Nec.toList(l)
 }
 
 instance Iterable[Nec] {
     pub def iterator(r: Region[r], t: Nec[a]): Iterator[a, r] \ Write(r) =
-        Nec.toIterator(r, t)
+        Nec.iterator(r, t)
 }
 
 instance ToString[Nec[a]] with ToString[a] {
@@ -777,13 +777,13 @@ namespace Nec {
     ///
     /// Returns an iterator over `c`.
     ///
-    pub def toIterator(r: Region[r], c: Nec[a]): Iterator[a, r] \ Write(r) =
-        toIteratorHelper(r, Some(viewLeft(c)))
+    pub def iterator(r: Region[r], c: Nec[a]): Iterator[a, r] \ Write(r) =
+        iteratorHelper(r, Some(viewLeft(c)))
 
     ///
     /// Returns an iterator over `l`.
     ///
-    def toIteratorHelper(r: Region[r], vl: Option[ViewLeft[a]]): Iterator[a, r] \ Write(r) =
+    def iteratorHelper(r: Region[r], vl: Option[ViewLeft[a]]): Iterator[a, r] \ Write(r) =
         let cursor = ref vl @ r;
         let done = () -> match (deref cursor) {
             case None    => true
@@ -801,6 +801,12 @@ namespace Nec {
             }
         };
         Iterator(done, next)
+
+    ///
+    /// Returns an iterator over `c` zipped with the indices of the elements.
+    ///
+    pub def enumerator(r: Region[r], c: Nec[a]): Iterator[(a, Int32), r] \ Write(r) =
+        iterator(r, c) |> Iterator.zipWithIndex
 
     ///
     /// Helper for the `sort` functions.
@@ -939,7 +945,7 @@ namespace Nec {
     /// Applies `g` to the initial element of `c` and combines it
     /// with the remainder of `c` using `f` going from left to right.
     ///
-    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, c: Nec[a]): b & (ef1 and ef2) = match viewLeft(c) {
+    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, c: Nec[a]): b \ {ef1, ef2} = match viewLeft(c) {
         case OneLeft(x)      => g(x)
         case SomeLeft(x, xs) => foldLeft(f, g(x), xs)
     }
@@ -949,7 +955,7 @@ namespace Nec {
     /// Applies `g` to the initial element of `c` and combines it
     /// with the remainder of `c` using `f` going from right to left.
     ///
-    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, c: Nec[a]): b & (ef1 and ef2) = match viewRight(c) {
+    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, c: Nec[a]): b \ {ef1, ef2} = match viewRight(c) {
         case OneRight(x)      => g(x)
         case SomeRight(xs, x) => foldRight((a, acc) -> f(a, acc), g(x), xs)
     }

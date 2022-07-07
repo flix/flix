@@ -2674,22 +2674,51 @@ def distinctWith09(): Bool =
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toIterator                                                              //
+    // iterator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool = region r {
-        Nil: List[Int32] |> List.toIterator(r) |> Iterator.toList == Nil
+    def iterator01(): Bool = region r {
+        Nil: List[Int32] |> List.iterator(r) |> Iterator.toList == Nil
     }
 
     @test
-    def toIterator02(): Bool = region r {
-        (1 :: 2 :: 3 :: Nil) |> List.toIterator(r) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    def iterator02(): Bool = region r {
+        (1 :: 2 :: 3 :: Nil) |> List.iterator(r) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
     }
 
     @test
-    def toIterator03(): Bool = region r {
-        List.range(-100, 100) |> List.toIterator(r) |> Iterator.toList == List.range(-100, 100)
+    def iterator03(): Bool = region r {
+        List.range(-100, 100) |> List.iterator(r) |> Iterator.toList == List.range(-100, 100)
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // enumerate                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def enumerate01(): Bool = region r {
+        let z = ref Nil @ r;
+        let l = Nil;
+        foreach ((x, i) <- List.enumerator(r, l)) z := (x, i) :: deref z;
+        List.reverse(deref z) == Nil: List[(Int32, Int32)]
+    }
+
+    @test
+    def enumerate02(): Bool = region r {
+        let z = ref Nil @ r;
+        let l = 1 :: 2 :: 3 :: Nil;
+        foreach ((x, i) <- List.enumerator(r, l)) z := (x, i) :: deref z;
+        List.reverse(deref z) == (1, 0) :: (2, 1) :: (3, 2) :: Nil
+    }
+
+    @test
+    def enumerate03(): Bool = region r {
+        let z = ref Nil @ r;
+        let l = List.range(100, 200);
+        foreach ((x, i) <- List.enumerator(r, l)) z := (x, i) :: deref z;
+        List.reverse(deref z) == List.zip(l, List.range(0, 100))
     }
 
 

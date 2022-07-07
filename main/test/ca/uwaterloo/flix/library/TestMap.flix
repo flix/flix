@@ -2444,23 +2444,44 @@ def query18(): Bool =
         Map.toMultiMap(Map#{1 => 'a', 2 => 'b'}) |> MultiMap.toAscList == (1, 'a') :: (2, 'b') :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
-    // toIterator                                                              //
+    // iterator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool = region r {
-        Map.empty(): Map[Int32, Int32] |> Map.toIterator(r) |> Iterator.toMap == Map.empty()
+    def iterator01(): Bool = region r {
+        Map.empty(): Map[Int32, Int32] |> Map.iterator(r) |> Iterator.toMap == Map.empty()
     }
 
     @test
-    def toIterator02(): Bool = region r {
-        Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4} |> Map.toIterator(r) |> Iterator.toMap == Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4}
+    def iterator02(): Bool = region r {
+        Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4} |> Map.iterator(r) |> Iterator.toMap == Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4}
     }
 
     @test
-    def toIterator03(): Bool = region r {
+    def iterator03(): Bool = region r {
         let l = List.range(0, 100);
-        List.zip(l, List.reverse(l)) |> List.toMap |> Map.toIterator(r) |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
+        List.zip(l, List.reverse(l)) |> List.toMap |> Map.iterator(r) |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // enumerate                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def enumerate01(): Bool = region r {
+        let z = ref Nil @ r;
+        let m = Map#{};
+        foreach (((k, v), i) <- Map.enumerator(r, m)) z := (k, v, i) :: deref z;
+        List.sortBy(match (k, _, _) -> k, deref z) == Nil: List[(Int32, Int32, Int32)]
+    }
+
+    @test
+    def enumerate02(): Bool = region r {
+        let z = ref Nil @ r;
+        let m = Map#{2 => 1, 3 => 2, 4 => 3};
+        foreach (((k, v), i) <- Map.enumerator(r, m)) z := (k, v, i) :: deref z;
+        List.sortBy(match (k, _, _) -> k, deref z) == (2, 1, 0) :: (3, 2, 1) :: (4, 3, 2) :: Nil
     }
 
 

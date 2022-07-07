@@ -70,22 +70,22 @@ object Unification {
   def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     (tpe1, tpe2) match {
 
-      // TODO tmp hack to work around effects
-      case _ if (tpe1.kind == Kind.Effect && tpe2.kind == Kind.Effect) => Result.Ok(Substitution.empty)
+      // don't try to unify effects if the flag is off
+      case (x, y) if x.kind == Kind.Effect && y.kind == Kind.Effect && !flix.options.xeffects => Ok(Substitution.empty)
 
       case (x: Type.Var, y: Type.Var) => unifyVars(x.asKinded, y.asKinded, renv)
 
-      case (x: Type.Var, _) =>
-        if (x.kind == Kind.Bool && tpe2.kind == Kind.Bool)
-          BoolUnification.unify(x, tpe2, renv)
-        else
-          unifyVar(x.asKinded, tpe2, renv)
+      case (x: Type.Var, _) => (x.kind, tpe2.kind) match {
+        case (Kind.Bool, Kind.Bool) => BoolUnification.unify(x, tpe2, renv)
+        case (Kind.Effect, Kind.Effect) => SetUnification.unify(x, tpe2, renv)
+        case _ => unifyVar(x.asKinded, tpe2, renv)
+      }
 
-      case (_, x: Type.Var) =>
-        if (x.kind == Kind.Bool && tpe1.kind == Kind.Bool)
-          BoolUnification.unify(x, tpe1, renv)
-        else
-          unifyVar(x.asKinded, tpe1, renv)
+      case (_, x: Type.Var) => (tpe1.kind, x.kind) match {
+        case (Kind.Bool, Kind.Bool) => BoolUnification.unify(tpe1, x, renv)
+        case (Kind.Effect, Kind.Effect) => SetUnification.unify(tpe1, x, renv)
+        case _ => unifyVar(x.asKinded, tpe1, renv)
+      }
 
       case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(Substitution.empty)
 
@@ -95,6 +95,9 @@ object Unification {
 
       case _ if tpe1.kind == Kind.Bool && tpe2.kind == Kind.Bool =>
         BoolUnification.unify(tpe1, tpe2, renv)
+
+      case _ if tpe1.kind == Kind.Effect && tpe2.kind == Kind.Effect =>
+        SetUnification.unify(tpe1, tpe2, renv)
 
       case (row1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(_), _), _, _), restRow1, _), row2) =>
         // Attempt to write the row to match.

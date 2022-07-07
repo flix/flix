@@ -1303,27 +1303,27 @@ namespace TestDelayList {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toIterator                                                              //
+    // iterator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
     def toIter01(): Bool = region r {
-    	DelayList.toIterator(r, ENil: DelayList[Unit]) |> Iterator.toList == Nil
+    	DelayList.iterator(r, ENil: DelayList[Unit]) |> Iterator.toList == Nil
     }
 
     @test
     def toIter02(): Bool = region r {
-    	DelayList.toIterator(r, LList(lazy ENil): DelayList[Unit]) |> Iterator.toList == Nil
+    	DelayList.iterator(r, LList(lazy ENil): DelayList[Unit]) |> Iterator.toList == Nil
     }
 
     @test
     def toIter06(): Bool = region r {
-    	DelayList.toIterator(r, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    	DelayList.iterator(r, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
     }
 
     @test
     def toIter09(): Bool = region r {
-    	DelayList.range(-100, 100) |> DelayList.toIterator(r) |> Iterator.toList == List.range(-100, 100)
+    	DelayList.range(-100, 100) |> DelayList.iterator(r) |> Iterator.toList == List.range(-100, 100)
     }
 
 

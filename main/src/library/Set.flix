@@ -620,8 +620,14 @@ namespace Set {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def toIterator(r: Region[r], s: Set[a]): Iterator[a, r] \ Write(r) =
-        toList(s) |> List.toIterator(r)
+    pub def iterator(r: Region[r], s: Set[a]): Iterator[a, r] \ Write(r) =
+        toList(s) |> List.iterator(r)
+
+    ///
+    /// Returns an iterator over `s` zipped with the indices of the elements.
+    ///
+    pub def enumerator(r: Region[r], s: Set[a]): Iterator[(a, Int32), r] \ Write(r) =
+        iterator(r, s) |> Iterator.zipWithIndex
 
     ///
     /// Returns the concatenation of the string representation
