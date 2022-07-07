@@ -1991,11 +1991,12 @@ object Typer {
       case KindedAst.Expression.Cast(exp, declaredType, declaredPur, declaredEff, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val dt = declaredType.map(tpe => subst0(tpe))
-        val de = declaredPur.map(pur => subst0(pur))
+        val dp = declaredPur.map(pur => subst0(pur))
+        val de = declaredEff.map(eff => subst0(eff))
         val tpe = subst0(tvar)
         val pur = declaredPur.getOrElse(e.pur)
         val eff = declaredEff.getOrElse(e.eff)
-        TypedAst.Expression.Cast(e, dt, de, tpe, pur, eff, loc)
+        TypedAst.Expression.Cast(e, dt, dp, de, tpe, pur, eff, loc)
 
       case KindedAst.Expression.Without(exp, _, _) => visitExp(exp, subst0) // TODO
 

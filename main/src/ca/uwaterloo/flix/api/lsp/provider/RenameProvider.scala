@@ -39,7 +39,7 @@ object RenameProvider {
         case Entity.Exp(exp) => exp match {
           case Expression.Var(sym, _, _) => renameVar(sym, newName)
           case Expression.Def(sym, _, _) => renameDef(sym, newName)
-          case Expression.Tag(sym, tag, _, _, _, _) => renameTag(sym, tag, newName)
+          case Expression.Tag(sym, tag, _, _, _, _, _) => renameTag(sym, tag, newName)
           case _ => mkNotFound(uri, pos)
         }
 
