@@ -32,7 +32,6 @@ namespace Fixpoint/Ram {
 
     instance ToString[BoolExp[v]] with ToString[v] {
         pub def toString(exp: BoolExp[v]): String =
-            use Fixpoint.commaSeparate;
             match exp {
                 case Empty(ramSym) => "${ramSym} == ∅"
                 case NotMemberOf(terms, ramSym) => "(${terms |> List.join(", ")}) ∉ ${ramSym}"
