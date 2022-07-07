@@ -232,7 +232,7 @@ object CodeHinter {
         case HandlerRule(_, _, e) => visitExp(e)
       }
 
-    case Expression.Do(sym, exps, pur, eff, loc) =>
+    case Expression.Do(_, exps, _, _, _) =>
       exps.flatMap(visitExp)
 
     case Expression.Resume(exp, _, _) =>
