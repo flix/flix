@@ -18,12 +18,14 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Symbol}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import scala.annotation.tailrec
+import scala.collection.immutable.{AbstractSet, SortedSet}
 
 /**
   * The Tree Shaking phase removes all unused function definitions.
@@ -108,7 +110,7 @@ object EarlyTreeShaker {
       case x :: xs => loop(xs, visitExp(x.exp) ++ visitExp(x.guard) ++ acc)
     }
 
-    loop(rules, Set())
+    loop(rules, Set.empty)
   }
 
   private def visitChoiceRules(rules: List[ChoiceRule]): Set[Symbol.DefnSym] = {
@@ -118,7 +120,7 @@ object EarlyTreeShaker {
       case x :: xs => loop(xs, visitExp(x.exp) ++ acc)
     }
 
-    loop(rules, Set())
+    loop(rules, Set.empty)
   }
 
   def visitCatchRules(rules: List[CatchRule]): Set[Symbol.DefnSym] = {
@@ -128,7 +130,33 @@ object EarlyTreeShaker {
       case x :: xs => loop(xs, visitExp(x.exp) ++ acc)
     }
 
-    loop(rules, Set())
+    loop(rules, Set.empty)
+  }
+
+  def visitChannelRules(rules: List[SelectChannelRule]): Set[Symbol.DefnSym] = {
+    @tailrec
+    def loop(r: List[SelectChannelRule], acc: Set[Symbol.DefnSym]): Set[Symbol.DefnSym] = r match {
+      case Nil => acc
+      case x :: xs => loop(xs, visitExp(x.chan) ++ visitExp(x.exp) ++ acc)
+    }
+
+    loop(rules, Set.empty)
+  }
+
+  def visitConstraints(constraints: List[Constraint]): Set[Symbol.DefnSym] = {
+    @tailrec
+    def loop(cs: List[Constraint], acc: Set[Symbol.DefnSym]): Set[Symbol.DefnSym] = cs match {
+      case Nil => acc
+      case x :: xs => loop(xs, acc ++ (x.head match {
+        case Head.Atom(_, _, terms, _, _) => visitExps(terms)
+      }) ++ (x.body match {
+        case Body.Guard(exp, _) => visitExp(exp)
+        case Body.Loop(_, exp, _) => visitExp(exp)
+        case _ => Set.empty
+      }))
+    }
+
+    loop(constraints, Set.empty)
   }
 
   /**
@@ -283,31 +311,82 @@ object EarlyTreeShaker {
 
     case Expression.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitCatchRules(rules)
-    case Expression.InvokeConstructor(constructor, args, _, _, _) => ???
-    case Expression.InvokeMethod(method, exp, args, _, _, _) => ???
-    case Expression.InvokeStaticMethod(method, args, _, _, _) => ???
-    case Expression.GetField(field, exp, _, _, _) => ???
-    case Expression.PutField(field, exp1, exp2, _, _, _) => ???
-    case Expression.GetStaticField(field, _, _, _) => ???
-    case Expression.PutStaticField(field, exp, _, _, _) => ???
-    case Expression.NewObject(clazz, _, _, _) => ???
-    case Expression.NewChannel(exp, _, _, _) => ???
-    case Expression.GetChannel(exp, _, _, _) => ???
-    case Expression.PutChannel(exp1, exp2, _, _, _) => ???
-    case Expression.SelectChannel(rules, default, _, _, _) => ???
-    case Expression.Spawn(exp, _, _, _) => ???
-    case Expression.Lazy(exp, _, _) => ???
-    case Expression.Force(exp, _, _, _) => ???
-    case Expression.FixpointConstraintSet(cs, stf, _, _) => ???
-    case Expression.FixpointLambda(pparams, exp, stf, _, _, _) => ???
-    case Expression.FixpointMerge(exp1, exp2, stf, _, _, _) => ???
-    case Expression.FixpointSolve(exp, stf, _, _, _) => ???
-    case Expression.FixpointFilter(pred, exp, _, _, _) => ???
-    case Expression.FixpointInject(exp, pred, _, _, _) => ???
-    case Expression.FixpointProject(pred, exp, _, _, _) => ???
-    case Expression.Reify(t, _, _, _) => ???
-    case Expression.ReifyType(t, k, _, _, _) => ???
-    case Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, _) => ???
+
+    case Expression.InvokeConstructor(_, args, _, _, _) =>
+      visitExps(args)
+
+    case Expression.InvokeMethod(_, exp, args, _, _, _) =>
+      visitExp(exp) ++ visitExps(args)
+
+    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
+      visitExps(args)
+
+    case Expression.GetField(_, exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.PutField(_, exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expression.GetStaticField(_, _, _, _) =>
+      Set.empty
+
+    case Expression.PutStaticField(_, exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.NewObject(_, _, _, _) =>
+      Set.empty
+
+    case Expression.NewChannel(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.GetChannel(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.PutChannel(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expression.SelectChannel(rules, default, _, _, _) =>
+      visitChannelRules(rules) ++ default.map(visitExp).getOrElse(Set.empty)
+
+    case Expression.Spawn(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.Lazy(exp, _, _) =>
+      visitExp(exp)
+
+    case Expression.Force(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.FixpointConstraintSet(cs, _, _, _) =>
+      visitConstraints(cs)
+
+    case Expression.FixpointLambda(_, exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expression.FixpointSolve(exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.FixpointFilter(_, exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.FixpointInject(exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.FixpointProject(_, exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.Reify(_, _, _, _) =>
+      Set.empty
+
+    case Expression.ReifyType(_, _, _, _, _) =>
+      Set.empty
+
+    case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
   }
 
   /**
