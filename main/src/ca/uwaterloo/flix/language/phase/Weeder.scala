@@ -711,6 +711,37 @@ object Weeder {
           }
       }
 
+    case ParsedAst.Expression.ForYield(_, frags, exp, _) =>
+      //
+      // Rewrites a foreach loop to Monad.flatMap and Functor.map call.
+      //
+
+      val fqnMap = "Functor.map"
+      val fqnFlatMap = "Monad.flatMap"
+
+      foldRight(frags.zipWithIndex)(visitExp(exp, senv)) {
+
+        // The innermost for-loop must be a `Functor.map` call
+        case ((ParsedAst.ForYieldFragment.ForYield(sp11, pat, exp1, sp12), i), exp0) if i == frags.length - 1 =>
+          mapN(visitPattern(pat), visitExp(exp1, senv)) {
+            case (p, e1) =>
+              val loc = mkSL(sp11, sp12).asSynthetic
+              val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
+              val fparams = List(lambda, e1)
+              mkApplyFqn(fqnMap, fparams, loc)
+          }
+
+        // Same as above, but call `Monad.flatMap` instead
+        case ((ParsedAst.ForYieldFragment.ForYield(sp11, pat, exp1, sp12), _), exp0) =>
+          mapN(visitPattern(pat), visitExp(exp1, senv)) {
+            case (p, e1) =>
+              val loc = mkSL(sp11, sp12).asSynthetic
+              val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
+              val fparams = List(lambda, e1)
+              mkApplyFqn(fqnFlatMap, fparams, loc)
+          }
+      }
+
     case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe, exp1, exp2, sp2) =>
       //
       // Rewrites a let-match to a regular let-binding or a full-blown pattern match.
@@ -2840,6 +2871,7 @@ object Weeder {
     case ParsedAst.Expression.Stm(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Discard(sp1, _, _) => sp1
     case ParsedAst.Expression.ForEach(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.ForYield(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _) => sp1
