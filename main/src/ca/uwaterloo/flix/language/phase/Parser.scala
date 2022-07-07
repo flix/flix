@@ -531,8 +531,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         ForYieldFragment // Add guard fragment later
       }
 
-      // Add a For rule that is just the for along with the parenthesis of fragments
-
       rule {
         SP ~ keyword("for") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Fragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForYield
       }
