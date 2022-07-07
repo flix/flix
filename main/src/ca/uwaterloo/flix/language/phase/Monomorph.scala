@@ -841,7 +841,8 @@ object Monomorph {
   private def reifyBool(tpe: Type, loc: SourceLocation): Expression = {
     val sym = Symbol.mkEnumSym("ReifiedBool")
     val resultTpe = Type.mkEnum(sym, Kind.Star, loc)
-    val resultEff = Type.Pure
+    val resultPur = Type.Pure
+    val resultEff = Type.Empty
 
     tpe.typeConstructor match {
       case None =>
@@ -850,15 +851,15 @@ object Monomorph {
       case Some(tc) => tc match {
         case TypeConstructor.True =>
           val tag = Name.Tag("ReifiedTrue", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.False =>
           val tag = Name.Tag("ReifiedFalse", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case _ =>
           val tag = Name.Tag("ErasedBool", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
       }
     }
   }
@@ -869,7 +870,8 @@ object Monomorph {
   private def reifyType(tpe: Type, loc: SourceLocation): Expression = {
     val sym = Symbol.mkEnumSym("ReifiedType")
     val resultTpe = Type.mkEnum(sym, Kind.Star, loc)
-    val resultEff = Type.Pure
+    val resultPur = Type.Pure
+    val resultEff = Type.Empty
 
     def visit(t0: Type): Expression = t0.typeConstructor match {
       case None =>
@@ -878,49 +880,49 @@ object Monomorph {
       case Some(tc) => tc match {
         case TypeConstructor.Unit =>
           val tag = Name.Tag("ReifiedUnit", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Bool =>
           val tag = Name.Tag("ReifiedBool", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Char =>
           val tag = Name.Tag("ReifiedChar", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Float32 =>
           val tag = Name.Tag("ReifiedFloat32", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Float64 =>
           val tag = Name.Tag("ReifiedFloat64", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Int8 =>
           val tag = Name.Tag("ReifiedInt8", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Int16 =>
           val tag = Name.Tag("ReifiedInt16", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Int32 =>
           val tag = Name.Tag("ReifiedInt32", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Int64 =>
           val tag = Name.Tag("ReifiedInt64", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Array =>
           val tag = Name.Tag("ReifiedArray", loc)
           val innerTpe = Type.eraseAliases(t0).typeArguments.head
           val innerExp = visit(innerTpe)
-          Expression.Tag(sym, tag, innerExp, resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, innerExp, resultTpe, resultPur, resultEff, loc)
 
         case _ =>
           val tag = Name.Tag("ErasedType", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
       }
     }
