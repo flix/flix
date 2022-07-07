@@ -18,14 +18,14 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.Ast.Annotation
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Symbol}
+import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import scala.annotation.tailrec
-import scala.collection.immutable.{AbstractSet, SortedSet}
 
 /**
   * The Tree Shaking phase removes all unused function definitions.
@@ -81,18 +81,18 @@ object EarlyTreeShaker {
     reachable
   }
 
-  @tailrec
-  private def isBenchmark(l: List[Annotation]): Boolean = l match {
-    case Nil => false
-    case Ast.Annotation.Benchmark(_) :: _ => true
-    case _ :: xs => isBenchmark(xs)
+  private def isBenchmark(l: List[TypedAst.Annotation]): Boolean = l.exists { a =>
+    a.name match {
+      case Annotation.Benchmark(_) => true
+      case _ => false
+    }
   }
 
-  @tailrec
-  private def isTest(l: List[Annotation]): Boolean = l match {
-    case Nil => false
-    case Ast.Annotation.Test(_) :: _ => true
-    case _ :: xs => isTest(xs)
+  private def isTest(l: List[TypedAst.Annotation]): Boolean = l.exists { a =>
+    a.name match {
+      case Annotation.Test(_) => true
+      case _ => false
+    }
   }
 
   /**
@@ -144,16 +144,22 @@ object EarlyTreeShaker {
   }
 
   def visitConstraints(constraints: List[Constraint]): Set[Symbol.DefnSym] = {
+    def visitHead(h: Head): Set[Symbol.DefnSym] = h match {
+      case Head.Atom(_, _, terms, _, _) => visitExps(terms)
+    }
+
+    def visitBody(b: List[Body]): Set[Symbol.DefnSym] = {
+      b.foldLeft(Set.empty: Set[Symbol.DefnSym]) {
+        case (acc, Body.Guard(exp, _)) => visitExp(exp) ++ acc
+        case (acc, Body.Loop(_, exp, _)) => visitExp(exp) ++ acc
+        case (acc, _) => acc
+      }
+    }
+
     @tailrec
     def loop(cs: List[Constraint], acc: Set[Symbol.DefnSym]): Set[Symbol.DefnSym] = cs match {
       case Nil => acc
-      case x :: xs => loop(xs, acc ++ (x.head match {
-        case Head.Atom(_, _, terms, _, _) => visitExps(terms)
-      }) ++ (x.body match {
-        case Body.Guard(exp, _) => visitExp(exp)
-        case Body.Loop(_, exp, _) => visitExp(exp)
-        case _ => Set.empty
-      }))
+      case x :: xs => loop(xs, visitHead(x.head) ++ visitBody(x.body) ++ acc)
     }
 
     loop(constraints, Set.empty)
@@ -215,10 +221,10 @@ object EarlyTreeShaker {
       Set(sym)
 
     case Expression.Sig(sym, _, _) =>
-      Set(sym)
+      Set.empty
 
     case Expression.Hole(sym, _, _) =>
-      Set(sym)
+      Set.empty
 
     case Expression.Lambda(fparam, exp, _, _) =>
       visitExp(exp)
