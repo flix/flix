@@ -718,27 +718,28 @@ object Weeder {
 
       val fqnMap = "Functor.map"
       val fqnFlatMap = "Monad.flatMap"
+      val last = frags.length - 1
+
+      def mkForYieldLoop(sp1: SourcePosition,
+                         fqn: String,
+                         pat: WeededAst.Pattern,
+                         exp1: WeededAst.Expression,
+                         exp0: WeededAst.Expression,
+                         sp2: SourcePosition): WeededAst.Expression = {
+        val loc = mkSL(sp1, sp2).asSynthetic
+        val lambda = mkLambdaMatch(sp1, pat, exp0, sp2)
+        val fparams = List(lambda, exp1)
+        mkApplyFqn(fqn, fparams, loc)
+      }
 
       foldRight(frags.zipWithIndex)(visitExp(exp, senv)) {
-
-        // The innermost for-loop must be a `Functor.map` call
-        case ((ParsedAst.ForYieldFragment.ForYield(sp11, pat, exp1, sp12), i), exp0) if i == frags.length - 1 =>
+        case ((ParsedAst.ForYieldFragment.ForYield(sp11, pat, exp1, sp12), idx), exp0) =>
           mapN(visitPattern(pat), visitExp(exp1, senv)) {
             case (p, e1) =>
-              val loc = mkSL(sp11, sp12).asSynthetic
-              val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
-              val fparams = List(lambda, e1)
-              mkApplyFqn(fqnMap, fparams, loc)
-          }
-
-        // Same as above, but call `Monad.flatMap` instead
-        case ((ParsedAst.ForYieldFragment.ForYield(sp11, pat, exp1, sp12), _), exp0) =>
-          mapN(visitPattern(pat), visitExp(exp1, senv)) {
-            case (p, e1) =>
-              val loc = mkSL(sp11, sp12).asSynthetic
-              val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
-              val fparams = List(lambda, e1)
-              mkApplyFqn(fqnFlatMap, fparams, loc)
+              if (idx == last) // Check if it's the innermost loop
+                mkForYieldLoop(sp11, fqnMap, p, e1, exp0, sp12)
+              else
+                mkForYieldLoop(sp11, fqnFlatMap, p, e1, exp0, sp12)
           }
       }
 
