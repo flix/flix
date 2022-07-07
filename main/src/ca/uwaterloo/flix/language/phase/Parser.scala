@@ -502,7 +502,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("discard") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Discard
     }
 
-    def ForEach: Rule1[ParsedAst.Expression.ForEach] = { // add yield rule
+    def ForEach: Rule1[ParsedAst.Expression.ForEach] = {
 
       def ForEachFragment: Rule1[ParsedAst.ForeachFragment.ForEach] = rule {
         SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForeachFragment.ForEach
@@ -521,7 +521,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def ForYield: Rule1[ParsedAst.Expression.ForYield] = {
+    def ForYield: Rule1[ParsedAst.Expression.ForYield] = { // add yield rule
 
       def ForYieldFragment: Rule1[ParsedAst.ForYieldFragment.ForYield] = rule {
         SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForYieldFragment.ForYield
