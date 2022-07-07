@@ -462,11 +462,31 @@ object Lowering {
       val t = visitType(tpe)
       Expression.Cast(e, dt, declaredPur, declaredEff, t, pur, eff, loc)
 
+    case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      Expression.Without(e, sym, t, pur, eff, loc)
+
     case Expression.TryCatch(exp, rules, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitCatchRule)
       val t = visitType(tpe)
       Expression.TryCatch(e, rs, t, pur, eff, loc)
+
+    case Expression.TryWith(exp, sym, rules, tpe, pur, eff, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map(visitHandlerRule)
+      val t = visitType(tpe)
+      Expression.TryWith(e, sym, rs, t, pur, eff, loc)
+
+    case Expression.Do(sym, exps, pur, eff, loc) =>
+      val es = visitExps(exps)
+      Expression.Do(sym, es, pur, eff, loc)
+
+    case Expression.Resume(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      Expression.Resume(e, t, loc)
 
     case Expression.InvokeConstructor(constructor, args, tpe, pur, eff, loc) =>
       val as = visitExps(args)
@@ -779,6 +799,15 @@ object Lowering {
     case CatchRule(sym, clazz, exp) =>
       val e = visitExp(exp)
       CatchRule(sym, clazz, e)
+  }
+
+  /**
+    * Lowers the given handler rule `rule0`.
+    */
+  private def visitHandlerRule(rule0: HandlerRule)(implicit root: Root, flix: Flix): HandlerRule = rule0 match {
+    case HandlerRule(sym, fparams, exp) =>
+      val e = visitExp(exp)
+      HandlerRule(sym, fparams, e)
   }
 
   /**
