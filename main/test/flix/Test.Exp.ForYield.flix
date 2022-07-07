@@ -38,7 +38,7 @@ namespace Test/Exp/ForYield {
     @test
     def testForYield06(): Bool =
         let l =
-            for (x <- 1 :: 2 :: 3 :: Nil)
+            for (x <- 1 :: 2 :: 3 :: Nil) yield
                 for (y <- 4 :: 5 :: Nil)
                     yield (x, y);
         l == (1, 4) :: (1, 5) :: (2, 4) :: (2, 5) :: (3, 4) :: (3, 5) :: Nil
