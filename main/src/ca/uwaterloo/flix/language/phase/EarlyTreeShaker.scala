@@ -42,7 +42,7 @@ object EarlyTreeShaker {
   /**
     * Performs tree shaking on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("TreeShaker") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("EarlyTreeShaker") {
     // Compute the symbols that are always reachable.
     val initReach = initReachable(root)
 
