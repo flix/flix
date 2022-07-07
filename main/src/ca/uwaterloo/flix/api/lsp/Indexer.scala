@@ -295,8 +295,11 @@ object Indexer {
       // TODO index ops and effs
 
     case Expression.Do(_, exps, _, _, _) =>
-      traverse(exps)(visitExp)
+      traverse(exps)(visitExp) ++ Index.occurrenceOf(exp0)
       // TODO index ops
+
+    case Expression.Resume(exp, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.InvokeConstructor(_, args, _, _, _, _) =>
       visitExps(args) ++ Index.occurrenceOf(exp0)
