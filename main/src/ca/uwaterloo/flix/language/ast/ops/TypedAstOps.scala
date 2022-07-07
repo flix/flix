@@ -409,7 +409,11 @@ object TypedAstOps {
     case Expression.Assign(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Ascribe(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Cast(exp, _, _, _, _, _, _, _) => sigSymsOf(exp)
+    case Expression.Without(exp, _, _, _, _, _) => sigSymsOf(exp)
     case Expression.TryCatch(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
+    case Expression.TryWith(exp, _, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
+    case Expression.Do(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
+    case Expression.Resume(exp, _, _) => sigSymsOf(exp)
     case Expression.InvokeConstructor(_, args, _, _, _, _) => args.flatMap(sigSymsOf).toSet
     case Expression.InvokeMethod(_, exp, args, _, _, _, _) => sigSymsOf(exp) ++ args.flatMap(sigSymsOf)
     case Expression.InvokeStaticMethod(_, args, _, _, _, _) => args.flatMap(sigSymsOf).toSet
@@ -604,6 +608,9 @@ object TypedAstOps {
     case Expression.Ascribe(exp, _, _, _, _) =>
       freeVars(exp)
 
+    case Expression.Without(exp, _, _, _, _, _) =>
+      freeVars(exp)
+
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
       freeVars(exp)
 
@@ -611,6 +618,17 @@ object TypedAstOps {
       rules.foldLeft(freeVars(exp)) {
         case (acc, CatchRule(sym, _, exp)) => acc ++ freeVars(exp) - sym
       }
+
+    case Expression.TryWith(exp, _, rules, _, _, _, _) =>
+      rules.foldLeft(freeVars(exp)) {
+        case (acc, HandlerRule(_, fparams, exp)) => acc ++ freeVars(exp) -- fparams.map(_.sym)
+      }
+
+    case Expression.Do(_, exps, _, _, _) =>
+      exps.flatMap(freeVars).toMap
+
+    case Expression.Resume(exp, _, _) =>
+      freeVars(exp)
 
     case Expression.InvokeConstructor(_, args, _, _, _, _) =>
       args.foldLeft(Map.empty[Symbol.VarSym, Type]) {
