@@ -220,13 +220,13 @@ object EarlyTreeShaker {
     case Expression.Def(sym, _, _) =>
       Set(sym)
 
-    case Expression.Sig(sym, _, _) =>
+    case Expression.Sig(_, _, _) =>
       Set.empty
 
-    case Expression.Hole(sym, _, _) =>
+    case Expression.Hole(_, _, _) =>
       Set.empty
 
-    case Expression.Lambda(fparam, exp, _, _) =>
+    case Expression.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
     case Expression.Apply(exp, exps, _, _, _, _) =>
@@ -238,16 +238,16 @@ object EarlyTreeShaker {
     case Expression.Binary(_, exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Let(sym, _, exp1, exp2, _, _, _, _) =>
+    case Expression.Let(_, _, exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.LetRec(sym, _, exp1, exp2, _, _, _, _) =>
+    case Expression.LetRec(_, _, exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Region(_, _) =>
       Set.empty
 
-    case Expression.Scope(sym, _, exp, _, _, _, _) =>
+    case Expression.Scope(_, _, exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
