@@ -500,7 +500,7 @@ object Typer {
           lambdaType <- unifyTypeM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyPur, lambdaBodyEff, lambdaBodyType, loc), loc)
           resultTyp <- unifyTypeM(tvar, lambdaBodyType, loc)
           resultPur <- unifyBoolM(evar, Type.mkAnd(lambdaBodyPur :: pur :: purs, loc), loc)
-          resultEff = Type.mkUnion(eff :: effs, loc) // MATT do we need an evar?
+          resultEff = Type.mkUnion(lambdaBodyEff :: eff :: effs, loc) // MATT do we need an evar?
           _ <- unbindVar(lambdaBodyType) // NB: Safe to unbind since the variable is not used elsewhere.
           _ <- unbindVar(lambdaBodyPur) // NB: Safe to unbind since the variable is not used elsewhere.
         } yield (constrs1 ++ constrs2.flatten, resultTyp, resultPur, resultEff)

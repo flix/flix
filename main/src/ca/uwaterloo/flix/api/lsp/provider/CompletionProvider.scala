@@ -77,10 +77,15 @@ object CompletionProvider {
   //
   object Priority {
     def high(name: String) = "1" + name
+
     def boost(name: String) = "2" + name
+
     def snippet(name: String) = "4" + name
+
     def local(name: String) = "5" + name
+
     def normal(name: String) = "7" + name
+
     def low(name: String) = "9" + name
   }
 
@@ -331,9 +336,9 @@ object CompletionProvider {
     val isPublic = decl.spec.mod.isPublic && !isInternal(decl)
     val isNamespace = word.nonEmpty && word.head.isUpper
     val isMatch = if (isNamespace)
-                    decl.sym.toString.startsWith(word)
-                  else
-                    decl.sym.text.startsWith(word)
+      decl.sym.toString.startsWith(word)
+    else
+      decl.sym.text.startsWith(word)
     val isInFile = decl.sym.loc.source.name == uri
 
     isMatch && (isPublic || isInFile)
@@ -346,9 +351,9 @@ object CompletionProvider {
     val isPublic = sign.spec.mod.isPublic
     val isNamespace = word.nonEmpty && word.head.isUpper
     val isMatch = if (isNamespace)
-                    sign.sym.toString.startsWith(word)
-                  else
-                    sign.sym.name.startsWith(word)
+      sign.sym.toString.startsWith(word)
+    else
+      sign.sym.name.startsWith(word)
     val isInFile = sign.sym.loc.source.name == uri
 
     isMatch && (isPublic || isInFile)
@@ -395,13 +400,13 @@ object CompletionProvider {
         completion = if (currentWordIsWith) s"with $name" else name
       } yield
         CompletionItem(label = completion,
-            sortText = Priority.high(name),
-            textEdit = TextEdit(context.range, completion),
-            documentation = Some(clazz.doc.text),
-            kind = CompletionItemKind.Class)
+          sortText = Priority.high(name),
+          textEdit = TextEdit(context.range, completion),
+          documentation = Some(clazz.doc.text),
+          kind = CompletionItemKind.Class)
     } else if (withPattern.matches(context.prefix) || currentWordIsWith) {
       root.classes.map {
-        case(_, clazz) =>
+        case (_, clazz) =>
           val name = clazz.sym.toString
           val hole = "${1:t}"
           val application = s"$name[$hole]"
@@ -513,8 +518,8 @@ object CompletionProvider {
     tparams match {
       case Nil => ""
       case _ => tparams.zipWithIndex.map {
-                  case (tparam, idx) => "$" + s"{${idx + 1}:${tparam.name}}"
-                }.mkString("[", ", ", "]")
+        case (tparam, idx) => "$" + s"{${idx + 1}:${tparam.name}}"
+      }.mkString("[", ", ", "]")
     }
   }
 
@@ -587,7 +592,7 @@ object CompletionProvider {
     * This is more permissive than the parser, but that's OK.
     */
   private val isWordChar = Letters.LegalLetter ++ Letters.OperatorLetter ++
-      Letters.MathLetter ++ Letters.GreekLetter ++ CharPredicate("@/.")
+    Letters.MathLetter ++ Letters.GreekLetter ++ CharPredicate("@/.")
 
   /**
     * Returns the word at the end of a string, discarding trailing whitespace first
@@ -608,25 +613,25 @@ object CompletionProvider {
     * Find context from the source, and cursor position within it.
     */
   private def getContext(source: String, uri: String, pos: Position): Option[Context] = {
-      val x = pos.character - 1
-      val y = pos.line - 1
-      val lines = source.linesWithSeparators.toList
-      for(line <- lines.slice(y, y + 1).toList.headOption) yield {
-        val (prefix, suffix) = line.splitAt(x)
-        val wordStart = prefix.reverse.takeWhile(isWordChar).reverse
-        val wordEnd = suffix.takeWhile(isWordChar)
-        val word = wordStart + wordEnd
-        val start = x - wordStart.length
-        val end = x + wordEnd.length
-        val prevWord = getSecondLastWord(prefix)
-        val previousWord = if (prevWord.nonEmpty) {
-          prevWord
-        } else lines.slice(y - 1, y).toList.headOption match {
-          case None => ""
-          case Some(s) => getLastWord(s)
-        }
-        val range = Range(Position(y, start), Position(y, end))
-        new Context(uri, range, word, previousWord, prefix)
+    val x = pos.character - 1
+    val y = pos.line - 1
+    val lines = source.linesWithSeparators.toList
+    for (line <- lines.slice(y, y + 1).toList.headOption) yield {
+      val (prefix, suffix) = line.splitAt(x)
+      val wordStart = prefix.reverse.takeWhile(isWordChar).reverse
+      val wordEnd = suffix.takeWhile(isWordChar)
+      val word = wordStart + wordEnd
+      val start = x - wordStart.length
+      val end = x + wordEnd.length
+      val prevWord = getSecondLastWord(prefix)
+      val previousWord = if (prevWord.nonEmpty) {
+        prevWord
+      } else lines.slice(y - 1, y).toList.headOption match {
+        case None => ""
+        case Some(s) => getLastWord(s)
       }
+      val range = Range(Position(y, start), Position(y, end))
+      new Context(uri, range, word, previousWord, prefix)
+    }
   }
 }

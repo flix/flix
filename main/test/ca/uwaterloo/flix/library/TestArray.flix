@@ -62,22 +62,32 @@ namespace TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // get                                                                     //
+    // nth                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testGet01(): Bool = region r {
-        Array.get(0, [1, 2, 3] @ r) == 1
+    def testNth01(): Bool = region r {
+        Array.nth(0, [1, 2, 3] @ r) == Some(1)
     }
 
     @test
-    def testGet02(): Bool = region r {
-        Array.get(1, [1, 2, 3] @ r) == 2
+    def testNth02(): Bool = region r {
+        Array.nth(1, [1, 2, 3] @ r) == Some(2)
     }
 
     @test
-    def testGet03(): Bool = region r {
-        Array.get(2, [1, 2, 3] @ r) == 3
+    def testNth03(): Bool = region r {
+        Array.nth(2, [1, 2, 3] @ r) == Some(3)
+    }
+
+    @test
+    def testNth04(): Bool = region r {
+        Array.nth(3, [1, 2, 3] @ r) == None
+    }
+
+    @test
+    def testNth05(): Bool = region r {
+        Array.nth(-2, [1, 2, 3] @ r) == None
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -5766,33 +5776,33 @@ namespace TestArray {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toIterator                                                              //
+    // iterator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool = region r {
-        []: Array[Int32, r] |> Array.toIterator(r) |> Iterator.toList == Nil
+    def iterator01(): Bool = region r {
+        []: Array[Int32, r] |> Array.iterator(r) |> Iterator.toList == Nil
     }
 
     @test
-    def toIterator02(): Bool = region r {
-        [1, 2, 3] |> Array.toIterator(r) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    def iterator02(): Bool = region r {
+        [1, 2, 3] |> Array.iterator(r) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
     }
 
     @test
-    def toIterator03(): Bool = region r {
-        ([1, 2, 3] @ r) |> Array.toIterator(r) |> Iterator.toArray(r) `sameElements` [1, 2, 3] @ r
+    def iterator03(): Bool = region r {
+        ([1, 2, 3] @ r) |> Array.iterator(r) |> Iterator.toArray(r) `sameElements` [1, 2, 3] @ r
     }
 
     @test
-    def toIterator04(): Bool = region r {
-        Array.range(r, -100, 100) |> Array.toIterator(r) |> Iterator.toArray(r) `sameElements` Array.range(r, -100, 100)
+    def iterator04(): Bool = region r {
+        Array.range(r, -100, 100) |> Array.iterator(r) |> Iterator.toArray(r) `sameElements` Array.range(r, -100, 100)
     }
 
     @test
-    def toIterator05(): Bool = region r {
+    def iterator05(): Bool = region r {
         let a = [1, 2, 3] @ r;
-        let iter = Array.toIterator(r, a);
+        let iter = Array.iterator(r, a);
         a[0] = 10000;
         Iterator.toArray(r, iter) `sameElements` [1, 2, 3]
     }
