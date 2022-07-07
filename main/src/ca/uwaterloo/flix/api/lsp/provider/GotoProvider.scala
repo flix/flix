@@ -42,7 +42,7 @@ object GotoProvider {
           case Expression.Var(sym, _, loc) =>
             ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
 
-          case Expression.Tag(sym, tag, _, _, _, _) =>
+          case Expression.Tag(sym, tag, _, _, _, _, _) =>
             ("status" -> "success") ~ ("result" -> LocationLink.fromEnumAndTag(sym, tag, tag.loc)(root).toJSON)
 
           case _ => mkNotFound(uri, pos)

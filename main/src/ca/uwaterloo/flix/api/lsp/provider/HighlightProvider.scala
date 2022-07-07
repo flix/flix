@@ -40,7 +40,7 @@ object HighlightProvider {
           case Expression.Var(sym, _, _) => highlightVar(sym)
           case Expression.Def(sym, _, _) => highlightDef(sym)
           case Expression.Sig(sym, _, _) => highlightSig(sym)
-          case Expression.Tag(sym, tag, _, _, _, _) => highlightTag(sym, tag)
+          case Expression.Tag(sym, tag, _, _, _, _, _) => highlightTag(sym, tag)
           case _ => mkNotFound(uri, pos)
         }
 
