@@ -62,8 +62,7 @@ object HoverProvider {
 
   private def hoverType(tpe: Type, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root): JObject = {
     val markup =
-      s"""${if (!current) "**Not Current**"}
-         |```flix
+      s"""${if (!current) s"**Not Current**${System.lineSeparator()}" else ""}```flix
          |${FormatType.formatWellKindedType(tpe)}
          |```
          |""".stripMargin
@@ -76,8 +75,7 @@ object HoverProvider {
   private def hoverTypAndEff(tpe: Type, eff: Type, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root, flix: Flix): JObject = {
     val minEff = BoolTable.minimizeType(eff)
     val markup =
-      s"""${if (!current) "**Not Current**"}
-         |```flix
+      s"""${if (!current) s"**Not Current**${System.lineSeparator()}" else ""}```flix
          |${formatTypAndEff(tpe, minEff)}
          |```
          |""".stripMargin
@@ -90,8 +88,7 @@ object HoverProvider {
   private def hoverDef(sym: Symbol.DefnSym, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root): JObject = {
     val defDecl = root.defs(sym)
     val markup =
-      s"""${if (!current) "**Not Current**"}
-         |```flix
+      s"""${if (!current) s"**Not Current**${System.lineSeparator()}" else ""}```flix
          |${FormatSignature.asMarkDown(defDecl)}
          |```
          |
@@ -106,8 +103,7 @@ object HoverProvider {
   private def hoverSig(sym: Symbol.SigSym, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root): JObject = {
     val sigDecl = root.sigs(sym)
     val markup =
-      s"""${if (!current) "**Not Current**"}
-         |```flix
+      s"""${if (!current) s"**Not Current**${System.lineSeparator()}" else ""}```flix
          |${FormatSignature.asMarkDown(sigDecl)}
          |```
          |
@@ -131,8 +127,7 @@ object HoverProvider {
 
   private def hoverKind(t: Type, current: Boolean)(implicit index: Index, root: Root): JObject = {
     val markup =
-      s"""${if (!current) "**Not Current**"}
-         |```flix
+      s"""${if (!current) s"**Not Current**${System.lineSeparator()}" else ""}```flix
          |${FormatKind.formatKind(t.kind)}
          |```
          |""".stripMargin
