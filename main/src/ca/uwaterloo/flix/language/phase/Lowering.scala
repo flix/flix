@@ -1532,7 +1532,29 @@ object Lowering {
       val e = substExp(exp, subst)
       Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
 
+    case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Without(e, sym, tpe, pur, eff, loc)
+
     case Expression.TryCatch(_, _, _, _, _, _) => ??? // TODO
+
+    case Expression.TryWith(exp, sym, rules, tpe, pur, eff, loc) =>
+      val e = substExp(exp, subst)
+      val rs = rules.map {
+        case HandlerRule(op, fparams, hexp) =>
+          val fps = fparams.map(substFormalParam(_, subst))
+          val he = substExp(hexp, subst)
+          HandlerRule(op, fps, he)
+      }
+      Expression.TryWith(e, sym, rs, tpe, pur, eff, loc)
+
+    case Expression.Do(sym, exps, pur, eff, loc) =>
+      val es = exps.map(substExp(_, subst))
+      Expression.Do(sym, es, pur, eff, loc)
+
+    case Expression.Resume(exp, tpe, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Resume(e, tpe, loc)
 
     case Expression.InvokeConstructor(constructor, args, tpe, pur, eff, loc) =>
       val as = args.map(substExp(_, subst))
