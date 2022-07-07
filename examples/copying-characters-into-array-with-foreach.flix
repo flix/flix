@@ -15,6 +15,8 @@ def main(): Unit & Impure =
         // with the index of the char.
         // The loop has a guard to avoid
         // out of bounds errors.
+        // It also matches the pattern of the
+        // value returned by `enumerator.`
         foreach ((x, i) <- enumerator(r, s);
                  if i < length(xs))
                     xs[i] = x;
