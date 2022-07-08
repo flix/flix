@@ -96,7 +96,7 @@ object SetTable {
 
     // Compute the variables in `tpe`.
     val tvars = tpe.typeVars.toList.map(tvar => SetFormula.Constant.Var(tvar.sym))
-    val effs = getEffects(tpe).map(SetFormula.Constant.Eff)
+    val effs = getEffects(tpe).toList.map(SetFormula.Constant.Eff)
 
     // Construct a bi-directional map from type variables to indices.
     // The idea is that the first variable becomes x0, the next x1, and so forth.
@@ -385,11 +385,11 @@ object SetTable {
   /**
     * Gets all the effects in the given type.
     */
-  private def getEffects(t: Type): List[Symbol.EffectSym] = t match {
-    case Type.Cst(TypeConstructor.Effect(sym), _) => List(sym)
+  private def getEffects(t: Type): SortedSet[Symbol.EffectSym] = t match {
+    case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(sym)
 
-    case _: Type.Cst => Nil
-    case _: Type.KindedVar => Nil
+    case _: Type.Cst => SortedSet.empty
+    case _: Type.KindedVar => SortedSet.empty
 
     case Type.Apply(tpe1, tpe2, loc) => getEffects(tpe1) ++ getEffects(tpe2)
     case Type.Alias(cst, args, tpe, loc) => getEffects(tpe)
