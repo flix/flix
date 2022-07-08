@@ -262,8 +262,17 @@ object SetUnification {
     case (_, Type.Empty) =>
       Type.Empty
 
+    // C ∧ D => F
     case (CONSTANT(x1), CONSTANT(x2)) if x1 != x2 =>
       Type.Empty
+
+    // C ∧ ¬D => C
+    case (CONSTANT(x1), COMPLEMENT(CONSTANT(x2))) if x1 != x2 =>
+      x1
+
+    // ¬C ∧ D => D
+    case (COMPLEMENT(CONSTANT(x1)), CONSTANT(x2)) if x1 != x2 =>
+      x2
 
     // ¬x ∧ (x ∨ y) => ¬x ∧ y
     case (COMPLEMENT(x1), UNION(x2, y)) if x1 == x2 =>
@@ -444,8 +453,8 @@ object SetUnification {
 
   private object CONSTANT {
     @inline
-    def unapply(tpe: Type): Option[Symbol.EffectSym] = tpe match {
-      case Type.Cst(TypeConstructor.Effect(sym), _) => Some(sym)
+    def unapply(tpe: Type): Option[Type] = tpe match {
+      case Type.Cst(TypeConstructor.Effect(sym), _) => Some(tpe)
       case _ => None
     }
   }
