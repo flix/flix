@@ -718,7 +718,7 @@ object Weeder {
 
       val fqnMap = "Functor.map"
       val fqnFlatMap = "Monad.flatMap"
-      val fqnFilter = "FunctorFilter.filter"
+      val fqnFilterMap = "FunctorFilter.filterMap"
       val last = frags.length - 1
 
       def mkForYieldLoop(sp1: SourcePosition,

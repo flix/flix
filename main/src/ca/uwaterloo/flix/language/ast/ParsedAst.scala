@@ -2210,7 +2210,7 @@ object ParsedAst {
       * @param guards an optional sequence of guards
       * @param sp2    the position of the last character in the fragment.
       */
-    case class ForYield(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, guards: Option[Seq[Guard]], sp2: SourcePosition) extends ForYieldFragment
+    case class ForYield(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, guards: Seq[Guard], sp2: SourcePosition) extends ForYieldFragment
 
     /**
       * A for-yield guard fragment, i.e. `if x > 1`.
