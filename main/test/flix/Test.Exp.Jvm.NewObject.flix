@@ -7,7 +7,9 @@ namespace Test/Exp/Jvm/NewObject {
     object ##java.io.Serializable { }
 
   def implementIterable(): ##java.lang.Iterable & Impure =
-    object ##java.lang.Iterable { }
+    object ##java.lang.Iterable { 
+      def iterator(): ##java.util.Iterator & Pure = ()
+    }
 
   @test
   def testImplementInterface01(): Bool & Impure =

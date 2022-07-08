@@ -219,10 +219,24 @@ object CodeHinter {
     case Expression.Cast(exp, _, _, _, tpe, pur, _, loc) =>
       checkCast(tpe, pur, loc) ++ visitExp(exp)
 
+    case Expression.Without(exp, _, _, _, _, _) =>
+      visitExp(exp)
+
     case Expression.TryCatch(exp, rules, _, _, _, _) =>
       visitExp(exp) ++ rules.flatMap {
         case CatchRule(_, _, exp) => visitExp(exp)
       }
+
+    case Expression.TryWith(exp, _, rules, _, _, _, _) =>
+      visitExp(exp) ++ rules.flatMap {
+        case HandlerRule(_, _, e) => visitExp(e)
+      }
+
+    case Expression.Do(_, exps, _, _, _) =>
+      exps.flatMap(visitExp)
+
+    case Expression.Resume(exp, _, _) =>
+      visitExp(exp)
 
     case Expression.InvokeConstructor(_, args, _, _, _, _) =>
       visitExps(args)
