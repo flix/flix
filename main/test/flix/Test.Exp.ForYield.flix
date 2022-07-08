@@ -156,4 +156,64 @@ namespace Test/Exp/ForYield {
                 yield x + 1;
         l == Nil
 
+    @test
+    def testForYield19(): Bool =
+        let l =
+            for (x <- 1 :: 2 :: 3 :: Nil;
+                 y <- 4 :: 5 :: Nil;
+                 if y < 5)
+                    yield (x, y);
+        l == (1, 4) :: (2, 4) :: (3, 4) :: Nil
+
+    @test
+    def testForYield20(): Bool =
+        let l =
+            for (x <- 1 :: 2 :: 3 :: Nil;
+                 y <- 4 :: 5 :: Nil;
+                 if y < 4)
+                    yield (x, y);
+        l == Nil
+
+    @test
+    def testForYield21(): Bool =
+        let l =
+            for (x <- 1 :: 2 :: 3 :: Nil;
+                 if x > 1;
+                 y <- 4 :: 5 :: 6 :: Nil;
+                 if y < 6)
+                    yield (x, y);
+        // Monad.flatMap(match x -> Functor.map(match y -> (x, y),
+        //   FunctorFilter.filter(match y -> y < 6, 4 :: 5 :: 6 :: Nil)),
+        //   FunctorFilter.filter(match x -> x > 1, 1 :: 2 :: 3 :: Nil))
+        l == (2, 4) :: (2, 5) :: (3, 4) :: (3, 5) :: Nil
+
+    @test
+    def testForYield22(): Bool =
+        let l0 =
+            for (x <- 1 :: 2 :: 3 :: Nil;
+                 if x > 1;
+                 y <- 4 :: 5 :: 6 :: Nil;
+                 if y < 6)
+                    yield (x, y);
+
+        let l1 = Monad.flatMap(match x -> Functor.map(match y -> (x, y),
+                    FunctorFilter.filter(match y -> y < 6, 4 :: 5 :: 6 :: Nil)),
+                    FunctorFilter.filter(match x -> x > 1, 1 :: 2 :: 3 :: Nil));
+        l0 == l1
+
+
+    @test
+    def testForYield23(): Bool =
+        let l =
+            for (x <- 1 :: 2 :: 3 :: Nil;
+                 y <- 4 :: 5 :: 6 :: Nil;
+                 if x > 1;
+                 if y < 6)
+                    yield (x, y);
+        l == (2, 4) :: (2, 5) :: (3, 4) :: (3, 5) :: Nil
+
+
+
+        // (1, 4) :: (1, 5) :: (2, 4) :: (2, 5) :: (3, 4) :: (3, 5) :: Nil
+
 }
