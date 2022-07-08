@@ -113,4 +113,47 @@ namespace Test/Exp/ForYield {
                     FunctorFilter.filter(match x -> x > 1) |> Functor.map(match x -> x + 1);
         l0 == l1
 
+    @test
+    def testForYield14(): Bool =
+        let l =
+            for (x <- 1 :: 2 :: 3 :: Nil;
+                 if x < 1)
+                yield x + 1;
+        l == Nil
+
+    @test
+    def testForYield15(): Bool =
+        let l =
+            for (x <- 1 :: 2 :: 3 :: Nil;
+                 if x > 3)
+                yield x + 1;
+        l == Nil
+
+    @test
+    def testForYield16(): Bool =
+        let l =
+            for (x <- 1 :: 2 :: 3 :: Nil;
+                 if x > 1;
+                 if x > 3)
+                yield x + 1;
+        l == Nil
+
+    @test
+    def testForYield17(): Bool =
+        let l =
+            for (x <- 1 :: 2 :: 3 :: Nil;
+                 if x < 1;
+                 if x < 3)
+                yield x + 1;
+        l == Nil
+
+    @test
+    def testForYield18(): Bool =
+        let l =
+            for (x <- 1 :: 2 :: 3 :: Nil;
+                 if x < 1;
+                 if x > 3)
+                yield x + 1;
+        l == Nil
+
 }
