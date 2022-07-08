@@ -268,12 +268,15 @@ object Indexer {
     case Expression.Ascribe(exp, tpe, pur, _, _) =>
       visitExp(exp) ++ visitType(tpe) ++ visitType(pur) ++ Index.occurrenceOf(exp0)
 
-    case Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) =>
+    case Expression.Cast(exp, declaredType, declaredPur, declaredEff, _, _, _, loc) =>
       val dt = declaredType.map(visitType).getOrElse(Index.empty)
       val dp = declaredPur.map(visitType).getOrElse(Index.empty)
       val de = declaredEff.map(visitType).getOrElse(Index.empty)
-      visitExp(exp) ++ dt ++ dp ++ de ++ visitType(tpe) ++ visitType(pur) ++ visitType(eff) ++ Index.occurrenceOf(exp0)
-      // TODO correct to visit tpe, pur, eff?
+      visitExp(exp) ++ dt ++ dp ++ de ++ Index.occurrenceOf(exp0)
+
+    case Expression.Without(exp, _, _, _, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
+      // TODO visit effs
 
     case Expression.TryCatch(exp, rules, _, _, _, _) =>
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
@@ -281,6 +284,22 @@ object Indexer {
         case CatchRule(_, _, exp) => visitExp(exp)
       }
       i0 ++ i1
+
+    case Expression.TryWith(exp, _, rules, _, _, _, _) =>
+      val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
+      val i1 = traverse(rules) {
+        case HandlerRule(_, fparams, exp) =>
+          Index.traverse(fparams)(visitFormalParam) ++ visitExp(exp)
+      }
+      i0 ++ i1
+      // TODO index ops and effs
+
+    case Expression.Do(_, exps, _, _, _) =>
+      traverse(exps)(visitExp) ++ Index.occurrenceOf(exp0)
+      // TODO index ops
+
+    case Expression.Resume(exp, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.InvokeConstructor(_, args, _, _, _, _) =>
       visitExps(args) ++ Index.occurrenceOf(exp0)

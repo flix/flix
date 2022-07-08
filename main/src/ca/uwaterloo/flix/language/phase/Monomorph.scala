@@ -489,6 +489,10 @@ object Monomorph {
         val e = visitExp(exp, env0)
         Expression.Cast(e, None, None, None, subst0(tpe), pur, eff, loc)
 
+      case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
+        // Erase the Without
+        visitExp(exp, env0)
+
       case Expression.TryCatch(exp, rules, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
         val rs = rules map {
@@ -500,6 +504,18 @@ object Monomorph {
             CatchRule(freshSym, clazz, b)
         }
         Expression.TryCatch(e, rs, subst0(tpe), pur, eff, loc)
+
+      case Expression.TryWith(exp, _, _, _, _, _, _) =>
+        // Erase the handlers
+        visitExp(exp, env0)
+
+      case Expression.Do(_, _, _, _, loc) =>
+        // Erase down to unit
+        Expression.Unit(loc)
+
+      case Expression.Resume(_, _, loc) =>
+        // Erase down to unit
+        Expression.Unit(loc)
 
       case Expression.InvokeConstructor(constructor, args, tpe, pur, eff, loc) =>
         val as = args.map(visitExp(_, env0))

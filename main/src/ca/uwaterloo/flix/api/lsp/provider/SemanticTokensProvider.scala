@@ -390,12 +390,32 @@ object SemanticTokensProvider {
     case Expression.Cast(exp, _, _, _, tpe, _, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 
+    case Expression.Without(exp, _, _, _, _, _) =>
+      visitExp(exp)
+      // TODO index eff
+
     case Expression.TryCatch(exp, rules, _, _, _, _) =>
       rules.foldLeft(visitExp(exp)) {
         case (acc, CatchRule(sym, _, exp)) =>
           val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
           acc ++ Iterator(t) ++ visitExp(exp)
       }
+
+    case Expression.TryWith(exp, _, rules, _, _, _, _) =>
+      // TODO index eff
+      rules.foldLeft(visitExp(exp)) {
+        case (acc, HandlerRule(_, fparams, exp)) =>
+          // TODO index op
+          val t = visitFormalParams(fparams)
+          acc ++ t ++ visitExp(exp)
+      }
+
+    case Expression.Do(_, exps, _, _, _) =>
+      // TODO index op
+      visitExps(exps)
+
+    case Expression.Resume(exp, _, _) =>
+      visitExp(exp)
 
     case Expression.InvokeConstructor(_, exps, _, _, _, _) =>
       exps.foldLeft(Iterator.empty[SemanticToken]) {
