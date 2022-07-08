@@ -527,8 +527,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForYieldFragment.ForYield
       }
 
+      def GuardFragment: Rule1[ParsedAst.ForYieldFragment.Guard] = rule {
+        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.ForYieldFragment.Guard
+      }
+
       def Fragment: Rule1[ParsedAst.ForYieldFragment] = rule {
-        ForYieldFragment // Add guard fragment later
+        ForYieldFragment | GuardFragment
       }
 
       rule {
