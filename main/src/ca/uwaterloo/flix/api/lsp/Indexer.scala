@@ -34,7 +34,8 @@ object Indexer {
       instances => traverse(instances)(visitInstance)
     }
     val idx5 = traverse(root.sigs.values)(visitSig)
-    idx1 ++ idx2 ++ idx3 ++ idx4 ++ idx5
+    val idx6 = traverse(root.effects.values)(visitEff)
+    idx1 ++ idx2 ++ idx3 ++ idx4 ++ idx5 ++ idx6
   }
 
   /**
@@ -111,6 +112,26 @@ object Indexer {
       val idx3 = traverse(tconstrs)(visitTypeConstraint)
       val idx4 = traverse(defs)(visitDef)
       idx1 ++ idx2 ++ idx3 ++ idx4
+  }
+
+  /**
+    * Returns a reverse index for the given effect `eff0`
+    */
+  private def visitEff(eff0: Effect): Index = eff0 match {
+    case Effect(_, _, _, sym, ops, _) =>
+      val idx1 = Index.occurrenceOf(sym)
+      val idx2 = traverse(ops)(visitOp)
+      idx1 ++ idx2
+  }
+
+  /**
+    * Returns a reverse index for the given effect operation `op0`
+    */
+  private def visitOp(op0: Op): Index = op0 match {
+    case Op(sym, spec) =>
+      val idx1 = Index.occurrenceOf(sym)
+      val idx2 = visitSpec(spec)
+      idx1 ++ idx2
   }
 
   /**

@@ -94,6 +94,16 @@ object Index {
   def occurrenceOf(sym: Symbol.KindedTypeVarSym): Index = empty + Entity.TypeVar(sym)
 
   /**
+    * Returns an index for the given effect `sym`.
+    */
+  def occurrenceOf(sym: Symbol.EffectSym): Index = empty + Entity.Effect(sym)
+
+  /**
+    * Returns an index for the given effect operation `sym`.
+    */
+  def occurrenceOf(sym: Symbol.OpSym): Index = empty + Entity.Op(sym)
+
+  /**
     * Returns an index with the symbol 'sym' used at location 'loc'.
     */
   def useOf(sym: Symbol.ClassSym, loc: SourceLocation): Index = Index.empty.copy(classUses = MultiMap.singleton(sym, loc))
