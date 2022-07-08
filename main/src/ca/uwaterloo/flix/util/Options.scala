@@ -42,7 +42,7 @@ object Options {
     xnobooltable = false,
     xstatistics = false,
     xstrictmono = false,
-    xnoeffects = false
+    xnoseteffects = false
   )
 
   /**
@@ -103,7 +103,7 @@ case class Options(lib: LibLevel,
                    xnobooltable: Boolean,
                    xstatistics: Boolean,
                    xstrictmono: Boolean,
-                   xnoeffects: Boolean
+                   xnoseteffects: Boolean
                   )
 
 /**
