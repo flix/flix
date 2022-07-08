@@ -17,8 +17,7 @@ use Fixpoint.PredSymsOf;
 use Fixpoint/PredSymsOf.predSymsOf;
 use Fixpoint.SubstitutePredSym;
 use Fixpoint/SubstitutePredSym.substitute;
-use Fixpoint.Tuple;
-use Fixpoint.Tuple.Tuple;
+use Fixpoint/Tuple.Tuple;
 use Fixpoint/Shared.PredSym;
 use Fixpoint/Ram.RamSym;
 
@@ -69,14 +68,13 @@ namespace Fixpoint/Ast {
             }
             case Model(db) => region r {
                 use Fixpoint/Ram.toDenotation;
-                use Fixpoint.commaSeparate;
                 let sb = new StringBuilder(r);
                 Map.foreach(ramSym -> rel -> match toDenotation(ramSym) {
-                    case Relational => Map.foreach(match Tuple(tuple) -> _ -> {
-                        StringBuilder.appendLine!("${ramSym}(${commaSeparate(tuple) as & Pure}).", sb)
+                    case Relational => Map.foreach((tuple, _) -> {
+                        StringBuilder.appendLine!("${ramSym}(${List.join(", ", Fixpoint/Tuple.toList(tuple))}).", sb)
                     }, rel)
-                    case Latticenal(_) => Map.foreach(match Tuple(tuple) -> lat -> {
-                        StringBuilder.appendLine!("${ramSym}(${commaSeparate(tuple) as & Pure}; ${lat}).", sb)
+                    case Latticenal(_) => Map.foreach((tuple, lat) -> {
+                        StringBuilder.appendLine!("${ramSym}(${List.join(", ", Fixpoint/Tuple.toList(tuple))}; ${lat}).", sb)
                     }, rel)
                 }, db);
                 StringBuilder.toString(sb)

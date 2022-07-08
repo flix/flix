@@ -62,11 +62,22 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
   private var isFirstCompile = true
 
   /**
-    * Remove any backslashes from escaped new lines from the given string
+    * Remove any line continuation backslashes from the given string
     */
   def unescapeLine(s: String) = {
-    val escapedLineEnd = raw"\\\n".r
-    escapedLineEnd.replaceAllIn(s, "\n")
+
+    // (?s) enables dotall mode (so . matches newlines)
+    val twoBackslashes = raw"(?s)\\\\\n(.*)\n\\\\".r
+
+    s match {
+      // First, check for a string with two backslashes at start and end
+      case twoBackslashes(s) => s
+
+      // If not, then replace all escaped line endings with \n
+      case _ =>
+        val escapedLineEnd = raw"\\\n".r
+        escapedLineEnd.replaceAllIn(s, "\n")
+    }
   }
 
   /**
