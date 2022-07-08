@@ -524,7 +524,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def ForYield: Rule1[ParsedAst.Expression.ForYield] = {
 
       def ForYieldFragment: Rule1[ParsedAst.ForYieldFragment.ForYield] = rule {
-        SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ zeroOrMore(GuardFragment).separatedBy(optWS ~ ";" ~ optWS) ~ SP ~> ParsedAst.ForYieldFragment.ForYield
+        SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ optional(optWS ~ ";" ~ optWS ~ oneOrMore(GuardFragment).separatedBy(optWS ~ ";" ~ optWS)) ~ SP ~> ParsedAst.ForYieldFragment.ForYield
       }
 
       def GuardFragment: Rule1[ParsedAst.ForYieldFragment.Guard] = rule {
