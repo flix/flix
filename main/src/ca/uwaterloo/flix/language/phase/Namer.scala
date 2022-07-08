@@ -973,7 +973,7 @@ object Namer {
         case e => NamedAst.Expression.PutStaticField(className, fieldName, e, loc)
       }
 
-    case WeededAst.Expression.NewObject(className, loc) =>
+    case WeededAst.Expression.NewObject(className, methods, loc) =>
       NamedAst.Expression.NewObject(className, loc).toSuccess
 
     case WeededAst.Expression.NewChannel(exp, tpe, loc) =>
@@ -1528,7 +1528,7 @@ object Namer {
     case WeededAst.Expression.PutField(_, _, exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.GetStaticField(_, _, _) => Nil
     case WeededAst.Expression.PutStaticField(_, _, exp, _) => freeVars(exp)
-    case WeededAst.Expression.NewObject(_, _) => Nil
+    case WeededAst.Expression.NewObject(_, _, _) => Nil
     case WeededAst.Expression.NewChannel(exp, _, _) => freeVars(exp)
     case WeededAst.Expression.GetChannel(exp, _) => freeVars(exp)
     case WeededAst.Expression.PutChannel(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
