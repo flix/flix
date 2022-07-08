@@ -26,7 +26,8 @@ object Index {
     * Represents the empty reverse index.
     */
   val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty,
-    MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
+    MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty,
+    MultiMap.empty)
 
   /**
     * Returns an index for the given `class0`.
@@ -139,6 +140,16 @@ object Index {
   def useOf(sym: Symbol.KindedTypeVarSym, loc: SourceLocation): Index = Index.empty.copy(tvarUses = MultiMap.singleton(sym, loc))
 
   /**
+    * Returns an index with the symbol `sym` used at location `loc.`
+    */
+  def useOf(sym: Symbol.EffectSym, loc: SourceLocation): Index = Index.empty.copy(effUses = MultiMap.singleton(sym, loc))
+
+  /**
+    * Returns an index with the symbol `sym` used at location `loc.`
+    */
+  def useOf(sym: Symbol.OpSym, loc: SourceLocation): Index = Index.empty.copy(opUses = MultiMap.singleton(sym, loc))
+
+  /**
     * Returns an index with a def of the given `field`.
     */
   def defOf(field: Name.Field): Index = Index.empty.copy(fieldDefs = MultiMap.singleton(field, field.loc))
@@ -183,7 +194,9 @@ case class Index(m: Map[(String, Int), List[Entity]],
                  predDefs: MultiMap[Name.Pred, SourceLocation],
                  predUses: MultiMap[Name.Pred, SourceLocation],
                  varUses: MultiMap[Symbol.VarSym, SourceLocation],
-                 tvarUses: MultiMap[Symbol.KindedTypeVarSym, SourceLocation]
+                 tvarUses: MultiMap[Symbol.KindedTypeVarSym, SourceLocation],
+                 effUses: MultiMap[Symbol.EffectSym, SourceLocation],
+                 opUses: MultiMap[Symbol.OpSym, SourceLocation]
                 ) {
 
   /**
@@ -351,7 +364,9 @@ case class Index(m: Map[(String, Int), List[Entity]],
       this.predDefs ++ that.predDefs,
       this.predUses ++ that.predUses,
       this.varUses ++ that.varUses,
-      this.tvarUses ++ that.tvarUses
+      this.tvarUses ++ that.tvarUses,
+      this.effUses ++ that.effUses,
+      this.opUses ++ that.opUses
     )
   }
 
