@@ -668,7 +668,7 @@ object Kinder {
         exp => KindedAst.Expression.PutStaticField(field, exp, loc)
       }
 
-    case ResolvedAst.Expression.NewObject(clazz, loc) =>
+    case ResolvedAst.Expression.NewObject(clazz, _, loc) =>
       KindedAst.Expression.NewObject(clazz, loc).toSuccess
 
     case ResolvedAst.Expression.NewChannel(exp0, tpe0, loc) =>

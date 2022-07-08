@@ -180,7 +180,7 @@ object ResolvedAst {
 
     case class PutStaticField(field: Field, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class NewObject(clazz: java.lang.Class[_], loc: SourceLocation) extends ResolvedAst.Expression
+    case class NewObject(clazz: java.lang.Class[_], methods: List[JvmMethod], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class NewChannel(exp: ResolvedAst.Expression, tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -347,6 +347,8 @@ object ResolvedAst {
     case class PredicateParamWithType(pred: Name.Pred, den: Ast.Denotation, tpes: List[Type], loc: SourceLocation) extends PredicateParam
 
   }
+
+  case class JvmMethod(ident: Name.Ident, fparams: Seq[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, tpe: Type, purAndEff: Ast.PurityAndEffect, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ResolvedAst.Expression)
 

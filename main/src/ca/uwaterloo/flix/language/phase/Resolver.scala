@@ -1055,9 +1055,11 @@ object Resolver {
             case (field, e) => ResolvedAst.Expression.PutStaticField(field, e, loc)
           }
 
-        case NamedAst.Expression.NewObject(className, _, loc) =>
-          lookupJvmClass(className, loc) map {
-            case clazz => ResolvedAst.Expression.NewObject(clazz, loc)
+        case NamedAst.Expression.NewObject(className, methods, loc) =>
+          val clazz = lookupJvmClass(className, loc)
+          val fparams = traverse(methods)(visitJvmMethod(_, taenv, ns0, root))
+          mapN(clazz, fparams) {
+            case (c, f) => ResolvedAst.Expression.NewObject(c, f, loc)
           }
 
         case NamedAst.Expression.NewChannel(exp, tpe, loc) =>
@@ -1186,6 +1188,16 @@ object Resolver {
             case (e1, e2, e3) => ResolvedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
           }
 
+      }
+
+      def visitJvmMethod(method: NamedAst.JvmMethod, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.JvmMethod, ResolutionError] = {
+        val fparams = resolveFormalParams(method.fparams, taenv, ns0, root)
+        val exp = visitExp(method.exp, None)
+        val tpe = resolveType(method.tpe, taenv, ns0, root)
+        val purAndEff = semiResolvePurityAndEffect(method.purAndEff, ns0, root)
+        mapN(fparams, exp, tpe, purAndEff) {
+          case (f, e, t, p) => ResolvedAst.JvmMethod(method.ident, f, e, t , p, method.loc)
+        }
       }
 
       visitExp(exp0, None)
