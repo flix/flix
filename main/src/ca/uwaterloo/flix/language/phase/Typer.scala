@@ -44,12 +44,13 @@ object Typer {
     val instancesVal = visitInstances(root, classEnv)
     val defsVal = visitDefs(root, classEnv, oldRoot, changeSet)
     val enumsVal = visitEnums(root)
+    val effsVal = visitEffs(root)
     val typeAliases = visitTypeAliases(root)
 
-    Validation.mapN(classesVal, instancesVal, defsVal, enumsVal) {
-      case (classes, instances, defs, enums) =>
+    Validation.mapN(classesVal, instancesVal, defsVal, enumsVal, effsVal) {
+      case (classes, instances, defs, enums, effs) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
-        TypedAst.Root(classes, instances, sigs, defs, enums, typeAliases, root.entryPoint, root.reachable, root.sources, classEnv)
+        TypedAst.Root(classes, instances, sigs, defs, enums, effs, typeAliases, root.entryPoint, root.reachable, root.sources, classEnv)
     }
   }
 
@@ -132,6 +133,34 @@ object Typer {
   }
 
   /**
+    * Performs type inference and reassembly on all effects in the given AST root.
+    *
+    * Returns [[Err]] if a definition fails to type check.
+    */
+  private def visitEffs(root: KindedAst.Root)(implicit flix: Flix): Validation[Map[Symbol.EffectSym, TypedAst.Effect], TypeError] = {
+    val results = ParOps.parMap(root.effects.values)(visitEff(_, root))
+
+    // Sequence the results using the freshDefs as the initial value.
+    Validation.sequence(results) map {
+      case xs => xs.foldLeft(Map.empty[Symbol.EffectSym, TypedAst.Effect]) {
+        case (acc, eff) => acc + (eff.sym -> eff)
+      }
+    }
+  }
+
+  /**
+    * Performs type inference and reassembly on the given effect `eff`.
+    */
+  private def visitEff(eff: KindedAst.Effect, root: KindedAst.Root)(implicit flix: Flix): Validation[TypedAst.Effect, TypeError] = eff match {
+    case KindedAst.Effect(doc, ann0, mod, sym, ops0, loc) =>
+      val annVal = visitAnnotations(ann0, root)
+      val opsVal = traverse(ops0)(visitOp(_, root))
+      mapN(annVal, opsVal) {
+        case (ann, ops) => TypedAst.Effect(doc, ann, mod, sym, ops, loc)
+      }
+  }
+
+  /**
     * Performs type inference and reassembly on the given definition `defn`.
     */
   private def visitDefn(defn: KindedAst.Def, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = defn match {
@@ -156,6 +185,16 @@ object Typer {
     case KindedAst.Sig(sym, spec0, None) =>
       visitSpec(spec0, root, Substitution.empty) map {
         spec => TypedAst.Sig(sym, spec, None)
+      }
+  }
+
+  /**
+    * Performs type inference and reassembly on the given effect operation `op`
+    */
+  private def visitOp(op: KindedAst.Op, root: KindedAst.Root)(implicit flix: Flix): Validation[TypedAst.Op, TypeError] = op match {
+    case KindedAst.Op(sym, spec0) =>
+      visitSpec(spec0, root, Substitution.empty) map {
+        case spec => TypedAst.Op(sym, spec)
       }
   }
 
