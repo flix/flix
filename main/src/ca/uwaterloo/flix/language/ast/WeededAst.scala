@@ -412,11 +412,11 @@ object WeededAst {
 
   }
 
+  case class JvmMethod(ident: Name.Ident, fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, purAndEff: PurityAndEffect, loc: SourceLocation)
+
   case class CatchRule(ident: Name.Ident, className: String, exp: WeededAst.Expression)
 
   case class HandlerRule(op: Name.Ident, fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression)
-
-  case class JvmMethod(ident: Name.Ident, fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, purAndEff: PurityAndEffect, loc: SourceLocation)
 
   case class ChoiceRule(pat: List[WeededAst.ChoicePattern], exp: WeededAst.Expression)
 
