@@ -43,7 +43,7 @@ object FindReferencesProvider {
           case Expression.Def(sym, _, _) => findDefReferences(sym)
           case Expression.Sig(sym, _, _) => findSigReferences(sym)
           case Expression.Var(sym, _, _) => findVarReferences(sym)
-          case Expression.Tag(sym, tag, _, _, _, _) => findTagReferences(sym, tag)
+          case Expression.Tag(sym, tag, _, _, _, _, _) => findTagReferences(sym, tag)
           case _ => mkNotFound(uri, pos)
         }
 
