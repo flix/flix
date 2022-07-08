@@ -100,7 +100,7 @@ object EarlyTreeShaker {
     */
   private def visitSym(sym: Symbol.DefnSym, root: Root): Set[Symbol.DefnSym] = root.defs.get(sym) match {
     case None => Set.empty
-    case Some(defn) => visitExp(defn.impl.exp)
+    case Some(defn) => visitExp(defn.impl.exp) ++ visitExps(defn.spec.ann.flatMap(_.args))
   }
 
   /**
