@@ -495,6 +495,20 @@ object Ast {
     override def hashCode(): Int = Objects.hash(head.sym, arg)
   }
 
+  case object Effect {
+    /**
+      * Represents a reference to an effect.
+      */
+    case class Ref(sym: Symbol.EffectSym, loc: SourceLocation)
+  }
+
+  case object Op {
+    /**
+      * Represents a reference to an effect operation.
+      */
+    case class Ref(sym: Symbol.OpSym, loc: SourceLocation)
+  }
+
   /**
     * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
     */

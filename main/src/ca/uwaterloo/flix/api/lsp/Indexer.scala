@@ -295,9 +295,8 @@ object Indexer {
       val de = declaredEff.map(visitType).getOrElse(Index.empty)
       visitExp(exp) ++ dt ++ dp ++ de ++ Index.occurrenceOf(exp0)
 
-    case Expression.Without(exp, sym, _, _, _, loc) =>
-      visitExp(exp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc)
-      // TODO get precise eff location
+    case Expression.Without(exp, effRef, _, _, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(effRef.sym, effRef.loc)
 
     case Expression.TryCatch(exp, rules, _, _, _, _) =>
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
@@ -306,19 +305,16 @@ object Indexer {
       }
       i0 ++ i1
 
-    case Expression.TryWith(exp, sym, rules, _, _, _, loc) =>
-      val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc)
-      // TODO get precise eff location
+    case Expression.TryWith(exp, effRef, rules, _, _, _, _) =>
+      val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(effRef.sym, effRef.loc)
       val i1 = traverse(rules) {
         case HandlerRule(op, fparams, exp) =>
-          Index.traverse(fparams)(visitFormalParam) ++ visitExp(exp) ++ Index.useOf(op, exp.loc)
-        // TODO get precise op location
+          Index.traverse(fparams)(visitFormalParam) ++ visitExp(exp) ++ Index.useOf(op.sym, op.loc)
       }
       i0 ++ i1
 
-    case Expression.Do(sym, exps, _, _, loc) =>
-      traverse(exps)(visitExp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc)
-      // TODO get precise op location
+    case Expression.Do(op, exps, _, _, loc) =>
+      traverse(exps)(visitExp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(op.sym, op.loc)
 
     case Expression.Resume(exp, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)

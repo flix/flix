@@ -289,13 +289,13 @@ object TypedAst {
 
     case class Cast(exp: TypedAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], declaredEff: Option[Type], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Without(exp: TypedAst.Expression, sym: Symbol.EffectSym, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Without(exp: TypedAst.Expression, effRef: Ast.Effect.Ref, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class TryWith(exp: TypedAst.Expression, sym: Symbol.EffectSym, rules: List[TypedAst.HandlerRule], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class TryWith(exp: TypedAst.Expression, effRef: Ast.Effect.Ref, rules: List[TypedAst.HandlerRule], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Do(sym: Symbol.OpSym, exps: List[TypedAst.Expression], pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression {
+    case class Do(op: Ast.Op.Ref, exps: List[TypedAst.Expression], pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = Type.Unit
     }
 
@@ -511,7 +511,7 @@ object TypedAst {
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: TypedAst.Expression)
 
-  case class HandlerRule(op: Symbol.OpSym, fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression)
+  case class HandlerRule(op: Ast.Op.Ref, fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression)
 
   case class ChoiceRule(pat: List[TypedAst.ChoicePattern], exp: TypedAst.Expression)
 
