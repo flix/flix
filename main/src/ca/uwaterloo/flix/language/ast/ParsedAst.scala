@@ -2204,12 +2204,13 @@ object ParsedAst {
     /**
       * A for-yield fragment, i.e. `x <- xs`.
       *
-      * @param sp1 the position of the first character in the fragment.
-      * @param pat the pattern on the left hand side.
-      * @param exp the functor or monad expression.
-      * @param sp2 the position of the last character in the fragment.
+      * @param sp1    the position of the first character in the fragment.
+      * @param pat    the pattern on the left hand side.
+      * @param exp    the functor or monad expression.
+      * @param guards an optional sequence of guards
+      * @param sp2    the position of the last character in the fragment.
       */
-    case class ForYield(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition) extends ForYieldFragment
+    case class ForYield(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, guards: Seq[Guard], sp2: SourcePosition) extends ForYieldFragment
 
     /**
       * A for-yield guard fragment, i.e. `if x > 1`.
@@ -2218,7 +2219,7 @@ object ParsedAst {
       * @param guard the guard expression.
       * @param sp2   the position of the last character in the fragment.
       */
-    case class Guard(sp1: SourcePosition, guard: ParsedAst.Expression, sp2: SourcePosition) extends ForYieldFragment
+    case class Guard(sp1: SourcePosition, guard: ParsedAst.Expression, sp2: SourcePosition)
 
   }
 

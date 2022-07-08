@@ -718,6 +718,7 @@ object Weeder {
 
       val fqnMap = "Functor.map"
       val fqnFlatMap = "Monad.flatMap"
+      val fqnFilter = "FunctorFilter.filter"
       val last = frags.length - 1
 
       def mkForYieldLoop(sp1: SourcePosition,
@@ -733,7 +734,7 @@ object Weeder {
       }
 
       foldRight(frags.zipWithIndex)(visitExp(exp, senv)) {
-        case ((ParsedAst.ForYieldFragment.ForYield(sp11, pat, exp1, sp12), idx), exp0) =>
+        case ((ParsedAst.ForYieldFragment.ForYield(sp11, pat, exp1, optGuards, sp12), idx), exp0) =>
           mapN(visitPattern(pat), visitExp(exp1, senv)) {
             case (p, e1) =>
               if (idx == last) // Check if it's the innermost loop
