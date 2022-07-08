@@ -711,6 +711,38 @@ object Weeder {
           }
       }
 
+    case ParsedAst.Expression.ForYield(_, frags, exp, _) =>
+      //
+      // Rewrites a foreach loop to Monad.flatMap and Functor.map call.
+      //
+
+      val fqnMap = "Functor.map"
+      val fqnFlatMap = "Monad.flatMap"
+      val last = frags.length - 1
+
+      def mkForYieldLoop(sp1: SourcePosition,
+                         fqn: String,
+                         pat: WeededAst.Pattern,
+                         exp1: WeededAst.Expression,
+                         exp0: WeededAst.Expression,
+                         sp2: SourcePosition): WeededAst.Expression = {
+        val loc = mkSL(sp1, sp2).asSynthetic
+        val lambda = mkLambdaMatch(sp1, pat, exp0, sp2)
+        val fparams = List(lambda, exp1)
+        mkApplyFqn(fqn, fparams, loc)
+      }
+
+      foldRight(frags.zipWithIndex)(visitExp(exp, senv)) {
+        case ((ParsedAst.ForYieldFragment.ForYield(sp11, pat, exp1, sp12), idx), exp0) =>
+          mapN(visitPattern(pat), visitExp(exp1, senv)) {
+            case (p, e1) =>
+              if (idx == last) // Check if it's the innermost loop
+                mkForYieldLoop(sp11, fqnMap, p, e1, exp0, sp12)
+              else
+                mkForYieldLoop(sp11, fqnFlatMap, p, e1, exp0, sp12)
+          }
+      }
+
     case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe, exp1, exp2, sp2) =>
       //
       // Rewrites a let-match to a regular let-binding or a full-blown pattern match.
@@ -2840,6 +2872,7 @@ object Weeder {
     case ParsedAst.Expression.Stm(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Discard(sp1, _, _) => sp1
     case ParsedAst.Expression.ForEach(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.ForYield(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _) => sp1

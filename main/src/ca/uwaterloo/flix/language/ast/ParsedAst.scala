@@ -715,6 +715,16 @@ object ParsedAst {
     case class ForEach(sp1: SourcePosition, frags: Seq[ForeachFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * ForYield Expression.
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param frags the for-yield fragments.
+      * @param exp   the body expression.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class ForYield(sp1: SourcePosition, frags: Seq[ForYieldFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Tag Expression.
       *
       * @param sp1  the position of the first character in the expression.
@@ -2157,7 +2167,7 @@ object ParsedAst {
   case class PurityAndEffect(pur: Option[Type], eff: Option[EffectSet])
 
   /**
-    * Represents a super type for `for`-expression fragments.
+    * Represents a super type for foreach expression fragments.
     */
   sealed trait ForeachFragment
 
@@ -2182,6 +2192,24 @@ object ParsedAst {
       */
     case class Guard(sp1: SourcePosition, guard: ParsedAst.Expression, sp2: SourcePosition) extends ForeachFragment
 
+  }
+
+  /**
+    * Represents a super type for for-yield expression fragments.
+    */
+  sealed trait ForYieldFragment
+
+  object ForYieldFragment {
+
+    /**
+      * A for-yield fragment, i.e. `x <- xs`.
+      *
+      * @param sp1 the position of the first character in the fragment.
+      * @param pat the pattern on the left hand side.
+      * @param exp the functor or monad expression.
+      * @param sp2 the position of the last character in the fragment.
+      */
+    case class ForYield(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition) extends ForYieldFragment
   }
 
 }
