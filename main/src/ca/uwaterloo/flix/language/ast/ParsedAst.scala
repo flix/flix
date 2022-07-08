@@ -659,11 +659,12 @@ object ParsedAst {
     /**
       * NewObject (create an anonymous object which implements a Java interface or extends a Java class).
       *
-      * @param sp1 the position of the first character in the expression.
-      * @param fqn the fully-qualified name of the Java interface or class.
-      * @param sp2 the position of the last character in the expression.
+      * @param sp1     the position of the first character in the expression.
+      * @param fqn     the fully-qualified name of the Java interface or class.
+      * @param methods implementations of the methods within the Java interface or class
+      * @param sp2     the position of the last character in the expression.
       */
-    case class NewObject(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) extends ParsedAst.Expression
+    case class NewObject(sp1: SourcePosition, fqn: Seq[String], methods: Seq[JvmMethod], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Static Region Expression.
@@ -2063,6 +2064,18 @@ object ParsedAst {
     case class PutStaticField(fqn: Seq[String], tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
 
   }
+
+  /**
+    * JvmMethod (used within NewObject)
+    *
+    * @param sp1     the position of the first character in the method.
+    * @param ident   the name of the method.
+    * @param fparams the formal parameters.
+    * @param exp     the method body.
+    * @param tpe     the method return type.
+    * @param sp2     the position of the last character in the method.
+    */
+  case class JvmMethod(sp1: SourcePosition, name: Name.Ident, fparams: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, purAndEff: ParsedAst.PurityAndEffect, exp: ParsedAst.Expression, sp2: SourcePosition)
 
   /**
     * Record Operations.

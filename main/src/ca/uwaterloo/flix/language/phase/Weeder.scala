@@ -1027,7 +1027,7 @@ object Weeder {
           }
       }
 
-    case ParsedAst.Expression.NewObject(sp1, className, sp2) =>
+    case ParsedAst.Expression.NewObject(sp1, className, methods, sp2) =>
       val loc = mkSL(sp1, sp2)
       WeededAst.Expression.NewObject(className.mkString("."), loc).toSuccess
 
@@ -2877,7 +2877,7 @@ object Weeder {
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.NewObject(sp1, _, _) => sp1
+    case ParsedAst.Expression.NewObject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Static(sp1, _) => sp1
     case ParsedAst.Expression.Scope(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
