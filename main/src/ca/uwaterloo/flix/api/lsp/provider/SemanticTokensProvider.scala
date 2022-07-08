@@ -91,9 +91,17 @@ object SemanticTokensProvider {
     }
 
     //
+    // Construct an iterator of the semantic tokens from effects.
+    //
+    val effectTokens = root.effects.flatMap {
+      case (_, decl) if include(uri, decl.loc) => visitEffect(decl)
+      case _ => Nil
+    }
+
+    //
     // Collect all tokens into one list.
     //
-    val allTokens = (classTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ typeAliasTokens).toList
+    val allTokens = (classTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ typeAliasTokens ++ effectTokens).toList
 
     //
     // We keep all tokens that are: (i) single-line tokens, (ii) have the same source as `uri`, and (iii) come from real source locations.
@@ -232,6 +240,28 @@ object SemanticTokensProvider {
       val st2 = visitTypeParams(tparams)
       val st3 = visitType(tpe)
       st1 ++ st2 ++ st3
+  }
+
+  /**
+    * Returns all semantic tokens in the given effect.
+    */
+  private def visitEffect(effect: TypedAst.Effect): Iterator[SemanticToken] = effect match {
+    case TypedAst.Effect(_, _, _, sym, ops, _) =>
+      val t = SemanticToken(SemanticTokenType.Interface, Nil, sym.loc)
+      val st1 = Iterator(t)
+      val st2 = ops.flatMap(visitOp)
+      st1 ++ st2
+  }
+
+  /**
+    * Returns all semantic tokens in the given effect operation.
+    */
+  private def visitOp(op: TypedAst.Op): Iterator[SemanticToken] = op match {
+    case TypedAst.Op(sym, spec) =>
+      val t = SemanticToken(SemanticTokenType.Function, Nil, sym.loc)
+      val st1 = Iterator(t)
+      val st2 = visitSpec(spec)
+      st1 ++ st2
   }
 
   /**

@@ -39,6 +39,10 @@ object FindReferencesProvider {
 
         case Entity.Enum(enum0) => findEnumReferences(enum0.sym)
 
+        case Entity.Effect(eff0) => findEffectReferences(eff0.sym)
+
+        case Entity.Op(op0) => findOpReferences(op0.sym)
+
         case Entity.Exp(exp) => exp match {
           case Expression.Def(sym, _, _) => findDefReferences(sym)
           case Expression.Sig(sym, _, _) => findSigReferences(sym)
@@ -62,7 +66,7 @@ object FindReferencesProvider {
         case Entity.LocalVar(sym, _) => findVarReferences(sym)
 
         case Entity.Type(t) => t match {
-          case Type.KindedVar(sym, loc) => findTypeVarReferences(sym)
+          case Type.KindedVar(sym, _) => findTypeVarReferences(sym)
           case Type.Cst(tc, _) => tc match {
             case TypeConstructor.RecordRowExtend(field) => findFieldReferences(field)
             case TypeConstructor.SchemaRowExtend(pred) => findPredReferences(pred)
@@ -135,6 +139,20 @@ object FindReferencesProvider {
   }
 
   private def findTypeVarReferences(sym: Symbol.KindedTypeVarSym)(implicit index: Index, root: Root): JObject = {
+    val defSite = Location.from(sym.loc)
+    val useSites = index.usesOf(sym)
+    val locs = defSite :: useSites.toList.map(Location.from)
+    ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+  }
+
+  private def findEffectReferences(sym: Symbol.EffectSym)(implicit index: Index, root: Root): JObject = {
+    val defSite = Location.from(sym.loc)
+    val useSites = index.usesOf(sym)
+    val locs = defSite :: useSites.toList.map(Location.from)
+    ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+  }
+
+  private def findOpReferences(sym: Symbol.OpSym)(implicit index: Index, root: Root): JObject = {
     val defSite = Location.from(sym.loc)
     val useSites = index.usesOf(sym)
     val locs = defSite :: useSites.toList.map(Location.from)

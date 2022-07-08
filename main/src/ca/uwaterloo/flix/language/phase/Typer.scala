@@ -1343,10 +1343,10 @@ object Typer {
           case KindedAst.HandlerRule(op, actualFparams, body, opTvar) =>
             // Don't need to generalize since ops are monomorphic
             // Don't need to handle unknown op because resolver would have caught this
-            ops(op) match {
+            ops(op.sym) match {
               case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, opTpe, expectedPur, expectedEff, _)) =>
                 for {
-                  _ <- unifyFormalParams(op, expected = expectedFparams, actual = actualFparams)
+                  _ <- unifyFormalParams(op.sym, expected = expectedFparams, actual = actualFparams)
                   (actualTconstrs, actualTpe, actualPur, actualEff) <- visitExp(body)
 
                   // unify the operation return type with its tvar

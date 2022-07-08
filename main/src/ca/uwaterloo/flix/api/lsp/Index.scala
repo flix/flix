@@ -97,12 +97,12 @@ object Index {
   /**
     * Returns an index for the given effect `sym`.
     */
-  def occurrenceOf(sym: Symbol.EffectSym): Index = empty + Entity.Effect(sym)
+  def occurrenceOf(eff: Effect): Index = empty + Entity.Effect(eff)
 
   /**
     * Returns an index for the given effect operation `sym`.
     */
-  def occurrenceOf(sym: Symbol.OpSym): Index = empty + Entity.Op(sym)
+  def occurrenceOf(op: Op): Index = empty + Entity.Op(op)
 
   /**
     * Returns an index with the symbol 'sym' used at location 'loc'.
@@ -297,6 +297,16 @@ case class Index(m: Map[(String, Int), List[Entity]],
     * Returns all uses of the given symbol `sym`.
     */
   def usesOf(sym: Symbol.KindedTypeVarSym): Set[SourceLocation] = tvarUses(sym)
+
+  /**
+    * Returns all uses of the given symbol `sym`.
+    */
+  def usesOf(sym: Symbol.EffectSym): Set[SourceLocation] = effUses(sym)
+
+  /**
+    * Returns all uses of the given symbol `sym`.
+    */
+  def usesOf(sym: Symbol.OpSym): Set[SourceLocation] = opUses(sym)
 
   /**
     * Returns all defs of the given `field`.
