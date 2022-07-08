@@ -63,4 +63,38 @@ namespace Test/Exp/ForYield {
             };
         List.reverse(deref l1) == l2
         }
+
+    @test
+    def testForYield09(): Bool =
+        let l =
+            for (x <- 1 :: 2 :: 3 :: Nil;
+                 if x > 1)
+                yield x + 1;
+        l == 3 :: 4 :: Nil
+
+    @test
+    def testForYield10(): Bool =
+        let l =
+            for (x <- 1 :: 2 :: 3 :: Nil;
+                 if (x > 1))
+                yield x + 1;
+        l == 3 :: 4 :: Nil
+
+    @test
+    def testForYield11(): Bool =
+        let l =
+            for (x <- 1 :: 2 :: 3 :: Nil;
+                 if x > 1 and x < 3)
+                yield x + 1;
+        l == 3 :: Nil
+
+    @test
+    def testForYield12(): Bool =
+        let l =
+            for (x <- 1 :: 2 :: 3 :: Nil;
+                 if x > 1;
+                 if x < 3)
+                yield x + 1;
+        l == 3 :: Nil
+
 }
