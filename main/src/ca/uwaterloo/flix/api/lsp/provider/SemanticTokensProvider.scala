@@ -420,9 +420,9 @@ object SemanticTokensProvider {
     case Expression.Cast(exp, _, _, _, tpe, _, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 
-    case Expression.Without(exp, _, _, _, _, _) =>
-      visitExp(exp)
-      // TODO index eff
+    case Expression.Without(exp, eff, _, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Type, Nil, eff.loc)
+      Iterator(t) ++ visitExp(exp)
 
     case Expression.TryCatch(exp, rules, _, _, _, _) =>
       rules.foldLeft(visitExp(exp)) {
@@ -431,18 +431,21 @@ object SemanticTokensProvider {
           acc ++ Iterator(t) ++ visitExp(exp)
       }
 
-    case Expression.TryWith(exp, _, rules, _, _, _, _) =>
-      // TODO index eff
-      rules.foldLeft(visitExp(exp)) {
-        case (acc, HandlerRule(_, fparams, exp)) =>
-          // TODO index op
-          val t = visitFormalParams(fparams)
-          acc ++ t ++ visitExp(exp)
+    case Expression.TryWith(exp, eff, rules, _, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Type, Nil, eff.loc)
+      val st1 = Iterator(t)
+      val st2 = rules.foldLeft(visitExp(exp)) {
+        case (acc, HandlerRule(op, fparams, exp)) =>
+          val st = SemanticToken(SemanticTokenType.Type, Nil, op.loc)
+          val t1 = Iterator(st)
+          val t2 = visitFormalParams(fparams)
+          acc ++ t1 ++ t2 ++ visitExp(exp)
       }
+      st1 ++ st2
 
-    case Expression.Do(_, exps, _, _, _) =>
-      // TODO index op
-      visitExps(exps)
+    case Expression.Do(op, exps, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Function, Nil, op.loc)
+      Iterator(t) ++ visitExps(exps)
 
     case Expression.Resume(exp, _, _) =>
       visitExp(exp)

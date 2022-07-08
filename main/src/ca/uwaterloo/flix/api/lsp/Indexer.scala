@@ -118,8 +118,8 @@ object Indexer {
     * Returns a reverse index for the given effect `eff0`
     */
   private def visitEff(eff0: Effect): Index = eff0 match {
-    case Effect(_, _, _, sym, ops, _) =>
-      val idx1 = Index.occurrenceOf(sym)
+    case Effect(_, _, _, _, ops, _) =>
+      val idx1 = Index.occurrenceOf(eff0)
       val idx2 = traverse(ops)(visitOp)
       idx1 ++ idx2
   }
@@ -128,8 +128,8 @@ object Indexer {
     * Returns a reverse index for the given effect operation `op0`
     */
   private def visitOp(op0: Op): Index = op0 match {
-    case Op(sym, spec) =>
-      val idx1 = Index.occurrenceOf(sym)
+    case Op(_, spec) =>
+      val idx1 = Index.occurrenceOf(op0)
       val idx2 = visitSpec(spec)
       idx1 ++ idx2
   }
