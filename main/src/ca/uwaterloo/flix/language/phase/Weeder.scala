@@ -760,8 +760,10 @@ object Weeder {
               if (idx == last) { // Check if it's the innermost loop and no guards
                 val e1Filtered = mkFilterApply(sp11, p, gs, e1, sp12)
                 mkForYieldLoopLambda(sp11, fqnMap, p, exp0, e1Filtered, sp12)
-              } else
-                mkForYieldLoopLambda(sp11, fqnFlatMap, p, exp0, e1, sp12)
+              } else {
+                val e1Filtered = mkFilterApply(sp11, p, gs, e1, sp12)
+                mkForYieldLoopLambda(sp11, fqnFlatMap, p, exp0, e1Filtered, sp12)
+              }
           }
       }
 
