@@ -974,7 +974,9 @@ object Namer {
       }
 
     case WeededAst.Expression.NewObject(className, methods, loc) =>
-      NamedAst.Expression.NewObject(className, loc).toSuccess
+      mapN(traverse(methods)(visitJvmMethod(_, uenv0, tenv0))) {
+        case m => NamedAst.Expression.NewObject(className, m, loc)
+      }
 
     case WeededAst.Expression.NewChannel(exp, tpe, loc) =>
       mapN(visitExp(exp, env0, uenv0, tenv0), visitType(tpe, uenv0, tenv0)) {
@@ -1528,7 +1530,7 @@ object Namer {
     case WeededAst.Expression.PutField(_, _, exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.GetStaticField(_, _, _) => Nil
     case WeededAst.Expression.PutStaticField(_, _, exp, _) => freeVars(exp)
-    case WeededAst.Expression.NewObject(_, _, _) => Nil
+    case WeededAst.Expression.NewObject(_, methods, _) => methods.flatMap(m => freeVars(m.exp))
     case WeededAst.Expression.NewChannel(exp, _, _) => freeVars(exp)
     case WeededAst.Expression.GetChannel(exp, _) => freeVars(exp)
     case WeededAst.Expression.PutChannel(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
@@ -1760,6 +1762,21 @@ object Namer {
       mapN(traverse(tpes)(visitType(_, uenv0, tenv0))) {
         case ts => NamedAst.PredicateParam.PredicateParamWithType(pred, den, ts, loc)
       }
+  }
+
+  /**
+    * Translates the given weeded JvmMethod to a named JvmMethod.
+    */
+  private def visitJvmMethod(method: WeededAst.JvmMethod, uenv: UseEnv, tenv: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.JvmMethod, NameError] = {
+    flatMapN(traverse(method.fparams)(visitFormalParam(_, uenv, tenv))) {
+      case fparams =>
+        val exp = visitExp(method.exp, getVarEnv(fparams), uenv, tenv)
+        val tpe = visitType(method.tpe, uenv, tenv)
+        val purAndEff = visitPurityAndEffect(method.purAndEff, uenv, tenv)
+        mapN(exp, tpe, purAndEff) {
+          case (e, t, p) => NamedAst.JvmMethod(method.ident, fparams, e, t, p, method.loc)
+        }
+    }
   }
 
   /**

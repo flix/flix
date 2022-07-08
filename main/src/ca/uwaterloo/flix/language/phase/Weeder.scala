@@ -2718,6 +2718,9 @@ object Weeder {
       WeededAst.Type.Var(ident, ident.loc)
   }
 
+  /**
+    * Performs weeding on the given JvmMethod
+    */
   private def visitJvmMethod(method: ParsedAst.JvmMethod, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.JvmMethod, WeederError] = {
     val tpe = visitType(method.tpe)
     val purAndEff = visitPurityAndEffect(method.purAndEff)

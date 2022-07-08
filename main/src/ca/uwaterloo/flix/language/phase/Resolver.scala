@@ -1055,7 +1055,7 @@ object Resolver {
             case (field, e) => ResolvedAst.Expression.PutStaticField(field, e, loc)
           }
 
-        case NamedAst.Expression.NewObject(className, loc) =>
+        case NamedAst.Expression.NewObject(className, _, loc) =>
           lookupJvmClass(className, loc) map {
             case clazz => ResolvedAst.Expression.NewObject(clazz, loc)
           }
