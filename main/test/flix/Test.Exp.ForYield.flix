@@ -97,6 +97,20 @@ namespace Test/Exp/ForYield {
                  if x > 1;
                  if x < 3)
                 yield x + 1;
+        // Functor.map(match x -> x + 1,
+        //   FunctorFilter.filter(match x -> x > 1,
+        //     FunctorFilter.filter(match x -> x < 3, 1 :: 2 :: 3 :: Nil)))
         l == 3 :: Nil
+
+    @test
+    def testForYield13(): Bool =
+        let l0 =
+            for (x <- 1 :: 2 :: 3 :: Nil;
+                 if x > 1;
+                 if x < 3)
+                yield x + 1;
+        let l1 = FunctorFilter.filter(match x -> x < 3, 1 :: 2 :: 3 :: Nil) |>
+                    FunctorFilter.filter(match x -> x > 1) |> Functor.map(match x -> x + 1);
+        l0 == l1
 
 }
