@@ -262,6 +262,9 @@ object SetUnification {
     case (_, Type.Empty) =>
       Type.Empty
 
+    case (CONSTANT(x1), CONSTANT(x2)) if x1 != x2 =>
+      Type.Empty
+
     // ¬x ∧ (x ∨ y) => ¬x ∧ y
     case (COMPLEMENT(x1), UNION(x2, y)) if x1 == x2 =>
       mkIntersection(mkComplement(x1), y)
@@ -435,6 +438,14 @@ object SetUnification {
     @inline
     def unapply(tpe: Type): Option[(Type, Type)] = tpe match {
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y, _) => Some((x, y))
+      case _ => None
+    }
+  }
+
+  private object CONSTANT {
+    @inline
+    def unapply(tpe: Type): Option[Symbol.EffectSym] = tpe match {
+      case Type.Cst(TypeConstructor.Effect(sym), _) => Some(sym)
       case _ => None
     }
   }
