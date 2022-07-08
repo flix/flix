@@ -2215,11 +2215,11 @@ object ParsedAst {
     /**
       * A for-yield guard fragment, i.e. `if x > 1`.
       *
-      * @param sp1   the position of the first character in the fragment.
-      * @param guard the guard expression.
-      * @param sp2   the position of the last character in the fragment.
+      * @param sp1 the position of the first character in the fragment.
+      * @param exp the guard expression.
+      * @param sp2 the position of the last character in the fragment.
       */
-    case class Guard(sp1: SourcePosition, guard: ParsedAst.Expression, sp2: SourcePosition)
+    case class Guard(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition)
 
   }
 
