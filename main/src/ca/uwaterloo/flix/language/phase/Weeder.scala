@@ -689,7 +689,7 @@ object Weeder {
 
     case ParsedAst.Expression.ForEach(_, frags, exp, _) =>
       //
-      // Rewrites a foreach loop to Foreach.foreach call.
+      // Rewrites a foreach loop to Iterator.foreach call.
       //
 
       val fqn = "Iterator.foreach"
