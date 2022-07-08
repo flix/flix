@@ -2065,7 +2065,7 @@ object ParsedAst {
     * @param tpe     the method return type.
     * @param sp2     the position of the last character in the method.
     */
-  case class JvmMethod(sp1: SourcePosition, name: String, fparams: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, purAndEff: ParsedAst.PurityAndEffect, exp: ParsedAst.Expression, sp2: SourcePosition)
+  case class JvmMethod(sp1: SourcePosition, name: Name.Ident, fparams: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, purAndEff: ParsedAst.PurityAndEffect, exp: ParsedAst.Expression, sp2: SourcePosition)
 
   /**
     * Record Operations.

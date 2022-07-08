@@ -829,7 +829,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def JvmMethod: Rule1[ParsedAst.JvmMethod] = rule {
-      SP ~ keyword("def") ~ WS ~ Names.JavaIdentifier ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.JvmMethod
+      SP ~ keyword("def") ~ WS ~ Names.JavaMethod ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.JvmMethod
     }
 
     def Match: Rule1[ParsedAst.Expression.Match] = {
@@ -1803,6 +1803,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def JavaName: Rule1[Seq[String]] = rule {
       oneOrMore(JavaIdentifier).separatedBy(".")
+    }
+
+    def JavaMethod: Rule1[Name.Ident] = rule {
+      SP ~ JavaIdentifier ~ SP ~> Name.Ident
     }
 
   }
