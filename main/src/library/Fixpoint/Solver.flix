@@ -754,6 +754,19 @@ namespace Fixpoint {
         case _               => bug!("Unexpected non-value term.")
     }
 
+    ///
+    /// Unsafely casts and prints the given Datalog program `d`.
+    ///
+    @Internal @Unsafe
+    pub def unsafePrint(d: a): Unit & Impure =
+        println(unsafeCast(d))
+
+    ///
+    /// Unsafely casts the given value `d` to a Datalog program.
+    ///
+    @Internal @Unsafe
+    pub def unsafeCast(v: a): Datalog[Boxed] = v as Datalog[Boxed]
+
     def toModel(db: Database[v, r]): Datalog[v] & r =
         MutMap.toMap(db) |>
         Map.map(MutMap.toMap) |>
