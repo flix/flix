@@ -226,6 +226,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
 
         val aliasDecl = r.typeAliases(aliasSym)
         w.println(FormatType.formatWellKindedType(aliasDecl.tpe))
+        w.println
         w.println(FormatDoc.asMarkDown(aliasDecl.doc))
 
       } else {
