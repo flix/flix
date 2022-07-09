@@ -19,7 +19,8 @@ package ca.uwaterloo.flix.runtime.shell
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.fmt.Audience
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.fmt._
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util._
@@ -33,6 +34,7 @@ import java.util.concurrent.Executors
 import java.util.logging.{Level, Logger}
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
+import ca.uwaterloo.flix.util.Validation.Failure
 
 class Shell(sourceProvider: SourceProvider, options: Options) {
 
@@ -50,6 +52,11 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     * The Flix instance (the same instance is used for incremental compilation).
     */
   private val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
+
+  /**
+    * The result of the most recent compilation
+    */
+  private var root: Option[Root] = None
 
   /**
     * The source files currently loaded.
@@ -162,6 +169,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
   private def execute(cmd: Command)(implicit terminal: Terminal): Unit = cmd match {
     case Command.Nop => // nop
     case Command.Reload => execReload()
+    case Command.Doc(s) => execDoc(s)
     case Command.Quit => execQuit()
     case Command.Help => execHelp()
     case Command.Praise => execPraise()
@@ -172,7 +180,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
   /**
     * Reloads every source path.
     */
-  private def execReload()(implicit terminal: Terminal): Validation[CompilationResult, CompilationMessage] = {
+  private def execReload()(implicit terminal: Terminal): Unit = {
 
     // Scan the disk to find changes, and add source to the flix object
     sourceFiles.addSourcesAndPackages(flix)
@@ -180,9 +188,45 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     // Remove any previous definitions, as they may no longer be valid against the new source
     clearFragments()
 
-    val result = compile(progress = isFirstCompile)
+    compile(progress = isFirstCompile)
     isFirstCompile = false
-    result
+  }
+
+  /**
+    * Displays documentation for the given identifier
+    */
+  private def execDoc(s: String)(implicit terminal: Terminal): Unit = {
+    val w = terminal.writer()
+
+    for(r <- root) {
+      val classSym = Symbol.mkClassSym(s)
+      if(r.classes.contains(classSym)) {
+        val classDecl = r.classes(classSym)
+        w.println(FormatDoc.asMarkDown(classDecl.doc))
+      }
+
+      val defnSym = Symbol.mkDefnSym(s)
+      if (r.defs.contains(defnSym)) {
+        val defDecl = r.defs(defnSym)
+        w.println(FormatSignature.asMarkDown(defDecl))
+        w.println(FormatDoc.asMarkDown(defDecl.spec.doc))
+      }
+
+      val enumSym = Symbol.mkEnumSym(s)
+      if (r.enums.contains(enumSym)) {
+        val enumDecl = r.enums(enumSym)
+        w.println(FormatType.formatWellKindedType(enumDecl.tpeDeprecated))
+        w.println
+        w.println(FormatDoc.asMarkDown(enumDecl.doc))
+      }
+
+      val aliasSym = Symbol.mkTypeAliasSym(s)
+      if (r.typeAliases.contains(aliasSym)) {
+        val aliasDecl = r.typeAliases(aliasSym)
+        w.println(FormatType.formatWellKindedType(aliasDecl.tpe))
+        w.println(FormatDoc.asMarkDown(aliasDecl.doc))
+      }
+    }
   }
 
   /**
@@ -198,11 +242,12 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
   private def execHelp()(implicit terminal: Terminal): Unit = {
     val w = terminal.writer()
 
-    w.println("  Command       Purpose")
+    w.println("  Command       Arguments     Purpose")
     w.println()
-    w.println("  :reload :r    Recompiles every source file.")
-    w.println("  :quit :q      Terminates the Flix shell.")
-    w.println("  :help :h :?   Shows this helpful information.")
+    w.println("  :reload :r                  Recompiles every source file.")
+    w.println("  :doc :d       <identifier>  Displays documentation for <identifier>")
+    w.println("  :quit :q                    Terminates the Flix shell.")
+    w.println("  :help :h :?                 Shows this helpful information.")
     w.println()
   }
 
@@ -289,11 +334,17 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
   private def compile(entryPoint: Option[Symbol.DefnSym] = None, progress: Boolean = true)(implicit terminal: Terminal): Validation[CompilationResult, CompilationMessage] = {
 
     // Set the main entry point if there is one (i.e. if the programmer wrote an expression)
-    this.flix.setOptions(options.copy(entryPoint = entryPoint, progress = progress))
+    flix.setOptions(options.copy(entryPoint = entryPoint, progress = progress))
 
-    val result = this.flix.compile()
+    val checkResult = flix.check()
+    checkResult match {
+      case Validation.Success(root) => this.root = Some(root)
+      case Failure(_) => // no-op
+    }
+
+    val result = Validation.flatMapN(checkResult)(flix.codeGen)
     result match {
-      case Validation.Success(result) => // Compilation successful, no-op
+      case Validation.Success(_) => // Compilation successful, no-op
 
       case Validation.Failure(errors) =>
         for (msg <- flix.mkMessages(errors)) {

@@ -136,6 +136,14 @@ object Symbol {
   }
 
   /**
+    * Returns the class symbol for the given fully qualified name
+    */
+  def mkClassSym(fqn: String): ClassSym = split(fqn) match {
+    case None => new ClassSym(Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new ClassSym(ns, name, SourceLocation.Unknown)
+  }
+
+  /**
     * Returns the hole symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkHoleSym(ns: NName, ident: Ident): HoleSym = {
@@ -162,6 +170,15 @@ object Symbol {
     */
   def mkTypeAliasSym(ns: NName, ident: Ident): TypeAliasSym = {
     new TypeAliasSym(ns.parts, ident.name, ident.loc)
+  }
+
+  /**
+    * Returns the type alias symbol for the given fully qualified name
+    */
+
+  def mkTypeAliasSym(fqn: String): TypeAliasSym = split(fqn) match {
+    case None => new TypeAliasSym(Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new TypeAliasSym(ns, name, SourceLocation.Unknown)
   }
 
   /**
