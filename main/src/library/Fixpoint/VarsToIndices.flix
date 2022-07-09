@@ -22,7 +22,7 @@ use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar};
 namespace Fixpoint {
 
     @Internal
-    pub def lowerStmt(stmt: RamStmt[v]): RamStmt[v] & Impure = match stmt {
+    pub def lowerStmt(stmt: RamStmt[v]): RamStmt[v] = match stmt {
         case RamStmt.Insert(op) => RamStmt.Insert(lowerOp(op, Map#{}, 0))
         case RamStmt.Merge(_, _) => stmt
         case RamStmt.Assign(_, _) => stmt
@@ -32,7 +32,7 @@ namespace Fixpoint {
         case RamStmt.Comment(_) => stmt
     }
 
-    def lowerOp(op: RelOp[v], rowVars: Map[RowVar, RowVar], depth: Int32): RelOp[v] & Impure =
+    def lowerOp(op: RelOp[v], rowVars: Map[RowVar, RowVar], depth: Int32): RelOp[v] =
         match op {
             case RelOp.Search(var, ramSym, body) =>
                 let newVar = RowVar.Index(depth);
