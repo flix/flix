@@ -197,34 +197,39 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     */
   private def execDoc(s: String)(implicit terminal: Terminal): Unit = {
     val w = terminal.writer()
+    val classSym = Symbol.mkClassSym(s)
+    val defnSym = Symbol.mkDefnSym(s)
+    val enumSym = Symbol.mkEnumSym(s)
+    val aliasSym = Symbol.mkTypeAliasSym(s)
 
     for(r <- root) {
-      val classSym = Symbol.mkClassSym(s)
+
       if(r.classes.contains(classSym)) {
+
         val classDecl = r.classes(classSym)
         w.println(FormatDoc.asMarkDown(classDecl.doc))
-      }
 
-      val defnSym = Symbol.mkDefnSym(s)
-      if (r.defs.contains(defnSym)) {
+      } else if (r.defs.contains(defnSym)) {
+
         val defDecl = r.defs(defnSym)
         w.println(FormatSignature.asMarkDown(defDecl))
         w.println(FormatDoc.asMarkDown(defDecl.spec.doc))
-      }
 
-      val enumSym = Symbol.mkEnumSym(s)
-      if (r.enums.contains(enumSym)) {
+      } else if (r.enums.contains(enumSym)) {
+
         val enumDecl = r.enums(enumSym)
         w.println(FormatType.formatWellKindedType(enumDecl.tpeDeprecated))
         w.println
         w.println(FormatDoc.asMarkDown(enumDecl.doc))
-      }
 
-      val aliasSym = Symbol.mkTypeAliasSym(s)
-      if (r.typeAliases.contains(aliasSym)) {
+      } else if (r.typeAliases.contains(aliasSym)) {
+
         val aliasDecl = r.typeAliases(aliasSym)
         w.println(FormatType.formatWellKindedType(aliasDecl.tpe))
         w.println(FormatDoc.asMarkDown(aliasDecl.doc))
+
+      } else {
+        w.println(s"$s not found")
       }
     }
   }
