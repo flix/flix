@@ -1400,8 +1400,8 @@ object Weeder {
       }
 
     case ParsedAst.Expression.Do(sp1, op, args0, sp2) =>
-      val argsVal = traverse(args0)(visitArgument(_, senv))
       val loc = mkSL(sp1, sp2)
+      val argsVal = traverse(args0)(visitArgument(_, senv)).map(getArguments(_, loc))
       mapN(argsVal) {
         args => WeededAst.Expression.Do(op, args, loc)
       }
