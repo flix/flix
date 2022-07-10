@@ -218,8 +218,6 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
       } else if (r.enums.contains(enumSym)) {
 
         val enumDecl = r.enums(enumSym)
-        w.println(FormatType.formatWellKindedType(enumDecl.tpeDeprecated))
-        w.println
         w.println(FormatDoc.asMarkDown(enumDecl.doc))
 
       } else if (r.typeAliases.contains(aliasSym)) {
