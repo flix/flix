@@ -695,7 +695,7 @@ object Weeder {
       val fqn = "Iterator.foreach"
 
       foldRight(frags)(visitExp(exp, senv)) {
-        case (ParsedAst.ForeachFragment.ForEach(sp11, pat, e1, sp12), e0) =>
+        case (ParsedAst.ForEachFragment.ForEach(sp11, pat, e1, sp12), e0) =>
           mapN(visitPattern(pat), visitExp(e1, senv)) {
             case (p, e2) =>
               val loc = mkSL(sp11, sp12).asSynthetic
@@ -704,7 +704,7 @@ object Weeder {
               mkApplyFqn(fqn, fparams, loc)
           }
 
-        case (ParsedAst.ForeachFragment.Guard(sp11, e1, sp12), e0) =>
+        case (ParsedAst.ForEachFragment.Guard(sp11, e1, sp12), e0) =>
           mapN(visitExp(e1, senv)) { e2 =>
             val loc = mkSL(sp11, sp12).asSynthetic
             WeededAst.Expression.IfThenElse(e2, e0, WeededAst.Expression.Unit(loc), loc)
