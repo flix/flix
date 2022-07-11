@@ -1743,9 +1743,14 @@ object Namer {
         case Some(t) => visitType(t, uenv0, tenv0)
       }
 
+      val src = optType match {
+        case None => Ast.TypeSource.Inferred
+        case Some(_) => Ast.TypeSource.Ascribed
+      }
+
       // Construct the formal parameter.
       mapN(tpeVal) {
-        case tpe => NamedAst.FormalParam(freshSym, mod, tpe, loc)
+        case tpe => NamedAst.FormalParam(freshSym, mod, tpe, src, loc)
       }
   }
 
@@ -1881,7 +1886,7 @@ object Namer {
     */
   private def getVarEnv(fparams0: List[NamedAst.FormalParam]): Map[String, Symbol.VarSym] = {
     fparams0.foldLeft(Map.empty[String, Symbol.VarSym]) {
-      case (macc, NamedAst.FormalParam(sym, mod, tpe, loc)) =>
+      case (macc, NamedAst.FormalParam(sym, _, _, _, _)) =>
         if (sym.isWild) macc else macc + (sym.text -> sym)
     }
   }

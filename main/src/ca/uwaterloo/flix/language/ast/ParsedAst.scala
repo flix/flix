@@ -713,7 +713,7 @@ object ParsedAst {
       * @param exp   the body expression.
       * @param sp2   the position of the last character in the expression.
       */
-    case class ForEach(sp1: SourcePosition, frags: Seq[ForeachFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ForEach(sp1: SourcePosition, frags: Seq[ForEachFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * ForYield Expression.
@@ -2182,9 +2182,9 @@ object ParsedAst {
   /**
     * Represents a super type for foreach expression fragments.
     */
-  sealed trait ForeachFragment
+  sealed trait ForEachFragment
 
-  object ForeachFragment {
+  object ForEachFragment {
 
     /**
       * A foreach fragment, i.e. `x <- xs`.
@@ -2194,7 +2194,7 @@ object ParsedAst {
       * @param exp the iterable expression.
       * @param sp2 the position of the last character in the fragment.
       */
-    case class ForEach(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition) extends ForeachFragment
+    case class ForEach(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition) extends ForEachFragment
 
     /**
       * A foreach guard fragment, i.e. `if x > 1`.
@@ -2203,7 +2203,7 @@ object ParsedAst {
       * @param guard the guard expression.
       * @param sp2   the position of the last character in the fragment.
       */
-    case class Guard(sp1: SourcePosition, guard: ParsedAst.Expression, sp2: SourcePosition) extends ForeachFragment
+    case class Guard(sp1: SourcePosition, guard: ParsedAst.Expression, sp2: SourcePosition) extends ForEachFragment
 
   }
 
@@ -2223,6 +2223,16 @@ object ParsedAst {
       * @param sp2 the position of the last character in the fragment.
       */
     case class ForYield(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition) extends ForYieldFragment
+
+    /**
+      * A for-yield guard fragment, i.e. `if x > 1`.
+      *
+      * @param sp1 the position of the first character in the fragment.
+      * @param exp the guard expression.
+      * @param sp2 the position of the last character in the fragment.
+      */
+    case class Guard(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ForYieldFragment
+
   }
 
 }

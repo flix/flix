@@ -504,15 +504,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def ForEach: Rule1[ParsedAst.Expression.ForEach] = {
 
-      def ForEachFragment: Rule1[ParsedAst.ForeachFragment.ForEach] = rule {
-        SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForeachFragment.ForEach
+      def ForEachFragment: Rule1[ParsedAst.ForEachFragment.ForEach] = rule {
+        SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForEachFragment.ForEach
       }
 
-      def GuardFragment: Rule1[ParsedAst.ForeachFragment.Guard] = rule {
-        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.ForeachFragment.Guard
+      def GuardFragment: Rule1[ParsedAst.ForEachFragment.Guard] = rule {
+        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.ForEachFragment.Guard
       }
 
-      def Fragment: Rule1[ParsedAst.ForeachFragment] = rule {
+      def Fragment: Rule1[ParsedAst.ForEachFragment] = rule {
         ForEachFragment | GuardFragment
       }
 
@@ -527,8 +527,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForYieldFragment.ForYield
       }
 
+      def GuardFragment: Rule1[ParsedAst.ForYieldFragment.Guard] = rule {
+        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.ForYieldFragment.Guard
+      }
+
       def Fragment: Rule1[ParsedAst.ForYieldFragment] = rule {
-        ForYieldFragment // Add guard fragment later
+        ForYieldFragment | GuardFragment
       }
 
       rule {

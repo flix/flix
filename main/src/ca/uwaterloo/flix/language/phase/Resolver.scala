@@ -489,7 +489,7 @@ object Resolver {
         val varSyms = (0 until arity).map(i => Symbol.freshVarSym(Flix.Delimiter + i, BoundBy.FormalParam, loc)).toList
 
         // Introduce a formal parameter for each variable symbol.
-        varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar, loc))
+        varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar, Ast.TypeSource.Inferred, loc))
       }
 
       /**
@@ -789,7 +789,7 @@ object Resolver {
                   val freshVar = Symbol.freshVarSym("x" + Flix.Delimiter, BoundBy.FormalParam, loc)
 
                   // Construct the formal parameter for the fresh symbol.
-                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshUnkindedVar(loc), loc)
+                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshUnkindedVar(loc), Ast.TypeSource.Inferred, loc)
 
                   // Construct a variable expression for the fresh symbol.
                   val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar, loc)
@@ -1324,7 +1324,7 @@ object Resolver {
     def resolve(fparam0: NamedAst.FormalParam, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.FormalParam, ResolutionError] = {
       val tVal = resolveType(fparam0.tpe, taenv, ns0, root)
       mapN(tVal) {
-        t => ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.loc)
+        t => ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.src, fparam0.loc)
       }
     }
 

@@ -33,6 +33,10 @@ instance Scoped[MutList[a]] {
     pub def regionOf(_: MutList[a, r]): Region[r] = () as Region[r]
 }
 
+instance Iterable[MutList] {
+    pub def iterator(l: MutList[a, r]): Iterator[a, r] \ Write(r) = MutList.iterator(l)
+}
+
 namespace MutList {
 
     ///
@@ -791,6 +795,23 @@ namespace MutList {
         foreachWithIndex(step, v);
         StringBuilder.toString(sb)
     }
+
+    ///
+    /// Returns an iterator over `l`.
+    ///
+    /// Modifying `l` while using an iterator has undefined behavior and is dangerous.
+    ///
+    pub def iterator(l: MutList[a, r]): Iterator[a, r] \ Write(r) =
+        let r = Scoped.regionOf(l);
+        let MutList(a, len) = l;
+        let i = ref 0 @ r;
+        let done = () -> deref i == deref len;
+        let next = () -> {
+            let x = (deref a)[deref i];
+            i := deref i + 1;
+            x
+        };
+        Iterator(done, next)
 
     ///
     /// Applies `f` to all the elements in `v`.

@@ -771,9 +771,9 @@ object Lowering {
     * Lowers the given formal parameter `fparam0`.
     */
   private def visitFormalParam(fparam0: FormalParam)(implicit root: Root, flix: Flix): FormalParam = fparam0 match {
-    case FormalParam(sym, mod, tpe, loc) =>
+    case FormalParam(sym, mod, tpe, src, loc) =>
       val t = visitType(tpe)
-      FormalParam(sym, mod, t, loc)
+      FormalParam(sym, mod, t, src, loc)
   }
 
   /**
@@ -1131,7 +1131,7 @@ object Lowering {
     if (fvs.isEmpty) {
       val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)
       // Construct a lambda that takes the unit argument.
-      val fparam = FormalParam(sym, Ast.Modifiers.Empty, Type.Unit, loc)
+      val fparam = FormalParam(sym, Ast.Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
       val lambdaExp = Expression.Lambda(fparam, exp, tpe, loc)
       return mkTag(Enums.BodyPredicate, s"Guard0", lambdaExp, Types.BodyPredicate, loc)
@@ -1149,7 +1149,7 @@ object Lowering {
     val lambdaExp = fvs.foldRight(freshExp) {
       case ((oldSym, tpe), acc) =>
         val freshSym = freshVars(oldSym)
-        val fparam = FormalParam(freshSym, Ast.Modifiers.Empty, tpe, loc)
+        val fparam = FormalParam(freshSym, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
         val lambdaType = Type.mkPureArrow(tpe, acc.tpe, loc)
         Expression.Lambda(fparam, acc, lambdaType, loc)
     }
@@ -1181,7 +1181,7 @@ object Lowering {
     if (fvs.isEmpty) {
       val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)
       // Construct a lambda that takes the unit argument.
-      val fparam = FormalParam(sym, Ast.Modifiers.Empty, Type.Unit, loc)
+      val fparam = FormalParam(sym, Ast.Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
       val lambdaExp = Expression.Lambda(fparam, exp, tpe, loc)
       return mkTag(Enums.HeadTerm, s"App0", lambdaExp, Types.HeadTerm, loc)
@@ -1199,7 +1199,7 @@ object Lowering {
     val lambdaExp = fvs.foldRight(freshExp) {
       case ((oldSym, tpe), acc) =>
         val freshSym = freshVars(oldSym)
-        val fparam = FormalParam(freshSym, Ast.Modifiers.Empty, tpe, loc)
+        val fparam = FormalParam(freshSym, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
         val lambdaType = Type.mkPureArrow(tpe, acc.tpe, loc)
         Expression.Lambda(fparam, acc, lambdaType, loc)
     }
@@ -1657,9 +1657,9 @@ object Lowering {
     * Applies the given substitution `subst` to the given formal param `fparam0`.
     */
   private def substFormalParam(fparam0: FormalParam, subst: Map[Symbol.VarSym, Symbol.VarSym]): FormalParam = fparam0 match {
-    case FormalParam(sym, mod, tpe, loc) =>
+    case FormalParam(sym, mod, tpe, src, loc) =>
       val s = subst.getOrElse(sym, sym)
-      FormalParam(s, mod, tpe, loc)
+      FormalParam(s, mod, tpe, src, loc)
   }
 
 }

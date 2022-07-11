@@ -370,7 +370,7 @@ object Documentor {
     * Returns the given formal parameter `fparam` as a JSON value.
     */
   private def visitFormalParam(fparam: FormalParam): JObject = fparam match {
-    case FormalParam(sym, _, tpe, _) =>
+    case FormalParam(sym, _, tpe, _, _) =>
       ("name" -> sym.text) ~ ("tpe" -> visitType(tpe))
   }
 
