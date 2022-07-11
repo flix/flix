@@ -20,7 +20,7 @@ namespace Graph {
         Node(x) :- Edge(_, x).
     }
 
-    def reachability(): #{ Edge(t, t), Reachable(t, t) | r } with Boxable[t] = #{
+    def reachability(): #{ Edge(t, t), Node(t), Reachable(t, t) | r } with Boxable[t] = #{
         // All nodes can reach themselves.
         Reachable(n, n) :- Node(n).
         // If `n1` can reach `m` and there is an edge from `m` to `n2`
@@ -29,7 +29,7 @@ namespace Graph {
         Reachable(n1, n2) :- Reachable(n1, m), Edge(m, n2).
     }
 
-    def reachabilityWithSrc(src: t): #{ Edge(t, t), Node(t), Reachable(t) | r } with Boxable[t] = #{
+    def reachabilityFromSrc(src: t): #{ Edge(t, t), Node(t), Reachable(t) | r } with Boxable[t] = #{
         // A node can reach itself.
         Reachable(src).
         // If `src` can reach `m` and there is an edge from `m` to `n`
@@ -51,7 +51,7 @@ namespace Graph {
     ///
     pub def reachable(src: t, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] =
         let edges = inject g into Edge;
-        let x = query edges, reachabilityWithSrc(src) select dst from Reachable(dst);
+        let x = query edges, reachabilityFromSrc(src) select dst from Reachable(dst);
         List.toSet(x)
 
     ///
@@ -63,7 +63,7 @@ namespace Graph {
             // If there is a node that is not Reachable from src then it is unreachable.
             UnReachable(x) :- Node(x), not Reachable(x).
         };
-        let x = query edges, nodes(), reachabilityWithSrc(src), unreachablility select dst from UnReachable(dst);
+        let x = query edges, nodes(), reachabilityFromSrc(src), unreachablility select dst from UnReachable(dst);
         List.toSet(x)
 
     ///
