@@ -47,7 +47,7 @@ namespace Test/Exp/ForYield {
 
     @test
     def testForYield07(): Bool =
-        let l =
+        let l = // Monad.flatMap(match x -> Monad.flatMap(match y -> Applicative.point((x, y)), 4 :: 5 :: Nil), 1 :: 2 :: 3 :: Nil)
             for (x <- 1 :: 2 :: 3 :: Nil) yield
                 for (y <- 4 :: 5 :: Nil)
                     yield (x, y);
@@ -62,16 +62,14 @@ namespace Test/Exp/ForYield {
                 x
             };
         List.reverse(deref l1) == l2
-        }
+    }
 
     @test
     def testForYield09(): Bool =
-        let l =
+        let l = // Monad.flatMap(match x -> if (x > 1) Applicative.point(x + 1) else MonadZero.empty(), 1 :: 2 :: 3 :: Nil)
             for (x <- 1 :: 2 :: 3 :: Nil;
                  if x > 1)
                 yield x + 1;
-        // Functor.map(match x -> x + 1,
-        //   FunctorFilter.filter(match x -> x > 1, 1 :: 2 :: 3 :: Nil))
         l == 3 :: 4 :: Nil
 
     @test
@@ -92,14 +90,11 @@ namespace Test/Exp/ForYield {
 
     @test
     def testForYield12(): Bool =
-        let l =
+        let l = // Monad.flatMap(match x -> if (x > 1) if (x < 3) Applicative.point(x + 1) else MonadZero.empty() else MonadZero.empty(), 1 :: 2 :: 3 :: Nil)
             for (x <- 1 :: 2 :: 3 :: Nil;
                  if x > 1;
                  if x < 3)
                 yield x + 1;
-        // Functor.map(match x -> x + 1,
-        //   FunctorFilter.filter(match x -> x > 1,
-        //     FunctorFilter.filter(match x -> x < 3, 1 :: 2 :: 3 :: Nil)))
         l == 3 :: Nil
 
     @test
@@ -109,8 +104,11 @@ namespace Test/Exp/ForYield {
                  if x > 1;
                  if x < 3)
                 yield x + 1;
-        let l1 = FunctorFilter.filter(match x -> x < 3, 1 :: 2 :: 3 :: Nil) |>
-                    FunctorFilter.filter(match x -> x > 1) |> Functor.map(match x -> x + 1);
+        let l1 = Monad.flatMap(match x ->
+                    if (x > 1 and x < 3)
+                        Applicative.point(x + 1)
+                    else MonadZero.empty(),
+                    1 :: 2 :: 3 :: Nil);
         l0 == l1
 
     @test
@@ -182,9 +180,6 @@ namespace Test/Exp/ForYield {
                  y <- 4 :: 5 :: 6 :: Nil;
                  if y < 6)
                     yield (x, y);
-        // Monad.flatMap(match x -> Functor.map(match y -> (x, y),
-        //   FunctorFilter.filter(match y -> y < 6, 4 :: 5 :: 6 :: Nil)),
-        //   FunctorFilter.filter(match x -> x > 1, 1 :: 2 :: 3 :: Nil))
         l == (2, 4) :: (2, 5) :: (3, 4) :: (3, 5) :: Nil
 
     @test
