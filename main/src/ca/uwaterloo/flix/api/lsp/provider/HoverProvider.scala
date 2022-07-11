@@ -42,7 +42,7 @@ object HoverProvider {
 
             case Expression.Sig(sym, _, loc) => hoverSig(sym, loc, current)
 
-            case _ => hoverTypAndEff(exp.tpe, exp.pur, exp.eff, exp.loc)
+            case _ => hoverTypeAndEff(exp.tpe, exp.pur, exp.eff, exp.loc, current)
           }
 
         case Entity.FormalParam(fparam) => hoverType(fparam.tpe, fparam.loc, current)
@@ -62,8 +62,8 @@ object HoverProvider {
 
   private def hoverType(tpe: Type, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root): JObject = {
     val markup =
-      s"""${if (!current) s"**Not Current**${System.lineSeparator()}" else ""}```flix
-         |${FormatType.formatWellKindedType(tpe)}
+      s"""```flix
+         |${FormatType.formatWellKindedType(tpe)} ${mkCurrentMsg(current)}
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
@@ -72,12 +72,12 @@ object HoverProvider {
     ("status" -> "success") ~ ("result" -> result)
   }
 
-  private def hoverTypAndEff(tpe: Type, pur: Type, eff: Type, loc: SourceLocation)(implicit index: Index, root: Root, flix: Flix): JObject = {
+  private def hoverTypeAndEff(tpe: Type, pur: Type, eff: Type, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root, flix: Flix): JObject = {
     val minPur = BoolTable.minimizeType(pur)
     val minEff = SetTable.minimizeType(eff)
     val markup =
       s"""```flix
-         |${formatTypAndEff(tpe, minPur, minEff)}
+         |${formatTypAndEff(tpe, minPur, minEff)} ${mkCurrentMsg(current)}
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
@@ -89,8 +89,8 @@ object HoverProvider {
   private def hoverDef(sym: Symbol.DefnSym, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root): JObject = {
     val defDecl = root.defs(sym)
     val markup =
-      s"""${if (!current) s"**Not Current**${System.lineSeparator()}" else ""}```flix
-         |${FormatSignature.asMarkDown(defDecl)}
+      s"""```flix
+         |${FormatSignature.asMarkDown(defDecl)} ${mkCurrentMsg(current)}
          |```
          |
          |${FormatDoc.asMarkDown(defDecl.spec.doc)}
@@ -104,8 +104,8 @@ object HoverProvider {
   private def hoverSig(sym: Symbol.SigSym, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root): JObject = {
     val sigDecl = root.sigs(sym)
     val markup =
-      s"""${if (!current) s"**Not Current**${System.lineSeparator()}" else ""}```flix
-         |${FormatSignature.asMarkDown(sigDecl)}
+      s"""```flix
+         |${FormatSignature.asMarkDown(sigDecl)} ${mkCurrentMsg(current)}
          |```
          |
          |${FormatDoc.asMarkDown(sigDecl.spec.doc)}
@@ -129,8 +129,8 @@ object HoverProvider {
 
   private def hoverKind(t: Type, current: Boolean)(implicit index: Index, root: Root): JObject = {
     val markup =
-      s"""${if (!current) s"**Not Current**${System.lineSeparator()}" else ""}```flix
-         |${FormatKind.formatKind(t.kind)}
+      s"""```flix
+         |${FormatKind.formatKind(t.kind)} ${mkCurrentMsg(current)}
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
@@ -144,5 +144,9 @@ object HoverProvider {
     */
   private def mkNotFound(uri: String, pos: Position): JObject =
     ("status" -> "failure") ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
+
+
+  private def mkCurrentMsg(current: Boolean): String =
+    if (!current) "(Information may not current)" else ""
 
 }
