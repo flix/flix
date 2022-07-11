@@ -58,8 +58,12 @@ object EarlyTreeShaker {
       case (sym, _) => allReachable.contains(ReachableSym.SigSym(sym))
     }
 
+    val newInstances = root.instances.filter {
+      case (sym, _) => allReachable.contains(ReachableSym.ClassSym(sym))
+    }
+
     // Reassemble the AST.
-    root.copy(defs = newDefs, sigs = newSigs).toSuccess
+    root.copy(defs = newDefs, sigs = newSigs, instances = newInstances).toSuccess
   }
 
   /**
@@ -110,8 +114,19 @@ object EarlyTreeShaker {
 
     case ReachableSym.SigSym(sigSym) => root.sigs.get(sigSym) match {
       case None => Set.empty
-      case Some(Sig(_, spec, Some(impl))) => visitExps(spec.ann.flatMap(_.args)) ++ visitExp(impl.exp)
-      case Some(Sig(_, spec, None)) => visitExps(spec.ann.flatMap(_.args))
+      case Some(Sig(sigSym, spec, impl)) =>
+        Set(ReachableSym.SigSym(sigSym)) ++
+          visitExps(spec.ann.flatMap(_.args)) ++
+          impl.map(i => visitExp(i.exp)).getOrElse(Set.empty)
+    }
+
+    case ReachableSym.ClassSym(classSym) => root.instances.get(classSym) match {
+      case None => Set.empty
+      case Some(instances) =>
+        instances.flatMap(_.defs.map(d => ReachableSym.DefnSym(d.sym))).toSet ++
+          visitExps(instances.flatMap(_.ann.flatMap(_.args))) ++
+          visitExps(instances.flatMap(_.defs.map(_.impl.exp))) ++
+          visitExps(instances.flatMap(_.defs.flatMap(_.spec.ann.flatMap(_.args))))
     }
   }
 
@@ -378,6 +393,8 @@ object EarlyTreeShaker {
     case class DefnSym(defnSym: Symbol.DefnSym) extends ReachableSym
 
     case class SigSym(sigSym: Symbol.SigSym) extends ReachableSym
+
+    case class ClassSym(classSym: Symbol.ClassSym) extends ReachableSym
 
   }
 
