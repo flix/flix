@@ -695,7 +695,7 @@ object Weeder {
       val fqn = "Iterator.foreach"
 
       foldRight(frags)(visitExp(exp, senv)) {
-        case (ParsedAst.ForeachFragment.ForEach(sp11, pat, e1, sp12), e0) =>
+        case (ParsedAst.ForEachFragment.ForEach(sp11, pat, e1, sp12), e0) =>
           mapN(visitPattern(pat), visitExp(e1, senv)) {
             case (p, e2) =>
               val loc = mkSL(sp11, sp12).asSynthetic
@@ -704,42 +704,43 @@ object Weeder {
               mkApplyFqn(fqn, fparams, loc)
           }
 
-        case (ParsedAst.ForeachFragment.Guard(sp11, e1, sp12), e0) =>
+        case (ParsedAst.ForEachFragment.Guard(sp11, e1, sp12), e0) =>
           mapN(visitExp(e1, senv)) { e2 =>
             val loc = mkSL(sp11, sp12).asSynthetic
             WeededAst.Expression.IfThenElse(e2, e0, WeededAst.Expression.Unit(loc), loc)
           }
       }
 
-    case ParsedAst.Expression.ForYield(_, frags, exp, _) =>
+    case ParsedAst.Expression.ForYield(sp1, frags, exp, sp2) =>
       //
-      // Rewrites a foreach loop to Monad.flatMap and Functor.map call.
+      // Rewrites a for-loop to Monad.flatMap.
       //
 
-      val fqnMap = "Functor.map"
       val fqnFlatMap = "Monad.flatMap"
-      val last = frags.length - 1
-
-      def mkForYieldLoop(sp1: SourcePosition,
-                         fqn: String,
-                         pat: WeededAst.Pattern,
-                         exp1: WeededAst.Expression,
-                         exp0: WeededAst.Expression,
-                         sp2: SourcePosition): WeededAst.Expression = {
-        val loc = mkSL(sp1, sp2).asSynthetic
-        val lambda = mkLambdaMatch(sp1, pat, exp0, sp2)
-        val fparams = List(lambda, exp1)
-        mkApplyFqn(fqn, fparams, loc)
+      val fqnPoint = "Applicative.point"
+      val fqnZero = "MonadZero.empty"
+      val yieldExp = mapN(visitExp(exp, senv)) {
+        case e =>
+          val loc = mkSL(sp1, sp2).asSynthetic
+          mkApplyFqn(fqnPoint, List(e), loc)
       }
 
-      foldRight(frags.zipWithIndex)(visitExp(exp, senv)) {
-        case ((ParsedAst.ForYieldFragment.ForYield(sp11, pat, exp1, sp12), idx), exp0) =>
+      foldRight(frags)(yieldExp) {
+        case (ParsedAst.ForYieldFragment.ForYield(sp11, pat, exp1, sp12), exp0) =>
           mapN(visitPattern(pat), visitExp(exp1, senv)) {
             case (p, e1) =>
-              if (idx == last) // Check if it's the innermost loop
-                mkForYieldLoop(sp11, fqnMap, p, e1, exp0, sp12)
-              else
-                mkForYieldLoop(sp11, fqnFlatMap, p, e1, exp0, sp12)
+              val loc = mkSL(sp11, sp12).asSynthetic
+              val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
+              val fparams = List(lambda, e1)
+              mkApplyFqn(fqnFlatMap, fparams, loc)
+          }
+
+        case (ParsedAst.ForYieldFragment.Guard(sp11, exp1, sp12), exp0) =>
+          mapN(visitExp(exp1, senv)) {
+            case e1 =>
+              val loc = mkSL(sp11, sp12).asSynthetic
+              val zero = mkApplyFqn(fqnZero, List(WeededAst.Expression.Unit(loc)), loc)
+              WeededAst.Expression.IfThenElse(e1, exp0, zero, loc)
           }
       }
 
@@ -1401,8 +1402,8 @@ object Weeder {
       }
 
     case ParsedAst.Expression.Do(sp1, op, args0, sp2) =>
-      val argsVal = traverse(args0)(visitArgument(_, senv))
       val loc = mkSL(sp1, sp2)
+      val argsVal = traverse(args0)(visitArgument(_, senv)).map(getArguments(_, loc))
       mapN(argsVal) {
         args => WeededAst.Expression.Do(op, args, loc)
       }
@@ -2721,12 +2722,13 @@ object Weeder {
   /**
     * Performs weeding on the given JvmMethod
     */
-  private def visitJvmMethod(method: ParsedAst.JvmMethod, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.JvmMethod, WeederError] = {
-    val tpe = visitType(method.tpe)
-    val purAndEff = visitPurityAndEffect(method.purAndEff)
-    mapN(visitFormalParams(method.fparams, Presence.Required), visitExp(method.exp, senv)) {
-      case(fparams, exp) => WeededAst.JvmMethod(method.ident, fparams, exp, tpe, purAndEff, mkSL(method.sp1, method.sp2))
-    }
+  private def visitJvmMethod(method: ParsedAst.JvmMethod, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.JvmMethod, WeederError] = method match {
+    case ParsedAst.JvmMethod(sp1, ident, fparams0, tpe, purAndEff, exp0, sp2) =>
+      val tpeVal = visitType(tpe)
+      val purAndEffVal = visitPurityAndEffect(purAndEff)
+      mapN(visitFormalParams(fparams0, Presence.Required), visitExp(exp0, senv)) {
+        case(fparams, exp) => WeededAst.JvmMethod(ident, fparams, exp, tpeVal, purAndEffVal, mkSL(sp1, sp2))
+      }
   }
 
   /**

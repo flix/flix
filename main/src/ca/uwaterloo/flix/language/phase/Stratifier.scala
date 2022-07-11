@@ -289,12 +289,35 @@ object Stratifier {
         case e => Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
       }
 
+    case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Without(e, sym, tpe, pur, eff, loc)
+      }
+
     case Expression.TryCatch(exp, rules, tpe, pur, eff, loc) =>
       val rulesVal = traverse(rules) {
         case CatchRule(sym, clazz, e) => visitExp(e).map(CatchRule(sym, clazz, _))
       }
       mapN(visitExp(exp), rulesVal) {
         case (e, rs) => Expression.TryCatch(e, rs, tpe, pur, eff, loc)
+      }
+
+    case Expression.TryWith(exp, sym, rules, tpe, pur, eff, loc) =>
+      val rulesVal = traverse(rules) {
+        case HandlerRule(op, fparams, e) => visitExp(e).map(HandlerRule(op, fparams, _))
+      }
+      mapN(visitExp(exp), rulesVal) {
+        case (e, rs) => Expression.TryWith(e, sym, rs, tpe, pur, eff, loc)
+      }
+
+    case Expression.Do(sym, exps, pur, eff, loc) =>
+      mapN(traverse(exps)(visitExp)) {
+        case es => Expression.Do(sym, es, pur, eff, loc)
+      }
+
+    case Expression.Resume(exp, tpe, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Resume(e, tpe, loc)
       }
 
     case Expression.InvokeConstructor(constructor, args, tpe, pur, eff, loc) =>
@@ -615,10 +638,26 @@ object Stratifier {
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
+    case Expression.Without(exp, _, _, _, _, _) =>
+      labelledGraphOfExp(exp)
+
     case Expression.TryCatch(exp, rules, _, _, _, _) =>
       rules.foldLeft(labelledGraphOfExp(exp)) {
         case (acc, CatchRule(_, _, e)) => acc + labelledGraphOfExp(e)
       }
+
+    case Expression.TryWith(exp, _, rules, _, _, _, _) =>
+      rules.foldLeft(labelledGraphOfExp(exp)) {
+        case (acc, HandlerRule(_, _, e)) => acc + labelledGraphOfExp(e)
+      }
+
+    case Expression.Do(_, exps, _, _, _) =>
+      exps.foldLeft(LabelledGraph.empty) {
+        case (acc, exp) => acc + labelledGraphOfExp(exp)
+      }
+
+    case Expression.Resume(exp, _, _) =>
+      labelledGraphOfExp(exp)
 
     case Expression.InvokeConstructor(_, args, _, _, _, _) =>
       args.foldLeft(LabelledGraph.empty) {

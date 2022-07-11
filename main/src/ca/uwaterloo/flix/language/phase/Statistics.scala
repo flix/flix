@@ -129,7 +129,11 @@ object Statistics {
       case Expression.Assign(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Ascribe(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Cast(exp, _, _, _, tpe, pur, eff, loc) => visitExp(exp)
+      case Expression.Without(exp, _, _, _, _, _) => visitExp(exp)
       case Expression.TryCatch(exp, rules, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitCatchRule))
+      case Expression.TryWith(exp, sym, rules, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitHandlerRule))
+      case Expression.Do(sym, exps, pur, eff, loc) => Counter.merge(exps.map(visitExp))
+      case Expression.Resume(exp, tpe, loc) => visitExp(exp)
       case Expression.InvokeConstructor(constructor, args, tpe, pur, eff, loc) => Counter.merge(args.map(visitExp))
       case Expression.InvokeMethod(method, exp, args, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(args.map(visitExp))
       case Expression.InvokeStaticMethod(method, args, tpe, pur, eff, loc) => Counter.merge(args.map(visitExp))
@@ -179,6 +183,13 @@ object Statistics {
     */
   private def visitCatchRule(rule: CatchRule): Counter = rule match {
     case CatchRule(sym, clazz, exp) => visitExp(exp)
+  }
+
+  /**
+    * Counts AST nodes in the given rule.
+    */
+  private def visitHandlerRule(rule: HandlerRule): Counter = rule match {
+    case HandlerRule(op, fparams, exp) => visitExp(exp)
   }
 
   /**

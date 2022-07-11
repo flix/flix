@@ -75,40 +75,42 @@ namespace Fixpoint {
         } as & Pure
     }
 
-    type alias Database[v] = MutMap[RamSym[v], MutMap[Tuple[v], v, Static], Static]
+    type alias Database[v: Type, r: Region] = MutMap[RamSym[v], MutMap[Tuple[v], v, r], r]
     type alias SearchEnv[v] = (Array[Tuple[v], Static], Array[v, Static])
 
-    def interpret(stmt: RamStmt[v]): Database[v] & Impure with Order[v], ToString[v] =
-        interpretWithDatabase(new MutMap(Static), stmt)
+    def interpret(r: Region[r], stmt: RamStmt[v]): Database[v, r] & Impure with Order[v], ToString[v] =
+        interpretWithDatabase(new MutMap(r), stmt)
 
-    def interpretWithDatabase(db: Database[v], stmt: RamStmt[v]): Database[v] & Impure with Order[v], ToString[v] =
+    def interpretWithDatabase(db: Database[v, r], stmt: RamStmt[v]): Database[v, r] & Impure with Order[v], ToString[v] =
         notifyPreInterpret(stmt);
         evalStmt(db, stmt);
         db
 
-    def evalStmt(db: Database[v], stmt: RamStmt[v]): Unit & Impure with Order[v], ToString[v] = match stmt {
-        case RamStmt.Insert(relOp) => evalOp(db, allocEnv(0, relOp), relOp)
-        case RamStmt.Merge(srcSym, dstSym) =>
-            let dst = MutMap.getOrElsePut!(dstSym, new MutMap(Static), db);
-            match toDenotation(srcSym) {
-                case Denotation.Relational =>
-                    MutMap.merge!(MutMap.getWithDefault(srcSym, new MutMap(Static), db), dst)
-                case Denotation.Latticenal(_, _, lub, _) =>
-                    MutMap.mergeWith!(lub, MutMap.getWithDefault(srcSym, new MutMap(Static), db), dst)
-            }
-        case RamStmt.Assign(lhs, rhs) =>
-            MutMap.put!(lhs, MutMap.getWithDefault(rhs, new MutMap(Static), db), db)
-        case RamStmt.Purge(ramSym) => MutMap.remove!(ramSym, db)
-        case RamStmt.Seq(stmts) => List.foreach(evalStmt(db), stmts)
-        case RamStmt.Until(test, body) =>
-            if (evalBoolExp(db, ([], []), test)) {
-                ()
-            } else {
-                evalStmt(db, body);
-                evalStmt(db, stmt)
-            }
-        case RamStmt.Comment(_) => ()
-    }
+    def evalStmt(db: Database[v, r], stmt: RamStmt[v]): Unit & Impure with Order[v], ToString[v] =
+        let r = Scoped.regionOf(db);
+        match stmt {
+            case RamStmt.Insert(relOp) => evalOp(db, allocEnv(0, relOp), relOp)
+            case RamStmt.Merge(srcSym, dstSym) =>
+                let dst = MutMap.getOrElsePut!(dstSym, new MutMap(r), db);
+                match toDenotation(srcSym) {
+                    case Denotation.Relational =>
+                        MutMap.merge!(MutMap.getWithDefault(srcSym, new MutMap(r), db), dst)
+                    case Denotation.Latticenal(_, _, lub, _) =>
+                        MutMap.mergeWith!(lub, MutMap.getWithDefault(srcSym, new MutMap(r), db), dst)
+                }
+            case RamStmt.Assign(lhs, rhs) =>
+                MutMap.put!(lhs, MutMap.getWithDefault(rhs, new MutMap(r), db), db)
+            case RamStmt.Purge(ramSym) => MutMap.remove!(ramSym, db)
+            case RamStmt.Seq(stmts) => List.foreach(evalStmt(db), stmts)
+            case RamStmt.Until(test, body) =>
+                if (evalBoolExp(db, ([], []), test)) {
+                    ()
+                } else {
+                    evalStmt(db, body);
+                    evalStmt(db, stmt)
+                }
+            case RamStmt.Comment(_) => ()
+        }
 
     def allocEnv(depth: Int32, relOp: RelOp[v]): SearchEnv[v] & Impure = match relOp {
         case RelOp.Search(_, _, body) => allocEnv(depth + 1, body)
@@ -117,7 +119,8 @@ namespace Fixpoint {
         case RelOp.If(_, then) => allocEnv(depth, then)
     }
 
-    def evalOp(db: Database[v], env: SearchEnv[v], op: RelOp[v]): Unit & Impure with Order[v], ToString[v] =
+    def evalOp(db: Database[v, r], env: SearchEnv[v], op: RelOp[v]): Unit & Impure with Order[v], ToString[v] =
+        let r = Scoped.regionOf(db);
         match op {
             case RelOp.Search(RowVar.Index(i), ramSym, body) =>
                 let (tupleEnv, latEnv) = env;
@@ -125,16 +128,16 @@ namespace Fixpoint {
                     tupleEnv[i] = t;
                     latEnv[i] = l;
                     evalOp(db, env, body)
-                }, MutMap.getWithDefault(ramSym, new MutMap(Static), db))
+                }, MutMap.getWithDefault(ramSym, new MutMap(r), db))
             case RelOp.Query(RowVar.Index(i), ramSym, query, body) =>
                 let (tupleEnv, latEnv) = env;
                 MutMap.queryWith(evalQuery(env, query), t -> l -> {
                     tupleEnv[i] = t;
                     latEnv[i] = l;
                     evalOp(db, env, body)
-                }, MutMap.getWithDefault(ramSym, new MutMap(Static), db))
+                }, MutMap.getWithDefault(ramSym, new MutMap(r), db))
             case RelOp.Project(terms, ramSym) =>
-                let rel = MutMap.getOrElsePut!(ramSym, new MutMap(Static), db);
+                let rel = MutMap.getOrElsePut!(ramSym, new MutMap(r), db);
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>
                         let tuple = Fixpoint/Tuple.new(List.map(evalTerm(env), terms));
@@ -170,12 +173,13 @@ namespace Fixpoint {
             }
         }
 
-    def evalBoolExp(db: Database[v], env: SearchEnv[v], es: List[BoolExp[v]]): Bool & Impure with Order[v], ToString[v] =
+    def evalBoolExp(db: Database[v, r], env: SearchEnv[v], es: List[BoolExp[v]]): Bool & Impure with Order[v], ToString[v] =
+        let r = Scoped.regionOf(db);
         List.forall(exp -> match exp {
             case BoolExp.Empty(ramSym) =>
-                MutMap.isEmpty(MutMap.getWithDefault(ramSym, new MutMap(Static), db))
+                MutMap.isEmpty(MutMap.getWithDefault(ramSym, new MutMap(r), db))
             case BoolExp.NotMemberOf(terms, ramSym) =>
-                let rel = MutMap.getWithDefault(ramSym, new MutMap(Static), db);
+                let rel = MutMap.getWithDefault(ramSym, new MutMap(r), db);
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>
                         let tuple = Fixpoint/Tuple.new(List.map(evalTerm(env), terms));

@@ -75,6 +75,10 @@ instance Monad[DelayList] {
     pub def flatMap(f: a -> DelayList[b] & ef, l: DelayList[a]): DelayList[b] & ef = DelayList.flatMap(f, l)
 }
 
+instance MonadZero[DelayList] {
+    pub def empty(): DelayList[a] = DelayList.empty()
+}
+
 instance Traversable[DelayList] {
     pub def traverse(f: a -> m[b] & ef, l: DelayList[a]): m[DelayList[b]] & ef with Applicative[m] = DelayList.traverse(f, l)
     pub override def sequence(l: DelayList[m[a]]): m[DelayList[a]] with Applicative[m] = DelayList.sequence(l)
@@ -92,11 +96,6 @@ instance UnorderedFoldable[DelayList] {
     override pub def exists(f: a -> Bool & ef, l: DelayList[a]): Bool & ef = DelayList.exists(f, l)
     override pub def forall(f: a -> Bool & ef, l: DelayList[a]): Bool & ef = DelayList.forall(f, l)
     override pub def memberOf(x: a, l: DelayList[a]): Bool with Eq[a] = DelayList.memberOf(x, l)
-}
-
-instance Iterable[DelayList] {
-    pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) =
-        DelayList.iterator(r, l)
 }
 
 instance FunctorFilter[DelayList] {

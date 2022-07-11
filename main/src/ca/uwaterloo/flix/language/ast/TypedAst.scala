@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 import ca.uwaterloo.flix.language.dbg.{FormatExpression, FormatPattern}
 
 import java.lang.reflect.{Constructor, Field, Method}
-import scala.collection.immutable.List
 
 object TypedAst {
 
@@ -285,7 +284,21 @@ object TypedAst {
 
     case class Cast(exp: TypedAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], declaredEff: Option[Type], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
+    case class Without(exp: TypedAst.Expression, sym: Symbol.EffectSym, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
     case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
+    case class TryWith(exp: TypedAst.Expression, sym: Symbol.EffectSym, rules: List[TypedAst.HandlerRule], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
+    case class Do(sym: Symbol.OpSym, exps: List[TypedAst.Expression], pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression {
+      def tpe: Type = Type.Unit
+    }
+
+    case class Resume(exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
+      def pur: Type = Type.Pure
+
+      def eff: Type = Type.Empty
+    }
 
     case class InvokeConstructor(constructor: Constructor[_], args: List[TypedAst.Expression], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -487,13 +500,15 @@ object TypedAst {
 
   }
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, src: Ast.TypeSource, loc: SourceLocation)
 
   case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression, retTpe: Type, pur: Type, eff: Type, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: TypedAst.Expression)
+
+  case class HandlerRule(op: Symbol.OpSym, fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression)
 
   case class ChoiceRule(pat: List[TypedAst.ChoicePattern], exp: TypedAst.Expression)
 

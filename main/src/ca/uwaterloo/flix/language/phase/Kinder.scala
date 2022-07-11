@@ -1107,9 +1107,9 @@ object Kinder {
     * Performs kinding on the given formal param under the given kind environment.
     */
   private def visitFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.FormalParam, KindError] = fparam0 match {
-    case ResolvedAst.FormalParam(sym, mod, tpe0, loc) =>
+    case ResolvedAst.FormalParam(sym, mod, tpe0, src, loc) =>
       mapN(visitType(tpe0, Kind.Star, kenv, senv, taenv, root)) {
-        tpe => KindedAst.FormalParam(sym, mod, tpe, loc)
+        tpe => KindedAst.FormalParam(sym, mod, tpe, src, loc)
       }
   }
 
@@ -1195,14 +1195,15 @@ object Kinder {
       }
   }
 
-  private def visitJvmMethod(method: ResolvedAst.JvmMethod, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.KindedVar, Type.KindedVar)], root: ResolvedAst.Root)(implicit flix: Flix) = {
-    val fparams = traverse(method.fparams)(visitFormalParam(_, kenv, senv, taenv, root))
-    val exp = visitExp(method.exp, kenv, senv, taenv, henv, root)
-    val tpe = Type.freshVar(Kind.Star, method.loc.asSynthetic)
-    val purAndEff = visitPurityAndEffect(method.purAndEff, kenv, senv, taenv, root)
-    mapN(fparams, exp, purAndEff) {
-      case (f, e, (pur, eff)) => KindedAst.JvmMethod(method.ident, f, e, tpe, pur, eff, method.loc)
-    }
+  private def visitJvmMethod(method: ResolvedAst.JvmMethod, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.KindedVar, Type.KindedVar)], root: ResolvedAst.Root)(implicit flix: Flix) = method match {
+    case ResolvedAst.JvmMethod(ident, fparams, exp, tpe0, purAndEff, loc) =>
+      val fparamsVal = traverse(fparams)(visitFormalParam(_, kenv, senv, taenv, root))
+      val expVal = visitExp(exp, kenv, senv, taenv, henv, root)
+      val purAndEffVal = visitPurityAndEffect(method.purAndEff, kenv, senv, taenv, root)
+      val tpeVal = visitType(tpe0, Kind.Wild, kenv, Map.empty, taenv, root)
+      mapN(fparamsVal, expVal, tpeVal, purAndEffVal) {
+        case (f, e, tpe, (pur, eff)) => KindedAst.JvmMethod(method.ident, f, e, tpe, pur, eff, method.loc)
+      }
   }
 
   /**
@@ -1228,7 +1229,7 @@ object Kinder {
     * Infers a kind environment from the given formal param.
     */
   private def inferFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = fparam0 match {
-    case ResolvedAst.FormalParam(_, _, tpe0, _) => inferType(tpe0, Kind.Star, kenv, taenv, root)
+    case ResolvedAst.FormalParam(_, _, tpe0, _, _) => inferType(tpe0, Kind.Star, kenv, taenv, root)
   }
 
   /**

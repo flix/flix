@@ -177,9 +177,22 @@ object Safety {
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
       visitExp(exp)
 
+    case Expression.Without(exp, _, _, _, _, _) =>
+      visitExp(exp)
+
     case Expression.TryCatch(exp, rules, _, _, _, _) =>
       visitExp(exp) :::
         rules.flatMap { case CatchRule(_, _, e) => visitExp(e) }
+
+    case Expression.TryWith(exp, _, rules, _, _, _, _) =>
+      visitExp(exp) :::
+        rules.flatMap { case HandlerRule(_, _, e) => visitExp(e) }
+
+    case Expression.Do(_, exps, _, _, _) =>
+      exps.flatMap(visitExp)
+
+    case Expression.Resume(exp, _, _) =>
+      visitExp(exp)
 
     case Expression.InvokeConstructor(_, args, _, _, _, _) =>
       args.flatMap(visitExp)

@@ -54,6 +54,10 @@ instance Monad[Chain] {
     pub def flatMap(f: a -> Chain[b] & ef, x : Chain[a]) : Chain[b] & ef = Chain.flatMap(f, x)
 }
 
+instance MonadZero[Chain] {
+    pub def empty(): Chain[a] = Chain.empty()
+}
+
 instance Foldable[Chain] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldLeft(f, s, c)
     pub def foldRight(f: (a, b) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldRight(f, s, c)
@@ -76,11 +80,6 @@ instance Traversable[Chain] {
 instance FunctorFilter[Chain] {
     pub def filterMap(f: a -> Option[b] & ef, x: Chain[a]): Chain[b] & ef = Chain.filterMap(f, x)
     pub override def filter(f: a -> Bool & ef, x: Chain[a]): Chain[a] & ef = Chain.filter(f, x)
-}
-
-instance Iterable[Chain] {
-    pub def iterator(r: Region[r], c: Chain[a]): Iterator[a, r] \ Write(r) =
-        Chain.iterator(r, c)
 }
 
 instance ToString[Chain[a]] with ToString[a] {

@@ -240,12 +240,33 @@ object Regions {
         case e => checkType(tpe, loc)
       }
 
+    case Expression.Without(exp, _, tpe, _, _, loc) =>
+      flatMapN(visitExp(exp)) {
+        case _ => checkType(tpe, loc)
+      }
+
     case Expression.TryCatch(exp, rules, tpe, _, _, loc) =>
       val rulesVal = traverse(rules) {
-        case CatchRule(sym, clazz, e) => visitExp(e).map(_ => ())
+        case CatchRule(sym, clazz, e) => visitExp(e)
       }
       flatMapN(visitExp(exp), rulesVal) {
         case (e, rs) => checkType(tpe, loc)
+      }
+
+    case Expression.TryWith(exp, _, rules, tpe, _, _, loc) =>
+      val rulesVal = traverseX(rules) {
+        case HandlerRule(_, _, e) => visitExp(e)
+      }
+      flatMapN(visitExp(exp), rulesVal) {
+        case _ => checkType(tpe, loc)
+      }
+
+    case Expression.Do(_, exps, _, _, _) =>
+      traverseX(exps)(visitExp)
+
+    case Expression.Resume(exp, tpe, loc) =>
+      flatMapN(visitExp(exp)) {
+        case _ => checkType(tpe, loc)
       }
 
     case Expression.InvokeConstructor(_, exps, tpe, _, _, loc) =>

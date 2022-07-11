@@ -580,7 +580,7 @@ object Namer {
       NamedAst.Expression.Wild(loc).toSuccess
 
     case WeededAst.Expression.DefOrSig(qname, loc) =>
-      NamedAst.Expression.DefOrSig(qname, loc).toSuccess
+      NamedAst.Expression.DefOrSig(qname, env0, loc).toSuccess
 
     case WeededAst.Expression.VarOrDefOrSig(ident, loc) =>
       // the ident name.
@@ -590,10 +590,10 @@ object Namer {
       (env0.get(name), uenv0.lowerNames.get(name)) match {
         case (None, None) =>
           // Case 1: the name is a top-level function.
-          NamedAst.Expression.DefOrSig(Name.mkQName(ident), loc).toSuccess
+          NamedAst.Expression.DefOrSig(Name.mkQName(ident), env0, loc).toSuccess
         case (None, Some(actualQName)) =>
           // Case 2: the name is a use def.
-          NamedAst.Expression.DefOrSig(actualQName, loc).toSuccess
+          NamedAst.Expression.DefOrSig(actualQName, env0, loc).toSuccess
         case (Some(sym), None) =>
           // Case 4: the name is a variable.
           NamedAst.Expression.Var(sym, loc).toSuccess
@@ -1745,9 +1745,14 @@ object Namer {
         case Some(t) => visitType(t, uenv0, tenv0)
       }
 
+      val src = optType match {
+        case None => Ast.TypeSource.Inferred
+        case Some(_) => Ast.TypeSource.Ascribed
+      }
+
       // Construct the formal parameter.
       mapN(tpeVal) {
-        case tpe => NamedAst.FormalParam(freshSym, mod, tpe, loc)
+        case tpe => NamedAst.FormalParam(freshSym, mod, tpe, src, loc)
       }
   }
 
@@ -1767,19 +1772,17 @@ object Namer {
   /**
     * Translates the given weeded JvmMethod to a named JvmMethod.
     */
-  private def visitJvmMethod(method: WeededAst.JvmMethod, env: Map[String, Symbol.VarSym], uenv: UseEnv, tenv: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.JvmMethod, NameError] = {
-    method match {
-      case WeededAst.JvmMethod(ident, fparams, exp0, tpe0, purAndEff0, loc) =>
-        flatMapN(traverse(fparams)(visitFormalParam(_, uenv, tenv))) {
-          case fparams =>
-            val exp = visitExp(exp0, env ++ getVarEnv(fparams), uenv, tenv)
-            val tpe = visitType(tpe0, uenv, tenv)
-            val purAndEff = visitPurityAndEffect(purAndEff0, uenv, tenv)
-            mapN(exp, tpe, purAndEff) {
-              case (e, t, p) => NamedAst.JvmMethod(ident, fparams, e, t, p, loc)
-            }
-        }
-    }
+  private def visitJvmMethod(method: WeededAst.JvmMethod, env: Map[String, Symbol.VarSym], uenv: UseEnv, tenv: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.JvmMethod, NameError] = method match {
+    case WeededAst.JvmMethod(ident, fparams, exp0, tpe0, purAndEff0, loc) =>
+      flatMapN(traverse(fparams)(visitFormalParam(_, uenv, tenv))) {
+        case fparams =>
+          val exp = visitExp(exp0, env ++ getVarEnv(fparams), uenv, tenv)
+          val tpe = visitType(tpe0, uenv, tenv)
+          val purAndEff = visitPurityAndEffect(purAndEff0, uenv, tenv)
+          mapN(exp, tpe, purAndEff) {
+            case (e, t, p) => NamedAst.JvmMethod(ident, fparams, e, t, p, loc)
+          }
+      }
   }
 
   /**
@@ -1901,7 +1904,7 @@ object Namer {
     */
   private def getVarEnv(fparams0: List[NamedAst.FormalParam]): Map[String, Symbol.VarSym] = {
     fparams0.foldLeft(Map.empty[String, Symbol.VarSym]) {
-      case (macc, NamedAst.FormalParam(sym, mod, tpe, loc)) =>
+      case (macc, NamedAst.FormalParam(sym, _, _, _, _)) =>
         if (sym.isWild) macc else macc + (sym.text -> sym)
     }
   }

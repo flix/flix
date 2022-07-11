@@ -545,6 +545,9 @@ object Redundancy {
           }
       }
 
+    case Expression.Without(exp, _, _, _, _, _) =>
+      visitExp(exp, env0, rc)
+
     case Expression.TryCatch(exp, rules, _, _, _, _) =>
       val usedExp = visitExp(exp, env0, rc)
       val usedRules = rules.foldLeft(Used.empty) {
@@ -556,6 +559,23 @@ object Redundancy {
             acc ++ usedBody
       }
       usedExp ++ usedRules
+
+    case Expression.TryWith(exp, _, rules, _, _, _, _) =>
+      val usedExp = visitExp(exp, env0, rc)
+      val usedRules = rules.foldLeft(Used.empty) {
+        case (acc, HandlerRule(_, fparams, body)) =>
+          val usedBody = visitExp(body, env0, rc)
+          val syms = fparams.map(_.sym)
+          val dead = syms.filter(deadVarSym(_, usedBody))
+          acc ++ usedBody ++ dead.map(UnusedVarSym)
+      }
+      usedExp ++ usedRules
+
+    case Expression.Do(_, exps, _, _, _) =>
+      visitExps(exps, env0, rc)
+
+    case Expression.Resume(exp, _, _) =>
+      visitExp(exp, env0, rc)
 
     case Expression.InvokeConstructor(_, args, _, _, _, _) =>
       visitExps(args, env0, rc)

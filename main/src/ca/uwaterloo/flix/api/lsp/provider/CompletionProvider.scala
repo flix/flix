@@ -16,7 +16,9 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp._
-import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatScheme, FormatType}
 import ca.uwaterloo.flix.language.phase.Parser.Letters
 import ca.uwaterloo.flix.language.phase.Resolver.DerivableSyms
@@ -45,7 +47,7 @@ object CompletionProvider {
   // This list manually maintained. If a new built-in type is added, it must be extended.
   // Built-in types are typically descrbed in TypeConstructor, Namer and Resolver.
   //
-  val builtinTypeNames = List(
+  val builtinTypeNames: List[String] = List(
     "Unit",
     "Bool",
     "Char",
@@ -76,23 +78,23 @@ object CompletionProvider {
   // 9: Low: completions that are unlikely to be relevant unless within a specific context
   //
   object Priority {
-    def high(name: String) = "1" + name
+    def high(name: String): String = "1" + name
 
-    def boost(name: String) = "2" + name
+    def boost(name: String): String = "2" + name
 
-    def snippet(name: String) = "4" + name
+    def snippet(name: String): String = "4" + name
 
-    def local(name: String) = "5" + name
+    def local(name: String): String = "5" + name
 
-    def normal(name: String) = "7" + name
+    def normal(name: String): String = "7" + name
 
-    def low(name: String) = "9" + name
+    def low(name: String): String = "9" + name
   }
 
   /**
     * Process a completion request.
     */
-  def autoComplete(uri: String, pos: Position, source: Option[String])(implicit index: Index, root: TypedAst.Root): JObject = {
+  def autoComplete(uri: String, pos: Position, source: Option[String], currentErrors: List[CompilationMessage])(implicit index: Index, root: TypedAst.Root): JObject = {
     //
     // To the best of my knowledge, completions should never be Nil. It could only happen if source was None
     // (what would having no source even mean?) or if the position represented by pos was invalid with respect
@@ -100,7 +102,7 @@ object CompletionProvider {
     //
     val completions = source.flatMap(getContext(_, uri, pos)) match {
       case None => Nil
-      case Some(context) => getCompletions()(context, index, root)
+      case Some(context) => getCompletions()(context, index, root) ++ getCompletionsFromErrors(pos, currentErrors)(context, index, root)
     }
 
     ("status" -> "success") ~ ("result" -> CompletionList(isIncomplete = true, completions).toJSON)
@@ -118,6 +120,27 @@ object CompletionProvider {
       getWithCompletions() ++
       getInstanceCompletions() ++
       getTypeCompletions()
+  }
+
+  /**
+    * Returns a list of completions based on the given compilation messages.
+    */
+  private def getCompletionsFromErrors(pos: Position, errors: List[CompilationMessage])(implicit context: Context, index: Index, root: TypedAst.Root): Iterator[CompletionItem] = {
+    val undefinedNames = errors.collect {
+      case m: ResolutionError.UndefinedName => m
+    }
+    closest(pos, undefinedNames) match {
+      case None => Iterator.empty
+      case Some(undefinedNameError) =>
+        val suggestions = undefinedNameError.env.map {
+          case (name, sym) => CompletionItem(label = name,
+            sortText = Priority.high(name),
+            textEdit = TextEdit(context.range, name + " "),
+            detail = None,
+            kind = CompletionItemKind.Variable)
+        }
+        suggestions.iterator
+    }
   }
 
   private def keywordCompletion(name: String)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
@@ -333,6 +356,7 @@ object CompletionProvider {
         case Ast.Annotation.Internal(_) => true
         case _ => false
       })
+
     val isPublic = decl.spec.mod.isPublic && !isInternal(decl)
     val isNamespace = word.nonEmpty && word.head.isUpper
     val isMatch = if (isNamespace)
@@ -395,7 +419,7 @@ object CompletionProvider {
       for {
         (_, clazz) <- root.classes
         sym = clazz.sym
-        if (DerivableSyms.contains(sym))
+        if DerivableSyms.contains(sym)
         name = sym.toString
         completion = if (currentWordIsWith) s"with $name" else name
       } yield
@@ -616,7 +640,7 @@ object CompletionProvider {
     val x = pos.character - 1
     val y = pos.line - 1
     val lines = source.linesWithSeparators.toList
-    for (line <- lines.slice(y, y + 1).toList.headOption) yield {
+    for (line <- lines.slice(y, y + 1).headOption) yield {
       val (prefix, suffix) = line.splitAt(x)
       val wordStart = prefix.reverse.takeWhile(isWordChar).reverse
       val wordEnd = suffix.takeWhile(isWordChar)
@@ -626,12 +650,34 @@ object CompletionProvider {
       val prevWord = getSecondLastWord(prefix)
       val previousWord = if (prevWord.nonEmpty) {
         prevWord
-      } else lines.slice(y - 1, y).toList.headOption match {
+      } else lines.slice(y - 1, y).headOption match {
         case None => ""
         case Some(s) => getLastWord(s)
       }
       val range = Range(Position(y, start), Position(y, end))
-      new Context(uri, range, word, previousWord, prefix)
+      Context(uri, range, word, previousWord, prefix)
     }
   }
+
+  /**
+    * Optionally returns the error message in `l` closest to the given position `pos`.
+    */
+  private def closest[T <: CompilationMessage](pos: Position, l: List[T]): Option[T] = {
+    if (l.isEmpty)
+      None
+    else
+      Some(l.minBy(msg => lineDistance(pos, msg.loc)))
+  }
+
+  /**
+    * Returns the line distance between `pos` and `loc`.
+    *
+    * Returns `Int.MaxValue` if `loc` is Unknown.
+    */
+  private def lineDistance(pos: Position, loc: SourceLocation): Int =
+    if (loc == SourceLocation.Unknown)
+      Int.MaxValue
+    else
+      Math.abs(pos.line - loc.beginLine)
+
 }
