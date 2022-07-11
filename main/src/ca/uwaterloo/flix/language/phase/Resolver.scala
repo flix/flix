@@ -1190,6 +1190,9 @@ object Resolver {
 
       }
 
+    /**
+      * Performs name resolution on the given JvmMethod `method` in the namespace `ns0`.
+      */
       def visitJvmMethod(method: NamedAst.JvmMethod, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.JvmMethod, ResolutionError] = {
         val fparams = resolveFormalParams(method.fparams, taenv, ns0, root)
         val exp = visitExp(method.exp, None)

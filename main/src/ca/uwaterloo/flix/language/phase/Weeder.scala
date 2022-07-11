@@ -2724,7 +2724,7 @@ object Weeder {
   private def visitJvmMethod(method: ParsedAst.JvmMethod, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.JvmMethod, WeederError] = {
     val tpe = visitType(method.tpe)
     val purAndEff = visitPurityAndEffect(method.purAndEff)
-    mapN(visitFormalParams(method.fparams, Presence.Optional), visitExp(method.exp, senv)) {
+    mapN(visitFormalParams(method.fparams, Presence.Required), visitExp(method.exp, senv)) {
       case(fparams, exp) => WeededAst.JvmMethod(method.ident, fparams, exp, tpe, purAndEff, mkSL(method.sp1, method.sp2))
     }
   }
