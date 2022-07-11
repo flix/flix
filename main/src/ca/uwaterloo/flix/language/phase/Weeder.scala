@@ -1029,8 +1029,9 @@ object Weeder {
       }
 
     case ParsedAst.Expression.NewObject(sp1, className, methods, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      WeededAst.Expression.NewObject(className.mkString("."), loc).toSuccess
+      mapN(traverse(methods)(visitJvmMethod(_, senv))) {
+        case m => WeededAst.Expression.NewObject(className.mkString("."), m, mkSL(sp1, sp2))
+      }
 
     case ParsedAst.Expression.Static(sp1, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -2716,6 +2717,18 @@ object Weeder {
       WeededAst.Type.False(ident.loc)
     else
       WeededAst.Type.Var(ident, ident.loc)
+  }
+
+  /**
+    * Performs weeding on the given JvmMethod
+    */
+  private def visitJvmMethod(method: ParsedAst.JvmMethod, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.JvmMethod, WeederError] = method match {
+    case ParsedAst.JvmMethod(sp1, ident, fparams0, tpe, purAndEff, exp0, sp2) =>
+      val tpeVal = visitType(tpe)
+      val purAndEffVal = visitPurityAndEffect(purAndEff)
+      mapN(visitFormalParams(fparams0, Presence.Required), visitExp(exp0, senv)) {
+        case(fparams, exp) => WeededAst.JvmMethod(ident, fparams, exp, tpeVal, purAndEffVal, mkSL(sp1, sp2))
+      }
   }
 
   /**

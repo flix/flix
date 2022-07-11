@@ -1439,7 +1439,7 @@ object Typer {
           resultEff = valueEff
         } yield (valueConstrs, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.NewObject(clazz, loc) =>
+      case KindedAst.Expression.NewObject(clazz, _, loc) =>
         val resultTyp = getFlixType(clazz)
         val resultPur = Type.Impure
         val resultEff = Type.Empty
@@ -2091,7 +2091,7 @@ object Typer {
         val eff = e.eff
         TypedAst.Expression.PutStaticField(field, e, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.NewObject(clazz, loc) =>
+      case KindedAst.Expression.NewObject(clazz, _, loc) =>
         val tpe = getFlixType(clazz)
         val pur = Type.Impure
         val eff = Type.Empty
