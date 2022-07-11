@@ -341,10 +341,9 @@ namespace List {
     /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
     /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
     ///
-    pub def ap(f: List[a -> b & e], x: List[a]) : List[b] & e =
+    pub def ap(f: List[a -> b & ef], x: List[a]) : List[b] & ef =
         map(g -> map(g, x), f) |> flatten
 
-    // TODO: Efficient implementations of lift2,...,lift5, redirect liftA2,...,liftA5 to those.
     ///
     /// Lift a binary function to work on lists of its original arguments, returning a list
     /// of applying all combinations of arguments.
