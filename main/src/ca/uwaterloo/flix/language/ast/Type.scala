@@ -171,12 +171,22 @@ sealed trait Type {
   }
 
   /**
-    * Returns the effect type of `this` arrow type.
+    * Returns the purity type of `this` arrow type.
     *
     * NB: Assumes that `this` type is an arrow.
     */
   def arrowPurityType: Type = typeConstructor match {
     case Some(TypeConstructor.Arrow(n)) => typeArguments.head
+    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
+  }
+
+  /**
+    * Returns the effect type of `this` arrow type.
+    *
+    * NB: Assumes that `this` type is an arrow.
+    */
+  def arrowEffectType: Type = typeConstructor match {
+    case Some(TypeConstructor.Arrow(n)) => typeArguments(1)
     case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
   }
 

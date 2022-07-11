@@ -659,11 +659,12 @@ object ParsedAst {
     /**
       * NewObject (create an anonymous object which implements a Java interface or extends a Java class).
       *
-      * @param sp1 the position of the first character in the expression.
-      * @param fqn the fully-qualified name of the Java interface or class.
-      * @param sp2 the position of the last character in the expression.
+      * @param sp1     the position of the first character in the expression.
+      * @param fqn     the fully-qualified name of the Java interface or class.
+      * @param methods implementations of the methods within the Java interface or class
+      * @param sp2     the position of the last character in the expression.
       */
-    case class NewObject(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) extends ParsedAst.Expression
+    case class NewObject(sp1: SourcePosition, fqn: Seq[String], methods: Seq[JvmMethod], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Static Region Expression.
@@ -712,7 +713,17 @@ object ParsedAst {
       * @param exp   the body expression.
       * @param sp2   the position of the last character in the expression.
       */
-    case class ForEach(sp1: SourcePosition, frags: Seq[ForeachFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ForEach(sp1: SourcePosition, frags: Seq[ForEachFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * ForYield Expression.
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param frags the for-yield fragments.
+      * @param exp   the body expression.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class ForYield(sp1: SourcePosition, frags: Seq[ForYieldFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Tag Expression.
@@ -2055,6 +2066,18 @@ object ParsedAst {
   }
 
   /**
+    * JvmMethod (used within NewObject)
+    *
+    * @param sp1     the position of the first character in the method.
+    * @param ident   the name of the method.
+    * @param fparams the formal parameters.
+    * @param exp     the method body.
+    * @param tpe     the method return type.
+    * @param sp2     the position of the last character in the method.
+    */
+  case class JvmMethod(sp1: SourcePosition, name: Name.Ident, fparams: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, purAndEff: ParsedAst.PurityAndEffect, exp: ParsedAst.Expression, sp2: SourcePosition)
+
+  /**
     * Record Operations.
     */
   sealed trait RecordOp
@@ -2157,11 +2180,11 @@ object ParsedAst {
   case class PurityAndEffect(pur: Option[Type], eff: Option[EffectSet])
 
   /**
-    * Represents a super type for `for`-expression fragments.
+    * Represents a super type for foreach expression fragments.
     */
-  sealed trait ForeachFragment
+  sealed trait ForEachFragment
 
-  object ForeachFragment {
+  object ForEachFragment {
 
     /**
       * A foreach fragment, i.e. `x <- xs`.
@@ -2171,7 +2194,7 @@ object ParsedAst {
       * @param exp the iterable expression.
       * @param sp2 the position of the last character in the fragment.
       */
-    case class ForEach(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition) extends ForeachFragment
+    case class ForEach(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition) extends ForEachFragment
 
     /**
       * A foreach guard fragment, i.e. `if x > 1`.
@@ -2180,8 +2203,26 @@ object ParsedAst {
       * @param guard the guard expression.
       * @param sp2   the position of the last character in the fragment.
       */
-    case class Guard(sp1: SourcePosition, guard: ParsedAst.Expression, sp2: SourcePosition) extends ForeachFragment
+    case class Guard(sp1: SourcePosition, guard: ParsedAst.Expression, sp2: SourcePosition) extends ForEachFragment
 
+  }
+
+  /**
+    * Represents a super type for for-yield expression fragments.
+    */
+  sealed trait ForYieldFragment
+
+  object ForYieldFragment {
+
+    /**
+      * A for-yield fragment, i.e. `x <- xs`.
+      *
+      * @param sp1 the position of the first character in the fragment.
+      * @param pat the pattern on the left hand side.
+      * @param exp the functor or monad expression.
+      * @param sp2 the position of the last character in the fragment.
+      */
+    case class ForYield(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition) extends ForYieldFragment
   }
 
 }

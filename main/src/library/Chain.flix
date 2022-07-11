@@ -54,6 +54,10 @@ instance Monad[Chain] {
     pub def flatMap(f: a -> Chain[b] & ef, x : Chain[a]) : Chain[b] & ef = Chain.flatMap(f, x)
 }
 
+instance MonadZero[Chain] {
+    pub def empty(): Chain[a] = Chain.empty()
+}
+
 instance Foldable[Chain] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldLeft(f, s, c)
     pub def foldRight(f: (a, b) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldRight(f, s, c)
@@ -76,6 +80,11 @@ instance Traversable[Chain] {
 instance FunctorFilter[Chain] {
     pub def filterMap(f: a -> Option[b] & ef, x: Chain[a]): Chain[b] & ef = Chain.filterMap(f, x)
     pub override def filter(f: a -> Bool & ef, x: Chain[a]): Chain[a] & ef = Chain.filter(f, x)
+}
+
+instance Iterable[Chain] {
+    pub def iterator(r: Region[r], c: Chain[a]): Iterator[a, r] \ Write(r) =
+        Chain.iterator(r, c)
 }
 
 instance ToString[Chain[a]] with ToString[a] {
@@ -749,6 +758,30 @@ namespace Chain {
             foreach(match (b, i) -> arr[i] = b, zipWithIndex(c));
             arr
         }
+
+    ///
+    /// Returns an iterator over `c`.
+    ///
+    pub def iterator(r: Region[r], c: Chain[a]): Iterator[a, r] \ Write(r) =
+        let cursor = ref viewLeft(c) @ r;
+        let done = () -> match (deref cursor) {
+            case NoneLeft    => true
+            case SomeLeft(_) => false
+        };
+        let next = () -> match (deref cursor) {
+            case NoneLeft        => bug!("Empty Iterator!")
+            case SomeLeft(x, xs) => {
+                cursor := viewLeft(xs);
+                x
+            }
+        };
+        Iterator(done, next)
+
+    ///
+    /// Returns an iterator over `c` zipped with the indices of the elements.
+    ///
+    pub def enumerator(r: Region[r], c: Chain[a]): Iterator[(a, Int32), r] \ Write(r) =
+        iterator(r, c) |> Iterator.zipWithIndex
 
     ///
     /// Returns the chain `c` as a Nel.

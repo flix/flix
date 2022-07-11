@@ -75,6 +75,10 @@ instance Monad[DelayList] {
     pub def flatMap(f: a -> DelayList[b] & ef, l: DelayList[a]): DelayList[b] & ef = DelayList.flatMap(f, l)
 }
 
+instance MonadZero[DelayList] {
+    pub def empty(): DelayList[a] = DelayList.empty()
+}
+
 instance Traversable[DelayList] {
     pub def traverse(f: a -> m[b] & ef, l: DelayList[a]): m[DelayList[b]] & ef with Applicative[m] = DelayList.traverse(f, l)
     pub override def sequence(l: DelayList[m[a]]): m[DelayList[a]] with Applicative[m] = DelayList.sequence(l)
@@ -96,7 +100,7 @@ instance UnorderedFoldable[DelayList] {
 
 instance Iterable[DelayList] {
     pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) =
-        DelayList.toIterator(r, l)
+        DelayList.iterator(r, l)
 }
 
 instance FunctorFilter[DelayList] {
@@ -1155,7 +1159,7 @@ namespace DelayList {
     /// Does not force any elements of the list.
     ///
     @Experimental @Lazy
-    pub def toIterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) =
+    pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) =
         let cursor = ref l @ r;
         let done = () -> match head(deref cursor) {
             case None    => true
@@ -1173,7 +1177,7 @@ namespace DelayList {
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
     pub def enumerator(r: Region[r], l: DelayList[a]): Iterator[(a, Int32), r] \ Write(r) =
-        toIterator(r, l) |> Iterator.zipWithIndex
+        iterator(r, l) |> Iterator.zipWithIndex
 
     ///
     /// Returns `l` as a `List`.

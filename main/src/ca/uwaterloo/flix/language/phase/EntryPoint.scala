@@ -193,7 +193,7 @@ object EntryPoint {
       ann = Nil,
       mod = Ast.Modifiers.Empty,
       tparams = Nil,
-      fparams = List(TypedAst.FormalParam(argSym, Ast.Modifiers.Empty, Type.Unit, SourceLocation.Unknown)),
+      fparams = List(TypedAst.FormalParam(argSym, Ast.Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, SourceLocation.Unknown)),
       declaredScheme = EntryPointScheme,
       retTpe = Type.Unit,
       pur = Type.Impure,
@@ -206,14 +206,14 @@ object EntryPoint {
     val func = TypedAst.Expression.Def(oldEntryPoint.sym, oldEntryPoint.spec.declaredScheme.base, SourceLocation.Unknown)
 
     // func()
-    val call = TypedAst.Expression.Apply(func, List(TypedAst.Expression.Unit(SourceLocation.Unknown)), oldEntryPoint.spec.declaredScheme.base.arrowResultType, oldEntryPoint.spec.declaredScheme.base.arrowPurityType, SourceLocation.Unknown)
+    val call = TypedAst.Expression.Apply(func, List(TypedAst.Expression.Unit(SourceLocation.Unknown)), oldEntryPoint.spec.declaredScheme.base.arrowResultType, oldEntryPoint.spec.declaredScheme.base.arrowPurityType, oldEntryPoint.spec.declaredScheme.base.arrowEffectType, SourceLocation.Unknown)
 
     // one of:
     // printUnlessUnit(func(args))
     val printSym = root.defs(new Symbol.DefnSym(None, Nil, "printUnlessUnit", SourceLocation.Unknown)).sym
     val printTpe = Type.mkImpureArrow(oldEntryPoint.spec.declaredScheme.base.arrowResultType, Type.Unit, SourceLocation.Unknown)
     val printFunc = TypedAst.Expression.Def(printSym, printTpe, SourceLocation.Unknown)
-    val print = TypedAst.Expression.Apply(printFunc, List(call), Type.Unit, Type.Impure, SourceLocation.Unknown)
+    val print = TypedAst.Expression.Apply(printFunc, List(call), Type.Unit, Type.Impure, Type.Empty, SourceLocation.Unknown)
 
     val impl = TypedAst.Impl(
       exp = print,

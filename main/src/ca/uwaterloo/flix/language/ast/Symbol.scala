@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-import java.util.Objects
+import java.util.{Comparator, Objects}
 
 object Symbol {
 
@@ -136,6 +136,14 @@ object Symbol {
   }
 
   /**
+    * Returns the class symbol for the given fully qualified name
+    */
+  def mkClassSym(fqn: String): ClassSym = split(fqn) match {
+    case None => new ClassSym(Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new ClassSym(ns, name, SourceLocation.Unknown)
+  }
+
+  /**
     * Returns the hole symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkHoleSym(ns: NName, ident: Ident): HoleSym = {
@@ -162,6 +170,14 @@ object Symbol {
     */
   def mkTypeAliasSym(ns: NName, ident: Ident): TypeAliasSym = {
     new TypeAliasSym(ns.parts, ident.name, ident.loc)
+  }
+
+  /**
+    * Returns the type alias symbol for the given fully qualified name
+    */
+  def mkTypeAliasSym(fqn: String): TypeAliasSym = split(fqn) match {
+    case None => new TypeAliasSym(Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new TypeAliasSym(ns, name, SourceLocation.Unknown)
   }
 
   /**
@@ -526,7 +542,7 @@ object Symbol {
   /**
     * Effect symbol.
     */
-  final class EffectSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable {
+  final class EffectSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Ordered[EffectSym] {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -549,6 +565,13 @@ object Symbol {
       * Returns the source of `this`.
       */
     override def src: Ast.Source = loc.source
+
+    /**
+      * Compares `this` and `that` effect sym.
+      *
+      * Fairly arbitrary comparison since the purpose is to allow for mapping the object.
+      */
+    override def compare(that: EffectSym): Int = this.toString.compare(that.toString)
   }
 
   /**

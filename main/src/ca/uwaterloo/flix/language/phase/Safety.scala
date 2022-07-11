@@ -89,172 +89,185 @@ object Safety {
     case Expression.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expression.Apply(exp, exps, _, _, _) =>
+    case Expression.Apply(exp, exps, _, _, _, _) =>
       visitExp(exp) ::: exps.flatMap(visitExp)
 
-    case Expression.Unary(_, exp, _, _, _) =>
+    case Expression.Unary(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Binary(_, exp1, exp2, _, _, _) =>
+    case Expression.Binary(_, exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.Let(_, _, exp1, exp2, _, _, _) =>
+    case Expression.Let(_, _, exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.LetRec(_, _, exp1, exp2, _, _, _) =>
+    case Expression.LetRec(_, _, exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
     case Expression.Region(_, _) =>
       Nil
 
-    case Expression.Scope(_, _, exp, _, _, _) =>
+    case Expression.Scope(_, _, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2) ::: visitExp(exp3)
 
-    case Expression.Stm(exp1, exp2, _, _, _) =>
+    case Expression.Stm(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.Discard(exp, _, _) =>
+    case Expression.Discard(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Match(exp, rules, _, _, _) =>
+    case Expression.Match(exp, rules, _, _, _, _) =>
       visitExp(exp) :::
         rules.flatMap { case MatchRule(_, g, e) => visitExp(g) ::: visitExp(e) }
 
-    case Expression.Choose(exps, rules, _, _, _) =>
+    case Expression.Choose(exps, rules, _, _, _, _) =>
       exps.flatMap(visitExp) :::
         rules.flatMap { case ChoiceRule(_, exp) => visitExp(exp) }
 
-    case Expression.Tag(_, _, exp, _, _, _) =>
+    case Expression.Tag(_, _, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Tuple(elms, _, _, _) =>
+    case Expression.Tuple(elms, _, _, _, _) =>
       elms.flatMap(visitExp)
 
     case Expression.RecordEmpty(_, _) => Nil
 
-    case Expression.RecordSelect(exp, _, _, _, _) =>
+    case Expression.RecordSelect(exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.RecordExtend(_, value, rest, _, _, _) =>
+    case Expression.RecordExtend(_, value, rest, _, _, _, _) =>
       visitExp(value) ::: visitExp(rest)
 
-    case Expression.RecordRestrict(_, rest, _, _, _) =>
+    case Expression.RecordRestrict(_, rest, _, _, _, _) =>
       visitExp(rest)
 
-    case Expression.ArrayLit(elms, exp, _, _, _) =>
+    case Expression.ArrayLit(elms, exp, _, _, _, _) =>
       elms.flatMap(visitExp) ::: visitExp(exp)
 
-    case Expression.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+    case Expression.ArrayNew(exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2) ::: visitExp(exp3)
 
-    case Expression.ArrayLoad(base, index, _, _, _) =>
+    case Expression.ArrayLoad(base, index, _, _, _, _) =>
       visitExp(base) ::: visitExp(index)
 
-    case Expression.ArrayLength(base, _, _) =>
+    case Expression.ArrayLength(base, _, _, _) =>
       visitExp(base)
 
-    case Expression.ArrayStore(base, index, elm, _) =>
+    case Expression.ArrayStore(base, index, elm, _, _) =>
       visitExp(base) ::: visitExp(index) ::: visitExp(elm)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, _, _) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _) =>
       visitExp(base) ::: visitExp(beginIndex) ::: visitExp(endIndex)
 
-    case Expression.Ref(exp1, exp2, _, _, _) =>
+    case Expression.Ref(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.Deref(exp, _, _, _) =>
+    case Expression.Deref(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Assign(exp1, exp2, _, _, _) =>
+    case Expression.Assign(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.Ascribe(exp, _, _, _) =>
+    case Expression.Ascribe(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Cast(exp, _, _, _, _, _) =>
+    case Expression.Cast(exp, _, _, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.TryCatch(exp, rules, _, _, _) =>
+    case Expression.Without(exp, _, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.TryCatch(exp, rules, _, _, _, _) =>
       visitExp(exp) :::
         rules.flatMap { case CatchRule(_, _, e) => visitExp(e) }
 
-    case Expression.InvokeConstructor(_, args, _, _, _) =>
+    case Expression.TryWith(exp, _, rules, _, _, _, _) =>
+      visitExp(exp) :::
+        rules.flatMap { case HandlerRule(_, _, e) => visitExp(e) }
+
+    case Expression.Do(_, exps, _, _, _) =>
+      exps.flatMap(visitExp)
+
+    case Expression.Resume(exp, _, _) =>
+      visitExp(exp)
+
+    case Expression.InvokeConstructor(_, args, _, _, _, _) =>
       args.flatMap(visitExp)
 
-    case Expression.InvokeMethod(_, exp, args, _, _, _) =>
+    case Expression.InvokeMethod(_, exp, args, _, _, _, _) =>
       visitExp(exp) ::: args.flatMap(visitExp)
 
-    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
+    case Expression.InvokeStaticMethod(_, args, _, _, _, _) =>
       args.flatMap(visitExp)
 
-    case Expression.GetField(_, exp, _, _, _) =>
+    case Expression.GetField(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.PutField(_, exp1, exp2, _, _, _) =>
+    case Expression.PutField(_, exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.GetStaticField(_, _, _, _) =>
+    case Expression.GetStaticField(_, _, _, _, _) =>
       Nil
 
-    case Expression.PutStaticField(_, exp, _, _, _) =>
+    case Expression.PutStaticField(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewObject(_, _, _, _) =>
+    case Expression.NewObject(_, _, _, _, _) =>
       Nil
 
-    case Expression.NewChannel(exp, _, _, _) =>
+    case Expression.NewChannel(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.GetChannel(exp, _, _, _) =>
+    case Expression.GetChannel(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.PutChannel(exp1, exp2, _, _, _) =>
+    case Expression.PutChannel(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.SelectChannel(rules, default, _, _, _) =>
+    case Expression.SelectChannel(rules, default, _, _, _, _) =>
       rules.flatMap { case SelectChannelRule(_, chan, body) => visitExp(chan) :::
         visitExp(body)
       } :::
         default.map(visitExp).getOrElse(Nil)
 
-    case Expression.Spawn(exp, _, _, _) =>
+    case Expression.Spawn(exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.Lazy(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.Force(exp, _, _, _) =>
+    case Expression.Force(exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.FixpointConstraintSet(cs, _, _, _) =>
       cs.flatMap(checkConstraint)
 
-    case Expression.FixpointLambda(_, exp, _, _, _, _) =>
+    case Expression.FixpointLambda(_, exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
+    case Expression.FixpointMerge(exp1, exp2, _, _, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.FixpointSolve(exp, _, _, _, _) =>
+    case Expression.FixpointSolve(exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointFilter(_, exp, _, _, _) =>
+    case Expression.FixpointFilter(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointInject(exp, _, _, _, _) =>
+    case Expression.FixpointInject(exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointProject(_, exp, _, _, _) =>
+    case Expression.FixpointProject(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Reify(_, _, _, _) => Nil
+    case Expression.Reify(_, _, _, _, _) => Nil
 
-    case Expression.ReifyType(_, _, _, _, _) => Nil
+    case Expression.ReifyType(_, _, _, _, _, _) => Nil
 
-    case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _) =>
+    case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
   }

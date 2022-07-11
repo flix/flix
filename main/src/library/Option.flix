@@ -81,6 +81,10 @@ instance Monad[Option] {
     pub def flatMap(f: a -> Option[b] & ef, x : Option[a]) : Option[b] & ef = Option.flatMap(f, x)
 }
 
+instance MonadZero[Option] {
+    pub def empty(): Option[a] = None
+}
+
 instance Foldable[Option] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldLeft(f, s, o)
     pub def foldRight(f: (a, b) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRight(f, o, s)
@@ -133,7 +137,7 @@ instance CommutativeMonoid[Option[a]] with CommutativeMonoid[a]
 
 instance Iterable[Option] {
     pub def iterator(r: Region[r], t: Option[a]): Iterator[a, r] \ Write(r) =
-        Option.toIterator(r, t)
+        Option.iterator(r, t)
 }
 
 namespace Option {
@@ -586,7 +590,7 @@ namespace Option {
     ///
     /// Returns an iterator over `o` with 1 element or an empty iterator if `o` is `None`.
     ///
-    pub def toIterator(r: Region[r], o: Option[a]): Iterator[a, r] \ Write(r) = match o {
+    pub def iterator(r: Region[r], o: Option[a]): Iterator[a, r] \ Write(r) = match o {
         case None    => new Iterator(r)
         case Some(x) => Iterator.singleton(r, x)
     }
@@ -595,6 +599,6 @@ namespace Option {
     /// Returns an iterator over `o` zipped with the indices of the elements.
     ///
     pub def enumerator(r: Region[r], o: Option[a]): Iterator[(a, Int32), r] \ Write(r) =
-        toIterator(r, o) |> Iterator.zipWithIndex
+        iterator(r, o) |> Iterator.zipWithIndex
 
 }

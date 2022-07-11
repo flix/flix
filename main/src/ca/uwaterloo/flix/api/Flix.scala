@@ -174,6 +174,7 @@ class Flix {
     "Group.flix" -> LocalResource.get("/src/library/Group.flix"),
     "Identity.flix" -> LocalResource.get("/src/library/Identity.flix"),
     "Monad.flix" -> LocalResource.get("/src/library/Monad.flix"),
+    "MonadZero.flix" -> LocalResource.get("/src/library/MonadZero.flix"),
     "Monoid.flix" -> LocalResource.get("/src/library/Monoid.flix"),
     "Reducible.flix" -> LocalResource.get("/src/library/Reducible.flix"),
     "SemiGroup.flix" -> LocalResource.get("/src/library/SemiGroup.flix"),
@@ -206,7 +207,6 @@ class Flix {
     "Fixpoint/Solver.flix" -> LocalResource.get("/src/library/Fixpoint/Solver.flix"),
     "Fixpoint/Stratifier.flix" -> LocalResource.get("/src/library/Fixpoint/Stratifier.flix"),
     "Fixpoint/SubstitutePredSym.flix" -> LocalResource.get("/src/library/Fixpoint/SubstitutePredSym.flix"),
-    "Fixpoint/ToString.flix" -> LocalResource.get("/src/library/Fixpoint/ToString.flix"),
     "Fixpoint/VarsToIndices.flix" -> LocalResource.get("/src/library/Fixpoint/VarsToIndices.flix"),
 
     "Fixpoint/Ast/BodyPredicate.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/BodyPredicate.flix"),

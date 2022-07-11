@@ -24,8 +24,6 @@ use Fixpoint/Ram.RamSym;
 use Fixpoint/Shared.PredSym;
 use Fixpoint/Shared.PredSym.PredSym;
 
-use Fixpoint.Tuple.Tuple;
-
 namespace Fixpoint {
 
     ///
@@ -52,7 +50,9 @@ namespace Fixpoint {
             queryStmt |>
             lowerStmt;
         let model = match d {
-            case Datalog(_) => compiler(d) |> interpret |> toModel
+            case Datalog(_) => region r {
+                compiler(d) |> interpret(r) |> toModel
+            }
             case Model(_) => d
             case Join(Model(m), cs) =>
                 let db = Map.map(Map.toMutMap(Static), m) |> Map.toMutMap(Static);
@@ -159,7 +159,10 @@ namespace Fixpoint {
     @Internal
     pub def injectInto1[f: Type -> Type, t1: Type](p: PredSym, ts: f[(t1)]):
         Datalog[Boxed] with Boxable[t1], Foldable[f] =
-        injectIntoX(match (v1) -> [box(v1)], p, ts) as & Pure
+        injectIntoX(match (v1) ->
+            box(v1) ::
+            Nil
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -171,9 +174,10 @@ namespace Fixpoint {
     pub def injectInto2[f: Type -> Type, t1: Type, t2: Type](p: PredSym, ts: f[(t1, t2)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Foldable[f] =
         injectIntoX(match (v1, v2) ->
-            [box(v1),
-             box(v2)]
-        , p, ts) as & Pure
+            box(v1) ::
+            box(v2) ::
+            Nil
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -185,10 +189,11 @@ namespace Fixpoint {
     pub def injectInto3[f: Type -> Type, t1: Type, t2: Type, t3: Type](p: PredSym, ts: f[(t1, t2, t3)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Foldable[f] =
         injectIntoX(match (v1, v2, v3) ->
-            [box(v1),
-             box(v2),
-             box(v3)]
-        , p, ts) as & Pure
+            box(v1) ::
+            box(v2) ::
+            box(v3) ::
+            Nil
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -201,11 +206,12 @@ namespace Fixpoint {
     pub def injectInto4[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type](p: PredSym, ts: f[(t1, t2, t3, t4)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4) ->
-            [box(v1),
-             box(v2),
-             box(v3),
-             box(v4)]
-        , p, ts) as & Pure
+            box(v1) ::
+            box(v2) ::
+            box(v3) ::
+            box(v4) ::
+            Nil
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -218,12 +224,13 @@ namespace Fixpoint {
     pub def injectInto5[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5) ->
-            [box(v1),
-             box(v2),
-             box(v3),
-             box(v4),
-             box(v5)]
-        , p, ts) as & Pure
+            box(v1) ::
+            box(v2) ::
+            box(v3) ::
+            box(v4) ::
+            box(v5) ::
+            Nil
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -236,13 +243,14 @@ namespace Fixpoint {
     pub def injectInto6[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6) ->
-            [box(v1),
-             box(v2),
-             box(v3),
-             box(v4),
-             box(v5),
-             box(v6)]
-        , p, ts) as & Pure
+            box(v1) ::
+            box(v2) ::
+            box(v3) ::
+            box(v4) ::
+            box(v5) ::
+            box(v6) ::
+            Nil
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -255,14 +263,15 @@ namespace Fixpoint {
     pub def injectInto7[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7) ->
-            [box(v1),
-             box(v2),
-             box(v3),
-             box(v4),
-             box(v5),
-             box(v6),
-             box(v7)]
-        , p, ts) as & Pure
+            box(v1) ::
+            box(v2) ::
+            box(v3) ::
+            box(v4) ::
+            box(v5) ::
+            box(v6) ::
+            box(v7) ::
+            Nil
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -276,15 +285,16 @@ namespace Fixpoint {
     pub def injectInto8[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8) ->
-            [box(v1),
-             box(v2),
-             box(v3),
-             box(v4),
-             box(v5),
-             box(v6),
-             box(v7),
-             box(v8)]
-        , p, ts) as & Pure
+            box(v1) ::
+            box(v2) ::
+            box(v3) ::
+            box(v4) ::
+            box(v5) ::
+            box(v6) ::
+            box(v7) ::
+            box(v8) ::
+            Nil
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -298,16 +308,17 @@ namespace Fixpoint {
     pub def injectInto9[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9) ->
-            [box(v1),
-             box(v2),
-             box(v3),
-             box(v4),
-             box(v5),
-             box(v6),
-             box(v7),
-             box(v8),
-             box(v9)]
-        , p, ts) as & Pure
+            box(v1) ::
+            box(v2) ::
+            box(v3) ::
+            box(v4) ::
+            box(v5) ::
+            box(v6) ::
+            box(v7) ::
+            box(v8) ::
+            box(v9) ::
+            Nil
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -323,17 +334,18 @@ namespace Fixpoint {
     pub def injectInto10[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) ->
-            [box(v1),
-             box(v2),
-             box(v3),
-             box(v4),
-             box(v5),
-             box(v6),
-             box(v7),
-             box(v8),
-             box(v9),
-             box(v10)]
-        , p, ts) as & Pure
+            box(v1) ::
+            box(v2) ::
+            box(v3) ::
+            box(v4) ::
+            box(v5) ::
+            box(v6) ::
+            box(v7) ::
+            box(v8) ::
+            box(v9) ::
+            box(v10) ::
+            Nil
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -349,18 +361,19 @@ namespace Fixpoint {
     pub def injectInto11[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11) ->
-            [box(v1),
-             box(v2),
-             box(v3),
-             box(v4),
-             box(v5),
-             box(v6),
-             box(v7),
-             box(v8),
-             box(v9),
-             box(v10),
-             box(v11)]
-        , p, ts) as & Pure
+            box(v1) ::
+            box(v2) ::
+            box(v3) ::
+            box(v4) ::
+            box(v5) ::
+            box(v6) ::
+            box(v7) ::
+            box(v8) ::
+            box(v9) ::
+            box(v10) ::
+            box(v11) ::
+            Nil
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -376,19 +389,20 @@ namespace Fixpoint {
     pub def injectInto12[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12) ->
-            [box(v1),
-             box(v2),
-             box(v3),
-             box(v4),
-             box(v5),
-             box(v6),
-             box(v7),
-             box(v8),
-             box(v9),
-             box(v10),
-             box(v11),
-             box(v12)]
-        , p, ts) as & Pure
+            box(v1) ::
+            box(v2) ::
+            box(v3) ::
+            box(v4) ::
+            box(v5) ::
+            box(v6) ::
+            box(v7) ::
+            box(v8) ::
+            box(v9) ::
+            box(v10) ::
+            box(v11) ::
+            box(v12) ::
+            Nil
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -404,20 +418,21 @@ namespace Fixpoint {
     pub def injectInto13[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13) ->
-            [box(v1),
-             box(v2),
-             box(v3),
-             box(v4),
-             box(v5),
-             box(v6),
-             box(v7),
-             box(v8),
-             box(v9),
-             box(v10),
-             box(v11),
-             box(v12),
-             box(v13)]
-        , p, ts) as & Pure
+            box(v1) ::
+            box(v2) ::
+            box(v3) ::
+            box(v4) ::
+            box(v5) ::
+            box(v6) ::
+            box(v7) ::
+            box(v8) ::
+            box(v9) ::
+            box(v10) ::
+            box(v11) ::
+            box(v12) ::
+            box(v13) ::
+            Nil
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -433,21 +448,22 @@ namespace Fixpoint {
     pub def injectInto14[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type, t14: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14) ->
-            [box(v1),
-             box(v2),
-             box(v3),
-             box(v4),
-             box(v5),
-             box(v6),
-             box(v7),
-             box(v8),
-             box(v9),
-             box(v10),
-             box(v11),
-             box(v12),
-             box(v13),
-             box(v14)]
-        , p, ts) as & Pure
+            box(v1) ::
+            box(v2) ::
+            box(v3) ::
+            box(v4) ::
+            box(v5) ::
+            box(v6) ::
+            box(v7) ::
+            box(v8) ::
+            box(v9) ::
+            box(v10) ::
+            box(v11) ::
+            box(v12) ::
+            box(v13) ::
+            box(v14) ::
+            Nil
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -463,33 +479,36 @@ namespace Fixpoint {
     pub def injectInto15[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type, t14: Type, t15: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14], Boxable[t15], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15) ->
-            [box(v1),
-             box(v2),
-             box(v3),
-             box(v4),
-             box(v5),
-             box(v6),
-             box(v7),
-             box(v8),
-             box(v9),
-             box(v10),
-             box(v11),
-             box(v12),
-             box(v13),
-             box(v14),
-             box(v15)]
-        , p, ts) as & Pure
+            box(v1) ::
+            box(v2) ::
+            box(v3) ::
+            box(v4) ::
+            box(v5) ::
+            box(v6) ::
+            box(v7) ::
+            box(v8) ::
+            box(v9) ::
+            box(v10) ::
+            box(v11) ::
+            box(v12) ::
+            box(v13) ::
+            box(v14) ::
+            box(v15) ::
+            Nil
+        , p, ts)
 
-    def injectIntoX[f: Type -> Type, t: Type, ef: Bool](f: t -> Array[Boxed, Static] & ef, p: PredSym, ts: f[t]): Datalog[Boxed] & Impure with Foldable[f] =
-        let db = new MutMap(Static);
-        Foldable.foldLeft(() -> t -> {
-            let vs = f(t);
-            let arity = Array.length(vs);
-            let ramSym = RamSym.Full(p, arity, Denotation.Relational);
-            let rel = MutMap.getOrElsePut!(ramSym, new MutMap(Static), db);
-            MutMap.put!(Tuple(vs), $DEFAULT$, rel)
-        }, (), ts);
-        toModel(db)
+    def injectIntoX[f: Type -> Type, t: Type, ef: Bool](f: t -> List[Boxed] & ef, p: PredSym, ts: f[t]): Datalog[Boxed] & ef with Foldable[f] =
+        region r {
+            let db = new MutMap(r);
+            Foldable.foldLeft(() -> t -> {
+                let vs = f(t);
+                let arity = List.length(vs);
+                let ramSym = RamSym.Full(p, arity, Denotation.Relational);
+                let rel = MutMap.getOrElsePut!(ramSym, new MutMap(r), db);
+                MutMap.put!(Fixpoint/Tuple.new(vs), $DEFAULT$, rel)
+            }, (), ts);
+            toModel(db)
+        }
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -707,13 +726,13 @@ namespace Fixpoint {
             };
             Map.queryWith(query, ramSym -> rel -> match toDenotation(ramSym) {
                 case Denotation.Relational =>
-                    Map.foreach(match Tuple(tuple) -> _ -> MutList.push!(f(Array.toList(tuple) as & Pure), pFacts), rel)
+                    Map.foreach((tuple, _) -> MutList.push!(f(Fixpoint/Tuple.toList(tuple)), pFacts), rel)
                 case Denotation.Latticenal(_) =>
-                    Map.foreach(match Tuple(tuple) -> lat -> {
-                        let it = Iterator.range(r, 0, Array.length(tuple) + 1);
+                    Map.foreach((tuple, lat) -> {
+                        let it = Iterator.range(r, 0, Fixpoint/Tuple.length(tuple) + 1);
                         let vs = it |> Iterator.map(i -> {
-                            if (i < Array.length(tuple))
-                                tuple[i] as & Pure
+                            if (i < Fixpoint/Tuple.length(tuple))
+                                Fixpoint/Tuple.valueAt(tuple, i)
                             else
                                 lat
                         });
@@ -739,9 +758,8 @@ namespace Fixpoint {
     /// Unsafely casts and prints the given Datalog program `d`.
     ///
     @Internal @Unsafe
-    pub def unsafePrint(d: a): a =
-        let _ = println(unsafeCast(d)) as & Pure;
-        d
+    pub def unsafePrint(d: a): Unit & Impure =
+        println(unsafeCast(d))
 
     ///
     /// Unsafely casts the given value `d` to a Datalog program.
@@ -749,7 +767,7 @@ namespace Fixpoint {
     @Internal @Unsafe
     pub def unsafeCast(v: a): Datalog[Boxed] = v as Datalog[Boxed]
 
-    def toModel(db: Database[v]): Datalog[v] & Impure =
+    def toModel(db: Database[v, r]): Datalog[v] & r =
         MutMap.toMap(db) |>
         Map.map(MutMap.toMap) |>
         Model

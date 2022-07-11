@@ -38,7 +38,7 @@ object GenAnonymousClasses {
     //
     ParOps.parAgg(objs, Map.empty[JvmName, JvmClass])({
       case (macc, obj) =>
-        val className = JvmName(RootPackage, "HardcodedAnon")
+        val className = JvmName(RootPackage, obj.name)
         flix.subtask(className.toInternalName, sample = true)
 
         macc + (className -> JvmClass(className, genByteCode(className, obj)))

@@ -79,36 +79,36 @@ namespace Traversable {
     /// We use an Impure continuation so we can internally cast the `ef` of `mapAccumLeft` and not lose
     /// impurity information.
     ///
-    enum ContStateLeft[ka, s, a]((a -> s -> ka & Impure) -> s -> ka & Impure)
+    enum ContStateLeft[ef: Eff, ka: Type, s: Type, a: Type]((a -> s -> ka & Impure \ ef) -> s -> ka & Impure \ ef)
 
     ///
     /// Helper function for ContStateLeft's implementations of `map` and `ap`.
     ///
-    def applyLeft1(ma: ContStateLeft[ka, s, a], st: s, cont: a -> s -> ka & Impure): ka & Impure =
+    def applyLeft1(ma: ContStateLeft[ef, ka, s, a], st: s, cont: a -> s -> ka & Impure \ ef): ka & Impure \ ef =
         let ContStateLeft(f) = ma;
         f(cont, st)
 
     ///
     /// Returns the result (new state and answer) of applying `ma` to the initial state `st`.
     ///
-    def runContStateLeft(ma: ContStateLeft[(s, a), s, a], st: s): (s, a) & Impure =
+    def runContStateLeft(ma: ContStateLeft[ef, (s, a), s, a], st: s): (s, a) & Impure \ ef =
         let ContStateLeft(f) = ma;
-        let cont = (a, s) -> (s, a) as & Impure;
+        let cont = (a, s) -> (s, a) as & Impure \ ef;
         f(cont, st)
 
 
-    instance Functor[ContStateLeft[ka, s]] {
-        pub def map(f: a -> b & ef, ma: ContStateLeft[ka, s, a]): ContStateLeft[ka, s, b] & ef =
+    instance Functor[ContStateLeft[ef1, ka, s]] {
+        pub def map(f: a -> b & ef, ma: ContStateLeft[ef1, ka, s, a]): ContStateLeft[ef1, ka, s, b] & ef =
             ContStateLeft((k, s) ->
                 applyLeft1(ma, s, (a, s1) -> k(f(a) as & Impure, s1))
             ) as & ef
     }
 
-    instance Applicative[ContStateLeft[ka, s]] {
-        pub def point(x: a): ContStateLeft[ka, s, a] =
+    instance Applicative[ContStateLeft[ef1, ka, s]] {
+        pub def point(x: a): ContStateLeft[ef1, ka, s, a] =
             ContStateLeft((k, s) -> k(x, s))
 
-        pub def ap(mf: ContStateLeft[ka, s, a -> b & ef], ma: ContStateLeft[ka, s, a]): ContStateLeft[ka, s, b] & ef =
+        pub def ap(mf: ContStateLeft[ef1, ka, s, a -> b & ef], ma: ContStateLeft[ef1, ka, s, a]): ContStateLeft[ef1, ka, s, b] & ef =
             ContStateLeft((k, s) ->
                 applyLeft1(mf, s, (f, s1) ->
                     applyLeft1(ma, s1, (a, s2) ->
@@ -132,35 +132,35 @@ namespace Traversable {
     ///
     /// ContStateRight is exactly the same as ContStateLeft except the evaluation order of `ap` is flipped.
     ///
-    enum ContStateRight[ka, s, a]((a -> s -> ka & Impure) -> s -> ka & Impure)
+    enum ContStateRight[ef: Eff, ka: Type, s: Type, a: Type]((a -> s -> ka & Impure \ ef) -> s -> ka & Impure \ ef)
 
     ///
     /// Helper function for ContStateRight's implementations of `map` and `ap`.
     ///
-    def applyRight1(ma: ContStateRight[ka, s, a], st: s, cont: a -> s -> ka & Impure): ka & Impure=
+    def applyRight1(ma: ContStateRight[ef, ka, s, a], st: s, cont: a -> s -> ka & Impure \ ef): ka & Impure \ ef =
         let ContStateRight(f) = ma;
         f(cont, st)
 
     ///
     /// Returns the result (new state and answer) of applying `ma` to the initial state `st`.
     ///
-    def runContStateRight(ma: ContStateRight[(s, a), s, a], st: s): (s, a) & Impure=
+    def runContStateRight(ma: ContStateRight[ef, (s, a), s, a], st: s): (s, a) & Impure \ ef =
         let ContStateRight(f) = ma;
-        let cont = (a, s) -> (s, a) as & Impure;
+        let cont = (a, s) -> (s, a) as & Impure \ ef;
         f(cont, st)
 
 
-    instance Functor[ContStateRight[ka, s]] {
-        pub def map(f: a -> b & ef, ma: ContStateRight[ka, s, a]): ContStateRight[ka, s, b] & ef =
+    instance Functor[ContStateRight[ef1, ka, s]] {
+        pub def map(f: a -> b & ef, ma: ContStateRight[ef1, ka, s, a]): ContStateRight[ef1, ka, s, b] & ef =
             ContStateRight((k, s) ->
                 applyRight1(ma, s, (a, s1) -> k(f(a) as & Impure, s1))
             ) as & ef
     }
 
-    instance Applicative[ContStateRight[ka, s]] {
-        pub def point(x: a): ContStateRight[ka, s, a] = ContStateRight((k, s) -> k(x, s))
+    instance Applicative[ContStateRight[ef1, ka, s]] {
+        pub def point(x: a): ContStateRight[ef1, ka, s, a] = ContStateRight((k, s) -> k(x, s))
 
-        pub def ap(mf: ContStateRight[ka, s, a -> b & ef], ma: ContStateRight[ka, s, a]): ContStateRight[ka, s, b] & ef =
+        pub def ap(mf: ContStateRight[ef1, ka, s, a -> b & ef], ma: ContStateRight[ef1, ka, s, a]): ContStateRight[ef1, ka, s, b] & ef =
             ContStateRight((k, s) ->
                 applyRight1(ma, s, (a, s1) ->
                     applyRight1(mf, s1, (f, s2) ->

@@ -48,10 +48,10 @@ object PrettyExpression {
     case Expression.Lambda(fparam, exp, _, _) =>
       s"${fparam.sym.text} -> ${pretty(exp)}"
 
-    case Expression.Apply(exp, exps, _, _, _) =>
+    case Expression.Apply(exp, exps, _, _, _, _) =>
       s"${pretty(exp)}(${exps.map(pretty).mkString(", ")})"
 
-    case Expression.Unary(sop, exp, _, _, _) =>
+    case Expression.Unary(sop, exp, _, _, _, _) =>
       val op = SemanticOperatorOps.toUnaryOp(sop)
       op match {
         case UnaryOperator.LogicalNot => s"not ${pretty(exp)}"
@@ -60,7 +60,7 @@ object PrettyExpression {
         case UnaryOperator.BitwiseNegate => s"~~~${pretty(exp)}"
     }
 
-    case Expression.Binary(sop, exp1, exp2, _, _, _) =>
+    case Expression.Binary(sop, exp1, exp2, _, _, _, _) =>
       val op = SemanticOperatorOps.toBinaryOp(sop)
       op match {
         case BinaryOperator.Plus => s"${pretty(exp1)} + ${pretty(exp2)}"
@@ -93,22 +93,22 @@ object PrettyExpression {
     //
     //    case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
-    case Expression.Stm(exp1, exp2, _, _, _) =>
+    case Expression.Stm(exp1, exp2, _, _, _, _) =>
       s"${pretty(exp1); pretty(exp2)}"
 
-    case Expression.Discard(exp, _, _) =>
+    case Expression.Discard(exp, _, _, _) =>
       s"discard ${pretty(exp)}"
 
     //
     //    case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
 
-    case Expression.Tag(_, tag, exp, _, _, _) => exp.tpe.typeConstructor match {
+    case Expression.Tag(_, tag, exp, _, _, _, _) => exp.tpe.typeConstructor match {
       case Some(TypeConstructor.Unit) => tag.name
       case _ => s"${tag.name}${pretty(exp)}"
     }
 
-    case Expression.Tuple(elms, _, _, _) =>
+    case Expression.Tuple(elms, _, _, _, _) =>
       s"(${elms.map(pretty).mkString(", ")})"
 
     //    case class RecordEmpty(tpe: Type, loc: SourceLocation) extends TypedAst.Expression
@@ -170,7 +170,7 @@ object PrettyExpression {
     //    case class SelectChannel(rules: List[TypedAst.SelectChannelRule], default: Option[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
 
-    case Expression.Spawn(exp, _, _, _) =>
+    case Expression.Spawn(exp, _, _, _, _) =>
       s"spawn ${pretty(exp)}"
 
     case _ => e0.toString
