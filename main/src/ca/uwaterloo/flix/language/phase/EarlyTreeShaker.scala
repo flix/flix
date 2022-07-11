@@ -51,31 +51,35 @@ object EarlyTreeShaker {
 
     // Filter the reachable definitions.
     val newDefs = root.defs.filter {
-      case (sym, _) => allReachable.contains(sym)
+      case (sym, _) => allReachable.contains(ReachableSym.DefnSym(sym))
+    }
+
+    val newSigs = root.sigs.filter {
+      case (sym, _) => allReachable.contains(ReachableSym.SigSym(sym))
     }
 
     // Reassemble the AST.
-    root.copy(defs = newDefs).toSuccess
+    root.copy(defs = newDefs, sigs = newSigs).toSuccess
   }
 
   /**
     * Returns the symbols that are always reachable.
     */
-  private def initReachable(root: Root): Set[Symbol.DefnSym] = {
+  private def initReachable(root: Root): Set[ReachableSym] = {
     // A set used to collect the symbols of reachable functions.
-    var reachable: Set[Symbol.DefnSym] = root.reachable
+    var reachable: Set[ReachableSym] = root.reachable.map(ReachableSym.DefnSym)
 
     //
     // (a) The main function is always reachable (if it exists).
     //
-    reachable = reachable ++ root.entryPoint.toList
+    reachable = reachable ++ root.entryPoint.toList.map(ReachableSym.DefnSym)
 
     //
     // (b) A function annotated with @benchmark or @test is always reachable.
     //
     for ((sym, defn) <- root.defs) {
       if (isBenchmark(defn.spec.ann) || isTest(defn.spec.ann)) {
-        reachable = reachable + sym
+        reachable = reachable + ReachableSym.DefnSym(sym)
       }
     }
     reachable
@@ -98,34 +102,42 @@ object EarlyTreeShaker {
   /**
     * Returns the symbols reachable from the given symbol `sym`.
     */
-  private def visitSym(sym: Symbol.DefnSym, root: Root): Set[Symbol.DefnSym] = root.defs.get(sym) match {
-    case None => Set.empty
-    case Some(defn) => visitExp(defn.impl.exp) ++ visitExps(defn.spec.ann.flatMap(_.args))
+  private def visitSym(sym: ReachableSym, root: Root): Set[ReachableSym] = sym match {
+    case ReachableSym.DefnSym(defnSym) => root.defs.get(defnSym) match {
+      case None => Set.empty
+      case Some(defn) => visitExp(defn.impl.exp) ++ visitExps(defn.spec.ann.flatMap(_.args))
+    }
+
+    case ReachableSym.SigSym(sigSym) => root.sigs.get(sigSym) match {
+      case None => Set.empty
+      case Some(Sig(_, spec, Some(impl))) => visitExps(spec.ann.flatMap(_.args)) ++ visitExp(impl.exp)
+      case Some(Sig(_, spec, None)) => visitExps(spec.ann.flatMap(_.args))
+    }
   }
 
   /**
     * Returns the symbols reachable from the given list of constraints `constraints`.
     */
-  def visitConstraints(constraints: List[Constraint]): Set[Symbol.DefnSym] = {
-    def visitHead(h: Head): Set[Symbol.DefnSym] = h match {
+  def visitConstraints(constraints: List[Constraint]): Set[ReachableSym] = {
+    def visitHead(h: Head): Set[ReachableSym] = h match {
       case Head.Atom(_, _, terms, _, _) => visitExps(terms)
     }
 
-    def visitBody(b: List[Body]): Set[Symbol.DefnSym] = {
-      b.foldLeft(Set.empty: Set[Symbol.DefnSym]) {
+    def visitBody(b: List[Body]): Set[ReachableSym] = {
+      b.foldLeft(Set.empty: Set[ReachableSym]) {
         case (acc, Body.Guard(exp, _)) => visitExp(exp) ++ acc
         case (acc, Body.Loop(_, exp, _)) => visitExp(exp) ++ acc
         case (acc, _) => acc
       }
     }
 
-    constraints.foldLeft(Set.empty: Set[Symbol.DefnSym])((acc, c) => visitHead(c.head) ++ visitBody(c.body) ++ acc)
+    constraints.foldLeft(Set.empty: Set[ReachableSym])((acc, c) => visitHead(c.head) ++ visitBody(c.body) ++ acc)
   }
 
   /**
     * Returns the function symbols reachable from the given expression `e0`.
     */
-  private def visitExp(e0: Expression): Set[Symbol.DefnSym] = e0 match {
+  private def visitExp(e0: Expression): Set[ReachableSym] = e0 match {
     case Expression.Unit(_) =>
       Set.empty
 
@@ -175,10 +187,10 @@ object EarlyTreeShaker {
       Set.empty
 
     case Expression.Def(sym, _, _) =>
-      Set(sym)
+      Set(ReachableSym.DefnSym(sym))
 
-    case Expression.Sig(_, _, _) =>
-      Set.empty
+    case Expression.Sig(sym, _, _) =>
+      Set(ReachableSym.SigSym(sym))
 
     case Expression.Hole(_, _, _) =>
       Set.empty
@@ -356,6 +368,17 @@ object EarlyTreeShaker {
   /**
     * Returns the function symbols reachable from `es`.
     */
-  private def visitExps(es: List[Expression]): Set[Symbol.DefnSym] = es.map(visitExp).fold(Set())(_ ++ _)
+  private def visitExps(es: List[Expression]): Set[ReachableSym] = es.map(visitExp).fold(Set())(_ ++ _)
+
+
+  sealed trait ReachableSym
+
+  object ReachableSym {
+
+    case class DefnSym(defnSym: Symbol.DefnSym) extends ReachableSym
+
+    case class SigSym(sigSym: Symbol.SigSym) extends ReachableSym
+
+  }
 
 }
