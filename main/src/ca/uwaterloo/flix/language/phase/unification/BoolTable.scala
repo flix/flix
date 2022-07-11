@@ -100,7 +100,7 @@ object BoolTable {
 
     // Construct a bi-directional map from type variables to indices.
     // The idea is that the first variable becomes x0, the next x1, and so forth.
-    val m = tvars.zipWithIndex.foldLeft(Bimap.empty[BoolFormula.VarOrEff, Variable]) {
+    val m = (tvars ++ effs).zipWithIndex.foldLeft(Bimap.empty[BoolFormula.VarOrEff, Variable]) {
       case (macc, (sym, x)) => macc + (sym -> x)
     }
 
