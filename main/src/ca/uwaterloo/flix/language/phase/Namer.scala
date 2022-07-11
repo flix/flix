@@ -1767,19 +1767,17 @@ object Namer {
   /**
     * Translates the given weeded JvmMethod to a named JvmMethod.
     */
-  private def visitJvmMethod(method: WeededAst.JvmMethod, env: Map[String, Symbol.VarSym], uenv: UseEnv, tenv: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.JvmMethod, NameError] = {
-    method match {
-      case WeededAst.JvmMethod(ident, fparams, exp0, tpe0, purAndEff0, loc) =>
-        flatMapN(traverse(fparams)(visitFormalParam(_, uenv, tenv))) {
-          case fparams =>
-            val exp = visitExp(exp0, env ++ getVarEnv(fparams), uenv, tenv)
-            val tpe = visitType(tpe0, uenv, tenv)
-            val purAndEff = visitPurityAndEffect(purAndEff0, uenv, tenv)
-            mapN(exp, tpe, purAndEff) {
-              case (e, t, p) => NamedAst.JvmMethod(ident, fparams, e, t, p, loc)
-            }
-        }
-    }
+  private def visitJvmMethod(method: WeededAst.JvmMethod, env: Map[String, Symbol.VarSym], uenv: UseEnv, tenv: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.JvmMethod, NameError] = method match {
+    case WeededAst.JvmMethod(ident, fparams, exp0, tpe0, purAndEff0, loc) =>
+      flatMapN(traverse(fparams)(visitFormalParam(_, uenv, tenv))) {
+        case fparams =>
+          val exp = visitExp(exp0, env ++ getVarEnv(fparams), uenv, tenv)
+          val tpe = visitType(tpe0, uenv, tenv)
+          val purAndEff = visitPurityAndEffect(purAndEff0, uenv, tenv)
+          mapN(exp, tpe, purAndEff) {
+            case (e, t, p) => NamedAst.JvmMethod(ident, fparams, e, t, p, loc)
+          }
+      }
   }
 
   /**

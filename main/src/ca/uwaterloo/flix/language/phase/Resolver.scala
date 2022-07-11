@@ -1193,14 +1193,15 @@ object Resolver {
     /**
       * Performs name resolution on the given JvmMethod `method` in the namespace `ns0`.
       */
-      def visitJvmMethod(method: NamedAst.JvmMethod, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.JvmMethod, ResolutionError] = {
-        val fparams = resolveFormalParams(method.fparams, taenv, ns0, root)
-        val exp = visitExp(method.exp, None)
-        val tpe = resolveType(method.tpe, taenv, ns0, root)
-        val purAndEff = resolvePurityAndEffect(method.purAndEff, taenv, ns0, root)
-        mapN(fparams, exp, tpe, purAndEff) {
-          case (f, e, t, p) => ResolvedAst.JvmMethod(method.ident, f, e, t , p, method.loc)
-        }
+      def visitJvmMethod(method: NamedAst.JvmMethod, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.JvmMethod, ResolutionError] = method match {
+        case NamedAst.JvmMethod(ident, fparams, exp, tpe, purAndEff, loc) =>
+          val fparamsVal = resolveFormalParams(fparams, taenv, ns0, root)
+          val expVal = visitExp(exp, None)
+          val tpeVal = resolveType(tpe, taenv, ns0, root)
+          val purAndEffVal = resolvePurityAndEffect(purAndEff, taenv, ns0, root)
+          mapN(fparamsVal, expVal, tpeVal, purAndEffVal) {
+            case (f, e, t, p) => ResolvedAst.JvmMethod(ident, f, e, t , p, loc)
+          }
       }
 
       visitExp(exp0, None)

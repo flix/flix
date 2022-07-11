@@ -2721,12 +2721,13 @@ object Weeder {
   /**
     * Performs weeding on the given JvmMethod
     */
-  private def visitJvmMethod(method: ParsedAst.JvmMethod, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.JvmMethod, WeederError] = {
-    val tpe = visitType(method.tpe)
-    val purAndEff = visitPurityAndEffect(method.purAndEff)
-    mapN(visitFormalParams(method.fparams, Presence.Required), visitExp(method.exp, senv)) {
-      case(fparams, exp) => WeededAst.JvmMethod(method.ident, fparams, exp, tpe, purAndEff, mkSL(method.sp1, method.sp2))
-    }
+  private def visitJvmMethod(method: ParsedAst.JvmMethod, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.JvmMethod, WeederError] = method match {
+    case ParsedAst.JvmMethod(sp1, ident, fparams0, tpe, purAndEff, exp0, sp2) =>
+      val tpeVal = visitType(tpe)
+      val purAndEffVal = visitPurityAndEffect(purAndEff)
+      mapN(visitFormalParams(fparams0, Presence.Required), visitExp(exp0, senv)) {
+        case(fparams, exp) => WeededAst.JvmMethod(ident, fparams, exp, tpeVal, purAndEffVal, mkSL(sp1, sp2))
+      }
   }
 
   /**

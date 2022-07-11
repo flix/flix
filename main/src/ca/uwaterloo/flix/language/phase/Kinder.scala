@@ -1195,14 +1195,15 @@ object Kinder {
       }
   }
 
-  private def visitJvmMethod(method: ResolvedAst.JvmMethod, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.KindedVar, Type.KindedVar)], root: ResolvedAst.Root)(implicit flix: Flix) = {
-    val fparams = traverse(method.fparams)(visitFormalParam(_, kenv, senv, taenv, root))
-    val exp = visitExp(method.exp, kenv, senv, taenv, henv, root)
-    val tpe = Type.freshVar(Kind.Star, method.loc.asSynthetic)
-    val purAndEff = visitPurityAndEffect(method.purAndEff, kenv, senv, taenv, root)
-    mapN(fparams, exp, purAndEff) {
-      case (f, e, (pur, eff)) => KindedAst.JvmMethod(method.ident, f, e, tpe, pur, eff, method.loc)
-    }
+  private def visitJvmMethod(method: ResolvedAst.JvmMethod, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.KindedVar, Type.KindedVar)], root: ResolvedAst.Root)(implicit flix: Flix) = method match {
+    case ResolvedAst.JvmMethod(ident, fparams, exp, _, purAndEff, loc) =>
+      val fparamsVal = traverse(fparams)(visitFormalParam(_, kenv, senv, taenv, root))
+      val expVal = visitExp(exp, kenv, senv, taenv, henv, root)
+      val purAndEffVal = visitPurityAndEffect(method.purAndEff, kenv, senv, taenv, root)
+      val tpeVal = Type.freshVar(Kind.Star, loc.asSynthetic)
+      mapN(fparamsVal, expVal, purAndEffVal) {
+        case (f, e, (pur, eff)) => KindedAst.JvmMethod(method.ident, f, e, tpeVal, pur, eff, method.loc)
+      }
   }
 
   /**
