@@ -191,9 +191,17 @@ namespace Test/Exp/ForYield {
                  if y < 6)
                     yield (x, y);
 
-        let l1 = Monad.flatMap(match x -> Functor.map(match y -> (x, y),
-                    FunctorFilter.filter(match y -> y < 6, 4 :: 5 :: 6 :: Nil)),
-                    FunctorFilter.filter(match x -> x > 1, 1 :: 2 :: 3 :: Nil));
+        let l1 = Monad.flatMap(match x ->
+                    Monad.flatMap(match y ->
+                        if (x > 1)
+                            if (y < 6)
+                                Applicative.point((x, y))
+                            else
+                                MonadZero.empty()
+                        else
+                            MonadZero.empty(),
+                        4 :: 5 :: 6 :: Nil),
+                    1 :: 2 :: 3 :: Nil);
         l0 == l1
 
 
@@ -205,10 +213,17 @@ namespace Test/Exp/ForYield {
                  if x > 1;
                  if y < 6)
                     yield (x, y);
-        // Monad.flatMap(match x -> Functor.map(match y -> (x, y),
-        //   FunctorFilter.filter(match y -> x > 1,                         <- The error is in the match lambda
-        //     FunctorFilter.filter(match y -> y > 6, 1 :: 2 :: 3 :: Nil)), <- The error is in the match lambda
-        //   4 :: 5 :: 6 :: Nil))
+        // Monad.flatMap(match x ->
+        //     Monad.flatMap(match y ->
+        //         if (x > 1)
+        //             if (y < 6)
+        //                 Applicative.point((x, y))
+        //             else
+        //                 MonadZero.empty()
+        //         else
+        //             MonadZero.empty(),
+        //         4 :: 5 :: 6 :: Nil),
+        //    1 :: 2 :: 3 :: Nil)
         l == (2, 4) :: (2, 5) :: (3, 4) :: (3, 5) :: Nil
 
 }
