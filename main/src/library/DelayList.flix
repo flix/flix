@@ -75,6 +75,10 @@ instance Monad[DelayList] {
     pub def flatMap(f: a -> DelayList[b] & ef, l: DelayList[a]): DelayList[b] & ef = DelayList.flatMap(f, l)
 }
 
+instance MonadZero[DelayList] {
+    pub def empty(): DelayList[a] = DelayList.empty()
+}
+
 instance Traversable[DelayList] {
     pub def traverse(f: a -> m[b] & ef, l: DelayList[a]): m[DelayList[b]] & ef with Applicative[m] = DelayList.traverse(f, l)
     pub override def sequence(l: DelayList[m[a]]): m[DelayList[a]] with Applicative[m] = DelayList.sequence(l)
