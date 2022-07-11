@@ -45,36 +45,6 @@ object Main {
       null
     }
 
-    // check if the --listen flag was passed.
-    if (cmdOpts.listen.nonEmpty) {
-      var successfulRun: Boolean = false
-      while (!successfulRun) {
-        try {
-          val socketServer = new SocketServer(cmdOpts.listen.get)
-          socketServer.run()
-          successfulRun = true
-        } catch {
-          case ex: BindException =>
-            Console.println(ex.getMessage)
-            Console.println("Retrying in 10 seconds.")
-            Thread.sleep(10_000)
-        }
-      }
-      System.exit(0)
-    }
-
-    // check if the --lsp flag was passed.
-    if (cmdOpts.lsp.nonEmpty) {
-      try {
-        val languageServer = new LanguageServer(cmdOpts.lsp.get)
-        languageServer.run()
-      } catch {
-        case ex: BindException =>
-          Console.println(ex.getMessage)
-      }
-      System.exit(0)
-    }
-
     // compute the main entry point
     val entryPoint = cmdOpts.entryPoint match {
       case None => Options.Default.entryPoint
@@ -96,11 +66,6 @@ object Main {
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono
     )
-
-    // Don't use progress bar if benchmarking.
-    if (cmdOpts.benchmark || cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkIncremental || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkThroughput) {
-      options = options.copy(progress = false)
-    }
 
     // Don't use progress bar if not attached to a console.
     if (System.console() == null) {
