@@ -135,11 +135,6 @@ instance Monoid[Option[a]] with Monoid[a] {
 
 instance CommutativeMonoid[Option[a]] with CommutativeMonoid[a]
 
-instance Iterable[Option] {
-    pub def iterator(r: Region[r], t: Option[a]): Iterator[a, r] \ Write(r) =
-        Option.iterator(r, t)
-}
-
 namespace Option {
 
     ///
