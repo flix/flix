@@ -725,22 +725,30 @@ object Weeder {
           mkApplyFqn(fqnPoint, List(e), loc)
       }
 
+      def mkFlatMap(sp11: SourcePosition,
+                    p: WeededAst.Pattern,
+                    exp0: WeededAst.Expression,
+                    exp1: WeededAst.Expression,
+                    sp12: SourcePosition): WeededAst.Expression = {
+
+        val loc = mkSL(sp11, sp12).asSynthetic
+        val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
+        val fparams = List(lambda, exp1)
+        mkApplyFqn(fqnFlatMap, fparams, loc)
+      }
+
       foldRight(frags)(yieldExp) {
         case (ParsedAst.ForYieldFragment.ForYield(sp11, pat, exp1, sp12), exp0) =>
           mapN(visitPattern(pat), visitExp(exp1, senv)) {
-            case (p, e1) =>
-              val loc = mkSL(sp11, sp12).asSynthetic
-              val lambda = mkLambdaMatch(sp1, p, exp0, sp2)
-              val fparams = List(lambda, e1)
-              mkApplyFqn(fqnFlatMap, fparams, loc)
+            case (p, e1) => mkFlatMap(sp11, p, exp0, e1, sp12)
           }
+
         case (ParsedAst.ForYieldFragment.Guard(sp11, exp1, sp12), exp0) =>
           mapN(visitExp(exp1, senv)) {
             case e1 =>
               val loc = mkSL(sp11, sp12).asSynthetic
-              val point = mkApplyFqn(fqnPoint, List(exp0), loc)
               val zero = mkApplyFqn(fqnZero, List(WeededAst.Expression.Unit(loc)), loc)
-              WeededAst.Expression.IfThenElse(e1, point, zero, loc)
+              WeededAst.Expression.IfThenElse(e1, exp0, zero, loc)
           }
       }
 
