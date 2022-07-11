@@ -14,8 +14,8 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: >
-            if (context.title.matches === null) {
-              throw null
+            if (context.title.match(process.env.regex) === null) {
+              throw new Error("Invalid commit message.")
             }
             
       
