@@ -1197,7 +1197,7 @@ object Resolver {
         val fparams = resolveFormalParams(method.fparams, taenv, ns0, root)
         val exp = visitExp(method.exp, None)
         val tpe = resolveType(method.tpe, taenv, ns0, root)
-        val purAndEff = semiResolvePurityAndEffect(method.purAndEff, ns0, root)
+        val purAndEff = resolvePurityAndEffect(method.purAndEff, taenv, ns0, root)
         mapN(fparams, exp, tpe, purAndEff) {
           case (f, e, t, p) => ResolvedAst.JvmMethod(method.ident, f, e, t , p, method.loc)
         }
