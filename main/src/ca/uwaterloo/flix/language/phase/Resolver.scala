@@ -970,8 +970,8 @@ object Resolver {
           val fVal = lookupEffect(eff, ns0, root)
           mapN(eVal, fVal) {
             case (e, f) =>
-              val effRef = Ast.EffectSymUse(f.sym, eff.loc)
-              ResolvedAst.Expression.Without(e, effRef, loc)
+              val effUse = Ast.EffectSymUse(f.sym, eff.loc)
+              ResolvedAst.Expression.Without(e, effUse, loc)
           }
 
         case NamedAst.Expression.TryWith(exp, eff, rules, loc) =>
@@ -979,7 +979,7 @@ object Resolver {
           val fVal = lookupEffect(eff, ns0, root)
           flatMapN(eVal, fVal) {
             case (e, f) =>
-              val effRef = Ast.EffectSymUse(f.sym, eff.loc)
+              val effUse = Ast.EffectSymUse(f.sym, eff.loc)
               val rulesVal = traverse(rules) {
                 case NamedAst.HandlerRule(ident, fparams, body) =>
                   val opVal = findOpInEffect(ident, f)
@@ -987,12 +987,12 @@ object Resolver {
                   val bodyVal = visitExp(body, region)
                   mapN(opVal, fparamsVal, bodyVal) {
                     case (o, fp, b) =>
-                      val opRef = Ast.OpSymUse(o.sym, ident.loc)
-                      ResolvedAst.HandlerRule(opRef, fp, b)
+                      val opUse = Ast.OpSymUse(o.sym, ident.loc)
+                      ResolvedAst.HandlerRule(opUse, fp, b)
                   }
               }
               mapN(rulesVal) {
-                rs => ResolvedAst.Expression.TryWith(e, effRef, rs, loc)
+                rs => ResolvedAst.Expression.TryWith(e, effUse, rs, loc)
               }
           }
 
@@ -1001,8 +1001,8 @@ object Resolver {
           val expsVal = traverse(exps)(visitExp(_, region))
           mapN(opVal, expsVal) {
             case (o, es) =>
-              val opRef = Ast.OpSymUse(o.sym, op.loc)
-              ResolvedAst.Expression.Do(opRef, es, loc)
+              val opUse = Ast.OpSymUse(o.sym, op.loc)
+              ResolvedAst.Expression.Do(opUse, es, loc)
           }
 
         case NamedAst.Expression.Resume(exp, loc) =>

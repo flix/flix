@@ -289,11 +289,11 @@ object TypedAst {
 
     case class Cast(exp: TypedAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], declaredEff: Option[Type], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Without(exp: TypedAst.Expression, effRef: Ast.EffectSymUse, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Without(exp: TypedAst.Expression, effUse: Ast.EffectSymUse, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class TryWith(exp: TypedAst.Expression, effRef: Ast.EffectSymUse, rules: List[TypedAst.HandlerRule], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class TryWith(exp: TypedAst.Expression, effUse: Ast.EffectSymUse, rules: List[TypedAst.HandlerRule], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Do(op: Ast.OpSymUse, exps: List[TypedAst.Expression], pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = Type.Unit
