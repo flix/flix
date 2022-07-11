@@ -580,7 +580,7 @@ object Namer {
       NamedAst.Expression.Wild(loc).toSuccess
 
     case WeededAst.Expression.DefOrSig(qname, loc) =>
-      NamedAst.Expression.DefOrSig(qname, loc).toSuccess
+      NamedAst.Expression.DefOrSig(qname, env0, loc).toSuccess
 
     case WeededAst.Expression.VarOrDefOrSig(ident, loc) =>
       // the ident name.
@@ -590,10 +590,10 @@ object Namer {
       (env0.get(name), uenv0.lowerNames.get(name)) match {
         case (None, None) =>
           // Case 1: the name is a top-level function.
-          NamedAst.Expression.DefOrSig(Name.mkQName(ident), loc).toSuccess
+          NamedAst.Expression.DefOrSig(Name.mkQName(ident), env0, loc).toSuccess
         case (None, Some(actualQName)) =>
           // Case 2: the name is a use def.
-          NamedAst.Expression.DefOrSig(actualQName, loc).toSuccess
+          NamedAst.Expression.DefOrSig(actualQName, env0, loc).toSuccess
         case (Some(sym), None) =>
           // Case 4: the name is a variable.
           NamedAst.Expression.Var(sym, loc).toSuccess
