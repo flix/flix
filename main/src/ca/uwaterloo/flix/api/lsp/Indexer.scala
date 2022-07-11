@@ -454,7 +454,7 @@ object Indexer {
     * Returns a reverse index for the given formal parameter `fparam0`.
     */
   private def visitFormalParam(fparam0: FormalParam): Index = fparam0 match {
-    case FormalParam(_, _, tpe, _) =>
+    case FormalParam(_, _, tpe, _, _) =>
       Index.occurrenceOf(fparam0) ++ visitType(tpe)
   }
 
