@@ -112,9 +112,6 @@ object Main {
     // check if command was passed.
     try {
       cmdOpts.command match {
-        case Command.None =>
-        // nop, continue
-
         case Command.Init =>
           val result = Packager.init(cwd, options)
           System.exit(getCode(result))
@@ -159,42 +156,65 @@ object Main {
           val o = options.copy(progress = false)
           val result = Packager.install(project, cwd, o)
           System.exit(getCode(result))
+
+        case Command.Doc =>
+          val o = options.copy(documentor = true) // TODO documenting should be its own thing, not a phase
+          val result = Packager.build(cwd, o)
+          System.exit(getCode(result))
+
+        case Command.Listen(port) =>
+          var successfulRun: Boolean = false
+          while (!successfulRun) {
+            try {
+              val socketServer = new SocketServer(port)
+              socketServer.run()
+              successfulRun = true
+            } catch {
+              case ex: BindException =>
+                Console.println(ex.getMessage)
+                Console.println("Retrying in 10 seconds.")
+                Thread.sleep(10_000)
+            }
+          }
+          System.exit(0)
+
+        case Command.Lsp(port) =>
+          try {
+            val languageServer = new LanguageServer(port)
+            languageServer.run()
+          } catch {
+            case ex: BindException =>
+              Console.println(ex.getMessage)
+          }
+          System.exit(0)
+
+        case Command.XBenchmarkCodeSize =>
+          BenchmarkCompiler.benchmarkCodeSize(options)
+          System.exit(0)
+
+        case Command.XBenchmarkIncremental =>
+          BenchmarkCompiler.benchmarkIncremental(options)
+          System.exit(0)
+
+        case Command.XBenchmarkPhases =>
+          BenchmarkCompiler.benchmarkPhases(options)
+          System.exit(0)
+
+        case Command.XBenchmarkThroughput =>
+          BenchmarkCompiler.benchmarkThroughput(options)
+          System.exit(0)
+
+        case Command.None if cmdOpts.files.isEmpty =>
+          val shell = new Shell(SourceProvider.ProjectPath(cwd), options)
+          shell.loop()
+          System.exit(0)
+
+        case Command.None => ??? // MATT
       }
     } catch {
       case ex: RuntimeException =>
         Console.println(ex.getMessage)
         System.exit(1)
-    }
-
-    // check if the --Xbenchmark-code-size flag was passed.
-    if (cmdOpts.xbenchmarkCodeSize) {
-      BenchmarkCompiler.benchmarkCodeSize(options)
-      System.exit(0)
-    }
-
-    // check if the --Xbenchmark-incremental flag was passed.
-    if (cmdOpts.xbenchmarkIncremental) {
-      BenchmarkCompiler.benchmarkIncremental(options)
-      System.exit(0)
-    }
-
-    // check if the --Xbenchmark-phases flag was passed.
-    if (cmdOpts.xbenchmarkPhases) {
-      BenchmarkCompiler.benchmarkPhases(options)
-      System.exit(0)
-    }
-
-    // check if the --Xbenchmark-throughput flag was passed.
-    if (cmdOpts.xbenchmarkThroughput) {
-      BenchmarkCompiler.benchmarkThroughput(options)
-      System.exit(0)
-    }
-
-    // check if we should start a REPL
-    if (cmdOpts.command == Command.None && cmdOpts.files.isEmpty) {
-      val shell = new Shell(SourceProvider.ProjectPath(cwd), options)
-      shell.loop()
-      System.exit(0)
     }
 
     // configure Flix and add the paths.
@@ -234,14 +254,6 @@ object Main {
             System.exit(0)
         }
 
-        if (cmdOpts.benchmark) {
-          Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(options)
-        }
-
-        if (cmdOpts.test) {
-          val results = Tester.test(compilationResult)
-          Console.println(results.output(flix.getFormatter))
-        }
       case Validation.Failure(errors) =>
         flix.mkMessages(errors.sortBy(_.source.name))
           .foreach(println)
@@ -264,20 +276,11 @@ object Main {
     */
   case class CmdOpts(command: Command = Command.None,
                      args: Option[String] = None,
-                     benchmark: Boolean = false,
-                     documentor: Boolean = false,
                      entryPoint: Option[String] = None,
                      explain: Boolean = false,
                      json: Boolean = false,
-                     listen: Option[Int] = None,
-                     lsp: Option[Int] = None,
                      output: Option[String] = None,
-                     test: Boolean = false,
                      threads: Option[Int] = None,
-                     xbenchmarkCodeSize: Boolean = false,
-                     xbenchmarkIncremental: Boolean = false,
-                     xbenchmarkPhases: Boolean = false,
-                     xbenchmarkThroughput: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
                      xnobooltable: Boolean = false,
@@ -314,6 +317,24 @@ object Main {
     case object Repl extends Command
 
     case class Install(project: String) extends Command
+
+    case class Listen(port: Int) extends Command
+
+    case object Doc extends Command
+
+//    case object Help extends Command // MATT
+
+    case class Lsp(port: Int) extends Command
+
+//    case object Version extends Command // MATT
+
+    case object XBenchmarkCodeSize extends Command
+
+    case object XBenchmarkIncremental extends Command
+
+    case object XBenchmarkPhases extends Command
+
+    case object XBenchmarkThroughput extends Command
 
   }
 
@@ -354,23 +375,29 @@ object Main {
 
       cmd("repl").action((_, c) => c.copy(command = Command.Repl)).text("  starts a repl for the current project, or provided Flix source files.")
 
-      cmd("install").text("  installs the Flix package from the given GitHub <owner>/<repo>")
+      cmd("install").text("  installs the Flix package from the given GitHub <owner>/<repo>.")
         .children(
-          arg[String]("project").action((project, c) => c.copy(command = Command.Install(project)))
+          arg[String]("<project>").action((project, c) => c.copy(command = Command.Install(project)))
             .required()
         )
+
+      cmd("doc").action((_, c) => c.copy(command = Command.Doc)).text("  generates JSON documentation.")
+
+      cmd("listen").text("  starts the socket server and listens on the given port.")
+        .children(
+          arg[Int]("<port>").action((port, c) => c.copy(command = Command.Listen(port)))
+            .required())
+
+      cmd("lsp").text("  starts the LSP server and listens on the given port.")
+        .children(
+          arg[Int]("<port>").action((port, c) => c.copy(command = Command.Lsp(port)))
+            .required())
 
       note("")
 
       opt[String]("args").action((s, c) => c.copy(args = Some(s))).
         valueName("<a1, a2, ...>").
         text("arguments passed to main. Must be a single quoted string.")
-
-      opt[Unit]("benchmark").action((_, c) => c.copy(benchmark = true)).
-        text("runs benchmarks.")
-
-      opt[Unit]("doc").action((_, c) => c.copy(documentor = true)).
-        text("generates HTML documentation.")
 
       opt[String]("entrypoint").action((s, c) => c.copy(entryPoint = Some(s))).
         text("specifies the main entry point.")
@@ -383,19 +410,8 @@ object Main {
       opt[Unit]("json").action((_, c) => c.copy(json = true)).
         text("enables json output.")
 
-      opt[Int]("listen").action((s, c) => c.copy(listen = Some(s))).
-        valueName("<port>").
-        text("starts the socket server and listens on the given port.")
-
-      opt[Int]("lsp").action((s, c) => c.copy(lsp = Some(s))).
-        valueName("<port>").
-        text("starts the LSP server and listens on the given port.")
-
       opt[String]("output").action((s, c) => c.copy(output = Some(s))).
         text("specifies the output directory for JVM bytecode.")
-
-      opt[Unit]("test").action((_, c) => c.copy(test = true)).
-        text("runs unit tests.")
 
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
         text("number of threads to use for compilation.")
@@ -404,23 +420,25 @@ object Main {
 
       // Experimental options:
       note("")
-      note("The following options are experimental:")
+      note("The following commands and options are experimental:")
 
       // Xbenchmark-code-size
-      opt[Unit]("Xbenchmark-code-size").action((_, c) => c.copy(xbenchmarkCodeSize = true)).
-        text("[experimental] benchmarks the size of the generated JVM files.")
+      cmd("Xbenchmark-code-size").action((_, c) => c.copy(command = Command.XBenchmarkCodeSize)).
+        text("  [experimental] benchmarks the size of the generated JVM files.")
 
       // Xbenchmark-incremental
-      opt[Unit]("Xbenchmark-incremental").action((_, c) => c.copy(xbenchmarkIncremental = true)).
-        text("[experimental] benchmarks the performance of each compiler phase in incremental mode.")
+      cmd("Xbenchmark-incremental").action((_, c) => c.copy(command = Command.XBenchmarkIncremental)).
+        text("  [experimental] benchmarks the performance of each compiler phase in incremental mode.")
 
       // Xbenchmark-phases
-      opt[Unit]("Xbenchmark-phases").action((_, c) => c.copy(xbenchmarkPhases = true)).
-        text("[experimental] benchmarks the performance of each compiler phase.")
+      cmd("Xbenchmark-phases").action((_, c) => c.copy(command = Command.XBenchmarkPhases)).
+        text("  [experimental] benchmarks the performance of each compiler phase.")
 
       // Xbenchmark-throughput
-      opt[Unit]("Xbenchmark-throughput").action((_, c) => c.copy(xbenchmarkThroughput = true)).
-        text("[experimental] benchmarks the performance of the entire compiler.")
+      cmd("Xbenchmark-throughput").action((_, c) => c.copy(command = Command.XBenchmarkThroughput)).
+        text("  [experimental] benchmarks the performance of the entire compiler.")
+
+      note("")
 
       // Xdebug.
       opt[Unit]("Xdebug").action((_, c) => c.copy(xdebug = true)).
