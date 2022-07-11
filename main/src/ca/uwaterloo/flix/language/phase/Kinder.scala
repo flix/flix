@@ -376,7 +376,10 @@ object Kinder {
       val expsVal = traverse(exps0)(visitExp(_, kenv0, senv, taenv, henv0, root))
       mapN(expVal, expsVal) {
         case (exp, exps) =>
-          KindedAst.Expression.Apply(exp, exps, Type.freshVar(Kind.Star, loc.asSynthetic), Type.freshVar(Kind.Bool, loc.asSynthetic), loc)
+          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+          val evar = Type.freshVar(Kind.Effect, loc.asSynthetic)
+          KindedAst.Expression.Apply(exp, exps, tvar, pvar, evar, loc)
       }
 
     case ResolvedAst.Expression.Lambda(fparam0, exp0, loc) =>
@@ -1102,9 +1105,9 @@ object Kinder {
     * Performs kinding on the given formal param under the given kind environment.
     */
   private def visitFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.FormalParam, KindError] = fparam0 match {
-    case ResolvedAst.FormalParam(sym, mod, tpe0, loc) =>
+    case ResolvedAst.FormalParam(sym, mod, tpe0, src, loc) =>
       mapN(visitType(tpe0, Kind.Star, kenv, senv, taenv, root)) {
-        tpe => KindedAst.FormalParam(sym, mod, tpe, loc)
+        tpe => KindedAst.FormalParam(sym, mod, tpe, src, loc)
       }
   }
 
@@ -1214,7 +1217,7 @@ object Kinder {
     * Infers a kind environment from the given formal param.
     */
   private def inferFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = fparam0 match {
-    case ResolvedAst.FormalParam(_, _, tpe0, _) => inferType(tpe0, Kind.Star, kenv, taenv, root)
+    case ResolvedAst.FormalParam(_, _, tpe0, _, _) => inferType(tpe0, Kind.Star, kenv, taenv, root)
   }
 
   /**

@@ -114,11 +114,6 @@ instance Reducible[Nec] {
     override pub def toList(l: Nec[a]): List[a] = Nec.toList(l)
 }
 
-instance Iterable[Nec] {
-    pub def iterator(r: Region[r], t: Nec[a]): Iterator[a, r] \ Write(r) =
-        Nec.iterator(r, t)
-}
-
 instance ToString[Nec[a]] with ToString[a] {
     pub def toString(c: Nec[a]): String =
         let fn = () -> region r {

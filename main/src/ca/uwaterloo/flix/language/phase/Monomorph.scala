@@ -335,51 +335,51 @@ object Monomorph {
         val e = visitExp(exp, env0 ++ env1)
         Expression.Lambda(p, e, subst0(tpe), loc)
 
-      case Expression.Apply(exp, exps, tpe, eff, loc) =>
+      case Expression.Apply(exp, exps, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
         val es = exps.map(visitExp(_, env0))
-        Expression.Apply(e, es, subst0(tpe), eff, loc)
+        Expression.Apply(e, es, subst0(tpe), pur, eff, loc)
 
-      case Expression.Unary(sop, exp, tpe, eff, loc) =>
+      case Expression.Unary(sop, exp, tpe, pur, eff, loc) =>
         val e1 = visitExp(exp, env0)
-        Expression.Unary(sop, e1, subst0(tpe), eff, loc)
+        Expression.Unary(sop, e1, subst0(tpe), pur, eff, loc)
 
       /*
        * Other Binary Expression.
        */
-      case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+      case Expression.Binary(sop, exp1, exp2, tpe, pur, eff, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
-        Expression.Binary(sop, e1, e2, subst0(tpe), eff, loc)
+        Expression.Binary(sop, e1, e2, subst0(tpe), pur, eff, loc)
 
-      case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
+      case Expression.Let(sym, mod, exp1, exp2, tpe, pur, eff, loc) =>
         // Generate a fresh symbol for the let-bound variable.
         val freshSym = Symbol.freshVarSym(sym)
         val env1 = env0 + (sym -> freshSym)
-        Expression.Let(freshSym, mod, visitExp(exp1, env0), visitExp(exp2, env1), subst0(tpe), eff, loc)
+        Expression.Let(freshSym, mod, visitExp(exp1, env0), visitExp(exp2, env1), subst0(tpe), pur, eff, loc)
 
-      case Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
+      case Expression.LetRec(sym, mod, exp1, exp2, tpe, pur, eff, loc) =>
         // Generate a fresh symbol for the let-bound variable.
         val freshSym = Symbol.freshVarSym(sym)
         val env1 = env0 + (sym -> freshSym)
-        Expression.LetRec(freshSym, mod, visitExp(exp1, env1), visitExp(exp2, env1), subst0(tpe), eff, loc)
+        Expression.LetRec(freshSym, mod, visitExp(exp1, env1), visitExp(exp2, env1), subst0(tpe), pur, eff, loc)
 
-      case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+      case Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
         val e3 = visitExp(exp3, env0)
-        Expression.IfThenElse(e1, e2, e3, subst0(tpe), eff, loc)
+        Expression.IfThenElse(e1, e2, e3, subst0(tpe), pur, eff, loc)
 
-      case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
+      case Expression.Stm(exp1, exp2, tpe, pur, eff, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
-        Expression.Stm(e1, e2, subst0(tpe), eff, loc)
+        Expression.Stm(e1, e2, subst0(tpe), pur, eff, loc)
 
-      case Expression.Discard(exp, eff, loc) =>
+      case Expression.Discard(exp, pur, eff, loc) =>
         val e = visitExp(exp, env0)
-        Expression.Discard(e, eff, loc)
+        Expression.Discard(e, pur, eff, loc)
 
-      case Expression.Match(exp, rules, tpe, eff, loc) =>
+      case Expression.Match(exp, rules, tpe, pur, eff, loc) =>
         val rs = rules map {
           case MatchRule(pat, guard, body) =>
             val (p, env1) = visitPat(pat)
@@ -388,9 +388,9 @@ object Monomorph {
             val b = visitExp(body, extendedEnv)
             MatchRule(p, g, b)
         }
-        Expression.Match(visitExp(exp, env0), rs, subst0(tpe), eff, loc)
+        Expression.Match(visitExp(exp, env0), rs, subst0(tpe), pur, eff, loc)
 
-      case Expression.Choose(exps, rules, tpe, eff, loc) =>
+      case Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
         val es = exps.map(visitExp(_, env0))
         val rs = rules.map {
           case ChoiceRule(pat, exp) =>
@@ -408,88 +408,92 @@ object Monomorph {
             val e = visitExp(exp, env0 ++ env1)
             ChoiceRule(p, e)
         }
-        Expression.Choose(es, rs, tpe, eff, loc)
+        Expression.Choose(es, rs, tpe, pur, eff, loc)
 
-      case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
+      case Expression.Tag(sym, tag, exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
-        Expression.Tag(sym, tag, e, subst0(tpe), eff, loc)
+        Expression.Tag(sym, tag, e, subst0(tpe), pur, eff, loc)
 
-      case Expression.Tuple(elms, tpe, eff, loc) =>
+      case Expression.Tuple(elms, tpe, pur, eff, loc) =>
         val es = elms.map(e => visitExp(e, env0))
-        Expression.Tuple(es, subst0(tpe), eff, loc)
+        Expression.Tuple(es, subst0(tpe), pur, eff, loc)
 
       case Expression.RecordEmpty(tpe, loc) =>
         Expression.RecordEmpty(subst0(tpe), loc)
 
-      case Expression.RecordSelect(base, field, tpe, eff, loc) =>
+      case Expression.RecordSelect(base, field, tpe, pur, eff, loc) =>
         val b = visitExp(base, env0)
-        Expression.RecordSelect(b, field, subst0(tpe), eff, loc)
+        Expression.RecordSelect(b, field, subst0(tpe), pur, eff, loc)
 
-      case Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
+      case Expression.RecordExtend(field, value, rest, tpe, pur, eff, loc) =>
         val v = visitExp(value, env0)
         val r = visitExp(rest, env0)
-        Expression.RecordExtend(field, v, r, subst0(tpe), eff, loc)
+        Expression.RecordExtend(field, v, r, subst0(tpe), pur, eff, loc)
 
-      case Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
+      case Expression.RecordRestrict(field, rest, tpe, pur, eff, loc) =>
         val r = visitExp(rest, env0)
-        Expression.RecordRestrict(field, r, subst0(tpe), eff, loc)
+        Expression.RecordRestrict(field, r, subst0(tpe), pur, eff, loc)
 
-      case Expression.ArrayLit(exps, exp, tpe, eff, loc) =>
+      case Expression.ArrayLit(exps, exp, tpe, pur, eff, loc) =>
         val es = exps.map(visitExp(_, env0))
         val e = visitExp(exp, env0)
-        Expression.ArrayLit(es, e, subst0(tpe), eff, loc)
+        Expression.ArrayLit(es, e, subst0(tpe), pur, eff, loc)
 
-      case Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
+      case Expression.ArrayNew(exp1, exp2, exp3, tpe, pur, eff, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
         val e3 = visitExp(exp3, env0)
-        Expression.ArrayNew(e1, e2, e3, subst0(tpe), eff, loc)
+        Expression.ArrayNew(e1, e2, e3, subst0(tpe), pur, eff, loc)
 
-      case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
+      case Expression.ArrayLoad(base, index, tpe, pur, eff, loc) =>
         val b = visitExp(base, env0)
         val i = visitExp(index, env0)
-        Expression.ArrayLoad(b, i, subst0(tpe), eff, loc)
+        Expression.ArrayLoad(b, i, subst0(tpe), pur, eff, loc)
 
-      case Expression.ArrayStore(base, index, elm, loc) =>
+      case Expression.ArrayStore(base, index, elm, eff, loc) =>
         val b = visitExp(base, env0)
         val i = visitExp(index, env0)
         val e = visitExp(elm, env0)
-        Expression.ArrayStore(b, i, e, loc)
+        Expression.ArrayStore(b, i, e, eff, loc)
 
-      case Expression.ArrayLength(base, eff, loc) =>
+      case Expression.ArrayLength(base, pur, eff, loc) =>
         val b = visitExp(base, env0)
-        Expression.ArrayLength(b, eff, loc)
+        Expression.ArrayLength(b, pur, eff, loc)
 
-      case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
+      case Expression.ArraySlice(base, startIndex, endIndex, tpe, eff, loc) =>
         val b = visitExp(base, env0)
         val i1 = visitExp(startIndex, env0)
         val i2 = visitExp(endIndex, env0)
-        Expression.ArraySlice(b, i1, i2, subst0(tpe), loc)
+        Expression.ArraySlice(b, i1, i2, subst0(tpe), eff, loc)
 
-      case Expression.Ref(exp1, exp2, tpe, eff, loc) =>
+      case Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
-        Expression.Ref(e1, e2, subst0(tpe), eff, loc)
+        Expression.Ref(e1, e2, subst0(tpe), pur, eff, loc)
 
-      case Expression.Deref(exp, tpe, eff, loc) =>
+      case Expression.Deref(exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
-        Expression.Deref(e, subst0(tpe), eff, loc)
+        Expression.Deref(e, subst0(tpe), pur, eff, loc)
 
-      case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
+      case Expression.Assign(exp1, exp2, tpe, pur, eff, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
-        Expression.Assign(e1, e2, subst0(tpe), eff, loc)
+        Expression.Assign(e1, e2, subst0(tpe), pur, eff, loc)
 
-      case Expression.Ascribe(exp, tpe, eff, loc) =>
+      case Expression.Ascribe(exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
-        Expression.Ascribe(e, subst0(tpe), eff, loc)
+        Expression.Ascribe(e, subst0(tpe), pur, eff, loc)
 
-      case Expression.Cast(exp, _, _, tpe, eff, loc) =>
+      case Expression.Cast(exp, _, _, _, tpe, pur, eff, loc) =>
         // We drop the declaredType and declaredEff here.
         val e = visitExp(exp, env0)
-        Expression.Cast(e, None, None, subst0(tpe), eff, loc)
+        Expression.Cast(e, None, None, None, subst0(tpe), pur, eff, loc)
 
-      case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+      case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
+        // Erase the Without
+        visitExp(exp, env0)
+
+      case Expression.TryCatch(exp, rules, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
         val rs = rules map {
           case CatchRule(sym, clazz, body) =>
@@ -499,54 +503,66 @@ object Monomorph {
             val b = visitExp(body, env1)
             CatchRule(freshSym, clazz, b)
         }
-        Expression.TryCatch(e, rs, subst0(tpe), eff, loc)
+        Expression.TryCatch(e, rs, subst0(tpe), pur, eff, loc)
 
-      case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
+      case Expression.TryWith(exp, _, _, _, _, _, _) =>
+        // Erase the handlers
+        visitExp(exp, env0)
+
+      case Expression.Do(_, _, _, _, loc) =>
+        // Erase down to unit
+        Expression.Unit(loc)
+
+      case Expression.Resume(_, _, loc) =>
+        // Erase down to unit
+        Expression.Unit(loc)
+
+      case Expression.InvokeConstructor(constructor, args, tpe, pur, eff, loc) =>
         val as = args.map(visitExp(_, env0))
-        Expression.InvokeConstructor(constructor, as, subst0(tpe), eff, loc)
+        Expression.InvokeConstructor(constructor, as, subst0(tpe), pur, eff, loc)
 
-      case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
+      case Expression.InvokeMethod(method, exp, args, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
         val as = args.map(visitExp(_, env0))
-        Expression.InvokeMethod(method, e, as, tpe, eff, loc)
+        Expression.InvokeMethod(method, e, as, tpe, pur, eff, loc)
 
-      case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
+      case Expression.InvokeStaticMethod(method, args, tpe, pur, eff, loc) =>
         val as = args.map(visitExp(_, env0))
-        Expression.InvokeStaticMethod(method, as, tpe, eff, loc)
+        Expression.InvokeStaticMethod(method, as, tpe, pur, eff, loc)
 
-      case Expression.GetField(field, exp, tpe, eff, loc) =>
+      case Expression.GetField(field, exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
-        Expression.GetField(field, e, tpe, eff, loc)
+        Expression.GetField(field, e, tpe, pur, eff, loc)
 
-      case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
+      case Expression.PutField(field, exp1, exp2, tpe, pur, eff, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
-        Expression.PutField(field, e1, e2, tpe, eff, loc)
+        Expression.PutField(field, e1, e2, tpe, pur, eff, loc)
 
-      case Expression.GetStaticField(field, tpe, eff, loc) =>
-        Expression.GetStaticField(field, tpe, eff, loc)
+      case Expression.GetStaticField(field, tpe, pur, eff, loc) =>
+        Expression.GetStaticField(field, tpe, pur, eff, loc)
 
-      case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
+      case Expression.PutStaticField(field, exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
-        Expression.PutStaticField(field, e, tpe, eff, loc)
+        Expression.PutStaticField(field, e, tpe, pur, eff, loc)
 
-      case Expression.NewObject(clazz, tpe, eff, loc) =>
-        Expression.NewObject(clazz, subst0(tpe), eff, loc)
+      case Expression.NewObject(clazz, tpe, pur, eff, loc) =>
+        Expression.NewObject(clazz, subst0(tpe), pur, eff, loc)
 
-      case Expression.NewChannel(exp, tpe, eff, loc) =>
+      case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
-        Expression.NewChannel(e, subst0(tpe), eff, loc)
+        Expression.NewChannel(e, subst0(tpe), pur, eff, loc)
 
-      case Expression.GetChannel(exp, tpe, eff, loc) =>
+      case Expression.GetChannel(exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
-        Expression.GetChannel(e, subst0(tpe), eff, loc)
+        Expression.GetChannel(e, subst0(tpe), pur, eff, loc)
 
-      case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+      case Expression.PutChannel(exp1, exp2, tpe, pur, eff, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
-        Expression.PutChannel(e1, e2, subst0(tpe), eff, loc)
+        Expression.PutChannel(e1, e2, subst0(tpe), pur, eff, loc)
 
-      case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
+      case Expression.SelectChannel(rules, default, tpe, pur, eff, loc) =>
         val rs = rules map {
           case SelectChannelRule(sym, chan, exp) =>
             val freshSym = Symbol.freshVarSym(sym)
@@ -558,48 +574,48 @@ object Monomorph {
 
         val d = default.map(visitExp(_, env0))
 
-        Expression.SelectChannel(rs, d, subst0(tpe), eff, loc)
+        Expression.SelectChannel(rs, d, subst0(tpe), pur, eff, loc)
 
-      case Expression.Spawn(exp, tpe, eff, loc) =>
+      case Expression.Spawn(exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
-        Expression.Spawn(e, subst0(tpe), eff, loc)
+        Expression.Spawn(e, subst0(tpe), pur, eff, loc)
 
       case Expression.Lazy(exp, tpe, loc) =>
         val e = visitExp(exp, env0)
         Expression.Lazy(e, subst0(tpe), loc)
 
-      case Expression.Force(exp, tpe, eff, loc) =>
+      case Expression.Force(exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
-        Expression.Force(e, subst0(tpe), eff, loc)
+        Expression.Force(e, subst0(tpe), pur, eff, loc)
 
       case Expression.Region(_, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
-      case Expression.Scope(_, _, _, _, _, loc) =>
+      case Expression.Scope(_, _, _, _, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
       case Expression.FixpointConstraintSet(_, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
-      case Expression.FixpointLambda(_, _, _, _, _, loc) =>
+      case Expression.FixpointLambda(_, _, _, _, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
-      case Expression.FixpointMerge(_, _, _, _, _, loc) =>
+      case Expression.FixpointMerge(_, _, _, _, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
-      case Expression.FixpointSolve(_, _, _, _, loc) =>
+      case Expression.FixpointSolve(_, _, _, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
-      case Expression.FixpointFilter(_, _, _, _, loc) =>
+      case Expression.FixpointFilter(_, _, _, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
-      case Expression.FixpointInject(_, _, _, _, loc) =>
+      case Expression.FixpointInject(_, _, _, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
-      case Expression.FixpointProject(_, _, _, _, loc) =>
+      case Expression.FixpointProject(_, _, _, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
-      case Expression.Reify(t, _, _, loc) =>
+      case Expression.Reify(t, _, _, _, loc) =>
         // Magic!
         val isTrue = subst0(t) match {
           case Type.Cst(TypeConstructor.True, _) => true
@@ -612,14 +628,14 @@ object Monomorph {
         else
           Expression.False(loc)
 
-      case Expression.ReifyType(t, k, _, _, loc) =>
+      case Expression.ReifyType(t, k, _, _, _, loc) =>
         k match {
           case Kind.Bool => reifyBool(subst0(t), loc)
           case Kind.Star => reifyType(subst0(t), loc)
           case _ => throw InternalCompilerException(s"Unexpected kind: $k.")
         }
 
-      case Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, loc) =>
+      case Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, _, loc) =>
         // Magic!
         val isPure = subst0(exp1.tpe).arrowPurityType match {
           case Type.Cst(TypeConstructor.True, _) => true
@@ -633,7 +649,7 @@ object Monomorph {
 
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env1)
-          Expression.Let(freshSym, Modifiers.Empty, e1, e2, e2.tpe, e2.pur, loc)
+          Expression.Let(freshSym, Modifiers.Empty, e1, e2, e2.tpe, e2.pur, e2.eff, loc)
         } else {
           visitExp(exp3, env0)
         }
@@ -801,9 +817,9 @@ object Monomorph {
     * Returns the new formal parameter and an environment mapping the variable symbol to a fresh variable symbol.
     */
   private def specializeFormalParam(fparam0: FormalParam, subst0: StrictSubstitution)(implicit flix: Flix): (FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
-    val FormalParam(sym, mod, tpe, loc) = fparam0
+    val FormalParam(sym, mod, tpe, src, loc) = fparam0
     val freshSym = Symbol.freshVarSym(sym)
-    (FormalParam(freshSym, mod, subst0(tpe), loc), Map(sym -> freshSym))
+    (FormalParam(freshSym, mod, subst0(tpe), src, loc), Map(sym -> freshSym))
   }
 
   /**
@@ -841,7 +857,8 @@ object Monomorph {
   private def reifyBool(tpe: Type, loc: SourceLocation): Expression = {
     val sym = Symbol.mkEnumSym("ReifiedBool")
     val resultTpe = Type.mkEnum(sym, Kind.Star, loc)
-    val resultEff = Type.Pure
+    val resultPur = Type.Pure
+    val resultEff = Type.Empty
 
     tpe.typeConstructor match {
       case None =>
@@ -850,15 +867,15 @@ object Monomorph {
       case Some(tc) => tc match {
         case TypeConstructor.True =>
           val tag = Name.Tag("ReifiedTrue", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.False =>
           val tag = Name.Tag("ReifiedFalse", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case _ =>
           val tag = Name.Tag("ErasedBool", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
       }
     }
   }
@@ -869,7 +886,8 @@ object Monomorph {
   private def reifyType(tpe: Type, loc: SourceLocation): Expression = {
     val sym = Symbol.mkEnumSym("ReifiedType")
     val resultTpe = Type.mkEnum(sym, Kind.Star, loc)
-    val resultEff = Type.Pure
+    val resultPur = Type.Pure
+    val resultEff = Type.Empty
 
     def visit(t0: Type): Expression = t0.typeConstructor match {
       case None =>
@@ -878,49 +896,49 @@ object Monomorph {
       case Some(tc) => tc match {
         case TypeConstructor.Unit =>
           val tag = Name.Tag("ReifiedUnit", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Bool =>
           val tag = Name.Tag("ReifiedBool", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Char =>
           val tag = Name.Tag("ReifiedChar", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Float32 =>
           val tag = Name.Tag("ReifiedFloat32", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Float64 =>
           val tag = Name.Tag("ReifiedFloat64", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Int8 =>
           val tag = Name.Tag("ReifiedInt8", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Int16 =>
           val tag = Name.Tag("ReifiedInt16", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Int32 =>
           val tag = Name.Tag("ReifiedInt32", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Int64 =>
           val tag = Name.Tag("ReifiedInt64", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Array =>
           val tag = Name.Tag("ReifiedArray", loc)
           val innerTpe = Type.eraseAliases(t0).typeArguments.head
           val innerExp = visit(innerTpe)
-          Expression.Tag(sym, tag, innerExp, resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, innerExp, resultTpe, resultPur, resultEff, loc)
 
         case _ =>
           val tag = Name.Tag("ErasedType", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
       }
     }

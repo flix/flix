@@ -45,13 +45,15 @@ object CodeLensProvider {
         val runMainWithArgs = Command("Run with args...", "flix.runMainWithArgs", args)
         val runMainNewTerminal = Command("Run (in new terminal)", "flix.runMainNewTerminal", args)
         val runMainNewTerminalWithArgs = Command("Run with args... (in new terminal)", "flix.runMainNewTerminalWithArgs", args)
+        val openInRepl = Command("Open in REPL", "flix.cmdRepl", args)
         val range = Range.from(sym.loc)
 
         List(
           CodeLens(range, Some(runMain)),
           CodeLens(range, Some(runMainWithArgs)),
           CodeLens(range, Some(runMainNewTerminal)),
-          CodeLens(range, Some(runMainNewTerminalWithArgs))
+          CodeLens(range, Some(runMainNewTerminalWithArgs)),
+          CodeLens(range, Some(openInRepl)),
         )
     }
   }

@@ -149,7 +149,10 @@ object Deriver {
         ann = Nil,
         mod = Ast.Modifiers.Empty,
         tparams = tparams,
-        fparams = List(KindedAst.FormalParam(param1, Ast.Modifiers.Empty, tpe, loc), KindedAst.FormalParam(param2, Ast.Modifiers.Empty, tpe, loc)),
+        fparams = List(
+          KindedAst.FormalParam(param1, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc),
+          KindedAst.FormalParam(param2, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
+        ),
         sc = Scheme(
           tparams.map(_.sym),
           List(Ast.TypeConstraint(Ast.TypeConstraint.Head(eqClassSym, loc), tpe, loc)),
@@ -188,7 +191,8 @@ object Deriver {
               mkVarExpr(varSym2, loc)
             ),
             Type.freshVar(Kind.Star, loc, text = FallbackText("eqType")),
-            Type.freshVar(Kind.Bool, loc, text = FallbackText("eqEff")),
+            Type.freshVar(Kind.Bool, loc, text = FallbackText("eqPur")),
+            Type.freshVar(Kind.Effect, loc, text = FallbackText("eqEff")),
             loc
           )
       }
@@ -280,7 +284,7 @@ object Deriver {
       val indexMatchRules = cases.values.zipWithIndex.map { case (caze, index) => mkCompareIndexMatchRule(caze, index, loc) }
       val indexMatchExp = KindedAst.Expression.Match(mkVarExpr(lambdaParamVarSym, loc), indexMatchRules.toList, loc)
       val lambda = KindedAst.Expression.Lambda(
-        KindedAst.FormalParam(lambdaParamVarSym, Ast.Modifiers.Empty, lambdaParamVarSym.tvar.ascribedWith(Kind.Star), loc),
+        KindedAst.FormalParam(lambdaParamVarSym, Ast.Modifiers.Empty, lambdaParamVarSym.tvar.ascribedWith(Kind.Star), Ast.TypeSource.Ascribed, loc),
         indexMatchExp,
         Type.freshVar(Kind.Star, loc, text = FallbackText("indexOfType")),
         loc
@@ -301,18 +305,21 @@ object Deriver {
               mkVarExpr(lambdaVarSym, loc),
               List(mkVarExpr(param1, loc)),
               Type.freshVar(Kind.Star, loc, text = FallbackText("xType")),
-              Type.freshVar(Kind.Bool, loc, text = FallbackText("xEff")),
+              Type.freshVar(Kind.Bool, loc, text = FallbackText("xPur")),
+              Type.freshVar(Kind.Effect, loc, text = FallbackText("xEff")),
               loc
             ),
             KindedAst.Expression.Apply(
               mkVarExpr(lambdaVarSym, loc),
               List(mkVarExpr(param2, loc)),
               Type.freshVar(Kind.Star, loc, text = FallbackText("yType")),
-              Type.freshVar(Kind.Bool, loc, text = FallbackText("yEff")),
+              Type.freshVar(Kind.Bool, loc, text = FallbackText("yPur")),
+              Type.freshVar(Kind.Effect, loc, text = FallbackText("yEff")),
               loc),
           ),
           Type.freshVar(Kind.Star, loc, text = FallbackText("compareType")),
-          Type.freshVar(Kind.Bool, loc, text = FallbackText("compareEff")),
+          Type.freshVar(Kind.Bool, loc, text = FallbackText("comparePur")),
+          Type.freshVar(Kind.Effect, loc, text = FallbackText("compareEff")),
           loc
         )
       )
@@ -341,7 +348,10 @@ object Deriver {
         ann = Nil,
         mod = Ast.Modifiers.Empty,
         tparams = tparams,
-        fparams = List(KindedAst.FormalParam(param1, Ast.Modifiers.Empty, tpe, loc), KindedAst.FormalParam(param2, Ast.Modifiers.Empty, tpe, loc)),
+        fparams = List(
+          KindedAst.FormalParam(param1, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc),
+          KindedAst.FormalParam(param2, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
+        ),
         sc = Scheme(
           tparams.map(_.sym),
           List(Ast.TypeConstraint(Ast.TypeConstraint.Head(orderClassSym, loc), tpe, loc)),
@@ -397,7 +407,8 @@ object Deriver {
               mkVarExpr(varSym2, loc)
             ),
             Type.freshVar(Kind.Star, loc, text = FallbackText("compareType")),
-            Type.freshVar(Kind.Bool, loc, text = FallbackText("compareEff")),
+            Type.freshVar(Kind.Bool, loc, text = FallbackText("comparePur")),
+            Type.freshVar(Kind.Effect, loc, text = FallbackText("compareEff")),
             loc
           )
       }
@@ -414,7 +425,8 @@ object Deriver {
             KindedAst.Expression.Lazy(exp2, loc)
           ),
           Type.freshVar(Kind.Star, loc, text = FallbackText("thenCompareType")),
-          Type.freshVar(Kind.Bool, loc, text = FallbackText("thenCompareEff")),
+          Type.freshVar(Kind.Bool, loc, text = FallbackText("thenComparePur")),
+          Type.freshVar(Kind.Effect, loc, text = FallbackText("thenCompareEff")),
           loc
         )
       }
@@ -508,7 +520,7 @@ object Deriver {
         ann = Nil,
         mod = Ast.Modifiers.Empty,
         tparams = tparams,
-        fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, tpe, loc)),
+        fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)),
         sc = Scheme(
           tparams.map(_.sym),
           List(Ast.TypeConstraint(Ast.TypeConstraint.Head(toStringClassSym, loc), tpe, loc)),
@@ -545,7 +557,8 @@ object Deriver {
             KindedAst.Expression.Sig(toStringSym, Type.freshVar(Kind.Star, loc, text = FallbackText("toString")), loc),
             List(mkVarExpr(varSym, loc)),
             Type.freshVar(Kind.Star, loc, text = FallbackText("toStringType")),
-            Type.freshVar(Kind.Bool, loc, text = FallbackText("toStringEff")),
+            Type.freshVar(Kind.Bool, loc, text = FallbackText("toStringPur")),
+            Type.freshVar(Kind.Effect, loc, text = FallbackText("toStringEff")),
             loc
           )
       }
@@ -646,7 +659,7 @@ object Deriver {
         ann = Nil,
         mod = Ast.Modifiers.Empty,
         tparams = tparams,
-        fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, tpe, loc)),
+        fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)),
         sc = Scheme(
           tparams.map(_.sym),
           List(Ast.TypeConstraint(Ast.TypeConstraint.Head(hashClassSym, loc), tpe, loc)),
@@ -691,7 +704,8 @@ object Deriver {
               KindedAst.Expression.Sig(hashSigSym, Type.freshVar(Kind.Star, loc, text = FallbackText("hash")), loc),
               List(mkVarExpr(varSym, loc)),
               Type.freshVar(Kind.Star, loc, text = FallbackText("hashType")),
-              Type.freshVar(Kind.Bool, loc, text = FallbackText("hashEff")),
+              Type.freshVar(Kind.Bool, loc, text = FallbackText("hashPur")),
+              Type.freshVar(Kind.Effect, loc, text = FallbackText("hashEff")),
               loc
             ),
             Type.freshVar(Kind.Star, loc, text = FallbackText("sum")),

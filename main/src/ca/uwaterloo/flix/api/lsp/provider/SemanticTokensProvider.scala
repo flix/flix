@@ -290,23 +290,23 @@ object SemanticTokensProvider {
     case Expression.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp)
 
-    case Expression.Apply(exp, exps, _, _, _) =>
+    case Expression.Apply(exp, exps, _, _, _, _) =>
       exps.foldLeft(visitExp(exp)) {
         case (acc, exp) => acc ++ visitExp(exp)
       }
 
-    case Expression.Unary(sop, exp, tpe, eff, loc) =>
+    case Expression.Unary(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+    case Expression.Binary(_, exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Let(sym, _, exp1, exp2, _, _, _) =>
+    case Expression.Let(sym, _, exp1, exp2, _, _, _, _) =>
       val o = getSemanticTokenType(sym, exp1.tpe)
       val t = SemanticToken(o, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.LetRec(sym, _, exp1, exp2, _, _, _) =>
+    case Expression.LetRec(sym, _, exp1, exp2, _, _, _, _) =>
       val o = getSemanticTokenType(sym, exp1.tpe)
       val t = SemanticToken(o, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
@@ -314,126 +314,146 @@ object SemanticTokensProvider {
     case Expression.Region(_, _) =>
       Iterator.empty
 
-    case Expression.Scope(sym, _, exp, _, _, _) =>
+    case Expression.Scope(sym, _, exp, _, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp)
 
-    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.Stm(exp1, exp2, _, _, _) =>
+    case Expression.Stm(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Discard(exp, _, _) => visitExp(exp)
+    case Expression.Discard(exp, _, _, _) => visitExp(exp)
 
-    case Expression.Match(matchExp, rules, _, _, _) =>
+    case Expression.Match(matchExp, rules, _, _, _, _) =>
       val m = visitExp(matchExp)
       rules.foldLeft(m) {
         case (acc, MatchRule(pat, guard, exp)) =>
           acc ++ visitPat(pat) ++ visitExp(guard) ++ visitExp(exp)
       }
 
-    case Expression.Choose(exps, rules, tpe, eff, loc) =>
+    case Expression.Choose(exps, rules, tpe, eff, loc, _) =>
       Iterator.empty // TODO: Choose expression.
 
-    case Expression.Tag(_, tag, exp, _, _, _) =>
+    case Expression.Tag(_, tag, exp, _, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, tag.loc)
       Iterator(t) ++ visitExp(exp)
 
-    case Expression.Tuple(exps, _, _, _) =>
+    case Expression.Tuple(exps, _, _, _, _) =>
       visitExps(exps)
 
     case Expression.RecordEmpty(_, _) => Iterator.empty
 
-    case Expression.RecordSelect(exp, field, _, _, _) =>
+    case Expression.RecordSelect(exp, field, _, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Property, Nil, field.loc)
       Iterator(t) ++ visitExp(exp)
 
-    case Expression.RecordExtend(field, exp1, exp2, _, _, _) =>
+    case Expression.RecordExtend(field, exp1, exp2, _, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Property, Nil, field.loc)
       Iterator(t) ++ visitExp(exp2) ++ visitExp(exp1)
 
-    case Expression.RecordRestrict(field, exp, _, _, _) =>
+    case Expression.RecordRestrict(field, exp, _, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Property, Nil, field.loc)
       Iterator(t) ++ visitExp(exp)
 
-    case Expression.ArrayLit(exps, exp, _, _, _) =>
+    case Expression.ArrayLit(exps, exp, _, _, _, _) =>
       visitExps(exps) ++ visitExp(exp)
 
-    case Expression.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+    case Expression.ArrayNew(exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.ArrayLoad(exp1, exp2, _, _, _) =>
+    case Expression.ArrayLoad(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.ArrayStore(exp1, exp2, exp3, _) =>
+    case Expression.ArrayStore(exp1, exp2, exp3, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.ArrayLength(exp, _, _) =>
+    case Expression.ArrayLength(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.ArraySlice(exp1, exp2, exp3, _, _) =>
+    case Expression.ArraySlice(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.Ref(exp1, exp2, _, _, _) =>
+    case Expression.Ref(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Deref(exp, _, _, _) =>
+    case Expression.Deref(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Assign(exp1, exp2, _, _, _) =>
+    case Expression.Assign(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Ascribe(exp, tpe, _, _) =>
+    case Expression.Ascribe(exp, tpe, _, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 
-    case Expression.Cast(exp, _, _, tpe, _, _) =>
+    case Expression.Cast(exp, _, _, _, tpe, _, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 
-    case Expression.TryCatch(exp, rules, _, _, _) =>
+    case Expression.Without(exp, _, _, _, _, _) =>
+      visitExp(exp)
+      // TODO index eff
+
+    case Expression.TryCatch(exp, rules, _, _, _, _) =>
       rules.foldLeft(visitExp(exp)) {
         case (acc, CatchRule(sym, _, exp)) =>
           val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
           acc ++ Iterator(t) ++ visitExp(exp)
       }
 
-    case Expression.InvokeConstructor(_, exps, _, _, _) =>
+    case Expression.TryWith(exp, _, rules, _, _, _, _) =>
+      // TODO index eff
+      rules.foldLeft(visitExp(exp)) {
+        case (acc, HandlerRule(_, fparams, exp)) =>
+          // TODO index op
+          val t = visitFormalParams(fparams)
+          acc ++ t ++ visitExp(exp)
+      }
+
+    case Expression.Do(_, exps, _, _, _) =>
+      // TODO index op
+      visitExps(exps)
+
+    case Expression.Resume(exp, _, _) =>
+      visitExp(exp)
+
+    case Expression.InvokeConstructor(_, exps, _, _, _, _) =>
       exps.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, exp) => acc ++ visitExp(exp)
       }
 
-    case Expression.InvokeMethod(method, exp, exps, _, _, _) =>
+    case Expression.InvokeMethod(_, exp, exps, _, _, _, _) =>
       exps.foldLeft(visitExp(exp)) {
         case (acc, e) => acc ++ visitExp(e)
       }
 
-    case Expression.InvokeStaticMethod(_, exps, _, _, _) =>
+    case Expression.InvokeStaticMethod(_, exps, _, _, _, _) =>
       exps.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, e) => acc ++ visitExp(e)
       }
 
-    case Expression.GetField(_, exp, _, _, _) =>
+    case Expression.GetField(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.PutField(_, exp1, exp2, _, _, _) =>
+    case Expression.PutField(_, exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.GetStaticField(_, _, _, _) =>
+    case Expression.GetStaticField(_, _, _, _, _) =>
       Iterator.empty
 
-    case Expression.PutStaticField(_, exp, _, _, _) =>
+    case Expression.PutStaticField(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewObject(_, _, _, _) =>
+    case Expression.NewObject(_, _, _, _, _) =>
       Iterator.empty
 
-    case Expression.NewChannel(exp, _, _, _) => visitExp(exp)
+    case Expression.NewChannel(exp, _, _, _, _) => visitExp(exp)
 
-    case Expression.GetChannel(exp, _, _, _) => visitExp(exp)
+    case Expression.GetChannel(exp, _, _, _, _) => visitExp(exp)
 
-    case Expression.PutChannel(exp1, exp2, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
+    case Expression.PutChannel(exp1, exp2, _, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.SelectChannel(rules, default, _, _, _) =>
+    case Expression.SelectChannel(rules, default, _, _, _, _) =>
       val rs = rules.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, SelectChannelRule(sym, chan, exp)) =>
           val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
@@ -442,40 +462,40 @@ object SemanticTokensProvider {
       val d = default.map(visitExp).getOrElse(Iterator.empty)
       rs ++ d
 
-    case Expression.Spawn(exp, _, _, _) => visitExp(exp)
+    case Expression.Spawn(exp, _, _, _, _) => visitExp(exp)
 
     case Expression.Lazy(exp, _, _) => visitExp(exp)
 
-    case Expression.Force(exp, _, _, _) => visitExp(exp)
+    case Expression.Force(exp, _, _, _, _) => visitExp(exp)
 
     case Expression.FixpointConstraintSet(cs, _, _, _) =>
       cs.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, c) => acc ++ visitConstraint(c)
       }
 
-    case Expression.FixpointLambda(pparams, exp, _, _, _, _) =>
+    case Expression.FixpointLambda(pparams, exp, _, _, _, _, _) =>
       visitPredicateParams(pparams) ++ visitExp(exp)
 
-    case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
+    case Expression.FixpointMerge(exp1, exp2, _, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.FixpointSolve(exp, _, _, _, _) =>
+    case Expression.FixpointSolve(exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointFilter(_, exp, _, _, _) =>
+    case Expression.FixpointFilter(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointInject(exp, _, _, _, _) =>
+    case Expression.FixpointInject(exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointProject(_, exp, _, _, _) =>
+    case Expression.FixpointProject(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Reify(_, _, _, _) => Iterator.empty
+    case Expression.Reify(_, _, _, _, _) => Iterator.empty
 
-    case Expression.ReifyType(t, _, _, _, _) => visitType(t)
+    case Expression.ReifyType(t, _, _, _, _, _) => visitType(t)
 
-    case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+    case Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, _, _) =>
       val o = getSemanticTokenType(sym, exp1.tpe)
       val t = SemanticToken(o, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
@@ -661,7 +681,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given formal parameter `fparam0`.
     */
   private def visitFormalParam(fparam0: FormalParam): Iterator[SemanticToken] = fparam0 match {
-    case FormalParam(sym, _, tpe, _) =>
+    case FormalParam(sym, _, tpe, _, _) =>
       val o = getSemanticTokenType(sym, tpe)
       val t = SemanticToken(o, Nil, sym.loc)
       Iterator(t) ++ visitType(tpe)

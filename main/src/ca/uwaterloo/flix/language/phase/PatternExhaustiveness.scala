@@ -149,80 +149,87 @@ object PatternExhaustiveness {
       case Expression.Str(_, _) => ().toSuccess
       case Expression.Default(_, _) => ().toSuccess
       case Expression.Lambda(_, body, _, _) => visitExp(body, root)
-      case Expression.Apply(exp, exps, _, _, _) => traverseX(exp :: exps)(visitExp(_, root))
-      case Expression.Unary(_, exp, _, _, _) => visitExp(exp, root)
-      case Expression.Binary(_, exp1, exp2, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
-      case Expression.Let(_, _, exp1, exp2, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
-      case Expression.LetRec(_, _, exp1, exp2, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
+      case Expression.Apply(exp, exps, _, _, _, _) => traverseX(exp :: exps)(visitExp(_, root))
+      case Expression.Unary(_, exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.Binary(_, exp1, exp2, _, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
+      case Expression.Let(_, _, exp1, exp2, _, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
+      case Expression.LetRec(_, _, exp1, exp2, _, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
       case Expression.Region(_, _) => ().toSuccess
-      case Expression.Scope(_, _, exp, _, _, _) => visitExp(exp, root)
-      case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => traverseX(List(exp1, exp2, exp3))(visitExp(_, root))
-      case Expression.Stm(exp1, exp2, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
-      case Expression.Discard(exp, _, _) => visitExp(exp, root)
+      case Expression.Scope(_, _, exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) => traverseX(List(exp1, exp2, exp3))(visitExp(_, root))
+      case Expression.Stm(exp1, exp2, _, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
+      case Expression.Discard(exp, _, _, _) => visitExp(exp, root)
 
-      case Expression.Match(exp, rules, _, _, _) =>
+      case Expression.Match(exp, rules, _, _, _, _) =>
         val ruleExps = rules.map(_.exp)
         val guards = rules.map(_.guard)
         val expsVal = traverseX(exp :: ruleExps ::: guards)(visitExp(_, root))
         val rulesVal = checkRules(exp, rules, root)
         sequenceX(List(expsVal, rulesVal))
 
-      case Expression.Choose(exps, rules, _, _, _) =>
+      case Expression.Choose(exps, rules, _, _, _, _) =>
         val ruleExps = rules.map(_.exp)
         traverseX(exps ::: ruleExps)(visitExp(_, root))
 
-      case Expression.Tag(_, _, exp, _, _, _) => visitExp(exp, root)
-      case Expression.Tuple(elms, _, _, _) => traverseX(elms)(visitExp(_, root))
+      case Expression.Tag(_, _, exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.Tuple(elms, _, _, _, _) => traverseX(elms)(visitExp(_, root))
       case Expression.RecordEmpty(_, _) => ().toSuccess
-      case Expression.RecordSelect(base, _, _, _, _) => visitExp(base, root)
-      case Expression.RecordExtend(_, value, rest, _, _, _) => traverseX(List(value, rest))(visitExp(_, root))
-      case Expression.RecordRestrict(_, rest, _, _, _) => visitExp(rest, root)
-      case Expression.ArrayLit(exps, exp, _, _, _) => traverseX(exp :: exps)(visitExp(_, root))
-      case Expression.ArrayNew(exp1, exp2, exp3, _, _, _) => traverseX(List(exp1, exp2, exp3))(visitExp(_, root))
-      case Expression.ArrayLoad(base, index, _, _, _) => traverseX(List(base, index))(visitExp(_, root))
-      case Expression.ArrayStore(base, index, elm, _) => traverseX(List(base, index, elm))(visitExp(_, root))
-      case Expression.ArrayLength(base, _, _) => visitExp(base, root)
-      case Expression.ArraySlice(base, beginIndex, endIndex, _, _) => traverseX(List(base, beginIndex, endIndex))(visitExp(_, root))
-      case Expression.Ref(exp1, exp2, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
-      case Expression.Deref(exp, _, _, _) => visitExp(exp, root)
-      case Expression.Assign(exp1, exp2, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
-      case Expression.Ascribe(exp, _, _, _) => visitExp(exp, root)
-      case Expression.Cast(exp, _, _, _, _, _) => visitExp(exp, root)
+      case Expression.RecordSelect(base, _, _, _, _, _) => visitExp(base, root)
+      case Expression.RecordExtend(_, value, rest, _, _, _, _) => traverseX(List(value, rest))(visitExp(_, root))
+      case Expression.RecordRestrict(_, rest, _, _, _, _) => visitExp(rest, root)
+      case Expression.ArrayLit(exps, exp, _, _, _, _) => traverseX(exp :: exps)(visitExp(_, root))
+      case Expression.ArrayNew(exp1, exp2, exp3, _, _, _, _) => traverseX(List(exp1, exp2, exp3))(visitExp(_, root))
+      case Expression.ArrayLoad(base, index, _, _, _, _) => traverseX(List(base, index))(visitExp(_, root))
+      case Expression.ArrayStore(base, index, elm, _, _) => traverseX(List(base, index, elm))(visitExp(_, root))
+      case Expression.ArrayLength(base, _, _, _) => visitExp(base, root)
+      case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _) => traverseX(List(base, beginIndex, endIndex))(visitExp(_, root))
+      case Expression.Ref(exp1, exp2, _, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
+      case Expression.Deref(exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.Assign(exp1, exp2, _, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
+      case Expression.Ascribe(exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.Cast(exp, _, _, _, _, _, _, _) => visitExp(exp, root)
+      case Expression.Without(exp, _, _, _, _, _) => visitExp(exp, root)
 
-      case Expression.TryCatch(exp, rules, _, _, _) =>
+      case Expression.TryCatch(exp, rules, _, _, _, _) =>
         val ruleExps = rules.map(_.exp)
         traverseX(exp :: ruleExps)(visitExp(_, root))
 
-      case Expression.InvokeConstructor(_, args, _, _, _) => traverseX(args)(visitExp(_, root))
-      case Expression.InvokeMethod(_, exp, args, _, _, _) => traverseX(exp :: args)(visitExp(_, root))
-      case Expression.InvokeStaticMethod(_, args, _, _, _) => traverseX(args)(visitExp(_, root))
-      case Expression.GetField(_, exp, _, _, _) => visitExp(exp, root)
-      case Expression.PutField(_, exp1, exp2, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
-      case Expression.GetStaticField(_, _, _, _) => ().toSuccess
-      case Expression.PutStaticField(_, exp, _, _, _) => visitExp(exp, root)
-      case Expression.NewObject(_, _, _, _) => ().toSuccess
-      case Expression.NewChannel(exp, _, _, _) => visitExp(exp, root)
-      case Expression.GetChannel(exp, _, _, _) => visitExp(exp, root)
-      case Expression.PutChannel(exp1, exp2, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
+      case Expression.TryWith(exp, _, rules, _, _, _, _) =>
+        val ruleExps = rules.map(_.exp)
+        traverseX(exp :: ruleExps)(visitExp(_, root))
 
-      case Expression.SelectChannel(rules, default, _, _, _) =>
+      case Expression.Do(_, exps, _, _, _) => traverseX(exps)(visitExp(_, root))
+      case Expression.Resume(exp, _, _) => visitExp(exp, root)
+      case Expression.InvokeConstructor(_, args, _, _, _, _) => traverseX(args)(visitExp(_, root))
+      case Expression.InvokeMethod(_, exp, args, _, _, _, _) => traverseX(exp :: args)(visitExp(_, root))
+      case Expression.InvokeStaticMethod(_, args, _, _, _, _) => traverseX(args)(visitExp(_, root))
+      case Expression.GetField(_, exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.PutField(_, exp1, exp2, _, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
+      case Expression.GetStaticField(_, _, _, _, _) => ().toSuccess
+      case Expression.PutStaticField(_, exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.NewObject(_, _, _, _, _) => ().toSuccess
+      case Expression.NewChannel(exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.GetChannel(exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.PutChannel(exp1, exp2, _, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
+
+      case Expression.SelectChannel(rules, default, _, _, _, _) =>
         val ruleExps = rules.map(_.exp)
         val chans = rules.map(_.chan)
         traverseX(ruleExps ::: chans ::: default.toList)(visitExp(_, root))
 
-      case Expression.Spawn(exp, _, _, _) => visitExp(exp, root)
+      case Expression.Spawn(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Lazy(exp, _, _) => visitExp(exp, root)
-      case Expression.Force(exp, _, _, _) => visitExp(exp, root)
+      case Expression.Force(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.FixpointConstraintSet(cs, _, _, _) => traverseX(cs)(visitConstraint(_, root))
-      case Expression.FixpointLambda(_, exp, _, _, _, _) => visitExp(exp, root)
-      case Expression.FixpointMerge(exp1, exp2, _, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
-      case Expression.FixpointSolve(exp, _, _, _, _) => visitExp(exp, root)
-      case Expression.FixpointFilter(_, exp, _, _, _) => visitExp(exp, root)
-      case Expression.FixpointInject(exp, _, _, _, _) => visitExp(exp, root)
-      case Expression.FixpointProject(_, exp, _, _, _) => visitExp(exp, root)
-      case Expression.Reify(_, _, _, _) => ().toSuccess
-      case Expression.ReifyType(_, _, _, _, _) => ().toSuccess
-      case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _) => traverseX(List(exp1, exp2, exp3))(visitExp(_, root))
+      case Expression.FixpointLambda(_, exp, _, _, _, _, _) => visitExp(exp, root)
+      case Expression.FixpointMerge(exp1, exp2, _, _, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
+      case Expression.FixpointSolve(exp, _, _, _, _, _) => visitExp(exp, root)
+      case Expression.FixpointFilter(_, exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.FixpointInject(exp, _, _, _, _, _) => visitExp(exp, root)
+      case Expression.FixpointProject(_, exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.Reify(_, _, _, _, _) => ().toSuccess
+      case Expression.ReifyType(_, _, _, _, _, _) => ().toSuccess
+      case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) => traverseX(List(exp1, exp2, exp3))(visitExp(_, root))
     }
   }
 

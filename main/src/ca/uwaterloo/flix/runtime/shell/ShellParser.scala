@@ -46,11 +46,24 @@ class Parsed(s: String) extends ParsedLine {
   */
 class ShellParser extends Parser {
   def parse(s: String, cursor: Int, context: Parser.ParseContext): ParsedLine = {
-    
-    // If the last character in the string is a backslash, throw `EOFError` to trigger line continuation
-    if (s.lastOption == Some('\\'))
-      throw new EOFError(-1, -1, "Escaped new line", "newline")
 
+    if (context == Parser.ParseContext.ACCEPT_LINE) {
+
+      val lines = s.linesIterator.toList
+
+      // If the input starts with two backslashes on a line ...
+      if (lines.headOption == Some("\\\\")) {
+
+        // ... and doesn't end with two backslashes on a line, throw `EOFError` to trigger line continuation
+        if (!(lines.size > 1 && lines.last == "\\\\"))
+          throw new EOFError(-1, -1, "Escaped new line", "newline")
+      } else {      
+
+        // Otherwise, if the last character in the string is a backslash, throw `EOFError` to trigger line continuation
+        if (s.lastOption == Some('\\'))
+          throw new EOFError(-1, -1, "Escaped new line", "newline")
+      }
+    }
     new Parsed(s)
   }
 }

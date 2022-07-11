@@ -1093,6 +1093,69 @@ namespace TestMutDeque {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // iterator                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def iterator01(): Bool = region r {
+        let d = new MutDeque(r): MutDeque[Int32, r];
+        Iterable.iterator(d) |> invokeIsEmpty(100)
+    }
+
+    @test
+    def iterator02(): Bool = region r {
+        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+        not (Iterable.iterator(d) |> invokeIsEmpty(100))
+    }
+
+    @test
+    def iterator03(): Bool = region r {
+        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+        discard MutDeque.popBack(d);
+        discard MutDeque.popBack(d);
+        discard MutDeque.popBack(d);
+        Iterable.iterator(d) |> invokeIsEmpty(100)
+    }
+
+    @test
+    def iterator04(): Bool = region r {
+        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+        Iterable.iterator(d) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    }
+
+    @test
+    def iterator05(): Bool = region r {
+        let d = List.range(0, 100) |> List.toMutDeque(r);
+        Iterable.iterator(d) |> Iterator.toList == List.range(0, 100) and
+        MutDeque.toList(d) == List.range(0, 100)
+    }
+
+    @test
+    def iterator06(): Bool = region r {
+        let d = List.range(0, 100) |> List.toMutDeque(r);
+        let iter = Iterable.iterator(d);
+        foreach (_ <- MutList.range(r, 0, 50) |> Iterable.iterator)
+            discard Iterator.next(iter);
+        iter |> Iterator.toList == List.range(50, 100) and
+        MutDeque.toList(d) == List.range(0, 100)
+    }
+
+    ///
+    /// Invokes `Iterator.isEmpty(iter)` `n` times and combines the results with `and`.
+    ///
+    /// Assumes `n > 0`.
+    ///
+    def invokeIsEmpty(n: Int32, iter: Iterator[a, r]): Bool \ Read(r) =
+        def loop(i, acc) = {
+            if (i >= n)
+                acc
+            else
+                loop(i + 1, Iterator.isEmpty(iter) and acc)
+        };
+        loop(1, Iterator.isEmpty(iter))
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // foreach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
