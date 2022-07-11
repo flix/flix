@@ -578,7 +578,7 @@ object Redundancy {
     case Expression.PutStaticField(_, exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.NewObject(_, _, _, _, _) =>
+    case Expression.NewObject(_, _, _, _, _, _) =>
       Used.empty
 
     case Expression.NewChannel(exp, _, _, _, _) =>

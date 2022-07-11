@@ -2069,11 +2069,12 @@ object Typer {
         val eff = e.eff
         TypedAst.Expression.PutStaticField(field, e, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.NewObject(clazz, _, loc) =>
+      case KindedAst.Expression.NewObject(clazz, methods, loc) =>
         val tpe = getFlixType(clazz)
         val pur = Type.Impure
         val eff = Type.Empty
-        TypedAst.Expression.NewObject(clazz, tpe, pur, eff, loc)
+        val ms = methods map visitJvmMethod
+        TypedAst.Expression.NewObject(clazz, tpe, pur, eff, ms, loc)
 
       case KindedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp, subst0)
@@ -2241,6 +2242,15 @@ object Typer {
       */
     def visitPredicateParam(pparam: KindedAst.PredicateParam): TypedAst.PredicateParam =
       TypedAst.PredicateParam(pparam.pred, subst0(pparam.tpe), pparam.loc)
+
+    def visitJvmMethod(method: KindedAst.JvmMethod): TypedAst.JvmMethod = {
+      method match {
+        case KindedAst.JvmMethod(ident, fparams0, exp0, tpe, pur, eff, loc) =>
+          val fparams = getFormalParams(fparams0, subst0)
+          val exp = visitExp(exp0, subst0)
+          TypedAst.JvmMethod(ident, fparams, exp, tpe, pur, eff, loc)
+      }
+    }
 
     visitExp(exp0, subst0)
   }

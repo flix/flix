@@ -424,7 +424,7 @@ object SemanticTokensProvider {
     case Expression.PutStaticField(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewObject(_, _, _, _, _) =>
+    case Expression.NewObject(_, _, _, _, _, _) =>
       Iterator.empty
 
     case Expression.NewChannel(exp, _, _, _, _) => visitExp(exp)

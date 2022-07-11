@@ -281,7 +281,7 @@ object Regions {
         case e => checkType(tpe, loc)
       }
 
-    case Expression.NewObject(_, _, _, _, _) =>
+    case Expression.NewObject(_, _, _, _, _, _) =>
       ().toSuccess
 
     case Expression.NewChannel(exp, tpe, _, _, loc) =>

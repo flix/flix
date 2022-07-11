@@ -301,7 +301,7 @@ object TypedAst {
 
     case class PutStaticField(field: Field, exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class NewObject(clazz: java.lang.Class[_], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class NewObject(clazz: java.lang.Class[_], tpe: Type, pur: Type, eff: Type, methods: List[JvmMethod], loc: SourceLocation) extends TypedAst.Expression
 
     case class NewChannel(exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -490,6 +490,8 @@ object TypedAst {
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
 
   case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
+
+  case class JvmMethod(ident: Name.Ident, fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression, retTpe: Type, pur: Type, eff: Type, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: TypedAst.Expression)
 
