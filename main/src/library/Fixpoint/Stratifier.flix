@@ -30,7 +30,7 @@ namespace Fixpoint {
     /// Initially, all IDB predicates are assigned to stratum 0.
     /// I.e. facts are ignored in the stratification.
     ///
-    def stratify(d: Datalog[v]): Map[PredSym, Int32] & Impure = match d {
+    def stratify(d: Datalog[v]): Map[PredSym, Int32] = match d {
         case Datalog(_, rules) =>
             List.foldRight(match Constraint(HeadAtom(p, _, _), _) -> Map.insert(p, 0), Map#{}, rules) |>
             stratifyHelper(mkDepGraph(d))
@@ -77,7 +77,7 @@ namespace Fixpoint {
                 stf
     }
 
-    def mkDepGraph(d: Datalog[v]): PrecedenceGraph & Impure = match d {
+    def mkDepGraph(d: Datalog[v]): PrecedenceGraph = match d {
         case Datalog(_, rules) => List.fold(List.map(precedenceHelper, rules))
         case Model(_) => Monoid.empty()
         case Join(d1, d2) => Monoid.combine(mkDepGraph(d1), mkDepGraph(d2))
