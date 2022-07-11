@@ -15,21 +15,26 @@
  */
 namespace Graph {
 
+    def nodes(): #{ Edge(t, t), Node(t) | r } with Boxable[t] = #{
+        Node(x) :- Edge(x, _).
+        Node(x) :- Edge(_, x).
+    }
+
+    def reachability(): #{Edge(t, t), Reachable(t, t) | r} with Boxable[t] = #{
+        // All nodes can reach themselves.
+        Reachable(n, n) :- Node(n).
+        // If `n1` can reach `m` and there is an edge from `m` to `n2`
+        // then `n1` can also reach `n2`. This adds all node pairs to
+        // the relational that are reachable using any number of nodes.
+        Reachable(n1, n2) :- Reachable(n1, m), Edge(m, n2).
+    }
+
     ///
     /// Returns the transitive closure of the directed graph `g`.
     ///
     pub def closure(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Boxable[t] =
         let edges = inject g into Edge;
-        let reachability = #{
-            // All nodes can reach themselves.
-            Reachable(n1, n1) :- Edge(n1, _).
-            Reachable(n2, n2) :- Edge(_, n2).
-            // If `n1` can reach `m` and there is an edge from `m` to `n2`
-            // then `n1` can also reach `n2`. This adds all node pairs to
-            // the relational that are reachable using any number of nodes.
-            Reachable(n1, n2) :- Reachable(n1, m), Edge(m, n2).
-        };
-        let x = query edges, reachability select (src, dst) from Reachable(src, dst);
+        let x = query edges, nodes(), reachability() select (src, dst) from Reachable(src, dst);
         List.toSet(x)
 
     ///
@@ -53,10 +58,6 @@ namespace Graph {
     ///
     pub def unreachable(src: t, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] =
         let edges = inject g into Edge;
-        let nodes = #{
-            Node(x) :- Edge(x, _).
-            Node(x) :- Edge(_, x).
-        };
         let reachability = #{
             // A node can reach itself.
             Reachable(src).
@@ -69,7 +70,7 @@ namespace Graph {
             // If there is a node that is not Reachable from src then it is unreachable.
             UnReachable(x) :- Node(x), not Reachable(x).
         };
-        let x = query edges, nodes, reachability, unreachablility select dst from UnReachable(dst);
+        let x = query edges, nodes(), reachability, unreachablility select dst from UnReachable(dst);
         List.toSet(x)
 
     ///
@@ -83,42 +84,11 @@ namespace Graph {
     ///
     pub def stronglyConnectedComponents(g: m[(t, t)]): List[Set[t]] with Foldable[m], Boxable[t] =
         let edges = inject g into Edge;
-        let nodes = #{
-            Node(x) :- Edge(x, _).
-            Node(x) :- Edge(_, x).
-        };
-        let reachability = #{
-            // All nodes can reach themselves.
-            Reachable(n1, n1) :- Edge(n1, _).
-            Reachable(n2, n2) :- Edge(_, n2).
-            // If `n1` can reach `m` and there is an edge from `m` to `n2`
-            // then `n1` can also reach `n2`. This adds all node pairs to
-            // the relational that are reachable using any number of nodes.
-            Reachable(n1, n2) :- Reachable(n1, m), Edge(m, n2).
-        };
         let connected = #{
             // If `n1` can reach `n2` and `n2` can reach `n1`
             // then they are part of the same strongly connected component.
-            Connected(n1, n2) :- Reachable(n1, n2), Reachable(n2, n1).
+            Connected(n1; Set#{n2}) :- Reachable(n1, n2), Reachable(n2, n1).
         };
-
-        let allNodes = query edges, nodes select x from Node(x);
-
-        // Find every node that is part of the strongly connected component with `x`.
-        let f = (x) -> {
-            query edges, reachability, connected select dst from Connected(src, dst) where src == x
-        };
-
-        let f1 = (acc, x) -> {
-            let (acc1, visited) = acc;
-            if (Set.memberOf(x, visited)) {
-                acc
-            } else {
-                let stronglyConnected = Set.insert(x, List.toSet(f(x)));
-                (stronglyConnected :: acc1, Set.union(visited, stronglyConnected))
-            }
-        };
-
-        fst(List.foldLeft(f1, (Nil, Set.empty()), allNodes))
+        query edges, nodes(), reachability(), connected select x from Connected(_; x)
 
 }
