@@ -1,0 +1,21 @@
+name: Semantic Commit Message
+on:
+  pull_request:
+    types: [opened, edited]
+
+jobs:
+  check-title:
+    runs-on: ubuntu-latest
+    env:
+      regex: "^(chore|ci|docs|feat|fix|refactor|style|test): "
+    steps:
+      - name: Check title
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: >
+            if (context.title.matches === null) {
+              throw null
+            }
+            
+      
