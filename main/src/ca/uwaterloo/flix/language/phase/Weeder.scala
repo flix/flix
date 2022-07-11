@@ -716,54 +716,26 @@ object Weeder {
       // Rewrites a foreach loop to Monad.flatMap and Functor.map call.
       //
 
-      val fqnMap = "Functor.map"
       val fqnFlatMap = "Monad.flatMap"
-      val last = frags.length - 1
+      val fqnPoint = "Applicative.point"
+      val fqnZero = "MonadZero.empty"
 
-      def mkForYieldLoopLambda(sp1: SourcePosition,
-                               fqn: String,
-                               pat: WeededAst.Pattern,
-                               exp0: WeededAst.Expression,
-                               exp1: WeededAst.Expression,
-                               sp2: SourcePosition): WeededAst.Expression = {
-        val loc = mkSL(sp1, sp2).asSynthetic
-        val lambda = mkLambdaMatch(sp1, pat, exp0, sp2)
-        val fparams = List(lambda, exp1)
-        mkApplyFqn(fqn, fparams, loc)
-      }
-
-      def mkFilterApply(sp1: SourcePosition,
-                        pat: WeededAst.Pattern,
-                        guards: List[WeededAst.Expression],
-                        exp1: WeededAst.Expression,
-                        sp2: SourcePosition): WeededAst.Expression = {
-
-        // Neutral filter is `FunctorFilter.filter(_ -> true, l)`
-        val loc = mkSL(sp1, sp2).asSynthetic
-        val fqnFilter = "FunctorFilter.filter"
-        val lambda0 = mkLambdaMatch(sp1, WeededAst.Pattern.Wild(loc), WeededAst.Expression.True(loc), sp2)
-        val fparams0 = List(lambda0, exp1)
-
-        guards.foldRight(mkApplyFqn(fqnFilter, fparams0, loc)) {
-          case (cond, acc) =>
-            val lambda1 = mkLambdaMatch(sp1, pat, cond, sp2)
-            val fparams1 = List(lambda1, acc)
-            mkApplyFqn(fqnFilter, fparams1, cond.loc)
-        }
-      }
-
-      foldRight(frags.zipWithIndex)(visitExp(exp, senv)) {
-        case ((ParsedAst.ForYieldFragment.ForYield(sp11, pat, exp1, guards, sp12), idx), exp0) =>
-          val guardVals = traverse(guards)(g => visitExp(g.exp, senv))
-          mapN(visitPattern(pat), guardVals, visitExp(exp1, senv)) {
-            case (p, gs, e1) =>
-              if (idx == last) { // Check if it's the innermost loop and no guards
-                val e1Filtered = mkFilterApply(sp11, p, gs, e1, sp12)
-                mkForYieldLoopLambda(sp11, fqnMap, p, exp0, e1Filtered, sp12)
-              } else {
-                val e1Filtered = mkFilterApply(sp11, p, gs, e1, sp12)
-                mkForYieldLoopLambda(sp11, fqnFlatMap, p, exp0, e1Filtered, sp12)
-              }
+      foldRight(frags)(visitExp(exp, senv)) {
+        case (ParsedAst.ForYieldFragment.ForYield(sp1, pat, exp1, sp2), exp0) =>
+          mapN(visitPattern(pat), visitExp(exp1, senv)) {
+            case (p, e1) =>
+              val loc = mkSL(sp1, sp2).asSynthetic
+              val lambda = mkLambdaMatch(sp1, p, exp0, sp2)
+              val fparams = List(lambda, e1)
+              mkApplyFqn(fqnFlatMap, fparams, loc)
+          }
+        case (ParsedAst.ForYieldFragment.Guard(sp1, exp1, sp2), exp0) =>
+          mapN(visitExp(exp1, senv)) {
+            case e1 =>
+              val loc = mkSL(sp1, sp2).asSynthetic
+              val point = mkApplyFqn(fqnPoint, List(exp0), loc)
+              val zero = mkApplyFqn(fqnZero, List.empty, loc)
+              WeededAst.Expression.IfThenElse(e1, point, zero, loc)
           }
       }
 
