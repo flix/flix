@@ -202,34 +202,29 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     val enumSym = Symbol.mkEnumSym(s)
     val aliasSym = Symbol.mkTypeAliasSym(s)
 
-    for(r <- root) {
+    root match {
+      case Some(r) =>
+        if(r.classes.contains(classSym)) {
+          val classDecl = r.classes(classSym)
+          w.println(FormatDoc.asMarkDown(classDecl.doc))
+        } else if (r.defs.contains(defnSym)) {
+          val defDecl = r.defs(defnSym)
+          w.println(FormatSignature.asMarkDown(defDecl))
+          w.println(FormatDoc.asMarkDown(defDecl.spec.doc))
+        } else if (r.enums.contains(enumSym)) {
+          val enumDecl = r.enums(enumSym)
+          w.println(FormatDoc.asMarkDown(enumDecl.doc))
+        } else if (r.typeAliases.contains(aliasSym)) {
+          val aliasDecl = r.typeAliases(aliasSym)
+          w.println(FormatType.formatWellKindedType(aliasDecl.tpe))
+          w.println
+          w.println(FormatDoc.asMarkDown(aliasDecl.doc))
+        } else {
+          w.println(s"$s not found")
+        }
 
-      if(r.classes.contains(classSym)) {
-
-        val classDecl = r.classes(classSym)
-        w.println(FormatDoc.asMarkDown(classDecl.doc))
-
-      } else if (r.defs.contains(defnSym)) {
-
-        val defDecl = r.defs(defnSym)
-        w.println(FormatSignature.asMarkDown(defDecl))
-        w.println(FormatDoc.asMarkDown(defDecl.spec.doc))
-
-      } else if (r.enums.contains(enumSym)) {
-
-        val enumDecl = r.enums(enumSym)
-        w.println(FormatDoc.asMarkDown(enumDecl.doc))
-
-      } else if (r.typeAliases.contains(aliasSym)) {
-
-        val aliasDecl = r.typeAliases(aliasSym)
-        w.println(FormatType.formatWellKindedType(aliasDecl.tpe))
-        w.println
-        w.println(FormatDoc.asMarkDown(aliasDecl.doc))
-
-      } else {
-        w.println(s"$s not found")
-      }
+      case None =>
+        w.println("Error: No compilation results available")
     }
   }
 
@@ -249,7 +244,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     w.println("  Command       Arguments     Purpose")
     w.println()
     w.println("  :reload :r                  Recompiles every source file.")
-    w.println("  :doc :d       <identifier>  Displays documentation for <identifier>")
+    w.println("  :doc :d       <fqn>         Displays documentation for <fqn>")
     w.println("  :quit :q                    Terminates the Flix shell.")
     w.println("  :help :h :?                 Shows this helpful information.")
     w.println()

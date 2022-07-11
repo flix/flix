@@ -36,7 +36,7 @@ object Command {
   case object Reload extends Command
 
   /**
-    * Displays documentation
+    * Displays documentation about the fqn s
     */
   case class Doc(s: String) extends Command
 

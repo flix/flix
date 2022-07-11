@@ -175,7 +175,6 @@ object Symbol {
   /**
     * Returns the type alias symbol for the given fully qualified name
     */
-
   def mkTypeAliasSym(fqn: String): TypeAliasSym = split(fqn) match {
     case None => new TypeAliasSym(Nil, fqn, SourceLocation.Unknown)
     case Some((ns, name)) => new TypeAliasSym(ns, name, SourceLocation.Unknown)
