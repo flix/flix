@@ -63,7 +63,7 @@ object EarlyTreeShaker {
     }
 
     // Reassemble the AST.
-    root.copy(defs = newDefs, sigs = newSigs, instances = newInstances).toSuccess
+    root.copy(defs = newDefs, sigs = newSigs).toSuccess
   }
 
   /**
@@ -87,9 +87,8 @@ object EarlyTreeShaker {
       }
     }
 
-    // (c) Order and eq is always reachable
-    // reachable ++= root.instances.map(s => ReachableSym.ClassSym(s._1)).filter(s => s.classSym.name == "Order" || s.classSym.name == "Eq")
-
+    // (c) Type classes are always reachable???
+    reachable ++= root.instances.map(s => ReachableSym.ClassSym(s._1))
     reachable
   }
 
@@ -119,7 +118,6 @@ object EarlyTreeShaker {
     case ReachableSym.SigSym(sigSym) => root.sigs.get(sigSym) match {
       case None => Set.empty
       case Some(Sig(sigSym, spec, impl)) =>
-        Set(ReachableSym.SigSym(sigSym)) ++
           visitExps(spec.ann.flatMap(_.args)) ++
           impl.map(i => visitExp(i.exp)).getOrElse(Set.empty)
     }
