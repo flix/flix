@@ -118,7 +118,7 @@ object EarlyTreeShaker {
     case ReachableSym.SigSym(sigSym) => root.sigs.get(sigSym) match {
       case None => Set.empty
       case Some(Sig(sigSym, spec, impl)) =>
-          visitExps(spec.ann.flatMap(_.args)) ++
+        visitExps(spec.ann.flatMap(_.args)) ++
           impl.map(i => visitExp(i.exp)).getOrElse(Set.empty)
     }
 
@@ -379,6 +379,18 @@ object EarlyTreeShaker {
 
     case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+    case Expression.Do(sym, exps, _, _, _) =>
+      visitExps(exps) // Add OpSym to reachable syms?
+
+    case Expression.Resume(exp, _, _) =>
+      visitExp(exp)
+
+    case Expression.TryWith(exp, _, rules, _, _, _, _) =>
+      visitExp(exp) ++ visitExps(rules.map(_.exp))
+
+    case Expression.Without(exp, _, _, _, _, _) =>
+      visitExp(exp)
 
   }
 
