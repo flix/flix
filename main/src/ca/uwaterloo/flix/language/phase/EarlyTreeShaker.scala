@@ -86,6 +86,10 @@ object EarlyTreeShaker {
         reachable = reachable + ReachableSym.DefnSym(sym)
       }
     }
+
+    // (c) Order and eq is always reachable
+    // reachable ++= root.instances.map(s => ReachableSym.ClassSym(s._1)).filter(s => s.classSym.name == "Order" || s.classSym.name == "Eq")
+
     reachable
   }
 
