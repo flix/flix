@@ -1130,6 +1130,16 @@ namespace TestMutDeque {
         MutDeque.toList(d) == List.range(0, 100)
     }
 
+    @test
+    def iterator06(): Bool = region r {
+        let d = List.range(0, 100) |> List.toMutDeque(r);
+        let iter = Iterable.iterator(d);
+        foreach (_ <- MutList.range(r, 0, 50) |> Iterable.iterator)
+            discard Iterator.next(iter);
+        iter |> Iterator.toList == List.range(50, 100) and
+        MutDeque.toList(d) == List.range(0, 100)
+    }
+
     ///
     /// Invokes `Iterator.isEmpty(iter)` `n` times and combines the results with `and`.
     ///
