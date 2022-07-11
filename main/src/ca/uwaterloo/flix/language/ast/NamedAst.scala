@@ -421,7 +421,7 @@ object NamedAst {
 
   }
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: NamedAst.Type, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: NamedAst.Type, src: Ast.TypeSource, loc: SourceLocation)
 
   sealed trait PredicateParam
 

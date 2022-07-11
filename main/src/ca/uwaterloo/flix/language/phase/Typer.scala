@@ -2256,7 +2256,7 @@ object Typer {
       * Applies the substitution to the given list of formal parameters.
       */
     def visitFormalParam(fparam: KindedAst.FormalParam): TypedAst.FormalParam =
-      TypedAst.FormalParam(fparam.sym, fparam.mod, subst0(fparam.tpe), fparam.loc)
+      TypedAst.FormalParam(fparam.sym, fparam.mod, subst0(fparam.tpe), fparam.src, fparam.loc)
 
     /**
       * Applies the substitution to the given list of predicate parameters.
@@ -2538,7 +2538,7 @@ object Typer {
     // Compute the substitution by mapping the symbol of each parameter to its declared type.
     val declaredTypes = params.map(_.tpe)
     (params zip declaredTypes).foldLeft(Substitution.empty) {
-      case (macc, (KindedAst.FormalParam(sym, _, _, _), declaredType)) =>
+      case (macc, (KindedAst.FormalParam(sym, _, _, _, _), declaredType)) =>
         macc ++ Substitution.singleton(sym.tvar.sym.ascribedWith(Kind.Star), declaredType)
     }
   }
@@ -2563,7 +2563,7 @@ object Typer {
     * Returns the typed version of the given formal parameters `fparams0`.
     */
   private def getFormalParams(fparams0: List[KindedAst.FormalParam], subst0: Substitution): List[TypedAst.FormalParam] = fparams0.map {
-    case KindedAst.FormalParam(sym, mod, tpe, loc) => TypedAst.FormalParam(sym, mod, subst0(tpe), sym.loc)
+    case KindedAst.FormalParam(sym, mod, tpe, src, loc) => TypedAst.FormalParam(sym, mod, subst0(tpe), src, sym.loc)
   }
 
   /**
