@@ -46,7 +46,7 @@ namespace TestGraph {
             Nil;
         Set#{(1, 2), (2, 3), (3, 4)}
 
-    def _graph06(): Set[(Int32, Int32)] =
+    def graph06(): Set[(Int32, Int32)] =
         let _graphString =
             " ┌─┐   ┌─┐ " ::
             " │1├─→─┤2│ " ::
@@ -58,7 +58,7 @@ namespace TestGraph {
             Nil;
         Set#{(1, 2), (2, 3), (3, 4), (4, 1)}
 
-    def _graph07(): Set[(Int32, Int32)] =
+    def graph07(): Set[(Int32, Int32)] =
         let _graphString =
             " ┌─┐   ┌─┐   ┌─┐ " ::
             " │1├─→─┤2├─→─┤5│ " ::
