@@ -489,7 +489,7 @@ object Resolver {
         val varSyms = (0 until arity).map(i => Symbol.freshVarSym(Flix.Delimiter + i, BoundBy.FormalParam, loc)).toList
 
         // Introduce a formal parameter for each variable symbol.
-        varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar, loc))
+        varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar, Ast.TypeSource.Inferred, loc))
       }
 
       /**
@@ -606,8 +606,8 @@ object Resolver {
         case NamedAst.Expression.Var(sym, loc) =>
           ResolvedAst.Expression.Var(sym, sym.tvar, loc).toSuccess
 
-        case NamedAst.Expression.DefOrSig(qname, loc) =>
-          mapN(lookupDefOrSig(qname, ns0, root)) {
+        case NamedAst.Expression.DefOrSig(qname, env, loc) =>
+          mapN(lookupDefOrSig(qname, ns0, env, root)) {
             case NamedAst.DefOrSig.Def(defn) => visitDef(defn, loc)
             case NamedAst.DefOrSig.Sig(sig) => visitSig(sig, loc)
           }
@@ -623,7 +623,7 @@ object Resolver {
           // Lookup the used name to ensure that it exists.
           use match {
             case NamedAst.Use.UseDefOrSig(qname, _, _) =>
-              flatMapN(lookupDefOrSig(qname, ns0, root))(_ => visitExp(exp, region))
+              flatMapN(lookupDefOrSig(qname, ns0, Map.empty, root))(_ => visitExp(exp, region))
 
             case NamedAst.Use.UseTypeOrClass(qname, _, _) =>
               flatMapN(resolveType(NamedAst.Type.Ambiguous(qname, loc), taenv, ns0, root))(_ => visitExp(exp, region))
@@ -660,8 +660,8 @@ object Resolver {
 
         case NamedAst.Expression.Default(loc) => ResolvedAst.Expression.Default(loc).toSuccess
 
-        case app@NamedAst.Expression.Apply(NamedAst.Expression.DefOrSig(qname, innerLoc), exps, outerLoc) =>
-          flatMapN(lookupDefOrSig(qname, ns0, root)) {
+        case app@NamedAst.Expression.Apply(NamedAst.Expression.DefOrSig(qname, env, innerLoc), exps, outerLoc) =>
+          flatMapN(lookupDefOrSig(qname, ns0, env, root)) {
             case NamedAst.DefOrSig.Def(defn) => visitApplyDef(app, defn, exps, region, innerLoc, outerLoc)
             case NamedAst.DefOrSig.Sig(sig) => visitApplySig(app, sig, exps, region, innerLoc, outerLoc)
           }
@@ -789,7 +789,7 @@ object Resolver {
                   val freshVar = Symbol.freshVarSym("x" + Flix.Delimiter, BoundBy.FormalParam, loc)
 
                   // Construct the formal parameter for the fresh symbol.
-                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshUnkindedVar(loc), loc)
+                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshUnkindedVar(loc), Ast.TypeSource.Inferred, loc)
 
                   // Construct a variable expression for the fresh symbol.
                   val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar, loc)
@@ -1340,7 +1340,7 @@ object Resolver {
     def resolve(fparam0: NamedAst.FormalParam, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.FormalParam, ResolutionError] = {
       val tVal = resolveType(fparam0.tpe, taenv, ns0, root)
       mapN(tVal) {
-        t => ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.loc)
+        t => ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.src, fparam0.loc)
       }
     }
 
@@ -1523,11 +1523,11 @@ object Resolver {
   /**
     * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
-  def lookupDefOrSig(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.DefOrSig, ResolutionError] = {
+  def lookupDefOrSig(qname: Name.QName, ns0: Name.NName, env: Map[String, Symbol.VarSym], root: NamedAst.Root): Validation[NamedAst.DefOrSig, ResolutionError] = {
     val defOrSigOpt = tryLookupName(qname, ns0, root.defsAndSigs)
 
     defOrSigOpt match {
-      case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
+      case None => ResolutionError.UndefinedName(qname, ns0, env, qname.loc).toFailure
       case Some(d@NamedAst.DefOrSig.Def(defn)) =>
         if (isDefAccessible(defn, ns0)) {
           d.toSuccess
@@ -1773,7 +1773,7 @@ object Resolver {
       lookupTypeAlias(qname, ns0, root) match {
         case None =>
           // Case 1: The type alias was not found. Report an error.
-          ResolutionError.UndefinedName(qname, ns0, loc).toFailure
+          ResolutionError.UndefinedName(qname, ns0, Map.empty, loc).toFailure
         case Some(typeAlias) =>
           // Case 2: The type alias was found. Use it.
           val tVal = getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)

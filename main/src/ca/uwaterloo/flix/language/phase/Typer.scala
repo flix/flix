@@ -1998,7 +1998,12 @@ object Typer {
         val eff = declaredEff.getOrElse(e.eff)
         TypedAst.Expression.Cast(e, dt, dp, de, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.Without(exp, _, _) => visitExp(exp, subst0) // TODO
+      case KindedAst.Expression.Without(exp, sym, loc) =>
+        val e = visitExp(exp, subst0)
+        val tpe = e.tpe
+        val pur = e.pur
+        val eff = e.eff
+        TypedAst.Expression.Without(e, sym, tpe, pur, eff, loc)
 
       case KindedAst.Expression.TryCatch(exp, rules, loc) =>
         val e = visitExp(exp, subst0)
@@ -2012,12 +2017,29 @@ object Typer {
         val eff = Type.mkUnion(e.eff :: rs.map(_.exp.eff), loc)
         TypedAst.Expression.TryCatch(e, rs, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.TryWith(exp, _, _, _, _) => visitExp(exp, subst0) // TODO
+      case KindedAst.Expression.TryWith(exp, sym, rules, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        val rs = rules map {
+          case KindedAst.HandlerRule(op, fparams, hexp, htvar) =>
+            val fps = fparams.map(visitFormalParam)
+            val he = visitExp(hexp, subst0)
+            TypedAst.HandlerRule(op, fps, he)
+        }
+        val tpe = subst0(tvar)
+        val pur = Type.mkAnd(e.pur :: rs.map(_.exp.pur), loc)
+        val eff = Type.mkUnion(e.eff :: rs.map(_.exp.eff), loc)
+        TypedAst.Expression.TryWith(e, sym, rs, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.Do(_, _, loc) => TypedAst.Expression.Unit(loc) // TODO
+      case KindedAst.Expression.Do(sym, exps, loc) =>
+        val es = exps.map(visitExp(_, subst0))
+        val pur = Type.mkAnd(es.map(_.pur), loc)
+        val eff = Type.mkUnion(Type.Cst(TypeConstructor.Effect(sym.eff), loc) :: es.map(_.eff), loc)
+        TypedAst.Expression.Do(sym, es, pur, eff, loc)
 
-      case KindedAst.Expression.Resume(_, _, _, loc) => TypedAst.Expression.Unit(loc) // TODO
-
+      case KindedAst.Expression.Resume(exp, _, retTvar, loc) =>
+        val e = visitExp(exp, subst0)
+        val tpe = subst0(retTvar)
+        TypedAst.Expression.Resume(e, tpe, loc)
 
       case KindedAst.Expression.InvokeConstructor(constructor, args, loc) =>
         val as = args.map(visitExp(_, subst0))
@@ -2234,7 +2256,7 @@ object Typer {
       * Applies the substitution to the given list of formal parameters.
       */
     def visitFormalParam(fparam: KindedAst.FormalParam): TypedAst.FormalParam =
-      TypedAst.FormalParam(fparam.sym, fparam.mod, subst0(fparam.tpe), fparam.loc)
+      TypedAst.FormalParam(fparam.sym, fparam.mod, subst0(fparam.tpe), fparam.src, fparam.loc)
 
     /**
       * Applies the substitution to the given list of predicate parameters.
@@ -2516,7 +2538,7 @@ object Typer {
     // Compute the substitution by mapping the symbol of each parameter to its declared type.
     val declaredTypes = params.map(_.tpe)
     (params zip declaredTypes).foldLeft(Substitution.empty) {
-      case (macc, (KindedAst.FormalParam(sym, _, _, _), declaredType)) =>
+      case (macc, (KindedAst.FormalParam(sym, _, _, _, _), declaredType)) =>
         macc ++ Substitution.singleton(sym.tvar.sym.ascribedWith(Kind.Star), declaredType)
     }
   }
@@ -2541,7 +2563,7 @@ object Typer {
     * Returns the typed version of the given formal parameters `fparams0`.
     */
   private def getFormalParams(fparams0: List[KindedAst.FormalParam], subst0: Substitution): List[TypedAst.FormalParam] = fparams0.map {
-    case KindedAst.FormalParam(sym, mod, tpe, loc) => TypedAst.FormalParam(sym, mod, subst0(tpe), sym.loc)
+    case KindedAst.FormalParam(sym, mod, tpe, src, loc) => TypedAst.FormalParam(sym, mod, subst0(tpe), src, sym.loc)
   }
 
   /**

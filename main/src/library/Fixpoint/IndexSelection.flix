@@ -59,7 +59,7 @@ namespace Fixpoint {
     /// Step 1 and Step 2 are implemented as one pass.
     ///
     @Internal
-    pub def queryStmt(stmt: RamStmt[v]): RamStmt[v] & Impure = match stmt {
+    pub def queryStmt(stmt: RamStmt[v]): RamStmt[v] = match stmt {
         case RamStmt.Insert(op) =>
             let (innerOp, ground) = queryOp(op, Set#{});
             if (List.isEmpty(ground))
@@ -79,7 +79,7 @@ namespace Fixpoint {
     /// `freeVars` is the set of variables bound by an outer loop.
     /// Returns the optimized op and the conditions that occur in `op` that have to be hoisted.
     ///
-    def queryOp(op: RelOp[v], freeVars: Set[RowVar]): (RelOp[v], List[BoolExp[v]]) & Impure = match op {
+    def queryOp(op: RelOp[v], freeVars: Set[RowVar]): (RelOp[v], List[BoolExp[v]]) = match op {
         case RelOp.Search(var, ramSym, body) =>
             use Fixpoint/Ram.BoolExp.Eq;
             use Fixpoint/Ram.RamTerm.{RowLoad, Lit};

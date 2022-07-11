@@ -1,4 +1,4 @@
-name: Java CI
+name: Compiler Tests
 
 on: [pull_request]
 
