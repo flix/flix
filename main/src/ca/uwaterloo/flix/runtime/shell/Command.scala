@@ -36,6 +36,11 @@ object Command {
   case object Reload extends Command
 
   /**
+    * Displays documentation about the fqn s
+    */
+  case class Doc(s: String) extends Command
+
+  /**
     * Terminates the shell.
     */
   case object Quit extends Command
@@ -82,6 +87,14 @@ object Command {
     if (input == ":r" || input == ":reload")
       return Command.Reload
 
+    //
+    // Doc
+    //
+    val docPattern = raw":d(oc)?\s+(\S+).*".r
+    input match {
+      case docPattern(_, s) => return Command.Doc(s)
+      case _ => // no-op
+    }
 
     //
     // Quit
