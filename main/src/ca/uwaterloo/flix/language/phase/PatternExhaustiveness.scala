@@ -188,11 +188,18 @@ object PatternExhaustiveness {
       case Expression.Assign(exp1, exp2, _, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
       case Expression.Ascribe(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Cast(exp, _, _, _, _, _, _, _) => visitExp(exp, root)
+      case Expression.Without(exp, _, _, _, _, _) => visitExp(exp, root)
 
       case Expression.TryCatch(exp, rules, _, _, _, _) =>
         val ruleExps = rules.map(_.exp)
         traverseX(exp :: ruleExps)(visitExp(_, root))
 
+      case Expression.TryWith(exp, _, rules, _, _, _, _) =>
+        val ruleExps = rules.map(_.exp)
+        traverseX(exp :: ruleExps)(visitExp(_, root))
+
+      case Expression.Do(_, exps, _, _, _) => traverseX(exps)(visitExp(_, root))
+      case Expression.Resume(exp, _, _) => visitExp(exp, root)
       case Expression.InvokeConstructor(_, args, _, _, _, _) => traverseX(args)(visitExp(_, root))
       case Expression.InvokeMethod(_, exp, args, _, _, _, _) => traverseX(exp :: args)(visitExp(_, root))
       case Expression.InvokeStaticMethod(_, args, _, _, _, _) => traverseX(args)(visitExp(_, root))

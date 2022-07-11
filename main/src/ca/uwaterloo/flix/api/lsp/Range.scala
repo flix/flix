@@ -32,7 +32,7 @@ object Range {
     */
   def from(loc: SourceLocation): Range = {
     // NB: LSP line and column numbers are zero-indexed.
-    Range(Position(loc.beginLine - 1, loc.beginCol - 1), Position(loc.endLine - 1, loc.endCol - 1))
+    Range(Position.fromBegin(loc), Position.fromEnd(loc))
   }
 
   /**

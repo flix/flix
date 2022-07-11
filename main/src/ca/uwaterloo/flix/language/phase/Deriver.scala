@@ -149,7 +149,10 @@ object Deriver {
         ann = Nil,
         mod = Ast.Modifiers.Empty,
         tparams = tparams,
-        fparams = List(KindedAst.FormalParam(param1, Ast.Modifiers.Empty, tpe, loc), KindedAst.FormalParam(param2, Ast.Modifiers.Empty, tpe, loc)),
+        fparams = List(
+          KindedAst.FormalParam(param1, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc),
+          KindedAst.FormalParam(param2, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
+        ),
         sc = Scheme(
           tparams.map(_.sym),
           List(Ast.TypeConstraint(Ast.TypeConstraint.Head(eqClassSym, loc), tpe, loc)),
@@ -281,7 +284,7 @@ object Deriver {
       val indexMatchRules = cases.values.zipWithIndex.map { case (caze, index) => mkCompareIndexMatchRule(caze, index, loc) }
       val indexMatchExp = KindedAst.Expression.Match(mkVarExpr(lambdaParamVarSym, loc), indexMatchRules.toList, loc)
       val lambda = KindedAst.Expression.Lambda(
-        KindedAst.FormalParam(lambdaParamVarSym, Ast.Modifiers.Empty, lambdaParamVarSym.tvar.ascribedWith(Kind.Star), loc),
+        KindedAst.FormalParam(lambdaParamVarSym, Ast.Modifiers.Empty, lambdaParamVarSym.tvar.ascribedWith(Kind.Star), Ast.TypeSource.Ascribed, loc),
         indexMatchExp,
         Type.freshVar(Kind.Star, loc, text = FallbackText("indexOfType")),
         loc
@@ -345,7 +348,10 @@ object Deriver {
         ann = Nil,
         mod = Ast.Modifiers.Empty,
         tparams = tparams,
-        fparams = List(KindedAst.FormalParam(param1, Ast.Modifiers.Empty, tpe, loc), KindedAst.FormalParam(param2, Ast.Modifiers.Empty, tpe, loc)),
+        fparams = List(
+          KindedAst.FormalParam(param1, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc),
+          KindedAst.FormalParam(param2, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
+        ),
         sc = Scheme(
           tparams.map(_.sym),
           List(Ast.TypeConstraint(Ast.TypeConstraint.Head(orderClassSym, loc), tpe, loc)),
@@ -514,7 +520,7 @@ object Deriver {
         ann = Nil,
         mod = Ast.Modifiers.Empty,
         tparams = tparams,
-        fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, tpe, loc)),
+        fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)),
         sc = Scheme(
           tparams.map(_.sym),
           List(Ast.TypeConstraint(Ast.TypeConstraint.Head(toStringClassSym, loc), tpe, loc)),
@@ -653,7 +659,7 @@ object Deriver {
         ann = Nil,
         mod = Ast.Modifiers.Empty,
         tparams = tparams,
-        fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, tpe, loc)),
+        fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)),
         sc = Scheme(
           tparams.map(_.sym),
           List(Ast.TypeConstraint(Ast.TypeConstraint.Head(hashClassSym, loc), tpe, loc)),

@@ -174,6 +174,7 @@ class Flix {
     "Group.flix" -> LocalResource.get("/src/library/Group.flix"),
     "Identity.flix" -> LocalResource.get("/src/library/Identity.flix"),
     "Monad.flix" -> LocalResource.get("/src/library/Monad.flix"),
+    "MonadZero.flix" -> LocalResource.get("/src/library/MonadZero.flix"),
     "Monoid.flix" -> LocalResource.get("/src/library/Monoid.flix"),
     "Reducible.flix" -> LocalResource.get("/src/library/Reducible.flix"),
     "SemiGroup.flix" -> LocalResource.get("/src/library/SemiGroup.flix"),

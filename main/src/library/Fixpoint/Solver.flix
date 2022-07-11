@@ -50,7 +50,9 @@ namespace Fixpoint {
             queryStmt |>
             lowerStmt;
         let model = match d {
-            case Datalog(_) => compiler(d) |> interpret |> toModel
+            case Datalog(_) => region r {
+                compiler(d) |> interpret(r) |> toModel
+            }
             case Model(_) => d
             case Join(Model(m), cs) =>
                 let db = Map.map(Map.toMutMap(Static), m) |> Map.toMutMap(Static);
@@ -160,7 +162,7 @@ namespace Fixpoint {
         injectIntoX(match (v1) ->
             box(v1) ::
             Nil
-        , p, ts) as & Pure
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -175,7 +177,7 @@ namespace Fixpoint {
             box(v1) ::
             box(v2) ::
             Nil
-        , p, ts) as & Pure
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -191,7 +193,7 @@ namespace Fixpoint {
             box(v2) ::
             box(v3) ::
             Nil
-        , p, ts) as & Pure
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -209,7 +211,7 @@ namespace Fixpoint {
             box(v3) ::
             box(v4) ::
             Nil
-        , p, ts) as & Pure
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -228,7 +230,7 @@ namespace Fixpoint {
             box(v4) ::
             box(v5) ::
             Nil
-        , p, ts) as & Pure
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -248,7 +250,7 @@ namespace Fixpoint {
             box(v5) ::
             box(v6) ::
             Nil
-        , p, ts) as & Pure
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -269,7 +271,7 @@ namespace Fixpoint {
             box(v6) ::
             box(v7) ::
             Nil
-        , p, ts) as & Pure
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -292,7 +294,7 @@ namespace Fixpoint {
             box(v7) ::
             box(v8) ::
             Nil
-        , p, ts) as & Pure
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -316,7 +318,7 @@ namespace Fixpoint {
             box(v8) ::
             box(v9) ::
             Nil
-        , p, ts) as & Pure
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -343,7 +345,7 @@ namespace Fixpoint {
             box(v9) ::
             box(v10) ::
             Nil
-        , p, ts) as & Pure
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -371,7 +373,7 @@ namespace Fixpoint {
             box(v10) ::
             box(v11) ::
             Nil
-        , p, ts) as & Pure
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -400,7 +402,7 @@ namespace Fixpoint {
             box(v11) ::
             box(v12) ::
             Nil
-        , p, ts) as & Pure
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -430,7 +432,7 @@ namespace Fixpoint {
             box(v12) ::
             box(v13) ::
             Nil
-        , p, ts) as & Pure
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -461,7 +463,7 @@ namespace Fixpoint {
             box(v13) ::
             box(v14) ::
             Nil
-        , p, ts) as & Pure
+        , p, ts)
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -493,18 +495,20 @@ namespace Fixpoint {
             box(v14) ::
             box(v15) ::
             Nil
-        , p, ts) as & Pure
+        , p, ts)
 
-    def injectIntoX[f: Type -> Type, t: Type, ef: Bool](f: t -> List[Boxed] & ef, p: PredSym, ts: f[t]): Datalog[Boxed] & Impure with Foldable[f] =
-        let db = new MutMap(Static);
-        Foldable.foldLeft(() -> t -> {
-            let vs = f(t);
-            let arity = List.length(vs);
-            let ramSym = RamSym.Full(p, arity, Denotation.Relational);
-            let rel = MutMap.getOrElsePut!(ramSym, new MutMap(Static), db);
-            MutMap.put!(Fixpoint/Tuple.new(vs), $DEFAULT$, rel)
-        }, (), ts);
-        toModel(db)
+    def injectIntoX[f: Type -> Type, t: Type, ef: Bool](f: t -> List[Boxed] & ef, p: PredSym, ts: f[t]): Datalog[Boxed] & ef with Foldable[f] =
+        region r {
+            let db = new MutMap(r);
+            Foldable.foldLeft(() -> t -> {
+                let vs = f(t);
+                let arity = List.length(vs);
+                let ramSym = RamSym.Full(p, arity, Denotation.Relational);
+                let rel = MutMap.getOrElsePut!(ramSym, new MutMap(r), db);
+                MutMap.put!(Fixpoint/Tuple.new(vs), $DEFAULT$, rel)
+            }, (), ts);
+            toModel(db)
+        }
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -754,9 +758,8 @@ namespace Fixpoint {
     /// Unsafely casts and prints the given Datalog program `d`.
     ///
     @Internal @Unsafe
-    pub def unsafePrint(d: a): a =
-        let _ = println(unsafeCast(d)) as & Pure;
-        d
+    pub def unsafePrint(d: a): Unit & Impure =
+        println(unsafeCast(d))
 
     ///
     /// Unsafely casts the given value `d` to a Datalog program.
@@ -764,7 +767,7 @@ namespace Fixpoint {
     @Internal @Unsafe
     pub def unsafeCast(v: a): Datalog[Boxed] = v as Datalog[Boxed]
 
-    def toModel(db: Database[v]): Datalog[v] & Impure =
+    def toModel(db: Database[v, r]): Datalog[v] & r =
         MutMap.toMap(db) |>
         Map.map(MutMap.toMap) |>
         Model
