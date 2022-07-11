@@ -304,7 +304,7 @@ object TypedAstOps {
       */
     def getEnvFromParams(fparams: List[FormalParam]): Map[Symbol.VarSym, Type] =
       fparams.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (macc, FormalParam(sym, mod, tpe, loc)) => macc + (sym -> tpe)
+        case (macc, FormalParam(sym, mod, tpe, src, loc)) => macc + (sym -> tpe)
       }
 
     // Visit every definition.

@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 import ca.uwaterloo.flix.language.dbg.{FormatExpression, FormatPattern}
 
 import java.lang.reflect.{Constructor, Field, Method}
-import scala.collection.immutable.List
 
 object TypedAst {
 
@@ -501,7 +500,7 @@ object TypedAst {
 
   }
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, src: Ast.TypeSource, loc: SourceLocation)
 
   case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
 
