@@ -16,8 +16,9 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.Entity
-import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.TypedAst.{FormalParam, Root}
 import ca.uwaterloo.flix.api.lsp.{Index, InlayHint, InlayHintKind, Position, Range}
+import ca.uwaterloo.flix.language.ast.Ast.TypeSource
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
 
@@ -40,10 +41,17 @@ object InlayHintProvider {
   /**
     * Returns an inlay hint for the given formal param `fparam`.
     */
-  private def getFormalParamHint(fparam: TypedAst.FormalParam): Option[InlayHint] = {
-    val pos = Position.fromEnd(fparam.loc)
-    val label = ": " + FormatType.formatWellKindedType(fparam.tpe)(Audience.External)
-    Some(InlayHint(pos, label, Some(InlayHintKind.Type), Nil, ""))
+  private def getFormalParamHint(fparam: TypedAst.FormalParam): Option[InlayHint] = fparam match {
+    case FormalParam(sym, _, tpe, src, loc) => src match {
+      case TypeSource.Ascribed =>
+        // We do not show any inlay hint if the type is already there.
+        None
+
+      case TypeSource.Inferred =>
+        val pos = Position.fromEnd(fparam.loc)
+        val label = ": " + FormatType.formatWellKindedType(fparam.tpe)(Audience.External)
+        Some(InlayHint(pos, label, Some(InlayHintKind.Type), Nil, ""))
+    }
   }
 
   /**
