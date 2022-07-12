@@ -322,8 +322,11 @@ object Indexer {
     case Expression.PutStaticField(_, exp, _, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.NewObject(_, _, _, _, _, _) =>
-      Index.occurrenceOf(exp0)
+    case Expression.NewObject(_, _, _, _, methods, _) =>
+      Index.occurrenceOf(exp0) ++ traverse(methods) {
+        case JvmMethod(_, fparams, exp, _, _, _, _) =>
+          Index.traverse(fparams)(visitFormalParam) ++ visitExp(exp)
+      }
 
     case Expression.NewChannel(exp, _, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
