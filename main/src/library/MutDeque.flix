@@ -31,13 +31,16 @@ pub enum MutDeque[a: Type, r: Region] {
     case MutDeque(Ref[Array[a, r], r], Ref[Int32, r], Ref[Int32, r])
 }
 
-
 instance Newable[MutDeque[a]] {
     pub def new(r: Region[r]): MutDeque[a, r] \ Write(r) = MutDeque.new(r)
 }
 
 instance Scoped[MutDeque[a]] {
     pub def regionOf(_: MutDeque[a, r]): Region[r] = () as Region[r]
+}
+
+instance Iterable[MutDeque] {
+    pub def iterator(d: MutDeque[a, r]): Iterator[a, r] \ Write(r) = MutDeque.iterator(d)
 }
 
 namespace MutDeque {
@@ -403,6 +406,23 @@ namespace MutDeque {
         foreach(x -> { append!(f(x), sb); append!(sep, sb) }, d);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
+
+    ///
+    /// Returns an iterator over `d`.
+    ///
+    /// Modifying `d` while using an iterator has undefined behavior and is dangerous.
+    ///
+    pub def iterator(d: MutDeque[a, r]): Iterator[a, r] \ Write(r) =
+        let r = Scoped.regionOf(d);
+        let MutDeque(a, f, b) = d;
+        let i = ref (deref f) @ r;
+        let done = () -> deref i == deref b;
+        let next = () -> {
+            let x = (deref a)[deref i];
+            i := deref i + 1 &&& (capacity(d) - 1);
+            x
+        };
+        Iterator(done, next)
 
     ///
     /// Apply the effectful function `f` to all the elements in the MutDeque `d`.
