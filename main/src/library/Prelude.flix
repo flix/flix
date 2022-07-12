@@ -45,7 +45,7 @@ pub def flip(f: (a, b) -> c & ef): (b, a) -> c & ef = (x, y) -> f(y, x)
 /// Partially applying this function in the form ``f `on` g`` lifts the binary function `f` to work on
 /// inputs transformed by `g`.
 ///
-pub def on(f: (b, b) -> c & ef1, g: a -> b & ef2, x: a, y: a): c & (ef1 and ef2) = f(g(x), g(y))
+pub def on(f: (b, b) -> c & ef1, g: a -> b & ef2, x: a, y: a): c \ { ef1, ef2 } = f(g(x), g(y))
 
 ///
 /// Returns the first component of `t`.
@@ -74,7 +74,7 @@ pub def swap(p: (a, b)): (b, a) =
 ///
 /// Given the functions `f: a -> b` and `g: b -> c` returns a function `a -> c`
 ///
-pub def >>(f: a -> b & ef1, g: b -> c & ef2): a -> c & (ef1 and ef2) = x -> g(f(x))
+pub def >>(f: a -> b & ef1, g: b -> c & ef2): a -> c \ { ef1, ef2 } = x -> g(f(x))
 
 ///
 /// Pipes the given value `x` into the function `f`.
