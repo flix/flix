@@ -98,11 +98,6 @@ instance UnorderedFoldable[DelayList] {
     override pub def memberOf(x: a, l: DelayList[a]): Bool with Eq[a] = DelayList.memberOf(x, l)
 }
 
-instance Iterable[DelayList] {
-    pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) =
-        DelayList.iterator(r, l)
-}
-
 instance FunctorFilter[DelayList] {
     pub def filterMap(f: a -> Option[b] & ef, x: DelayList[a]): DelayList[b] & ef = DelayList.filterMap(f, x)
     pub override def filter(f: a -> Bool & ef, x: DelayList[a]): DelayList[a] & ef = DelayList.filter(f, x)

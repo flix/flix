@@ -44,12 +44,13 @@ object Typer {
     val instancesVal = visitInstances(root, classEnv)
     val defsVal = visitDefs(root, classEnv, oldRoot, changeSet)
     val enumsVal = visitEnums(root)
+    val effsVal = visitEffs(root)
     val typeAliases = visitTypeAliases(root)
 
-    Validation.mapN(classesVal, instancesVal, defsVal, enumsVal) {
-      case (classes, instances, defs, enums) =>
+    Validation.mapN(classesVal, instancesVal, defsVal, enumsVal, effsVal) {
+      case (classes, instances, defs, enums, effs) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
-        TypedAst.Root(classes, instances, sigs, defs, enums, typeAliases, root.entryPoint, root.reachable, root.sources, classEnv)
+        TypedAst.Root(classes, instances, sigs, defs, enums, effs, typeAliases, root.entryPoint, root.reachable, root.sources, classEnv)
     }
   }
 
@@ -132,6 +133,34 @@ object Typer {
   }
 
   /**
+    * Performs type inference and reassembly on all effects in the given AST root.
+    *
+    * Returns [[Err]] if a definition fails to type check.
+    */
+  private def visitEffs(root: KindedAst.Root)(implicit flix: Flix): Validation[Map[Symbol.EffectSym, TypedAst.Effect], TypeError] = {
+    val results = ParOps.parMap(root.effects.values)(visitEff(_, root))
+
+    // Sequence the results using the freshDefs as the initial value.
+    Validation.sequence(results) map {
+      case xs => xs.foldLeft(Map.empty[Symbol.EffectSym, TypedAst.Effect]) {
+        case (acc, eff) => acc + (eff.sym -> eff)
+      }
+    }
+  }
+
+  /**
+    * Performs type inference and reassembly on the given effect `eff`.
+    */
+  private def visitEff(eff: KindedAst.Effect, root: KindedAst.Root)(implicit flix: Flix): Validation[TypedAst.Effect, TypeError] = eff match {
+    case KindedAst.Effect(doc, ann0, mod, sym, ops0, loc) =>
+      val annVal = visitAnnotations(ann0, root)
+      val opsVal = traverse(ops0)(visitOp(_, root))
+      mapN(annVal, opsVal) {
+        case (ann, ops) => TypedAst.Effect(doc, ann, mod, sym, ops, loc)
+      }
+  }
+
+  /**
     * Performs type inference and reassembly on the given definition `defn`.
     */
   private def visitDefn(defn: KindedAst.Def, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = defn match {
@@ -156,6 +185,16 @@ object Typer {
     case KindedAst.Sig(sym, spec0, None) =>
       visitSpec(spec0, root, Substitution.empty) map {
         spec => TypedAst.Sig(sym, spec, None)
+      }
+  }
+
+  /**
+    * Performs type inference and reassembly on the given effect operation `op`
+    */
+  private def visitOp(op: KindedAst.Op, root: KindedAst.Root)(implicit flix: Flix): Validation[TypedAst.Op, TypeError] = op match {
+    case KindedAst.Op(sym, spec0) =>
+      visitSpec(spec0, root, Substitution.empty) map {
+        case spec => TypedAst.Op(sym, spec)
       }
   }
 
@@ -1259,8 +1298,8 @@ object Typer {
           resultEff = declaredEff.getOrElse(actualEff)
         } yield (constrs, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.Without(exp, sym, loc) =>
-        val effType = Type.Cst(TypeConstructor.Effect(sym), loc)
+      case KindedAst.Expression.Without(exp, effUse, loc) =>
+        val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
         val expected = Type.mkDifference(Type.freshVar(Kind.Effect, loc), effType, loc)
         for {
           (tconstrs, tpe, pur, eff) <- visitExp(exp)
@@ -1282,8 +1321,8 @@ object Typer {
           resultEff = Type.mkUnion(eff :: ruleEffs, loc)
         } yield (constrs ++ ruleConstrs.flatten, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.TryWith(exp, sym, rules, tvar, loc) =>
-        val effect = root.effects(sym)
+      case KindedAst.Expression.TryWith(exp, effUse, rules, tvar, loc) =>
+        val effect = root.effects(effUse.sym)
         val ops = effect.ops.map(op => op.sym -> op).toMap
 
         def unifyFormalParams(op: Symbol.OpSym, expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam]): InferMonad[Unit] = {
@@ -1304,10 +1343,10 @@ object Typer {
           case KindedAst.HandlerRule(op, actualFparams, body, opTvar) =>
             // Don't need to generalize since ops are monomorphic
             // Don't need to handle unknown op because resolver would have caught this
-            ops(op) match {
+            ops(op.sym) match {
               case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, opTpe, expectedPur, expectedEff, _)) =>
                 for {
-                  _ <- unifyFormalParams(op, expected = expectedFparams, actual = actualFparams)
+                  _ <- unifyFormalParams(op.sym, expected = expectedFparams, actual = actualFparams)
                   (actualTconstrs, actualTpe, actualPur, actualEff) <- visitExp(body)
 
                   // unify the operation return type with its tvar
@@ -1321,7 +1360,7 @@ object Typer {
             }
         }
 
-        val effType = Type.Cst(TypeConstructor.Effect(sym), loc)
+        val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
         for {
           (tconstrs, tpe, pur, eff) <- visitExp(exp)
           (tconstrss, _, purs, effs) <- seqM(rules.map(visitHandlerRule)).map(unzip4)
@@ -1332,10 +1371,10 @@ object Typer {
         } yield (resultTconstrs, resultTpe, resultPur, resultEff)
 
       case KindedAst.Expression.Do(op, args, loc) =>
-        val effect = root.effects(op.eff)
-        val operation = effect.ops.find(_.sym == op)
-          .getOrElse(throw InternalCompilerException(s"Unexpected missing operation $op in effect ${op.eff}"))
-        val effTpe = Type.Cst(TypeConstructor.Effect(op.eff), loc)
+        val effect = root.effects(op.sym.eff)
+        val operation = effect.ops.find(_.sym == op.sym)
+          .getOrElse(throw InternalCompilerException(s"Unexpected missing operation $op in effect ${op.sym.eff}"))
+        val effTpe = Type.Cst(TypeConstructor.Effect(op.sym.eff), loc)
 
         def visitArg(arg: KindedAst.Expression, fparam: KindedAst.FormalParam): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = {
           for {
@@ -1345,7 +1384,7 @@ object Typer {
         }
 
         if (operation.spec.fparams.length != args.length) {
-          InferMonad.errPoint(TypeError.InvalidOpParamCount(op, expected = operation.spec.fparams.length, actual = args.length, loc))
+          InferMonad.errPoint(TypeError.InvalidOpParamCount(op.sym, expected = operation.spec.fparams.length, actual = args.length, loc))
         } else {
           val argM = (args zip operation.spec.fparams) map {
             case (arg, fparam) => visitArg(arg, fparam)
@@ -1439,7 +1478,7 @@ object Typer {
           resultEff = valueEff
         } yield (valueConstrs, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.NewObject(clazz, loc) =>
+      case KindedAst.Expression.NewObject(clazz, _, loc) =>
         val resultTyp = getFlixType(clazz)
         val resultPur = Type.Impure
         val resultEff = Type.Empty
@@ -1998,12 +2037,12 @@ object Typer {
         val eff = declaredEff.getOrElse(e.eff)
         TypedAst.Expression.Cast(e, dt, dp, de, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.Without(exp, sym, loc) =>
+      case KindedAst.Expression.Without(exp, effUse, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = e.tpe
         val pur = e.pur
         val eff = e.eff
-        TypedAst.Expression.Without(e, sym, tpe, pur, eff, loc)
+        TypedAst.Expression.Without(e, effUse, tpe, pur, eff, loc)
 
       case KindedAst.Expression.TryCatch(exp, rules, loc) =>
         val e = visitExp(exp, subst0)
@@ -2017,7 +2056,7 @@ object Typer {
         val eff = Type.mkUnion(e.eff :: rs.map(_.exp.eff), loc)
         TypedAst.Expression.TryCatch(e, rs, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.TryWith(exp, sym, rules, tvar, loc) =>
+      case KindedAst.Expression.TryWith(exp, effUse, rules, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val rs = rules map {
           case KindedAst.HandlerRule(op, fparams, hexp, htvar) =>
@@ -2028,13 +2067,13 @@ object Typer {
         val tpe = subst0(tvar)
         val pur = Type.mkAnd(e.pur :: rs.map(_.exp.pur), loc)
         val eff = Type.mkUnion(e.eff :: rs.map(_.exp.eff), loc)
-        TypedAst.Expression.TryWith(e, sym, rs, tpe, pur, eff, loc)
+        TypedAst.Expression.TryWith(e, effUse, rs, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.Do(sym, exps, loc) =>
+      case KindedAst.Expression.Do(op, exps, loc) =>
         val es = exps.map(visitExp(_, subst0))
         val pur = Type.mkAnd(es.map(_.pur), loc)
-        val eff = Type.mkUnion(Type.Cst(TypeConstructor.Effect(sym.eff), loc) :: es.map(_.eff), loc)
-        TypedAst.Expression.Do(sym, es, pur, eff, loc)
+        val eff = Type.mkUnion(Type.Cst(TypeConstructor.Effect(op.sym.eff), loc) :: es.map(_.eff), loc)
+        TypedAst.Expression.Do(op, es, pur, eff, loc)
 
       case KindedAst.Expression.Resume(exp, _, retTvar, loc) =>
         val e = visitExp(exp, subst0)
@@ -2091,7 +2130,7 @@ object Typer {
         val eff = e.eff
         TypedAst.Expression.PutStaticField(field, e, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.NewObject(clazz, loc) =>
+      case KindedAst.Expression.NewObject(clazz, _, loc) =>
         val tpe = getFlixType(clazz)
         val pur = Type.Impure
         val eff = Type.Empty

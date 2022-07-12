@@ -34,7 +34,8 @@ object Indexer {
       instances => traverse(instances)(visitInstance)
     }
     val idx5 = traverse(root.sigs.values)(visitSig)
-    idx1 ++ idx2 ++ idx3 ++ idx4 ++ idx5
+    val idx6 = traverse(root.effects.values)(visitEff)
+    idx1 ++ idx2 ++ idx3 ++ idx4 ++ idx5 ++ idx6
   }
 
   /**
@@ -111,6 +112,26 @@ object Indexer {
       val idx3 = traverse(tconstrs)(visitTypeConstraint)
       val idx4 = traverse(defs)(visitDef)
       idx1 ++ idx2 ++ idx3 ++ idx4
+  }
+
+  /**
+    * Returns a reverse index for the given effect `eff0`
+    */
+  private def visitEff(eff0: Effect): Index = eff0 match {
+    case Effect(_, _, _, _, ops, _) =>
+      val idx1 = Index.occurrenceOf(eff0)
+      val idx2 = traverse(ops)(visitOp)
+      idx1 ++ idx2
+  }
+
+  /**
+    * Returns a reverse index for the given effect operation `op0`
+    */
+  private def visitOp(op0: Op): Index = op0 match {
+    case Op(_, spec) =>
+      val idx1 = Index.occurrenceOf(op0)
+      val idx2 = visitSpec(spec)
+      idx1 ++ idx2
   }
 
   /**
@@ -274,9 +295,8 @@ object Indexer {
       val de = declaredEff.map(visitType).getOrElse(Index.empty)
       visitExp(exp) ++ dt ++ dp ++ de ++ Index.occurrenceOf(exp0)
 
-    case Expression.Without(exp, _, _, _, _, _) =>
-      visitExp(exp) ++ Index.occurrenceOf(exp0)
-      // TODO visit effs
+    case Expression.Without(exp, effUse, _, _, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(effUse.sym, effUse.loc)
 
     case Expression.TryCatch(exp, rules, _, _, _, _) =>
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
@@ -285,18 +305,16 @@ object Indexer {
       }
       i0 ++ i1
 
-    case Expression.TryWith(exp, _, rules, _, _, _, _) =>
-      val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
+    case Expression.TryWith(exp, effUse, rules, _, _, _, _) =>
+      val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(effUse.sym, effUse.loc)
       val i1 = traverse(rules) {
-        case HandlerRule(_, fparams, exp) =>
-          Index.traverse(fparams)(visitFormalParam) ++ visitExp(exp)
+        case HandlerRule(op, fparams, exp) =>
+          Index.traverse(fparams)(visitFormalParam) ++ visitExp(exp) ++ Index.useOf(op.sym, op.loc)
       }
       i0 ++ i1
-      // TODO index ops and effs
 
-    case Expression.Do(_, exps, _, _, _) =>
-      traverse(exps)(visitExp) ++ Index.occurrenceOf(exp0)
-      // TODO index ops
+    case Expression.Do(op, exps, _, _, loc) =>
+      traverse(exps)(visitExp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(op.sym, op.loc)
 
     case Expression.Resume(exp, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
@@ -477,6 +495,8 @@ object Indexer {
         Index.empty
       case TypeConstructor.RecordRowExtend(field) => Index.occurrenceOf(tpe0) ++ Index.useOf(field)
       case TypeConstructor.SchemaRowExtend(pred) => Index.occurrenceOf(tpe0) ++ Index.useOf(pred)
+      case TypeConstructor.KindedEnum(sym, _) => Index.useOf(sym, loc)
+      case TypeConstructor.Effect(sym) => Index.useOf(sym, loc)
       case _ => Index.occurrenceOf(tpe0)
     }
     case Type.Apply(tpe1, tpe2, _) => visitType(tpe1) ++ visitType(tpe2)
