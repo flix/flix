@@ -141,7 +141,7 @@ object Statistics {
       case Expression.PutField(field, exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.GetStaticField(field, tpe, pur, eff, loc) => Counter.empty
       case Expression.PutStaticField(field, exp, tpe, pur, eff, loc) => visitExp(exp)
-      case Expression.NewObject(clazz, tpe, pur, eff, methods, loc) => Counter.empty
+      case Expression.NewObject(clazz, tpe, pur, eff, methods, loc) => Counter.merge(methods.map(visitJvmMethod))
       case Expression.NewChannel(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.GetChannel(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.PutChannel(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
@@ -220,6 +220,13 @@ object Statistics {
     case Body.Atom(_, _, _, _, _, _, _) => Counter.empty
     case Body.Guard(exp, loc) => visitExp(exp)
     case Body.Loop(varSyms, exp, loc) => visitExp(exp)
+  }
+
+  /**
+    * Counts AST nodes in the given JVMMethod
+    */
+  private def visitJvmMethod(method: JvmMethod): Counter = method match {
+    case JvmMethod(_, _, exp, _, _, _, _) => visitExp(exp)
   }
 
   /**
