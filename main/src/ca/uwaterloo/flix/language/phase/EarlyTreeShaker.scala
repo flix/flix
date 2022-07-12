@@ -62,8 +62,12 @@ object EarlyTreeShaker {
       case (sym, _) => allReachable.contains(ReachableSym.ClassSym(sym))
     }
 
+    val reachableClasses = root.classes.filter {
+      case (_, clazz) => clazz.signatures.exists(s => reachableSigs.values.exists(_ == s))
+    }
+
     // Reassemble the AST.
-    root.copy(defs = reachableDefs, sigs = reachableSigs, instances = reachableInstances).toSuccess
+    root.copy(classes = reachableClasses, instances = reachableInstances, sigs = reachableSigs, defs = reachableDefs).toSuccess
   }
 
   /**
