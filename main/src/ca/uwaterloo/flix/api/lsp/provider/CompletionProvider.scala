@@ -238,7 +238,7 @@ object CompletionProvider {
     List(
       // NB: Please keep the list alphabetically sorted.
       snippetCompletion("foreach",
-        s"""foreach ($${1:pat} <- $${2:iterable}) {
+        s"""foreach ($${1:pattern} <- $${2:iterable}) {
            |    $${3:body}
            |}""".stripMargin,
         "snippet for foreach-loop"
