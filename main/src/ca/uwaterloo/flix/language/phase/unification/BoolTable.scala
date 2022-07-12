@@ -105,7 +105,11 @@ object BoolTable {
     }
 
     // Convert the type `tpe` to a Boolean formula.
-    val input = fromBoolType(tpe, m)
+    val input = tpe.kind match {
+      case Kind.Bool => fromBoolType(tpe, m)
+      case Kind.Effect => fromEffType(tpe, m)
+      case _ => throw InternalCompilerException(s"Unexpected non-Bool/non-Effect kind: '${tpe.kind}'.")
+    }
 
     // Minimize the Boolean formula.
     val minimized = minimizeFormula(input)
