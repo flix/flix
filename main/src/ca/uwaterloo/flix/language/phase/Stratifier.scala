@@ -353,7 +353,10 @@ object Stratifier {
         case e => Expression.PutStaticField(field, e, tpe, pur, eff, loc)
       }
 
-    case Expression.NewObject(_, _, _, _, _, _) => exp0.toSuccess
+    case Expression.NewObject(clazz, tpe, pur, eff, methods, loc) =>
+      mapN(traverse(methods)(visitJvmMethod)) {
+        case ms => Expression.NewObject(clazz, tpe, pur, eff, ms, loc)
+      }
 
     case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
@@ -462,6 +465,13 @@ object Stratifier {
         case (e1, e2, e3) => Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
       }
 
+  }
+
+  private def visitJvmMethod(method: JvmMethod)(implicit g: LabelledGraph, flix: Flix): Validation[JvmMethod, StratificationError] = method match {
+    case JvmMethod(ident, fparams, exp, tpe, pur, eff, loc) => 
+      mapN(visitExp(exp)) {
+        case e => JvmMethod(ident, fparams, e, tpe, pur, eff, loc)
+      }
   }
 
   /**
