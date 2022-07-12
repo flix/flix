@@ -33,8 +33,7 @@ namespace Fixpoint {
     ///
     @Internal
     pub def solve(d: Datalog[v]): Datalog[v] with Order[v], ToString[v] =
-        (stratify(d) |>
-        solveWithStratification(d)) as & Pure
+        stratify(d) |> solveWithStratification(d)
 
     ///
     /// Returns the minimal model of the given Datalog program `d`.
@@ -42,8 +41,8 @@ namespace Fixpoint {
     /// A stratification of `d` is given by `stf`.
     ///
     @Internal
-    def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] & Impure with Order[v], ToString[v] =
-        notifyPreSolve(d, stf);
+    def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v], ToString[v] =
+        let _ = notifyPreSolve(d, stf) as & Pure;
         let compiler = cs ->
             compile(cs, stf) |>
             simplifyStmt |>
@@ -54,12 +53,13 @@ namespace Fixpoint {
                 compiler(d) |> interpret(r) |> toModel
             }
             case Model(_) => d
-            case Join(Model(m), cs) =>
-                let db = Map.map(Map.toMutMap(Static), m) |> Map.toMutMap(Static);
+            case Join(Model(m), cs) => region r {
+                let db = Map.map(Map.toMutMap(r), m) |> Map.toMutMap(r);
                 compiler(cs) |> interpretWithDatabase(db) |> toModel
+            }
             case _ => bug!("Datalog normalization bug")
         };
-        notifyPostSolve(model);
+        let _ = notifyPostSolve(model) as & Pure;
         model
 
     ///

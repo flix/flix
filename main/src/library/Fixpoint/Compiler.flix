@@ -44,7 +44,7 @@ namespace Fixpoint {
                     let ruleStratum = Map.getWithDefault(p, 0, strat);
                     Map.insertWith(List.append, ruleStratum, rule :: Nil)
             }, Map#{}, rules) |>
-            Map.foreach(_ -> (x -> List.toArray(r, x)) >> compileStratum(stmts));
+            Map.foreach((_, s) -> compileStratum(stmts, s));
             RamStmt.Seq(MutList.toList(stmts))
         }
         case _ => bug!("Datalog normalization bug")
@@ -68,13 +68,13 @@ namespace Fixpoint {
     /// Note that Eval-Rule is the code emitted by `compileRule`
     /// and Eval-Rule-Incr is the code emitted by `compileRuleIncr`.
     ///
-    def compileStratum(stmts: MutList[RamStmt[v], r1], stratum: Array[Constraint[v], r2]): Unit & (r1 and r2) with ToString[v] = region r {
-        let idb = Array.foldRight(match Constraint(HeadAtom(pred, den, terms), _) -> {
+    def compileStratum(stmts: MutList[RamStmt[v], r], stratum: List[Constraint[v]]): Unit & r with ToString[v] = region r {
+        let idb = List.foldRight(match Constraint(HeadAtom(pred, den, terms), _) -> {
             let arity = List.length(terms);
             Map.insert(pred, (arity, den))
         }, Map#{}, stratum);
         let loopBody = new MutList(r);
-        Array.foreach(compileRule(stmts), stratum);
+        List.foreach(compileRule(stmts), stratum);
         Map.foreach(predSym -> match (arity, den) -> {
             let full = RamSym.Full(predSym, arity, den);
             let delta = RamSym.Delta(predSym, arity, den);
@@ -85,7 +85,7 @@ namespace Fixpoint {
             let purge = RamStmt.Purge(RamSym.New(predSym, arity, den));
             MutList.push!(purge, loopBody)
         }, idb);
-        Array.foreach(compileRuleIncr(loopBody), stratum);
+        List.foreach(compileRuleIncr(loopBody), stratum);
         Map.foreach(predSym -> match (arity, den) -> {
             let new = RamSym.New(predSym, arity, den);
             let full = RamSym.Full(predSym, arity, den);
