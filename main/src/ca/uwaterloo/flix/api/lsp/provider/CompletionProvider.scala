@@ -237,12 +237,6 @@ object CompletionProvider {
   private def getSnippetCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): List[CompletionItem] = {
     List(
       // NB: Please keep the list alphabetically sorted.
-      snippetCompletion("foreach",
-        s"""foreach ($${1:pattern} <- $${2:iterable}) {
-           |    $${3:body}
-           |}""".stripMargin,
-        "snippet for foreach-loop"
-      ),
       snippetCompletion("main",
         "def main(): Unit & Impure = \n    println(\"Hello World!\")",
         "snippet for Hello World Program"),
