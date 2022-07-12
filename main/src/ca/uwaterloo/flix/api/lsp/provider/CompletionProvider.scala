@@ -179,6 +179,7 @@ object CompletionProvider {
       "enum",
       "false",
       "fix",
+      "for",
       "forall",
       "force",
       "from",
@@ -220,7 +221,8 @@ object CompletionProvider {
       "use",
       "where",
       "with",
-      "without"
+      "without",
+      "yield"
     ) map keywordCompletion
   }
 
