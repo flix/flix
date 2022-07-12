@@ -332,4 +332,43 @@ namespace Test/Exp/Foreach {
         deref z == 4 * 2
     }
 
+    @test
+    def testForEach40(): Bool = region r {
+        let y = ref 0 @ r;
+        foreach (x <- MutList.range(r, 1, 2)) y := x + 1; // Iterator.foreach(match x -> y := x + 1, Iterable.iterator(MutList.range(r, 1, 2)))
+        deref y == 2
+    }
+
+    @test
+    def testForEach41(): Bool = region r {
+        let l = new MutList(r);
+        foreach (i <- Iterator.range(r, 0, 10)) {
+            MutList.push!(i, l)
+        };
+        let y = ref 0 @ r;
+        foreach (x <- l)
+            y := deref y + x; // Iterator.foreach(match x -> y := x + 1, Iterable.iterator(l))
+        deref y == (9 + 1) * 9 / 2
+    }
+
+    @test
+    def testForEach42(): Bool = region r {
+        let l = new MutList(r);
+        foreach (i <- Iterator.range(r, 0, 10)) {
+            MutList.push!(i, l)
+        };
+        let y = ref 0 @ r;
+        foreach (x <- l;
+                 if x < 5)
+            y := deref y + x; // Iterator.foreach(match x -> if (x < 5) y := x + 1 else (), Iterable.iterator(l))
+        deref y == (4 + 1) * 4 / 2
+    }
+
+    @test
+    def testForEach43(): Bool = region r {
+        let z = ref 0 @ r;
+        foreach ((x, y) <- List.toMutDeque(r, (1, 2) :: (3, 4) :: Nil)) z := deref z + x + y;
+        deref z == 10
+    }
+
 }
