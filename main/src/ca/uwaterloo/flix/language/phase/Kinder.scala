@@ -668,8 +668,10 @@ object Kinder {
         exp => KindedAst.Expression.PutStaticField(field, exp, loc)
       }
 
-    case ResolvedAst.Expression.NewObject(clazz, loc) =>
-      KindedAst.Expression.NewObject(clazz, loc).toSuccess
+    case ResolvedAst.Expression.NewObject(clazz, methods, loc) =>
+      mapN(traverse(methods)(visitJvmMethod(_, kenv0, senv, taenv, henv0, root))) {
+        methods => KindedAst.Expression.NewObject(clazz, methods, loc)
+      }
 
     case ResolvedAst.Expression.NewChannel(exp0, tpe0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
@@ -1193,6 +1195,16 @@ object Kinder {
       }
   }
 
+  private def visitJvmMethod(method: ResolvedAst.JvmMethod, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.KindedVar, Type.KindedVar)], root: ResolvedAst.Root)(implicit flix: Flix) = method match {
+    case ResolvedAst.JvmMethod(ident, fparams, exp, tpe0, purAndEff, loc) =>
+      val fparamsVal = traverse(fparams)(visitFormalParam(_, kenv, senv, taenv, root))
+      val expVal = visitExp(exp, kenv, senv, taenv, henv, root)
+      val purAndEffVal = visitPurityAndEffect(method.purAndEff, kenv, senv, taenv, root)
+      val tpeVal = visitType(tpe0, Kind.Wild, kenv, Map.empty, taenv, root)
+      mapN(fparamsVal, expVal, tpeVal, purAndEffVal) {
+        case (f, e, tpe, (pur, eff)) => KindedAst.JvmMethod(method.ident, f, e, tpe, pur, eff, method.loc)
+      }
+  }
 
   /**
     * Infers a kind environment from the given spec.

@@ -82,11 +82,6 @@ instance FunctorFilter[Chain] {
     pub override def filter(f: a -> Bool & ef, x: Chain[a]): Chain[a] & ef = Chain.filter(f, x)
 }
 
-instance Iterable[Chain] {
-    pub def iterator(r: Region[r], c: Chain[a]): Iterator[a, r] \ Write(r) =
-        Chain.iterator(r, c)
-}
-
 instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String =
         let fn = () -> region r {
