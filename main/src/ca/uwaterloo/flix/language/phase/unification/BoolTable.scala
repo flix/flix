@@ -105,7 +105,7 @@ object BoolTable {
     }
 
     // Convert the type `tpe` to a Boolean formula.
-    val input = fromType(tpe, m)
+    val input = fromBoolType(tpe, m)
 
     // Minimize the Boolean formula.
     val minimized = minimizeFormula(input)
