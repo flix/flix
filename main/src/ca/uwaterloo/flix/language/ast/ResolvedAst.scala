@@ -156,7 +156,7 @@ object ResolvedAst {
 
     case class Cast(exp: ResolvedAst.Expression, declaredType: Option[Type], declaredEff: Ast.PurityAndEffect, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Without(exp: ResolvedAst.Expression, eff: Ast.EffectSymUse, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Without(exp: ResolvedAst.Expression, effs: List[Ast.EffectSymUse], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class TryCatch(exp: ResolvedAst.Expression, rules: List[ResolvedAst.CatchRule], loc: SourceLocation) extends ResolvedAst.Expression
 

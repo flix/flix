@@ -1298,8 +1298,9 @@ object Typer {
           resultEff = declaredEff.getOrElse(actualEff)
         } yield (constrs, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.Without(exp, effUse, loc) =>
-        val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
+      case KindedAst.Expression.Without(exp, effUses, loc) =>
+        val effTypes = effUses.map(effUse => Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc))
+        val effType = Type.mkUnion(effTypes, loc)
         val expected = Type.mkDifference(Type.freshVar(Kind.Effect, loc), effType, loc)
         for {
           (tconstrs, tpe, pur, eff) <- visitExp(exp)
@@ -2037,12 +2038,12 @@ object Typer {
         val eff = declaredEff.getOrElse(e.eff)
         TypedAst.Expression.Cast(e, dt, dp, de, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.Without(exp, effUse, loc) =>
+      case KindedAst.Expression.Without(exp, effUses, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = e.tpe
         val pur = e.pur
         val eff = e.eff
-        TypedAst.Expression.Without(e, effUse, tpe, pur, eff, loc)
+        TypedAst.Expression.Without(e, effUses, tpe, pur, eff, loc)
 
       case KindedAst.Expression.TryCatch(exp, rules, loc) =>
         val e = visitExp(exp, subst0)

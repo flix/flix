@@ -295,8 +295,12 @@ object Indexer {
       val de = declaredEff.map(visitType).getOrElse(Index.empty)
       visitExp(exp) ++ dt ++ dp ++ de ++ Index.occurrenceOf(exp0)
 
-    case Expression.Without(exp, effUse, _, _, _, _) =>
-      visitExp(exp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(effUse.sym, effUse.loc)
+    case Expression.Without(exp, effUses, _, _, _, _) =>
+      val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
+      val i1 = traverse(effUses) {
+        case Ast.EffectSymUse(sym, loc) => Index.useOf(sym, loc)
+      }
+      i0 ++ i1
 
     case Expression.TryCatch(exp, rules, _, _, _, _) =>
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)

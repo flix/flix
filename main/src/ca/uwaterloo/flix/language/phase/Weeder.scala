@@ -1395,10 +1395,9 @@ object Weeder {
         case e => WeededAst.Expression.Cast(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
       }
 
-    case ParsedAst.Expression.Without(exp, eff, sp2) =>
-      val e = visitExp(exp, senv)
+    case ParsedAst.Expression.Without(exp, effs, sp2) =>
       mapN(visitExp(exp, senv)) {
-        e => WeededAst.Expression.Without(e, eff, mkSL(leftMostSourcePosition(exp), sp2))
+        e => WeededAst.Expression.Without(e, effs.toList, mkSL(leftMostSourcePosition(exp), sp2))
       }
 
     case ParsedAst.Expression.Do(sp1, op, args0, sp2) =>

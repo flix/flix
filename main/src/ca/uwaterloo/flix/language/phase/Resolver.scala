@@ -965,13 +965,14 @@ object Resolver {
             case (e, rs) => ResolvedAst.Expression.TryCatch(e, rs, loc)
           }
 
-        case NamedAst.Expression.Without(exp, eff, loc) =>
+        case NamedAst.Expression.Without(exp, effs, loc) =>
           val eVal = visitExp(exp, region)
-          val fVal = lookupEffect(eff, ns0, root)
-          mapN(eVal, fVal) {
-            case (e, f) =>
-              val effUse = Ast.EffectSymUse(f.sym, eff.loc)
-              ResolvedAst.Expression.Without(e, effUse, loc)
+          val fsVal = traverse(effs)(lookupEffect(_, ns0, root))
+          val effLocs = effs.map(_.loc)
+          mapN(eVal, fsVal) {
+            case (e, fs) =>
+              val effUses = (fs zip effLocs).map{ case (f, effLoc) => Ast.EffectSymUse(f.sym, effLoc) }
+              ResolvedAst.Expression.Without(e, effUses, loc)
           }
 
         case NamedAst.Expression.TryWith(exp, eff, rules, loc) =>

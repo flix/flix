@@ -420,9 +420,11 @@ object SemanticTokensProvider {
     case Expression.Cast(exp, _, _, _, tpe, _, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 
-    case Expression.Without(exp, eff, _, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, eff.loc)
-      Iterator(t) ++ visitExp(exp)
+    case Expression.Without(exp, effs, _, _, _, _) =>
+      val st1 = effs.map {
+        case Ast.EffectSymUse(_, loc) => SemanticToken(SemanticTokenType.Type, Nil, loc)
+      }
+      st1.iterator ++ visitExp(exp)
 
     case Expression.TryCatch(exp, rules, _, _, _, _) =>
       rules.foldLeft(visitExp(exp)) {

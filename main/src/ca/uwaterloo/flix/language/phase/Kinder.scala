@@ -585,10 +585,10 @@ object Kinder {
           KindedAst.Expression.Cast(exp, declaredType.headOption, declaredPur, declaredEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
-    case ResolvedAst.Expression.Without(exp0, eff, loc) =>
+    case ResolvedAst.Expression.Without(exp0, effs, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       mapN(expVal) {
-        case exp => KindedAst.Expression.Without(exp, eff, loc)
+        case exp => KindedAst.Expression.Without(exp, effs, loc)
       }
 
     case ResolvedAst.Expression.TryCatch(exp0, rules0, loc) =>

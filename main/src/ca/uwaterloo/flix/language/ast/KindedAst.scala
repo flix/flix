@@ -155,7 +155,7 @@ object KindedAst {
 
     case class Cast(exp: KindedAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], declaredEff: Option[Type], tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Without(exp: KindedAst.Expression, eff: Ast.EffectSymUse, loc: SourceLocation) extends KindedAst.Expression
+    case class Without(exp: KindedAst.Expression, effs: List[Ast.EffectSymUse], loc: SourceLocation) extends KindedAst.Expression
 
     case class TryCatch(exp: KindedAst.Expression, rules: List[KindedAst.CatchRule], loc: SourceLocation) extends KindedAst.Expression
 
