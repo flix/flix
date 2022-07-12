@@ -18,6 +18,10 @@ instance Scoped[Array[a]] {
     pub def regionOf(_: Array[a, r]): Region[r] = () as Region[r]
 }
 
+instance Iterable[Array] {
+    pub def iterator(a: Array[a, r]): Iterator[a, r] \ Write(r) = Array.iterator(a)
+}
+
 namespace Array {
 
     ///
@@ -1505,6 +1509,30 @@ namespace Array {
             false
 
     ///
+    /// Returns an iterator over `a` in the same region as `a`.
+    ///
+    /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
+    ///
+    pub def iterator(a: Array[a, r]): Iterator[a, r] \ Write(r) =
+        let r = Scoped.regionOf(a);
+        let i = ref 0 @ r;
+        let done = () -> deref i == length(a);
+        let next = () -> {
+            let x = a[deref i];
+            i := deref i + 1;
+            x
+        };
+        Iterator(done, next)
+
+    ///
+    /// Returns an iterator over `a` in the same region as `a` zipped with the indices of the elements.
+    ///
+    /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
+    ///
+    pub def enumerator(a: Array[a, r]): Iterator[(a, Int32), r] \ { Read(r), Write(r) } =
+        iterator(a) |> Iterator.zipWithIndex
+
+    ///
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
@@ -1765,28 +1793,6 @@ namespace Array {
                 import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
         }
-
-   ///
-   /// Returns an iterator over `a`.
-   ///
-   pub def iterator(r1: Region[r1], a: Array[a, r2]): Iterator[a, r1] \ { Read(r2), Write(r1) } =
-       let len = Array.length(a);
-       let copy = copyOfRange(r1, 0, len, a);
-       let i = ref 0 @ r1;
-       let done = () -> (deref i) >= len;
-       let next = () -> {
-           let j = deref i;
-           let x = copy[j];
-           i := j + 1;
-           x
-       };
-       Iterator(done, next)
-
-    ///
-    /// Returns an iterator over `a` zipped with the indices of the elements.
-    ///
-    pub def enumerator(r1: Region[r1], a: Array[a, r2]): Iterator[(a, Int32), r1] \ { Read(r2), Write(r1) } =
-        iterator(r1, a) |> Iterator.zipWithIndex
 
     ///
     /// Shuffles `a` using the Fisher–Yates shuffle.

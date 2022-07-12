@@ -82,10 +82,6 @@ instance Traversable[Nel] {
     pub override def sequence(t: Nel[m[a]]): m[Nel[a]] with Applicative[m] = Nel.sequence(t)
 }
 
-instance Iterable[Nel] {
-    pub def iterator(r: Region[r], t: Nel[a]): Iterator[a, r] \ Write(r) =
-        Nel.iterator(r, t)
-}
 instance Reducible[Nel] {
     pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b \ {ef1, ef2} = Nel.reduceLeftTo(f, g, l)
     pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b \ {ef1, ef2} = Nel.reduceRightTo(f, g, l)

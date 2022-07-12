@@ -5829,30 +5829,22 @@ namespace TestArray {
 
     @test
     def iterator01(): Bool = region r {
-        []: Array[Int32, r] |> Array.iterator(r) |> Iterator.toList == Nil
+        []: Array[Int32, r] |> Array.iterator |> Iterator.toList == Nil
     }
 
     @test
     def iterator02(): Bool = region r {
-        [1, 2, 3] |> Array.iterator(r) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+        [1, 2, 3] |> Array.iterator |> Iterator.toList == 1 :: 2 :: 3 :: Nil
     }
 
     @test
     def iterator03(): Bool = region r {
-        ([1, 2, 3] @ r) |> Array.iterator(r) |> Iterator.toArray(r) `sameElements` [1, 2, 3] @ r
+        ([1, 2, 3] @ r) |> Array.iterator |> Iterator.toArray(r) `sameElements` [1, 2, 3] @ r
     }
 
     @test
     def iterator04(): Bool = region r {
-        Array.range(r, -100, 100) |> Array.iterator(r) |> Iterator.toArray(r) `sameElements` Array.range(r, -100, 100)
-    }
-
-    @test
-    def iterator05(): Bool = region r {
-        let a = [1, 2, 3] @ r;
-        let iter = Array.iterator(r, a);
-        a[0] = 10000;
-        Iterator.toArray(r, iter) `sameElements` [1, 2, 3]
+        Array.range(r, -100, 100) |> Array.iterator |> Iterator.toArray(r) `sameElements` Array.range(r, -100, 100)
     }
 
 

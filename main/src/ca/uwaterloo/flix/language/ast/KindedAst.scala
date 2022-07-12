@@ -155,13 +155,13 @@ object KindedAst {
 
     case class Cast(exp: KindedAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], declaredEff: Option[Type], tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Without(exp: KindedAst.Expression, eff: Symbol.EffectSym, loc: SourceLocation) extends KindedAst.Expression
+    case class Without(exp: KindedAst.Expression, eff: Ast.EffectSymUse, loc: SourceLocation) extends KindedAst.Expression
 
     case class TryCatch(exp: KindedAst.Expression, rules: List[KindedAst.CatchRule], loc: SourceLocation) extends KindedAst.Expression
 
-    case class TryWith(exp: KindedAst.Expression, eff: Symbol.EffectSym, rules: List[KindedAst.HandlerRule], tvar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+    case class TryWith(exp: KindedAst.Expression, eff: Ast.EffectSymUse, rules: List[KindedAst.HandlerRule], tvar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Do(op: Symbol.OpSym, args: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
+    case class Do(op: Ast.OpSymUse, args: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
 
     case class Resume(exp: KindedAst.Expression, argTvar: Type.KindedVar, retTvar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
@@ -179,7 +179,7 @@ object KindedAst {
 
     case class PutStaticField(field: Field, exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
-    case class NewObject(clazz: java.lang.Class[_], loc: SourceLocation) extends KindedAst.Expression
+    case class NewObject(clazz: java.lang.Class[_], methods: List[KindedAst.JvmMethod], loc: SourceLocation) extends KindedAst.Expression
 
     case class NewChannel(exp: KindedAst.Expression, tpe: Type, loc: SourceLocation) extends KindedAst.Expression
 
@@ -325,9 +325,11 @@ object KindedAst {
 
   case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
 
+  case class JvmMethod(ident: Name.Ident, fparams: List[KindedAst.FormalParam], exp: KindedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation)
+
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: KindedAst.Expression)
 
-  case class HandlerRule(op: Symbol.OpSym, fparams: List[KindedAst.FormalParam], exp: KindedAst.Expression, tvar: Type.KindedVar)
+  case class HandlerRule(op: Ast.OpSymUse, fparams: List[KindedAst.FormalParam], exp: KindedAst.Expression, tvar: Type.KindedVar)
 
   case class ChoiceRule(pat: List[KindedAst.ChoicePattern], exp: KindedAst.Expression)
 
