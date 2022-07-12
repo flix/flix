@@ -191,10 +191,11 @@ instance ToString[Array[a, r]] with ToString[a] {
         StringBuilder.appendString!("[", sb);
         foreach ((x, i) <- Iterable.enumerator(a)) {
             if (i == a.length - 1)
-                StringBuilder.appendString!("${x}]", sb)
+                StringBuilder.appendString!("${x}", sb)
             else
                 StringBuilder.appendString!("${x}, ", sb)
         };
+        StringBuilder.appendString!("]", sb);
         StringBuilder.toString(sb)
     } as & Pure
 }
