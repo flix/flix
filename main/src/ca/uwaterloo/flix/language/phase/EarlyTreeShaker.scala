@@ -82,21 +82,27 @@ object EarlyTreeShaker {
     // (b) A function annotated with @benchmark or @test is always reachable.
     //
     for ((sym, defn) <- root.defs) {
-      if (isBenchmark(defn.spec.ann) || isTest(defn.spec.ann)) {
+      if (isBenchmark(defn) || isTest(defn)) {
         reachable = reachable + ReachableSym.DefnSym(sym)
       }
     }
     reachable
   }
 
-  private def isBenchmark(l: List[TypedAst.Annotation]): Boolean = l.exists { a =>
+  /**
+    * Returns `true` if `defn` is annotated with `@benchmark`
+    */
+  private def isBenchmark(defn: TypedAst.Def): Boolean = defn.spec.ann.exists { a =>
     a.name match {
       case Annotation.Benchmark(_) => true
       case _ => false
     }
   }
 
-  private def isTest(l: List[TypedAst.Annotation]): Boolean = l.exists { a =>
+  /**
+    * Returns `true` if `defn` is annotated with `@test`
+    */
+  private def isTest(defn: TypedAst.Def): Boolean = defn.spec.ann.exists { a =>
     a.name match {
       case Annotation.Test(_) => true
       case _ => false
@@ -398,6 +404,9 @@ object EarlyTreeShaker {
   private def visitExps(es: List[Expression]): Set[ReachableSym] = es.map(visitExp).fold(Set())(_ ++ _)
 
 
+  /**
+    * Represents a super type for reachable symbols in the AST.
+    */
   sealed trait ReachableSym
 
   object ReachableSym {
