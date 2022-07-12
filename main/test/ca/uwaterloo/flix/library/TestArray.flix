@@ -5628,6 +5628,30 @@ namespace TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // toNec                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toNec01(): Bool = region r {
+        Array.toNec([]: Array[Unit, _]) == None
+    }
+
+    @test
+    def toNec02(): Bool = region r {
+        Array.toNec([1]) == Some(Nec.singleton(1))
+    }
+
+    @test
+    def toNec03(): Bool = region r {
+        Array.toNec([1,2]) == List.toNec(1 :: 2 :: Nil)
+    }
+
+    @test
+    def toNec04(): Bool = region r {
+        Array.toNec([1,2,3]) == List.toNec(1 :: 2 :: 3 :: Nil)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // copyOfRange                                                             //
     /////////////////////////////////////////////////////////////////////////////
 

@@ -150,6 +150,27 @@ namespace Array {
         loop(arr.length, Chain.empty())
 
     ///
+    /// Optionally returns the array `arr` as a non-empty chain.
+    ///
+    /// If `arr` is empty return `None`, otherwise return the Nec wrapped in `Some`.
+    ///
+    pub def toNec(arr: Array[a, r]): Option[Nec[a]] \ Read(r) =
+        def loop(i, acc) = {
+            if (i == 0) {
+                acc
+            } else {
+                let x = arr[i - 1];
+                loop(i - 1, Nec.snoc(acc, x))
+            }
+        };
+        if (Array.isEmpty(arr)) {
+            None
+        } else {
+            let i = arr.length - 1;
+            Some(loop(i, Nec.singleton(arr[i])))
+        }
+
+    ///
     /// Returns `a` as a MutDeque.
     ///
     pub def toMutDeque(r1: Region[r1], a: Array[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1) }  =
