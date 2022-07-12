@@ -1616,7 +1616,6 @@ namespace TestNec {
             case _       => false
         }
 
-
     @test
     def shuffle02(): Bool & Impure =
         let c = necOf3(1, 2, 3) |> Nec.shuffle(Random.new());

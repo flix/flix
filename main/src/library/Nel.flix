@@ -698,5 +698,14 @@ namespace Nel {
         let Nel(x, xs) = l;
         List.takeWhile(f, x :: xs)
 
+    ///
+    /// Optionally returns the Nel `l` shuffled using the Fisher–Yates shuffle.
+    ///
+    pub def shuffle(rnd: Random.Random, l: Nel[a]): Option[Nel[a]] & Impure = region r {
+        let arr = toArray(r, l);
+        Array.shuffle(rnd, arr);
+        Array.toNel(arr)
+    }
+
 }
 
