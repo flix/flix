@@ -124,6 +124,27 @@ namespace Array {
         loop(a.length, Nil)
 
     ///
+    /// Optionally returns the array `arr` as a non-empty list.
+    ///
+    /// If `arr` is empty return `None`, otherwise return the Nel wrapped in `Some`.
+    ///
+    pub def toNel(arr: Array[a, r]): Option[Nel[a]] \ Read(r) =
+        def loop(i, acc) = {
+            if (i == 0) {
+                acc
+            } else {
+                let x = arr[i - 1];
+                loop(i - 1, Nel.cons(x, acc))
+            }
+        };
+        if (Array.isEmpty(arr)) {
+            None
+        } else {
+            let i = arr.length - 1;
+            Some(loop(i, Nel.singleton(arr[i])))
+        }
+
+    ///
     /// Returns the array `a` as a `DelayList`.
     ///
     pub def toDelayList(a: Array[a, r]): DelayList[a] \ Read(r) =
@@ -160,7 +181,7 @@ namespace Array {
                 acc
             } else {
                 let x = arr[i - 1];
-                loop(i - 1, Nec.snoc(acc, x))
+                loop(i - 1, Nec.cons(x, acc))
             }
         };
         if (Array.isEmpty(arr)) {
