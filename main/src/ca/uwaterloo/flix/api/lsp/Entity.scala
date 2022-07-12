@@ -88,4 +88,12 @@ object Entity {
     def loc: SourceLocation = t.loc
   }
 
+  case class Effect(eff: TypedAst.Effect) extends Entity {
+    def loc: SourceLocation = eff.sym.loc
+  }
+
+  case class Op(op: TypedAst.Op) extends Entity {
+    def loc: SourceLocation = op.sym.loc
+  }
+
 }
