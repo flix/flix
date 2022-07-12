@@ -37,6 +37,22 @@ instance Iterable[MutList] {
     pub def iterator(l: MutList[a, r]): Iterator[a, r] \ Write(r) = MutList.iterator(l)
 }
 
+instance ToString[MutList[a, r]] with ToString[a] {
+    pub def toString(l: MutList[a, r]): String = region r2 {
+        let sb = new StringBuilder(r2);
+        let last = MutList.length(l) - 1;
+        StringBuilder.appendString!("[", sb);
+        foreach ((x, i) <- Iterable.enumerator(l)) {
+            if (i == last)
+                StringBuilder.appendString!("${x}", sb)
+            else
+                StringBuilder.appendString!("${x}, ", sb)
+        };
+        StringBuilder.appendString!("]", sb);
+        StringBuilder.toString(sb)
+    } as & Pure
+}
+
 namespace MutList {
 
     ///

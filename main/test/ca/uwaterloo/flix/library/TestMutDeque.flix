@@ -1258,31 +1258,45 @@ namespace TestMutDeque {
 
     @test
     def toString01(): Bool = region r {
-        ToString.toString(Array.range(r, 0, 5) |> Array.toMutDeque(r)) == "[0, 1, 2, 3, 4]"
+        ToString.toString(new MutDeque(r): MutDeque[Int32, r]) == "[]"
     }
 
     @test
     def toString02(): Bool = region r {
-        ToString.toString(Array.range(r, 0, 1) |> Array.toMutDeque(r)) == "[0]"
+        ToString.toString(Array.range(r, 0, 0) |> Array.toMutDeque(r)) == "[]"
     }
 
     @test
     def toString03(): Bool = region r {
-        ToString.toString(Array.new(r, 'a', 3) |> Array.toMutDeque(r)) == "[a, a, a]"
+        ToString.toString(Array.range(r, 0, 5) |> Array.toMutDeque(r)) == "[0, 1, 2, 3, 4]"
     }
 
     @test
     def toString04(): Bool = region r {
-        ToString.toString(Array.range(r, 1, 3) |> Array.toMutDeque(r)) == "[1, 2]"
+        ToString.toString(Array.range(r, 0, 1) |> Array.toMutDeque(r)) == "[0]"
     }
 
     @test
     def toString05(): Bool = region r {
-        ToString.toString(Array.new(r, [1, 2, 3], 3) |> Array.toMutDeque(r)) == "[[1, 2, 3], [1, 2, 3], [1, 2, 3]]"
+        ToString.toString(Array.new(r, 'a', 3) |> Array.toMutDeque(r)) == "[a, a, a]"
     }
 
     @test
     def toString06(): Bool = region r {
-        ToString.toString(Array.range(r, 0, 0) |> Array.toMutDeque(r)) == "[]"
+        ToString.toString(Array.range(r, 1, 3) |> Array.toMutDeque(r)) == "[1, 2]"
     }
+
+    @test
+    def toString07(): Bool = region r {
+        let d = new MutDeque(r);
+        foreach (_ <- Iterator.range(r, 0, 3)) {
+            let d1 = new MutDeque(r);
+            foreach (i <- Iterator.range(r, 1, 4)) {
+                MutDeque.pushBack(i, d1)
+            };
+            MutDeque.pushBack(d1, d)
+        };
+        ToString.toString(d) == "[[1, 2, 3], [1, 2, 3], [1, 2, 3]]"
+    }
+
 }
