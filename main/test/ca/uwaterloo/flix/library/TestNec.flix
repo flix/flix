@@ -1612,7 +1612,7 @@ namespace TestNec {
     def shuffle01(): Bool & Impure =
         let c = Nec.singleton(1) |> Nec.shuffle(Random.new());
         match c {
-            case Some(cc) => Nec.length(cc) == 1 and Nec.toSet(cc) == Set#{}
+            case Some(cc) => Nec.length(cc) == 1 and Nec.toSet(cc) == Set#{1}
             case _       => false
         }
 

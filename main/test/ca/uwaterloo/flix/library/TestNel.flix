@@ -1039,7 +1039,7 @@ namespace TestNel {
     def shuffle01(): Bool & Impure =
         let l = Nel.singleton(1);
         match Nel.shuffle(Random.new(), l) {
-            case Some(ll) => Nel.length(ll) == 1 and (ll |> Nel.toList |> List.toSet) == Set#{}
+            case Some(ll) => Nel.length(ll) == 1 and (ll |> Nel.toList |> List.toSet) == Set#{1}
             case _        => false
         }
 
