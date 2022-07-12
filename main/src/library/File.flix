@@ -299,7 +299,7 @@ namespace File {
     /// `count` - the number of bytes read.
     /// `charSet` - the specific charset to be used to decode the bytes.
     ///
-    pub def readWith(opts: {offset :: Int64, count :: Int32, charSet :: String}, f : String): Result[String, String] & Impure = {
+    pub def readWith(opts: {offset :: Int64, count :: Int32, charSet :: String}, f : String): Result[String, String] & Impure =
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
             import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream & Impure as newInputStream;
@@ -309,19 +309,29 @@ namespace File {
             import new java.lang.String(Array[Int8, Static], ##java.nio.charset.Charset): String & Impure as newString;
 
             let javaFile = newFile(f);
-            let stream = newInputStream(javaFile);
-            discard skip(stream, opts.offset);
-            let bytes = [0i8; opts.count];
-            discard read(stream, bytes, 0, opts.count);
-            let charSet = forName(opts.charSet);
-            let returnString = newString(bytes, charSet);
-            Ok(returnString)
+            def loop(i) = {
+                if (i > 0) {
+                    let stream = newInputStream(javaFile);
+                    let skipped = skip(stream, opts.offset);
+                    if (skipped == opts.offset) {
+                        let bytes = [0i8; opts.count];
+                        discard read(stream, bytes, 0, opts.count);
+                        let charSet = forName(opts.charSet);
+                        let returnString = newString(bytes, charSet);
+                        Ok(returnString)
+                    } else {
+                        loop(i - 1)
+                    }
+                } else {
+                    Err("An error occurred when reading the file: '${f}'.")
+                }
+            };
+            loop(opts.count / 1000)
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
-    }
 
     ///
     /// Returns a list of all the lines in the given file `f`.
