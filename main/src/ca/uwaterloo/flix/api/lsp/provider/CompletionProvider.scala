@@ -219,7 +219,8 @@ object CompletionProvider {
       "type",
       "use",
       "where",
-      "with"
+      "with",
+      "without"
     ) map keywordCompletion
   }
 
