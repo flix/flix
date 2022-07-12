@@ -138,6 +138,18 @@ pub def bug!(m: String): a =
 pub def unreachable!(): a = bug!("Reached unreachable expression.")
 
 ///
+/// Alias for `Foldable.iterator`.
+///
+pub def iterator(r: Region[r], t: t[a]): Iterator[a, r] \ Write(r) with Foldable[t] =
+    Foldable.iterator(r, t)
+
+///
+/// Alias for `Foldable.iterator |> Iterable.enumerator`.
+///
+pub def enumerator(r: Region[r], t: t[a]): Iterator[(a, Int32), r] \ Write(r) with Foldable[t] =
+    Foldable.iterator(r, t) |> Iterable.enumerator
+
+///
 /// Meta-programming facility to express the time complexity of a function `f`.
 ///
 @Internal
