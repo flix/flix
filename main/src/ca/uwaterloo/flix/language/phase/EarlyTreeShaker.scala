@@ -58,8 +58,15 @@ object EarlyTreeShaker {
       case (sym, _) => allReachable.contains(ReachableSym.SigSym(sym))
     }
 
-    val reachableInstances = root.instances.filter {
-      case (sym, _) => allReachable.contains(ReachableSym.ClassSym(sym))
+    val reachableInstances = root.instances.foldLeft(Map.empty: Map[Symbol.ClassSym, List[TypedAst.Instance]]) {
+      case (m, (sym, instances)) =>
+        if (allReachable.contains(ReachableSym.ClassSym(sym))) {
+          val insts = instances.filter(_.defs.exists(d => allReachable.contains(ReachableSym.DefnSym(d.sym))))
+          val minInsts = insts.map(i => i.copy(defs = i.defs.filter(d => allReachable.contains(ReachableSym.DefnSym(d.sym)))))
+          m + (sym -> minInsts)
+        }
+        else
+          m
     }
 
     val reachableClasses = root.classes.foldLeft(Map.empty: Map[Symbol.ClassSym, TypedAst.Class]) {
