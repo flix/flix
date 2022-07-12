@@ -43,13 +43,15 @@ object FindReferencesProvider {
 
         case Entity.Op(op0) => findOpReferences(op0.sym)
 
-        case Entity.Exp(exp) => exp match {
-          case Expression.Def(sym, _, _) => findDefReferences(sym)
-          case Expression.Sig(sym, _, _) => findSigReferences(sym)
-          case Expression.Var(sym, _, _) => findVarReferences(sym)
-          case Expression.Tag(sym, tag, _, _, _, _, _) => findTagReferences(sym, tag)
-          case _ => mkNotFound(uri, pos)
-        }
+        case Entity.DefUse(sym, _) => findDefReferences(sym)
+
+        case Entity.SigUse(sym, _) => findSigReferences(sym)
+
+        case Entity.VarUse(sym, _) => findVarReferences(sym)
+
+        case Entity.TagUse(sym, tag, _) => findTagReferences(sym, tag)
+
+        case Entity.Exp(_) => mkNotFound(uri, pos)
 
         case Entity.Field(field) => findFieldReferences(field)
 
