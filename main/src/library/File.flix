@@ -303,30 +303,40 @@ namespace File {
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
             import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream & Impure as newInputStream;
-            import java.io.FileInputStream.skip(Int64): Int64 & Impure;
             import java.io.FileInputStream.read(Array[Int8, Static], Int32, Int32): Int32 & Impure;
             import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset & Impure;
             import new java.lang.String(Array[Int8, Static], ##java.nio.charset.Charset): String & Impure as newString;
 
             let javaFile = newFile(f);
-            def loop(i) = {
-                if (0 <= i) {
-                    let stream = newInputStream(javaFile);
-                    let skipped = skip(stream, opts.offset);
-                    if (skipped == opts.offset) {
-                        let bytes = [0i8; opts.count];
-                        discard read(stream, bytes, 0, opts.count);
-                        let charSet = forName(opts.charSet);
-                        let returnString = newString(bytes, charSet);
-                        Ok(returnString)
-                    } else {
-                        loop(i - 1)
-                    }
-                } else {
-                    Err("An error occurred when reading the file: '${f}'.")
+            let stream = newInputStream(javaFile);
+            match skip((opts.offset / 10_000i64), opts.offset, stream, f) {
+                case Ok(_)    => {
+                    let bytes = [0i8; opts.count];
+                    discard read(stream, bytes, 0, opts.count);
+                    let charSet = forName(opts.charSet);
+                    let returnString = newString(bytes, charSet);
+                    Ok(returnString)
                 }
-            };
-            loop(opts.count / 1000)
+                case Err(msg) => Err(msg)
+            }
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
+
+    def skip(i: Int64, bytesToSkip: Int64, stream: ##java.io.FileInputStream, f: String): Result[Unit, String] & Impure =
+        try {
+            if (0i64 <= i) {
+                import java.io.FileInputStream.skip(Int64): Int64 & Impure as javaSkip;
+                let skipped = javaSkip(stream, bytesToSkip);
+                if (skipped < bytesToSkip)
+                    skip(i - 1i64, bytesToSkip - skipped, stream, f)
+                else
+                    Ok()
+            } else {
+                Err("An error occurred when reading the file: '${f}'.")
+            }
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String & Impure;
