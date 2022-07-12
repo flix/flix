@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{DocumentHighlight, DocumentHighlightKind, Entity, Index, Position, Range}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL._
@@ -40,13 +40,15 @@ object HighlightProvider {
 
         case Entity.Op(op) => highlightOp(op.sym)
 
-        case Entity.Exp(exp) => exp match {
-          case Expression.Var(sym, _, _) => highlightVar(sym)
-          case Expression.Def(sym, _, _) => highlightDef(sym)
-          case Expression.Sig(sym, _, _) => highlightSig(sym)
-          case Expression.Tag(sym, tag, _, _, _, _, _) => highlightTag(sym, tag)
-          case _ => mkNotFound(uri, pos)
-        }
+        case Entity.VarUse(sym, _) => highlightVar(sym)
+
+        case Entity.DefUse(sym, _) => highlightDef(sym)
+
+        case Entity.SigUse(sym, _) => highlightSig(sym)
+
+        case Entity.TagUse(sym, tag, _) => highlightTag(sym, tag)
+
+        case Entity.Exp(_) => mkNotFound(uri, pos)
 
         case Entity.Field(field) => highlightField(field)
 

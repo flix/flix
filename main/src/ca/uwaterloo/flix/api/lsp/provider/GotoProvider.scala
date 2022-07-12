@@ -32,21 +32,19 @@ object GotoProvider {
 
       case Some(entity) => entity match {
 
-        case Entity.Exp(exp) => exp match {
-          case Expression.Def(sym, _, loc) =>
-            ("status" -> "success") ~ ("result" -> LocationLink.fromDefSym(sym, loc)(root).toJSON)
+        case Entity.DefUse(sym, loc) =>
+          ("status" -> "success") ~ ("result" -> LocationLink.fromDefSym(sym, loc)(root).toJSON)
 
-          case Expression.Sig(sym, _, loc) =>
-            ("status" -> "success") ~ ("result" -> LocationLink.fromSigSym(sym, loc)(root).toJSON)
+        case Entity.SigUse(sym, loc) =>
+          ("status" -> "success") ~ ("result" -> LocationLink.fromSigSym(sym, loc)(root).toJSON)
 
-          case Expression.Var(sym, _, loc) =>
-            ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
+        case Entity.VarUse(sym, loc) =>
+          ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
 
-          case Expression.Tag(sym, tag, _, _, _, _, _) =>
-            ("status" -> "success") ~ ("result" -> LocationLink.fromEnumAndTag(sym, tag, tag.loc)(root).toJSON)
+        case Entity.TagUse(sym, tag, _) =>
+          ("status" -> "success") ~ ("result" -> LocationLink.fromEnumAndTag(sym, tag, tag.loc)(root).toJSON)
 
-          case _ => mkNotFound(uri, pos)
-        }
+        case Entity.Exp(_) => mkNotFound(uri, pos)
 
         case Entity.Pattern(pat) => pat match {
           case Pattern.Tag(sym, tag, _, _, _) =>

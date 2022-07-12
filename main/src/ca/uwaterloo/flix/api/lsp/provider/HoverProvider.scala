@@ -36,14 +36,13 @@ object HoverProvider {
 
         case Entity.Case(caze) => hoverType(caze.sc.base, caze.tag.loc)
 
-        case Entity.Exp(exp) =>
-          exp match {
-            case Expression.Def(sym, _, loc) => hoverDef(sym, loc)
+        case Entity.DefUse(sym, loc) => hoverDef(sym, loc)
 
-            case Expression.Sig(sym, _, loc) => hoverSig(sym, loc)
+        case Entity.SigUse(sym, loc) => hoverSig(sym, loc)
 
-            case _ => hoverTypAndEff(exp.tpe, exp.pur, exp.eff, exp.loc)
-          }
+        // MATT need to hover type and eff for vars and tags
+        // MATT Entity.Var and Entity.Exp will have the same location so it's not clear which will be selected
+        case Entity.Exp(exp) => hoverTypAndEff(exp.tpe, exp.pur, exp.eff, exp.loc)
 
         case Entity.FormalParam(fparam) => hoverType(fparam.tpe, fparam.loc)
 

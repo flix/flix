@@ -96,4 +96,12 @@ object Entity {
     def loc: SourceLocation = op.sym.loc
   }
 
+  case class DefUse(sym: Symbol.DefnSym, loc: SourceLocation) extends Entity
+
+  case class SigUse(sym: Symbol.SigSym, loc: SourceLocation) extends Entity
+
+  case class VarUse(sym: Symbol.VarSym, loc: SourceLocation) extends Entity
+
+  case class TagUse(sym: Symbol.EnumSym, tag: Name.Tag, loc: SourceLocation) extends Entity
+
 }

@@ -112,12 +112,14 @@ object Index {
   /**
     * Returns an index with the symbol 'sym' used at location 'loc'.
     */
-  def useOf(sym: Symbol.SigSym, loc: SourceLocation): Index = Index.empty.copy(sigUses = MultiMap.singleton(sym, loc))
+  def useOf(sym: Symbol.SigSym, loc: SourceLocation): Index =
+    Index.empty.copy(sigUses = MultiMap.singleton(sym, loc)) + Entity.SigUse(sym, loc)
 
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
     */
-  def useOf(sym: Symbol.DefnSym, loc: SourceLocation): Index = Index.empty.copy(defUses = MultiMap.singleton(sym, loc))
+  def useOf(sym: Symbol.DefnSym, loc: SourceLocation): Index =
+    Index.empty.copy(defUses = MultiMap.singleton(sym, loc)) + Entity.DefUse(sym, loc)
 
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
@@ -127,12 +129,14 @@ object Index {
   /**
     * Returns an index with the symbol `sym` and `tag` used at location `loc.`
     */
-  def useOf(sym: Symbol.EnumSym, tag: Name.Tag): Index = Index.empty.copy(tagUses = MultiMap.singleton((sym, tag), tag.loc))
+  def useOf(sym: Symbol.EnumSym, tag: Name.Tag): Index =
+    Index.empty.copy(tagUses = MultiMap.singleton((sym, tag), tag.loc)) + Entity.TagUse(sym, tag, tag.loc)
 
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
     */
-  def useOf(sym: Symbol.VarSym, loc: SourceLocation): Index = Index.empty.copy(varUses = MultiMap.singleton(sym, loc))
+  def useOf(sym: Symbol.VarSym, loc: SourceLocation): Index =
+    Index.empty.copy(varUses = MultiMap.singleton(sym, loc)) + Entity.VarUse(sym, loc)
 
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
