@@ -1252,4 +1252,37 @@ namespace TestMutDeque {
             d2 |> MutDeque.toList |> List.toSet == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toString01(): Bool = region r {
+        ToString.toString(Array.range(r, 0, 5) |> Array.toMutDeque(r)) == "[0, 1, 2, 3, 4]"
+    }
+
+    @test
+    def toString02(): Bool = region r {
+        ToString.toString(Array.range(r, 0, 1) |> Array.toMutDeque(r)) == "[0]"
+    }
+
+    @test
+    def toString03(): Bool = region r {
+        ToString.toString(Array.new(r, 'a', 3) |> Array.toMutDeque(r)) == "[a, a, a]"
+    }
+
+    @test
+    def toString04(): Bool = region r {
+        ToString.toString(Array.range(r, 1, 3) |> Array.toMutDeque(r)) == "[1, 2]"
+    }
+
+    @test
+    def toString05(): Bool = region r {
+        ToString.toString(Array.new(r, [1, 2, 3], 3) |> Array.toMutDeque(r)) == "[[1, 2, 3], [1, 2, 3], [1, 2, 3]]"
+    }
+
+    @test
+    def toString06(): Bool = region r {
+        ToString.toString(Array.range(r, 0, 0) |> Array.toMutDeque(r)) == "[]"
+    }
 }

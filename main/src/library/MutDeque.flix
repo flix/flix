@@ -43,6 +43,21 @@ instance Iterable[MutDeque] {
     pub def iterator(d: MutDeque[a, r]): Iterator[a, r] \ Write(r) = MutDeque.iterator(d)
 }
 
+instance ToString[MutDeque[a, r]] with ToString[a] {
+    pub def toString(m: MutDeque[a, r]): String = region r2 {
+        let sb = new StringBuilder(r2);
+        StringBuilder.appendString!("[", sb);
+        foreach ((x, i) <- Iterable.enumerator(m)) {
+            if (i == MutDeque.size(m) - 1)
+                StringBuilder.appendString!("${x}", sb)
+            else
+                StringBuilder.appendString!("${x}, ", sb)
+        };
+        StringBuilder.appendString!("]", sb);
+        StringBuilder.toString(sb)
+    } as & Pure
+}
+
 namespace MutDeque {
 
     ///
@@ -442,12 +457,7 @@ namespace MutDeque {
                 loop((i + 1) &&& c)
             }
         };
-
-        if (MutDeque.isEmpty(d)) {
-            ()
-        } else {
-            loop(deref front)
-        }
+        loop(deref front)
 
     ///
     /// Shuffles a copy of `d` using the Fisher–Yates shuffle.
