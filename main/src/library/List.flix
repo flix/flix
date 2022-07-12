@@ -109,11 +109,6 @@ instance Monoid[List[a]] {
     pub def empty(): List[a] = Nil
 }
 
-instance Iterable[List] {
-    pub def iterator(r: Region[r], t: List[a]): Iterator[a, r] \ Write(r) =
-        List.iterator(r, t)
-}
-
 namespace List {
 
     ///

@@ -193,7 +193,7 @@ object WeededAst {
 
     case class PutStaticField(className: String, fieldName: String, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class NewObject(className: String, loc: SourceLocation) extends WeededAst.Expression
+    case class NewObject(className: String, methods: List[JvmMethod], loc: SourceLocation) extends WeededAst.Expression
 
     case class NewChannel(exp: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
 
@@ -411,6 +411,8 @@ object WeededAst {
     case class PredicateParamWithType(pred: Name.Pred, den: Ast.Denotation, tpes: List[WeededAst.Type], loc: SourceLocation) extends PredicateParam
 
   }
+
+  case class JvmMethod(ident: Name.Ident, fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, purAndEff: PurityAndEffect, loc: SourceLocation)
 
   case class CatchRule(ident: Name.Ident, className: String, exp: WeededAst.Expression)
 
