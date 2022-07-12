@@ -680,7 +680,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Without: Rule1[ParsedAst.Expression] = {
       def Effects: Rule1[Seq[Name.QName]] = rule {
-        Names.QualifiedEffect ~> ((n: Name.QName) => List(n)) | "{" ~ optWS ~ oneOrMore(Names.QualifiedEffect).separatedBy(optWS ~ "," ~ optWS) ~ "}"
+        Names.QualifiedEffect ~> ((n: Name.QName) => List(n)) | "{" ~ optWS ~ oneOrMore(Names.QualifiedEffect).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}"
       }
       rule {
         Cast ~ optional(WS ~ keyword("without") ~ WS ~ Effects ~ SP ~> ParsedAst.Expression.Without)
