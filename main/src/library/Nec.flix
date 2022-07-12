@@ -1001,4 +1001,13 @@ namespace Nec {
         };
         loop(c, Nil)
 
+    ///
+    /// Optionally returns the Nec `c` shuffled using the Fisher–Yates shuffle.
+    ///
+    pub def shuffle(rnd: Random.Random, c: Nec[a]): Option[Nec[a]] & Impure = region r {
+        let arr = toArray(r, c);
+        Array.shuffle(rnd, arr);
+        Array.toNec(arr)
+    }
+
 }
