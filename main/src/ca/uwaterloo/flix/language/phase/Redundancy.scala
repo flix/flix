@@ -598,8 +598,14 @@ object Redundancy {
     case Expression.PutStaticField(_, exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.NewObject(_, _, _, _, _, _) =>
-      Used.empty
+    case Expression.NewObject(_, _, _, _, methods, _) =>
+      methods.foldLeft(Used.empty) {
+        case (acc, JvmMethod(_, fparams, exp, _, _, _, _)) => 
+          val used = visitExp(exp, env0, rc)
+          val syms = fparams.map(_.sym)
+          val dead = syms.filter(deadVarSym(_, used))
+          acc ++ used ++ dead.map(UnusedVarSym)
+      }
 
     case Expression.NewChannel(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
