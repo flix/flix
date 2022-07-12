@@ -114,11 +114,6 @@ class Flix {
     // Boxable
     "Boxable.flix" -> LocalResource.get("/src/library/Boxable.flix"),
     "Boxed.flix" -> LocalResource.get("/src/library/Boxed.flix"),
-
-    // For-loops
-    "Iterable.flix" -> LocalResource.get("/src/library/Iterable.flix"),
-    "Iterator.flix" -> LocalResource.get("/src/library/Iterator.flix"),
-
   )
 
   /**
@@ -142,6 +137,8 @@ class Flix {
     "Int16.flix" -> LocalResource.get("/src/library/Int16.flix"),
     "Int32.flix" -> LocalResource.get("/src/library/Int32.flix"),
     "Int64.flix" -> LocalResource.get("/src/library/Int64.flix"),
+    "Iterable.flix" -> LocalResource.get("/src/library/Iterable.flix"),
+    "Iterator.flix" -> LocalResource.get("/src/library/Iterator.flix"),
     "List.flix" -> LocalResource.get("/src/library/List.flix"),
     "Map.flix" -> LocalResource.get("/src/library/Map.flix"),
     "Nec.flix" -> LocalResource.get("/src/library/Nec.flix"),
