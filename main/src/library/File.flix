@@ -310,7 +310,7 @@ namespace File {
 
             let javaFile = newFile(f);
             def loop(i) = {
-                if (i > 0) {
+                if (0 <= i) {
                     let stream = newInputStream(javaFile);
                     let skipped = skip(stream, opts.offset);
                     if (skipped == opts.offset) {
