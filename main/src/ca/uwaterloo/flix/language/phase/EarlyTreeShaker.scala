@@ -49,15 +49,6 @@ object EarlyTreeShaker {
     // Compute the symbols that are transitively reachable.
     val allReachable = ParOps.parReachable(initReach, visitSym(_, root))
 
-    // Filter the reachable definitions.
-    val reachableDefs = root.defs.filter {
-      case (sym, _) => allReachable.contains(ReachableSym.DefnSym(sym))
-    }
-
-    val reachableSigs = root.sigs.filter {
-      case (sym, _) => allReachable.contains(ReachableSym.SigSym(sym))
-    }
-
     val reachableInstances = root.instances.foldLeft(Map.empty: Map[Symbol.ClassSym, List[TypedAst.Instance]]) {
       case (m, (sym, instances)) =>
         if (allReachable.contains(ReachableSym.ClassSym(sym))) {
@@ -78,8 +69,22 @@ object EarlyTreeShaker {
           m
     }
 
+    // Filter the reachable definitions.
+    val reachableDefs = root.defs.filter {
+      case (sym, _) =>
+        allReachable.contains(ReachableSym.DefnSym(sym)) ||
+          reachableInstances.flatMap(_._2).flatMap(_.defs).exists(_.sym == sym) ||
+          reachableClasses.values.flatMap(_.laws).exists(_.sym == sym)
+    }
+
+    /*
+    val reachableSigs = root.sigs.filter {
+      case (sym, _) => allReachable.contains(ReachableSym.SigSym(sym))
+    }
+  */
+
     // Reassemble the AST.
-    root.copy(classes = reachableClasses, instances = reachableInstances, sigs = reachableSigs, defs = reachableDefs).toSuccess
+    root.copy(defs = reachableDefs).toSuccess
   }
 
   /**
