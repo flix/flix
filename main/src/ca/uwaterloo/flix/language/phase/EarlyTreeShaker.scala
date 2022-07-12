@@ -50,20 +50,20 @@ object EarlyTreeShaker {
     val allReachable = ParOps.parReachable(initReach, visitSym(_, root))
 
     // Filter the reachable definitions.
-    val newDefs = root.defs.filter {
+    val reachableDefs = root.defs.filter {
       case (sym, _) => allReachable.contains(ReachableSym.DefnSym(sym))
     }
 
-    val newSigs = root.sigs.filter {
+    val reachableSigs = root.sigs.filter {
       case (sym, _) => allReachable.contains(ReachableSym.SigSym(sym))
     }
 
-    val newInstances = root.instances.filter {
+    val reachableInstances = root.instances.filter {
       case (sym, _) => allReachable.contains(ReachableSym.ClassSym(sym))
     }
 
     // Reassemble the AST.
-    root.copy(defs = newDefs, sigs = newSigs).toSuccess
+    root.copy(defs = reachableDefs, sigs = reachableSigs, instances = reachableInstances).toSuccess
   }
 
   /**
@@ -86,9 +86,6 @@ object EarlyTreeShaker {
         reachable = reachable + ReachableSym.DefnSym(sym)
       }
     }
-
-    // (c) Type classes are always reachable???
-    reachable ++= root.instances.map(s => ReachableSym.ClassSym(s._1))
     reachable
   }
 
@@ -118,7 +115,8 @@ object EarlyTreeShaker {
     case ReachableSym.SigSym(sigSym) => root.sigs.get(sigSym) match {
       case None => Set.empty
       case Some(Sig(sigSym, spec, impl)) =>
-        visitExps(spec.ann.flatMap(_.args)) ++
+        Set(ReachableSym.ClassSym(sigSym.clazz)) ++
+          visitExps(spec.ann.flatMap(_.args)) ++
           impl.map(i => visitExp(i.exp)).getOrElse(Set.empty)
     }
 
