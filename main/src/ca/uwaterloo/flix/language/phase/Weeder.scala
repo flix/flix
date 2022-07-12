@@ -692,7 +692,8 @@ object Weeder {
       // Rewrites a foreach loop to Iterator.foreach call.
       //
 
-      val fqn = "Iterator.foreach"
+      val fqnForEach = "Iterator.foreach"
+      val fqnIterator = "Iterable.iterator"
 
       foldRight(frags)(visitExp(exp, senv)) {
         case (ParsedAst.ForEachFragment.ForEach(sp11, pat, exp1, sp12), exp0) =>
@@ -700,8 +701,9 @@ object Weeder {
             case (p, e1) =>
               val loc = mkSL(sp11, sp12).asSynthetic
               val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
-              val fparams = List(lambda, e1)
-              mkApplyFqn(fqn, fparams, loc)
+              val iterable = mkApplyFqn(fqnIterator, List(e1), e1.loc)
+              val fparams = List(lambda, iterable)
+              mkApplyFqn(fqnForEach, fparams, loc)
           }
 
         case (ParsedAst.ForEachFragment.Guard(sp11, exp1, sp12), exp0) =>
