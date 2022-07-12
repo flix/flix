@@ -1439,11 +1439,22 @@ object Typer {
           resultEff = valueEff
         } yield (valueConstrs, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.NewObject(clazz, _, loc) =>
-        val resultTyp = getFlixType(clazz)
-        val resultPur = Type.Impure
-        val resultEff = Type.Empty
-        liftM(List.empty, resultTyp, resultPur, resultEff)
+      case KindedAst.Expression.NewObject(clazz, methods, loc) => {
+        def visitJvmMethod(method: KindedAst.JvmMethod): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = method match {
+          case KindedAst.JvmMethod(ident, fparams, exp, returnTpe, pur, eff, loc) =>
+            for {
+              (constrs, bodyTpe, bodyPur, bodyEff) <- visitExp(exp)
+              _ <- expectTypeM(expected = returnTpe, actual = bodyTpe, exp.loc)
+            } yield (constrs, returnTpe, bodyPur, bodyEff)
+        }
+
+        for {
+          (constrs, _, _, _) <- seqM(methods map visitJvmMethod).map(unzip4)
+          resultTyp = getFlixType(clazz)
+          resultPur = Type.Impure
+          resultEff = Type.Empty
+        } yield (constrs.flatten, resultTyp, resultPur, resultEff)
+      }
 
       case KindedAst.Expression.NewChannel(exp, declaredType, loc) =>
         for {
