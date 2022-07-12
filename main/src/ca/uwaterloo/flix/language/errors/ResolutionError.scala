@@ -495,7 +495,7 @@ object ResolutionError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Undefined operation '${red(qname.toString)}'.'.
+         |>> Undefined operation '${red(qname.toString)}'.
          |
          |${code(loc, "operation not found")}
          |
