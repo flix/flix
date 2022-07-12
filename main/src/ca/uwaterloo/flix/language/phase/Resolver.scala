@@ -969,7 +969,9 @@ object Resolver {
           val eVal = visitExp(exp, region)
           val fVal = lookupEffect(eff, ns0, root)
           mapN(eVal, fVal) {
-            case (e, f) => ResolvedAst.Expression.Without(e, f.sym, loc)
+            case (e, f) =>
+              val effUse = Ast.EffectSymUse(f.sym, eff.loc)
+              ResolvedAst.Expression.Without(e, effUse, loc)
           }
 
         case NamedAst.Expression.TryWith(exp, eff, rules, loc) =>
@@ -977,17 +979,20 @@ object Resolver {
           val fVal = lookupEffect(eff, ns0, root)
           flatMapN(eVal, fVal) {
             case (e, f) =>
+              val effUse = Ast.EffectSymUse(f.sym, eff.loc)
               val rulesVal = traverse(rules) {
                 case NamedAst.HandlerRule(ident, fparams, body) =>
                   val opVal = findOpInEffect(ident, f)
                   val fparamsVal = resolveFormalParams(fparams, taenv, ns0, root)
                   val bodyVal = visitExp(body, region)
                   mapN(opVal, fparamsVal, bodyVal) {
-                    case (o, fp, b) => ResolvedAst.HandlerRule(o.sym, fp, b)
+                    case (o, fp, b) =>
+                      val opUse = Ast.OpSymUse(o.sym, ident.loc)
+                      ResolvedAst.HandlerRule(opUse, fp, b)
                   }
               }
               mapN(rulesVal) {
-                rs => ResolvedAst.Expression.TryWith(e, f.sym, rs, loc)
+                rs => ResolvedAst.Expression.TryWith(e, effUse, rs, loc)
               }
           }
 
@@ -995,7 +1000,9 @@ object Resolver {
           val opVal = lookupOp(op, ns0, root)
           val expsVal = traverse(exps)(visitExp(_, region))
           mapN(opVal, expsVal) {
-            case (o, es) => ResolvedAst.Expression.Do(o.sym, es, loc)
+            case (o, es) =>
+              val opUse = Ast.OpSymUse(o.sym, op.loc)
+              ResolvedAst.Expression.Do(opUse, es, loc)
           }
 
         case NamedAst.Expression.Resume(exp, loc) =>

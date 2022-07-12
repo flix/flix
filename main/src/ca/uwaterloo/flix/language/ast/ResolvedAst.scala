@@ -156,13 +156,13 @@ object ResolvedAst {
 
     case class Cast(exp: ResolvedAst.Expression, declaredType: Option[Type], declaredEff: Ast.PurityAndEffect, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Without(exp: ResolvedAst.Expression, eff: Symbol.EffectSym, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Without(exp: ResolvedAst.Expression, eff: Ast.EffectSymUse, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class TryCatch(exp: ResolvedAst.Expression, rules: List[ResolvedAst.CatchRule], loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class TryWith(exp: ResolvedAst.Expression, eff: Symbol.EffectSym, rules: List[ResolvedAst.HandlerRule], loc: SourceLocation) extends ResolvedAst.Expression
+    case class TryWith(exp: ResolvedAst.Expression, eff: Ast.EffectSymUse, rules: List[ResolvedAst.HandlerRule], loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Do(op: Symbol.OpSym, args: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
+    case class Do(op: Ast.OpSymUse, args: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Resume(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -352,7 +352,7 @@ object ResolvedAst {
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ResolvedAst.Expression)
 
-  case class HandlerRule(op: Symbol.OpSym, fparams: Seq[ResolvedAst.FormalParam], exp: ResolvedAst.Expression)
+  case class HandlerRule(op: Ast.OpSymUse, fparams: Seq[ResolvedAst.FormalParam], exp: ResolvedAst.Expression)
 
   case class ChoiceRule(pat: List[ResolvedAst.ChoicePattern], exp: ResolvedAst.Expression)
 

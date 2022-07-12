@@ -26,6 +26,10 @@ instance Scoped[Iterator[a]] {
     pub def regionOf(_: Iterator[a, r]): Region[r] = () as Region[r]
 }
 
+instance Iterable[Iterator] {
+    pub def iterator(iter: Iterator[a, r]): Iterator[a, r] \ Write(r) = iter as \ Write(r)
+}
+
 namespace Iterator {
 
     ///
