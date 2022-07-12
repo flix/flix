@@ -45,7 +45,7 @@ object CompletionProvider {
 
   //
   // This list manually maintained. If a new built-in type is added, it must be extended.
-  // Built-in types are typically descrbed in TypeConstructor, Namer and Resolver.
+  // Built-in types are typically described in TypeConstructor, Namer and Resolver.
   //
   val builtinTypeNames: List[String] = List(
     "Unit",
@@ -66,9 +66,9 @@ object CompletionProvider {
   )
 
   //
-  // To ensure that completions are displayed "most useful" first, we preceed sortText with a number. Priorities
+  // To ensure that completions are displayed "most useful" first, we precede sortText with a number. Priorities
   // differ depending on the type of completion, and can be boosted depending upon context (e.g. type completions
-  // are boosted if the cursor is preceeded by a ":")
+  // are boosted if the cursor is preceded by a ":")
   //
   // 1: High: completions which are only available within a very specific context
   // 2: Boost: completions which are normally low priority, but the context makes them more likely
