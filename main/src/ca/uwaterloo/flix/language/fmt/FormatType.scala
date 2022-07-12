@@ -227,8 +227,8 @@ object FormatType {
         strings.mkString(" or ")
       case SimpleType.Complement(tpe) => s"~${delimit(tpe, mode)}"
       case SimpleType.Union(tpes) =>
-        val strings = tpes.map(delimit(_, mode))
-        strings.mkString(" + ")
+        val strings = tpes.map(visit(_, mode))
+        strings.mkString("{", ", ", "}")
       case SimpleType.Intersection(tpes) =>
         val strings = tpes.map(delimit(_, mode))
         strings.mkString(" & ")
