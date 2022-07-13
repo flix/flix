@@ -768,7 +768,7 @@ namespace Fixpoint {
     @Internal @Unsafe
     pub def unsafeCast(v: a): Datalog[Boxed] = v as Datalog[Boxed]
 
-    def toModel(db: Database[v, r]): Datalog[v] & r =
+    def toModel(db: Database[v, r]): Datalog[v] \ Read(r) =
         MutMap.toMap(db) |>
         Map.map(MutMap.toMap) |>
         Model

@@ -78,16 +78,15 @@ namespace Fixpoint {
     type alias Database[v: Type, r: Region] = MutMap[RamSym[v], MutMap[Tuple[v], v, r], r]
     type alias SearchEnv[v: Type, r: Region] = (Array[Tuple[v], r], Array[v, r])
 
-    def interpret(r: Region[r], stmt: RamStmt[v]): Database[v, r] & r with Order[v], ToString[v] =
+    def interpret(r: Region[r], stmt: RamStmt[v]): Database[v, r] \ Write(r) with Order[v], ToString[v] =
         interpretWithDatabase(new MutMap(r), stmt)
 
-    def interpretWithDatabase(db: Database[v, r], stmt: RamStmt[v]): Database[v, r] & r with Order[v], ToString[v] = {
-        notifyPreInterpret(stmt);
+    def interpretWithDatabase(db: Database[v, r], stmt: RamStmt[v]): Database[v, r] \ { Read(r), Write(r) } with Order[v], ToString[v] =
+        notifyPreInterpret(stmt) as & r; // This casts away the impure effect of notify
         evalStmt(db, stmt);
         db
-    } as & r // This casts away the impure effect of notify
 
-    def evalStmt(db: Database[v, r], stmt: RamStmt[v]): Unit & r with Order[v], ToString[v] =
+    def evalStmt(db: Database[v, r], stmt: RamStmt[v]): Unit \ { Read(r), Write(r) } with Order[v], ToString[v] =
         let r = Scoped.regionOf(db);
         match stmt {
             case RamStmt.Insert(relOp) => evalOp(db, allocEnv(r, 0, relOp), relOp)
@@ -113,14 +112,14 @@ namespace Fixpoint {
             case RamStmt.Comment(_) => ()
         }
 
-    def allocEnv(r: Region[r], depth: Int32, relOp: RelOp[v]): SearchEnv[v, r] & r = match relOp {
+    def allocEnv(r: Region[r], depth: Int32, relOp: RelOp[v]): SearchEnv[v, r] \ Write(r) = match relOp {
         case RelOp.Search(_, _, body) => allocEnv(r, depth + 1, body)
         case RelOp.Query(_, _, _, body) => allocEnv(r, depth + 1, body)
         case RelOp.Project(_) => (Array.new(r, Fixpoint/Tuple.new(Nil), depth), Array.new(r, $DEFAULT$, depth))
         case RelOp.If(_, then) => allocEnv(r, depth, then)
     }
 
-    def evalOp(db: Database[v, r1], env: SearchEnv[v, r2], op: RelOp[v]): Unit & (r1 and r2) with Order[v], ToString[v] =
+    def evalOp(db: Database[v, r1], env: SearchEnv[v, r2], op: RelOp[v]): Unit \ { Read(r1), Write(r1), Read(r2), Write(r2) } with Order[v], ToString[v] =
         let r1 = Scoped.regionOf(db);
         match op {
             case RelOp.Search(RowVar.Index(i), ramSym, body) =>
@@ -165,7 +164,7 @@ namespace Fixpoint {
             case _ => ()
         }
 
-    def evalQuery(env: SearchEnv[v, r], query: List[(Int32, RamTerm[v])], tuple: Tuple[v]): Comparison & r with Order[v], ToString[v] =
+    def evalQuery(env: SearchEnv[v, r], query: List[(Int32, RamTerm[v])], tuple: Tuple[v]): Comparison \ Read(r) with Order[v], ToString[v] =
         match query {
             case Nil => EqualTo
             case (j, t) :: tl => match Fixpoint/Tuple.valueAt(tuple, j) <=> evalTerm(env, t) {
@@ -174,7 +173,7 @@ namespace Fixpoint {
             }
         }
 
-    def evalBoolExp(db: Database[v, r1], env: SearchEnv[v, r2], es: List[BoolExp[v]]): Bool & (r1 and r2) with Order[v], ToString[v] =
+    def evalBoolExp(db: Database[v, r1], env: SearchEnv[v, r2], es: List[BoolExp[v]]): Bool \ { Read(r1), Read(r2) } with Order[v], ToString[v] =
         let r1 = Scoped.regionOf(db);
         List.forall(exp -> match exp {
             case BoolExp.Empty(ramSym) =>
@@ -228,7 +227,7 @@ namespace Fixpoint {
                 f(v1)(v2)(v3)(v4)(v5)
         }, es)
 
-    def evalTerm(env: SearchEnv[v, r], term: RamTerm[v]): v & r with ToString[v] = match term {
+    def evalTerm(env: SearchEnv[v, r], term: RamTerm[v]): v \ Read(r) with ToString[v] = match term {
         case RamTerm.Lit(v) => v
         case RamTerm.RowLoad(RowVar.Index(i), index) =>
             let (tupleEnv, _) = env;
