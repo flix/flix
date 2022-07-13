@@ -179,40 +179,50 @@ object SetUnification {
   private def simplifyConstantSet(t0: Type): Type = {
     def visit(t: Type): EffectSet = t match {
       case COMPLEMENT(tpe) => visit(tpe) match {
-        case EffectSet.Positive(tpes) => EffectSet.Negative(tpes)
-        case EffectSet.Negative(tpes) => EffectSet.Positive(tpes)
+        case EffectSet.Positive(effs, vars) => EffectSet.Negative(effs, vars)
+        case EffectSet.Negative(effs, vars) => EffectSet.Positive(effs, vars)
       }
 
       case INTERSECTION(tpe1, tpe2) => (visit(tpe1), visit(tpe2)) match {
         // {A, B} & {B, C} = {B}
-        case (EffectSet.Positive(tpes1), EffectSet.Positive(tpes2)) => EffectSet.Positive(tpes1 intersect tpes2)
+        case (EffectSet.Positive(effs1, vars1), EffectSet.Positive(effs2, vars2)) => EffectSet.Positive(effs1 intersect effs2, vars1 intersect vars2)
         // {A, B} & ~{B, C} = {A, B} - {B, C} = {A}
-        case (EffectSet.Positive(tpes1), EffectSet.Negative(tpes2)) => EffectSet.Positive(tpes1 -- tpes2)
+        case (EffectSet.Positive(effs1, vars1), EffectSet.Negative(effs2, vars2)) => EffectSet.Positive(effs1 -- effs2, vars1 -- vars2)
         // ~{A, B} & {B, C} = {B, C} - {A, B} = {C}
-        case (EffectSet.Negative(tpes1), EffectSet.Positive(tpes2)) => EffectSet.Positive(tpes2 -- tpes1)
+        case (EffectSet.Negative(effs1, vars1), EffectSet.Positive(effs2, vars2)) => EffectSet.Positive(effs2 -- effs1, vars2 -- vars1)
         // ~{A, B} & ~{B, C} = ~({A, B} + {B, C}) = ~{A, B, C}
-        case (EffectSet.Negative(tpes1), EffectSet.Negative(tpes2)) => EffectSet.Negative(tpes1 ++ tpes2)
+        case (EffectSet.Negative(effs1, vars1), EffectSet.Negative(effs2, vars2)) => EffectSet.Negative(effs1 ++ effs2, vars1 ++ vars2)
       }
 
       case UNION(tpe1, tpe2) => (visit(tpe1), visit(tpe2)) match {
         // {A, B} + {B, C} = {A, B, C}
-        case (EffectSet.Positive(tpes1), EffectSet.Positive(tpes2)) => EffectSet.Positive(tpes1 ++ tpes2)
+        case (EffectSet.Positive(effs1, vars1), EffectSet.Positive(effs2, vars2)) => EffectSet.Positive(effs1 ++ effs2, vars1 ++ vars2)
         // {A, B} + ~{B, C} = ~({B, C} - {A, B}) = ~{C}
-        case (EffectSet.Positive(tpes1), EffectSet.Negative(tpes2)) => EffectSet.Negative(tpes2 -- tpes1)
+        case (EffectSet.Positive(effs1, vars1), EffectSet.Negative(effs2, vars2)) => EffectSet.Negative(effs2 -- effs1, vars2 -- vars1)
         // ~{A, B} + {B, C} = ~({A, B} - {A, B}) = ~{A}
-        case (EffectSet.Negative(tpes1), EffectSet.Positive(tpes2)) => EffectSet.Negative(tpes1 -- tpes2)
+        case (EffectSet.Negative(effs1, vars1), EffectSet.Positive(effs2, vars2)) => EffectSet.Negative(effs1 -- effs2, vars1 -- vars2)
         // ~{A, B} + ~{B, C} = ~({A, B} & {B, C}) = ~{B}
-        case (EffectSet.Negative(tpes1), EffectSet.Negative(tpes2)) => EffectSet.Negative(tpes1 intersect tpes2)
+        case (EffectSet.Negative(effs1, vars1), EffectSet.Negative(effs2, vars2)) => EffectSet.Negative(effs1 intersect effs2, vars1 intersect vars2)
       }
 
-      case Type.Cst(TypeConstructor.Effect(sym), _) => EffectSet.Positive(SortedSet(sym))
+      case Type.All => EffectSet.Negative(SortedSet.empty, SortedSet.empty)
+      case Type.Empty => EffectSet.Positive(SortedSet.empty, SortedSet.empty)
+
+      case Type.Cst(TypeConstructor.Effect(sym), _) => EffectSet.Positive(SortedSet(sym), SortedSet.empty)
+      case Type.KindedVar(sym, _) => EffectSet.Positive(SortedSet.empty, SortedSet(sym))
+
       case _ => throw InternalCompilerException(s"Unexpected type: ${t0}")
     }
 
     visit(t0) match {
-      case EffectSet.Positive(syms) => Type.mkUnion(syms.toList.map {sym => Type.Cst(TypeConstructor.Effect(sym), t0.loc)}, t0.loc)
-      case EffectSet.Negative(syms) =>
-        val pos = Type.mkUnion(syms.toList.map {sym => Type.Cst(TypeConstructor.Effect(sym), t0.loc)}, t0.loc)
+      case EffectSet.Positive(effs, vars) =>
+        val effPart = Type.mkUnion(effs.toList.map {sym => Type.Cst(TypeConstructor.Effect(sym), t0.loc)}, t0.loc)
+        val varPart = Type.mkUnion(vars.toList.map {sym => Type.KindedVar(sym, t0.loc)}, t0.loc)
+        Type.mkUnion(effPart, varPart, t0.loc)
+      case EffectSet.Negative(effs, vars) =>
+        val effPart = Type.mkUnion(effs.toList.map {sym => Type.Cst(TypeConstructor.Effect(sym), t0.loc)}, t0.loc)
+        val varPart = Type.mkUnion(vars.toList.map {sym => Type.KindedVar(sym, t0.loc)}, t0.loc)
+        val pos = Type.mkUnion(effPart, varPart, t0.loc)
         Type.mkComplement(pos, t0.loc)
     }
 
@@ -489,12 +499,12 @@ object SetUnification {
     /**
       * Represents the union of the given effects.
       */
-    case class Positive(tpes: SortedSet[Symbol.EffectSym]) extends EffectSet
+    case class Positive(tpes: SortedSet[Symbol.EffectSym], vars: SortedSet[Symbol.KindedTypeVarSym]) extends EffectSet
 
     /**
       * Represents the complement of the union of the given effects.
       */
-    case class Negative(tpes: SortedSet[Symbol.EffectSym]) extends EffectSet
+    case class Negative(tpes: SortedSet[Symbol.EffectSym], vars: SortedSet[Symbol.KindedTypeVarSym]) extends EffectSet
   }
 
 }
