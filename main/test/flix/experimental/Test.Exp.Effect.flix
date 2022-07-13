@@ -60,7 +60,7 @@ namespace Test/Exp/Effect {
 
     pub def unionEffect(): Bool \ Fail + Fail = ??? as \ Fail + Fail
 
-    pub def intersectionEffect(): Bool \ Fail & Fail = ??? as \ Fail & Fail
+    pub def intersectionEffect(): Bool \ Fail & Fail = ??? as \ Fail && Fail
 
     pub def differenceEffect(): Bool \ Fail - Fail = ??? as \ Fail - Fail
 
@@ -70,7 +70,7 @@ namespace Test/Exp/Effect {
 
     pub def unionPolyEffect(): Bool \ ef1 + ef2 = ??? as \ ef1 + ef2
 
-    pub def intersectionPolyEffect(): Bool \ ef1 & ef2 = ??? as \ ef1 & ef2
+    pub def intersectionPolyEffect(): Bool \ ef1 & ef2 = ??? as \ ef1 && ef2
 
     pub def differencePolyEffect(): Bool \ ef1 - ef2 = ??? as \ ef1 - ef2
 
