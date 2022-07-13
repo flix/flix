@@ -637,6 +637,7 @@ object SemanticTokensProvider {
     * This is restricted to type constructors whose that use the standard shape (X[Y, Z]).
     */
   private def isVisibleTypeConstructor(tycon: TypeConstructor): Boolean = tycon match {
+    // visible
     case TypeConstructor.Unit => true
     case TypeConstructor.Null => true
     case TypeConstructor.Bool => true
@@ -649,6 +650,17 @@ object SemanticTokensProvider {
     case TypeConstructor.Int64 => true
     case TypeConstructor.BigInt => true
     case TypeConstructor.Str => true
+    case TypeConstructor.Channel => true
+    case TypeConstructor.Lazy => true
+    case TypeConstructor.KindedEnum(_, _) => true
+    case TypeConstructor.Native(_) => true
+    case TypeConstructor.Array => true
+    case TypeConstructor.Ref => true
+    case TypeConstructor.True => true
+    case TypeConstructor.False => true
+    case TypeConstructor.Effect(_) => true
+
+    // invisible
     case TypeConstructor.Arrow(_) => false
     case TypeConstructor.RecordRowEmpty => false
     case TypeConstructor.RecordRowExtend(_) => false
@@ -656,25 +668,16 @@ object SemanticTokensProvider {
     case TypeConstructor.SchemaRowEmpty => false
     case TypeConstructor.SchemaRowExtend(_) => false
     case TypeConstructor.Schema => false
-    case TypeConstructor.Channel => true
-    case TypeConstructor.Lazy => true
     case TypeConstructor.Tag(_, _) => false
-    case TypeConstructor.KindedEnum(_, _) => true
-    case TypeConstructor.Native(_) => true
-    case TypeConstructor.Array => true
-    case TypeConstructor.Ref => true
     case TypeConstructor.Tuple(_) => false
     case TypeConstructor.Relation => false
     case TypeConstructor.Lattice => false
-    case TypeConstructor.True => true
-    case TypeConstructor.False => true
     case TypeConstructor.Not => false
     case TypeConstructor.And => false
     case TypeConstructor.Or => false
     case TypeConstructor.Complement => false
     case TypeConstructor.Union => false
     case TypeConstructor.Intersection => false
-    case TypeConstructor.Effect(_) => false
     case TypeConstructor.Region => false
     case TypeConstructor.Empty => false
     case TypeConstructor.All => false
