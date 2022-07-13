@@ -155,6 +155,40 @@ class TestSetUnification extends FunSuite with TestUtils {
     assertUnifies(tpe1, tpe2, RigidityEnv.empty)
   }
 
+  test("Test.SetUnification.10") {
+    // (E ∪ F) ∖ E ≐ F
+    val effE = Type.Cst(TypeConstructor.Effect(mkEffectSym("E")), loc)
+    val effF = Type.Cst(TypeConstructor.Effect(mkEffectSym("F")), loc)
+
+    val tpe1 = Type.mkDifference(
+      Type.mkUnion(effE, effF, loc),
+      effE,
+      loc
+    )
+
+    val tpe2 = effF
+
+    assertUnifies(tpe1, tpe2, RigidityEnv.empty)
+  }
+
+  test("Test.SetUnification.11") {
+    // E ∖ E ≐ ∅
+    val effE = Type.Cst(TypeConstructor.Effect(mkEffectSym("E")), loc)
+
+    val tpe1 = Type.mkDifference(effE, effE, loc)
+    val tpe2 = Type.Empty
+
+    assertUnifies(tpe1, tpe2, RigidityEnv.empty)
+  }
+
+  test("Test.SetUnification.12") {
+    // 𝓤 ∖ 𝓤 ≐ ∅
+    val tpe1 = Type.mkDifference(Type.All, Type.All, loc)
+    val tpe2 = Type.Empty
+
+    assertUnifies(tpe1, tpe2, RigidityEnv.empty)
+  }
+
   test("Test.SetUnification.Fail.01") {
     // e! ≐ f!
     val sym1 = mkTypeVarSym("e")

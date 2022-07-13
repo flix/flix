@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import scala.annotation.tailrec
+import scala.collection.immutable.SortedSet
 import scala.collection.mutable
 
 object SetUnification {
@@ -62,24 +63,7 @@ object SetUnification {
     ///
     /// Run the expensive boolean unification algorithm.
     ///
-    booleanUnification(simplify(eraseAliases(tpe1)), simplify(eraseAliases(tpe2)), renv)
-  }
-
-  /**
-    * Simplifies the type, removing trivial redundancies and the Difference construct.
-    */
-  private def simplify(tpe: Type): Type = tpe match {
-    case COMPLEMENT(tpe1) => mkComplement(tpe1)
-    case UNION(tpe1, tpe2) => mkUnion(tpe1, tpe2)
-    case INTERSECTION(tpe1, tpe2) => mkIntersection(tpe1, tpe2)
-    case _: Type.Var => tpe
-    case _: Type.Cst => tpe
-    case Type.Apply(tpe1, tpe2, loc) => Type.Apply(simplify(tpe1), simplify(tpe2), loc)
-
-    case _: Type.Alias => throw InternalCompilerException("Unexpected type alias.")
-    case _: Type.Ascribe => throw InternalCompilerException("Unexpected unkinded type.")
-    case _: Type.ReadWrite => throw InternalCompilerException("Unexpected unkinded type.")
-    case _: Type.UnkindedArrow => throw InternalCompilerException("Unexpected unkinded type.")
+    booleanUnification(eraseAliases(tpe1), eraseAliases(tpe2), renv)
   }
 
   /**
@@ -143,7 +127,7 @@ object SetUnification {
   private def successiveVariableElimination(f: Type, fvs: List[Type.KindedVar])(implicit flix: Flix): Substitution = fvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables and constants are made flexible.
-      if (!satisfiable(deconst(f)))
+      if (!satisfiable(deconst(simplifyConstantSet(f))))
         Substitution.empty
       else
         throw SetUnificationException
@@ -185,6 +169,53 @@ object SetUnification {
     }
 
     visit(t0)
+  }
+
+  /**
+    * Simplifies the given type into a simple union or negation of a union.
+    *
+    * Must NOT be called on a type that has free variables.
+    */
+  private def simplifyConstantSet(t0: Type): Type = {
+    def visit(t: Type): EffectSet = t match {
+      case COMPLEMENT(tpe) => visit(tpe) match {
+        case EffectSet.Positive(tpes) => EffectSet.Negative(tpes)
+        case EffectSet.Negative(tpes) => EffectSet.Positive(tpes)
+      }
+
+      case INTERSECTION(tpe1, tpe2) => (visit(tpe1), visit(tpe2)) match {
+        // {A, B} & {B, C} = {B}
+        case (EffectSet.Positive(tpes1), EffectSet.Positive(tpes2)) => EffectSet.Positive(tpes1 intersect tpes2)
+        // {A, B} & ~{B, C} = {A, B} - {B, C} = {A}
+        case (EffectSet.Positive(tpes1), EffectSet.Negative(tpes2)) => EffectSet.Positive(tpes1 -- tpes2)
+        // ~{A, B} & {B, C} = {B, C} - {A, B} = {C}
+        case (EffectSet.Negative(tpes1), EffectSet.Positive(tpes2)) => EffectSet.Positive(tpes2 -- tpes1)
+        // ~{A, B} & ~{B, C} = ~({A, B} + {B, C}) = ~{A, B, C}
+        case (EffectSet.Negative(tpes1), EffectSet.Negative(tpes2)) => EffectSet.Negative(tpes1 ++ tpes2)
+      }
+
+      case UNION(tpe1, tpe2) => (visit(tpe1), visit(tpe2)) match {
+        // {A, B} + {B, C} = {A, B, C}
+        case (EffectSet.Positive(tpes1), EffectSet.Positive(tpes2)) => EffectSet.Positive(tpes1 ++ tpes2)
+        // {A, B} + ~{B, C} = ~({B, C} - {A, B}) = ~{C}
+        case (EffectSet.Positive(tpes1), EffectSet.Negative(tpes2)) => EffectSet.Negative(tpes2 -- tpes1)
+        // ~{A, B} + {B, C} = ~({A, B} - {A, B}) = ~{A}
+        case (EffectSet.Negative(tpes1), EffectSet.Positive(tpes2)) => EffectSet.Negative(tpes1 -- tpes2)
+        // ~{A, B} + ~{B, C} = ~({A, B} & {B, C}) = ~{B}
+        case (EffectSet.Negative(tpes1), EffectSet.Negative(tpes2)) => EffectSet.Negative(tpes1 intersect tpes2)
+      }
+
+      case Type.Cst(TypeConstructor.Effect(sym), _) => EffectSet.Positive(SortedSet(sym))
+      case _ => throw InternalCompilerException(s"Unexpected type: ${t0}")
+    }
+
+    visit(t0) match {
+      case EffectSet.Positive(syms) => Type.mkUnion(syms.toList.map {sym => Type.Cst(TypeConstructor.Effect(sym), t0.loc)}, t0.loc)
+      case EffectSet.Negative(syms) =>
+        val pos = Type.mkUnion(syms.toList.map {sym => Type.Cst(TypeConstructor.Effect(sym), t0.loc)}, t0.loc)
+        Type.mkComplement(pos, t0.loc)
+    }
+
   }
 
   /**
@@ -448,6 +479,22 @@ object SetUnification {
       case Type.Cst(TypeConstructor.Effect(_), _) => Some(tpe)
       case _ => None
     }
+  }
+
+  /**
+    * Enum representing a set of effects without variables.
+    */
+  sealed trait EffectSet
+  object EffectSet {
+    /**
+      * Represents the union of the given effects.
+      */
+    case class Positive(tpes: SortedSet[Symbol.EffectSym]) extends EffectSet
+
+    /**
+      * Represents the complement of the union of the given effects.
+      */
+    case class Negative(tpes: SortedSet[Symbol.EffectSym]) extends EffectSet
   }
 
 }
