@@ -1177,7 +1177,7 @@ object Kinder {
           }: (Type, Type) => Type).getOrElse(Type.Pure)
 
           val eff = effs.reduceOption({
-            case (t1, t2) => Type.mkUnion(t1, t2, t1.loc)
+            case (t1, t2) => Type.mkUnion(t1, t2, t1.loc.asSynthetic)
           }: (Type, Type) => Type).getOrElse(Type.Empty)
 
           (pur, eff)
