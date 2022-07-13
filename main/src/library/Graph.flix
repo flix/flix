@@ -82,6 +82,11 @@ namespace Graph {
             // then they are part of the same strongly connected component.
             Connected(n1; Set#{n2}) :- Reachable(n1, n2), Reachable(n2, n1).
         };
-        query edges, nodes(), reachability(), connected select x from Connected(_; x)
+        let components = #{
+            // After the full computation of Connected, dublicates are removed
+            // by checking `n` is the minimum in the strongly connected component.
+            Components(s) :- fix Connected(n; s), if Some(n) == Set.minimum(s).
+        };
+        query edges, nodes(), reachability(), connected, components select x from Components(x)
 
 }
