@@ -961,9 +961,7 @@ namespace MutList {
     /// Shuffles `v` using the Fisher–Yates shuffle.
     ///
     pub def shuffle(r1: Region[r1], rnd: Random.Random, v: MutList[a, r1]): MutList[a, r1] & Impure \ { Read(r1), Write(r1), Impure } = region r2 {
-        let arr = toArray(r2, v);
-        Array.shuffle(rnd, arr);
-        Array.toMutList(r1, arr)
+        toArray(r2, v) !> Array.shuffle(rnd) |> Array.toMutList(r1)
     }
 
 }

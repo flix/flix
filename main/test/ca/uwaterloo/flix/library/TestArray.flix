@@ -189,6 +189,30 @@ namespace TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // toNel                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toNel01(): Bool = region r {
+        Array.toNel([]: Array[Unit, _]) == None
+    }
+
+    @test
+    def toNel02(): Bool = region r {
+        Array.toNel([1]) == Some(Nel.singleton(1))
+    }
+
+    @test
+    def toNel03(): Bool = region r {
+        Array.toNel([1,2]) == List.toNel(1 :: 2 :: Nil)
+    }
+
+    @test
+    def toNel04(): Bool = region r {
+        Array.toNel([1,2,3]) == List.toNel(1 :: 2 :: 3 :: Nil)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -5625,6 +5649,30 @@ namespace TestArray {
     @test
     def toChain04(): Bool = region r {
         Array.toChain([1,2,3]) == List.toChain(1 :: 2 :: 3 :: Nil)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toNec                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toNec01(): Bool = region r {
+        Array.toNec([]: Array[Unit, _]) == None
+    }
+
+    @test
+    def toNec02(): Bool = region r {
+        Array.toNec([1]) == Some(Nec.singleton(1))
+    }
+
+    @test
+    def toNec03(): Bool = region r {
+        Array.toNec([1,2]) == List.toNec(1 :: 2 :: Nil)
+    }
+
+    @test
+    def toNec04(): Bool = region r {
+        Array.toNec([1,2,3]) == List.toNec(1 :: 2 :: 3 :: Nil)
     }
 
     /////////////////////////////////////////////////////////////////////////////
