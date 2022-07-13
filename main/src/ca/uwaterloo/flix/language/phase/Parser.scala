@@ -1513,7 +1513,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def IntersectionTail = rule {
-      operatorX("&") ~ optWS ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "&" ~ optWS) ~> ParsedAst.Effect.Intersection
+      operatorX("&&") ~ optWS ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "&&" ~ optWS) ~> ParsedAst.Effect.Intersection
     }
 
     def DifferenceTail = rule {
