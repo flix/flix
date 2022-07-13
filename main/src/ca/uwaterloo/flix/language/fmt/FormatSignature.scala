@@ -37,8 +37,7 @@ object FormatSignature {
     * Returns a markdown string for the given `name` and `spec`.
     */
   private def formatSpec(name: String, spec: TypedAst.Spec)(implicit audience: Audience): String = {
-    s"""def ${name}(${formatFormalParams(spec.fparams)}): ${formatResultTypeAndEff(spec.retTpe, spec.pur)}
-       |""".stripMargin
+    s"def $name(${formatFormalParams(spec.fparams)}): ${formatResultTypeAndEff(spec.retTpe, spec.pur)}"
 
   }
 

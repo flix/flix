@@ -462,4 +462,28 @@ class TestFormatType extends FunSuite with TestUtils {
 
     assert(actual == expected)
   }
+
+  test("FormatType.Eff.External.02") {
+    val e = Type.Cst(TypeConstructor.Effect(new Symbol.EffectSym(Nil, "E", loc)), loc)
+    val f = Type.Cst(TypeConstructor.Effect(new Symbol.EffectSym(Nil, "F", loc)), loc)
+
+    val tpe = Type.mkIntersection(e, Type.mkComplement(f, loc), loc)
+
+    val expected = "E - F"
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Eff.External.03") {
+    val e = Type.Cst(TypeConstructor.Effect(new Symbol.EffectSym(Nil, "E", loc)), loc)
+    val f = Type.Cst(TypeConstructor.Effect(new Symbol.EffectSym(Nil, "F", loc)), loc)
+
+    val tpe = Type.mkIntersection(f, Type.mkComplement(e, loc), loc)
+
+    val expected = "F - E"
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
+
+    assert(actual == expected)
+  }
 }

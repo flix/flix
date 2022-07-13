@@ -2447,6 +2447,18 @@ object Weeder {
   }
 
   /**
+    * Constructs the type equivalent to the type (tpe1 - tpe2)
+    */
+  private def mkDifference(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation): WeededAst.Type = {
+    // (ef1 - ef2) is sugar for (ef1 && (~ef2))
+    WeededAst.Type.Intersection(
+      tpe1,
+      WeededAst.Type.Complement(tpe2, loc),
+      loc
+    )
+  }
+
+  /**
     * Weeds the given parsed optional purity and effect `purAndEff`.
     */
   private def visitPurityAndEffect(purAndEff: ParsedAst.PurityAndEffect): WeededAst.PurityAndEffect = purAndEff match {
@@ -2517,7 +2529,7 @@ object Weeder {
           case (acc, innerEff0) =>
             val innerEff = visitSingleEffect(innerEff0)
             val innerLoc = mkSL(leftSp, rightMostSourcePosition(innerEff0))
-            WeededAst.Type.Difference(acc, innerEff, innerLoc)
+            mkDifference(acc, innerEff, innerLoc)
         }
     }
   }
