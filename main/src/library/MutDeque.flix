@@ -43,22 +43,6 @@ instance Iterable[MutDeque] {
     pub def iterator(d: MutDeque[a, r]): Iterator[a, r] \ Write(r) = MutDeque.iterator(d)
 }
 
-instance ToString[MutDeque[a, r]] with ToString[a] {
-    pub def toString(d: MutDeque[a, r]): String = region r2 {
-        let sb = new StringBuilder(r2);
-        let last = MutDeque.size(d) - 1;
-        StringBuilder.appendString!("[", sb);
-        foreach ((x, i) <- Iterable.enumerator(d)) {
-            if (i == last)
-                StringBuilder.appendString!("${x}", sb)
-            else
-                StringBuilder.appendString!("${x}, ", sb)
-        };
-        StringBuilder.appendString!("]", sb);
-        StringBuilder.toString(sb)
-    } as & Pure
-}
-
 namespace MutDeque {
 
     ///
