@@ -692,22 +692,24 @@ object Weeder {
       // Rewrites a foreach loop to Iterator.foreach call.
       //
 
-      val fqn = "Iterator.foreach"
+      val fqnForEach = "Iterator.foreach"
+      val fqnIterator = "Iterable.iterator"
 
       foldRight(frags)(visitExp(exp, senv)) {
-        case (ParsedAst.ForEachFragment.ForEach(sp11, pat, e1, sp12), e0) =>
-          mapN(visitPattern(pat), visitExp(e1, senv)) {
-            case (p, e2) =>
+        case (ParsedAst.ForEachFragment.ForEach(sp11, pat, exp1, sp12), exp0) =>
+          mapN(visitPattern(pat), visitExp(exp1, senv)) {
+            case (p, e1) =>
               val loc = mkSL(sp11, sp12).asSynthetic
-              val lambda = mkLambdaMatch(sp11, p, e0, sp12)
-              val fparams = List(lambda, e2)
-              mkApplyFqn(fqn, fparams, loc)
+              val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
+              val iterable = mkApplyFqn(fqnIterator, List(e1), e1.loc)
+              val fparams = List(lambda, iterable)
+              mkApplyFqn(fqnForEach, fparams, loc)
           }
 
-        case (ParsedAst.ForEachFragment.Guard(sp11, e1, sp12), e0) =>
-          mapN(visitExp(e1, senv)) { e2 =>
+        case (ParsedAst.ForEachFragment.Guard(sp11, exp1, sp12), exp0) =>
+          mapN(visitExp(exp1, senv)) { e1 =>
             val loc = mkSL(sp11, sp12).asSynthetic
-            WeededAst.Expression.IfThenElse(e2, e0, WeededAst.Expression.Unit(loc), loc)
+            WeededAst.Expression.IfThenElse(e1, exp0, WeededAst.Expression.Unit(loc), loc)
           }
       }
 
