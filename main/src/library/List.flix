@@ -1404,9 +1404,7 @@ namespace List {
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
     pub def shuffle(rnd: Random.Random, l: List[a]): List[a] & Impure = region r {
-        let arr = toArray(r, l);
-        Array.shuffle(rnd, arr);
-        Array.toList(arr)
+        toArray(r, l) !> Array.shuffle(rnd) |> Array.toList
     }
 
 }

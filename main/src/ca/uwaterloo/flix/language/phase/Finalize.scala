@@ -480,8 +480,6 @@ object Finalize {
 
             case TypeConstructor.Intersection => MonoType.Unit
 
-            case TypeConstructor.Difference => MonoType.Unit
-
             case TypeConstructor.Effect(_) => MonoType.Unit
 
             case TypeConstructor.Empty => MonoType.Unit

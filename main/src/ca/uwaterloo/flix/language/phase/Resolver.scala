@@ -1880,11 +1880,6 @@ object Resolver {
         case (t1, t2) => mkIntersection(t1, t2, loc)
       }
 
-    case NamedAst.Type.Difference(tpe1, tpe2, loc) =>
-      mapN(semiResolveType(tpe1, ns0, root), semiResolveType(tpe2, ns0, root)) {
-        case (t1, t2) => mkDifference(t1, t2, loc)
-      }
-
     case NamedAst.Type.Read(tpe, loc) =>
       mapN(semiResolveType(tpe, ns0, root)) {
         case t => Type.ReadWrite(t, loc)
@@ -2657,11 +2652,6 @@ object Resolver {
     * Returns the type `Intersection(tpe1, tpe2)`.
     */
   private def mkIntersection(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.Intersection, loc), List(tpe1, tpe2), loc)
-
-  /**
-    * Returns the type `Difference(tpe1, tpe2)`.
-    */
-  private def mkDifference(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.Difference, loc), List(tpe1, tpe2), loc)
 
   /**
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
