@@ -20,7 +20,7 @@ namespace Graph {
         Node(x) :- Edge(_, x).
     }
 
-    def reachability(): #{ Edge(t, t) Reachable(t, t) | r } with Boxable[t] = #{
+    def reachability(): #{ Edge(t, t), Reachable(t, t) | r } with Boxable[t] = #{
         // All nodes can reach themselves.
         Reachable(n, n) :- Node(n).
         // If `n1` can reach `m` and there is an edge from `m` to `n2`
@@ -29,7 +29,7 @@ namespace Graph {
         Reachable(n1, n2) :- Reachable(n1, m), Edge(m, n2).
     }
 
-    def reachabilityFromSrc(src: t): #{ Edge(t, t) Reachable(t) | r } with Boxable[t] = #{
+    def reachabilityFromSrc(src: t): #{ Edge(t, t), Reachable(t) | r } with Boxable[t] = #{
         // A node can reach itself.
         Reachable(src).
         // If `src` can reach `m` and there is an edge from `m` to `n`
