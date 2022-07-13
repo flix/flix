@@ -325,6 +325,10 @@ namespace File {
                 Err(getMessage(ex))
         }
 
+    ///
+    /// Helper function for `readWith` and `readBytesWith`.
+    /// Tries to skip the requested number of bytes `bytes to skip` in `f` over `i` iterations.
+    ///
     def skip(i: Int64, bytesToSkip: Int64, stream: ##java.io.FileInputStream, f: String): Result[Unit, String] & Impure =
         try {
             if (0i64 <= i) {
