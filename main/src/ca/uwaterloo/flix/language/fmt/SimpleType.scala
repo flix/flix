@@ -528,22 +528,13 @@ object SimpleType {
           case Nil => Intersection(Hole :: Hole :: Nil)
           // Case 2: One arg. Take the left and put a hole at the end: tpe1 & tpe2 & ?
           case args :: Nil => Intersection(args :+ Hole)
-          // Case 3: Multiple args. Concatenate them: tpe1 & tpe2 & tpe3 & tpe4
+          // Case 3: Complement on the right: sugar it into a difference.
+          case args :: List(Complement(tpe)) :: Nil => Difference(joinIntersection(args), tpe)
+          // Case 4: Complement on the left: sugar it into a difference.
+          case List(Complement(tpe)) :: args :: Nil => Difference(joinIntersection(args), tpe)
+          // Case 5: Multiple args. Concatenate them: tpe1 & tpe2 & tpe3 & tpe4
           case args1 :: args2 :: Nil => Intersection(args1 ++ args2)
-          // Case 4: Too many args. Error.
-          case _ :: _ :: _ :: _ => throw new OverAppliedType
-        }
-
-      case TypeConstructor.Difference =>
-        // NB we don't collapse the chain since difference is not commutative
-        t.typeArguments.map(fromWellKindedType) match {
-          // Case 1: No args. ? - ?
-          case Nil => Difference(Hole, Hole)
-          // Case 2: One arg. Take the left and put a hole at the end: tpe1 - ?
-          case arg :: Nil => Difference(arg, Hole)
-          // Case 3: Multiple args. Concatenate them: tpe1 - tpe2
-          case arg1 :: arg2 :: Nil => Difference(arg1, arg2)
-          // Case 4: Too many args. Error.
+          // Case 6: Too many args. Error.
           case _ :: _ :: _ :: _ => throw new OverAppliedType
         }
 
@@ -672,6 +663,16 @@ object SimpleType {
   private def splitIntersections(tpe: SimpleType): List[SimpleType] = tpe match {
     case Intersection(tpes) => tpes
     case t => List(t)
+  }
+
+  /**
+    * Joins `t1 :: t2 :: Nil` into `t1 & t2`
+    * and leaves singletons as non-intersection types.
+    */
+  private def joinIntersection(tpes: List[SimpleType]): SimpleType = tpes match {
+    case Nil => throw InternalCompilerException("unexpected empty type list")
+    case t :: Nil => t
+    case ts => Intersection(ts)
   }
 
   /**

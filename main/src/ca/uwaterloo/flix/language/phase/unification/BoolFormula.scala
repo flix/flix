@@ -155,7 +155,6 @@ object BoolFormula {
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Neg(fromEffType(tpe1, m))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Conj(fromEffType(tpe1, m), fromEffType(tpe2, m))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => Disj(fromEffType(tpe1, m), fromEffType(tpe2, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), tpe1, _), tpe2, _) => Conj(fromEffType(tpe1, m), Neg(fromEffType(tpe2, m)))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
