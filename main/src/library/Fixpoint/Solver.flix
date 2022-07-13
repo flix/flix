@@ -41,8 +41,8 @@ namespace Fixpoint {
     /// A stratification of `d` is given by `stf`.
     ///
     @Internal
-    def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v], ToString[v] =
-        let _ = notifyPreSolve(d, stf) as & Pure;
+    def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v], ToString[v] = {
+        notifyPreSolve(d, stf);
         let compiler = cs ->
             compile(cs, stf) |>
             simplifyStmt |>
@@ -59,8 +59,9 @@ namespace Fixpoint {
             }
             case _ => bug!("Datalog normalization bug")
         };
-        let _ = notifyPostSolve(model) as & Pure;
+        notifyPostSolve(model);
         model
+    } as & Pure // This casts away the impure effect of notify
 
     ///
     /// Returns the pairwise union of `d1` and `d2`.
@@ -144,11 +145,11 @@ namespace Fixpoint {
             println(s);
             println(d);
             println(r)
-        } as & Pure else ();
+        } else ();
 
         // Return the result.
         r
-    }
+    } as & Pure // This casts away the impure effect of debugging
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.

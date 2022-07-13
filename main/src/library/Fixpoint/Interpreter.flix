@@ -81,10 +81,11 @@ namespace Fixpoint {
     def interpret(r: Region[r], stmt: RamStmt[v]): Database[v, r] & r with Order[v], ToString[v] =
         interpretWithDatabase(new MutMap(r), stmt)
 
-    def interpretWithDatabase(db: Database[v, r], stmt: RamStmt[v]): Database[v, r] & r with Order[v], ToString[v] =
-        let _ = notifyPreInterpret(stmt) as & Pure;
+    def interpretWithDatabase(db: Database[v, r], stmt: RamStmt[v]): Database[v, r] & r with Order[v], ToString[v] = {
+        notifyPreInterpret(stmt);
         evalStmt(db, stmt);
         db
+    } as & r // This casts away the impure effect of notify
 
     def evalStmt(db: Database[v, r], stmt: RamStmt[v]): Unit & r with Order[v], ToString[v] =
         let r = Scoped.regionOf(db);
