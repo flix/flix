@@ -72,7 +72,6 @@ object SetUnification {
     case COMPLEMENT(tpe1) => mkComplement(tpe1)
     case UNION(tpe1, tpe2) => mkUnion(tpe1, tpe2)
     case INTERSECTION(tpe1, tpe2) => mkIntersection(tpe1, tpe2)
-    case DIFFERENCE(tpe1, tpe2) => mkDifference(tpe1, tpe2)
     case _: Type.Var => tpe
     case _: Type.Cst => tpe
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(simplify(tpe1), simplify(tpe2), loc)
@@ -443,18 +442,10 @@ object SetUnification {
     }
   }
 
-  private object DIFFERENCE {
-    @inline
-    def unapply(tpe: Type): Option[(Type, Type)] = tpe match {
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y, _) => Some((x, y))
-      case _ => None
-    }
-  }
-
   private object CONSTANT {
     @inline
     def unapply(tpe: Type): Option[Type] = tpe match {
-      case Type.Cst(TypeConstructor.Effect(sym), _) => Some(tpe)
+      case Type.Cst(TypeConstructor.Effect(_), _) => Some(tpe)
       case _ => None
     }
   }
