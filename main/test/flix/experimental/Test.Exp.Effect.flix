@@ -18,7 +18,7 @@ namespace Test/Exp/Effect {
 
     // @test
     pub def handleEff03(): Bool = {
-        try true with Empty
+        try true with EffNoOps
     }
 
     // @test
@@ -53,6 +53,10 @@ namespace Test/Exp/Effect {
             def println(_) = resume()
         }
     }
+
+    pub def without01(): Bool = true without Fail
+
+    pub def without02(): Bool = true without {Fail, Console}
 
     pub def singleEffect(): Bool \ Fail = ??? as \ Fail
 
@@ -92,7 +96,7 @@ namespace Test/Exp/Effect {
 
     pub def arrowWithEffect03(f: a -> b \ {Console, ef - Fail}): Bool = ???
 
-    eff Empty
+    eff EffNoOps
 
     eff Fail {
         pub def fail(x: String): Unit
