@@ -54,6 +54,10 @@ namespace Test/Exp/Effect {
         }
     }
 
+    pub def without01(): Bool = true without Fail
+
+    pub def without02(): Bool = true without {Fail, Console}
+
     pub def singleEffect(): Bool \ Fail = ??? as \ Fail
 
     pub def complementEffect(): Bool \ ~Fail = ??? as \ ~Fail
