@@ -19,13 +19,10 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Annotation
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{ParOps, Validation}
-
-import scala.annotation.tailrec
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
   * The Tree Shaking phase removes all unused function definitions.
@@ -49,39 +46,10 @@ object EarlyTreeShaker {
     // Compute the symbols that are transitively reachable.
     val allReachable = ParOps.parReachable(initReach, visitSym(_, root))
 
-    val reachableInstances = root.instances.foldLeft(Map.empty: Map[Symbol.ClassSym, List[TypedAst.Instance]]) {
-      case (m, (sym, instances)) =>
-        if (allReachable.contains(ReachableSym.ClassSym(sym))) {
-          val insts = instances.filter(_.defs.exists(d => allReachable.contains(ReachableSym.DefnSym(d.sym))))
-          val minInsts = insts.map(i => i.copy(defs = i.defs.filter(d => allReachable.contains(ReachableSym.DefnSym(d.sym)))))
-          m + (sym -> minInsts)
-        }
-        else
-          m
-    }
-
-    val reachableClasses = root.classes.foldLeft(Map.empty: Map[Symbol.ClassSym, TypedAst.Class]) {
-      case (m, (sym, clazz)) =>
-        if (allReachable.contains(ReachableSym.ClassSym(sym))) {
-          val sigs = clazz.signatures.filter(s => allReachable.contains(ReachableSym.SigSym(s.sym)))
-          m + (sym -> clazz.copy(signatures = sigs))
-        } else
-          m
-    }
-
     // Filter the reachable definitions.
     val reachableDefs = root.defs.filter {
-      case (sym, _) =>
-        allReachable.contains(ReachableSym.DefnSym(sym)) ||
-          reachableInstances.flatMap(_._2).flatMap(_.defs).exists(_.sym == sym) ||
-          reachableClasses.values.flatMap(_.laws).exists(_.sym == sym)
+      case (sym, _) => allReachable.contains(ReachableSym.DefnSym(sym))
     }
-
-    /*
-    val reachableSigs = root.sigs.filter {
-      case (sym, _) => allReachable.contains(ReachableSym.SigSym(sym))
-    }
-  */
 
     // Reassemble the AST.
     root.copy(defs = reachableDefs).toSuccess
@@ -136,44 +104,21 @@ object EarlyTreeShaker {
   private def visitSym(sym: ReachableSym, root: Root): Set[ReachableSym] = sym match {
     case ReachableSym.DefnSym(defnSym) => root.defs.get(defnSym) match {
       case None => Set.empty
-      case Some(defn) => visitExp(defn.impl.exp) ++ visitExps(defn.spec.ann.flatMap(_.args))
+      case Some(defn) => visitExp(defn.impl.exp)
     }
 
     case ReachableSym.SigSym(sigSym) => root.sigs.get(sigSym) match {
       case None => Set.empty
       case Some(Sig(sigSym, spec, impl)) =>
         Set(ReachableSym.ClassSym(sigSym.clazz)) ++
-          visitExps(spec.ann.flatMap(_.args)) ++
           impl.map(i => visitExp(i.exp)).getOrElse(Set.empty)
     }
 
     case ReachableSym.ClassSym(classSym) => root.instances.get(classSym) match {
       case None => Set.empty
       case Some(instances) =>
-        instances.flatMap(_.defs.map(d => ReachableSym.DefnSym(d.sym))).toSet ++
-          visitExps(instances.flatMap(_.ann.flatMap(_.args))) ++
-          visitExps(instances.flatMap(_.defs.map(_.impl.exp))) ++
-          visitExps(instances.flatMap(_.defs.flatMap(_.spec.ann.flatMap(_.args))))
+        visitExps(instances.flatMap(_.defs.map(_.impl.exp)))
     }
-  }
-
-  /**
-    * Returns the symbols reachable from the given list of constraints `constraints`.
-    */
-  def visitConstraints(constraints: List[Constraint]): Set[ReachableSym] = {
-    def visitHead(h: Head): Set[ReachableSym] = h match {
-      case Head.Atom(_, _, terms, _, _) => visitExps(terms)
-    }
-
-    def visitBody(b: List[Body]): Set[ReachableSym] = {
-      b.foldLeft(Set.empty: Set[ReachableSym]) {
-        case (acc, Body.Guard(exp, _)) => visitExp(exp) ++ acc
-        case (acc, Body.Loop(_, exp, _)) => visitExp(exp) ++ acc
-        case (acc, _) => acc
-      }
-    }
-
-    constraints.foldLeft(Set.empty: Set[ReachableSym])((acc, c) => visitHead(c.head) ++ visitBody(c.body) ++ acc)
   }
 
   /**
@@ -375,23 +320,23 @@ object EarlyTreeShaker {
     case Expression.Force(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointConstraintSet(cs, _, _, _) =>
-      visitConstraints(cs)
+    case Expression.FixpointConstraintSet(_, _, _, loc) =>
+      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
-    case Expression.FixpointLambda(_, exp, _, _, _, _, _) =>
-      visitExp(exp)
+    case Expression.FixpointLambda(_, _, _, _, _, _, loc) =>
+      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
-    case Expression.FixpointMerge(exp1, exp2, _, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
+    case Expression.FixpointMerge(_, _, _, _, _, _, loc) =>
+      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
-    case Expression.FixpointSolve(exp, _, _, _, _, _) =>
-      visitExp(exp)
+    case Expression.FixpointSolve(_, _, _, _, _, loc) =>
+      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
-    case Expression.FixpointFilter(_, exp, _, _, _, _) =>
-      visitExp(exp)
+    case Expression.FixpointFilter(_, _, _, _, _, loc) =>
+      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
-    case Expression.FixpointInject(exp, _, _, _, _, _) =>
-      visitExp(exp)
+    case Expression.FixpointInject(_, _, _, _, _, loc) =>
+      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       visitExp(exp)
@@ -405,8 +350,8 @@ object EarlyTreeShaker {
     case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.Do(sym, exps, _, _, _) =>
-      visitExps(exps) // Add OpSym to reachable syms?
+    case Expression.Do(_, exps, _, _, _) =>
+      visitExps(exps)
 
     case Expression.Resume(exp, _, _) =>
       visitExp(exp)
