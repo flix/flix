@@ -103,9 +103,9 @@ object BinaryOperator {
   case object Divide extends ArithmeticOperator
 
   /**
-    * Modulus.
+    * Remainder.
     */
-  case object Modulo extends ArithmeticOperator
+  case object Remainder extends ArithmeticOperator
 
   /**
     * Exponentiate.
