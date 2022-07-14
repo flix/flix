@@ -143,7 +143,8 @@ object SetUnification {
   private def successiveVariableElimination(f: Type, fvs: List[Type.KindedVar])(implicit flix: Flix): Substitution = fvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables and constants are made flexible.
-      if (!satisfiable(deconst(f)))
+//      if (!satisfiable(deconst(f)))
+      if (isEmpty(dnf(nnf(f))))
         Substitution.empty
       else
         throw SetUnificationException
@@ -266,11 +267,11 @@ object SetUnification {
       Type.Empty
 
     // C ∧ ¬D => C
-    case (CONSTANT(x1), COMPLEMENT(CONSTANT(x2))) if x1 != x2 =>
+    case (x1@CONSTANT(_), COMPLEMENT(x2@CONSTANT(_))) if x1 != x2 =>
       x1
 
     // ¬C ∧ D => D
-    case (COMPLEMENT(CONSTANT(x1)), CONSTANT(x2)) if x1 != x2 =>
+    case (COMPLEMENT(x1@CONSTANT(_)), x2@CONSTANT(_)) if x1 != x2 =>
       x2
 
     // ¬x ∧ (x ∨ y) => ¬x ∧ y
@@ -444,10 +445,100 @@ object SetUnification {
 
   private object CONSTANT {
     @inline
-    def unapply(tpe: Type): Option[Type] = tpe match {
-      case Type.Cst(TypeConstructor.Effect(_), _) => Some(tpe)
+    def unapply(tpe: Type): Option[Symbol.EffectSym] = tpe match {
+      case Type.Cst(TypeConstructor.Effect(sym), _) => Some(sym)
       case _ => None
     }
   }
+
+  private object VAR {
+    @inline
+    def unapply(tpe: Type): Option[Symbol.KindedTypeVarSym] = tpe match {
+      case Type.KindedVar(sym, _) => Some(sym)
+      case _ => None
+    }
+  }
+
+  sealed trait Atom
+
+  object Atom {
+    case class Var(sym: Symbol.KindedTypeVarSym) extends Atom
+
+    case class Eff(sym: Symbol.EffectSym) extends Atom
+  }
+
+  sealed trait Literal
+
+  object Literal {
+    case class Positive(atom: Atom) extends Literal
+
+    case class Negative(atom: Atom) extends Literal
+  }
+
+  type Intersection = Set[Literal]
+
+  type Dnf = Set[Intersection]
+
+  def nnf(t: Type): Type = t match {
+    case tpe@Type.KindedVar(_, _) => tpe
+    case tpe@CONSTANT(_) => tpe
+    case COMPLEMENT(tpe) => nnfNot(tpe)
+    case UNION(tpe1, tpe2) => mkUnion(nnf(tpe1), nnf(tpe2))
+    case INTERSECTION(tpe1, tpe2) => mkIntersection(nnf(tpe1), nnf(tpe2))
+    case Type.Empty => Type.Empty
+    case Type.All => Type.All
+    case _ => throw InternalCompilerException(s"unexpected type: $t")
+  }
+
+  def nnfNot(t: Type): Type = t match {
+    case Type.Empty => Type.All
+    case Type.All => Type.Empty
+    case tpe@Type.KindedVar(_, _) => mkComplement(tpe)
+    case tpe@CONSTANT(_) => mkComplement(tpe)
+    case COMPLEMENT(tpe) => tpe
+    case UNION(tpe1, tpe2) => mkIntersection(
+      nnf(mkComplement(tpe1)),
+      nnf(mkComplement(tpe2))
+    )
+    case INTERSECTION(tpe1, tpe2) => mkUnion(
+      nnf(mkComplement(tpe1)),
+      nnf(mkComplement(tpe2))
+    )
+    case _ => throw InternalCompilerException(s"unexpected type: $t")
+  }
+
+  def dnf(t: Type): Dnf = t match {
+    case Type.Empty => Set(Set())
+    case VAR(sym) => Set(Set(Literal.Positive(Atom.Var(sym))))
+    case CONSTANT(sym) => Set(Set(Literal.Positive(Atom.Eff(sym))))
+    case COMPLEMENT(VAR(sym)) => Set(Set(Literal.Positive(Atom.Var(sym))))
+    case COMPLEMENT(CONSTANT(sym)) => Set(Set(Literal.Positive(Atom.Eff(sym))))
+    case UNION(tpe1, tpe2) => dnf(tpe1) ++ dnf(tpe2)
+    case INTERSECTION(tpe1, tpe2) => intersect(dnf(tpe1), dnf(tpe2))
+    case _ => throw InternalCompilerException(s"unexpected type: $t")
+  }
+
+  def intersect(t1: Dnf, t2: Dnf): Dnf = {
+    for {
+      inter1 <- t1
+      inter2 <- t2
+    } yield inter1 ++ inter2
+  }
+
+  def isEmpty(t1: Dnf): Boolean = {
+    t1.forall(isEmptyIntersection)
+  }
+
+  def isEmptyIntersection(t1: Intersection): Boolean = { // right?
+    val pos = t1.collect {
+      case Literal.Positive(atom) => atom
+    }
+    val neg = t1.collect {
+      case Literal.Negative(atom) => atom
+    }
+    (pos -- neg).isEmpty
+  }
+
+
 
 }
