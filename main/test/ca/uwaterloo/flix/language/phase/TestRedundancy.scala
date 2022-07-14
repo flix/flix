@@ -474,6 +474,8 @@ class TestRedundancy extends FunSuite with TestUtils {
         |       0
         |   }
         """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedFormalParam](result)
   }
 
   test("UnusedTypeParam.Def.01") {
