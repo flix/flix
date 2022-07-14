@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, Position, Range, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
@@ -51,6 +51,8 @@ object RenameProvider {
           case _ => mkNotFound(uri, pos)
         }
 
+        case Entity.Class(clazz) => renameClass(clazz.sym, newName)
+
         case Entity.Pred(pred, _) => renamePred(pred, newName)
 
         case Entity.FormalParam(fparam) => renameVar(fparam.sym, newName)
@@ -74,7 +76,7 @@ object RenameProvider {
   }
 
   /**
-    * Constructs the JSON response for renaming all `occurences` to `newName`.
+    * Constructs the JSON response for renaming all `occurrences` to `newName`.
     *
     * NB: The occurrences must *NOT* overlap nor be repeated. Hence they are a set.
     */
@@ -103,16 +105,16 @@ object RenameProvider {
     rename(newName, uses + defn)
   }
 
-  private def renameEnum(sym: Symbol.EnumSym, newName: String)(implicit index: Index, root: Root): JObject = {
-    val defn = sym.loc
-    val uses = index.usesOf(sym)
-    rename(newName, uses + defn)
-  }
-
   private def renameField(field: Name.Field, newName: String)(implicit index: Index, root: Root): JObject = {
     val defs = index.defsOf(field)
     val uses = index.usesOf(field)
     rename(newName, defs ++ uses)
+  }
+
+  private def renameClass(sym: Symbol.ClassSym, newName: String)(implicit index: Index, root: Root): JObject = {
+    val loc = sym.loc
+    val uses = index.usesOf(sym)
+    rename(newName, uses + loc)
   }
 
   private def renamePred(pred: Name.Pred, newName: String)(implicit index: Index, root: Root): JObject = {
