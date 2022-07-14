@@ -54,9 +54,11 @@ instance Functor[Map[k]] {
 }
 
 instance Foldable[Map[k]] {
-    pub def foldLeft(f: (b, v) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldLeft((acc, v) -> f(acc, v), s, m)
+    pub def foldLeft(f: (b, v) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldLeft(f, s, m)
     pub def foldRight(f: (v, b) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldRight(f, s, m)
     pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldRightWithCont(f, s, m)
+    override pub def iterator(r: Region[r], m: Map[k, v]): Iterator[v, r] \ Write(r) =
+        Map.iterator(r, m) |> Iterator.mapL(match (_, v) -> v)
 }
 
 instance UnorderedFoldable[Map[k]] {
@@ -113,17 +115,14 @@ namespace Map {
     ///
     pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region r {
         let sb = new StringBuilder(r);
-        let first = ref true;
-
+        let last = size(m) - 1;
         StringBuilder.appendString!("Map#{", sb);
-
-        let f = (k, v) -> {
-            if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
-            StringBuilder.appendString!("${k} => ${v}", sb)
+        foreach (((k, v), i) <- Map.enumerator(r, m)) {
+            if (i >= last)
+                StringBuilder.appendString!("${k} => ${v}}", sb)
+            else
+                StringBuilder.appendString!("${k} => ${v}, ", sb)
         };
-        Map.foreach(f, m);
-
-        StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)
     }
 
@@ -961,11 +960,10 @@ namespace Map {
     ///
     /// Returns `m` as a `DelayMap`.
     ///
-    pub def toDelayMap(m: Map[k, v]): DelayMap[k, v] = {
+    pub def toDelayMap(m: Map[k, v]): DelayMap[k, v] =
         let Map(t) = m;
         let f = (_, v) -> lazy v;
         DMap(RedBlackTree.mapWithKey(f, t))
-    }
 
     ///
     /// Returns the result of running all the actions in the map `m`.
