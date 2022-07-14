@@ -25,30 +25,26 @@ pub enum Map[k, v] {
     case Map(RedBlackTree[k, v])
 }
 
-instance Boxable[Map[k, v]] with Boxable[k], Boxable[v]
+instance Eq[Map[k, v]] with Eq[k], Eq[v] {
+    pub def eq(m1: Map[k, v], m2: Map[k, v]): Bool =
+        Map.toList(m1) == Map.toList(m2)
+}
+
+instance Order[Map[k, v]] with Order[k], Order[v] {
+    pub def compare(x: Map[k, v], y: Map[k, v]): Comparison =
+        Map.toList(x) <=> Map.toList(y)
+}
 
 instance ToString[Map[k, v]] with ToString[k], ToString[v] {
     pub def toString(m: Map[k, v]): String = Map.toString(m)
 }
 
+instance Boxable[Map[k, v]] with Boxable[k], Boxable[v]
+
 instance Hash[Map[k, v]] with Hash[k], Hash[v] {
     pub def hash(m: Map[k, v]): Int32 =
         Map.foldLeftWithKey((acc, k, v) -> acc * 17 + Hash.hash(k) + 19 * Hash.hash(v), 7937, m)
 }
-
-instance Eq[Map[k, v]] with Eq[k], Eq[v] {
-    pub def eq(m1: Map[k, v], m2: Map[k, v]): Bool =
-        Map.toList(m1) == Map.toList(m2)
-
-}
-
-instance Order[Map[k, v]] with Order[k], Order[v] {
-
-    pub def compare(x: Map[k, v], y: Map[k, v]): Comparison =
-        Map.toList(x) <=> Map.toList(y)
-
-}
-
 instance Functor[Map[k]] {
     pub def map(f: v1 -> v2 & ef, m: Map[k, v1]): Map[k, v2] & ef = Map.map(f, m)
 }
