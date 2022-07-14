@@ -2444,7 +2444,7 @@ def query18(): Bool =
         Map.toMultiMap(Map#{1 => 'a', 2 => 'b'}) |> MultiMap.toAscList == (1, 'a') :: (2, 'b') :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
-    // iterator                                                              //
+    // iterator                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
@@ -2482,6 +2482,48 @@ def query18(): Bool =
         let m = Map#{2 => 1, 3 => 2, 4 => 3};
         foreach (((k, v), i) <- Map.enumerator(r, m)) z := (k, v, i) :: deref z;
         List.sortBy(match (k, _, _) -> k, deref z) == (2, 1, 0) :: (3, 2, 1) :: (4, 3, 2) :: Nil
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // iteratorKeys                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def iteratorKeys01(): Bool = region r {
+        Map.empty(): Map[Int32, Int32] |> Map.iteratorKeys(r) |> Iterator.toList == Nil
+    }
+
+    @test
+    def iteratorKeys02(): Bool = region r {
+        Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4} |> Map.iteratorKeys(r) |> Iterator.toList == "a" :: "b" :: "c" :: "d" :: Nil
+    }
+
+    @test
+    def iteratorKeys03(): Bool = region r {
+        let l = List.range(0, 100);
+        List.zip(l, List.reverse(l)) |> List.toMap |> Map.iteratorKeys(r) |> Iterator.toList == List.range(0, 100)
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // iteratorValues                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def iteratorValues01(): Bool = region r {
+        Map.empty(): Map[Int32, Int32] |> Map.iteratorValues(r) |> Iterator.toList == Nil
+    }
+
+    @test
+    def iteratorValues02(): Bool = region r {
+        Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4} |> Map.iteratorValues(r) |> Iterator.toList == 1 :: 2 :: 3 :: 4 :: Nil
+    }
+
+    @test
+    def iteratorValues03(): Bool = region r {
+        let l = List.range(0, 100);
+        List.zip(l, List.reverse(l)) |> List.toMap |> Map.iteratorValues(r) |> Iterator.toList == List.range(0, 100) |> List.reverse
     }
 
 

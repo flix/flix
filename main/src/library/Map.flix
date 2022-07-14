@@ -959,6 +959,18 @@ namespace Map {
         iterator(r, m) |> Iterator.zipWithIndex
 
     ///
+    /// Returns an iterator over values in `m`.
+    ///
+    pub def iteratorKeys(r: Region[r], m: Map[k, v]): Iterator[k, r] \ Write(r) =
+        iterator(r, m) |> Iterator.mapL(match (k, _) -> k)
+
+    ///
+    /// Returns an iterator over values in `m`.
+    ///
+    pub def iteratorValues(r: Region[r], m: Map[k, v]): Iterator[v, r] \ Write(r) =
+        iterator(r, m) |> Iterator.mapL(match (_, v) -> v)
+
+    ///
     /// Returns `m` as a `DelayMap`.
     ///
     pub def toDelayMap(m: Map[k, v]): DelayMap[k, v] = {

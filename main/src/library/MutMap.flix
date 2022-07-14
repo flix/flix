@@ -578,6 +578,38 @@ namespace MutMap {
         Map.foreach(f, deref mm)
 
     ///
+    /// Returns an iterator over all key-value pairs in `m`.
+    ///
+    pub def iterator(m: MutMap[k, v, r]): Iterator[(k, v), r] \ Write(r) =
+        let MutMap(mm) = m;
+        let r = Scoped.regionOf(m);
+        Map.iterator(r, deref mm)
+
+    ///
+    /// Returns an iterator over key-value pairs in `m` zipped with the indices of the elements.
+    ///
+    pub def enumerator(m: MutMap[k, v, r]): Iterator[((k, v), Int32), r] \ Write(r) =
+        let MutMap(mm) = m;
+        let r = Scoped.regionOf(m);
+        Map.enumerator(r, deref mm)
+
+    ///
+    /// Returns an iterator over values in `m`.
+    ///
+    pub def iteratorKeys(m: MutMap[k, v, r]): Iterator[k, r] \ Write(r) =
+        let MutMap(mm) = m;
+        let r = Scoped.regionOf(m);
+        Map.iteratorKeys(r, deref mm)
+
+    ///
+    /// Returns an iterator over values in `m`.
+    ///
+    pub def iteratorValues(m: MutMap[k, v, r]): Iterator[v, r] \ Write(r) =
+        let MutMap(mm) = m;
+        let r = Scoped.regionOf(m);
+        Map.iteratorValues(r, deref mm)
+
+    ///
     /// Extracts a range of key-value pairs from the mutable map `m`.
     ///
     /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
