@@ -314,7 +314,7 @@ object TypedAst {
 
     case class PutStaticField(field: Field, exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class NewObject(clazz: java.lang.Class[_], tpe: Type, pur: Type, eff: Type, methods: List[JvmMethod], loc: SourceLocation) extends TypedAst.Expression
+    case class NewObject(clazz: java.lang.Class[_], tpe: Type, pur: Type, eff: Type, methods: List[TypedAst.JvmMethod], loc: SourceLocation) extends TypedAst.Expression
 
     case class NewChannel(exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 

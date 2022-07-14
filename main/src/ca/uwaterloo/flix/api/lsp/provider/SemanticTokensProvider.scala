@@ -760,8 +760,8 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given JvmMethod `method`
     */
   private def visitJvmMethod(method: TypedAst.JvmMethod): Iterator[SemanticToken] = method match {
-    case TypedAst.JvmMethod(_, fparams, exp, _, _, _, _) =>
-      visitFormalParams(fparams) ++ visitExp(exp)
+    case TypedAst.JvmMethod(_, fparams, exp, tpe, eff, pur, _) =>
+      visitFormalParams(fparams) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff) ++ visiType(pur)
   }
 
   /**

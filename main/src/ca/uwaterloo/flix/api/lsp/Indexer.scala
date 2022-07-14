@@ -324,8 +324,8 @@ object Indexer {
 
     case Expression.NewObject(_, _, _, _, methods, _) =>
       Index.occurrenceOf(exp0) ++ traverse(methods) {
-        case JvmMethod(_, fparams, exp, _, _, _, _) =>
-          Index.traverse(fparams)(visitFormalParam) ++ visitExp(exp)
+        case JvmMethod(_, fparams, exp, tpe, eff, pur, _) =>
+          Index.traverse(fparams)(visitFormalParam) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff) ++ visitType(pur)
       }
 
     case Expression.NewChannel(exp, _, _, _, _) =>
