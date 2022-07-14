@@ -114,8 +114,10 @@ namespace Map {
         let sb = new StringBuilder(r);
         StringBuilder.appendString!("Map#{", sb);
         foreach (((k, v), i) <- Map.enumerator(r, m)) {
-            if (i > 0) StringBuilder.appendString!(", ", sb) else ();
-            StringBuilder.appendString!("${k} => ${v}", sb)
+            if (i == 0)
+                StringBuilder.appendString!("${k} => ${v}", sb)
+            else
+                StringBuilder.appendString!(", ${k} => ${v}", sb)
         };
         StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)

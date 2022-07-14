@@ -57,8 +57,9 @@ namespace DelayMap {
         let _ = parallelForce(m);
         StringBuilder.appendString!("DelayMap#{", sb);
         foreach (((k, v), i) <- DelayMap.enumerator(r, m)) {
-            if (i > 0) StringBuilder.appendString!(", ", sb) else ();
-            StringBuilder.appendString!("${k} => ${v}", sb)
+            if (i == 0) StringBuilder.appendString!("${k} => ${v}", sb)
+                else
+            StringBuilder.appendString!(", ${k} => ${v}", sb)
         };
         StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)

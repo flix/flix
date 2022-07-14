@@ -31,23 +31,7 @@ pub enum MultiMap[k, v] {
 instance Boxable[MultiMap[k, v]] with Boxable[k], Boxable[v]
 
 instance ToString[MultiMap[k, v]] with ToString[k], ToString[v] {
-    pub def toString(m: MultiMap[k, v]): String =
-        let fn = () -> region r {
-            let MultiMap(m1) = m;
-            let sb = new StringBuilder(r);
-            let first = ref true @ r;
-            StringBuilder.appendString!("MultiMap#{", sb);
-            Map.foreach((k, v) -> {
-                if (deref first) {
-                    first := false;
-                    StringBuilder.appendString!("${k} => ${v}", sb)
-                } else
-                    StringBuilder.appendString!(", ${k} => ${v}", sb)
-                }, m1);
-            StringBuilder.appendString!("}", sb);
-            StringBuilder.toString(sb)
-        };
-        fn()
+    pub def toString(m: MultiMap[k, v]): String = MultiMap.toString(m)
 }
 
 instance Hash[MultiMap[k, v]] with Hash[k], Hash[v] {
@@ -93,6 +77,22 @@ instance Monoid[MultiMap[k, v]] with Order[k], Order[v] {
 instance CommutativeMonoid[MultiMap[k, v]] with Order[k], Order[v]
 
 namespace MultiMap {
+
+    ///
+    /// Returns a string representation of `m`.
+    ///
+    pub def toString(m: MultiMap[k, v]): String with ToString[k], ToString[v] = region r {
+        let sb = new StringBuilder(r);
+        StringBuilder.appendString!("MultiMap#{", sb);
+        foreach (((k, v), i) <- MultiMap.enumerator(r, m)) {
+            if (i == 0)
+                StringBuilder.appendString!("${k} => ${v}", sb)
+            else
+                StringBuilder.appendString!(", ${k} => ${v}", sb)
+        };
+        StringBuilder.appendString!("}", sb);
+        StringBuilder.toString(sb)
+    }
 
     ///
     /// Returns the empty MultiMap.
@@ -559,5 +559,19 @@ namespace MultiMap {
     pub def foreach(f: (k, v) -> Unit & ef, m: MultiMap[k, v]): Unit & ef =
         let MultiMap(m1) = m;
         Map.foreach((k, s) -> Set.foreach(f(k), s), m1)
+
+    ///
+    /// Returns an iterator over all key-value pairs in `m` i.e. `k => Set#{v_1, ..., v_n}`.
+    ///
+    pub def iterator(r: Region[r], m: MultiMap[k, v]): Iterator[(k, Set[v]), r] \ Write(r) =
+        let MultiMap(m1) = m;
+        Map.iterator(r, m1)
+
+    ///
+    /// Returns an iterator over key-value pairs in `m`, i.e. `k => Set#{v_1, ..., v_n}`,
+    /// zipped with the indices of the elements.
+    ///
+    pub def enumerator(r: Region[r], m: MultiMap[k, v]): Iterator[((k, Set[v]), Int32), r] \ Write(r) =
+        iterator(r, m) |> Iterator.zipWithIndex
 
 }

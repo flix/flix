@@ -101,8 +101,10 @@ namespace Set {
         let sb = new StringBuilder(r);
         StringBuilder.appendString!("Set#{", sb);
         foreach ((x, i) <- enumerator(r, s)) {
-            if (i > 0) StringBuilder.appendString!(", ", sb) else ();
-            StringBuilder.appendString!("${x}", sb)
+            if (i == 0)
+                StringBuilder.appendString!("${x}", sb)
+            else
+                StringBuilder.appendString!(", ${x}", sb)
         };
         StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)
