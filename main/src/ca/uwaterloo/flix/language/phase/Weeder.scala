@@ -1399,7 +1399,7 @@ object Weeder {
 
     case ParsedAst.Expression.Without(exp, effs, sp2) =>
       val loc = mkSL(leftMostSourcePosition(exp), sp2)
-      // NB: we use only give the innermost expression a real location as it has the effect we would expect
+      // NB: We only give the innermost expression a real location
       mapN(visitExp(exp, senv)) {
         e =>
           val base = WeededAst.Expression.Without(e, effs.head, loc)
