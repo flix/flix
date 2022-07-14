@@ -867,7 +867,7 @@ namespace Chain {
     ///
     pub def traverse(f: a -> m[b] & ef, c: Chain[a]): m[Chain[b]] & ef with Applicative[m] =
         def loop(v, acc) = match v {
-            case NoneLeft        => acc as & ef
+            case NoneLeft        => upcast(() -> acc)()
             case SomeLeft(x, rs) => loop(viewLeft(rs), snocA(acc, f(x)))
         };
         loop(viewLeft(c), Applicative.point(empty()))
