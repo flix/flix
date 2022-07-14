@@ -1397,10 +1397,15 @@ object Weeder {
         case e => WeededAst.Expression.Cast(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
       }
 
-    case ParsedAst.Expression.Without(exp, eff, sp2) =>
-      val e = visitExp(exp, senv)
+    case ParsedAst.Expression.Without(exp, effs, sp2) =>
+      val loc = mkSL(leftMostSourcePosition(exp), sp2)
+      // NB: We only give the innermost expression a real location
       mapN(visitExp(exp, senv)) {
-        e => WeededAst.Expression.Without(e, eff, mkSL(leftMostSourcePosition(exp), sp2))
+        e =>
+          val base = WeededAst.Expression.Without(e, effs.head, loc)
+          effs.tail.foldLeft(base) {
+            case (acc, eff) => WeededAst.Expression.Without(acc, eff, loc.asSynthetic)
+          }
       }
 
     case ParsedAst.Expression.Do(sp1, op, args0, sp2) =>

@@ -947,11 +947,11 @@ object ParsedAst {
     /**
       * Without Expression.
       *
-      * @param exp the expression.
-      * @param eff the effect.
-      * @param sp2 the position of the last character in the expression.
+      * @param exp  the expression.
+      * @param effs the effects.
+      * @param sp2  the position of the last character in the expression.
       */
-    case class Without(exp: ParsedAst.Expression, eff: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Without(exp: ParsedAst.Expression, effs: Seq[Name.QName], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Do Expression.

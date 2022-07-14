@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.language.ast.Ast.VarText
-import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
 
 object FormatType {
   /**
@@ -92,7 +92,6 @@ object FormatType {
       case SimpleType.And(_) => false
       case SimpleType.Or(_) => false
       case SimpleType.Complement(_) => false
-      case SimpleType.Union(_) => false
       case SimpleType.Intersection(_) => false
       case SimpleType.Difference(_, _) => false
       case SimpleType.PureArrow(_, _) => false
@@ -143,6 +142,7 @@ object FormatType {
       case SimpleType.Apply(_, _) => true
       case SimpleType.Var(_, _, _, _) => true
       case SimpleType.Tuple(_) => true
+      case SimpleType.Union(_) => true
     }
 
     /**
