@@ -105,7 +105,6 @@ object BinaryOperator {
   /**
     * Modulus.
     */
-  // TODO: Rename to remainder?
   case object Modulo extends ArithmeticOperator
 
   /**
