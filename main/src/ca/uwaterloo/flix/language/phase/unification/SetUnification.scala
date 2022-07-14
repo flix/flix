@@ -144,10 +144,10 @@ object SetUnification {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables and constants are made flexible.
 //      if (!satisfiable(deconst(f)))
-//      println(s"init: $f")
       val n = nnf(f)
-//      println(s" nnf: $n")
       val d = dnf(n)
+//      println(s"init: $f")
+//      println(s" nnf: $n")
 //      println(s" dnf: ${dnfToString(d)}")
       if (isEmpty(d))
         Substitution.empty
@@ -541,7 +541,19 @@ object SetUnification {
     val neg = t1.collect {
       case Literal.Negative(atom) => atom
     }
-    (pos & neg).nonEmpty || t1.isEmpty
+    // an intersection is empty if:
+    // 1. It is syntactically empty
+    val synEmpty = t1.isEmpty
+
+    // 2. It contains two different positive constants
+    val diffConst = pos.collect {
+      case Atom.Eff(sym) => sym
+    }.size > 1
+
+    // 3. It contains an atom in both the positive and negative sets
+    val negation = (pos & neg).nonEmpty
+
+    synEmpty || diffConst || negation
   }
 
   def dnfToString(d: Dnf): String = {
