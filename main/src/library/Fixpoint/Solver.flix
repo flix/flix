@@ -33,8 +33,7 @@ namespace Fixpoint {
     ///
     @Internal
     pub def solve(d: Datalog[v]): Datalog[v] with Order[v], ToString[v] =
-        (stratify(d) |>
-        solveWithStratification(d)) as & Pure
+        stratify(d) |> solveWithStratification(d)
 
     ///
     /// Returns the minimal model of the given Datalog program `d`.
@@ -42,7 +41,7 @@ namespace Fixpoint {
     /// A stratification of `d` is given by `stf`.
     ///
     @Internal
-    def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] & Impure with Order[v], ToString[v] =
+    def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v], ToString[v] = {
         notifyPreSolve(d, stf);
         let compiler = cs ->
             compile(cs, stf) |>
@@ -54,13 +53,15 @@ namespace Fixpoint {
                 compiler(d) |> interpret(r) |> toModel
             }
             case Model(_) => d
-            case Join(Model(m), cs) =>
-                let db = Map.map(Map.toMutMap(Static), m) |> Map.toMutMap(Static);
+            case Join(Model(m), cs) => region r {
+                let db = Map.map(Map.toMutMap(r), m) |> Map.toMutMap(r);
                 compiler(cs) |> interpretWithDatabase(db) |> toModel
+            }
             case _ => bug!("Datalog normalization bug")
         };
         notifyPostSolve(model);
         model
+    } as & Pure // This casts away the impure effect of notify
 
     ///
     /// Returns the pairwise union of `d1` and `d2`.
@@ -144,11 +145,11 @@ namespace Fixpoint {
             println(s);
             println(d);
             println(r)
-        } as & Pure else ();
+        } else ();
 
         // Return the result.
         r
-    }
+    } as & Pure // This casts away the impure effect of debugging
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -767,7 +768,7 @@ namespace Fixpoint {
     @Internal @Unsafe
     pub def unsafeCast(v: a): Datalog[Boxed] = v as Datalog[Boxed]
 
-    def toModel(db: Database[v, r]): Datalog[v] & r =
+    def toModel(db: Database[v, r]): Datalog[v] \ Read(r) =
         MutMap.toMap(db) |>
         Map.map(MutMap.toMap) |>
         Model
