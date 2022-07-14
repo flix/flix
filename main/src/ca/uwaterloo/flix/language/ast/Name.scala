@@ -91,7 +91,7 @@ object Name {
     /**
       * The source location of the identifier.
       */
-    def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    var loc: SourceLocation = SourceLocation.mk(sp1, sp2)
 
     /**
       * Two identifiers are equal if they have the same name.

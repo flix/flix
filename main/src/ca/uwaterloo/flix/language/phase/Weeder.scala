@@ -1691,6 +1691,7 @@ object Weeder {
 
     // The name of the lambda parameter.
     val ident = Name.Ident(sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), sp2)
+    ident.loc = ident.loc.asSynthetic
 
     // Construct the body of the lambda expression.
     val varOrRef = WeededAst.Expression.VarOrDefOrSig(ident, loc)
