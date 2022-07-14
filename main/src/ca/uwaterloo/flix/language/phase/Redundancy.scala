@@ -28,6 +28,8 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
+import scala.annotation.tailrec
+
 /**
   * The Redundancy phase checks that declarations and expressions within the AST are used in a meaningful way.
   *
@@ -404,7 +406,7 @@ object Redundancy {
     case Expression.Discard(exp, _, _, _) =>
       val us = visitExp(exp, env0, rc)
 
-      if (exp.pur == Type.Pure)
+      if (isPure(exp))
         us + DiscardedPureValue(exp.loc)
       else if (exp.tpe == Type.Unit)
         us + RedundantDiscard(exp.loc)
@@ -784,14 +786,15 @@ object Redundancy {
   private def isUnderAppliedFunction(exp: Expression): Boolean = {
     val isPure = exp.pur == Type.Pure
     val isNonPureFunction = exp.tpe.typeConstructor match {
-      case Some(TypeConstructor.Arrow(_)) => curriedArrowEffectType(exp.tpe) != Type.Pure
+      case Some(TypeConstructor.Arrow(_)) =>
+        curriedArrowPurityType(exp.tpe) != Type.Pure || curriedArrowEffectType(exp.tpe) != Type.Empty
       case _ => false
     }
     isPure && isNonPureFunction
   }
 
   /**
-    * Returns the effect type of `this` curried arrow type.
+    * Returns the purity type of `this` curried arrow type.
     *
     * For example,
     *
@@ -803,25 +806,54 @@ object Redundancy {
     *
     * NB: Assumes that `this` type is an arrow.
     */
+  @tailrec
+  private def curriedArrowPurityType(tpe: Type): Type = {
+    val resType = tpe.arrowResultType
+    resType.typeConstructor match {
+      case Some(TypeConstructor.Arrow(_)) => curriedArrowPurityType(resType)
+      case _ => tpe.arrowPurityType
+    }
+  }
+
+  /**
+    * Returns the effect type of `this` curried arrow type.
+    *
+    * For example,
+    *
+    * {{{
+    * Int32                                        =>     throw
+    * Int32 -> String -> Int32 \ Eff               =>     Pure
+    * (Int32, String) -> String -> Bool & \ Eff    =>     Impure
+    * }}}
+    *
+    * NB: Assumes that `this` type is an arrow.
+    */
+  @tailrec
   private def curriedArrowEffectType(tpe: Type): Type = {
     val resType = tpe.arrowResultType
     resType.typeConstructor match {
       case Some(TypeConstructor.Arrow(_)) => curriedArrowEffectType(resType)
-      case _ => tpe.arrowPurityType
+      case _ => tpe.arrowEffectType
     }
   }
 
   /**
     * Returns true if the expression is pure.
     */
+  private def isPure(exp: Expression): Boolean =
+    exp.pur == Type.Pure && exp.eff == Type.Empty
+
+  /**
+    * Returns true if the expression is pure.
+    */
   private def isUselessExpression(exp: Expression): Boolean =
-    exp.pur == Type.Pure
+    isPure(exp)
 
   /**
     * Returns true if the expression is not pure and not unit type.
     */
   private def isImpureDiscardedValue(exp: Expression): Boolean =
-    exp.pur != Type.Pure && exp.tpe != Type.Unit
+    !isPure(exp) && exp.tpe != Type.Unit
 
   /**
     * Returns the free variables in the pattern `p0`.
