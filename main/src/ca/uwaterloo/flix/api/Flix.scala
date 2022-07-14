@@ -49,11 +49,6 @@ class Flix {
   private val inputs = mutable.Map.empty[String, Input]
 
   /**
-    * A set of reachable root definitions.
-    */
-  private val reachableRoots = mutable.Set.empty[Symbol.DefnSym]
-
-  /**
     * The set of sources changed since last compilation.
     */
   private var changeSet: ChangeSet = ChangeSet.Everything
@@ -408,18 +403,6 @@ class Flix {
 
     jarLoader.addURL(p.toUri.toURL)
     this
-  }
-
-  /**
-    * Returns the reachable root definitions.
-    */
-  def getReachableRoots: Set[Symbol.DefnSym] = reachableRoots.toSet
-
-  /**
-    * Adds the given fully-qualified name as a reachable root.
-    */
-  def addReachableRoot(fqn: String): scala.Unit = {
-    reachableRoots += Symbol.mkDefnSym(fqn)
   }
 
   /**
