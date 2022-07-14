@@ -144,7 +144,12 @@ object SetUnification {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables and constants are made flexible.
 //      if (!satisfiable(deconst(f)))
-      if (isEmpty(dnf(nnf(f))))
+//      println(s"init: $f")
+      val n = nnf(f)
+//      println(s" nnf: $n")
+      val d = dnf(n)
+//      println(s" dnf: ${dnfToString(d)}")
+      if (isEmpty(d))
         Substitution.empty
       else
         throw SetUnificationException
@@ -480,9 +485,9 @@ object SetUnification {
   type Dnf = Set[Intersection]
 
   def nnf(t: Type): Type = t match {
-    case tpe@Type.KindedVar(_, _) => tpe
     case tpe@CONSTANT(_) => tpe
-    case COMPLEMENT(tpe) => nnfNot(tpe)
+    case tpe@VAR(_) => tpe
+    case tpe@COMPLEMENT(_) => nnfNot(tpe)
     case UNION(tpe1, tpe2) => mkUnion(nnf(tpe1), nnf(tpe2))
     case INTERSECTION(tpe1, tpe2) => mkIntersection(nnf(tpe1), nnf(tpe2))
     case Type.Empty => Type.Empty
@@ -491,16 +496,14 @@ object SetUnification {
   }
 
   def nnfNot(t: Type): Type = t match {
-    case Type.Empty => Type.All
-    case Type.All => Type.Empty
-    case tpe@Type.KindedVar(_, _) => mkComplement(tpe)
-    case tpe@CONSTANT(_) => mkComplement(tpe)
-    case COMPLEMENT(tpe) => tpe
-    case UNION(tpe1, tpe2) => mkIntersection(
+    case tpe@COMPLEMENT(CONSTANT(_)) => tpe
+    case tpe@COMPLEMENT(VAR(_)) => tpe
+    case COMPLEMENT(COMPLEMENT(tpe)) => nnf(tpe)
+    case COMPLEMENT(UNION(tpe1, tpe2)) => mkIntersection(
       nnf(mkComplement(tpe1)),
       nnf(mkComplement(tpe2))
     )
-    case INTERSECTION(tpe1, tpe2) => mkUnion(
+    case COMPLEMENT(INTERSECTION(tpe1, tpe2)) => mkUnion(
       nnf(mkComplement(tpe1)),
       nnf(mkComplement(tpe2))
     )
@@ -511,10 +514,12 @@ object SetUnification {
     case Type.Empty => Set(Set())
     case VAR(sym) => Set(Set(Literal.Positive(Atom.Var(sym))))
     case CONSTANT(sym) => Set(Set(Literal.Positive(Atom.Eff(sym))))
-    case COMPLEMENT(VAR(sym)) => Set(Set(Literal.Positive(Atom.Var(sym))))
-    case COMPLEMENT(CONSTANT(sym)) => Set(Set(Literal.Positive(Atom.Eff(sym))))
+    case COMPLEMENT(VAR(sym)) => Set(Set(Literal.Negative(Atom.Var(sym))))
+    case COMPLEMENT(CONSTANT(sym)) => Set(Set(Literal.Negative(Atom.Eff(sym))))
     case UNION(tpe1, tpe2) => dnf(tpe1) ++ dnf(tpe2)
-    case INTERSECTION(tpe1, tpe2) => intersect(dnf(tpe1), dnf(tpe2))
+    case INTERSECTION(tpe1, tpe2) =>
+//      println(s"Intersect ($tpe1, $tpe2) is: ${dnfToString(intersect(dnf(tpe1), dnf(tpe2)))}")
+      intersect(dnf(tpe1), dnf(tpe2))
     case _ => throw InternalCompilerException(s"unexpected type: $t")
   }
 
@@ -536,9 +541,13 @@ object SetUnification {
     val neg = t1.collect {
       case Literal.Negative(atom) => atom
     }
-    (pos -- neg).isEmpty
+    (pos & neg).nonEmpty || t1.isEmpty
   }
 
+  def dnfToString(d: Dnf): String = {
+//    d.map(i => i.mkString("(", " and ", ")")).mkString(" or ")
+      "union of: " + d.map(set => "intersection of " + set.mkString("{", ", ", "}")).mkString("{\n", ", \n", "\n}")
+  }
 
 
 }
