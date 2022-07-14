@@ -748,22 +748,8 @@ namespace DelayMap {
     ///
     @Experimental
     pub def iterator(r: Region[r], m: DelayMap[a, b]): Iterator[(a, b), r] \ Write(r) with Order[a] =
-        let keys = keysOf(m) |> Set.toList;
-        let cursor = ref keys @ r;
-        let done = () -> match deref cursor {
-            case Nil => true
-            case _   => false
-        };
-        let next = () -> match deref cursor {
-            case Nil     => bug!("Empty Iterator!")
-            case x :: xs =>
-                cursor := xs;
-                match DelayMap.get(x, m) {
-                    case None    => bug!("Empty Iterator!")
-                    case Some(v) => (x, v)
-                }
-        };
-        Iterator(done, next)
+        let DMap(t) = m;
+        RedBlackTree.iterator(r, m) |> Iterator.mapL(match (k, v) -> (k, force v))
 
     ///
     /// Returns an iterator over key-value pairs of `m` zipped with the indices of the elements.
