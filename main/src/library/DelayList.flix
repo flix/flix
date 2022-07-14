@@ -62,6 +62,10 @@ instance Order[DelayList[a]] with Order[a] {
     }
 }
 
+instance ToString[DelayList[a]] with ToString[a] {
+    pub def toString(l: DelayList[a]): String = DelayList.toString(l)
+}
+
 instance Functor[DelayList] {
     pub def map(f: a -> b & ef, l: DelayList[a]): DelayList[b] & ef = DelayList.map(f, l)
 }
@@ -113,6 +117,25 @@ instance Monoid[DelayList[a]] {
 }
 
 namespace DelayList {
+
+    ///
+    /// Returns a string representation of `l`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def toString(l: DelayList[a]): String with ToString[a] = region r {
+        let sb = new StringBuilder(r);
+        StringBuilder.appendString!("DelayList(", sb);
+        foreach ((x, i) <- enumerator(r, l)) {
+            if (i == 0)
+                StringBuilder.appendString!("${x}", sb)
+            else
+                StringBuilder.appendString!(", ${x}", sb)
+        };
+        StringBuilder.appendString!(")", sb);
+        StringBuilder.toString(sb)
+    }
 
     ///
     /// Returns an empty DelayList.
