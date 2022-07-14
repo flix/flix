@@ -67,6 +67,7 @@ instance Foldable[Set] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldLeft(f, s, s1)
     pub def foldRight(f: (a, b) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldRight(f, s, s1)
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldRightWithCont(f, s, s1)
+    override pub def iterator(r: Region[r], s: Set[a]): Iterator[a, r] \ Write(r) = Set.iterator(r, s)
 }
 
 instance UnorderedFoldable[Set] {
@@ -98,16 +99,11 @@ namespace Set {
     ///
     pub def toString(s: Set[a]): String with ToString[a] = region r {
         let sb = new StringBuilder(r);
-        let first = ref true;
-
         StringBuilder.appendString!("Set#{", sb);
-
-        let f = (x) -> {
-            if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
+        foreach ((x, i) <- enumerator(r, s)) {
+            if (i > 0) StringBuilder.appendString!(", ", sb) else ();
             StringBuilder.appendString!("${x}", sb)
         };
-        Set.foreach(f, s);
-
         StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)
     }

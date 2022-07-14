@@ -112,14 +112,12 @@ namespace Map {
     ///
     pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region r {
         let sb = new StringBuilder(r);
-        let last = size(m) - 1;
         StringBuilder.appendString!("Map#{", sb);
         foreach (((k, v), i) <- Map.enumerator(r, m)) {
-            if (i >= last)
-                StringBuilder.appendString!("${k} => ${v}}", sb)
-            else
-                StringBuilder.appendString!("${k} => ${v}, ", sb)
+            if (i > 0) StringBuilder.appendString!(", ", sb) else ();
+            StringBuilder.appendString!("${k} => ${v}", sb)
         };
+        StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)
     }
 

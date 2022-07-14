@@ -2011,4 +2011,30 @@ namespace TestDelayMap {
         Map#{0 => "1", 1 => "2", 2 => "2"} |> Map.toDelayMap |>
             DelayMap.joinWith((k, v) -> "${k} => ${v}", ", ") == "0 => 1, 1 => 2, 2 => 2"
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toString01(): Bool =
+        ToString.toString(Map#{1 => 2} |> Map.toDelayMap) == "DelayMap#{1 => 2}"
+
+    @test
+    def toString02(): Bool =
+        ToString.toString(Map#{1 => 0, 2 => 1, 3 => 2} |> Map.toDelayMap) == "DelayMap#{1 => 0, 2 => 1, 3 => 2}"
+
+    @test
+    def toString03(): Bool =
+        ToString.toString(Map#{1 => "b", 2 => "a"} |> Map.toDelayMap) == "DelayMap#{1 => b, 2 => a}"
+
+    @test
+    def toString04(): Bool =
+        ToString.toString(Map#{97 => false, 2 => true, 3 => false, 4 => true, 0 => true} |> Map.toDelayMap) == "DelayMap#{0 => true, 2 => true, 3 => false, 4 => true, 97 => false}"
+
+    @test
+    def toString05(): Bool =
+        ToString.toString(Map#{2 => Map#{1 => 0, 2 => 1}, 3 => Map#{3 => 2, 4 => 92}} |> Map.toDelayMap) == "DelayMap#{2 => Map#{1 => 0, 2 => 1}, 3 => Map#{3 => 2, 4 => 92}}"
+
+
 }
