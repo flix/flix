@@ -88,6 +88,7 @@ instance Foldable[DelayList] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldRightWithCont(f, s, l)
+    override pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) = DelayList.iterator(r, l)
 }
 
 instance UnorderedFoldable[DelayList] {
