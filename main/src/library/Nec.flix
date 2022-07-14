@@ -676,7 +676,7 @@ namespace Nec {
         loop(c, k -> k, 0)
 
     ///
-    /// `mapAccumLeft` is a stateful version of `map`. The accumulating paramter `s` is updated at each
+    /// `mapAccumLeft` is a stateful version of `map`. The accumulating parameter `s` is updated at each
     /// step in a left-to-right traversal.
     ///
     pub def mapAccumLeft(f: (s, a) -> (s, b) & ef, start: s, c: Nec[a]): (s, Nec[b]) & ef =
