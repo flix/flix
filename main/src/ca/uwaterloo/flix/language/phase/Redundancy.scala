@@ -92,7 +92,7 @@ object Redundancy {
     }
 
     // Check for unused parameters and remove all variable symbols.
-    val unusedFormalParams = sig.impl.toList.flatMap(_ => findUnusedFormalParameters(sig.spec, usedExp))
+    val unusedFormalParams = sig.impl.toList.flatMap(_ => findUnusedFormalParameters(sig.spec.fparams, usedExp))
     val unusedTypeParams = findUnusedTypeParameters(sig.spec)
 
     val usedAll = (usedExp ++
@@ -115,7 +115,7 @@ object Redundancy {
     // Compute the used symbols inside the definition.
     val usedExp = visitExp(defn.impl.exp, Env.empty ++ defn.spec.fparams.map(_.sym), RecursionContext.ofDef(defn.sym))
 
-    val unusedFormalParams = findUnusedFormalParameters(defn.spec, usedExp)
+    val unusedFormalParams = findUnusedFormalParameters(defn.spec.fparams, usedExp)
     val unusedTypeParams = findUnusedTypeParameters(defn.spec)
 
     // Check for unused parameters and remove all variable symbols.
@@ -134,8 +134,8 @@ object Redundancy {
   /**
     * Finds unused formal parameters.
     */
-  private def findUnusedFormalParameters(spec: Spec, used: Used): List[UnusedFormalParam] = {
-    spec.fparams.collect {
+  private def findUnusedFormalParameters(fparams: List[FormalParam], used: Used): List[UnusedFormalParam] = {
+    fparams.collect {
       case fparam if deadVarSym(fparam.sym, used) => UnusedFormalParam(fparam.sym)
     }
   }
@@ -601,10 +601,11 @@ object Redundancy {
     case Expression.NewObject(_, _, _, _, methods, _) =>
       methods.foldLeft(Used.empty) {
         case (acc, JvmMethod(_, fparams, exp, _, _, _, _)) => 
-          val used = visitExp(exp, env0, rc)
-          val syms = fparams.map(_.sym)
-          val dead = syms.filter(deadVarSym(_, used))
-          acc ++ used ++ dead.map(UnusedVarSym)
+          // Extend the environment with the formal paramter symbols
+          val env1 = env0 ++ fparams.map(_.sym)
+          val used = visitExp(exp, env1, rc)
+          val unusedFParams = findUnusedFormalParameters(fparams, used)
+          acc ++ used ++ unusedFParams
       }
 
     case Expression.NewChannel(exp, _, _, _, _) =>
