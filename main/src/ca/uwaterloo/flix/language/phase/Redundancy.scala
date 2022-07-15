@@ -549,6 +549,12 @@ object Redundancy {
         case _ => visitExp(exp, env0, rc)
       }
 
+    case Expression.Upcast(exp, tpe, pur, eff, loc) =>
+      if (tpe == exp.tpe && pur == exp.pur && eff == exp.eff)
+        visitExp(exp, env0, rc) + RedundantUpcast(loc)
+      else
+        visitExp(exp, env0, rc)
+
     case Expression.Without(exp, _, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
@@ -604,7 +610,7 @@ object Redundancy {
 
     case Expression.NewObject(_, _, _, _, methods, _) =>
       methods.foldLeft(Used.empty) {
-        case (acc, JvmMethod(_, fparams, exp, _, _, _, _)) => 
+        case (acc, JvmMethod(_, fparams, exp, _, _, _, _)) =>
           // Extend the environment with the formal parameter symbols
           val env1 = env0 ++ fparams.map(_.sym)
           val used = visitExp(exp, env1, rc)

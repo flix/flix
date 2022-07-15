@@ -481,6 +481,22 @@ object RedundancyError {
     def explain(formatter: Formatter): Option[String] = None
   }
 
+  case class RedundantUpcast(loc: SourceLocation) extends RedundancyError {
+    override def summary: String = "Redundant upcast. The expression already has the expected type."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Redundant upcast. The expression already has the expected type.
+         |
+         |${code(loc, "redundant upcast.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
   /**
     * An error raised to indicate a redundant type constraint.
     *

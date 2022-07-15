@@ -4,4 +4,9 @@ namespace Test/Exp/Upcast {
     def upcast01(): Unit & Impure =
         upcast ()
 
+/*
+    @test
+    def upcast02(): Unit = // Should trigger redundancy error.
+        upcast ()
+*/
 }
