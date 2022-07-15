@@ -229,6 +229,13 @@ namespace TestFile {
             case _ => false
         }
 
+    @test
+    def testReadBytesWith03(): Bool & Impure =
+        match readBytesWith({offset = 10i64, count = 4}, "./LICENSE.md") {
+            case Ok(v) => v == [101, 110, 115, 101]
+            case _ => false
+        }
+
     /////////////////////////////////////////////////////////////////////////////
     // readChunks                                                              //
     /////////////////////////////////////////////////////////////////////////////
