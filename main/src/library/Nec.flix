@@ -700,14 +700,14 @@ namespace Nec {
         def loop(s1: s, c1: Nec[a], k: (s, Nec[b]) -> (s, Nec[b]) & ef) = match viewRight(c1) {
             case OneRight(x)      => {
                 let (s2, x1) = f(s1, x);
-                k(s2, NecOne(x1))
+                k((s2, NecOne(x1)))
             }
             case SomeRight(rs, x) => {
                 let (s2, x1) = f(s1, x);
-                loop(s2, rs, (s3, ks) -> k(s3, snoc(ks, x1)))
+                loop(s2, rs, (s3, ks) -> k((s3, snoc(ks, x1))))
            }
         };
-        loop(start, c, (s1, ks) -> (s1, ks) as & ef)
+        loop(start, c, upcast(identity))
 
     ///
     /// Applies `f` to every element of `c`.
