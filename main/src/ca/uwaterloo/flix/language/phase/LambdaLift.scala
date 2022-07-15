@@ -50,7 +50,6 @@ object LambdaLift {
       newDefs ++ m,
       newEnums,
       root.entryPoint,
-      root.reachable,
       root.sources
     ).toSuccess
   }
