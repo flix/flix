@@ -534,11 +534,12 @@ object Redundancy {
     case Expression.Ascribe(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.Cast(exp, _, declaredEff, _, _, _, _, loc) =>
-      declaredEff match {
-        case None => visitExp(exp, env0, rc)
-        case Some(eff) =>
-          (eff, exp.pur) match {
+    case Expression.Cast(exp, _, declaredPur, declaredEff, _, _, _, loc) =>
+      (declaredPur, declaredEff) match {
+        case (None, None) => visitExp(exp, env0, rc)
+        // Don't capture redundant purity casts if there's also a set effect
+        case (Some(pur), eff) if eff.forall(_ == Type.Empty) =>
+          (pur, exp.pur) match {
             case (Type.Pure, Type.Pure) =>
               visitExp(exp, env0, rc) + RedundantPurityCast(loc)
             case (tvar1: Type.KindedVar, tvar2: Type.KindedVar) if tvar1.sym == tvar2.sym =>
