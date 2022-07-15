@@ -22,7 +22,6 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import scala.annotation.tailrec
-import scala.collection.mutable
 
 object SetUnification {
 
@@ -143,12 +142,11 @@ object SetUnification {
   private def successiveVariableElimination(f: Type, fvs: List[Type.KindedVar])(implicit flix: Flix): Substitution = fvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables and constants are made flexible.
-//      if (!satisfiable(deconst(f)))
       val n = nnf(f)
       val d = dnf(n)
-//      println(s"init: $f")
-//      println(s" nnf: $n")
-//      println(s" dnf: ${dnfToString(d)}")
+      //      println(s"init: $f")
+      //      println(s" nnf: $n")
+      //      println(s" dnf: ${dnfToString(d)}")
       if (isEmpty(d))
         Substitution.empty
       else
@@ -165,55 +163,9 @@ object SetUnification {
   }
 
   /**
-    * Transforms effect constants in the type into variables.
-    */
-  private def deconst(t0: Type)(implicit flix: Flix): Type = {
-    val eenv = mutable.Map.empty[Symbol.EffectSym, Type]
-
-    def visit(t: Type): Type = t match {
-      case Type.Cst(TypeConstructor.Effect(sym), loc) =>
-        eenv.getOrElseUpdate(sym, Type.freshVar(Kind.Effect, loc, text = Ast.VarText.SourceText(sym.name)))
-
-      case COMPLEMENT(tpe) => mkComplement(visit(tpe))
-      case INTERSECTION(tpe1, tpe2) => mkIntersection(visit(tpe1), visit(tpe2))
-      case UNION(tpe1, tpe2) => mkUnion(visit(tpe1), visit(tpe2))
-
-      case Type.Apply(tpe1, tpe2, loc) => Type.Apply(visit(tpe1), visit(tpe2), loc)
-
-      case tpe: Type.Cst => tpe
-      case tpe: Type.KindedVar => tpe
-      case tpe: Type.UnkindedVar => tpe
-
-      case _: Type.Alias => throw InternalCompilerException("Unexpected type alias.")
-      case _: Type.UnkindedArrow => throw InternalCompilerException("Unexpected unkinded type.")
-      case _: Type.ReadWrite => throw InternalCompilerException("Unexpected unkinded type.")
-      case _: Type.Ascribe => throw InternalCompilerException("Unexpected unkinded type.")
-    }
-
-    visit(t0)
-  }
-
-  /**
     * An exception thrown to indicate that boolean unification failed.
     */
   private case object SetUnificationException extends RuntimeException
-
-  /**
-    * Returns `true` if the given boolean formula `f` is satisfiable.
-    */
-  private def satisfiable(f: Type)(implicit flix: Flix): Boolean = f match {
-    case Type.All => true
-    case Type.Empty => false
-    case _ =>
-      val q = mkEq(f, Type.All)
-      try {
-        successiveVariableElimination(q, q.typeVars.toList)
-        true
-      } catch {
-        case SetUnificationException => false
-      }
-  }
-
 
   /**
     * To unify two set formulas p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
@@ -518,7 +470,7 @@ object SetUnification {
     case COMPLEMENT(CONSTANT(sym)) => Set(Set(Literal.Negative(Atom.Eff(sym))))
     case UNION(tpe1, tpe2) => dnf(tpe1) ++ dnf(tpe2)
     case INTERSECTION(tpe1, tpe2) =>
-//      println(s"Intersect ($tpe1, $tpe2) is: ${dnfToString(intersect(dnf(tpe1), dnf(tpe2)))}")
+      //      println(s"Intersect ($tpe1, $tpe2) is: ${dnfToString(intersect(dnf(tpe1), dnf(tpe2)))}")
       intersect(dnf(tpe1), dnf(tpe2))
     case _ => throw InternalCompilerException(s"unexpected type: $t")
   }
@@ -557,8 +509,8 @@ object SetUnification {
   }
 
   def dnfToString(d: Dnf): String = {
-//    d.map(i => i.mkString("(", " and ", ")")).mkString(" or ")
-      "union of: " + d.map(set => "intersection of " + set.mkString("{", ", ", "}")).mkString("{\n", ", \n", "\n}")
+    //    d.map(i => i.mkString("(", " and ", ")")).mkString(" or ")
+    "union of: " + d.map(set => "intersection of " + set.mkString("{", ", ", "}")).mkString("{\n", ", \n", "\n}")
   }
 
 
