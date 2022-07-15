@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
 import ca.uwaterloo.flix.util.Validation
@@ -176,6 +176,14 @@ object Safety {
 
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
       visitExp(exp)
+
+    case Expression.Upcast(exp, tpe, pur, eff, loc) =>
+      val ps = (pur, exp.pur) match {
+        case (Type.Pure, _) => List(UnsafeUpcast(loc))
+        case (_: Type.KindedVar, Type.Impure) => List(UnsafeUpcast(loc))
+        case _ => Nil
+      }
+      visitExp(exp) ::: ps
 
     case Expression.Without(exp, _, _, _, _, _) =>
       visitExp(exp)

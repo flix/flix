@@ -478,7 +478,11 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""If you try to upcast an expression that already has the same type, purity
+         |and effect as expected the upcast is redundant.
+         |""".stripMargin
+    })
   }
 
   case class RedundantUpcast(loc: SourceLocation) extends RedundancyError {
