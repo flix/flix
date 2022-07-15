@@ -447,6 +447,7 @@ object SetUnification {
     case INTERSECTION(tpe1, tpe2) => Nnf.Intersection(nnf(tpe1), nnf(tpe2))
     case Type.Empty => Nnf.Empty
     case Type.All => Nnf.All
+    case _ => throw InternalCompilerException(s"unexpected type: $t")
   }
 
   private def nnfNot(t: Type): Nnf = t match {
