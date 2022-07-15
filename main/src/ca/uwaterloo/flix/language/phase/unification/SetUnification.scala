@@ -125,8 +125,6 @@ object SetUnification {
   private def successiveVariableElimination(f: Type, fvs: List[Type.KindedVar])(implicit flix: Flix): Substitution = fvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables and constants are made flexible.
-      //      val n = nnf(f)
-      //      val d = dnf(n)
       val n = nnf(f)
       val d = nnfToDnf(n)
       //      println(s"init: $f")
@@ -511,14 +509,4 @@ object SetUnification {
 
     synEmpty || diffConst || negation
   }
-
-  /**
-    * Debugging utility to convert the given DNF to a string.
-    */
-  private def dnfToString(d: Dnf): String = {
-    //    d.map(i => i.mkString("(", " and ", ")")).mkString(" or ")
-    "union of: " + d.map(set => "intersection of " + set.mkString("{", ", ", "}")).mkString("{\n", ", \n", "\n}")
-  }
-
-
 }
