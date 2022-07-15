@@ -25,7 +25,6 @@ object LiftedAst {
   case class Root(defs: Map[Symbol.DefnSym, LiftedAst.Def],
                   enums: Map[Symbol.EnumSym, LiftedAst.Enum],
                   entryPoint: Option[Symbol.DefnSym],
-                  reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[LiftedAst.FormalParam], exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation)
