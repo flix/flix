@@ -26,7 +26,6 @@ object OccurrenceAst {
   case class Root(defs: Map[Symbol.DefnSym, OccurrenceAst.Def],
                   enums: Map[Symbol.EnumSym, OccurrenceAst.Enum],
                   entryPoint: Option[Symbol.DefnSym],
-                  reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[OccurrenceAst.FormalParam], exp: OccurrenceAst.Expression, context: DefContext, tpe: Type, loc: SourceLocation)
