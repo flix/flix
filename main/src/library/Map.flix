@@ -949,7 +949,8 @@ namespace Map {
     /// Returns an iterator over all key-value pairs in `m`.
     ///
     pub def iterator(r: Region[r], m: Map[k, v]): Iterator[(k, v), r] \ Write(r) =
-        List.iterator(r, Map.query(_ -> EqualTo, m))
+        let Map(t) = m;
+        RedBlackTree.iterator(r, t)
 
     ///
     /// Returns an iterator over key-value pairs in `m` zipped with the indices of the elements.

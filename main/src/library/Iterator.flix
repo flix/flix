@@ -26,6 +26,22 @@ instance Scoped[Iterator[a]] {
     pub def regionOf(_: Iterator[a, r]): Region[r] = () as Region[r]
 }
 
+instance Iterable[Iterator] {
+    pub def iterator(iter: Iterator[a, r]): Iterator[a, r] \ Write(r) = iter as \ Write(r)
+}
+
+///
+/// Alias for `Foldable.iterator`.
+///
+pub def iterator(r: Region[r], t: t[a]): Iterator[a, r] \ Write(r) with Foldable[t] =
+    Foldable.iterator(r, t)
+
+///
+/// Alias for `Foldable.iterator |> Iterable.enumerator`.
+///
+pub def enumerator(r: Region[r], t: t[a]): Iterator[(a, Int32), r] \ Write(r) with Foldable[t] =
+    Foldable.iterator(r, t) |> Iterable.enumerator
+
 namespace Iterator {
 
     ///

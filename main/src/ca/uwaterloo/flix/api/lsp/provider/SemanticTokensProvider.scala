@@ -91,9 +91,17 @@ object SemanticTokensProvider {
     }
 
     //
+    // Construct an iterator of the semantic tokens from effects.
+    //
+    val effectTokens = root.effects.flatMap {
+      case (_, decl) if include(uri, decl.loc) => visitEffect(decl)
+      case _ => Nil
+    }
+
+    //
     // Collect all tokens into one list.
     //
-    val allTokens = (classTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ typeAliasTokens).toList
+    val allTokens = (classTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ typeAliasTokens ++ effectTokens).toList
 
     //
     // We keep all tokens that are: (i) single-line tokens, (ii) have the same source as `uri`, and (iii) come from real source locations.
@@ -235,6 +243,28 @@ object SemanticTokensProvider {
   }
 
   /**
+    * Returns all semantic tokens in the given effect.
+    */
+  private def visitEffect(effect: TypedAst.Effect): Iterator[SemanticToken] = effect match {
+    case TypedAst.Effect(_, _, _, sym, ops, _) =>
+      val t = SemanticToken(SemanticTokenType.Interface, Nil, sym.loc)
+      val st1 = Iterator(t)
+      val st2 = ops.flatMap(visitOp)
+      st1 ++ st2
+  }
+
+  /**
+    * Returns all semantic tokens in the given effect operation.
+    */
+  private def visitOp(op: TypedAst.Op): Iterator[SemanticToken] = op match {
+    case TypedAst.Op(sym, spec) =>
+      val t = SemanticToken(SemanticTokenType.Function, Nil, sym.loc)
+      val st1 = Iterator(t)
+      val st2 = visitSpec(spec)
+      st1 ++ st2
+  }
+
+  /**
     * Returns all semantic tokens in the given expression `exp0`.
     */
   private def visitExp(exp0: Expression): Iterator[SemanticToken] = exp0 match {
@@ -257,9 +287,7 @@ object SemanticTokensProvider {
 
     case Expression.Hole(_, _, _) => Iterator.empty
 
-    case Expression.Unit(loc) =>
-      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
-      Iterator(t)
+    case Expression.Unit(_) => Iterator.empty
 
     case Expression.Null(_, _) => Iterator.empty
 
@@ -390,9 +418,9 @@ object SemanticTokensProvider {
     case Expression.Cast(exp, _, _, _, tpe, _, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 
-    case Expression.Without(exp, _, _, _, _, _) =>
-      visitExp(exp)
-      // TODO index eff
+    case Expression.Without(exp, eff, _, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Type, Nil, eff.loc)
+      Iterator(t) ++ visitExp(exp)
 
     case Expression.TryCatch(exp, rules, _, _, _, _) =>
       rules.foldLeft(visitExp(exp)) {
@@ -401,18 +429,21 @@ object SemanticTokensProvider {
           acc ++ Iterator(t) ++ visitExp(exp)
       }
 
-    case Expression.TryWith(exp, _, rules, _, _, _, _) =>
-      // TODO index eff
-      rules.foldLeft(visitExp(exp)) {
-        case (acc, HandlerRule(_, fparams, exp)) =>
-          // TODO index op
-          val t = visitFormalParams(fparams)
-          acc ++ t ++ visitExp(exp)
+    case Expression.TryWith(exp, eff, rules, _, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Type, Nil, eff.loc)
+      val st1 = Iterator(t)
+      val st2 = rules.foldLeft(visitExp(exp)) {
+        case (acc, HandlerRule(op, fparams, exp)) =>
+          val st = SemanticToken(SemanticTokenType.Type, Nil, op.loc)
+          val t1 = Iterator(st)
+          val t2 = visitFormalParams(fparams)
+          acc ++ t1 ++ t2 ++ visitExp(exp)
       }
+      st1 ++ st2
 
-    case Expression.Do(_, exps, _, _, _) =>
-      // TODO index op
-      visitExps(exps)
+    case Expression.Do(op, exps, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Function, Nil, op.loc)
+      Iterator(t) ++ visitExps(exps)
 
     case Expression.Resume(exp, _, _) =>
       visitExp(exp)
@@ -522,9 +553,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
-    case Pattern.Unit(loc) =>
-      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
-      Iterator(t)
+    case Pattern.Unit(_) => Iterator.empty
 
     case Pattern.True(_) => Iterator.empty
 
@@ -606,6 +635,7 @@ object SemanticTokensProvider {
     * This is restricted to type constructors whose that use the standard shape (X[Y, Z]).
     */
   private def isVisibleTypeConstructor(tycon: TypeConstructor): Boolean = tycon match {
+    // visible
     case TypeConstructor.Unit => true
     case TypeConstructor.Null => true
     case TypeConstructor.Bool => true
@@ -618,6 +648,17 @@ object SemanticTokensProvider {
     case TypeConstructor.Int64 => true
     case TypeConstructor.BigInt => true
     case TypeConstructor.Str => true
+    case TypeConstructor.Channel => true
+    case TypeConstructor.Lazy => true
+    case TypeConstructor.KindedEnum(_, _) => true
+    case TypeConstructor.Native(_) => true
+    case TypeConstructor.Array => true
+    case TypeConstructor.Ref => true
+    case TypeConstructor.True => true
+    case TypeConstructor.False => true
+    case TypeConstructor.Effect(_) => true
+
+    // invisible
     case TypeConstructor.Arrow(_) => false
     case TypeConstructor.RecordRowEmpty => false
     case TypeConstructor.RecordRowExtend(_) => false
@@ -625,26 +666,16 @@ object SemanticTokensProvider {
     case TypeConstructor.SchemaRowEmpty => false
     case TypeConstructor.SchemaRowExtend(_) => false
     case TypeConstructor.Schema => false
-    case TypeConstructor.Channel => true
-    case TypeConstructor.Lazy => true
     case TypeConstructor.Tag(_, _) => false
-    case TypeConstructor.KindedEnum(_, _) => true
-    case TypeConstructor.Native(_) => true
-    case TypeConstructor.Array => true
-    case TypeConstructor.Ref => true
     case TypeConstructor.Tuple(_) => false
     case TypeConstructor.Relation => false
     case TypeConstructor.Lattice => false
-    case TypeConstructor.True => true
-    case TypeConstructor.False => true
     case TypeConstructor.Not => false
     case TypeConstructor.And => false
     case TypeConstructor.Or => false
     case TypeConstructor.Complement => false
     case TypeConstructor.Union => false
     case TypeConstructor.Intersection => false
-    case TypeConstructor.Difference => false
-    case TypeConstructor.Effect(_) => false
     case TypeConstructor.Region => false
     case TypeConstructor.Empty => false
     case TypeConstructor.All => false

@@ -16,14 +16,13 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Kind, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.BoolFormula._
 import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource, StreamOps}
 import ca.uwaterloo.flix.util.collection.Bimap
 
 import java.io.IOException
 import java.util.zip.ZipInputStream
-
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 
@@ -76,16 +75,19 @@ object BoolTable {
     *
     * Returns the same formula or a smaller formula that is equivalent.
     */
-  def minimizeType(tpe: Type)(implicit flix: Flix): Type = {
+  def minimizeType(tpe0: Type)(implicit flix: Flix): Type = {
     // Check whether minimization via tabling is disabled.
     if (flix.options.xnobooltable) {
-      return tpe
+      return tpe0
     }
 
     // Check that the `tpe` argument is a Boolean formula.
-    if (tpe.kind != Kind.Bool) {
-      throw InternalCompilerException(s"Unexpected non-Bool kind: '${tpe.kind}'.")
+    if (tpe0.kind != Kind.Bool && tpe0.kind != Kind.Effect) {
+      throw InternalCompilerException(s"Unexpected non-Bool/non-Effect kind: '${tpe0.kind}'.")
     }
+
+    // Erase aliases to get a processable type
+    val tpe = Type.eraseAliases(tpe0)
 
     // Compute the size of  `tpe`.
     val currentSize = tpe.size
@@ -96,22 +98,27 @@ object BoolTable {
     }
 
     // Compute the variables in `tpe`.
-    val tvars = tpe.typeVars.map(_.sym).toList
+    val tvars = tpe.typeVars.toList.map(tvar => BoolFormula.VarOrEff.Var(tvar.sym))
+    val effs = getEffects(tpe).toList.map(BoolFormula.VarOrEff.Eff)
 
     // Construct a bi-directional map from type variables to indices.
     // The idea is that the first variable becomes x0, the next x1, and so forth.
-    val m = tvars.zipWithIndex.foldLeft(Bimap.empty[Symbol.KindedTypeVarSym, Variable]) {
+    val m = (tvars ++ effs).zipWithIndex.foldLeft(Bimap.empty[BoolFormula.VarOrEff, Variable]) {
       case (macc, (sym, x)) => macc + (sym -> x)
     }
 
     // Convert the type `tpe` to a Boolean formula.
-    val input = fromType(tpe, m)
+    val input = tpe.kind match {
+      case Kind.Bool => fromBoolType(tpe, m)
+      case Kind.Effect => fromEffType(tpe, m)
+      case _ => throw InternalCompilerException(s"Unexpected non-Bool/non-Effect kind: '${tpe.kind}'.")
+    }
 
     // Minimize the Boolean formula.
     val minimized = minimizeFormula(input)
 
     // Convert the formula back to a type.
-    toType(minimized, m, tpe.loc)
+    toType(minimized, m, tpe.kind, tpe.loc)
   }
 
   /**
@@ -382,4 +389,21 @@ object BoolTable {
   private def leftPad(s: String, len: Int): String =
     ' '.toString * (len - s.length()) + s
 
+  /**
+    * Gets all the effects in the given type.
+    */
+  private def getEffects(t: Type): SortedSet[Symbol.EffectSym] = t match {
+    case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(sym)
+
+    case _: Type.Cst => SortedSet.empty
+    case _: Type.KindedVar => SortedSet.empty
+
+    case Type.Apply(tpe1, tpe2, loc) => getEffects(tpe1) ++ getEffects(tpe2)
+    case Type.Alias(cst, args, tpe, loc) => getEffects(tpe)
+
+    case _: Type.Ascribe => throw InternalCompilerException("Unexpected unkinded type.")
+    case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type.")
+    case _: Type.UnkindedArrow => throw InternalCompilerException("Unexpected unkinded type.")
+    case _: Type.ReadWrite => throw InternalCompilerException("Unexpected unkinded type.")
+  }
 }

@@ -28,6 +28,7 @@ object TypedAst {
                   sigs: Map[Symbol.SigSym, TypedAst.Sig],
                   defs: Map[Symbol.DefnSym, TypedAst.Def],
                   enums: Map[Symbol.EnumSym, TypedAst.Enum],
+                  effects: Map[Symbol.EffectSym, TypedAst.Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, TypedAst.TypeAlias],
                   entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
@@ -49,6 +50,10 @@ object TypedAst {
   case class Enum(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypedAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Name.Tag, TypedAst.Case], tpeDeprecated: Type, loc: SourceLocation)
 
   case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[TypedAst.TypeParam], tpe: Type, loc: SourceLocation)
+
+  case class Effect(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[TypedAst.Op], loc: SourceLocation)
+
+  case class Op(sym: Symbol.OpSym, spec: TypedAst.Spec)
 
   sealed trait Expression extends Product {
     def tpe: Type
@@ -284,13 +289,13 @@ object TypedAst {
 
     case class Cast(exp: TypedAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], declaredEff: Option[Type], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Without(exp: TypedAst.Expression, sym: Symbol.EffectSym, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Without(exp: TypedAst.Expression, effUse: Ast.EffectSymUse, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class TryWith(exp: TypedAst.Expression, sym: Symbol.EffectSym, rules: List[TypedAst.HandlerRule], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class TryWith(exp: TypedAst.Expression, effUse: Ast.EffectSymUse, rules: List[TypedAst.HandlerRule], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Do(sym: Symbol.OpSym, exps: List[TypedAst.Expression], pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression {
+    case class Do(op: Ast.OpSymUse, exps: List[TypedAst.Expression], pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = Type.Unit
     }
 
@@ -508,7 +513,7 @@ object TypedAst {
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: TypedAst.Expression)
 
-  case class HandlerRule(op: Symbol.OpSym, fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression)
+  case class HandlerRule(op: Ast.OpSymUse, fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression)
 
   case class ChoiceRule(pat: List[TypedAst.ChoicePattern], exp: TypedAst.Expression)
 
