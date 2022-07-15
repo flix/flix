@@ -29,7 +29,6 @@ object NamedAst {
                   effects: Map[Name.NName, Map[String, NamedAst.Effect]],
                   ops: Map[Name.NName, Map[String, NamedAst.Op]],
                   entryPoint: Option[Symbol.DefnSym],
-                  reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
   // TODO change laws to NamedAst.Law

@@ -69,7 +69,7 @@ object Weeder {
           val m = rs.foldLeft(fresh) {
             case (acc, (k, v)) => acc + (k -> v)
           }
-          WeededAst.Root(m, root.entryPoint, Set())
+          WeededAst.Root(m, root.entryPoint)
       }
     }
 

@@ -30,7 +30,6 @@ object ResolvedAst {
                   typeAliases: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias],
                   taOrder: List[Symbol.TypeAliasSym],
                   entryPoint: Option[Symbol.DefnSym],
-                  reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
   // TODO use ResolvedAst.Law for laws

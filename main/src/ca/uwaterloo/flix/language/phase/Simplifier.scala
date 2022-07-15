@@ -860,7 +860,7 @@ object Simplifier {
         k -> SimplifiedAst.Enum(sAnn, mod, sym, cases, enumType, loc)
     }
 
-    SimplifiedAst.Root(defns ++ toplevel, enums, root.entryPoint, root.reachable, root.sources).toSuccess
+    SimplifiedAst.Root(defns ++ toplevel, enums, root.entryPoint, root.sources).toSuccess
   }
 
   /**
