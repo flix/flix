@@ -61,24 +61,7 @@ object SetUnification {
     ///
     /// Run the expensive boolean unification algorithm.
     ///
-    booleanUnification(simplify(eraseAliases(tpe1)), simplify(eraseAliases(tpe2)), renv)
-  }
-
-  /**
-    * Simplifies the type, removing trivial redundancies and the Difference construct.
-    */
-  private def simplify(tpe: Type): Type = tpe match {
-    case COMPLEMENT(tpe1) => mkComplement(tpe1)
-    case UNION(tpe1, tpe2) => mkUnion(tpe1, tpe2)
-    case INTERSECTION(tpe1, tpe2) => mkIntersection(tpe1, tpe2)
-    case _: Type.Var => tpe
-    case _: Type.Cst => tpe
-    case Type.Apply(tpe1, tpe2, loc) => Type.Apply(simplify(tpe1), simplify(tpe2), loc)
-
-    case _: Type.Alias => throw InternalCompilerException("Unexpected type alias.")
-    case _: Type.Ascribe => throw InternalCompilerException("Unexpected unkinded type.")
-    case _: Type.ReadWrite => throw InternalCompilerException("Unexpected unkinded type.")
-    case _: Type.UnkindedArrow => throw InternalCompilerException("Unexpected unkinded type.")
+    booleanUnification(eraseAliases(tpe1), eraseAliases(tpe2), renv)
   }
 
   /**
