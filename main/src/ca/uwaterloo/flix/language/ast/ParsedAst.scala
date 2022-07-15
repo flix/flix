@@ -945,6 +945,15 @@ object ParsedAst {
     case class Cast(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], purAndEff: ParsedAst.PurityAndEffect, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Upcast Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Upcast(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Without Expression.
       *
       * @param exp  the expression.
