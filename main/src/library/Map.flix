@@ -113,9 +113,12 @@ namespace Map {
     pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region r {
         let sb = new StringBuilder(r);
         StringBuilder.appendString!("Map#{", sb);
-        foreach (((k, v), i) <- Map.enumerator(r, m)) {
-            if (i == 0)
+        let first = ref true @ r;
+        foreach ((k, v) <- Map.iterator(r, m)) {
+            if (deref first) {
+                first := false;
                 StringBuilder.appendString!("${k} => ${v}", sb)
+            }
             else
                 StringBuilder.appendString!(", ${k} => ${v}", sb)
         };
@@ -947,12 +950,6 @@ namespace Map {
     pub def iterator(r: Region[r], m: Map[k, v]): Iterator[(k, v), r] \ Write(r) =
         let Map(t) = m;
         RedBlackTree.iterator(r, t)
-
-    ///
-    /// Returns an iterator over key-value pairs in `m` zipped with the indices of the elements.
-    ///
-    pub def enumerator(r: Region[r], m: Map[k, v]): Iterator[((k, v), Int32), r] \ Write(r) =
-        iterator(r, m) |> Iterator.zipWithIndex
 
     ///
     /// Returns `m` as a `DelayMap`.
