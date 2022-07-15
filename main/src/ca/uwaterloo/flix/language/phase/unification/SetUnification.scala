@@ -417,7 +417,13 @@ object SetUnification {
 
   private type Intersection = Set[Literal]
 
-  private type Dnf = Set[Intersection]
+  private sealed trait Dnf
+
+  private object Dnf {
+    case class Union(inters: Set[Intersection]) extends Dnf
+
+    case object All extends Dnf
+  }
 
   private sealed trait Nnf
 
@@ -459,28 +465,42 @@ object SetUnification {
   }
 
   private def nnfToDnf(t: Nnf): Dnf = t match {
-    case Nnf.Union(tpe1, tpe2) => nnfToDnf(tpe1) ++ nnfToDnf(tpe2)
+    case Nnf.Union(tpe1, tpe2) => union(nnfToDnf(tpe1), nnfToDnf(tpe2))
     case Nnf.Intersection(tpe1, tpe2) => intersect(nnfToDnf(tpe1), nnfToDnf(tpe2))
-    case Nnf.Singleton(tpe) => Set(Set(tpe))
-    case Nnf.Empty => Set(Set())
-    case Nnf.All => throw InternalCompilerException("unexpected universal set") // MATT ???
+    case Nnf.Singleton(tpe) => Dnf.Union(Set(Set(tpe)))
+    case Nnf.Empty => Dnf.Union(Set(Set()))
+    case Nnf.All => Dnf.All
   }
 
   /**
     * Calculates the intersection of two DNF sets.
     */
-  private def intersect(t1: Dnf, t2: Dnf): Dnf = {
-    for {
-      inter1 <- t1
-      inter2 <- t2
-    } yield inter1 ++ inter2
+  private def intersect(t1: Dnf, t2: Dnf): Dnf = (t1, t2) match {
+    case (Dnf.All, t) => t
+    case (t, Dnf.All) => t
+    case (Dnf.Union(inters1), Dnf.Union(inters2)) =>
+      val inters = for {
+        inter1 <- inters1
+        inter2 <- inters2
+      } yield inter1 ++ inter2
+      Dnf.Union(inters)
+  }
+
+  /**
+    * Calculates the union of two DNF sets.
+    */
+  private def union(t1: Dnf, t2: Dnf): Dnf = (t1, t2) match {
+    case (Dnf.All, _) => Dnf.All
+    case (_, Dnf.All) => Dnf.All
+    case (Dnf.Union(inters1), Dnf.Union(inters2)) => Dnf.Union(inters1 ++ inters2)
   }
 
   /**
     * Returns true if the given DNF set represents an empty set.
     */
-  private def isEmpty(t1: Dnf): Boolean = {
-    t1.forall(isEmptyIntersection)
+  private def isEmpty(t1: Dnf): Boolean = t1 match {
+    case Dnf.Union(inters) => inters.forall(isEmptyIntersection)
+    case Dnf.All => false
   }
 
   /**
