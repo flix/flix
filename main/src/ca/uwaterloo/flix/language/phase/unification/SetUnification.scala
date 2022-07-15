@@ -421,9 +421,9 @@ object SetUnification {
 
   private type Dnf = Set[Intersection]
 
-  sealed trait Nnf
+  private sealed trait Nnf
 
-  object Nnf {
+  private object Nnf {
     case class Union(tpe1: Nnf, tpe2: Nnf) extends Nnf
 
     case class Intersection(tpe1: Nnf, tpe2: Nnf) extends Nnf
@@ -438,7 +438,7 @@ object SetUnification {
   private def nnf(t: Type): Nnf = t match {
     case CONSTANT(sym) => Nnf.Singleton(Literal.Positive(Atom.Eff(sym)))
     case VAR(sym) => Nnf.Singleton(Literal.Positive(Atom.Var(sym)))
-    case tpe@COMPLEMENT(_) => nnfNot(tpe)
+    case COMPLEMENT(tpe) => nnfNot(tpe)
     case UNION(tpe1, tpe2) => Nnf.Union(nnf(tpe1), nnf(tpe2))
     case INTERSECTION(tpe1, tpe2) => Nnf.Intersection(nnf(tpe1), nnf(tpe2))
     case Type.Empty => Nnf.Empty
