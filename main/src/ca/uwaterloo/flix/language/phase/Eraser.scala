@@ -28,7 +28,7 @@ object Eraser {
     val defs = root.defs.map { case (k, v) => k -> visitDef(v) }
     val enums = root.enums.map { case (k, v) => k -> visitEnum(v) }
 
-    ErasedAst.Root(defs, enums, root.entryPoint, root.reachable, root.sources).toSuccess
+    ErasedAst.Root(defs, enums, root.entryPoint, root.sources).toSuccess
   }
 
   /**
