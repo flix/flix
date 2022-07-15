@@ -244,7 +244,7 @@ object Simplifier {
         val e = visitExp(exp)
         SimplifiedAst.Expression.PutStaticField(field, e, tpe, simplifyPurity(pur), loc)
 
-      case TypedAst.Expression.NewObject(clazz, tpe, pur, eff, loc) =>
+      case TypedAst.Expression.NewObject(clazz, tpe, pur, eff, methods, loc) =>
         SimplifiedAst.Expression.NewObject(clazz, tpe, simplifyPurity(pur), loc)
 
       case TypedAst.Expression.NewChannel(exp, tpe, pur, eff, loc) =>

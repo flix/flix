@@ -368,8 +368,6 @@ object WeededAst {
 
     case class Intersection(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
-    case class Difference(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
-
     case class Read(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
     case class Write(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type

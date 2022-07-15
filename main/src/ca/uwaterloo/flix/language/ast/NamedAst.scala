@@ -378,8 +378,6 @@ object NamedAst {
 
     case class Intersection(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
-    case class Difference(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
-
     case class Read(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Write(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type

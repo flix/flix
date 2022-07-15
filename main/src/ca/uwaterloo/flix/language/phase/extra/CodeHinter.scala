@@ -259,8 +259,10 @@ object CodeHinter {
     case Expression.PutStaticField(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewObject(_, _, _, _, _) =>
-      Nil
+    case Expression.NewObject(_, _, _, _, methods, _) =>
+      methods.flatMap {
+        case JvmMethod(_, _, exp, _, _, _, _) => visitExp(exp)
+      }
 
     case Expression.NewChannel(exp, _, _, _, _) =>
       visitExp(exp)

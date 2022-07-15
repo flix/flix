@@ -692,22 +692,24 @@ object Weeder {
       // Rewrites a foreach loop to Iterator.foreach call.
       //
 
-      val fqn = "Iterator.foreach"
+      val fqnForEach = "Iterator.foreach"
+      val fqnIterator = "Iterable.iterator"
 
       foldRight(frags)(visitExp(exp, senv)) {
-        case (ParsedAst.ForEachFragment.ForEach(sp11, pat, e1, sp12), e0) =>
-          mapN(visitPattern(pat), visitExp(e1, senv)) {
-            case (p, e2) =>
+        case (ParsedAst.ForEachFragment.ForEach(sp11, pat, exp1, sp12), exp0) =>
+          mapN(visitPattern(pat), visitExp(exp1, senv)) {
+            case (p, e1) =>
               val loc = mkSL(sp11, sp12).asSynthetic
-              val lambda = mkLambdaMatch(sp11, p, e0, sp12)
-              val fparams = List(lambda, e2)
-              mkApplyFqn(fqn, fparams, loc)
+              val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
+              val iterable = mkApplyFqn(fqnIterator, List(e1), e1.loc)
+              val fparams = List(lambda, iterable)
+              mkApplyFqn(fqnForEach, fparams, loc)
           }
 
-        case (ParsedAst.ForEachFragment.Guard(sp11, e1, sp12), e0) =>
-          mapN(visitExp(e1, senv)) { e2 =>
+        case (ParsedAst.ForEachFragment.Guard(sp11, exp1, sp12), exp0) =>
+          mapN(visitExp(exp1, senv)) { e1 =>
             val loc = mkSL(sp11, sp12).asSynthetic
-            WeededAst.Expression.IfThenElse(e2, e0, WeededAst.Expression.Unit(loc), loc)
+            WeededAst.Expression.IfThenElse(e1, exp0, WeededAst.Expression.Unit(loc), loc)
           }
       }
 
@@ -1395,10 +1397,15 @@ object Weeder {
         case e => WeededAst.Expression.Cast(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
       }
 
-    case ParsedAst.Expression.Without(exp, eff, sp2) =>
-      val e = visitExp(exp, senv)
+    case ParsedAst.Expression.Without(exp, effs, sp2) =>
+      val loc = mkSL(leftMostSourcePosition(exp), sp2)
+      // NB: We only give the innermost expression a real location
       mapN(visitExp(exp, senv)) {
-        e => WeededAst.Expression.Without(e, eff, mkSL(leftMostSourcePosition(exp), sp2))
+        e =>
+          val base = WeededAst.Expression.Without(e, effs.head, loc)
+          effs.tail.foldLeft(base) {
+            case (acc, eff) => WeededAst.Expression.Without(acc, eff, loc.asSynthetic)
+          }
       }
 
     case ParsedAst.Expression.Do(sp1, op, args0, sp2) =>
@@ -2445,6 +2452,18 @@ object Weeder {
   }
 
   /**
+    * Constructs the type equivalent to the type (tpe1 - tpe2)
+    */
+  private def mkDifference(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation): WeededAst.Type = {
+    // (ef1 - ef2) is sugar for (ef1 && (~ef2))
+    WeededAst.Type.Intersection(
+      tpe1,
+      WeededAst.Type.Complement(tpe2, loc),
+      loc
+    )
+  }
+
+  /**
     * Weeds the given parsed optional purity and effect `purAndEff`.
     */
   private def visitPurityAndEffect(purAndEff: ParsedAst.PurityAndEffect): WeededAst.PurityAndEffect = purAndEff match {
@@ -2515,7 +2534,7 @@ object Weeder {
           case (acc, innerEff0) =>
             val innerEff = visitSingleEffect(innerEff0)
             val innerLoc = mkSL(leftSp, rightMostSourcePosition(innerEff0))
-            WeededAst.Type.Difference(acc, innerEff, innerLoc)
+            mkDifference(acc, innerEff, innerLoc)
         }
     }
   }

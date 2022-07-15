@@ -1395,11 +1395,6 @@ object Namer {
         case (t1, t2) => NamedAst.Type.Intersection(t1, t2, loc)
       }
 
-    case WeededAst.Type.Difference(tpe1, tpe2, loc) =>
-      mapN(visitType(tpe1, uenv0, tenv0), visitType(tpe2, uenv0, tenv0)) {
-        case (t1, t2) => NamedAst.Type.Difference(t1, t2, loc)
-      }
-
     case WeededAst.Type.Read(tpe, loc) =>
       mapN(visitType(tpe, uenv0, tenv0)) {
         case t => NamedAst.Type.Read(t, loc)
@@ -1627,7 +1622,6 @@ object Namer {
     case WeededAst.Type.Complement(tpe, loc) => freeVars(tpe)
     case WeededAst.Type.Union(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.Intersection(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
-    case WeededAst.Type.Difference(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.Read(tpe, loc) => freeVars(tpe)
     case WeededAst.Type.Write(tpe, loc) => freeVars(tpe)
     case WeededAst.Type.Set(_, _) => ??? // TODO handle
@@ -1664,7 +1658,6 @@ object Namer {
       case WeededAst.Type.Complement(tpe, loc) => visit(tpe)
       case WeededAst.Type.Union(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
       case WeededAst.Type.Intersection(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
-      case WeededAst.Type.Difference(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
       case WeededAst.Type.Read(tpe, loc) => visit(tpe)
       case WeededAst.Type.Write(tpe, loc) => visit(tpe)
       case WeededAst.Type.Set(_, _) => ??? // TODO handle

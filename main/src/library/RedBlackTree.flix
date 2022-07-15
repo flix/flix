@@ -1058,4 +1058,48 @@ namespace RedBlackTree {
             case None    => acc
         };
         foldLeft(step, empty(), t)
+
+    ///
+    /// Returns an iterator over `t`.
+    ///
+    pub def iterator(r: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), r] \ { Write(r) } =
+        let stack1 = leftmost(t, Nil);
+        let state = ref stack1 @ r;
+        let done = () -> match (deref state) {
+            case Nil => true
+            case _   => false
+        };
+        let next = () -> match (deref state) {
+            case Nil                 => bug!("Empty Iterator!")
+            case (k, v, rtree) :: es => {
+                state := leftmost(rtree, es);
+                (k, v)
+            }
+        };
+        Iterator(done, next)
+
+    ///
+    /// This represents pending items `(key, value, right-tree)` encountered while finding the
+    /// leftmost node in a tree to start iterating from.
+    ///
+    type alias IterStack2[k, v] = List[(k, v, RedBlackTree[k,v])]
+
+    ///
+    /// Helper function for `iterator`.
+    /// This is called before iteration starts to find the leftmost node of
+    /// the tree and build a stack of pending items. As the iterator is run it will
+    /// call `leftmost` on pending "right trees" in the stack.
+    ///
+    def leftmost(t: RedBlackTree[k, v], es: IterStack2[k, v]): IterStack2[k, v] = match t {
+        case Leaf                        => es
+        case DoubleBlackLeaf             => es
+        case Node(_, ltree, k, v, rtree) => leftmost(ltree, (k, v, rtree) :: es)
+    }
+
+    ///
+    /// Returns an enumerator over `l` zipped with the indices of the elements.
+    ///
+    pub def enumerator(r: Region[r], t: RedBlackTree[k, v]): Iterator[((k, v), Int32), r] \ { Write(r) } =
+        iterator(r, t) |> Iterator.enumerator
+
 }

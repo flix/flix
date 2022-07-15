@@ -286,6 +286,20 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedVar](result)
   }
 
+  test("ShadowedVar.NewObject.01") {
+    val input =
+      """
+        |def f(): ##java.lang.Comparable & Impure =
+        |   object ##java.lang.Comparable {
+        |     def compareTo(x: ##java.lang.Object, _y: ##java.lang.Object): Int32 =
+        |       let x = 0;
+        |       x
+        |   }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
   test("UnusedEnumSym.01") {
     val input =
       s"""
@@ -447,6 +461,19 @@ class TestRedundancy extends FunSuite with TestUtils {
          |  f(1, 2, 3)
          |
        """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedFormalParam](result)
+  }
+
+  test("UnusedFormalParam.NewObject.01") {
+    val input =
+      """
+        |def f(): ##java.lang.Comparable & Impure =
+        |   object ##java.lang.Comparable {
+        |     def compareTo(x: ##java.lang.Object, _y: ##java.lang.Object): Int32 =
+        |       0
+        |   }
+        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.UnusedFormalParam](result)
   }

@@ -340,8 +340,11 @@ object Indexer {
     case Expression.PutStaticField(_, exp, _, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.NewObject(_, _, _, _, _) =>
-      Index.occurrenceOf(exp0)
+    case Expression.NewObject(_, _, _, _, methods, _) =>
+      Index.occurrenceOf(exp0) ++ traverse(methods) {
+        case JvmMethod(_, fparams, exp, tpe, eff, pur, _) =>
+          Index.traverse(fparams)(visitFormalParam) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff) ++ visitType(pur)
+      }
 
     case Expression.NewChannel(exp, _, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
@@ -495,8 +498,8 @@ object Indexer {
         Index.empty
       case TypeConstructor.RecordRowExtend(field) => Index.occurrenceOf(tpe0) ++ Index.useOf(field)
       case TypeConstructor.SchemaRowExtend(pred) => Index.occurrenceOf(tpe0) ++ Index.useOf(pred)
-      case TypeConstructor.KindedEnum(sym, _) => Index.useOf(sym, loc)
-      case TypeConstructor.Effect(sym) => Index.useOf(sym, loc)
+      case TypeConstructor.KindedEnum(sym, _) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc)
+      case TypeConstructor.Effect(sym) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc)
       case _ => Index.occurrenceOf(tpe0)
     }
     case Type.Apply(tpe1, tpe2, _) => visitType(tpe1) ++ visitType(tpe2)
