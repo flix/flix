@@ -221,9 +221,6 @@ object Typer {
       // Compute the stale and fresh definitions.
       val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
 
-      // println(s"Stale = ${staleDefs.keySet}")
-      // println(s"Fresh = ${freshDefs.keySet.size}")
-
       // Process the stale defs in parallel.
       val results = ParOps.parMap(staleDefs.values)(visitDefn(_, Nil, root, classEnv))
 
@@ -1298,6 +1295,14 @@ object Typer {
           resultEff = declaredEff.getOrElse(actualEff)
         } yield (constrs, resultTyp, resultPur, resultEff)
 
+      case KindedAst.Expression.Upcast(exp, _, _, _, loc) =>
+        for {
+          (constrs, _, _, _) <- visitExp(exp)
+          resultTyp = Type.freshVar(Kind.Star, loc, text = FallbackText("tpe"))
+          resultPur = Type.freshVar(Kind.Bool, loc, text = FallbackText("pur"))
+          resultEff = Type.freshVar(Kind.Effect, loc, text = FallbackText("eff"))
+        } yield (constrs, resultTyp, resultPur, resultEff)
+
       case KindedAst.Expression.Without(exp, effUse, loc) =>
         val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
         val expected = Type.mkDifference(Type.freshVar(Kind.Effect, loc), effType, loc)
@@ -2047,6 +2052,13 @@ object Typer {
         val pur = declaredPur.getOrElse(e.pur)
         val eff = declaredEff.getOrElse(e.eff)
         TypedAst.Expression.Cast(e, dt, dp, de, tpe, pur, eff, loc)
+
+      case KindedAst.Expression.Upcast(exp, tvar, pvar, evar, loc) =>
+        val e = visitExp(exp, subst0)
+        val tpe = subst0(tvar)
+        val pur = subst0(pvar)
+        val eff = subst0(evar)
+        TypedAst.Expression.Upcast(e, tpe, pur, eff, loc)
 
       case KindedAst.Expression.Without(exp, effUse, loc) =>
         val e = visitExp(exp, subst0)
