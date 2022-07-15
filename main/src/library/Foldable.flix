@@ -196,6 +196,12 @@ pub class Foldable[t : Type -> Type] {
         Foldable.foldRight((x, acc) -> Chain.cons(x, acc), Chain.empty(), t)
 
     ///
+    /// Returns `t` as a `DelayList`.
+    ///
+    pub def toDelayList(t: t[a]): DelayList[a] =
+        Foldable.foldRight((x, acc) -> ECons(x, acc), ENil, t)
+
+    ///
     /// Returns `t` as an immutable list.
     ///
     pub def toList(t: t[a]): List[a] =
@@ -274,7 +280,13 @@ pub class Foldable[t : Type -> Type] {
         Foldable.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), s)
 
     ///
-    /// Returns the set `s` as a `MutMap`.
+    /// Returns `t` as a `DelayMap`
+    ///
+    pub def toDelayMap(t: t[(k, v)]): DelayMap[k, v] with Order[k] =
+        Foldable.foldRight((x, acc) -> let (k, v) = x; DelayMap.insert(k, v, acc), DelayMap.empty(), t)
+
+    ///
+    /// Returns `t` as a `MutMap`.
     ///
     pub def toMutMap(r: Region[r], t: t[(k, v)]): MutMap[k, v, r] \ Write(r) with Order[k] =
         let m = new MutMap(r);
