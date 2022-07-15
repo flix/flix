@@ -294,6 +294,14 @@ pub class Foldable[t : Type -> Type] {
         m
 
     ///
+    /// Optionally returns `t` as a non empty chain.
+    ///
+    pub def toNec(t: t[a]): Option[Nec[a]] with Foldable[t] =
+        use Option.flatMap;
+        let* el = Foldable.last(t);
+        Some(Foldable.foldRight((x, acc) -> Nec.cons(x, acc), Nec.singleton(el), t))
+
+    ///
     /// Returns `t` without the longest prefix that satisfies the predicate `f`.
     ///
     /// Returns an immutable list.
