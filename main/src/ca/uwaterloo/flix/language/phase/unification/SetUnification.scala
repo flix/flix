@@ -460,40 +460,6 @@ object SetUnification {
     case _ => throw InternalCompilerException(s"unexpected type: $t")
   }
 
-  //  /**
-  //    * Converts the given type to NNF.
-  //    */
-  //  private def nnf(t: Type): Type = t match {
-  //    case tpe@CONSTANT(_) => tpe
-  //    case tpe@VAR(_) => tpe
-  //    case tpe@COMPLEMENT(_) => nnfNot(tpe)
-  //    case UNION(tpe1, tpe2) => mkUnion(nnf(tpe1), nnf(tpe2))
-  //    case INTERSECTION(tpe1, tpe2) => mkIntersection(nnf(tpe1), nnf(tpe2))
-  //    case Type.Empty => Type.Empty
-  //    case Type.All => Type.All
-  //    case _ => throw InternalCompilerException(s"unexpected type: $t")
-  //  }
-
-  //  /**
-  //    * Converts the given type to NNF.
-  //    *
-  //    * The type must be of the form ~X.
-  //    */
-  //  private def nnfNot(t: Type): Type = t match {
-  //    case tpe@COMPLEMENT(CONSTANT(_)) => tpe
-  //    case tpe@COMPLEMENT(VAR(_)) => tpe
-  //    case COMPLEMENT(COMPLEMENT(tpe)) => nnf(tpe)
-  //    case COMPLEMENT(UNION(tpe1, tpe2)) => mkIntersection(
-  //      nnf(mkComplement(tpe1)),
-  //      nnf(mkComplement(tpe2))
-  //    )
-  //    case COMPLEMENT(INTERSECTION(tpe1, tpe2)) => mkUnion(
-  //      nnf(mkComplement(tpe1)),
-  //      nnf(mkComplement(tpe2))
-  //    )
-  //    case _ => throw InternalCompilerException(s"unexpected type: $t")
-  //  }
-
   private def nnfToDnf(t: Nnf): Dnf = t match {
     case Nnf.Union(tpe1, tpe2) => nnfToDnf(tpe1) ++ nnfToDnf(tpe2)
     case Nnf.Intersection(tpe1, tpe2) => intersect(nnfToDnf(tpe1), nnfToDnf(tpe2))
@@ -501,20 +467,6 @@ object SetUnification {
     case Nnf.Empty => Set(Set())
     case Nnf.All => throw InternalCompilerException("unexpected universal set") // MATT ???
   }
-
-  //  /**
-  //    * Converts the given type in NNF to DNF.
-  //    */
-  //  private def dnf(t: Type): Dnf = t match {
-  //    case Type.Empty => Set(Set())
-  //    case VAR(sym) => Set(Set(Literal.Positive(Atom.Var(sym))))
-  //    case CONSTANT(sym) => Set(Set(Literal.Positive(Atom.Eff(sym))))
-  //    case COMPLEMENT(VAR(sym)) => Set(Set(Literal.Negative(Atom.Var(sym))))
-  //    case COMPLEMENT(CONSTANT(sym)) => Set(Set(Literal.Negative(Atom.Eff(sym))))
-  //    case UNION(tpe1, tpe2) => dnf(tpe1) ++ dnf(tpe2)
-  //    case INTERSECTION(tpe1, tpe2) => intersect(dnf(tpe1), dnf(tpe2))
-  //    case _ => throw InternalCompilerException(s"unexpected type: $t")
-  //  }
 
   /**
     * Calculates the intersection of two DNF sets.
