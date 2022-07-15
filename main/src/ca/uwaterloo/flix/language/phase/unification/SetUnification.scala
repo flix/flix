@@ -399,27 +399,30 @@ object SetUnification {
     }
   }
 
-  sealed trait Atom
+  private sealed trait Atom
 
-  object Atom {
+  private object Atom {
     case class Var(sym: Symbol.KindedTypeVarSym) extends Atom
 
     case class Eff(sym: Symbol.EffectSym) extends Atom
   }
 
-  sealed trait Literal
+  private sealed trait Literal
 
-  object Literal {
+  private object Literal {
     case class Positive(atom: Atom) extends Literal
 
     case class Negative(atom: Atom) extends Literal
   }
 
-  type Intersection = Set[Literal]
+  private type Intersection = Set[Literal]
 
-  type Dnf = Set[Intersection]
+  private type Dnf = Set[Intersection]
 
-  def nnf(t: Type): Type = t match {
+  /**
+    * Converts the given type to NNF.
+    */
+  private def nnf(t: Type): Type = t match {
     case tpe@CONSTANT(_) => tpe
     case tpe@VAR(_) => tpe
     case tpe@COMPLEMENT(_) => nnfNot(tpe)
@@ -430,7 +433,12 @@ object SetUnification {
     case _ => throw InternalCompilerException(s"unexpected type: $t")
   }
 
-  def nnfNot(t: Type): Type = t match {
+  /**
+    * Converts the given type to NNF.
+    *
+    * The type must be of the form ~X.
+    */
+  private def nnfNot(t: Type): Type = t match {
     case tpe@COMPLEMENT(CONSTANT(_)) => tpe
     case tpe@COMPLEMENT(VAR(_)) => tpe
     case COMPLEMENT(COMPLEMENT(tpe)) => nnf(tpe)
@@ -445,38 +453,50 @@ object SetUnification {
     case _ => throw InternalCompilerException(s"unexpected type: $t")
   }
 
-  def dnf(t: Type): Dnf = t match {
+  /**
+    * Converts the given type in NNF to DNF.
+    */
+  private def dnf(t: Type): Dnf = t match {
     case Type.Empty => Set(Set())
     case VAR(sym) => Set(Set(Literal.Positive(Atom.Var(sym))))
     case CONSTANT(sym) => Set(Set(Literal.Positive(Atom.Eff(sym))))
     case COMPLEMENT(VAR(sym)) => Set(Set(Literal.Negative(Atom.Var(sym))))
     case COMPLEMENT(CONSTANT(sym)) => Set(Set(Literal.Negative(Atom.Eff(sym))))
     case UNION(tpe1, tpe2) => dnf(tpe1) ++ dnf(tpe2)
-    case INTERSECTION(tpe1, tpe2) =>
-      //      println(s"Intersect ($tpe1, $tpe2) is: ${dnfToString(intersect(dnf(tpe1), dnf(tpe2)))}")
-      intersect(dnf(tpe1), dnf(tpe2))
+    case INTERSECTION(tpe1, tpe2) => intersect(dnf(tpe1), dnf(tpe2))
     case _ => throw InternalCompilerException(s"unexpected type: $t")
   }
 
-  def intersect(t1: Dnf, t2: Dnf): Dnf = {
+  /**
+    * Calculates the intersection of two DNF sets.
+    */
+  private def intersect(t1: Dnf, t2: Dnf): Dnf = {
     for {
       inter1 <- t1
       inter2 <- t2
     } yield inter1 ++ inter2
   }
 
-  def isEmpty(t1: Dnf): Boolean = {
+  /**
+    * Returns true if the given DNF set represents an empty set.
+    */
+  private def isEmpty(t1: Dnf): Boolean = {
     t1.forall(isEmptyIntersection)
   }
 
-  def isEmptyIntersection(t1: Intersection): Boolean = { // right?
+  /**
+    * Returns true if `t1` represents an empty intersection of effects.
+    */
+  private def isEmptyIntersection(t1: Intersection): Boolean = {
     val pos = t1.collect {
       case Literal.Positive(atom) => atom
     }
     val neg = t1.collect {
       case Literal.Negative(atom) => atom
     }
-    // an intersection is empty if:
+
+    // an intersection is empty if any of the following is true:
+
     // 1. It is syntactically empty
     val synEmpty = t1.isEmpty
 
@@ -491,7 +511,10 @@ object SetUnification {
     synEmpty || diffConst || negation
   }
 
-  def dnfToString(d: Dnf): String = {
+  /**
+    * Debugging utility to convert the given DNF to a string.
+    */
+  private def dnfToString(d: Dnf): String = {
     //    d.map(i => i.mkString("(", " and ", ")")).mkString(" or ")
     "union of: " + d.map(set => "intersection of " + set.mkString("{", ", ", "}")).mkString("{\n", ", \n", "\n}")
   }
