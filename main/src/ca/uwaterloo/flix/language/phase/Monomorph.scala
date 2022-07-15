@@ -489,6 +489,9 @@ object Monomorph {
         val e = visitExp(exp, env0)
         Expression.Cast(e, None, None, None, subst0(tpe), pur, eff, loc)
 
+      case Expression.Upcast(exp, tpe, pur, eff, loc) =>
+        Expression.Upcast(visitExp(exp, env0), tpe, pur, eff, loc)
+
       case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
         // Erase the Without
         visitExp(exp, env0)
