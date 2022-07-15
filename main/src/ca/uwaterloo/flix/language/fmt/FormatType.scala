@@ -94,7 +94,6 @@ object FormatType {
       case SimpleType.Complement(_) => false
       case SimpleType.Intersection(_) => false
       case SimpleType.Difference(_, _) => false
-      case SimpleType.Union(_) => false
       case SimpleType.PureArrow(_, _) => false
       case SimpleType.PolyEffArrow(_, _, _) => false
       case SimpleType.PolyPurArrow(_, _, _) => false
@@ -143,6 +142,7 @@ object FormatType {
       case SimpleType.Apply(_, _) => true
       case SimpleType.Var(_, _, _, _) => true
       case SimpleType.Tuple(_) => true
+      case SimpleType.Union(_) => true
     }
 
     /**
@@ -225,14 +225,14 @@ object FormatType {
       case SimpleType.Or(tpes) =>
         val strings = tpes.map(delimit(_, mode))
         strings.mkString(" or ")
-      case SimpleType.Complement(tpe) => s"not ${delimit(tpe, mode)}" // MATT hacking
+      case SimpleType.Complement(tpe) => s"~${delimit(tpe, mode)}"
       case SimpleType.Union(tpes) =>
-        val strings = tpes.map(delimit(_, mode))
-        strings.mkString(" or ") // MATT hacking
+        val strings = tpes.map(visit(_, mode))
+        strings.mkString("{", ", ", "}")
       case SimpleType.Intersection(tpes) =>
         val strings = tpes.map(delimit(_, mode))
-        strings.mkString(" and ") // MATT hacking
-      case SimpleType.Difference(tpe1, tpe2) => s"${delimit(tpe1, mode)} and (not ${delimit(tpe2, mode)})" // MATT hacking
+        strings.mkString(" & ")
+      case SimpleType.Difference(tpe1, tpe2) => s"${delimit(tpe1, mode)} - ${delimit(tpe2, mode)}"
       case SimpleType.RelationConstructor => "Relation"
       case SimpleType.Relation(tpes) =>
         val terms = tpes.map(visit(_, Mode.Type)).mkString(", ")
