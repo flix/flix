@@ -83,10 +83,13 @@ namespace MultiMap {
     ///
     pub def toString(m: MultiMap[k, v]): String with ToString[k], ToString[v] = region r {
         let sb = new StringBuilder(r);
+        let first = ref true;
         StringBuilder.appendString!("MultiMap#{", sb);
-        foreach (((k, v), i) <- MultiMap.enumerator(r, m)) {
-            if (i == 0)
+        foreach ((k, v) <- MultiMap.iterator(r, m)) {
+            if (deref first) {
+                first := false;
                 StringBuilder.appendString!("${k} => ${v}", sb)
+            }
             else
                 StringBuilder.appendString!(", ${k} => ${v}", sb)
         };
@@ -566,12 +569,5 @@ namespace MultiMap {
     pub def iterator(r: Region[r], m: MultiMap[k, v]): Iterator[(k, Set[v]), r] \ Write(r) =
         let MultiMap(m1) = m;
         Map.iterator(r, m1)
-
-    ///
-    /// Returns an iterator over key-value pairs in `m`, i.e. `k => Set#{v_1, ..., v_n}`,
-    /// zipped with the indices of the elements.
-    ///
-    pub def enumerator(r: Region[r], m: MultiMap[k, v]): Iterator[((k, Set[v]), Int32), r] \ Write(r) =
-        iterator(r, m) |> Iterator.zipWithIndex
 
 }
