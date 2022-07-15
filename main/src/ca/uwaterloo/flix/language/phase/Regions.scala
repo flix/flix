@@ -302,8 +302,10 @@ object Regions {
         case e => checkType(tpe, loc)
       }
 
-    case Expression.NewObject(_, _, _, _, _) =>
-      ().toSuccess
+    case Expression.NewObject(_, tpe, _, _, methods, loc) =>
+      flatMapN(traverse(methods)(visitJvmMethod)) {
+        case ms => checkType(tpe, loc)
+      }
 
     case Expression.NewChannel(exp, tpe, _, _, loc) =>
       flatMapN(visitExp(exp)) {
@@ -397,6 +399,13 @@ object Regions {
         case (e1, e2, e3) => checkType(tpe, loc)
       }
 
+  }
+
+  def visitJvmMethod(method: JvmMethod)(implicit scope: List[Type.KindedVar], flix: Flix): Validation[Unit, CompilationMessage] = method match {
+    case JvmMethod(_, _, exp, tpe, _, _, loc) =>
+      flatMapN(visitExp(exp)) {
+        case e => checkType(tpe, loc)
+      }
   }
 
   /**

@@ -823,4 +823,64 @@ namespace TestRedBlackTree {
         d1 `MutDeque.sameElements` d2
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // iterator                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def iterator01(): Bool = region r {
+        RedBlackTree.empty(): RedBlackTree[Int32, Int32] |> RedBlackTree.iterator(r) |> Iterator.toList == Nil
+    }
+
+    @test
+    def iterator02(): Bool = region r {
+        let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b')
+                                     |> RedBlackTree.insert(3, 'c') |> RedBlackTree.insert(4, 'd');
+        RedBlackTree.iterator(r, t) |> Iterator.toList == (1, 'a') :: (2, 'b') :: (3, 'c') :: (4, 'd') :: Nil
+    }
+
+    @test
+    def iterator03(): Bool = region r {
+        let t = RedBlackTree.empty() |> RedBlackTree.insert(4, 'd') |> RedBlackTree.insert(3, 'c')
+                                     |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(1, 'a');
+        RedBlackTree.iterator(r, t) |> Iterator.toList == (1, 'a') :: (2, 'b') :: (3, 'c') :: (4, 'd') :: Nil
+    }
+
+    @test
+    def iterator04(): Bool = region r {
+        let l = List.range(1, 100);
+        let t = List.foldLeft((ac, i) -> RedBlackTree.insert(i, i+100, ac), RedBlackTree.empty(), l);
+        RedBlackTree.iterator(r, t) |> Iterator.toList == List.map(i -> (i, i+100), List.range(1, 100))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // enumerate                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def enumerator01(): Bool = region r {
+        RedBlackTree.empty(): RedBlackTree[Int32, Int32] |> RedBlackTree.enumerator(r) |> Iterator.toList == Nil
+    }
+
+    @test
+    def enumerator02(): Bool = region r {
+        let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b')
+                                     |> RedBlackTree.insert(3, 'c') |> RedBlackTree.insert(4, 'd');
+        RedBlackTree.enumerator(r, t) |> Iterator.toList == ((1, 'a'), 0) :: ((2, 'b'), 1) :: ((3, 'c'), 2) :: ((4, 'd'), 3) :: Nil
+    }
+
+    @test
+    def enumerator03(): Bool = region r {
+        let t = RedBlackTree.empty() |> RedBlackTree.insert(4, 'd') |> RedBlackTree.insert(3, 'c')
+                                     |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(1, 'a');
+        RedBlackTree.enumerator(r, t) |> Iterator.toList == ((1, 'a'), 0) :: ((2, 'b'), 1) :: ((3, 'c'), 2) :: ((4, 'd'), 3) :: Nil
+    }
+
+    @test
+    def enumerator04(): Bool = region r {
+        let l = List.range(1, 100);
+        let t = List.foldLeft((ac, i) -> RedBlackTree.insert(i, i+100, ac), RedBlackTree.empty(), l);
+        RedBlackTree.enumerator(r, t) |> Iterator.toList == List.map(i -> ((i, i+100), i-1), List.range(1, 100))
+    }
+
 }
