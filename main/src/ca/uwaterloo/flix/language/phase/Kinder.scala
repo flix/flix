@@ -585,6 +585,11 @@ object Kinder {
           KindedAst.Expression.Cast(exp, declaredType.headOption, declaredPur, declaredEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
+    case ResolvedAst.Expression.Upcast(exp, loc) =>
+      mapN(visitExp(exp, kenv0, senv, taenv, henv0, root)) {
+        case e => KindedAst.Expression.Upcast(e, loc)
+      }
+
     case ResolvedAst.Expression.Without(exp0, eff, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       mapN(expVal) {
