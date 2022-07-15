@@ -296,18 +296,14 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Optionally returns `t` as a non empty chain.
     ///
-    pub def toNec(t: t[a]): Option[Nec[a]] with Foldable[t] =
-        use Option.flatMap;
-        let* el = Foldable.last(t);
-        Some(Foldable.foldRight((x, acc) -> Nec.cons(x, acc), Nec.singleton(el), t))
+    pub def toNec(t: t[a]): Option[Nec[a]] =
+        Foldable.toChain(t) |> Chain.toNec
 
     ///
     /// Optionally returns `t` as a non empty list.
     ///
-    pub def toNel(t: t[a]): Option[Nel[a]] with Foldable[t] =
-        use Option.flatMap;
-        let* el = Foldable.last(t);
-        Some(Foldable.foldRight((x, acc) -> Nel.cons(x, acc), Nel.singleton(el), t))
+    pub def toNel(t: t[a]): Option[Nel[a]] =
+        Foldable.toList(t) |> List.toNel
 
     ///
     /// Returns `t` without the longest prefix that satisfies the predicate `f`.

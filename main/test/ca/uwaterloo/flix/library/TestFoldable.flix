@@ -428,7 +428,7 @@ namespace TestFoldable {
         Foldable.toNec(Nil: List[Int32]) == None
 
     @test
-    def toNec02(): Bool =
+    def toNec02(): Bool & Impure =
         Foldable.toNec(1 :: 2 :: Nil) == Some(Nec.cons(1, Nec.singleton(2)))
 
     @test
