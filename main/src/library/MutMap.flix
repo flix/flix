@@ -586,14 +586,6 @@ namespace MutMap {
         Map.iterator(r, deref mm)
 
     ///
-    /// Returns an iterator over key-value pairs in `m` zipped with the indices of the elements.
-    ///
-    pub def enumerator(m: MutMap[k, v, r]): Iterator[((k, v), Int32), r] \ Write(r) =
-        let MutMap(mm) = m;
-        let r = Scoped.regionOf(m);
-        Map.enumerator(r, deref mm)
-
-    ///
     /// Returns an iterator over values in `m`.
     ///
     pub def iteratorKeys(m: MutMap[k, v, r]): Iterator[k, r] \ Write(r) =

@@ -954,12 +954,6 @@ namespace Map {
         RedBlackTree.iterator(r, t)
 
     ///
-    /// Returns an iterator over key-value pairs in `m` zipped with the indices of the elements.
-    ///
-    pub def enumerator(r: Region[r], m: Map[k, v]): Iterator[((k, v), Int32), r] \ Write(r) =
-        iterator(r, m) |> Iterator.zipWithIndex
-
-    ///
     /// Returns an iterator over values in `m`.
     ///
     pub def iteratorKeys(r: Region[r], m: Map[k, v]): Iterator[k, r] \ Write(r) =

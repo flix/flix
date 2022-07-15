@@ -2465,27 +2465,6 @@ def query18(): Bool =
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // enumerate                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def enumerate01(): Bool = region r {
-        let z = ref Nil @ r;
-        let m = Map#{};
-        foreach (((k, v), i) <- Map.enumerator(r, m)) z := (k, v, i) :: deref z;
-        List.sortBy(match (k, _, _) -> k, deref z) == Nil: List[(Int32, Int32, Int32)]
-    }
-
-    @test
-    def enumerate02(): Bool = region r {
-        let z = ref Nil @ r;
-        let m = Map#{2 => 1, 3 => 2, 4 => 3};
-        foreach (((k, v), i) <- Map.enumerator(r, m)) z := (k, v, i) :: deref z;
-        List.sortBy(match (k, _, _) -> k, deref z) == (2, 1, 0) :: (3, 2, 1) :: (4, 3, 2) :: Nil
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // iteratorKeys                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
