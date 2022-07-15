@@ -71,7 +71,7 @@ object Unification {
     (tpe1, tpe2) match {
 
       // don't try to unify effects if the flag is off
-      case (x, y) if x.kind == Kind.Effect && y.kind == Kind.Effect && flix.options.xeffects => Ok(Substitution.empty) // MATT !!!
+      case (x, y) if x.kind == Kind.Effect && y.kind == Kind.Effect && !flix.options.xeffects => Ok(Substitution.empty)
 
       case (x: Type.Var, y: Type.Var) => unifyVars(x.asKinded, y.asKinded, renv)
 
