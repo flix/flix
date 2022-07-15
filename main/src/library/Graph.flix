@@ -75,7 +75,7 @@ namespace Graph {
     ///
     /// Returns the strongly connected components of the directed graph `g`.
     ///
-    pub def stronglyConnectedComponents(g: m[(t, t)]): List[Set[t]] with Foldable[m], Boxable[t] =
+    pub def stronglyConnectedComponents(g: m[(t, t)]): Set[Set[t]] with Foldable[m], Boxable[t] =
         let edges = inject g into Edge;
         let connected = #{
             // If `n1` can reach `n2` and `n2` can reach `n1`
@@ -87,6 +87,6 @@ namespace Graph {
             // by checking `n` is the minimum in the strongly connected component.
             Components(s) :- fix Connected(n; s), if Some(n) == Set.minimum(s).
         };
-        query edges, nodes(), reachability(), connected, components select x from Components(x)
+        query edges, nodes(), reachability(), connected, components select x from Components(x) |> List.toSet
 
 }
