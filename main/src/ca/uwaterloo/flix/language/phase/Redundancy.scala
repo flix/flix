@@ -917,8 +917,7 @@ object Redundancy {
       !decl.spec.mod.isPublic &&
       !isMain(decl.sym) &&
       !decl.sym.name.startsWith("_") &&
-      !used.defSyms.contains(decl.sym) &&
-      !root.reachable.contains(decl.sym)
+      !used.defSyms.contains(decl.sym)
 
   /**
     * Returns `true` if the given symbol `sym` either is `main` or is an entry point.
