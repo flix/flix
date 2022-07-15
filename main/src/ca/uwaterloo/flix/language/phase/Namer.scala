@@ -873,6 +873,11 @@ object Namer {
         case (e, t, f) => NamedAst.Expression.Cast(e, t, f, loc)
       }
 
+    case WeededAst.Expression.Upcast(exp, loc) =>
+      mapN(visitExp(exp, env0, uenv0, tenv0)) {
+        case e => NamedAst.Expression.Upcast(e, loc)
+      }
+
     case WeededAst.Expression.Without(exp, eff, loc) =>
       val expVal = visitExp(exp, env0, uenv0, tenv0)
       val f = getClassOrEffect(eff, uenv0)
