@@ -366,19 +366,19 @@ namespace TestFoldable {
     @test
     def toDelayMap01(): Bool =
         let l = Nil: List[(Int32, Int32)];
-        let d1 = toDelayMap(List.toChain(l));
+        let d1 = Foldable.toDelayMap(List.toChain(l));
         (d1 |> DelayMap.toList) == l
 
     @test
     def toDelayMap02(): Bool =
         let l = (1, 2) :: (2, 3) :: (3, 4) :: Nil;
-        let d1 = toDelayMap(List.toChain(l));
+        let d1 = Foldable.toDelayMap(List.toChain(l));
         (d1 |> DelayMap.toList) == l
 
     @test
     def toDelayMap03(): Bool =
         let s = Set#{(0, 2), (1, 4), (2, 6), (3, 8), (4, 10)};
-        let d1 = toDelayMap(s);
+        let d1 = Foldable.toDelayMap(s);
         (d1 |> DelayMap.toSet) == s
 
 
