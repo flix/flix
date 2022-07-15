@@ -202,7 +202,7 @@ namespace Result {
     ///
     @Time(time(f)) @Space(space(f))
     pub def foldRightWithCont(f: (t, Unit -> a & ef) -> a & ef, z: a, r: Result[t, e]): a & ef = match r {
-        case Ok(v)  => f(v, _ -> z as & ef)
+        case Ok(v)  => f(v, upcast(_ -> z))
         case Err(_) => z
     }
 
@@ -282,7 +282,7 @@ namespace Result {
                 case Err(e) => Err(e)
             })
         };
-        loop(l, s1 -> Ok(s1) as & ef)
+        loop(l, upcast(s1 -> Ok(s1)))
 
     ///
     /// Returns a one-element list of the value `v` if `r` is `Ok(v)`. Otherwise returns the empty list.

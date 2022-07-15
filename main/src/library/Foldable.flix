@@ -327,7 +327,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     pub def foldLeftM(f: (b, a) -> m[b] & ef, s: b, t: t[a]): m[b] & ef with Monad[m] =
         let f1 = (x, acc) -> z -> Monad.flatMap(acc, f(z, x));
-        s |> Foldable.foldRight(f1, x1 -> Applicative.point(x1) as & ef, t)
+        s |> Foldable.foldRight(f1, upcast(x1 -> Applicative.point(x1)), t)
 
     ///
     /// A monadic version of `foldRight`.
@@ -337,7 +337,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     pub def foldRightM(f: (a, b) -> m[b] & ef, s: b, t: t[a]): m[b] & ef with Monad[m] =
         let f1 = (k, x) -> z -> Monad.flatMap(k, f(x, z));
-        s |> Foldable.foldLeft(f1, x1 -> Applicative.point(x1) as & ef, t)
+        s |> Foldable.foldLeft(f1, upcast(x1 -> Applicative.point(x1)), t)
 
     ///
     /// A monadic version of `foreach`.
