@@ -844,7 +844,7 @@ object SemanticOperatorOps {
 
     case SemanticOperator.Int8Op.Rem | SemanticOperator.Int16Op.Rem | SemanticOperator.Int16Op.Rem
          | SemanticOperator.Int32Op.Rem | SemanticOperator.Int64Op.Rem
-         | SemanticOperator.BigIntOp.Rem => BinaryOperator.Modulo
+         | SemanticOperator.BigIntOp.Rem => BinaryOperator.Remainder
 
     case SemanticOperator.Float32Op.Exp | SemanticOperator.Float64Op.Exp | SemanticOperator.Int8Op.Exp
          | SemanticOperator.Int16Op.Exp | SemanticOperator.Int16Op.Exp | SemanticOperator.Int32Op.Exp
