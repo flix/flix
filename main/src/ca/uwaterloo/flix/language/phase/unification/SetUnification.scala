@@ -124,13 +124,8 @@ object SetUnification {
     */
   private def successiveVariableElimination(f: Type, fvs: List[Type.KindedVar])(implicit flix: Flix): Substitution = fvs match {
     case Nil =>
-      // Determine if f is unsatisfiable when all (rigid) variables and constants are made flexible.
-      val n = nnf(f)
-      val d = nnfToDnf(n)
-      //      println(s"init: $f")
-      //      println(s" nnf: $n")
-      //      println(s" dnf: ${dnfToString(d)}")
-      if (isEmpty(d))
+      // Determine if f is necessarily empty when all (rigid) variables and constants are made flexible.
+      if (isEmpty(dnf(f)))
         Substitution.empty
       else
         throw SetUnificationException
@@ -399,6 +394,9 @@ object SetUnification {
     }
   }
 
+  /**
+    * An atom is a constant or a variable.
+    */
   private sealed trait Atom
 
   private object Atom {
@@ -407,6 +405,9 @@ object SetUnification {
     case class Eff(sym: Symbol.EffectSym) extends Atom
   }
 
+  /**
+    * A literal is a negated or un-negated atom.
+    */
   private sealed trait Literal
 
   private object Literal {
@@ -415,16 +416,27 @@ object SetUnification {
     case class Negative(atom: Atom) extends Literal
   }
 
+  /**
+    * A DNF intersection is a set of literals.
+    */
   private type Intersection = Set[Literal]
 
+  /**
+    * A DNF formula is either:
+    * - a union of intersections of literals.
+    * - the universal set
+    */
   private sealed trait Dnf
 
   private object Dnf {
-    case class Union(inters: Set[Intersection]) extends Dnf
+    case class Union(inters: Set[Intersection]) extends Dnf // TODO should be a list to avoid extra comparisons?
 
     case object All extends Dnf
   }
 
+  /**
+    * An NNF formula is a formula where all negations are on atoms.
+    */
   private sealed trait Nnf
 
   private object Nnf {
@@ -439,6 +451,14 @@ object SetUnification {
     case object All extends Nnf
   }
 
+  /**
+    * Converts the given type to DNF
+    */
+  private def dnf(t: Type): Dnf = nnfToDnf(nnf(t))
+
+  /**
+    * Converts the given type to NNF.
+    */
   private def nnf(t: Type): Nnf = t match {
     case CONSTANT(sym) => Nnf.Singleton(Literal.Positive(Atom.Eff(sym)))
     case VAR(sym) => Nnf.Singleton(Literal.Positive(Atom.Var(sym)))
@@ -450,6 +470,9 @@ object SetUnification {
     case _ => throw InternalCompilerException(s"unexpected type: $t")
   }
 
+  /**
+    * Converts the complement of the given type to NNF.
+    */
   private def nnfNot(t: Type): Nnf = t match {
     case CONSTANT(sym) => Nnf.Singleton(Literal.Negative(Atom.Eff(sym)))
     case VAR(sym) => Nnf.Singleton(Literal.Negative(Atom.Var(sym)))
@@ -465,6 +488,9 @@ object SetUnification {
     case _ => throw InternalCompilerException(s"unexpected type: $t")
   }
 
+  /**
+    * Converts the given type from NNF to DNF.
+    */
   private def nnfToDnf(t: Nnf): Dnf = t match {
     case Nnf.Union(tpe1, tpe2) => union(nnfToDnf(tpe1), nnfToDnf(tpe2))
     case Nnf.Intersection(tpe1, tpe2) => intersect(nnfToDnf(tpe1), nnfToDnf(tpe2))
