@@ -232,7 +232,7 @@ namespace TestFile {
     @test
     def testReadBytesWith03(): Bool & Impure =
         match readBytesWith({offset = 10i64, count = 4}, "./LICENSE.md") {
-            case Ok(v) => v `Array.sameElements` [101, 110, 115, 101]
+            case Ok(v) => v `Array.sameElements` [101i8, 110i8, 115i8, 101i8]
             case _ => false
         }
 
