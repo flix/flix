@@ -536,7 +536,6 @@ object Redundancy {
 
     case Expression.Cast(exp, _, declaredPur, declaredEff, _, _, _, loc) =>
       (declaredPur, declaredEff) match {
-        case (None, None) => visitExp(exp, env0, rc)
         // Don't capture redundant purity casts if there's also a set effect
         case (Some(pur), eff) if eff.forall(_ == Type.Empty) =>
           (pur, exp.pur) match {
@@ -546,6 +545,7 @@ object Redundancy {
               visitExp(exp, env0, rc) + RedundantEffectCast(loc)
             case _ => visitExp(exp, env0, rc)
           }
+        case _ => visitExp(exp, env0, rc)
       }
 
     case Expression.Without(exp, _, _, _, _, _) =>
