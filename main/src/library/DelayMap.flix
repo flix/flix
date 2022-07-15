@@ -55,11 +55,15 @@ namespace DelayMap {
     pub def toString(m: DelayMap[k, v]): String with ToString[k], ToString[v] = region r {
         let sb = new StringBuilder(r);
         let _ = parallelForce(m);
+        let first = ref true;
         StringBuilder.appendString!("DelayMap#{", sb);
-        foreach (((k, v), i) <- DelayMap.enumerator(r, m)) {
-            if (i == 0) StringBuilder.appendString!("${k} => ${v}", sb)
-                else
-            StringBuilder.appendString!(", ${k} => ${v}", sb)
+        foreach ((k, v) <- DelayMap.iterator(r, m)) {
+            if (deref first) {
+                first := false;
+                StringBuilder.appendString!("${k} => ${v}", sb)
+            }
+            else
+                StringBuilder.appendString!(", ${k} => ${v}", sb)
         };
         StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)
@@ -793,12 +797,6 @@ namespace DelayMap {
     pub def iterator(r: Region[r], m: DelayMap[a, b]): Iterator[(a, b), r] \ Write(r) =
         let DMap(t) = m;
         RedBlackTree.iterator(r, t) |> Iterator.mapL(match (k, v) -> (k, force v))
-
-    ///
-    /// Returns an iterator over key-value pairs of `m` zipped with the indices of the elements.
-    ///
-    pub def enumerator(r: Region[r], m: DelayMap[k, v]): Iterator[((k, v), Int32), r] \ Write(r) =
-        iterator(r, m) |> Iterator.zipWithIndex
 
     ///
     /// Returns the map `m` as a MutDeque of key-value pairs.
