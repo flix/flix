@@ -425,15 +425,32 @@ namespace TestFoldable {
 
     @test
     def toNec01(): Bool =
-        toNec(Nil: List[Int32]) == None
+        Foldable.toNec(Nil: List[Int32]) == None
 
     @test
     def toNec02(): Bool =
-        toNec(1 :: 2 :: Nil) == Some(Nec.cons(1, Nec.singleton(2)))
+        Foldable.toNec(1 :: 2 :: Nil) == Some(Nec.cons(1, Nec.singleton(2)))
 
     @test
     def toNec03(): Bool =
-        toNec(Set#{0, 1, 2, 3, 4}) == List.toNec(0 :: 1 :: 2 :: 3 :: 4 :: Nil)
+        Foldable.toNec(Set#{0, 1, 2, 3, 4}) == List.toNec(0 :: 1 :: 2 :: 3 :: 4 :: Nil)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toNel                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toNel01(): Bool =
+        Foldable.toNel(Nil: List[Int32]) == None
+
+    @test
+    def toNel02(): Bool =
+        Foldable.toNel(1 :: 2 :: Nil) == Some(Nel.cons(1, Nel.singleton(2)))
+
+    @test
+    def toNel03(): Bool =
+        Foldable.toNel(Set#{0, 1, 2, 3, 4}) == List.toNel(0 :: 1 :: 2 :: 3 :: 4 :: Nil)
 
 
     /////////////////////////////////////////////////////////////////////////////
