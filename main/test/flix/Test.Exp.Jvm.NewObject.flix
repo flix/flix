@@ -8,7 +8,7 @@ namespace Test/Exp/Jvm/NewObject {
 
   def implementIterable(): ##java.lang.Iterable & Impure =
     object ##java.lang.Iterable { 
-      def iterator(): ##java.util.Iterator & Pure = ()
+      def iterator(): ##java.util.Iterator & Pure = () as ##java.util.Iterator
     }
 
   @test

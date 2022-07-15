@@ -60,7 +60,7 @@ object TreeShaker {
     */
   private def initReachable(root: Root): Set[Symbol.DefnSym] = {
     // A set used to collect the symbols of reachable functions.
-    var reachable: Set[Symbol.DefnSym] = root.reachable
+    var reachable: Set[Symbol.DefnSym] = Set.empty
 
     //
     // (a) The main function is always reachable (if it exists).

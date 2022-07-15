@@ -50,7 +50,7 @@ object Typer {
     Validation.mapN(classesVal, instancesVal, defsVal, enumsVal, effsVal) {
       case (classes, instances, defs, enums, effs) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
-        TypedAst.Root(classes, instances, sigs, defs, enums, effs, typeAliases, root.entryPoint, root.reachable, root.sources, classEnv)
+        TypedAst.Root(classes, instances, sigs, defs, enums, effs, typeAliases, root.entryPoint, root.sources, classEnv)
     }
   }
 
@@ -1478,11 +1478,22 @@ object Typer {
           resultEff = valueEff
         } yield (valueConstrs, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.NewObject(clazz, _, loc) =>
-        val resultTyp = getFlixType(clazz)
-        val resultPur = Type.Impure
-        val resultEff = Type.Empty
-        liftM(List.empty, resultTyp, resultPur, resultEff)
+      case KindedAst.Expression.NewObject(clazz, methods, loc) => {
+        def visitJvmMethod(method: KindedAst.JvmMethod): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = method match {
+          case KindedAst.JvmMethod(ident, fparams, exp, returnTpe, pur, eff, loc) =>
+            for {
+              (constrs, bodyTpe, bodyPur, bodyEff) <- visitExp(exp)
+              _ <- expectTypeM(expected = returnTpe, actual = bodyTpe, exp.loc)
+            } yield (constrs, returnTpe, bodyPur, bodyEff)
+        }
+
+        for {
+          (constrs, _, _, _) <- seqM(methods map visitJvmMethod).map(unzip4)
+          resultTyp = getFlixType(clazz)
+          resultPur = Type.Impure
+          resultEff = Type.Empty
+        } yield (constrs.flatten, resultTyp, resultPur, resultEff)
+      }
 
       case KindedAst.Expression.NewChannel(exp, declaredType, loc) =>
         for {
@@ -2130,11 +2141,12 @@ object Typer {
         val eff = e.eff
         TypedAst.Expression.PutStaticField(field, e, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.NewObject(clazz, _, loc) =>
+      case KindedAst.Expression.NewObject(clazz, methods, loc) =>
         val tpe = getFlixType(clazz)
         val pur = Type.Impure
         val eff = Type.Empty
-        TypedAst.Expression.NewObject(clazz, tpe, pur, eff, loc)
+        val ms = methods map visitJvmMethod
+        TypedAst.Expression.NewObject(clazz, tpe, pur, eff, ms, loc)
 
       case KindedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp, subst0)
@@ -2302,6 +2314,15 @@ object Typer {
       */
     def visitPredicateParam(pparam: KindedAst.PredicateParam): TypedAst.PredicateParam =
       TypedAst.PredicateParam(pparam.pred, subst0(pparam.tpe), pparam.loc)
+
+    def visitJvmMethod(method: KindedAst.JvmMethod): TypedAst.JvmMethod = {
+      method match {
+        case KindedAst.JvmMethod(ident, fparams0, exp0, tpe, pur, eff, loc) =>
+          val fparams = getFormalParams(fparams0, subst0)
+          val exp = visitExp(exp0, subst0)
+          TypedAst.JvmMethod(ident, fparams, exp, tpe, pur, eff, loc)
+      }
+    }
 
     visitExp(exp0, subst0)
   }

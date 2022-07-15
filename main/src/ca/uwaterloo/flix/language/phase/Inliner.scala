@@ -57,7 +57,7 @@ object Inliner {
     }
 
     // Reassemble the ast root.
-    val result = LiftedAst.Root(defs, enums, root.entryPoint, root.reachable, root.sources)
+    val result = LiftedAst.Root(defs, enums, root.entryPoint, root.sources)
 
     result.toSuccess
   }

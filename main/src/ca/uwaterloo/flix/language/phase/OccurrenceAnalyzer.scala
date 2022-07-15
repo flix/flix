@@ -70,7 +70,7 @@ object OccurrenceAnalyzer {
     val enums = root.enums.map { case (k, v) => k -> visitEnum(v) }
 
     // Reassemble the ast root.
-    val result = OccurrenceAst.Root(defs, enums, root.entryPoint, root.reachable, root.sources)
+    val result = OccurrenceAst.Root(defs, enums, root.entryPoint, root.sources)
 
     result.toSuccess
   }
