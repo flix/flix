@@ -40,7 +40,7 @@ object Finalize {
       case (sym, enum) => sym -> visitEnum(enum, m)
     }
 
-    FinalAst.Root(defs ++ m, enums, root.entryPoint, root.reachable, root.sources).toSuccess
+    FinalAst.Root(defs ++ m, enums, root.entryPoint, root.sources).toSuccess
   }
 
   private def visitDef(def0: LiftedAst.Def, m: TopLevel)(implicit flix: Flix): FinalAst.Def = {
@@ -479,8 +479,6 @@ object Finalize {
             case TypeConstructor.Union => MonoType.Unit
 
             case TypeConstructor.Intersection => MonoType.Unit
-
-            case TypeConstructor.Difference => MonoType.Unit
 
             case TypeConstructor.Effect(_) => MonoType.Unit
 

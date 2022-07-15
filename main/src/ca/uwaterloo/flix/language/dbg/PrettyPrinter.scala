@@ -479,7 +479,7 @@ object PrettyPrinter {
       case BinaryOperator.Minus => "-"
       case BinaryOperator.Times => "*"
       case BinaryOperator.Divide => "/"
-      case BinaryOperator.Modulo => "%"
+      case BinaryOperator.Remainder => "%"
       case BinaryOperator.Exponentiate => "**"
       case BinaryOperator.Less => "<"
       case BinaryOperator.LessEqual => "<="

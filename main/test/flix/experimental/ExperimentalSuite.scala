@@ -17,10 +17,15 @@ package flix.experimental
 
 import ca.uwaterloo.flix.util.{FlixSuite, Options}
 
+/**
+  * Suite of tests for which nonstandard testing options are required.
+  *
+  * Intended for work-in-progress features for which maintaining the standard options (e.g. redundancy checking)
+  * would be a burden.
+  *
+  * Tests should be promoted out of this suite and into [[flix.CompilerSuite]]
+  * as soon as they run without special options.
+  */
 class ExperimentalSuite extends FlixSuite(incremental = true) {
   implicit val options: Options = Options.TestWithLibNix.copy(xallowredundancies = true)
-
-  // TODO temporarily allowing redundancies during development
-  mkTest("main/test/flix/experimental/Test.Exp.Effect.flix")
-  mkTest("main/test/flix/experimental/Test.Dec.Effect.flix")
 }

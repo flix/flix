@@ -1302,9 +1302,7 @@ namespace DelayList {
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
     pub def shuffle(rnd: Random.Random, l: DelayList[a]): DelayList[a] & Impure = region r {
-        let arr = toArray(r, l);
-        Array.shuffle(rnd, arr);
-        Array.toDelayList(arr)
+        toArray(r, l) !> Array.shuffle(rnd) |> Array.toDelayList
     }
 
 }

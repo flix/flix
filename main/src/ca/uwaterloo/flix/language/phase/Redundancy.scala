@@ -28,6 +28,8 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
+import scala.annotation.tailrec
+
 /**
   * The Redundancy phase checks that declarations and expressions within the AST are used in a meaningful way.
   *
@@ -92,7 +94,7 @@ object Redundancy {
     }
 
     // Check for unused parameters and remove all variable symbols.
-    val unusedFormalParams = sig.impl.toList.flatMap(_ => findUnusedFormalParameters(sig.spec, usedExp))
+    val unusedFormalParams = sig.impl.toList.flatMap(_ => findUnusedFormalParameters(sig.spec.fparams, usedExp))
     val unusedTypeParams = findUnusedTypeParameters(sig.spec)
 
     val usedAll = (usedExp ++
@@ -115,7 +117,7 @@ object Redundancy {
     // Compute the used symbols inside the definition.
     val usedExp = visitExp(defn.impl.exp, Env.empty ++ defn.spec.fparams.map(_.sym), RecursionContext.ofDef(defn.sym))
 
-    val unusedFormalParams = findUnusedFormalParameters(defn.spec, usedExp)
+    val unusedFormalParams = findUnusedFormalParameters(defn.spec.fparams, usedExp)
     val unusedTypeParams = findUnusedTypeParameters(defn.spec)
 
     // Check for unused parameters and remove all variable symbols.
@@ -134,8 +136,8 @@ object Redundancy {
   /**
     * Finds unused formal parameters.
     */
-  private def findUnusedFormalParameters(spec: Spec, used: Used): List[UnusedFormalParam] = {
-    spec.fparams.collect {
+  private def findUnusedFormalParameters(fparams: List[FormalParam], used: Used): List[UnusedFormalParam] = {
+    fparams.collect {
       case fparam if deadVarSym(fparam.sym, used) => UnusedFormalParam(fparam.sym)
     }
   }
@@ -404,7 +406,7 @@ object Redundancy {
     case Expression.Discard(exp, _, _, _) =>
       val us = visitExp(exp, env0, rc)
 
-      if (exp.pur == Type.Pure)
+      if (isPure(exp))
         us + DiscardedPureValue(exp.loc)
       else if (exp.tpe == Type.Unit)
         us + RedundantDiscard(exp.loc)
@@ -532,17 +534,19 @@ object Redundancy {
     case Expression.Ascribe(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.Cast(exp, _, declaredEff, _, _, _, _, loc) =>
-      declaredEff match {
-        case None => visitExp(exp, env0, rc)
-        case Some(eff) =>
-          (eff, exp.pur) match {
-            case (Type.Pure, Type.Pure) =>
+    case Expression.Cast(exp, _, declaredPur, declaredEff, _, _, _, loc) =>
+      (declaredPur, declaredEff) match {
+        // Don't capture redundant purity casts if there's also a set effect
+        case (Some(pur), Some(eff)) =>
+          ((pur, exp.pur), (eff, exp.eff)) match {
+            case ((Type.Pure, Type.Pure), (Type.Empty, Type.Empty)) =>
               visitExp(exp, env0, rc) + RedundantPurityCast(loc)
-            case (tvar1: Type.KindedVar, tvar2: Type.KindedVar) if tvar1.sym == tvar2.sym =>
+            case ((Type.KindedVar(pur1, _), Type.KindedVar(pur2, _)), (Type.KindedVar(eff1, _), Type.KindedVar(eff2, _)))
+              if pur1 == pur2 && eff1 == eff2 =>
               visitExp(exp, env0, rc) + RedundantEffectCast(loc)
             case _ => visitExp(exp, env0, rc)
           }
+        case _ => visitExp(exp, env0, rc)
       }
 
     case Expression.Without(exp, _, _, _, _, _) =>
@@ -598,8 +602,15 @@ object Redundancy {
     case Expression.PutStaticField(_, exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.NewObject(_, _, _, _, _) =>
-      Used.empty
+    case Expression.NewObject(_, _, _, _, methods, _) =>
+      methods.foldLeft(Used.empty) {
+        case (acc, JvmMethod(_, fparams, exp, _, _, _, _)) => 
+          // Extend the environment with the formal parameter symbols
+          val env1 = env0 ++ fparams.map(_.sym)
+          val used = visitExp(exp, env1, rc)
+          val unusedFParams = findUnusedFormalParameters(fparams, used)
+          acc ++ used ++ unusedFParams
+      }
 
     case Expression.NewChannel(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
@@ -784,14 +795,15 @@ object Redundancy {
   private def isUnderAppliedFunction(exp: Expression): Boolean = {
     val isPure = exp.pur == Type.Pure
     val isNonPureFunction = exp.tpe.typeConstructor match {
-      case Some(TypeConstructor.Arrow(_)) => curriedArrowEffectType(exp.tpe) != Type.Pure
+      case Some(TypeConstructor.Arrow(_)) =>
+        curriedArrowPurityType(exp.tpe) != Type.Pure || curriedArrowEffectType(exp.tpe) != Type.Empty
       case _ => false
     }
     isPure && isNonPureFunction
   }
 
   /**
-    * Returns the effect type of `this` curried arrow type.
+    * Returns the purity type of `this` curried arrow type.
     *
     * For example,
     *
@@ -803,25 +815,54 @@ object Redundancy {
     *
     * NB: Assumes that `this` type is an arrow.
     */
+  @tailrec
+  private def curriedArrowPurityType(tpe: Type): Type = {
+    val resType = tpe.arrowResultType
+    resType.typeConstructor match {
+      case Some(TypeConstructor.Arrow(_)) => curriedArrowPurityType(resType)
+      case _ => tpe.arrowPurityType
+    }
+  }
+
+  /**
+    * Returns the effect type of `this` curried arrow type.
+    *
+    * For example,
+    *
+    * {{{
+    * Int32                                        =>     throw
+    * Int32 -> String -> Int32 \ Eff               =>     Pure
+    * (Int32, String) -> String -> Bool & \ Eff    =>     Impure
+    * }}}
+    *
+    * NB: Assumes that `this` type is an arrow.
+    */
+  @tailrec
   private def curriedArrowEffectType(tpe: Type): Type = {
     val resType = tpe.arrowResultType
     resType.typeConstructor match {
       case Some(TypeConstructor.Arrow(_)) => curriedArrowEffectType(resType)
-      case _ => tpe.arrowPurityType
+      case _ => tpe.arrowEffectType
     }
   }
 
   /**
     * Returns true if the expression is pure.
     */
+  private def isPure(exp: Expression): Boolean =
+    exp.pur == Type.Pure && exp.eff == Type.Empty
+
+  /**
+    * Returns true if the expression is pure.
+    */
   private def isUselessExpression(exp: Expression): Boolean =
-    exp.pur == Type.Pure
+    isPure(exp)
 
   /**
     * Returns true if the expression is not pure and not unit type.
     */
   private def isImpureDiscardedValue(exp: Expression): Boolean =
-    exp.pur != Type.Pure && exp.tpe != Type.Unit
+    !isPure(exp) && exp.tpe != Type.Unit
 
   /**
     * Returns the free variables in the pattern `p0`.
@@ -885,8 +926,7 @@ object Redundancy {
       !decl.spec.mod.isPublic &&
       !isMain(decl.sym) &&
       !decl.sym.name.startsWith("_") &&
-      !used.defSyms.contains(decl.sym) &&
-      !root.reachable.contains(decl.sym)
+      !used.defSyms.contains(decl.sym)
 
   /**
     * Returns `true` if the given symbol `sym` either is `main` or is an entry point.

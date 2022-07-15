@@ -29,7 +29,6 @@ object NamedAst {
                   effects: Map[Name.NName, Map[String, NamedAst.Effect]],
                   ops: Map[Name.NName, Map[String, NamedAst.Op]],
                   entryPoint: Option[Symbol.DefnSym],
-                  reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
   // TODO change laws to NamedAst.Law
@@ -378,8 +377,6 @@ object NamedAst {
     case class Union(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Intersection(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
-
-    case class Difference(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Read(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 

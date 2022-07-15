@@ -72,7 +72,7 @@ object FormatExpression {
     case TypedAst.Expression.PutField(field, exp1, exp2, _, _, _, _) => s"PutField($field, $exp1, $exp2)"
     case TypedAst.Expression.GetStaticField(field, _, _, _, _) => s"GetStaticField($field)"
     case TypedAst.Expression.PutStaticField(field, exp, _, _, _, _) => s"PutStaticField($field, $exp)"
-    case TypedAst.Expression.NewObject(clazz, _, _, _, _) => s"NewObject($clazz)"
+    case TypedAst.Expression.NewObject(clazz, _, _, _, methods, _) => s"NewObject($clazz, ${methods.map(FormatJvmMethod.format).mkString(", ")})"
     case TypedAst.Expression.NewChannel(exp, _, _, _, _) => s"NewChannel($exp)"
     case TypedAst.Expression.GetChannel(exp, _, _, _, _) => s"GetChannel($exp)"
     case TypedAst.Expression.PutChannel(exp1, exp2, _, _, _, _) => s"PutChannel($exp1, $exp2)"

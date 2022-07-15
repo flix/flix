@@ -90,7 +90,7 @@ object Kinder {
 
         mapN(enumsVal, classesVal, defsVal, instancesVal, effectsVal) {
           case (enums, classes, defs, instances, effects) =>
-            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, effects.toMap, taenv, root.entryPoint, root.reachable, root.sources)
+            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, effects.toMap, taenv, root.entryPoint, root.sources)
         }
     }
 
@@ -1177,7 +1177,7 @@ object Kinder {
           }: (Type, Type) => Type).getOrElse(Type.Pure)
 
           val eff = effs.reduceOption({
-            case (t1, t2) => Type.mkUnion(t1, t2, t1.loc)
+            case (t1, t2) => Type.mkUnion(t1, t2, t1.loc.asSynthetic)
           }: (Type, Type) => Type).getOrElse(Type.Empty)
 
           (pur, eff)

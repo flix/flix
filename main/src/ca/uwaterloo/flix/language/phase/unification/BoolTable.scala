@@ -75,16 +75,19 @@ object BoolTable {
     *
     * Returns the same formula or a smaller formula that is equivalent.
     */
-  def minimizeType(tpe: Type)(implicit flix: Flix): Type = {
+  def minimizeType(tpe0: Type)(implicit flix: Flix): Type = {
     // Check whether minimization via tabling is disabled.
     if (flix.options.xnobooltable) {
-      return tpe
+      return tpe0
     }
 
     // Check that the `tpe` argument is a Boolean formula.
-    if (tpe.kind != Kind.Bool && tpe.kind != Kind.Effect) {
-      throw InternalCompilerException(s"Unexpected non-Bool/non-Effect kind: '${tpe.kind}'.")
+    if (tpe0.kind != Kind.Bool && tpe0.kind != Kind.Effect) {
+      throw InternalCompilerException(s"Unexpected non-Bool/non-Effect kind: '${tpe0.kind}'.")
     }
+
+    // Erase aliases to get a processable type
+    val tpe = Type.eraseAliases(tpe0)
 
     // Compute the size of  `tpe`.
     val currentSize = tpe.size
