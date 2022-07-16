@@ -644,8 +644,10 @@ object JvmOps {
       case Expression.PutStaticField(_, exp, _, _) =>
         visitExp(exp)
 
-      case Expression.NewObject(_, _, _) =>
-        Set.empty
+      case Expression.NewObject(_, _, methods, _) =>
+        methods.foldLeft(Set.empty[ClosureInfo]) {
+          case (sacc, m) => visitExp(m.exp)
+        }
 
       case Expression.NewChannel(exp, _, _) => visitExp(exp)
 
@@ -1020,7 +1022,13 @@ object JvmOps {
 
       case Expression.PutStaticField(_, exp, _, _) => visitExp(exp)
 
-      case Expression.NewObject(_, _, _) => Set.empty
+      case Expression.NewObject(_, _, methods, _) => 
+        methods.foldLeft(Set.empty[MonoType]) {
+          case (sacc, JvmMethod(_, fparams, exp, retTpe, _)) =>
+            sacc ++ fparams.foldLeft(Set(retTpe)) {
+              case (acc, FormalParam(_, tpe)) => acc + tpe
+            } ++ visitExp(exp)
+      }
 
       case Expression.NewChannel(exp, _, _) => visitExp(exp)
 
