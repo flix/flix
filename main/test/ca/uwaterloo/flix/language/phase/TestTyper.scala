@@ -1358,4 +1358,62 @@ class TestTyper extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.UnexpectedType](result)
   }
+
+  test("Test.MismatchedEff.Without.01") {
+    val input =
+      """
+        |eff E {
+        |    pub def op(): Unit
+        |}
+        |
+        |def foo(): Unit = do E.op() without E
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("Test.MismatchedEff.Apply.01") {
+    val input =
+      """
+        |eff E {
+        |    pub def op(): Unit
+        |}
+        |
+        |def noE(f: Unit -> Unit \ {ef - E}): Unit = ???
+        |
+        |def foo(): Unit = noE(_ -> do E.op())
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("Test.MismatchedEff.Apply.02") {
+    val input =
+      """
+        |eff E {
+        |    pub def op(): Unit
+        |}
+        |
+        |def disjoint(f: Unit -> Unit \ ef1, g: Unit -> Unit \ ef2 - ef1): Unit = ???
+        |
+        |def foo(): Unit = disjoint(_ -> do E.op(), _ -> do E.op())
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("Test.MismatchedEff.Apply.03") {
+    val input =
+      """
+        |eff E {
+        |    pub def op(): Unit
+        |}
+        |
+        |def mustE(f: Unit -> Unit \ {ef, E}): Unit = ???
+        |
+        |def foo(): Unit = mustE(x -> x)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedBools](result)
+  }
 }
