@@ -67,6 +67,7 @@ object RenameProvider {
                     println("exp.sig")
                     println(sym)
                     renameSig(sym, newName)
+                  case _ => mkNotFound(uri, pos)
                 }
 
               case _ =>
