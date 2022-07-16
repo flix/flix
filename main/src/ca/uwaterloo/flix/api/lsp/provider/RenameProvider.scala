@@ -61,12 +61,12 @@ object RenameProvider {
                 println("exp.tag")
                 println(sym)
                 renameTag(sym, tag, newName)
-              case Expression.Apply(exp, _, _, _, _, loc) =>
+              case Expression.Apply(exp, _, _, _, _, _) =>
                 exp match {
-                  case Expression.Sig(sym, _, _) =>
+                  case Expression.Sig(sym, tpe, loc) =>
                     println("exp.sig")
                     println(sym)
-                    renameSig(sym, newName)
+                    renameSigClass(Expression.Sig(sym, tpe, loc), newName)
                   case _ => mkNotFound(uri, pos)
                 }
 
@@ -206,13 +206,13 @@ object RenameProvider {
     rename(newName, uses + defn)
   }
 
-  private def renameSig(sym: Symbol.SigSym, newName: String)(implicit index: Index, root: Root): JObject = {
+  private def renameSigClass(sig: Expression.Sig, newName: String)(implicit index: Index, root: Root): JObject = {
     root.classes.find {
-      case (_, clazz) => clazz.signatures.exists(s => s.sym == sym)
-    }.map(_._2.loc) match {
-      case None => ("status" -> "failure") ~ ("message" -> "???")
+      case (_, clazz) => clazz.signatures.exists(s => s.sym == sig.sym)
+    }.map(_._1.loc) match {
+      case None => ???
       case Some(clazz) =>
-        val uses = index.usesOf(sym)
+        val uses = index.usesOf(sig.sym.clazz)
         rename(newName, uses + clazz)
     }
   }
