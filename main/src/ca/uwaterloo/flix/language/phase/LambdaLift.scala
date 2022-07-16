@@ -326,6 +326,7 @@ object LambdaLift {
         LiftedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
 
       case SimplifiedAst.Expression.NewObject(clazz, tpe, purity, methods0, loc) =>
+        // TODO - not yet complete
         val methods = methods0.map(visitJvmMethod)
         LiftedAst.Expression.NewObject(clazz, tpe, purity, methods, loc)
 
@@ -393,4 +394,5 @@ object LambdaLift {
   private def visitFormalParam(fparam: SimplifiedAst.FormalParam): LiftedAst.FormalParam = fparam match {
     case SimplifiedAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
   }
+
 }
