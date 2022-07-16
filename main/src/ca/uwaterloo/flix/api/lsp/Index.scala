@@ -216,9 +216,6 @@ case class Index(m: Map[(String, Int), List[Entity]],
         // Step 2: Sort the expressions by their span (i.e. their length).
         val sorted = filtered.sortBy(e => span(e.loc))
 
-        // Print all candidates.
-        // println(sorted.map(_.loc.format).mkString("\n"))
-
         // Step 3: Return the candidate with the smallest span.
         sorted.headOption
     }
