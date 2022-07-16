@@ -48,7 +48,7 @@ object Options {
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, test = true, xeffects = true)
+  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, test = true)
 
   /**
     * Default test options with the standard library.
