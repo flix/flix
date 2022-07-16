@@ -329,9 +329,10 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.PutStaticField(field, e, t, loc)
 
-      case LiftedAst.Expression.NewObject(clazz, tpe, _, loc) =>
+      case LiftedAst.Expression.NewObject(clazz, tpe, _, methods, loc) =>
         val t = visitType(tpe)
-        FinalAst.Expression.NewObject(clazz, t, loc)
+        val ms = methods.map(visitJvmMethod(_, m))
+        FinalAst.Expression.NewObject(clazz, t, ms, loc)
 
       case LiftedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visit(exp)
@@ -511,6 +512,14 @@ object Finalize {
     }
 
     visit(Type.eraseAliases(tpe0))
+  }
+
+  private def visitJvmMethod(method: LiftedAst.JvmMethod, m: TopLevel)(implicit flix: Flix): FinalAst.JvmMethod = method match {
+    case LiftedAst.JvmMethod(ident, fparams, exp, retTpe, purity, loc) =>
+      val e = visitExp(exp, m)
+      val f = fparams.map(visitFormalParam)
+      val t = visitType(retTpe)
+      FinalAst.JvmMethod(ident, f, e, t, loc)
   }
 
   // TODO: Deprecated
