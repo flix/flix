@@ -145,10 +145,12 @@ object SemanticTokensProvider {
 
   /**
     * Returns all semantic tokens in the given instance `inst0`.
+    *
+    * We use SemanticTokenType.Class because the OOP "Class" most directly corresponds to the FP "Instance"
+    *
     */
   private def visitInstance(inst0: TypedAst.Instance): Iterator[SemanticToken] = inst0 match {
     case TypedAst.Instance(_, _, _, sym, tpe, tconstrs, defs, _, _) =>
-      // NB: we use SemanticTokenType.Class because the OOP "Class" most directly corresponds to the FP "Instance"
       val t = SemanticToken(SemanticTokenType.Class, Nil, sym.loc)
       val st1 = Iterator(t)
       val st2 = visitType(tpe)
