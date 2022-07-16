@@ -28,48 +28,124 @@ object RenameProvider {
     */
   def processRename(newName: String, uri: String, pos: Position)(implicit index: Index, root: Root): JObject = {
     index.query(uri, pos) match {
-      case None => mkNotFound(uri, pos)
+      case None =>
+        println("query returned none")
+        mkNotFound(uri, pos)
 
-      case Some(entity) => entity match {
+      case Some(entity) => {
+        println(entity)
+        entity match {
 
-        case Entity.Case(caze) => renameTag(caze.sym, caze.tag, newName)
+          case Entity.Case(caze) =>
+            println("case")
+            println(caze.tag)
+            renameTag(caze.sym, caze.tag, newName)
 
-        case Entity.Def(defn) => renameDef(defn.sym, newName)
+          case Entity.Def(defn) =>
+            println("def")
+            println(defn.sym)
+            renameDef(defn.sym, newName)
 
-        case Entity.Exp(exp) => exp match {
-          case Expression.Var(sym, _, _) => renameVar(sym, newName)
-          case Expression.Def(sym, _, _) => renameDef(sym, newName)
-          case Expression.Tag(sym, tag, _, _, _, _, _) => renameTag(sym, tag, newName)
-          case _ => mkNotFound(uri, pos)
+          case Entity.Exp(exp) =>
+            println("exp")
+            exp match {
+              case Expression.Var(sym, _, _) =>
+                println("exp.var")
+                println(sym)
+                renameVar(sym, newName)
+              case Expression.Def(sym, _, _) =>
+                println("exp.def")
+                println(sym)
+                renameDef(sym, newName)
+              case Expression.Tag(sym, tag, _, _, _, _, _) =>
+                println("exp.tag")
+                println(sym)
+                renameTag(sym, tag, newName)
+              case Expression.Apply(exp, _, _, _, _, loc) =>
+                exp match {
+                  case Expression.Sig(sym, _, _) =>
+                    println("exp.sig")
+                    println(sym)
+                    renameSig(sym, newName)
+                }
+
+              case _ =>
+                println("exp.notfound")
+                mkNotFound(uri, pos)
+            }
+
+          case Entity.Field(field) =>
+            println("field")
+            println(field.name)
+            renameField(field, newName)
+
+          case Entity.Pattern(pat) =>
+            println("pattern")
+            pat match {
+              case Pattern.Var(sym, _, _) =>
+                println("pattern.var")
+                renameVar(sym, newName)
+              case Pattern.Tag(sym, tag, _, _, _) =>
+                println("pattern.tag")
+                println(sym)
+                println(tag)
+                renameTag(sym, tag, newName)
+              case _ =>
+                println("pattern.notfound")
+                mkNotFound(uri, pos)
+            }
+
+          case Entity.Class(clazz) =>
+            println("class")
+            println(clazz.sym)
+            renameClass(clazz.sym, newName)
+
+          case Entity.Pred(pred, _) =>
+            println("pred")
+            println(pred.name)
+            renamePred(pred, newName)
+
+          case Entity.FormalParam(fparam) =>
+            println("formalparam")
+            println(fparam.sym)
+            renameVar(fparam.sym, newName)
+
+          case Entity.LocalVar(sym, _) =>
+            println("localvar")
+            println(sym)
+            renameVar(sym, newName)
+
+          case Entity.Type(t) =>
+            println("type")
+            t match {
+              case Type.Cst(tc, _) =>
+                println("type.cst (type constructor?)")
+                tc match {
+                  case TypeConstructor.RecordRowExtend(field) =>
+                    println("typeconstructor.recordrowextend")
+                    println(field.name)
+                    renameField(field, newName)
+                  case TypeConstructor.SchemaRowExtend(pred) =>
+                    println("typeconstructor.schemarowextend")
+                    println(pred.name)
+                    renamePred(pred, newName)
+                  case _ =>
+                    println("typeconstructor not found")
+                    mkNotFound(uri, pos)
+                }
+              case Type.KindedVar(sym, loc) =>
+                println("type.kindedvar")
+                println(sym)
+                renameTypeVar(sym, newName)
+              case _ =>
+                println("type.notfound")
+                mkNotFound(uri, pos)
+            }
+
+          case _ =>
+            println("entity not found")
+            mkNotFound(uri, pos)
         }
-
-        case Entity.Field(field) => renameField(field, newName)
-
-        case Entity.Pattern(pat) => pat match {
-          case Pattern.Var(sym, _, _) => renameVar(sym, newName)
-          case Pattern.Tag(sym, tag, _, _, _) => renameTag(sym, tag, newName)
-          case _ => mkNotFound(uri, pos)
-        }
-
-        case Entity.Class(clazz) => renameClass(clazz.sym, newName)
-
-        case Entity.Pred(pred, _) => renamePred(pred, newName)
-
-        case Entity.FormalParam(fparam) => renameVar(fparam.sym, newName)
-
-        case Entity.LocalVar(sym, _) => renameVar(sym, newName)
-
-        case Entity.Type(t) => t match {
-          case Type.Cst(tc, _) => tc match {
-            case TypeConstructor.RecordRowExtend(field) => renameField(field, newName)
-            case TypeConstructor.SchemaRowExtend(pred) => renamePred(pred, newName)
-            case _ => mkNotFound(uri, pos)
-          }
-          case Type.KindedVar(sym, loc) => renameTypeVar(sym, newName)
-          case _ => mkNotFound(uri, pos)
-        }
-
-        case _ => mkNotFound(uri, pos)
       }
     }
 
@@ -127,6 +203,17 @@ object RenameProvider {
     val defn = root.enums(sym).cases(tag).tag.loc
     val uses = index.usesOf(sym, tag)
     rename(newName, uses + defn)
+  }
+
+  private def renameSig(sym: Symbol.SigSym, newName: String)(implicit index: Index, root: Root): JObject = {
+    root.classes.find {
+      case (_, clazz) => clazz.signatures.exists(s => s.sym == sym)
+    }.map(_._2.loc) match {
+      case None => ("status" -> "failure") ~ ("message" -> "???")
+      case Some(clazz) =>
+        val uses = index.usesOf(sym)
+        rename(newName, uses + clazz)
+    }
   }
 
   private def renameTypeVar(sym: Symbol.KindedTypeVarSym, newName: String)(implicit index: Index, root: Root): JObject = {
