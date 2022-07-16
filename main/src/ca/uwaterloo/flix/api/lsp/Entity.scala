@@ -31,8 +31,6 @@ sealed trait Entity {
   }
 }
 
-// TODO: Restructure this?
-
 object Entity {
 
   case class Case(e: TypedAst.Case) extends Entity {
