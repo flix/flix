@@ -90,7 +90,7 @@ object Kinder {
 
         mapN(enumsVal, classesVal, defsVal, instancesVal, effectsVal) {
           case (enums, classes, defs, instances, effects) =>
-            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, effects.toMap, taenv, root.entryPoint, root.reachable, root.sources)
+            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, effects.toMap, taenv, root.entryPoint, root.sources)
         }
     }
 
