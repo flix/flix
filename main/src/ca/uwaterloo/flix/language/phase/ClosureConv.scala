@@ -265,8 +265,12 @@ object ClosureConv {
       val e = visitExp(exp)
       Expression.PutStaticField(field, e, tpe, purity, loc)
 
-    case Expression.NewObject(_, _, _, _) =>
-      exp0
+    case Expression.NewObject(clazz, tpe, purity, methods0, loc) =>
+      val methods = methods0 map {
+        case JvmMethod(ident, fparams, exp, retTpe, purity, loc) =>
+          JvmMethod(ident, fparams, visitExp(exp), retTpe, purity, loc)
+      }
+      Expression.NewObject(clazz, tpe, purity, methods, loc)
 
     case Expression.NewChannel(exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -396,7 +400,12 @@ object ClosureConv {
 
     case Expression.PutStaticField(_, exp, _, _, _) => freeVars(exp)
 
-    case Expression.NewObject(_, _, _, _) => mutable.LinkedHashSet.empty
+    case Expression.NewObject(_, _, _, methods, _) => 
+      mutable.LinkedHashSet.empty ++ methods.flatMap {
+        case JvmMethod(_, fparams, exp, _, _, _) =>
+          val bound = fparams.map(_.sym)
+          freeVars(exp).filterNot { v => bound.contains(v._1) }
+      }
 
     case Expression.NewChannel(exp, _, _) => freeVars(exp)
 
@@ -651,8 +660,9 @@ object ClosureConv {
         val e = visitExp(exp)
         Expression.PutStaticField(field, e, tpe, purity, loc)
 
-      case Expression.NewObject(_, _, _, _) =>
-        e
+      case Expression.NewObject(clazz, tpe, purity, methods0, loc) =>
+        val methods = methods0.map(replace(_, subst))
+        Expression.NewObject(clazz, tpe, purity, methods, loc)
 
       case Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -708,6 +718,15 @@ object ClosureConv {
         case None => FormalParam(sym, mod, tpe, loc)
         case Some(newSym) => FormalParam(newSym, mod, tpe, loc)
       }
+  }
+
+  /**
+    * Applies the given substitution map `subst` to the given JvmMethod `method`.
+    */
+  private def replace(method: JvmMethod, subst: Map[Symbol.VarSym, Symbol.VarSym])(implicit flix: Flix): JvmMethod = method match {
+    case JvmMethod(ident, fparams0, exp, retTpe, purity, loc) =>
+      val fparams = fparams0.map(replace(_, subst))
+      JvmMethod(ident, fparams, replace(exp, subst), retTpe, purity, loc)
   }
 
 }

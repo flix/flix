@@ -402,10 +402,10 @@ object PrettyPrinter {
             " value " +
             visitExp(exp)
 
-        case Expression.NewObject(clazz, _, _, _) =>
+        case Expression.NewObject(clazz, _, _, methods, _) =>
           "object " +
             clazz.getName +
-            "{ }"
+            methods.map(fmtJvmMethod(_, formatter)).mkString("{ ", " ", " }")
 
         case Expression.NewChannel(exp, tpe, loc) => "Channel" + " " + visitExp(exp)
 
@@ -495,6 +495,14 @@ object PrettyPrinter {
       case BinaryOperator.BitwiseXor => "^^^"
       case BinaryOperator.BitwiseLeftShift => "<<<"
       case BinaryOperator.BitwiseRightShift => ">>>"
+    }
+
+    def fmtJvmMethod(method: JvmMethod, formatter: Formatter): String = method match {
+      case JvmMethod(ident, fparams, exp, retTpe, purity, loc) =>
+        s"${formatter.bold("def")} ${formatter.blue(ident.toString)}" +
+        fparams.map(fmtParam(_, formatter)).mkString("(", ", ", ")") +
+        " & " + purity + " = " +
+        fmtExp(exp, formatter)
     }
   }
 }
