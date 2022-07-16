@@ -207,6 +207,9 @@ object RenameProvider {
   }
 
   private def renameSigClass(sig: Expression.Sig, newName: String)(implicit index: Index, root: Root): JObject = {
+    // Currently renames classes and instances correctly
+    // but applications of a member i.e. `A.b()` get renamed to
+    // `A.newName()`.
     root.classes.find {
       case (_, clazz) => clazz.signatures.exists(s => s.sym == sig.sym)
     }.map(_._1.loc) match {
