@@ -155,6 +155,97 @@ class TestSetUnification extends FunSuite with TestUtils {
     assertUnifies(tpe1, tpe2, RigidityEnv.empty)
   }
 
+  test("Test.SetUnification.10") {
+    // e! ∪ f! ≐ f! ∪ e!
+    val symE = mkTypeVarSym("e")
+    val symF = mkTypeVarSym("f")
+    val e = Type.KindedVar(symE, loc)
+    val f = Type.KindedVar(symF, loc)
+    val tpe1 = Type.mkUnion(e, f, loc)
+    val tpe2 = Type.mkUnion(f, e, loc)
+    val renv = RigidityEnv.empty.markRigid(symE).markRigid(symF)
+    assertUnifies(tpe1, tpe2, renv)
+  }
+
+  test("Test.SetUnification.11") {
+    // e! ∪ f! ≐ e! ∪ f!
+    val symE = mkTypeVarSym("e")
+    val symF = mkTypeVarSym("f")
+    val e = Type.KindedVar(symE, loc)
+    val f = Type.KindedVar(symF, loc)
+    val tpe1 = Type.mkUnion(e, f, loc)
+    val tpe2 = Type.mkUnion(e, f, loc)
+    val renv = RigidityEnv.empty.markRigid(symE).markRigid(symF)
+    assertUnifies(tpe1, tpe2, renv)
+  }
+
+  test("Test.SetUnification.12") {
+    // e ≐ f!
+    val symE = mkTypeVarSym("e")
+    val symF = mkTypeVarSym("f")
+    val tpe1 = Type.KindedVar(symE, loc)
+    val tpe2 = Type.KindedVar(symF, loc)
+    val renv = RigidityEnv.empty.markRigid(symF)
+    assertUnifies(tpe1, tpe2, renv)
+  }
+
+  test("Test.SetUnification.13") {
+    // e ∪ f ≐ g! ∪ h!
+    val symE = mkTypeVarSym("e")
+    val symF = mkTypeVarSym("f")
+    val symG = mkTypeVarSym("g")
+    val symH = mkTypeVarSym("h")
+
+    val tpe1 = Type.mkUnion(
+      Type.KindedVar(symE, loc),
+      Type.KindedVar(symF, loc),
+      loc
+    )
+    val tpe2 = Type.mkUnion(
+      Type.KindedVar(symG, loc),
+      Type.KindedVar(symH, loc),
+      loc
+    )
+    val renv = RigidityEnv.empty.markRigid(symG).markRigid(symH)
+    assertUnifies(tpe1, tpe2, renv)
+  }
+
+  test("Test.SetUnification.14") {
+    // (e ∪ (f! ∩ g!)) ∩ (g! ∪ f!) ≐ f!
+    val symE = mkTypeVarSym("e")
+    val symF = mkTypeVarSym("f")
+    val symG = mkTypeVarSym("g")
+
+    val e = Type.KindedVar(symE, loc)
+    val f = Type.KindedVar(symF, loc)
+    val g = Type.KindedVar(symG, loc)
+
+    val tpe1 = Type.mkIntersection(
+      Type.mkUnion(
+        e,
+        Type.mkIntersection(f, g, loc)
+        ,loc
+      ),
+      Type.mkUnion(g, f, loc),
+      loc
+    )
+    val tpe2 = f
+
+    val renv = RigidityEnv.empty.markRigid(symF).markRigid(symG)
+    assertUnifies(tpe1, tpe2, renv)
+  }
+
+  test("Test.SetUnification.15") {
+    // e - (Print ∪ Throw) ≐ Time
+    val print = Type.Cst(TypeConstructor.Effect(mkEffectSym("Print")), loc)
+    val time = Type.Cst(TypeConstructor.Effect(mkEffectSym("Time")), loc)
+    val thro = Type.Cst(TypeConstructor.Effect(mkEffectSym("Throw")), loc)
+
+    val tpe1 = Type.mkDifference(Type.KindedVar(mkTypeVarSym("e"), loc), Type.mkUnion(print, thro, loc), loc)
+    val tpe2 = time
+    assertUnifies(tpe1, tpe2, RigidityEnv.empty)
+  }
+
   test("Test.SetUnification.Fail.01") {
     // e! ≐ f!
     val sym1 = mkTypeVarSym("e")
