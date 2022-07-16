@@ -81,6 +81,7 @@ instance Foldable[List] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: List[a]): b & ef = List.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: List[a]): b & ef = List.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, l: List[a]): b & ef = List.foldRightWithCont(f, s, l)
+    override pub def iterator(r: Region[r], l: List[a]): Iterator[a, r] \ Write(r) = List.iterator(r, l)
 }
 
 instance UnorderedFoldable[List] {
@@ -116,7 +117,8 @@ namespace List {
     ///
     pub def toString(l: List[a]): String with ToString[a] = region r {
         let sb = new StringBuilder(r);
-        List.foreach(x -> StringBuilder.appendString!("${x} :: ", sb), l);
+        foreach (x <- iterator(r, l))
+            StringBuilder.appendString!("${x} :: ", sb);
         StringBuilder.appendString!("Nil", sb);
         StringBuilder.toString(sb)
     }
