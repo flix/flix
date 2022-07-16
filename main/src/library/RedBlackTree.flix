@@ -274,7 +274,7 @@ namespace RedBlackTree {
             })
             case _ => sk(None)
         };
-        loop(t, k -> k as & ef)
+        loop(t, upcast(identity))
 
     ///
     /// Optionally returns the first key-value pair in `t` that satisfies the predicate `f` when searching from right to left.
@@ -291,7 +291,7 @@ namespace RedBlackTree {
             })
             case _ => sk(None)
         };
-        loop(t, k -> k as & ef)
+        loop(t, upcast(identity))
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `t` going from left to right.
@@ -919,7 +919,7 @@ namespace RedBlackTree {
             case Node(color, left, key, v, right) => loop(left, kl -> loop(right, kr -> k(nodeA(color, kl, key, f(key, v), kr))))
             case _                                => k(Applicative.point(Leaf))
         };
-        loop(t, ks -> ks as & ef)
+        loop(t, upcast(identity))
 
     ///
     /// Applies `cmp` over the tree `t` in parallel and optionally returns the lowest

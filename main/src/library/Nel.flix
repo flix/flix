@@ -287,7 +287,7 @@ namespace Nel {
         };
         match f {
             case Nel(f1, Nil) => map(f1, l)
-            case Nel(f1, rs)  => loop(f1, rs, ks -> ks as & ef)
+            case Nel(f1, rs)  => loop(f1, rs, upcast(identity))
         }
 
     ///
