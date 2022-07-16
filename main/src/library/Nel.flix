@@ -67,6 +67,7 @@ instance Foldable[Nel] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldRightWithCont(f, s, l)
+    override pub def iterator(r: Region[r], l: Nel[a]): Iterator[a, r] \ Write(r) = Nel.iterator(r, l)
 }
 
 instance UnorderedFoldable[Nel] {
