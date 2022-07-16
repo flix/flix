@@ -381,11 +381,14 @@ case class Index(m: Map[(String, Int), List[Entity]],
 
   /**
     * Returns the span (i.e. length) of the given source location `loc`.
+    *
+    * Does not support multi-line expressions.
+    *
     */
   private def span(loc: SourceLocation): Int =
     if (loc.beginLine == loc.endLine)
       loc.endCol - loc.beginCol
     else
-      1000 // TODO: Add support for multi-line expressions.
+      1000
 
 }
