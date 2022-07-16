@@ -20,7 +20,54 @@ pub enum DelayMap[k, v] {
     case DMap(RedBlackTree[k, Lazy[v]])
 }
 
+instance Eq[DelayMap[k, v]] with Eq[k], Eq[v] {
+    pub def eq(m1: DelayMap[k, v], m2: DelayMap[k, v]): Bool =
+        DelayMap.toList(m1) == DelayMap.toList(m2)
+}
+
+instance Order[DelayMap[k, v]] with Order[k], Order[v] {
+    pub def compare(x: DelayMap[k, v], y: DelayMap[k, v]): Comparison =
+        DelayMap.toList(x) <=> DelayMap.toList(y)
+}
+
+instance ToString[DelayMap[k, v]] with ToString[k], ToString[v] {
+    pub def toString(m: DelayMap[k, v]): String = DelayMap.toString(m)
+}
+
+instance Functor[DelayMap[k]] {
+    pub def map(f: v1 -> v2 & ef, m: DelayMap[k, v1]): DelayMap[k, v2] & ef = DelayMap.map(f, m)
+}
+
+instance Foldable[DelayMap[k]] {
+    pub def foldLeft(f: (b, v) -> b & ef, s: b, m: DelayMap[k, v]): b & ef = DelayMap.foldLeft(f, s, m)
+    pub def foldRight(f: (v, b) -> b & ef, s: b, m: DelayMap[k, v]): b & ef = DelayMap.foldRight(f, s, m)
+    pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, s: b, m: DelayMap[k, v]): b & ef = DelayMap.foldRightWithCont(f, s, m)
+    override pub def iterator(r: Region[r], m: DelayMap[k, v]): Iterator[v, r] \ Write(r) =
+        DelayMap.iterator(r, m) |> Iterator.mapL(match (_, v) -> v)
+}
+
 namespace DelayMap {
+
+    ///
+    /// Returns a string representation of the given `DelayMap` `m`.
+    ///
+    @Experimental
+    pub def toString(m: DelayMap[k, v]): String with ToString[k], ToString[v] = region r {
+        let sb = new StringBuilder(r);
+        let _ = parallelForce(m);
+        let first = ref true;
+        StringBuilder.appendString!("DelayMap#{", sb);
+        foreach ((k, v) <- DelayMap.iterator(r, m)) {
+            if (deref first) {
+                first := false;
+                StringBuilder.appendString!("${k} => ${v}", sb)
+            }
+            else
+                StringBuilder.appendString!(", ${k} => ${v}", sb)
+        };
+        StringBuilder.appendString!("}", sb);
+        StringBuilder.toString(sb)
+    }
 
     ///
     /// Returns the number of threads to use for parallel evaluation.
@@ -347,7 +394,7 @@ namespace DelayMap {
     ///  - Applies `f` lazily if `f` is pure.
     ///
     @Experimental @ParallelWhenPure @LazyWhenPure
-    pub def map(f: v1 -> v2 & ef, m: DelayMap[k, v1]): DelayMap[k, v2] & ef with Order[k] =
+    pub def map(f: v1 -> v2 & ef, m: DelayMap[k, v1]): DelayMap[k, v2] & ef =
         mapWithKey((_, v) -> f(v), m)
 
     ///
@@ -359,7 +406,7 @@ namespace DelayMap {
     ///
     @Experimental @ParallelWhenPure @LazyWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 & ef, m: DelayMap[k, v1]): DelayMap[k, v2] & ef =
-        let f1 = (args) -> f(fst(args), snd(args));
+        let f1 = match (k, v) -> f(k, v);
         reifyEff(f1) {
             case Pure(g) => mapWithKeyL((k, v) -> g((k, v)), m)
             case _       => mapWithKeyE(f, m)
@@ -747,29 +794,9 @@ namespace DelayMap {
     /// Returns an iterator over all key-value pairs in `m`.
     ///
     @Experimental
-    pub def iterator(r: Region[r], m: DelayMap[a, b]): Iterator[(a, b), r] \ Write(r) with Order[a] =
-        let keys = keysOf(m) |> Set.toList;
-        let cursor = ref keys @ r;
-        let done = () -> match deref cursor {
-            case Nil => true
-            case _   => false
-        };
-        let next = () -> match deref cursor {
-            case Nil     => bug!("Empty Iterator!")
-            case x :: xs =>
-                cursor := xs;
-                match DelayMap.get(x, m) {
-                    case None    => bug!("Empty Iterator!")
-                    case Some(v) => (x, v)
-                }
-        };
-        Iterator(done, next)
-
-    ///
-    /// Returns an iterator over key-value pairs of `m` zipped with the indices of the elements.
-    ///
-    pub def enumerator(r: Region[r], m: DelayMap[k, v]): Iterator[((k, v), Int32), r] \ Write(r) with Order[k] =
-        iterator(r, m) |> Iterator.zipWithIndex
+    pub def iterator(r: Region[r], m: DelayMap[a, b]): Iterator[(a, b), r] \ Write(r) =
+        let DMap(t) = m;
+        RedBlackTree.iterator(r, t) |> Iterator.mapL(match (k, v) -> (k, force v))
 
     ///
     /// Returns the map `m` as a MutDeque of key-value pairs.
