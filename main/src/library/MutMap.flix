@@ -586,7 +586,7 @@ namespace MutMap {
         Map.iterator(r, deref mm)
 
     ///
-    /// Returns an iterator over values in `m`.
+    /// Returns an iterator over keys in `m`.
     ///
     pub def iteratorKeys(m: MutMap[k, v, r]): Iterator[k, r] \ Write(r) =
         let MutMap(mm) = m;

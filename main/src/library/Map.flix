@@ -951,7 +951,7 @@ namespace Map {
         RedBlackTree.iterator(r, t)
 
     ///
-    /// Returns an iterator over values in `m`.
+    /// Returns an iterator over keys in `m`.
     ///
     pub def iteratorKeys(r: Region[r], m: Map[k, v]): Iterator[k, r] \ Write(r) =
         iterator(r, m) |> Iterator.mapL(match (k, _) -> k)
