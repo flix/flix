@@ -210,6 +210,8 @@ object RenameProvider {
     // Currently renames classes and instances correctly
     // but applications of a member i.e. `A.b()` get renamed to
     // `A.newName()`.
+    // Is there any way to tell `rename` to use a
+    // `Symbol.SigSym.clazz` instead of its `name` field?
     root.classes.find {
       case (_, clazz) => clazz.signatures.exists(s => s.sym == sig.sym)
     }.map(_._1.loc) match {
