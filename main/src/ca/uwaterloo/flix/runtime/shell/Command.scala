@@ -41,6 +41,46 @@ object Command {
   case class Doc(s: String) extends Command
 
   /**
+    * Creates a new project in the current directory
+    */
+  case object Init extends Command
+
+  /**
+    * Checks the current project for errors.
+    */
+  case object Check extends Command
+
+  /**
+    * Builds the current project.
+    */
+  case object Build extends Command
+
+  /**
+    * Builds a jar file from the current project.
+    */
+  case object Jar extends Command
+
+  /**
+    * Builds an fpkg file from the current project.
+    */
+  case object Fpkg extends Command
+
+  /**
+    * Runs the benchmarks for the current project.
+    */
+  case object Bench extends Command
+
+  /**
+    * Runs the tests for the current project.
+    */
+  case object Test extends Command
+
+  /**
+    * Installs the Flix package from the given GitHub owner/repo
+    */
+  case class Install(project: String) extends Command
+
+  /**
     * Terminates the shell.
     */
   case object Quit extends Command
@@ -90,9 +130,60 @@ object Command {
     //
     // Doc
     //
-    val docPattern = raw":d(oc)?\s+(\S+).*".r
+    val docPattern = raw":d(oc)?\s+(\S+)\s*".r
     input match {
       case docPattern(_, s) => return Command.Doc(s)
+      case _ => // no-op
+    }
+
+    // 
+    // Init
+    // 
+    if (input == ":init")
+      return Command.Init
+
+    // 
+    // Check
+    // 
+    if (input == ":check" || input == ":c")
+      return Command.Check
+
+    // 
+    // Build
+    // 
+    if (input == ":build" || input == ":b")
+      return Command.Build
+
+    // 
+    // Jar
+    // 
+    if (input == ":jar" || input == ":j")
+      return Command.Jar
+
+    // 
+    // Fpkg
+    // 
+    if (input == ":pkg" || input == ":p")
+      return Command.Fpkg
+
+    // 
+    // Bench
+    // 
+    if (input == ":bench")
+      return Command.Bench
+
+    // 
+    // Test
+    // 
+    if (input == ":test" || input == ":t")
+      return Command.Test
+
+    // 
+    // Intall
+    // 
+    val installPattern = raw":install\s+(\S+)\s*".r
+    input match {
+      case installPattern(s) => return Command.Install(s)
       case _ => // no-op
     }
 
