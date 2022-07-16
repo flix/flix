@@ -201,8 +201,10 @@ case class Index(m: Map[(String, Int), List[Entity]],
 
   /**
     * Optionally returns the expression in the document at the given `uri` at the given position `pos`.
+    *
+    * Does not support multi-line expressions.
+    *
     */
-  // TODO: Add support for multi-line expressions.
   def query(uri: String, pos: Position): Option[Entity] = {
     // A key consists of a uri and a line number.
     val key = (uri, pos.line)
