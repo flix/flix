@@ -73,7 +73,6 @@ object Entity {
     def loc: SourceLocation = e.loc
   }
 
-  // TODO: Split this into LetBound and SelectBound?
   case class LocalVar(sym: Symbol.VarSym, tpe: ast.Type) extends Entity {
     def loc: SourceLocation = sym.loc
   }
