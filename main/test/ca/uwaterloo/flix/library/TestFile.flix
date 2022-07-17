@@ -271,25 +271,25 @@ namespace TestFile {
 
     @test
     def testReadChunks01(): Bool & Impure =
-        match readChunks("./LICENSE.md", 2) {
+        match readChunks(2, "./LICENSE.md") {
             case Iterator(_, next) => Result.isOk(next())
         }
 
     @test
     def testReadChunks02(): Bool & Impure =
-        match readChunks("./LICENSE.md", 2) {
+        match readChunks(2, "./LICENSE.md") {
             case Iterator(done, _) => done() == false
         }
 
     @test
     def testReadChunks03(): Bool & Impure =
-        match readChunks("./LICENSE.md", 0) {
+        match readChunks(0, "./LICENSE.md") {
             case Iterator(_, next) => Result.isErr(next())
         }
 
     @test
     def testReadChunks04(): Bool & Impure =
-        match readChunks("./LICENSE.md", -10) {
+        match readChunks(-10, "./LICENSE.md") {
             case Iterator(_, next) => Result.isErr(next())
         }
 
