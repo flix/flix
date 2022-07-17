@@ -175,7 +175,7 @@ object ErasedAst {
 
     case class PutStaticField(field: Field, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
-    case class NewObject(clazz: java.lang.Class[_], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression {
+    case class NewObject(clazz: java.lang.Class[_], tpe: MonoType, methods: List[ErasedAst.JvmMethod], loc: SourceLocation) extends ErasedAst.Expression {
       final val name = s"Anon${this.hashCode}"
     }
 
@@ -265,6 +265,8 @@ object ErasedAst {
   case class SelectChannelRule(sym: Symbol.VarSym, chan: ErasedAst.Expression, exp: ErasedAst.Expression)
 
   case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: MonoType, loc: SourceLocation)
+
+  case class JvmMethod(ident: Name.Ident, fparams: List[ErasedAst.FormalParam], retTpe: MonoType, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ErasedAst.Expression)
 
