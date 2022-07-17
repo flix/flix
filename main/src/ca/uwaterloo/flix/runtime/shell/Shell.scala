@@ -175,6 +175,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     case Command.Praise => execPraise()
     case Command.Eval(s) => execEval(s)
     case Command.Unknown(s) => execUnknown(s)
+    case _ => sourceProvider.execute(cmd, options)
   }
 
   /**
@@ -244,7 +245,15 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     w.println("  Command       Arguments     Purpose")
     w.println()
     w.println("  :reload :r                  Recompiles every source file.")
-    w.println("  :doc :d       <fqn>         Displays documentation for <fqn>")
+    w.println("  :doc :d       <fqn>         Displays documentation for <fqn>.")
+    w.println("  :init                       Creates a new project in the current directory.")
+    w.println("  :check :c                   Checks the current project for errors.")
+    w.println("  :build :b                   Builds (i.e. compiles) the current project.")
+    w.println("  :jar :j                     Builds a jar-file from the current project.")
+    w.println("  :pkg :p                     Builds a fpkg-file from the current project.")
+    w.println("  :bench                      Runs the benchmarks for the current project.")
+    w.println("  :test :t                    Runs the tests for the current project.")
+    w.println("  :install     <owner>/<repo> Installs the Flix package from the given GitHub project")
     w.println("  :quit :q                    Terminates the Flix shell.")
     w.println("  :help :h :?                 Shows this helpful information.")
     w.println()
