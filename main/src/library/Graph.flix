@@ -15,29 +15,6 @@
  */
 namespace Graph {
 
-    def nodes(): #{ Edge(t, t), Node(t) | r } with Boxable[t] = #{
-        Node(x) :- Edge(x, _).
-        Node(x) :- Edge(_, x).
-    }
-
-    def reachability(): #{ Edge(t, t), Reachable(t, t) | r } with Boxable[t] = #{
-        // All nodes can reach themselves.
-        Reachable(n, n) :- Node(n).
-        // If `n1` can reach `m` and there is an edge from `m` to `n2`
-        // then `n1` can also reach `n2`. This adds all node pairs to
-        // the relational that are reachable using any number of nodes.
-        Reachable(n1, n2) :- Reachable(n1, m), Edge(m, n2).
-    }
-
-    def reachabilityFromSrc(src: t): #{ Edge(t, t), Reachable(t) | r } with Boxable[t] = #{
-        // A node can reach itself.
-        Reachable(src).
-        // If `src` can reach `m` and there is an edge from `m` to `n`
-        // then `src` can also reach `n`. This adds all node pairs to
-        // the relational that are reachable using any number of nodes.
-        Reachable(n) :- Reachable(m), Edge(m, n).
-    }
-
     ///
     /// Returns the transitive closure of the directed graph `g`.
     ///
@@ -67,6 +44,19 @@ namespace Graph {
         List.toSet(x)
 
     ///
+    /// Helper functions for `reachable` and `unreachable`.
+    /// Returns reachable facts as `Reachable(n)` where nodes `n` that are reachable from `src`.
+    ///
+    def reachabilityFromSrc(src: t): #{ Edge(t, t), Reachable(t) | r } with Boxable[t] = #{
+        // A node can reach itself.
+        Reachable(src).
+        // If `src` can reach `m` and there is an edge from `m` to `n`
+        // then `src` can also reach `n`. This adds all node pairs to
+        // the relational that are reachable using any number of nodes.
+        Reachable(n) :- Reachable(m), Edge(m, n).
+    }
+
+    ///
     /// Returns `true` if there is a path from `src` to `dst` in the directed graph `g`.
     ///
     pub def isConnected(src: {src :: t}, dst: {dst :: t}, g: m[(t, t)]): Bool with Foldable[m], Boxable[t] =
@@ -88,5 +78,27 @@ namespace Graph {
             Components(s) :- fix Connected(n; s), if Some(n) == Set.minimum(s).
         };
         query edges, nodes(), reachability(), connected, components select x from Components(x) |> List.toSet
+
+    ///
+    /// Helper function.
+    /// Returns nodes facts as `Node(n)` where `n` is a node from edge facts `Edge(x, y)`.
+    ///
+    def nodes(): #{ Edge(t, t), Node(t) | r } with Boxable[t] = #{
+        Node(x) :- Edge(x, _).
+        Node(x) :- Edge(_, x).
+    }
+
+    ///
+    /// Helper function.
+    /// Returns reachable facts `Reachable(n1, n2)` where `n1` can reach `n2`.
+    ///
+    def reachability(): #{ Edge(t, t), Reachable(t, t) | r } with Boxable[t] = #{
+        // All nodes can reach themselves.
+        Reachable(n, n) :- Node(n).
+        // If `n1` can reach `m` and there is an edge from `m` to `n2`
+        // then `n1` can also reach `n2`. This adds all node pairs to
+        // the relational that are reachable using any number of nodes.
+        Reachable(n1, n2) :- Reachable(n1, m), Edge(m, n2).
+    }
 
 }
