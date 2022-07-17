@@ -48,8 +48,7 @@ object GenAnonymousClasses {
   /**
     * Returns the bytecode for the anonoymous class
     */
-  private def genByteCode(className: JvmName,
-                          obj: Expression.NewObject)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(className: JvmName, obj: Expression.NewObject)(implicit root: Root, flix: Flix): Array[Byte] = {
     val visitor = AsmOps.mkClassWriter()
 
     val superClass = BackendObjType.JavaObject.jvmName
@@ -57,6 +56,8 @@ object GenAnonymousClasses {
       superClass.toInternalName, Array(asm.Type.getInternalName(obj.clazz)))
 
     compileConstructor(superClass, visitor)
+
+    obj.methods.foreach(compileMethod(_, visitor))
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -75,5 +76,24 @@ object GenAnonymousClasses {
 
     constructor.visitMaxs(999, 999)
     constructor.visitEnd()
+  }
+
+  /**
+    * Method
+    */
+  private def compileMethod(method: JvmMethod, visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = method match {
+    case JvmMethod(ident, fparams, tpe, loc) =>
+      // Drop the first formal parameter (which always represents `this`)
+      val paramTypes = fparams.tail.map(f => JvmOps.getJvmType(f.tpe))
+      val returnType = JvmOps.getJvmType(tpe)
+      val m = visitor.visitMethod(ACC_PUBLIC, ident.name, AsmOps.getMethodDescriptor(paramTypes, returnType), null, null)
+
+      m.visitTypeInsn(NEW, JvmName.UnsupportedOperationException.toInternalName)
+      m.visitInsn(DUP)
+      m.visitMethodInsn(INVOKESPECIAL, JvmName.UnsupportedOperationException.toInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)
+      m.visitInsn(ATHROW)
+
+      m.visitMaxs(999, 999)
+      m.visitEnd()
   }
 }
