@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Ming-Ho Yee
+ * Copyright 2015-2016, 2022 Ming-Ho Yee, Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,22 +31,18 @@ object ClosureConv {
     * Performs closure conversion on the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("ClosureConv") {
-
-    // Definitions.
-    val definitions = root.defs.map {
+    val newDefs = root.defs.map {
       case (sym, decl) => sym -> visitDef(decl)
     }
 
-    // Return the updated AST root.
-    root.copy(defs = definitions).toSuccess
+    root.copy(defs = newDefs).toSuccess
   }
 
   /**
     * Performs closure conversion on the given definition `def0`.
     */
   private def visitDef(def0: Def)(implicit flix: Flix): Def = {
-    val convertedExp = visitExp(def0.exp)
-    def0.copy(exp = convertedExp)
+    def0.copy(exp = visitExp(def0.exp))
   }
 
   /**
@@ -82,30 +78,45 @@ object ClosureConv {
     case Expression.Var(_, _, _) => exp0
 
     case Expression.Def(sym, tpe, loc) =>
-      // The Def expression did not occur in an Apply expression.
-      // We must create a closure, without free variables, of the definition symbol.
+      //
+      // Special Case: A def expression occurs outside of an `Apply` expression.
+      //
+
+      //
+      // We must create a closure that references the definition symbol.
+      //
+      // The closure has no free variables since it is a reference to a top-level function.
+      //
+      // This case happens if the programmers writes e.g.:
+      //
+      // let m = List.map; ...
+      //
       Expression.Closure(sym, List.empty, tpe, loc)
 
-    case Expression.Lambda(args, body, tpe, loc) =>
-      // Convert lambdas to closures. This is the main part of the `convert` function.
-      // Closure conversion happens as follows:
+    case Expression.Lambda(fparams, exp, tpe, loc) =>
+      //
+      // Main case: Convert a lambda expression to a lambda closure.
+      //
 
-      // First, we collect the free variables in the lambda expression.
-      // NB: We pass the lambda expression (instead of its body) to account for bound arguments.
-      val fvs = freeVars(exp0).toList
+      // Step 1: Compute the free variables in the lambda expression.
+      // Note: We must remove the formal parameters (which are obviously bound in the body).
+      val boundSyms = fparams.map(_.sym)
+      val fvs = freeVars(exp).toList.filter(kv => !boundSyms.contains(kv._1))
 
-      // We prepend the free variables to the arguments list. Thus all variables within the lambda body will be treated
-      // uniformly. The implementation will supply values for the free variables, without any effort from the caller.
+      // Step 2: We prepend the free variables to the formal parameter list.
+      // Thus all variables within the lambda body will be treated uniformly.
+      // The implementation will supply values for the free variables, without any effort from the caller.
       // We introduce new symbols for each introduced parameter and replace their occurrence in the body.
       val subst = mutable.Map.empty[Symbol.VarSym, Symbol.VarSym]
-      val newArgs = fvs.map {
-        case (oldSym, ptype) =>
+      val extFormalParams = fvs.map {
+        case (oldSym, ptpe) =>
           val newSym = Symbol.freshVarSym(oldSym)
           subst += (oldSym -> newSym)
-          FormalParam(newSym, Ast.Modifiers.Empty, ptype, loc)
-      } ++ args
+          FormalParam(newSym, Ast.Modifiers.Empty, ptpe, loc)
+      } ++ fparams
 
-      val newBody = visitExp(replace(body, subst.toMap))
+      // Step 3: Replace every old symbol by its new symbol in the body expression.
+      val newBody = visitExp(replace(exp, subst.toMap))
 
       // At this point all free variables have been converted to new arguments, prepended to the original
       // arguments list. Additionally, any lambdas within the body have also been closure converted.
@@ -113,15 +124,15 @@ object ClosureConv {
       // The closure will actually be created at run time, where the values for the free variables are bound
       // and stored in the closure structure. When the closure is called, the bound values are passed as arguments.
       // In a later phase, we will lift the lambda to a top-level definition.
-      Expression.LambdaClosure(newArgs, fvs.map(v => FreeVar(v._1, v._2)), newBody, tpe, loc)
+      Expression.LambdaClosure(extFormalParams, fvs.map(v => FreeVar(v._1, v._2)), newBody, tpe, loc)
 
-    case Expression.Apply(e, args, tpe, purity, loc) =>
+    case Expression.Apply(exp, exps, tpe, purity, loc) =>
       // We're trying to call some expression `e`. If `e` is a Ref, then it's a top-level function, so we directly call
       // it with ApplyRef. We remove the Ref node and don't recurse on it to avoid creating a closure.
       // We do something similar if `e` is a Hook, where we transform Apply to ApplyHook.
-      e match {
-        case Expression.Def(sym, _, _) => Expression.ApplyDef(sym, args.map(visitExp), tpe, purity, loc)
-        case _ => Expression.ApplyClo(visitExp(e), args.map(visitExp), tpe, purity, loc)
+      exp match {
+        case Expression.Def(sym, _, _) => Expression.ApplyDef(sym, exps.map(visitExp), tpe, purity, loc)
+        case _ => Expression.ApplyClo(visitExp(exp), exps.map(visitExp), tpe, purity, loc)
       }
 
     case Expression.Unary(sop, op, e, tpe, purity, loc) =>
@@ -310,38 +321,58 @@ object ClosureConv {
       Expression.Force(e, tpe, loc)
 
     case Expression.HoleError(_, _, _) => exp0
+
     case Expression.MatchError(_, _) => exp0
 
-    case Expression.Closure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
-    case Expression.LambdaClosure(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
-    case Expression.ApplyClo(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
-    case Expression.ApplyDef(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+    case Expression.Closure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
+
+    case Expression.LambdaClosure(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
+
+    case Expression.ApplyClo(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
+
+    case Expression.ApplyDef(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
   }
 
   /**
     * Returns the free variables in the given expression `exp`.
     * Does a left-to-right traversal of the AST, collecting free variables in order, in a LinkedHashSet.
     */
-  // TODO: Use immutable, but sorted data structure?
+  // TODO: Refactor to return a normal list of SimplifiedAst.FreeVar.
   private def freeVars(exp0: Expression): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = exp0 match {
     case Expression.Unit(_) => mutable.LinkedHashSet.empty
+
     case Expression.Null(_, _) => mutable.LinkedHashSet.empty
+
     case Expression.True(_) => mutable.LinkedHashSet.empty
+
     case Expression.False(_) => mutable.LinkedHashSet.empty
+
     case Expression.Char(_, _) => mutable.LinkedHashSet.empty
+
     case Expression.Float32(_, _) => mutable.LinkedHashSet.empty
+
     case Expression.Float64(_, _) => mutable.LinkedHashSet.empty
+
     case Expression.Int8(_, _) => mutable.LinkedHashSet.empty
+
     case Expression.Int16(_, _) => mutable.LinkedHashSet.empty
+
     case Expression.Int32(_, _) => mutable.LinkedHashSet.empty
+
     case Expression.Int64(_, _) => mutable.LinkedHashSet.empty
+
     case Expression.BigInt(_, _) => mutable.LinkedHashSet.empty
+
     case Expression.Str(_, _) => mutable.LinkedHashSet.empty
+
     case Expression.Var(sym, tpe, _) => mutable.LinkedHashSet((sym, tpe))
+
     case Expression.Def(_, _, _) => mutable.LinkedHashSet.empty
+
     case Expression.Lambda(args, body, _, _) =>
       val bound = args.map(_.sym)
       freeVars(body).filterNot { v => bound.contains(v._1) }
+
     case Expression.Apply(exp, args, _, _, _) =>
       freeVars(exp) ++ args.flatMap(freeVars)
     case Expression.Unary(_, _, exp, _, _, _) => freeVars(exp)
@@ -400,7 +431,7 @@ object ClosureConv {
 
     case Expression.PutStaticField(_, exp, _, _, _) => freeVars(exp)
 
-    case Expression.NewObject(_, _, _, methods, _) => 
+    case Expression.NewObject(_, _, _, methods, _) =>
       mutable.LinkedHashSet.empty ++ methods.flatMap {
         case JvmMethod(_, fparams, exp, _, _, _) =>
           val bound = fparams.map(_.sym)
@@ -703,7 +734,7 @@ object ClosureConv {
 
       case Expression.HoleError(_, _, _) => e
 
-      case Expression.MatchError( _, _) => e
+      case Expression.MatchError(_, _) => e
     }
 
     visitExp(e0)
