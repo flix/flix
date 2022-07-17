@@ -180,6 +180,19 @@ namespace TestFile {
     def testReadWith02(): Bool & Impure =
         readWith({offset = 2i64, count = 2, charSet = "US-ASCII"}, "./LICENSE.md") == Ok("ac")
 
+    @test
+    def testReadWith03(): Bool & Impure =
+        readWith({offset = 0i64, count = 0, charSet = "US-ASCII"}, "./LICENSE.md") == Ok("")
+
+    @test
+    def testReadWith04(): Bool & Impure =
+        Result.isErr(readWith({offset = -10i64, count = 0, charSet = "US-ASCII"}, "./LICENSE.md"))
+
+    @test
+    def testReadWith05(): Bool & Impure =
+        Result.isErr(readWith({offset = 0i64, count = -100, charSet = "US-ASCII"}, "./LICENSE.md"))
+
+
     /////////////////////////////////////////////////////////////////////////////
     // readLinesIter                                                           //
     /////////////////////////////////////////////////////////////////////////////
@@ -226,15 +239,31 @@ namespace TestFile {
     def testReadBytesWith02(): Bool & Impure =
         match readBytesWith({offset = 2i64, count = 2}, "./LICENSE.md") {
             case Ok(v) => v.length == 2
-            case _ => false
+            case _     => false
         }
 
     @test
     def testReadBytesWith03(): Bool & Impure =
         match readBytesWith({offset = 10i64, count = 4}, "./LICENSE.md") {
             case Ok(v) => v `Array.sameElements` [101i8, 110i8, 115i8, 101i8]
-            case _ => false
+            case _     => false
         }
+
+    @test
+    def testReadBytesWith04(): Bool & Impure =
+        match readBytesWith({offset = 0i64, count = 0}, "./LICENSE.md") {
+            case Ok(v) => Array.isEmpty(v)
+            case _     => false
+        }
+
+    @test
+    def testReadBytesWith05(): Bool & Impure =
+        Result.isErr(readBytesWith({offset = -10i64, count = 0}, "./LICENSE.md"))
+
+    @test
+    def testReadBytesWith06(): Bool & Impure =
+        Result.isErr(readBytesWith({offset = 0i64, count = -10}, "./LICENSE.md"))
+
 
     /////////////////////////////////////////////////////////////////////////////
     // readChunks                                                              //
