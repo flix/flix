@@ -227,7 +227,8 @@ namespace File {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String & Impure;
-                Err(getMessage(ex))        }
+                Err(getMessage(ex))
+        }
 
     ///
     /// Returns `true` if the given file `f` is a symbolic link.
