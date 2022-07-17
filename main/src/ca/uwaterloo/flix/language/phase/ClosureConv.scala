@@ -515,7 +515,7 @@ object ClosureConv {
     }
 
   /**
-    * Returns `fvs` without `bound`.
+    * Returns `fvs` without the variable symbol `bound`.
     */
   private def filterBoundVar(fvs: SortedSet[FreeVar], bound: Symbol.VarSym): SortedSet[FreeVar] =
     fvs.filter {
@@ -523,7 +523,7 @@ object ClosureConv {
     }
 
   /**
-    * Returns `fvs` with `bound`.
+    * Returns `fvs` without all the variable symbols in the formal parameters `bound`.
     */
   private def filterBoundParams(fvs: SortedSet[FreeVar], bound: List[FormalParam]): SortedSet[FreeVar] =
     fvs.filter {
@@ -570,7 +570,7 @@ object ClosureConv {
       case Expression.Def(_, _, _) => e
 
       case Expression.Lambda(fparams, exp, tpe, loc) =>
-        val fs = fparams.map(fparam => replace(fparam, subst))
+        val fs = fparams.map(fparam => visitFormalParam(fparam, subst))
         val e = visitExp(exp)
         Expression.Lambda(fs, e, tpe, loc)
 
@@ -754,7 +754,7 @@ object ClosureConv {
         Expression.PutStaticField(field, e, tpe, purity, loc)
 
       case Expression.NewObject(clazz, tpe, purity, methods0, loc) =>
-        val methods = methods0.map(replace(_, subst))
+        val methods = methods0.map(visitJvmMethod(_, subst))
         Expression.NewObject(clazz, tpe, purity, methods, loc)
 
       case Expression.NewChannel(exp, tpe, loc) =>
@@ -806,7 +806,7 @@ object ClosureConv {
     * Applies the given substitution map `subst` to the given formal parameters `fs`.
     */
   // TODO: Move into the above replace function and rename to visitFormalParam
-  private def replace(fparam: FormalParam, subst: Map[Symbol.VarSym, Symbol.VarSym]): FormalParam = fparam match {
+  private def visitFormalParam(fparam: FormalParam, subst: Map[Symbol.VarSym, Symbol.VarSym]): FormalParam = fparam match {
     case FormalParam(sym, mod, tpe, loc) =>
       subst.get(sym) match {
         case None => FormalParam(sym, mod, tpe, loc)
@@ -818,9 +818,9 @@ object ClosureConv {
     * Applies the given substitution map `subst` to the given JvmMethod `method`.
     */
   // TODO: Move into the above replace function and rename to visitJvmMethod.
-  private def replace(method: JvmMethod, subst: Map[Symbol.VarSym, Symbol.VarSym])(implicit flix: Flix): JvmMethod = method match {
+  private def visitJvmMethod(method: JvmMethod, subst: Map[Symbol.VarSym, Symbol.VarSym])(implicit flix: Flix): JvmMethod = method match {
     case JvmMethod(ident, fparams0, exp, retTpe, purity, loc) =>
-      val fparams = fparams0.map(replace(_, subst))
+      val fparams = fparams0.map(visitFormalParam(_, subst))
       JvmMethod(ident, fparams, applySubst(exp, subst), retTpe, purity, loc)
   }
 
