@@ -19,10 +19,11 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
+import scala.collection.immutable.SortedSet
 import scala.collection.mutable
 
 object ClosureConv {
@@ -100,16 +101,15 @@ object ClosureConv {
 
       // Step 1: Compute the free variables in the lambda expression.
       // Note: We must remove the formal parameters (which are obviously bound in the body).
-      val boundSyms = fparams.map(_.sym)
-      val fvs = freeVars(exp).toList.filter(kv => !boundSyms.contains(kv._1))
+      val fvs = filterBoundVars(freeVars(exp), fparams.map(_.sym))
 
       // Step 2: We prepend the free variables to the formal parameter list.
       // Thus all variables within the lambda body will be treated uniformly.
       // The implementation will supply values for the free variables, without any effort from the caller.
       // We introduce new symbols for each introduced parameter and replace their occurrence in the body.
       val subst = mutable.Map.empty[Symbol.VarSym, Symbol.VarSym]
-      val extFormalParams = fvs.map {
-        case (oldSym, ptpe) =>
+      val extFormalParams = fvs.toList.map {
+        case FreeVar(oldSym, ptpe) =>
           val newSym = Symbol.freshVarSym(oldSym)
           subst += (oldSym -> newSym)
           FormalParam(newSym, Ast.Modifiers.Empty, ptpe, loc)
@@ -124,7 +124,7 @@ object ClosureConv {
       // The closure will actually be created at run time, where the values for the free variables are bound
       // and stored in the closure structure. When the closure is called, the bound values are passed as arguments.
       // In a later phase, we will lift the lambda to a top-level definition.
-      Expression.LambdaClosure(extFormalParams, fvs.map(v => FreeVar(v._1, v._2)), newBody, tpe, loc)
+      Expression.LambdaClosure(extFormalParams, fvs.toList, newBody, tpe, loc)
 
     case Expression.Apply(exp, exps, tpe, purity, loc) => exp match {
       case Expression.Def(sym, _, _) =>
@@ -347,108 +347,130 @@ object ClosureConv {
   }
 
   /**
-    * Returns the free variables in the given expression `exp`.
-    * Does a left-to-right traversal of the AST, collecting free variables in order, in a LinkedHashSet.
+    * Returns all free variables in the given expression `exp0`.
+    *
+    * Note: The result:
+    *   - (A) must be a set to avoid duplicates, and
+    *   - (B) must be sorted to ensure deterministic compilation.
     */
-  // TODO: Refactor to return a normal list of SimplifiedAst.FreeVar.
-  private def freeVars(exp0: Expression): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = exp0 match {
-    case Expression.Unit(_) => mutable.LinkedHashSet.empty
+  private def freeVars(exp0: Expression): SortedSet[FreeVar] = exp0 match {
+    case Expression.Unit(_) => SortedSet.empty
 
-    case Expression.Null(_, _) => mutable.LinkedHashSet.empty
+    case Expression.Null(_, _) => SortedSet.empty
 
-    case Expression.True(_) => mutable.LinkedHashSet.empty
+    case Expression.True(_) => SortedSet.empty
 
-    case Expression.False(_) => mutable.LinkedHashSet.empty
+    case Expression.False(_) => SortedSet.empty
 
-    case Expression.Char(_, _) => mutable.LinkedHashSet.empty
+    case Expression.Char(_, _) => SortedSet.empty
 
-    case Expression.Float32(_, _) => mutable.LinkedHashSet.empty
+    case Expression.Float32(_, _) => SortedSet.empty
 
-    case Expression.Float64(_, _) => mutable.LinkedHashSet.empty
+    case Expression.Float64(_, _) => SortedSet.empty
 
-    case Expression.Int8(_, _) => mutable.LinkedHashSet.empty
+    case Expression.Int8(_, _) => SortedSet.empty
 
-    case Expression.Int16(_, _) => mutable.LinkedHashSet.empty
+    case Expression.Int16(_, _) => SortedSet.empty
 
-    case Expression.Int32(_, _) => mutable.LinkedHashSet.empty
+    case Expression.Int32(_, _) => SortedSet.empty
 
-    case Expression.Int64(_, _) => mutable.LinkedHashSet.empty
+    case Expression.Int64(_, _) => SortedSet.empty
 
-    case Expression.BigInt(_, _) => mutable.LinkedHashSet.empty
+    case Expression.BigInt(_, _) => SortedSet.empty
 
-    case Expression.Str(_, _) => mutable.LinkedHashSet.empty
+    case Expression.Str(_, _) => SortedSet.empty
 
-    case Expression.Var(sym, tpe, _) => mutable.LinkedHashSet((sym, tpe))
+    case Expression.Var(sym, tpe, _) => SortedSet(FreeVar(sym, tpe))
 
-    case Expression.Def(_, _, _) => mutable.LinkedHashSet.empty
+    case Expression.Def(_, _, _) => SortedSet.empty
 
     case Expression.Lambda(args, body, _, _) =>
-      val bound = args.map(_.sym)
-      freeVars(body).filterNot { v => bound.contains(v._1) }
+      filterBoundParams(freeVars(body), args)
 
     case Expression.Apply(exp, args, _, _, _) =>
       freeVars(exp) ++ args.flatMap(freeVars)
     case Expression.Unary(_, _, exp, _, _, _) => freeVars(exp)
+
     case Expression.Binary(_, _, exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
+
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
+
     case Expression.Branch(exp, branches, _, _, _) =>
-      mutable.LinkedHashSet.empty ++ freeVars(exp) ++ (branches flatMap {
+      freeVars(exp) ++ (branches flatMap {
         case (_, br) => freeVars(br)
       })
-    case Expression.JumpTo(_, _, _, _) => mutable.LinkedHashSet.empty
+
+    case Expression.JumpTo(_, _, _, _) => SortedSet.empty
 
     case Expression.Let(sym, exp1, exp2, _, _, _) =>
-      val bound = sym
-      freeVars(exp1) ++ freeVars(exp2).filterNot { v => bound == v._1 }
+      filterBoundVar(freeVars(exp1) ++ freeVars(exp2), sym)
 
     case Expression.LetRec(sym, exp1, exp2, _, _, _) =>
-      val bound = sym
-      (freeVars(exp1) ++ freeVars(exp2)).filterNot { v => bound == v._1 }
+      filterBoundVar(freeVars(exp1) ++ freeVars(exp2), sym)
 
     case Expression.Is(_, _, exp, _, _) => freeVars(exp)
+
     case Expression.Untag(_, _, exp, _, _, _) => freeVars(exp)
+
     case Expression.Tag(_, _, exp, _, _, _) => freeVars(exp)
+
     case Expression.Index(base, _, _, _, _) => freeVars(base)
-    case Expression.Tuple(elms, _, _, _) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVars)
-    case Expression.RecordEmpty(_, _) => mutable.LinkedHashSet.empty
+
+    case Expression.Tuple(exps, _, _, _) => visitExps(exps)
+
+    case Expression.RecordEmpty(_, _) => SortedSet.empty
+
     case Expression.RecordSelect(exp, _, _, _, _) => freeVars(exp)
+
     case Expression.RecordExtend(_, value, rest, _, _, _) => freeVars(value) ++ freeVars(rest)
+
     case Expression.RecordRestrict(_, rest, _, _, _) => freeVars(rest)
-    case Expression.ArrayLit(elms, _, _) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVars)
+
+    case Expression.ArrayLit(exps, _, _) => visitExps(exps)
+
     case Expression.ArrayNew(elm, len, _, _) => freeVars(elm) ++ freeVars(len)
+
     case Expression.ArrayLoad(base, index, _, _) => freeVars(base) ++ freeVars(index)
+
     case Expression.ArrayStore(base, index, elm, _, _) => freeVars(base) ++ freeVars(index) ++ freeVars(elm)
+
     case Expression.ArrayLength(base, _, _, _) => freeVars(base)
+
     case Expression.ArraySlice(base, beginIndex, endIndex, _, _) => freeVars(base) ++ freeVars(beginIndex) ++ freeVars(endIndex)
+
     case Expression.Ref(exp, _, _) => freeVars(exp)
+
     case Expression.Deref(exp, _, _) => freeVars(exp)
+
     case Expression.Assign(exp1, exp2, _, _) => freeVars(exp1) ++ freeVars(exp2)
 
     case Expression.Cast(exp, _, _, _) => freeVars(exp)
 
-    case Expression.TryCatch(exp, rules, _, _, _) => mutable.LinkedHashSet.empty ++ freeVars(exp) ++ rules.flatMap(r => freeVars(r.exp).filterNot(_._1 == r.sym))
+    case Expression.TryCatch(exp, rules, _, _, _) => rules.foldLeft(freeVars(exp)) {
+      case (acc, CatchRule(sym, _, exp)) =>
+        acc ++ filterBoundVar(freeVars(exp), sym)
+    }
 
-    case Expression.InvokeConstructor(_, args, _, _, _) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
+    case Expression.InvokeConstructor(_, args, _, _, _) => visitExps(args)
 
-    case Expression.InvokeMethod(_, exp, args, _, _, _) => freeVars(exp) ++ args.flatMap(freeVars)
+    case Expression.InvokeMethod(_, exp, args, _, _, _) => freeVars(exp) ++ visitExps(args)
 
-    case Expression.InvokeStaticMethod(_, args, _, _, _) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
+    case Expression.InvokeStaticMethod(_, args, _, _, _) => visitExps(args)
 
     case Expression.GetField(_, exp, _, _, _) => freeVars(exp)
 
     case Expression.PutField(_, exp1, exp2, _, _, _) => freeVars(exp1) ++ freeVars(exp2)
 
-    case Expression.GetStaticField(_, _, _, _) => mutable.LinkedHashSet.empty
+    case Expression.GetStaticField(_, _, _, _) => SortedSet.empty
 
     case Expression.PutStaticField(_, exp, _, _, _) => freeVars(exp)
 
     case Expression.NewObject(_, _, _, methods, _) =>
-      mutable.LinkedHashSet.empty ++ methods.flatMap {
-        case JvmMethod(_, fparams, exp, _, _, _) =>
-          val bound = fparams.map(_.sym)
-          freeVars(exp).filterNot { v => bound.contains(v._1) }
+      methods.foldLeft(SortedSet.empty[FreeVar]) {
+        case (acc, JvmMethod(_, fparams, exp, _, _, _)) =>
+          acc ++ filterBoundParams(freeVars(exp), fparams)
       }
 
     case Expression.NewChannel(exp, _, _) => freeVars(exp)
@@ -458,13 +480,10 @@ object ClosureConv {
     case Expression.PutChannel(exp1, exp2, _, _) => freeVars(exp1) ++ freeVars(exp2)
 
     case Expression.SelectChannel(rules, default, _, _) =>
-      val rs = mutable.LinkedHashSet.empty ++ rules.flatMap {
-        case SelectChannelRule(sym, chan, exp) => (freeVars(chan) ++ freeVars(exp)).filter(p => p._1 != sym)
+      rules.foldLeft(default.map(freeVars).getOrElse(SortedSet.empty[FreeVar])) {
+        case (acc, SelectChannelRule(sym, chan, exp)) =>
+          acc ++ filterBoundVar(freeVars(exp) ++ freeVars(chan), sym)
       }
-
-      val d = default.map(freeVars).getOrElse(mutable.LinkedHashSet.empty)
-
-      rs ++ d
 
     case Expression.Spawn(exp, _, _) => freeVars(exp)
 
@@ -472,14 +491,50 @@ object ClosureConv {
 
     case Expression.Force(exp, _, _) => freeVars(exp)
 
-    case Expression.HoleError(_, _, _) => mutable.LinkedHashSet.empty
-    case Expression.MatchError(_, _) => mutable.LinkedHashSet.empty
+    case Expression.HoleError(_, _, _) => SortedSet.empty
 
-    case Expression.LambdaClosure(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
-    case Expression.Closure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
-    case Expression.ApplyClo(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
-    case Expression.ApplyDef(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+    case Expression.MatchError(_, _) => SortedSet.empty
+
+    case Expression.LambdaClosure(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
+
+    case Expression.Closure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
+
+    case Expression.ApplyClo(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
+
+    case Expression.ApplyDef(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
   }
+
+  /**
+    * Returns the free variables in `exps0`.
+    */
+  private def visitExps(exps0: List[Expression]): SortedSet[FreeVar] =
+    exps0.foldLeft(SortedSet.empty[FreeVar]) {
+      case (acc, exp) => acc ++ freeVars(exp)
+    }
+
+  /**
+    * Returns `fvs` without `bound`.
+    */
+  private def filterBoundVar(fvs: SortedSet[FreeVar], bound: Symbol.VarSym): SortedSet[FreeVar] =
+    fvs.filter {
+      case FreeVar(sym, _) => sym != bound
+    }
+
+  /**
+    * Returns `fvs` with `bound`.
+    */
+  private def filterBoundVars(fvs: SortedSet[FreeVar], bound: List[Symbol.VarSym]): SortedSet[FreeVar] =
+    fvs.filter {
+      case FreeVar(sym, _) => !bound.contains(sym)
+    }
+
+  /**
+    * Returns `fvs` with `bound`.
+    */
+  private def filterBoundParams(fvs: SortedSet[FreeVar], bound: List[FormalParam]): SortedSet[FreeVar] =
+    fvs.filter {
+      case FreeVar(sym, _) => !bound.contains(sym)
+    }
 
   /**
     * Applies the given substitution map `subst` to the given expression `e`.
