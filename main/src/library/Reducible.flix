@@ -80,8 +80,8 @@ pub class Reducible[t: Type -> Type] {
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, t: t[a]): b & ef =
-        let f1 = (a, b) -> f(a, _ -> b as & ef);
-        Reducible.reduceRightTo(f1, a -> f(a, _ -> z as & ef), t)
+        let f1 = (a, b) -> f(a, upcast(_ -> b));
+        Reducible.reduceRightTo(f1, a -> f(a, upcast(_ -> z)), t)
 
     ///
     /// Alias for `reduce`.

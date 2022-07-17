@@ -2444,7 +2444,7 @@ def query18(): Bool =
         Map.toMultiMap(Map#{1 => 'a', 2 => 'b'}) |> MultiMap.toAscList == (1, 'a') :: (2, 'b') :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
-    // iterator                                                              //
+    // iterator                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
@@ -2462,28 +2462,6 @@ def query18(): Bool =
         let l = List.range(0, 100);
         List.zip(l, List.reverse(l)) |> List.toMap |> Map.iterator(r) |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
     }
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // enumerate                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def enumerate01(): Bool = region r {
-        let z = ref Nil @ r;
-        let m = Map#{};
-        foreach (((k, v), i) <- Map.enumerator(r, m)) z := (k, v, i) :: deref z;
-        List.sortBy(match (k, _, _) -> k, deref z) == Nil: List[(Int32, Int32, Int32)]
-    }
-
-    @test
-    def enumerate02(): Bool = region r {
-        let z = ref Nil @ r;
-        let m = Map#{2 => 1, 3 => 2, 4 => 3};
-        foreach (((k, v), i) <- Map.enumerator(r, m)) z := (k, v, i) :: deref z;
-        List.sortBy(match (k, _, _) -> k, deref z) == (2, 1, 0) :: (3, 2, 1) :: (4, 3, 2) :: Nil
-    }
-
 
     /////////////////////////////////////////////////////////////////////////////
     // joinKeys                                                                //
