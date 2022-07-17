@@ -311,11 +311,15 @@ namespace File {
             let stream = newInputStream(javaFile);
             match skip((opts.offset / 10_000i64), opts.offset, stream, f) {
                 case Ok(_)    => {
-                    let bytes = [0i8; opts.count];
-                    discard read(stream, bytes, 0, opts.count);
-                    let charSet = forName(opts.charSet);
-                    let returnString = newString(bytes, charSet);
-                    Ok(returnString)
+                    if (0 <= opts.count) {
+                        let bytes = [0i8; opts.count];
+                        discard read(stream, bytes, 0, opts.count);
+                        let charSet = forName(opts.charSet);
+                        let returnString = newString(bytes, charSet);
+                        Ok(returnString)
+                    } else {
+                        Err("The argument `count` has to be a non negative number when calling `File.readWith`.")
+                    }
                 }
                 case Err(msg) => Err(msg)
             }
@@ -511,10 +515,14 @@ namespace File {
             let stream = newInputStream(javaFile);
             match skip((opts.offset / 10_000i64), opts.offset, stream, f) {
                 case Ok(_)    => {
+                    if (0 < opts.cound) {
                         let bytes = [0i8; opts.count];
                         let numberRead = read(stream, bytes, 0, opts.count);
                         let res = readBytesWithHelper(bytes, numberRead, opts.count);
                         Ok(res)
+                    } else {
+                        Err("The argument `count` has to be a non negative number when calling `File.readBytesWith`.")
+                    }
                 }
                 case Err(msg) => Err(msg)
             }
