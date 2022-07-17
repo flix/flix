@@ -526,7 +526,7 @@ object ClosureConv {
     */
   private def filterBoundParams(fvs: SortedSet[FreeVar], bound: List[FormalParam]): SortedSet[FreeVar] =
     fvs.filter {
-      case FreeVar(sym, _) => !bound.contains(sym)
+      case FreeVar(sym, _) => !bound.exists(fparam => sym == fparam.sym)
     }
 
   /**
