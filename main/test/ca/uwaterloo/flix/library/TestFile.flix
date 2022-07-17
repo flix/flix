@@ -252,7 +252,7 @@ namespace TestFile {
     @test
     def testReadBytesWith04(): Bool & Impure =
         match readBytesWith({offset = 0i64, count = 0}, "./LICENSE.md") {
-            case Ok(v) => Array.isEmpty(v)
+            case Ok(v) => v `Array.sameElements` []
             case _     => false
         }
 
@@ -280,5 +280,18 @@ namespace TestFile {
         match readChunks("./LICENSE.md", 2) {
             case Iterator(done, _) => done() == false
         }
+
+    @test
+    def testReadChunks03(): Bool & Impure =
+        match readChunks("./LICENSE.md", 0) {
+            case Iterator(_, next) => Result.isErr(next())
+        }
+
+    @test
+    def testReadChunks04(): Bool & Impure =
+        match readChunks("./LICENSE.md", -10) {
+            case Iterator(_, next) => Result.isErr(next())
+        }
+
 
 }
