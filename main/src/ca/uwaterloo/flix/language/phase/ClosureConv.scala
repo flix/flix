@@ -101,7 +101,7 @@ object ClosureConv {
 
       // Step 1: Compute the free variables in the lambda expression.
       // Note: We must remove the formal parameters (which are obviously bound in the body).
-      val fvs = filterBoundVars(freeVars(exp), fparams.map(_.sym))
+      val fvs = filterBoundParams(freeVars(exp), fparams)
 
       // Step 2: We prepend the free variables to the formal parameter list.
       // Thus all variables within the lambda body will be treated uniformly.
@@ -518,14 +518,6 @@ object ClosureConv {
   private def filterBoundVar(fvs: SortedSet[FreeVar], bound: Symbol.VarSym): SortedSet[FreeVar] =
     fvs.filter {
       case FreeVar(sym, _) => sym != bound
-    }
-
-  /**
-    * Returns `fvs` with `bound`.
-    */
-  private def filterBoundVars(fvs: SortedSet[FreeVar], bound: List[Symbol.VarSym]): SortedSet[FreeVar] =
-    fvs.filter {
-      case FreeVar(sym, _) => !bound.contains(sym)
     }
 
   /**
