@@ -101,14 +101,14 @@ object ClosureConv {
 
       // Step 1: Compute the free variables in the lambda expression.
       // Note: We must remove the formal parameters (which are obviously bound in the body).
-      val fvs = filterBoundParams(freeVars(exp), fparams)
+      val fvs = filterBoundParams(freeVars(exp), fparams).toList
 
       // Step 2: We prepend the free variables to the formal parameter list.
       // Thus all variables within the lambda body will be treated uniformly.
       // The implementation will supply values for the free variables, without any effort from the caller.
       // We introduce new symbols for each introduced parameter and replace their occurrence in the body.
       val subst = mutable.Map.empty[Symbol.VarSym, Symbol.VarSym]
-      val extFormalParams = fvs.toList.map {
+      val extFormalParams = fvs.map {
         case FreeVar(oldSym, ptpe) =>
           val newSym = Symbol.freshVarSym(oldSym)
           subst += (oldSym -> newSym)
@@ -116,7 +116,7 @@ object ClosureConv {
       } ++ fparams
 
       // Step 3: Replace every old symbol by its new symbol in the body expression.
-      val newBody = visitExp(replace(exp, subst.toMap))
+      val newBody = visitExp(applySubst(exp, subst.toMap))
 
       // At this point all free variables have been converted to new arguments, prepended to the original
       // arguments list. Additionally, any lambdas within the body have also been closure converted.
@@ -124,7 +124,7 @@ object ClosureConv {
       // The closure will actually be created at run time, where the values for the free variables are bound
       // and stored in the closure structure. When the closure is called, the bound values are passed as arguments.
       // In a later phase, we will lift the lambda to a top-level definition.
-      Expression.LambdaClosure(extFormalParams, fvs.toList, newBody, tpe, loc)
+      Expression.LambdaClosure(extFormalParams, fvs, newBody, tpe, loc)
 
     case Expression.Apply(exp, exps, tpe, purity, loc) => exp match {
       case Expression.Def(sym, _, _) =>
@@ -532,7 +532,7 @@ object ClosureConv {
   /**
     * Applies the given substitution map `subst` to the given expression `e`.
     */
-  private def replace(e0: Expression, subst: Map[Symbol.VarSym, Symbol.VarSym])(implicit flix: Flix): Expression = {
+  private def applySubst(e0: Expression, subst: Map[Symbol.VarSym, Symbol.VarSym])(implicit flix: Flix): Expression = {
 
     def visitExp(e: Expression): Expression = e match {
       case Expression.Unit(_) => e
@@ -820,7 +820,7 @@ object ClosureConv {
   private def replace(method: JvmMethod, subst: Map[Symbol.VarSym, Symbol.VarSym])(implicit flix: Flix): JvmMethod = method match {
     case JvmMethod(ident, fparams0, exp, retTpe, purity, loc) =>
       val fparams = fparams0.map(replace(_, subst))
-      JvmMethod(ident, fparams, replace(exp, subst), retTpe, purity, loc)
+      JvmMethod(ident, fparams, applySubst(exp, subst), retTpe, purity, loc)
   }
 
 }
