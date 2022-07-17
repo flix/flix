@@ -138,6 +138,14 @@ pub def bug!(m: String): a =
 pub def unreachable!(): a = bug!("Reached unreachable expression.")
 
 ///
+/// Casts a pure function to `ef`.
+///
+/// `upcast` is safe to use anywhere.
+///
+pub def upcast(f: a -> b): a -> b & ef =
+    x -> f(x) as & ef
+
+///
 /// Meta-programming facility to express the time complexity of a function `f`.
 ///
 @Internal
