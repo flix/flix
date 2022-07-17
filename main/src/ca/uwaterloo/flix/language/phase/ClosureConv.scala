@@ -135,14 +135,20 @@ object ClosureConv {
         case _ => Expression.ApplyClo(visitExp(exp), exps.map(visitExp), tpe, purity, loc)
       }
 
-    case Expression.Unary(sop, op, e, tpe, purity, loc) =>
-      Expression.Unary(sop, op, visitExp(e), tpe, purity, loc)
+    case Expression.Unary(sop, op, exp, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      Expression.Unary(sop, op, e, tpe, purity, loc)
 
-    case Expression.Binary(sop, op, e1, e2, tpe, purity, loc) =>
-      Expression.Binary(sop, op, visitExp(e1), visitExp(e2), tpe, purity, loc)
+    case Expression.Binary(sop, op, exp1, exp2, tpe, purity, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
 
-    case Expression.IfThenElse(e1, e2, e3, tpe, purity, loc) =>
-      Expression.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), tpe, purity, loc)
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      Expression.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
     case Expression.Branch(exp, branches, tpe, purity, loc) =>
       val e = visitExp(exp)
@@ -743,6 +749,7 @@ object ClosureConv {
   /**
     * Applies the given substitution map `subst` to the given formal parameters `fs`.
     */
+  // TODO: Move into the above replace function and rename to visitFormalParam
   private def replace(fparam: FormalParam, subst: Map[Symbol.VarSym, Symbol.VarSym]): FormalParam = fparam match {
     case FormalParam(sym, mod, tpe, loc) =>
       subst.get(sym) match {
@@ -754,6 +761,7 @@ object ClosureConv {
   /**
     * Applies the given substitution map `subst` to the given JvmMethod `method`.
     */
+  // TODO: Move into the above replace function and rename to visitJvmMethod.
   private def replace(method: JvmMethod, subst: Map[Symbol.VarSym, Symbol.VarSym])(implicit flix: Flix): JvmMethod = method match {
     case JvmMethod(ident, fparams0, exp, retTpe, purity, loc) =>
       val fparams = fparams0.map(replace(_, subst))
