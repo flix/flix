@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -100,31 +100,18 @@ object ClosureConv {
       //
 
       // Step 1: Compute the free variables in the lambda expression.
-      // Note: We must remove the formal parameters (which are obviously bound in the body).
+      //         (Remove the variables bound by the lambda itself).
       val fvs = filterBoundParams(freeVars(exp), fparams).toList
 
-      // Step 2: We prepend the free variables to the formal parameter list.
-      // Thus all variables within the lambda body will be treated uniformly.
-      // The implementation will supply values for the free variables, without any effort from the caller.
-      // We introduce new symbols for each introduced parameter and replace their occurrence in the body.
-      val subst = mutable.Map.empty[Symbol.VarSym, Symbol.VarSym]
-      val extFormalParams = fvs.map {
-        case FreeVar(oldSym, ptpe) =>
-          val newSym = Symbol.freshVarSym(oldSym)
-          subst += (oldSym -> newSym)
-          FormalParam(newSym, Ast.Modifiers.Empty, ptpe, loc)
-      } ++ fparams
+      // Step 2: Convert the free variables into a new parameter list and substitution.
+      val (extraParams, subst) = getFormalParamsAndSubst(fvs, loc)
+      val newParams = extraParams ++ fparams
 
-      // Step 3: Replace every old symbol by its new symbol in the body expression.
-      val newBody = visitExp(applySubst(exp, subst.toMap))
+      // Step 3: Replace every old symbol by its new symbol in the body of the lambda.
+      val newBody = visitExp(applySubst(exp, subst))
 
-      // At this point all free variables have been converted to new arguments, prepended to the original
-      // arguments list. Additionally, any lambdas within the body have also been closure converted.
-
-      // The closure will actually be created at run time, where the values for the free variables are bound
-      // and stored in the closure structure. When the closure is called, the bound values are passed as arguments.
-      // In a later phase, we will lift the lambda to a top-level definition.
-      Expression.LambdaClosure(extFormalParams, fvs, newBody, tpe, loc)
+      // Step 4: Put everything back together.
+      Expression.LambdaClosure(newParams, fvs, newBody, tpe, loc)
 
     case Expression.Apply(exp, exps, tpe, purity, loc) => exp match {
       case Expression.Def(sym, _, _) =>
@@ -344,6 +331,20 @@ object ClosureConv {
     case Expression.ApplyClo(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
 
     case Expression.ApplyDef(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
+  }
+
+  /**
+    * Returns a pair of a formal parameter list and a substitution
+    */
+  private def getFormalParamsAndSubst(fvs: List[FreeVar], loc: SourceLocation)(implicit flix: Flix): (List[FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
+    val subst = mutable.Map.empty[Symbol.VarSym, Symbol.VarSym]
+    val fparams = fvs.map {
+      case FreeVar(oldSym, ptpe) =>
+        val newSym = Symbol.freshVarSym(oldSym)
+        subst += (oldSym -> newSym)
+        FormalParam(newSym, Ast.Modifiers.Empty, ptpe, loc)
+    }
+    (fparams, subst.toMap)
   }
 
   /**
