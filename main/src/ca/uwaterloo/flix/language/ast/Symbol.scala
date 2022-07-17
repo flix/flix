@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-import java.util.{Comparator, Objects}
+import java.util.Objects
 
 object Symbol {
 
@@ -231,7 +231,7 @@ object Symbol {
     def setStackOffset(offset: Int): Unit = stackOffset match {
       case None => stackOffset = Some(offset)
       case Some(_) =>
-        throw InternalCompilerException(s"Offset already set for variable symbol $toString.")
+        throw InternalCompilerException(s"Offset already set for variable symbol: '$toString' near ${loc.format}.")
     }
 
     /**

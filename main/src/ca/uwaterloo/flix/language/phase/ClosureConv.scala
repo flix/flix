@@ -388,7 +388,8 @@ object ClosureConv {
       filterBoundParams(freeVars(body), args)
 
     case Expression.Apply(exp, args, _, _, _) =>
-      freeVars(exp) ++ args.flatMap(freeVars)
+      freeVars(exp) ++ freeVarsExps(args)
+
     case Expression.Unary(_, _, exp, _, _, _) => freeVars(exp)
 
     case Expression.Binary(_, _, exp1, exp2, _, _, _) =>
@@ -418,7 +419,7 @@ object ClosureConv {
 
     case Expression.Index(base, _, _, _, _) => freeVars(base)
 
-    case Expression.Tuple(exps, _, _, _) => visitExps(exps)
+    case Expression.Tuple(exps, _, _, _) => freeVarsExps(exps)
 
     case Expression.RecordEmpty(_, _) => SortedSet.empty
 
@@ -428,7 +429,7 @@ object ClosureConv {
 
     case Expression.RecordRestrict(_, rest, _, _, _) => freeVars(rest)
 
-    case Expression.ArrayLit(exps, _, _) => visitExps(exps)
+    case Expression.ArrayLit(exps, _, _) => freeVarsExps(exps)
 
     case Expression.ArrayNew(elm, len, _, _) => freeVars(elm) ++ freeVars(len)
 
@@ -453,11 +454,11 @@ object ClosureConv {
         acc ++ filterBoundVar(freeVars(exp), sym)
     }
 
-    case Expression.InvokeConstructor(_, args, _, _, _) => visitExps(args)
+    case Expression.InvokeConstructor(_, args, _, _, _) => freeVarsExps(args)
 
-    case Expression.InvokeMethod(_, exp, args, _, _, _) => freeVars(exp) ++ visitExps(args)
+    case Expression.InvokeMethod(_, exp, args, _, _, _) => freeVars(exp) ++ freeVarsExps(args)
 
-    case Expression.InvokeStaticMethod(_, args, _, _, _) => visitExps(args)
+    case Expression.InvokeStaticMethod(_, args, _, _, _) => freeVarsExps(args)
 
     case Expression.GetField(_, exp, _, _, _) => freeVars(exp)
 
@@ -507,7 +508,7 @@ object ClosureConv {
   /**
     * Returns the free variables in `exps0`.
     */
-  private def visitExps(exps0: List[Expression]): SortedSet[FreeVar] =
+  private def freeVarsExps(exps0: List[Expression]): SortedSet[FreeVar] =
     exps0.foldLeft(SortedSet.empty[FreeVar]) {
       case (acc, exp) => acc ++ freeVars(exp)
     }
