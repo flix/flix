@@ -126,14 +126,21 @@ object ClosureConv {
       // In a later phase, we will lift the lambda to a top-level definition.
       Expression.LambdaClosure(extFormalParams, fvs.map(v => FreeVar(v._1, v._2)), newBody, tpe, loc)
 
-    case Expression.Apply(exp, exps, tpe, purity, loc) =>
-      // We're trying to call some expression `e`. If `e` is a Ref, then it's a top-level function, so we directly call
-      // it with ApplyRef. We remove the Ref node and don't recurse on it to avoid creating a closure.
-      // We do something similar if `e` is a Hook, where we transform Apply to ApplyHook.
-      exp match {
-        case Expression.Def(sym, _, _) => Expression.ApplyDef(sym, exps.map(visitExp), tpe, purity, loc)
-        case _ => Expression.ApplyClo(visitExp(exp), exps.map(visitExp), tpe, purity, loc)
-      }
+    case Expression.Apply(exp, exps, tpe, purity, loc) => exp match {
+      case Expression.Def(sym, _, _) =>
+        //
+        // Special Case: Direct call to a known function symbol.
+        //
+        val es = exps.map(visitExp)
+        Expression.ApplyDef(sym, es, tpe, purity, loc)
+      case _ =>
+        //
+        // General Case: Call to closure.
+        //
+        val e = visitExp(exp)
+        val es = exps.map(visitExp)
+        Expression.ApplyClo(e, es, tpe, purity, loc)
+    }
 
     case Expression.Unary(sop, op, exp, tpe, purity, loc) =>
       val e = visitExp(exp)
