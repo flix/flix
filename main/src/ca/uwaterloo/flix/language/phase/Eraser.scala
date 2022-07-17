@@ -243,10 +243,9 @@ object Eraser {
 
     case FinalAst.Expression.NewObject(clazz, tpe, methods0, loc) =>
       val methods = methods0.map {
-        case FinalAst.JvmMethod(ident, fparams, exp, retTpe, loc) =>
-          val e = visitExp(exp)
+        case FinalAst.JvmMethod(ident, fparams, retTpe, loc) =>
           val f = fparams.map(visitFormalParam)
-          ErasedAst.JvmMethod(ident, f, e, retTpe, loc)
+          ErasedAst.JvmMethod(ident, f, retTpe, loc)
       }
       ErasedAst.Expression.NewObject(clazz, tpe, methods, loc)
 

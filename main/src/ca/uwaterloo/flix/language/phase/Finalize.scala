@@ -515,11 +515,10 @@ object Finalize {
   }
 
   private def visitJvmMethod(method: LiftedAst.JvmMethod, m: TopLevel)(implicit flix: Flix): FinalAst.JvmMethod = method match {
-    case LiftedAst.JvmMethod(ident, fparams, exp, retTpe, purity, loc) =>
-      val e = visitExp(exp, m)
+    case LiftedAst.JvmMethod(ident, fparams, retTpe, purity, loc) =>
       val f = fparams.map(visitFormalParam)
       val t = visitType(retTpe)
-      FinalAst.JvmMethod(ident, f, e, t, loc)
+      FinalAst.JvmMethod(ident, f, t, loc)
   }
 
   // TODO: Deprecated

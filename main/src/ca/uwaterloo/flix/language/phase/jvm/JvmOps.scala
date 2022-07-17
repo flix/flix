@@ -645,9 +645,7 @@ object JvmOps {
         visitExp(exp)
 
       case Expression.NewObject(_, _, methods, _) =>
-        methods.foldLeft(Set.empty[ClosureInfo]) {
-          case (sacc, m) => visitExp(m.exp)
-        }
+        Set.empty
 
       case Expression.NewChannel(exp, _, _) => visitExp(exp)
 
@@ -1024,10 +1022,10 @@ object JvmOps {
 
       case Expression.NewObject(_, _, methods, _) => 
         methods.foldLeft(Set.empty[MonoType]) {
-          case (sacc, JvmMethod(_, fparams, exp, retTpe, _)) =>
+          case (sacc, JvmMethod(_, fparams, retTpe, _)) =>
             sacc ++ fparams.foldLeft(Set(retTpe)) {
               case (acc, FormalParam(_, tpe)) => acc + tpe
-            } ++ visitExp(exp)
+            }
       }
 
       case Expression.NewChannel(exp, _, _) => visitExp(exp)

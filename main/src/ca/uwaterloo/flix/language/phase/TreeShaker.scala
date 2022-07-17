@@ -256,7 +256,7 @@ object TreeShaker {
       visitExp(exp)
 
     case Expression.NewObject(_, _, _, methods, _) =>
-      visitExps(methods.map(_.exp))
+      Set.empty
 
     case Expression.NewChannel(exp, _, _) =>
       visitExp(exp)

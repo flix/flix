@@ -379,10 +379,9 @@ object LambdaLift {
     }
 
     def visitJvmMethod(method: SimplifiedAst.JvmMethod): LiftedAst.JvmMethod = method match {
-      case SimplifiedAst.JvmMethod(ident, fparams0, exp0, retTpe, purity, loc) =>
+      case SimplifiedAst.JvmMethod(ident, fparams0, _, retTpe, purity, loc) =>
         val fparams = fparams0 map visitFormalParam
-        val exp = visitExp(exp0)
-        LiftedAst.JvmMethod(ident, fparams, exp, retTpe, purity, loc)
+        LiftedAst.JvmMethod(ident, fparams, retTpe, purity, loc)
     }
 
     visitExp(exp0)
