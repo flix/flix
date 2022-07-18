@@ -92,7 +92,7 @@ Did you know that:
   for explicit coercions.
 
 - Flix -- by design -- disallows unused variables and shadowed variables since
-  these are a frequently source of bugs.
+  these are a frequent source of bugs.
 
 - Flix -- by design -- disallows allow unused declarations. This prevents bit
   rot.
@@ -214,4 +214,3 @@ Did you know that:
 - more than 50 people have contributed to the Flix compiler.
 
 - more than 2,000 pull requests have been merged into the Flix compiler.
-
