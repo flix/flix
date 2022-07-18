@@ -228,7 +228,8 @@ class TestSafety extends FunSuite with TestUtils {
       """
         |def f(): ##java.lang.Runnable & Impure = 
         |  object ##java.lang.Runnable {
-        |    def anExtraMethod(_this: ##java.lang.Object): Unit & Impure = ()
+        |    def run(_this: ##java.lang.Runnable): Unit & Impure = ()
+        |    def anExtraMethod(_this: ##java.lang.Runnable): Unit & Impure = ()
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
