@@ -1416,4 +1416,21 @@ class TestTyper extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
   }
+
+  test("Test.GeneralizationError.Eff.01") {
+    val input =
+      """
+        |eff E {
+        |    pub def op(): Unit
+        |}
+        |
+        |eff F {
+        |    pub def op(): Unit
+        |}
+        |
+        |def doBoth(f: Unit -> Unit \ {ef - E}, g: Unit -> Unit \ {ef - F}): Unit \ {ef - E - F} = g(); f()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.GeneralizationError](result)
+  }
 }

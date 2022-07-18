@@ -116,4 +116,16 @@ namespace Test/Exp/Effect {
     def yesPrintNoThrow(f: Unit -> Unit \ {(ef + Print) - Throw}): Unit \ {(ef + Print) - Throw} = {
         f() without Throw
     }
+
+    // @test
+    pub def compose(f: a -> a \ ef, g: a -> a \ ef): (a -> a \ ef) = x -> f(g(x))
+
+    // @test
+    pub def compose3(f: a -> b \ ef, g: b -> a \ ef): (a -> a \ ef) = x -> g(f(x))
+
+    // @test
+    pub def doBoth(f: Unit -> Unit \ ef, g: Unit -> Unit \ ef): Unit \ ef = f(); g()
+
+    // @test
+    pub def doBoth2(f: Unit -> Unit \ {ef - Print}, g: Unit -> Unit \ {ef - Throw}): Unit \ ef = f(); g()
 }
