@@ -255,7 +255,7 @@ object TreeShaker {
     case Expression.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewObject(_, _, _, _) =>
+    case Expression.NewObject(_, _, _, methods, _) =>
       Set.empty
 
     case Expression.NewChannel(exp, _, _) =>

@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-import java.util.{Comparator, Objects}
+import java.util.Objects
 
 object Symbol {
 
@@ -60,7 +60,7 @@ object Symbol {
     * Returns a fresh variable symbol for the given identifier.
     */
   def freshVarSym(ident: Name.Ident, boundBy: BoundBy)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(ident.loc),  boundBy, ident.loc)
+    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(ident.loc), boundBy, ident.loc)
   }
 
   /**
@@ -203,7 +203,7 @@ object Symbol {
     * @param boundBy the way the variable is bound.
     * @param loc     the source location associated with the symbol.
     */
-  final class VarSym(val id: Int, val text: String, val tvar: Type.UnkindedVar, val boundBy: BoundBy, val loc: SourceLocation) {
+  final class VarSym(val id: Int, val text: String, val tvar: Type.UnkindedVar, val boundBy: BoundBy, val loc: SourceLocation) extends Ordered[VarSym] {
 
     /**
       * The internal stack offset. Computed during variable numbering.
@@ -231,7 +231,7 @@ object Symbol {
     def setStackOffset(offset: Int): Unit = stackOffset match {
       case None => stackOffset = Some(offset)
       case Some(_) =>
-        throw InternalCompilerException(s"Offset already set for variable symbol $toString.")
+        throw InternalCompilerException(s"Offset already set for variable symbol: '$toString' near ${loc.format}.")
     }
 
     /**
@@ -246,6 +246,11 @@ object Symbol {
       * Returns the hash code of this symbol.
       */
     override val hashCode: Int = id
+
+    /**
+      * Return the comparison of `this` symbol to `that` symol.
+      */
+    override def compare(that: VarSym): Int = this.id.compare(that.id)
 
     /**
       * Human readable representation.
