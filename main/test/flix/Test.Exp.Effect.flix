@@ -116,5 +116,5 @@ namespace Test/Exp/Effect {
         pub def println(x: String): Unit
     }
 
-    enum Do[e: Eff](Unit -> Unit \ e)
+    pub enum Do[e: Eff](Unit -> Unit \ e)
 }
