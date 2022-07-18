@@ -6,16 +6,19 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
+import ca.uwaterloo.flix.language.phase.Typer.getFlixType
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.annotation.tailrec
 
 /**
-  * Performs safety and well-formedness of Datalog constraints.
+  * Performs safety and well-formedness checks on:
+  *  - Datalog constraints
+  *  - Anonymous objects
   */
 object Safety {
 
@@ -215,8 +218,9 @@ object Safety {
     case Expression.PutStaticField(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewObject(_, _, _, _, methods, _) =>
-      methods.flatMap { case JvmMethod(_, _, exp, _, _, _, _) => visitExp(exp) }
+    case Expression.NewObject(clazz, tpe, _, _, methods, loc) =>
+      checkObjectImplementation(clazz, tpe, methods, loc) ++
+        methods.flatMap { case JvmMethod(_, _, exp, _, _, _, _) => visitExp(exp) }
 
     case Expression.NewChannel(exp, _, _, _, _) =>
       visitExp(exp)
@@ -478,6 +482,53 @@ object Safety {
     case Pattern.Array(elms, _, _) => visitPats(elms, loc)
     case Pattern.ArrayTailSpread(elms, _, _, _) => visitPats(elms, loc)
     case Pattern.ArrayHeadSpread(_, elms, _, _) => visitPats(elms, loc)
+  }
+
+  case class MethodSignature(name: String, retTpe: Type, paramTypes: List[Type])
+
+  private def getMethodSignature(method: java.lang.reflect.Method): MethodSignature = {
+    MethodSignature(method.getName(), 
+      getFlixType(method.getReturnType),
+      method.getParameterTypes().toList.map(getFlixType))
+  }
+
+  private def getMethodSignature(method: JvmMethod): MethodSignature = method match {
+    case JvmMethod(ident, fparams, _, retTpe, _, _, _) =>
+      // Drop the first formal parameter (which always represents `this`)
+      val paramTypes = fparams.tail.map(_.tpe)
+      MethodSignature(ident.name, retTpe, paramTypes)
+  }
+
+  /**
+    * Ensures that `clazz` is a Java interface, and that `methods` fully implement it.
+    */
+  private def checkObjectImplementation(clazz: java.lang.Class[_], tpe: Type, methods: List[JvmMethod], loc: SourceLocation): List[CompilationMessage] = {
+    // First, check that `clazz` is an interface
+    if (!clazz.isInterface()) {
+      List(IllegalObjectDerivation(clazz, loc))
+    } else {
+      val thisErrors = methods.flatMap {
+        case JvmMethod(ident, fparams, _, _, _, _, _) => 
+          if (fparams.length < 1 || fparams.head.tpe != tpe) {
+            Some(InvalidThis(clazz, ident.name, loc))
+          } else {
+            None
+          }
+      }
+
+      val toImplement = clazz.getMethods().map(getMethodSignature).toSet
+      val implemented = methods.map(getMethodSignature).toSet
+      val intersection = toImplement intersect implemented
+
+      val unimplementedErrors = (toImplement diff intersection).map {
+        case MethodSignature(name, _, _) => UnimplementedMethod(clazz, name, loc)
+      }
+      val extraErrors = (implemented diff intersection).map {
+        case MethodSignature(name, _, _) => ExtraMethod(clazz, name, loc)
+      }
+
+      thisErrors ++ unimplementedErrors ++ extraErrors
+    }
   }
 
 }

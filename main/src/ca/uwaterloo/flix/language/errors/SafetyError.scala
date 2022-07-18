@@ -116,4 +116,57 @@ object SafetyError {
     })
   }
 
+  case class IllegalObjectDerivation(clazz: java.lang.Class[_], loc: SourceLocation) extends SafetyError {
+    def summary: String = s"Illegal object derivation from '${clazz}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+        |>> '${red(clazz.toString)}' is not a Java interface.
+        |
+        |${code(loc, "the illegal derivation occurs here.")}
+        |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  case class InvalidThis(clazz: java.lang.Class[_], name: String, loc: SourceLocation) extends SafetyError {
+    def summary: String = s"Invalid `this` parameter for method ${name}"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+        |${code(loc, "the object occurs here.")}
+        |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  case class UnimplementedMethod(clazz: java.lang.Class[_], name: String, loc: SourceLocation) extends SafetyError {
+    def summary: String = s"No implementation found for method ${name} of interface ${clazz.getName}"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+        |${code(loc, "the object occurs here.")}
+        |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  case class ExtraMethod(clazz: java.lang.Class[_], name: String, loc: SourceLocation) extends SafetyError {
+    def summary: String = s"Method ${name} not found in interface ${clazz.getName}"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+        |${code(loc, "the object occurs here.")}
+        |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
 }

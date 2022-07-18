@@ -2633,8 +2633,10 @@ object Typer {
 
   /**
     * Returns the Flix Type of a Java Class
+    * 
+    * TODO - move this out of Typer.scala
     */
-  private def getFlixType(c: Class[_]): Type = {
+  def getFlixType(c: Class[_]): Type = {
     if (c == java.lang.Boolean.TYPE) {
       Type.Bool
     }
