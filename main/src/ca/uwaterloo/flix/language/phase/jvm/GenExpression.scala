@@ -935,7 +935,7 @@ object GenExpression {
       // Push Unit on the stack.
       visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
-    case obj@Expression.NewObject(_, tpe, loc) =>
+    case obj@Expression.NewObject(_, tpe, _, loc) =>
       addSourceLine(visitor, loc)
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, obj.name).toInternalName
       visitor.visitTypeInsn(NEW, className)

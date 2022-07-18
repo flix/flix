@@ -44,6 +44,7 @@ object SimplifiedAst {
 
     case class Unit(loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Unit
+
       def purity: Purity = Pure
     }
 
@@ -53,56 +54,67 @@ object SimplifiedAst {
 
     case class True(loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Bool
+
       def purity: Purity = Pure
     }
 
     case class False(loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Bool
+
       def purity: Purity = Pure
     }
 
     case class Char(lit: scala.Char, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Char
+
       def purity: Purity = Pure
     }
 
     case class Float32(lit: scala.Float, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Float32
+
       def purity: Purity = Pure
     }
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Float64
+
       def purity: Purity = Pure
     }
 
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Int8
+
       def purity: Purity = Pure
     }
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Int16
+
       def purity: Purity = Pure
     }
 
     case class Int32(lit: scala.Int, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Int32
+
       def purity: Purity = Pure
     }
 
     case class Int64(lit: scala.Long, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Int64
+
       def purity: Purity = Pure
     }
 
     case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.BigInt
+
       def purity: Purity = Pure
     }
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Str
+
       def purity: Purity = Pure
     }
 
@@ -150,7 +162,7 @@ object SimplifiedAst {
 
     case class LetRec(sym: Symbol.VarSym, exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class Is(sym: Symbol.EnumSym, tag: Name.Tag, exp: SimplifiedAst.Expression,  purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression {
+    case class Is(sym: Symbol.EnumSym, tag: Name.Tag, exp: SimplifiedAst.Expression, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Bool
     }
 
@@ -224,7 +236,7 @@ object SimplifiedAst {
 
     case class PutStaticField(field: Field, exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class NewObject(clazz: java.lang.Class[_], tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class NewObject(clazz: java.lang.Class[_], tpe: Type, purity: Purity, methods: List[SimplifiedAst.JvmMethod], loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class NewChannel(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
       def purity: Purity = Impure
@@ -268,10 +280,14 @@ object SimplifiedAst {
 
   case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: Type, loc: SourceLocation)
 
+  case class JvmMethod(ident: Name.Ident, fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, retTpe: Type, purity: Purity, loc: SourceLocation)
+
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: SimplifiedAst.Expression)
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
 
-  case class FreeVar(sym: Symbol.VarSym, tpe: Type)
+  case class FreeVar(sym: Symbol.VarSym, tpe: Type) extends Ordered[FreeVar] {
+    override def compare(that: FreeVar): Int = this.sym.compare(that.sym)
+  }
 
 }
