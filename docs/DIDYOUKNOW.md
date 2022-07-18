@@ -92,7 +92,7 @@ Did you know that:
   for explicit coercions.
 
 - Flix -- by design -- disallows unused variables and shadowed variables since
-  these are a frequently source of bugs.
+  these are a frequent source of bugs.
 
 - Flix -- by design -- disallows allow unused declarations. This prevents bit
   rot.
@@ -113,7 +113,7 @@ Did you know that:
 
 Did you know that:
 
-- Flix has an extensive standard library with more than 2,000 functions spanning
+- Flix has an extensive standard library with more than 2,600 functions spanning
   more than 30,000 lines of code.
 
 - the Flix Prelude, i.e. the functions which are imported by default, is kept
@@ -191,7 +191,7 @@ Did you know that:
 
 - the Flix compiler contains more than 80,000 lines of code.
 
-- the Flix compiler has more than 12,500 manually written unit tests.
+- the Flix compiler has more than 13,500 manually written unit tests.
 
 - the performance of the Flix compiler is tracked at https://arewefast.flix.dev/
 
@@ -205,29 +205,12 @@ Did you know that:
   growing open source community.
 
 - Several novel aspects of the Flix programming language has been described in
-  the research literature.
+  the research literature, including its type and effect system and support for
+  first-class Datalog constraints.
 
-- Flix has received grants from the Independent Research Fund Denmark, from
-  Amazon Research, and from the Concordium Foundation.
+- Flix is funded by the Independent Research Fund Denmark, Amazon Research,  
+  DIREC, the Stibo Foundation, and the Concordium Foundation.
 
-- Flix has been discussed on Reddit, HackerNews, and LambdaTheUltimate.
+- more than 50 people have contributed to the Flix compiler.
 
-- more than 40 people have contributed to the Flix compiler.
-
-- more than 1,500 pull requests have been merged into the Flix compiler.
-
-## History
-
-- Flix used to support uniform function call syntax (UFCS) but we could not
-  overcome the fundamental ambiguities in the expression `e1.f(e2)`.
-
-- Flix used to support the `switch` expression, but it was removed since
-  `if-then-else` and `match` can express the same things. 
-
-- Flix used to support invoking nullary functions without parentheses. For
-  example, if `def f(): Int32 = 123` then one could write `f + 42`. This feature
-  was removed due to its inherent ambiguities. 
-
-- Flix used to support infix type applications. For example, the type
-  `Map[Int32, String]` could be written as ```Int32 `Map` String```. 
-
+- more than 2,000 pull requests have been merged into the Flix compiler.
