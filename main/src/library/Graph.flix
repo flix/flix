@@ -45,8 +45,7 @@ namespace Graph {
 
     ///
     /// Helper functions for `reachable` and `unreachable`.
-    /// Returns a Datalog program which computes the reachable nodes from `src`
-    /// when given a set of `Edge` and `Node` facts.
+    /// Returns a Datalog program which computes the reachable nodes from `src` when given a set of `Edge` facts.
     ///
     def reachabilityFromSrc(src: t): #{ Edge(t, t), Reachable(t) | r } with Boxable[t] = #{
         // A node can reach itself.
