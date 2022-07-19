@@ -202,7 +202,7 @@ object FinalAst {
 
   case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: MonoType, loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[FinalAst.FormalParam], retTpe: MonoType, loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[FinalAst.FormalParam], closure: FinalAst.Expression, retTpe: MonoType, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: FinalAst.Expression)
 
