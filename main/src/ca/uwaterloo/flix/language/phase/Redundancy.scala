@@ -168,6 +168,7 @@ object Redundancy {
   private def checkUnusedEffects(used: Used)(implicit root: Root): Used = {
     root.effects.foldLeft(used) {
       case (acc, (_, decl)) if deadEffect(decl, used) => acc + UnusedEffectSym(decl.sym)
+      case (acc, _) => acc
     }
   }
 
