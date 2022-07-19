@@ -442,12 +442,7 @@ namespace MutDeque {
                 loop((i + 1) &&& c)
             }
         };
-
-        if (MutDeque.isEmpty(d)) {
-            ()
-        } else {
-            loop(deref front)
-        }
+        loop(deref front)
 
     ///
     /// Shuffles a copy of `d` using the Fisher–Yates shuffle.

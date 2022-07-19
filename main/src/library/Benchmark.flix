@@ -123,7 +123,7 @@ namespace Benchmark {
         let Benchmark(r) = b;
         import static java.lang.System.nanoTime(): Int64 & Impure;
         let t = nanoTime();
-        (r.f)() as & Impure;
+        upcast(r.f)();
         (nanoTime() - t) / scaleFactor()
 
     ///
