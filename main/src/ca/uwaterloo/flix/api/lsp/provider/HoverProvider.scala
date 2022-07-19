@@ -55,6 +55,8 @@ object HoverProvider {
 
         case Entity.Type(t) => hoverKind(t, current)
 
+        case Entity.OpUse(sym, loc) => hoverOp(sym, loc, current)
+
         case _ => mkNotFound(uri, pos)
       }
     }
@@ -109,6 +111,21 @@ object HoverProvider {
          |```
          |
          |${FormatDoc.asMarkDown(sigDecl.spec.doc)}
+         |""".stripMargin
+    val contents = MarkupContent(MarkupKind.Markdown, markup)
+    val range = Range.from(loc)
+    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+    ("status" -> "success") ~ ("result" -> result)
+  }
+
+  private def hoverOp(sym: Symbol.OpSym, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root): JObject = {
+    val opDecl = root.effects(sym.eff).ops.find(_.sym == sym).get // guaranteed to be present
+    val markup =
+      s"""```flix
+         |${FormatSignature.asMarkDown(opDecl)} ${mkCurrentMsg(current)}
+         |```
+         |
+         |${FormatDoc.asMarkDown(opDecl.spec.doc)}
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
     val range = Range.from(loc)
