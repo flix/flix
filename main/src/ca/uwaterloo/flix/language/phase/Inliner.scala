@@ -402,11 +402,12 @@ object Inliner {
 
     case OccurrenceAst.Expression.NewObject(clazz, tpe, purity, methods0, loc) =>
       val methods = methods0.map {
-        case OccurrenceAst.JvmMethod(ident, fparams, retTpe, purity, loc) =>
+        case OccurrenceAst.JvmMethod(ident, fparams, closure, retTpe, purity, loc) =>
           val f = fparams.map {
             case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
           }
-          LiftedAst.JvmMethod(ident, f, retTpe, purity, loc)
+          val c = visitExp(closure, subst0)
+          LiftedAst.JvmMethod(ident, f, c, retTpe, purity, loc)
       }
       LiftedAst.Expression.NewObject(clazz, tpe, purity, methods, loc)
 
@@ -796,11 +797,12 @@ object Inliner {
 
     case OccurrenceAst.Expression.NewObject(clazz, tpe, purity, methods0, loc) =>
       val methods = methods0.map {
-        case OccurrenceAst.JvmMethod(ident, fparams, retTpe, purity, loc) =>
+        case OccurrenceAst.JvmMethod(ident, fparams, closure, retTpe, purity, loc) =>
           val f = fparams.map {
             case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
           }
-          LiftedAst.JvmMethod(ident, f, retTpe, purity, loc)
+          val c = substituteExp(closure, env0)
+          LiftedAst.JvmMethod(ident, f, c, retTpe, purity, loc)
       }
       LiftedAst.Expression.NewObject(clazz, tpe, purity, methods, loc)
 
