@@ -23,6 +23,20 @@ namespace Graph {
         let x = query edges, nodes(), reachability() select (src, dst) from Reachable(src, dst);
         List.toSet(x)
 
+
+    ///
+    /// Helper function.
+    /// Returns a Datalog program which computes the reachable nodes when given a set of `Edge` and `Node` facts.
+    ///
+    def reachability(): #{ Edge(t, t), Reachable(t, t) | r } with Boxable[t] = #{
+        // All nodes can reach themselves.
+        Reachable(n, n) :- Node(n).
+        // If `n1` can reach `m` and there is an edge from `m` to `n2`
+        // then `n1` can also reach `n2`. This adds all node pairs to
+        // the relational that are reachable using any number of nodes.
+        Reachable(n1, n2) :- Reachable(n1, m), Edge(m, n2).
+    }
+
     ///
     /// Returns the vertices that are reachable from the `src` in the directed graph `g`.
     ///
@@ -89,16 +103,19 @@ namespace Graph {
     }
 
     ///
-    /// Helper function.
-    /// Returns a Datalog program which computes the reachable nodes when given a set of `Edge` and `Node` facts.
+    /// Returns `true` if the directed graph `g` contains at least one cycle.
     ///
-    def reachability(): #{ Edge(t, t), Reachable(t, t) | r } with Boxable[t] = #{
-        // All nodes can reach themselves.
-        Reachable(n, n) :- Node(n).
-        // If `n1` can reach `m` and there is an edge from `m` to `n2`
-        // then `n1` can also reach `n2`. This adds all node pairs to
-        // the relational that are reachable using any number of nodes.
-        Reachable(n1, n2) :- Reachable(n1, m), Edge(m, n2).
-    }
+    pub def isCyclic(g: m[(t, t)]): Bool with Foldable[m], Boxable[t] =
+        let edges = inject g into Edge;
+        let reachability = #{
+            // Reachability given the edges.
+            Reachable(n1, n2) :- Edge(n1, n2), if n1 != n2.
+            // If `n1` can reach `m` and there is an edge from `m` to `n2`
+            // then `n1` can also reach `n2`. This adds all node pairs to
+            // the relational that are reachable using any number of nodes.
+            Reachable(n1, n2) :- Reachable(n1, m), Edge(m, n2).
+        };
+        let selfReach = query edges, reachability select (x, y) from Reachable(x, y) where x == y;
+        0 < (selfReach |> List.length)
 
 }
