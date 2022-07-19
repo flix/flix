@@ -489,6 +489,9 @@ object Safety {
     */
   case class MethodSignature(name: String, retTpe: Type, paramTypes: List[Type])
 
+  /**
+    * Convert a list of Java methods to a set of MethodSignatures. Returns a map to allow subsequent reverse lookup.
+    */
   private def getJavaMethodSignatures(methods: List[java.lang.reflect.Method]): Map[MethodSignature, java.lang.reflect.Method] = {
     methods.foldLeft(Map.empty[MethodSignature, java.lang.reflect.Method]) {
       case (acc, m) =>
@@ -499,6 +502,9 @@ object Safety {
     }
   }
 
+  /**
+    * Convert a list of Flix methods to a set of MethodSignatures. Returns a map to allow subsequent reverse lookup.
+    */
   private def getFlixMethodSignatures(methods: List[JvmMethod]): Map[MethodSignature, JvmMethod] = {
     methods.foldLeft(Map.empty[MethodSignature, JvmMethod]) {
       case (acc, m@JvmMethod(ident, fparams, _, retTpe, _, _, _)) =>
