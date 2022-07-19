@@ -103,9 +103,9 @@ namespace TestGraph {
     def closure05(): Bool =
         let g = graph05();
         let s = Set#{(1, 1), (1, 2), (1, 3), (1, 4),
-                      (2, 2), (2, 3), (2, 4),
-                      (3, 3), (3, 4),
-                      (4, 4)};
+                     (2, 2), (2, 3), (2, 4),
+                     (3, 3), (3, 4),
+                     (4, 4)};
         Graph.closure(g) == s
 
 
