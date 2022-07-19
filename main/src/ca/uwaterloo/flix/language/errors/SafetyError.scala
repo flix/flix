@@ -132,24 +132,33 @@ object SafetyError {
   }
 
   case class InvalidThis(clazz: java.lang.Class[_], name: String, loc: SourceLocation) extends SafetyError {
-    def summary: String = s"Invalid `this` parameter for method ${name}"
+    def summary: String = s"Invalid `this` parameter for method '${name}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-        |${code(loc, "the object occurs here.")}
+        |>> Invalid `this` parameter for method '${red(name)}''.
+        |
+        |${code(loc, "the method occurs here.")}
         |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+        | The first argument to any method must be `this`, and must have the same type as the interface
+        | being implemented.
+        |""".stripMargin
+    })
   }
 
   case class UnimplementedMethod(clazz: java.lang.Class[_], name: String, loc: SourceLocation) extends SafetyError {
-    def summary: String = s"No implementation found for method ${name} of interface ${clazz.getName}"
+    def summary: String = s"No implementation found for method '${name}' of interface '${clazz.getName}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
+        |>> No implementation found for method '${red(name)}' of interface '${red(clazz.getName)}'.
+        |
         |${code(loc, "the object occurs here.")}
         |""".stripMargin
     }
@@ -158,12 +167,14 @@ object SafetyError {
   }
 
   case class ExtraMethod(clazz: java.lang.Class[_], name: String, loc: SourceLocation) extends SafetyError {
-    def summary: String = s"Method ${name} not found in interface ${clazz.getName}"
+    def summary: String = s"Method '${name}' not found in interface '${clazz.getName}'"
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-        |${code(loc, "the object occurs here.")}
+        |>> Method '${red(name)}' not found in interface '${red(clazz.getName)}'
+        |
+        |${code(loc, "the method occurs here.")}
         |""".stripMargin
     }
 

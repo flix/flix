@@ -484,47 +484,75 @@ object Safety {
     case Pattern.ArrayHeadSpread(_, elms, _, _) => visitPats(elms, loc)
   }
 
+  /**
+    * Represents the signature of a method, used to compare Java signatures against Flix signatures.
+    */
   case class MethodSignature(name: String, retTpe: Type, paramTypes: List[Type])
 
-  private def getMethodSignature(method: java.lang.reflect.Method): MethodSignature = {
-    MethodSignature(method.getName(), 
-      getFlixType(method.getReturnType),
-      method.getParameterTypes().toList.map(getFlixType))
+  private def getJavaMethodSignatures(methods: List[java.lang.reflect.Method]): Map[MethodSignature, java.lang.reflect.Method] = {
+    methods.foldLeft(Map.empty[MethodSignature, java.lang.reflect.Method]) {
+      case (acc, m) =>
+        val signature = MethodSignature(m.getName(), 
+          getFlixType(m.getReturnType),
+          m.getParameterTypes().toList.map(getFlixType))
+        acc + (signature -> m)
+    }
   }
 
-  private def getMethodSignature(method: JvmMethod): MethodSignature = method match {
-    case JvmMethod(ident, fparams, _, retTpe, _, _, _) =>
-      // Drop the first formal parameter (which always represents `this`)
-      val paramTypes = fparams.tail.map(_.tpe)
-      MethodSignature(ident.name, retTpe, paramTypes)
+  private def getFlixMethodSignatures(methods: List[JvmMethod]): Map[MethodSignature, JvmMethod] = {
+    methods.foldLeft(Map.empty[MethodSignature, JvmMethod]) {
+      case (acc, m@JvmMethod(ident, fparams, _, retTpe, _, _, _)) =>
+        // Drop the first formal parameter (which always represents `this`)
+        val paramTypes = fparams.tail.map(_.tpe)
+        val signature = MethodSignature(ident.name, retTpe, paramTypes)
+        acc + (signature -> m)
+    }
   }
 
   /**
     * Ensures that `clazz` is a Java interface, and that `methods` fully implement it.
     */
   private def checkObjectImplementation(clazz: java.lang.Class[_], tpe: Type, methods: List[JvmMethod], loc: SourceLocation): List[CompilationMessage] = {
-    // First, check that `clazz` is an interface
+    // 
+    // Check that `clazz` is an interface
+    // 
     if (!clazz.isInterface()) {
       List(IllegalObjectDerivation(clazz, loc))
     } else {
+      // 
+      // Check that the first argument looks like "this"
+      // 
       val thisErrors = methods.flatMap {
-        case JvmMethod(ident, fparams, _, _, _, _, _) => 
+        case JvmMethod(ident, fparams, _, _, _, _, methodLoc) => 
           if (fparams.length < 1 || fparams.head.tpe != tpe) {
-            Some(InvalidThis(clazz, ident.name, loc))
+            Some(InvalidThis(clazz, ident.name, methodLoc))
           } else {
             None
           }
       }
 
-      val toImplement = clazz.getMethods().map(getMethodSignature).toSet
-      val implemented = methods.map(getMethodSignature).toSet
+      val javaMethods = getJavaMethodSignatures(clazz.getMethods().toList)
+      val flixMethods = getFlixMethodSignatures(methods)
+
+      val toImplement = javaMethods.keySet
+      val implemented = flixMethods.keySet
       val intersection = toImplement intersect implemented
 
-      val unimplementedErrors = (toImplement diff intersection).map {
-        case MethodSignature(name, _, _) => UnimplementedMethod(clazz, name, loc)
+      // 
+      // Check that there are no unimplemented methods.
+      // Filter out methods that have a default implementation
+      // 
+      val unimplemented = (toImplement diff intersection).filterNot(m => javaMethods(m).isDefault())
+      val unimplementedErrors = unimplemented.map {
+        case sig@MethodSignature(name, _, _) => UnimplementedMethod(clazz, name, loc)
       }
-      val extraErrors = (implemented diff intersection).map {
-        case MethodSignature(name, _, _) => ExtraMethod(clazz, name, loc)
+
+      // 
+      // Check that there are no methods that aren't in the interface
+      //  
+      val extra = (implemented diff intersection)
+      val extraErrors = extra.map {
+        case sig@MethodSignature(name, _, _) => ExtraMethod(clazz, name, flixMethods(sig).loc)
       }
 
       thisErrors ++ unimplementedErrors ++ extraErrors

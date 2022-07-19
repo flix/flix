@@ -8,12 +8,12 @@ namespace Test/Exp/Jvm/NewObject {
 
   def implementIterable(): ##java.lang.Iterable & Impure =
     object ##java.lang.Iterable { 
-      def iterator(_this: ##java.lang.Object): ##java.util.Iterator & Impure = () as ##java.util.Iterator
+      def iterator(_this: ##java.lang.Iterable): ##java.util.Iterator & Impure = () as ##java.util.Iterator
     }
 
   def implementComparable(): ##java.lang.Comparable & Impure =
     object ##java.lang.Comparable {
-      def compareTo(_this: ##java.lang.Object, _that: ##java.lang.Object): Int32 & Pure = 0
+      def compareTo(_this: ##java.lang.Comparable, _that: ##java.lang.Object): Int32 & Pure = 0
     }
 
   @test
