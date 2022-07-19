@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.fmt.{Audience, FormatScheme, FormatType}
 import ca.uwaterloo.flix.language.phase.Parser.Letters
 import ca.uwaterloo.flix.language.phase.Resolver.DerivableSyms
 import ca.uwaterloo.flix.util.InternalCompilerException
-import org.json4s.JsonAST.JObject
+import org.json4s.JsonAST.{JObject, concat}
 import org.json4s.JsonDSL._
 import org.parboiled2.CharPredicate
 
@@ -119,7 +119,8 @@ object CompletionProvider {
       getDefAndSigCompletions() ++
       getWithCompletions() ++
       getInstanceCompletions() ++
-      getTypeCompletions()
+      getTypeCompletions() ++
+      getOpCompletions()
   }
 
   /**
@@ -351,6 +352,19 @@ object CompletionProvider {
       kind = CompletionItemKind.Interface)
   }
 
+  private def opCompletion(decl: TypedAst.Op)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
+    // NB: priority is high because only an op can come after `do`
+    val name = decl.sym.toString
+    CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
+      sortText = Priority.high(name),
+      filterText = Some(getFilterTextForName(name)),
+      textEdit = TextEdit(context.range, getApplySnippet(name, decl.spec.fparams)),
+      detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
+      documentation = Some(decl.spec.doc.text),
+      insertTextFormat = InsertTextFormat.Snippet,
+      kind = CompletionItemKind.Interface)
+  }
+
   /**
     * Returns `true` if the given definition `decl` should be included in the suggestions.
     */
@@ -387,6 +401,21 @@ object CompletionProvider {
     isMatch && (isPublic || isInFile)
   }
 
+  /**
+    * Returns `true` if the given effect operation `op` should be included in the suggestions.
+    */
+  private def matchesOp(op: TypedAst.Op, word: String, uri: String): Boolean = {
+    val isPublic = op.spec.mod.isPublic
+    val isNamespace = word.nonEmpty && word.head.isUpper
+    val isMatch = if (isNamespace)
+      op.sym.toString.startsWith(word)
+    else
+      op.sym.name.startsWith(word)
+    val isInFile = op.sym.loc.source.name == uri
+
+    isMatch && (isPublic || isInFile)
+  }
+
   private def getDefAndSigCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     if (root == null) {
       return Nil
@@ -398,6 +427,17 @@ object CompletionProvider {
     val defSuggestions = root.defs.values.filter(matchesDef(_, word, uri)).map(defCompletion)
     val sigSuggestions = root.sigs.values.filter(matchesSig(_, word, uri)).map(sigCompletion)
     defSuggestions ++ sigSuggestions
+  }
+
+  private def getOpCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+    if (root == null || context.previousWord != "do") {
+      return Nil
+    }
+
+    val word = context.word
+    val uri = context.uri
+
+    root.effects.values.flatMap(_.ops).filter(matchesOp(_, word, uri)).map(opCompletion)
   }
 
   /**
