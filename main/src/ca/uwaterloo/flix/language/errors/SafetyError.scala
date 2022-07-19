@@ -116,6 +116,12 @@ object SafetyError {
     })
   }
 
+  /**
+    * An error raised to indicate an illegal object derivation. Objects can only be derived from Java interfaces.
+    *
+    * @param clazz The (illegal) superclass.
+    * @param loc   The source location of the object derivation.
+    */
   case class IllegalObjectDerivation(clazz: java.lang.Class[_], loc: SourceLocation) extends SafetyError {
     def summary: String = s"Illegal object derivation from '${clazz}'."
 
@@ -131,6 +137,13 @@ object SafetyError {
     def explain(formatter: Formatter): Option[String] = None
   }
 
+  /**
+    * An error raised to indicate an invalid `this` parameter for a method.
+    *
+    * @param clazz The Java interface being implemented.
+    * @param name  The name of the method with the invalid `this` parameter.
+    * @param loc   The source location of the method.
+    */
   case class InvalidThis(clazz: java.lang.Class[_], name: String, loc: SourceLocation) extends SafetyError {
     def summary: String = s"Invalid `this` parameter for method '${name}'."
 
@@ -151,6 +164,13 @@ object SafetyError {
     })
   }
 
+  /**
+    * An error raised to indicate an unimplemented Java interface method
+    *
+    * @param clazz The Java interface being implemented.
+    * @param name  The name of the unimplemented method.
+    * @param loc   The source location of the object derivation.
+    */
   case class UnimplementedMethod(clazz: java.lang.Class[_], name: String, loc: SourceLocation) extends SafetyError {
     def summary: String = s"No implementation found for method '${name}' of interface '${clazz.getName}'."
 
@@ -166,6 +186,14 @@ object SafetyError {
     def explain(formatter: Formatter): Option[String] = None
   }
 
+  /**
+    * An error raised to indicate that an object derivation includes a method that doesn't exist
+    * in the Java interface being implemented.
+    *
+    * @param clazz The Java interface being implemented.
+    * @param name  The name of the extra method.
+    * @param loc   The source location of the method.
+    */
   case class ExtraMethod(clazz: java.lang.Class[_], name: String, loc: SourceLocation) extends SafetyError {
     def summary: String = s"Method '${name}' not found in interface '${clazz.getName}'"
 
