@@ -1019,10 +1019,11 @@ object JvmOps {
 
       case Expression.NewObject(_, _, methods, _) => 
         methods.foldLeft(Set.empty[MonoType]) {
-          case (sacc, JvmMethod(_, fparams, retTpe, _)) =>
-            sacc ++ fparams.foldLeft(Set(retTpe)) {
-              case (acc, FormalParam(_, tpe)) => acc + tpe
-            }
+          case (sacc, JvmMethod(_, fparams, closure, retTpe, _)) =>
+            val fs = fparams.foldLeft(Set(retTpe)) {
+                case (acc, FormalParam(_, tpe)) => acc + tpe
+              }
+            sacc ++ fs ++ visitExp(closure)
       }
 
       case Expression.NewChannel(exp, _, _) => visitExp(exp)

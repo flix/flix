@@ -410,11 +410,12 @@ object OccurrenceAnalyzer {
 
     case Expression.NewObject(clazz, tpe, purity, methods, loc) =>
       val (ms, o1) = methods.map {
-        case LiftedAst.JvmMethod(ident, fparams, retTpe, purity, loc) => {
+        case LiftedAst.JvmMethod(ident, fparams, closure, retTpe, purity, loc) => {
           val f = fparams.map {
             case LiftedAst.FormalParam(sym, mod, tpe, loc) => OccurrenceAst.FormalParam(sym, mod, tpe, loc)
           }
-          (OccurrenceAst.JvmMethod(ident, f, retTpe, purity, loc), OccurInfo.One)
+          val (c, o) = visitExp(sym0, closure)
+          (OccurrenceAst.JvmMethod(ident, f, c, retTpe, purity, loc), o.increaseSizeByOne())
         }
       }.unzip
       val o2 = o1.foldLeft(OccurInfo.Empty)((acc, o3) => combineAllSeq(acc, o3))

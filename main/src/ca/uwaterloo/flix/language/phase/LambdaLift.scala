@@ -323,7 +323,6 @@ object LambdaLift {
         LiftedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
 
       case SimplifiedAst.Expression.NewObject(clazz, tpe, purity, methods0, loc) =>
-        // TODO - not yet complete
         val methods = methods0.map(visitJvmMethod)
         LiftedAst.Expression.NewObject(clazz, tpe, purity, methods, loc)
 
@@ -376,9 +375,14 @@ object LambdaLift {
     }
 
     def visitJvmMethod(method: SimplifiedAst.JvmMethod): LiftedAst.JvmMethod = method match {
-      case SimplifiedAst.JvmMethod(ident, fparams0, _, retTpe, purity, loc) =>
+      case SimplifiedAst.JvmMethod(ident, fparams0, exp, retTpe, purity, loc) =>
         val fparams = fparams0 map visitFormalParam
-        LiftedAst.JvmMethod(ident, fparams, retTpe, purity, loc)
+        visitExp(exp) match {
+          case closure: LiftedAst.Expression.Closure => 
+            LiftedAst.JvmMethod(ident, fparams, closure, retTpe, purity, loc)
+
+          case _ => throw InternalCompilerException(s"Unexpected expression.")
+        }
     }
 
     visitExp(exp0)
