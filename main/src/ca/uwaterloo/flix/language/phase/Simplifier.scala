@@ -1091,7 +1091,7 @@ object Simplifier {
 
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
 
-      case SimplifiedAst.Expression.Closure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+      case SimplifiedAst.Expression.Closure(_, _, _) => throw InternalCompilerException(s"Unexpected expression.")
       case SimplifiedAst.Expression.LambdaClosure(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
       case SimplifiedAst.Expression.ApplyClo(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
       case SimplifiedAst.Expression.ApplyDef(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")

@@ -93,7 +93,7 @@ object ErasedAst {
 
     case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
-    case class Closure(sym: Symbol.DefnSym, closureArgs: List[ErasedAst.Expression], fnMonoType: MonoType, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class Closure(sym: Symbol.DefnSym, closureArgs: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
     case class ApplyClo(exp: ErasedAst.Expression, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
