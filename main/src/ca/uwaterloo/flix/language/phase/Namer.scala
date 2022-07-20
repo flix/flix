@@ -50,7 +50,6 @@ object Namer {
       effects = Map.empty,
       ops = Map.empty,
       entryPoint = program.entryPoint,
-      reachable = program.reachable,
       sources = locations
     )
 
@@ -1406,12 +1405,12 @@ object Namer {
         case t => NamedAst.Type.Write(t, loc)
       }
 
+    case WeededAst.Type.Empty(loc) => NamedAst.Type.Empty(loc).toSuccess
+
     case WeededAst.Type.Ascribe(tpe, kind, loc) =>
       mapN(visitType(tpe, uenv0, tenv0)) {
         t => NamedAst.Type.Ascribe(t, kind, loc)
       }
-
-    case _: WeededAst.Type.Set => ??? // TODO handle
   }
 
   /**
@@ -1625,7 +1624,7 @@ object Namer {
     case WeededAst.Type.Intersection(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.Read(tpe, loc) => freeVars(tpe)
     case WeededAst.Type.Write(tpe, loc) => freeVars(tpe)
-    case WeededAst.Type.Set(_, _) => ??? // TODO handle
+    case WeededAst.Type.Empty(_) => Nil
     case WeededAst.Type.Ascribe(tpe, _, _) => freeVars(tpe)
   }
 
@@ -1661,7 +1660,7 @@ object Namer {
       case WeededAst.Type.Intersection(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
       case WeededAst.Type.Read(tpe, loc) => visit(tpe)
       case WeededAst.Type.Write(tpe, loc) => visit(tpe)
-      case WeededAst.Type.Set(_, _) => ??? // TODO handle
+      case WeededAst.Type.Empty(_) => Nil
       case WeededAst.Type.Ascribe(tpe, _, _) => visit(tpe)
     }
 

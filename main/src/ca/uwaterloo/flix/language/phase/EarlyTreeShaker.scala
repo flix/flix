@@ -60,7 +60,7 @@ object EarlyTreeShaker {
     */
   private def initReachable(root: Root): Set[ReachableSym] = {
     // A set used to collect the symbols of reachable functions.
-    var reachable: Set[ReachableSym] = root.reachable.map(ReachableSym.DefnSym)
+    var reachable: Set[ReachableSym] = Set.empty
 
     //
     // (a) The main function is always reachable (if it exists).
@@ -296,8 +296,8 @@ object EarlyTreeShaker {
     case Expression.PutStaticField(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewObject(_, _, _, _, _) =>
-      Set.empty
+    case Expression.NewObject(_, _, _, _, methods, _) =>
+      visitExps(methods.map(_.exp))
 
     case Expression.NewChannel(exp, _, _, _, _) =>
       visitExp(exp)

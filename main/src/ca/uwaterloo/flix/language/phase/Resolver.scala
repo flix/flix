@@ -88,7 +88,7 @@ object Resolver {
         flatMapN(classesVal, sequence(instancesVal), defsVal, sequence(enumsVal), sequence(effectsVal)) {
           case (classes, instances, defs, enums, effects) =>
             mapN(checkSuperClassDag(classes)) {
-              _ => ResolvedAst.Root(classes, combine(instances), defs, enums.toMap, effects.toMap, taenv, taOrder, root.entryPoint, root.reachable, root.sources)
+              _ => ResolvedAst.Root(classes, combine(instances), defs, enums.toMap, effects.toMap, taenv, taOrder, root.entryPoint, root.sources)
             }
         }
     }
@@ -1889,6 +1889,8 @@ object Resolver {
       mapN(semiResolveType(tpe, ns0, root)) {
         case t => Type.ReadWrite(t, loc)
       }
+
+    case NamedAst.Type.Empty(loc) => Type.Cst(TypeConstructor.Empty, loc).toSuccess
 
     case NamedAst.Type.Ascribe(tpe, kind, loc) =>
       mapN(semiResolveType(tpe, ns0, root)) {

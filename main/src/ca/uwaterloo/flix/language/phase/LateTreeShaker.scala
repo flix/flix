@@ -60,7 +60,7 @@ object LateTreeShaker {
     */
   private def initReachable(root: Root): Set[Symbol.DefnSym] = {
     // A set used to collect the symbols of reachable functions.
-    var reachable: Set[Symbol.DefnSym] = root.reachable
+    var reachable: Set[Symbol.DefnSym] = Set.empty
 
     //
     // (a) The main function is always reachable (if it exists).
@@ -255,7 +255,7 @@ object LateTreeShaker {
     case Expression.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewObject(_, _, _, _) =>
+    case Expression.NewObject(_, _, _, methods, _) =>
       Set.empty
 
     case Expression.NewChannel(exp, _, _) =>

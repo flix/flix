@@ -25,7 +25,6 @@ object ErasedAst {
   case class Root(defs: Map[Symbol.DefnSym, ErasedAst.Def],
                   enums: Map[Symbol.EnumSym, ErasedAst.Enum],
                   entryPoint: Option[Symbol.DefnSym],
-                  reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam], exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) {
@@ -94,7 +93,7 @@ object ErasedAst {
 
     case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
-    case class Closure(sym: Symbol.DefnSym, closureArgs: List[ErasedAst.Expression], fnMonoType: MonoType, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class Closure(sym: Symbol.DefnSym, closureArgs: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
     case class ApplyClo(exp: ErasedAst.Expression, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
@@ -176,7 +175,7 @@ object ErasedAst {
 
     case class PutStaticField(field: Field, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
-    case class NewObject(clazz: java.lang.Class[_], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression {
+    case class NewObject(clazz: java.lang.Class[_], tpe: MonoType, methods: List[ErasedAst.JvmMethod], loc: SourceLocation) extends ErasedAst.Expression {
       final val name = s"Anon${this.hashCode}"
     }
 
@@ -266,6 +265,8 @@ object ErasedAst {
   case class SelectChannelRule(sym: Symbol.VarSym, chan: ErasedAst.Expression, exp: ErasedAst.Expression)
 
   case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: MonoType, loc: SourceLocation)
+
+  case class JvmMethod(ident: Name.Ident, fparams: List[ErasedAst.FormalParam], retTpe: MonoType, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ErasedAst.Expression)
 

@@ -106,9 +106,9 @@ object GenExpression {
     case Expression.Var(sym, tpe, _) =>
       readVar(sym, tpe, visitor)
 
-    case Expression.Closure(sym, closureArgs, fnType, _, _) =>
+    case Expression.Closure(sym, closureArgs, tpe, _) =>
       // JvmType of the closure
-      val jvmType = JvmOps.getClosureClassType(sym, fnType)
+      val jvmType = JvmOps.getClosureClassType(sym)
       // new closure instance
       visitor.visitTypeInsn(NEW, jvmType.name.toInternalName)
       // Duplicate
@@ -327,7 +327,7 @@ object GenExpression {
       // Store instruction for `jvmType`
       val iStore = AsmOps.getStoreInstruction(jvmType)
       // JvmType of the closure
-      val cloType = JvmOps.getClosureClassType(defSym, exp1.tpe)
+      val cloType = JvmOps.getClosureClassType(defSym)
 
       // Store temp recursive value
       visitor.visitInsn(ACONST_NULL)
@@ -935,7 +935,7 @@ object GenExpression {
       // Push Unit on the stack.
       visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
-    case obj@Expression.NewObject(_, tpe, loc) =>
+    case obj@Expression.NewObject(_, tpe, _, loc) =>
       addSourceLine(visitor, loc)
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, obj.name).toInternalName
       visitor.visitTypeInsn(NEW, className)
@@ -1416,7 +1416,7 @@ object GenExpression {
         case BinaryOperator.Plus => (IADD, LADD, FADD, DADD, "add")
         case BinaryOperator.Minus => (ISUB, LSUB, FSUB, DSUB, "subtract")
         case BinaryOperator.Times => (IMUL, LMUL, FMUL, DMUL, "multiply")
-        case BinaryOperator.Modulo => (IREM, LREM, FREM, DREM, "remainder")
+        case BinaryOperator.Remainder => (IREM, LREM, FREM, DREM, "remainder")
         case BinaryOperator.Divide => (IDIV, LDIV, FDIV, DDIV, "divide")
         case BinaryOperator.Exponentiate => throw InternalCompilerException("BinaryOperator.Exponentiate already handled.")
       }

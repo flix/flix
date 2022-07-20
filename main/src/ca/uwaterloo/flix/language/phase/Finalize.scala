@@ -40,7 +40,7 @@ object Finalize {
       case (sym, enum) => sym -> visitEnum(enum, m)
     }
 
-    FinalAst.Root(defs ++ m, enums, root.entryPoint, root.reachable, root.sources).toSuccess
+    FinalAst.Root(defs ++ m, enums, root.entryPoint, root.sources).toSuccess
   }
 
   private def visitDef(def0: LiftedAst.Def, m: TopLevel)(implicit flix: Flix): FinalAst.Def = {
@@ -110,8 +110,7 @@ object Finalize {
       case LiftedAst.Expression.Closure(sym, closureArgs, tpe, loc) =>
         val t = visitType(tpe)
         val newClosureArgs = closureArgs.map(visit)
-        val fnMonoType = getFunctionTypeTemporaryToBeRemoved(newClosureArgs, t)
-        FinalAst.Expression.Closure(sym, newClosureArgs, fnMonoType, t, loc)
+        FinalAst.Expression.Closure(sym, newClosureArgs, t, loc)
 
       case LiftedAst.Expression.ApplyClo(exp, args, tpe, _, loc) =>
         val as = args map visit
@@ -329,9 +328,10 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.PutStaticField(field, e, t, loc)
 
-      case LiftedAst.Expression.NewObject(clazz, tpe, _, loc) =>
+      case LiftedAst.Expression.NewObject(clazz, tpe, _, methods, loc) =>
         val t = visitType(tpe)
-        FinalAst.Expression.NewObject(clazz, t, loc)
+        val ms = methods.map(visitJvmMethod(_, m))
+        FinalAst.Expression.NewObject(clazz, t, ms, loc)
 
       case LiftedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visit(exp)
@@ -513,12 +513,10 @@ object Finalize {
     visit(Type.eraseAliases(tpe0))
   }
 
-  // TODO: Deprecated
-  private def getFunctionTypeTemporaryToBeRemoved(fvs: List[FinalAst.Expression], tpe: MonoType): MonoType = tpe match {
-    case MonoType.Arrow(targs, tresult) =>
-      val freeArgs = fvs.map(_.tpe)
-      MonoType.Arrow(freeArgs ::: targs, tresult)
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+  private def visitJvmMethod(method: LiftedAst.JvmMethod, m: TopLevel)(implicit flix: Flix): FinalAst.JvmMethod = method match {
+    case LiftedAst.JvmMethod(ident, fparams, retTpe, purity, loc) =>
+      val f = fparams.map(visitFormalParam)
+      val t = visitType(retTpe)
+      FinalAst.JvmMethod(ident, f, t, loc)
   }
-
 }
