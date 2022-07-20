@@ -255,7 +255,7 @@ object LiftedAst {
 
   case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: Type, loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[LiftedAst.FormalParam], closure: LiftedAst.Expression, retTpe: Type, purity: Purity, loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[LiftedAst.FormalParam], clo: LiftedAst.Expression, retTpe: Type, purity: Purity, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: LiftedAst.Expression)
 
