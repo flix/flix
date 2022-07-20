@@ -77,6 +77,8 @@ object FindReferencesProvider {
           case _ => mkNotFound(uri, pos)
         }
 
+        case Entity.OpUse(sym, _) => findOpReferences(sym)
+
         case _ => mkNotFound(uri, pos)
 
       }

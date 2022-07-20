@@ -374,7 +374,7 @@ object WeededAst {
 
     case class Write(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
-    case class Set(tpe: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
+    case class Empty(loc: SourceLocation) extends WeededAst.Type
 
     case class Ascribe(tpe: WeededAst.Type, kind: Kind, loc: SourceLocation) extends WeededAst.Type
 

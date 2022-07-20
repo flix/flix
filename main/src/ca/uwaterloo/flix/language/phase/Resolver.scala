@@ -1894,6 +1894,8 @@ object Resolver {
         case t => Type.ReadWrite(t, loc)
       }
 
+    case NamedAst.Type.Empty(loc) => Type.Cst(TypeConstructor.Empty, loc).toSuccess
+
     case NamedAst.Type.Ascribe(tpe, kind, loc) =>
       mapN(semiResolveType(tpe, ns0, root)) {
         t => Type.Ascribe(t, kind, loc)

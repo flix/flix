@@ -34,6 +34,13 @@ object FormatSignature {
   }
 
   /**
+    * Returns a markdown string for the signature of the given definition.
+    */
+  def asMarkDown(op: TypedAst.Op)(implicit audience: Audience): String = {
+    formatSpec(op.sym.name, op.spec)
+  }
+
+  /**
     * Returns a markdown string for the given `name` and `spec`.
     */
   private def formatSpec(name: String, spec: TypedAst.Spec)(implicit audience: Audience): String = {

@@ -2385,8 +2385,12 @@ object Weeder {
 
     case ParsedAst.Type.Effect(sp1, eff0, sp2) =>
       val loc = mkSL(sp1, sp2)
-      val eff = visitEffectSet(eff0)
-      WeededAst.Type.Set(eff, loc)
+      val effs = visitEffectSet(eff0)
+      // NB: safe to reduce since effs is never empty
+      val effOpt = effs.reduceLeftOption ({
+        case (acc, eff) => WeededAst.Type.Union(acc, eff, loc)
+      }: (WeededAst.Type, WeededAst.Type) => WeededAst.Type)
+      effOpt.getOrElse(WeededAst.Type.Empty(loc))
 
     case ParsedAst.Type.Ascribe(tpe, kind, sp2) =>
       val sp1 = leftMostSourcePosition(tpe)

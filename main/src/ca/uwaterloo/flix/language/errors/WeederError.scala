@@ -512,7 +512,11 @@ object WeederError {
 
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
-      s"${underline("Tip:")} Mark the declaration as 'pub'."
+      s"""${underline("Tip:")} The following declarations must be public.
+         |  * Class signatures
+         |  * Instance definitions
+         |  * Effect operations
+         |""".stripMargin
     })
 
   }

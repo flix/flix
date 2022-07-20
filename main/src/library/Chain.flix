@@ -62,6 +62,7 @@ instance Foldable[Chain] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldLeft(f, s, c)
     pub def foldRight(f: (a, b) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldRight(f, s, c)
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldRightWithCont(f, s, c)
+    override pub def iterator(r: Region[r], c: Chain[a]): Iterator[a, r] \ Write(r) = Chain.iterator(r, c)
 }
 
 instance UnorderedFoldable[Chain] {
@@ -83,20 +84,18 @@ instance FunctorFilter[Chain] {
 }
 
 instance ToString[Chain[a]] with ToString[a] {
-    pub def toString(c: Chain[a]): String =
-        let fn = () -> region r {
-            let sb = new StringBuilder(r);
-            StringBuilder.appendString!("Chain#{", sb);
-            Chain.foreach(match (x, i) -> {
-                if (i < 1)
-                    StringBuilder.appendString!("${x}", sb)
-                else
-                    StringBuilder.appendString!(", ${x}", sb)
-                }, Chain.zipWithIndex(c));
-            StringBuilder.appendString!("}", sb);
-            StringBuilder.toString(sb)
+    pub def toString(c: Chain[a]): String = region r {
+        let sb = new StringBuilder(r);
+        StringBuilder.appendString!("Chain#{", sb);
+        foreach ((x, i) <- enumerator(r, c)) {
+            if (i < 1)
+                StringBuilder.appendString!("${x}", sb)
+            else
+                StringBuilder.appendString!(", ${x}", sb)
         };
-        fn()
+        StringBuilder.appendString!("}", sb);
+        StringBuilder.toString(sb)
+    }
 }
 
 

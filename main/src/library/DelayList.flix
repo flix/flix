@@ -62,6 +62,10 @@ instance Order[DelayList[a]] with Order[a] {
     }
 }
 
+instance ToString[DelayList[a]] with ToString[a] {
+    pub def toString(l: DelayList[a]): String = DelayList.toString(l)
+}
+
 instance Functor[DelayList] {
     pub def map(f: a -> b & ef, l: DelayList[a]): DelayList[b] & ef = DelayList.map(f, l)
 }
@@ -88,6 +92,7 @@ instance Foldable[DelayList] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldRightWithCont(f, s, l)
+    override pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) = DelayList.iterator(r, l)
 }
 
 instance UnorderedFoldable[DelayList] {
@@ -112,6 +117,25 @@ instance Monoid[DelayList[a]] {
 }
 
 namespace DelayList {
+
+    ///
+    /// Returns a string representation of `l`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def toString(l: DelayList[a]): String with ToString[a] = region r {
+        let sb = new StringBuilder(r);
+        StringBuilder.appendString!("DelayList(", sb);
+        foreach ((x, i) <- enumerator(r, l)) {
+            if (i == 0)
+                StringBuilder.appendString!("${x}", sb)
+            else
+                StringBuilder.appendString!(", ${x}", sb)
+        };
+        StringBuilder.appendString!(")", sb);
+        StringBuilder.toString(sb)
+    }
 
     ///
     /// Returns an empty DelayList.

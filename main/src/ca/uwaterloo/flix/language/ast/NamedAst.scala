@@ -384,6 +384,8 @@ object NamedAst {
 
     case class Write(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
+    case class Empty(loc: SourceLocation) extends NamedAst.Type
+
     case class Ascribe(tpe: NamedAst.Type, kind: Kind, loc: SourceLocation) extends NamedAst.Type
 
   }

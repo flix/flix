@@ -79,6 +79,7 @@ instance Foldable[Nec] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, c: Nec[a]): b & ef = Nec.foldLeft(f, s, c)
     pub def foldRight(f: (a, b) -> b & ef, s: b, c: Nec[a]): b & ef = Nec.foldRight(f, s, c)
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, c: Nec[a]): b & ef = Nec.foldRightWithCont(f, s, c)
+    override pub def iterator(r: Region[r], c: Nec[a]): Iterator[a, r] \ Write(r) = Nec.iterator(r, c)
 }
 
 instance UnorderedFoldable[Nec] {
@@ -115,20 +116,18 @@ instance Reducible[Nec] {
 }
 
 instance ToString[Nec[a]] with ToString[a] {
-    pub def toString(c: Nec[a]): String =
-        let fn = () -> region r {
-            let sb = new StringBuilder(r);
-            StringBuilder.appendString!("Nec#{", sb);
-            Nec.foreach(match (x, i) -> {
-                if (i < 1)
-                    StringBuilder.appendString!("${x}", sb)
-                else
-                    StringBuilder.appendString!(", ${x}", sb)
-                }, Nec.zipWithIndex(c));
-            StringBuilder.appendString!("}", sb);
-            StringBuilder.toString(sb)
+    pub def toString(c: Nec[a]): String = region r {
+        let sb = new StringBuilder(r);
+        StringBuilder.appendString!("Nec#{", sb);
+        foreach ((x, i) <- enumerator(r, c)) {
+            if (i < 1)
+                StringBuilder.appendString!("${x}", sb)
+            else
+                StringBuilder.appendString!(", ${x}", sb)
         };
-        fn()
+        StringBuilder.appendString!("}", sb);
+        StringBuilder.toString(sb)
+    }
 }
 
 
