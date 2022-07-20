@@ -394,7 +394,7 @@ object CodeHinter {
       Nil
     } else {
       // Case 2: Formula is big. Try to minimize it.
-      val minType = BoolTable.minimizeType(tpe)
+      val minType = TypeMinimization.minimizeType(tpe)
       if (numberOfVarOccurs(minType) < 5) {
         // Case 2.1: Formula is small. Good.
         Nil

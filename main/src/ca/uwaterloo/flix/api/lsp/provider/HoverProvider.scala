@@ -75,8 +75,8 @@ object HoverProvider {
   }
 
   private def hoverTypeAndEff(tpe: Type, pur: Type, eff: Type, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root, flix: Flix): JObject = {
-    val minPur = BoolTable.minimizeType(pur)
-    val minEff = BoolTable.minimizeType(eff)
+    val minPur = TypeMinimization.minimizeType(pur)
+    val minEff = TypeMinimization.minimizeType(eff)
     val markup =
       s"""```flix
          |${formatTypAndEff(tpe, minPur, minEff)} ${mkCurrentMsg(current)}

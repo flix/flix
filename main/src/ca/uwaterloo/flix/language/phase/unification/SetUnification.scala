@@ -135,7 +135,7 @@ object SetUnification {
       val t1 = Substitution.singleton(x.sym, Type.All)(f)
       val se = successiveVariableElimination(mkIntersection(t0, t1), xs)
 
-      val f1 = BoolTable.minimizeType(mkUnion(se(t0), mkIntersection(x, mkComplement(se(t1)))))
+      val f1 = TypeMinimization.minimizeType(mkUnion(se(t0), mkIntersection(x, mkComplement(se(t1)))))
       val st = Substitution.singleton(x.sym, f1)
       st ++ se
   }
