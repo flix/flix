@@ -50,6 +50,25 @@ object TypeMinimization {
   }
 
   /**
+    * Minimizes the given scheme, reducing it to a more concise equivalent form.
+    */
+  def minimizeScheme(sc: Scheme)(implicit flix: Flix): Scheme = sc match {
+    case Scheme(quantifiers, constraints, base) =>
+      val newBase = minimizeType(base)
+      val tvars = newBase.typeVars.map(_.sym)
+
+      // filter out unused quantifiers
+      val newQuants = quantifiers.filter(tvars.contains)
+
+      // filter out unused type constraints
+      val newTconstrs = constraints.filter {
+        case Ast.TypeConstraint(_, Type.KindedVar(sym, _), _) if tvars.contains(sym) => true
+        case _ => false
+      }
+      Scheme(newQuants, newTconstrs, newBase)
+  }
+
+  /**
     * Attempts to minimize the given Boolean formula `tpe`.
     *
     * Returns the same formula or a smaller formula that is equivalent.
