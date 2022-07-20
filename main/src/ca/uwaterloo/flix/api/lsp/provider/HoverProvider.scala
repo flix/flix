@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.{Entity, Index, MarkupContent, MarkupKind, Posi
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Root}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt._
-import ca.uwaterloo.flix.language.phase.unification.BoolTable
+import ca.uwaterloo.flix.language.phase.unification.{BoolTable, TypeMinimization}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
@@ -75,8 +75,8 @@ object HoverProvider {
   }
 
   private def hoverTypeAndEff(tpe: Type, pur: Type, eff: Type, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root, flix: Flix): JObject = {
-    val minPur = BoolTable.minimizeType(pur)
-    val minEff = BoolTable.minimizeType(eff)
+    val minPur = TypeMinimization.minimizeType(pur)
+    val minEff = TypeMinimization.minimizeType(eff)
     val markup =
       s"""```flix
          |${formatTypAndEff(tpe, minPur, minEff)} ${mkCurrentMsg(current)}
