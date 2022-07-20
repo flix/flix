@@ -98,7 +98,7 @@ object ClosureConv {
       //
       // Main case: Convert a lambda expression to a lambda closure.
       //
-      createLambdaClosure(fparams, exp, tpe, loc)
+      mkLambdaClosure(fparams, exp, tpe, loc)
 
     case Expression.Apply(exp, exps, tpe, purity, loc) => exp match {
       case Expression.Def(sym, _, _) =>
@@ -266,7 +266,7 @@ object ClosureConv {
     case Expression.NewObject(clazz, tpe, purity, methods0, loc) =>
       val methods = methods0 map {
         case JvmMethod(ident, fparams, exp, retTpe, purity, loc) =>
-          val closure = createLambdaClosure(fparams, exp, retTpe, loc)
+          val closure = mkLambdaClosure(fparams, exp, retTpe, loc)
           JvmMethod(ident, fparams, closure, retTpe, purity, loc)
       }
       Expression.NewObject(clazz, tpe, purity, methods, loc)
@@ -321,7 +321,10 @@ object ClosureConv {
     case Expression.ApplyDef(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
   }
 
-  private def createLambdaClosure(fparams: List[FormalParam], exp: Expression, tpe: Type, loc: SourceLocation)(implicit flix: Flix): Expression.LambdaClosure = {
+  /**
+    * Returns a LambdaClosure under the given formal parameters fparams for the body expression exp where the overall lambda has type tpe.
+    */
+  private def mkLambdaClosure(fparams: List[FormalParam], exp: Expression, tpe: Type, loc: SourceLocation)(implicit flix: Flix): Expression.LambdaClosure = {
     // Step 1: Compute the free variables in the lambda expression.
     //         (Remove the variables bound by the lambda itself).
     val fvs = filterBoundParams(freeVars(exp), fparams).toList
