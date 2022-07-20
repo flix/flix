@@ -43,13 +43,13 @@ object FindReferencesProvider {
 
         case Entity.Op(op0) => findOpReferences(op0.sym)
 
-        case Entity.DefUse(sym, _) => findDefReferences(sym)
+        case Entity.DefUse(sym, _, _) => findDefReferences(sym)
 
-        case Entity.SigUse(sym, _) => findSigReferences(sym)
+        case Entity.SigUse(sym, _, _) => findSigReferences(sym)
 
-        case Entity.VarUse(sym, _) => findVarReferences(sym)
+        case Entity.VarUse(sym, _, _) => findVarReferences(sym)
 
-        case Entity.TagUse(sym, tag, _) => findTagReferences(sym, tag)
+        case Entity.TagUse(sym, tag, _, _) => findTagReferences(sym, tag)
 
         case Entity.Exp(_) => mkNotFound(uri, pos)
 

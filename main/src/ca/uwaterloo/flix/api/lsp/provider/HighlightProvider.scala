@@ -40,13 +40,13 @@ object HighlightProvider {
 
         case Entity.Op(op) => highlightOp(op.sym)
 
-        case Entity.VarUse(sym, _) => highlightVar(sym)
+        case Entity.VarUse(sym, _, _) => highlightVar(sym)
 
-        case Entity.DefUse(sym, _) => highlightDef(sym)
+        case Entity.DefUse(sym, _, _) => highlightDef(sym)
 
-        case Entity.SigUse(sym, _) => highlightSig(sym)
+        case Entity.SigUse(sym, _, _) => highlightSig(sym)
 
-        case Entity.TagUse(sym, tag, _) => highlightTag(sym, tag)
+        case Entity.TagUse(sym, tag, _, _) => highlightTag(sym, tag)
 
         case Entity.Exp(_) => mkNotFound(uri, pos)
 
@@ -76,7 +76,7 @@ object HighlightProvider {
           case _ => mkNotFound(uri, pos)
         }
 
-        case Entity.OpUse(sym, _) => highlightOp(sym)
+        case Entity.OpUse(sym, _, _) => highlightOp(sym)
 
         case _ => mkNotFound(uri, pos)
       }

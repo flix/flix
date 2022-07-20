@@ -36,11 +36,11 @@ object RenameProvider {
 
         case Entity.Def(defn) => renameDef(defn.sym, newName)
 
-        case Entity.VarUse(sym, _) => renameVar(sym, newName)
+        case Entity.VarUse(sym, _, _) => renameVar(sym, newName)
 
-        case Entity.DefUse(sym, _) => renameDef(sym, newName)
+        case Entity.DefUse(sym, _, _) => renameDef(sym, newName)
 
-        case Entity.TagUse(sym, tag, _) => renameTag(sym, tag, newName)
+        case Entity.TagUse(sym, tag, _, _) => renameTag(sym, tag, newName)
 
         case Entity.Exp(exp) => mkNotFound(uri, pos)
 

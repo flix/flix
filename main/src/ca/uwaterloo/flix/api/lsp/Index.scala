@@ -229,6 +229,7 @@ case class Index(m: Map[(String, Int), List[Entity]],
         val filtered = candidates.filter(e => e.loc.beginCol <= pos.character && pos.character <= e.loc.endCol)
 
         // Step 2: Sort the expressions by their span (i.e. their length).
+        filtered.maxByOption(e => (span(e.loc), e.priority))
         val sorted = filtered.sortBy(e => span(e.loc))
 
         // Print all candidates.

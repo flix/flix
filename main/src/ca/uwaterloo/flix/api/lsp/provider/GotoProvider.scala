@@ -32,16 +32,16 @@ object GotoProvider {
 
       case Some(entity) => entity match {
 
-        case Entity.DefUse(sym, loc) =>
+        case Entity.DefUse(sym, loc, _) =>
           ("status" -> "success") ~ ("result" -> LocationLink.fromDefSym(sym, loc)(root).toJSON)
 
-        case Entity.SigUse(sym, loc) =>
+        case Entity.SigUse(sym, loc, _) =>
           ("status" -> "success") ~ ("result" -> LocationLink.fromSigSym(sym, loc)(root).toJSON)
 
-        case Entity.VarUse(sym, loc) =>
+        case Entity.VarUse(sym, loc, _) =>
           ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
 
-        case Entity.TagUse(sym, tag, _) =>
+        case Entity.TagUse(sym, tag, _, _) =>
           ("status" -> "success") ~ ("result" -> LocationLink.fromEnumAndTag(sym, tag, tag.loc)(root).toJSON)
 
         case Entity.Exp(_) => mkNotFound(uri, pos)
@@ -66,7 +66,7 @@ object GotoProvider {
           case _ => mkNotFound(uri, pos)
         }
 
-        case Entity.OpUse(sym, loc) =>
+        case Entity.OpUse(sym, loc, _) =>
           ("status" -> "success") ~ ("result" -> LocationLink.fromOpSym(sym, loc).toJSON)
 
         case _ => mkNotFound(uri, pos)
