@@ -92,7 +92,7 @@ object ClosureConv {
       //
       // let m = List.map; ...
       //
-      Expression.Closure(sym, List.empty, tpe, loc)
+      Expression.Closure(sym, tpe, loc)
 
     case Expression.Lambda(fparams, exp, tpe, loc) =>
       //
@@ -324,7 +324,7 @@ object ClosureConv {
 
     case Expression.MatchError(_, _) => exp0
 
-    case Expression.Closure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
+    case Expression.Closure(_, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
 
     case Expression.LambdaClosure(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
 
@@ -499,7 +499,7 @@ object ClosureConv {
 
     case Expression.LambdaClosure(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
 
-    case Expression.Closure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
+    case Expression.Closure(_, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
 
     case Expression.ApplyClo(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
 
@@ -574,7 +574,7 @@ object ClosureConv {
         val e = visitExp(exp)
         Expression.Lambda(fs, e, tpe, loc)
 
-      case Expression.Closure(_, _, _, _) => e
+      case Expression.Closure(_, _, _) => e
 
       case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) =>
         val e = visitExp(exp).asInstanceOf[Expression.Lambda]
