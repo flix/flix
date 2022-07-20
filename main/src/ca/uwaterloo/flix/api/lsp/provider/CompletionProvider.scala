@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.fmt.{Audience, FormatScheme, FormatType}
 import ca.uwaterloo.flix.language.phase.Parser.Letters
 import ca.uwaterloo.flix.language.phase.Resolver.DerivableSyms
 import ca.uwaterloo.flix.util.InternalCompilerException
-import org.json4s.JsonAST.{JObject, concat}
+import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 import org.parboiled2.CharPredicate
 
@@ -120,7 +120,8 @@ object CompletionProvider {
       getWithCompletions() ++
       getInstanceCompletions() ++
       getTypeCompletions() ++
-      getOpCompletions()
+      getOpCompletions() ++
+      getEffectCompletions()
   }
 
   /**
@@ -644,6 +645,40 @@ object CompletionProvider {
     }
 
     enums ++ aliases ++ builtinTypes
+  }
+
+  /**
+    * Completions for Effects
+    */
+  private def getEffectCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+    if (root == null) {
+      return Nil
+    }
+
+    // Boost priority if there is `\` or `\ {` immediately before the word the user is typing
+    val effSetPrefix = raw".*\\\s*\{?\s*\S*".r
+
+    val priority = if (context.previousWord == "without") {
+      // If the last word is `without`, we can be very sure an effect is coming.
+      Priority.high _
+    } else if (effSetPrefix.matches(context.prefix) || context.previousWord == "with") {
+      // If the last word is `with` or looks like `\` or `\ {`, it is likely an effect but could be something else.
+      Priority.boost _
+    } else {
+      // Otherwise it's probably not an effect.
+      Priority.low _
+    }
+
+    root.effects.map {
+      case (_, t) =>
+        val name = t.sym.name
+        CompletionItem(label = name,
+          sortText = priority(name),
+          textEdit = TextEdit(context.range, name),
+          documentation = Some(t.doc.text),
+          insertTextFormat = InsertTextFormat.Snippet,
+          kind = CompletionItemKind.Enum)
+    }
   }
 
   /*
