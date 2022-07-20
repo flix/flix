@@ -82,7 +82,7 @@ object GenAnonymousClasses {
     * Method
     */
   private def compileMethod(method: JvmMethod, visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = method match {
-    case JvmMethod(ident, fparams, closure, tpe, loc) =>
+    case JvmMethod(ident, fparams, clo, tpe, loc) =>
       // Drop the first formal parameter (which always represents `this`)
       val paramTypes = fparams.tail.map(f => JvmOps.getJvmType(f.tpe))
       val returnType = JvmOps.getJvmType(tpe)

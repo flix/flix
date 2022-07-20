@@ -498,10 +498,10 @@ object PrettyPrinter {
     }
 
     def fmtJvmMethod(method: JvmMethod, formatter: Formatter): String = method match {
-      case JvmMethod(ident, fparams, closure, retTpe, purity, loc) =>
+      case JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
         s"${formatter.bold("def")} ${formatter.blue(ident.toString)}" +
         fparams.map(fmtParam(_, formatter)).mkString("(", ", ", ")") +
-        " & " + purity + " = " + fmtExp(closure, formatter)
+        " & " + purity + " = " + fmtExp(clo, formatter)
     }
   }
 }

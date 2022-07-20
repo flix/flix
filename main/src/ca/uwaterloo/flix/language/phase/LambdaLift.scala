@@ -377,12 +377,7 @@ object LambdaLift {
     def visitJvmMethod(method: SimplifiedAst.JvmMethod): LiftedAst.JvmMethod = method match {
       case SimplifiedAst.JvmMethod(ident, fparams0, exp, retTpe, purity, loc) =>
         val fparams = fparams0 map visitFormalParam
-        visitExp(exp) match {
-          case closure: LiftedAst.Expression.Closure => 
-            LiftedAst.JvmMethod(ident, fparams, closure, retTpe, purity, loc)
-
-          case _ => throw InternalCompilerException(s"Unexpected expression.")
-        }
+        LiftedAst.JvmMethod(ident, fparams, visitExp(exp), retTpe, purity, loc)
     }
 
     visitExp(exp0)

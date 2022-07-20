@@ -256,7 +256,7 @@ object OccurrenceAst {
 
   case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: Type, loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[OccurrenceAst.FormalParam], closure: OccurrenceAst.Expression, retTpe: Type, purity: Purity, loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[OccurrenceAst.FormalParam], clo: OccurrenceAst.Expression, retTpe: Type, purity: Purity, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: OccurrenceAst.Expression)
 
