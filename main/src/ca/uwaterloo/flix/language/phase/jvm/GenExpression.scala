@@ -108,7 +108,7 @@ object GenExpression {
 
     case Expression.Closure(sym, closureArgs, fnType, _, _) =>
       // JvmType of the closure
-      val jvmType = JvmOps.getClosureClassType(sym, fnType)
+      val jvmType = JvmOps.getClosureClassType(sym)
       // new closure instance
       visitor.visitTypeInsn(NEW, jvmType.name.toInternalName)
       // Duplicate
@@ -327,7 +327,7 @@ object GenExpression {
       // Store instruction for `jvmType`
       val iStore = AsmOps.getStoreInstruction(jvmType)
       // JvmType of the closure
-      val cloType = JvmOps.getClosureClassType(defSym, exp1.tpe)
+      val cloType = JvmOps.getClosureClassType(defSym)
 
       // Store temp recursive value
       visitor.visitInsn(ACONST_NULL)

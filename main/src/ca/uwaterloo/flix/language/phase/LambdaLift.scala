@@ -140,11 +140,8 @@ object LambdaLift {
         // Construct the closure expression.
         LiftedAst.Expression.Closure(freshSymbol, closureArgs, tpe, loc)
 
-      case SimplifiedAst.Expression.Closure(sym, freeVars, tpe, loc) =>
-        val closureArgs = freeVars.map {
-          case SimplifiedAst.FreeVar(sym, tpe) => LiftedAst.Expression.Var(sym, tpe, sym.loc)
-        }
-        LiftedAst.Expression.Closure(sym, closureArgs, tpe, loc)
+      case SimplifiedAst.Expression.Closure(sym, tpe, loc) =>
+        LiftedAst.Expression.Closure(sym, List.empty, tpe, loc)
 
       case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
         val e = visitExp(exp)

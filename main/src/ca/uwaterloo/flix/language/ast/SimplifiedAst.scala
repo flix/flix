@@ -138,7 +138,7 @@ object SimplifiedAst {
     }
 
     @IntroducedBy(LambdaLift.getClass)
-    case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+    case class Closure(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
       def purity: Purity = Pure
     }
 
