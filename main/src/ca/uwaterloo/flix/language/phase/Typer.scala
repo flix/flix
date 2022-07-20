@@ -2514,7 +2514,7 @@ object Typer {
         (constrs, tpe, pur, eff) <- inferExp(exp, root)
         expPur <- unifyBoolM(Type.Pure, pur, loc)
         expTyp <- unifyTypeM(expectedType, tpe, loc)
-        expEff <- unifyTypeM(Type.Empty, pur, loc)
+        expEff <- unifyTypeM(Type.Empty, eff, loc)
       } yield (constrs, mkAnySchemaRowType(loc))
   }
 
