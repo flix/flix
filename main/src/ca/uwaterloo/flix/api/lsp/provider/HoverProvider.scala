@@ -136,12 +136,15 @@ object HoverProvider {
   private def formatTypAndEff(tpe0: Type, pur0: Type, eff0: Type): String = {
     val t = FormatType.formatWellKindedType(tpe0)
     val p = pur0 match {
-      case Type.Cst(TypeConstructor.True, _) => "Pure"
-      case Type.Cst(TypeConstructor.False, _) => "Impure"
-      case pur => FormatType.formatWellKindedType(pur)
+      case Type.Cst(TypeConstructor.True, _) => ""
+      case Type.Cst(TypeConstructor.False, _) => " & Impure"
+      case pur => " & " + FormatType.formatWellKindedType(pur)
     }
-    val e = FormatType.formatWellKindedType(eff0)
-    s"$t & $p \\ $e"
+    val e = eff0 match {
+      case Type.Cst(TypeConstructor.Empty, _) => ""
+      case eff => " \\ " + FormatType.formatWellKindedType(eff)
+    }
+    s"$t$p$e"
   }
 
   private def hoverKind(t: Type, current: Boolean)(implicit index: Index, root: Root): JObject = {
