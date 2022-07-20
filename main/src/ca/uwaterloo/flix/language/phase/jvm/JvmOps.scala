@@ -523,7 +523,7 @@ object JvmOps {
 
       case Expression.Var(_, _, _) => Set.empty
 
-      case Expression.Closure(sym, closureArgs, _, tpe, _) =>
+      case Expression.Closure(sym, closureArgs, tpe, _) =>
         val closureInfo = closureArgs.foldLeft(Set.empty[ClosureInfo]) {
           case (sacc, e) => sacc ++ visitExp(e)
         }
@@ -907,7 +907,7 @@ object JvmOps {
 
       case Expression.Var(_, _, _) => Set.empty
 
-      case Expression.Closure(_, closureArgs, _, _, _) => closureArgs.foldLeft(Set.empty[MonoType]) {
+      case Expression.Closure(_, closureArgs, _, _) => closureArgs.foldLeft(Set.empty[MonoType]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
@@ -1184,7 +1184,7 @@ object JvmOps {
 
       case Expression.Var(_, _, _) => Set.empty
 
-      case Expression.Closure(_, closureArgs, _, _, _) => closureArgs.foldLeft(Set.empty[Expression.NewObject]) {
+      case Expression.Closure(_, closureArgs, _, _) => closureArgs.foldLeft(Set.empty[Expression.NewObject]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 

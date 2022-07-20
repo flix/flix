@@ -94,7 +94,7 @@ object FinalAst {
     case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     // TODO: Get rid of the fnMonoType here.
-    case class Closure(sym: Symbol.DefnSym, closureArgs: List[FinalAst.Expression], fnMonoType: MonoType, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    case class Closure(sym: Symbol.DefnSym, closureArgs: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class ApplyClo(exp: FinalAst.Expression, args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
