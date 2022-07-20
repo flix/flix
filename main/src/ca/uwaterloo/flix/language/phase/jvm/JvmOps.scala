@@ -191,18 +191,15 @@ object JvmOps {
     * List.length       =>    List/Clo$length
     * List.map          =>    List/Clo$map
     */
-  def getClosureClassType(sym: Symbol.DefnSym, tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
-    case MonoType.Arrow(_, _) =>
-      // The JVM name is of the form Clo$sym.name
-      val name = s"Clo${Flix.Delimiter}${mangle(sym.name)}"
+  def getClosureClassType(sym: Symbol.DefnSym)(implicit root: Root, flix: Flix): JvmType.Reference = {
+    // The JVM name is of the form Clo$sym.name
+    val name = s"Clo${Flix.Delimiter}${mangle(sym.name)}"
 
-      // The JVM package is the namespace of the symbol.
-      val pkg = sym.namespace
+    // The JVM package is the namespace of the symbol.
+    val pkg = sym.namespace
 
-      // The result type.
-      JvmType.Reference(JvmName(pkg, name))
-
-    case tpe => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+    // The result type.
+    JvmType.Reference(JvmName(pkg, name))
   }
 
   /**
@@ -526,7 +523,7 @@ object JvmOps {
 
       case Expression.Var(_, _, _) => Set.empty
 
-      case Expression.Closure(sym, closureArgs, _, tpe, _) =>
+      case Expression.Closure(sym, closureArgs, tpe, _) =>
         val closureInfo = closureArgs.foldLeft(Set.empty[ClosureInfo]) {
           case (sacc, e) => sacc ++ visitExp(e)
         }
@@ -644,7 +641,7 @@ object JvmOps {
       case Expression.PutStaticField(_, exp, _, _) =>
         visitExp(exp)
 
-      case Expression.NewObject(_, _, _) =>
+      case Expression.NewObject(_, _, methods, _) =>
         Set.empty
 
       case Expression.NewChannel(exp, _, _) => visitExp(exp)
@@ -910,7 +907,7 @@ object JvmOps {
 
       case Expression.Var(_, _, _) => Set.empty
 
-      case Expression.Closure(_, closureArgs, _, _, _) => closureArgs.foldLeft(Set.empty[MonoType]) {
+      case Expression.Closure(_, closureArgs, _, _) => closureArgs.foldLeft(Set.empty[MonoType]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
@@ -1020,7 +1017,13 @@ object JvmOps {
 
       case Expression.PutStaticField(_, exp, _, _) => visitExp(exp)
 
-      case Expression.NewObject(_, _, _) => Set.empty
+      case Expression.NewObject(_, _, methods, _) => 
+        methods.foldLeft(Set.empty[MonoType]) {
+          case (sacc, JvmMethod(_, fparams, retTpe, _)) =>
+            sacc ++ fparams.foldLeft(Set(retTpe)) {
+              case (acc, FormalParam(_, tpe)) => acc + tpe
+            }
+      }
 
       case Expression.NewChannel(exp, _, _) => visitExp(exp)
 
@@ -1181,7 +1184,7 @@ object JvmOps {
 
       case Expression.Var(_, _, _) => Set.empty
 
-      case Expression.Closure(_, closureArgs, _, _, _) => closureArgs.foldLeft(Set.empty[Expression.NewObject]) {
+      case Expression.Closure(_, closureArgs, _, _) => closureArgs.foldLeft(Set.empty[Expression.NewObject]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
