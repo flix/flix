@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.{Entity, Index, MarkupContent, MarkupKind, Posi
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Root}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt._
-import ca.uwaterloo.flix.language.phase.unification.BoolTable
+import ca.uwaterloo.flix.language.phase.unification.{BoolTable, TypeMinimization}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
