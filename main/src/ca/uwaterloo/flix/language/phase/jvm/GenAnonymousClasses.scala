@@ -55,9 +55,9 @@ object GenAnonymousClasses {
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
       superClass.toInternalName, Array(asm.Type.getInternalName(obj.clazz)))
 
-    compileConstructor(superClass, visitor)
+    compileConstructor(JvmType.Reference(className), superClass, obj.methods, visitor)
 
-    obj.methods.zipWithIndex.foreach{ case (m, i) => compileMethod(m, i, visitor) }
+    obj.methods.zipWithIndex.foreach { case (m, i) => compileMethod(m, i, visitor) }
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -66,12 +66,19 @@ object GenAnonymousClasses {
   /**
     * Constructor of the class
     */
-  private def compileConstructor(superClass: JvmName, visitor: ClassWriter): Unit = {
+  private def compileConstructor(currentClass: JvmType.Reference, superClass: JvmName, methods: List[JvmMethod], visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
     val constructor = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
 
     constructor.visitVarInsn(ALOAD, 0)
     constructor.visitMethodInsn(INVOKESPECIAL, superClass.toInternalName, JvmName.ConstructorMethod,
       MethodDescriptor.NothingToVoid.toDescriptor, false)
+
+    methods.zipWithIndex.foreach { case (m, i) => 
+      GenExpression.compileExpression(m.clo, constructor, currentClass, Map(), new Label())
+      constructor.visitInsn(DUP)
+      constructor.visitFieldInsn(PUTFIELD, currentClass.name.toInternalName, s"m$i", JvmOps.getErasedJvmType(m.clo.tpe).toDescriptor)
+    }
+
     constructor.visitInsn(RETURN)
 
     constructor.visitMaxs(999, 999)
@@ -83,7 +90,7 @@ object GenAnonymousClasses {
     */
   private def compileMethod(method: JvmMethod, i: Int, classVisitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = method match {
     case JvmMethod(ident, fparams, clo, tpe, loc) =>
-      AsmOps.compileField(classVisitor, s"clo$i", JvmOps.getClosureAbstractClassType(method.clo.tpe), isStatic = false, isPrivate = false)
+      AsmOps.compileField(classVisitor, s"m$i", JvmOps.getClosureAbstractClassType(method.clo.tpe), isStatic = false, isPrivate = false)
 
       // Drop the first formal parameter (which always represents `this`)
       val paramTypes = fparams.tail.map(f => JvmOps.getJvmType(f.tpe))
