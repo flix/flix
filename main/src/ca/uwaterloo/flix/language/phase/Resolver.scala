@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation}
+import ca.uwaterloo.flix.language.ast.NamedAst.Expression
 import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -1195,11 +1196,41 @@ object Resolver {
             case (e1, e2, e3) => ResolvedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
           }
 
+        case app@NamedAst.Expression.ParApply(_, _, _) =>
+          visitParApply(app, region)
+
       }
 
-    /**
-      * Performs name resolution on the given JvmMethod `method` in the namespace `ns0`.
-      */
+      def visitParApply(exp: NamedAst.Expression.ParApply, region: Option[Symbol.VarSym]): Validation[ResolvedAst.Expression, ResolutionError] = {
+        def expAsApply: NamedAst.Expression.Apply =
+          NamedAst.Expression.Apply(exp.exp, exp.exps, exp.loc)
+
+        // We do the same thing as in both cases for NamedAst.Expression.Apply
+        // in visitExp and use the helper function expAsApply to help convert
+        // a ParApply expression to an Apply Expression.
+        // Finally we convert it back to a ParApply Expression again.
+        exp match {
+          case NamedAst.Expression.ParApply(NamedAst.Expression.DefOrSig(qname, env, innerLoc), exps, outerLoc) =>
+            val app = flatMapN(lookupDefOrSig(qname, ns0, env, root)) {
+              case NamedAst.DefOrSig.Def(defn) => visitApplyDef(expAsApply, defn, exps, region, innerLoc, outerLoc)
+              case NamedAst.DefOrSig.Sig(sig) => visitApplySig(expAsApply, sig, exps, region, innerLoc, outerLoc)
+            }
+            mapN(app) {
+              case ResolvedAst.Expression.Apply(exp1, exps1, loc1) =>
+                ResolvedAst.Expression.ParApply(exp1, exps1, loc1)
+            }
+
+          case NamedAst.Expression.ParApply(exp, exps, loc) =>
+            mapN(visitApply(expAsApply, region)) {
+              case ResolvedAst.Expression.Apply(exp1, exps1, loc1) =>
+                ResolvedAst.Expression.ParApply(exp1, exps1, loc1)
+            }
+        }
+      }
+
+      /**
+        * Performs name resolution on the given JvmMethod `method` in the namespace `ns0`.
+        */
       def visitJvmMethod(method: NamedAst.JvmMethod, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.JvmMethod, ResolutionError] = method match {
         case NamedAst.JvmMethod(ident, fparams, exp, tpe, purAndEff, loc) =>
           val fparamsVal = resolveFormalParams(fparams, taenv, ns0, root)
@@ -1207,7 +1238,7 @@ object Resolver {
           val tpeVal = resolveType(tpe, taenv, ns0, root)
           val purAndEffVal = resolvePurityAndEffect(purAndEff, taenv, ns0, root)
           mapN(fparamsVal, expVal, tpeVal, purAndEffVal) {
-            case (f, e, t, p) => ResolvedAst.JvmMethod(ident, f, e, t , p, loc)
+            case (f, e, t, p) => ResolvedAst.JvmMethod(ident, f, e, t, p, loc)
           }
       }
 
@@ -2305,6 +2336,7 @@ object Resolver {
       EnumAccessibility.Accessible
     }
   }
+
   /**
     * Successfully returns the given `enum0` if it is accessible from the given namespace `ns0`.
     *
