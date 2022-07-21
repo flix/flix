@@ -101,4 +101,16 @@ namespace Graph {
         Reachable(n1, n2) :- Reachable(n1, m), Edge(m, n2).
     }
 
+    ///
+    /// Returns the shortest distance from `src` to `dst` in the graph `g`.
+    ///
+    pub def distance(src: {src :: t}, dst: {dst :: t}, g: m[(t, d, t)]): Option[d] with Foldable[m], Boxable[t], Boxable[d], Add[d] =
+        let edges = inject g into Edge;
+        let src2 = src.src;
+        let dists = #{
+            Distance(src2, d, n2) :- Edge(src2, d, n2).
+            Distance(n1, d1 + d2, n2) :- Distance(n1, d1, m), Edge(m, d2, n2).
+        };
+        (query edges, dists select x from Distance(_, x, n) where n == dst.dst) |> List.minimum
+
 }
