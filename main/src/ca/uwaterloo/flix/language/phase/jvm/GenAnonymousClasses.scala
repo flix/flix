@@ -57,7 +57,7 @@ object GenAnonymousClasses {
 
     compileConstructor(superClass, visitor)
 
-    obj.methods.foreach(compileMethod(_, visitor))
+    obj.methods.zipWithIndex.foreach{ case (m, i) => compileMethod(m, i, visitor) }
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -81,19 +81,21 @@ object GenAnonymousClasses {
   /**
     * Method
     */
-  private def compileMethod(method: JvmMethod, visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = method match {
+  private def compileMethod(method: JvmMethod, i: Int, classVisitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = method match {
     case JvmMethod(ident, fparams, clo, tpe, loc) =>
+      AsmOps.compileField(classVisitor, s"clo$i", JvmOps.getClosureAbstractClassType(method.clo.tpe), isStatic = false, isPrivate = false)
+
       // Drop the first formal parameter (which always represents `this`)
       val paramTypes = fparams.tail.map(f => JvmOps.getJvmType(f.tpe))
       val returnType = JvmOps.getJvmType(tpe)
-      val m = visitor.visitMethod(ACC_PUBLIC, ident.name, AsmOps.getMethodDescriptor(paramTypes, returnType), null, null)
+      val methodVisitor = classVisitor.visitMethod(ACC_PUBLIC, ident.name, AsmOps.getMethodDescriptor(paramTypes, returnType), null, null)
 
-      m.visitTypeInsn(NEW, JvmName.UnsupportedOperationException.toInternalName)
-      m.visitInsn(DUP)
-      m.visitMethodInsn(INVOKESPECIAL, JvmName.UnsupportedOperationException.toInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)
-      m.visitInsn(ATHROW)
+      methodVisitor.visitTypeInsn(NEW, JvmName.UnsupportedOperationException.toInternalName)
+      methodVisitor.visitInsn(DUP)
+      methodVisitor.visitMethodInsn(INVOKESPECIAL, JvmName.UnsupportedOperationException.toInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)
+      methodVisitor.visitInsn(ATHROW)
 
-      m.visitMaxs(999, 999)
-      m.visitEnd()
+      methodVisitor.visitMaxs(999, 999)
+      methodVisitor.visitEnd()
   }
 }
