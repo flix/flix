@@ -75,7 +75,19 @@ object GenAnonymousClasses {
 
     methods.zipWithIndex.foreach { case (m, i) => 
       GenExpression.compileExpression(m.clo, constructor, currentClass, Map(), new Label())
-      constructor.visitInsn(DUP)
+
+      // Loading `this`
+      constructor.visitVarInsn(ALOAD, 0)
+
+      // Swapping `this` and result of the expression
+      val resultJvmType = JvmOps.getErasedJvmType(m.retTpe)
+      if (AsmOps.getStackSize(resultJvmType) == 1) {
+        constructor.visitInsn(SWAP)
+      } else {
+        constructor.visitInsn(DUP_X2)
+        constructor.visitInsn(POP)
+      }
+
       constructor.visitFieldInsn(PUTFIELD, currentClass.name.toInternalName, s"m$i", JvmOps.getErasedJvmType(m.clo.tpe).toDescriptor)
     }
 
