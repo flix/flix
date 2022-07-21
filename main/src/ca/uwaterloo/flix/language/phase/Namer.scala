@@ -1083,6 +1083,10 @@ object Namer {
         case (e1, e2, e3) => NamedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
       }
 
+    case WeededAst.Expression.ParApply(exp0, args, loc) =>
+      mapN(visitExp(exp0, env0, uenv0, tenv0), traverse(args)(a => visitExp(a, env0, uenv0, tenv0))) {
+        case (e, as) => NamedAst.Expression.ParApply(e, as, loc)
+      }
   }
 
   /**
