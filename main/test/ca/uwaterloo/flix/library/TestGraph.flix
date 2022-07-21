@@ -359,7 +359,7 @@ namespace TestGraph {
     /////////////////////////////////////////////////////////////////////////////
     // distance                                                                //
     /////////////////////////////////////////////////////////////////////////////
-/*
+
     @test
     def distance01(): Bool =
         let g = graphWithDist01();
@@ -404,5 +404,5 @@ namespace TestGraph {
     def distance09(): Bool =
         let g = graphWithDist06();
         Graph.distance(src = 1, dst = 6, g) == Some(5 + 2 + 1)
-*/
+
 }

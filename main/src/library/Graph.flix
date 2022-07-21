@@ -109,7 +109,7 @@ namespace Graph {
         let src2 = src.src;
         let dists = #{
             Distance(src2, d, n2) :- Edge(src2, d, n2).
-            Distance(n1, d1 + d2, n2) :- Distance(n1, d1, m), Edge(m, d2, n2).
+            Distance(n1, d1 + d2, n2) :- Distance(n1, d1, m), Edge(m, d2, n2), if n1 != n2.
         };
         (query edges, dists select x from Distance(_, x, n) where n == dst.dst) |> List.minimum
 
