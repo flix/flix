@@ -55,9 +55,10 @@ object GenAnonymousClasses {
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
       superClass.toInternalName, Array(asm.Type.getInternalName(obj.clazz)))
 
-    compileConstructor(JvmType.Reference(className), superClass, obj.methods, visitor)
+    val currentClass = JvmType.Reference(className)
+    compileConstructor(currentClass, superClass, obj.methods, visitor)
 
-    obj.methods.zipWithIndex.foreach { case (m, i) => compileMethod(m, i, visitor) }
+    obj.methods.zipWithIndex.foreach { case (m, i) => compileMethod(currentClass, m, i, visitor) }
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -100,19 +101,35 @@ object GenAnonymousClasses {
   /**
     * Method
     */
-  private def compileMethod(method: JvmMethod, i: Int, classVisitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = method match {
+  private def compileMethod(currentClass: JvmType.Reference, method: JvmMethod, i: Int, classVisitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = method match {
     case JvmMethod(ident, fparams, clo, tpe, loc) =>
-      AsmOps.compileField(classVisitor, s"m$i", JvmOps.getClosureAbstractClassType(method.clo.tpe), isStatic = false, isPrivate = false)
+      val closureAbstractClass = JvmOps.getClosureAbstractClassType(method.clo.tpe)
+      val functionInterface = JvmOps.getFunctionInterfaceType(method.clo.tpe)
+      val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(method.retTpe))
+
+      AsmOps.compileField(classVisitor, s"m$i", closureAbstractClass, isStatic = false, isPrivate = false)
 
       // Drop the first formal parameter (which always represents `this`)
       val paramTypes = fparams.tail.map(f => JvmOps.getJvmType(f.tpe))
       val returnType = JvmOps.getJvmType(tpe)
       val methodVisitor = classVisitor.visitMethod(ACC_PUBLIC, ident.name, AsmOps.getMethodDescriptor(paramTypes, returnType), null, null)
 
-      methodVisitor.visitTypeInsn(NEW, JvmName.UnsupportedOperationException.toInternalName)
-      methodVisitor.visitInsn(DUP)
-      methodVisitor.visitMethodInsn(INVOKESPECIAL, JvmName.UnsupportedOperationException.toInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)
-      methodVisitor.visitInsn(ATHROW)
+      methodVisitor.visitVarInsn(ALOAD, 0)
+      methodVisitor.visitFieldInsn(GETFIELD, currentClass.name.toInternalName, s"m$i", closureAbstractClass.toDescriptor)
+
+      methodVisitor.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
+
+      fparams.zipWithIndex.foreach { case (arg, i) => 
+        methodVisitor.visitInsn(DUP)
+        methodVisitor.visitVarInsn(ALOAD, i)
+        methodVisitor.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
+          s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
+      }
+      methodVisitor.visitMethodInsn(INVOKEVIRTUAL, functionInterface.name.toInternalName,
+        backendContinuationType.UnwindMethod.name, AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
+      AsmOps.castIfNotPrim(methodVisitor, JvmOps.getJvmType(tpe))
+
+      methodVisitor.visitInsn(AsmOps.getReturnInstruction(JvmOps.getJvmType(method.retTpe)))
 
       methodVisitor.visitMaxs(999, 999)
       methodVisitor.visitEnd()
