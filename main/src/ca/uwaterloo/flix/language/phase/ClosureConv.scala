@@ -266,7 +266,7 @@ object ClosureConv {
     case Expression.NewObject(clazz, tpe, purity, methods0, loc) =>
       val methods = methods0 map {
         case JvmMethod(ident, fparams, exp, retTpe, purity, loc) =>
-          val cloType = Type.mkPureUncurriedArrow(fparams.map(_.tpe), retTpe, loc)
+          val cloType = Type.mkImpureUncurriedArrow(fparams.map(_.tpe), retTpe, loc)
           val clo = mkLambdaClosure(fparams, exp, cloType, loc)
           JvmMethod(ident, fparams, clo, retTpe, purity, loc)
       }
