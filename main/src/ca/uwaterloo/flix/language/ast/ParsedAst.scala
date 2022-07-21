@@ -1155,7 +1155,7 @@ object ParsedAst {
       */
     case class ReifyPurity(sp1: SourcePosition, exp1: ParsedAst.Expression, ident: Name.Ident, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
-    case class ParApply(sp1: SourcePosition, exp0: ParsedAst.Expression, args: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Expression
+    case class ParApply(sp1: SourcePosition, exp: ParsedAst.Expression, exps: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Expression
 
   }
 

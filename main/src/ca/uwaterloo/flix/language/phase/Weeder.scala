@@ -1674,12 +1674,12 @@ object Weeder {
           WeededAst.Expression.ReifyEff(ident, e1, e2, e3, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.ParApply(sp1, exp0, args, sp2) =>
-      val argsVal = traverse(args) {
+    case ParsedAst.Expression.ParApply(sp1, exp, exps, sp2) =>
+      val argsVal = traverse(exps) {
         case ParsedAst.Argument.Named(_, e, _) => visitExp(e, senv)
         case ParsedAst.Argument.Unnamed(e) => visitExp(e, senv)
       }
-      mapN(visitExp(exp0, senv), argsVal) {
+      mapN(visitExp(exp, senv), argsVal) {
         case (e0, as) =>
           WeededAst.Expression.ParApply(e0, as, mkSL(sp1, sp2))
       }

@@ -1083,8 +1083,8 @@ object Namer {
         case (e1, e2, e3) => NamedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
       }
 
-    case WeededAst.Expression.ParApply(exp0, args, loc) =>
-      mapN(visitExp(exp0, env0, uenv0, tenv0), traverse(args)(a => visitExp(a, env0, uenv0, tenv0))) {
+    case WeededAst.Expression.ParApply(exp, exps, loc) =>
+      mapN(visitExp(exp, env0, uenv0, tenv0), traverse(exps)(a => visitExp(a, env0, uenv0, tenv0))) {
         case (e, as) => NamedAst.Expression.ParApply(e, as, loc)
       }
   }
@@ -1552,6 +1552,7 @@ object Namer {
     case WeededAst.Expression.Reify(_, _) => Nil
     case WeededAst.Expression.ReifyType(_, _, _) => Nil
     case WeededAst.Expression.ReifyEff(ident, exp1, exp2, exp3, _) => filterBoundVars(freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3), List(ident))
+    case WeededAst.Expression.ParApply(exp, exps, _) => freeVars(exp) ++ exps.flatMap(freeVars)
   }
 
   /**
