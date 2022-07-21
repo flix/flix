@@ -110,8 +110,7 @@ object Finalize {
       case LiftedAst.Expression.Closure(sym, closureArgs, tpe, loc) =>
         val t = visitType(tpe)
         val newClosureArgs = closureArgs.map(visit)
-        val fnMonoType = getFunctionTypeTemporaryToBeRemoved(newClosureArgs, t)
-        FinalAst.Expression.Closure(sym, newClosureArgs, fnMonoType, t, loc)
+        FinalAst.Expression.Closure(sym, newClosureArgs, t, loc)
 
       case LiftedAst.Expression.ApplyClo(exp, args, tpe, _, loc) =>
         val as = args map visit
@@ -515,18 +514,10 @@ object Finalize {
   }
 
   private def visitJvmMethod(method: LiftedAst.JvmMethod, m: TopLevel)(implicit flix: Flix): FinalAst.JvmMethod = method match {
-    case LiftedAst.JvmMethod(ident, fparams, retTpe, purity, loc) =>
+    case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
       val f = fparams.map(visitFormalParam)
+      val c = visitExp(clo, m)
       val t = visitType(retTpe)
-      FinalAst.JvmMethod(ident, f, t, loc)
+      FinalAst.JvmMethod(ident, f, c, t, loc)
   }
-
-  // TODO: Deprecated
-  private def getFunctionTypeTemporaryToBeRemoved(fvs: List[FinalAst.Expression], tpe: MonoType): MonoType = tpe match {
-    case MonoType.Arrow(targs, tresult) =>
-      val freeArgs = fvs.map(_.tpe)
-      MonoType.Arrow(freeArgs ::: targs, tresult)
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-  }
-
 }

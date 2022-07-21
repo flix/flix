@@ -140,11 +140,8 @@ object LambdaLift {
         // Construct the closure expression.
         LiftedAst.Expression.Closure(freshSymbol, closureArgs, tpe, loc)
 
-      case SimplifiedAst.Expression.Closure(sym, freeVars, tpe, loc) =>
-        val closureArgs = freeVars.map {
-          case SimplifiedAst.FreeVar(sym, tpe) => LiftedAst.Expression.Var(sym, tpe, sym.loc)
-        }
-        LiftedAst.Expression.Closure(sym, closureArgs, tpe, loc)
+      case SimplifiedAst.Expression.Closure(sym, tpe, loc) =>
+        LiftedAst.Expression.Closure(sym, List.empty, tpe, loc)
 
       case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
         val e = visitExp(exp)
@@ -326,7 +323,6 @@ object LambdaLift {
         LiftedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
 
       case SimplifiedAst.Expression.NewObject(clazz, tpe, purity, methods0, loc) =>
-        // TODO - not yet complete
         val methods = methods0.map(visitJvmMethod)
         LiftedAst.Expression.NewObject(clazz, tpe, purity, methods, loc)
 
@@ -379,9 +375,9 @@ object LambdaLift {
     }
 
     def visitJvmMethod(method: SimplifiedAst.JvmMethod): LiftedAst.JvmMethod = method match {
-      case SimplifiedAst.JvmMethod(ident, fparams0, _, retTpe, purity, loc) =>
+      case SimplifiedAst.JvmMethod(ident, fparams0, exp, retTpe, purity, loc) =>
         val fparams = fparams0 map visitFormalParam
-        LiftedAst.JvmMethod(ident, fparams, retTpe, purity, loc)
+        LiftedAst.JvmMethod(ident, fparams, visitExp(exp), retTpe, purity, loc)
     }
 
     visitExp(exp0)

@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
+import ca.uwaterloo.flix.language.phase.unification.TypeMinimization.minimizeScheme
 import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
@@ -313,22 +314,22 @@ object Typer {
                       // Case 1: Declared as pure, but impure.
                       return TypeError.ImpureDeclaredAsPure(loc).toFailure
                     } else if (declaredPur == Type.Pure && inferredPur != Type.Pure) {
-                      // Case 2: Declared as pure, but purect polymorphic.
+                      // Case 2: Declared as pure, but purity polymorphic.
                       return TypeError.EffectPolymorphicDeclaredAsPure(inferredPur, loc).toFailure
                     } else {
-                      // Case 3: Check if it is the purect that cannot be generalized.
+                      // Case 3: Check if it is the purity that cannot be generalized.
                       val inferredPurScheme = Scheme(inferredSc.quantifiers, Nil, inferredPur)
                       val declaredPurScheme = Scheme(declaredScheme.quantifiers, Nil, declaredPur)
                       Scheme.checkLessThanEqual(inferredPurScheme, declaredPurScheme, classEnv) match {
                         case Validation.Success(_) =>
-                        // Case 3.1: The purect is not the problem. Regular generalization error.
+                        // Case 3.1: The purity is not the problem. Regular generalization error.
                         // Fall through to below.
                         case Validation.Failure(_) =>
-                          // Case 3.2: The purect cannot be generalized.
+                          // Case 3.2: The purity cannot be generalized.
                           return TypeError.EffectGeneralizationError(declaredPur, inferredPur, loc).toFailure
                       }
 
-                      return TypeError.GeneralizationError(declaredScheme, inferredSc, loc).toFailure
+                      return TypeError.GeneralizationError(declaredScheme, minimizeScheme(inferredSc), loc).toFailure
                     }
                   } else {
                     // Case 3: instance error
@@ -2514,7 +2515,7 @@ object Typer {
         (constrs, tpe, pur, eff) <- inferExp(exp, root)
         expPur <- unifyBoolM(Type.Pure, pur, loc)
         expTyp <- unifyTypeM(expectedType, tpe, loc)
-        expEff <- unifyTypeM(Type.Empty, pur, loc)
+        expEff <- unifyTypeM(Type.Empty, eff, loc)
       } yield (constrs, mkAnySchemaRowType(loc))
   }
 
