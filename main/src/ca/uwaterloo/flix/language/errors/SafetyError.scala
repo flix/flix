@@ -116,7 +116,7 @@ object SafetyError {
     })
   }
 
-  case class UnsafeUpcast(loc: SourceLocation) extends SafetyError {
+  case class IllegalUpcast(loc: SourceLocation) extends SafetyError {
     override def summary: String = "Unsafe upcast."
 
     override def message(formatter: Formatter): String = ""

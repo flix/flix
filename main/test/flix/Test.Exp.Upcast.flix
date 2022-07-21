@@ -5,7 +5,7 @@ namespace Test/Exp/Upcast {
         upcast ()
 
     @test
-    def upcast02(): Unit =
+    def upcast02(): Unit = // Should trigger error
         upcast ()
 
 }
