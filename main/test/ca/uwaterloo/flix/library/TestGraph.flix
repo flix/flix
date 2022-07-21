@@ -363,7 +363,8 @@ namespace TestGraph {
     @test
     def distance01(): Bool =
         let g = graphWithDist01();
-        Graph.distance(src = 1, dst = 2, g) == None
+        false
+        //Graph.distance(src = 1, dst = 2, g) == None
 
     @test
     def distance02(): Bool =
