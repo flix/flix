@@ -27,6 +27,10 @@ instance Scoped[MutSet[t]] {
     pub def regionOf(_: MutSet[t, r]): Region[r] = () as Region[r]
 }
 
+instance Iterable[MutSet] {
+    pub def iterator(s: MutSet[a, r]): Iterator[a, r] \ Write(r) = MutSet.iterator(s)
+}
+
 namespace MutSet {
 
     ///
@@ -389,6 +393,20 @@ namespace MutSet {
     pub def foreach(f: a -> Unit & ef, s: MutSet[a, r]): Unit \ { ef, Read(r) } =
         let MutSet(ms) = s;
         Set.foreach(f, deref ms)
+
+    ///
+    /// Returns an iterator over `s`.
+    ///
+    pub def iterator(s: MutSet[a, r]): Iterator[a, r] \ Write(r) =
+        let MutSet(ms) = s;
+        let r = Scoped.regionOf(s);
+        Set.iterator(r, deref ms)
+
+    ///
+    /// Returns an iterator over `s`.
+    ///
+    pub def enumerator(s: MutSet[a, r]): Iterator[(a, Int32), r] \ Write(r) =
+        iterator(s) |> Iterator.zipWithIndex
 
     ///
     /// Returns `true` if MutSets `a` and `b` have the same elements, i.e. are structurally equal.
