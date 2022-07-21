@@ -530,8 +530,10 @@ object Safety {
       // 
       val thisErrors = methods.flatMap {
         case JvmMethod(ident, fparams, _, _, _, _, methodLoc) => 
-          if (fparams.length < 1 || fparams.head.tpe != tpe) {
-            Some(InvalidThis(clazz, ident.name, methodLoc))
+          if (fparams.length < 1)
+            Some(MissingThis(tpe, ident.name, methodLoc))
+          else if (fparams.head.tpe != tpe) {
+            Some(IllegalThisType(tpe, fparams.head.tpe, ident.name, methodLoc))
           } else {
             None
           }
@@ -549,17 +551,13 @@ object Safety {
       // Filter out methods that have a default implementation
       // 
       val unimplemented = (toImplement diff intersection).filterNot(m => javaMethods(m).isDefault())
-      val unimplementedErrors = unimplemented.map {
-        case sig@MethodSignature(name, _, _) => UnimplementedMethod(clazz, name, loc)
-      }
+      val unimplementedErrors = unimplemented.map(UnimplementedMethod(tpe, _, loc))
 
       // 
       // Check that there are no methods that aren't in the interface
       //  
       val extra = (implemented diff intersection)
-      val extraErrors = extra.map {
-        case sig@MethodSignature(name, _, _) => ExtraMethod(clazz, name, flixMethods(sig).loc)
-      }
+      val extraErrors = extra.map(m => ExtraMethod(tpe, m, flixMethods(m).loc))
 
       thisErrors ++ unimplementedErrors ++ extraErrors
     }
