@@ -2974,6 +2974,7 @@ object Weeder {
     case ParsedAst.Expression.ReifyBool(sp1, _, _) => sp1
     case ParsedAst.Expression.ReifyType(sp1, _, _) => sp1
     case ParsedAst.Expression.ReifyPurity(sp1, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.ParApply(sp1, _, _, _) => sp1
   }
 
   /**
