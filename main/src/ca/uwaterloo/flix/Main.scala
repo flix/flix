@@ -94,7 +94,8 @@ object Main {
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
       xnobooltable = cmdOpts.xnobooltable,
       xstatistics = cmdOpts.xstatistics,
-      xstrictmono = cmdOpts.xstrictmono
+      xstrictmono = cmdOpts.xstrictmono,
+      xeffects = cmdOpts.xeffects
     )
 
     // Don't use progress bar if benchmarking.
