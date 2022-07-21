@@ -88,7 +88,7 @@ object GenAnonymousClasses {
         constructor.visitInsn(POP)
       }
 
-      constructor.visitFieldInsn(PUTFIELD, currentClass.name.toInternalName, s"m$i", JvmOps.getErasedJvmType(m.clo.tpe).toDescriptor)
+      constructor.visitFieldInsn(PUTFIELD, currentClass.name.toInternalName, s"m$i", JvmOps.getClosureAbstractClassType(m.clo.tpe).toDescriptor)
     }
 
     constructor.visitInsn(RETURN)
