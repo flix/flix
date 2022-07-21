@@ -965,7 +965,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ParApply: Rule1[ParsedAst.Expression.ParApply] = rule {
-      SP ~ keyword("par") ~ WS ~ RecordSelect ~ ArgumentList ~ SP ~> ParsedAst.Expression.ParApply
+      SP ~ keyword("par") ~ WS ~ Primary ~ ArgumentList ~ SP ~> ParsedAst.Expression.ParApply
     }
 
     def Lazy: Rule1[ParsedAst.Expression.Lazy] = rule {
