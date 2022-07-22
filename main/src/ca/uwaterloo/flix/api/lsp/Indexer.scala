@@ -295,6 +295,12 @@ object Indexer {
       val de = declaredEff.map(visitType).getOrElse(Index.empty)
       visitExp(exp) ++ dt ++ dp ++ de ++ Index.occurrenceOf(exp0)
 
+    case Expression.Upcast(exp, tpe, pur, eff, _) =>
+      val t = visitType(tpe)
+      val p = visitType(pur)
+      val e = visitType(eff)
+      visitExp(exp) ++ t ++ p ++ e ++ Index.occurrenceOf(exp0)
+
     case Expression.Without(exp, effUse, _, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(effUse.sym, effUse.loc)
 

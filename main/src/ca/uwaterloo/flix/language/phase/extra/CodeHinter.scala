@@ -219,6 +219,9 @@ object CodeHinter {
     case Expression.Cast(exp, _, _, _, tpe, pur, _, loc) =>
       checkCast(tpe, pur, loc) ++ visitExp(exp)
 
+    case Expression.Upcast(exp, _, _, _, _) =>
+      visitExp(exp)
+
     case Expression.Without(exp, _, _, _, _, _) =>
       visitExp(exp)
 

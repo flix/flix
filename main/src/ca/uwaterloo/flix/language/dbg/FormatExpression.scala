@@ -60,6 +60,7 @@ object FormatExpression {
     case TypedAst.Expression.Assign(exp1, exp2, _, _, _, _) => s"Assign($exp1, $exp2)"
     case TypedAst.Expression.Ascribe(exp, tpe, _, _, _) => s"Ascribe($exp, $tpe)"
     case TypedAst.Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, eff, _, _) => s"Cast($exp, $declaredType, $declaredPur, $declaredEff, $tpe, $eff)"
+    case TypedAst.Expression.Upcast(exp, tpe, pur, eff, loc) => s"Upcast($exp, $tpe, $pur, $eff, $loc)"
     case TypedAst.Expression.Without(exp, sym, _, _, _, _) => s"Without($exp, $sym)"
     case TypedAst.Expression.TryCatch(exp, rules, _, _, _, _) => s"TryCatch($exp, ${rules.mkString(", ")})"
     case TypedAst.Expression.TryWith(exp, sym, rules, _, _, _, _) => s"TryWith($exp, $sym, ${rules.mkString(", ")})"
