@@ -126,6 +126,7 @@ namespace Graph {
             Distance(n, d1 + d2) :- Distance(m, d1), Edge(m, d2, n), if n != src.
         };
         let allDists = #{
+            // Collect the distances `d` from `src` to `n` in a Set.
             AllDists(n; Set#{d}) :- Distance(n, d).
         };
         let reachable = query edges, dists, allDists select (x, Set.minimum(s)) from AllDists(x; s) |> List.toMap;

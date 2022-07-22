@@ -423,7 +423,7 @@ namespace TestGraph {
     @test
     def distances03(): Bool =
         let g = graphWithDist02();
-        Graph.distances(1, g) == Map#{1 => None}
+        Graph.distances(2, g) == Map#{1 => None}
 
     @test
     def distances04(): Bool =
