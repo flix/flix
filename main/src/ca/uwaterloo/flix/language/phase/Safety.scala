@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
 import ca.uwaterloo.flix.util.Validation
@@ -184,22 +184,28 @@ object Safety {
       println(s"exp.tpe: ${exp.tpe}")
       println(s"exp.pur: ${exp.pur}")
       println(s"exp.eff: ${exp.eff}")
-      val x = tpe match {
-        // case _: Type.Var => List(UnsafeUpcast(loc))
+      println()
+      val tpeError = tpe match {
+        case _: Type.Var | _: Type.KindedVar => List(UnsafeUpcast(loc))
+        case _ => Nil
+      }
+      val purError = pur match {
+        // case _: Type.Var | _: Type.KindedVar => List(UnsafeUpcast(loc))
+        case _ => Nil
+      }
+      val effError = eff match {
+        // case _: Type.Var | _: Type.KindedVar => List(UnsafeUpcast(loc))
         case _ => Nil
       }
       val ps = (pur, exp.pur) match {
-        case (Type.Pure, _) =>
-          // Nothing can be cast to pure
-          List(UnsafeUpcast(loc))
-
-        case (_, Type.Impure) =>
-          // An Impure expression cannot be cast to anything else
+        case (Type.Pure, _: Type.KindedVar) |
+             (Type.Pure, Type.Impure) |
+             (_: Type.Var, Type.Impure) =>
           List(UnsafeUpcast(loc))
 
         case _ => Nil
       }
-      visitExp(exp) ::: ps ::: x
+      visitExp(exp) ::: ps ::: tpeError ::: purError ::: effError
 
     case Expression.Without(exp, _, _, _, _, _) =>
       visitExp(exp)
