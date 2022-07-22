@@ -180,12 +180,12 @@ object Safety {
     case Expression.Upcast(exp, tpe, pur, eff, loc) =>
       // Check if tpe is still a var
       val x = tpe match {
-        case _: Type.Var => List(IllegalUpcast(loc))
+        case _: Type.Var => List(UnsafeUpcast(loc))
         case _ => Nil
       }
       val ps = (pur, exp.pur) match {
-        case (Type.Pure, _) => List(IllegalUpcast(loc))
-        case (_: Type.KindedVar, Type.Impure) => List(IllegalUpcast(loc))
+        case (Type.Pure, _) => List(UnsafeUpcast(loc))
+        case (_: Type.KindedVar, Type.Impure) => List(UnsafeUpcast(loc))
         case _ => Nil
       }
       visitExp(exp) ::: x

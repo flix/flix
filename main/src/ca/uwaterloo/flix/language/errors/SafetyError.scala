@@ -116,12 +116,24 @@ object SafetyError {
     })
   }
 
-  case class IllegalUpcast(loc: SourceLocation) extends SafetyError {
+  case class UnsafeUpcast(loc: SourceLocation) extends SafetyError {
     override def summary: String = "Unsafe upcast."
 
-    override def message(formatter: Formatter): String = ""
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unsafe upcast
+         |
+         |${code(loc, "the upcast occurs here.")}
+         |""".stripMargin
+    }
 
-    override def explain(formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = Some({
+      s"""An upcast is only allowed if it casts from
+         |Pure -> ef -> Impure
+         |or from a Java type to a Java super-type.""".stripMargin
+    })
+
   }
 
 }
