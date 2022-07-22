@@ -652,6 +652,11 @@ object Namer {
         case (e, es) => NamedAst.Expression.Apply(e, es, loc)
       }
 
+    case WeededAst.Expression.ParApply(exp, exps, loc) =>
+      mapN(visitExp(exp, env0, uenv0, tenv0), traverse(exps)(a => visitExp(a, env0, uenv0, tenv0))) {
+        case (e, as) => NamedAst.Expression.ParApply(e, as, loc)
+      }
+
     case WeededAst.Expression.Lambda(fparam0, exp, loc) =>
       flatMapN(visitFormalParam(fparam0, uenv0, tenv0)) {
         case p =>
@@ -1083,10 +1088,6 @@ object Namer {
         case (e1, e2, e3) => NamedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
       }
 
-    case WeededAst.Expression.ParApply(exp, exps, loc) =>
-      mapN(visitExp(exp, env0, uenv0, tenv0), traverse(exps)(a => visitExp(a, env0, uenv0, tenv0))) {
-        case (e, as) => NamedAst.Expression.ParApply(e, as, loc)
-      }
   }
 
   /**
@@ -1476,6 +1477,7 @@ object Namer {
     case WeededAst.Expression.Str(_, _) => Nil
     case WeededAst.Expression.Default(_) => Nil
     case WeededAst.Expression.Apply(exp, exps, _) => freeVars(exp) ++ exps.flatMap(freeVars)
+    case WeededAst.Expression.ParApply(exp, exps, _) => freeVars(exp) ++ exps.flatMap(freeVars)
     case WeededAst.Expression.Lambda(fparam, exp, _) => filterBoundVars(freeVars(exp), List(fparam.ident))
     case WeededAst.Expression.Unary(_, exp, _) => freeVars(exp)
     case WeededAst.Expression.Binary(_, exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
@@ -1552,7 +1554,6 @@ object Namer {
     case WeededAst.Expression.Reify(_, _) => Nil
     case WeededAst.Expression.ReifyType(_, _, _) => Nil
     case WeededAst.Expression.ReifyEff(ident, exp1, exp2, exp3, _) => filterBoundVars(freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3), List(ident))
-    case WeededAst.Expression.ParApply(exp, exps, _) => freeVars(exp) ++ exps.flatMap(freeVars)
   }
 
   /**

@@ -617,6 +617,16 @@ object Weeder {
           WeededAst.Expression.Apply(e, es, loc)
       }
 
+    case ParsedAst.Expression.ParApply(sp1, exp, exps, sp2) =>
+      val argsVal = traverse(exps) {
+        case ParsedAst.Argument.Named(_, e, _) => visitExp(e, senv)
+        case ParsedAst.Argument.Unnamed(e) => visitExp(e, senv)
+      }
+      mapN(visitExp(exp, senv), argsVal) {
+        case (e0, as) =>
+          WeededAst.Expression.ParApply(e0, as, mkSL(sp1, sp2))
+      }
+
     case ParsedAst.Expression.Infix(exp1, name, exp2, sp2) =>
       /*
        * Rewrites infix expressions to apply expressions.
@@ -1674,15 +1684,6 @@ object Weeder {
           WeededAst.Expression.ReifyEff(ident, e1, e2, e3, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.ParApply(sp1, exp, exps, sp2) =>
-      val argsVal = traverse(exps) {
-        case ParsedAst.Argument.Named(_, e, _) => visitExp(e, senv)
-        case ParsedAst.Argument.Unnamed(e) => visitExp(e, senv)
-      }
-      mapN(visitExp(exp, senv), argsVal) {
-        case (e0, as) =>
-          WeededAst.Expression.ParApply(e0, as, mkSL(sp1, sp2))
-      }
   }
 
   /**
@@ -2392,7 +2393,7 @@ object Weeder {
       val loc = mkSL(sp1, sp2)
       val effs = visitEffectSet(eff0)
       // NB: safe to reduce since effs is never empty
-      val effOpt = effs.reduceLeftOption ({
+      val effOpt = effs.reduceLeftOption({
         case (acc, eff) => WeededAst.Type.Union(acc, eff, loc)
       }: (WeededAst.Type, WeededAst.Type) => WeededAst.Type)
       effOpt.getOrElse(WeededAst.Type.Empty(loc))
@@ -2760,7 +2761,7 @@ object Weeder {
       val tpeVal = visitType(tpe)
       val purAndEffVal = visitPurityAndEffect(purAndEff)
       mapN(visitFormalParams(fparams0, Presence.Required), visitExp(exp0, senv)) {
-        case(fparams, exp) => WeededAst.JvmMethod(ident, fparams, exp, tpeVal, purAndEffVal, mkSL(sp1, sp2))
+        case (fparams, exp) => WeededAst.JvmMethod(ident, fparams, exp, tpeVal, purAndEffVal, mkSL(sp1, sp2))
       }
   }
 
@@ -2910,6 +2911,7 @@ object Weeder {
     case ParsedAst.Expression.Lit(sp1, _, _) => sp1
     case ParsedAst.Expression.Intrinsic(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Apply(e1, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.ParApply(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Infix(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Lambda(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LambdaMatch(sp1, _, _, _) => sp1
@@ -2974,7 +2976,6 @@ object Weeder {
     case ParsedAst.Expression.ReifyBool(sp1, _, _) => sp1
     case ParsedAst.Expression.ReifyType(sp1, _, _) => sp1
     case ParsedAst.Expression.ReifyPurity(sp1, _, _, _, _, _) => sp1
-    case ParsedAst.Expression.ParApply(sp1, _, _, _) => sp1
   }
 
   /**
