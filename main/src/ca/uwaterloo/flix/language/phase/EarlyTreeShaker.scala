@@ -109,7 +109,7 @@ object EarlyTreeShaker {
     *
     * This includes three types of symbols:
     *
-    * (a) The defn or sig symbols in the implementation / body expression of a reachable defn symbol
+    * (a) The function or signature symbols in the implementation / body expression of a reachable function symbol
     *
     * (b) The class symbol of a reachable sig symbol.
     *
@@ -132,7 +132,7 @@ object EarlyTreeShaker {
   }
 
   /**
-    * Returns the function symbols reachable from the given expression `e0`.
+    * Returns the function and signature symbols reachable from the given expression `e0`.
     */
   private def visitExp(e0: Expression): Set[ReachableSym] = e0 match {
     case Expression.Unit(_) =>
