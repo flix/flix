@@ -1479,7 +1479,7 @@ object Typer {
           resultEff = valueEff
         } yield (valueConstrs, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.NewObject(clazz, methods, loc) => {
+      case KindedAst.Expression.NewObject(_, clazz, methods, loc) => {
         def visitJvmMethod(method: KindedAst.JvmMethod): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = method match {
           case KindedAst.JvmMethod(ident, fparams, exp, returnTpe, pur, eff, loc) =>
             for {
@@ -2142,12 +2142,12 @@ object Typer {
         val eff = e.eff
         TypedAst.Expression.PutStaticField(field, e, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.NewObject(clazz, methods, loc) =>
+      case KindedAst.Expression.NewObject(name, clazz, methods, loc) =>
         val tpe = getFlixType(clazz)
         val pur = Type.Impure
         val eff = Type.Empty
         val ms = methods map visitJvmMethod
-        TypedAst.Expression.NewObject(clazz, tpe, pur, eff, ms, loc)
+        TypedAst.Expression.NewObject(name, clazz, tpe, pur, eff, ms, loc)
 
       case KindedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp, subst0)

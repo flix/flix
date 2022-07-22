@@ -218,7 +218,7 @@ object Safety {
     case Expression.PutStaticField(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewObject(clazz, tpe, _, _, methods, loc) =>
+    case Expression.NewObject(_, clazz, tpe, _, _, methods, loc) =>
       checkObjectImplementation(clazz, tpe, methods, loc) ++
         methods.flatMap { case JvmMethod(_, _, exp, _, _, _, _) => visitExp(exp) }
 
