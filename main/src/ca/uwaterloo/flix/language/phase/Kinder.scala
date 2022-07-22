@@ -783,6 +783,16 @@ object Kinder {
         case (e1, e2, e3) => KindedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
       }
 
+    case ResolvedAst.Expression.ParApply(exp, exps, loc) =>
+      val expVal = visitExp(exp, kenv0, senv, taenv, henv0, root)
+      val expsVal = traverse(exps)(visitExp(_, kenv0, senv, taenv, henv0, root))
+      mapN(expVal, expsVal) {
+        case (exp, exps) =>
+          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+          val evar = Type.freshVar(Kind.Effect, loc.asSynthetic)
+          KindedAst.Expression.ParApply(exp, exps, tvar, pvar, evar, loc)
+      }
   }
 
   /**
@@ -1012,6 +1022,7 @@ object Kinder {
             t1 => mkApply(t1, t2, loc)
           }
       }
+
     case Type.Ascribe(t, k, loc) =>
       unify(k, expectedKind) match {
         case Some(kind) => visitType(t, kind, kenv, senv, taenv, root)

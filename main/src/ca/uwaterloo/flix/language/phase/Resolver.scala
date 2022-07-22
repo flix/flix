@@ -1218,13 +1218,16 @@ object Resolver {
             mapN(app) {
               case ResolvedAst.Expression.Apply(exp1, exps1, loc1) =>
                 ResolvedAst.Expression.ParApply(exp1, exps1, loc1)
+              case _ => throw InternalCompilerException("Unable to resolve parallel apply")
             }
 
           case NamedAst.Expression.ParApply(exp, exps, loc) =>
             mapN(visitApply(expAsApply, region)) {
               case ResolvedAst.Expression.Apply(exp1, exps1, loc1) =>
                 ResolvedAst.Expression.ParApply(exp1, exps1, loc1)
+              case _ => throw InternalCompilerException("Unable to resolve parallel apply")
             }
+          case _ => throw InternalCompilerException("Unable to resolve parallel apply")
         }
       }
 
