@@ -116,6 +116,8 @@ object NamedAst {
 
     case class Apply(exp: NamedAst.Expression, exps: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
+    case class ParApply(exp: NamedAst.Expression, exps: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
+
     case class Lambda(fparam: NamedAst.FormalParam, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Unary(sop: SemanticOperator, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
@@ -235,8 +237,6 @@ object NamedAst {
     case class ReifyType(t: NamedAst.Type, k: Kind, loc: SourceLocation) extends NamedAst.Expression
 
     case class ReifyEff(sym: Symbol.VarSym, exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
-
-    case class ParApply(exp: NamedAst.Expression, exps: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
   }
 

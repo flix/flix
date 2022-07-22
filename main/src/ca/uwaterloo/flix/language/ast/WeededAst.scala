@@ -109,6 +109,8 @@ object WeededAst {
 
     case class Apply(exp: WeededAst.Expression, exps: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
+    case class ParApply(exp: WeededAst.Expression, exps: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+
     case class Lambda(fparam: WeededAst.FormalParam, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Unary(sop: SemanticOperator, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
@@ -228,8 +230,6 @@ object WeededAst {
     case class ReifyType(t: WeededAst.Type, k: Kind, loc: SourceLocation) extends WeededAst.Expression
 
     case class ReifyEff(ident: Name.Ident, exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
-    case class ParApply(exp: WeededAst.Expression, exps: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
   }
 

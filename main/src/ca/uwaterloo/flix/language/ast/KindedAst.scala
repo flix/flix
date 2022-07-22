@@ -96,6 +96,8 @@ object KindedAst {
 
     case class Apply(exp: KindedAst.Expression, exps: List[KindedAst.Expression], tpe: Type.KindedVar, pur: Type.KindedVar, eff: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
+    case class ParApply(exp: Expression, exps: List[Expression], tvar: Type.KindedVar, pvar: Type.KindedVar, evar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+
     case class Lambda(fparam: KindedAst.FormalParam, exp: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
     case class Unary(sop: SemanticOperator, exp: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
@@ -213,8 +215,6 @@ object KindedAst {
     case class ReifyType(t: Type, k: Kind, loc: SourceLocation) extends KindedAst.Expression
 
     case class ReifyEff(sym: Symbol.VarSym, exp1: KindedAst.Expression, exp2: KindedAst.Expression, exp3: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
-
-    case class ParApply(exp: Expression, exps: List[Expression], tvar: Type.KindedVar, pvar: Type.KindedVar, evar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
   }
 
