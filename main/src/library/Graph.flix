@@ -109,7 +109,7 @@ namespace Graph {
         let src2 = src.src;
         let dists = #{
             // Distances `d` to the nodes `n` with an edge from `src`.
-            Distance(src2, d, n2) :- Edge(src2, d, n2), if src != n2.
+            Distance(src2, d, n2) :- Edge(src2, d, n2), if src2 != n2.
             // If `n1` can reach `m` with distance `d1`
             // and there is an edge from `m` to `n2` with distance `d2`
             // then `n1` can also reach `n2` with distance `d1 + d2`.
