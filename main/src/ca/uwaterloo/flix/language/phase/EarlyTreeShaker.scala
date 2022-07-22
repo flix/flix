@@ -106,25 +106,29 @@ object EarlyTreeShaker {
 
   /**
     * Returns the symbols reachable from the given symbol `sym`.
+    *
+    * This includes three types of symbols:
+    *
+    * (a) The defn or sig symbols in the implementation / body expression of a reachable defn symbol
+    *
+    * (b) The class symbol of a reachable sig symbol.
+    *
+    * (c)Every expression in a class instance of a reachable class symbol is reachable.
+    *
     */
   private def visitSym(sym: ReachableSym, root: Root): Set[ReachableSym] = sym match {
-    case ReachableSym.DefnSym(defnSym) => root.defs.get(defnSym) match {
-      case None => Set.empty
-      case Some(defn) => visitExp(defn.impl.exp)
-    }
+    case ReachableSym.DefnSym(defnSym) =>
+      visitExp(root.defs(defnSym).impl.exp)
 
-    case ReachableSym.SigSym(sigSym) => root.sigs.get(sigSym) match {
-      case None => Set.empty
-      case Some(Sig(sigSym, _, impl)) =>
-        Set(ReachableSym.ClassSym(sigSym.clazz)) ++
-          impl.map(i => visitExp(i.exp)).getOrElse(Set.empty)
-    }
+    case ReachableSym.SigSym(sigSym) =>
+      val sig = root.sigs(sigSym)
+      Set(ReachableSym.ClassSym(sig.sym.clazz)) ++
+        sig.impl.map(i => visitExp(i.exp)).getOrElse(Set.empty)
 
-    case ReachableSym.ClassSym(classSym) => root.instances.get(classSym) match {
-      case None => Set.empty
-      case Some(instances) =>
-        visitExps(instances.flatMap(_.defs.map(_.impl.exp)))
-    }
+    case ReachableSym.ClassSym(classSym) =>
+      root.instances(classSym).foldLeft(Set.empty[ReachableSym]) {
+        case (acc, s) => visitExps(s.defs.map(_.impl.exp)) ++ acc
+      }
   }
 
   /**
