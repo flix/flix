@@ -1296,13 +1296,10 @@ object Typer {
           resultEff = declaredEff.getOrElse(actualEff)
         } yield (constrs, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.Upcast(exp, _, _, _, loc) =>
+      case KindedAst.Expression.Upcast(exp, tvar, pvar, evar, loc) =>
         for {
           (constrs, _, _, _) <- visitExp(exp)
-          resultTyp = Type.freshVar(Kind.Star, loc, text = FallbackText("tpe"))
-          resultPur = Type.freshVar(Kind.Bool, loc, text = FallbackText("pur"))
-          resultEff = Type.freshVar(Kind.Effect, loc, text = FallbackText("eff"))
-        } yield (constrs, resultTyp, resultPur, resultEff)
+        } yield (constrs, tvar, pvar, evar)
 
       case KindedAst.Expression.Without(exp, effUse, loc) =>
         val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
