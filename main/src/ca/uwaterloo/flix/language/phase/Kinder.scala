@@ -668,9 +668,9 @@ object Kinder {
         exp => KindedAst.Expression.PutStaticField(field, exp, loc)
       }
 
-    case ResolvedAst.Expression.NewObject(clazz, methods, loc) =>
+    case ResolvedAst.Expression.NewObject(name, clazz, methods, loc) =>
       mapN(traverse(methods)(visitJvmMethod(_, kenv0, senv, taenv, henv0, root))) {
-        methods => KindedAst.Expression.NewObject(clazz, methods, loc)
+        methods => KindedAst.Expression.NewObject(name, clazz, methods, loc)
       }
 
     case ResolvedAst.Expression.NewChannel(exp0, tpe0, loc) =>

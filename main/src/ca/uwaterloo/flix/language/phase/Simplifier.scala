@@ -244,9 +244,9 @@ object Simplifier {
         val e = visitExp(exp)
         SimplifiedAst.Expression.PutStaticField(field, e, tpe, simplifyPurity(pur), loc)
 
-      case TypedAst.Expression.NewObject(clazz, tpe, pur, eff, methods0, loc) =>
+      case TypedAst.Expression.NewObject(name, clazz, tpe, pur, eff, methods0, loc) =>
         val methods = methods0 map visitJvmMethod
-        SimplifiedAst.Expression.NewObject(clazz, tpe, simplifyPurity(pur), methods, loc)
+        SimplifiedAst.Expression.NewObject(name, clazz, tpe, simplifyPurity(pur), methods, loc)
 
       case TypedAst.Expression.NewChannel(exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp)
@@ -1046,9 +1046,9 @@ object Simplifier {
         val e = visitExp(exp)
         SimplifiedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.NewObject(clazz, tpe, purity, methods0, loc) => 
+      case SimplifiedAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) => 
         val methods = methods0 map visitJvmMethod
-        SimplifiedAst.Expression.NewObject(clazz, tpe, purity, methods, loc)
+        SimplifiedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
       case SimplifiedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp)

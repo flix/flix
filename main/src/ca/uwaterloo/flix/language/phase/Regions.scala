@@ -302,7 +302,7 @@ object Regions {
         case e => checkType(tpe, loc)
       }
 
-    case Expression.NewObject(_, tpe, _, _, methods, loc) =>
+    case Expression.NewObject(_, _, tpe, _, _, methods, loc) =>
       flatMapN(traverse(methods)(visitJvmMethod)) {
         case ms => checkType(tpe, loc)
       }

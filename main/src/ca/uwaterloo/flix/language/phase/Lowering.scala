@@ -524,10 +524,10 @@ object Lowering {
       val t = visitType(tpe)
       Expression.PutStaticField(field, e, t, pur, eff, loc)
 
-    case Expression.NewObject(clazz, tpe, pur, eff, methods, loc) =>
+    case Expression.NewObject(name, clazz, tpe, pur, eff, methods, loc) =>
       val t = visitType(tpe)
       val ms = methods.map(visitJvmMethod)
-      Expression.NewObject(clazz, t, pur, eff, ms, loc)
+      Expression.NewObject(name, clazz, t, pur, eff, ms, loc)
 
     case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
@@ -1598,7 +1598,7 @@ object Lowering {
       val e = substExp(exp, subst)
       Expression.PutStaticField(field, e, tpe, pur, eff, loc)
 
-    case Expression.NewObject(_, _, _, _, _, _) => exp0
+    case Expression.NewObject(_, _, _, _, _, _, _) => exp0
 
     case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
