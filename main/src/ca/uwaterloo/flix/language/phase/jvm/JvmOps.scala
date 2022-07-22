@@ -642,7 +642,9 @@ object JvmOps {
         visitExp(exp)
 
       case Expression.NewObject(_, _, methods, _) =>
-        Set.empty
+        methods.foldLeft(Set.empty[ClosureInfo]) {
+          case (sacc, JvmMethod(_, _, clo, _, _)) => visitExp(clo)
+        }
 
       case Expression.NewChannel(exp, _, _) => visitExp(exp)
 
