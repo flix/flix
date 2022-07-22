@@ -178,17 +178,28 @@ object Safety {
       visitExp(exp)
 
     case Expression.Upcast(exp, tpe, pur, eff, loc) =>
-      // Check if tpe is still a var
+      println(s"tpe    : $tpe")
+      println(s"pur    : $pur")
+      println(s"eff    : $eff")
+      println(s"exp.tpe: ${exp.tpe}")
+      println(s"exp.pur: ${exp.pur}")
+      println(s"exp.eff: ${exp.eff}")
       val x = tpe match {
-        case _: Type.Var => List(UnsafeUpcast(loc))
+        // case _: Type.Var => List(UnsafeUpcast(loc))
         case _ => Nil
       }
       val ps = (pur, exp.pur) match {
-        case (Type.Pure, _) => List(UnsafeUpcast(loc))
-        case (_: Type.KindedVar, Type.Impure) => List(UnsafeUpcast(loc))
+        case (Type.Pure, _) =>
+          // Nothing can be cast to pure
+          List(UnsafeUpcast(loc))
+
+        case (_, Type.Impure) =>
+          // An Impure expression cannot be cast to anything else
+          List(UnsafeUpcast(loc))
+
         case _ => Nil
       }
-      visitExp(exp) ::: x
+      visitExp(exp) ::: ps ::: x
 
     case Expression.Without(exp, _, _, _, _, _) =>
       visitExp(exp)
