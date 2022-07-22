@@ -375,9 +375,9 @@ object EarlyTreeShaker {
   }
 
   /**
-    * Returns the function symbols reachable from `es`.
+    * Returns the function symbols reachable from `exps`.
     */
-  private def visitExps(es: List[Expression]): Set[ReachableSym] = es.map(visitExp).fold(Set())(_ ++ _)
+  private def visitExps(exps: List[Expression]): Set[ReachableSym] = exps.map(visitExp).fold(Set())(_ ++ _)
 
 
   /**
