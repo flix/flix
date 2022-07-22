@@ -1551,6 +1551,9 @@ object Lowering {
       val e = substExp(exp, subst)
       Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
 
+    case Expression.Upcast(_, _, _, _, _) =>
+      throw InternalCompilerException("Unreachable upcast branch taken")
+      
     case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
       Expression.Without(e, sym, tpe, pur, eff, loc)
