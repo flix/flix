@@ -44,7 +44,7 @@ namespace Graph {
         List.toSet(x)
 
     ///
-    /// Helper functions for `reachable` and `unreachable`.
+    /// Helper function for `reachable` and `unreachable`.
     /// Returns a Datalog program which computes the reachable nodes from `src` when given a set of `Edge` facts.
     ///
     def reachabilityFromSrc(src: t): #{ Edge(t, t), Reachable(t) | r } with Boxable[t] = #{
@@ -102,44 +102,43 @@ namespace Graph {
     }
 
     ///
-    /// Returns the shortest distance from `src` to `dst` in the graph `g`.
+    /// Optionally returns the shortest distance from `src` to `dst` in the weighted directed graph `g`.
     ///
     pub def distance(src: {src :: t}, dst: {dst :: t}, g: m[(t, d, t)]): Option[d] with Foldable[m], Boxable[t], Boxable[d], Add[d] =
         let edges = inject g into Edge;
-        let src2 = src.src;
-        let dists = #{
-            // Distances `d` to the nodes `n` with an edge from `src`.
-            Distance(src2, d, n2) :- Edge(src2, d, n2), if src2 != n2.
-            // If `n1` can reach `m` with distance `d1`
-            // and there is an edge from `m` to `n2` with distance `d2`
-            // then `n1` can also reach `n2` with distance `d1 + d2`.
-            Distance(n1, d1 + d2, n2) :- Distance(n1, d1, m), Edge(m, d2, n2), if n1 != n2.
-        };
-        (query edges, dists select x from Distance(_, x, n) where n == dst.dst) |> List.minimum
+        let x = query edges, dists(src.src) select x from Distance(n, x) where n == dst.dst;
+        List.minimum(x)
 
     ///
-    /// Returns the shortest distance from `o` to every other vertex in the graph `g`.
+    /// Returns the shortest distance from `src` to every other vertex in the weighted directed graph `g`.
     ///
     pub def distances(src: t, g: m[(t, d, t)]): Map[t, Option[d]] with Foldable[m], Boxable[t], Boxable[d], Add[d] =
         let edges = inject g into Edge;
-        let dists = #{
-            // Distances `d` to the nodes `n` with an edge from `src`.
-            Distance(n, d) :- Edge(src, d, n), if n != src.
-            // Distances to the nodes `n` where `src` can reach `m` by distance `d1`
-            // and there is an edge from `m` to `n` with distance `d2`.
-            Distance(n, d1 + d2) :- Distance(m, d1), Edge(m, d2, n), if n != src.
-        };
         let allDists = #{
-            // Collect the distances `d` from `src` to `n` in a Set.
+            // Collects all the distances `d` from `src` to `n` into a Set.
             AllDists(n; Set#{d}) :- Distance(n, d).
         };
-        let reachable = query edges, dists, allDists select (x, Set.minimum(s)) from AllDists(x; s) |> List.toMap;
-        let unreachable = unreachableWithDists(src, g)
-                            |> List.foldRight((x, acc) -> Map.insert(x, None, acc), Map.empty());
-        Map.union(reachable, unreachable)
+        let reachableDists = query edges, dists(src), allDists select (x, Set.minimum(s)) from AllDists(x; s) |> List.toMap;
+        let unreachableDists = unreachableWithDists(src, g)
+                                |> List.foldRight((x, acc) -> Map.insert(x, None, acc), Map.empty());
+        Map.union(reachableDists, unreachableDists)
 
     ///
-    /// Helper functions for `distances`.
+    /// Helper function for `distance` and `distances`.
+    /// Returns a Datalog program which computes distances to all reachable nodes
+    /// when given a set of `Edge` facts and a `src`.
+    ///
+    def dists(src: t): #{ Edge(t, d, t) | r } with Boxable[t], Boxable[d], Add[d] = #{
+        // Distance `d` from `src` to `n`.
+        Distance(n, d) :- Edge(src, d, n), if n != src.
+        // If `src` can reach `m` with distance `d1` and
+        // there is an edge from `m` to `n` with distance `d2`
+        // then `src` can reach `n` with distance `d1 + d2`.
+        Distance(n, d1 + d2) :- Distance(m, d1), Edge(m, d2, n), if n != src.
+    }
+
+    ///
+    /// Helper function for `distances`.
     /// Returns a Datalog program which when given a set of `Edge` facts computes the nodes.
     ///
     def nodesWithDists(): #{ Edge(t, d, t), Node(t) | r } with Boxable[t], Boxable[d] = #{
@@ -148,7 +147,7 @@ namespace Graph {
     }
 
     ///
-    /// Helper functions for `distances`.
+    /// Helper function for `distances`.
     /// Returns the vertices that are unreachable from the `src` in the weighted directed graph `g`.
     ///
     def unreachableWithDists(src: t, g: m[(t, d, t)]): List[t] with Foldable[m], Boxable[t], Boxable[d] =
