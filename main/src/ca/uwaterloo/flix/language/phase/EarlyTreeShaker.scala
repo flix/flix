@@ -30,8 +30,14 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
   * A function is considered reachable if it:
   *
   * (a) The main function is always reachable.
+  *
   * (b) A function marked with @benchmark or @test is reachable.
+  *
   * (c) Appears in a function which itself is reachable.
+  *
+  * (d) Is an instance of a class whose signature(s) appear in a reachable function.
+  * Monomorph will erase erase unused instances so this phase must check all instances
+  * for the monomorph to work.
   *
   */
 object EarlyTreeShaker {
