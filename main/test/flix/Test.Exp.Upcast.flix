@@ -1,12 +1,15 @@
 namespace Test/Exp/Upcast {
 
+    /*
+
     @test
     def testUpcast01(): Unit & Impure =
         upcast ()
-
     @test
     def testUpcast02(): Unit = // Should trigger error
         upcast ()
+
+    */
 
     @test
     def testUpcast03(): Unit =
