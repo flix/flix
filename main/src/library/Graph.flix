@@ -108,7 +108,11 @@ namespace Graph {
         let edges = inject g into Edge;
         let src2 = src.src;
         let dists = #{
-            Distance(src2, d, n2) :- Edge(src2, d, n2).
+            // Distances `d` to the nodes `n` with an edge from `src`.
+            Distance(src2, d, n2) :- Edge(src2, d, n2), if src != n2.
+            // If `n1` can reach `m` with distance `d1`
+            // and there is an edge from `m` to `n2` with distance `d2`
+            // then `n1` can also reach `n2` with distance `d1 + d2`.
             Distance(n1, d1 + d2, n2) :- Distance(n1, d1, m), Edge(m, d2, n2), if n1 != n2.
         };
         (query edges, dists select x from Distance(_, x, n) where n == dst.dst) |> List.minimum
