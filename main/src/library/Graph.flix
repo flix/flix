@@ -135,6 +135,15 @@ namespace Graph {
 
     ///
     /// Helper functions for `distances`.
+    /// Returns a Datalog program which when given a set of `Edge` facts computes the nodes.
+    ///
+    def nodesWithDists(): #{ Edge(t, d, t), Node(t) | r } with Boxable[t], Boxable[d] = #{
+        Node(x) :- Edge(x, _, _).
+        Node(x) :- Edge(_, _, x).
+    }
+
+    ///
+    /// Helper functions for `distances`.
     /// Returns the vertices that are unreachable from the `src` in the weighted directed graph `g`.
     ///
     def unreachableWithDists(src: t, g: m[(t, d, t)]): List[t] with Foldable[m], Boxable[t], Boxable[d] =
