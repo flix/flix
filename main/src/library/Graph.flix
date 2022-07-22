@@ -125,8 +125,7 @@ namespace Graph {
 
     ///
     /// Helper function for `distance` and `distances`.
-    /// Returns a Datalog program which computes distances to all reachable nodes
-    /// when given a set of `Edge` facts and a `src`.
+    /// Returns a Datalog program which computes distances to all reachable nodes when given a set of `Edge` facts and a `src`.
     ///
     def dists(src: t): #{ Edge(t, d, t) | r } with Boxable[t], Boxable[d], Add[d] = #{
         // Distance `d` from `src` to `n`.
