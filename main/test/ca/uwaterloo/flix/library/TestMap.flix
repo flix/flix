@@ -2463,6 +2463,49 @@ def query18(): Bool =
         List.zip(l, List.reverse(l)) |> List.toMap |> Map.iterator(r) |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
     }
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // iteratorKeys                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def iteratorKeys01(): Bool = region r {
+        Map.empty(): Map[Int32, Int32] |> Map.iteratorKeys(r) |> Iterator.toList == Nil
+    }
+
+    @test
+    def iteratorKeys02(): Bool = region r {
+        Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4} |> Map.iteratorKeys(r) |> Iterator.toList == "a" :: "b" :: "c" :: "d" :: Nil
+    }
+
+    @test
+    def iteratorKeys03(): Bool = region r {
+        let l = List.range(0, 100);
+        List.zip(l, List.reverse(l)) |> List.toMap |> Map.iteratorKeys(r) |> Iterator.toList == List.range(0, 100)
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // iteratorValues                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def iteratorValues01(): Bool = region r {
+        Map.empty(): Map[Int32, Int32] |> Map.iteratorValues(r) |> Iterator.toList == Nil
+    }
+
+    @test
+    def iteratorValues02(): Bool = region r {
+        Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4} |> Map.iteratorValues(r) |> Iterator.toList == 1 :: 2 :: 3 :: 4 :: Nil
+    }
+
+    @test
+    def iteratorValues03(): Bool = region r {
+        let l = List.range(0, 100);
+        List.zip(l, List.reverse(l)) |> List.toMap |> Map.iteratorValues(r) |> Iterator.toList == List.range(0, 100) |> List.reverse
+    }
+
+
     /////////////////////////////////////////////////////////////////////////////
     // joinKeys                                                                //
     /////////////////////////////////////////////////////////////////////////////

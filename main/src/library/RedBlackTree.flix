@@ -1098,10 +1098,4 @@ namespace RedBlackTree {
         case Node(_, ltree, k, v, rtree) => leftmost(ltree, (k, v, rtree) :: es)
     }
 
-    ///
-    /// Returns an enumerator over `l` zipped with the indices of the elements.
-    ///
-    pub def enumerator(r: Region[r], t: RedBlackTree[k, v]): Iterator[((k, v), Int32), r] \ { Write(r) } =
-        iterator(r, t) |> Iterator.enumerator
-
 }
