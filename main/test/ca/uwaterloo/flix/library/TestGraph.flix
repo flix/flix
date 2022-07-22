@@ -82,7 +82,6 @@ namespace TestGraph {
     def graphWithDist01(): Set[(Int32, Int32, Int32)] =
         Set#{}
 
-
     def graphWithDist02(): Set[(Int32, Int32, Int32)] =
         let _graphString =
             " ┌─┐    ┌─┐ " ::
