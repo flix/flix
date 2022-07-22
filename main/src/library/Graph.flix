@@ -113,4 +113,44 @@ namespace Graph {
         };
         (query edges, dists select x from Distance(_, x, n) where n == dst.dst) |> List.minimum
 
+    ///
+    /// Returns the shortest distance from `o` to every other vertex in the graph `g`.
+    ///
+    pub def distances(src: t, g: m[(t, d, t)]): Map[t, Option[d]] with Foldable[m], Boxable[t], Boxable[d], Add[d] =
+        let edges = inject g into Edge;
+        let dists = #{
+            // Distances `d` to the nodes `n` with an edge from `src`.
+            Distance(n, d) :- Edge(src, d, n), if n != src.
+            // Distances to the nodes `n` where `src` can reach `m` by distance `d1`
+            // and there is an edge from `m` to `n` with distance `d2`.
+            Distance(n, d1 + d2) :- Distance(m, d1), Edge(m, d2, n), if n != src.
+        };
+        let allDists = #{
+            AllDists(n; Set#{d}) :- Distance(n, d).
+        };
+        let reachable = query edges, dists, allDists select (x, Set.minimum(s)) from AllDists(x; s) |> List.toMap;
+        let unreachable = unreachableWithDists(src, g)
+                            |> List.foldRight((x, acc) -> Map.insert(x, None, acc), Map.empty());
+        Map.union(reachable, unreachable)
+
+    ///
+    /// Helper functions for `distances`.
+    /// Returns the vertices that are unreachable from the `src` in the weighted directed graph `g`.
+    ///
+    def unreachableWithDists(src: t, g: m[(t, d, t)]): List[t] with Foldable[m], Boxable[t], Boxable[d] =
+        let edges = inject g into Edge;
+        let reachabilityFromSrc = #{
+            // A node can reach itself.
+            Reachable(src).
+            // If `src` can reach `m` and there is an edge from `m` to `n`
+            // then `src` can also reach `n`. This adds all node pairs to
+            // the relational that are reachable using any number of nodes.
+            Reachable(n) :- Reachable(m), Edge(m, _, n).
+        };
+        let unreachablility = #{
+            // If there is a node that is not Reachable from src then it is unreachable.
+            UnReachable(x) :- Node(x), not Reachable(x).
+        };
+        query edges, nodesWithDists(), reachabilityFromSrc, unreachablility select dst from UnReachable(dst)
+
 }
