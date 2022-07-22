@@ -2738,7 +2738,7 @@ object Typer {
         val tpe2 = tpe.getOrElse(tpe1)
         val pur2 = pur.getOrElse(pur1)
         val eff2 = eff.getOrElse(eff1)
-        TypedAst.Expression.Upcast(patchUpcasts(exp), tpe2, pur2, eff2, loc)
+        TypedAst.Expression.Upcast(exp, tpe2, pur2, eff2, loc)
       case _ => ???
     }
 
@@ -2779,35 +2779,7 @@ object Typer {
 
       case TypedAst.Expression.Stm(exp1, exp2, tpe, pur, eff, loc) => ???
       case TypedAst.Expression.Discard(exp, pur, eff, loc) => ???
-      case TypedAst.Expression.Match(exp, rules, tpe, pur, eff, loc) =>
-        var e = exp
-        if (upcasts.contains(exp))
-          e = applyNewType(exp, Some(tpe), Some(pur), Some(eff))
-        else
-          e = patchUpcasts(exp)
-
-        val rs = rules.foldRight(Nil: List[TypedAst.MatchRule]) {
-          case (rule, acc) =>
-            var g = rule.guard
-            var er = rule.exp
-
-            if (upcasts.contains(rule.guard))
-              g = applyNewType(rule.guard, Some(tpe), Some(pur), Some(eff))
-            else
-              g = patchUpcasts(rule.guard)
-
-            if (upcasts.contains(rule.exp))
-              er = applyNewType(rule.exp, Some(tpe), Some(pur), Some(eff))
-            else
-              er = patchUpcasts(rule.exp)
-
-            val res = TypedAst.MatchRule(rule.pat, g, er)
-
-            res :: Nil
-        }
-
-        TypedAst.Expression.Match(e, rs, tpe, pur, eff, loc)
-
+      case TypedAst.Expression.Match(exp, rules, tpe, pur, eff, loc) => ???
       case TypedAst.Expression.Choose(exps, rules, tpe, pur, eff, loc) => ???
       case TypedAst.Expression.Tag(sym, tag, exp, tpe, pur, eff, loc) => ???
       case TypedAst.Expression.Tuple(elms, tpe, pur, eff, loc) => ???
