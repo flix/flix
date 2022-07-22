@@ -469,7 +469,7 @@ class Flix {
       afterTyper <- Typer.run(afterDeriver, cachedTypedAst, changeSet)
       afterEntryPoint <- EntryPoint.run(afterTyper)
       afterStatistics <- Statistics.run(afterEntryPoint)
-      afterInstances <- Instances.run(afterStatistics)
+      afterInstances <- Instances.run(afterStatistics, cachedTypedAst, changeSet)
       afterStratifier <- Stratifier.run(afterInstances)
       afterRegions <- Regions.run(afterStratifier)
       afterPatternExhaustiveness <- PatternExhaustiveness.run(afterRegions)
