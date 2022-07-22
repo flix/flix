@@ -8,7 +8,7 @@ namespace Test/Exp/Jvm/NewObject {
 
   def implementIterable(): ##java.lang.Iterable & Impure =
     object ##java.lang.Iterable { 
-      def iterator(_this: ##java.lang.Iterable): ##java.util.Iterator & Impure = nil as ##java.util.Iterator
+      def iterator(_this: ##java.lang.Iterable): ##java.util.Iterator & Impure = null as ##java.util.Iterator
     }
 
   def implementComparable(): ##java.lang.Comparable & Impure =
