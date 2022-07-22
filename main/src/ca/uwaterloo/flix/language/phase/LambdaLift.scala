@@ -322,9 +322,9 @@ object LambdaLift {
         val e = visitExp(exp)
         LiftedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.NewObject(clazz, tpe, purity, methods0, loc) =>
+      case SimplifiedAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
         val methods = methods0.map(visitJvmMethod)
-        LiftedAst.Expression.NewObject(clazz, tpe, purity, methods, loc)
+        LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
       case SimplifiedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp)

@@ -602,7 +602,7 @@ object Redundancy {
     case Expression.PutStaticField(_, exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.NewObject(_, _, _, _, methods, _) =>
+    case Expression.NewObject(_, _, _, _, _, methods, _) =>
       methods.foldLeft(Used.empty) {
         case (acc, JvmMethod(_, fparams, exp, _, _, _, _)) => 
           // Extend the environment with the formal parameter symbols

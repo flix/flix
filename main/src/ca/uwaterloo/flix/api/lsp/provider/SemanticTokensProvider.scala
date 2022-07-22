@@ -475,7 +475,7 @@ object SemanticTokensProvider {
     case Expression.PutStaticField(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewObject(_, _, _, _, methods, _) =>
+    case Expression.NewObject(_, _, _, _, _, methods, _) =>
       methods.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, m) => acc ++ visitJvmMethod(m)
       }

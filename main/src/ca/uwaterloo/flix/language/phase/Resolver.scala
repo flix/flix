@@ -1062,11 +1062,11 @@ object Resolver {
             case (field, e) => ResolvedAst.Expression.PutStaticField(field, e, loc)
           }
 
-        case NamedAst.Expression.NewObject(className, methods, loc) =>
+        case NamedAst.Expression.NewObject(name, className, methods, loc) =>
           val clazz = lookupJvmClass(className, loc)
           val fparams = traverse(methods)(visitJvmMethod(_, taenv, ns0, root))
           mapN(clazz, fparams) {
-            case (c, f) => ResolvedAst.Expression.NewObject(c, f, loc)
+            case (c, f) => ResolvedAst.Expression.NewObject(name, c, f, loc)
           }
 
         case NamedAst.Expression.NewChannel(exp, tpe, loc) =>
