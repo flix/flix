@@ -109,7 +109,7 @@ object EarlyTreeShaker {
 
     case ReachableSym.SigSym(sigSym) => root.sigs.get(sigSym) match {
       case None => Set.empty
-      case Some(Sig(sigSym, spec, impl)) =>
+      case Some(Sig(sigSym, _, impl)) =>
         Set(ReachableSym.ClassSym(sigSym.clazz)) ++
           impl.map(i => visitExp(i.exp)).getOrElse(Set.empty)
     }
