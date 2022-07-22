@@ -10,6 +10,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      GRADLE_OPTS: "-Xms128m -Xmx4g"
 
     steps:
       - name: Check out the master branch
@@ -19,7 +21,7 @@ jobs:
         with:
           java-version: 1.11
       - name: Build with gradle
-        run: ./gradlew clean compileTestScala
+        run: ./gradlew clean compileTestScala --console=plain
       - name: Run tests with timeout
         timeout-minutes: 20
-        run: ./gradlew test
+        run: ./gradlew test --console=plain
