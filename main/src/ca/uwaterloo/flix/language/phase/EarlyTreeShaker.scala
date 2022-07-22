@@ -381,17 +381,17 @@ object EarlyTreeShaker {
 
 
   /**
-    * Represents a super type for reachable symbols in the AST.
+    * A common super-type for reachable symbols (defs, classes, sigs)
     */
   sealed trait ReachableSym
 
   object ReachableSym {
 
-    case class DefnSym(defnSym: Symbol.DefnSym) extends ReachableSym
+    case class DefnSym(sym: Symbol.DefnSym) extends ReachableSym
 
-    case class SigSym(sigSym: Symbol.SigSym) extends ReachableSym
+    case class ClassSym(sym: Symbol.ClassSym) extends ReachableSym
 
-    case class ClassSym(classSym: Symbol.ClassSym) extends ReachableSym
+    case class SigSym(sym: Symbol.SigSym) extends ReachableSym
 
   }
 
