@@ -330,27 +330,6 @@ object EarlyTreeShaker {
     case Expression.Force(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointConstraintSet(_, _, _, loc) =>
-      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
-    case Expression.FixpointLambda(_, _, _, _, _, _, loc) =>
-      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
-    case Expression.FixpointMerge(_, _, _, _, _, _, loc) =>
-      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
-    case Expression.FixpointSolve(_, _, _, _, _, loc) =>
-      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
-    case Expression.FixpointFilter(_, _, _, _, _, loc) =>
-      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
-    case Expression.FixpointInject(_, _, _, _, _, loc) =>
-      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
-    case Expression.FixpointProject(_, exp, _, _, _, _) =>
-      visitExp(exp)
-
     case Expression.Reify(_, _, _, _, _) =>
       Set.empty
 
@@ -371,6 +350,27 @@ object EarlyTreeShaker {
 
     case Expression.Without(exp, _, _, _, _, _) =>
       visitExp(exp)
+
+    case Expression.FixpointConstraintSet(_, _, _, loc) =>
+      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
+
+    case Expression.FixpointLambda(_, _, _, _, _, _, loc) =>
+      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
+
+    case Expression.FixpointMerge(_, _, _, _, _, _, loc) =>
+      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
+
+    case Expression.FixpointSolve(_, _, _, _, _, loc) =>
+      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
+
+    case Expression.FixpointFilter(_, _, _, _, _, loc) =>
+      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
+
+    case Expression.FixpointInject(_, _, _, _, _, loc) =>
+      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
+
+    case Expression.FixpointProject(_, _, _, _, _, loc) =>
+      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
   }
 
