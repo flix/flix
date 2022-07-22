@@ -71,7 +71,7 @@ object EarlyTreeShaker {
     //
     // (a) The main function is always reachable (if it exists).
     //
-    reachable = reachable ++ root.entryPoint.toList.map(ReachableSym.DefnSym)
+    reachable = reachable ++ root.entryPoint.map(ReachableSym.DefnSym)
 
     //
     // (b) A function annotated with @benchmark or @test is always reachable.

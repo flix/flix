@@ -65,7 +65,7 @@ object LateTreeShaker {
     //
     // (a) The main function is always reachable (if it exists).
     //
-    reachable = reachable ++ root.entryPoint.toList
+    reachable = reachable ++ root.entryPoint
 
     //
     // (b) A function annotated with @benchmark or @test is always reachable.
