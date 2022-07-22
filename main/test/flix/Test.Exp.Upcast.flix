@@ -8,7 +8,7 @@ namespace Test/Exp/Upcast {
         ()
 
     @test
-    def testUpcast01(): Unit & Impure =
+    def testUpcast02(): Unit & Impure =
         upcast ()
 
 }
