@@ -20,8 +20,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
-import ca.uwaterloo.flix.language.ast.KindedAst.Expression
-import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
@@ -37,8 +35,6 @@ import ca.uwaterloo.flix.util.collection.ListOps.unzip4
 import java.io.PrintWriter
 
 object Typer {
-
-  var upcasts = Set.empty[TypedAst.Expression]
 
   /**
     * Type checks the given AST root.
@@ -1300,26 +1296,13 @@ object Typer {
           resultEff = declaredEff.getOrElse(actualEff)
         } yield (constrs, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.Upcast(exp, tvar, pvar, evar, loc) =>
-        //
-        //  exp : t & p \ e
-        // ---------------------------
-        //  upcast exp : t' & p' \ e'
-        //
+      case KindedAst.Expression.Upcast(exp, _, _, _, loc) =>
         for {
-          (constrs, tpe, pur, eff) <- visitExp(exp)
-          resultTyp <- unifyTypeM(tvar, tpe, loc)
-          resultPur <- unifyTypeM(pvar, pur, loc)
-          resultEff <- unifyTypeM(evar, eff, loc)
-        } yield {
-          println(s"tpe: $resultTyp")
-          println(s"pur: $resultPur")
-          println(s"eff: $resultEff")
-          (constrs
-            , resultTyp
-            , resultPur
-            , resultEff)
-        }
+          (constrs, _, _, _) <- visitExp(exp)
+          resultTyp = Type.freshVar(Kind.Star, loc, text = FallbackText("tpe"))
+          resultPur = Type.freshVar(Kind.Bool, loc, text = FallbackText("pur"))
+          resultEff = Type.freshVar(Kind.Effect, loc, text = FallbackText("eff"))
+        } yield (constrs, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.Without(exp, effUse, loc) =>
         val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
@@ -2076,9 +2059,7 @@ object Typer {
         val tpe = subst0(tvar)
         val pur = subst0(pvar)
         val eff = subst0(evar)
-        val res = TypedAst.Expression.Upcast(e, tpe, pur, eff, loc)
-        upcasts += res
-        res
+        TypedAst.Expression.Upcast(e, tpe, pur, eff, loc)
 
       case KindedAst.Expression.Without(exp, effUse, loc) =>
         val e = visitExp(exp, subst0)
@@ -2356,8 +2337,7 @@ object Typer {
       }
     }
 
-    val e = visitExp(exp0, subst0)
-    patchUpcasts(e)
+    visitExp(exp0, subst0)
   }
 
   /**
@@ -2730,106 +2710,5 @@ object Typer {
       t.mkRow(List(sym.toString, size, f"$mean%2.1f", median, total))
     }
     t.write(new PrintWriter(System.out))
-  }
-
-  private def patchUpcasts(exp0: TypedAst.Expression): TypedAst.Expression = {
-    def applyNewType(exp: TypedAst.Expression, tpe: Option[Type] = None, pur: Option[Type] = None, eff: Option[Type] = None): TypedAst.Expression = exp match {
-      case TypedAst.Expression.Upcast(exp, tpe1, pur1, eff1, loc) =>
-        val tpe2 = tpe.getOrElse(tpe1)
-        val pur2 = pur.getOrElse(pur1)
-        val eff2 = eff.getOrElse(eff1)
-        TypedAst.Expression.Upcast(exp, tpe2, pur2, eff2, loc)
-      case _ => ???
-    }
-
-    exp0 match {
-      case TypedAst.Expression.Lambda(fparam, exp, tpe, loc) =>
-        if (upcasts.contains(exp))
-          TypedAst.Expression.Lambda(fparam, applyNewType(exp, Some(tpe)), tpe, loc)
-        else
-          TypedAst.Expression.Lambda(fparam, patchUpcasts(exp), tpe, loc)
-
-      case TypedAst.Expression.Apply(exp, exps, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.Unary(sop, exp, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.Binary(sop, exp1, exp2, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.Let(sym, mod, exp1, exp2, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.LetRec(sym, mod, exp1, exp2, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.Region(tpe, loc) => ???
-      case TypedAst.Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) =>
-        var e1 = exp1
-        var e2 = exp2
-        var e3 = exp3
-        if (upcasts.contains(exp1)) {
-          e1 = applyNewType(exp1, Some(tpe), Some(pur), Some(eff))
-        } else {
-          e1 = patchUpcasts(exp1)
-        }
-        if (upcasts.contains(exp2)) {
-          e2 = applyNewType(exp2, Some(tpe), Some(pur), Some(eff))
-        } else {
-          e2 = patchUpcasts(exp2)
-        }
-        if (upcasts.contains(exp3)) {
-          e3 = applyNewType(exp3, Some(tpe), Some(pur), Some(eff))
-        } else {
-          e3 = patchUpcasts(exp3)
-        }
-        TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, pur, eff, loc)
-
-      case TypedAst.Expression.Stm(exp1, exp2, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.Discard(exp, pur, eff, loc) => ???
-      case TypedAst.Expression.Match(exp, rules, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.Choose(exps, rules, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.Tag(sym, tag, exp, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.Tuple(elms, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.RecordEmpty(tpe, loc) => ???
-      case TypedAst.Expression.RecordSelect(exp, field, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.RecordExtend(field, value, rest, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.RecordRestrict(field, rest, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.ArrayLit(exps, exp, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.ArrayNew(exp1, exp2, exp3, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.ArrayLoad(base, index, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.ArrayLength(base, pur, eff, loc) => ???
-      case TypedAst.Expression.ArrayStore(base, index, elm, eff, loc) => ???
-      case TypedAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => ???
-      case TypedAst.Expression.Ref(exp1, exp2, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.Deref(exp, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.Assign(exp1, exp2, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.Ascribe(exp, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.Upcast(exp, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.Without(exp, effUse, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.TryCatch(exp, rules, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.TryWith(exp, effUse, rules, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.Do(op, exps, pur, eff, loc) => ???
-      case TypedAst.Expression.Resume(exp, tpe, loc) => ???
-      case TypedAst.Expression.InvokeConstructor(constructor, args, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.InvokeMethod(method, exp, args, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.InvokeStaticMethod(method, args, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.GetField(field, exp, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.PutField(field, exp1, exp2, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.GetStaticField(field, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.PutStaticField(field, exp, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.NewObject(clazz, tpe, pur, eff, methods, loc) => ???
-      case TypedAst.Expression.NewChannel(exp, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.GetChannel(exp, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.PutChannel(exp1, exp2, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.SelectChannel(rules, default, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.Spawn(exp, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.Lazy(exp, tpe, loc) => ???
-      case TypedAst.Expression.Force(exp, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.FixpointConstraintSet(cs, stf, tpe, loc) => ???
-      case TypedAst.Expression.FixpointLambda(pparams, exp, stf, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.FixpointMerge(exp1, exp2, stf, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.FixpointSolve(exp, stf, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.FixpointFilter(pred, exp, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.FixpointInject(exp, pred, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.FixpointProject(pred, exp, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.Reify(t, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.ReifyType(t, k, tpe, pur, eff, loc) => ???
-      case TypedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, pur, eff, loc) => ???
-      case _ => exp0
-    }
   }
 }
