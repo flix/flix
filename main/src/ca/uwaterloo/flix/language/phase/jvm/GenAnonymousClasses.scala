@@ -55,9 +55,10 @@ object GenAnonymousClasses {
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
       superClass.toInternalName, Array(asm.Type.getInternalName(obj.clazz)))
 
-    compileConstructor(superClass, visitor)
+    val currentClass = JvmType.Reference(className)
+    compileConstructor(currentClass, superClass, obj.methods, visitor)
 
-    obj.methods.foreach(compileMethod(_, visitor))
+    obj.methods.zipWithIndex.foreach { case (m, i) => compileMethod(currentClass, m, i, visitor) }
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -66,12 +67,21 @@ object GenAnonymousClasses {
   /**
     * Constructor of the class
     */
-  private def compileConstructor(superClass: JvmName, visitor: ClassWriter): Unit = {
+  private def compileConstructor(currentClass: JvmType.Reference, superClass: JvmName, methods: List[JvmMethod], visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
     val constructor = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
 
+    // Invoke the superclass constructor
     constructor.visitVarInsn(ALOAD, 0)
     constructor.visitMethodInsn(INVOKESPECIAL, superClass.toInternalName, JvmName.ConstructorMethod,
       MethodDescriptor.NothingToVoid.toDescriptor, false)
+
+    // For each method, compile the closure which implements the body of that method and store it in a field
+    methods.zipWithIndex.foreach { case (m, i) => 
+      constructor.visitVarInsn(ALOAD, 0)
+      GenExpression.compileExpression(m.clo, constructor, currentClass, Map(), new Label())
+      constructor.visitFieldInsn(PUTFIELD, currentClass.name.toInternalName, s"clo$i", JvmOps.getClosureAbstractClassType(m.clo.tpe).toDescriptor)
+    }
+
     constructor.visitInsn(RETURN)
 
     constructor.visitMaxs(999, 999)
@@ -81,19 +91,43 @@ object GenAnonymousClasses {
   /**
     * Method
     */
-  private def compileMethod(method: JvmMethod, visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = method match {
+  private def compileMethod(currentClass: JvmType.Reference, method: JvmMethod, i: Int, classVisitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = method match {
     case JvmMethod(ident, fparams, clo, tpe, loc) =>
+      val closureAbstractClass = JvmOps.getClosureAbstractClassType(method.clo.tpe)
+      val functionInterface = JvmOps.getFunctionInterfaceType(method.clo.tpe)
+      val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(method.retTpe))
+
+      // Create the field that will store the closure implementing the body of the method
+      AsmOps.compileField(classVisitor, s"clo$i", closureAbstractClass, isStatic = false, isPrivate = false)
+
       // Drop the first formal parameter (which always represents `this`)
       val paramTypes = fparams.tail.map(f => JvmOps.getJvmType(f.tpe))
       val returnType = JvmOps.getJvmType(tpe)
-      val m = visitor.visitMethod(ACC_PUBLIC, ident.name, AsmOps.getMethodDescriptor(paramTypes, returnType), null, null)
+      val methodVisitor = classVisitor.visitMethod(ACC_PUBLIC, ident.name, AsmOps.getMethodDescriptor(paramTypes, returnType), null, null)
 
-      m.visitTypeInsn(NEW, JvmName.UnsupportedOperationException.toInternalName)
-      m.visitInsn(DUP)
-      m.visitMethodInsn(INVOKESPECIAL, JvmName.UnsupportedOperationException.toInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)
-      m.visitInsn(ATHROW)
+      // Retrieve the closure that implements this method
+      methodVisitor.visitVarInsn(ALOAD, 0)
+      methodVisitor.visitFieldInsn(GETFIELD, currentClass.name.toInternalName, s"clo$i", closureAbstractClass.toDescriptor)
 
-      m.visitMaxs(999, 999)
-      m.visitEnd()
+      methodVisitor.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName,
+        AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
+
+      // Push arguments onto the stack
+      fparams.zipWithIndex.foreach { case (arg, i) => 
+        methodVisitor.visitInsn(DUP)
+        methodVisitor.visitVarInsn(ALOAD, i)
+        methodVisitor.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
+          s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
+      }
+
+      // Invoke the closure
+      methodVisitor.visitMethodInsn(INVOKEVIRTUAL, functionInterface.name.toInternalName,
+        backendContinuationType.UnwindMethod.name, AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
+      AsmOps.castIfNotPrim(methodVisitor, JvmOps.getJvmType(tpe))
+
+      methodVisitor.visitInsn(AsmOps.getReturnInstruction(JvmOps.getJvmType(method.retTpe)))
+
+      methodVisitor.visitMaxs(999, 999)
+      methodVisitor.visitEnd()
   }
 }
