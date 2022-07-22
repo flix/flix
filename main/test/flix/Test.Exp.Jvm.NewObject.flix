@@ -62,20 +62,12 @@ namespace Test/Exp/Jvm/NewObject {
   def testImplementInterface07(): Bool & Impure =
     import java.lang.Iterable.iterator(): ##java.util.Iterator & Impure;
     let anon = implementIterable();
-    try {
-      let _it = iterator(anon);
-      false
-    } catch {
-      case _: ##java.lang.UnsupportedOperationException => true
-    }
+    let _it = iterator(anon);
+    true
   
   @test
   def testImplementInterface08(): Bool & Impure =
     import java.lang.Comparable.compareTo(##java.lang.Object): Int32 & Pure;
     let anon = implementComparable();
-    try {
-      compareTo(anon, anon as ##java.lang.Object) == 0
-    } catch {
-      case _: ##java.lang.UnsupportedOperationException => true
-    }
+    compareTo(anon, anon as ##java.lang.Object) == 0
 }

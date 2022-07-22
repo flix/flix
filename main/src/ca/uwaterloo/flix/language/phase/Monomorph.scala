@@ -547,7 +547,7 @@ object Monomorph {
         Expression.PutStaticField(field, e, tpe, pur, eff, loc)
 
       case Expression.NewObject(clazz, tpe, pur, eff, methods0, loc) =>
-        val methods = methods0.map(visitJvmMethod)
+        val methods = methods0.map(visitJvmMethod(_, env0))
         Expression.NewObject(clazz, subst0(tpe), pur, eff, methods, loc)
 
       case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
@@ -703,10 +703,10 @@ object Monomorph {
           else envs.reduce(_ ++ _) ++ Map(sym -> freshSym))
     }
 
-    def visitJvmMethod(method: JvmMethod) = method match {
+    def visitJvmMethod(method: JvmMethod, env0: Map[Symbol.VarSym, Symbol.VarSym]) = method match {
       case JvmMethod(ident, fparams0, exp0, tpe, pur, eff, loc) =>
-        val (fparams, env0) = specializeFormalParams(fparams0, subst0)
-        val exp = visitExp(exp0, env0)
+        val (fparams, env1) = specializeFormalParams(fparams0, subst0)
+        val exp = visitExp(exp0, env0 ++ env1)
         JvmMethod(ident, fparams, exp, subst0(tpe), pur, eff, loc)
     }
 
