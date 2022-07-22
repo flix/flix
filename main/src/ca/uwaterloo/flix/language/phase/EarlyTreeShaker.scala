@@ -123,7 +123,7 @@ object EarlyTreeShaker {
     case ReachableSym.SigSym(sigSym) =>
       val sig = root.sigs(sigSym)
       Set(ReachableSym.ClassSym(sig.sym.clazz)) ++
-        sig.impl.map(i => visitExp(i.exp)).getOrElse(Set.empty)
+        sig.impl.map(_.exp).map(visitExp).getOrElse(Set.empty)
 
     case ReachableSym.ClassSym(classSym) =>
       root.instances(classSym).foldLeft(Set.empty[ReachableSym]) {
