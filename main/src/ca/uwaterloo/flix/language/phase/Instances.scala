@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Kind, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -30,9 +30,9 @@ object Instances {
   /**
     * Validates instances and classes in the given AST root.
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Instances") {
+  def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Instances") {
     Validation.sequenceX(List(
-      visitInstances(root),
+      visitInstances(root, oldRoot, changeSet),
       visitClasses(root)
     )).map(_ => root)
   }
@@ -73,7 +73,7 @@ object Instances {
   /**
     * Validates all instances in the given AST root.
     */
-  private def visitInstances(root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, InstanceError] = {
+  private def visitInstances(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Unit, InstanceError] = {
 
     /**
       * Checks that an instance is not an orphan.
@@ -239,6 +239,19 @@ object Instances {
         }
     }
 
+    def checkInstance(inst: TypedAst.Instance): Validation[Unit, InstanceError] = {
+      val isClassStable = inst.sym.clazz.loc.source.stable
+      val isInstanceStable = inst.loc.source.stable
+      val isIncremental = changeSet.isInstanceOf[ChangeSet.Changes]
+      if (isIncremental && isClassStable && isInstanceStable) {
+        return ().toSuccess
+      }
+
+      Validation.sequenceX(List(checkSigMatch(inst),
+        checkOrphan(inst),
+        checkSuperInstances(inst)))
+    }
+
     /**
       * Reassembles a set of instances of the same class.
       */
@@ -253,12 +266,9 @@ object Instances {
             _ =>
               Validation.sequenceX(List(
                 Validation.traverse(unchecked)(checkOverlap(_, inst)),
-                checkSigMatch(inst),
-                checkOrphan(inst),
-                checkSuperInstances(inst),
+                checkInstance(inst)
               ))
           }
-
         case Nil => ().toSuccess
       }
     }
