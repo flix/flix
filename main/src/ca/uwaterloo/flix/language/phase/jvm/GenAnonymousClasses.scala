@@ -59,7 +59,7 @@ object GenAnonymousClasses {
     val currentClass = JvmType.Reference(className)
     compileConstructor(currentClass, superClass, obj.methods, visitor)
 
-    obj.methods.zipWithIndex.foreach { case (m, i) => compileMethod(currentClass, m, i, visitor) }
+    obj.methods.zipWithIndex.foreach { case (m, i) => compileMethod(currentClass, m, s"clo$i", visitor) }
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -92,14 +92,14 @@ object GenAnonymousClasses {
   /**
     * Method
     */
-  private def compileMethod(currentClass: JvmType.Reference, method: JvmMethod, i: Int, classVisitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = method match {
+  private def compileMethod(currentClass: JvmType.Reference, method: JvmMethod, cloName: String, classVisitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = method match {
     case JvmMethod(ident, fparams, clo, tpe, loc) =>
       val closureAbstractClass = JvmOps.getClosureAbstractClassType(method.clo.tpe)
       val functionInterface = JvmOps.getFunctionInterfaceType(method.clo.tpe)
       val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(method.retTpe))
 
       // Create the field that will store the closure implementing the body of the method
-      AsmOps.compileField(classVisitor, s"clo$i", closureAbstractClass, isStatic = false, isPrivate = false)
+      AsmOps.compileField(classVisitor, cloName, closureAbstractClass, isStatic = false, isPrivate = false)
 
       // Drop the first formal parameter (which always represents `this`)
       val paramTypes = fparams.tail.map(f => JvmOps.getJvmType(f.tpe))
@@ -114,15 +114,18 @@ object GenAnonymousClasses {
 
       // Retrieve the closure that implements this method
       methodVisitor.visitVarInsn(ALOAD, 0)
-      methodVisitor.visitFieldInsn(GETFIELD, currentClass.name.toInternalName, s"clo$i", closureAbstractClass.toDescriptor)
+      methodVisitor.visitFieldInsn(GETFIELD, currentClass.name.toInternalName, cloName, closureAbstractClass.toDescriptor)
 
       methodVisitor.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName,
         AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
 
       // Push arguments onto the stack
+      var offset = 0
       fparams.zipWithIndex.foreach { case (arg, i) => 
         methodVisitor.visitInsn(DUP)
-        methodVisitor.visitVarInsn(AsmOps.getLoadInstruction(JvmOps.getJvmType(arg.tpe)), i)
+        val argType = JvmOps.getJvmType(arg.tpe)
+        methodVisitor.visitVarInsn(AsmOps.getLoadInstruction(argType), offset)
+        offset += AsmOps.getStackSize(argType)
         methodVisitor.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
           s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
       }
