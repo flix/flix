@@ -192,7 +192,7 @@ namespace TestRedBlackTree {
     ///
     /// Returns a tree with `n` nodes `x -> ()` where `x` is a random integer.
     ///
-    def random(n: Int32): RedBlackTree[Int32, Unit] & Impure = {
+    def random(n: Int32): RedBlackTree[Int32, Unit] & Impure \ NonDet = {
         let seed = 42i64;
         let r = Random.newWithSeed(seed);
         List.foldLeft((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(),
