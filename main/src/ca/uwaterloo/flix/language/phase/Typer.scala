@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.TypeMinimization.minimizeScheme
@@ -2632,56 +2633,6 @@ object Typer {
     */
   private def mkAnySchemaRowType(loc: SourceLocation)(implicit flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc, text = FallbackText("row"))
 
-  /**
-    * Returns the Flix Type of a Java Class
-    * 
-    * TODO - move this out of Typer.scala
-    */
-  def getFlixType(c: Class[_]): Type = {
-    if (c == java.lang.Boolean.TYPE) {
-      Type.Bool
-    }
-    else if (c == java.lang.Byte.TYPE) {
-      Type.Int8
-    }
-    else if (c == java.lang.Short.TYPE) {
-      Type.Int16
-    }
-    else if (c == java.lang.Integer.TYPE) {
-      Type.Int32
-    }
-    else if (c == java.lang.Long.TYPE) {
-      Type.Int64
-    }
-    else if (c == java.lang.Character.TYPE) {
-      Type.Char
-    }
-    else if (c == java.lang.Float.TYPE) {
-      Type.Float32
-    }
-    else if (c == java.lang.Double.TYPE) {
-      Type.Float64
-    }
-    else if (c == classOf[java.math.BigInteger]) {
-      Type.BigInt
-    }
-    else if (c == classOf[java.lang.String]) {
-      Type.Str
-    }
-    else if (c == java.lang.Void.TYPE) {
-      Type.Unit
-    }
-    // handle arrays of types
-    else if (c.isArray) {
-      val comp = c.getComponentType
-      val elmType = getFlixType(comp)
-      Type.mkArray(elmType, Type.False, SourceLocation.Unknown)
-    }
-    // otherwise native type
-    else {
-      Type.mkNative(c, SourceLocation.Unknown)
-    }
-  }
 
   /**
     * Computes and prints statistics about the given substitution.

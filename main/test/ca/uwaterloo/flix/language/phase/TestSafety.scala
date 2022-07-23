@@ -214,18 +214,6 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[SafetyError.IllegalThisType](result)
   }
 
-  test("TestInvalidThis.03") {
-    val input =
-      """
-        |def f(): ##java.lang.Runnable & Impure = 
-        |  object ##java.lang.Runnable {
-        |    def run(_this: ##java.lang.Runnable): Unit & Impure = ()
-        |  }
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectSuccess(result)
-  }
-
   test("TestUnimplementedMethod.01") {
     val input =
       """
@@ -233,19 +221,6 @@ class TestSafety extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.UnimplementedMethod](result)
-  }
-
-  test("TestUnimplementedMethod.02") {
-    val input =
-      """
-        |def f(): ##java.lang.Iterable & Impure =
-        |  object ##java.lang.Iterable {
-        |    def iterator(_this: ##java.lang.Iterable): ##java.util.Iterator & Impure = () as ##java.util.Iterator
-        |  }
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    // Succeeds because spliterator and forEach have default implementations
-    expectSuccess(result)
   }
 
   test("TestExtraMethod.01") {
