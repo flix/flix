@@ -3,15 +3,15 @@ namespace Random {
     ///
     /// Returns a fresh random number generator.
     ///
-    pub def new(): Random & Impure =
-        import new java.util.Random(): ##java.util.Random & Impure as newRandom;
+    pub def new(): Random & Impure \ NonDet =
+        import new java.util.Random(): ##java.util.Random & Impure \ NonDet as newRandom;
         Random(newRandom())
 
     ///
     /// Returns a fresh random number generator initialized with the given seed `s`.
     ///
-    pub def newWithSeed(s: Int64): Random & Impure =
-        import new java.util.Random(Int64): ##java.util.Random & Impure as newRandom;
+    pub def newWithSeed(s: Int64): Random & Impure \ NonDet =
+        import new java.util.Random(Int64): ##java.util.Random & Impure \ NonDet as newRandom;
         Random(newRandom(s))
 
     ///
@@ -19,7 +19,7 @@ namespace Random {
     ///
     /// Returns `None` if the given array `a` is empty.
     ///
-    pub def choose(r: Random, a: Array[a, Static]): Option[a] & Impure =
+    pub def choose(r: Random, a: Array[a, Static]): Option[a] & Impure \ NonDet =
         if (a.length == 0) {
             None
         } else {
@@ -31,56 +31,56 @@ namespace Random {
     ///
     /// Returns the next pseudorandom boolean from the given random number generator `r`.
     ///
-    pub def nextBool(r: Random): Bool & Impure =
-        import java.util.Random.nextBoolean(): Bool & Impure;
+    pub def nextBool(r: Random): Bool \ NonDet =
+        import java.util.Random.nextBoolean(): Bool \ NonDet;
         let Random(o) = r;
         nextBoolean(o)
 
     ///
     /// Returns the next pseudorandom 32-bit floating point number from the given random number generator `r`.
     ///
-    pub def nextFloat32(r: Random): Float32 & Impure =
-        import java.util.Random.nextFloat(): Float32 & Impure;
+    pub def nextFloat32(r: Random): Float32 & Impure \ NonDet =
+        import java.util.Random.nextFloat(): Float32 & Impure \ NonDet;
         let Random(o) = r;
         nextFloat(o)
 
     ///
     /// Returns the next pseudorandom 64-bit floating point number from the given random number generator `r`.
     ///
-    pub def nextFloat64(r: Random): Float64 & Impure =
-        import java.util.Random.nextDouble(): Float64 & Impure;
+    pub def nextFloat64(r: Random): Float64 & Impure \ NonDet =
+        import java.util.Random.nextDouble(): Float64 & Impure \ NonDet;
         let Random(o) = r;
         nextDouble(o)
 
     ///
     /// Returns the next pseudorandom 32-bit integer value from the given random number generator `r`.
     ///
-    pub def nextInt32(r: Random): Int32 & Impure =
-        import java.util.Random.nextInt(): Int32 & Impure;
+    pub def nextInt32(r: Random): Int32 & Impure \ NonDet =
+        import java.util.Random.nextInt(): Int32 & Impure \ NonDet;
         let Random(o) = r;
         nextInt(o)
 
     ///
     /// Returns the next pseudorandom 64-bit integer value from the given random number generator `r`.
     ///
-    pub def nextInt64(r: Random): Int64 & Impure =
-        import java.util.Random.nextLong(): Int64 & Impure;
+    pub def nextInt64(r: Random): Int64 & Impure \ NonDet =
+        import java.util.Random.nextLong(): Int64 & Impure \ NonDet;
         let Random(o) = r;
         nextLong(o)
 
     ///
     /// Returns the next pseudorandom Gaussian distributed 64-bit floating point number.
     ///
-    pub def nextGaussian(r: Random): Float64 & Impure =
-        import java.util.Random.nextGaussian(): Float64 & Impure;
+    pub def nextGaussian(r: Random): Float64 & Impure \ NonDet =
+        import java.util.Random.nextGaussian(): Float64 & Impure \ NonDet;
         let Random(o) = r;
         nextGaussian(o)
 
     ///
     /// Returns the next pseudorandom 32-bit integer value between `0` and `m` (exclusive) using the given random number generator `r`.
     ///
-    pub def nextNatWithMax(r: Random, m: Int32): Int32 & Impure =
-        import java.util.Random.nextInt(Int32): Int32 & Impure;
+    pub def nextNatWithMax(r: Random, m: Int32): Int32 \ NonDet =
+        import java.util.Random.nextInt(Int32): Int32 \ NonDet;
         let Random(o) = r;
         nextInt(o, m)
 

@@ -2514,7 +2514,7 @@ namespace TestMutList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool & Impure = region r {
+    def shuffle01(): Bool & Impure \ NonDet = region r {
         let l: List[Int32] = Nil;
         let v = MutList.shuffle(r, Random.new(), List.toMutList(r, l));
         MutList.sort!(v);
@@ -2523,7 +2523,7 @@ namespace TestMutList {
     }
 
     @test
-    def shuffle02(): Bool & Impure = region r {
+    def shuffle02(): Bool & Impure \ NonDet = region r {
         let l = 1 :: Nil;
         let v = MutList.shuffle(r, Random.new(), List.toMutList(r, l));
         MutList.sort!(v);
@@ -2532,7 +2532,7 @@ namespace TestMutList {
     }
 
     @test
-    def shuffle03(): Bool & Impure = region r {
+    def shuffle03(): Bool & Impure \ NonDet = region r {
         let l = 1 :: 2 :: 3 :: Nil;
         let v = MutList.shuffle(r, Random.new(), List.toMutList(r, l));
         MutList.sort!(v);
@@ -2541,7 +2541,7 @@ namespace TestMutList {
     }
 
     @test
-    def shuffle04(): Bool & Impure = region r {
+    def shuffle04(): Bool & Impure \ NonDet = region r {
         let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
         let v = MutList.shuffle(r, Random.new(), List.toMutList(r, l));
         MutList.sort!(v);
