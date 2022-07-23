@@ -1,23 +1,23 @@
 @test
-def testChoose01(): Option[Int32] & Impure =
+def testChoose01(): Option[Int32] & Impure \ NonDet =
     let r = Random.new();
     let a = [42i32; 10];
     Random.choose(r, a)
 
 @test
-def testChoose02(): Option[String] & Impure =
+def testChoose02(): Option[String] & Impure \ NonDet =
     let r = Random.new();
     let a = ["Hello World"; 10];
     Random.choose(r, a)
 
 @test
-def testChoose03(): Option[Result[Int32, Int32]] & Impure =
+def testChoose03(): Option[Result[Int32, Int32]] & Impure \ NonDet =
     let r = Random.new();
     let a = [Ok(123), Ok(456), Err(789)];
     Random.choose(r, a)
 
 @test
-def testNextBool(): Bool & Impure =
+def testNextBool(): Bool & Impure \ NonDet =
     let r = Random.newWithSeed(0i64);
     Random.nextBool(r)
 
@@ -47,6 +47,6 @@ def testNextInt64(): Int64 & Impure =
     Random.nextInt64(r)
 
 @test
-def testNextNatWithMax(): Int32 \ NonDet =
+def testNextNatWithMax(): Int32 & Impure \ NonDet =
     let r = Random.new();
     Random.nextNatWithMax(r, 100)
