@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.MonoType
 import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{MethodDescriptor, RootPackage}
 import ca.uwaterloo.flix.util.ParOps
@@ -102,7 +103,13 @@ object GenAnonymousClasses {
 
       // Drop the first formal parameter (which always represents `this`)
       val paramTypes = fparams.tail.map(f => JvmOps.getJvmType(f.tpe))
-      val returnType = JvmOps.getJvmType(tpe)
+
+      // Special case: treat Unit as void
+      val returnType = tpe match {
+        case MonoType.Unit => JvmType.Void
+        case _ => JvmOps.getJvmType(tpe)
+      } 
+
       val methodVisitor = classVisitor.visitMethod(ACC_PUBLIC, ident.name, AsmOps.getMethodDescriptor(paramTypes, returnType), null, null)
 
       // Retrieve the closure that implements this method
@@ -115,7 +122,7 @@ object GenAnonymousClasses {
       // Push arguments onto the stack
       fparams.zipWithIndex.foreach { case (arg, i) => 
         methodVisitor.visitInsn(DUP)
-        methodVisitor.visitVarInsn(ALOAD, i)
+        methodVisitor.visitVarInsn(AsmOps.getLoadInstruction(JvmOps.getJvmType(arg.tpe)), i)
         methodVisitor.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
           s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
       }
@@ -125,7 +132,11 @@ object GenAnonymousClasses {
         backendContinuationType.UnwindMethod.name, AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
       AsmOps.castIfNotPrim(methodVisitor, JvmOps.getJvmType(tpe))
 
-      methodVisitor.visitInsn(AsmOps.getReturnInstruction(JvmOps.getJvmType(method.retTpe)))
+      val returnInstruction = returnType match {
+        case JvmType.Void => RETURN
+        case _ => AsmOps.getReturnInstruction(returnType)
+      }
+      methodVisitor.visitInsn(returnInstruction)
 
       methodVisitor.visitMaxs(999, 999)
       methodVisitor.visitEnd()

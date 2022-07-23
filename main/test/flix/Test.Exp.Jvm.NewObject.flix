@@ -6,16 +6,6 @@ namespace Test/Exp/Jvm/NewObject {
   def implementSerializableAgain(): ##java.io.Serializable & Impure =
     object ##java.io.Serializable { }
 
-  def implementIterable(): ##java.lang.Iterable & Impure =
-    object ##java.lang.Iterable { 
-      def iterator(_this: ##java.lang.Iterable): ##java.util.Iterator & Impure = null as ##java.util.Iterator
-    }
-
-  def implementComparable(): ##java.lang.Comparable & Impure =
-    object ##java.lang.Comparable {
-      def compareTo(_this: ##java.lang.Comparable, _that: ##java.lang.Object): Int32 & Pure = 0
-    }
-
   @test
   def testImplementInterface01(): Bool & Impure =
     import java.lang.Object.toString(): String & Pure;
@@ -52,22 +42,12 @@ namespace Test/Exp/Jvm/NewObject {
     let anon2 = implementSerializableAgain() as ##java.lang.Object;
     not equals(getClass(anon) as ##java.lang.Object, getClass(anon2) as ##java.lang.Object)
 
-  @test
-  def testImplementInterface06(): Bool & Impure =
-    import java.lang.Object.toString(): String & Pure;
-    let anon = implementIterable() as ##java.lang.Object;
-    toString(anon) |> String.startsWith(prefix = "Anon")
-
-  @test
-  def testImplementInterface07(): Bool & Impure =
-    import java.lang.Iterable.iterator(): ##java.util.Iterator & Impure;
-    let anon = implementIterable();
-    let _it = iterator(anon);
-    true
-  
-  @test
-  def testImplementInterface08(): Bool & Impure =
-    import java.lang.Comparable.compareTo(##java.lang.Object): Int32 & Pure;
-    let anon = implementComparable();
-    compareTo(anon, anon as ##java.lang.Object) == 0
+  @test 
+  def testPrimitiveTypes01(): Bool & Impure =
+    import static flix.test.TestPrimitiveTypes.runTest(##flix.test.TestPrimitiveTypes): Bool;
+    let anon = object ##flix.test.TestPrimitiveTypes {
+      def takesAndReturnsVoid(_this: ##flix.test.TestPrimitiveTypes): Unit = ()
+      def takesAndReturnsInt(_this: ##flix.test.TestPrimitiveTypes, x: Int32): Int32 = x + 1
+    };
+    runTest(anon)
 }
