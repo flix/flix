@@ -19,7 +19,7 @@ namespace Random {
     ///
     /// Returns `None` if the given array `a` is empty.
     ///
-    pub def choose(r: Random, a: Array[a, Static]): Option[a] & Impure =
+    pub def choose(r: Random, a: Array[a, Static]): Option[a] & Impure \ NonDet =
         if (a.length == 0) {
             None
         } else {
@@ -31,8 +31,8 @@ namespace Random {
     ///
     /// Returns the next pseudorandom boolean from the given random number generator `r`.
     ///
-    pub def nextBool(r: Random): Bool & Impure =
-        import java.util.Random.nextBoolean(): Bool & Impure;
+    pub def nextBool(r: Random): Bool \ NonDet =
+        import java.util.Random.nextBoolean(): Bool \ NonDet;
         let Random(o) = r;
         nextBoolean(o)
 
@@ -79,8 +79,8 @@ namespace Random {
     ///
     /// Returns the next pseudorandom 32-bit integer value between `0` and `m` (exclusive) using the given random number generator `r`.
     ///
-    pub def nextNatWithMax(r: Random, m: Int32): Int32 & Impure =
-        import java.util.Random.nextInt(Int32): Int32 & Impure;
+    pub def nextNatWithMax(r: Random, m: Int32): Int32 \ NonDet =
+        import java.util.Random.nextInt(Int32): Int32 \ NonDet;
         let Random(o) = r;
         nextInt(o, m)
 

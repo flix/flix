@@ -998,7 +998,7 @@ namespace Nec {
     ///
     /// Optionally returns the Nec `c` shuffled using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random.Random, c: Nec[a]): Option[Nec[a]] & Impure = region r {
+    pub def shuffle(rnd: Random.Random, c: Nec[a]): Option[Nec[a]] \ NonDet = region r {
         toArray(r, c) !> Array.shuffle(rnd) |> Array.toNec
     }
 

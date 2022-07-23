@@ -47,6 +47,6 @@ def testNextInt64(): Int64 & Impure =
     Random.nextInt64(r)
 
 @test
-def testNextNatWithMax(): Int32 & Impure =
+def testNextNatWithMax(): Int32 \ NonDet =
     let r = Random.new();
     Random.nextNatWithMax(r, 100)
