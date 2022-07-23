@@ -91,13 +91,13 @@ namespace TestRedBlackTree {
         checkBinarySearchTreeInvariant(tree)
 
     @test
-    def testBinarySearchTreeInvariant10(): Bool & Impure = checkBinarySearchTreeInvariant(random(10))
+    def testBinarySearchTreeInvariant10(): Bool & Impure \ NonDet = checkBinarySearchTreeInvariant(random(10))
 
     @test
-    def testBinarySearchTreeInvariant11(): Bool & Impure = checkBinarySearchTreeInvariant(random(100))
+    def testBinarySearchTreeInvariant11(): Bool & Impure \ NonDet = checkBinarySearchTreeInvariant(random(100))
 
     @test
-    def testBinarySearchTreeInvariant12(): Bool & Impure = checkBinarySearchTreeInvariant(random(1000))
+    def testBinarySearchTreeInvariant12(): Bool & Impure \ NonDet = checkBinarySearchTreeInvariant(random(1000))
 
     @test
     def testRedParentInvariant01(): Bool =
@@ -139,13 +139,13 @@ namespace TestRedBlackTree {
         checkRedParentInvariant(tree)
 
     @test
-    def testRedParentInvariant10(): Bool & Impure = checkRedParentInvariant(random(10))
+    def testRedParentInvariant10(): Bool & Impure \ NonDet = checkRedParentInvariant(random(10))
 
     @test
-    def testRedParentInvariant11(): Bool & Impure = checkRedParentInvariant(random(100))
+    def testRedParentInvariant11(): Bool & Impure \ NonDet = checkRedParentInvariant(random(100))
 
     @test
-    def testRedParentInvariant12(): Bool & Impure = checkRedParentInvariant(random(1000))
+    def testRedParentInvariant12(): Bool & Impure \ NonDet = checkRedParentInvariant(random(1000))
 
     ///
     /// Returns `true` if and only if the binary search tree invariant holds for `tree`.
