@@ -60,4 +60,14 @@ namespace Test/Exp/Jvm/NewObject {
         "${a}, ${b}, ${c}, ${d}, ${e}, ${f}, ${g}, ${h}"
     };
     runTest(anon)
+
+  @test
+  def testOverloadedMethods01(): Bool & Impure =
+    import static flix.test.TestOverloadedMethods.runTest(##flix.test.TestOverloadedMethods): Bool;
+    let anon = object ##flix.test.TestOverloadedMethods {
+      def overloadedMethod(_this: ##flix.test.TestOverloadedMethods): Int32 = 42
+      def overloadedMethod(_this: ##flix.test.TestOverloadedMethods, x: Int32): Int32 = x + 1
+      def overloadedMethod(_this: ##flix.test.TestOverloadedMethods, x: String, y: Float64, z: Float64): String = "${x}${y / z}"
+    };
+    runTest(anon)
 }
