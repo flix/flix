@@ -181,15 +181,6 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[IllegalRelationalUseOfLatticeVariable](result)
   }
 
-  test("TestIllegalDerivation.01") {
-    val input =
-      """
-        |def f(): ##java.lang.Thread & Impure = object ##java.lang.Thread {}
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalObjectDerivation](result)
-  }
-
   test("TestInvalidThis.01") {
     val input =
       """

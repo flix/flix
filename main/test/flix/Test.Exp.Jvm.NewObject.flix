@@ -104,4 +104,25 @@ namespace Test/Exp/Jvm/NewObject {
         "${str}, ${toString(int)}" as ##java.lang.Object
     };
     runTest(anon)
+
+  @test
+  def testClassWithDefaultConstructor01(): Bool & Impure =
+    import flix.test.TestClassWithDefaultConstructor.abstractMethod(Int32): Int32;
+    import flix.test.TestClassWithDefaultConstructor.concreteMethod(String): String;
+    let anon = object ##flix.test.TestClassWithDefaultConstructor {
+      def abstractMethod(_this: ##flix.test.TestClassWithDefaultConstructor, x: Int32): Int32 = x + 1
+    };
+    abstractMethod(anon, 1) == 2 and
+      concreteMethod(anon, "bar") == "foobar"
+
+  @test
+  def testClassWithDefaultConstructor02(): Bool & Impure =
+    import flix.test.TestClassWithDefaultConstructor.abstractMethod(Int32): Int32;
+    import flix.test.TestClassWithDefaultConstructor.concreteMethod(String): String;
+    let anon = object ##flix.test.TestClassWithDefaultConstructor {
+      def abstractMethod(_this: ##flix.test.TestClassWithDefaultConstructor, x: Int32): Int32 = x + 1
+      def concreteMethod(_this: ##flix.test.TestClassWithDefaultConstructor, y: String): String = "flix: ${y}"
+    };
+    abstractMethod(anon, 1) == 2 and
+      concreteMethod(anon, "bar") == "flix: bar"
 }

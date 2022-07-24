@@ -52,9 +52,18 @@ object GenAnonymousClasses {
   private def genByteCode(className: JvmName, obj: Expression.NewObject)(implicit root: Root, flix: Flix): Array[Byte] = {
     val visitor = AsmOps.mkClassWriter()
 
-    val superClass = BackendObjType.JavaObject.jvmName
+    val superClass = if (obj.clazz.isInterface()) 
+        BackendObjType.JavaObject.jvmName.toInternalName 
+      else 
+        asm.Type.getInternalName(obj.clazz)
+
+    val interfaces = if (obj.clazz.isInterface()) 
+        Array(asm.Type.getInternalName(obj.clazz)) 
+      else
+        Array[String]()
+
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
-      superClass.toInternalName, Array(asm.Type.getInternalName(obj.clazz)))
+      superClass, interfaces)
 
     val currentClass = JvmType.Reference(className)
     compileConstructor(currentClass, superClass, obj.methods, visitor)
@@ -68,12 +77,12 @@ object GenAnonymousClasses {
   /**
     * Constructor of the class
     */
-  private def compileConstructor(currentClass: JvmType.Reference, superClass: JvmName, methods: List[JvmMethod], visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
+  private def compileConstructor(currentClass: JvmType.Reference, superClass: String, methods: List[JvmMethod], visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
     val constructor = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
 
     // Invoke the superclass constructor
     constructor.visitVarInsn(ALOAD, 0)
-    constructor.visitMethodInsn(INVOKESPECIAL, superClass.toInternalName, JvmName.ConstructorMethod,
+    constructor.visitMethodInsn(INVOKESPECIAL, superClass, JvmName.ConstructorMethod,
       MethodDescriptor.NothingToVoid.toDescriptor, false)
 
     // For each method, compile the closure which implements the body of that method and store it in a field
