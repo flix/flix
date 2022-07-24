@@ -85,6 +85,18 @@ instance MonadZero[Option] {
     pub def empty(): Option[a] = None
 }
 
+instance MonadZip[Option] {
+    pub def zipWith(f: (a, b) -> c & ef, ma: Option[a], mb: Option[b]): Option[c] & ef = Applicative.liftA2(f, ma, mb)
+    pub override def zip(ma: Option[a], mb: Option[b]): Option[(a, b)] = Applicative.liftA2((x, y) -> (x, y), ma, mb)
+
+    pub def zipWithA(f: (a, b) -> f[c] & ef, x: Option[a], y: Option[b]): f[Option[c]] & ef with Applicative[f] =
+        use Functor.{<$>};
+        match (x, y) {
+            case (Some(x1), Some(y1)) => Some <$> f(x1, y1)
+            case (_, _)               => Applicative.point(None)
+        }
+}
+
 instance Foldable[Option] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldLeft(f, s, o)
     pub def foldRight(f: (a, b) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRight(f, o, s)

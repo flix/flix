@@ -77,6 +77,13 @@ instance MonadZero[List] {
     pub def empty(): List[a] = Nil
 }
 
+instance MonadZip[List] {
+    pub def zipWith(f: (a, b) -> c & ef, xs: List[a], ys: List[b]): List[c] & ef = List.zipWith(f, xs, ys)
+    pub def zipWithA(f: (a, b) -> f[c] & ef, xs: List[a], ys: List[b]): f[List[c]] & ef with Applicative[f] = List.zipWithA(f, xs, ys)
+    pub override def zip(xs: List[a], ys: List[b]): List[(a, b)] = List.zip(xs, ys)
+    pub override def unzip(xs: List[(a, b)]): (List[a], List[b]) = List.unzip(xs)
+}
+
 instance Foldable[List] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: List[a]): b & ef = List.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: List[a]): b & ef = List.foldRight(f, s, l)
@@ -971,6 +978,20 @@ namespace List {
             case (x :: xs) => loop(xs, i + 1, ks -> k((x, i) :: ks))
         };
         loop(l, 0, identity)
+
+    ///
+    /// Generalize `zipWith` to an applicative functor `f`.
+    ///
+    pub def zipWithA(f: (a, b) -> f[c] & ef, xs: List[a], ys: List[b]): f[List[c]] & ef with Applicative[f] =
+        use Functor.{<$>};
+        use Applicative.{<*>};
+        def loop(l1, l2, k) = match (l1, l2) {
+            case (x :: rs1, y :: rs2) => loop(rs1, rs2, ks -> k(((z, zs) -> z :: zs) <$> f(x, y) <*> ks))
+            case (_, _)               => k(Applicative.point(Nil))
+        };
+        loop(xs, ys, upcast(identity))
+
+
 
     ///
     /// Returns a pair of lists, the first containing all first components in `l`

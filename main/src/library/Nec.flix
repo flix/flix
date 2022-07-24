@@ -75,6 +75,13 @@ instance Monad[Nec] {
     pub def flatMap(f: a -> Nec[b] & ef, x : Nec[a]) : Nec[b] & ef = Nec.flatMap(f, x)
 }
 
+instance MonadZip[Nec] {
+    pub def zipWith(f: (a, b) -> c & ef, xs: Nec[a], ys: Nec[b]): Nec[c] & ef = Nec.zipWith(f, xs, ys)
+    pub def zipWithA(f: (a, b) -> f[c] & ef, xs: Nec[a], ys: Nec[b]): f[Nec[c]] & ef with Applicative[f] = Nec.zipWithA(f, xs, ys)
+    pub override def zip(xs: Nec[a], ys: Nec[b]): Nec[(a, b)] = Nec.zip(xs, ys)
+    pub override def unzip(xs: Nec[(a, b)]): (Nec[a], Nec[b]) = Nec.unzip(xs)
+}
+
 instance Foldable[Nec] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, c: Nec[a]): b & ef = Nec.foldLeft(f, s, c)
     pub def foldRight(f: (a, b) -> b & ef, s: b, c: Nec[a]): b & ef = Nec.foldRight(f, s, c)
@@ -673,6 +680,18 @@ namespace Nec {
             case SomeLeft(x, rs) => loop(rs, ks -> k(cons((x, i), ks)), i + 1)
         };
         loop(c, k -> k, 0)
+
+    ///
+    /// Generalize `zipWith` to an applicative functor `f`.
+    ///
+    pub def zipWithA(f: (a, b) -> f[c] & ef, xs: Nec[a], ys: Nec[b]): f[Nec[c]] & ef with Applicative[f] =
+        def loop(v1, v2, k) = match (v1, v2) {
+            case (SomeLeft(x, c1), SomeLeft(y, c2)) => loop(viewLeft(c1), viewLeft(c2), ks -> k(cons <$> f(x,y) <*> ks))
+            case (SomeLeft(x, _), OneLeft(y))       => k(singleton <$> f(x,y))
+            case (OneLeft(x), SomeLeft(y, _))       => k(singleton <$> f(x,y))
+            case (OneLeft(x), OneLeft(y))           => k(singleton <$> f(x,y))
+        };
+        loop(viewLeft(xs), viewLeft(ys), upcast(identity))
 
     ///
     /// `mapAccumLeft` is a stateful version of `map`. The accumulating parameter `s` is updated at each

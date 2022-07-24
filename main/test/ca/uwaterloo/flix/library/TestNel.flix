@@ -712,6 +712,22 @@ namespace TestNel {
         Nel.zipWithIndex(Nel(1, 2 :: 3 :: 4 :: 5 :: Nil)) == Nel((1, 0), (2, 1) :: (3, 2) :: (4, 3) :: (5, 4) :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
+    // zipWithA                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithA01(): Bool = Nel.zipWithA((x, y) -> Identity(x + y), Nel(1, Nil), Nel(1, Nil)) == Identity(Nel(2, Nil))
+
+    @test
+    def zipWithA02(): Bool = Nel.zipWithA((x, y) -> Identity(x + y), Nel(1, 2 :: Nil), Nel(1, Nil)) == Identity(Nel(2, Nil))
+
+    @test
+    def zipWithA03(): Bool = Nel.zipWithA((x, y) -> Identity(x + y), Nel(1, Nil), Nel(1, 2 :: Nil)) == Identity(Nel(2, Nil))
+
+    @test
+    def zipWithA04(): Bool = Nel.zipWithA((x, y) -> Identity(x + y), Nel(1, 2 :: Nil), Nel(1, 2 :: Nil)) == Identity(Nel(2, 4 :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 

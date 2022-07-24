@@ -53,6 +53,23 @@ instance Monad[Identity] {
         f(x1)
 }
 
+instance MonadZip[Identity] {
+    pub def zipWith(f: (a, b) -> c & ef, ma: Identity[a], mb: Identity[b]): Identity[c] & ef =
+        let Identity(a) = ma;
+        let Identity(b) = mb;
+        Identity(f(a, b))
+
+    pub override def unzip(ma: Identity[(a, b)]): (Identity[a], Identity[b]) =
+        let Identity((a, b)) = ma;
+        (Identity(a), Identity(b))
+
+    pub def zipWithA(f: (a, b) -> f[c] & ef, x: Identity[a], y: Identity[b]): f[Identity[c]] & ef with Applicative[f] =
+        use Functor.{<$>};
+        let Identity(x1) = x;
+        let Identity(y1) = y;
+        Identity <$> f(x1, y1)
+}
+
 instance Foldable[Identity] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, x: Identity[a]): b & ef =
         let Identity(x1) = x;
