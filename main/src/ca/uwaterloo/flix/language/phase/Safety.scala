@@ -495,10 +495,14 @@ object Safety {
   private def getJavaMethodSignatures(methods: List[java.lang.reflect.Method]): Map[MethodSignature, java.lang.reflect.Method] = {
     methods.foldLeft(Map.empty[MethodSignature, java.lang.reflect.Method]) {
       case (acc, m) =>
-        val signature = MethodSignature(m.getName(), 
-          getFlixType(m.getReturnType),
-          m.getParameterTypes().toList.map(getFlixType))
-        acc + (signature -> m)
+        if (!java.lang.reflect.Modifier.isStatic(m.getModifiers())) {
+          val signature = MethodSignature(m.getName(), 
+            getFlixType(m.getReturnType),
+            m.getParameterTypes().toList.map(getFlixType))
+          acc + (signature -> m)
+        } else {
+          acc
+        }
     }
   }
 
