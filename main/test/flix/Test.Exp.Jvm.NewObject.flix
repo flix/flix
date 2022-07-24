@@ -70,4 +70,23 @@ namespace Test/Exp/Jvm/NewObject {
       def overloadedMethod(_this: ##flix.test.TestOverloadedMethods, x: String, y: Float64, z: Float64): String = "${x}${y / z}"
     };
     runTest(anon)
+
+  @test
+  def testDefaultMethods01(): Bool & Impure =
+    import flix.test.TestDefaultMethods.methodWithNoImplementation(Int32): Int32;
+    import flix.test.TestDefaultMethods.methodWithDefaultImplementation(Int32): Int32;
+    let anon = object ##flix.test.TestDefaultMethods {
+      def methodWithNoImplementation(_this: ##flix.test.TestDefaultMethods, x: Int32): Int32 = x + 1
+    };
+    methodWithNoImplementation(anon, 1) == 2 and methodWithDefaultImplementation(anon, 1) == 43
+
+  @test
+  def testDefaultMethods02(): Bool & Impure =
+    import flix.test.TestDefaultMethods.methodWithNoImplementation(Int32): Int32;
+    import flix.test.TestDefaultMethods.methodWithDefaultImplementation(Int32): Int32;
+    let anon = object ##flix.test.TestDefaultMethods {
+      def methodWithNoImplementation(_this: ##flix.test.TestDefaultMethods, x: Int32): Int32 = x + 1
+      def methodWithDefaultImplementation(_this: ##flix.test.TestDefaultMethods, x: Int32): Int32 = x + 2
+    };
+    methodWithNoImplementation(anon, 1) == 2 and methodWithDefaultImplementation(anon, 1) == 3
 }
