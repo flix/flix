@@ -89,4 +89,19 @@ namespace Test/Exp/Jvm/NewObject {
       def methodWithDefaultImplementation(_this: ##flix.test.TestDefaultMethods, x: Int32): Int32 = x + 2
     };
     methodWithNoImplementation(anon, 1) == 2 and methodWithDefaultImplementation(anon, 1) == 3
+
+  @test
+  def testGenerics01(): Bool & Impure =
+    import static flix.test.TestGenerics.runTest(##flix.test.TestGenerics): Bool;
+    import java.lang.Integer.toString(): String;
+    let anon = object ##flix.test.TestGenerics {
+      def methodOne(_this: ##flix.test.TestGenerics, x: ##java.lang.Object): ##java.lang.Object = 
+        let str = x as String;
+        "${str}, ${str}" as ##java.lang.Object
+      def methodTwo(_this: ##flix.test.TestGenerics, x: ##java.lang.Object, y: ##java.lang.Object): ##java.lang.Object =
+        let str = x as String;
+        let int = y as ##java.lang.Integer;
+        "${str}, ${toString(int)}" as ##java.lang.Object
+    };
+    runTest(anon)
 }
