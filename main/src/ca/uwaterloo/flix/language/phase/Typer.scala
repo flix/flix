@@ -1480,22 +1480,36 @@ object Typer {
           resultEff = valueEff
         } yield (valueConstrs, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.NewObject(_, clazz, methods, loc) => {
-        def visitJvmMethod(method: KindedAst.JvmMethod): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = method match {
+      case KindedAst.Expression.NewObject(_, clazz, methods, loc) =>
+
+        /**
+          * Performs type inference on the given JVM `method`.
+          */
+        def inferJvmMethod(method: KindedAst.JvmMethod): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = method match {
           case KindedAst.JvmMethod(ident, fparams, exp, returnTpe, pur, eff, loc) =>
+
+            /**
+              * Constrains the given formal parameter to its declared type.
+              */
+            def inferParam(fparam: KindedAst.FormalParam): InferMonad[Unit] = fparam match {
+              case KindedAst.FormalParam(sym, _, tpe, _, loc) =>
+                unifyTypeM(sym.tvar.ascribedWith(Kind.Star), tpe, loc).map(_ => ())
+            }
+
             for {
+              _ <- seqM(fparams.map(inferParam))
               (constrs, bodyTpe, bodyPur, bodyEff) <- visitExp(exp)
               _ <- expectTypeM(expected = returnTpe, actual = bodyTpe, exp.loc)
             } yield (constrs, returnTpe, bodyPur, bodyEff)
         }
 
         for {
-          (constrs, _, _, _) <- seqM(methods map visitJvmMethod).map(unzip4)
+          (constrs, _, _, _) <- seqM(methods map inferJvmMethod).map(unzip4)
           resultTyp = getFlixType(clazz)
           resultPur = Type.Impure
           resultEff = Type.Empty
         } yield (constrs.flatten, resultTyp, resultPur, resultEff)
-      }
+
 
       case KindedAst.Expression.NewChannel(exp, declaredType, loc) =>
         for {
@@ -2317,6 +2331,9 @@ object Typer {
     def visitPredicateParam(pparam: KindedAst.PredicateParam): TypedAst.PredicateParam =
       TypedAst.PredicateParam(pparam.pred, subst0(pparam.tpe), pparam.loc)
 
+    /**
+      * Applies the substitution to the given jvm method.
+      */
     def visitJvmMethod(method: KindedAst.JvmMethod): TypedAst.JvmMethod = {
       method match {
         case KindedAst.JvmMethod(ident, fparams0, exp0, tpe, pur, eff, loc) =>
