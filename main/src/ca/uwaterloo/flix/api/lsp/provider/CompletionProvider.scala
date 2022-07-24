@@ -282,7 +282,7 @@ object CompletionProvider {
 
       val retTpe = FormatType.formatWellKindedType(retTpe0)
       val pur = pur0 match {
-        case Type.Cst(TypeConstructor.True, _) => " & Pure"
+        case Type.Cst(TypeConstructor.True, _) => ""
         case Type.Cst(TypeConstructor.False, _) => " & Impure"
         case e => " & " + FormatType.formatWellKindedType(e)
       }
