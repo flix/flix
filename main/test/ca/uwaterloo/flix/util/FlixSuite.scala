@@ -55,7 +55,7 @@ class FlixSuite(incremental: Boolean) extends FunSuite {
     }
 
     // Set options.
-    flix.setOptions(options.copy(xeffects = true))
+    flix.setOptions(options)
 
     // Add the given path.
     flix.addSourcePath(path)
