@@ -1609,7 +1609,7 @@ namespace TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool & Impure \ NonDet =
+    def shuffle01(): Bool \ NonDet =
         let c = Nec.singleton(1) |> Nec.shuffle(Random.new());
         match c {
             case Some(cc) => Nec.length(cc) == 1 and Nec.toSet(cc) == Set#{1}
@@ -1617,7 +1617,7 @@ namespace TestNec {
         }
 
     @test
-    def shuffle02(): Bool & Impure \ NonDet =
+    def shuffle02(): Bool \ NonDet =
         let c = necOf3(1, 2, 3) |> Nec.shuffle(Random.new());
         match c {
             case Some(cc) => Nec.length(cc) == 3 and Nec.toSet(cc) == Set#{1, 2, 3}
@@ -1625,7 +1625,7 @@ namespace TestNec {
         }
 
     @test
-    def shuffle03(): Bool & Impure \ NonDet =
+    def shuffle03(): Bool \ NonDet =
         let c = necOf8(1, 2, 3, 4, 5, 6, 7, 8) |> Nec.shuffle(Random.new());
         match c {
             case Some(cc) => Nec.length(cc) == 8 and Nec.toSet(cc) == Set#{1, 2, 3, 4, 5, 6, 7, 8}

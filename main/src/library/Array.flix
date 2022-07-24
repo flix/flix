@@ -1725,7 +1725,6 @@ namespace Array {
 
     ///
     /// A for loop with an accumulator (helper for sorting).
-    /// This function is not array specific so is not necessarily Impure.
     ///
     /// precondition: lo <= hi
     ///
