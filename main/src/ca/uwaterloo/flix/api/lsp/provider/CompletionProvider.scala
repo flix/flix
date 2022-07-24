@@ -288,7 +288,7 @@ object CompletionProvider {
       }
       val eff = eff0 match {
         case Type.Cst(TypeConstructor.Empty, _) => ""
-        case e => "\\ " + FormatType.formatWellKindedType(e)
+        case e => " \\ " + FormatType.formatWellKindedType(e)
       }
 
       s"$name(${args.mkString(", ")}): $retTpe$pur$eff"
