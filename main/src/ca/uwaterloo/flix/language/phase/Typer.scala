@@ -223,6 +223,9 @@ object Typer {
       // Compute the stale and fresh definitions.
       val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
 
+      // println(s"Stale = ${staleDefs.keySet}")
+      // println(s"Fresh = ${freshDefs.keySet.size}")
+
       // Process the stale defs in parallel.
       val results = ParOps.parMap(staleDefs.values)(visitDefn(_, Nil, root, classEnv))
 
