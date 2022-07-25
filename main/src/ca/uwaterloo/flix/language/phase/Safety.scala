@@ -180,66 +180,8 @@ object Safety {
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Upcast(exp, tpe, pur, eff, loc) =>
-      // debug
-      println(s"exp.tpe     : ${exp.tpe}")
-      println(s"exp.tpe type: ${
-        exp.tpe match {
-          case Type.KindedVar(sym, loc) => "KindedVar"
-          case Type.UnkindedVar(sym, loc) => "UnkindedVar"
-          case Type.Ascribe(tpe, kind, loc) => "Ascribe"
-          case Type.Cst(tc, loc) => "Cst"
-          case Type.Apply(tpe1, tpe2, loc) => "Apply"
-          case Type.Alias(cst, args, tpe, loc) => "Alias"
-          case Type.UnkindedArrow(purAndEff, arity, loc) => "UnkindedArrow"
-          case Type.ReadWrite(tpe, loc) => "ReadWrite"
-        }
-      }")
-      println(s"    tpe     : $tpe")
-      println(s"exp.tpe.kind: ${exp.tpe.kind}")
-      println(s"    tpe.kind: ${tpe.kind}")
-      println(s"tpe type    : ${
-        tpe match {
-          case Type.KindedVar(sym, loc) => "KindedVar"
-          case Type.UnkindedVar(sym, loc) => "UnkindedVar"
-          case Type.Ascribe(tpe, kind, loc) => "Ascribe"
-          case Type.Cst(tc, loc) => "Cst"
-          case Type.Apply(tpe1, tpe2, loc) => "Apply"
-          case Type.Alias(cst, args, tpe, loc) => "Alias"
-          case Type.UnkindedArrow(purAndEff, arity, loc) => "UnkindedArrow"
-          case Type.ReadWrite(tpe, loc) => "ReadWrite"
-        }
-      }")
-      println(s"exp.pur     : ${exp.pur}")
-      println(s"    pur     : $pur")
-      println(s"exp.pur.kind: ${exp.pur.kind}")
-      println(s"    pur.kind: ${pur.kind}")
-      println(s"exp.pur type: ${
-        exp.pur match {
-          case Type.KindedVar(sym, loc) => "KindedVar"
-          case Type.UnkindedVar(sym, loc) => "UnkindedVar"
-          case Type.Ascribe(tpe, kind, loc) => "Ascribe"
-          case Type.Cst(tc, loc) => "Cst"
-          case Type.Apply(tpe1, tpe2, loc) => "Apply"
-          case Type.Alias(cst, args, tpe, loc) => "Alias"
-          case Type.UnkindedArrow(purAndEff, arity, loc) => "UnkindedArrow"
-          case Type.ReadWrite(tpe, loc) => "ReadWrite"
-        }
-      }")
-      println(s"    pur type: ${
-        pur match {
-          case Type.KindedVar(sym, loc) => "KindedVar"
-          case Type.UnkindedVar(sym, loc) => "UnkindedVar"
-          case Type.Ascribe(tpe, kind, loc) => "Ascribe"
-          case Type.Cst(tc, loc) => "Cst"
-          case Type.Apply(tpe1, tpe2, loc) => "Apply"
-          case Type.Alias(cst, args, tpe, loc) => "Alias"
-          case Type.UnkindedArrow(purAndEff, arity, loc) => "UnkindedArrow"
-          case Type.ReadWrite(tpe, loc) => "ReadWrite"
-        }
-      }")
-      println()
-
+    case e@Expression.Upcast(exp, tpe, pur, eff, loc) =>
+      upcastDebug(e)
       // impl
       val tpes = (exp.tpe.arrowPurityType, tpe) match {
         case (_, Type.Impure) => List.empty
@@ -346,6 +288,68 @@ object Safety {
     case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
+  }
+
+  def upcastDebug(exp: Expression.Upcast): Unit = exp match {
+    case Expression.Upcast(exp, tpe, pur, eff, loc) =>
+      // debug
+      println(s"exp.tpe     : ${exp.tpe}")
+      println(s"exp.tpe type: ${
+        exp.tpe match {
+          case Type.KindedVar(sym, loc) => "KindedVar"
+          case Type.UnkindedVar(sym, loc) => "UnkindedVar"
+          case Type.Ascribe(tpe, kind, loc) => "Ascribe"
+          case Type.Cst(tc, loc) => "Cst"
+          case Type.Apply(tpe1, tpe2, loc) => "Apply"
+          case Type.Alias(cst, args, tpe, loc) => "Alias"
+          case Type.UnkindedArrow(purAndEff, arity, loc) => "UnkindedArrow"
+          case Type.ReadWrite(tpe, loc) => "ReadWrite"
+        }
+      }")
+      println(s"    tpe     : $tpe")
+      println(s"exp.tpe.kind: ${exp.tpe.kind}")
+      println(s"    tpe.kind: ${tpe.kind}")
+      println(s"tpe type    : ${
+        tpe match {
+          case Type.KindedVar(sym, loc) => "KindedVar"
+          case Type.UnkindedVar(sym, loc) => "UnkindedVar"
+          case Type.Ascribe(tpe, kind, loc) => "Ascribe"
+          case Type.Cst(tc, loc) => "Cst"
+          case Type.Apply(tpe1, tpe2, loc) => "Apply"
+          case Type.Alias(cst, args, tpe, loc) => "Alias"
+          case Type.UnkindedArrow(purAndEff, arity, loc) => "UnkindedArrow"
+          case Type.ReadWrite(tpe, loc) => "ReadWrite"
+        }
+      }")
+      println(s"exp.pur     : ${exp.pur}")
+      println(s"    pur     : $pur")
+      println(s"exp.pur.kind: ${exp.pur.kind}")
+      println(s"    pur.kind: ${pur.kind}")
+      println(s"exp.pur type: ${
+        exp.pur match {
+          case Type.KindedVar(sym, loc) => "KindedVar"
+          case Type.UnkindedVar(sym, loc) => "UnkindedVar"
+          case Type.Ascribe(tpe, kind, loc) => "Ascribe"
+          case Type.Cst(tc, loc) => "Cst"
+          case Type.Apply(tpe1, tpe2, loc) => "Apply"
+          case Type.Alias(cst, args, tpe, loc) => "Alias"
+          case Type.UnkindedArrow(purAndEff, arity, loc) => "UnkindedArrow"
+          case Type.ReadWrite(tpe, loc) => "ReadWrite"
+        }
+      }")
+      println(s"    pur type: ${
+        pur match {
+          case Type.KindedVar(sym, loc) => "KindedVar"
+          case Type.UnkindedVar(sym, loc) => "UnkindedVar"
+          case Type.Ascribe(tpe, kind, loc) => "Ascribe"
+          case Type.Cst(tc, loc) => "Cst"
+          case Type.Apply(tpe1, tpe2, loc) => "Apply"
+          case Type.Alias(cst, args, tpe, loc) => "Alias"
+          case Type.UnkindedArrow(purAndEff, arity, loc) => "UnkindedArrow"
+          case Type.ReadWrite(tpe, loc) => "ReadWrite"
+        }
+      }")
+      println()
   }
 
   /**
