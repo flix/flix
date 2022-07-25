@@ -508,10 +508,8 @@ object Safety {
   /**
     * Convert a `java.lang.reflect.Method` to a MethodSignature.
     */
-  private def getJavaMethodSignature(method: java.lang.reflect.Method) = {
-    MethodSignature(method.getName(),
-      getFlixType(method.getReturnType),
-      method.getParameterTypes().toList.map(getFlixType))
+  private def getJavaMethodSignature(method: java.lang.reflect.Method): MethodSignature = {
+    MethodSignature(method.getName, getFlixType(method.getReturnType), method.getParameterTypes.toList.map(getFlixType))
   }
 
   /**
@@ -521,11 +519,11 @@ object Safety {
     * * A (non-static) method must be implemented if it is abstract.
     */
   private def getJavaMethods(clazz: java.lang.Class[_]): (Set[MethodSignature], Set[MethodSignature]) = {
-    val methods = clazz.getMethods().toList.filterNot(m => java.lang.reflect.Modifier.isStatic(m.getModifiers()))
-    val mustImplement = if (clazz.isInterface()) {
+    val methods = clazz.getMethods.toList.filterNot(m => java.lang.reflect.Modifier.isStatic(m.getModifiers))
+    val mustImplement = if (clazz.isInterface) {
       methods.filterNot(_.isDefault())
     } else {
-      methods.filter(m => java.lang.reflect.Modifier.isAbstract(m.getModifiers()))
+      methods.filter(m => java.lang.reflect.Modifier.isAbstract(m.getModifiers))
     }
     (methods.map(getJavaMethodSignature).toSet, mustImplement.map(getJavaMethodSignature).toSet)
   }
@@ -538,14 +536,19 @@ object Safety {
     // Check that the first argument looks like "this"
     //
     val thisErrors = methods.flatMap {
-      case JvmMethod(ident, fparams, _, _, _, _, methodLoc) =>
-        if (fparams.length < 1)
+      case JvmMethod(ident, fparams, _, _, _, _, methodLoc) => fparams match {
+        case Nil =>
+          // Case 1: Missing `this` argument.
           Some(MissingThis(tpe, ident.name, methodLoc))
-        else if (fparams.head.tpe != tpe) {
-          Some(IllegalThisType(tpe, fparams.head.tpe, ident.name, methodLoc))
-        } else {
-          None
-        }
+        case fparam :: _ =>
+          // Case 2: Check that the declared type of `this` matches the type of the class or interface.
+          val thisType = Type.eraseAliases(fparam.tpe)
+          if (thisType != tpe) {
+            Some(IllegalThisType(tpe, fparams.head.tpe, ident.name, methodLoc))
+          } else {
+            None
+          }
+      }
     }
 
     val flixMethods = getFlixMethodSignatures(methods)
