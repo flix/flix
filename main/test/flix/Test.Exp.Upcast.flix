@@ -19,4 +19,14 @@ namespace Test/Exp/Upcast {
         let _ = f(1);
         ()
 
+    @test
+    def testUpcast03(): Unit & ef = // this should fail
+        let f =
+            if (true)
+                upcast x -> x + 1
+            else
+                (_ -> "x" as & ef);
+        let _ = f(1);
+        ()
+
 }
