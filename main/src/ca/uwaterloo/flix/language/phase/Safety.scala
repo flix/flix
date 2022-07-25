@@ -512,8 +512,10 @@ object Safety {
   }
 
   /**
-    * Given a class, get sets representing both the methods that can be implemented,
-    * and the methods that must be implemented.
+    * Given a class or interface, returns a pair of the methods that can be implemented and that must be implemented.
+    *
+    * * A (non-static) method can be implemented if it exists in the class.
+    * * A (non-static) method must be implemented if it is abstract.
     */
   private def getJavaMethods(clazz: java.lang.Class[_]): (Set[MethodSignature], Set[MethodSignature]) = {
     val methods = clazz.getMethods().toList.filterNot(m => java.lang.reflect.Modifier.isStatic(m.getModifiers()))
