@@ -938,7 +938,6 @@ object Resolver {
           }
 
         case NamedAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
-
           val declaredTypVal = declaredType match {
             case None => (None: Option[Type]).toSuccess
             case Some(t) => mapN(resolveType(t, taenv, ns0, root))(x => Some(x))
@@ -948,6 +947,11 @@ object Resolver {
           val eVal = visitExp(exp, region)
           mapN(eVal, declaredTypVal, declaredEffVal) {
             case (e, t, f) => ResolvedAst.Expression.Cast(e, t, f, loc)
+          }
+
+        case NamedAst.Expression.Upcast(exp, loc) =>
+          mapN(visitExp(exp, region)) {
+            case e => ResolvedAst.Expression.Upcast(e, loc)
           }
 
         case NamedAst.Expression.TryCatch(exp, rules, loc) =>
@@ -1197,9 +1201,9 @@ object Resolver {
 
       }
 
-    /**
-      * Performs name resolution on the given JvmMethod `method` in the namespace `ns0`.
-      */
+      /**
+        * Performs name resolution on the given JvmMethod `method` in the namespace `ns0`.
+        */
       def visitJvmMethod(method: NamedAst.JvmMethod, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.JvmMethod, ResolutionError] = method match {
         case NamedAst.JvmMethod(ident, fparams, exp, tpe, purAndEff, loc) =>
           val fparamsVal = resolveFormalParams(fparams, taenv, ns0, root)
@@ -1207,7 +1211,7 @@ object Resolver {
           val tpeVal = resolveType(tpe, taenv, ns0, root)
           val purAndEffVal = resolvePurityAndEffect(purAndEff, taenv, ns0, root)
           mapN(fparamsVal, expVal, tpeVal, purAndEffVal) {
-            case (f, e, t, p) => ResolvedAst.JvmMethod(ident, f, e, t , p, loc)
+            case (f, e, t, p) => ResolvedAst.JvmMethod(ident, f, e, t, p, loc)
           }
       }
 
@@ -2305,6 +2309,7 @@ object Resolver {
       EnumAccessibility.Accessible
     }
   }
+
   /**
     * Successfully returns the given `enum0` if it is accessible from the given namespace `ns0`.
     *

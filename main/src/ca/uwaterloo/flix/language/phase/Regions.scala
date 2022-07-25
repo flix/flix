@@ -240,6 +240,11 @@ object Regions {
         case e => checkType(tpe, loc)
       }
 
+    case Expression.Upcast(exp, tpe, _, _, loc) =>
+      flatMapN(visitExp(exp)) {
+        case _ => checkType(tpe, loc)
+      }
+
     case Expression.Without(exp, _, tpe, _, _, loc) =>
       flatMapN(visitExp(exp)) {
         case _ => checkType(tpe, loc)
