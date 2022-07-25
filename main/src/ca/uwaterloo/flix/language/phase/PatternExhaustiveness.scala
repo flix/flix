@@ -219,6 +219,7 @@ object PatternExhaustiveness {
         traverseX(ruleExps ::: chans ::: default.toList)(visitExp(_, root))
 
       case Expression.Spawn(exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.Par(exp, _) => visitExp(exp, root)
       case Expression.Lazy(exp, _, _) => visitExp(exp, root)
       case Expression.Force(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.FixpointConstraintSet(cs, _, _, _) => traverseX(cs)(visitConstraint(_, root))

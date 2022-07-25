@@ -350,6 +350,9 @@ object Regions {
         case e => checkType(tpe, loc)
       }
 
+    case Expression.Par(exp, loc) =>
+      flatMapN(visitExp(exp))(_ => checkType(exp.tpe, loc))
+
     case Expression.Lazy(exp, tpe, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
