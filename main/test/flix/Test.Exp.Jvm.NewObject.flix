@@ -237,6 +237,15 @@ namespace Test/Exp/Jvm/NewObject {
     runTest(anon)
 
   @test
+  def testVarargsInterface01(): Bool & Impure =
+    import static flix.test.TestVarargsInterface.runTest(##flix.test.TestVarargsInterface): Bool;
+    let anon = object ##flix.test.TestVarargsInterface {
+      def testMethod(_this: ##flix.test.TestVarargsInterface, xs: Array[Int32, false]): Int32 = 
+        xs |> Array.sum
+    };
+    runTest(anon)
+
+  @test
   def testClassWithDefaultConstructor01(): Bool & Impure =
     import flix.test.TestClassWithDefaultConstructor.abstractMethod(Int32): Int32;
     import flix.test.TestClassWithDefaultConstructor.concreteMethod(String): String;
