@@ -401,6 +401,9 @@ object Stratifier {
         case e => Expression.Spawn(e, tpe, pur, eff, loc)
       }
 
+    case Expression.Par(exp, loc) =>
+      mapN(visitExp(exp))(Expression.Lazy(_, exp.tpe, loc))
+
     case Expression.Lazy(exp, tpe, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Lazy(e, tpe, loc)
