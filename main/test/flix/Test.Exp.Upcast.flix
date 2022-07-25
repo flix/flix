@@ -9,4 +9,14 @@ namespace Test/Exp/Upcast {
                 x -> { println("x"); x + 1 };
         ()
 
+    @test
+    def testUpcast02(): Unit & ef =
+        let f =
+            if (true)
+                upcast x -> x + 1
+            else
+                x -> x as & ef;
+        f();
+        ()
+
 }
