@@ -17,13 +17,14 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, MarkupContent, MarkupKind, Position, Range}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt._
 import ca.uwaterloo.flix.language.phase.unification.TypeMinimization.minimizeType
-import ca.uwaterloo.flix.language.phase.unification.{BoolTable, TypeMinimization}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
+
+import scala.annotation.tailrec
 
 object HoverProvider {
 
@@ -33,33 +34,45 @@ object HoverProvider {
     index.query(uri, pos) match {
       case None => mkNotFound(uri, pos)
 
-      case Some(entity) => entity match {
-
-        case Entity.Case(caze) => hoverType(caze.sc.base, caze.tag.loc, current)
-
-        case Entity.DefUse(sym, loc, _) => hoverDef(sym, loc, current)
-
-        case Entity.SigUse(sym, loc, _) => hoverSig(sym, loc, current)
-
-        // MATT need to hover type and eff for vars and tags
-        // MATT Entity.Var and Entity.Exp will have the same location so it's not clear which will be selected
-        case Entity.Exp(exp) => hoverTypeAndEff(exp.tpe, exp.pur, exp.eff, exp.loc, current)
-
-        case Entity.FormalParam(fparam) => hoverType(fparam.tpe, fparam.loc, current)
-
-        case Entity.Pattern(pat) => hoverType(pat.tpe, pat.loc, current)
-
-        case Entity.Pred(pred, tpe) => hoverType(tpe, pred.loc, current)
-
-        case Entity.LocalVar(sym, tpe) => hoverType(tpe, sym.loc, current)
-
-        case Entity.Type(t) => hoverKind(t, current)
-
-        case Entity.OpUse(sym, loc, _) => hoverOp(sym, loc, current)
-
-        case _ => mkNotFound(uri, pos)
-      }
+      case Some(entity) => hoverEntity(entity, uri, pos, current)
     }
+  }
+
+  @tailrec
+  private def hoverEntity(entity: Entity, uri: String, pos: Position, current: Boolean)(implicit Index: Index, root: Root, flix: Flix): JObject = entity match {
+
+    case Entity.Case(caze) => hoverType(caze.sc.base, caze.tag.loc, current)
+
+    case Entity.DefUse(sym, loc, _) => hoverDef(sym, loc, current)
+
+    case Entity.SigUse(sym, loc, _) => hoverSig(sym, loc, current)
+
+    case Entity.VarUse(_, _, parent) => hoverEntity(parent, uri, pos, current)
+
+    case Entity.TagUse(_, _, _, parent) => hoverEntity(parent, uri, pos, current)
+
+    case Entity.Exp(exp) => hoverTypeAndEff(exp.tpe, exp.pur, exp.eff, exp.loc, current)
+
+    case Entity.FormalParam(fparam) => hoverType(fparam.tpe, fparam.loc, current)
+
+    case Entity.Pattern(pat) => hoverType(pat.tpe, pat.loc, current)
+
+    case Entity.Pred(pred, tpe) => hoverType(tpe, pred.loc, current)
+
+    case Entity.LocalVar(sym, tpe) => hoverType(tpe, sym.loc, current)
+
+    case Entity.Type(t) => hoverKind(t, current)
+
+    case Entity.OpUse(sym, loc, _) => hoverOp(sym, loc, current)
+
+    case Entity.Class(_) => mkNotFound(uri, pos)
+    case Entity.Def(_) => mkNotFound(uri, pos)
+    case Entity.Effect(_) => mkNotFound(uri, pos)
+    case Entity.Enum(_) => mkNotFound(uri, pos)
+    case Entity.Field(_) => mkNotFound(uri, pos)
+    case Entity.Op(_) => mkNotFound(uri, pos)
+    case Entity.Sig(_) => mkNotFound(uri, pos)
+    case Entity.TypeVar(_) => mkNotFound(uri, pos)
   }
 
   private def hoverType(tpe: Type, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root, flix: Flix): JObject = {

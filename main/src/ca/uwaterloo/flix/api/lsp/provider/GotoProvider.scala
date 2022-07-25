@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, LocationLink, Position}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
@@ -69,7 +69,18 @@ object GotoProvider {
         case Entity.OpUse(sym, loc, _) =>
           ("status" -> "success") ~ ("result" -> LocationLink.fromOpSym(sym, loc).toJSON)
 
-        case _ => mkNotFound(uri, pos)
+        case Entity.Case(_) => mkNotFound(uri, pos)
+        case Entity.Class(_) => mkNotFound(uri, pos)
+        case Entity.Def(_) => mkNotFound(uri, pos)
+        case Entity.Effect(_) => mkNotFound(uri, pos)
+        case Entity.Enum(_) => mkNotFound(uri, pos)
+        case Entity.Field(_) => mkNotFound(uri, pos)
+        case Entity.FormalParam(_) => mkNotFound(uri, pos)
+        case Entity.LocalVar(_, _) => mkNotFound(uri, pos)
+        case Entity.Op(_) => mkNotFound(uri, pos)
+        case Entity.Pred(_, _) => mkNotFound(uri, pos)
+        case Entity.Sig(_) => mkNotFound(uri, pos)
+        case Entity.TypeVar(_) => mkNotFound(uri, pos)
       }
     }
   }
