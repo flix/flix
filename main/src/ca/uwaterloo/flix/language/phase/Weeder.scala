@@ -617,16 +617,6 @@ object Weeder {
           WeededAst.Expression.Apply(e, es, loc)
       }
 
-    case ParsedAst.Expression.ParApply(sp1, exp, exps, sp2) =>
-      val argsVal = traverse(exps) {
-        case ParsedAst.Argument.Named(_, e, _) => visitExp(e, senv)
-        case ParsedAst.Argument.Unnamed(e) => visitExp(e, senv)
-      }
-      mapN(visitExp(exp, senv), argsVal) {
-        case (e0, as) =>
-          WeededAst.Expression.ParApply(e0, as, mkSL(sp1, sp2))
-      }
-
     case ParsedAst.Expression.Infix(exp1, name, exp2, sp2) =>
       /*
        * Rewrites infix expressions to apply expressions.
@@ -1507,6 +1497,12 @@ object Weeder {
     case ParsedAst.Expression.Spawn(sp1, exp, sp2) =>
       visitExp(exp, senv) map {
         case e => WeededAst.Expression.Spawn(e, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.Par(sp1, exp, sp2) =>
+      mapN(visitExp(exp, senv)) {
+        e =>
+          WeededAst.Expression.Par(e, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.Lazy(sp1, exp, sp2) =>
@@ -2911,7 +2907,7 @@ object Weeder {
     case ParsedAst.Expression.Lit(sp1, _, _) => sp1
     case ParsedAst.Expression.Intrinsic(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Apply(e1, _, _) => leftMostSourcePosition(e1)
-    case ParsedAst.Expression.ParApply(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.Par(sp1, _, _) => sp1
     case ParsedAst.Expression.Infix(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Lambda(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LambdaMatch(sp1, _, _, _) => sp1

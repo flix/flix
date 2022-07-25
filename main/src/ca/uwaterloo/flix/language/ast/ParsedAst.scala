@@ -529,16 +529,6 @@ object ParsedAst {
     case class Apply(lambda: ParsedAst.Expression, args: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Parallel Apply expression (function call).
-      *
-      * @param sp1  the position of the first character in the expression.
-      * @param exp  the lambda expression.
-      * @param exps the arguments.
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class ParApply(sp1: SourcePosition, exp: ParsedAst.Expression, exps: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Infix Apply.
       *
       * Replaced with Apply by Weeder.
@@ -1038,6 +1028,15 @@ object ParsedAst {
       * @param sp2 the position of the last character in the expression.
       */
     case class Spawn(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Parallel expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Par(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Lazy Expression.

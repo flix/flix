@@ -546,8 +546,6 @@ object Typer {
           _ <- unbindVar(lambdaBodyPur) // NB: Safe to unbind since the variable is not used elsewhere.
         } yield (constrs1 ++ constrs2.flatten, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.ParApply(exp, exps, tvar, pvar, evar, loc) => ???
-
       case KindedAst.Expression.Unary(sop, exp, tvar, loc) => sop match {
         case SemanticOperator.BoolOp.Not =>
           for {
@@ -1592,6 +1590,8 @@ object Typer {
           resultEff = eff
         } yield (constrs, resultTyp, resultPur, resultEff)
 
+      case KindedAst.Expression.Par(exp, tvar, pvar, evar, loc) => ???
+
       case KindedAst.Expression.Lazy(exp, loc) =>
         for {
           (constrs, tpe, pur, eff) <- visitExp(exp)
@@ -1843,7 +1843,7 @@ object Typer {
         val es = exps.map(visitExp(_, subst0))
         TypedAst.Expression.Apply(e, es, subst0(tvar), subst0(pvar), subst0(evar), loc)
 
-      case KindedAst.Expression.ParApply(exp, exps, tvar, pvar, evar, loc) => ???
+      case KindedAst.Expression.Par(exp, tvar, pvar, evar, loc) => ???
 
       case KindedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
         val p = visitFormalParam(fparam)

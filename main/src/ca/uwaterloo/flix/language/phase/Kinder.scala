@@ -382,15 +382,13 @@ object Kinder {
           KindedAst.Expression.Apply(exp, exps, tvar, pvar, evar, loc)
       }
 
-    case ResolvedAst.Expression.ParApply(exp, exps, loc) =>
-      val expVal = visitExp(exp, kenv0, senv, taenv, henv0, root)
-      val expsVal = traverse(exps)(visitExp(_, kenv0, senv, taenv, henv0, root))
-      mapN(expVal, expsVal) {
-        case (exp, exps) =>
+    case ResolvedAst.Expression.Par(exp, loc) =>
+      mapN(visitExp(exp, kenv0, senv, taenv, henv0, root)) {
+        e =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
           val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
           val evar = Type.freshVar(Kind.Effect, loc.asSynthetic)
-          KindedAst.Expression.ParApply(exp, exps, tvar, pvar, evar, loc)
+          KindedAst.Expression.Par(e, tvar, pvar, evar, loc)
       }
 
     case ResolvedAst.Expression.Lambda(fparam0, exp0, loc) =>

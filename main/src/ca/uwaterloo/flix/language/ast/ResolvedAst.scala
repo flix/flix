@@ -97,8 +97,6 @@ object ResolvedAst {
 
     case class Apply(exp: ResolvedAst.Expression, exps: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ParApply(exp: Expression, exps: List[Expression], loc: SourceLocation) extends ResolvedAst.Expression
-
     case class Lambda(fparam: ResolvedAst.FormalParam, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Unary(sop: SemanticOperator, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
@@ -192,6 +190,8 @@ object ResolvedAst {
     case class SelectChannel(rules: List[ResolvedAst.SelectChannelRule], default: Option[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Spawn(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class Par(exp: Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Lazy(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 

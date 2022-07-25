@@ -596,38 +596,6 @@ object Resolver {
         }
       }
 
-      /**
-        * Resolve the application expression, performing currying over the subexpressions.
-        */
-      def visitParApply(exp: NamedAst.Expression.ParApply, region: Option[Symbol.VarSym]): Validation[ResolvedAst.Expression, ResolutionError] = {
-        def expAsApply: NamedAst.Expression.Apply =
-          NamedAst.Expression.Apply(exp.exp, exp.exps, exp.loc)
-
-        // We do the same thing as in both cases for NamedAst.Expression.Apply
-        // in visitExp and use the helper function expAsApply to help convert
-        // a ParApply expression to an Apply Expression.
-        // Finally we convert it back to a ParApply Expression again.
-        exp match {
-          case NamedAst.Expression.ParApply(NamedAst.Expression.DefOrSig(qname, env, innerLoc), exps, outerLoc) =>
-            val app = flatMapN(lookupDefOrSig(qname, ns0, env, root)) {
-              case NamedAst.DefOrSig.Def(defn) => visitApplyDef(expAsApply, defn, exps, region, innerLoc, outerLoc)
-              case NamedAst.DefOrSig.Sig(sig) => visitApplySig(expAsApply, sig, exps, region, innerLoc, outerLoc)
-            }
-            mapN(app) {
-              case ResolvedAst.Expression.Apply(exp1, exps1, loc1) =>
-                ResolvedAst.Expression.ParApply(exp1, exps1, loc1)
-              case _ => throw InternalCompilerException("Unable to resolve parallel apply")
-            }
-
-          case NamedAst.Expression.ParApply(exp, exps, loc) =>
-            mapN(visitApply(expAsApply, region)) {
-              case ResolvedAst.Expression.Apply(exp1, exps1, loc1) =>
-                ResolvedAst.Expression.ParApply(exp1, exps1, loc1)
-              case _ => throw InternalCompilerException("Unable to resolve parallel apply")
-            }
-          case _ => throw InternalCompilerException("Unable to resolve parallel apply")
-        }
-      }
 
       /**
         * Local visitor.
@@ -702,9 +670,6 @@ object Resolver {
 
         case app@NamedAst.Expression.Apply(_, _, _) =>
           visitApply(app, region)
-
-        case app@NamedAst.Expression.ParApply(_, _, _) =>
-          visitParApply(app, region)
 
         case NamedAst.Expression.Lambda(fparam, exp, loc) =>
           val pVal = Params.resolve(fparam, taenv, ns0, root)
@@ -1154,6 +1119,11 @@ object Resolver {
           val eVal = visitExp(exp, region)
           mapN(eVal) {
             e => ResolvedAst.Expression.Spawn(e, loc)
+          }
+
+        case NamedAst.Expression.Par(exp, loc) =>
+          mapN(visitExp(exp, region)) {
+            e => ResolvedAst.Expression.Par(e, loc)
           }
 
         case NamedAst.Expression.Lazy(exp, loc) =>
