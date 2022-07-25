@@ -206,8 +206,8 @@ object Simplifier {
         val e = visitExp(exp)
         SimplifiedAst.Expression.Cast(e, tpe, simplifyPurity(pur), loc)
 
-      case TypedAst.Expression.Upcast(exp, tpe, pur, _, loc) =>
-        throw InternalCompilerException("Not implemented")
+      case TypedAst.Expression.Upcast(exp, _, _, _, _) =>
+        visitExp(exp)
 
       case TypedAst.Expression.TryCatch(exp, rules, tpe, pur, eff, loc) =>
         val e = visitExp(exp)

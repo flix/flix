@@ -463,7 +463,9 @@ object Lowering {
       Expression.Cast(e, dt, declaredPur, declaredEff, t, pur, eff, loc)
 
     case Expression.Upcast(exp, tpe, pur, eff, loc) =>
-      throw InternalCompilerException("Not implemented")
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      Expression.Upcast(e, t, pur, eff, loc)
 
     case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
@@ -1304,7 +1306,7 @@ object Lowering {
     */
   private def mkList(exps: List[Expression], elmType: Type, loc: SourceLocation): Expression = {
     val nil = mkNil(elmType, loc)
-    exps.foldRight(nil){
+    exps.foldRight(nil) {
       case (e, acc) => mkCons(e, acc, loc)
     }
   }
@@ -1549,6 +1551,10 @@ object Lowering {
       val e = substExp(exp, subst)
       Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
 
+    case Expression.Upcast(exp, tpe, pur, eff, loc) =>
+      val e = substExp(exp0, subst)
+      Expression.Upcast(e, tpe, pur, eff, loc)
+
     case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
       Expression.Without(e, sym, tpe, pur, eff, loc)
@@ -1668,9 +1674,6 @@ object Lowering {
       Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
 
     case Expression.FixpointConstraintSet(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
-
-    case Expression.Upcast(_, _, _, _, _) =>
-      throw InternalCompilerException("Not Implemented")
 
   }
 

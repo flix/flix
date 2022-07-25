@@ -181,10 +181,8 @@ object Safety {
       visitExp(exp)
 
     case Expression.Upcast(exp, tpe, pur, eff, loc) =>
-      val es = (tpe, pur, eff) match {
-        case (_: Type.Var, _, _) => List(UnsafeUpcast(exp.tpe, exp.pur, exp.eff, tpe, pur, eff, loc))
-        case (_, _: Type.Var, _) => List(UnsafeUpcast(exp.tpe, exp.pur, exp.eff, tpe, pur, eff, loc))
-        case (_, _, _: Type.Var) => List(UnsafeUpcast(exp.tpe, exp.pur, exp.eff, tpe, pur, eff, loc))
+      val es = tpe match {
+        case _: Type.Var => List(UnsafeUpcast(exp.tpe, exp.pur, exp.eff, tpe, pur, eff, loc))
         case _ => List.empty
       }
       visitExp(exp) ::: es
