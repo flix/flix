@@ -7,10 +7,10 @@ import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.annotation.tailrec
@@ -181,17 +181,65 @@ object Safety {
       visitExp(exp)
 
     case e@Expression.Upcast(exp, tpe, pur, eff, loc) =>
-      upcastDebug(e)
+
       // impl
-      val tpes = (exp.tpe.arrowPurityType, tpe) match {
+      def isSoundApply(eapp: Type.Apply, app: Type.Apply): Boolean = {
+        println("---")
+        println(eapp)
+        println(app)
+        println(app.tpe1)
+        // we should probably check that the effect on app.tpe1 is sound?
+        println(app.tpe2)
+        println(eapp.arrowPurityType)
+        println(app.arrowPurityType)
+        println(app.arrowPurityType match {
+          case Type.KindedVar(sym, loc) => "KindedVar"
+          case Type.UnkindedVar(sym, loc) => "UnkindedVar"
+          case Type.Ascribe(tpe, kind, loc) => "Ascribe"
+          case Type.Cst(tc, loc) => "Cst"
+          case Type.Apply(tpe1, tpe2, loc) => "Apply"
+          case Type.Alias(cst, args, tpe, loc) => "Alias"
+          case Type.UnkindedArrow(purAndEff, arity, loc) => "UnkindedArrow"
+          case Type.ReadWrite(tpe, loc) => "ReadWrite"
+        })
+        println("---")
+        eapp == app //&&
+        /*((eapp.arrowPurityType, app.arrowPurityType) match {
+            case (Type.Cst(TypeConstructor.True, _), _) => true
+            case (_, Type.Cst(TypeConstructor.False, _)) => true
+            case (Type.Cst(tc, loc), _) =>
+              println(tc)
+              false
+            case (_, Type.Cst(tc, loc)) =>
+              println(tc)
+              false
+            case _ => false
+          })*/
+      }
+
+      val tpes = (exp.tpe, tpe) match {
         case (_, Type.Impure) => List.empty
         case (Type.Pure, Type.KindedVar(sym, _)) => List.empty
-        case _ => List(UnsafeUpcast(exp.tpe, exp.pur, exp.eff, tpe, pur, eff, loc))
+        case (eapp: Type.Apply, app: Type.Apply) =>
+          println(eapp.arrowPurityType)
+          println(app.arrowPurityType)
+          if (isSoundApply(eapp, app))
+            List.empty
+          else
+            println("Got tpes unsound apply case")
+          List(UnsafeUpcast(exp.tpe, exp.pur, exp.eff, tpe, pur, eff, loc))
+        case _ =>
+          println("Got tpes default case")
+          List(UnsafeUpcast(exp.tpe, exp.pur, exp.eff, tpe, pur, eff, loc))
       }
+
       val purs = (exp.pur, pur) match {
         case (Type.Pure, Type.KindedVar(_, _)) => List.empty // if pur.kind == Kind.Bool && pur.kind == exp.pur.kind
-        case _ => List(UnsafeUpcast(exp.tpe, exp.pur, exp.eff, tpe, pur, eff, loc))
+        case _ =>
+          println("Got purs default case")
+          List(UnsafeUpcast(exp.tpe, exp.pur, exp.eff, tpe, pur, eff, loc))
       }
+      upcastDebug(e)
       visitExp(exp) ::: tpes ::: purs
 
     case Expression.Without(exp, _, _, _, _, _) =>
@@ -292,8 +340,10 @@ object Safety {
 
   def upcastDebug(exp: Expression.Upcast): Unit = exp match {
     case Expression.Upcast(exp, tpe, pur, eff, loc) =>
-      // debug
       println(s"exp.tpe     : ${exp.tpe}")
+      println(s"    tpe     : $tpe")
+      println(s"exp.tpe.kind: ${exp.tpe.kind}")
+      println(s"    tpe.kind: ${tpe.kind}")
       println(s"exp.tpe type: ${
         exp.tpe match {
           case Type.KindedVar(sym, loc) => "KindedVar"
@@ -306,10 +356,8 @@ object Safety {
           case Type.ReadWrite(tpe, loc) => "ReadWrite"
         }
       }")
-      println(s"    tpe     : $tpe")
-      println(s"exp.tpe.kind: ${exp.tpe.kind}")
-      println(s"    tpe.kind: ${tpe.kind}")
-      println(s"tpe type    : ${
+
+      println(s"    tpe type: ${
         tpe match {
           case Type.KindedVar(sym, loc) => "KindedVar"
           case Type.UnkindedVar(sym, loc) => "UnkindedVar"
@@ -349,6 +397,9 @@ object Safety {
           case Type.ReadWrite(tpe, loc) => "ReadWrite"
         }
       }")
+      println()
+      println()
+      println()
       println()
   }
 
