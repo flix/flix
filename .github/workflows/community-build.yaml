@@ -31,7 +31,7 @@ jobs:
       - run: |
           echo "org.gradle.jvmargs=-Xmx4096m" > gradle.properties
       - name: Build jar
-        run: ./gradlew jar
+        run: ./gradlew clean jar
       - name: Build community projects
         timeout-minutes: 10
         run: |
