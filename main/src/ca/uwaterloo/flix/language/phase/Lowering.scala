@@ -1551,9 +1551,6 @@ object Lowering {
       val e = substExp(exp, subst)
       Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
 
-    case Expression.Upcast(_, _, _, _, _) =>
-      throw InternalCompilerException("Unreachable upcast branch taken")
-      
     case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
       Expression.Without(e, sym, tpe, pur, eff, loc)
@@ -1673,6 +1670,10 @@ object Lowering {
       Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
 
     case Expression.FixpointConstraintSet(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
+
+    case Expression.Upcast(_, _, _, _, _) =>
+      throw InternalCompilerException("Unreachable upcast branch taken")
+
   }
 
   /**
