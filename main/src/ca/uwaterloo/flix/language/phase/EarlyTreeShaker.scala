@@ -309,7 +309,7 @@ object EarlyTreeShaker {
     case Expression.PutStaticField(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewObject(_, _, _, _, methods, _) =>
+    case Expression.NewObject(_, _, _, _, _, methods, _) =>
       visitExps(methods.map(_.exp))
 
     case Expression.NewChannel(exp, _, _, _, _) =>

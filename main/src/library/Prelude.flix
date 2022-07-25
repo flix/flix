@@ -30,10 +30,26 @@ pub enum ReifiedType with Eq, Order, ToString {
 }
 
 ///
+/// The Generic IO Effect.
+///
+/// The `IO` effect is the most general effect of any
+/// operation that interacts with the environment.
+///
+pub eff IO
+
+///
+/// The Non-Deterministic Effect.
+///
+/// The `NonDet` effect represents "functions" that behave like relations,
+/// i.e. they have no side-effects, and given the same input their output
+//// there is a fixed set of output.
+///
+pub eff NonDet
+
+///
 /// The identity function.
 ///
 pub def identity(x: a): a = x
-
 
 ///
 /// Returns the function `f` with input arguments swapped.

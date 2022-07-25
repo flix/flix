@@ -22,27 +22,27 @@ namespace Time {
         /// Returns the number of nano seconds since the Unix epoch.
         ///
         @Experimental
-        pub def nanoseconds(): Int64 & Impure =
-            import static java.lang.System.nanoTime(): Int64 & Impure;
+        pub def nanoseconds(): Int64 \ IO =
+            import static java.lang.System.nanoTime(): Int64 \ IO;
             nanoTime()
 
         ///
         /// Returns the number of micro seconds since the Unix epoch.
         ///
         @Experimental
-        pub def microseconds(): Int64 & Impure = nanoseconds() / 1000i64
+        pub def microseconds(): Int64 \ IO = nanoseconds() / 1000i64
 
         ///
         /// Returns the number of milli seconds since the Unix epoch.
         ///
         @Experimental
-        pub def milliseconds(): Int64 & Impure = microseconds() / 1000i64
+        pub def milliseconds(): Int64 \ IO = microseconds() / 1000i64
 
         ///
         /// Returns the number of seconds since the Unix epoch.
         ///
         @Experimental
-        pub def seconds(): Int64 & Impure = milliseconds() / 1000i64
+        pub def seconds(): Int64 \ IO = milliseconds() / 1000i64
 
     }
 

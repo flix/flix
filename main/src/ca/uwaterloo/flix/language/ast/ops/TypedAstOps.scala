@@ -221,7 +221,7 @@ object TypedAstOps {
       case Expression.PutStaticField(_, exp, _, _, _, _) =>
         visitExp(exp, env0)
 
-      case Expression.NewObject(_, _, _, _, methods, _) =>
+      case Expression.NewObject(_, _, _, _, _, methods, _) =>
         methods.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
           case (macc, JvmMethod(_, fparams, exp, _, _, _, _)) =>
             val env1 = fparams.map(fparam => fparam.sym -> fparam.tpe)
@@ -429,7 +429,7 @@ object TypedAstOps {
     case Expression.PutField(_, exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.GetStaticField(_, _, _, _, _) => Set.empty
     case Expression.PutStaticField(_, exp, _, _, _, _) => sigSymsOf(exp)
-    case Expression.NewObject(_, _, _, _, methods, _) => methods.flatMap(method => sigSymsOf(method.exp)).toSet
+    case Expression.NewObject(_, _, _, _, _, methods, _) => methods.flatMap(method => sigSymsOf(method.exp)).toSet
     case Expression.NewChannel(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.GetChannel(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.PutChannel(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
@@ -668,7 +668,7 @@ object TypedAstOps {
     case Expression.PutStaticField(_, exp, _, _, _, _) =>
       freeVars(exp)
 
-    case Expression.NewObject(_, _, _, _, methods, _) =>
+    case Expression.NewObject(_, _, _, _, _, methods, _) =>
       methods.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, JvmMethod(_, fparams, exp, _, _, _, _)) => acc ++ freeVars(exp) -- fparams.map(_.sym)
       }

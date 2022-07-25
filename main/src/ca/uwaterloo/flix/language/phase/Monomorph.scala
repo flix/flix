@@ -549,9 +549,9 @@ object Monomorph {
         val e = visitExp(exp, env0)
         Expression.PutStaticField(field, e, tpe, pur, eff, loc)
 
-      case Expression.NewObject(clazz, tpe, pur, eff, methods0, loc) =>
+      case Expression.NewObject(name, clazz, tpe, pur, eff, methods0, loc) =>
         val methods = methods0.map(visitJvmMethod(_, env0))
-        Expression.NewObject(clazz, subst0(tpe), pur, eff, methods, loc)
+        Expression.NewObject(name, clazz, subst0(tpe), pur, eff, methods, loc)
 
       case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
