@@ -1843,8 +1843,6 @@ object Typer {
         val es = exps.map(visitExp(_, subst0))
         TypedAst.Expression.Apply(e, es, subst0(tvar), subst0(pvar), subst0(evar), loc)
 
-      case KindedAst.Expression.Par(exp, tvar, pvar, evar, loc) => ???
-
       case KindedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
         val p = visitFormalParam(fparam)
         val e = visitExp(exp, subst0)
@@ -2207,6 +2205,8 @@ object Typer {
         val pur = e.pur
         val eff = e.eff
         TypedAst.Expression.Spawn(e, tpe, pur, eff, loc)
+
+      case KindedAst.Expression.Par(exp, tvar, pvar, evar, loc) => ???
 
       case KindedAst.Expression.Lazy(exp, loc) =>
         val e = visitExp(exp, subst0)

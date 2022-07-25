@@ -1478,7 +1478,6 @@ object Namer {
     case WeededAst.Expression.Str(_, _) => Nil
     case WeededAst.Expression.Default(_) => Nil
     case WeededAst.Expression.Apply(exp, exps, _) => freeVars(exp) ++ exps.flatMap(freeVars)
-    case WeededAst.Expression.Par(exp, _) => freeVars(exp)
     case WeededAst.Expression.Lambda(fparam, exp, _) => filterBoundVars(freeVars(exp), List(fparam.ident))
     case WeededAst.Expression.Unary(_, exp, _) => freeVars(exp)
     case WeededAst.Expression.Binary(_, exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
@@ -1543,6 +1542,7 @@ object Namer {
       val defaultFreeVars = default.map(freeVars).getOrElse(Nil)
       rulesFreeVars ++ defaultFreeVars
     case WeededAst.Expression.Spawn(exp, _) => freeVars(exp)
+    case WeededAst.Expression.Par(exp, _) => freeVars(exp)
     case WeededAst.Expression.Lazy(exp, _) => freeVars(exp)
     case WeededAst.Expression.Force(exp, _) => freeVars(exp)
     case WeededAst.Expression.FixpointConstraintSet(cs, _) => cs.flatMap(freeVarsConstraint)
