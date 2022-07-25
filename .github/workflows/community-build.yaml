@@ -28,6 +28,8 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 17
+      - run: |
+          echo "org.gradle.jvmargs=-Xmx4096m" > gradle.properties
       - name: Build jar
         run: ./gradlew jar
       - name: Build community projects
