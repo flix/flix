@@ -188,6 +188,7 @@ object PatternExhaustiveness {
       case Expression.Assign(exp1, exp2, _, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
       case Expression.Ascribe(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Cast(exp, _, _, _, _, _, _, _) => visitExp(exp, root)
+      case Expression.Upcast(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Without(exp, _, _, _, _, _) => visitExp(exp, root)
 
       case Expression.TryCatch(exp, rules, _, _, _, _) =>

@@ -168,6 +168,9 @@ object TypedAstOps {
       case Expression.Cast(exp, _, _, _, _, _, _, _) =>
         visitExp(exp, env0)
 
+      case Expression.Upcast(exp, _, _, _, _) =>
+        visitExp(exp, env0)
+
       case Expression.Without(exp, _, _, _, _, _) =>
         visitExp(exp, env0)
 
@@ -220,7 +223,7 @@ object TypedAstOps {
 
       case Expression.NewObject(_, _, _, _, _, methods, _) =>
         methods.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-          case (macc, JvmMethod(_, fparams, exp, _, _, _, _)) => 
+          case (macc, JvmMethod(_, fparams, exp, _, _, _, _)) =>
             val env1 = fparams.map(fparam => fparam.sym -> fparam.tpe)
             macc ++ visitExp(exp, env0 ++ env1)
         }
@@ -413,6 +416,7 @@ object TypedAstOps {
     case Expression.Assign(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Ascribe(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Cast(exp, _, _, _, _, _, _, _) => sigSymsOf(exp)
+    case Expression.Upcast(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Without(exp, _, _, _, _, _) => sigSymsOf(exp)
     case Expression.TryCatch(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.TryWith(exp, _, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
@@ -616,6 +620,9 @@ object TypedAstOps {
       freeVars(exp)
 
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.Upcast(exp, _, _, _, _) =>
       freeVars(exp)
 
     case Expression.TryCatch(exp, rules, _, _, _, _) =>
