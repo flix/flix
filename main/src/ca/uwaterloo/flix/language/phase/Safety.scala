@@ -10,7 +10,7 @@ import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.annotation.tailrec
@@ -181,34 +181,7 @@ object Safety {
       visitExp(exp)
 
     case Expression.Upcast(exp, tpe, pur, eff, loc) =>
-      println(s"tpe    : $tpe")
-      println(s"pur    : $pur")
-      println(s"eff    : $eff")
-      println(s"exp.tpe: ${exp.tpe}")
-      println(s"exp.pur: ${exp.pur}")
-      println(s"exp.eff: ${exp.eff}")
-      println()
-      val tpeError = tpe match {
-        case _: Type.Var | _: Type.KindedVar => List(UnsafeUpcast(loc))
-        case _ => Nil
-      }
-      val purError = pur match {
-        // case _: Type.Var | _: Type.KindedVar => List(UnsafeUpcast(loc))
-        case _ => Nil
-      }
-      val effError = eff match {
-        // case _: Type.Var | _: Type.KindedVar => List(UnsafeUpcast(loc))
-        case _ => Nil
-      }
-      val ps = (pur, exp.pur) match {
-        case (Type.Pure, _: Type.KindedVar) |
-             (Type.Pure, Type.Impure) |
-             (_: Type.Var, Type.Impure) =>
-          List(UnsafeUpcast(loc))
-
-        case _ => Nil
-      }
-      visitExp(exp) ::: ps ::: tpeError ::: purError ::: effError
+      throw InternalCompilerException("Not implemented")
 
     case Expression.Without(exp, _, _, _, _, _) =>
       visitExp(exp)

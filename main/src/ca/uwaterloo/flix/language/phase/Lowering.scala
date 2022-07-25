@@ -463,9 +463,10 @@ object Lowering {
       Expression.Cast(e, dt, declaredPur, declaredEff, t, pur, eff, loc)
 
     case Expression.Upcast(exp, tpe, pur, eff, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      Expression.Upcast(e, t, pur, eff, loc)
+      throw InternalCompilerException("Not implemented")
+    // val e = visitExp(exp)
+    // val t = visitType(tpe)
+    // Expression.Upcast(e, t, pur, eff, loc)
 
     case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
@@ -1672,7 +1673,7 @@ object Lowering {
     case Expression.FixpointConstraintSet(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
 
     case Expression.Upcast(_, _, _, _, _) =>
-      throw InternalCompilerException("Unreachable upcast branch taken")
+      throw InternalCompilerException("Not Implemented")
 
   }
 
