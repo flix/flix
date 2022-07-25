@@ -181,7 +181,13 @@ object Safety {
       visitExp(exp)
 
     case Expression.Upcast(exp, tpe, pur, eff, loc) =>
-      throw InternalCompilerException("Not implemented")
+      val es = (tpe, pur, eff) match {
+        case (_: Type.Var, _, _) => List(UnsafeUpcast(exp.tpe, exp.pur, exp.eff, tpe, pur, eff, loc))
+        case (_, _: Type.Var, _) => List(UnsafeUpcast(exp.tpe, exp.pur, exp.eff, tpe, pur, eff, loc))
+        case (_, _, _: Type.Var) => List(UnsafeUpcast(exp.tpe, exp.pur, exp.eff, tpe, pur, eff, loc))
+        case _ => List.empty
+      }
+      visitExp(exp) ::: es
 
     case Expression.Without(exp, _, _, _, _, _) =>
       visitExp(exp)
