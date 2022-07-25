@@ -478,27 +478,34 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""If you try to upcast an expression that already has the same type, purity
-         |and effect as expected the upcast is redundant.
-         |""".stripMargin
-    })
+    def explain(formatter: Formatter): Option[String] = None
   }
 
+  /**
+    * An error raised to indicate that an upcast is redundant.
+    *
+    * @param loc the source location of the upcast.
+    */
   case class RedundantUpcast(loc: SourceLocation) extends RedundancyError {
-    override def summary: String = "Redundant upcast. The expression already has the expected type."
 
-    override def message(formatter: Formatter): String = {
+    def summary: String = "Redundant upcast. The expression already has the expected type and effect."
+
+    def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Redundant upcast. The expression already has the expected type.
+         |>> Redundant upcast. The expression already has the expected type and effect.
          |
          |${code(loc, "redundant upcast.")}
          |
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""If you try to upcast an expression that already has the same type, purity
+         |and effect as expected the upcast is redundant.
+         |""".stripMargin
+    })
+
   }
 
   /**
