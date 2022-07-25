@@ -245,6 +245,8 @@ object TypedAstOps {
 
       case Expression.Spawn(exp, _, _, _, _) => visitExp(exp, env0)
 
+      case Expression.Par(exp, _) => visitExp(exp, env0)
+
       case Expression.Lazy(exp, tpe, loc) => visitExp(exp, env0)
 
       case Expression.Force(exp, _, _, _, _) => visitExp(exp, env0)
@@ -435,6 +437,7 @@ object TypedAstOps {
     case Expression.PutChannel(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.SelectChannel(rules, default, _, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.chan) ++ sigSymsOf(rule.exp)).toSet ++ default.toSet.flatMap(sigSymsOf)
     case Expression.Spawn(exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.Par(exp, _) => sigSymsOf(exp)
     case Expression.Lazy(exp, _, _) => sigSymsOf(exp)
     case Expression.Force(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointConstraintSet(_, _, _, _) => Set.empty
@@ -689,6 +692,9 @@ object TypedAstOps {
       }
 
     case Expression.Spawn(exp, _, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.Par(exp, _) =>
       freeVars(exp)
 
     case Expression.Lazy(exp, _, _) =>

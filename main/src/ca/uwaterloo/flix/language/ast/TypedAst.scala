@@ -332,6 +332,14 @@ object TypedAst {
 
     case class Spawn(exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
+    case class Par(exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
+      def tpe: Type = exp.tpe
+
+      def pur: Type = exp.pur
+
+      def eff: Type = exp.eff
+    }
+
     case class Lazy(exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def pur: Type = Type.Pure
 

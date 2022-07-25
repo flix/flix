@@ -716,13 +716,7 @@ object Kinder {
       }
 
     case ResolvedAst.Expression.Par(exp, loc) =>
-      mapN(visitExp(exp, kenv0, senv, taenv, henv0, root)) {
-        e =>
-          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Effect, loc.asSynthetic)
-          KindedAst.Expression.Par(e, tvar, pvar, evar, loc)
-      }
+      mapN(visitExp(exp, kenv0, senv, taenv, henv0, root))(KindedAst.Expression.Par(_, loc))
 
     case ResolvedAst.Expression.Lazy(exp0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
