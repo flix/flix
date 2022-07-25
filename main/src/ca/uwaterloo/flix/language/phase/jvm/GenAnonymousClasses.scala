@@ -99,6 +99,28 @@ object GenAnonymousClasses {
   }
 
   /**
+    * Returns a JVM type descriptor for the given `MonoType`
+    * 
+    * Hacked to half-work for array types. In the new backend we should handle all types, including multidim arrays.
+    */
+  def getDescriptorHacked(tpe: MonoType)(implicit root: Root, flix: Flix): String = tpe match {
+    case MonoType.Array(t) => s"[${JvmOps.getJvmType(t).toDescriptor}"
+    case MonoType.Unit => JvmType.Void.toDescriptor
+    case _ => JvmOps.getJvmType(tpe).toDescriptor
+  }
+
+  /**
+    * Returns a JVM method descriptor for the given parameters and return types
+    * 
+    * Hacked to half-work for array types. In the new backend we should handle all types, including multidim arrays.
+    */
+  def getMethodDescriptorHacked(paramTypes: List[MonoType], retType: MonoType)(implicit root: Root, flix: Flix): String = {
+    val resultDescriptor = getDescriptorHacked(retType)
+    val argumentDescriptor = paramTypes.map(getDescriptorHacked).mkString
+    s"($argumentDescriptor)$resultDescriptor"
+  }
+
+  /**
     * Method
     */
   private def compileMethod(currentClass: JvmType.Reference, method: JvmMethod, cloName: String, classVisitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = method match {
@@ -111,15 +133,8 @@ object GenAnonymousClasses {
       AsmOps.compileField(classVisitor, cloName, closureAbstractClass, isStatic = false, isPrivate = false)
 
       // Drop the first formal parameter (which always represents `this`)
-      val paramTypes = fparams.tail.map(f => JvmOps.getJvmType(f.tpe))
-
-      // Special case: treat Unit as void
-      val returnType = tpe match {
-        case MonoType.Unit => JvmType.Void
-        case _ => JvmOps.getJvmType(tpe)
-      } 
-
-      val methodVisitor = classVisitor.visitMethod(ACC_PUBLIC, ident.name, AsmOps.getMethodDescriptor(paramTypes, returnType), null, null)
+      val paramTypes = fparams.tail.map(_.tpe)
+      val methodVisitor = classVisitor.visitMethod(ACC_PUBLIC, ident.name, getMethodDescriptorHacked(paramTypes, tpe), null, null)
 
       // Retrieve the closure that implements this method
       methodVisitor.visitVarInsn(ALOAD, 0)
@@ -142,11 +157,16 @@ object GenAnonymousClasses {
       // Invoke the closure
       methodVisitor.visitMethodInsn(INVOKEVIRTUAL, functionInterface.name.toInternalName,
         backendContinuationType.UnwindMethod.name, AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
-      AsmOps.castIfNotPrim(methodVisitor, JvmOps.getJvmType(tpe))
 
-      val returnInstruction = returnType match {
-        case JvmType.Void => RETURN
-        case _ => AsmOps.getReturnInstruction(returnType)
+      tpe match {
+        case MonoType.Array(_) => methodVisitor.visitTypeInsn(CHECKCAST, getDescriptorHacked(tpe))
+        case _ => AsmOps.castIfNotPrim(methodVisitor, JvmOps.getJvmType(tpe))
+      }
+
+      val returnInstruction = tpe match {
+        case MonoType.Unit => RETURN
+        case MonoType.Array(_) => ARETURN
+        case _ => AsmOps.getReturnInstruction(JvmOps.getJvmType(tpe))
       }
       methodVisitor.visitInsn(returnInstruction)
 
