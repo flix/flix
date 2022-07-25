@@ -2,6 +2,9 @@ name: Community Build
 
 on: [pull_request]
 
+permissions:
+  contents: read
+
 # Cancel previous runs if the PR is updated
 concurrency:
   cancel-in-progress: true
@@ -19,17 +22,12 @@ jobs:
 
       PROJ_DIR: project-build
 
-      GRADLE_OPTS: "-Xmx6g"
-      JAVA_OPTS: "-Xmx4g"
-
     steps:
       - uses: actions/checkout@v2
       - name: Set up JDK 17
         uses: actions/setup-java@v1
         with:
           java-version: 17
-      - run: |
-          echo "org.gradle.jvmargs=-Xmx4096m" > gradle.properties
       - name: Build jar
         run: ./gradlew clean jar
       - name: Build community projects
