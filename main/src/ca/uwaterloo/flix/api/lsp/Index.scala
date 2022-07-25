@@ -228,15 +228,10 @@ case class Index(m: Map[(String, Int), List[Entity]],
         // Step 1: Compute all whole range overlap with the given position.
         val filtered = candidates.filter(e => e.loc.beginCol <= pos.character && pos.character <= e.loc.endCol)
 
-        // Step 2: Sort the expressions by their span (i.e. their length).
-        filtered.maxByOption(e => (span(e.loc), e.priority))
-        val sorted = filtered.sortBy(e => span(e.loc))
-
-        // Print all candidates.
-        // println(sorted.map(_.loc.format).mkString("\n"))
-
-        // Step 3: Return the candidate with the smallest span.
-        sorted.headOption
+        // Step 2: Get the max expression,
+        // primarily by the span (i.e. the length)
+        // and secondarily by the precision level of the entity
+        filtered.maxOption(Ordering.by((e: Entity) => span(e.loc)).orElse(Ordering.by(e => e.precision)))
     }
   }
 
