@@ -19,6 +19,8 @@ jobs:
 
       PROJ_DIR: project-build
 
+      GRADLE_OPTS: "-Xms128m -Xmx4g"
+
     steps:
       - uses: actions/checkout@v2
       - name: Set up JDK 17
@@ -31,7 +33,7 @@ jobs:
         timeout-minutes: 10
         run: |
           # Sanity check: Make sure the project build directory does not exist.
-          test ! -e ${{ env.PROJ_DIR }}
+          test ! -e $PROJ_DIR
           
           # Build each project in a fresh directory.
           for project in ${{ env.PROJECTS }}; do
