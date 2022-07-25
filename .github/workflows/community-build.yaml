@@ -19,7 +19,7 @@ jobs:
 
       PROJ_DIR: project-build
 
-      GRADLE_OPTS: "-Xms128m -Xmx6g"
+      GRADLE_OPTS: "-Xmx6g"
 
     steps:
       - uses: actions/checkout@v2
