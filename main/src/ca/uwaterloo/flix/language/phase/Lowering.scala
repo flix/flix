@@ -464,9 +464,6 @@ object Lowering {
 
     case Expression.Upcast(exp, tpe, pur, eff, loc) =>
       throw InternalCompilerException("Not implemented")
-    // val e = visitExp(exp)
-    // val t = visitType(tpe)
-    // Expression.Upcast(e, t, pur, eff, loc)
 
     case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
