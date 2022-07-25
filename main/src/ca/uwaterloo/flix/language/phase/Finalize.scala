@@ -328,10 +328,10 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.PutStaticField(field, e, t, loc)
 
-      case LiftedAst.Expression.NewObject(clazz, tpe, _, methods, loc) =>
+      case LiftedAst.Expression.NewObject(name, clazz, tpe, _, methods, loc) =>
         val t = visitType(tpe)
         val ms = methods.map(visitJvmMethod(_, m))
-        FinalAst.Expression.NewObject(clazz, t, ms, loc)
+        FinalAst.Expression.NewObject(name, clazz, t, ms, loc)
 
       case LiftedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visit(exp)

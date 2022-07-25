@@ -27,8 +27,8 @@ namespace Time {
         /// Returns the current time from the system clock.
         ///
         @Experimental
-        pub def now(): Time.Instant & Impure =
-            import static java.time.Instant.now(): ##java.time.Instant & Impure;
+        pub def now(): Time.Instant \ IO =
+            import static java.time.Instant.now(): ##java.time.Instant \ IO;
             Time/Instant.Instant(now())
 
         ///

@@ -1325,7 +1325,7 @@ namespace DelayList {
     ///
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random.Random, l: DelayList[a]): DelayList[a] & Impure = region r {
+    pub def shuffle(rnd: Random.Random, l: DelayList[a]): DelayList[a] \ NonDet = region r {
         toArray(r, l) !> Array.shuffle(rnd) |> Array.toDelayList
     }
 

@@ -263,14 +263,14 @@ object ClosureConv {
       val e = visitExp(exp)
       Expression.PutStaticField(field, e, tpe, purity, loc)
 
-    case Expression.NewObject(clazz, tpe, purity, methods0, loc) =>
+    case Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0 map {
         case JvmMethod(ident, fparams, exp, retTpe, purity, loc) =>
           val cloType = Type.mkImpureUncurriedArrow(fparams.map(_.tpe), retTpe, loc)
           val clo = mkLambdaClosure(fparams, exp, cloType, loc)
           JvmMethod(ident, fparams, clo, retTpe, purity, loc)
       }
-      Expression.NewObject(clazz, tpe, purity, methods, loc)
+      Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
     case Expression.NewChannel(exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -477,7 +477,7 @@ object ClosureConv {
 
     case Expression.PutStaticField(_, exp, _, _, _) => freeVars(exp)
 
-    case Expression.NewObject(_, _, _, methods, _) =>
+    case Expression.NewObject(_, _, _, _, methods, _) =>
       methods.foldLeft(SortedSet.empty[FreeVar]) {
         case (acc, JvmMethod(_, fparams, exp, _, _, _)) =>
           acc ++ filterBoundParams(freeVars(exp), fparams)
@@ -761,9 +761,9 @@ object ClosureConv {
         val e = visitExp(exp)
         Expression.PutStaticField(field, e, tpe, purity, loc)
 
-      case Expression.NewObject(clazz, tpe, purity, methods0, loc) =>
+      case Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
         val methods = methods0.map(visitJvmMethod(_, subst))
-        Expression.NewObject(clazz, tpe, purity, methods, loc)
+        Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
       case Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp)
