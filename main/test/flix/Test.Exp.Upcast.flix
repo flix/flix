@@ -6,7 +6,7 @@ namespace Test/Exp/Upcast {
             if (true)
                 upcast x -> x + 1
             else
-                x -> { println(x); x + 1 };
+                x -> { println("x"); x + 1 };
         ()
 
 }
