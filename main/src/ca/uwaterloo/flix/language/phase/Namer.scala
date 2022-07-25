@@ -977,10 +977,11 @@ object Namer {
         case e => NamedAst.Expression.PutStaticField(className, fieldName, e, loc)
       }
 
-    case WeededAst.Expression.NewObject(className, methods, loc) =>
-      mapN(traverse(methods)(visitJvmMethod(_, env0, uenv0, tenv0))) { case m => 
+    case WeededAst.Expression.NewObject(tpe, methods, loc) =>
+      mapN(visitType(tpe, uenv0, tenv0), traverse(methods)(visitJvmMethod(_, env0, uenv0, tenv0))) {
+        case (tpe, ms) =>
           val name = s"Anon$$${flix.genSym.freshId()}"
-          NamedAst.Expression.NewObject(name, className, m, loc)
+          NamedAst.Expression.NewObject(name, tpe, ms, loc)
       }
 
     case WeededAst.Expression.NewChannel(exp, tpe, loc) =>
