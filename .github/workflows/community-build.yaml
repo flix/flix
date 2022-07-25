@@ -20,6 +20,7 @@ jobs:
       PROJ_DIR: project-build
 
       GRADLE_OPTS: "-Xmx6g"
+      JAVA_OPTS: "-Xmx4g"
 
     steps:
       - uses: actions/checkout@v2
