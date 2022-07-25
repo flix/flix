@@ -682,14 +682,18 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       def Effects: Rule1[Seq[Name.QName]] = rule {
         Names.QualifiedEffect ~> ((n: Name.QName) => List(n)) | "{" ~ optWS ~ oneOrMore(Names.QualifiedEffect).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}"
       }
+
       rule {
         Cast ~ optional(WS ~ keyword("without") ~ WS ~ Effects ~ SP ~> ParsedAst.Expression.Without)
       }
     }
 
-
     def Cast: Rule1[ParsedAst.Expression] = rule {
       Ascribe ~ optional(WS ~ keyword("as") ~ WS ~ TypAndPurFragment ~ SP ~> ParsedAst.Expression.Cast)
+    }
+
+    def Upcast: Rule1[ParsedAst.Expression] = rule {
+      SP ~ keyword("upcast") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Upcast
     }
 
     def Ascribe: Rule1[ParsedAst.Expression] = rule {
@@ -720,7 +724,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Static | Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
         ReifyType | ReifyPurity | Choose | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
-        GetChannel | SelectChannel | Spawn | Par | Lazy | Force | Intrinsic | New | ArrayLit | ArrayNew |
+        GetChannel | SelectChannel | Spawn | Par | Lazy | Force | Upcast | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
         Discard | ForYield | ForEach | NewObject | UnaryLambda | FName | Tag | Hole

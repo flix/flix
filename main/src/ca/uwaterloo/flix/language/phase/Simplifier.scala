@@ -206,6 +206,9 @@ object Simplifier {
         val e = visitExp(exp)
         SimplifiedAst.Expression.Cast(e, tpe, simplifyPurity(pur), loc)
 
+      case TypedAst.Expression.Upcast(exp, tpe, pur, _, loc) =>
+        throw InternalCompilerException("Not implemented")
+
       case TypedAst.Expression.TryCatch(exp, rules, tpe, pur, eff, loc) =>
         val e = visitExp(exp)
         val rs = rules map {
@@ -1046,7 +1049,7 @@ object Simplifier {
         val e = visitExp(exp)
         SimplifiedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) => 
+      case SimplifiedAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
         val methods = methods0 map visitJvmMethod
         SimplifiedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 

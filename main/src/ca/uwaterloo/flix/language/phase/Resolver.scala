@@ -941,7 +941,6 @@ object Resolver {
           }
 
         case NamedAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
-
           val declaredTypVal = declaredType match {
             case None => (None: Option[Type]).toSuccess
             case Some(t) => mapN(resolveType(t, taenv, ns0, root))(x => Some(x))
@@ -951,6 +950,11 @@ object Resolver {
           val eVal = visitExp(exp, region)
           mapN(eVal, declaredTypVal, declaredEffVal) {
             case (e, t, f) => ResolvedAst.Expression.Cast(e, t, f, loc)
+          }
+
+        case NamedAst.Expression.Upcast(exp, loc) =>
+          mapN(visitExp(exp, region)) {
+            case e => ResolvedAst.Expression.Upcast(e, loc)
           }
 
         case NamedAst.Expression.TryCatch(exp, rules, loc) =>

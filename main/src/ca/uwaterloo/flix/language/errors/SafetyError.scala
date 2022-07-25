@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Type, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.Safety
 import ca.uwaterloo.flix.util.Formatter
 
@@ -118,6 +118,40 @@ object SafetyError {
   }
 
   /**
+    * An error raised to indicate an illegal relational use of the lattice variable `sym`.
+    *
+    * @param actualType     the type of the expression being upcast.
+    * @param actualPurity   the purity of the expression being upcast.
+    * @param actualEffect   the effect of the expression being upcast.
+    * @param expectedType   the expected type being upcast to.
+    * @param expectedPurity the expected purity being upcast to.
+    * @param expectedEffect the expected effect being upcast to.
+    * @param loc            the source location of the unsafe upcast.
+    */
+  case class UnsafeUpcast(actualType: Type, actualPurity: Type, actualEffect: Type, expectedType: Type, expectedPurity: Type, expectedEffect: Type, loc: SourceLocation) extends SafetyError {
+    override def summary: String = "Unsafe upcast."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> The following upcast is unsafe and not allowed.
+         |
+         |${code(loc, "the upcast occurs here.")}
+         |
+         |Actual type  : $actualType
+         |Actual purity: $actualPurity
+         |Actual effect: $actualEffect
+         |
+         |Expected type  : $expectedType
+         |Expected purity: $expectedPurity
+         |Expected effect: $expectedEffect
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised to indicate an illegal object derivation. Objects can only be derived from Java interfaces.
     *
     * @param clazz The (illegal) superclass.
@@ -129,10 +163,10 @@ object SafetyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-        |>> '${red(clazz.toString)}' is not a Java interface.
-        |
-        |${code(loc, "the illegal derivation occurs here.")}
-        |""".stripMargin
+         |>> '${red(clazz.toString)}' is not a Java interface.
+         |
+         |${code(loc, "the illegal derivation occurs here.")}
+         |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = None
@@ -151,18 +185,18 @@ object SafetyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-        |>> Missing `this` parameter for method '${red(name)}''.
-        |
-        |The `this` parameter should have type ${cyan(thisType.toString)}
-        |
-        |${code(loc, "the method occurs here.")}
-        |""".stripMargin
+         |>> Missing `this` parameter for method '${red(name)}''.
+         |
+         |The `this` parameter should have type ${cyan(thisType.toString)}
+         |
+         |${code(loc, "the method occurs here.")}
+         |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
       s"""
-        | The first argument to any method must be `this`, and must have the same type as the superclass.
-        |""".stripMargin
+         | The first argument to any method must be `this`, and must have the same type as the superclass.
+         |""".stripMargin
     })
   }
 
@@ -180,18 +214,18 @@ object SafetyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-        |>> Invalid `this` parameter for method '${red(name)}''.
-        |
-        |Expected `this` type is ${cyan(thisType.toString)}, but the first argument is declared as type ${cyan(illegalThisType.toString)}
-        |
-        |${code(loc, "the method occurs here.")}
-        |""".stripMargin
+         |>> Invalid `this` parameter for method '${red(name)}''.
+         |
+         |Expected `this` type is ${cyan(thisType.toString)}, but the first argument is declared as type ${cyan(illegalThisType.toString)}
+         |
+         |${code(loc, "the method occurs here.")}
+         |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
       s"""
-        | The first argument to any method must be `this`, and must have the same type as the superclass.
-        |""".stripMargin
+         | The first argument to any method must be `this`, and must have the same type as the superclass.
+         |""".stripMargin
     })
   }
 
@@ -208,18 +242,18 @@ object SafetyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-        |>> No implementation found for method '${red(method.name)}' of superclass '${red(thisType.toString)}'.
-        |
-        |${code(loc, "the object occurs here.")}
-        |""".stripMargin
+         |>> No implementation found for method '${red(method.name)}' of superclass '${red(thisType.toString)}'.
+         |
+         |${code(loc, "the object occurs here.")}
+         |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
       s"""
-        | Try adding a method with the following signature:
-        |
-        | def ${method.name}(${method.paramTypes.mkString(", ")}): ${method.retTpe}
-        |""".stripMargin
+         | Try adding a method with the following signature:
+         |
+         | def ${method.name}(${method.paramTypes.mkString(", ")}): ${method.retTpe}
+         |""".stripMargin
     })
   }
 
@@ -237,12 +271,13 @@ object SafetyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-        |>> Method '${red(method.name)}' not found in superclass '${red(thisType.toString)}'
-        |
-        |${code(loc, "the method occurs here.")}
-        |""".stripMargin
+         |>> Method '${red(method.name)}' not found in superclass '${red(thisType.toString)}'
+         |
+         |${code(loc, "the method occurs here.")}
+         |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = None
   }
+
 }

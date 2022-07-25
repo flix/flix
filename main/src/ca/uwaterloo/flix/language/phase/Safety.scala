@@ -3,14 +3,14 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
+import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.ast.Type.getFlixType
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.annotation.tailrec
@@ -179,6 +179,9 @@ object Safety {
 
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
       visitExp(exp)
+
+    case Expression.Upcast(exp, tpe, pur, eff, loc) =>
+      throw InternalCompilerException("Not implemented")
 
     case Expression.Without(exp, _, _, _, _, _) =>
       visitExp(exp)
@@ -501,12 +504,12 @@ object Safety {
         acc + (signature -> m)
     }
   }
-  
+
   /**
     * Convert a `java.lang.reflect.Method` to a MethodSignature.
     */
   private def getJavaMethodSignature(method: java.lang.reflect.Method) = {
-    MethodSignature(method.getName(), 
+    MethodSignature(method.getName(),
       getFlixType(method.getReturnType),
       method.getParameterTypes().toList.map(getFlixType))
   }
@@ -520,10 +523,10 @@ object Safety {
   private def getJavaMethods(clazz: java.lang.Class[_]): (Set[MethodSignature], Set[MethodSignature]) = {
     val methods = clazz.getMethods().toList.filterNot(m => java.lang.reflect.Modifier.isStatic(m.getModifiers()))
     val mustImplement = if (clazz.isInterface()) {
-        methods.filterNot(_.isDefault())
-      } else {
-        methods.filter(m => java.lang.reflect.Modifier.isAbstract(m.getModifiers()))
-      }
+      methods.filterNot(_.isDefault())
+    } else {
+      methods.filter(m => java.lang.reflect.Modifier.isAbstract(m.getModifiers()))
+    }
     (methods.map(getJavaMethodSignature).toSet, mustImplement.map(getJavaMethodSignature).toSet)
   }
 
@@ -531,11 +534,11 @@ object Safety {
     * Ensures that `methods` fully implement `clazz`
     */
   private def checkObjectImplementation(clazz: java.lang.Class[_], tpe: Type, methods: List[JvmMethod], loc: SourceLocation): List[CompilationMessage] = {
-    // 
+    //
     // Check that the first argument looks like "this"
-    // 
+    //
     val thisErrors = methods.flatMap {
-      case JvmMethod(ident, fparams, _, _, _, _, methodLoc) => 
+      case JvmMethod(ident, fparams, _, _, _, _, methodLoc) =>
         if (fparams.length < 1)
           Some(MissingThis(tpe, ident.name, methodLoc))
         else if (fparams.head.tpe != tpe) {
@@ -550,15 +553,15 @@ object Safety {
 
     val (canImplement, mustImplement) = getJavaMethods(clazz)
 
-    // 
+    //
     // Check that there are no unimplemented methods.
-    // 
+    //
     val unimplemented = mustImplement diff implemented
     val unimplementedErrors = unimplemented.map(UnimplementedMethod(tpe, _, loc))
 
-    // 
+    //
     // Check that there are no methods that aren't in the interface
-    //  
+    //
     val extra = implemented diff canImplement
     val extraErrors = extra.map(m => ExtraMethod(tpe, m, flixMethods(m).loc))
 
