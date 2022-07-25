@@ -524,7 +524,10 @@ object Lowering {
       val t = visitType(tpe)
       Expression.PutStaticField(field, e, t, pur, eff, loc)
 
-    case Expression.NewObject(_, _, _, _, _) => exp0
+    case Expression.NewObject(name, clazz, tpe, pur, eff, methods, loc) =>
+      val t = visitType(tpe)
+      val ms = methods.map(visitJvmMethod)
+      Expression.NewObject(name, clazz, t, pur, eff, ms, loc)
 
     case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
@@ -988,6 +991,17 @@ object Lowering {
     case Pattern.ArrayTailSpread(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
 
     case Pattern.ArrayHeadSpread(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
+  }
+
+  /**
+    * Lowers the given JvmMethod `method`.
+    */
+  private def visitJvmMethod(method: JvmMethod)(implicit root: Root, flix: Flix): JvmMethod = method match {
+    case JvmMethod(ident, fparams, exp, retTyp, pur, eff, loc) =>
+      val fs = fparams.map(visitFormalParam)
+      val e = visitExp(exp)
+      val t = visitType(retTyp)
+      JvmMethod(ident, fs, e, t, pur, eff, loc)
   }
 
   /**
@@ -1584,7 +1598,7 @@ object Lowering {
       val e = substExp(exp, subst)
       Expression.PutStaticField(field, e, tpe, pur, eff, loc)
 
-    case Expression.NewObject(_, _, _, _, _) => exp0
+    case Expression.NewObject(_, _, _, _, _, _, _) => exp0
 
     case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)

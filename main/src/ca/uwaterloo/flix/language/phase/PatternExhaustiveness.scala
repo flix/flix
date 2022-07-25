@@ -207,7 +207,7 @@ object PatternExhaustiveness {
       case Expression.PutField(_, exp1, exp2, _, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
       case Expression.GetStaticField(_, _, _, _, _) => ().toSuccess
       case Expression.PutStaticField(_, exp, _, _, _, _) => visitExp(exp, root)
-      case Expression.NewObject(_, _, _, _, _) => ().toSuccess
+      case Expression.NewObject(_, _, _, _, _, methods, _) => traverseX(methods)(m => visitExp(m.exp, root))
       case Expression.NewChannel(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.GetChannel(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.PutChannel(exp1, exp2, _, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))

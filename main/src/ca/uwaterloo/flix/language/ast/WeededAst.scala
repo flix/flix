@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Denotation
 
 object WeededAst {
 
-  case class Root(units: Map[Ast.Source, WeededAst.CompilationUnit], entryPoint: Option[Symbol.DefnSym], reachable: Set[Symbol.DefnSym])
+  case class Root(units: Map[Ast.Source, WeededAst.CompilationUnit], entryPoint: Option[Symbol.DefnSym])
 
   case class CompilationUnit(uses: List[WeededAst.Use], decls: List[WeededAst.Declaration], loc: SourceLocation)
 
@@ -372,7 +372,7 @@ object WeededAst {
 
     case class Write(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
-    case class Set(tpe: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
+    case class Empty(loc: SourceLocation) extends WeededAst.Type
 
     case class Ascribe(tpe: WeededAst.Type, kind: Kind, loc: SourceLocation) extends WeededAst.Type
 

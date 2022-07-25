@@ -89,6 +89,7 @@ instance Foldable[Option] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldLeft(f, s, o)
     pub def foldRight(f: (a, b) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRight(f, o, s)
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRightWithCont(f, o, s)
+    override pub def iterator(r: Region[r], o: Option[a]): Iterator[a, r] \ Write(r) = Option.iterator(r, o)
 }
 
 instance UnorderedFoldable[Option] {
@@ -318,7 +319,7 @@ namespace Option {
     ///
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, o: Option[a], z: b): b & ef = match o {
         case None    => z
-        case Some(v) => f(v, _ -> z as & ef)
+        case Some(v) => f(v, upcast(_ -> z))
     }
 
     ///
@@ -402,7 +403,7 @@ namespace Option {
                 case None     => None
             })
         };
-        loop(l, s1 -> Some(s1) as & ef)
+        loop(l, upcast(s1 -> Some(s1)))
 
     ///
     /// Returns a one-element list of the value `v` if `o` is `Some(v)`. Otherwise returns the empty list.

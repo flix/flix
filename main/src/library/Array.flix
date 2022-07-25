@@ -1725,7 +1725,6 @@ namespace Array {
 
     ///
     /// A for loop with an accumulator (helper for sorting).
-    /// This function is not array specific so is not necessarily Impure.
     ///
     /// precondition: lo <= hi
     ///
@@ -1797,7 +1796,7 @@ namespace Array {
     ///
     /// Shuffles `a` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random.Random, a: Array[a, r]): Unit & Impure =
+    pub def shuffle(rnd: Random.Random, a: Array[a, r]): Unit & r \ NonDet =
         let len = Array.length(a);
         def loop(i) = {
             if (i > 0) {

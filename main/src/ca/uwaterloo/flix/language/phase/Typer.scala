@@ -21,8 +21,10 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
+import ca.uwaterloo.flix.language.phase.unification.TypeMinimization.minimizeScheme
 import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
@@ -50,7 +52,7 @@ object Typer {
     Validation.mapN(classesVal, instancesVal, defsVal, enumsVal, effsVal) {
       case (classes, instances, defs, enums, effs) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
-        TypedAst.Root(classes, instances, sigs, defs, enums, effs, typeAliases, root.entryPoint, root.reachable, root.sources, classEnv)
+        TypedAst.Root(classes, instances, sigs, defs, enums, effs, typeAliases, root.entryPoint, root.sources, classEnv)
     }
   }
 
@@ -313,22 +315,22 @@ object Typer {
                       // Case 1: Declared as pure, but impure.
                       return TypeError.ImpureDeclaredAsPure(loc).toFailure
                     } else if (declaredPur == Type.Pure && inferredPur != Type.Pure) {
-                      // Case 2: Declared as pure, but purect polymorphic.
+                      // Case 2: Declared as pure, but purity polymorphic.
                       return TypeError.EffectPolymorphicDeclaredAsPure(inferredPur, loc).toFailure
                     } else {
-                      // Case 3: Check if it is the purect that cannot be generalized.
+                      // Case 3: Check if it is the purity that cannot be generalized.
                       val inferredPurScheme = Scheme(inferredSc.quantifiers, Nil, inferredPur)
                       val declaredPurScheme = Scheme(declaredScheme.quantifiers, Nil, declaredPur)
                       Scheme.checkLessThanEqual(inferredPurScheme, declaredPurScheme, classEnv) match {
                         case Validation.Success(_) =>
-                        // Case 3.1: The purect is not the problem. Regular generalization error.
+                        // Case 3.1: The purity is not the problem. Regular generalization error.
                         // Fall through to below.
                         case Validation.Failure(_) =>
-                          // Case 3.2: The purect cannot be generalized.
+                          // Case 3.2: The purity cannot be generalized.
                           return TypeError.EffectGeneralizationError(declaredPur, inferredPur, loc).toFailure
                       }
 
-                      return TypeError.GeneralizationError(declaredScheme, inferredSc, loc).toFailure
+                      return TypeError.GeneralizationError(declaredScheme, minimizeScheme(inferredSc), loc).toFailure
                     }
                   } else {
                     // Case 3: instance error
@@ -1478,11 +1480,36 @@ object Typer {
           resultEff = valueEff
         } yield (valueConstrs, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.NewObject(clazz, _, loc) =>
-        val resultTyp = getFlixType(clazz)
-        val resultPur = Type.Impure
-        val resultEff = Type.Empty
-        liftM(List.empty, resultTyp, resultPur, resultEff)
+      case KindedAst.Expression.NewObject(_, clazz, methods, loc) =>
+
+        /**
+          * Performs type inference on the given JVM `method`.
+          */
+        def inferJvmMethod(method: KindedAst.JvmMethod): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = method match {
+          case KindedAst.JvmMethod(ident, fparams, exp, returnTpe, pur, eff, loc) =>
+
+            /**
+              * Constrains the given formal parameter to its declared type.
+              */
+            def inferParam(fparam: KindedAst.FormalParam): InferMonad[Unit] = fparam match {
+              case KindedAst.FormalParam(sym, _, tpe, _, loc) =>
+                unifyTypeM(sym.tvar.ascribedWith(Kind.Star), tpe, loc).map(_ => ())
+            }
+
+            for {
+              _ <- seqM(fparams.map(inferParam))
+              (constrs, bodyTpe, bodyPur, bodyEff) <- visitExp(exp)
+              _ <- expectTypeM(expected = returnTpe, actual = bodyTpe, exp.loc)
+            } yield (constrs, returnTpe, bodyPur, bodyEff)
+        }
+
+        for {
+          (constrs, _, _, _) <- seqM(methods map inferJvmMethod).map(unzip4)
+          resultTyp = getFlixType(clazz)
+          resultPur = Type.Impure
+          resultEff = Type.Empty
+        } yield (constrs.flatten, resultTyp, resultPur, resultEff)
+
 
       case KindedAst.Expression.NewChannel(exp, declaredType, loc) =>
         for {
@@ -2130,11 +2157,12 @@ object Typer {
         val eff = e.eff
         TypedAst.Expression.PutStaticField(field, e, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.NewObject(clazz, _, loc) =>
+      case KindedAst.Expression.NewObject(name, clazz, methods, loc) =>
         val tpe = getFlixType(clazz)
         val pur = Type.Impure
         val eff = Type.Empty
-        TypedAst.Expression.NewObject(clazz, tpe, pur, eff, loc)
+        val ms = methods map visitJvmMethod
+        TypedAst.Expression.NewObject(name, clazz, tpe, pur, eff, ms, loc)
 
       case KindedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp, subst0)
@@ -2302,6 +2330,18 @@ object Typer {
       */
     def visitPredicateParam(pparam: KindedAst.PredicateParam): TypedAst.PredicateParam =
       TypedAst.PredicateParam(pparam.pred, subst0(pparam.tpe), pparam.loc)
+
+    /**
+      * Applies the substitution to the given jvm method.
+      */
+    def visitJvmMethod(method: KindedAst.JvmMethod): TypedAst.JvmMethod = {
+      method match {
+        case KindedAst.JvmMethod(ident, fparams0, exp0, tpe, pur, eff, loc) =>
+          val fparams = getFormalParams(fparams0, subst0)
+          val exp = visitExp(exp0, subst0)
+          TypedAst.JvmMethod(ident, fparams, exp, tpe, pur, eff, loc)
+      }
+    }
 
     visitExp(exp0, subst0)
   }
@@ -2493,7 +2533,7 @@ object Typer {
         (constrs, tpe, pur, eff) <- inferExp(exp, root)
         expPur <- unifyBoolM(Type.Pure, pur, loc)
         expTyp <- unifyTypeM(expectedType, tpe, loc)
-        expEff <- unifyTypeM(Type.Empty, pur, loc)
+        expEff <- unifyTypeM(Type.Empty, eff, loc)
       } yield (constrs, mkAnySchemaRowType(loc))
   }
 
@@ -2610,54 +2650,6 @@ object Typer {
     */
   private def mkAnySchemaRowType(loc: SourceLocation)(implicit flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc, text = FallbackText("row"))
 
-  /**
-    * Returns the Flix Type of a Java Class
-    */
-  private def getFlixType(c: Class[_]): Type = {
-    if (c == java.lang.Boolean.TYPE) {
-      Type.Bool
-    }
-    else if (c == java.lang.Byte.TYPE) {
-      Type.Int8
-    }
-    else if (c == java.lang.Short.TYPE) {
-      Type.Int16
-    }
-    else if (c == java.lang.Integer.TYPE) {
-      Type.Int32
-    }
-    else if (c == java.lang.Long.TYPE) {
-      Type.Int64
-    }
-    else if (c == java.lang.Character.TYPE) {
-      Type.Char
-    }
-    else if (c == java.lang.Float.TYPE) {
-      Type.Float32
-    }
-    else if (c == java.lang.Double.TYPE) {
-      Type.Float64
-    }
-    else if (c == classOf[java.math.BigInteger]) {
-      Type.BigInt
-    }
-    else if (c == classOf[java.lang.String]) {
-      Type.Str
-    }
-    else if (c == java.lang.Void.TYPE) {
-      Type.Unit
-    }
-    // handle arrays of types
-    else if (c.isArray) {
-      val comp = c.getComponentType
-      val elmType = getFlixType(comp)
-      Type.mkArray(elmType, Type.False, SourceLocation.Unknown)
-    }
-    // otherwise native type
-    else {
-      Type.mkNative(c, SourceLocation.Unknown)
-    }
-  }
 
   /**
     * Computes and prints statistics about the given substitution.

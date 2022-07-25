@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalNegativelyBoundWildVariable, IllegalNegativelyBoundWildcard, IllegalNonPositivelyBoundVariable, IllegalRelationalUseOfLatticeVariable}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
@@ -180,4 +181,58 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[IllegalRelationalUseOfLatticeVariable](result)
   }
 
+  test("TestIllegalDerivation.01") {
+    val input =
+      """
+        |def f(): ##java.lang.Thread & Impure = object ##java.lang.Thread {}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalObjectDerivation](result)
+  }
+
+  test("TestInvalidThis.01") {
+    val input =
+      """
+        |def f(): ##java.lang.Runnable & Impure = 
+        |  object ##java.lang.Runnable {
+        |    def run(): Unit & Impure = ()
+        |  }
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalThisType](result)
+  }
+
+  test("TestInvalidThis.02") {
+    val input =
+      """
+        |def f(): ##java.lang.Runnable & Impure = 
+        |  object ##java.lang.Runnable {
+        |    def run(_this: Int32): Unit & Impure = ()
+        |  }
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalThisType](result)
+  }
+
+  test("TestUnimplementedMethod.01") {
+    val input =
+      """
+        |def f(): ##java.lang.Runnable & Impure = object ##java.lang.Runnable {}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.UnimplementedMethod](result)
+  }
+
+  test("TestExtraMethod.01") {
+    val input =
+      """
+        |def f(): ##java.lang.Runnable & Impure = 
+        |  object ##java.lang.Runnable {
+        |    def run(_this: ##java.lang.Runnable): Unit & Impure = ()
+        |    def anExtraMethod(_this: ##java.lang.Runnable): Unit & Impure = ()
+        |  }
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ExtraMethod](result)
+  }
 }

@@ -30,10 +30,26 @@ pub enum ReifiedType with Eq, Order, ToString {
 }
 
 ///
+/// The Generic IO Effect.
+///
+/// The `IO` effect is the most general effect of any
+/// operation that interacts with the environment.
+///
+pub eff IO
+
+///
+/// The Non-Deterministic Effect.
+///
+/// The `NonDet` effect represents "functions" that behave like relations,
+/// i.e. they have no side-effects, and given the same input their output
+//// there is a fixed set of output.
+///
+pub eff NonDet
+
+///
 /// The identity function.
 ///
 pub def identity(x: a): a = x
-
 
 ///
 /// Returns the function `f` with input arguments swapped.
@@ -136,6 +152,14 @@ pub def bug!(m: String): a =
 /// Asserts that this expression is unreachable. Crashes if not.
 ///
 pub def unreachable!(): a = bug!("Reached unreachable expression.")
+
+///
+/// Casts a pure function to `ef`.
+///
+/// `upcast` is safe to use anywhere.
+///
+pub def upcast(f: a -> b): a -> b & ef =
+    x -> f(x) as & ef
 
 ///
 /// Meta-programming facility to express the time complexity of a function `f`.

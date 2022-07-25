@@ -67,7 +67,7 @@ object PrettyExpression {
         case BinaryOperator.Minus => s"${pretty(exp1)} - ${pretty(exp2)}"
         case BinaryOperator.Times => s"${pretty(exp1)} * ${pretty(exp2)}"
         case BinaryOperator.Divide => s"${pretty(exp1)} / ${pretty(exp2)}"
-        case BinaryOperator.Modulo => s"${pretty(exp1)} % ${pretty(exp2)}"
+        case BinaryOperator.Remainder => s"${pretty(exp1)} % ${pretty(exp2)}"
         case BinaryOperator.Exponentiate => s"${pretty(exp1)} ** ${pretty(exp2)}"
         case BinaryOperator.Less => s"${pretty(exp1)} < ${pretty(exp2)}"
         case BinaryOperator.LessEqual => s"${pretty(exp1)} <= ${pretty(exp2)}"

@@ -2942,31 +2942,60 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool & Impure =
+    def shuffle01(): Bool \ NonDet =
         let l1: List[Int32] = Nil;
         let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
 
         DelayList.length(l2) == 0 and DelayList.toSet(l2) == Set#{}
 
     @test
-    def shuffle02(): Bool & Impure =
+    def shuffle02(): Bool \ NonDet =
         let l1 = 1 :: Nil;
         let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
 
         DelayList.length(l2) == 1 and DelayList.toSet(l2) == Set#{1}
 
     @test
-    def shuffle03(): Bool & Impure =
+    def shuffle03(): Bool \ NonDet =
         let l1 = 1 :: 2 :: 3 :: Nil;
         let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
 
         DelayList.length(l2) == 3 and DelayList.toSet(l2) == Set#{1, 2, 3}
 
     @test
-    def shuffle04(): Bool & Impure =
+    def shuffle04(): Bool \ NonDet =
         let l1 = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
         let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
 
         DelayList.length(l2) == 10 and DelayList.toSet(l2) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toString01(): Bool =
+        ToString.toString(List.toDelayList(1 :: Nil)) == "DelayList(1)"
+
+    @test
+    def toString02(): Bool =
+        ToString.toString(List.toDelayList(1 :: 2 :: Nil)) == "DelayList(1, 2)"
+
+    @test
+    def toString03(): Bool =
+        ToString.toString(List.toDelayList(93 :: 3 :: 4 :: Nil)) == "DelayList(93, 3, 4)"
+
+    @test
+    def toString04(): Bool =
+        ToString.toString(List.toDelayList('a' :: 'b' :: 'c' :: Nil)) == "DelayList(a, b, c)"
+
+    @test
+    def toString05(): Bool =
+        ToString.toString(List.toDelayList(true :: false :: true :: true :: Nil)) == "DelayList(true, false, true, true)"
+
+    @test
+    def toString06(): Bool =
+        ToString.toString(List.toDelayList(List.toDelayList(1 :: 2 :: Nil) :: List.toDelayList(2 :: 3 :: Nil) :: List.toDelayList(4 :: 7 :: Nil) :: Nil)) == "DelayList(DelayList(1, 2), DelayList(2, 3), DelayList(4, 7))"
 
 }

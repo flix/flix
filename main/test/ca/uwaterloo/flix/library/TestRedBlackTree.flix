@@ -91,13 +91,13 @@ namespace TestRedBlackTree {
         checkBinarySearchTreeInvariant(tree)
 
     @test
-    def testBinarySearchTreeInvariant10(): Bool & Impure = checkBinarySearchTreeInvariant(random(10))
+    def testBinarySearchTreeInvariant10(): Bool \ NonDet = checkBinarySearchTreeInvariant(random(10))
 
     @test
-    def testBinarySearchTreeInvariant11(): Bool & Impure = checkBinarySearchTreeInvariant(random(100))
+    def testBinarySearchTreeInvariant11(): Bool \ NonDet = checkBinarySearchTreeInvariant(random(100))
 
     @test
-    def testBinarySearchTreeInvariant12(): Bool & Impure = checkBinarySearchTreeInvariant(random(1000))
+    def testBinarySearchTreeInvariant12(): Bool \ NonDet = checkBinarySearchTreeInvariant(random(1000))
 
     @test
     def testRedParentInvariant01(): Bool =
@@ -139,13 +139,13 @@ namespace TestRedBlackTree {
         checkRedParentInvariant(tree)
 
     @test
-    def testRedParentInvariant10(): Bool & Impure = checkRedParentInvariant(random(10))
+    def testRedParentInvariant10(): Bool \ NonDet = checkRedParentInvariant(random(10))
 
     @test
-    def testRedParentInvariant11(): Bool & Impure = checkRedParentInvariant(random(100))
+    def testRedParentInvariant11(): Bool \ NonDet = checkRedParentInvariant(random(100))
 
     @test
-    def testRedParentInvariant12(): Bool & Impure = checkRedParentInvariant(random(1000))
+    def testRedParentInvariant12(): Bool \ NonDet = checkRedParentInvariant(random(1000))
 
     ///
     /// Returns `true` if and only if the binary search tree invariant holds for `tree`.
@@ -192,7 +192,7 @@ namespace TestRedBlackTree {
     ///
     /// Returns a tree with `n` nodes `x -> ()` where `x` is a random integer.
     ///
-    def random(n: Int32): RedBlackTree[Int32, Unit] & Impure = {
+    def random(n: Int32): RedBlackTree[Int32, Unit] \ NonDet = {
         let seed = 42i64;
         let r = Random.newWithSeed(seed);
         List.foldLeft((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(),
@@ -821,6 +821,36 @@ namespace TestRedBlackTree {
         MutDeque.pushFront((1, 'a'), d2);
 
         d1 `MutDeque.sameElements` d2
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // iterator                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def iterator01(): Bool = region r {
+        RedBlackTree.empty(): RedBlackTree[Int32, Int32] |> RedBlackTree.iterator(r) |> Iterator.toList == Nil
+    }
+
+    @test
+    def iterator02(): Bool = region r {
+        let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b')
+                                     |> RedBlackTree.insert(3, 'c') |> RedBlackTree.insert(4, 'd');
+        RedBlackTree.iterator(r, t) |> Iterator.toList == (1, 'a') :: (2, 'b') :: (3, 'c') :: (4, 'd') :: Nil
+    }
+
+    @test
+    def iterator03(): Bool = region r {
+        let t = RedBlackTree.empty() |> RedBlackTree.insert(4, 'd') |> RedBlackTree.insert(3, 'c')
+                                     |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(1, 'a');
+        RedBlackTree.iterator(r, t) |> Iterator.toList == (1, 'a') :: (2, 'b') :: (3, 'c') :: (4, 'd') :: Nil
+    }
+
+    @test
+    def iterator04(): Bool = region r {
+        let l = List.range(1, 100);
+        let t = List.foldLeft((ac, i) -> RedBlackTree.insert(i, i+100, ac), RedBlackTree.empty(), l);
+        RedBlackTree.iterator(r, t) |> Iterator.toList == List.map(i -> (i, i+100), List.range(1, 100))
     }
 
 }

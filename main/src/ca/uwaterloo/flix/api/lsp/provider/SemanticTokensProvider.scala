@@ -475,8 +475,10 @@ object SemanticTokensProvider {
     case Expression.PutStaticField(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewObject(_, _, _, _, _) =>
-      Iterator.empty
+    case Expression.NewObject(_, _, _, _, _, methods, _) =>
+      methods.foldLeft(Iterator.empty[SemanticToken]) {
+        case (acc, m) => acc ++ visitJvmMethod(m)
+      }
 
     case Expression.NewChannel(exp, _, _, _, _) => visitExp(exp)
 
@@ -783,6 +785,14 @@ object SemanticTokensProvider {
     case Body.Loop(varSyms, exp, loc) =>
       val ts = varSyms.map(varSym => SemanticToken(SemanticTokenType.Variable, Nil, varSym.loc))
       visitExp(exp) ++ ts
+  }
+
+  /**
+    * Returns all semantic tokens in the given JvmMethod `method`
+    */
+  private def visitJvmMethod(method: TypedAst.JvmMethod): Iterator[SemanticToken] = method match {
+    case TypedAst.JvmMethod(_, fparams, exp, tpe, eff, pur, _) =>
+      visitFormalParams(fparams) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff) ++ visitType(pur)
   }
 
   /**

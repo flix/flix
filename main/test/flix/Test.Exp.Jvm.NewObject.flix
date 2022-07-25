@@ -8,7 +8,12 @@ namespace Test/Exp/Jvm/NewObject {
 
   def implementIterable(): ##java.lang.Iterable & Impure =
     object ##java.lang.Iterable { 
-      def iterator(): ##java.util.Iterator & Pure = ()
+      def iterator(_this: ##java.lang.Iterable): ##java.util.Iterator & Impure = null as ##java.util.Iterator
+    }
+
+  def implementComparable(): ##java.lang.Comparable & Impure =
+    object ##java.lang.Comparable {
+      def compareTo(_this: ##java.lang.Comparable, _that: ##java.lang.Object): Int32 & Pure = 0
     }
 
   @test
@@ -18,21 +23,21 @@ namespace Test/Exp/Jvm/NewObject {
     toString(anon) |> String.startsWith(prefix = "Anon")
 
   @test
-  def implementInterface02(): Bool & Impure =
+  def testImplementInterface02(): Bool & Impure =
     import java.lang.Object.hashCode(): Int32 & Pure;
     let anon = implementSerializable() as ##java.lang.Object;
     let anon2 = implementSerializable() as ##java.lang.Object;
     hashCode(anon) != hashCode(anon2)
 
   @test
-  def implementInterface03(): Bool & Impure =
+  def testImplementInterface03(): Bool & Impure =
     import java.lang.Object.equals(##java.lang.Object): Bool & Pure;
     let anon = implementSerializable() as ##java.lang.Object;
     let anon2 = implementSerializable() as ##java.lang.Object;
     not equals(anon, anon2)
 
   @test
-  def implementInterface04(): Bool & Impure =
+  def testImplementInterface04(): Bool & Impure =
     import java.lang.Object.getClass(): ##java.lang.Class & Pure;
     import java.lang.Object.equals(##java.lang.Object): Bool & Pure;
     let anon = implementSerializable() as ##java.lang.Object;
@@ -40,7 +45,7 @@ namespace Test/Exp/Jvm/NewObject {
     equals(getClass(anon) as ##java.lang.Object, getClass(anon2) as ##java.lang.Object)
 
   @test
-  def implementInterface05(): Bool & Impure =
+  def testImplementInterface05(): Bool & Impure =
     import java.lang.Object.getClass(): ##java.lang.Class & Pure;
     import java.lang.Object.equals(##java.lang.Object): Bool & Pure;
     let anon = implementSerializable() as ##java.lang.Object;
@@ -48,8 +53,21 @@ namespace Test/Exp/Jvm/NewObject {
     not equals(getClass(anon) as ##java.lang.Object, getClass(anon2) as ##java.lang.Object)
 
   @test
-  def implementInterface06(): Bool & Impure =
+  def testImplementInterface06(): Bool & Impure =
     import java.lang.Object.toString(): String & Pure;
     let anon = implementIterable() as ##java.lang.Object;
     toString(anon) |> String.startsWith(prefix = "Anon")
+
+  @test
+  def testImplementInterface07(): Bool & Impure =
+    import java.lang.Iterable.iterator(): ##java.util.Iterator & Impure;
+    let anon = implementIterable();
+    let _it = iterator(anon);
+    true
+  
+  @test
+  def testImplementInterface08(): Bool & Impure =
+    import java.lang.Comparable.compareTo(##java.lang.Object): Int32 & Pure;
+    let anon = implementComparable();
+    compareTo(anon, anon as ##java.lang.Object) == 0
 }

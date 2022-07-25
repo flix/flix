@@ -29,7 +29,6 @@ object NamedAst {
                   effects: Map[Name.NName, Map[String, NamedAst.Effect]],
                   ops: Map[Name.NName, Map[String, NamedAst.Op]],
                   entryPoint: Option[Symbol.DefnSym],
-                  reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
   // TODO change laws to NamedAst.Law
@@ -201,7 +200,7 @@ object NamedAst {
 
     case class PutStaticField(className: String, fieldName: String, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class NewObject(className: String, methods: List[JvmMethod], loc: SourceLocation) extends NamedAst.Expression
+    case class NewObject(name: String, className: String, methods: List[JvmMethod], loc: SourceLocation) extends NamedAst.Expression
 
     case class NewChannel(exp: NamedAst.Expression, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Expression
 
@@ -382,6 +381,8 @@ object NamedAst {
     case class Read(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Write(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
+    case class Empty(loc: SourceLocation) extends NamedAst.Type
 
     case class Ascribe(tpe: NamedAst.Type, kind: Kind, loc: SourceLocation) extends NamedAst.Type
 

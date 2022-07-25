@@ -67,6 +67,7 @@ instance Foldable[Nel] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldRightWithCont(f, s, l)
+    override pub def iterator(r: Region[r], l: Nel[a]): Iterator[a, r] \ Write(r) = Nel.iterator(r, l)
 }
 
 instance UnorderedFoldable[Nel] {
@@ -286,7 +287,7 @@ namespace Nel {
         };
         match f {
             case Nel(f1, Nil) => map(f1, l)
-            case Nel(f1, rs)  => loop(f1, rs, ks -> ks as & ef)
+            case Nel(f1, rs)  => loop(f1, rs, upcast(identity))
         }
 
     ///
@@ -697,9 +698,8 @@ namespace Nel {
     ///
     /// Optionally returns the Nel `l` shuffled using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random.Random, l: Nel[a]): Option[Nel[a]] & Impure = region r {
+    pub def shuffle(rnd: Random.Random, l: Nel[a]): Option[Nel[a]] \ NonDet = region r {
         toArray(r, l) !> Array.shuffle(rnd) |> Array.toNel
     }
 
 }
-

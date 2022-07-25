@@ -88,7 +88,7 @@ object Resolver {
         flatMapN(classesVal, sequence(instancesVal), defsVal, sequence(enumsVal), sequence(effectsVal)) {
           case (classes, instances, defs, enums, effects) =>
             mapN(checkSuperClassDag(classes)) {
-              _ => ResolvedAst.Root(classes, combine(instances), defs, enums.toMap, effects.toMap, taenv, taOrder, root.entryPoint, root.reachable, root.sources)
+              _ => ResolvedAst.Root(classes, combine(instances), defs, enums.toMap, effects.toMap, taenv, taOrder, root.entryPoint, root.sources)
             }
         }
     }
@@ -1062,11 +1062,11 @@ object Resolver {
             case (field, e) => ResolvedAst.Expression.PutStaticField(field, e, loc)
           }
 
-        case NamedAst.Expression.NewObject(className, methods, loc) =>
+        case NamedAst.Expression.NewObject(name, className, methods, loc) =>
           val clazz = lookupJvmClass(className, loc)
           val fparams = traverse(methods)(visitJvmMethod(_, taenv, ns0, root))
           mapN(clazz, fparams) {
-            case (c, f) => ResolvedAst.Expression.NewObject(c, f, loc)
+            case (c, f) => ResolvedAst.Expression.NewObject(name, c, f, loc)
           }
 
         case NamedAst.Expression.NewChannel(exp, tpe, loc) =>
@@ -1889,6 +1889,8 @@ object Resolver {
       mapN(semiResolveType(tpe, ns0, root)) {
         case t => Type.ReadWrite(t, loc)
       }
+
+    case NamedAst.Type.Empty(loc) => Type.Cst(TypeConstructor.Empty, loc).toSuccess
 
     case NamedAst.Type.Ascribe(tpe, kind, loc) =>
       mapN(semiResolveType(tpe, ns0, root)) {

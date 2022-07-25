@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2022 Paul Butcher
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.api
+package ca.uwaterloo.flix.language.dbg
 
-object Version {
+import ca.uwaterloo.flix.language.ast.TypedAst
+
+object FormatJvmMethod {
+
   /**
-    * Represents the current version of Flix.
+    * JvmMethod.
     */
-  val CurrentVersion: Version = Version(major = 0, minor = 30, revision = 0)
-}
+  def format(method: TypedAst.JvmMethod): String = method match {
+    case TypedAst.JvmMethod(ident, fparams, exp, _, _, _, _) =>
+      s"JvmMethod($ident, ${fparams.map(FormatFormalParam.format).mkString("(", ", ", ")")}, ${FormatExpression.format(exp)})"
+  }
 
-/**
-  * A case class to represent versions.
-  */
-case class Version(major: Int, minor: Int, revision: Int) {
-  override val toString: String = s"v$major.$minor.$revision"
 }
