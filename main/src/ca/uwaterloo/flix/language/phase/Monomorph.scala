@@ -619,6 +619,9 @@ object Monomorph {
       case Expression.FixpointProject(_, _, _, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
+      case Expression.Par(_, loc) =>
+        throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
+
       case Expression.Reify(t, _, _, _, loc) =>
         // Magic!
         val isTrue = subst0(t) match {

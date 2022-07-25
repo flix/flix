@@ -345,6 +345,10 @@ object Simplifier {
 
       case TypedAst.Expression.ReifyEff(_, _, _, _, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
+
+      case TypedAst.Expression.Par(_, _) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.")
+
     }
 
     /**

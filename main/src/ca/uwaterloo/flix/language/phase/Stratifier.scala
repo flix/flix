@@ -732,6 +732,9 @@ object Stratifier {
     case Expression.Spawn(exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
+    case Expression.Par(exp, _) =>
+      labelledGraphOfExp(exp)
+
     case Expression.Lazy(exp, _, _) =>
       labelledGraphOfExp(exp)
 
