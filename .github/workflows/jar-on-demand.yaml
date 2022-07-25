@@ -8,8 +8,6 @@ jobs:
   handle-request:
     if: github.event.issue.pull_request && contains(github.event.comment.body, '!!!jar')
     runs-on: ubuntu-latest
-    env:
-      GRADLE_OPTS: "-Xms128m -Xmx4g"
     steps:
       - name: Acknowledge request
         uses: actions/github-script@v3
