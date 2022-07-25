@@ -2,6 +2,9 @@ name: Community Build
 
 on: [pull_request]
 
+permissions:
+  contents: read
+
 # Cancel previous runs if the PR is updated
 concurrency:
   cancel-in-progress: true
@@ -31,7 +34,7 @@ jobs:
         timeout-minutes: 10
         run: |
           # Sanity check: Make sure the project build directory does not exist.
-          test ! -e ${{ env.PROJ_DIR }}
+          test ! -e $PROJ_DIR
           
           # Build each project in a fresh directory.
           for project in ${{ env.PROJECTS }}; do
