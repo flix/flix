@@ -18,7 +18,7 @@ namespace Test/Exp/Upcast {
                 (x -> x as & ef);
         let _ = f(1);
         ()
-
+/*
     @test
     def testUpcast03(): Unit & ef = // this should fail
         let f =
@@ -27,6 +27,15 @@ namespace Test/Exp/Upcast {
             else
                 (_ -> "x" as & ef);
         let _ = f(1);
+        ()
+*/
+    @test
+    def testUpcast04(): Unit =
+        let _ =
+            if (true)
+                upcast _ -> ()
+            else
+                _ -> println(1);
         ()
 
 }
