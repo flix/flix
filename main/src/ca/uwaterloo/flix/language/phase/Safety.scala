@@ -6,14 +6,13 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.annotation.tailrec
-import scala.collection.immutable.SortedSet
 
 /**
   * Performs safety and well-formedness checks on:
@@ -180,32 +179,15 @@ object Safety {
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Upcast(exp, tpe, pur, eff, loc) => {
-
-      def isSoundUpcast(actual: Expression, expected: Expression): Boolean = {
-        // check types are equal
-        // check purity is ok
-        // pure -> ef -> impure
-        // ef -> ef and ef2
-        val types = actual.tpe == expected.tpe
-        val purities = (actual.pur, expected.pur) match {
-          case (Type.Pure, _) => true
-          case (_, Type.Impure) => true
-          case _ => false
-        }
-        types && purities
-      }
-
+    case Expression.Upcast(exp, tpe, pur, eff, loc) =>
       val errors =
         if (isSoundUpcast(exp, exp0)) {
           List.empty
         }
         else {
-          List(UnsafeUpcast(exp.tpe, exp.pur, exp.eff, tpe, pur, eff, loc))
+          List(UnsafeUpcast(exp, exp0, loc))
         }
-
       visitExp(exp) ::: errors
-    }
 
     case Expression.Without(exp, _, _, _, _, _) =>
       visitExp(exp)
@@ -302,72 +284,37 @@ object Safety {
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
   }
-  /*
-    def upcastDebug(exp: Expression.Upcast): Unit = exp match {
-      case Expression.Upcast(exp, tpe, pur, eff, loc) =>
-        println(s"exp.tpe     : ${exp.tpe}")
-        println(s"    tpe     : $tpe")
-        println(s"exp.tpe.kind: ${exp.tpe.kind}")
-        println(s"    tpe.kind: ${tpe.kind}")
-        println(s"exp.tpe type: ${
-          exp.tpe match {
-            case Type.KindedVar(sym, loc) => "KindedVar"
-            case Type.UnkindedVar(sym, loc) => "UnkindedVar"
-            case Type.Ascribe(tpe, kind, loc) => "Ascribe"
-            case Type.Cst(tc, loc) => "Cst"
-            case Type.Apply(tpe1, tpe2, loc) => "Apply"
-            case Type.Alias(cst, args, tpe, loc) => "Alias"
-            case Type.UnkindedArrow(purAndEff, arity, loc) => "UnkindedArrow"
-            case Type.ReadWrite(tpe, loc) => "ReadWrite"
-          }
-        }")
 
-        println(s"    tpe type: ${
-          tpe match {
-            case Type.KindedVar(sym, loc) => "KindedVar"
-            case Type.UnkindedVar(sym, loc) => "UnkindedVar"
-            case Type.Ascribe(tpe, kind, loc) => "Ascribe"
-            case Type.Cst(tc, loc) => "Cst"
-            case Type.Apply(tpe1, tpe2, loc) => "Apply"
-            case Type.Alias(cst, args, tpe, loc) => "Alias"
-            case Type.UnkindedArrow(purAndEff, arity, loc) => "UnkindedArrow"
-            case Type.ReadWrite(tpe, loc) => "ReadWrite"
-          }
-        }")
-        println(s"exp.pur     : ${exp.pur}")
-        println(s"    pur     : $pur")
-        println(s"exp.pur.kind: ${exp.pur.kind}")
-        println(s"    pur.kind: ${pur.kind}")
-        println(s"exp.pur type: ${
-          exp.pur match {
-            case Type.KindedVar(sym, loc) => "KindedVar"
-            case Type.UnkindedVar(sym, loc) => "UnkindedVar"
-            case Type.Ascribe(tpe, kind, loc) => "Ascribe"
-            case Type.Cst(tc, loc) => "Cst"
-            case Type.Apply(tpe1, tpe2, loc) => "Apply"
-            case Type.Alias(cst, args, tpe, loc) => "Alias"
-            case Type.UnkindedArrow(purAndEff, arity, loc) => "UnkindedArrow"
-            case Type.ReadWrite(tpe, loc) => "ReadWrite"
-          }
-        }")
-        println(s"    pur type: ${
-          pur match {
-            case Type.KindedVar(sym, loc) => "KindedVar"
-            case Type.UnkindedVar(sym, loc) => "UnkindedVar"
-            case Type.Ascribe(tpe, kind, loc) => "Ascribe"
-            case Type.Cst(tc, loc) => "Cst"
-            case Type.Apply(tpe1, tpe2, loc) => "Apply"
-            case Type.Alias(cst, args, tpe, loc) => "Alias"
-            case Type.UnkindedArrow(purAndEff, arity, loc) => "UnkindedArrow"
-            case Type.ReadWrite(tpe, loc) => "ReadWrite"
-          }
-        }")
-        println()
-        println()
-        println()
-        println()
+  /**
+    * Checks that an upcast is sound.
+    *
+    * An upcast is considered sound if:
+    *
+    * (a) the expression has the exact same flix type
+    *
+    * (b) the actual expression is a java subtype of the expected java type
+    *
+    * AND
+    *
+    * the purity is being cast from `pure` -> `ef` -> `impure`.
+    *
+    * @param actual   the expression being upcast.
+    * @param expected the upcast expression itself.
+    */
+  private def isSoundUpcast(actual: Expression, expected: Expression): Boolean = {
+    // check flix types are equal
+    // or java type is subtype of upcast java type
+    // check purity is ok
+    // pure -> ef -> impure
+    // ef -> ef and ef2
+    val types = actual.tpe == expected.tpe
+    val purities = (actual.pur, expected.pur) match {
+      case (Type.Pure, _) => true
+      case (_, Type.Impure) => true
+      case _ => false
     }
-  */
+    types && purities
+  }
 
   /**
     * Performs safety and well-formedness checks on the given constraint `c0`.

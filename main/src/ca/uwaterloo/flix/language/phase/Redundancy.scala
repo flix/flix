@@ -550,10 +550,10 @@ object Redundancy {
       }
 
     case Expression.Upcast(exp, tpe, pur, eff, loc) =>
-      // if (exp.tpe == tpe)
-      //  visitExp(exp, env0, rc) + RedundantUpcast(loc)
-      // else
-      visitExp(exp, env0, rc)
+      if (exp.tpe == tpe && exp.pur == pur && exp.eff == eff)
+        visitExp(exp, env0, rc) + RedundantUpcast(loc)
+      else
+        visitExp(exp, env0, rc)
 
     case Expression.Without(exp, _, _, _, _, _) =>
       visitExp(exp, env0, rc)
