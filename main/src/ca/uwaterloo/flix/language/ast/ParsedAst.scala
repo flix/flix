@@ -660,11 +660,11 @@ object ParsedAst {
       * NewObject (create an anonymous object which implements a Java interface or extends a Java class).
       *
       * @param sp1     the position of the first character in the expression.
-      * @param fqn     the fully-qualified name of the Java interface or class.
+      * @param tpe     the class or interface (specified as a JVM type or type alias).
       * @param methods implementations of the methods within the Java interface or class
       * @param sp2     the position of the last character in the expression.
       */
-    case class NewObject(sp1: SourcePosition, fqn: Seq[String], methods: Seq[JvmMethod], sp2: SourcePosition) extends ParsedAst.Expression
+    case class NewObject(sp1: SourcePosition, tpe: ParsedAst.Type, methods: Seq[JvmMethod], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Static Region Expression.
@@ -943,6 +943,15 @@ object ParsedAst {
       * @param sp2       the position of the last character in the expression.
       */
     case class Cast(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], purAndEff: ParsedAst.PurityAndEffect, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Upcast Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Upcast(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Without Expression.

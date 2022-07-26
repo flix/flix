@@ -482,6 +482,33 @@ object RedundancyError {
   }
 
   /**
+    * An error raised to indicate that an upcast is redundant.
+    *
+    * @param loc the source location of the upcast.
+    */
+  case class RedundantUpcast(loc: SourceLocation) extends RedundancyError {
+
+    def summary: String = "Redundant upcast. The expression already has the expected type and effect."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Redundant upcast. The expression already has the expected type and effect.
+         |
+         |${code(loc, "redundant upcast.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""If you try to upcast an expression that already has the same type, purity
+         |and effect as expected the upcast is redundant.
+         |""".stripMargin
+    })
+
+  }
+
+  /**
     * An error raised to indicate a redundant type constraint.
     *
     * @param entailingTconstr the tconstr that entails the other.

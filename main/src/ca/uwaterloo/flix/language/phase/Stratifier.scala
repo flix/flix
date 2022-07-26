@@ -289,6 +289,11 @@ object Stratifier {
         case e => Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
       }
 
+    case Expression.Upcast(exp, tpe, pur, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Upcast(e, tpe, pur, eff, loc)
+      }
+
     case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Without(e, sym, tpe, pur, eff, loc)
@@ -468,7 +473,7 @@ object Stratifier {
   }
 
   private def visitJvmMethod(method: JvmMethod)(implicit g: LabelledGraph, flix: Flix): Validation[JvmMethod, StratificationError] = method match {
-    case JvmMethod(ident, fparams, exp, tpe, pur, eff, loc) => 
+    case JvmMethod(ident, fparams, exp, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => JvmMethod(ident, fparams, e, tpe, pur, eff, loc)
       }
@@ -646,6 +651,9 @@ object Stratifier {
       labelledGraphOfExp(exp)
 
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
+      labelledGraphOfExp(exp)
+
+    case Expression.Upcast(exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.Without(exp, _, _, _, _, _) =>

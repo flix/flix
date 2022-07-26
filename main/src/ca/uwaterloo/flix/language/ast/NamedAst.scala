@@ -176,6 +176,8 @@ object NamedAst {
 
     case class Cast(exp: NamedAst.Expression, declaredType: Option[NamedAst.Type], declaredEff: NamedAst.PurityAndEffect, loc: SourceLocation) extends NamedAst.Expression
 
+    case class Upcast(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
     case class Without(exp: NamedAst.Expression, eff: Name.QName, loc: SourceLocation) extends NamedAst.Expression
 
     case class TryCatch(exp: NamedAst.Expression, rules: List[NamedAst.CatchRule], loc: SourceLocation) extends NamedAst.Expression
@@ -200,7 +202,7 @@ object NamedAst {
 
     case class PutStaticField(className: String, fieldName: String, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class NewObject(name: String, className: String, methods: List[JvmMethod], loc: SourceLocation) extends NamedAst.Expression
+    case class NewObject(name: String, tpe: NamedAst.Type, methods: List[JvmMethod], loc: SourceLocation) extends NamedAst.Expression
 
     case class NewChannel(exp: NamedAst.Expression, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Expression
 

@@ -1030,9 +1030,11 @@ object Weeder {
           }
       }
 
-    case ParsedAst.Expression.NewObject(sp1, className, methods, sp2) =>
+    case ParsedAst.Expression.NewObject(sp1, tpe, methods, sp2) =>
       mapN(traverse(methods)(visitJvmMethod(_, senv))) {
-        case m => WeededAst.Expression.NewObject(className.mkString("."), m, mkSL(sp1, sp2))
+        case ms =>
+          val t = visitType(tpe)
+          WeededAst.Expression.NewObject(t, ms, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.Static(sp1, sp2) =>
@@ -1395,6 +1397,11 @@ object Weeder {
       val f = visitPurityAndEffect(declaredEff)
       mapN(visitExp(exp, senv)) {
         case e => WeededAst.Expression.Cast(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
+      }
+
+    case ParsedAst.Expression.Upcast(sp1, exp, sp2) =>
+      mapN(visitExp(exp, senv)) {
+        case e => WeededAst.Expression.Upcast(e, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.Without(exp, effs, sp2) =>
@@ -2942,6 +2949,7 @@ object Weeder {
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Cast(e1, _, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.Upcast(sp1, _, _) => sp1
     case ParsedAst.Expression.Without(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Do(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Resume(sp1, _, _) => sp1

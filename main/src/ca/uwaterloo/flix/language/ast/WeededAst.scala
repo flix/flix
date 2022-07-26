@@ -169,6 +169,8 @@ object WeededAst {
 
     case class Cast(exp: WeededAst.Expression, declaredType: Option[WeededAst.Type], declaredEff: WeededAst.PurityAndEffect, loc: SourceLocation) extends WeededAst.Expression
 
+    case class Upcast(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class Without(exp: WeededAst.Expression, eff: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
     case class TryCatch(exp: WeededAst.Expression, rules: List[WeededAst.CatchRule], loc: SourceLocation) extends WeededAst.Expression
@@ -193,7 +195,7 @@ object WeededAst {
 
     case class PutStaticField(className: String, fieldName: String, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class NewObject(className: String, methods: List[JvmMethod], loc: SourceLocation) extends WeededAst.Expression
+    case class NewObject(tpe: WeededAst.Type, methods: List[JvmMethod], loc: SourceLocation) extends WeededAst.Expression
 
     case class NewChannel(exp: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
 

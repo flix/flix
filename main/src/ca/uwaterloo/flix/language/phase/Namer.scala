@@ -873,6 +873,11 @@ object Namer {
         case (e, t, f) => NamedAst.Expression.Cast(e, t, f, loc)
       }
 
+    case WeededAst.Expression.Upcast(exp, loc) =>
+      mapN(visitExp(exp, env0, uenv0, tenv0)) {
+        case e => NamedAst.Expression.Upcast(e, loc)
+      }
+
     case WeededAst.Expression.Without(exp, eff, loc) =>
       val expVal = visitExp(exp, env0, uenv0, tenv0)
       val f = getClassOrEffect(eff, uenv0)
@@ -972,10 +977,11 @@ object Namer {
         case e => NamedAst.Expression.PutStaticField(className, fieldName, e, loc)
       }
 
-    case WeededAst.Expression.NewObject(className, methods, loc) =>
-      mapN(traverse(methods)(visitJvmMethod(_, env0, uenv0, tenv0))) { case m => 
+    case WeededAst.Expression.NewObject(tpe, methods, loc) =>
+      mapN(visitType(tpe, uenv0, tenv0), traverse(methods)(visitJvmMethod(_, env0, uenv0, tenv0))) {
+        case (tpe, ms) =>
           val name = s"Anon$$${flix.genSym.freshId()}"
-          NamedAst.Expression.NewObject(name, className, m, loc)
+          NamedAst.Expression.NewObject(name, tpe, ms, loc)
       }
 
     case WeededAst.Expression.NewChannel(exp, tpe, loc) =>
@@ -1507,6 +1513,7 @@ object Namer {
     case WeededAst.Expression.Assign(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Ascribe(exp, _, _, _) => freeVars(exp)
     case WeededAst.Expression.Cast(exp, _, _, _) => freeVars(exp)
+    case WeededAst.Expression.Upcast(exp, _) => freeVars(exp)
     case WeededAst.Expression.Without(exp, _, _) => freeVars(exp)
     case WeededAst.Expression.Do(_, exps, _) => exps.flatMap(freeVars)
     case WeededAst.Expression.Resume(exp, _) => freeVars(exp)

@@ -462,6 +462,9 @@ object Lowering {
       val t = visitType(tpe)
       Expression.Cast(e, dt, declaredPur, declaredEff, t, pur, eff, loc)
 
+    case Expression.Upcast(exp, tpe, pur, eff, loc) =>
+      throw InternalCompilerException("Not implemented")
+
     case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
@@ -1665,6 +1668,10 @@ object Lowering {
       Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
 
     case Expression.FixpointConstraintSet(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
+
+    case Expression.Upcast(_, _, _, _, _) =>
+      throw InternalCompilerException("Not Implemented")
+
   }
 
   /**
