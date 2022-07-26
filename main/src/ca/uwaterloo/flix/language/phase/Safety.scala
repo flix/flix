@@ -489,7 +489,7 @@ object Safety {
   /**
     * Represents the signature of a method, used to compare Java signatures against Flix signatures.
     */
-  case class MethodSignature(name: String, paramTypes: List[Type], retTpe: Type)
+  private case class MethodSignature(name: String, paramTypes: List[Type], retTpe: Type)
 
   /**
     * Convert a list of Flix methods to a set of MethodSignatures. Returns a map to allow subsequent reverse lookup.
@@ -504,27 +504,21 @@ object Safety {
     }
   }
 
-  /**
-    * Convert a `java.lang.reflect.Method` to a MethodSignature.
-    */
-  private def getJavaMethodSignature(method: java.lang.reflect.Method): MethodSignature = {
-    MethodSignature(method.getName, method.getParameterTypes.toList.map(Type.getFlixType), Type.getFlixType(method.getReturnType))
+  private def getJavaMethodSignatures(clazz: java.lang.Class[_]): Map[MethodSignature, java.lang.reflect.Method] = {
+    val methods = clazz.getMethods.toList.filterNot(m => java.lang.reflect.Modifier.isStatic(m.getModifiers))
+    methods.foldLeft(Map.empty[MethodSignature, java.lang.reflect.Method]) {
+      case (acc, m) => 
+        val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.getFlixType), Type.getFlixType(m.getReturnType))
+        acc + (signature -> m)
+    }
   }
 
-  /**
-    * Given a class or interface, returns a pair of the methods that can be implemented and that must be implemented.
-    *
-    * * A (non-static) method can be implemented if it exists in the class.
-    * * A (non-static) method must be implemented if it is abstract.
-    */
-  private def getJavaMethods(clazz: java.lang.Class[_]): (Set[MethodSignature], Set[MethodSignature]) = {
-    val methods = clazz.getMethods.toList.filterNot(m => java.lang.reflect.Modifier.isStatic(m.getModifiers))
-    val mustImplement = if (clazz.isInterface) {
-      methods.filterNot(_.isDefault())
+  private def isAbstract(method: java.lang.reflect.Method, clazz: java.lang.Class[_]) = {
+    if (clazz.isInterface) {
+      !method.isDefault()
     } else {
-      methods.filter(m => java.lang.reflect.Modifier.isAbstract(m.getModifiers))
+      java.lang.reflect.Modifier.isAbstract(method.getModifiers)
     }
-    (methods.map(getJavaMethodSignature).toSet, mustImplement.map(getJavaMethodSignature).toSet)
   }
 
   /**
@@ -535,37 +529,35 @@ object Safety {
     // Check that the first argument looks like "this"
     //
     val thisErrors = methods.flatMap {
-      case JvmMethod(ident, fparams, _, _, _, _, methodLoc) => fparams match {
-        case Nil =>
-          // Case 1: Missing `this` argument.
-          Some(MissingThis(tpe, ident.name, methodLoc))
-        case fparam :: _ =>
-          // Case 2: Check that the declared type of `this` matches the type of the class or interface.
-          val thisType = Type.eraseAliases(fparam.tpe)
-          if (thisType != tpe) {
-            Some(IllegalThisType(tpe, fparams.head.tpe, ident.name, methodLoc))
-          } else {
-            None
-          }
-      }
+      case JvmMethod(ident, fparams, _, _, _, _, methodLoc) =>
+        // Check that the declared type of `this` matches the type of the class or interface.
+        val fparam = fparams.head
+        val thisType = Type.eraseAliases(fparam.tpe)
+        thisType match {
+          case `tpe` => None
+          case Type.Unit => Some(MissingThis(clazz, ident.name, methodLoc))
+          case _ => Some(IllegalThisType(clazz, fparam.tpe, ident.name, methodLoc))
+        }
     }
 
     val flixMethods = getFlixMethodSignatures(methods)
     val implemented = flixMethods.keySet
 
-    val (canImplement, mustImplement) = getJavaMethods(clazz)
+    val javaMethods = getJavaMethodSignatures(clazz)
+    val canImplement = javaMethods.keySet
+    val mustImplement = canImplement.filter(m => isAbstract(javaMethods(m), clazz))
 
     //
     // Check that there are no unimplemented methods.
     //
     val unimplemented = mustImplement diff implemented
-    val unimplementedErrors = unimplemented.map(UnimplementedMethod(tpe, _, loc))
+    val unimplementedErrors = unimplemented.map(m => UnimplementedMethod(clazz, javaMethods(m), loc))
 
     //
     // Check that there are no methods that aren't in the interface
     //
     val extra = implemented diff canImplement
-    val extraErrors = extra.map(m => ExtraMethod(tpe, m, flixMethods(m).loc))
+    val extraErrors = extra.map(m => ExtraMethod(clazz, m.name, flixMethods(m).loc))
 
     thisErrors ++ unimplementedErrors ++ extraErrors
   }

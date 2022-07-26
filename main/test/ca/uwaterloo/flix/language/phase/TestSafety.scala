@@ -190,7 +190,7 @@ class TestSafety extends FunSuite with TestUtils {
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalThisType](result)
+    expectError[SafetyError.MissingThis](result)
   }
 
   test("TestInvalidThis.02") {
