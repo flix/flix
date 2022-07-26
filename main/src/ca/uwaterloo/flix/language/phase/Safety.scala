@@ -533,10 +533,10 @@ object Safety {
   private def hasDefaultConstructor(clazz: java.lang.Class[_]): Boolean = {
     try {
       clazz.getConstructor()
+      true
     } catch {
       case _: NoSuchMethodException => false
     }
-    true
   }
 
   /**
@@ -546,7 +546,7 @@ object Safety {
     // 
     // Check that `clazz` doesn't have a non-default constructor
     // 
-    val constructorErrors = if (!clazz.isInterface() || !hasDefaultConstructor(clazz))
+    val constructorErrors = if (!clazz.isInterface() && !hasDefaultConstructor(clazz))
         List(NonDefaultConstructor(clazz, loc))
       else
         List.empty
