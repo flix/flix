@@ -47,7 +47,7 @@ object Resolver {
   private val ToStringSym = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
   private val HashSym = new Symbol.ClassSym(Nil, "Hash", SourceLocation.Unknown)
 
-  val DerivableSyms = List(BoxableSym, EqSym, OrderSym, ToStringSym, HashSym)
+  val DerivableSyms: List[Symbol.ClassSym] = List(BoxableSym, EqSym, OrderSym, ToStringSym, HashSym)
 
   /**
     * Performs name resolution on the given program `root`.
@@ -586,7 +586,7 @@ object Resolver {
           // Case 1: Hooray! We can call the function directly.
           val esVal = traverse(exps)(visitExp(_, region))
           mapN(esVal) {
-            case (es) =>
+            case es =>
               val base = ResolvedAst.Expression.Sig(sig.sym, innerLoc)
               ResolvedAst.Expression.Apply(base, es, outerLoc)
           }
@@ -1069,11 +1069,17 @@ object Resolver {
             case (field, e) => ResolvedAst.Expression.PutStaticField(field, e, loc)
           }
 
-        case NamedAst.Expression.NewObject(name, className, methods, loc) =>
-          val clazz = lookupJvmClass(className, loc)
-          val fparams = traverse(methods)(visitJvmMethod(_, taenv, ns0, root))
-          mapN(clazz, fparams) {
-            case (c, f) => ResolvedAst.Expression.NewObject(name, c, f, loc)
+        case NamedAst.Expression.NewObject(name, tpe, methods, loc) =>
+          flatMapN(resolveType(tpe, taenv, ns0, root), traverse(methods)(visitJvmMethod(_, taenv, ns0, root))) {
+            case (t, ms) =>
+              //
+              // Check that the type is a JVM type (after type alias erasure).
+              //
+              Type.eraseAliases(t) match {
+                case Type.Cst(TypeConstructor.Native(clazz), _) =>
+                  ResolvedAst.Expression.NewObject(name, clazz, ms, loc).toSuccess
+                case _ => ResolutionError.IllegalNonJavaType(t, t.loc).toFailure
+              }
           }
 
         case NamedAst.Expression.NewChannel(exp, tpe, loc) =>

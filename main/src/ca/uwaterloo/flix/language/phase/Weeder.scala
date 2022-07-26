@@ -1030,9 +1030,11 @@ object Weeder {
           }
       }
 
-    case ParsedAst.Expression.NewObject(sp1, className, methods, sp2) =>
+    case ParsedAst.Expression.NewObject(sp1, tpe, methods, sp2) =>
       mapN(traverse(methods)(visitJvmMethod(_, senv))) {
-        case m => WeededAst.Expression.NewObject(className.mkString("."), m, mkSL(sp1, sp2))
+        case ms =>
+          val t = visitType(tpe)
+          WeededAst.Expression.NewObject(t, ms, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.Static(sp1, sp2) =>
