@@ -236,19 +236,6 @@ namespace Test/Exp/Jvm/NewObject {
     };
     runTest(anon)
 
-  type alias TestGenericInterface = ##flix.test.TestGenericInterface
-  type alias JavaObject = ##java.lang.Object
-  
-  @test
-  def testAliasesInObject01(): Bool & Impure =
-    import static flix.test.TestGenericInterface.runTest(TestGenericInterface): Bool;
-    let anon = object TestGenericInterface {
-      def testMethod(_this: TestGenericInterface, x: JavaObject): JavaObject = 
-        let str = x as String;
-        "${str}, ${str}" as JavaObject
-    };
-    runTest(anon)
-
   @test
   def testVarargsInterface01(): Bool & Impure =
     import static flix.test.TestVarargsInterface.runTest(##flix.test.TestVarargsInterface): Bool;
