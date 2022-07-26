@@ -126,7 +126,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Root                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   def Root: Rule1[ParsedAst.CompilationUnit] = rule {
-    SP ~ UseDeclarations ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.CompilationUnit
+    SP ~ UsesOrImports ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.CompilationUnit
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -149,9 +149,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     Declaration ~ EOI
   }
 
-  def UseDeclarations: Rule1[Seq[ParsedAst.Use]] = rule {
+  def UsesOrImports: Rule1[Seq[ParsedAst.UseOrImport]] = rule {
     // It is important for documentation comments that whitespace is not consumed if no uses are present
-    (optWS ~ oneOrMore(Use ~ optWS ~ ";").separatedBy(optWS)) | push(Seq.empty)
+    (optWS ~ oneOrMore((Use | Import) ~ optWS ~ ";").separatedBy(optWS)) | push(Seq.empty)
   }
 
   def Decls: Rule1[Seq[ParsedAst.Declaration]] = rule {
@@ -161,7 +161,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Declarations {
 
     def Namespace: Rule1[ParsedAst.Declaration.Namespace] = rule {
-      optWS ~ SP ~ keyword("namespace") ~ WS ~ Names.Namespace ~ optWS ~ '{' ~ UseDeclarations ~ Decls ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
+      optWS ~ SP ~ keyword("namespace") ~ WS ~ Names.Namespace ~ optWS ~ '{' ~ UsesOrImports ~ Decls ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
     }
 
     def Def: Rule1[ParsedAst.Declaration.Def] = rule {
@@ -316,7 +316,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Uses                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   def Use: Rule1[ParsedAst.Use] = rule {
-    (keyword("use") ~ WS ~ (Uses.UseOneTag | Uses.UseManyTag | Uses.UseOne | Uses.UseMany)) | (keyword("import") ~ WS ~ Imports.Import)
+    keyword("use") ~ WS ~ (Uses.UseOneTag | Uses.UseManyTag | Uses.UseOne | Uses.UseMany)
   }
 
   object Uses {
@@ -353,12 +353,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
   }
 
+  def Import: Rule1[ParsedAst.Import] = rule {
+    keyword("import") ~ WS ~ Imports.Import
+  }
+
   object Imports {
-
-    def Import: Rule1[ParsedAst.Use] = rule {
-      SP ~ Names.JavaName ~ SP ~> ParsedAst.Use.Import
+    def Import: Rule1[ParsedAst.Import] = rule {
+      SP ~ Names.JavaName ~ SP ~> ParsedAst.Imports.Import
     }
-
   }
 
   /////////////////////////////////////////////////////////////////////////////

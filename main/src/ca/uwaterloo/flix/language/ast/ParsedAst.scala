@@ -32,11 +32,11 @@ object ParsedAst {
     * A collection of imports and declarations.
     *
     * @param sp1   the position of the first character in the source.
-    * @param uses  the uses in the abstract syntax tree.
+    * @param usesOrImports  the uses in the abstract syntax tree.
     * @param decls the declarations in the abstract syntax tree.
     * @param sp2   the position of the last character in the source.
     */
-  case class CompilationUnit(sp1: SourcePosition, uses: Seq[ParsedAst.Use], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition)
+  case class CompilationUnit(sp1: SourcePosition, usesOrImports: Seq[ParsedAst.UseOrImport], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition)
 
   /**
     * Declarations.
@@ -59,7 +59,7 @@ object ParsedAst {
       * @param decls the nested declarations.
       * @param sp2   the position of the last character in the declaration.
       */
-    case class Namespace(sp1: SourcePosition, name: Name.NName, uses: Seq[ParsedAst.Use], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Namespace(sp1: SourcePosition, name: Name.NName, uses: Seq[ParsedAst.UseOrImport], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Definition Declaration.
@@ -228,9 +228,14 @@ object ParsedAst {
   }
 
   /**
+    * A common super-type for uses or imports.
+    */
+  sealed trait UseOrImport
+
+  /**
     * Uses.
     */
-  sealed trait Use
+  sealed trait Use extends UseOrImport
 
   object Use {
 
@@ -242,7 +247,7 @@ object ParsedAst {
       * @param ident the name.
       * @param sp2   the position of the last character.
       */
-    case class UseOne(sp1: SourcePosition, nname: Name.NName, ident: Name.Ident, sp2: SourcePosition) extends Use
+    case class UseOne(sp1: SourcePosition, nname: Name.NName, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Use
 
     /**
       * A use of multiple names from a namespace.
@@ -252,7 +257,7 @@ object ParsedAst {
       * @param names the names.
       * @param sp2   the position of the last character.
       */
-    case class UseMany(sp1: SourcePosition, nname: Name.NName, names: Seq[ParsedAst.Use.NameAndAlias], sp2: SourcePosition) extends Use
+    case class UseMany(sp1: SourcePosition, nname: Name.NName, names: Seq[ParsedAst.Use.NameAndAlias], sp2: SourcePosition) extends ParsedAst.Use
 
     /**
       * A use of a single tag.
@@ -262,7 +267,7 @@ object ParsedAst {
       * @param tag   the name of the tag.
       * @param sp2   the position of the last character.
       */
-    case class UseOneTag(sp1: SourcePosition, qname: Name.QName, tag: Name.Ident, sp2: SourcePosition) extends Use
+    case class UseOneTag(sp1: SourcePosition, qname: Name.QName, tag: Name.Ident, sp2: SourcePosition) extends ParsedAst.Use
 
     /**
       * A use of multiple tags.
@@ -272,16 +277,7 @@ object ParsedAst {
       * @param tags  the names of the tags.
       * @param sp2   the position of the last character.
       */
-    case class UseManyTag(sp1: SourcePosition, qname: Name.QName, tags: Seq[ParsedAst.Use.NameAndAlias], sp2: SourcePosition) extends Use
-
-    /**
-      * A name with an optional alias.
-      *
-      * @param sp1  the position of the first character.
-      * @param name the Java class or interface name.
-      * @param sp2  the position of the last character.
-      */
-    case class Import(sp1: SourcePosition, name: Seq[String], sp2: SourcePosition) extends Use
+    case class UseManyTag(sp1: SourcePosition, qname: Name.QName, tags: Seq[ParsedAst.Use.NameAndAlias], sp2: SourcePosition) extends ParsedAst.Use
 
     /**
       * A name with an optional alias.
@@ -292,6 +288,24 @@ object ParsedAst {
       * @param sp2   the position of the last character.
       */
     case class NameAndAlias(sp1: SourcePosition, ident: Name.Ident, alias: Option[Name.Ident], sp2: SourcePosition)
+
+  }
+
+  /**
+    * Imports.
+    */
+  sealed trait Import extends UseOrImport
+
+  object Imports {
+
+    /**
+      * A name with an optional alias.
+      *
+      * @param sp1  the position of the first character.
+      * @param name the Java class or interface name.
+      * @param sp2  the position of the last character.
+      */
+    case class Import(sp1: SourcePosition, name: Seq[String], sp2: SourcePosition) extends ParsedAst.Import
 
   }
 
