@@ -229,6 +229,9 @@ object SafetyError {
     })
   }
 
+  /**
+    * Format a Java type suitable for method implementation.
+    */
   private def formatJavaType(t: java.lang.Class[_]) = {
     if (t.isPrimitive() || t.isArray())
       Type.getFlixType(t).toString

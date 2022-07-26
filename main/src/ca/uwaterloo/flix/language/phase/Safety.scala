@@ -504,6 +504,9 @@ object Safety {
     }
   }
 
+  /**
+    * Get a Set of MethodSignatures representing the methods of `clazz`. Returns a map to allow subsequent reverse lookup.
+    */
   private def getJavaMethodSignatures(clazz: java.lang.Class[_]): Map[MethodSignature, java.lang.reflect.Method] = {
     val methods = clazz.getMethods.toList.filterNot(m => java.lang.reflect.Modifier.isStatic(m.getModifiers))
     methods.foldLeft(Map.empty[MethodSignature, java.lang.reflect.Method]) {
@@ -513,6 +516,9 @@ object Safety {
     }
   }
 
+  /**
+    * Return true if a method is abstract (either because it's a non-default member of an interface, or an abstract method of a class)
+    */
   private def isAbstract(method: java.lang.reflect.Method, clazz: java.lang.Class[_]) = {
     if (clazz.isInterface) {
       !method.isDefault()
