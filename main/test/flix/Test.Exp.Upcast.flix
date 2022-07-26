@@ -1,14 +1,18 @@
 namespace Test/Exp/Upcast {
 
+// upcast exp
+// exp.purity < expected.purity
+/*
     @test
     def testUpcast01(): Unit =
         let _ =
             if (true)
                 upcast x -> x + 1
-            else
-                x -> { println("x"); x + 1 };
+            else {
+                println(1);
+                x -> x + 1
+            };
         ()
-
     @test
     def testUpcast02(): Unit & ef =
         let f =
@@ -28,7 +32,6 @@ namespace Test/Exp/Upcast {
                 (_ -> "x" as & ef);
         let _ = f(1);
         ()
-*/
     @test
     def testUpcast04(): Unit =
         let _ =
@@ -36,6 +39,15 @@ namespace Test/Exp/Upcast {
                 upcast _ -> ()
             else
                 _ -> println(1);
+        ()
+*/
+    @test
+    def testUpcast05(): Unit & Impure =
+        let _ =
+            if (true)
+                upcast ()
+            else
+               println(1);
         ()
 
 }

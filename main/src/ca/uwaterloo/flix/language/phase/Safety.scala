@@ -180,49 +180,32 @@ object Safety {
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Upcast(exp, tpe, pur, eff, loc) =>
+    case Expression.Upcast(exp, tpe, pur, eff, loc) => {
 
-      def visitTypeCst(tc: TypeConstructor): Boolean = tc match {
-        case TypeConstructor.False => false
-        // case TypeConstructor.Not => false
-        // case TypeConstructor.And => false
-        // case TypeConstructor.Or => false
-        // case TypeConstructor.Complement => false
-        // case TypeConstructor.Union => false
-        // case TypeConstructor.Intersection => false
-        // case TypeConstructor.All => false
-        // case TypeConstructor.Region => ???
-        case _ => true
+      def isSoundUpcast(actual: Expression, expected: Expression): Boolean = {
+        // check types are equal
+        // check purity is ok
+        // pure -> ef -> impure
+        // ef -> ef and ef2
+        val types = actual.tpe == expected.tpe
+        val purities = (actual.pur, expected.pur) match {
+          case (Type.Pure, _) => true
+          case (_, Type.Impure) => true
+          case _ => false
+        }
+        types && purities
       }
 
-      def isPure(e: Type): Boolean = e match {
-        case Type.Pure => true
-        case Type.KindedVar(_, _) => true
-        case Type.Impure => false
-        case Type.Cst(tc, _) => visitTypeCst(tc)
-        case Type.Apply(tpe1, tpe2, _) => isPure(tpe1) && isPure(tpe2)
-        case Type.Alias(_, args, tpe, _) => args.forall(isPure) && isPure(tpe)
-        case _ => throw InternalCompilerException("Unexpected type")
-      }
+      val errors =
+        if (isSoundUpcast(exp, exp0)) {
+          List.empty
+        }
+        else {
+          List(UnsafeUpcast(exp.tpe, exp.pur, exp.eff, tpe, pur, eff, loc))
+        }
 
-      def typesOf(tcs: List[TypeConstructor]): List[TypeConstructor] = {
-        def f(tc: TypeConstructor): Boolean =
-          visitTypeCst(tc) &&
-            tc != TypeConstructor.True &&
-            tc != TypeConstructor.Empty
-
-        tcs.filter(f)
-      }
-
-      def isSameType(eapp: Type, app: Type): Boolean =
-        typesOf(eapp.typeConstructors) == typesOf(app.typeConstructors)
-
-      def isSound(eapp: Type, app: Type): Boolean =
-        isPure(eapp) && isSameType(eapp, app)
-
-      val tpes = if (isSound(exp.tpe, tpe)) List.empty else List(UnsafeUpcast(exp.tpe, exp.pur, exp.eff, tpe, pur, eff, loc))
-      // upcastDebug(e)
-      visitExp(exp) ::: tpes
+      visitExp(exp) ::: errors
+    }
 
     case Expression.Without(exp, _, _, _, _, _) =>
       visitExp(exp)
