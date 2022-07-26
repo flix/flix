@@ -292,4 +292,37 @@ object SafetyError {
     def explain(formatter: Formatter): Option[String] = None
   }
 
+  case class NonDefaultConstructor(clazz: java.lang.Class[_], loc: SourceLocation) extends SafetyError {
+    def summary: String = s"Superclass '${clazz.getName}' has a non-default constructor"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Method Superclass '${red(clazz.getName)}' has a non-default constructor
+         |
+         |${code(loc, "the object occurs here.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some(
+      s"""
+        | Flix 'object' statements only support interfaces and classes with default (no-argument) constructors.
+        |""".stripMargin
+    )
+  }
+
+  case class InaccessibleSuperclass(clazz: java.lang.Class[_], loc: SourceLocation) extends SafetyError {
+    def summary: String = s"Superclass '${clazz.getName}' is not public"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Superclass '${red(clazz.getName)}' is not public
+         |
+         |${code(loc, "the object occurs here.")}
+         |""".stripMargin
+    }
+    
+    def explain(formatter: Formatter): Option[String] = None
+  }
 }

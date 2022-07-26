@@ -226,4 +226,26 @@ class TestSafety extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ExtraMethod](result)
   }
+
+  test("TestNonDefaultConstructor.01") {
+    val input =
+      """
+        |def f(): ##flix.test.TestClassWithNonDefaultConstructor & Impure = 
+        |  object ##flix.test.TestClassWithNonDefaultConstructor {
+        |  }
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.NonDefaultConstructor](result)
+  }
+
+  test("TestNonPublicInterface.01") {
+    val input =
+      """
+        |def f(): ##flix.test.TestNonPublicInterface & Impure = 
+        |  object ##flix.test.TestNonPublicInterface {
+        |  }
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.InaccessibleSuperclass](result)
+  }
 }

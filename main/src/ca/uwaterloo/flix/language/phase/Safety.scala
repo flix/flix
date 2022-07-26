@@ -519,7 +519,7 @@ object Safety {
   /**
     * Return true if a method is abstract (either because it's a non-default member of an interface, or an abstract method of a class)
     */
-  private def isAbstract(method: java.lang.reflect.Method, clazz: java.lang.Class[_]) = {
+  private def isAbstract(method: java.lang.reflect.Method, clazz: java.lang.Class[_]): Boolean = {
     if (clazz.isInterface) {
       !method.isDefault()
     } else {
@@ -528,9 +528,37 @@ object Safety {
   }
 
   /**
+    * Return true if `clazz` has a non-default (no argument) constructor.
+    */
+  private def hasDefaultConstructor(clazz: java.lang.Class[_]): Boolean = {
+    try {
+      clazz.getConstructor()
+    } catch {
+      case _: NoSuchMethodException => false
+    }
+    true
+  }
+
+  /**
     * Ensures that `methods` fully implement `clazz`
     */
   private def checkObjectImplementation(clazz: java.lang.Class[_], tpe: Type, methods: List[JvmMethod], loc: SourceLocation): List[CompilationMessage] = {
+    // 
+    // Check that `clazz` doesn't have a non-default constructor
+    // 
+    val constructorErrors = if (!clazz.isInterface() || !hasDefaultConstructor(clazz))
+        List(NonDefaultConstructor(clazz, loc))
+      else
+        List.empty
+
+    // 
+    // Check that `clazz` is public
+    // 
+    val visibilityErrors = if (!java.lang.reflect.Modifier.isPublic(clazz.getModifiers))
+        List(InaccessibleSuperclass(clazz, loc))
+      else
+        List.empty
+
     //
     // Check that the first argument looks like "this"
     //
@@ -565,7 +593,7 @@ object Safety {
     val extra = implemented diff canImplement
     val extraErrors = extra.map(m => ExtraMethod(clazz, m.name, flixMethods(m).loc))
 
-    thisErrors ++ unimplementedErrors ++ extraErrors
+    constructorErrors ++ visibilityErrors ++ thisErrors ++ unimplementedErrors ++ extraErrors
   }
 
 }
