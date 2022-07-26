@@ -3,7 +3,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
-import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
@@ -490,7 +489,7 @@ object Safety {
   /**
     * Represents the signature of a method, used to compare Java signatures against Flix signatures.
     */
-  case class MethodSignature(name: String, retTpe: Type, paramTypes: List[Type])
+  case class MethodSignature(name: String, paramTypes: List[Type], retTpe: Type)
 
   /**
     * Convert a list of Flix methods to a set of MethodSignatures. Returns a map to allow subsequent reverse lookup.
@@ -500,7 +499,7 @@ object Safety {
       case (acc, m@JvmMethod(ident, fparams, _, retTpe, _, _, _)) =>
         // Drop the first formal parameter (which always represents `this`)
         val paramTypes = fparams.tail.map(_.tpe)
-        val signature = MethodSignature(ident.name, retTpe, paramTypes)
+        val signature = MethodSignature(ident.name, paramTypes.map(t => Type.eraseAliases(t)), Type.eraseAliases(retTpe))
         acc + (signature -> m)
     }
   }
@@ -509,7 +508,7 @@ object Safety {
     * Convert a `java.lang.reflect.Method` to a MethodSignature.
     */
   private def getJavaMethodSignature(method: java.lang.reflect.Method): MethodSignature = {
-    MethodSignature(method.getName, getFlixType(method.getReturnType), method.getParameterTypes.toList.map(getFlixType))
+    MethodSignature(method.getName, method.getParameterTypes.toList.map(Type.getFlixType), Type.getFlixType(method.getReturnType))
   }
 
   /**
