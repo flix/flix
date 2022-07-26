@@ -78,12 +78,13 @@ object Weeder {
     */
   private def visitCompilationUnit(src: Ast.Source, unit: ParsedAst.CompilationUnit)(implicit flix: Flix): Validation[(Ast.Source, WeededAst.CompilationUnit), WeederError] = {
     val usesVal = traverse(unit.uses)(visitUse)
+    val importsVal = traverse(unit.uses)(visitImport)
     val declarationsVal = traverse(unit.decls)(visitDecl)
     val loc = mkSL(unit.sp1, unit.sp2)
 
-    mapN(usesVal, declarationsVal) {
-      case (uses, decls) =>
-        src -> WeededAst.CompilationUnit(uses.flatten, decls.flatten, loc)
+    mapN(usesVal, importsVal, declarationsVal) {
+      case (uses, imports, decls) =>
+        src -> WeededAst.CompilationUnit(uses.flatten, imports.flatten ::: decls.flatten, loc)
     }
   }
 
@@ -411,6 +412,7 @@ object Weeder {
         List(WeededAst.Use.UseUpper(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
       else
         List(WeededAst.Use.UseLower(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
+
     case ParsedAst.Use.UseMany(_, nname, names, _) =>
       val us = names.foldRight(Nil: List[WeededAst.Use]) {
         case (ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2), acc) =>
@@ -433,6 +435,23 @@ object Weeder {
       }
       us.toSuccess
 
+    case ParsedAst.Use.Import(_, _, _) => Nil.toSuccess
+
+  }
+
+  /**
+    * Performs weeding on the given imports `u0`.
+    */
+  private def visitImport(u0: ParsedAst.Use): Validation[List[WeededAst.Declaration], WeederError] = u0 match {
+    case ParsedAst.Use.Import(sp1, name, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val doc = Ast.Doc(Nil, loc)
+      val mod = Ast.Modifiers.Empty
+      val ident = Name.Ident(sp1, name.last, sp2)
+      val tparams = WeededAst.TypeParams.Elided
+      val tpe = WeededAst.Type.Native(name.mkString("."), loc)
+      List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc)).toSuccess
+    case _ => Nil.toSuccess
   }
 
   /**
@@ -2389,7 +2408,7 @@ object Weeder {
       val loc = mkSL(sp1, sp2)
       val effs = visitEffectSet(eff0)
       // NB: safe to reduce since effs is never empty
-      val effOpt = effs.reduceLeftOption ({
+      val effOpt = effs.reduceLeftOption({
         case (acc, eff) => WeededAst.Type.Union(acc, eff, loc)
       }: (WeededAst.Type, WeededAst.Type) => WeededAst.Type)
       effOpt.getOrElse(WeededAst.Type.Empty(loc))
@@ -2757,7 +2776,7 @@ object Weeder {
       val tpeVal = visitType(tpe)
       val purAndEffVal = visitPurityAndEffect(purAndEff)
       mapN(visitFormalParams(fparams0, Presence.Required), visitExp(exp0, senv)) {
-        case(fparams, exp) => WeededAst.JvmMethod(ident, fparams, exp, tpeVal, purAndEffVal, mkSL(sp1, sp2))
+        case (fparams, exp) => WeededAst.JvmMethod(ident, fparams, exp, tpeVal, purAndEffVal, mkSL(sp1, sp2))
       }
   }
 

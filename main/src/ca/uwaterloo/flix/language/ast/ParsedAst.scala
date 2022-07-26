@@ -277,6 +277,15 @@ object ParsedAst {
     /**
       * A name with an optional alias.
       *
+      * @param sp1  the position of the first character.
+      * @param name the Java class or interface name.
+      * @param sp2  the position of the last character.
+      */
+    case class Import(sp1: SourcePosition, name: Seq[String], sp2: SourcePosition) extends Use
+
+    /**
+      * A name with an optional alias.
+      *
       * @param sp1   the position of the first character.
       * @param ident the name.
       * @param alias the optional alias.
@@ -285,7 +294,6 @@ object ParsedAst {
     case class NameAndAlias(sp1: SourcePosition, ident: Name.Ident, alias: Option[Name.Ident], sp2: SourcePosition)
 
   }
-
 
   /**
     * CharCodes.
