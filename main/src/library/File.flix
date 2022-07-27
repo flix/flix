@@ -533,7 +533,7 @@ namespace File {
                     Err(getMessage(ex))
             }
         } else if (opts.count == 0) {
-            Ok("")
+            Ok([])
         } else {
             Err("The argument `count` has to be a non negative number when calling `File.readBytesWith`.")
         }

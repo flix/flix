@@ -262,11 +262,18 @@ namespace TestFile {
 
     @test
     def testReadBytesWith05(): Bool & Impure =
-        Result.isErr(readBytesWith({offset = -10i64, count = 0}, "./LICENSE.md"))
+        match readBytesWith({offset = -10i64, count = 0}, "./LICENSE.md") {
+            case Ok(v) => v `Array.sameElements` []
+            case _     => false
+        }
 
     @test
     def testReadBytesWith06(): Bool & Impure =
         Result.isErr(readBytesWith({offset = 0i64, count = -10}, "./LICENSE.md"))
+
+    @test
+    def testReadBytesWith07(): Bool & Impure =
+        Result.isErr(readBytesWith({offset = -10i64, count = 10}, "./LICENSE.md"))
 
 
     /////////////////////////////////////////////////////////////////////////////
