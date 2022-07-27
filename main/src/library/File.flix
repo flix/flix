@@ -510,7 +510,7 @@ namespace File {
     /// `count` - the number of bytes read.
     ///
     pub def readBytesWith(opts: {offset :: Int64, count :: Int32}, f: String): Result[Array[Int8, Static], String] & Impure =
-        if (0 < opts.count) {
+        if (0 <= opts.count) {
             try {
                 import new java.io.File(String): ##java.io.File & Impure as newFile;
                 import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream & Impure as newInputStream;
@@ -532,8 +532,6 @@ namespace File {
                     import java.lang.Throwable.getMessage(): String & Impure;
                     Err(getMessage(ex))
             }
-        } else if (opts.count == 0) {
-            Ok([])
         } else {
             Err("The argument `count` has to be a non negative number when calling `File.readBytesWith`.")
         }
