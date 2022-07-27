@@ -532,6 +532,8 @@ namespace File {
                     import java.lang.Throwable.getMessage(): String & Impure;
                     Err(getMessage(ex))
             }
+        } else if (opts.count == 0) {
+            Ok([])
         } else {
             Err("The argument `count` has to be a non negative number when calling `File.readBytesWith`.")
         }
