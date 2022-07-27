@@ -676,7 +676,19 @@ object Lowering {
       val allEffs = Type.mkUnion(fun.eff :: args.map(_.eff), funLoc)
       val apply = Expression.Apply(fun1, args1, tpe, pur, eff, funLoc)
       val block = chans(spawns(waits(apply)))
-      Expression.Cast(block, None, Some(allPurs), Some(allEffs), tpe, pur, eff, parLoc)
+      val res = Expression.Cast(block, None, Some(allPurs), Some(allEffs), tpe, pur, eff, parLoc)
+      println(exp0)
+      println()
+      println(exp)
+      println()
+      println(exps)
+      println()
+      println(fun)
+      println()
+      println(args)
+      println()
+      println(res)
+      res
     }
 
 
