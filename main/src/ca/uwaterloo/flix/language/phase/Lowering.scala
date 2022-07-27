@@ -559,6 +559,9 @@ object Lowering {
       val t = visitType(tpe)
       Expression.Spawn(e, t, pur, eff, loc)
 
+    case Expression.Par(exp, _) =>
+      throw InternalCompilerException("Not Implemented")
+
     case Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
@@ -1621,6 +1624,9 @@ object Lowering {
     case Expression.Spawn(exp, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
       Expression.Spawn(e, tpe, pur, eff, loc)
+
+    case Expression.Par(exp, _) =>
+      throw InternalCompilerException("Not Implemented")
 
     case Expression.Lazy(exp, tpe, loc) =>
       val e = substExp(exp, subst)

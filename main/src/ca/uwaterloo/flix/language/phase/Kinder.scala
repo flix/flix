@@ -725,6 +725,9 @@ object Kinder {
         exp => KindedAst.Expression.Spawn(exp, loc)
       }
 
+    case ResolvedAst.Expression.Par(exp, loc) =>
+      mapN(visitExp(exp, kenv0, senv, taenv, henv0, root))(KindedAst.Expression.Par(_, loc))
+
     case ResolvedAst.Expression.Lazy(exp0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       mapN(expVal) {
@@ -1031,6 +1034,7 @@ object Kinder {
             t1 => mkApply(t1, t2, loc)
           }
       }
+
     case Type.Ascribe(t, k, loc) =>
       unify(k, expectedKind) match {
         case Some(kind) => visitType(t, kind, kenv, senv, taenv, root)

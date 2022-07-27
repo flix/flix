@@ -192,6 +192,8 @@ object KindedAst {
 
     case class Spawn(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
+    case class Par(exp: Expression, loc: SourceLocation) extends KindedAst.Expression
+
     case class Lazy(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
     case class Force(exp: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression

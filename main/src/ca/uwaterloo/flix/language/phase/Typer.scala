@@ -1595,6 +1595,9 @@ object Typer {
           resultEff = eff
         } yield (constrs, resultTyp, resultPur, resultEff)
 
+      case KindedAst.Expression.Par(exp, _) =>
+        visitExp(exp)
+
       case KindedAst.Expression.Lazy(exp, loc) =>
         for {
           (constrs, tpe, pur, eff) <- visitExp(exp)
@@ -2215,6 +2218,9 @@ object Typer {
         val pur = e.pur
         val eff = e.eff
         TypedAst.Expression.Spawn(e, tpe, pur, eff, loc)
+
+      case KindedAst.Expression.Par(exp, loc) =>
+        TypedAst.Expression.Par(visitExp(exp, subst0), loc)
 
       case KindedAst.Expression.Lazy(exp, loc) =>
         val e = visitExp(exp, subst0)
