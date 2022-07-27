@@ -240,6 +240,11 @@ object Regions {
         case e => checkType(tpe, loc)
       }
 
+    case Expression.Upcast(exp, tpe, _, _, loc) =>
+      flatMapN(visitExp(exp)) {
+        case _ => checkType(tpe, loc)
+      }
+
     case Expression.Without(exp, _, tpe, _, _, loc) =>
       flatMapN(visitExp(exp)) {
         case _ => checkType(tpe, loc)
@@ -302,7 +307,7 @@ object Regions {
         case e => checkType(tpe, loc)
       }
 
-    case Expression.NewObject(_, tpe, _, _, methods, loc) =>
+    case Expression.NewObject(_, _, tpe, _, _, methods, loc) =>
       flatMapN(traverse(methods)(visitJvmMethod)) {
         case ms => checkType(tpe, loc)
       }
@@ -344,6 +349,9 @@ object Regions {
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
+
+    case Expression.Par(exp, loc) =>
+      flatMapN(visitExp(exp))(_ => checkType(exp.tpe, loc))
 
     case Expression.Lazy(exp, tpe, loc) =>
       flatMapN(visitExp(exp)) {

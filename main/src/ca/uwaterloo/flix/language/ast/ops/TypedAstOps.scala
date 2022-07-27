@@ -168,6 +168,9 @@ object TypedAstOps {
       case Expression.Cast(exp, _, _, _, _, _, _, _) =>
         visitExp(exp, env0)
 
+      case Expression.Upcast(exp, _, _, _, _) =>
+        visitExp(exp, env0)
+
       case Expression.Without(exp, _, _, _, _, _) =>
         visitExp(exp, env0)
 
@@ -218,9 +221,9 @@ object TypedAstOps {
       case Expression.PutStaticField(_, exp, _, _, _, _) =>
         visitExp(exp, env0)
 
-      case Expression.NewObject(_, _, _, _, methods, _) =>
+      case Expression.NewObject(_, _, _, _, _, methods, _) =>
         methods.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-          case (macc, JvmMethod(_, fparams, exp, _, _, _, _)) => 
+          case (macc, JvmMethod(_, fparams, exp, _, _, _, _)) =>
             val env1 = fparams.map(fparam => fparam.sym -> fparam.tpe)
             macc ++ visitExp(exp, env0 ++ env1)
         }
@@ -241,6 +244,8 @@ object TypedAstOps {
         rs ++ d
 
       case Expression.Spawn(exp, _, _, _, _) => visitExp(exp, env0)
+
+      case Expression.Par(exp, _) => visitExp(exp, env0)
 
       case Expression.Lazy(exp, tpe, loc) => visitExp(exp, env0)
 
@@ -413,6 +418,7 @@ object TypedAstOps {
     case Expression.Assign(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Ascribe(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Cast(exp, _, _, _, _, _, _, _) => sigSymsOf(exp)
+    case Expression.Upcast(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Without(exp, _, _, _, _, _) => sigSymsOf(exp)
     case Expression.TryCatch(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.TryWith(exp, _, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
@@ -425,12 +431,13 @@ object TypedAstOps {
     case Expression.PutField(_, exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.GetStaticField(_, _, _, _, _) => Set.empty
     case Expression.PutStaticField(_, exp, _, _, _, _) => sigSymsOf(exp)
-    case Expression.NewObject(_, _, _, _, methods, _) => methods.flatMap(method => sigSymsOf(method.exp)).toSet
+    case Expression.NewObject(_, _, _, _, _, methods, _) => methods.flatMap(method => sigSymsOf(method.exp)).toSet
     case Expression.NewChannel(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.GetChannel(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.PutChannel(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.SelectChannel(rules, default, _, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.chan) ++ sigSymsOf(rule.exp)).toSet ++ default.toSet.flatMap(sigSymsOf)
     case Expression.Spawn(exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.Par(exp, _) => sigSymsOf(exp)
     case Expression.Lazy(exp, _, _) => sigSymsOf(exp)
     case Expression.Force(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointConstraintSet(_, _, _, _) => Set.empty
@@ -618,6 +625,9 @@ object TypedAstOps {
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
       freeVars(exp)
 
+    case Expression.Upcast(exp, _, _, _, _) =>
+      freeVars(exp)
+
     case Expression.TryCatch(exp, rules, _, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
         case (acc, CatchRule(sym, _, exp)) => acc ++ freeVars(exp) - sym
@@ -661,7 +671,7 @@ object TypedAstOps {
     case Expression.PutStaticField(_, exp, _, _, _, _) =>
       freeVars(exp)
 
-    case Expression.NewObject(_, _, _, _, methods, _) =>
+    case Expression.NewObject(_, _, _, _, _, methods, _) =>
       methods.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, JvmMethod(_, fparams, exp, _, _, _, _)) => acc ++ freeVars(exp) -- fparams.map(_.sym)
       }
@@ -682,6 +692,9 @@ object TypedAstOps {
       }
 
     case Expression.Spawn(exp, _, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.Par(exp, _) =>
       freeVars(exp)
 
     case Expression.Lazy(exp, _, _) =>

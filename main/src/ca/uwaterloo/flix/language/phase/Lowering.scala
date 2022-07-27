@@ -462,6 +462,9 @@ object Lowering {
       val t = visitType(tpe)
       Expression.Cast(e, dt, declaredPur, declaredEff, t, pur, eff, loc)
 
+    case Expression.Upcast(exp, tpe, pur, eff, loc) =>
+      throw InternalCompilerException("Not implemented")
+
     case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
@@ -524,10 +527,10 @@ object Lowering {
       val t = visitType(tpe)
       Expression.PutStaticField(field, e, t, pur, eff, loc)
 
-    case Expression.NewObject(clazz, tpe, pur, eff, methods, loc) =>
+    case Expression.NewObject(name, clazz, tpe, pur, eff, methods, loc) =>
       val t = visitType(tpe)
       val ms = methods.map(visitJvmMethod)
-      Expression.NewObject(clazz, t, pur, eff, ms, loc)
+      Expression.NewObject(name, clazz, t, pur, eff, ms, loc)
 
     case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
@@ -555,6 +558,9 @@ object Lowering {
       val e = visitExp(exp)
       val t = visitType(tpe)
       Expression.Spawn(e, t, pur, eff, loc)
+
+    case Expression.Par(exp, _) =>
+      throw InternalCompilerException("Not Implemented")
 
     case Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -1598,7 +1604,7 @@ object Lowering {
       val e = substExp(exp, subst)
       Expression.PutStaticField(field, e, tpe, pur, eff, loc)
 
-    case Expression.NewObject(_, _, _, _, _, _) => exp0
+    case Expression.NewObject(_, _, _, _, _, _, _) => exp0
 
     case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
@@ -1618,6 +1624,9 @@ object Lowering {
     case Expression.Spawn(exp, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
       Expression.Spawn(e, tpe, pur, eff, loc)
+
+    case Expression.Par(exp, _) =>
+      throw InternalCompilerException("Not Implemented")
 
     case Expression.Lazy(exp, tpe, loc) =>
       val e = substExp(exp, subst)
@@ -1665,6 +1674,10 @@ object Lowering {
       Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
 
     case Expression.FixpointConstraintSet(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
+
+    case Expression.Upcast(_, _, _, _, _) =>
+      throw InternalCompilerException("Not Implemented")
+
   }
 
   /**

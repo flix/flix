@@ -54,8 +54,7 @@ instance Foldable[Map[k]] {
     pub def foldLeft(f: (b, v) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldLeft(f, s, m)
     pub def foldRight(f: (v, b) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldRight(f, s, m)
     pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldRightWithCont(f, s, m)
-    override pub def iterator(r: Region[r], m: Map[k, v]): Iterator[v, r] \ Write(r) =
-        Map.iterator(r, m) |> Iterator.mapL(match (_, v) -> v)
+    override pub def iterator(r: Region[r], m: Map[k, v]): Iterator[v, r] \ Write(r) = Map.iteratorValues(r, m)
 }
 
 instance UnorderedFoldable[Map[k]] {
@@ -950,6 +949,18 @@ namespace Map {
     pub def iterator(r: Region[r], m: Map[k, v]): Iterator[(k, v), r] \ Write(r) =
         let Map(t) = m;
         RedBlackTree.iterator(r, t)
+
+    ///
+    /// Returns an iterator over keys in `m`.
+    ///
+    pub def iteratorKeys(r: Region[r], m: Map[k, v]): Iterator[k, r] \ Write(r) =
+        iterator(r, m) |> Iterator.mapL(match (k, _) -> k)
+
+    ///
+    /// Returns an iterator over values in `m`.
+    ///
+    pub def iteratorValues(r: Region[r], m: Map[k, v]): Iterator[v, r] \ Write(r) =
+        iterator(r, m) |> Iterator.mapL(match (_, v) -> v)
 
     ///
     /// Returns `m` as a `DelayMap`.

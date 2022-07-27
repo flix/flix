@@ -447,7 +447,7 @@ namespace MutDeque {
     ///
     /// Shuffles a copy of `d` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(r1: Region[r1], rnd: Random.Random, d: MutDeque[a, r2]): MutDeque[a, r1] & Impure \ { Read(r2), Write(r1), Impure } = region r3 {
+    pub def shuffle(r1: Region[r1], rnd: Random.Random, d: MutDeque[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1), NonDet } = region r3 {
         toArray(r3, d) !> Array.shuffle(rnd) |> Array.toMutDeque(r1)
     }
 

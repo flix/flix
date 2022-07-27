@@ -578,6 +578,30 @@ namespace MutMap {
         Map.foreach(f, deref mm)
 
     ///
+    /// Returns an iterator over all key-value pairs in `m`.
+    ///
+    pub def iterator(m: MutMap[k, v, r]): Iterator[(k, v), r] \ Write(r) =
+        let MutMap(mm) = m;
+        let r = Scoped.regionOf(m);
+        Map.iterator(r, deref mm)
+
+    ///
+    /// Returns an iterator over keys in `m`.
+    ///
+    pub def iteratorKeys(m: MutMap[k, v, r]): Iterator[k, r] \ Write(r) =
+        let MutMap(mm) = m;
+        let r = Scoped.regionOf(m);
+        Map.iteratorKeys(r, deref mm)
+
+    ///
+    /// Returns an iterator over values in `m`.
+    ///
+    pub def iteratorValues(m: MutMap[k, v, r]): Iterator[v, r] \ Write(r) =
+        let MutMap(mm) = m;
+        let r = Scoped.regionOf(m);
+        Map.iteratorValues(r, deref mm)
+
+    ///
     /// Extracts a range of key-value pairs from the mutable map `m`.
     ///
     /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
@@ -588,8 +612,6 @@ namespace MutMap {
 
     ///
     /// Applies `f` to all key-value pairs `(k, v)` in the mutable map `m` where `p(k)` returns `EqualTo`.
-    ///
-    /// The function `f` must be impure.
     ///
     pub def queryWith(p: k -> Comparison & ef1, f: (k, v) -> Unit & ef2, m: MutMap[k, v, r]): Unit \ { ef1, ef2, Read(r) } =
         let MutMap(mm) = m;

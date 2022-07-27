@@ -34,12 +34,12 @@ import ca.uwaterloo.flix.util.Validation._
   * (c) Appears in a function which itself is reachable.
   *
   */
-object TreeShaker {
+object LateTreeShaker {
 
   /**
     * Performs tree shaking on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("TreeShaker") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("LateTreeShaker") {
     // Compute the symbols that are always reachable.
     val initReach = initReachable(root)
 
@@ -65,7 +65,7 @@ object TreeShaker {
     //
     // (a) The main function is always reachable (if it exists).
     //
-    reachable = reachable ++ root.entryPoint.toList
+    reachable = reachable ++ root.entryPoint
 
     //
     // (b) A function annotated with @benchmark or @test is always reachable.
@@ -255,8 +255,8 @@ object TreeShaker {
     case Expression.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewObject(_, _, _, methods, _) =>
-      Set.empty
+    case Expression.NewObject(_, _, _, _, methods, _) =>
+      visitExps(methods.map(_.clo))
 
     case Expression.NewChannel(exp, _, _) =>
       visitExp(exp)

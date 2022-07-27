@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.CodeHint
-import ca.uwaterloo.flix.language.phase.unification.BoolTable
+import ca.uwaterloo.flix.language.phase.unification.TypeMinimization
 
 object CodeHinter {
 
@@ -219,6 +219,9 @@ object CodeHinter {
     case Expression.Cast(exp, _, _, _, tpe, pur, _, loc) =>
       checkCast(tpe, pur, loc) ++ visitExp(exp)
 
+    case Expression.Upcast(exp, _, _, _, _) =>
+      visitExp(exp)
+
     case Expression.Without(exp, _, _, _, _, _) =>
       visitExp(exp)
 
@@ -259,7 +262,7 @@ object CodeHinter {
     case Expression.PutStaticField(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewObject(_, _, _, _, methods, _) =>
+    case Expression.NewObject(_, _, _, _, _, methods, _) =>
       methods.flatMap {
         case JvmMethod(_, _, exp, _, _, _, _) => visitExp(exp)
       }
@@ -279,6 +282,9 @@ object CodeHinter {
       } ++ default.map(visitExp).getOrElse(Nil)
 
     case Expression.Spawn(exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.Par(exp, _) =>
       visitExp(exp)
 
     case Expression.Lazy(exp, _, _) =>
@@ -394,7 +400,7 @@ object CodeHinter {
       Nil
     } else {
       // Case 2: Formula is big. Try to minimize it.
-      val minType = BoolTable.minimizeType(tpe)
+      val minType = TypeMinimization.minimizeType(tpe)
       if (numberOfVarOccurs(minType) < 5) {
         // Case 2.1: Formula is small. Good.
         Nil

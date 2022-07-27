@@ -6,16 +6,18 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.annotation.tailrec
 
 /**
-  * Performs safety and well-formedness of Datalog constraints.
+  * Performs safety and well-formedness checks on:
+  *  - Datalog constraints
+  *  - Anonymous objects
   */
 object Safety {
 
@@ -177,6 +179,9 @@ object Safety {
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
       visitExp(exp)
 
+    case Expression.Upcast(exp, tpe, pur, eff, loc) =>
+      throw InternalCompilerException("Not implemented")
+
     case Expression.Without(exp, _, _, _, _, _) =>
       visitExp(exp)
 
@@ -215,8 +220,9 @@ object Safety {
     case Expression.PutStaticField(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewObject(_, _, _, _, methods, _) =>
-      methods.flatMap { case JvmMethod(_, _, exp, _, _, _, _) => visitExp(exp) }
+    case Expression.NewObject(_, clazz, tpe, _, _, methods, loc) =>
+      checkObjectImplementation(clazz, tpe, methods, loc) ++
+        methods.flatMap { case JvmMethod(_, _, exp, _, _, _, _) => visitExp(exp) }
 
     case Expression.NewChannel(exp, _, _, _, _) =>
       visitExp(exp)
@@ -234,6 +240,9 @@ object Safety {
         default.map(visitExp).getOrElse(Nil)
 
     case Expression.Spawn(exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.Par(exp, _) =>
       visitExp(exp)
 
     case Expression.Lazy(exp, _, _) =>
@@ -478,6 +487,90 @@ object Safety {
     case Pattern.Array(elms, _, _) => visitPats(elms, loc)
     case Pattern.ArrayTailSpread(elms, _, _, _) => visitPats(elms, loc)
     case Pattern.ArrayHeadSpread(_, elms, _, _) => visitPats(elms, loc)
+  }
+
+  /**
+    * Represents the signature of a method, used to compare Java signatures against Flix signatures.
+    */
+  case class MethodSignature(name: String, paramTypes: List[Type], retTpe: Type)
+
+  /**
+    * Convert a list of Flix methods to a set of MethodSignatures. Returns a map to allow subsequent reverse lookup.
+    */
+  private def getFlixMethodSignatures(methods: List[JvmMethod]): Map[MethodSignature, JvmMethod] = {
+    methods.foldLeft(Map.empty[MethodSignature, JvmMethod]) {
+      case (acc, m@JvmMethod(ident, fparams, _, retTpe, _, _, _)) =>
+        // Drop the first formal parameter (which always represents `this`)
+        val paramTypes = fparams.tail.map(_.tpe)
+        val signature = MethodSignature(ident.name, paramTypes.map(t => Type.eraseAliases(t)), Type.eraseAliases(retTpe))
+        acc + (signature -> m)
+    }
+  }
+
+  /**
+    * Convert a `java.lang.reflect.Method` to a MethodSignature.
+    */
+  private def getJavaMethodSignature(method: java.lang.reflect.Method): MethodSignature = {
+    MethodSignature(method.getName, method.getParameterTypes.toList.map(Type.getFlixType), Type.getFlixType(method.getReturnType))
+  }
+
+  /**
+    * Given a class or interface, returns a pair of the methods that can be implemented and that must be implemented.
+    *
+    * * A (non-static) method can be implemented if it exists in the class.
+    * * A (non-static) method must be implemented if it is abstract.
+    */
+  private def getJavaMethods(clazz: java.lang.Class[_]): (Set[MethodSignature], Set[MethodSignature]) = {
+    val methods = clazz.getMethods.toList.filterNot(m => java.lang.reflect.Modifier.isStatic(m.getModifiers))
+    val mustImplement = if (clazz.isInterface) {
+      methods.filterNot(_.isDefault())
+    } else {
+      methods.filter(m => java.lang.reflect.Modifier.isAbstract(m.getModifiers))
+    }
+    (methods.map(getJavaMethodSignature).toSet, mustImplement.map(getJavaMethodSignature).toSet)
+  }
+
+  /**
+    * Ensures that `methods` fully implement `clazz`
+    */
+  private def checkObjectImplementation(clazz: java.lang.Class[_], tpe: Type, methods: List[JvmMethod], loc: SourceLocation): List[CompilationMessage] = {
+    //
+    // Check that the first argument looks like "this"
+    //
+    val thisErrors = methods.flatMap {
+      case JvmMethod(ident, fparams, _, _, _, _, methodLoc) => fparams match {
+        case Nil =>
+          // Case 1: Missing `this` argument.
+          Some(MissingThis(tpe, ident.name, methodLoc))
+        case fparam :: _ =>
+          // Case 2: Check that the declared type of `this` matches the type of the class or interface.
+          val thisType = Type.eraseAliases(fparam.tpe)
+          if (thisType != tpe) {
+            Some(IllegalThisType(tpe, fparams.head.tpe, ident.name, methodLoc))
+          } else {
+            None
+          }
+      }
+    }
+
+    val flixMethods = getFlixMethodSignatures(methods)
+    val implemented = flixMethods.keySet
+
+    val (canImplement, mustImplement) = getJavaMethods(clazz)
+
+    //
+    // Check that there are no unimplemented methods.
+    //
+    val unimplemented = mustImplement diff implemented
+    val unimplementedErrors = unimplemented.map(UnimplementedMethod(tpe, _, loc))
+
+    //
+    // Check that there are no methods that aren't in the interface
+    //
+    val extra = implemented diff canImplement
+    val extraErrors = extra.map(m => ExtraMethod(tpe, m, flixMethods(m).loc))
+
+    thisErrors ++ unimplementedErrors ++ extraErrors
   }
 
 }
