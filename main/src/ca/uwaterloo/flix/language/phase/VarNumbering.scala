@@ -235,7 +235,8 @@ object VarNumbering {
       case Expression.PutStaticField(_, exp, _, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.NewObject(_, _, _, _) =>
+      case Expression.NewObject(_, _, _, _, _, _) =>
+        // TODO - think about this after we've worked out what's going on in lambda lifting for NewObject
         i0
 
       case Expression.NewChannel(exp, _, _) =>

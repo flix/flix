@@ -206,6 +206,9 @@ object Simplifier {
         val e = visitExp(exp)
         SimplifiedAst.Expression.Cast(e, tpe, simplifyPurity(pur), loc)
 
+      case TypedAst.Expression.Upcast(exp, tpe, pur, _, loc) =>
+        throw InternalCompilerException("Not implemented")
+
       case TypedAst.Expression.TryCatch(exp, rules, tpe, pur, eff, loc) =>
         val e = visitExp(exp)
         val rs = rules map {
@@ -244,8 +247,9 @@ object Simplifier {
         val e = visitExp(exp)
         SimplifiedAst.Expression.PutStaticField(field, e, tpe, simplifyPurity(pur), loc)
 
-      case TypedAst.Expression.NewObject(clazz, tpe, pur, eff, methods, loc) =>
-        SimplifiedAst.Expression.NewObject(clazz, tpe, simplifyPurity(pur), loc)
+      case TypedAst.Expression.NewObject(name, clazz, tpe, pur, eff, methods0, loc) =>
+        val methods = methods0 map visitJvmMethod
+        SimplifiedAst.Expression.NewObject(name, clazz, tpe, simplifyPurity(pur), methods, loc)
 
       case TypedAst.Expression.NewChannel(exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp)
@@ -341,6 +345,10 @@ object Simplifier {
 
       case TypedAst.Expression.ReifyEff(_, _, _, _, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
+
+      case TypedAst.Expression.Par(_, _) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.")
+
     }
 
     /**
@@ -348,6 +356,16 @@ object Simplifier {
       */
     def visitFormalParam(p: TypedAst.FormalParam): SimplifiedAst.FormalParam =
       SimplifiedAst.FormalParam(p.sym, p.mod, p.tpe, p.loc)
+
+    /**
+      * Translates the given JvmMethod `method` to the SimplifiedAst
+      */
+    def visitJvmMethod(method: TypedAst.JvmMethod): SimplifiedAst.JvmMethod = method match {
+      case TypedAst.JvmMethod(ident, fparams0, exp0, retTpe, pur, eff, loc) =>
+        val fparams = fparams0 map visitFormalParam
+        val exp = visitExp(exp0)
+        SimplifiedAst.JvmMethod(ident, fparams, exp, retTpe, simplifyPurity(pur), loc)
+    }
 
     /**
       * Returns the given pattern `pat0` as an expression.
@@ -1035,7 +1053,9 @@ object Simplifier {
         val e = visitExp(exp)
         SimplifiedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.NewObject(_,_, _, _) => e
+      case SimplifiedAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
+        val methods = methods0 map visitJvmMethod
+        SimplifiedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
       case SimplifiedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -1078,10 +1098,15 @@ object Simplifier {
 
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
 
-      case SimplifiedAst.Expression.Closure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+      case SimplifiedAst.Expression.Closure(_, _, _) => throw InternalCompilerException(s"Unexpected expression.")
       case SimplifiedAst.Expression.LambdaClosure(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
       case SimplifiedAst.Expression.ApplyClo(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
       case SimplifiedAst.Expression.ApplyDef(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+    }
+
+    def visitJvmMethod(method: SimplifiedAst.JvmMethod) = method match {
+      case SimplifiedAst.JvmMethod(ident, fparams, exp, tpe, purity, loc) =>
+        SimplifiedAst.JvmMethod(ident, fparams, visitExp(exp), tpe, purity, loc)
     }
 
     visitExp(exp0)

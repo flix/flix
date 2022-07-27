@@ -873,6 +873,11 @@ object Namer {
         case (e, t, f) => NamedAst.Expression.Cast(e, t, f, loc)
       }
 
+    case WeededAst.Expression.Upcast(exp, loc) =>
+      mapN(visitExp(exp, env0, uenv0, tenv0)) {
+        case e => NamedAst.Expression.Upcast(e, loc)
+      }
+
     case WeededAst.Expression.Without(exp, eff, loc) =>
       val expVal = visitExp(exp, env0, uenv0, tenv0)
       val f = getClassOrEffect(eff, uenv0)
@@ -972,9 +977,11 @@ object Namer {
         case e => NamedAst.Expression.PutStaticField(className, fieldName, e, loc)
       }
 
-    case WeededAst.Expression.NewObject(className, methods, loc) =>
-      mapN(traverse(methods)(visitJvmMethod(_, env0, uenv0, tenv0))) {
-        case m => NamedAst.Expression.NewObject(className, m, loc)
+    case WeededAst.Expression.NewObject(tpe, methods, loc) =>
+      mapN(visitType(tpe, uenv0, tenv0), traverse(methods)(visitJvmMethod(_, env0, uenv0, tenv0))) {
+        case (tpe, ms) =>
+          val name = s"Anon$$${flix.genSym.freshId()}"
+          NamedAst.Expression.NewObject(name, tpe, ms, loc)
       }
 
     case WeededAst.Expression.NewChannel(exp, tpe, loc) =>
@@ -1017,6 +1024,11 @@ object Namer {
     case WeededAst.Expression.Spawn(exp, loc) =>
       visitExp(exp, env0, uenv0, tenv0) map {
         case e => NamedAst.Expression.Spawn(e, loc)
+      }
+
+    case WeededAst.Expression.Par(exp, loc) =>
+      mapN(visitExp(exp, env0, uenv0, tenv0)) {
+        case e => NamedAst.Expression.Par(e, loc)
       }
 
     case WeededAst.Expression.Lazy(exp, loc) =>
@@ -1405,12 +1417,12 @@ object Namer {
         case t => NamedAst.Type.Write(t, loc)
       }
 
+    case WeededAst.Type.Empty(loc) => NamedAst.Type.Empty(loc).toSuccess
+
     case WeededAst.Type.Ascribe(tpe, kind, loc) =>
       mapN(visitType(tpe, uenv0, tenv0)) {
         t => NamedAst.Type.Ascribe(t, kind, loc)
       }
-
-    case _: WeededAst.Type.Set => ??? // TODO handle
   }
 
   /**
@@ -1506,6 +1518,7 @@ object Namer {
     case WeededAst.Expression.Assign(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Ascribe(exp, _, _, _) => freeVars(exp)
     case WeededAst.Expression.Cast(exp, _, _, _) => freeVars(exp)
+    case WeededAst.Expression.Upcast(exp, _) => freeVars(exp)
     case WeededAst.Expression.Without(exp, _, _) => freeVars(exp)
     case WeededAst.Expression.Do(_, exps, _) => exps.flatMap(freeVars)
     case WeededAst.Expression.Resume(exp, _) => freeVars(exp)
@@ -1536,6 +1549,7 @@ object Namer {
       val defaultFreeVars = default.map(freeVars).getOrElse(Nil)
       rulesFreeVars ++ defaultFreeVars
     case WeededAst.Expression.Spawn(exp, _) => freeVars(exp)
+    case WeededAst.Expression.Par(exp, _) => freeVars(exp)
     case WeededAst.Expression.Lazy(exp, _) => freeVars(exp)
     case WeededAst.Expression.Force(exp, _) => freeVars(exp)
     case WeededAst.Expression.FixpointConstraintSet(cs, _) => cs.flatMap(freeVarsConstraint)
@@ -1624,7 +1638,7 @@ object Namer {
     case WeededAst.Type.Intersection(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.Read(tpe, loc) => freeVars(tpe)
     case WeededAst.Type.Write(tpe, loc) => freeVars(tpe)
-    case WeededAst.Type.Set(_, _) => ??? // TODO handle
+    case WeededAst.Type.Empty(_) => Nil
     case WeededAst.Type.Ascribe(tpe, _, _) => freeVars(tpe)
   }
 
@@ -1660,7 +1674,7 @@ object Namer {
       case WeededAst.Type.Intersection(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
       case WeededAst.Type.Read(tpe, loc) => visit(tpe)
       case WeededAst.Type.Write(tpe, loc) => visit(tpe)
-      case WeededAst.Type.Set(_, _) => ??? // TODO handle
+      case WeededAst.Type.Empty(_) => Nil
       case WeededAst.Type.Ascribe(tpe, _, _) => visit(tpe)
     }
 

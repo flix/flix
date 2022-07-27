@@ -55,7 +55,7 @@ object SymbolProvider {
     val defs = root.defs.values.collect { case d if d.sym.loc.source.name == uri => mkDefDocumentSymbol(d) }
     val classes = root.classes.values.collect { case c if c.sym.loc.source.name == uri => mkClassDocumentSymbol(c) }
     val effs = root.effects.values.collect { case e if e.sym.loc.source.name == uri => mkEffectDocumentSymbol(e) }
-    (classes ++ defs ++ enums).toList
+    (classes ++ defs ++ enums ++ effs).toList
   }
 
   /**

@@ -46,7 +46,7 @@ namespace TestGraph {
             Nil;
         Set#{(1, 2), (2, 3), (3, 4)}
 
-    def _graph06(): Set[(Int32, Int32)] =
+    def graph06(): Set[(Int32, Int32)] =
         let _graphString =
             " ┌─┐   ┌─┐ " ::
             " │1├─→─┤2│ " ::
@@ -58,7 +58,7 @@ namespace TestGraph {
             Nil;
         Set#{(1, 2), (2, 3), (3, 4), (4, 1)}
 
-    def _graph07(): Set[(Int32, Int32)] =
+    def graph07(): Set[(Int32, Int32)] =
         let _graphString =
             " ┌─┐   ┌─┐   ┌─┐ " ::
             " │1├─→─┤2├─→─┤5│ " ::
@@ -233,5 +233,51 @@ namespace TestGraph {
         let g = graph05();
         Graph.isConnected(src = 5, dst = 6, g) == false
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // stronglyConnectedComponents                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def stronglyConnectedComponents01(): Bool =
+        let g = graph01();
+        let s = Set#{};
+        Graph.stronglyConnectedComponents(g) == s
+
+    @test
+    def stronglyConnectedComponents02(): Bool =
+        let g = graph02();
+        let s = Set#{Set#{1}, Set#{2}};
+        Graph.stronglyConnectedComponents(g) == s
+
+    @test
+    def stronglyConnectedComponents03(): Bool =
+        let g = graph03();
+        let s = Set#{Set#{1}, Set#{2}, Set#{3}, Set#{4}};
+        Graph.stronglyConnectedComponents(g) == s
+
+    @test
+    def stronglyConnectedComponents04(): Bool =
+        let g = graph04();
+        let s = Set#{Set#{1}, Set#{2}, Set#{3}};
+        Graph.stronglyConnectedComponents(g) == s
+
+    @test
+    def stronglyConnectedComponents05(): Bool =
+        let g = graph05();
+        let s = Set#{Set#{1}, Set#{2}, Set#{3}, Set#{4}};
+        Graph.stronglyConnectedComponents(g) == s
+
+    @test
+    def stronglyConnectedComponents06(): Bool =
+        let g = graph06();
+        let s = Set#{Set#{1, 2, 3, 4}};
+        Graph.stronglyConnectedComponents(g) == s
+
+    @test
+    def stronglyConnectedComponents07(): Bool =
+        let g = graph07();
+        let s = Set#{Set#{1, 2, 3, 4}, Set#{5, 6}};
+        Graph.stronglyConnectedComponents(g) == s
 
 }

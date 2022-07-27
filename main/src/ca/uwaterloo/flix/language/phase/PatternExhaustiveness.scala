@@ -188,6 +188,7 @@ object PatternExhaustiveness {
       case Expression.Assign(exp1, exp2, _, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
       case Expression.Ascribe(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Cast(exp, _, _, _, _, _, _, _) => visitExp(exp, root)
+      case Expression.Upcast(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Without(exp, _, _, _, _, _) => visitExp(exp, root)
 
       case Expression.TryCatch(exp, rules, _, _, _, _) =>
@@ -207,7 +208,7 @@ object PatternExhaustiveness {
       case Expression.PutField(_, exp1, exp2, _, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
       case Expression.GetStaticField(_, _, _, _, _) => ().toSuccess
       case Expression.PutStaticField(_, exp, _, _, _, _) => visitExp(exp, root)
-      case Expression.NewObject(_, _, _, _, methods, _) => traverseX(methods)(m => visitExp(m.exp, root))
+      case Expression.NewObject(_, _, _, _, _, methods, _) => traverseX(methods)(m => visitExp(m.exp, root))
       case Expression.NewChannel(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.GetChannel(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.PutChannel(exp1, exp2, _, _, _, _) => traverseX(List(exp1, exp2))(visitExp(_, root))
@@ -218,6 +219,7 @@ object PatternExhaustiveness {
         traverseX(ruleExps ::: chans ::: default.toList)(visitExp(_, root))
 
       case Expression.Spawn(exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.Par(exp, _) => visitExp(exp, root)
       case Expression.Lazy(exp, _, _) => visitExp(exp, root)
       case Expression.Force(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.FixpointConstraintSet(cs, _, _, _) => traverseX(cs)(visitConstraint(_, root))

@@ -155,6 +155,8 @@ object ResolvedAst {
 
     case class Cast(exp: ResolvedAst.Expression, declaredType: Option[Type], declaredEff: Ast.PurityAndEffect, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class Upcast(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Without(exp: ResolvedAst.Expression, eff: Ast.EffectSymUse, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class TryCatch(exp: ResolvedAst.Expression, rules: List[ResolvedAst.CatchRule], loc: SourceLocation) extends ResolvedAst.Expression
@@ -179,7 +181,7 @@ object ResolvedAst {
 
     case class PutStaticField(field: Field, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class NewObject(clazz: java.lang.Class[_], methods: List[JvmMethod], loc: SourceLocation) extends ResolvedAst.Expression
+    case class NewObject(name: String, clazz: java.lang.Class[_], methods: List[JvmMethod], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class NewChannel(exp: ResolvedAst.Expression, tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -190,6 +192,8 @@ object ResolvedAst {
     case class SelectChannel(rules: List[ResolvedAst.SelectChannelRule], default: Option[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Spawn(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class Par(exp: Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Lazy(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 

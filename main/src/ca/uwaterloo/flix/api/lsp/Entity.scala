@@ -96,4 +96,6 @@ object Entity {
     def loc: SourceLocation = op.sym.loc
   }
 
+  case class OpUse(sym: Symbol.OpSym, loc: SourceLocation) extends Entity
+
 }

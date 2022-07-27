@@ -489,6 +489,9 @@ object Monomorph {
         val e = visitExp(exp, env0)
         Expression.Cast(e, None, None, None, subst0(tpe), pur, eff, loc)
 
+      case Expression.Upcast(exp, tpe, pur, eff, loc) =>
+        Expression.Upcast(visitExp(exp, env0), tpe, pur, eff, loc)
+
       case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
         // Erase the Without
         visitExp(exp, env0)
@@ -546,9 +549,9 @@ object Monomorph {
         val e = visitExp(exp, env0)
         Expression.PutStaticField(field, e, tpe, pur, eff, loc)
 
-      case Expression.NewObject(clazz, tpe, pur, eff, methods0, loc) =>
-        val methods = methods0.map(visitJvmMethod)
-        Expression.NewObject(clazz, subst0(tpe), pur, eff, methods, loc)
+      case Expression.NewObject(name, clazz, tpe, pur, eff, methods0, loc) =>
+        val methods = methods0.map(visitJvmMethod(_, env0))
+        Expression.NewObject(name, clazz, subst0(tpe), pur, eff, methods, loc)
 
       case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
@@ -580,6 +583,9 @@ object Monomorph {
       case Expression.Spawn(exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
         Expression.Spawn(e, subst0(tpe), pur, eff, loc)
+
+      case Expression.Par(_, loc) =>
+        throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
       case Expression.Lazy(exp, tpe, loc) =>
         val e = visitExp(exp, env0)
@@ -638,8 +644,9 @@ object Monomorph {
 
       case Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, _, loc) =>
         // Magic!
-        val isPure = subst0(exp1.tpe).arrowPurityType match {
-          case Type.Cst(TypeConstructor.True, _) => true
+        val arrowTpe = subst0(exp1.tpe)
+        val isPure = (arrowTpe.arrowPurityType, arrowTpe.arrowEffectType) match {
+          case (Type.Cst(TypeConstructor.True, _), Type.Cst(TypeConstructor.Empty, _)) => true
           case _ => false
         }
 
@@ -702,10 +709,10 @@ object Monomorph {
           else envs.reduce(_ ++ _) ++ Map(sym -> freshSym))
     }
 
-    def visitJvmMethod(method: JvmMethod) = method match {
+    def visitJvmMethod(method: JvmMethod, env0: Map[Symbol.VarSym, Symbol.VarSym]) = method match {
       case JvmMethod(ident, fparams0, exp0, tpe, pur, eff, loc) =>
-        val (fparams, env0) = specializeFormalParams(fparams0, subst0)
-        val exp = visitExp(exp0, env0)
+        val (fparams, env1) = specializeFormalParams(fparams0, subst0)
+        val exp = visitExp(exp0, env0 ++ env1)
         JvmMethod(ident, fparams, exp, subst0(tpe), pur, eff, loc)
     }
 

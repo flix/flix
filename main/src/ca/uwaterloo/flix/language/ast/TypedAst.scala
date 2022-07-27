@@ -288,6 +288,8 @@ object TypedAst {
 
     case class Cast(exp: TypedAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], declaredEff: Option[Type], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
+    case class Upcast(exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
     case class Without(exp: TypedAst.Expression, effUse: Ast.EffectSymUse, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
@@ -318,7 +320,7 @@ object TypedAst {
 
     case class PutStaticField(field: Field, exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class NewObject(clazz: java.lang.Class[_], tpe: Type, pur: Type, eff: Type, methods: List[TypedAst.JvmMethod], loc: SourceLocation) extends TypedAst.Expression
+    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, pur: Type, eff: Type, methods: List[TypedAst.JvmMethod], loc: SourceLocation) extends TypedAst.Expression
 
     case class NewChannel(exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -329,6 +331,14 @@ object TypedAst {
     case class SelectChannel(rules: List[TypedAst.SelectChannelRule], default: Option[TypedAst.Expression], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Spawn(exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
+    case class Par(exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
+      def tpe: Type = exp.tpe
+
+      def pur: Type = exp.pur
+
+      def eff: Type = exp.eff
+    }
 
     case class Lazy(exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def pur: Type = Type.Pure
