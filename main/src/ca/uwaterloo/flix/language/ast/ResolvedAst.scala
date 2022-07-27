@@ -193,6 +193,8 @@ object ResolvedAst {
 
     case class Spawn(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class Par(exp: Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Lazy(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Force(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression

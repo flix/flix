@@ -132,21 +132,19 @@ pub def println(x: a): Unit & Impure with ToString[a] =
 ///
 /// Crashes the current process with the given message `m`.
 ///
-pub def bug!(m: String): a =
-    let f = () -> {
-        import static get java.lang.System.err: ##java.io.PrintStream & Pure as getErr;
-        import java.io.PrintStream.println(String): Unit & Impure;
-        import java.lang.String.repeat(Int32): ##java.lang.String & Pure;
-        let prt = println(getErr());
-        prt(repeat("*", 80));
-        prt("**") ;
-        prt("**  BUG: ${m}") ;
-        prt("**") ;
-        prt(repeat("*", 80));
-        prt("")
-    };
-    let _ = f() as & Pure;
+pub def bug!(m: String): a = {
+    import static get java.lang.System.err: ##java.io.PrintStream & Pure as getErr;
+    import java.io.PrintStream.println(String): Unit & Impure;
+    import java.lang.String.repeat(Int32): ##java.lang.String & Pure;
+    let prt = println(getErr());
+    prt(repeat("*", 80));
+    prt("**") ;
+    prt("**  BUG: ${m}") ;
+    prt("**") ;
+    prt(repeat("*", 80));
+    prt("");
     ?panic
+} as & Pure
 
 ///
 /// Asserts that this expression is unreachable. Crashes if not.

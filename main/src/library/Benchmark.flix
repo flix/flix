@@ -16,10 +16,11 @@
 namespace Benchmark {
 
     ///
-    /// A benchmark has a name and a function to execute.
+    /// A benchmark has a name and a function to execute. The function is always
+    /// impure since timing is considered a side-effect in this context.
     ///
     pub enum Benchmark {
-        case Benchmark({name :: String, f :: Unit -> Unit})
+        case Benchmark({name :: String, f :: Unit -> Unit & Impure})
     }
 
     ///
@@ -44,9 +45,9 @@ namespace Benchmark {
     /// A smart constructor for a benchmark.
     ///
     @Experimental
-    pub def defBenchmark(name: String, f: Unit -> a): Benchmark =
+    pub def defBenchmark(name: String, f: Unit -> a & ef): Benchmark =
         let fn = () -> {
-            let _ = f();
+            let _ = f() as & Impure;
             ()
         };
         Benchmark({name = name, f = fn})
@@ -123,17 +124,17 @@ namespace Benchmark {
         let Benchmark(r) = b;
         import static java.lang.System.nanoTime(): Int64 & Impure;
         let t = nanoTime();
-        upcast(r.f)();
+        (r.f)();
         (nanoTime() - t) / scaleFactor()
 
     ///
     /// Executes the given function `f` exactly `n` times.
     ///
-    def loop(f: Unit -> a, n: Int32): Unit & Impure =
+    def loop(f: Unit -> a & ef, n: Int32): Unit & ef =
         if (n == 0)
             ()
         else {
-            discard f() as & Impure;
+            discard f();
             loop(f, n - 1)
         }
 

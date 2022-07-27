@@ -249,6 +249,9 @@ object Safety {
     case Expression.Spawn(exp, _, _, _, _) =>
       visitExp(exp)
 
+    case Expression.Par(exp, _) =>
+      visitExp(exp)
+
     case Expression.Lazy(exp, _, _) =>
       visitExp(exp)
 

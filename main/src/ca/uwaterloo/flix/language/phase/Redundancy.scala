@@ -658,7 +658,11 @@ object Redundancy {
         case (acc, used) => acc ++ used
       }
 
-    case Expression.Spawn(exp, _, _, _, _) => visitExp(exp, env0, rc)
+    case Expression.Spawn(exp, _, _, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expression.Par(exp, _) =>
+      visitExp(exp, env0, rc)
 
     case Expression.Lazy(exp, _, _) =>
       visitExp(exp, env0, rc)
