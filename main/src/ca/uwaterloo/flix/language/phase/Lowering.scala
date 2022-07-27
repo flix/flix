@@ -590,7 +590,15 @@ object Lowering {
 
       def mkChannel(e: Expression): Expression = {
         val loc = e.loc.asSynthetic
-        NewChannel(Expression.Int32(1, loc), Type.Channel, Type.Pure, Type.Empty, loc)
+        Expression.NewChannel(Expression.Int32(1, loc), Type.mkChannel(e.tpe, loc), Type.Impure, Type.Empty, loc) // Should have IO effect?
+      }
+
+      def mkSpawn(e: Expression): Expression = {
+        Expression.Spawn(e, Type.Unit, e.pur, e.eff, e.loc.asSynthetic)
+      }
+
+      def mkWait(chan: Expression): Expression = {
+        Expression.GetChannel(chan, chan.tpe, Type.Impure, chan.eff, chan.loc.asSynthetic)
       }
 
       def mkLetSym(prefix: String, e: Expression): Symbol.VarSym = {
@@ -612,6 +620,19 @@ object Lowering {
             loc))
       }
 
+      def mkStmCont(e: Expression): Expression => Expression = {
+        val loc = e.loc.asSynthetic
+        e1: Expression =>
+          Expression.Stm(
+            e,
+            e1,
+            e1.tpe,
+            Type.mkAnd(e.pur, e1.pur, loc),
+            Type.mkUnion(e.pur, e1.pur, loc),
+            loc
+          )
+      }
+
       val funLoc = loc1.asSynthetic
       val parLoc = loc0.asSynthetic
       val fun = visitExp(exp)
@@ -627,6 +648,12 @@ object Lowering {
       }
 
       // Spawn expressions into channels
+      val spawns = args.foldLeft(mkStmCont(mkSpawn(fun))) {
+        case (spawnAcc, e) =>
+          e1 => spawnAcc(mkStmCont(mkSpawn(e))(e1))
+      }
+
+      // Wait for message in channels
 
 
       val fun1 = ???
