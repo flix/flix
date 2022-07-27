@@ -18,13 +18,16 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
-import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation, Fixity, Polarity}
+import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation, Fixity, Modifiers, Polarity}
+import ca.uwaterloo.flix.language.ast.TypedAst.Expression.NewChannel
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+
+import java.util.UUID
 
 /**
   * This phase translates AST expressions related to the Datalog subset of the
@@ -559,7 +562,83 @@ object Lowering {
       val t = visitType(tpe)
       Expression.Spawn(e, t, pur, eff, loc)
 
-    case Expression.Par(exp, _) =>
+    case Expression.Par(Expression.Apply(exp, exps, tpe, pur, eff, loc1), loc0) => {
+      /*
+      {
+        let ch1 = channel 1;
+        let ch2 = channel 1;
+        let ch3 = channel 1;
+        ...
+        let chn = channel 1;
+
+        spawn ch1 <- exp1;
+        spawn ch2 <- exp2;
+        spawn ch3 <- exp3;
+        ...
+        spawn chn <- expn;
+
+        let tmp1 = <- ch1;
+        let tmp2 = <- ch2;
+        let tmp3 = <- ch3;
+        ...
+        let tmpn = <- chn;
+
+        (tmp1)(tmp2, tmp3, ..., tmpn) // these last two is a Let(tpmn = <- chn, apply) expression.
+      } as & *the effect of tmp1 to tmpn*
+       */
+
+
+      def mkChannel(e: Expression): Expression = {
+        val loc = e.loc.asSynthetic
+        NewChannel(Expression.Int32(1, loc), Type.Channel, Type.Pure, Type.Empty, loc)
+      }
+
+      def mkLetSym(prefix: String, e: Expression): Symbol.VarSym = {
+        val name = prefix + Flix.Delimiter + flix.genSym.freshId()
+        Symbol.freshVarSym(name, BoundBy.Let, e.loc.asSynthetic)
+      }
+
+      def mkLetCont(prefix: String, e: Expression): (Symbol.VarSym, Expression => Expression) = {
+        val sym = mkLetSym(prefix, e)
+        val loc = e.loc.asSynthetic
+        (sym, e1 =>
+          Expression.Let(sym,
+            Modifiers(List(Ast.Modifier.Synthetic)),
+            e,
+            e1,
+            e1.tpe,
+            Type.mkAnd(e.pur, e1.pur, loc),
+            Type.mkUnion(e.eff, e1.eff, loc),
+            loc))
+      }
+
+      val funLoc = loc1.asSynthetic
+      val parLoc = loc0.asSynthetic
+      val fun = visitExp(exp)
+      val args = visitExps(exps)
+
+      // Create channels
+      val (funChanSym, funChan) = mkLetCont("chan", mkChannel(fun))
+      val chanStart = (List(funChanSym), funChan)
+      val (chanSyms, chans) = args.foldLeft(chanStart) {
+        case ((syms, bindings), e1) =>
+          val (s, c) = mkLetCont("chan", mkChannel(e1))
+          (syms ::: List(s), e => bindings(c(e)))
+      }
+
+      // Spawn expressions into channels
+
+
+      val fun1 = ???
+      val args1 = ???
+      val combinedPurities = ???
+      val apply = Expression.Apply(fun1, args1, tpe, pur, eff, funLoc)
+      val result = Expression.Cast(apply, None, Some(combinedPurities), None, ???, ???, ???, parLoc)
+      result
+    }
+
+
+    case Expression.Par(_, _) =>
       throw InternalCompilerException("Not Implemented")
 
     case Expression.Lazy(exp, tpe, loc) =>
@@ -1307,7 +1386,7 @@ object Lowering {
     */
   private def mkList(exps: List[Expression], elmType: Type, loc: SourceLocation): Expression = {
     val nil = mkNil(elmType, loc)
-    exps.foldRight(nil){
+    exps.foldRight(nil) {
       case (e, acc) => mkCons(e, acc, loc)
     }
   }
