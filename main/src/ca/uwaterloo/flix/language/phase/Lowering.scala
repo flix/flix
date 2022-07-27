@@ -27,8 +27,6 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, 
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
-import java.util.UUID
-
 /**
   * This phase translates AST expressions related to the Datalog subset of the
   * language into `Fixpoint/Ast` values (which are ordinary Flix values).
@@ -593,8 +591,17 @@ object Lowering {
         Expression.NewChannel(Expression.Int32(1, loc), Type.mkChannel(e.tpe, loc), Type.Impure, Type.Empty, loc) // Should have IO effect?
       }
 
-      def mkSpawn(e: Expression): Expression = {
-        Expression.Spawn(e, Type.Unit, e.pur, e.eff, e.loc.asSynthetic)
+      def mkPutChannel(chan: Symbol.VarSym, e: Expression): Expression = {
+        val loc = e.loc.asSynthetic
+        Expression.PutChannel(Expression.Var(chan, Type.mkChannel(e.tpe, loc), loc), e, e.tpe, Type.Impure, e.eff, loc)
+      }
+
+      def mkSpawn(chan: Symbol.VarSym, e: Expression): Expression = {
+        Expression.Spawn(mkPutChannel(chan, e), Type.Unit, e.pur, e.eff, e.loc.asSynthetic)
+      }
+
+      def mkVarExp(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation): Expression = {
+        Expression.Var(sym, tpe, loc)
       }
 
       def mkWait(chan: Expression): Expression = {
@@ -648,20 +655,28 @@ object Lowering {
       }
 
       // Spawn expressions into channels
-      val spawns = args.foldLeft(mkStmCont(mkSpawn(fun))) {
-        case (spawnAcc, e) =>
-          e1 => spawnAcc(mkStmCont(mkSpawn(e))(e1))
+      val spawns = chanSyms.tail.zip(args).foldLeft(mkStmCont(mkSpawn(funChanSym, fun))) {
+        case (spawnCont, (chan, e)) =>
+          e1 => spawnCont(mkStmCont(mkSpawn(chan, e))(e1))
       }
 
       // Wait for message in channels
+      val (funWaitSym, funWaitCont) = mkLetCont("tmp", mkWait(mkVarExp(funChanSym, fun.tpe, fun.loc)))
+      val (waitSyms, waits) = chanSyms.tail.zip(args).foldLeft((List(funWaitSym), funWaitCont)) {
+        case ((syms, letWaitCont), (chanSym, e0)) =>
+          val (s, l) = mkLetCont("tmp", mkWait(mkVarExp(chanSym, e0.tpe, e0.loc)))
+          (syms ::: List(s), (e: Expression) => letWaitCont(l(e)))
+      }
 
-
-      val fun1 = ???
-      val args1 = ???
-      val combinedPurities = ???
+      val fun1 = mkVarExp(funWaitSym, fun.tpe, funLoc)
+      val args1 = waitSyms.zip(args).map {
+        case (sym, e) => mkVarExp(sym, e.tpe, e.loc.asSynthetic)
+      }
+      val allPurs = Type.mkAnd(fun.tpe :: args.map(_.tpe), funLoc)
+      val allEffs = Type.mkUnion(fun.eff :: args.map(_.eff), funLoc)
       val apply = Expression.Apply(fun1, args1, tpe, pur, eff, funLoc)
-      val result = Expression.Cast(apply, None, Some(combinedPurities), None, ???, ???, ???, parLoc)
-      result
+      val block = chans(spawns(waits(apply)))
+      Expression.Cast(block, None, Some(allPurs), Some(allEffs), tpe, pur, eff, parLoc)
     }
 
 
