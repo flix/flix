@@ -1,5 +1,5 @@
 namespace Test/Exp/Upcast {
-
+/*
     @test
     def testUpcast01(): Unit & Impure =
         let _ =
@@ -39,6 +39,17 @@ namespace Test/Exp/Upcast {
                let _ = [8; 8];
                ()
            };
+        ()
+*/
+    @test
+    def testUpcast06(): Unit & Impure = // why are the purities different?
+        import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
+        import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
+        let _ =
+            if (true)
+                upcast newStringBuilder()
+            else
+                newObject();
         ()
 
 }

@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
 import ca.uwaterloo.flix.util.Validation
@@ -310,7 +310,13 @@ object Safety {
     // check purity is ok
     // pure -> ef -> impure
     // ef -> ef and ef2
-    val types = actual.tpe == expected.tpe
+    val types = (actual.tpe, expected.tpe) match {
+      case (Type.Cst(TypeConstructor.Native(class1), _), Type.Cst(TypeConstructor.Native(class2), _)) =>
+        class2.isAssignableFrom(class1)
+
+      case (tpe1, tpe2) =>
+        tpe1 == tpe2
+    }
     val purities = (actual.pur, expected.pur) match {
       case (Type.Pure, _) => true
       case (_, Type.Impure) => true
