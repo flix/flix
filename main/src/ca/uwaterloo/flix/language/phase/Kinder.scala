@@ -59,6 +59,16 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
   */
 object Kinder {
 
+  /**
+    * The symbol for the IO effect.
+    */
+  private val IoSym = new Symbol.EffectSym(Nil, "IO", SourceLocation.Unknown)
+
+  /**
+    * The symbol for the NonDet effect.
+    */
+  private val NonDetSym = new Symbol.EffectSym(Nil, "NonDet", SourceLocation.Unknown)
+
   def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[KindedAst.Root, KindError] = flix.phase("Kinder") {
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
@@ -1181,9 +1191,20 @@ object Kinder {
           val purs = byKind.getOrElse(Kind.Bool, Nil)
           val effs = byKind.getOrElse(Kind.Effect, Nil)
 
-          val pur = purs.reduceOption({
-            case (t1, t2) => BoolUnification.mkAnd(t1, t2)
-          }: (Type, Type) => Type).getOrElse(Type.Pure)
+          // find the location of a necessarily impure effect if it exists
+          val impureEff = effs.collectFirst {
+            case Type.Cst(TypeConstructor.Effect(sym), loc) if sym == IoSym || sym == NonDetSym => loc
+          }
+
+          val pur = impureEff match {
+            // Case 1: There is a necessarily impure effect. We are impure.
+            case Some(loc) => Type.mkFalse(loc)
+            // Case 2: There is no necessarily impure effect. Build the formula
+            case None =>
+              purs.reduceOption({
+                case (t1, t2) => BoolUnification.mkAnd(t1, t2)
+              }: (Type, Type) => Type).getOrElse(Type.Pure)
+          }
 
           val eff = effs.reduceOption({
             case (t1, t2) => Type.mkUnion(t1, t2, t1.loc.asSynthetic)
