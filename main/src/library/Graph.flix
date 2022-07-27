@@ -115,7 +115,7 @@ namespace Graph {
             // the relational that are reachable using any number of nodes.
             Reachable(n1, n2) :- Reachable(n1, m), Edge(m, n2).
         };
-        let selfReach = query edges, reachability select (x, y) from Reachable(x, y) where x == y;
+        let selfReach = query edges, reachability select () from Reachable(x, y) where x == y;
         0 < (selfReach |> List.length)
 
 }
