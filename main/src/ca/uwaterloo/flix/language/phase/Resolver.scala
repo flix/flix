@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation}
+import ca.uwaterloo.flix.language.ast.NamedAst.Expression
 import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -46,7 +47,7 @@ object Resolver {
   private val ToStringSym = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
   private val HashSym = new Symbol.ClassSym(Nil, "Hash", SourceLocation.Unknown)
 
-  val DerivableSyms = List(BoxableSym, EqSym, OrderSym, ToStringSym, HashSym)
+  val DerivableSyms: List[Symbol.ClassSym] = List(BoxableSym, EqSym, OrderSym, ToStringSym, HashSym)
 
   /**
     * Performs name resolution on the given program `root`.
@@ -585,7 +586,7 @@ object Resolver {
           // Case 1: Hooray! We can call the function directly.
           val esVal = traverse(exps)(visitExp(_, region))
           mapN(esVal) {
-            case (es) =>
+            case es =>
               val base = ResolvedAst.Expression.Sig(sig.sym, innerLoc)
               ResolvedAst.Expression.Apply(base, es, outerLoc)
           }
@@ -594,6 +595,7 @@ object Resolver {
           visitApply(app, region)
         }
       }
+
 
       /**
         * Local visitor.
@@ -666,7 +668,8 @@ object Resolver {
             case NamedAst.DefOrSig.Sig(sig) => visitApplySig(app, sig, exps, region, innerLoc, outerLoc)
           }
 
-        case app@NamedAst.Expression.Apply(_, _, _) => visitApply(app, region)
+        case app@NamedAst.Expression.Apply(_, _, _) =>
+          visitApply(app, region)
 
         case NamedAst.Expression.Lambda(fparam, exp, loc) =>
           val pVal = Params.resolve(fparam, taenv, ns0, root)
@@ -938,7 +941,6 @@ object Resolver {
           }
 
         case NamedAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
-
           val declaredTypVal = declaredType match {
             case None => (None: Option[Type]).toSuccess
             case Some(t) => mapN(resolveType(t, taenv, ns0, root))(x => Some(x))
@@ -948,6 +950,11 @@ object Resolver {
           val eVal = visitExp(exp, region)
           mapN(eVal, declaredTypVal, declaredEffVal) {
             case (e, t, f) => ResolvedAst.Expression.Cast(e, t, f, loc)
+          }
+
+        case NamedAst.Expression.Upcast(exp, loc) =>
+          mapN(visitExp(exp, region)) {
+            case e => ResolvedAst.Expression.Upcast(e, loc)
           }
 
         case NamedAst.Expression.TryCatch(exp, rules, loc) =>
@@ -1062,11 +1069,17 @@ object Resolver {
             case (field, e) => ResolvedAst.Expression.PutStaticField(field, e, loc)
           }
 
-        case NamedAst.Expression.NewObject(className, methods, loc) =>
-          val clazz = lookupJvmClass(className, loc)
-          val fparams = traverse(methods)(visitJvmMethod(_, taenv, ns0, root))
-          mapN(clazz, fparams) {
-            case (c, f) => ResolvedAst.Expression.NewObject(c, f, loc)
+        case NamedAst.Expression.NewObject(name, tpe, methods, loc) =>
+          flatMapN(resolveType(tpe, taenv, ns0, root), traverse(methods)(visitJvmMethod(_, taenv, ns0, root))) {
+            case (t, ms) =>
+              //
+              // Check that the type is a JVM type (after type alias erasure).
+              //
+              Type.eraseAliases(t) match {
+                case Type.Cst(TypeConstructor.Native(clazz), _) =>
+                  ResolvedAst.Expression.NewObject(name, clazz, ms, loc).toSuccess
+                case _ => ResolutionError.IllegalNonJavaType(t, t.loc).toFailure
+              }
           }
 
         case NamedAst.Expression.NewChannel(exp, tpe, loc) =>
@@ -1116,6 +1129,11 @@ object Resolver {
           val eVal = visitExp(exp, region)
           mapN(eVal) {
             e => ResolvedAst.Expression.Spawn(e, loc)
+          }
+
+        case NamedAst.Expression.Par(exp, loc) =>
+          mapN(visitExp(exp, region)) {
+            e => ResolvedAst.Expression.Par(e, loc)
           }
 
         case NamedAst.Expression.Lazy(exp, loc) =>
@@ -1197,9 +1215,9 @@ object Resolver {
 
       }
 
-    /**
-      * Performs name resolution on the given JvmMethod `method` in the namespace `ns0`.
-      */
+      /**
+        * Performs name resolution on the given JvmMethod `method` in the namespace `ns0`.
+        */
       def visitJvmMethod(method: NamedAst.JvmMethod, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.JvmMethod, ResolutionError] = method match {
         case NamedAst.JvmMethod(ident, fparams, exp, tpe, purAndEff, loc) =>
           val fparamsVal = resolveFormalParams(fparams, taenv, ns0, root)
@@ -1207,7 +1225,7 @@ object Resolver {
           val tpeVal = resolveType(tpe, taenv, ns0, root)
           val purAndEffVal = resolvePurityAndEffect(purAndEff, taenv, ns0, root)
           mapN(fparamsVal, expVal, tpeVal, purAndEffVal) {
-            case (f, e, t, p) => ResolvedAst.JvmMethod(ident, f, e, t , p, loc)
+            case (f, e, t, p) => ResolvedAst.JvmMethod(ident, f, e, t, p, loc)
           }
       }
 
@@ -1890,6 +1908,8 @@ object Resolver {
         case t => Type.ReadWrite(t, loc)
       }
 
+    case NamedAst.Type.Empty(loc) => Type.Cst(TypeConstructor.Empty, loc).toSuccess
+
     case NamedAst.Type.Ascribe(tpe, kind, loc) =>
       mapN(semiResolveType(tpe, ns0, root)) {
         t => Type.Ascribe(t, kind, loc)
@@ -2303,6 +2323,7 @@ object Resolver {
       EnumAccessibility.Accessible
     }
   }
+
   /**
     * Successfully returns the given `enum0` if it is accessible from the given namespace `ns0`.
     *

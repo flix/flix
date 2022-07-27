@@ -329,8 +329,6 @@ namespace Result {
     ///
     /// Applies `f` to `v` if `r` is `Ok(v)`. Otherwise does nothing.
     ///
-    /// The function `f` must be impure.
-    ///
     @Time(time(f)) @Space(space(f))
     pub def foreach(f: t -> Unit & ef, r: Result[t, e]): Unit & ef = match r {
         case Ok(v)  => f(v)

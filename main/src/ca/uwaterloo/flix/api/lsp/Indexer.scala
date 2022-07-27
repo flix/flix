@@ -295,6 +295,12 @@ object Indexer {
       val de = declaredEff.map(visitType).getOrElse(Index.empty)
       visitExp(exp) ++ dt ++ dp ++ de ++ Index.occurrenceOf(exp0)
 
+    case Expression.Upcast(exp, tpe, pur, eff, _) =>
+      val t = visitType(tpe)
+      val p = visitType(pur)
+      val e = visitType(eff)
+      visitExp(exp) ++ t ++ p ++ e ++ Index.occurrenceOf(exp0)
+
     case Expression.Without(exp, effUse, _, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(effUse.sym, effUse.loc)
 
@@ -340,7 +346,7 @@ object Indexer {
     case Expression.PutStaticField(_, exp, _, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.NewObject(_, _, _, _, methods, _) =>
+    case Expression.NewObject(_, _, _, _, _, methods, _) =>
       Index.occurrenceOf(exp0) ++ traverse(methods) {
         case JvmMethod(_, fparams, exp, tpe, eff, pur, _) =>
           Index.traverse(fparams)(visitFormalParam) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff) ++ visitType(pur)
@@ -364,6 +370,9 @@ object Indexer {
       i0 ++ i1 ++ Index.occurrenceOf(exp0)
 
     case Expression.Spawn(exp, _, _, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
+
+    case Expression.Par(exp, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.Lazy(exp, _, _) =>

@@ -68,6 +68,9 @@ object GotoProvider {
           case _ => mkNotFound(uri, pos)
         }
 
+        case Entity.OpUse(sym, loc) =>
+          ("status" -> "success") ~ ("result" -> LocationLink.fromOpSym(sym, loc).toJSON)
+
         case _ => mkNotFound(uri, pos)
       }
     }

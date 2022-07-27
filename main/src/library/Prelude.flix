@@ -30,10 +30,26 @@ pub enum ReifiedType with Eq, Order, ToString {
 }
 
 ///
+/// The Generic IO Effect.
+///
+/// The `IO` effect is the most general effect of any
+/// operation that interacts with the environment.
+///
+pub eff IO
+
+///
+/// The Non-Deterministic Effect.
+///
+/// The `NonDet` effect represents "functions" that behave like relations,
+/// i.e. they have no side-effects, and given the same input their output
+//// there is a fixed set of output.
+///
+pub eff NonDet
+
+///
 /// The identity function.
 ///
 pub def identity(x: a): a = x
-
 
 ///
 /// Returns the function `f` with input arguments swapped.
@@ -116,21 +132,19 @@ pub def println(x: a): Unit & Impure with ToString[a] =
 ///
 /// Crashes the current process with the given message `m`.
 ///
-pub def bug!(m: String): a =
-    let f = () -> {
-        import static get java.lang.System.err: ##java.io.PrintStream & Pure as getErr;
-        import java.io.PrintStream.println(String): Unit & Impure;
-        import java.lang.String.repeat(Int32): ##java.lang.String & Pure;
-        let prt = println(getErr());
-        prt(repeat("*", 80));
-        prt("**") ;
-        prt("**  BUG: ${m}") ;
-        prt("**") ;
-        prt(repeat("*", 80));
-        prt("")
-    };
-    let _ = f() as & Pure;
+pub def bug!(m: String): a = {
+    import static get java.lang.System.err: ##java.io.PrintStream & Pure as getErr;
+    import java.io.PrintStream.println(String): Unit & Impure;
+    import java.lang.String.repeat(Int32): ##java.lang.String & Pure;
+    let prt = println(getErr());
+    prt(repeat("*", 80));
+    prt("**") ;
+    prt("**  BUG: ${m}") ;
+    prt("**") ;
+    prt(repeat("*", 80));
+    prt("");
     ?panic
+} as & Pure
 
 ///
 /// Asserts that this expression is unreachable. Crashes if not.

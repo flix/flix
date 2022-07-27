@@ -289,6 +289,11 @@ object Stratifier {
         case e => Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
       }
 
+    case Expression.Upcast(exp, tpe, pur, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Upcast(e, tpe, pur, eff, loc)
+      }
+
     case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Without(e, sym, tpe, pur, eff, loc)
@@ -353,9 +358,9 @@ object Stratifier {
         case e => Expression.PutStaticField(field, e, tpe, pur, eff, loc)
       }
 
-    case Expression.NewObject(clazz, tpe, pur, eff, methods, loc) =>
+    case Expression.NewObject(name, clazz, tpe, pur, eff, methods, loc) =>
       mapN(traverse(methods)(visitJvmMethod)) {
-        case ms => Expression.NewObject(clazz, tpe, pur, eff, ms, loc)
+        case ms => Expression.NewObject(name, clazz, tpe, pur, eff, ms, loc)
       }
 
     case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
@@ -395,6 +400,9 @@ object Stratifier {
       mapN(visitExp(exp)) {
         case e => Expression.Spawn(e, tpe, pur, eff, loc)
       }
+
+    case Expression.Par(exp, loc) =>
+      mapN(visitExp(exp))(Expression.Lazy(_, exp.tpe, loc))
 
     case Expression.Lazy(exp, tpe, loc) =>
       mapN(visitExp(exp)) {
@@ -468,7 +476,7 @@ object Stratifier {
   }
 
   private def visitJvmMethod(method: JvmMethod)(implicit g: LabelledGraph, flix: Flix): Validation[JvmMethod, StratificationError] = method match {
-    case JvmMethod(ident, fparams, exp, tpe, pur, eff, loc) => 
+    case JvmMethod(ident, fparams, exp, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => JvmMethod(ident, fparams, e, tpe, pur, eff, loc)
       }
@@ -648,6 +656,9 @@ object Stratifier {
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
+    case Expression.Upcast(exp, _, _, _, _) =>
+      labelledGraphOfExp(exp)
+
     case Expression.Without(exp, _, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
@@ -696,7 +707,7 @@ object Stratifier {
     case Expression.PutStaticField(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.NewObject(_, _, _, _, _, _) =>
+    case Expression.NewObject(_, _, _, _, _, _, _) =>
       LabelledGraph.empty
 
     case Expression.NewChannel(exp, _, _, _, _) =>
@@ -719,6 +730,9 @@ object Stratifier {
       }
 
     case Expression.Spawn(exp, _, _, _, _) =>
+      labelledGraphOfExp(exp)
+
+    case Expression.Par(exp, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.Lazy(exp, _, _) =>

@@ -119,7 +119,9 @@ object CompletionProvider {
       getDefAndSigCompletions() ++
       getWithCompletions() ++
       getInstanceCompletions() ++
-      getTypeCompletions()
+      getTypeCompletions() ++
+      getOpCompletions() ++
+      getEffectCompletions()
   }
 
   /**
@@ -273,19 +275,23 @@ object CompletionProvider {
   }
 
   private def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec): String = spec match {
-    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, pur0, eff0, _) => // TODO use eff
+    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, pur0, eff0, _) =>
       val args = fparams.map {
         fparam => s"${fparam.sym.text}: ${FormatType.formatWellKindedType(fparam.tpe)}"
       }
 
       val retTpe = FormatType.formatWellKindedType(retTpe0)
-      val eff = pur0 match {
-        case Type.Cst(TypeConstructor.True, _) => "Pure"
-        case Type.Cst(TypeConstructor.False, _) => "Impure"
-        case e => FormatType.formatWellKindedType(e)
+      val pur = pur0 match {
+        case Type.Cst(TypeConstructor.True, _) => ""
+        case Type.Cst(TypeConstructor.False, _) => " & Impure"
+        case e => " & " + FormatType.formatWellKindedType(e)
+      }
+      val eff = eff0 match {
+        case Type.Cst(TypeConstructor.Empty, _) => ""
+        case e => " \\ " + FormatType.formatWellKindedType(e)
       }
 
-      s"$name(${args.mkString(", ")}): $retTpe & $eff"
+      s"$name(${args.mkString(", ")}): $retTpe$pur$eff"
   }
 
   /**
@@ -351,6 +357,19 @@ object CompletionProvider {
       kind = CompletionItemKind.Interface)
   }
 
+  private def opCompletion(decl: TypedAst.Op)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
+    // NB: priority is high because only an op can come after `do`
+    val name = decl.sym.toString
+    CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
+      sortText = Priority.high(name),
+      filterText = Some(getFilterTextForName(name)),
+      textEdit = TextEdit(context.range, getApplySnippet(name, decl.spec.fparams)),
+      detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
+      documentation = Some(decl.spec.doc.text),
+      insertTextFormat = InsertTextFormat.Snippet,
+      kind = CompletionItemKind.Interface)
+  }
+
   /**
     * Returns `true` if the given definition `decl` should be included in the suggestions.
     */
@@ -387,6 +406,21 @@ object CompletionProvider {
     isMatch && (isPublic || isInFile)
   }
 
+  /**
+    * Returns `true` if the given effect operation `op` should be included in the suggestions.
+    */
+  private def matchesOp(op: TypedAst.Op, word: String, uri: String): Boolean = {
+    val isPublic = op.spec.mod.isPublic
+    val isNamespace = word.nonEmpty && word.head.isUpper
+    val isMatch = if (isNamespace)
+      op.sym.toString.startsWith(word)
+    else
+      op.sym.name.startsWith(word)
+    val isInFile = op.sym.loc.source.name == uri
+
+    isMatch && (isPublic || isInFile)
+  }
+
   private def getDefAndSigCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     if (root == null) {
       return Nil
@@ -398,6 +432,17 @@ object CompletionProvider {
     val defSuggestions = root.defs.values.filter(matchesDef(_, word, uri)).map(defCompletion)
     val sigSuggestions = root.sigs.values.filter(matchesSig(_, word, uri)).map(sigCompletion)
     defSuggestions ++ sigSuggestions
+  }
+
+  private def getOpCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+    if (root == null || context.previousWord != "do") {
+      return Nil
+    }
+
+    val word = context.word
+    val uri = context.uri
+
+    root.effects.values.flatMap(_.ops).filter(matchesOp(_, word, uri)).map(opCompletion)
   }
 
   /**
@@ -604,6 +649,40 @@ object CompletionProvider {
     }
 
     enums ++ aliases ++ builtinTypes
+  }
+
+  /**
+    * Completions for Effects
+    */
+  private def getEffectCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+    if (root == null) {
+      return Nil
+    }
+
+    // Boost priority if there is `\` or `\ {` immediately before the word the user is typing
+    val effSetPrefix = raw".*\\\s*\{?\s*\S*".r
+
+    val priority = if (context.previousWord == "without") {
+      // If the last word is `without`, we can be very sure an effect is coming.
+      Priority.high _
+    } else if (effSetPrefix.matches(context.prefix) || context.previousWord == "with") {
+      // If the last word is `with` or looks like `\` or `\ {`, it is likely an effect but could be something else.
+      Priority.boost _
+    } else {
+      // Otherwise it's probably not an effect.
+      Priority.low _
+    }
+
+    root.effects.map {
+      case (_, t) =>
+        val name = t.sym.name
+        CompletionItem(label = name,
+          sortText = priority(name),
+          textEdit = TextEdit(context.range, name),
+          documentation = Some(t.doc.text),
+          insertTextFormat = InsertTextFormat.Snippet,
+          kind = CompletionItemKind.Enum)
+    }
   }
 
   /*

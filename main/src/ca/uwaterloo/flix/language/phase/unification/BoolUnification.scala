@@ -137,7 +137,7 @@ object BoolUnification {
       val t1 = Substitution.singleton(x.sym, Type.True)(f)
       val se = successiveVariableElimination(mkAnd(t0, t1), xs)
 
-      val f1 = BoolTable.minimizeType(mkOr(se(t0), mkAnd(x, mkNot(se(t1)))))
+      val f1 = TypeMinimization.minimizeType(mkOr(se(t0), mkAnd(x, mkNot(se(t1)))))
       val st = Substitution.singleton(x.sym, f1)
       st ++ se
   }
