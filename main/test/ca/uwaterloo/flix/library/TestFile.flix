@@ -186,11 +186,15 @@ namespace TestFile {
 
     @test
     def testReadWith04(): Bool & Impure =
-        Result.isErr(readWith({offset = -10i64, count = 0, charSet = "US-ASCII"}, "./LICENSE.md"))
+        readWith({offset = -10i64, count = 0, charSet = "US-ASCII"}, "./LICENSE.md") == Ok("")
 
     @test
     def testReadWith05(): Bool & Impure =
         Result.isErr(readWith({offset = 0i64, count = -100, charSet = "US-ASCII"}, "./LICENSE.md"))
+
+    @test
+    def testReadWith06(): Bool & Impure =
+        Result.isErr(readWith({offset = -10i64, count = 10, charSet = "US-ASCII"}, "./LICENSE.md"))
 
 
     /////////////////////////////////////////////////////////////////////////////
