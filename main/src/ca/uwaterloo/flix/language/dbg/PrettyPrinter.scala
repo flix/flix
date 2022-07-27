@@ -402,7 +402,7 @@ object PrettyPrinter {
             " value " +
             visitExp(exp)
 
-        case Expression.NewObject(clazz, _, _, methods, _) =>
+        case Expression.NewObject(_, clazz, _, _, methods, _) =>
           "object " +
             clazz.getName +
             methods.map(fmtJvmMethod(_, formatter)).mkString("{ ", " ", " }")

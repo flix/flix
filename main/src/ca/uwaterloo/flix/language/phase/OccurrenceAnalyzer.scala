@@ -408,7 +408,7 @@ object OccurrenceAnalyzer {
       val (e, o) = visitExp(sym0, exp)
       (OccurrenceAst.Expression.PutStaticField(field, e, tpe, purity, loc), o.increaseSizeByOne())
 
-    case Expression.NewObject(clazz, tpe, purity, methods, loc) =>
+    case Expression.NewObject(name, clazz, tpe, purity, methods, loc) =>
       val (ms, o1) = methods.map {
         case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) => {
           val f = fparams.map {
@@ -419,7 +419,7 @@ object OccurrenceAnalyzer {
         }
       }.unzip
       val o2 = o1.foldLeft(OccurInfo.Empty)((acc, o3) => combineAllSeq(acc, o3))
-      (OccurrenceAst.Expression.NewObject(clazz, tpe, purity, ms, loc), o2.increaseSizeByOne())
+      (OccurrenceAst.Expression.NewObject(name, clazz, tpe, purity, ms, loc), o2.increaseSizeByOne())
 
     case Expression.NewChannel(exp, tpe, loc) =>
       val (e, o) = visitExp(sym0, exp)

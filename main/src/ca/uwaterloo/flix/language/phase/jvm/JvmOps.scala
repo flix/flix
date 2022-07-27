@@ -641,9 +641,9 @@ object JvmOps {
       case Expression.PutStaticField(_, exp, _, _) =>
         visitExp(exp)
 
-      case Expression.NewObject(_, _, methods, _) =>
+      case Expression.NewObject(_, _, _, methods, _) =>
         methods.foldLeft(Set.empty[ClosureInfo]) {
-          case (sacc, JvmMethod(_, _, clo, _, _)) => visitExp(clo)
+          case (sacc, JvmMethod(_, _, clo, _, _)) => sacc ++ visitExp(clo)
         }
 
       case Expression.NewChannel(exp, _, _) => visitExp(exp)
@@ -1019,7 +1019,7 @@ object JvmOps {
 
       case Expression.PutStaticField(_, exp, _, _) => visitExp(exp)
 
-      case Expression.NewObject(_, _, methods, _) => 
+      case Expression.NewObject(_, _, _, methods, _) => 
         methods.foldLeft(Set.empty[MonoType]) {
           case (sacc, JvmMethod(_, fparams, clo, retTpe, _)) =>
             val fs = fparams.foldLeft(Set(retTpe)) {

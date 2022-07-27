@@ -1800,28 +1800,28 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool & Impure =
+    def shuffle01(): Bool \ NonDet =
         let l: List[Int32] = Nil;
         let c = List.toChain(l) |> Chain.shuffle(Random.new());
 
         Chain.length(c) == 0 and Chain.toSet(c) == Set#{}
 
     @test
-    def shuffle02(): Bool & Impure =
+    def shuffle02(): Bool \ NonDet =
         let l = 1 :: Nil;
         let c = List.toChain(l) |> Chain.shuffle(Random.new());
 
         Chain.length(c) == 1 and Chain.toSet(c) == Set#{1}
 
     @test
-    def shuffle03(): Bool & Impure =
+    def shuffle03(): Bool \ NonDet =
         let l = 1 :: 2 :: 3 :: Nil;
         let c = List.toChain(l) |> Chain.shuffle(Random.new());
 
         Chain.length(c) == 3 and Chain.toSet(c) == Set#{1, 2, 3}
 
     @test
-    def shuffle04(): Bool & Impure =
+    def shuffle04(): Bool \ NonDet =
         let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
         let c = List.toChain(l) |> Chain.shuffle(Random.new());
 

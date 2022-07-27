@@ -282,6 +282,9 @@ object EarlyTreeShaker {
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
       visitExp(exp)
 
+    case Expression.Upcast(exp, _, _, _, _) =>
+      visitExp(exp)
+
     case Expression.TryCatch(exp, rules, _, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
@@ -306,7 +309,7 @@ object EarlyTreeShaker {
     case Expression.PutStaticField(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewObject(_, _, _, _, methods, _) =>
+    case Expression.NewObject(_, _, _, _, _, methods, _) =>
       visitExps(methods.map(_.exp))
 
     case Expression.NewChannel(exp, _, _, _, _) =>
@@ -322,6 +325,9 @@ object EarlyTreeShaker {
       visitExps(rules.map(_.chan)) ++ visitExps(rules.map(_.exp)) ++ default.map(visitExp).getOrElse(Set.empty)
 
     case Expression.Spawn(exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.Par(exp, _) =>
       visitExp(exp)
 
     case Expression.Lazy(exp, _, _) =>

@@ -1030,9 +1030,11 @@ object Weeder {
           }
       }
 
-    case ParsedAst.Expression.NewObject(sp1, className, methods, sp2) =>
+    case ParsedAst.Expression.NewObject(sp1, tpe, methods, sp2) =>
       mapN(traverse(methods)(visitJvmMethod(_, senv))) {
-        case m => WeededAst.Expression.NewObject(className.mkString("."), m, mkSL(sp1, sp2))
+        case ms =>
+          val t = visitType(tpe)
+          WeededAst.Expression.NewObject(t, ms, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.Static(sp1, sp2) =>
@@ -1397,6 +1399,11 @@ object Weeder {
         case e => WeededAst.Expression.Cast(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
       }
 
+    case ParsedAst.Expression.Upcast(sp1, exp, sp2) =>
+      mapN(visitExp(exp, senv)) {
+        case e => WeededAst.Expression.Upcast(e, mkSL(sp1, sp2))
+      }
+
     case ParsedAst.Expression.Without(exp, effs, sp2) =>
       val loc = mkSL(leftMostSourcePosition(exp), sp2)
       // NB: We only give the innermost expression a real location
@@ -1498,6 +1505,9 @@ object Weeder {
       visitExp(exp, senv) map {
         case e => WeededAst.Expression.Spawn(e, mkSL(sp1, sp2))
       }
+
+    case ParsedAst.Expression.Par(sp1, exp, sp2) =>
+      mapN(visitExp(exp, senv))(WeededAst.Expression.Par(_, mkSL(sp1, sp2)))
 
     case ParsedAst.Expression.Lazy(sp1, exp, sp2) =>
       visitExp(exp, senv) map {
@@ -1673,6 +1683,7 @@ object Weeder {
         case (e1, e2, e3) =>
           WeededAst.Expression.ReifyEff(ident, e1, e2, e3, mkSL(sp1, sp2))
       }
+
   }
 
   /**
@@ -2382,7 +2393,7 @@ object Weeder {
       val loc = mkSL(sp1, sp2)
       val effs = visitEffectSet(eff0)
       // NB: safe to reduce since effs is never empty
-      val effOpt = effs.reduceLeftOption ({
+      val effOpt = effs.reduceLeftOption({
         case (acc, eff) => WeededAst.Type.Union(acc, eff, loc)
       }: (WeededAst.Type, WeededAst.Type) => WeededAst.Type)
       effOpt.getOrElse(WeededAst.Type.Empty(loc))
@@ -2750,7 +2761,7 @@ object Weeder {
       val tpeVal = visitType(tpe)
       val purAndEffVal = visitPurityAndEffect(purAndEff)
       mapN(visitFormalParams(fparams0, Presence.Required), visitExp(exp0, senv)) {
-        case(fparams, exp) => WeededAst.JvmMethod(ident, fparams, exp, tpeVal, purAndEffVal, mkSL(sp1, sp2))
+        case (fparams, exp) => WeededAst.JvmMethod(ident, fparams, exp, tpeVal, purAndEffVal, mkSL(sp1, sp2))
       }
   }
 
@@ -2942,6 +2953,7 @@ object Weeder {
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Cast(e1, _, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.Upcast(sp1, _, _) => sp1
     case ParsedAst.Expression.Without(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Do(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Resume(sp1, _, _) => sp1
@@ -2951,6 +2963,7 @@ object Weeder {
     case ParsedAst.Expression.PutChannel(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.SelectChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Spawn(sp1, _, _) => sp1
+    case ParsedAst.Expression.Par(sp1, _, _) => sp1
     case ParsedAst.Expression.Lazy(sp1, _, _) => sp1
     case ParsedAst.Expression.Force(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointConstraint(sp1, _, _) => sp1

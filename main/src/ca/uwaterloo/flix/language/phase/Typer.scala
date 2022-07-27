@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.TypeMinimization.minimizeScheme
@@ -1299,6 +1300,11 @@ object Typer {
           resultEff = declaredEff.getOrElse(actualEff)
         } yield (constrs, resultTyp, resultPur, resultEff)
 
+      case KindedAst.Expression.Upcast(exp, tvar, pvar, evar, loc) =>
+        for {
+          (constrs, _, _, _) <- visitExp(exp)
+        } yield (constrs, tvar, pvar, evar)
+
       case KindedAst.Expression.Without(exp, effUse, loc) =>
         val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
         val expected = Type.mkDifference(Type.freshVar(Kind.Effect, loc), effType, loc)
@@ -1479,22 +1485,36 @@ object Typer {
           resultEff = valueEff
         } yield (valueConstrs, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.NewObject(clazz, methods, loc) => {
-        def visitJvmMethod(method: KindedAst.JvmMethod): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = method match {
+      case KindedAst.Expression.NewObject(_, clazz, methods, loc) =>
+
+        /**
+          * Performs type inference on the given JVM `method`.
+          */
+        def inferJvmMethod(method: KindedAst.JvmMethod): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = method match {
           case KindedAst.JvmMethod(ident, fparams, exp, returnTpe, pur, eff, loc) =>
+
+            /**
+              * Constrains the given formal parameter to its declared type.
+              */
+            def inferParam(fparam: KindedAst.FormalParam): InferMonad[Unit] = fparam match {
+              case KindedAst.FormalParam(sym, _, tpe, _, loc) =>
+                unifyTypeM(sym.tvar.ascribedWith(Kind.Star), tpe, loc).map(_ => ())
+            }
+
             for {
+              _ <- seqM(fparams.map(inferParam))
               (constrs, bodyTpe, bodyPur, bodyEff) <- visitExp(exp)
               _ <- expectTypeM(expected = returnTpe, actual = bodyTpe, exp.loc)
             } yield (constrs, returnTpe, bodyPur, bodyEff)
         }
 
         for {
-          (constrs, _, _, _) <- seqM(methods map visitJvmMethod).map(unzip4)
+          (constrs, _, _, _) <- seqM(methods map inferJvmMethod).map(unzip4)
           resultTyp = getFlixType(clazz)
           resultPur = Type.Impure
           resultEff = Type.Empty
         } yield (constrs.flatten, resultTyp, resultPur, resultEff)
-      }
+
 
       case KindedAst.Expression.NewChannel(exp, declaredType, loc) =>
         for {
@@ -1574,6 +1594,9 @@ object Typer {
           resultPur = Type.Impure
           resultEff = eff
         } yield (constrs, resultTyp, resultPur, resultEff)
+
+      case KindedAst.Expression.Par(exp, _) =>
+        visitExp(exp)
 
       case KindedAst.Expression.Lazy(exp, loc) =>
         for {
@@ -2049,6 +2072,13 @@ object Typer {
         val eff = declaredEff.getOrElse(e.eff)
         TypedAst.Expression.Cast(e, dt, dp, de, tpe, pur, eff, loc)
 
+      case KindedAst.Expression.Upcast(exp, tvar, pvar, evar, loc) =>
+        val e = visitExp(exp, subst0)
+        val tpe = subst0(tvar)
+        val pur = subst0(pvar)
+        val eff = subst0(evar)
+        TypedAst.Expression.Upcast(e, tpe, pur, eff, loc)
+
       case KindedAst.Expression.Without(exp, effUse, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = e.tpe
@@ -2142,12 +2172,12 @@ object Typer {
         val eff = e.eff
         TypedAst.Expression.PutStaticField(field, e, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.NewObject(clazz, methods, loc) =>
+      case KindedAst.Expression.NewObject(name, clazz, methods, loc) =>
         val tpe = getFlixType(clazz)
         val pur = Type.Impure
         val eff = Type.Empty
         val ms = methods map visitJvmMethod
-        TypedAst.Expression.NewObject(clazz, tpe, pur, eff, ms, loc)
+        TypedAst.Expression.NewObject(name, clazz, tpe, pur, eff, ms, loc)
 
       case KindedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp, subst0)
@@ -2188,6 +2218,9 @@ object Typer {
         val pur = e.pur
         val eff = e.eff
         TypedAst.Expression.Spawn(e, tpe, pur, eff, loc)
+
+      case KindedAst.Expression.Par(exp, loc) =>
+        TypedAst.Expression.Par(visitExp(exp, subst0), loc)
 
       case KindedAst.Expression.Lazy(exp, loc) =>
         val e = visitExp(exp, subst0)
@@ -2316,6 +2349,9 @@ object Typer {
     def visitPredicateParam(pparam: KindedAst.PredicateParam): TypedAst.PredicateParam =
       TypedAst.PredicateParam(pparam.pred, subst0(pparam.tpe), pparam.loc)
 
+    /**
+      * Applies the substitution to the given jvm method.
+      */
     def visitJvmMethod(method: KindedAst.JvmMethod): TypedAst.JvmMethod = {
       method match {
         case KindedAst.JvmMethod(ident, fparams0, exp0, tpe, pur, eff, loc) =>
@@ -2632,54 +2668,6 @@ object Typer {
     */
   private def mkAnySchemaRowType(loc: SourceLocation)(implicit flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc, text = FallbackText("row"))
 
-  /**
-    * Returns the Flix Type of a Java Class
-    */
-  private def getFlixType(c: Class[_]): Type = {
-    if (c == java.lang.Boolean.TYPE) {
-      Type.Bool
-    }
-    else if (c == java.lang.Byte.TYPE) {
-      Type.Int8
-    }
-    else if (c == java.lang.Short.TYPE) {
-      Type.Int16
-    }
-    else if (c == java.lang.Integer.TYPE) {
-      Type.Int32
-    }
-    else if (c == java.lang.Long.TYPE) {
-      Type.Int64
-    }
-    else if (c == java.lang.Character.TYPE) {
-      Type.Char
-    }
-    else if (c == java.lang.Float.TYPE) {
-      Type.Float32
-    }
-    else if (c == java.lang.Double.TYPE) {
-      Type.Float64
-    }
-    else if (c == classOf[java.math.BigInteger]) {
-      Type.BigInt
-    }
-    else if (c == classOf[java.lang.String]) {
-      Type.Str
-    }
-    else if (c == java.lang.Void.TYPE) {
-      Type.Unit
-    }
-    // handle arrays of types
-    else if (c.isArray) {
-      val comp = c.getComponentType
-      val elmType = getFlixType(comp)
-      Type.mkArray(elmType, Type.False, SourceLocation.Unknown)
-    }
-    // otherwise native type
-    else {
-      Type.mkNative(c, SourceLocation.Unknown)
-    }
-  }
 
   /**
     * Computes and prints statistics about the given substitution.
