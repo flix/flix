@@ -510,30 +510,32 @@ namespace File {
     /// `count` - the number of bytes read.
     ///
     pub def readBytesWith(opts: {offset :: Int64, count :: Int32}, f: String): Result[Array[Int8, Static], String] & Impure =
-        try {
-            import new java.io.File(String): ##java.io.File & Impure as newFile;
-            import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream & Impure as newInputStream;
-            import java.io.FileInputStream.read(Array[Int8, Static], Int32, Int32): Int32 & Impure;
+        if (0 < opts.count) {
+            try {
+                import new java.io.File(String): ##java.io.File & Impure as newFile;
+                import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream & Impure as newInputStream;
+                import java.io.FileInputStream.read(Array[Int8, Static], Int32, Int32): Int32 & Impure;
 
-            let javaFile = newFile(f);
-            let stream = newInputStream(javaFile);
-            match skip((opts.offset / 10_000i64), opts.offset, stream, f) {
-                case Ok(_)    => {
-                    if (0 <= opts.count) {
+                let javaFile = newFile(f);
+                let stream = newInputStream(javaFile);
+                match skip((opts.offset / 10_000i64), opts.offset, stream, f) {
+                    case Ok(_)    => {
                         let bytes = [0i8; opts.count];
                         let numberRead = read(stream, bytes, 0, opts.count);
                         let res = readBytesWithHelper(bytes, numberRead, opts.count);
                         Ok(res)
-                    } else {
-                        Err("The argument `count` has to be a non negative number when calling `File.readBytesWith`.")
                     }
+                    case Err(msg) => Err(msg)
                 }
-                case Err(msg) => Err(msg)
+            } catch {
+                case ex: ##java.io.IOException =>
+                    import java.lang.Throwable.getMessage(): String & Impure;
+                    Err(getMessage(ex))
             }
-        } catch {
-            case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String & Impure;
-                Err(getMessage(ex))
+        } else if (opts.count == 0) {
+            Ok("")
+        } else {
+            Err("The argument `count` has to be a non negative number when calling `File.readBytesWith`.")
         }
 
     ///
