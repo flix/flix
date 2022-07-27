@@ -94,7 +94,7 @@ object FinalAst {
     case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     // TODO: Get rid of the fnMonoType here.
-    case class Closure(sym: Symbol.DefnSym, closureArgs: List[FinalAst.Expression], fnMonoType: MonoType, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    case class Closure(sym: Symbol.DefnSym, closureArgs: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class ApplyClo(exp: FinalAst.Expression, args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
@@ -176,7 +176,7 @@ object FinalAst {
 
     case class PutStaticField(field: Field, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class NewObject(clazz: java.lang.Class[_], tpe: MonoType, methods: List[FinalAst.JvmMethod], loc: SourceLocation) extends FinalAst.Expression
+    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[FinalAst.JvmMethod], loc: SourceLocation) extends FinalAst.Expression
 
     case class NewChannel(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
@@ -202,7 +202,7 @@ object FinalAst {
 
   case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: MonoType, loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[FinalAst.FormalParam], retTpe: MonoType, loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[FinalAst.FormalParam], clo: FinalAst.Expression, retTpe: MonoType, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: FinalAst.Expression)
 

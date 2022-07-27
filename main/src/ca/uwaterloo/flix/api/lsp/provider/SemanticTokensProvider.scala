@@ -418,6 +418,9 @@ object SemanticTokensProvider {
     case Expression.Cast(exp, _, _, _, tpe, _, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 
+    case Expression.Upcast(exp, tpe, _, _, _) =>
+      visitExp(exp) ++ visitType(tpe)
+
     case Expression.Without(exp, eff, _, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, eff.loc)
       Iterator(t) ++ visitExp(exp)
@@ -475,7 +478,7 @@ object SemanticTokensProvider {
     case Expression.PutStaticField(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewObject(_, _, _, _, methods, _) =>
+    case Expression.NewObject(_, _, _, _, _, methods, _) =>
       methods.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, m) => acc ++ visitJvmMethod(m)
       }
@@ -496,6 +499,8 @@ object SemanticTokensProvider {
       rs ++ d
 
     case Expression.Spawn(exp, _, _, _, _) => visitExp(exp)
+
+    case Expression.Par(exp, _) => visitExp(exp)
 
     case Expression.Lazy(exp, _, _) => visitExp(exp)
 

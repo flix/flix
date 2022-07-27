@@ -38,7 +38,7 @@ object GenClosureClasses {
     //
     ParOps.parAgg(closures, Map.empty[JvmName, JvmClass])({
       case (macc, closure) =>
-        val jvmType = JvmOps.getClosureClassType(closure.sym, closure.tpe)
+        val jvmType = JvmOps.getClosureClassType(closure.sym)
         val jvmName = jvmType.name
         val bytecode = genByteCode(closure)
         macc + (jvmName -> JvmClass(jvmName, bytecode))
@@ -79,7 +79,7 @@ object GenClosureClasses {
     val functionInterface = JvmOps.getClosureAbstractClassType(closure.tpe)
 
     // `JvmType` of the class for `defn`
-    val classType = JvmOps.getClosureClassType(closure.sym, closure.tpe)
+    val classType = JvmOps.getClosureClassType(closure.sym)
 
     // Class visitor
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null,

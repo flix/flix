@@ -206,6 +206,9 @@ object Simplifier {
         val e = visitExp(exp)
         SimplifiedAst.Expression.Cast(e, tpe, simplifyPurity(pur), loc)
 
+      case TypedAst.Expression.Upcast(exp, tpe, pur, _, loc) =>
+        throw InternalCompilerException("Not implemented")
+
       case TypedAst.Expression.TryCatch(exp, rules, tpe, pur, eff, loc) =>
         val e = visitExp(exp)
         val rs = rules map {
@@ -244,9 +247,9 @@ object Simplifier {
         val e = visitExp(exp)
         SimplifiedAst.Expression.PutStaticField(field, e, tpe, simplifyPurity(pur), loc)
 
-      case TypedAst.Expression.NewObject(clazz, tpe, pur, eff, methods0, loc) =>
+      case TypedAst.Expression.NewObject(name, clazz, tpe, pur, eff, methods0, loc) =>
         val methods = methods0 map visitJvmMethod
-        SimplifiedAst.Expression.NewObject(clazz, tpe, simplifyPurity(pur), methods, loc)
+        SimplifiedAst.Expression.NewObject(name, clazz, tpe, simplifyPurity(pur), methods, loc)
 
       case TypedAst.Expression.NewChannel(exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp)
@@ -342,6 +345,10 @@ object Simplifier {
 
       case TypedAst.Expression.ReifyEff(_, _, _, _, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
+
+      case TypedAst.Expression.Par(_, _) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.")
+
     }
 
     /**
@@ -1046,9 +1053,9 @@ object Simplifier {
         val e = visitExp(exp)
         SimplifiedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.NewObject(clazz, tpe, purity, methods0, loc) => 
+      case SimplifiedAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
         val methods = methods0 map visitJvmMethod
-        SimplifiedAst.Expression.NewObject(clazz, tpe, purity, methods, loc)
+        SimplifiedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
       case SimplifiedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -1091,7 +1098,7 @@ object Simplifier {
 
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
 
-      case SimplifiedAst.Expression.Closure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+      case SimplifiedAst.Expression.Closure(_, _, _) => throw InternalCompilerException(s"Unexpected expression.")
       case SimplifiedAst.Expression.LambdaClosure(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
       case SimplifiedAst.Expression.ApplyClo(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
       case SimplifiedAst.Expression.ApplyDef(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
