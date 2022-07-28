@@ -135,8 +135,13 @@ object SafetyError {
          |
          |${code(loc, "the upcast occurs here.")}
          |
-         |Actual type:      ${actual.tpe}
-         |Tried casting to: ${expected.tpe}
+         |Actual type  : ${actual.tpe}
+         |Actual purity: ${actual.pur}
+         |Actual effect: ${actual.eff}
+         |
+         |Expected type  : ${expected.tpe}
+         |Expected purity: ${expected.pur}
+         |Expected effect: ${expected.eff}
          |""".stripMargin
     }
 
@@ -298,8 +303,8 @@ object SafetyError {
 
     def explain(formatter: Formatter): Option[String] = Some(
       s"""
-        | Flix 'object' statements only support interfaces and classes with default (no-argument) constructors.
-        |""".stripMargin
+         | Flix 'object' statements only support interfaces and classes with default (no-argument) constructors.
+         |""".stripMargin
     )
   }
 
@@ -314,7 +319,7 @@ object SafetyError {
          |${code(loc, "the object occurs here.")}
          |""".stripMargin
     }
-    
+
     def explain(formatter: Formatter): Option[String] = None
   }
 }
