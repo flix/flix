@@ -1,18 +1,7 @@
 namespace Test/Exp/Upcast {
 
     @test
-    def testUpcast01(): Unit & Impure =
-        let _ =
-            if (true)
-                upcast x -> x + 1
-            else {
-                println(1);
-                x -> x + 1
-            };
-        ()
-
-    @test
-    def testUpcast02(): Unit & ef =
+    def testUpcast01(): Unit & ef =
         let f =
             if (true)
                 upcast x -> x + 1
@@ -22,23 +11,12 @@ namespace Test/Exp/Upcast {
         ()
 
     @test
-    def testUpcast04(): Unit =
+    def testUpcast02(): Unit =
         let _ =
             if (true)
                 upcast _ -> ()
             else
                 _ -> println(1);
-        ()
-
-    @test
-    def testUpcast05(): Unit & Impure =
-        let _ =
-            if (true)
-                upcast ()
-            else {
-               let _ = [8; 8];
-               ()
-           };
         ()
 
 }
