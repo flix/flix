@@ -1198,5 +1198,37 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.RedundantUpcast](result)
   }
 
+  test("TestUpcast.04") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let _ =
+        |        if (true)
+        |            upcast (1, "a")
+        |        else
+        |            upcast (1, "a");
+        |    ()
+        |""".stripMargin
 
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[Redundancy.RedundantUpcast](result)
+  }
+
+  test("TestUpcast.05") {
+    val input =
+      """
+        |def f(): Unit & Impure =
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
+        |    import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
+        |    let _ =
+        |        if (true)
+        |            upcast (newObject(), newObject())
+        |        else
+        |            (newObject(), newObject());
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[Redundancy.RedundantUpcast](result)
+  }
 }
