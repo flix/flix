@@ -593,7 +593,7 @@ namespace File {
                     Iterator.singleton(Static, Err(getMessage(ex)))
             }
         } else {
-            Iterator.singleton(Static, Err("The argument `chunkSize` has to be bigger than 0 when calling `File.readChunks`."))
+            Iterator.new(Static)
         }
 
     ///
