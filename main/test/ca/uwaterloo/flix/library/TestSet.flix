@@ -1536,22 +1536,22 @@ def unfoldWithIter06(): Bool & Impure =
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toIterator                                                              //
+    // iterator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool = region r {
-        Set.empty(): Set[Int32] |> Set.toIterator(r) |> Iterator.toSet == Set.empty()
+    def iterator01(): Bool = region r {
+        Set.empty(): Set[Int32] |> Set.iterator(r) |> Iterator.toSet == Set.empty()
     }
 
     @test
-    def toIterator02(): Bool = region r {
-        Set#{1, 2, 3, 4} |> Set.toIterator(r) |> Iterator.toSet == Set#{1, 2, 3, 4}
+    def iterator02(): Bool = region r {
+        Set#{1, 2, 3, 4} |> Set.iterator(r) |> Iterator.toSet == Set#{1, 2, 3, 4}
     }
 
     @test
-    def toIterator03(): Bool = region r {
-        Set.range(0, 100) |> Set.toIterator(r) |> Iterator.toSet == Set.range(0, 100)
+    def iterator03(): Bool = region r {
+        Set.range(0, 100) |> Set.iterator(r) |> Iterator.toSet == Set.range(0, 100)
     }
 
 

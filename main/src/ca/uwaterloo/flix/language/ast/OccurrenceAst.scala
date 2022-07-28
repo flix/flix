@@ -26,7 +26,6 @@ object OccurrenceAst {
   case class Root(defs: Map[Symbol.DefnSym, OccurrenceAst.Def],
                   enums: Map[Symbol.EnumSym, OccurrenceAst.Enum],
                   entryPoint: Option[Symbol.DefnSym],
-                  reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[OccurrenceAst.FormalParam], exp: OccurrenceAst.Expression, context: DefContext, tpe: Type, loc: SourceLocation)
@@ -213,7 +212,7 @@ object OccurrenceAst {
 
     case class PutStaticField(field: Field, exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class NewObject(clazz: java.lang.Class[_], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, purity: Purity, methods: List[OccurrenceAst.JvmMethod], loc: SourceLocation) extends OccurrenceAst.Expression
 
     case class NewChannel(exp: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = Impure
@@ -256,6 +255,8 @@ object OccurrenceAst {
   case class SelectChannelRule(sym: Symbol.VarSym, chan: OccurrenceAst.Expression, exp: OccurrenceAst.Expression)
 
   case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: Type, loc: SourceLocation)
+
+  case class JvmMethod(ident: Name.Ident, fparams: List[OccurrenceAst.FormalParam], clo: OccurrenceAst.Expression, retTpe: Type, purity: Purity, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: OccurrenceAst.Expression)
 

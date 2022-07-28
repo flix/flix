@@ -60,7 +60,7 @@ object Symbol {
     * Returns a fresh variable symbol for the given identifier.
     */
   def freshVarSym(ident: Name.Ident, boundBy: BoundBy)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(ident.loc),  boundBy, ident.loc)
+    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(ident.loc), boundBy, ident.loc)
   }
 
   /**
@@ -136,6 +136,14 @@ object Symbol {
   }
 
   /**
+    * Returns the class symbol for the given fully qualified name
+    */
+  def mkClassSym(fqn: String): ClassSym = split(fqn) match {
+    case None => new ClassSym(Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new ClassSym(ns, name, SourceLocation.Unknown)
+  }
+
+  /**
     * Returns the hole symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkHoleSym(ns: NName, ident: Ident): HoleSym = {
@@ -165,6 +173,14 @@ object Symbol {
   }
 
   /**
+    * Returns the type alias symbol for the given fully qualified name
+    */
+  def mkTypeAliasSym(fqn: String): TypeAliasSym = split(fqn) match {
+    case None => new TypeAliasSym(Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new TypeAliasSym(ns, name, SourceLocation.Unknown)
+  }
+
+  /**
     * Returns the effect symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkEffectSym(ns: NName, ident: Ident): EffectSym = {
@@ -187,7 +203,7 @@ object Symbol {
     * @param boundBy the way the variable is bound.
     * @param loc     the source location associated with the symbol.
     */
-  final class VarSym(val id: Int, val text: String, val tvar: Type.UnkindedVar, val boundBy: BoundBy, val loc: SourceLocation) {
+  final class VarSym(val id: Int, val text: String, val tvar: Type.UnkindedVar, val boundBy: BoundBy, val loc: SourceLocation) extends Ordered[VarSym] {
 
     /**
       * The internal stack offset. Computed during variable numbering.
@@ -215,7 +231,7 @@ object Symbol {
     def setStackOffset(offset: Int): Unit = stackOffset match {
       case None => stackOffset = Some(offset)
       case Some(_) =>
-        throw InternalCompilerException(s"Offset already set for variable symbol $toString.")
+        throw InternalCompilerException(s"Offset already set for variable symbol: '$toString' near ${loc.format}.")
     }
 
     /**
@@ -230,6 +246,11 @@ object Symbol {
       * Returns the hash code of this symbol.
       */
     override val hashCode: Int = id
+
+    /**
+      * Return the comparison of `this` symbol to `that` symol.
+      */
+    override def compare(that: VarSym): Int = this.id.compare(that.id)
 
     /**
       * Human readable representation.
@@ -526,7 +547,7 @@ object Symbol {
   /**
     * Effect symbol.
     */
-  final class EffectSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable {
+  final class EffectSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Ordered[EffectSym] {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -549,6 +570,13 @@ object Symbol {
       * Returns the source of `this`.
       */
     override def src: Ast.Source = loc.source
+
+    /**
+      * Compares `this` and `that` effect sym.
+      *
+      * Fairly arbitrary comparison since the purpose is to allow for mapping the object.
+      */
+    override def compare(that: EffectSym): Int = this.toString.compare(that.toString)
   }
 
   /**

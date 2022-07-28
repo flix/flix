@@ -99,6 +99,28 @@ namespace StringBuilder {
        Array.foreachWithIndex(append1!, a)
 
     ///
+    /// Returns an iterator over `sb`.
+    ///
+    pub def iterator(r1: Region[r1], sb: StringBuilder[r2]): Iterator[Char, r1 and r2] \ { Read(r2), Write(r1) } =
+        import java.lang.StringBuilder.charAt(Int32): Char \ Read(r2);
+        let StringBuilder(msb) = sb;
+        let len = length(sb);
+        let i = ref 0 @ r1;
+        let done = () -> { deref i >= len } as & r1 and r2;
+        let next = () -> {
+            let x = charAt(msb, deref i);
+            i := deref i + 1;
+            x
+        };
+        Iterator(done, next)
+
+    ///
+    /// Returns an iterator over `l` zipped with the indices of the elements.
+    ///
+    pub def enumerator(r1: Region[r1], sb: StringBuilder[r2]): Iterator[(Char, Int32), r1 and r2] \ { Read(r2), Write(r1) } =
+        iterator(r1, sb) |> Iterator.zipWithIndex
+
+    ///
     /// Return the length of the StringBuilder `sb`.
     ///
     pub def length(sb: StringBuilder[r]): Int32 \ Read(r) =

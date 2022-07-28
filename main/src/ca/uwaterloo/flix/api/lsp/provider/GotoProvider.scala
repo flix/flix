@@ -42,7 +42,7 @@ object GotoProvider {
           case Expression.Var(sym, _, loc) =>
             ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
 
-          case Expression.Tag(sym, tag, _, _, _, _) =>
+          case Expression.Tag(sym, tag, _, _, _, _, _) =>
             ("status" -> "success") ~ ("result" -> LocationLink.fromEnumAndTag(sym, tag, tag.loc)(root).toJSON)
 
           case _ => mkNotFound(uri, pos)
@@ -59,11 +59,17 @@ object GotoProvider {
           case Type.Cst(TypeConstructor.KindedEnum(sym, _), loc) =>
             ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, loc)(root).toJSON)
 
+          case Type.Cst(TypeConstructor.Effect(sym), loc) =>
+            ("status" -> "success") ~ ("result" -> LocationLink.fromEffectSym(sym, loc).toJSON)
+
           case Type.KindedVar(sym, loc) =>
             ("status" -> "success") ~ ("result" -> LocationLink.fromTypeVarSym(sym, loc).toJSON)
 
           case _ => mkNotFound(uri, pos)
         }
+
+        case Entity.OpUse(sym, loc) =>
+          ("status" -> "success") ~ ("result" -> LocationLink.fromOpSym(sym, loc).toJSON)
 
         case _ => mkNotFound(uri, pos)
       }

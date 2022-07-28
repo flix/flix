@@ -46,7 +46,6 @@ namespace Fixpoint/Ast {
 
     instance ToString[Constraint[v]] with ToString[v] {
         pub def toString(c: Constraint[v]): String =
-            use Fixpoint.commaSeparate;
             match c {
                 case Constraint(head, body) =>
                     if (List.length(body) == 0)

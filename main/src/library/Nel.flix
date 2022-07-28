@@ -67,6 +67,7 @@ instance Foldable[Nel] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldRightWithCont(f, s, l)
+    override pub def iterator(r: Region[r], l: Nel[a]): Iterator[a, r] \ Write(r) = Nel.iterator(r, l)
 }
 
 instance UnorderedFoldable[Nel] {
@@ -82,13 +83,9 @@ instance Traversable[Nel] {
     pub override def sequence(t: Nel[m[a]]): m[Nel[a]] with Applicative[m] = Nel.sequence(t)
 }
 
-instance Iterable[Nel] {
-    pub def iterator(r: Region[r], t: Nel[a]): Iterator[a, r] \ Write(r) =
-        Nel.toIterator(r, t)
-}
 instance Reducible[Nel] {
-    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b & (ef1 and ef2) = Nel.reduceLeftTo(f, g, l)
-    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b & (ef1 and ef2) = Nel.reduceRightTo(f, g, l)
+    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b \ {ef1, ef2} = Nel.reduceLeftTo(f, g, l)
+    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b \ {ef1, ef2} = Nel.reduceRightTo(f, g, l)
     override pub def head(l: Nel[a]): a = Nel.head(l)
     override pub def last(l: Nel[a]): a = Nel.last(l)
     override pub def init(l: Nel[a]): List[a] = Nel.init(l)
@@ -102,7 +99,7 @@ instance Reducible[Nel] {
     override pub def dropWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef = Nel.dropWhile(f, l)
     override pub def takeWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef = Nel.takeWhile(f, l)
     override pub def toArray(r: Region[r], l: Nel[a]): Array[a, r] \ Write(r) = Nel.toArray(r, l)
-    override pub def toIterator(r: Region[r], l: Nel[a]): Iterator[a, r] \ Write(r) = Nel.toIterator(r, l)
+    override pub def iterator(r: Region[r], l: Nel[a]): Iterator[a, r] \ Write(r) = Nel.iterator(r, l)
     override pub def toList(l: Nel[a]): List[a] = Nel.toList(l)
 }
 
@@ -290,7 +287,7 @@ namespace Nel {
         };
         match f {
             case Nel(f1, Nil) => map(f1, l)
-            case Nel(f1, rs)  => loop(f1, rs, ks -> ks as & ef)
+            case Nel(f1, rs)  => loop(f1, rs, upcast(identity))
         }
 
     ///
@@ -400,7 +397,7 @@ namespace Nel {
     /// Applies `g` to the initial element of `l` and combines it
     /// with the remainder of `l` using `f` going from left to right.
     ///
-    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b & (ef1 and ef2) = match l {
+    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b \ {ef1, ef2} = match l {
         case Nel(x, xs) => List.foldLeft(f, g(x), xs)
     }
 
@@ -409,14 +406,14 @@ namespace Nel {
     /// Applies `g` to the initial element of `l` and combines it
     /// with the remainder of `l` using `f` going from right to left.
     ///
-    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b & (ef1 and ef2) =
+    pub def reduceRightTo(f: (a, b) -> b & ef1 \ ef1_, g: a -> b & ef2 \ ef2_, l: Nel[a]): b & (ef1 and ef2) \ (ef1_ + ef2_) =
         def loop(ll, k) = match ll {
             case x :: Nil => k(g(x))
             case x :: xs  => loop(xs, ks -> k(f(x, ks)))
             case _        => unreachable!()
         };
         let Nel(x, xs) = l;
-        loop(x :: xs, ks -> ks as & (ef1 and ef2))
+        loop(x :: xs, ks -> ks as & (ef1 and ef2) \ (ef1_ + ef2_))
 
     ///
     /// Applies `combine` to all elements in `l` until a single value is obtained.
@@ -640,9 +637,9 @@ namespace Nel {
     ///
     /// Returns an iterator over `l`.
     ///
-    pub def toIterator(r: Region[r], l: Nel[a]): Iterator[a, r] \ Write(r) =
+    pub def iterator(r: Region[r], l: Nel[a]): Iterator[a, r] \ Write(r) =
        let Nel(x, xs) = l;
-       List.toIterator(r, x :: xs)
+       List.iterator(r, x :: xs)
 
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the
@@ -698,5 +695,11 @@ namespace Nel {
         let Nel(x, xs) = l;
         List.takeWhile(f, x :: xs)
 
-}
+    ///
+    /// Optionally returns the Nel `l` shuffled using the Fisher–Yates shuffle.
+    ///
+    pub def shuffle(rnd: Random.Random, l: Nel[a]): Option[Nel[a]] \ NonDet = region r {
+        toArray(r, l) !> Array.shuffle(rnd) |> Array.toNel
+    }
 
+}

@@ -26,14 +26,14 @@ pub class Reducible[t: Type -> Type] {
     /// Applies `g` to the initial element of `t` and combines it
     /// with the remainder of `t` using `f` going from left to right.
     ///
-    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, t: t[a]): b & (ef1 and ef2)
+    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, t: t[a]): b \ { ef1, ef2 }
 
     ///
     /// Right-associative reduction of a structure.
     /// Applies `g` to the initial element of `t` and combines it
     /// with the remainder of `t` using `f` going from right to left.
     ///
-    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, t: t[a]): b & (ef1 and ef2)
+    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, t: t[a]): b \ { ef1, ef2 }
 
     ///
     /// Left-associative reduction on `t` using `f`.
@@ -80,8 +80,8 @@ pub class Reducible[t: Type -> Type] {
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, t: t[a]): b & ef =
-        let f1 = (a, b) -> f(a, _ -> b as & ef);
-        Reducible.reduceRightTo(f1, a -> f(a, _ -> z as & ef), t)
+        let f1 = (a, b) -> f(a, upcast(_ -> b));
+        Reducible.reduceRightTo(f1, a -> f(a, upcast(_ -> z)), t)
 
     ///
     /// Alias for `reduce`.
@@ -266,9 +266,8 @@ pub class Reducible[t: Type -> Type] {
     ///
     /// Returns an iterator over `t`.
     ///
-    pub def toIterator(r: Region[r], t: t[a]): Iterator[a, r] \ Write(r) = region r2 {
-        Reducible.toArray(r2, t) |> Array.toIterator(r)
-    }
+    pub def iterator(r: Region[r], t: t[a]): Iterator[a, r] \ Write(r) =
+        Reducible.toArray(r, t) |> Array.iterator
 
     ///
     /// Returns `t` as a list.

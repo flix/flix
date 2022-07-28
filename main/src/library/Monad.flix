@@ -67,7 +67,7 @@ namespace Monad {
     ///
     /// Map `x` with the monadic function `f1` and then map its result with the function `f2`.
     ///
-    pub def kleisliLeft(f1: a -> m[b] & ef1, f2: b -> m[c] & ef2, x: a): m[c] & (ef1 and ef2) with Monad[m] =
+    pub def kleisliLeft(f1: a -> m[b] & ef1, f2: b -> m[c] & ef2, x: a): m[c] \ { ef1, ef2 } with Monad[m] =
         flatMap(x1 -> f2(x1), f1(x))
 
     ///
@@ -75,7 +75,7 @@ namespace Monad {
     ///
     /// Map `x` with the monadic function `f2` and then map its result with the function `f1`.
     ///
-    pub def kleisliRight(f1: b -> m[c] & ef1, f2: a -> m[b] & ef2, x: a): m[c] & (ef1 and ef2) with Monad[m] =
+    pub def kleisliRight(f1: b -> m[c] & ef1, f2: a -> m[b] & ef2, x: a): m[c] \ { ef1, ef2 } with Monad[m] =
         flatMap(x1 -> f1(x1), f2(x))
 
 
@@ -94,14 +94,14 @@ namespace Monad {
     ///
     /// `>=>` is an operator alias for `kleisliLeft`.
     ///
-    pub def >=>(f1: a -> m[b] & ef1, f2: b -> m[c] & ef2): a -> m[c] & (ef1 and ef2) with Monad[m] = x ->
+    pub def >=>(f1: a -> m[b] & ef1, f2: b -> m[c] & ef2): a -> m[c] \ { ef1, ef2 } with Monad[m] = x ->
         kleisliLeft(f1, f2, x)
 
 
     ///
     /// `<=<` is an operator alias for `kleisliRight`.
     ///
-    pub def <=<(f1: b -> m[c] & ef1, f2: a -> m[b] & ef2): a -> m[c] & (ef1 and ef2) with Monad[m] = x ->
+    pub def <=<(f1: b -> m[c] & ef1, f2: a -> m[b] & ef2): a -> m[c] \ { ef1, ef2 } with Monad[m] = x ->
         kleisliRight(f1, f2, x)
 
 }

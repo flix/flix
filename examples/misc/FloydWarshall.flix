@@ -93,7 +93,7 @@ def main(): Unit & Impure =
         Edge("3", "4", 30).
     };
     let m = solve p;
-    (m |> Fixpoint.unsafePrint) as & Impure;
+    Fixpoint.unsafePrint(m);
     ()
 
 // Expected output

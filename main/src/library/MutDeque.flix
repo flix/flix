@@ -31,13 +31,16 @@ pub enum MutDeque[a: Type, r: Region] {
     case MutDeque(Ref[Array[a, r], r], Ref[Int32, r], Ref[Int32, r])
 }
 
-
 instance Newable[MutDeque[a]] {
     pub def new(r: Region[r]): MutDeque[a, r] \ Write(r) = MutDeque.new(r)
 }
 
 instance Scoped[MutDeque[a]] {
     pub def regionOf(_: MutDeque[a, r]): Region[r] = () as Region[r]
+}
+
+instance Iterable[MutDeque] {
+    pub def iterator(d: MutDeque[a, r]): Iterator[a, r] \ Write(r) = MutDeque.iterator(d)
 }
 
 namespace MutDeque {
@@ -405,6 +408,23 @@ namespace MutDeque {
     }
 
     ///
+    /// Returns an iterator over `d`.
+    ///
+    /// Modifying `d` while using an iterator has undefined behavior and is dangerous.
+    ///
+    pub def iterator(d: MutDeque[a, r]): Iterator[a, r] \ Write(r) =
+        let r = Scoped.regionOf(d);
+        let MutDeque(a, f, b) = d;
+        let i = ref (deref f) @ r;
+        let done = () -> deref i == deref b;
+        let next = () -> {
+            let x = (deref a)[deref i];
+            i := deref i + 1 &&& (capacity(d) - 1);
+            x
+        };
+        Iterator(done, next)
+
+    ///
     /// Apply the effectful function `f` to all the elements in the MutDeque `d`.
     ///
     pub def foreach(f: a -> Unit & ef, d: MutDeque[a, r]): Unit \ { ef, Read(r) } =
@@ -415,24 +435,20 @@ namespace MutDeque {
             if (i == deref back) {
                 ()
             } else {
-                f(Array.get(i, deref a));
+                match Array.nth(i, deref a) {
+                    case Some(x) => f(x)
+                    case None    => bug!("An error occurred in MutDeque.foreach!")
+                };
                 loop((i + 1) &&& c)
             }
         };
-
-        if (MutDeque.isEmpty(d)) {
-            ()
-        } else {
-            loop(deref front)
-        }
+        loop(deref front)
 
     ///
     /// Shuffles a copy of `d` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(r1: Region[r1], rnd: Random.Random, d: MutDeque[a, r2]): MutDeque[a, r1] & Impure \ { Read(r2), Write(r1) } = region r3 {
-        let arr = toArray(r3, d);
-        Array.shuffle(rnd, arr);
-        Array.toMutDeque(r1, arr)
+    pub def shuffle(r1: Region[r1], rnd: Random.Random, d: MutDeque[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1), NonDet } = region r3 {
+        toArray(r3, d) !> Array.shuffle(rnd) |> Array.toMutDeque(r1)
     }
 
 }

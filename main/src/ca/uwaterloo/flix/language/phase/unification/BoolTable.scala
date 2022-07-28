@@ -15,15 +15,12 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Kind, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.unification.BoolFormula._
-import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource, StreamOps}
 import ca.uwaterloo.flix.util.collection.Bimap
+import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource, StreamOps}
 
 import java.io.IOException
 import java.util.zip.ZipInputStream
-
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 
@@ -57,12 +54,12 @@ object BoolTable {
   /**
     * The size a formula (but represented as a type) must have before we try to minimize it.
     */
-  private val Threshold: Int = 10
+  val Threshold: Int = 10
 
   /**
     * A Boolean variable is represented by a unique number.
     */
-  private type Variable = Int
+  type Variable = Int
 
   /**
     * A table that maps Boolean semantic functions to their minimal formulas.
@@ -70,49 +67,6 @@ object BoolTable {
     * The table is pre-computed and initialized when this class is loaded.
     */
   private lazy val Table: Array[BoolFormula] = initTable()
-
-  /**
-    * Attempts to minimize the given Boolean formula `tpe`.
-    *
-    * Returns the same formula or a smaller formula that is equivalent.
-    */
-  def minimizeType(tpe: Type)(implicit flix: Flix): Type = {
-    // Check whether minimization via tabling is disabled.
-    if (flix.options.xnobooltable) {
-      return tpe
-    }
-
-    // Check that the `tpe` argument is a Boolean formula.
-    if (tpe.kind != Kind.Bool) {
-      throw InternalCompilerException(s"Unexpected non-Bool kind: '${tpe.kind}'.")
-    }
-
-    // Compute the size of  `tpe`.
-    val currentSize = tpe.size
-
-    // Return `tpe` immediately if it is "small".
-    if (currentSize < Threshold) {
-      return tpe
-    }
-
-    // Compute the variables in `tpe`.
-    val tvars = tpe.typeVars.map(_.sym).toList
-
-    // Construct a bi-directional map from type variables to indices.
-    // The idea is that the first variable becomes x0, the next x1, and so forth.
-    val m = tvars.zipWithIndex.foldLeft(Bimap.empty[Symbol.KindedTypeVarSym, Variable]) {
-      case (macc, (sym, x)) => macc + (sym -> x)
-    }
-
-    // Convert the type `tpe` to a Boolean formula.
-    val input = fromType(tpe, m)
-
-    // Minimize the Boolean formula.
-    val minimized = minimizeFormula(input)
-
-    // Convert the formula back to a type.
-    toType(minimized, m, tpe.loc)
-  }
 
   /**
     * Attempts to minimize the given formula `f`.
@@ -381,5 +335,4 @@ object BoolTable {
     */
   private def leftPad(s: String, len: Int): String =
     ' '.toString * (len - s.length()) + s
-
 }

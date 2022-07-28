@@ -25,28 +25,25 @@ pub enum Map[k, v] {
     case Map(RedBlackTree[k, v])
 }
 
-instance Boxable[Map[k, v]] with Boxable[k], Boxable[v]
+instance Eq[Map[k, v]] with Eq[k], Eq[v] {
+    pub def eq(m1: Map[k, v], m2: Map[k, v]): Bool =
+        Map.toList(m1) == Map.toList(m2)
+}
+
+instance Order[Map[k, v]] with Order[k], Order[v] {
+    pub def compare(x: Map[k, v], y: Map[k, v]): Comparison =
+        Map.toList(x) <=> Map.toList(y)
+}
 
 instance ToString[Map[k, v]] with ToString[k], ToString[v] {
     pub def toString(m: Map[k, v]): String = Map.toString(m)
 }
 
+instance Boxable[Map[k, v]] with Boxable[k], Boxable[v]
+
 instance Hash[Map[k, v]] with Hash[k], Hash[v] {
     pub def hash(m: Map[k, v]): Int32 =
         Map.foldLeftWithKey((acc, k, v) -> acc * 17 + Hash.hash(k) + 19 * Hash.hash(v), 7937, m)
-}
-
-instance Eq[Map[k, v]] with Eq[k], Eq[v] {
-    pub def eq(m1: Map[k, v], m2: Map[k, v]): Bool =
-        Map.toList(m1) == Map.toList(m2)
-
-}
-
-instance Order[Map[k, v]] with Order[k], Order[v] {
-
-    pub def compare(x: Map[k, v], y: Map[k, v]): Comparison =
-        Map.toList(x) <=> Map.toList(y)
-
 }
 
 instance Functor[Map[k]] {
@@ -54,9 +51,10 @@ instance Functor[Map[k]] {
 }
 
 instance Foldable[Map[k]] {
-    pub def foldLeft(f: (b, v) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldLeft((acc, v) -> f(acc, v), s, m)
+    pub def foldLeft(f: (b, v) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldLeft(f, s, m)
     pub def foldRight(f: (v, b) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldRight(f, s, m)
     pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldRightWithCont(f, s, m)
+    override pub def iterator(r: Region[r], m: Map[k, v]): Iterator[v, r] \ Write(r) = Map.iteratorValues(r, m)
 }
 
 instance UnorderedFoldable[Map[k]] {
@@ -113,16 +111,16 @@ namespace Map {
     ///
     pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region r {
         let sb = new StringBuilder(r);
-        let first = ref true;
-
         StringBuilder.appendString!("Map#{", sb);
-
-        let f = (k, v) -> {
-            if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
-            StringBuilder.appendString!("${k} => ${v}", sb)
+        let first = ref true @ r;
+        foreach ((k, v) <- Map.iterator(r, m)) {
+            if (deref first) {
+                first := false;
+                StringBuilder.appendString!("${k} => ${v}", sb)
+            }
+            else
+                StringBuilder.appendString!(", ${k} => ${v}", sb)
         };
-        Map.foreach(f, m);
-
         StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)
     }
@@ -941,24 +939,36 @@ namespace Map {
     ///
     /// Applies `f` to all key-value pairs `(k, v)` from the map `m` where `p(k)` returns `EqualTo`.
     ///
-    pub def queryWith(p: k -> Comparison & ef1, f: (k, v) -> Unit & ef2, m: Map[k, v]): Unit & (ef1 and ef2) =
+    pub def queryWith(p: k -> Comparison & ef1, f: (k, v) -> Unit & ef2, m: Map[k, v]): Unit \ { ef1, ef2 } =
         let Map(t) = m;
         RedBlackTree.queryWith(p, f, t)
 
     ///
     /// Returns an iterator over all key-value pairs in `m`.
     ///
-    pub def toIterator(r: Region[r], m: Map[k, v]): Iterator[(k, v), r] \ Write(r) =
-        List.toIterator(r, Map.query(_ -> EqualTo, m))
+    pub def iterator(r: Region[r], m: Map[k, v]): Iterator[(k, v), r] \ Write(r) =
+        let Map(t) = m;
+        RedBlackTree.iterator(r, t)
+
+    ///
+    /// Returns an iterator over keys in `m`.
+    ///
+    pub def iteratorKeys(r: Region[r], m: Map[k, v]): Iterator[k, r] \ Write(r) =
+        iterator(r, m) |> Iterator.mapL(match (k, _) -> k)
+
+    ///
+    /// Returns an iterator over values in `m`.
+    ///
+    pub def iteratorValues(r: Region[r], m: Map[k, v]): Iterator[v, r] \ Write(r) =
+        iterator(r, m) |> Iterator.mapL(match (_, v) -> v)
 
     ///
     /// Returns `m` as a `DelayMap`.
     ///
-    pub def toDelayMap(m: Map[k, v]): DelayMap[k, v] = {
+    pub def toDelayMap(m: Map[k, v]): DelayMap[k, v] =
         let Map(t) = m;
         let f = (_, v) -> lazy v;
         DMap(RedBlackTree.mapWithKey(f, t))
-    }
 
     ///
     /// Returns the result of running all the actions in the map `m`.

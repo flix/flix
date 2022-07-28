@@ -119,7 +119,6 @@ object Metrics {
     val purPart = defIsh.purAndEff.pur match {
       case Some(value) => value match {
         case Type.True(_, _) => true
-        case Type.False(_, _) => false
         case _ => false
       }
       case None => true
@@ -138,26 +137,32 @@ object Metrics {
   private def isImpure(defIsh: DefIsh): Boolean = {
     val purPart = defIsh.purAndEff.pur match {
       case Some(value) => value match {
-        case Type.True(_, _) => Some(false)
         case Type.False(_, _) => Some(true)
         case _ => Some(false)
       }
       case None => None
     }
-    val efPart = defIsh.purAndEff.eff match {
-      case Some(value) => value match {
-        case EffectSet.Singleton(_, eff, _) => eff match {
-          case Effect.Impure(_, _) => Some(true)
-          case _ => Some(false)
-        }
-        case EffectSet.Pure(_, _) => Some(false)
-        case EffectSet.Set(_, effs, _) => Some(effs.exists {
-          case Effect.Impure(_, _) => true
-          case _ => false
-        })
+    def visitEff(eff: Effect): Boolean = eff match {
+      case Effect.Var(sp1, ident, sp2) => false
+      case Effect.Read(sp1, regs, sp2) => false
+      case Effect.Write(sp1, regs, sp2) => false
+      case Effect.Impure(sp1, sp2) => true
+      case Effect.Eff(sp1, name, sp2) => name.toString match {
+        case "NonDet" => true
+        case "IO" => true
+        case _ => ???
       }
-      case None => None
+      case Effect.Complement(sp1, eff, sp2) => ???
+      case Effect.Union(eff1, effs) => effs.exists(visitEff) || visitEff(eff1)
+      case Effect.Intersection(eff1, effs) => ???
+      case Effect.Difference(eff1, effs) => ???
     }
+    def visitEffSet(effSet: EffectSet): Boolean = effSet match {
+      case EffectSet.Singleton(_, eff, _) => visitEff(eff)
+      case EffectSet.Pure(_, _) => false
+      case EffectSet.Set(_, effs, _) => effs.exists(visitEff)
+    }
+    val efPart = defIsh.purAndEff.eff.map(visitEffSet)
     combineOpts[Boolean](_ || _, purPart, efPart).getOrElse(false)
   }
 
@@ -195,36 +200,27 @@ object Metrics {
         check(value)
       case None => Set()
     }
-    val efPart: Set[Name.Ident] = defIsh.purAndEff.eff match {
-      case Some(effSet) => effSet match {
-        case EffectSet.Singleton(_, eff, _) => eff match {
-          case Effect.Read(sp1, regs, sp2) => regs.toSet
-          case Effect.Write(sp1, regs, sp2) => regs.toSet
-          case Effect.Var(sp1, ident, sp2) => Set()
-          case Effect.Impure(sp1, sp2) => ???
-          case Effect.Eff(sp1, name, sp2) => ???
-          case Effect.Complement(sp1, eff, sp2) => ???
-          case Effect.Union(eff1, effs) => ???
-          case Effect.Intersection(eff1, effs) => ???
-          case Effect.Difference(eff1, effs) => ???
-        }
-        case EffectSet.Pure(_, _) => Set()
-        case EffectSet.Set(sp1, effs, sp2) =>
-          val lll: Seq[Set[Name.Ident]] = effs.map {
-            case Effect.Read(sp1, regs, sp2) => regs.toSet
-            case Effect.Write(sp1, regs, sp2) => regs.toSet
-            case Effect.Var(sp1, ident, sp2) => Set()
-            case Effect.Impure(sp1, sp2) => Set()
-            case Effect.Eff(sp1, name, sp2) => ???
-            case Effect.Complement(sp1, eff, sp2) => ???
-            case Effect.Union(eff1, effs) => ???
-            case Effect.Intersection(eff1, effs) => ???
-            case Effect.Difference(eff1, effs) => ???
-          }
-          lll.foldLeft(Set[Name.Ident]()) { case (acc, s) => acc union s }
+    def visitEff(eff: Effect): Set[Name.Ident] = eff match {
+      case Effect.Read(sp1, regs, sp2) => regs.toSet
+      case Effect.Write(sp1, regs, sp2) => regs.toSet
+      case Effect.Var(sp1, ident, sp2) => Set()
+      case Effect.Impure(sp1, sp2) => Set()
+      case Effect.Eff(sp1, name, sp2) => name.toString match {
+        case "NonDet" => Set()
+        case "IO" => Set()
+        case _ => ???
       }
-      case None => Set()
+      case Effect.Complement(sp1, eff, sp2) => ???
+      case Effect.Union(eff1, effs) => effs.flatMap(visitEff).toSet union visitEff(eff1)
+      case Effect.Intersection(eff1, effs) => ???
+      case Effect.Difference(eff1, effs) => ???
     }
+    def visitEffSet(eff: EffectSet): Set[Name.Ident] = eff match {
+        case EffectSet.Singleton(_, eff, _) => visitEff(eff)
+        case EffectSet.Pure(_, _) => Set()
+        case EffectSet.Set(sp1, effs, sp2) => effs.flatMap(visitEff).toSet
+    }
+    val efPart: Set[Name.Ident] = defIsh.purAndEff.eff.map(visitEffSet).getOrElse(Set())
     purPart union efPart
   }
 
@@ -255,37 +251,27 @@ object Metrics {
         check(value)
       case None => None
     }
-    val efPart = defIsh.purAndEff.eff match {
-      case Some(value) => value match {
-        case EffectSet.Singleton(sp1, eff, sp2) => eff match {
-          case Effect.Var(sp1, ident, sp2) => Some(true)
-          case Effect.Read(sp1, regs, sp2) => Some(false)
-          case Effect.Write(sp1, regs, sp2) => Some(false)
-          case Effect.Impure(sp1, sp2) => Some(false)
-          case Effect.Eff(sp1, name, sp2) => ???
-          case Effect.Complement(sp1, eff, sp2) => ???
-          case Effect.Union(eff1, effs) => ???
-          case Effect.Intersection(eff1, effs) => ???
-          case Effect.Difference(eff1, effs) => ???
-        }
-        case EffectSet.Pure(sp1, sp2) => Some(false)
-        case EffectSet.Set(sp1, effs, sp2) =>
-          def check(e: Effect): Boolean = e match {
-            case Effect.Var(sp1, ident, sp2) => true
-            case Effect.Read(sp1, regs, sp2) => false
-            case Effect.Write(sp1, regs, sp2) => false
-            case Effect.Impure(sp1, sp2) => false
-            case Effect.Eff(sp1, name, sp2) => ???
-            case Effect.Complement(sp1, eff, sp2) => ???
-            case Effect.Union(eff1, effs) => effs.exists(check) || check(eff1)
-            case Effect.Intersection(eff1, effs) => ???
-            case Effect.Difference(eff1, effs) => ???
-          }
-
-          Some(effs.exists(check))
+    def visitEff(eff: ParsedAst.Effect): Boolean = eff match {
+      case Effect.Var(sp1, ident, sp2) => true
+      case Effect.Read(sp1, regs, sp2) => false
+      case Effect.Write(sp1, regs, sp2) => false
+      case Effect.Impure(sp1, sp2) => false
+      case Effect.Eff(sp1, name, sp2) => name.toString match {
+        case "NonDet" => false
+        case "IO" => false
+        case _ => ???
       }
-      case None => None
+      case Effect.Complement(sp1, eff, sp2) => ???
+      case Effect.Union(eff1, effs) => effs.exists(visitEff) || visitEff(eff1)
+      case Effect.Intersection(eff1, effs) => ???
+      case Effect.Difference(eff1, effs) => ???
     }
+    def visitEffSet(effSet: EffectSet): Boolean = effSet match {
+      case EffectSet.Singleton(sp1, eff, sp2) => visitEff(eff)
+      case EffectSet.Pure(sp1, sp2) => false
+      case EffectSet.Set(sp1, effs, sp2) => effs.exists(visitEff)
+    }
+    val efPart = defIsh.purAndEff.eff.map(visitEffSet)
     combineOpts[Boolean](_ || _, purPart, efPart).getOrElse(false)
   }
 
@@ -318,9 +304,14 @@ object Metrics {
     def visitRecordField(value: ParsedAst.RecordField): Boolean =
       visitExp(value.value)
 
-    def visitForeachFragment(value: ParsedAst.ForeachFragment): Boolean = value match {
-      case ForeachFragment.ForEach(sp1, pat, exp, sp2) => visitExp(exp)
-      case ForeachFragment.Guard(sp1, guard, sp2) => visitExp(guard)
+    def visitForeachFragment(value: ParsedAst.ForEachFragment): Boolean = value match {
+      case ForEachFragment.ForEach(sp1, pat, exp, sp2) => visitExp(exp)
+      case ForEachFragment.Guard(sp1, guard, sp2) => visitExp(guard)
+    }
+
+    def visitForYieldFragment(value: ParsedAst.ForYieldFragment): Boolean = value match {
+      case ForYieldFragment.ForYield(sp1, pat, exp, sp2) => visitExp(exp)
+      case ForYieldFragment.Guard(sp1, exp, sp2) => visitExp(exp)
     }
 
     def visitChoiceRule(value: ParsedAst.ChoiceRule): Boolean =
@@ -332,6 +323,10 @@ object Metrics {
     def visitArg(value: ParsedAst.Argument): Boolean = value match {
       case Argument.Named(name, exp, sp2) => visitExp(exp)
       case Argument.Unnamed(exp) => visitExp(exp)
+    }
+
+    def visitJvmMethod(jvmMethod: ParsedAst.JvmMethod): Boolean = jvmMethod match {
+      case ParsedAst.JvmMethod(sp1, ident, fparams, tpe, purAndEff, exp, sp2) => visitExp(exp)
     }
 
     def visitExp(exp: ParsedAst.Expression): Boolean = exp match {
@@ -356,7 +351,7 @@ object Metrics {
       case Expression.LetMatchStar(sp1, pat, tpe, exp1, exp2, sp2) => visitExp(exp1) || visitExp(exp2)
       case Expression.LetRecDef(sp1, ident, fparams, exp1, exp2, sp2) => visitExp(exp1) || visitExp(exp2)
       case Expression.LetImport(sp1, op, exp, sp2) => visitExp(exp)
-      case Expression.NewObject(sp1, fqn, sp2) => false
+      case Expression.NewObject(sp1, tep, methods, sp2) => methods.exists(visitJvmMethod)
       case Expression.Static(sp1, sp2) => false
       case Expression.Match(sp1, exp, rules, sp2) => visitExp(exp) || rules.exists(visitMatchRule)
       case Expression.Choose(sp1, star, exps, rules, sp2) => exps.exists(visitExp) || rules.exists(visitChoiceRule)
@@ -406,6 +401,9 @@ object Metrics {
       case Expression.ReifyBool(sp1, t, sp2) => false
       case Expression.ReifyType(sp1, t, sp2) => false
       case Expression.ReifyPurity(sp1, exp1, ident, exp2, exp3, sp2) => visitExp(exp1) || visitExp(exp2) || visitExp(exp3)
+      case Expression.ForYield(sp1, frags, exp, sp2) => frags.exists(visitForYieldFragment) || visitExp(exp)
+      case Expression.Par(sp1, exp, sp2) => visitExp(exp)
+      case Expression.Upcast(sp1, exp, sp2) => visitExp(exp)
     }
 
     visitExp(defIsh.exp)

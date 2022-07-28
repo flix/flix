@@ -321,13 +321,6 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represents the difference of two effect sets.
-    */
-  case object Difference extends TypeConstructor {
-    def kind: Kind = Kind.Effect ->: Kind.Effect ->: Kind.Effect
-  }
-
-  /**
     * A type constructor that represents a single effect.
     */
   case class Effect(sym: Symbol.EffectSym) extends TypeConstructor {

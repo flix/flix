@@ -26,6 +26,22 @@ instance Scoped[Iterator[a]] {
     pub def regionOf(_: Iterator[a, r]): Region[r] = () as Region[r]
 }
 
+instance Iterable[Iterator] {
+    pub def iterator(iter: Iterator[a, r]): Iterator[a, r] \ Write(r) = iter as \ Write(r)
+}
+
+///
+/// Alias for `Foldable.iterator`.
+///
+pub def iterator(r: Region[r], t: t[a]): Iterator[a, r] \ Write(r) with Foldable[t] =
+    Foldable.iterator(r, t)
+
+///
+/// Alias for `Foldable.iterator |> Iterable.enumerator`.
+///
+pub def enumerator(r: Region[r], t: t[a]): Iterator[(a, Int32), r] \ Write(r) with Foldable[t] =
+    Foldable.iterator(r, t) |> Iterable.enumerator
+
 namespace Iterator {
 
     ///
@@ -431,6 +447,12 @@ namespace Iterator {
         Iterator(done, next1)
 
     ///
+    /// Alias for `zipWithIndex`.
+    ///
+    pub def enumerator(iter: Iterator[a, r]): Iterator[(a, Int32), r] \ Write(r) =
+        zipWithIndex(iter)
+
+    ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
@@ -459,7 +481,7 @@ namespace Iterator {
                 loop(ks -> k(f(x, ks)))
             }
         };
-        loop(ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
+        loop(upcast(identity)) // NB: Cast required because the identity continuation is pure,
                                // but the intermediate continuations are effect polymorphic
     ///
     /// Applies `f` to a start value `z` and all elements in `iter` going from right to left.
@@ -707,7 +729,7 @@ namespace Iterator {
         let mkCursor = i -> { // Appends an iterator with the contents of `iterA`. Boolean formula: r1 and formula of i
             if (deref isReversed)
                 // `iterA` has been consumed, so construct a new one from `xs`
-                cursor := Some(append(i, List.toIterator(r1, deref xs)))
+                cursor := Some(append(i, List.iterator(r1, deref xs)))
             else
                 cursor := Some(append(i, Iterator(doneAA, nextAA)))
         };

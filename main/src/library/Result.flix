@@ -202,7 +202,7 @@ namespace Result {
     ///
     @Time(time(f)) @Space(space(f))
     pub def foldRightWithCont(f: (t, Unit -> a & ef) -> a & ef, z: a, r: Result[t, e]): a & ef = match r {
-        case Ok(v)  => f(v, _ -> z as & ef)
+        case Ok(v)  => f(v, upcast(_ -> z))
         case Err(_) => z
     }
 
@@ -282,7 +282,7 @@ namespace Result {
                 case Err(e) => Err(e)
             })
         };
-        loop(l, s1 -> Ok(s1) as & ef)
+        loop(l, upcast(s1 -> Ok(s1)))
 
     ///
     /// Returns a one-element list of the value `v` if `r` is `Ok(v)`. Otherwise returns the empty list.
@@ -328,8 +328,6 @@ namespace Result {
 
     ///
     /// Applies `f` to `v` if `r` is `Ok(v)`. Otherwise does nothing.
-    ///
-    /// The function `f` must be impure.
     ///
     @Time(time(f)) @Space(space(f))
     pub def foreach(f: t -> Unit & ef, r: Result[t, e]): Unit & ef = match r {
@@ -433,10 +431,16 @@ namespace Result {
     ///
     /// Returns an iterator over `r` with 1 element or an empty iterator if `r` is `Err`.
     ///
-    pub def toIterator(reg: Region[reg], r: Result[t, e]): Iterator[t, reg] \ Write(reg) = match r {
+    pub def iterator(reg: Region[reg], r: Result[t, e]): Iterator[t, reg] \ Write(reg) = match r {
         case Err(_) => new Iterator(reg)
         case Ok(x)  => Iterator.singleton(reg, x)
     }
+
+    ///
+    /// Returns an iterator over `r` zipped with the indices of the elements.
+    ///
+    pub def enumerator(reg: Region[reg], r: Result[t, e]): Iterator[(t, Int32), reg] \ Write(reg) =
+        iterator(reg, r) |> Iterator.zipWithIndex
 
     ///
     /// Returns `Ok(x)` if `f` was invoked without throwing an exception.

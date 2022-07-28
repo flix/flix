@@ -1640,26 +1640,26 @@ namespace TestDelayMap {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toIterator                                                              //
+    // iterator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool = region r {
+    def iterator01(): Bool = region r {
         Map.empty(): Map[Int32, Int32] |> Map.toDelayMap |>
-            DelayMap.toIterator(r) |> Iterator.toMap == Map.empty()
+            DelayMap.iterator(r) |> Iterator.toMap == Map.empty()
     }
 
     @test
-    def toIterator02(): Bool = region r {
+    def iterator02(): Bool = region r {
         Map#{"A" => 1, "B" => 2, "C" => 3, "D" => 4} |> Map.toDelayMap |>
-            DelayMap.toIterator(r) |> Iterator.toMap == Map#{"A" => 1, "B" => 2, "C" => 3, "D" => 4}
+            DelayMap.iterator(r) |> Iterator.toMap == Map#{"A" => 1, "B" => 2, "C" => 3, "D" => 4}
     }
 
     @test
-    def toIterator03(): Bool = region r {
+    def iterator03(): Bool = region r {
         let l = List.range(0, 100);
         List.zip(l, List.reverse(l)) |> List.toMap |> Map.toDelayMap |>
-            DelayMap.toIterator(r) |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
+            DelayMap.iterator(r) |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
     }
 
 
@@ -2010,5 +2010,31 @@ namespace TestDelayMap {
     def joinWith04(): Bool =
         Map#{0 => "1", 1 => "2", 2 => "2"} |> Map.toDelayMap |>
             DelayMap.joinWith((k, v) -> "${k} => ${v}", ", ") == "0 => 1, 1 => 2, 2 => 2"
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toString01(): Bool =
+        ToString.toString(Map#{1 => 2} |> Map.toDelayMap) == "DelayMap#{1 => 2}"
+
+    @test
+    def toString02(): Bool =
+        ToString.toString(Map#{1 => 0, 2 => 1, 3 => 2} |> Map.toDelayMap) == "DelayMap#{1 => 0, 2 => 1, 3 => 2}"
+
+    @test
+    def toString03(): Bool =
+        ToString.toString(Map#{1 => "b", 2 => "a"} |> Map.toDelayMap) == "DelayMap#{1 => b, 2 => a}"
+
+    @test
+    def toString04(): Bool =
+        ToString.toString(Map#{97 => false, 2 => true, 3 => false, 4 => true, 0 => true} |> Map.toDelayMap) == "DelayMap#{0 => true, 2 => true, 3 => false, 4 => true, 97 => false}"
+
+    @test
+    def toString05(): Bool =
+        ToString.toString(Map#{2 => Map#{1 => 0, 2 => 1}, 3 => Map#{3 => 2, 4 => 92}} |> Map.toDelayMap) == "DelayMap#{2 => Map#{1 => 0, 2 => 1}, 3 => Map#{3 => 2, 4 => 92}}"
+
 
 }

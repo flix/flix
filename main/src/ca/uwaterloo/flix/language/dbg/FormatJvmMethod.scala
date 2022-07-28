@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Benjamin Dahse
+ * Copyright 2022 Paul Butcher
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,18 @@
  * limitations under the License.
  */
 
-namespace Fixpoint {
-    ///
-    /// Helper function to implement `ToString`.
-    ///
-    @Internal
-    pub def commaSeparate(a: Array[v, r]): String \ Read(r) with ToString[v] =
-        Array.join(", ", a)
+package ca.uwaterloo.flix.language.dbg
+
+import ca.uwaterloo.flix.language.ast.TypedAst
+
+object FormatJvmMethod {
+
+  /**
+    * JvmMethod.
+    */
+  def format(method: TypedAst.JvmMethod): String = method match {
+    case TypedAst.JvmMethod(ident, fparams, exp, _, _, _, _) =>
+      s"JvmMethod($ident, ${fparams.map(FormatFormalParam.format).mkString("(", ", ", ")")}, ${FormatExpression.format(exp)})"
+  }
+
 }

@@ -76,7 +76,6 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class IllegalType(tpe: Type, loc: SourceLocation) extends ResolutionError {
-
     def summary: String = "Illegal type."
 
     def message(formatter: Formatter): String = {
@@ -93,6 +92,33 @@ object ResolutionError {
       */
     def explain(formatter: Formatter): Option[String] = None
   }
+
+  /**
+    * Illegal Non-Java Type Error.
+    *
+    * @param tpe the illegal type.
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalNonJavaType(tpe: Type, loc: SourceLocation) extends ResolutionError {
+    def summary: String = "Illegal non-Java type. Expected class or interface type."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected non-Java type: '${red(FormatType.formatWellKindedType(tpe))}'.
+         |
+         |${code(loc, "unexpected type.")}
+         |
+         |Expected a Java class or interface.
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
 
   /**
     * Inaccessible Class Error.
@@ -405,9 +431,10 @@ object ResolutionError {
     *
     * @param qn  the unresolved name.
     * @param ns  the current namespace.
+    * @param env the variables in the scope.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedName(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedName(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends ResolutionError {
     def summary: String = "Undefined name."
 
     def message(formatter: Formatter): String = {
@@ -494,7 +521,7 @@ object ResolutionError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Undefined operation '${red(qname.toString)}'.'.
+         |>> Undefined operation '${red(qname.toString)}'.
          |
          |${code(loc, "operation not found")}
          |

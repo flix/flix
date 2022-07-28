@@ -130,7 +130,7 @@ namespace IDE {
 
         let m = solve p, f1, f2;
 
-        (m |> Fixpoint.unsafePrint) as & Impure; // NB: Just for debugging.
+        Fixpoint.unsafePrint(m); // NB: Just for debugging.
 
         query p, f1, f2 select (n, d, l) from Results(n, d; l)
 

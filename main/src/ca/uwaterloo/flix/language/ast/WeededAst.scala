@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Denotation
 
 object WeededAst {
 
-  case class Root(units: Map[Ast.Source, WeededAst.CompilationUnit], entryPoint: Option[Symbol.DefnSym], reachable: Set[Symbol.DefnSym])
+  case class Root(units: Map[Ast.Source, WeededAst.CompilationUnit], entryPoint: Option[Symbol.DefnSym])
 
   case class CompilationUnit(uses: List[WeededAst.Use], decls: List[WeededAst.Declaration], loc: SourceLocation)
 
@@ -169,6 +169,8 @@ object WeededAst {
 
     case class Cast(exp: WeededAst.Expression, declaredType: Option[WeededAst.Type], declaredEff: WeededAst.PurityAndEffect, loc: SourceLocation) extends WeededAst.Expression
 
+    case class Upcast(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class Without(exp: WeededAst.Expression, eff: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
     case class TryCatch(exp: WeededAst.Expression, rules: List[WeededAst.CatchRule], loc: SourceLocation) extends WeededAst.Expression
@@ -193,7 +195,7 @@ object WeededAst {
 
     case class PutStaticField(className: String, fieldName: String, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class NewObject(className: String, loc: SourceLocation) extends WeededAst.Expression
+    case class NewObject(tpe: WeededAst.Type, methods: List[JvmMethod], loc: SourceLocation) extends WeededAst.Expression
 
     case class NewChannel(exp: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
 
@@ -204,6 +206,8 @@ object WeededAst {
     case class SelectChannel(rules: List[WeededAst.SelectChannelRule], default: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class Spawn(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Par(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Lazy(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
@@ -368,13 +372,11 @@ object WeededAst {
 
     case class Intersection(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
-    case class Difference(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
-
     case class Read(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
     case class Write(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
-    case class Set(tpe: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
+    case class Empty(loc: SourceLocation) extends WeededAst.Type
 
     case class Ascribe(tpe: WeededAst.Type, kind: Kind, loc: SourceLocation) extends WeededAst.Type
 
@@ -411,6 +413,8 @@ object WeededAst {
     case class PredicateParamWithType(pred: Name.Pred, den: Ast.Denotation, tpes: List[WeededAst.Type], loc: SourceLocation) extends PredicateParam
 
   }
+
+  case class JvmMethod(ident: Name.Ident, fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, purAndEff: PurityAndEffect, loc: SourceLocation)
 
   case class CatchRule(ident: Name.Ident, className: String, exp: WeededAst.Expression)
 

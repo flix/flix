@@ -36,11 +36,15 @@ object HighlightProvider {
 
         case Entity.Enum(enum) => highlightEnum(enum.sym)
 
+        case Entity.Effect(eff) => highlightEffect(eff.sym)
+
+        case Entity.Op(op) => highlightOp(op.sym)
+
         case Entity.Exp(exp) => exp match {
           case Expression.Var(sym, _, _) => highlightVar(sym)
           case Expression.Def(sym, _, _) => highlightDef(sym)
           case Expression.Sig(sym, _, _) => highlightSig(sym)
-          case Expression.Tag(sym, tag, _, _, _, _) => highlightTag(sym, tag)
+          case Expression.Tag(sym, tag, _, _, _, _, _) => highlightTag(sym, tag)
           case _ => mkNotFound(uri, pos)
         }
 
@@ -63,11 +67,14 @@ object HighlightProvider {
             case TypeConstructor.RecordRowExtend(field) => highlightField(field)
             case TypeConstructor.SchemaRowExtend(pred) => highlightPred(pred)
             case TypeConstructor.KindedEnum(sym, _) => highlightEnum(sym)
+            case TypeConstructor.Effect(sym) => highlightEffect(sym)
             case _ => mkNotFound(uri, pos)
           }
           case Type.KindedVar(sym, loc) => highlightTypeVar(sym)
           case _ => mkNotFound(uri, pos)
         }
+
+        case Entity.OpUse(sym, _) => highlightOp(sym)
 
         case _ => mkNotFound(uri, pos)
       }
@@ -127,6 +134,18 @@ object HighlightProvider {
   }
 
   private def highlightTypeVar(sym: Symbol.KindedTypeVarSym)(implicit index: Index, root: Root): JObject = {
+    val write = (sym.loc, DocumentHighlightKind.Write)
+    val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
+    highlight(write :: reads)
+  }
+
+  private def highlightEffect(sym: Symbol.EffectSym)(implicit index: Index, root: Root): JObject = {
+    val write = (sym.loc, DocumentHighlightKind.Write)
+    val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
+    highlight(write :: reads)
+  }
+
+  private def highlightOp(sym: Symbol.OpSym)(implicit index: Index, root: Root): JObject = {
     val write = (sym.loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(write :: reads)

@@ -498,22 +498,20 @@ object WeederError {
     * @param loc   the location where the error occurred.
     */
   case class IllegalPrivateDeclaration(ident: Name.Ident, loc: SourceLocation) extends WeederError {
-    def summary: String = s"Illegal private declaration '${ident.name}'."
+    def summary: String = s"Declaration must be public: '${ident.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Illegal private declaration '${red(ident.name)}'.
+         |>> Declaration must be public: '${red(ident.name)}'.
          |
          |${code(loc, "illegal private declaration")}
          |
+         |Mark the declaration as public with `pub'.
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Mark the declaration as 'pub'."
-    })
+    def explain(formatter: Formatter): Option[String] = None
 
   }
 
@@ -815,14 +813,14 @@ object WeederError {
     * @param loc the location where the error occurred.
     */
   case class NonUnitOperationType(loc: SourceLocation) extends WeederError {
-    def summary: String = "Non-Unit operation type. Effect operations must return Unit type."
+    def summary: String = "Non-Unit return type. All effect operations must return Unit."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Non-Unit operation type. Effect operations must return Unit type.
+         |>> Non-Unit return type. All effect operations must return Unit.
          |
-         |${code(loc, "non-Unit operation type")}
+         |${code(loc, "non-Unit return type")}
          |
          |""".stripMargin
     }
@@ -849,7 +847,6 @@ object WeederError {
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
       s"""This enum uses both the singleton syntax and the case syntax.
          |
          |Only one of the enum forms may be used.

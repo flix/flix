@@ -15,35 +15,52 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.Entity.LocalVar
-import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.api.lsp.Entity
+import ca.uwaterloo.flix.language.ast.TypedAst.{FormalParam, Root}
 import ca.uwaterloo.flix.api.lsp.{Index, InlayHint, InlayHintKind, Position, Range}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.Ast.TypeSource
+import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
 
 object InlayHintProvider {
 
+  /**
+    * Returns the inlay hints in the given `uri` in the given `range`.
+    */
   def processInlayHints(uri: String, range: Range)(implicit index: Index, root: Root): List[InlayHint] = {
     index.queryByRange(uri, range) match {
       case Nil => Nil
-      case entities => entities.foldLeft(Nil: List[InlayHint]) {
-        case (acc, LocalVar(sym, tpe)) => getTypeHint(sym.loc, tpe) match {
-          case Some(hint) => hint :: acc
-          case None => acc
-        }
-        case (acc, _) => acc
+      case entities => entities.flatMap {
+        // case Entity.LocalVar(sym, tpe) => getLocalVarHint(sym, tpe) // TODO: Disabled until we figure out a way to not overwhelm the user.
+        case Entity.FormalParam(fparam) => getFormalParamHint(fparam)
+        case _ => None
       }
     }
   }
 
-  private def getTypeHint(loc: SourceLocation, tpe: Type): Option[InlayHint] = {
-    if (tpe.loc.isSynthetic || tpe.loc == SourceLocation.Unknown) {
-      val pos = Position(loc.endLine - 1, loc.endCol - 1)
-      val label = ": " + FormatType.formatWellKindedType(tpe)(Audience.External)
-      Some(InlayHint(pos, label, Some(InlayHintKind.Type), Nil, ""))
-    } else {
-      None
+  /**
+    * Returns an inlay hint for the given formal param `fparam`.
+    */
+  private def getFormalParamHint(fparam: TypedAst.FormalParam): Option[InlayHint] = fparam match {
+    case FormalParam(sym, _, tpe, src, loc) => src match {
+      case TypeSource.Ascribed =>
+        // We do not show any inlay hint if the type is already there.
+        None
+
+      case TypeSource.Inferred =>
+        val pos = Position.fromEnd(fparam.loc)
+        val label = ": " + FormatType.formatWellKindedType(fparam.tpe)(Audience.External)
+        Some(InlayHint(pos, label, Some(InlayHintKind.Type), Nil, ""))
     }
+  }
+
+  /**
+    * Returns an inlay hint for the local var  type `tpe` at the given source location `loc`.
+    */
+  private def getLocalVarHint(sym: Symbol.VarSym, tpe: Type): Option[InlayHint] = {
+    val pos = Position.fromEnd(sym.loc)
+    val label = ": " + FormatType.formatWellKindedType(tpe)(Audience.External)
+    Some(InlayHint(pos, label, Some(InlayHintKind.Type), Nil, ""))
   }
 
 }

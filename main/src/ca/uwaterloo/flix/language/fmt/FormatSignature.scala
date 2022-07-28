@@ -34,11 +34,17 @@ object FormatSignature {
   }
 
   /**
+    * Returns a markdown string for the signature of the given definition.
+    */
+  def asMarkDown(op: TypedAst.Op)(implicit audience: Audience): String = {
+    formatSpec(op.sym.name, op.spec)
+  }
+
+  /**
     * Returns a markdown string for the given `name` and `spec`.
     */
   private def formatSpec(name: String, spec: TypedAst.Spec)(implicit audience: Audience): String = {
-    s"""def ${name}(${formatFormalParams(spec.fparams)}): ${formatResultTypeAndEff(spec.retTpe, spec.pur)}
-       |""".stripMargin
+    s"def $name(${formatFormalParams(spec.fparams)}): ${formatResultTypeAndEff(spec.retTpe, spec.pur)}"
 
   }
 
@@ -51,7 +57,7 @@ object FormatSignature {
     // Case 2: Some list of parameters. Format each and join them: `foo(x: Int32, y: Bool)`
     case fparams =>
       val formattedArgs = fparams.map {
-        case TypedAst.FormalParam(sym, _, tpe, _) => s"${sym.text}: ${FormatType.formatWellKindedType(tpe)}"
+        case TypedAst.FormalParam(sym, _, tpe, _, _) => s"${sym.text}: ${FormatType.formatWellKindedType(tpe)}"
       }
       formattedArgs.mkString(", ")
 

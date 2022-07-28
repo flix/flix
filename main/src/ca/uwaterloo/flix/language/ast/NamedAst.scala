@@ -29,7 +29,6 @@ object NamedAst {
                   effects: Map[Name.NName, Map[String, NamedAst.Effect]],
                   ops: Map[Name.NName, Map[String, NamedAst.Op]],
                   entryPoint: Option[Symbol.DefnSym],
-                  reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
   // TODO change laws to NamedAst.Law
@@ -81,7 +80,7 @@ object NamedAst {
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NamedAst.Expression
 
-    case class DefOrSig(name: Name.QName, loc: SourceLocation) extends NamedAst.Expression
+    case class DefOrSig(name: Name.QName, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends NamedAst.Expression
 
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends NamedAst.Expression
 
@@ -177,6 +176,8 @@ object NamedAst {
 
     case class Cast(exp: NamedAst.Expression, declaredType: Option[NamedAst.Type], declaredEff: NamedAst.PurityAndEffect, loc: SourceLocation) extends NamedAst.Expression
 
+    case class Upcast(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
     case class Without(exp: NamedAst.Expression, eff: Name.QName, loc: SourceLocation) extends NamedAst.Expression
 
     case class TryCatch(exp: NamedAst.Expression, rules: List[NamedAst.CatchRule], loc: SourceLocation) extends NamedAst.Expression
@@ -201,7 +202,7 @@ object NamedAst {
 
     case class PutStaticField(className: String, fieldName: String, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class NewObject(className: String, loc: SourceLocation) extends NamedAst.Expression
+    case class NewObject(name: String, tpe: NamedAst.Type, methods: List[JvmMethod], loc: SourceLocation) extends NamedAst.Expression
 
     case class NewChannel(exp: NamedAst.Expression, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Expression
 
@@ -212,6 +213,8 @@ object NamedAst {
     case class SelectChannel(rules: List[NamedAst.SelectChannelRule], default: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
     case class Spawn(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
+    case class Par(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Lazy(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
@@ -379,11 +382,11 @@ object NamedAst {
 
     case class Intersection(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
-    case class Difference(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
-
     case class Read(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Write(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
+    case class Empty(loc: SourceLocation) extends NamedAst.Type
 
     case class Ascribe(tpe: NamedAst.Type, kind: Kind, loc: SourceLocation) extends NamedAst.Type
 
@@ -421,7 +424,7 @@ object NamedAst {
 
   }
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: NamedAst.Type, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: NamedAst.Type, src: Ast.TypeSource, loc: SourceLocation)
 
   sealed trait PredicateParam
 
@@ -432,6 +435,8 @@ object NamedAst {
     case class PredicateParamWithType(pred: Name.Pred, den: Ast.Denotation, tpes: List[NamedAst.Type], loc: SourceLocation) extends PredicateParam
 
   }
+
+  case class JvmMethod(ident: Name.Ident, fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, tpe: NamedAst.Type, purAndEff: PurityAndEffect, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, className: String, exp: NamedAst.Expression)
 

@@ -82,6 +82,56 @@ namespace TestMutList {
 
     // TODO
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // nth                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def nth01(): Bool = region r {
+        MutList.nth(0, new MutList(r): MutList[Int32, _]) == None
+    }
+
+    @test
+    def nth02(): Bool = region r {
+        let v = new MutList(r);
+        MutList.push!(42, v);
+        MutList.nth(0, v) == Some(42)
+    }
+
+    @test
+    def nth03(): Bool = region r {
+        let v = new MutList(r);
+        MutList.push!(42, v);
+        MutList.nth(1, v) == None
+    }
+
+    @test
+    def nth04(): Bool = region r {
+        MutList.nth(1, MutList.range(r, 0, 2)) == Some(1)
+    }
+
+    @test
+    def nth05(): Bool = region r {
+        MutList.nth(3, MutList.range(r, 0, 4)) == Some(3)
+    }
+
+    @test
+    def nth06(): Bool = region r {
+        MutList.nth(30, MutList.range(r, 0, 42)) == Some(30)
+    }
+
+    @test
+    def nth07(): Bool = region r {
+        MutList.nth(-30, MutList.range(r, 0, 42)) == None
+    }
+
+    @test
+    def nth08(): Bool = region r {
+        MutList.nth(50, MutList.range(r, 0, 42)) == None
+    }
+
+
     /////////////////////////////////////////////////////////////////////////////
     // length                                                                  //
     /////////////////////////////////////////////////////////////////////////////
@@ -992,7 +1042,7 @@ namespace TestMutList {
         MutList.push!(42, v);
         MutList.push!(31, v);
         MutList.push!(1019, v);
-        MutList.length(v) == 3 and MutList.get(0, v) == 42 and MutList.get(1, v) == 31 and MutList.get(2, v) == 1019
+        MutList.length(v) == 3 and MutList.nth(0, v) == Some(42) and MutList.nth(1, v) == Some(31) and MutList.nth(2, v) == Some(1019)
     }
 
     @test
@@ -1002,7 +1052,7 @@ namespace TestMutList {
         MutList.push!(0, v);
         MutList.push!(0, v);
         MutList.push!(0, v);
-        MutList.length(v) == 4 and MutList.get(0, v) == 0 and MutList.get(1, v) == 0 and MutList.get(2, v) == 0 and MutList.get(3, v) == 0
+        MutList.length(v) == 4 and MutList.nth(0, v) == Some(0) and MutList.nth(1, v) == Some(0) and MutList.nth(2, v) == Some(0) and MutList.nth(3, v) == Some(0)
     }
 
 
@@ -1070,7 +1120,7 @@ namespace TestMutList {
         MutList.insert!(98, 1, v);
         MutList.insert!(99, 2, v);
         MutList.insert!(107, 1, v);
-        MutList.length(v) == 4 and MutList.get(1, v) == 107
+        MutList.length(v) == 4 and MutList.nth(1, v) == Some(107)
     }
 
     @test
@@ -1482,6 +1532,59 @@ namespace TestMutList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // iterator                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def iterator01(): Bool = region r {
+        let l = new MutList(r): MutList[Int32, r];
+        Iterable.iterator(l) |> invokeIsEmpty(100)
+    }
+
+    @test
+    def iterator02(): Bool = region r {
+        let l = List.toMutList(r, 1 :: 2 :: 3 :: Nil);
+        not (Iterable.iterator(l) |> invokeIsEmpty(100))
+    }
+
+    @test
+    def iterator03(): Bool = region r {
+        let l = List.toMutList(r, 1 :: 2 :: 3 :: Nil);
+        discard MutList.pop!(l);
+        discard MutList.pop!(l);
+        discard MutList.pop!(l);
+        Iterable.iterator(l) |> invokeIsEmpty(100)
+    }
+
+    @test
+    def iterator04(): Bool = region r {
+        let l = List.toMutList(r, 1 :: 2 :: 3 :: Nil);
+        Iterable.iterator(l) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    }
+
+    @test
+    def iterator05(): Bool = region r {
+        let l = MutList.range(r, 0, 100);
+        Iterable.iterator(l) |> Iterator.toList == List.range(0, 100) and
+        MutList.toList(l) == List.range(0, 100)
+    }
+
+    ///
+    /// Invokes `Iterator.isEmpty(iter)` `n` times and combines the results with `and`.
+    ///
+    /// Assumes `n > 0`.
+    ///
+    def invokeIsEmpty(n: Int32, iter: Iterator[a, r]): Bool \ Read(r) =
+        def loop(i, acc) = {
+            if (i >= n)
+                acc
+            else
+                loop(i + 1, Iterator.isEmpty(iter) and acc)
+        };
+        loop(1, Iterator.isEmpty(iter))
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // foreach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1684,7 +1787,7 @@ namespace TestMutList {
         let v = Array.toMutList(r, [1, 2, 3]);
         let a = MutList.toArray(r, v);
         a[1] = 42;
-        MutList.get(1, v) == 2
+        MutList.nth(1, v) == Some(2)
     }
 
     @test
@@ -2411,7 +2514,7 @@ namespace TestMutList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool & Impure = region r {
+    def shuffle01(): Bool \ NonDet = region r {
         let l: List[Int32] = Nil;
         let v = MutList.shuffle(r, Random.new(), List.toMutList(r, l));
         MutList.sort!(v);
@@ -2420,7 +2523,7 @@ namespace TestMutList {
     }
 
     @test
-    def shuffle02(): Bool & Impure = region r {
+    def shuffle02(): Bool \ NonDet = region r {
         let l = 1 :: Nil;
         let v = MutList.shuffle(r, Random.new(), List.toMutList(r, l));
         MutList.sort!(v);
@@ -2429,7 +2532,7 @@ namespace TestMutList {
     }
 
     @test
-    def shuffle03(): Bool & Impure = region r {
+    def shuffle03(): Bool \ NonDet = region r {
         let l = 1 :: 2 :: 3 :: Nil;
         let v = MutList.shuffle(r, Random.new(), List.toMutList(r, l));
         MutList.sort!(v);
@@ -2438,7 +2541,7 @@ namespace TestMutList {
     }
 
     @test
-    def shuffle04(): Bool & Impure = region r {
+    def shuffle04(): Bool \ NonDet = region r {
         let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
         let v = MutList.shuffle(r, Random.new(), List.toMutList(r, l));
         MutList.sort!(v);

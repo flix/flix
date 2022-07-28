@@ -26,7 +26,6 @@ namespace Fixpoint/Ram {
 
     instance ToString[RelOp[v]] with ToString[v] {
         pub def toString(op: RelOp[v]): String =
-            use Fixpoint.commaSeparate;
             let nl = String.lineSeparator();
             match op {
                 case Search(var, ramSym, body) =>

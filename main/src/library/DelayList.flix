@@ -62,6 +62,10 @@ instance Order[DelayList[a]] with Order[a] {
     }
 }
 
+instance ToString[DelayList[a]] with ToString[a] {
+    pub def toString(l: DelayList[a]): String = DelayList.toString(l)
+}
+
 instance Functor[DelayList] {
     pub def map(f: a -> b & ef, l: DelayList[a]): DelayList[b] & ef = DelayList.map(f, l)
 }
@@ -75,6 +79,10 @@ instance Monad[DelayList] {
     pub def flatMap(f: a -> DelayList[b] & ef, l: DelayList[a]): DelayList[b] & ef = DelayList.flatMap(f, l)
 }
 
+instance MonadZero[DelayList] {
+    pub def empty(): DelayList[a] = DelayList.empty()
+}
+
 instance Traversable[DelayList] {
     pub def traverse(f: a -> m[b] & ef, l: DelayList[a]): m[DelayList[b]] & ef with Applicative[m] = DelayList.traverse(f, l)
     pub override def sequence(l: DelayList[m[a]]): m[DelayList[a]] with Applicative[m] = DelayList.sequence(l)
@@ -84,6 +92,7 @@ instance Foldable[DelayList] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldRightWithCont(f, s, l)
+    override pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) = DelayList.iterator(r, l)
 }
 
 instance UnorderedFoldable[DelayList] {
@@ -92,11 +101,6 @@ instance UnorderedFoldable[DelayList] {
     override pub def exists(f: a -> Bool & ef, l: DelayList[a]): Bool & ef = DelayList.exists(f, l)
     override pub def forall(f: a -> Bool & ef, l: DelayList[a]): Bool & ef = DelayList.forall(f, l)
     override pub def memberOf(x: a, l: DelayList[a]): Bool with Eq[a] = DelayList.memberOf(x, l)
-}
-
-instance Iterable[DelayList] {
-    pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) =
-        DelayList.toIterator(r, l)
 }
 
 instance FunctorFilter[DelayList] {
@@ -113,6 +117,25 @@ instance Monoid[DelayList[a]] {
 }
 
 namespace DelayList {
+
+    ///
+    /// Returns a string representation of `l`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def toString(l: DelayList[a]): String with ToString[a] = region r {
+        let sb = new StringBuilder(r);
+        StringBuilder.appendString!("DelayList(", sb);
+        foreach ((x, i) <- enumerator(r, l)) {
+            if (i == 0)
+                StringBuilder.appendString!("${x}", sb)
+            else
+                StringBuilder.appendString!(", ${x}", sb)
+        };
+        StringBuilder.appendString!(")", sb);
+        StringBuilder.toString(sb)
+    }
 
     ///
     /// Returns an empty DelayList.
@@ -598,7 +621,7 @@ namespace DelayList {
             case LCons(x, xs) => loop(force xs, ks -> k(f(x, ks)))
             case LList(xs)    => loop(force xs, k)
         };
-        loop(l, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
+        loop(l, upcast(identity)) // NB: Cast required because the identity continuation is pure,
                                   // but the intermediate continuations are effect polymorphic.
 
     ///
@@ -673,7 +696,7 @@ namespace DelayList {
             case LList(xs)    => loop(force xs, k)
             case _            => unreachable!()
         };
-        if (isEmpty(l)) None else Some(loop(l, ks -> ks as & ef)) // NB: Cast required because the identity continuation is pure,
+        if (isEmpty(l)) None else Some(loop(l, upcast(identity))) // NB: Cast required because the identity continuation is pure,
                                                                   // but the intermediate continuations are effect polymorphic.
     ///
     /// Returns a `DelayList` with every element in `l` that satisfies the predicate `f`.
@@ -805,7 +828,7 @@ namespace DelayList {
             case LCons(x, xs) => loop(force xs, () -> if (f(x)) Some(x) else k())
             case LList(xs)    => loop(force xs, k)
         };
-        loop(l, () -> None as & ef) // NB: Cast required because the identity continuation is pure,
+        loop(l, upcast(() -> None)) // NB: Cast required because the identity continuation is pure,
                                     // but the intermediate continuations are effect polymorphic.
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `l`.
@@ -1155,7 +1178,7 @@ namespace DelayList {
     /// Does not force any elements of the list.
     ///
     @Experimental @Lazy
-    pub def toIterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) =
+    pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) =
         let cursor = ref l @ r;
         let done = () -> match head(deref cursor) {
             case None    => true
@@ -1168,6 +1191,12 @@ namespace DelayList {
                 x
         };
         Iterator(done, next)
+
+    ///
+    /// Returns an iterator over `l` zipped with the indices of the elements.
+    ///
+    pub def enumerator(r: Region[r], l: DelayList[a]): Iterator[(a, Int32), r] \ Write(r) =
+        iterator(r, l) |> Iterator.zipWithIndex
 
     ///
     /// Returns `l` as a `List`.
@@ -1290,16 +1319,14 @@ namespace DelayList {
             case LCons(x, xs) => loop(force xs, ks -> k(consA(f(x), ks)))
             case LList(xs)    => loop(force xs, k)
         };
-        loop(l, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
+        loop(l, upcast(identity)) // NB: Cast required because the identity continuation is pure,
                                   // but the intermediate continuations are effect polymorphic.
 
     ///
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random.Random, l: DelayList[a]): DelayList[a] & Impure = region r {
-        let arr = toArray(r, l);
-        Array.shuffle(rnd, arr);
-        Array.toDelayList(arr)
+    pub def shuffle(rnd: Random.Random, l: DelayList[a]): DelayList[a] \ NonDet = region r {
+        toArray(r, l) !> Array.shuffle(rnd) |> Array.toDelayList
     }
 
 }

@@ -120,13 +120,12 @@ object SetUnification {
   }
 
   /**
-    * Performs success variable elimination on the given boolean expression `f`.
+    * Performs successive variable elimination on the given set expression `f`.
     */
   private def successiveVariableElimination(f: Type, fvs: List[Type.KindedVar])(implicit flix: Flix): Substitution = fvs match {
     case Nil =>
-      println(f)
-      // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
-      if (!satisfiable(f))
+      // Determine if f is necessarily empty when all (rigid) variables and constants are made flexible.
+      if (isEmpty(dnf(f)))
         Substitution.empty
       else
         throw SetUnificationException
@@ -136,9 +135,7 @@ object SetUnification {
       val t1 = Substitution.singleton(x.sym, Type.All)(f)
       val se = successiveVariableElimination(mkIntersection(t0, t1), xs)
 
-//      val f1 = BoolTable.minimizeType(mkUnion(se(t0), mkIntersection(x, mkComplement(se(t1)))))
-      // TODO enable minimization
-      val f1 = mkUnion(se(t0), mkIntersection(x, mkComplement(se(t1))))
+      val f1 = TypeMinimization.minimizeType(mkUnion(se(t0), mkIntersection(x, mkComplement(se(t1)))))
       val st = Substitution.singleton(x.sym, f1)
       st ++ se
   }
@@ -147,23 +144,6 @@ object SetUnification {
     * An exception thrown to indicate that boolean unification failed.
     */
   private case object SetUnificationException extends RuntimeException
-
-  /**
-    * Returns `true` if the given boolean formula `f` is satisfiable.
-    */
-  private def satisfiable(f: Type)(implicit flix: Flix): Boolean = f match {
-    case Type.All => true
-    case Type.Empty => false
-    case _ =>
-      val q = mkEq(f, Type.All)
-      try {
-        successiveVariableElimination(q, q.typeVars.toList)
-        true
-      } catch {
-        case SetUnificationException => false
-      }
-  }
-
 
   /**
     * To unify two set formulas p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
@@ -216,6 +196,18 @@ object SetUnification {
     // x ∧ F => F
     case (_, Type.Empty) =>
       Type.Empty
+
+    // C ∧ D => F
+    case (CONSTANT(x1), CONSTANT(x2)) if x1 != x2 =>
+      Type.Empty
+
+    // C ∧ ¬D => C
+    case (x1@CONSTANT(_), COMPLEMENT(x2@CONSTANT(_))) if x1 != x2 =>
+      x1
+
+    // ¬C ∧ D => D
+    case (COMPLEMENT(x1@CONSTANT(_)), x2@CONSTANT(_)) if x1 != x2 =>
+      x2
 
     // ¬x ∧ (x ∨ y) => ¬x ∧ y
     case (COMPLEMENT(x1), UNION(x2, y)) if x1 == x2 =>
@@ -357,6 +349,11 @@ object SetUnification {
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, tpe1.loc), tpe1, tpe1.loc), tpe2, tpe1.loc)
   }
 
+  /**
+    * Returns the difference of the given types.
+    */
+  def mkDifference(tpe1: Type, tpe2: Type): Type = mkIntersection(tpe1, mkComplement(tpe2))
+
   private object COMPLEMENT {
     @inline
     def unapply(tpe: Type): Option[Type] = tpe match {
@@ -381,4 +378,182 @@ object SetUnification {
     }
   }
 
+  private object CONSTANT {
+    @inline
+    def unapply(tpe: Type): Option[Symbol.EffectSym] = tpe match {
+      case Type.Cst(TypeConstructor.Effect(sym), _) => Some(sym)
+      case _ => None
+    }
+  }
+
+  private object VAR {
+    @inline
+    def unapply(tpe: Type): Option[Symbol.KindedTypeVarSym] = tpe match {
+      case Type.KindedVar(sym, _) => Some(sym)
+      case _ => None
+    }
+  }
+
+  /**
+    * An atom is a constant or a variable.
+    */
+  private sealed trait Atom
+
+  private object Atom {
+    case class Var(sym: Symbol.KindedTypeVarSym) extends Atom
+
+    case class Eff(sym: Symbol.EffectSym) extends Atom
+  }
+
+  /**
+    * A literal is a negated or un-negated atom.
+    */
+  private sealed trait Literal
+
+  private object Literal {
+    case class Positive(atom: Atom) extends Literal
+
+    case class Negative(atom: Atom) extends Literal
+  }
+
+  /**
+    * A DNF intersection is a set of literals.
+    */
+  private type Intersection = Set[Literal]
+
+  /**
+    * A DNF formula is either:
+    * - a union of intersections of literals.
+    * - the universal set
+    */
+  private sealed trait Dnf
+
+  private object Dnf {
+    case class Union(inters: Set[Intersection]) extends Dnf // TODO should be a list to avoid extra comparisons?
+
+    case object All extends Dnf
+  }
+
+  /**
+    * An NNF formula is a formula where all negations are on atoms.
+    */
+  private sealed trait Nnf
+
+  private object Nnf {
+    case class Union(tpe1: Nnf, tpe2: Nnf) extends Nnf
+
+    case class Intersection(tpe1: Nnf, tpe2: Nnf) extends Nnf
+
+    case class Singleton(tpe: Literal) extends Nnf
+
+    case object Empty extends Nnf
+
+    case object All extends Nnf
+  }
+
+  /**
+    * Converts the given type to DNF
+    */
+  private def dnf(t: Type): Dnf = nnfToDnf(nnf(t))
+
+  /**
+    * Converts the given type to NNF.
+    */
+  private def nnf(t: Type): Nnf = t match {
+    case CONSTANT(sym) => Nnf.Singleton(Literal.Positive(Atom.Eff(sym)))
+    case VAR(sym) => Nnf.Singleton(Literal.Positive(Atom.Var(sym)))
+    case COMPLEMENT(tpe) => nnfNot(tpe)
+    case UNION(tpe1, tpe2) => Nnf.Union(nnf(tpe1), nnf(tpe2))
+    case INTERSECTION(tpe1, tpe2) => Nnf.Intersection(nnf(tpe1), nnf(tpe2))
+    case Type.Empty => Nnf.Empty
+    case Type.All => Nnf.All
+    case _ => throw InternalCompilerException(s"unexpected type: $t")
+  }
+
+  /**
+    * Converts the complement of the given type to NNF.
+    */
+  private def nnfNot(t: Type): Nnf = t match {
+    case CONSTANT(sym) => Nnf.Singleton(Literal.Negative(Atom.Eff(sym)))
+    case VAR(sym) => Nnf.Singleton(Literal.Negative(Atom.Var(sym)))
+    case COMPLEMENT(tpe) => nnf(tpe)
+    case UNION(tpe1, tpe2) => Nnf.Intersection(
+      nnf(mkComplement(tpe1)),
+      nnf(mkComplement(tpe2))
+    )
+    case INTERSECTION(tpe1, tpe2) => Nnf.Union(
+      nnf(mkComplement(tpe1)),
+      nnf(mkComplement(tpe2))
+    )
+    case _ => throw InternalCompilerException(s"unexpected type: $t")
+  }
+
+  /**
+    * Converts the given type from NNF to DNF.
+    */
+  private def nnfToDnf(t: Nnf): Dnf = t match {
+    case Nnf.Union(tpe1, tpe2) => union(nnfToDnf(tpe1), nnfToDnf(tpe2))
+    case Nnf.Intersection(tpe1, tpe2) => intersect(nnfToDnf(tpe1), nnfToDnf(tpe2))
+    case Nnf.Singleton(tpe) => Dnf.Union(Set(Set(tpe)))
+    case Nnf.Empty => Dnf.Union(Set(Set()))
+    case Nnf.All => Dnf.All
+  }
+
+  /**
+    * Calculates the intersection of two DNF sets.
+    */
+  private def intersect(t1: Dnf, t2: Dnf): Dnf = (t1, t2) match {
+    case (Dnf.All, t) => t
+    case (t, Dnf.All) => t
+    case (Dnf.Union(inters1), Dnf.Union(inters2)) =>
+      val inters = for {
+        inter1 <- inters1
+        inter2 <- inters2
+      } yield inter1 ++ inter2
+      Dnf.Union(inters)
+  }
+
+  /**
+    * Calculates the union of two DNF sets.
+    */
+  private def union(t1: Dnf, t2: Dnf): Dnf = (t1, t2) match {
+    case (Dnf.All, _) => Dnf.All
+    case (_, Dnf.All) => Dnf.All
+    case (Dnf.Union(inters1), Dnf.Union(inters2)) => Dnf.Union(inters1 ++ inters2)
+  }
+
+  /**
+    * Returns true if the given DNF set represents an empty set.
+    */
+  private def isEmpty(t1: Dnf): Boolean = t1 match {
+    case Dnf.Union(inters) => inters.forall(isEmptyIntersection)
+    case Dnf.All => false
+  }
+
+  /**
+    * Returns true if `t1` represents an empty intersection of effects.
+    */
+  private def isEmptyIntersection(t1: Intersection): Boolean = {
+    val pos = t1.collect {
+      case Literal.Positive(atom) => atom
+    }
+    val neg = t1.collect {
+      case Literal.Negative(atom) => atom
+    }
+
+    // an intersection is empty if any of the following is true:
+
+    // 1. It is syntactically empty
+    val synEmpty = t1.isEmpty
+
+    // 2. It contains two different positive constants
+    val diffConst = pos.collect {
+      case Atom.Eff(sym) => sym
+    }.size > 1
+
+    // 3. It contains an atom in both the positive and negative sets
+    val negation = (pos & neg).nonEmpty
+
+    synEmpty || diffConst || negation
+  }
 }

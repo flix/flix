@@ -30,10 +30,26 @@ pub enum ReifiedType with Eq, Order, ToString {
 }
 
 ///
+/// The Generic IO Effect.
+///
+/// The `IO` effect is the most general effect of any
+/// operation that interacts with the environment.
+///
+pub eff IO
+
+///
+/// The Non-Deterministic Effect.
+///
+/// The `NonDet` effect represents "functions" that behave like relations,
+/// i.e. they have no side-effects, and given the same input their output
+//// there is a fixed set of output.
+///
+pub eff NonDet
+
+///
 /// The identity function.
 ///
 pub def identity(x: a): a = x
-
 
 ///
 /// Returns the function `f` with input arguments swapped.
@@ -45,7 +61,7 @@ pub def flip(f: (a, b) -> c & ef): (b, a) -> c & ef = (x, y) -> f(y, x)
 /// Partially applying this function in the form ``f `on` g`` lifts the binary function `f` to work on
 /// inputs transformed by `g`.
 ///
-pub def on(f: (b, b) -> c & ef1, g: a -> b & ef2, x: a, y: a): c & (ef1 and ef2) = f(g(x), g(y))
+pub def on(f: (b, b) -> c & ef1, g: a -> b & ef2, x: a, y: a): c \ { ef1, ef2 } = f(g(x), g(y))
 
 ///
 /// Returns the first component of `t`.
@@ -74,7 +90,7 @@ pub def swap(p: (a, b)): (b, a) =
 ///
 /// Given the functions `f: a -> b` and `g: b -> c` returns a function `a -> c`
 ///
-pub def >>(f: a -> b & ef1, g: b -> c & ef2): a -> c & (ef1 and ef2) = x -> g(f(x))
+pub def >>(f: a -> b & ef1, g: b -> c & ef2): a -> c \ { ef1, ef2 } = x -> g(f(x))
 
 ///
 /// Pipes the given value `x` into the function `f`.
@@ -116,26 +132,32 @@ pub def println(x: a): Unit & Impure with ToString[a] =
 ///
 /// Crashes the current process with the given message `m`.
 ///
-pub def bug!(m: String): a =
-    let f = () -> {
-        import static get java.lang.System.err: ##java.io.PrintStream & Pure as getErr;
-        import java.io.PrintStream.println(String): Unit & Impure;
-        import java.lang.String.repeat(Int32): ##java.lang.String & Pure;
-        let prt = println(getErr());
-        prt(repeat("*", 80));
-        prt("**") ;
-        prt("**  BUG: ${m}") ;
-        prt("**") ;
-        prt(repeat("*", 80));
-        prt("")
-    };
-    let _ = f() as & Pure;
+pub def bug!(m: String): a = {
+    import static get java.lang.System.err: ##java.io.PrintStream & Pure as getErr;
+    import java.io.PrintStream.println(String): Unit & Impure;
+    import java.lang.String.repeat(Int32): ##java.lang.String & Pure;
+    let prt = println(getErr());
+    prt(repeat("*", 80));
+    prt("**") ;
+    prt("**  BUG: ${m}") ;
+    prt("**") ;
+    prt(repeat("*", 80));
+    prt("");
     ?panic
+} as & Pure
 
 ///
 /// Asserts that this expression is unreachable. Crashes if not.
 ///
 pub def unreachable!(): a = bug!("Reached unreachable expression.")
+
+///
+/// Casts a pure function to `ef`.
+///
+/// `upcast` is safe to use anywhere.
+///
+pub def upcast(f: a -> b): a -> b & ef =
+    x -> f(x) as & ef
 
 ///
 /// Meta-programming facility to express the time complexity of a function `f`.

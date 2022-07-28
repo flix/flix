@@ -62,22 +62,32 @@ namespace TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // get                                                                     //
+    // nth                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testGet01(): Bool = region r {
-        Array.get(0, [1, 2, 3] @ r) == 1
+    def testNth01(): Bool = region r {
+        Array.nth(0, [1, 2, 3] @ r) == Some(1)
     }
 
     @test
-    def testGet02(): Bool = region r {
-        Array.get(1, [1, 2, 3] @ r) == 2
+    def testNth02(): Bool = region r {
+        Array.nth(1, [1, 2, 3] @ r) == Some(2)
     }
 
     @test
-    def testGet03(): Bool = region r {
-        Array.get(2, [1, 2, 3] @ r) == 3
+    def testNth03(): Bool = region r {
+        Array.nth(2, [1, 2, 3] @ r) == Some(3)
+    }
+
+    @test
+    def testNth04(): Bool = region r {
+        Array.nth(3, [1, 2, 3] @ r) == None
+    }
+
+    @test
+    def testNth05(): Bool = region r {
+        Array.nth(-2, [1, 2, 3] @ r) == None
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -176,6 +186,30 @@ namespace TestArray {
     @test
     def testToList03(): Bool = region r {
         Array.toList([1, 2]) == 1 :: 2 :: Nil
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toNel                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toNel01(): Bool = region r {
+        Array.toNel([]: Array[Unit, _]) == None
+    }
+
+    @test
+    def toNel02(): Bool = region r {
+        Array.toNel([1]) == Some(Nel.singleton(1))
+    }
+
+    @test
+    def toNel03(): Bool = region r {
+        Array.toNel([1,2]) == List.toNel(1 :: 2 :: Nil)
+    }
+
+    @test
+    def toNel04(): Bool = region r {
+        Array.toNel([1,2,3]) == List.toNel(1 :: 2 :: 3 :: Nil)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -5618,6 +5652,30 @@ namespace TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // toNec                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toNec01(): Bool = region r {
+        Array.toNec([]: Array[Unit, _]) == None
+    }
+
+    @test
+    def toNec02(): Bool = region r {
+        Array.toNec([1]) == Some(Nec.singleton(1))
+    }
+
+    @test
+    def toNec03(): Bool = region r {
+        Array.toNec([1,2]) == List.toNec(1 :: 2 :: Nil)
+    }
+
+    @test
+    def toNec04(): Bool = region r {
+        Array.toNec([1,2,3]) == List.toNec(1 :: 2 :: 3 :: Nil)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // copyOfRange                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -5766,35 +5824,27 @@ namespace TestArray {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toIterator                                                              //
+    // iterator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool = region r {
-        []: Array[Int32, r] |> Array.toIterator(r) |> Iterator.toList == Nil
+    def iterator01(): Bool = region r {
+        []: Array[Int32, r] |> Array.iterator |> Iterator.toList == Nil
     }
 
     @test
-    def toIterator02(): Bool = region r {
-        [1, 2, 3] |> Array.toIterator(r) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    def iterator02(): Bool = region r {
+        [1, 2, 3] |> Array.iterator |> Iterator.toList == 1 :: 2 :: 3 :: Nil
     }
 
     @test
-    def toIterator03(): Bool = region r {
-        ([1, 2, 3] @ r) |> Array.toIterator(r) |> Iterator.toArray(r) `sameElements` [1, 2, 3] @ r
+    def iterator03(): Bool = region r {
+        ([1, 2, 3] @ r) |> Array.iterator |> Iterator.toArray(r) `sameElements` [1, 2, 3] @ r
     }
 
     @test
-    def toIterator04(): Bool = region r {
-        Array.range(r, -100, 100) |> Array.toIterator(r) |> Iterator.toArray(r) `sameElements` Array.range(r, -100, 100)
-    }
-
-    @test
-    def toIterator05(): Bool = region r {
-        let a = [1, 2, 3] @ r;
-        let iter = Array.toIterator(r, a);
-        a[0] = 10000;
-        Iterator.toArray(r, iter) `sameElements` [1, 2, 3]
+    def iterator04(): Bool = region r {
+        Array.range(r, -100, 100) |> Array.iterator |> Iterator.toArray(r) `sameElements` Array.range(r, -100, 100)
     }
 
 
@@ -5943,28 +5993,28 @@ namespace TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool & Impure = region r {
+    def shuffle01(): Bool \ NonDet = region r {
         let a = ([] @ r): Array[Int32, _];
         Array.shuffle(Random.new(), a);
         Array.length(a) == 0 and Array.toSet(a) == Set#{}
     }
 
     @test
-    def shuffle02(): Bool & Impure = region r {
+    def shuffle02(): Bool \ NonDet = region r {
         let a = ([0] @ r);
         Array.shuffle(Random.new(), a);
         Array.length(a) == 1 and Array.toSet(a) == Set#{0}
     }
 
     @test
-    def shuffle03(): Bool & Impure = region r {
+    def shuffle03(): Bool \ NonDet = region r {
         let a = ([0, 1, 2, 3] @ r);
         Array.shuffle(Random.new(), a);
         Array.length(a) == 4 and Array.toSet(a) == Set#{0, 1, 2, 3}
     }
 
     @test
-    def shuffle04(): Bool & Impure = region r {
+    def shuffle04(): Bool \ NonDet = region r {
         let a = ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9] @ r);
         Array.shuffle(Random.new(), a);
         Array.length(a) == 10 and Array.toSet(a) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}

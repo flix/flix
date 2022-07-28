@@ -33,6 +33,10 @@ instance Scoped[MutList[a]] {
     pub def regionOf(_: MutList[a, r]): Region[r] = () as Region[r]
 }
 
+instance Iterable[MutList] {
+    pub def iterator(l: MutList[a, r]): Iterator[a, r] \ Write(r) = MutList.iterator(l)
+}
+
 namespace MutList {
 
     ///
@@ -60,14 +64,14 @@ namespace MutList {
         MutList(ref Array.init(r, f, c) @ r, ref d @ r)
 
     ///
-    /// Returns the element at position `i` in the mutable list `v`.
+    /// Optionally returns the element at position `i` in the mutable list `v`.
     ///
-    pub def get(i: Int32, v: MutList[a, r]): a \ Read(r) =
+    pub def nth(i: Int32, v: MutList[a, r]): Option[a] \ Read(r) =
         let MutList(a, l) = v;
-        if (i >= deref l)
-            bug!("Invalid argument ${i}")
+        if (0 <= i and i < deref l)
+            Array.nth(i, deref a)
         else
-            (deref a)[i]
+            None
 
     ///
     /// Returns the number of elements in the given mutable list `v`.
@@ -793,6 +797,23 @@ namespace MutList {
     }
 
     ///
+    /// Returns an iterator over `l`.
+    ///
+    /// Modifying `l` while using an iterator has undefined behavior and is dangerous.
+    ///
+    pub def iterator(l: MutList[a, r]): Iterator[a, r] \ Write(r) =
+        let r = Scoped.regionOf(l);
+        let MutList(a, len) = l;
+        let i = ref 0 @ r;
+        let done = () -> deref i == deref len;
+        let next = () -> {
+            let x = (deref a)[deref i];
+            i := deref i + 1;
+            x
+        };
+        Iterator(done, next)
+
+    ///
     /// Applies `f` to all the elements in `v`.
     ///
     pub def foreach(f: a -> Unit & ef, v: MutList[a, r]): Unit \ { ef, Read(r) } =
@@ -923,10 +944,8 @@ namespace MutList {
     ///
     /// Shuffles `v` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(r1: Region[r1], rnd: Random.Random, v: MutList[a, r1]): MutList[a, r1] & Impure \ { Read(r1), Write(r1) } = region r2 {
-        let arr = toArray(r2, v);
-        Array.shuffle(rnd, arr);
-        Array.toMutList(r1, arr)
+    pub def shuffle(r1: Region[r1], rnd: Random.Random, v: MutList[a, r1]): MutList[a, r1] \ { Read(r1), Write(r1), NonDet } = region r2 {
+        toArray(r2, v) !> Array.shuffle(rnd) |> Array.toMutList(r1)
     }
 
 }

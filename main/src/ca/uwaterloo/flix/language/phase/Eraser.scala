@@ -28,7 +28,7 @@ object Eraser {
     val defs = root.defs.map { case (k, v) => k -> visitDef(v) }
     val enums = root.enums.map { case (k, v) => k -> visitEnum(v) }
 
-    ErasedAst.Root(defs, enums, root.entryPoint, root.reachable, root.sources).toSuccess
+    ErasedAst.Root(defs, enums, root.entryPoint, root.sources).toSuccess
   }
 
   /**
@@ -107,8 +107,8 @@ object Eraser {
     case FinalAst.Expression.Var(sym, tpe, loc) =>
       ErasedAst.Expression.Var(sym, tpe, loc)
 
-    case FinalAst.Expression.Closure(sym, closureArgs, fnMonoType, tpe, loc) =>
-      ErasedAst.Expression.Closure(sym, closureArgs.map(visitExp), fnMonoType, tpe, loc)
+    case FinalAst.Expression.Closure(sym, closureArgs, tpe, loc) =>
+      ErasedAst.Expression.Closure(sym, closureArgs.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.ApplyClo(exp, args, tpe, loc) =>
       ErasedAst.Expression.ApplyClo(visitExp(exp), args.map(visitExp), tpe, loc)
@@ -241,8 +241,13 @@ object Eraser {
     case FinalAst.Expression.PutStaticField(field, exp, tpe, loc) =>
       ErasedAst.Expression.PutStaticField(field, visitExp(exp), tpe, loc)
 
-    case FinalAst.Expression.NewObject(clazz, tpe, loc) =>
-      ErasedAst.Expression.NewObject(clazz, tpe, loc)
+    case FinalAst.Expression.NewObject(name, clazz, tpe, methods0, loc) =>
+      val methods = methods0.map {
+        case FinalAst.JvmMethod(ident, fparams, clo, retTpe, loc) =>
+          val f = fparams.map(visitFormalParam)
+          ErasedAst.JvmMethod(ident, f, visitExp(clo), retTpe, loc)
+      }
+      ErasedAst.Expression.NewObject(name, clazz, tpe, methods, loc)
 
     case FinalAst.Expression.NewChannel(exp, tpe, loc) =>
       ErasedAst.Expression.NewChannel(visitExp(exp), tpe, loc)

@@ -57,7 +57,7 @@ object Inliner {
     }
 
     // Reassemble the ast root.
-    val result = LiftedAst.Root(defs, enums, root.entryPoint, root.reachable, root.sources)
+    val result = LiftedAst.Root(defs, enums, root.entryPoint, root.sources)
 
     result.toSuccess
   }
@@ -400,8 +400,16 @@ object Inliner {
       val e = visitExp(exp, subst0)
       LiftedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.NewObject(clazz, tpe, purity, loc) =>
-      LiftedAst.Expression.NewObject(clazz, tpe, purity, loc)
+    case OccurrenceAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
+      val methods = methods0.map {
+        case OccurrenceAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
+          val f = fparams.map {
+            case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
+          }
+          val c = visitExp(clo, subst0)
+          LiftedAst.JvmMethod(ident, f, c, retTpe, purity, loc)
+      }
+      LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
     case OccurrenceAst.Expression.NewChannel(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
@@ -787,8 +795,16 @@ object Inliner {
       val e = substituteExp(exp, env0)
       LiftedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.NewObject(clazz, tpe, purity, loc) =>
-      LiftedAst.Expression.NewObject(clazz, tpe, purity, loc)
+    case OccurrenceAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
+      val methods = methods0.map {
+        case OccurrenceAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
+          val f = fparams.map {
+            case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
+          }
+          val c = substituteExp(clo, env0)
+          LiftedAst.JvmMethod(ident, f, c, retTpe, purity, loc)
+      }
+      LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
     case OccurrenceAst.Expression.NewChannel(exp, tpe, loc) =>
       val e = substituteExp(exp, env0)

@@ -3317,5 +3317,34 @@ def escapeInterpolation03(): Bool = "\${}" == ("$" + "{}")
 def escapeInterpolation04(): String = "$"
 
 
+    /////////////////////////////////////////////////////////////////////////////
+    // iterator                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def iterator01(): Bool = region r {
+        String.iterator(r, "") |> Iterator.toList == Nil
+    }
+
+    @test
+    def iterator02(): Bool = region r {
+        String.iterator(r, "abc") |> Iterator.toList == 'a' :: 'b' :: 'c' :: Nil
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // enumerator                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def enumerator01(): Bool = region r {
+        String.enumerator(r, "") |> Iterator.toList == Nil
+    }
+
+    @test
+    def enumerator02(): Bool = region r {
+        String.enumerator(r, "abc") |> Iterator.toList == ('a', 0) :: ('b', 1) :: ('c', 2) :: Nil
+    }
+
 }
 

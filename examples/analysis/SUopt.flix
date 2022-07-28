@@ -96,5 +96,5 @@ def main(): Unit & Impure =
         Kill(l;Top) :- Phi(l).
     };
     let m = solve p;
-    (m |> Fixpoint.unsafePrint) as & Impure;
+    Fixpoint.unsafePrint(m);
     ()

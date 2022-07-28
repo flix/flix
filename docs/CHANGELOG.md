@@ -1,5 +1,19 @@
 # Changelog
 
+Version 0.30.0:
+
+- Language: `query` now returns a `List` (thanks Jonathan!)
+- Library: Added iterators for sets and maps (thanks Jakob and Stephen!)
+- Library: Added `iterator` and `enumerator` to Prelude (thanks Jakob!)
+- Library: Added `nth` functions (thanks Nina!)
+- Library: Miscellaneous improvements to the library  (thanks Nina, Jacob!)
+- LSP: Added support for inlay hints (thanks Nicola!)
+- LSP: Added "Open in REPL" as a Code Lens (thanks Magnus!)
+- LSP: Improved auto-completion (thanks Magnus and Paul!)
+- REPL: Allow build commands to be executed from the REPL (thanks Paul!)
+- REPL: Added :doc command (thanks Paul!)
+- REPL: Added support for multi-line input with \\ (thanks Paul!)
+
 Version 0.29.0:
 
 - Language: Added syntactic sugar for singleton enums (thanks Matt!)
@@ -311,3 +325,5 @@ HEAD (in progress, not released):
 - Regions.
 - Inliner
 - Datalog abstraction
+- For and Forecah
+- Graph namespace.

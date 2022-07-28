@@ -18,6 +18,10 @@ instance Scoped[Array[a]] {
     pub def regionOf(_: Array[a, r]): Region[r] = () as Region[r]
 }
 
+instance Iterable[Array] {
+    pub def iterator(a: Array[a, r]): Iterator[a, r] \ Write(r) = Array.iterator(a)
+}
+
 namespace Array {
 
     ///
@@ -71,12 +75,13 @@ namespace Array {
         [x; l] @ r
 
     ///
-    /// Returns the element at position `i` in the array `a`.
+    /// Optionally returns the element at position `i` in the array `a`.
     ///
-    /// Equivalent to the expression `a[i]`.
-    ///
-    @Time(1) @Space(1)
-    pub def get(i: Int32, a: Array[a, r]): a \ Read(r) = a[i]
+    pub def nth(i: Int32, a: Array[a, r]): Option[a] \ Read(r) =
+        if (0 <= i and i < Array.length(a))
+            Some(a[i])
+        else
+            None
 
     ///
     /// Stores the value `x` at position `i` in the array `a`.
@@ -123,6 +128,27 @@ namespace Array {
         loop(a.length, Nil)
 
     ///
+    /// Optionally returns the array `arr` as a non-empty list.
+    ///
+    /// If `arr` is empty return `None`, otherwise return the Nel wrapped in `Some`.
+    ///
+    pub def toNel(arr: Array[a, r]): Option[Nel[a]] \ Read(r) =
+        def loop(i, acc) = {
+            if (i == 0) {
+                acc
+            } else {
+                let x = arr[i - 1];
+                loop(i - 1, Nel.cons(x, acc))
+            }
+        };
+        if (Array.isEmpty(arr)) {
+            None
+        } else {
+            let i = arr.length - 1;
+            Some(loop(i, Nel.singleton(arr[i])))
+        }
+
+    ///
     /// Returns the array `a` as a `DelayList`.
     ///
     pub def toDelayList(a: Array[a, r]): DelayList[a] \ Read(r) =
@@ -147,6 +173,27 @@ namespace Array {
             }
         };
         loop(arr.length, Chain.empty())
+
+    ///
+    /// Optionally returns the array `arr` as a non-empty chain.
+    ///
+    /// If `arr` is empty return `None`, otherwise return the Nec wrapped in `Some`.
+    ///
+    pub def toNec(arr: Array[a, r]): Option[Nec[a]] \ Read(r) =
+        def loop(i, acc) = {
+            if (i == 0) {
+                acc
+            } else {
+                let x = arr[i - 1];
+                loop(i - 1, Nec.cons(x, acc))
+            }
+        };
+        if (Array.isEmpty(arr)) {
+            None
+        } else {
+            let i = arr.length - 1;
+            Some(loop(i, Nec.singleton(arr[i])))
+        }
 
     ///
     /// Returns `a` as a MutDeque.
@@ -1462,6 +1509,30 @@ namespace Array {
             false
 
     ///
+    /// Returns an iterator over `a` in the same region as `a`.
+    ///
+    /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
+    ///
+    pub def iterator(a: Array[a, r]): Iterator[a, r] \ Write(r) =
+        let r = Scoped.regionOf(a);
+        let i = ref 0 @ r;
+        let done = () -> deref i == length(a);
+        let next = () -> {
+            let x = a[deref i];
+            i := deref i + 1;
+            x
+        };
+        Iterator(done, next)
+
+    ///
+    /// Returns an iterator over `a` in the same region as `a` zipped with the indices of the elements.
+    ///
+    /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
+    ///
+    pub def enumerator(a: Array[a, r]): Iterator[(a, Int32), r] \ { Read(r), Write(r) } =
+        iterator(a) |> Iterator.zipWithIndex
+
+    ///
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
@@ -1654,7 +1725,6 @@ namespace Array {
 
     ///
     /// A for loop with an accumulator (helper for sorting).
-    /// This function is not array specific so is not necessarily Impure.
     ///
     /// precondition: lo <= hi
     ///
@@ -1723,26 +1793,10 @@ namespace Array {
                 copy(arr, b, e) as Array[a, r2]
         }
 
-   ///
-   /// Returns an iterator over `a`.
-   ///
-   pub def toIterator(r1: Region[r1], a: Array[a, r2]): Iterator[a, r1] \ { Read(r2), Write(r1) } =
-       let len = Array.length(a);
-       let copy = copyOfRange(r1, 0, len, a);
-       let i = ref 0 @ r1;
-       let done = () -> (deref i) >= len;
-       let next = () -> {
-           let j = deref i;
-           let x = copy[j];
-           i := j + 1;
-           x
-       };
-       Iterator(done, next)
-
     ///
     /// Shuffles `a` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random.Random, a: Array[a, r]): Unit & Impure =
+    pub def shuffle(rnd: Random.Random, a: Array[a, r]): Unit & r \ NonDet =
         let len = Array.length(a);
         def loop(i) = {
             if (i > 0) {

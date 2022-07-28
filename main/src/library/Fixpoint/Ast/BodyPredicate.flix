@@ -50,7 +50,6 @@ namespace Fixpoint/Ast {
 
     instance ToString[BodyPredicate[v]] with ToString[v] {
         pub def toString(body: BodyPredicate[v]): String =
-            use Fixpoint.commaSeparate;
             def polarityPrefix(p) = match p {
                 case Negative => "not "
                 case Positive => ""

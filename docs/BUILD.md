@@ -19,6 +19,14 @@ Open `Main.scala`, right-click on `def main` and select `Run 'Main'`. This runs 
 To compile and run a Flix file with a `main` function, right-click on the main function in `Main.scala` and choose "Modify Run Configuration".
 Here enter the file name in the "Program arguments" field.
 
+### Running tests
+
+Open `TestAll.scala`, right click on `class TestAll` and select `Run 'TestAll'`
+
+### Formatting
+
+Settings > Editor > Code Style > Scala > ScalaDoc > check "add additional space for leading asterisk"
+
 ## Building with Gradle
 
 Flix can also be built with Gradle, but the main developers prefer to build with IntelliJ IDEA.

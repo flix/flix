@@ -964,17 +964,17 @@ namespace TestNel {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toIterator                                                              //
+    // iterator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool = region r {
-        Nel(1, 2 :: 3 :: Nil) |> Nel.toIterator(r) |> Iterator.toNel == Some(Nel(1, 2 :: 3 :: Nil))
+    def iterator01(): Bool = region r {
+        Nel(1, 2 :: 3 :: Nil) |> Nel.iterator(r) |> Iterator.toNel == Some(Nel(1, 2 :: 3 :: Nil))
     }
 
     @test
-    def toIterator02(): Bool = region r {
-        Nel(-100, List.range(-99, 100)) |> Nel.toIterator(r) |> Iterator.toList == List.range(-100, 100)
+    def iterator02(): Bool = region r {
+        Nel(-100, List.range(-99, 100)) |> Nel.iterator(r) |> Iterator.toList == List.range(-100, 100)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1030,5 +1030,34 @@ namespace TestNel {
     @test
     def joinWith03(): Bool =
         Nel.joinWith(x -> x + x, ",", Nel("1", "2" :: "3" :: Nil)) == "11,22,33"
+
+    /////////////////////////////////////////////////////////////////////////////
+    // shuffle                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def shuffle01(): Bool \ NonDet =
+        let l = Nel.singleton(1);
+        match Nel.shuffle(Random.new(), l) {
+            case Some(ll) => Nel.length(ll) == 1 and (ll |> Nel.toList |> List.toSet) == Set#{1}
+            case _        => false
+        }
+
+    @test
+    def shuffle02(): Bool \ NonDet =
+        let l = Nel.cons(1, Nel.cons(2, Nel.singleton(3)));
+        match Nel.shuffle(Random.new(), l) {
+            case Some(ll) => Nel.length(ll) == 3 and (ll |> Nel.toList |> List.toSet) == Set#{1, 2, 3}
+            case _        => false
+        }
+
+    @test
+    def shuffle03(): Bool \ NonDet =
+        let l = Nel.cons(1, Nel.cons(2, Nel.cons(3, Nel.cons(4, Nel.cons(5, Nel.cons(6, Nel.cons(7, Nel.singleton(8))))))));
+        match Nel.shuffle(Random.new(), l) {
+            case Some(ll) => Nel.length(ll) == 8 and
+                                (ll |> Nel.toList |> List.toSet) == Set#{1, 2, 3, 4, 5, 6, 7, 8}
+            case _        => false
+        }
 
 }

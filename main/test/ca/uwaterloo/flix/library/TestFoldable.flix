@@ -228,6 +228,23 @@ namespace TestFoldable {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // toDelayList                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toDelayList01(): Bool =
+        Foldable.toDelayList(Nil: List[Int32]) == DelayList.empty(): DelayList[Int32]
+
+    @test
+    def toDelayList02(): Bool =
+        Foldable.toDelayList(1 :: 2 :: Nil) == List.toDelayList(1 :: 2 :: Nil)
+
+    @test
+    def toDelayList03(): Bool =
+        Foldable.toDelayList(Set#{0, 1, 2, 3, 4}) == List.toDelayList(0 :: 1 :: 2 :: 3 :: 4 :: Nil)
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // toArray                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -343,6 +360,29 @@ namespace TestFoldable {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // toDelayMap                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toDelayMap01(): Bool =
+        let l = Nil: List[(Int32, Int32)];
+        let d1 = Foldable.toDelayMap(List.toChain(l));
+        (d1 |> DelayMap.toList) == l
+
+    @test
+    def toDelayMap02(): Bool =
+        let l = (1, 2) :: (2, 3) :: (3, 4) :: Nil;
+        let d1 = Foldable.toDelayMap(List.toChain(l));
+        (d1 |> DelayMap.toList) == l
+
+    @test
+    def toDelayMap03(): Bool =
+        let s = Set#{(0, 2), (1, 4), (2, 6), (3, 8), (4, 10)};
+        let d1 = Foldable.toDelayMap(s);
+        (d1 |> DelayMap.toSet) == s
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // toMutMap                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -377,6 +417,40 @@ namespace TestFoldable {
 
         l == MutMap.toList(m)
     }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toNec                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toNec01(): Bool =
+        Foldable.toNec(Nil: List[Int32]) == None
+
+    @test
+    def toNec02(): Bool =
+        Foldable.toNec(1 :: 2 :: Nil) == Some(Nec.cons(1, Nec.singleton(2)))
+
+    @test
+    def toNec03(): Bool =
+        Foldable.toNec(Set#{0, 1, 2, 3, 4}) == List.toNec(0 :: 1 :: 2 :: 3 :: 4 :: Nil)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toNel                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toNel01(): Bool =
+        Foldable.toNel(Nil: List[Int32]) == None
+
+    @test
+    def toNel02(): Bool =
+        Foldable.toNel(1 :: 2 :: Nil) == Some(Nel.cons(1, Nel.singleton(2)))
+
+    @test
+    def toNel03(): Bool =
+        Foldable.toNel(Set#{0, 1, 2, 3, 4}) == List.toNel(0 :: 1 :: 2 :: 3 :: 4 :: Nil)
 
 
     /////////////////////////////////////////////////////////////////////////////

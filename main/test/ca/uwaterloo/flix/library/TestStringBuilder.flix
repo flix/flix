@@ -502,6 +502,43 @@ def intercalate06!(): Bool = region r {
     StringBuilder.toString(sb) == "abc::def::ghi"
 }
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // iterator                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def iterator01(): Bool = region r {
+        let sb = new StringBuilder(r);
+        StringBuilder.iterator(r, sb) |> Iterator.toList == Nil
+    }
+
+    @test
+    def iterator02(): Bool = region r {
+        let sb = new StringBuilder(r);
+        StringBuilder.appendString!("abc", sb);
+        StringBuilder.iterator(r, sb) |> Iterator.toList == 'a' :: 'b' :: 'c' :: Nil
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // enumerator                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def enumerator01(): Bool = region r {
+        let sb = new StringBuilder(r);
+        StringBuilder.enumerator(r, sb) |> Iterator.toList == Nil
+    }
+
+    @test
+    def enumerator02(): Bool = region r {
+        let sb = new StringBuilder(r);
+        StringBuilder.appendString!("abc", sb);
+        StringBuilder.enumerator(r, sb) |> Iterator.toList == ('a', 0) :: ('b', 1) :: ('c', 2) :: Nil
+    }
+
+
 /////////////////////////////////////////////////////////////////////////////
 // length                                                                  //
 /////////////////////////////////////////////////////////////////////////////

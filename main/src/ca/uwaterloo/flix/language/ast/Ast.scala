@@ -496,6 +496,16 @@ object Ast {
   }
 
   /**
+    * Represents a use of an effect sym.
+    */
+  case class EffectSymUse(sym: Symbol.EffectSym, loc: SourceLocation)
+
+  /**
+    * Represents a reference to an effect operation.
+    */
+  case class OpSymUse(sym: Symbol.OpSym, loc: SourceLocation)
+
+  /**
     * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
     */
   case class Instance(tpe: Type, tconstrs: List[Ast.TypeConstraint])
@@ -590,4 +600,21 @@ object Ast {
   }
 
   case class PurityAndEffect(pur: Option[Type], eff: Option[List[Type]])
+
+  /**
+    * Enum representing whether a type is ascribed or inferred.
+    */
+  sealed trait TypeSource
+
+  object TypeSource {
+    /**
+      * The type is ascribed (present in the source code).
+      */
+    case object Ascribed extends TypeSource
+
+    /**
+      * The type is inferred (absent in the source code).
+      */
+    case object Inferred extends TypeSource
+  }
 }

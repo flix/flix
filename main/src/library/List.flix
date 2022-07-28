@@ -73,10 +73,15 @@ instance Monad[List] {
     pub def flatMap(f: a -> List[b] & ef, x : List[a]) : List[b] & ef = List.flatMap(f, x)
 }
 
+instance MonadZero[List] {
+    pub def empty(): List[a] = Nil
+}
+
 instance Foldable[List] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: List[a]): b & ef = List.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: List[a]): b & ef = List.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, l: List[a]): b & ef = List.foldRightWithCont(f, s, l)
+    override pub def iterator(r: Region[r], l: List[a]): Iterator[a, r] \ Write(r) = List.iterator(r, l)
 }
 
 instance UnorderedFoldable[List] {
@@ -105,11 +110,6 @@ instance Monoid[List[a]] {
     pub def empty(): List[a] = Nil
 }
 
-instance Iterable[List] {
-    pub def iterator(r: Region[r], t: List[a]): Iterator[a, r] \ Write(r) =
-        List.toIterator(r, t)
-}
-
 namespace List {
 
     ///
@@ -117,7 +117,8 @@ namespace List {
     ///
     pub def toString(l: List[a]): String with ToString[a] = region r {
         let sb = new StringBuilder(r);
-        List.foreach(x -> StringBuilder.appendString!("${x} :: ", sb), l);
+        foreach (x <- iterator(r, l))
+            StringBuilder.appendString!("${x} :: ", sb);
         StringBuilder.appendString!("Nil", sb);
         StringBuilder.toString(sb)
     }
@@ -249,7 +250,7 @@ namespace List {
             case Nil     => k()
             case x :: xs => loop(xs, () -> if (f(x)) Some(x) else k())
         };
-        loop(l, () -> None as & ef)
+        loop(l, upcast(() -> None))
 
     ///
     /// Returns a list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -310,7 +311,7 @@ namespace List {
                 case ss :: _ => k(f(x, ss) :: ks)
                 case _       => unreachable!()})
         };
-        loop(l, ks -> ks as & ef)
+        loop(l, upcast(identity))
 
     ///
     /// Returns the result of applying `f` to every element in `l`.
@@ -337,10 +338,9 @@ namespace List {
     /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
     /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
     ///
-    pub def ap(f: List[a -> b & e], x: List[a]) : List[b] & e =
+    pub def ap(f: List[a -> b & ef], x: List[a]) : List[b] & ef =
         map(g -> map(g, x), f) |> flatten
 
-    // TODO: Efficient implementations of lift2,...,lift5, redirect liftA2,...,liftA5 to those.
     ///
     /// Lift a binary function to work on lists of its original arguments, returning a list
     /// of applying all combinations of arguments.
@@ -651,7 +651,7 @@ namespace List {
             case Nil     => k(s)
             case x :: xs => loop(xs, ks -> k(f(x, ks)))
         };
-        loop(l, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
+        loop(l, upcast(identity)) // NB: Cast required because the identity continuation is pure,
                                   // but the intermediate continuations are effect polymorphic
 
     ///
@@ -692,7 +692,7 @@ namespace List {
                 case Some(v) => Some(f(x, v))
             }))
         };
-        loop(l, ks -> ks as & ef)
+        loop(l, upcast(identity))
 
     ///
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
@@ -755,7 +755,7 @@ namespace List {
             case Nil     => k(Nil)
             case x :: xs => if (f(x)) loop(xs, ks -> k(x :: ks)) else loop(xs, k)
         };
-        loop(l, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
+        loop(l, upcast(identity)) // NB: Cast required because the identity continuation is pure,
                                   // but the intermediate continuations are effect polymorphic
     ///
     /// Returns the sublist of `l` without the last element.
@@ -1050,7 +1050,7 @@ namespace List {
         };
         let len1 = length(l1);
         let len2 = length(l2);
-        loop(drop(len1 - len2, l1), drop(len2 - len1, l2), ks -> ks as & ef)
+        loop(drop(len1 - len2, l1), drop(len2 - len1, l2), upcast(identity))
 
     ///
     /// Returns the result of mapping each element and combining the results.
@@ -1326,7 +1326,7 @@ namespace List {
     ///
     /// Returns an iterator over `l`.
     ///
-    pub def toIterator(r: Region[r], l: List[a]): Iterator[a, r] \ Write(r) =
+    pub def iterator(r: Region[r], l: List[a]): Iterator[a, r] \ Write(r) =
         let cursor = ref l @ r;
         let done = () -> match (deref cursor) {
             case Nil => true
@@ -1339,6 +1339,12 @@ namespace List {
                 x
         };
         Iterator(done, next)
+
+    ///
+    /// Returns an iterator over `l` zipped with the indices of the elements.
+    ///
+    pub def enumerator(r: Region[r], l: List[a]): Iterator[(a, Int32), r] \ Write(r) =
+        iterator(r, l) |> Iterator.zipWithIndex
 
     ///
     /// Returns the association list `l` as a `DelayMap`.
@@ -1377,7 +1383,7 @@ namespace List {
             case Nil     => k(Applicative.point(Nil))
             case x :: xs => loop(xs, ks -> k(consA(f(x), ks)))
         };
-        loop(l, ks -> ks as & ef)
+        loop(l, upcast(identity))
 
     ///
     /// Merges the two lists `l1` and `l2`. Assuming they are both sorted.
@@ -1399,10 +1405,8 @@ namespace List {
     ///
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random.Random, l: List[a]): List[a] & Impure = region r {
-        let arr = toArray(r, l);
-        Array.shuffle(rnd, arr);
-        Array.toList(arr)
+    pub def shuffle(rnd: Random.Random, l: List[a]): List[a] \ NonDet = region r {
+        toArray(r, l) !> Array.shuffle(rnd) |> Array.toList
     }
 
 }

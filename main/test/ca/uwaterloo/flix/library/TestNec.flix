@@ -1212,18 +1212,18 @@ namespace TestNec {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toIterator                                                              //
+    // iterator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool = region r {
-        necOf3(1, 2, 3) |> Nec.toIterator(r) |> Iterator.toNec == Some(necOf3(1, 2, 3))
+    def iterator01(): Bool = region r {
+        necOf3(1, 2, 3) |> Nec.iterator(r) |> Iterator.toNec == Some(necOf3(1, 2, 3))
     }
 
     @test
-    def toIterator02(): Bool = region r {
+    def iterator02(): Bool = region r {
         match Nec.range(-100, 100) {
-            case Some(nec) => nec |> Nec.toIterator(r) |> Iterator.toList == List.range(-100, 100)
+            case Some(nec) => nec |> Nec.iterator(r) |> Iterator.toList == List.range(-100, 100)
             case None      => unreachable!()
         }
     }
@@ -1603,5 +1603,33 @@ namespace TestNec {
 
     @test
     def takeWhileRight07(): Bool = Nec.takeWhileRight(i -> i > 3, necOf8(4, 6, -3, 11, -5, 1, 2, 16)) == 16 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // shuffle                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def shuffle01(): Bool \ NonDet =
+        let c = Nec.singleton(1) |> Nec.shuffle(Random.new());
+        match c {
+            case Some(cc) => Nec.length(cc) == 1 and Nec.toSet(cc) == Set#{1}
+            case _       => false
+        }
+
+    @test
+    def shuffle02(): Bool \ NonDet =
+        let c = necOf3(1, 2, 3) |> Nec.shuffle(Random.new());
+        match c {
+            case Some(cc) => Nec.length(cc) == 3 and Nec.toSet(cc) == Set#{1, 2, 3}
+            case _       => false
+        }
+
+    @test
+    def shuffle03(): Bool \ NonDet =
+        let c = necOf8(1, 2, 3, 4, 5, 6, 7, 8) |> Nec.shuffle(Random.new());
+        match c {
+            case Some(cc) => Nec.length(cc) == 8 and Nec.toSet(cc) == Set#{1, 2, 3, 4, 5, 6, 7, 8}
+            case _       => false
+        }
 
 }

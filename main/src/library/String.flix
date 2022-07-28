@@ -1273,4 +1273,24 @@ namespace String {
         else
             Some(dropRight(length(substr.substr), s))
 
+    ///
+    /// Returns an iterator over `s`.
+    ///
+    pub def iterator(r: Region[r], s: String): Iterator[Char, r] \ Write(r) =
+        let len = length(s);
+        let i = ref 0 @ r;
+        let done = () -> deref i >= len;
+        let next = () -> {
+            let x = charAt(deref i, s);
+            i := deref i + 1;
+            x
+        };
+        Iterator(done, next)
+
+    ///
+    /// Returns an iterator over `l` zipped with the indices of the elements.
+    ///
+    pub def enumerator(r: Region[r], s: String): Iterator[(Char, Int32), r] \ Write(r) =
+        iterator(r, s) |> Iterator.zipWithIndex
+
 }
