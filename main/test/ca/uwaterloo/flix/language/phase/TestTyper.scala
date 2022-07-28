@@ -1433,4 +1433,80 @@ class TestTyper extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.GeneralizationError](result)
   }
+
+  test("TestUpcast.01") {
+    val input =
+      """
+        |def f(): Unit & ef =
+        |    let f =
+        |        if (true)
+        |            upcast x -> (x + 1 as & ef)
+        |        else
+        |            x -> x + 1;
+        |    let _ = f(1);
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.EffectGeneralizationError](result)
+  }
+
+  test("TestUpcast.02") {
+    val input =
+      """
+        |def f(): Unit & ef =
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
+        |    import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
+        |    let _ =
+        |        if (true)
+        |            newStringBuilder()
+        |        else
+        |            upcast newObject();
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.EffectGeneralizationError](result)
+  }
+
+  test("TestUpcast.03") {
+    val input =
+      """
+        |def f(): Unit & ef =
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
+        |    import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
+        |    let f = (_: ##java.lang.StringBuilder) -> newObject(); // sb  -> obj
+        |    let g = (_: ##java.lang.Object) -> newStringBuilder(); // obj -> sb
+        |    let _ =
+        |        if (true)
+        |            f
+        |        else
+        |            upcast g;
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.EffectGeneralizationError](result)
+  }
+
+  test("TestUpcast.04") {
+    val input =
+      """
+        |def f(): Unit & ef =
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
+        |    import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
+        |    let f = (_: ##java.lang.StringBuilder) -> newObject(); // sb  -> obj
+        |    let g = (_: ##java.lang.Object) -> newStringBuilder(); // obj -> sb
+        |    let _ =
+        |        if (true)
+        |            f
+        |        else
+        |            upcast g;
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.EffectGeneralizationError](result)
+  }
+
 }

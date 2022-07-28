@@ -1206,7 +1206,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |        if (true)
         |            upcast (1, "a")
         |        else
-        |            upcast (1, "a");
+        |            (1, "a");
         |    ()
         |""".stripMargin
 

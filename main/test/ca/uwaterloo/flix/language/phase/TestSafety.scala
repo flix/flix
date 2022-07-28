@@ -279,13 +279,12 @@ class TestSafety extends FunSuite with TestUtils {
   test("TestUpcast.04") {
     val input =
       """
-        |def f(): Unit & ef =
-        |    let f =
+        |def f(): Unit =
+        |    let _ =
         |        if (true)
-        |            upcast x -> (x + 1 as & ef)
+        |            upcast (1, "a")
         |        else
-        |            x -> x + 1;
-        |    let _ = f(1);
+        |            (1, 1);
         |    ()
         |""".stripMargin
 
@@ -301,7 +300,7 @@ class TestSafety extends FunSuite with TestUtils {
         |        if (true)
         |            upcast (1, "a")
         |        else
-        |            (1, 1);
+        |            upcast (1, 1);
         |    ()
         |""".stripMargin
 
@@ -312,89 +311,14 @@ class TestSafety extends FunSuite with TestUtils {
   test("TestUpcast.06") {
     val input =
       """
-        |def f(): Unit =
-        |    let _ =
-        |        if (true)
-        |            upcast (1, "a")
-        |        else
-        |            upcast (1, 1);
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.UnsafeUpcast](result)
-  }
-
-  test("TestUpcast.07") {
-    val input =
-      """
         |def f(): Unit & Impure =
         |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
         |    import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
         |    let _ =
         |        if (true)
-        |            upcast (newObject(), newStringBuilder())
+        |            upcast (newObject(), newObject())
         |        else
-        |            (newObject(), newObject());
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.UnsafeUpcast](result)
-  }
-
-  test("TestUpcast.08") {
-    val input =
-      """
-        |def f(): Unit & ef =
-        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
-        |    import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
-        |    let _ =
-        |        if (true)
-        |            newStringBuilder()
-        |        else
-        |            upcast newObject();
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.UnsafeUpcast](result)
-  }
-
-  test("TestUpcast.09") {
-    val input =
-      """
-        |def f(): Unit & ef =
-        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
-        |    import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
-        |    let f = (_: ##java.lang.StringBuilder) -> newObject(); // sb  -> obj
-        |    let g = (_: ##java.lang.Object) -> newStringBuilder(); // obj -> sb
-        |    let _ =
-        |        if (true)
-        |            f
-        |        else
-        |            upcast g;
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.UnsafeUpcast](result)
-  }
-
-
-  test("TestUpcast.10") {
-    val input =
-      """
-        |def f(): Unit & ef =
-        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
-        |    import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
-        |    let f = (_: ##java.lang.StringBuilder) -> newObject(); // sb  -> obj
-        |    let g = (_: ##java.lang.Object) -> newStringBuilder(); // obj -> sb
-        |    let _ =
-        |        if (true)
-        |            f
-        |        else
-        |            upcast g;
+        |            (newObject(), newStringBuilder());
         |    ()
         |""".stripMargin
 
