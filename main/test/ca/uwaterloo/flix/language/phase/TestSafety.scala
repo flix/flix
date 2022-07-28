@@ -242,4 +242,20 @@ class TestSafety extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.UnsafeUpcast](result)
   }
+
+  test("TestUpcast.02") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let _ =
+        |        if (true)
+        |            upcast x -> { println(x); x + 1 }
+        |        else
+        |            x -> x + 1;
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.UnsafeUpcast](result)
+  }
 }
