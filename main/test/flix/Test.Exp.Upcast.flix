@@ -15,7 +15,7 @@ namespace Test/Exp/Upcast {
     def testUpcast02(): Unit & ef =
         let f =
             if (true)
-                x -> upcast x + 1
+                upcast x -> x + 1
             else
                 (x -> (x as & ef));
         let _ = f(1);
@@ -25,7 +25,7 @@ namespace Test/Exp/Upcast {
     def testUpcast04(): Unit =
         let _ =
             if (true)
-                _ -> upcast ()
+                upcast _ -> ()
             else
                 _ -> println(1);
         ()
