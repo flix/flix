@@ -34,8 +34,9 @@ object Indexer {
       instances => traverse(instances)(visitInstance)
     }
     val idx5 = traverse(root.sigs.values)(visitSig)
-    val idx6 = traverse(root.effects.values)(visitEff)
-    idx1 ++ idx2 ++ idx3 ++ idx4 ++ idx5 ++ idx6
+    val idx6 = traverse(root.typeAliases.values)(visitTypeAlias)
+    val idx7 = traverse(root.effects.values)(visitEff)
+    idx1 ++ idx2 ++ idx3 ++ idx4 ++ idx5 ++ idx6 ++ idx7
   }
 
   /**
@@ -112,6 +113,17 @@ object Indexer {
       val idx3 = traverse(tconstrs)(visitTypeConstraint)
       val idx4 = traverse(defs)(visitDef)
       idx1 ++ idx2 ++ idx3 ++ idx4
+  }
+
+  /**
+    * Returns a reverse index for the given type alias `alias0`.
+    */
+  private def visitTypeAlias(alias0: TypeAlias): Index = alias0 match {
+    case TypeAlias(_, _, _, tparams, tpe, _) =>
+      val idx1 = Index.occurrenceOf(alias0)
+      val idx2 = traverse(tparams)(visitTypeParam)
+      val idx3 = visitType(tpe)
+      idx1 ++ idx2 ++ idx3
   }
 
   /**
@@ -509,7 +521,7 @@ object Indexer {
       case _ => Index.occurrenceOf(tpe0)
     }
     case Type.Apply(tpe1, tpe2, _) => visitType(tpe1) ++ visitType(tpe2)
-    case Type.Alias(_, _, tpe, _) => visitType(tpe) // TODO index TypeAlias
+    case Type.Alias(Type.AliasConstructor(sym, loc), args, _, _) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc) ++ traverse(args)(visitType)
     case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type: $tpe0.")
     case _: Type.UnkindedVar => throw InternalCompilerException(s"Unexpected type: $tpe0.")
     case _: Type.UnkindedArrow => throw InternalCompilerException(s"Unexpected type: $tpe0.")
