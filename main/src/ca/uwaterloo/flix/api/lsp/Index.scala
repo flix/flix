@@ -228,10 +228,10 @@ case class Index(m: Map[(String, Int), List[Entity]],
         // Step 1: Compute all whole range overlap with the given position.
         val filtered = candidates.filter(e => e.loc.beginCol <= pos.character && pos.character <= e.loc.endCol)
 
-        // Step 2: Get the max expression,
+        // Step 2: Get the min expression,
         // primarily by the span (i.e. the length)
         // and secondarily by the precision level of the entity
-        filtered.maxOption(
+        filtered.minOption(
           Ordering.by((e: Entity) => span(e.loc))
             .orElse(Ordering.by((e: Entity) => e.precision).reverse))
     }
