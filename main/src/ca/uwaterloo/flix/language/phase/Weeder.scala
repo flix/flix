@@ -77,13 +77,22 @@ object Weeder {
     * Weeds the given abstract syntax tree.
     */
   private def visitCompilationUnit(src: Ast.Source, unit: ParsedAst.CompilationUnit)(implicit flix: Flix): Validation[(Ast.Source, WeededAst.CompilationUnit), WeederError] = {
-    val usesVal = traverse(unit.uses)(visitUse)
+    val allUses = unit.usesOrImports.collect {
+      case u: ParsedAst.Use => u
+    }
+    val usesVal = traverse(allUses)(visitUse)
+
+    val allImports = unit.usesOrImports.collect {
+      case i: ParsedAst.Import => i
+    }
+    val importsVal = traverse(allImports)(visitImport)
+
     val declarationsVal = traverse(unit.decls)(visitDecl)
     val loc = mkSL(unit.sp1, unit.sp2)
 
-    mapN(usesVal, declarationsVal) {
-      case (uses, decls) =>
-        src -> WeededAst.CompilationUnit(uses.flatten, decls.flatten, loc)
+    mapN(usesVal, importsVal, declarationsVal) {
+      case (uses, imports, decls) =>
+        src -> WeededAst.CompilationUnit(uses.flatten, imports ::: decls.flatten, loc)
     }
   }
 
@@ -91,9 +100,16 @@ object Weeder {
     * Compiles the given parsed declaration `past` to a list of weeded declarations.
     */
   private def visitDecl(decl: ParsedAst.Declaration)(implicit flix: Flix): Validation[List[WeededAst.Declaration], WeederError] = decl match {
-    case ParsedAst.Declaration.Namespace(sp1, name, uses, decls, sp2) =>
-      val usesVal = traverse(uses)(visitUse)
+    case ParsedAst.Declaration.Namespace(sp1, name, usesOrImports, decls, sp2) =>
+      val allUses = usesOrImports.collect {
+        case u: ParsedAst.Use => u
+      }
+      val usesVal = traverse(allUses)(visitUse)
+
+      // TODO: Support imports here?
+
       val declarationsVal = traverse(decls)(visitDecl)
+
       mapN(usesVal, declarationsVal) {
         case (us, ds) => List(WeededAst.Declaration.Namespace(name, us.flatten, ds.flatten, mkSL(sp1, sp2)))
       }
@@ -411,6 +427,7 @@ object Weeder {
         List(WeededAst.Use.UseUpper(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
       else
         List(WeededAst.Use.UseLower(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
+
     case ParsedAst.Use.UseMany(_, nname, names, _) =>
       val us = names.foldRight(Nil: List[WeededAst.Use]) {
         case (ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2), acc) =>
@@ -432,7 +449,20 @@ object Weeder {
           WeededAst.Use.UseTag(qname, Name.mkTag(ident), alias, mkSL(sp1, sp2)) :: acc
       }
       us.toSuccess
+  }
 
+  /**
+    * Performs weeding on the given import `i0`.
+    */
+  private def visitImport(i0: ParsedAst.Import): Validation[WeededAst.Declaration, WeederError] = i0 match {
+    case ParsedAst.Imports.Import(sp1, name, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val doc = Ast.Doc(Nil, loc)
+      val mod = Ast.Modifiers.Empty
+      val ident = Name.Ident(sp1, name.last, sp2)
+      val tparams = WeededAst.TypeParams.Elided
+      val tpe = WeededAst.Type.Native(name.mkString("."), loc)
+      WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc).toSuccess
   }
 
   /**
@@ -1506,6 +1536,9 @@ object Weeder {
         case e => WeededAst.Expression.Spawn(e, mkSL(sp1, sp2))
       }
 
+    case ParsedAst.Expression.Par(sp1, exp, sp2) =>
+      mapN(visitExp(exp, senv))(WeededAst.Expression.Par(_, mkSL(sp1, sp2)))
+
     case ParsedAst.Expression.Lazy(sp1, exp, sp2) =>
       visitExp(exp, senv) map {
         case e => WeededAst.Expression.Lazy(e, mkSL(sp1, sp2))
@@ -1680,6 +1713,7 @@ object Weeder {
         case (e1, e2, e3) =>
           WeededAst.Expression.ReifyEff(ident, e1, e2, e3, mkSL(sp1, sp2))
       }
+
   }
 
   /**
@@ -2389,7 +2423,7 @@ object Weeder {
       val loc = mkSL(sp1, sp2)
       val effs = visitEffectSet(eff0)
       // NB: safe to reduce since effs is never empty
-      val effOpt = effs.reduceLeftOption ({
+      val effOpt = effs.reduceLeftOption({
         case (acc, eff) => WeededAst.Type.Union(acc, eff, loc)
       }: (WeededAst.Type, WeededAst.Type) => WeededAst.Type)
       effOpt.getOrElse(WeededAst.Type.Empty(loc))
@@ -2757,7 +2791,7 @@ object Weeder {
       val tpeVal = visitType(tpe)
       val purAndEffVal = visitPurityAndEffect(purAndEff)
       mapN(visitFormalParams(fparams0, Presence.Required), visitExp(exp0, senv)) {
-        case(fparams, exp) => WeededAst.JvmMethod(ident, fparams, exp, tpeVal, purAndEffVal, mkSL(sp1, sp2))
+        case (fparams, exp) => WeededAst.JvmMethod(ident, fparams, exp, tpeVal, purAndEffVal, mkSL(sp1, sp2))
       }
   }
 
@@ -2959,6 +2993,7 @@ object Weeder {
     case ParsedAst.Expression.PutChannel(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.SelectChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Spawn(sp1, _, _) => sp1
+    case ParsedAst.Expression.Par(sp1, _, _) => sp1
     case ParsedAst.Expression.Lazy(sp1, _, _) => sp1
     case ParsedAst.Expression.Force(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointConstraint(sp1, _, _) => sp1

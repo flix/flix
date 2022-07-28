@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.Safety
 import ca.uwaterloo.flix.util.Formatter
@@ -120,15 +121,11 @@ object SafetyError {
   /**
     * An error raised to indicate an illegal relational use of the lattice variable `sym`.
     *
-    * @param actualType     the type of the expression being upcast.
-    * @param actualPurity   the purity of the expression being upcast.
-    * @param actualEffect   the effect of the expression being upcast.
-    * @param expectedType   the expected type being upcast to.
-    * @param expectedPurity the expected purity being upcast to.
-    * @param expectedEffect the expected effect being upcast to.
-    * @param loc            the source location of the unsafe upcast.
+    * @param actual   the expression being upcast.
+    * @param expected the upcast expression itself.
+    * @param loc      the source location of the unsafe upcast.
     */
-  case class UnsafeUpcast(actualType: Type, actualPurity: Type, actualEffect: Type, expectedType: Type, expectedPurity: Type, expectedEffect: Type, loc: SourceLocation) extends SafetyError {
+  case class UnsafeUpcast(actual: Expression, expected: Expression, loc: SourceLocation) extends SafetyError {
     override def summary: String = "Unsafe upcast."
 
     override def message(formatter: Formatter): String = {
@@ -138,13 +135,13 @@ object SafetyError {
          |
          |${code(loc, "the upcast occurs here.")}
          |
-         |Actual type  : $actualType
-         |Actual purity: $actualPurity
-         |Actual effect: $actualEffect
+         |Actual type  : ${actual.tpe}
+         |Actual purity: ${actual.pur}
+         |Actual effect: ${actual.eff}
          |
-         |Expected type  : $expectedType
-         |Expected purity: $expectedPurity
-         |Expected effect: $expectedEffect
+         |Expected type  : ${expected.tpe}
+         |Expected purity: ${expected.pur}
+         |Expected effect: ${expected.eff}
          |""".stripMargin
     }
 
