@@ -240,7 +240,7 @@ object Regions {
         case e => checkType(tpe, loc)
       }
 
-    case Expression.Upcast(exp, tpe, _, _, loc) =>
+    case Expression.Upcast(exp, tpe, loc) =>
       flatMapN(visitExp(exp)) {
         case _ => checkType(tpe, loc)
       }

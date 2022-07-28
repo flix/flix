@@ -462,10 +462,8 @@ object Lowering {
       val t = visitType(tpe)
       Expression.Cast(e, dt, declaredPur, declaredEff, t, pur, eff, loc)
 
-    case Expression.Upcast(exp, tpe, pur, eff, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      Expression.Upcast(e, t, pur, eff, loc)
+    case Expression.Upcast(exp, tpe, loc) =>
+      Expression.Upcast(visitExp(exp), visitType(tpe), loc)
 
     case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
@@ -1554,9 +1552,8 @@ object Lowering {
       val e = substExp(exp, subst)
       Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
 
-    case Expression.Upcast(exp, tpe, pur, eff, loc) =>
-      val e = substExp(exp0, subst)
-      Expression.Upcast(e, tpe, pur, eff, loc)
+    case Expression.Upcast(exp, tpe, loc) =>
+      Expression.Upcast(substExp(exp, subst), tpe, loc)
 
     case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
