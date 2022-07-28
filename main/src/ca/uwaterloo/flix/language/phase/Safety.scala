@@ -180,8 +180,10 @@ object Safety {
       visitExp(exp)
 
     case Expression.Upcast(exp, tpe, pur, eff, loc) =>
+      println(tpe)
+      println(exp.tpe)
       val errors =
-        if (isSafeUpcast(exp, exp0)) {
+        if (isSafeUpcast(tpe, exp.tpe)) {
           List.empty
         }
         else {
@@ -299,30 +301,21 @@ object Safety {
     *
     * AND
     *
-    * the purity is being cast from `pure` -> `ef` -> `impure`.
+    * the purity of a function is being cast from `pure` -> `ef` -> `impure`.
     *
-    * @param actual   the expression being upcast.
     * @param expected the upcast expression itself.
+    * @param actual   the expression being upcast.
     */
-  private def isSafeUpcast(actual: Expression, expected: Expression): Boolean = {
-    // check flix types are equal
-    // or java type is subtype of upcast java type
-    // check purity is ok
-    // pure -> ef -> impure
-    // ef -> ef and ef2
-    val types = (actual.tpe, expected.tpe) match {
-      case (Type.Cst(TypeConstructor.Native(class1), _), Type.Cst(TypeConstructor.Native(class2), _)) =>
-        class2.isAssignableFrom(class1)
-
-      case (tpe1, tpe2) =>
-        tpe1 == tpe2
-    }
-    val purities = (actual.pur, expected.pur) match {
-      case (Type.Pure, _) => true
-      case (_, Type.Impure) => true
-      case _ => false
-    }
-    types
+  private def isSafeUpcast(expected: Type, actual: Type): Boolean = (expected.typeConstructor, actual.typeConstructor) match {
+    case (Some(TypeConstructor.Native(class1)), Some(TypeConstructor.Native(class2))) =>
+      class1.isAssignableFrom(class2)
+    case (Some(TypeConstructor.Tuple(n1)), Some(TypeConstructor.Tuple(n2))) if n1 == n2 =>
+      val args1 = expected.typeArguments
+      val args2 = actual.typeArguments
+      args1.zip(args2).forall {
+        case (t1, t2) => isSafeUpcast(t1, t2)
+      }
+    case (tpe1, tpe2) => tpe1 == tpe2
   }
 
   /**
