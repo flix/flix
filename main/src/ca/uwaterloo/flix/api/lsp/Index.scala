@@ -231,7 +231,9 @@ case class Index(m: Map[(String, Int), List[Entity]],
         // Step 2: Get the max expression,
         // primarily by the span (i.e. the length)
         // and secondarily by the precision level of the entity
-        filtered.maxOption(Ordering.by((e: Entity) => span(e.loc)).orElse(Ordering.by(e => e.precision)))
+        filtered.maxOption(
+          Ordering.by((e: Entity) => span(e.loc))
+            .orElse(Ordering.by((e: Entity) => e.precision).reverse))
     }
   }
 
