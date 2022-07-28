@@ -272,7 +272,47 @@ class TestSafety extends FunSuite with TestUtils {
         |    ()
         |""".stripMargin
 
-    val result = compile(input, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.UnsafeUpcast](result)
   }
+
+  test("TestUpcast.04") {
+    val input =
+      """
+        |def f(): Unit & ef =
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
+        |    import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
+        |    let _ =
+        |        if (true)
+        |            newStringBuilder()
+        |        else
+        |            upcast newObject();
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.UnsafeUpcast](result)
+  }
+
+  test("TestUpcast.05") {
+    val input =
+      """
+        |def f(): Unit & ef =
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
+        |    import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
+        |    let f = (_: ##java.lang.StringBuilder) -> newObject(); // sb  -> obj
+        |    let g = (_: ##java.lang.Object) -> newStringBuilder(); // obj -> sb
+        |    let _ =
+        |        if (true)
+        |            f
+        |        else
+        |            upcast g;
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.UnsafeUpcast](result)
+  }
+
+
 }
