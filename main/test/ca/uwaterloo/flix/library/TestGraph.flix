@@ -103,9 +103,9 @@ namespace TestGraph {
     def closure05(): Bool =
         let g = graph05();
         let s = Set#{(1, 1), (1, 2), (1, 3), (1, 4),
-                      (2, 2), (2, 3), (2, 4),
-                      (3, 3), (3, 4),
-                      (4, 4)};
+                     (2, 2), (2, 3), (2, 4),
+                     (3, 3), (3, 4),
+                     (4, 4)};
         Graph.closure(g) == s
 
 
@@ -279,5 +279,44 @@ namespace TestGraph {
         let g = graph07();
         let s = Set#{Set#{1, 2, 3, 4}, Set#{5, 6}};
         Graph.stronglyConnectedComponents(g) == s
+
+    /////////////////////////////////////////////////////////////////////////////
+    // isCyclic                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def isCyclic01(): Bool =
+        let g = graph01();
+        Graph.isCyclic(g) == false
+
+    @test
+    def isCyclic02(): Bool =
+        let g = graph02();
+        Graph.isCyclic(g) == false
+
+    @test
+    def isCyclic03(): Bool =
+        let g = graph03();
+        Graph.isCyclic(g) == false
+
+    @test
+    def isCyclic04(): Bool =
+        let g = graph04();
+        Graph.isCyclic(g) == false
+
+    @test
+    def isCyclic05(): Bool =
+        let g = graph05();
+        Graph.isCyclic(g) == false
+
+    @test
+    def isCyclic06(): Bool =
+        let g = graph06();
+        Graph.isCyclic(g)
+
+    @test
+    def isCyclic07(): Bool =
+        let g = graph07();
+        Graph.isCyclic(g)
 
 }
