@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
 import ca.uwaterloo.flix.util.Validation
@@ -181,7 +181,7 @@ object Safety {
 
     case Expression.Upcast(exp, tpe, loc) =>
       val errors =
-        if (isSoundUpcast(exp, exp0)) {
+        if (isSuperTypeOf(tpe, exp.tpe)) {
           List.empty
         }
         else {
@@ -299,24 +299,48 @@ object Safety {
     *
     * AND
     *
-    * the purity is being cast from `pure` -> `ef` -> `impure`.
+    * the purity of a function is being cast from `pure` -> `ef` -> `impure`.
     *
-    * @param actual   the expression being upcast.
     * @param expected the upcast expression itself.
+    * @param actual   the expression being upcast.
     */
-  private def isSoundUpcast(actual: Expression, expected: Expression): Boolean = {
-    // check flix types are equal
-    // or java type is subtype of upcast java type
-    // check purity is ok
-    // pure -> ef -> impure
-    // ef -> ef and ef2
-    val types = actual.tpe == expected.tpe
-    val purities = (actual.pur, expected.pur) match {
-      case (Type.Pure, _) => true
-      case (_, Type.Impure) => true
-      case _ => false
-    }
-    types && purities
+  private def isSuperTypeOf(expected: Type, actual: Type, contravariantPos: Boolean = false): Boolean = (expected.typeConstructor, actual.typeConstructor) match {
+    case (Some(Type.Impure), Some(Type.Pure)) => true
+
+    case (Some(TypeConstructor.Native(class1)), Some(TypeConstructor.Native(class2))) =>
+      if (contravariantPos) class2.isAssignableFrom(class1) else class1.isAssignableFrom(class2)
+
+    case (Some(TypeConstructor.Tuple(n1)), Some(TypeConstructor.Tuple(n2))) if n1 == n2 =>
+      val args1 = expected.typeArguments
+      val args2 = actual.typeArguments
+      args1.zip(args2).forall {
+        case (t1, t2) => isSuperTypeOf(t1, t2, contravariantPos)
+      }
+
+    case (Some(TypeConstructor.Arrow(n1)), Some(TypeConstructor.Arrow(n2))) if n1 == n2 =>
+      val args1 = expected.typeArguments.init.drop(2)
+      val args2 = actual.typeArguments.init.drop(2)
+
+      // purities
+      val pur1 = expected.typeArguments.head
+      val pur2 = expected.typeArguments.head
+      val safePurities = isSuperTypeOf(pur1, pur2)
+
+      // covariance in args
+      val covariantArgs = args1.zip(args2).forall {
+        case (t1, t2) =>
+          isSuperTypeOf(t1, t2)
+      }
+
+      // contravariance in results
+      val res1 = expected.typeArguments.last
+      val res2 = actual.typeArguments.last
+      val contraVariantResult = isSuperTypeOf(res1, res2, contravariantPos = true)
+
+      safePurities && covariantArgs && contraVariantResult
+
+    case _ => expected == actual
+
   }
 
   /**

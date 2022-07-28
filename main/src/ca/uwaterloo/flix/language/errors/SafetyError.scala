@@ -135,13 +135,8 @@ object SafetyError {
          |
          |${code(loc, "the upcast occurs here.")}
          |
-         |Actual type  : ${actual.tpe}
-         |Actual purity: ${actual.pur}
-         |Actual effect: ${actual.eff}
-         |
-         |Expected type  : ${expected.tpe}
-         |Expected purity: ${expected.pur}
-         |Expected effect: ${expected.eff}
+         |Actual type:      ${actual.tpe}
+         |Tried casting to: ${expected.tpe}
          |""".stripMargin
     }
 
