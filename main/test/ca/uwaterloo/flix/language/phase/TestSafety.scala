@@ -288,7 +288,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    ()
         |""".stripMargin
 
-    val result = compile(input, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.UnsafeUpcast](result)
   }
 
@@ -304,7 +304,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    ()
         |""".stripMargin
 
-    val result = compile(input, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.UnsafeUpcast](result)
   }
 
