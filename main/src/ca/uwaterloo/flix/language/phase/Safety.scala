@@ -289,13 +289,15 @@ object Safety {
   }
 
   /**
-    * Checks that an upcast is sound.
+    * Checks that an upcast is safe.
     *
-    * An upcast is considered sound if:
+    * An upcast is considered safe if:
     *
     * (a) the expression has the exact same flix type
     *
     * (b) the actual expression is a java subtype of the expected java type
+    *
+    * (c) the actual expression is a function and a subtype of the expected function.
     *
     * AND
     *
