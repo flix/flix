@@ -9,7 +9,7 @@ import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.annotation.tailrec
@@ -180,7 +180,14 @@ object Safety {
       visitExp(exp)
 
     case Expression.Upcast(exp, tpe, pur, eff, loc) =>
-      throw InternalCompilerException("Not implemented")
+      val errors =
+        if (isSoundUpcast(exp, exp0)) {
+          List.empty
+        }
+        else {
+          List(UnsafeUpcast(exp, exp0, loc))
+        }
+      visitExp(exp) ::: errors
 
     case Expression.Without(exp, _, _, _, _, _) =>
       visitExp(exp)
@@ -279,6 +286,37 @@ object Safety {
     case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
+  }
+
+  /**
+    * Checks that an upcast is sound.
+    *
+    * An upcast is considered sound if:
+    *
+    * (a) the expression has the exact same flix type
+    *
+    * (b) the actual expression is a java subtype of the expected java type
+    *
+    * AND
+    *
+    * the purity is being cast from `pure` -> `ef` -> `impure`.
+    *
+    * @param actual   the expression being upcast.
+    * @param expected the upcast expression itself.
+    */
+  private def isSoundUpcast(actual: Expression, expected: Expression): Boolean = {
+    // check flix types are equal
+    // or java type is subtype of upcast java type
+    // check purity is ok
+    // pure -> ef -> impure
+    // ef -> ef and ef2
+    val types = actual.tpe == expected.tpe
+    val purities = (actual.pur, expected.pur) match {
+      case (Type.Pure, _) => true
+      case (_, Type.Impure) => true
+      case _ => false
+    }
+    types && purities
   }
 
   /**
