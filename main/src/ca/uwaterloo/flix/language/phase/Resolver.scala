@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation}
+import ca.uwaterloo.flix.language.ast.NamedAst.Expression
 import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -595,6 +596,7 @@ object Resolver {
         }
       }
 
+
       /**
         * Local visitor.
         */
@@ -666,7 +668,8 @@ object Resolver {
             case NamedAst.DefOrSig.Sig(sig) => visitApplySig(app, sig, exps, region, innerLoc, outerLoc)
           }
 
-        case app@NamedAst.Expression.Apply(_, _, _) => visitApply(app, region)
+        case app@NamedAst.Expression.Apply(_, _, _) =>
+          visitApply(app, region)
 
         case NamedAst.Expression.Lambda(fparam, exp, loc) =>
           val pVal = Params.resolve(fparam, taenv, ns0, root)
@@ -1126,6 +1129,11 @@ object Resolver {
           val eVal = visitExp(exp, region)
           mapN(eVal) {
             e => ResolvedAst.Expression.Spawn(e, loc)
+          }
+
+        case NamedAst.Expression.Par(exp, loc) =>
+          mapN(visitExp(exp, region)) {
+            e => ResolvedAst.Expression.Par(e, loc)
           }
 
         case NamedAst.Expression.Lazy(exp, loc) =>
@@ -2290,9 +2298,9 @@ object Resolver {
     * |            | same | child | other |
     * |------------|------|-------|-------|
     * | (none)     | A    | A     | I     |
-    * | opaque     | A    | O     | I     |
+    * | opaque     | A    | A     | I     |
     * | pub        | A    | A     | A     |
-    * | pub opaque | A    | O     | O     |
+    * | pub opaque | A    | A     | O     |
     *
     * (A: Accessible, O: Opaque, I: Inaccessible)
     */
@@ -2301,18 +2309,19 @@ object Resolver {
     val enumNs = enum0.sym.namespace
     val accessingNs = ns0.idents.map(_.name)
 
-    if (enumNs == accessingNs) {
-      // Case 1: We're in the same namespace: Accessible
-      EnumAccessibility.Accessible
-    } else if (!enum0.mod.isPublic && !accessingNs.startsWith(enumNs)) {
-      // Case 2: The enum is private and we're in unrelated namespaces: Inaccessible
-      EnumAccessibility.Inaccessible
-    } else if (enum0.mod.isOpaque) {
-      // Case 3: The enum is accessible but opaque
-      EnumAccessibility.Opaque
-    } else {
-      // Case 4: The enum is otherwise accessible
-      EnumAccessibility.Accessible
+    val fromChild = accessingNs.startsWith(enumNs)
+    (enum0.mod.isPublic, enum0.mod.isOpaque, fromChild) match {
+      // Case 1: Access from child namespace. Accessible.
+      case (_, _, true) => EnumAccessibility.Accessible
+
+      // Case 2: Private. Inaccessible.
+      case (false, _, false) => EnumAccessibility.Inaccessible
+
+      // Case 3: Public but opaque. Opaque.
+      case (true, true, false) => EnumAccessibility.Opaque
+
+      // Case 4: Public and non-opaque. Accessible.
+      case (true, false, false) => EnumAccessibility.Accessible
     }
   }
 

@@ -170,6 +170,6 @@ object HoverProvider {
 
 
   private def mkCurrentMsg(current: Boolean): String =
-    if (!current) "(Information may not current)" else ""
+    if (!current) "(Information may not be current)" else ""
 
 }

@@ -207,6 +207,8 @@ object WeededAst {
 
     case class Spawn(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
+    case class Par(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class Lazy(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Force(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression

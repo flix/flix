@@ -550,7 +550,7 @@ object Redundancy {
       }
 
     case Expression.Upcast(exp, tpe, pur, eff, loc) =>
-      if (tpe == exp.tpe && pur == exp.pur && eff == exp.eff)
+      if (exp.tpe == tpe && exp.pur == pur && exp.eff == eff)
         visitExp(exp, env0, rc) + RedundantUpcast(loc)
       else
         visitExp(exp, env0, rc)
@@ -658,7 +658,11 @@ object Redundancy {
         case (acc, used) => acc ++ used
       }
 
-    case Expression.Spawn(exp, _, _, _, _) => visitExp(exp, env0, rc)
+    case Expression.Spawn(exp, _, _, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expression.Par(exp, _) =>
+      visitExp(exp, env0, rc)
 
     case Expression.Lazy(exp, _, _) =>
       visitExp(exp, env0, rc)

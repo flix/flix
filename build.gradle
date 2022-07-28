@@ -32,7 +32,7 @@ dependencies {
 
 tasks.withType(ScalaCompile) {
     scalaCompileOptions.forkOptions.with {
-        memoryMaximumSize = '4g'
+        memoryMaximumSize = '1536m'
     }
     scalaCompileOptions.additionalParameters = [
             "-language:postfixOps",
