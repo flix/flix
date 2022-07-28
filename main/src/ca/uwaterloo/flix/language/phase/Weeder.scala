@@ -77,13 +77,22 @@ object Weeder {
     * Weeds the given abstract syntax tree.
     */
   private def visitCompilationUnit(src: Ast.Source, unit: ParsedAst.CompilationUnit)(implicit flix: Flix): Validation[(Ast.Source, WeededAst.CompilationUnit), WeederError] = {
-    val usesVal = traverse(unit.uses)(visitUse)
+    val allUses = unit.usesOrImports.collect {
+      case u: ParsedAst.Use => u
+    }
+    val usesVal = traverse(allUses)(visitUse)
+
+    val allImports = unit.usesOrImports.collect {
+      case i: ParsedAst.Import => i
+    }
+    val importsVal = traverse(allImports)(visitImport)
+
     val declarationsVal = traverse(unit.decls)(visitDecl)
     val loc = mkSL(unit.sp1, unit.sp2)
 
-    mapN(usesVal, declarationsVal) {
-      case (uses, decls) =>
-        src -> WeededAst.CompilationUnit(uses.flatten, decls.flatten, loc)
+    mapN(usesVal, importsVal, declarationsVal) {
+      case (uses, imports, decls) =>
+        src -> WeededAst.CompilationUnit(uses.flatten, imports ::: decls.flatten, loc)
     }
   }
 
@@ -91,9 +100,16 @@ object Weeder {
     * Compiles the given parsed declaration `past` to a list of weeded declarations.
     */
   private def visitDecl(decl: ParsedAst.Declaration)(implicit flix: Flix): Validation[List[WeededAst.Declaration], WeederError] = decl match {
-    case ParsedAst.Declaration.Namespace(sp1, name, uses, decls, sp2) =>
-      val usesVal = traverse(uses)(visitUse)
+    case ParsedAst.Declaration.Namespace(sp1, name, usesOrImports, decls, sp2) =>
+      val allUses = usesOrImports.collect {
+        case u: ParsedAst.Use => u
+      }
+      val usesVal = traverse(allUses)(visitUse)
+
+      // TODO: Support imports here?
+
       val declarationsVal = traverse(decls)(visitDecl)
+
       mapN(usesVal, declarationsVal) {
         case (us, ds) => List(WeededAst.Declaration.Namespace(name, us.flatten, ds.flatten, mkSL(sp1, sp2)))
       }
@@ -411,6 +427,7 @@ object Weeder {
         List(WeededAst.Use.UseUpper(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
       else
         List(WeededAst.Use.UseLower(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
+
     case ParsedAst.Use.UseMany(_, nname, names, _) =>
       val us = names.foldRight(Nil: List[WeededAst.Use]) {
         case (ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2), acc) =>
@@ -432,7 +449,20 @@ object Weeder {
           WeededAst.Use.UseTag(qname, Name.mkTag(ident), alias, mkSL(sp1, sp2)) :: acc
       }
       us.toSuccess
+  }
 
+  /**
+    * Performs weeding on the given import `i0`.
+    */
+  private def visitImport(i0: ParsedAst.Import): Validation[WeededAst.Declaration, WeederError] = i0 match {
+    case ParsedAst.Imports.Import(sp1, name, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val doc = Ast.Doc(Nil, loc)
+      val mod = Ast.Modifiers.Empty
+      val ident = Name.Ident(sp1, name.last, sp2)
+      val tparams = WeededAst.TypeParams.Elided
+      val tpe = WeededAst.Type.Native(name.mkString("."), loc)
+      WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc).toSuccess
   }
 
   /**
