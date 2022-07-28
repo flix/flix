@@ -181,7 +181,7 @@ object Safety {
 
     case Expression.Upcast(exp, tpe, loc) =>
       val errors =
-        if (isSuperTypeOf(tpe, exp.tpe)) {
+        if (isSuperTypeOf(Type.eraseAliases(tpe), Type.eraseAliases(exp.tpe))) {
           List.empty
         }
         else {
@@ -307,7 +307,7 @@ object Safety {
     * @param actual   the expression being upcast.
     */
   private def isSuperTypeOf(expected: Type, actual: Type, contravariantPos: Boolean = false): Boolean = (expected.typeConstructor, actual.typeConstructor) match {
-    case (Some(Type.Impure), Some(Type.Pure)) => true
+    case (Some(TypeConstructor.False), Some(TypeConstructor.True)) => true
 
     case (Some(TypeConstructor.Native(class1)), Some(TypeConstructor.Native(class2))) =>
       if (contravariantPos) class2.isAssignableFrom(class1) else class1.isAssignableFrom(class2)
@@ -324,8 +324,11 @@ object Safety {
       val args2 = actual.typeArguments.init.drop(2)
 
       // purities
-      val pur1 = expected.typeArguments.head
-      val pur2 = expected.typeArguments.head
+      val pur1 = expected.typeArguments.head match {
+        case Type.KindedVar(_, _) => Type.Impure
+        case p => p
+      }
+      val pur2 = actual.typeArguments.head
       val safePurities = isSuperTypeOf(pur1, pur2)
 
       // covariance in args
