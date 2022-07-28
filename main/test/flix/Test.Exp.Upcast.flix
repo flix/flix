@@ -30,17 +30,6 @@ namespace Test/Exp/Upcast {
         ()
 
     @test
-    def testUpcast04(): Unit & Impure =
-        let _ =
-            if (true)
-                ()
-            else {
-               let _ = [8; 8];
-               ()
-           };
-        ()
-
-    @test
     def testUpcast05(): Unit & Impure =
         import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
         import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
