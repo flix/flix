@@ -584,6 +584,9 @@ object Monomorph {
         val e = visitExp(exp, env0)
         Expression.Spawn(e, subst0(tpe), pur, eff, loc)
 
+      case Expression.Par(_, loc) =>
+        throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
+
       case Expression.Lazy(exp, tpe, loc) =>
         val e = visitExp(exp, env0)
         Expression.Lazy(e, subst0(tpe), loc)

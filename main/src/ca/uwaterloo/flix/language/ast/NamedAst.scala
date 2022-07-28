@@ -214,6 +214,8 @@ object NamedAst {
 
     case class Spawn(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
+    case class Par(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
     case class Lazy(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Force(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression

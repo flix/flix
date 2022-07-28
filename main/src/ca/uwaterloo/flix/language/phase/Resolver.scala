@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation}
+import ca.uwaterloo.flix.language.ast.NamedAst.Expression
 import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -595,6 +596,7 @@ object Resolver {
         }
       }
 
+
       /**
         * Local visitor.
         */
@@ -666,7 +668,8 @@ object Resolver {
             case NamedAst.DefOrSig.Sig(sig) => visitApplySig(app, sig, exps, region, innerLoc, outerLoc)
           }
 
-        case app@NamedAst.Expression.Apply(_, _, _) => visitApply(app, region)
+        case app@NamedAst.Expression.Apply(_, _, _) =>
+          visitApply(app, region)
 
         case NamedAst.Expression.Lambda(fparam, exp, loc) =>
           val pVal = Params.resolve(fparam, taenv, ns0, root)
@@ -1126,6 +1129,11 @@ object Resolver {
           val eVal = visitExp(exp, region)
           mapN(eVal) {
             e => ResolvedAst.Expression.Spawn(e, loc)
+          }
+
+        case NamedAst.Expression.Par(exp, loc) =>
+          mapN(visitExp(exp, region)) {
+            e => ResolvedAst.Expression.Par(e, loc)
           }
 
         case NamedAst.Expression.Lazy(exp, loc) =>
