@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, Position, Range, TextEdit, WorkspaceEdit}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
@@ -35,6 +35,8 @@ object RenameProvider {
         case Entity.Case(caze) => renameTag(caze.sym, caze.tag, newName)
 
         case Entity.Def(defn) => renameDef(defn.sym, newName)
+
+        case Entity.TypeAlias(alias) => renameTypeAlias(alias.sym, newName)
 
         case Entity.VarUse(sym, _, _) => renameVar(sym, newName)
 
@@ -71,9 +73,8 @@ object RenameProvider {
         case Entity.Class(_) => mkNotFound(uri, pos)
         case Entity.Effect(_) => mkNotFound(uri, pos)
         case Entity.Enum(_) => mkNotFound(uri, pos)
-        case Entity.TypeAlias(_) => mkNotFound(uri, pos) // MATT
         case Entity.Op(_) => mkNotFound(uri, pos)
-        case Entity.OpUse(_, _ ,_) => mkNotFound(uri, pos)
+        case Entity.OpUse(_, _, _) => mkNotFound(uri, pos)
         case Entity.Sig(_) => mkNotFound(uri, pos)
         case Entity.SigUse(_, _, _) => mkNotFound(uri, pos)
         case Entity.TypeVar(_) => mkNotFound(uri, pos)
@@ -113,6 +114,12 @@ object RenameProvider {
   }
 
   private def renameEnum(sym: Symbol.EnumSym, newName: String)(implicit index: Index, root: Root): JObject = {
+    val defn = sym.loc
+    val uses = index.usesOf(sym)
+    rename(newName, uses + defn)
+  }
+
+  private def renameTypeAlias(sym: Symbol.TypeAliasSym, newName: String)(implicit index: Index, root: Root): JObject = {
     val defn = sym.loc
     val uses = index.usesOf(sym)
     rename(newName, uses + defn)

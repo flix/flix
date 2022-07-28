@@ -36,7 +36,7 @@ object HighlightProvider {
 
         case Entity.Enum(enum) => highlightEnum(enum.sym)
 
-        case Entity.TypeAlias(alias) => mkNotFound(uri, pos) // MATT
+        case Entity.TypeAlias(alias) => highlightTypeAlias(alias.sym)
 
         case Entity.Effect(eff) => highlightEffect(eff.sym)
 
@@ -109,6 +109,12 @@ object HighlightProvider {
   }
 
   private def highlightEnum(sym: Symbol.EnumSym)(implicit index: Index, root: Root): JObject = {
+    val write = (sym.loc, DocumentHighlightKind.Write)
+    val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
+    highlight(write :: reads)
+  }
+
+  private def highlightTypeAlias(sym: Symbol.TypeAliasSym)(implicit index: Index, root: Root): JObject = {
     val write = (sym.loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(write :: reads)

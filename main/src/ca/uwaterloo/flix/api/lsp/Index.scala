@@ -295,6 +295,11 @@ case class Index(m: Map[(String, Int), List[Entity]],
   def usesOf(sym: Symbol.EnumSym): Set[SourceLocation] = enumUses(sym)
 
   /**
+    * Returns all uses of the given symbol `sym`.
+    */
+  def usesOf(sym: Symbol.TypeAliasSym): Set[SourceLocation] = aliasUses(sym)
+
+  /**
     * Returns all uses of the given symbol `sym` and `tag`.
     */
   def usesOf(sym: Symbol.EnumSym, tag: Name.Tag): Set[SourceLocation] = tagUses((sym, tag))

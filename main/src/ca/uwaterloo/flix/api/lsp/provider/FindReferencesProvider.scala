@@ -39,7 +39,7 @@ object FindReferencesProvider {
 
         case Entity.Enum(enum0) => findEnumReferences(enum0.sym)
 
-        case Entity.TypeAlias(alias0) => mkNotFound(uri, pos) // MATT
+        case Entity.TypeAlias(alias0) => findTypeAliasReferences(alias0.sym)
 
         case Entity.Effect(eff0) => findEffectReferences(eff0.sym)
 
@@ -111,6 +111,13 @@ object FindReferencesProvider {
   }
 
   private def findEnumReferences(sym: Symbol.EnumSym)(implicit index: Index, root: Root): JObject = {
+    val defSite = Location.from(sym.loc)
+    val useSites = index.usesOf(sym)
+    val locs = defSite :: useSites.toList.map(Location.from)
+    ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+  }
+
+  private def findTypeAliasReferences(sym: Symbol.TypeAliasSym)(implicit index: Index, root: Root): JObject = {
     val defSite = Location.from(sym.loc)
     val useSites = index.usesOf(sym)
     val locs = defSite :: useSites.toList.map(Location.from)
