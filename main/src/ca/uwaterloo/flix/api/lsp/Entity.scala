@@ -55,6 +55,10 @@ object Entity {
     def loc: SourceLocation = e.sym.loc
   }
 
+  case class TypeAlias(e: TypedAst.TypeAlias) extends Entity {
+    def loc: SourceLocation = e.sym.loc
+  }
+
   case class Exp(e: TypedAst.Expression) extends Entity {
     def loc: SourceLocation = e.loc
   }

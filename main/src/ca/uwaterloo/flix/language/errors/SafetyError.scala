@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.Safety
 import ca.uwaterloo.flix.util.Formatter
@@ -120,15 +121,11 @@ object SafetyError {
   /**
     * An error raised to indicate an illegal relational use of the lattice variable `sym`.
     *
-    * @param actualType     the type of the expression being upcast.
-    * @param actualPurity   the purity of the expression being upcast.
-    * @param actualEffect   the effect of the expression being upcast.
-    * @param expectedType   the expected type being upcast to.
-    * @param expectedPurity the expected purity being upcast to.
-    * @param expectedEffect the expected effect being upcast to.
-    * @param loc            the source location of the unsafe upcast.
+    * @param actual   the expression being upcast.
+    * @param expected the upcast expression itself.
+    * @param loc      the source location of the unsafe upcast.
     */
-  case class UnsafeUpcast(actualType: Type, actualPurity: Type, actualEffect: Type, expectedType: Type, expectedPurity: Type, expectedEffect: Type, loc: SourceLocation) extends SafetyError {
+  case class UnsafeUpcast(actual: Expression, expected: Expression, loc: SourceLocation) extends SafetyError {
     override def summary: String = "Unsafe upcast."
 
     override def message(formatter: Formatter): String = {
@@ -138,13 +135,13 @@ object SafetyError {
          |
          |${code(loc, "the upcast occurs here.")}
          |
-         |Actual type  : $actualType
-         |Actual purity: $actualPurity
-         |Actual effect: $actualEffect
+         |Actual type  : ${actual.tpe}
+         |Actual purity: ${actual.pur}
+         |Actual effect: ${actual.eff}
          |
-         |Expected type  : $expectedType
-         |Expected purity: $expectedPurity
-         |Expected effect: $expectedEffect
+         |Expected type  : ${expected.tpe}
+         |Expected purity: ${expected.pur}
+         |Expected effect: ${expected.eff}
          |""".stripMargin
     }
 
@@ -175,19 +172,19 @@ object SafetyError {
   /**
     * An error raised to indicate a missing `this` parameter for a method.
     *
-    * @param thisType The expected `this` type.
-    * @param name     The name of the method with the invalid `this` parameter.
-    * @param loc      The source location of the method.
+    * @param clazz The expected `this` type.
+    * @param name  The name of the method with the invalid `this` parameter.
+    * @param loc   The source location of the method.
     */
-  case class MissingThis(thisType: Type, name: String, loc: SourceLocation) extends SafetyError {
+  case class MissingThis(clazz: java.lang.Class[_], name: String, loc: SourceLocation) extends SafetyError {
     def summary: String = s"Missing `this` parameter for method '${name}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Missing `this` parameter for method '${red(name)}''.
+         |>> Missing 'this' parameter for method '${red(name)}''.
          |
-         |The `this` parameter should have type ${cyan(thisType.toString)}
+         |The 'this' parameter should have type ${cyan(s"##${clazz.getName}")}
          |
          |${code(loc, "the method occurs here.")}
          |""".stripMargin
@@ -195,7 +192,7 @@ object SafetyError {
 
     def explain(formatter: Formatter): Option[String] = Some({
       s"""
-         | The first argument to any method must be `this`, and must have the same type as the superclass.
+         | The first argument to any method must be 'this', and must have the same type as the superclass.
          |""".stripMargin
     })
   }
@@ -203,20 +200,20 @@ object SafetyError {
   /**
     * An error raised to indicate an invalid `this` parameter for a method.
     *
-    * @param thisType        The expected `this` type.
+    * @param clazz           The expected `this` type.
     * @param illegalThisType The incorrect `this` type.
     * @param name            The name of the method with the invalid `this` parameter.
     * @param loc             The source location of the method.
     */
-  case class IllegalThisType(thisType: Type, illegalThisType: Type, name: String, loc: SourceLocation) extends SafetyError {
+  case class IllegalThisType(clazz: java.lang.Class[_], illegalThisType: Type, name: String, loc: SourceLocation) extends SafetyError {
     def summary: String = s"Invalid `this` parameter for method '${name}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Invalid `this` parameter for method '${red(name)}''.
+         |>> Invalid 'this' parameter for method '${red(name)}''.
          |
-         |Expected `this` type is ${cyan(thisType.toString)}, but the first argument is declared as type ${cyan(illegalThisType.toString)}
+         |Expected 'this' type is ${cyan(s"##${clazz.getName}")}, but the first argument is declared as type ${cyan(illegalThisType.toString)}
          |
          |${code(loc, "the method occurs here.")}
          |""".stripMargin
@@ -224,35 +221,47 @@ object SafetyError {
 
     def explain(formatter: Formatter): Option[String] = Some({
       s"""
-         | The first argument to any method must be `this`, and must have the same type as the superclass.
+         | The first argument to any method must be 'this', and must have the same type as the superclass.
          |""".stripMargin
     })
   }
 
   /**
+    * Format a Java type suitable for method implementation.
+    */
+  private def formatJavaType(t: java.lang.Class[_]) = {
+    if (t.isPrimitive() || t.isArray())
+      Type.getFlixType(t).toString
+    else
+      s"##${t.getName}"
+  }
+
+  /**
     * An error raised to indicate an unimplemented superclass method
     *
-    * @param thisType The type of the superclass.
-    * @param method   The signature of the unimplemented method
-    * @param loc      The source location of the object derivation.
+    * @param clazz  The type of the superclass.
+    * @param method The unimplemented method.
+    * @param loc    The source location of the object derivation.
     */
-  case class UnimplementedMethod(thisType: Type, method: Safety.MethodSignature, loc: SourceLocation) extends SafetyError {
-    def summary: String = s"No implementation found for method '${method.name}' of superclass '${thisType}'."
+  case class UnimplementedMethod(clazz: java.lang.Class[_], method: java.lang.reflect.Method, loc: SourceLocation) extends SafetyError {
+    def summary: String = s"No implementation found for method '${method.getName}' of superclass '${clazz.getName}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> No implementation found for method '${red(method.name)}' of superclass '${red(thisType.toString)}'.
+         |>> No implementation found for method '${red(method.getName)}' of superclass '${red(clazz.getName)}'.
          |
          |${code(loc, "the object occurs here.")}
          |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
+      val parameterTypes = (clazz +: method.getParameterTypes).map(formatJavaType)
+      val returnType = formatJavaType(method.getReturnType)
       s"""
          | Try adding a method with the following signature:
          |
-         | def ${method.name}(${method.paramTypes.mkString(", ")}): ${method.retTpe}
+         | def ${method.getName}(${parameterTypes.mkString(", ")}): ${returnType}
          |""".stripMargin
     })
   }
@@ -261,17 +270,17 @@ object SafetyError {
     * An error raised to indicate that an object derivation includes a method that doesn't exist
     * in the superclass being implemented.
     *
-    * @param thisType The type of superclass
-    * @param name     The name of the extra method.
-    * @param loc      The source location of the method.
+    * @param clazz The type of superclass
+    * @param name  The name of the extra method.
+    * @param loc   The source location of the method.
     */
-  case class ExtraMethod(thisType: Type, method: Safety.MethodSignature, loc: SourceLocation) extends SafetyError {
-    def summary: String = s"Method '${method.name}' not found in superclass '${thisType}'"
+  case class ExtraMethod(clazz: java.lang.Class[_], name: String, loc: SourceLocation) extends SafetyError {
+    def summary: String = s"Method '${name}' not found in superclass '${clazz.getName}'"
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Method '${red(method.name)}' not found in superclass '${red(thisType.toString)}'
+         |>> Method '${red(name)}' not found in superclass '${red(clazz.getName)}'
          |
          |${code(loc, "the method occurs here.")}
          |""".stripMargin
@@ -280,4 +289,37 @@ object SafetyError {
     def explain(formatter: Formatter): Option[String] = None
   }
 
+  case class NonDefaultConstructor(clazz: java.lang.Class[_], loc: SourceLocation) extends SafetyError {
+    def summary: String = s"Superclass '${clazz.getName}' has a non-default constructor"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Method Superclass '${red(clazz.getName)}' has a non-default constructor
+         |
+         |${code(loc, "the object occurs here.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some(
+      s"""
+        | Flix 'object' statements only support interfaces and classes with default (no-argument) constructors.
+        |""".stripMargin
+    )
+  }
+
+  case class InaccessibleSuperclass(clazz: java.lang.Class[_], loc: SourceLocation) extends SafetyError {
+    def summary: String = s"Superclass '${clazz.getName}' is not public"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Superclass '${red(clazz.getName)}' is not public
+         |
+         |${code(loc, "the object occurs here.")}
+         |""".stripMargin
+    }
+    
+    def explain(formatter: Formatter): Option[String] = None
+  }
 }
