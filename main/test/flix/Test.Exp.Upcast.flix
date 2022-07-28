@@ -1,5 +1,5 @@
 namespace Test/Exp/Upcast {
-/*
+
     @test
     def testUpcast01(): Unit & Impure =
         let _ =
@@ -72,14 +72,27 @@ namespace Test/Exp/Upcast {
             else
                 (newObject(), newObject());
         ()
-*/
 
     @test
-    def testUpcast100(): Unit & Impure =
+    def testUpcast08(): Unit & Impure =
         import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
         import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
         let f = (_: ##java.lang.StringBuilder) -> newObject(); // strBuilder -> obj
-        let g = (_: ##java.lang.Object) -> newStringBuilder();        // obj        -> strBuilder
+        let g = (_: ##java.lang.Object) -> newStringBuilder(); // obj        -> strBuilder
+        let _ =
+            if (true)
+                upcast f
+            else
+                g;
+        ()
+
+
+    @test
+    def testUpcast09(): Unit & Impure =
+        import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
+        import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
+        let f = (_: ##java.lang.StringBuilder) -> (_: ##java.lang.StringBuilder) -> newObject(); // strBuilder -> strBuilder -> obj
+        let g = (_: ##java.lang.Object) -> (_: ##java.lang.Object) -> newStringBuilder();        // obj        -> obj        -> strBuilder
         let _ =
             if (true)
                 upcast f
@@ -88,11 +101,37 @@ namespace Test/Exp/Upcast {
         ()
 
     @test
-    def testUpcast101(): Unit & Impure =
+    def testUpcast10(): Unit & Impure =
         import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
         import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
         let f = (_: ##java.lang.StringBuilder) -> (_: ##java.lang.Object) -> newObject(); // strBuilder -> obj -> obj
         let g = (_: ##java.lang.Object) -> (_: ##java.lang.Object) -> newStringBuilder(); // obj        -> obj -> strBuilder
+        let _ =
+            if (true)
+                upcast f
+            else
+                g;
+        ()
+
+    @test
+    def testUpcast11(): Unit & Impure =
+        import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
+        import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
+        let f = (_: ##java.lang.StringBuilder) -> (_: ##java.lang.StringBuilder) -> (_: ##java.lang.Object) -> newObject(); // strBuilder -> strBuilder -> obj -> obj
+        let g = (_: ##java.lang.Object) -> (_: ##java.lang.Object) -> (_: ##java.lang.Object) -> newStringBuilder();        // obj        -> obj        -> obj -> strBuilder
+        let _ =
+            if (true)
+                upcast f
+            else
+                g;
+        ()
+
+    @test
+    def testUpcast12(): Unit & Impure =
+        import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
+        import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
+        let f = (_: ##java.lang.StringBuilder) -> (_: ##java.lang.Object) -> (newObject(), newObject(), newStringBuilder());        // strBuilder -> obj -> (obj, obj, strBuilder)
+        let g = (_: ##java.lang.Object) -> (_: ##java.lang.Object) -> (newStringBuilder(), newStringBuilder(), newStringBuilder()); // obj        -> obj -> (strBuilder, strBuilder, strBuilder)
         let _ =
             if (true)
                 upcast f
