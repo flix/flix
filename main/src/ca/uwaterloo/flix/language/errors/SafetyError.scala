@@ -135,9 +135,8 @@ object SafetyError {
          |
          |${code(loc, "the upcast occurs here.")}
          |
-         |Actual type  : ${actual.tpe}
-         |
-         |Expected type  : ${expected.tpe}
+         |Actual type:  ${actual.tpe}
+         |Upcasting to: ${expected.tpe}
          |""".stripMargin
     }
 
