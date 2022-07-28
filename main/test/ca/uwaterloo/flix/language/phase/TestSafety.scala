@@ -184,7 +184,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("TestInvalidThis.01") {
     val input =
       """
-        |def f(): ##java.lang.Runnable & Impure = 
+        |def f(): ##java.lang.Runnable & Impure =
         |  object ##java.lang.Runnable {
         |    def run(): Unit & Impure = ()
         |  }
@@ -196,7 +196,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("TestInvalidThis.02") {
     val input =
       """
-        |def f(): ##java.lang.Runnable & Impure = 
+        |def f(): ##java.lang.Runnable & Impure =
         |  object ##java.lang.Runnable {
         |    def run(_this: Int32): Unit & Impure = ()
         |  }
@@ -217,7 +217,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("TestExtraMethod.01") {
     val input =
       """
-        |def f(): ##java.lang.Runnable & Impure = 
+        |def f(): ##java.lang.Runnable & Impure =
         |  object ##java.lang.Runnable {
         |    def run(_this: ##java.lang.Runnable): Unit & Impure = ()
         |    def anExtraMethod(_this: ##java.lang.Runnable): Unit & Impure = ()
@@ -225,5 +225,21 @@ class TestSafety extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ExtraMethod](result)
+  }
+
+  test("TestUpcast.01") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let _ =
+        |        if (true)
+        |            upcast ()
+        |        else
+        |            1;
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.UnsafeUpcast](result)
   }
 }

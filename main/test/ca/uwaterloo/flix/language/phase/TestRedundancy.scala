@@ -1194,7 +1194,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |    ()
         |""".stripMargin
 
-    val result = compile(input, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.RedundantUpcast](result)
   }
 
