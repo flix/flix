@@ -1,5 +1,5 @@
 namespace Test/Exp/Upcast {
-
+/*
     @test
     def testUpcast01(): Unit & Impure =
         let _ =
@@ -40,5 +40,5 @@ namespace Test/Exp/Upcast {
                ()
            };
         ()
-
+*/
 }

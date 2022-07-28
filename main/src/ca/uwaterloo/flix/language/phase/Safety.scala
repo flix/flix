@@ -179,7 +179,7 @@ object Safety {
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Upcast(exp, tpe, pur, eff, loc) =>
+    case Expression.Upcast(exp, tpe, loc) =>
       val errors =
         if (isSoundUpcast(exp, exp0)) {
           List.empty
