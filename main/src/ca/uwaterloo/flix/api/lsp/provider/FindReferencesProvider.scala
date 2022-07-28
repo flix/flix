@@ -39,6 +39,8 @@ object FindReferencesProvider {
 
         case Entity.Enum(enum0) => findEnumReferences(enum0.sym)
 
+        case Entity.TypeAlias(alias0) => mkNotFound(uri, pos) // MATT
+
         case Entity.Effect(eff0) => findEffectReferences(eff0.sym)
 
         case Entity.Op(op0) => findOpReferences(op0.sym)

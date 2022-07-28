@@ -452,9 +452,9 @@ object Indexer {
     case Pattern.Int64(_, _) => Index.occurrenceOf(pat0)
     case Pattern.BigInt(_, _) => Index.occurrenceOf(pat0)
     case Pattern.Str(_, _) => Index.occurrenceOf(pat0)
-    case Pattern.Tag(sym, tag, pat, _, loc) =>
+    case Pattern.Tag(sym, tag, pat, _, _) =>
       val parent = Entity.Exp(exp0)
-      Index.occurrenceOf(pat0) ++ visitPat(pat0, exp0) ++ Index.useOf(sym, tag, parent)
+      Index.occurrenceOf(pat0) ++ visitPat(pat, exp0) ++ Index.useOf(sym, tag, parent)
     case Pattern.Tuple(elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms, exp0)
     case Pattern.Array(elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms, exp0)
     case Pattern.ArrayTailSpread(elms, _, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms, exp0)

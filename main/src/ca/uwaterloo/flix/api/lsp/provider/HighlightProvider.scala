@@ -36,6 +36,8 @@ object HighlightProvider {
 
         case Entity.Enum(enum) => highlightEnum(enum.sym)
 
+        case Entity.TypeAlias(alias) => mkNotFound(uri, pos) // MATT
+
         case Entity.Effect(eff) => highlightEffect(eff.sym)
 
         case Entity.Op(op) => highlightOp(op.sym)

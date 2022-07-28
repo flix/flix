@@ -89,6 +89,7 @@ object Entity {
 
   case class TypeAlias(e: TypedAst.TypeAlias) extends Entity {
     def loc: SourceLocation = e.sym.loc
+    def precision: Precision = Precision.High
   }
 
   case class Exp(e: TypedAst.Expression) extends Entity {
