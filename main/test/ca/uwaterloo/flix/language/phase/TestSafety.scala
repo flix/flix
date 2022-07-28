@@ -190,7 +190,7 @@ class TestSafety extends FunSuite with TestUtils {
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalThisType](result)
+    expectError[SafetyError.MissingThis](result)
   }
 
   test("TestInvalidThis.02") {
@@ -326,5 +326,26 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[SafetyError.UnsafeUpcast](result)
   }
 
+  test("TestNonDefaultConstructor.01") {
+    val input =
+      """
+        |def f(): ##flix.test.TestClassWithNonDefaultConstructor & Impure =
+        |  object ##flix.test.TestClassWithNonDefaultConstructor {
+        |  }
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.NonDefaultConstructor](result)
+  }
+
+  test("TestNonPublicInterface.01") {
+    val input =
+      """
+        |def f(): ##flix.test.TestNonPublicInterface & Impure =
+        |  object ##flix.test.TestNonPublicInterface {
+        |  }
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.InaccessibleSuperclass](result)
+  }
 
 }
