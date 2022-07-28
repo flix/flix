@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
 import ca.uwaterloo.flix.util.Validation
@@ -181,7 +181,7 @@ object Safety {
 
     case Expression.Upcast(exp, tpe, loc) =>
       val errors =
-        if (isSuperTypeOf(Type.eraseAliases(tpe), Type.eraseAliases(exp.tpe))) {
+        if (isSoundUpcast(exp, exp0)) {
           List.empty
         }
         else {
@@ -289,63 +289,34 @@ object Safety {
   }
 
   /**
-    * Checks that an upcast is safe.
+    * Checks that an upcast is sound.
     *
-    * An upcast is considered safe if:
+    * An upcast is considered sound if:
     *
     * (a) the expression has the exact same flix type
     *
     * (b) the actual expression is a java subtype of the expected java type
     *
-    * (c) the actual expression is a function and a subtype of the expected function.
-    *
     * AND
     *
-    * the purity of a function is being cast from `pure` -> `ef` -> `impure`.
+    * the purity is being cast from `pure` -> `ef` -> `impure`.
     *
-    * @param expected the upcast expression itself.
     * @param actual   the expression being upcast.
+    * @param expected the upcast expression itself.
     */
-  private def isSuperTypeOf(expected: Type, actual: Type, contravariantPos: Boolean = false): Boolean = (expected.typeConstructor, actual.typeConstructor) match {
-    case (Some(TypeConstructor.False), Some(TypeConstructor.True)) => true
-
-    case (Some(TypeConstructor.Native(class1)), Some(TypeConstructor.Native(class2))) =>
-      if (contravariantPos) class2.isAssignableFrom(class1) else class1.isAssignableFrom(class2)
-
-    case (Some(TypeConstructor.Tuple(n1)), Some(TypeConstructor.Tuple(n2))) if n1 == n2 =>
-      val args1 = expected.typeArguments
-      val args2 = actual.typeArguments
-      args1.zip(args2).forall {
-        case (t1, t2) => isSuperTypeOf(t1, t2, contravariantPos)
-      }
-
-    case (Some(TypeConstructor.Arrow(n1)), Some(TypeConstructor.Arrow(n2))) if n1 == n2 =>
-      val args1 = expected.typeArguments.init.drop(2)
-      val args2 = actual.typeArguments.init.drop(2)
-
-      // purities
-      val pur1 = expected.typeArguments.head match {
-        case Type.KindedVar(_, _) => Type.Impure
-        case p => p
-      }
-      val pur2 = actual.typeArguments.head
-      val safePurities = isSuperTypeOf(pur1, pur2)
-
-      // covariance in args
-      val covariantArgs = args1.zip(args2).forall {
-        case (t1, t2) =>
-          isSuperTypeOf(t1, t2)
-      }
-
-      // contravariance in results
-      val res1 = expected.typeArguments.last
-      val res2 = actual.typeArguments.last
-      val contraVariantResult = isSuperTypeOf(res1, res2, contravariantPos = true)
-
-      safePurities && covariantArgs && contraVariantResult
-
-    case _ => expected == actual
-
+  private def isSoundUpcast(actual: Expression, expected: Expression): Boolean = {
+    // check flix types are equal
+    // or java type is subtype of upcast java type
+    // check purity is ok
+    // pure -> ef -> impure
+    // ef -> ef and ef2
+    val types = actual.tpe == expected.tpe
+    val purities = (actual.pur, expected.pur) match {
+      case (Type.Pure, _) => true
+      case (_, Type.Impure) => true
+      case _ => false
+    }
+    types && purities
   }
 
   /**
@@ -580,7 +551,7 @@ object Safety {
   private def getJavaMethodSignatures(clazz: java.lang.Class[_]): Map[MethodSignature, java.lang.reflect.Method] = {
     val methods = clazz.getMethods.toList.filterNot(m => java.lang.reflect.Modifier.isStatic(m.getModifiers))
     methods.foldLeft(Map.empty[MethodSignature, java.lang.reflect.Method]) {
-      case (acc, m) => 
+      case (acc, m) =>
         val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.getFlixType), Type.getFlixType(m.getReturnType))
         acc + (signature -> m)
     }
@@ -613,21 +584,21 @@ object Safety {
     * Ensures that `methods` fully implement `clazz`
     */
   private def checkObjectImplementation(clazz: java.lang.Class[_], tpe: Type, methods: List[JvmMethod], loc: SourceLocation): List[CompilationMessage] = {
-    // 
+    //
     // Check that `clazz` doesn't have a non-default constructor
-    // 
+    //
     val constructorErrors = if (!clazz.isInterface() && !hasDefaultConstructor(clazz))
-        List(NonDefaultConstructor(clazz, loc))
-      else
-        List.empty
+      List(NonDefaultConstructor(clazz, loc))
+    else
+      List.empty
 
-    // 
+    //
     // Check that `clazz` is public
-    // 
+    //
     val visibilityErrors = if (!java.lang.reflect.Modifier.isPublic(clazz.getModifiers))
-        List(InaccessibleSuperclass(clazz, loc))
-      else
-        List.empty
+      List(InaccessibleSuperclass(clazz, loc))
+    else
+      List.empty
 
     //
     // Check that the first argument looks like "this"
