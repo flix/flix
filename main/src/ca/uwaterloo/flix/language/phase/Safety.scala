@@ -181,7 +181,7 @@ object Safety {
 
     case Expression.Upcast(exp, tpe, pur, eff, loc) =>
       val errors =
-        if (isSoundUpcast(exp, exp0)) {
+        if (isSafeUpcast(exp, exp0)) {
           List.empty
         }
         else {
@@ -304,7 +304,7 @@ object Safety {
     * @param actual   the expression being upcast.
     * @param expected the upcast expression itself.
     */
-  private def isSoundUpcast(actual: Expression, expected: Expression): Boolean = {
+  private def isSafeUpcast(actual: Expression, expected: Expression): Boolean = {
     // check flix types are equal
     // or java type is subtype of upcast java type
     // check purity is ok
@@ -322,7 +322,7 @@ object Safety {
       case (_, Type.Impure) => true
       case _ => false
     }
-    types && purities
+    types
   }
 
   /**
