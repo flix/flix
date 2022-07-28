@@ -1,5 +1,5 @@
 namespace Test/Exp/Upcast {
-
+/*
     @test
     def testUpcast01(): Unit & Impure =
         let _ =
@@ -60,6 +60,44 @@ namespace Test/Exp/Upcast {
                 upcast newStringBuilder()
             else
                 newObject();
+        ()
+
+    @test
+    def testUpcast07(): Unit & Impure =
+        import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
+        import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
+        let _ =
+            if (true)
+                upcast (newStringBuilder(), newStringBuilder())
+            else
+                (newObject(), newObject());
+        ()
+*/
+
+    @test
+    def testUpcast100(): Unit & Impure =
+        import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
+        import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
+        let f = (_: ##java.lang.StringBuilder) -> newObject(); // strBuilder -> obj
+        let g = (_: ##java.lang.Object) -> newStringBuilder();        // obj        -> strBuilder
+        let _ =
+            if (true)
+                upcast f
+            else
+                g;
+        ()
+
+    @test
+    def testUpcast101(): Unit & Impure =
+        import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
+        import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
+        let f = (_: ##java.lang.StringBuilder) -> (_: ##java.lang.Object) -> newObject(); // strBuilder -> obj -> obj
+        let g = (_: ##java.lang.Object) -> (_: ##java.lang.Object) -> newStringBuilder(); // obj        -> obj -> strBuilder
+        let _ =
+            if (true)
+                upcast f
+            else
+                g;
         ()
 
 }
