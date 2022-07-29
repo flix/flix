@@ -759,7 +759,7 @@ namespace Fixpoint {
     /// Unsafely casts and prints the given Datalog program `d`.
     ///
     @Internal @Unsafe
-    pub def unsafePrint(d: a): Unit \ IO =
+    pub def unsafePrint(d: a): Unit & Impure =
         println(unsafeCast(d))
 
     ///

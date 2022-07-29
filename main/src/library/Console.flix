@@ -19,8 +19,8 @@ namespace Console {
     ///
     /// Returns true if there is a `Console` object associated with the current JVM.
     ///
-    pub def hasConsole(): Bool \ IO =
-        import static java.lang.System.console(): ##java.io.Console \ IO;
+    pub def hasConsole(): Bool & Impure =
+        import static java.lang.System.console(): ##java.io.Console & Impure;
         not Object.isNull(console())
 
     ///
@@ -30,8 +30,8 @@ namespace Console {
     ///
     /// See also `System/StdIn.readLines`.
     ///
-    pub def readLine(): Option[String] \ IO =
-        import java.io.Console.readLine(): String \ IO as consoleReadLine;
+    pub def readLine(): Option[String] & Impure =
+        import java.io.Console.readLine(): String & Impure as consoleReadLine;
         console() |> Option.map(consoleReadLine)
 
     ///
@@ -45,9 +45,9 @@ namespace Console {
     ///
     /// See also `System/StdOut.print`.
     ///
-    pub def print(x: a): Unit \ IO with ToString[a] =
-        import java.io.Console.writer(): ##java.io.PrintWriter \ IO;
-        import java.io.PrintWriter.print(String): Unit \ IO as printWriterPrint;
+    pub def print(x: a): Unit & Impure with ToString[a] =
+        import java.io.Console.writer(): ##java.io.PrintWriter & Impure;
+        import java.io.PrintWriter.print(String): Unit & Impure as printWriterPrint;
         console() |> Option.foreach(c -> printWriterPrint(writer(c), ToString.toString(x)))
 
     ///
@@ -61,9 +61,9 @@ namespace Console {
     ///
     /// See also `System/StdOut.println`.
     ///
-    pub def printLine(x: a): Unit \ IO with ToString[a] =
-        import java.io.Console.writer(): ##java.io.PrintWriter \ IO;
-        import java.io.PrintWriter.println(String): Unit \ IO as printWriterPrintln;
+    pub def printLine(x: a): Unit & Impure with ToString[a] =
+        import java.io.Console.writer(): ##java.io.PrintWriter & Impure;
+        import java.io.PrintWriter.println(String): Unit & Impure as printWriterPrintln;
         console() |> Option.foreach(c -> printWriterPrintln(writer(c), ToString.toString(x)))
 
     ///
@@ -75,8 +75,8 @@ namespace Console {
     ///
     /// See also `System/StdOut.flush`.
     ///
-    pub def flush(): Unit \ IO =
-        import java.io.Console.flush(): Unit \ IO as consoleFlush;
+    pub def flush(): Unit & Impure =
+        import java.io.Console.flush(): Unit & Impure as consoleFlush;
         console() |> Option.foreach(consoleFlush)
 
     ///
@@ -115,8 +115,8 @@ namespace Console {
     ///
     /// Retrieves the console of the JVM if there is one, otherwise None.
     ///
-    def console(): Option[##java.io.Console] \ IO =
-        import static java.lang.System.console(): ##java.io.Console \ IO as getConsole;
+    def console(): Option[##java.io.Console] & Impure =
+        import static java.lang.System.console(): ##java.io.Console & Impure as getConsole;
         getConsole() |> Object.toOption
 
     ///
