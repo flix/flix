@@ -652,7 +652,7 @@ object Lowering {
       }
 
       def collectExps(e0: Expression): (List[Expression => Expression], List[Expression], List[Expression]) = e0 match {
-        case Expression.Apply(exp, exps, _, _, _, _) => // match deeper
+        case Expression.Apply(exp, exps, _, _, _, _) =>
           val (fchan, fspawn, fwait) = collectExps(exp)
           val (achan, aspawn, await) = exps.map(collectExps).foldLeft((List.empty[Expression => Expression], List.empty[Expression], List.empty[Expression])) {
             case ((accchans, accspawns, accwaits), (argchan, argspawn, argwait)) =>
