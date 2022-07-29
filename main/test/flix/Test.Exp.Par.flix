@@ -5,7 +5,7 @@ namespace Test/Exp/Par {
     @test
     def testPar01(): Bool =
         par f(1)
-
+/*
     @test
     def testPar02(): Bool = // Could this be simplified?
         let f = (a, b, c) -> a and b and c;
@@ -13,5 +13,5 @@ namespace Test/Exp/Par {
         let b = () -> a();
         let c = () -> b();
         par f(a(), b(), c())
-
+*/
 }
