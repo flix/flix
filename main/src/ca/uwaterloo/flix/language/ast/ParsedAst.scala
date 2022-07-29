@@ -676,7 +676,7 @@ object ParsedAst {
       * @param exp the body expression.
       * @param sp2 the position of the last character in the expression.
       */
-    case class LetImport(sp1: SourcePosition, op: ParsedAst.JvmOp, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class LetImport(sp1: SourcePosition, op: ParsedAst.JvmOp, sp2: SourcePosition, exp: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
       * NewObject (create an anonymous object which implements a Java interface or extends a Java class).

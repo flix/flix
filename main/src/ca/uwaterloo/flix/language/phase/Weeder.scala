@@ -839,7 +839,7 @@ object Weeder {
           WeededAst.Expression.LetRec(ident, mod, lambda, e2, loc)
       }
 
-    case ParsedAst.Expression.LetImport(sp1, impl, exp2, sp2) =>
+    case ParsedAst.Expression.LetImport(sp1, impl, sp2, exp2) =>
       val loc = mkSL(sp1, sp2)
 
       //

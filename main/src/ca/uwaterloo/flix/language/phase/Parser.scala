@@ -859,7 +859,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ Import ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetImport
+        SP ~ Import ~ optWS ~ ";" ~ SP ~ optWS ~ Stm ~> ParsedAst.Expression.LetImport
       }
     }
 
