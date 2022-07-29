@@ -256,7 +256,7 @@ object Resolver {
       */
     def resolve(c0: NamedAst.Constraint, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Constraint, ResolutionError] = c0 match {
       case NamedAst.Constraint(cparams0, head0, body0, loc) =>
-        val cparamsVal = traverse(cparams0)(p => Params.resolve(p, ns0, root))
+        val cparamsVal = traverse(cparams0)(p => Params.resolve(p, taenv, ns0, root))
         val headVal = Predicates.Head.resolve(head0, taenv, ns0, root)
         val bodyVal = traverse(body0)(Predicates.Body.resolve(_, taenv, ns0, root))
         mapN(cparamsVal, headVal, bodyVal) {
@@ -1354,9 +1354,17 @@ object Resolver {
     /**
       * Performs name resolution on the given constraint parameter `cparam0` in the given namespace `ns0`.
       */
-    def resolve(cparam0: NamedAst.ConstraintParam, ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.ConstraintParam, ResolutionError] = cparam0 match {
-      case NamedAst.ConstraintParam.HeadParam(sym, tpe, loc) => ResolvedAst.ConstraintParam.HeadParam(sym, tpe, loc).toSuccess
-      case NamedAst.ConstraintParam.RuleParam(sym, tpe, loc) => ResolvedAst.ConstraintParam.RuleParam(sym, tpe, loc).toSuccess
+    def resolve(cparam0: NamedAst.ConstraintParam, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.ConstraintParam, ResolutionError] = cparam0 match {
+      case NamedAst.ConstraintParam.HeadParam(sym, tpe0, loc) =>
+        val tpeVal = resolveType(tpe0, taenv, ns0, root)
+        mapN(tpeVal) {
+          case tpe => ResolvedAst.ConstraintParam.HeadParam(sym, tpe, loc)
+        }
+      case NamedAst.ConstraintParam.RuleParam(sym, tpe0, loc) =>
+        val tpeVal = resolveType(tpe0, taenv, ns0, root)
+        mapN(tpeVal) {
+          case tpe => ResolvedAst.ConstraintParam.RuleParam(sym, tpe, loc)
+        }
     }
 
     /**

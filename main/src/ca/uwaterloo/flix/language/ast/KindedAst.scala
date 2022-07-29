@@ -318,9 +318,9 @@ object KindedAst {
 
   object ConstraintParam {
 
-    case class HeadParam(sym: Symbol.VarSym, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.ConstraintParam
+    case class HeadParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends KindedAst.ConstraintParam
 
-    case class RuleParam(sym: Symbol.VarSym, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.ConstraintParam
+    case class RuleParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends KindedAst.ConstraintParam
 
   }
 

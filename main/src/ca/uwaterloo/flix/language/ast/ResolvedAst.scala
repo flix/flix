@@ -333,9 +333,9 @@ object ResolvedAst {
 
   object ConstraintParam {
 
-    case class HeadParam(sym: Symbol.VarSym, tpe: Type.UnkindedVar, loc: SourceLocation) extends ResolvedAst.ConstraintParam
+    case class HeadParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ResolvedAst.ConstraintParam
 
-    case class RuleParam(sym: Symbol.VarSym, tpe: Type.UnkindedVar, loc: SourceLocation) extends ResolvedAst.ConstraintParam
+    case class RuleParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ResolvedAst.ConstraintParam
 
   }
 
