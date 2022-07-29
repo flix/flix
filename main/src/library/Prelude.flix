@@ -124,9 +124,9 @@ pub def print(x: a): Unit & Impure with ToString[a] =
 ///
 /// Converts `x` to a string and prints it to standard out followed by a new line.
 ///
-pub def println(x: a): Unit & Impure with ToString[a] =
-    import static get java.lang.System.out: ##java.io.PrintStream & Impure as getOut;
-    import java.io.PrintStream.println(String): Unit & Impure;
+pub def println(x: a): Unit \ IO with ToString[a] =
+    import static get java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
+    import java.io.PrintStream.println(String): Unit \ IO;
     x |> ToString.toString |> println(getOut())
 
 ///
@@ -175,7 +175,7 @@ pub def space(_: a -> Int32): Int32 = 1
 /// Prints the argument unless it is ().
 ///
 @Internal
-pub def printUnlessUnit(x: a): Unit & Impure with ToString[a] = {
+pub def printUnlessUnit(x: a): Unit \ IO with ToString[a] = {
     match (reifyType a) {
         case ReifiedUnit => ()
         case _ => println(x)
