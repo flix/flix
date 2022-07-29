@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
+import ca.uwaterloo.flix.language.ast.Ast.IntroducedBy
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
 import ca.uwaterloo.flix.language.phase.Kinder
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -50,10 +50,7 @@ sealed trait Type {
     case x: Type.KindedVar => SortedSet(x)
     case Type.Cst(tc, _) => SortedSet.empty
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
-    case Type.Ascribe(tpe, _, _) => tpe.typeVars
     case Type.Alias(_, args, _, _) => args.flatMap(_.typeVars).to(SortedSet)
-    case Type.UnkindedArrow(_, _, _) => SortedSet.empty
-    case Type.ReadWrite(tpe, _) => tpe.typeVars
   }
 
   /**
@@ -80,10 +77,7 @@ sealed trait Type {
     case Type.KindedVar(_, _) => None
     case Type.Cst(tc, _) => Some(tc)
     case Type.Apply(t1, _, _) => t1.typeConstructor
-    case Type.Ascribe(tpe, _, _) => tpe.typeConstructor
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructor
-    case Type.UnkindedArrow(_, _, _) => None
-    case Type.ReadWrite(_, _) => None
   }
 
   /**
@@ -109,10 +103,7 @@ sealed trait Type {
     case Type.KindedVar(_, _) => Nil
     case Type.Cst(tc, _) => tc :: Nil
     case Type.Apply(t1, t2, _) => t1.typeConstructors ::: t2.typeConstructors
-    case Type.Ascribe(tpe, _, _) => tpe.typeConstructors
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructors
-    case Type.UnkindedArrow(_, _, _) => Nil
-    case Type.ReadWrite(_, _) => Nil
   }
 
   /**
@@ -142,10 +133,7 @@ sealed trait Type {
     case tvar: Type.KindedVar => f(tvar)
     case Type.Cst(_, _) => this
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(tpe1.map(f), tpe2.map(f), loc)
-    case Type.Ascribe(tpe, kind, loc) => Type.Ascribe(tpe.map(f), kind, loc)
     case Type.Alias(sym, args, tpe, loc) => Type.Alias(sym, args.map(_.map(f)), tpe.map(f), loc)
-    case Type.UnkindedArrow(_, _, _) => this
-    case Type.ReadWrite(tpe, loc) => Type.ReadWrite(tpe.map(f), loc)
   }
 
   /**
@@ -194,11 +182,8 @@ sealed trait Type {
   def size: Int = this match {
     case Type.KindedVar(_, _) => 1
     case Type.Cst(_, _) => 1
-    case Type.Ascribe(tpe, _, _) => tpe.size
     case Type.Apply(tpe1, tpe2, _) => tpe1.size + tpe2.size + 1
     case Type.Alias(_, _, tpe, _) => tpe.size
-    case Type.UnkindedArrow(_, _, _) => 1
-    case Type.ReadWrite(tpe, _) => tpe.size + 1
   }
 
   /**
@@ -400,19 +385,6 @@ object Type {
   }
 
   /**
-    * Represents a type ascribed with a kind.
-    */
-  @EliminatedBy(Kinder.getClass)
-  case class Ascribe(tpe: Type, kind: Kind, loc: SourceLocation) extends Type with BaseType {
-    override def hashCode(): Int = Objects.hash(tpe, kind)
-
-    override def equals(o: Any): Boolean = o match {
-      case that: Ascribe => this.tpe == that.tpe && this.kind == that.kind
-      case _ => false
-    }
-  }
-
-  /**
     * A type represented by the type constructor `tc`.
     */
   case class Cst(tc: TypeConstructor, loc: SourceLocation) extends Type with BaseType {
@@ -461,30 +433,9 @@ object Type {
   /**
     * A type alias, including the arguments passed to it and the type it represents.
     */
-  case class Alias(cst: AliasConstructor, args: List[Type], tpe: Type, loc: SourceLocation) extends Type with BaseType {
+  case class Alias(cst: Ast.AliasConstructor, args: List[Type], tpe: Type, loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = tpe.kind
   }
-
-  /**
-    * An unkinded arrow, holding a yet-unsplit purity and effect.
-    */
-  @EliminatedBy(Kinder.getClass)
-  case class UnkindedArrow(purAndEff: Ast.PurityAndEffect, arity: Int, loc: SourceLocation) extends Type with BaseType {
-    def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type")
-  }
-
-  /**
-    * A type representing a read or write to a region.
-    */
-  @EliminatedBy(Kinder.getClass)
-  case class ReadWrite(tpe: Type, loc: SourceLocation) extends Type with BaseType {
-    def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type")
-  }
-
-  /**
-    * A constructor for a type alias. (Not a valid type by itself).
-    */
-  case class AliasConstructor(sym: Symbol.TypeAliasSym, loc: SourceLocation)
 
   /////////////////////////////////////////////////////////////////////////////
   // Utility Functions                                                       //
@@ -681,11 +632,6 @@ object Type {
     * Construct the enum type `Sym[ts]`.
     */
   def mkEnum(sym: Symbol.EnumSym, ts: List[Type], loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.KindedEnum(sym, Kind.mkArrow(ts.length)), loc), ts, loc)
-
-  /**
-    * Construct the enum type `Sym[ts]`.
-    */
-  def mkUnkindedEnum(sym: Symbol.EnumSym, ts: List[Type], loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.UnkindedEnum(sym), loc), ts, loc)
 
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
@@ -935,9 +881,6 @@ object Type {
     case Type.Cst(_, _) => t
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Type.Alias(_, _, tpe, _) => eraseAliases(tpe)
-    case Type.Ascribe(tpe, kind, loc) => Type.Ascribe(tpe, kind, loc)
-    case _: Type.UnkindedArrow => t
-    case Type.ReadWrite(tpe, loc) => Type.ReadWrite(eraseAliases(tpe), loc)
   }
 
   /**

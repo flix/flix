@@ -147,15 +147,15 @@ object Resolver {
     /**
       * Gets a list of all type aliases used in the partially resolved type tpe0.
       */
-    def getAliasUses(tpe0: Type): List[Symbol.TypeAliasSym] = tpe0 match {
-      case tvar: Type.Var => tvar.asUnkinded; Nil
-      case Type.Ascribe(tpe, _, _) => getAliasUses(tpe)
-      case Type.Cst(TypeConstructor.UnappliedAlias(sym), _) => sym :: Nil
-      case Type.Cst(_, _) => Nil
-      case Type.Apply(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
-      case _: Type.UnkindedArrow => Nil
-      case Type.ReadWrite(tpe, loc) => getAliasUses(tpe)
-      case _: Type.Alias => throw InternalCompilerException("unexpected applied alias")
+    def getAliasUses(tpe0: UnkindedType): List[Symbol.TypeAliasSym] = tpe0 match {
+      case _: UnkindedType => Nil
+      case UnkindedType.Ascribe(tpe, _, _) => getAliasUses(tpe)
+      case UnkindedType.UnappliedAlias(sym, _) => sym :: Nil
+      case _: UnkindedType.Cst => Nil
+      case UnkindedType.Apply(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
+      case _: UnkindedType.UnkindedArrow => Nil
+      case UnkindedType.ReadWrite(tpe, loc) => getAliasUses(tpe)
+      case _: UnkindedType.Alias => throw InternalCompilerException("unexpected applied alias")
     }
 
     /**
@@ -770,7 +770,7 @@ object Resolver {
                   val freshVar = Symbol.freshVarSym("x" + Flix.Delimiter, BoundBy.FormalParam, loc)
 
                   // Construct the formal parameter for the fresh symbol.
-                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshUnkindedVar(loc), Ast.TypeSource.Inferred, loc)
+                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, UnkindedType.freshVar(loc), Ast.TypeSource.Inferred, loc)
 
                   // Construct a variable expression for the fresh symbol.
                   val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar, loc)
@@ -912,7 +912,7 @@ object Resolver {
 
         case NamedAst.Expression.Ascribe(exp, expectedType, expectedEff, loc) =>
           val expectedTypVal = expectedType match {
-            case None => (None: Option[Type]).toSuccess
+            case None => (None: Option[UnkindedType]).toSuccess
             case Some(t) => mapN(resolveType(t, taenv, ns0, root))(x => Some(x))
           }
           val expectedEffVal = resolvePurityAndEffect(expectedEff, taenv, ns0, root)
@@ -924,7 +924,7 @@ object Resolver {
 
         case NamedAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
           val declaredTypVal = declaredType match {
-            case None => (None: Option[Type]).toSuccess
+            case None => (None: Option[UnkindedType]).toSuccess
             case Some(t) => mapN(resolveType(t, taenv, ns0, root))(x => Some(x))
           }
           val declaredEffVal = resolvePurityAndEffect(declaredEff, taenv, ns0, root)
@@ -1729,30 +1729,30 @@ object Resolver {
     *
     * Type aliases are given temporary placeholders.
     */
-  private def semiResolveType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Type, ResolutionError] = tpe0 match {
+  private def semiResolveType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[UnkindedType, ResolutionError] = tpe0 match {
     case NamedAst.Type.Var(sym, loc) => Type.UnkindedVar(sym, loc).toSuccess
 
     case NamedAst.Type.Unit(loc) => Type.mkUnit(loc).toSuccess
 
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
       // Basic Types
-      case "Unit" => Type.mkUnit(loc).toSuccess
-      case "Null" => Type.mkNull(loc).toSuccess
-      case "Bool" => Type.mkBool(loc).toSuccess
-      case "Char" => Type.mkChar(loc).toSuccess
-      case "Float32" => Type.mkFloat32(loc).toSuccess
-      case "Float64" => Type.mkFloat64(loc).toSuccess
-      case "Int8" => Type.mkInt8(loc).toSuccess
-      case "Int16" => Type.mkInt16(loc).toSuccess
-      case "Int32" => Type.mkInt32(loc).toSuccess
-      case "Int64" => Type.mkInt64(loc).toSuccess
-      case "BigInt" => Type.mkBigInt(loc).toSuccess
-      case "String" => Type.mkString(loc).toSuccess
-      case "Channel" => Type.mkChannel(loc).toSuccess
-      case "Lazy" => Type.mkLazy(loc).toSuccess
-      case "Array" => Type.Cst(TypeConstructor.Array, loc).toSuccess
-      case "Ref" => Type.Cst(TypeConstructor.Ref, loc).toSuccess
-      case "Region" => Type.Cst(TypeConstructor.Region, loc).toSuccess
+      case "Unit" => UnkindedType.Cst(TypeConstructor.Unit, loc).toSuccess
+      case "Null" => UnkindedType.Cst(TypeConstructor.Null, loc).toSuccess
+      case "Bool" => UnkindedType.Cst(TypeConstructor.Bool, loc).toSuccess
+      case "Char" => UnkindedType.Cst(TypeConstructor.Char, loc).toSuccess
+      case "Float32" => UnkindedType.Cst(TypeConstructor.Float32, loc).toSuccess
+      case "Float64" => UnkindedType.Cst(TypeConstructor.Float64, loc).toSuccess
+      case "Int8" => UnkindedType.Cst(TypeConstructor.Int8, loc).toSuccess
+      case "Int16" => UnkindedType.Cst(TypeConstructor.Int16, loc).toSuccess
+      case "Int32" => UnkindedType.Cst(TypeConstructor.Int32, loc).toSuccess
+      case "Int64" => UnkindedType.Cst(TypeConstructor.Int64, loc).toSuccess
+      case "BigInt" => UnkindedType.Cst(TypeConstructor.BigInt, loc).toSuccess
+      case "String" => UnkindedType.Cst(TypeConstructor.Str, loc).toSuccess
+      case "Channel" => UnkindedType.Cst(TypeConstructor.Channel, loc).toSuccess
+      case "Lazy" => UnkindedType.Cst(TypeConstructor.Lazy, loc).toSuccess
+      case "Array" => UnkindedType.Cst(TypeConstructor.Array, loc).toSuccess
+      case "Ref" => UnkindedType.Cst(TypeConstructor.Ref, loc).toSuccess
+      case "Region" => UnkindedType.Cst(TypeConstructor.Region, loc).toSuccess
 
       // Disambiguate type.
       case typeName =>
@@ -1782,8 +1782,7 @@ object Resolver {
         elms => Type.mkTuple(elms, loc)
       }
 
-    case NamedAst.Type.RecordRowEmpty(loc) =>
-      Type.mkRecordRowEmpty(loc).toSuccess
+    case NamedAst.Type.RecordRowEmpty(loc) => UnkindedType.Cst(TypeConstructor.RecordRowEmpty, loc).toSuccess
 
     case NamedAst.Type.RecordRowExtend(field, value, rest, loc) =>
       val vVal = semiResolveType(value, ns0, root)
@@ -1798,8 +1797,7 @@ object Resolver {
         r => Type.mkRecord(r, loc)
       }
 
-    case NamedAst.Type.SchemaRowEmpty(loc) =>
-      Type.mkSchemaRowEmpty(loc).toSuccess
+    case NamedAst.Type.SchemaRowEmpty(loc) => UnkindedType.Cst(TypeConstructor.SchemaRowEmpty, loc).toSuccess
 
     case NamedAst.Type.SchemaRowExtendWithAlias(qname, targs, rest, loc) =>
       // Lookup the type alias.
@@ -1848,10 +1846,10 @@ object Resolver {
 
     case NamedAst.Type.Native(fqn, loc) =>
       fqn match {
-        case "java.math.BigInteger" => Type.mkBigInt(loc).toSuccess
-        case "java.lang.String" => Type.mkString(loc).toSuccess
+        case "java.math.BigInteger" => UnkindedType.Cst(TypeConstructor.BigInt, loc).toSuccess
+        case "java.lang.String" => UnkindedType.Cst(TypeConstructor.Str, loc).toSuccess
         case _ => lookupJvmClass(fqn, loc) map {
-          case clazz => Type.mkNative(clazz, loc)
+          case clazz => UnkindedType.Cst(TypeConstructor.Native(clazz), loc)
         }
       }
 
@@ -1867,14 +1865,12 @@ object Resolver {
       val tpe1Val = semiResolveType(base0, ns0, root)
       val tpe2Val = semiResolveType(targ0, ns0, root)
       mapN(tpe1Val, tpe2Val) {
-        case (tpe1, tpe2) => Type.Apply(tpe1, tpe2, loc)
+        case (tpe1, tpe2) => UnkindedType.Apply(tpe1, tpe2, loc)
       }
 
-    case NamedAst.Type.True(loc) =>
-      Type.mkTrue(loc).toSuccess
+    case NamedAst.Type.True(loc) => UnkindedType.Cst(TypeConstructor.True, loc).toSuccess
 
-    case NamedAst.Type.False(loc) =>
-      Type.mkFalse(loc).toSuccess
+    case NamedAst.Type.False(loc) => UnkindedType.Cst(TypeConstructor.False, loc).toSuccess
 
     case NamedAst.Type.Not(tpe, loc) =>
       mapN(semiResolveType(tpe, ns0, root)) {
@@ -1908,19 +1904,19 @@ object Resolver {
 
     case NamedAst.Type.Read(tpe, loc) =>
       mapN(semiResolveType(tpe, ns0, root)) {
-        case t => Type.ReadWrite(t, loc)
+        case t => UnkindedType.ReadWrite(t, loc)
       }
 
     case NamedAst.Type.Write(tpe, loc) =>
       mapN(semiResolveType(tpe, ns0, root)) {
-        case t => Type.ReadWrite(t, loc)
+        case t => UnkindedType.ReadWrite(t, loc)
       }
 
-    case NamedAst.Type.Empty(loc) => Type.Cst(TypeConstructor.Empty, loc).toSuccess
+    case NamedAst.Type.Empty(loc) => UnkindedType.Cst(TypeConstructor.Empty, loc).toSuccess
 
     case NamedAst.Type.Ascribe(tpe, kind, loc) =>
       mapN(semiResolveType(tpe, ns0, root)) {
-        t => Type.Ascribe(t, kind, loc)
+        t => UnkindedType.Ascribe(t, kind, loc)
       }
 
   }
@@ -1930,7 +1926,7 @@ object Resolver {
     *
     * Replaces type alias placeholders with the real type aliases.
     */
-  private def finishResolveType(tpe0: Type, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]): Validation[Type, ResolutionError] = {
+  private def finishResolveType(tpe0: UnkindedType, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]): Validation[UnkindedType, ResolutionError] = {
 
     /**
       * Performs beta-reduction on the given type alias.
@@ -1982,7 +1978,7 @@ object Resolver {
   /**
     * Performs name resolution on the given type `tpe0` in the given namespace `ns0`.
     */
-  def resolveType(tpe0: NamedAst.Type, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Type, ResolutionError] = {
+  def resolveType(tpe0: NamedAst.Type, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[UnkindedType, ResolutionError] = {
     val tVal = semiResolveType(tpe0, ns0, root)
     flatMapN(tVal) {
       t => finishResolveType(t, taenv)
@@ -1992,31 +1988,31 @@ object Resolver {
   /**
     * Partially resolves the given purity and effect.
     */
-  private def semiResolvePurityAndEffect(purAndEff0: NamedAst.PurityAndEffect, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Ast.PurityAndEffect, ResolutionError] = purAndEff0 match {
+  private def semiResolvePurityAndEffect(purAndEff0: NamedAst.PurityAndEffect, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[UnkindedType.PurityAndEffect, ResolutionError] = purAndEff0 match {
     case NamedAst.PurityAndEffect(pur0, eff0) =>
       val purVal = traverse(pur0)(semiResolveType(_, ns0, root)).map(_.headOption)
       val effVal = traverse(eff0)(effs => traverse(effs)(semiResolveType(_, ns0, root))).map(_.headOption)
       mapN(purVal, effVal) {
-        case (pur, eff) => Ast.PurityAndEffect(pur, eff)
+        case (pur, eff) => UnkindedType.PurityAndEffect(pur, eff)
       }
   }
 
   /**
     * Finishes resolution of the given purity and effect.
     */
-  private def finishResolvePurityAndEffect(purAndEff0: Ast.PurityAndEffect, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]): Validation[Ast.PurityAndEffect, ResolutionError] = purAndEff0 match {
-    case Ast.PurityAndEffect(pur0, eff0) =>
+  private def finishResolvePurityAndEffect(purAndEff0: UnkindedType.PurityAndEffect, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]): Validation[UnkindedType.PurityAndEffect, ResolutionError] = purAndEff0 match {
+    case UnkindedType.PurityAndEffect(pur0, eff0) =>
       val purVal = traverse(pur0)(finishResolveType(_, taenv)).map(_.headOption)
       val effVal = traverse(eff0)(effs => traverse(effs)(finishResolveType(_, taenv))).map(_.headOption)
       mapN(purVal, effVal) {
-        case (pur, eff) => Ast.PurityAndEffect(pur, eff)
+        case (pur, eff) => UnkindedType.PurityAndEffect(pur, eff)
       }
   }
 
   /**
     * Performs name resolution on the given purity and effect `purAndEff0` in the given namespace `ns0`.
     */
-  private def resolvePurityAndEffect(purAndEff0: NamedAst.PurityAndEffect, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Ast.PurityAndEffect, ResolutionError] = {
+  private def resolvePurityAndEffect(purAndEff0: NamedAst.PurityAndEffect, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[UnkindedType.PurityAndEffect, ResolutionError] = {
     flatMapN(semiResolvePurityAndEffect(purAndEff0, ns0, root)) {
       case purAndEff => finishResolvePurityAndEffect(purAndEff, taenv)
     }
@@ -2352,7 +2348,7 @@ object Resolver {
     *
     * Otherwise fails with a resolution error.
     */
-  private def getEnumTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[Type, ResolutionError] =
+  private def getEnumTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[UnkindedType, ResolutionError] =
     getEnumIfAccessible(enum0, ns0, loc) map {
       case enum => mkUnkindedEnum(enum.sym, loc)
     }
@@ -2393,7 +2389,7 @@ object Resolver {
     *
     * Otherwise fails with a resolution error.
     */
-  private def getTypeAliasTypeIfAccessible(alia0: NamedAst.TypeAlias, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[Type, ResolutionError] = {
+  private def getTypeAliasTypeIfAccessible(alia0: NamedAst.TypeAlias, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[UnkindedType, ResolutionError] = {
     getTypeAliasIfAccessible(alia0, ns0, loc) map {
       alias => mkUnappliedTypeAlias(alias.sym, loc)
     }
@@ -2435,7 +2431,7 @@ object Resolver {
     *
     * Otherwise fails with a resolution error.
     */
-  private def getEffectTypeIfAccessible(eff0: NamedAst.Effect, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[Type, ResolutionError] = {
+  private def getEffectTypeIfAccessible(eff0: NamedAst.Effect, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[UnkindedType, ResolutionError] = {
     getEffectIfAccessible(eff0, ns0, loc) map {
       alias => mkEffect(alias.sym, loc)
     }
@@ -2456,7 +2452,7 @@ object Resolver {
   /**
     * Returns the constructor reflection object for the given `className` and `signature`.
     */
-  private def lookupJvmConstructor(className: String, signature: List[Type], loc: SourceLocation)(implicit flix: Flix): Validation[Constructor[_], ResolutionError] = {
+  private def lookupJvmConstructor(className: String, signature: List[UnkindedType], loc: SourceLocation)(implicit flix: Flix): Validation[Constructor[_], ResolutionError] = {
     // Lookup the class and signature.
     flatMapN(lookupJvmClass(className, loc), lookupSignature(signature, loc)) {
       case (clazz, sig) => try {
@@ -2535,7 +2531,7 @@ object Resolver {
   /**
     * Performs name resolution on the given `signature`.
     */
-  private def lookupSignature(signature: List[Type], loc: SourceLocation)(implicit flix: Flix): Validation[List[Class[_]], ResolutionError] = {
+  private def lookupSignature(signature: List[UnkindedType], loc: SourceLocation)(implicit flix: Flix): Validation[List[Class[_]], ResolutionError] = {
     traverse(signature)(getJVMType(_, loc))
   }
 
@@ -2618,7 +2614,7 @@ object Resolver {
   /**
     * Construct the enum type constructor for the given symbol `sym` with the given kind `k`.
     */
-  def mkUnkindedEnum(sym: Symbol.EnumSym, loc: SourceLocation): Type = Type.Cst(TypeConstructor.UnkindedEnum(sym), loc)
+  def mkUnkindedEnum(sym: Symbol.EnumSym, loc: SourceLocation): UnkindedType = UnkindedType.Enum(sym, loc)
 
   /**
     * Construct the enum type `Sym[ts]`.
@@ -2631,12 +2627,12 @@ object Resolver {
   /**
     * Construct the type alias type constructor for the given symbol `sym` with the given kind `k`.
     */
-  def mkUnappliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation): Type = Type.Cst(TypeConstructor.UnappliedAlias(sym), loc)
+  def mkUnappliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation): Type = UnkindedType.UnappliedAlias(sym, loc)
 
   /**
     * Construct the effect type for the given symbol.
     */
-  def mkEffect(sym: Symbol.EffectSym, loc: SourceLocation): Type = Type.Cst(TypeConstructor.Effect(sym), loc)
+  def mkEffect(sym: Symbol.EffectSym, loc: SourceLocation): UnkindedType = UnkindedType.Cst(TypeConstructor.Effect(sym), loc)
 
   /**
     * Constructs a predicate type.

@@ -113,7 +113,8 @@ object ResolvedAst {
 
     case class LetRec(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Region(tpe: UnkindedType, loc: SourceLocation) extends ResolvedAst.Expression
+    // MATT why was this a full type
+    case class Region(tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Scope(sym: Symbol.VarSym, regionVar: Symbol.UnkindedTypeVarSym, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
