@@ -1433,4 +1433,5 @@ class TestTyper extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.GeneralizationError](result)
   }
+
 }
