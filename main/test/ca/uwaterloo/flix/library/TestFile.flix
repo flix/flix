@@ -26,7 +26,7 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testAccessTime01(): Bool \ IO =
+    def testAccessTime01(): Bool & Impure =
         Result.isOk(accessTime("README.md"))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -34,7 +34,7 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testCreationTime01(): Bool \ IO =
+    def testCreationTime01(): Bool & Impure =
         Result.isOk(creationTime("README.md"))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -42,7 +42,7 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testModificationTime01(): Bool \ IO =
+    def testModificationTime01(): Bool & Impure =
         Result.isOk(modificationTime("README.md"))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -50,7 +50,7 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testSize01(): Bool \ IO =
+    def testSize01(): Bool & Impure =
         Result.isOk(size("README.md"))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -58,11 +58,11 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testStat01(): Bool \ IO =
+    def testStat01(): Bool & Impure =
         Result.isOk(stat("README.md"))
 
     @test
-    def testStat02(): Bool \ IO =
+    def testStat02(): Bool & Impure =
         match stat("README.md") {
             case Ok(v) => v.fileType == File/FileType.File
             case _ => false
@@ -73,11 +73,11 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testExists01(): Bool \ IO =
+    def testExists01(): Bool & Impure =
         exists("./README.md") == Ok(true)
 
     @test
-    def testExists02(): Bool \ IO =
+    def testExists02(): Bool & Impure =
         exists("./fakeREADME.md") == Ok(false)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -85,11 +85,11 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testIsDirectory01(): Bool \ IO =
+    def testIsDirectory01(): Bool & Impure =
         isDirectory("./main/test/ca/uwaterloo/flix/library") == Ok(true)
 
     @test
-    def testIsDirectory02(): Bool \ IO =
+    def testIsDirectory02(): Bool & Impure =
         isDirectory("./README.md") == Ok(false)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -97,11 +97,11 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testIsRegularFile01(): Bool \ IO =
+    def testIsRegularFile01(): Bool & Impure =
         isRegularFile("./main/test/ca/uwaterloo/flix/library") == Ok(false)
 
     @test
-    def testIsRegularFile02(): Bool \ IO =
+    def testIsRegularFile02(): Bool & Impure =
         isRegularFile("./README.md") == Ok(true)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -109,11 +109,11 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testIsReadable01(): Bool \ IO =
+    def testIsReadable01(): Bool & Impure =
         isReadable("./README.md") == Ok(true)
 
     @test
-    def testIsReadable02(): Bool \ IO =
+    def testIsReadable02(): Bool & Impure =
         isReadable("./fakeREADME.md") == Ok(false)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -121,7 +121,7 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testIsSymbolicLink(): Bool \ IO =
+    def testIsSymbolicLink(): Bool & Impure =
         isSymbolicLink("./README.md") == Ok(false)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -129,11 +129,11 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testIsWritable01(): Bool \ IO =
+    def testIsWritable01(): Bool & Impure =
         isWritable("./README.md") == Ok(true)
 
     @test
-    def testIsWritable02(): Bool \ IO =
+    def testIsWritable02(): Bool & Impure =
         isWritable("./fakeREADME.md") == Ok(false)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -141,7 +141,7 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testIsExecutable(): Bool \ IO =
+    def testIsExecutable(): Bool & Impure =
         isExecutable("./fakeREADME.md") == Ok(false)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -149,7 +149,7 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadLines01(): Bool \ IO =
+    def testReadLines01(): Bool & Impure =
         Result.isOk(readLines("./LICENSE.md"))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -157,7 +157,7 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadLinesWith01(): Bool \ IO =
+    def testReadLinesWith01(): Bool & Impure =
         Result.isOk(readLinesWith({charSet = "UTF8"}, "./LICENSE.md"))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -165,7 +165,7 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testRead01(): Bool \ IO =
+    def testRead01(): Bool & Impure =
         Result.isOk(read("./LICENSE.md"))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -173,11 +173,11 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadWith01(): Bool \ IO =
+    def testReadWith01(): Bool & Impure =
         Result.isOk(readWith({offset = 2i64, count = 2, charSet = "UTF8"}, "./LICENSE.md"))
 
     @test
-    def testReadWith02(): Bool \ IO =
+    def testReadWith02(): Bool & Impure =
         readWith({offset = 2i64, count = 2, charSet = "US-ASCII"}, "./LICENSE.md") == Ok("ac")
 
     /////////////////////////////////////////////////////////////////////////////
@@ -185,13 +185,13 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadLinesIter01(): Bool \ IO =
+    def testReadLinesIter01(): Bool & Impure =
         match readLinesIter("./LICENSE.md") {
             case Iterator(_, next) => Result.isOk(next())
         }
 
     @test
-    def testReadLinesIter02(): Bool \ IO =
+    def testReadLinesIter02(): Bool & Impure =
         match readLinesIter("./LICENSE.md") {
             case Iterator(done, _) => done() == false
         }
@@ -201,7 +201,7 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadLinesIterWithWith01(): Bool \ IO =
+    def testReadLinesIterWithWith01(): Bool & Impure =
         match readLinesIterWith({charSet = "utf8"}, "./LICENSE.md") {
             case Iterator(_, next) => Result.isOk(next())
         }
@@ -211,7 +211,7 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadBytes01(): Bool \ IO =
+    def testReadBytes01(): Bool & Impure =
         Result.isOk(readBytes("./LICENSE.md"))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -219,11 +219,11 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadBytesWith01(): Bool \ IO =
+    def testReadBytesWith01(): Bool & Impure =
         Result.isOk(readBytesWith({offset = 2i64, count = 2}, "./LICENSE.md"))
 
     @test
-    def testReadBytesWith02(): Bool \ IO =
+    def testReadBytesWith02(): Bool & Impure =
         match readBytesWith({offset = 2i64, count = 2}, "./LICENSE.md") {
             case Ok(v) => v.length == 2
             case _ => false
@@ -234,13 +234,13 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadChunks01(): Bool \ IO =
+    def testReadChunks01(): Bool & Impure =
         match readChunks("./LICENSE.md", 2) {
             case Iterator(_, next) => Result.isOk(next())
         }
 
     @test
-    def testReadChunks02(): Bool \ IO =
+    def testReadChunks02(): Bool & Impure =
         match readChunks("./LICENSE.md", 2) {
             case Iterator(done, _) => done() == false
         }
