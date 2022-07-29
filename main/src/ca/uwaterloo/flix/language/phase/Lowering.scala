@@ -624,9 +624,9 @@ object Lowering {
         * @param e0
         * @return
         */
-      def parallelize(e0: Expression): Expression = e0 match {
-        case Expression.Apply(exp, exps, tpe, pur, eff, loc) =>
-          Expression.Apply(parallelize(exp), exps.map(parallelize), tpe, pur, eff, loc)
+      def parallelize(e0: Expression, continue: Boolean = true): Expression = e0 match {
+        case Expression.Apply(exp, exps, tpe, pur, eff, loc) if continue =>
+          Expression.Apply(parallelize(exp), exps.map(parallelize(_, continue = false)), tpe, pur, eff, loc)
         case e1 =>
           mkLetCont("chan", mkChannel(e1)) {
             sym =>
