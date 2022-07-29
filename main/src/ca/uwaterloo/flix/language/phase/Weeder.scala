@@ -839,7 +839,7 @@ object Weeder {
           WeededAst.Expression.LetRec(ident, mod, lambda, e2, loc)
       }
 
-    case ParsedAst.Expression.LetImport(sp1, impl, sp2, exp2) =>
+    case ParsedAst.Expression.LetImport(sp1, impl, spIntermediate, exp2, sp2) =>
       val loc = mkSL(sp1, sp2)
 
       //
@@ -900,7 +900,7 @@ object Weeder {
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2, senv)) {
             case ((className, methodName), e2) =>
               // Compute the name of the let-bound variable.
-              val ident = identOpt.getOrElse(Name.Ident(sp1, methodName, sp2))
+              val ident = identOpt.getOrElse(Name.Ident(sp1, methodName, spIntermediate))
 
               val receiverType = WeededAst.Type.Native(className, loc)
 
@@ -2954,7 +2954,7 @@ object Weeder {
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _) => sp1
-    case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.LetImport(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.NewObject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Static(sp1, _) => sp1
     case ParsedAst.Expression.Scope(sp1, _, _, _) => sp1
