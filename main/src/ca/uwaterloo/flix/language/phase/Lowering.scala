@@ -600,7 +600,7 @@ object Lowering {
         Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), e, e1, e1.tpe, Type.mkAnd(e.pur, e1.pur, loc), Type.mkUnion(e.eff, e1.eff, loc), loc)
       }
 
-      def mkStmCont(e: Expression)(e1: Expression): Expression = {
+      def mkStm(e: Expression)(e1: Expression): Expression = {
         val loc = e.loc.asSynthetic
         Expression.Stm(e, e1, e1.tpe, Type.mkAnd(e.pur, e1.pur, loc), Type.mkUnion(e.pur, e1.pur, loc), loc)
       }
@@ -611,7 +611,7 @@ object Lowering {
         case e1 =>
           mkLetCont("chan", mkChannel(e1)) {
             sym =>
-              mkStmCont(mkSpawn(sym, e1)) {
+              mkStm(mkSpawn(sym, e1)) {
                 mkWait(sym, e1.tpe)
               }
           }
@@ -625,9 +625,8 @@ object Lowering {
 
       def collectEffects(e0: Expression): List[Type] = e0 match {
         case Expression.Apply(exp, exps, _, _, eff, _) =>
-          eff :: collectPurities(exp) ::: exps.flatMap(collectPurities)
-        case e1 =>
-          e1.eff :: Nil
+          eff :: collectEffects(exp) ::: exps.flatMap(collectEffects)
+        case e1 => e1.eff :: Nil
       }
 
       def collectExps(e0: Expression): (List[Expression => Expression], List[Expression], List[Expression]) = e0 match {
@@ -670,7 +669,7 @@ object Lowering {
       val waits1 = waits.reduceLeft({
         case (left, right) =>
           val rloc = right.loc.asSynthetic
-          Expression.Apply(left, right :: Nil, Type.mkApply(left.tpe, List(right.tpe), rloc),
+          Expression.Apply(left, right :: Nil, Type.mkApply(left.tpe, right.tpe :: Nil, rloc),
             Type.mkAnd(left.pur, right.pur, rloc),
             Type.mkUnion(left.eff, right.eff, rloc),
             rloc)
@@ -679,7 +678,7 @@ object Lowering {
       val reorderedApp = chans1(spawns1(waits1))
       val purs = Some(Type.mkAnd(collectPurities(app), app.loc.asSynthetic))
       val effs = Some(Type.mkUnion(collectEffects(app), app.loc.asSynthetic))
-      Expression.Cast(reorderedApp, None, purs, effs, tpe, pur, eff, loc0.asSynthetic)
+      Expression.Cast(reorderedApp, None, purs, effs, reorderedApp.tpe, reorderedApp.pur, reorderedApp.eff, loc0.asSynthetic)
     }
 
     case Expression.Par(_, _) =>
