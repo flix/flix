@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.tools._
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util._
 
-import java.io.{File, PrintWriter}
+import java.io.File
 import java.net.BindException
 import java.nio.file.Paths
 
@@ -55,7 +55,7 @@ object Main {
     var options = Options.Default.copy(
       lib = cmdOpts.xlib,
       debug = cmdOpts.xdebug,
-      documentor = cmdOpts.documentor,
+      documentor = false,
       entryPoint = entryPoint,
       explain = cmdOpts.explain,
       json = cmdOpts.json,
@@ -174,56 +174,55 @@ object Main {
           shell.loop()
           System.exit(0)
 
-        case Command.None => ??? // MATT
+        case Command.None => // TODO pull into helper
+          // configure Flix and add the paths.
+          val flix = new Flix()
+          flix.setOptions(options)
+          for (file <- cmdOpts.files) {
+            val ext = file.getName.split('.').last
+            ext match {
+              case "flix" => flix.addSourcePath(file.toPath)
+              case "fpkg" => flix.addSourcePath(file.toPath)
+              case "jar" => flix.addJar(file.toPath)
+              case _ =>
+                Console.println(s"Unrecognized file extension: '$ext'.")
+                System.exit(1)
+            }
+          }
+          if (Formatter.hasColorSupport)
+            flix.setFormatter(AnsiTerminalFormatter)
+
+          // evaluate main.
+          val timer = new Timer(flix.compile())
+          timer.getResult match {
+            case Validation.Success(compilationResult) =>
+
+              compilationResult.getMain match {
+                case None => // nop
+                case Some(m) =>
+                  // Compute the arguments to be passed to main.
+                  val args: Array[String] = cmdOpts.args match {
+                    case None => Array.empty
+                    case Some(a) => a.split(" ")
+                  }
+                  // Invoke main with the supplied arguments.
+                  m(args)
+
+                  // Exit.
+                  System.exit(0)
+              }
+
+            case Validation.Failure(errors) =>
+              flix.mkMessages(errors.sortBy(_.source.name))
+                .foreach(println)
+              println()
+              println(s"Compilation failed with ${errors.length} error(s).")
+              System.exit(1)
+          }
       }
     } catch {
       case ex: RuntimeException =>
         Console.println(ex.getMessage)
-        System.exit(1)
-    }
-
-    // configure Flix and add the paths.
-    val flix = new Flix()
-    flix.setOptions(options)
-    for (file <- cmdOpts.files) {
-      val ext = file.getName.split('.').last
-      ext match {
-        case "flix" => flix.addSourcePath(file.toPath)
-        case "fpkg" => flix.addSourcePath(file.toPath)
-        case "jar" => flix.addJar(file.toPath)
-        case _ =>
-          Console.println(s"Unrecognized file extension: '$ext'.")
-          System.exit(1)
-      }
-    }
-    if (Formatter.hasColorSupport)
-      flix.setFormatter(AnsiTerminalFormatter)
-
-    // evaluate main.
-    val timer = new Timer(flix.compile())
-    timer.getResult match {
-      case Validation.Success(compilationResult) =>
-
-        compilationResult.getMain match {
-          case None => // nop
-          case Some(m) =>
-            // Compute the arguments to be passed to main.
-            val args: Array[String] = cmdOpts.args match {
-              case None => Array.empty
-              case Some(a) => a.split(" ")
-            }
-            // Invoke main with the supplied arguments.
-            m(args)
-
-            // Exit.
-            System.exit(0)
-        }
-
-      case Validation.Failure(errors) =>
-        flix.mkMessages(errors.sortBy(_.source.name))
-          .foreach(println)
-        println()
-        println(s"Compilation failed with ${errors.length} error(s).")
         System.exit(1)
     }
   }
@@ -287,11 +286,11 @@ object Main {
 
     case object Doc extends Command
 
-//    case object Help extends Command // MATT
+    //    case object Help extends Command // MATT
 
     case class Lsp(port: Int) extends Command
 
-//    case object Version extends Command // MATT
+    //    case object Version extends Command // MATT
 
     case object XBenchmarkCodeSize extends Command
 
