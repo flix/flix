@@ -248,7 +248,7 @@ namespace TestRedBlackTree {
         m == Map#{2 => 1, 5 => 20, 11 => 2, 8 => 16}
 
     @test
-    def mapWithKey06(): Bool \ IO =
+    def mapWithKey06(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(Static);
@@ -376,18 +376,20 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool \ IO =
-        let r = ref 21;
+    def foreach01(): Bool = region r {
+        let x = ref 21 @ r;
         let Map(t) = Map#{};
-        RedBlackTree.foreach((k, _) -> r := k, t);
-        21 == deref r
+        RedBlackTree.foreach((k, _) -> x := k, t);
+        21 == deref x
+    }
 
     @test
-    def foreach02(): Bool \ IO =
-        let r = ref 21;
+    def foreach02(): Bool = region r {
+        let x = ref 21 @ r;
         let Map(t) = Map#{1 => "Hello World!"};
-        RedBlackTree.foreach((k, _) -> r := k, t);
-        1 == deref r
+        RedBlackTree.foreach((k, _) -> x := k, t);
+        1 == deref x
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // foldMapWithKey                                                          //
