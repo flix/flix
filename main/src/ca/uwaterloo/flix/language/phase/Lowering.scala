@@ -561,30 +561,6 @@ object Lowering {
       Expression.Spawn(e, t, pur, eff, loc)
 
     case Expression.Par(Expression.Apply(exp, exps, tpe, pur, eff, loc1), loc0) => {
-      /*
-      {
-        let ch1 = channel 1;
-        let ch2 = channel 1;
-        let ch3 = channel 1;
-        ...
-        let chn = channel 1;
-
-        spawn ch1 <- exp1;
-        spawn ch2 <- exp2;
-        spawn ch3 <- exp3;
-        ...
-        spawn chn <- expn;
-
-        let tmp1 = <- ch1;
-        let tmp2 = <- ch2;
-        let tmp3 = <- ch3;
-        ...
-        let tmpn = <- chn;
-
-        (tmp1)(tmp2, tmp3, ..., tmpn) // these last two is a Let(tpmn = <- chn, apply) expression.
-      } as & *the effect of tmp1 to tmpn*
-       */
-
 
       def mkChannel(e: Expression): Expression = {
         val loc = e.loc.asSynthetic
@@ -605,7 +581,8 @@ object Lowering {
         Expression.Var(sym, tpe, loc)
       }
 
-      def mkWait(chan: Expression, tpe: Type): Expression = {
+      def mkWait(sym: Symbol.VarSym, tpe: Type): Expression = {
+        val chan = mkVarExp(sym, tpe, sym.loc.asSynthetic)
         Expression.GetChannel(chan, tpe, Type.Impure, chan.eff, chan.loc.asSynthetic)
       }
 
@@ -614,100 +591,73 @@ object Lowering {
         Symbol.freshVarSym(name, BoundBy.Let, e.loc.asSynthetic)
       }
 
-      def mkLetCont(prefix: String, e: Expression): (Symbol.VarSym, Expression => Expression) = {
+      def mkLetCont(prefix: String, e: Expression)(f: Symbol.VarSym => Expression): Expression = {
         val sym = mkLetSym(prefix, e)
         val loc = e.loc.asSynthetic
-        (sym, e1 =>
-          Expression.Let(sym,
-            Modifiers(List(Ast.Modifier.Synthetic)),
-            e,
-            e1,
-            e1.tpe,
-            Type.mkAnd(e.pur, e1.pur, loc),
-            Type.mkUnion(e.eff, e1.eff, loc),
-            loc))
+        val e1 = f(sym)
+        Expression.Let(sym,
+          Modifiers(List(Ast.Modifier.Synthetic)),
+          e,
+          e1,
+          e1.tpe,
+          Type.mkAnd(e.pur, e1.pur, loc),
+          Type.mkUnion(e.eff, e1.eff, loc),
+          loc)
       }
 
-      def mkStmCont(e: Expression): Expression => Expression = {
+      def mkStmCont(e: Expression)(f: () => Expression): Expression = {
         val loc = e.loc.asSynthetic
-        e1: Expression =>
-          Expression.Stm(
-            e,
-            e1,
-            e1.tpe,
-            Type.mkAnd(e.pur, e1.pur, loc),
-            Type.mkUnion(e.pur, e1.pur, loc),
-            loc
-          )
+        val e1 = f()
+        Expression.Stm(
+          e,
+          e1,
+          e1.tpe,
+          Type.mkAnd(e.pur, e1.pur, loc),
+          Type.mkUnion(e.pur, e1.pur, loc),
+          loc
+        )
       }
 
-      def nextType(f: Expression): (Type, Type, Type) = f.tpe.typeConstructor match {
-        case Some(TypeConstructor.Arrow(_)) =>
-          val last = f.tpe.typeArguments.last
-          last.typeConstructor match {
-            case Some(TypeConstructor.Arrow(_)) =>
-              val tpeArgs = last.typeArguments.init
-              val tpe = tpeArgs.drop(2).head
-              val pur = tpeArgs.head
-              val eff = tpeArgs.drop(1).head
-              (tpe, pur, eff)
-
-            case _ =>
-              val tpeArgs = f.tpe.typeArguments
-              val tpe = tpeArgs.last
-              val pur = tpeArgs.head
-              val eff = tpeArgs.drop(1).head
-              (tpe, pur, eff)
-
+      /**
+        *
+        *
+        * @param e0
+        * @return
+        */
+      def parallelize(e0: Expression): Expression = e0 match {
+        case Expression.Apply(exp, exps, tpe, pur, eff, loc) =>
+          Expression.Apply(parallelize(exp), exps.map(parallelize), tpe, pur, eff, loc)
+        case e1 =>
+          mkLetCont("chan", mkChannel(e1)) {
+            sym =>
+              mkStmCont(mkSpawn(sym, e1)) {
+                () => mkWait(sym, e1.tpe)
+              }
           }
-
-        case _ => throw InternalCompilerException("Unexpected Type Constructor. Expected Arrow.")
       }
 
-      def curryApply(e: Expression): Expression = e match {
-        case Expression.Apply(exp, exps, _, _, _, _) =>
-          exps.foldLeft(exp) {
-            case (left, arg) =>
-              val (nxtTpe, nxtPur, nxtEff) = nextType(left)
-              Expression.Apply(left, arg :: Nil, nxtTpe, nxtPur, nxtEff, arg.loc)
-          }
-        case _ => throw InternalCompilerException("Unexpected Expression. Expected Apply.")
+      def collectPurities(e0: Expression): List[Type] = e0 match {
+        case Expression.Apply(exp, exps, _, pur, _, _) =>
+          pur :: collectPurities(exp) ::: exps.flatMap(collectPurities)
+        case e1 => e1.pur :: Nil
       }
 
-      val funLoc = loc1.asSynthetic
-      val parLoc = loc0.asSynthetic
+      def collectEffects(e0: Expression): List[Type] = e0 match {
+        case Expression.Apply(exp, exps, _, _, eff, _) =>
+          eff :: collectPurities(exp) ::: exps.flatMap(collectPurities)
+        case e1 =>
+          e1.eff :: Nil
+      }
+
+
       val fun = visitExp(exp)
       val args = visitExps(exps)
 
-      // Create channels
-      val (funChanSym, funChan) = mkLetCont("chan", mkChannel(fun))
-      val chanStart = (List(funChanSym), funChan)
-      val (chanSyms, chans) = args.foldLeft(chanStart) {
-        case ((syms, bindings), e1) =>
-          val (s, c) = mkLetCont("chan", mkChannel(e1))
-          (syms ::: List(s), e => bindings(c(e)))
-      }
-
-      // Spawn expressions into channels
-      val spawnStart = mkStmCont(mkSpawn(funChanSym, fun))
-      val spawns = chanSyms.tail.zip(args).foldLeft(spawnStart) {
-        case (spawnCont, (chan, e)) =>
-          e1 => spawnCont(mkStmCont(mkSpawn(chan, e))(e1))
-      }
-
-      // Wait for message in channels
-      val applyCont = (es: List[Expression]) => Expression.Apply(mkWait(mkVarExp(funChanSym, fun.tpe, fun.loc.asSynthetic), fun.tpe), es, fun.tpe, fun.pur, fun.eff, fun.loc.asSynthetic)
-      val applyExp = chanSyms.tail.zip(args).foldLeft(applyCont) {
-        case (app, (chanSym, e0)) =>
-          es => app(List(mkWait(mkVarExp(chanSym, e0.tpe, e0.loc.asSynthetic), e0.tpe)) ::: es)
-      }
-
-      val allPurs = Type.mkAnd(fun.tpe :: args.map(_.tpe), funLoc)
-      val allEffs = Type.mkUnion(fun.eff :: args.map(_.eff), funLoc)
-      val block = chans(spawns(curryApply(applyExp(Nil))))
-      Expression.Cast(block, None, Some(allPurs), Some(allEffs), tpe, pur, eff, parLoc)
+      val app = parallelize(Expression.Apply(fun, args, tpe, pur, eff, loc1.asSynthetic))
+      val purs = Some(Type.mkAnd(collectPurities(app), app.loc.asSynthetic))
+      val effs = Some(Type.mkUnion(collectEffects(app), app.loc.asSynthetic))
+      Expression.Cast(app, None, purs, effs, tpe, pur, eff, loc0.asSynthetic)
     }
-
 
     case Expression.Par(_, _) =>
       throw InternalCompilerException("Not Implemented")
