@@ -641,6 +641,39 @@ object Lowering {
           )
       }
 
+      def nextType(f: Expression): (Type, Type, Type) = f.tpe.typeConstructor match {
+        case Some(TypeConstructor.Arrow(_)) =>
+          val last = f.tpe.typeArguments.last
+          last.typeConstructor match {
+            case Some(TypeConstructor.Arrow(_)) =>
+              val tpeArgs = last.typeArguments.init
+              val tpe = tpeArgs.drop(2).head
+              val pur = tpeArgs.head
+              val eff = tpeArgs.drop(1).head
+              (tpe, pur, eff)
+
+            case _ =>
+              val tpeArgs = f.tpe.typeArguments
+              val tpe = tpeArgs.last
+              val pur = tpeArgs.head
+              val eff = tpeArgs.drop(1).head
+              (tpe, pur, eff)
+
+          }
+
+        case _ => throw InternalCompilerException("Unexpected Type Constructor. Expected Arrow.")
+      }
+
+      def curryApply(e: Expression): Expression = e match {
+        case Expression.Apply(exp, exps, _, _, _, _) =>
+          exps.foldLeft(exp) {
+            case (left, arg) =>
+              val (nxtTpe, nxtPur, nxtEff) = nextType(left)
+              Expression.Apply(left, arg :: Nil, nxtTpe, nxtPur, nxtEff, arg.loc)
+          }
+        case _ => throw InternalCompilerException("Unexpected Expression. Expected Apply.")
+      }
+
       val funLoc = loc1.asSynthetic
       val parLoc = loc0.asSynthetic
       val fun = visitExp(exp)
@@ -672,7 +705,7 @@ object Lowering {
 
       val allPurs = Type.mkAnd(fun.tpe :: args.map(_.tpe), funLoc)
       val allEffs = Type.mkUnion(fun.eff :: args.map(_.eff), funLoc)
-      val block = chans(spawns(applyExp(Nil)))
+      val block = chans(spawns(curryApply(applyExp(Nil))))
       Expression.Cast(block, None, Some(allPurs), Some(allEffs), tpe, pur, eff, parLoc)
     }
 
