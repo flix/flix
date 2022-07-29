@@ -569,12 +569,13 @@ object Lowering {
 
       def mkPutChannel(chan: Symbol.VarSym, e: Expression): Expression = {
         val loc = e.loc.asSynthetic
-        // Does this have e.type or Type.Unit?
-        Expression.PutChannel(Expression.Var(chan, Type.mkChannel(e.tpe, loc), loc), e, Type.Unit, Type.Impure, e.eff, loc)
+        val e1 = Expression.Var(chan, Type.mkChannel(e.tpe, loc), loc)
+        Expression.PutChannel(e1, e, Type.Unit, Type.Impure, Type.mkUnion(e.eff, e1.eff, loc), loc)
       }
 
       def mkSpawn(chan: Symbol.VarSym, e: Expression): Expression = {
-        Expression.Spawn(mkPutChannel(chan, e), Type.Unit, Type.Impure, e.eff, e.loc.asSynthetic)
+        val e1 = mkPutChannel(chan, e)
+        Expression.Spawn(e1, Type.Unit, Type.Impure, e1.eff, e1.loc.asSynthetic)
       }
 
       def mkVarExp(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation): Expression = {
@@ -582,7 +583,8 @@ object Lowering {
       }
 
       def mkWait(sym: Symbol.VarSym, tpe: Type): Expression = {
-        val chan = mkVarExp(sym, Type.mkChannel(tpe, sym.loc.asSynthetic), sym.loc.asSynthetic)
+        val symLoc = sym.loc.asSynthetic
+        val chan = mkVarExp(sym, Type.mkChannel(tpe, symLoc), symLoc)
         Expression.GetChannel(chan, tpe, Type.Impure, chan.eff, chan.loc.asSynthetic)
       }
 
