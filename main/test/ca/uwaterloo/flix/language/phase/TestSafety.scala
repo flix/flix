@@ -184,7 +184,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("TestInvalidThis.01") {
     val input =
       """
-        |def f(): ##java.lang.Runnable & Impure = 
+        |def f(): ##java.lang.Runnable & Impure =
         |  object ##java.lang.Runnable {
         |    def run(): Unit & Impure = ()
         |  }
@@ -196,7 +196,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("TestInvalidThis.02") {
     val input =
       """
-        |def f(): ##java.lang.Runnable & Impure = 
+        |def f(): ##java.lang.Runnable & Impure =
         |  object ##java.lang.Runnable {
         |    def run(_this: Int32): Unit & Impure = ()
         |  }
@@ -217,7 +217,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("TestExtraMethod.01") {
     val input =
       """
-        |def f(): ##java.lang.Runnable & Impure = 
+        |def f(): ##java.lang.Runnable & Impure =
         |  object ##java.lang.Runnable {
         |    def run(_this: ##java.lang.Runnable): Unit & Impure = ()
         |    def anExtraMethod(_this: ##java.lang.Runnable): Unit & Impure = ()
@@ -230,7 +230,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("TestNonDefaultConstructor.01") {
     val input =
       """
-        |def f(): ##flix.test.TestClassWithNonDefaultConstructor & Impure = 
+        |def f(): ##flix.test.TestClassWithNonDefaultConstructor & Impure =
         |  object ##flix.test.TestClassWithNonDefaultConstructor {
         |  }
       """.stripMargin
@@ -241,11 +241,12 @@ class TestSafety extends FunSuite with TestUtils {
   test("TestNonPublicInterface.01") {
     val input =
       """
-        |def f(): ##flix.test.TestNonPublicInterface & Impure = 
+        |def f(): ##flix.test.TestNonPublicInterface & Impure =
         |  object ##flix.test.TestNonPublicInterface {
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.InaccessibleSuperclass](result)
   }
+
 }

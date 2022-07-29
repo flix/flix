@@ -1300,10 +1300,10 @@ object Typer {
           resultEff = declaredEff.getOrElse(actualEff)
         } yield (constrs, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.Upcast(exp, tvar, pvar, evar, loc) =>
+      case KindedAst.Expression.Upcast(exp, tvar, loc) =>
         for {
-          (constrs, _, _, _) <- visitExp(exp)
-        } yield (constrs, tvar, pvar, evar)
+          (constrs, _, pur, eff) <- visitExp(exp)
+        } yield (constrs, tvar, pur, eff)
 
       case KindedAst.Expression.Without(exp, effUse, loc) =>
         val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
@@ -2072,12 +2072,8 @@ object Typer {
         val eff = declaredEff.getOrElse(e.eff)
         TypedAst.Expression.Cast(e, dt, dp, de, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.Upcast(exp, tvar, pvar, evar, loc) =>
-        val e = visitExp(exp, subst0)
-        val tpe = subst0(tvar)
-        val pur = subst0(pvar)
-        val eff = subst0(evar)
-        TypedAst.Expression.Upcast(e, tpe, pur, eff, loc)
+      case KindedAst.Expression.Upcast(exp, tvar, loc) =>
+        TypedAst.Expression.Upcast(visitExp(exp, subst0), subst0(tvar), loc)
 
       case KindedAst.Expression.Without(exp, effUse, loc) =>
         val e = visitExp(exp, subst0)
