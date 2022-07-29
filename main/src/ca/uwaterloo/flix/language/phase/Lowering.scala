@@ -588,24 +588,25 @@ object Lowering {
 
       def mkChannel(e: Expression): Expression = {
         val loc = e.loc.asSynthetic
-        Expression.NewChannel(Expression.Int32(1, loc), Type.mkChannel(e.tpe, loc), Type.Impure, Type.Empty, loc) // Should have IO effect?
+        Expression.NewChannel(Expression.Int32(1, loc), Type.mkChannel(e.tpe, loc), Type.Impure, Type.Empty, loc)
       }
 
       def mkPutChannel(chan: Symbol.VarSym, e: Expression): Expression = {
         val loc = e.loc.asSynthetic
-        Expression.PutChannel(Expression.Var(chan, Type.mkChannel(e.tpe, loc), loc), e, e.tpe, Type.Impure, e.eff, loc)
+        // Does this have e.type or Type.Unit?
+        Expression.PutChannel(Expression.Var(chan, Type.mkChannel(e.tpe, loc), loc), e, Type.Unit, Type.Impure, e.eff, loc)
       }
 
       def mkSpawn(chan: Symbol.VarSym, e: Expression): Expression = {
-        Expression.Spawn(mkPutChannel(chan, e), Type.Unit, e.pur, e.eff, e.loc.asSynthetic)
+        Expression.Spawn(mkPutChannel(chan, e), Type.Unit, Type.Impure, e.eff, e.loc.asSynthetic)
       }
 
       def mkVarExp(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation): Expression = {
         Expression.Var(sym, tpe, loc)
       }
 
-      def mkWait(chan: Expression): Expression = {
-        Expression.GetChannel(chan, chan.tpe, Type.Impure, chan.eff, chan.loc.asSynthetic)
+      def mkWait(chan: Expression, tpe: Type): Expression = {
+        Expression.GetChannel(chan, tpe, Type.Impure, chan.eff, chan.loc.asSynthetic)
       }
 
       def mkLetSym(prefix: String, e: Expression): Symbol.VarSym = {
@@ -655,29 +656,24 @@ object Lowering {
       }
 
       // Spawn expressions into channels
-      val spawns = chanSyms.tail.zip(args).foldLeft(mkStmCont(mkSpawn(funChanSym, fun))) {
+      val spawnStart = mkStmCont(mkSpawn(funChanSym, fun))
+      val spawns = chanSyms.tail.zip(args).foldLeft(spawnStart) {
         case (spawnCont, (chan, e)) =>
           e1 => spawnCont(mkStmCont(mkSpawn(chan, e))(e1))
       }
 
       // Wait for message in channels
-      val (funWaitSym, funWaitCont) = mkLetCont("tmp", mkWait(mkVarExp(funChanSym, fun.tpe, fun.loc)))
-      val (waitSyms, waits) = chanSyms.tail.zip(args).foldLeft((List(funWaitSym), funWaitCont)) {
-        case ((syms, letWaitCont), (chanSym, e0)) =>
-          val (s, l) = mkLetCont("tmp", mkWait(mkVarExp(chanSym, e0.tpe, e0.loc)))
-          (syms ::: List(s), (e: Expression) => letWaitCont(l(e)))
+      val applyCont = (es: List[Expression]) => Expression.Apply(mkWait(mkVarExp(funChanSym, fun.tpe, fun.loc.asSynthetic), fun.tpe), es, fun.tpe, fun.pur, fun.eff, fun.loc.asSynthetic)
+      // ("tmp", mkWait(mkVarExp(funChanSym, fun.tpe, fun.loc), fun.tpe))
+      val applyExp = chanSyms.tail.zip(args).foldLeft(applyCont) {
+        case (app, (chanSym, e0)) =>
+          es => app(List(mkWait(mkVarExp(chanSym, e0.tpe, e0.loc.asSynthetic), e0.tpe)) ::: es)
       }
 
-      val fun1 = mkVarExp(funWaitSym, fun.tpe, funLoc)
-      val args1 = waitSyms.zip(args).map {
-        case (sym, e) => mkVarExp(sym, e.tpe, e.loc.asSynthetic)
-      }
       val allPurs = Type.mkAnd(fun.tpe :: args.map(_.tpe), funLoc)
       val allEffs = Type.mkUnion(fun.eff :: args.map(_.eff), funLoc)
-      val apply = Expression.Apply(fun1, args1, tpe, pur, eff, funLoc)
-      val block = chans(spawns(waits(apply)))
-      val res = Expression.Cast(block, None, Some(allPurs), Some(allEffs), tpe, pur, eff, parLoc)
-      res
+      val block = chans(spawns(applyExp(Nil)))
+      Expression.Cast(block, None, Some(allPurs), Some(allEffs), tpe, pur, eff, parLoc)
     }
 
 
