@@ -582,7 +582,7 @@ object Lowering {
       }
 
       def mkWait(sym: Symbol.VarSym, tpe: Type): Expression = {
-        val chan = mkVarExp(sym, tpe, sym.loc.asSynthetic)
+        val chan = mkVarExp(sym, Type.mkChannel(tpe, sym.loc.asSynthetic), sym.loc.asSynthetic)
         Expression.GetChannel(chan, tpe, Type.Impure, chan.eff, chan.loc.asSynthetic)
       }
 
