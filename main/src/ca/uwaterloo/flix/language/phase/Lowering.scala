@@ -677,17 +677,6 @@ object Lowering {
       val apply = Expression.Apply(fun1, args1, tpe, pur, eff, funLoc)
       val block = chans(spawns(waits(apply)))
       val res = Expression.Cast(block, None, Some(allPurs), Some(allEffs), tpe, pur, eff, parLoc)
-      println(exp0)
-      println()
-      println(exp)
-      println()
-      println(exps)
-      println()
-      println(fun)
-      println()
-      println(args)
-      println()
-      println(res)
       res
     }
 
