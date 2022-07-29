@@ -672,7 +672,7 @@ object Lowering {
       val fun = visitExp(exp)
       val args = visitExps(exps)
 
-      val app = parallelize(Expression.Apply(fun, args, tpe, pur, eff, loc1.asSynthetic))
+      val app = parallelize(exp0)
       val (chans, spawns, waits) = collectExps(app)
       val rechans = chans.reduceLeft({
         case (k, e) => (e1: Expression) => k(e(e1))
@@ -680,7 +680,8 @@ object Lowering {
 
       val respawns = spawns.foldLeft((e: Expression) => e)({
         case (k, e) =>
-          (e1: Expression) => k(Expression.Stm(e, e1, e1.tpe, e1.pur, e1.eff, e.loc.asSynthetic))
+          val loc = e.loc.asSynthetic
+          (e1: Expression) => k(Expression.Stm(e, e1, e1.tpe, Type.mkAnd(e.pur, e1.pur, loc), Type.mkUnion(e.eff, e1.eff, loc), loc))
       }: (Expression => Expression, Expression) => Expression => Expression)
 
       val rewaits = waits.reduceLeft({
