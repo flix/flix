@@ -142,13 +142,13 @@ def imperativePipe02(): Bool = region r {
     }
 
 @test
-def imperativePipe03(): Bool & Impure =
+def imperativePipe03(): Bool \ IO =
     let a = ref 8;
     let f = (x) -> a := x;
     (2 !> f) == 2 and deref a == 2
 
 @test
-def imperativePipe04(): Bool & Impure =
+def imperativePipe04(): Bool \ IO =
     let a = ref 8;
     let f = (x) -> a := x;
     (2 !> f) == 2 and (4 !> f) == 4 and deref a == 4
