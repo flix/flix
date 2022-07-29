@@ -47,7 +47,7 @@ sealed trait Type {
     * Returns a sorted set to ensure that the compiler is deterministic.
     */
   def typeVars: SortedSet[Type.KindedVar] = this match {
-    case x: Type.Var => SortedSet(x.asKinded)
+    case x: Type.KindedVar => SortedSet(x)
     case Type.Cst(tc, _) => SortedSet.empty
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
     case Type.Ascribe(tpe, _, _) => tpe.typeVars
@@ -78,7 +78,6 @@ sealed trait Type {
     */
   def typeConstructor: Option[TypeConstructor] = this match {
     case Type.KindedVar(_, _) => None
-    case Type.UnkindedVar(_, _) => None
     case Type.Cst(tc, _) => Some(tc)
     case Type.Apply(t1, _, _) => t1.typeConstructor
     case Type.Ascribe(tpe, _, _) => tpe.typeConstructor
@@ -108,7 +107,6 @@ sealed trait Type {
     */
   def typeConstructors: List[TypeConstructor] = this match {
     case Type.KindedVar(_, _) => Nil
-    case Type.UnkindedVar(_, _) => Nil
     case Type.Cst(tc, _) => tc :: Nil
     case Type.Apply(t1, t2, _) => t1.typeConstructors ::: t2.typeConstructors
     case Type.Ascribe(tpe, _, _) => tpe.typeConstructors
@@ -141,7 +139,7 @@ sealed trait Type {
     * Applies `f` to every type variable in `this` type.
     */
   def map(f: Type.KindedVar => Type): Type = this match {
-    case tvar: Type.Var => f(tvar.asKinded)
+    case tvar: Type.KindedVar => f(tvar)
     case Type.Cst(_, _) => this
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(tpe1.map(f), tpe2.map(f), loc)
     case Type.Ascribe(tpe, kind, loc) => Type.Ascribe(tpe.map(f), kind, loc)
@@ -195,7 +193,6 @@ sealed trait Type {
     */
   def size: Int = this match {
     case Type.KindedVar(_, _) => 1
-    case Type.UnkindedVar(_, _) => 1
     case Type.Cst(_, _) => 1
     case Type.Ascribe(tpe, _, _) => tpe.size
     case Type.Apply(tpe1, tpe2, _) => tpe1.size + tpe2.size + 1
@@ -368,39 +365,6 @@ object Type {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-    * The union of type variables.
-    */
-  sealed trait Var extends Type {
-    def sym: Symbol.TypeVarSym
-
-    def kind: Kind = this match {
-      case KindedVar(sym, _) => sym.kind
-      case UnkindedVar(_, _) => throw InternalCompilerException("Attempt to access kind of unkinded type variable.")
-    }
-
-    /**
-      * Returns the same type variable with the given text.
-      */
-    def withText(text: Ast.VarText): Var
-
-    /**
-      * Casts this type variable to a kinded type variable.
-      */
-    def asKinded: Type.KindedVar = this match {
-      case tvar: KindedVar => tvar
-      case _: UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable.")
-    }
-
-    /**
-      * Casts this type variable to an unkinded type variable.
-      */
-    def asUnkinded: Type.UnkindedVar = this match {
-      case tvar: UnkindedVar => tvar
-      case _: KindedVar => throw InternalCompilerException("Unexpected kinded type variable.")
-    }
-  }
-
-  /**
     * The union of non-Apply types.
     * Used to restrict the range of return values of [[Type.baseType]].
     */
@@ -410,9 +374,11 @@ object Type {
     * A type variable.
     */
   @IntroducedBy(Kinder.getClass)
-  case class KindedVar(sym: Symbol.KindedTypeVarSym, loc: SourceLocation) extends Type with Var with BaseType with Ordered[Type.KindedVar] {
+  case class KindedVar(sym: Symbol.KindedTypeVarSym, loc: SourceLocation) extends Type with BaseType with Ordered[Type.KindedVar] {
 
-    override def withText(text: Ast.VarText): KindedVar = KindedVar(sym.withText(text), loc)
+    def withText(text: Ast.VarText): KindedVar = KindedVar(sym.withText(text), loc)
+
+    def kind: Kind = sym.kind
 
     /**
       * Returns `true` if `this` type variable is equal to `o`.
@@ -431,38 +397,6 @@ object Type {
       * Compares `this` type variable to `that` type variable.
       */
     override def compare(that: Type.KindedVar): Int = this.sym.id - that.sym.id
-  }
-
-  /**
-    * A type variable without a kind.
-    */
-  @EliminatedBy(Kinder.getClass)
-  case class UnkindedVar(sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends Type with Var with BaseType with Ordered[Type.UnkindedVar] {
-
-    override def withText(text: Ast.VarText): UnkindedVar = UnkindedVar(sym.withText(text), loc)
-
-    /**
-      * Returns `true` if `this` type variable is equal to `o`.
-      */
-    override def equals(o: scala.Any): Boolean = o match {
-      case that: UnkindedVar => this.sym == that.sym
-      case _ => false
-    }
-
-    /**
-      * Returns the hash code of `this` type variable.
-      */
-    override def hashCode(): Int = sym.hashCode()
-
-    /**
-      * Compares `this` type variable to `that` type variable.
-      */
-    override def compare(that: Type.UnkindedVar): Int = this.sym.id - that.sym.id
-
-    /**
-      * Converts the UnkindedVar to a Var with the given `kind`.
-      */
-    def ascribedWith(kind: Kind): Type.KindedVar = Type.KindedVar(sym.ascribedWith(kind), loc)
   }
 
   /**
@@ -562,14 +496,6 @@ object Type {
   def freshVar(k: Kind, loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): Type.KindedVar = {
     val sym = Symbol.freshKindedTypeVarSym(text, k, isRegion, loc)
     Type.KindedVar(sym, loc)
-  }
-
-  /**
-    * Returns a fresh unkinded type variable of the given kind `k` and rigidity `r`.
-    */
-  def freshUnkindedVar(loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): Type.UnkindedVar = {
-    val sym = Symbol.freshUnkindedTypeVarSym(text, isRegion, loc)
-    Type.UnkindedVar(sym, loc)
   }
 
   /**
@@ -1005,7 +931,7 @@ object Type {
     * to clear all aliases for easier processing.
     */
   def eraseAliases(t: Type): Type = t match {
-    case tvar: Type.Var => tvar
+    case tvar: Type.KindedVar => tvar
     case Type.Cst(_, _) => t
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Type.Alias(_, _, tpe, _) => eraseAliases(tpe)
