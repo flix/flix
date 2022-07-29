@@ -663,6 +663,8 @@ object Lowering {
         wait@Expression.GetChannel(_, _, _, _, _), _, _, _, _),
         tpe, pur, eff, loc) =>
           (List(e => Expression.Let(sym, mod, chan, e, tpe, pur, eff, loc)), List(spawn), List(wait))
+        case _ =>
+          (Nil, Nil, Nil)
       }
 
       val fun = visitExp(exp)
