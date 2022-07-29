@@ -596,7 +596,7 @@ class TestWeeder extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    law ^^^: forall (x: a) . true
+        |    law ^^^ : forall (x: a) . true
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
