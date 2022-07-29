@@ -298,8 +298,8 @@ object SafetyError {
 
     def explain(formatter: Formatter): Option[String] = Some(
       s"""
-        | Flix 'object' statements only support interfaces and classes with default (no-argument) constructors.
-        |""".stripMargin
+         | Flix 'object' statements only support interfaces and classes with default (no-argument) constructors.
+         |""".stripMargin
     )
   }
 
@@ -314,7 +314,7 @@ object SafetyError {
          |${code(loc, "the object occurs here.")}
          |""".stripMargin
     }
-    
+
     def explain(formatter: Formatter): Option[String] = None
   }
 }

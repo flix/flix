@@ -580,7 +580,7 @@ object Safety {
   private def getJavaMethodSignatures(clazz: java.lang.Class[_]): Map[MethodSignature, java.lang.reflect.Method] = {
     val methods = clazz.getMethods.toList.filterNot(m => java.lang.reflect.Modifier.isStatic(m.getModifiers))
     methods.foldLeft(Map.empty[MethodSignature, java.lang.reflect.Method]) {
-      case (acc, m) => 
+      case (acc, m) =>
         val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.getFlixType), Type.getFlixType(m.getReturnType))
         acc + (signature -> m)
     }
@@ -613,21 +613,21 @@ object Safety {
     * Ensures that `methods` fully implement `clazz`
     */
   private def checkObjectImplementation(clazz: java.lang.Class[_], tpe: Type, methods: List[JvmMethod], loc: SourceLocation): List[CompilationMessage] = {
-    // 
+    //
     // Check that `clazz` doesn't have a non-default constructor
-    // 
+    //
     val constructorErrors = if (!clazz.isInterface() && !hasDefaultConstructor(clazz))
-        List(NonDefaultConstructor(clazz, loc))
-      else
-        List.empty
+      List(NonDefaultConstructor(clazz, loc))
+    else
+      List.empty
 
-    // 
+    //
     // Check that `clazz` is public
-    // 
+    //
     val visibilityErrors = if (!java.lang.reflect.Modifier.isPublic(clazz.getModifiers))
-        List(InaccessibleSuperclass(clazz, loc))
-      else
-        List.empty
+      List(InaccessibleSuperclass(clazz, loc))
+    else
+      List.empty
 
     //
     // Check that the first argument looks like "this"
