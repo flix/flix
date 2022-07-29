@@ -649,14 +649,49 @@ object Lowering {
           e1.eff :: Nil
       }
 
+      def collectExps(e0: Expression): (List[Expression => Expression], List[Expression], List[Expression]) = e0 match {
+        case Expression.Apply(exp, exps, _, _, _, _) => // match deeper
+          val (fchan, fspawn, fwait) = collectExps(exp)
+          val (achan, aspawn, await) = exps.map(collectExps).foldLeft((List.empty[Expression => Expression], List.empty[Expression], List.empty[Expression])) {
+            case ((accchans, accspawns, accwaits), (argchan, argspawn, argwait)) =>
+              (accchans ::: argchan, accspawns ::: argspawn, accwaits ::: argwait)
+          }
+          (fchan ::: achan, fspawn ::: aspawn, fwait ::: await)
+        case Expression.Let(sym, mod,
+        chan@Expression.NewChannel(_, _, _, _, _),
+        Expression.Stm(spawn@Expression.Spawn(_, _, _, _, _),
+        wait@Expression.GetChannel(_, _, _, _, _), _, _, _, _),
+        tpe, pur, eff, loc) =>
+          (List(e => Expression.Let(sym, mod, chan, e, tpe, pur, eff, loc)), List(spawn), List(wait))
+      }
 
       val fun = visitExp(exp)
       val args = visitExps(exps)
 
       val app = parallelize(Expression.Apply(fun, args, tpe, pur, eff, loc1.asSynthetic))
+      val (chans, spawns, waits) = collectExps(app)
+      val rechans = chans.reduceLeft({
+        case (k, e) => (e1: Expression) => k(e(e1))
+      }: (Expression => Expression, Expression => Expression) => Expression => Expression)
+
+      val respawns = spawns.foldLeft((e: Expression) => e)({
+        case (k, e) =>
+          (e1: Expression) => k(Expression.Stm(e, e1, e1.tpe, e1.pur, e1.eff, e.loc.asSynthetic))
+      }: (Expression => Expression, Expression) => Expression => Expression)
+
+      val rewaits = waits.reduceLeft({
+        case (left, right) =>
+          val rloc = right.loc.asSynthetic
+          Expression.Apply(left, right :: Nil, left.tpe,
+            Type.mkAnd(left.pur, right.pur, rloc),
+            Type.mkUnion(left.eff, right.eff, rloc),
+            rloc)
+      }: (Expression, Expression) => Expression)
+
+      val reorderedApp = rechans(respawns(rewaits))
       val purs = Some(Type.mkAnd(collectPurities(app), app.loc.asSynthetic))
       val effs = Some(Type.mkUnion(collectEffects(app), app.loc.asSynthetic))
-      Expression.Cast(app, None, purs, effs, tpe, pur, eff, loc0.asSynthetic)
+      Expression.Cast(reorderedApp, None, purs, effs, tpe, pur, eff, loc0.asSynthetic)
     }
 
     case Expression.Par(_, _) =>
