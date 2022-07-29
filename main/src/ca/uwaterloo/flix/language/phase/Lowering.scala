@@ -597,35 +597,15 @@ object Lowering {
         val sym = mkLetSym(prefix, e)
         val loc = e.loc.asSynthetic
         val e1 = f(sym)
-        Expression.Let(sym,
-          Modifiers(List(Ast.Modifier.Synthetic)),
-          e,
-          e1,
-          e1.tpe,
-          Type.mkAnd(e.pur, e1.pur, loc),
-          Type.mkUnion(e.eff, e1.eff, loc),
-          loc)
+        Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), e, e1, e1.tpe, Type.mkAnd(e.pur, e1.pur, loc), Type.mkUnion(e.eff, e1.eff, loc), loc)
       }
 
       def mkStmCont(e: Expression)(f: () => Expression): Expression = {
         val loc = e.loc.asSynthetic
         val e1 = f()
-        Expression.Stm(
-          e,
-          e1,
-          e1.tpe,
-          Type.mkAnd(e.pur, e1.pur, loc),
-          Type.mkUnion(e.pur, e1.pur, loc),
-          loc
-        )
+        Expression.Stm(e, e1, e1.tpe, Type.mkAnd(e.pur, e1.pur, loc), Type.mkUnion(e.pur, e1.pur, loc), loc)
       }
 
-      /**
-        *
-        *
-        * @param e0
-        * @return
-        */
       def parallelize(e0: Expression, continue: Boolean = true): Expression = e0 match {
         case Expression.Apply(exp, exps, tpe, pur, eff, loc) if continue =>
           Expression.Apply(parallelize(exp), exps.map(parallelize(_, continue = false)), tpe, pur, eff, loc)
@@ -659,12 +639,14 @@ object Lowering {
               (accchans ::: argchan, accspawns ::: argspawn, accwaits ::: argwait)
           }
           (fchan ::: achan, fspawn ::: aspawn, fwait ::: await)
+
         case Expression.Let(sym, mod,
         chan@Expression.NewChannel(_, _, _, _, _),
         Expression.Stm(spawn@Expression.Spawn(_, _, _, _, _),
         wait@Expression.GetChannel(_, _, _, _, _), _, _, _, _),
         tpe, pur, eff, loc) =>
           (List(e => Expression.Let(sym, mod, chan, e, tpe, pur, eff, loc)), List(spawn), List(wait))
+
         case _ =>
           (Nil, Nil, Nil)
       }
@@ -672,11 +654,14 @@ object Lowering {
       val fun = visitExp(exp)
       val args = visitExps(exps)
 
-      val app = parallelize(exp0)
+      val app = parallelize(Expression.Apply(fun, args, fun.tpe, fun.pur, fun.eff, fun.loc))
       val (chans, spawns, waits) = collectExps(app)
+
+
       val rechans = chans.reduceLeft({
         case (k, e) => (e1: Expression) => k(e(e1))
       }: (Expression => Expression, Expression => Expression) => Expression => Expression)
+
 
       val respawns = spawns.foldLeft((e: Expression) => e)({
         case (k, e) =>
