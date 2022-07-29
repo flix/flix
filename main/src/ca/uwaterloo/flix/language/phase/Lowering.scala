@@ -697,7 +697,6 @@ object Lowering {
 
       // Wait for message in channels
       val applyCont = (es: List[Expression]) => Expression.Apply(mkWait(mkVarExp(funChanSym, fun.tpe, fun.loc.asSynthetic), fun.tpe), es, fun.tpe, fun.pur, fun.eff, fun.loc.asSynthetic)
-      // ("tmp", mkWait(mkVarExp(funChanSym, fun.tpe, fun.loc), fun.tpe))
       val applyExp = chanSyms.tail.zip(args).foldLeft(applyCont) {
         case (app, (chanSym, e0)) =>
           es => app(List(mkWait(mkVarExp(chanSym, e0.tpe, e0.loc.asSynthetic), e0.tpe)) ::: es)
