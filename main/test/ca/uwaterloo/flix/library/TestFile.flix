@@ -301,7 +301,7 @@ namespace TestFile {
     @test
     def testReadChunks04(): Bool & Impure =
         match readChunks(-10, "./LICENSE.md") {
-            case Iterator(done, _) => done()
+            case Iterator(_, next) => Result.isErr(next())
         }
 
 

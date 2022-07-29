@@ -592,8 +592,10 @@ namespace File {
                     import java.lang.Throwable.getMessage(): String & Impure;
                     Iterator.singleton(Static, Err(getMessage(ex)))
             }
-        } else {
+        } else if (chunkSize == 0) {
             Iterator.new(Static)
+        } else {
+            Iterator.singleton(Static, Err("The argument `chunkSize` has to be a non negative number when calling `File.readChunks`."))
         }
 
     ///
