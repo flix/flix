@@ -116,9 +116,9 @@ pub def !>( x: a, f: a -> Unit & ef): a & ef = f(x); x
 ///
 /// Converts `x` to a string and prints it to standard out.
 ///
-pub def print(x: a): Unit & Impure with ToString[a] =
-    import static get java.lang.System.out: ##java.io.PrintStream & Impure as getOut;
-    import java.io.PrintStream.print(String): Unit & Impure;
+pub def print(x: a): Unit \ IO with ToString[a] =
+    import static get java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
+    import java.io.PrintStream.print(String): Unit \ IO;
     x |> ToString.toString |> print(getOut())
 
 ///
@@ -134,7 +134,7 @@ pub def println(x: a): Unit \ IO with ToString[a] =
 ///
 pub def bug!(m: String): a = {
     import static get java.lang.System.err: ##java.io.PrintStream & Pure as getErr;
-    import java.io.PrintStream.println(String): Unit & Impure;
+    import java.io.PrintStream.println(String): Unit \ IO;
     import java.lang.String.repeat(Int32): ##java.lang.String & Pure;
     let prt = println(getErr());
     prt(repeat("*", 80));
