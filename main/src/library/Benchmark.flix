@@ -20,7 +20,7 @@ namespace Benchmark {
     /// impure since timing is considered a side-effect in this context.
     ///
     pub enum Benchmark {
-        case Benchmark({name :: String, f :: Unit -> Unit \ IO})
+        case Benchmark({name :: String, f :: Unit -> Unit & Impure})
     }
 
     ///
@@ -47,7 +47,7 @@ namespace Benchmark {
     @Experimental
     pub def defBenchmark(name: String, f: Unit -> a & ef): Benchmark =
         let fn = () -> {
-            let _ = f() as \ IO;
+            let _ = f() as & Impure;
             ()
         };
         Benchmark({name = name, f = fn})
@@ -60,12 +60,12 @@ namespace Benchmark {
     /// Runs all benchmarks in `bs`. Attempts to spend no more than `budget` time.
     ///
     @Experimental
-    pub def runWithBudget(bs: Array[Benchmark, r], budget: Int64): Int32 \ IO =
+    pub def runWithBudget(bs: Array[Benchmark, r], budget: Int64): Int32 & Impure =
         if (bs.length == 0) {
             println("No benchmarks");
             1
         } else {
-            import static java.lang.System.nanoTime(): Int64 \ IO;
+            import static java.lang.System.nanoTime(): Int64 & Impure;
             let t = nanoTime();
             printHeader();
             println("");
@@ -83,7 +83,7 @@ namespace Benchmark {
     ///
     /// Runs every benchmark in `bs` once and estimates its duration.
     ///
-    def warmupAndEstimate(bs: Array[Benchmark, r]): Array[(Benchmark, Int64), r] \ IO = {
+    def warmupAndEstimate(bs: Array[Benchmark, r]): Array[(Benchmark, Int64), r] & Impure = {
         print("Warmup: ");
         bs |> Array.map(b -> {
             let time = runBenchmarkOnce(b);
@@ -95,7 +95,7 @@ namespace Benchmark {
     ///
     /// Runs all the given benchmarks with estimates `bs` and the given time `budget`.
     ///
-    def runAll(bs: Array[(Benchmark, Int64), r], budget: Int64): Unit \ IO = {
+    def runAll(bs: Array[(Benchmark, Int64), r], budget: Int64): Unit & Impure = {
         let budgetPerBenchmark = budget / (Int32.toInt64(bs.length));
         bs |> Array.foreach(match (b, cost) ->
             let iters = iterations(cost, budgetPerBenchmark);
@@ -106,8 +106,8 @@ namespace Benchmark {
     ///
     /// Runs the given benchmark `b` exactly `n` times.
     ///
-    def runBenchmark(b: Benchmark, n: Int32): BenchmarkResult \ IO =
-        import static java.lang.System.nanoTime(): Int64 \ IO;
+    def runBenchmark(b: Benchmark, n: Int32): BenchmarkResult & Impure =
+        import static java.lang.System.nanoTime(): Int64 & Impure;
         let Benchmark(r) = b;
         let t = nanoTime();
         loop(r.f, n);
@@ -120,9 +120,9 @@ namespace Benchmark {
     ///
     /// Runs `f` once and divides the time elapsed by the `scaleFactor`.
     ///
-    def runBenchmarkOnce(b: Benchmark): Int64 \ IO =
+    def runBenchmarkOnce(b: Benchmark): Int64 & Impure =
         let Benchmark(r) = b;
-        import static java.lang.System.nanoTime(): Int64 \ IO;
+        import static java.lang.System.nanoTime(): Int64 & Impure;
         let t = nanoTime();
         (r.f)();
         (nanoTime() - t) / scaleFactor()
@@ -151,14 +151,14 @@ namespace Benchmark {
     ///
     /// Prints the benchmark header.
     ///
-    def printHeader(): Unit \ IO = {
+    def printHeader(): Unit & Impure = {
         println("------------------------------ Running Benchmarks ------------------------------")
     }
 
     ///
     /// Prints the column names.
     ///
-    def printCols(): Unit \ IO = {
+    def printCols(): Unit & Impure = {
         let namePart = String.padRight(40, ' ', "Benchmark");
         let iterPart = String.padLeft(20, ' ', "Iterations");
         let timePart = String.padLeft(20, ' ', "Time (avg)");
@@ -168,7 +168,7 @@ namespace Benchmark {
     ///
     /// Prints information about the given benchmark result `s`.
     ///
-    def printRow(s: BenchmarkResult): Unit \ IO = {
+    def printRow(s: BenchmarkResult): Unit & Impure = {
         let Success(r) = s;
         let avgNs = r.total / Int32.toInt64(r.rounds);
         let avgMs = toMicroSeconds(avgNs);
