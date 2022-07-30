@@ -542,7 +542,7 @@ object Safety {
     //
     // Check that `clazz` is public
     //
-    val visibilityErrors = if (!isPublic(clazz))
+    val visibilityErrors = if (!isPublicClass(clazz))
       List(InaccessibleSuperclass(clazz, loc))
     else
       List.empty
@@ -567,7 +567,7 @@ object Safety {
 
     val javaMethods = getJavaMethodSignatures(clazz)
     val canImplement = javaMethods.keySet
-    val mustImplement = canImplement.filter(m => isAbstract(javaMethods(m)))
+    val mustImplement = canImplement.filter(m => isAbstractMethod(javaMethods(m)))
 
     //
     // Check that there are no unimplemented methods.
@@ -606,7 +606,7 @@ object Safety {
     * Get a Set of MethodSignatures representing the methods of `clazz`. Returns a map to allow subsequent reverse lookup.
     */
   private def getJavaMethodSignatures(clazz: java.lang.Class[_]): Map[MethodSignature, java.lang.reflect.Method] = {
-    val methods = clazz.getMethods.toList.filterNot(isStatic)
+    val methods = clazz.getMethods.toList.filterNot(isStaticMethod)
     methods.foldLeft(Map.empty[MethodSignature, java.lang.reflect.Method]) {
       case (acc, m) =>
         val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.getFlixType), Type.getFlixType(m.getReturnType))
@@ -627,21 +627,21 @@ object Safety {
   }
 
   /**
-    * Return `true` if the given method `m` is abstract.
-    */
-  private def isAbstract(m: java.lang.reflect.Method): Boolean =
-    java.lang.reflect.Modifier.isAbstract(m.getModifiers)
-
-  /**
     * Returns `true` if the given class `c` is public.
     */
-  private def isPublic(c: java.lang.Class[_]): Boolean =
+  private def isPublicClass(c: java.lang.Class[_]): Boolean =
     java.lang.reflect.Modifier.isPublic(c.getModifiers)
+
+  /**
+    * Return `true` if the given method `m` is abstract.
+    */
+  private def isAbstractMethod(m: java.lang.reflect.Method): Boolean =
+    java.lang.reflect.Modifier.isAbstract(m.getModifiers)
 
   /**
     * Returns `true` if the given method `m` is static.
     */
-  private def isStatic(m: java.lang.reflect.Method): Boolean =
+  private def isStaticMethod(m: java.lang.reflect.Method): Boolean =
     java.lang.reflect.Modifier.isStatic(m.getModifiers)
 
 }
