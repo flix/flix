@@ -723,6 +723,17 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedJvmMethod](result)
   }
 
+  test("UndefinedJvmMethod.07") {
+    val input =
+      s"""
+         |def foo(): Unit =
+         |    import java.lang.String.hashCode(): Unit & Impure as _;
+         |    ()
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedJvmMethod](result)
+  }
+
   test("UndefinedJvmField.01") {
     val input =
       raw"""
