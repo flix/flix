@@ -501,7 +501,7 @@ object PatternExhaustiveness {
       // For Enums, we have to figure out what base enum is, then look it up in the enum definitions to get the
       // other enums
       case TyCon.Enum(_, sym, _, _) => {
-        root.enums.get(sym).get.cases.map(x => TyCon.Enum(x._1.name, sym, countTypeArgs(x._2.tpeDeprecated), List.empty[TyCon]))
+        root.enums.get(sym).get.cases.map(x => TyCon.Enum(x._1.name, sym, countTypeArgs(x._2.tpe), List.empty[TyCon]))
       }.toList ::: xs
 
       /* For numeric types, we consider them as "infinite" types union
@@ -574,7 +574,6 @@ object PatternExhaustiveness {
     case Some(TypeConstructor.Channel) => 1
     case Some(TypeConstructor.Lazy) => 1
     case Some(TypeConstructor.KindedEnum(sym, kind)) => 0 // TODO: Correct?
-    case Some(TypeConstructor.Tag(sym, tag)) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     case Some(TypeConstructor.Native(clazz)) => 0
     case Some(TypeConstructor.Tuple(l)) => l
     case Some(TypeConstructor.RecordRowExtend(_)) => 2

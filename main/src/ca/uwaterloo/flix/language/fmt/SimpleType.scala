@@ -427,18 +427,6 @@ object SimpleType {
       case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Channel => mkApply(Channel, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(fromWellKindedType))
-      case TypeConstructor.Tag(sym, tag) =>
-        val args = t.typeArguments.map(fromWellKindedType)
-        args match {
-          // Case 1: Bare tag.
-          case Nil => PureArrow(Hole, Hole)
-          // Case 2: Tag with arguments.
-          case tpe :: Nil => PureArrow(tpe, Hole)
-          // Case 3: Fully applied tag.
-          case tpe :: ret :: Nil => PureArrow(tpe, ret)
-          // Case 4: Too many arguments. Error.
-          case _ :: _ :: _ :: _ => throw new OverAppliedType
-        }
       case TypeConstructor.KindedEnum(sym, kind) => mkApply(Name(sym.name), t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.UnkindedEnum(sym) => throw InternalCompilerException("Unexpected unkinded type.")
       case TypeConstructor.Native(clazz) => Name(clazz.getSimpleName)
