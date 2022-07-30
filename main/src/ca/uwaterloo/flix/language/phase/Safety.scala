@@ -527,58 +527,6 @@ object Safety {
     case Pattern.ArrayHeadSpread(_, elms, _, _) => visitPats(elms, loc)
   }
 
-  /**
-    * Represents the signature of a method, used to compare Java signatures against Flix signatures.
-    */
-  private case class MethodSignature(name: String, paramTypes: List[Type], retTpe: Type)
-
-  /**
-    * Convert a list of Flix methods to a set of MethodSignatures. Returns a map to allow subsequent reverse lookup.
-    */
-  private def getFlixMethodSignatures(methods: List[JvmMethod]): Map[MethodSignature, JvmMethod] = {
-    methods.foldLeft(Map.empty[MethodSignature, JvmMethod]) {
-      case (acc, m@JvmMethod(ident, fparams, _, retTpe, _, _, _)) =>
-        // Drop the first formal parameter (which always represents `this`)
-        val paramTypes = fparams.tail.map(_.tpe)
-        val signature = MethodSignature(ident.name, paramTypes.map(t => Type.eraseAliases(t)), Type.eraseAliases(retTpe))
-        acc + (signature -> m)
-    }
-  }
-
-  /**
-    * Get a Set of MethodSignatures representing the methods of `clazz`. Returns a map to allow subsequent reverse lookup.
-    */
-  private def getJavaMethodSignatures(clazz: java.lang.Class[_]): Map[MethodSignature, java.lang.reflect.Method] = {
-    val methods = clazz.getMethods.toList.filterNot(m => java.lang.reflect.Modifier.isStatic(m.getModifiers))
-    methods.foldLeft(Map.empty[MethodSignature, java.lang.reflect.Method]) {
-      case (acc, m) =>
-        val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.getFlixType), Type.getFlixType(m.getReturnType))
-        acc + (signature -> m)
-    }
-  }
-
-  /**
-    * Return true if a method is abstract (either because it's a non-default member of an interface, or an abstract method of a class)
-    */
-  private def isAbstract(method: java.lang.reflect.Method, clazz: java.lang.Class[_]): Boolean = {
-    if (clazz.isInterface) {
-      !method.isDefault()
-    } else {
-      java.lang.reflect.Modifier.isAbstract(method.getModifiers)
-    }
-  }
-
-  /**
-    * Return true if `clazz` has a non-default (no argument) constructor.
-    */
-  private def hasDefaultConstructor(clazz: java.lang.Class[_]): Boolean = {
-    try {
-      clazz.getConstructor()
-      true
-    } catch {
-      case _: NoSuchMethodException => false
-    }
-  }
 
   /**
     * Ensures that `methods` fully implement `clazz`
@@ -587,7 +535,7 @@ object Safety {
     //
     // Check that `clazz` doesn't have a non-default constructor
     //
-    val constructorErrors = if (!clazz.isInterface() && !hasDefaultConstructor(clazz))
+    val constructorErrors = if (!clazz.isInterface && !hasDefaultConstructor(clazz))
       List(NonDefaultConstructor(clazz, loc))
     else
       List.empty
@@ -595,7 +543,7 @@ object Safety {
     //
     // Check that `clazz` is public
     //
-    val visibilityErrors = if (!java.lang.reflect.Modifier.isPublic(clazz.getModifiers))
+    val visibilityErrors = if (!isPublic(clazz))
       List(InaccessibleSuperclass(clazz, loc))
     else
       List.empty
@@ -620,7 +568,7 @@ object Safety {
 
     val javaMethods = getJavaMethodSignatures(clazz)
     val canImplement = javaMethods.keySet
-    val mustImplement = canImplement.filter(m => isAbstract(javaMethods(m), clazz))
+    val mustImplement = canImplement.filter(m => isAbstract(javaMethods(m)))
 
     //
     // Check that there are no unimplemented methods.
@@ -636,5 +584,65 @@ object Safety {
 
     constructorErrors ++ visibilityErrors ++ thisErrors ++ unimplementedErrors ++ extraErrors
   }
+
+  /**
+    * Represents the signature of a method, used to compare Java signatures against Flix signatures.
+    */
+  private case class MethodSignature(name: String, paramTypes: List[Type], retTpe: Type)
+
+  /**
+    * Convert a list of Flix methods to a set of MethodSignatures. Returns a map to allow subsequent reverse lookup.
+    */
+  private def getFlixMethodSignatures(methods: List[JvmMethod]): Map[MethodSignature, JvmMethod] = {
+    methods.foldLeft(Map.empty[MethodSignature, JvmMethod]) {
+      case (acc, m@JvmMethod(ident, fparams, _, retTpe, _, _, _)) =>
+        // Drop the first formal parameter (which always represents `this`)
+        val paramTypes = fparams.tail.map(_.tpe)
+        val signature = MethodSignature(ident.name, paramTypes.map(t => Type.eraseAliases(t)), Type.eraseAliases(retTpe))
+        acc + (signature -> m)
+    }
+  }
+
+  /**
+    * Get a Set of MethodSignatures representing the methods of `clazz`. Returns a map to allow subsequent reverse lookup.
+    */
+  private def getJavaMethodSignatures(clazz: java.lang.Class[_]): Map[MethodSignature, java.lang.reflect.Method] = {
+    val methods = clazz.getMethods.toList.filterNot(isStatic)
+    methods.foldLeft(Map.empty[MethodSignature, java.lang.reflect.Method]) {
+      case (acc, m) =>
+        val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.getFlixType), Type.getFlixType(m.getReturnType))
+        acc + (signature -> m)
+    }
+  }
+
+  /**
+    * Return true if `clazz` has a non-default (no argument) constructor.
+    */
+  private def hasDefaultConstructor(clazz: java.lang.Class[_]): Boolean = {
+    try {
+      clazz.getConstructor()
+      true
+    } catch {
+      case _: NoSuchMethodException => false
+    }
+  }
+
+  /**
+    * Return `true` if the given method `m` is abstract.
+    */
+  private def isAbstract(m: java.lang.reflect.Method): Boolean =
+    java.lang.reflect.Modifier.isAbstract(m.getModifiers)
+
+  /**
+    * Returns `true` if the given class `c` is public.
+    */
+  private def isPublic(c: java.lang.Class[_]): Boolean =
+    java.lang.reflect.Modifier.isPublic(c.getModifiers)
+
+  /**
+    * Returns `true` if the given method `m` is static.
+    */
+  private def isStatic(m: java.lang.reflect.Method): Boolean =
+    java.lang.reflect.Modifier.isStatic(m.getModifiers)
 
 }
