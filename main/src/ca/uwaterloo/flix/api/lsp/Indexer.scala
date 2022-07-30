@@ -92,10 +92,16 @@ object Indexer {
       val idx2 = traverse(derives) {
         case Ast.Derivation(clazz, loc) => Index.useOf(clazz, loc)
       }
-      val idx3 = traverse(cases) {
-        case (_, caze) => Index.occurrenceOf(caze)
-      }
+      val idx3 = traverse(cases.values)(visitCase)
       idx0 ++ idx1 ++ idx2 ++ idx3
+  }
+
+  /**
+    * Returns a reverse index for the given enum case `caze0`.
+    */
+  private def visitCase(caze0: Case): Index = caze0 match {
+    case Case(_, _, tpe, _, _) =>
+      Index.occurrenceOf(caze0) ++ visitType(tpe)
   }
 
   /**
