@@ -468,7 +468,7 @@ object Resolver {
         val varSyms = (0 until arity).map(i => Symbol.freshVarSym(Flix.Delimiter + i, BoundBy.FormalParam, loc)).toList
 
         // Introduce a formal parameter for each variable symbol.
-        varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar, Ast.TypeSource.Inferred, loc))
+        varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar.withoutKind, Ast.TypeSource.Inferred, loc))
       }
 
       /**
@@ -478,7 +478,7 @@ object Resolver {
         val l = loc.asSynthetic
 
         // The arguments passed to the definition (i.e. the fresh variable symbols).
-        val argExps = fparams.map(fparam => ResolvedAst.Expression.Var(fparam.sym, fparam.sym.tvar, l))
+        val argExps = fparams.map(fparam => ResolvedAst.Expression.Var(fparam.sym, fparam.sym.tvar.withoutKind, l))
 
         // The apply expression inside the lambda.
         val applyExp = ResolvedAst.Expression.Apply(baseExp, argExps, l)
@@ -584,7 +584,7 @@ object Resolver {
           ResolvedAst.Expression.Wild(loc).toSuccess
 
         case NamedAst.Expression.Var(sym, loc) =>
-          ResolvedAst.Expression.Var(sym, sym.tvar, loc).toSuccess
+          ResolvedAst.Expression.Var(sym, sym.tvar.withoutKind, loc).toSuccess
 
         case NamedAst.Expression.DefOrSig(qname, env, loc) =>
           mapN(lookupDefOrSig(qname, ns0, env, root)) {
@@ -773,7 +773,7 @@ object Resolver {
                   val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, UnkindedType.freshVar(loc), Ast.TypeSource.Inferred, loc)
 
                   // Construct a variable expression for the fresh symbol.
-                  val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar, loc)
+                  val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar.withoutKind, loc)
 
                   // Construct the tag expression on the fresh symbol expression.
                   val tagExp = ResolvedAst.Expression.Tag(Ast.CaseSymUse(caze.sym, tag.loc), varExp, loc)
@@ -1812,7 +1812,7 @@ object Resolver {
           val rVal = semiResolveType(rest, ns0, root)
           mapN(tVal, tsVal, rVal) {
             case (t, ts, r) =>
-              val app = Type.mkApply(t, ts, loc)
+              val app = UnkindedType.mkApply(t, ts, loc)
               Type.mkSchemaRowExtend(Name.mkPred(qname.ident), app, r, loc)
           }
       }
