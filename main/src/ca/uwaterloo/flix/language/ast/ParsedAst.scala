@@ -305,7 +305,7 @@ object ParsedAst {
       * @param name the Java class or interface name.
       * @param sp2  the position of the last character.
       */
-    case class Import(sp1: SourcePosition, name: Seq[String], sp2: SourcePosition) extends ParsedAst.Import
+    case class Import(sp1: SourcePosition, name: Name.JavaName, sp2: SourcePosition) extends ParsedAst.Import
 
   }
 
@@ -1493,7 +1493,7 @@ object ParsedAst {
       * @param fqn the fully qualified Java name.
       * @param sp2 the position of the last character in the type.
       */
-    case class Native(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) extends ParsedAst.Type
+    case class Native(sp1: SourcePosition, fqn: Name.JavaName, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Type Application.
@@ -1916,7 +1916,7 @@ object ParsedAst {
     * @param fqn   the fully-qualified Java name.
     * @param exp   the body expression.
     */
-  case class CatchRule(ident: Name.Ident, fqn: Seq[String], exp: ParsedAst.Expression)
+  case class CatchRule(ident: Name.Ident, fqn: Name.JavaName, exp: ParsedAst.Expression)
 
   /**
     * Effect handler rule.
@@ -2039,7 +2039,7 @@ object ParsedAst {
       * @param purAndEff the purity and effect of the constructor.
       * @param ident     the name given to the imported constructor.
       */
-    case class Constructor(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
+    case class Constructor(fqn: Name.JavaName, sig: Seq[ParsedAst.Type], tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
 
     /**
       * Method Invocation.
@@ -2050,7 +2050,7 @@ object ParsedAst {
       * @param purAndEff the purity and effect of the imported method.
       * @param ident     the optional name given to the imported method.
       */
-    case class Method(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Type, purAndEff: PurityAndEffect, ident: Option[Name.Ident]) extends JvmOp
+    case class Method(fqn: Name.JavaName, sig: Seq[ParsedAst.Type], tpe: Type, purAndEff: PurityAndEffect, ident: Option[Name.Ident]) extends JvmOp
 
     /**
       * Static Method Invocation.
@@ -2061,7 +2061,7 @@ object ParsedAst {
       * @param purAndEff the purity and effect of the imported method.
       * @param ident     the optional name given to the imported method.
       */
-    case class StaticMethod(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Type, purAndEff: PurityAndEffect, ident: Option[Name.Ident]) extends JvmOp
+    case class StaticMethod(fqn: Name.JavaName, sig: Seq[ParsedAst.Type], tpe: Type, purAndEff: PurityAndEffect, ident: Option[Name.Ident]) extends JvmOp
 
     /**
       * Get Object Field.
@@ -2071,7 +2071,7 @@ object ParsedAst {
       * @param purAndEff the purity and effect of the generated function.
       * @param ident     the name given to the imported field.
       */
-    case class GetField(fqn: Seq[String], tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
+    case class GetField(fqn: Name.JavaName, tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
 
     /**
       * Put ObjectField.
@@ -2081,7 +2081,7 @@ object ParsedAst {
       * @param purAndEff the purity and effect of the generated function.
       * @param ident     the name given to the imported field.
       */
-    case class PutField(fqn: Seq[String], tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
+    case class PutField(fqn: Name.JavaName, tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
 
     /**
       * Get Static Field.
@@ -2091,7 +2091,7 @@ object ParsedAst {
       * @param purAndEff the purity and effect of the generated function.
       * @param ident     the name given to the imported field.
       */
-    case class GetStaticField(fqn: Seq[String], tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
+    case class GetStaticField(fqn: Name.JavaName, tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
 
     /**
       * Put Static Field.
@@ -2101,7 +2101,7 @@ object ParsedAst {
       * @param purAndEff the purity and effect of the generated function.
       * @param ident     the name given to the imported field.
       */
-    case class PutStaticField(fqn: Seq[String], tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
+    case class PutStaticField(fqn: Name.JavaName, tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
 
   }
 
