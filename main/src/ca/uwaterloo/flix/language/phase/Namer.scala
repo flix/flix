@@ -313,10 +313,10 @@ object Namer {
       mapN(visitHeadPredicate(h, outerEnv, headEnv, ruleEnv, uenv0, tenv0), traverse(bs)(b => visitBodyPredicate(b, outerEnv, headEnv, ruleEnv, uenv0, tenv0))) {
         case (head, body) =>
           val headParams = headEnv.map {
-            case (_, sym) => NamedAst.ConstraintParam.HeadParam(sym, sym.tvar, sym.loc)
+            case (_, sym) => NamedAst.ConstraintParam.HeadParam(sym, NamedAst.Type.Var(sym.tvar.sym, loc), sym.loc)
           }
           val ruleParam = ruleEnv.map {
-            case (_, sym) => NamedAst.ConstraintParam.RuleParam(sym, sym.tvar, sym.loc)
+            case (_, sym) => NamedAst.ConstraintParam.RuleParam(sym, NamedAst.Type.Var(sym.tvar.sym, loc), sym.loc)
           }
           val cparams = (headParams ++ ruleParam).toList
           NamedAst.Constraint(cparams, head, body, loc)

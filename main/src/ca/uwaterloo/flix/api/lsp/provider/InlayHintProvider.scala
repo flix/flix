@@ -15,19 +15,20 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.Entity
-import ca.uwaterloo.flix.language.ast.TypedAst.{FormalParam, Root}
-import ca.uwaterloo.flix.api.lsp.{Index, InlayHint, InlayHintKind, Position, Range}
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.lsp.{Entity, Index, InlayHint, InlayHintKind, Position, Range}
 import ca.uwaterloo.flix.language.ast.Ast.TypeSource
+import ca.uwaterloo.flix.language.ast.TypedAst.{FormalParam, Root}
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
+import ca.uwaterloo.flix.language.phase.unification.TypeMinimization
 
 object InlayHintProvider {
 
   /**
     * Returns the inlay hints in the given `uri` in the given `range`.
     */
-  def processInlayHints(uri: String, range: Range)(implicit index: Index, root: Root): List[InlayHint] = {
+  def processInlayHints(uri: String, range: Range)(implicit index: Index, root: Root, flix: Flix): List[InlayHint] = {
     index.queryByRange(uri, range) match {
       case Nil => Nil
       case entities => entities.flatMap {
@@ -41,7 +42,7 @@ object InlayHintProvider {
   /**
     * Returns an inlay hint for the given formal param `fparam`.
     */
-  private def getFormalParamHint(fparam: TypedAst.FormalParam): Option[InlayHint] = fparam match {
+  private def getFormalParamHint(fparam: TypedAst.FormalParam)(implicit flix: Flix): Option[InlayHint] = fparam match {
     case FormalParam(sym, _, tpe, src, loc) => src match {
       case TypeSource.Ascribed =>
         // We do not show any inlay hint if the type is already there.
@@ -49,7 +50,7 @@ object InlayHintProvider {
 
       case TypeSource.Inferred =>
         val pos = Position.fromEnd(fparam.loc)
-        val label = ": " + FormatType.formatWellKindedType(fparam.tpe)(Audience.External)
+        val label = ": " + FormatType.formatWellKindedType(TypeMinimization.minimizeType(tpe))(Audience.External)
         Some(InlayHint(pos, label, Some(InlayHintKind.Type), Nil, ""))
     }
   }
@@ -57,9 +58,9 @@ object InlayHintProvider {
   /**
     * Returns an inlay hint for the local var  type `tpe` at the given source location `loc`.
     */
-  private def getLocalVarHint(sym: Symbol.VarSym, tpe: Type): Option[InlayHint] = {
+  private def getLocalVarHint(sym: Symbol.VarSym, tpe: Type)(implicit flix: Flix): Option[InlayHint] = {
     val pos = Position.fromEnd(sym.loc)
-    val label = ": " + FormatType.formatWellKindedType(tpe)(Audience.External)
+    val label = ": " + FormatType.formatWellKindedType(TypeMinimization.minimizeType(tpe))(Audience.External)
     Some(InlayHint(pos, label, Some(InlayHintKind.Type), Nil, ""))
   }
 

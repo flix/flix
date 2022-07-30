@@ -418,9 +418,9 @@ object NamedAst {
 
   object ConstraintParam {
 
-    case class HeadParam(sym: Symbol.VarSym, tpe: ast.Type.UnkindedVar, loc: SourceLocation) extends NamedAst.ConstraintParam
+    case class HeadParam(sym: Symbol.VarSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.ConstraintParam
 
-    case class RuleParam(sym: Symbol.VarSym, tpe: ast.Type.UnkindedVar, loc: SourceLocation) extends NamedAst.ConstraintParam
+    case class RuleParam(sym: Symbol.VarSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.ConstraintParam
 
   }
 

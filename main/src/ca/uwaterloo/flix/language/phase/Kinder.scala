@@ -927,7 +927,7 @@ object Kinder {
     */
   private def visitConstraint(constraint0: ResolvedAst.Constraint, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.KindedVar, Type.KindedVar)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Constraint, KindError] = constraint0 match {
     case ResolvedAst.Constraint(cparams0, head0, body0, loc) =>
-      val cparamsVal = traverse(cparams0)(visitConstraintParam(_, kenv, root))
+      val cparamsVal = traverse(cparams0)(visitConstraintParam(_, kenv, senv, taenv, root))
       val headVal = visitHeadPredicate(head0, kenv, senv, taenv, henv, root)
       val bodyVal = traverse(body0)(visitBodyPredicate(_, kenv, senv, taenv, henv, root))
       mapN(cparamsVal, headVal, bodyVal) {
@@ -938,9 +938,17 @@ object Kinder {
   /**
     * Performs kinding on the given constraint param under the given kind environment.
     */
-  private def visitConstraintParam(cparam0: ResolvedAst.ConstraintParam, kenv: KindEnv, root: ResolvedAst.Root): Validation[KindedAst.ConstraintParam, KindError] = cparam0 match {
-    case ResolvedAst.ConstraintParam.HeadParam(sym, tpe, loc) => KindedAst.ConstraintParam.HeadParam(sym, tpe.ascribedWith(Kind.Star), loc).toSuccess
-    case ResolvedAst.ConstraintParam.RuleParam(sym, tpe, loc) => KindedAst.ConstraintParam.RuleParam(sym, tpe.ascribedWith(Kind.Star), loc).toSuccess
+  private def visitConstraintParam(cparam0: ResolvedAst.ConstraintParam, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.ConstraintParam, KindError] = cparam0 match {
+    case ResolvedAst.ConstraintParam.HeadParam(sym, tpe0, loc) =>
+      val tpeVal = visitType(tpe0, Kind.Star, kenv, senv, taenv, root)
+      mapN(tpeVal) {
+        case tpe => KindedAst.ConstraintParam.HeadParam(sym, tpe, loc)
+      }
+    case ResolvedAst.ConstraintParam.RuleParam(sym, tpe0, loc) =>
+      val tpeVal = visitType(tpe0, Kind.Star, kenv, senv, taenv, root)
+      mapN(tpeVal) {
+        case tpe => KindedAst.ConstraintParam.RuleParam(sym, tpe, loc)
+      }
   }
 
   /**
