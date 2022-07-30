@@ -930,7 +930,7 @@ object Weeder {
               }
 
               // Assemble the lambda expression.
-              val call = WeededAst.Expression.InvokeMethod(className, methodName, as.head, as.tail, ts, loc)
+              val call = WeededAst.Expression.InvokeMethod(className, methodName, as.head, as.tail, ts, tpe, loc)
               val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), purAndEff, loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
@@ -954,7 +954,7 @@ object Weeder {
               //
               if (sig.isEmpty) {
                 val fparam = WeededAst.FormalParam(Name.Ident(sp1, "_", sp2), Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
-                val call = WeededAst.Expression.InvokeStaticMethod(className, methodName, Nil, Nil, loc)
+                val call = WeededAst.Expression.InvokeStaticMethod(className, methodName, Nil, Nil, tpe, loc)
                 val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), purAndEff, loc)
                 val e1 = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
                 return WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc).toSuccess
@@ -978,7 +978,7 @@ object Weeder {
               }
 
               // Assemble the lambda expression.
-              val call = WeededAst.Expression.InvokeStaticMethod(className, methodName, as, ts, loc)
+              val call = WeededAst.Expression.InvokeStaticMethod(className, methodName, as, ts, tpe, loc)
               val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), purAndEff, loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)

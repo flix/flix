@@ -944,19 +944,21 @@ object Namer {
         case (as, sig) => NamedAst.Expression.InvokeConstructor(className, as, sig, loc)
       }
 
-    case WeededAst.Expression.InvokeMethod(className, methodName, exp, args, sig, loc) =>
+    case WeededAst.Expression.InvokeMethod(className, methodName, exp, args, sig, retTpe, loc) =>
       val expVal = visitExp(exp, env0, uenv0, tenv0)
       val argsVal = traverse(args)(visitExp(_, env0, uenv0, tenv0))
       val sigVal = traverse(sig)(visitType(_, uenv0, tenv0))
-      mapN(expVal, argsVal, sigVal) {
-        case (e, as, sig) => NamedAst.Expression.InvokeMethod(className, methodName, e, as, sig, loc)
+      val retVal = visitType(retTpe, uenv0, tenv0)
+      mapN(expVal, argsVal, sigVal, retVal) {
+        case (e, as, sig, ret) => NamedAst.Expression.InvokeMethod(className, methodName, e, as, sig, ret, loc)
       }
 
-    case WeededAst.Expression.InvokeStaticMethod(className, methodName, args, sig, loc) =>
+    case WeededAst.Expression.InvokeStaticMethod(className, methodName, args, sig, retTpe, loc) =>
       val argsVal = traverse(args)(visitExp(_, env0, uenv0, tenv0))
       val sigVal = traverse(sig)(visitType(_, uenv0, tenv0))
-      mapN(argsVal, sigVal) {
-        case (as, sig) => NamedAst.Expression.InvokeStaticMethod(className, methodName, as, sig, loc)
+      val retVal = visitType(retTpe, uenv0, tenv0)
+      mapN(argsVal, sigVal, retVal) {
+        case (as, sig, ret) => NamedAst.Expression.InvokeStaticMethod(className, methodName, as, sig, ret, loc)
       }
 
     case WeededAst.Expression.GetField(className, fieldName, exp, loc) =>
@@ -1531,8 +1533,8 @@ object Namer {
         case (fvs, WeededAst.CatchRule(ident, _, body)) => fvs ++ filterBoundVars(freeVars(body), List(ident))
       }
     case WeededAst.Expression.InvokeConstructor(_, args, _, _) => args.flatMap(freeVars)
-    case WeededAst.Expression.InvokeMethod(_, _, exp, args, _, _) => freeVars(exp) ++ args.flatMap(freeVars)
-    case WeededAst.Expression.InvokeStaticMethod(_, _, args, _, _) => args.flatMap(freeVars)
+    case WeededAst.Expression.InvokeMethod(_, _, exp, args, _, _, _) => freeVars(exp) ++ args.flatMap(freeVars)
+    case WeededAst.Expression.InvokeStaticMethod(_, _, args, _, _, _) => args.flatMap(freeVars)
     case WeededAst.Expression.GetField(_, _, exp, _) => freeVars(exp)
     case WeededAst.Expression.PutField(_, _, exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.GetStaticField(_, _, _) => Nil
