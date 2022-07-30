@@ -99,7 +99,7 @@ object ResolutionError {
     * @param tpe the illegal type.
     * @param loc the location where the error occurred.
     */
-  case class IllegalNonJavaType(tpe: Type, loc: SourceLocation) extends ResolutionError {
+  case class IllegalNonJavaType(tpe: UnkindedType, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Illegal non-Java type. Expected class or interface type."
 
     def message(formatter: Formatter): String = {

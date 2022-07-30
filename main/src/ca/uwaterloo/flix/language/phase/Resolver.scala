@@ -153,7 +153,7 @@ object Resolver {
       case UnkindedType.UnappliedAlias(sym, _) => sym :: Nil
       case _: UnkindedType.Cst => Nil
       case UnkindedType.Apply(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
-      case _: UnkindedType.UnkindedArrow => Nil
+      case _: UnkindedType.Arrow => Nil
       case UnkindedType.ReadWrite(tpe, loc) => getAliasUses(tpe)
       case _: UnkindedType.Alias => throw InternalCompilerException("unexpected applied alias")
     }
@@ -1073,8 +1073,8 @@ object Resolver {
               //
               // Check that the type is a JVM type (after type alias erasure).
               //
-              Type.eraseAliases(t) match {
-                case Type.Cst(TypeConstructor.Native(clazz), _) =>
+              UnkindedType.eraseAliases(t) match {
+                case UnkindedType.Cst(TypeConstructor.Native(clazz), _) =>
                   ResolvedAst.Expression.NewObject(name, clazz, ms, loc).toSuccess
                 case _ => ResolutionError.IllegalNonJavaType(t, t.loc).toFailure
               }
@@ -2680,7 +2680,7 @@ object Resolver {
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
     */
   def mkUncurriedArrowWithEffect(as: List[UnkindedType], e: UnkindedType.PurityAndEffect, b: UnkindedType, loc: SourceLocation): UnkindedType = {
-    val arrow = UnkindedType.UnkindedArrow(e, as.length + 1, loc)
+    val arrow = UnkindedType.Arrow(e, as.length + 1, loc)
     val inner = as.foldLeft(arrow: UnkindedType) {
       case (acc, x) => UnkindedType.Apply(acc, x, loc)
     }
