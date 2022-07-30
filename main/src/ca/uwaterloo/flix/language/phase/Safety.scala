@@ -228,8 +228,11 @@ object Safety {
       visitExp(exp)
 
     case Expression.NewObject(_, clazz, tpe, _, _, methods, loc) =>
-      checkObjectImplementation(clazz, tpe, methods, loc) ++
-        methods.flatMap { case JvmMethod(_, _, exp, _, _, _, _) => visitExp(exp) }
+      val erasedType = Type.eraseAliases(tpe)
+      checkObjectImplementation(clazz, erasedType, methods, loc) ++
+        methods.flatMap {
+          case JvmMethod(_, _, exp, _, _, _, _) => visitExp(exp)
+        }
 
     case Expression.NewChannel(exp, _, _, _, _) =>
       visitExp(exp)
@@ -534,10 +537,16 @@ object Safety {
     //
     // Check that `clazz` doesn't have a non-default constructor
     //
-    val constructorErrors = if (!clazz.isInterface && !hasPublicZeroArgConstructor(clazz))
-      List(MissingPublicZeroArgConstructor(clazz, loc))
-    else
+    val constructorErrors = if (clazz.isInterface) {
+      // Case 1: Interface. No need for a constructor.
       List.empty
+    } else {
+      // Case 2: Class. Must have a public non-zero argument constructor.
+      if (hasPublicZeroArgConstructor(clazz))
+        List.empty
+      else
+        List(MissingPublicZeroArgConstructor(clazz, loc))
+    }
 
     //
     // Check that `clazz` is public
@@ -619,7 +628,7 @@ object Safety {
     */
   private def hasPublicZeroArgConstructor(clazz: java.lang.Class[_]): Boolean = {
     try {
-      // We simply use getConstructor whose documentation states:
+      // We simply use Class.getConstructor whose documentation states:
       //
       // Returns a Constructor object that reflects the specified
       // public constructor of the class represented by this class object.
