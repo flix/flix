@@ -419,16 +419,11 @@ object Resolver {
     * Performs name resolution on the given case `caze0` in the given namespace `ns0`.
     */
   private def resolveCase(caze0: (Name.Tag, NamedAst.Case), enum0: NamedAst.Enum, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix) = (enum0, caze0) match {
-    case (NamedAst.Enum(_, _, _, sym, tparams, _, _, _, _), (name, NamedAst.Case(enumIdent, tag, tpe0))) =>
+    case (NamedAst.Enum(_, _, _, sym, tparams, _, _, _, _), (name, NamedAst.Case(_, tag, tpe0))) =>
       val tpeVal = resolveType(tpe0, taenv, ns0, root)
       mapN(tpeVal) {
         tpe =>
-          val freeVars = tparams.tparams.map(_.sym)
-          val caseType = tpe
-          val enumType = mkUnkindedEnum(sym, freeVars, sym.loc)
-          val base = Type.mkTag(sym, tag, caseType, enumType, tpe.loc)
-          val sc = ResolvedAst.Scheme(freeVars, Nil, base)
-          name -> ResolvedAst.Case(enumIdent, tag, tpe, sc)
+          name -> ResolvedAst.Case(sym, tag, tpe)
       }
   }
 
