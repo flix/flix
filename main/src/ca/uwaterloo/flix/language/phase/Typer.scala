@@ -2029,7 +2029,7 @@ object Typer {
         val tpe = e1.tpe
         val pur = subst0(pvar)
         val eff = Type.mkUnion(List(e1.eff, e2.eff, e3.eff), loc)
-        TypedAst.Expression.ArraySlice(e1, e2, e3, tpe, eff, pur, loc)
+        TypedAst.Expression.ArraySlice(e1, e2, e3, tpe, pur, eff, loc)
 
       case KindedAst.Expression.Ref(exp1, exp2, tvar, pvar, loc) =>
         val e1 = visitExp(exp1, subst0)
