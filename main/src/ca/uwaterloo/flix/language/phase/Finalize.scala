@@ -444,9 +444,6 @@ object Finalize {
 
             case TypeConstructor.KindedEnum(sym, _) => MonoType.Enum(sym, args)
 
-            case TypeConstructor.Tag(sym, _) =>
-              throw InternalCompilerException(s"Unexpected type: '$t0'.")
-
             case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
             case TypeConstructor.Array => MonoType.Array(args.head)
