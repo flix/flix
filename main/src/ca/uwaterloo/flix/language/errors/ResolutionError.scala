@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, UnkindedType}
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -75,7 +75,7 @@ object ResolutionError {
     * @param tpe the illegal type.
     * @param loc the location where the error occurred.
     */
-  case class IllegalType(tpe: Type, loc: SourceLocation) extends ResolutionError {
+  case class IllegalType(tpe: UnkindedType, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Illegal type."
 
     def message(formatter: Formatter): String = {

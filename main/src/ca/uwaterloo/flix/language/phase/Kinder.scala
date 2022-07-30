@@ -455,7 +455,7 @@ object Kinder {
       KindedAst.Expression.Region(tpe, loc).toSuccess
 
     case ResolvedAst.Expression.Scope(sym, regionVar, exp0, loc) =>
-      val rv = Type.KindedVar(regionVar.ascribedWith(Kind.Bool), loc)
+      val rv = Type.KindedVar(regionVar.withKind(Kind.Bool), loc)
       val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
       flatMapN(kenv0 + (regionVar -> Kind.Bool)) {
         case kenv =>
@@ -1012,11 +1012,11 @@ object Kinder {
   private def visitTypeVarSym(sym: Symbol.UnkindedTypeVarSym, expectedKind: Kind, kenv: KindEnv, loc: SourceLocation): Validation[Symbol.KindedTypeVarSym, KindError] = {
     kenv.map.get(sym) match {
       // Case 1: we don't know about this kind, just ascribe it with what the context expects
-      case None => sym.ascribedWith(expectedKind).toSuccess
+      case None => sym.withKind(expectedKind).toSuccess
       // Case 2: we know about this kind, make sure it's behaving as we expect
       case Some(actualKind) =>
         unify(expectedKind, actualKind) match {
-          case Some(kind) => sym.ascribedWith(kind).toSuccess
+          case Some(kind) => sym.withKind(kind).toSuccess
           case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc = loc).toFailure
         }
     }

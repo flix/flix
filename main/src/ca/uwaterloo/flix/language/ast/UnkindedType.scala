@@ -22,6 +22,13 @@ object UnkindedType {
     val sym = Symbol.freshUnkindedTypeVarSym(text, isRegion, loc)
     UnkindedType.Var(sym, loc)
   }
+
+  /**
+    * Constructs the apply type base[t_1, ,..., t_n].
+    */
+  def mkApply(base: UnkindedType, ts: List[UnkindedType], loc: SourceLocation): UnkindedType = ts.foldLeft(base) {
+    case (acc, t) => Apply(acc, t, loc)
+  }
 }
 
 sealed trait UnkindedType {

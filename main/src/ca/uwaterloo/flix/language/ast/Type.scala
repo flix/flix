@@ -358,12 +358,16 @@ object Type {
   /**
     * A type variable.
     */
-  @IntroducedBy(Kinder.getClass)
   case class KindedVar(sym: Symbol.KindedTypeVarSym, loc: SourceLocation) extends Type with BaseType with Ordered[Type.KindedVar] {
 
     def withText(text: Ast.VarText): KindedVar = KindedVar(sym.withText(text), loc)
 
     def kind: Kind = sym.kind
+
+    /**
+      * Removes the kind from this var.
+      */
+    def withoutKind: UnkindedType.Var = UnkindedType.Var(sym.withoutKind, loc)
 
     /**
       * Returns `true` if `this` type variable is equal to `o`.

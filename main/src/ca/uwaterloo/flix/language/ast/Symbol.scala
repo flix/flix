@@ -60,14 +60,14 @@ object Symbol {
     * Returns a fresh variable symbol for the given identifier.
     */
   def freshVarSym(ident: Name.Ident, boundBy: BoundBy)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(ident.loc), boundBy, ident.loc)
+    new VarSym(flix.genSym.freshId(), ident.name, Type.freshVar(Kind.Star, ident.loc), boundBy, ident.loc)
   }
 
   /**
     * Returns a fresh variable symbol with the given text.
     */
   def freshVarSym(text: String, boundBy: BoundBy, loc: SourceLocation)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), text, Type.freshUnkindedVar(loc), boundBy, loc)
+    new VarSym(flix.genSym.freshId(), text, Type.freshVar(Kind.Star, loc), boundBy, loc)
   }
 
   /**
@@ -210,7 +210,7 @@ object Symbol {
     * @param boundBy the way the variable is bound.
     * @param loc     the source location associated with the symbol.
     */
-  final class VarSym(val id: Int, val text: String, val tvar: Type.UnkindedVar, val boundBy: BoundBy, val loc: SourceLocation) extends Ordered[VarSym] {
+  final class VarSym(val id: Int, val text: String, val tvar: Type.KindedVar, val boundBy: BoundBy, val loc: SourceLocation) extends Ordered[VarSym] {
 
     /**
       * The internal stack offset. Computed during variable numbering.
@@ -323,6 +323,11 @@ object Symbol {
       */
     def withKind(newKind: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, newKind, isRegion, loc)
 
+    /**
+      * Returns the same symbol without a kind.
+      */
+    def withoutKind: UnkindedTypeVarSym = new UnkindedTypeVarSym(id, text, isRegion, loc)
+
     override def withText(newText: Ast.VarText): KindedTypeVarSym = new KindedTypeVarSym(id, newText, kind, isRegion, loc)
 
     override def compare(that: KindedTypeVarSym): Int = that.id - this.id
@@ -338,7 +343,7 @@ object Symbol {
     /**
       * Ascribes this UnkindedTypeVarSym with the given kind.
       */
-    def ascribedWith(k: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, k, isRegion, loc)
+    def withKind(k: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, k, isRegion, loc)
 
     override def compare(that: UnkindedTypeVarSym): Int = that.id - this.id
   }

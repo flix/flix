@@ -1730,9 +1730,9 @@ object Resolver {
     * Type aliases are given temporary placeholders.
     */
   private def semiResolveType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[UnkindedType, ResolutionError] = tpe0 match {
-    case NamedAst.Type.Var(sym, loc) => Type.UnkindedVar(sym, loc).toSuccess
+    case NamedAst.Type.Var(sym, loc) => UnkindedType.Var(sym, loc).toSuccess
 
-    case NamedAst.Type.Unit(loc) => Type.mkUnit(loc).toSuccess
+    case NamedAst.Type.Unit(loc) => UnkindedType.Cst(TypeConstructor.Unit, loc).toSuccess
 
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
       // Basic Types
@@ -1936,7 +1936,7 @@ object Resolver {
       val map = alias.tparams.tparams.map(_.sym).zip(args).toMap[Symbol.TypeVarSym, Type]
       val subst = Substitution(map)
       val tpe = subst(alias.tpe)
-      val cst = Type.AliasConstructor(alias.sym, cstLoc)
+      val cst = Ast.AliasConstructor(alias.sym, cstLoc)
       Type.Alias(cst, args, tpe, tpe0.loc)
     }
 
@@ -2469,7 +2469,7 @@ object Resolver {
   /**
     * Returns the method reflection object for the given `clazz`, `methodName`, and `signature`.
     */
-  private def lookupJvmMethod(clazz: Class[_], methodName: String, signature: List[Type], retTpe: Type, static: Boolean, loc: SourceLocation)(implicit flix: Flix): Validation[Method, ResolutionError] = {
+  private def lookupJvmMethod(clazz: Class[_], methodName: String, signature: List[UnkindedType], retTpe: UnkindedType, static: Boolean, loc: SourceLocation)(implicit flix: Flix): Validation[Method, ResolutionError] = {
     // Lookup the signature.
     flatMapN(lookupSignature(signature, loc)) {
       sig => try {
@@ -2542,7 +2542,7 @@ object Resolver {
     *
     * An array type is mapped to the corresponding array type.
     */
-  private def getJVMType(tpe: Type, loc: SourceLocation)(implicit flix: Flix): Validation[Class[_], ResolutionError] = Type.eraseAliases(tpe).typeConstructor match {
+  private def getJVMType(tpe: UnkindedType, loc: SourceLocation)(implicit flix: Flix): Validation[Class[_], ResolutionError] = Type.eraseAliases(tpe).typeConstructor match {
     case None =>
       ResolutionError.IllegalType(tpe, loc).toFailure
 
@@ -2619,15 +2619,15 @@ object Resolver {
   /**
     * Construct the enum type `Sym[ts]`.
     */
-  def mkUnkindedEnum(sym: Symbol.EnumSym, ts: List[Symbol.UnkindedTypeVarSym], loc: SourceLocation): Type = {
-    val args = ts.map(sym => Type.UnkindedVar(sym, sym.loc))
-    Type.mkApply(Type.Cst(TypeConstructor.UnkindedEnum(sym), loc), args, loc)
+  def mkUnkindedEnum(sym: Symbol.EnumSym, ts: List[Symbol.UnkindedTypeVarSym], loc: SourceLocation): UnkindedType = {
+    val args = ts.map(sym => UnkindedType.Var(sym, sym.loc))
+    UnkindedType.mkApply(UnkindedType.Enum(sym, loc), args, loc)
   }
 
   /**
     * Construct the type alias type constructor for the given symbol `sym` with the given kind `k`.
     */
-  def mkUnappliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation): Type = UnkindedType.UnappliedAlias(sym, loc)
+  def mkUnappliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation): UnkindedType = UnkindedType.UnappliedAlias(sym, loc)
 
   /**
     * Construct the effect type for the given symbol.
@@ -2679,12 +2679,12 @@ object Resolver {
   /**
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
     */
-  def mkUncurriedArrowWithEffect(as: List[Type], e: Ast.PurityAndEffect, b: Type, loc: SourceLocation): Type = {
-    val arrow = Type.UnkindedArrow(e, as.length + 1, loc)
-    val inner = as.foldLeft(arrow: Type) {
-      case (acc, x) => Type.Apply(acc, x, loc)
+  def mkUncurriedArrowWithEffect(as: List[UnkindedType], e: UnkindedType.PurityAndEffect, b: UnkindedType, loc: SourceLocation): UnkindedType = {
+    val arrow = UnkindedType.UnkindedArrow(e, as.length + 1, loc)
+    val inner = as.foldLeft(arrow: UnkindedType) {
+      case (acc, x) => UnkindedType.Apply(acc, x, loc)
     }
-    Type.Apply(inner, b, loc)
+    UnkindedType.Apply(inner, b, loc)
   }
 
   /**
@@ -2699,7 +2699,7 @@ object Resolver {
       currentRegion match {
         case Some(sym) =>
           // Case 2.1: Use the current region.
-          ResolvedAst.Expression.Var(sym, sym.tvar, sym.loc)
+          ResolvedAst.Expression.Var(sym, sym.tvar.withoutKind, sym.loc)
         case None =>
           // Case 2.2: Use the global region.
           val tpe = Type.mkRegion(Type.False, loc)

@@ -41,7 +41,7 @@ object ResolvedAst {
 
   case class Def(sym: Symbol.DefnSym, spec: ResolvedAst.Spec, exp: ResolvedAst.Expression)
 
-  case class Spec(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, tparams: ResolvedAst.TypeParams, fparams: List[ResolvedAst.FormalParam], tpe: UnkindedType, purAndEff: Ast.PurityAndEffect, tconstrs: List[ResolvedAst.TypeConstraint], loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, tparams: ResolvedAst.TypeParams, fparams: List[ResolvedAst.FormalParam], tpe: UnkindedType, purAndEff: UnkindedType.PurityAndEffect, tconstrs: List[ResolvedAst.TypeConstraint], loc: SourceLocation)
 
   case class Enum(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: ResolvedAst.TypeParams, derives: List[Ast.Derivation], cases: List[ResolvedAst.Case], tpe: UnkindedType, loc: SourceLocation)
 
@@ -152,9 +152,9 @@ object ResolvedAst {
 
     case class Assign(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Ascribe(exp: ResolvedAst.Expression, expectedType: Option[UnkindedType], expectedEff: Ast.PurityAndEffect, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Ascribe(exp: ResolvedAst.Expression, expectedType: Option[UnkindedType], expectedEff: UnkindedType.PurityAndEffect, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Cast(exp: ResolvedAst.Expression, declaredType: Option[UnkindedType], declaredEff: Ast.PurityAndEffect, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Cast(exp: ResolvedAst.Expression, declaredType: Option[UnkindedType], declaredEff: UnkindedType.PurityAndEffect, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Upcast(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -352,7 +352,7 @@ object ResolvedAst {
 
   }
 
-  case class JvmMethod(ident: Name.Ident, fparams: Seq[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, tpe: UnkindedType, purAndEff: Ast.PurityAndEffect, loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: Seq[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, tpe: UnkindedType, purAndEff: UnkindedType.PurityAndEffect, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ResolvedAst.Expression)
 
