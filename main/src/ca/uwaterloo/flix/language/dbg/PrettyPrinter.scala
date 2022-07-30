@@ -22,6 +22,8 @@ import ca.uwaterloo.flix.language.fmt.Audience
 import ca.uwaterloo.flix.language.fmt.FormatType.formatWellKindedType
 import ca.uwaterloo.flix.util.Formatter
 
+import scala.collection.mutable
+
 object PrettyPrinter {
 
   private implicit val audience: Audience = Audience.External
@@ -29,16 +31,8 @@ object PrettyPrinter {
   object Lifted {
 
     def fmtRoot(root: Root, formatter: Formatter): String = {
-      import formatter._
-      val sb = new StringBuilder()
+      val sb = new mutable.StringBuilder
       for ((sym, defn) <- root.defs.toList.sortBy(_._1.loc)) {
-        sb.append(s"${bold("def")} ${blue(sym.toString)}(")
-        for (fparam <- defn.fparams) {
-          sb.append(s"${fmtParam(fparam, formatter)}, ")
-        }
-        sb.append(") & ")
-        sb.append(defn.exp.purity)
-        sb.append(" = ")
         sb.append(fmtDef(defn, formatter).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
         sb.append(System.lineSeparator() + System.lineSeparator())
       }
@@ -46,7 +40,21 @@ object PrettyPrinter {
     }
 
     def fmtDef(defn: Def, formatter: Formatter): String = {
-      fmtExp(defn.exp, formatter)
+      import formatter._
+      val sb = new mutable.StringBuilder
+      sb.append(s"${bold("def")} ${blue(defn.sym.toString)}(")
+      for (fparam <- defn.fparams) {
+        sb.append(s"${fmtParam(fparam, formatter)}, ")
+      }
+      sb.append("): ")
+      sb.append(formatWellKindedType(defn.exp.tpe))
+      sb.append(" & ")
+      sb.append(defn.exp.purity)
+      sb.append(" = ")
+      sb.append("\n")
+      sb.append("  ")
+      sb.append(fmtExp(defn.exp, formatter))
+      sb.toString()
     }
 
     def fmtExp(exp0: Expression, formatter: Formatter): String = {
@@ -80,7 +88,7 @@ object PrettyPrinter {
         case Expression.Var(sym, tpe, loc) => fmtSym(sym, formatter)
 
         case Expression.Closure(sym, closureArgs, _, _) =>
-          val sb = new StringBuilder()
+          val sb = new mutable.StringBuilder
           sb.append("Closure(")
             .append(fmtSym(sym, formatter))
             .append(", [")
@@ -92,7 +100,7 @@ object PrettyPrinter {
             .toString()
 
         case Expression.ApplyClo(exp, args, tpe, _, loc) =>
-          val sb = new StringBuilder()
+          val sb = new mutable.StringBuilder
           sb.append(visitExp(exp))
             .append("(")
           for (arg <- args) {
@@ -103,7 +111,7 @@ object PrettyPrinter {
             .toString()
 
         case Expression.ApplyDef(sym, args, tpe, _, loc) =>
-          val sb = new StringBuilder()
+          val sb = new mutable.StringBuilder
           sb.append(fmtSym(sym, formatter))
             .append("(")
           for (arg <- args) {
@@ -115,7 +123,7 @@ object PrettyPrinter {
             .toString()
 
         case Expression.ApplyCloTail(exp, args, tpe, _, loc) =>
-          val sb = new StringBuilder()
+          val sb = new mutable.StringBuilder
           sb.append(visitExp(exp))
             .append("*(")
           for (arg <- args) {
@@ -126,7 +134,7 @@ object PrettyPrinter {
             .toString()
 
         case Expression.ApplyDefTail(sym, args, tpe, _, loc) =>
-          val sb = new StringBuilder()
+          val sb = new mutable.StringBuilder
           sb.append(fmtSym(sym, formatter))
             .append("*(")
           for (arg <- args) {
@@ -137,7 +145,7 @@ object PrettyPrinter {
             .toString()
 
         case Expression.ApplySelfTail(name, formals, args, tpe, _, loc) =>
-          val sb = new StringBuilder()
+          val sb = new mutable.StringBuilder
           sb.append("ApplySelfTail")
             .append("*(")
           for (arg <- args) {
@@ -151,7 +159,7 @@ object PrettyPrinter {
           fmtUnaryOp(op) + visitExp(exp)
 
         case Expression.Binary(sop, op, exp1, exp2, tpe, _, loc) =>
-          val sb = new StringBuilder()
+          val sb = new mutable.StringBuilder
           sb.append(visitExp(exp1))
             .append(" ")
             .append(fmtBinaryOp(op))
@@ -160,7 +168,7 @@ object PrettyPrinter {
             .toString()
 
         case Expression.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
-          val sb = new StringBuilder()
+          val sb = new mutable.StringBuilder
           sb.append(formatter.bold("if") + " (")
             .append(visitExp(exp1))
             .append(") {")
@@ -176,7 +184,7 @@ object PrettyPrinter {
             .toString()
 
         case Expression.Branch(exp, branches, tpe, _, loc) =>
-          val sb = new StringBuilder()
+          val sb = new mutable.StringBuilder
           sb.append("branch {")
             .append((" " * 2) + visitExp(exp).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
             .append(System.lineSeparator())
@@ -194,9 +202,11 @@ object PrettyPrinter {
         case Expression.JumpTo(sym, tpe, purity, loc) => s"jumpto ${fmtSym(sym, formatter)}"
 
         case Expression.Let(sym, exp1, exp2, tpe, purity, loc) =>
-          val sb = new StringBuilder()
+          val sb = new mutable.StringBuilder
           sb.append(formatter.bold("let "))
             .append(fmtSym(sym, formatter))
+            .append(": ")
+            .append(formatWellKindedType(exp1.tpe))
             .append(" = ")
             .append(visitExp(exp1).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
             .append(";")
@@ -205,7 +215,7 @@ object PrettyPrinter {
             .toString()
 
         case Expression.LetRec(varSym, _, _, exp1, exp2, tpe, _, loc) =>
-          val sb = new StringBuilder()
+          val sb = new mutable.StringBuilder
           sb.append(formatter.bold("let rec"))
             .append(fmtSym(varSym, formatter))
             .append(" = ")
@@ -220,7 +230,7 @@ object PrettyPrinter {
         case Expression.Tag(sym, tag, exp, tpe, _, loc) => exp match {
           case Expression.Unit(_) => tag.name
           case _ =>
-            val sb = new StringBuilder()
+            val sb = new mutable.StringBuilder
             sb.append(tag.name)
               .append("(")
               .append(visitExp(exp))
@@ -237,7 +247,7 @@ object PrettyPrinter {
             "]"
 
         case Expression.Tuple(elms, tpe, _, loc) =>
-          val sb = new StringBuilder()
+          val sb = new mutable.StringBuilder
           sb.append("(")
           for (elm <- elms) {
             sb.append(visitExp(elm))
@@ -270,7 +280,7 @@ object PrettyPrinter {
             "}"
 
         case Expression.ArrayLit(elms, tpe, loc) =>
-          val sb = new StringBuilder()
+          val sb = new mutable.StringBuilder
           sb.append("[")
           for (elm <- elms) {
             sb.append(visitExp(elm))
@@ -323,10 +333,10 @@ object PrettyPrinter {
         case Expression.Cast(exp, tpe, _, loc) =>
           visitExp(exp) +
             " as " +
-            tpe.toString
+            formatWellKindedType(tpe)
 
         case Expression.TryCatch(exp, rules, tpe, _, loc) =>
-          val sb = new StringBuilder()
+          val sb = new mutable.StringBuilder
           sb.append("try {")
             .append(System.lineSeparator())
             .append((" " * 2) + visitExp(exp).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
@@ -346,7 +356,7 @@ object PrettyPrinter {
             .toString()
 
         case Expression.InvokeConstructor(constructor, args, tpe, _, loc) =>
-          val sb = new StringBuilder()
+          val sb = new mutable.StringBuilder
           sb.append(constructor.toString)
             .append("(")
           for (e <- args) {
@@ -357,7 +367,7 @@ object PrettyPrinter {
             .toString()
 
         case Expression.InvokeMethod(method, exp, args, tpe, _, loc) =>
-          val sb = new StringBuilder()
+          val sb = new mutable.StringBuilder
           sb.append(visitExp(exp))
             .append(".")
             .append(method.getDeclaringClass.getCanonicalName + "." + method.getName)
@@ -370,7 +380,7 @@ object PrettyPrinter {
             .toString()
 
         case Expression.InvokeStaticMethod(method, args, tpe, _, loc) =>
-          val sb = new StringBuilder()
+          val sb = new mutable.StringBuilder
           sb.append(method.getDeclaringClass.getCanonicalName + "." + method.getName)
             .append("(")
           for (e <- args) {
@@ -414,7 +424,7 @@ object PrettyPrinter {
         case Expression.GetChannel(exp, tpe, loc) => "<- " + visitExp(exp)
 
         case Expression.SelectChannel(rules, default, tpe, loc) =>
-          val sb = new StringBuilder()
+          val sb = new mutable.StringBuilder
           sb.append("select {")
             .append(System.lineSeparator())
           for (SelectChannelRule(sym, chan, exp) <- rules) {
