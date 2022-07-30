@@ -455,7 +455,7 @@ object Weeder {
     * Performs weeding on the given import `i0`.
     */
   private def visitImport(i0: ParsedAst.Import): Validation[WeededAst.Declaration, WeederError] = i0 match {
-    case ParsedAst.Imports.Import(sp1, name, sp2) =>
+    case ParsedAst.Imports.Import(sp1, Name.JavaName(_, name, _), sp2) =>
       val loc = mkSL(sp1, sp2)
       val doc = Ast.Doc(Nil, loc)
       val mod = Ast.Modifiers.Empty
@@ -853,7 +853,7 @@ object Weeder {
           mapN(visitExp(exp2, senv)) {
             case e2 =>
               // Compute the class name.
-              val className = fqn.mkString(".")
+              val className = fqn.toString
 
               val tpe = visitType(tpe0)
               val purAndEff = visitPurityAndEffect(purAndEff0)
@@ -897,10 +897,10 @@ object Weeder {
           //
           // Introduce a let-bound lambda: (obj, args...) -> InvokeMethod(obj, args) as tpe & pur
           //
-          mapN(parseClassAndMember(fqn, loc), visitExp(exp2, senv)) {
+          mapN(parseClassAndMember(fqn), visitExp(exp2, senv)) {
             case ((className, methodName), e2) =>
               // Compute the name of the let-bound variable.
-              val ident = identOpt.getOrElse(Name.Ident(sp1, methodName, sp2))
+              val ident = identOpt.getOrElse(Name.Ident(fqn.sp1, methodName, fqn.sp2))
 
               val receiverType = WeededAst.Type.Native(className, loc)
 
@@ -940,11 +940,11 @@ object Weeder {
           //
           // Introduce a let-bound lambda: (args...) -> InvokeStaticMethod(args) as tpe & pur
           //
-          mapN(parseClassAndMember(fqn, loc), visitExp(exp2, senv)) {
+          mapN(parseClassAndMember(fqn), visitExp(exp2, senv)) {
             case ((className, methodName), e2) =>
 
               // Compute the name of the let-bound variable.
-              val ident = identOpt.getOrElse(Name.Ident(sp1, methodName, sp2))
+              val ident = identOpt.getOrElse(Name.Ident(fqn.sp1, methodName, fqn.sp2))
 
               val tpe = visitType(tpe0)
               val purAndEff = visitPurityAndEffect(purAndEff0)
@@ -988,7 +988,7 @@ object Weeder {
           //
           // Introduce a let-bound lambda: o -> GetField(o) as tpe & pur
           //
-          mapN(parseClassAndMember(fqn, loc), visitExp(exp2, senv)) {
+          mapN(parseClassAndMember(fqn), visitExp(exp2, senv)) {
 
             case ((className, fieldName), e2) =>
               val tpe = visitType(tpe0)
@@ -1007,7 +1007,7 @@ object Weeder {
           //
           // Introduce a let-bound lambda: (o, v) -> PutField(o, v) as tpe & pur
           //
-          mapN(parseClassAndMember(fqn, loc), visitExp(exp2, senv)) {
+          mapN(parseClassAndMember(fqn), visitExp(exp2, senv)) {
             case ((className, fieldName), e2) =>
               val tpe = visitType(tpe0)
               val purAndEff = visitPurityAndEffect(purAndEff0)
@@ -1028,7 +1028,7 @@ object Weeder {
           //
           // Introduce a let-bound lambda: _: Unit -> GetStaticField.
           //
-          mapN(parseClassAndMember(fqn, loc), visitExp(exp2, senv)) {
+          mapN(parseClassAndMember(fqn), visitExp(exp2, senv)) {
             case ((className, fieldName), e2) =>
               val tpe = visitType(tpe0)
               val purAndEff = visitPurityAndEffect(purAndEff0)
@@ -1045,7 +1045,7 @@ object Weeder {
           //
           // Introduce a let-bound lambda: x -> PutStaticField(x).
           //
-          mapN(parseClassAndMember(fqn, loc), visitExp(exp2, senv)) {
+          mapN(parseClassAndMember(fqn), visitExp(exp2, senv)) {
             case ((className, fieldName), e2) =>
               val tpe = visitType(tpe0)
               val purAndEff = visitPurityAndEffect(purAndEff0)
@@ -1473,7 +1473,7 @@ object Weeder {
       val rulesVal = traverse(rules) {
         case ParsedAst.CatchRule(ident, fqn, body) =>
           visitExp(body, senv) map {
-            case b => WeededAst.CatchRule(ident, fqn.mkString("."), b)
+            case b => WeededAst.CatchRule(ident, fqn.toString, b)
           }
       }
 
@@ -2388,7 +2388,7 @@ object Weeder {
       mkCurriedArrow(ts, purAndEff, tr, loc)
 
     case ParsedAst.Type.Native(sp1, fqn, sp2) =>
-      WeededAst.Type.Native(fqn.mkString("."), mkSL(sp1, sp2))
+      WeededAst.Type.Native(fqn.toString, mkSL(sp1, sp2))
 
     case ParsedAst.Type.Apply(t1, args, sp2) =>
       // Curry the type arguments.
@@ -3102,17 +3102,18 @@ object Weeder {
   /**
     * Returns the class and member name constructed from the given fully-qualified name `fqn`.
     */
-  private def parseClassAndMember(fqn: Seq[String], loc: SourceLocation): Validation[(String, String), WeederError] = {
-    // Ensure that the fqn has at least two components.
-    if (fqn.length == 1) {
-      return WeederError.IllegalJvmFieldOrMethodName(loc).toFailure
-    }
+  private def parseClassAndMember(fqn: Name.JavaName): Validation[(String, String), WeederError] = fqn match {
+    case Name.JavaName(sp1, components, sp2) =>
+      // Ensure that the fqn has at least two components.
+      if (components.length == 1) {
+        return WeederError.IllegalJvmFieldOrMethodName(mkSL(sp1, sp2)).toFailure
+      }
 
-    // Compute the class and member name.
-    val className = fqn.dropRight(1).mkString(".")
-    val memberName = fqn.last
+      // Compute the class and member name.
+      val className = components.dropRight(1).mkString(".")
+      val memberName = components.last
 
-    (className, memberName).toSuccess
+      (className, memberName).toSuccess
   }
 
   /**
