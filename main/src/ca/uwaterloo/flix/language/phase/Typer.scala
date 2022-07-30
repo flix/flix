@@ -1752,7 +1752,7 @@ object Typer {
         val a = Type.freshVar(Kind.Star, loc, text = FallbackText("arg"))
         val b = Type.freshVar(Kind.Star, loc, text = FallbackText("result"))
         val p = Type.freshVar(Kind.Bool, loc, text = FallbackText("pur"))
-        val ef = Type.freshVar(Kind.Bool, loc, text = FallbackText("eff"))
+        val ef = Type.freshVar(Kind.Effect, loc, text = FallbackText("eff"))
         val polyLambdaType = Type.mkArrowWithEffect(a, p, ef, b, loc)
         val pureLambdaType = Type.mkPureArrow(a, b, loc)
         for {
