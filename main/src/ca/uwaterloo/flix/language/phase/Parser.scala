@@ -1832,8 +1832,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       capture((CharPredicate.Alpha | anyOf("_$")) ~ zeroOrMore(CharPredicate.AlphaNum | anyOf("_$")))
     }
 
-    def JavaName: Rule1[Seq[String]] = rule {
-      oneOrMore(JavaIdentifier).separatedBy(".")
+    def JavaName: Rule1[Name.JavaName] = rule {
+      SP ~ oneOrMore(JavaIdentifier).separatedBy(".") ~ SP ~> Name.JavaName
     }
 
     def JavaMethod: Rule1[Name.Ident] = rule {

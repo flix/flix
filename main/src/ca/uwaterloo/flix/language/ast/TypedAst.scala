@@ -498,7 +498,7 @@ object TypedAst {
 
   case class Attribute(name: String, tpe: Type, loc: SourceLocation)
 
-  case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: Type, sc: Scheme, loc: SourceLocation)
+  case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpe: Type, sc: Scheme, loc: SourceLocation)
 
   case class Constraint(cparams: List[TypedAst.ConstraintParam], head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body], loc: SourceLocation)
 
