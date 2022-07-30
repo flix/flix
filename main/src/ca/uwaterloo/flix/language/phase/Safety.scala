@@ -527,7 +527,6 @@ object Safety {
     case Pattern.ArrayHeadSpread(_, elms, _, _) => visitPats(elms, loc)
   }
 
-
   /**
     * Ensures that `methods` fully implement `clazz`
     */
