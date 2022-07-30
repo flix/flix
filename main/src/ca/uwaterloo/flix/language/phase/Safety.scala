@@ -534,8 +534,8 @@ object Safety {
     //
     // Check that `clazz` doesn't have a non-default constructor
     //
-    val constructorErrors = if (!clazz.isInterface && !hasDefaultConstructor(clazz))
-      List(NonDefaultConstructor(clazz, loc))
+    val constructorErrors = if (!clazz.isInterface && !hasPublicZeroArgConstructor(clazz))
+      List(MissingPublicZeroArgConstructor(clazz, loc))
     else
       List.empty
 
@@ -543,7 +543,7 @@ object Safety {
     // Check that `clazz` is public
     //
     val visibilityErrors = if (!isPublicClass(clazz))
-      List(InaccessibleSuperclass(clazz, loc))
+      List(NonPublicClass(clazz, loc))
     else
       List.empty
 
@@ -615,10 +615,14 @@ object Safety {
   }
 
   /**
-    * Return true if `clazz` has a non-default (no argument) constructor.
+    * Return true if the given `clazz` has public zero argument constructor.
     */
-  private def hasDefaultConstructor(clazz: java.lang.Class[_]): Boolean = {
+  private def hasPublicZeroArgConstructor(clazz: java.lang.Class[_]): Boolean = {
     try {
+      // We simply use getConstructor whose documentation states:
+      //
+      // Returns a Constructor object that reflects the specified
+      // public constructor of the class represented by this class object.
       clazz.getConstructor()
       true
     } catch {
