@@ -180,6 +180,23 @@ namespace TestFile {
     def testReadWith02(): Bool & Impure =
         readWith({offset = 2i64, count = 2, charSet = "US-ASCII"}, "./LICENSE.md") == Ok("ac")
 
+    @test
+    def testReadWith03(): Bool & Impure =
+        readWith({offset = 0i64, count = 0, charSet = "US-ASCII"}, "./LICENSE.md") == Ok("")
+
+    @test
+    def testReadWith04(): Bool & Impure =
+        readWith({offset = -10i64, count = 0, charSet = "US-ASCII"}, "./LICENSE.md") == Ok("")
+
+    @test
+    def testReadWith05(): Bool & Impure =
+        Result.isErr(readWith({offset = 0i64, count = -100, charSet = "US-ASCII"}, "./LICENSE.md"))
+
+    @test
+    def testReadWith06(): Bool & Impure =
+        Result.isErr(readWith({offset = -10i64, count = 10, charSet = "US-ASCII"}, "./LICENSE.md"))
+
+
     /////////////////////////////////////////////////////////////////////////////
     // readLinesIter                                                           //
     /////////////////////////////////////////////////////////////////////////////
@@ -226,8 +243,38 @@ namespace TestFile {
     def testReadBytesWith02(): Bool & Impure =
         match readBytesWith({offset = 2i64, count = 2}, "./LICENSE.md") {
             case Ok(v) => v.length == 2
-            case _ => false
+            case _     => false
         }
+
+    @test
+    def testReadBytesWith03(): Bool & Impure =
+        match readBytesWith({offset = 10i64, count = 4}, "./LICENSE.md") {
+            case Ok(v) => v `Array.sameElements` [101i8, 110i8, 115i8, 101i8]
+            case _     => false
+        }
+
+    @test
+    def testReadBytesWith04(): Bool & Impure =
+        match readBytesWith({offset = 0i64, count = 0}, "./LICENSE.md") {
+            case Ok(v) => v `Array.sameElements` []
+            case _     => false
+        }
+
+    @test
+    def testReadBytesWith05(): Bool & Impure =
+        match readBytesWith({offset = -10i64, count = 0}, "./LICENSE.md") {
+            case Ok(v) => v `Array.sameElements` []
+            case _     => false
+        }
+
+    @test
+    def testReadBytesWith06(): Bool & Impure =
+        Result.isErr(readBytesWith({offset = 0i64, count = -10}, "./LICENSE.md"))
+
+    @test
+    def testReadBytesWith07(): Bool & Impure =
+        Result.isErr(readBytesWith({offset = -10i64, count = 10}, "./LICENSE.md"))
+
 
     /////////////////////////////////////////////////////////////////////////////
     // readChunks                                                              //
@@ -235,14 +282,27 @@ namespace TestFile {
 
     @test
     def testReadChunks01(): Bool & Impure =
-        match readChunks("./LICENSE.md", 2) {
+        match readChunks(2, "./LICENSE.md") {
             case Iterator(_, next) => Result.isOk(next())
         }
 
     @test
     def testReadChunks02(): Bool & Impure =
-        match readChunks("./LICENSE.md", 2) {
+        match readChunks(2, "./LICENSE.md") {
             case Iterator(done, _) => done() == false
         }
+
+    @test
+    def testReadChunks03(): Bool & Impure =
+        match readChunks(0, "./LICENSE.md") {
+            case Iterator(done, _) => done()
+        }
+
+    @test
+    def testReadChunks04(): Bool & Impure =
+        match readChunks(-10, "./LICENSE.md") {
+            case Iterator(_, next) => Result.isErr(next())
+        }
+
 
 }
