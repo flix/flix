@@ -310,7 +310,7 @@ object KindedAst {
 
   case class Attribute(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
-  case class Case(ident: Name.Ident, tag: Name.Tag, tpeDeprecated: Type, sc: Scheme)
+  case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpe: Type, sc: Scheme)
 
   case class Constraint(cparams: List[KindedAst.ConstraintParam], head: KindedAst.Predicate.Head, body: List[KindedAst.Predicate.Body], loc: SourceLocation)
 
@@ -318,9 +318,9 @@ object KindedAst {
 
   object ConstraintParam {
 
-    case class HeadParam(sym: Symbol.VarSym, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.ConstraintParam
+    case class HeadParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends KindedAst.ConstraintParam
 
-    case class RuleParam(sym: Symbol.VarSym, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.ConstraintParam
+    case class RuleParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends KindedAst.ConstraintParam
 
   }
 
