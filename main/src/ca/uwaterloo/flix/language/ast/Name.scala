@@ -291,4 +291,18 @@ object Name {
     override def toString: String = name
   }
 
+  /**
+    * Java Name.
+    *
+    * @param sp1  the position of the first character in the identifier.
+    * @param fqn  the fully qualified name.
+    * @param sp2  the position of the last character in the identifier.
+    */
+  case class JavaName(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) {
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = fqn.mkString(".")
+  }
 }
