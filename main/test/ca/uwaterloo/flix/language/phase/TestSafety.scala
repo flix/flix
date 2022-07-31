@@ -235,7 +235,7 @@ class TestSafety extends FunSuite with TestUtils {
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.NonDefaultConstructor](result)
+    expectError[SafetyError.MissingPublicZeroArgConstructor](result)
   }
 
   test("TestNonPublicInterface.01") {
@@ -246,7 +246,7 @@ class TestSafety extends FunSuite with TestUtils {
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.InaccessibleSuperclass](result)
+    expectError[SafetyError.NonPublicClass](result)
   }
 
 }
