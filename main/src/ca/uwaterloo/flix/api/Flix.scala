@@ -472,8 +472,8 @@ class Flix {
       _ <- Instances.run(afterStatistics, cachedTypedAst, changeSet)
       afterStratifier <- Stratifier.run(afterStatistics)
       afterRegions <- Regions.run(afterStratifier)
-      afterPatternExhaustiveness <- PatternExhaustiveness.run(afterRegions)
-      afterRedundancy <- Redundancy.run(afterPatternExhaustiveness)
+      _ <- PatternExhaustiveness.run(afterRegions)
+      afterRedundancy <- Redundancy.run(afterRegions)
       afterSafety <- Safety.run(afterRedundancy)
     } yield {
       // Update caches for incremental compilation.
