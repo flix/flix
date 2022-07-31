@@ -325,7 +325,7 @@ object ResolvedAst {
 
   case class Attribute(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
-  case class Case(ident: Name.Ident, tag: Name.Tag, tpeDeprecated: Type, sc: Scheme)
+  case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpe: Type)
 
   case class Constraint(cparams: List[ResolvedAst.ConstraintParam], head: ResolvedAst.Predicate.Head, body: List[ResolvedAst.Predicate.Body], loc: SourceLocation)
 
@@ -333,9 +333,9 @@ object ResolvedAst {
 
   object ConstraintParam {
 
-    case class HeadParam(sym: Symbol.VarSym, tpe: Type.UnkindedVar, loc: SourceLocation) extends ResolvedAst.ConstraintParam
+    case class HeadParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ResolvedAst.ConstraintParam
 
-    case class RuleParam(sym: Symbol.VarSym, tpe: Type.UnkindedVar, loc: SourceLocation) extends ResolvedAst.ConstraintParam
+    case class RuleParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ResolvedAst.ConstraintParam
 
   }
 

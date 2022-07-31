@@ -180,9 +180,9 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given case `case0`.
     */
   private def visitCase(case0: TypedAst.Case): Iterator[SemanticToken] = case0 match {
-    case TypedAst.Case(_, tag, _, sc, _) =>
+    case TypedAst.Case(_, tag, tpe, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, tag.loc)
-      Iterator(t) ++ visitType(sc.base)
+      Iterator(t) ++ visitType(tpe)
   }
 
   /**
@@ -671,7 +671,6 @@ object SemanticTokensProvider {
     case TypeConstructor.SchemaRowEmpty => false
     case TypeConstructor.SchemaRowExtend(_) => false
     case TypeConstructor.Schema => false
-    case TypeConstructor.Tag(_, _) => false
     case TypeConstructor.Tuple(_) => false
     case TypeConstructor.Relation => false
     case TypeConstructor.Lattice => false
