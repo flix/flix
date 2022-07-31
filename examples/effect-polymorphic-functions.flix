@@ -10,5 +10,5 @@ def twice2(f: Int32 -> Int32 & Impure, x: Int32): Int32 & Impure = f(f(x))
 def twice3(f: Int32 -> Int32 & ef, x: Int32): Int32 & ef = f(f(x))
 
 /// We can use `twice3` with both pure and impure functions:
-def main(): Unit & Impure =
+def main(): Unit \ IO =
     (twice3(inc1, 0) + twice3(inc2, 0)) |> println

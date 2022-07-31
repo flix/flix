@@ -109,7 +109,7 @@ namespace Stratifier {
         "Output:\n${rs}\nExpected:\n${expected}" |> println
 }
 
-def main(): Unit & Impure =
+def main(): Unit \ IO =
         Stratifier.example01();
         println("");
         Stratifier.example02();

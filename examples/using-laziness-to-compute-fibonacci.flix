@@ -6,5 +6,5 @@ def fibs(): DelayList[Int32] =
                 (x, y) -> x + y, fibs(), DelayList.tail(fibs()))))
 
 /// Prints the first 10 Fibonacci numbers
-def main(): Unit & Impure =
+def main(): Unit \ IO =
     DelayList.take(10, fibs()) |> DelayList.toList |> println

@@ -418,7 +418,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("MissingArrowInstance.01") {
     val input =
       s"""
-         |def main(): Unit & Impure =
+         |def main(): Unit \ IO =
          |    println(x -> x + 41i32)
          |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)

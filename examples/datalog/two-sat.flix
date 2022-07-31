@@ -1,6 +1,6 @@
 // https://github.com/souffle-lang/souffle/tree/master/tests/example/2sat
 
-def main(): Unit & Impure =
+def main(): Unit \ IO =
 
     let clauses = #{
         Clause("Pos", "x0", "Pos", "x2").

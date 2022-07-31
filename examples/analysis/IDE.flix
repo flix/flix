@@ -325,7 +325,7 @@ namespace ConstantProp {
 ///
 /// Run the example.
 ///
-def main(): Unit & Impure =
+def main(): Unit \ IO =
     println("Running IDE");
 
     // TODO: Magnus: Use sets?
