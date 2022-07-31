@@ -15,7 +15,7 @@ def main(): Unit \ IO =
     (r1.age + r2.age + r3.age) |> println
 
 /// Constructs a record, extends it with an age, and restricts it.
-def main2(): Unit & Impure =
+def main2(): Unit \ IO =
     let r1 = {fstName = "Julius", lstName = "Caesar"};
     let r2 = withAge(r1, 55);
     let r3 = withoutAge(r2);

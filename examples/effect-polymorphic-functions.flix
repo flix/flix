@@ -1,6 +1,6 @@
 /// Assume we have some pure and impure functions:
 def inc1(x: Int32): Int32 & Pure = x + 1
-def inc2(x: Int32): Int32 & Impure = println("Hello"); x + 1
+def inc2(x: Int32): Int32 \ IO = println("Hello"); x + 1
 
 /// We can write functions that expect pure or impure functions:
 def twice1(f: Int32 -> Int32 & Pure, x: Int32): Int32 & Pure = f(f(x))
