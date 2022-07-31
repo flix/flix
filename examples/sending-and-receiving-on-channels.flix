@@ -1,5 +1,5 @@
 /// A function that sends every element of a list
-def send(c: Channel[Int32], l: List[Int32]): Unit & Impure =
+def send(c: Channel[Int32], l: List[Int32]): Unit \ IO =
     match l {
         case Nil     => ()
         case x :: xs => c <- x; send(c, xs)
@@ -7,7 +7,7 @@ def send(c: Channel[Int32], l: List[Int32]): Unit & Impure =
 
 /// A function that receives n elements
 /// and collects them into a list.
-def recv(c: Channel[Int32], n: Int32): List[Int32] & Impure =
+def recv(c: Channel[Int32], n: Int32): List[Int32] \ IO =
     match n {
         case 0 => Nil
         case _ => (<- c) :: recv(c, n - 1)

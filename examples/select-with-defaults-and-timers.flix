@@ -1,13 +1,13 @@
 /// Sends the value `x` on the channel `c` after a delay.
-def slow(x: Int32, c: Channel[Int32]): Unit & Impure =
-    import static java.lang.Thread.sleep(Int64): Unit & Impure;
+def slow(x: Int32, c: Channel[Int32]): Unit \ IO =
+    import static java.lang.Thread.sleep(Int64): Unit \ IO;
     sleep(Time/Duration.oneMinute() / 1_000_000i64);
     c <- x;
     ()
 
 /// Reads a value from the channel `c`.
 /// Returns the default value `1` if `c` is not ready.
-def recvWithDefault(c: Channel[Int32]): Int32 & Impure =
+def recvWithDefault(c: Channel[Int32]): Int32 \ IO =
     select {
         case x <- c => x
         case _      => 1
@@ -15,7 +15,7 @@ def recvWithDefault(c: Channel[Int32]): Int32 & Impure =
 
 /// Reads a value from the channel `c`.
 /// Returns the default value `2` if after a timeout.
-def recvWithTimeout(c: Channel[Int32]): Int32 & Impure =
+def recvWithTimeout(c: Channel[Int32]): Int32 \ IO =
     select {
         case x <- c                   => x
         case _ <- Concurrent/Channel/Timer.seconds(1i64) => 2
