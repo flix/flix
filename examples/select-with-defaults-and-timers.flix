@@ -15,16 +15,16 @@ def recvWithDefault(c: Channel[Int32]): Int32 \ IO =
 
 /// Reads a value from the channel `c`.
 /// Returns the default value `2` if after a timeout.
-def recvWithTimeout(c: Channel[Int32]): Int32 & Impure =
+def recvWithTimeout(c: Channel[Int32]): Int32 \ IO =
     select {
         case x <- c                   => x
         case _ <- Concurrent/Channel/Timer.seconds(1i64) => 2
-    }
+    } as & IO
 
 /// Creates two channels `c1` and `c2`.
 /// Sends values on both after one minute.
 /// Receives from both using defaults and timeouts.
-def main(): Unit & Impure = {
+def main(): Unit \ IO = {
   let c1 = chan Int32 1;
   let c2 = chan Int32 1;
   spawn slow(123, c1);
