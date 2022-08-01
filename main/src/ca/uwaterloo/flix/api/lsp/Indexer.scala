@@ -100,7 +100,7 @@ object Indexer {
     * Returns a reverse index for the given enum case `caze0`.
     */
   private def visitCase(caze0: Case): Index = caze0 match {
-    case Case(_, _, tpe, _, _) =>
+    case Case(_, tpe, _, _) =>
       Index.occurrenceOf(caze0) ++ visitType(tpe)
   }
 
@@ -262,9 +262,9 @@ object Indexer {
         case ChoiceRule(_, exp) => visitExp(exp)
       }
 
-    case Expression.Tag(sym, tag, exp, _, _, _, _) =>
+    case Expression.Tag(Ast.CaseSymUse(sym, loc), exp, _, _, _, _) =>
       val parent = Entity.Exp(exp0)
-      visitExp(exp) ++ Index.useOf(sym, tag, parent) ++ Index.occurrenceOf(exp0)
+      visitExp(exp) ++ Index.useOf(sym, loc, parent) ++ Index.occurrenceOf(exp0)
 
     case Expression.Tuple(exps, _, _, _, _) =>
       visitExps(exps) ++ Index.occurrenceOf(exp0)
@@ -458,9 +458,9 @@ object Indexer {
     case Pattern.Int64(_, _) => Index.occurrenceOf(pat0)
     case Pattern.BigInt(_, _) => Index.occurrenceOf(pat0)
     case Pattern.Str(_, _) => Index.occurrenceOf(pat0)
-    case Pattern.Tag(sym, tag, pat, _, _) =>
+    case Pattern.Tag(Ast.CaseSymUse(sym, loc), pat, _, _) =>
       val parent = Entity.Exp(exp0)
-      Index.occurrenceOf(pat0) ++ visitPat(pat, exp0) ++ Index.useOf(sym, tag, parent)
+      Index.occurrenceOf(pat0) ++ visitPat(pat, exp0) ++ Index.useOf(sym, loc, parent)
     case Pattern.Tuple(elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms, exp0)
     case Pattern.Array(elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms, exp0)
     case Pattern.ArrayTailSpread(elms, _, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms, exp0)

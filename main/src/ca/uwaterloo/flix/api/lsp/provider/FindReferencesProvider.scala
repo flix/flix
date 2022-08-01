@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, Location, Position}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
@@ -29,7 +29,7 @@ object FindReferencesProvider {
 
       case Some(entity) => entity match {
 
-        case Entity.Case(caze) => findTagReferences(caze.sym, caze.tag)
+        case Entity.Case(caze) => findCaseReferences(caze.sym)
 
         case Entity.Class(class0) => findClassReferences(class0.sym)
 
@@ -51,7 +51,7 @@ object FindReferencesProvider {
 
         case Entity.VarUse(sym, _, _) => findVarReferences(sym)
 
-        case Entity.TagUse(sym, tag, _, _) => findTagReferences(sym, tag)
+        case Entity.CaseUse(sym, _, _) => findCaseReferences(sym)
 
         case Entity.Exp(_) => mkNotFound(uri, pos)
 
@@ -61,7 +61,7 @@ object FindReferencesProvider {
 
         case Entity.Pattern(pat) => pat match {
           case Pattern.Var(sym, _, _) => findVarReferences(sym)
-          case Pattern.Tag(sym, tag, _, _, _) => findTagReferences(sym, tag)
+          case Pattern.Tag(Ast.CaseSymUse(sym, _), _, _, _) => findCaseReferences(sym)
           case _ => mkNotFound(uri, pos)
         }
 
@@ -138,9 +138,9 @@ object FindReferencesProvider {
     ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 
-  private def findTagReferences(sym: Symbol.EnumSym, tag: Name.Tag)(implicit index: Index, root: Root): JObject = {
-    val defSite = Location.from(root.enums(sym).cases(tag).loc)
-    val useSites = index.usesOf(sym, tag)
+  private def findCaseReferences(sym: Symbol.CaseSym)(implicit index: Index, root: Root): JObject = {
+    val defSite = Location.from(root.enums(sym.enum).cases(sym).loc)
+    val useSites = index.usesOf(sym)
     val locs = defSite :: useSites.toList.map(Location.from)
     ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
