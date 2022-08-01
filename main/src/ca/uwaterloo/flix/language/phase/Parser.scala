@@ -1362,7 +1362,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Apply: Rule1[ParsedAst.Type] = rule {
-      Primary ~ oneOrMore(TypeArguments ~ SP ~> ParsedAst.Type.Apply)
+      Primary ~ zeroOrMore(TypeArguments ~ SP ~> ParsedAst.Type.Apply)
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
@@ -1463,7 +1463,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     private def TypeArguments: Rule1[Seq[ParsedAst.Type]] = rule {
-      "[" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]"
+      "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]"
     }
 
   }
