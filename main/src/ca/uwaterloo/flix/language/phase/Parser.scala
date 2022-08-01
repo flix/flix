@@ -1362,7 +1362,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Apply: Rule1[ParsedAst.Type] = rule {
-      Primary ~ zeroOrMore(TypeArguments ~ SP ~> ParsedAst.Type.Apply)
+      Primary ~ oneOrMore(TypeArguments ~ SP ~> ParsedAst.Type.Apply)
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
