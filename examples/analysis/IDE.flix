@@ -47,7 +47,7 @@ namespace IDE {
     ///
     /// Solves the given IDE instances.
     ///
-    pub def run(ide: IDE[p, n, d, f, l]): List[(n, d, l)] & Impure
+    pub def run(ide: IDE[p, n, d, f, l]): List[(n, d, l)] \ IO
         with LowerBound[f], JoinLattice[f], MeetLattice[f],
              LowerBound[l], JoinLattice[l], MeetLattice[l],
              Boxable[n], Boxable[d], Boxable[p], Boxable[f],  Boxable[l] =
@@ -325,7 +325,7 @@ namespace ConstantProp {
 ///
 /// Run the example.
 ///
-def main(): Unit & Impure =
+def main(): Unit \ IO =
     println("Running IDE");
 
     // TODO: Magnus: Use sets?
