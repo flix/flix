@@ -226,7 +226,7 @@ namespace File {
             Ok(canRead(newFile(f)))
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String & Impure;
+                import java.lang.Throwable.getMessage(): String \ IO;
                 Err(getMessage(ex))
         }
 
@@ -304,11 +304,11 @@ namespace File {
     pub def readWith(opts: {offset :: Int64, count :: Int32, charSet :: String}, f : String): Result[String, String] \ IO =
         if (0 < opts.count) {
             try {
-                import new java.io.File(String): ##java.io.File & Impure as newFile;
-                import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream & Impure as newInputStream;
-                import java.io.FileInputStream.read(Array[Int8, Static], Int32, Int32): Int32 & Impure;
-                import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset & Impure;
-                import new java.lang.String(Array[Int8, Static], ##java.nio.charset.Charset): String & Impure as newString;
+                import new java.io.File(String): ##java.io.File \ IO as newFile;
+                import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream \ IO as newInputStream;
+                import java.io.FileInputStream.read(Array[Int8, Static], Int32, Int32): Int32 \ IO;
+                import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset \ IO;
+                import new java.lang.String(Array[Int8, Static], ##java.nio.charset.Charset): String \ IO as newString;
 
                 let javaFile = newFile(f);
                 let stream = newInputStream(javaFile);
@@ -324,7 +324,7 @@ namespace File {
                 }
             } catch {
                 case ex: ##java.io.IOException =>
-                    import java.lang.Throwable.getMessage(): String & Impure;
+                    import java.lang.Throwable.getMessage(): String \ IO;
                     Err(getMessage(ex))
             }
         } else if (opts.count == 0) {
@@ -337,10 +337,10 @@ namespace File {
     /// Helper function for `readWith` and `readBytesWith`.
     /// Tries to skip the requested number of bytes `bytes to skip` in `f` over `i + 1` iterations.
     ///
-    def skip(i: Int64, bytesToSkip: Int64, stream: ##java.io.FileInputStream, f: String): Result[Unit, String] & Impure =
+    def skip(i: Int64, bytesToSkip: Int64, stream: ##java.io.FileInputStream, f: String): Result[Unit, String] \ IO =
         try {
             if (0i64 <= i) {
-                import java.io.FileInputStream.skip(Int64): Int64 & Impure as javaSkip;
+                import java.io.FileInputStream.skip(Int64): Int64 \ IO as javaSkip;
                 let skipped = javaSkip(stream, bytesToSkip);
                 if (skipped < bytesToSkip)
                     skip(i - 1i64, bytesToSkip - skipped, stream, f)
@@ -411,7 +411,7 @@ namespace File {
     ///
     /// Returns an iterator of the given file `f`
     ///
-    pub def readLinesIter(f: String): Iterator[Result[String, String], Static] \ IO =
+    pub def readLinesIter(f: String): Iterator[Result[String, String], Static] \ {Impure, IO} =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -449,7 +449,7 @@ namespace File {
     /// The options `opts` to apply consists of
     /// `charSet` - the specific charset to be used to decode the bytes.
     ///
-    pub def readLinesIterWith(opts: {charSet :: String}, f: String): Iterator[Result[String, String], Static] \ IO =
+    pub def readLinesIterWith(opts: {charSet :: String}, f: String): Iterator[Result[String, String], Static] \ {Impure, IO} =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -512,9 +512,9 @@ namespace File {
     pub def readBytesWith(opts: {offset :: Int64, count :: Int32}, f: String): Result[Array[Int8, Static], String] \ IO =
         if (0 < opts.count) {
             try {
-                import new java.io.File(String): ##java.io.File & Impure as newFile;
-                import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream & Impure as newInputStream;
-                import java.io.FileInputStream.read(Array[Int8, Static], Int32, Int32): Int32 & Impure;
+                import new java.io.File(String): ##java.io.File \ IO as newFile;
+                import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream \ IO as newInputStream;
+                import java.io.FileInputStream.read(Array[Int8, Static], Int32, Int32): Int32 \ IO;
 
                 let javaFile = newFile(f);
                 let stream = newInputStream(javaFile);
@@ -529,7 +529,7 @@ namespace File {
                 }
             } catch {
                 case ex: ##java.io.IOException =>
-                    import java.lang.Throwable.getMessage(): String & Impure;
+                    import java.lang.Throwable.getMessage(): String \ IO;
                     Err(getMessage(ex))
             }
         } else if (opts.count == 0) {
@@ -558,12 +558,12 @@ namespace File {
     ///
     /// Returns an iterator of the bytes in the given `file` in chunks of size `chunkSize`.
     ///
-    pub def readChunks(chunkSize: Int32, f: String): Iterator[Result[Array[Int8, Static], String], Static] \ IO =
+    pub def readChunks(chunkSize: Int32, f: String): Iterator[Result[Array[Int8, Static], String], Static] \ {Impure, IO} =
         if (0 < chunkSize) {
             try {
-                import new java.io.File(String): ##java.io.File & Impure as newFile;
-                import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream & Impure as newInputStream;
-                import java.io.FileInputStream.read(Array[Int8, Static]): Int32 & Impure;
+                import new java.io.File(String): ##java.io.File \ IO as newFile;
+                import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream \ IO as newInputStream;
+                import java.io.FileInputStream.read(Array[Int8, Static]): Int32 \ IO;
 
                 let javaFile = newFile(f);
                 let stream = newInputStream(javaFile);
@@ -581,7 +581,7 @@ namespace File {
                     } catch {
                         case ex: ##java.io.IOException => {
                             numberRead := -1;
-                            import java.lang.Throwable.getMessage(): String & Impure;
+                            import java.lang.Throwable.getMessage(): String \ IO;
                             Err(getMessage(ex))
                         }
                     }
@@ -589,7 +589,7 @@ namespace File {
                 Iterator(done, next)
             } catch {
                 case ex: ##java.io.IOException =>
-                    import java.lang.Throwable.getMessage(): String & Impure;
+                    import java.lang.Throwable.getMessage(): String \ IO;
                     Iterator.singleton(Static, Err(getMessage(ex)))
             }
         } else if (chunkSize == 0) {
@@ -918,7 +918,7 @@ namespace File {
     ///
     /// Does not recursively traverse the directory.
     ///
-    pub def listWithIter(f: String): Result[Iterator[String, Static], String] \ IO =
+    pub def listWithIter(f: String): Result[Iterator[String, Static], String] \ {Impure, IO} =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
