@@ -68,7 +68,7 @@ object PredefinedClasses {
     val enumKey = new Symbol.EnumSym(Nil, enumName, SourceLocation.Unknown)
     val enum = root.enums.getOrElse(enumKey, throw InternalCompilerException(s"The definition '$enumKey' is not defined."))
     val cazeKey = new Symbol.CaseSym(enum.sym, cazeName, SourceLocation.Unknown)
-    enum.cases.getOrElse(cazeKey, throw InternalCompilerException(s"The definition '$enumKey' is not defined."))
+    enum.cases.getOrElse(cazeKey, throw InternalCompilerException(s"The definition '$enumKey' is not defined.")).sym
   }
 
 

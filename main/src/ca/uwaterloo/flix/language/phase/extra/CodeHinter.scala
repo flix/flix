@@ -45,7 +45,7 @@ object CodeHinter {
     * Computes code quality hints for the given enum `enum`.
     */
   private def visitEnum(enum0: TypedAst.Enum)(implicit root: Root, index: Index): List[CodeHint] = {
-    val tagUses = enum0.cases.keys.flatMap(tag => index.usesOf(enum0.sym, tag))
+    val tagUses = enum0.cases.keys.flatMap(sym => index.usesOf(sym))
     val enumUses = index.usesOf(enum0.sym)
     val uses = enumUses ++ tagUses
     val isDeprecated = enum0.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Deprecated])
@@ -169,7 +169,7 @@ object CodeHinter {
         case ChoiceRule(_, exp) => visitExp(exp)
       }
 
-    case Expression.Tag(_, _, exp, _, _, _, _) =>
+    case Expression.Tag(_, exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.Tuple(exps, _, _, _, _) =>
