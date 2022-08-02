@@ -27,7 +27,7 @@ object Index {
     */
   val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty,
     MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty,
-    MultiMap.empty)
+    MultiMap.empty, MultiMap.empty)
 
   /**
     * Returns an index for the given `class0`.
@@ -53,6 +53,11 @@ object Index {
     * Returns an index for the given `enum0`.
     */
   def occurrenceOf(enum0: Enum): Index = empty + Entity.Enum(enum0)
+
+  /**
+    * Returns an index for the given `alias0`.
+    */
+  def occurrenceOf(alias0: TypeAlias): Index = empty + Entity.TypeAlias(alias0)
 
   /**
     * Returns an index for the given `exp0`.
@@ -130,6 +135,11 @@ object Index {
   def useOf(sym: Symbol.EnumSym, tag: Name.Tag): Index = Index.empty.copy(tagUses = MultiMap.singleton((sym, tag), tag.loc))
 
   /**
+    * Returns an index with the symbol `sym` and `tag` used at location `loc.`
+    */
+  def useOf(sym: Symbol.TypeAliasSym, loc: SourceLocation): Index = Index.empty.copy(aliasUses = MultiMap.singleton(sym, loc))
+
+  /**
     * Returns an index with the symbol `sym` used at location `loc.`
     */
   def useOf(sym: Symbol.VarSym, loc: SourceLocation): Index = Index.empty.copy(varUses = MultiMap.singleton(sym, loc))
@@ -188,6 +198,7 @@ case class Index(m: Map[(String, Int), List[Entity]],
                  sigUses: MultiMap[Symbol.SigSym, SourceLocation],
                  defUses: MultiMap[Symbol.DefnSym, SourceLocation],
                  enumUses: MultiMap[Symbol.EnumSym, SourceLocation],
+                 aliasUses: MultiMap[Symbol.TypeAliasSym, SourceLocation],
                  tagUses: MultiMap[(Symbol.EnumSym, Name.Tag), SourceLocation],
                  fieldDefs: MultiMap[Name.Field, SourceLocation],
                  fieldUses: MultiMap[Name.Field, SourceLocation],
@@ -368,6 +379,7 @@ case class Index(m: Map[(String, Int), List[Entity]],
       this.sigUses ++ that.sigUses,
       this.defUses ++ that.defUses,
       this.enumUses ++ that.enumUses,
+      this.aliasUses ++ that.aliasUses,
       this.tagUses ++ that.tagUses,
       this.fieldDefs ++ that.fieldDefs,
       this.fieldUses ++ that.fieldUses,

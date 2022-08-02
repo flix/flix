@@ -386,8 +386,8 @@ object Typer {
       val annVal = visitAnnotations(ann, root)
       val tparams = getTypeParams(tparams0)
       val cases = cases0 map {
-        case (name, KindedAst.Case(_, tagName, tagType, tagScheme)) =>
-          name -> TypedAst.Case(enumSym, tagName, tagType, tagScheme, tagName.loc)
+        case (name, KindedAst.Case(_, tagName, tagType, sc)) =>
+          name -> TypedAst.Case(enumSym, tagName, tagType, sc, tagName.loc)
       }
 
       Validation.mapN(annVal) {
@@ -1090,12 +1090,11 @@ object Typer {
           val (_, tagType) = Scheme.instantiate(caze.sc)
 
           //
-          // The tag type can be thought of as a function from the type of variant to the type of the enum.
-          // See Type.mkTag for details.
+          // The tag type is a function from the type of variant to the type of the enum.
           //
           for {
             (constrs, tpe, pur, eff) <- visitExp(exp)
-            _ <- unifyTypeM(tagType, Type.mkTag(sym, tag, tpe, tvar, loc), loc)
+            _ <- unifyTypeM(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
             resultTyp = tvar
             resultPur = pur
             resultEff = eff
@@ -1300,10 +1299,10 @@ object Typer {
           resultEff = declaredEff.getOrElse(actualEff)
         } yield (constrs, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.Upcast(exp, tvar, pvar, evar, loc) =>
+      case KindedAst.Expression.Upcast(exp, tvar, loc) =>
         for {
-          (constrs, _, _, _) <- visitExp(exp)
-        } yield (constrs, tvar, pvar, evar)
+          (constrs, _, pur, eff) <- visitExp(exp)
+        } yield (constrs, tvar, pur, eff)
 
       case KindedAst.Expression.Without(exp, effUse, loc) =>
         val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
@@ -1752,7 +1751,7 @@ object Typer {
         val a = Type.freshVar(Kind.Star, loc, text = FallbackText("arg"))
         val b = Type.freshVar(Kind.Star, loc, text = FallbackText("result"))
         val p = Type.freshVar(Kind.Bool, loc, text = FallbackText("pur"))
-        val ef = Type.freshVar(Kind.Bool, loc, text = FallbackText("eff"))
+        val ef = Type.freshVar(Kind.Effect, loc, text = FallbackText("eff"))
         val polyLambdaType = Type.mkArrowWithEffect(a, p, ef, b, loc)
         val pureLambdaType = Type.mkPureArrow(a, b, loc)
         for {
@@ -2072,12 +2071,8 @@ object Typer {
         val eff = declaredEff.getOrElse(e.eff)
         TypedAst.Expression.Cast(e, dt, dp, de, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.Upcast(exp, tvar, pvar, evar, loc) =>
-        val e = visitExp(exp, subst0)
-        val tpe = subst0(tvar)
-        val pur = subst0(pvar)
-        val eff = subst0(evar)
-        TypedAst.Expression.Upcast(e, tpe, pur, eff, loc)
+      case KindedAst.Expression.Upcast(exp, tvar, loc) =>
+        TypedAst.Expression.Upcast(visitExp(exp, subst0), subst0(tvar), loc)
 
       case KindedAst.Expression.Without(exp, effUse, loc) =>
         val e = visitExp(exp, subst0)
@@ -2411,12 +2406,11 @@ object Typer {
         val (_, tagType) = Scheme.instantiate(caze.sc)
 
         //
-        // The tag type can be thought of as a function from the type of variant to the type of the enum.
-        // See Type.mkTag for details.
+        // The tag type is a function from the type of variant to the type of the enum.
         //
         for {
           tpe <- visit(pat)
-          _ <- unifyTypeM(tagType, Type.mkTag(sym, tag, tpe, tvar, loc), loc)
+          _ <- unifyTypeM(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
           resultTyp = tvar
         } yield resultTyp
 

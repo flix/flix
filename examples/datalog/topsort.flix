@@ -8,7 +8,7 @@ def genEdges(n: Int32): #{Edge(Int32, Int32) | _} = {
     } <+> genEdges(n-1)
 }
 
-def main(): Unit & Impure =
+def main(): Unit \ IO =
 
     let edges = genEdges(20);
 

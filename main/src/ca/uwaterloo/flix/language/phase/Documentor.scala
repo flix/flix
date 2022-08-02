@@ -410,7 +410,7 @@ object Documentor {
     */
   private def visitCase(caze: Case): JObject = caze match {
     case Case(_, tag, _, _, _) =>
-      val tpe = FormatType.formatWellKindedType(caze.tpeDeprecated)
+      val tpe = FormatType.formatWellKindedType(caze.tpe)
       ("tag" -> tag.name) ~ ("tpe" -> tpe)
   }
 
