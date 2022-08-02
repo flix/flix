@@ -1331,8 +1331,8 @@ object Lowering {
     * Returns a pure tag expression for the given `sym` and given `tag` with the given inner expression `exp`.
     */
   private def mkTag(sym: Symbol.EnumSym, tag: String, exp: Expression, tpe: Type, loc: SourceLocation): Expression = {
-    val caseSym = new Symbol.CaseSym(sym, tag, loc)
-    Expression.Tag(caseSym, exp, tpe, Type.Pure, Type.Empty, loc)
+    val caseSym = new Symbol.CaseSym(sym, tag, SourceLocation.Unknown)
+    Expression.Tag(Ast.CaseSymUse(caseSym, loc), exp, tpe, Type.Pure, Type.Empty, loc)
   }
 
   /**

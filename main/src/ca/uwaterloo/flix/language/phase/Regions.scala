@@ -157,7 +157,7 @@ object Regions {
         case (es, rs) => checkType(tpe, loc)
       }
 
-    case Expression.Tag(sym, _, exp, tpe, _, _, loc) =>
+    case Expression.Tag(_, exp, tpe, _, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }

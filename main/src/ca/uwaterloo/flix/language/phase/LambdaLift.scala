@@ -71,7 +71,7 @@ object LambdaLift {
   private def visitEnum(enum0: SimplifiedAst.Enum): LiftedAst.Enum = enum0 match {
     case SimplifiedAst.Enum(ann, mod, sym, cases, tpeDeprecated, loc) =>
       val cs = cases.map {
-        case (tag, SimplifiedAst.Case(_, _, tpeDeprecated, loc)) => tag -> LiftedAst.Case(sym, tag, tpeDeprecated, loc)
+        case (tag, SimplifiedAst.Case(caseSym, tpeDeprecated, loc)) => tag -> LiftedAst.Case(caseSym, tpeDeprecated, loc)
       }
       LiftedAst.Enum(ann, mod, sym, cs, tpeDeprecated, loc)
   }
@@ -200,17 +200,17 @@ object LambdaLift {
           case _ => throw InternalCompilerException(s"Unexpected expression: '$e1'.")
         }
 
-      case SimplifiedAst.Expression.Is(sym, tag, exp, purity, loc) =>
+      case SimplifiedAst.Expression.Is(sym, exp, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Is(sym, tag, e, purity, loc)
+        LiftedAst.Expression.Is(sym, e, purity, loc)
 
-      case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, purity, loc) =>
+      case SimplifiedAst.Expression.Tag(sym, exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Tag(enum, tag, e, tpe, purity, loc)
+        LiftedAst.Expression.Tag(sym, e, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.Untag(sym, tag, exp, tpe, purity, loc) =>
+      case SimplifiedAst.Expression.Untag(sym, exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Untag(sym, tag, e, tpe, purity, loc)
+        LiftedAst.Expression.Untag(sym, e, tpe, purity, loc)
 
       case SimplifiedAst.Expression.Index(exp, offset, tpe, purity, loc) =>
         val e = visitExp(exp)
