@@ -43,7 +43,7 @@ object FormatExpression {
     case TypedAst.Expression.Discard(exp, _, _, _) => s"Discard($exp)"
     case TypedAst.Expression.Match(exp, rules, _, _, _, _) => s"Match($exp, ${rules.mkString(", ")})"
     case TypedAst.Expression.Choose(exps, rules, _, _, _, _) => s"Choose($exps, $rules)"
-    case TypedAst.Expression.Tag(sym, tag, exp, _, _, _, _) => s"Tag($sym, $tag, $exp)"
+    case TypedAst.Expression.Tag(sym, exp, _, _, _, _) => s"Tag($sym, $exp)"
     case TypedAst.Expression.Tuple(elms, _, _, _, _) => s"Tuple(${elms.mkString(", ")})"
     case TypedAst.Expression.RecordEmpty(_, _) => s"RecordEmpty"
     case TypedAst.Expression.RecordSelect(exp, field, _, _, _, _) => s"RecordSelect($exp, $field)"

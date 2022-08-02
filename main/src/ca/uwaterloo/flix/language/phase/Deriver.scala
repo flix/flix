@@ -169,13 +169,13 @@ object Deriver {
     * Creates an Eq match rule for the given enum case.
     */
   private def mkEqMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
-    case KindedAst.Case(sym, tag, tpe, _) =>
+    case KindedAst.Case(sym, tpe, _) =>
       val eqSym = PredefinedClasses.lookupSigSym("Eq", "eq", root)
 
       // get a pattern corresponding to this case, e.g.
       // `case C2(x0, x1)`
-      val (pat1, varSyms1) = mkPattern(sym, tag, tpe, "x", loc)
-      val (pat2, varSyms2) = mkPattern(sym, tag, tpe, "y", loc)
+      val (pat1, varSyms1) = mkPattern(sym, tpe, "x", loc)
+      val (pat2, varSyms2) = mkPattern(sym, tpe, "y", loc)
       val pat = KindedAst.Pattern.Tuple(List(pat1, pat2), loc)
 
       val guard = KindedAst.Expression.True(loc)
@@ -341,7 +341,7 @@ object Deriver {
   private def mkCompareSpec(enum0: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root): KindedAst.Spec = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val orderClassSym = PredefinedClasses.lookupClassSym("Order", root)
-      val comparisonEnumSym = PredefinedClasses.lookupEnum("Comparison", root)
+      val comparisonEnumSym = PredefinedClasses.lookupEnumSym("Comparison", root)
 
       KindedAst.Spec(
         doc = Ast.Doc(Nil, loc),
@@ -369,8 +369,8 @@ object Deriver {
     * `case C2(_) => 2`
     */
   private def mkCompareIndexMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation)(implicit Flix: Flix): KindedAst.MatchRule = caze match {
-    case KindedAst.Case(sym, tag, _, _) =>
-      val pat = KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc, text = FallbackText("wild")), loc), Type.freshVar(Kind.Star, loc, text = FallbackText("tag")), loc)
+    case KindedAst.Case(sym, _, _) =>
+      val pat = KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc, text = FallbackText("wild")), loc), Type.freshVar(Kind.Star, loc, text = FallbackText("tag")), loc)
       val guard = KindedAst.Expression.True(loc)
       val exp = KindedAst.Expression.Int32(index, loc)
       KindedAst.MatchRule(pat, guard, exp)
@@ -381,16 +381,15 @@ object Deriver {
     * ```case (C2(x0, x1), C2(y0, y1)) => compare(x0, y0) `thenCompare` lazy(x1, y1)```
     */
   private def mkComparePairMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
-    case KindedAst.Case(sym, tag, tpe, _) =>
-      val comparisonEnumSym = PredefinedClasses.lookupEnum("Comparison", root)
-      val equalToTag = Name.Tag("EqualTo", loc)
+    case KindedAst.Case(sym, tpe, _) =>
+      val equalToSym = PredefinedClasses.lookupCaseSym("Comparison", "EqualTo", root)
       val compareSigSym = PredefinedClasses.lookupSigSym("Order", "compare", root)
       val thenCompareDefSym = PredefinedClasses.lookupDefSym(List("Order"), "thenCompare", root)
 
       // Match on the tuple
       // `case (C2(x0, x1), C2(y0, y1))
-      val (pat1, varSyms1) = mkPattern(sym, tag, tpe, "x", loc)
-      val (pat2, varSyms2) = mkPattern(sym, tag, tpe, "y", loc)
+      val (pat1, varSyms1) = mkPattern(sym, tpe, "x", loc)
+      val (pat2, varSyms2) = mkPattern(sym, tpe, "y", loc)
       val pat = KindedAst.Pattern.Tuple(List(pat1, pat2), loc)
 
       val guard = KindedAst.Expression.True(loc)
@@ -434,7 +433,7 @@ object Deriver {
       // ```compare(x0, y0) `thenCompare` lazy compare(x1, y1)```
       val exp = compares match {
         // Case 1: no variables to compare; just return true
-        case Nil => KindedAst.Expression.Tag(comparisonEnumSym, equalToTag, KindedAst.Expression.Unit(loc), Type.freshVar(Kind.Star, loc, text = FallbackText("tag")), loc)
+        case Nil => KindedAst.Expression.Tag(Ast.CaseSymUse(equalToSym, loc), KindedAst.Expression.Unit(loc), Type.freshVar(Kind.Star, loc, text = FallbackText("tag")), loc)
         // Case 2: multiple comparisons to be done; wrap them in Order.thenCompare
         case cmps => cmps.reduceRight(thenCompare)
       }
@@ -536,17 +535,17 @@ object Deriver {
     * Creates a ToString match rule for the given enum case.
     */
   private def mkToStringMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
-    case KindedAst.Case(sym, tag, tpe, _) =>
+    case KindedAst.Case(sym, tpe, _) =>
       val toStringSym = PredefinedClasses.lookupSigSym("ToString", "toString", root)
 
       // get a pattern corresponding to this case, e.g.
       // `case C2(x0, x1)`
-      val (pat, varSyms) = mkPattern(sym, tag, tpe, "x", loc)
+      val (pat, varSyms) = mkPattern(sym, tpe, "x", loc)
 
       val guard = KindedAst.Expression.True(loc)
 
       // "C2"
-      val tagPart = KindedAst.Expression.Str(tag.name, loc)
+      val tagPart = KindedAst.Expression.Str(sym.name, loc)
 
       // call toString on each variable,
       // `toString(x0)`, `toString(x1)`
@@ -675,12 +674,12 @@ object Deriver {
     * Creates a ToString match rule for the given enum case.
     */
   private def mkHashMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
-    case KindedAst.Case(sym, tag, tpe, _) =>
+    case KindedAst.Case(sym, tpe, _) =>
       val hashSigSym = PredefinedClasses.lookupSigSym("Hash", "hash", root)
 
       // get a pattern corresponding to this case, e.g.
       // `case C2(x0, x1)`
-      val (pat, varSyms) = mkPattern(sym, tag, tpe, "x", loc)
+      val (pat, varSyms) = mkPattern(sym, tpe, "x", loc)
 
       val guard = KindedAst.Expression.True(loc)
 
@@ -805,16 +804,16 @@ object Deriver {
   /**
     * Creates a pattern corresponding to the given tag type.
     */
-  private def mkPattern(sym: Symbol.EnumSym, tag: Name.Tag, tpe: Type, varPrefix: String, loc: SourceLocation)(implicit flix: Flix): (KindedAst.Pattern, List[Symbol.VarSym]) = {
+  private def mkPattern(sym: Symbol.CaseSym, tpe: Type, varPrefix: String, loc: SourceLocation)(implicit flix: Flix): (KindedAst.Pattern, List[Symbol.VarSym]) = {
     unpack(tpe) match {
-      case Nil => (KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Unit(loc), Type.freshVar(Kind.Star, loc, text = FallbackText("tag")), loc), Nil)
+      case Nil => (KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), KindedAst.Pattern.Unit(loc), Type.freshVar(Kind.Star, loc, text = FallbackText("tag")), loc), Nil)
       case _ :: Nil =>
         val varSym = Symbol.freshVarSym(s"${varPrefix}0", BoundBy.Pattern, loc)
-        (KindedAst.Pattern.Tag(sym, tag, mkVarPattern(varSym, loc), Type.freshVar(Kind.Star, loc, text = FallbackText("elm")), loc), List(varSym))
+        (KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), mkVarPattern(varSym, loc), Type.freshVar(Kind.Star, loc, text = FallbackText("elm")), loc), List(varSym))
       case tpes =>
         val varSyms = tpes.zipWithIndex.map { case (_, index) => Symbol.freshVarSym(s"$varPrefix$index", BoundBy.Pattern, loc) }
         val subPats = varSyms.map(varSym => mkVarPattern(varSym, loc))
-        (KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Tuple(subPats, loc), Type.freshVar(Kind.Star, loc, text = FallbackText("tuple")), loc), varSyms)
+        (KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), KindedAst.Pattern.Tuple(subPats, loc), Type.freshVar(Kind.Star, loc, text = FallbackText("tuple")), loc), varSyms)
     }
   }
 

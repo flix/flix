@@ -231,7 +231,7 @@ object EarlyTreeShaker {
     case Expression.Choose(exps, rules, _, _, _, _) =>
       visitExps(exps) ++ visitExps(rules.map(_.exp))
 
-    case Expression.Tag(_, _, exp, _, _, _, _) =>
+    case Expression.Tag(_, exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.Tuple(elms, _, _, _, _) =>

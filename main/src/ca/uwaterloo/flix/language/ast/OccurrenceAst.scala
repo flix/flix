@@ -30,7 +30,7 @@ object OccurrenceAst {
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[OccurrenceAst.FormalParam], exp: OccurrenceAst.Expression, context: DefContext, tpe: Type, loc: SourceLocation)
 
-  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Name.Tag, OccurrenceAst.Case], tpeDeprecated: Type, loc: SourceLocation)
+  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, OccurrenceAst.Case], tpeDeprecated: Type, loc: SourceLocation)
 
   sealed trait Expression {
     def tpe: Type
@@ -138,13 +138,13 @@ object OccurrenceAst {
 
     case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class Is(sym: Symbol.EnumSym, tag: Name.Tag, exp: OccurrenceAst.Expression, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression {
+    case class Is(sym: Symbol.CaseSym, exp: OccurrenceAst.Expression, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression {
       def tpe: Type = Type.Bool
     }
 
-    case class Tag(sym: Symbol.EnumSym, tag: Name.Tag, exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class Tag(sym: Symbol.CaseSym, exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class Untag(sym: Symbol.EnumSym, tag: Name.Tag, exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class Untag(sym: Symbol.CaseSym, exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
     case class Index(base: OccurrenceAst.Expression, offset: scala.Int, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
@@ -254,7 +254,7 @@ object OccurrenceAst {
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: OccurrenceAst.Expression, exp: OccurrenceAst.Expression)
 
-  case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: Type, loc: SourceLocation)
+  case class Case(sym: Symbol.CaseSym, tpeDeprecated: Type, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[OccurrenceAst.FormalParam], clo: OccurrenceAst.Expression, retTpe: Type, purity: Purity, loc: SourceLocation)
 
