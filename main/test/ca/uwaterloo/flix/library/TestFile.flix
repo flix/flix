@@ -202,13 +202,13 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadLinesIter01(): Bool \ IO =
+    def testReadLinesIter01(): Bool & Impure =
         match readLinesIter("./LICENSE.md") {
             case Iterator(_, next) => Result.isOk(next())
         }
 
     @test
-    def testReadLinesIter02(): Bool \ IO =
+    def testReadLinesIter02(): Bool & Impure =
         match readLinesIter("./LICENSE.md") {
             case Iterator(done, _) => done() == false
         }
@@ -218,7 +218,7 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadLinesIterWithWith01(): Bool \ IO =
+    def testReadLinesIterWithWith01(): Bool & Impure =
         match readLinesIterWith({charSet = "utf8"}, "./LICENSE.md") {
             case Iterator(_, next) => Result.isOk(next())
         }
@@ -281,25 +281,25 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadChunks01(): Bool \ IO =
+    def testReadChunks01(): Bool & Impure =
         match readChunks(2, "./LICENSE.md") {
             case Iterator(_, next) => Result.isOk(next())
         }
 
     @test
-    def testReadChunks02(): Bool \ IO =
+    def testReadChunks02(): Bool & Impure =
         match readChunks(2, "./LICENSE.md") {
             case Iterator(done, _) => done() == false
         }
 
     @test
-    def testReadChunks03(): Bool \ IO =
+    def testReadChunks03(): Bool & Impure =
         match readChunks(0, "./LICENSE.md") {
             case Iterator(done, _) => done()
         }
 
     @test
-    def testReadChunks04(): Bool \ IO =
+    def testReadChunks04(): Bool & Impure =
         match readChunks(-10, "./LICENSE.md") {
             case Iterator(_, next) => Result.isErr(next())
         }
