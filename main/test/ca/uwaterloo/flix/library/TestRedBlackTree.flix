@@ -376,18 +376,20 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool & Impure =
-        let r = ref 21;
+    def foreach01(): Bool = region r {
+        let x = ref 21 @ r;
         let Map(t) = Map#{};
-        RedBlackTree.foreach((k, _) -> r := k, t);
-        21 == deref r
+        RedBlackTree.foreach((k, _) -> x := k, t);
+        21 == deref x
+    }
 
     @test
-    def foreach02(): Bool & Impure =
-        let r = ref 21;
+    def foreach02(): Bool = region r {
+        let x = ref 21 @ r;
         let Map(t) = Map#{1 => "Hello World!"};
-        RedBlackTree.foreach((k, _) -> r := k, t);
-        1 == deref r
+        RedBlackTree.foreach((k, _) -> x := k, t);
+        1 == deref x
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // foldMapWithKey                                                          //
