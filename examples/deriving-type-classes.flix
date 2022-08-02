@@ -32,6 +32,6 @@ instance ToString[Date] {
 def earlierDate(d1: Date, d2: Date): Date = Order.min(d1, d2)
 
 /// Thanks to the ToString type class, we can easily convert dates to strings.
-def printDate(d: Date): Unit & Impure =
+def printDate(d: Date): Unit \ IO =
     let message = "The date is ${d}!";
     println(message)

@@ -54,7 +54,7 @@ namespace Stratifier {
         else
             Some(m)
 
-    pub def example01(): Unit & Impure =
+    pub def example01(): Unit \ IO =
         println("example01");
         // A :- B, C
         // B :- D
@@ -73,7 +73,7 @@ namespace Stratifier {
         };
         "Output:\n${rs}\nExpected:\n${expected}" |> println
 
-    pub def example02(): Unit & Impure =
+    pub def example02(): Unit \ IO =
         println("example02");
         // A :- B, C
         // B :- D
@@ -93,7 +93,7 @@ namespace Stratifier {
         };
         "Output:\n${rs}\nExpected:\nNot Stratified" |> println
 
-    pub def example03(): Unit & Impure =
+    pub def example03(): Unit \ IO =
         println("example03");
         // A :- not B.
         let p = Program(
@@ -109,7 +109,7 @@ namespace Stratifier {
         "Output:\n${rs}\nExpected:\n${expected}" |> println
 }
 
-def main(): Unit & Impure =
+def main(): Unit \ IO =
         Stratifier.example01();
         println("");
         Stratifier.example02();

@@ -225,7 +225,9 @@ namespace File {
             import java.io.File.canRead(): Bool \ IO;
             Ok(canRead(newFile(f)))
         } catch {
-            case _: ##java.io.IOException => Err("I/O Error")
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
         }
 
     ///
@@ -299,29 +301,59 @@ namespace File {
     /// `count` - the number of bytes read.
     /// `charSet` - the specific charset to be used to decode the bytes.
     ///
-    pub def readWith(opts: {offset :: Int64, count :: Int32, charSet :: String}, f : String): Result[String, String] \ IO = {
-        try {
-            import new java.io.File(String): ##java.io.File \ IO as newFile;
-            import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream \ IO as newInputStream;
-            import java.io.FileInputStream.skip(Int64): Int64 \ IO;
-            import java.io.FileInputStream.read(Array[Int8, Static], Int32, Int32): Int32 \ IO;
-            import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset \ IO;
-            import new java.lang.String(Array[Int8, Static], ##java.nio.charset.Charset): String \ IO as newString;
+    pub def readWith(opts: {offset :: Int64, count :: Int32, charSet :: String}, f : String): Result[String, String] \ IO =
+        if (0 < opts.count) {
+            try {
+                import new java.io.File(String): ##java.io.File & Impure as newFile;
+                import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream & Impure as newInputStream;
+                import java.io.FileInputStream.read(Array[Int8, Static], Int32, Int32): Int32 & Impure;
+                import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset & Impure;
+                import new java.lang.String(Array[Int8, Static], ##java.nio.charset.Charset): String & Impure as newString;
 
-            let javaFile = newFile(f);
-            let stream = newInputStream(javaFile);
-            discard skip(stream, opts.offset);
-            let bytes = [0i8; opts.count];
-            discard read(stream, bytes, 0, opts.count);
-            let charSet = forName(opts.charSet);
-            let returnString = newString(bytes, charSet);
-            Ok(returnString)
+                let javaFile = newFile(f);
+                let stream = newInputStream(javaFile);
+                match skip((opts.offset / 10_000i64), opts.offset, stream, f) {
+                    case Ok(_)    => {
+                        let bytes = [0i8; opts.count];
+                        discard read(stream, bytes, 0, opts.count);
+                        let charSet = forName(opts.charSet);
+                        let returnString = newString(bytes, charSet);
+                        Ok(returnString)
+                    }
+                    case Err(msg) => Err(msg)
+                }
+            } catch {
+                case ex: ##java.io.IOException =>
+                    import java.lang.Throwable.getMessage(): String & Impure;
+                    Err(getMessage(ex))
+            }
+        } else if (opts.count == 0) {
+            Ok("")
+        } else {
+            Err("The argument `count` has to be a non negative number when calling `File.readWith`.")
+        }
+
+    ///
+    /// Helper function for `readWith` and `readBytesWith`.
+    /// Tries to skip the requested number of bytes `bytes to skip` in `f` over `i + 1` iterations.
+    ///
+    def skip(i: Int64, bytesToSkip: Int64, stream: ##java.io.FileInputStream, f: String): Result[Unit, String] & Impure =
+        try {
+            if (0i64 <= i) {
+                import java.io.FileInputStream.skip(Int64): Int64 & Impure as javaSkip;
+                let skipped = javaSkip(stream, bytesToSkip);
+                if (skipped < bytesToSkip)
+                    skip(i - 1i64, bytesToSkip - skipped, stream, f)
+                else
+                    Ok()
+            } else {
+                Err("An error occurred when reading the file: '${f}'.")
+            }
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(getMessage(ex))
         }
-    }
 
     ///
     /// Returns a list of all the lines in the given file `f`.
@@ -478,25 +510,32 @@ namespace File {
     /// `count` - the number of bytes read.
     ///
     pub def readBytesWith(opts: {offset :: Int64, count :: Int32}, f: String): Result[Array[Int8, Static], String] \ IO =
-        try {
-            import new java.io.File(String): ##java.io.File \ IO as newFile;
-            import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream \ IO as newInputStream;
-            import java.io.FileInputStream.skip(Int64): Int64 \ IO;
-            import java.io.FileInputStream.read(Array[Int8, Static], Int32, Int32): Int32 \ IO;
+        if (0 < opts.count) {
+            try {
+                import new java.io.File(String): ##java.io.File & Impure as newFile;
+                import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream & Impure as newInputStream;
+                import java.io.FileInputStream.read(Array[Int8, Static], Int32, Int32): Int32 & Impure;
 
-            let javaFile = newFile(f);
-            let stream = newInputStream(javaFile);
-            discard skip(stream, opts.offset);
-            let bytes = [0i8; opts.count];
-            let numberRead = read(stream, bytes, 0, opts.count);
-
-            let res = readBytesWithHelper(bytes, numberRead, opts.count);
-
-            Ok(res)
-        } catch {
-            case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String \ IO;
-                Err(getMessage(ex))
+                let javaFile = newFile(f);
+                let stream = newInputStream(javaFile);
+                match skip((opts.offset / 10_000i64), opts.offset, stream, f) {
+                    case Ok(_)    => {
+                        let bytes = [0i8; opts.count];
+                        let numberRead = read(stream, bytes, 0, opts.count);
+                        let res = readBytesWithHelper(bytes, numberRead, opts.count);
+                        Ok(res)
+                    }
+                    case Err(msg) => Err(msg)
+                }
+            } catch {
+                case ex: ##java.io.IOException =>
+                    import java.lang.Throwable.getMessage(): String & Impure;
+                    Err(getMessage(ex))
+            }
+        } else if (opts.count == 0) {
+            Ok([])
+        } else {
+            Err("The argument `count` has to be a non negative number when calling `File.readBytesWith`.")
         }
 
     ///
@@ -519,38 +558,44 @@ namespace File {
     ///
     /// Returns an iterator of the bytes in the given `file` in chunks of size `chunkSize`.
     ///
-    pub def readChunks(f: String, chunkSize: Int32): Iterator[Result[Array[Int8, Static], String], Static] \ IO =
-        try {
-            import new java.io.File(String): ##java.io.File \ IO as newFile;
-            import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream \ IO as newInputStream;
-            import java.io.FileInputStream.read(Array[Int8, Static]): Int32 \ IO;
+    pub def readChunks(chunkSize: Int32, f: String): Iterator[Result[Array[Int8, Static], String], Static] \ IO =
+        if (0 < chunkSize) {
+            try {
+                import new java.io.File(String): ##java.io.File & Impure as newFile;
+                import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream & Impure as newInputStream;
+                import java.io.FileInputStream.read(Array[Int8, Static]): Int32 & Impure;
 
-            let javaFile = newFile(f);
-            let stream = newInputStream(javaFile);
-            let bytes = ref [0i8; chunkSize];
-            let numberRead = ref read(stream, deref bytes);
+                let javaFile = newFile(f);
+                let stream = newInputStream(javaFile);
+                let bytes = ref [0i8; chunkSize];
+                let numberRead = ref read(stream, deref bytes);
 
-            let done = () -> deref numberRead == -1;
-            let next = () -> {
-                try {
-                    let chunk = deref bytes;
-                    bytes := [0i8; chunkSize];
-                    let accRead = deref numberRead;
-                    numberRead := read(stream, deref bytes);
-                    Ok(readBytesWithHelper(chunk, accRead, chunkSize))
-                } catch {
-                    case ex: ##java.io.IOException => {
-                        numberRead := -1;
-                        import java.lang.Throwable.getMessage(): String \ IO;
-                        Err(getMessage(ex))
+                let done = () -> deref numberRead == -1;
+                let next = () -> {
+                    try {
+                        let chunk = deref bytes;
+                        bytes := [0i8; chunkSize];
+                        let accRead = deref numberRead;
+                        numberRead := read(stream, deref bytes);
+                        Ok(readBytesWithHelper(chunk, accRead, chunkSize))
+                    } catch {
+                        case ex: ##java.io.IOException => {
+                            numberRead := -1;
+                            import java.lang.Throwable.getMessage(): String & Impure;
+                            Err(getMessage(ex))
+                        }
                     }
-                }
-            };
-            Iterator(done, next)
-        } catch {
-            case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String \ IO;
-                Iterator.singleton(Static, Err(getMessage(ex)))
+                };
+                Iterator(done, next)
+            } catch {
+                case ex: ##java.io.IOException =>
+                    import java.lang.Throwable.getMessage(): String & Impure;
+                    Iterator.singleton(Static, Err(getMessage(ex)))
+            }
+        } else if (chunkSize == 0) {
+            Iterator.new(Static)
+        } else {
+            Iterator.singleton(Static, Err("The argument `chunkSize` has to be a non negative number when calling `File.readChunks`."))
         }
 
     ///

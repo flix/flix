@@ -17,6 +17,6 @@ def getRules(): #{ ParentOf, AncestorOf } = #{
 }
 
 /// Composes the facts and rules, and computes the lfp.
-def main(): Unit & Impure =
+def main(): Unit \ IO =
     query getFacts(), getRules()
         select (x, y) from AncestorOf(x, y) |> println

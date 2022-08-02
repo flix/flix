@@ -5,7 +5,7 @@ def inc(x: Int32): Int32 & Pure = x + 1
 def inc2(x: Int32): Int32 = x + 1
 
 /// We can also declare an impure function.
-def printAndInc(x: Int32): Int32 & Impure =
+def printAndInc(x: Int32): Int32 \ IO =
     println("Hello");
     x + 1
 
