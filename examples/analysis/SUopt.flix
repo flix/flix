@@ -49,7 +49,7 @@ def filter(e: SULattice, p: String): Bool = match e {
   case SULattice.Top => true
 }
 
-def main(): Unit & Impure =
+def main(): Unit \ IO =
     let p = #{
         // Rules
         // =========
