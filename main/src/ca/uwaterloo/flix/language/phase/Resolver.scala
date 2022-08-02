@@ -1648,7 +1648,7 @@ object Resolver {
         for (decls <- root.enums.get(Name.RootNS)) {
           for ((enumName, decl) <- decls) {
             for ((enumTag, caze) <- decl.cases) {
-              if (tag == enumTag) {
+              if (tag.name == enumTag) {
                 globalMatches += decl
               }
             }
@@ -1696,7 +1696,7 @@ object Resolver {
           case Some(enum) =>
             // Case 2.2: Enum declaration found. Look for the tag.
             for ((enumTag, caze) <- enum.cases) {
-              if (tag == enumTag) {
+              if (tag.name == enumTag) {
                 // Case 2.2.1: Tag found.
                 return getEnumAccessibility(enum, ns0) match {
                   case EnumAccessibility.Accessible => enum.toSuccess
