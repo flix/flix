@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Kind, Name, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.ReificationError
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
@@ -410,9 +410,9 @@ object Monomorph {
         }
         Expression.Choose(es, rs, tpe, pur, eff, loc)
 
-      case Expression.Tag(sym, tag, exp, tpe, pur, eff, loc) =>
+      case Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
-        Expression.Tag(sym, tag, e, subst0(tpe), pur, eff, loc)
+        Expression.Tag(sym, e, subst0(tpe), pur, eff, loc)
 
       case Expression.Tuple(elms, tpe, pur, eff, loc) =>
         val es = elms.map(e => visitExp(e, env0))
@@ -686,9 +686,9 @@ object Monomorph {
       case Pattern.Int64(lit, loc) => (Pattern.Int64(lit, loc), Map.empty)
       case Pattern.BigInt(lit, loc) => (Pattern.BigInt(lit, loc), Map.empty)
       case Pattern.Str(lit, loc) => (Pattern.Str(lit, loc), Map.empty)
-      case Pattern.Tag(sym, tag, pat, tpe, loc) =>
+      case Pattern.Tag(sym, pat, tpe, loc) =>
         val (p, env1) = visitPat(pat)
-        (Pattern.Tag(sym, tag, p, subst0(tpe), loc), env1)
+        (Pattern.Tag(sym, p, subst0(tpe), loc), env1)
       case Pattern.Tuple(elms, tpe, loc) =>
         val (ps, envs) = elms.map(p => visitPat(p)).unzip
         (Pattern.Tuple(ps, subst0(tpe), loc), envs.reduce(_ ++ _))
@@ -881,16 +881,16 @@ object Monomorph {
 
       case Some(tc) => tc match {
         case TypeConstructor.True =>
-          val tag = Name.Tag("ReifiedTrue", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          val caseSym = new Symbol.CaseSym(sym, "ReifiedTrue", SourceLocation.Unknown)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc.asSynthetic), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.False =>
-          val tag = Name.Tag("ReifiedFalse", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          val caseSym = new Symbol.CaseSym(sym, "ReifiedFalse", SourceLocation.Unknown)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc.asSynthetic), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case _ =>
-          val tag = Name.Tag("ErasedBool", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          val caseSym = new Symbol.CaseSym(sym, "ErasedBool", SourceLocation.Unknown)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc.asSynthetic), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
       }
     }
   }
@@ -910,50 +910,50 @@ object Monomorph {
 
       case Some(tc) => tc match {
         case TypeConstructor.Unit =>
-          val tag = Name.Tag("ReifiedUnit", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          val caseSym = new Symbol.CaseSym(sym, "ReifiedUnit", SourceLocation.Unknown)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Bool =>
-          val tag = Name.Tag("ReifiedBool", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          val caseSym = new Symbol.CaseSym(sym, "ReifiedBool", SourceLocation.Unknown)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Char =>
-          val tag = Name.Tag("ReifiedChar", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          val caseSym = new Symbol.CaseSym(sym, "ReifiedChar", SourceLocation.Unknown)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Float32 =>
-          val tag = Name.Tag("ReifiedFloat32", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          val caseSym = new Symbol.CaseSym(sym, "ReifiedFloat32", SourceLocation.Unknown)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Float64 =>
-          val tag = Name.Tag("ReifiedFloat64", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          val caseSym = new Symbol.CaseSym(sym, "ReifiedFloat64", SourceLocation.Unknown)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Int8 =>
-          val tag = Name.Tag("ReifiedInt8", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          val caseSym = new Symbol.CaseSym(sym, "ReifiedInt8", SourceLocation.Unknown)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Int16 =>
-          val tag = Name.Tag("ReifiedInt16", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          val caseSym = new Symbol.CaseSym(sym, "ReifiedInt16", SourceLocation.Unknown)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Int32 =>
-          val tag = Name.Tag("ReifiedInt32", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          val caseSym = new Symbol.CaseSym(sym, "ReifiedInt32", SourceLocation.Unknown)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Int64 =>
-          val tag = Name.Tag("ReifiedInt64", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          val caseSym = new Symbol.CaseSym(sym, "ReifiedInt64", SourceLocation.Unknown)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Array =>
-          val tag = Name.Tag("ReifiedArray", loc)
+          val caseSym = new Symbol.CaseSym(sym, "ReifiedArray", SourceLocation.Unknown)
           val innerTpe = Type.eraseAliases(t0).typeArguments.head
           val innerExp = visit(innerTpe)
-          Expression.Tag(sym, tag, innerExp, resultTpe, resultPur, resultEff, loc)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), innerExp, resultTpe, resultPur, resultEff, loc)
 
         case _ =>
-          val tag = Name.Tag("ErasedType", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          val caseSym = new Symbol.CaseSym(sym, "ErasedType", SourceLocation.Unknown)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
       }
     }
