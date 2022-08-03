@@ -261,10 +261,10 @@ object EarlyTreeShaker {
     case Expression.ArrayLength(base, _, _, _) =>
       visitExp(base)
 
-    case Expression.ArrayStore(base, index, elm, _, _) =>
+    case Expression.ArrayStore(base, index, elm, _, _, _) =>
       visitExp(base) ++ visitExp(index) ++ visitExp(elm)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) =>
       visitExp(base) ++ visitExp(beginIndex) ++ visitExp(endIndex)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
