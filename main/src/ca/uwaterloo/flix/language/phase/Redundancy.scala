@@ -566,9 +566,6 @@ object Redundancy {
       else
         visitExp(exp, env0, rc)
 
-    case Expression.Without(exp, _, _, _, _, _) =>
-      visitExp(exp, env0, rc)
-
     case Expression.Without(exp, effUse, _, _, _, _) =>
       Used.of(effUse.sym) ++ visitExp(exp, env0, rc)
 
