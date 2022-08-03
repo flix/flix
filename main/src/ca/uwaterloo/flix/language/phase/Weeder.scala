@@ -2870,7 +2870,7 @@ object Weeder {
     * Attempts to parse the given int8 with `sign` and `digits`.
     */
   private def toInt8(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Byte, WeederError] = try {
-    val s = if (sign) "-" + digits else digits
+    val s = sign + digits
     JByte.parseByte(stripUnderscores(s), radix).toSuccess
   } catch {
     case _: NumberFormatException => IllegalInt(loc).toFailure
