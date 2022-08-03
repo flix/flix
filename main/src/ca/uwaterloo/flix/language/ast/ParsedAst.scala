@@ -387,78 +387,78 @@ object ParsedAst {
       * Float32 Literal (32-bit floating-point number).
       *
       * @param sp1    the position of the first character in the literal.
-      * @param sign   the sign (true if signed).
+      * @param sign   the sign.
       * @param before the digits before the decimal point.
       * @param after  the digits after the decimal point.
       * @param sp2    the position of the last character in the literal.
       */
-    case class Float32(sp1: SourcePosition, sign: Boolean, before: String, after: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class Float32(sp1: SourcePosition, sign: String, before: String, after: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Float64 Literal (64-bit floating-point number).
       *
       * @param sp1    the position of the first character in the literal.
-      * @param sign   the sign (true if signed).
+      * @param sign   the sign.
       * @param before the digits before the decimal point.
       * @param after  the digits after the decimal point.
       * @param sp2    the position of the last character in the literal.
       */
-    case class Float64(sp1: SourcePosition, sign: Boolean, before: String, after: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class Float64(sp1: SourcePosition, sign: String, before: String, after: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Int8 Literal (signed 8-bit integer).
       *
       * @param sp1   the position of the first character in the literal.
-      * @param sign  the sign (true if signed).
+      * @param sign  the sign.
       * @param radix the radix of the literal.
       * @param lit   the int8 literal.
       * @param sp2   the position of the last character in the literal.
       */
-    case class Int8(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class Int8(sp1: SourcePosition, sign: String, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Int16 Literal (signed 16-bit integer).
       *
       * @param sp1   the position of the first character in the literal.
-      * @param sign  the sign (true if signed).
+      * @param sign  the sign.
       * @param radix the radix of the literal.
       * @param lit   the int16 literal.
       * @param sp2   the position of the last character in the literal.
       */
-    case class Int16(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class Int16(sp1: SourcePosition, sign: String, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Int32 Literal (signed 32-bit integer).
       *
       * @param sp1   the position of the first character in the literal.
-      * @param sign  the sign (true if signed).
+      * @param sign  the sign.
       * @param radix the radix of the literal.
       * @param lit   the int32 literal.
       * @param sp2   the position of the last character in the literal.
       */
-    case class Int32(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class Int32(sp1: SourcePosition, sign: String, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Int64 Literal (signed 64-bit integer).
       *
       * @param sp1   the position of the first character in the literal.
-      * @param sign  the sign (true if signed).
+      * @param sign  the sign.
       * @param radix the radix of the literal.
       * @param lit   the int64 literal.
       * @param sp2   the position of the last character in the literal.
       */
-    case class Int64(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class Int64(sp1: SourcePosition, sign: String, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * BigInt Literal (arbitrary sized integer).
       *
       * @param sp1   the position of the first character in the literal.
-      * @param sign  the sign (true if signed).
+      * @param sign  the sign.
       * @param radix the radix of the literal.
       * @param lit   the big int literal.
       * @param sp2   the position of the last character in the literal.
       */
-    case class BigInt(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class BigInt(sp1: SourcePosition, sign: String, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * String Literal.
