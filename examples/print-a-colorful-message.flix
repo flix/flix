@@ -1,5 +1,5 @@
 /// Construct colorful messages.
-def main(): Unit & Impure =
+def main(): Unit \ IO =
   let s1 = "You can print message with " + Console.red("colored text");
   let s2 = " or " + Console.bgBlue("background") + ".";
   println(s1+s2);

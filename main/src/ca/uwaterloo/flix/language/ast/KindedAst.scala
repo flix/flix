@@ -136,13 +136,13 @@ object KindedAst {
 
     case class ArrayNew(exp1: KindedAst.Expression, exp2: KindedAst.Expression, exp3: KindedAst.Expression, tvar: Type.KindedVar, pvar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
-    case class ArrayLoad(base: KindedAst.Expression, index: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+    case class ArrayLoad(base: KindedAst.Expression, index: KindedAst.Expression, tpe: Type.KindedVar, pvar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
-    case class ArrayStore(base: KindedAst.Expression, index: KindedAst.Expression, elm: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class ArrayStore(base: KindedAst.Expression, index: KindedAst.Expression, elm: KindedAst.Expression, pvar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
     case class ArrayLength(base: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
-    case class ArraySlice(base: KindedAst.Expression, beginIndex: KindedAst.Expression, endIndex: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class ArraySlice(base: KindedAst.Expression, beginIndex: KindedAst.Expression, endIndex: KindedAst.Expression, pvar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
     case class Ref(exp1: KindedAst.Expression, exp2: KindedAst.Expression, tvar: Type.KindedVar, pvar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 

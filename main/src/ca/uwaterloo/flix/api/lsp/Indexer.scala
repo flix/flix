@@ -92,10 +92,16 @@ object Indexer {
       val idx2 = traverse(derives) {
         case Ast.Derivation(clazz, loc) => Index.useOf(clazz, loc)
       }
-      val idx3 = traverse(cases) {
-        case (_, caze) => Index.occurrenceOf(caze)
-      }
+      val idx3 = traverse(cases.values)(visitCase)
       idx0 ++ idx1 ++ idx2 ++ idx3
+  }
+
+  /**
+    * Returns a reverse index for the given enum case `caze0`.
+    */
+  private def visitCase(caze0: Case): Index = caze0 match {
+    case Case(_, _, tpe, _, _) =>
+      Index.occurrenceOf(caze0) ++ visitType(tpe)
   }
 
   /**
@@ -287,10 +293,10 @@ object Indexer {
     case Expression.ArrayLength(exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.ArrayStore(exp1, exp2, exp3, _, _) =>
+    case Expression.ArrayStore(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
 
-    case Expression.ArraySlice(exp1, exp2, exp3, _, _, _) =>
+    case Expression.ArraySlice(exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
@@ -363,8 +369,8 @@ object Indexer {
 
     case Expression.NewObject(_, _, _, _, _, methods, _) =>
       Index.occurrenceOf(exp0) ++ traverse(methods) {
-        case JvmMethod(_, fparams, exp, tpe, eff, pur, _) =>
-          Index.traverse(fparams)(visitFormalParam) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff) ++ visitType(pur)
+        case JvmMethod(_, fparams, exp, tpe, pur, eff, _) =>
+          Index.traverse(fparams)(visitFormalParam) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(pur) ++ visitType(eff)
       }
 
     case Expression.NewChannel(exp, _, _, _, _) =>

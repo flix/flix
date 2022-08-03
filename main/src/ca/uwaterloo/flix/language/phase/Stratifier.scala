@@ -254,14 +254,14 @@ object Stratifier {
         case b => Expression.ArrayLength(b, pur, eff, loc)
       }
 
-    case Expression.ArrayStore(base, index, elm, eff, loc) =>
+    case Expression.ArrayStore(base, index, elm, pur, eff, loc) =>
       mapN(visitExp(base), visitExp(index), visitExp(elm)) {
-        case (b, i, e) => Expression.ArrayStore(b, i, e, eff, loc)
+        case (b, i, e) => Expression.ArrayStore(b, i, e, pur, eff, loc)
       }
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, pur, eff, loc) =>
       mapN(visitExp(base), visitExp(beginIndex), visitExp(endIndex)) {
-        case (b, i1, i2) => Expression.ArraySlice(b, i1, i2, tpe, eff, loc)
+        case (b, i1, i2) => Expression.ArraySlice(b, i1, i2, tpe, pur, eff, loc)
       }
 
     case Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
@@ -633,10 +633,10 @@ object Stratifier {
     case Expression.ArrayLength(base, _, _, _) =>
       labelledGraphOfExp(base)
 
-    case Expression.ArrayStore(base, index, elm, _, _) =>
+    case Expression.ArrayStore(base, index, elm, _, _, _) =>
       labelledGraphOfExp(base) + labelledGraphOfExp(index) + labelledGraphOfExp(elm)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) =>
       labelledGraphOfExp(base) + labelledGraphOfExp(beginIndex) + labelledGraphOfExp(endIndex)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
