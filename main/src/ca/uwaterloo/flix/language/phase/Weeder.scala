@@ -2850,7 +2850,7 @@ object Weeder {
     * Attempts to parse the given float32 with `sign` digits `before` and `after` the comma.
     */
   private def toFloat32(sign: String, before: String, after: String, loc: SourceLocation): Validation[Float, WeederError] = try {
-    val s = "$sign$before.$after"
+    val s = s"$sign$before.$after"
     stripUnderscores(s).toFloat.toSuccess
   } catch {
     case _: NumberFormatException => IllegalFloat(loc).toFailure
@@ -2860,7 +2860,7 @@ object Weeder {
     * Attempts to parse the given float64 with `sign` digits `before` and `after` the comma.
     */
   private def toFloat64(sign: String, before: String, after: String, loc: SourceLocation): Validation[Double, WeederError] = try {
-    val s = "$sign$before.$after"
+    val s = s"$sign$before.$after"
     stripUnderscores(s).toDouble.toSuccess
   } catch {
     case _: NumberFormatException => IllegalFloat(loc).toFailure
