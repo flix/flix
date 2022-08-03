@@ -456,12 +456,12 @@ object Kinder {
 
     case ResolvedAst.Expression.Scope(sym, regionVar, exp0, loc) =>
       val rv = Type.KindedVar(regionVar.ascribedWith(Kind.Bool), loc)
-      val evar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+      val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
       flatMapN(kenv0 + (regionVar -> Kind.Bool)) {
         case kenv =>
           val expVal = visitExp(exp0, kenv, senv, taenv, henv0, root)
           mapN(expVal) {
-            exp => KindedAst.Expression.Scope(sym, rv, exp, evar, loc)
+            exp => KindedAst.Expression.Scope(sym, rv, exp, pvar, loc)
           }
       }
 
@@ -518,8 +518,8 @@ object Kinder {
       mapN(esVal, eVal) {
         case (es, e) =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Bool, loc.asSynthetic)
-          KindedAst.Expression.ArrayLit(es, e, tvar, evar, loc)
+          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+          KindedAst.Expression.ArrayLit(es, e, tvar, pvar, loc)
       }
 
     case ResolvedAst.Expression.ArrayNew(exp1, exp2, exp3, loc) =>
@@ -529,15 +529,17 @@ object Kinder {
       mapN(e1Val, e2Val, e3Val) {
         case (e1, e2, e3) =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Bool, loc.asSynthetic)
-          KindedAst.Expression.ArrayNew(e1, e2, e3, tvar, evar, loc)
+          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+          KindedAst.Expression.ArrayNew(e1, e2, e3, tvar, pvar, loc)
       }
 
     case ResolvedAst.Expression.ArrayLoad(base0, index0, loc) =>
       val baseVal = visitExp(base0, kenv0, senv, taenv, henv0, root)
       val indexVal = visitExp(index0, kenv0, senv, taenv, henv0, root)
       mapN(baseVal, indexVal) {
-        case (base, index) => KindedAst.Expression.ArrayLoad(base, index, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+        case (base, index) =>
+          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+          KindedAst.Expression.ArrayLoad(base, index, Type.freshVar(Kind.Star, loc.asSynthetic), pvar, loc)
       }
 
     case ResolvedAst.Expression.ArrayStore(base0, index0, elm0, loc) =>
@@ -545,7 +547,9 @@ object Kinder {
       val indexVal = visitExp(index0, kenv0, senv, taenv, henv0, root)
       val elmVal = visitExp(elm0, kenv0, senv, taenv, henv0, root)
       mapN(baseVal, indexVal, elmVal) {
-        case (base, index, elm) => KindedAst.Expression.ArrayStore(base, index, elm, loc)
+        case (base, index, elm) =>
+          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+          KindedAst.Expression.ArrayStore(base, index, elm, pvar, loc)
       }
 
     case ResolvedAst.Expression.ArrayLength(base0, loc) =>
@@ -559,7 +563,9 @@ object Kinder {
       val beginIndexVal = visitExp(beginIndex0, kenv0, senv, taenv, henv0, root)
       val endIndexVal = visitExp(endIndex0, kenv0, senv, taenv, henv0, root)
       mapN(baseVal, beginIndexVal, endIndexVal) {
-        case (base, beginIndex, endIndex) => KindedAst.Expression.ArraySlice(base, beginIndex, endIndex, loc)
+        case (base, beginIndex, endIndex) =>
+          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+          KindedAst.Expression.ArraySlice(base, beginIndex, endIndex, pvar, loc)
       }
 
     case ResolvedAst.Expression.Ref(exp1, exp2, loc) =>

@@ -289,10 +289,10 @@ object Indexer {
     case Expression.ArrayLength(exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.ArrayStore(exp1, exp2, exp3, _, _) =>
+    case Expression.ArrayStore(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
 
-    case Expression.ArraySlice(exp1, exp2, exp3, _, _, _) =>
+    case Expression.ArraySlice(exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
@@ -363,8 +363,8 @@ object Indexer {
 
     case Expression.NewObject(_, _, _, _, _, methods, _) =>
       Index.occurrenceOf(exp0) ++ traverse(methods) {
-        case JvmMethod(_, fparams, exp, tpe, eff, pur, _) =>
-          Index.traverse(fparams)(visitFormalParam) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff) ++ visitType(pur)
+        case JvmMethod(_, fparams, exp, tpe, pur, eff, _) =>
+          Index.traverse(fparams)(visitFormalParam) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(pur) ++ visitType(eff)
       }
 
     case Expression.NewChannel(exp, _, _, _, _) =>

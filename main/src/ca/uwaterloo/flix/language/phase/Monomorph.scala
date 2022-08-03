@@ -450,21 +450,21 @@ object Monomorph {
         val i = visitExp(index, env0)
         Expression.ArrayLoad(b, i, subst0(tpe), pur, eff, loc)
 
-      case Expression.ArrayStore(base, index, elm, eff, loc) =>
+      case Expression.ArrayStore(base, index, elm, pur, eff, loc) =>
         val b = visitExp(base, env0)
         val i = visitExp(index, env0)
         val e = visitExp(elm, env0)
-        Expression.ArrayStore(b, i, e, eff, loc)
+        Expression.ArrayStore(b, i, e, pur, eff, loc)
 
       case Expression.ArrayLength(base, pur, eff, loc) =>
         val b = visitExp(base, env0)
         Expression.ArrayLength(b, pur, eff, loc)
 
-      case Expression.ArraySlice(base, startIndex, endIndex, tpe, eff, loc) =>
+      case Expression.ArraySlice(base, startIndex, endIndex, tpe, pur, eff, loc) =>
         val b = visitExp(base, env0)
         val i1 = visitExp(startIndex, env0)
         val i2 = visitExp(endIndex, env0)
-        Expression.ArraySlice(b, i1, i2, subst0(tpe), eff, loc)
+        Expression.ArraySlice(b, i1, i2, subst0(tpe), pur, eff, loc)
 
       case Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
         val e1 = visitExp(exp1, env0)
