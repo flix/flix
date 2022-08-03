@@ -683,7 +683,6 @@ object Weeder {
         case e => visitUnaryOperator(op) match {
           case OperatorResult.BuiltIn(name) => WeededAst.Expression.Apply(WeededAst.Expression.DefOrSig(name, name.loc), List(e), loc)
           case OperatorResult.Operator(o) => WeededAst.Expression.Unary(o, e, loc)
-          case OperatorResult.NoOp => e
           case OperatorResult.Unrecognized(ident) => WeededAst.Expression.Apply(WeededAst.Expression.VarOrDefOrSig(ident, ident.loc), List(e), loc)
         }
       }
@@ -696,7 +695,6 @@ object Weeder {
           case OperatorResult.BuiltIn(name) => WeededAst.Expression.Apply(WeededAst.Expression.DefOrSig(name, name.loc), List(e1, e2), loc)
           case OperatorResult.Operator(o) => WeededAst.Expression.Binary(o, e1, e2, loc)
           case OperatorResult.Unrecognized(ident) => WeededAst.Expression.Apply(WeededAst.Expression.VarOrDefOrSig(ident, ident.loc), List(e1, e2), loc)
-          case OperatorResult.NoOp => throw InternalCompilerException(s"Unexpected operator: $op")
         }
       }
 
@@ -1777,11 +1775,6 @@ object Weeder {
     case class Operator(op: SemanticOperator) extends OperatorResult
 
     /**
-      * The operator represents a no-op.
-      */
-    case object NoOp extends OperatorResult
-
-    /**
       * The operator is unrecognized: it must have been defined elsewhere.
       */
     case class Unrecognized(ident: Name.Ident) extends OperatorResult
@@ -1794,7 +1787,6 @@ object Weeder {
     case ParsedAst.Operator(sp1, op, sp2) =>
       op match {
         case "not" => OperatorResult.Operator(SemanticOperator.BoolOp.Not)
-        case "+" => OperatorResult.NoOp
         case "-" => OperatorResult.BuiltIn(Name.mkQName("Neg.neg", sp1, sp2))
         case "~~~" => OperatorResult.BuiltIn(Name.mkQName("BitwiseNot.not", sp1, sp2))
         case _ => OperatorResult.Unrecognized(Name.Ident(sp1, op, sp2))
@@ -2857,8 +2849,8 @@ object Weeder {
   /**
     * Attempts to parse the given float32 with `sign` digits `before` and `after` the comma.
     */
-  private def toFloat32(sign: Boolean, before: String, after: String, loc: SourceLocation): Validation[Float, WeederError] = try {
-    val s = if (sign) s"-$before.$after" else s"$before.$after"
+  private def toFloat32(sign: String, before: String, after: String, loc: SourceLocation): Validation[Float, WeederError] = try {
+    val s = s"$sign$before.$after"
     stripUnderscores(s).toFloat.toSuccess
   } catch {
     case _: NumberFormatException => IllegalFloat(loc).toFailure
@@ -2867,8 +2859,8 @@ object Weeder {
   /**
     * Attempts to parse the given float64 with `sign` digits `before` and `after` the comma.
     */
-  private def toFloat64(sign: Boolean, before: String, after: String, loc: SourceLocation): Validation[Double, WeederError] = try {
-    val s = if (sign) s"-$before.$after" else s"$before.$after"
+  private def toFloat64(sign: String, before: String, after: String, loc: SourceLocation): Validation[Double, WeederError] = try {
+    val s = s"$sign$before.$after"
     stripUnderscores(s).toDouble.toSuccess
   } catch {
     case _: NumberFormatException => IllegalFloat(loc).toFailure
@@ -2877,8 +2869,8 @@ object Weeder {
   /**
     * Attempts to parse the given int8 with `sign` and `digits`.
     */
-  private def toInt8(sign: Boolean, radix: Int, digits: String, loc: SourceLocation): Validation[Byte, WeederError] = try {
-    val s = if (sign) "-" + digits else digits
+  private def toInt8(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Byte, WeederError] = try {
+    val s = sign + digits
     JByte.parseByte(stripUnderscores(s), radix).toSuccess
   } catch {
     case _: NumberFormatException => IllegalInt(loc).toFailure
@@ -2887,8 +2879,8 @@ object Weeder {
   /**
     * Attempts to parse the given int16 with `sign` and `digits`.
     */
-  private def toInt16(sign: Boolean, radix: Int, digits: String, loc: SourceLocation): Validation[Short, WeederError] = try {
-    val s = if (sign) "-" + digits else digits
+  private def toInt16(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Short, WeederError] = try {
+    val s = sign + digits
     JShort.parseShort(stripUnderscores(s), radix).toSuccess
   } catch {
     case _: NumberFormatException => IllegalInt(loc).toFailure
@@ -2897,8 +2889,8 @@ object Weeder {
   /**
     * Attempts to parse the given int32 with `sign` and `digits`.
     */
-  private def toInt32(sign: Boolean, radix: Int, digits: String, loc: SourceLocation): Validation[Int, WeederError] = try {
-    val s = if (sign) "-" + digits else digits
+  private def toInt32(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Int, WeederError] = try {
+    val s = sign + digits
     JInt.parseInt(stripUnderscores(s), radix).toSuccess
   } catch {
     case _: NumberFormatException => IllegalInt(loc).toFailure
@@ -2907,8 +2899,8 @@ object Weeder {
   /**
     * Attempts to parse the given int64 with `sign` and `digits`.
     */
-  private def toInt64(sign: Boolean, radix: Int, digits: String, loc: SourceLocation): Validation[Long, WeederError] = try {
-    val s = if (sign) "-" + digits else digits
+  private def toInt64(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Long, WeederError] = try {
+    val s = sign + digits
     JLong.parseLong(stripUnderscores(s), radix).toSuccess
   } catch {
     case _: NumberFormatException => IllegalInt(loc).toFailure
@@ -2917,8 +2909,8 @@ object Weeder {
   /**
     * Attempts to parse the given BigInt with `sign` and `digits`.
     */
-  private def toBigInt(sign: Boolean, radix: Int, digits: String, loc: SourceLocation): Validation[BigInteger, WeederError] = try {
-    val s = if (sign) "-" + digits else digits
+  private def toBigInt(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[BigInteger, WeederError] = try {
+    val s = sign + digits
     new BigInteger(stripUnderscores(s), radix).toSuccess
   } catch {
     case _: NumberFormatException => IllegalInt(loc).toFailure

@@ -448,8 +448,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("$DEFAULT$") ~ SP ~> ParsedAst.Literal.Default
     }
 
-    def Sign: Rule1[Boolean] = rule {
-      optional(capture("-")) ~> ((s: Option[String]) => s.nonEmpty)
+    def Sign: Rule1[String] = rule {
+      capture("-" | "+" | "")
     }
 
     def SeparableDecDigits: Rule1[String] = rule {
@@ -667,7 +667,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Unary: Rule1[ParsedAst.Expression] = {
       def UnaryOp1: Rule1[ParsedAst.Operator] = rule {
-        operator("+") | operator("-") | operator("~~~")
+        operator("-") | operator("~~~")
       }
 
       def UnaryOp2: Rule1[ParsedAst.Operator] = rule {
