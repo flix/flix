@@ -667,7 +667,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Unary: Rule1[ParsedAst.Expression] = {
       def UnaryOp1: Rule1[ParsedAst.Operator] = rule {
-        operator("+") | operator("-") | operator("~~~")
+        operator("-") | operator("~~~")
       }
 
       def UnaryOp2: Rule1[ParsedAst.Operator] = rule {

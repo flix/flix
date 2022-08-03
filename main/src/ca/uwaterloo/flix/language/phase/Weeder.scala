@@ -683,7 +683,6 @@ object Weeder {
         case e => visitUnaryOperator(op) match {
           case OperatorResult.BuiltIn(name) => WeededAst.Expression.Apply(WeededAst.Expression.DefOrSig(name, name.loc), List(e), loc)
           case OperatorResult.Operator(o) => WeededAst.Expression.Unary(o, e, loc)
-          case OperatorResult.NoOp => e
           case OperatorResult.Unrecognized(ident) => WeededAst.Expression.Apply(WeededAst.Expression.VarOrDefOrSig(ident, ident.loc), List(e), loc)
         }
       }
@@ -696,7 +695,6 @@ object Weeder {
           case OperatorResult.BuiltIn(name) => WeededAst.Expression.Apply(WeededAst.Expression.DefOrSig(name, name.loc), List(e1, e2), loc)
           case OperatorResult.Operator(o) => WeededAst.Expression.Binary(o, e1, e2, loc)
           case OperatorResult.Unrecognized(ident) => WeededAst.Expression.Apply(WeededAst.Expression.VarOrDefOrSig(ident, ident.loc), List(e1, e2), loc)
-          case OperatorResult.NoOp => throw InternalCompilerException(s"Unexpected operator: $op")
         }
       }
 
@@ -1777,11 +1775,6 @@ object Weeder {
     case class Operator(op: SemanticOperator) extends OperatorResult
 
     /**
-      * The operator represents a no-op.
-      */
-    case object NoOp extends OperatorResult
-
-    /**
       * The operator is unrecognized: it must have been defined elsewhere.
       */
     case class Unrecognized(ident: Name.Ident) extends OperatorResult
@@ -1794,7 +1787,6 @@ object Weeder {
     case ParsedAst.Operator(sp1, op, sp2) =>
       op match {
         case "not" => OperatorResult.Operator(SemanticOperator.BoolOp.Not)
-        case "+" => OperatorResult.NoOp
         case "-" => OperatorResult.BuiltIn(Name.mkQName("Neg.neg", sp1, sp2))
         case "~~~" => OperatorResult.BuiltIn(Name.mkQName("BitwiseNot.not", sp1, sp2))
         case _ => OperatorResult.Unrecognized(Name.Ident(sp1, op, sp2))
