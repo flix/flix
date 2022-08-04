@@ -6,7 +6,7 @@ namespace Test/Eff/Simplification {
     def testPureAndImpure(): Unit & Pure and Impure = impure()
 
     @test
-    def testImpureAndImpure(): Unit & Impure and Impure = impure()
+    def testImpureAndImpure(): Unit \ IO and Impure = impure()
 
     @test
     def testPureOrPure(): Unit & Pure or Pure = pure()
@@ -15,11 +15,11 @@ namespace Test/Eff/Simplification {
     def testPureOrImpure(): Unit & Pure or Impure = pure()
 
     @test
-    def testImpureOrImpure(): Unit & Impure or Impure = impure()
+    def testImpureOrImpure(): Unit \ IO or Impure = impure()
 
     /// a pure function
     def pure(): Unit & Pure = ()
 
     /// an impure function
-    def impure(): Unit & Impure = () as & Impure
+    def impure(): Unit \ IO = () as \ IO
 }

@@ -1108,8 +1108,6 @@ object Kinder {
       // Lookup the enum kind
       val kind = getEnumKind(root.enums(sym))
       TypeConstructor.KindedEnum(sym, kind).toSuccess
-    // IO maps to empty
-    case TypeConstructor.Effect(IoSym) => TypeConstructor.Empty.toSuccess
     case _: TypeConstructor.KindedEnum => throw InternalCompilerException("Unexpected kinded enum.")
     case _: TypeConstructor.UnappliedAlias => throw InternalCompilerException("Unexpected unapplied type alias.")
     case t => t.toSuccess
@@ -1215,8 +1213,6 @@ object Kinder {
           }
 
           val eff = effs.reduceLeftOption({
-            // ignore IO in set effects
-            case (acc, Type.Cst(TypeConstructor.Effect(IoSym), _)) => acc
             case (acc, t) => Type.mkUnion(acc, t, t.loc.asSynthetic)
           }: (Type, Type) => Type).getOrElse(Type.Empty)
 

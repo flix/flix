@@ -20,7 +20,7 @@ namespace Benchmark {
     /// impure since timing is considered a side-effect in this context.
     ///
     pub enum Benchmark {
-        case Benchmark({name :: String, f :: Unit -> Unit & Impure})
+        case Benchmark({name :: String, f :: Unit -> Unit \ IO})
     }
 
     ///
@@ -47,7 +47,7 @@ namespace Benchmark {
     @Experimental
     pub def defBenchmark(name: String, f: Unit -> a & ef): Benchmark =
         let fn = () -> {
-            let _ = f() as & Impure;
+            let _ = f() as \ IO;
             ()
         };
         Benchmark({name = name, f = fn})
@@ -65,7 +65,7 @@ namespace Benchmark {
             println("No benchmarks");
             1
         } else {
-            import static java.lang.System.nanoTime(): Int64 & Impure;
+            import static java.lang.System.nanoTime(): Int64 \ IO;
             let t = nanoTime();
             printHeader();
             println("");
@@ -106,8 +106,8 @@ namespace Benchmark {
     ///
     /// Runs the given benchmark `b` exactly `n` times.
     ///
-    def runBenchmark(b: Benchmark, n: Int32): BenchmarkResult & Impure =
-        import static java.lang.System.nanoTime(): Int64 & Impure;
+    def runBenchmark(b: Benchmark, n: Int32): BenchmarkResult \ IO =
+        import static java.lang.System.nanoTime(): Int64 \ IO;
         let Benchmark(r) = b;
         let t = nanoTime();
         loop(r.f, n);
@@ -120,9 +120,9 @@ namespace Benchmark {
     ///
     /// Runs `f` once and divides the time elapsed by the `scaleFactor`.
     ///
-    def runBenchmarkOnce(b: Benchmark): Int64 & Impure =
+    def runBenchmarkOnce(b: Benchmark): Int64 \ IO =
         let Benchmark(r) = b;
-        import static java.lang.System.nanoTime(): Int64 & Impure;
+        import static java.lang.System.nanoTime(): Int64 \ IO;
         let t = nanoTime();
         (r.f)();
         (nanoTime() - t) / scaleFactor()
