@@ -75,7 +75,8 @@ object Redundancy {
       checkUnusedDefs(usedAll)(root) ++
         checkUnusedEnumsAndTags(usedAll)(root) ++
         checkUnusedTypeParamsEnums()(root) ++
-        checkRedundantTypeConstraints()(root)
+        checkRedundantTypeConstraints()(root) ++
+        checkUnusedEffects(usedAll)(root)
 
     // Return the root if successful, otherwise returns all redundancy errors.
     usedRes.toValidation(root)
@@ -157,6 +158,16 @@ object Redundancy {
   private def checkUnusedDefs(used: Used)(implicit root: Root): Used = {
     root.defs.foldLeft(used) {
       case (acc, (_, decl)) if deadDef(decl, used) => acc + UnusedDefSym(decl.sym)
+      case (acc, _) => acc
+    }
+  }
+
+  /**
+    * Checks for unused effect symbols.
+    */
+  private def checkUnusedEffects(used: Used)(implicit root: Root): Used = {
+    root.effects.foldLeft(used) {
+      case (acc, (_, decl)) if deadEffect(decl, used) => acc + UnusedEffectSym(decl.sym)
       case (acc, _) => acc
     }
   }
@@ -555,8 +566,8 @@ object Redundancy {
       else
         visitExp(exp, env0, rc)
 
-    case Expression.Without(exp, _, _, _, _, _) =>
-      visitExp(exp, env0, rc)
+    case Expression.Without(exp, effUse, _, _, _, _) =>
+      Used.of(effUse.sym) ++ visitExp(exp, env0, rc)
 
     case Expression.TryCatch(exp, rules, _, _, _, _) =>
       val usedExp = visitExp(exp, env0, rc)
@@ -570,7 +581,7 @@ object Redundancy {
       }
       usedExp ++ usedRules
 
-    case Expression.TryWith(exp, _, rules, _, _, _, _) =>
+    case Expression.TryWith(exp, effUse, rules, _, _, _, _) =>
       val usedExp = visitExp(exp, env0, rc)
       val usedRules = rules.foldLeft(Used.empty) {
         case (acc, HandlerRule(_, fparams, body)) =>
@@ -579,10 +590,10 @@ object Redundancy {
           val dead = syms.filter(deadVarSym(_, usedBody))
           acc ++ usedBody ++ dead.map(UnusedVarSym)
       }
-      usedExp ++ usedRules
+      usedExp ++ Used.of(effUse.sym) ++ usedRules
 
-    case Expression.Do(_, exps, _, _, _) =>
-      visitExps(exps, env0, rc)
+    case Expression.Do(opUse, exps, _, _, _) =>
+      Used.of(opUse.sym.eff) ++ visitExps(exps, env0, rc)
 
     case Expression.Resume(exp, _, _) =>
       visitExp(exp, env0, rc)
@@ -945,6 +956,14 @@ object Redundancy {
     sym.toString == "main" || root.entryPoint.contains(sym)
 
   /**
+    * Returns `true` if the given definition `decl` is unused according to `used`.
+    */
+  private def deadEffect(decl: Effect, used: Used)(implicit root: Root): Boolean =
+      !decl.mod.isPublic &&
+      !decl.sym.name.startsWith("_") &&
+      !used.effectSyms.contains(decl.sym)
+
+  /**
     * Returns `true` if the given `tag` is unused according to the `usedTags`.
     */
   private def deadTag(tag: Name.Tag, usedTags: Set[Name.Tag]): Boolean =
@@ -1007,7 +1026,7 @@ object Redundancy {
     /**
       * Represents the empty set of used symbols.
       */
-    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, ListMap.empty, Set.empty)
+    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, Set.empty, ListMap.empty, Set.empty)
 
     /**
       * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
@@ -1035,6 +1054,11 @@ object Redundancy {
     def of(sym: Symbol.VarSym): Used = empty.copy(varSyms = Set(sym), occurrencesOf = ListMap.singleton(sym, sym.loc))
 
     /**
+      * Returns an object where the given variable symbol `sym` is marked as used.
+      */
+    def of(sym: Symbol.EffectSym): Used = empty.copy(effectSyms = Set(sym))
+
+    /**
       * Returns an object where the given variable symbols `syms` are marked as used.
       */
     def of(syms: Set[Symbol.VarSym]): Used = empty.copy(
@@ -1053,6 +1077,7 @@ object Redundancy {
                           sigSyms: Set[Symbol.SigSym],
                           holeSyms: Set[Symbol.HoleSym],
                           varSyms: Set[Symbol.VarSym],
+                          effectSyms: Set[Symbol.EffectSym],
                           occurrencesOf: ListMap[Symbol.VarSym, SourceLocation],
                           errors: Set[RedundancyError]) {
 
@@ -1073,6 +1098,7 @@ object Redundancy {
           this.sigSyms ++ that.sigSyms,
           this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
+          this.effectSyms ++ that.effectSyms,
           this.occurrencesOf ++ that.occurrencesOf,
           this.errors ++ that.errors
         )
