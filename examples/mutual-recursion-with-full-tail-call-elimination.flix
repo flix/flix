@@ -15,5 +15,5 @@ def isEvn(n: Int32): Bool =
 /// We can now compute if 12345 is odd.
 /// In a language without TCE this would
 /// quickly consume all stack space.
-def main(): Unit & Impure =
+def main(): Unit \ IO =
     isOdd(12345) |> println

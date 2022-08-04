@@ -268,15 +268,11 @@ object TypedAst {
       def tpe: Type = Type.Int32
     }
 
-    case class ArrayStore(base: TypedAst.Expression, index: TypedAst.Expression, elm: TypedAst.Expression, eff: Type, loc: SourceLocation) extends TypedAst.Expression {
+    case class ArrayStore(base: TypedAst.Expression, index: TypedAst.Expression, elm: TypedAst.Expression, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = Type.Unit
-
-      def pur: Type = Type.Impure
     }
 
-    case class ArraySlice(base: TypedAst.Expression, beginIndex: TypedAst.Expression, endIndex: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression {
-      def pur: Type = Type.Impure
-    }
+    case class ArraySlice(base: TypedAst.Expression, beginIndex: TypedAst.Expression, endIndex: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Ref(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -498,7 +494,7 @@ object TypedAst {
 
   case class Attribute(name: String, tpe: Type, loc: SourceLocation)
 
-  case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: Type, sc: Scheme, loc: SourceLocation)
+  case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpe: Type, sc: Scheme, loc: SourceLocation)
 
   case class Constraint(cparams: List[TypedAst.ConstraintParam], head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body], loc: SourceLocation)
 
