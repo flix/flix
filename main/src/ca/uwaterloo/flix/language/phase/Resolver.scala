@@ -147,13 +147,14 @@ object Resolver {
       * Gets a list of all type aliases used in the partially resolved type tpe0.
       */
     def getAliasUses(tpe0: UnkindedType): List[Symbol.TypeAliasSym] = tpe0 match {
-      case _: UnkindedType => Nil
+      case _: UnkindedType.Var => Nil
       case UnkindedType.Ascribe(tpe, _, _) => getAliasUses(tpe)
       case UnkindedType.UnappliedAlias(sym, _) => sym :: Nil
       case _: UnkindedType.Cst => Nil
       case UnkindedType.Apply(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
       case _: UnkindedType.Arrow => Nil
       case UnkindedType.ReadWrite(tpe, loc) => getAliasUses(tpe)
+      case _: UnkindedType.Enum => Nil
       case _: UnkindedType.Alias => throw InternalCompilerException("unexpected applied alias")
     }
 
@@ -2620,6 +2621,29 @@ object Resolver {
         case TypeConstructor.Record => Class.forName("java.lang.Object").toSuccess
 
         case TypeConstructor.Schema => Class.forName("java.lang.Object").toSuccess
+
+        case TypeConstructor.All => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.And => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Arrow(_) => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Complement => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Effect(_) => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Empty => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.False => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Intersection => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Lattice => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Lazy => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Not=> ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Null => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Or => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.RecordRowEmpty => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.RecordRowExtend(_) => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Region => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Relation => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.SchemaRowEmpty => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.SchemaRowExtend(_) => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.True => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Union => ResolutionError.IllegalType(tpe, loc).toFailure
+
 
       }
 

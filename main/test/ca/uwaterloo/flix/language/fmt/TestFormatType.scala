@@ -66,7 +66,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val name = Name.mkQName("MyEmptyRecordRow")
     val ident = name.ident
     val sym = Symbol.mkTypeAliasSym(name.namespace, ident)
-    val alias = Type.Alias(Type.AliasConstructor(sym, loc), Nil, Type.RecordRowEmpty, loc)
+    val alias = Type.Alias(Ast.AliasConstructor(sym, loc), Nil, Type.RecordRowEmpty, loc)
 
     val tpe = Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, alias, loc)
 
@@ -80,7 +80,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val name = Name.mkQName("MyEmptyRecordRow")
     val ident = name.ident
     val sym = Symbol.mkTypeAliasSym(name.namespace, ident)
-    val alias = Type.Alias(Type.AliasConstructor(sym, loc), Nil, Type.RecordRowEmpty, loc)
+    val alias = Type.Alias(Ast.AliasConstructor(sym, loc), Nil, Type.RecordRowEmpty, loc)
 
     val tpe = Type.mkRecord(alias, loc)
 
@@ -200,7 +200,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val name = Name.mkQName("MyEmptySchemaRow")
     val ident = name.ident
     val sym = Symbol.mkTypeAliasSym(name.namespace, ident)
-    val alias = Type.Alias(Type.AliasConstructor(sym, loc), Nil, Type.RecordRowEmpty, loc)
+    val alias = Type.Alias(Ast.AliasConstructor(sym, loc), Nil, Type.RecordRowEmpty, loc)
 
     val latticeType1 = Type.mkLattice(List(Type.Str, Type.Bool), loc)
 
@@ -217,7 +217,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val ident = name.ident
     val sym = Symbol.mkTypeAliasSym(name.namespace, ident)
     val latticeType1 = Type.mkLattice(List(Type.Str, Type.Bool), loc)
-    val alias = Type.Alias(Type.AliasConstructor(sym, loc), Nil, latticeType1, loc)
+    val alias = Type.Alias(Ast.AliasConstructor(sym, loc), Nil, latticeType1, loc)
 
 
     val tpe = Type.mkSchemaRowExtend(Name.Pred("X", loc), alias, Type.SchemaRowEmpty, loc)
@@ -412,7 +412,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val name = Name.mkQName("MyType")
     val ident = name.ident
     val sym = Symbol.mkTypeAliasSym(name.namespace, ident)
-    val tpe = Type.Alias(Type.AliasConstructor(sym, loc), Nil, Type.Int32, loc)
+    val tpe = Type.Alias(Ast.AliasConstructor(sym, loc), Nil, Type.Int32, loc)
 
     val expected = "MyType"
     val actual = FormatType.formatWellKindedType(tpe)(Audience.External)

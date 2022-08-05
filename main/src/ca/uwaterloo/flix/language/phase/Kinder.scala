@@ -1085,6 +1085,16 @@ object Kinder {
       // erase the read/write wrapper
       visitType(tpe, expectedKind, kenv, senv, taenv, root)
 
+    case UnkindedType.Enum(sym, loc) =>
+      val kind = getEnumKind(root.enums(sym))
+      unify(kind, expectedKind) match {
+        case Some(k) => Type.Cst(TypeConstructor.KindedEnum(sym, k), loc).toSuccess
+        case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
+      }
+
+    case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias")
+
+
   }
 
   /**
@@ -1331,6 +1341,19 @@ object Kinder {
       }
 
     case UnkindedType.ReadWrite(t, _) => inferType(t, Kind.Bool, kenv0, taenv, root)
+
+    case UnkindedType.Enum(sym, _) =>
+      val tyconKind = getEnumKind(root.enums(sym))
+      val args = Kind.kindArgs(tyconKind)
+
+      Validation.fold(tpe.typeArguments.zip(args), KindEnv.empty) {
+        case (acc, (targ, kind)) => flatMapN(inferType(targ, kind, kenv0, taenv, root)) {
+          kenv => acc ++ kenv
+        }
+      }
+
+    case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application")
+    case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias")
   }
 
   /**

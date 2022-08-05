@@ -78,10 +78,11 @@ object ResolutionError {
   case class IllegalType(tpe: UnkindedType, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Illegal type."
 
+    // TODO need to format ill-kinded type!
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Illegal type: '${red(FormatType.formatWellKindedType(tpe))}'.
+         |>> Illegal type: '${red(tpe.toString)}'.
          |
          |${code(loc, "illegal type.")}
          |""".stripMargin
@@ -102,10 +103,11 @@ object ResolutionError {
   case class IllegalNonJavaType(tpe: UnkindedType, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Illegal non-Java type. Expected class or interface type."
 
+    // TODO need to format unkinded types!
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unexpected non-Java type: '${red(FormatType.formatWellKindedType(tpe))}'.
+         |>> Unexpected non-Java type: '${red(tpe.toString)}'.
          |
          |${code(loc, "unexpected type.")}
          |

@@ -671,9 +671,6 @@ object SemanticTokensProvider {
     case TypeConstructor.Region => false
     case TypeConstructor.Empty => false
     case TypeConstructor.All => false
-
-    case TypeConstructor.UnkindedEnum(_) => throw InternalCompilerException("Unexpected unkinded type.")
-    case TypeConstructor.UnappliedAlias(_) => throw InternalCompilerException("Unexpected unkinded type.")
   }
 
   /**
