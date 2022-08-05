@@ -34,7 +34,7 @@ case class Bimap[A, B](m1: Map[A, B], m2: Map[B, A]) {
   /**
     * Alias for adds the pair `p` to the map.
     */
-  def +(p: (A, B)): Bimap[A, B] = this + (p._1 -> p._2)
+  def +(p: (A, B)): Bimap[A, B] = Bimap(m1 + (p._1 -> p._2), m2 + (p._2 -> p._1))
 
   /**
     * Optionally returns the value `a` is mapped to.
