@@ -1779,7 +1779,7 @@ object Resolver {
     case NamedAst.Type.Tuple(elms0, loc) =>
       val elmsVal = traverse(elms0)(tpe => semiResolveType(tpe, ns0, root))
       mapN(elmsVal) {
-        elms => Type.mkTuple(elms, loc)
+        elms => UnkindedType.mkTuple(elms, loc)
       }
 
     case NamedAst.Type.RecordRowEmpty(loc) => UnkindedType.Cst(TypeConstructor.RecordRowEmpty, loc).toSuccess
@@ -1788,13 +1788,13 @@ object Resolver {
       val vVal = semiResolveType(value, ns0, root)
       val rVal = semiResolveType(rest, ns0, root)
       mapN(vVal, rVal) {
-        case (v, r) => Type.mkRecordRowExtend(field, v, r, loc)
+        case (v, r) => UnkindedType.mkRecordRowExtend(field, v, r, loc)
       }
 
     case NamedAst.Type.Record(row, loc) =>
       val rVal = semiResolveType(row, ns0, root)
       mapN(rVal) {
-        r => Type.mkRecord(r, loc)
+        r => UnkindedType.mkRecord(r, loc)
       }
 
     case NamedAst.Type.SchemaRowEmpty(loc) => UnkindedType.Cst(TypeConstructor.SchemaRowEmpty, loc).toSuccess
@@ -1813,7 +1813,7 @@ object Resolver {
           mapN(tVal, tsVal, rVal) {
             case (t, ts, r) =>
               val app = UnkindedType.mkApply(t, ts, loc)
-              Type.mkSchemaRowExtend(Name.mkPred(qname.ident), app, r, loc)
+              UnkindedType.mkSchemaRowExtend(Name.mkPred(qname.ident), app, r, loc)
           }
       }
 
@@ -1823,25 +1823,25 @@ object Resolver {
       mapN(tsVal, rVal) {
         case (ts, r) =>
           val pred = mkPredicate(den, ts, loc)
-          Type.mkSchemaRowExtend(Name.mkPred(ident), pred, r, loc)
+          UnkindedType.mkSchemaRowExtend(Name.mkPred(ident), pred, r, loc)
       }
 
     case NamedAst.Type.Schema(row, loc) =>
       val rVal = semiResolveType(row, ns0, root)
       mapN(rVal) {
-        r => Type.mkSchema(r, loc)
+        r => UnkindedType.mkSchema(r, loc)
       }
 
     case NamedAst.Type.Relation(tpes, loc) =>
       val tsVal = traverse(tpes)(semiResolveType(_, ns0, root))
       mapN(tsVal) {
-        ts => Type.mkRelation(ts, loc)
+        ts => UnkindedType.mkRelation(ts, loc)
       }
 
     case NamedAst.Type.Lattice(tpes, loc) =>
       val tsVal = traverse(tpes)(semiResolveType(_, ns0, root))
       mapN(tsVal) {
-        ts => Type.mkLattice(ts, loc)
+        ts => UnkindedType.mkLattice(ts, loc)
       }
 
     case NamedAst.Type.Native(fqn, loc) =>
@@ -1874,7 +1874,7 @@ object Resolver {
 
     case NamedAst.Type.Not(tpe, loc) =>
       mapN(semiResolveType(tpe, ns0, root)) {
-        case t => Type.mkNot(t, loc)
+        case t => mkNot(t, loc)
       }
 
     case NamedAst.Type.And(tpe1, tpe2, loc) =>
@@ -1970,7 +1970,7 @@ object Resolver {
 
       case _ =>
         traverse(targs)(finishResolveType(_, taenv)) map {
-          resolvedArgs => Type.mkApply(baseType, resolvedArgs, tpe0.loc)
+          resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
         }
     }
   }
@@ -2542,7 +2542,7 @@ object Resolver {
     *
     * An array type is mapped to the corresponding array type.
     */
-  private def getJVMType(tpe: UnkindedType, loc: SourceLocation)(implicit flix: Flix): Validation[Class[_], ResolutionError] = Type.eraseAliases(tpe).typeConstructor match {
+  private def getJVMType(tpe: UnkindedType, loc: SourceLocation)(implicit flix: Flix): Validation[Class[_], ResolutionError] = UnkindedType.eraseAliases(tpe).typeConstructor match {
     case None =>
       ResolutionError.IllegalType(tpe, loc).toFailure
 
@@ -2573,14 +2573,12 @@ object Resolver {
 
       case TypeConstructor.KindedEnum(_, _) => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.UnkindedEnum(_) => Class.forName("java.lang.Object").toSuccess
-
       case TypeConstructor.Ref => Class.forName("java.lang.Object").toSuccess
 
       case TypeConstructor.Tuple(_) => Class.forName("java.lang.Object").toSuccess
 
       case TypeConstructor.Array =>
-        Type.eraseAliases(tpe).typeArguments match {
+        UnkindedType.eraseAliases(tpe).typeArguments match {
           case elmTyp :: region :: Nil =>
             mapN(getJVMType(elmTyp, loc)) {
               case elmClass =>
@@ -2637,44 +2635,49 @@ object Resolver {
   /**
     * Constructs a predicate type.
     */
-  private def mkPredicate(den: Ast.Denotation, ts0: List[Type], loc: SourceLocation): Type = {
+  private def mkPredicate(den: Ast.Denotation, ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
     val tycon = den match {
-      case Denotation.Relational => Type.Cst(TypeConstructor.Relation, loc)
-      case Denotation.Latticenal => Type.Cst(TypeConstructor.Lattice, loc)
+      case Denotation.Relational => UnkindedType.Cst(TypeConstructor.Relation, loc)
+      case Denotation.Latticenal => UnkindedType.Cst(TypeConstructor.Lattice, loc)
     }
     val ts = ts0 match {
-      case Nil => Type.mkUnit(loc)
+      case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
       case x :: Nil => x
-      case xs => Type.mkTuple(xs, loc)
+      case xs => UnkindedType.mkTuple(xs, loc)
     }
 
-    Type.Apply(tycon, ts, loc)
+    UnkindedType.Apply(tycon, ts, loc)
   }
+
+  /**
+    * Returns the type `Not(tpe1)`.
+    */
+  private def mkNot(tpe1: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Not, loc), List(tpe1), loc)
 
   /**
     * Returns the type `And(tpe1, tpe2)`.
     */
-  private def mkAnd(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.And, loc), List(tpe1, tpe2), loc)
+  private def mkAnd(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.And, loc), List(tpe1, tpe2), loc)
 
   /**
     * Returns the type `Or(tpe1, tpe2)`.
     */
-  private def mkOr(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.Or, loc), List(tpe1, tpe2), loc)
+  private def mkOr(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Or, loc), List(tpe1, tpe2), loc)
 
   /**
-    * Returns the type `Complement(tpe1, tpe2)`.
+    * Returns the type `Complement(tpe1)`.
     */
-  private def mkComplement(tpe1: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.Complement, loc), List(tpe1), loc)
+  private def mkComplement(tpe1: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Complement, loc), List(tpe1), loc)
 
   /**
     * Returns the type `Union(tpe1, tpe2)`.
     */
-  private def mkUnion(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.Union, loc), List(tpe1, tpe2), loc)
+  private def mkUnion(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Union, loc), List(tpe1, tpe2), loc)
 
   /**
     * Returns the type `Intersection(tpe1, tpe2)`.
     */
-  private def mkIntersection(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.Intersection, loc), List(tpe1, tpe2), loc)
+  private def mkIntersection(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Intersection, loc), List(tpe1, tpe2), loc)
 
   /**
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.

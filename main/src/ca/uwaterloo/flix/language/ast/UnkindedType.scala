@@ -5,13 +5,21 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 
 object UnkindedType {
   case class Var(sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends UnkindedType
+
   case class Cst(tc: TypeConstructor, loc: SourceLocation) extends UnkindedType
+
   case class Enum(sym: Symbol.EnumSym, loc: SourceLocation) extends UnkindedType
+
   case class UnappliedAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation) extends UnkindedType
+
   case class Apply(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation) extends UnkindedType
+
   case class Arrow(purAndEff: PurityAndEffect, arity: Int, loc: SourceLocation) extends UnkindedType
+
   case class ReadWrite(tpe: UnkindedType, loc: SourceLocation) extends UnkindedType
+
   case class Ascribe(tpe: UnkindedType, kind: Kind, loc: SourceLocation) extends UnkindedType
+
   case class Alias(cst: Ast.AliasConstructor, args: List[UnkindedType], tpe: UnkindedType, loc: SourceLocation) extends UnkindedType
 
   case class PurityAndEffect(pur: Option[UnkindedType], eff: Option[List[UnkindedType]]) {
@@ -36,6 +44,74 @@ object UnkindedType {
     case (acc, t) => Apply(acc, t, loc)
   }
 
+  /**
+    * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
+    */
+  def mkTuple(ts: List[UnkindedType], loc: SourceLocation): UnkindedType = {
+    val init = UnkindedType.Cst(TypeConstructor.Tuple(ts.length), loc)
+    ts.foldLeft(init: UnkindedType) {
+      case (acc, x) => Apply(acc, x, loc)
+    }
+  }
+
+  /**
+    * Constructs a RecordExtend type.
+    */
+  def mkRecordRowExtend(field: Name.Field, tpe: UnkindedType, rest: UnkindedType, loc: SourceLocation): UnkindedType = {
+    mkApply(UnkindedType.Cst(TypeConstructor.RecordRowExtend(field), loc), List(tpe, rest), loc)
+  }
+
+  /**
+    * Constructs a SchemaExtend type.
+    */
+  def mkSchemaRowExtend(pred: Name.Pred, tpe: UnkindedType, rest: UnkindedType, loc: SourceLocation): UnkindedType = {
+    mkApply(UnkindedType.Cst(TypeConstructor.SchemaRowExtend(pred), loc), List(tpe, rest), loc)
+  }
+
+  /**
+    * Constructs a Record type.
+    */
+  def mkRecord(tpe: UnkindedType, loc: SourceLocation): UnkindedType = {
+    Apply(UnkindedType.Cst(TypeConstructor.Record, loc), tpe, loc)
+  }
+
+  /**
+    * Constructs a Schema type.
+    */
+  def mkSchema(tpe: UnkindedType, loc: SourceLocation): UnkindedType = {
+    Apply(UnkindedType.Cst(TypeConstructor.Schema, loc), tpe, loc)
+  }
+
+
+  /**
+    * Construct a relation type with the given list of type arguments `ts0`.
+    */
+  def mkRelation(ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
+    val ts = ts0 match {
+      case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
+      case x :: Nil => x
+      case xs => mkTuple(xs, loc)
+    }
+
+    Apply(UnkindedType.Cst(TypeConstructor.Relation, loc), ts, loc)
+  }
+
+  /**
+    * Construct a lattice type with the given list of type arguments `ts0`.
+    */
+  def mkLattice(ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
+    val ts = ts0 match {
+      case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
+      case x :: Nil => x
+      case xs => mkTuple(xs, loc)
+    }
+
+    Apply(UnkindedType.Cst(TypeConstructor.Lattice, loc), ts, loc)
+  }
+
+  /**
+    * Erases all the aliases from the type.
+    */
   def eraseAliases(tpe0: UnkindedType): UnkindedType = tpe0 match {
     case tpe: Var => tpe
     case tpe: Cst => tpe
@@ -47,6 +123,8 @@ object UnkindedType {
     case Alias(_, _, tpe, _) => eraseAliases(tpe)
     case UnappliedAlias(_, _) => throw InternalCompilerException("unexpected unapplied alias")
   }
+
+
 }
 
 sealed trait UnkindedType {
