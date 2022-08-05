@@ -2503,9 +2503,15 @@ object Resolver {
         if (static != Modifier.isStatic(method.getModifiers))
           throw new NoSuchMethodException()
         else 
-          // Check that the return type of the method matches the declared type
-          Type.getFlixType(method.getReturnType) match {
-            case tpe@Type.Cst(_, _) => if (tpe != retTpe) throw new NoSuchMethodException() else method.toSuccess
+          // Check that the return type of the method matches the declared type.
+          // We currently don't know how to handle all possible return types,
+          // so only check the straightforward case for now and succeed all others.
+          retTpe match {
+            case Type.Cst(_, _) =>
+              if (Type.getFlixType(method.getReturnType) != retTpe) 
+                throw new NoSuchMethodException() 
+              else 
+                method.toSuccess
             case _ => method.toSuccess
           }
       } catch {
