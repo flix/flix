@@ -2498,11 +2498,12 @@ object Resolver {
         // Check if the method should be and is static.
         if (static != Modifier.isStatic(method.getModifiers))
           throw new NoSuchMethodException()
-        // Check that the return type of the method matches the declared type
-        else if (Type.getFlixType(method.getReturnType) != retTpe)
-          throw new NoSuchMethodException()
-        else
-          method.toSuccess
+        else 
+          // Check that the return type of the method matches the declared type
+          Type.getFlixType(method.getReturnType) match {
+            case tpe@Type.Cst(_, _) => if (tpe != retTpe) throw new NoSuchMethodException() else method.toSuccess
+            case _ => method.toSuccess
+          }
       } catch {
         case ex: NoSuchMethodException =>
           val candidateMethods = clazz.getMethods.filter(m => m.getName == methodName).toList
