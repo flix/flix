@@ -218,7 +218,7 @@ object Unification {
   /**
     * Unifies the `expected` type with the `actual` type (and unifies `bind` with the result).
     */
-  def expectTypeM(expected: Type, actual: Type, bind: Type.Var, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+  def expectTypeM(expected: Type, actual: Type, bind: Type.KindedVar, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     for {
       r <- expectTypeM(expected, actual, loc)
       _ <- unifyTypeM(bind, r, loc)
@@ -351,8 +351,8 @@ object Unification {
     */
   private def purify(tvar: Type.KindedVar, tpe: Type): Type = tpe.typeConstructor match {
     case None => tpe match {
-      case t: Type.Var =>
-        if (tvar.sym == t.asKinded.sym) Type.True else tpe
+      case t: Type.KindedVar =>
+        if (tvar.sym == t.sym) Type.True else tpe
       case _ => throw InternalCompilerException(s"Unexpected type constructor: '$tpe'.")
     }
 
