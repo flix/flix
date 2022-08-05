@@ -129,4 +129,25 @@ object UnkindedType {
 
 sealed trait UnkindedType {
   def loc: SourceLocation
+
+  def map(f: Symbol.UnkindedTypeVarSym => UnkindedType): UnkindedType = this match {
+    case UnkindedType.Var(sym, _) => f(sym)
+    case t: UnkindedType.Cst => t
+    case t: UnkindedType.Enum => t
+    case t: UnkindedType.UnappliedAlias => t
+    case UnkindedType.Apply(tpe1, tpe2, loc) => UnkindedType.Apply(tpe1.map(f), tpe2.map(f), loc)
+    case UnkindedType.Arrow(purAndEff, arity, loc) => UnkindedType.Arrow(purAndEff.map(_.map(f)), arity, loc)
+    case UnkindedType.ReadWrite(tpe, loc) => UnkindedType.ReadWrite(tpe.map(f), loc)
+    case UnkindedType.Ascribe(tpe, kind, loc) => UnkindedType.Ascribe(tpe.map(f), kind, loc)
+    case UnkindedType.Alias(cst, args, tpe, loc) => UnkindedType.Alias(cst, args.map(_.map(f)), tpe.map(f), loc)
+  }
+
+  def baseType: UnkindedType = this match {
+    case UnkindedType.Apply(tpe1, _, _) => tpe1.baseType
+    case t => t
+  }
+
+  def typeArgs: List[UnkindedType] = this match {
+    case UnkindedType.Apply(tpe1, tpe2, _) => tpe1.typeArgs :+ tpe2
+  }
 }

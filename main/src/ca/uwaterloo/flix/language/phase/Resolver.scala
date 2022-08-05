@@ -1932,19 +1932,18 @@ object Resolver {
       * Performs beta-reduction on the given type alias.
       * The list of arguments must be the same length as the alias's parameters.
       */
-    def applyAlias(alias: ResolvedAst.TypeAlias, args: List[Type], cstLoc: SourceLocation): Type = {
-      val map = alias.tparams.tparams.map(_.sym).zip(args).toMap[Symbol.TypeVarSym, Type]
-      val subst = Substitution(map)
-      val tpe = subst(alias.tpe)
+    def applyAlias(alias: ResolvedAst.TypeAlias, args: List[UnkindedType], cstLoc: SourceLocation): UnkindedType = {
+      val map = alias.tparams.tparams.map(_.sym).zip(args).toMap[Symbol.TypeVarSym, UnkindedType]
+      val tpe = alias.tpe.map(map)
       val cst = Ast.AliasConstructor(alias.sym, cstLoc)
-      Type.Alias(cst, args, tpe, tpe0.loc)
+      UnkindedType.Alias(cst, args, tpe, tpe0.loc)
     }
 
     val baseType = tpe0.baseType
-    val targs = tpe0.typeArguments
+    val targs = tpe0.typeArgs
 
     baseType match {
-      case Type.Cst(TypeConstructor.UnappliedAlias(sym), loc) =>
+      case UnkindedType.UnappliedAlias(sym, loc) =>
         val alias = taenv(sym)
         val tparams = alias.tparams.tparams
         val numParams = tparams.length
@@ -1957,21 +1956,48 @@ object Resolver {
           traverse(targs)(finishResolveType(_, taenv)) map {
             resolvedArgs =>
               val (usedArgs, extraArgs) = resolvedArgs.splitAt(numParams)
-              Type.mkApply(applyAlias(alias, usedArgs, loc), extraArgs, tpe0.loc)
+              UnkindedType.mkApply(applyAlias(alias, usedArgs, loc), extraArgs, tpe0.loc)
           }
         }
-      case Type.UnkindedArrow(purAndEff0, arity, loc) =>
-        val purAndEffVal = finishResolvePurityAndEffect(purAndEff0, taenv)
-        val argsVal = traverse(targs)(finishResolveType(_, taenv))
-        mapN(purAndEffVal, argsVal) {
-          case (purAndEff, args) =>
-            Type.mkApply(Type.UnkindedArrow(purAndEff, arity, loc), args, tpe0.loc)
-        }
 
-      case _ =>
+      case _: UnkindedType.Var =>
         traverse(targs)(finishResolveType(_, taenv)) map {
           resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
         }
+
+      case _: UnkindedType.Cst =>
+        traverse(targs)(finishResolveType(_, taenv)) map {
+          resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
+        }
+
+      case _: UnkindedType.Enum =>
+        traverse(targs)(finishResolveType(_, taenv)) map {
+          resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
+        }
+
+      case UnkindedType.Arrow(purAndEff, arity, loc) =>
+        val purAndEffVal = finishResolvePurityAndEffect(purAndEff, taenv)
+        val targsVal = traverse(targsVal)(finishResolveType(_, taenv))
+        mapN(purAndEffVal, targsVal) {
+          case (p, ts) => UnkindedType.mkApply(UnkindedType.Arrow(p, arity, loc), ts, tpe0.loc)
+        }
+
+      case UnkindedType.ReadWrite(tpe, loc) =>
+        val tpeVal = finishResolveType(tpe, taenv)
+        val targsVal = traverse(targs)(finishResolveType(_, taenv))
+        mapN(tpeVal, targsVal) {
+          case (t, ts) => UnkindedType.mkApply(UnkindedType.ReadWrite(t, loc), ts, tpe0.loc)
+        }
+
+      case UnkindedType.Ascribe(tpe, kind, loc) =>
+        val tpeVal = finishResolveType(tpe, taenv)
+        val targsVal = traverse(targs)(finishResolveType(_, taenv))
+        mapN(tpeVal, targsVal) {
+          case (t, ts) => UnkindedType.mkApply(UnkindedType.Ascribe(t, kind, loc), ts, tpe0.loc)
+        }
+
+      case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application")
+      case _: UnkindedType.Alias => throw InternalCompilerException("unexpected resolved alias")
     }
   }
 
