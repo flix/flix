@@ -31,7 +31,7 @@ namespace Test/Exp/Jvm/InvokeMethod {
         toLowerCase("HELLO WORLD") == "hello world"
 
     @test
-    def testInvokeObjectMethod01(): ##java.lang.Object & Impure =
-        import java.lang.String.toLowerCase(): ##java.lang.Object & Impure;
+    def testInvokeObjectMethod01(): ##java.lang.String & Impure =
+        import java.lang.String.toLowerCase(): ##java.lang.String & Impure;
         toLowerCase("HELLO WORLD")
 }
