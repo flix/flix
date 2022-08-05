@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation}
 import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, ParOps, Validation}
 
@@ -2568,60 +2567,77 @@ object Resolver {
     *
     * An array type is mapped to the corresponding array type.
     */
-  private def getJVMType(tpe: UnkindedType, loc: SourceLocation)(implicit flix: Flix): Validation[Class[_], ResolutionError] = UnkindedType.eraseAliases(tpe).typeConstructor match {
-    case None =>
-      ResolutionError.IllegalType(tpe, loc).toFailure
+  private def getJVMType(tpe: UnkindedType, loc: SourceLocation)(implicit flix: Flix): Validation[Class[_], ResolutionError] = {
+    val erased = UnkindedType.eraseAliases(tpe)
+    val baseType = erased.baseType
+    baseType match {
+      // Case 1: Constant: Match on the type.
+      case UnkindedType.Cst(tc, _) => tc match {
+        case TypeConstructor.Unit => Class.forName("java.lang.Object").toSuccess
 
-    case Some(tc) => tc match {
-      case TypeConstructor.Unit => Class.forName("java.lang.Object").toSuccess
+        case TypeConstructor.Bool => classOf[Boolean].toSuccess
 
-      case TypeConstructor.Bool => classOf[Boolean].toSuccess
+        case TypeConstructor.Char => classOf[Char].toSuccess
 
-      case TypeConstructor.Char => classOf[Char].toSuccess
+        case TypeConstructor.Float32 => classOf[Float].toSuccess
 
-      case TypeConstructor.Float32 => classOf[Float].toSuccess
+        case TypeConstructor.Float64 => classOf[Double].toSuccess
 
-      case TypeConstructor.Float64 => classOf[Double].toSuccess
+        case TypeConstructor.Int8 => classOf[Byte].toSuccess
 
-      case TypeConstructor.Int8 => classOf[Byte].toSuccess
+        case TypeConstructor.Int16 => classOf[Short].toSuccess
 
-      case TypeConstructor.Int16 => classOf[Short].toSuccess
+        case TypeConstructor.Int32 => classOf[Int].toSuccess
 
-      case TypeConstructor.Int32 => classOf[Int].toSuccess
+        case TypeConstructor.Int64 => classOf[Long].toSuccess
 
-      case TypeConstructor.Int64 => classOf[Long].toSuccess
+        case TypeConstructor.BigInt => Class.forName("java.math.BigInteger").toSuccess
 
-      case TypeConstructor.BigInt => Class.forName("java.math.BigInteger").toSuccess
+        case TypeConstructor.Str => Class.forName("java.lang.String").toSuccess
 
-      case TypeConstructor.Str => Class.forName("java.lang.String").toSuccess
+        case TypeConstructor.Channel => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.Channel => Class.forName("java.lang.Object").toSuccess
+        case TypeConstructor.KindedEnum(_, _) => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.KindedEnum(_, _) => Class.forName("java.lang.Object").toSuccess
+        case TypeConstructor.Ref => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.Ref => Class.forName("java.lang.Object").toSuccess
+        case TypeConstructor.Tuple(_) => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.Tuple(_) => Class.forName("java.lang.Object").toSuccess
+        case TypeConstructor.Array =>
+          erased.typeArgs match {
+            case elmTyp :: region :: Nil =>
+              mapN(getJVMType(elmTyp, loc)) {
+                case elmClass =>
+                  // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
+                  java.lang.reflect.Array.newInstance(elmClass, 0).getClass
+              }
+            case _ =>
+              ResolutionError.IllegalType(tpe, loc).toFailure
+          }
 
-      case TypeConstructor.Array =>
-        UnkindedType.eraseAliases(tpe).typeArguments match {
-          case elmTyp :: region :: Nil =>
-            mapN(getJVMType(elmTyp, loc)) {
-              case elmClass =>
-                // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
-                java.lang.reflect.Array.newInstance(elmClass, 0).getClass
-            }
-          case _ =>
-            ResolutionError.IllegalType(tpe, loc).toFailure
-        }
+        case TypeConstructor.Native(clazz) => clazz.toSuccess
 
-      case TypeConstructor.Native(clazz) => clazz.toSuccess
+        case TypeConstructor.Record => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.Record => Class.forName("java.lang.Object").toSuccess
+        case TypeConstructor.Schema => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.Schema => Class.forName("java.lang.Object").toSuccess
+      }
 
-      case _ => ResolutionError.IllegalType(tpe, loc).toFailure
+      // Case 2: Enum. Return an object type.
+      case _: UnkindedType.Enum => Class.forName("java.lang.Object").toSuccess
+
+      // Case 3: Ascription. Ignore it and recurse.
+      case UnkindedType.Ascribe(t, _, _) => getJVMType(UnkindedType.mkApply(t, erased.typeArgs, loc), loc)
+
+      // Case 4: Illegal type. Error.
+      case _: UnkindedType.Var => ResolutionError.IllegalType(tpe, loc).toFailure
+      case _: UnkindedType.Arrow => ResolutionError.IllegalType(tpe, loc).toFailure
+      case _: UnkindedType.ReadWrite => ResolutionError.IllegalType(tpe, loc).toFailure
+
+      // Case 5: Unexpected type. Crash.
+      case t: UnkindedType.Apply => throw InternalCompilerException(s"unexpected type: $t")
+      case t: UnkindedType.UnappliedAlias => throw InternalCompilerException(s"unexpected type: $t")
+      case t: UnkindedType.Alias => throw InternalCompilerException(s"unexpected type: $t")
     }
   }
 
