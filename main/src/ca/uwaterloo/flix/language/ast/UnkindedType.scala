@@ -147,7 +147,7 @@ sealed trait UnkindedType {
     case t => t
   }
 
-  def typeArgs: List[UnkindedType] = this match {
-    case UnkindedType.Apply(tpe1, tpe2, _) => tpe1.typeArgs :+ tpe2
+  def typeArguments: List[UnkindedType] = this match {
+    case UnkindedType.Apply(tpe1, tpe2, _) => tpe1.typeArguments :+ tpe2
   }
 }

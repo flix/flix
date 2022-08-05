@@ -1939,7 +1939,7 @@ object Resolver {
     }
 
     val baseType = tpe0.baseType
-    val targs = tpe0.typeArgs
+    val targs = tpe0.typeArguments
 
     baseType match {
       case UnkindedType.UnappliedAlias(sym, loc) =>
@@ -1976,7 +1976,7 @@ object Resolver {
 
       case UnkindedType.Arrow(purAndEff, arity, loc) =>
         val purAndEffVal = finishResolvePurityAndEffect(purAndEff, taenv)
-        val targsVal = traverse(targsVal)(finishResolveType(_, taenv))
+        val targsVal = traverse(targs)(finishResolveType(_, taenv))
         mapN(purAndEffVal, targsVal) {
           case (p, ts) => UnkindedType.mkApply(UnkindedType.Arrow(p, arity, loc), ts, tpe0.loc)
         }
@@ -2604,7 +2604,7 @@ object Resolver {
         case TypeConstructor.Tuple(_) => Class.forName("java.lang.Object").toSuccess
 
         case TypeConstructor.Array =>
-          erased.typeArgs match {
+          erased.typeArguments match {
             case elmTyp :: region :: Nil =>
               mapN(getJVMType(elmTyp, loc)) {
                 case elmClass =>
@@ -2627,7 +2627,7 @@ object Resolver {
       case _: UnkindedType.Enum => Class.forName("java.lang.Object").toSuccess
 
       // Case 3: Ascription. Ignore it and recurse.
-      case UnkindedType.Ascribe(t, _, _) => getJVMType(UnkindedType.mkApply(t, erased.typeArgs, loc), loc)
+      case UnkindedType.Ascribe(t, _, _) => getJVMType(UnkindedType.mkApply(t, erased.typeArguments, loc), loc)
 
       // Case 4: Illegal type. Error.
       case _: UnkindedType.Var => ResolutionError.IllegalType(tpe, loc).toFailure
