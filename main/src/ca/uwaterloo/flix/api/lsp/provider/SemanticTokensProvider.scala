@@ -607,9 +607,6 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.TypeParameter, Nil, loc)
       Iterator(t)
 
-    case Type.Ascribe(tpe, _, _) =>
-      visitType(tpe)
-
     case Type.Cst(cst, loc) =>
       if (isVisibleTypeConstructor(cst)) {
         val t = SemanticToken(SemanticTokenType.Type, Nil, loc)
@@ -624,15 +621,6 @@ object SemanticTokensProvider {
     case Type.Alias(cst, args, _, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
       Iterator(t) ++ args.flatMap(visitType).iterator
-
-    case _: Type.UnkindedVar =>
-      throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
-
-    case _: Type.UnkindedArrow =>
-      throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
-
-    case _: Type.ReadWrite =>
-      throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
   }
 
   /**

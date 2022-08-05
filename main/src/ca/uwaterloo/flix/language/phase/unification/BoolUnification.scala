@@ -43,7 +43,6 @@ object BoolUnification {
         if (tpe2 eq Type.False)
           return Ok(Substitution.singleton(x.sym, Type.False))
 
-      case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable")
       case _ => // nop
     }
 
@@ -54,7 +53,6 @@ object BoolUnification {
         if (tpe1 eq Type.False)
           return Ok(Substitution.singleton(y.sym, Type.False))
 
-      case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable")
       case _ => // nop
     }
 

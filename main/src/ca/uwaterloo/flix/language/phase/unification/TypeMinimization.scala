@@ -41,11 +41,6 @@ object TypeMinimization {
       case tpe: Type.Cst => tpe
       case Type.Apply(tpe1, tpe2, loc) => Type.Apply(minimizeType(tpe1), minimizeType(tpe2), loc)
       case Type.Alias(cst, args, tpe, loc) => Type.Alias(cst, args.map(minimizeType), minimizeType(tpe), loc)
-
-      case _: Type.UnkindedVar => throw InternalCompilerException("unexpected unkinded type")
-      case _: Type.Ascribe => throw InternalCompilerException("unexpected unkinded type")
-      case _: Type.UnkindedArrow => throw InternalCompilerException("unexpected unkinded type")
-      case _: Type.ReadWrite => throw InternalCompilerException("unexpected unkinded type")
     }
   }
 
@@ -131,10 +126,5 @@ object TypeMinimization {
 
     case Type.Apply(tpe1, tpe2, loc) => getEffects(tpe1) ++ getEffects(tpe2)
     case Type.Alias(cst, args, tpe, loc) => getEffects(tpe)
-
-    case _: Type.Ascribe => throw InternalCompilerException("Unexpected unkinded type.")
-    case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type.")
-    case _: Type.UnkindedArrow => throw InternalCompilerException("Unexpected unkinded type.")
-    case _: Type.ReadWrite => throw InternalCompilerException("Unexpected unkinded type.")
   }
 }

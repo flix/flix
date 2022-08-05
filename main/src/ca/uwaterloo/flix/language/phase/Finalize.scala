@@ -483,12 +483,6 @@ object Finalize {
 
             case TypeConstructor.All => MonoType.Unit
 
-            case TypeConstructor.UnkindedEnum(_) =>
-              throw InternalCompilerException(s"Unexpected type: '$t0'.")
-
-            case TypeConstructor.UnappliedAlias(_) =>
-              throw InternalCompilerException(s"Unexpected type: '$t0'.")
-
             case TypeConstructor.Relation =>
               throw InternalCompilerException(s"Unexpected type: '$t0'.")
 

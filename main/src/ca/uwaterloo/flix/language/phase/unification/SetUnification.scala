@@ -43,7 +43,6 @@ object SetUnification {
         if (tpe2 eq Type.Empty)
           return Ok(Substitution.singleton(x.sym, Type.Empty))
 
-      case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable")
       case _ => // nop
     }
 
@@ -54,7 +53,6 @@ object SetUnification {
         if (tpe1 eq Type.Empty)
           return Ok(Substitution.singleton(y.sym, Type.Empty))
 
-      case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable")
       case _ => // nop
     }
 

@@ -121,10 +121,6 @@ object Instances {
           }
           errs0
         case Type.Alias(alias, _, _, _) => List(InstanceError.IllegalTypeAliasInstance(alias.sym, sym, sym.loc))
-        case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type.")
-        case _: Type.UnkindedArrow => throw InternalCompilerException("Unexpected unkinded type.")
-        case _: Type.ReadWrite => throw InternalCompilerException("Unexpected unkinded type.")
-        case _: Type.Ascribe => throw InternalCompilerException("Unexpected ascribe type.")
       }
     }
 
@@ -152,10 +148,6 @@ object Instances {
       case t: Type.Cst => t
       case Type.Apply(tpe1, tpe2, loc) => Type.Apply(generifyBools(tpe1), generifyBools(tpe2), loc)
       case Type.Alias(cst, args, tpe, loc) => Type.Alias(cst, args.map(generifyBools), generifyBools(tpe), loc)
-      case _: Type.UnkindedVar => throw InternalCompilerException("unexpected unkinded type")
-      case _: Type.UnkindedArrow => throw InternalCompilerException("unexpected unkinded type")
-      case _: Type.ReadWrite => throw InternalCompilerException("unexpected unkinded type")
-      case _: Type.Ascribe => throw InternalCompilerException("unexpected unkinded type")
     }
 
     /**

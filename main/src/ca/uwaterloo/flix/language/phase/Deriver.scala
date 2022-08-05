@@ -284,7 +284,7 @@ object Deriver {
       val indexMatchRules = cases.values.zipWithIndex.map { case (caze, index) => mkCompareIndexMatchRule(caze, index, loc) }
       val indexMatchExp = KindedAst.Expression.Match(mkVarExpr(lambdaParamVarSym, loc), indexMatchRules.toList, loc)
       val lambda = KindedAst.Expression.Lambda(
-        KindedAst.FormalParam(lambdaParamVarSym, Ast.Modifiers.Empty, lambdaParamVarSym.tvar.ascribedWith(Kind.Star), Ast.TypeSource.Ascribed, loc),
+        KindedAst.FormalParam(lambdaParamVarSym, Ast.Modifiers.Empty, lambdaParamVarSym.tvar, Ast.TypeSource.Ascribed, loc),
         indexMatchExp,
         Type.freshVar(Kind.Star, loc, text = FallbackText("indexOfType")),
         loc
@@ -770,7 +770,7 @@ object Deriver {
   /**
     * Builds a var expression from the given var sym.
     */
-  private def mkVarExpr(varSym: Symbol.VarSym, loc: SourceLocation): KindedAst.Expression.Var = KindedAst.Expression.Var(varSym, varSym.tvar.ascribedWith(Kind.Star), loc)
+  private def mkVarExpr(varSym: Symbol.VarSym, loc: SourceLocation): KindedAst.Expression.Var = KindedAst.Expression.Var(varSym, varSym.tvar, loc)
 
   /**
     * Builds a string concatenation expression from the given expressions.
@@ -820,7 +820,7 @@ object Deriver {
   /**
     * Creates a variable pattern using the given variable symbol.
     */
-  private def mkVarPattern(varSym: Symbol.VarSym, loc: SourceLocation): KindedAst.Pattern = KindedAst.Pattern.Var(varSym, varSym.tvar.ascribedWith(Kind.Star), loc)
+  private def mkVarPattern(varSym: Symbol.VarSym, loc: SourceLocation): KindedAst.Pattern = KindedAst.Pattern.Var(varSym, varSym.tvar, loc)
 
   /**
     * Inserts `sep` between every two elements of `list`.

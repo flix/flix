@@ -238,7 +238,7 @@ object Indexer {
       Index.occurrenceOf(exp0)
 
     case Expression.Scope(sym, _, exp, _, _, _, loc) =>
-      val tpe = Type.mkRegion(sym.tvar.ascribedWith(Kind.Bool), loc)
+      val tpe = Type.mkRegion(sym.tvar, loc)
       Index.occurrenceOf(sym, tpe) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
@@ -386,7 +386,7 @@ object Indexer {
       val i0 = default.map(visitExp).getOrElse(Index.empty)
       val i1 = traverse(rules) {
         case SelectChannelRule(sym, chan, body) =>
-          Index.occurrenceOf(sym, sym.tvar.ascribedWith(Kind.Star)) ++ visitExp(chan) ++ visitExp(body)
+          Index.occurrenceOf(sym, sym.tvar) ++ visitExp(chan) ++ visitExp(body)
       }
       i0 ++ i1 ++ Index.occurrenceOf(exp0)
 
@@ -537,11 +537,7 @@ object Indexer {
       case _ => Index.occurrenceOf(tpe0)
     }
     case Type.Apply(tpe1, tpe2, _) => visitType(tpe1) ++ visitType(tpe2)
-    case Type.Alias(Type.AliasConstructor(sym, loc), args, _, _) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc) ++ traverse(args)(visitType)
-    case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type: $tpe0.")
-    case _: Type.UnkindedVar => throw InternalCompilerException(s"Unexpected type: $tpe0.")
-    case _: Type.UnkindedArrow => throw InternalCompilerException(s"Unexpected type: $tpe0.")
-    case _: Type.ReadWrite => throw InternalCompilerException(s"Unexpected type: $tpe0.")
+    case Type.Alias(Ast.AliasConstructor(sym, loc), args, _, _) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc) ++ traverse(args)(visitType)
   }
 
   /**

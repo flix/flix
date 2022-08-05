@@ -496,13 +496,9 @@ object CodeHinter {
     */
   private def numberOfVarOccurs(tpe: Type): Int = tpe match {
     case Type.KindedVar(_, _) => 1
-    case Type.UnkindedVar(_, _) => 1
-    case Type.Ascribe(tpe, _, _) => numberOfVarOccurs(tpe)
     case Type.Cst(_, _) => 0
     case Type.Apply(tpe1, tpe2, _) => numberOfVarOccurs(tpe1) + numberOfVarOccurs(tpe2)
     case Type.Alias(_, _, tpe, _) => numberOfVarOccurs(tpe)
-    case Type.UnkindedArrow(_, _, _) => 0
-    case Type.ReadWrite(_, _) => 0
   }
 
 }
