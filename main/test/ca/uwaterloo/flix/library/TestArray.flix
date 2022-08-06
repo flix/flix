@@ -3960,25 +3960,25 @@ namespace TestArray {
 
     @test
     def unzip01(): Bool = region r {
-        let (a,b) = Array.unzip([]: Array[(Unit, Unit), _]);
+        let (a,b) = Array.unzip(r, r, []: Array[(Unit, Unit), _]);
         Array.sameElements(a, []) and Array.sameElements(b, [])
     }
 
     @test
     def unzip02(): Bool = region r {
-        let (a,b) = Array.unzip([(1, true)]);
+        let (a,b) = Array.unzip(r, r, [(1, true)]);
         Array.sameElements(a, [1]) and Array.sameElements(b, [true])
     }
 
     @test
     def unzip03(): Bool = region r {
-        let (a,b) = Array.unzip([(1, true), (2, true)]);
+        let (a,b) = Array.unzip(r, r, [(1, true), (2, true)]);
         Array.sameElements(a, [1,2])  and Array.sameElements(b, [true,true])
     }
 
     @test
     def unzip04(): Bool = region r {
-        let (a,b) = Array.unzip([(1, true), (2, true), (3, false)]);
+        let (a,b) = Array.unzip(r, r, [(1, true), (2, true), (3, false)]);
         Array.sameElements(a, [1,2,3]) and Array.sameElements(b, [true,true,false])
     }
 
