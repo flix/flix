@@ -15,10 +15,10 @@
  */
 
 namespace Reachable/Imperative {
-    pub def reachable(origin: node, edges: f[(node, node)]): Set[node] with Foldable[f], Order[node] =
+    pub def reachable(origin: n, edges: f[(n, n)]): Set[n] with Foldable[f], Order[n] =
         region r {
             // collect edge lists
-            let edgeMap: MutMap[node, MutList[node, r], r] = new MutMap(r);
+            let edgeMap = new MutMap(r);
             foreach((start, end) <- Foldable.iterator(r, edges)) {
                 let startEdges = MutMap.getOrElsePut!(start, new MutList(r), edgeMap);
                 MutList.push!(end, startEdges)
@@ -52,14 +52,14 @@ namespace Reachable/Imperative {
 }
 
 namespace Reachable/Functional {
-    pub def reachable(origin: node, edges: f[(node, node)]): Set[node] with Foldable[f], Order[node] =
+    pub def reachable(origin: n, edges: f[(n, n)]): Set[n] with Foldable[f], Order[n] =
         // collect edge lists
         let edgeMap = (Map.empty(), edges) ||> Foldable.foldLeft(map -> match (start, end) -> {
             let startEdges = Map.getWithDefault(start, Nil, map);
             Map.insert(start, end :: startEdges, map)
         });
         // explore the graph depth first
-        def dfs(node: node, reachable: Set[node]) = {
+        def dfs(node: n, reachable: Set[n]) = {
             // this node has now been reached
             let reachable1 = Set.insert(node, reachable);
             let endPoints = Map.getWithDefault(node, Nil, edgeMap);
@@ -80,7 +80,7 @@ namespace Reachable/Functional {
 
 namespace Reachable/Logic {
     // Note that Boxable includes Order
-    pub def reachable(origin: node, edges: f[(node, node)]): Set[node] with Foldable[f], Boxable[node] =
+    pub def reachable(origin: n, edges: f[(n, n)]): Set[n] with Foldable[f], Boxable[n] =
         let edgeFacts = project edges into Edge;
         // origin is reachable and this set is expanded by the edge facts
         let reachable = #{
