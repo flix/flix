@@ -408,7 +408,7 @@ object Monomorph {
             val e = visitExp(exp, env0 ++ env1)
             ChoiceRule(p, e)
         }
-        Expression.Choose(es, rs, tpe, pur, eff, loc)
+        Expression.Choose(es, rs, subst0(tpe), pur, eff, loc)
 
       case Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
