@@ -421,18 +421,18 @@ object Lowering {
       val b = visitExp(base)
       Expression.ArrayLength(b, pur, eff, loc)
 
-    case Expression.ArrayStore(base, index, elm, eff, loc) =>
+    case Expression.ArrayStore(base, index, elm, pur, eff, loc) =>
       val b = visitExp(base)
       val i = visitExp(index)
       val e = visitExp(elm)
-      Expression.ArrayStore(b, i, e, eff, loc)
+      Expression.ArrayStore(b, i, e, pur, eff, loc)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, pur, eff, loc) =>
       val b = visitExp(base)
       val bi = visitExp(beginIndex)
       val ei = visitExp(endIndex)
       val t = visitType(tpe)
-      Expression.ArraySlice(b, bi, ei, t, eff, loc)
+      Expression.ArraySlice(b, bi, ei, t, pur, eff, loc)
 
     case Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -461,6 +461,9 @@ object Lowering {
       val dt = declaredType.map(visitType)
       val t = visitType(tpe)
       Expression.Cast(e, dt, declaredPur, declaredEff, t, pur, eff, loc)
+
+    case Expression.Upcast(exp, tpe, loc) =>
+      Expression.Upcast(visitExp(exp), visitType(tpe), loc)
 
     case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
@@ -555,6 +558,9 @@ object Lowering {
       val e = visitExp(exp)
       val t = visitType(tpe)
       Expression.Spawn(e, t, pur, eff, loc)
+
+    case Expression.Par(exp, _) =>
+      throw InternalCompilerException("Not Implemented")
 
     case Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -1301,7 +1307,7 @@ object Lowering {
     */
   private def mkList(exps: List[Expression], elmType: Type, loc: SourceLocation): Expression = {
     val nil = mkNil(elmType, loc)
-    exps.foldRight(nil){
+    exps.foldRight(nil) {
       case (e, acc) => mkCons(e, acc, loc)
     }
   }
@@ -1513,16 +1519,16 @@ object Lowering {
       val b = substExp(base, subst)
       Expression.ArrayLength(b, pur, eff, loc)
 
-    case Expression.ArrayStore(base, index, elm, eff, loc) =>
+    case Expression.ArrayStore(base, index, elm, pur, eff, loc) =>
       val b = substExp(base, subst)
       val i = substExp(index, subst)
-      Expression.ArrayStore(b, i, elm, eff, loc)
+      Expression.ArrayStore(b, i, elm, pur, eff, loc)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, pur, eff, loc) =>
       val b = substExp(base, subst)
       val bi = substExp(beginIndex, subst)
       val ei = substExp(endIndex, subst)
-      Expression.ArraySlice(b, bi, ei, tpe, eff, loc)
+      Expression.ArraySlice(b, bi, ei, tpe, pur, eff, loc)
 
     case Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = substExp(exp1, subst)
@@ -1545,6 +1551,9 @@ object Lowering {
     case Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
       Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
+
+    case Expression.Upcast(exp, tpe, loc) =>
+      Expression.Upcast(substExp(exp, subst), tpe, loc)
 
     case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
@@ -1619,6 +1628,9 @@ object Lowering {
       val e = substExp(exp, subst)
       Expression.Spawn(e, tpe, pur, eff, loc)
 
+    case Expression.Par(exp, _) =>
+      throw InternalCompilerException("Not Implemented")
+
     case Expression.Lazy(exp, tpe, loc) =>
       val e = substExp(exp, subst)
       Expression.Lazy(e, tpe, loc)
@@ -1665,6 +1677,7 @@ object Lowering {
       Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
 
     case Expression.FixpointConstraintSet(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
+
   }
 
   /**

@@ -144,13 +144,13 @@ object TypedAstOps {
       case Expression.ArrayLoad(base, index, _, _, _, _) =>
         visitExp(base, env0) ++ visitExp(index, env0)
 
-      case Expression.ArrayStore(base, index, elm, _, _) =>
+      case Expression.ArrayStore(base, index, elm, _, _, _) =>
         visitExp(base, env0) ++ visitExp(index, env0) ++ visitExp(elm, env0)
 
       case Expression.ArrayLength(base, _, _, _) =>
         visitExp(base, env0)
 
-      case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _) =>
+      case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) =>
         visitExp(base, env0) ++ visitExp(beginIndex, env0) ++ visitExp(endIndex, env0)
 
       case Expression.Ref(exp1, exp2, _, _, _, _) =>
@@ -166,6 +166,9 @@ object TypedAstOps {
         visitExp(exp, env0)
 
       case Expression.Cast(exp, _, _, _, _, _, _, _) =>
+        visitExp(exp, env0)
+
+      case Expression.Upcast(exp, _, _) =>
         visitExp(exp, env0)
 
       case Expression.Without(exp, _, _, _, _, _) =>
@@ -220,7 +223,7 @@ object TypedAstOps {
 
       case Expression.NewObject(_, _, _, _, _, methods, _) =>
         methods.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-          case (macc, JvmMethod(_, fparams, exp, _, _, _, _)) => 
+          case (macc, JvmMethod(_, fparams, exp, _, _, _, _)) =>
             val env1 = fparams.map(fparam => fparam.sym -> fparam.tpe)
             macc ++ visitExp(exp, env0 ++ env1)
         }
@@ -241,6 +244,8 @@ object TypedAstOps {
         rs ++ d
 
       case Expression.Spawn(exp, _, _, _, _) => visitExp(exp, env0)
+
+      case Expression.Par(exp, _) => visitExp(exp, env0)
 
       case Expression.Lazy(exp, tpe, loc) => visitExp(exp, env0)
 
@@ -406,13 +411,14 @@ object TypedAstOps {
     case Expression.ArrayNew(exp1, exp2, exp3, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
     case Expression.ArrayLoad(base, index, _, _, _, _) => sigSymsOf(base) ++ sigSymsOf(index)
     case Expression.ArrayLength(base, _, _, _) => sigSymsOf(base)
-    case Expression.ArrayStore(base, index, elm, _, _) => sigSymsOf(base) ++ sigSymsOf(index) ++ sigSymsOf(elm)
-    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _) => sigSymsOf(base) ++ sigSymsOf(beginIndex) ++ sigSymsOf(endIndex)
+    case Expression.ArrayStore(base, index, elm, _, _, _) => sigSymsOf(base) ++ sigSymsOf(index) ++ sigSymsOf(elm)
+    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) => sigSymsOf(base) ++ sigSymsOf(beginIndex) ++ sigSymsOf(endIndex)
     case Expression.Ref(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Deref(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Assign(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Ascribe(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Cast(exp, _, _, _, _, _, _, _) => sigSymsOf(exp)
+    case Expression.Upcast(exp, _, _) => sigSymsOf(exp)
     case Expression.Without(exp, _, _, _, _, _) => sigSymsOf(exp)
     case Expression.TryCatch(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.TryWith(exp, _, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
@@ -431,6 +437,7 @@ object TypedAstOps {
     case Expression.PutChannel(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.SelectChannel(rules, default, _, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.chan) ++ sigSymsOf(rule.exp)).toSet ++ default.toSet.flatMap(sigSymsOf)
     case Expression.Spawn(exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.Par(exp, _) => sigSymsOf(exp)
     case Expression.Lazy(exp, _, _) => sigSymsOf(exp)
     case Expression.Force(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointConstraintSet(_, _, _, _) => Set.empty
@@ -594,10 +601,10 @@ object TypedAstOps {
     case Expression.ArrayLength(base, _, _, _) =>
       freeVars(base)
 
-    case Expression.ArrayStore(base, index, elm, _, _) =>
+    case Expression.ArrayStore(base, index, elm, _, _, _) =>
       freeVars(base) ++ freeVars(index) ++ freeVars(elm)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) =>
       freeVars(base) ++ freeVars(beginIndex) ++ freeVars(endIndex)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
@@ -616,6 +623,9 @@ object TypedAstOps {
       freeVars(exp)
 
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.Upcast(exp, _, _) =>
       freeVars(exp)
 
     case Expression.TryCatch(exp, rules, _, _, _, _) =>
@@ -682,6 +692,9 @@ object TypedAstOps {
       }
 
     case Expression.Spawn(exp, _, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.Par(exp, _) =>
       freeVars(exp)
 
     case Expression.Lazy(exp, _, _) =>

@@ -1,4 +1,4 @@
-def main(): Unit & Impure =
+def main(): Unit \ IO =
     // Test an input word and print the output
     def trial(input) = {
         let res = input |>

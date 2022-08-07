@@ -116,37 +116,35 @@ pub def !>( x: a, f: a -> Unit & ef): a & ef = f(x); x
 ///
 /// Converts `x` to a string and prints it to standard out.
 ///
-pub def print(x: a): Unit & Impure with ToString[a] =
-    import static get java.lang.System.out: ##java.io.PrintStream & Impure as getOut;
-    import java.io.PrintStream.print(String): Unit & Impure;
+pub def print(x: a): Unit \ IO with ToString[a] =
+    import static get java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
+    import java.io.PrintStream.print(String): Unit \ IO;
     x |> ToString.toString |> print(getOut())
 
 ///
 /// Converts `x` to a string and prints it to standard out followed by a new line.
 ///
-pub def println(x: a): Unit & Impure with ToString[a] =
-    import static get java.lang.System.out: ##java.io.PrintStream & Impure as getOut;
-    import java.io.PrintStream.println(String): Unit & Impure;
+pub def println(x: a): Unit \ IO with ToString[a] =
+    import static get java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
+    import java.io.PrintStream.println(String): Unit \ IO;
     x |> ToString.toString |> println(getOut())
 
 ///
 /// Crashes the current process with the given message `m`.
 ///
-pub def bug!(m: String): a =
-    let f = () -> {
-        import static get java.lang.System.err: ##java.io.PrintStream & Pure as getErr;
-        import java.io.PrintStream.println(String): Unit & Impure;
-        import java.lang.String.repeat(Int32): ##java.lang.String & Pure;
-        let prt = println(getErr());
-        prt(repeat("*", 80));
-        prt("**") ;
-        prt("**  BUG: ${m}") ;
-        prt("**") ;
-        prt(repeat("*", 80));
-        prt("")
-    };
-    let _ = f() as & Pure;
+pub def bug!(m: String): a = {
+    import static get java.lang.System.err: ##java.io.PrintStream & Pure as getErr;
+    import java.io.PrintStream.println(String): Unit \ IO;
+    import java.lang.String.repeat(Int32): ##java.lang.String & Pure;
+    let prt = println(getErr());
+    prt(repeat("*", 80));
+    prt("**") ;
+    prt("**  BUG: ${m}") ;
+    prt("**") ;
+    prt(repeat("*", 80));
+    prt("");
     ?panic
+} as & Pure
 
 ///
 /// Asserts that this expression is unreachable. Crashes if not.
@@ -177,7 +175,7 @@ pub def space(_: a -> Int32): Int32 = 1
 /// Prints the argument unless it is ().
 ///
 @Internal
-pub def printUnlessUnit(x: a): Unit & Impure with ToString[a] = {
+pub def printUnlessUnit(x: a): Unit \ IO with ToString[a] = {
     match (reifyType a) {
         case ReifiedUnit => ()
         case _ => println(x)

@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN}
@@ -211,9 +211,11 @@ object EntryPoint {
     // one of:
     // printUnlessUnit(func(args))
     val printSym = root.defs(new Symbol.DefnSym(None, Nil, "printUnlessUnit", SourceLocation.Unknown)).sym
-    val printTpe = Type.mkImpureArrow(oldEntryPoint.spec.declaredScheme.base.arrowResultType, Type.Unit, SourceLocation.Unknown)
+    val ioSym = root.effects(new Symbol.EffectSym(Nil, "IO", SourceLocation.Unknown)).sym
+    val ioTpe = Type.Cst(TypeConstructor.Effect(ioSym), SourceLocation.Unknown)
+    val printTpe = Type.mkArrowWithEffect(oldEntryPoint.spec.declaredScheme.base.arrowResultType, Type.Impure, ioTpe, Type.Unit, SourceLocation.Unknown)
     val printFunc = TypedAst.Expression.Def(printSym, printTpe, SourceLocation.Unknown)
-    val print = TypedAst.Expression.Apply(printFunc, List(call), Type.Unit, Type.Impure, Type.Empty, SourceLocation.Unknown)
+    val print = TypedAst.Expression.Apply(printFunc, List(call), Type.Unit, Type.Impure, ioTpe, SourceLocation.Unknown)
 
     val impl = TypedAst.Impl(
       exp = print,

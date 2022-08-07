@@ -181,31 +181,22 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[IllegalRelationalUseOfLatticeVariable](result)
   }
 
-  test("TestIllegalDerivation.01") {
-    val input =
-      """
-        |def f(): ##java.lang.Thread & Impure = object ##java.lang.Thread {}
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalObjectDerivation](result)
-  }
-
   test("TestInvalidThis.01") {
     val input =
       """
-        |def f(): ##java.lang.Runnable & Impure = 
+        |def f(): ##java.lang.Runnable & Impure =
         |  object ##java.lang.Runnable {
         |    def run(): Unit & Impure = ()
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalThisType](result)
+    expectError[SafetyError.MissingThis](result)
   }
 
   test("TestInvalidThis.02") {
     val input =
       """
-        |def f(): ##java.lang.Runnable & Impure = 
+        |def f(): ##java.lang.Runnable & Impure =
         |  object ##java.lang.Runnable {
         |    def run(_this: Int32): Unit & Impure = ()
         |  }
@@ -226,7 +217,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("TestExtraMethod.01") {
     val input =
       """
-        |def f(): ##java.lang.Runnable & Impure = 
+        |def f(): ##java.lang.Runnable & Impure =
         |  object ##java.lang.Runnable {
         |    def run(_this: ##java.lang.Runnable): Unit & Impure = ()
         |    def anExtraMethod(_this: ##java.lang.Runnable): Unit & Impure = ()
@@ -235,4 +226,27 @@ class TestSafety extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ExtraMethod](result)
   }
+
+  test("TestNonDefaultConstructor.01") {
+    val input =
+      """
+        |def f(): ##flix.test.TestClassWithNonDefaultConstructor & Impure =
+        |  object ##flix.test.TestClassWithNonDefaultConstructor {
+        |  }
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.MissingPublicZeroArgConstructor](result)
+  }
+
+  test("TestNonPublicInterface.01") {
+    val input =
+      """
+        |def f(): ##flix.test.TestNonPublicInterface & Impure =
+        |  object ##flix.test.TestNonPublicInterface {
+        |  }
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.NonPublicClass](result)
+  }
+
 }

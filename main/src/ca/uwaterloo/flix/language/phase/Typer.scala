@@ -386,8 +386,8 @@ object Typer {
       val annVal = visitAnnotations(ann, root)
       val tparams = getTypeParams(tparams0)
       val cases = cases0 map {
-        case (name, KindedAst.Case(_, tagName, tagType, tagScheme)) =>
-          name -> TypedAst.Case(enumSym, tagName, tagType, tagScheme, tagName.loc)
+        case (name, KindedAst.Case(_, tagName, tagType, sc)) =>
+          name -> TypedAst.Case(enumSym, tagName, tagType, sc, tagName.loc)
       }
 
       Validation.mapN(annVal) {
@@ -1090,12 +1090,11 @@ object Typer {
           val (_, tagType) = Scheme.instantiate(caze.sc)
 
           //
-          // The tag type can be thought of as a function from the type of variant to the type of the enum.
-          // See Type.mkTag for details.
+          // The tag type is a function from the type of variant to the type of the enum.
           //
           for {
             (constrs, tpe, pur, eff) <- visitExp(exp)
-            _ <- unifyTypeM(tagType, Type.mkTag(sym, tag, tpe, tvar, loc), loc)
+            _ <- unifyTypeM(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
             resultTyp = tvar
             resultPur = pur
             resultEff = eff
@@ -1200,18 +1199,18 @@ object Typer {
           _ <- unbindVar(regionVar)
         } yield (constrs, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.ArrayLoad(exp1, exp2, tvar, loc) =>
+      case KindedAst.Expression.ArrayLoad(exp1, exp2, tvar, pvar, loc) =>
         val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
         for {
           (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
           arrayType <- expectTypeM(expected = Type.mkArray(tvar, regionVar, loc), actual = tpe1, exp1.loc)
           indexType <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
-          resultPur = Type.mkAnd(regionVar, pur1, pur2, loc)
+          resultPur <- unifyTypeM(pvar, Type.mkAnd(regionVar, pur1, pur2, loc), loc)
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, tvar, resultPur, resultEff)
 
-      case KindedAst.Expression.ArrayStore(exp1, exp2, exp3, loc) =>
+      case KindedAst.Expression.ArrayStore(exp1, exp2, exp3, pvar, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
         val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
         val arrayType = Type.mkArray(elmVar, regionVar, loc)
@@ -1223,11 +1222,11 @@ object Typer {
           _ <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
           _ <- expectTypeM(expected = elmVar, actual = tpe3, exp3.loc)
           resultTyp = Type.Unit
-          resultPur = Type.mkAnd(List(regionVar, pur1, pur2, pur3), loc)
+          resultPur <- unifyTypeM(pvar, Type.mkAnd(List(regionVar, pur1, pur2, pur3), loc), loc)
           resultEff = Type.mkUnion(List(eff1, eff2, eff3), loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.ArraySlice(exp1, exp2, exp3, loc) =>
+      case KindedAst.Expression.ArraySlice(exp1, exp2, exp3, pvar, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
         val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
         val arrayType = Type.mkArray(elmVar, regionVar, loc)
@@ -1238,7 +1237,7 @@ object Typer {
           _ <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
           _ <- expectTypeM(expected = Type.Int32, actual = tpe3, exp3.loc)
           resultTyp <- expectTypeM(expected = arrayType, actual = tpe1, exp1.loc)
-          resultPur = Type.mkAnd(List(regionVar, pur1, pur2, pur3), loc)
+          resultPur <- unifyTypeM(pvar, Type.mkAnd(List(regionVar, pur1, pur2, pur3), loc), loc)
           resultEff = Type.mkUnion(List(eff1, eff2, eff3), loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultPur, resultEff)
 
@@ -1299,6 +1298,11 @@ object Typer {
           resultPur = declaredPur.getOrElse(actualPur)
           resultEff = declaredEff.getOrElse(actualEff)
         } yield (constrs, resultTyp, resultPur, resultEff)
+
+      case KindedAst.Expression.Upcast(exp, tvar, loc) =>
+        for {
+          (constrs, _, pur, eff) <- visitExp(exp)
+        } yield (constrs, tvar, pur, eff)
 
       case KindedAst.Expression.Without(exp, effUse, loc) =>
         val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
@@ -1590,6 +1594,9 @@ object Typer {
           resultEff = eff
         } yield (constrs, resultTyp, resultPur, resultEff)
 
+      case KindedAst.Expression.Par(exp, _) =>
+        visitExp(exp)
+
       case KindedAst.Expression.Lazy(exp, loc) =>
         for {
           (constrs, tpe, pur, eff) <- visitExp(exp)
@@ -1744,7 +1751,7 @@ object Typer {
         val a = Type.freshVar(Kind.Star, loc, text = FallbackText("arg"))
         val b = Type.freshVar(Kind.Star, loc, text = FallbackText("result"))
         val p = Type.freshVar(Kind.Bool, loc, text = FallbackText("pur"))
-        val ef = Type.freshVar(Kind.Bool, loc, text = FallbackText("eff"))
+        val ef = Type.freshVar(Kind.Effect, loc, text = FallbackText("eff"))
         val polyLambdaType = Type.mkArrowWithEffect(a, p, ef, b, loc)
         val pureLambdaType = Type.mkPureArrow(a, b, loc)
         for {
@@ -1993,19 +2000,21 @@ object Typer {
         val eff = Type.mkUnion(List(e1.eff, e2.eff, e3.eff), loc)
         TypedAst.Expression.ArrayNew(e1, e2, e3, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.ArrayLoad(exp1, exp2, tvar, loc) =>
+      case KindedAst.Expression.ArrayLoad(exp1, exp2, tvar, pvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
-        val pur = Type.Impure
+        val tpe = subst0(tvar)
+        val pur = subst0(pvar)
         val eff = Type.mkUnion(e1.eff, e2.eff, loc)
-        TypedAst.Expression.ArrayLoad(e1, e2, subst0(tvar), pur, eff, loc)
+        TypedAst.Expression.ArrayLoad(e1, e2, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.ArrayStore(exp1, exp2, exp3, loc) =>
+      case KindedAst.Expression.ArrayStore(exp1, exp2, exp3, pvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val e3 = visitExp(exp3, subst0)
+        val pur = subst0(pvar)
         val eff = Type.mkUnion(List(e1.eff, e2.eff, e3.eff), loc)
-        TypedAst.Expression.ArrayStore(e1, e2, e3, eff, loc)
+        TypedAst.Expression.ArrayStore(e1, e2, e3, pur, eff, loc)
 
       case KindedAst.Expression.ArrayLength(exp, loc) =>
         val e = visitExp(exp, subst0)
@@ -2013,13 +2022,14 @@ object Typer {
         val eff = e.eff
         TypedAst.Expression.ArrayLength(e, pur, eff, loc)
 
-      case KindedAst.Expression.ArraySlice(exp1, exp2, exp3, loc) =>
+      case KindedAst.Expression.ArraySlice(exp1, exp2, exp3, pvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val e3 = visitExp(exp3, subst0)
         val tpe = e1.tpe
+        val pur = subst0(pvar)
         val eff = Type.mkUnion(List(e1.eff, e2.eff, e3.eff), loc)
-        TypedAst.Expression.ArraySlice(e1, e2, e3, tpe, eff, loc)
+        TypedAst.Expression.ArraySlice(e1, e2, e3, tpe, pur, eff, loc)
 
       case KindedAst.Expression.Ref(exp1, exp2, tvar, pvar, loc) =>
         val e1 = visitExp(exp1, subst0)
@@ -2063,6 +2073,9 @@ object Typer {
         val pur = declaredPur.getOrElse(e.pur)
         val eff = declaredEff.getOrElse(e.eff)
         TypedAst.Expression.Cast(e, dt, dp, de, tpe, pur, eff, loc)
+
+      case KindedAst.Expression.Upcast(exp, tvar, loc) =>
+        TypedAst.Expression.Upcast(visitExp(exp, subst0), subst0(tvar), loc)
 
       case KindedAst.Expression.Without(exp, effUse, loc) =>
         val e = visitExp(exp, subst0)
@@ -2203,6 +2216,9 @@ object Typer {
         val pur = e.pur
         val eff = e.eff
         TypedAst.Expression.Spawn(e, tpe, pur, eff, loc)
+
+      case KindedAst.Expression.Par(exp, loc) =>
+        TypedAst.Expression.Par(visitExp(exp, subst0), loc)
 
       case KindedAst.Expression.Lazy(exp, loc) =>
         val e = visitExp(exp, subst0)
@@ -2393,12 +2409,11 @@ object Typer {
         val (_, tagType) = Scheme.instantiate(caze.sc)
 
         //
-        // The tag type can be thought of as a function from the type of variant to the type of the enum.
-        // See Type.mkTag for details.
+        // The tag type is a function from the type of variant to the type of the enum.
         //
         for {
           tpe <- visit(pat)
-          _ <- unifyTypeM(tagType, Type.mkTag(sym, tag, tpe, tvar, loc), loc)
+          _ <- unifyTypeM(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
           resultTyp = tvar
         } yield resultTyp
 

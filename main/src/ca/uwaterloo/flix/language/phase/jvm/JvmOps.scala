@@ -643,7 +643,7 @@ object JvmOps {
 
       case Expression.NewObject(_, _, _, methods, _) =>
         methods.foldLeft(Set.empty[ClosureInfo]) {
-          case (sacc, JvmMethod(_, _, clo, _, _)) => visitExp(clo)
+          case (sacc, JvmMethod(_, _, clo, _, _)) => sacc ++ visitExp(clo)
         }
 
       case Expression.NewChannel(exp, _, _) => visitExp(exp)

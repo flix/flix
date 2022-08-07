@@ -1,6 +1,6 @@
 /// Sends the value `x` on the channel `c` after a delay.
-def slow(x: Int32, c: Channel[Int32]): Unit & Impure =
-    import static java.lang.Thread.sleep(Int64): Unit & Impure;
+def slow(x: Int32, c: Channel[Int32]): Unit \ IO =
+    import static java.lang.Thread.sleep(Int64): Unit \ IO;
     sleep(Time/Duration.oneMinute() / 1_000_000i64);
     c <- x;
     ()
@@ -24,7 +24,7 @@ def recvWithTimeout(c: Channel[Int32]): Int32 & Impure =
 /// Creates two channels `c1` and `c2`.
 /// Sends values on both after one minute.
 /// Receives from both using defaults and timeouts.
-def main(): Unit & Impure = {
+def main(): Unit \ {Impure, IO} = {
   let c1 = chan Int32 1;
   let c2 = chan Int32 1;
   spawn slow(123, c1);

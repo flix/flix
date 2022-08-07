@@ -43,5 +43,5 @@ namespace Test/Exp/ReifyEff {
 
     def >>(f: a -> b & ef1, g: b -> c & ef2): a -> c \ { ef1, ef2 } = x -> g(f(x))
 
-    eff E
+    pub eff E
 }

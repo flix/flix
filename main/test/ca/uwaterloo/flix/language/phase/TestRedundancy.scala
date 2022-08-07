@@ -1061,6 +1061,29 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedDefSym](result)
   }
 
+  test("UnusedEffectSym.01") {
+    val input =
+      """
+        |namespace N {
+        |    eff E
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedEffectSym](result)
+  }
+
+  test("UnusedEffectSym.02") {
+    val input =
+      """
+        |namespace N {
+        |    eff E
+        |    def foo(): Unit \ E = ??? as \ E
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedEffectSym](result)
+  }
+
   test("DiscardedPureValue.01") {
     val input =
       """
@@ -1146,4 +1169,5 @@ class TestRedundancy extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.DiscardedValue](result)
   }
+
 }

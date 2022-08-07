@@ -1003,4 +1003,37 @@ class TestResolver extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalType](result)
   }
+
+  test("IllegalNonJavaType.01") {
+    val input =
+      """
+        |def f(): Unit =
+        |    object Int32 {}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalNonJavaType](result)
+  }
+
+  test("IllegalNonJavaType.02") {
+    val input =
+      """
+        |def f(): Unit =
+        |    object String {}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalNonJavaType](result)
+  }
+
+  test("IllegalNonJavaType.03") {
+    val input =
+      """
+        |type alias T = Int32
+        |
+        |def f(): Unit =
+        |    object T {}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalNonJavaType](result)
+  }
+
 }

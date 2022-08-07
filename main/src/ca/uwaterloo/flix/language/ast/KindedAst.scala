@@ -136,13 +136,13 @@ object KindedAst {
 
     case class ArrayNew(exp1: KindedAst.Expression, exp2: KindedAst.Expression, exp3: KindedAst.Expression, tvar: Type.KindedVar, pvar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
-    case class ArrayLoad(base: KindedAst.Expression, index: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+    case class ArrayLoad(base: KindedAst.Expression, index: KindedAst.Expression, tpe: Type.KindedVar, pvar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
-    case class ArrayStore(base: KindedAst.Expression, index: KindedAst.Expression, elm: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class ArrayStore(base: KindedAst.Expression, index: KindedAst.Expression, elm: KindedAst.Expression, pvar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
     case class ArrayLength(base: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
-    case class ArraySlice(base: KindedAst.Expression, beginIndex: KindedAst.Expression, endIndex: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class ArraySlice(base: KindedAst.Expression, beginIndex: KindedAst.Expression, endIndex: KindedAst.Expression, pvar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
     case class Ref(exp1: KindedAst.Expression, exp2: KindedAst.Expression, tvar: Type.KindedVar, pvar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
@@ -153,6 +153,8 @@ object KindedAst {
     case class Ascribe(exp: KindedAst.Expression, expectedType: Option[Type], expectedPur: Option[Type], expectedEff: Option[Type], tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
     case class Cast(exp: KindedAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], declaredEff: Option[Type], tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+
+    case class Upcast(exp: KindedAst.Expression, tvar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
     case class Without(exp: KindedAst.Expression, eff: Ast.EffectSymUse, loc: SourceLocation) extends KindedAst.Expression
 
@@ -189,6 +191,8 @@ object KindedAst {
     case class SelectChannel(rules: List[KindedAst.SelectChannelRule], default: Option[KindedAst.Expression], tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
     case class Spawn(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+
+    case class Par(exp: Expression, loc: SourceLocation) extends KindedAst.Expression
 
     case class Lazy(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
@@ -306,7 +310,7 @@ object KindedAst {
 
   case class Attribute(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
-  case class Case(ident: Name.Ident, tag: Name.Tag, tpeDeprecated: Type, sc: Scheme)
+  case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpe: Type, sc: Scheme)
 
   case class Constraint(cparams: List[KindedAst.ConstraintParam], head: KindedAst.Predicate.Head, body: List[KindedAst.Predicate.Body], loc: SourceLocation)
 
@@ -314,9 +318,9 @@ object KindedAst {
 
   object ConstraintParam {
 
-    case class HeadParam(sym: Symbol.VarSym, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.ConstraintParam
+    case class HeadParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends KindedAst.ConstraintParam
 
-    case class RuleParam(sym: Symbol.VarSym, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.ConstraintParam
+    case class RuleParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends KindedAst.ConstraintParam
 
   }
 

@@ -261,10 +261,10 @@ object EarlyTreeShaker {
     case Expression.ArrayLength(base, _, _, _) =>
       visitExp(base)
 
-    case Expression.ArrayStore(base, index, elm, _, _) =>
+    case Expression.ArrayStore(base, index, elm, _, _, _) =>
       visitExp(base) ++ visitExp(index) ++ visitExp(elm)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) =>
       visitExp(base) ++ visitExp(beginIndex) ++ visitExp(endIndex)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
@@ -280,6 +280,9 @@ object EarlyTreeShaker {
       visitExp(exp)
 
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.Upcast(exp, _, _) =>
       visitExp(exp)
 
     case Expression.TryCatch(exp, rules, _, _, _, _) =>
@@ -322,6 +325,9 @@ object EarlyTreeShaker {
       visitExps(rules.map(_.chan)) ++ visitExps(rules.map(_.exp)) ++ default.map(visitExp).getOrElse(Set.empty)
 
     case Expression.Spawn(exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.Par(exp, _) =>
       visitExp(exp)
 
     case Expression.Lazy(exp, _, _) =>

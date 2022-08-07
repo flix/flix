@@ -169,7 +169,7 @@ object Simplifier {
         val i = visitExp(index)
         SimplifiedAst.Expression.ArrayLoad(b, i, tpe, loc)
 
-      case TypedAst.Expression.ArrayStore(base, index, elm, _, loc) =>
+      case TypedAst.Expression.ArrayStore(base, index, elm, _, _, loc) =>
         val b = visitExp(base)
         val i = visitExp(index)
         val e = visitExp(elm)
@@ -180,7 +180,7 @@ object Simplifier {
         val purity = b.purity
         SimplifiedAst.Expression.ArrayLength(b, Type.Int32, purity, loc)
 
-      case TypedAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, _, loc) =>
+      case TypedAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, _, _, loc) =>
         val b = visitExp(base)
         val i1 = visitExp(beginIndex)
         val i2 = visitExp(endIndex)
@@ -205,6 +205,9 @@ object Simplifier {
       case TypedAst.Expression.Cast(exp, _, _, _, tpe, pur, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Cast(e, tpe, simplifyPurity(pur), loc)
+
+      case TypedAst.Expression.Upcast(exp, _, _) =>
+        visitExp(exp)
 
       case TypedAst.Expression.TryCatch(exp, rules, tpe, pur, eff, loc) =>
         val e = visitExp(exp)
@@ -342,6 +345,10 @@ object Simplifier {
 
       case TypedAst.Expression.ReifyEff(_, _, _, _, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
+
+      case TypedAst.Expression.Par(_, _) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.")
+
     }
 
     /**
@@ -1046,7 +1053,7 @@ object Simplifier {
         val e = visitExp(exp)
         SimplifiedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) => 
+      case SimplifiedAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
         val methods = methods0 map visitJvmMethod
         SimplifiedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 

@@ -205,12 +205,12 @@ object Regions {
         case b => ().toSuccess
       }
 
-    case Expression.ArrayStore(exp1, exp2, exp3, _, loc) =>
+    case Expression.ArrayStore(exp1, exp2, exp3, _, _, loc) =>
       flatMapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
         case (b, i, e) => ().toSuccess
       }
 
-    case Expression.ArraySlice(exp1, exp2, exp3, tpe, _, loc) =>
+    case Expression.ArraySlice(exp1, exp2, exp3, tpe, _, _, loc) =>
       flatMapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
         case (b, i1, i2) => checkType(tpe, loc)
       }
@@ -238,6 +238,11 @@ object Regions {
     case Expression.Cast(exp, _, _, _, tpe, _, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
+      }
+
+    case Expression.Upcast(exp, tpe, loc) =>
+      flatMapN(visitExp(exp)) {
+        case _ => checkType(tpe, loc)
       }
 
     case Expression.Without(exp, _, tpe, _, _, loc) =>
@@ -344,6 +349,9 @@ object Regions {
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
+
+    case Expression.Par(exp, loc) =>
+      flatMapN(visitExp(exp))(_ => checkType(exp.tpe, loc))
 
     case Expression.Lazy(exp, tpe, loc) =>
       flatMapN(visitExp(exp)) {

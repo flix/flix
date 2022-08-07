@@ -39,17 +39,21 @@ object FindReferencesProvider {
 
         case Entity.Enum(enum0) => findEnumReferences(enum0.sym)
 
+        case Entity.TypeAlias(alias0) => findTypeAliasReferences(alias0.sym)
+
         case Entity.Effect(eff0) => findEffectReferences(eff0.sym)
 
         case Entity.Op(op0) => findOpReferences(op0.sym)
 
-        case Entity.Exp(exp) => exp match {
-          case Expression.Def(sym, _, _) => findDefReferences(sym)
-          case Expression.Sig(sym, _, _) => findSigReferences(sym)
-          case Expression.Var(sym, _, _) => findVarReferences(sym)
-          case Expression.Tag(sym, tag, _, _, _, _, _) => findTagReferences(sym, tag)
-          case _ => mkNotFound(uri, pos)
-        }
+        case Entity.DefUse(sym, _, _) => findDefReferences(sym)
+
+        case Entity.SigUse(sym, _, _) => findSigReferences(sym)
+
+        case Entity.VarUse(sym, _, _) => findVarReferences(sym)
+
+        case Entity.TagUse(sym, tag, _, _) => findTagReferences(sym, tag)
+
+        case Entity.Exp(_) => mkNotFound(uri, pos)
 
         case Entity.Field(field) => findFieldReferences(field)
 
@@ -77,9 +81,9 @@ object FindReferencesProvider {
           case _ => mkNotFound(uri, pos)
         }
 
-        case Entity.OpUse(sym, _) => findOpReferences(sym)
+        case Entity.OpUse(sym, _, _) => findOpReferences(sym)
 
-        case _ => mkNotFound(uri, pos)
+        case Entity.TypeVar(sym) => findTypeVarReferences(sym)
 
       }
     }
@@ -107,6 +111,13 @@ object FindReferencesProvider {
   }
 
   private def findEnumReferences(sym: Symbol.EnumSym)(implicit index: Index, root: Root): JObject = {
+    val defSite = Location.from(sym.loc)
+    val useSites = index.usesOf(sym)
+    val locs = defSite :: useSites.toList.map(Location.from)
+    ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+  }
+
+  private def findTypeAliasReferences(sym: Symbol.TypeAliasSym)(implicit index: Index, root: Root): JObject = {
     val defSite = Location.from(sym.loc)
     val useSites = index.usesOf(sym)
     val locs = defSite :: useSites.toList.map(Location.from)

@@ -195,13 +195,13 @@ object CodeHinter {
     case Expression.ArrayLoad(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.ArrayStore(exp1, exp2, exp3, _, _) =>
+    case Expression.ArrayStore(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
     case Expression.ArrayLength(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.ArraySlice(exp1, exp2, exp3, _, _, _) =>
+    case Expression.ArraySlice(exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
@@ -218,6 +218,9 @@ object CodeHinter {
 
     case Expression.Cast(exp, _, _, _, tpe, pur, _, loc) =>
       checkCast(tpe, pur, loc) ++ visitExp(exp)
+
+    case Expression.Upcast(exp, _, _) =>
+      visitExp(exp)
 
     case Expression.Without(exp, _, _, _, _, _) =>
       visitExp(exp)
@@ -279,6 +282,9 @@ object CodeHinter {
       } ++ default.map(visitExp).getOrElse(Nil)
 
     case Expression.Spawn(exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.Par(exp, _) =>
       visitExp(exp)
 
     case Expression.Lazy(exp, _, _) =>

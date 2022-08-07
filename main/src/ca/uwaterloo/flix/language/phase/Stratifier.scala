@@ -254,14 +254,14 @@ object Stratifier {
         case b => Expression.ArrayLength(b, pur, eff, loc)
       }
 
-    case Expression.ArrayStore(base, index, elm, eff, loc) =>
+    case Expression.ArrayStore(base, index, elm, pur, eff, loc) =>
       mapN(visitExp(base), visitExp(index), visitExp(elm)) {
-        case (b, i, e) => Expression.ArrayStore(b, i, e, eff, loc)
+        case (b, i, e) => Expression.ArrayStore(b, i, e, pur, eff, loc)
       }
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, pur, eff, loc) =>
       mapN(visitExp(base), visitExp(beginIndex), visitExp(endIndex)) {
-        case (b, i1, i2) => Expression.ArraySlice(b, i1, i2, tpe, eff, loc)
+        case (b, i1, i2) => Expression.ArraySlice(b, i1, i2, tpe, pur, eff, loc)
       }
 
     case Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
@@ -288,6 +288,9 @@ object Stratifier {
       mapN(visitExp(exp)) {
         case e => Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
       }
+
+    case Expression.Upcast(exp, tpe, loc) =>
+      mapN(visitExp(exp))(Expression.Upcast(_, tpe, loc))
 
     case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
@@ -396,6 +399,9 @@ object Stratifier {
         case e => Expression.Spawn(e, tpe, pur, eff, loc)
       }
 
+    case Expression.Par(exp, loc) =>
+      mapN(visitExp(exp))(Expression.Lazy(_, exp.tpe, loc))
+
     case Expression.Lazy(exp, tpe, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Lazy(e, tpe, loc)
@@ -468,7 +474,7 @@ object Stratifier {
   }
 
   private def visitJvmMethod(method: JvmMethod)(implicit g: LabelledGraph, flix: Flix): Validation[JvmMethod, StratificationError] = method match {
-    case JvmMethod(ident, fparams, exp, tpe, pur, eff, loc) => 
+    case JvmMethod(ident, fparams, exp, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => JvmMethod(ident, fparams, e, tpe, pur, eff, loc)
       }
@@ -627,10 +633,10 @@ object Stratifier {
     case Expression.ArrayLength(base, _, _, _) =>
       labelledGraphOfExp(base)
 
-    case Expression.ArrayStore(base, index, elm, _, _) =>
+    case Expression.ArrayStore(base, index, elm, _, _, _) =>
       labelledGraphOfExp(base) + labelledGraphOfExp(index) + labelledGraphOfExp(elm)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) =>
       labelledGraphOfExp(base) + labelledGraphOfExp(beginIndex) + labelledGraphOfExp(endIndex)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
@@ -646,6 +652,9 @@ object Stratifier {
       labelledGraphOfExp(exp)
 
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
+      labelledGraphOfExp(exp)
+
+    case Expression.Upcast(exp, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.Without(exp, _, _, _, _, _) =>
@@ -719,6 +728,9 @@ object Stratifier {
       }
 
     case Expression.Spawn(exp, _, _, _, _) =>
+      labelledGraphOfExp(exp)
+
+    case Expression.Par(exp, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.Lazy(exp, _, _) =>
