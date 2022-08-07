@@ -1002,6 +1002,22 @@ namespace TestNec {
         Nec.zipWithIndex(necOf8(8, 7, 6, 5, 4, 3, 2, 1)) == necOf8((8, 0), (7, 1), (6, 2), (5, 3), (4, 4), (3, 5), (2, 6), (1, 7))
 
     /////////////////////////////////////////////////////////////////////////////
+    // zipWithA                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithA01(): Bool = Nec.zipWithA((x, y) -> Identity(x + y), singleton(1), singleton(1)) == Identity(singleton(2))
+
+    @test
+    def zipWithA02(): Bool = Nec.zipWithA((x, y) -> Identity(x + y), necOf2(1, 2), singleton(1)) == Identity(singleton(2))
+
+    @test
+    def zipWithA03(): Bool = Nec.zipWithA((x, y) -> Identity(x + y), singleton(1), necOf2(1, 2)) == Identity(singleton(2))
+
+    @test
+    def zipWithA04(): Bool = Nec.zipWithA((x, y) -> Identity(x + y), necOf2(1, 2), necOf2(1, 2)) == Identity(necOf2(2, 4))
+
+    /////////////////////////////////////////////////////////////////////////////
     // mapAccumLeft                                                            //
     /////////////////////////////////////////////////////////////////////////////
 

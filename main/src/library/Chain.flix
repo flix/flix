@@ -58,6 +58,13 @@ instance MonadZero[Chain] {
     pub def empty(): Chain[a] = Chain.empty()
 }
 
+instance MonadZip[Chain] {
+    pub def zipWith(f: (a, b) -> c & ef, xs: Chain[a], ys: Chain[b]): Chain[c] & ef = Chain.zipWith(f, xs, ys)
+    pub def zipWithA(f: (a, b) -> f[c] & ef, xs: Chain[a], ys: Chain[b]): f[Chain[c]] & ef with Applicative[f] = Chain.zipWithA(f, xs, ys)
+    pub override def zip(xs: Chain[a], ys: Chain[b]): Chain[(a, b)] = Chain.zip(xs, ys)
+    pub override def unzip(xs: Chain[(a, b)]): (Chain[a], Chain[b]) = Chain.unzip(xs)
+}
+
 instance Foldable[Chain] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldLeft(f, s, c)
     pub def foldRight(f: (a, b) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldRight(f, s, c)
@@ -658,6 +665,19 @@ namespace Chain {
             case _                                  => acc
         };
         loop(c1, c2, empty())
+
+    ///
+    /// Generalize `zipWith` to an applicative functor `f`.
+    ///
+    pub def zipWithA(f: (a, b) -> m[c] & ef, xs: Chain[a], ys: Chain[b]): m[Chain[c]] & ef with Applicative[m] =
+        use Functor.{<$>};
+        use Applicative.{<*>, point};
+        def loop(v1, v2, k) = match (v1, v2) {
+            case (SomeLeft(x, c1), SomeLeft(y, c2)) => loop(viewLeft(c1), viewLeft(c2), ks -> k(cons <$> f(x,y) <*> ks))
+            case (_, _)                             => k(point(empty()))
+        };
+        loop(viewLeft(xs), viewLeft(ys), upcast(identity))
+
 
     ///
     /// Returns a pair of chains, the first containing all first components in `c`
