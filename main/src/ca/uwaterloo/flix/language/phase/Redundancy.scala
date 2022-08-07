@@ -1064,7 +1064,7 @@ object Redundancy {
     def of(syms: Set[Symbol.VarSym]): Used = empty.copy(
       varSyms = syms,
       occurrencesOf = syms.foldLeft(ListMap.empty[Symbol.VarSym, SourceLocation]) {
-        case (mm, sym) => mm + (sym, sym.loc)
+        case (mm, sym) => mm + (sym -> sym.loc)
       })
 
   }
