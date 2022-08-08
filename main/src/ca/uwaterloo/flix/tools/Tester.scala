@@ -2,63 +2,83 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.util.Formatter
+import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException}
+
+import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
- * Evaluates all tests in a model.
- */
+  * Evaluates all tests in a model.
+  */
 object Tester {
 
   /**
-   * Represents the outcome of a single test.
-   */
+    * Evaluates all tests.
+    *
+    * Returns a pair of (successful, failed)-tests.
+    */
+  def run(compilationResult: CompilationResult): TestResults = {
+    val queue = new ConcurrentLinkedQueue[TestEvent]()
+    val runner = new TestRunner(queue, compilationResult)
+    runner.start()
+    while (true) {
+      queue.poll() match {
+        case TestEvent.Done(testResults) => return testResults
+        case _ => // nop
+      }
+    }
+    throw InternalCompilerException("Unreachable")
+  }
+
+  /**
+    * Represents the outcome of a single test.
+    */
   sealed trait TestResult {
     /**
-     * The symbol associated with the test.
-     */
+      * The symbol associated with the test.
+      */
     def sym: Symbol.DefnSym
   }
 
   object TestResult {
 
     /**
-     * Represents a successful test case.
-     */
+      * Represents a successful test case.
+      */
     case class Success(sym: Symbol.DefnSym, msg: String) extends TestResult
 
     /**
-     * Represents a failed test case.
-     */
+      * Represents a failed test case.
+      */
     case class Failure(sym: Symbol.DefnSym, msg: String) extends TestResult
 
   }
 
   /**
-   * Represents the outcome of a run of a suite of tests.
-   */
+    * Represents the outcome of a run of a suite of tests.
+    */
   sealed trait OverallTestResult
 
   object OverallTestResult {
 
     /**
-     * Represents the outcome where all tests succeeded.
-     */
+      * Represents the outcome where all tests succeeded.
+      */
     case object Success extends OverallTestResult
 
     /**
-     * Represents the outcome where at least one test failed.
-     */
+      * Represents the outcome where at least one test failed.
+      */
     case object Failure extends OverallTestResult
 
     /**
-     * Represents the outcome where no tests were run.
-     */
+      * Represents the outcome where no tests were run.
+      */
     case object NoTests extends OverallTestResult
   }
 
   /**
-   * Represents the results of running all the tests in a given model.
-   */
+    * Represents the results of running all the tests in a given model.
+    */
   case class TestResults(results: List[TestResult]) {
     def output(formatter: Formatter): String = {
       var success = 0
@@ -99,27 +119,33 @@ object Tester {
     }
   }
 
-  /**
-   * Evaluates all tests.
-   *
-   * Returns a pair of (successful, failed)-tests.
-   */
-  def test(compilationResult: CompilationResult): TestResults = {
-    val results = compilationResult.getTests.toList.map {
-      case (sym, defn) =>
-        try {
-          val result = defn()
-          result match {
-            case java.lang.Boolean.TRUE => TestResult.Success(sym, "Returned true.")
-            case java.lang.Boolean.FALSE => TestResult.Failure(sym, "Returned false.")
-            case _ => TestResult.Success(sym, "Returned non-boolean value.")
+  sealed trait TestEvent
+
+  object TestEvent {
+    case class Done(testResults: TestResults) extends TestEvent
+  }
+
+  class TestRunner(queue: ConcurrentLinkedQueue[TestEvent], result: CompilationResult) extends Thread {
+
+    import TestEvent.Done
+
+    override def run(): Unit = {
+      val results = result.getTests.toList.map {
+        case (sym, defn) =>
+          try {
+            val result = defn()
+            result match {
+              case java.lang.Boolean.TRUE => TestResult.Success(sym, "Returned true.")
+              case java.lang.Boolean.FALSE => TestResult.Failure(sym, "Returned false.")
+              case _ => TestResult.Success(sym, "Returned non-boolean value.")
+            }
+          } catch {
+            case ex: Exception =>
+              TestResult.Failure(sym, ex.getMessage)
           }
-        } catch {
-          case ex: Exception =>
-            TestResult.Failure(sym, ex.getMessage)
-        }
+      }
+      queue.add(Done(TestResults(results)))
     }
-    TestResults(results)
   }
 
 }

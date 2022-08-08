@@ -359,7 +359,7 @@ object Packager {
     implicit val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
     build(p, o) flatMap {
       compilationResult =>
-        val results = Tester.test(compilationResult)
+        val results = Tester.run(compilationResult)
         Console.println(results.output(flix.getFormatter))
         results.overallResult match {
           case Tester.OverallTestResult.Failure => 1.toErr

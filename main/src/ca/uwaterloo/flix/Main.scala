@@ -240,7 +240,7 @@ object Main {
         }
 
         if (cmdOpts.test) {
-          val results = Tester.test(compilationResult)
+          val results = Tester.run(compilationResult)
           Console.println(results.output(flix.getFormatter))
         }
       case Validation.Failure(errors) =>
