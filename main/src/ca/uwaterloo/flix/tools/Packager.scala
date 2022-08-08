@@ -360,7 +360,6 @@ object Packager {
     build(p, o) flatMap {
       compilationResult =>
         val results = Tester.run(compilationResult)
-        Console.println(results.output(flix.getFormatter))
         results.overallResult match {
           case Tester.OverallTestResult.Failure => 1.toErr
           case Tester.OverallTestResult.Success | Tester.OverallTestResult.NoTests => ().toOk

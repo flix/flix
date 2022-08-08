@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.tools
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException}
@@ -16,13 +17,15 @@ object Tester {
     *
     * Returns a pair of (successful, failed)-tests.
     */
-  def run(compilationResult: CompilationResult): TestResults = {
+  def run(compilationResult: CompilationResult)(implicit flix: Flix): TestResults = {
     val queue = new ConcurrentLinkedQueue[TestEvent]()
     val runner = new TestRunner(queue, compilationResult)
     runner.start()
     while (true) {
       queue.poll() match {
-        case TestEvent.Done(testResults) => return testResults
+        case TestEvent.Done(testResults) =>
+          Console.println(testResults.output(flix.getFormatter))
+          return testResults
         case _ => // nop
       }
     }
