@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.tools.Tester.TestEvent.{AfterTest, BeforeTest}
 import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -23,6 +24,8 @@ object Tester {
     runner.start()
     while (true) {
       queue.poll() match {
+        case TestEvent.BeforeTest(sym) => println(s"before  test: ${sym}")
+
         case TestEvent.Done(testResults) =>
           Console.println(testResults.output(flix.getFormatter))
           return testResults
@@ -126,6 +129,10 @@ object Tester {
 
   object TestEvent {
     case class Done(testResults: TestResults) extends TestEvent
+
+    case class BeforeTest(sym: Symbol.DefnSym) extends TestEvent
+
+    case class AfterTest(sym: Symbol.DefnSym) extends TestEvent
   }
 
   class TestRunner(queue: ConcurrentLinkedQueue[TestEvent], result: CompilationResult) extends Thread {
@@ -134,20 +141,35 @@ object Tester {
 
     override def run(): Unit = {
       val results = result.getTests.toList.map {
-        case (sym, defn) =>
-          try {
-            val result = defn()
-            result match {
-              case java.lang.Boolean.TRUE => TestResult.Success(sym, "Returned true.")
-              case java.lang.Boolean.FALSE => TestResult.Failure(sym, "Returned false.")
-              case _ => TestResult.Success(sym, "Returned non-boolean value.")
-            }
-          } catch {
-            case ex: Exception =>
-              TestResult.Failure(sym, ex.getMessage)
-          }
+        case (sym, defn) => runTest(sym, defn)
+
       }
       queue.add(Done(TestResults(results)))
+    }
+
+    /**
+      * Runs the given test.
+      */
+    private def runTest(sym: Symbol.DefnSym, defn: () => AnyRef): TestResult = {
+      try {
+        Thread.sleep(1500)
+        queue.add(BeforeTest(sym))
+        val result = defn()
+        result match {
+          case java.lang.Boolean.TRUE =>
+            queue.add(AfterTest(sym))
+            TestResult.Success(sym, "Returned true.")
+          case java.lang.Boolean.FALSE =>
+            queue.add(AfterTest(sym))
+            TestResult.Failure(sym, "Returned false.")
+          case _ =>
+            queue.add(AfterTest(sym))
+            TestResult.Success(sym, "Returned non-boolean value.")
+        }
+      } catch {
+        case ex: Exception =>
+          TestResult.Failure(sym, ex.getMessage)
+      }
     }
   }
 
