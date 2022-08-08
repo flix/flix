@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.tools.Tester.TestEvent.{AfterTest, BeforeTest}
+import ca.uwaterloo.flix.tools.Tester.TestEvent.{BeforeTest, TestSuccess}
 import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
@@ -36,8 +36,8 @@ object Tester {
     runner.start()
     while (true) {
       queue.poll() match {
-        case TestEvent.BeforeTest(sym) =>
-          terminal.writer().println(green(s"before  test: ${sym}"))
+        case TestEvent.TestSuccess(sym, elapsed) =>
+          terminal.writer().println(s"  - ${green(sym.toString)} ${magenta(elapsed.toString + "ms")}")
           terminal.flush()
 
         case TestEvent.Done(testResults) =>
@@ -146,7 +146,11 @@ object Tester {
 
     case class BeforeTest(sym: Symbol.DefnSym) extends TestEvent
 
-    case class AfterTest(sym: Symbol.DefnSym) extends TestEvent
+    case class TestSuccess(sym: Symbol.DefnSym, time: Long) extends TestEvent
+
+    case class TestFailure(sym: Symbol.DefnSym, time: Long) extends TestEvent
+
+    case class TestIgnored(sym: Symbol.DefnSym) extends TestEvent
   }
 
   class TestRunner(queue: ConcurrentLinkedQueue[TestEvent], result: CompilationResult) extends Thread {
@@ -167,17 +171,20 @@ object Tester {
     private def runTest(sym: Symbol.DefnSym, defn: () => AnyRef): TestResult = {
       try {
         Thread.sleep(1500)
+
         queue.add(BeforeTest(sym))
+        val elapsed = 123
+
         val result = defn()
         result match {
           case java.lang.Boolean.TRUE =>
-            queue.add(AfterTest(sym))
+            queue.add(TestSuccess(sym, elapsed))
             TestResult.Success(sym, "Returned true.")
           case java.lang.Boolean.FALSE =>
-            queue.add(AfterTest(sym))
+            queue.add(TestSuccess(sym, elapsed))
             TestResult.Failure(sym, "Returned false.")
           case _ =>
-            queue.add(AfterTest(sym))
+            queue.add(TestSuccess(sym, elapsed))
             TestResult.Success(sym, "Returned non-boolean value.")
         }
       } catch {
