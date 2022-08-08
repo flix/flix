@@ -5,8 +5,10 @@ import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Tester.TestEvent.{AfterTest, BeforeTest}
 import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException}
+import org.jline.terminal.{Terminal, TerminalBuilder}
 
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.logging.{Level, Logger}
 
 /**
   * Evaluates all tests in a model.
@@ -19,12 +21,24 @@ object Tester {
     * Returns a pair of (successful, failed)-tests.
     */
   def run(compilationResult: CompilationResult)(implicit flix: Flix): TestResults = {
+
+    // Silence JLine warnings about terminal type.
+    Logger.getLogger("org.jline").setLevel(Level.OFF)
+
+    // Initialize the terminal.
+    implicit val terminal: Terminal = TerminalBuilder
+      .builder()
+      .system(true)
+      .build()
+
     val queue = new ConcurrentLinkedQueue[TestEvent]()
     val runner = new TestRunner(queue, compilationResult)
     runner.start()
     while (true) {
       queue.poll() match {
-        case TestEvent.BeforeTest(sym) => println(s"before  test: ${sym}")
+        case TestEvent.BeforeTest(sym) =>
+          terminal.writer().println(green(s"before  test: ${sym}"))
+          terminal.flush()
 
         case TestEvent.Done(testResults) =>
           Console.println(testResults.output(flix.getFormatter))
@@ -172,5 +186,12 @@ object Tester {
       }
     }
   }
+
+
+  private def green(s: String): String = Console.GREEN + s + Console.RESET
+
+  private def magenta(s: String): String = Console.MAGENTA + s + Console.RESET
+
+  private def red(s: String): String = Console.RED + s + Console.RESET
 
 }
