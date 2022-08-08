@@ -117,12 +117,14 @@ object Index {
   /**
     * Returns an index with the symbol 'sym' used at location 'loc'.
     */
-  def useOf(sym: Symbol.SigSym, loc: SourceLocation): Index = Index.empty.copy(sigUses = MultiMap.singleton(sym, loc))
+  def useOf(sym: Symbol.SigSym, loc: SourceLocation, parent: Entity): Index =
+    Index.empty.copy(sigUses = MultiMap.singleton(sym, loc)) + Entity.SigUse(sym, loc, parent)
 
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
     */
-  def useOf(sym: Symbol.DefnSym, loc: SourceLocation): Index = Index.empty.copy(defUses = MultiMap.singleton(sym, loc))
+  def useOf(sym: Symbol.DefnSym, loc: SourceLocation, parent: Entity): Index =
+    Index.empty.copy(defUses = MultiMap.singleton(sym, loc)) + Entity.DefUse(sym, loc, parent)
 
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
@@ -132,7 +134,8 @@ object Index {
   /**
     * Returns an index with the symbol `sym` and `tag` used at location `loc.`
     */
-  def useOf(sym: Symbol.EnumSym, tag: Name.Tag): Index = Index.empty.copy(tagUses = MultiMap.singleton((sym, tag), tag.loc))
+  def useOf(sym: Symbol.EnumSym, tag: Name.Tag, parent: Entity): Index =
+    Index.empty.copy(tagUses = MultiMap.singleton((sym, tag), tag.loc)) + Entity.TagUse(sym, tag, tag.loc, parent)
 
   /**
     * Returns an index with the symbol `sym` and `tag` used at location `loc.`
@@ -142,7 +145,8 @@ object Index {
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
     */
-  def useOf(sym: Symbol.VarSym, loc: SourceLocation): Index = Index.empty.copy(varUses = MultiMap.singleton(sym, loc))
+  def useOf(sym: Symbol.VarSym, loc: SourceLocation, parent: Entity): Index =
+    Index.empty.copy(varUses = MultiMap.singleton(sym, loc)) + Entity.VarUse(sym, loc, parent)
 
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
@@ -157,7 +161,7 @@ object Index {
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
     */
-  def useOf(sym: Symbol.OpSym, loc: SourceLocation): Index = Index.empty.copy(opUses = MultiMap.singleton(sym, loc)) + Entity.OpUse(sym, loc)
+  def useOf(sym: Symbol.OpSym, loc: SourceLocation, parent: Entity): Index = Index.empty.copy(opUses = MultiMap.singleton(sym, loc)) + Entity.OpUse(sym, loc, parent)
 
   /**
     * Returns an index with a def of the given `field`.
@@ -224,14 +228,12 @@ case class Index(m: Map[(String, Int), List[Entity]],
         // Step 1: Compute all whole range overlap with the given position.
         val filtered = candidates.filter(e => e.loc.beginCol <= pos.character && pos.character <= e.loc.endCol)
 
-        // Step 2: Sort the expressions by their span (i.e. their length).
-        val sorted = filtered.sortBy(e => span(e.loc))
-
-        // Print all candidates.
-        // println(sorted.map(_.loc.format).mkString("\n"))
-
-        // Step 3: Return the candidate with the smallest span.
-        sorted.headOption
+        // Step 2: Get the min expression,
+        // primarily by the span (i.e. the length)
+        // and secondarily by the precision level of the entity
+        filtered.minOption(
+          Ordering.by((e: Entity) => span(e.loc))
+            .orElse(Ordering.by((e: Entity) => e.precision).reverse))
     }
   }
 
@@ -293,6 +295,11 @@ case class Index(m: Map[(String, Int), List[Entity]],
     * Returns all uses of the given symbol `sym`.
     */
   def usesOf(sym: Symbol.EnumSym): Set[SourceLocation] = enumUses(sym)
+
+  /**
+    * Returns all uses of the given symbol `sym`.
+    */
+  def usesOf(sym: Symbol.TypeAliasSym): Set[SourceLocation] = aliasUses(sym)
 
   /**
     * Returns all uses of the given symbol `sym` and `tag`.

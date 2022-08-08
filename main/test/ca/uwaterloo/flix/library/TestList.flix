@@ -1618,6 +1618,30 @@ def zipWithIndex03(): Bool = List.zipWithIndex("a" :: "b" :: Nil) == ("a", 0) ::
 def zipWithIndex04(): Bool = List.zipWithIndex(List.zipWithIndex(true :: false :: Nil)) == ((true, 0), 0) :: ((false, 1), 1) :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
+// zipWithA                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def zipWithA01(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, Nil, Nil) == Identity(Nil)
+
+@test
+def zipWithA02(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, 1 :: Nil, Nil) == Identity(Nil)
+
+@test
+def zipWithA03(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, Nil, true :: Nil) == Identity(Nil)
+
+@test
+def zipWithA04(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, 1 :: Nil, true :: Nil) == Identity(2 :: Nil)
+
+@test
+def zipWithA05(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, 1 :: Nil, false :: Nil) == Identity(1 :: Nil)
+
+@test
+def zipWithA06(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil,
+                      false :: true :: true :: false :: false :: true :: true :: true :: Nil) ==
+                      Identity(1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil)
+
+
+/////////////////////////////////////////////////////////////////////////////
 // unzip                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test

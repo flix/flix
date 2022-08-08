@@ -63,6 +63,13 @@ instance Monad[Nel] {
     pub def flatMap(f: a -> Nel[b] & ef, x : Nel[a]) : Nel[b] & ef = Nel.flatMap(f, x)
 }
 
+instance MonadZip[Nel] {
+    pub def zipWith(f: (a, b) -> c & ef, xs: Nel[a], ys: Nel[b]): Nel[c] & ef = Nel.zipWith(f, xs, ys)
+    pub def zipWithA(f: (a, b) -> f[c] & ef, xs: Nel[a], ys: Nel[b]): f[Nel[c]] & ef with Applicative[f] = Nel.zipWithA(f, xs, ys)
+    pub override def zip(xs: Nel[a], ys: Nel[b]): Nel[(a, b)] = Nel.zip(xs, ys)
+    pub override def unzip(xs: Nel[(a, b)]): (Nel[a], Nel[b]) = Nel.unzip(xs)
+}
+
 instance Foldable[Nel] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldRight(f, s, l)
@@ -529,7 +536,7 @@ namespace Nel {
     /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
     ///
     @Time(time(f) * Int32.min(length(l1), length(l2))) @Space(space(f) * Int32.min(length(l1), length(l2)))
-    pub def zipWith(f: (a, b) -> c, l1: Nel[a], l2: Nel[b]): Nel[c] = match (l1, l2) {
+    pub def zipWith(f: (a, b) -> c & ef, l1: Nel[a], l2: Nel[b]): Nel[c] & ef = match (l1, l2) {
         case (Nel(x, xs), Nel(y, ys)) => Nel(f(x, y), List.zipWith(f, xs, ys))
     }
 
@@ -555,6 +562,18 @@ namespace Nel {
         match l {
             case Nel(x, xs) => Nel((x, 0), loop(xs, identity, 1))
         }
+
+    ///
+    /// Generalize `zipWith` to an applicative functor `f`.
+    ///
+    pub def zipWithA(f: (a, b) -> m[c] & ef, xs: Nel[a], ys: Nel[b]): m[Nel[c]] & ef with Applicative[m] =
+        use Functor.{<$>};
+        use Applicative.{<*>};
+        match (xs, ys) {
+            case (Nel(x, l1), Nel(y, l2)) => ((c, cs) -> Nel(c, cs)) <$> f(x, y) <*> List.zipWithA(f, l1, l2)
+        }
+
+
 
     ///
     /// Returns `l` as a normal list.

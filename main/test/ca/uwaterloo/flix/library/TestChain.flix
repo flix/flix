@@ -1304,6 +1304,30 @@ namespace TestChain {
                           List.toChain(1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
+    // zipWithA                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithA01(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, Chain.empty(), Chain.empty()) == Identity(Chain.empty())
+
+    @test
+    def zipWithA02(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, Chain.singleton(1), Chain.empty()) == Identity(Chain.empty())
+
+    @test
+    def zipWithA03(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, Chain.empty(), Chain.singleton(true)) == Identity(Chain.empty())
+
+    @test
+    def zipWithA04(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, Chain.singleton(1), Chain.singleton(true)) == Identity(Chain.singleton(2))
+
+    @test
+    def zipWithA05(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, Chain.singleton(1), Chain.singleton(false)) == Identity(Chain.singleton(1))
+
+    @test
+    def zipWith06A(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, List.toChain(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil),
+                          List.toChain(false :: true :: true :: false :: false :: true :: true :: true :: Nil)) ==
+                          Identity(List.toChain(1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
     // unzip                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
