@@ -3960,27 +3960,38 @@ namespace TestArray {
 
     @test
     def unzip01(): Bool = region r {
-        let (a,b) = Array.unzip([]: Array[(Unit, Unit), _]);
+        let (a,b) = Array.unzip(r, r, []: Array[(Unit, Unit), _]);
         Array.sameElements(a, []) and Array.sameElements(b, [])
     }
 
     @test
     def unzip02(): Bool = region r {
-        let (a,b) = Array.unzip([(1, true)]);
+        let (a,b) = Array.unzip(r, r, [(1, true)]);
         Array.sameElements(a, [1]) and Array.sameElements(b, [true])
     }
 
     @test
     def unzip03(): Bool = region r {
-        let (a,b) = Array.unzip([(1, true), (2, true)]);
+        let (a,b) = Array.unzip(r, r, [(1, true), (2, true)]);
         Array.sameElements(a, [1,2])  and Array.sameElements(b, [true,true])
     }
 
     @test
     def unzip04(): Bool = region r {
-        let (a,b) = Array.unzip([(1, true), (2, true), (3, false)]);
+        let (a,b) = Array.unzip(r, r, [(1, true), (2, true), (3, false)]);
         Array.sameElements(a, [1,2,3]) and Array.sameElements(b, [true,true,false])
     }
+
+    @test
+    def unzip05(): Bool = region r1 { region r2 {
+        unzip05Aux(r1, [(1, "1"), (2, "2"), (3, "3")] @ r2) `Array.sameElements` [1, 2, 3]
+    }}
+
+    def unzip05Aux(r1: Region[r1], a: Array[(a, b), r2]): Array[a, r1] \ { Write(r1), Read(r2) } =
+        region r3 {
+            // snd is local, fst is for caller
+            Array.unzip(r1, r3, a) |> fst
+        }
 
     /////////////////////////////////////////////////////////////////////////////
     // fold2                                                                   //
