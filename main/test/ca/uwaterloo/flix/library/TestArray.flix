@@ -3982,6 +3982,17 @@ namespace TestArray {
         Array.sameElements(a, [1,2,3]) and Array.sameElements(b, [true,true,false])
     }
 
+    @test
+    def unzip05(): Bool = region r1 { region r2 {
+        unzip05Aux(r1, [(1, "1"), (2, "2"), (3, "3")] @ r2) `Array.sameElements` [1, 2, 3]
+    }}
+
+    def unzip05Aux(r1: Region[r1], a: Array[(a, b), r2]): Array[a, r1] \ { Write(r1), Read(r2) } =
+        region r3 {
+            // snd is local, fst is for caller
+            Array.unzip(r1, r3, a) |> fst
+        }
+
     /////////////////////////////////////////////////////////////////////////////
     // fold2                                                                   //
     /////////////////////////////////////////////////////////////////////////////
