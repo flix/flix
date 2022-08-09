@@ -127,7 +127,7 @@ object TypeError {
         |
         |For example:
         |
-        |  def example(): Unit & Impure = println("hello")
+        |  def example(): Unit \ IO = println("hello")
         |                      ^^^^^^^^
         |""".stripMargin
     })
@@ -157,7 +157,7 @@ object TypeError {
         |
         |For example:
         |
-        |  def example(f: Int32 -> Int32 & ef): Int32 & ef = f(123)
+        |  def example(f: Int32 -> Int32 \ ef): Int32 \ ef = f(123)
         |                                             ^^^^
         |""".stripMargin
     })

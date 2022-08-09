@@ -45,11 +45,11 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |
          |""".stripMargin)
     flix.addSourceCode(FileB,
-      s"""
-         |def main(): Unit & Impure =
-         |    println(f(true));
-         |    println(C.cd(1) |> C.cda)
-         |""".stripMargin)
+      raw"""
+           |def main(): Unit \ IO =
+           |    println(f(true));
+           |    println(C.cd(1) |> C.cda)
+           |""".stripMargin)
     flix.addSourceCode(FileC,
       s"""
          |pub class C[a] {
@@ -98,10 +98,10 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |
          |""".stripMargin)
     flix.addSourceCode(FileB,
-      s"""
-         |def main(): Unit & Impure =
-         |    println(f(123))
-         |""".stripMargin)
+      raw"""
+           |def main(): Unit \ IO =
+           |    println(f(123))
+           |""".stripMargin)
     flix.addSourceCode(FileC,
       s"""
          |pub class C[a] {
@@ -124,10 +124,10 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |pub def f(x: String): String = String.toUpperCase(x)
          |""".stripMargin)
     flix.addSourceCode(FileB,
-      s"""
-         |def main(): Unit & Impure =
-         |    println(f("Hello World"))
-         |""".stripMargin)
+      raw"""
+           |def main(): Unit \ IO =
+           |    println(f("Hello World"))
+           |""".stripMargin)
     flix.addSourceCode(FileC,
       s"""
          |pub class C[a] {
@@ -178,11 +178,11 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |
          |""".stripMargin)
     flix.addSourceCode(FileB,
-      s"""
-         |def main(): Unit & Impure =
-         |    println(f(1i64, 2i64));
-         |    println(C.cd(1i64) |> C.cda)
-         |""".stripMargin)
+      raw"""
+           |def main(): Unit \ IO =
+           |    println(f(1i64, 2i64));
+           |    println(C.cd(1i64) |> C.cda)
+           |""".stripMargin)
     flix.addSourceCode(FileC,
       s"""
          |pub class C[a] {
@@ -229,11 +229,11 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |}
          |""".stripMargin)
     flix.addSourceCode(FileB,
-      s"""
-         |def main(): Unit & Impure =
-         |    println(F.f(true));
-         |    println(C.cd(1i8) |> C.cda)
-         |""".stripMargin)
+      raw"""
+           |def main(): Unit \ IO =
+           |    println(F.f(true));
+           |    println(C.cd(1i8) |> C.cda)
+           |""".stripMargin)
     flix.addSourceCode(FileC,
       s"""
          |pub class C[a] {

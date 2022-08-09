@@ -23,7 +23,7 @@ pub class Traversable[t : Type -> Type] with Functor[t], Foldable[t] {
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the
     /// data structure `t`.
     ///
-    pub def traverse(f: a -> m[b] & ef, t: t[a]): m[t[b]] & ef with Applicative[m]
+    pub def traverse(f: a -> m[b] \ ef, t: t[a]): m[t[b]] \ ef with Applicative[m]
 
     ///
     /// Returns the result of running all the actions in the data structure `t`.
@@ -54,7 +54,7 @@ namespace Traversable {
     ///
     /// `for` is `traverse` with it's arguments flipped.
     ///
-    pub def for(t: t[a], f: a -> m[b] & ef): m[t[b]] & ef with Applicative[m], Traversable[t] =
+    pub def for(t: t[a], f: a -> m[b] \ ef): m[t[b]] \ ef with Applicative[m], Traversable[t] =
         Traversable.traverse(f, t)
 
     ///
@@ -64,8 +64,8 @@ namespace Traversable {
     /// `mapAccumLeft` is essentially the combination of `map` and `foldLeft` - like map it returns an updated copy
     /// of the initial structure, like `foldLeft` it passes an updating accumulator through each step of the traversal.
     ///
-    pub def mapAccumLeft(f: (acc, a) -> (acc, b) & ef, start: acc, t: t[a]): (acc, t[b]) & ef with Traversable[t] =
-        runContStateLeft(traverse(x1 -> ContStateLeft((k, s) -> let (s1, b) = f(s, x1); k(b, s1)), t), start) as & ef
+    pub def mapAccumLeft(f: (acc, a) -> (acc, b) \ ef, start: acc, t: t[a]): (acc, t[b]) \ ef with Traversable[t] =
+        runContStateLeft(traverse(x1 -> ContStateLeft((k, s) -> let (s1, b) = f(s, x1); k(b, s1)), t), start) as \ ef
 
     ///
     /// Helper type for `mapAccumLeft`.
@@ -98,7 +98,7 @@ namespace Traversable {
 
 
     instance Functor[ContStateLeft[ef1, ka, s]] {
-        pub def map(f: a -> b & ef, ma: ContStateLeft[ef1, ka, s, a]): ContStateLeft[ef1, ka, s, b] & ef =
+        pub def map(f: a -> b \ ef, ma: ContStateLeft[ef1, ka, s, a]): ContStateLeft[ef1, ka, s, b] \ ef =
             upcast(() -> ContStateLeft((k, s) ->
                 applyLeft1(ma, s, (a, s1) -> k(f(a) as \ IO, s1))
             ))()
@@ -108,7 +108,7 @@ namespace Traversable {
         pub def point(x: a): ContStateLeft[ef1, ka, s, a] =
             ContStateLeft((k, s) -> k(x, s))
 
-        pub def ap(mf: ContStateLeft[ef1, ka, s, a -> b & ef], ma: ContStateLeft[ef1, ka, s, a]): ContStateLeft[ef1, ka, s, b] & ef =
+        pub def ap(mf: ContStateLeft[ef1, ka, s, a -> b \ ef], ma: ContStateLeft[ef1, ka, s, a]): ContStateLeft[ef1, ka, s, b] \ ef =
             upcast(() -> ContStateLeft((k, s) ->
                 applyLeft1(mf, s, (f, s1) ->
                     applyLeft1(ma, s1, (a, s2) ->
@@ -123,8 +123,8 @@ namespace Traversable {
     /// `mapAccumRight` is essentially the combination of `map` and `foldLeft` - like map it returns an updated copy
     /// of the intial structure, like `foldRight` it passes an updating accumulator through each step of the traversal.
     ///
-    pub def mapAccumRight(f: (acc, a) -> (acc, b) & ef, start: acc, t: t[a]): (acc, t[b]) & ef with Traversable[t] =
-        runContStateRight(traverse(x1 -> ContStateRight((k, s) -> let (s1, b) = f(s, x1); k(b, s1)), t), start) as & ef
+    pub def mapAccumRight(f: (acc, a) -> (acc, b) \ ef, start: acc, t: t[a]): (acc, t[b]) \ ef with Traversable[t] =
+        runContStateRight(traverse(x1 -> ContStateRight((k, s) -> let (s1, b) = f(s, x1); k(b, s1)), t), start) as \ ef
 
 
     ///
@@ -151,7 +151,7 @@ namespace Traversable {
 
 
     instance Functor[ContStateRight[ef1, ka, s]] {
-        pub def map(f: a -> b & ef, ma: ContStateRight[ef1, ka, s, a]): ContStateRight[ef1, ka, s, b] & ef =
+        pub def map(f: a -> b \ ef, ma: ContStateRight[ef1, ka, s, a]): ContStateRight[ef1, ka, s, b] \ ef =
             upcast(() -> ContStateRight((k, s) ->
                 applyRight1(ma, s, (a, s1) -> k(f(a) as \ IO, s1))
             ))()
@@ -160,7 +160,7 @@ namespace Traversable {
     instance Applicative[ContStateRight[ef1, ka, s]] {
         pub def point(x: a): ContStateRight[ef1, ka, s, a] = ContStateRight((k, s) -> k(x, s))
 
-        pub def ap(mf: ContStateRight[ef1, ka, s, a -> b & ef], ma: ContStateRight[ef1, ka, s, a]): ContStateRight[ef1, ka, s, b] & ef =
+        pub def ap(mf: ContStateRight[ef1, ka, s, a -> b \ ef], ma: ContStateRight[ef1, ka, s, a]): ContStateRight[ef1, ka, s, b] \ ef =
             upcast(() -> ContStateRight((k, s) ->
                 applyRight1(ma, s, (a, s1) ->
                     applyRight1(mf, s1, (f, s2) ->

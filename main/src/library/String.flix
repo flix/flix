@@ -21,7 +21,7 @@ namespace String {
     ///
     @Time(1) @Space(1)
     pub def charAt(i: Int32, s: String): Char =
-        import java.lang.String.charAt(Int32): Char & Pure;
+        import java.lang.String.charAt(Int32): Char \ {};
         charAt(s, i)
 
     ///
@@ -29,7 +29,7 @@ namespace String {
     ///
     @Time(length(s1) + length(s2)) @Space(length(s1) + length(s2))
     pub def concat(s1: String, s2: String): String =
-        import java.lang.String.concat(String): String & Pure;
+        import java.lang.String.concat(String): String \ {};
         (s1 `concat` s2)
 
     ///
@@ -37,7 +37,7 @@ namespace String {
     ///
     @Time(1) @Space(1)
     pub def isEmpty(s: String): Bool =
-        import java.lang.String.isEmpty(): Bool & Pure;
+        import java.lang.String.isEmpty(): Bool \ {};
         isEmpty(s)
 
     ///
@@ -45,21 +45,21 @@ namespace String {
     ///
     @Time(1) @Space(1)
     pub def length(s: String): Int32 =
-        import java.lang.String.length(): Int32 & Pure;
+        import java.lang.String.length(): Int32 \ {};
         length(s)
 
     ///
     /// Returns `true` if the string `s` starts with the string `prefix`.
     ///
     pub def startsWith(prefix: {prefix :: String}, s: String): Bool =
-        import java.lang.String.startsWith(String): Bool & Pure;
+        import java.lang.String.startsWith(String): Bool \ {};
         (s `startsWith` prefix.prefix)
 
     ///
     /// Returns `true` if the string `s` ends with the string `suffix`.
     ///
     pub def endsWith(suffix: {suffix :: String}, s: String): Bool =
-        import java.lang.String.endsWith(String): Bool & Pure;
+        import java.lang.String.endsWith(String): Bool \ {};
         (s `endsWith` suffix.suffix)
 
     ///
@@ -76,7 +76,7 @@ namespace String {
     ///
     @Time(length(s)) @Space(length(s))
     pub def toLowerCase(s: String): String =
-        import java.lang.String.toLowerCase(): String & Pure;
+        import java.lang.String.toLowerCase(): String \ {};
         toLowerCase(s)
 
     ///
@@ -84,7 +84,7 @@ namespace String {
     ///
     @Time(length(s)) @Space(length(s))
     pub def toUpperCase(s: String): String =
-        import java.lang.String.toUpperCase(): String & Pure;
+        import java.lang.String.toUpperCase(): String \ {};
         toUpperCase(s)
 
     ///
@@ -100,7 +100,7 @@ namespace String {
     ///
     @Time(length(s)) @Space(length(s))
     pub def trim(s: String): String =
-        import java.lang.String.trim(): String & Pure;
+        import java.lang.String.trim(): String \ {};
         trim(s)
 
     ///
@@ -108,7 +108,7 @@ namespace String {
     ///
     @Time(1) @Space(1)
     pub def lineSeparator(): String =
-        import static java.lang.System.lineSeparator(): String & Pure;
+        import static java.lang.System.lineSeparator(): String \ {};
         lineSeparator()
 
     ///
@@ -122,7 +122,7 @@ namespace String {
     /// Build a string of length `len` by applying `f` to the successive indices.
     ///
     @Time(time(f) * len) @Space(space(f) * len)
-    pub def init(f: Int32 -> Char & ef, len: Int32): String & ef =
+    pub def init(f: Int32 -> Char \ ef, len: Int32): String \ ef =
         if (len <= 0) "" else initHelper(f, len)
 
     ///
@@ -130,7 +130,7 @@ namespace String {
     ///
     /// Assumes that `len > 0`.
     ///
-    def initHelper(f: Int32 -> Char & ef, len: Int32): String & ef = region r {
+    def initHelper(f: Int32 -> Char \ ef, len: Int32): String \ ef = region r {
         let sb = new StringBuilder(r);
         def loop(i) = {
             if (i >= len)
@@ -186,7 +186,7 @@ namespace String {
     /// Returns the result of applying `f` to every character in `s`.
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
-    pub def map(f: Char -> Char & ef, s: String): String & ef =
+    pub def map(f: Char -> Char \ ef, s: String): String \ ef =
         let len = length(s);
         init(i -> f(charAt(i, s)), len)
 
@@ -194,7 +194,7 @@ namespace String {
     /// Returns the result of applying `f` to every character in `s` along with that character's index.
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
-    pub def mapWithIndex(f: (Char, Int32) -> Char & ef, s: String): String & ef =
+    pub def mapWithIndex(f: (Char, Int32) -> Char \ ef, s: String): String \ ef =
         let len = length(s);
         init(i -> f(charAt(i, s), i), len)
 
@@ -254,7 +254,7 @@ namespace String {
     /// Note - use `isSubmatch` to search for a substring.
     ///
     pub def isMatch(regex: {regex :: String}, s: String): Bool =
-        import java.lang.String.matches(String): Bool & Pure;
+        import java.lang.String.matches(String): Bool \ {};
         try {
             matches(s, regex.regex)
         } catch {
@@ -291,7 +291,7 @@ namespace String {
     /// If `b` or `e` are out-of-bounds, return the empty string.
     ///
     pub def slice(b: Int32, e: Int32, s: String): String = try {
-        import java.lang.String.substring(Int32, Int32): String & Pure;
+        import java.lang.String.substring(Int32, Int32): String \ {};
         substring(s, b, e)
     } catch {
         case _: ##java.lang.IndexOutOfBoundsException => ""
@@ -325,7 +325,7 @@ namespace String {
     /// Returns `None` if no character in `s` satisfies `f`.
     ///
     @Time(time(f) * length(s)) @Space(space(f))
-    pub def findIndexOfLeft(f: Char -> Bool & ef, s: String): Option[Int32] & ef =
+    pub def findIndexOfLeft(f: Char -> Bool \ ef, s: String): Option[Int32] \ ef =
         let len = length(s);
         def loop(i) = {
             if (i >= len)
@@ -545,7 +545,7 @@ namespace String {
     ///
     /// Applies `f` to a start value `x` and all elements in `s` going from left to right.
     ///
-    pub def foldLeft(f: (b, Char) -> b & ef, x: b, s: String): b & ef =
+    pub def foldLeft(f: (b, Char) -> b \ ef, x: b, s: String): b \ ef =
         let len = length(s);
         def loop(acc, i) = {
             if (i >= len)
@@ -559,7 +559,7 @@ namespace String {
     ///
     /// Applies `f` to a start value `x and all elements in `s` going from right to left.
     ///
-    pub def foldRight(f: (Char, b) -> b & ef, x: b, s: String): b &  ef =
+    pub def foldRight(f: (Char, b) -> b \ ef, x: b, s: String): b &  ef =
         def loop(acc, i) = {
             if (i < 0)
                 acc
@@ -574,7 +574,7 @@ namespace String {
     /// Accumulates the result of applying `f` pairwise to the elements of `s` and `t`
     /// starting with the initial value `x` and going from left to right.
     ///
-    pub def foldLeft2(f: (b, Char, Char) -> b & ef, x: b, s: String, t: String): b & ef =
+    pub def foldLeft2(f: (b, Char, Char) -> b \ ef, x: b, s: String, t: String): b \ ef =
         let len = Int32.min(length(s), length(t));
         def loop(acc, i) = {
             if (i >= len)
@@ -589,7 +589,7 @@ namespace String {
     /// Accumulates the result of applying `f` pairwise to the elements of `s` and `t`
     /// starting with the initial value `x` and going from right to left.
     ///
-    pub def foldRight2(f: (Char, Char, b) -> b & ef, x: b, s: String, t: String): b &  ef =
+    pub def foldRight2(f: (Char, Char, b) -> b \ ef, x: b, s: String, t: String): b &  ef =
         let sn = length(s) - 1;
         let tn = length(t) - 1;
         def loop(acc, i, j) = {
@@ -604,7 +604,7 @@ namespace String {
     ///
     /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
     ///
-    pub def unfold(f: b -> Option[(Char, b)] & ef, x: b): String & ef = region r {
+    pub def unfold(f: b -> Option[(Char, b)] \ ef, x: b): String \ ef = region r {
         let sb = new StringBuilder(r);
         def loop(a) = {
             let a1 = f(a);
@@ -627,7 +627,7 @@ namespace String {
     ///
     /// `next` should return `None` to signal the end of building the string.
     ///
-    pub def unfoldWithIter(f: Unit -> Option[Char] & ef): String & ef = region r {
+    pub def unfoldWithIter(f: Unit -> Option[Char] \ ef): String \ ef = region r {
         let sb = new StringBuilder(r);
         def loop() = {
             match f() {
@@ -646,7 +646,7 @@ namespace String {
     ///
     /// This is a version of `unfold` where `f` generates substrings rather than chars.
     ///
-    pub def unfoldString(f: b -> Option[(String, b)] & ef, x: b) : String & ef = region r {
+    pub def unfoldString(f: b -> Option[(String, b)] \ ef, x: b) : String \ ef = region r {
         let sb = new StringBuilder(r);
         def loop(a) = {
             let a1 = f(a);
@@ -669,7 +669,7 @@ namespace String {
     ///
     /// `next` should return `None` to signal the end of building the string.
     ///
-    pub def unfoldStringWithIter(f: Unit -> Option[String] & ef): String & ef = region r {
+    pub def unfoldStringWithIter(f: Unit -> Option[String] \ ef): String \ ef = region r {
         let sb = new StringBuilder(r);
         def loop() = {
             match f() {
@@ -689,7 +689,7 @@ namespace String {
     /// Returns `false` if `a` is empty.
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
-    pub def exists(f: Char -> Bool & ef, s: String): Bool & ef = match findIndexOfLeft(f, s) {
+    pub def exists(f: Char -> Bool \ ef, s: String): Bool \ ef = match findIndexOfLeft(f, s) {
         case None    => false
         case Some(_) => true
     }
@@ -700,7 +700,7 @@ namespace String {
     /// Returns `true` if `s` is empty.
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
-    pub def forall(f: Char -> Bool & ef, s: String): Bool & ef = match findIndexOfLeft(x -> not (f(x)), s) {
+    pub def forall(f: Char -> Bool \ ef, s: String): Bool \ ef = match findIndexOfLeft(x -> not (f(x)), s) {
         case None    => true
         case Some(_) => false
     }
@@ -742,7 +742,7 @@ namespace String {
     ///
     @Time(length(s) * n) @Space(length(s) * n)
     pub def repeat(n: Int32, s: String): String =
-        import java.lang.String.repeat(Int32): String & Pure;
+        import java.lang.String.repeat(Int32): String \ {};
         if (n < 0)
             ""
         else
@@ -774,7 +774,7 @@ namespace String {
     /// Returns `s` with every match of the substring `from` replaced by the string `to`.
     ///
     pub def replace(from: {from :: String}, to: {to :: String}, s: String): String =
-        import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String & Pure;
+        import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String \ {};
         let t = from.from as ##java.lang.CharSequence;
         let r = to.to as ##java.lang.CharSequence;
         replace(s, t, r)
@@ -783,21 +783,21 @@ namespace String {
     /// Returns `s` with every match of the character `target` replaced by the character `rep`.
     ///
     pub def replaceChar(from: {from :: Char}, to: {to :: Char}, s: String): String =
-        import java.lang.String.replace(Char, Char): String & Pure;
+        import java.lang.String.replace(Char, Char): String \ {};
         replace(s, from.from, to.to)
 
     ///
     /// Returns `s` with every match of the regular expression `regex` replaced by the string `to`.
     ///
     pub def replaceMatches(regex: {regex :: String}, to: {to :: String}, s: String): String =
-        import java.lang.String.replaceAll(String, String): String & Pure;
+        import java.lang.String.replaceAll(String, String): String \ {};
         replaceAll(s, regex.regex, to.to)
 
     ///
     /// Returns `s` with the first match of the regular expression `regex` replaced by the string `to`.
     ///
     pub def replaceFirstMatch(regex: {regex :: String}, to: {to :: String}, s: String): String =
-        import java.lang.String.replaceFirst(String, String): String & Pure;
+        import java.lang.String.replaceFirst(String, String): String \ {};
         replaceFirst(s, regex.regex, to.to)
 
     ///
@@ -960,7 +960,7 @@ namespace String {
     /// If `substr` is the empty string return None.
     ///
     pub def indexOfLeft(substr: {substr :: String}, s: String): Option[Int32] =
-        import java.lang.String.indexOf(String): Int32 & Pure;
+        import java.lang.String.indexOf(String): Int32 \ {};
         if (isEmpty(substr.substr))
             None
         else {
@@ -976,7 +976,7 @@ namespace String {
     /// If `substr` is the empty string return None.
     ///
     pub def indexOfRight(substr: {substr :: String}, s: String): Option[Int32] =
-        import java.lang.String.lastIndexOf(String): Int32 & Pure;
+        import java.lang.String.lastIndexOf(String): Int32 \ {};
         if (isEmpty(substr.substr))
             None
         else {
@@ -1110,7 +1110,7 @@ namespace String {
     ///
     /// This implements a forloop, the end point `e` is inclusive.
     ///
-    def forIndex(b: Int32, e: Int32, f: Int32 -> Unit & ef): Unit & ef =
+    def forIndex(b: Int32, e: Int32, f: Int32 -> Unit \ ef): Unit \ ef =
         if (b <= e) { f(b); forIndex(b + 1, e, f) } else ()
 
     ///
@@ -1137,7 +1137,7 @@ namespace String {
     /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
     ///
     @Time(Int32.min(length(a), length(b))) @Space(Int32.min(length(a), length(b)))
-    pub def zipWith(f: (Char, Char) -> Char & ef, a: String, b: String): String & ef =
+    pub def zipWith(f: (Char, Char) -> Char \ ef, a: String, b: String): String \ ef =
         let len = Int32.min(length(a), length(b));
         init(i -> f(charAt(i, a), charAt(i, b)), len)
 
@@ -1172,7 +1172,7 @@ namespace String {
     /// Returns `None` if `substr` is the empty string.
     ///
     pub def indexOfLeftWithOffset(substr: {substr :: String}, offset: {offset :: Int32}, s: String): Option[Int32] =
-        import java.lang.String.indexOf(String, Int32): Int32 & Pure;
+        import java.lang.String.indexOf(String, Int32): Int32 \ {};
         if (isEmpty(substr.substr))
             None
         else {
@@ -1186,7 +1186,7 @@ namespace String {
     /// Returns `None` if `substr` is the empty string.
     ///
     pub def indexOfRightWithOffset(substr: {substr :: String}, offset: {offset :: Int32}, s: String): Option[Int32] =
-        import java.lang.String.lastIndexOf(String, Int32): Int32 & Pure;
+        import java.lang.String.lastIndexOf(String, Int32): Int32 \ {};
         if (isEmpty(substr.substr))
             None
         else {

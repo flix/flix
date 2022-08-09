@@ -33,7 +33,7 @@ namespace Fixpoint {
             pub def eq(x: Tuple[v], y: Tuple[v]): Bool =
                 let Tuple(a) = x;
                 let Tuple(b) = y;
-                Array.sameElements(a, b) as & Pure
+                Array.sameElements(a, b) as \ {}
         }
 
         // NB: Unsafe instance.
@@ -41,14 +41,14 @@ namespace Fixpoint {
             pub def compare(x: Tuple[v], y: Tuple[v]): Comparison =
                 let Tuple(a) = x;
                 let Tuple(b) = y;
-                Array.compare(a, b) as & Pure
+                Array.compare(a, b) as \ {}
         }
 
         ///
         /// Creates an empty tuple consisting of the elements in `l`.
         ///
         pub def new(l: f[v]): Tuple[v] with Foldable[f] =
-            Tuple(Foldable.toArray(Static, l)) as & Pure
+            Tuple(Foldable.toArray(Static, l)) as \ {}
 
         ///
         /// Converts `t` to a list.
@@ -56,7 +56,7 @@ namespace Fixpoint {
         pub def toList(t: Tuple[v]): List[v] = {
             let Tuple(a) = t;
             Array.toList(a)
-        } as & Pure
+        } as \ {}
 
         ///
         /// Returns the length of `t`.
@@ -72,7 +72,7 @@ namespace Fixpoint {
         pub def valueAt(t: Tuple[v], v: Int32): v = {
             let Tuple(a) = t;
             a[v]
-        } as & Pure
+        } as \ {}
     }
 
     type alias Database[v: Type, r: Region] = MutMap[RamSym[v], MutMap[Tuple[v], v, r], r]
