@@ -377,7 +377,7 @@ namespace RedBlackTree {
     /// Traverses the tree `t` in parallel.
     ///
     @Parallel
-    pub def parExists(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool & Impure =
+    pub def parExists(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool \ IO =
         if (n <= 1)
             seqExists(f, t)
         else
@@ -433,7 +433,7 @@ namespace RedBlackTree {
     /// Traverses the tree `t` in parallel.
     ///
     @Parallel
-    pub def parForall(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool & Impure =
+    pub def parForall(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool \ IO =
         if (n <= 1)
             seqForall(f, t)
         else
@@ -645,7 +645,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    def parMapWithKey(n: Int32, f: (k, v1) -> v2, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] & Impure = {
+    def parMapWithKey(n: Int32, f: (k, v1) -> v2, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] \ IO = {
         if (n <= 1)
             parSeqMapWithKey(f, t)
         else
@@ -704,7 +704,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parCount(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 & Impure =
+    pub def parCount(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 \ IO =
         if (n <= 1)
             seqCount(f, t)
         else
@@ -771,7 +771,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parSumWith(n: Int32, f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 & Impure =
+    pub def parSumWith(n: Int32, f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 \ IO =
         if (n <= 1)
             seqSumWith(f, t)
         else
@@ -847,7 +847,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parProductWith(n: Int32, f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 & Impure = {
+    pub def parProductWith(n: Int32, f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 \ IO = {
         if (n <= 1)
             seqProductWith(f, t)
         else
@@ -930,7 +930,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parMinimumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] & Impure =
+    pub def parMinimumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] \ IO =
         parLimitBy(n, (kl, vl, kr, vr) -> if (cmp(kl, vl, kr, vr) == LessThan) (kl, vl) else (kr, vr), t)
 
     ///
@@ -942,7 +942,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parMaximumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] & Impure =
+    pub def parMaximumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] \ IO =
         parLimitBy(n, (kl, vl, kr, vr) -> if (cmp(kl, vl, kr, vr) == GreaterThan) (kl, vl) else (kr, vr), t)
 
     ///
@@ -956,7 +956,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    def parLimitBy(n: Int32, cmp: (k, v, k, v) -> (k, v), t: RedBlackTree[k, v]): Option[(k, v)] & Impure =
+    def parLimitBy(n: Int32, cmp: (k, v, k, v) -> (k, v), t: RedBlackTree[k, v]): Option[(k, v)] \ IO =
         if (n <= 0)
             seqLimitBy(cmp, t)
         else

@@ -69,13 +69,13 @@ namespace Test/Exp/Force {
         v == force x
 
     @test
-    def testArrayOfIntForce01(): Bool & Impure =
+    def testArrayOfIntForce01(): Bool \ IO =
         let v = [1, 2];
         let x = lazy v;
         v[0] == (force x)[0]
 
     @test
-    def testArrayOfStringForce01(): Bool & Impure =
+    def testArrayOfStringForce01(): Bool \ IO =
         let v = ["str", "str2"];
         let x = lazy v;
         v[0] == (force x)[0]

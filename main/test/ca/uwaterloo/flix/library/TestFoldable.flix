@@ -249,15 +249,15 @@ namespace TestFoldable {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toArray01(): Bool & Impure =
+    def toArray01(): Bool \ IO =
         Array.sameElements(Foldable.toArray(Static, Nel(1, Nil)), [1])
 
     @test
-    def toArray02(): Bool & Impure =
+    def toArray02(): Bool \ IO =
         Array.sameElements(Foldable.toArray(Static, Nel(1, 2 :: 3 :: Nil)), [1, 2, 3])
 
     @test
-    def toArray03(): Bool & Impure =
+    def toArray03(): Bool \ IO =
         Array.sameElements(Foldable.toArray(Static, Nel(1, 1 :: 2 :: 3 :: Nil)), [1, 1, 2, 3])
 
 

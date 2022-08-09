@@ -25,8 +25,8 @@ namespace Concurrent/ReentrantLock {
     /// Creates an instance of ReentrantLock with the given fairness policy.
     /// `fair = False` is the default for Java.
     ///
-    pub def new(fair: Bool): Concurrent/ReentrantLock.ReentrantLock & Impure =
-        import new java.util.concurrent.locks.ReentrantLock(Bool): ##java.util.concurrent.locks.ReentrantLock & Impure as reentrantLock;
+    pub def new(fair: Bool): Concurrent/ReentrantLock.ReentrantLock \ IO =
+        import new java.util.concurrent.locks.ReentrantLock(Bool): ##java.util.concurrent.locks.ReentrantLock \ IO as reentrantLock;
         ReentrantLock(reentrantLock(fair))
 
     ///
@@ -40,16 +40,16 @@ namespace Concurrent/ReentrantLock {
     ///
     /// Acquires the lock.
     ///
-    pub def lock(lock: Concurrent/ReentrantLock.ReentrantLock): Unit & Impure =
-        import java.util.concurrent.locks.ReentrantLock.lock(): Unit & Impure as lockIt;
+    pub def lock(lock: Concurrent/ReentrantLock.ReentrantLock): Unit \ IO =
+        import java.util.concurrent.locks.ReentrantLock.lock(): Unit \ IO as lockIt;
         let ReentrantLock(l) = lock;
         lockIt(l)
 
     ///
     /// Acquires the lock unless the current thread is interrupted.
     ///
-    pub def lockInterruptibly(lock: Concurrent/ReentrantLock.ReentrantLock): Result[Unit, ##java.lang.InterruptedException] & Impure =
-        import java.util.concurrent.locks.ReentrantLock.lockInterruptibly(): Unit & Impure;
+    pub def lockInterruptibly(lock: Concurrent/ReentrantLock.ReentrantLock): Result[Unit, ##java.lang.InterruptedException] \ IO =
+        import java.util.concurrent.locks.ReentrantLock.lockInterruptibly(): Unit \ IO;
         let ReentrantLock(l) = lock;
         try {
             Ok(lockInterruptibly(l))
@@ -60,8 +60,8 @@ namespace Concurrent/ReentrantLock {
     ///
     /// Returns a Condition instance for use with this Lock instance.
     ///
-    pub def newCondition(lock: Concurrent/ReentrantLock.ReentrantLock): Concurrent/Condition.Condition & Impure =
-        import java.util.concurrent.locks.ReentrantLock.newCondition(): ##java.util.concurrent.locks.Condition & Impure;
+    pub def newCondition(lock: Concurrent/ReentrantLock.ReentrantLock): Concurrent/Condition.Condition \ IO =
+        import java.util.concurrent.locks.ReentrantLock.newCondition(): ##java.util.concurrent.locks.Condition \ IO;
         let ReentrantLock(l) = lock;
         use Concurrent/Condition.Condition;
         Condition.Condition(newCondition(l))
@@ -69,17 +69,17 @@ namespace Concurrent/ReentrantLock {
     ///
     /// Acquires the lock only if it is not held by another thread at the time of invocation.
     ///
-    pub def tryLock(lock: Concurrent/ReentrantLock.ReentrantLock): Bool & Impure =
-        import java.util.concurrent.locks.ReentrantLock.tryLock(): Bool & Impure;
+    pub def tryLock(lock: Concurrent/ReentrantLock.ReentrantLock): Bool \ IO =
+        import java.util.concurrent.locks.ReentrantLock.tryLock(): Bool \ IO;
         let ReentrantLock(l) = lock;
         tryLock(l)
 
     ///
     /// Acquires the lock if it is not held by another thread within the given waiting time (nanos) and the current thread has not been interrupted.
     ///
-    pub def tryLockNanos(lock: Concurrent/ReentrantLock.ReentrantLock, nanosTimeout: Int64): Result[Bool, ##java.lang.InterruptedException] & Impure =
-        import java.util.concurrent.locks.ReentrantLock.tryLock(Int64, ##java.util.concurrent.TimeUnit): Bool & Impure;
-        import static get java.util.concurrent.TimeUnit.NANOSECONDS: ##java.util.concurrent.TimeUnit & Impure as nano;
+    pub def tryLockNanos(lock: Concurrent/ReentrantLock.ReentrantLock, nanosTimeout: Int64): Result[Bool, ##java.lang.InterruptedException] \ IO =
+        import java.util.concurrent.locks.ReentrantLock.tryLock(Int64, ##java.util.concurrent.TimeUnit): Bool \ IO;
+        import static get java.util.concurrent.TimeUnit.NANOSECONDS: ##java.util.concurrent.TimeUnit \ IO as nano;
         let ReentrantLock(l) = lock;
         try {
             Ok(tryLock(l, nanosTimeout, nano()))
@@ -90,8 +90,8 @@ namespace Concurrent/ReentrantLock {
     ///
     /// Attempts to release this lock.
     ///
-    pub def unlock(lock: Concurrent/ReentrantLock.ReentrantLock): Result[Unit, ##java.lang.IllegalMonitorStateException] & Impure =
-        import java.util.concurrent.locks.ReentrantLock.unlock(): Unit & Impure;
+    pub def unlock(lock: Concurrent/ReentrantLock.ReentrantLock): Result[Unit, ##java.lang.IllegalMonitorStateException] \ IO =
+        import java.util.concurrent.locks.ReentrantLock.unlock(): Unit \ IO;
         let ReentrantLock(l) = lock;
         try {
             Ok(unlock(l))

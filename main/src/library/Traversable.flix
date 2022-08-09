@@ -79,28 +79,28 @@ namespace Traversable {
     /// We use an Impure continuation so we can internally cast the `ef` of `mapAccumLeft` and not lose
     /// impurity information.
     ///
-    enum ContStateLeft[ef: Eff, ka: Type, s: Type, a: Type]((a -> s -> ka & Impure \ ef) -> s -> ka & Impure \ ef)
+    enum ContStateLeft[ef: Eff, ka: Type, s: Type, a: Type]((a -> s -> ka \ {IO, ef}) -> s -> ka \ {IO, ef})
 
     ///
     /// Helper function for ContStateLeft's implementations of `map` and `ap`.
     ///
-    def applyLeft1(ma: ContStateLeft[ef, ka, s, a], st: s, cont: a -> s -> ka & Impure \ ef): ka & Impure \ ef =
+    def applyLeft1(ma: ContStateLeft[ef, ka, s, a], st: s, cont: a -> s -> ka \ {IO, ef}): ka \ {IO, ef} =
         let ContStateLeft(f) = ma;
         f(cont, st)
 
     ///
     /// Returns the result (new state and answer) of applying `ma` to the initial state `st`.
     ///
-    def runContStateLeft(ma: ContStateLeft[ef, (s, a), s, a], st: s): (s, a) & Impure \ ef =
+    def runContStateLeft(ma: ContStateLeft[ef, (s, a), s, a], st: s): (s, a) \ {IO, ef} =
         let ContStateLeft(f) = ma;
-        let cont = (a, s) -> (s, a) as & Impure \ ef;
+        let cont = (a, s) -> (s, a) as \ {IO, ef};
         f(cont, st)
 
 
     instance Functor[ContStateLeft[ef1, ka, s]] {
         pub def map(f: a -> b & ef, ma: ContStateLeft[ef1, ka, s, a]): ContStateLeft[ef1, ka, s, b] & ef =
             upcast(() -> ContStateLeft((k, s) ->
-                applyLeft1(ma, s, (a, s1) -> k(f(a) as & Impure, s1))
+                applyLeft1(ma, s, (a, s1) -> k(f(a) as \ IO, s1))
             ))()
     }
 
@@ -112,7 +112,7 @@ namespace Traversable {
             upcast(() -> ContStateLeft((k, s) ->
                 applyLeft1(mf, s, (f, s1) ->
                     applyLeft1(ma, s1, (a, s2) ->
-                        k(f(a) as & Impure, s2)))
+                        k(f(a) as \ IO, s2)))
             ))()
     }
 
@@ -132,28 +132,28 @@ namespace Traversable {
     ///
     /// ContStateRight is exactly the same as ContStateLeft except the evaluation order of `ap` is flipped.
     ///
-    enum ContStateRight[ef: Eff, ka: Type, s: Type, a: Type]((a -> s -> ka & Impure \ ef) -> s -> ka & Impure \ ef)
+    enum ContStateRight[ef: Eff, ka: Type, s: Type, a: Type]((a -> s -> ka \ {IO, ef}) -> s -> ka \ {IO, ef})
 
     ///
     /// Helper function for ContStateRight's implementations of `map` and `ap`.
     ///
-    def applyRight1(ma: ContStateRight[ef, ka, s, a], st: s, cont: a -> s -> ka & Impure \ ef): ka & Impure \ ef =
+    def applyRight1(ma: ContStateRight[ef, ka, s, a], st: s, cont: a -> s -> ka \ {IO, ef}): ka \ {IO, ef} =
         let ContStateRight(f) = ma;
         f(cont, st)
 
     ///
     /// Returns the result (new state and answer) of applying `ma` to the initial state `st`.
     ///
-    def runContStateRight(ma: ContStateRight[ef, (s, a), s, a], st: s): (s, a) & Impure \ ef =
+    def runContStateRight(ma: ContStateRight[ef, (s, a), s, a], st: s): (s, a) \ {IO, ef} =
         let ContStateRight(f) = ma;
-        let cont = (a, s) -> (s, a) as & Impure \ ef;
+        let cont = (a, s) -> (s, a) as \ {IO, ef};
         f(cont, st)
 
 
     instance Functor[ContStateRight[ef1, ka, s]] {
         pub def map(f: a -> b & ef, ma: ContStateRight[ef1, ka, s, a]): ContStateRight[ef1, ka, s, b] & ef =
             upcast(() -> ContStateRight((k, s) ->
-                applyRight1(ma, s, (a, s1) -> k(f(a) as & Impure, s1))
+                applyRight1(ma, s, (a, s1) -> k(f(a) as \ IO, s1))
             ))()
     }
 
@@ -164,7 +164,7 @@ namespace Traversable {
             upcast(() -> ContStateRight((k, s) ->
                 applyRight1(ma, s, (a, s1) ->
                     applyRight1(mf, s1, (f, s2) ->
-                        k(f(a) as & Impure, s2)))
+                        k(f(a) as \ IO, s2)))
             ))()
     }
 

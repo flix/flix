@@ -16,13 +16,13 @@
  */
 
 @test
-def testNew01(): Concurrent/Channel.Mpmc & Impure = Concurrent/Channel.new(0)
+def testNew01(): Concurrent/Channel.Mpmc \ IO = Concurrent/Channel.new(0)
 
 @test
-def testNew02(): Concurrent/Channel.Mpmc & Impure = Concurrent/Channel.new(32)
+def testNew02(): Concurrent/Channel.Mpmc \ IO = Concurrent/Channel.new(32)
 
 @test
-def testGetPut01(): Bool & Impure =
+def testGetPut01(): Bool \ IO =
     let c = Concurrent/Channel.new(1);
     Concurrent/Channel.put(BoxedBool(true), c);
     match Concurrent/Channel.get(c) {
@@ -31,7 +31,7 @@ def testGetPut01(): Bool & Impure =
     }
 
 @test
-def testGetPut02(): Bool & Impure =
+def testGetPut02(): Bool \ IO =
     let c = Concurrent/Channel.new(1);
     Concurrent/Channel.put(BoxedInt32(123), c);
     match Concurrent/Channel.get(c) {
@@ -40,7 +40,7 @@ def testGetPut02(): Bool & Impure =
     }
 
 @test
-def testGetPut03(): Bool & Impure =
+def testGetPut03(): Bool \ IO =
     let c = Concurrent/Channel.new(1);
     Concurrent/Channel.put(BoxedValue("Hello World!" as ##java.lang.Object), c);
     match Concurrent/Channel.get(c) {
@@ -49,7 +49,7 @@ def testGetPut03(): Bool & Impure =
     }
 
 @test
-def testSelect01(): Bool & Impure =
+def testSelect01(): Bool \ IO =
     let c = Concurrent/Channel.new(1);
     Concurrent/Channel.put(BoxedInt32(2), c);
     match Concurrent/Channel.select([c], false) {
@@ -58,7 +58,7 @@ def testSelect01(): Bool & Impure =
     }
 
 @test
-def testSelect02(): Bool & Impure =
+def testSelect02(): Bool \ IO =
     let c = Concurrent/Channel.new(1);
     match Concurrent/Channel.select([c], true) {
         case Some(0, BoxedInt32(_)) => bug!("The channel should be empty")
@@ -67,7 +67,7 @@ def testSelect02(): Bool & Impure =
     }
 
 @test
-def testSelect03(): Bool & Impure =
+def testSelect03(): Bool \ IO =
     let cString = Concurrent/Channel.new(10);
     let cInt = Concurrent/Channel.new(0);
 
