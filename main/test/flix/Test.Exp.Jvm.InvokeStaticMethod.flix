@@ -32,7 +32,7 @@ namespace Test/Exp/Jvm/InvokeStaticMethod {
 
     @test
     def testInvokePureStaticMethod01(): Bool =
-        import static java.lang.String.valueOf(Bool): _ Pure;
+        import static java.lang.String.valueOf(Bool): _ \ Pure;
         valueOf(true) == "true"
 
     @test

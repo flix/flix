@@ -54,7 +54,7 @@ class TestRedundancy extends FunSuite with TestUtils {
            |    }
            |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.HiddenVarSym](result)
   }
 
@@ -265,7 +265,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |    }
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.ShadowedVar](result)
   }
 
@@ -296,7 +296,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |       x
         |   }
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.ShadowedVar](result)
   }
 
@@ -474,7 +474,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |       0
         |   }
         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
@@ -745,7 +745,7 @@ class TestRedundancy extends FunSuite with TestUtils {
            |    }
            |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.UnusedVarSym](result)
   }
 
@@ -760,7 +760,7 @@ class TestRedundancy extends FunSuite with TestUtils {
            |    }
            |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.UnusedVarSym](result)
   }
 
@@ -1108,7 +1108,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |def h(): Unit \ IO = f(fakePrint, discard "hello")
         |""".stripMargin
 
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.DiscardedPureValue](result)
   }
 
@@ -1124,7 +1124,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |
         |""".stripMargin
 
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.RedundantDiscard](result)
   }
 
@@ -1139,7 +1139,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |
         |""".stripMargin
 
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.RedundantDiscard](result)
   }
 

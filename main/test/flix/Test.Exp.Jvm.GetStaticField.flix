@@ -90,7 +90,7 @@ namespace Test/Exp/Jvm/GetStaticField {
 
     @test
     def testGetStaticPureField01(): Bool =
-        import static get flix.test.TestClass.STRING_FIELD: _ Pure as getField;
+        import static get flix.test.TestClass.STRING_FIELD: _ \ Pure as getField;
         getField() == "Hello World"
 
     @test

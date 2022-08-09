@@ -1041,7 +1041,7 @@ class TestTyper extends FunSuite with TestUtils {
         |}
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
   }
 
@@ -1065,7 +1065,7 @@ class TestTyper extends FunSuite with TestUtils {
         |}
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
   }
 
@@ -1159,7 +1159,7 @@ class TestTyper extends FunSuite with TestUtils {
         |pub def f(): Int32 = 123 as \ IO
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.ImpureDeclaredAsPure](result)
   }
 
@@ -1169,7 +1169,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def f(): Int32 & Pure = 123 as \ IO
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.ImpureDeclaredAsPure](result)
   }
 

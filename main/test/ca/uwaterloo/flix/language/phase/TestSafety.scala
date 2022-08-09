@@ -189,7 +189,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    def run(): Unit \ IO = ()
         |  }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.MissingThis](result)
   }
 
@@ -201,7 +201,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    def run(_this: Int32): Unit \ IO = ()
         |  }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.IllegalThisType](result)
   }
 
@@ -210,7 +210,7 @@ class TestSafety extends FunSuite with TestUtils {
       """
         |def f(): ##java.lang.Runnable \ IO = object ##java.lang.Runnable {}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.UnimplementedMethod](result)
   }
 
@@ -223,7 +223,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    def anExtraMethod(_this: ##java.lang.Runnable): Unit \ IO = ()
         |  }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.ExtraMethod](result)
   }
 
@@ -234,7 +234,7 @@ class TestSafety extends FunSuite with TestUtils {
         |  object ##flix.test.TestClassWithNonDefaultConstructor {
         |  }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.MissingPublicZeroArgConstructor](result)
   }
 
@@ -245,7 +245,7 @@ class TestSafety extends FunSuite with TestUtils {
         |  object ##flix.test.TestNonPublicInterface {
         |  }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.NonPublicClass](result)
   }
 
