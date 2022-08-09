@@ -47,7 +47,7 @@ namespace Test/Exp/Jvm/InvokeConstructor {
 
     @test
     def testInvokePureConstructor01(): ##java.lang.String =
-        import new java.lang.String(String): _ \ Pure as newString;
+        import new java.lang.String(String): _ \ {} as newString;
         newString("Hello World")
 
     @test
