@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
 import ca.uwaterloo.flix.util.Duration
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
-import java.io.{ByteArrayOutputStream, PrintStream}
+import java.io.{ByteArrayOutputStream, PrintStream, PrintWriter, StringWriter}
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.logging.{Level, Logger}
 import scala.util.matching.Regex
@@ -204,7 +204,7 @@ object Tester {
 
             // Compute elapsed time.
             val elapsed = System.nanoTime() - start
-            queue.add(TestEvent.Failure(sym, redirect.stdOut ++ redirect.stdErr, Duration(elapsed)))
+            queue.add(TestEvent.Failure(sym, redirect.stdOut ++ redirect.stdErr ++ fmtStackTrace(ex), Duration(elapsed)))
         }
     }
   }
@@ -275,6 +275,16 @@ object Tester {
     }
 
     allTests.filter(isMatch).toVector.sorted
+  }
+
+  /**
+    * Returns the stack trace of the given exception `ex` as a list of strings.
+    */
+  private def fmtStackTrace(ex: Throwable): Vector[String] = {
+    val sw = new StringWriter();
+    val pw = new PrintWriter(sw);
+    ex.printStackTrace(pw);
+    sw.toString.linesIterator.toVector
   }
 
   /**
