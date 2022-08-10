@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException}
+import ca.uwaterloo.flix.util.{InternalCompilerException, TimeOps}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -60,16 +60,20 @@ object Tester {
       while (true) {
         queue.poll() match {
           case TestEvent.TestSuccess(sym, elapsed) =>
-            terminal.writer().println(s"  - ${green(sym.toString)} ${magenta(elapsed.toString + "ms")}")
+            terminal.writer().println(s"  - ${green(sym.toString)} ${magenta(TimeOps.toMilliSeconds(elapsed) + "ms")}")
             terminal.flush()
+          case TestEvent.TestFailure(sym, elapsed) =>
+            terminal.writer().println(s"  - ${red(sym.toString)} ${magenta(TimeOps.toMilliSeconds(elapsed) + "ms")}")
+            terminal.flush()
+          case TestEvent.Finished() =>
+            return
           case _ => // nop
         }
       }
       throw InternalCompilerException("Unreachable")
-
     }
 
-    private def green(s: String): String = Console.GREEN + s + Console.RESET
+    private def green(s: String): String = flix.getFormatter.green(s)
 
     private def magenta(s: String): String = Console.MAGENTA + s + Console.RESET
 
@@ -92,7 +96,7 @@ object Tester {
     private def runTest(sym: Symbol.DefnSym, defn: () => AnyRef): Unit = {
       val start = System.nanoTime()
       try {
-        Thread.sleep((Math.random() * 100.0).toInt)
+        Thread.sleep((Math.random() * 10.0).toInt)
 
         queue.add(TestEvent.BeforeTest(sym))
 
