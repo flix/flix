@@ -156,10 +156,12 @@ object Tester {
     private def gray(s: String): String = fgColor(100, 100, 100, s)
 
     // TODO: Use flix.formatter
-    private def fgColor(r: Int, g: Int, b: Int, s: String): String = '\u001b' + s"[38;2;$r;$g;${b}m" + s + '\u001b' + "[0m"
+    private def fgColor(r: Int, g: Int, b: Int, s: String): String = escape() + s"[38;2;$r;$g;${b}m" + s + escape() + "[0m"
 
     // TODO: Use flix.formatter
-    private def bgColor(r: Int, g: Int, b: Int, s: String): String = '\u001b' + s"[42;2;$r;$g;${b}m" + s + '\u001b' + "[0m"
+    private def bgColor(r: Int, g: Int, b: Int, s: String): String = escape() + s"[42;2;$r;$g;${b}m" + s + escape() + "[0m"
+
+    private def escape(): String = "\u001b"
 
   }
 
