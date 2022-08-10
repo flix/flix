@@ -21,28 +21,39 @@ object Tester {
     * Returns a pair of (successful, failed)-tests.
     */
   def run(compilationResult: CompilationResult)(implicit flix: Flix): Unit = {
-
-    // Silence JLine warnings about terminal type.
-    Logger.getLogger("org.jline").setLevel(Level.OFF)
-
-    // Initialize the terminal.
-    implicit val terminal: Terminal = TerminalBuilder
-      .builder()
-      .system(true)
-      .build()
-
     val queue = new ConcurrentLinkedQueue[TestEvent]()
+    val reporter = new TestReporter(queue, compilationResult)
     val runner = new TestRunner(queue, compilationResult)
+    reporter.start()
     runner.start()
-    while (true) {
-      queue.poll() match {
-        case TestEvent.TestSuccess(sym, elapsed) =>
-          terminal.writer().println(s"  - ${green(sym.toString)} ${magenta(elapsed.toString + "ms")}")
-          terminal.flush()
-        case _ => // nop
+
+    reporter.join()
+    runner.join()
+  }
+
+  class TestReporter(queue: ConcurrentLinkedQueue[TestEvent], compilationResult: CompilationResult)(implicit flix: Flix) extends Thread {
+    override def run(): Unit = {
+
+      // Silence JLine warnings about terminal type.
+      Logger.getLogger("org.jline").setLevel(Level.OFF)
+
+      // Initialize the terminal.
+      implicit val terminal: Terminal = TerminalBuilder
+        .builder()
+        .system(true)
+        .build()
+
+      while (true) {
+        queue.poll() match {
+          case TestEvent.TestSuccess(sym, elapsed) =>
+            terminal.writer().println(s"  - ${green(sym.toString)} ${magenta(elapsed.toString + "ms")}")
+            terminal.flush()
+          case _ => // nop
+        }
       }
+      throw InternalCompilerException("Unreachable")
+
     }
-    throw InternalCompilerException("Unreachable")
   }
 
   private def green(s: String): String = Console.GREEN + s + Console.RESET
@@ -75,34 +86,10 @@ object Tester {
 
   }
 
-  /**
-    * Represents the outcome of a run of a suite of tests.
-    */
-  sealed trait OverallTestResult
-
-  object OverallTestResult {
-
-    /**
-      * Represents the outcome where all tests succeeded.
-      */
-    case object Success extends OverallTestResult
-
-    /**
-      * Represents the outcome where at least one test failed.
-      */
-    case object Failure extends OverallTestResult
-
-    /**
-      * Represents the outcome where no tests were run.
-      */
-    case object NoTests extends OverallTestResult
-  }
-
-
-  class TestRunner(queue: ConcurrentLinkedQueue[TestEvent], result: CompilationResult)(implicit flix: Flix) extends Thread {
+  class TestRunner(queue: ConcurrentLinkedQueue[TestEvent], compilationResult: CompilationResult)(implicit flix: Flix) extends Thread {
 
     override def run(): Unit = {
-      val results = result.getTests.toList.map {
+      val results = compilationResult.getTests.toList.map {
         case (sym, defn) => runTest(sym, defn)
 
       }
