@@ -73,7 +73,7 @@ object Tester {
 
       // Main event loop.
       var passed = 0
-      var ignore = 0
+      var skipped = 0
       var failed: List[(Symbol.DefnSym, List[String])] = Nil
 
       var finished = false
@@ -94,8 +94,8 @@ object Tester {
             writer.println(s"  ${redBg(" FAIL ")} $sym ${magenta(elapsed.fmt)}")
             terminal.flush()
 
-          case TestEvent.Ignore(sym) =>
-            ignore = ignore + 1
+          case TestEvent.Skip(sym) =>
+            skipped = skipped + 1
             writer.println(s"  ${yellowBg(" SKIP ")} $sym")
             terminal.flush()
 
@@ -120,7 +120,7 @@ object Tester {
             writer.println(s"Finished. " +
               s"Passed: ${green(passed.toString)}, " +
               s"Failed: ${red(failed.length.toString)}. " +
-              s"Ignored: ${yellow(ignore.toString)}. " +
+              s"Skipped: ${yellow(skipped.toString)}. " +
               s"Elapsed: ${magenta(elapsed.fmt)}.")
             terminal.flush()
             finished = true
@@ -173,10 +173,10 @@ object Tester {
       * Runs the given `test` emitting test events.
       */
     private def runTest(test: TestCase): Unit = test match {
-      case TestCase(sym, ignore, run) =>
+      case TestCase(sym, skip, run) =>
         // Check if the test case should be ignored.
-        if (ignore) {
-          queue.add(TestEvent.Ignore(sym))
+        if (skip) {
+          queue.add(TestEvent.Skip(sym))
           return
         }
 
@@ -277,17 +277,17 @@ object Tester {
     */
   private def getTestCases(compilationResult: CompilationResult): Vector[TestCase] =
     compilationResult.getTests.toVector.sortBy(_._1.toString).map {
-      case (sym, TestFn(_, ignore, run)) => TestCase(sym, ignore, run)
+      case (sym, TestFn(_, skip, run)) => TestCase(sym, skip, run)
     }
 
   /**
     * Represents a single test case.
     *
-    * @param sym    the Flix symbol.
-    * @param ignore true if the test case should be ignored.
-    * @param run    the code to run.
+    * @param sym  the Flix symbol.
+    * @param skip true if the test case should be skipped.
+    * @param run  the code to run.
     */
-  case class TestCase(sym: Symbol.DefnSym, ignore: Boolean, run: () => AnyRef)
+  case class TestCase(sym: Symbol.DefnSym, skip: Boolean, run: () => AnyRef)
 
   /**
     * A common super-type for test events.
@@ -314,7 +314,7 @@ object Tester {
     /**
       * A test event emitted to indicate that a test was ignored.
       */
-    case class Ignore(sym: Symbol.DefnSym) extends TestEvent
+    case class Skip(sym: Symbol.DefnSym) extends TestEvent
 
     /**
       * A test event emitted to indicates that testing has completed.

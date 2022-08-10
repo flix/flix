@@ -57,8 +57,8 @@ class CompilationResult(root: Root,
   def getTests: Map[Symbol.DefnSym, TestFn] = {
     defs.collect {
       case (sym, run) if root.defs(sym).ann.isTest =>
-        val ignore = root.defs(sym).ann.isIgnore
-        (sym -> TestFn(sym, ignore, run))
+        val skip = root.defs(sym).ann.isSkip
+        (sym -> TestFn(sym, skip, run))
     }
   }
 

@@ -2244,12 +2244,12 @@ object Weeder {
     case "Test" => Ast.Annotation.Test(ident.loc).toSuccess
     case "Deprecated" => Ast.Annotation.Deprecated(ident.loc).toSuccess
     case "Experimental" => Ast.Annotation.Experimental(ident.loc).toSuccess
-    case "Ignore" => Ast.Annotation.Ignore(ident.loc).toSuccess
     case "Internal" => Ast.Annotation.Internal(ident.loc).toSuccess
     case "Parallel" => Ast.Annotation.Parallel(ident.loc).toSuccess
     case "ParallelWhenPure" => Ast.Annotation.ParallelWhenPure(ident.loc).toSuccess
     case "Lazy" => Ast.Annotation.Lazy(ident.loc).toSuccess
     case "LazyWhenPure" => Ast.Annotation.LazyWhenPure(ident.loc).toSuccess
+    case "Skip" => Ast.Annotation.Skip(ident.loc).toSuccess
     case "Space" => Ast.Annotation.Space(ident.loc).toSuccess
     case "Time" => Ast.Annotation.Time(ident.loc).toSuccess
     case "Unsafe" => Ast.Annotation.Unsafe(ident.loc).toSuccess

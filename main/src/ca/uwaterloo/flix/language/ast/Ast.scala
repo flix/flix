@@ -124,16 +124,6 @@ object Ast {
       override def toString: String = "@Internal"
     }
 
-    /**
-      * An AST node that represents an `@Ignore` annotation.
-      *
-      * A function marked with `Ignore` is ignored by the test framework (but still reported).
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Ignore(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Ignore"
-    }
 
     /**
       * An annotation that marks a function definition as using parallel evaluation.
@@ -169,6 +159,17 @@ object Ast {
       */
     case class LazyWhenPure(loc: SourceLocation) extends Annotation {
       override def toString: String = "@LazyWhenPure"
+    }
+
+    /**
+      * An AST node that represents a `@Skip` annotation.
+      *
+      * A function marked with `Skip` is skipped by the test framework.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Skip(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Skip"
     }
 
     /**
@@ -232,9 +233,9 @@ object Ast {
     def isBenchmark: Boolean = annotations exists (_.isInstanceOf[Annotation.Benchmark])
 
     /**
-      * Returns `true` if `this` sequence contains the `@Ignore` annotation.
+      * Returns `true` if `this` sequence contains the `@Skip` annotation.
       */
-    def isIgnore: Boolean = annotations exists (_.isInstanceOf[Annotation.Ignore])
+    def isSkip: Boolean = annotations exists (_.isInstanceOf[Annotation.Skip])
 
     /**
       * Returns `true` if `this` sequence contains the `@Test` annotation.
