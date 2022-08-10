@@ -44,7 +44,7 @@ namespace Environment {
     /// Returns the value of the specified environment variable.
     ///
     pub def getVar(name: String): Option[String] =
-        import static java.lang.System.getenv(String): String & Pure;
+        import static java.lang.System.getenv(String): String \ {};
         try {
             let result = getenv(name);
             Object.toOption(result)
@@ -56,7 +56,7 @@ namespace Environment {
     /// Returns the system property by name.
     ///
     pub def getProp(name: String): Option[String] =
-        import static java.lang.System.getProperty(String): String & Pure;
+        import static java.lang.System.getProperty(String): String \ {};
         try {
             let result = getProperty(name);
             Object.toOption(result)
@@ -83,21 +83,21 @@ namespace Environment {
     ///  Returns the file separator
     ///
     pub def getFileSeparator(): String =
-        import static get java.io.File.separator: String & Pure as sep;
+        import static get java.io.File.separator: String \ {} as sep;
         sep()
 
     ///
     /// Returns the path separator
     ///
     pub def getPathSeparator(): String =
-        import static get java.io.File.pathSeparator: String & Pure as pathSep;
+        import static get java.io.File.pathSeparator: String \ {} as pathSep;
         pathSep()
 
     ///
     /// Returns the system line separator
     ///
     pub def getLineSeparator(): String =
-        import static java.lang.System.lineSeparator(): String & Pure;
+        import static java.lang.System.lineSeparator(): String \ {};
         lineSeparator()
 
     ///
@@ -126,15 +126,15 @@ namespace Environment {
     /// The returned value is never less than one.
     ///
     pub def getVirtualProcessors(): Int32 =
-        import static java.lang.Runtime.getRuntime(): ##java.lang.Runtime & Pure;
-        import java.lang.Runtime.availableProcessors(): Int32 & Pure;
+        import static java.lang.Runtime.getRuntime(): ##java.lang.Runtime \ {};
+        import java.lang.Runtime.availableProcessors(): Int32 \ {};
         (getRuntime() |> availableProcessors)
 
     def getEnvHelper(iter: ##java.util.Iterator, m: Map[String, String]): Map[String, String] =
-        import java.util.Iterator.hasNext(): Bool & Pure;
-        import java.util.Iterator.next(): ##java.lang.Object & Pure;
-        import java.util.Map$Entry.getKey(): ##java.lang.Object & Pure;
-        import java.util.Map$Entry.getValue(): ##java.lang.Object & Pure;
+        import java.util.Iterator.hasNext(): Bool \ {};
+        import java.util.Iterator.next(): ##java.lang.Object \ {};
+        import java.util.Map$Entry.getKey(): ##java.lang.Object \ {};
+        import java.util.Map$Entry.getValue(): ##java.lang.Object \ {};
         if (hasNext(iter))
             let entry = next(iter) as ##java.util.Map$Entry;
             let key = getKey(entry) as String;

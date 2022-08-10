@@ -63,60 +63,60 @@ instance SemiGroup[Nec[a]] {
 }
 
 instance Functor[Nec] {
-    pub def map(f: a -> b & ef, c: Nec[a]): Nec[b] & ef = Nec.map(f, c)
+    pub def map(f: a -> b \ ef, c: Nec[a]): Nec[b] \ ef = Nec.map(f, c)
 }
 
 instance Applicative[Nec] {
     pub def point(x: a) : Nec[a] = Nec.singleton(x)
-    pub def ap(f: Nec[a -> b & ef], x: Nec[a]) : Nec[b] & ef = Nec.ap(f, x)
+    pub def ap(f: Nec[a -> b \ ef], x: Nec[a]) : Nec[b] \ ef = Nec.ap(f, x)
 }
 
 instance Monad[Nec] {
-    pub def flatMap(f: a -> Nec[b] & ef, x : Nec[a]) : Nec[b] & ef = Nec.flatMap(f, x)
+    pub def flatMap(f: a -> Nec[b] \ ef, x : Nec[a]) : Nec[b] \ ef = Nec.flatMap(f, x)
 }
 
 instance MonadZip[Nec] {
-    pub def zipWith(f: (a, b) -> c & ef, xs: Nec[a], ys: Nec[b]): Nec[c] & ef = Nec.zipWith(f, xs, ys)
-    pub def zipWithA(f: (a, b) -> f[c] & ef, xs: Nec[a], ys: Nec[b]): f[Nec[c]] & ef with Applicative[f] = Nec.zipWithA(f, xs, ys)
+    pub def zipWith(f: (a, b) -> c \ ef, xs: Nec[a], ys: Nec[b]): Nec[c] \ ef = Nec.zipWith(f, xs, ys)
+    pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Nec[a], ys: Nec[b]): f[Nec[c]] \ ef with Applicative[f] = Nec.zipWithA(f, xs, ys)
     pub override def zip(xs: Nec[a], ys: Nec[b]): Nec[(a, b)] = Nec.zip(xs, ys)
     pub override def unzip(xs: Nec[(a, b)]): (Nec[a], Nec[b]) = Nec.unzip(xs)
 }
 
 instance Foldable[Nec] {
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, c: Nec[a]): b & ef = Nec.foldLeft(f, s, c)
-    pub def foldRight(f: (a, b) -> b & ef, s: b, c: Nec[a]): b & ef = Nec.foldRight(f, s, c)
-    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, c: Nec[a]): b & ef = Nec.foldRightWithCont(f, s, c)
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldLeft(f, s, c)
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldRight(f, s, c)
+    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldRightWithCont(f, s, c)
     override pub def iterator(r: Region[r], c: Nec[a]): Iterator[a, r] \ Write(r) = Nec.iterator(r, c)
 }
 
 instance UnorderedFoldable[Nec] {
-    pub def foldMap(f: a -> b & ef, c: Nec[a]): b & ef with CommutativeMonoid[b] = Nec.foldMap(f, c)
+    pub def foldMap(f: a -> b \ ef, c: Nec[a]): b \ ef with CommutativeMonoid[b] = Nec.foldMap(f, c)
     override pub def isEmpty(_: Nec[a]): Bool = false
-    override pub def exists(f: a -> Bool & ef, c: Nec[a]): Bool & ef = Nec.exists(f, c)
-    override pub def forall(f: a -> Bool & ef, c: Nec[a]): Bool & ef = Nec.forall(f, c)
+    override pub def exists(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.exists(f, c)
+    override pub def forall(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.forall(f, c)
     override pub def memberOf(x: a, c: Nec[a]): Bool with Eq[a] = Nec.memberOf(x, c)
 }
 
 instance Traversable[Nec] {
-    pub def traverse(f: a -> m[b] & ef, t: Nec[a]): m[Nec[b]] & ef with Applicative[m] = Nec.traverse(f, t)
+    pub def traverse(f: a -> m[b] \ ef, t: Nec[a]): m[Nec[b]] \ ef with Applicative[m] = Nec.traverse(f, t)
     pub override def sequence(t: Nec[m[a]]): m[Nec[a]] with Applicative[m] = Nec.sequence(t)
 }
 
 instance Reducible[Nec] {
-    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nec[a]): b \ {ef1, ef2} = Nec.reduceLeftTo(f, g, l)
-    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, l: Nec[a]): b \ {ef1, ef2} = Nec.reduceRightTo(f, g, l)
+    pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, l: Nec[a]): b \ {ef1, ef2} = Nec.reduceLeftTo(f, g, l)
+    pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, l: Nec[a]): b \ {ef1, ef2} = Nec.reduceRightTo(f, g, l)
     override pub def head(l: Nec[a]): a = Nec.head(l)
     override pub def last(l: Nec[a]): a = Nec.last(l)
     override pub def init(l: Nec[a]): List[a] = Nec.init(l)
     override pub def tail(l: Nec[a]): List[a] = Nec.tail(l)
-    override pub def exists(f: a -> Bool & ef, l: Nec[a]): Bool & ef = Nec.exists(f, l)
-    override pub def forall(f: a -> Bool & ef, l: Nec[a]): Bool & ef = Nec.forall(f, l)
-    override pub def find(f: a -> Bool & ef, l: Nec[a]): Option[a] & ef = Nec.find(f, l)
-    override pub def findLeft(f: a -> Bool & ef, l: Nec[a]): Option[a] & ef = Nec.findLeft(f, l)
-    override pub def findRight(f: a -> Bool & ef, l: Nec[a]): Option[a] & ef = Nec.findRight(f, l)
+    override pub def exists(f: a -> Bool \ ef, l: Nec[a]): Bool \ ef = Nec.exists(f, l)
+    override pub def forall(f: a -> Bool \ ef, l: Nec[a]): Bool \ ef = Nec.forall(f, l)
+    override pub def find(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.find(f, l)
+    override pub def findLeft(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.findLeft(f, l)
+    override pub def findRight(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.findRight(f, l)
     override pub def memberOf(a: a, l: Nec[a]): Bool with Eq[a] = Nec.memberOf(a, l)
-    override pub def dropWhile(f: a -> Bool & ef, l: Nec[a]): List[a] & ef = Nec.dropWhileLeft(f, l)
-    override pub def takeWhile(f: a -> Bool & ef, l: Nec[a]): List[a] & ef = Nec.takeWhileLeft(f, l)
+    override pub def dropWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.dropWhileLeft(f, l)
+    override pub def takeWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.takeWhileLeft(f, l)
     override pub def toArray(r: Region[r], l: Nec[a]): Array[a, r] \ Write(r) = Nec.toArray(r, l)
     override pub def iterator(r: Region[r], l: Nec[a]): Iterator[a, r] \ Write(r) = Nec.iterator(r, l)
     override pub def toList(l: Nec[a]): List[a] = Nec.toList(l)
@@ -319,12 +319,12 @@ namespace Nec {
     ///
     /// Alias for `findLeft`.
     ///
-    pub def find(f: a -> Bool & ef, c: Nec[a]): Option[a] & ef = findLeft(f, c)
+    pub def find(f: a -> Bool \ ef, c: Nec[a]): Option[a] \ ef = findLeft(f, c)
 
     ///
     /// Optionally returns the first element of `c` that satisfies the predicate `f` when searching from left to right.
     ///
-    pub def findLeft(f: a -> Bool & ef, c: Nec[a]): Option[a] & ef = match viewLeft(c) {
+    pub def findLeft(f: a -> Bool \ ef, c: Nec[a]): Option[a] \ ef = match viewLeft(c) {
         case OneLeft(x)      => if (f(x)) Some(x) else None
         case SomeLeft(x, rs) => if (f(x)) Some(x) else findLeft(f, rs)
     }
@@ -332,7 +332,7 @@ namespace Nec {
     ///
     /// Optionally returns the first element of `c` that satisfies the predicate `f` when searching from right to left.
     ///
-    pub def findRight(f: a -> Bool & ef, c: Nec[a]): Option[a] & ef = match viewRight(c) {
+    pub def findRight(f: a -> Bool \ ef, c: Nec[a]): Option[a] \ ef = match viewRight(c) {
         case OneRight(x)      => if (f(x)) Some(x) else None
         case SomeRight(rs, x) => if (f(x)) Some(x) else findRight(f, rs)
     }
@@ -358,8 +358,8 @@ namespace Nec {
     ///
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
-    pub def map(f: a -> b & ef, c: Nec[a]): Nec[b] & ef =
-        def loop(c1: Nec[a], k: Nec[b] -> Nec[b] & ef) = match viewLeft(c1) {
+    pub def map(f: a -> b \ ef, c: Nec[a]): Nec[b] \ ef =
+        def loop(c1: Nec[a], k: Nec[b] -> Nec[b] \ ef) = match viewLeft(c1) {
             case OneLeft(x)      => {let a = f(x); k(NecOne(a))}
             case SomeLeft(x, rs) => loop(rs, ks -> {let a = f(x); k(cons(a, ks))})
         };
@@ -370,8 +370,8 @@ namespace Nec {
     ///
     /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
     ///
-    pub def mapWithIndex(f: (a, Int32) -> b & ef, c: Nec[a]): Nec[b] & ef =
-        def loop(c1: Nec[a], i: Int32, k: Nec[b] -> Nec[b] & ef) = match viewLeft(c1) {
+    pub def mapWithIndex(f: (a, Int32) -> b \ ef, c: Nec[a]): Nec[b] \ ef =
+        def loop(c1: Nec[a], i: Int32, k: Nec[b] -> Nec[b] \ ef) = match viewLeft(c1) {
             case OneLeft(x)      => {let a = f(x, i); k(NecOne(a))}
             case SomeLeft(x, rs) => loop(rs, i+1, ks -> {let a = f(x, i); k(cons(a, ks))})
         };
@@ -382,8 +382,8 @@ namespace Nec {
     /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
     /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
     ///
-    pub def ap(f: Nec[a -> b & ef], c: Nec[a]) : Nec[b] & ef =
-        def loop(f1: Nec[a -> b & ef], k: Nec[b] -> Nec[b] & ef) = match viewLeft(f1) {
+    pub def ap(f: Nec[a -> b \ ef], c: Nec[a]) : Nec[b] \ ef =
+        def loop(f1: Nec[a -> b \ ef], k: Nec[b] -> Nec[b] \ ef) = match viewLeft(f1) {
             case OneLeft(f2)      => k(map(f2, c))
             case SomeLeft(f2, rs) => loop(rs, ks -> k(map(f2, c) `append` ks))
         };
@@ -392,8 +392,8 @@ namespace Nec {
     ///
     /// Returns the result of applying `f` to every element in `c` and concatenating the results.
     ///
-    pub def flatMap(f: a -> Nec[b] & ef, c: Nec[a]): Nec[b] & ef =
-        def loop(c1: Nec[a], k: Nec[b] -> Nec[b] & ef) = match viewLeft(c1) {
+    pub def flatMap(f: a -> Nec[b] \ ef, c: Nec[a]): Nec[b] \ ef =
+        def loop(c1: Nec[a], k: Nec[b] -> Nec[b] \ ef) = match viewLeft(c1) {
             case OneLeft(x)      => {let a = f(x); k(a)}
             case SomeLeft(x, rs) => loop(rs, ks -> {let a = f(x); k(append(a, ks))})
         };
@@ -478,7 +478,7 @@ namespace Nec {
     ///
     /// Returns the number of elements in `c` that satisfy the predicate `f`.
     ///
-    pub def count(f: a -> Bool & ef, c: Nec[a]): Int32 & ef =
+    pub def count(f: a -> Bool \ ef, c: Nec[a]): Int32 \ ef =
         def loop(c1: Nec[a], acc: Int32) = match viewLeft(c1) {
             case OneLeft(x)      => if (f(x)) acc + 1 else acc
             case SomeLeft(x, rs) => loop(rs, if (f(x)) acc + 1 else acc)
@@ -494,7 +494,7 @@ namespace Nec {
     ///
     /// Returns the sum of all elements in the Nec `c` according to the function `f`.
     ///
-    pub def sumWith(f: a -> Int32 & ef, c: Nec[a]): Int32 & ef =
+    pub def sumWith(f: a -> Int32 \ ef, c: Nec[a]): Int32 \ ef =
         Foldable.sumWith(f, c)
 
     ///
@@ -506,7 +506,7 @@ namespace Nec {
     ///
     /// Returns the product of all elements in the list `l` according to the function `f`.
     ///
-    pub def productWith(f: a -> Int32 & ef, c: Nec[a]): Int32 & ef =
+    pub def productWith(f: a -> Int32 \ ef, c: Nec[a]): Int32 \ ef =
         Foldable.productWith(f, c)
 
     ///
@@ -522,7 +522,7 @@ namespace Nec {
     ///
     /// Returns `false` if `c` is empty.
     ///
-    pub def exists(f: a -> Bool & ef, c: Nec[a]): Bool & ef = match viewLeft(c) {
+    pub def exists(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = match viewLeft(c) {
         case OneLeft(x)      => f(x)
         case SomeLeft(x, rs) => if (f(x)) true else exists(f, rs)
     }
@@ -532,7 +532,7 @@ namespace Nec {
     ///
     /// Returns `true` if `c` is empty.
     ///
-    pub def forall(f: a -> Bool & ef, c: Nec[a]): Bool & ef = match viewLeft(c) {
+    pub def forall(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = match viewLeft(c) {
         case OneLeft(x)      => f(x)
         case SomeLeft(x, rs) => if (not f(x)) false else forall(f, rs)
     }
@@ -540,8 +540,8 @@ namespace Nec {
     ///
     /// Returns a list of every element in `c` that satisfies the predicate `f`.
     ///
-    pub def filter(f: a -> Bool & ef, c: Nec[a]): List[a] & ef =
-        def loop(c1: Nec[a], k: List[a] -> List[a] & ef) = match viewLeft(c1) {
+    pub def filter(f: a -> Bool \ ef, c: Nec[a]): List[a] \ ef =
+        def loop(c1: Nec[a], k: List[a] -> List[a] \ ef) = match viewLeft(c1) {
             case OneLeft(x)      => if (f(x)) k(x :: Nil) else k(Nil)
             case SomeLeft(x, rs) => if (f(x)) loop(rs, ks -> k(x :: ks)) else loop(rs, k)
         };
@@ -559,7 +559,7 @@ namespace Nec {
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, acc: b, c: Nec[a]): b & ef = match viewLeft(c) {
+    pub def foldLeft(f: (b, a) -> b \ ef, acc: b, c: Nec[a]): b \ ef = match viewLeft(c) {
         case OneLeft(x)      => f(acc, x)
         case SomeLeft(x, rs) => {
             let b = f(acc, x);
@@ -572,7 +572,7 @@ namespace Nec {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, c: Nec[a]): b & ef = match viewRight(c) {
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Nec[a]): b \ ef = match viewRight(c) {
         case OneRight(x)      => f(x, s)
         case SomeRight(rs, x) => {
             let b = f(x, s);
@@ -586,7 +586,7 @@ namespace Nec {
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, c: Nec[a]): b & ef = match viewLeft(c) {
+    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, c: Nec[a]): b \ ef = match viewLeft(c) {
         case OneLeft(x)      => f(x, upcast(_ -> z))
         case SomeLeft(x, rs) => f(x, _ -> foldRightWithCont(f, z, rs))
     }
@@ -594,13 +594,13 @@ namespace Nec {
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
-    pub def foldMap(f: a -> b & ef, c: Nec[a]): b & ef with Monoid[b] =
+    pub def foldMap(f: a -> b \ ef, c: Nec[a]): b \ ef with Monoid[b] =
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), c)
 
     ///
     /// Collects the results of applying the partial function `f` to every element in `c`.
     ///
-    pub def filterMap(f: a -> Option[b] & ef, c: Nec[a]): List[b] & ef =
+    pub def filterMap(f: a -> Option[b] \ ef, c: Nec[a]): List[b] \ ef =
         def loop(l, k) = match viewLeft(l) {
             case OneLeft(x)      => match (f(x)) {
                 case Some(a) => k(a :: Nil)
@@ -618,7 +618,7 @@ namespace Nec {
     ///
     /// Returns `None` if f(c) for every element of c is `None`.
     ///
-    pub def findMap(f: a -> Option[b] & ef, c: Nec[a]): Option[b] & ef = match viewLeft(c) {
+    pub def findMap(f: a -> Option[b] \ ef, c: Nec[a]): Option[b] \ ef = match viewLeft(c) {
         case OneLeft(x)      => f(x)
         case SomeLeft(x, rs) => match f(x) {
             case Some(v) => Some(v)
@@ -647,8 +647,8 @@ namespace Nec {
     ///
     /// If either `c1` or `c2` becomes depleted, then no further elements are added to the resulting Nec.
     ///
-    pub def zipWith(f: (a, b) -> c & ef, c1: Nec[a], c2: Nec[b]): Nec[c] & ef =
-        def loop(nec1: Nec[a], nec2: Nec[b], k: Nec[c] -> Nec[c] & ef) = match (viewLeft(nec1), viewLeft(nec2)) {
+    pub def zipWith(f: (a, b) -> c \ ef, c1: Nec[a], c2: Nec[b]): Nec[c] \ ef =
+        def loop(nec1: Nec[a], nec2: Nec[b], k: Nec[c] -> Nec[c] \ ef) = match (viewLeft(nec1), viewLeft(nec2)) {
             case (OneLeft(x), OneLeft(y))           => {let a = f(x, y); k(singleton(a))}
             case (OneLeft(x), SomeLeft(y, _))       => {let a = f(x, y); k(singleton(a))}
             case (SomeLeft(x, _), OneLeft(y))       => {let a = f(x, y); k(singleton(a))}
@@ -684,7 +684,7 @@ namespace Nec {
     ///
     /// Generalize `zipWith` to an applicative functor `f`.
     ///
-    pub def zipWithA(f: (a, b) -> f[c] & ef, xs: Nec[a], ys: Nec[b]): f[Nec[c]] & ef with Applicative[f] =
+    pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Nec[a], ys: Nec[b]): f[Nec[c]] \ ef with Applicative[f] =
         def loop(v1, v2, k) = match (v1, v2) {
             case (SomeLeft(x, c1), SomeLeft(y, c2)) => loop(viewLeft(c1), viewLeft(c2), ks -> k(cons <$> f(x,y) <*> ks))
             case (SomeLeft(x, _), OneLeft(y))       => k(singleton <$> f(x,y))
@@ -697,7 +697,7 @@ namespace Nec {
     /// `mapAccumLeft` is a stateful version of `map`. The accumulating parameter `s` is updated at each
     /// step in a left-to-right traversal.
     ///
-    pub def mapAccumLeft(f: (s, a) -> (s, b) & ef, start: s, c: Nec[a]): (s, Nec[b]) & ef =
+    pub def mapAccumLeft(f: (s, a) -> (s, b) \ ef, start: s, c: Nec[a]): (s, Nec[b]) \ ef =
         def loop(s1, c1, k) = match viewLeft(c1) {
             case OneLeft(x)      => {
                 let (s2, x1) = f(s1, x);
@@ -714,7 +714,7 @@ namespace Nec {
     /// `mapAccumRight` is a stateful version of `map`. The accumulating parameter `s` is updated at each
     /// step in a right-to-left traversal.
     ///
-    pub def mapAccumRight(f: (s, a) -> (s, b) & ef, start: s, c: Nec[a]): (s, Nec[b]) & ef =
+    pub def mapAccumRight(f: (s, a) -> (s, b) \ ef, start: s, c: Nec[a]): (s, Nec[b]) \ ef =
         def loop(s1, c1, k) = match viewRight(c1) {
             case OneRight(x)      => {
                 let (s2, x1) = f(s1, x);
@@ -730,7 +730,7 @@ namespace Nec {
     ///
     /// Applies `f` to every element of `c`.
     ///
-    pub def foreach(f: a -> Unit & ef, c: Nec[a]): Unit & ef = match viewLeft(c) {
+    pub def foreach(f: a -> Unit \ ef, c: Nec[a]): Unit \ ef = match viewLeft(c) {
         case OneLeft(x)      => f(x)
         case SomeLeft(x, rs) => f(x); foreach(f, rs)
     }
@@ -903,7 +903,7 @@ namespace Nec {
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the
     /// Nec `c`.
     ///
-    pub def traverse(f: a -> m[b] & ef, c: Nec[a]): m[Nec[b]] & ef with Applicative[m] =
+    pub def traverse(f: a -> m[b] \ ef, c: Nec[a]): m[Nec[b]] \ ef with Applicative[m] =
         def loop(l2, k) = match viewLeft(l2) {
             case OneLeft(x)      => k(NecOne <$> f(x))
             case SomeLeft(x, rs) => loop(rs, ks -> k(consA(f(x), ks)))
@@ -921,7 +921,7 @@ namespace Nec {
     /// Returns the concatenation of the string representation
     /// of each element in `c` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, c: Nec[a]): String & ef =
+    pub def joinWith(f: a -> String \ ef, sep: String, c: Nec[a]): String \ ef =
         Foldable.joinWith(f, sep, c)
 
 
@@ -938,7 +938,7 @@ namespace Nec {
     ///
     /// That is, the result is of the form: `f(...f(f(x1, x2), x3)..., xn)`
     ///
-    pub def reduceLeft(f: (a, a) -> a & ef, c: Nec[a]): a & ef = match viewLeft(c) {
+    pub def reduceLeft(f: (a, a) -> a \ ef, c: Nec[a]): a \ ef = match viewLeft(c) {
         case OneLeft(x)      => x
         case SomeLeft(x, xs) => foldLeft(f, x, xs)
     }
@@ -948,7 +948,7 @@ namespace Nec {
     ///
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     ///
-    pub def reduceRight(f: (a, a) -> a & ef, c: Nec[a]): a & ef = match viewRight(c) {
+    pub def reduceRight(f: (a, a) -> a \ ef, c: Nec[a]): a \ ef = match viewRight(c) {
         case OneRight(x)      => x
         case SomeRight(xs, x) => foldRight((a, acc) -> f(a, acc), x, xs)
     }
@@ -958,7 +958,7 @@ namespace Nec {
     /// Applies `g` to the initial element of `c` and combines it
     /// with the remainder of `c` using `f` going from left to right.
     ///
-    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, c: Nec[a]): b \ {ef1, ef2} = match viewLeft(c) {
+    pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, c: Nec[a]): b \ {ef1, ef2} = match viewLeft(c) {
         case OneLeft(x)      => g(x)
         case SomeLeft(x, xs) => foldLeft(f, g(x), xs)
     }
@@ -968,7 +968,7 @@ namespace Nec {
     /// Applies `g` to the initial element of `c` and combines it
     /// with the remainder of `c` using `f` going from right to left.
     ///
-    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, c: Nec[a]): b \ {ef1, ef2} = match viewRight(c) {
+    pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, c: Nec[a]): b \ {ef1, ef2} = match viewRight(c) {
         case OneRight(x)      => g(x)
         case SomeRight(xs, x) => foldRight((a, acc) -> f(a, acc), g(x), xs)
     }
@@ -976,7 +976,7 @@ namespace Nec {
     ///
     /// Returns `c` without the longest prefix that satisfies the predicate `f`.
     ///
-    pub def dropWhileLeft(f: a -> Bool & ef, c: Nec[a]): List[a] & ef =
+    pub def dropWhileLeft(f: a -> Bool \ ef, c: Nec[a]): List[a] \ ef =
         def loop(c1) = match viewLeft(c1) {
             case OneLeft(x)      => if (f(x)) Nil else (x :: Nil)
             case SomeLeft(x, rs) => if (f(x)) loop(rs) else x :: toList(rs)
@@ -986,7 +986,7 @@ namespace Nec {
     ///
     /// Returns `c` without the longest sufffix that satisfies the predicate `f`.
     ///
-    pub def dropWhileRight(f: a -> Bool & ef, c: Nec[a]): List[a] & ef =
+    pub def dropWhileRight(f: a -> Bool \ ef, c: Nec[a]): List[a] \ ef =
         def loop(c1) = match viewRight(c1) {
             case OneRight(x)      => if (f(x)) Nil else (x :: Nil)
             case SomeRight(rs, x) => if (f(x)) loop(rs) else toList(rs `snoc` x)
@@ -996,7 +996,7 @@ namespace Nec {
     ///
     /// Returns the longest prefix of `c` that satisfies the predicate `f`.
     ///
-    pub def takeWhileLeft(f: a -> Bool & ef, c: Nec[a]): List[a] & ef =
+    pub def takeWhileLeft(f: a -> Bool \ ef, c: Nec[a]): List[a] \ ef =
         def loop(c1, k) = match viewLeft(c1) {
             case OneLeft(x)      => if (f(x)) k(x :: Nil) else k(Nil)
             case SomeLeft(x, rs) => if (f(x)) loop(rs, ks -> k(x :: ks)) else k(Nil)
@@ -1007,7 +1007,7 @@ namespace Nec {
     ///
     /// Returns the longest prefix of `c` that satisfies the predicate `f`.
     ///
-    pub def takeWhileRight(f: a -> Bool & ef, c: Nec[a]): List[a] & ef =
+    pub def takeWhileRight(f: a -> Bool \ ef, c: Nec[a]): List[a] \ ef =
         def loop(c1, ac) = match viewRight(c1) {
             case OneRight(x)      => if (f(x)) (x :: ac) else ac
             case SomeRight(rs, x) => if (f(x)) loop(rs, x :: ac) else ac

@@ -40,7 +40,7 @@ namespace Test/Def/Generalization {
     def testGen13(): (a -> a) -> (a -> a) = x -> x
 
     @test
-    def testGen14(): (a -> a & Impure) -> (a -> a & Impure) = x -> x
+    def testGen14(): (a -> a \ IO) -> (a -> a \ IO) = x -> x
 
     @test
     def testGen15(): (a -> a & e) -> (a -> a & e) = x -> x
@@ -158,7 +158,7 @@ namespace Test/Def/Generalization {
     def testLeq26(): (Unit -> b) -> b = f -> f()
 
     @test
-    def testLeq27(): (Unit -> b & Impure) -> b & Impure = f -> f()
+    def testLeq27(): (Unit -> b \ IO) -> b \ IO = f -> f()
 
     @test
     def testLeq28(): (Unit -> b & (e1 and e2 and e3)) -> b & (e3 and e2 and e1) = f -> f()

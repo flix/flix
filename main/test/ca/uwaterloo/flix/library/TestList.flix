@@ -2016,13 +2016,13 @@ def toMapWith05(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def foreach01(): Bool & Impure =
+def foreach01(): Bool \ IO =
     let r = ref 21;
     List.foreach(x -> r := x, Nil);
     21 == deref r
 
 @test
-def foreach02(): Bool & Impure =
+def foreach02(): Bool \ IO =
     let r = ref 21;
     List.foreach(x -> r := x, 1 :: 2 :: 3 :: Nil);
     3 == deref r
@@ -2260,7 +2260,7 @@ def unfold06(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def unfoldWithIter01(): Bool & Impure =
+def unfoldWithIter01(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (true)
@@ -2273,7 +2273,7 @@ def unfoldWithIter01(): Bool & Impure =
     List.unfoldWithIter(step) == Nil
 
 @test
-def unfoldWithIter02(): Bool & Impure =
+def unfoldWithIter02(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x > 0)
@@ -2286,7 +2286,7 @@ def unfoldWithIter02(): Bool & Impure =
     List.unfoldWithIter(step) == '0' :: Nil
 
 @test
-def unfoldWithIter03(): Bool & Impure =
+def unfoldWithIter03(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x > 1)
@@ -2299,7 +2299,7 @@ def unfoldWithIter03(): Bool & Impure =
     List.unfoldWithIter(step) == '0' :: '1' :: Nil
 
 @test
-def unfoldWithIter04(): Bool & Impure =
+def unfoldWithIter04(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x >= 10)
@@ -2312,7 +2312,7 @@ def unfoldWithIter04(): Bool & Impure =
     List.unfoldWithIter(step) == '0' :: '1' :: '2' :: '3' :: '4' :: '5' :: '6' :: '7' :: '8' :: '9' :: Nil
 
 @test
-def unfoldWithIter05(): Bool & Impure =
+def unfoldWithIter05(): Bool \ IO =
     let x = ref 5;
     let step = () ->
         if (deref x >= 10)
@@ -2325,7 +2325,7 @@ def unfoldWithIter05(): Bool & Impure =
     List.unfoldWithIter(step) == '5' :: '6' :: '7' :: '8' :: '9' :: Nil
 
 @test
-def unfoldWithIter06(): Bool & Impure =
+def unfoldWithIter06(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x >= 10)
@@ -2343,7 +2343,7 @@ def unfoldWithIter06(): Bool & Impure =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def unfoldWithOkIter01(): Bool & Impure =
+def unfoldWithOkIter01(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (true) {
@@ -2354,7 +2354,7 @@ def unfoldWithOkIter01(): Bool & Impure =
     List.unfoldWithOkIter(step): Result[_, Unit] == Ok(Nil)
 
 @test
-def unfoldWithOkIter02(): Bool & Impure =
+def unfoldWithOkIter02(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (true) {
@@ -2365,7 +2365,7 @@ def unfoldWithOkIter02(): Bool & Impure =
     List.unfoldWithOkIter(step) == Err(0)
 
 @test
-def unfoldWithOkIter03(): Bool & Impure =
+def unfoldWithOkIter03(): Bool \ IO =
     let x = ref 1;
     let step = () ->
         if (deref x rem 5 > 0) {

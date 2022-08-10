@@ -61,7 +61,25 @@ object SetUnification {
     ///
     /// Run the expensive boolean unification algorithm.
     ///
-    booleanUnification(eraseAliases(tpe1), eraseAliases(tpe2), renv)
+    booleanUnification(eraseIo(eraseAliases(tpe1)), eraseIo(eraseAliases(tpe2)), renv)
+  }
+
+  /**
+    * Erases IO effects from the type, mapping them to Empty.
+    *
+    * Expects a type without type aliases.
+    */
+  private def eraseIo(t: Type): Type = t match {
+    case Type.Cst(TypeConstructor.Effect(sym), _) if sym.namespace == Nil && sym.name == "IO" => Type.Empty
+    case tpe: Type.Cst => tpe
+    case tpe: Type.KindedVar => tpe
+    case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseIo(tpe1), eraseIo(tpe2), loc)
+
+    case _: Type.UnkindedArrow => throw InternalCompilerException("unexpected unkinded type")
+    case _: Type.ReadWrite => throw InternalCompilerException("unexpected unkinded type")
+    case _: Type.UnkindedVar => throw InternalCompilerException("unexpected unkinded type")
+    case _: Type.Ascribe => throw InternalCompilerException("unexpected unkinded type")
+    case _: Type.Alias => throw InternalCompilerException("unexpected type alias")
   }
 
   /**
@@ -462,7 +480,11 @@ object SetUnification {
   /**
     * Converts the given type to DNF
     */
-  private def dnf(t: Type): Dnf = nnfToDnf(nnf(t))
+  private def dnf(t: Type): Dnf = {
+    val n = nnf(t)
+    val d = nnfToDnf(n)
+    d
+  }
 
   /**
     * Converts the given type to NNF.
@@ -533,7 +555,7 @@ object SetUnification {
     case Dnf.Union(inters) => inters.forall(isEmptyIntersection)
   }
 
-  /**
+  /*complement *
     * Returns true if `t1` represents an empty intersection of effects.
     */
   private def isEmptyIntersection(t1: Intersection): Boolean = {

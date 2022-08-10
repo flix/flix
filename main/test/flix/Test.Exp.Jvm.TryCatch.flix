@@ -16,8 +16,8 @@
 
 namespace Test/Exp/Jvm/TestTryCatch {
 
-    def exception(): Unit & Impure =
-        import static java.lang.Math.floorDiv(Int32, Int32): Int32 & Impure;
+    def exception(): Unit \ IO =
+        import static java.lang.Math.floorDiv(Int32, Int32): Int32 \ IO;
         discard floorDiv(1, 0);
         ()
 
@@ -30,7 +30,7 @@ namespace Test/Exp/Jvm/TestTryCatch {
         }
 
     @test
-    def testSimpleException01(): Bool & Impure =
+    def testSimpleException01(): Bool \ IO =
         try {
             exception();
             false
@@ -39,7 +39,7 @@ namespace Test/Exp/Jvm/TestTryCatch {
         }
 
     @test
-    def testMultipleExceptions01(): Bool & Impure =
+    def testMultipleExceptions01(): Bool \ IO =
         try {
             exception();
             false
@@ -49,7 +49,7 @@ namespace Test/Exp/Jvm/TestTryCatch {
         }
 
     @test
-    def testMultipleExceptions02(): Bool & Impure =
+    def testMultipleExceptions02(): Bool \ IO =
         try {
             exception();
             false
@@ -59,9 +59,9 @@ namespace Test/Exp/Jvm/TestTryCatch {
         }
 
     @test
-    def testBinding01(): Bool & Impure =
-        import java.lang.Object.toString(): ##java.lang.String & Impure;
-        import java.lang.String.isEmpty(): Bool & Impure;
+    def testBinding01(): Bool \ IO =
+        import java.lang.Object.toString(): ##java.lang.String \ IO;
+        import java.lang.String.isEmpty(): Bool \ IO;
         try {
             exception();
             false
@@ -71,9 +71,9 @@ namespace Test/Exp/Jvm/TestTryCatch {
         }
 
     @test
-    def testBinding02(): Bool & Impure =
-        import java.lang.String.isEmpty(): Bool & Impure;
-        import java.lang.Throwable.getMessage(): String & Impure;
+    def testBinding02(): Bool \ IO =
+        import java.lang.String.isEmpty(): Bool \ IO;
+        import java.lang.Throwable.getMessage(): String \ IO;
         try {
             exception();
             false
@@ -83,7 +83,7 @@ namespace Test/Exp/Jvm/TestTryCatch {
         }
 
     @test
-    def testPriority01(): Bool & Impure =
+    def testPriority01(): Bool \ IO =
         try {
             exception();
             false
@@ -93,7 +93,7 @@ namespace Test/Exp/Jvm/TestTryCatch {
         }
 
     @test
-    def testPriority02(): Bool & Impure =
+    def testPriority02(): Bool \ IO =
         try {
             exception();
             false

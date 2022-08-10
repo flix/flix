@@ -1,37 +1,37 @@
 namespace Test/Exp/Stm {
 
     @test
-    def testStm01(): Int32 & Impure =
+    def testStm01(): Int32 \ IO =
         f();
         123
 
     @test
-    def testStm02(): Int32 & Impure =
+    def testStm02(): Int32 \ IO =
         f();
         g();
         123
 
     @test
-    def testStm03(): Int32 & Impure =
+    def testStm03(): Int32 \ IO =
         f();
         g();
         h();
         123
 
     @test
-    def testStm04(): Int32 & Impure =
+    def testStm04(): Int32 \ IO =
         let x = 123;
         f();
         x
 
     @test
-    def testStm05(): Int32 & Impure =
+    def testStm05(): Int32 \ IO =
         f();
         let x = 123;
         x
 
     @test
-    def testStm06(): Int32 & Impure =
+    def testStm06(): Int32 \ IO =
         let x = 123;
         let y = 456;
         f();
@@ -39,7 +39,7 @@ namespace Test/Exp/Stm {
         x + y
 
     @test
-    def testStm07(): Int32 & Impure =
+    def testStm07(): Int32 \ IO =
         let x = 123;
         f();
         let y = 456;
@@ -47,7 +47,7 @@ namespace Test/Exp/Stm {
         x + y
 
     @test
-    def testStm08(): Int32 & Impure =
+    def testStm08(): Int32 \ IO =
         let x = 123;
         f();
         g();
@@ -55,7 +55,7 @@ namespace Test/Exp/Stm {
         x + y
 
     @test
-    def testStm09(): Int32 & Impure =
+    def testStm09(): Int32 \ IO =
         f();
         let x = 123;
         g();
@@ -63,7 +63,7 @@ namespace Test/Exp/Stm {
         x + y
 
     @test
-    def testStm10(): Int32 & Impure =
+    def testStm10(): Int32 \ IO =
         f();
         g();
         let x = 123;
@@ -71,7 +71,7 @@ namespace Test/Exp/Stm {
         x + y
 
     @test
-    def testStm11(): Int32 & Impure =
+    def testStm11(): Int32 \ IO =
         let x = {
             f();
             123
@@ -79,7 +79,7 @@ namespace Test/Exp/Stm {
         x
 
     @test
-    def testStm12(): Int32 & Impure =
+    def testStm12(): Int32 \ IO =
         let x = {
             f();
             g();
@@ -88,10 +88,10 @@ namespace Test/Exp/Stm {
         h();
         x
 
-    def f(): Unit & Impure = () as & Impure
+    def f(): Unit \ IO = () as \ IO
 
-    def g(): Unit & Impure = () as & Impure
+    def g(): Unit \ IO = () as \ IO
 
-    def h(): Unit & Impure = () as & Impure
+    def h(): Unit \ IO = () as \ IO
 
 }
