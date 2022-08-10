@@ -25,14 +25,12 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.logging.{Level, Logger}
 
 /**
-  * Evaluates all tests in a model.
+  * Evaluates all tests in a Flix program.
   */
 object Tester {
 
   /**
-    * Evaluates all tests.
-    *
-    * Returns a pair of (successful, failed)-tests.
+    * Runs all tests.
     */
   def run(compilationResult: CompilationResult)(implicit flix: Flix): Unit = {
     val queue = new ConcurrentLinkedQueue[TestEvent]()
@@ -45,9 +43,10 @@ object Tester {
     runner.join()
   }
 
-  class TestReporter(queue: ConcurrentLinkedQueue[TestEvent], compilationResult: CompilationResult)(implicit flix: Flix) extends Thread {
-    override def run(): Unit = {
+  // TODO: DOC
+  private class TestReporter(queue: ConcurrentLinkedQueue[TestEvent], compilationResult: CompilationResult)(implicit flix: Flix) extends Thread {
 
+    override def run(): Unit = {
       // Silence JLine warnings about terminal type.
       Logger.getLogger("org.jline").setLevel(Level.OFF)
 
@@ -57,14 +56,8 @@ object Tester {
         .system(true)
         .build()
 
-      var total = 0
       var passed = 0
       var failed = 0
-      var ignored = 0
-      var filtered = 0
-      var elapsed = 0
-
-      //. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
       while (true) {
         queue.poll() match {
@@ -80,7 +73,7 @@ object Tester {
 
           case TestEvent.Finished() =>
             terminal.writer().println()
-            terminal.writer().println(s"Finished. Passed: ${passed}, Failed: ${failed}. Ignored: ${ignored}. Elapsed: ${elapsed}")
+            terminal.writer().println(s"Finished. Passed: ${passed}, Failed: ${failed}. ")
             terminal.flush()
             return
           case _ => // nop
@@ -99,8 +92,8 @@ object Tester {
     private def red(s: String): String = Console.RED + s + Console.RESET
   }
 
-
-  class TestRunner(queue: ConcurrentLinkedQueue[TestEvent], compilationResult: CompilationResult)(implicit flix: Flix) extends Thread {
+  // TODO: DOC
+  private class TestRunner(queue: ConcurrentLinkedQueue[TestEvent], compilationResult: CompilationResult)(implicit flix: Flix) extends Thread {
 
     // TODO: DOC
     override def run(): Unit = {
@@ -114,10 +107,7 @@ object Tester {
     private def runTest(sym: Symbol.DefnSym, defn: () => AnyRef): Unit = {
       val start = System.nanoTime()
       try {
-        Thread.sleep((Math.random() * 10.0).toInt)
-
         queue.add(TestEvent.BeforeTest(sym))
-
 
         val result = defn()
 
@@ -147,7 +137,6 @@ object Tester {
 
     // TODO: DOC
     case class BeforeTest(sym: Symbol.DefnSym) extends TestEvent
-
 
     // TODO: DOC
     case class TestSuccess(sym: Symbol.DefnSym, time: Long) extends TestEvent
