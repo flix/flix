@@ -86,12 +86,12 @@ object Tester {
 
           case TestEvent.Success(sym, elapsed) =>
             passed = passed + 1
-            writer.println(s"  ${greenBg(" PASS ")} $sym ${magenta(elapsed.fmt)}")
+            writer.println(s"  ${greenBg(" PASS ")} $sym ${gray(elapsed.fmt)}")
             terminal.flush()
 
           case TestEvent.Failure(sym, output, elapsed) =>
             failed = (sym, output) :: failed
-            writer.println(s"  ${redBg(" FAIL ")} $sym ${magenta(elapsed.fmt)}")
+            writer.println(s"  ${redBg(" FAIL ")} $sym ${gray(elapsed.fmt)}")
             terminal.flush()
 
           case TestEvent.Skip(sym) =>
@@ -117,11 +117,12 @@ object Tester {
 
             // Print the summary.
             writer.println()
-            writer.println(s"Finished. " +
+            writer.println(
               s"Passed: ${green(passed.toString)}, " +
-              s"Failed: ${red(failed.length.toString)}. " +
-              s"Skipped: ${yellow(skipped.toString)}. " +
-              s"Elapsed: ${magenta(elapsed.fmt)}.")
+                s"Failed: ${red(failed.length.toString)}. " +
+                s"Skipped: ${yellow(skipped.toString)}. " +
+                s"Elapsed: ${gray(elapsed.fmt)}."
+            )
             terminal.flush()
             finished = true
 
@@ -131,25 +132,34 @@ object Tester {
     }
 
     // TODO: Use flix.formatter
-    private def green(s: String): String = Console.GREEN + s + Console.RESET
+    private def green(s: String): String = fgColor(57, 181, 74, s)
 
     // TODO: Use flix.formatter
-    private def greenBg(s: String): String = Console.GREEN_B + s + Console.RESET
+    private def greenBg(s: String): String = bgColor(57, 181, 74, brightWhite(s))
 
     // TODO: Use flix.formatter
-    private def magenta(s: String): String = Console.MAGENTA + s + Console.RESET
+    private def red(s: String): String = fgColor(222, 56, 43, s)
 
     // TODO: Use flix.formatter
-    private def red(s: String): String = Console.RED + s + Console.RESET
+    private def redBg(s: String): String = bgColor(222, 56, 43, brightWhite(s))
 
     // TODO: Use flix.formatter
-    private def redBg(s: String): String = Console.RED_B + s + Console.RESET
+    private def yellow(s: String): String = fgColor(255, 199, 6, s)
 
     // TODO: Use flix.formatter
-    private def yellow(s: String): String = Console.YELLOW + s + Console.RESET
+    private def yellowBg(s: String): String = bgColor(255, 199, 6, brightWhite(s))
 
     // TODO: Use flix.formatter
-    private def yellowBg(s: String): String = Console.YELLOW_B + s + Console.RESET
+    private def brightWhite(s: String): String = fgColor(255, 255, 255, s)
+
+    // TODO: Use flix.formatter
+    private def gray(s: String): String = fgColor(100, 100, 100, s)
+
+    // TODO: Use flix.formatter
+    private def fgColor(r: Int, g: Int, b: Int, s: String): String = '\u001b' + s"[38;2;$r;$g;${b}m" + s + '\u001b' + "[0m"
+
+    // TODO: Use flix.formatter
+    private def bgColor(r: Int, g: Int, b: Int, s: String): String = '\u001b' + s"[42;2;$r;$g;${b}m" + s + '\u001b' + "[0m"
 
   }
 
