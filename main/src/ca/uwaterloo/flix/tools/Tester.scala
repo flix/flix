@@ -154,7 +154,7 @@ object Tester {
 
           }
         } catch {
-          case ex: Exception =>
+          case ex: Throwable =>
             val elapsed = System.nanoTime() - start
             queue.add(TestEvent.Failure(sym, Duration(elapsed)))
         }
