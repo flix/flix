@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{Duration, InternalCompilerException, TimeOps}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
+import java.io.{ByteArrayOutputStream, PrintStream, PrintWriter}
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.logging.{Level, Logger}
 
@@ -82,9 +83,9 @@ object Tester {
             writer.println(s"  - ${green(sym.toString)} ${magenta(elapsed.fmt)}")
             terminal.flush()
 
-          case TestEvent.Failure(sym, elapsed) =>
+          case TestEvent.Failure(sym, output, _) =>
             failed = failed + 1
-            writer.println(s"  - ${red(sym.toString)} ${magenta(elapsed.fmt)}")
+            writer.println(s"  - ${red(sym.toString)} ${red(output)}")
             terminal.flush()
 
           case TestEvent.Finished(elapsed) =>
@@ -137,17 +138,29 @@ object Tester {
       case TestCase(sym, run) =>
         queue.add(TestEvent.Before(sym))
 
+        // Redirect std out and std err.
+        val redirect = new ConsoleRedirection
+        redirect.redirect()
+
+        // Start the clock.
         val start = System.nanoTime()
+
         try {
+          // Run the test case.
           val result = run()
+
+          // Compute elapsed time.
           val elapsed = System.nanoTime() - start
+
+          // Restore std out and std err.
+          redirect.restore()
 
           result match {
             case java.lang.Boolean.TRUE =>
               queue.add(TestEvent.Success(sym, Duration(elapsed)))
 
             case java.lang.Boolean.FALSE =>
-              queue.add(TestEvent.Failure(sym, Duration(elapsed)))
+              queue.add(TestEvent.Failure(sym, "Returned false.", Duration(elapsed)))
 
             case _ =>
               queue.add(TestEvent.Success(sym, Duration(elapsed)))
@@ -155,9 +168,62 @@ object Tester {
           }
         } catch {
           case ex: Throwable =>
+            // Restore std out and std err.
+            redirect.restore()
+
+            // Compute elapsed time.
             val elapsed = System.nanoTime() - start
-            queue.add(TestEvent.Failure(sym, Duration(elapsed)))
+            queue.add(TestEvent.Failure(sym, redirect.stdOut ++ redirect.stdErr, Duration(elapsed)))
         }
+    }
+  }
+
+  /**
+    * A class used to redirect the standard out and standard error streams.
+    */
+  class ConsoleRedirection {
+    private val bytesOut = new ByteArrayOutputStream()
+    private val bytesErr = new ByteArrayOutputStream()
+    private val streamOut = new PrintStream(bytesOut)
+    private val streamErr = new PrintStream(bytesErr)
+
+    private var oldStreamOut: PrintStream = _
+    private var oldStreamErr: PrintStream = _
+
+    /**
+      * Returns the string emitted to the std out during redirection.
+      */
+    def stdOut: String = bytesOut.toString()
+
+    /**
+      * Returns the string emitted to the std err during redirection.
+      */
+    def stdErr: String = bytesErr.toString()
+
+    /**
+      * Redirect std out and std err.
+      */
+    def redirect(): Unit = {
+      // Store the old streams.
+      oldStreamOut = System.out
+      oldStreamErr = System.err
+
+      // Set the new streams.
+      System.setOut(streamOut)
+      System.setErr(streamErr)
+    }
+
+    /**
+      * Restore the std in and std err to their original streams.
+      */
+    def restore(): Unit = {
+      // Flush the new streams.
+      System.out.flush()
+      System.err.flush()
+
+      // Restore standard out and standard error.
+      System.setOut(oldStreamOut)
+      System.setErr(oldStreamErr)
     }
   }
 
@@ -197,7 +263,7 @@ object Tester {
     /**
       * A test event emitted to indicate that a test failed.
       */
-    case class Failure(sym: Symbol.DefnSym, d: Duration) extends TestEvent
+    case class Failure(sym: Symbol.DefnSym, output: String, d: Duration) extends TestEvent
 
     /**
       * A test event emitted to indicates that testing has completed.
