@@ -79,17 +79,23 @@ object Tester {
         queue.poll() match {
           case TestEvent.Success(sym, elapsed) =>
             passed = passed + 1
-            writer.println(s"  - ${green(sym)} ${magenta(elapsed.fmt)}")
+            writer.println(s"  - ${green(sym.toString)} ${magenta(elapsed.fmt)}")
             terminal.flush()
 
           case TestEvent.Failure(sym, elapsed) =>
             failed = failed + 1
-            writer.println(s"  - ${red(sym)} ${magenta(elapsed.fmt)}")
+            writer.println(s"  - ${red(sym.toString)} ${magenta(elapsed.fmt)}")
             terminal.flush()
 
           case TestEvent.Finished(elapsed) =>
             writer.println()
-            writer.println(s"Finished. Passed: $passed, Failed: $failed. Elapsed: ${elapsed.fmt}.")
+            writer.println(s"${red("Finished")}. Passed: ${green(passed.toString)}, Failed: ${red(failed.toString)}. Elapsed: ${magenta(elapsed.fmt)}.")
+            writer.println()
+            if (failed == 0) {
+              writer.println(green("All tests passed!"))
+            } else {
+              writer.println(red("There were test failures..."))
+            }
             terminal.flush()
             finished = true
 
@@ -99,13 +105,13 @@ object Tester {
     }
 
     // TODO: Use flix.formatter
-    private def green(s: AnyRef): String = Console.GREEN + s + Console.RESET
+    private def green(s: String): String = Console.GREEN + s + Console.RESET
 
     // TODO: Use flix.formatter
-    private def magenta(s: AnyRef): String = Console.MAGENTA + s + Console.RESET
+    private def magenta(s: String): String = Console.MAGENTA + s + Console.RESET
 
     // TODO: Use flix.formatter
-    private def red(s: AnyRef): String = Console.RED + s + Console.RESET
+    private def red(s: String): String = Console.RED + s + Console.RESET
   }
 
   /**
