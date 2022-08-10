@@ -33,18 +33,25 @@ object Tester {
     * Runs all tests.
     */
   def run(compilationResult: CompilationResult)(implicit flix: Flix): Unit = {
+    //
+    // Find all test cases (both active and ignored).
+    //
+    val tests = getTestCases(compilationResult)
+
+    // Start the TestRunner and TestReporter.
     val queue = new ConcurrentLinkedQueue[TestEvent]()
-    val reporter = new TestReporter(queue, compilationResult)
-    val runner = new TestRunner(queue, compilationResult)
+    val reporter = new TestReporter(queue)
+    val runner = new TestRunner(queue, tests)
     reporter.start()
     runner.start()
 
+    // Wait for everything to complete.
     reporter.join()
     runner.join()
   }
 
   // TODO: DOC
-  private class TestReporter(queue: ConcurrentLinkedQueue[TestEvent], compilationResult: CompilationResult)(implicit flix: Flix) extends Thread {
+  private class TestReporter(queue: ConcurrentLinkedQueue[TestEvent])(implicit flix: Flix) extends Thread {
 
     override def run(): Unit = {
       // Silence JLine warnings about terminal type.
@@ -73,7 +80,7 @@ object Tester {
 
           case TestEvent.Finished(elapsed) =>
             terminal.writer().println()
-            terminal.writer().println(s"Finished. Passed: ${passed}, Failed: ${failed}. Elapsed: $elapsed ")
+            terminal.writer().println(s"Finished. Passed: ${passed}, Failed: $failed. Elapsed: $elapsed ")
             terminal.flush()
             return
           case _ => // nop
@@ -93,40 +100,57 @@ object Tester {
   }
 
   // TODO: DOC
-  private class TestRunner(queue: ConcurrentLinkedQueue[TestEvent], compilationResult: CompilationResult)(implicit flix: Flix) extends Thread {
+  private class TestRunner(queue: ConcurrentLinkedQueue[TestEvent], tests: List[TestCase])(implicit flix: Flix) extends Thread {
 
     // TODO: DOC
     override def run(): Unit = {
-      val results = compilationResult.getTests.toList.map {
-        case (sym, defn) => runTest(sym, defn)
+      for (testCase <- tests) {
+        runTest(testCase)
       }
       queue.add(TestEvent.Finished(0)) // TODO
     }
 
     // TODO: DOC
-    private def runTest(sym: Symbol.DefnSym, defn: () => AnyRef): Unit = {
-      val start = System.nanoTime()
-      try {
-        queue.add(TestEvent.Before(sym))
+    private def runTest(testCase: TestCase): Unit = testCase match {
+      case TestCase(sym, run) =>
+        val start = System.nanoTime()
+        try {
+          queue.add(TestEvent.Before(sym))
 
-        val result = defn()
+          val result = run()
 
-        val elapsed = System.nanoTime() - start // TODO
+          val elapsed = System.nanoTime() - start // TODO
 
-        result match {
-          case java.lang.Boolean.TRUE =>
-            queue.add(TestEvent.Success(sym, elapsed))
-          case java.lang.Boolean.FALSE =>
-            queue.add(TestEvent.Failure(sym, elapsed))
-          case _ =>
-            queue.add(TestEvent.Success(sym, elapsed))
+          result match {
+            case java.lang.Boolean.TRUE =>
+              queue.add(TestEvent.Success(sym, elapsed))
+            case java.lang.Boolean.FALSE =>
+              queue.add(TestEvent.Failure(sym, elapsed))
+            case _ =>
+              queue.add(TestEvent.Success(sym, elapsed))
+          }
+        } catch {
+          case ex: Exception =>
+            queue.add(TestEvent.Failure(sym, 0)) // TODO
         }
-      } catch {
-        case ex: Exception =>
-          queue.add(TestEvent.Failure(sym, 0)) // TODO
-      }
     }
   }
+
+  /**
+    * Returns all test cases from the given compilation `result`.
+    */
+  private def getTestCases(compilationResult: CompilationResult): List[TestCase] =
+    compilationResult.getTests.toList.sortBy(_._1.loc).map {
+      case (sym, defn) => TestCase(sym, defn)
+    }
+
+  /**
+    * Represents a single test case.
+    *
+    * @param sym the Flix symbol.
+    * @param run the code to run.
+    */
+  case class TestCase(sym: Symbol.DefnSym, run: () => AnyRef)
 
   /**
     * A common super-type for test events.
@@ -140,13 +164,19 @@ object Tester {
       */
     case class Before(sym: Symbol.DefnSym) extends TestEvent
 
-    // TODO: DOC
+    /**
+      * A test event emitted to indicate that a test succeeded.
+      */
     case class Success(sym: Symbol.DefnSym, time: Long) extends TestEvent
 
-    // TODO: DOC
+    /**
+      * A test event emitted to indicate that a test failed.
+      */
     case class Failure(sym: Symbol.DefnSym, time: Long) extends TestEvent
 
-    // TODO: DOC
+    /**
+      * A test event emitted to indicates that testing has completed.
+      */
     case class Finished(time: Long) extends TestEvent
   }
 
