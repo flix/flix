@@ -170,7 +170,7 @@ object Formatter {
   /**
     * Returns `true` if the terminal appears to support at least 256 colors.
     */
-  def hasColorSupport: Boolean = isAnsiTerminal || isTrueColorTerminal || isWindowsTerminal
+  def hasColorSupport: Boolean = isAnsiTerminal || isTrueColorTerminal || isWindowsTerminal || isIdeaTerminal
 
   /**
     * Returns `true` if the terminal appears to be an ANSI terminal.
@@ -199,4 +199,13 @@ object Formatter {
     val wtSession = System.getenv("WT_SESSION")
     wtSession != null
   }
+
+  /**
+    * Returns `true` if the terminal appears to be an IDEA emulator.
+    */
+  private def isIdeaTerminal: Boolean = {
+    val emulator = System.getenv("TERMINAL_EMULATOR")
+    emulator != null && emulator.contains("JetBrains")
+  }
+
 }
