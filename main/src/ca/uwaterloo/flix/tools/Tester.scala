@@ -1,9 +1,23 @@
+/*
+ * Copyright 2022 Magnus Madsen
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.tools.Tester.TestEvent.{BeforeTest, TestSuccess}
 import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
@@ -54,72 +68,50 @@ object Tester {
       throw InternalCompilerException("Unreachable")
 
     }
+
+    private def green(s: String): String = Console.GREEN + s + Console.RESET
+
+    private def magenta(s: String): String = Console.MAGENTA + s + Console.RESET
+
+    private def red(s: String): String = Console.RED + s + Console.RESET
   }
 
-  private def green(s: String): String = Console.GREEN + s + Console.RESET
 
-  private def magenta(s: String): String = Console.MAGENTA + s + Console.RESET
-
-  private def red(s: String): String = Console.RED + s + Console.RESET
-
-  /**
-    * Represents the outcome of a single test.
-    */
-  sealed trait TestResult {
-    /**
-      * The symbol associated with the test.
-      */
-    def sym: Symbol.DefnSym
-  }
-
-  object TestResult {
-
-    /**
-      * Represents a successful test case.
-      */
-    case class Success(sym: Symbol.DefnSym, msg: String) extends TestResult
-
-    /**
-      * Represents a failed test case.
-      */
-    case class Failure(sym: Symbol.DefnSym, msg: String) extends TestResult
-
-  }
 
   class TestRunner(queue: ConcurrentLinkedQueue[TestEvent], compilationResult: CompilationResult)(implicit flix: Flix) extends Thread {
 
+    // TODO: DOC
     override def run(): Unit = {
       val results = compilationResult.getTests.toList.map {
         case (sym, defn) => runTest(sym, defn)
-
       }
+      queue.add(TestEvent.Finished())
     }
 
-    /**
-      * Runs the given test.
-      */
-    private def runTest(sym: Symbol.DefnSym, defn: () => AnyRef): TestResult = {
+    // TODO: DOC
+    private def runTest(sym: Symbol.DefnSym, defn: () => AnyRef): Unit = {
+      val start = System.nanoTime()
       try {
-        Thread.sleep(1500)
+        Thread.sleep((Math.random() * 100.0).toInt)
 
-        queue.add(BeforeTest(sym))
-        val elapsed = 123
+        queue.add(TestEvent.BeforeTest(sym))
+
 
         val result = defn()
+
+        val elapsed = System.nanoTime() - start
+
         result match {
           case java.lang.Boolean.TRUE =>
-            queue.add(TestSuccess(sym, elapsed))
-            TestResult.Success(sym, "Returned true.")
+            queue.add(TestEvent.TestSuccess(sym, elapsed))
           case java.lang.Boolean.FALSE =>
-            queue.add(TestSuccess(sym, elapsed))
-            TestResult.Failure(sym, "Returned false.")
+            queue.add(TestEvent.TestFailure(sym, elapsed))
           case _ =>
-            queue.add(TestSuccess(sym, elapsed))
-            TestResult.Success(sym, "Returned non-boolean value.")
+            queue.add(TestEvent.TestSuccess(sym, elapsed))
         }
       } catch {
         case ex: Exception =>
-          TestResult.Failure(sym, ex.getMessage)
+          queue.add(TestEvent.TestFailure(sym, 0))
       }
     }
   }
@@ -131,18 +123,18 @@ object Tester {
 
   object TestEvent {
 
+    // TODO: DOC
     case class BeforeTest(sym: Symbol.DefnSym) extends TestEvent
 
-    /**
-      * The test was successful.
-      */
+
+    // TODO: DOC
     case class TestSuccess(sym: Symbol.DefnSym, time: Long) extends TestEvent
 
-    /**
-      * The test failed.
-      */
+    // TODO: DOC
     case class TestFailure(sym: Symbol.DefnSym, time: Long) extends TestEvent
 
+    // TODO: DOC
+    case class Finished() extends TestEvent
   }
 
 }
