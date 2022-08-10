@@ -117,28 +117,33 @@ object Tester {
       queue.add(TestEvent.Finished(0)) // TODO
     }
 
-    // TODO: DOC
-    private def runTest(testCase: TestCase): Unit = testCase match {
+    /**
+      * Runs the given `test` emitting test events.
+      */
+    private def runTest(test: TestCase): Unit = test match {
       case TestCase(sym, run) =>
+        queue.add(TestEvent.Before(sym))
+
         val start = System.nanoTime()
         try {
-          queue.add(TestEvent.Before(sym))
-
           val result = run()
-
-          val elapsed = System.nanoTime() - start // TODO
+          val elapsed = System.nanoTime() - start
 
           result match {
             case java.lang.Boolean.TRUE =>
               queue.add(TestEvent.Success(sym, elapsed))
+
             case java.lang.Boolean.FALSE =>
               queue.add(TestEvent.Failure(sym, elapsed))
+
             case _ =>
               queue.add(TestEvent.Success(sym, elapsed))
+
           }
         } catch {
           case ex: Exception =>
-            queue.add(TestEvent.Failure(sym, 0)) // TODO
+            val elapsed = System.nanoTime() - start
+            queue.add(TestEvent.Failure(sym, elapsed))
         }
     }
   }
@@ -147,7 +152,7 @@ object Tester {
     * Returns all test cases from the given compilation `result`.
     */
   private def getTestCases(compilationResult: CompilationResult): Vector[TestCase] =
-    compilationResult.getTests.toVector.sortBy(_._1.loc).map {
+    compilationResult.getTests.toVector.sortBy(_._1.toString).map {
       case (sym, defn) => TestCase(sym, defn)
     }
 
