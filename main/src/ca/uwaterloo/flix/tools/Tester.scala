@@ -79,12 +79,12 @@ object Tester {
         queue.poll() match {
           case TestEvent.Success(sym, elapsed) =>
             passed = passed + 1
-            writer.println(s"  - ${green(sym)} ${magenta(TimeOps.toMilliSeconds(elapsed) + "ms")}")
+            writer.println(s"  - ${green(sym)} ${magenta(elapsed.fmt)}")
             terminal.flush()
 
           case TestEvent.Failure(sym, elapsed) =>
             failed = failed + 1
-            writer.println(s"  - ${red(sym)} ${magenta(TimeOps.toMilliSeconds(elapsed) + "ms")}")
+            writer.println(s"  - ${red(sym)} ${magenta(elapsed.fmt)}")
             terminal.flush()
 
           case TestEvent.Finished(elapsed) =>
@@ -138,19 +138,19 @@ object Tester {
 
           result match {
             case java.lang.Boolean.TRUE =>
-              queue.add(TestEvent.Success(sym, elapsed))
+              queue.add(TestEvent.Success(sym, Duration(elapsed)))
 
             case java.lang.Boolean.FALSE =>
-              queue.add(TestEvent.Failure(sym, elapsed))
+              queue.add(TestEvent.Failure(sym, Duration(elapsed)))
 
             case _ =>
-              queue.add(TestEvent.Success(sym, elapsed))
+              queue.add(TestEvent.Success(sym, Duration(elapsed)))
 
           }
         } catch {
           case ex: Exception =>
             val elapsed = System.nanoTime() - start
-            queue.add(TestEvent.Failure(sym, elapsed))
+            queue.add(TestEvent.Failure(sym, Duration(elapsed)))
         }
     }
   }
@@ -186,12 +186,12 @@ object Tester {
     /**
       * A test event emitted to indicate that a test succeeded.
       */
-    case class Success(sym: Symbol.DefnSym, time: Long) extends TestEvent
+    case class Success(sym: Symbol.DefnSym, d: Duration) extends TestEvent
 
     /**
       * A test event emitted to indicate that a test failed.
       */
-    case class Failure(sym: Symbol.DefnSym, time: Long) extends TestEvent
+    case class Failure(sym: Symbol.DefnSym, d: Duration) extends TestEvent
 
     /**
       * A test event emitted to indicates that testing has completed.
