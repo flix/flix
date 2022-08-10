@@ -20,7 +20,7 @@ object Tester {
     *
     * Returns a pair of (successful, failed)-tests.
     */
-  def run(compilationResult: CompilationResult)(implicit flix: Flix): TestResults = {
+  def run(compilationResult: CompilationResult)(implicit flix: Flix): Unit = {
 
     // Silence JLine warnings about terminal type.
     Logger.getLogger("org.jline").setLevel(Level.OFF)
@@ -39,15 +39,17 @@ object Tester {
         case TestEvent.TestSuccess(sym, elapsed) =>
           terminal.writer().println(s"  - ${green(sym.toString)} ${magenta(elapsed.toString + "ms")}")
           terminal.flush()
-
-        case TestEvent.Done(testResults) =>
-          Console.println(testResults.output(flix.getFormatter))
-          return testResults
         case _ => // nop
       }
     }
     throw InternalCompilerException("Unreachable")
   }
+
+  private def green(s: String): String = Console.GREEN + s + Console.RESET
+
+  private def magenta(s: String): String = Console.MAGENTA + s + Console.RESET
+
+  private def red(s: String): String = Console.RED + s + Console.RESET
 
   /**
     * Represents the outcome of a single test.
@@ -96,73 +98,14 @@ object Tester {
     case object NoTests extends OverallTestResult
   }
 
-  /**
-    * Represents the results of running all the tests in a given model.
-    */
-  case class TestResults(results: List[TestResult]) {
-    def output(formatter: Formatter): String = {
-      var success = 0
-      var failure = 0
-      val sb = new StringBuilder()
-      for ((ns, tests) <- results.groupBy(_.sym.namespace)) {
-        val namespace = if (ns.isEmpty) "root" else ns.mkString("/")
-        sb.append(formatter.line("Tests", namespace) + System.lineSeparator())
-        for (test <- tests.sortBy(_.sym.loc)) {
-          test match {
-            case TestResult.Success(sym, msg) =>
-              sb.append("  " + formatter.green("✓") + " " + sym.name + System.lineSeparator())
-              success = success + 1
-            case TestResult.Failure(sym, msg) =>
-              sb.append("  " + formatter.red("✗") + " " + sym.name + ": " + msg + " (" + formatter.blue(sym.loc.format) + ")" + System.lineSeparator())
-              failure = failure + 1
-          }
-        }
-        sb.append(System.lineSeparator())
-      }
-      // Summary
-      if (failure == 0) {
-        sb.append(formatter.green("  Tests Passed!") + s" (Passed: $success / $success)" + System.lineSeparator())
-      } else {
-        sb.append(formatter.red(s"  Tests Failed!") + s" (Passed: $success / ${success + failure})" + System.lineSeparator())
-      }
-      sb.toString()
-    }
 
-    def overallResult: OverallTestResult = {
-      if (results.isEmpty) {
-        OverallTestResult.NoTests
-      } else if (results.forall(_.isInstanceOf[TestResult.Success])) {
-        OverallTestResult.Success
-      } else {
-        OverallTestResult.Failure
-      }
-    }
-  }
-
-  sealed trait TestEvent
-
-  object TestEvent {
-    case class Done(testResults: TestResults) extends TestEvent
-
-    case class BeforeTest(sym: Symbol.DefnSym) extends TestEvent
-
-    case class TestSuccess(sym: Symbol.DefnSym, time: Long) extends TestEvent
-
-    case class TestFailure(sym: Symbol.DefnSym, time: Long) extends TestEvent
-
-    case class TestIgnored(sym: Symbol.DefnSym) extends TestEvent
-  }
-
-  class TestRunner(queue: ConcurrentLinkedQueue[TestEvent], result: CompilationResult) extends Thread {
-
-    import TestEvent.Done
+  class TestRunner(queue: ConcurrentLinkedQueue[TestEvent], result: CompilationResult)(implicit flix: Flix) extends Thread {
 
     override def run(): Unit = {
       val results = result.getTests.toList.map {
         case (sym, defn) => runTest(sym, defn)
 
       }
-      queue.add(Done(TestResults(results)))
     }
 
     /**
@@ -194,11 +137,25 @@ object Tester {
     }
   }
 
+  /**
+    * A common super-type for test events.
+    */
+  sealed trait TestEvent
 
-  private def green(s: String): String = Console.GREEN + s + Console.RESET
+  object TestEvent {
 
-  private def magenta(s: String): String = Console.MAGENTA + s + Console.RESET
+    case class BeforeTest(sym: Symbol.DefnSym) extends TestEvent
 
-  private def red(s: String): String = Console.RED + s + Console.RESET
+    /**
+      * The test was successful.
+      */
+    case class TestSuccess(sym: Symbol.DefnSym, time: Long) extends TestEvent
+
+    /**
+      * The test failed.
+      */
+    case class TestFailure(sym: Symbol.DefnSym, time: Long) extends TestEvent
+
+  }
 
 }

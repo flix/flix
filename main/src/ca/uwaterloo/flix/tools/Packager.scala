@@ -276,8 +276,8 @@ object Packager {
       // Add all class files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
       for ((buildFile, fileNameWithSlashes) <- getAllFiles(getBuildDirectory(p))
-          .map{path=>(path, convertPathToRelativeFileName(getBuildDirectory(p), path))}
-          .sortBy(_._2)) {
+        .map { path => (path, convertPathToRelativeFileName(getBuildDirectory(p), path)) }
+        .sortBy(_._2)) {
         addToZip(zip, fileNameWithSlashes, buildFile)
       }
     } match {
@@ -315,8 +315,8 @@ object Packager {
       // Add all source files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
       for ((sourceFile, fileNameWithSlashes) <- getAllFiles(getSourceDirectory(p))
-          .map{path=>(path, convertPathToRelativeFileName(p, path))}
-          .sortBy(_._2)) {
+        .map { path => (path, convertPathToRelativeFileName(p, path)) }
+        .sortBy(_._2)) {
         addToZip(zip, fileNameWithSlashes, sourceFile)
       }
     } match {
@@ -359,11 +359,8 @@ object Packager {
     implicit val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
     build(p, o) flatMap {
       compilationResult =>
-        val results = Tester.run(compilationResult)
-        results.overallResult match {
-          case Tester.OverallTestResult.Failure => 1.toErr
-          case Tester.OverallTestResult.Success | Tester.OverallTestResult.NoTests => ().toOk
-        }
+        Tester.run(compilationResult)
+        ().toOk
     }
   }
 
