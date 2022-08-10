@@ -78,16 +78,19 @@ object Tester {
       var finished = false
       while (!finished) {
         queue.poll() match {
-          // TODO: Before
+          case TestEvent.Before(sym) =>
+            // Note: Print \r to reset the caret.
+            writer.print(s"  ${yellowBg(" TEST ")} $sym\r")
+            terminal.flush()
 
           case TestEvent.Success(sym, elapsed) =>
             passed = passed + 1
-            writer.println(s"  - ${green(sym.toString)} ${magenta(elapsed.fmt)}")
+            writer.println(s"  ${greenBg(" PASS ")} $sym ${magenta(elapsed.fmt)}")
             terminal.flush()
 
           case TestEvent.Failure(sym, _, elapsed) =>
             failed = failed + 1
-            writer.println(s"  - ${red(sym.toString)} ${magenta(elapsed.fmt)}")
+            writer.println(s"  ${redBg(" FAIL ")} $sym ${magenta(elapsed.fmt)}")
             terminal.flush()
 
           case TestEvent.Finished(elapsed) =>
@@ -111,10 +114,20 @@ object Tester {
     private def green(s: String): String = Console.GREEN + s + Console.RESET
 
     // TODO: Use flix.formatter
+    private def greenBg(s: String): String = Console.GREEN_B + s + Console.RESET
+
+    // TODO: Use flix.formatter
     private def magenta(s: String): String = Console.MAGENTA + s + Console.RESET
 
     // TODO: Use flix.formatter
     private def red(s: String): String = Console.RED + s + Console.RESET
+
+    // TODO: Use flix.formatter
+    private def redBg(s: String): String = Console.RED_B + s + Console.RESET
+
+    // TODO: Use flix.formatter
+    private def yellowBg(s: String): String = Console.YELLOW_B + s + Console.RESET
+
   }
 
   /**
