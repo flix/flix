@@ -61,19 +61,19 @@ object Tester {
 
       while (true) {
         queue.poll() match {
-          case TestEvent.TestSuccess(sym, elapsed) =>
+          case TestEvent.Success(sym, elapsed) =>
             passed = passed + 1
             terminal.writer().println(s"  - ${green(sym.toString)} ${magenta(TimeOps.toMilliSeconds(elapsed) + "ms")}")
             terminal.flush()
 
-          case TestEvent.TestFailure(sym, elapsed) =>
+          case TestEvent.Failure(sym, elapsed) =>
             failed = failed + 1
             terminal.writer().println(s"  - ${red(sym.toString)} ${magenta(TimeOps.toMilliSeconds(elapsed) + "ms")}")
             terminal.flush()
 
-          case TestEvent.Finished() =>
+          case TestEvent.Finished(elapsed) =>
             terminal.writer().println()
-            terminal.writer().println(s"Finished. Passed: ${passed}, Failed: ${failed}. ")
+            terminal.writer().println(s"Finished. Passed: ${passed}, Failed: ${failed}. Elapsed: $elapsed ")
             terminal.flush()
             return
           case _ => // nop
@@ -100,30 +100,30 @@ object Tester {
       val results = compilationResult.getTests.toList.map {
         case (sym, defn) => runTest(sym, defn)
       }
-      queue.add(TestEvent.Finished())
+      queue.add(TestEvent.Finished(0)) // TODO
     }
 
     // TODO: DOC
     private def runTest(sym: Symbol.DefnSym, defn: () => AnyRef): Unit = {
       val start = System.nanoTime()
       try {
-        queue.add(TestEvent.BeforeTest(sym))
+        queue.add(TestEvent.Before(sym))
 
         val result = defn()
 
-        val elapsed = System.nanoTime() - start
+        val elapsed = System.nanoTime() - start // TODO
 
         result match {
           case java.lang.Boolean.TRUE =>
-            queue.add(TestEvent.TestSuccess(sym, elapsed))
+            queue.add(TestEvent.Success(sym, elapsed))
           case java.lang.Boolean.FALSE =>
-            queue.add(TestEvent.TestFailure(sym, elapsed))
+            queue.add(TestEvent.Failure(sym, elapsed))
           case _ =>
-            queue.add(TestEvent.TestSuccess(sym, elapsed))
+            queue.add(TestEvent.Success(sym, elapsed))
         }
       } catch {
         case ex: Exception =>
-          queue.add(TestEvent.TestFailure(sym, 0))
+          queue.add(TestEvent.Failure(sym, 0)) // TODO
       }
     }
   }
@@ -135,17 +135,19 @@ object Tester {
 
   object TestEvent {
 
-    // TODO: DOC
-    case class BeforeTest(sym: Symbol.DefnSym) extends TestEvent
+    /**
+      * A test event emitted immediately before a test case is executed.
+      */
+    case class Before(sym: Symbol.DefnSym) extends TestEvent
 
     // TODO: DOC
-    case class TestSuccess(sym: Symbol.DefnSym, time: Long) extends TestEvent
+    case class Success(sym: Symbol.DefnSym, time: Long) extends TestEvent
 
     // TODO: DOC
-    case class TestFailure(sym: Symbol.DefnSym, time: Long) extends TestEvent
+    case class Failure(sym: Symbol.DefnSym, time: Long) extends TestEvent
 
     // TODO: DOC
-    case class Finished() extends TestEvent
+    case class Finished(time: Long) extends TestEvent
   }
 
 }
