@@ -153,7 +153,7 @@ object Tester {
     private def brightWhite(s: String): String = fgColor(255, 255, 255, s)
 
     // TODO: Use flix.formatter
-    private def gray(s: String): String = fgColor(150, 150, 150, s)
+    private def gray(s: String): String = fgColor(110, 110, 110, s)
 
     // TODO: Use flix.formatter
     private def fgColor(r: Int, g: Int, b: Int, s: String): String = escape() + s"[38;2;$r;$g;${b}m" + s + escape() + "[0m"
