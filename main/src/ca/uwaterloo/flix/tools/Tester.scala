@@ -24,6 +24,7 @@ import org.jline.terminal.{Terminal, TerminalBuilder}
 import java.io.{ByteArrayOutputStream, PrintStream}
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.logging.{Level, Logger}
+import scala.util.matching.Regex
 
 /**
   * Evaluates all tests in a Flix program.
@@ -33,11 +34,11 @@ object Tester {
   /**
     * Runs all tests.
     */
-  def run(compilationResult: CompilationResult)(implicit flix: Flix): Unit = {
+  def run(filters: List[Regex], compilationResult: CompilationResult)(implicit flix: Flix): Unit = {
     //
     // Find all test cases (both active and ignored).
     //
-    val tests = getTestCases(compilationResult)
+    val tests = getTestCases(filters, compilationResult)
 
     // Start the TestRunner and TestReporter.
     val queue = new ConcurrentLinkedQueue[TestEvent]()
@@ -258,12 +259,23 @@ object Tester {
   }
 
   /**
-    * Returns all test cases from the given compilation `result`.
+    * Returns all test cases from the given compilation `result` which satisfy at least one filter.
     */
-  private def getTestCases(compilationResult: CompilationResult): Vector[TestCase] =
-    compilationResult.getTests.toVector.sortBy(_._1.toString).map {
+  private def getTestCases(filters: List[Regex], compilationResult: CompilationResult): Vector[TestCase] = {
+    /**
+      * Returns `true` if at least one filter matches the given symbol _OR_ if there are no filters.
+      */
+    def isMatch(test: TestCase): Boolean = {
+      val name = test.sym.toString
+      filters.isEmpty || filters.exists(regex => regex.matches(name))
+    }
+
+    val allTests = compilationResult.getTests.map {
       case (sym, TestFn(_, skip, run)) => TestCase(sym, skip, run)
     }
+
+    allTests.filter(isMatch).toVector.sorted
+  }
 
   /**
     * Represents a single test case.
@@ -272,7 +284,9 @@ object Tester {
     * @param skip true if the test case should be skipped.
     * @param run  the code to run.
     */
-  case class TestCase(sym: Symbol.DefnSym, skip: Boolean, run: () => AnyRef)
+  case class TestCase(sym: Symbol.DefnSym, skip: Boolean, run: () => AnyRef) extends Ordered[TestCase] {
+    override def compare(that: TestCase): Int = this.sym.toString.compareTo(that.sym.toString)
+  }
 
   /**
     * A common super-type for test events.

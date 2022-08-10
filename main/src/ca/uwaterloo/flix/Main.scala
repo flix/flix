@@ -240,7 +240,7 @@ object Main {
         }
 
         if (cmdOpts.test) {
-          Tester.run(compilationResult)(flix)
+          Tester.run(Nil, compilationResult)(flix)
         }
       case Validation.Failure(errors) =>
         flix.mkMessages(errors.sortBy(_.source.name))
