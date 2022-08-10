@@ -93,21 +93,8 @@ object Ast {
       *
       * @param loc the source location of the annotation.
       */
-    // NB: Deprecated
     case class Benchmark(loc: SourceLocation) extends Annotation {
       override def toString: String = "@benchmark"
-    }
-
-    /**
-      * An AST node that represents a `@test` annotation.
-      *
-      * A function marked with `test` is evaluated as part of the test framework.
-      *
-      * @param loc the source location of the annotation.
-      */
-    // NB: Deprecated
-    case class Test(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@test"
     }
 
     /**
@@ -135,6 +122,17 @@ object Ast {
       */
     case class Internal(loc: SourceLocation) extends Annotation {
       override def toString: String = "@Internal"
+    }
+
+    /**
+      * An AST node that represents an `@Ignore` annotation.
+      *
+      * A function marked with `Ignore` is ignored by the test framework (but still reported).
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Ignore(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Ignore"
     }
 
     /**
@@ -183,6 +181,17 @@ object Ast {
     }
 
     /**
+      * An AST node that represents a `@Test` annotation.
+      *
+      * A function marked with `test` is evaluated as part of the test framework.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Test(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Test"
+    }
+
+    /**
       * An annotation that indicates the time complexity of a function definition.
       *
       * @param loc the source location of the annotation.
@@ -223,7 +232,12 @@ object Ast {
     def isBenchmark: Boolean = annotations exists (_.isInstanceOf[Annotation.Benchmark])
 
     /**
-      * Returns `true` if `this` sequence contains the `@test` annotation.
+      * Returns `true` if `this` sequence contains the `@Ignore` annotation.
+      */
+    def isIgnore: Boolean = annotations exists (_.isInstanceOf[Annotation.Ignore])
+
+    /**
+      * Returns `true` if `this` sequence contains the `@Test` annotation.
       */
     def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
 

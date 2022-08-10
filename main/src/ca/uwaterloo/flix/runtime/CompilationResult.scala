@@ -54,9 +54,11 @@ class CompilationResult(root: Root,
   /**
     * Returns all the test functions in the program.
     */
-  def getTests: Map[Symbol.DefnSym, () => AnyRef] = {
-    defs filter {
-      case (sym, _) => root.defs(sym).ann.isTest
+  def getTests: Map[Symbol.DefnSym, TestFn] = {
+    defs.collect {
+      case (sym, run) if root.defs(sym).ann.isTest =>
+        val ignore = root.defs(sym).ann.isIgnore
+        (sym -> TestFn(sym, ignore, run))
     }
   }
 

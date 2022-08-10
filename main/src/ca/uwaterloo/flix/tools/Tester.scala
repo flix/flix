@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
 import ca.uwaterloo.flix.util.Duration
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
@@ -160,7 +160,14 @@ object Tester {
       * Runs the given `test` emitting test events.
       */
     private def runTest(test: TestCase): Unit = test match {
-      case TestCase(sym, run) =>
+      case TestCase(sym, ignore, run) =>
+        // Check if the test case should be ignored.
+        if (ignore) {
+
+          return
+        }
+
+        // We are about to run the test case.
         queue.add(TestEvent.Before(sym))
 
         // Redirect std out and std err.
@@ -257,16 +264,17 @@ object Tester {
     */
   private def getTestCases(compilationResult: CompilationResult): Vector[TestCase] =
     compilationResult.getTests.toVector.sortBy(_._1.toString).map {
-      case (sym, defn) => TestCase(sym, defn)
+      case (sym, TestFn(_, ignore, run)) => TestCase(sym, ignore, run)
     }
 
   /**
     * Represents a single test case.
     *
-    * @param sym the Flix symbol.
-    * @param run the code to run.
+    * @param sym    the Flix symbol.
+    * @param ignore true if the test case should be ignored.
+    * @param run    the code to run.
     */
-  case class TestCase(sym: Symbol.DefnSym, run: () => AnyRef)
+  case class TestCase(sym: Symbol.DefnSym, ignore: Boolean, run: () => AnyRef)
 
   /**
     * A common super-type for test events.
