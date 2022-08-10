@@ -18,10 +18,10 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.util.{Duration, InternalCompilerException, TimeOps}
+import ca.uwaterloo.flix.util.Duration
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
-import java.io.{ByteArrayOutputStream, PrintStream, PrintWriter}
+import java.io.{ByteArrayOutputStream, PrintStream}
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.logging.{Level, Logger}
 
@@ -78,14 +78,16 @@ object Tester {
       var finished = false
       while (!finished) {
         queue.poll() match {
+          // TODO: Before
+
           case TestEvent.Success(sym, elapsed) =>
             passed = passed + 1
             writer.println(s"  - ${green(sym.toString)} ${magenta(elapsed.fmt)}")
             terminal.flush()
 
-          case TestEvent.Failure(sym, output, _) =>
+          case TestEvent.Failure(sym, _, elapsed) =>
             failed = failed + 1
-            writer.println(s"  - ${red(sym.toString)} ${red(output)}")
+            writer.println(s"  - ${red(sym.toString)} ${magenta(elapsed.fmt)}")
             terminal.flush()
 
           case TestEvent.Finished(elapsed) =>
@@ -160,7 +162,7 @@ object Tester {
               queue.add(TestEvent.Success(sym, Duration(elapsed)))
 
             case java.lang.Boolean.FALSE =>
-              queue.add(TestEvent.Failure(sym, "Returned false.", Duration(elapsed)))
+              queue.add(TestEvent.Failure(sym, "FALSE" :: Nil, Duration(elapsed)))
 
             case _ =>
               queue.add(TestEvent.Success(sym, Duration(elapsed)))
@@ -193,12 +195,12 @@ object Tester {
     /**
       * Returns the string emitted to the std out during redirection.
       */
-    def stdOut: String = bytesOut.toString()
+    def stdOut: List[String] = bytesOut.toString().linesIterator.toList
 
     /**
       * Returns the string emitted to the std err during redirection.
       */
-    def stdErr: String = bytesErr.toString()
+    def stdErr: List[String] = bytesErr.toString().linesIterator.toList
 
     /**
       * Redirect std out and std err.
@@ -263,7 +265,7 @@ object Tester {
     /**
       * A test event emitted to indicate that a test failed.
       */
-    case class Failure(sym: Symbol.DefnSym, output: String, d: Duration) extends TestEvent
+    case class Failure(sym: Symbol.DefnSym, output: List[String], d: Duration) extends TestEvent
 
     /**
       * A test event emitted to indicates that testing has completed.

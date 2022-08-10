@@ -42,6 +42,8 @@ object Duration {
 
 /**
   * A simple class to format a time duration.
+  *
+  * @param d represents the duration in nanoseconds.
   */
 case class Duration(d: Long) {
 
