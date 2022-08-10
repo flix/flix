@@ -2,6 +2,8 @@ package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
 
+import scala.collection.mutable
+
 trait Formatter {
 
   def line(left: String, right: String): String =
@@ -14,7 +16,7 @@ trait Formatter {
     val endCol = loc.endCol
 
     def arrowUnderline: String = {
-      val sb = new StringBuilder()
+      val sb = new mutable.StringBuilder
       val lineAt = loc.lineAt(beginLine)
       val lineNo = beginLine.toString + " | "
       sb.append(lineNo)
@@ -30,7 +32,7 @@ trait Formatter {
 
     def leftline: String = {
       val numWidth = endLine.toString.length
-      val sb = new StringBuilder()
+      val sb = new mutable.StringBuilder
       for (lineNo <- beginLine to endLine) {
         val currentLine = loc.lineAt(lineNo)
         sb.append(padLeft(numWidth, lineNo.toString))
@@ -59,17 +61,27 @@ trait Formatter {
 
   def green(s: String): String
 
+  def bgGreen(s: String): String
+
   def magenta(s: String): String
 
   def red(s: String): String
 
+  def bgRed(s: String): String
+
   def yellow(s: String): String
+
+  def bgYellow(s: String): String
 
   def white(s: String): String
 
   def bold(s: String): String
 
   def underline(s: String): String
+
+  def brightWhite(s: String): String
+
+  def gray(s: String): String
 
   private def padLeft(width: Int, s: String): String = String.format("%" + width + "s", s)
 }
@@ -89,11 +101,17 @@ object Formatter {
 
     override def green(s: String): String = s
 
+    override def bgGreen(s: String): String = s
+
     override def magenta(s: String): String = s
 
     override def red(s: String): String = s
 
+    override def bgRed(s: String): String = s
+
     override def yellow(s: String): String = s
+
+    override def bgYellow(s: String): String = s
 
     override def white(s: String): String = s
 
@@ -101,6 +119,9 @@ object Formatter {
 
     override def underline(s: String): String = s
 
+    override def brightWhite(s: String): String = s
+
+    override def gray(s: String): String = s
   }
 
   /**
@@ -114,19 +135,35 @@ object Formatter {
 
     override def cyan(s: String): String = Console.CYAN + s + Console.RESET
 
-    override def green(s: String): String = Console.GREEN + s + Console.RESET
+    override def green(s: String): String = fgColor(57, 181, 74, s)
+
+    override def bgGreen(s: String): String = bgColor(57, 181, 74, brightWhite(s))
 
     override def magenta(s: String): String = Console.MAGENTA + s + Console.RESET
 
-    override def red(s: String): String = Console.RED + s + Console.RESET
+    override def red(s: String): String = fgColor(222, 56, 43, s)
 
-    override def yellow(s: String): String = Console.YELLOW + s + Console.RESET
+    override def bgRed(s: String): String = bgColor(222, 56, 43, brightWhite(s))
+
+    override def yellow(s: String): String = fgColor(255, 199, 6, s)
+
+    override def bgYellow(s: String): String = bgColor(255, 199, 6, brightWhite(s))
 
     override def white(s: String): String = Console.WHITE + s + Console.RESET
 
     override def bold(s: String): String = Console.BOLD + s + Console.RESET
 
     override def underline(s: String): String = Console.UNDERLINED + s + Console.RESET
+
+    override def brightWhite(s: String): String = fgColor(255, 255, 255, s)
+
+    override def gray(s: String): String = fgColor(110, 110, 110, s)
+
+    private def fgColor(r: Int, g: Int, b: Int, s: String): String = escape() + s"[38;2;$r;$g;${b}m" + s + escape() + "[0m"
+
+    private def bgColor(r: Int, g: Int, b: Int, s: String): String = escape() + s"[48;2;$r;$g;${b}m" + s + escape() + "[0m"
+
+    private def escape(): String = "\u001b"
 
   }
 

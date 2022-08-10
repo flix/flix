@@ -55,9 +55,14 @@ object Tester {
     * A class that reports the results of test events as they come in.
     */
   private class TestReporter(queue: ConcurrentLinkedQueue[TestEvent], tests: Vector[TestCase])(implicit flix: Flix) extends Thread {
+
     override def run(): Unit = {
       // Silence JLine warnings about terminal type.
       Logger.getLogger("org.jline").setLevel(Level.OFF)
+
+      // Import formatter.
+      val formatter = flix.getFormatter
+      import formatter._
 
       // Initialize the terminal.
       implicit val terminal: Terminal = TerminalBuilder
@@ -81,22 +86,22 @@ object Tester {
         queue.poll() match {
           case TestEvent.Before(sym) =>
             // Note: Print \r to reset the caret.
-            writer.print(s"  ${yellowBg(" TEST ")} $sym\r")
+            writer.print(s"  ${bgYellow(" TEST ")} $sym\r")
             terminal.flush()
 
           case TestEvent.Success(sym, elapsed) =>
             passed = passed + 1
-            writer.println(s"  ${greenBg(" PASS ")} $sym ${gray(elapsed.fmt)}")
+            writer.println(s"  ${bgGreen(" PASS ")} $sym ${gray(elapsed.fmt)}")
             terminal.flush()
 
           case TestEvent.Failure(sym, output, elapsed) =>
             failed = (sym, output) :: failed
-            writer.println(s"  ${redBg(" FAIL ")} $sym ${gray(elapsed.fmt)}")
+            writer.println(s"  ${bgRed(" FAIL ")} $sym ${gray(elapsed.fmt)}")
             terminal.flush()
 
           case TestEvent.Skip(sym) =>
             skipped = skipped + 1
-            writer.println(s"  ${yellowBg(" SKIP ")} $sym")
+            writer.println(s"  ${bgYellow(" SKIP ")} $sym")
             terminal.flush()
 
           case TestEvent.Finished(elapsed) =>
@@ -106,7 +111,7 @@ object Tester {
               writer.println("-" * 80)
               writer.println()
               for ((sym, output) <- failed; if output.nonEmpty) {
-                writer.println(s"  ${redBg(" FAIL ")} $sym")
+                writer.println(s"  ${bgRed(" FAIL ")} $sym")
                 for (line <- output) {
                   writer.println(s"    $line")
                 }
@@ -130,38 +135,6 @@ object Tester {
         }
       }
     }
-
-    // TODO: Use flix.formatter
-    private def green(s: String): String = fgColor(57, 181, 74, s)
-
-    // TODO: Use flix.formatter
-    private def greenBg(s: String): String = bgColor(57, 181, 74, brightWhite(s))
-
-    // TODO: Use flix.formatter
-    private def red(s: String): String = fgColor(222, 56, 43, s)
-
-    // TODO: Use flix.formatter
-    private def redBg(s: String): String = bgColor(222, 56, 43, brightWhite(s))
-
-    // TODO: Use flix.formatter
-    private def yellow(s: String): String = fgColor(255, 199, 6, s)
-
-    // TODO: Use flix.formatter
-    private def yellowBg(s: String): String = bgColor(255, 199, 6, brightWhite(s))
-
-    // TODO: Use flix.formatter
-    private def brightWhite(s: String): String = fgColor(255, 255, 255, s)
-
-    // TODO: Use flix.formatter
-    private def gray(s: String): String = fgColor(110, 110, 110, s)
-
-    // TODO: Use flix.formatter
-    private def fgColor(r: Int, g: Int, b: Int, s: String): String = escape() + s"[38;2;$r;$g;${b}m" + s + escape() + "[0m"
-
-    // TODO: Use flix.formatter
-    private def bgColor(r: Int, g: Int, b: Int, s: String): String = escape() + s"[48;2;$r;$g;${b}m" + s + escape() + "[0m"
-
-    private def escape(): String = "\u001b"
 
   }
 
