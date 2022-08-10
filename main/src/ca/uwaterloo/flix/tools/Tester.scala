@@ -73,7 +73,7 @@ object Tester {
 
       // Main event loop.
       var passed = 0
-      var failed = 0
+      var failed: List[(Symbol.DefnSym, List[String])] = Nil
 
       var finished = false
       while (!finished) {
@@ -88,20 +88,30 @@ object Tester {
             writer.println(s"  ${greenBg(" PASS ")} $sym ${magenta(elapsed.fmt)}")
             terminal.flush()
 
-          case TestEvent.Failure(sym, _, elapsed) =>
-            failed = failed + 1
+          case TestEvent.Failure(sym, output, elapsed) =>
+            failed = (sym, output) :: failed
             writer.println(s"  ${redBg(" FAIL ")} $sym ${magenta(elapsed.fmt)}")
             terminal.flush()
 
           case TestEvent.Finished(elapsed) =>
-            writer.println()
-            writer.println(s"${red("Finished")}. Passed: ${green(passed.toString)}, Failed: ${red(failed.toString)}. Elapsed: ${magenta(elapsed.fmt)}.")
-            writer.println()
-            if (failed == 0) {
-              writer.println(green("All tests passed!"))
-            } else {
-              writer.println(red("There were test failures..."))
+            // Print the std out / std err of every failed test.
+            if (failed.nonEmpty) {
+              writer.println()
+              writer.println("-" * 80)
+              writer.println()
+              for ((sym, output) <- failed; if output.nonEmpty) {
+                writer.println(s"  ${redBg(" FAIL ")} $sym")
+                for (line <- output) {
+                  writer.println(s"    $line")
+                }
+                writer.println()
+              }
+              writer.println("-" * 80)
             }
+
+            // Print the summary.
+            writer.println()
+            writer.println(s"Finished. Passed: ${green(passed.toString)}, Failed: ${red(failed.length.toString)}. Elapsed: ${magenta(elapsed.fmt)}.")
             terminal.flush()
             finished = true
 
@@ -175,7 +185,7 @@ object Tester {
               queue.add(TestEvent.Success(sym, Duration(elapsed)))
 
             case java.lang.Boolean.FALSE =>
-              queue.add(TestEvent.Failure(sym, "FALSE" :: Nil, Duration(elapsed)))
+              queue.add(TestEvent.Failure(sym, Nil, Duration(elapsed)))
 
             case _ =>
               queue.add(TestEvent.Success(sym, Duration(elapsed)))
