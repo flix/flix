@@ -73,6 +73,7 @@ object Tester {
 
       // Main event loop.
       var passed = 0
+      var ignore = 0
       var failed: List[(Symbol.DefnSym, List[String])] = Nil
 
       var finished = false
@@ -93,6 +94,11 @@ object Tester {
             writer.println(s"  ${redBg(" FAIL ")} $sym ${magenta(elapsed.fmt)}")
             terminal.flush()
 
+          case TestEvent.Ignore(sym) =>
+            ignore = ignore + 1
+            writer.println(s"  ${yellowBg(" SKIP ")} $sym")
+            terminal.flush()
+
           case TestEvent.Finished(elapsed) =>
             // Print the std out / std err of every failed test.
             if (failed.nonEmpty) {
@@ -111,7 +117,11 @@ object Tester {
 
             // Print the summary.
             writer.println()
-            writer.println(s"Finished. Passed: ${green(passed.toString)}, Failed: ${red(failed.length.toString)}. Elapsed: ${magenta(elapsed.fmt)}.")
+            writer.println(s"Finished. " +
+              s"Passed: ${green(passed.toString)}, " +
+              s"Failed: ${red(failed.length.toString)}. " +
+              s"Ignored: ${yellow(ignore.toString)}. " +
+              s"Elapsed: ${magenta(elapsed.fmt)}.")
             terminal.flush()
             finished = true
 
@@ -134,6 +144,9 @@ object Tester {
 
     // TODO: Use flix.formatter
     private def redBg(s: String): String = Console.RED_B + s + Console.RESET
+
+    // TODO: Use flix.formatter
+    private def yellow(s: String): String = Console.YELLOW + s + Console.RESET
 
     // TODO: Use flix.formatter
     private def yellowBg(s: String): String = Console.YELLOW_B + s + Console.RESET
@@ -163,7 +176,7 @@ object Tester {
       case TestCase(sym, ignore, run) =>
         // Check if the test case should be ignored.
         if (ignore) {
-
+          queue.add(TestEvent.Ignore(sym))
           return
         }
 
@@ -297,6 +310,11 @@ object Tester {
       * A test event emitted to indicate that a test failed.
       */
     case class Failure(sym: Symbol.DefnSym, output: List[String], d: Duration) extends TestEvent
+
+    /**
+      * A test event emitted to indicate that a test was ignored.
+      */
+    case class Ignore(sym: Symbol.DefnSym) extends TestEvent
 
     /**
       * A test event emitted to indicates that testing has completed.
