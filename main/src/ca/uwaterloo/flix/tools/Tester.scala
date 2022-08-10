@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.util.{InternalCompilerException, TimeOps}
+import ca.uwaterloo.flix.util.{Duration, InternalCompilerException, TimeOps}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -89,7 +89,7 @@ object Tester {
 
           case TestEvent.Finished(elapsed) =>
             writer.println()
-            writer.println(s"Finished. Passed: $passed, Failed: $failed. Elapsed: $elapsed ms.")
+            writer.println(s"Finished. Passed: $passed, Failed: $failed. Elapsed: ${elapsed.fmt}.")
             terminal.flush()
             finished = true
 
@@ -121,7 +121,7 @@ object Tester {
         runTest(testCase)
       }
       val elapsed = System.nanoTime() - start
-      queue.add(TestEvent.Finished(elapsed))
+      queue.add(TestEvent.Finished(Duration(elapsed)))
     }
 
     /**
@@ -196,7 +196,7 @@ object Tester {
     /**
       * A test event emitted to indicates that testing has completed.
       */
-    case class Finished(time: Long) extends TestEvent
+    case class Finished(d: Duration) extends TestEvent
   }
 
 }
