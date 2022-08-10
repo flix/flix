@@ -57,15 +57,31 @@ object Tester {
         .system(true)
         .build()
 
+      var total = 0
+      var passed = 0
+      var failed = 0
+      var ignored = 0
+      var filtered = 0
+      var elapsed = 0
+
+      //. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
       while (true) {
         queue.poll() match {
           case TestEvent.TestSuccess(sym, elapsed) =>
+            passed = passed + 1
             terminal.writer().println(s"  - ${green(sym.toString)} ${magenta(TimeOps.toMilliSeconds(elapsed) + "ms")}")
             terminal.flush()
+
           case TestEvent.TestFailure(sym, elapsed) =>
+            failed = failed + 1
             terminal.writer().println(s"  - ${red(sym.toString)} ${magenta(TimeOps.toMilliSeconds(elapsed) + "ms")}")
             terminal.flush()
+
           case TestEvent.Finished() =>
+            terminal.writer().println()
+            terminal.writer().println(s"Finished. Passed: ${passed}, Failed: ${failed}. Ignored: ${ignored}. Elapsed: ${elapsed}")
+            terminal.flush()
             return
           case _ => // nop
         }
@@ -73,13 +89,15 @@ object Tester {
       throw InternalCompilerException("Unreachable")
     }
 
-    private def green(s: String): String = flix.getFormatter.green(s)
+    // TODO: Use flix.formatter
+    private def green(s: String): String = Console.GREEN + s + Console.RESET
 
+    // TODO: Use flix.formatter
     private def magenta(s: String): String = Console.MAGENTA + s + Console.RESET
 
+    // TODO: Use flix.formatter
     private def red(s: String): String = Console.RED + s + Console.RESET
   }
-
 
 
   class TestRunner(queue: ConcurrentLinkedQueue[TestEvent], compilationResult: CompilationResult)(implicit flix: Flix) extends Thread {
