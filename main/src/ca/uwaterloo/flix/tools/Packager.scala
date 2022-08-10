@@ -359,7 +359,7 @@ object Packager {
     implicit val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
     build(p, o) flatMap {
       compilationResult =>
-        Tester.run(compilationResult)
+        Tester.run(Nil, compilationResult)
         ().toOk
     }
   }
