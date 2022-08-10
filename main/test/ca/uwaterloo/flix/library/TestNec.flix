@@ -1048,13 +1048,13 @@ namespace TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool & Impure =
+    def foreach01(): Bool \ IO =
         let r = ref 21;
         Nec.foreach(x -> r := x, singleton(1));
         1 == deref r
 
     @test
-    def foreach02(): Bool & Impure =
+    def foreach02(): Bool \ IO =
         let r = ref 21;
         Nec.foreach(x -> r := x, necOf3(1, 2, 3));
         3 == deref r

@@ -120,8 +120,8 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def fromString(s: String): Result[Float32, String] = try {
-        import java.lang.String.strip(): String & Pure;
-        import static java.lang.Float.parseFloat(String): Float32 & Pure;
+        import java.lang.String.strip(): String \ {};
+        import static java.lang.Float.parseFloat(String): Float32 \ {};
         Ok(s |> strip |> parseFloat)
      } catch {
          case _: ##java.lang.NumberFormatException => Err("Float32.fromString")
@@ -138,8 +138,8 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt8(x: Float32): Option[Int8] =
-        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure;
-        import java.lang.Float.byteValue(): Int8 & Pure;
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float \ {};
+        import java.lang.Float.byteValue(): Int8 \ {};
         if (x < Int8.toFloat32(Int8.minValue()) or x > Int8.toFloat32(Int8.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
@@ -156,8 +156,8 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt16(x: Float32): Option[Int16] =
-        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure;
-        import java.lang.Float.shortValue(): Int16 & Pure;
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float \ {};
+        import java.lang.Float.shortValue(): Int16 \ {};
         if (x < Int16.toFloat32(Int16.minValue()) or x > Int16.toFloat32(Int16.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
@@ -177,8 +177,8 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt32(x: Float32): Option[Int32] =
-        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure;
-        import java.lang.Float.intValue(): Int32 & Pure;
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float \ {};
+        import java.lang.Float.intValue(): Int32 \ {};
         if (x < Int32.toFloat32(Int32.minValue()) or x > Int32.toFloat32(Int32.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
@@ -198,8 +198,8 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt64(x: Float32): Option[Int64] =
-        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure;
-        import java.lang.Float.longValue(): Int64 & Pure;
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float \ {};
+        import java.lang.Float.longValue(): Int64 \ {};
         if (x < Int64.toFloat32(Int64.minValue()) or x > Int64.toFloat32(Int64.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
@@ -221,8 +221,8 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def toFloat64(x: Float32): Float64 =
-        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure;
-        import java.lang.Float.doubleValue(): Float64 & Pure;
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float \ {};
+        import java.lang.Float.doubleValue(): Float64 \ {};
         (valueOf(x) |> doubleValue)
 
     ///
@@ -247,8 +247,8 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt8(x: Float32, minimum: Int8, maximum: Int8, nanValue: Int8): Int8 =
-        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure;
-        import java.lang.Float.byteValue(): Int8 & Pure;
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float \ {};
+        import java.lang.Float.byteValue(): Int8 \ {};
         let minf32 = Int8.toFloat32(minimum);
         let maxf32 = Int8.toFloat32(maximum);
         if (isNan(x))
@@ -266,8 +266,8 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt16(x: Float32, minimum: Int16, maximum: Int16, nanValue: Int16): Int16 =
-        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure;
-        import java.lang.Float.shortValue(): Int16 & Pure;
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float \ {};
+        import java.lang.Float.shortValue(): Int16 \ {};
         let minf32 = Int16.toFloat32(minimum);
         let maxf32 = Int16.toFloat32(maximum);
         if (isNan(x))
@@ -285,8 +285,8 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt32(x: Float32, minimum: Int32, maximum: Int32, nanValue: Int32): Int32 =
-        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure;
-        import java.lang.Float.intValue(): Int32 & Pure;
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float \ {};
+        import java.lang.Float.intValue(): Int32 \ {};
         let minf32 = Int32.toFloat32(minimum);
         let maxf32 = Int32.toFloat32(maximum);
         if (isNan(x))
@@ -304,8 +304,8 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt64(x: Float32, minimum: Int64, maximum: Int64, nanValue: Int64): Int64 =
-        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure;
-        import java.lang.Float.longValue(): Int64 & Pure;
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float \ {};
+        import java.lang.Float.longValue(): Int64 \ {};
         let minf32 = Int64.toFloat32(minimum);
         let maxf32 = Int64.toFloat32(maximum);
         if (isNan(x))
@@ -318,7 +318,7 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def abs(x: Float32): Float32 =
-        import static java.lang.Math.abs(Float32): Float32 & Pure;
+        import static java.lang.Math.abs(Float32): Float32 \ {};
         abs(x)
 
     ///
@@ -326,11 +326,11 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def ceil(x: Float32): Float32 =
-        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure as valueOfF32;
-        import static java.lang.Double.valueOf(Float64): ##java.lang.Double & Pure as valueOfF64;
-        import static java.lang.Math.ceil(Float64): Float64 & Pure;
-        import java.lang.Double.floatValue(): Float32 & Pure;
-        import java.lang.Float.doubleValue(): Float64 & Pure;
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float \ {} as valueOfF32;
+        import static java.lang.Double.valueOf(Float64): ##java.lang.Double \ {} as valueOfF64;
+        import static java.lang.Math.ceil(Float64): Float64 \ {};
+        import java.lang.Double.floatValue(): Float32 \ {};
+        import java.lang.Float.doubleValue(): Float64 \ {};
         let x1 = ceil(doubleValue(valueOfF32(x)));
         floatValue(valueOfF64(x1))
 
@@ -339,11 +339,11 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def floor(x: Float32): Float32 =
-        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure as valueOfF32;
-        import static java.lang.Double.valueOf(Float64): ##java.lang.Double & Pure as valueOfF64;
-        import static java.lang.Math.floor(Float64): Float64 & Pure;
-        import java.lang.Double.floatValue(): Float32 & Pure;
-        import java.lang.Float.doubleValue(): Float64 & Pure;
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float \ {} as valueOfF32;
+        import static java.lang.Double.valueOf(Float64): ##java.lang.Double \ {} as valueOfF64;
+        import static java.lang.Math.floor(Float64): Float64 \ {};
+        import java.lang.Double.floatValue(): Float32 \ {};
+        import java.lang.Float.doubleValue(): Float64 \ {};
         let x1 = floor(doubleValue(valueOfF32(x)));
         floatValue(valueOfF64(x1))
 
@@ -355,11 +355,11 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def round(x: Float32): Float32 =
-        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure as valueOfF32;
-        import static java.lang.Double.valueOf(Float64): ##java.lang.Double & Pure as valueOfF64;
-        import static java.lang.Math.rint(Float64): Float64 & Pure;
-        import java.lang.Double.floatValue(): Float32 & Pure;
-        import java.lang.Float.doubleValue(): Float64 & Pure;
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float \ {} as valueOfF32;
+        import static java.lang.Double.valueOf(Float64): ##java.lang.Double \ {} as valueOfF64;
+        import static java.lang.Math.rint(Float64): Float64 \ {};
+        import java.lang.Double.floatValue(): Float32 \ {};
+        import java.lang.Float.doubleValue(): Float64 \ {};
         let x1 = rint(doubleValue(valueOfF32(x)));
         floatValue(valueOfF64(x1))
 

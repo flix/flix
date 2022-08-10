@@ -1486,7 +1486,7 @@ def unfold08(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def unfoldWithIter01(): Bool & Impure =
+def unfoldWithIter01(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (true)
@@ -1499,7 +1499,7 @@ def unfoldWithIter01(): Bool & Impure =
     String.unfoldWithIter(step) == ""
 
 @test
-def unfoldWithIter02(): Bool & Impure =
+def unfoldWithIter02(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x > 0)
@@ -1512,7 +1512,7 @@ def unfoldWithIter02(): Bool & Impure =
     String.unfoldWithIter(step) == "a"
 
 @test
-def unfoldWithIter03(): Bool & Impure =
+def unfoldWithIter03(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x > 1)
@@ -1525,7 +1525,7 @@ def unfoldWithIter03(): Bool & Impure =
     String.unfoldWithIter(step) == "ab"
 
 @test
-def unfoldWithIter04(): Bool & Impure =
+def unfoldWithIter04(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x >= 10)
@@ -1538,7 +1538,7 @@ def unfoldWithIter04(): Bool & Impure =
     String.unfoldWithIter(step) == "abcdefghij"
 
 @test
-def unfoldWithIter05(): Bool & Impure =
+def unfoldWithIter05(): Bool \ IO =
     let x = ref 5;
     let step = () ->
         if (deref x >= 10)
@@ -1551,7 +1551,7 @@ def unfoldWithIter05(): Bool & Impure =
     String.unfoldWithIter(step) == "fghij"
 
 @test
-def unfoldWithIter06(): Bool & Impure =
+def unfoldWithIter06(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x >= 10)
@@ -1605,7 +1605,7 @@ def unfoldString08(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def unfoldStringWithIter01(): Bool & Impure =
+def unfoldStringWithIter01(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (true)
@@ -1620,7 +1620,7 @@ def unfoldStringWithIter01(): Bool & Impure =
     String.unfoldStringWithIter(step) == ""
 
 @test
-def unfoldStringWithIter02(): Bool & Impure =
+def unfoldStringWithIter02(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x > 0)
@@ -1635,7 +1635,7 @@ def unfoldStringWithIter02(): Bool & Impure =
     String.unfoldStringWithIter(step) == "Aa."
 
 @test
-def unfoldStringWithIter03(): Bool & Impure =
+def unfoldStringWithIter03(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x > 1)
@@ -1650,7 +1650,7 @@ def unfoldStringWithIter03(): Bool & Impure =
     String.unfoldStringWithIter(step) == "Aa.Bb."
 
 @test
-def unfoldStringWithIter04(): Bool & Impure =
+def unfoldStringWithIter04(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x >= 10)
@@ -1665,7 +1665,7 @@ def unfoldStringWithIter04(): Bool & Impure =
     String.unfoldStringWithIter(step) == "Aa.Bb.Cc.Dd.Ee.Ff.Gg.Hh.Ii.Jj."
 
 @test
-def unfoldStringWithIter05(): Bool & Impure =
+def unfoldStringWithIter05(): Bool \ IO =
     let x = ref 5;
     let step = () ->
         if (deref x >= 10)
@@ -1680,7 +1680,7 @@ def unfoldStringWithIter05(): Bool & Impure =
     String.unfoldStringWithIter(step) == "Ff.Gg.Hh.Ii.Jj."
 
 @test
-def unfoldStringWithIter06(): Bool & Impure =
+def unfoldStringWithIter06(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x >= 10)

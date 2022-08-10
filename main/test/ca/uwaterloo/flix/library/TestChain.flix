@@ -1381,13 +1381,13 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool & Impure =
+    def foreach01(): Bool \ IO =
         let r = ref 21;
         Chain.foreach(x -> r := x, Chain.empty());
         21 == deref r
 
     @test
-    def foreach02(): Bool & Impure =
+    def foreach02(): Bool \ IO =
         let r = ref 21;
         Chain.foreach(x -> r := x, List.toChain(1 :: 2 :: 3 :: Nil));
         3 == deref r

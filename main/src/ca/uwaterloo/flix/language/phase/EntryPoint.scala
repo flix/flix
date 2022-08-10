@@ -39,7 +39,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
   *  For example, given an entry point `func` with type `Unit -> Float64`,
   *  we produce:
   *  {{{
-  *  pub def main%(): Unit & Impure = {
+  *  pub def main%(): Unit \ IO = {
   *      println(func(args))
   *  }
   *  }}}

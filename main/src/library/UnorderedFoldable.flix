@@ -25,7 +25,7 @@ pub class UnorderedFoldable[t : Type -> Type] {
     /// Applies `f` to all elements in `t` and combines the results
     /// i.e. `CommutativeMonoid.combine(f(a))` for all `a` in `t`.
     ///
-    pub def foldMap(f: a -> b & ef, t: t[a]): b & ef with CommutativeMonoid[b]
+    pub def foldMap(f: a -> b \ ef, t: t[a]): b \ ef with CommutativeMonoid[b]
 
     ///
     /// Returns the result of applying `CommutativeMonoid.combine` to all the elements in `t`.
@@ -44,7 +44,7 @@ pub class UnorderedFoldable[t : Type -> Type] {
     ///
     /// Returns `false` if `t` is empty.
     ///
-    pub def exists(f: a -> Bool & ef, t: t[a]): Bool & ef =
+    pub def exists(f: a -> Bool \ ef, t: t[a]): Bool \ ef =
         use SemiGroup.Any.Any;
         let Any(x) = UnorderedFoldable.foldMap(a -> Any(f(a)), t);
         x
@@ -54,7 +54,7 @@ pub class UnorderedFoldable[t : Type -> Type] {
     ///
     /// Returns `true` if `t` is empty.
     ///
-    pub def forall(f: a -> Bool & ef, t: t[a]): Bool & ef =
+    pub def forall(f: a -> Bool \ ef, t: t[a]): Bool \ ef =
         use SemiGroup.All.All;
         let All(x) = UnorderedFoldable.foldMap(a -> All(f(a)), t);
         x
@@ -74,7 +74,7 @@ pub class UnorderedFoldable[t : Type -> Type] {
     ///
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
     ///
-    pub def count(f: a -> Bool & ef, t: t[a]): Int32 & ef =
+    pub def count(f: a -> Bool \ ef, t: t[a]): Int32 \ ef =
         UnorderedFoldable.foldMap(a -> if (f(a)) 1 else 0, t)
 
 }

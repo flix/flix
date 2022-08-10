@@ -25,7 +25,7 @@ class MonadZip[m: Type -> Type] with Monad[m] {
     /// Returns single monad where the element (or elements) of `ma` and `mb` are combined
     /// with the function `f`.
     ///
-    pub def zipWith(f: (a, b) -> c & ef, ma: m[a], mb: m[b]): m[c] & ef
+    pub def zipWith(f: (a, b) -> c \ ef, ma: m[a], mb: m[b]): m[c] \ ef
 
     ///
     /// Returns single monad where the element (or elements) of `ma` and `mb` are combined
@@ -43,6 +43,6 @@ class MonadZip[m: Type -> Type] with Monad[m] {
     /// Generalized version of `zipWith` where `f` zips an applicative functor across the
     /// (monadic) containers `ma` and `mb`.
     ///
-    pub def zipWithA(f: (a, b) -> f[c] & ef, ma: m[a], mb: m[b]): f[m[c]] & ef with Applicative[f]
+    pub def zipWithA(f: (a, b) -> f[c] \ ef, ma: m[a], mb: m[b]): f[m[c]] \ ef with Applicative[f]
 
 }

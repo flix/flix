@@ -51,60 +51,60 @@ instance Order[Nel[a]] with Order[a] {
 }
 
 instance Functor[Nel] {
-    pub def map(f: a -> b & ef, l: Nel[a]): Nel[b] & ef = Nel.map(f, l)
+    pub def map(f: a -> b \ ef, l: Nel[a]): Nel[b] \ ef = Nel.map(f, l)
 }
 
 instance Applicative[Nel] {
     pub def point(x: a): Nel[a] = Nel.singleton(x)
-    pub def ap(f: Nel[a -> b & ef], x: Nel[a]): Nel[b] & ef = Nel.ap(f, x)
+    pub def ap(f: Nel[a -> b \ ef], x: Nel[a]): Nel[b] \ ef = Nel.ap(f, x)
 }
 
 instance Monad[Nel] {
-    pub def flatMap(f: a -> Nel[b] & ef, x : Nel[a]) : Nel[b] & ef = Nel.flatMap(f, x)
+    pub def flatMap(f: a -> Nel[b] \ ef, x : Nel[a]) : Nel[b] \ ef = Nel.flatMap(f, x)
 }
 
 instance MonadZip[Nel] {
-    pub def zipWith(f: (a, b) -> c & ef, xs: Nel[a], ys: Nel[b]): Nel[c] & ef = Nel.zipWith(f, xs, ys)
-    pub def zipWithA(f: (a, b) -> f[c] & ef, xs: Nel[a], ys: Nel[b]): f[Nel[c]] & ef with Applicative[f] = Nel.zipWithA(f, xs, ys)
+    pub def zipWith(f: (a, b) -> c \ ef, xs: Nel[a], ys: Nel[b]): Nel[c] \ ef = Nel.zipWith(f, xs, ys)
+    pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Nel[a], ys: Nel[b]): f[Nel[c]] \ ef with Applicative[f] = Nel.zipWithA(f, xs, ys)
     pub override def zip(xs: Nel[a], ys: Nel[b]): Nel[(a, b)] = Nel.zip(xs, ys)
     pub override def unzip(xs: Nel[(a, b)]): (Nel[a], Nel[b]) = Nel.unzip(xs)
 }
 
 instance Foldable[Nel] {
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldLeft(f, s, l)
-    pub def foldRight(f: (a, b) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldRight(f, s, l)
-    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldRightWithCont(f, s, l)
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldLeft(f, s, l)
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldRight(f, s, l)
+    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldRightWithCont(f, s, l)
     override pub def iterator(r: Region[r], l: Nel[a]): Iterator[a, r] \ Write(r) = Nel.iterator(r, l)
 }
 
 instance UnorderedFoldable[Nel] {
-    pub def foldMap(f: a -> b & ef, l: Nel[a]): b & ef with CommutativeMonoid[b] = Nel.foldMap(f, l)
+    pub def foldMap(f: a -> b \ ef, l: Nel[a]): b \ ef with CommutativeMonoid[b] = Nel.foldMap(f, l)
     override pub def isEmpty(_: Nel[a]): Bool = false
-    override pub def exists(f: a -> Bool & ef, l: Nel[a]): Bool & ef = Nel.exists(f, l)
-    override pub def forall(f: a -> Bool & ef, l: Nel[a]): Bool & ef = Nel.forall(f, l)
+    override pub def exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
+    override pub def forall(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forall(f, l)
     override pub def memberOf(x: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(x, l)
 }
 
 instance Traversable[Nel] {
-    pub def traverse(f: a -> m[b] & ef, t: Nel[a]): m[Nel[b]] & ef with Applicative[m] = Nel.traverse(f, t)
+    pub def traverse(f: a -> m[b] \ ef, t: Nel[a]): m[Nel[b]] \ ef with Applicative[m] = Nel.traverse(f, t)
     pub override def sequence(t: Nel[m[a]]): m[Nel[a]] with Applicative[m] = Nel.sequence(t)
 }
 
 instance Reducible[Nel] {
-    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b \ {ef1, ef2} = Nel.reduceLeftTo(f, g, l)
-    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b \ {ef1, ef2} = Nel.reduceRightTo(f, g, l)
+    pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ {ef1, ef2} = Nel.reduceLeftTo(f, g, l)
+    pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ {ef1, ef2} = Nel.reduceRightTo(f, g, l)
     override pub def head(l: Nel[a]): a = Nel.head(l)
     override pub def last(l: Nel[a]): a = Nel.last(l)
     override pub def init(l: Nel[a]): List[a] = Nel.init(l)
     override pub def tail(l: Nel[a]): List[a] = Nel.tail(l)
-    override pub def exists(f: a -> Bool & ef, l: Nel[a]): Bool & ef = Nel.exists(f, l)
-    override pub def forall(f: a -> Bool & ef, l: Nel[a]): Bool & ef = Nel.forall(f, l)
-    override pub def find(f: a -> Bool & ef, l: Nel[a]): Option[a] & ef = Nel.find(f, l)
-    override pub def findLeft(f: a -> Bool & ef, l: Nel[a]): Option[a] & ef = Nel.findLeft(f, l)
-    override pub def findRight(f: a -> Bool & ef, l: Nel[a]): Option[a] & ef = Nel.findRight(f, l)
+    override pub def exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
+    override pub def forall(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forall(f, l)
+    override pub def find(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.find(f, l)
+    override pub def findLeft(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.findLeft(f, l)
+    override pub def findRight(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.findRight(f, l)
     override pub def memberOf(a: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(a, l)
-    override pub def dropWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef = Nel.dropWhile(f, l)
-    override pub def takeWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef = Nel.takeWhile(f, l)
+    override pub def dropWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.dropWhile(f, l)
+    override pub def takeWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.takeWhile(f, l)
     override pub def toArray(r: Region[r], l: Nel[a]): Array[a, r] \ Write(r) = Nel.toArray(r, l)
     override pub def iterator(r: Region[r], l: Nel[a]): Iterator[a, r] \ Write(r) = Nel.iterator(r, l)
     override pub def toList(l: Nel[a]): List[a] = Nel.toList(l)
@@ -233,13 +233,13 @@ namespace Nel {
     /// Alias for `findLeft`.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def find(f: a -> Bool & ef, l: Nel[a]): Option[a] & ef = findLeft(f, l)
+    pub def find(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = findLeft(f, l)
 
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from left to right.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def findLeft(f: a -> Bool & ef, l: Nel[a]): Option[a] & ef = match l {
+    pub def findLeft(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = match l {
         case Nel(x, xs) => if (f(x)) Some(x) else List.findLeft(f, xs)
     }
 
@@ -247,7 +247,7 @@ namespace Nel {
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def findRight(f: a -> Bool & ef, l: Nel[a]): Option[a] & ef = match l {
+    pub def findRight(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = match l {
         case Nel(x, xs) => match List.findRight(f, xs) {
             case None    => if (f(x)) Some(x) else None
             case Some(y) => Some(y)
@@ -260,7 +260,7 @@ namespace Nel {
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
-    pub def map(f: a -> b & ef, l: Nel[a]): Nel[b] & ef = match l {
+    pub def map(f: a -> b \ ef, l: Nel[a]): Nel[b] \ ef = match l {
         case Nel(x, xs) => Nel(f(x), List.map(f, xs))
     }
 
@@ -270,7 +270,7 @@ namespace Nel {
     /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
     ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
-    pub def mapWithIndex(f: (a, Int32) -> b & ef, l: Nel[a]): Nel[b] & ef =
+    pub def mapWithIndex(f: (a, Int32) -> b \ ef, l: Nel[a]): Nel[b] \ ef =
         let Nel(x, xs) = l;
         match List.mapWithIndex(f, x :: xs) {
             case y :: ys => Nel(y, ys)
@@ -282,7 +282,7 @@ namespace Nel {
     /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
     /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
     ///
-    pub def ap(f: Nel[a -> b & ef], l: Nel[a]) : Nel[b] & ef =
+    pub def ap(f: Nel[a -> b \ ef], l: Nel[a]) : Nel[b] \ ef =
         // Note - loop has been worker-wrapper transformed to represent the list of
         // functions as head (f1) and tail (fs) so we never have an empty list to deal with.
         def loop(f1, fs, k) = match fs {
@@ -301,7 +301,7 @@ namespace Nel {
     /// Returns the result of applying `f` to every element in `l` and concatenating the results.
     ///
     @Time(time(f) * length(l)) @Space(time(f) * length(l))
-    pub def flatMap(f: a -> Nel[b] & ef, l: Nel[a]): Nel[b] & ef = match l {
+    pub def flatMap(f: a -> Nel[b] \ ef, l: Nel[a]): Nel[b] \ ef = match l {
         case Nel(x, xs) => match f(x) {
             case Nel(y, ys) => Nel(y, ys ::: List.flatMap(z -> toList(f(z)), xs))
         }
@@ -370,7 +370,7 @@ namespace Nel {
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, l: Nel[a]): b & ef = match l {
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: Nel[a]): b \ ef = match l {
         case Nel(x, xs) => List.foldLeft(f, f(s, x), xs)
     }
 
@@ -379,7 +379,7 @@ namespace Nel {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, l: Nel[a]): b & ef = match l {
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, l: Nel[a]): b \ ef = match l {
         case Nel(x, xs) => f(x, List.foldRight(f, s, xs))
     }
 
@@ -389,14 +389,14 @@ namespace Nel {
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, l: Nel[a]): b & ef = match l {
+    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, l: Nel[a]): b \ ef = match l {
         case Nel(x, xs) => f(x, _ -> List.foldRightWithCont(f, z, xs))
     }
 
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
-    pub def foldMap(f: a -> b & ef, l: Nel[a]): b & ef with Monoid[b] =
+    pub def foldMap(f: a -> b \ ef, l: Nel[a]): b \ ef with Monoid[b] =
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), l)
 
     ///
@@ -404,7 +404,7 @@ namespace Nel {
     /// Applies `g` to the initial element of `l` and combines it
     /// with the remainder of `l` using `f` going from left to right.
     ///
-    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b \ {ef1, ef2} = match l {
+    pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ {ef1, ef2} = match l {
         case Nel(x, xs) => List.foldLeft(f, g(x), xs)
     }
 
@@ -434,7 +434,7 @@ namespace Nel {
     ///
     /// That is, the result is of the form: `f(...f(f(x1, x2), x3)..., xn)`
     ///
-    pub def reduceLeft(f: (a, a) -> a & ef, l: Nel[a]): a & ef = match l {
+    pub def reduceLeft(f: (a, a) -> a \ ef, l: Nel[a]): a \ ef = match l {
         case Nel(x, xs) => List.foldLeft(f, x, xs)
     }
 
@@ -443,7 +443,7 @@ namespace Nel {
     ///
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     ///
-    pub def reduceRight(f: (a, a) -> a & ef, l: Nel[a]): a & ef = match l {
+    pub def reduceRight(f: (a, a) -> a \ ef, l: Nel[a]): a \ ef = match l {
         case Nel(x, xs) => match List.reduceRight(f, x :: xs) {
             case None    => unreachable!()
             case Some(v) => v
@@ -454,7 +454,7 @@ namespace Nel {
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
     ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
-    pub def count(f: a -> Bool & ef, l: Nel[a]): Int32 & ef = match l {
+    pub def count(f: a -> Bool \ ef, l: Nel[a]): Int32 \ ef = match l {
         case Nel(x, xs) => (if (f(x)) 1 else 0) + List.count(f, xs)
     }
 
@@ -467,7 +467,7 @@ namespace Nel {
     ///
     /// Returns the sum of all elements in the list `l` according to the function `f`.
     ///
-    pub def sumWith(f: a -> Int32 & ef, l: Nel[a]): Int32 & ef =
+    pub def sumWith(f: a -> Int32 \ ef, l: Nel[a]): Int32 \ ef =
         Foldable.sumWith(f, l)
 
     ///
@@ -479,7 +479,7 @@ namespace Nel {
     ///
     /// Returns the product of all elements in the list `l` according to the function `f`.
     ///
-    pub def productWith(f: a -> Int32 & ef, l: Nel[a]): Int32 & ef =
+    pub def productWith(f: a -> Int32 \ ef, l: Nel[a]): Int32 \ ef =
         Foldable.productWith(f, l)
 
     ///
@@ -494,7 +494,7 @@ namespace Nel {
     /// Returns `true` if and only if at least one element in `l` satisfies the predicate `f`.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def exists(f: a -> Bool & ef, l: Nel[a]): Bool & ef = match l {
+    pub def exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = match l {
         case Nel(x, xs) => if (f(x)) true else List.exists(f, xs)
     }
 
@@ -502,7 +502,7 @@ namespace Nel {
     /// Returns `true` if and only if all elements in `l` satisfy the predicate `f`.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def forall(f: a -> Bool & ef, l: Nel[a]): Bool & ef = match l {
+    pub def forall(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = match l {
         case Nel(x, xs) => if (f(x)) List.forall(f, xs) else false
     }
 
@@ -536,7 +536,7 @@ namespace Nel {
     /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
     ///
     @Time(time(f) * Int32.min(length(l1), length(l2))) @Space(space(f) * Int32.min(length(l1), length(l2)))
-    pub def zipWith(f: (a, b) -> c & ef, l1: Nel[a], l2: Nel[b]): Nel[c] & ef = match (l1, l2) {
+    pub def zipWith(f: (a, b) -> c \ ef, l1: Nel[a], l2: Nel[b]): Nel[c] \ ef = match (l1, l2) {
         case (Nel(x, xs), Nel(y, ys)) => Nel(f(x, y), List.zipWith(f, xs, ys))
     }
 
@@ -566,7 +566,7 @@ namespace Nel {
     ///
     /// Generalize `zipWith` to an applicative functor `f`.
     ///
-    pub def zipWithA(f: (a, b) -> m[c] & ef, xs: Nel[a], ys: Nel[b]): m[Nel[c]] & ef with Applicative[m] =
+    pub def zipWithA(f: (a, b) -> m[c] \ ef, xs: Nel[a], ys: Nel[b]): m[Nel[c]] \ ef with Applicative[m] =
         use Functor.{<$>};
         use Applicative.{<*>};
         match (xs, ys) {
@@ -601,7 +601,7 @@ namespace Nel {
     /// Applies `f` to every element of `l`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def foreach(f: a -> Unit & ef, l: Nel[a]): Unit & ef = match l {
+    pub def foreach(f: a -> Unit \ ef, l: Nel[a]): Unit \ ef = match l {
         case Nel(x, xs) => f(x); List.foreach(f, xs)
     }
 
@@ -672,7 +672,7 @@ namespace Nel {
     ///
     /// Returns the result of running all the actions in the non-empty list `l`.
     ///
-    pub def traverse(f: a -> m[b] & ef, l: Nel[a]): m[Nel[b]] & ef with Applicative[m] =
+    pub def traverse(f: a -> m[b] \ ef, l: Nel[a]): m[Nel[b]] \ ef with Applicative[m] =
         match l {
             case Nel(x, xs) => (((y, ys) -> Nel(y, ys)) `Functor.map` f(x)) `Applicative.ap` Traversable.traverse(f, xs)
         }
@@ -697,20 +697,20 @@ namespace Nel {
     /// Returns the concatenation of the string representation
     /// of each element in `l` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, l: Nel[a]): String & ef =
+    pub def joinWith(f: a -> String \ ef, sep: String, l: Nel[a]): String \ ef =
         Foldable.joinWith(f, sep, l)
 
     ///
     /// Returns `l` without the longest prefix that satisfies the predicate `f`.
     ///
-    pub def dropWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef =
+    pub def dropWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef =
         let Nel(x, xs) = l;
         List.dropWhile(f, x :: xs)
 
     ///
     /// Returns the longest prefix of `l` that satisfies the predicate `f`.
     ///
-    pub def takeWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef =
+    pub def takeWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef =
         let Nel(x, xs) = l;
         List.takeWhile(f, x :: xs)
 

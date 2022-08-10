@@ -49,13 +49,13 @@ namespace Test/Eff/Advanced {
     def pure(): Unit = ()
 
     /// An impure function from Unit -> Unit.
-    def impure(): Unit & Impure = discard [1, 2, 3]; ()
+    def impure(): Unit \ IO = discard [1, 2, 3]; ()
 
     /// A function that requires a pure function
     def requiresPure(_f: a -> b): Unit = ()
 
     /// A function that requires an impure function.
-    def requiresImpure(_f: a -> b & Impure): Unit = ()
+    def requiresImpure(_f: a -> b \ IO): Unit = ()
 
     /// A function that requires a pure and an impure function.
     def requiresPureAndImpure1(_f: a -> b & e, _g: a -> b & (not e)): Unit = ()

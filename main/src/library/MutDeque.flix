@@ -108,7 +108,7 @@ namespace MutDeque {
     ///
     /// Returns the sum of all elements in the deque `d` according to the function `f`.
     ///
-    pub def sumWith(f: a -> Int32 & ef, d: MutDeque[a, r]): Int32 \ { ef, Read(r) } =
+    pub def sumWith(f: a -> Int32 \ ef, d: MutDeque[a, r]): Int32 \ { ef, Read(r) } =
         foldLeft((acc, x) -> f(x) + acc, 0, d)
 
     ///
@@ -120,7 +120,7 @@ namespace MutDeque {
     ///
     /// Returns the product of all elements in the deque `d` according to the function `f`.
     ///
-    pub def productWith(f: a -> Int32 & ef, d: MutDeque[a, r]): Int32 \ { ef, Read(r) } =
+    pub def productWith(f: a -> Int32 \ ef, d: MutDeque[a, r]): Int32 \ { ef, Read(r) } =
         if (isEmpty(d))
             0
         else
@@ -131,7 +131,7 @@ namespace MutDeque {
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, d: MutDeque[a, r]): b \ { ef, Read(r) } =
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, d: MutDeque[a, r]): b \ { ef, Read(r) } =
         let MutDeque(ar_, front_, back_) = d;
         let ar = deref ar_;
         let front = deref front_;
@@ -149,7 +149,7 @@ namespace MutDeque {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, d: MutDeque[a, r]): b \ { ef, Read(r) } =
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, d: MutDeque[a, r]): b \ { ef, Read(r) } =
         let MutDeque(ar_, front_, back_) = d;
         let ar = deref ar_;
         let front = deref front_;
@@ -170,7 +170,7 @@ namespace MutDeque {
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithCont(f: (a, Unit -> b & ef and r) -> b & ef and r, s: b, d: MutDeque[a, r]): b \ { ef, Read(r) } =
+    pub def foldRightWithCont(f: (a, Unit -> b \ {ef, r}) -> b \ {ef, r}, s: b, d: MutDeque[a, r]): b \ { ef, Read(r) } =
         let MutDeque(ar_, front_, back_) = d;
         let ar = deref ar_;
         let front = deref front_;
@@ -187,7 +187,7 @@ namespace MutDeque {
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
-    pub def foldMap(f: a -> b & ef, d: MutDeque[a, r]): b \ { ef, Read(r) } with Monoid[b] =
+    pub def foldMap(f: a -> b \ ef, d: MutDeque[a, r]): b \ { ef, Read(r) } with Monoid[b] =
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), d)
 
     ///
@@ -399,7 +399,7 @@ namespace MutDeque {
     /// Returns the concatenation of the string representation
     /// of each element in `d` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, d: MutDeque[a, r]): String \ { ef, Read(r) } = region r1 {
+    pub def joinWith(f: a -> String \ ef, sep: String, d: MutDeque[a, r]): String \ { ef, Read(r) } = region r1 {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = new StringBuilder(r1);
@@ -427,7 +427,7 @@ namespace MutDeque {
     ///
     /// Apply the effectful function `f` to all the elements in the MutDeque `d`.
     ///
-    pub def foreach(f: a -> Unit & ef, d: MutDeque[a, r]): Unit \ { ef, Read(r) } =
+    pub def foreach(f: a -> Unit \ ef, d: MutDeque[a, r]): Unit \ { ef, Read(r) } =
         let MutDeque(a, front, back) = d;
         let c = capacity(d) - 1;
 

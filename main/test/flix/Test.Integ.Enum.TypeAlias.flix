@@ -14,7 +14,7 @@ namespace M {
 }
 
 namespace Test/Integ/Enum/TypeAlias {
-    pub type alias T[ef: Region] = Unit -> Bool & ef
+    pub type alias T[ef: Region] = Unit -> Bool \ ef
     pub enum E[ef: Region] {
         case E(T[ef])
     }
