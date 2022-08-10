@@ -66,7 +66,9 @@ object Tester {
       val writer = terminal.writer()
 
       // Print headline.
-      writer.println(s"Testing started... Total tests: ${tests.length}.")
+      writer.println(s"Running ${tests.length} tests...")
+      writer.println()
+      writer.flush()
 
       // Main event loop.
       var passed = 0
@@ -106,15 +108,20 @@ object Tester {
     private def red(s: AnyRef): String = Console.RED + s + Console.RESET
   }
 
-  // TODO: DOC
+  /**
+    * A class that runs all the given tests emitting test events.
+    */
   private class TestRunner(queue: ConcurrentLinkedQueue[TestEvent], tests: Vector[TestCase])(implicit flix: Flix) extends Thread {
-
-    // TODO: DOC
+    /**
+      * Runs all the given tests.
+      */
     override def run(): Unit = {
+      val start = System.nanoTime()
       for (testCase <- tests) {
         runTest(testCase)
       }
-      queue.add(TestEvent.Finished(0)) // TODO
+      val elapsed = System.nanoTime() - start
+      queue.add(TestEvent.Finished(elapsed))
     }
 
     /**
