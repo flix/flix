@@ -28,7 +28,7 @@ namespace Assert {
             println("Assertion Error:");
             println("  Expected: ${green(expected)}");
             println("  Actual:   ${red(actual)}");
-            ?fsd
+            ?assertEq
         }
     } as \ {}
 
