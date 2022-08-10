@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import org.scalatest.FunSuite
 
@@ -85,10 +85,10 @@ class FlixSuite(incremental: Boolean) extends FunSuite {
       val testsByName = tests.toList.sortBy(_._1.name)
 
       // Evaluate each tests with a clue of its source location.
-      for ((sym, defn) <- testsByName) {
+      for ((sym, TestFn(_, _, run)) <- testsByName) {
         withClue(sym.loc.format) {
           // Evaluate the function.
-          val result = defn()
+          val result = run()
           // Expect the true value, if boolean.
           if (result.isInstanceOf[java.lang.Boolean]) {
             if (result != true) {

@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
 import ca.uwaterloo.flix.util.Duration
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
@@ -73,6 +73,7 @@ object Tester {
 
       // Main event loop.
       var passed = 0
+      var skipped = 0
       var failed: List[(Symbol.DefnSym, List[String])] = Nil
 
       var finished = false
@@ -93,6 +94,11 @@ object Tester {
             writer.println(s"  ${redBg(" FAIL ")} $sym ${magenta(elapsed.fmt)}")
             terminal.flush()
 
+          case TestEvent.Skip(sym) =>
+            skipped = skipped + 1
+            writer.println(s"  ${yellowBg(" SKIP ")} $sym")
+            terminal.flush()
+
           case TestEvent.Finished(elapsed) =>
             // Print the std out / std err of every failed test.
             if (failed.nonEmpty) {
@@ -111,7 +117,11 @@ object Tester {
 
             // Print the summary.
             writer.println()
-            writer.println(s"Finished. Passed: ${green(passed.toString)}, Failed: ${red(failed.length.toString)}. Elapsed: ${magenta(elapsed.fmt)}.")
+            writer.println(s"Finished. " +
+              s"Passed: ${green(passed.toString)}, " +
+              s"Failed: ${red(failed.length.toString)}. " +
+              s"Skipped: ${yellow(skipped.toString)}. " +
+              s"Elapsed: ${magenta(elapsed.fmt)}.")
             terminal.flush()
             finished = true
 
@@ -134,6 +144,9 @@ object Tester {
 
     // TODO: Use flix.formatter
     private def redBg(s: String): String = Console.RED_B + s + Console.RESET
+
+    // TODO: Use flix.formatter
+    private def yellow(s: String): String = Console.YELLOW + s + Console.RESET
 
     // TODO: Use flix.formatter
     private def yellowBg(s: String): String = Console.YELLOW_B + s + Console.RESET
@@ -160,7 +173,14 @@ object Tester {
       * Runs the given `test` emitting test events.
       */
     private def runTest(test: TestCase): Unit = test match {
-      case TestCase(sym, run) =>
+      case TestCase(sym, skip, run) =>
+        // Check if the test case should be ignored.
+        if (skip) {
+          queue.add(TestEvent.Skip(sym))
+          return
+        }
+
+        // We are about to run the test case.
         queue.add(TestEvent.Before(sym))
 
         // Redirect std out and std err.
@@ -257,16 +277,17 @@ object Tester {
     */
   private def getTestCases(compilationResult: CompilationResult): Vector[TestCase] =
     compilationResult.getTests.toVector.sortBy(_._1.toString).map {
-      case (sym, defn) => TestCase(sym, defn)
+      case (sym, TestFn(_, skip, run)) => TestCase(sym, skip, run)
     }
 
   /**
     * Represents a single test case.
     *
-    * @param sym the Flix symbol.
-    * @param run the code to run.
+    * @param sym  the Flix symbol.
+    * @param skip true if the test case should be skipped.
+    * @param run  the code to run.
     */
-  case class TestCase(sym: Symbol.DefnSym, run: () => AnyRef)
+  case class TestCase(sym: Symbol.DefnSym, skip: Boolean, run: () => AnyRef)
 
   /**
     * A common super-type for test events.
@@ -289,6 +310,11 @@ object Tester {
       * A test event emitted to indicate that a test failed.
       */
     case class Failure(sym: Symbol.DefnSym, output: List[String], d: Duration) extends TestEvent
+
+    /**
+      * A test event emitted to indicate that a test was ignored.
+      */
+    case class Skip(sym: Symbol.DefnSym) extends TestEvent
 
     /**
       * A test event emitted to indicates that testing has completed.

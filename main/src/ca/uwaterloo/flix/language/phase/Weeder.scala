@@ -2241,6 +2241,7 @@ object Weeder {
   private def visitAnnotationTag(ident: Name.Ident)(implicit flix: Flix): Validation[Ast.Annotation, WeederError] = ident.name match {
     case "benchmark" => Ast.Annotation.Benchmark(ident.loc).toSuccess
     case "test" => Ast.Annotation.Test(ident.loc).toSuccess
+    case "Test" => Ast.Annotation.Test(ident.loc).toSuccess
     case "Deprecated" => Ast.Annotation.Deprecated(ident.loc).toSuccess
     case "Experimental" => Ast.Annotation.Experimental(ident.loc).toSuccess
     case "Internal" => Ast.Annotation.Internal(ident.loc).toSuccess
@@ -2248,6 +2249,7 @@ object Weeder {
     case "ParallelWhenPure" => Ast.Annotation.ParallelWhenPure(ident.loc).toSuccess
     case "Lazy" => Ast.Annotation.Lazy(ident.loc).toSuccess
     case "LazyWhenPure" => Ast.Annotation.LazyWhenPure(ident.loc).toSuccess
+    case "Skip" => Ast.Annotation.Skip(ident.loc).toSuccess
     case "Space" => Ast.Annotation.Space(ident.loc).toSuccess
     case "Time" => Ast.Annotation.Time(ident.loc).toSuccess
     case "Unsafe" => Ast.Annotation.Unsafe(ident.loc).toSuccess
