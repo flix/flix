@@ -128,7 +128,7 @@ object TypeError {
         |For example:
         |
         |  def example(): Unit \ IO = println("hello")
-        |                      ^^^^^^^^
+        |                      ^^^^
         |""".stripMargin
     })
   }
