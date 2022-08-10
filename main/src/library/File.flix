@@ -924,7 +924,7 @@ namespace File {
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             import static java.nio.file.Files.newDirectoryStream(##java.nio.file.Path): ##java.nio.file.DirectoryStream \ IO;
             import java.nio.file.DirectoryStream.iterator(): ##java.util.Iterator \ IO;
-            import java.nio.file.Path.toString(): String & Pure as pathToString;
+            import java.nio.file.Path.toString(): String \ {} as pathToString;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -951,7 +951,7 @@ namespace File {
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             import static java.nio.file.Files.walk(##java.nio.file.Path, Array[##java.nio.file.FileVisitOption, Static]): ##java.util.stream.Stream \ IO;
             import java.util.stream.BaseStream.iterator(): ##java.util.Iterator \ IO;
-            import java.nio.file.Path.toString(): String & Pure as pathToString;
+            import java.nio.file.Path.toString(): String \ {} as pathToString;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);

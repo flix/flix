@@ -52,16 +52,16 @@ instance Order[MultiMap[k, v]] with Order[k], Order[v] {
 }
 
 instance Foldable[MultiMap[k]] {
-    pub def foldLeft(f: (b, v) -> b & ef, s: b, m: MultiMap[k, v]): b & ef = MultiMap.foldLeft((acc, v) -> f(acc, v), s, m)
-    pub def foldRight(f: (v, b) -> b & ef, s: b, m: MultiMap[k, v]): b & ef = MultiMap.foldRight(f, s, m)
-    pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, s: b, m: MultiMap[k, v]): b & ef = MultiMap.foldRightWithCont(f, s, m)
+    pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef = MultiMap.foldLeft((acc, v) -> f(acc, v), s, m)
+    pub def foldRight(f: (v, b) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef = MultiMap.foldRight(f, s, m)
+    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef = MultiMap.foldRightWithCont(f, s, m)
 }
 
 instance UnorderedFoldable[MultiMap[k]] {
-    pub def foldMap(f: v -> b & ef, m: MultiMap[k, v]): b & ef with CommutativeMonoid[b] = MultiMap.foldMap(f, m)
+    pub def foldMap(f: v -> b \ ef, m: MultiMap[k, v]): b \ ef with CommutativeMonoid[b] = MultiMap.foldMap(f, m)
     override pub def isEmpty(m: MultiMap[k, v]): Bool = MultiMap.isEmpty(m)
-    override pub def exists(f: v -> Bool & ef, m: MultiMap[k, v]): Bool & ef = MultiMap.exists(_ -> f, m)
-    override pub def forall(f: v -> Bool & ef, m: MultiMap[k, v]): Bool & ef = MultiMap.forall(_ -> f, m)
+    override pub def exists(f: v -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef = MultiMap.exists(_ -> f, m)
+    override pub def forall(f: v -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef = MultiMap.forall(_ -> f, m)
 }
 
 instance SemiGroup[MultiMap[k,v]] with Order[k], Order[v] {
@@ -172,25 +172,25 @@ namespace MultiMap {
     ///
     /// Otherwise, returns `m`.
     ///
-    pub def adjust(f: v -> v & ef, k: k, m: MultiMap[k, v]): MultiMap[k, v] & ef with Order[k], Order[v] =
+    pub def adjust(f: v -> v \ ef, k: k, m: MultiMap[k, v]): MultiMap[k, v] \ ef with Order[k], Order[v] =
         adjustWithKey((_, v1) -> f(v1), k, m)
 
     ///
     /// Updates `m` with `k => map(f(k), vs)` if `k => vs` is in `m`. Otherwise, returns `m`.
     ///
-    pub def adjustWithKey(f: (k, v) -> v & ef, k: k, m: MultiMap[k, v]): MultiMap[k, v] & ef with Order[k], Order[v] =
+    pub def adjustWithKey(f: (k, v) -> v \ ef, k: k, m: MultiMap[k, v]): MultiMap[k, v] \ ef with Order[k], Order[v] =
         updateWithKey((k1, v) -> Some(f(k1, v)), k, m)
 
     ///
     /// Updates `m` with `k => v1` if `k => v` is in `m` and `f(v) = Some(v1)`. Otherwise, returns `m`.
     ///
-    pub def update(f: v -> Option[v] & ef, k: k, m: MultiMap[k, v]): MultiMap[k, v] & ef with Order[k], Order[v] =
+    pub def update(f: v -> Option[v] \ ef, k: k, m: MultiMap[k, v]): MultiMap[k, v] \ ef with Order[k], Order[v] =
         updateWithKey((_, v1) -> f(v1), k, m)
 
     ///
     /// Updates `m` with `k => v1` if `k => v` is in `m` and `f(k, v) = Some(v1)`. Otherwise, returns `m`.
     ///
-    pub def updateWithKey(f: (k, v) -> Option[v] & ef, k: k, m: MultiMap[k, v]): MultiMap[k, v] & ef with Order[k], Order[v] =
+    pub def updateWithKey(f: (k, v) -> Option[v] \ ef, k: k, m: MultiMap[k, v]): MultiMap[k, v] \ ef with Order[k], Order[v] =
         let MultiMap(m1) = m;
         let outer = (k1, s) -> if (k1 == k) Set.map(v1 -> Option.getWithDefault(v1, f(k1, v1)), s) else s;
         MultiMap(Map.mapWithKey(outer, m1))
@@ -217,12 +217,12 @@ namespace MultiMap {
     ///
     /// Alias for `findLeft`.
     ///
-    pub def find(f: (k, v) -> Bool & ef, m: MultiMap[k, v]): Option[(k, v)] & ef = findLeft(f, m)
+    pub def find(f: (k, v) -> Bool \ ef, m: MultiMap[k, v]): Option[(k, v)] \ ef = findLeft(f, m)
 
     ///
     /// Optionally returns the first mapping of `m` that satisfies the predicate `f` when searching from left to right.
     ///
-    pub def findLeft(f: (k, v) -> Bool & ef, m: MultiMap[k, v]): Option[(k, v)] & ef =
+    pub def findLeft(f: (k, v) -> Bool \ ef, m: MultiMap[k, v]): Option[(k, v)] \ ef =
         let MultiMap(m1) = m;
         let findGroup = (k, s) -> Set.exists(f(k), s);
         let findItem = (k, s) -> Set.findLeft(f(k), s) |> Option.map(v1 -> (k, v1));
@@ -234,7 +234,7 @@ namespace MultiMap {
     ///
     /// Optionally returns the first mapping of `m` that satisfies the predicate `f` when searching from right to left.
     ///
-    pub def findRight(f: (k, v) -> Bool & ef, m: MultiMap[k, v]): Option[(k, v)] & ef =
+    pub def findRight(f: (k, v) -> Bool \ ef, m: MultiMap[k, v]): Option[(k, v)] \ ef =
         let MultiMap(m1) = m;
         let findGroup = (k, s) -> Set.exists(f(k), s);
         let findItem = (k, s) -> Set.findRight(f(k), s) |> Option.map(v1 -> (k, v1));
@@ -246,13 +246,13 @@ namespace MultiMap {
     ///
     /// Returns a MultiMap of all mappings `k => v` in `m` where `v` satisfies the predicate `f`.
     ///
-    pub def filter(f: v -> Bool & ef, m: MultiMap[k, v]): MultiMap[k, v] & ef with Order[k], Order[v] =
+    pub def filter(f: v -> Bool \ ef, m: MultiMap[k, v]): MultiMap[k, v] \ ef with Order[k], Order[v] =
         filterWithKey((_, v) -> f(v), m)
 
     ///
     /// Returns a MultiMap of all mappings `k => v` in `m` where `(k, v)` satisfies the predicate `f`.
     ///
-    pub def filterWithKey(f: (k, v) -> Bool & ef, m: MultiMap[k, v]): MultiMap[k, v] & ef with Order[k], Order[v] =
+    pub def filterWithKey(f: (k, v) -> Bool \ ef, m: MultiMap[k, v]): MultiMap[k, v] \ ef with Order[k], Order[v] =
         foldLeftWithKey((acc, k, v) -> if (f(k, v)) insert(k, v, acc) else acc, empty(), m)
 
     ///
@@ -261,7 +261,7 @@ namespace MultiMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def map(f: v1 -> v2 & ef, m: MultiMap[k, v1]): MultiMap[k, v2] & ef with Order[v2] =
+    pub def map(f: v1 -> v2 \ ef, m: MultiMap[k, v1]): MultiMap[k, v2] \ ef with Order[v2] =
         mapWithKey((_, v) -> f(v), m)
 
     ///
@@ -270,7 +270,7 @@ namespace MultiMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def mapWithKey(f: (k, v1) -> v2 & ef, m: MultiMap[k, v1]): MultiMap[k, v2] & ef with Order[v2] =
+    pub def mapWithKey(f: (k, v1) -> v2 \ ef, m: MultiMap[k, v1]): MultiMap[k, v2] \ ef with Order[v2] =
         let MultiMap(m1) = m;
         let outer = (k, vs) -> Set.map(f(k), vs);
         MultiMap(Map.mapWithKey(outer, m1))
@@ -278,14 +278,14 @@ namespace MultiMap {
     ///
     /// Alias for `foldLeftWithKey`.
     ///
-    pub def foldWithKey(f: (b, k, v) -> b & ef, s: b, m: MultiMap[k, v]): b & ef = foldLeftWithKey(f, s, m)
+    pub def foldWithKey(f: (b, k, v) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef = foldLeftWithKey(f, s, m)
 
     ///
     /// Applies `f` to a start value `s` and all values in `m` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, v1), v2)..., vn)`.
     ///
-    pub def foldLeft(f: (b, v) -> b & ef, s: b, m: MultiMap[k, v]): b & ef =
+    pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef =
         foldLeftWithKey((acc, _, v) -> f(acc, v), s, m)
 
     ///
@@ -293,7 +293,7 @@ namespace MultiMap {
     ///
     /// That is, the result is of the form: `f(...f(f(s, k1, v1), k2, v2)..., vn)`.
     ///
-    pub def foldLeftWithKey(f: (b, k, v) -> b & ef, s: b, m: MultiMap[k, v]): b & ef =
+    pub def foldLeftWithKey(f: (b, k, v) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef =
         let MultiMap(m1) = m;
         let outer = (acc, k, vs) -> Set.foldLeft((acc1, v1) -> f(acc1, k, v1), acc, vs);
         Map.foldLeftWithKey(outer, s, m1)
@@ -303,7 +303,7 @@ namespace MultiMap {
     ///
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
     ///
-    pub def foldRight(f: (v, b) -> b & ef, s: b, m: MultiMap[k, v]): b & ef =
+    pub def foldRight(f: (v, b) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef =
         foldRightWithKey((_, v, acc) -> f(v, acc), s, m)
 
     ///
@@ -311,7 +311,7 @@ namespace MultiMap {
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     ///
-    pub def foldRightWithKey(f: (k, v, b) -> b & ef, s: b, m: MultiMap[k, v]): b & ef =
+    pub def foldRightWithKey(f: (k, v, b) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef =
         let MultiMap(m1) = m;
         let outer = (k, vs, acc) -> Set.foldRight((v1, acc1) -> f(k, v1, acc1), acc, vs);
         Map.foldRightWithKey(outer, s, m1)
@@ -322,7 +322,7 @@ namespace MultiMap {
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, z)))`.
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, z: b, m: MultiMap[k, v]): b & ef =
+    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, z: b, m: MultiMap[k, v]): b \ ef =
         foldRightWithKeyCont((_, v, c) -> f(v, c), z, m)
 
     ///
@@ -331,20 +331,20 @@ namespace MultiMap {
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, z)))`.
     /// A `foldRightWithKeyCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithKeyCont(f: (k, v, Unit -> b & ef) -> b & ef, z: b, m: MultiMap[k, v]): b & ef =
+    pub def foldRightWithKeyCont(f: (k, v, Unit -> b \ ef) -> b \ ef, z: b, m: MultiMap[k, v]): b \ ef =
         let MultiMap(m1) = m;
         Map.foldRightWithKeyCont((k, vs, b1) -> Set.foldRightWithCont((v1, fac) -> f(k, v1, fac), b1(), vs), z, m1)
 
     ///
     /// Returns the result of mapping each key-value pair and combining the results.
     ///
-    pub def foldMapWithKey(f: (k, v) -> b & ef, m: MultiMap[k, v]): b & ef with Monoid[b] =
+    pub def foldMapWithKey(f: (k, v) -> b \ ef, m: MultiMap[k, v]): b \ ef with Monoid[b] =
         foldLeftWithKey((acc, k, v) -> Monoid.combine(acc, f(k, v)), Monoid.empty(), m)
 
     ///
     /// Returns the result of mapping each value and combining the results.
     ///
-    pub def foldMap(f: v -> b & ef, m: MultiMap[k, v]): b & ef with Monoid[b] =
+    pub def foldMap(f: v -> b \ ef, m: MultiMap[k, v]): b \ ef with Monoid[b] =
         foldMapWithKey(_ -> f, m)
 
     ///
@@ -354,7 +354,7 @@ namespace MultiMap {
     ///
     /// Returns `None` if `m` is the empty MultiMap.
     ///
-    pub def reduceLeft(f: (v, v) -> v & ef, m: MultiMap[k, v]): Option[v] & ef =
+    pub def reduceLeft(f: (v, v) -> v \ ef, m: MultiMap[k, v]): Option[v] \ ef =
         reduceLeftWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) |> Option.map(snd)
 
     ///
@@ -364,7 +364,7 @@ namespace MultiMap {
     ///
     /// Returns `None` if `m` is the empty MultiMap.
     ///
-    pub def reduceLeftWithKey(f: (k, v, k, v) -> (k, v) & ef, m: MultiMap[k, v]): Option[(k, v)] & ef =
+    pub def reduceLeftWithKey(f: (k, v, k, v) -> (k, v) \ ef, m: MultiMap[k, v]): Option[(k, v)] \ ef =
         let MultiMap(m1) = m;
         let inner = (k, acc, v) -> match acc {
             case None               => Some((k, v))
@@ -380,7 +380,7 @@ namespace MultiMap {
     ///
     /// Returns `None` if `m` is the empty MultiMap.
     ///
-    pub def reduceRight(f: (v, v) -> v & ef, m: MultiMap[k, v]): Option[v] & ef =
+    pub def reduceRight(f: (v, v) -> v \ ef, m: MultiMap[k, v]): Option[v] \ ef =
         reduceRightWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) |> Option.map(snd)
 
     ///
@@ -390,7 +390,7 @@ namespace MultiMap {
     ///
     /// Returns `None` if `m` is the empty MultiMap.
     ///
-    pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) & ef, m: MultiMap[k, v]): Option[(k, v)] & ef =
+    pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) \ ef, m: MultiMap[k, v]): Option[(k, v)] \ ef =
         let MultiMap(m1) = m;
         let inner = (k, v, acc) -> match acc {
             case None               => Some((k, v))
@@ -405,7 +405,7 @@ namespace MultiMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def count(f: (k, v) -> Bool & ef, m: MultiMap[k, v]): Int32 & ef =
+    pub def count(f: (k, v) -> Bool \ ef, m: MultiMap[k, v]): Int32 \ ef =
         sumWith((k, v) -> if (f(k,v)) 1 else 0, m)
 
     ///
@@ -426,7 +426,7 @@ namespace MultiMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def sumWith(f: (k, v) -> Int32 & ef, m: MultiMap[k, v]): Int32 & ef =
+    pub def sumWith(f: (k, v) -> Int32 \ ef, m: MultiMap[k, v]): Int32 \ ef =
         let MultiMap(m1) = m;
         let outer = (k, vs) -> Set.sumWith(v -> f(k, v), vs);
         Map.sumWith(outer, m1)
@@ -449,7 +449,7 @@ namespace MultiMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def productWith(f: (k, v) -> Int32 & ef, m: MultiMap[k, v]): Int32 & ef =
+    pub def productWith(f: (k, v) -> Int32 \ ef, m: MultiMap[k, v]): Int32 \ ef =
         let MultiMap(m1) = m;
         let outer = (k, vs) -> Set.productWith(v -> f(k, v), vs);
         Map.productWith(outer, m1)
@@ -459,7 +459,7 @@ namespace MultiMap {
     ///
     /// Returns `false` if `m` is the empty MultiMap.
     ///
-    pub def exists(f: (k, v) -> Bool & ef, m: MultiMap[k, v]): Bool & ef =
+    pub def exists(f: (k, v) -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef =
         let MultiMap(m1) = m;
         let outer = (k, vs) -> Set.exists(v -> f(k, v), vs);
         Map.exists(outer, m1)
@@ -469,7 +469,7 @@ namespace MultiMap {
     ///
     /// Returns `true` if `m` is the empty MultiMap.
     ///
-    pub def forall(f: (k, v) -> Bool & ef, m: MultiMap[k, v]): Bool & ef =
+    pub def forall(f: (k, v) -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef =
         let MultiMap(m1) = m;
         let outer = (k, vs) -> Set.forall(v -> f(k, v), vs);
         Map.forall(outer, m1)
@@ -559,7 +559,7 @@ namespace MultiMap {
     ///
     /// Applies `f` to every `(key, value)` of MultiMap `m`.
     ///
-    pub def foreach(f: (k, v) -> Unit & ef, m: MultiMap[k, v]): Unit & ef =
+    pub def foreach(f: (k, v) -> Unit \ ef, m: MultiMap[k, v]): Unit \ ef =
         let MultiMap(m1) = m;
         Map.foreach((k, s) -> Set.foreach(f(k), s), m1)
 

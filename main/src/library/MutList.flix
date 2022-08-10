@@ -129,7 +129,7 @@ namespace MutList {
     ///
     /// Returns `0` if the given mutable list `v` is empty.
     ///
-    pub def count(f: a -> Bool & ef, v: MutList[a, r]): Int32 \ { ef, Read(r) } =
+    pub def count(f: a -> Bool \ ef, v: MutList[a, r]): Int32 \ { ef, Read(r) } =
         foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, v)
 
     ///
@@ -141,7 +141,7 @@ namespace MutList {
     ///
     /// Returns the sum of all elements in the MutList `v` according to the function `f`.
     ///
-    pub def sumWith(f: a -> Int32 & ef, v: MutList[a, r]): Int32 \ { ef, Read(r) } =
+    pub def sumWith(f: a -> Int32 \ ef, v: MutList[a, r]): Int32 \ { ef, Read(r) } =
         foldLeft((acc, x) -> acc + f(x), 0, v)
 
     ///
@@ -156,7 +156,7 @@ namespace MutList {
     ///
     /// Returns the product of all elements in the mutable list `v` according to the function `f`.
     ///
-    pub def productWith(f: a -> Int32 & ef, v: MutList[a, r]): Int32 \ { ef, Read(r) } =
+    pub def productWith(f: a -> Int32 \ ef, v: MutList[a, r]): Int32 \ { ef, Read(r) } =
         if (isEmpty(v))
             0
         else
@@ -167,7 +167,7 @@ namespace MutList {
     ///
     /// Returns `false` if the given mutable list `v` is empty.
     ///
-    pub def exists(f: a -> Bool & ef, v: MutList[a, r]): Bool \ { ef, Read(r) } =
+    pub def exists(f: a -> Bool \ ef, v: MutList[a, r]): Bool \ { ef, Read(r) } =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -184,7 +184,7 @@ namespace MutList {
     ///
     /// Returns `true` if the given mutable list `v` is empty.
     ///
-    pub def forall(f: a -> Bool & ef, v: MutList[a, r]): Bool \ { ef, Read(r) } =
+    pub def forall(f: a -> Bool \ ef, v: MutList[a, r]): Bool \ { ef, Read(r) } =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -302,13 +302,13 @@ namespace MutList {
     ///
     /// Alias for `scanLeft`.
     ///
-    pub def scan(f: (b, a) -> b & ef, s: b, v: MutList[a, r]): MutList[b, r] \ { ef, Read(r), Write(r) } =
+    pub def scan(f: (b, a) -> b \ ef, s: b, v: MutList[a, r]): MutList[b, r] \ { ef, Read(r), Write(r) } =
         scanLeft(f, s, v)
 
     ///
     /// Accumulates the result of applying `f` to `v` going left to right.
     ///
-    pub def scanLeft(f: (b, a) -> b & ef, s: b, v: MutList[a, r]): MutList[b, r] \ { ef, Read(r), Write(r) } =
+    pub def scanLeft(f: (b, a) -> b \ ef, s: b, v: MutList[a, r]): MutList[b, r] \ { ef, Read(r), Write(r) } =
         let r = Scoped.regionOf(v);
         let MutList(ra, rl) = v;
         let a = deref ra;
@@ -330,7 +330,7 @@ namespace MutList {
     ///
     /// Accumulates the result of applying `f` to `v` going right to left.
     ///
-    pub def scanRight(f: (a, b) -> b & ef, s: b, v: MutList[a, r]): MutList[b, r] \ { ef, Read(r), Write(r) } =
+    pub def scanRight(f: (a, b) -> b \ ef, s: b, v: MutList[a, r]): MutList[b, r] \ { ef, Read(r), Write(r) } =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -354,7 +354,7 @@ namespace MutList {
     ///
     /// The result is a new mutable list.
     ///
-    pub def map(f: a -> b & ef, v: MutList[a, r]): MutList[b, r] \ { ef, Read(r), Write(r) } =
+    pub def map(f: a -> b \ ef, v: MutList[a, r]): MutList[b, r] \ { ef, Read(r), Write(r) } =
         let r = Scoped.regionOf(v);
         if (isEmpty(v))
             new MutList(r)
@@ -379,7 +379,7 @@ namespace MutList {
     ///
     /// Returns the result of applying `f` to every element in `v` along with that element's index.
     ///
-    pub def mapWithIndex(f: (a, Int32) -> b & ef, v: MutList[a, r]): MutList[b, r] \ { ef, Read(r), Write(r) } =
+    pub def mapWithIndex(f: (a, Int32) -> b \ ef, v: MutList[a, r]): MutList[b, r] \ { ef, Read(r), Write(r) } =
         let r = Scoped.regionOf(v);
         if (isEmpty(v))
             new MutList(r)
@@ -440,7 +440,7 @@ namespace MutList {
     ///
     /// That is, the result is of the form: `f(...f(f(s, a[0]), a[1])..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, v: MutList[a, r]): b \ { ef, Read(r) } =
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, v: MutList[a, r]): b \ { ef, Read(r) } =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -461,7 +461,7 @@ namespace MutList {
     ///
     /// The implementation is tail recursive.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, v: MutList[a, r]): b \ { ef, Read(r) } =
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, v: MutList[a, r]): b \ { ef, Read(r) } =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -481,7 +481,7 @@ namespace MutList {
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithCont(f: (a, Unit -> b & ef and r) -> b & ef and r, z: b, v: MutList[a, r]): b \ { ef, Read(r) } =
+    pub def foldRightWithCont(f: (a, Unit -> b \ {ef, r}) -> b \ {ef, r}, z: b, v: MutList[a, r]): b \ { ef, Read(r) } =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -497,7 +497,7 @@ namespace MutList {
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
-    pub def foldMap(f: a -> b & ef, v: MutList[a, r]): b \ {ef, Read(r)} with Monoid[b] =
+    pub def foldMap(f: a -> b \ ef, v: MutList[a, r]): b \ {ef, Read(r)} with Monoid[b] =
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), v)
 
     ///
@@ -505,7 +505,7 @@ namespace MutList {
     ///
     /// Returns `None` if `v` is empty.
     ///
-    pub def reduceLeft(f: (a, a) -> a & ef, v: MutList[a, r]): Option[a] \ { ef, Read(r) } =
+    pub def reduceLeft(f: (a, a) -> a \ ef, v: MutList[a, r]): Option[a] \ { ef, Read(r) } =
         foldLeft((acc, x) -> match acc {
             case Some(y) => Some(f(y, x))
             case None => Some(x)
@@ -516,7 +516,7 @@ namespace MutList {
     ///
     /// Returns `None` if `v` is empty.
     ///
-    pub def reduceRight(f: (a, a) -> a & ef, v: MutList[a, r]): Option[a] \ { ef, Read(r) } =
+    pub def reduceRight(f: (a, a) -> a \ ef, v: MutList[a, r]): Option[a] \ { ef, Read(r) } =
         foldRight((x, acc) -> match acc {
             case Some(y) => Some(f(x, y))
             case None => Some(x)
@@ -783,7 +783,7 @@ namespace MutList {
     /// Returns the concatenation of the string representation
     /// of each element in `v` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, v: MutList[a, r]): String \ { ef, Read(r) } = region r1 {
+    pub def joinWith(f: a -> String \ ef, sep: String, v: MutList[a, r]): String \ { ef, Read(r) } = region r1 {
         let sb = new StringBuilder(r1);
         let step = (x, i) ->
             if (i == 0)
@@ -816,7 +816,7 @@ namespace MutList {
     ///
     /// Applies `f` to all the elements in `v`.
     ///
-    pub def foreach(f: a -> Unit & ef, v: MutList[a, r]): Unit \ { ef, Read(r) } =
+    pub def foreach(f: a -> Unit \ ef, v: MutList[a, r]): Unit \ { ef, Read(r) } =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -833,7 +833,7 @@ namespace MutList {
     ///
     /// Applies `f` to all the elements in `v`.
     ///
-    pub def foreachWithIndex(f: (a, Int32) -> Unit & ef, v: MutList[a, r]): Unit \ { ef, Read(r) } =
+    pub def foreachWithIndex(f: (a, Int32) -> Unit \ ef, v: MutList[a, r]): Unit \ { ef, Read(r) } =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;

@@ -438,8 +438,8 @@ namespace TestDelayList {
     def mapFusion02(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.map(x -> { l := "a" :: deref l; x } as & Pure) |>
-        DelayList.map(x -> { l := "b" :: deref l; x } as & Pure) |>
+        DelayList.map(x -> { l := "a" :: deref l; x } as \ {}) |>
+        DelayList.map(x -> { l := "b" :: deref l; x } as \ {}) |>
         DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
@@ -555,8 +555,8 @@ namespace TestDelayList {
     def filterFusion02(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.filter(_x -> { l := "a" :: deref l; true } as & Pure) |>
-        DelayList.filter(_x -> { l := "b" :: deref l; true } as & Pure) |>
+        DelayList.filter(_x -> { l := "a" :: deref l; true } as \ {}) |>
+        DelayList.filter(_x -> { l := "b" :: deref l; true } as \ {}) |>
         DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
@@ -577,8 +577,8 @@ namespace TestDelayList {
     def mapFilterFusion02(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.map(   x -> { l := "a" :: deref l; x }    as & Pure) |>
-        DelayList.filter(_ -> { l := "b" :: deref l; true } as & Pure) |>
+        DelayList.map(   x -> { l := "a" :: deref l; x }    as \ {}) |>
+        DelayList.filter(_ -> { l := "b" :: deref l; true } as \ {}) |>
         DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
@@ -599,8 +599,8 @@ namespace TestDelayList {
     def filterThenMapFusion02(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.filter(_ -> { l := "a" :: deref l; true } as & Pure) |>
-        DelayList.map(   x -> { l := "b" :: deref l; x    } as & Pure) |>
+        DelayList.filter(_ -> { l := "a" :: deref l; true } as \ {}) |>
+        DelayList.map(   x -> { l := "b" :: deref l; x    } as \ {}) |>
         DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
@@ -1479,8 +1479,8 @@ namespace TestDelayList {
     def zipWithFusion02(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.zipWith((x, y) -> { l := "a" :: deref l; (x, y) } as & Pure, ECons(1, ECons(2, ECons(3, ENil)))) |>
-        DelayList.zipWith((x, y) -> { l := "b" :: deref l; (x, y) } as & Pure, ECons(1, ECons(2, ECons(3, ENil)))) |>
+        DelayList.zipWith((x, y) -> { l := "a" :: deref l; (x, y) } as \ {}, ECons(1, ECons(2, ECons(3, ENil)))) |>
+        DelayList.zipWith((x, y) -> { l := "b" :: deref l; (x, y) } as \ {}, ECons(1, ECons(2, ECons(3, ENil)))) |>
         DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
@@ -1783,8 +1783,8 @@ namespace TestDelayList {
     def flatMapFusion02(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.flatMap(i -> { l := "a" :: deref l; ECons(i, ENil) } as & Pure) |>
-        DelayList.flatMap(i -> { l := "b" :: deref l; ECons(i, ENil) } as & Pure) |>
+        DelayList.flatMap(i -> { l := "a" :: deref l; ECons(i, ENil) } as \ {}) |>
+        DelayList.flatMap(i -> { l := "b" :: deref l; ECons(i, ENil) } as \ {}) |>
         DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
@@ -2041,8 +2041,8 @@ namespace TestDelayList {
     def mapWithIndexFusion02(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.mapWithIndex((x, _) -> { l := "a" :: deref l; x } as & Pure) |>
-        DelayList.mapWithIndex((x, _) -> { l := "b" :: deref l; x } as & Pure) |>
+        DelayList.mapWithIndex((x, _) -> { l := "a" :: deref l; x } as \ {}) |>
+        DelayList.mapWithIndex((x, _) -> { l := "b" :: deref l; x } as \ {}) |>
         DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
@@ -2272,8 +2272,8 @@ namespace TestDelayList {
     def takeWhileFusion02(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.takeWhile(i -> { l := "a" :: deref l; i < 4 } as & Pure) |>
-        DelayList.takeWhile(i -> { l := "b" :: deref l; i < 4 } as & Pure) |>
+        DelayList.takeWhile(i -> { l := "a" :: deref l; i < 4 } as \ {}) |>
+        DelayList.takeWhile(i -> { l := "b" :: deref l; i < 4 } as \ {}) |>
         DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
@@ -2281,8 +2281,8 @@ namespace TestDelayList {
     def takeWhileFusion03(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.takeWhile(i -> { l := "a" :: deref l; i < 3 } as & Pure) |>
-        DelayList.takeWhile(i -> { l := "b" :: deref l; i < 2 } as & Pure) |>
+        DelayList.takeWhile(i -> { l := "a" :: deref l; i < 3 } as \ {}) |>
+        DelayList.takeWhile(i -> { l := "b" :: deref l; i < 2 } as \ {}) |>
         DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: Nil)
 
@@ -2290,8 +2290,8 @@ namespace TestDelayList {
     def takeWhileFusion04(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.takeWhile(i -> { l := "a" :: deref l; i < 3 } as & Pure) |>
-        DelayList.takeWhile(i -> { l := "b" :: deref l; i < 3 } as & Pure) |>
+        DelayList.takeWhile(i -> { l := "a" :: deref l; i < 3 } as \ {}) |>
+        DelayList.takeWhile(i -> { l := "b" :: deref l; i < 3 } as \ {}) |>
         DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
 
@@ -2423,8 +2423,8 @@ namespace TestDelayList {
     def dropWhileFusion02(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.dropWhile(i -> { l := "a" :: deref l; i < 3 } as & Pure) |>
-        DelayList.dropWhile(i -> { l := "b" :: deref l; i < 4 } as & Pure) |>
+        DelayList.dropWhile(i -> { l := "a" :: deref l; i < 3 } as \ {}) |>
+        DelayList.dropWhile(i -> { l := "b" :: deref l; i < 4 } as \ {}) |>
         DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: Nil)
 
@@ -2432,8 +2432,8 @@ namespace TestDelayList {
     def dropWhileFusion03(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.dropWhile(i -> { l := "a" :: deref l; i < 1 } as & Pure) |>
-        DelayList.dropWhile(i -> { l := "b" :: deref l; i < 3 } as & Pure) |>
+        DelayList.dropWhile(i -> { l := "a" :: deref l; i < 1 } as \ {}) |>
+        DelayList.dropWhile(i -> { l := "b" :: deref l; i < 3 } as \ {}) |>
         DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "b" :: "b" :: Nil)
 
@@ -2441,8 +2441,8 @@ namespace TestDelayList {
     def dropWhileFusion04(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.dropWhile(i -> { l := "a" :: deref l; i < 2 } as & Pure) |>
-        DelayList.dropWhile(i -> { l := "b" :: deref l; i < 3 } as & Pure) |>
+        DelayList.dropWhile(i -> { l := "a" :: deref l; i < 2 } as \ {}) |>
+        DelayList.dropWhile(i -> { l := "b" :: deref l; i < 3 } as \ {}) |>
         DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "a" :: "b" :: "b" :: Nil)
 
@@ -2629,8 +2629,8 @@ namespace TestDelayList {
     def filterMapFusion02(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.filterMap(x -> { l := "a" :: deref l; Some(x) } as & Pure) |>
-        DelayList.filterMap(x -> { l := "b" :: deref l; Some(x) } as & Pure) |>
+        DelayList.filterMap(x -> { l := "a" :: deref l; Some(x) } as \ {}) |>
+        DelayList.filterMap(x -> { l := "b" :: deref l; Some(x) } as \ {}) |>
         DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
@@ -2754,8 +2754,8 @@ namespace TestDelayList {
     //    let l = ref Nil;
     //    let _ =
     //    (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-    //    DelayList.span(x -> { l := "a" :: deref l; x < 3 } as & Pure) |> fst |>
-    //    DelayList.span(x -> { l := "b" :: deref l; x < 3 } as & Pure) |> fst |>
+    //    DelayList.span(x -> { l := "a" :: deref l; x < 3 } as \ {}) |> fst |>
+    //    DelayList.span(x -> { l := "b" :: deref l; x < 3 } as \ {}) |> fst |>
     //    DelayList.toList;
     //    List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
 

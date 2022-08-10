@@ -45,7 +45,7 @@ namespace Benchmark {
     /// A smart constructor for a benchmark.
     ///
     @Experimental
-    pub def defBenchmark(name: String, f: Unit -> a & ef): Benchmark =
+    pub def defBenchmark(name: String, f: Unit -> a \ ef): Benchmark =
         let fn = () -> {
             let _ = f() as \ IO;
             ()
@@ -130,7 +130,7 @@ namespace Benchmark {
     ///
     /// Executes the given function `f` exactly `n` times.
     ///
-    def loop(f: Unit -> a & ef, n: Int32): Unit & ef =
+    def loop(f: Unit -> a \ ef, n: Int32): Unit \ ef =
         if (n == 0)
             ()
         else {

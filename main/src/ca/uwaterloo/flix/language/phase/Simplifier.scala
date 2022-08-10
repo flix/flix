@@ -277,7 +277,7 @@ object Simplifier {
         SimplifiedAst.Expression.SelectChannel(rs, d, tpe, loc)
 
       case TypedAst.Expression.Spawn(exp, tpe, pur, eff, loc) =>
-        // Wrap the expression in a closure: () -> tpe & eff
+        // Wrap the expression in a closure: () -> tpe \ eff
         val e = visitExp(exp)
         val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, eff, Type.Empty, e.tpe, loc) // TODO use eff
         val lambdaExp = SimplifiedAst.Expression.Lambda(List(), e, lambdaTyp, loc)

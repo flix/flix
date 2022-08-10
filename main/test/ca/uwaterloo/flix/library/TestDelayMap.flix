@@ -105,12 +105,12 @@ namespace TestDelayMap {
     //def insertWithFusion02(): Bool \ IO =
     //    let l = ref Nil;
     //    let m = List.toDelayMap((1, 1) :: Nil) |>
-    //    DelayMap.insertWith((v, _) -> { l := "a" :: deref l; v } as & Pure, 1, 1) |>
-    //    DelayMap.insertWith((v, _) -> { l := "a" :: deref l; v } as & Pure, 1, 1) |>
-    //    DelayMap.insertWith((v, _) -> { l := "a" :: deref l; v } as & Pure, 1, 1) |>
-    //    DelayMap.insertWith((v, _) -> { l := "b" :: deref l; v } as & Pure, 1, 1) |>
-    //    DelayMap.insertWith((v, _) -> { l := "b" :: deref l; v } as & Pure, 1, 1) |>
-    //    DelayMap.insertWith((v, _) -> { l := "b" :: deref l; v } as & Pure, 1, 1);
+    //    DelayMap.insertWith((v, _) -> { l := "a" :: deref l; v } as \ {}, 1, 1) |>
+    //    DelayMap.insertWith((v, _) -> { l := "a" :: deref l; v } as \ {}, 1, 1) |>
+    //    DelayMap.insertWith((v, _) -> { l := "a" :: deref l; v } as \ {}, 1, 1) |>
+    //    DelayMap.insertWith((v, _) -> { l := "b" :: deref l; v } as \ {}, 1, 1) |>
+    //    DelayMap.insertWith((v, _) -> { l := "b" :: deref l; v } as \ {}, 1, 1) |>
+    //    DelayMap.insertWith((v, _) -> { l := "b" :: deref l; v } as \ {}, 1, 1);
     //    let _ = DelayMap.toMap(m);
     //    List.reverse(deref l) == "a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil
 
@@ -274,8 +274,8 @@ namespace TestDelayMap {
     //def mapFusion02(): Bool \ IO =
     //    let l = ref Nil;
     //    let m = ((1, 1) :: (2, 2) :: (3, 3) :: Nil) |> List.toDelayMap |>
-    //    DelayMap.map(v -> { l := "a" :: deref l; v } as & Pure) |>
-    //    DelayMap.map(v -> { l := "b" :: deref l; v } as & Pure);
+    //    DelayMap.map(v -> { l := "a" :: deref l; v } as \ {}) |>
+    //    DelayMap.map(v -> { l := "b" :: deref l; v } as \ {});
     //    let _ = DelayMap.toMap(m);
     //    List.reverse(deref l) == "a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil
 
@@ -763,8 +763,8 @@ namespace TestDelayMap {
     //def unionWithKeyFusion02(): Bool \ IO =
     //    let l = ref Nil;
     //    let m = Map#{1 => 1, 2 => 2, 3 => 3} |> Map.toDelayMap |>
-    //    DelayMap.unionWithKey((_, _, v) -> { l := "a" :: deref l; v } as & Pure, Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3})) |>
-    //    DelayMap.unionWithKey((_, _, v) -> { l := "b" :: deref l; v } as & Pure, Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3}));
+    //    DelayMap.unionWithKey((_, _, v) -> { l := "a" :: deref l; v } as \ {}, Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3})) |>
+    //    DelayMap.unionWithKey((_, _, v) -> { l := "b" :: deref l; v } as \ {}, Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3}));
     //    let _ = DelayMap.toMap(m);
     //    List.reverse(deref l) == "a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil
 
@@ -1060,12 +1060,12 @@ namespace TestDelayMap {
     //def updateWithKeyFusion02(): Bool \ IO =
     //    let l = ref Nil;
     //    let _ = Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3}) |>
-    //        DelayMap.updateWithKey((_, v) -> { l := "a" :: deref l; Some(v) } as & Pure, 1) |>
-    //        DelayMap.updateWithKey((_, v) -> { l := "a" :: deref l; Some(v) } as & Pure, 2) |>
-    //        DelayMap.updateWithKey((_, v) -> { l := "a" :: deref l; Some(v) } as & Pure, 3) |>
-    //        DelayMap.updateWithKey((_, v) -> { l := "b" :: deref l; Some(v) } as & Pure, 1) |>
-    //        DelayMap.updateWithKey((_, v) -> { l := "b" :: deref l; Some(v) } as & Pure, 2) |>
-    //        DelayMap.updateWithKey((_, v) -> { l := "b" :: deref l; Some(v) } as & Pure, 3) |>
+    //        DelayMap.updateWithKey((_, v) -> { l := "a" :: deref l; Some(v) } as \ {}, 1) |>
+    //        DelayMap.updateWithKey((_, v) -> { l := "a" :: deref l; Some(v) } as \ {}, 2) |>
+    //        DelayMap.updateWithKey((_, v) -> { l := "a" :: deref l; Some(v) } as \ {}, 3) |>
+    //        DelayMap.updateWithKey((_, v) -> { l := "b" :: deref l; Some(v) } as \ {}, 1) |>
+    //        DelayMap.updateWithKey((_, v) -> { l := "b" :: deref l; Some(v) } as \ {}, 2) |>
+    //        DelayMap.updateWithKey((_, v) -> { l := "b" :: deref l; Some(v) } as \ {}, 3) |>
     //        DelayMap.toMap;
     //    List.reverse(deref l) == "a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil
 

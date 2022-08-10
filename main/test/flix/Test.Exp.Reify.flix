@@ -18,8 +18,8 @@ namespace Test/Exp/Reify {
     @test
     def reify06(): Bool = not hof((x -> x as \ IO) >> (y -> y as \ IO))
 
-    def hof(_f: a -> b & ef): Bool = reify ef
+    def hof(_f: a -> b \ ef): Bool = reify ef
 
-    def >>(f: a -> b & ef1, g: b -> c & ef2): a -> c \ { ef1, ef2 } = x -> g(f(x))
+    def >>(f: a -> b \ ef1, g: b -> c \ ef2): a -> c \ { ef1, ef2 } = x -> g(f(x))
 
 }

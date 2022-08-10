@@ -67,16 +67,16 @@ instance ToString[DelayList[a]] with ToString[a] {
 }
 
 instance Functor[DelayList] {
-    pub def map(f: a -> b & ef, l: DelayList[a]): DelayList[b] & ef = DelayList.map(f, l)
+    pub def map(f: a -> b \ ef, l: DelayList[a]): DelayList[b] \ ef = DelayList.map(f, l)
 }
 
 instance Applicative[DelayList] {
     pub def point(x: a): DelayList[a] = DelayList.point(x)
-    pub def ap(f: DelayList[a -> b & ef], l: DelayList[a]): DelayList[b] & ef = DelayList.ap(f, l)
+    pub def ap(f: DelayList[a -> b \ ef], l: DelayList[a]): DelayList[b] \ ef = DelayList.ap(f, l)
 }
 
 instance Monad[DelayList] {
-    pub def flatMap(f: a -> DelayList[b] & ef, l: DelayList[a]): DelayList[b] & ef = DelayList.flatMap(f, l)
+    pub def flatMap(f: a -> DelayList[b] \ ef, l: DelayList[a]): DelayList[b] \ ef = DelayList.flatMap(f, l)
 }
 
 instance MonadZero[DelayList] {
@@ -84,28 +84,28 @@ instance MonadZero[DelayList] {
 }
 
 instance Traversable[DelayList] {
-    pub def traverse(f: a -> m[b] & ef, l: DelayList[a]): m[DelayList[b]] & ef with Applicative[m] = DelayList.traverse(f, l)
+    pub def traverse(f: a -> m[b] \ ef, l: DelayList[a]): m[DelayList[b]] \ ef with Applicative[m] = DelayList.traverse(f, l)
     pub override def sequence(l: DelayList[m[a]]): m[DelayList[a]] with Applicative[m] = DelayList.sequence(l)
 }
 
 instance Foldable[DelayList] {
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldLeft(f, s, l)
-    pub def foldRight(f: (a, b) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldRight(f, s, l)
-    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldRightWithCont(f, s, l)
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldLeft(f, s, l)
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRight(f, s, l)
+    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRightWithCont(f, s, l)
     override pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) = DelayList.iterator(r, l)
 }
 
 instance UnorderedFoldable[DelayList] {
-    pub def foldMap(f: a -> b & ef, l: DelayList[a]): b & ef with CommutativeMonoid[b] = DelayList.foldMap(f, l)
+    pub def foldMap(f: a -> b \ ef, l: DelayList[a]): b \ ef with CommutativeMonoid[b] = DelayList.foldMap(f, l)
     override pub def isEmpty(l: DelayList[a]): Bool = DelayList.isEmpty(l)
-    override pub def exists(f: a -> Bool & ef, l: DelayList[a]): Bool & ef = DelayList.exists(f, l)
-    override pub def forall(f: a -> Bool & ef, l: DelayList[a]): Bool & ef = DelayList.forall(f, l)
+    override pub def exists(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.exists(f, l)
+    override pub def forall(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.forall(f, l)
     override pub def memberOf(x: a, l: DelayList[a]): Bool with Eq[a] = DelayList.memberOf(x, l)
 }
 
 instance FunctorFilter[DelayList] {
-    pub def filterMap(f: a -> Option[b] & ef, x: DelayList[a]): DelayList[b] & ef = DelayList.filterMap(f, x)
-    pub override def filter(f: a -> Bool & ef, x: DelayList[a]): DelayList[a] & ef = DelayList.filter(f, x)
+    pub def filterMap(f: a -> Option[b] \ ef, x: DelayList[a]): DelayList[b] \ ef = DelayList.filterMap(f, x)
+    pub override def filter(f: a -> Bool \ ef, x: DelayList[a]): DelayList[a] \ ef = DelayList.filter(f, x)
 }
 
 instance SemiGroup[DelayList[a]] {
@@ -232,7 +232,7 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def count(f: a -> Bool & ef, l: DelayList[a]): Int32 & ef =
+    pub def count(f: a -> Bool \ ef, l: DelayList[a]): Int32 \ ef =
         foldLeft((i, x) -> if (f(x)) i + 1 else i, 0, l)
 
     ///
@@ -250,7 +250,7 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def sumWith(f: a -> Int32 & ef, l: DelayList[a]): Int32 & ef =
+    pub def sumWith(f: a -> Int32 \ ef, l: DelayList[a]): Int32 \ ef =
         Foldable.sumWith(f ,l)
 
     ///
@@ -268,7 +268,7 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def productWith(f: a -> Int32 & ef, l: DelayList[a]): Int32 & ef =
+    pub def productWith(f: a -> Int32 \ ef, l: DelayList[a]): Int32 \ ef =
         Foldable.productWith(f, l)
 
     ///
@@ -292,7 +292,7 @@ namespace DelayList {
     /// Forces elements of `l` until the predicate `f` is satisfied.
     ///
     @Experimental
-    pub def exists(f: a -> Bool & ef, l: DelayList[a]): Bool & ef = match l {
+    pub def exists(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = match l {
         case ENil         => false
         case ECons(x, xs) => if (f(x)) true else exists(f,       xs)
         case LCons(x, xs) => if (f(x)) true else exists(f, force xs)
@@ -307,7 +307,7 @@ namespace DelayList {
     /// Forces elements in `l` until the first element that does not satisfy the predicate `f` (inclusive).
     ///
     @Experimental
-    pub def forall(f: a -> Bool & ef, l: DelayList[a]): Bool & ef = match l {
+    pub def forall(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = match l {
         case ENil         => true
         case ECons(x, xs) => if (f(x)) forall(f,       xs) else false
         case LCons(x, xs) => if (f(x)) forall(f, force xs) else false
@@ -410,7 +410,7 @@ namespace DelayList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     @Experimental @LazyWhenPure
-    pub def map(f: a -> b & ef, l: DelayList[a]): DelayList[b] & ef =
+    pub def map(f: a -> b \ ef, l: DelayList[a]): DelayList[b] \ ef =
         reifyEff(f) {
             case Pure(g) => mapL(g, l)
             case _       => mapE(f, l)
@@ -434,7 +434,7 @@ namespace DelayList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def mapE(f: a -> b & ef, l: DelayList[a]): DelayList[b] & ef =
+    def mapE(f: a -> b \ ef, l: DelayList[a]): DelayList[b] \ ef =
         def loop(ll, k) = match ll {
             case ENil => k(ENil)
             case ECons(x, xs) =>
@@ -459,7 +459,7 @@ namespace DelayList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     @Experimental @LazyWhenPure
-    pub def mapWithIndex(f: (a, Int32) -> b & ef, l: DelayList[a]): DelayList[b] & ef =
+    pub def mapWithIndex(f: (a, Int32) -> b \ ef, l: DelayList[a]): DelayList[b] \ ef =
         let f1 = (args) -> f(fst(args), snd(args));
         reifyEff(f1) {
             case Pure(g) => mapWithIndexL((x, i) -> g((x, i)), l)
@@ -486,7 +486,7 @@ namespace DelayList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def mapWithIndexE(f: (a, Int32) -> b & ef, l: DelayList[a]): DelayList[b] & ef =
+    def mapWithIndexE(f: (a, Int32) -> b \ ef, l: DelayList[a]): DelayList[b] \ ef =
         def loop(ll, i, k) = match ll {
             case ENil => k(ENil)
             case ECons(x, xs) =>
@@ -508,7 +508,7 @@ namespace DelayList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     @Experimental @LazyWhenPure
-    pub def flatMap(f: a -> DelayList[b] & ef, l: DelayList[a]): DelayList[b] & ef =
+    pub def flatMap(f: a -> DelayList[b] \ ef, l: DelayList[a]): DelayList[b] \ ef =
         reifyEff(f) {
             case Pure(g) => flatMapL(g, l)
             case _       => flatMapE(f, l)
@@ -532,7 +532,7 @@ namespace DelayList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def flatMapE(f: a -> DelayList[b] & ef, l: DelayList[a]): DelayList[b] & ef =
+    def flatMapE(f: a -> DelayList[b] \ ef, l: DelayList[a]): DelayList[b] \ ef =
         def loop(ll, k) = match ll {
             case ENil => k(ENil)
             case ECons(x, xs) =>
@@ -564,7 +564,7 @@ namespace DelayList {
     /// Note that this implies that ALL functions in `f` must be pure to avoid forcing `l`.
     ///
     @Experimental @LazyWhenPure
-    pub def ap(f: DelayList[a -> b & ef], l: DelayList[a]): DelayList[b] & ef =
+    pub def ap(f: DelayList[a -> b \ ef], l: DelayList[a]): DelayList[b] \ ef =
         flatMap(g -> map(g, l), f)
 
     ///
@@ -599,7 +599,7 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, l: DelayList[a]): b & ef = match l {
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef = match l {
         case ENil         => s
         case ECons(x, xs) => foldLeft(f, f(s, x),       xs)
         case LCons(x, xs) => foldLeft(f, f(s, x), force xs)
@@ -614,7 +614,7 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def foldRight(f: (a, b) -> b & ef, s: b, l: DelayList[a]): b & ef =
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, l: DelayList[a]): b \ ef =
         def loop(ll, k) = match ll {
             case ENil         => k(s)
             case ECons(x, xs) => loop(      xs, ks -> k(f(x, ks)))
@@ -634,7 +634,7 @@ namespace DelayList {
     /// Calling the continuation forces the list `l`.
     ///
     @Experimental
-    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, l: DelayList[a]): b & ef =
+    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, l: DelayList[a]): b \ ef =
         def loop(ll) = match ll {
             case ENil         => z
             case ECons(x, xs) => f(x, _ -> loop(xs))
@@ -646,7 +646,7 @@ namespace DelayList {
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
-    pub def foldMap(f: a -> b & ef, l: DelayList[a]): b & ef with Monoid[b] =
+    pub def foldMap(f: a -> b \ ef, l: DelayList[a]): b \ ef with Monoid[b] =
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), l)
 
     ///
@@ -655,7 +655,7 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def foreach(f: a -> Unit & ef, l: DelayList[a]): Unit & ef = match l {
+    pub def foreach(f: a -> Unit \ ef, l: DelayList[a]): Unit \ ef = match l {
         case ENil         => ()
         case ECons(x, xs) => f(x); foreach(f,       xs)
         case LCons(x, xs) => f(x); foreach(f, force xs)
@@ -672,7 +672,7 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def reduceLeft(f: (a, a) -> a & ef, l: DelayList[a]): Option[a] & ef = match l {
+    pub def reduceLeft(f: (a, a) -> a \ ef, l: DelayList[a]): Option[a] \ ef = match l {
         case ENil         => None
         case ECons(x, xs) => Some(foldLeft(f, x,       xs))
         case LCons(x, xs) => Some(foldLeft(f, x, force xs))
@@ -689,7 +689,7 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def reduceRight(f: (a, a) -> a & ef, l: DelayList[a]): Option[a] & ef =
+    pub def reduceRight(f: (a, a) -> a \ ef, l: DelayList[a]): Option[a] \ ef =
         def loop(ll, k) = match ll {
             case ECons(x, xs) => if (isEmpty(      xs)) k(x) else loop(      xs, ks -> k(f(x, ks)))
             case LCons(x, xs) => if (isEmpty(force xs)) k(x) else loop(force xs, ks -> k(f(x, ks)))
@@ -707,7 +707,7 @@ namespace DelayList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     @Experimental @LazyWhenPure
-    pub def filter(f: a -> Bool & ef, l: DelayList[a]): DelayList[a] & ef =
+    pub def filter(f: a -> Bool \ ef, l: DelayList[a]): DelayList[a] \ ef =
         reifyEff(f) {
             case Pure(g) => filterL(g, l)
             case _       => filterE(f, l)
@@ -731,7 +731,7 @@ namespace DelayList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def filterE(f: a -> Bool & ef, l: DelayList[a]): DelayList[a] & ef =
+    def filterE(f: a -> Bool \ ef, l: DelayList[a]): DelayList[a] \ ef =
         def loop(ll, k) = match ll {
             case ENil         => k(ENil)
             case ECons(x, xs) => if (f(x)) loop(      xs, ks -> k(ECons(x, ks))) else loop(      xs, k)
@@ -749,7 +749,7 @@ namespace DelayList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     @Experimental @LazyWhenPure
-    pub def filterMap(f: a -> Option[b] & ef, l: DelayList[a]): DelayList[b] & ef =
+    pub def filterMap(f: a -> Option[b] \ ef, l: DelayList[a]): DelayList[b] \ ef =
         reifyEff(f) {
             case Pure(g) => filterMapL(g, l)
             case _       => filterMapE(f, l)
@@ -787,7 +787,7 @@ namespace DelayList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def filterMapE(f: a -> Option[b] & ef, l: DelayList[a]): DelayList[b] & ef =
+    def filterMapE(f: a -> Option[b] \ ef, l: DelayList[a]): DelayList[b] \ ef =
         def loop(ll, k) = match ll {
             case ENil         => k(ENil)
             case ECons(x, xs) => match f(x) {
@@ -808,7 +808,7 @@ namespace DelayList {
     /// Forces elements of `l` until the predicate `f` is satisfied.
     ///
     @Experimental
-    pub def findLeft(f: a -> Bool & ef, l: DelayList[a]): Option[a] & ef = match l {
+    pub def findLeft(f: a -> Bool \ ef, l: DelayList[a]): Option[a] \ ef = match l {
         case ENil         => None
         case ECons(x, xs) => if (f(x)) Some(x) else findLeft(f,       xs)
         case LCons(x, xs) => if (f(x)) Some(x) else findLeft(f, force xs)
@@ -821,7 +821,7 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def findRight(f: a -> Bool & ef, l: DelayList[a]): Option[a] & ef =
+    pub def findRight(f: a -> Bool \ ef, l: DelayList[a]): Option[a] \ ef =
         def loop(ll, k) = match ll {
             case ENil         => k()
             case ECons(x, xs) => loop(      xs, () -> if (f(x)) Some(x) else k())
@@ -838,7 +838,7 @@ namespace DelayList {
     /// Forces elements of `l` until `f(x)` returns `Some(v)`.
     ///
     @Experimental
-    pub def findMap(f: a -> Option[b] & ef, l: DelayList[a]): Option[b] & ef = match l {
+    pub def findMap(f: a -> Option[b] \ ef, l: DelayList[a]): Option[b] \ ef = match l {
         case ENil         => None
         case ECons(x, xs) => match f(x) {
             case None    => findMap(f, xs)
@@ -888,7 +888,7 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def partition(f: a -> Bool & ef, l: DelayList[a]): (DelayList[a], DelayList[a]) & ef =
+    pub def partition(f: a -> Bool \ ef, l: DelayList[a]): (DelayList[a], DelayList[a]) \ ef =
         def loop(ll, k) = match ll {
             case ENil         => k((ENil, ENil))
             case ECons(x, xs) =>
@@ -916,7 +916,7 @@ namespace DelayList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     @Experimental @LazyWhenPure
-    pub def span(f: a -> Bool & ef, l: DelayList[a]): (DelayList[a], DelayList[a]) & ef =
+    pub def span(f: a -> Bool \ ef, l: DelayList[a]): (DelayList[a], DelayList[a]) \ ef =
         reifyEff(f) {
             case Pure(g) => spanL(g, l)
             case _       => spanE(f, l)
@@ -950,7 +950,7 @@ namespace DelayList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def spanE(f: a -> Bool & ef, l: DelayList[a]): (DelayList[a], DelayList[a]) & ef =
+    def spanE(f: a -> Bool \ ef, l: DelayList[a]): (DelayList[a], DelayList[a]) \ ef =
         def loop(ll, k) = match ll {
             case ENil         => k((ENil, ENil))
             case ECons(x, xs) =>
@@ -999,7 +999,7 @@ namespace DelayList {
     /// - If `f` is impure then it is applied eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
     @Experimental @LazyWhenPure
-    pub def dropWhile(f: a -> Bool & ef, l: DelayList[a]): DelayList[a] & ef =
+    pub def dropWhile(f: a -> Bool \ ef, l: DelayList[a]): DelayList[a] \ ef =
         reifyEff(f) {
             case Pure(g) => dropWhileL(g, l)
             case _       => dropWhileE(f, l)
@@ -1029,7 +1029,7 @@ namespace DelayList {
     ///
     /// Applies `f` eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
-    def dropWhileE(f: a -> Bool & ef, l: DelayList[a]): DelayList[a] & ef = match l {
+    def dropWhileE(f: a -> Bool \ ef, l: DelayList[a]): DelayList[a] \ ef = match l {
         case ENil         => ENil
         case ECons(x, xs) => if (f(x)) dropWhileE(f,       xs) else l
         case LCons(x, xs) => if (f(x)) dropWhileE(f, force xs) else l
@@ -1065,7 +1065,7 @@ namespace DelayList {
     /// - If `f` is impure then it is applied eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
     @Experimental @LazyWhenPure
-    pub def takeWhile(f: a -> Bool & ef, l: DelayList[a]): DelayList[a] & ef =
+    pub def takeWhile(f: a -> Bool \ ef, l: DelayList[a]): DelayList[a] \ ef =
         reifyEff(f) {
             case Pure(g) => takeWhileL(g, l)
             case _       => takeWhileE(f, l)
@@ -1095,7 +1095,7 @@ namespace DelayList {
     ///
     /// Applies `f` eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
-    def takeWhileE(f: a -> Bool & ef, l: DelayList[a]): DelayList[a] & ef =
+    def takeWhileE(f: a -> Bool \ ef, l: DelayList[a]): DelayList[a] \ ef =
         def loop(ll, k) = match ll {
             case ENil         => k(ENil)
             case ECons(x, xs) => if (f(x)) loop(      xs, ks -> k(ECons(x, ks))) else k(ENil)
@@ -1143,7 +1143,7 @@ namespace DelayList {
     /// - If `f` is impure then it is applied eagerly (i.e. both lists `l1` and `l2` are forced).
     ///
     @Experimental @LazyWhenPure
-    pub def zipWith(f: (a, b) -> c & ef, l1: DelayList[a], l2: DelayList[b]): DelayList[c] & ef =
+    pub def zipWith(f: (a, b) -> c \ ef, l1: DelayList[a], l2: DelayList[b]): DelayList[c] \ ef =
         map(x -> f(fst(x), snd(x)), zip(l1, l2))
 
     ///
@@ -1281,7 +1281,7 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def joinWith(f: a -> String & ef, sep: String, l: DelayList[a]): String & ef =
+    pub def joinWith(f: a -> String \ ef, sep: String, l: DelayList[a]): String \ ef =
         Foldable.joinWith(f, sep, l)
 
     ///
@@ -1312,7 +1312,7 @@ namespace DelayList {
     /// DelayList `l`.
     ///
     @Experimental
-    pub def traverse(f: a -> m[b] & ef, l: DelayList[a]): m[DelayList[b]] & ef with Applicative[m] =
+    pub def traverse(f: a -> m[b] \ ef, l: DelayList[a]): m[DelayList[b]] \ ef with Applicative[m] =
         def loop(ll, k) = match ll {
             case ENil         => k(Applicative.point(ENil))
             case ECons(x, xs) => loop(xs, ks -> k(consA(f(x), ks)))

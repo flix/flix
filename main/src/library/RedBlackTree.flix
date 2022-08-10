@@ -57,26 +57,26 @@ namespace RedBlackTree {
     }
 
     instance Functor[RedBlackTree[k]] {
-        pub def map(f: a -> b & ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] & ef = mapWithKey((_, v) -> f(v), t)
+        pub def map(f: a -> b \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] \ ef = mapWithKey((_, v) -> f(v), t)
     }
 
     instance Foldable[RedBlackTree[k]] {
-        pub def foldLeft(f: (b, v) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldLeft((acc, _, v) -> f(acc, v), s, t)
-        pub def foldRight(f: (v, b) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldRight((_, v, acc) -> f(v, acc), s, t)
-        pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldRightWithCont((_, v, acc) -> f(v, acc), s, t)
+        pub def foldLeft(f: (b, v) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = foldLeft((acc, _, v) -> f(acc, v), s, t)
+        pub def foldRight(f: (v, b) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = foldRight((_, v, acc) -> f(v, acc), s, t)
+        pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = foldRightWithCont((_, v, acc) -> f(v, acc), s, t)
         override pub def iterator(r: Region[r], t: RedBlackTree[k, v]): Iterator[v, r] \ Write(r) =
             iterator(r, t) |> Iterator.mapL(match (_, v) -> v)
     }
 
     instance UnorderedFoldable[RedBlackTree[k]] {
-        pub def foldMap(f: v -> b & ef, t: RedBlackTree[k, v]): b & ef with CommutativeMonoid[b] = RedBlackTree.foldMap(_ -> f, t)
+        pub def foldMap(f: v -> b \ ef, t: RedBlackTree[k, v]): b \ ef with CommutativeMonoid[b] = RedBlackTree.foldMap(_ -> f, t)
         override pub def isEmpty(t: RedBlackTree[k, v]): Bool = RedBlackTree.isEmpty(t)
-        override pub def exists(f: v -> Bool & ef, t: RedBlackTree[k, v]): Bool & ef = RedBlackTree.exists(_ -> f, t)
-        override pub def forall(f: v -> Bool & ef, t: RedBlackTree[k, v]): Bool & ef = RedBlackTree.forall(_ -> f, t)
+        override pub def exists(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.exists(_ -> f, t)
+        override pub def forall(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.forall(_ -> f, t)
     }
 
     instance Traversable[RedBlackTree[k]] {
-        pub def traverse(f: a -> m[b] & ef, t: RedBlackTree[k, a]): m[RedBlackTree[k, b]] & ef with Applicative[m] =
+        pub def traverse(f: a -> m[b] \ ef, t: RedBlackTree[k, a]): m[RedBlackTree[k, b]] \ ef with Applicative[m] =
             mapAWithKey((_, v) -> f(v), t)
 
         pub override def sequence(t: RedBlackTree[k, m[a]]): m[RedBlackTree[k, a]] with Applicative[m] =
@@ -84,8 +84,8 @@ namespace RedBlackTree {
     }
 
     instance FunctorFilter[RedBlackTree[k]] with Order[k] {
-        pub def filterMap(f: a -> Option[b] & ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] & ef = filterMapImplementation(f, t)
-        pub override def filter(f: a -> Bool & ef, t: RedBlackTree[k, a]): RedBlackTree[k, a] & ef = filterImplementation(f, t)
+        pub def filterMap(f: a -> Option[b] \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] \ ef = filterMapImplementation(f, t)
+        pub override def filter(f: a -> Bool \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, a] \ ef = filterImplementation(f, t)
     }
 
 
@@ -171,7 +171,7 @@ namespace RedBlackTree {
     /// Otherwise, updates `t` with `k => v`.
     ///
     @Time(time(f) + Int32.log2(size(t))) @Space(space(f) + Int32.log2(size(t)))
-    pub def insertWith(f: (k, v, v) -> v & ef, k: k, v: v, t: RedBlackTree[k, v]): RedBlackTree[k, v] & ef with Order[k] =
+    pub def insertWith(f: (k, v, v) -> v \ ef, k: k, v: v, t: RedBlackTree[k, v]): RedBlackTree[k, v] \ ef with Order[k] =
         def loop(tt, sk) = match tt {
             case Leaf                  => sk(Node(Red, Leaf, k, v, Leaf))
             case Node(c, a, k1, v1, b) => match k <=> k1 {
@@ -189,7 +189,7 @@ namespace RedBlackTree {
     /// Otherwise, returns `t`.
     ///
     @Time(time(f) + Int32.log2(size(t))) @Space(space(f) + Int32.log2(size(t)))
-    pub def updateWith(f: (k, v) -> Option[v] & ef, k: k, t: RedBlackTree[k, v]): RedBlackTree[k, v] & ef with Order[k] =
+    pub def updateWith(f: (k, v) -> Option[v] \ ef, k: k, t: RedBlackTree[k, v]): RedBlackTree[k, v] \ ef with Order[k] =
         def loop(tt, sk) = match tt {
             case Leaf                  => sk(tt)
             case Node(c, a, k1, v1, b) => match k <=> k1 {
@@ -263,7 +263,7 @@ namespace RedBlackTree {
     /// Optionally returns the first key-value pair in `t` that satisfies the predicate `f` when searching from left to right.
     ///
     @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
-    pub def findLeft(f: (k, v) -> Bool & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
+    pub def findLeft(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
         def loop(tt, sk) = match tt {
             case Node(_, a, k, v, b) => loop(a, kl -> match kl {
                 case None => if (f(k, v)) Some(k, v) else loop(b, kr -> match kr {
@@ -280,7 +280,7 @@ namespace RedBlackTree {
     /// Optionally returns the first key-value pair in `t` that satisfies the predicate `f` when searching from right to left.
     ///
     @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
-    pub def findRight(f: (k, v) -> Bool & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
+    pub def findRight(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
         def loop(tt, sk) = match tt {
             case Node(_, a, k, v, b) => loop(b, kr -> match kr {
                 case None => if (f(k, v)) Some(k, v) else loop(a, kl -> match kl {
@@ -298,7 +298,7 @@ namespace RedBlackTree {
     ///
     /// That is, the result is of the form: `f(...f(f(s, k1, v1), k2, v2)..., vn)`.
     ///
-    pub def foldLeft(f: (b, k, v) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = match t {
+    pub def foldLeft(f: (b, k, v) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = match t {
         case Node(_, a, k, v, b) => foldLeft(f, f(foldLeft(f, s, a), k, v), b)
         case _                   => s
     }
@@ -308,7 +308,7 @@ namespace RedBlackTree {
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     ///
-    pub def foldRight(f: (k, v, b) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = match t {
+    pub def foldRight(f: (k, v, b) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = match t {
         case Node(_, a, k, v, b) => foldRight(f, f(k, v, foldRight(f, s, b)), a)
         case _ => s
     }
@@ -316,7 +316,7 @@ namespace RedBlackTree {
     ///
     /// Returns the result of mapping each key-value pair and combining the results.
     ///
-    pub def foldMap(f: (k, v) -> b & ef, t: RedBlackTree[k, v]): b & ef with Monoid[b] =
+    pub def foldMap(f: (k, v) -> b \ ef, t: RedBlackTree[k, v]): b \ ef with Monoid[b] =
         foldLeft((acc, k, v) -> Monoid.combine(acc, f(k, v)), Monoid.empty(), t)
 
     ///
@@ -325,7 +325,7 @@ namespace RedBlackTree {
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithCont(f: (k, v, Unit -> b & ef) -> b & ef, z: b, t: RedBlackTree[k, v]): b & ef = match t {
+    pub def foldRightWithCont(f: (k, v, Unit -> b \ ef) -> b \ ef, z: b, t: RedBlackTree[k, v]): b \ ef = match t {
         case Node(_, a, k, v, b) => foldRightWithCont(f, f(k, v, _ -> foldRightWithCont(f, z, b)), a)
         case _                   => z
     }
@@ -337,7 +337,7 @@ namespace RedBlackTree {
     ///
     /// Returns `None` if `t` is the empty tree.
     ///
-    pub def reduceLeft(f: (k, v, k, v) -> (k, v) & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
+    pub def reduceLeft(f: (k, v, k, v) -> (k, v) \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
         foldLeft((x, k1, v1) -> match x {
             case Some((k2, v2)) => Some(f(k2, v2, k1, v1))
             case None           => Some(k1, v1)
@@ -350,7 +350,7 @@ namespace RedBlackTree {
     ///
     /// Returns `None` if `t` is the empty tree.
     ///
-    pub def reduceRight(f: (k, v, k, v) -> (k, v) & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
+    pub def reduceRight(f: (k, v, k, v) -> (k, v) \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
         foldRight((k1, v1, acc) -> match acc {
             case Some((k2, v2)) => Some(f(k1, v1, k2, v2))
             case None           => Some(k1, v1)
@@ -362,7 +362,7 @@ namespace RedBlackTree {
     /// Returns `false` if `t` is the empty tree.
     ///
     @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
-    pub def exists(f: (k, v) -> Bool & ef, t: RedBlackTree[k, v]): Bool & ef = match t {
+    pub def exists(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = match t {
         case Node(_, a, k, v, b) => if (f(k, v)) true else exists(f, a) or exists(f, b)
         case _                   => false
     }
@@ -418,7 +418,7 @@ namespace RedBlackTree {
     /// Returns `true` if `t` is the empty tree.
     ///
     @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
-    pub def forall(f: (k, v) -> Bool & ef, t: RedBlackTree[k, v]): Bool & ef = match t {
+    pub def forall(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = match t {
         case Node(_, a, k, v, b) => if (f(k, v)) forall(f, a) and forall(f, b) else false
         case _                   => true
     }
@@ -472,7 +472,7 @@ namespace RedBlackTree {
     /// Applies `f` to every key-value pair of `t`.
     ///
     @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
-    pub def foreach(f: (k, v) -> Unit & ef, t: RedBlackTree[k, v]): Unit & ef = match t {
+    pub def foreach(f: (k, v) -> Unit \ ef, t: RedBlackTree[k, v]): Unit \ ef = match t {
         case Node(_, a, k, v, b) => foreach(f, a); f(k, v); foreach(f, b)
         case _                   => ()
     }
@@ -567,7 +567,7 @@ namespace RedBlackTree {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: k -> Comparison & ef1, f: (k, v) -> Unit & ef2, t: RedBlackTree[k, v]): Unit \ { ef1, ef2 } = match t {
+    pub def queryWith(p: k -> Comparison \ ef1, f: (k, v) -> Unit \ ef2, t: RedBlackTree[k, v]): Unit \ { ef1, ef2 } = match t {
         case Node(_, a, k, v, b) =>
             match p(k) {
                 case LessThan    => queryWith(p, f, b)
@@ -582,7 +582,7 @@ namespace RedBlackTree {
     ///
     /// That is, the result is a list of all pairs `f(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison & ef1, f: (k, v) -> a & ef2, t: RedBlackTree[k, v]): List[a] \ { ef1, ef2 } = region r {
+    pub def query(p: k -> Comparison \ ef1, f: (k, v) -> a \ ef2, t: RedBlackTree[k, v]): List[a] \ { ef1, ef2 } = region r {
         let buffer = new MutList(r);
         let g = k -> v -> MutList.push!(f(k, v), buffer);
         queryWith(p, g, t);
@@ -625,13 +625,13 @@ namespace RedBlackTree {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def mapWithKey(f: (k, v1) -> v2 & ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] & ef =
+    pub def mapWithKey(f: (k, v1) -> v2 \ ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] \ ef =
         let f1 = (r) -> f(r.k, r.v);
         reifyEff(f1) {
             case Pure(g) =>
                 if (useParallelEvaluation(t))
                     let h = (k, v) -> g({k = k, v = v});
-                    parMapWithKey(threads() - 1, h, t) as & Pure
+                    parMapWithKey(threads() - 1, h, t) as \ {}
                 else
                     seqMapWithKey(f, t)
             case _  => seqMapWithKey(f, t)
@@ -685,7 +685,7 @@ namespace RedBlackTree {
     ///
     /// Sequentially maps `f` over the tree `t`.
     ///
-    def seqMapWithKey(f: (k, v1) -> v2 & ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] & ef = match t {
+    def seqMapWithKey(f: (k, v1) -> v2 \ ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] \ ef = match t {
         case Leaf                => Leaf
         case DoubleBlackLeaf     => DoubleBlackLeaf
         case Node(c, a, k, v, b) =>
@@ -752,7 +752,7 @@ namespace RedBlackTree {
     /// Returns the sum of all key-value pairs `k => v` in the tree `t`
     /// according to the function `f`.
     ///
-    pub def sumWith(f: (k, v) -> Int32 & ef, t: RedBlackTree[k, v]): Int32 & ef = match t {
+    pub def sumWith(f: (k, v) -> Int32 \ ef, t: RedBlackTree[k, v]): Int32 \ ef = match t {
         case Leaf                => 0
         case DoubleBlackLeaf     => 0
         case Node(_, a, k, v, b) =>
@@ -822,7 +822,7 @@ namespace RedBlackTree {
     /// Returns the product of all key-value pairs `k => v` in the tree `t`
     /// according to the function `f`.
     ///
-    pub def productWith(f: (k, v) -> Int32 & ef, t: RedBlackTree[k, v]): Int32 & ef =
+    pub def productWith(f: (k, v) -> Int32 \ ef, t: RedBlackTree[k, v]): Int32 \ ef =
         def loop(tt) = match tt {
             case Leaf                => 1
             case DoubleBlackLeaf     => 1
@@ -914,7 +914,7 @@ namespace RedBlackTree {
     ///
     /// Returns a RedBlackTree with mappings `k => f(v)` for every `k => v` in `t`.
     ///
-    pub def mapAWithKey(f: (k, v1) -> m[v2] & ef, t: RedBlackTree[k, v1]): m[RedBlackTree[k, v2]] & ef with Applicative[m] =
+    pub def mapAWithKey(f: (k, v1) -> m[v2] \ ef, t: RedBlackTree[k, v1]): m[RedBlackTree[k, v2]] \ ef with Applicative[m] =
         def loop(tt, k) = match tt {
             case Node(color, left, key, v, right) => loop(left, kl -> loop(right, kr -> k(nodeA(color, kl, key, f(key, v), kr))))
             case _                                => k(Applicative.point(Leaf))
@@ -986,7 +986,7 @@ namespace RedBlackTree {
     /// Applies `cmp` over the tree `t` sequentially and optionally returns the lowest
     /// element according to `cmp`.
     ///
-    def seqLimitBy(cmp: (k, v, k, v) -> (k, v) & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef = match t {
+    def seqLimitBy(cmp: (k, v, k, v) -> (k, v) \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef = match t {
         case Node(_, a, k, v, b) =>
             let res = match seqLimitBy(cmp, a) {
                 case None         => (k, v)
@@ -1019,7 +1019,7 @@ namespace RedBlackTree {
     /// Returns the concatenation of the string representation of each key-value pair
     /// `k => v` in `t` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: (k, v) -> String & ef, sep: String, t: RedBlackTree[k, v]): String & ef = region r {
+    pub def joinWith(f: (k, v) -> String \ ef, sep: String, t: RedBlackTree[k, v]): String \ ef = region r {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = new StringBuilder(r);
@@ -1030,7 +1030,7 @@ namespace RedBlackTree {
     ///
     /// Returns a new copy of tree `t` with just the nodes that satisfy the predicate `f`.
     ///
-    pub def filter(f: v -> Bool & ef, t: RedBlackTree[k, v]): RedBlackTree[k, v] & ef with Order[k] =
+    pub def filter(f: v -> Bool \ ef, t: RedBlackTree[k, v]): RedBlackTree[k, v] \ ef with Order[k] =
         filterImplementation(f, t)
 
     ///
@@ -1039,7 +1039,7 @@ namespace RedBlackTree {
     /// If `FunctorFilter.filter` calls `filter` it appears to invoke a cycle and the concrete
     /// implementation is never called.
     ///
-    def filterImplementation(f: v -> Bool & ef, t: RedBlackTree[k, v]): RedBlackTree[k, v] & ef with Order[k] =
+    def filterImplementation(f: v -> Bool \ ef, t: RedBlackTree[k, v]): RedBlackTree[k, v] \ ef with Order[k] =
         foldLeft((acc, k, v) -> if (f(v)) insert(k, v, acc) else acc, empty(), t)
 
     ///
@@ -1047,14 +1047,14 @@ namespace RedBlackTree {
     /// This traverses tree `t` and produces a new tree with just nodes where applying f
     /// produces `Some(_)`.
     ///
-    pub def filterMap(f: a -> Option[b] & ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] & ef with Order[k] =
+    pub def filterMap(f: a -> Option[b] \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] \ ef with Order[k] =
         filterMapImplementation(f, t)
 
     ///
     /// Temporary hack!
     /// A concrete implementation of `filterMap` that the `FunctorFilter` instance can use.
     ///
-    def filterMapImplementation(f: a -> Option[b] & ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] & ef with Order[k] =
+    def filterMapImplementation(f: a -> Option[b] \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] \ ef with Order[k] =
         let step = (acc, k, a) -> match f(a) {
             case Some(b) => insert(k, b, acc)
             case None    => acc
