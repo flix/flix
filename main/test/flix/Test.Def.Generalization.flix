@@ -43,7 +43,7 @@ namespace Test/Def/Generalization {
     def testGen14(): (a -> a \ IO) -> (a -> a \ IO) = x -> x
 
     @test
-    def testGen15(): (a -> a & e) -> (a -> a & e) = x -> x
+    def testGen15(): (a -> a \ e) -> (a -> a \ e) = x -> x
 
     @test
     def testGen16(): a -> (b -> a) = x -> (_ -> x)
@@ -152,7 +152,7 @@ namespace Test/Def/Generalization {
     def testLeq24(): {x :: Int32} -> {x :: Int32} = r -> {x = 21 | r}
 
     @test
-    def testLeq25(): (Unit -> b & e) -> b & e = f -> f()
+    def testLeq25(): (Unit -> b \ e) -> b \ e = f -> f()
 
     @test
     def testLeq26(): (Unit -> b) -> b = f -> f()
@@ -161,7 +161,7 @@ namespace Test/Def/Generalization {
     def testLeq27(): (Unit -> b \ IO) -> b \ IO = f -> f()
 
     @test
-    def testLeq28(): (Unit -> b & (e1 and e2 and e3)) -> b & (e3 and e2 and e1) = f -> f()
+    def testLeq28(): (Unit -> b \ {e1, e2, e3}) -> b \ {e3, e2, e1} = f -> f()
 
     // TODO: Broken
     /*@test

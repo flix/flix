@@ -11,7 +11,7 @@ namespace Test/Kind/Def {
 
             pub def schemaRow(x: #{ R | a }): Int32 = ???
 
-            pub def bool(x: Int32 -> Int32 & a): Int32 = ???
+            pub def bool(x: Int32 -> Int32 \ a): Int32 = ???
 
             pub def starToStar(x: a[Int32]): Int32 = ???
         }
@@ -76,7 +76,7 @@ namespace Test/Kind/Def {
 
             pub def schemaRow[a: SchemaRow](x: #{ R | a }): Int32 = ???
 
-            pub def bool[a: Bool](x: Int32 -> Int32 & a): Int32 = ???
+            pub def bool[a: Bool](x: Int32 -> Int32 \ a): Int32 = ???
 
             pub def starToStar[a: Type -> Type](x: a[Int32]): Int32 = ???
         }
