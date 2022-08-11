@@ -41,7 +41,7 @@ object HoverProvider {
   @tailrec
   private def hoverEntity(entity: Entity, uri: String, pos: Position, current: Boolean)(implicit Index: Index, root: Root, flix: Flix): JObject = entity match {
 
-    case Entity.Case(caze) => hoverType(caze.sc.base, caze.tag.loc, current)
+    case Entity.Case(caze) => hoverType(caze.tpe, caze.sym.loc, current)
 
     case Entity.DefUse(sym, loc, _) => hoverDef(sym, loc, current)
 
@@ -49,7 +49,7 @@ object HoverProvider {
 
     case Entity.VarUse(_, _, parent) => hoverEntity(parent, uri, pos, current)
 
-    case Entity.TagUse(_, _, _, parent) => hoverEntity(parent, uri, pos, current)
+    case Entity.CaseUse(_, _, parent) => hoverEntity(parent, uri, pos, current)
 
     case Entity.Exp(exp) => hoverTypeAndEff(exp.tpe, exp.pur, exp.eff, exp.loc, current)
 

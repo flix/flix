@@ -386,8 +386,8 @@ object Typer {
       val annVal = visitAnnotations(ann, root)
       val tparams = getTypeParams(tparams0)
       val cases = cases0 map {
-        case (name, KindedAst.Case(_, tagName, tagType, sc)) =>
-          name -> TypedAst.Case(enumSym, tagName, tagType, sc, tagName.loc)
+        case (name, KindedAst.Case(caseSym, tagType, sc)) =>
+          name -> TypedAst.Case(caseSym, tagType, sc, caseSym.loc) // TODO this should be full case location
       }
 
       Validation.mapN(annVal) {
@@ -1045,12 +1045,12 @@ object Typer {
           resultEff = Type.mkUnion(matchEff ::: ruleBodyEff, loc)
         } yield (matchConstrs.flatten ++ ruleBodyConstrs.flatten, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
-        if (sym == Symbol.mkEnumSym("Choice")) {
+      case KindedAst.Expression.Tag(symUse, exp, tvar, loc) =>
+        if (symUse.sym.enum == Symbol.mkEnumSym("Choice")) {
           //
           // Special Case 1: Absent or Present Tag
           //
-          if (tag.name == "Absent") {
+          if (symUse.sym.name == "Absent") {
             // Case 1.1: Absent Tag.
             val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
             val isAbsent = Type.True
@@ -1061,7 +1061,7 @@ object Typer {
               resultEff = Type.Empty
             } yield (List.empty, resultTyp, resultPur, resultEff)
           }
-          else if (tag.name == "Present") {
+          else if (symUse.sym.name == "Present") {
             // Case 1.2: Present Tag.
             val isAbsent = Type.freshVar(Kind.Bool, loc, text = FallbackText("isAbs"))
             val isPresent = Type.True
@@ -1073,7 +1073,7 @@ object Typer {
             } yield (constrs, resultTyp, resultPur, resultEff)
           } else {
             // Case 1.3: Unknown tag.
-            throw InternalCompilerException(s"Unexpected choice tag: '$tag' near ${loc.format}.")
+            throw InternalCompilerException(s"Unexpected choice tag: '${symUse.sym}' near ${loc.format}.")
           }
         } else {
           //
@@ -1081,10 +1081,10 @@ object Typer {
           //
 
           // Lookup the enum declaration.
-          val decl = root.enums(sym)
+          val decl = root.enums(symUse.sym.enum)
 
           // Lookup the case declaration.
-          val caze = decl.cases(tag)
+          val caze = decl.cases(symUse.sym)
 
           // Instantiate the type scheme of the case.
           val (_, tagType) = Scheme.instantiate(caze.sc)
@@ -1948,11 +1948,11 @@ object Typer {
         val eff = Type.mkUnion(rs.map(_.exp.eff), loc)
         TypedAst.Expression.Choose(es, rs, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
+      case KindedAst.Expression.Tag(sym, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val pur = e.pur
         val eff = e.eff
-        TypedAst.Expression.Tag(sym, tag, e, subst0(tvar), pur, eff, loc)
+        TypedAst.Expression.Tag(sym, e, subst0(tvar), pur, eff, loc)
 
       case KindedAst.Expression.Tuple(elms, loc) =>
         val es = elms.map(visitExp(_, subst0))
@@ -2398,12 +2398,12 @@ object Typer {
 
       case KindedAst.Pattern.Str(s, loc) => liftM(Type.Str)
 
-      case KindedAst.Pattern.Tag(sym, tag, pat, tvar, loc) =>
+      case KindedAst.Pattern.Tag(symUse, pat, tvar, loc) =>
         // Lookup the enum declaration.
-        val decl = root.enums(sym)
+        val decl = root.enums(symUse.sym.enum)
 
         // Lookup the case declaration.
-        val caze = decl.cases(tag)
+        val caze = decl.cases(symUse.sym)
 
         // Instantiate the type scheme of the case.
         val (_, tagType) = Scheme.instantiate(caze.sc)
@@ -2480,7 +2480,7 @@ object Typer {
       case KindedAst.Pattern.BigInt(lit, loc) => TypedAst.Pattern.BigInt(lit, loc)
       case KindedAst.Pattern.Str(lit, loc) => TypedAst.Pattern.Str(lit, loc)
 
-      case KindedAst.Pattern.Tag(sym, tag, pat, tvar, loc) => TypedAst.Pattern.Tag(sym, tag, visit(pat), subst0(tvar), loc)
+      case KindedAst.Pattern.Tag(sym, pat, tvar, loc) => TypedAst.Pattern.Tag(sym, visit(pat), subst0(tvar), loc)
 
       case KindedAst.Pattern.Tuple(elms, loc) =>
         val es = elms.map(visit)

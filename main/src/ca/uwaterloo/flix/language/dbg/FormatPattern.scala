@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.dbg
 
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.{Ast, TypedAst}
 
 /**
   * Formatting Patterns.
@@ -25,9 +25,9 @@ object FormatPattern {
     case TypedAst.Pattern.Int64(lit, _) => s"${lit}i64"
     case TypedAst.Pattern.BigInt(lit, _) => s"${lit}ii"
     case TypedAst.Pattern.Str(lit, _) => "\"" + lit + "\""
-    case TypedAst.Pattern.Tag(_, tag, pat, _, _) => pat match {
-      case TypedAst.Pattern.Unit(_) => tag.name
-      case _ => tag.name + "(" + format(pat) + ")"
+    case TypedAst.Pattern.Tag(Ast.CaseSymUse(sym, _), pat, _, _) => pat match {
+      case TypedAst.Pattern.Unit(_) => sym.name
+      case _ => sym.name + "(" + format(pat) + ")"
     }
     case TypedAst.Pattern.Tuple(elms, _, _) => "(" + elms.map(format).mkString(", ") + ")"
     case TypedAst.Pattern.Array(elms, _, _) => "[" + elms.map(format).mkString(", ") + "]"

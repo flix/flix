@@ -42,7 +42,7 @@ object KindedAst {
 
   case class Spec(doc: Ast.Doc, ann: List[KindedAst.Annotation], mod: Ast.Modifiers, tparams: List[KindedAst.TypeParam], fparams: List[KindedAst.FormalParam], sc: Scheme, tpe: Type, pur: Type, eff: Type, loc: SourceLocation)
 
-  case class Enum(doc: Ast.Doc, ann: List[KindedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[KindedAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Name.Tag, KindedAst.Case], tpeDeprecated: Type, loc: SourceLocation)
+  case class Enum(doc: Ast.Doc, ann: List[KindedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[KindedAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Symbol.CaseSym, KindedAst.Case], tpeDeprecated: Type, loc: SourceLocation)
 
   case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[KindedAst.TypeParam], tpe: Type, loc: SourceLocation)
 
@@ -120,7 +120,7 @@ object KindedAst {
 
     case class Choose(star: Boolean, exps: List[KindedAst.Expression], rules: List[KindedAst.ChoiceRule], tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Tag(sym: Symbol.EnumSym, tag: Name.Tag, exp: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+    case class Tag(sym: Ast.CaseSymUse, exp: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
     case class Tuple(elms: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
 
@@ -254,7 +254,7 @@ object KindedAst {
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends KindedAst.Pattern
 
-    case class Tag(sym: Symbol.EnumSym, tag: Name.Tag, pat: KindedAst.Pattern, tvar: ast.Type.KindedVar, loc: SourceLocation) extends KindedAst.Pattern
+    case class Tag(sym: Ast.CaseSymUse, pat: KindedAst.Pattern, tvar: ast.Type.KindedVar, loc: SourceLocation) extends KindedAst.Pattern
 
     case class Tuple(elms: List[KindedAst.Pattern], loc: SourceLocation) extends KindedAst.Pattern
 
@@ -310,7 +310,7 @@ object KindedAst {
 
   case class Attribute(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
-  case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpe: Type, sc: Scheme)
+  case class Case(sym: Symbol.CaseSym, tpe: Type, sc: Scheme)
 
   case class Constraint(cparams: List[KindedAst.ConstraintParam], head: KindedAst.Predicate.Head, body: List[KindedAst.Predicate.Body], loc: SourceLocation)
 

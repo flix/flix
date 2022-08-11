@@ -180,8 +180,8 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given case `case0`.
     */
   private def visitCase(case0: TypedAst.Case): Iterator[SemanticToken] = case0 match {
-    case TypedAst.Case(_, tag, tpe, _, _) =>
-      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, tag.loc)
+    case TypedAst.Case(sym, tpe, _, _) =>
+      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, sym.loc)
       Iterator(t) ++ visitType(tpe)
   }
 
@@ -364,8 +364,8 @@ object SemanticTokensProvider {
     case Expression.Choose(exps, rules, tpe, eff, loc, _) =>
       Iterator.empty // TODO: Choose expression.
 
-    case Expression.Tag(_, tag, exp, _, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, tag.loc)
+    case Expression.Tag(Ast.CaseSymUse(_, loc), exp, _, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
       Iterator(t) ++ visitExp(exp)
 
     case Expression.Tuple(exps, _, _, _, _) =>
@@ -582,8 +582,8 @@ object SemanticTokensProvider {
 
     case Pattern.Str(_, _) => Iterator.empty
 
-    case Pattern.Tag(_, tag, pat, _, _) =>
-      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, tag.loc)
+    case Pattern.Tag(Ast.CaseSymUse(_, loc), pat, _, _) =>
+      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
       Iterator(t) ++ visitPat(pat)
 
     case Pattern.Tuple(pats, _, _) => pats.flatMap(visitPat).iterator

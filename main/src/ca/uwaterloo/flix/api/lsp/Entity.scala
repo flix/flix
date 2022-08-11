@@ -159,7 +159,7 @@ object Entity {
     def precision: Precision = Precision.High
   }
 
-  case class TagUse(sym: Symbol.EnumSym, tag: Name.Tag, loc: SourceLocation, parent: Entity) extends Entity {
+  case class CaseUse(sym: Symbol.CaseSym, loc: SourceLocation, parent: Entity) extends Entity {
     def precision: Precision = Precision.High
   }
 

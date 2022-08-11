@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, LocationLink, Position}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Type, TypeConstructor}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
@@ -41,14 +41,14 @@ object GotoProvider {
         case Entity.VarUse(sym, loc, _) =>
           ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
 
-        case Entity.TagUse(sym, tag, _, _) =>
-          ("status" -> "success") ~ ("result" -> LocationLink.fromEnumAndTag(sym, tag, tag.loc)(root).toJSON)
+        case Entity.CaseUse(sym, loc, _) =>
+          ("status" -> "success") ~ ("result" -> LocationLink.fromCaseSym(sym, loc)(root).toJSON)
 
         case Entity.Exp(_) => mkNotFound(uri, pos)
 
         case Entity.Pattern(pat) => pat match {
-          case Pattern.Tag(sym, tag, _, _, _) =>
-            ("status" -> "success") ~ ("result" -> LocationLink.fromEnumAndTag(sym, tag, tag.loc)(root).toJSON)
+          case Pattern.Tag(Ast.CaseSymUse(sym, loc), _, _, _) =>
+            ("status" -> "success") ~ ("result" -> LocationLink.fromCaseSym(sym, loc)(root).toJSON)
 
           case _ => mkNotFound(uri, pos)
         }

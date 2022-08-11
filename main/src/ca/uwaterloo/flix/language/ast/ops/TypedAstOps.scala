@@ -114,7 +114,7 @@ object TypedAstOps {
         }
         m1 ++ m2
 
-      case Expression.Tag(_, _, exp, _, _, _, _) =>
+      case Expression.Tag(_, exp, _, _, _, _) =>
         visitExp(exp, env0)
 
       case Expression.Tuple(elms, _, _, _, _) =>
@@ -345,7 +345,7 @@ object TypedAstOps {
     case Pattern.Int64(lit, loc) => Map.empty
     case Pattern.BigInt(lit, loc) => Map.empty
     case Pattern.Str(lit, loc) => Map.empty
-    case Pattern.Tag(sym, tag, pat, tpe, loc) => binds(pat)
+    case Pattern.Tag(sym, pat, tpe, loc) => binds(pat)
     case Pattern.Tuple(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
       case (macc, elm) => macc ++ binds(elm)
     }
@@ -401,7 +401,7 @@ object TypedAstOps {
     case Expression.Discard(exp, _, _, _) => sigSymsOf(exp)
     case Expression.Match(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ sigSymsOf(rule.guard))
     case Expression.Choose(exps, rules, _, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ rules.flatMap(rule => sigSymsOf(rule.exp))
-    case Expression.Tag(_, _, exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.Tag(_, exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Tuple(elms, _, _, _, _) => elms.flatMap(sigSymsOf).toSet
     case Expression.RecordEmpty(_, _) => Set.empty
     case Expression.RecordSelect(exp, _, _, _, _, _) => sigSymsOf(exp)
@@ -568,7 +568,7 @@ object TypedAstOps {
       }
       es ++ rs
 
-    case Expression.Tag(_, _, exp, _, _, _, _) =>
+    case Expression.Tag(_, exp, _, _, _, _) =>
       freeVars(exp)
 
     case Expression.Tuple(elms, _, _, _, _) =>
@@ -755,7 +755,7 @@ object TypedAstOps {
     case Pattern.Int64(_, _) => Map.empty
     case Pattern.BigInt(_, _) => Map.empty
     case Pattern.Str(_, _) => Map.empty
-    case Pattern.Tag(_, _, pat, _, _) => freeVars(pat)
+    case Pattern.Tag(_, pat, _, _) => freeVars(pat)
     case Pattern.Tuple(elms, _, _) =>
       elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, pat) => acc ++ freeVars(pat)

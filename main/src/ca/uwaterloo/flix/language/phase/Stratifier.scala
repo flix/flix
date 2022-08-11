@@ -206,9 +206,9 @@ object Stratifier {
         case (es, rs) => Expression.Choose(es, rs, tpe, pur, eff, loc)
       }
 
-    case Expression.Tag(sym, tag, exp, tpe, pur, eff, loc) =>
+    case Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Tag(sym, tag, e, tpe, pur, eff, loc)
+        case e => Expression.Tag(sym, e, tpe, pur, eff, loc)
       }
 
     case Expression.Tuple(elms, tpe, pur, eff, loc) =>
@@ -599,7 +599,7 @@ object Stratifier {
       }
       dg1 + dg2
 
-    case Expression.Tag(_, _, exp, _, _, _, _) =>
+    case Expression.Tag(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.Tuple(elms, _, _, _, _) =>
