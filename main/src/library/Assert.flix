@@ -25,9 +25,10 @@ namespace Assert {
             true
         else {
             use Console.{green, red};
-            println("Assertion Error:");
+            println("Assertion Error");
             println("  Expected: ${green(expected)}");
             println("  Actual:   ${red(actual)}");
+            println("");
             ?assertEq
         }
     } as \ {}

@@ -97,12 +97,13 @@ object Tester {
 
           case TestEvent.Failure(sym, output, elapsed) =>
             failed = (sym, output) :: failed
-            writer.println(s"  ${bgRed(" FAIL ")} $sym ${gray(elapsed.fmt)}")
+            val line = output.headOption.map(s => s"(${red(s)})").getOrElse("")
+            writer.println(s"  ${bgRed(" FAIL ")} $sym $line")
             terminal.flush()
 
           case TestEvent.Skip(sym) =>
             skipped = skipped + 1
-            writer.println(s"  ${bgYellow(" SKIP ")} $sym")
+            writer.println(s"  ${bgYellow(" SKIP ")} $sym (${yellow("SKIPPED")})")
             terminal.flush()
 
           case TestEvent.Finished(elapsed) =>
@@ -191,7 +192,7 @@ object Tester {
               queue.add(TestEvent.Success(sym, Duration(elapsed)))
 
             case java.lang.Boolean.FALSE =>
-              queue.add(TestEvent.Failure(sym, Nil, Duration(elapsed)))
+              queue.add(TestEvent.Failure(sym, "Assertion Error" :: Nil, Duration(elapsed)))
 
             case _ =>
               queue.add(TestEvent.Success(sym, Duration(elapsed)))
@@ -281,9 +282,9 @@ object Tester {
     * Returns the stack trace of the given exception `ex` as a list of strings.
     */
   private def fmtStackTrace(ex: Throwable): Vector[String] = {
-    val sw = new StringWriter();
-    val pw = new PrintWriter(sw);
-    ex.printStackTrace(pw);
+    val sw = new StringWriter()
+    val pw = new PrintWriter(sw)
+    ex.printStackTrace(pw)
     sw.toString.linesIterator.toVector
   }
 
