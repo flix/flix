@@ -24,10 +24,10 @@ def recvWithTimeout(c: Channel[Int32]): Int32 \ IO =
 /// Creates two channels `c1` and `c2`.
 /// Sends values on both after one minute.
 /// Receives from both using defaults and timeouts.
-def main(): Unit \ {Impure, IO} = {
-  let c1 = chan Int32 1;
-  let c2 = chan Int32 1;
-  spawn slow(123, c1);
-  spawn slow(456, c2);
-  (recvWithDefault(c1) + recvWithTimeout(c2)) |> println
+def main(): Unit \ IO = {
+    let c1 = chan Int32 1;
+    let c2 = chan Int32 1;
+    spawn slow(123, c1);
+    spawn slow(456, c2);
+    (recvWithDefault(c1) + recvWithTimeout(c2)) |> println
 }

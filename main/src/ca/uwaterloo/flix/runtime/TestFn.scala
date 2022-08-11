@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Magnus Madsen
+ * Copyright 2022 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.runtime
 
-package ca.uwaterloo.flix.util
+import ca.uwaterloo.flix.language.ast.Symbol
 
-object TimeOps {
-
-  /**
-    * Converts the given number of nanoseconds `l` into human readable string representation.
-    */
-  def toSeconds(l: Long): String = f"${l.toDouble / 1_000_000_000.0}%3.1f"
-
-}
+/**
+  * Represents a unit test.
+  *
+  * @param sym  the Flix def symbol.
+  * @param skip true if the test case is marked @Skip.
+  * @param run  the function code.
+  */
+case class TestFn(sym: Symbol.DefnSym, skip: Boolean, run: () => AnyRef)
