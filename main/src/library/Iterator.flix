@@ -543,7 +543,7 @@ namespace Iterator {
             case Some(x) =>
                 cursor := None;
                 x
-        } as & r and ef;
+        } as \ {r, ef};
         Iterator(done, next)
 
     ///

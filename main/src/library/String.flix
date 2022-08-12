@@ -559,7 +559,7 @@ namespace String {
     ///
     /// Applies `f` to a start value `x and all elements in `s` going from right to left.
     ///
-    pub def foldRight(f: (Char, b) -> b \ ef, x: b, s: String): b &  ef =
+    pub def foldRight(f: (Char, b) -> b \ ef, x: b, s: String): b \ ef =
         def loop(acc, i) = {
             if (i < 0)
                 acc
@@ -589,7 +589,7 @@ namespace String {
     /// Accumulates the result of applying `f` pairwise to the elements of `s` and `t`
     /// starting with the initial value `x` and going from right to left.
     ///
-    pub def foldRight2(f: (Char, Char, b) -> b \ ef, x: b, s: String, t: String): b &  ef =
+    pub def foldRight2(f: (Char, Char, b) -> b \ ef, x: b, s: String, t: String): b \ ef =
         let sn = length(s) - 1;
         let tn = length(t) - 1;
         def loop(acc, i, j) = {

@@ -33,7 +33,7 @@ namespace StringBuilder {
     /// Returns a new mutable StringBuilder.
     ///
     pub def new(_: Region[r]): StringBuilder[r] \ Write(r) =
-        import new java.lang.StringBuilder(): ##java.lang.StringBuilder & r as newStringBuilder;
+        import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ r as newStringBuilder;
         StringBuilder(newStringBuilder())
 
     ///
@@ -48,7 +48,7 @@ namespace StringBuilder {
     /// Append the String `s` to the StringBuilder `sb`.
     ///
     pub def appendString!(s: String, sb: StringBuilder[r]): Unit \ Write(r) =
-        import java.lang.StringBuilder.append(String): ##java.lang.StringBuilder & r;
+        import java.lang.StringBuilder.append(String): ##java.lang.StringBuilder \ r;
         let StringBuilder(msb) = sb;
         discard msb `append` s;
         ()
@@ -106,7 +106,7 @@ namespace StringBuilder {
         let StringBuilder(msb) = sb;
         let len = length(sb);
         let i = ref 0 @ r1;
-        let done = () -> { deref i >= len } as & r1 and r2;
+        let done = () -> { deref i >= len } as \ {r1, r2};
         let next = () -> {
             let x = charAt(msb, deref i);
             i := deref i + 1;
@@ -124,7 +124,7 @@ namespace StringBuilder {
     /// Return the length of the StringBuilder `sb`.
     ///
     pub def length(sb: StringBuilder[r]): Int32 \ Read(r) =
-        import java.lang.StringBuilder.length(): Int32 & r;
+        import java.lang.StringBuilder.length(): Int32 \ r;
         let StringBuilder(msb) = sb;
         length(msb)
 
@@ -132,7 +132,7 @@ namespace StringBuilder {
     /// Convert the StringBuilder `sb` to a string.
     ///
     pub def toString(sb: StringBuilder[r]): String \ Read(r) =
-        import java.lang.StringBuilder.toString(): String & r;
+        import java.lang.StringBuilder.toString(): String \ r;
         let StringBuilder(msb) = sb;
         toString(msb)
 
