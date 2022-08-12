@@ -82,7 +82,7 @@ namespace Fixpoint {
         interpretWithDatabase(new MutMap(r), stmt)
 
     def interpretWithDatabase(db: Database[v, r], stmt: RamStmt[v]): Database[v, r] \ { Read(r), Write(r) } with Order[v], ToString[v] =
-        notifyPreInterpret(stmt) as & r; // This casts away the impure effect of notify
+        notifyPreInterpret(stmt) as \ r; // This casts away the impure effect of notify
         evalStmt(db, stmt);
         db
 
