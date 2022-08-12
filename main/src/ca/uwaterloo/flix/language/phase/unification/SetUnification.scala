@@ -73,10 +73,6 @@ object SetUnification {
     case tpe: Type.KindedVar => tpe
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseIo(tpe1), eraseIo(tpe2), loc)
 
-    case _: Type.UnkindedArrow => throw InternalCompilerException("unexpected unkinded type")
-    case _: Type.ReadWrite => throw InternalCompilerException("unexpected unkinded type")
-    case _: Type.UnkindedVar => throw InternalCompilerException("unexpected unkinded type")
-    case _: Type.Ascribe => throw InternalCompilerException("unexpected unkinded type")
     case _: Type.Alias => throw InternalCompilerException("unexpected type alias")
   }
 
