@@ -1595,7 +1595,11 @@ object Typer {
         } yield (constrs, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.Par(exp, _) =>
-        visitExp(exp)
+        for {
+          (constrs, tpe, pur, eff) <- visitExp(exp)
+          resultPur <- expectTypeM(expected = Type.Pure, actual = pur, exp.loc)
+          resultEff <- expectTypeM(expected = Type.Empty, actual = eff, exp.loc)
+        } yield (constrs, tpe, resultPur, resultEff)
 
       case KindedAst.Expression.Lazy(exp, loc) =>
         for {
