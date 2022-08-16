@@ -104,4 +104,28 @@ namespace Test/Exp/Upcast {
                 g;
         ()
 
+    @test
+    def testUpcast11(): Unit =
+        import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
+        let f = (_: ##java.lang.Object) -> (_: ##java.lang.Object) -> (_: ##java.lang.Object) -> (_: ##java.io.Serializable) -> newObject();
+        let g = (_: ##java.io.Serializable) -> (_: ##java.lang.Object) -> (_: ##java.io.Serializable) -> (_: ##java.io.Serializable) -> newObject();
+        let _ =
+            if (true)
+                upcast f
+            else
+                g;
+        ()
+
+    @test
+    def testUpcast12(): Unit =
+        import new java.lang.Boolean(Bool): ##java.lang.Boolean & Impure as newBool;
+        let f = (_: ##java.io.Serializable) -> (_: ##java.io.Serializable) -> (_: ##java.io.Serializable) -> (_: ##java.lang.StringBuilder) -> newBool(true);
+        let g = (_: ##java.lang.StringBuilder) -> (_: ##java.io.Serializable) -> (_: ##java.lang.StringBuilder) -> (_: ##java.lang.StringBuilder) -> newBool(false);
+        let _ =
+            if (true)
+                upcast f
+            else
+                g;
+        ()
+
 }
