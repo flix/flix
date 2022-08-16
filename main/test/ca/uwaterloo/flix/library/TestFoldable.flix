@@ -31,7 +31,7 @@ namespace TestFoldable {
 
 
     instance Functor[Logger[i]] {
-        pub def map(f: a -> b & ef, ma: Logger[i, a]): Logger[i, b] & ef =
+        pub def map(f: a -> b \ ef, ma: Logger[i, a]): Logger[i, b] \ ef =
             let Logger((w, a)) = ma;
             Logger((w, f(a)))
     }
@@ -39,7 +39,7 @@ namespace TestFoldable {
     instance Applicative[Logger[i]] {
         pub def point(x: a): Logger[i, a] = Logger(Chain.empty(), x)
 
-        pub def ap(mf: Logger[i, a -> b & ef], ma: Logger[i, a]): Logger[i, b] & ef =
+        pub def ap(mf: Logger[i, a -> b \ ef], ma: Logger[i, a]): Logger[i, b] \ ef =
             let Logger((w1, f)) = mf;
             let Logger((w2, a)) = ma;
             Logger((Chain.append(w1, w2), f(a)))
@@ -47,7 +47,7 @@ namespace TestFoldable {
 
 
     instance Monad[Logger[i]] {
-        pub def flatMap(f: a -> Logger[i, b] & ef, ma: Logger[i, a]): Logger[i, b] & ef =
+        pub def flatMap(f: a -> Logger[i, b] \ ef, ma: Logger[i, a]): Logger[i, b] \ ef =
             let Logger((w1, a)) = ma;
             let Logger((w2, b)) = f(a);
             Logger((Chain.append(w1, w2), b))
@@ -249,15 +249,15 @@ namespace TestFoldable {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toArray01(): Bool & Impure =
+    def toArray01(): Bool \ IO =
         Array.sameElements(Foldable.toArray(Static, Nel(1, Nil)), [1])
 
     @test
-    def toArray02(): Bool & Impure =
+    def toArray02(): Bool \ IO =
         Array.sameElements(Foldable.toArray(Static, Nel(1, 2 :: 3 :: Nil)), [1, 2, 3])
 
     @test
-    def toArray03(): Bool & Impure =
+    def toArray03(): Bool \ IO =
         Array.sameElements(Foldable.toArray(Static, Nel(1, 1 :: 2 :: 3 :: Nil)), [1, 1, 2, 3])
 
 

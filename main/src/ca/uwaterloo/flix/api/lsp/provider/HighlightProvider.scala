@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{DocumentHighlight, DocumentHighlightKind, Entity, Index, Position, Range}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL._
 
@@ -28,7 +28,7 @@ object HighlightProvider {
       case None => mkNotFound(uri, pos)
 
       case Some(entity) => entity match {
-        case Entity.Case(caze) => highlightTag(caze.sym, caze.tag)
+        case Entity.Case(caze) => highlightCase(caze.sym)
 
         case Entity.Def(defn) => highlightDef(defn.sym)
 
@@ -36,17 +36,21 @@ object HighlightProvider {
 
         case Entity.Enum(enum) => highlightEnum(enum.sym)
 
+        case Entity.TypeAlias(alias) => highlightTypeAlias(alias.sym)
+
         case Entity.Effect(eff) => highlightEffect(eff.sym)
 
         case Entity.Op(op) => highlightOp(op.sym)
 
-        case Entity.Exp(exp) => exp match {
-          case Expression.Var(sym, _, _) => highlightVar(sym)
-          case Expression.Def(sym, _, _) => highlightDef(sym)
-          case Expression.Sig(sym, _, _) => highlightSig(sym)
-          case Expression.Tag(sym, tag, _, _, _, _, _) => highlightTag(sym, tag)
-          case _ => mkNotFound(uri, pos)
-        }
+        case Entity.VarUse(sym, _, _) => highlightVar(sym)
+
+        case Entity.DefUse(sym, _, _) => highlightDef(sym)
+
+        case Entity.SigUse(sym, _, _) => highlightSig(sym)
+
+        case Entity.CaseUse(sym, _, _) => highlightCase(sym)
+
+        case Entity.Exp(_) => mkNotFound(uri, pos)
 
         case Entity.Field(field) => highlightField(field)
 
@@ -54,7 +58,7 @@ object HighlightProvider {
 
         case Entity.Pattern(pat) => pat match {
           case Pattern.Var(sym, _, _) => highlightVar(sym)
-          case Pattern.Tag(sym, tag, _, _, _) => highlightTag(sym, tag)
+          case Pattern.Tag(Ast.CaseSymUse(sym, _), _, _, _) => highlightCase(sym)
           case _ => mkNotFound(uri, pos)
         }
 
@@ -74,9 +78,10 @@ object HighlightProvider {
           case _ => mkNotFound(uri, pos)
         }
 
-        case Entity.OpUse(sym, _) => highlightOp(sym)
+        case Entity.OpUse(sym, _, _) => highlightOp(sym)
 
-        case _ => mkNotFound(uri, pos)
+        case Entity.Class(_) => mkNotFound(uri, pos)
+        case Entity.TypeVar(_) => mkNotFound(uri, pos)
       }
     }
   }
@@ -109,6 +114,12 @@ object HighlightProvider {
     highlight(write :: reads)
   }
 
+  private def highlightTypeAlias(sym: Symbol.TypeAliasSym)(implicit index: Index, root: Root): JObject = {
+    val write = (sym.loc, DocumentHighlightKind.Write)
+    val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
+    highlight(write :: reads)
+  }
+
   private def highlightField(field: Name.Field)(implicit index: Index, root: Root): JObject = {
     val writes = index.defsOf(field).toList.map(loc => (loc, DocumentHighlightKind.Write))
     val reads = index.usesOf(field).toList.map(loc => (loc, DocumentHighlightKind.Read))
@@ -121,9 +132,9 @@ object HighlightProvider {
     highlight(reads ::: writes)
   }
 
-  private def highlightTag(sym: Symbol.EnumSym, tag: Name.Tag)(implicit index: Index, root: Root): JObject = {
-    val write = (root.enums(sym).cases(tag).loc, DocumentHighlightKind.Write)
-    val reads = index.usesOf(sym, tag).toList.map(loc => (loc, DocumentHighlightKind.Read))
+  private def highlightCase(sym: Symbol.CaseSym)(implicit index: Index, root: Root): JObject = {
+    val write = (root.enums(sym.enum).cases(sym).loc, DocumentHighlightKind.Write)
+    val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(write :: reads)
   }
 

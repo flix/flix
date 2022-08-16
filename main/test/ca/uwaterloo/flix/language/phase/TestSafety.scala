@@ -184,69 +184,69 @@ class TestSafety extends FunSuite with TestUtils {
   test("TestInvalidThis.01") {
     val input =
       """
-        |def f(): ##java.lang.Runnable & Impure =
+        |def f(): ##java.lang.Runnable \ IO =
         |  object ##java.lang.Runnable {
-        |    def run(): Unit & Impure = ()
+        |    def run(): Unit \ IO = ()
         |  }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.MissingThis](result)
   }
 
   test("TestInvalidThis.02") {
     val input =
       """
-        |def f(): ##java.lang.Runnable & Impure =
+        |def f(): ##java.lang.Runnable \ IO =
         |  object ##java.lang.Runnable {
-        |    def run(_this: Int32): Unit & Impure = ()
+        |    def run(_this: Int32): Unit \ IO = ()
         |  }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.IllegalThisType](result)
   }
 
   test("TestUnimplementedMethod.01") {
     val input =
       """
-        |def f(): ##java.lang.Runnable & Impure = object ##java.lang.Runnable {}
+        |def f(): ##java.lang.Runnable \ IO = object ##java.lang.Runnable {}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.UnimplementedMethod](result)
   }
 
   test("TestExtraMethod.01") {
     val input =
       """
-        |def f(): ##java.lang.Runnable & Impure =
+        |def f(): ##java.lang.Runnable \ IO =
         |  object ##java.lang.Runnable {
-        |    def run(_this: ##java.lang.Runnable): Unit & Impure = ()
-        |    def anExtraMethod(_this: ##java.lang.Runnable): Unit & Impure = ()
+        |    def run(_this: ##java.lang.Runnable): Unit \ IO = ()
+        |    def anExtraMethod(_this: ##java.lang.Runnable): Unit \ IO = ()
         |  }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.ExtraMethod](result)
   }
 
   test("TestNonDefaultConstructor.01") {
     val input =
       """
-        |def f(): ##flix.test.TestClassWithNonDefaultConstructor & Impure =
+        |def f(): ##flix.test.TestClassWithNonDefaultConstructor \ IO =
         |  object ##flix.test.TestClassWithNonDefaultConstructor {
         |  }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.NonDefaultConstructor](result)
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.MissingPublicZeroArgConstructor](result)
   }
 
   test("TestNonPublicInterface.01") {
     val input =
       """
-        |def f(): ##flix.test.TestNonPublicInterface & Impure =
+        |def f(): ##flix.test.TestNonPublicInterface \ IO =
         |  object ##flix.test.TestNonPublicInterface {
         |  }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.InaccessibleSuperclass](result)
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.NonPublicClass](result)
   }
 
 }

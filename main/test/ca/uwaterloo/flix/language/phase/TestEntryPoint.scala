@@ -26,7 +26,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
   test("Test.IllegalEntryPointArg.Main.01") {
     val input =
       """
-        |def main(blah: Array[String, _]): Unit & Impure = ??? as & Impure
+        |def main(blah: Array[String, _]): Unit \ IO = ??? as \ IO
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointArgs](result)
@@ -35,7 +35,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
   test("Test.IllegalEntryPointArg.Main.02") {
     val input =
       """
-        |def main(blah: Array[a, _]): Unit & Impure = ??? as & Impure
+        |def main(blah: Array[a, _]): Unit \ IO = ??? as \ IO
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointArgs](result)
@@ -46,7 +46,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
       """
         |class C[a]
         |
-        |def main(blah: Array[a, _]): Unit & Impure with C[a] = ??? as & Impure
+        |def main(blah: Array[a, _]): Unit \ IO with C[a] = ??? as \ IO
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointArgs](result)
@@ -82,7 +82,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
   test("Test.IllegalEntryPointResult.Main.01") {
     val input =
       """
-        |def main(): a & Impure = ??? as & Impure
+        |def main(): a \ IO = ??? as \ IO
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointResult](result)
@@ -129,7 +129,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
   test("Test.ValidEntryPoint.Main.01") {
     val input =
       """
-        |def main(): Unit & ef = ??? as & ef
+        |def main(): Unit \ ef = ??? as \ ef
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectSuccess(result)
@@ -147,7 +147,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
     test("Test.ValidEntryPoint.Main.03") {
       val input =
         """
-          |def main(): Int64 & Impure = ??? as & Impure
+          |def main(): Int64 \ IO = ??? as \ IO
           |""".stripMargin
       val result = compile(input, Options.TestWithLibMin)
       expectSuccess(result)

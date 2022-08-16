@@ -4,7 +4,7 @@
 
 /// Constructs a list with ten elements and performs
 /// various operations on it in a pipeline.
-def main(): Unit & Impure =
+def main(): Unit \ IO =
     List.range(0, 10) |>
     List.map(x -> x * x) |>
     List.take(5) |>

@@ -53,7 +53,7 @@ import scala.collection.mutable
   *
   * $ wscat -c ws://localhost:8000
   *
-  * > {"id": "1", "request": "api/addUri", "uri": "foo.flix", "src": "def main(): Unit & Impure = println(\"Hello World\")"}
+  * > {"id": "1", "request": "api/addUri", "uri": "foo.flix", "src": "def main(): Unit \ IO = println(\"Hello World\")"}
   * > {"id": "2", "request": "lsp/check"}
   * > {"id": "3", "request": "lsp/hover", "uri": "foo.flix", "position": {"line": 1, "character": 25}}
   *
@@ -296,7 +296,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ("data" -> Nil))
 
     case Request.InlayHint(id, uri, range) =>
-      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, root).map(_.toJSON))
+      if (current)
+        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, root, flix).map(_.toJSON))
+      else
+        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
 
   }
 

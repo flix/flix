@@ -12,7 +12,7 @@ namespace Test/Kind/TypeAlias {
 
         type alias TStarStar[a: Type, b: Type] = (a, b)
 
-        type alias TBool[a: Bool] = Int32 -> Int32 & a
+        type alias TBool[a: Bool] = Int32 -> Int32 \ a
 
         type alias TRecordRow[a: RecordRow] = { l :: Int32 | a }
 

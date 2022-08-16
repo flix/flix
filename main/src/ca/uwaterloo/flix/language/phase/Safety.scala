@@ -129,7 +129,7 @@ object Safety {
       exps.flatMap(visitExp) :::
         rules.flatMap { case ChoiceRule(_, exp) => visitExp(exp) }
 
-    case Expression.Tag(_, _, exp, _, _, _, _) =>
+    case Expression.Tag(_, exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.Tuple(elms, _, _, _, _) =>
@@ -158,10 +158,10 @@ object Safety {
     case Expression.ArrayLength(base, _, _, _) =>
       visitExp(base)
 
-    case Expression.ArrayStore(base, index, elm, _, _) =>
+    case Expression.ArrayStore(base, index, elm, _, _, _) =>
       visitExp(base) ::: visitExp(index) ::: visitExp(elm)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) =>
       visitExp(base) ::: visitExp(beginIndex) ::: visitExp(endIndex)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
@@ -228,8 +228,11 @@ object Safety {
       visitExp(exp)
 
     case Expression.NewObject(_, clazz, tpe, _, _, methods, loc) =>
-      checkObjectImplementation(clazz, tpe, methods, loc) ++
-        methods.flatMap { case JvmMethod(_, _, exp, _, _, _, _) => visitExp(exp) }
+      val erasedType = Type.eraseAliases(tpe)
+      checkObjectImplementation(clazz, erasedType, methods, loc) ++
+        methods.flatMap {
+          case JvmMethod(_, _, exp, _, _, _, _) => visitExp(exp)
+        }
 
     case Expression.NewChannel(exp, _, _, _, _) =>
       visitExp(exp)
@@ -520,11 +523,74 @@ object Safety {
     case Pattern.Int64(_, _) => Nil
     case Pattern.BigInt(_, _) => Nil
     case Pattern.Str(_, _) => Nil
-    case Pattern.Tag(_, _, pat, _, _) => visitPat(pat, loc)
+    case Pattern.Tag(_, pat, _, _) => visitPat(pat, loc)
     case Pattern.Tuple(elms, _, _) => visitPats(elms, loc)
     case Pattern.Array(elms, _, _) => visitPats(elms, loc)
     case Pattern.ArrayTailSpread(elms, _, _, _) => visitPats(elms, loc)
     case Pattern.ArrayHeadSpread(_, elms, _, _) => visitPats(elms, loc)
+  }
+
+  /**
+    * Ensures that `methods` fully implement `clazz`
+    */
+  private def checkObjectImplementation(clazz: java.lang.Class[_], tpe: Type, methods: List[JvmMethod], loc: SourceLocation): List[CompilationMessage] = {
+    //
+    // Check that `clazz` doesn't have a non-default constructor
+    //
+    val constructorErrors = if (clazz.isInterface) {
+      // Case 1: Interface. No need for a constructor.
+      List.empty
+    } else {
+      // Case 2: Class. Must have a public non-zero argument constructor.
+      if (hasPublicZeroArgConstructor(clazz))
+        List.empty
+      else
+        List(MissingPublicZeroArgConstructor(clazz, loc))
+    }
+
+    //
+    // Check that `clazz` is public
+    //
+    val visibilityErrors = if (!isPublicClass(clazz))
+      List(NonPublicClass(clazz, loc))
+    else
+      List.empty
+
+    //
+    // Check that the first argument looks like "this"
+    //
+    val thisErrors = methods.flatMap {
+      case JvmMethod(ident, fparams, _, _, _, _, methodLoc) =>
+        // Check that the declared type of `this` matches the type of the class or interface.
+        val fparam = fparams.head
+        val thisType = Type.eraseAliases(fparam.tpe)
+        thisType match {
+          case `tpe` => None
+          case Type.Unit => Some(MissingThis(clazz, ident.name, methodLoc))
+          case _ => Some(IllegalThisType(clazz, fparam.tpe, ident.name, methodLoc))
+        }
+    }
+
+    val flixMethods = getFlixMethodSignatures(methods)
+    val implemented = flixMethods.keySet
+
+    val javaMethods = getJavaMethodSignatures(clazz)
+    val canImplement = javaMethods.keySet
+    val mustImplement = canImplement.filter(m => isAbstractMethod(javaMethods(m)))
+
+    //
+    // Check that there are no unimplemented methods.
+    //
+    val unimplemented = mustImplement diff implemented
+    val unimplementedErrors = unimplemented.map(m => UnimplementedMethod(clazz, javaMethods(m), loc))
+
+    //
+    // Check that there are no methods that aren't in the interface
+    //
+    val extra = implemented diff canImplement
+    val extraErrors = extra.map(m => ExtraMethod(clazz, m.name, flixMethods(m).loc))
+
+    constructorErrors ++ visibilityErrors ++ thisErrors ++ unimplementedErrors ++ extraErrors
   }
 
   /**
@@ -549,7 +615,7 @@ object Safety {
     * Get a Set of MethodSignatures representing the methods of `clazz`. Returns a map to allow subsequent reverse lookup.
     */
   private def getJavaMethodSignatures(clazz: java.lang.Class[_]): Map[MethodSignature, java.lang.reflect.Method] = {
-    val methods = clazz.getMethods.toList.filterNot(m => java.lang.reflect.Modifier.isStatic(m.getModifiers))
+    val methods = clazz.getMethods.toList.filterNot(isStaticMethod)
     methods.foldLeft(Map.empty[MethodSignature, java.lang.reflect.Method]) {
       case (acc, m) =>
         val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.getFlixType), Type.getFlixType(m.getReturnType))
@@ -558,21 +624,14 @@ object Safety {
   }
 
   /**
-    * Return true if a method is abstract (either because it's a non-default member of an interface, or an abstract method of a class)
+    * Return true if the given `clazz` has public zero argument constructor.
     */
-  private def isAbstract(method: java.lang.reflect.Method, clazz: java.lang.Class[_]): Boolean = {
-    if (clazz.isInterface) {
-      !method.isDefault()
-    } else {
-      java.lang.reflect.Modifier.isAbstract(method.getModifiers)
-    }
-  }
-
-  /**
-    * Return true if `clazz` has a non-default (no argument) constructor.
-    */
-  private def hasDefaultConstructor(clazz: java.lang.Class[_]): Boolean = {
+  private def hasPublicZeroArgConstructor(clazz: java.lang.Class[_]): Boolean = {
     try {
+      // We simply use Class.getConstructor whose documentation states:
+      //
+      // Returns a Constructor object that reflects the specified
+      // public constructor of the class represented by this class object.
       clazz.getConstructor()
       true
     } catch {
@@ -581,60 +640,21 @@ object Safety {
   }
 
   /**
-    * Ensures that `methods` fully implement `clazz`
+    * Returns `true` if the given class `c` is public.
     */
-  private def checkObjectImplementation(clazz: java.lang.Class[_], tpe: Type, methods: List[JvmMethod], loc: SourceLocation): List[CompilationMessage] = {
-    //
-    // Check that `clazz` doesn't have a non-default constructor
-    //
-    val constructorErrors = if (!clazz.isInterface() && !hasDefaultConstructor(clazz))
-      List(NonDefaultConstructor(clazz, loc))
-    else
-      List.empty
+  private def isPublicClass(c: java.lang.Class[_]): Boolean =
+    java.lang.reflect.Modifier.isPublic(c.getModifiers)
 
-    //
-    // Check that `clazz` is public
-    //
-    val visibilityErrors = if (!java.lang.reflect.Modifier.isPublic(clazz.getModifiers))
-      List(InaccessibleSuperclass(clazz, loc))
-    else
-      List.empty
+  /**
+    * Return `true` if the given method `m` is abstract.
+    */
+  private def isAbstractMethod(m: java.lang.reflect.Method): Boolean =
+    java.lang.reflect.Modifier.isAbstract(m.getModifiers)
 
-    //
-    // Check that the first argument looks like "this"
-    //
-    val thisErrors = methods.flatMap {
-      case JvmMethod(ident, fparams, _, _, _, _, methodLoc) =>
-        // Check that the declared type of `this` matches the type of the class or interface.
-        val fparam = fparams.head
-        val thisType = Type.eraseAliases(fparam.tpe)
-        thisType match {
-          case `tpe` => None
-          case Type.Unit => Some(MissingThis(clazz, ident.name, methodLoc))
-          case _ => Some(IllegalThisType(clazz, fparam.tpe, ident.name, methodLoc))
-        }
-    }
-
-    val flixMethods = getFlixMethodSignatures(methods)
-    val implemented = flixMethods.keySet
-
-    val javaMethods = getJavaMethodSignatures(clazz)
-    val canImplement = javaMethods.keySet
-    val mustImplement = canImplement.filter(m => isAbstract(javaMethods(m), clazz))
-
-    //
-    // Check that there are no unimplemented methods.
-    //
-    val unimplemented = mustImplement diff implemented
-    val unimplementedErrors = unimplemented.map(m => UnimplementedMethod(clazz, javaMethods(m), loc))
-
-    //
-    // Check that there are no methods that aren't in the interface
-    //
-    val extra = implemented diff canImplement
-    val extraErrors = extra.map(m => ExtraMethod(clazz, m.name, flixMethods(m).loc))
-
-    constructorErrors ++ visibilityErrors ++ thisErrors ++ unimplementedErrors ++ extraErrors
-  }
+  /**
+    * Returns `true` if the given method `m` is static.
+    */
+  private def isStaticMethod(m: java.lang.reflect.Method): Boolean =
+    java.lang.reflect.Modifier.isStatic(m.getModifiers)
 
 }

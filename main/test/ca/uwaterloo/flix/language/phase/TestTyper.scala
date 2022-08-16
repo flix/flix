@@ -153,7 +153,7 @@ class TestTyper extends FunSuite with TestUtils {
     """
       |enum E[a: Type, ef: Bool](Unit)
       |def f(g: E[Int32, true]): Bool = ???
-      |def mkE(): E[Int32, true] & ef = ???
+      |def mkE(): E[Int32, true] \ ef = ???
       |
       |def g(): Bool = f(mkE)
       |""".stripMargin
@@ -417,8 +417,8 @@ class TestTyper extends FunSuite with TestUtils {
 
   test("MissingArrowInstance.01") {
     val input =
-      s"""
-         |def main(): Unit & Impure =
+      """
+         |def main(): Unit \ IO =
          |    println(x -> x + 41i32)
          |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1027,10 +1027,10 @@ class TestTyper extends FunSuite with TestUtils {
         |def foo(): Unit =
         |    let f = x -> {
         |        choose x {
-        |            case Absent     => 1 as & Impure
+        |            case Absent     => 1 as \ IO
         |        };
         |        choose x {
-        |            case Present(_) => 2 as & Impure
+        |            case Present(_) => 2 as \ IO
         |        }
         |    };
         |    f(Absent)
@@ -1041,7 +1041,7 @@ class TestTyper extends FunSuite with TestUtils {
         |}
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
   }
 
@@ -1051,10 +1051,10 @@ class TestTyper extends FunSuite with TestUtils {
         |def foo(): Unit =
         |    let f = x -> {
         |        choose x {
-        |            case Absent     => 1 as & Impure
+        |            case Absent     => 1 as \ IO
         |        };
         |        choose x {
-        |            case Present(_) => 2 as & Impure
+        |            case Present(_) => 2 as \ IO
         |        }
         |    };
         |    f(Present(123))
@@ -1065,7 +1065,7 @@ class TestTyper extends FunSuite with TestUtils {
         |}
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
   }
 
@@ -1156,20 +1156,20 @@ class TestTyper extends FunSuite with TestUtils {
   test("Test.ImpureDeclaredAsPure.01") {
     val input =
       """
-        |pub def f(): Int32 = 123 as & Impure
+        |pub def f(): Int32 = 123 as \ IO
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.ImpureDeclaredAsPure](result)
   }
 
   test("Test.ImpureDeclaredAsPure.02") {
     val input =
       """
-        |def f(): Int32 & Pure = 123 as & Impure
+        |def f(): Int32 & Pure = 123 as \ IO
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.ImpureDeclaredAsPure](result)
   }
 
@@ -1177,7 +1177,7 @@ class TestTyper extends FunSuite with TestUtils {
     // Regression test. See https://github.com/flix/flix/issues/4062
     val input =
       """
-        |def mkArray(): Array[Int32, Static] & Impure = []
+        |def mkArray(): Array[Int32, Static] \ IO = []
         |
         |def zero(): Int32 & Pure = mkArray().length
         |""".stripMargin
@@ -1188,7 +1188,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("Test.EffectPolymorphicDeclaredAsPure.01") {
     val input =
       """
-        |def f(g: Int32 -> Int32 & ef): Int32 = g(123)
+        |def f(g: Int32 -> Int32 \ ef): Int32 = g(123)
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1198,7 +1198,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("Test.EffectPolymorphicDeclaredAsPure.02") {
     val input =
       """
-        |def f(g: Int32 -> Int32 & ef): Int32 & Pure = g(123)
+        |def f(g: Int32 -> Int32 \ ef): Int32 & Pure = g(123)
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1208,7 +1208,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("Test.EffectGeneralizationError.01") {
     val input =
       """
-        |def f(g: Int32 -> Int32 & ef): Int32 & ef = 123
+        |def f(g: Int32 -> Int32 \ ef): Int32 \ ef = 123
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1218,7 +1218,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("Test.EffectGeneralizationError.02") {
     val input =
       """
-        |def f(g: Int32 -> Int32 & ef1, h: Int32 -> Int32 & ef2): Int32 & (ef1 and ef2) = 123
+        |def f(g: Int32 -> Int32 \ ef1, h: Int32 -> Int32 \ ef2): Int32 & (ef1 and ef2) = 123
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)

@@ -42,45 +42,52 @@ instance Monoid[Chain[a]] {
 }
 
 instance Functor[Chain] {
-    pub def map(f: a -> b & ef, c: Chain[a]): Chain[b] & ef = Chain.map(f, c)
+    pub def map(f: a -> b \ ef, c: Chain[a]): Chain[b] \ ef = Chain.map(f, c)
 }
 
 instance Applicative[Chain] {
     pub def point(x: a) : Chain[a] = Chain.singleton(x)
-    pub def ap(f: Chain[a -> b & ef], x: Chain[a]) : Chain[b] & ef = Chain.ap(f, x)
+    pub def ap(f: Chain[a -> b \ ef], x: Chain[a]) : Chain[b] \ ef = Chain.ap(f, x)
 }
 
 instance Monad[Chain] {
-    pub def flatMap(f: a -> Chain[b] & ef, x : Chain[a]) : Chain[b] & ef = Chain.flatMap(f, x)
+    pub def flatMap(f: a -> Chain[b] \ ef, x : Chain[a]) : Chain[b] \ ef = Chain.flatMap(f, x)
 }
 
 instance MonadZero[Chain] {
     pub def empty(): Chain[a] = Chain.empty()
 }
 
+instance MonadZip[Chain] {
+    pub def zipWith(f: (a, b) -> c \ ef, xs: Chain[a], ys: Chain[b]): Chain[c] \ ef = Chain.zipWith(f, xs, ys)
+    pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Chain[a], ys: Chain[b]): f[Chain[c]] \ ef with Applicative[f] = Chain.zipWithA(f, xs, ys)
+    pub override def zip(xs: Chain[a], ys: Chain[b]): Chain[(a, b)] = Chain.zip(xs, ys)
+    pub override def unzip(xs: Chain[(a, b)]): (Chain[a], Chain[b]) = Chain.unzip(xs)
+}
+
 instance Foldable[Chain] {
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldLeft(f, s, c)
-    pub def foldRight(f: (a, b) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldRight(f, s, c)
-    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldRightWithCont(f, s, c)
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldLeft(f, s, c)
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldRight(f, s, c)
+    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldRightWithCont(f, s, c)
     override pub def iterator(r: Region[r], c: Chain[a]): Iterator[a, r] \ Write(r) = Chain.iterator(r, c)
 }
 
 instance UnorderedFoldable[Chain] {
-    pub def foldMap(f: a -> b & ef, c: Chain[a]): b & ef with CommutativeMonoid[b] = Chain.foldMap(f, c)
+    pub def foldMap(f: a -> b \ ef, c: Chain[a]): b \ ef with CommutativeMonoid[b] = Chain.foldMap(f, c)
     override pub def isEmpty(c: Chain[a]): Bool = Chain.isEmpty(c)
-    override pub def exists(f: a -> Bool & ef, c: Chain[a]): Bool & ef = Chain.exists(f, c)
-    override pub def forall(f: a -> Bool & ef, c: Chain[a]): Bool & ef = Chain.forall(f, c)
+    override pub def exists(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.exists(f, c)
+    override pub def forall(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.forall(f, c)
     override pub def memberOf(x: a, c: Chain[a]): Bool with Eq[a] = Chain.memberOf(x, c)
 }
 
 instance Traversable[Chain] {
-    pub def traverse(f: a -> m[b] & ef, t: Chain[a]): m[Chain[b]] & ef with Applicative[m] = Chain.traverse(f, t)
+    pub def traverse(f: a -> m[b] \ ef, t: Chain[a]): m[Chain[b]] \ ef with Applicative[m] = Chain.traverse(f, t)
     pub override def sequence(t: Chain[m[a]]): m[Chain[a]] with Applicative[m] = Chain.sequence(t)
 }
 
 instance FunctorFilter[Chain] {
-    pub def filterMap(f: a -> Option[b] & ef, x: Chain[a]): Chain[b] & ef = Chain.filterMap(f, x)
-    pub override def filter(f: a -> Bool & ef, x: Chain[a]): Chain[a] & ef = Chain.filter(f, x)
+    pub def filterMap(f: a -> Option[b] \ ef, x: Chain[a]): Chain[b] \ ef = Chain.filterMap(f, x)
+    pub override def filter(f: a -> Bool \ ef, x: Chain[a]): Chain[a] \ ef = Chain.filter(f, x)
 }
 
 instance ToString[Chain[a]] with ToString[a] {
@@ -132,7 +139,7 @@ namespace Chain {
     /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
     /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
     ///
-    pub def ap(f: Chain[a -> b & ef], x: Chain[a]) : Chain[b] & ef =
+    pub def ap(f: Chain[a -> b \ ef], x: Chain[a]) : Chain[b] \ ef =
         def loop(g, acc) = match g {
             case NoneLeft        => acc
             case SomeLeft(h, xs) => loop(viewLeft(xs), acc `append` map(h, x))
@@ -310,14 +317,14 @@ namespace Chain {
     ///
     /// Alias for `scanLeft`.
     ///
-    pub def scan(f: (b, a) -> b & ef, s: b, c: Chain[a]): Chain[b] & ef = scanLeft(f, s, c)
+    pub def scan(f: (b, a) -> b \ ef, s: b, c: Chain[a]): Chain[b] \ ef = scanLeft(f, s, c)
 
     ///
     /// Accumulates the result of applying `f` to `c` going left to right.
     ///
     /// That is, the result is of the form: `s :: f(s, x1) :: f(f(s, x1), x2)  ...`.
     ///
-    pub def scanLeft(f: (b, a) -> b & ef, s: b, c: Chain[a]): Chain[b] & ef =
+    pub def scanLeft(f: (b, a) -> b \ ef, s: b, c: Chain[a]): Chain[b] \ ef =
         def loop(a, cc, acc) = match viewLeft(cc) {
             case NoneLeft        => acc
             case SomeLeft(x, xs) =>
@@ -331,7 +338,7 @@ namespace Chain {
     ///
     /// That is, the result is of the form: `... f(xn-1, f(xn, s)) :: f(xn, s) :: s`.
     ///
-    pub def scanRight(f: (a, b) -> b & ef, s: b, c: Chain[a]): Chain[b] & ef =
+    pub def scanRight(f: (a, b) -> b \ ef, s: b, c: Chain[a]): Chain[b] \ ef =
         def loop(a, cc, acc) = match viewRight(cc) {
             case NoneRight        => acc
             case SomeRight(xs, x) =>
@@ -345,7 +352,7 @@ namespace Chain {
     ///
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
-    pub def map(f: a -> b & ef, c: Chain[a]): Chain[b] & ef =
+    pub def map(f: a -> b \ ef, c: Chain[a]): Chain[b] \ ef =
         def loop(cc, acc) = match viewLeft(cc) {
             case NoneLeft        => acc
             case SomeLeft(a, rs) => loop(rs, snoc(acc, f(a)))
@@ -357,7 +364,7 @@ namespace Chain {
     ///
     /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
     ///
-    pub def mapWithIndex(f: (a, Int32) -> b & ef, c: Chain[a]): Chain[b] & ef =
+    pub def mapWithIndex(f: (a, Int32) -> b \ ef, c: Chain[a]): Chain[b] \ ef =
         def loop(cc, i, acc) = match viewLeft(cc) {
             case NoneLeft        => acc
             case SomeLeft(x, rs) =>
@@ -369,7 +376,7 @@ namespace Chain {
     ///
     /// Returns the result of applying `f` to every element in `c` and concatenating the results.
     ///
-    pub def flatMap(f: a -> Chain[b] & ef, c: Chain[a]): Chain[b] & ef =
+    pub def flatMap(f: a -> Chain[b] \ ef, c: Chain[a]): Chain[b] \ ef =
         def loop(cc, acc) = match viewLeft(cc) {
             case NoneLeft        => acc
             case SomeLeft(a, rs) => loop(rs, append(acc, f(a)))
@@ -402,7 +409,7 @@ namespace Chain {
     ///
     /// Returns the number of elements in `c` that satisfy the predicate `f`.
     ///
-    pub def count(f: a -> Bool & ef, c: Chain[a]): Int32 & ef =
+    pub def count(f: a -> Bool \ ef, c: Chain[a]): Int32 \ ef =
         def loop(cc, acc) = match viewLeft(cc) {
             case NoneLeft        => acc
             case SomeLeft(a, rs) => if (f(a)) loop(rs, acc + 1) else loop(rs, acc)
@@ -418,7 +425,7 @@ namespace Chain {
     ///
     /// Returns the sum of all elements in the chain `c` according to the function `f`.
     ///
-    pub def sumWith(f: a -> Int32 & ef, c: Chain[a]): Int32 & ef =
+    pub def sumWith(f: a -> Int32 \ ef, c: Chain[a]): Int32 \ ef =
         Foldable.sumWith(f, c)
 
     ///
@@ -430,7 +437,7 @@ namespace Chain {
     ///
     /// Returns the product of all elements in the list `l` according to the function `f`.
     ///
-    pub def productWith(f: a -> Int32 & ef, c: Chain[a]): Int32 & ef =
+    pub def productWith(f: a -> Int32 \ ef, c: Chain[a]): Int32 \ ef =
         Foldable.productWith(f, c)
 
     ///
@@ -444,7 +451,7 @@ namespace Chain {
     ///
     /// Returns `false` if `c` is empty.
     ///
-    pub def exists(f: a -> Bool & ef, c: Chain[a]): Bool & ef = match viewLeft(c) {
+    pub def exists(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = match viewLeft(c) {
         case NoneLeft               => false
         case SomeLeft(x, _) if f(x) => true
         case SomeLeft(_, xs)        => exists(f, xs)
@@ -455,7 +462,7 @@ namespace Chain {
     ///
     /// Returns `true` if `c` is empty.
     ///
-    pub def forall(f: a -> Bool & ef, c: Chain[a]): Bool & ef = match viewLeft(c) {
+    pub def forall(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = match viewLeft(c) {
         case NoneLeft                   => true
         case SomeLeft(x, _) if not f(x) => false
         case SomeLeft(_, xs)            => forall(f, xs)
@@ -466,7 +473,7 @@ namespace Chain {
     ///
     /// The function `f` must be pure.
     ///
-    pub def filter(f: a -> Bool & ef, c: Chain[a]): Chain[a] & ef =
+    pub def filter(f: a -> Bool \ ef, c: Chain[a]): Chain[a] \ ef =
         def loop(cc, acc) = match viewLeft(cc) {
             case NoneLeft        => acc
             case SomeLeft(a, rs) => if (f(a)) loop(rs, snoc(acc, a)) else loop(rs, acc)
@@ -478,7 +485,7 @@ namespace Chain {
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, c: Chain[a]): b & ef = match viewLeft(c) {
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, c: Chain[a]): b \ ef = match viewLeft(c) {
         case NoneLeft        => s
         case SomeLeft(x, xs) => foldLeft(f, f(s, x), xs)
     }
@@ -488,7 +495,7 @@ namespace Chain {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, c: Chain[a]): b & ef = match viewRight(c) {
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Chain[a]): b \ ef = match viewRight(c) {
         case NoneRight        => s
         case SomeRight(xs, x) => foldRight(f, f(x, s), xs)
     }
@@ -499,7 +506,7 @@ namespace Chain {
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, c: Chain[a]): b & ef = match viewLeft(c) {
+    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, c: Chain[a]): b \ ef = match viewLeft(c) {
         case NoneLeft        => z
         case SomeLeft(x, xs) => f(x, _ -> foldRightWithCont(f, z, xs))
     }
@@ -507,7 +514,7 @@ namespace Chain {
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
-    pub def foldMap(f: a -> b & ef, c: Chain[a]): b & ef with Monoid[b] =
+    pub def foldMap(f: a -> b \ ef, c: Chain[a]): b \ ef with Monoid[b] =
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), c)
 
     ///
@@ -543,7 +550,7 @@ namespace Chain {
     ///
     /// Returns `c` without the longest prefix that satisfies the predicate `f`.
     ///
-    pub def dropWhileLeft(f: a -> Bool & ef, c: Chain[a]): Chain[a] & ef = match viewLeft(c) {
+    pub def dropWhileLeft(f: a -> Bool \ ef, c: Chain[a]): Chain[a] \ ef = match viewLeft(c) {
         case SomeLeft(x, xs) if (f(x)) => dropWhileLeft(f, xs)
         case _                         => c
     }
@@ -551,7 +558,7 @@ namespace Chain {
     ///
     /// Returns `c` without the longest suffix that satisfies the predicate `f`.
     ///
-    pub def dropWhileRight(f: a -> Bool & ef, c: Chain[a]): Chain[a] & ef = match viewRight(c) {
+    pub def dropWhileRight(f: a -> Bool \ ef, c: Chain[a]): Chain[a] \ ef = match viewRight(c) {
         case SomeRight(xs, x) if (f(x)) => dropWhileRight(f, xs)
         case _                          => c
     }
@@ -593,7 +600,7 @@ namespace Chain {
     ///
     /// Returns the longest prefix of `c` that satisfies the predicate `f`.
     ///
-    pub def takeWhileLeft(f: a -> Bool & ef, c: Chain[a]): Chain[a] & ef =
+    pub def takeWhileLeft(f: a -> Bool \ ef, c: Chain[a]): Chain[a] \ ef =
         def loop(cc, acc) = match viewLeft(cc) {
             case NoneLeft        => acc
             case SomeLeft(a, rs) => if (f(a)) loop(rs, snoc(acc, a)) else acc
@@ -603,7 +610,7 @@ namespace Chain {
     ///
     /// Returns the longest suffix of `c` that satisfies the predicate `f`.
     ///
-    pub def takeWhileRight(f: a -> Bool & ef, c: Chain[a]): Chain[a] & ef =
+    pub def takeWhileRight(f: a -> Bool \ ef, c: Chain[a]): Chain[a] \ ef =
         def loop(cc, acc) = match viewRight(cc) {
             case SomeRight(rs, a) if (f(a)) => loop(rs, cons(a, acc))
             case _                          => acc
@@ -613,7 +620,7 @@ namespace Chain {
     ///
     /// Collects the results of applying the partial function `f` to every element in `c`.
     ///
-    pub def filterMap(f: a -> Option[b] & ef, c: Chain[a]): Chain[b] & ef =
+    pub def filterMap(f: a -> Option[b] \ ef, c: Chain[a]): Chain[b] \ ef =
         let step = (acc, x) -> match f(x) {
             case None    => acc
             case Some(v) => snoc(acc, v)
@@ -625,7 +632,7 @@ namespace Chain {
     ///
     /// Returns `None` if every element of `c` is `None`.
     ///
-    pub def findMap(f: a -> Option[b] & ef, c: Chain[a]): Option[b] & ef = match viewLeft(c) {
+    pub def findMap(f: a -> Option[b] \ ef, c: Chain[a]): Option[b] \ ef = match viewLeft(c) {
         case NoneLeft        => None
         case SomeLeft(x, xs) => match f(x) {
             case None    => findMap(f, xs)
@@ -652,12 +659,25 @@ namespace Chain {
     ///
     /// If either `c1` or `c2` becomes depleted, then no further elements are added to the resulting chain.
     ///
-    pub def zipWith(f: (a, b) -> c & ef, c1: Chain[a], c2: Chain[b]): Chain[c] & ef =
+    pub def zipWith(f: (a, b) -> c \ ef, c1: Chain[a], c2: Chain[b]): Chain[c] \ ef =
         def loop(cc1, cc2, acc) = match (viewLeft(cc1), viewLeft(cc2)) {
             case (SomeLeft(a, rs), SomeLeft(b, qs)) => loop(rs, qs, snoc(acc, f(a, b)))
             case _                                  => acc
         };
         loop(c1, c2, empty())
+
+    ///
+    /// Generalize `zipWith` to an applicative functor `f`.
+    ///
+    pub def zipWithA(f: (a, b) -> m[c] \ ef, xs: Chain[a], ys: Chain[b]): m[Chain[c]] \ ef with Applicative[m] =
+        use Functor.{<$>};
+        use Applicative.{<*>, point};
+        def loop(v1, v2, k) = match (v1, v2) {
+            case (SomeLeft(x, c1), SomeLeft(y, c2)) => loop(viewLeft(c1), viewLeft(c2), ks -> k(cons <$> f(x,y) <*> ks))
+            case (_, _)                             => k(point(empty()))
+        };
+        loop(viewLeft(xs), viewLeft(ys), upcast(identity))
+
 
     ///
     /// Returns a pair of chains, the first containing all first components in `c`
@@ -674,7 +694,7 @@ namespace Chain {
     /// `mapAccumLeft` is a stateful version of `map`. The accumulating paramter `s` is updated at each
     /// step in a left-to-right traversal.
     ///
-    pub def mapAccumLeft(f: (s, a) -> (s, b) & ef, start: s, c: Chain[a]): (s, Chain[b]) & ef =
+    pub def mapAccumLeft(f: (s, a) -> (s, b) \ ef, start: s, c: Chain[a]): (s, Chain[b]) \ ef =
         def loop(s1, cc, k) = match viewLeft(cc) {
             case NoneLeft        => k((s1, empty()))
             case SomeLeft(a, rs) => {
@@ -688,7 +708,7 @@ namespace Chain {
     /// `mapAccumRight` is a stateful version of `map`. The accumulating parameter `s` is updated at each
     /// step in a right-to-left traversal.
     ///
-    pub def mapAccumRight(f: (s, a) -> (s, b) & ef, start: s, c: Chain[a]): (s, Chain[b]) & ef =
+    pub def mapAccumRight(f: (s, a) -> (s, b) \ ef, start: s, c: Chain[a]): (s, Chain[b]) \ ef =
         def loop(s1, cc, k) = match viewRight(cc) {
             case NoneRight        => k((s1, empty()))
             case SomeRight(rs, a) => {
@@ -701,7 +721,7 @@ namespace Chain {
     ///
     /// Applies `f` to every element of `c`.
     ///
-    pub def foreach(f: a -> Unit & ef, c: Chain[a]): Unit & ef = match viewLeft(c) {
+    pub def foreach(f: a -> Unit \ ef, c: Chain[a]): Unit \ ef = match viewLeft(c) {
         case NoneLeft => ()
         case SomeLeft(x, xs) => f(x); foreach(f, xs)
     }
@@ -864,7 +884,7 @@ namespace Chain {
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the
     /// chain `c`.
     ///
-    pub def traverse(f: a -> m[b] & ef, c: Chain[a]): m[Chain[b]] & ef with Applicative[m] =
+    pub def traverse(f: a -> m[b] \ ef, c: Chain[a]): m[Chain[b]] \ ef with Applicative[m] =
         def loop(v, acc) = match v {
             case NoneLeft        => upcast(() -> acc)()
             case SomeLeft(x, rs) => loop(viewLeft(rs), snocA(acc, f(x)))
@@ -882,7 +902,7 @@ namespace Chain {
     /// Returns the concatenation of the string representation
     /// of each element in `c` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, c: Chain[a]): String & ef =
+    pub def joinWith(f: a -> String \ ef, sep: String, c: Chain[a]): String \ ef =
         Foldable.joinWith(f, sep, c)
 
     ///
