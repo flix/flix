@@ -316,23 +316,22 @@ object Safety {
       right.isAssignableFrom(left)
 
     case (Type.Cst(TypeConstructor.Arrow(n1), _), Type.Cst(TypeConstructor.Arrow(n2), _)) if n1 == n2 =>
-      val args1 = tpe1.typeArguments.init.drop(2)
-      val args2 = tpe2.typeArguments.init.drop(2)
-
       // purities
-      val pur1 = tpe1.typeArguments.head
-      val pur2 = tpe2.typeArguments.head
+      val pur1 = tpe1.arrowPurityType
+      val pur2 = tpe2.arrowPurityType
       val subTypePurity = isSubTypeOf(pur1, pur2)
 
       // check that parameters are supertypes
+      val args1 = tpe1.arrowArgTypes
+      val args2 = tpe2.arrowArgTypes
       val superTypeArgs = args1.zip(args2).forall {
         case (t1, t2) =>
           isSubTypeOf(t2, t1)
       }
 
       // check that result is a subtype
-      val expectedResTpe = tpe1.typeArguments.last
-      val actualResTpe = tpe2.typeArguments.last
+      val expectedResTpe = tpe1.arrowResultType
+      val actualResTpe = tpe2.arrowResultType
       val subTypeResult = isSubTypeOf(expectedResTpe, actualResTpe)
 
       subTypePurity && superTypeArgs && subTypeResult
