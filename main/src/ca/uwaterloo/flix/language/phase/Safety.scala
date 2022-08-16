@@ -292,24 +292,22 @@ object Safety {
   }
 
   /**
-    * Checks that an upcast is safe.
+    * Checks that `tpe1` is a subtype of `tpe2`.
     *
-    * An upcast is considered safe if:
+    * `tpe1` is a subtype of `tpe2` if:
     *
-    * (a) the expression has the exact same flix type
+    * (a) `tpe1` has the exact same flix type as `tpe2`
     *
-    * (b) the actual expression is a java subtype of the expected java type
+    * (b) both types are java types and `tpe1` is a subtype of `tpe2`
     *
-    * (c) the actual expression is a function and a subtype of the expected function.
+    * (c) both types are functions and `tpe1` is a subtype of `tpe2`
     *
     * AND
     *
     * the purity of a function is being cast from `pure` -> `ef` -> `impure`.
     *
-    * @param expected the upcast expression itself.
-    * @param actual   the expression being upcast.
     */
-  private def isSubTypeOf(expected: Type, actual: Type): Boolean = (expected.baseType, actual.baseType) match {
+  private def isSubTypeOf(tpe1: Type, tpe2: Type): Boolean = (tpe1.baseType, tpe2.baseType) match {
     case (Type.True, Type.KindedVar(_, _)) => true
     case (Type.True, Type.False) => true
     case (Type.KindedVar(_, _), Type.False) => true
@@ -318,12 +316,12 @@ object Safety {
       right.isAssignableFrom(left)
 
     case (Type.Cst(TypeConstructor.Arrow(n1), _), Type.Cst(TypeConstructor.Arrow(n2), _)) if n1 == n2 =>
-      val args1 = expected.typeArguments.init.drop(2)
-      val args2 = actual.typeArguments.init.drop(2)
+      val args1 = tpe1.typeArguments.init.drop(2)
+      val args2 = tpe2.typeArguments.init.drop(2)
 
       // purities
-      val pur1 = expected.typeArguments.head
-      val pur2 = actual.typeArguments.head
+      val pur1 = tpe1.typeArguments.head
+      val pur2 = tpe2.typeArguments.head
       val subTypePurity = isSubTypeOf(pur1, pur2)
 
       // check that parameters are supertypes
@@ -333,13 +331,13 @@ object Safety {
       }
 
       // check that result is a subtype
-      val expectedResTpe = expected.typeArguments.last
-      val actualResTpe = actual.typeArguments.last
+      val expectedResTpe = tpe1.typeArguments.last
+      val actualResTpe = tpe2.typeArguments.last
       val subTypeResult = isSubTypeOf(expectedResTpe, actualResTpe)
 
       subTypePurity && superTypeArgs && subTypeResult
 
-    case _ => expected == actual
+    case _ => tpe1 == tpe2
 
   }
 
