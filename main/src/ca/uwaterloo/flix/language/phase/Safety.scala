@@ -181,7 +181,7 @@ object Safety {
 
     case Expression.Upcast(exp, tpe, loc) =>
       val errors =
-        if (isSuperTypeOf(Type.eraseAliases(tpe), Type.eraseAliases(exp.tpe))) {
+        if (isSubTypeOf(Type.eraseAliases(exp.tpe), Type.eraseAliases(tpe))) {
           List.empty
         }
         else {
@@ -309,43 +309,42 @@ object Safety {
     * @param expected the upcast expression itself.
     * @param actual   the expression being upcast.
     */
-  private def isSuperTypeOf(expected: Type, actual: Type, contravariantPos: Boolean = false): Boolean = (expected.typeConstructor, actual.typeConstructor) match {
-    case (Some(TypeConstructor.False), Some(TypeConstructor.True)) => true
+  private def isSubTypeOf(expected: Type, actual: Type): Boolean = (expected.baseType, actual.baseType) match {
+    case (Type.True, Type.KindedVar(_, _)) => true
+    case (Type.True, Type.False) => true
+    case (Type.KindedVar(_, _), Type.False) => true
 
-    case (Some(TypeConstructor.Native(class1)), Some(TypeConstructor.Native(class2))) =>
-      if (contravariantPos) class2.isAssignableFrom(class1) else class1.isAssignableFrom(class2)
+    case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
+      right.isAssignableFrom(left)
 
-    case (Some(TypeConstructor.Tuple(n1)), Some(TypeConstructor.Tuple(n2))) if n1 == n2 =>
+    case (Type.Cst(TypeConstructor.Tuple(n1), _), Type.Cst(TypeConstructor.Tuple(n2), _)) if n1 == n2 =>
       val args1 = expected.typeArguments
       val args2 = actual.typeArguments
       args1.zip(args2).forall {
-        case (t1, t2) => isSuperTypeOf(t1, t2, contravariantPos)
+        case (t1, t2) => isSubTypeOf(t1, t2)
       }
 
-    case (Some(TypeConstructor.Arrow(n1)), Some(TypeConstructor.Arrow(n2))) if n1 == n2 =>
+    case (Type.Cst(TypeConstructor.Arrow(n1), _), Type.Cst(TypeConstructor.Arrow(n2), _)) if n1 == n2 =>
       val args1 = expected.typeArguments.init.drop(2)
       val args2 = actual.typeArguments.init.drop(2)
 
       // purities
-      val pur1 = expected.typeArguments.head match {
-        case Type.KindedVar(_, _) => Type.Impure
-        case p => p
-      }
+      val pur1 = expected.typeArguments.head
       val pur2 = actual.typeArguments.head
-      val safePurities = isSuperTypeOf(pur1, pur2)
+      val subTypePurity = isSubTypeOf(pur1, pur2)
 
-      // covariance in args
-      val covariantArgs = args1.zip(args2).forall {
+      // check that parameters are supertypes
+      val superTypeArgs = args1.zip(args2).forall {
         case (t1, t2) =>
-          isSuperTypeOf(t1, t2)
+          isSubTypeOf(t2, t1)
       }
 
-      // contravariance in results
-      val res1 = expected.typeArguments.last
-      val res2 = actual.typeArguments.last
-      val contraVariantResult = isSuperTypeOf(res1, res2, contravariantPos = true)
+      // check that result is a subtype
+      val expectedResTpe = expected.typeArguments.last
+      val actualResTpe = actual.typeArguments.last
+      val subTypeResult = isSubTypeOf(expectedResTpe, actualResTpe)
 
-      safePurities && covariantArgs && contraVariantResult
+      subTypePurity && superTypeArgs && subTypeResult
 
     case _ => expected == actual
 
