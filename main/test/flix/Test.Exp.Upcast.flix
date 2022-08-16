@@ -41,18 +41,7 @@ namespace Test/Exp/Upcast {
         ()
 
     @test
-    def testUpcast06(): Unit & Impure =
-        import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
-        import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
-        let _ =
-            if (true)
-                upcast (newStringBuilder(), newStringBuilder())
-            else
-                (newObject(), newObject());
-        ()
-
-    @test
-    def testUpcast07(): Unit =
+    def testUpcast06(): Unit =
         import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
         import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
         let f = (_: ##java.lang.Object) -> newStringBuilder();
@@ -66,7 +55,7 @@ namespace Test/Exp/Upcast {
 
 
     @test
-    def testUpcast08(): Unit =
+    def testUpcast07(): Unit =
         import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
         import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
         let f = (_: ##java.lang.Object) -> (_: ##java.lang.Object) -> newStringBuilder();
@@ -79,7 +68,7 @@ namespace Test/Exp/Upcast {
         ()
 
     @test
-    def testUpcast09(): Unit =
+    def testUpcast08(): Unit =
         import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
         import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
         let f = (_: ##java.lang.Object) -> (_: ##java.lang.Object) -> newStringBuilder();
@@ -92,7 +81,7 @@ namespace Test/Exp/Upcast {
         ()
 
     @test
-    def testUpcast10(): Unit =
+    def testUpcast09(): Unit =
         import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
         let f = (_: ##java.lang.Object) -> (_: ##java.lang.Object) -> (_: ##java.lang.Object) -> newObject();
         let g = (_: ##java.lang.StringBuilder) -> (_: ##java.lang.Object) -> (_: ##java.lang.StringBuilder) -> newObject();
@@ -104,7 +93,7 @@ namespace Test/Exp/Upcast {
         ()
 
     @test
-    def testUpcast11(): Unit =
+    def testUpcast10(): Unit =
         import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
         let f = (_: ##java.lang.Object) -> (_: ##java.lang.Object) -> (_: ##java.lang.Object) -> (_: ##java.lang.StringBuilder) -> newObject();
         let g = (_: ##java.lang.StringBuilder) -> (_: ##java.lang.Object) -> (_: ##java.lang.StringBuilder) -> (_: ##java.lang.StringBuilder) -> newObject();

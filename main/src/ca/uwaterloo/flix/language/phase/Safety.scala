@@ -317,13 +317,6 @@ object Safety {
     case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
       right.isAssignableFrom(left)
 
-    case (Type.Cst(TypeConstructor.Tuple(n1), _), Type.Cst(TypeConstructor.Tuple(n2), _)) if n1 == n2 =>
-      val args1 = expected.typeArguments
-      val args2 = actual.typeArguments
-      args1.zip(args2).forall {
-        case (t1, t2) => isSubTypeOf(t1, t2)
-      }
-
     case (Type.Cst(TypeConstructor.Arrow(n1), _), Type.Cst(TypeConstructor.Arrow(n2), _)) if n1 == n2 =>
       val args1 = expected.typeArguments.init.drop(2)
       val args2 = actual.typeArguments.init.drop(2)
