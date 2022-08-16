@@ -183,11 +183,11 @@ class TestWeeder extends FunSuite with TestUtils {
 
   test("IllegalJvmFieldOrMethodName.01") {
     val input =
-      s"""
-         |def f(): Unit =
-         |    import foo(): Unit & Impure as bar;
-         |    ()
-         |""".stripMargin
+      raw"""
+           |def f(): Unit =
+           |    import foo(): Unit \ IO as bar;
+           |    ()
+           |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalJvmFieldOrMethodName](result)
   }
@@ -714,7 +714,7 @@ class TestWeeder extends FunSuite with TestUtils {
     val input =
       """
         |eff E {
-        |    def op(): Unit & Impure
+        |    def op(): Unit \ IO
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)

@@ -50,7 +50,6 @@ object Namer {
       effects = Map.empty,
       ops = Map.empty,
       entryPoint = program.entryPoint,
-      reachable = program.reachable,
       sources = locations
     )
 
@@ -314,10 +313,10 @@ object Namer {
       mapN(visitHeadPredicate(h, outerEnv, headEnv, ruleEnv, uenv0, tenv0), traverse(bs)(b => visitBodyPredicate(b, outerEnv, headEnv, ruleEnv, uenv0, tenv0))) {
         case (head, body) =>
           val headParams = headEnv.map {
-            case (_, sym) => NamedAst.ConstraintParam.HeadParam(sym, sym.tvar, sym.loc)
+            case (_, sym) => NamedAst.ConstraintParam.HeadParam(sym, NamedAst.Type.Var(sym.tvar.sym, loc), sym.loc)
           }
           val ruleParam = ruleEnv.map {
-            case (_, sym) => NamedAst.ConstraintParam.RuleParam(sym, sym.tvar, sym.loc)
+            case (_, sym) => NamedAst.ConstraintParam.RuleParam(sym, NamedAst.Type.Var(sym.tvar.sym, loc), sym.loc)
           }
           val cparams = (headParams ++ ruleParam).toList
           NamedAst.Constraint(cparams, head, body, loc)
@@ -344,23 +343,28 @@ object Namer {
 
       val annVal = traverse(ann0)(visitAnnotation(_, Map.empty, uenv0, tenv))
       val mod = visitModifiers(mod0, ns0)
-      mapN(annVal, casesOf(cases0, uenv0, tenv)) {
+      val casesVal = traverse(cases0)(visitCase(_, sym, uenv0, tenv))
+
+      mapN(annVal, casesVal) {
         case (ann, cases) =>
-          NamedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, enumType, loc)
+          val caseMap = cases.foldLeft(Map.empty[String, NamedAst.Case]) {
+            case (acc, caze) => acc + (caze.sym.name -> caze)
+          }
+          NamedAst.Enum(doc, ann, mod, sym, tparams, derives, caseMap, enumType, loc)
       }
   }
 
+
   /**
-    * Performs naming on the given `cases` map.
+    * Performs naming on the given enum case.
     */
-  private def casesOf(cases: Map[Name.Tag, WeededAst.Case], uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[Map[Name.Tag, NamedAst.Case], NameError] = {
-    val casesVal = cases map {
-      case (name, WeededAst.Case(enum, tag, tpe)) =>
-        mapN(visitType(tpe, uenv0, tenv0)) {
-          case t => (name, NamedAst.Case(enum, tag, t))
-        }
-    }
-    mapN(sequence(casesVal))(_.toMap)
+  private def visitCase(case0: WeededAst.Case, enum: Symbol.EnumSym, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.Case, NameError] = case0 match {
+    case WeededAst.Case(ident, tpe0) =>
+      mapN(visitType(tpe0, uenv0, tenv0)) {
+        case tpe =>
+          val sym = Symbol.mkCaseSym(enum, ident)
+          NamedAst.Case(sym, tpe)
+      }
   }
 
   /**
@@ -580,7 +584,7 @@ object Namer {
       NamedAst.Expression.Wild(loc).toSuccess
 
     case WeededAst.Expression.DefOrSig(qname, loc) =>
-      NamedAst.Expression.DefOrSig(qname, loc).toSuccess
+      NamedAst.Expression.DefOrSig(qname, env0, loc).toSuccess
 
     case WeededAst.Expression.VarOrDefOrSig(ident, loc) =>
       // the ident name.
@@ -590,10 +594,10 @@ object Namer {
       (env0.get(name), uenv0.lowerNames.get(name)) match {
         case (None, None) =>
           // Case 1: the name is a top-level function.
-          NamedAst.Expression.DefOrSig(Name.mkQName(ident), loc).toSuccess
+          NamedAst.Expression.DefOrSig(Name.mkQName(ident), env0, loc).toSuccess
         case (None, Some(actualQName)) =>
           // Case 2: the name is a use def.
-          NamedAst.Expression.DefOrSig(actualQName, loc).toSuccess
+          NamedAst.Expression.DefOrSig(actualQName, env0, loc).toSuccess
         case (Some(sym), None) =>
           // Case 4: the name is a variable.
           NamedAst.Expression.Var(sym, loc).toSuccess
@@ -874,6 +878,11 @@ object Namer {
         case (e, t, f) => NamedAst.Expression.Cast(e, t, f, loc)
       }
 
+    case WeededAst.Expression.Upcast(exp, loc) =>
+      mapN(visitExp(exp, env0, uenv0, tenv0)) {
+        case e => NamedAst.Expression.Upcast(e, loc)
+      }
+
     case WeededAst.Expression.Without(exp, eff, loc) =>
       val expVal = visitExp(exp, env0, uenv0, tenv0)
       val f = getClassOrEffect(eff, uenv0)
@@ -973,8 +982,12 @@ object Namer {
         case e => NamedAst.Expression.PutStaticField(className, fieldName, e, loc)
       }
 
-    case WeededAst.Expression.NewObject(className, loc) =>
-      NamedAst.Expression.NewObject(className, loc).toSuccess
+    case WeededAst.Expression.NewObject(tpe, methods, loc) =>
+      mapN(visitType(tpe, uenv0, tenv0), traverse(methods)(visitJvmMethod(_, env0, uenv0, tenv0))) {
+        case (tpe, ms) =>
+          val name = s"Anon$$${flix.genSym.freshId()}"
+          NamedAst.Expression.NewObject(name, tpe, ms, loc)
+      }
 
     case WeededAst.Expression.NewChannel(exp, tpe, loc) =>
       mapN(visitExp(exp, env0, uenv0, tenv0), visitType(tpe, uenv0, tenv0)) {
@@ -1016,6 +1029,11 @@ object Namer {
     case WeededAst.Expression.Spawn(exp, loc) =>
       visitExp(exp, env0, uenv0, tenv0) map {
         case e => NamedAst.Expression.Spawn(e, loc)
+      }
+
+    case WeededAst.Expression.Par(exp, loc) =>
+      mapN(visitExp(exp, env0, uenv0, tenv0)) {
+        case e => NamedAst.Expression.Par(e, loc)
       }
 
     case WeededAst.Expression.Lazy(exp, loc) =>
@@ -1394,11 +1412,6 @@ object Namer {
         case (t1, t2) => NamedAst.Type.Intersection(t1, t2, loc)
       }
 
-    case WeededAst.Type.Difference(tpe1, tpe2, loc) =>
-      mapN(visitType(tpe1, uenv0, tenv0), visitType(tpe2, uenv0, tenv0)) {
-        case (t1, t2) => NamedAst.Type.Difference(t1, t2, loc)
-      }
-
     case WeededAst.Type.Read(tpe, loc) =>
       mapN(visitType(tpe, uenv0, tenv0)) {
         case t => NamedAst.Type.Read(t, loc)
@@ -1409,12 +1422,12 @@ object Namer {
         case t => NamedAst.Type.Write(t, loc)
       }
 
+    case WeededAst.Type.Empty(loc) => NamedAst.Type.Empty(loc).toSuccess
+
     case WeededAst.Type.Ascribe(tpe, kind, loc) =>
       mapN(visitType(tpe, uenv0, tenv0)) {
         t => NamedAst.Type.Ascribe(t, kind, loc)
       }
-
-    case _: WeededAst.Type.Set => ??? // TODO handle
   }
 
   /**
@@ -1510,6 +1523,7 @@ object Namer {
     case WeededAst.Expression.Assign(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Ascribe(exp, _, _, _) => freeVars(exp)
     case WeededAst.Expression.Cast(exp, _, _, _) => freeVars(exp)
+    case WeededAst.Expression.Upcast(exp, _) => freeVars(exp)
     case WeededAst.Expression.Without(exp, _, _) => freeVars(exp)
     case WeededAst.Expression.Do(_, exps, _) => exps.flatMap(freeVars)
     case WeededAst.Expression.Resume(exp, _) => freeVars(exp)
@@ -1528,7 +1542,7 @@ object Namer {
     case WeededAst.Expression.PutField(_, _, exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.GetStaticField(_, _, _) => Nil
     case WeededAst.Expression.PutStaticField(_, _, exp, _) => freeVars(exp)
-    case WeededAst.Expression.NewObject(_, _) => Nil
+    case WeededAst.Expression.NewObject(_, methods, _) => methods.flatMap(m => freeVars(m.exp))
     case WeededAst.Expression.NewChannel(exp, _, _) => freeVars(exp)
     case WeededAst.Expression.GetChannel(exp, _) => freeVars(exp)
     case WeededAst.Expression.PutChannel(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
@@ -1540,6 +1554,7 @@ object Namer {
       val defaultFreeVars = default.map(freeVars).getOrElse(Nil)
       rulesFreeVars ++ defaultFreeVars
     case WeededAst.Expression.Spawn(exp, _) => freeVars(exp)
+    case WeededAst.Expression.Par(exp, _) => freeVars(exp)
     case WeededAst.Expression.Lazy(exp, _) => freeVars(exp)
     case WeededAst.Expression.Force(exp, _) => freeVars(exp)
     case WeededAst.Expression.FixpointConstraintSet(cs, _) => cs.flatMap(freeVarsConstraint)
@@ -1626,10 +1641,9 @@ object Namer {
     case WeededAst.Type.Complement(tpe, loc) => freeVars(tpe)
     case WeededAst.Type.Union(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.Intersection(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
-    case WeededAst.Type.Difference(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.Read(tpe, loc) => freeVars(tpe)
     case WeededAst.Type.Write(tpe, loc) => freeVars(tpe)
-    case WeededAst.Type.Set(_, _) => ??? // TODO handle
+    case WeededAst.Type.Empty(_) => Nil
     case WeededAst.Type.Ascribe(tpe, _, _) => freeVars(tpe)
   }
 
@@ -1663,10 +1677,9 @@ object Namer {
       case WeededAst.Type.Complement(tpe, loc) => visit(tpe)
       case WeededAst.Type.Union(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
       case WeededAst.Type.Intersection(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
-      case WeededAst.Type.Difference(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
       case WeededAst.Type.Read(tpe, loc) => visit(tpe)
       case WeededAst.Type.Write(tpe, loc) => visit(tpe)
-      case WeededAst.Type.Set(_, _) => ??? // TODO handle
+      case WeededAst.Type.Empty(_) => Nil
       case WeededAst.Type.Ascribe(tpe, _, _) => visit(tpe)
     }
 
@@ -1743,9 +1756,14 @@ object Namer {
         case Some(t) => visitType(t, uenv0, tenv0)
       }
 
+      val src = optType match {
+        case None => Ast.TypeSource.Inferred
+        case Some(_) => Ast.TypeSource.Ascribed
+      }
+
       // Construct the formal parameter.
       mapN(tpeVal) {
-        case tpe => NamedAst.FormalParam(freshSym, mod, tpe, loc)
+        case tpe => NamedAst.FormalParam(freshSym, mod, tpe, src, loc)
       }
   }
 
@@ -1759,6 +1777,22 @@ object Namer {
     case WeededAst.PredicateParam.PredicateParamWithType(pred, den, tpes, loc) =>
       mapN(traverse(tpes)(visitType(_, uenv0, tenv0))) {
         case ts => NamedAst.PredicateParam.PredicateParamWithType(pred, den, ts, loc)
+      }
+  }
+
+  /**
+    * Translates the given weeded JvmMethod to a named JvmMethod.
+    */
+  private def visitJvmMethod(method: WeededAst.JvmMethod, env: Map[String, Symbol.VarSym], uenv: UseEnv, tenv: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.JvmMethod, NameError] = method match {
+    case WeededAst.JvmMethod(ident, fparams, exp0, tpe0, purAndEff0, loc) =>
+      flatMapN(traverse(fparams)(visitFormalParam(_, uenv, tenv))) {
+        case fparams =>
+          val exp = visitExp(exp0, env ++ getVarEnv(fparams), uenv, tenv)
+          val tpe = visitType(tpe0, uenv, tenv)
+          val purAndEff = visitPurityAndEffect(purAndEff0, uenv, tenv)
+          mapN(exp, tpe, purAndEff) {
+            case (e, t, p) => NamedAst.JvmMethod(ident, fparams, e, t, p, loc)
+          }
       }
   }
 
@@ -1881,7 +1915,7 @@ object Namer {
     */
   private def getVarEnv(fparams0: List[NamedAst.FormalParam]): Map[String, Symbol.VarSym] = {
     fparams0.foldLeft(Map.empty[String, Symbol.VarSym]) {
-      case (macc, NamedAst.FormalParam(sym, mod, tpe, loc)) =>
+      case (macc, NamedAst.FormalParam(sym, _, _, _, _)) =>
         if (sym.isWild) macc else macc + (sym.text -> sym)
     }
   }
@@ -1896,7 +1930,7 @@ object Namer {
   /**
     * Disambiguate the given tag `tag0` with the given optional enum name `enumOpt0` under the given use environment `uenv0`.
     */
-  private def getDisambiguatedTag(enumOpt0: Option[Name.QName], tag0: Name.Tag, uenv0: UseEnv): (Option[Name.QName], Name.Tag) = {
+  private def getDisambiguatedTag(enumOpt0: Option[Name.QName], tag0: Name.Ident, uenv0: UseEnv): (Option[Name.QName], Name.Ident) = {
     enumOpt0 match {
       case None =>
         // Case 1: The tag is unqualified. Look it up in the use environment.
@@ -2012,7 +2046,7 @@ object Namer {
   /**
     * Represents an environment of "imported" names, including defs, types, and tags.
     */
-  private case class UseEnv(lowerNames: Map[String, Name.QName], upperNames: Map[String, Name.QName], tags: Map[String, (Name.QName, Name.Tag)]) {
+  private case class UseEnv(lowerNames: Map[String, Name.QName], upperNames: Map[String, Name.QName], tags: Map[String, (Name.QName, Name.Ident)]) {
     /**
       * Binds the lowercase name `s` to the qualified name `n`.
       */
@@ -2026,7 +2060,7 @@ object Namer {
     /**
       * Binds the tag name `s` to the qualified name `n` and tag `t`.
       */
-    def addTag(s: String, n: Name.QName, t: Name.Tag): UseEnv = copy(tags = tags + (s -> (n, t)))
+    def addTag(s: String, n: Name.QName, t: Name.Ident): UseEnv = copy(tags = tags + (s -> (n, t)))
   }
 
 }

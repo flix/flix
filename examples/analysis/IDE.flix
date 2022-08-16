@@ -47,7 +47,7 @@ namespace IDE {
     ///
     /// Solves the given IDE instances.
     ///
-    pub def run(ide: IDE[p, n, d, f, l]): List[(n, d, l)] & Impure
+    pub def run(ide: IDE[p, n, d, f, l]): List[(n, d, l)] \ IO
         with LowerBound[f], JoinLattice[f], MeetLattice[f],
              LowerBound[l], JoinLattice[l], MeetLattice[l],
              Boxable[n], Boxable[d], Boxable[p], Boxable[f],  Boxable[l] =
@@ -130,7 +130,7 @@ namespace IDE {
 
         let m = solve p, f1, f2;
 
-        (m |> Fixpoint.unsafePrint) as & Impure; // NB: Just for debugging.
+        Fixpoint.unsafePrint(m); // NB: Just for debugging.
 
         query p, f1, f2 select (n, d, l) from Results(n, d; l)
 
@@ -325,7 +325,7 @@ namespace ConstantProp {
 ///
 /// Run the example.
 ///
-def main(): Unit & Impure =
+def main(): Unit \ IO =
     println("Running IDE");
 
     // TODO: Magnus: Use sets?

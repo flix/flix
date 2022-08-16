@@ -179,17 +179,6 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represent the type of tags.
-    */
-  @EliminatedBy(Typer.getClass)
-  case class Tag(sym: Symbol.EnumSym, tag: Name.Tag) extends TypeConstructor {
-    /**
-      * The shape of a tag is "like" a function `caseType` -> (`resultType`) -> *.
-      */
-    def kind: Kind = Kind.Star ->: Kind.Star ->: Kind.Star
-  }
-
-  /**
     * A type constructor that represents the type of enums.
     */
   @IntroducedBy(Kinder.getClass)
@@ -317,13 +306,6 @@ object TypeConstructor {
     * A type constructor that represents the intersection of two effect sets.
     */
   case object Intersection extends TypeConstructor {
-    def kind: Kind = Kind.Effect ->: Kind.Effect ->: Kind.Effect
-  }
-
-  /**
-    * A type constructor that represents the difference of two effect sets.
-    */
-  case object Difference extends TypeConstructor {
     def kind: Kind = Kind.Effect ->: Kind.Effect ->: Kind.Effect
   }
 

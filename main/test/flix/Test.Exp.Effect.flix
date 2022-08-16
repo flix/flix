@@ -54,6 +54,10 @@ namespace Test/Exp/Effect {
         }
     }
 
+    pub def without01(): Bool = true without Fail
+
+    pub def without02(): Bool = true without {Fail, Console}
+
     pub def singleEffect(): Bool \ Fail = ??? as \ Fail
 
     pub def complementEffect(): Bool \ ~Fail = ??? as \ ~Fail
@@ -62,7 +66,7 @@ namespace Test/Exp/Effect {
 
     pub def intersectionEffect(): Bool \ Fail & Fail = ??? as \ Fail & Fail
 
-    pub def differenceEffect(): Bool \ Fail - Fail = ??? as \ Fail - Fail
+    pub def differenceEffect(): Bool \ Fail - Fail = ???
 
     pub def singlePolyEffect(): Bool \ ef1 = ??? as \ ef1
 
@@ -80,7 +84,7 @@ namespace Test/Exp/Effect {
 
     pub def effectSet03(): Bool \ { Fail, Fail, Console } = ??? as \ { Fail, Fail, Console }
 
-    pub def effectSet04(): Bool \ {} = ??? as \ {}
+    pub def effectSet04(): Bool \ {} = ???
 
     pub def polyEffectSet01[ef: Eff](): Bool \ ef = ??? as \ ef
 
@@ -92,6 +96,16 @@ namespace Test/Exp/Effect {
 
     pub def arrowWithEffect03(f: a -> b \ {Console, ef - Fail}): Bool = ???
 
+    pub def enumWithEffect01(f: Do[{Pure}]): Bool = ???
+
+    pub def enumWithEffect02(f: Do[{ef}]): Bool = ???
+
+    pub def enumWithEffect03(f: Do[{ef, Fail}]): Bool = ???
+
+    pub def enumWithEffect04(f: Do[{ef - Fail}]): Bool = ???
+
+    pub def enumWithEffect05(f: Do[{Console, ef - Fail}]): Bool = ???
+
     eff Empty
 
     eff Fail {
@@ -101,4 +115,6 @@ namespace Test/Exp/Effect {
     eff Console {
         pub def println(x: String): Unit
     }
+
+    pub enum Do[e: Eff](Unit -> Unit \ e)
 }

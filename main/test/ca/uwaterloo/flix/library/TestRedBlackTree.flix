@@ -91,13 +91,13 @@ namespace TestRedBlackTree {
         checkBinarySearchTreeInvariant(tree)
 
     @test
-    def testBinarySearchTreeInvariant10(): Bool & Impure = checkBinarySearchTreeInvariant(random(10))
+    def testBinarySearchTreeInvariant10(): Bool \ NonDet = checkBinarySearchTreeInvariant(random(10))
 
     @test
-    def testBinarySearchTreeInvariant11(): Bool & Impure = checkBinarySearchTreeInvariant(random(100))
+    def testBinarySearchTreeInvariant11(): Bool \ NonDet = checkBinarySearchTreeInvariant(random(100))
 
     @test
-    def testBinarySearchTreeInvariant12(): Bool & Impure = checkBinarySearchTreeInvariant(random(1000))
+    def testBinarySearchTreeInvariant12(): Bool \ NonDet = checkBinarySearchTreeInvariant(random(1000))
 
     @test
     def testRedParentInvariant01(): Bool =
@@ -139,13 +139,13 @@ namespace TestRedBlackTree {
         checkRedParentInvariant(tree)
 
     @test
-    def testRedParentInvariant10(): Bool & Impure = checkRedParentInvariant(random(10))
+    def testRedParentInvariant10(): Bool \ NonDet = checkRedParentInvariant(random(10))
 
     @test
-    def testRedParentInvariant11(): Bool & Impure = checkRedParentInvariant(random(100))
+    def testRedParentInvariant11(): Bool \ NonDet = checkRedParentInvariant(random(100))
 
     @test
-    def testRedParentInvariant12(): Bool & Impure = checkRedParentInvariant(random(1000))
+    def testRedParentInvariant12(): Bool \ NonDet = checkRedParentInvariant(random(1000))
 
     ///
     /// Returns `true` if and only if the binary search tree invariant holds for `tree`.
@@ -192,7 +192,7 @@ namespace TestRedBlackTree {
     ///
     /// Returns a tree with `n` nodes `x -> ()` where `x` is a random integer.
     ///
-    def random(n: Int32): RedBlackTree[Int32, Unit] & Impure = {
+    def random(n: Int32): RedBlackTree[Int32, Unit] \ NonDet = {
         let seed = 42i64;
         let r = Random.newWithSeed(seed);
         List.foldLeft((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(),
@@ -248,7 +248,7 @@ namespace TestRedBlackTree {
         m == Map#{2 => 1, 5 => 20, 11 => 2, 8 => 16}
 
     @test
-    def mapWithKey06(): Bool & Impure =
+    def mapWithKey06(): Bool \ IO =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(Static);
@@ -273,12 +273,12 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parCount01(): Bool & Impure =
+    def parCount01(): Bool \ IO =
         let Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
         RedBlackTree.parCount(threads() - 1, (k, v) -> k == v, t) == 2000
 
     @test
-    def parCount02(): Bool & Impure =
+    def parCount02(): Bool \ IO =
         let Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
         RedBlackTree.parCount(threads() - 1, (k, v) -> k - 1000 == v, t) == 2000
 
@@ -288,13 +288,13 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parMinimumBy01(): Bool & Impure =
+    def parMinimumBy01(): Bool \ IO =
         let range = List.range(0, 2000);
         let Map(t) = List.zip(range, range) |> List.toMap;
         RedBlackTree.parMinimumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some(0, 0)
 
     @test
-    def parMinimumBy02(): Bool & Impure =
+    def parMinimumBy02(): Bool \ IO =
         let range = List.range(0, 2000);
         let Map(t) = List.zip(range, List.reverse(range)) |> List.toMap;
         RedBlackTree.parMinimumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some(1999, 0)
@@ -328,20 +328,20 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parExists01(): Bool & Impure =
+    def parExists01(): Bool \ IO =
         let l = List.range(1, 2001);
         let Map(t) = List.zip(l, l) |> List.toMap;
         RedBlackTree.parExists(threads() - 1, (k, v) -> k == 1002 and v == 1002, t)
 
     @test
-    def parExists02(): Bool & Impure =
+    def parExists02(): Bool \ IO =
         let l1 = List.range(1, 2001);
         let l2 = List.range(-2000, 0);
         let Map(t) = List.zip(l1, l2) |> List.toMap;
         RedBlackTree.parExists(threads() - 1, (k, v) -> k == 1002 and v == -999, t)
 
     @test
-    def parExists03(): Bool & Impure =
+    def parExists03(): Bool \ IO =
         let l = List.range(1, 2001);
         let Map(t) = List.zip(l, l) |> List.toMap;
         not RedBlackTree.parExists(threads() - 1, (k, v) -> k < 0 or v > 3000, t)
@@ -352,19 +352,19 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parForall01(): Bool & Impure =
+    def parForall01(): Bool \ IO =
         let l = List.range(1, 2001);
         let Map(t) = List.zip(l, l) |> List.toMap;
         RedBlackTree.parForall(threads() - 1, (k, v) -> k == v, t)
 
     @test
-    def parForall02(): Bool & Impure =
+    def parForall02(): Bool \ IO =
         let l = List.range(1, 2001);
         let Map(t) = List.zip(l, l) |> List.toMap;
         not RedBlackTree.parForall(threads() - 1, (k, _) -> k == 1, t)
 
     @test
-    def parForall03(): Bool & Impure =
+    def parForall03(): Bool \ IO =
         let l1 = List.range(1, 2001);
         let l2 = List.range(-2000, 0);
         let Map(t) = List.zip(l1, l2) |> List.toMap;
@@ -376,18 +376,20 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool & Impure =
-        let r = ref 21;
+    def foreach01(): Bool = region r {
+        let x = ref 21 @ r;
         let Map(t) = Map#{};
-        RedBlackTree.foreach((k, _) -> r := k, t);
-        21 == deref r
+        RedBlackTree.foreach((k, _) -> x := k, t);
+        21 == deref x
+    }
 
     @test
-    def foreach02(): Bool & Impure =
-        let r = ref 21;
+    def foreach02(): Bool = region r {
+        let x = ref 21 @ r;
         let Map(t) = Map#{1 => "Hello World!"};
-        RedBlackTree.foreach((k, _) -> r := k, t);
-        1 == deref r
+        RedBlackTree.foreach((k, _) -> x := k, t);
+        1 == deref x
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // foldMapWithKey                                                          //
@@ -531,12 +533,12 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parSumWith01(): Bool & Impure =
+    def parSumWith01(): Bool \ IO =
         let Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
         RedBlackTree.parSumWith(threads() - 1, (k, v) -> k + v, t) == 3998000
 
     @test
-    def parSumWith02(): Bool & Impure =
+    def parSumWith02(): Bool \ IO =
         let Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
         RedBlackTree.parSumWith(threads() - 1, (k, v) -> k + v, t) == 1998000
 
@@ -648,13 +650,13 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parProductWith01(): Bool & Impure =
+    def parProductWith01(): Bool \ IO =
         let l = List.range(1, 2001);
         let Map(t) = List.zip(l, l) |> List.toMap;
         RedBlackTree.parProductWith(threads() - 1, (k, v) -> k * v, t) == List.product(l) * List.product(l)
 
     @test
-    def parProductWith02(): Bool & Impure =
+    def parProductWith02(): Bool \ IO =
         let l1 = List.range(1, 2001);
         let l2 = List.range(-2000, 0);
         let Map(t) = List.zip(l1, l2) |> List.toMap;
@@ -821,6 +823,36 @@ namespace TestRedBlackTree {
         MutDeque.pushFront((1, 'a'), d2);
 
         d1 `MutDeque.sameElements` d2
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // iterator                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def iterator01(): Bool = region r {
+        RedBlackTree.empty(): RedBlackTree[Int32, Int32] |> RedBlackTree.iterator(r) |> Iterator.toList == Nil
+    }
+
+    @test
+    def iterator02(): Bool = region r {
+        let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b')
+                                     |> RedBlackTree.insert(3, 'c') |> RedBlackTree.insert(4, 'd');
+        RedBlackTree.iterator(r, t) |> Iterator.toList == (1, 'a') :: (2, 'b') :: (3, 'c') :: (4, 'd') :: Nil
+    }
+
+    @test
+    def iterator03(): Bool = region r {
+        let t = RedBlackTree.empty() |> RedBlackTree.insert(4, 'd') |> RedBlackTree.insert(3, 'c')
+                                     |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(1, 'a');
+        RedBlackTree.iterator(r, t) |> Iterator.toList == (1, 'a') :: (2, 'b') :: (3, 'c') :: (4, 'd') :: Nil
+    }
+
+    @test
+    def iterator04(): Bool = region r {
+        let l = List.range(1, 100);
+        let t = List.foldLeft((ac, i) -> RedBlackTree.insert(i, i+100, ac), RedBlackTree.empty(), l);
+        RedBlackTree.iterator(r, t) |> Iterator.toList == List.map(i -> (i, i+100), List.range(1, 100))
     }
 
 }

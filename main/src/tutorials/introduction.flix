@@ -172,7 +172,7 @@ def isMaybeZero(e: Constant): Bool = match e {
     case Top    => true
 }
 
-def main(): Unit & Impure =
+def main(): Unit \ IO =
     let p = #{
         //
         // We can now define the semantic rules of the analysis.
@@ -233,7 +233,7 @@ def main(): Unit & Impure =
         DivStm("v", "w", "z"). // v = w / z
     };
     let m = solve p;
-    discard (m |> Fixpoint.unsafePrint) as & Impure;
+    Fixpoint.unsafePrint(m);
     ()
 
 //

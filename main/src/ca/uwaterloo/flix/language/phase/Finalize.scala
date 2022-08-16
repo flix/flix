@@ -40,7 +40,7 @@ object Finalize {
       case (sym, enum) => sym -> visitEnum(enum, m)
     }
 
-    FinalAst.Root(defs ++ m, enums, root.entryPoint, root.reachable, root.sources).toSuccess
+    FinalAst.Root(defs ++ m, enums, root.entryPoint, root.sources).toSuccess
   }
 
   private def visitDef(def0: LiftedAst.Def, m: TopLevel)(implicit flix: Flix): FinalAst.Def = {
@@ -53,9 +53,9 @@ object Finalize {
   private def visitEnum(enum0: LiftedAst.Enum, m: TopLevel)(implicit flix: Flix): FinalAst.Enum = enum0 match {
     case LiftedAst.Enum(ann, mod, sym, cases0, tpe0, loc) =>
       val cases = cases0.map {
-        case (tag, LiftedAst.Case(enumSym, tagName, tagType, tagLoc)) =>
+        case (tag, LiftedAst.Case(enumSym, tagType, tagLoc)) =>
           val tpe = visitType(tagType)
-          tag -> FinalAst.Case(enumSym, tagName, tpe, tagLoc)
+          tag -> FinalAst.Case(enumSym, tpe, tagLoc)
       }
       val tpe = visitType(tpe0)
       FinalAst.Enum(ann, mod, sym, cases, tpe, loc)
@@ -110,8 +110,7 @@ object Finalize {
       case LiftedAst.Expression.Closure(sym, closureArgs, tpe, loc) =>
         val t = visitType(tpe)
         val newClosureArgs = closureArgs.map(visit)
-        val fnMonoType = getFunctionTypeTemporaryToBeRemoved(newClosureArgs, t)
-        FinalAst.Expression.Closure(sym, newClosureArgs, fnMonoType, t, loc)
+        FinalAst.Expression.Closure(sym, newClosureArgs, t, loc)
 
       case LiftedAst.Expression.ApplyClo(exp, args, tpe, _, loc) =>
         val as = args map visit
@@ -182,19 +181,19 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.LetRec(varSym, index, defSym, e1, e2, t, loc)
 
-      case LiftedAst.Expression.Is(sym, tag, exp, _, loc) =>
+      case LiftedAst.Expression.Is(sym, exp, _, loc) =>
         val e1 = visit(exp)
-        FinalAst.Expression.Is(sym, tag, e1, loc)
+        FinalAst.Expression.Is(sym, e1, loc)
 
-      case LiftedAst.Expression.Tag(enum, tag, exp, tpe, _, loc) =>
+      case LiftedAst.Expression.Tag(enum, exp, tpe, _, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
-        FinalAst.Expression.Tag(enum, tag, e, t, loc)
+        FinalAst.Expression.Tag(enum, e, t, loc)
 
-      case LiftedAst.Expression.Untag(sym, tag, exp, tpe, _, loc) =>
+      case LiftedAst.Expression.Untag(sym, exp, tpe, _, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
-        FinalAst.Expression.Untag(sym, tag, e, t, loc)
+        FinalAst.Expression.Untag(sym, e, t, loc)
 
       case LiftedAst.Expression.Index(base, offset, tpe, _, loc) =>
         val b = visit(base)
@@ -329,9 +328,10 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.PutStaticField(field, e, t, loc)
 
-      case LiftedAst.Expression.NewObject(clazz, tpe, _, loc) =>
+      case LiftedAst.Expression.NewObject(name, clazz, tpe, _, methods, loc) =>
         val t = visitType(tpe)
-        FinalAst.Expression.NewObject(clazz, t, loc)
+        val ms = methods.map(visitJvmMethod(_, m))
+        FinalAst.Expression.NewObject(name, clazz, t, ms, loc)
 
       case LiftedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visit(exp)
@@ -444,9 +444,6 @@ object Finalize {
 
             case TypeConstructor.KindedEnum(sym, _) => MonoType.Enum(sym, args)
 
-            case TypeConstructor.Tag(sym, _) =>
-              throw InternalCompilerException(s"Unexpected type: '$t0'.")
-
             case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
             case TypeConstructor.Array => MonoType.Array(args.head)
@@ -479,8 +476,6 @@ object Finalize {
             case TypeConstructor.Union => MonoType.Unit
 
             case TypeConstructor.Intersection => MonoType.Unit
-
-            case TypeConstructor.Difference => MonoType.Unit
 
             case TypeConstructor.Effect(_) => MonoType.Unit
 
@@ -515,12 +510,11 @@ object Finalize {
     visit(Type.eraseAliases(tpe0))
   }
 
-  // TODO: Deprecated
-  private def getFunctionTypeTemporaryToBeRemoved(fvs: List[FinalAst.Expression], tpe: MonoType): MonoType = tpe match {
-    case MonoType.Arrow(targs, tresult) =>
-      val freeArgs = fvs.map(_.tpe)
-      MonoType.Arrow(freeArgs ::: targs, tresult)
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+  private def visitJvmMethod(method: LiftedAst.JvmMethod, m: TopLevel)(implicit flix: Flix): FinalAst.JvmMethod = method match {
+    case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
+      val f = fparams.map(visitFormalParam)
+      val c = visitExp(clo, m)
+      val t = visitType(retTpe)
+      FinalAst.JvmMethod(ident, f, c, t, loc)
   }
-
 }

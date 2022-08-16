@@ -171,12 +171,22 @@ sealed trait Type {
   }
 
   /**
-    * Returns the effect type of `this` arrow type.
+    * Returns the purity type of `this` arrow type.
     *
     * NB: Assumes that `this` type is an arrow.
     */
   def arrowPurityType: Type = typeConstructor match {
     case Some(TypeConstructor.Arrow(n)) => typeArguments.head
+    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
+  }
+
+  /**
+    * Returns the effect type of `this` arrow type.
+    *
+    * NB: Assumes that `this` type is an arrow.
+    */
+  def arrowEffectType: Type = typeConstructor match {
+    case Some(TypeConstructor.Arrow(n)) => typeArguments(1)
     case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
   }
 
@@ -752,29 +762,6 @@ object Type {
   def mkUnkindedEnum(sym: Symbol.EnumSym, ts: List[Type], loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.UnkindedEnum(sym), loc), ts, loc)
 
   /**
-    * Constructs a tag type for the given `sym`, `tag`, `caseType` and `resultType`.
-    *
-    * A tag type can be understood as a "function type" from the `caseType` to the `resultType`.
-    *
-    * For example, for:
-    *
-    * {{{
-    * enum List[a] {
-    *   case Nil,
-    *   case Cons(a, List[a])
-    * }
-    *
-    * We have:
-    *
-    *   Nil:  Unit -> List[a]           (caseType = Unit, resultType = List[a])
-    *   Cons: (a, List[a]) -> List[a]   (caseType = (a, List[a]), resultType = List[a])
-    * }}}
-    */
-  def mkTag(sym: Symbol.EnumSym, tag: Name.Tag, caseType: Type, resultType: Type, loc: SourceLocation): Type = {
-    Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Tag(sym, tag), loc), caseType, loc), resultType, loc)
-  }
-
-  /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
   def mkTuple(ts: List[Type], loc: SourceLocation): Type = {
@@ -1038,5 +1025,53 @@ object Type {
     case tpe => tpe
   }
 
+  /**
+    * Returns the Flix Type of a Java Class
+    */
+  def getFlixType(c: Class[_]): Type = {
+    if (c == java.lang.Boolean.TYPE) {
+      Type.Bool
+    }
+    else if (c == java.lang.Byte.TYPE) {
+      Type.Int8
+    }
+    else if (c == java.lang.Short.TYPE) {
+      Type.Int16
+    }
+    else if (c == java.lang.Integer.TYPE) {
+      Type.Int32
+    }
+    else if (c == java.lang.Long.TYPE) {
+      Type.Int64
+    }
+    else if (c == java.lang.Character.TYPE) {
+      Type.Char
+    }
+    else if (c == java.lang.Float.TYPE) {
+      Type.Float32
+    }
+    else if (c == java.lang.Double.TYPE) {
+      Type.Float64
+    }
+    else if (c == classOf[java.math.BigInteger]) {
+      Type.BigInt
+    }
+    else if (c == classOf[java.lang.String]) {
+      Type.Str
+    }
+    else if (c == java.lang.Void.TYPE) {
+      Type.Unit
+    }
+    // handle arrays of types
+    else if (c.isArray) {
+      val comp = c.getComponentType
+      val elmType = getFlixType(comp)
+      Type.mkArray(elmType, Type.False, SourceLocation.Unknown)
+    }
+    // otherwise native type
+    else {
+      Type.mkNative(c, SourceLocation.Unknown)
+    }
+  }
 
 }

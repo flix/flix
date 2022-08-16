@@ -82,7 +82,7 @@ namespace BigInt {
     /// Returns the integer binary logarithm of `x`.
     ///
     pub def log2(x: BigInt): Int32 =
-        import java.math.BigInteger.bitLength(): Int32 & Pure;
+        import java.math.BigInteger.bitLength(): Int32 \ {};
         bitLength(x)
 
     ///
@@ -95,8 +95,8 @@ namespace BigInt {
     /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
     ///
     pub def fromString(s: String): Result[BigInt, String] = try {
-        import java.lang.String.strip(): String & Pure;
-        import new java.math.BigInteger(String): BigInt & Pure as parseBigInt;
+        import java.lang.String.strip(): String \ {};
+        import new java.math.BigInteger(String): BigInt \ {} as parseBigInt;
         Ok(s |> strip |> parseBigInt)
     } catch {
         case _: ##java.lang.NumberFormatException => Err("BigInt.fromString")
@@ -111,7 +111,7 @@ namespace BigInt {
     /// (i.e. -128 to 127).
     ///
     pub def tryToInt8(x: BigInt): Option[Int8] =
-        import java.math.BigInteger.byteValueExact(): Int8 & Pure;
+        import java.math.BigInteger.byteValueExact(): Int8 \ {};
         try {
             Some(byteValueExact(x))
         } catch {
@@ -127,7 +127,7 @@ namespace BigInt {
     /// (i.e. -32768 to 32767).
     ///
     pub def tryToInt16(x: BigInt): Option[Int16] =
-        import java.math.BigInteger.shortValueExact(): Int16 & Pure;
+        import java.math.BigInteger.shortValueExact(): Int16 \ {};
         try {
             Some(shortValueExact(x))
         } catch {
@@ -143,7 +143,7 @@ namespace BigInt {
     /// (i.e. -2147483648 to 2147483647).
     ///
     pub def tryToInt32(x: BigInt): Option[Int32] =
-        import java.math.BigInteger.intValueExact(): Int32 & Pure;
+        import java.math.BigInteger.intValueExact(): Int32 \ {};
         try {
             Some(intValueExact(x))
         } catch {
@@ -159,7 +159,7 @@ namespace BigInt {
     /// (i.e. -9223372036854775808 to 9223372036854775807).
     ///
     pub def tryToInt64(x: BigInt): Option[Int64] =
-        import java.math.BigInteger.longValueExact(): Int64 & Pure;
+        import java.math.BigInteger.longValueExact(): Int64 \ {};
         try {
             Some(longValueExact(x))
         } catch {
@@ -178,8 +178,8 @@ namespace BigInt {
     ///
     pub def tryToFloat32(x: BigInt): Option[Float32] =
         use Option.flatMap;
-        import new java.math.BigDecimal(BigInt): ##java.math.BigDecimal & Pure as newBigDecimal;
-        import java.math.BigDecimal.floatValue(): Float32 & Pure;
+        import new java.math.BigDecimal(BigInt): ##java.math.BigDecimal \ {} as newBigDecimal;
+        import java.math.BigDecimal.floatValue(): Float32 \ {};
         let xd = newBigDecimal(x);
         let d = floatValue(xd);
         let* f32min = Float32.tryToBigInt(Float32.minValue());
@@ -201,8 +201,8 @@ namespace BigInt {
     ///
     pub def tryToFloat64(x: BigInt): Option[Float64] =
         use Option.flatMap;
-        import new java.math.BigDecimal(BigInt): ##java.math.BigDecimal & Pure as newBigDecimal;
-        import java.math.BigDecimal.doubleValue(): Float64 & Pure;
+        import new java.math.BigDecimal(BigInt): ##java.math.BigDecimal \ {} as newBigDecimal;
+        import java.math.BigDecimal.doubleValue(): Float64 \ {};
         let xd = newBigDecimal(x);
         let d = doubleValue(xd);
         let* f64min = Float64.tryToBigInt(Float64.minValue());
@@ -230,7 +230,7 @@ namespace BigInt {
     /// Returns `x` clamped within the Int8 range `minimum` to `maximum`.
     ///
     pub def clampToInt8(x: BigInt, minimum: Int8, maximum: Int8): Int8 =
-        import java.math.BigInteger.byteValueExact(): Int8 & Pure;
+        import java.math.BigInteger.byteValueExact(): Int8 \ {};
         let minii = Int8.toBigInt(minimum);
         let maxii = Int8.toBigInt(maximum);
         try {
@@ -246,7 +246,7 @@ namespace BigInt {
     /// Returns `x` clamped within the Int16 range `minimum` to `maximum`.
     ///
     pub def clampToInt16(x: BigInt, minimum: Int16, maximum: Int16): Int16 =
-        import java.math.BigInteger.shortValueExact(): Int16 & Pure;
+        import java.math.BigInteger.shortValueExact(): Int16 \ {};
         let minii = Int16.toBigInt(minimum);
         let maxii = Int16.toBigInt(maximum);
         try {
@@ -262,7 +262,7 @@ namespace BigInt {
     /// Returns `x` clamped within the Int32 range `minimum` to `maximum`.
     ///
     pub def clampToInt32(x: BigInt, minimum: Int32, maximum: Int32): Int32 =
-        import java.math.BigInteger.intValueExact(): Int32 & Pure;
+        import java.math.BigInteger.intValueExact(): Int32 \ {};
         let minii = Int32.toBigInt(minimum);
         let maxii = Int32.toBigInt(maximum);
         try {
@@ -278,7 +278,7 @@ namespace BigInt {
     /// Returns `x` clamped within the Int64 range `minimum` to `maximum`.
     ///
     pub def clampToInt64(x: BigInt, minimum: Int64, maximum: Int64): Int64 =
-        import java.math.BigInteger.longValueExact(): Int64 & Pure;
+        import java.math.BigInteger.longValueExact(): Int64 \ {};
         let minii = Int64.toBigInt(minimum);
         let maxii = Int64.toBigInt(maximum);
         try {
@@ -295,8 +295,8 @@ namespace BigInt {
     ///
     pub def clampToFloat32(x: BigInt, minimum: Float32, maximum: Float32): Float32 =
         use Option.flatMap;
-        import new java.math.BigDecimal(BigInt): ##java.math.BigDecimal & Pure as newBigDecimal;
-        import java.math.BigDecimal.floatValue(): Float32 & Pure;
+        import new java.math.BigDecimal(BigInt): ##java.math.BigDecimal \ {} as newBigDecimal;
+        import java.math.BigDecimal.floatValue(): Float32 \ {};
         let step = () -> {
             let* f32min = Float32.tryToBigInt(minimum);
             let* f32max = Float32.tryToBigInt(maximum);
@@ -316,8 +316,8 @@ namespace BigInt {
     ///
     pub def clampToFloat64(x: BigInt, minimum: Float64, maximum: Float64): Float64 =
         use Option.flatMap;
-        import new java.math.BigDecimal(BigInt): ##java.math.BigDecimal & Pure as newBigDecimal;
-        import java.math.BigDecimal.doubleValue(): Float64 & Pure;
+        import new java.math.BigDecimal(BigInt): ##java.math.BigDecimal \ {} as newBigDecimal;
+        import java.math.BigDecimal.doubleValue(): Float64 \ {};
         let step = () -> {
             let* f64min = Float64.tryToBigInt(minimum);
             let* f64max = Float64.tryToBigInt(maximum);

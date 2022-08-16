@@ -40,7 +40,6 @@ namespace Fixpoint/Ast {
 
     instance ToString[HeadPredicate[v]] with ToString[v] {
         pub def toString(head: HeadPredicate[v]): String =
-            use Fixpoint.commaSeparate;
             match head {
                 case HeadAtom(predSym, Relational, terms) => "${predSym}(${terms |> List.join(", ")})"
                 case HeadAtom(predSym, Latticenal(_), terms) =>

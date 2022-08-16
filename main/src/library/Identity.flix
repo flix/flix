@@ -32,7 +32,7 @@ instance Monoid[Identity[a]] with Monoid[a] {
 }
 
 instance Functor[Identity] {
-    pub def map(f: a -> b & ef, x: Identity[a]): Identity[b] & ef =
+    pub def map(f: a -> b \ ef, x: Identity[a]): Identity[b] \ ef =
         let Identity(x1) = x;
         Identity(f(x1))
 }
@@ -41,40 +41,57 @@ instance Applicative[Identity] {
     pub def point(x: a): Identity[a] =
         Identity(x)
 
-    pub def ap(f: Identity[a -> b & ef], x: Identity[a]): Identity[b] & ef =
+    pub def ap(f: Identity[a -> b \ ef], x: Identity[a]): Identity[b] \ ef =
         let Identity(f1) = f;
         let Identity(x1) = x;
         Identity(f1(x1))
 }
 
 instance Monad[Identity] {
-    pub def flatMap(f: a -> Identity[b] & ef, x: Identity[a]): Identity[b] & ef =
+    pub def flatMap(f: a -> Identity[b] \ ef, x: Identity[a]): Identity[b] \ ef =
         let Identity(x1) = x;
         f(x1)
 }
 
+instance MonadZip[Identity] {
+    pub def zipWith(f: (a, b) -> c \ ef, ma: Identity[a], mb: Identity[b]): Identity[c] \ ef =
+        let Identity(a) = ma;
+        let Identity(b) = mb;
+        Identity(f(a, b))
+
+    pub override def unzip(ma: Identity[(a, b)]): (Identity[a], Identity[b]) =
+        let Identity((a, b)) = ma;
+        (Identity(a), Identity(b))
+
+    pub def zipWithA(f: (a, b) -> f[c] \ ef, x: Identity[a], y: Identity[b]): f[Identity[c]] \ ef with Applicative[f] =
+        use Functor.{<$>};
+        let Identity(x1) = x;
+        let Identity(y1) = y;
+        Identity <$> f(x1, y1)
+}
+
 instance Foldable[Identity] {
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, x: Identity[a]): b & ef =
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, x: Identity[a]): b \ ef =
         let Identity(x1) = x;
         f(s, x1)
 
-    pub def foldRight(f: (a, b) -> b & ef, s: b, x: Identity[a]): b & ef =
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, x: Identity[a]): b \ ef =
         let Identity(x1) = x;
         f(x1, s)
 
-    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, x: Identity[a]): b & ef =
+    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, x: Identity[a]): b \ ef =
         let Identity(x1) = x;
-        f(x1, _ -> s as & ef)
+        f(x1, upcast(_ -> s))
 }
 
 instance UnorderedFoldable[Identity] {
-    pub def foldMap(f: a -> b & ef, x: Identity[a]): b & ef with CommutativeMonoid[b] =
+    pub def foldMap(f: a -> b \ ef, x: Identity[a]): b \ ef with CommutativeMonoid[b] =
         let Identity(x1) = x;
         f(x1)
 }
 
 instance Traversable[Identity] {
-    pub def traverse(f: a -> m[b] & ef, x: Identity[a]): m[Identity[b]] & ef with Applicative[m] =
+    pub def traverse(f: a -> m[b] \ ef, x: Identity[a]): m[Identity[b]] \ ef with Applicative[m] =
         let Identity(x1) = x;
         Functor.map(Identity, f(x1))
 

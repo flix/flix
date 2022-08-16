@@ -31,7 +31,7 @@ namespace TestFoldable {
 
 
     instance Functor[Logger[i]] {
-        pub def map(f: a -> b & ef, ma: Logger[i, a]): Logger[i, b] & ef =
+        pub def map(f: a -> b \ ef, ma: Logger[i, a]): Logger[i, b] \ ef =
             let Logger((w, a)) = ma;
             Logger((w, f(a)))
     }
@@ -39,7 +39,7 @@ namespace TestFoldable {
     instance Applicative[Logger[i]] {
         pub def point(x: a): Logger[i, a] = Logger(Chain.empty(), x)
 
-        pub def ap(mf: Logger[i, a -> b & ef], ma: Logger[i, a]): Logger[i, b] & ef =
+        pub def ap(mf: Logger[i, a -> b \ ef], ma: Logger[i, a]): Logger[i, b] \ ef =
             let Logger((w1, f)) = mf;
             let Logger((w2, a)) = ma;
             Logger((Chain.append(w1, w2), f(a)))
@@ -47,7 +47,7 @@ namespace TestFoldable {
 
 
     instance Monad[Logger[i]] {
-        pub def flatMap(f: a -> Logger[i, b] & ef, ma: Logger[i, a]): Logger[i, b] & ef =
+        pub def flatMap(f: a -> Logger[i, b] \ ef, ma: Logger[i, a]): Logger[i, b] \ ef =
             let Logger((w1, a)) = ma;
             let Logger((w2, b)) = f(a);
             Logger((Chain.append(w1, w2), b))
@@ -228,19 +228,36 @@ namespace TestFoldable {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // toDelayList                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toDelayList01(): Bool =
+        Foldable.toDelayList(Nil: List[Int32]) == DelayList.empty(): DelayList[Int32]
+
+    @test
+    def toDelayList02(): Bool =
+        Foldable.toDelayList(1 :: 2 :: Nil) == List.toDelayList(1 :: 2 :: Nil)
+
+    @test
+    def toDelayList03(): Bool =
+        Foldable.toDelayList(Set#{0, 1, 2, 3, 4}) == List.toDelayList(0 :: 1 :: 2 :: 3 :: 4 :: Nil)
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // toArray                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toArray01(): Bool & Impure =
+    def toArray01(): Bool \ IO =
         Array.sameElements(Foldable.toArray(Static, Nel(1, Nil)), [1])
 
     @test
-    def toArray02(): Bool & Impure =
+    def toArray02(): Bool \ IO =
         Array.sameElements(Foldable.toArray(Static, Nel(1, 2 :: 3 :: Nil)), [1, 2, 3])
 
     @test
-    def toArray03(): Bool & Impure =
+    def toArray03(): Bool \ IO =
         Array.sameElements(Foldable.toArray(Static, Nel(1, 1 :: 2 :: 3 :: Nil)), [1, 1, 2, 3])
 
 
@@ -343,6 +360,29 @@ namespace TestFoldable {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // toDelayMap                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toDelayMap01(): Bool =
+        let l = Nil: List[(Int32, Int32)];
+        let d1 = Foldable.toDelayMap(List.toChain(l));
+        (d1 |> DelayMap.toList) == l
+
+    @test
+    def toDelayMap02(): Bool =
+        let l = (1, 2) :: (2, 3) :: (3, 4) :: Nil;
+        let d1 = Foldable.toDelayMap(List.toChain(l));
+        (d1 |> DelayMap.toList) == l
+
+    @test
+    def toDelayMap03(): Bool =
+        let s = Set#{(0, 2), (1, 4), (2, 6), (3, 8), (4, 10)};
+        let d1 = Foldable.toDelayMap(s);
+        (d1 |> DelayMap.toSet) == s
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // toMutMap                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -377,6 +417,40 @@ namespace TestFoldable {
 
         l == MutMap.toList(m)
     }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toNec                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toNec01(): Bool =
+        Foldable.toNec(Nil: List[Int32]) == None
+
+    @test
+    def toNec02(): Bool =
+        Foldable.toNec(1 :: 2 :: Nil) == Some(Nec.cons(1, Nec.singleton(2)))
+
+    @test
+    def toNec03(): Bool =
+        Foldable.toNec(Set#{0, 1, 2, 3, 4}) == List.toNec(0 :: 1 :: 2 :: 3 :: 4 :: Nil)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toNel                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toNel01(): Bool =
+        Foldable.toNel(Nil: List[Int32]) == None
+
+    @test
+    def toNel02(): Bool =
+        Foldable.toNel(1 :: 2 :: Nil) == Some(Nel.cons(1, Nel.singleton(2)))
+
+    @test
+    def toNel03(): Bool =
+        Foldable.toNel(Set#{0, 1, 2, 3, 4}) == List.toNel(0 :: 1 :: 2 :: 3 :: 4 :: Nil)
 
 
     /////////////////////////////////////////////////////////////////////////////

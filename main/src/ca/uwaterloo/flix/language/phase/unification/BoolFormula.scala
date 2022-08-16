@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
@@ -123,16 +123,38 @@ object BoolFormula {
     *
     * The map `m` must bind each free type variable in `tpe` to a Boolean variable.
     */
-  def fromType(tpe: Type, m: Bimap[Symbol.KindedTypeVarSym, Int]): BoolFormula = tpe match {
-    case Type.KindedVar(sym, _) => m.getForward(sym) match {
+  def fromBoolType(tpe: Type, m: Bimap[VarOrEff, Int]): BoolFormula = tpe match {
+    case Type.KindedVar(sym, _) => m.getForward(VarOrEff.Var(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.")
       case Some(x) => Var(x)
     }
     case Type.True => True
     case Type.False => False
-    case Type.Apply(Type.Cst(TypeConstructor.Not, _), tpe1, _) => Neg(fromType(tpe1, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => Conj(fromType(tpe1, m), fromType(tpe2, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => Disj(fromType(tpe1, m), fromType(tpe2, m))
+    case Type.Apply(Type.Cst(TypeConstructor.Not, _), tpe1, _) => Neg(fromBoolType(tpe1, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => Conj(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => Disj(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+  }
+
+  /**
+    * Converts the given type `tpe` to a Boolean formula under the given variable substitution map `m`.
+    *
+    * The map `m` must bind each free type variable in `tpe` to a Boolean variable.
+    */
+  def fromEffType(tpe: Type, m: Bimap[VarOrEff, Int]): BoolFormula = tpe match {
+    case Type.KindedVar(sym, _) => m.getForward(VarOrEff.Var(sym)) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.")
+      case Some(x) => Var(x)
+    }
+    case Type.Cst(TypeConstructor.Effect(sym), _) => m.getForward(VarOrEff.Eff(sym)) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound effect: '$sym'.")
+      case Some(x) => Var(x)
+    }
+    case Type.All => True
+    case Type.Empty => False
+    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Neg(fromEffType(tpe1, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Conj(fromEffType(tpe1, m), fromEffType(tpe2, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => Disj(fromEffType(tpe1, m), fromEffType(tpe2, m))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
@@ -141,16 +163,62 @@ object BoolFormula {
     *
     * The map `m` must bind each free variable in `f` to a type variable.
     */
-  def toType(f: BoolFormula, m: Bimap[Symbol.KindedTypeVarSym, Int], loc: SourceLocation): Type = f match {
+  def toType(f: BoolFormula, m: Bimap[VarOrEff, Int], kind: Kind, loc: SourceLocation): Type = kind match {
+    case Kind.Bool => toBoolType(f, m, loc)
+    case Kind.Effect => toEffType(f, m, loc)
+    case _ => throw InternalCompilerException(s"Unexpected kind: '$kind'.")
+  }
+
+  /**
+    * Converts the given formula `f` back to a type under the given variable substitution map `m`.
+    *
+    * The map `m` must bind each free variable in `f` to a type variable.
+    */
+  private def toBoolType(f: BoolFormula, m: Bimap[VarOrEff, Int], loc: SourceLocation): Type = f match {
     case True => Type.True
     case False => Type.False
     case Var(x) => m.getBackward(x) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.")
-      case Some(sym) => Type.KindedVar(sym, loc)
+      case Some(VarOrEff.Var(sym)) => Type.KindedVar(sym, loc)
+      case Some(VarOrEff.Eff(sym)) => throw InternalCompilerException(s"Unexpected effect: '$sym'.")
     }
-    case Neg(f1) => Type.mkNot(toType(f1, m, loc), loc)
-    case Conj(t1, t2) => Type.mkAnd(toType(t1, m, loc), toType(t2, m, loc), loc)
-    case Disj(t1, t2) => Type.mkOr(toType(t1, m, loc), toType(t2, m, loc), loc)
+    case Neg(f1) => Type.mkNot(toBoolType(f1, m, loc), loc)
+    case Conj(t1, t2) => Type.mkAnd(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
+    case Disj(t1, t2) => Type.mkOr(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
   }
 
+  /**
+    * Converts the given formula `f` back to a type under the given variable substitution map `m`.
+    *
+    * The map `m` must bind each free variable in `f` to a type variable.
+    */
+  private def toEffType(f: BoolFormula, m: Bimap[VarOrEff, Int], loc: SourceLocation): Type = f match {
+    case True => Type.All
+    case False => Type.Empty
+    case Var(x) => m.getBackward(x) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.")
+      case Some(VarOrEff.Var(sym)) => Type.KindedVar(sym, loc)
+      case Some(VarOrEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), loc)
+    }
+    case Neg(f1) => Type.mkComplement(toEffType(f1, m, loc), loc)
+    case Conj(t1, t2) => Type.mkIntersection(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
+    case Disj(t1, t2) => Type.mkUnion(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
+  }
+
+  /**
+    * Union of variable and effect types.
+    */
+  sealed trait VarOrEff
+
+  object VarOrEff {
+    /**
+      * A type variable.
+      */
+    case class Var(sym: Symbol.KindedTypeVarSym) extends VarOrEff
+
+    /**
+      * An effect constant.
+      */
+    case class Eff(sym: Symbol.EffectSym) extends VarOrEff
+  }
 }

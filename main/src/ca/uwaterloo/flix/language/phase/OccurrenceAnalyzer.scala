@@ -70,7 +70,7 @@ object OccurrenceAnalyzer {
     val enums = root.enums.map { case (k, v) => k -> visitEnum(v) }
 
     // Reassemble the ast root.
-    val result = OccurrenceAst.Root(defs, enums, root.entryPoint, root.reachable, root.sources)
+    val result = OccurrenceAst.Root(defs, enums, root.entryPoint, root.sources)
 
     result.toSuccess
   }
@@ -90,7 +90,7 @@ object OccurrenceAnalyzer {
    * Translates the given case `case0` to the OccurrenceAst.
    */
   private def visitCase(case0: LiftedAst.Case): OccurrenceAst.Case = {
-    OccurrenceAst.Case(case0.sym, case0.tag, case0.tpeDeprecated, case0.loc)
+    OccurrenceAst.Case(case0.sym, case0.tpeDeprecated, case0.loc)
   }
 
   /**
@@ -275,20 +275,20 @@ object OccurrenceAnalyzer {
       val o3 = combineAllSeq(o1, o2)
       (OccurrenceAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc), o3.increaseSizeByOne())
 
-    case Expression.Is(sym, tag, exp, purity, loc) =>
+    case Expression.Is(sym, exp, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)
       if (sym.name == "Choice")
-        (OccurrenceAst.Expression.Is(sym, tag, e, purity, loc), o.copy(defs = o.defs + (sym0 -> DontInline)).increaseSizeByOne())
+        (OccurrenceAst.Expression.Is(sym, e, purity, loc), o.copy(defs = o.defs + (sym0 -> DontInline)).increaseSizeByOne())
       else
-        (OccurrenceAst.Expression.Is(sym, tag, e, purity, loc), o.increaseSizeByOne())
+        (OccurrenceAst.Expression.Is(sym, e, purity, loc), o.increaseSizeByOne())
 
-    case Expression.Tag(sym, tag, exp, tpe, purity, loc) =>
+    case Expression.Tag(sym, exp, tpe, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)
-      (OccurrenceAst.Expression.Tag(sym, tag, e, tpe, purity, loc), o.increaseSizeByOne())
+      (OccurrenceAst.Expression.Tag(sym, e, tpe, purity, loc), o.increaseSizeByOne())
 
-    case Expression.Untag(sym, tag, exp, tpe, purity, loc) =>
+    case Expression.Untag(sym, exp, tpe, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)
-      (OccurrenceAst.Expression.Untag(sym, tag, e, tpe, purity, loc), o.increaseSizeByOne())
+      (OccurrenceAst.Expression.Untag(sym, e, tpe, purity, loc), o.increaseSizeByOne())
 
     case Expression.Index(base, offset, tpe, purity, loc) =>
       val (b, o) = visitExp(sym0, base)
@@ -408,8 +408,18 @@ object OccurrenceAnalyzer {
       val (e, o) = visitExp(sym0, exp)
       (OccurrenceAst.Expression.PutStaticField(field, e, tpe, purity, loc), o.increaseSizeByOne())
 
-    case Expression.NewObject(clazz, tpe, purity, loc) =>
-      (OccurrenceAst.Expression.NewObject(clazz, tpe, purity, loc), OccurInfo.One)
+    case Expression.NewObject(name, clazz, tpe, purity, methods, loc) =>
+      val (ms, o1) = methods.map {
+        case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) => {
+          val f = fparams.map {
+            case LiftedAst.FormalParam(sym, mod, tpe, loc) => OccurrenceAst.FormalParam(sym, mod, tpe, loc)
+          }
+          val (c, o) = visitExp(sym0, clo)
+          (OccurrenceAst.JvmMethod(ident, f, c, retTpe, purity, loc), o.increaseSizeByOne())
+        }
+      }.unzip
+      val o2 = o1.foldLeft(OccurInfo.Empty)((acc, o3) => combineAllSeq(acc, o3))
+      (OccurrenceAst.Expression.NewObject(name, clazz, tpe, purity, ms, loc), o2.increaseSizeByOne())
 
     case Expression.NewChannel(exp, tpe, loc) =>
       val (e, o) = visitExp(sym0, exp)

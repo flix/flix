@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Benjamin Dahse
+ * Copyright 2022 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+namespace Assert {
 
-namespace Fixpoint {
     ///
-    /// Helper function to implement `ToString`.
+    /// Asserts that `expected` must equal `actual`.
     ///
-    @Internal
-    pub def commaSeparate(a: Array[v, r]): String \ Read(r) with ToString[v] =
-        Array.join(", ", a)
+    /// Aborts execution if the two values are un-equal.
+    ///
+    pub def eq(expected: a, actual: a): Bool with Eq[a], ToString[a] = {
+        if (expected == actual)
+            true
+        else {
+            use Console.{green, red};
+            println("Assertion Error");
+            println("  Expected: ${green(expected)}");
+            println("  Actual:   ${red(actual)}");
+            println("");
+            ?assertEq
+        }
+    } as \ {}
+
 }

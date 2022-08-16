@@ -1304,6 +1304,30 @@ namespace TestChain {
                           List.toChain(1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
+    // zipWithA                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithA01(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, Chain.empty(), Chain.empty()) == Identity(Chain.empty())
+
+    @test
+    def zipWithA02(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, Chain.singleton(1), Chain.empty()) == Identity(Chain.empty())
+
+    @test
+    def zipWithA03(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, Chain.empty(), Chain.singleton(true)) == Identity(Chain.empty())
+
+    @test
+    def zipWithA04(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, Chain.singleton(1), Chain.singleton(true)) == Identity(Chain.singleton(2))
+
+    @test
+    def zipWithA05(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, Chain.singleton(1), Chain.singleton(false)) == Identity(Chain.singleton(1))
+
+    @test
+    def zipWith06A(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, List.toChain(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil),
+                          List.toChain(false :: true :: true :: false :: false :: true :: true :: true :: Nil)) ==
+                          Identity(List.toChain(1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
     // unzip                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1357,13 +1381,13 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool & Impure =
+    def foreach01(): Bool \ IO =
         let r = ref 21;
         Chain.foreach(x -> r := x, Chain.empty());
         21 == deref r
 
     @test
-    def foreach02(): Bool & Impure =
+    def foreach02(): Bool \ IO =
         let r = ref 21;
         Chain.foreach(x -> r := x, List.toChain(1 :: 2 :: 3 :: Nil));
         3 == deref r
@@ -1800,28 +1824,28 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool & Impure =
+    def shuffle01(): Bool \ NonDet =
         let l: List[Int32] = Nil;
         let c = List.toChain(l) |> Chain.shuffle(Random.new());
 
         Chain.length(c) == 0 and Chain.toSet(c) == Set#{}
 
     @test
-    def shuffle02(): Bool & Impure =
+    def shuffle02(): Bool \ NonDet =
         let l = 1 :: Nil;
         let c = List.toChain(l) |> Chain.shuffle(Random.new());
 
         Chain.length(c) == 1 and Chain.toSet(c) == Set#{1}
 
     @test
-    def shuffle03(): Bool & Impure =
+    def shuffle03(): Bool \ NonDet =
         let l = 1 :: 2 :: 3 :: Nil;
         let c = List.toChain(l) |> Chain.shuffle(Random.new());
 
         Chain.length(c) == 3 and Chain.toSet(c) == Set#{1, 2, 3}
 
     @test
-    def shuffle04(): Bool & Impure =
+    def shuffle04(): Bool \ NonDet =
         let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
         let c = List.toChain(l) |> Chain.shuffle(Random.new());
 

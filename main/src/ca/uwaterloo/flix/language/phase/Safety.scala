@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
 import ca.uwaterloo.flix.util.Validation
@@ -15,7 +15,9 @@ import ca.uwaterloo.flix.util.Validation._
 import scala.annotation.tailrec
 
 /**
-  * Performs safety and well-formedness of Datalog constraints.
+  * Performs safety and well-formedness checks on:
+  *  - Datalog constraints
+  *  - Anonymous objects
   */
 object Safety {
 
@@ -89,174 +91,235 @@ object Safety {
     case Expression.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expression.Apply(exp, exps, _, _, _) =>
+    case Expression.Apply(exp, exps, _, _, _, _) =>
       visitExp(exp) ::: exps.flatMap(visitExp)
 
-    case Expression.Unary(_, exp, _, _, _) =>
+    case Expression.Unary(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Binary(_, exp1, exp2, _, _, _) =>
+    case Expression.Binary(_, exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.Let(_, _, exp1, exp2, _, _, _) =>
+    case Expression.Let(_, _, exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.LetRec(_, _, exp1, exp2, _, _, _) =>
+    case Expression.LetRec(_, _, exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
     case Expression.Region(_, _) =>
       Nil
 
-    case Expression.Scope(_, _, exp, _, _, _) =>
+    case Expression.Scope(_, _, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2) ::: visitExp(exp3)
 
-    case Expression.Stm(exp1, exp2, _, _, _) =>
+    case Expression.Stm(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.Discard(exp, _, _) =>
+    case Expression.Discard(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Match(exp, rules, _, _, _) =>
+    case Expression.Match(exp, rules, _, _, _, _) =>
       visitExp(exp) :::
         rules.flatMap { case MatchRule(_, g, e) => visitExp(g) ::: visitExp(e) }
 
-    case Expression.Choose(exps, rules, _, _, _) =>
+    case Expression.Choose(exps, rules, _, _, _, _) =>
       exps.flatMap(visitExp) :::
         rules.flatMap { case ChoiceRule(_, exp) => visitExp(exp) }
 
-    case Expression.Tag(_, _, exp, _, _, _) =>
+    case Expression.Tag(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Tuple(elms, _, _, _) =>
+    case Expression.Tuple(elms, _, _, _, _) =>
       elms.flatMap(visitExp)
 
     case Expression.RecordEmpty(_, _) => Nil
 
-    case Expression.RecordSelect(exp, _, _, _, _) =>
+    case Expression.RecordSelect(exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.RecordExtend(_, value, rest, _, _, _) =>
+    case Expression.RecordExtend(_, value, rest, _, _, _, _) =>
       visitExp(value) ::: visitExp(rest)
 
-    case Expression.RecordRestrict(_, rest, _, _, _) =>
+    case Expression.RecordRestrict(_, rest, _, _, _, _) =>
       visitExp(rest)
 
-    case Expression.ArrayLit(elms, exp, _, _, _) =>
+    case Expression.ArrayLit(elms, exp, _, _, _, _) =>
       elms.flatMap(visitExp) ::: visitExp(exp)
 
-    case Expression.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+    case Expression.ArrayNew(exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2) ::: visitExp(exp3)
 
-    case Expression.ArrayLoad(base, index, _, _, _) =>
+    case Expression.ArrayLoad(base, index, _, _, _, _) =>
       visitExp(base) ::: visitExp(index)
 
-    case Expression.ArrayLength(base, _, _) =>
+    case Expression.ArrayLength(base, _, _, _) =>
       visitExp(base)
 
-    case Expression.ArrayStore(base, index, elm, _) =>
+    case Expression.ArrayStore(base, index, elm, _, _, _) =>
       visitExp(base) ::: visitExp(index) ::: visitExp(elm)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, _, _) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) =>
       visitExp(base) ::: visitExp(beginIndex) ::: visitExp(endIndex)
 
-    case Expression.Ref(exp1, exp2, _, _, _) =>
+    case Expression.Ref(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.Deref(exp, _, _, _) =>
+    case Expression.Deref(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Assign(exp1, exp2, _, _, _) =>
+    case Expression.Assign(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.Ascribe(exp, _, _, _) =>
+    case Expression.Ascribe(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Cast(exp, _, _, _, _, _) =>
+    case Expression.Cast(exp, _, _, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.TryCatch(exp, rules, _, _, _) =>
+    case Expression.Upcast(exp, tpe, loc) =>
+      val errors =
+        if (isSoundUpcast(exp, exp0)) {
+          List.empty
+        }
+        else {
+          List(UnsafeUpcast(exp, exp0, loc))
+        }
+      visitExp(exp) ::: errors
+
+    case Expression.Without(exp, _, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.TryCatch(exp, rules, _, _, _, _) =>
       visitExp(exp) :::
         rules.flatMap { case CatchRule(_, _, e) => visitExp(e) }
 
-    case Expression.InvokeConstructor(_, args, _, _, _) =>
+    case Expression.TryWith(exp, _, rules, _, _, _, _) =>
+      visitExp(exp) :::
+        rules.flatMap { case HandlerRule(_, _, e) => visitExp(e) }
+
+    case Expression.Do(_, exps, _, _, _) =>
+      exps.flatMap(visitExp)
+
+    case Expression.Resume(exp, _, _) =>
+      visitExp(exp)
+
+    case Expression.InvokeConstructor(_, args, _, _, _, _) =>
       args.flatMap(visitExp)
 
-    case Expression.InvokeMethod(_, exp, args, _, _, _) =>
+    case Expression.InvokeMethod(_, exp, args, _, _, _, _) =>
       visitExp(exp) ::: args.flatMap(visitExp)
 
-    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
+    case Expression.InvokeStaticMethod(_, args, _, _, _, _) =>
       args.flatMap(visitExp)
 
-    case Expression.GetField(_, exp, _, _, _) =>
+    case Expression.GetField(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.PutField(_, exp1, exp2, _, _, _) =>
+    case Expression.PutField(_, exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.GetStaticField(_, _, _, _) =>
+    case Expression.GetStaticField(_, _, _, _, _) =>
       Nil
 
-    case Expression.PutStaticField(_, exp, _, _, _) =>
+    case Expression.PutStaticField(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewObject(_, _, _, _) =>
-      Nil
+    case Expression.NewObject(_, clazz, tpe, _, _, methods, loc) =>
+      val erasedType = Type.eraseAliases(tpe)
+      checkObjectImplementation(clazz, erasedType, methods, loc) ++
+        methods.flatMap {
+          case JvmMethod(_, _, exp, _, _, _, _) => visitExp(exp)
+        }
 
-    case Expression.NewChannel(exp, _, _, _) =>
+    case Expression.NewChannel(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.GetChannel(exp, _, _, _) =>
+    case Expression.GetChannel(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.PutChannel(exp1, exp2, _, _, _) =>
+    case Expression.PutChannel(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.SelectChannel(rules, default, _, _, _) =>
+    case Expression.SelectChannel(rules, default, _, _, _, _) =>
       rules.flatMap { case SelectChannelRule(_, chan, body) => visitExp(chan) :::
         visitExp(body)
       } :::
         default.map(visitExp).getOrElse(Nil)
 
-    case Expression.Spawn(exp, _, _, _) =>
+    case Expression.Spawn(exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.Par(exp, _) =>
       visitExp(exp)
 
     case Expression.Lazy(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.Force(exp, _, _, _) =>
+    case Expression.Force(exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.FixpointConstraintSet(cs, _, _, _) =>
       cs.flatMap(checkConstraint)
 
-    case Expression.FixpointLambda(_, exp, _, _, _, _) =>
+    case Expression.FixpointLambda(_, exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
+    case Expression.FixpointMerge(exp1, exp2, _, _, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.FixpointSolve(exp, _, _, _, _) =>
+    case Expression.FixpointSolve(exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointFilter(_, exp, _, _, _) =>
+    case Expression.FixpointFilter(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointInject(exp, _, _, _, _) =>
+    case Expression.FixpointInject(exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointProject(_, exp, _, _, _) =>
+    case Expression.FixpointProject(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Reify(_, _, _, _) => Nil
+    case Expression.Reify(_, _, _, _, _) => Nil
 
-    case Expression.ReifyType(_, _, _, _, _) => Nil
+    case Expression.ReifyType(_, _, _, _, _, _) => Nil
 
-    case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _) =>
+    case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
+  }
+
+  /**
+    * Checks that an upcast is sound.
+    *
+    * An upcast is considered sound if:
+    *
+    * (a) the expression has the exact same flix type
+    *
+    * (b) the actual expression is a java subtype of the expected java type
+    *
+    * AND
+    *
+    * the purity is being cast from `pure` -> `ef` -> `impure`.
+    *
+    * @param actual   the expression being upcast.
+    * @param expected the upcast expression itself.
+    */
+  private def isSoundUpcast(actual: Expression, expected: Expression): Boolean = {
+    // check flix types are equal
+    // or java type is subtype of upcast java type
+    // check purity is ok
+    // pure -> ef -> impure
+    // ef -> ef and ef2
+    val types = actual.tpe == expected.tpe
+    val purities = (actual.pur, expected.pur) match {
+      case (Type.Pure, _) => true
+      case (_, Type.Impure) => true
+      case _ => false
+    }
+    types && purities
   }
 
   /**
@@ -460,11 +523,138 @@ object Safety {
     case Pattern.Int64(_, _) => Nil
     case Pattern.BigInt(_, _) => Nil
     case Pattern.Str(_, _) => Nil
-    case Pattern.Tag(_, _, pat, _, _) => visitPat(pat, loc)
+    case Pattern.Tag(_, pat, _, _) => visitPat(pat, loc)
     case Pattern.Tuple(elms, _, _) => visitPats(elms, loc)
     case Pattern.Array(elms, _, _) => visitPats(elms, loc)
     case Pattern.ArrayTailSpread(elms, _, _, _) => visitPats(elms, loc)
     case Pattern.ArrayHeadSpread(_, elms, _, _) => visitPats(elms, loc)
   }
+
+  /**
+    * Ensures that `methods` fully implement `clazz`
+    */
+  private def checkObjectImplementation(clazz: java.lang.Class[_], tpe: Type, methods: List[JvmMethod], loc: SourceLocation): List[CompilationMessage] = {
+    //
+    // Check that `clazz` doesn't have a non-default constructor
+    //
+    val constructorErrors = if (clazz.isInterface) {
+      // Case 1: Interface. No need for a constructor.
+      List.empty
+    } else {
+      // Case 2: Class. Must have a public non-zero argument constructor.
+      if (hasPublicZeroArgConstructor(clazz))
+        List.empty
+      else
+        List(MissingPublicZeroArgConstructor(clazz, loc))
+    }
+
+    //
+    // Check that `clazz` is public
+    //
+    val visibilityErrors = if (!isPublicClass(clazz))
+      List(NonPublicClass(clazz, loc))
+    else
+      List.empty
+
+    //
+    // Check that the first argument looks like "this"
+    //
+    val thisErrors = methods.flatMap {
+      case JvmMethod(ident, fparams, _, _, _, _, methodLoc) =>
+        // Check that the declared type of `this` matches the type of the class or interface.
+        val fparam = fparams.head
+        val thisType = Type.eraseAliases(fparam.tpe)
+        thisType match {
+          case `tpe` => None
+          case Type.Unit => Some(MissingThis(clazz, ident.name, methodLoc))
+          case _ => Some(IllegalThisType(clazz, fparam.tpe, ident.name, methodLoc))
+        }
+    }
+
+    val flixMethods = getFlixMethodSignatures(methods)
+    val implemented = flixMethods.keySet
+
+    val javaMethods = getJavaMethodSignatures(clazz)
+    val canImplement = javaMethods.keySet
+    val mustImplement = canImplement.filter(m => isAbstractMethod(javaMethods(m)))
+
+    //
+    // Check that there are no unimplemented methods.
+    //
+    val unimplemented = mustImplement diff implemented
+    val unimplementedErrors = unimplemented.map(m => UnimplementedMethod(clazz, javaMethods(m), loc))
+
+    //
+    // Check that there are no methods that aren't in the interface
+    //
+    val extra = implemented diff canImplement
+    val extraErrors = extra.map(m => ExtraMethod(clazz, m.name, flixMethods(m).loc))
+
+    constructorErrors ++ visibilityErrors ++ thisErrors ++ unimplementedErrors ++ extraErrors
+  }
+
+  /**
+    * Represents the signature of a method, used to compare Java signatures against Flix signatures.
+    */
+  private case class MethodSignature(name: String, paramTypes: List[Type], retTpe: Type)
+
+  /**
+    * Convert a list of Flix methods to a set of MethodSignatures. Returns a map to allow subsequent reverse lookup.
+    */
+  private def getFlixMethodSignatures(methods: List[JvmMethod]): Map[MethodSignature, JvmMethod] = {
+    methods.foldLeft(Map.empty[MethodSignature, JvmMethod]) {
+      case (acc, m@JvmMethod(ident, fparams, _, retTpe, _, _, _)) =>
+        // Drop the first formal parameter (which always represents `this`)
+        val paramTypes = fparams.tail.map(_.tpe)
+        val signature = MethodSignature(ident.name, paramTypes.map(t => Type.eraseAliases(t)), Type.eraseAliases(retTpe))
+        acc + (signature -> m)
+    }
+  }
+
+  /**
+    * Get a Set of MethodSignatures representing the methods of `clazz`. Returns a map to allow subsequent reverse lookup.
+    */
+  private def getJavaMethodSignatures(clazz: java.lang.Class[_]): Map[MethodSignature, java.lang.reflect.Method] = {
+    val methods = clazz.getMethods.toList.filterNot(isStaticMethod)
+    methods.foldLeft(Map.empty[MethodSignature, java.lang.reflect.Method]) {
+      case (acc, m) =>
+        val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.getFlixType), Type.getFlixType(m.getReturnType))
+        acc + (signature -> m)
+    }
+  }
+
+  /**
+    * Return true if the given `clazz` has public zero argument constructor.
+    */
+  private def hasPublicZeroArgConstructor(clazz: java.lang.Class[_]): Boolean = {
+    try {
+      // We simply use Class.getConstructor whose documentation states:
+      //
+      // Returns a Constructor object that reflects the specified
+      // public constructor of the class represented by this class object.
+      clazz.getConstructor()
+      true
+    } catch {
+      case _: NoSuchMethodException => false
+    }
+  }
+
+  /**
+    * Returns `true` if the given class `c` is public.
+    */
+  private def isPublicClass(c: java.lang.Class[_]): Boolean =
+    java.lang.reflect.Modifier.isPublic(c.getModifiers)
+
+  /**
+    * Return `true` if the given method `m` is abstract.
+    */
+  private def isAbstractMethod(m: java.lang.reflect.Method): Boolean =
+    java.lang.reflect.Modifier.isAbstract(m.getModifiers)
+
+  /**
+    * Returns `true` if the given method `m` is static.
+    */
+  private def isStaticMethod(m: java.lang.reflect.Method): Boolean =
+    java.lang.reflect.Modifier.isStatic(m.getModifiers)
 
 }

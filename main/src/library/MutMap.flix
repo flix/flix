@@ -72,7 +72,7 @@ namespace MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
     @ParallelWhenPure
-    pub def minimumKeyBy(cmp: (k, k) -> Comparison & ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
+    pub def minimumKeyBy(cmp: (k, k) -> Comparison \ ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.minimumKeyBy(cmp, deref mm)
 
@@ -94,7 +94,7 @@ namespace MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
     @ParallelWhenPure
-    pub def minimumValueBy(cmp: (v, v) -> Comparison & ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
+    pub def minimumValueBy(cmp: (v, v) -> Comparison \ ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.minimumValueBy(cmp, deref mm)
 
@@ -115,7 +115,7 @@ namespace MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def maximumKeyBy(cmp: (k, k) -> Comparison & ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
+    pub def maximumKeyBy(cmp: (k, k) -> Comparison \ ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.maximumKeyBy(cmp, deref mm)
 
@@ -137,7 +137,7 @@ namespace MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
     @ParallelWhenPure
-    pub def maximumValueBy(cmp: (v, v) -> Comparison & ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
+    pub def maximumValueBy(cmp: (v, v) -> Comparison \ ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.maximumValueBy(cmp, deref mm)
 
@@ -192,7 +192,7 @@ namespace MutMap {
     ///
     /// Otherwise updates the mutable map `m` with the binding `k -> v`.
     ///
-    pub def putWith!(f: (v, v) -> v & ef, k: k, v: v, m: MutMap[k, v, r]): Unit \ { ef, Read(r), Write(r) } with Order[k] =
+    pub def putWith!(f: (v, v) -> v \ ef, k: k, v: v, m: MutMap[k, v, r]): Unit \ { ef, Read(r), Write(r) } with Order[k] =
         let MutMap(mm) = m;
         mm := Map.insertWith(f, k, v, deref mm)
 
@@ -201,7 +201,7 @@ namespace MutMap {
     ///
     /// Otherwise leaves the map is unchanged.
     ///
-    pub def adjust!(f: v -> v & ef, k: k, m: MutMap[k, v, r]): Unit \ { ef, Read(r), Write(r) } with Order[k] =
+    pub def adjust!(f: v -> v \ ef, k: k, m: MutMap[k, v, r]): Unit \ { ef, Read(r), Write(r) } with Order[k] =
         adjustWithKey!((_, v1) -> f(v1), k, m)
 
     ///
@@ -209,7 +209,7 @@ namespace MutMap {
     ///
     /// Otherwise leaves the map is unchanged.
     ///
-    pub def adjustWithKey!(f: (k, v) -> v & ef, k: k, m: MutMap[k, v, r]): Unit \ { ef, Read(r), Write(r) } with Order[k] =
+    pub def adjustWithKey!(f: (k, v) -> v \ ef, k: k, m: MutMap[k, v, r]): Unit \ { ef, Read(r), Write(r) } with Order[k] =
         let MutMap(mm) = m;
         mm := Map.adjustWithKey(f, k, deref mm)
 
@@ -243,13 +243,13 @@ namespace MutMap {
     ///
     /// Merges the mutable map `m1` into the mutable map `m2` where key collisions are resolved with the merge function `f`.
     ///
-    pub def mergeWith!(f: (v, v) -> v & ef, m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Unit \ { ef, Read(r1, r2), Write(r2) } with Order[k] =
+    pub def mergeWith!(f: (v, v) -> v \ ef, m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Unit \ { ef, Read(r1, r2), Write(r2) } with Order[k] =
         mergeWithKey!(_ -> f, m1, m2)
 
     ///
     /// Merges the mutable map `m1` into the mutable map `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
     ///
-    pub def mergeWithKey!(f: (k, v, v) -> v & ef, m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Unit \ { ef, Read(r1, r2), Write(r2) } with Order[k] =
+    pub def mergeWithKey!(f: (k, v, v) -> v \ ef, m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Unit \ { ef, Read(r1, r2), Write(r2) } with Order[k] =
         let MutMap(mm1) = m1;
         let MutMap(mm2) = m2;
         mm2 := Map.unionWithKey(f, deref mm1, deref mm2)
@@ -283,14 +283,14 @@ namespace MutMap {
     ///
     /// Applies the function `f` to every value in the mutable map `m`.
     ///
-    pub def transform!(f: v -> v & ef, m: MutMap[k, v, r]): Unit \ { ef, Read(r), Write(r) } with Order[k] =
+    pub def transform!(f: v -> v \ ef, m: MutMap[k, v, r]): Unit \ { ef, Read(r), Write(r) } with Order[k] =
         let MutMap(mm) = m;
         mm := Map.map(f, deref mm)
 
     ///
     /// Applies the function `f` to every value in the mutable map `m`.
     ///
-    pub def transformWithKey!(f: (k, v) -> v & ef, m: MutMap[k, v, r]): Unit \ { ef, Read(r), Write(r) } with Order[k] =
+    pub def transformWithKey!(f: (k, v) -> v \ ef, m: MutMap[k, v, r]): Unit \ { ef, Read(r), Write(r) } with Order[k] =
         let MutMap(mm) = m;
         mm := Map.mapWithKey(f, deref mm)
 
@@ -342,7 +342,7 @@ namespace MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def map(f: v1 -> v2 & ef, m: MutMap[k, v1, r]): MutMap[k, v2, r] \ { ef, Read(r), Write(r) } =
+    pub def map(f: v1 -> v2 \ ef, m: MutMap[k, v1, r]): MutMap[k, v2, r] \ { ef, Read(r), Write(r) } =
         mapWithKey(_ -> f, m)
 
     ///
@@ -351,14 +351,14 @@ namespace MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def mapWithKey(f: (k, v1) -> v2 & ef, m: MutMap[k, v1, r]): MutMap[k, v2, r] \ { ef, Read(r), Write(r) } =
+    pub def mapWithKey(f: (k, v1) -> v2 \ ef, m: MutMap[k, v1, r]): MutMap[k, v2, r] \ { ef, Read(r), Write(r) } =
         let MutMap(mm) = m;
         MutMap(ref Map.mapWithKey(f, deref mm) @ Scoped.regionOf(m))
 
     ///
     /// Alias for `foldLeftWithKey`.
     ///
-    pub def foldWithKey(f: (b, k, v) -> b & ef, i: b, m: MutMap[k, v, r]): b \ { ef, Read(r) }  =
+    pub def foldWithKey(f: (b, k, v) -> b \ ef, i: b, m: MutMap[k, v, r]): b \ { ef, Read(r) }  =
         foldLeftWithKey(f, i, m)
 
     ///
@@ -366,7 +366,7 @@ namespace MutMap {
     ///
     /// That is, the result is of the form: `f(...f(f(i, v1), v2)..., vn)`.
     ///
-    pub def foldLeft(f: (b, v) -> b & ef, i: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
+    pub def foldLeft(f: (b, v) -> b \ ef, i: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.foldLeft(f, i, deref mm)
 
@@ -375,7 +375,7 @@ namespace MutMap {
     ///
     /// That is, the result is of the form: `f(...f(k2, f(k1, i, v1), v2)..., vn)`.
     ///
-    pub def foldLeftWithKey(f: (b, k, v) -> b & ef, i: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
+    pub def foldLeftWithKey(f: (b, k, v) -> b \ ef, i: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.foldLeftWithKey(f, i, deref mm)
 
@@ -384,7 +384,7 @@ namespace MutMap {
     ///
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
     ///
-    pub def foldRight(f: (v, b) -> b & ef, s: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
+    pub def foldRight(f: (v, b) -> b \ ef, s: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
         foldRightWithKey((_, v, b) -> f(v, b), s, m)
 
     ///
@@ -392,7 +392,7 @@ namespace MutMap {
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     ///
-    pub def foldRightWithKey(f: (k, v, b) -> b & ef, s: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
+    pub def foldRightWithKey(f: (k, v, b) -> b \ ef, s: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.foldRightWithKey(f, s, deref mm)
 
@@ -402,7 +402,7 @@ namespace MutMap {
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, z)))`.
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, z: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
+    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, z: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
         foldRightWithKeyCont((_, v, b) -> f(v, b), z, m)
 
     ///
@@ -411,7 +411,7 @@ namespace MutMap {
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, z)))`.
     /// A `foldRightWithKeyCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithKeyCont(f: (k, v, Unit -> b & ef) -> b & ef, z: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
+    pub def foldRightWithKeyCont(f: (k, v, Unit -> b \ ef) -> b \ ef, z: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.foldRightWithKeyCont(f, z, deref mm)
 
@@ -422,7 +422,7 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is the empty map.
     ///
-    pub def reduceLeft(f: (v, v) -> v & ef, m: MutMap[k, v, r]): Option[v] \ { ef, Read(r) } =
+    pub def reduceLeft(f: (v, v) -> v \ ef, m: MutMap[k, v, r]): Option[v] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.reduceLeft(f, deref mm)
 
@@ -433,7 +433,7 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is the empty map.
     ///
-    pub def reduceLeftWithKey(f: (k, v, k, v) -> (k, v) & ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
+    pub def reduceLeftWithKey(f: (k, v, k, v) -> (k, v) \ ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.reduceLeftWithKey(f, deref mm)
 
@@ -444,7 +444,7 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is the empty map.
     ///
-    pub def reduceRight(f: (v, v) -> v & ef, m: MutMap[k, v, r]): Option[v] \ { ef, Read(r) } =
+    pub def reduceRight(f: (v, v) -> v \ ef, m: MutMap[k, v, r]): Option[v] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.reduceRight(f, deref mm)
 
@@ -455,7 +455,7 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is the empty map.
     ///
-    pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) & ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
+    pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) \ ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.reduceRightWithKey(f, deref mm)
 
@@ -465,7 +465,7 @@ namespace MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def count(f: (k, v) -> Bool & ef, m: MutMap[k, v, r]): Int32 \ { ef, Read(r) } =
+    pub def count(f: (k, v) -> Bool \ ef, m: MutMap[k, v, r]): Int32 \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.count(f, deref mm)
 
@@ -489,7 +489,7 @@ namespace MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def sumWith(f: (k, v) -> Int32 & ef, m: MutMap[k, v, r]): Int32 \ { ef, Read(r) } =
+    pub def sumWith(f: (k, v) -> Int32 \ ef, m: MutMap[k, v, r]): Int32 \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.sumWith(f, deref mm)
 
@@ -513,7 +513,7 @@ namespace MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def productWith(f: (k, v) -> Int32 & ef, m: MutMap[k, v, r]): Int32 \ { ef, Read(r) } =
+    pub def productWith(f: (k, v) -> Int32 \ ef, m: MutMap[k, v, r]): Int32 \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.productWith(f, deref mm)
 
@@ -522,7 +522,7 @@ namespace MutMap {
     ///
     /// Returns `false` if `m` is the empty map.
     ///
-    pub def exists(f: (k, v) -> Bool & ef, m: MutMap[k, v, r]): Bool \ { ef, Read(r) } =
+    pub def exists(f: (k, v) -> Bool \ ef, m: MutMap[k, v, r]): Bool \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.exists(f, deref mm)
 
@@ -531,7 +531,7 @@ namespace MutMap {
     ///
     /// Returns `true` if `m` is the empty map.
     ///
-    pub def forall(f: (k, v) -> Bool & ef, m: MutMap[k, v, r]): Bool \ { ef, Read(r) } =
+    pub def forall(f: (k, v) -> Bool \ ef, m: MutMap[k, v, r]): Bool \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.forall(f, deref mm)
 
@@ -573,25 +573,47 @@ namespace MutMap {
     ///
     /// Applies `f` to every element in the mutable map `m`.
     ///
-    pub def foreach(f: (k, v) -> Unit & ef, m: MutMap[k, v, r]): Unit \ { ef, Read(r) } =
+    pub def foreach(f: (k, v) -> Unit \ ef, m: MutMap[k, v, r]): Unit \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.foreach(f, deref mm)
+
+    ///
+    /// Returns an iterator over all key-value pairs in `m`.
+    ///
+    pub def iterator(m: MutMap[k, v, r]): Iterator[(k, v), r] \ Write(r) =
+        let MutMap(mm) = m;
+        let r = Scoped.regionOf(m);
+        Map.iterator(r, deref mm)
+
+    ///
+    /// Returns an iterator over keys in `m`.
+    ///
+    pub def iteratorKeys(m: MutMap[k, v, r]): Iterator[k, r] \ Write(r) =
+        let MutMap(mm) = m;
+        let r = Scoped.regionOf(m);
+        Map.iteratorKeys(r, deref mm)
+
+    ///
+    /// Returns an iterator over values in `m`.
+    ///
+    pub def iteratorValues(m: MutMap[k, v, r]): Iterator[v, r] \ Write(r) =
+        let MutMap(mm) = m;
+        let r = Scoped.regionOf(m);
+        Map.iteratorValues(r, deref mm)
 
     ///
     /// Extracts a range of key-value pairs from the mutable map `m`.
     ///
     /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison & ef, m: MutMap[k, v, r]): List[(k, v)] \ { ef, Read(r) } =
+    pub def query(p: k -> Comparison \ ef, m: MutMap[k, v, r]): List[(k, v)] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.query(p, deref mm)
 
     ///
     /// Applies `f` to all key-value pairs `(k, v)` in the mutable map `m` where `p(k)` returns `EqualTo`.
     ///
-    /// The function `f` must be impure.
-    ///
-    pub def queryWith(p: k -> Comparison & ef1, f: (k, v) -> Unit & ef2, m: MutMap[k, v, r]): Unit & (ef1 and ef2) \ { Read(r) } =
+    pub def queryWith(p: k -> Comparison \ ef1, f: (k, v) -> Unit \ ef2, m: MutMap[k, v, r]): Unit \ { ef1, ef2, Read(r) } =
         let MutMap(mm) = m;
         Map.queryWith(p, f, deref mm)
 
@@ -621,7 +643,7 @@ namespace MutMap {
     /// Returns the concatenation of the string representation of each key-value pair
     /// `k => v` in `m` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: (k, v) -> String & ef, sep: String, m: MutMap[k, v, r]): String \ { ef, Read(r) } =
+    pub def joinWith(f: (k, v) -> String \ ef, sep: String, m: MutMap[k, v, r]): String \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.joinWith(f, sep, deref mm)
 

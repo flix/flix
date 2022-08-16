@@ -64,9 +64,9 @@ object LocationLink {
   /**
     * Returns a location link to the given symbol `sym`.
     */
-  def fromEnumAndTag(sym: Symbol.EnumSym, tag: Name.Tag, loc: SourceLocation)(implicit root: Root): LocationLink = {
-    val enumDecl = root.enums(sym)
-    val caseDecl = enumDecl.cases(tag)
+  def fromCaseSym(sym: Symbol.CaseSym, loc: SourceLocation)(implicit root: Root): LocationLink = {
+    val enumDecl = root.enums(sym.enum)
+    val caseDecl = enumDecl.cases(sym)
     val originSelectionRange = Range.from(loc)
     val targetUri = sym.loc.source.name
     val targetRange = Range.from(caseDecl.loc)
@@ -107,6 +107,27 @@ object LocationLink {
     LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
   }
 
+  /**
+    * Returns a reference to the effect symbol `sym`.
+    */
+  def fromEffectSym(sym: Symbol.EffectSym, originLoc: SourceLocation): LocationLink = {
+    val originSelectionRange = Range.from(originLoc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(sym.loc)
+    val targetSelectionRange = Range.from(sym.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
+  /**
+    * Returns a reference to the effect operation symbol `sym`.
+    */
+  def fromOpSym(sym: Symbol.OpSym, originLoc: SourceLocation): LocationLink = {
+    val originSelectionRange = Range.from(originLoc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(sym.loc)
+    val targetSelectionRange = Range.from(sym.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
 }
 
 /**

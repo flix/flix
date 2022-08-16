@@ -62,37 +62,54 @@ instance Hash[Option[a]] with Hash[a] {
 }
 
 instance Functor[Option] {
-    pub def map(f: a -> b & ef, o: Option[a]): Option[b] & ef = Option.map(f, o)
+    pub def map(f: a -> b \ ef, o: Option[a]): Option[b] \ ef = Option.map(f, o)
 }
 
 instance Applicative[Option] {
     pub def point(x: a) : Option[a] = Option.point(x)
 
-    pub def ap(f: Option[a -> b & e], x: Option[a]) : Option[b] & e = Option.ap(f, x)
+    pub def ap(f: Option[a -> b \ e], x: Option[a]) : Option[b] \ e = Option.ap(f, x)
 
     // Same as the default implementation using `map` and `ap` but with less indirection.
-    override pub def liftA2(f: t1 -> t2 -> r & e, x1: Option[t1], x2: Option[t2]): Option[r] & e = Option.lift2(f, x1, x2)
-    override pub def liftA3(f: t1 -> t2 -> t3 -> r & e, x1: Option[t1], x2: Option[t2], x3: Option[t3]): Option[r] & e = Option.lift3(f, x1, x2, x3)
-    override pub def liftA4(f: t1 -> t2 -> t3 -> t4 -> r & e, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4]): Option[r] & e = Option.lift4(f, x1, x2, x3, x4)
-    override pub def liftA5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r & e, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4], x5: Option[t5]): Option[r] & e = Option.lift5(f, x1, x2, x3, x4, x5)
+    override pub def liftA2(f: t1 -> t2 -> r \ e, x1: Option[t1], x2: Option[t2]): Option[r] \ e = Option.lift2(f, x1, x2)
+    override pub def liftA3(f: t1 -> t2 -> t3 -> r \ e, x1: Option[t1], x2: Option[t2], x3: Option[t3]): Option[r] \ e = Option.lift3(f, x1, x2, x3)
+    override pub def liftA4(f: t1 -> t2 -> t3 -> t4 -> r \ e, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4]): Option[r] \ e = Option.lift4(f, x1, x2, x3, x4)
+    override pub def liftA5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r \ e, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4], x5: Option[t5]): Option[r] \ e = Option.lift5(f, x1, x2, x3, x4, x5)
 }
 
 instance Monad[Option] {
-    pub def flatMap(f: a -> Option[b] & ef, x : Option[a]) : Option[b] & ef = Option.flatMap(f, x)
+    pub def flatMap(f: a -> Option[b] \ ef, x : Option[a]) : Option[b] \ ef = Option.flatMap(f, x)
+}
+
+instance MonadZero[Option] {
+    pub def empty(): Option[a] = None
+}
+
+instance MonadZip[Option] {
+    pub def zipWith(f: (a, b) -> c \ ef, ma: Option[a], mb: Option[b]): Option[c] \ ef = Applicative.liftA2(f, ma, mb)
+    pub override def zip(ma: Option[a], mb: Option[b]): Option[(a, b)] = Applicative.liftA2((x, y) -> (x, y), ma, mb)
+
+    pub def zipWithA(f: (a, b) -> f[c] \ ef, x: Option[a], y: Option[b]): f[Option[c]] \ ef with Applicative[f] =
+        use Functor.{<$>};
+        match (x, y) {
+            case (Some(x1), Some(y1)) => Some <$> f(x1, y1)
+            case (_, _)               => Applicative.point(None)
+        }
 }
 
 instance Foldable[Option] {
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldLeft(f, s, o)
-    pub def foldRight(f: (a, b) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRight(f, o, s)
-    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRightWithCont(f, o, s)
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, o: Option[a]): b \ ef = Option.foldLeft(f, s, o)
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, o: Option[a]): b \ ef = Option.foldRight(f, o, s)
+    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, o: Option[a]): b \ ef = Option.foldRightWithCont(f, o, s)
+    override pub def iterator(r: Region[r], o: Option[a]): Iterator[a, r] \ Write(r) = Option.iterator(r, o)
 }
 
 instance UnorderedFoldable[Option] {
-    pub def foldMap(f: a -> b & ef, o: Option[a]): b & ef with CommutativeMonoid[b] = Option.foldMap(f, o)
+    pub def foldMap(f: a -> b \ ef, o: Option[a]): b \ ef with CommutativeMonoid[b] = Option.foldMap(f, o)
 }
 
 instance Traversable[Option] {
-    pub def traverse(f: a -> m[b] & ef, t: Option[a]): m[Option[b]] & ef with Applicative[m] =
+    pub def traverse(f: a -> m[b] \ ef, t: Option[a]): m[Option[b]] \ ef with Applicative[m] =
         use Applicative.{point};
         use Functor.{map};
         match t {
@@ -111,8 +128,8 @@ instance Traversable[Option] {
 }
 
 instance FunctorFilter[Option] {
-    pub def filterMap(f: a -> Option[b] & ef, o: Option[a]): Option[b] & ef = Option.flatMap(f, o)
-    pub override def filter(f: a -> Bool & ef, o: Option[a]): Option[a] & ef = Option.filter(f, o)
+    pub def filterMap(f: a -> Option[b] \ ef, o: Option[a]): Option[b] \ ef = Option.flatMap(f, o)
+    pub override def filter(f: a -> Bool \ ef, o: Option[a]): Option[a] \ ef = Option.filter(f, o)
 }
 
 instance SemiGroup[Option[a]] with SemiGroup[a] {
@@ -130,11 +147,6 @@ instance Monoid[Option[a]] with Monoid[a] {
 }
 
 instance CommutativeMonoid[Option[a]] with CommutativeMonoid[a]
-
-instance Iterable[Option] {
-    pub def iterator(r: Region[r], t: Option[a]): Iterator[a, r] \ Write(r) =
-        Option.iterator(r, t)
-}
 
 namespace Option {
 
@@ -178,7 +190,7 @@ namespace Option {
     /// Returns `true` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `false`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def exists(f: a -> Bool & ef, o: Option[a]): Bool & ef = match o {
+    pub def exists(f: a -> Bool \ ef, o: Option[a]): Bool \ ef = match o {
         case None    => false
         case Some(v) => f(v)
     }
@@ -189,7 +201,7 @@ namespace Option {
     /// Otherwise returns `false`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def forall(f: a -> Bool & ef, o: Option[a]): Bool & ef = match o {
+    pub def forall(f: a -> Bool \ ef, o: Option[a]): Bool \ ef = match o {
         case None    => true
         case Some(v) => f(v)
     }
@@ -198,7 +210,7 @@ namespace Option {
     /// Returns `o` if `o` is `Some(v)` and the predicate `f(v)` is true. Otherwise returns `None`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def filter(f: a -> Bool & ef, o: Option[a]): Option[a] & ef = match o {
+    pub def filter(f: a -> Bool \ ef, o: Option[a]): Option[a] \ ef = match o {
         case None    => None
         case Some(v) => if (f(v)) o else None
     }
@@ -207,7 +219,7 @@ namespace Option {
     /// Returns `Some(f(v))` if `o` is `Some(v)`. Otherwise returns `None`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def map(f: a -> b & ef, o: Option[a]): Option[b] & ef = match o {
+    pub def map(f: a -> b \ ef, o: Option[a]): Option[b] \ ef = match o {
         case None    => None
         case Some(v) => Some(f(v))
     }
@@ -221,7 +233,7 @@ namespace Option {
     /// If both arguments are `Some`, return a `Some` containing the result of applying the function inside
     /// `f` to the value inside `x`. Otherwise return `None`.
     ///
-    pub def ap(f: Option[a -> b & e], x: Option[a]) : Option[b] & e =
+    pub def ap(f: Option[a -> b \ e], x: Option[a]) : Option[b] \ e =
         match f {
             case None    => None
             case Some(g) => match x {
@@ -233,7 +245,7 @@ namespace Option {
     ///
     /// Returns `f(v)` if `o` is `Some(v)`. Otherwise returns `None`.
     ///
-    pub def flatMap(f: a -> Option[b] & ef, o: Option[a]): Option[b] & ef = match o {
+    pub def flatMap(f: a -> Option[b] \ ef, o: Option[a]): Option[b] \ ef = match o {
         case None    => None
         case Some(v) => f(v)
     }
@@ -242,7 +254,7 @@ namespace Option {
     /// Returns `1` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `0`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def count(f: a -> Bool & ef, o: Option[a]): Int32 & ef = match o {
+    pub def count(f: a -> Bool \ ef, o: Option[a]): Int32 \ ef = match o {
         case None    => 0
         case Some(v) => if (f(v)) 1 else 0
     }
@@ -256,7 +268,7 @@ namespace Option {
     ///
     /// Returns `f(v)` if `o` is `Some(v)` else `0`.
     ///
-    pub def sumWith(f: a -> Int32 & ef, o: Option[a]): Int32 & ef =
+    pub def sumWith(f: a -> Int32 \ ef, o: Option[a]): Int32 \ ef =
         Foldable.sumWith(f, o)
 
     ///
@@ -268,7 +280,7 @@ namespace Option {
     ///
     /// Returns `f(v)` if `o` is `Some(v)` else `0`.
     ///
-    pub def productWith(f: a -> Int32 & ef, o: Option[a]): Int32 & ef =
+    pub def productWith(f: a -> Int32 \ ef, o: Option[a]): Int32 \ ef =
         Foldable.productWith(f, o)
 
     ///
@@ -299,7 +311,7 @@ namespace Option {
     ///
     /// Returns `f(z, v)` if `o` is `Some(v)`. Otherwise returns `z`.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, z: b, o: Option[a]): b & ef = match o {
+    pub def foldLeft(f: (b, a) -> b \ ef, z: b, o: Option[a]): b \ ef = match o {
         case None    => z
         case Some(v) => f(z, v)
     }
@@ -307,7 +319,7 @@ namespace Option {
     ///
     /// Returns `f(v, z)` if `o` is `Some(v)`. Otherwise returns `z`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, o: Option[a], z: b): b & ef = match o {
+    pub def foldRight(f: (a, b) -> b \ ef, o: Option[a], z: b): b \ ef = match o {
         case None    => z
         case Some(v) => f(v, z)
     }
@@ -317,15 +329,15 @@ namespace Option {
     ///
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, o: Option[a], z: b): b & ef = match o {
+    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, o: Option[a], z: b): b \ ef = match o {
         case None    => z
-        case Some(v) => f(v, _ -> z as & ef)
+        case Some(v) => f(v, upcast(_ -> z))
     }
 
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
-    pub def foldMap(f: a -> b & ef, o: Option[a]): b & ef with Monoid[b] =
+    pub def foldMap(f: a -> b \ ef, o: Option[a]): b \ ef with Monoid[b] =
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), o)
 
     ///
@@ -343,7 +355,7 @@ namespace Option {
     ///
     /// Returns `Some(v1 :: v2 :: ... v :: vn)` if each of `f(l_i)` is `Some(v_i)`. Otherwise returns `None`.
     ///
-    pub def traverse(f: a -> Option[b] & ef, l: List[a]): Option[List[b]] & ef =
+    pub def traverse(f: a -> Option[b] \ ef, l: List[a]): Option[List[b]] \ ef =
         def loop(ll, k) = match ll {
             case Nil     => k(Nil)
             case x :: xs => match f(x) {
@@ -359,7 +371,7 @@ namespace Option {
     /// This function is the "forgetful" version of `traverse`, use it when the you want the effect
     /// of applying `f` to each element but do not care about collecting the results.
     ///
-    pub def traverseX(f: a -> Option[b] & ef, l: List[a]): Option[Unit] & ef = match l {
+    pub def traverseX(f: a -> Option[b] \ ef, l: List[a]): Option[Unit] \ ef = match l {
         case Nil     => Some()
         case x :: xs => match f(x) {
             case None    => None
@@ -377,7 +389,7 @@ namespace Option {
     /// If `f` is successfully applied to all the elements in `l` the result is of the form:
     /// `Some(f(...f(f(s, x1), x2)..., xn))`.
     ///
-    pub def foldLeftM(f: (b, a) -> Option[b] & ef, s: b, l: List[a]): Option[b] & ef = match l {
+    pub def foldLeftM(f: (b, a) -> Option[b] \ ef, s: b, l: List[a]): Option[b] \ ef = match l {
         case Nil     => Some(s)
         case x :: xs => match f(s, x) {
             case Some(s1) => foldLeftM(f, s1, xs)
@@ -395,7 +407,7 @@ namespace Option {
     /// If `f` is successfully applied to al elements in `l` the result is of the form:
     /// `Some(f(x1, ...f(xn-1, f(xn, s))...))`.
     ///
-    pub def foldRightM(f: (a, b) -> Option[b] & ef, s: b, l: List[a]): Option[b] & ef =
+    pub def foldRightM(f: (a, b) -> Option[b] \ ef, s: b, l: List[a]): Option[b] \ ef =
         def loop(ll, k) = match ll {
             case Nil     => k(s)
             case x :: xs => loop(xs, s1 -> match f(x, s1) {
@@ -403,7 +415,7 @@ namespace Option {
                 case None     => None
             })
         };
-        loop(l, s1 -> Some(s1) as & ef)
+        loop(l, upcast(s1 -> Some(s1)))
 
     ///
     /// Returns a one-element list of the value `v` if `o` is `Some(v)`. Otherwise returns the empty list.
@@ -497,7 +509,7 @@ namespace Option {
     /// Applies `f` to `v` if `o` is `Some(v)`. Otherwise does nothing.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def foreach(f: a -> Unit & ef, o: Option[a]): Unit & ef = match o {
+    pub def foreach(f: a -> Unit \ ef, o: Option[a]): Unit \ ef = match o {
         case None    => ()
         case Some(v) => f(v)
     }
@@ -508,7 +520,7 @@ namespace Option {
     /// Returns `None` if either `o1` or `o2` are `None`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def lift2(f: (t1, t2) -> u & ef, o1: Option[t1], o2: Option[t2]): Option[u] & ef =
+    pub def lift2(f: (t1, t2) -> u \ ef, o1: Option[t1], o2: Option[t2]): Option[u] \ ef =
         ap(map(f, o1), o2)
 
     ///
@@ -517,7 +529,7 @@ namespace Option {
     /// Returns `None` if any of `o1`, `o2` and `o3` are `None`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def lift3(f: (t1, t2, t3) -> u & ef, o1: Option[t1], o2: Option[t2], o3: Option[t3]): Option[u] & ef =
+    pub def lift3(f: (t1, t2, t3) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3]): Option[u] \ ef =
         ap(lift2(f, o1, o2), o3)
 
     ///
@@ -526,7 +538,7 @@ namespace Option {
     /// Returns `None` if any of `o1`, `o2`, `o3` and `o4` are `None`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def lift4(f: (t1, t2, t3, t4) -> u & ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4]): Option[u] & ef =
+    pub def lift4(f: (t1, t2, t3, t4) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4]): Option[u] \ ef =
         ap(lift3(f, o1, o2, o3), o4)
 
     ///
@@ -535,7 +547,7 @@ namespace Option {
     /// Returns `None` if any of `o1`, `o2`, ... `o5` are `None`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def lift5(f: (t1, t2, t3, t4, t5) -> u & ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5]): Option[u] & ef =
+    pub def lift5(f: (t1, t2, t3, t4, t5) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5]): Option[u] \ ef =
         ap(lift4(f, o1, o2, o3, o4), o5)
 
     ///
@@ -544,7 +556,7 @@ namespace Option {
     /// Returns `None` if any of `o1`, `o2`, ... `o6` are `None`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def lift6(f: (t1, t2, t3, t4, t5, t6) -> u & ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6]): Option[u] & ef =
+    pub def lift6(f: (t1, t2, t3, t4, t5, t6) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6]): Option[u] \ ef =
         ap(lift5(f, o1, o2, o3, o4, o5), o6)
 
     ///
@@ -553,7 +565,7 @@ namespace Option {
     /// Returns `None` if any of `o1`, `o2`, ... `o7` are `None`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def lift7(f: (t1, t2, t3, t4, t5, t6, t7) -> u & ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7]): Option[u] & ef=
+    pub def lift7(f: (t1, t2, t3, t4, t5, t6, t7) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7]): Option[u] \ ef=
         ap(lift6(f, o1, o2, o3, o4, o5, o6), o7)
 
     ///
@@ -562,7 +574,7 @@ namespace Option {
     /// Returns `None` if any of `o1`, `o2`, ... `o8` are `None`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def lift8(f: (t1, t2, t3, t4, t5, t6, t7, t8) -> u & ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7], o8: Option[t8]): Option[u] & ef =
+    pub def lift8(f: (t1, t2, t3, t4, t5, t6, t7, t8) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7], o8: Option[t8]): Option[u] \ ef =
         ap(lift7(f, o1, o2, o3, o4, o5, o6, o7), o8)
 
     ///
@@ -571,7 +583,7 @@ namespace Option {
     /// Returns `None` if any of `o1`, `o2`, ... `o9` are `None`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def lift9(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9) -> u & ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7], o8: Option[t8], o9: Option[t9]): Option[u] & ef =
+    pub def lift9(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7], o8: Option[t8], o9: Option[t9]): Option[u] \ ef =
         ap(lift8(f, o1, o2, o3, o4, o5, o6, o7, o8), o9)
 
     ///
@@ -580,7 +592,7 @@ namespace Option {
     /// Returns `None` if any of `o1`, `o2`, ... `o10` are `None`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u & ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7], o8: Option[t8], o9: Option[t9], o10: Option[t10]): Option[u] & ef =
+    pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7], o8: Option[t8], o9: Option[t9], o10: Option[t10]): Option[u] \ ef =
         ap(lift9(f, o1, o2, o3, o4, o5, o6, o7, o8, o9), o10)
 
     ///

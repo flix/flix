@@ -106,9 +106,9 @@ object GenExpression {
     case Expression.Var(sym, tpe, _) =>
       readVar(sym, tpe, visitor)
 
-    case Expression.Closure(sym, closureArgs, fnType, _, _) =>
+    case Expression.Closure(sym, closureArgs, tpe, _) =>
       // JvmType of the closure
-      val jvmType = JvmOps.getClosureClassType(sym, fnType)
+      val jvmType = JvmOps.getClosureClassType(sym)
       // new closure instance
       visitor.visitTypeInsn(NEW, jvmType.name.toInternalName)
       // Duplicate
@@ -327,7 +327,7 @@ object GenExpression {
       // Store instruction for `jvmType`
       val iStore = AsmOps.getStoreInstruction(jvmType)
       // JvmType of the closure
-      val cloType = JvmOps.getClosureClassType(defSym, exp1.tpe)
+      val cloType = JvmOps.getClosureClassType(defSym)
 
       // Store temp recursive value
       visitor.visitInsn(ACONST_NULL)
@@ -342,11 +342,11 @@ object GenExpression {
       visitor.visitVarInsn(iStore, varSym.getStackOffset + 1)
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
 
-    case Expression.Is(_, tag, exp, loc) =>
+    case Expression.Is(sym, exp, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the `TagInfo` for the tag
-      val tagInfo = JvmOps.getTagInfo(exp.tpe, tag.name)
+      val tagInfo = JvmOps.getTagInfo(exp.tpe, sym.name)
       // We get the JvmType of the class for tag
       val classType = JvmOps.getTagClassType(tagInfo)
 
@@ -356,11 +356,11 @@ object GenExpression {
       visitor.visitTypeInsn(INSTANCEOF, classType.name.toInternalName)
 
     // Normal Tag
-    case Expression.Tag(enum, tag, exp, tpe, loc) =>
+    case Expression.Tag(sym, exp, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Get the tag info.
-      val tagInfo = JvmOps.getTagInfo(tpe, tag.name)
+      val tagInfo = JvmOps.getTagInfo(tpe, sym.name)
       // We get the JvmType of the class for tag
       val classType = JvmOps.getTagClassType(tagInfo)
 
@@ -373,7 +373,7 @@ object GenExpression {
         Symbol.mkEnumSym("RedBlackTree.RedBlackTree"),
         Symbol.mkEnumSym("RedBlackTree.Color"),
       )
-      if (exp.tpe == MonoType.Unit && whitelistedEnums.contains(enum)) {
+      if (exp.tpe == MonoType.Unit && whitelistedEnums.contains(sym.enum)) {
         // TODO: This is could introduce errors by if exp has side effects
         // Read the "unitInstance" field of the appropriate class.
         val declaration = classType.name.toInternalName
@@ -396,12 +396,12 @@ object GenExpression {
         visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
       }
 
-    case Expression.Untag(_, tag, exp, tpe, loc) =>
+    case Expression.Untag(sym, exp, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
 
       // We get the `TagInfo` for the tag
-      val tagInfo = JvmOps.getTagInfo(exp.tpe, tag.name)
+      val tagInfo = JvmOps.getTagInfo(exp.tpe, sym.name)
       // We get the JvmType of the class for the tag
       val classType = JvmOps.getTagClassType(tagInfo)
       // Evaluate the exp
@@ -935,9 +935,9 @@ object GenExpression {
       // Push Unit on the stack.
       visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
-    case obj@Expression.NewObject(_, tpe, loc) =>
+    case Expression.NewObject(name, _, tpe, _, loc) =>
       addSourceLine(visitor, loc)
-      val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, obj.name).toInternalName
+      val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
       visitor.visitTypeInsn(NEW, className)
       visitor.visitInsn(DUP)
       visitor.visitMethodInsn(INVOKESPECIAL, className, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
@@ -1416,7 +1416,7 @@ object GenExpression {
         case BinaryOperator.Plus => (IADD, LADD, FADD, DADD, "add")
         case BinaryOperator.Minus => (ISUB, LSUB, FSUB, DSUB, "subtract")
         case BinaryOperator.Times => (IMUL, LMUL, FMUL, DMUL, "multiply")
-        case BinaryOperator.Modulo => (IREM, LREM, FREM, DREM, "remainder")
+        case BinaryOperator.Remainder => (IREM, LREM, FREM, DREM, "remainder")
         case BinaryOperator.Divide => (IDIV, LDIV, FDIV, DDIV, "divide")
         case BinaryOperator.Exponentiate => throw InternalCompilerException("BinaryOperator.Exponentiate already handled.")
       }

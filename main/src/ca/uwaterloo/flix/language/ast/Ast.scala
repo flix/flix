@@ -93,21 +93,8 @@ object Ast {
       *
       * @param loc the source location of the annotation.
       */
-    // NB: Deprecated
     case class Benchmark(loc: SourceLocation) extends Annotation {
       override def toString: String = "@benchmark"
-    }
-
-    /**
-      * An AST node that represents a `@test` annotation.
-      *
-      * A function marked with `test` is evaluated as part of the test framework.
-      *
-      * @param loc the source location of the annotation.
-      */
-    // NB: Deprecated
-    case class Test(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@test"
     }
 
     /**
@@ -136,6 +123,7 @@ object Ast {
     case class Internal(loc: SourceLocation) extends Annotation {
       override def toString: String = "@Internal"
     }
+
 
     /**
       * An annotation that marks a function definition as using parallel evaluation.
@@ -174,12 +162,34 @@ object Ast {
     }
 
     /**
+      * An AST node that represents a `@Skip` annotation.
+      *
+      * A function marked with `Skip` is skipped by the test framework.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Skip(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Skip"
+    }
+
+    /**
       * An annotation that indicates the space complexity of a function definition.
       *
       * @param loc the source location of the annotation.
       */
     case class Space(loc: SourceLocation) extends Annotation {
       override def toString: String = "@Space"
+    }
+
+    /**
+      * An AST node that represents a `@Test` annotation.
+      *
+      * A function marked with `test` is evaluated as part of the test framework.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Test(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Test"
     }
 
     /**
@@ -223,7 +233,12 @@ object Ast {
     def isBenchmark: Boolean = annotations exists (_.isInstanceOf[Annotation.Benchmark])
 
     /**
-      * Returns `true` if `this` sequence contains the `@test` annotation.
+      * Returns `true` if `this` sequence contains the `@Skip` annotation.
+      */
+    def isSkip: Boolean = annotations exists (_.isInstanceOf[Annotation.Skip])
+
+    /**
+      * Returns `true` if `this` sequence contains the `@Test` annotation.
       */
     def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
 
@@ -496,6 +511,21 @@ object Ast {
   }
 
   /**
+    * Represents a use of an effect sym.
+    */
+  case class EffectSymUse(sym: Symbol.EffectSym, loc: SourceLocation)
+
+  /**
+    * Represents a use of an effect operation sym.
+    */
+  case class OpSymUse(sym: Symbol.OpSym, loc: SourceLocation)
+
+  /**
+    * Represents a use of an enum case.
+    */
+  case class CaseSymUse(sym: Symbol.CaseSym, loc: SourceLocation)
+
+  /**
     * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
     */
   case class Instance(tpe: Type, tconstrs: List[Ast.TypeConstraint])
@@ -590,4 +620,21 @@ object Ast {
   }
 
   case class PurityAndEffect(pur: Option[Type], eff: Option[List[Type]])
+
+  /**
+    * Enum representing whether a type is ascribed or inferred.
+    */
+  sealed trait TypeSource
+
+  object TypeSource {
+    /**
+      * The type is ascribed (present in the source code).
+      */
+    case object Ascribed extends TypeSource
+
+    /**
+      * The type is inferred (absent in the source code).
+      */
+    case object Inferred extends TypeSource
+  }
 }

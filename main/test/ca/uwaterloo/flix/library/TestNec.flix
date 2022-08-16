@@ -1002,6 +1002,22 @@ namespace TestNec {
         Nec.zipWithIndex(necOf8(8, 7, 6, 5, 4, 3, 2, 1)) == necOf8((8, 0), (7, 1), (6, 2), (5, 3), (4, 4), (3, 5), (2, 6), (1, 7))
 
     /////////////////////////////////////////////////////////////////////////////
+    // zipWithA                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithA01(): Bool = Nec.zipWithA((x, y) -> Identity(x + y), singleton(1), singleton(1)) == Identity(singleton(2))
+
+    @test
+    def zipWithA02(): Bool = Nec.zipWithA((x, y) -> Identity(x + y), necOf2(1, 2), singleton(1)) == Identity(singleton(2))
+
+    @test
+    def zipWithA03(): Bool = Nec.zipWithA((x, y) -> Identity(x + y), singleton(1), necOf2(1, 2)) == Identity(singleton(2))
+
+    @test
+    def zipWithA04(): Bool = Nec.zipWithA((x, y) -> Identity(x + y), necOf2(1, 2), necOf2(1, 2)) == Identity(necOf2(2, 4))
+
+    /////////////////////////////////////////////////////////////////////////////
     // mapAccumLeft                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1032,13 +1048,13 @@ namespace TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool & Impure =
+    def foreach01(): Bool \ IO =
         let r = ref 21;
         Nec.foreach(x -> r := x, singleton(1));
         1 == deref r
 
     @test
-    def foreach02(): Bool & Impure =
+    def foreach02(): Bool \ IO =
         let r = ref 21;
         Nec.foreach(x -> r := x, necOf3(1, 2, 3));
         3 == deref r
@@ -1603,5 +1619,33 @@ namespace TestNec {
 
     @test
     def takeWhileRight07(): Bool = Nec.takeWhileRight(i -> i > 3, necOf8(4, 6, -3, 11, -5, 1, 2, 16)) == 16 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // shuffle                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def shuffle01(): Bool \ NonDet =
+        let c = Nec.singleton(1) |> Nec.shuffle(Random.new());
+        match c {
+            case Some(cc) => Nec.length(cc) == 1 and Nec.toSet(cc) == Set#{1}
+            case _       => false
+        }
+
+    @test
+    def shuffle02(): Bool \ NonDet =
+        let c = necOf3(1, 2, 3) |> Nec.shuffle(Random.new());
+        match c {
+            case Some(cc) => Nec.length(cc) == 3 and Nec.toSet(cc) == Set#{1, 2, 3}
+            case _       => false
+        }
+
+    @test
+    def shuffle03(): Bool \ NonDet =
+        let c = necOf8(1, 2, 3, 4, 5, 6, 7, 8) |> Nec.shuffle(Random.new());
+        match c {
+            case Some(cc) => Nec.length(cc) == 8 and Nec.toSet(cc) == Set#{1, 2, 3, 4, 5, 6, 7, 8}
+            case _       => false
+        }
 
 }

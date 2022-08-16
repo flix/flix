@@ -49,11 +49,6 @@ class Flix {
   private val inputs = mutable.Map.empty[String, Input]
 
   /**
-    * A set of reachable root definitions.
-    */
-  private val reachableRoots = mutable.Set.empty[Symbol.DefnSym]
-
-  /**
     * The set of sources changed since last compilation.
     */
   private var changeSet: ChangeSet = ChangeSet.Everything
@@ -62,10 +57,10 @@ class Flix {
     * A cache of compiled ASTs (for incremental compilation).
     */
   private var cachedParsedAst: ParsedAst.Root = ParsedAst.Root(Map.empty, None)
-  private var cachedWeededAst: WeededAst.Root = WeededAst.Root(Map.empty, None, Set.empty)
-  private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty)
-  private var cachedResolvedAst: ResolvedAst.Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Set.empty, Map.empty)
-  private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty, Map.empty)
+  private var cachedWeededAst: WeededAst.Root = WeededAst.Root(Map.empty, None)
+  private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty)
+  private var cachedResolvedAst: ResolvedAst.Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Map.empty)
+  private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty)
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
@@ -123,6 +118,7 @@ class Flix {
     */
   private val standardLibrary = List(
     "Array.flix" -> LocalResource.get("/src/library/Array.flix"),
+    "Assert.flix" -> LocalResource.get("/src/library/Assert.flix"),
     "Benchmark.flix" -> LocalResource.get("/src/library/Benchmark.flix"),
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
@@ -174,6 +170,8 @@ class Flix {
     "Group.flix" -> LocalResource.get("/src/library/Group.flix"),
     "Identity.flix" -> LocalResource.get("/src/library/Identity.flix"),
     "Monad.flix" -> LocalResource.get("/src/library/Monad.flix"),
+    "MonadZero.flix" -> LocalResource.get("/src/library/MonadZero.flix"),
+    "MonadZip.flix" -> LocalResource.get("/src/library/MonadZip.flix"),
     "Monoid.flix" -> LocalResource.get("/src/library/Monoid.flix"),
     "Reducible.flix" -> LocalResource.get("/src/library/Reducible.flix"),
     "SemiGroup.flix" -> LocalResource.get("/src/library/SemiGroup.flix"),
@@ -206,7 +204,6 @@ class Flix {
     "Fixpoint/Solver.flix" -> LocalResource.get("/src/library/Fixpoint/Solver.flix"),
     "Fixpoint/Stratifier.flix" -> LocalResource.get("/src/library/Fixpoint/Stratifier.flix"),
     "Fixpoint/SubstitutePredSym.flix" -> LocalResource.get("/src/library/Fixpoint/SubstitutePredSym.flix"),
-    "Fixpoint/ToString.flix" -> LocalResource.get("/src/library/Fixpoint/ToString.flix"),
     "Fixpoint/VarsToIndices.flix" -> LocalResource.get("/src/library/Fixpoint/VarsToIndices.flix"),
 
     "Fixpoint/Ast/BodyPredicate.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/BodyPredicate.flix"),
@@ -411,18 +408,6 @@ class Flix {
   }
 
   /**
-    * Returns the reachable root definitions.
-    */
-  def getReachableRoots: Set[Symbol.DefnSym] = reachableRoots.toSet
-
-  /**
-    * Adds the given fully-qualified name as a reachable root.
-    */
-  def addReachableRoot(fqn: String): scala.Unit = {
-    reachableRoots += Symbol.mkDefnSym(fqn)
-  }
-
-  /**
     * Sets the options used for this Flix instance.
     */
   def setOptions(opts: Options): Flix = {
@@ -486,11 +471,11 @@ class Flix {
       afterTyper <- Typer.run(afterDeriver, cachedTypedAst, changeSet)
       afterEntryPoint <- EntryPoint.run(afterTyper)
       afterStatistics <- Statistics.run(afterEntryPoint)
-      afterInstances <- Instances.run(afterStatistics)
-      afterStratifier <- Stratifier.run(afterInstances)
+      _ <- Instances.run(afterStatistics, cachedTypedAst, changeSet)
+      afterStratifier <- Stratifier.run(afterStatistics)
       afterRegions <- Regions.run(afterStratifier)
-      afterPatternExhaustiveness <- PatternExhaustiveness.run(afterRegions)
-      afterRedundancy <- Redundancy.run(afterPatternExhaustiveness)
+      _ <- PatternExhaustiveness.run(afterRegions)
+      afterRedundancy <- Redundancy.run(afterRegions)
       afterSafety <- Safety.run(afterRedundancy)
     } yield {
       // Update caches for incremental compilation.
@@ -531,14 +516,15 @@ class Flix {
     val result = for {
       afterDocumentor <- Documentor.run(typedAst)
       afterLowering <- Lowering.run(afterDocumentor)
-      afterMonomorph <- Monomorph.run(afterLowering)
+      afterEarlyTreeShaker <- EarlyTreeShaker.run(afterLowering)
+      afterMonomorph <- Monomorph.run(afterEarlyTreeShaker)
       afterSimplifier <- Simplifier.run(afterMonomorph)
       afterClosureConv <- ClosureConv.run(afterSimplifier)
       afterLambdaLift <- LambdaLift.run(afterClosureConv)
       afterTailrec <- Tailrec.run(afterLambdaLift)
       afterOptimizer <- Optimizer.run(afterTailrec)
-      afterTreeShaker <- TreeShaker.run(afterOptimizer)
-      afterVarNumbering <- VarNumbering.run(afterTreeShaker)
+      afterLateTreeShaker <- LateTreeShaker.run(afterOptimizer)
+      afterVarNumbering <- VarNumbering.run(afterLateTreeShaker)
       afterFinalize <- Finalize.run(afterVarNumbering)
       afterEraser <- Eraser.run(afterFinalize)
       afterJvmBackend <- JvmBackend.run(afterEraser)

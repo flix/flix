@@ -17,8 +17,9 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider._
 import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -27,7 +28,7 @@ import ca.uwaterloo.flix.util._
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
-import org.json4s.JsonAST.{JArray, JString, JValue}
+import org.json4s.JsonAST.{JString, JValue}
 import org.json4s.JsonDSL._
 import org.json4s.ParserUtil.ParseException
 import org.json4s._
@@ -52,7 +53,7 @@ import scala.collection.mutable
   *
   * $ wscat -c ws://localhost:8000
   *
-  * > {"id": "1", "request": "api/addUri", "uri": "foo.flix", "src": "def main(): Unit & Impure = println(\"Hello World\")"}
+  * > {"id": "1", "request": "api/addUri", "uri": "foo.flix", "src": "def main(): Unit \ IO = println(\"Hello World\")"}
   * > {"id": "2", "request": "lsp/check"}
   * > {"id": "3", "request": "lsp/hover", "uri": "foo.flix", "position": {"line": 1, "character": 25}}
   *
@@ -80,17 +81,22 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   /**
     * The current AST root. The root is null until the source code is compiled.
     */
-  var root: Root = _
+  private var root: Root = _
 
   /**
     * The current reverse index. The index is empty until the source code is compiled.
     */
-  var index: Index = Index.empty
+  private var index: Index = Index.empty
 
   /**
     * A Boolean that records if the root AST is current (i.e. up-to-date).
     */
   private var current: Boolean = false
+
+  /**
+    * The current compilation errors.
+    */
+  private var currentErrors: List[CompilationMessage] = Nil
 
   /**
     * Invoked when the server is started.
@@ -257,13 +263,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
 
     case Request.Complete(id, uri, pos) =>
-      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri))(index, root)
+      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(index, root)
 
     case Request.Highlight(id, uri, pos) =>
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)
 
     case Request.Hover(id, uri, pos) =>
-      ("id" -> id) ~ HoverProvider.processHover(uri, pos)(index, root, flix)
+      ("id" -> id) ~ HoverProvider.processHover(uri, pos, current)(index, root, flix)
 
     case Request.Goto(id, uri, pos) =>
       ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, root)
@@ -290,7 +296,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ("data" -> Nil))
 
     case Request.InlayHint(id, uri, range) =>
-      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, root).map(_.toJSON))
+      if (current)
+        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, root, flix).map(_.toJSON))
+      else
+        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
 
   }
 
@@ -309,6 +318,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
           this.root = root
           this.index = Indexer.visitRoot(root)
           this.current = true
+          this.currentErrors = Nil
 
           // Compute elapsed time.
           val e = System.nanoTime() - t
@@ -330,8 +340,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         case Failure(errors) =>
           // Case 2: Compilation failed. Send back the error messages.
 
-          // Mark the AST as outdated.
-          current = false
+          // Mark the AST as outdated and update the current errors.
+          this.current = false
+          this.currentErrors = errors.toList
+
+          // Publish diagnostics.
           val results = PublishDiagnosticsParams.fromMessages(errors)
           ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
       }

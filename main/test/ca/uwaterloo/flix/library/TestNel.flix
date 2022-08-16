@@ -712,6 +712,22 @@ namespace TestNel {
         Nel.zipWithIndex(Nel(1, 2 :: 3 :: 4 :: 5 :: Nil)) == Nel((1, 0), (2, 1) :: (3, 2) :: (4, 3) :: (5, 4) :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
+    // zipWithA                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithA01(): Bool = Nel.zipWithA((x, y) -> Identity(x + y), Nel(1, Nil), Nel(1, Nil)) == Identity(Nel(2, Nil))
+
+    @test
+    def zipWithA02(): Bool = Nel.zipWithA((x, y) -> Identity(x + y), Nel(1, 2 :: Nil), Nel(1, Nil)) == Identity(Nel(2, Nil))
+
+    @test
+    def zipWithA03(): Bool = Nel.zipWithA((x, y) -> Identity(x + y), Nel(1, Nil), Nel(1, 2 :: Nil)) == Identity(Nel(2, Nil))
+
+    @test
+    def zipWithA04(): Bool = Nel.zipWithA((x, y) -> Identity(x + y), Nel(1, 2 :: Nil), Nel(1, 2 :: Nil)) == Identity(Nel(2, 4 :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -771,13 +787,13 @@ namespace TestNel {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool & Impure =
+    def foreach01(): Bool \ IO =
         let r = ref 21;
         Nel.foreach(x -> r := x, Nel.singleton(1));
         1 == deref r
 
     @test
-    def foreach02(): Bool & Impure =
+    def foreach02(): Bool \ IO =
         let r = ref 21;
         Nel.foreach(x -> r := x, Nel(1, 2 :: 3 :: Nil));
         3 == deref r
@@ -1030,5 +1046,34 @@ namespace TestNel {
     @test
     def joinWith03(): Bool =
         Nel.joinWith(x -> x + x, ",", Nel("1", "2" :: "3" :: Nil)) == "11,22,33"
+
+    /////////////////////////////////////////////////////////////////////////////
+    // shuffle                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def shuffle01(): Bool \ NonDet =
+        let l = Nel.singleton(1);
+        match Nel.shuffle(Random.new(), l) {
+            case Some(ll) => Nel.length(ll) == 1 and (ll |> Nel.toList |> List.toSet) == Set#{1}
+            case _        => false
+        }
+
+    @test
+    def shuffle02(): Bool \ NonDet =
+        let l = Nel.cons(1, Nel.cons(2, Nel.singleton(3)));
+        match Nel.shuffle(Random.new(), l) {
+            case Some(ll) => Nel.length(ll) == 3 and (ll |> Nel.toList |> List.toSet) == Set#{1, 2, 3}
+            case _        => false
+        }
+
+    @test
+    def shuffle03(): Bool \ NonDet =
+        let l = Nel.cons(1, Nel.cons(2, Nel.cons(3, Nel.cons(4, Nel.cons(5, Nel.cons(6, Nel.cons(7, Nel.singleton(8))))))));
+        match Nel.shuffle(Random.new(), l) {
+            case Some(ll) => Nel.length(ll) == 8 and
+                                (ll |> Nel.toList |> List.toSet) == Set#{1, 2, 3, 4, 5, 6, 7, 8}
+            case _        => false
+        }
 
 }

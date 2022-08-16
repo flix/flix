@@ -16,7 +16,9 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp._
-import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatScheme, FormatType}
 import ca.uwaterloo.flix.language.phase.Parser.Letters
 import ca.uwaterloo.flix.language.phase.Resolver.DerivableSyms
@@ -43,9 +45,9 @@ object CompletionProvider {
 
   //
   // This list manually maintained. If a new built-in type is added, it must be extended.
-  // Built-in types are typically descrbed in TypeConstructor, Namer and Resolver.
+  // Built-in types are typically described in TypeConstructor, Namer and Resolver.
   //
-  val builtinTypeNames = List(
+  val builtinTypeNames: List[String] = List(
     "Unit",
     "Bool",
     "Char",
@@ -64,9 +66,9 @@ object CompletionProvider {
   )
 
   //
-  // To ensure that completions are displayed "most useful" first, we preceed sortText with a number. Priorities
+  // To ensure that completions are displayed "most useful" first, we precede sortText with a number. Priorities
   // differ depending on the type of completion, and can be boosted depending upon context (e.g. type completions
-  // are boosted if the cursor is preceeded by a ":")
+  // are boosted if the cursor is preceded by a ":")
   //
   // 1: High: completions which are only available within a very specific context
   // 2: Boost: completions which are normally low priority, but the context makes them more likely
@@ -76,23 +78,23 @@ object CompletionProvider {
   // 9: Low: completions that are unlikely to be relevant unless within a specific context
   //
   object Priority {
-    def high(name: String) = "1" + name
+    def high(name: String): String = "1" + name
 
-    def boost(name: String) = "2" + name
+    def boost(name: String): String = "2" + name
 
-    def snippet(name: String) = "4" + name
+    def snippet(name: String): String = "4" + name
 
-    def local(name: String) = "5" + name
+    def local(name: String): String = "5" + name
 
-    def normal(name: String) = "7" + name
+    def normal(name: String): String = "7" + name
 
-    def low(name: String) = "9" + name
+    def low(name: String): String = "9" + name
   }
 
   /**
     * Process a completion request.
     */
-  def autoComplete(uri: String, pos: Position, source: Option[String])(implicit index: Index, root: TypedAst.Root): JObject = {
+  def autoComplete(uri: String, pos: Position, source: Option[String], currentErrors: List[CompilationMessage])(implicit index: Index, root: TypedAst.Root): JObject = {
     //
     // To the best of my knowledge, completions should never be Nil. It could only happen if source was None
     // (what would having no source even mean?) or if the position represented by pos was invalid with respect
@@ -100,7 +102,7 @@ object CompletionProvider {
     //
     val completions = source.flatMap(getContext(_, uri, pos)) match {
       case None => Nil
-      case Some(context) => getCompletions()(context, index, root)
+      case Some(context) => getCompletions()(context, index, root) ++ getCompletionsFromErrors(pos, currentErrors)(context, index, root)
     }
 
     ("status" -> "success") ~ ("result" -> CompletionList(isIncomplete = true, completions).toJSON)
@@ -117,7 +119,30 @@ object CompletionProvider {
       getDefAndSigCompletions() ++
       getWithCompletions() ++
       getInstanceCompletions() ++
-      getTypeCompletions()
+      getTypeCompletions() ++
+      getOpCompletions() ++
+      getEffectCompletions()
+  }
+
+  /**
+    * Returns a list of completions based on the given compilation messages.
+    */
+  private def getCompletionsFromErrors(pos: Position, errors: List[CompilationMessage])(implicit context: Context, index: Index, root: TypedAst.Root): Iterator[CompletionItem] = {
+    val undefinedNames = errors.collect {
+      case m: ResolutionError.UndefinedName => m
+    }
+    closest(pos, undefinedNames) match {
+      case None => Iterator.empty
+      case Some(undefinedNameError) =>
+        val suggestions = undefinedNameError.env.map {
+          case (name, sym) => CompletionItem(label = name,
+            sortText = Priority.high(name),
+            textEdit = TextEdit(context.range, name + " "),
+            detail = None,
+            kind = CompletionItemKind.Variable)
+        }
+        suggestions.iterator
+    }
   }
 
   private def keywordCompletion(name: String)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
@@ -156,8 +181,10 @@ object CompletionProvider {
       "enum",
       "false",
       "fix",
+      "for",
       "forall",
       "force",
+      "foreach",
       "from",
       "get",
       "if",
@@ -196,7 +223,9 @@ object CompletionProvider {
       "type",
       "use",
       "where",
-      "with"
+      "with",
+      "without",
+      "yield"
     ) map keywordCompletion
   }
 
@@ -213,7 +242,7 @@ object CompletionProvider {
     List(
       // NB: Please keep the list alphabetically sorted.
       snippetCompletion("main",
-        "def main(): Unit & Impure = \n    println(\"Hello World!\")",
+        "def main(): Unit \\ IO = \n    println(\"Hello World!\")",
         "snippet for Hello World Program"),
       snippetCompletion("query",
         "query ${1:db} select ${2:cols} from ${3:preds} ${4:where ${5:cond}}",
@@ -246,19 +275,23 @@ object CompletionProvider {
   }
 
   private def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec): String = spec match {
-    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, pur0, eff0, _) => // TODO use eff
+    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, pur0, eff0, _) =>
       val args = fparams.map {
         fparam => s"${fparam.sym.text}: ${FormatType.formatWellKindedType(fparam.tpe)}"
       }
 
       val retTpe = FormatType.formatWellKindedType(retTpe0)
-      val eff = pur0 match {
-        case Type.Cst(TypeConstructor.True, _) => "Pure"
-        case Type.Cst(TypeConstructor.False, _) => "Impure"
-        case e => FormatType.formatWellKindedType(e)
+      val pur = pur0 match {
+        case Type.Cst(TypeConstructor.True, _) => ""
+        case Type.Cst(TypeConstructor.False, _) => " & Impure"
+        case e => " & " + FormatType.formatWellKindedType(e)
+      }
+      val eff = eff0 match {
+        case Type.Cst(TypeConstructor.Empty, _) => ""
+        case e => " \\ " + FormatType.formatWellKindedType(e)
       }
 
-      s"$name(${args.mkString(", ")}): $retTpe & $eff"
+      s"$name(${args.mkString(", ")}): $retTpe$pur$eff"
   }
 
   /**
@@ -324,6 +357,19 @@ object CompletionProvider {
       kind = CompletionItemKind.Interface)
   }
 
+  private def opCompletion(decl: TypedAst.Op)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
+    // NB: priority is high because only an op can come after `do`
+    val name = decl.sym.toString
+    CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
+      sortText = Priority.high(name),
+      filterText = Some(getFilterTextForName(name)),
+      textEdit = TextEdit(context.range, getApplySnippet(name, decl.spec.fparams)),
+      detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
+      documentation = Some(decl.spec.doc.text),
+      insertTextFormat = InsertTextFormat.Snippet,
+      kind = CompletionItemKind.Interface)
+  }
+
   /**
     * Returns `true` if the given definition `decl` should be included in the suggestions.
     */
@@ -333,6 +379,7 @@ object CompletionProvider {
         case Ast.Annotation.Internal(_) => true
         case _ => false
       })
+
     val isPublic = decl.spec.mod.isPublic && !isInternal(decl)
     val isNamespace = word.nonEmpty && word.head.isUpper
     val isMatch = if (isNamespace)
@@ -359,6 +406,21 @@ object CompletionProvider {
     isMatch && (isPublic || isInFile)
   }
 
+  /**
+    * Returns `true` if the given effect operation `op` should be included in the suggestions.
+    */
+  private def matchesOp(op: TypedAst.Op, word: String, uri: String): Boolean = {
+    val isPublic = op.spec.mod.isPublic
+    val isNamespace = word.nonEmpty && word.head.isUpper
+    val isMatch = if (isNamespace)
+      op.sym.toString.startsWith(word)
+    else
+      op.sym.name.startsWith(word)
+    val isInFile = op.sym.loc.source.name == uri
+
+    isMatch && (isPublic || isInFile)
+  }
+
   private def getDefAndSigCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     if (root == null) {
       return Nil
@@ -370,6 +432,17 @@ object CompletionProvider {
     val defSuggestions = root.defs.values.filter(matchesDef(_, word, uri)).map(defCompletion)
     val sigSuggestions = root.sigs.values.filter(matchesSig(_, word, uri)).map(sigCompletion)
     defSuggestions ++ sigSuggestions
+  }
+
+  private def getOpCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+    if (root == null || context.previousWord != "do") {
+      return Nil
+    }
+
+    val word = context.word
+    val uri = context.uri
+
+    root.effects.values.flatMap(_.ops).filter(matchesOp(_, word, uri)).map(opCompletion)
   }
 
   /**
@@ -395,7 +468,7 @@ object CompletionProvider {
       for {
         (_, clazz) <- root.classes
         sym = clazz.sym
-        if (DerivableSyms.contains(sym))
+        if DerivableSyms.contains(sym)
         name = sym.toString
         completion = if (currentWordIsWith) s"with $name" else name
       } yield
@@ -578,6 +651,40 @@ object CompletionProvider {
     enums ++ aliases ++ builtinTypes
   }
 
+  /**
+    * Completions for Effects
+    */
+  private def getEffectCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+    if (root == null) {
+      return Nil
+    }
+
+    // Boost priority if there is `\` or `\ {` immediately before the word the user is typing
+    val effSetPrefix = raw".*\\\s*\{?\s*\S*".r
+
+    val priority = if (context.previousWord == "without") {
+      // If the last word is `without`, we can be very sure an effect is coming.
+      Priority.high _
+    } else if (effSetPrefix.matches(context.prefix) || context.previousWord == "with") {
+      // If the last word is `with` or looks like `\` or `\ {`, it is likely an effect but could be something else.
+      Priority.boost _
+    } else {
+      // Otherwise it's probably not an effect.
+      Priority.low _
+    }
+
+    root.effects.map {
+      case (_, t) =>
+        val name = t.sym.name
+        CompletionItem(label = name,
+          sortText = priority(name),
+          textEdit = TextEdit(context.range, name),
+          documentation = Some(t.doc.text),
+          insertTextFormat = InsertTextFormat.Snippet,
+          kind = CompletionItemKind.Enum)
+    }
+  }
+
   /*
    * @param uri          Source file URI (from client)
    * @param range        Start and end position of the word underneath (or alongside) the cursor
@@ -616,7 +723,7 @@ object CompletionProvider {
     val x = pos.character - 1
     val y = pos.line - 1
     val lines = source.linesWithSeparators.toList
-    for (line <- lines.slice(y, y + 1).toList.headOption) yield {
+    for (line <- lines.slice(y, y + 1).headOption) yield {
       val (prefix, suffix) = line.splitAt(x)
       val wordStart = prefix.reverse.takeWhile(isWordChar).reverse
       val wordEnd = suffix.takeWhile(isWordChar)
@@ -626,12 +733,34 @@ object CompletionProvider {
       val prevWord = getSecondLastWord(prefix)
       val previousWord = if (prevWord.nonEmpty) {
         prevWord
-      } else lines.slice(y - 1, y).toList.headOption match {
+      } else lines.slice(y - 1, y).headOption match {
         case None => ""
         case Some(s) => getLastWord(s)
       }
       val range = Range(Position(y, start), Position(y, end))
-      new Context(uri, range, word, previousWord, prefix)
+      Context(uri, range, word, previousWord, prefix)
     }
   }
+
+  /**
+    * Optionally returns the error message in `l` closest to the given position `pos`.
+    */
+  private def closest[T <: CompilationMessage](pos: Position, l: List[T]): Option[T] = {
+    if (l.isEmpty)
+      None
+    else
+      Some(l.minBy(msg => lineDistance(pos, msg.loc)))
+  }
+
+  /**
+    * Returns the line distance between `pos` and `loc`.
+    *
+    * Returns `Int.MaxValue` if `loc` is Unknown.
+    */
+  private def lineDistance(pos: Position, loc: SourceLocation): Int =
+    if (loc == SourceLocation.Unknown)
+      Int.MaxValue
+    else
+      Math.abs(pos.line - loc.beginLine)
+
 }

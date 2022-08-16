@@ -94,7 +94,8 @@ object Main {
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
       xnobooltable = cmdOpts.xnobooltable,
       xstatistics = cmdOpts.xstatistics,
-      xstrictmono = cmdOpts.xstrictmono
+      xstrictmono = cmdOpts.xstrictmono,
+      xnoseteffects = cmdOpts.xnoseteffects
     )
 
     // Don't use progress bar if benchmarking.
@@ -239,8 +240,7 @@ object Main {
         }
 
         if (cmdOpts.test) {
-          val results = Tester.test(compilationResult)
-          Console.println(results.output(flix.getFormatter))
+          Tester.run(Nil, compilationResult)(flix)
         }
       case Validation.Failure(errors) =>
         flix.mkMessages(errors.sortBy(_.source.name))
@@ -283,7 +283,7 @@ object Main {
                      xnobooltable: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
-                     xeffects: Boolean = false,
+                     xnoseteffects: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -442,8 +442,8 @@ object Main {
       opt[Unit]("Xstrictmono").action((_, c) => c.copy(xstrictmono = true)).
         text("[experimental] enable strict monomorphization.")
 
-      opt[Unit]("Xeffects").action((_, c) => c.copy(xeffects = true)).
-        text("[experimental] enable set effects")
+      opt[Unit]("Xno-set-effects").action((_, c) => c.copy(xnoseteffects = true)).
+        text("[experimental] disable set effects")
 
       note("")
 

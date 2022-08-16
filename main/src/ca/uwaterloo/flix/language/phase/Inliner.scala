@@ -57,7 +57,7 @@ object Inliner {
     }
 
     // Reassemble the ast root.
-    val result = LiftedAst.Root(defs, enums, root.entryPoint, root.reachable, root.sources)
+    val result = LiftedAst.Root(defs, enums, root.entryPoint, root.sources)
 
     result.toSuccess
   }
@@ -79,8 +79,8 @@ object Inliner {
    */
   private def visitEnum(enum0: OccurrenceAst.Enum): LiftedAst.Enum = {
     val cases = enum0.cases.map {
-      case (tag, caze) =>
-        tag -> LiftedAst.Case(caze.sym, tag, caze.tpeDeprecated, caze.loc)
+      case (sym, caze) =>
+        sym -> LiftedAst.Case(sym, caze.tpeDeprecated, caze.loc)
     }
     LiftedAst.Enum(enum0.ann, enum0.mod, enum0.sym, cases, enum0.tpeDeprecated, enum0.loc)
   }
@@ -272,24 +272,24 @@ object Inliner {
       val e2 = visitExp(exp2, subst0)
       LiftedAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Is(sym, tag, exp, purity, loc) =>
+    case OccurrenceAst.Expression.Is(sym, exp, purity, loc) =>
       val e = visitExp(exp, subst0)
-      val enum0 = root.enums(sym)
+      val enum0 = root.enums(sym.enum)
       if (enum0.cases.size == 1 && e.purity == Pure)
           LiftedAst.Expression.True(loc)
       else
-        LiftedAst.Expression.Is(sym, tag, e, purity, loc)
+        LiftedAst.Expression.Is(sym, e, purity, loc)
 
-    case OccurrenceAst.Expression.Tag(sym, tag, exp, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.Tag(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.Tag(sym, tag, e, tpe, purity, loc)
+      LiftedAst.Expression.Tag(sym, e, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Untag(sym, tag, exp, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.Untag(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
       // Inline expressions of the form Untag(Tag(e)) => e
       e match {
-        case LiftedAst.Expression.Tag(_, _, innerExp, _, _, _) => innerExp
-        case _ => LiftedAst.Expression.Untag(sym, tag, e, tpe, purity, loc)
+        case LiftedAst.Expression.Tag(_, innerExp, _, _, _) => innerExp
+        case _ => LiftedAst.Expression.Untag(sym, e, tpe, purity, loc)
       }
 
     case OccurrenceAst.Expression.Index(base, offset, tpe, purity, loc) =>
@@ -400,8 +400,16 @@ object Inliner {
       val e = visitExp(exp, subst0)
       LiftedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.NewObject(clazz, tpe, purity, loc) =>
-      LiftedAst.Expression.NewObject(clazz, tpe, purity, loc)
+    case OccurrenceAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
+      val methods = methods0.map {
+        case OccurrenceAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
+          val f = fparams.map {
+            case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
+          }
+          val c = visitExp(clo, subst0)
+          LiftedAst.JvmMethod(ident, f, c, retTpe, purity, loc)
+      }
+      LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
     case OccurrenceAst.Expression.NewChannel(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
@@ -666,17 +674,17 @@ object Inliner {
       val e2 = substituteExp(exp2, env1)
       LiftedAst.Expression.LetRec(freshVar, index, defSym, e1, e2, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Is(sym, tag, exp, purity, loc) =>
+    case OccurrenceAst.Expression.Is(sym, exp, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Is(sym, tag, e, purity, loc)
+      LiftedAst.Expression.Is(sym, e, purity, loc)
 
-    case OccurrenceAst.Expression.Tag(sym, tag, exp, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.Tag(sym, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Tag(sym, tag, e, tpe, purity, loc)
+      LiftedAst.Expression.Tag(sym, e, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Untag(sym, tag, exp, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.Untag(sym, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Untag(sym, tag, e, tpe, purity, loc)
+      LiftedAst.Expression.Untag(sym, e, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Index(base, offset, tpe, purity, loc) =>
       val b = substituteExp(base, env0)
@@ -787,8 +795,16 @@ object Inliner {
       val e = substituteExp(exp, env0)
       LiftedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.NewObject(clazz, tpe, purity, loc) =>
-      LiftedAst.Expression.NewObject(clazz, tpe, purity, loc)
+    case OccurrenceAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
+      val methods = methods0.map {
+        case OccurrenceAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
+          val f = fparams.map {
+            case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
+          }
+          val c = substituteExp(clo, env0)
+          LiftedAst.JvmMethod(ident, f, c, retTpe, purity, loc)
+      }
+      LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
     case OccurrenceAst.Expression.NewChannel(exp, tpe, loc) =>
       val e = substituteExp(exp, env0)
