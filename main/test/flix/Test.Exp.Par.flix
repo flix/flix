@@ -1,11 +1,15 @@
 namespace Test/Exp/Par {
 
-    def f(x: Int32): Bool = x == 1
+    //def f(x: Int32): Bool = x == 1
+
+    @test
+    def testPar01(): (Int32, Int32, Int32) =
+        par (1, 2, 3)
+/*
 
     @test
     def testPar01(): Bool =
         par f(1)
-/*
     @test
     def testPar02(): Bool = // Could this be simplified?
         let f = (a, b, c) -> a and b and c;

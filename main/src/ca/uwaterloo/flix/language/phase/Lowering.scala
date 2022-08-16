@@ -560,126 +560,44 @@ object Lowering {
       val t = visitType(tpe)
       Expression.Spawn(e, t, pur, eff, loc)
 
-    case Expression.Par(Expression.Apply(exp, exps, tpe, pur, eff, loc1), loc0) => {
+    case Expression.Par(Expression.Tuple(elms, tpe, pur, eff, loc1), loc0) =>
 
-      def mkChannel(e: Expression): Expression = {
-        val loc = e.loc.asSynthetic
-        Expression.NewChannel(Expression.Int32(1, loc), Type.mkChannel(e.tpe, loc), Type.Impure, Type.Empty, loc)
-      }
-
-      def mkPutChannel(chan: Symbol.VarSym, e: Expression): Expression = {
-        val loc = e.loc.asSynthetic
-        val e1 = Expression.Var(chan, Type.mkChannel(e.tpe, loc), loc)
-        Expression.PutChannel(e1, e, Type.Unit, Type.Impure, Type.mkUnion(e.eff, e1.eff, loc), loc)
-      }
-
-      def mkSpawn(chan: Symbol.VarSym, e: Expression): Expression = {
-        val e1 = mkPutChannel(chan, e)
-        Expression.Spawn(e1, Type.Unit, Type.Impure, e1.eff, e1.loc.asSynthetic)
-      }
-
-      def mkVarExp(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation): Expression = {
-        Expression.Var(sym, tpe, loc)
-      }
-
-      def mkWait(sym: Symbol.VarSym, tpe: Type): Expression = {
-        val symLoc = sym.loc.asSynthetic
-        val chan = mkVarExp(sym, Type.mkChannel(tpe, symLoc), symLoc)
-        Expression.GetChannel(chan, tpe, Type.Impure, chan.eff, chan.loc.asSynthetic)
-      }
-
-      def mkLetSym(prefix: String, e: Expression): Symbol.VarSym = {
+      def mkLetSym(prefix: String, loc: SourceLocation): Symbol.VarSym = {
         val name = prefix + Flix.Delimiter + flix.genSym.freshId()
-        Symbol.freshVarSym(name, BoundBy.Let, e.loc.asSynthetic)
+        Symbol.freshVarSym(name, BoundBy.Let, loc)
       }
 
-      def mkLetCont(prefix: String, e: Expression)(f: Symbol.VarSym => Expression): Expression = {
-        val sym = mkLetSym(prefix, e)
-        val loc = e.loc.asSynthetic
-        val e1 = f(sym)
-        Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), e, e1, e1.tpe, Type.mkAnd(e.pur, e1.pur, loc), Type.mkUnion(e.eff, e1.eff, loc), loc)
-      }
+      val chanSymsWithElms = elms.map(e => (mkLetSym("channel", e.loc.asSynthetic), e))
 
-      def mkStm(e: Expression)(e1: Expression): Expression = {
-        val loc = e.loc.asSynthetic
-        Expression.Stm(e, e1, e1.tpe, Type.mkAnd(e.pur, e1.pur, loc), Type.mkUnion(e.pur, e1.pur, loc), loc)
-      }
-
-      def parallelize(e0: Expression, continue: Boolean = true): Expression = e0 match {
-        case Expression.Apply(exp, exps, tpe, pur, eff, loc) if continue =>
-          Expression.Apply(parallelize(exp), exps.map(parallelize(_, continue = false)), tpe, pur, eff, loc)
-        case e1 =>
-          mkLetCont("chan", mkChannel(e1)) {
-            sym =>
-              mkStm(mkSpawn(sym, e1)) {
-                mkWait(sym, e1.tpe)
-              }
-          }
-      }
-
-      def collectPurities(e0: Expression): List[Type] = e0 match {
-        case Expression.Apply(exp, exps, _, pur, _, _) =>
-          pur :: collectPurities(exp) ::: exps.flatMap(collectPurities)
-        case e1 => e1.pur :: Nil
-      }
-
-      def collectEffects(e0: Expression): List[Type] = e0 match {
-        case Expression.Apply(exp, exps, _, _, eff, _) =>
-          eff :: collectEffects(exp) ::: exps.flatMap(collectEffects)
-        case e1 => e1.eff :: Nil
-      }
-
-      def collectExps(e0: Expression): (List[Expression => Expression], List[Expression], List[Expression]) = e0 match {
-        case Expression.Apply(exp, exps, _, _, _, _) =>
-          val (fchan, fspawn, fwait) = collectExps(exp)
-          val (achan, aspawn, await) = exps.map(collectExps).foldLeft((List.empty[Expression => Expression], List.empty[Expression], List.empty[Expression])) {
-            case ((accchans, accspawns, accwaits), (argchan, argspawn, argwait)) =>
-              (accchans ::: argchan, accspawns ::: argspawn, accwaits ::: argwait)
-          }
-          (fchan ::: achan, fspawn ::: aspawn, fwait ::: await)
-
-        case Expression.Let(sym, mod,
-        chan@Expression.NewChannel(_, _, _, _, _),
-        Expression.Stm(spawn@Expression.Spawn(_, _, _, _, _),
-        wait@Expression.GetChannel(_, _, _, _, _), _, _, _, _),
-        tpe, pur, eff, loc) =>
-          (List(e => Expression.Let(sym, mod, chan, e, tpe, pur, eff, loc)), List(spawn), List(wait))
-
-        case _ => (Nil, Nil, Nil)
-      }
-
-      val fun = visitExp(exp)
-      val args = visitExps(exps)
-
-      val app = parallelize(Expression.Apply(fun, args, Type.mkApply(fun.tpe, args.map(_.tpe), fun.loc), Type.mkAnd(fun.pur :: args.map(_.pur), fun.loc), Type.mkUnion(fun.eff :: args.map(_.eff), fun.loc), fun.loc))
-      val (chans, spawns, waits) = collectExps(app)
-
-
-      val chans1 = chans.reduceLeft({
-        case (k, e) => (e1: Expression) => k(e(e1))
-      }: (Expression => Expression, Expression => Expression) => Expression => Expression)
-
-
-      val spawns1 = spawns.foldLeft((e: Expression) => e)({
-        case (k, e) =>
+      // make wait expressions
+      val resultTuple = Expression.Tuple(chanSymsWithElms.map {
+        case (sym, e) =>
           val loc = e.loc.asSynthetic
-          (e1: Expression) => k(Expression.Stm(e, e1, e1.tpe, Type.mkAnd(e.pur, e1.pur, loc), Type.mkUnion(e.eff, e1.eff, loc), loc))
-      }: (Expression => Expression, Expression) => Expression => Expression)
+          Expression.GetChannel(
+            Expression.Var(sym, Type.mkChannel(loc), loc),
+            e.tpe, Type.Impure, e.eff, loc)
+      }, tpe, pur, eff, loc1.asSynthetic)
 
-      val waits1 = waits.reduceLeft({
-        case (left, right) =>
-          val rloc = right.loc.asSynthetic
-          Expression.Apply(left, right :: Nil, Type.mkApply(left.tpe, right.tpe :: Nil, rloc),
-            Type.mkAnd(left.pur, right.pur, rloc),
-            Type.mkUnion(left.eff, right.eff, rloc),
-            rloc)
-      }: (Expression, Expression) => Expression)
+      // make spawn expressions
+      val spawns = chanSymsWithElms.foldRight(resultTuple: Expression) {
+        case ((sym, e), acc) =>
+          val loc = e.loc.asSynthetic
+          val e1 = Expression.Var(sym, Type.mkChannel(loc), loc)
+          val e2 = Expression.PutChannel(e1, e, Type.Unit, Type.Impure, Type.mkUnion(e.eff, e1.eff, loc), loc)
+          val e3 = Expression.Spawn(e2, Type.Unit, Type.Impure, e2.eff, loc)
+          Expression.Stm(e3, acc, e1.tpe, Type.mkAnd(e3.pur, acc.pur, loc), Type.mkUnion(e3.eff, acc.eff, loc), loc)
+      }
 
-      val reorderedApp = chans1(spawns1(waits1))
-      val purs = Some(Type.mkAnd(collectPurities(app), app.loc.asSynthetic))
-      val effs = Some(Type.mkUnion(collectEffects(app), app.loc.asSynthetic))
-      Expression.Cast(reorderedApp, None, purs, effs, reorderedApp.tpe, reorderedApp.pur, reorderedApp.eff, loc0.asSynthetic)
-    }
+      // make let bindings
+      val block = chanSymsWithElms.foldRight(spawns: Expression) {
+        case ((sym, e), acc) =>
+          val loc = e.loc.asSynthetic
+          val chan = Expression.NewChannel(Expression.Int32(1, loc), Type.mkChannel(loc), Type.Impure, Type.Empty, loc)
+          Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), chan, acc, acc.tpe, Type.mkAnd(e.pur, acc.pur, loc), Type.mkUnion(e.eff, acc.eff, loc), loc)
+      }
+
+      Expression.Cast(block, None, Some(Type.Pure), Some(Type.Empty), tpe, pur, eff, loc1)
+
 
     case Expression.Par(_, _) =>
       throw InternalCompilerException("Not Implemented")
