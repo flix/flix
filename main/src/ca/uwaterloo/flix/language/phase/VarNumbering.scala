@@ -137,13 +137,13 @@ object VarNumbering {
         val i2 = visitExp(exp1, i1)
         visitExp(exp2, i2)
 
-      case Expression.Is(_, _, exp, _, _) =>
+      case Expression.Is(_, exp, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.Tag(_, _, exp, _, _, _) =>
+      case Expression.Tag(_, exp, _, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.Untag(_, _, exp, _, _, _) =>
+      case Expression.Untag(_, exp, _, _, _) =>
         visitExp(exp, i0)
 
       case Expression.Index(exp, _, _, _, _) =>

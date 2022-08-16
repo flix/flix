@@ -31,8 +31,8 @@
 /// A minimal implementation must define `point` and at least one of `ap` and `liftA2` (if `liftA2` is implemented,
 /// `ap` can be defined based on `liftA2` as shown below). If both `ap` and `liftA2` are defined,
 /// they must be equivalent to their default definitions:
-///     `ap(f: m[a -> b & e], x: m[a]): m[b] & ef = liftA2(identity, f, x)`
-///     `liftA2(f: a -> b -> c & e, x: m[a], y: m[b]): m[c] & ef = ap(Functor.map(f, x), y)`
+///     `ap(f: m[a -> b & e], x: m[a]): m[b] \ ef = liftA2(identity, f, x)`
+///     `liftA2(f: a -> b -> c & e, x: m[a], y: m[b]): m[c] \ ef = ap(Functor.map(f, x), y)`
 ///
 pub lawful class Applicative[m : Type -> Type] with Functor[m] {
     ///
@@ -43,35 +43,35 @@ pub lawful class Applicative[m : Type -> Type] with Functor[m] {
     ///
     /// Apply the function-type applicative `f` to the argument-type applicative `x`.
     ///
-    pub def ap(f: m[a -> b & ef], x: m[a]): m[b] & ef
+    pub def ap(f: m[a -> b \ ef], x: m[a]): m[b] \ ef
 
     ///
     /// Lift a binary function to work on `Applicative`s.
     /// Instances can define more efficient implementations than the default implementation
     /// (which is `Applicative.ap(Functor.map(f, x1), x2)`).
     ///
-    pub def liftA2(f: t1 -> t2 -> r & ef, x1: m[t1], x2: m[t2]): m[r] & ef = Applicative.ap(Functor.map(f, x1), x2)
+    pub def liftA2(f: t1 -> t2 -> r \ ef, x1: m[t1], x2: m[t2]): m[r] \ ef = Applicative.ap(Functor.map(f, x1), x2)
 
     ///
     /// Lift a ternary function to work on `Applicative`s.
     /// Instances can define more efficient implementations than the default implementation
     /// (which is `Applicative.ap(Applicative.liftA2(f, x1, x2), x3)`).
     ///
-    pub def liftA3(f: t1 -> t2 -> t3 -> r & ef, x1: m[t1], x2: m[t2], x3: m[t3]): m[r] & ef = Applicative.ap(Applicative.liftA2(f, x1, x2), x3)
+    pub def liftA3(f: t1 -> t2 -> t3 -> r \ ef, x1: m[t1], x2: m[t2], x3: m[t3]): m[r] \ ef = Applicative.ap(Applicative.liftA2(f, x1, x2), x3)
 
     ///
     /// Lift a 4-ary function to work on `Applicative`s.
     /// Instances can define more efficient implementations than the default implementation
     /// (which is `Applicative.ap(Applicative.liftA3(f, x1, x2, x3), x4)`).
     ///
-    pub def liftA4(f: t1 -> t2 -> t3 -> t4 -> r & ef, x1: m[t1], x2: m[t2], x3: m[t3], x4: m[t4]): m[r] & ef = Applicative.ap(Applicative.liftA3(f, x1, x2, x3), x4)
+    pub def liftA4(f: t1 -> t2 -> t3 -> t4 -> r \ ef, x1: m[t1], x2: m[t2], x3: m[t3], x4: m[t4]): m[r] \ ef = Applicative.ap(Applicative.liftA3(f, x1, x2, x3), x4)
 
     ///
     /// Lift a 5-ary function to work on `Applicative`s.
     /// Instances can define more efficient implementations than the default implementation
     /// (which is `Applicative.ap(Applicative.liftA3(f, x1, x2, x3), x4)`).
     ///
-    pub def liftA5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r & ef, x1: m[t1], x2: m[t2], x3: m[t3], x4: m[t4], x5: m[t5]): m[r] & ef = Applicative.ap(Applicative.liftA4(f, x1, x2, x3, x4), x5)
+    pub def liftA5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r \ ef, x1: m[t1], x2: m[t2], x3: m[t3], x4: m[t4], x5: m[t5]): m[r] \ ef = Applicative.ap(Applicative.liftA4(f, x1, x2, x3, x4), x5)
 
     ///
     /// Applying the identity function wrapped into an applicative preserves every applicative value.
@@ -163,14 +163,14 @@ namespace Applicative {
     ///
     /// `<*>` is an operator alias for `ap`.
     ///
-    pub def <*>(mf: m[a -> b & ef], ma: m[a]): m[b] & ef with Applicative[m] = Applicative.ap(mf, ma)
+    pub def <*>(mf: m[a -> b \ ef], ma: m[a]): m[b] \ ef with Applicative[m] = Applicative.ap(mf, ma)
 
     ///
     /// `<**>` is a variant of the operator `<*>` with its arguments flipped.
     ///
     /// The order of evaluation is `ma` then `mf`.
     ///
-    pub def <**>(ma: m[a], mf: m[a -> b & ef]): m[b] & ef with Applicative[m] = Applicative.liftA2((a, f) -> f(a), ma, mf)
+    pub def <**>(ma: m[a], mf: m[a -> b \ ef]): m[b] \ ef with Applicative[m] = Applicative.liftA2((a, f) -> f(a), ma, mf)
 
     ///
     /// `<*` is an operator alias for `productLeft`.

@@ -37,7 +37,7 @@ instance ToString[Card] {
 }
 
 // Simulates a game of War, printing each player's turn.
-def playWar(p1: List[Card], p2: List[Card], spoils: List[Card]): Unit & Impure = match (p1, p2) {
+def playWar(p1: List[Card], p2: List[Card], spoils: List[Card]): Unit \ IO = match (p1, p2) {
     case (Nil, Nil) => println("No one has any cards. It's a draw.")
     case (Nil, _) => println("Player 1 is out of cards. Player 2 wins!")
     case (_, Nil) => println("Player 2 is out of cards. Player 1 wins!")

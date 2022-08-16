@@ -43,7 +43,7 @@ object Eraser {
     * Translates the given case `case0` to the ErasedAst.
     */
   private def visitCase(case0: FinalAst.Case): ErasedAst.Case = {
-    ErasedAst.Case(case0.sym, case0.tag, case0.tpeDeprecated, case0.loc)
+    ErasedAst.Case(case0.sym, case0.tpeDeprecated, case0.loc)
   }
 
   /**
@@ -156,14 +156,14 @@ object Eraser {
       val e2 = visitExp(exp2)
       ErasedAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, loc)
 
-    case FinalAst.Expression.Is(sym, tag, exp, loc) =>
-      ErasedAst.Expression.Is(sym, tag, visitExp(exp), loc)
+    case FinalAst.Expression.Is(sym, exp, loc) =>
+      ErasedAst.Expression.Is(sym, visitExp(exp), loc)
 
-    case FinalAst.Expression.Tag(sym, tag, exp, tpe, loc) =>
-      ErasedAst.Expression.Tag(sym, tag, visitExp(exp), tpe, loc)
+    case FinalAst.Expression.Tag(sym, exp, tpe, loc) =>
+      ErasedAst.Expression.Tag(sym, visitExp(exp), tpe, loc)
 
-    case FinalAst.Expression.Untag(sym, tag, exp, tpe, loc) =>
-      ErasedAst.Expression.Untag(sym, tag, visitExp(exp), tpe, loc)
+    case FinalAst.Expression.Untag(sym, exp, tpe, loc) =>
+      ErasedAst.Expression.Untag(sym, visitExp(exp), tpe, loc)
 
     case FinalAst.Expression.Index(base, offset, tpe, loc) =>
       ErasedAst.Expression.Index(visitExp(base), offset, tpe, loc)

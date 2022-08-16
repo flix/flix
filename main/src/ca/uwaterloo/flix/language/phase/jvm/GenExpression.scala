@@ -342,11 +342,11 @@ object GenExpression {
       visitor.visitVarInsn(iStore, varSym.getStackOffset + 1)
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
 
-    case Expression.Is(_, tag, exp, loc) =>
+    case Expression.Is(sym, exp, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the `TagInfo` for the tag
-      val tagInfo = JvmOps.getTagInfo(exp.tpe, tag.name)
+      val tagInfo = JvmOps.getTagInfo(exp.tpe, sym.name)
       // We get the JvmType of the class for tag
       val classType = JvmOps.getTagClassType(tagInfo)
 
@@ -356,11 +356,11 @@ object GenExpression {
       visitor.visitTypeInsn(INSTANCEOF, classType.name.toInternalName)
 
     // Normal Tag
-    case Expression.Tag(enum, tag, exp, tpe, loc) =>
+    case Expression.Tag(sym, exp, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Get the tag info.
-      val tagInfo = JvmOps.getTagInfo(tpe, tag.name)
+      val tagInfo = JvmOps.getTagInfo(tpe, sym.name)
       // We get the JvmType of the class for tag
       val classType = JvmOps.getTagClassType(tagInfo)
 
@@ -373,7 +373,7 @@ object GenExpression {
         Symbol.mkEnumSym("RedBlackTree.RedBlackTree"),
         Symbol.mkEnumSym("RedBlackTree.Color"),
       )
-      if (exp.tpe == MonoType.Unit && whitelistedEnums.contains(enum)) {
+      if (exp.tpe == MonoType.Unit && whitelistedEnums.contains(sym.enum)) {
         // TODO: This is could introduce errors by if exp has side effects
         // Read the "unitInstance" field of the appropriate class.
         val declaration = classType.name.toInternalName
@@ -396,12 +396,12 @@ object GenExpression {
         visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
       }
 
-    case Expression.Untag(_, tag, exp, tpe, loc) =>
+    case Expression.Untag(sym, exp, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
 
       // We get the `TagInfo` for the tag
-      val tagInfo = JvmOps.getTagInfo(exp.tpe, tag.name)
+      val tagInfo = JvmOps.getTagInfo(exp.tpe, sym.name)
       // We get the JvmType of the class for the tag
       val classType = JvmOps.getTagClassType(tagInfo)
       // Evaluate the exp

@@ -93,7 +93,7 @@ object RedundancyError {
   /**
     * An error raised to indicate that the def with the symbol `sym` is not used.
     *
-    * @param sym the unused enum symbol.
+    * @param sym the unused def symbol.
     */
   case class UnusedDefSym(sym: Symbol.DefnSym) extends RedundancyError {
     def summary: String = "Unused definition."
@@ -159,7 +159,7 @@ object RedundancyError {
     * @param sym the enum symbol.
     * @param tag the unused tag.
     */
-  case class UnusedEnumTag(sym: Symbol.EnumSym, tag: Name.Tag) extends RedundancyError {
+  case class UnusedEnumTag(sym: Symbol.EnumSym, tag: Symbol.CaseSym) extends RedundancyError {
     def summary: String = s"Unused case '${tag.name}'."
 
     def message(formatter: Formatter): String = {
@@ -179,6 +179,37 @@ object RedundancyError {
          |  (1)  Use the case.
          |  (2)  Remove the case.
          |  (3)  Prefix the case with an underscore.
+         |
+         |""".stripMargin
+    })
+
+    def loc: SourceLocation = sym.loc
+  }
+
+  /**
+    * An error raised to indicate that the effect with the symbol `sym` is not used.
+    *
+    * @param sym the unused effect symbol.
+    */
+  case class UnusedEffectSym(sym: Symbol.EffectSym) extends RedundancyError {
+    def summary: String = s"Unused effect '${sym.name}'.'"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unused effect '${red(sym.name)}'. The effect is never referenced.
+         |
+         |${code(sym.loc, "unused effect.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""Possible fixes:
+         |
+         |  (1)  Use the effect.
+         |  (2)  Remove the effect.
+         |  (3)  Mark the effect as public.
+         |  (4)  Prefix the effect name with an underscore.
          |
          |""".stripMargin
     })

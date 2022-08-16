@@ -3,7 +3,6 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.phase.Safety
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -150,7 +149,7 @@ object SafetyError {
     * @param loc   The source location of the object derivation.
     */
   case class IllegalObjectDerivation(clazz: java.lang.Class[_], loc: SourceLocation) extends SafetyError {
-    def summary: String = s"Illegal object derivation from '${clazz}'."
+    def summary: String = s"Illegal object derivation from '$clazz'."
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -172,7 +171,7 @@ object SafetyError {
     * @param loc   The source location of the method.
     */
   case class MissingThis(clazz: java.lang.Class[_], name: String, loc: SourceLocation) extends SafetyError {
-    def summary: String = s"Missing `this` parameter for method '${name}'."
+    def summary: String = s"Missing `this` parameter for method '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -201,7 +200,7 @@ object SafetyError {
     * @param loc             The source location of the method.
     */
   case class IllegalThisType(clazz: java.lang.Class[_], illegalThisType: Type, name: String, loc: SourceLocation) extends SafetyError {
-    def summary: String = s"Invalid `this` parameter for method '${name}'."
+    def summary: String = s"Invalid `this` parameter for method '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -225,7 +224,7 @@ object SafetyError {
     * Format a Java type suitable for method implementation.
     */
   private def formatJavaType(t: java.lang.Class[_]) = {
-    if (t.isPrimitive() || t.isArray())
+    if (t.isPrimitive || t.isArray)
       Type.getFlixType(t).toString
     else
       s"##${t.getName}"
@@ -256,7 +255,7 @@ object SafetyError {
       s"""
          | Try adding a method with the following signature:
          |
-         | def ${method.getName}(${parameterTypes.mkString(", ")}): ${returnType}
+         | def ${method.getName}(${parameterTypes.mkString(", ")}): $returnType
          |""".stripMargin
     })
   }
@@ -270,7 +269,7 @@ object SafetyError {
     * @param loc   The source location of the method.
     */
   case class ExtraMethod(clazz: java.lang.Class[_], name: String, loc: SourceLocation) extends SafetyError {
-    def summary: String = s"Method '${name}' not found in superclass '${clazz.getName}'"
+    def summary: String = s"Method '$name' not found in superclass '${clazz.getName}'"
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -284,37 +283,46 @@ object SafetyError {
     def explain(formatter: Formatter): Option[String] = None
   }
 
-  case class NonDefaultConstructor(clazz: java.lang.Class[_], loc: SourceLocation) extends SafetyError {
-    def summary: String = s"Superclass '${clazz.getName}' has a non-default constructor"
+  /**
+    * An error raised to indicate that a class lacks a public zero argument constructor.
+    *
+    * @param clazz the class.
+    * @param loc   the source location of the new object expression.
+    */
+  case class MissingPublicZeroArgConstructor(clazz: java.lang.Class[_], loc: SourceLocation) extends SafetyError {
+    def summary: String = s"Class '${clazz.getName}' lacks a public zero argument constructor."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Method Superclass '${red(clazz.getName)}' has a non-default constructor
+         |>> Class '${red(clazz.getName)}' lacks a public zero argument constructor.
          |
-         |${code(loc, "the object occurs here.")}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some(
-      s"""
-         | Flix 'object' statements only support interfaces and classes with default (no-argument) constructors.
-         |""".stripMargin
-    )
-  }
-
-  case class InaccessibleSuperclass(clazz: java.lang.Class[_], loc: SourceLocation) extends SafetyError {
-    def summary: String = s"Superclass '${clazz.getName}' is not public"
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Superclass '${red(clazz.getName)}' is not public
-         |
-         |${code(loc, "the object occurs here.")}
+         |${code(loc, "missing constructor.")}
          |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = None
   }
+
+  /**
+    * An error raised to indicate that a class is non-public.
+    *
+    * @param clazz the class.
+    * @param loc   the source location of the new object expression.
+    */
+  case class NonPublicClass(clazz: java.lang.Class[_], loc: SourceLocation) extends SafetyError {
+    def summary: String = s"Class '${clazz.getName}' is not public"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Class '${red(clazz.getName)}' is not public.
+         |
+         |${code(loc, "non-public class.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
 }

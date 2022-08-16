@@ -1,6 +1,6 @@
 // https://github.com/souffle-lang/benchmarks/tree/master/benchmarks/sequences
 
-def main(): Unit & Impure =
+def main(): Unit \ IO =
 
     let numLetters = #{NumLetters(20).};
 

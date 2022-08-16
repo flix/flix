@@ -148,8 +148,8 @@ object SymbolProvider {
     * Returns an EnumMember DocumentSymbol from a Case node.
     */
   private def mkCaseDocumentSymbol(c: TypedAst.Case): DocumentSymbol = c match {
-    case TypedAst.Case(_, tag, _, _, loc) => DocumentSymbol(
-      tag.name, None, SymbolKind.EnumMember, Range.from(loc), Range.from(loc), Nil, Nil,
+    case TypedAst.Case(sym, _, _, loc) => DocumentSymbol(
+      sym.name, None, SymbolKind.EnumMember, Range.from(loc), Range.from(loc), Nil, Nil,
     )
   }
 
@@ -168,8 +168,8 @@ object SymbolProvider {
     * Returns an EnumMember SymbolInformation from a Case node.
     */
   private def mkCaseSymbolInformation(c: TypedAst.Case): SymbolInformation = c match {
-    case TypedAst.Case(_, tag, _, _, loc) => SymbolInformation(
-      tag.name, SymbolKind.EnumMember, Nil, deprecated = false, Location(loc.source.name, Range.from(loc)), None)
+    case TypedAst.Case(sym, _, _, loc) => SymbolInformation(
+      sym.name, SymbolKind.EnumMember, Nil, deprecated = false, Location(loc.source.name, Range.from(loc)), None)
   }
 
   /**

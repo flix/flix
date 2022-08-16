@@ -1,4 +1,4 @@
-def main(): Unit & Impure =
+def main(): Unit \ IO =
     // Introduce some facts for colored paths.
     let f1 = #{
         ColorEdge(1, "blue", 2).

@@ -29,6 +29,6 @@ def deduplicate(l: List[a]): List[a] with Order[a] =
 /// call `deduplicate` that returns a new list
 /// with only unique elements.
 ///
-def main(): Unit & Impure =
+def main(): Unit \ IO =
     let l = 1 :: 1 :: 2 :: 2 :: 3 :: 3 :: Nil;
     println(deduplicate(l))
