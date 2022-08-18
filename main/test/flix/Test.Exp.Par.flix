@@ -2,6 +2,11 @@ namespace Test/Exp/Par {
 
     enum A[t](t) with Eq
 
+    enum B[t] with Eq {
+        case N,
+        case C(t, t, B[t])
+    }
+
     def f(x: Int32): Bool = x == 1
 
     @test
@@ -72,5 +77,16 @@ namespace Test/Exp/Par {
     @test
     def testPar14(): Bool =
         (par A(par f(fst(par (1, 2))))) == A(f(1))
+    @test
+    def testPar15(): Bool =
+        (par C(par f(fst(par (1, 2))), par f(fst(par (1, 2))), N)) == C(f(1), f(1), N)
+
+    @test
+    def testPar16(): Bool =
+        (par C(1, 1, N)) == C(1, 1, N)
+
+    @test
+    def testPar17(): Bool =
+        (par A(f(1))) == A(true)
 
 }

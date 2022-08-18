@@ -18,8 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
-import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation, Fixity, Modifiers, Polarity}
-import ca.uwaterloo.flix.language.ast.TypedAst.Expression.NewChannel
+import ca.uwaterloo.flix.language.ast.Ast.{Instance, _}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
@@ -1494,11 +1493,38 @@ object Lowering {
     case _ => waits.head
   }
 
-  def mkParTag(exp: Expression)(implicit flix: Flix): Expression = {
+  /**
+    * Returns a `Tag` expression where each component is evaluated in parallel.
+    *
+    * {{{
+    *   par Cons(1, Nil)
+    * }}}
+    * is translated to
+    *
+    * {{{
+    *   {
+    *     let ch1 = chan 1;
+    *     let ch2 = chan 1;
+    *     spawn ch1 <- 1;
+    *     spawn ch2 <- Nil;
+    *     Cons(<- ch1, <- ch2)
+    *   } as & Pure
+    * }}}
+    */
+  def mkParTag(exp: Expression.Tag)(implicit root: Root, flix: Flix): Expression = {
     val Expression.Tag(sym, e, tpe, pur, eff, loc) = exp
-    val chanSymsWithExps = List((mkLetSym("channel", e.loc.asSynthetic), e))
-    val tag = Expression.Tag(sym, mkParWaits(chanSymsWithExps).head, tpe, pur, eff, loc.asSynthetic)
-    mkParChannels(tag, chanSymsWithExps)
+    e match {
+      case t: Expression.Tuple =>
+        Expression.Tag(sym, mkParTuple(t), tpe, pur, eff, loc)
+
+      case f: Expression.Apply =>
+        Expression.Tag(sym, mkParApply(f), tpe, pur, eff, loc)
+
+      case _ =>
+        val chanSymsWithExps = List((mkLetSym("channel", e.loc.asSynthetic), e))
+        val tag = Expression.Tag(sym, mkParWaits(chanSymsWithExps).head, tpe, pur, eff, loc.asSynthetic)
+        mkParChannels(tag, chanSymsWithExps)
+    }
   }
 
 
