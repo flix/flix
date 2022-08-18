@@ -561,43 +561,10 @@ object Lowering {
       Expression.Spawn(e, t, pur, eff, loc)
 
     case Expression.Par(Expression.Tuple(elms, tpe, pur, eff, loc1), loc0) =>
-
-      def mkLetSym(prefix: String, loc: SourceLocation): Symbol.VarSym = {
-        val name = prefix + Flix.Delimiter + flix.genSym.freshId()
-        Symbol.freshVarSym(name, BoundBy.Let, loc)
-      }
-
-      val chanSymsWithElms = elms.map(e => (mkLetSym("channel", e.loc.asSynthetic), e))
-
-      // make wait expressions
-      val resultTuple = Expression.Tuple(chanSymsWithElms.map {
-        case (sym, e) =>
-          val loc = e.loc.asSynthetic
-          Expression.GetChannel(
-            Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc),
-            e.tpe, Type.Impure, e.eff, loc)
-      }, tpe, pur, eff, loc1.asSynthetic)
-
-      // make spawn expressions
-      val spawns = chanSymsWithElms.foldRight(resultTuple: Expression) {
-        case ((sym, e), acc) =>
-          val loc = e.loc.asSynthetic
-          val e1 = Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc)
-          val e2 = Expression.PutChannel(e1, e, Type.Unit, Type.Impure, Type.mkUnion(e.eff, e1.eff, loc), loc)
-          val e3 = Expression.Spawn(e2, Type.Unit, Type.Impure, e2.eff, loc)
-          Expression.Stm(e3, acc, e1.tpe, Type.mkAnd(e3.pur, acc.pur, loc), Type.mkUnion(e3.eff, acc.eff, loc), loc)
-      }
-
-      // make let bindings
-      val block = chanSymsWithElms.foldRight(spawns: Expression) {
-        case ((sym, e), acc) =>
-          val loc = e.loc.asSynthetic
-          val chan = Expression.NewChannel(Expression.Int32(1, loc), Type.mkChannel(e.tpe, loc), Type.Impure, Type.Empty, loc)
-          Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), chan, acc, acc.tpe, Type.mkAnd(e.pur, acc.pur, loc), Type.mkUnion(e.eff, acc.eff, loc), loc)
-      }
-
-      Expression.Cast(block, None, Some(Type.Pure), Some(Type.Empty), tpe, pur, eff, loc1)
-
+      val es = visitExps(elms)
+      val t = visitType(tpe)
+      val e = mkParTuple(Expression.Tuple(es, t, pur, eff, loc1))
+      Expression.Cast(e, None, Some(Type.Pure), Some(Type.Empty), tpe, pur, eff, loc0)
 
     case Expression.Par(_, _) =>
       throw InternalCompilerException("Not Implemented")
@@ -706,6 +673,39 @@ object Lowering {
       val e3 = visitExp(exp3)
       Expression.ReifyEff(sym, e1, e2, e3, t, pur, eff, loc)
 
+  }
+
+  private def mkParTuple(tuple: Expression.Tuple)(implicit flix: Flix): Expression = {
+    val Expression.Tuple(elms, tpe, pur, eff, loc) = tuple
+    val chanSymsWithElms = elms.map(e => (mkLetSym("channel", e.loc.asSynthetic), e))
+
+    // make wait expressions
+    val resultTuple = Expression.Tuple(chanSymsWithElms.map {
+      case (sym, e) =>
+        val loc = e.loc.asSynthetic
+        Expression.GetChannel(
+          Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc),
+          e.tpe, Type.Impure, e.eff, loc)
+    }, tpe, pur, eff, loc.asSynthetic)
+
+    // make spawn expressions
+    val spawns = chanSymsWithElms.foldRight(resultTuple: Expression) {
+      case ((sym, e), acc) =>
+        val loc = e.loc.asSynthetic
+        val e1 = Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc)
+        val e2 = Expression.PutChannel(e1, e, Type.Unit, Type.Impure, Type.mkUnion(e.eff, e1.eff, loc), loc)
+        val e3 = Expression.Spawn(e2, Type.Unit, Type.Impure, e2.eff, loc)
+        Expression.Stm(e3, acc, e1.tpe, Type.mkAnd(e3.pur, acc.pur, loc), Type.mkUnion(e3.eff, acc.eff, loc), loc)
+    }
+
+    // make let bindings
+    val block = chanSymsWithElms.foldRight(spawns: Expression) {
+      case ((sym, e), acc) =>
+        val loc = e.loc.asSynthetic
+        val chan = Expression.NewChannel(Expression.Int32(1, loc), Type.mkChannel(e.tpe, loc), Type.Impure, Type.Empty, loc)
+        Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), chan, acc, acc.tpe, Type.mkAnd(e.pur, acc.pur, loc), Type.mkUnion(e.eff, acc.eff, loc), loc)
+    }
+    block
   }
 
   /**
@@ -1383,6 +1383,16 @@ object Lowering {
     val pur = Type.Pure
     val eff = Type.Empty
     Expression.Tuple(exps, tpe, pur, eff, loc)
+  }
+
+  /**
+    * Returns a new `VarSym` for use in a let-binding.
+    *
+    * This function is called `mkLetSym` to avoid confusion with [[mkVarSym]].
+    */
+  private def mkLetSym(prefix: String, loc: SourceLocation)(implicit flix: Flix): Symbol.VarSym = {
+    val name = prefix + Flix.Delimiter + flix.genSym.freshId()
+    Symbol.freshVarSym(name, BoundBy.Let, loc)
   }
 
   /**
