@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
-import ca.uwaterloo.flix.language.ast.Ast.{Instance, _}
+import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation, Fixity, Modifiers, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
@@ -1502,13 +1502,11 @@ object Lowering {
     * is translated to
     *
     * {{{
-    *   {
-    *     let ch1 = chan 1;
-    *     let ch2 = chan 1;
-    *     spawn ch1 <- 1;
-    *     spawn ch2 <- Nil;
-    *     Cons(<- ch1, <- ch2)
-    *   } as & Pure
+    *   let ch0 = chan 1;
+    *   let ch1 = chan 1;
+    *   spawn ch0 <- 1;
+    *   spawn ch1 <- Nil;
+    *   Cons(<- ch0, <- ch1)
     * }}}
     */
   def mkParTag(exp: Expression.Tag)(implicit root: Root, flix: Flix): Expression = {
@@ -1527,11 +1525,6 @@ object Lowering {
     }
   }
 
-
-  /**
-    * Returns a full `par exp` expression.
-    */
-  def mkParApply(exp: Expression.Apply): Expression = ???
   /**
     * Return a list of quantified variables in the given expression `exp0`.
     *
