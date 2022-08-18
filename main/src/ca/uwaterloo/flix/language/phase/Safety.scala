@@ -258,8 +258,11 @@ object Safety {
     case Expression.Par(exp: Expression.Apply, _) =>
       visitExp(exp)
 
+    case Expression.Par(exp: Expression.Tag, _) =>
+      visitExp(exp)
+
     case Expression.Par(e, _) =>
-      IllegalParExpression(e, e.loc) :: Nil
+      visitExp(e) ::: IllegalParExpression(exp0, exp0.loc) :: Nil
 
     case Expression.Lazy(exp, _, _) =>
       visitExp(exp)

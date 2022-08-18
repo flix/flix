@@ -573,6 +573,12 @@ object Lowering {
       val parExp = mkParApply(Expression.Apply(e, es, t, pur, eff, loc1))
       Expression.Cast(parExp, None, Some(Type.Pure), Some(Type.Empty), t, pur, eff, loc0)
 
+    case Expression.Par(Expression.Tag(sym, exp, tpe, pur, eff, loc1), loc0) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      val e1 = mkParTag(Expression.Tag(sym, e, t, pur, eff, loc1))
+      Expression.Cast(e1, None, Some(Type.Pure), Some(Type.Empty), t, pur, eff, loc0)
+
     case Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
@@ -677,8 +683,8 @@ object Lowering {
       val e3 = visitExp(exp3)
       Expression.ReifyEff(sym, e1, e2, e3, t, pur, eff, loc)
 
-    case Expression.Par(_, _) =>
-      throw InternalCompilerException("Unexpected expression")
+    case Expression.Par(_, loc) =>
+      throw InternalCompilerException(s"Unexpected par expression near ${loc.format}.")
 
   }
 
@@ -1408,7 +1414,7 @@ object Lowering {
 
 
   /**
-    * Returns a tuple expression that is evaluated in parallel.
+    * Returns a `Tuple`` expression that is evaluated in parallel.
     *
     * {{{
     *   par (exp0, exp1, exp2)
@@ -1438,7 +1444,7 @@ object Lowering {
   }
 
   /**
-    * Returns an apply expression where the function and its arguments are evaluated in parallel.
+    * Returns an `Apply` expression where the function and its arguments are evaluated in parallel.
     *
     * {{{
     *   par exp0(exp1, exp2, exp3)
@@ -1487,6 +1493,14 @@ object Lowering {
       Expression.Apply(mkWaitApply(e, ws), es, tpe, pur, eff, loc)
     case _ => waits.head
   }
+
+  def mkParTag(exp: Expression)(implicit flix: Flix): Expression = {
+    val Expression.Tag(sym, e, tpe, pur, eff, loc) = exp
+    val chanSymsWithExps = List((mkLetSym("channel", e.loc.asSynthetic), e))
+    val tag = Expression.Tag(sym, mkParWaits(chanSymsWithExps).head, tpe, pur, eff, loc.asSynthetic)
+    mkParChannels(tag, chanSymsWithExps)
+  }
+
 
   /**
     * Returns a full `par exp` expression.
