@@ -1439,6 +1439,24 @@ object Lowering {
 
   /**
     * Returns an apply expression where the function and its arguments are evaluated in parallel.
+    *
+    * {{{
+    *   par exp0(exp1, exp2, exp3)
+    * }}}
+    *
+    * is translated to
+    *
+    * {{{
+    *   let ch0 = chan 1;
+    *   let ch1 = chan 1;
+    *   let ch2 = chan 1;
+    *   let ch3 = chan 1;
+    *   spawn ch0 <- exp0;
+    *   spawn ch1 <- exp1;
+    *   spawn ch2 <- exp2;
+    *   spawn ch3 <- exp3;
+    *   (<- ch0)(<- ch1, <- ch2, <- ch3)
+    * }}}
     */
   private def mkParApply(exp: Expression.Apply)(implicit flix: Flix): Expression = {
     val exps = liftApplyExps(exp)
