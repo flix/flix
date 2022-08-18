@@ -1370,6 +1370,44 @@ object Lowering {
   }
 
   /**
+    * Returns a list of `GetChannel` expressions based on `symExps`.
+    */
+  private def mkParWaits(symExps: List[(Symbol.VarSym, Expression)]): List[Expression] = {
+    // Make wait expressions `<- ch, ..., <- chn`.
+    symExps.map {
+      case (sym, e) =>
+        val loc = e.loc.asSynthetic
+        Expression.GetChannel(
+          Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc),
+          e.tpe, Type.Impure, e.eff, loc)
+    }
+  }
+
+  /**
+    * Returns a full `par exp` expression.
+    */
+  private def mkParChannels(exp: Expression, chanSymsWithExps: List[(Symbol.VarSym, Expression)]): Expression = {
+    // Make spawn expressions `spawn ch <- exp`.
+    val spawns = chanSymsWithExps.foldRight(exp: Expression) {
+      case ((sym, e), acc) =>
+        val loc = e.loc.asSynthetic
+        val e1 = Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc) // The channel `ch`
+        val e2 = Expression.PutChannel(e1, e, Type.Unit, Type.Impure, Type.mkUnion(e.eff, e1.eff, loc), loc) // The put exp: `ch <- exp0`.
+        val e3 = Expression.Spawn(e2, Type.Unit, Type.Impure, e2.eff, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
+        Expression.Stm(e3, acc, e1.tpe, Type.mkAnd(e3.pur, acc.pur, loc), Type.mkUnion(e3.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
+    }
+
+    // Make let bindings `let ch = chan 1;`.
+    chanSymsWithExps.foldRight(spawns: Expression) {
+      case ((sym, e), acc) =>
+        val loc = e.loc.asSynthetic
+        val chan = Expression.NewChannel(Expression.Int32(1, loc), Type.mkChannel(e.tpe, loc), Type.Impure, Type.Empty, loc) // The channel exp `chan 1`
+        Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), chan, acc, acc.tpe, Type.mkAnd(e.pur, acc.pur, loc), Type.mkUnion(e.eff, acc.eff, loc), loc) // The let-binding `let ch = chan 1`
+    }
+  }
+
+
+  /**
     * Returns a tuple expression that is evaluated in parallel.
     *
     * {{{
@@ -1388,89 +1426,47 @@ object Lowering {
     *   (<- ch0, <- ch1, <- ch2)
     * }}}
     */
-  private def mkParTuple(tuple: Expression.Tuple)(implicit flix: Flix): Expression = {
-    val Expression.Tuple(elms, tpe, pur, eff, loc) = tuple
+  private def mkParTuple(exp: Expression.Tuple)(implicit flix: Flix): Expression = {
+    val Expression.Tuple(elms, tpe, pur, eff, loc) = exp
 
     // Generate symbols for each channel.
-    val chanSymsWithElms = elms.map(e => (mkLetSym("channel", e.loc.asSynthetic), e))
+    val chanSymsWithExps = elms.map(e => (mkLetSym("channel", e.loc.asSynthetic), e))
 
-    // Make wait expressions `(<- ch, ..., <- chn)`.
-    val waitExps = chanSymsWithElms.map {
-      case (sym, e) =>
-        val loc = e.loc.asSynthetic
-        Expression.GetChannel(
-          Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc),
-          e.tpe, Type.Impure, e.eff, loc)
-    }
-    val resultTuple = Expression.Tuple(waitExps, tpe, pur, eff, loc.asSynthetic)
-
-    // Make spawn expressions `spawn ch <- exp`.
-    val spawns = chanSymsWithElms.foldRight(resultTuple: Expression) {
-      case ((sym, e), acc) =>
-        val loc = e.loc.asSynthetic
-        val e1 = Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc) // The channel `ch`
-        val e2 = Expression.PutChannel(e1, e, Type.Unit, Type.Impure, Type.mkUnion(e.eff, e1.eff, loc), loc) // The put exp: `ch <- exp0`.
-        val e3 = Expression.Spawn(e2, Type.Unit, Type.Impure, e2.eff, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
-        Expression.Stm(e3, acc, e1.tpe, Type.mkAnd(e3.pur, acc.pur, loc), Type.mkUnion(e3.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
-    }
-
-    // Make let bindings `let ch = chan 1;`.
-    chanSymsWithElms.foldRight(spawns: Expression) {
-      case ((sym, e), acc) =>
-        val loc = e.loc.asSynthetic
-        val chan = Expression.NewChannel(Expression.Int32(1, loc), Type.mkChannel(e.tpe, loc), Type.Impure, Type.Empty, loc)
-        Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), chan, acc, acc.tpe, Type.mkAnd(e.pur, acc.pur, loc), Type.mkUnion(e.eff, acc.eff, loc), loc)
-    }
+    val waitExps = mkParWaits(chanSymsWithExps)
+    val tuple = Expression.Tuple(waitExps, tpe, pur, eff, loc.asSynthetic)
+    mkParChannels(tuple, chanSymsWithExps)
   }
 
   /**
     * Returns an apply expression where the function and its arguments are evaluated in parallel.
     */
   private def mkParApply(exp: Expression.Apply)(implicit flix: Flix): Expression = {
-    val exps = liftExps(exp)
+    val exps = liftApplyExps(exp)
     val chanSymsWithExps = exps.map(e => (mkLetSym("channel", e.loc.asSynthetic), e))
-
-    // make wait expressions
-    val waits = chanSymsWithExps.map {
-      case (sym, e) =>
-        val loc = e.loc.asSynthetic
-        Expression.GetChannel(
-          Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc),
-          e.tpe, Type.Impure, e.eff, loc)
-    }
-
+    val waits = mkParWaits(chanSymsWithExps)
     val app = mkWaitApply(exp, waits)
-
-    // make spawn expressions
-    val spawns = chanSymsWithExps.foldRight(app: Expression) {
-      case ((sym, e), acc) =>
-        val loc = e.loc.asSynthetic
-        val e1 = Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc)
-        val e2 = Expression.PutChannel(e1, e, Type.Unit, Type.Impure, Type.mkUnion(e.eff, e1.eff, loc), loc)
-        val e3 = Expression.Spawn(e2, Type.Unit, Type.Impure, e2.eff, loc)
-        Expression.Stm(e3, acc, e1.tpe, Type.mkAnd(e3.pur, acc.pur, loc), Type.mkUnion(e3.eff, acc.eff, loc), loc)
-    }
-
-    // make let bindings
-    chanSymsWithExps.foldRight(spawns: Expression) {
-      case ((sym, e), acc) =>
-        val loc = e.loc.asSynthetic
-        val chan = Expression.NewChannel(Expression.Int32(1, loc), Type.mkChannel(e.tpe, loc), Type.Impure, Type.Empty, loc)
-        Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), chan, acc, acc.tpe, Type.mkAnd(e.pur, acc.pur, loc), Type.mkUnion(e.eff, acc.eff, loc), loc)
-    }
+    mkParChannels(app, chanSymsWithExps)
   }
 
-  private def liftExps(exp: Expression): List[Expression] = exp match {
-    case Expression.Apply(exp, exps, _, _, _, _) => liftExps(exp) ::: exps
+  /**
+    * Returns a list of all expressions in an `Apply` expression.
+    */
+  private def liftApplyExps(exp: Expression): List[Expression] = exp match {
+    case Expression.Apply(exp, exps, _, _, _, _) => liftApplyExps(exp) ::: exps
     case e => e :: Nil
   }
 
+  /**
+    * Returns an `Apply` expression where the sub-expressions have been replaced with
+    * `GetChannel` expressions.
+    *
+    * Assumes that `waits` has the same structure as the output of [[liftApplyExps]].
+    */
   private def mkWaitApply(exp: Expression, waits: List[Expression]): Expression = exp match {
-    case Expression.Apply(exp, exps, tpe, pur, eff, loc) =>
+    case Expression.Apply(e, exps, tpe, pur, eff, loc) =>
       val es = waits.takeRight(exps.length)
       val ws = waits.dropRight(exps.length)
-      Expression.Apply(mkWaitApply(exp, ws), es, tpe, pur, eff, loc)
-
+      Expression.Apply(mkWaitApply(e, ws), es, tpe, pur, eff, loc)
     case _ => waits.head
   }
 
