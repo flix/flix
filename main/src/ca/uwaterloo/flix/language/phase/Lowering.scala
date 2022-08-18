@@ -1426,7 +1426,53 @@ object Lowering {
   /**
     * Returns an apply expression where the function and its arguments are evaluated in parallel.
     */
-  def mkParApply(exp: Expression.Apply): Expression = ???
+  private def mkParApply(exp: Expression.Apply)(implicit flix: Flix): Expression = {
+    val exps = liftExps(exp)
+    val chanSymsWithExps = exps.map(e => (mkLetSym("channel", e.loc.asSynthetic), e))
+
+    // make wait expressions
+    val waits = chanSymsWithExps.map {
+      case (sym, e) =>
+        val loc = e.loc.asSynthetic
+        Expression.GetChannel(
+          Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc),
+          e.tpe, Type.Impure, e.eff, loc)
+    }
+
+    val app = mkWaitApply(exp, waits)
+
+    // make spawn expressions
+    val spawns = chanSymsWithExps.foldRight(app: Expression) {
+      case ((sym, e), acc) =>
+        val loc = e.loc.asSynthetic
+        val e1 = Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc)
+        val e2 = Expression.PutChannel(e1, e, Type.Unit, Type.Impure, Type.mkUnion(e.eff, e1.eff, loc), loc)
+        val e3 = Expression.Spawn(e2, Type.Unit, Type.Impure, e2.eff, loc)
+        Expression.Stm(e3, acc, e1.tpe, Type.mkAnd(e3.pur, acc.pur, loc), Type.mkUnion(e3.eff, acc.eff, loc), loc)
+    }
+
+    // make let bindings
+    chanSymsWithExps.foldRight(spawns: Expression) {
+      case ((sym, e), acc) =>
+        val loc = e.loc.asSynthetic
+        val chan = Expression.NewChannel(Expression.Int32(1, loc), Type.mkChannel(e.tpe, loc), Type.Impure, Type.Empty, loc)
+        Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), chan, acc, acc.tpe, Type.mkAnd(e.pur, acc.pur, loc), Type.mkUnion(e.eff, acc.eff, loc), loc)
+    }
+  }
+
+  private def liftExps(exp: Expression): List[Expression] = exp match {
+    case Expression.Apply(exp, exps, _, _, _, _) => liftExps(exp) ::: exps
+    case e => e :: Nil
+  }
+
+  private def mkWaitApply(exp: Expression, waits: List[Expression]): Expression = exp match {
+    case Expression.Apply(exp, exps, tpe, pur, eff, loc) =>
+      val es = waits.takeRight(exps.length)
+      val ws = waits.dropRight(exps.length)
+      Expression.Apply(mkWaitApply(exp, ws), es, tpe, pur, eff, loc)
+
+    case _ => waits.head
+  }
 
   /**
     * Return a list of quantified variables in the given expression `exp0`.
