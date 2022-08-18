@@ -574,7 +574,7 @@ object Lowering {
         case (sym, e) =>
           val loc = e.loc.asSynthetic
           Expression.GetChannel(
-            Expression.Var(sym, Type.mkChannel(loc), loc),
+            Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc),
             e.tpe, Type.Impure, e.eff, loc)
       }, tpe, pur, eff, loc1.asSynthetic)
 
@@ -582,7 +582,7 @@ object Lowering {
       val spawns = chanSymsWithElms.foldRight(resultTuple: Expression) {
         case ((sym, e), acc) =>
           val loc = e.loc.asSynthetic
-          val e1 = Expression.Var(sym, Type.mkChannel(loc), loc)
+          val e1 = Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc)
           val e2 = Expression.PutChannel(e1, e, Type.Unit, Type.Impure, Type.mkUnion(e.eff, e1.eff, loc), loc)
           val e3 = Expression.Spawn(e2, Type.Unit, Type.Impure, e2.eff, loc)
           Expression.Stm(e3, acc, e1.tpe, Type.mkAnd(e3.pur, acc.pur, loc), Type.mkUnion(e3.eff, acc.eff, loc), loc)
@@ -592,7 +592,7 @@ object Lowering {
       val block = chanSymsWithElms.foldRight(spawns: Expression) {
         case ((sym, e), acc) =>
           val loc = e.loc.asSynthetic
-          val chan = Expression.NewChannel(Expression.Int32(1, loc), Type.mkChannel(loc), Type.Impure, Type.Empty, loc)
+          val chan = Expression.NewChannel(Expression.Int32(1, loc), Type.mkChannel(e.tpe, loc), Type.Impure, Type.Empty, loc)
           Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), chan, acc, acc.tpe, Type.mkAnd(e.pur, acc.pur, loc), Type.mkUnion(e.eff, acc.eff, loc), loc)
       }
 
