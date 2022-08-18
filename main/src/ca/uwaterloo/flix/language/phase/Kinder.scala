@@ -120,8 +120,8 @@ object Kinder {
       flatMapN(annVal, tparamsVal, tpeVal) {
         case (ann, tparams, tpe) =>
           val casesVal = traverse(cases0) {
-            case (tag, case0) => mapN(visitCase(case0, tparams, tpe, kenv, taenv, root)) {
-              caze => (tag, caze)
+            case case0 => mapN(visitCase(case0, tparams, tpe, kenv, taenv, root)) {
+              caze => caze.sym -> caze
             }
           }
           mapN(casesVal) {
@@ -164,13 +164,13 @@ object Kinder {
     * Performs kinding on the given enum case under the given kind environment.
     */
   private def visitCase(caze0: ResolvedAst.Case, tparams: List[KindedAst.TypeParam], resTpe: Type, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Case, KindError] = caze0 match {
-    case ResolvedAst.Case(enum, tag, tpe0) =>
+    case ResolvedAst.Case(sym, tpe0) =>
       val tpeVal = visitType(tpe0, Kind.Star, kenv, Map.empty, taenv, root)
       mapN(tpeVal) {
         case tpe =>
           val quants = tparams.map(_.sym)
-          val sc = Scheme(quants, Nil, Type.mkPureArrow(tpe, resTpe, tag.loc.asSynthetic))
-          KindedAst.Case(enum, tag, tpe, sc)
+          val sc = Scheme(quants, Nil, Type.mkPureArrow(tpe, resTpe, sym.loc.asSynthetic))
+          KindedAst.Case(sym, tpe, sc)
       }
   }
 
@@ -456,12 +456,12 @@ object Kinder {
 
     case ResolvedAst.Expression.Scope(sym, regionVar, exp0, loc) =>
       val rv = Type.KindedVar(regionVar.ascribedWith(Kind.Bool), loc)
-      val evar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+      val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
       flatMapN(kenv0 + (regionVar -> Kind.Bool)) {
         case kenv =>
           val expVal = visitExp(exp0, kenv, senv, taenv, henv0, root)
           mapN(expVal) {
-            exp => KindedAst.Expression.Scope(sym, rv, exp, evar, loc)
+            exp => KindedAst.Expression.Scope(sym, rv, exp, pvar, loc)
           }
       }
 
@@ -479,10 +479,10 @@ object Kinder {
         case (exps, rules) => KindedAst.Expression.Choose(star, exps, rules, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
-    case ResolvedAst.Expression.Tag(sym, tag, exp0, loc) =>
+    case ResolvedAst.Expression.Tag(sym, exp0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       mapN(expVal) {
-        exp => KindedAst.Expression.Tag(sym, tag, exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+        exp => KindedAst.Expression.Tag(sym, exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.Tuple(elms0, loc) =>
@@ -518,8 +518,8 @@ object Kinder {
       mapN(esVal, eVal) {
         case (es, e) =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Bool, loc.asSynthetic)
-          KindedAst.Expression.ArrayLit(es, e, tvar, evar, loc)
+          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+          KindedAst.Expression.ArrayLit(es, e, tvar, pvar, loc)
       }
 
     case ResolvedAst.Expression.ArrayNew(exp1, exp2, exp3, loc) =>
@@ -529,15 +529,17 @@ object Kinder {
       mapN(e1Val, e2Val, e3Val) {
         case (e1, e2, e3) =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Bool, loc.asSynthetic)
-          KindedAst.Expression.ArrayNew(e1, e2, e3, tvar, evar, loc)
+          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+          KindedAst.Expression.ArrayNew(e1, e2, e3, tvar, pvar, loc)
       }
 
     case ResolvedAst.Expression.ArrayLoad(base0, index0, loc) =>
       val baseVal = visitExp(base0, kenv0, senv, taenv, henv0, root)
       val indexVal = visitExp(index0, kenv0, senv, taenv, henv0, root)
       mapN(baseVal, indexVal) {
-        case (base, index) => KindedAst.Expression.ArrayLoad(base, index, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+        case (base, index) =>
+          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+          KindedAst.Expression.ArrayLoad(base, index, Type.freshVar(Kind.Star, loc.asSynthetic), pvar, loc)
       }
 
     case ResolvedAst.Expression.ArrayStore(base0, index0, elm0, loc) =>
@@ -545,7 +547,9 @@ object Kinder {
       val indexVal = visitExp(index0, kenv0, senv, taenv, henv0, root)
       val elmVal = visitExp(elm0, kenv0, senv, taenv, henv0, root)
       mapN(baseVal, indexVal, elmVal) {
-        case (base, index, elm) => KindedAst.Expression.ArrayStore(base, index, elm, loc)
+        case (base, index, elm) =>
+          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+          KindedAst.Expression.ArrayStore(base, index, elm, pvar, loc)
       }
 
     case ResolvedAst.Expression.ArrayLength(base0, loc) =>
@@ -559,7 +563,9 @@ object Kinder {
       val beginIndexVal = visitExp(beginIndex0, kenv0, senv, taenv, henv0, root)
       val endIndexVal = visitExp(endIndex0, kenv0, senv, taenv, henv0, root)
       mapN(baseVal, beginIndexVal, endIndexVal) {
-        case (base, beginIndex, endIndex) => KindedAst.Expression.ArraySlice(base, beginIndex, endIndex, loc)
+        case (base, beginIndex, endIndex) =>
+          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+          KindedAst.Expression.ArraySlice(base, beginIndex, endIndex, pvar, loc)
       }
 
     case ResolvedAst.Expression.Ref(exp1, exp2, loc) =>
@@ -891,10 +897,10 @@ object Kinder {
     case ResolvedAst.Pattern.Int64(lit, loc) => KindedAst.Pattern.Int64(lit, loc).toSuccess
     case ResolvedAst.Pattern.BigInt(lit, loc) => KindedAst.Pattern.BigInt(lit, loc).toSuccess
     case ResolvedAst.Pattern.Str(lit, loc) => KindedAst.Pattern.Str(lit, loc).toSuccess
-    case ResolvedAst.Pattern.Tag(sym, tag, pat0, loc) =>
+    case ResolvedAst.Pattern.Tag(sym, pat0, loc) =>
       val patVal = visitPattern(pat0, kenv, root)
       mapN(patVal) {
-        pat => KindedAst.Pattern.Tag(sym, tag, pat, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+        pat => KindedAst.Pattern.Tag(sym, pat, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
     case ResolvedAst.Pattern.Tuple(elms0, loc) =>
       val elmsVal = traverse(elms0)(visitPattern(_, kenv, root))
@@ -1206,8 +1212,8 @@ object Kinder {
               }: (Type, Type) => Type).getOrElse(Type.Pure)
           }
 
-          val eff = effs.reduceOption({
-            case (t1, t2) => Type.mkUnion(t1, t2, t1.loc.asSynthetic)
+          val eff = effs.reduceLeftOption({
+            case (acc, t) => Type.mkUnion(acc, t, t.loc.asSynthetic)
           }: (Type, Type) => Type).getOrElse(Type.Empty)
 
           (pur, eff)

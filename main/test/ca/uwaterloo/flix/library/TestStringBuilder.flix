@@ -21,7 +21,7 @@ namespace TestStringBuilder {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def new01(): StringBuilder[Impure] & Impure =
+    def new01(): StringBuilder[Static] \ IO =
         StringBuilder.new(Static) // Must be Impure, otherwise the StringBuilder would escape its region
 
 

@@ -352,10 +352,10 @@ class TestInstances extends FunSuite with TestUtils {
         |}
         |
         |instance C[Bool] {
-        |    pub def f(x: Bool, y: Int32): Int32 & Impure = 123 as & Impure
+        |    pub def f(x: Bool, y: Int32): Int32 \ IO = 123 as \ IO
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[InstanceError.MismatchedSignatures](result)
   }
 
@@ -367,10 +367,10 @@ class TestInstances extends FunSuite with TestUtils {
         |}
         |
         |instance C[Bool] {
-        |    pub def f(x: Bool, y: Int32): Int32 & Impure = 123 as & Impure
+        |    pub def f(x: Bool, y: Int32): Int32 \ IO = 123 as \ IO
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[InstanceError.MismatchedSignatures](result)
   }
 

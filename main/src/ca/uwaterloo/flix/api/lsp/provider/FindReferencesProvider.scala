@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, Location, Position}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
@@ -29,7 +29,7 @@ object FindReferencesProvider {
 
       case Some(entity) => entity match {
 
-        case Entity.Case(caze) => findTagReferences(caze.sym, caze.tag)
+        case Entity.Case(caze) => findCaseReferences(caze.sym)
 
         case Entity.Class(class0) => findClassReferences(class0.sym)
 
@@ -39,17 +39,21 @@ object FindReferencesProvider {
 
         case Entity.Enum(enum0) => findEnumReferences(enum0.sym)
 
+        case Entity.TypeAlias(alias0) => findTypeAliasReferences(alias0.sym)
+
         case Entity.Effect(eff0) => findEffectReferences(eff0.sym)
 
         case Entity.Op(op0) => findOpReferences(op0.sym)
 
-        case Entity.Exp(exp) => exp match {
-          case Expression.Def(sym, _, _) => findDefReferences(sym)
-          case Expression.Sig(sym, _, _) => findSigReferences(sym)
-          case Expression.Var(sym, _, _) => findVarReferences(sym)
-          case Expression.Tag(sym, tag, _, _, _, _, _) => findTagReferences(sym, tag)
-          case _ => mkNotFound(uri, pos)
-        }
+        case Entity.DefUse(sym, _, _) => findDefReferences(sym)
+
+        case Entity.SigUse(sym, _, _) => findSigReferences(sym)
+
+        case Entity.VarUse(sym, _, _) => findVarReferences(sym)
+
+        case Entity.CaseUse(sym, _, _) => findCaseReferences(sym)
+
+        case Entity.Exp(_) => mkNotFound(uri, pos)
 
         case Entity.Field(field) => findFieldReferences(field)
 
@@ -57,7 +61,7 @@ object FindReferencesProvider {
 
         case Entity.Pattern(pat) => pat match {
           case Pattern.Var(sym, _, _) => findVarReferences(sym)
-          case Pattern.Tag(sym, tag, _, _, _) => findTagReferences(sym, tag)
+          case Pattern.Tag(Ast.CaseSymUse(sym, _), _, _, _) => findCaseReferences(sym)
           case _ => mkNotFound(uri, pos)
         }
 
@@ -77,9 +81,9 @@ object FindReferencesProvider {
           case _ => mkNotFound(uri, pos)
         }
 
-        case Entity.OpUse(sym, _) => findOpReferences(sym)
+        case Entity.OpUse(sym, _, _) => findOpReferences(sym)
 
-        case _ => mkNotFound(uri, pos)
+        case Entity.TypeVar(sym) => findTypeVarReferences(sym)
 
       }
     }
@@ -113,6 +117,13 @@ object FindReferencesProvider {
     ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 
+  private def findTypeAliasReferences(sym: Symbol.TypeAliasSym)(implicit index: Index, root: Root): JObject = {
+    val defSite = Location.from(sym.loc)
+    val useSites = index.usesOf(sym)
+    val locs = defSite :: useSites.toList.map(Location.from)
+    ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+  }
+
   private def findFieldReferences(field: Name.Field)(implicit index: Index, root: Root): JObject = {
     val defSites = index.defsOf(field)
     val useSites = index.usesOf(field)
@@ -127,9 +138,9 @@ object FindReferencesProvider {
     ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 
-  private def findTagReferences(sym: Symbol.EnumSym, tag: Name.Tag)(implicit index: Index, root: Root): JObject = {
-    val defSite = Location.from(root.enums(sym).cases(tag).loc)
-    val useSites = index.usesOf(sym, tag)
+  private def findCaseReferences(sym: Symbol.CaseSym)(implicit index: Index, root: Root): JObject = {
+    val defSite = Location.from(root.enums(sym.enum).cases(sym).loc)
+    val useSites = index.usesOf(sym)
     val locs = defSite :: useSites.toList.map(Location.from)
     ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }

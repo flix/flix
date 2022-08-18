@@ -94,7 +94,7 @@ def map02(): Bool = Option.map(i -> 2*i, Some(1)) == Some(2)
 def map03(): Bool = Option.map(i -> 2*i, Some(2)) == Some(4)
 
 @test
-def map04(): Bool & Impure =
+def map04(): Bool \ IO =
     let n = ref 2;
     discard Option.map(i -> n := i, Some(4));
     4 == deref n
@@ -534,13 +534,13 @@ def unzip02(): Bool = Option.unzip(Some((1, true))) == (Some(1), Some(true))
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def foreach01(): Bool & Impure =
+def foreach01(): Bool \ IO =
     let r = ref 21;
     Option.foreach(x -> r := x, None);
     21 == deref r
 
 @test
-def foreach02(): Bool & Impure =
+def foreach02(): Bool \ IO =
     let r = ref 21;
     Option.foreach(x -> r := x, Some(42));
     42 == deref r

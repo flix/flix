@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -171,7 +171,7 @@ object PatternExhaustiveness {
         val ruleExps = rules.map(_.exp)
         (exps ::: ruleExps).flatMap(visitExp(_, root))
 
-      case Expression.Tag(_, _, exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.Tag(_, exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Tuple(elms, _, _, _, _) => elms.flatMap(visitExp(_, root))
       case Expression.RecordEmpty(_, _) => Nil
       case Expression.RecordSelect(base, _, _, _, _, _) => visitExp(base, root)
@@ -180,9 +180,9 @@ object PatternExhaustiveness {
       case Expression.ArrayLit(exps, exp, _, _, _, _) => (exp :: exps).flatMap(visitExp(_, root))
       case Expression.ArrayNew(exp1, exp2, exp3, _, _, _, _) => List(exp1, exp2, exp3).flatMap(visitExp(_, root))
       case Expression.ArrayLoad(base, index, _, _, _, _) => List(base, index).flatMap(visitExp(_, root))
-      case Expression.ArrayStore(base, index, elm, _, _) => List(base, index, elm).flatMap(visitExp(_, root))
+      case Expression.ArrayStore(base, index, elm, _, _, _) => List(base, index, elm).flatMap(visitExp(_, root))
       case Expression.ArrayLength(base, _, _, _) => visitExp(base, root)
-      case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _) => List(base, beginIndex, endIndex).flatMap(visitExp(_, root))
+      case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) => List(base, beginIndex, endIndex).flatMap(visitExp(_, root))
       case Expression.Ref(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expression.Deref(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Assign(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
@@ -375,10 +375,10 @@ object PatternExhaustiveness {
       // If it's a pattern with the constructor that we are
       // specializing for, we break it up into it's arguments
       // If it's not our constructor, we ignore it
-      case TypedAst.Pattern.Tag(_, tag, exp, _, _) =>
+      case TypedAst.Pattern.Tag(Ast.CaseSymUse(sym, _), exp, _, _) =>
         ctor match {
           case TyCon.Enum(name, _, _, _) =>
-            if (tag.name == name) {
+            if (sym.name == name) {
               exp match {
                 // The expression varies depending on how many arguments it has, 0 arguments => unit, non zero
                 // => Tuple. If there are arguments, we add them to the matrix
@@ -643,13 +643,13 @@ object PatternExhaustiveness {
     case Pattern.Int64(_, _) => TyCon.Int64
     case Pattern.BigInt(_, _) => TyCon.BigInt
     case Pattern.Str(_, _) => TyCon.Str
-    case Pattern.Tag(sym, tag, pat, tpe, _) => {
+    case Pattern.Tag(Ast.CaseSymUse(sym, _), pat, tpe, _) => {
       val (args, numArgs) = pat match {
         case Pattern.Unit(_) => (List.empty[TyCon], 0)
         case Pattern.Tuple(elms, _, _) => (elms.map(patToCtor), elms.length)
         case a => (List(patToCtor(a)), 1)
       }
-      TyCon.Enum(tag.name, sym, numArgs, args)
+      TyCon.Enum(sym.name, sym.enum, numArgs, args)
     }
     case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
     case Pattern.Array(elm, _, _) => TyCon.Array

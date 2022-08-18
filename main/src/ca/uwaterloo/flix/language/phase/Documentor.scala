@@ -409,9 +409,9 @@ object Documentor {
     * Returns the given case `caze` as a JSON value.
     */
   private def visitCase(caze: Case): JObject = caze match {
-    case Case(_, tag, _, _, _) =>
+    case Case(sym, _, _, _) =>
       val tpe = FormatType.formatWellKindedType(caze.tpe)
-      ("tag" -> tag.name) ~ ("tpe" -> tpe)
+      ("tag" -> sym.name) ~ ("tpe" -> tpe)
   }
 
   /**

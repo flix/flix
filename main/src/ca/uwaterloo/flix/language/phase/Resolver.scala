@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation}
-import ca.uwaterloo.flix.language.ast.NamedAst.Expression
 import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -407,23 +406,22 @@ object Resolver {
       val annVal = traverse(ann0)(visitAnnotation(_, taenv, ns0, root))
       val tparams = resolveTypeParams(tparams0, ns0, root)
       val derivesVal = resolveDerivations(derives0, ns0, root)
-      val casesVal = traverse(cases0)(resolveCase(_, e0, taenv, ns0, root))
+      val casesVal = traverse(cases0.values)(resolveCase(_, taenv, ns0, root))
       val tpeVal = resolveType(tpe0, taenv, ns0, root)
       mapN(annVal, derivesVal, casesVal, tpeVal) {
         case (ann, derives, cases, tpe) =>
-          ResolvedAst.Enum(doc, ann, mod, sym, tparams, derives, cases.toMap, tpe, loc)
+          ResolvedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc)
       }
   }
 
   /**
     * Performs name resolution on the given case `caze0` in the given namespace `ns0`.
     */
-  private def resolveCase(caze0: (Name.Tag, NamedAst.Case), enum0: NamedAst.Enum, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix) = (enum0, caze0) match {
-    case (NamedAst.Enum(_, _, _, sym, tparams, _, _, _, _), (name, NamedAst.Case(_, tag, tpe0))) =>
+  private def resolveCase(caze0: NamedAst.Case, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Case, ResolutionError] = caze0 match {
+    case NamedAst.Case(sym, tpe0) =>
       val tpeVal = resolveType(tpe0, taenv, ns0, root)
       mapN(tpeVal) {
-        tpe =>
-          name -> ResolvedAst.Case(sym, tag, tpe)
+        tpe => ResolvedAst.Case(sym, tpe)
       }
   }
 
@@ -772,13 +770,13 @@ object Resolver {
             lookupEnumByTag(enum, tag, ns0, root) map {
               case decl =>
                 // Retrieve the relevant case.
-                val caze = decl.cases(tag)
+                val caze = decl.cases(tag.name)
 
                 // Check if the tag value has Unit type.
                 if (isUnitType(caze.tpe)) {
                   // Case 1.1: The tag value has Unit type. Construct the Unit expression.
                   val e = ResolvedAst.Expression.Unit(loc)
-                  ResolvedAst.Expression.Tag(decl.sym, tag, e, loc)
+                  ResolvedAst.Expression.Tag(Ast.CaseSymUse(caze.sym, tag.loc), e, loc)
                 } else {
                   // Case 1.2: The tag has a non-Unit type. Hence the tag is used as a function.
                   // If the tag is `Some` we construct the lambda: x -> Some(x).
@@ -793,7 +791,7 @@ object Resolver {
                   val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar, loc)
 
                   // Construct the tag expression on the fresh symbol expression.
-                  val tagExp = ResolvedAst.Expression.Tag(decl.sym, caze.tag, varExp, loc)
+                  val tagExp = ResolvedAst.Expression.Tag(Ast.CaseSymUse(caze.sym, tag.loc), varExp, loc)
 
                   // Assemble the lambda expressions.
                   ResolvedAst.Expression.Lambda(freshParam, tagExp, loc)
@@ -804,7 +802,11 @@ object Resolver {
             val dVal = lookupEnumByTag(enum, tag, ns0, root)
             val eVal = visitExp(exp, region)
             mapN(dVal, eVal) {
-              case (d, e) => ResolvedAst.Expression.Tag(d.sym, tag, e, loc)
+              case (d, e) =>
+                // Retrieve the relevant case.
+                val caze = d.cases(tag.name)
+
+                ResolvedAst.Expression.Tag(Ast.CaseSymUse(caze.sym, tag.loc), e, loc)
             }
         }
 
@@ -1269,7 +1271,9 @@ object Resolver {
           val dVal = lookupEnumByTag(enum, tag, ns0, root)
           val pVal = visit(pat)
           mapN(dVal, pVal) {
-            case (d, p) => ResolvedAst.Pattern.Tag(d.sym, tag, p, loc)
+            case (d, p) =>
+              val caze = d.cases(tag.name)
+              ResolvedAst.Pattern.Tag(Ast.CaseSymUse(caze.sym, tag.loc), p, loc)
           }
 
         case NamedAst.Pattern.Tuple(elms, loc) =>
@@ -1605,7 +1609,7 @@ object Resolver {
   /**
     * Finds the enum that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
     */
-  def lookupEnumByTag(qnameOpt: Option[Name.QName], tag: Name.Tag, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Enum, ResolutionError] = {
+  def lookupEnumByTag(qnameOpt: Option[Name.QName], tag: Name.Ident, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Enum, ResolutionError] = {
     // Determine whether the name is qualified.
     qnameOpt match {
       case None =>
@@ -1613,9 +1617,9 @@ object Resolver {
 
         // Find all matching enums in the current namespace.
         val namespaceMatches = mutable.Set.empty[NamedAst.Enum]
-        for ((enumName, decl) <- root.enums.getOrElse(ns0, Map.empty[Name.Tag, NamedAst.Enum])) {
+        for ((enumName, decl) <- root.enums.getOrElse(ns0, Map.empty[String, NamedAst.Enum])) {
           for ((enumTag, caze) <- decl.cases) {
-            if (tag == enumTag) {
+            if (tag.name == enumTag) {
               namespaceMatches += decl
             }
           }
@@ -1644,7 +1648,7 @@ object Resolver {
         for (decls <- root.enums.get(Name.RootNS)) {
           for ((enumName, decl) <- decls) {
             for ((enumTag, caze) <- decl.cases) {
-              if (tag == enumTag) {
+              if (tag.name == enumTag) {
                 globalMatches += decl
               }
             }
@@ -1692,7 +1696,7 @@ object Resolver {
           case Some(enum) =>
             // Case 2.2: Enum declaration found. Look for the tag.
             for ((enumTag, caze) <- enum.cases) {
-              if (tag == enumTag) {
+              if (tag.name == enumTag) {
                 // Case 2.2.1: Tag found.
                 return getEnumAccessibility(enum, ns0) match {
                   case EnumAccessibility.Accessible => enum.toSuccess
