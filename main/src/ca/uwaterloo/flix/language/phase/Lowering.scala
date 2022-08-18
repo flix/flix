@@ -564,7 +564,7 @@ object Lowering {
       val es = visitExps(elms)
       val t = visitType(tpe)
       val e = mkParTuple(Expression.Tuple(es, t, pur, eff, loc1))
-      Expression.Cast(e, None, Some(Type.Pure), Some(Type.Empty), tpe, pur, eff, loc0)
+      Expression.Cast(e, None, Some(Type.Pure), Some(Type.Empty), t, pur, eff, loc0)
 
     case Expression.Par(_, _) =>
       throw InternalCompilerException("Not Implemented")
