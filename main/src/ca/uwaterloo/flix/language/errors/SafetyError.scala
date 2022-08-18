@@ -330,4 +330,25 @@ object SafetyError {
     def explain(formatter: Formatter): Option[String] = None
   }
 
+  /**
+    * An error raised to indicate that a `par expression` is not supported.
+    *
+    * @param exp the par expression.
+    * @param loc the source location of the expression.
+    */
+  case class IllegalParExpression(exp: Expression, loc: SourceLocation) extends SafetyError {
+    override def summary: String = s"Unable to parallelize $exp"
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unable to parallelize expression.
+         |
+         |${code(loc, "illegal par expression")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] =
+      Some("Only tuples and function applications can be parallelized with par.")
+  }
 }

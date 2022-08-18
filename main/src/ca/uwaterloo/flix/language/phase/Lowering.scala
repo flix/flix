@@ -566,9 +566,6 @@ object Lowering {
       val e = mkParTuple(Expression.Tuple(es, t, pur, eff, loc1))
       Expression.Cast(e, None, Some(Type.Pure), Some(Type.Empty), t, pur, eff, loc0)
 
-    case Expression.Par(_, _) =>
-      throw InternalCompilerException("Not Implemented")
-
     case Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
@@ -672,6 +669,9 @@ object Lowering {
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
       Expression.ReifyEff(sym, e1, e2, e3, t, pur, eff, loc)
+
+    case Expression.Par(_, _) =>
+      throw InternalCompilerException("Unexpected expression")
 
   }
 

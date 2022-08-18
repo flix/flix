@@ -249,4 +249,14 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[SafetyError.NonPublicClass](result)
   }
 
+  test("TestIllegalParExpression.01") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    par 1
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalParExpression](result)
+  }
+
 }
