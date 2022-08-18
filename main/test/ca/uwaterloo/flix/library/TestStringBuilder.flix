@@ -422,6 +422,41 @@ def appendLines04!(): Bool = region r {
 }
 
 /////////////////////////////////////////////////////////////////////////////
+// appendLinesWith                                                         //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def appendLinesWith01(): Bool = region r {
+    let sb = new StringBuilder(r);
+    StringBuilder.appendLinesWith!(Int32.toString, Nil, sb);
+    StringBuilder.toString(sb) == ""
+}
+
+@test
+def appendLinesWith02(): Bool = region r {
+    let sb = new StringBuilder(r);
+    StringBuilder.appendLinesWith!(Int32.toString, Set#{1}, sb);
+    let s1 = "1" + String.lineSeparator();
+    StringBuilder.toString(sb) == s1
+}
+
+@test
+def appendLinesWith03(): Bool = region r {
+    let sb = new StringBuilder(r);
+    StringBuilder.appendLinesWith!(Int32.toString, List.toChain(1 :: 2 :: Nil), sb);
+    let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator();
+    StringBuilder.toString(sb) == s1
+}
+
+@test
+def appendLinesWith04(): Bool = region r {
+    let sb = new StringBuilder(r);
+    StringBuilder.appendLinesWith!(Int32.toString, 1 :: 2 :: 3 :: Nil, sb);
+    let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator() + "3" + String.lineSeparator();
+    StringBuilder.toString(sb) == s1
+}
+
+/////////////////////////////////////////////////////////////////////////////
 // appendLinesWith!                                                        //
 /////////////////////////////////////////////////////////////////////////////
 

@@ -80,6 +80,12 @@ namespace StringBuilder {
         Array.foreach(x -> appendLine!(x, sb), a)
 
     ///
+    /// Appends `f(x)` for each x in the foldable collection `t` to the string builder `sb`.
+    ///
+    pub def appendLinesWith(f: a -> String & ef, t: t[a], sb: StringBuilder[r]): Unit \ { ef, Write(r) } with Foldable[t] =
+        Foldable.foreach(x -> appendLineWith!(f, x, sb), t)
+
+    ///
     /// Appends `f(x)` for each x in array `a` to the string builder `sb`.
     ///
     pub def appendLinesWith!(f: a -> String & ef, a: Array[a, r1], sb: StringBuilder[r2]): Unit \ { ef, Read(r1), Write(r2) } =
