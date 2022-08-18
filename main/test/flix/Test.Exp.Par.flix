@@ -69,4 +69,8 @@ namespace Test/Exp/Par {
     def testPar13(): Bool =
         (par A(par f(1))) == A(f(1))
 
+    @test
+    def testPar14(): Bool =
+        (par A(par f(fst(par (1, 2))))) == A(f(1))
+
 }
