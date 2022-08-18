@@ -1489,6 +1489,11 @@ object Lowering {
   }
 
   /**
+    * Returns an apply expression where the function and its arguments are evaluated in parallel.
+    */
+  def mkParApply(exp: Expression.Apply): Expression = ???
+
+  /**
     * Return a list of quantified variables in the given expression `exp0`.
     *
     * A variable is quantified (i.e. *NOT* lexically bound) if it occurs in the expression `exp0`
