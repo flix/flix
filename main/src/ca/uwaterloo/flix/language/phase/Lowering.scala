@@ -566,6 +566,13 @@ object Lowering {
       val e = mkParTuple(Expression.Tuple(es, t, pur, eff, loc1))
       Expression.Cast(e, None, Some(Type.Pure), Some(Type.Empty), t, pur, eff, loc0)
 
+    case Expression.Par(Expression.Apply(exp, exps, tpe, pur, eff, loc1), loc0) =>
+      val e = visitExp(exp)
+      val es = visitExps(exps)
+      val t = visitType(tpe)
+      val parExp = mkParApply(Expression.Apply(e, es, t, pur, eff, loc1))
+      Expression.Cast(parExp, None, Some(Type.Pure), Some(Type.Empty), t, pur, eff, loc0)
+
     case Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
@@ -1415,6 +1422,11 @@ object Lowering {
         Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), chan, acc, acc.tpe, Type.mkAnd(e.pur, acc.pur, loc), Type.mkUnion(e.eff, acc.eff, loc), loc)
     }
   }
+
+  /**
+    * Returns an apply expression where the function and its arguments are evaluated in parallel.
+    */
+  def mkParApply(exp: Expression.Apply): Expression = ???
 
   /**
     * Return a list of quantified variables in the given expression `exp0`.
