@@ -1681,8 +1681,8 @@ object Lowering {
       val e = substExp(exp, subst)
       Expression.Spawn(e, tpe, pur, eff, loc)
 
-    case Expression.Par(exp, _) =>
-      throw InternalCompilerException("Not Implemented")
+    case Expression.Par(exp, loc) =>
+      Expression.Par(substExp(exp, subst), loc)
 
     case Expression.Lazy(exp, tpe, loc) =>
       val e = substExp(exp, subst)
