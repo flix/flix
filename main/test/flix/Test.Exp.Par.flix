@@ -1,5 +1,7 @@
 namespace Test/Exp/Par {
 
+    enum A[t](t) with Eq
+
     def f(x: Int32): Bool = x == 1
 
     @test
@@ -58,5 +60,13 @@ namespace Test/Exp/Par {
         let a = () -> List.range(0, 2000) |> List.forall(x -> x > -1);
         let b = () -> a();
         par f(par (par a(), par b()))
+
+    @test
+    def testPar12(): Bool =
+        (par A(100)) == A(100)
+
+    @test
+    def testPar13(): Bool =
+        (par A(par f(1))) == A(f(1))
 
 }
