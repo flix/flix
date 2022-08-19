@@ -178,6 +178,7 @@ class Flix {
     "SemiGroup.flix" -> LocalResource.get("/src/library/SemiGroup.flix"),
     "Traversable.flix" -> LocalResource.get("/src/library/Traversable.flix"),
     "UnorderedFoldable.flix" -> LocalResource.get("/src/library/UnorderedFoldable.flix"),
+    "UnorderedTraversable.flix" -> LocalResource.get("/src/library/UnorderedTraversable.flix"),
 
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
 
