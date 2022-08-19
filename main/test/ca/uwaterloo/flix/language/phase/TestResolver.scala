@@ -857,7 +857,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedType.05") {
     val input =
       """
-        |def f(): Unit \ ef = ???
+        |def f(): Unit \ E = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
@@ -866,7 +866,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedType.06") {
     val input =
       """
-        |def f(x: a -> b \ ef): Unit = ???
+        |def f(x: a -> b \ E): Unit = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)

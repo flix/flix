@@ -7,7 +7,7 @@ namespace Test/Exp/ReifyEff {
     def reify02(): Bool = not hof(_ -> 123 as \ IO)
 
     @test
-    def reify03(): Bool = not hof(_ -> 123 as \ ef)
+    def reify03(): Bool = not hof(_ -> 123 as \ E)
 
     @test
     def reify04(): Bool = hof((x -> x) >> (y -> y))
@@ -22,26 +22,26 @@ namespace Test/Exp/ReifyEff {
     def reify07(): Bool = not hof((x -> x as \ IO) >> (y -> y as \ IO))
 
     @test
-    def reify08(): Bool = not hof((x -> x) >> (y -> y as \ ef))
+    def reify08(): Bool = not hof((x -> x) >> (y -> y as \ E))
 
     @test
-    def reify09(): Bool = not hof((x -> x as \ ef) >> (y -> y))
+    def reify09(): Bool = not hof((x -> x as \ E) >> (y -> y))
 
     @test
-    def reify10(): Bool = not hof((x -> x as \ ef) >> (y -> y as \ ef))
+    def reify10(): Bool = not hof((x -> x as \ E) >> (y -> y as \ E))
 
     @test
-    def reify11(): Bool = not hof((x -> x as \ ef) >> (y -> y as \ IO))
+    def reify11(): Bool = not hof((x -> x as \ E) >> (y -> y as \ IO))
 
     @test
-    def reify12(): Bool = not hof((x -> x as \ IO) >> (y -> y as \ ef))
+    def reify12(): Bool = not hof((x -> x as \ IO) >> (y -> y as \ E))
 
-    def hof(f: a -> b \ ef): Bool = reifyEff(f) {
+    def hof(f: a -> b \ E): Bool = reifyEff(f) {
         case Pure(_) => true
         case _ => false
     }
 
-    def >>(f: a -> b \ ef1, g: b -> c \ ef2): a -> c \ { ef1, ef2 } = x -> g(f(x))
+    def >>(f: a -> b \ E1, g: b -> c \ E2): a -> c \ { E1, E2 } = x -> g(f(x))
 
     pub eff E
 }
