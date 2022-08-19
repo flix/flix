@@ -242,7 +242,7 @@ object CompletionProvider {
     List(
       // NB: Please keep the list alphabetically sorted.
       snippetCompletion("main",
-        "def main(): Unit & Impure = \n    println(\"Hello World!\")",
+        "def main(): Unit \\ IO = \n    println(\"Hello World!\")",
         "snippet for Hello World Program"),
       snippetCompletion("query",
         "query ${1:db} select ${2:cols} from ${3:preds} ${4:where ${5:cond}}",

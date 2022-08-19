@@ -28,7 +28,7 @@ object ListMap {
   /**
     * Returns a singleton list map with a mapping from `k` to `v`.
     */
-  def singleton[K, V](k: K, v: V): ListMap[K, V] = empty + (k, v)
+  def singleton[K, V](k: K, v: V): ListMap[K, V] = empty + (k -> v)
 }
 
 /**
@@ -50,7 +50,8 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
   /**
     * Returns `this` list map extended with an additional mapping from `k` to `v`.
     */
-  def +(k: K, v: V): ListMap[K, V] = {
+  def +(kv: (K, V)): ListMap[K, V] = {
+    val (k, v) = kv
     val l = m.getOrElse(k, List.empty)
     ListMap(m + (k -> (v :: l)))
   }
@@ -58,7 +59,8 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
   /**
     * Returns `this` list map extended with additional mappings from `k`to the values in `vs`.
     */
-  def +(k: K, vs: List[V]): ListMap[K, V] = {
+  def ++(kvs: (K, List[V])): ListMap[K, V] = {
+    val (k, vs) = kvs
     val l = m.getOrElse(k, List.empty)
     ListMap(m + (k -> (vs ++ l)))
   }
@@ -68,7 +70,7 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
     */
   def ++(that: ListMap[K, V]): ListMap[K, V] = {
     that.m.foldLeft(this) {
-      case (macc, (k, vs)) => macc + (k, vs)
+      case (macc, (k, vs)) => macc ++ (k -> vs)
     }
   }
 

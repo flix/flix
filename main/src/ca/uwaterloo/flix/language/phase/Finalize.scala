@@ -53,9 +53,9 @@ object Finalize {
   private def visitEnum(enum0: LiftedAst.Enum, m: TopLevel)(implicit flix: Flix): FinalAst.Enum = enum0 match {
     case LiftedAst.Enum(ann, mod, sym, cases0, tpe0, loc) =>
       val cases = cases0.map {
-        case (tag, LiftedAst.Case(enumSym, tagName, tagType, tagLoc)) =>
+        case (tag, LiftedAst.Case(enumSym, tagType, tagLoc)) =>
           val tpe = visitType(tagType)
-          tag -> FinalAst.Case(enumSym, tagName, tpe, tagLoc)
+          tag -> FinalAst.Case(enumSym, tpe, tagLoc)
       }
       val tpe = visitType(tpe0)
       FinalAst.Enum(ann, mod, sym, cases, tpe, loc)
@@ -181,19 +181,19 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.LetRec(varSym, index, defSym, e1, e2, t, loc)
 
-      case LiftedAst.Expression.Is(sym, tag, exp, _, loc) =>
+      case LiftedAst.Expression.Is(sym, exp, _, loc) =>
         val e1 = visit(exp)
-        FinalAst.Expression.Is(sym, tag, e1, loc)
+        FinalAst.Expression.Is(sym, e1, loc)
 
-      case LiftedAst.Expression.Tag(enum, tag, exp, tpe, _, loc) =>
+      case LiftedAst.Expression.Tag(enum, exp, tpe, _, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
-        FinalAst.Expression.Tag(enum, tag, e, t, loc)
+        FinalAst.Expression.Tag(enum, e, t, loc)
 
-      case LiftedAst.Expression.Untag(sym, tag, exp, tpe, _, loc) =>
+      case LiftedAst.Expression.Untag(sym, exp, tpe, _, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
-        FinalAst.Expression.Untag(sym, tag, e, t, loc)
+        FinalAst.Expression.Untag(sym, e, t, loc)
 
       case LiftedAst.Expression.Index(base, offset, tpe, _, loc) =>
         val b = visit(base)

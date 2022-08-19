@@ -191,10 +191,10 @@ object Lowering {
     case Enum(doc, ann, mod, sym, tparams, derives, cases0, tpe0, loc) =>
       val tpe = visitType(tpe0)
       val cases = cases0.map {
-        case (_, Case(caseSym, tag, caseTpeDeprecated0, caseSc0, loc)) =>
+        case (_, Case(caseSym, caseTpeDeprecated0, caseSc0, loc)) =>
           val caseTpeDeprecated = visitType(caseTpeDeprecated0)
           val caseSc = visitScheme(caseSc0)
-          (tag, Case(caseSym, tag, caseTpeDeprecated, caseSc, loc))
+          (caseSym, Case(caseSym, caseTpeDeprecated, caseSc, loc))
       }
       Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc)
   }
@@ -368,10 +368,10 @@ object Lowering {
       val t = visitType(tpe)
       Expression.Choose(es, rs, t, pur, eff, loc)
 
-    case Expression.Tag(sym, tag, exp, tpe, pur, eff, loc) =>
+    case Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.Tag(sym, tag, e, t, pur, eff, loc)
+      Expression.Tag(sym, e, t, pur, eff, loc)
 
     case Expression.Tuple(elms, tpe, pur, eff, loc) =>
       val es = visitExps(elms)
@@ -421,18 +421,18 @@ object Lowering {
       val b = visitExp(base)
       Expression.ArrayLength(b, pur, eff, loc)
 
-    case Expression.ArrayStore(base, index, elm, eff, loc) =>
+    case Expression.ArrayStore(base, index, elm, pur, eff, loc) =>
       val b = visitExp(base)
       val i = visitExp(index)
       val e = visitExp(elm)
-      Expression.ArrayStore(b, i, e, eff, loc)
+      Expression.ArrayStore(b, i, e, pur, eff, loc)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, pur, eff, loc) =>
       val b = visitExp(base)
       val bi = visitExp(beginIndex)
       val ei = visitExp(endIndex)
       val t = visitType(tpe)
-      Expression.ArraySlice(b, bi, ei, t, eff, loc)
+      Expression.ArraySlice(b, bi, ei, t, pur, eff, loc)
 
     case Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -709,10 +709,10 @@ object Lowering {
 
     case Pattern.Str(_, _) => pat0
 
-    case Pattern.Tag(sym, tag, pat, tpe, loc) =>
+    case Pattern.Tag(sym, pat, tpe, loc) =>
       val p = visitPat(pat)
       val t = visitType(tpe)
-      Pattern.Tag(sym, tag, p, t, loc)
+      Pattern.Tag(sym, p, t, loc)
 
     case Pattern.Tuple(elms, tpe, loc) =>
       val es = elms.map(visitPat)
@@ -988,7 +988,7 @@ object Lowering {
     case Pattern.Str(lit, loc) =>
       mkBodyTermLit(box(Expression.Str(lit, loc)))
 
-    case Pattern.Tag(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
+    case Pattern.Tag(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
 
     case Pattern.Tuple(_, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
 
@@ -1331,7 +1331,8 @@ object Lowering {
     * Returns a pure tag expression for the given `sym` and given `tag` with the given inner expression `exp`.
     */
   private def mkTag(sym: Symbol.EnumSym, tag: String, exp: Expression, tpe: Type, loc: SourceLocation): Expression = {
-    Expression.Tag(sym, Name.Tag(tag, loc), exp, tpe, Type.Pure, Type.Empty, loc)
+    val caseSym = new Symbol.CaseSym(sym, tag, SourceLocation.Unknown)
+    Expression.Tag(Ast.CaseSymUse(caseSym, loc), exp, tpe, Type.Pure, Type.Empty, loc)
   }
 
   /**
@@ -1476,9 +1477,9 @@ object Lowering {
       }
       Expression.Choose(es, rs, tpe, pur, eff, loc)
 
-    case Expression.Tag(sym, tag, exp, tpe, pur, eff, loc) =>
+    case Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
-      Expression.Tag(sym, tag, e, tpe, pur, eff, loc)
+      Expression.Tag(sym, e, tpe, pur, eff, loc)
 
     case Expression.Tuple(elms, tpe, pur, eff, loc) =>
       val es = elms.map(substExp(_, subst))
@@ -1519,16 +1520,16 @@ object Lowering {
       val b = substExp(base, subst)
       Expression.ArrayLength(b, pur, eff, loc)
 
-    case Expression.ArrayStore(base, index, elm, eff, loc) =>
+    case Expression.ArrayStore(base, index, elm, pur, eff, loc) =>
       val b = substExp(base, subst)
       val i = substExp(index, subst)
-      Expression.ArrayStore(b, i, elm, eff, loc)
+      Expression.ArrayStore(b, i, elm, pur, eff, loc)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, pur, eff, loc) =>
       val b = substExp(base, subst)
       val bi = substExp(beginIndex, subst)
       val ei = substExp(endIndex, subst)
-      Expression.ArraySlice(b, bi, ei, tpe, eff, loc)
+      Expression.ArraySlice(b, bi, ei, tpe, pur, eff, loc)
 
     case Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = substExp(exp1, subst)

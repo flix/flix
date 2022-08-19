@@ -21,6 +21,6 @@ object TimeOps {
   /**
     * Converts the given number of nanoseconds `l` into human readable string representation.
     */
-  def toSeconds(l: Long): String = f"${l.toDouble / 1000000000.0}%3.1f"
+  def toSeconds(l: Long): String = f"${l.toDouble / 1_000_000_000.0}%3.1f"
 
 }

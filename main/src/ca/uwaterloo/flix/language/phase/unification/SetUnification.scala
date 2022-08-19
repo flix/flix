@@ -61,7 +61,25 @@ object SetUnification {
     ///
     /// Run the expensive boolean unification algorithm.
     ///
-    booleanUnification(eraseAliases(tpe1), eraseAliases(tpe2), renv)
+    booleanUnification(eraseIo(eraseAliases(tpe1)), eraseIo(eraseAliases(tpe2)), renv)
+  }
+
+  /**
+    * Erases IO effects from the type, mapping them to Empty.
+    *
+    * Expects a type without type aliases.
+    */
+  private def eraseIo(t: Type): Type = t match {
+    case Type.Cst(TypeConstructor.Effect(sym), _) if sym.namespace == Nil && sym.name == "IO" => Type.Empty
+    case tpe: Type.Cst => tpe
+    case tpe: Type.KindedVar => tpe
+    case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseIo(tpe1), eraseIo(tpe2), loc)
+
+    case _: Type.UnkindedArrow => throw InternalCompilerException("unexpected unkinded type")
+    case _: Type.ReadWrite => throw InternalCompilerException("unexpected unkinded type")
+    case _: Type.UnkindedVar => throw InternalCompilerException("unexpected unkinded type")
+    case _: Type.Ascribe => throw InternalCompilerException("unexpected unkinded type")
+    case _: Type.Alias => throw InternalCompilerException("unexpected type alias")
   }
 
   /**
@@ -431,7 +449,15 @@ object SetUnification {
   private object Dnf {
     case class Union(inters: Set[Intersection]) extends Dnf // TODO should be a list to avoid extra comparisons?
 
-    case object All extends Dnf
+    /**
+      * The bottom value is an empty union.
+      */
+    val Empty = Union(Set())
+
+    /**
+      * The top value is an empty intersection.
+      */
+    val All = Union(Set(Set()))
   }
 
   /**
@@ -454,7 +480,11 @@ object SetUnification {
   /**
     * Converts the given type to DNF
     */
-  private def dnf(t: Type): Dnf = nnfToDnf(nnf(t))
+  private def dnf(t: Type): Dnf = {
+    val n = nnf(t)
+    val d = nnfToDnf(n)
+    d
+  }
 
   /**
     * Converts the given type to NNF.
@@ -495,7 +525,7 @@ object SetUnification {
     case Nnf.Union(tpe1, tpe2) => union(nnfToDnf(tpe1), nnfToDnf(tpe2))
     case Nnf.Intersection(tpe1, tpe2) => intersect(nnfToDnf(tpe1), nnfToDnf(tpe2))
     case Nnf.Singleton(tpe) => Dnf.Union(Set(Set(tpe)))
-    case Nnf.Empty => Dnf.Union(Set(Set()))
+    case Nnf.Empty => Dnf.Empty
     case Nnf.All => Dnf.All
   }
 
@@ -503,8 +533,6 @@ object SetUnification {
     * Calculates the intersection of two DNF sets.
     */
   private def intersect(t1: Dnf, t2: Dnf): Dnf = (t1, t2) match {
-    case (Dnf.All, t) => t
-    case (t, Dnf.All) => t
     case (Dnf.Union(inters1), Dnf.Union(inters2)) =>
       val inters = for {
         inter1 <- inters1
@@ -517,8 +545,6 @@ object SetUnification {
     * Calculates the union of two DNF sets.
     */
   private def union(t1: Dnf, t2: Dnf): Dnf = (t1, t2) match {
-    case (Dnf.All, _) => Dnf.All
-    case (_, Dnf.All) => Dnf.All
     case (Dnf.Union(inters1), Dnf.Union(inters2)) => Dnf.Union(inters1 ++ inters2)
   }
 
@@ -527,10 +553,9 @@ object SetUnification {
     */
   private def isEmpty(t1: Dnf): Boolean = t1 match {
     case Dnf.Union(inters) => inters.forall(isEmptyIntersection)
-    case Dnf.All => false
   }
 
-  /**
+  /*complement *
     * Returns true if `t1` represents an empty intersection of effects.
     */
   private def isEmptyIntersection(t1: Intersection): Boolean = {
@@ -543,17 +568,14 @@ object SetUnification {
 
     // an intersection is empty if any of the following is true:
 
-    // 1. It is syntactically empty
-    val synEmpty = t1.isEmpty
-
-    // 2. It contains two different positive constants
+    // 1. It contains two different positive constants
     val diffConst = pos.collect {
       case Atom.Eff(sym) => sym
     }.size > 1
 
-    // 3. It contains an atom in both the positive and negative sets
+    // 2. It contains an atom in both the positive and negative sets
     val negation = (pos & neg).nonEmpty
 
-    synEmpty || diffConst || negation
+    diffConst || negation
   }
 }

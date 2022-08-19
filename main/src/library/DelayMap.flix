@@ -35,13 +35,13 @@ instance ToString[DelayMap[k, v]] with ToString[k], ToString[v] {
 }
 
 instance Functor[DelayMap[k]] {
-    pub def map(f: v1 -> v2 & ef, m: DelayMap[k, v1]): DelayMap[k, v2] & ef = DelayMap.map(f, m)
+    pub def map(f: v1 -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef = DelayMap.map(f, m)
 }
 
 instance Foldable[DelayMap[k]] {
-    pub def foldLeft(f: (b, v) -> b & ef, s: b, m: DelayMap[k, v]): b & ef = DelayMap.foldLeft(f, s, m)
-    pub def foldRight(f: (v, b) -> b & ef, s: b, m: DelayMap[k, v]): b & ef = DelayMap.foldRight(f, s, m)
-    pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, s: b, m: DelayMap[k, v]): b & ef = DelayMap.foldRightWithCont(f, s, m)
+    pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldLeft(f, s, m)
+    pub def foldRight(f: (v, b) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldRight(f, s, m)
+    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldRightWithCont(f, s, m)
     override pub def iterator(r: Region[r], m: DelayMap[k, v]): Iterator[v, r] \ Write(r) =
         DelayMap.iterator(r, m) |> Iterator.mapL(match (_, v) -> v)
 }
@@ -153,7 +153,7 @@ namespace DelayMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @Experimental @ParallelWhenPure
-    pub def count(f: (k, v) -> Bool & ef, m: DelayMap[k, v]): Int32 & ef =
+    pub def count(f: (k, v) -> Bool \ ef, m: DelayMap[k, v]): Int32 \ ef =
         let f1 = match (k, v) -> f(k, v);
         def c() = foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m);
         reifyEff(f1) {
@@ -161,7 +161,7 @@ namespace DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (k, v) -> g((k, force v));
                     let DMap(t) = m;
-                    RedBlackTree.parCount(threads() - 1, h, t) as & Pure
+                    RedBlackTree.parCount(threads() - 1, h, t) as \ {}
                 else
                     c()
             case _  => c()
@@ -196,7 +196,7 @@ namespace DelayMap {
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
     @Experimental @ParallelWhenPure
-    pub def minimumKeyBy(cmp: (k, k) -> Comparison & ef, m: DelayMap[k, v]): Option[(k, v)] & ef =
+    pub def minimumKeyBy(cmp: (k, k) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == LessThan) (kl, vl) else (kr, vr), m);
         let f = r -> cmp(r.kl, r.kr);
         reifyEff(f) {
@@ -204,7 +204,7 @@ namespace DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
                     let DMap(t) = m;
-                    let res = RedBlackTree.parMinimumBy(threads() - 1, h, t) as & Pure;
+                    let res = RedBlackTree.parMinimumBy(threads() - 1, h, t) as \ {};
                     match res {
                         case None       => None
                         case Some(k, v) => Some(k, force v)
@@ -230,7 +230,7 @@ namespace DelayMap {
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
     @Experimental @ParallelWhenPure
-    pub def minimumValueBy(cmp: (v, v) -> Comparison & ef, m: DelayMap[k, v]): Option[(k, v)] & ef =
+    pub def minimumValueBy(cmp: (v, v) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == LessThan) (kl, vl) else (kr, vr), m);
         let f = r -> cmp(r.vl, r.vr);
         reifyEff(f) {
@@ -238,7 +238,7 @@ namespace DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g({vl = force vl, vr = force vr});
                     let DMap(t) = m;
-                    let res = RedBlackTree.parMinimumBy(threads() - 1, h, t) as & Pure;
+                    let res = RedBlackTree.parMinimumBy(threads() - 1, h, t) as \ {};
                     match res {
                         case None       => None
                         case Some(k, v) => Some(k, force v)
@@ -269,7 +269,7 @@ namespace DelayMap {
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
     @Experimental @ParallelWhenPure
-    pub def maximumKeyBy(cmp: (k, k) -> Comparison & ef, m: DelayMap[k, v]): Option[(k, v)] & ef =
+    pub def maximumKeyBy(cmp: (k, k) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == GreaterThan) (kl, vl) else (kr, vr), m);
         let f = r -> cmp(r.kl, r.kr);
         reifyEff(f) {
@@ -277,7 +277,7 @@ namespace DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
                     let DMap(t) = m;
-                    let res = RedBlackTree.parMaximumBy(threads() - 1, h, t) as & Pure;
+                    let res = RedBlackTree.parMaximumBy(threads() - 1, h, t) as \ {};
                     match res {
                         case None       => None
                         case Some(k, v) => Some(k, force v)
@@ -304,7 +304,7 @@ namespace DelayMap {
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
     @Experimental @ParallelWhenPure
-    pub def maximumValueBy(cmp: (v, v) -> Comparison & ef, m: DelayMap[k, v]): Option[(k, v)] & ef =
+    pub def maximumValueBy(cmp: (v, v) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == GreaterThan) (kl, vl) else (kr, vr), m);
         let f = r -> cmp(r.vl, r.vr);
         reifyEff(f) {
@@ -312,7 +312,7 @@ namespace DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g({vl = force vl, vr = force vr});
                     let DMap(t) = m;
-                    let res = RedBlackTree.parMaximumBy(threads() - 1, h, t) as & Pure;
+                    let res = RedBlackTree.parMaximumBy(threads() - 1, h, t) as \ {};
                     match res {
                         case None       => None
                         case Some(k, v) => Some(k, force v)
@@ -350,7 +350,7 @@ namespace DelayMap {
     /// Otherwise, updates `m` with `k => v`.
     ///
     @Experimental @LazyWhenPure
-    pub def insertWith(f: (v, v) -> v & ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
+    pub def insertWith(f: (v, v) -> v \ ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         insertWithKey((_, v1, v2) -> f(v1, v2), k, v, m)
 
     ///
@@ -359,7 +359,7 @@ namespace DelayMap {
     /// Otherwise, updates `m` with `k => v`.
     ///
     @Experimental @LazyWhenPure
-    pub def insertWithKey(f: (k, v, v) -> v & ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
+    pub def insertWithKey(f: (k, v, v) -> v \ ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         let f1 = (args) -> f(args.k, args.v1, args.v2);
         reifyEff(f1) {
             case Pure(g) => insertWithKeyL((k1, v1, v2) -> g({k = k1, v1 = v1, v2 = v2}), k, v, m)
@@ -378,7 +378,7 @@ namespace DelayMap {
     ///
     /// Helper function for `insertWithKey`. Applies `f` eagerly.
     ///
-    def insertWithKeyE(f: (k, v, v) -> v & ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
+    def insertWithKeyE(f: (k, v, v) -> v \ ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         let DMap(t) = m;
         let f1 = (k1, v1, v2) -> {
                 let x = f(k1, force v1, force v2);
@@ -394,7 +394,7 @@ namespace DelayMap {
     ///  - Applies `f` lazily if `f` is pure.
     ///
     @Experimental @ParallelWhenPure @LazyWhenPure
-    pub def map(f: v1 -> v2 & ef, m: DelayMap[k, v1]): DelayMap[k, v2] & ef =
+    pub def map(f: v1 -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef =
         mapWithKey((_, v) -> f(v), m)
 
     ///
@@ -405,7 +405,7 @@ namespace DelayMap {
     ///  - Applies `f` lazily if `f` is pure.
     ///
     @Experimental @ParallelWhenPure @LazyWhenPure
-    pub def mapWithKey(f: (k, v1) -> v2 & ef, m: DelayMap[k, v1]): DelayMap[k, v2] & ef =
+    pub def mapWithKey(f: (k, v1) -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef =
         let f1 = match (k, v) -> f(k, v);
         reifyEff(f1) {
             case Pure(g) => mapWithKeyL((k, v) -> g((k, v)), m)
@@ -426,7 +426,7 @@ namespace DelayMap {
     ///
     /// Helper function for `mapWithKey`. Applies `f` eagerly.
     ///
-    def mapWithKeyE(f: (k, v1) -> v2 & ef, m: DelayMap[k, v1]): DelayMap[k, v2] & ef =
+    def mapWithKeyE(f: (k, v1) -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef =
         let g = (k, v) -> {
                 let x1 = f(k, force v);
                 lazy x1
@@ -476,7 +476,7 @@ namespace DelayMap {
         };
         let DMap(t) = m;
         if (useParallelEvaluation(m))
-            parLoop(threads() - 1, t) as & Pure
+            parLoop(threads() - 1, t) as \ {}
         else
             seqLoop(t)
 
@@ -484,14 +484,14 @@ namespace DelayMap {
     /// Returns a map of all mappings `k => v` in `m` where `v` satisfies the predicate `f`.
     ///
     @Experimental
-    pub def filter(f: v -> Bool & ef, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
+    pub def filter(f: v -> Bool \ ef, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         filterWithKey((_, v) -> f(v), m)
 
     ///
     /// Returns a map of all mappings `k => v` in `m` where `(k, v)` satisfies the predicate `f`.
     ///
     @Experimental
-    pub def filterWithKey(f: (k, v) -> Bool & ef, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
+    pub def filterWithKey(f: (k, v) -> Bool \ ef, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         foldLeftWithKey((acc, k, v) -> if (f(k, v)) insert(k, v, acc) else acc, empty(), m)
 
     ///
@@ -509,7 +509,7 @@ namespace DelayMap {
     /// Purity reflective: Applies `f` lazily if `f` is pure.
     ///
     @Experimental @LazyWhenPure
-    pub def unionWith(f: (v, v) -> v & ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
+    pub def unionWith(f: (v, v) -> v \ ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         unionWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
@@ -518,7 +518,7 @@ namespace DelayMap {
     /// Purity reflective: Applies `f` lazily if `f` is pure.
     ///
     @Experimental @LazyWhenPure
-    pub def unionWithKey(f: (k, v, v) -> v & ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
+    pub def unionWithKey(f: (k, v, v) -> v \ ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         let f1 = (args) -> f(args.k, args.v1, args.v2);
         reifyEff(f1) {
             case Pure(g) => unionWithKeyL((k, v1, v2) -> g({k = k, v1 = v1, v2 = v2}), m1, m2)
@@ -542,7 +542,7 @@ namespace DelayMap {
     ///
     /// Helper function for `unionWithKey`. Applies `f` eagerly.
     ///
-    def unionWithKeyE(f: (k, v, v) -> v & ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
+    def unionWithKeyE(f: (k, v, v) -> v \ ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         use RedBlackTree.{blackHeight, foldRight, insertWith};
         let DMap(xs) = m1;
         let DMap(ys) = m2;
@@ -563,7 +563,7 @@ namespace DelayMap {
     /// That is, the result is of the form: `f(...f(f(s, v1), v2)..., vn)`.
     ///
     @Experimental
-    pub def foldLeft(f: (b, v) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
+    pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef =
         foldLeftWithKey((acc, _, v) -> f(acc, v), s, m)
 
     ///
@@ -572,7 +572,7 @@ namespace DelayMap {
     /// That is, the result is of the form: `f(...f(f(s, k1, v1), k2, v2)..., vn)`.
     ///
     @Experimental
-    pub def foldLeftWithKey(f: (b, k, v) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
+    pub def foldLeftWithKey(f: (b, k, v) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef =
         let _ = parallelForce(m);
         let DMap(t) = m;
         let f1 = (b, k, v) -> f(b, k, force v);
@@ -584,7 +584,7 @@ namespace DelayMap {
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
     ///
     @Experimental
-    pub def foldRight(f: (v, b) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
+    pub def foldRight(f: (v, b) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef =
         foldRightWithKey((_, v, acc) -> f(v, acc), s, m)
 
     ///
@@ -593,7 +593,7 @@ namespace DelayMap {
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     ///
     @Experimental
-    pub def foldRightWithKey(f: (k, v, b) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
+    pub def foldRightWithKey(f: (k, v, b) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef =
         let _ = parallelForce(m);
         let DMap(t) = m;
         let f1 = (k1, v1, b1) -> f(k1, force v1, b1);
@@ -606,7 +606,7 @@ namespace DelayMap {
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
     @Experimental
-    pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, z: b, m: DelayMap[k, v]): b & ef =
+    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, z: b, m: DelayMap[k, v]): b \ ef =
         foldRightWithKeyCont((_, v, c) -> f(v, c), z, m)
 
     ///
@@ -616,7 +616,7 @@ namespace DelayMap {
     /// A `foldRightWithKeyCont` allows early termination by not calling the continuation.
     ///
     @Experimental
-    pub def foldRightWithKeyCont(f: (k, v, Unit -> b & ef) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
+    pub def foldRightWithKeyCont(f: (k, v, Unit -> b \ ef) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef =
         let _ = parallelForce(m);
         let DMap(t) = m;
         let f1 = (k1, v1, c) -> f(k1, force v1, c);
@@ -630,7 +630,7 @@ namespace DelayMap {
     /// Returns `None` if `m` is the empty map.
     ///
     @Experimental
-    pub def reduceLeft(f: (v, v) -> v & ef, m: DelayMap[k, v]): Option[v] & ef =
+    pub def reduceLeft(f: (v, v) -> v \ ef, m: DelayMap[k, v]): Option[v] \ ef =
         reduceLeftWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) |> Option.map(snd)
 
     ///
@@ -641,7 +641,7 @@ namespace DelayMap {
     /// Returns `None` if `m` is the empty map.
     ///
     @Experimental
-    pub def reduceLeftWithKey(f: (k, v, k, v) -> (k, v) & ef, m: DelayMap[k, v]): Option[(k, v)] & ef =
+    pub def reduceLeftWithKey(f: (k, v, k, v) -> (k, v) \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         let _ = parallelForce(m);
         let DMap(t) = m;
         let f1 = (k1, v1, k2, v2) -> {
@@ -661,7 +661,7 @@ namespace DelayMap {
     /// Returns `None` if `m` is the empty DelayMap.
     ///
     @Experimental
-    pub def reduceRight(f: (v, v) -> v & ef, m: DelayMap[k, v]): Option[v] & ef =
+    pub def reduceRight(f: (v, v) -> v \ ef, m: DelayMap[k, v]): Option[v] \ ef =
         reduceRightWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) |> Option.map(snd)
 
     ///
@@ -672,7 +672,7 @@ namespace DelayMap {
     /// Returns `None` if `m` is the empty DelayMap.
     ///
     @Experimental
-    pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) & ef, m: DelayMap[k, v]): Option[(k, v)] & ef =
+    pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         let _ = parallelForce(m);
         let DMap(t) = m;
         let f1 = (k1, v1, k2, v2) -> {
@@ -690,7 +690,7 @@ namespace DelayMap {
     /// Purity reflective: Applies `f` lazily if `f` is pure.
     ///
     @Experimental @LazyWhenPure
-    pub def adjust(f: v -> v & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
+    pub def adjust(f: v -> v \ ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         adjustWithKey((_, v1) -> f(v1), k, m)
 
     ///
@@ -699,7 +699,7 @@ namespace DelayMap {
     /// Purity reflective: Applies `f` lazily if `f` is pure.
     ///
     @Experimental @LazyWhenPure
-    pub def adjustWithKey(f: (k, v) -> v & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
+    pub def adjustWithKey(f: (k, v) -> v \ ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         updateWithKey((k1, v) -> Some(f(k1, v)), k, m)
 
     ///
@@ -708,7 +708,7 @@ namespace DelayMap {
     /// Purity reflective: Applies `f` lazily if `f` is pure.
     ///
     @Experimental @LazyWhenPure
-    pub def update(f: v -> Option[v] & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
+    pub def update(f: v -> Option[v] \ ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         updateWithKey((_, v1) -> f(v1), k, m)
 
     ///
@@ -717,7 +717,7 @@ namespace DelayMap {
     /// Purity reflective: Applies `f` lazily if `f` is pure.
     ///
     @Experimental @LazyWhenPure
-    pub def updateWithKey(f: (k, v) -> Option[v] & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
+    pub def updateWithKey(f: (k, v) -> Option[v] \ ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         let f1 = (t) -> f(fst(t), snd(t));
         reifyEff(f1) {
             case Pure(g) => updateWithKeyL((k1, v) -> g((k1, v)), k, m)
@@ -742,7 +742,7 @@ namespace DelayMap {
     ///
     /// Helper function for `updateWithKey`. Forces `v`.
     ///
-    def updateWithKeyE(f: (k, v) -> Option[v] & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
+    def updateWithKeyE(f: (k, v) -> Option[v] \ ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         let DMap(t) = m;
         let f1 = (k1, v1) -> {
             let res = f(k1, force v1);
@@ -810,7 +810,7 @@ namespace DelayMap {
     /// Applies `f` to every element of `xs`.
     ///
     @Experimental
-    pub def foreach(f: (k, v) -> Unit & ef, m: DelayMap[k, v]): Unit & ef =
+    pub def foreach(f: (k, v) -> Unit \ ef, m: DelayMap[k, v]): Unit \ ef =
         let _ = parallelForce(m);
         let DMap(t) = m;
         let f1 = (k, v) -> f(k, force v);
@@ -837,7 +837,7 @@ namespace DelayMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @Experimental @ParallelWhenPure
-    pub def sumWith(f: (k, v) -> Int32 & ef, m: DelayMap[k, v]): Int32 & ef =
+    pub def sumWith(f: (k, v) -> Int32 \ ef, m: DelayMap[k, v]): Int32 \ ef =
         let f1 = match (k, v) -> f(k, v);
         let DMap(t) = m;
         def sw() = {
@@ -848,7 +848,7 @@ namespace DelayMap {
             case Pure(g) =>
                 if (useParallelEvaluation(m))
                     let h = (k, v) -> g((k, force v));
-                    RedBlackTree.parSumWith(threads() - 1, h, t) as & Pure
+                    RedBlackTree.parSumWith(threads() - 1, h, t) as \ {}
                 else
                     sw()
             case _ => sw()
@@ -875,7 +875,7 @@ namespace DelayMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @Experimental @ParallelWhenPure
-    pub def productWith(f: (k, v) -> Int32 & ef, m: DelayMap[k, v]): Int32 & ef =
+    pub def productWith(f: (k, v) -> Int32 \ ef, m: DelayMap[k, v]): Int32 \ ef =
         let f1 = match (k, v) -> f(k, v);
         let DMap(t) = m;
         def pw() = {
@@ -886,7 +886,7 @@ namespace DelayMap {
             case Pure(g) =>
                 if (useParallelEvaluation(m))
                     let h = (k, v) -> g((k, force v));
-                    RedBlackTree.parProductWith(threads() - 1, h, t) as & Pure
+                    RedBlackTree.parProductWith(threads() - 1, h, t) as \ {}
                 else
                     pw()
             case _ => pw()
@@ -914,7 +914,7 @@ namespace DelayMap {
     /// `k => v` in `m` according to `f` with `sep` inserted between each element.
     ///
     @Experimental
-    pub def joinWith(f: (k, v) -> String & ef, sep: String, m: DelayMap[k, v]): String & ef =
+    pub def joinWith(f: (k, v) -> String \ ef, sep: String, m: DelayMap[k, v]): String \ ef =
         let _ = parallelForce(m);
         let DMap(t) = m;
         RedBlackTree.joinWith((k, v) -> f(k, force v), sep, t)
