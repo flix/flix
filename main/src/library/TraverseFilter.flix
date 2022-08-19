@@ -24,4 +24,7 @@ pub class TraverseFilter[t : Type -> Type] with FunctorFilter[t] {
     pub def sequenceFilter(t: t[m[Option[a]]]): m[t[a]] with Applicative[m] =
         TraverseFilter.traverseFilter(identity, t)
 
+    // collect function, flatten option?
+
+    // laws: identity, traverse consistency, composition
 }
