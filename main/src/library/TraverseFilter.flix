@@ -17,7 +17,7 @@
 ///
 ///
 ///
-pub class TraverseFilter[t : Type -> Type] with FunctorFilter[m] {
+pub class TraverseFilter[t : Type -> Type] with FunctorFilter[t] {
 
     pub def traverseFilter(f: a -> m[Option[b]] \ ef, t: t[a]): m[t[b]] \ ef with Applicative[m]
 
