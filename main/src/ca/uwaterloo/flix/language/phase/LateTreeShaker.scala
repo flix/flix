@@ -174,13 +174,13 @@ object LateTreeShaker {
     case Expression.LetRec(_, _, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Is(_, _, exp, _, _) =>
+    case Expression.Is(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expression.Tag(_, _, exp, _, _, _) =>
+    case Expression.Tag(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Untag(_, _, exp, _, _, _) =>
+    case Expression.Untag(_, exp, _, _, _) =>
       visitExp(exp)
 
     case Expression.Index(exp, _, _, _, _) =>

@@ -41,7 +41,7 @@ object WeededAst {
 
     case class Law(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.KindedTypeParams, fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, pur: WeededAst.Type, tconstrs: List[WeededAst.TypeConstraint], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Enum(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, derives: List[Name.QName], cases: Map[Name.Tag, WeededAst.Case], loc: SourceLocation) extends WeededAst.Declaration
+    case class Enum(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, derives: List[Name.QName], cases: List[WeededAst.Case], loc: SourceLocation) extends WeededAst.Declaration
 
     case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
 
@@ -59,7 +59,7 @@ object WeededAst {
 
     case class UseUpper(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
 
-    case class UseTag(qname: Name.QName, tag: Name.Tag, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
+    case class UseTag(qname: Name.QName, tag: Name.Ident, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
 
   }
 
@@ -133,7 +133,7 @@ object WeededAst {
 
     case class Choose(star: Boolean, exps: List[WeededAst.Expression], rules: List[WeededAst.ChoiceRule], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Tag(qname: Option[Name.QName], tag: Name.Tag, expOpt: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+    case class Tag(qname: Option[Name.QName], tag: Name.Ident, expOpt: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class Tuple(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
@@ -269,7 +269,7 @@ object WeededAst {
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends WeededAst.Pattern
 
-    case class Tag(qname: Option[Name.QName], tag: Name.Tag, pat: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
+    case class Tag(qname: Option[Name.QName], tag: Name.Ident, pat: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
 
     case class Tuple(elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
 
@@ -400,7 +400,7 @@ object WeededAst {
 
   case class Attribute(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation)
 
-  case class Case(ident: Name.Ident, tag: Name.Tag, tpe: WeededAst.Type)
+  case class Case(ident: Name.Ident, tpe: WeededAst.Type)
 
   case class FormalParam(ident: Name.Ident, mod: Ast.Modifiers, tpe: Option[WeededAst.Type], loc: SourceLocation)
 

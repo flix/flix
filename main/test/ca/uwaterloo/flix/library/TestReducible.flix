@@ -49,7 +49,7 @@ namespace TestReducible {
         Reducible.reduceLeft((acc, a) -> (acc - a) * ((a rem 2) + 1), Nel(100, 1 :: 2 :: 3 :: Nil)) == 386
 
     @test
-    def reduceLeft08(): Bool & Impure =
+    def reduceLeft08(): Bool \ IO =
         let l = ref Nil;
         // `f` uses 0 as a control value, since the first element of a `reduce` is located in `acc`.
         let f = (acc, a) -> {
@@ -96,7 +96,7 @@ namespace TestReducible {
         Reducible.reduceRight((a, acc) -> (acc - a) * ((a rem 2) + 1), Nel(1, 2 :: 3 :: 100 :: Nil)) == 382
 
     @test
-    def reduceRight08(): Bool & Impure =
+    def reduceRight08(): Bool \ IO =
         let l = ref Nil;
         // `f` uses 0 as a control value, since the first element of a `reduce` is located in `acc`.
         let f = (a, acc) -> {
@@ -173,7 +173,7 @@ namespace TestReducible {
         Reducible.foldLeft((acc, a) -> (acc - a) * ((a rem 2) + 1), 100, Nel(1, 2 :: 3 :: Nil)) == 386
 
     @test
-    def foldLeft07(): Bool & Impure =
+    def foldLeft07(): Bool \ IO =
         let l = ref Nil;
         discard Reducible.foldLeft((_, x) -> { l := x :: deref l; x == 1 }, false, Nel(3, 2 :: 1 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
@@ -208,7 +208,7 @@ namespace TestReducible {
         Reducible.foldRight((a, acc) -> (acc - a) * ((a rem 2) + 1), 100, Nel(1, 2 :: 3 :: Nil)) == 382
 
     @test
-    def foldRight07(): Bool & Impure =
+    def foldRight07(): Bool \ IO =
         let l = ref Nil;
         discard Reducible.foldRight((x, _) -> { l := x :: deref l; x == 1 }, false, Nel(1, 2 :: 3 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
@@ -243,7 +243,7 @@ namespace TestReducible {
         Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a rem 2) + 1), 100, Nel(1, 2 :: 3 :: Nil)) == 382
 
     @test
-    def foldRightWithCont07(): Bool & Impure =
+    def foldRightWithCont07(): Bool \ IO =
         let l = ref Nil;
         discard Reducible.foldRightWithCont((x, _) -> { l := x :: deref l; x == 1 }, false, Nel(1, 2 :: 3 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
@@ -557,13 +557,13 @@ namespace TestReducible {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool & Impure =
+    def foreach01(): Bool \ IO =
         let r = ref 21;
         Reducible.foreach(x -> r := x, Nel(1, Nil));
         1 == deref r
 
     @test
-    def foreach02(): Bool & Impure =
+    def foreach02(): Bool \ IO =
         let r = ref 21;
         Reducible.foreach(x -> r := x, Nel(1, 2 :: 3 :: Nil));
         3 == deref r
@@ -598,7 +598,7 @@ namespace TestReducible {
         Reducible.findLeft(x -> x == 3, Nel(1, 2 :: 3 :: Nil)) == Some(3)
 
     @test
-    def findLeft07(): Bool & Impure =
+    def findLeft07(): Bool \ IO =
         let l = ref Nil;
         discard Reducible.findLeft(x -> { l := x :: deref l; x == 1 }, Nel(3, 2 :: 1 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
@@ -633,7 +633,7 @@ namespace TestReducible {
         Reducible.findRight(x -> x == 3, Nel(1, 2 :: 3 :: Nil)) == Some(3)
 
     @test
-    def findRight07(): Bool & Impure =
+    def findRight07(): Bool \ IO =
         let l = ref Nil;
         discard Reducible.findRight(x -> { l := x :: deref l; x == 1 }, Nel(1, 2 :: 3 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil

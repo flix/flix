@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
@@ -191,7 +191,7 @@ object Redundancy {
             // Case 2: Enum is used and here are its used tags.
             // Check if there is any unused tag.
             decl.cases.foldLeft(acc) {
-              case (innerAcc, (tag, caze)) if deadTag(tag, usedTags) => innerAcc + UnusedEnumTag(sym, caze.tag)
+              case (innerAcc, (tag, caze)) if deadTag(tag, usedTags) => innerAcc + UnusedEnumTag(sym, caze.sym)
               case (innerAcc, _) => innerAcc
             }
         }
@@ -205,7 +205,7 @@ object Redundancy {
     root.enums.foldLeft(Used.empty) {
       case (acc, (_, decl)) =>
         val usedTypeVars = decl.cases.foldLeft(Set.empty[Symbol.TypeVarSym]) {
-          case (sacc, (_, Case(_, _, tpe, _, _))) => sacc ++ tpe.typeVars.map(_.sym)
+          case (sacc, (_, Case(_, tpe, _, _))) => sacc ++ tpe.typeVars.map(_.sym)
         }
         val unusedTypeParams = decl.tparams.filter(tparam => !usedTypeVars.contains(tparam.sym) && !tparam.name.name.startsWith("_"))
         acc ++ unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))
@@ -479,9 +479,9 @@ object Redundancy {
       }
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
-    case Expression.Tag(sym, tag, exp, _, _, _, _) =>
+    case Expression.Tag(Ast.CaseSymUse(sym, _), exp, _, _, _, _) =>
       val us = visitExp(exp, env0, rc)
-      Used.of(sym, tag) ++ us
+      Used.of(sym.enum, sym) ++ us
 
     case Expression.Tuple(elms, _, _, _, _) =>
       visitExps(elms, env0, rc)
@@ -741,7 +741,7 @@ object Redundancy {
     case Pattern.Int64(_, _) => Used.empty
     case Pattern.BigInt(_, _) => Used.empty
     case Pattern.Str(_, _) => Used.empty
-    case Pattern.Tag(sym, tag, _, _, _) => Used.of(sym, tag)
+    case Pattern.Tag(Ast.CaseSymUse(sym, _), _, _, _) => Used.of(sym.enum, sym)
     case Pattern.Tuple(elms, _, _) => visitPats(elms)
     case Pattern.Array(elms, _, _) => visitPats(elms)
     case Pattern.ArrayTailSpread(elms, _, _, _) => visitPats(elms)
@@ -831,7 +831,7 @@ object Redundancy {
     * {{{
     * Int32                                        =>     throw
     * Int32 -> String -> Int32 & Pure              =>     Pure
-    * (Int32, String) -> String -> Bool & Impure   =>     Impure
+    * (Int32, String) -> String -> Bool \ IO   =>     Impure
     * }}}
     *
     * NB: Assumes that `this` type is an arrow.
@@ -903,7 +903,7 @@ object Redundancy {
     case Pattern.Int64(_, _) => Set.empty
     case Pattern.BigInt(_, _) => Set.empty
     case Pattern.Str(_, _) => Set.empty
-    case Pattern.Tag(_, _, pat, _, _) => freeVars(pat)
+    case Pattern.Tag(_, pat, _, _) => freeVars(pat)
     case Pattern.Tuple(pats, _, _) => pats.foldLeft(Set.empty[Symbol.VarSym]) {
       case (acc, pat) => acc ++ freeVars(pat)
     }
@@ -966,7 +966,7 @@ object Redundancy {
   /**
     * Returns `true` if the given `tag` is unused according to the `usedTags`.
     */
-  private def deadTag(tag: Name.Tag, usedTags: Set[Name.Tag]): Boolean =
+  private def deadTag(tag: Symbol.CaseSym, usedTags: Set[Symbol.CaseSym]): Boolean =
     !tag.name.startsWith("_") &&
       !usedTags.contains(tag)
 
@@ -1031,7 +1031,7 @@ object Redundancy {
     /**
       * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
       */
-    def of(sym: Symbol.EnumSym, tag: Name.Tag): Used = empty.copy(enumSyms = MultiMap.singleton(sym, tag))
+    def of(sym: Symbol.EnumSym, caze: Symbol.CaseSym): Used = empty.copy(enumSyms = MultiMap.singleton(sym, caze))
 
     /**
       * Returns an object where the given defn symbol `sym` is marked as used.
@@ -1064,7 +1064,7 @@ object Redundancy {
     def of(syms: Set[Symbol.VarSym]): Used = empty.copy(
       varSyms = syms,
       occurrencesOf = syms.foldLeft(ListMap.empty[Symbol.VarSym, SourceLocation]) {
-        case (mm, sym) => mm + (sym, sym.loc)
+        case (mm, sym) => mm + (sym -> sym.loc)
       })
 
   }
@@ -1072,7 +1072,7 @@ object Redundancy {
   /**
     * A representation of used symbols.
     */
-  private case class Used(enumSyms: MultiMap[Symbol.EnumSym, Name.Tag],
+  private case class Used(enumSyms: MultiMap[Symbol.EnumSym, Symbol.CaseSym],
                           defSyms: Set[Symbol.DefnSym],
                           sigSyms: Set[Symbol.SigSym],
                           holeSyms: Set[Symbol.HoleSym],

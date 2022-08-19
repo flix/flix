@@ -43,87 +43,87 @@ namespace Test/Exp/Cast {
     def testCast14(): Option[Int32] = Some(42) as Option[Int32]
 
     @test
-    def testCastWithEff01(): Unit & Impure = () as Unit & Impure
+    def testCastWithEff01(): Unit \ IO = () as Unit \ IO
 
     @test
-    def testCastWithEff02(): Bool & Impure = true as Bool & Impure
+    def testCastWithEff02(): Bool \ IO = true as Bool \ IO
 
     @test
-    def testCastWithEff03(): Bool & Impure = not false as Bool & Impure
+    def testCastWithEff03(): Bool \ IO = not false as Bool \ IO
 
     @test
-    def testCastWithEff04(): Char & Impure = 'a' as Char & Impure
+    def testCastWithEff04(): Char \ IO = 'a' as Char \ IO
 
     @test
-    def testCastWithEff05(): Float32 & Impure = 0.0f32 as Float32 & Impure
+    def testCastWithEff05(): Float32 \ IO = 0.0f32 as Float32 \ IO
 
     @test
-    def testCastWithEff06(): Float64 & Impure = 0.0f64 as Float64 & Impure
+    def testCastWithEff06(): Float64 \ IO = 0.0f64 as Float64 \ IO
 
     @test
-    def testCastWithEff07(): Int8 & Impure = 0i8 as Int8 & Impure
+    def testCastWithEff07(): Int8 \ IO = 0i8 as Int8 \ IO
 
     @test
-    def testCastWithEff08(): Int16 & Impure = 0i16 as Int16 & Impure
+    def testCastWithEff08(): Int16 \ IO = 0i16 as Int16 \ IO
 
     @test
-    def testCastWithEff09(): Int32 & Impure = 0i32 as Int32 & Impure
+    def testCastWithEff09(): Int32 \ IO = 0i32 as Int32 \ IO
 
     @test
-    def testCastWithEff10(): Int64 & Impure = 0i64 as Int64 & Impure
+    def testCastWithEff10(): Int64 \ IO = 0i64 as Int64 \ IO
 
     @test
-    def testCastWithEff11(): BigInt & Impure = 0ii as BigInt & Impure
+    def testCastWithEff11(): BigInt \ IO = 0ii as BigInt \ IO
 
     @test
-    def testCastWithEff12(): String & Impure = "hello world" as String & Impure
+    def testCastWithEff12(): String \ IO = "hello world" as String \ IO
 
     @test
-    def testCastWithEff13(): (Int32, Int32, Int32) & Impure = (1, 2, 3) as (Int32, Int32, Int32) & Impure
+    def testCastWithEff13(): (Int32, Int32, Int32) \ IO = (1, 2, 3) as (Int32, Int32, Int32) \ IO
 
     @test
-    def testCastWithEff14(): Option[Int32] & Impure = Some(42) as Option[Int32] & Impure
+    def testCastWithEff14(): Option[Int32] \ IO = Some(42) as Option[Int32] \ IO
 
     @test
-    def testCastWithWildAndEff01(): Unit & Impure = () as & Impure
+    def testCastWithWildAndEff01(): Unit \ IO = () as \ IO
 
     @test
-    def testCastWithWildAndEff02(): Bool & Impure = true as & Impure
+    def testCastWithWildAndEff02(): Bool \ IO = true as \ IO
 
     @test
-    def testCastWithWildAndEff03(): Bool & Impure = not false as & Impure
+    def testCastWithWildAndEff03(): Bool \ IO = not false as \ IO
 
     @test
-    def testCastWithWildAndEff04(): Char & Impure = 'a' as & Impure
+    def testCastWithWildAndEff04(): Char \ IO = 'a' as \ IO
 
     @test
-    def testCastWithWildAndEff05(): Float32 & Impure = 0.0f32 as & Impure
+    def testCastWithWildAndEff05(): Float32 \ IO = 0.0f32 as \ IO
 
     @test
-    def testCastWithWildAndEff06(): Float64 & Impure = 0.0f64 as & Impure
+    def testCastWithWildAndEff06(): Float64 \ IO = 0.0f64 as \ IO
 
     @test
-    def testCastWithWildAndEff07(): Int8 & Impure = 0i8 as & Impure
+    def testCastWithWildAndEff07(): Int8 \ IO = 0i8 as \ IO
 
     @test
-    def testCastWithWildAndEff08(): Int16 & Impure = 0i16 as & Impure
+    def testCastWithWildAndEff08(): Int16 \ IO = 0i16 as \ IO
 
     @test
-    def testCastWithWildAndEff09(): Int32 & Impure = 0i32 as & Impure
+    def testCastWithWildAndEff09(): Int32 \ IO = 0i32 as \ IO
 
     @test
-    def testCastWithWildAndEff10(): Int64 & Impure = 0i64 as & Impure
+    def testCastWithWildAndEff10(): Int64 \ IO = 0i64 as \ IO
 
     @test
-    def testCastWithWildAndEff11(): BigInt & Impure = 0ii as & Impure
+    def testCastWithWildAndEff11(): BigInt \ IO = 0ii as \ IO
 
     @test
-    def testCastWithWildAndEff12(): String & Impure = "hello world" as & Impure
+    def testCastWithWildAndEff12(): String \ IO = "hello world" as \ IO
 
     @test
-    def testCastWithWildAndEff13(): (Int32, Int32, Int32) & Impure = (1, 2, 3) as & Impure
+    def testCastWithWildAndEff13(): (Int32, Int32, Int32) \ IO = (1, 2, 3) as \ IO
 
     @test
-    def testCastWithWildAndEff14(): Option[Int32] & Impure = Some(42) as & Impure
+    def testCastWithWildAndEff14(): Option[Int32] \ IO = Some(42) as \ IO
 
 }

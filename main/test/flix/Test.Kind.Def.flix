@@ -11,7 +11,7 @@ namespace Test/Kind/Def {
 
             pub def schemaRow(x: #{ R | a }): Int32 = ???
 
-            pub def bool(x: Int32 -> Int32 & a): Int32 = ???
+            pub def bool(x: Int32 -> Int32 \ a): Int32 = ???
 
             pub def starToStar(x: a[Int32]): Int32 = ???
         }
@@ -51,11 +51,11 @@ namespace Test/Kind/Def {
         namespace Effect {
             pub enum EBool[_a: Bool]
 
-            pub def bool(): Int32 & ef = ??? as & ef
+            pub def bool(): Int32 \ ef = ??? as \ ef
 
-            pub def func(x: Int32 -> Int32 & ef): Int32 & ef = ??? as & ef
+            pub def func(x: Int32 -> Int32 \ ef): Int32 \ ef = ??? as \ ef
 
-            pub def enum_(x: EBool[ef]): Int32 & ef = ??? as & ef
+            pub def enum_(x: EBool[ef]): Int32 \ ef = ??? as \ ef
         }
 
         namespace Exp {
@@ -76,7 +76,7 @@ namespace Test/Kind/Def {
 
             pub def schemaRow[a: SchemaRow](x: #{ R | a }): Int32 = ???
 
-            pub def bool[a: Bool](x: Int32 -> Int32 & a): Int32 = ???
+            pub def bool[a: Bool](x: Int32 -> Int32 \ a): Int32 = ???
 
             pub def starToStar[a: Type -> Type](x: a[Int32]): Int32 = ???
         }
@@ -97,7 +97,7 @@ namespace Test/Kind/Def {
             pub def starToStar[a: Type -> Type](x: a[Int32]): Int32 with CStarToStar[a] = ???
 
             // cannot be inferred
-            pub def boolToStar[a: Bool -> Type, ef: Bool](x: a[ef]): Int32 & ef with CBoolToStar[a] = ??? as & ef
+            pub def boolToStar[a: Bool -> Type, ef: Bool](x: a[ef]): Int32 \ ef with CBoolToStar[a] = ??? as \ ef
         }
 
         namespace Enum {
@@ -120,11 +120,11 @@ namespace Test/Kind/Def {
         namespace Effect {
             pub enum EBool[_a: Bool]
 
-            pub def bool[ef: Bool](): Int32 & ef = ??? as & ef
+            pub def bool[ef: Bool](): Int32 \ ef = ??? as \ ef
 
-            pub def func[ef: Bool](x: Int32 -> Int32 & ef): Int32 & ef = ??? as & ef
+            pub def func[ef: Bool](x: Int32 -> Int32 \ ef): Int32 \ ef = ??? as \ ef
 
-            pub def enum_[ef: Bool](x: EBool[ef]): Int32 & ef = ??? as & ef
+            pub def enum_[ef: Bool](x: EBool[ef]): Int32 \ ef = ??? as \ ef
         }
 
         namespace Exp {
@@ -137,9 +137,9 @@ namespace Test/Kind/Def {
     namespace Regression {
         namespace Test01 {
             pub enum Func[ef : Bool] {
-                case Function(Int32 -> Int32 & ef)
+                case Function(Int32 -> Int32 \ ef)
             }
-            pub def func(f: Int32 -> Int32 & ef, g: Func[ef]): Int32 = ???
+            pub def func(f: Int32 -> Int32 \ ef, g: Func[ef]): Int32 = ???
         }
 
         namespace Test02 {

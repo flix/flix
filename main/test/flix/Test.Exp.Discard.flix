@@ -21,67 +21,67 @@ namespace Test/Exp/Discard {
 
 
     @test
-    def testBoolDiscard01(): Unit & Impure =
+    def testBoolDiscard01(): Unit \ IO =
         let arr = [true];
         discard arr[0]
 
     @test
-    def testCharDiscard01(): Unit & Impure =
+    def testCharDiscard01(): Unit \ IO =
         let arr = ['q'];
         discard arr[0]
 
     @test
-    def testFloat32Discard01(): Unit & Impure =
+    def testFloat32Discard01(): Unit \ IO =
         let arr = [32.0f32];
         discard arr[0]
 
     @test
-    def testFloat64Discard01(): Unit & Impure =
+    def testFloat64Discard01(): Unit \ IO =
         let arr = [64.0f64];
         discard arr[0]
 
     @test
-    def testInt8Discard01(): Unit & Impure =
+    def testInt8Discard01(): Unit \ IO =
         let arr = [8i8];
         discard arr[0]
 
     @test
-    def testInt16Discard01(): Unit & Impure =
+    def testInt16Discard01(): Unit \ IO =
         let arr = [16i16];
         discard arr[0]
 
     @test
-    def testInt32Discard01(): Unit & Impure =
+    def testInt32Discard01(): Unit \ IO =
         let arr = [32i32];
         discard arr[0]
 
     @test
-    def testInt64Discard01(): Unit & Impure =
+    def testInt64Discard01(): Unit \ IO =
         let arr = [64i64];
         discard arr[0]
 
     @test
-    def testBigIntDiscard01(): Unit & Impure =
+    def testBigIntDiscard01(): Unit \ IO =
         let arr = [9999999ii];
         discard arr[0]
 
     @test
-    def testStringDiscard01(): Unit & Impure =
+    def testStringDiscard01(): Unit \ IO =
         let arr = ["cool string"];
         discard arr[0]
 
     @test
-    def testArrayOfIntDiscard01(): Unit & Impure =
+    def testArrayOfIntDiscard01(): Unit \ IO =
         let arr = [[2]];
         discard arr[0]
 
     @test
-    def testArrayOfStringDiscard01(): Unit & Impure =
+    def testArrayOfStringDiscard01(): Unit \ IO =
         let arr = [["cool string"]];
         discard arr[0]
 
     @test
-    def testTupleDiscard01(): Unit & Impure =
+    def testTupleDiscard01(): Unit \ IO =
         let arr = [("fst", "snd")];
         discard arr[0]
 
@@ -90,7 +90,7 @@ namespace Test/Exp/Discard {
     }
 
     @test
-    def testEnumDiscard01(): Unit & Impure =
+    def testEnumDiscard01(): Unit \ IO =
         let arr = [Data(32)];
         discard arr[0]
 
@@ -102,7 +102,7 @@ namespace Test/Exp/Discard {
         }
 
     @test
-    def testPolyDiscard01(): Unit & Impure =
+    def testPolyDiscard01(): Unit \ IO =
         let arr = [That("hello")];
         discard arr[0]
 
@@ -111,7 +111,7 @@ namespace Test/Exp/Discard {
 
 
     @test
-    def testBuilderDiscard01(): Bool & Impure =
+    def testBuilderDiscard01(): Bool \ IO =
         let counter = ref 0;
         def increaseBy(i, c) = {
             c := deref c + i;

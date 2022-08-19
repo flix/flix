@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, LocationLink, Position}
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
+import ca.uwaterloo.flix.language.ast.{Ast, Type, TypeConstructor}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
@@ -32,25 +32,23 @@ object GotoProvider {
 
       case Some(entity) => entity match {
 
-        case Entity.Exp(exp) => exp match {
-          case Expression.Def(sym, _, loc) =>
-            ("status" -> "success") ~ ("result" -> LocationLink.fromDefSym(sym, loc)(root).toJSON)
+        case Entity.DefUse(sym, loc, _) =>
+          ("status" -> "success") ~ ("result" -> LocationLink.fromDefSym(sym, loc)(root).toJSON)
 
-          case Expression.Sig(sym, _, loc) =>
-            ("status" -> "success") ~ ("result" -> LocationLink.fromSigSym(sym, loc)(root).toJSON)
+        case Entity.SigUse(sym, loc, _) =>
+          ("status" -> "success") ~ ("result" -> LocationLink.fromSigSym(sym, loc)(root).toJSON)
 
-          case Expression.Var(sym, _, loc) =>
-            ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
+        case Entity.VarUse(sym, loc, _) =>
+          ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
 
-          case Expression.Tag(sym, tag, _, _, _, _, _) =>
-            ("status" -> "success") ~ ("result" -> LocationLink.fromEnumAndTag(sym, tag, tag.loc)(root).toJSON)
+        case Entity.CaseUse(sym, loc, _) =>
+          ("status" -> "success") ~ ("result" -> LocationLink.fromCaseSym(sym, loc)(root).toJSON)
 
-          case _ => mkNotFound(uri, pos)
-        }
+        case Entity.Exp(_) => mkNotFound(uri, pos)
 
         case Entity.Pattern(pat) => pat match {
-          case Pattern.Tag(sym, tag, _, _, _) =>
-            ("status" -> "success") ~ ("result" -> LocationLink.fromEnumAndTag(sym, tag, tag.loc)(root).toJSON)
+          case Pattern.Tag(Ast.CaseSymUse(sym, loc), _, _, _) =>
+            ("status" -> "success") ~ ("result" -> LocationLink.fromCaseSym(sym, loc)(root).toJSON)
 
           case _ => mkNotFound(uri, pos)
         }
@@ -68,10 +66,22 @@ object GotoProvider {
           case _ => mkNotFound(uri, pos)
         }
 
-        case Entity.OpUse(sym, loc) =>
+        case Entity.OpUse(sym, loc, _) =>
           ("status" -> "success") ~ ("result" -> LocationLink.fromOpSym(sym, loc).toJSON)
 
-        case _ => mkNotFound(uri, pos)
+        case Entity.Case(_) => mkNotFound(uri, pos)
+        case Entity.Class(_) => mkNotFound(uri, pos)
+        case Entity.Def(_) => mkNotFound(uri, pos)
+        case Entity.Effect(_) => mkNotFound(uri, pos)
+        case Entity.Enum(_) => mkNotFound(uri, pos)
+        case Entity.TypeAlias(_) => mkNotFound(uri, pos)
+        case Entity.Field(_) => mkNotFound(uri, pos)
+        case Entity.FormalParam(_) => mkNotFound(uri, pos)
+        case Entity.LocalVar(_, _) => mkNotFound(uri, pos)
+        case Entity.Op(_) => mkNotFound(uri, pos)
+        case Entity.Pred(_, _) => mkNotFound(uri, pos)
+        case Entity.Sig(_) => mkNotFound(uri, pos)
+        case Entity.TypeVar(_) => mkNotFound(uri, pos)
       }
     }
   }

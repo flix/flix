@@ -55,7 +55,7 @@ namespace Test/Unused/Var {
         }
 
     @test
-    def testUnusedVar10(): Int32 & Impure =
+    def testUnusedVar10(): Int32 \ IO =
         let c = chan Int32 1;
         c <- 0;
         select {
@@ -63,7 +63,7 @@ namespace Test/Unused/Var {
         }
 
     @test
-    def testUnusedVar11(): Int32 & Impure =
+    def testUnusedVar11(): Int32 \ IO =
         let c1 = chan Int32 1;
         let c2 = chan Int32 1;
         c1 <- 0;

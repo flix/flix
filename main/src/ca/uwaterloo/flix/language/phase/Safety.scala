@@ -129,7 +129,7 @@ object Safety {
       exps.flatMap(visitExp) :::
         rules.flatMap { case ChoiceRule(_, exp) => visitExp(exp) }
 
-    case Expression.Tag(_, _, exp, _, _, _, _) =>
+    case Expression.Tag(_, exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.Tuple(elms, _, _, _, _) =>
@@ -523,7 +523,7 @@ object Safety {
     case Pattern.Int64(_, _) => Nil
     case Pattern.BigInt(_, _) => Nil
     case Pattern.Str(_, _) => Nil
-    case Pattern.Tag(_, _, pat, _, _) => visitPat(pat, loc)
+    case Pattern.Tag(_, pat, _, _) => visitPat(pat, loc)
     case Pattern.Tuple(elms, _, _) => visitPats(elms, loc)
     case Pattern.Array(elms, _, _) => visitPats(elms, loc)
     case Pattern.ArrayTailSpread(elms, _, _, _) => visitPats(elms, loc)

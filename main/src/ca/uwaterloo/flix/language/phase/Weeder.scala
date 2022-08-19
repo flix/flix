@@ -316,22 +316,22 @@ object Weeder {
 
       val casesVal = (tpe0, cases0) match {
         // Case 1: empty enum
-        case (None, None) => Map.empty[Name.Tag, WeededAst.Case].toSuccess
+        case (None, None) => Map.empty.toSuccess
         // Case 2: singleton enum
-        case (Some(t0), None) => Map(Name.mkTag(ident) -> WeededAst.Case(ident, Name.mkTag(ident), visitType(t0))).toSuccess
+        case (Some(t0), None) => Map(ident -> WeededAst.Case(ident, visitType(t0))).toSuccess
         // Case 3: multiton enum
         case (None, Some(cs0)) =>
           /*
            * Check for `DuplicateTag`.
            */
-          Validation.fold[ParsedAst.Case, Map[Name.Tag, WeededAst.Case], WeederError](cs0, Map.empty) {
+          Validation.fold[ParsedAst.Case, Map[Name.Ident, WeededAst.Case], WeederError](cs0, Map.empty) {
             case (macc, caze: ParsedAst.Case) =>
-              val tagName = Name.mkTag(caze.ident)
+              val tagName = caze.ident
               macc.get(tagName) match {
                 case None => (macc + (tagName -> visitCase(caze, ident))).toSuccess
                 case Some(otherTag) =>
                   val enumName = ident.name
-                  val loc1 = otherTag.tag.loc
+                  val loc1 = otherTag.ident.loc
                   val loc2 = mkSL(caze.ident.sp1, caze.ident.sp2)
                   Failure(LazyList(
                     // NB: We report an error at both source locations.
@@ -347,7 +347,7 @@ object Weeder {
 
       mapN(annVal, modVal, tparamsVal, casesVal) {
         case (ann, mod, tparams, cases) =>
-          List(WeededAst.Declaration.Enum(doc, ann, mod, ident, tparams, derives.toList, cases, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.Enum(doc, ann, mod, ident, tparams, derives.toList, cases.values.toList, mkSL(sp1, sp2)))
       }
   }
 
@@ -357,7 +357,7 @@ object Weeder {
   private def visitCase(c0: ParsedAst.Case, enum: Name.Ident)(implicit flix: Flix): WeededAst.Case = c0 match {
     case ParsedAst.Case(_, ident, tpe0, _) =>
       val tpe = tpe0.map(visitType).getOrElse(WeededAst.Type.Unit(ident.loc))
-      WeededAst.Case(enum, Name.mkTag(ident), tpe)
+      WeededAst.Case(ident, tpe)
   }
 
   /**
@@ -440,13 +440,13 @@ object Weeder {
       us.toSuccess
 
     case ParsedAst.Use.UseOneTag(sp1, qname, tag, sp2) =>
-      List(WeededAst.Use.UseTag(qname, Name.mkTag(tag), tag, mkSL(sp1, sp2))).toSuccess
+      List(WeededAst.Use.UseTag(qname, tag, tag, mkSL(sp1, sp2))).toSuccess
 
     case ParsedAst.Use.UseManyTag(_, qname, tags, _) =>
       val us = tags.foldRight(Nil: List[WeededAst.Use]) {
         case (ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2), acc) =>
           val alias = aliasOpt.getOrElse(ident)
-          WeededAst.Use.UseTag(qname, Name.mkTag(ident), alias, mkSL(sp1, sp2)) :: acc
+          WeededAst.Use.UseTag(qname, ident, alias, mkSL(sp1, sp2)) :: acc
       }
       us.toSuccess
   }
@@ -1126,11 +1126,11 @@ object Weeder {
       expOpt match {
         case None =>
           // Case 1: The tag does not have an expression. Nothing more to be done.
-          WeededAst.Expression.Tag(enum, Name.mkTag(tag), None, mkSL(sp1, sp2)).toSuccess
+          WeededAst.Expression.Tag(enum, tag, None, mkSL(sp1, sp2)).toSuccess
         case Some(exp) =>
           // Case 2: The tag has an expression. Perform weeding on it.
           mapN(visitExp(exp, senv)) {
-            case e => WeededAst.Expression.Tag(enum, Name.mkTag(tag), Some(e), mkSL(sp1, sp2))
+            case e => WeededAst.Expression.Tag(enum, tag, Some(e), mkSL(sp1, sp2))
           }
       }
 
@@ -1276,7 +1276,7 @@ object Weeder {
        * Rewrites a `FNil` expression into a tag expression.
        */
       val loc = mkSL(sp1, sp2)
-      val tag = Name.Tag("Nil", loc)
+      val tag = Name.Ident(sp1, "Nil", sp2)
       val exp = WeededAst.Expression.Unit(loc)
       WeededAst.Expression.Tag(None, tag, Some(exp), loc).toSuccess
 
@@ -1287,7 +1287,7 @@ object Weeder {
       mapN(visitExp(exp1, senv), visitExp(exp2, senv)) {
         case (e1, e2) =>
           val loc = mkSL(sp1, sp2)
-          val tag = Name.Tag("Cons", loc)
+          val tag = Name.Ident(sp1, "Cons", sp2)
           val exp = WeededAst.Expression.Tuple(List(e1, e2), loc)
           WeededAst.Expression.Tag(None, tag, Some(exp), loc)
       }
@@ -2047,9 +2047,9 @@ object Weeder {
           case None =>
             val loc = mkSL(sp1, sp2)
             val lit = WeededAst.Pattern.Unit(loc.asSynthetic)
-            WeededAst.Pattern.Tag(enum, Name.mkTag(tag), lit, loc).toSuccess
+            WeededAst.Pattern.Tag(enum, tag, lit, loc).toSuccess
           case Some(pat) => visit(pat) map {
-            case p => WeededAst.Pattern.Tag(enum, Name.mkTag(tag), p, mkSL(sp1, sp2))
+            case p => WeededAst.Pattern.Tag(enum, tag, p, mkSL(sp1, sp2))
           }
         }
 
@@ -2101,7 +2101,7 @@ object Weeder {
          * Rewrites a `FNil` pattern into a tag pattern.
          */
         val loc = mkSL(sp1, sp2)
-        val tag = Name.Tag("Nil", loc)
+        val tag = Name.Ident(sp1, "Nil", sp2)
         val pat = WeededAst.Pattern.Unit(loc.asSynthetic)
         WeededAst.Pattern.Tag(None, tag, pat, loc).toSuccess
 
@@ -2112,7 +2112,7 @@ object Weeder {
         mapN(visitPattern(pat1), visitPattern(pat2)) {
           case (hd, tl) =>
             val loc = mkSL(sp1, sp2)
-            val tag = Name.Tag("Cons", loc)
+            val tag = Name.Ident(sp1, "Cons", sp2)
             val pat = WeededAst.Pattern.Tuple(List(hd, tl), loc)
             WeededAst.Pattern.Tag(None, tag, pat, loc)
         }
@@ -2241,6 +2241,7 @@ object Weeder {
   private def visitAnnotationTag(ident: Name.Ident)(implicit flix: Flix): Validation[Ast.Annotation, WeederError] = ident.name match {
     case "benchmark" => Ast.Annotation.Benchmark(ident.loc).toSuccess
     case "test" => Ast.Annotation.Test(ident.loc).toSuccess
+    case "Test" => Ast.Annotation.Test(ident.loc).toSuccess
     case "Deprecated" => Ast.Annotation.Deprecated(ident.loc).toSuccess
     case "Experimental" => Ast.Annotation.Experimental(ident.loc).toSuccess
     case "Internal" => Ast.Annotation.Internal(ident.loc).toSuccess
@@ -2248,6 +2249,7 @@ object Weeder {
     case "ParallelWhenPure" => Ast.Annotation.ParallelWhenPure(ident.loc).toSuccess
     case "Lazy" => Ast.Annotation.Lazy(ident.loc).toSuccess
     case "LazyWhenPure" => Ast.Annotation.LazyWhenPure(ident.loc).toSuccess
+    case "Skip" => Ast.Annotation.Skip(ident.loc).toSuccess
     case "Space" => Ast.Annotation.Space(ident.loc).toSuccess
     case "Time" => Ast.Annotation.Time(ident.loc).toSuccess
     case "Unsafe" => Ast.Annotation.Unsafe(ident.loc).toSuccess

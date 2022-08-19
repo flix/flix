@@ -343,23 +343,28 @@ object Namer {
 
       val annVal = traverse(ann0)(visitAnnotation(_, Map.empty, uenv0, tenv))
       val mod = visitModifiers(mod0, ns0)
-      mapN(annVal, casesOf(cases0, uenv0, tenv)) {
+      val casesVal = traverse(cases0)(visitCase(_, sym, uenv0, tenv))
+
+      mapN(annVal, casesVal) {
         case (ann, cases) =>
-          NamedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, enumType, loc)
+          val caseMap = cases.foldLeft(Map.empty[String, NamedAst.Case]) {
+            case (acc, caze) => acc + (caze.sym.name -> caze)
+          }
+          NamedAst.Enum(doc, ann, mod, sym, tparams, derives, caseMap, enumType, loc)
       }
   }
 
+
   /**
-    * Performs naming on the given `cases` map.
+    * Performs naming on the given enum case.
     */
-  private def casesOf(cases: Map[Name.Tag, WeededAst.Case], uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[Map[Name.Tag, NamedAst.Case], NameError] = {
-    val casesVal = cases map {
-      case (name, WeededAst.Case(enum, tag, tpe)) =>
-        mapN(visitType(tpe, uenv0, tenv0)) {
-          case t => (name, NamedAst.Case(enum, tag, t))
-        }
-    }
-    mapN(sequence(casesVal))(_.toMap)
+  private def visitCase(case0: WeededAst.Case, enum: Symbol.EnumSym, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.Case, NameError] = case0 match {
+    case WeededAst.Case(ident, tpe0) =>
+      mapN(visitType(tpe0, uenv0, tenv0)) {
+        case tpe =>
+          val sym = Symbol.mkCaseSym(enum, ident)
+          NamedAst.Case(sym, tpe)
+      }
   }
 
   /**
@@ -1927,7 +1932,7 @@ object Namer {
   /**
     * Disambiguate the given tag `tag0` with the given optional enum name `enumOpt0` under the given use environment `uenv0`.
     */
-  private def getDisambiguatedTag(enumOpt0: Option[Name.QName], tag0: Name.Tag, uenv0: UseEnv): (Option[Name.QName], Name.Tag) = {
+  private def getDisambiguatedTag(enumOpt0: Option[Name.QName], tag0: Name.Ident, uenv0: UseEnv): (Option[Name.QName], Name.Ident) = {
     enumOpt0 match {
       case None =>
         // Case 1: The tag is unqualified. Look it up in the use environment.
@@ -2043,7 +2048,7 @@ object Namer {
   /**
     * Represents an environment of "imported" names, including defs, types, and tags.
     */
-  private case class UseEnv(lowerNames: Map[String, Name.QName], upperNames: Map[String, Name.QName], tags: Map[String, (Name.QName, Name.Tag)]) {
+  private case class UseEnv(lowerNames: Map[String, Name.QName], upperNames: Map[String, Name.QName], tags: Map[String, (Name.QName, Name.Ident)]) {
     /**
       * Binds the lowercase name `s` to the qualified name `n`.
       */
@@ -2057,7 +2062,7 @@ object Namer {
     /**
       * Binds the tag name `s` to the qualified name `n` and tag `t`.
       */
-    def addTag(s: String, n: Name.QName, t: Name.Tag): UseEnv = copy(tags = tags + (s -> (n, t)))
+    def addTag(s: String, n: Name.QName, t: Name.Ident): UseEnv = copy(tags = tags + (s -> (n, t)))
   }
 
 }

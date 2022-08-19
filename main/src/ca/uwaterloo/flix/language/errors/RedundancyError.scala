@@ -159,7 +159,7 @@ object RedundancyError {
     * @param sym the enum symbol.
     * @param tag the unused tag.
     */
-  case class UnusedEnumTag(sym: Symbol.EnumSym, tag: Name.Tag) extends RedundancyError {
+  case class UnusedEnumTag(sym: Symbol.EnumSym, tag: Symbol.CaseSym) extends RedundancyError {
     def summary: String = s"Unused case '${tag.name}'."
 
     def message(formatter: Formatter): String = {
