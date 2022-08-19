@@ -38,11 +38,11 @@ pub class UnorderedTraversable[t : Type -> Type] {
     ///
     /// Traversing with the identity function wrapped into an applicative preserves the container `t`.
     ///
-    law identity: forall(t: t[a], f: a -> m[a]) with Eq[m[t[a]]], Applicative[m] . Traversable.traverse(f, t) == Applicative.point(t)
+    law identity: forall(t: t[a], f: a -> m[a]) with Eq[m[t[a]]], CommutativeApplicative[m] . UnorderedTraversable.traverse(f, t) == CommutativeApplicative.point(t)
 
     ///
     /// sequence identity.
     ///
-    law identity: forall(t: t[a], f: a -> m[a]) with Eq[m[t[a]]], Applicative[m] . Traversable.sequence(Functor.map(f, t)) == Applicative.point(t)
+    law identity: forall(t: t[a], f: a -> m[a]) with Eq[m[t[a]]], CommutativeApplicative[m] . UnorderedTraversable.sequence(Functor.map(f, t)) == CommutativeApplicative.point(t)
 
 }
