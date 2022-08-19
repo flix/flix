@@ -17,16 +17,7 @@
 ///
 /// A type class for unordered data structures that can be traversed with an applicative functor.
 ///
-pub class UnorderedTraversable[t : Type -> Type] with UnorderedFoldable[t] {
-
-    ///
-    /// Unordered fold of `t`.
-    ///
-    /// Applies `f` to all elements in `t` and combines the results
-    /// i.e. `CommutativeMonoid.combine(f(a))` for all `a` in `t`.
-    ///
-    pub def foldMap(f: a -> b \ ef, t: t[a]): b \ ef with CommutativeMonoid[b] =
-        UnorderedFoldable.foldMap(f, t)
+pub class UnorderedTraversable[t : Type -> Type] {
 
     ///
     /// Unordered traverse of `t`.
@@ -43,6 +34,5 @@ pub class UnorderedTraversable[t : Type -> Type] with UnorderedFoldable[t] {
     ///
     pub def sequence(t: t[m[a]]): m[t[a]] with CommutativeApplicative[m] =
         UnorderedTraversable.traverse(identity, t)
-
 
 }
