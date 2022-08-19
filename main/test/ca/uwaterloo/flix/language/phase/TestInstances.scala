@@ -69,9 +69,9 @@ class TestInstances extends FunSuite with TestUtils {
       """
         |class C[a]
         |
-        |instance C[a -> b & p \ ef]
+        |instance C[a -> b & p \ ef1]
         |
-        |instance C[x -> y & q \ f]
+        |instance C[x -> y & q \ ef2]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.OverlappingInstances](result)
