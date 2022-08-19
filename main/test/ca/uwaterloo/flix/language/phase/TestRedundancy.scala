@@ -1077,7 +1077,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """
         |namespace N {
         |    eff E
-        |    def foo(): Unit \ E = ??? as \ E
+        |    def foo(): Unit \ ef = ??? as \ ef
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)

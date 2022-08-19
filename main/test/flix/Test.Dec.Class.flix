@@ -87,7 +87,7 @@ namespace Test/Dec/Class {
 
     namespace Test09 {
         class Eff[e : Bool] {
-            pub def isPure(f: a -> b \ e): Bool
+            pub def isPure(f: a -> b \ ef): Bool
         }
 
         instance Eff[Pure] {

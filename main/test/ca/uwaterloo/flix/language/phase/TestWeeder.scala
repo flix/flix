@@ -725,7 +725,7 @@ class TestWeeder extends FunSuite with TestUtils {
     val input =
       """
         |eff E {
-        |    def op(): Unit \ E
+        |    def op(): Unit \ ef
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
