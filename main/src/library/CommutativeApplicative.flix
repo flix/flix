@@ -15,7 +15,7 @@
  */
 
 ///
-///
+/// A type class for functors that support commutative application.
 ///
 pub class CommutativeApplicative[m : Type -> Type] with Applicative[m] {
 
