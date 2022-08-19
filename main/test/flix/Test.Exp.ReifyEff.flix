@@ -36,12 +36,12 @@ namespace Test/Exp/ReifyEff {
     @test
     def reify12(): Bool = not hof((x -> x as \ IO) >> (y -> y as \ E))
 
-    def hof(f: a -> b \ E): Bool = reifyEff(f) {
+    def hof(f: a -> b \ ef): Bool = reifyEff(f) {
         case Pure(_) => true
         case _ => false
     }
 
-    def >>(f: a -> b \ E1, g: b -> c \ E2): a -> c \ { E1, E2 } = x -> g(f(x))
+    def >>(f: a -> b \ ef1, g: b -> c \ ef2): a -> c \ { ef1, ef2 } = x -> g(f(x))
 
     pub eff E
 }
