@@ -1323,7 +1323,7 @@ class TestTyper extends FunSuite with TestUtils {
         |    pub def op(x: String): Unit
         |}
         |
-        |def foo(): Unit \ ef = do E.op("hello", "world")
+        |def foo(): Unit \ E = do E.op("hello", "world")
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.InvalidOpParamCount](result)
@@ -1353,7 +1353,7 @@ class TestTyper extends FunSuite with TestUtils {
         |    pub def op(x: String): Unit
         |}
         |
-        |def foo(): Unit \ ef = do E.op(123)
+        |def foo(): Unit \ E = do E.op(123)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.UnexpectedType](result)
