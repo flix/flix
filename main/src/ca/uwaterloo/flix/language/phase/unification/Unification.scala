@@ -70,8 +70,13 @@ object Unification {
   def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     (tpe1, tpe2) match {
 
-      // don't try to unify effects if the `no-set-effects` flag is on
-      case (x, y) if x.kind == Kind.Effect && y.kind == Kind.Effect && flix.options.xnoseteffects => Ok(Substitution.empty)
+      case _ if tpe1.kind == Kind.Effect && tpe2.kind == Kind.Effect =>
+        // don't try to unify effects if the `no-set-effects` flag is on
+        if (flix.options.xnoseteffects) {
+          Ok(Substitution.empty)
+        } else {
+          SetUnification.unify(tpe1, tpe2, renv)
+        }
 
       case _ if tpe1.kind == Kind.Bool && tpe2.kind == Kind.Bool => BoolUnification.unify(tpe1, tpe2, renv)
 
@@ -82,12 +87,10 @@ object Unification {
       case (x: Type.Var, y: Type.Var) => unifyVars(x.asKinded, y.asKinded, renv)
 
       case (x: Type.Var, _) => (x.kind, tpe2.kind) match {
-        case (Kind.Effect, Kind.Effect) => SetUnification.unify(x, tpe2, renv)
         case _ => unifyVar(x.asKinded, tpe2, renv)
       }
 
       case (_, x: Type.Var) => (tpe1.kind, x.kind) match {
-        case (Kind.Effect, Kind.Effect) => SetUnification.unify(tpe1, x, renv)
         case _ => unifyVar(x.asKinded, tpe1, renv)
       }
 
