@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.BoolFormula.{fromBoolType, fromEffType, toType}
-import ca.uwaterloo.flix.language.phase.unification.BoolTable.minimizeFormula
+import ca.uwaterloo.flix.language.phase.unification.BoolAlgebraTable.minimizeFormula
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
@@ -91,7 +91,7 @@ object TypeMinimization {
     val currentSize = tpe.size
 
     // Return `tpe` immediately if it is "small".
-    if (currentSize < BoolTable.Threshold) {
+    if (currentSize < BoolAlgebraTable.Threshold) {
       return tpe
     }
 
@@ -101,7 +101,7 @@ object TypeMinimization {
 
     // Construct a bi-directional map from type variables to indices.
     // The idea is that the first variable becomes x0, the next x1, and so forth.
-    val m = (tvars ++ effs).zipWithIndex.foldLeft(Bimap.empty[BoolFormula.VarOrEff, BoolTable.Variable]) {
+    val m = (tvars ++ effs).zipWithIndex.foldLeft(Bimap.empty[BoolFormula.VarOrEff, BoolAlgebraTable.Variable]) {
       case (macc, (sym, x)) => macc + (sym -> x)
     }
 
