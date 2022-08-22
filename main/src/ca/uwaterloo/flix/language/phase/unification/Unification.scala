@@ -26,7 +26,7 @@ object Unification {
   /**
     * Unify the two type variables `x` and `y`.
     */
-  private def unifyVars(x: Type.KindedVar, y: Type.KindedVar, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  def unifyVars(x: Type.KindedVar, y: Type.KindedVar, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // Case 0: types are identical
     if (x.sym == y.sym) {
       Result.Ok(Substitution.empty)
@@ -45,10 +45,10 @@ object Unification {
   /**
     * Unifies the given variable `x` with the given non-variable type `tpe`.
     */
-  private def unifyVar(x: Type.KindedVar, tpe: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  def unifyVar(x: Type.KindedVar, tpe: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // NB: The `tpe` type must be a non-var.
     if (tpe.isInstanceOf[Type.Var])
-      throw InternalCompilerException(s"Unexpected variable type: '$tpe'.")
+      throw InternalCompilerException(s"Unexpected variable type: '$tpe'.") // MATT dangerous. fix interface
 
     // Check if `x` is rigid.
     if (renv.isRigid(x.sym)) {
@@ -72,6 +72,8 @@ object Unification {
 
       // don't try to unify effects if the `no-set-effects` flag is on
       case (x, y) if x.kind == Kind.Effect && y.kind == Kind.Effect && flix.options.xnoseteffects => Ok(Substitution.empty)
+
+      case _ if tpe1.kind == Kind.RecordRow && tpe2.kind == Kind.RecordRow => RecordUnification.unifyRows(tpe1, tpe2, renv)
 
       case (x: Type.Var, y: Type.Var) => unifyVars(x.asKinded, y.asKinded, renv)
 
@@ -99,15 +101,6 @@ object Unification {
       case _ if tpe1.kind == Kind.Effect && tpe2.kind == Kind.Effect =>
         SetUnification.unify(tpe1, tpe2, renv)
 
-      case (row1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(_), _), _, _), restRow1, _), row2) =>
-        // Attempt to write the row to match.
-        rewriteRecordRow(row2, row1, renv) flatMap {
-          case (subst1, restRow2) =>
-            unifyTypes(subst1(restRow1), subst1(restRow2), renv) flatMap {
-              case subst2 => Result.Ok(subst2 @@ subst1)
-            }
-        }
-
       case (row1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(_), _), _, _), restRow1, _), row2) =>
         // Attempt to write the row to match.
         rewriteSchemaRow(row2, row1, renv) flatMap {
@@ -128,51 +121,6 @@ object Unification {
 
       case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
     }
-  }
-
-  /**
-    * Attempts to rewrite the given row type `rewrittenRow` such that it shares a first label with `staticRow`.
-    */
-  private def rewriteRecordRow(rewrittenRow: Type, staticRow: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, Type), UnificationError] = {
-
-    def visit(row: Type): Result[(Substitution, Type), UnificationError] = (row, staticRow) match {
-      case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(field2), _), fieldType2, _), restRow2, loc),
-      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(field1), _), fieldType1, _), _, _)) =>
-        // Case 1: The row is of the form { field2 :: fieldType2 | restRow2 }
-        if (field1 == field2) {
-          // Case 1.1: The fields match, their types must match.
-          for {
-            subst <- unifyTypes(fieldType1, fieldType2, renv)
-          } yield (subst, restRow2)
-        } else {
-          // Case 1.2: The fields do not match, attempt to match with a field further down.
-          visit(restRow2) map {
-            case (subst, rewrittenRow) => (subst, Type.mkRecordRowExtend(field2, fieldType2, rewrittenRow, loc))
-          }
-        }
-      case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(field1), _), fieldType1, _), _, _)) =>
-        val tv = tvar.asKinded
-        // Case 2: The row is a type variable.
-        if (staticRow.typeVars contains tv) {
-          Err(UnificationError.OccursCheck(tv, staticRow))
-        } else {
-          // Introduce a fresh type variable to represent one more level of the row.
-          val restRow2 = Type.freshVar(Kind.RecordRow, tvar.loc)
-          val type2 = Type.mkRecordRowExtend(field1, fieldType1, restRow2, tvar.loc)
-          val subst = Substitution.singleton(tv.sym, type2)
-          Ok((subst, restRow2))
-        }
-
-      case (Type.Cst(TypeConstructor.RecordRowEmpty, _), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(field1), _), fieldType1, _), _, _)) =>
-        // Case 3: The `field` does not exist in the record.
-        Err(UnificationError.UndefinedField(field1, fieldType1, rewrittenRow))
-
-      case _ =>
-        // Case 4: The type is not a row.
-        Err(UnificationError.NonRecordType(rewrittenRow))
-    }
-
-    visit(rewrittenRow)
   }
 
   /**
