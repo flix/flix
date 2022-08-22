@@ -162,7 +162,7 @@ object Packager {
     // Check that the path is a project path.
     checkProjectPath(p) match {
       case Validation.Success(_) => ()
-      case Validation.Failure(missingPaths) => throw new RuntimeException(s"Missing files or directories: $missingPaths")
+      case Validation.Failure(missingPaths) => throw new RuntimeException(s"Missing files or directories: ${missingPaths.mkString(", ")}")
     }
 
     // Configure a new Flix object.
@@ -188,7 +188,7 @@ object Packager {
     // Check that the path is a project path.
     checkProjectPath(p) match {
       case Validation.Success(_) => ()
-      case Validation.Failure(missingPaths) => throw new RuntimeException(s"Missing files or directories: $missingPaths")
+      case Validation.Failure(missingPaths) => throw new RuntimeException(s"Missing files or directories: ${missingPaths.mkString(", ")}")
     }
 
     // Configure a new Flix object.
@@ -258,7 +258,7 @@ object Packager {
     // Check that the path is a project path.
     checkProjectPath(p) match {
       case Validation.Success(_) => ()
-      case Validation.Failure(missingPaths) => throw new RuntimeException(s"Missing files or directories: $missingPaths")
+      case Validation.Failure(missingPaths) => throw new RuntimeException(s"Missing files or directories: ${missingPaths.mkString(", ")}")
     }
 
     // The path to the jar file.
@@ -303,7 +303,7 @@ object Packager {
     // Check that the path is a project path.
     checkProjectPath(p) match {
       case Validation.Success(_) => ()
-      case Validation.Failure(missingPaths) => throw new RuntimeException(s"Missing files or directories: $missingPaths")
+      case Validation.Failure(missingPaths) => throw new RuntimeException(s"Missing files or directories: ${missingPaths.mkString(", ")}")
     }
 
     // The path to the fpkg file.
