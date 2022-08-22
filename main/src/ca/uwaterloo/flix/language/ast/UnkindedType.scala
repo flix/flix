@@ -130,6 +130,9 @@ object UnkindedType {
 sealed trait UnkindedType {
   def loc: SourceLocation
 
+  /**
+    * Maps all the type vars in the type according to the given function `f`.
+    */
   def map(f: Symbol.UnkindedTypeVarSym => UnkindedType): UnkindedType = this match {
     case UnkindedType.Var(sym, _) => f(sym)
     case t: UnkindedType.Cst => t
@@ -142,13 +145,26 @@ sealed trait UnkindedType {
     case UnkindedType.Alias(cst, args, tpe, loc) => UnkindedType.Alias(cst, args.map(_.map(f)), tpe.map(f), loc)
   }
 
+  /**
+    * Returns the base type.
+    *
+    * For example,
+    * X[a, b, c] returns X
+    *
+    */
   def baseType: UnkindedType = this match {
     case UnkindedType.Apply(tpe1, _, _) => tpe1.baseType
     case t => t
   }
 
+  /**
+    * Returns the type arguments.
+    *
+    * For example
+    * X[a, b, c] returns [a, b, c]
+    */
   def typeArguments: List[UnkindedType] = this match {
     case UnkindedType.Apply(tpe1, tpe2, _) => tpe1.typeArguments :+ tpe2
-    case tpe => Nil
+    case _ => Nil
   }
 }
