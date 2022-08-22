@@ -15,9 +15,13 @@
  */
 package ca.uwaterloo.flix.util.collection
 
-import scala.collection.LinearSeq
+import scala.collection.SeqOps
 
 /**
   * Nonempty list type
   */
-case class Nel[A](override val head: A, override val tail: List[A]) extends LinearSeq[A]
+case class Nel[A](override val head: A, override val tail: List[A]) extends Seq[A] with SeqOps[A, Nel, List[A]] {
+  override def length: Int = tail.length + 1
+
+  override def iterator: Iterator[A] = Iterator(head) ++ Iterator.from(tail)
+}

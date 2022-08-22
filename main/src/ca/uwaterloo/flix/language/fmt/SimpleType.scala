@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.Nel
 
 /**
   * A well-kinded type in an easily-printable format.
@@ -153,12 +154,12 @@ object SimpleType {
   /**
     * A chain of types connected by `and`.
     */
-  case class And(tpes: List[SimpleType]) extends SimpleType
+  case class And(tpes: Nel[SimpleType]) extends SimpleType
 
   /**
     * A chain of types connected by `or`.
     */
-  case class Or(tpes: List[SimpleType]) extends SimpleType
+  case class Or(tpes: Nel[SimpleType]) extends SimpleType
 
   ////////////////
   // Set Operators
@@ -172,12 +173,12 @@ object SimpleType {
   /**
     * A chain of types connected by `+`.
     */
-  case class Union(tpes: List[SimpleType]) extends SimpleType
+  case class Union(tpes: Nel[SimpleType]) extends SimpleType
 
   /**
     * A chain of types connected by `&`.
     */
-  case class Intersection(tpes: List[SimpleType]) extends SimpleType
+  case class Intersection(tpes: Nel[SimpleType]) extends SimpleType
 
   /**
     * Difference of two types.
@@ -427,8 +428,8 @@ object SimpleType {
       case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Channel => mkApply(Channel, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(fromWellKindedType))
-      case TypeConstructor.KindedEnum(sym, kind) => mkApply(Name(sym.name), t.typeArguments.map(fromWellKindedType))
-      case TypeConstructor.UnkindedEnum(sym) => throw InternalCompilerException("Unexpected unkinded type.")
+      case TypeConstructor.KindedEnum(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.UnkindedEnum(_) => throw InternalCompilerException("Unexpected unkinded type.")
       case TypeConstructor.Native(clazz) => Name(clazz.getSimpleName)
       case TypeConstructor.Ref => mkApply(Ref, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Tuple(l) =>
@@ -467,7 +468,7 @@ object SimpleType {
         // collapse into a chain of ands
         t.typeArguments.map(fromWellKindedType).map(splitAnds) match {
           // Case 1: No args. ? and ?
-          case Nil => And(Hole :: Hole :: Nil)
+          case Nil => And(Nel(Hole, Hole :: Nil))
           // Case 2: One arg. Take the left and put a hole at the end: tpe1 and tpe2 and ?
           case args :: Nil => And(args :+ Hole)
           // Case 3: Multiple args. Concatenate them: tpe1 and tpe2 and tpe3 and tpe4
@@ -480,7 +481,7 @@ object SimpleType {
         // collapse into a chain of ors
         t.typeArguments.map(fromWellKindedType).map(splitOrs) match {
           // Case 1: No args. ? or ?
-          case Nil => Or(Hole :: Hole :: Nil)
+          case Nil => Or(Nel(Hole, Hole :: Nil))
           // Case 2: One arg. Take the left and put a hole at the end: tpe1 or tpe2 or ?
           case args :: Nil => Or(args :+ Hole)
           // Case 3: Multiple args. Concatenate them: tpe1 or tpe2 or tpe3 or tpe4
@@ -500,7 +501,7 @@ object SimpleType {
         // collapse into a chain of unions
         t.typeArguments.map(fromWellKindedType).map(splitUnions) match {
           // Case 1: No args. ? + ?
-          case Nil => Union(Hole :: Hole :: Nil)
+          case Nil => Union(Nel(Hole,  Hole :: Nil))
           // Case 2: One arg. Take the left and put a hole at the end: tpe1 + tpe2 + ?
           case args :: Nil => Union(args :+ Hole)
           // Case 3: Multiple args. Concatenate them: tpe1 + tpe2 + tpe3 + tpe4
@@ -513,13 +514,13 @@ object SimpleType {
         // collapse into a chain of intersections
         t.typeArguments.map(fromWellKindedType).map(splitIntersections) match {
           // Case 1: No args. ? & ?
-          case Nil => Intersection(Hole :: Hole :: Nil)
+          case Nil => Intersection(Nel(Hole, Hole :: Nil))
           // Case 2: One arg. Take the left and put a hole at the end: tpe1 & tpe2 & ?
           case args :: Nil => Intersection(args :+ Hole)
           // Case 3: Complement on the right: sugar it into a difference.
-          case args :: List(Complement(tpe)) :: Nil => Difference(joinIntersection(args), tpe)
+          case args :: Nel(Complement(tpe), Nil) :: Nil => Difference(joinIntersection(args), tpe)
           // Case 4: Complement on the left: sugar it into a difference.
-          case List(Complement(tpe)) :: args :: Nil => Difference(joinIntersection(args), tpe)
+          case Nel(Complement(tpe), Nil) :: args :: Nil => Difference(joinIntersection(args), tpe)
           // Case 5: Multiple args. Concatenate them: tpe1 & tpe2 & tpe3 & tpe4
           case args1 :: args2 :: Nil => Intersection(args1 ++ args2)
           // Case 6: Too many args. Error.
@@ -621,45 +622,44 @@ object SimpleType {
     * Splits `t1 and t2` into `t1 :: t2 :: Nil`,
     * and leaves non-and types as singletons.
     */
-  private def splitAnds(tpe: SimpleType): List[SimpleType] = tpe match {
+  private def splitAnds(tpe: SimpleType): Nel[SimpleType] = tpe match {
     case And(tpes) => tpes
-    case t => List(t)
+    case t => Nel(t, Nil)
   }
 
   /**
     * Splits `t1 or t2` into `t1 :: t2 :: Nil`,
     * and leaves non-or types as singletons.
     */
-  private def splitOrs(tpe: SimpleType): List[SimpleType] = tpe match {
+  private def splitOrs(tpe: SimpleType): Nel[SimpleType] = tpe match {
     case Or(tpes) => tpes
-    case t => List(t)
+    case t => Nel(t, Nil)
   }
 
   /**
     * Splits `t1 + t2` into `t1 :: t2 :: Nil`,
     * and leaves non-union types as singletons.
     */
-  private def splitUnions(tpe: SimpleType): List[SimpleType] = tpe match {
+  private def splitUnions(tpe: SimpleType): Nel[SimpleType] = tpe match {
     case Union(tpes) => tpes
-    case t => List(t)
+    case t => Nel(t, Nil)
   }
 
   /**
     * Splits `t1 & t2` into `t1 :: t2 :: Nil`,
     * and leaves non-intersection types as singletons.
     */
-  private def splitIntersections(tpe: SimpleType): List[SimpleType] = tpe match {
+  private def splitIntersections(tpe: SimpleType): Nel[SimpleType] = tpe match {
     case Intersection(tpes) => tpes
-    case t => List(t)
+    case t => Nel(t, Nil)
   }
 
   /**
     * Joins `t1 :: t2 :: Nil` into `t1 & t2`
     * and leaves singletons as non-intersection types.
     */
-  private def joinIntersection(tpes: List[SimpleType]): SimpleType = tpes match {
-    case Nil => throw InternalCompilerException("unexpected empty type list")
-    case t :: Nil => t
+  private def joinIntersection(tpes: Nel[SimpleType]): SimpleType = tpes match {
+    case Nel(t, Nil) => t
     case ts => Intersection(ts)
   }
 
