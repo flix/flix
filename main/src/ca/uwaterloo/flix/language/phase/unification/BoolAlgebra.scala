@@ -22,49 +22,49 @@ import ca.uwaterloo.flix.util.collection.Bimap
 import scala.collection.immutable.SortedSet
 
 /**
-  * A common super-type for Boolean formulas.
+  * A common super-type for Boolean algebras.
   */
 sealed trait BoolAlgebra {
 
   /**
-    * Returns the free variables in `this` formula.
+    * Returns the free variables in `this` expression.
     */
   final def freeVars: SortedSet[Int] = this match {
-    case BoolAlgebra.True => SortedSet.empty
-    case BoolAlgebra.False => SortedSet.empty
+    case BoolAlgebra.Top => SortedSet.empty
+    case BoolAlgebra.Bot => SortedSet.empty
     case BoolAlgebra.Var(x) => SortedSet(x)
     case BoolAlgebra.Neg(f) => f.freeVars
-    case BoolAlgebra.Conj(f1, f2) => f1.freeVars ++ f2.freeVars
-    case BoolAlgebra.Disj(f1, f2) => f1.freeVars ++ f2.freeVars
+    case BoolAlgebra.Join(f1, f2) => f1.freeVars ++ f2.freeVars
+    case BoolAlgebra.Meet(f1, f2) => f1.freeVars ++ f2.freeVars
   }
 
   /**
-    * Returns the size of `this` formulas.
+    * Returns the size of `this` expression.
     *
-    * The size is the number of conjunctions and disjunctions.
+    * The size is the number of joins and meets
     */
   final def size: Int = this match {
-    case BoolAlgebra.True => 0
-    case BoolAlgebra.False => 0
+    case BoolAlgebra.Top => 0
+    case BoolAlgebra.Bot => 0
     case BoolAlgebra.Var(_) => 0
     case BoolAlgebra.Neg(t) => t.size
-    case BoolAlgebra.Conj(t1, t2) => t1.size + t2.size + 1
-    case BoolAlgebra.Disj(t1, t2) => t1.size + t2.size + 1
+    case BoolAlgebra.Join(t1, t2) => t1.size + t2.size + 1
+    case BoolAlgebra.Meet(t1, t2) => t1.size + t2.size + 1
   }
 
   /**
-    * Returns a human-readable string representation of `this` formula.
+    * Returns a human-readable string representation of `this` expression.
     */
   override def toString: String = this match {
-    case BoolAlgebra.True => "true"
-    case BoolAlgebra.False => "false"
+    case BoolAlgebra.Top => "true"
+    case BoolAlgebra.Bot => "false"
     case BoolAlgebra.Var(x) => s"x$x"
     case BoolAlgebra.Neg(f) => f match {
       case BoolAlgebra.Var(x) => s"!x$x"
       case _ => s"!($f)"
     }
-    case BoolAlgebra.Conj(f1, f2) => s"(and $f1 $f2)"
-    case BoolAlgebra.Disj(f1, f2) => s"(or $f1 $f2)"
+    case BoolAlgebra.Join(f1, f2) => s"(and $f1 $f2)"
+    case BoolAlgebra.Meet(f1, f2) => s"(or $f1 $f2)"
   }
 
 }
@@ -72,14 +72,14 @@ sealed trait BoolAlgebra {
 object BoolAlgebra {
 
   /**
-    * Represents the constant True.
+    * Represents the constant ⊤.
     */
-  case object True extends BoolAlgebra
+  case object Top extends BoolAlgebra
 
   /**
-    * Represents the constant False.
+    * Represents the constant ⊥.
     */
-  case object False extends BoolAlgebra
+  case object Bot extends BoolAlgebra
 
   /**
     * Represents a variable. Variables are numbered by integers.
@@ -87,19 +87,19 @@ object BoolAlgebra {
   case class Var(x: Int) extends BoolAlgebra
 
   /**
-    * Represents the negation of the formula `f`.
+    * Represents ¬f
     */
   case class Neg(f: BoolAlgebra) extends BoolAlgebra
 
   /**
-    * Represents the conjunction (logical and) of `f1` and `f2`.
+    * Represents f1 ⊓ f2
     */
-  case class Conj(f1: BoolAlgebra, f2: BoolAlgebra) extends BoolAlgebra
+  case class Join(f1: BoolAlgebra, f2: BoolAlgebra) extends BoolAlgebra
 
   /**
-    * Represents the disjunction (logical or) of `f1` and `f2`.
+    * Represents f1 ⊔ f2
     */
-  case class Disj(f1: BoolAlgebra, f2: BoolAlgebra) extends BoolAlgebra
+  case class Meet(f1: BoolAlgebra, f2: BoolAlgebra) extends BoolAlgebra
 
   /**
     * Substitutes all variables in `f` using the substitution map `m`.
@@ -107,19 +107,19 @@ object BoolAlgebra {
     * The map `m` must bind each free variable in `f` to a (new) variable.
     */
   def substitute(f: BoolAlgebra, m: Bimap[Int, Int]): BoolAlgebra = f match {
-    case True => True
-    case False => False
+    case Top => Top
+    case Bot => Bot
     case Var(x) => m.getForward(x) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: 'x$x'.")
       case Some(y) => Var(y)
     }
     case Neg(f1) => Neg(substitute(f1, m))
-    case Conj(f1, f2) => Conj(substitute(f1, m), substitute(f2, m))
-    case Disj(f1, f2) => Disj(substitute(f1, m), substitute(f2, m))
+    case Join(f1, f2) => Join(substitute(f1, m), substitute(f2, m))
+    case Meet(f1, f2) => Meet(substitute(f1, m), substitute(f2, m))
   }
 
   /**
-    * Converts the given type `tpe` to a Boolean formula under the given variable substitution map `m`.
+    * Converts the given type `tpe` to a Boolean algebra expression under the given variable substitution map `m`.
     *
     * The map `m` must bind each free type variable in `tpe` to a Boolean variable.
     */
@@ -128,11 +128,11 @@ object BoolAlgebra {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.")
       case Some(x) => Var(x)
     }
-    case Type.True => True
-    case Type.False => False
+    case Type.True => Top
+    case Type.False => Bot
     case Type.Apply(Type.Cst(TypeConstructor.Not, _), tpe1, _) => Neg(fromBoolType(tpe1, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => Conj(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => Disj(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => Join(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => Meet(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
@@ -150,16 +150,16 @@ object BoolAlgebra {
       case None => throw InternalCompilerException(s"Unexpected unbound effect: '$sym'.")
       case Some(x) => Var(x)
     }
-    case Type.All => True
-    case Type.Empty => False
+    case Type.All => Top
+    case Type.Empty => Bot
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Neg(fromEffType(tpe1, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Conj(fromEffType(tpe1, m), fromEffType(tpe2, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => Disj(fromEffType(tpe1, m), fromEffType(tpe2, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Join(fromEffType(tpe1, m), fromEffType(tpe2, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => Meet(fromEffType(tpe1, m), fromEffType(tpe2, m))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
   /**
-    * Converts the given formula `f` back to a type under the given variable substitution map `m`.
+    * Converts the given algebraic expression `f` back to a type under the given variable substitution map `m`.
     *
     * The map `m` must bind each free variable in `f` to a type variable.
     */
@@ -170,39 +170,39 @@ object BoolAlgebra {
   }
 
   /**
-    * Converts the given formula `f` back to a type under the given variable substitution map `m`.
+    * Converts the given algebraic expression `f` back to a type under the given variable substitution map `m`.
     *
     * The map `m` must bind each free variable in `f` to a type variable.
     */
   private def toBoolType(f: BoolAlgebra, m: Bimap[VarOrEff, Int], loc: SourceLocation): Type = f match {
-    case True => Type.True
-    case False => Type.False
+    case Top => Type.True
+    case Bot => Type.False
     case Var(x) => m.getBackward(x) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.")
       case Some(VarOrEff.Var(sym)) => Type.KindedVar(sym, loc)
       case Some(VarOrEff.Eff(sym)) => throw InternalCompilerException(s"Unexpected effect: '$sym'.")
     }
     case Neg(f1) => Type.mkNot(toBoolType(f1, m, loc), loc)
-    case Conj(t1, t2) => Type.mkAnd(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
-    case Disj(t1, t2) => Type.mkOr(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
+    case Join(t1, t2) => Type.mkAnd(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
+    case Meet(t1, t2) => Type.mkOr(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
   }
 
   /**
-    * Converts the given formula `f` back to a type under the given variable substitution map `m`.
+    * Converts the given algebraic expression `f` back to a type under the given variable substitution map `m`.
     *
     * The map `m` must bind each free variable in `f` to a type variable.
     */
   private def toEffType(f: BoolAlgebra, m: Bimap[VarOrEff, Int], loc: SourceLocation): Type = f match {
-    case True => Type.All
-    case False => Type.Empty
+    case Top => Type.All
+    case Bot => Type.Empty
     case Var(x) => m.getBackward(x) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.")
       case Some(VarOrEff.Var(sym)) => Type.KindedVar(sym, loc)
       case Some(VarOrEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), loc)
     }
     case Neg(f1) => Type.mkComplement(toEffType(f1, m, loc), loc)
-    case Conj(t1, t2) => Type.mkIntersection(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
-    case Disj(t1, t2) => Type.mkUnion(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
+    case Join(t1, t2) => Type.mkIntersection(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
+    case Meet(t1, t2) => Type.mkUnion(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
   }
 
 
