@@ -248,7 +248,7 @@ object Unification {
         case Result.Err(UnificationError.MismatchedTypes(baseType1, baseType2)) =>
           (baseType1.typeConstructor, baseType2.typeConstructor) match {
             case (Some(TypeConstructor.Arrow(_)), _) => Err(getUnderOrOverAppliedError(baseType1, baseType2, type1, type2, renv, loc))
-            case (_, Some(TypeConstructor.Arrow(_))) => Err(getUnderOrOverAppliedError(baseType2, baseType1, type1, type2, renv, loc))
+            case (_, Some(TypeConstructor.Arrow(_))) => Err(getUnderOrOverAppliedError(baseType2, baseType1, type2, type1, renv, loc))
             case _ => Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, loc))
           }
 
