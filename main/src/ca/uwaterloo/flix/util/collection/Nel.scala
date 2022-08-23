@@ -15,13 +15,32 @@
  */
 package ca.uwaterloo.flix.util.collection
 
-import scala.collection.SeqOps
+import scala.collection.{SeqFactory, SeqOps, mutable}
 
 /**
   * Nonempty list type
   */
-case class Nel[A](override val head: A, override val tail: List[A]) extends Seq[A] with SeqOps[A, Nel, List[A]] {
-  override def length: Int = tail.length + 1
+case class Nel[A](override val head: A, override val tail: List[A]) extends Seq[A] with SeqOps[A, Nel, Seq[A]] {
+  override def length: Int = 1 + tail.length
 
-  override def iterator: Iterator[A] = Iterator(head) ++ Iterator.from(tail)
+  override def iterator: Iterator[A] = Iterator(head) ++ tail
+
+  override def iterableFactory: SeqFactory[Nel] = Nel.Factory
+
+  override def apply(i: Int): A = if (i == 0) head else tail(i - 1)
+}
+
+object Nel {
+  object Factory extends SeqFactory[Nel] {
+    override def from[A](source: IterableOnce[A]): Nel[A] = {
+      val it = source.iterator
+      val head = it.next()
+      val tail = it.toList
+      Nel(head, tail)
+    }
+
+    override def empty[A]: Nel[A] = throw new UnsupportedOperationException
+
+    override def newBuilder[A]: mutable.Builder[A, Nel[A]] = throw new UnsupportedOperationException
+  }
 }
