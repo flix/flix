@@ -118,7 +118,7 @@ object Typer {
     flix.subphase("Instances") {
       val results = ParOps.parMap(root.instances.values.flatten)(visitInstance(_, root, classEnv))
       Validation.sequence(results) map {
-        insts => insts.groupBy(inst => inst.sym.clazz)
+        insts => insts.toList.groupBy(inst => inst.sym.clazz)
       }
     }
 

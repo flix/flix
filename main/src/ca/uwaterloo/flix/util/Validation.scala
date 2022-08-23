@@ -16,7 +16,8 @@
 
 package ca.uwaterloo.flix.util
 
-import scala.collection.mutable
+import scala.+:
+import scala.collection.{IterableOps, SeqOps, mutable}
 
 sealed trait Validation[+T, +E] {
 
@@ -83,11 +84,11 @@ object Validation {
   /**
     * Sequences the given list of validations `xs`.
     */
-  def sequence[T, E](xs: Iterable[Validation[T, E]]): Validation[List[T], E] = {
-    val zero = Success(List.empty[T]): Validation[List[T], E]
+  def sequence[I[X] <: IterableOps[X, I, I[X]], T, E](xs: I[Validation[T, E]]): Validation[I[T], E] = {
+    val zero = Success(xs.iterableFactory.empty): Validation[I[T], E]
     xs.foldRight(zero) {
       case (Success(curValue), Success(accValue)) =>
-        Success(curValue :: accValue)
+        Success(xs.iterableFactory.fill(1)(curValue) ++  accValue)
       case (Success(_), Failure(accErrors)) =>
         Failure(accErrors)
       case (Failure(curErrors), Success(_)) =>
@@ -100,7 +101,7 @@ object Validation {
   /**
     * Sequences the given list of validations `xs`, ignoring non-error results.
     */
-  def sequenceX[T, E](xs: Iterable[Validation[T, E]]): Validation[Unit, E] = {
+  def sequenceX[I[X] <: IterableOps[X, I, I[X]], T, E](xs: I[Validation[T, E]]): Validation[Unit, E] = {
     sequence(xs).map(_ => ())
   }
 
