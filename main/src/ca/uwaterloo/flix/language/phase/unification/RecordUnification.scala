@@ -23,7 +23,11 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
 object RecordUnification {
 
-  // MATT docs
+  /**
+    * Performs unification on the given record rows in the given rigidity environment.
+    *
+    * The given types must have kind [[Kind.RecordRow]]
+    */
   def unifyRows(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
 
     case (tvar: Type.KindedVar, tpe) => Unification.unifyVar(tvar, tpe, renv)
