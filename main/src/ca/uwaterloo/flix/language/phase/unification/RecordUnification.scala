@@ -26,8 +26,6 @@ object RecordUnification {
   // MATT docs
   def unifyRows(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
 
-    case (tvar1: Type.KindedVar, tvar2: Type.KindedVar) => Unification.unifyVars(tvar1, tvar2, renv)
-
     case (tvar: Type.KindedVar, tpe) => Unification.unifyVar(tvar, tpe, renv)
 
     case (tpe, tvar: Type.KindedVar) => Unification.unifyVar(tvar, tpe, renv)

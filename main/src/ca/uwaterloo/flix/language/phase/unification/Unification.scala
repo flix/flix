@@ -26,7 +26,7 @@ object Unification {
   /**
     * Unify the two type variables `x` and `y`.
     */
-  def unifyVars(x: Type.KindedVar, y: Type.KindedVar, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  private def unifyVars(x: Type.KindedVar, y: Type.KindedVar, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // Case 0: types are identical
     if (x.sym == y.sym) {
       Result.Ok(Substitution.empty)
@@ -45,10 +45,9 @@ object Unification {
   /**
     * Unifies the given variable `x` with the given non-variable type `tpe`.
     */
-  def unifyVar(x: Type.KindedVar, tpe: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
-    // NB: The `tpe` type must be a non-var.
-    if (tpe.isInstanceOf[Type.Var])
-      throw InternalCompilerException(s"Unexpected variable type: '$tpe'.") // MATT dangerous. fix interface
+  def unifyVar(x: Type.KindedVar, tpe: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = tpe match {
+    case y: Type.KindedVar => unifyVars(x, y, renv)
+    case _ =>
 
     // Check if `x` is rigid.
     if (renv.isRigid(x.sym)) {
