@@ -69,6 +69,9 @@ object Unification {
   def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     (tpe1, tpe2) match {
 
+      //
+      // Effects
+      //
       case _ if tpe1.kind == Kind.Effect && tpe2.kind == Kind.Effect =>
         // don't try to unify effects if the `no-set-effects` flag is on
         if (flix.options.xnoseteffects) {
@@ -77,20 +80,30 @@ object Unification {
           SetUnification.unify(tpe1, tpe2, renv)
         }
 
+      //
+      // Bools
+      //
       case _ if tpe1.kind == Kind.Bool && tpe2.kind == Kind.Bool => BoolUnification.unify(tpe1, tpe2, renv)
 
+      //
+      // Record Rows
+      //
       case _ if tpe1.kind == Kind.RecordRow && tpe2.kind == Kind.RecordRow => RecordUnification.unifyRows(tpe1, tpe2, renv)
 
+      //
+      // Schema Rows
+      //
       case _ if tpe1.kind == Kind.SchemaRow && tpe2.kind == Kind.SchemaRow => SchemaUnification.unifyRows(tpe1, tpe2, renv)
 
-      case (x: Type.Var, y: Type.Var) => unifyVars(x.asKinded, y.asKinded, renv)
-
-      case (x: Type.Var, _) => (x.kind, tpe2.kind) match {
-        case _ => unifyVar(x.asKinded, tpe2, renv)
+      //
+      // Other: Star or Arrow
+      //
+      case (x: Type.KindedVar, _) => (x.kind, tpe2.kind) match {
+        case _ => unifyVar(x, tpe2, renv)
       }
 
-      case (_, x: Type.Var) => (tpe1.kind, x.kind) match {
-        case _ => unifyVar(x.asKinded, tpe1, renv)
+      case (_, x: Type.KindedVar) => (tpe1.kind, x.kind) match {
+        case _ => unifyVar(x, tpe1, renv)
       }
 
       case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(Substitution.empty)
@@ -98,12 +111,6 @@ object Unification {
       case (Type.Alias(_, _, tpe, _), _) => unifyTypes(tpe, tpe2, renv)
 
       case (_, Type.Alias(_, _, tpe, _)) => unifyTypes(tpe1, tpe, renv)
-
-      case _ if tpe1.kind == Kind.Bool && tpe2.kind == Kind.Bool =>
-        BoolUnification.unify(tpe1, tpe2, renv)
-
-      case _ if tpe1.kind == Kind.Effect && tpe2.kind == Kind.Effect =>
-        SetUnification.unify(tpe1, tpe2, renv)
 
       case (Type.Apply(t11, t12, _), Type.Apply(t21, t22, _)) =>
         unifyTypes(t11, t21, renv) match {
