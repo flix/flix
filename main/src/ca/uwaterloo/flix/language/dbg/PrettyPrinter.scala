@@ -225,20 +225,20 @@ object PrettyPrinter {
             .append(visitExp(exp2))
             .toString()
 
-        case Expression.Is(sym, tag, exp, _, loc) => visitExp(exp) + " is " + tag.name
+        case Expression.Is(sym, exp, _, loc) => visitExp(exp) + " is " + sym.name
 
-        case Expression.Tag(sym, tag, exp, tpe, _, loc) => exp match {
-          case Expression.Unit(_) => tag.name
+        case Expression.Tag(sym, exp, tpe, _, loc) => exp match {
+          case Expression.Unit(_) => sym.name
           case _ =>
             val sb = new mutable.StringBuilder
-            sb.append(tag.name)
+            sb.append(sym.name)
               .append("(")
               .append(visitExp(exp))
               .append(")")
               .toString()
         }
 
-        case Expression.Untag(sym, tag, exp, tpe, _, loc) => "Untag(" + visitExp(exp) + ")"
+        case Expression.Untag(sym, exp, tpe, _, loc) => "Untag(" + visitExp(exp) + ")"
 
         case Expression.Index(exp, offset, tpe, _, loc) =>
           visitExp(exp) +

@@ -47,12 +47,12 @@ namespace Iterator {
     ///
     /// The type of the done function.
     ///
-    pub type alias Done[ef: Region] = Unit -> Bool & ef
+    pub type alias Done[ef: Region] = Unit -> Bool \ ef
 
     ///
     /// The type of the next function.
     ///
-    pub type alias Next[a: Type, ef: Region] = Unit -> a & ef
+    pub type alias Next[a: Type, ef: Region] = Unit -> a \ ef
 
     ///
     /// Returns an empty iterator.
@@ -155,7 +155,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def sumWith(f: a -> Int32 & ef, iter: Iterator[a, r]): Int32 \ { ef, Read(r) } =
+    pub def sumWith(f: a -> Int32 \ ef, iter: Iterator[a, r]): Int32 \ { ef, Read(r) } =
         foldLeft((acc, x) -> acc + f(x), 0, iter)
 
     ///
@@ -174,7 +174,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def productWith(f: a -> Int32 & ef, iter: Iterator[a, r]): Int32 \ { ef, Read(r) } =
+    pub def productWith(f: a -> Int32 \ ef, iter: Iterator[a, r]): Int32 \ { ef, Read(r) } =
         if (isEmpty(iter))
             0
         else
@@ -250,7 +250,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def filter(f: a -> Bool & ef, iter: Iterator[a, r]): List[a] \ { ef, Read(r) } =
+    pub def filter(f: a -> Bool \ ef, iter: Iterator[a, r]): List[a] \ { ef, Read(r) } =
         let Iterator(done, next) = iter;
         def loop(k) = {
             if (done())
@@ -268,7 +268,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def map(f: a -> b & ef, iter: Iterator[a, r]): List[b] \ { ef, Read(r) } =
+    pub def map(f: a -> b \ ef, iter: Iterator[a, r]): List[b] \ { ef, Read(r) } =
         let Iterator(done, next) = iter;
         def loop(k) = {
             if (done())
@@ -284,7 +284,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foreach(f: a -> Unit & ef, iter: Iterator[a, r]): Unit \ { ef, Read(r) } = match iter {
+    pub def foreach(f: a -> Unit \ ef, iter: Iterator[a, r]): Unit \ { ef, Read(r) } = match iter {
         case Iterator(done, _) if done() => ()
         case Iterator(_, next)           => f(next()); foreach(f, iter)
     }
@@ -328,7 +328,7 @@ namespace Iterator {
     /// Fast forwards the given iterator until the next element that satisfies
     /// the given predicate `f`. Returns it (if it exists).
     ///
-    def forward(f: a -> Bool & ef, done: Done[r], next: Next[a, r]): Option[a] \ { ef, Read(r) } =
+    def forward(f: a -> Bool \ ef, done: Done[r], next: Next[a, r]): Option[a] \ { ef, Read(r) } =
         if (done())
             None
         else
@@ -424,7 +424,7 @@ namespace Iterator {
     ///
     /// An iterator should *never* be zipped with itself.
     ///
-    pub def zipWith(f: (a, b) -> c & ef, iterA: Iterator[a, r1], iterB: Iterator[b, r2]): List[c] \ { ef, Read(r1, r2) } =
+    pub def zipWith(f: (a, b) -> c \ ef, iterA: Iterator[a, r1], iterB: Iterator[b, r2]): List[c] \ { ef, Read(r1, r2) } =
         zip(iterA, iterB) |> map(match (x, y) -> f(x, y))
 
     ///
@@ -459,7 +459,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, iter: Iterator[a, r]): b \ { ef, Read(r) } = match iter {
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, iter: Iterator[a, r]): b \ { ef, Read(r) } = match iter {
         case Iterator(done, _) if done() => s
         case Iterator(_, next)           => foldLeft(f, f(s, next()), iter)
     }
@@ -471,7 +471,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, iter: Iterator[a, r]): b \ { ef, Read(r) } =
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, iter: Iterator[a, r]): b \ { ef, Read(r) } =
         let Iterator(done, next) = iter;
         def loop(k) = {
             if (done())
@@ -491,7 +491,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ { ef, Read(r) }) -> b & ef, z: b, iter: Iterator[a, r]): b \ { ef, Read(r) } =
+    pub def foldRightWithCont(f: (a, Unit -> b \ { ef, Read(r) }) -> b \ ef, z: b, iter: Iterator[a, r]): b \ { ef, Read(r) } =
         match iter {
             case Iterator(done, _) if done() => z
             case Iterator(_, next)           => f(next(), _ -> foldRightWithCont(f, z, iter))
@@ -500,7 +500,7 @@ namespace Iterator {
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
-    pub def foldMap(f: a -> b & ef, iter: Iterator[a, r]): b \ { ef, Read(r) } with Monoid[b] =
+    pub def foldMap(f: a -> b \ ef, iter: Iterator[a, r]): b \ { ef, Read(r) } with Monoid[b] =
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), iter)
 
     ///
@@ -512,7 +512,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def reduceLeft(f: (a, a) -> a & ef, iter: Iterator[a, r]): Option[a] \ { ef, Read(r) } =
+    pub def reduceLeft(f: (a, a) -> a \ ef, iter: Iterator[a, r]): Option[a] \ { ef, Read(r) } =
         let Iterator(done, next) = iter;
         if (done())
             None
@@ -527,7 +527,7 @@ namespace Iterator {
     /// If `f` returns `Err(e)`, then the iterator is depleted.
     ///
     @Lazy
-    pub def unfoldWithOk(r: Region[r], f: Unit -> Result[a, b] & ef): Iterator[a, r and ef] \ Write(r) =
+    pub def unfoldWithOk(r: Region[r], f: Unit -> Result[a, b] \ ef): Iterator[a, r and ef] \ Write(r) =
         let cursor = ref None @ r;
         let done = () -> match deref cursor {
             case None    => match f() {
@@ -543,7 +543,7 @@ namespace Iterator {
             case Some(x) =>
                 cursor := None;
                 x
-        } as & r and ef;
+        } as \ {r, ef};
         Iterator(done, next)
 
     ///
@@ -600,7 +600,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def takeWhile(f: a -> Bool & ef, iter: Iterator[a, r]): List[a] \ { ef, Read(r) } =
+    pub def takeWhile(f: a -> Bool \ ef, iter: Iterator[a, r]): List[a] \ { ef, Read(r) } =
         let Iterator(done, next) = iter;
         def loop(k) = {
             if (done())
@@ -616,7 +616,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def dropWhile(f: a -> Bool & ef, iter: Iterator[a, r]): List[a] \ { ef, Read(r) } =
+    pub def dropWhile(f: a -> Bool \ ef, iter: Iterator[a, r]): List[a] \ { ef, Read(r) } =
         let Iterator(done, next) = iter;
         match forward(x -> not f(x), done, next) {
             case None    => Nil
@@ -662,7 +662,7 @@ namespace Iterator {
     ///
     /// Forwards the given iterator to the first non-empty iterator produced by `f`.
     ///
-    def flatMapForward(f: a -> Iterator[b, r1] & ef, done: Done[r2], next: Next[a, r2]): Option[Iterator[b, r1]] \ { ef, Read(r1, r2) } =
+    def flatMapForward(f: a -> Iterator[b, r1] \ ef, done: Done[r2], next: Next[a, r2]): Option[Iterator[b, r1]] \ { ef, Read(r1, r2) } =
         if (done())
             None
         else
@@ -780,7 +780,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, iter: Iterator[a, r]): String \ { ef, Read(r) } =
+    pub def joinWith(f: a -> String \ ef, sep: String, iter: Iterator[a, r]): String \ { ef, Read(r) } =
         let Iterator(done, next) = iter;
         if (done())
             ""
@@ -834,7 +834,7 @@ namespace Iterator {
     ///
     /// This implementation returns `f(x)` as opposed to `forward` which returns `x`.
     ///
-    def filterMapForward(f: a -> Option[b] & ef, done: Done[r], next: Next[a, r]): Option[b] \ { ef, Read(r) } =
+    def filterMapForward(f: a -> Option[b] \ ef, done: Done[r], next: Next[a, r]): Option[b] \ { ef, Read(r) } =
         if (done())
             None
         else

@@ -248,7 +248,7 @@ namespace TestRedBlackTree {
         m == Map#{2 => 1, 5 => 20, 11 => 2, 8 => 16}
 
     @test
-    def mapWithKey06(): Bool & Impure =
+    def mapWithKey06(): Bool \ IO =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(Static);
@@ -273,12 +273,12 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parCount01(): Bool & Impure =
+    def parCount01(): Bool \ IO =
         let Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
         RedBlackTree.parCount(threads() - 1, (k, v) -> k == v, t) == 2000
 
     @test
-    def parCount02(): Bool & Impure =
+    def parCount02(): Bool \ IO =
         let Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
         RedBlackTree.parCount(threads() - 1, (k, v) -> k - 1000 == v, t) == 2000
 
@@ -288,13 +288,13 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parMinimumBy01(): Bool & Impure =
+    def parMinimumBy01(): Bool \ IO =
         let range = List.range(0, 2000);
         let Map(t) = List.zip(range, range) |> List.toMap;
         RedBlackTree.parMinimumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some(0, 0)
 
     @test
-    def parMinimumBy02(): Bool & Impure =
+    def parMinimumBy02(): Bool \ IO =
         let range = List.range(0, 2000);
         let Map(t) = List.zip(range, List.reverse(range)) |> List.toMap;
         RedBlackTree.parMinimumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some(1999, 0)
@@ -328,20 +328,20 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parExists01(): Bool & Impure =
+    def parExists01(): Bool \ IO =
         let l = List.range(1, 2001);
         let Map(t) = List.zip(l, l) |> List.toMap;
         RedBlackTree.parExists(threads() - 1, (k, v) -> k == 1002 and v == 1002, t)
 
     @test
-    def parExists02(): Bool & Impure =
+    def parExists02(): Bool \ IO =
         let l1 = List.range(1, 2001);
         let l2 = List.range(-2000, 0);
         let Map(t) = List.zip(l1, l2) |> List.toMap;
         RedBlackTree.parExists(threads() - 1, (k, v) -> k == 1002 and v == -999, t)
 
     @test
-    def parExists03(): Bool & Impure =
+    def parExists03(): Bool \ IO =
         let l = List.range(1, 2001);
         let Map(t) = List.zip(l, l) |> List.toMap;
         not RedBlackTree.parExists(threads() - 1, (k, v) -> k < 0 or v > 3000, t)
@@ -352,19 +352,19 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parForall01(): Bool & Impure =
+    def parForall01(): Bool \ IO =
         let l = List.range(1, 2001);
         let Map(t) = List.zip(l, l) |> List.toMap;
         RedBlackTree.parForall(threads() - 1, (k, v) -> k == v, t)
 
     @test
-    def parForall02(): Bool & Impure =
+    def parForall02(): Bool \ IO =
         let l = List.range(1, 2001);
         let Map(t) = List.zip(l, l) |> List.toMap;
         not RedBlackTree.parForall(threads() - 1, (k, _) -> k == 1, t)
 
     @test
-    def parForall03(): Bool & Impure =
+    def parForall03(): Bool \ IO =
         let l1 = List.range(1, 2001);
         let l2 = List.range(-2000, 0);
         let Map(t) = List.zip(l1, l2) |> List.toMap;
@@ -533,12 +533,12 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parSumWith01(): Bool & Impure =
+    def parSumWith01(): Bool \ IO =
         let Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
         RedBlackTree.parSumWith(threads() - 1, (k, v) -> k + v, t) == 3998000
 
     @test
-    def parSumWith02(): Bool & Impure =
+    def parSumWith02(): Bool \ IO =
         let Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
         RedBlackTree.parSumWith(threads() - 1, (k, v) -> k + v, t) == 1998000
 
@@ -650,13 +650,13 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parProductWith01(): Bool & Impure =
+    def parProductWith01(): Bool \ IO =
         let l = List.range(1, 2001);
         let Map(t) = List.zip(l, l) |> List.toMap;
         RedBlackTree.parProductWith(threads() - 1, (k, v) -> k * v, t) == List.product(l) * List.product(l)
 
     @test
-    def parProductWith02(): Bool & Impure =
+    def parProductWith02(): Bool \ IO =
         let l1 = List.range(1, 2001);
         let l2 = List.range(-2000, 0);
         let Map(t) = List.zip(l1, l2) |> List.toMap;

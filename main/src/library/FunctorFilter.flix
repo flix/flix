@@ -22,11 +22,11 @@ pub class FunctorFilter[m : Type -> Type] with Functor[m] {
     ///
     /// Applies the partial function `f` to every element in `x` collecting the results.
     ///
-    pub def filterMap(f: a -> Option[b] & ef, t: m[a]): m[b] & ef
+    pub def filterMap(f: a -> Option[b] \ ef, t: m[a]): m[b] \ ef
 
     //
     // Applies `f` to every element in `x`. Keeps every element that satisfies `f`.
     //
-    pub def filter(f: a -> Bool & ef, t: m[a]): m[a] & ef = FunctorFilter.filterMap(x -> if (f(x)) Some(x) else None, t)
+    pub def filter(f: a -> Bool \ ef, t: m[a]): m[a] \ ef = FunctorFilter.filterMap(x -> if (f(x)) Some(x) else None, t)
 
 }

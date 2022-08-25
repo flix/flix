@@ -118,6 +118,7 @@ class Flix {
     */
   private val standardLibrary = List(
     "Array.flix" -> LocalResource.get("/src/library/Array.flix"),
+    "Assert.flix" -> LocalResource.get("/src/library/Assert.flix"),
     "Benchmark.flix" -> LocalResource.get("/src/library/Benchmark.flix"),
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
@@ -170,6 +171,7 @@ class Flix {
     "Identity.flix" -> LocalResource.get("/src/library/Identity.flix"),
     "Monad.flix" -> LocalResource.get("/src/library/Monad.flix"),
     "MonadZero.flix" -> LocalResource.get("/src/library/MonadZero.flix"),
+    "MonadZip.flix" -> LocalResource.get("/src/library/MonadZip.flix"),
     "Monoid.flix" -> LocalResource.get("/src/library/Monoid.flix"),
     "Reducible.flix" -> LocalResource.get("/src/library/Reducible.flix"),
     "SemiGroup.flix" -> LocalResource.get("/src/library/SemiGroup.flix"),

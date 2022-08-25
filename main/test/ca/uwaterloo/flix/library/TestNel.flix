@@ -712,6 +712,22 @@ namespace TestNel {
         Nel.zipWithIndex(Nel(1, 2 :: 3 :: 4 :: 5 :: Nil)) == Nel((1, 0), (2, 1) :: (3, 2) :: (4, 3) :: (5, 4) :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
+    // zipWithA                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithA01(): Bool = Nel.zipWithA((x, y) -> Identity(x + y), Nel(1, Nil), Nel(1, Nil)) == Identity(Nel(2, Nil))
+
+    @test
+    def zipWithA02(): Bool = Nel.zipWithA((x, y) -> Identity(x + y), Nel(1, 2 :: Nil), Nel(1, Nil)) == Identity(Nel(2, Nil))
+
+    @test
+    def zipWithA03(): Bool = Nel.zipWithA((x, y) -> Identity(x + y), Nel(1, Nil), Nel(1, 2 :: Nil)) == Identity(Nel(2, Nil))
+
+    @test
+    def zipWithA04(): Bool = Nel.zipWithA((x, y) -> Identity(x + y), Nel(1, 2 :: Nil), Nel(1, 2 :: Nil)) == Identity(Nel(2, 4 :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -771,13 +787,13 @@ namespace TestNel {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool & Impure =
+    def foreach01(): Bool \ IO =
         let r = ref 21;
         Nel.foreach(x -> r := x, Nel.singleton(1));
         1 == deref r
 
     @test
-    def foreach02(): Bool & Impure =
+    def foreach02(): Bool \ IO =
         let r = ref 21;
         Nel.foreach(x -> r := x, Nel(1, 2 :: 3 :: Nil));
         3 == deref r

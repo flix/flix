@@ -1,5 +1,5 @@
 /// We can declare a pure function.
-def inc(x: Int32): Int32 & Pure = x + 1
+def inc(x: Int32): Int32 \ {} = x + 1
 
 /// The pure annotation is default, so we can just write:
 def inc2(x: Int32): Int32 = x + 1
