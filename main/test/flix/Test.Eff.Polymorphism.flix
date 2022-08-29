@@ -117,6 +117,6 @@ namespace Test/Eff/Polymorphism {
 
     def impure(): Unit \ IO = discard [42]; ()
 
-    def flip(f: (a, b) -> c \ e): (b, a) -> c \ e = (x, y) -> f(y, x)
+    def flip(f: (a, b) -> c \ ef): (b, a) -> c \ ef = (x, y) -> f(y, x)
 
 }
