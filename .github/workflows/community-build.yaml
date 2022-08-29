@@ -18,7 +18,7 @@ jobs:
     env:
       # === ADD PROJECTS HERE === #
       #   (space-separated list)  #
-      PROJECTS: magnus-madsen/helloworld mlutze/fcwg
+      PROJECTS: magnus-madsen/helloworld mlutze/fcwg JonathanStarup/Flix-ANSI-Terminal
 
       PROJ_DIR: project-build
 
