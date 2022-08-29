@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
 import ca.uwaterloo.flix.util.Validation
@@ -181,7 +181,7 @@ object Safety {
 
     case Expression.Upcast(exp, tpe, loc) =>
       val errors =
-        if (isSoundUpcast(exp, exp0)) {
+        if (isSubTypeOf(Type.eraseAliases(exp.tpe), Type.eraseAliases(tpe))) {
           List.empty
         }
         else {
@@ -298,34 +298,52 @@ object Safety {
   }
 
   /**
-    * Checks that an upcast is sound.
+    * Checks that `tpe1` is a subtype of `tpe2`.
     *
-    * An upcast is considered sound if:
+    * `tpe1` is a subtype of `tpe2` if:
     *
-    * (a) the expression has the exact same flix type
+    * (a) `tpe1` has the exact same flix type as `tpe2`
     *
-    * (b) the actual expression is a java subtype of the expected java type
+    * (b) both types are java types and `tpe1` is a subtype of `tpe2`
+    *
+    * (c) both types are functions and `tpe1` is a subtype of `tpe2`
     *
     * AND
     *
-    * the purity is being cast from `pure` -> `ef` -> `impure`.
+    * the purity of a function is being cast from `pure` -> `ef` -> `impure`.
     *
-    * @param actual   the expression being upcast.
-    * @param expected the upcast expression itself.
     */
-  private def isSoundUpcast(actual: Expression, expected: Expression): Boolean = {
-    // check flix types are equal
-    // or java type is subtype of upcast java type
-    // check purity is ok
-    // pure -> ef -> impure
-    // ef -> ef and ef2
-    val types = actual.tpe == expected.tpe
-    val purities = (actual.pur, expected.pur) match {
-      case (Type.Pure, _) => true
-      case (_, Type.Impure) => true
-      case _ => false
-    }
-    types && purities
+  private def isSubTypeOf(tpe1: Type, tpe2: Type): Boolean = (tpe1.baseType, tpe2.baseType) match {
+    case (Type.True, Type.KindedVar(_, _)) => true
+    case (Type.True, Type.False) => true
+    case (Type.KindedVar(_, _), Type.False) => true
+
+    case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
+      right.isAssignableFrom(left)
+
+    case (Type.Cst(TypeConstructor.Arrow(n1), _), Type.Cst(TypeConstructor.Arrow(n2), _)) if n1 == n2 =>
+      // purities
+      val pur1 = tpe1.arrowPurityType
+      val pur2 = tpe2.arrowPurityType
+      val subTypePurity = isSubTypeOf(pur1, pur2)
+
+      // check that parameters are supertypes
+      val args1 = tpe1.arrowArgTypes
+      val args2 = tpe2.arrowArgTypes
+      val superTypeArgs = args1.zip(args2).forall {
+        case (t1, t2) =>
+          isSubTypeOf(t2, t1)
+      }
+
+      // check that result is a subtype
+      val expectedResTpe = tpe1.arrowResultType
+      val actualResTpe = tpe2.arrowResultType
+      val subTypeResult = isSubTypeOf(expectedResTpe, actualResTpe)
+
+      subTypePurity && superTypeArgs && subTypeResult
+
+    case _ => tpe1 == tpe2
+
   }
 
   /**
