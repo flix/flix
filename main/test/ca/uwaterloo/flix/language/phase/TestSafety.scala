@@ -227,6 +227,105 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[SafetyError.ExtraMethod](result)
   }
 
+  test("TestUpcast.01") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let _ =
+        |        if (true)
+        |            upcast ()
+        |        else
+        |            1;
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.UnsafeUpcast](result)
+  }
+
+  test("TestUpcast.02") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let _ =
+        |        if (true)
+        |            upcast x -> { println(x); x + 1 }
+        |        else
+        |            x -> x + 1;
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.UnsafeUpcast](result)
+  }
+
+  test("TestUpcast.03") {
+    val input =
+      """
+        |def f(): Unit & ef =
+        |    let f =
+        |        if (true)
+        |            upcast x -> (x + 1 as & ef)
+        |        else
+        |            upcast x -> x + 1;
+        |    let _ = f(1);
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.UnsafeUpcast](result)
+  }
+
+  test("TestUpcast.04") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let _ =
+        |        if (true)
+        |            upcast (1, "a")
+        |        else
+        |            (1, 1);
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.UnsafeUpcast](result)
+  }
+
+  test("TestUpcast.05") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let _ =
+        |        if (true)
+        |            upcast (1, "a")
+        |        else
+        |            upcast (1, 1);
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.UnsafeUpcast](result)
+  }
+
+  test("TestUpcast.06") {
+    val input =
+      """
+        |def f(): Unit & Impure =
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
+        |    import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
+        |    let _ =
+        |        if (true)
+        |            upcast (newObject(), newObject())
+        |        else
+        |            (newObject(), newStringBuilder());
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.UnsafeUpcast](result)
+  }
+
   test("TestNonDefaultConstructor.01") {
     val input =
       """
