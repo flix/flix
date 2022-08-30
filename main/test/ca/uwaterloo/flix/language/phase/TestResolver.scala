@@ -731,7 +731,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    expectError[ResolutionError.MismatchingReturnType](result)
   }
 
   test("UndefinedJvmMethod.08") {
@@ -742,7 +742,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    expectError[ResolutionError.MismatchingReturnType](result)
   }
 
   test("UndefinedJvmField.01") {

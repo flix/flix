@@ -2508,8 +2508,9 @@ object Resolver {
           // so only check the straightforward case for now and succeed all others.
           retTpe match {
             case Type.Cst(_, _) =>
-              if (Type.getFlixType(method.getReturnType) != retTpe) 
-                throw new NoSuchMethodException() 
+              val expectedTpe = Type.getFlixType(method.getReturnType)
+              if (expectedTpe != retTpe) 
+                ResolutionError.MismatchingReturnType(className, methodName, retTpe, expectedTpe, loc).toFailure
               else 
                 method.toSuccess
             case _ => method.toSuccess
