@@ -53,7 +53,7 @@ object InlayHintProvider {
         val label = ": " + FormatType.formatWellKindedType(minType)(Audience.External)
 
         // Hide long inlay hints.
-        if (isTypeVar(minType) || label.length >= 10)
+        if (isTypeVar(minType) || label.length >= 14)
           None
         else
           Some(InlayHint(pos, label, Some(InlayHintKind.Type), Nil, ""))
