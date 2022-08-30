@@ -2745,6 +2745,77 @@ def distinctWith09(): Bool =
         List.reverse(deref z) == List.zip(l, List.range(0, 100))
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // sequence                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sequence01(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = List.map(x -> {st := x; Identity(x)}, Nil);
+        let ans = List.sequence(l);
+        ans == Identity(Nil) and deref st == 0
+    }
+
+    @test
+    def sequence02(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = List.map(x -> {st := x; Identity(x)}, 1 :: Nil);
+        let ans = List.sequence(l);
+        ans == Identity(1 :: Nil) and deref st == 1
+    }
+
+    @test
+    def sequence03(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = List.map(x -> {st := x; Identity(x)}, 1 :: 2 :: Nil);
+        let ans = List.sequence(l);
+        ans == Identity(1 :: 2 :: Nil) and deref st == 2
+    }
+
+    @test
+    def sequence04(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = List.map(x -> {st := x; Identity(x)}, 1 :: 2 :: 3 :: Nil);
+        let ans = List.sequence(l);
+        ans == Identity(1 :: 2 :: 3 :: Nil) and deref st == 3
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // traverse                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def traverse01(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = Nil;
+        let ans = List.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(Nil) and deref st == 0
+    }
+
+    @test
+    def traverse02(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = 1 :: Nil;
+        let ans = List.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(1 :: Nil) and deref st == 1
+    }
+
+    @test
+    def traverse03(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = 1 :: 2 :: Nil;
+        let ans = List.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(1 :: 2 :: Nil) and deref st == 2
+    }
+
+    @test
+    def traverse04(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = 1 :: 2 :: 3 :: Nil;
+        let ans = List.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(1 :: 2 :: 3 :: Nil) and deref st == 3
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // merge                                                                   //
