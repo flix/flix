@@ -218,7 +218,7 @@ object Formatter {
 
     override def brightBlue(s: String): String = fgColor(0, 0, 255, s)
 
-    override def bgBlue(s: String): String = bgColor(0, 11, 184, brightWhite(s))
+    override def bgBlue(s: String): String = bgColor(0, 111, 184, brightWhite(s))
 
     override def bgBrightBlue(s: String): String = bgColor(0, 0, 255, brightWhite(s))
 
