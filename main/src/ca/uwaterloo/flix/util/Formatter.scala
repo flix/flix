@@ -212,7 +212,7 @@ object Formatter {
 
     override def bgCyan(s: String): String = bgColor(44, 181, 233, brightWhite(s))
 
-    override def bgBrightCyan(s: String): String = bgColor(0, 255, 255, brightWhite(s))
+    override def bgBrightCyan(s: String): String = bgColor(0, 255, 255, black(s))
 
     override def green(s: String): String = Console.GREEN + s + Console.RESET
 
@@ -220,7 +220,7 @@ object Formatter {
 
     override def bgGreen(s: String): String = bgColor(57, 181, 74, brightWhite(s))
 
-    override def bgBrightGreen(s: String): String = bgColor(0, 255, 0, brightWhite(s))
+    override def bgBrightGreen(s: String): String = bgColor(0, 255, 0, black(s))
 
     override def magenta(s: String): String = Console.MAGENTA + s + Console.RESET
 
@@ -244,7 +244,7 @@ object Formatter {
 
     override def bgYellow(s: String): String = bgColor(255, 199, 6, brightWhite(s))
 
-    override def bgBrightYellow(s: String): String = bgColor(255, 255, 0, brightWhite(s))
+    override def bgBrightYellow(s: String): String = bgColor(255, 255, 0, black(s))
 
     override def white(s: String): String = Console.WHITE + s + Console.RESET
 
