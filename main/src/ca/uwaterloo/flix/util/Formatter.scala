@@ -137,11 +137,15 @@ object Formatter {
 
     override def bgBlack(s: String): String = s
 
+    override def bgBrightBlack(s: String): String = s
+
     override def blue(s: String): String = s
 
     override def brightBlue(s: String): String = s
 
     override def bgBlue(s: String): String = s
+
+    override def bgBrightBlue(s: String): String = s
 
     override def cyan(s: String): String = s
 
@@ -149,11 +153,15 @@ object Formatter {
 
     override def bgCyan(s: String): String = s
 
+    override def bgBrightCyan(s: String): String = s
+
     override def green(s: String): String = s
 
     override def brightGreen(s: String): String = s
 
     override def bgGreen(s: String): String = s
+
+    override def bgBrightGreen(s: String): String = s
 
     override def magenta(s: String): String = s
 
@@ -161,11 +169,15 @@ object Formatter {
 
     override def bgMagenta(s: String): String = s
 
+    override def bgBrightMagenta(s: String): String = s
+
     override def red(s: String): String = s
 
     override def brightRed(s: String): String = s
 
     override def bgRed(s: String): String = s
+
+    override def bgBrightRed(s: String): String = s
 
     override def yellow(s: String): String = s
 
@@ -173,11 +185,15 @@ object Formatter {
 
     override def bgYellow(s: String): String = s
 
+    override def bgBrightYellow(s: String): String = s
+
     override def white(s: String): String = s
 
     override def brightWhite(s: String): String = s
 
     override def bgWhite(s: String): String = s
+
+    override def bgBrightWhite(s: String): String = s
 
     override def bold(s: String): String = s
 
