@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, InlayHint, InlayHintKind, Position, Range}
 import ca.uwaterloo.flix.language.ast.Ast.TypeSource
 import ca.uwaterloo.flix.language.ast.TypedAst.{FormalParam, Root}
-import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
 import ca.uwaterloo.flix.language.phase.unification.TypeMinimization
 
@@ -32,7 +32,6 @@ object InlayHintProvider {
     index.queryByRange(uri, range) match {
       case Nil => Nil
       case entities => entities.flatMap {
-        // case Entity.LocalVar(sym, tpe) => getLocalVarHint(sym, tpe) // TODO: Disabled until we figure out a way to not overwhelm the user.
         case Entity.FormalParam(fparam) => getFormalParamHint(fparam)
         case _ => None
       }
@@ -50,18 +49,23 @@ object InlayHintProvider {
 
       case TypeSource.Inferred =>
         val pos = Position.fromEnd(fparam.loc)
-        val label = ": " + FormatType.formatWellKindedType(TypeMinimization.minimizeType(tpe))(Audience.External)
-        Some(InlayHint(pos, label, Some(InlayHintKind.Type), Nil, ""))
+        val minType = TypeMinimization.minimizeType(tpe)
+        val label = ": " + FormatType.formatWellKindedType(minType)(Audience.External)
+
+        // Hide long inlay hints.
+        if (isTypeVar(minType) || label.length >= 10)
+          None
+        else
+          Some(InlayHint(pos, label, Some(InlayHintKind.Type), Nil, ""))
     }
   }
 
   /**
-    * Returns an inlay hint for the local var  type `tpe` at the given source location `loc`.
+    * Returns `true` if the given type `tpe` is a type variable.
     */
-  private def getLocalVarHint(sym: Symbol.VarSym, tpe: Type)(implicit flix: Flix): Option[InlayHint] = {
-    val pos = Position.fromEnd(sym.loc)
-    val label = ": " + FormatType.formatWellKindedType(TypeMinimization.minimizeType(tpe))(Audience.External)
-    Some(InlayHint(pos, label, Some(InlayHintKind.Type), Nil, ""))
+  private def isTypeVar(tpe: Type): Boolean = tpe match {
+    case Type.KindedVar(_, _) => true
+    case _ => false
   }
 
 }
