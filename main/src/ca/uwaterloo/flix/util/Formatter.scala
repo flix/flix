@@ -131,21 +131,23 @@ object Formatter {
 
     override def black(s: String): String = Console.BLACK + s + Console.RESET
 
+    override def bgBlack(s: String): String = Console.BLACK + s + Console.RESET
+
     override def blue(s: String): String = Console.BLUE + s + Console.RESET
 
     override def cyan(s: String): String = Console.CYAN + s + Console.RESET
 
-    override def green(s: String): String = fgColor(57, 181, 74, s)
+    override def green(s: String): String = Console.GREEN + s + Console.RESET
 
     override def bgGreen(s: String): String = bgColor(57, 181, 74, brightWhite(s))
 
     override def magenta(s: String): String = Console.MAGENTA + s + Console.RESET
 
-    override def red(s: String): String = fgColor(222, 56, 43, s)
+    override def red(s: String): String = Console.RED + s + Console.RESET
 
     override def bgRed(s: String): String = bgColor(222, 56, 43, brightWhite(s))
 
-    override def yellow(s: String): String = fgColor(255, 199, 6, s)
+    override def yellow(s: String): String = Console.YELLOW + s + Console.RESET
 
     override def bgYellow(s: String): String = bgColor(255, 199, 6, brightWhite(s))
 
@@ -154,8 +156,6 @@ object Formatter {
     override def bold(s: String): String = Console.BOLD + s + Console.RESET
 
     override def underline(s: String): String = Console.UNDERLINED + s + Console.RESET
-
-    override def brightWhite(s: String): String = fgColor(255, 255, 255, s)
 
     override def gray(s: String): String = fgColor(110, 110, 110, s)
 
