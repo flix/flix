@@ -157,6 +157,8 @@ object Formatter {
 
     override def underline(s: String): String = Console.UNDERLINED + s + Console.RESET
 
+    override def brightWhite(s: String): String = fgColor(255, 255, 255, s)
+
     override def gray(s: String): String = fgColor(110, 110, 110, s)
 
     private def fgColor(r: Int, g: Int, b: Int, s: String): String = escape() + s"[38;2;$r;$g;${b}m" + s + escape() + "[0m"
