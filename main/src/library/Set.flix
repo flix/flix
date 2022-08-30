@@ -505,6 +505,16 @@ namespace Set {
         foldLeft((acc, x) -> union(acc, f(x)), empty(), s)
 
     ///
+    /// Collects the results of applying the partial function `f` to every element in `s`.
+    ///
+    pub def filterMap(f: a -> Option[b] \ ef, s: Set[a]): Set[b] \ ef with Order[b] =
+        let step = (acc, x) -> match f(x) {
+            case None    => acc
+            case Some(v) => insert(v, acc)
+        };
+        foldLeft(step, empty(), s)
+
+    ///
     /// Replaces the element `from` with `to` if `from` is in `s`. Otherwise, returns `s`.
     ///
     /// Note: The returned set may be smaller than `s`.
