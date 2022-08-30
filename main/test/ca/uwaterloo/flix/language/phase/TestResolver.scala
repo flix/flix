@@ -725,9 +725,9 @@ class TestResolver extends FunSuite with TestUtils {
 
   test("UndefinedJvmMethod.07") {
     val input =
-      s"""
+      raw"""
          |def foo(): Unit =
-         |    import java.lang.String.hashCode(): Unit & Impure as _;
+         |    import java.lang.String.hashCode(): Unit \ IO as _;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -736,9 +736,9 @@ class TestResolver extends FunSuite with TestUtils {
 
   test("UndefinedJvmMethod.08") {
     val input =
-      s"""
+      raw"""
          |def foo(): Unit =
-         |    import java.lang.String.subSequence(Int32, Int32): ##java.util.Iterator & Impure as _;
+         |    import java.lang.String.subSequence(Int32, Int32): ##java.util.Iterator \ IO as _;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
