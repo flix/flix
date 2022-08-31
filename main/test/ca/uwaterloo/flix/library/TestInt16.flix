@@ -766,28 +766,28 @@ namespace TestInt16 {
     // fromString                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def fromString01(): Bool = Int16.fromString("Bad") |> Result.isErr
+    def fromString01(): Bool = Int16.fromString("Bad") |> Option.isEmpty
 
     @test
-    def fromString02(): Bool = Int16.fromString(" 1") == Ok(1i16)
+    def fromString02(): Bool = Int16.fromString(" 1") == Some(1i16)
 
     @test
-    def fromString03(): Bool = Int16.fromString("1 ") == Ok(1i16)
+    def fromString03(): Bool = Int16.fromString("1 ") == Some(1i16)
 
     @test
-    def fromString04(): Bool = Int16.fromString("0") == Ok(0i16)
+    def fromString04(): Bool = Int16.fromString("0") == Some(0i16)
 
     @test
-    def fromString05(): Bool = Int16.fromString("1") == Ok(1i16)
+    def fromString05(): Bool = Int16.fromString("1") == Some(1i16)
 
     @test
-    def fromString06(): Bool = Int16.fromString("-1") == Ok(-1i16)
+    def fromString06(): Bool = Int16.fromString("-1") == Some(-1i16)
 
     @test
-    def fromString07(): Bool = Int16.fromString("32767") == Ok(32767i16)
+    def fromString07(): Bool = Int16.fromString("32767") == Some(32767i16)
 
     @test
-    def fromString08(): Bool = Int16.fromString("-32768") == Ok(-32768i16)
+    def fromString08(): Bool = Int16.fromString("-32768") == Some(-32768i16)
 
     /////////////////////////////////////////////////////////////////////////////
     // tryToInt8                                                               //
