@@ -723,6 +723,40 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedJvmMethod](result)
   }
 
+  test("MismatchingReturnType.01") {
+    val input =
+      raw"""
+         |def foo(): Unit =
+         |    import java.lang.String.hashCode(): Unit \ IO as _;
+         |    ()
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MismatchingReturnType](result)
+  }
+
+  test("MismatchingReturnType.02") {
+    val input =
+      raw"""
+         |def foo(): Unit =
+         |    import java.lang.String.subSequence(Int32, Int32): ##java.util.Iterator \ IO as _;
+         |    ()
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MismatchingReturnType](result)
+  }
+
+  test("MismatchingReturnType.03") {
+    val input =
+      raw"""
+         |type alias AliasedReturnType = ##java.util.Iterator
+         |def foo(): Unit =
+         |    import java.lang.String.subSequence(Int32, Int32): AliasedReturnType \ IO as _;
+         |    ()
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MismatchingReturnType](result)
+  }
+
   test("UndefinedJvmField.01") {
     val input =
       raw"""
