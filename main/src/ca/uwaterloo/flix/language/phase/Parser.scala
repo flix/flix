@@ -864,7 +864,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def NewObject: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("object") ~ WS ~ Type ~ optWS ~ "{" ~ optWS ~ zeroOrMore(JvmMethod).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.NewObject
+      SP ~ keyword("new") ~ WS ~ Type ~ optWS ~ "{" ~ optWS ~ zeroOrMore(JvmMethod).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.NewObject
     }
 
     def JvmMethod: Rule1[ParsedAst.JvmMethod] = rule {
