@@ -410,28 +410,28 @@ namespace TestBigInt {
     // fromString                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def fromString01(): Bool = BigInt.fromString("Bad") |> Result.isErr
+    def fromString01(): Bool = BigInt.fromString("Bad") |> Option.isEmpty
 
     @test
-    def fromString02(): Bool = BigInt.fromString(" 1") == Ok(1ii)
+    def fromString02(): Bool = BigInt.fromString(" 1") == Some(1ii)
 
     @test
-    def fromString03(): Bool = BigInt.fromString("1 ") == Ok(1ii)
+    def fromString03(): Bool = BigInt.fromString("1 ") == Some(1ii)
 
     @test
-    def fromString04(): Bool = BigInt.fromString("0") == Ok(0ii)
+    def fromString04(): Bool = BigInt.fromString("0") == Some(0ii)
 
     @test
-    def fromString05(): Bool = BigInt.fromString("1") == Ok(1ii)
+    def fromString05(): Bool = BigInt.fromString("1") == Some(1ii)
 
     @test
-    def fromString06(): Bool = BigInt.fromString("-1") == Ok(-1ii)
+    def fromString06(): Bool = BigInt.fromString("-1") == Some(-1ii)
 
     @test
-    def fromString07(): Bool = BigInt.fromString("3498457932459234592873452983453245") == Ok(3498457932459234592873452983453245ii)
+    def fromString07(): Bool = BigInt.fromString("3498457932459234592873452983453245") == Some(3498457932459234592873452983453245ii)
 
     @test
-    def fromString08(): Bool = BigInt.fromString("-3498457932459234592873452983453245") == Ok(-3498457932459234592873452983453245ii)
+    def fromString08(): Bool = BigInt.fromString("-3498457932459234592873452983453245") == Some(-3498457932459234592873452983453245ii)
 
     /////////////////////////////////////////////////////////////////////////////
     // tryToInt8                                                               //
