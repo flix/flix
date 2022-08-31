@@ -1757,21 +1757,21 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       * A greek identifier.
       */
     def GreekName: Rule1[Name.Ident] = rule {
-      SP ~ capture(oneOrMore(Letters.GreekLetter)) ~ SP ~> Name.Ident
+      SP ~ capture(optional("_") ~ oneOrMore(Letters.GreekLetter)) ~ SP ~> Name.Ident
     }
 
     /**
       * A math identifier.
       */
     def MathName: Rule1[Name.Ident] = rule {
-      SP ~ capture(oneOrMore(Letters.MathLetter)) ~ SP ~> Name.Ident
+      SP ~ capture(optional("_") ~ oneOrMore(Letters.MathLetter)) ~ SP ~> Name.Ident
     }
 
     /**
       * An operator identifier.
       */
     def OperatorName: Rule1[Name.Ident] = rule {
-      SP ~ capture(oneOrMore(Letters.OperatorLetter)) ~ SP ~> Name.Ident
+      SP ~ capture(optional("_") ~ oneOrMore(Letters.OperatorLetter)) ~ SP ~> Name.Ident
     }
 
     /**
@@ -1825,7 +1825,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def QualifiedType: Rule1[Name.QName] = UpperCaseQName
 
     def Variable: Rule1[Name.Ident] = rule {
-      LowerCaseName | Wildcard | GreekName | MathName
+      LowerCaseName | GreekName | MathName | Wildcard
     }
 
     def JavaIdentifier: Rule1[String] = rule {
