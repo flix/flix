@@ -2500,25 +2500,27 @@ object Resolver {
         val method = clazz.getDeclaredMethod(methodName, sig: _*)
 
         // Check if the method should be and is static.
-        if (static != Modifier.isStatic(method.getModifiers))
+        if (static != Modifier.isStatic(method.getModifiers)) {
           throw new NoSuchMethodException()
-        else 
+        } else {
           // Check that the return type of the method matches the declared type.
           // We currently don't know how to handle all possible return types,
           // so only check the straightforward cases for now and succeed all others.
-          Type.eraseAliases(retTpe) match {
+          val erasedRetTpe = Type.eraseAliases(retTpe)
+          erasedRetTpe match {
             case Type.Unit | Type.Bool | Type.Char | Type.Float32 | Type.Float64 |
               Type.Int8 | Type.Int16 | Type.Int32 | Type.Int64 | Type.BigInt | Type.Str |
               Type.Cst(TypeConstructor.Native(_), _) =>
 
                 val expectedTpe = Type.getFlixType(method.getReturnType)
-                if (expectedTpe != retTpe) 
+                if (expectedTpe != erasedRetTpe) 
                   ResolutionError.MismatchingReturnType(className, methodName, retTpe, expectedTpe, loc).toFailure
                 else 
                   method.toSuccess
 
             case _ => method.toSuccess
           }
+        }
       } catch {
         case ex: NoSuchMethodException =>
           val candidateMethods = clazz.getMethods.filter(m => m.getName == methodName).toList
