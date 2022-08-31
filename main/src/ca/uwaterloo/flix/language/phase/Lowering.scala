@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
-import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation, Fixity, Polarity}
+import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation, Fixity, Modifiers, Polarity}
+import ca.uwaterloo.flix.language.ast.TypedAst.Expression.NewChannel
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
@@ -559,8 +560,11 @@ object Lowering {
       val t = visitType(tpe)
       Expression.Spawn(e, t, pur, eff, loc)
 
-    case Expression.Par(exp, _) =>
-      throw InternalCompilerException("Not Implemented")
+    case Expression.Par(Expression.Tuple(elms, tpe, pur, eff, loc1), loc0) =>
+      val es = visitExps(elms)
+      val t = visitType(tpe)
+      val e = mkParTuple(Expression.Tuple(es, t, pur, eff, loc1))
+      Expression.Cast(e, None, Some(Type.Pure), Some(Type.Empty), t, pur, eff, loc0)
 
     case Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -665,6 +669,9 @@ object Lowering {
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
       Expression.ReifyEff(sym, e1, e2, e3, t, pur, eff, loc)
+
+    case Expression.Par(_, _) =>
+      throw InternalCompilerException("Unexpected expression")
 
   }
 
@@ -1346,6 +1353,70 @@ object Lowering {
   }
 
   /**
+    * Returns a new `VarSym` for use in a let-binding.
+    *
+    * This function is called `mkLetSym` to avoid confusion with [[mkVarSym]].
+    */
+  private def mkLetSym(prefix: String, loc: SourceLocation)(implicit flix: Flix): Symbol.VarSym = {
+    val name = prefix + Flix.Delimiter + flix.genSym.freshId()
+    Symbol.freshVarSym(name, BoundBy.Let, loc)
+  }
+
+  /**
+    * Returns a tuple expression that is evaluated in parallel.
+    *
+    * {{{
+    *   par (exp0, exp1, exp2)
+    * }}}
+    *
+    * is translated to
+    *
+    * {{{
+    *   let ch0 = chan 1;
+    *   let ch1 = chan 1;
+    *   let ch2 = chan 1;
+    *   spawn ch0 <- exp0;
+    *   spawn ch1 <- exp1;
+    *   spawn ch2 <- exp2;
+    *   (<- ch0, <- ch1, <- ch2)
+    * }}}
+    */
+  private def mkParTuple(tuple: Expression.Tuple)(implicit flix: Flix): Expression = {
+    val Expression.Tuple(elms, tpe, pur, eff, loc) = tuple
+
+    // Generate symbols for each channel.
+    val chanSymsWithElms = elms.map(e => (mkLetSym("channel", e.loc.asSynthetic), e))
+
+    // Make wait expressions `(<- ch, ..., <- chn)`.
+    val waitExps = chanSymsWithElms.map {
+      case (sym, e) =>
+        val loc = e.loc.asSynthetic
+        Expression.GetChannel(
+          Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc),
+          e.tpe, Type.Impure, e.eff, loc)
+    }
+    val resultTuple = Expression.Tuple(waitExps, tpe, pur, eff, loc.asSynthetic)
+
+    // Make spawn expressions `spawn ch <- exp`.
+    val spawns = chanSymsWithElms.foldRight(resultTuple: Expression) {
+      case ((sym, e), acc) =>
+        val loc = e.loc.asSynthetic
+        val e1 = Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc) // The channel `ch`
+        val e2 = Expression.PutChannel(e1, e, Type.Unit, Type.Impure, Type.mkUnion(e.eff, e1.eff, loc), loc) // The put exp: `ch <- exp0`.
+        val e3 = Expression.Spawn(e2, Type.Unit, Type.Impure, e2.eff, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
+        Expression.Stm(e3, acc, e1.tpe, Type.mkAnd(e3.pur, acc.pur, loc), Type.mkUnion(e3.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
+    }
+
+    // Make let bindings `let ch = chan 1;`.
+    chanSymsWithElms.foldRight(spawns: Expression) {
+      case ((sym, e), acc) =>
+        val loc = e.loc.asSynthetic
+        val chan = Expression.NewChannel(Expression.Int32(1, loc), Type.mkChannel(e.tpe, loc), Type.Impure, Type.Empty, loc)
+        Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), chan, acc, acc.tpe, Type.mkAnd(e.pur, acc.pur, loc), Type.mkUnion(e.eff, acc.eff, loc), loc)
+    }
+  }
+
+  /**
     * Return a list of quantified variables in the given expression `exp0`.
     *
     * A variable is quantified (i.e. *NOT* lexically bound) if it occurs in the expression `exp0`
@@ -1629,8 +1700,8 @@ object Lowering {
       val e = substExp(exp, subst)
       Expression.Spawn(e, tpe, pur, eff, loc)
 
-    case Expression.Par(exp, _) =>
-      throw InternalCompilerException("Not Implemented")
+    case Expression.Par(exp, loc) =>
+      Expression.Par(substExp(exp, subst), loc)
 
     case Expression.Lazy(exp, tpe, loc) =>
       val e = substExp(exp, subst)

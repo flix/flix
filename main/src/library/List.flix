@@ -66,7 +66,7 @@ instance Functor[List] {
 
 instance Applicative[List] {
     pub def point(a: a) : List[a] = List.point(a)
-    pub def ap(f: List[a -> b \ e], x: List[a]) : List[b] \ e = List.ap(f, x)
+    pub def ap(f: List[a -> b \ ef], x: List[a]) : List[b] \ ef = List.ap(f, x)
 }
 
 instance Monad[List] {
@@ -354,7 +354,7 @@ namespace List {
     /// For argument lists `l1 = x1, x2, ...` and `l2 = y1, y2, ...` the results appear in the order
     /// `f(x1,y1), f(x1,y2), ..., f(x2,y1), f(x2,y2), ...`.
     ///
-    pub def lift2(f: t1 -> t2 -> r \ e, l1: List[t1], l2: List[t2]): List[r] \ e = Applicative.liftA2(f, l1, l2)
+    pub def lift2(f: t1 -> t2 -> r \ ef, l1: List[t1], l2: List[t2]): List[r] \ ef = Applicative.liftA2(f, l1, l2)
 
     ///
     /// Lift a ternary function to work on lists of its original arguments, returning a list
@@ -368,15 +368,15 @@ namespace List {
     /// ...
     /// ```
     ///
-    pub def lift3(f: t1 -> t2 -> t3 -> r \ e, l1: List[t1], l2: List[t2], l3: List[t3]): List[r] \ e = Applicative.liftA3(f, l1, l2, l3)
+    pub def lift3(f: t1 -> t2 -> t3 -> r \ ef, l1: List[t1], l2: List[t2], l3: List[t3]): List[r] \ ef = Applicative.liftA3(f, l1, l2, l3)
 
     /// Lift a 4-ary function to work on lists of its original arguments, returning a list
     /// of applying all combinations of arguments. The results appear in the order extending the pattern from `lift3`.
-    pub def lift4(f: t1 -> t2 -> t3 -> t4 -> r \ e, l1: List[t1], l2: List[t2], l3: List[t3], l4: List[t4]): List[r] \ e = Applicative.liftA4(f, l1, l2, l3, l4)
+    pub def lift4(f: t1 -> t2 -> t3 -> t4 -> r \ ef, l1: List[t1], l2: List[t2], l3: List[t3], l4: List[t4]): List[r] \ ef = Applicative.liftA4(f, l1, l2, l3, l4)
 
     /// Lift a 5-ary function to work on lists of its original arguments, returning a list
     /// of applying all combinations of arguments. The results appear in the order extending the pattern from `lift3`.
-    pub def lift5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r \ e, l1: List[t1], l2: List[t2], l3: List[t3], l4: List[t4], l5: List[t5]): List[r] \ e = Applicative.liftA5(f, l1, l2, l3, l4, l5)
+    pub def lift5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r \ ef, l1: List[t1], l2: List[t2], l3: List[t3], l4: List[t4], l5: List[t5]): List[r] \ ef = Applicative.liftA5(f, l1, l2, l3, l4, l5)
 
     ///
     /// Returns the result of applying `f` to every element in `l` along with that element's index.
@@ -1377,16 +1377,19 @@ namespace List {
         List.foldRight((x, acc) -> DelayMap.insert(fst(x), snd(x), acc), DelayMap.empty(), l)
 
     ///
-    /// Helper function for `traverse` and `sequence`.
+    /// Helper function for `sequence`.
     ///
     /// Builds an "applicative list" from a head of one applicative action and an
     /// applicative list of the tail.
     ///
     def consA(mx: f[a], ml: f[List[a]]): f[List[a]] with Applicative[f] =
-        (((x, xs) -> x :: xs) `Functor.map` mx) `Applicative.ap` ml
+        use Functor.{<$>};
+        use Applicative.{<*>};
+        (((x, xs) -> x :: xs) <$> mx) <*> ml
 
     ///
-    /// Returns the result of running all the actions in the list `l`.
+    /// Returns the result of running all the actions in the list `l` going from left
+    /// to right.
     ///
     pub def sequence(l: List[m[a]]): m[List[a]] with Applicative[m] =
         def loop(ll, k) = match ll {
@@ -1396,15 +1399,31 @@ namespace List {
         loop(l, identity)
 
     ///
+    /// Helper function for `traverse`.
+    ///
+    /// Builds an "applicative DList" from a head of one applicative action and an
+    /// applicative list of the tail.
+    ///
+    /// This is a version of `consA` except it builds a DList rather than a regular
+    /// List within the applicative context. We use the DList within `traverse` to
+    /// avoid having to reverse the accumulated results list at the end of the traversal.
+    ///
+    def consAD(mx: f[a], ml: f[List[a] -> List[a]]): f[List[a]-> List[a]] with Applicative[f] =
+        use Functor.{<$>};
+        use Applicative.{<*>};
+        (((ks, x) -> (k -> x :: k) >> ks) <$> ml) <*> mx
+
+
+    ///
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the
-    /// list `l`.
+    /// list `l` going from left to right.
     ///
     pub def traverse(f: a -> m[b] \ ef, l: List[a]): m[List[b]] \ ef with Applicative[m] =
-        def loop(ll, k) = match ll {
-            case Nil     => k(Applicative.point(Nil))
-            case x :: xs => loop(xs, ks -> k(consA(f(x), ks)))
+        def loop(ll, acc) = match ll {
+            case Nil     => Applicative.ap(acc, Applicative.point(Nil))
+            case x :: xs => let ans = f(x); loop(xs, consAD(ans, acc))
         };
-        loop(l, upcast(identity))
+        loop(l, Applicative.point(upcast(identity)))
 
     ///
     /// Merges the two lists `l1` and `l2`. Assuming they are both sorted.
