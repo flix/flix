@@ -2505,14 +2505,18 @@ object Resolver {
         else 
           // Check that the return type of the method matches the declared type.
           // We currently don't know how to handle all possible return types,
-          // so only check the straightforward case for now and succeed all others.
-          retTpe match {
-            case Type.Cst(_, _) =>
-              val expectedTpe = Type.getFlixType(method.getReturnType)
-              if (expectedTpe != retTpe) 
-                ResolutionError.MismatchingReturnType(className, methodName, retTpe, expectedTpe, loc).toFailure
-              else 
-                method.toSuccess
+          // so only check the straightforward cases for now and succeed all others.
+          Type.eraseAliases(retTpe) match {
+            case Type.Unit | Type.Bool | Type.Char | Type.Float32 | Type.Float64 |
+              Type.Int8 | Type.Int16 | Type.Int32 | Type.Int64 | Type.BigInt | Type.Str |
+              Type.Cst(TypeConstructor.Native(_), _) =>
+
+                val expectedTpe = Type.getFlixType(method.getReturnType)
+                if (expectedTpe != retTpe) 
+                  ResolutionError.MismatchingReturnType(className, methodName, retTpe, expectedTpe, loc).toFailure
+                else 
+                  method.toSuccess
+
             case _ => method.toSuccess
           }
       } catch {

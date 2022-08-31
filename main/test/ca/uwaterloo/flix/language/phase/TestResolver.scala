@@ -723,7 +723,7 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedJvmMethod](result)
   }
 
-  test("UndefinedJvmMethod.07") {
+  test("MismatchingReturnType.01") {
     val input =
       raw"""
          |def foo(): Unit =
@@ -734,11 +734,23 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.MismatchingReturnType](result)
   }
 
-  test("UndefinedJvmMethod.08") {
+  test("MismatchingReturnType.02") {
     val input =
       raw"""
          |def foo(): Unit =
          |    import java.lang.String.subSequence(Int32, Int32): ##java.util.Iterator \ IO as _;
+         |    ()
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MismatchingReturnType](result)
+  }
+
+  test("MismatchingReturnType.03") {
+    val input =
+      raw"""
+         |type alias AliasedReturnType = ##java.util.Iterator
+         |def foo(): Unit =
+         |    import java.lang.String.subSequence(Int32, Int32): AliasedReturnType \ IO as _;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
