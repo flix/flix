@@ -1,6 +1,6 @@
 namespace TestNel {
 
-    use Hash.hash;
+    use Hash.hash
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //

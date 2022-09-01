@@ -16,7 +16,7 @@
 
 namespace TestTraversable {
 
-    use Traversable.{sequence, traverse, mapAccumLeft, mapAccumRight};
+    use Traversable.{sequence, traverse, mapAccumLeft, mapAccumRight}
 
 
     /////////////////////////////////////////////////////////////////////////////

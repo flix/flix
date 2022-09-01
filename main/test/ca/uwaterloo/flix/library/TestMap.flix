@@ -16,8 +16,8 @@
 
 namespace TestMap {
 
-    use ToString.toString;
-    use Hash.hash;
+    use ToString.toString
+    use Hash.hash
 
 /////////////////////////////////////////////////////////////////////////////
 // size                                                                    //
