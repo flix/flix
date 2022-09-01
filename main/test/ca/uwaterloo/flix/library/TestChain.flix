@@ -1759,36 +1759,24 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sequence01(): Bool = region r {
-        let st = ref 0 @ r;
-        let c = Chain.map(x -> {st := x; Identity(x)}, Chain.empty());
-        let ans = Chain.sequence(c);
-        ans == Identity(Chain.empty()) and deref st == 0
-    }
+    def sequence01(): Bool =
+        let c: Chain[Identity[Int32]] = Chain.empty();
+        Chain.sequence(c) == Identity(Chain.empty())
 
     @test
-    def sequence02(): Bool = region r {
-        let st = ref 0 @ r;
-        let c = Chain.map(x -> {st := x; Identity(x)}, Chain.singleton(1));
-        let ans = Chain.sequence(c);
-        ans == Identity(Chain.singleton(1)) and deref st == 1
-    }
+    def sequence02(): Bool =
+        let c = Chain.singleton(Identity(1));
+        Chain.sequence(c) == Identity(Chain.singleton(1))
 
     @test
-    def sequence03(): Bool = region r {
-        let st = ref 0 @ r;
-        let c = Chain.map(x -> {st := x; Identity(x)}, List.toChain(1 :: 2 :: Nil));
-        let ans = Chain.sequence(c);
-        ans == Identity(List.toChain(1 :: 2 :: Nil)) and deref st == 2
-    }
+    def sequence03(): Bool =
+        let c = List.toChain(Identity(1) :: Identity(2) :: Nil);
+        Chain.sequence(c) == Identity(List.toChain(1 :: 2 :: Nil))
 
     @test
-    def sequence04(): Bool = region r {
-        let st = ref 0 @ r;
-        let c = Chain.map(x -> {st := x; Identity(x)}, List.toChain(1 :: 2 :: 3 :: Nil));
-        let ans = Chain.sequence(c);
-        ans == Identity(List.toChain(1 :: 2 :: 3 :: Nil)) and deref st == 3
-    }
+    def sequence04(): Bool =
+        let c = List.toChain(Identity(1) :: Identity(2) :: Identity(3) :: Nil);
+        Chain.sequence(c) == Identity(List.toChain(1 :: 2 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // traverse                                                                //

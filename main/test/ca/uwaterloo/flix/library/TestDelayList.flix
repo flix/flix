@@ -2938,6 +2938,66 @@ namespace TestDelayList {
         DelayList.ap(f, l) |> DelayList.toList == 1 :: 5 :: 0 :: 8 :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
+    // sequence                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sequence01(): Bool =
+        let l: DelayList[Identity[Int32]] = ENil;
+        DelayList.sequence(l) == Identity(ENil)
+
+    @test
+    def sequence02(): Bool =
+        let l = List.toDelayList(Identity(1) :: Nil);
+        DelayList.sequence(l) == Identity(List.toDelayList(1 :: Nil))
+
+    @test
+    def sequence03(): Bool =
+        let l = List.toDelayList(Identity(1) :: Identity(2) :: Nil);
+        DelayList.sequence(l) == Identity(List.toDelayList(1 :: 2 :: Nil))
+
+    @test
+    def sequence04(): Bool =
+        let l = List.toDelayList(Identity(1) :: Identity(2) :: Identity(3) :: Nil);
+        DelayList.sequence(l) == Identity(List.toDelayList(1 :: 2 :: 3 :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // traverse                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def traverse01(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = ENil;
+        let ans = DelayList.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(ENil) and deref st == 0
+    }
+
+    @test
+    def traverse02(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = List.toDelayList(1 :: Nil);
+        let ans = DelayList.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(List.toDelayList(1 :: Nil)) and deref st == 1
+    }
+
+    @test
+    def traverse03(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = List.toDelayList(1 :: 2 :: Nil);
+        let ans = DelayList.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(List.toDelayList(1 :: 2 :: Nil)) and deref st == 2
+    }
+
+    @test
+    def traverse04(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = List.toDelayList(1 :: 2 :: 3 :: Nil);
+        let ans = DelayList.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(List.toDelayList(1 :: 2 :: 3 :: Nil)) and deref st == 3
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // shuffle                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 

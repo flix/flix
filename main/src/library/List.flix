@@ -1377,7 +1377,7 @@ namespace List {
         List.foldRight((x, acc) -> DelayMap.insert(fst(x), snd(x), acc), DelayMap.empty(), l)
 
     ///
-    /// Helper function for `sequence`.
+    /// Helper function for `sequence` and `traverse`.
     ///
     /// Builds an "applicative list" from a head of one applicative action and an
     /// applicative list of the tail.
@@ -1399,31 +1399,15 @@ namespace List {
         loop(l, identity)
 
     ///
-    /// Helper function for `traverse`.
-    ///
-    /// Builds an "applicative DList" from a head of one applicative action and an
-    /// applicative list of the tail.
-    ///
-    /// This is a version of `consA` except it builds a DList rather than a regular
-    /// List within the applicative context. We use the DList within `traverse` to
-    /// avoid having to reverse the accumulated results list at the end of the traversal.
-    ///
-    def consAD(mx: f[a], ml: f[List[a] -> List[a]]): f[List[a]-> List[a]] with Applicative[f] =
-        use Functor.{<$>};
-        use Applicative.{<*>};
-        (((ks, x) -> (k -> x :: k) >> ks) <$> ml) <*> mx
-
-
-    ///
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the
     /// list `l` going from left to right.
     ///
     pub def traverse(f: a -> m[b] \ ef, l: List[a]): m[List[b]] \ ef with Applicative[m] =
-        def loop(ll, acc) = match ll {
-            case Nil     => Applicative.ap(acc, Applicative.point(Nil))
-            case x :: xs => let ans = f(x); loop(xs, consAD(ans, acc))
+        def loop(ll, k) = match ll {
+            case Nil     => k(Applicative.point(Nil))
+            case x :: xs => {let ans = f(x); loop(xs, ks -> k(consA(ans, ks)))}
         };
-        loop(l, Applicative.point(upcast(identity)))
+        loop(l, upcast(identity))
 
     ///
     /// Merges the two lists `l1` and `l2`. Assuming they are both sorted.
