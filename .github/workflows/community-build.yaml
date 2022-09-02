@@ -11,6 +11,7 @@ concurrency:
   group: community-build-${{ github.ref }}
 
 jobs:
+  # Build the JAR once for all the community builds
   build-jar:
     runs-on: ubuntu-latest
     steps:
@@ -27,7 +28,10 @@ jobs:
         with:
           name: flix-jar
           path: build/libs/flix.jar
+
+  # Spawn a separate job per community build
   community-build:
+    needs: build-jar
     strategy:
       # collect all the failures
       fail-fast: false
@@ -36,9 +40,7 @@ jobs:
           - "magnus-madsen/helloworld"
           - "mlutze/fcwg"
           - "JonathanStarup/Flix-ANSI-Terminal"
-
     runs-on: ubuntu-latest
-
     steps:
       - name: Set up Java
         uses: actions/setup-java@v1
