@@ -34,8 +34,8 @@ jobs:
       matrix:
         repo:
           - "magnus-madsen/helloworld"
-            "mlutze/fcwg"
-            "JonathanStarup/Flix-ANSI-Terminal"
+          - "mlutze/fcwg"
+          - "JonathanStarup/Flix-ANSI-Terminal"
 
     runs-on: ubuntu-latest
 
