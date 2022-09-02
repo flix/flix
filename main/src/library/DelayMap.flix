@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use RedBlackTree.RedBlackTree;
+use RedBlackTree.RedBlackTree
 
 pub enum DelayMap[k, v] {
     case DMap(RedBlackTree[k, Lazy[v]])

@@ -396,7 +396,7 @@ pub class Foldable[t : Type -> Type] {
 
 namespace Foldable {
 
-    use Applicative.{*>};
+    use Applicative.{*>}
 
     ///
     /// Returns the result of applying `combine` to all the elements in `t`, using `empty` as the initial value.

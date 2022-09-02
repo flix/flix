@@ -254,8 +254,8 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUseLower.02") {
     val input =
       s"""
-         |use A.f;
-         |use B.f;
+         |use A.f
+         |use B.f
          |
          |def foo(): Bool =
          |    f() == f()
@@ -275,7 +275,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUseLower.03") {
     val input =
       s"""
-         |use A.f;
+         |use A.f
          |
          |def foo(): Bool =
          |    use B.f;
@@ -334,10 +334,10 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUseLower.06") {
     val input =
       s"""
-         |use A.f;
+         |use A.f
          |
          |namespace T {
-         |    use B.f;
+         |    use B.f
          |    def foo(): Bool =
          |        f() == f()
          |}
@@ -358,7 +358,7 @@ class TestNamer extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace T {
-         |    use A.{f => g, f => g};
+         |    use A.{f => g, f => g}
          |    def foo(): Bool =
          |        g() == g()
          |}
@@ -375,7 +375,7 @@ class TestNamer extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace T {
-         |    use A.f;
+         |    use A.f
          |    def foo(): Bool =
          |        use B.f;
          |        f() == f()
@@ -420,8 +420,8 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUseUpper.02") {
     val input =
       s"""
-         |use A.Color;
-         |use B.Color;
+         |use A.Color
+         |use B.Color
          |
          |def foo(): Bool = true
          |
@@ -446,8 +446,8 @@ class TestNamer extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace T {
-         |    use A.Color;
-         |    use B.Color;
+         |    use A.Color
+         |    use B.Color
          |    def foo(): Bool =
          |        true
          |}
@@ -495,8 +495,8 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUseTag.02") {
     val input =
       s"""
-         |use A.Color.Red;
-         |use B.Color.Red;
+         |use A.Color.Red
+         |use B.Color.Red
          |def foo(): Bool =
          |    Red == Red
          |
@@ -520,7 +520,7 @@ class TestNamer extends FunSuite with TestUtils {
     val input =
       s"""
          |
-         |use A.Color.Red;
+         |use A.Color.Red
          |def foo(): Bool =
          |    use B.Color.Red;
          |    Red == Red
@@ -564,8 +564,8 @@ class TestNamer extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace T {
-         |    use A.Color.Red;
-         |    use B.Color.Red;
+         |    use A.Color.Red
+         |    use B.Color.Red
          |    def foo(): Bool =
          |        Red == Red
          |}
@@ -595,7 +595,7 @@ class TestNamer extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace T {
-         |    use A.Color.Red;
+         |    use A.Color.Red
          |    def foo(): Bool =
          |        use B.Color.Red;
          |        Red == Red
@@ -621,8 +621,8 @@ class TestNamer extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace T {
-         |    use B.Color.{Red => R};
-         |    use B.Color.{Blu => R};
+         |    use B.Color.{Red => R}
+         |    use B.Color.{Blu => R}
          |    def foo(): Bool =
          |        R == R
          |}

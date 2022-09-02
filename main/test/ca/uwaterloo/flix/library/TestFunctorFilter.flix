@@ -16,7 +16,7 @@
 
 namespace TestFunctorFilter {
 
-    use FunctorFilter.{filter, filterMap};
+    use FunctorFilter.{filter, filterMap}
 
     def isOdd(i: Int32): Bool = not (i mod 2 == 0)
 
