@@ -66,7 +66,7 @@ object Main {
     // check if the --lsp flag was passed.
     if (cmdOpts.lsp.nonEmpty) {
       try {
-        val languageServer = new LanguageServer(cmdOpts.lsp.get)
+        val languageServer = new LanguageServer(cmdOpts.lsp.get, Options.Default)
         languageServer.run()
       } catch {
         case ex: BindException =>
@@ -160,6 +160,18 @@ object Main {
           val o = options.copy(progress = false)
           val result = Packager.install(project, cwd, o)
           System.exit(getCode(result))
+
+        case Command.Lsp(port) =>
+          val o = options.copy(progress = false)
+          try {
+            val languageServer = new LanguageServer(port, o)
+            languageServer.run()
+          } catch {
+            case ex: BindException =>
+              throw new RuntimeException(ex)
+          }
+          System.exit(0)
+
       }
     } catch {
       case ex: RuntimeException =>
@@ -315,6 +327,8 @@ object Main {
 
     case class Install(project: String) extends Command
 
+    case class Lsp(port: Int) extends Command
+
   }
 
   /**
@@ -357,6 +371,12 @@ object Main {
       cmd("install").text("  installs the Flix package from the given GitHub <owner>/<repo>")
         .children(
           arg[String]("project").action((project, c) => c.copy(command = Command.Install(project)))
+            .required()
+        )
+
+      cmd("lsp").text("  starts the LSP server and listens on the given port.")
+        .children(
+          arg[Int]("port").action((port, c) => c.copy(command = Command.Lsp(port)))
             .required()
         )
 
