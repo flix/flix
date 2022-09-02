@@ -1386,6 +1386,21 @@ namespace TestNec {
     @test
     def sequence04(): Bool = Nec.sequence(necOf3(Some(1), Some(2), Some(3))) == Some(necOf3(1, 2, 3))
 
+    @test
+    def sequence05(): Bool =
+        let l = Nec.singleton(Identity(1));
+        Nec.sequence(l) == Identity(Nec.singleton(1))
+
+    @test
+    def sequence06(): Bool =
+        let l = necOf2(Identity(1), Identity(2));
+        Nec.sequence(l) == Identity(necOf2(1, 2))
+
+    @test
+    def sequence07(): Bool =
+        let l = necOf3(Identity(1), Identity(2), Identity(3));
+        Nec.sequence(l) == Identity(necOf3(1, 2, 3))
+
     /////////////////////////////////////////////////////////////////////////////
     // traverse                                                                //
     /////////////////////////////////////////////////////////////////////////////
@@ -1401,6 +1416,30 @@ namespace TestNec {
 
     @test
     def traverse04(): Bool = Nec.traverse(_ -> None: Option[Int32], necOf2(1, 2)) == None
+
+    @test
+    def traverse05(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = Nec.singleton(1);
+        let ans = Nec.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(Nec.singleton(1)) and deref st == 1
+    }
+
+    @test
+    def traverse06(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = necOf2(1, 2);
+        let ans = Nec.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(necOf2(1, 2)) and deref st == 2
+    }
+
+    @test
+    def traverse07(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = necOf3(1, 2, 3);
+        let ans = Nec.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(necOf3(1, 2, 3)) and deref st == 3
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // join                                                                    //

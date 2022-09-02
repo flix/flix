@@ -994,6 +994,53 @@ namespace TestNel {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // sequence                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sequence01(): Bool =
+        let l = Nel.singleton(Identity(1));
+        Nel.sequence(l) == Identity(Nel.singleton(1))
+
+    @test
+    def sequence02(): Bool =
+        let l = Nel.cons(Identity(1), Nel.singleton(Identity(2)));
+        Nel.sequence(l) == Identity(Nel.cons(1, Nel.singleton(2)))
+
+    @test
+    def sequence03(): Bool =
+        let l = Nel.cons(Identity(1), Nel.cons(Identity(2), Nel.singleton(Identity(3))));
+        Nel.sequence(l) == Identity(Nel.cons(1, Nel.cons(2, Nel.singleton(3))))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // traverse                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def traverse01(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = Nel.singleton(1);
+        let ans = Nel.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(Nel.singleton(1)) and deref st == 1
+    }
+
+    @test
+    def traverse02(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = Nel.cons(1, Nel.singleton(2));
+        let ans = Nel.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(Nel.cons(1, Nel.singleton(2))) and deref st == 2
+    }
+
+    @test
+    def traverse03(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = Nel.cons(1, Nel.cons(2, Nel.singleton(3)));
+        let ans = Nel.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(Nel.cons(1, Nel.cons(2, Nel.singleton(3)))) and deref st == 3
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // toMapWith                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
