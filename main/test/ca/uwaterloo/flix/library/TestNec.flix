@@ -16,12 +16,12 @@
 
 namespace TestNec {
 
-    use Hash.hash;
+    use Hash.hash
 
-    use Nec.ViewLeft.{OneLeft, SomeLeft};
-    use Nec.ViewRight.{OneRight, SomeRight};
+    use Nec.ViewLeft.{OneLeft, SomeLeft}
+    use Nec.ViewRight.{OneRight, SomeRight}
 
-    use Nec.{cons, singleton, snoc};
+    use Nec.{cons, singleton, snoc}
 
     def necOf2(x: a, y: a): Nec[a] = cons(x, singleton(y))
 

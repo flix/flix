@@ -16,7 +16,7 @@
 
 namespace TestSemiGroup {
 
-    use SemiGroup.{combine, combineN};
+    use SemiGroup.{combine, combineN}
 
     /////////////////////////////////////////////////////////////////////////////
     // Unit                                                                    //

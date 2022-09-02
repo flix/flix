@@ -1,7 +1,7 @@
 namespace Bench/Fixpoint {
 
-    use Benchmark.Benchmark;
-    use Benchmark.defBenchmark;
+    use Benchmark.Benchmark
+    use Benchmark.defBenchmark
 
     pub def runBenchmarks() : Unit \ IO =
         let s1 = Bench/Fixpoint.benchmarks();

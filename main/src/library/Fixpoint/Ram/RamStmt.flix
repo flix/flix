@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ast.Constraint;
+use Fixpoint/Ast.Constraint
 
 namespace Fixpoint/Ram {
 

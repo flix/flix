@@ -1,6 +1,6 @@
-use RedBlackTree.RedBlackTree;
-use RedBlackTree.RedBlackTree.{Node};
-use RedBlackTree.Color.{Red, Black};
+use RedBlackTree.RedBlackTree
+use RedBlackTree.RedBlackTree.{Node}
+use RedBlackTree.Color.{Red, Black}
 
 namespace TestRedBlackTree {
 

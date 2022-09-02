@@ -1,8 +1,8 @@
-use GetOpt.{ArgDescr, OptionDescr};
-use GetOpt.ArgDescr.{NoArg, ReqArg, OptArg};
-use GetOpt.ArgOrder.{RequireOrder, Permute, ReturnInOrder};
+use GetOpt.{ArgDescr, OptionDescr}
+use GetOpt.ArgDescr.{NoArg, ReqArg, OptArg}
+use GetOpt.ArgOrder.{RequireOrder, Permute, ReturnInOrder}
 
-use GetOpt.{getOpt, usageInfo};
+use GetOpt.{getOpt, usageInfo}
 
 /// Define a datatype representing all flags and options.
 enum Flag with ToString {
