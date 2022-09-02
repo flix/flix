@@ -50,7 +50,7 @@ object InlayHintProvider {
       case TypeSource.Inferred =>
         val pos = Position.fromEnd(fparam.loc)
         val minType = TypeMinimization.minimizeType(tpe)
-        val label = ": " + FormatType.formatWellKindedType(minType)(Audience.External)
+        val label = ": " + FormatType.formatWellKindedType(minType)(Audience.External, flix)
 
         // Hide long inlay hints.
         if (isTypeVar(minType) || label.length >= 14)

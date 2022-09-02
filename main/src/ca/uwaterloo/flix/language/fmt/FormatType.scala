@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.fmt
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.VarText
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
 
@@ -22,7 +23,7 @@ object FormatType {
   /**
     * Transforms the given well-kinded type into a string.
     */
-  def formatWellKindedType(tpe: Type)(implicit audience: Audience): String = {
+  def formatWellKindedType(tpe: Type)(implicit audience: Audience, formatOptions: FormatOptions): String = {
     // TODO: Remove after we're confident in the formatter.
     try {
       format(SimpleType.fromWellKindedType(tpe))
@@ -34,7 +35,7 @@ object FormatType {
   /**
     * Transforms the given kinded type variable symbol into a string.
     */
-  def formatTypeVarSym(sym: Symbol.KindedTypeVarSym)(implicit audience: Audience): String = {
+  def formatTypeVarSym(sym: Symbol.KindedTypeVarSym)(implicit audience: Audience, formatOptions: FormatOptions): String = {
     val tpe = Type.Var(sym, SourceLocation.Unknown)
     formatWellKindedType(tpe)
   }

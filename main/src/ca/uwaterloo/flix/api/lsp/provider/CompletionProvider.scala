@@ -251,7 +251,7 @@ object CompletionProvider {
     )
   }
 
-  private def varCompletion(sym: Symbol.VarSym, tpe: Type)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
+  private def varCompletion(sym: Symbol.VarSym, tpe: Type)(implicit context: Context, index: Index, root: TypedAst.Root, flix: Flix): CompletionItem = {
     CompletionItem(label = sym.text,
       sortText = Priority.local(sym.text),
       textEdit = TextEdit(context.range, sym.text),
