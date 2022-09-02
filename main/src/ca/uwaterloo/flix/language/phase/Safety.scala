@@ -255,9 +255,6 @@ object Safety {
     case Expression.Par(exp: Expression.Tuple, _) =>
       visitExp(exp)
 
-    case Expression.Par(exp: Expression.Apply, _) =>
-      visitExp(exp)
-
     case Expression.Par(e, _) =>
       IllegalParExpression(e, e.loc) :: Nil
 
