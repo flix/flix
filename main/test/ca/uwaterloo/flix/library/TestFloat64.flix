@@ -240,40 +240,40 @@ namespace TestFloat64 {
     // fromString                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def fromString01(): Bool = Float64.fromString("Bad") |> Result.isErr
+    def fromString01(): Bool = Float64.fromString("Bad") |> Option.isEmpty
     
     @test
-    def fromString02(): Bool = Float64.fromString(" 1.0") == Ok(1.0f64)
+    def fromString02(): Bool = Float64.fromString(" 1.0") == Some(1.0f64)
     
     @test
-    def fromString03(): Bool = Float64.fromString("1.0 ") == Ok(1.0f64)
+    def fromString03(): Bool = Float64.fromString("1.0 ") == Some(1.0f64)
     
     @test
-    def fromString04(): Bool = Float64.fromString("0.0") == Ok(0.0f64)
+    def fromString04(): Bool = Float64.fromString("0.0") == Some(0.0f64)
     
     @test
-    def fromString05(): Bool = Float64.fromString("1.0") == Ok(1.0f64)
+    def fromString05(): Bool = Float64.fromString("1.0") == Some(1.0f64)
     
     @test
-    def fromString06(): Bool = Float64.fromString("-1.0") == Ok(-1.0f64)
+    def fromString06(): Bool = Float64.fromString("-1.0") == Some(-1.0f64)
     
     @test
-    def fromString07(): Bool = Float64.fromString("3.14") == Ok(3.14f64)
+    def fromString07(): Bool = Float64.fromString("3.14") == Some(3.14f64)
     
     @test
-    def fromString08(): Bool = Float64.fromString("-3.14") == Ok(-3.14f64)
+    def fromString08(): Bool = Float64.fromString("-3.14") == Some(-3.14f64)
     
     @test
     def fromString09(): Bool = match Float64.fromString("NaN") {
-        case Ok(x)  => Float64.isNan(x)
+        case Some(x)  => Float64.isNan(x)
         case _ => false
     }
     
     @test
-    def fromString10(): Bool = Float64.fromString("Infinity") == Ok(Float64.positiveInfinity())
+    def fromString10(): Bool = Float64.fromString("Infinity") == Some(Float64.positiveInfinity())
     
     @test
-    def fromString11(): Bool = Float64.fromString("-Infinity") == Ok(Float64.negativeInfinity())
+    def fromString11(): Bool = Float64.fromString("-Infinity") == Some(Float64.negativeInfinity())
 
     /////////////////////////////////////////////////////////////////////////////
     // tryToInt8                                                               //

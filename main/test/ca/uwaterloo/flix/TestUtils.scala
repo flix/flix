@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.util.{Options, Validation}
 import org.scalatest.FunSuite
 
 import scala.reflect.ClassTag
+import ca.uwaterloo.flix.util.Formatter
 
 trait TestUtils {
 
@@ -33,6 +34,10 @@ trait TestUtils {
     * Compiles the given input string `s` with the given compilation options `o`.
     */
   def compile(s: String, o: Options): Validation[CompilationResult, CompilationMessage] = new Flix().setOptions(o).addSourceCode(s).compile()
+
+  private def errorString(errors: Seq[CompilationMessage]): String = {
+    errors.map(_.message(Formatter.NoFormatter)).mkString("\n\n")
+  }
 
   /**
     * Asserts that the validation is a failure with a value of the parametric type `T`.
@@ -44,7 +49,7 @@ trait TestUtils {
       val actuals = errors.map(_.getClass)
 
       if (!actuals.exists(expected.isAssignableFrom(_)))
-        fail(s"Expected an error of type ${expected.getSimpleName}, but found ${actuals.mkString(", ")}.")
+        fail(s"Expected an error of type ${expected.getSimpleName}, but found:\n\n${errorString(errors)}.")
       else if (errors.exists(e => e.loc == SourceLocation.Unknown))
         fail("Error contains unknown source location.")
   }
@@ -70,6 +75,6 @@ trait TestUtils {
     case Validation.Failure(errors) =>
       val actuals = errors.map(_.getClass)
 
-      fail(s"Expected success, but found errors ${actuals.mkString(", ")}.")
+      fail(s"Expected success, but found errors:\n\n${errorString(errors)}.")
   }
 }
