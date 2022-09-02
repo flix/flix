@@ -61,7 +61,7 @@ import scala.collection.mutable
   *
   * NB: All errors must be printed to std err.
   */
-class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("localhost", port)) {
+class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSocketAddress("localhost", port)) {
 
   /**
     * The custom date format to use for logging.
@@ -71,7 +71,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   /**
     * The Flix instance (the same instance is used for incremental compilation).
     */
-  private val flix: Flix = new Flix().setFormatter(NoFormatter)
+  private val flix: Flix = new Flix().setFormatter(NoFormatter).setOptions(o)
 
   /**
     * A map from source URIs to source code.
