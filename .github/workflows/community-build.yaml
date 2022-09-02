@@ -56,12 +56,12 @@ jobs:
           ### Build the community project ###
           
           # Initialize the directory
-          java -jar build/libs/flix.jar init
+          java -jar flix.jar init
           
           # Remove example code to avoid conflicts.
           rm src/Main.flix
           rm test/TestMain.flix
           
           # Install and build the project.
-          java -jar build/libs/flix.jar install ${{ matrix.repo }}
-          java -jar build/libs/flix.jar build
+          java -jar flix.jar install ${{ matrix.repo }}
+          java -jar flix.jar build
