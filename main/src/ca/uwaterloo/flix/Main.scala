@@ -95,7 +95,8 @@ object Main {
       xnobooltable = cmdOpts.xnobooltable,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono,
-      xnoseteffects = cmdOpts.xnoseteffects
+      xnoseteffects = cmdOpts.xnoseteffects,
+      xnobooleffects = cmdOpts.xnobooleffects
     )
 
     // Don't use progress bar if benchmarking.
@@ -296,6 +297,7 @@ object Main {
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
                      xnoseteffects: Boolean = false,
+                     xnobooleffects: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -462,8 +464,13 @@ object Main {
       opt[Unit]("Xstrictmono").action((_, c) => c.copy(xstrictmono = true)).
         text("[experimental] enable strict monomorphization.")
 
+      // Xno-set-effects
       opt[Unit]("Xno-set-effects").action((_, c) => c.copy(xnoseteffects = true)).
         text("[experimental] disable set effects")
+
+      // Xno-bool-effects
+      opt[Unit]("Xno-bool-effects").action((_, c) => c.copy(xnobooleffects = true)).
+        text("[experimental] disable bool effects")
 
       note("")
 
