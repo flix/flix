@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Rigidity, RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.util.Result
 import org.scalatest.FunSuite
@@ -410,6 +410,28 @@ class TestUnification extends FunSuite with TestUtils {
     assertResult(Type.Bool)(subst.m(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc)))
     assertResult(Type.Char)(subst.m(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc)))
     assertResult(Type.mkTuple(List(Type.Bool, Type.Char), loc))(subst.m(new Symbol.KindedTypeVarSym(3, Ast.VarText.Absent, Kind.Star, isRegion = false, loc)))
+  }
+
+  test("TestNoSetEffects") {
+    val t1 = Type.Cst(TypeConstructor.Effect(new Symbol.EffectSym(Nil, "e1", loc)), loc)
+    val t2 = Type.Cst(TypeConstructor.Effect(new Symbol.EffectSym(Nil, "e2", loc)), loc)
+
+    // Sanity check: make sure the types don't normally unify
+    assert(!isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)))
+
+    // Make sure the types do unify when ignoring effects
+    assert(isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)(flix.setOptions(flix.options.copy(xnoseteffects = true)))))
+  }
+
+  test("TestNoBoolEffects") {
+    val t1 = Type.True
+    val t2 = Type.False
+
+    // Sanity check: make sure the types don't normally unify
+    assert(!isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)))
+
+    // Make sure the types do unify when ignoring effects
+    assert(isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)(flix.setOptions(flix.options.copy(xnobooleffects = true)))))
   }
 
   private def isOk[T, E](r: Result[T, E]) = r match {
