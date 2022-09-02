@@ -16,8 +16,8 @@
 
 namespace TestSet {
 
-    use ToString.toString;
-    use Hash.hash;
+    use ToString.toString
+    use Hash.hash
 
 /////////////////////////////////////////////////////////////////////////////
 // size                                                                    //

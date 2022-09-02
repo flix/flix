@@ -1,5 +1,5 @@
 namespace Test/Derives/Boxable {
-    use Boxable.box;
+    use Boxable.box
 
     pub enum ImplicitEnum with Eq, Order, ToString {
         case EmptyCase

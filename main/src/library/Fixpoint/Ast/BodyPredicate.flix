@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use Fixpoint.PredSymsOf;
-use Fixpoint.SubstitutePredSym;
-use Fixpoint/Shared.PredSym;
-use ToString.toString;
+use Fixpoint.PredSymsOf
+use Fixpoint.SubstitutePredSym
+use Fixpoint/Shared.PredSym
+use ToString.toString
 
 namespace Fixpoint/Ast {
 

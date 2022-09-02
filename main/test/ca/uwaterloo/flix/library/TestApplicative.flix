@@ -16,8 +16,8 @@
 
 namespace TestApplicative {
 
-    use Applicative.{product, productLeft, productRight, product3, product4, product5};
-    use Applicative.{<*>, <**>, *>, <*};
+    use Applicative.{product, productLeft, productRight, product3, product4, product5}
+    use Applicative.{<*>, <**>, *>, <*}
 
     /////////////////////////////////////////////////////////////////////////////
     // product                                                                 //

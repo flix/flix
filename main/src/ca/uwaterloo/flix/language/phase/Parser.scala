@@ -151,7 +151,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   def UsesOrImports: Rule1[Seq[ParsedAst.UseOrImport]] = rule {
     // It is important for documentation comments that whitespace is not consumed if no uses are present
-    (optWS ~ oneOrMore((Use | Import) ~ optWS ~ ";").separatedBy(optWS)) | push(Seq.empty)
+    oneOrMore(optWS ~ (Use | Import) ~ ((optWS ~ ";") | WS)) | push(Seq.empty)
   }
 
   def Decls: Rule1[Seq[ParsedAst.Declaration]] = rule {

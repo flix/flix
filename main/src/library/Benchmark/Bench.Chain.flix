@@ -1,7 +1,7 @@
 namespace Bench/Chain {
 
-    use Benchmark.Benchmark;
-    use Benchmark.defBenchmark;
+    use Benchmark.Benchmark
+    use Benchmark.defBenchmark
 
     pub def runBenchmarks(): Unit \ IO =
         let s1 = chainSuite(1000);

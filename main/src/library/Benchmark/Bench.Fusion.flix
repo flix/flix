@@ -1,7 +1,7 @@
 namespace Bench/Fusion {
 
-    use Benchmark.Benchmark;
-    use Benchmark.defBenchmark;
+    use Benchmark.Benchmark
+    use Benchmark.defBenchmark
 
     ///
     /// References:

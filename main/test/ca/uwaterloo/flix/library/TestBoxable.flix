@@ -16,7 +16,7 @@
 
 namespace TestBoxable {
 
-    use Boxable.{box, unbox};
+    use Boxable.{box, unbox}
 
     /////////////////////////////////////////////////////////////////////////////
     // Unit                                                                    //

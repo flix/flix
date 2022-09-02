@@ -140,8 +140,8 @@ instance ToString[Nec[a]] with ToString[a] {
 
 namespace Nec {
 
-    use Functor.{<$>};
-    use Applicative.{<*>};
+    use Functor.{<$>}
+    use Applicative.{<*>}
 
     ///
     /// A datatype for pattern matching on a Nec (traversing left-to-right).
