@@ -1161,4 +1161,47 @@ namespace File {
                 Err(getMessage(ex))
         }
 
+    ///
+    /// Deletes the given file or directory `f`.
+    ///
+    /// If `f` is a directory it must be empty.
+    ///
+    pub def delete(f: String): Result[Unit, String] \ IO =
+        try {
+            import new java.io.File(String): ##java.io.File \ IO as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
+            import static java.nio.file.Files.delete(##java.nio.file.Path): Unit \ IO;
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+
+            Ok(delete(javaPath))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String \ IO;
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns `true` if the given file or directory `f` was deleted
+    /// and `false` if `f` was not deleted because it did not exist.
+    ///
+    /// If `f` is a directory it must be empty.
+    ///
+    pub def deleteIfExists(f: String): Result[Bool, String] \ IO =
+        try {
+            import new java.io.File(String): ##java.io.File \ IO as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
+            import static java.nio.file.Files.deleteIfExists(##java.nio.file.Path): Bool \ IO;
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+
+            Ok(deleteIfExists(javaPath))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String \ IO;
+                Err(getMessage(ex))
+        }
+
 }

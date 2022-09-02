@@ -560,18 +560,20 @@ object Lowering {
       val t = visitType(tpe)
       Expression.Spawn(e, t, pur, eff, loc)
 
-    case Expression.Par(Expression.Tuple(elms, tpe, pur, eff, loc1), loc0) =>
-      val es = visitExps(elms)
-      val t = visitType(tpe)
-      val e = mkParTuple(Expression.Tuple(es, t, pur, eff, loc1))
-      Expression.Cast(e, None, Some(Type.Pure), Some(Type.Empty), t, pur, eff, loc0)
+    case Expression.Par(exp, loc0) => exp match {
+      case Expression.Tuple(elms, tpe, pur, eff, loc1) =>
+        val es = visitExps(elms)
+        val t = visitType(tpe)
+        val e = mkParTuple(Expression.Tuple(es, t, pur, eff, loc1))
+        Expression.Cast(e, None, Some(Type.Pure), Some(Type.Empty), t, pur, eff, loc0)
 
-    case Expression.Par(Expression.Apply(exp, exps, tpe, pur, eff, loc1), loc0) =>
-      val e = visitExp(exp)
-      val es = visitExps(exps)
-      val t = visitType(tpe)
-      val parExp = mkParApply(Expression.Apply(e, es, t, pur, eff, loc1))
-      Expression.Cast(parExp, None, Some(Type.Pure), Some(Type.Empty), t, pur, eff, loc0)
+      case Expression.Apply(exp, exps, tpe, pur, eff, loc1) =>
+        val e = visitExp(exp)
+        val es = visitExps(exps)
+        val t = visitType(tpe)
+        val parExp = mkParApply(Expression.Apply(e, es, t, pur, eff, loc1))
+        Expression.Cast(parExp, None, Some(Type.Pure), Some(Type.Empty), t, pur, eff, loc0)
+    }
 
     case Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)

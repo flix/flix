@@ -298,15 +298,15 @@ namespace Int16 {
 
     ///
     /// Parse the string `s` as an Int16, leading or trailing whitespace is trimmed.
-    /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
+    /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     @Time(1) @Space(1)
-    pub def fromString(s: String): Result[Int16, String] = try {
+    pub def fromString(s: String): Option[Int16] = try {
         import java.lang.String.strip(): String \ {};
         import static java.lang.Short.parseShort(String): Int16 \ {};
-        Ok(s |> strip |> parseShort)
+        Some(s |> strip |> parseShort)
     } catch {
-        case _: ##java.lang.NumberFormatException => Err("Int16.fromString")
+        case _: ##java.lang.NumberFormatException => None
     }
 
     ///

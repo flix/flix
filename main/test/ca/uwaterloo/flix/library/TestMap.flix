@@ -2505,6 +2505,101 @@ def query18(): Bool =
         List.zip(l, List.reverse(l)) |> List.toMap |> Map.iteratorValues(r) |> Iterator.toList == List.range(0, 100) |> List.reverse
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // sequence                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sequence01(): Bool =
+        let m: Map[Int32, Identity[Char]] = Map#{};
+        Map.sequence(m) == Identity(Map#{})
+
+    @test
+    def sequence02(): Bool =
+        let m = Map#{1 => Identity('a')};
+        Map.sequence(m) == Identity(Map#{1 => 'a'})
+
+    @test
+    def sequence03(): Bool =
+        let m = Map#{1 => Identity('a'), 2 => Identity('b')};
+        Map.sequence(m) == Identity(Map#{1 => 'a', 2 => 'b'})
+
+    @test
+    def sequence04(): Bool =
+        let m = Map#{1 => Identity('a'), 2 => Identity('b'), 3 => Identity('c')};
+        Map.sequence(m) == Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'})
+
+    /////////////////////////////////////////////////////////////////////////////
+    // traverse                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def traverse01(): Bool = region r {
+        let st = ref '#' @ r;
+        let m: Map[Int32, Char] = Map#{};
+        let ans = Map.traverse(x -> {st := x; Identity(x)}, m);
+        ans == Identity(Map#{}) and deref st == '#'
+    }
+
+    @test
+    def traverse02(): Bool = region r {
+        let st = ref '#' @ r;
+        let m = Map#{1 => 'a'};
+        let ans = Map.traverse(x -> {st := x; Identity(x)}, m);
+        ans == Identity(Map#{1 => 'a'}) and deref st == 'a'
+    }
+
+    @test
+    def traverse03(): Bool = region r {
+        let st = ref '#' @ r;
+        let m = Map#{1 => 'a', 2 => 'b'};
+        let ans = Map.traverse(x -> {st := x; Identity(x)}, m);
+        ans == Identity(Map#{1 => 'a', 2 => 'b'}) and deref st == 'b'
+    }
+
+    @test
+    def traverse04(): Bool = region r {
+        let st = ref '#' @ r;
+        let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'};
+        let ans = Map.traverse(x -> {st := x; Identity(x)}, m);
+        ans == Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}) and deref st == 'c'
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // traverseWithKey                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def traverseWithKey01(): Bool = region r {
+        let st = ref (0, '#') @ r;
+        let m: Map[Int32, Char] = Map#{};
+        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity(v)}, m);
+        ans == Identity(Map#{}) and deref st == (0, '#')
+    }
+
+    @test
+    def traverseWithKey02(): Bool = region r {
+        let st = ref (0, '#') @ r;
+        let m = Map#{1 => 'a'};
+        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity(v)}, m);
+        ans == Identity(Map#{1 => 'a'}) and deref st == (1, 'a')
+    }
+
+    @test
+    def traverseWithKey03(): Bool = region r {
+        let st = ref (0, '#') @ r;
+        let m = Map#{1 => 'a', 2 => 'b'};
+        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity(v)}, m);
+        ans == Identity(Map#{1 => 'a', 2 => 'b'}) and deref st == (2, 'b')
+    }
+
+    @test
+    def traverseWithKey04(): Bool = region r {
+        let st = ref (0, '#') @ r;
+        let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'};
+        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity(v)}, m);
+        ans == Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}) and deref st == (3, 'c')
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // joinKeys                                                                //

@@ -757,28 +757,28 @@ namespace TestInt8 {
     // fromString                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def fromString01(): Bool = Int8.fromString("Bad") |> Result.isErr
+    def fromString01(): Bool = Int8.fromString("Bad") |> Option.isEmpty
 
     @test
-    def fromString02(): Bool = Int8.fromString(" 1") == Ok(1i8)
+    def fromString02(): Bool = Int8.fromString(" 1") == Some(1i8)
 
     @test
-    def fromString03(): Bool = Int8.fromString("1 ") == Ok(1i8)
+    def fromString03(): Bool = Int8.fromString("1 ") == Some(1i8)
 
     @test
-    def fromString04(): Bool = Int8.fromString("0") == Ok(0i8)
+    def fromString04(): Bool = Int8.fromString("0") == Some(0i8)
 
     @test
-    def fromString05(): Bool = Int8.fromString("1") == Ok(1i8)
+    def fromString05(): Bool = Int8.fromString("1") == Some(1i8)
 
     @test
-    def fromString06(): Bool = Int8.fromString("-1") == Ok(-1i8)
+    def fromString06(): Bool = Int8.fromString("-1") == Some(-1i8)
 
     @test
-    def fromString07(): Bool = Int8.fromString("127") == Ok(127i8)
+    def fromString07(): Bool = Int8.fromString("127") == Some(127i8)
 
     @test
-    def fromString08(): Bool = Int8.fromString("-128") == Ok(-128i8)
+    def fromString08(): Bool = Int8.fromString("-128") == Some(-128i8)
 
     /////////////////////////////////////////////////////////////////////////////
     // toInt16                                                                 //
