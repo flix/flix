@@ -16,7 +16,7 @@
 
 namespace TestTraversable {
 
-    use Traversable.{sequence, traverse, mapAccumLeft, mapAccumRight};
+    use Traversable.{sequence, traverse, mapAccumLeft};
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -102,21 +102,6 @@ namespace TestTraversable {
     def mapAccumLeftOption02(): Bool =
         let o: Option[Int32] = Some(1);
         mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, o) == (11, Some(11))
-
-    /////////////////////////////////////////////////////////////////////////////
-    // mapAccumRightOption                                                     //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def mapAccumRightOption01(): Bool =
-        let o: Option[Int32] = None;
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, o) == (10, None)
-
-    @test
-    def mapAccumRightOption02(): Bool =
-        let o: Option[Int32] = Some(1);
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, o) == (11, Some(11))
-
 
     /////////////////////////////////////////////////////////////////////////////
     // sequenceList                                                            //
@@ -206,30 +191,6 @@ namespace TestTraversable {
         mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs) == (13, 11 :: 13 :: 15 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
-    // mapAccumRightList                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def mapAccumRightList01(): Bool =
-        let xs: List[Int32] = Nil;
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, xs) == (10, Nil)
-
-    @test
-    def mapAccumRightList02(): Bool =
-        let xs: List[Int32] = 1 :: Nil;
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, xs) == (11, 11 :: Nil)
-
-    @test
-    def mapAccumRightList03(): Bool =
-        let xs: List[Int32] = 1 :: 2 :: Nil;
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, xs) == (12, 12 :: 12 :: Nil)
-
-    @test
-    def mapAccumRightList04(): Bool =
-        let xs: List[Int32] = 1 :: 2 :: 3 :: Nil;
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, xs) == (13, 13 :: 13 :: 13 :: Nil)
-
-    /////////////////////////////////////////////////////////////////////////////
     // sequenceNel                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -295,25 +256,6 @@ namespace TestTraversable {
     def mapAccumLeftNel03(): Bool =
         let xs: Nel[Int32] = Nel(1, 2 :: 3 :: Nil);
         mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs) == (13, Nel(11, 13 :: 15 :: Nil))
-
-    /////////////////////////////////////////////////////////////////////////////
-    // mapAccumRightNel                                                        //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def mapAccumRightNel01(): Bool =
-        let xs: Nel[Int32] = Nel(1, Nil);
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, xs) == (11, Nel(11, Nil))
-
-    @test
-    def mapAccumRightNel02(): Bool =
-        let xs: Nel[Int32] = Nel(1, 2 :: Nil);
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, xs) == (12, Nel(12, 12 :: Nil))
-
-    @test
-    def mapAccumRightNel03(): Bool =
-        let xs: Nel[Int32] = Nel(1, 2 :: 3 :: Nil);
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, xs) == (13, Nel(13, 13 :: 13 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // sequenceChain                                                           //
@@ -403,30 +345,6 @@ namespace TestTraversable {
         mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs) == (13, List.toChain(11 :: 13 :: 15 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
-    // mapAccumRightChain                                                      //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def mapAccumRightChain01(): Bool =
-        let xs: Chain[Int32] = Chain.empty();
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, xs) == (10, Chain.empty())
-
-    @test
-    def mapAccumRightChain02(): Bool =
-        let xs: Chain[Int32] = Chain.singleton(1);
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, xs) == (11, Chain.singleton(11))
-
-    @test
-    def mapAccumRightChain03(): Bool =
-        let xs: Chain[Int32] = List.toChain(1 :: 2 :: Nil);
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, xs) == (12, List.toChain(12 :: 12 :: Nil))
-
-    @test
-    def mapAccumRightChain04(): Bool =
-        let xs: Chain[Int32] = List.toChain(1 :: 2 :: 3 :: Nil);
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, xs) == (13, List.toChain(13 :: 13 :: 13 :: Nil))
-
-    /////////////////////////////////////////////////////////////////////////////
     // sequenceMap                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -512,30 +430,6 @@ namespace TestTraversable {
     def mapAccumLeftMap04(): Bool =
         let m: Map[Int32, Int32]  = Map#{1 => 1, 2 => 2, 3 => 3};
         mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (13, Map#{1 => 11, 2 => 13, 3 => 15})
-
-    /////////////////////////////////////////////////////////////////////////////
-    // mapAccumRightMap                                                        //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def mapAccumRightMap01(): Bool =
-        let m: Map[Int32, Int32] = Map#{};
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, m) == (10, Map#{})
-
-    @test
-    def mapAccumRightMap02(): Bool =
-        let m: Map[Int32, Int32] = Map#{1 => 1};
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, m) == (11, Map#{1 => 11})
-
-    @test
-    def mapAccumRightMap03(): Bool =
-        let m: Map[Int32, Int32]  = Map#{1 => 1, 2 => 2};
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, m) == (12, Map#{1 => 12, 2 => 12})
-
-    @test
-    def mapAccumRightMap04(): Bool =
-        let m: Map[Int32, Int32]  = Map#{1 => 1, 2 => 2, 3 => 3};
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, m) == (13, Map#{1 => 13, 2 => 13, 3 => 13})
 
     /////////////////////////////////////////////////////////////////////////////
     /// Helper for RedBlackTree                                                //
@@ -630,30 +524,5 @@ namespace TestTraversable {
     def mapAccumLeftRedBlackTree04(): Bool =
         let m: RedBlackTree.RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: (2, 2) :: (3, 3) :: Nil);
         mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (13, toRedBlackTree((1, 11) :: (2, 13) :: (3, 15) :: Nil))
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // mapAccumRightRedBlackTree                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def mapAccumRightRedBlackTree01(): Bool =
-        let m: RedBlackTree.RedBlackTree[Int32, Int32] = RedBlackTree.empty();
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, m) == (10, RedBlackTree.empty())
-
-    @test
-    def mapAccumRightRedBlackTree02(): Bool =
-        let m: RedBlackTree.RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: Nil);
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, m) == (11, toRedBlackTree((1, 11) :: Nil))
-
-    @test
-    def mapAccumRightRedBlackTree03(): Bool =
-        let m: RedBlackTree.RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: (2, 2) :: Nil);
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, m) == (12, toRedBlackTree((1, 12) :: (2, 12) :: Nil))
-
-    @test
-    def mapAccumRightRedBlackTree04(): Bool =
-        let m: RedBlackTree.RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: (2, 2) :: (3, 3) :: Nil);
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, m) == (13, toRedBlackTree((1, 13) :: (2, 13) :: (3, 13) :: Nil))
 
 }
