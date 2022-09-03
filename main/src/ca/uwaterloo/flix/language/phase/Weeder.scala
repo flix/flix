@@ -469,10 +469,14 @@ object Weeder {
       val doc = Ast.Doc(Nil, loc)
       val mod = Ast.Modifiers.Empty
       val tparams = WeededAst.TypeParams.Elided
-      val is = ids.map { id => 
-        val ident = Name.Ident(sp1, id, sp2)
-        val tpe = WeededAst.Type.Native((pkg :+ id).mkString("."), loc)
-        WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc)
+      val is = ids.map {
+        case ParsedAst.Imports.NameAndAlias(_, name, alias, _) => 
+          val ident = alias match {
+            case Some(id) => id
+            case _ => Name.Ident(sp1, name, sp2)
+          }
+          val tpe = WeededAst.Type.Native((pkg :+ name).mkString("."), loc)
+          WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc)
       }
       is.toList.toSuccess
   }
