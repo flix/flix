@@ -759,7 +759,7 @@ object Deriver {
     */
   private def getTypeConstraintsForTypeParams(tparams: List[KindedAst.TypeParam], clazz: Symbol.ClassSym, loc: SourceLocation): List[Ast.TypeConstraint] = tparams.collect {
     case tparam if tparam.sym.kind == Kind.Star && !tparam.name.isWild =>
-      Ast.TypeConstraint(Ast.TypeConstraint.Head(clazz, loc), Type.KindedVar(tparam.sym, loc), loc)
+      Ast.TypeConstraint(Ast.TypeConstraint.Head(clazz, loc), Type.Var(tparam.sym, loc), loc)
   }
 
   /**

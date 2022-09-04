@@ -48,7 +48,7 @@ object Regions {
       case e => def0
     }
 
-  private def visitExp(exp0: Expression)(implicit scope: List[Type.KindedVar], flix: Flix): Validation[Unit, CompilationMessage] = exp0 match {
+  private def visitExp(exp0: Expression)(implicit scope: List[Type.Var], flix: Flix): Validation[Unit, CompilationMessage] = exp0 match {
     case Expression.Unit(_) => ().toSuccess
 
     case Expression.Null(_, _) => ().toSuccess
@@ -409,7 +409,7 @@ object Regions {
 
   }
 
-  def visitJvmMethod(method: JvmMethod)(implicit scope: List[Type.KindedVar], flix: Flix): Validation[Unit, CompilationMessage] = method match {
+  def visitJvmMethod(method: JvmMethod)(implicit scope: List[Type.Var], flix: Flix): Validation[Unit, CompilationMessage] = method match {
     case JvmMethod(_, _, exp, tpe, _, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
@@ -419,7 +419,7 @@ object Regions {
   /**
     * Ensures that no region escapes inside `tpe`.
     */
-  private def checkType(tpe: Type, loc: SourceLocation)(implicit scope: List[Type.KindedVar]): Validation[Unit, CompilationMessage] = {
+  private def checkType(tpe: Type, loc: SourceLocation)(implicit scope: List[Type.Var]): Validation[Unit, CompilationMessage] = {
     // Compute the region variables that escape.
     val escapes = regionVarsOf(tpe) -- scope
 
@@ -436,7 +436,7 @@ object Regions {
   /**
     * Returns all region variables in the given type `tpe`.
     */
-  private def regionVarsOf(tpe: Type): SortedSet[Type.KindedVar] = tpe.typeVars.filter {
+  private def regionVarsOf(tpe: Type): SortedSet[Type.Var] = tpe.typeVars.filter {
     case tvar =>
       val isBool = tvar.sym.kind == Kind.Bool
       val isRegion = tvar.sym.isRegion

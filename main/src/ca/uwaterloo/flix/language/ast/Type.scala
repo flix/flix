@@ -46,8 +46,8 @@ sealed trait Type {
     *
     * Returns a sorted set to ensure that the compiler is deterministic.
     */
-  def typeVars: SortedSet[Type.KindedVar] = this match {
-    case x: Type.KindedVar => SortedSet(x)
+  def typeVars: SortedSet[Type.Var] = this match {
+    case x: Type.Var => SortedSet(x)
     case Type.Cst(tc, _) => SortedSet.empty
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
     case Type.Alias(_, args, _, _) => args.flatMap(_.typeVars).to(SortedSet)
@@ -74,7 +74,7 @@ sealed trait Type {
     * }}}
     */
   def typeConstructor: Option[TypeConstructor] = this match {
-    case Type.KindedVar(_, _) => None
+    case Type.Var(_, _) => None
     case Type.Cst(tc, _) => Some(tc)
     case Type.Apply(t1, _, _) => t1.typeConstructor
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructor
@@ -100,7 +100,7 @@ sealed trait Type {
     * Returns a list of all type constructors in `this` type.
     */
   def typeConstructors: List[TypeConstructor] = this match {
-    case Type.KindedVar(_, _) => Nil
+    case Type.Var(_, _) => Nil
     case Type.Cst(tc, _) => tc :: Nil
     case Type.Apply(t1, t2, _) => t1.typeConstructors ::: t2.typeConstructors
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructors
@@ -129,8 +129,8 @@ sealed trait Type {
   /**
     * Applies `f` to every type variable in `this` type.
     */
-  def map(f: Type.KindedVar => Type): Type = this match {
-    case tvar: Type.KindedVar => f(tvar)
+  def map(f: Type.Var => Type): Type = this match {
+    case tvar: Type.Var => f(tvar)
     case Type.Cst(_, _) => this
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(tpe1.map(f), tpe2.map(f), loc)
     case Type.Alias(sym, args, tpe, loc) => Type.Alias(sym, args.map(_.map(f)), tpe.map(f), loc)
@@ -180,7 +180,7 @@ sealed trait Type {
     * Returns the size of `this` type.
     */
   def size: Int = this match {
-    case Type.KindedVar(_, _) => 1
+    case Type.Var(_, _) => 1
     case Type.Cst(_, _) => 1
     case Type.Apply(tpe1, tpe2, _) => tpe1.size + tpe2.size + 1
     case Type.Alias(_, _, tpe, _) => tpe.size
@@ -358,9 +358,9 @@ object Type {
   /**
     * A type variable.
     */
-  case class KindedVar(sym: Symbol.KindedTypeVarSym, loc: SourceLocation) extends Type with BaseType with Ordered[Type.KindedVar] {
+  case class Var(sym: Symbol.KindedTypeVarSym, loc: SourceLocation) extends Type with BaseType with Ordered[Type.Var] {
 
-    def withText(text: Ast.VarText): KindedVar = KindedVar(sym.withText(text), loc)
+    def withText(text: Ast.VarText): Var = Var(sym.withText(text), loc)
 
     def kind: Kind = sym.kind
 
@@ -373,7 +373,7 @@ object Type {
       * Returns `true` if `this` type variable is equal to `o`.
       */
     override def equals(o: scala.Any): Boolean = o match {
-      case that: KindedVar => this.sym == that.sym
+      case that: Var => this.sym == that.sym
       case _ => false
     }
 
@@ -385,7 +385,7 @@ object Type {
     /**
       * Compares `this` type variable to `that` type variable.
       */
-    override def compare(that: Type.KindedVar): Int = this.sym.id - that.sym.id
+    override def compare(that: Type.Var): Int = this.sym.id - that.sym.id
   }
 
   /**
@@ -448,9 +448,9 @@ object Type {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(k: Kind, loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): Type.KindedVar = {
+  def freshVar(k: Kind, loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): Type.Var = {
     val sym = Symbol.freshKindedTypeVarSym(text, k, isRegion, loc)
-    Type.KindedVar(sym, loc)
+    Type.Var(sym, loc)
   }
 
   /**
@@ -739,7 +739,7 @@ object Type {
     case (_, Type.Cst(TypeConstructor.True, _)) => tpe1
     case (Type.Cst(TypeConstructor.False, _), _) => Type.False
     case (_, Type.Cst(TypeConstructor.False, _)) => Type.False
-    case (Type.KindedVar(sym1, _), Type.KindedVar(sym2, _)) if sym1 == sym2 => tpe1
+    case (Type.Var(sym1, _), Type.Var(sym2, _)) if sym1 == sym2 => tpe1
     case _ => Type.Apply(Type.Apply(Type.And, tpe1, loc), tpe2, loc)
   }
 
@@ -779,7 +779,7 @@ object Type {
     case (_, Type.Cst(TypeConstructor.True, _)) => Type.True
     case (Type.Cst(TypeConstructor.False, _), _) => tpe2
     case (_, Type.Cst(TypeConstructor.False, _)) => tpe1
-    case (Type.KindedVar(sym1, _), Type.KindedVar(sym2, _)) if sym1 == sym2 => tpe1
+    case (Type.Var(sym1, _), Type.Var(sym2, _)) if sym1 == sym2 => tpe1
     case _ => Type.Apply(Type.Apply(Type.Or, tpe1, loc), tpe2, loc)
   }
 
@@ -881,7 +881,7 @@ object Type {
     * to clear all aliases for easier processing.
     */
   def eraseAliases(t: Type): Type = t match {
-    case tvar: Type.KindedVar => tvar
+    case tvar: Type.Var => tvar
     case Type.Cst(_, _) => t
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Type.Alias(_, _, tpe, _) => eraseAliases(tpe)

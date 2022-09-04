@@ -101,11 +101,11 @@ object Instances {
     def checkSimple(inst: TypedAst.Instance): List[InstanceError] = inst match {
       case TypedAst.Instance(_, _, _, sym, tpe, _, _, _, _) => tpe match {
         case _: Type.Cst => Nil
-        case _: Type.KindedVar => List(InstanceError.ComplexInstanceType(tpe, sym, sym.loc))
+        case _: Type.Var => List(InstanceError.ComplexInstanceType(tpe, sym, sym.loc))
         case _: Type.Apply =>
-          val (_, errs0) = tpe.typeArguments.foldLeft((List.empty[Type.KindedVar], List.empty[InstanceError])) {
+          val (_, errs0) = tpe.typeArguments.foldLeft((List.empty[Type.Var], List.empty[InstanceError])) {
             // Case 1: Type variable
-            case ((seen, errs), tvar: Type.KindedVar) =>
+            case ((seen, errs), tvar: Type.Var) =>
               // Case 1.1 We've seen it already. Error.
               if (seen.contains(tvar))
                 (seen, List(InstanceError.DuplicateTypeVariableOccurrence(tvar, sym, sym.loc)))
@@ -144,7 +144,7 @@ object Instances {
     def generifyBools(tpe0: Type)(implicit flix: Flix): Type = tpe0 match {
       case Type.Cst(TypeConstructor.True, loc) => Type.freshVar(Kind.Bool, loc)
       case Type.Cst(TypeConstructor.False, loc) => Type.freshVar(Kind.Bool, loc)
-      case t: Type.KindedVar => t
+      case t: Type.Var => t
       case t: Type.Cst => t
       case Type.Apply(tpe1, tpe2, loc) => Type.Apply(generifyBools(tpe1), generifyBools(tpe2), loc)
       case Type.Alias(cst, args, tpe, loc) => Type.Alias(cst, args.map(generifyBools), generifyBools(tpe), loc)

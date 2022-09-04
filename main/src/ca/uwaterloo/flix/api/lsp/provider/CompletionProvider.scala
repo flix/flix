@@ -523,8 +523,8 @@ object CompletionProvider {
       * with an equivalent variable symbol with the given `newText`.
       */
     def replaceText(tvar: Symbol.TypeVarSym, tpe: Type, newText: String): Type = tpe match {
-      case Type.KindedVar(sym, loc) if tvar == sym => Type.KindedVar(sym.withText(Ast.VarText.SourceText(newText)), loc)
-      case Type.KindedVar(_, _) => tpe
+      case Type.Var(sym, loc) if tvar == sym => Type.Var(sym.withText(Ast.VarText.SourceText(newText)), loc)
+      case Type.Var(_, _) => tpe
       case Type.Cst(_, _) => tpe
 
       case Type.Apply(tpe1, tpe2, loc) =>

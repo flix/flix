@@ -26,7 +26,7 @@ object Unification {
   /**
     * Unify the two type variables `x` and `y`.
     */
-  private def unifyVars(x: Type.KindedVar, y: Type.KindedVar, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  private def unifyVars(x: Type.Var, y: Type.Var, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // Case 0: types are identical
     if (x.sym == y.sym) {
       Result.Ok(Substitution.empty)
@@ -45,8 +45,8 @@ object Unification {
   /**
     * Unifies the given variable `x` with the given non-variable type `tpe`.
     */
-  def unifyVar(x: Type.KindedVar, tpe: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = tpe match {
-    case y: Type.KindedVar => unifyVars(x, y, renv)
+  def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = tpe match {
+    case y: Type.Var => unifyVars(x, y, renv)
     case _ =>
 
       // Check if `x` is rigid.
@@ -111,9 +111,9 @@ object Unification {
     * The types must each have a Star or Arrow kind.
     */
   private def unifyStarOrArrowTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
-    case (x: Type.KindedVar, _) => unifyVar(x, tpe2, renv)
+    case (x: Type.Var, _) => unifyVar(x, tpe2, renv)
 
-    case (_, x: Type.KindedVar) => unifyVar(x, tpe1, renv)
+    case (_, x: Type.Var) => unifyVar(x, tpe1, renv)
 
     case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(Substitution.empty)
 
@@ -202,7 +202,7 @@ object Unification {
     */
   def expectTypeM(expected: Type, actual: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     def handler(e: TypeError): TypeError = e match {
-      case _: TypeError.MismatchedTypes => 
+      case _: TypeError.MismatchedTypes =>
         (expected.typeConstructor, actual.typeConstructor) match {
           case (Some(TypeConstructor.Native(left)), Some(TypeConstructor.Native(right))) if left.isAssignableFrom(right) =>
             TypeError.PossibleUpcast(expected, actual, loc)
@@ -218,7 +218,7 @@ object Unification {
   /**
     * Unifies the `expected` type with the `actual` type (and unifies `bind` with the result).
     */
-  def expectTypeM(expected: Type, actual: Type, bind: Type.KindedVar, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+  def expectTypeM(expected: Type, actual: Type, bind: Type.Var, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     for {
       r <- expectTypeM(expected, actual, loc)
       _ <- unifyTypeM(bind, r, loc)
@@ -330,7 +330,7 @@ object Unification {
     *
     * NB: Use with EXTREME CAUTION.
     */
-  def unbindVar(tvar: Type.KindedVar): InferMonad[Unit] =
+  def unbindVar(tvar: Type.Var): InferMonad[Unit] =
     InferMonad { case (s, renv) => {
       Ok((s.unbind(tvar.sym), renv, ()))
     }
@@ -339,7 +339,7 @@ object Unification {
   /**
     * Purifies the given effect `eff` in the type inference monad.
     */
-  def purifyEffM(tvar: Type.KindedVar, eff: Type): InferMonad[Type] =
+  def purifyEffM(tvar: Type.Var, eff: Type): InferMonad[Type] =
     InferMonad { case (s, renv) => {
       val purifiedEff = purify(tvar, s(eff))
       Ok((s, renv, purifiedEff))
@@ -349,9 +349,9 @@ object Unification {
   /**
     * Returns the given Boolean formula `tpe` with the (possibly rigid) type variable `tvar` replaced by `True`.
     */
-  private def purify(tvar: Type.KindedVar, tpe: Type): Type = tpe.typeConstructor match {
+  private def purify(tvar: Type.Var, tpe: Type): Type = tpe.typeConstructor match {
     case None => tpe match {
-      case t: Type.KindedVar =>
+      case t: Type.Var =>
         if (tvar.sym == t.sym) Type.True else tpe
       case _ => throw InternalCompilerException(s"Unexpected type constructor: '$tpe'.")
     }
@@ -380,7 +380,7 @@ object Unification {
   /**
     * Ensures that the region variable `rvar` does not escape in the type `tpe` nor from the context.
     */
-  def noEscapeM(rvar: Type.KindedVar, tpe: Type): InferMonad[Unit] =
+  def noEscapeM(rvar: Type.Var, tpe: Type): InferMonad[Unit] =
     InferMonad { case (s, renv) =>
       // Apply the current substitution to `tpe`.
       val t = s(tpe)
@@ -398,7 +398,7 @@ object Unification {
   /**
     * Sets the given variable as rigid in the type inference monad.
     */
-  def rigidifyM(rvar: Type.KindedVar): InferMonad[Unit] =
+  def rigidifyM(rvar: Type.Var): InferMonad[Unit] =
     InferMonad {
       case (s, renv) => Ok((s, renv.markRigid(rvar.sym), ()))
     }

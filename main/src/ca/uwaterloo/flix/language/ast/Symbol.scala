@@ -210,7 +210,7 @@ object Symbol {
     * @param boundBy the way the variable is bound.
     * @param loc     the source location associated with the symbol.
     */
-  final class VarSym(val id: Int, val text: String, val tvar: Type.KindedVar, val boundBy: BoundBy, val loc: SourceLocation) extends Ordered[VarSym] {
+  final class VarSym(val id: Int, val text: String, val tvar: Type.Var, val boundBy: BoundBy, val loc: SourceLocation) extends Ordered[VarSym] {
 
     /**
       * The internal stack offset. Computed during variable numbering.

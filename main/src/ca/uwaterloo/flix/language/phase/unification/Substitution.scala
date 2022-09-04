@@ -33,9 +33,9 @@ object Substitution {
   def singleton(x: Symbol.TypeVarSym, tpe: Type): Substitution = {
     // Ensure that we do not add any x -> x mappings.
     tpe match {
-      case y: Type.KindedVar if x.id == y.sym.id => empty
-      case y: Type.KindedVar if y.sym.text isStrictlyLessPreciseThan x.text => Substitution(Map(x -> y.withText(x.text)))
-      case y: Type.KindedVar if x.text isStrictlyLessPreciseThan y.sym.text => Substitution(Map(x.withText(y.sym.text) -> y))
+      case y: Type.Var if x.id == y.sym.id => empty
+      case y: Type.Var if y.sym.text isStrictlyLessPreciseThan x.text => Substitution(Map(x -> y.withText(x.text)))
+      case y: Type.Var if x.text isStrictlyLessPreciseThan y.sym.text => Substitution(Map(x.withText(y.sym.text) -> y))
       case _ => Substitution(Map(x -> tpe))
     }
   }
@@ -59,7 +59,7 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
     // NB: The order of cases has been determined by code coverage analysis.
     def visit(t: Type): Type =
       t match {
-        case x: Type.KindedVar => m.getOrElse(x.sym, x)
+        case x: Type.Var => m.getOrElse(x.sym, x)
         case Type.Cst(tc, _) => t
         case Type.Apply(t1, t2, loc) =>
           val y = visit(t2)

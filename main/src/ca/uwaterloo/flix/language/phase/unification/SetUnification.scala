@@ -37,7 +37,7 @@ object SetUnification {
     }
 
     tpe1 match {
-      case x: Type.KindedVar if renv.isFlexible(x.sym) =>
+      case x: Type.Var if renv.isFlexible(x.sym) =>
         if (tpe2 eq Type.All)
           return Ok(Substitution.singleton(x.sym, Type.All))
         if (tpe2 eq Type.Empty)
@@ -47,7 +47,7 @@ object SetUnification {
     }
 
     tpe2 match {
-      case y: Type.KindedVar if renv.isFlexible(y.sym) =>
+      case y: Type.Var if renv.isFlexible(y.sym) =>
         if (tpe1 eq Type.All)
           return Ok(Substitution.singleton(y.sym, Type.All))
         if (tpe1 eq Type.Empty)
@@ -70,7 +70,7 @@ object SetUnification {
   private def eraseIo(t: Type): Type = t match {
     case Type.Cst(TypeConstructor.Effect(sym), _) if sym.namespace == Nil && sym.name == "IO" => Type.Empty
     case tpe: Type.Cst => tpe
-    case tpe: Type.KindedVar => tpe
+    case tpe: Type.Var => tpe
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseIo(tpe1), eraseIo(tpe2), loc)
 
     case _: Type.Alias => throw InternalCompilerException("unexpected type alias")
@@ -125,7 +125,7 @@ object SetUnification {
     * actually occur in the source code). We can ensure this by eliminating the
     * synthetic variables first.
     */
-  private def computeVariableOrder(l: List[Type.KindedVar]): List[Type.KindedVar] = {
+  private def computeVariableOrder(l: List[Type.Var]): List[Type.Var] = {
     val realVars = l.filter(_.sym.isReal)
     val synthVars = l.filterNot(_.sym.isReal)
     synthVars ::: realVars
@@ -134,7 +134,7 @@ object SetUnification {
   /**
     * Performs successive variable elimination on the given set expression `f`.
     */
-  private def successiveVariableElimination(f: Type, fvs: List[Type.KindedVar])(implicit flix: Flix): Substitution = fvs match {
+  private def successiveVariableElimination(f: Type, fvs: List[Type.Var])(implicit flix: Flix): Substitution = fvs match {
     case Nil =>
       // Determine if f is necessarily empty when all (rigid) variables and constants are made flexible.
       if (isEmpty(dnf(f)))
@@ -401,7 +401,7 @@ object SetUnification {
   private object VAR {
     @inline
     def unapply(tpe: Type): Option[Symbol.KindedTypeVarSym] = tpe match {
-      case Type.KindedVar(sym, _) => Some(sym)
+      case Type.Var(sym, _) => Some(sym)
       case _ => None
     }
   }

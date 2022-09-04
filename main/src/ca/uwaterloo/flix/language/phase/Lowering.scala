@@ -766,8 +766,8 @@ object Lowering {
     */
   private def visitType(tpe0: Type)(implicit root: Root, flix: Flix): Type = {
     def visit(tpe: Type): Type = tpe match {
-      case Type.KindedVar(sym, loc) => sym.kind match {
-        case Kind.SchemaRow => Type.KindedVar(sym.withKind(Kind.Star), loc)
+      case Type.Var(sym, loc) => sym.kind match {
+        case Kind.SchemaRow => Type.Var(sym.withKind(Kind.Star), loc)
         case _ => tpe0
       }
 

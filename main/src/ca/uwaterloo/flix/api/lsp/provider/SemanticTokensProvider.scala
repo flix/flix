@@ -603,7 +603,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given type `tpe0`.
     */
   private def visitType(tpe0: Type): Iterator[SemanticToken] = tpe0 match {
-    case Type.KindedVar(_, loc) =>
+    case Type.Var(_, loc) =>
       val t = SemanticToken(SemanticTokenType.TypeParameter, Nil, loc)
       Iterator(t)
 

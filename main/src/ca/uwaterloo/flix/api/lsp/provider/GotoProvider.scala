@@ -60,7 +60,7 @@ object GotoProvider {
           case Type.Cst(TypeConstructor.Effect(sym), loc) =>
             ("status" -> "success") ~ ("result" -> LocationLink.fromEffectSym(sym, loc).toJSON)
 
-          case Type.KindedVar(sym, loc) =>
+          case Type.Var(sym, loc) =>
             ("status" -> "success") ~ ("result" -> LocationLink.fromTypeVarSym(sym, loc).toJSON)
 
           case _ => mkNotFound(uri, pos)

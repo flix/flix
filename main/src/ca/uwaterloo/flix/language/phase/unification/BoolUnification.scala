@@ -37,7 +37,7 @@ object BoolUnification {
     }
 
     tpe1 match {
-      case x: Type.KindedVar if renv.isFlexible(x.sym) =>
+      case x: Type.Var if renv.isFlexible(x.sym) =>
         if (tpe2 eq Type.True)
           return Ok(Substitution.singleton(x.sym, Type.True))
         if (tpe2 eq Type.False)
@@ -47,7 +47,7 @@ object BoolUnification {
     }
 
     tpe2 match {
-      case y: Type.KindedVar if renv.isFlexible(y.sym) =>
+      case y: Type.Var if renv.isFlexible(y.sym) =>
         if (tpe1 eq Type.True)
           return Ok(Substitution.singleton(y.sym, Type.True))
         if (tpe1 eq Type.False)
@@ -111,7 +111,7 @@ object BoolUnification {
     * actually occur in the source code). We can ensure this by eliminating the
     * synthetic variables first.
     */
-  private def computeVariableOrder(l: List[Type.KindedVar]): List[Type.KindedVar] = {
+  private def computeVariableOrder(l: List[Type.Var]): List[Type.Var] = {
     val realVars = l.filter(_.sym.isReal)
     val synthVars = l.filterNot(_.sym.isReal)
     synthVars ::: realVars
@@ -122,7 +122,7 @@ object BoolUnification {
     *
     * `flexvs` is the list of remaining flexible variables in the expression.
     */
-  private def successiveVariableElimination(f: Type, flexvs: List[Type.KindedVar])(implicit flix: Flix): Substitution = flexvs match {
+  private def successiveVariableElimination(f: Type, flexvs: List[Type.Var])(implicit flix: Flix): Substitution = flexvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
       if (!satisfiable(f))

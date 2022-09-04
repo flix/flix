@@ -849,7 +849,7 @@ object Stratifier {
         case Type.Cst(TypeConstructor.Unit, _) => (Nil, den)
         case _ => (List(t), den) // Unary
       }
-    case _: Type.KindedVar =>
+    case _: Type.Var =>
       // This could occur when querying or projecting a non-existent predicate
       (Nil, Denotation.Relational)
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe.'")

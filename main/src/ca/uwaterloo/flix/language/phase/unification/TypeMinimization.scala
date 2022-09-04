@@ -37,7 +37,7 @@ object TypeMinimization {
     case Kind.Effect => minimizeBoolAlg(t)
     case Kind.Bool => minimizeBoolAlg(t)
     case _ => t match {
-      case tpe: Type.KindedVar => tpe
+      case tpe: Type.Var => tpe
       case tpe: Type.Cst => tpe
       case Type.Apply(tpe1, tpe2, loc) => Type.Apply(minimizeType(tpe1), minimizeType(tpe2), loc)
       case Type.Alias(cst, args, tpe, loc) => Type.Alias(cst, args.map(minimizeType), minimizeType(tpe), loc)
@@ -57,7 +57,7 @@ object TypeMinimization {
 
       // filter out unused type constraints
       val newTconstrs = constraints.filter {
-        case Ast.TypeConstraint(_, Type.KindedVar(sym, _), _) if tvars.contains(sym) => true
+        case Ast.TypeConstraint(_, Type.Var(sym, _), _) if tvars.contains(sym) => true
         case _ => false
       }
       Scheme(newQuants, newTconstrs, newBase)
@@ -122,7 +122,7 @@ object TypeMinimization {
     case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(sym)
 
     case _: Type.Cst => SortedSet.empty
-    case _: Type.KindedVar => SortedSet.empty
+    case _: Type.Var => SortedSet.empty
 
     case Type.Apply(tpe1, tpe2, loc) => getEffects(tpe1) ++ getEffects(tpe2)
     case Type.Alias(cst, args, tpe, loc) => getEffects(tpe)

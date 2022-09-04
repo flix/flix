@@ -293,7 +293,7 @@ object SimpleType {
     * Creates a simple type from the well-kinded type `t`.
    */
   def fromWellKindedType(t: Type): SimpleType = t.baseType match {
-    case Type.KindedVar(sym, _) =>
+    case Type.Var(sym, _) =>
       mkApply(Var(sym.id, sym.kind, sym.isRegion, sym.text), t.typeArguments.map(fromWellKindedType))
     case Type.Alias(cst, args, _, _) =>
       mkApply(Name(cst.sym.name), (args ++ t.typeArguments).map(fromWellKindedType))

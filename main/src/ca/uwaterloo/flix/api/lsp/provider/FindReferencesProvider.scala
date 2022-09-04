@@ -70,7 +70,7 @@ object FindReferencesProvider {
         case Entity.LocalVar(sym, _) => findVarReferences(sym)
 
         case Entity.Type(t) => t match {
-          case Type.KindedVar(sym, _) => findTypeVarReferences(sym)
+          case Type.Var(sym, _) => findTypeVarReferences(sym)
           case Type.Cst(tc, _) => tc match {
             case TypeConstructor.RecordRowExtend(field) => findFieldReferences(field)
             case TypeConstructor.SchemaRowExtend(pred) => findPredReferences(pred)
