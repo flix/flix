@@ -290,7 +290,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       """
         |def f(): ##java.lang.Comparable \ IO =
-        |   object ##java.lang.Comparable {
+        |   new ##java.lang.Comparable {
         |     def compareTo(x: ##java.lang.Object, _y: ##java.lang.Object): Int32 =
         |       let x = 0;
         |       x
@@ -469,7 +469,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       """
         |def f(): ##java.lang.Comparable \ IO =
-        |   object ##java.lang.Comparable {
+        |   new ##java.lang.Comparable {
         |     def compareTo(x: ##java.lang.Object, _y: ##java.lang.Object): Int32 =
         |       0
         |   }

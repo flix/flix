@@ -16,7 +16,7 @@
 
 namespace TestInt64 {
 
-    use Mul.mul;
+    use Mul.mul
 
     /////////////////////////////////////////////////////////////////////////////
     // mul                                                                     //
@@ -742,28 +742,28 @@ namespace TestInt64 {
     // fromString                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def fromString01(): Bool = Int64.fromString("Bad") |> Result.isErr
+    def fromString01(): Bool = Int64.fromString("Bad") |> Option.isEmpty
 
     @test
-    def fromString02(): Bool = Int64.fromString(" 1") == Ok(1i64)
+    def fromString02(): Bool = Int64.fromString(" 1") == Some(1i64)
 
     @test
-    def fromString03(): Bool = Int64.fromString("1 ") == Ok(1i64)
+    def fromString03(): Bool = Int64.fromString("1 ") == Some(1i64)
 
     @test
-    def fromString04(): Bool = Int64.fromString("0") == Ok(0i64)
+    def fromString04(): Bool = Int64.fromString("0") == Some(0i64)
 
     @test
-    def fromString05(): Bool = Int64.fromString("1") == Ok(1i64)
+    def fromString05(): Bool = Int64.fromString("1") == Some(1i64)
 
     @test
-    def fromString06(): Bool = Int64.fromString("-1") == Ok(-1i64)
+    def fromString06(): Bool = Int64.fromString("-1") == Some(-1i64)
 
     @test
-    def fromString07(): Bool = Int64.fromString("9223372036854775807") == Ok(9223372036854775807i64)
+    def fromString07(): Bool = Int64.fromString("9223372036854775807") == Some(9223372036854775807i64)
 
     @test
-    def fromString08(): Bool = Int64.fromString("-9223372036854775808") == Ok(-9223372036854775808i64)
+    def fromString08(): Bool = Int64.fromString("-9223372036854775808") == Some(-9223372036854775808i64)
 
     /////////////////////////////////////////////////////////////////////////////
     // parse                                                                   //

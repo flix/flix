@@ -1,8 +1,8 @@
-use GetOpt.{ArgDescr, OptionDescr};
-use GetOpt.ArgDescr.{NoArg, ReqArg, OptArg};
-use GetOpt.ArgOrder.{RequireOrder, Permute, ReturnInOrder};
+use GetOpt.{ArgDescr, OptionDescr}
+use GetOpt.ArgDescr.{NoArg, ReqArg, OptArg}
+use GetOpt.ArgOrder.{RequireOrder, Permute, ReturnInOrder}
 
-use GetOpt.{getOpt, usageInfo};
+use GetOpt.{getOpt, usageInfo}
 
 /// Define a datatype representing all flags and options.
 enum Flag with ToString {
@@ -24,17 +24,11 @@ def options(): List[OptionDescr[Flag]] =
 
 /// Define a simple "parser" to read an integer number of threads.
 /// (Used by the "threads" option descriptor)
-def threads(x: String): Option[Flag] = match Int32.fromString(x) {
-    case Ok(i) => Some(Threads(i))
-    case Err(_) => None
-}
+def threads(x: String): Option[Flag] = Int32.fromString(x) |> Option.map(i -> Threads(i))
 
 /// Define a simple "parser" to read an integer port number.
 /// (Used by the "listen" option descriptor)
-def listen(x: String): Option[Flag] = match Int32.fromString(x) {
-    case Ok(i) => Some(Listen(i))
-    case Err(_) => None
-}
+def listen(x: String): Option[Flag] = Int32.fromString(x) |> Option.map(i -> Listen(i))
 
 /// Decode the array `args` supplied to main.
 /// Note in this case we want to allow file names to contain spaces - the initial array `args` has

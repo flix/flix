@@ -15,7 +15,7 @@
  */
 
 namespace TestLowerBound {
-    use LowerBound.minValue;
+    use LowerBound.minValue
 
     @test
     def testUnit(): Bool = minValue() == ()

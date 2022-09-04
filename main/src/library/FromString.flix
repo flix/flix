@@ -48,31 +48,31 @@ instance FromString[Char] {
 }
 
 instance FromString[Float32] {
-    pub def fromString(x: String): Option[Float32] = Result.toOption(Float32.fromString(x))
+    pub def fromString(x: String): Option[Float32] = Float32.fromString(x)
 }
 
 instance FromString[Float64] {
-    pub def fromString(x: String): Option[Float64] = Result.toOption(Float64.fromString(x))
+    pub def fromString(x: String): Option[Float64] = Float64.fromString(x)
 }
 
 instance FromString[Int8] {
-    pub def fromString(x: String): Option[Int8] = Result.toOption(Int8.fromString(x))
+    pub def fromString(x: String): Option[Int8] = Int8.fromString(x)
 }
 
 instance FromString[Int16] {
-    pub def fromString(x: String): Option[Int16] = Result.toOption(Int16.fromString(x))
+    pub def fromString(x: String): Option[Int16] = Int16.fromString(x)
 }
 
 instance FromString[Int32] {
-    pub def fromString(x: String): Option[Int32] = Result.toOption(Int32.fromString(x))
+    pub def fromString(x: String): Option[Int32] = Int32.fromString(x)
 }
 
 instance FromString[Int64] {
-    pub def fromString(x: String): Option[Int64] = Result.toOption(Int64.fromString(x))
+    pub def fromString(x: String): Option[Int64] = Int64.fromString(x)
 }
 
 instance FromString[BigInt] {
-    pub def fromString(x: String): Option[BigInt] = Result.toOption(BigInt.fromString(x))
+    pub def fromString(x: String): Option[BigInt] = BigInt.fromString(x)
 }
 
 instance FromString[String] {

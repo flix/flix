@@ -305,15 +305,15 @@ namespace Int32 {
 
     ///
     /// Parse the string `s` as an Int32, leading or trailing whitespace is trimmed.
-    /// A successful parse is wrapped with `Ok(x)`, a parse failure is indicated by `Err(_)`.
+    /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     @Time(1) @Space(1)
-    pub def fromString(s: String): Result[Int32, String] = try {
+    pub def fromString(s: String): Option[Int32] = try {
         import java.lang.String.strip(): String \ {};
         import static java.lang.Integer.parseInt(String): Int32 \ {};
-        Ok(s |> strip |> parseInt)
+        Some(s |> strip |> parseInt)
     } catch {
-        case _: ##java.lang.NumberFormatException => Err("Int32.fromString")
+        case _: ##java.lang.NumberFormatException => None
     }
 
     ///

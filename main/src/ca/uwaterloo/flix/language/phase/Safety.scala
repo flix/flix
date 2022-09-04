@@ -252,14 +252,12 @@ object Safety {
     case Expression.Spawn(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Par(exp: Expression.Tuple, _) =>
-      visitExp(exp)
-
-    case Expression.Par(exp: Expression.Apply, _) =>
-      visitExp(exp)
-
-    case Expression.Par(e, _) =>
-      IllegalParExpression(e, e.loc) :: Nil
+    case Expression.Par(exp, _) =>
+      // Only tuple expressions are allowed to be parallelized with `par`.
+      exp match {
+        case e: Expression.Tuple => visitExp(e)
+        case _ => IllegalParExpression(exp, exp.loc) :: Nil
+      }
 
     case Expression.Lazy(exp, _, _) =>
       visitExp(exp)

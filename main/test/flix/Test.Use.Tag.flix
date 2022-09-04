@@ -160,7 +160,7 @@ namespace Test/Use/Tag {
         }
     }
     namespace C {
-        use Test/Use/Tag/A/B.Currency;
+        use Test/Use/Tag/A/B.Currency
 
         @test
         def testUseEnum19(): Bool =

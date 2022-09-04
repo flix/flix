@@ -19,7 +19,7 @@ namespace TestFile {
     use File.{exists, isDirectory, isRegularFile, isReadable, isSymbolicLink,
         isWritable, isExecutable, readLines, readLinesWith, read, readWith,
         readLinesIter, readLinesIterWith, readBytes, readBytesWith, readChunks,
-        stat, accessTime, creationTime, modificationTime, size};
+        stat, accessTime, creationTime, modificationTime, size}
 
     /////////////////////////////////////////////////////////////////////////////
     // accessTime                                                              //

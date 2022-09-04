@@ -185,7 +185,7 @@ class TestSafety extends FunSuite with TestUtils {
     val input =
       """
         |def f(): ##java.lang.Runnable \ IO =
-        |  object ##java.lang.Runnable {
+        |  new ##java.lang.Runnable {
         |    def run(): Unit \ IO = ()
         |  }
       """.stripMargin
@@ -197,7 +197,7 @@ class TestSafety extends FunSuite with TestUtils {
     val input =
       """
         |def f(): ##java.lang.Runnable \ IO =
-        |  object ##java.lang.Runnable {
+        |  new ##java.lang.Runnable {
         |    def run(_this: Int32): Unit \ IO = ()
         |  }
       """.stripMargin
@@ -208,7 +208,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("TestUnimplementedMethod.01") {
     val input =
       """
-        |def f(): ##java.lang.Runnable \ IO = object ##java.lang.Runnable {}
+        |def f(): ##java.lang.Runnable \ IO = new ##java.lang.Runnable {}
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.UnimplementedMethod](result)
@@ -218,7 +218,7 @@ class TestSafety extends FunSuite with TestUtils {
     val input =
       """
         |def f(): ##java.lang.Runnable \ IO =
-        |  object ##java.lang.Runnable {
+        |  new ##java.lang.Runnable {
         |    def run(_this: ##java.lang.Runnable): Unit \ IO = ()
         |    def anExtraMethod(_this: ##java.lang.Runnable): Unit \ IO = ()
         |  }
@@ -330,7 +330,7 @@ class TestSafety extends FunSuite with TestUtils {
     val input =
       """
         |def f(): ##flix.test.TestClassWithNonDefaultConstructor \ IO =
-        |  object ##flix.test.TestClassWithNonDefaultConstructor {
+        |  new ##flix.test.TestClassWithNonDefaultConstructor {
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -341,7 +341,7 @@ class TestSafety extends FunSuite with TestUtils {
     val input =
       """
         |def f(): ##flix.test.TestNonPublicInterface \ IO =
-        |  object ##flix.test.TestNonPublicInterface {
+        |  new ##flix.test.TestNonPublicInterface {
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)

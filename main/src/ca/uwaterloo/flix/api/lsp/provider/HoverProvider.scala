@@ -149,16 +149,29 @@ object HoverProvider {
     ("status" -> "success") ~ ("result" -> result)
   }
 
-  private def formatTypAndEff(tpe0: Type, pur0: Type, eff0: Type): String = {
+  private def formatTypAndEff(tpe0: Type, pur0: Type, eff0: Type)(implicit flix: Flix): String = {
+    // TODO deduplicate with CompletionProvider
     val t = FormatType.formatWellKindedType(tpe0)
-    val p = pur0 match {
-      case Type.Cst(TypeConstructor.True, _) => ""
-      case Type.Cst(TypeConstructor.False, _) => " & Impure"
-      case pur => " & " + FormatType.formatWellKindedType(pur)
+
+    // don't show purity if bool effects are turned off
+    val p = if (flix.options.xnobooleffects) {
+      ""
+    } else {
+      pur0 match {
+        case Type.Cst(TypeConstructor.True, _) => ""
+        case Type.Cst(TypeConstructor.False, _) => " & Impure"
+        case pur => " & " + FormatType.formatWellKindedType(pur)
+      }
     }
-    val e = eff0 match {
-      case Type.Cst(TypeConstructor.Empty, _) => ""
-      case eff => " \\ " + FormatType.formatWellKindedType(eff)
+
+    // don't show effect if set effects are turned off
+    val e = if (flix.options.xnoseteffects) {
+      ""
+    } else {
+      eff0 match {
+        case Type.Cst(TypeConstructor.Empty, _) => ""
+        case eff => " \\ " + FormatType.formatWellKindedType(eff)
+      }
     }
     s"$t$p$e"
   }

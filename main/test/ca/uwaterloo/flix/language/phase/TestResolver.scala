@@ -444,7 +444,7 @@ class TestResolver extends FunSuite with TestUtils {
          |}
          |
          |namespace B {
-         |    use A.f;
+         |    use A.f
          |    def g(): Int32 = f(1)
          |}
          |""".stripMargin
@@ -543,7 +543,7 @@ class TestResolver extends FunSuite with TestUtils {
            |    import new java.io.File(): ##java.io.File \ IO as _;
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmConstructor](result)
   }
 
@@ -554,7 +554,7 @@ class TestResolver extends FunSuite with TestUtils {
            |    import new java.io.File(Int32): ##java.io.File \ IO as _;
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmConstructor](result)
   }
 
@@ -565,7 +565,7 @@ class TestResolver extends FunSuite with TestUtils {
            |    import new java.lang.String(Bool): ##java.lang.String \ IO as _;
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmConstructor](result)
   }
 
@@ -576,7 +576,7 @@ class TestResolver extends FunSuite with TestUtils {
            |    import new java.lang.String(Bool, Char, String): ##java.lang.String \ IO as _;
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmConstructor](result)
   }
 
@@ -587,7 +587,7 @@ class TestResolver extends FunSuite with TestUtils {
            |    import new foo.bar.Baz(): Unit \ IO as newObject;
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmClass](result)
   }
 
@@ -598,7 +598,7 @@ class TestResolver extends FunSuite with TestUtils {
            |    import foo.bar.Baz.f(): Unit \ IO;
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmClass](result)
   }
 
@@ -609,7 +609,7 @@ class TestResolver extends FunSuite with TestUtils {
            |    import static foo.bar.Baz.f(): Unit \ IO;
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmClass](result)
   }
 
@@ -620,7 +620,7 @@ class TestResolver extends FunSuite with TestUtils {
            |    import get foo.bar.Baz.f: Unit \ IO as getF;
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmClass](result)
   }
 
@@ -631,7 +631,7 @@ class TestResolver extends FunSuite with TestUtils {
            |    import set foo.bar.Baz.f: Unit \ IO as setF;
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmClass](result)
   }
 
@@ -642,7 +642,7 @@ class TestResolver extends FunSuite with TestUtils {
            |    import static get foo.bar.Baz.f: Unit \ IO as getF;
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmClass](result)
   }
 
@@ -653,7 +653,7 @@ class TestResolver extends FunSuite with TestUtils {
            |    import static set foo.bar.Baz.f: Unit \ IO as setF;
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmClass](result)
   }
 
@@ -664,7 +664,7 @@ class TestResolver extends FunSuite with TestUtils {
            |    import java.lang.String.getFoo(): ##java.lang.String \ IO;
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmMethod](result)
   }
 
@@ -675,7 +675,7 @@ class TestResolver extends FunSuite with TestUtils {
            |    import java.lang.String.charAt(): ##java.lang.String \ IO;
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmMethod](result)
   }
 
@@ -686,7 +686,7 @@ class TestResolver extends FunSuite with TestUtils {
            |    import java.lang.String.charAt(Int32, Int32): ##java.lang.String \ IO;
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmMethod](result)
   }
 
@@ -697,7 +697,7 @@ class TestResolver extends FunSuite with TestUtils {
            |    import java.lang.String.isEmpty(Bool): Bool \ IO;
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmMethod](result)
   }
 
@@ -708,7 +708,7 @@ class TestResolver extends FunSuite with TestUtils {
            |    import static java.lang.String.isEmpty(): Bool \ IO;
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmMethod](result)
   }
 
@@ -719,8 +719,42 @@ class TestResolver extends FunSuite with TestUtils {
            |    import java.lang.String.valueOf(Bool): ##java.lang.String \ IO;
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmMethod](result)
+  }
+
+  test("MismatchingReturnType.01") {
+    val input =
+      raw"""
+         |def foo(): Unit =
+         |    import java.lang.String.hashCode(): Unit \ IO as _;
+         |    ()
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.MismatchingReturnType](result)
+  }
+
+  test("MismatchingReturnType.02") {
+    val input =
+      raw"""
+         |def foo(): Unit =
+         |    import java.lang.String.subSequence(Int32, Int32): ##java.util.Iterator \ IO as _;
+         |    ()
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.MismatchingReturnType](result)
+  }
+
+  test("MismatchingReturnType.03") {
+    val input =
+      raw"""
+         |type alias AliasedReturnType = ##java.util.Iterator
+         |def foo(): Unit =
+         |    import java.lang.String.subSequence(Int32, Int32): AliasedReturnType \ IO as _;
+         |    ()
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.MismatchingReturnType](result)
   }
 
   test("UndefinedJvmField.01") {
@@ -731,7 +765,7 @@ class TestResolver extends FunSuite with TestUtils {
            |    ()
            |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmField](result)
   }
 
@@ -742,7 +776,7 @@ class TestResolver extends FunSuite with TestUtils {
            |    import set java.lang.Character.foo: ##java.lang.Character \ IO as setFoo;
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmField](result)
   }
 
@@ -753,7 +787,7 @@ class TestResolver extends FunSuite with TestUtils {
            |    import static get java.lang.Character.foo: ##java.lang.Character \ IO as getFoo;
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmField](result)
   }
 
@@ -764,7 +798,7 @@ class TestResolver extends FunSuite with TestUtils {
            |    import static set java.lang.Character.foo: Unit \ IO as setFoo;
            |    ()
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmField](result)
   }
 
@@ -1008,7 +1042,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       """
         |def f(): Unit =
-        |    object Int32 {}
+        |    new Int32 {}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalNonJavaType](result)
@@ -1018,7 +1052,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       """
         |def f(): Unit =
-        |    object String {}
+        |    new String {}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalNonJavaType](result)
@@ -1030,7 +1064,7 @@ class TestResolver extends FunSuite with TestUtils {
         |type alias T = Int32
         |
         |def f(): Unit =
-        |    object T {}
+        |    new T {}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalNonJavaType](result)
