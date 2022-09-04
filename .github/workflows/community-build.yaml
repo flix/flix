@@ -11,48 +11,57 @@ concurrency:
   group: community-build-${{ github.ref }}
 
 jobs:
-  community-build:
-
+  # Build the JAR once for all the community builds
+  build-jar:
     runs-on: ubuntu-latest
-
-    env:
-      # === ADD PROJECTS HERE === #
-      #   (space-separated list)  #
-      PROJECTS: magnus-madsen/helloworld mlutze/fcwg
-
-      PROJ_DIR: project-build
-
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up JDK 17
+      - name: Check out branch
+        uses: actions/checkout@v2
+      - name: Set up Java
         uses: actions/setup-java@v1
         with:
           java-version: 17
-      - name: Build jar
+      - name: Build Flix JAR
         run: ./gradlew jar
-      - name: Build community projects
+      - name: Upload Flix JAR
+        uses: actions/upload-artifact@v3
+        with:
+          name: flix-jar
+          path: build/libs/flix.jar
+
+  # Spawn a separate job per community build
+  community-build:
+    needs: build-jar
+    strategy:
+      # collect all the failures
+      fail-fast: false
+      matrix:
+        repo:
+          - "magnus-madsen/helloworld"
+          - "mlutze/fcwg"
+          - "JonathanStarup/Flix-ANSI-Terminal"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Java
+        uses: actions/setup-java@v1
+        with:
+          java-version: 17
+      - name: Download Flix JAR
+        uses: actions/download-artifact@v3
+        with:
+          name: flix-jar
+      - name: Build community project
         timeout-minutes: 10
         run: |
-          # Sanity check: Make sure the project build directory does not exist.
-          test ! -e $PROJ_DIR
+          ### Build the community project ###
           
-          # Build each project in a fresh directory.
-          for project in ${{ env.PROJECTS }}; do
-            
-            # Initialize the project directory.
-            mkdir ${{ env.PROJ_DIR }}
-            cd ${{ env.PROJ_DIR }}
-            java -jar ../build/libs/flix.jar init
-            
-            # Remove example code to avoid conflicts.
-            rm src/Main.flix
-            rm test/TestMain.flix
-            
-            # Install and build the project.
-            java -jar ../build/libs/flix.jar install $project
-            java -jar ../build/libs/flix.jar build
-            
-            # Exit and clean the project directory.
-            cd ..
-            rm -rf ${{ env.PROJ_DIR }}
-          done
+          # Initialize the directory
+          java -jar flix.jar init
+          
+          # Remove example code to avoid conflicts.
+          rm src/Main.flix
+          rm test/TestMain.flix
+          
+          # Install and build the project.
+          java -jar flix.jar install ${{ matrix.repo }}
+          java -jar flix.jar build

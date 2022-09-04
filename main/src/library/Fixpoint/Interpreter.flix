@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar, toDenotation};
-use Fixpoint/Ast.Denotation;
-use Fixpoint/Tuple.Tuple;
+use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar, toDenotation}
+use Fixpoint/Ast.Denotation
+use Fixpoint/Tuple.Tuple
 
 namespace Fixpoint {
     namespace Tuple {

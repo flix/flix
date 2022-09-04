@@ -728,6 +728,37 @@ object ResolutionError {
   }
 
   /**
+    * An error raised to indicate that the method return type doesn't match.
+    *
+    * @param className    the class name.
+    * @param methodName   the method name.
+    * @param declaredType the declared type.
+    * @param expectedType the expected type.
+    * @param loc          the location of the method name.
+    */
+  case class MismatchingReturnType(className: String, methodName: String, declaredType: Type, expectedType: Type, loc: SourceLocation) extends ResolutionError {
+    def summary : String = {
+      s"Mismatching return type."
+    }
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+        >> Mismatched return type for method '${red(methodName)}' in class '${cyan(className)}'.
+        |
+        |${code(loc, "mismatched return type.")}
+        |Declared type: ${declaredType.toString}
+        |Expected type: ${expectedType.toString}
+        |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised to indicate that the field name was not found.
     *
     * @param className the class name.

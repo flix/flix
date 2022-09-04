@@ -16,8 +16,8 @@
 
 namespace TestMonad {
 
-    use Monad.{flatten, kleisliLeft, kleisliRight};
-    use Monad.{=<<, >>=, >=>, <=<};
+    use Monad.{flatten, kleisliLeft, kleisliRight}
+    use Monad.{=<<, >>=, >=>, <=<}
 
     /////////////////////////////////////////////////////////////////////////////
     // flatten                                                                 //

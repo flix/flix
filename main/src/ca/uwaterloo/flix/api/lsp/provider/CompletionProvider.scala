@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
@@ -94,7 +95,7 @@ object CompletionProvider {
   /**
     * Process a completion request.
     */
-  def autoComplete(uri: String, pos: Position, source: Option[String], currentErrors: List[CompilationMessage])(implicit index: Index, root: TypedAst.Root): JObject = {
+  def autoComplete(uri: String, pos: Position, source: Option[String], currentErrors: List[CompilationMessage])(implicit flix: Flix, index: Index, root: TypedAst.Root): JObject = {
     //
     // To the best of my knowledge, completions should never be Nil. It could only happen if source was None
     // (what would having no source even mean?) or if the position represented by pos was invalid with respect
@@ -102,13 +103,13 @@ object CompletionProvider {
     //
     val completions = source.flatMap(getContext(_, uri, pos)) match {
       case None => Nil
-      case Some(context) => getCompletions()(context, index, root) ++ getCompletionsFromErrors(pos, currentErrors)(context, index, root)
+      case Some(context) => getCompletions()(context, flix, index, root) ++ getCompletionsFromErrors(pos, currentErrors)(context, index, root)
     }
 
     ("status" -> "success") ~ ("result" -> CompletionList(isIncomplete = true, completions).toJSON)
   }
 
-  private def getCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+  private def getCompletions()(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     //
     // The order of this list doesn't matter because suggestions are ordered
     // through sortText
@@ -274,21 +275,33 @@ object CompletionProvider {
     iter.toList
   }
 
-  private def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec): String = spec match {
+  private def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
     case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, pur0, eff0, _) =>
       val args = fparams.map {
         fparam => s"${fparam.sym.text}: ${FormatType.formatWellKindedType(fparam.tpe)}"
       }
 
       val retTpe = FormatType.formatWellKindedType(retTpe0)
-      val pur = pur0 match {
-        case Type.Cst(TypeConstructor.True, _) => ""
-        case Type.Cst(TypeConstructor.False, _) => " & Impure"
-        case e => " & " + FormatType.formatWellKindedType(e)
+
+      // don't show purity if bool effects are turned off
+      val pur = if (flix.options.xnobooleffects) {
+        ""
+      } else {
+        pur0 match {
+          case Type.Cst(TypeConstructor.True, _) => ""
+          case Type.Cst(TypeConstructor.False, _) => " & Impure"
+          case p => " & " + FormatType.formatWellKindedType(p)
+        }
       }
-      val eff = eff0 match {
-        case Type.Cst(TypeConstructor.Empty, _) => ""
-        case e => " \\ " + FormatType.formatWellKindedType(e)
+
+      // don't show effect if set effects are turned off
+      val eff = if (flix.options.xnoseteffects) {
+        ""
+      } else {
+        eff0 match {
+          case Type.Cst(TypeConstructor.Empty, _) => ""
+          case e => " \\ " + FormatType.formatWellKindedType(e)
+        }
       }
 
       s"$name(${args.mkString(", ")}): $retTpe$pur$eff"
@@ -333,7 +346,7 @@ object CompletionProvider {
     s"${name}("
   }
 
-  private def defCompletion(decl: TypedAst.Def)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
+  private def defCompletion(decl: TypedAst.Def)(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): CompletionItem = {
     val name = decl.sym.toString
     CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
       sortText = Priority.normal(name),
@@ -345,7 +358,7 @@ object CompletionProvider {
       kind = CompletionItemKind.Function)
   }
 
-  private def sigCompletion(decl: TypedAst.Sig)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
+  private def sigCompletion(decl: TypedAst.Sig)(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): CompletionItem = {
     val name = decl.sym.toString
     CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
       sortText = Priority.normal(name),
@@ -357,7 +370,7 @@ object CompletionProvider {
       kind = CompletionItemKind.Interface)
   }
 
-  private def opCompletion(decl: TypedAst.Op)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
+  private def opCompletion(decl: TypedAst.Op)(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): CompletionItem = {
     // NB: priority is high because only an op can come after `do`
     val name = decl.sym.toString
     CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
@@ -421,7 +434,7 @@ object CompletionProvider {
     isMatch && (isPublic || isInFile)
   }
 
-  private def getDefAndSigCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+  private def getDefAndSigCompletions()(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     if (root == null) {
       return Nil
     }
@@ -434,7 +447,7 @@ object CompletionProvider {
     defSuggestions ++ sigSuggestions
   }
 
-  private def getOpCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+  private def getOpCompletions()(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     if (root == null || context.previousWord != "do") {
       return Nil
     }

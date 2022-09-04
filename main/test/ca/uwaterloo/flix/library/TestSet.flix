@@ -16,8 +16,8 @@
 
 namespace TestSet {
 
-    use ToString.toString;
-    use Hash.hash;
+    use ToString.toString
+    use Hash.hash
 
 /////////////////////////////////////////////////////////////////////////////
 // size                                                                    //
@@ -1029,6 +1029,44 @@ def flatMap09(): Bool = Set.flatMap(x -> Set#{x, 3*x}, Set#{1, 8, 3, 2, 9, -5, -
 
 @test
 def flatMap10(): Bool = Set.flatMap(x -> Set#{x, 2*x, 3*x}, Set#{1, 4, 3, 2}) == Set#{1, 8, 12, 3, 9, 2, 4, 6}
+
+/////////////////////////////////////////////////////////////////////////////
+// filterMap                                                               //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def filterMap01(): Bool =
+    Set.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Set.empty()) == Set.empty()
+
+@test
+def filterMap02(): Bool =
+    Set.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Set#{1}) == Set#{}
+
+@test
+def filterMap03(): Bool =
+    Set.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Set#{2}) == Set#{1}
+
+@test
+def filterMap04(): Bool =
+    Set.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Set#{1, 3}) == Set#{}
+
+@test
+def filterMap05(): Bool =
+    Set.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Set#{1, 4}) == Set#{2}
+
+@test
+def filterMap06(): Bool =
+    Set.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Set#{-1, 6}) == Set#{3}
+
+@test
+def filterMap07(): Bool =
+    Set.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Set#{6, 8}) == Set#{3, 4}
+
+@test
+def filterMap08(): Bool =
+    let s1 = Set#{0, 1, 2, 3, 4, 5, 10};
+    let s2 = Set#{0, 1, 2, 5};
+    Set.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, s1) == s2
 
 /////////////////////////////////////////////////////////////////////////////
 // replace                                                                 //

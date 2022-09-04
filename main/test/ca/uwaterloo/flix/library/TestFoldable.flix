@@ -16,7 +16,7 @@
 
 namespace TestFoldable {
 
-    use Applicative.{point, *>};
+    use Applicative.{point, *>}
 
     /// To test foldLeftM, foldRightM, foreachM we want a monad with
     /// "side-effects" so we can log direction of travel.

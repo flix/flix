@@ -16,7 +16,7 @@
 
 namespace TestMonoid {
 
-    use Monoid.{empty, combine};
+    use Monoid.{empty, combine}
 
     /////////////////////////////////////////////////////////////////////////////
     // Unit                                                                    //

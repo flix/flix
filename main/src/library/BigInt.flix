@@ -92,14 +92,14 @@ namespace BigInt {
 
     ///
     /// Parse the string `s` as an BigInt, leading or trailing whitespace is trimmed.
-    /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
+    /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
-    pub def fromString(s: String): Result[BigInt, String] = try {
+    pub def fromString(s: String): Option[BigInt] = try {
         import java.lang.String.strip(): String \ {};
         import new java.math.BigInteger(String): BigInt \ {} as parseBigInt;
-        Ok(s |> strip |> parseBigInt)
+        Some(s |> strip |> parseBigInt)
     } catch {
-        case _: ##java.lang.NumberFormatException => Err("BigInt.fromString")
+        case _: ##java.lang.NumberFormatException => None
     }
 
     ///

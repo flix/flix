@@ -116,15 +116,15 @@ namespace Float32 {
 
     ///
     /// Parse the string `s` as a Float32, leading or trailing whitespace is trimmed.
-    /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
+    /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     @Time(1) @Space(1)
-    pub def fromString(s: String): Result[Float32, String] = try {
+    pub def fromString(s: String): Option[Float32] = try {
         import java.lang.String.strip(): String \ {};
         import static java.lang.Float.parseFloat(String): Float32 \ {};
-        Ok(s |> strip |> parseFloat)
+        Some(s |> strip |> parseFloat)
      } catch {
-         case _: ##java.lang.NumberFormatException => Err("Float32.fromString")
+         case _: ##java.lang.NumberFormatException => None
      }
 
     ///

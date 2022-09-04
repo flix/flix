@@ -16,10 +16,10 @@
 
 namespace TestGetOpt {
 
-    use GetOpt.{OptionDescr};
-    use GetOpt.ArgDescr.{NoArg, ReqArg, OptArg};
-    use GetOpt.ArgOrder.{RequireOrder, Permute, ReturnInOrder};
-    use GetOpt.{getOpt};
+    use GetOpt.{OptionDescr}
+    use GetOpt.ArgDescr.{NoArg, ReqArg, OptArg}
+    use GetOpt.ArgOrder.{RequireOrder, Permute, ReturnInOrder}
+    use GetOpt.{getOpt}
 
     /// Preliminary code to define options...
 

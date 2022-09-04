@@ -1315,8 +1315,8 @@ namespace DelayList {
     pub def traverse(f: a -> m[b] \ ef, l: DelayList[a]): m[DelayList[b]] \ ef with Applicative[m] =
         def loop(ll, k) = match ll {
             case ENil         => k(Applicative.point(ENil))
-            case ECons(x, xs) => loop(xs, ks -> k(consA(f(x), ks)))
-            case LCons(x, xs) => loop(force xs, ks -> k(consA(f(x), ks)))
+            case ECons(x, xs) => {let ans = f(x); loop(xs, ks -> k(consA(ans, ks)))}
+            case LCons(x, xs) => {let ans = f(x); loop(force xs, ks -> k(consA(ans, ks)))}
             case LList(xs)    => loop(force xs, k)
         };
         loop(l, upcast(identity)) // NB: Cast required because the identity continuation is pure,

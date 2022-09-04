@@ -188,7 +188,7 @@ class TestWeeder extends FunSuite with TestUtils {
            |    import foo(): Unit \ IO as bar;
            |    ()
            |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[WeederError.IllegalJvmFieldOrMethodName](result)
   }
 
@@ -717,7 +717,7 @@ class TestWeeder extends FunSuite with TestUtils {
         |    def op(): Unit \ IO
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[WeederError.IllegalOperationEffect](result)
   }
 

@@ -15,8 +15,8 @@
  */
 
 namespace TestMutList {
-    use ToString.toString;
-    use MutList.sameElements;
+    use ToString.toString
+    use MutList.sameElements
 
     ///
     /// Helper function to test capacity of internal array.

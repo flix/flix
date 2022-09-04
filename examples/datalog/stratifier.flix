@@ -1,6 +1,6 @@
 namespace Stratifier {
-    use Int32.max;
-    use List.{toMap, map, flatMap, partition};
+    use Int32.max
+    use List.{toMap, map, flatMap, partition}
 
     enum Program(List[Constraint])
     enum Constraint((HeadAtom, List[BodyAtom]))
