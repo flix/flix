@@ -1423,8 +1423,8 @@ object Typer {
           resultEff = Type.mkUnion(effs, loc)
         } yield (constrs.flatten, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.InvokeMethod(method, thisTpe, exp, args, loc) =>
-        val classType = getFlixType(thisTpe)
+      case KindedAst.Expression.InvokeMethod(method, receiverClass, exp, args, loc) =>
+        val classType = getFlixType(receiverClass)
         val returnType = getFlixType(method.getReturnType)
         for {
           (baseConstrs, baseTyp, _, baseEff) <- visitExp(exp)
