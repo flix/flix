@@ -660,11 +660,11 @@ object Kinder {
         args => KindedAst.Expression.InvokeConstructor(constructor, args, loc)
       }
 
-    case ResolvedAst.Expression.InvokeMethod(method, exp0, args0, loc) =>
+    case ResolvedAst.Expression.InvokeMethod(method, thisTpe, exp0, args0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       val argsVal = traverse(args0)(visitExp(_, kenv0, senv, taenv, henv0, root))
       mapN(expVal, argsVal) {
-        case (exp, args) => KindedAst.Expression.InvokeMethod(method, exp, args, loc)
+        case (exp, args) => KindedAst.Expression.InvokeMethod(method, thisTpe, exp, args, loc)
       }
 
     case ResolvedAst.Expression.InvokeStaticMethod(method, args0, loc) =>

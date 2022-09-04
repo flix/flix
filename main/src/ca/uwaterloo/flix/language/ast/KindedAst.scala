@@ -168,7 +168,7 @@ object KindedAst {
 
     case class InvokeConstructor(constructor: Constructor[_], args: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
 
-    case class InvokeMethod(method: Method, exp: KindedAst.Expression, args: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
+    case class InvokeMethod(method: Method, thisTpe: java.lang.Class[_], exp: KindedAst.Expression, args: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
 
     case class InvokeStaticMethod(method: Method, args: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
 
