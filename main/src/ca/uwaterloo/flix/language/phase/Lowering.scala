@@ -560,23 +560,8 @@ object Lowering {
       val t = visitType(tpe)
       Expression.Spawn(e, t, pur, eff, loc)
 
-    case Expression.Par(exp, loc0) => exp match {
-      case Expression.Tuple(elms, tpe, pur, eff, loc1) =>
-        val es = visitExps(elms)
-        val t = visitType(tpe)
-        val e = mkParTuple(Expression.Tuple(es, t, pur, eff, loc1))
-        Expression.Cast(e, None, Some(Type.Pure), Some(Type.Empty), t, pur, eff, loc0)
-
-      case Expression.Apply(exp, exps, tpe, pur, eff, loc1) =>
-        val e = visitExp(exp)
-        val es = visitExps(exps)
-        val t = visitType(tpe)
-        val parExp = mkParApply(Expression.Apply(e, es, t, pur, eff, loc1))
-        Expression.Cast(parExp, None, Some(Type.Pure), Some(Type.Empty), t, pur, eff, loc0)
-
-      case e =>
-        throw InternalCompilerException(s"Unexpected par expression: $e")
-    }
+    case Expression.Par(exp, loc0) =>
+      visitParExp(exp, loc0)
 
     case Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -1833,6 +1818,106 @@ object Lowering {
     case FormalParam(sym, mod, tpe, src, loc) =>
       val s = subst.getOrElse(sym, sym)
       FormalParam(s, mod, tpe, src, loc)
+  }
+
+  /**
+    * Parallelizes `exp0`. Assumes `exp0` is the direct child of a [[Expression.Par]] expression.
+    */
+  private def visitParExp(exp0: Expression, loc0: SourceLocation)(implicit root: Root, flix: Flix): Expression = exp0 match {
+    case Expression.Unit(_) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Null(_, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.True(_) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.False(_) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Char(_, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Float32(_, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Float64(_, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Int8(_, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Int16(_, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Int32(_, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Int64(_, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.BigInt(_, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Str(_, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Default(_, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Wild(_, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Var(_, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Def(_, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Sig(_, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Hole(_, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Lambda(_, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+
+    case Expression.Apply(exp, exps, tpe, pur, eff, loc) =>
+      val e = visitExp(exp)
+      val es = visitExps(exps)
+      val t = visitType(tpe)
+      val parExp = mkParApply(Expression.Apply(e, es, t, pur, eff, loc))
+      Expression.Cast(parExp, None, Some(Type.Pure), Some(Type.Empty), t, pur, eff, loc0)
+
+    case Expression.Unary(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Binary(_, _, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Let(_, _, _, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.LetRec(_, _, _, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Region(_, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Scope(_, _, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.IfThenElse(_, _, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Stm(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Discard(_, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Match(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Choose(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Tag(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+
+    case Expression.Tuple(elms, tpe, pur, eff, loc) =>
+      val es = visitExps(elms)
+      val t = visitType(tpe)
+      val e = mkParTuple(Expression.Tuple(es, t, pur, eff, loc))
+      Expression.Cast(e, None, Some(Type.Pure), Some(Type.Empty), t, pur, eff, loc0)
+
+    case Expression.RecordEmpty(_, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.RecordSelect(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.RecordExtend(_, _, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.RecordRestrict(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.ArrayLit(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.ArrayNew(_, _, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.ArrayLoad(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.ArrayLength(_, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.ArrayStore(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.ArraySlice(_, _, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Ref(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Deref(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Assign(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Ascribe(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Cast(_, _, _, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Upcast(_, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Without(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.TryCatch(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.TryWith(_, _, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Do(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Resume(_, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.InvokeConstructor(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.InvokeMethod(_, _, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.InvokeStaticMethod(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.GetField(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.PutField(_, _, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.GetStaticField(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.PutStaticField(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.NewObject(_, _, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case NewChannel(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.GetChannel(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.PutChannel(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.SelectChannel(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Spawn(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Par(_, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Lazy(_, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Force(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.FixpointConstraintSet(_, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.FixpointLambda(_, _, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.FixpointMerge(_, _, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.FixpointSolve(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.FixpointFilter(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.FixpointInject(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.FixpointProject(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.Reify(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.ReifyType(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
+    case Expression.ReifyEff(_, _, _, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp0")
   }
 
 }
