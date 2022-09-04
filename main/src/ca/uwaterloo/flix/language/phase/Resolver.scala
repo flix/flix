@@ -1030,7 +1030,8 @@ object Resolver {
           val argsVal = traverse(args)(visitExp(_, region))
           val sigVal = traverse(sig)(resolveType(_, taenv, ns0, root))
           val retVal = resolveType(retTpe, taenv, ns0, root)
-          flatMapN(sigVal, expVal, argsVal, retVal, lookupJvmClass(className, loc)) {
+          val clazzVal = lookupJvmClass(className, loc)
+          flatMapN(sigVal, expVal, argsVal, retVal, clazzVal) {
             case (ts, e, as, ret, clazz) =>
               mapN(lookupJvmMethod(clazz, methodName, ts, ret, static = false, loc)) {
                 case method => ResolvedAst.Expression.InvokeMethod(method, clazz, e, as, loc)
@@ -1041,7 +1042,8 @@ object Resolver {
           val argsVal = traverse(args)(visitExp(_, region))
           val sigVal = traverse(sig)(resolveType(_, taenv, ns0, root))
           val retVal = resolveType(retTpe, taenv, ns0, root)
-          flatMapN(sigVal, argsVal, retVal, lookupJvmClass(className, loc)) {
+          val clazzVal = lookupJvmClass(className, loc)
+          flatMapN(sigVal, argsVal, retVal, clazzVal) {
             case (ts, as, ret, clazz) =>
               mapN(lookupJvmMethod(clazz, methodName, ts, ret, static = true, loc)) {
                 case method => ResolvedAst.Expression.InvokeStaticMethod(method, as, loc)
