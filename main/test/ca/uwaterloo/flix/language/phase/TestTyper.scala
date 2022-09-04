@@ -1509,4 +1509,29 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.EffectGeneralizationError](result)
   }
 
+  test("TestPossibleUpcast.01") {
+    val input = 
+      """
+        |def f(): ##flix.test.TestClassWithDefaultConstructor \ IO =
+        |    import new flix.test.TestClassWithInheritedMethod(): ##flix.test.TestClassWithInheritedMethod as newObj;
+        |    let x: ##flix.test.TestClassWithDefaultConstructor = newObj();
+        |    x
+      """.stripMargin
+
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.PossibleUpcast](result)
+  }
+
+  test("TestPossibleUpcast.02") {
+    val input = 
+      """
+        |def f(): Unit \ IO =
+        |    let o: ##java.lang.Object =  "Hello World";
+        |    ()
+      """.stripMargin
+
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.PossibleUpcast](result)
+  }
+
 }
