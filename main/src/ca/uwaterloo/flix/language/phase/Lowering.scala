@@ -574,8 +574,8 @@ object Lowering {
         val parExp = mkParApply(Expression.Apply(e, es, t, pur, eff, loc1))
         Expression.Cast(parExp, None, Some(Type.Pure), Some(Type.Empty), t, pur, eff, loc0)
 
-      case e =>
-        throw InternalCompilerException(s"Unexpected par expression: $e")
+      case Expression.Par(_, _) =>
+        throw InternalCompilerException(s"Unexpected par expression near ${loc0.format}: $exp")
     }
 
     case Expression.Lazy(exp, tpe, loc) =>
