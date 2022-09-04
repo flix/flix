@@ -315,7 +315,17 @@ object ParsedAst {
       * @param ids the names of the classes or interfaces.
       * @param sp2 the position of the last character.
       */
-    case class ImportMany(sp1: SourcePosition, pkg: Name.JavaName, ids: Seq[String], sp2: SourcePosition) extends ParsedAst.Import
+    case class ImportMany(sp1: SourcePosition, pkg: Name.JavaName, ids: Seq[NameAndAlias], sp2: SourcePosition) extends ParsedAst.Import
+
+    /**
+      * A name with an optional alias
+      *
+      * @param sp1   the position of the first character.
+      * @param name  the name.
+      * @param alias the optional alias.
+      * @param sp2   the position of the last character.
+      */
+    case class NameAndAlias(sp1: SourcePosition, name: String, alias: Option[Name.Ident], sp2: SourcePosition)
   }
 
   /**
