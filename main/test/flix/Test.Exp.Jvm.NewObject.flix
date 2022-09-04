@@ -1,32 +1,11 @@
 import java.lang.Object
-import flix.test.TestBoolArrayInterface
-import flix.test.TestBoolInterface
-import flix.test.TestCharArrayInterface
-import flix.test.TestCharInterface
-import flix.test.TestClass
-import flix.test.TestClassWithDefaultConstructor
-import flix.test.TestClassWithNonDefaultConstructor
-import flix.test.TestDefaultMethods
-import flix.test.TestFloat32ArrayInterface
-import flix.test.TestFloat32Interface
-import flix.test.TestFloat64ArrayInterface
-import flix.test.TestFloat64Interface
-import flix.test.TestFunctionalInterface
-import flix.test.TestGenericInterface
-import flix.test.TestGenericMethod
-import flix.test.TestInt8ArrayInterface
-import flix.test.TestInt16ArrayInterface
-import flix.test.TestInt16Interface
-import flix.test.TestInt32ArrayInterface
-import flix.test.TestInt32Interface
-import flix.test.TestInt64ArrayInterface
-import flix.test.TestInt64Interface
-import flix.test.TestNonPublicInterface
-import flix.test.TestOverloadedMethods
-import flix.test.TestStackOffsets
-import flix.test.TestThrowingInterface
-import flix.test.TestVarargsInterface
-import flix.test.TestVoidInterface
+import flix.test.{TestBoolArrayInterface, TestBoolInterface, TestCharArrayInterface, TestCharInterface, 
+                  TestClass, TestClassWithDefaultConstructor, TestClassWithNonDefaultConstructor, TestDefaultMethods, 
+                  TestFloat32ArrayInterface, TestFloat32Interface, TestFloat64ArrayInterface, TestFloat64Interface, 
+                  TestFunctionalInterface, TestGenericInterface, TestGenericMethod, TestInt8ArrayInterface, 
+                  TestInt16ArrayInterface, TestInt16Interface, TestInt32ArrayInterface, TestInt32Interface, 
+                  TestInt64ArrayInterface, TestInt64Interface, TestNonPublicInterface, TestOverloadedMethods, 
+                  TestStackOffsets, TestThrowingInterface, TestVarargsInterface, TestVoidInterface}
 
 namespace Test/Exp/Jvm/NewObject {
 
