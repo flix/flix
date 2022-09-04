@@ -738,7 +738,7 @@ object ResolutionError {
     * @param expectedType the expected type.
     * @param loc          the location of the method name.
     */
-  case class MismatchingReturnType(className: String, methodName: String, declaredType: Type, expectedType: Type, loc: SourceLocation) extends ResolutionError {
+  case class MismatchingReturnType(className: String, methodName: String, declaredType: UnkindedType, expectedType: UnkindedType, loc: SourceLocation) extends ResolutionError {
     def summary : String = {
       s"Mismatching return type."
     }

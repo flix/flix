@@ -2509,13 +2509,17 @@ object Resolver {
           // Check that the return type of the method matches the declared type.
           // We currently don't know how to handle all possible return types,
           // so only check the straightforward cases for now and succeed all others.
-          val erasedRetTpe = Type.eraseAliases(retTpe)
-          erasedRetTpe match {
-            case Type.Unit | Type.Bool | Type.Char | Type.Float32 | Type.Float64 |
-              Type.Int8 | Type.Int16 | Type.Int32 | Type.Int64 | Type.BigInt | Type.Str |
-              Type.Cst(TypeConstructor.Native(_), _) =>
+          // TODO move to typer
+          val erasedRetTpe = UnkindedType.eraseAliases(retTpe)
+          erasedRetTpe.baseType match {
+            case UnkindedType.Cst(TypeConstructor.Unit, _) | UnkindedType.Cst(TypeConstructor.Bool, _) |
+                 UnkindedType.Cst(TypeConstructor.Char, _) | UnkindedType.Cst(TypeConstructor.Float32, _) |
+                 UnkindedType.Cst(TypeConstructor.Float64, _) | UnkindedType.Cst(TypeConstructor.Int8, _) |
+                 UnkindedType.Cst(TypeConstructor.Int16, _) | UnkindedType.Cst(TypeConstructor.Int32, _) |
+                 UnkindedType.Cst(TypeConstructor.Int64, _) | UnkindedType.Cst(TypeConstructor.BigInt, _) |
+                 UnkindedType.Cst(TypeConstructor.Str, _) | UnkindedType.Cst(TypeConstructor.Native(_), _) =>
 
-                val expectedTpe = Type.getFlixType(method.getReturnType)
+                val expectedTpe = UnkindedType.getFlixType(method.getReturnType)
                 if (expectedTpe != erasedRetTpe)
                   ResolutionError.MismatchingReturnType(clazz.getName, methodName, retTpe, expectedTpe, loc).toFailure
                 else
