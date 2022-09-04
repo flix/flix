@@ -354,12 +354,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def Import: Rule1[ParsedAst.Import] = rule {
-    keyword("import") ~ WS ~ Imports.Import
+    keyword("import") ~ WS ~ (Imports.ImportMany | Imports.ImportOne)
   }
 
   object Imports {
-    def Import: Rule1[ParsedAst.Import] = rule {
-      SP ~ Names.JavaName ~ SP ~> ParsedAst.Imports.Import
+    def ImportOne: Rule1[ParsedAst.Imports.ImportOne] = rule {
+      SP ~ Names.JavaName ~ SP ~> ParsedAst.Imports.ImportOne
+    }
+
+    def ImportMany: Rule1[ParsedAst.Imports.ImportMany] = rule {
+      SP ~ Names.JavaName ~ atomic(".{") ~ optWS ~ zeroOrMore(Names.JavaIdentifier).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~>ParsedAst.Imports.ImportMany
     }
   }
 
