@@ -206,7 +206,7 @@ object Formatter {
     */
   object AnsiTerminalFormatter extends Formatter {
 
-    override def black(s: String): String = Console.BLACK + s + Console.RESET
+    override def black(s: String): String = fgColor(1, 1, 1, s)
 
     override def brightBlack(s: String): String = fgColor(128, 128, 128, s)
 
@@ -214,7 +214,7 @@ object Formatter {
 
     override def bgBrightBlack(s: String): String = bgColor(128, 128, 128, brightWhite(s))
 
-    override def blue(s: String): String = Console.BLUE + s + Console.RESET
+    override def blue(s: String): String = fgColor(0, 111, 184, s)
 
     override def brightBlue(s: String): String = fgColor(0, 0, 255, s)
 
@@ -222,7 +222,7 @@ object Formatter {
 
     override def bgBrightBlue(s: String): String = bgColor(0, 0, 255, brightWhite(s))
 
-    override def cyan(s: String): String = Console.CYAN + s + Console.RESET
+    override def cyan(s: String): String = fgColor(44, 181, 233, s)
 
     override def brightCyan(s: String): String = fgColor(0, 255, 255, s)
 
@@ -230,7 +230,7 @@ object Formatter {
 
     override def bgBrightCyan(s: String): String = bgColor(0, 255, 255, black(s))
 
-    override def green(s: String): String = Console.GREEN + s + Console.RESET
+    override def green(s: String): String = fgColor(57, 181, 74, s)
 
     override def brightGreen(s: String): String = fgColor(0, 255, 0, s)
 
@@ -238,7 +238,7 @@ object Formatter {
 
     override def bgBrightGreen(s: String): String = bgColor(0, 255, 0, black(s))
 
-    override def magenta(s: String): String = Console.MAGENTA + s + Console.RESET
+    override def magenta(s: String): String = fgColor(118, 38, 113, s)
 
     override def brightMagenta(s: String): String = fgColor(255, 0, 255, s)
 
@@ -246,7 +246,7 @@ object Formatter {
 
     override def bgBrightMagenta(s: String): String = bgColor(255, 0, 255, brightWhite(s))
 
-    override def red(s: String): String = Console.RED + s + Console.RESET
+    override def red(s: String): String = fgColor(222, 56, 43, s)
 
     override def brightRed(s: String): String = fgColor(255, 0, 0, s)
 
@@ -254,7 +254,7 @@ object Formatter {
 
     override def bgBrightRed(s: String): String = bgColor(255, 0, 0, brightWhite(s))
 
-    override def yellow(s: String): String = Console.YELLOW + s + Console.RESET
+    override def yellow(s: String): String = fgColor(255, 199, 6, s)
 
     override def brightYellow(s: String): String = fgColor(255, 255, 0, s)
 
@@ -262,7 +262,7 @@ object Formatter {
 
     override def bgBrightYellow(s: String): String = bgColor(255, 255, 0, black(s))
 
-    override def white(s: String): String = Console.WHITE + s + Console.RESET
+    override def white(s: String): String = fgColor(204, 204, 204, s)
 
     override def brightWhite(s: String): String = fgColor(255, 255, 255, s)
 
