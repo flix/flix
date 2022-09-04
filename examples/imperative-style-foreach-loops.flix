@@ -8,7 +8,7 @@
 /// In this example we explore how this loop
 /// works in Flix.
 ///
-def main(): Unit & Impure =
+def main(): Unit \ IO =
 
     ///
     /// Construct a simple list.
