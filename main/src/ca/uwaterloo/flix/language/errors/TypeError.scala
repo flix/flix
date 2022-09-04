@@ -185,6 +185,13 @@ object TypeError {
     def explain(formatter: Formatter): Option[String] = None
   }
 
+  /**
+    * Unexpected type, but upcast might work.
+    *
+    * @param expected the expected type.
+    * @param inferred the inferred type.
+    * @param loc      the location of the inferred type.
+    */
   case class PossibleUpcast(expected: Type, inferred: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Expected type '${formatWellKindedType(expected)}' but found type: '${formatWellKindedType(inferred)}'."
 
@@ -193,10 +200,10 @@ object TypeError {
       s"""
          |>> Expected type: '${red(formatWellKindedType(expected))}' but found type: '${red(formatWellKindedType(inferred))}'.
          |
+         |${code(loc, "expression has unexpected type.")}
+         |
          |'${formatWellKindedType(expected)}' appears to be assignable from '${formatWellKindedType(inferred)}'.
          |Consider using 'upcast'?
-         |
-         |${code(loc, "expression has unexpected type.")}
          |""".stripMargin
     }
 
