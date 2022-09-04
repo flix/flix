@@ -1522,16 +1522,4 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.PossibleUpcast](result)
   }
 
-  test("TestPossibleUpcast.02") {
-    val input = 
-      """
-        |def f(): Unit \ IO =
-        |    let o: ##java.lang.Object =  "Hello World";
-        |    ()
-      """.stripMargin
-
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.PossibleUpcast](result)
-  }
-
 }
