@@ -1,5 +1,5 @@
 // Easily iterate over arrays with foreach-loops.
-def main(): Unit & Impure =
+def main(): Unit \ IO =
     use Array.iterator;
 
     region r { // Declare a new region.
@@ -10,12 +10,12 @@ def main(): Unit & Impure =
 
         // Create a nested foreach-loop
         // in a single expression.
-        foreach (x <- iterator(r, xs);
-                 y <- iterator(r, ys))
+        foreach (x <- xs;
+                 y <- ys)
             println(x + y);
 
         // Equivalent to nesting like below.
-        foreach (x <- iterator(r, xs))
-            foreach(y <- iterator(r, ys))
+        foreach (x <- xs)
+            foreach(y <- ys)
                 println(x + y)
     }

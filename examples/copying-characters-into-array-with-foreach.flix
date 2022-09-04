@@ -1,5 +1,5 @@
 // Easily iterate over arrays with foreach-loops.
-def main(): Unit & Impure = region r {
+def main(): Unit \ IO = region r {
 
         // Create a string to separate characters of.
         let s = "Flix is cool!";
@@ -8,7 +8,7 @@ def main(): Unit & Impure = region r {
         let xs = ['a'; 8] @ r;
 
         // Print contents of `xs`.
-        foreach (x <- Array.iterator(r, xs))
+        foreach (x <- xs)
             println(x);
 
         // Enumerate the chars of `s` along
