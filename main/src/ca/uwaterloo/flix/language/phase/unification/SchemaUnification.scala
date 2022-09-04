@@ -72,7 +72,7 @@ object SchemaUnification {
           }
         }
       case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label1), _), fieldType1, _), _, _)) =>
-        val tv = tvar.asKinded
+        val tv = tvar
         // Case 2: The row is a type variable.
         if (staticRow.typeVars contains tv) {
           Err(UnificationError.OccursCheck(tv, staticRow))
