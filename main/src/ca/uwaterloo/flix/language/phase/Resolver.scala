@@ -1030,10 +1030,11 @@ object Resolver {
           val argsVal = traverse(args)(visitExp(_, region))
           val sigVal = traverse(sig)(resolveType(_, taenv, ns0, root))
           val retVal = resolveType(retTpe, taenv, ns0, root)
-          flatMapN(sigVal, expVal, argsVal, retVal) {
-            case (ts, e, as, ret) =>
-              mapN(lookupJvmMethod(className, methodName, ts, ret, static = false, loc)) {
-                case method => ResolvedAst.Expression.InvokeMethod(method, e, as, loc)
+          val clazzVal = lookupJvmClass(className, loc)
+          flatMapN(sigVal, expVal, argsVal, retVal, clazzVal) {
+            case (ts, e, as, ret, clazz) =>
+              mapN(lookupJvmMethod(clazz, methodName, ts, ret, static = false, loc)) {
+                case method => ResolvedAst.Expression.InvokeMethod(method, clazz, e, as, loc)
               }
           }
 
@@ -1041,9 +1042,10 @@ object Resolver {
           val argsVal = traverse(args)(visitExp(_, region))
           val sigVal = traverse(sig)(resolveType(_, taenv, ns0, root))
           val retVal = resolveType(retTpe, taenv, ns0, root)
-          flatMapN(sigVal, argsVal, retVal) {
-            case (ts, as, ret) =>
-              mapN(lookupJvmMethod(className, methodName, ts, ret, static = true, loc)) {
+          val clazzVal = lookupJvmClass(className, loc)
+          flatMapN(sigVal, argsVal, retVal, clazzVal) {
+            case (ts, as, ret, clazz) =>
+              mapN(lookupJvmMethod(clazz, methodName, ts, ret, static = true, loc)) {
                 case method => ResolvedAst.Expression.InvokeStaticMethod(method, as, loc)
               }
           }
@@ -2490,14 +2492,14 @@ object Resolver {
   }
 
   /**
-    * Returns the method reflection object for the given `className`, `methodName`, and `signature`.
+    * Returns the method reflection object for the given `clazz`, `methodName`, and `signature`.
     */
-  private def lookupJvmMethod(className: String, methodName: String, signature: List[Type], retTpe: Type, static: Boolean, loc: SourceLocation)(implicit flix: Flix): Validation[Method, ResolutionError] = {
-    // Lookup the class and signature.
-    flatMapN(lookupJvmClass(className, loc), lookupSignature(signature, loc)) {
-      case (clazz, sig) => try {
+  private def lookupJvmMethod(clazz: Class[_], methodName: String, signature: List[Type], retTpe: Type, static: Boolean, loc: SourceLocation)(implicit flix: Flix): Validation[Method, ResolutionError] = {
+    // Lookup the signature.
+    flatMapN(lookupSignature(signature, loc)) {
+      sig => try {
         // Lookup the method with the appropriate signature.
-        val method = clazz.getDeclaredMethod(methodName, sig: _*)
+        val method = clazz.getMethod(methodName, sig: _*)
 
         // Check if the method should be and is static.
         if (static != Modifier.isStatic(method.getModifiers)) {
@@ -2514,7 +2516,7 @@ object Resolver {
 
                 val expectedTpe = Type.getFlixType(method.getReturnType)
                 if (expectedTpe != erasedRetTpe) 
-                  ResolutionError.MismatchingReturnType(className, methodName, retTpe, expectedTpe, loc).toFailure
+                  ResolutionError.MismatchingReturnType(clazz.getName, methodName, retTpe, expectedTpe, loc).toFailure
                 else 
                   method.toSuccess
 
@@ -2524,8 +2526,8 @@ object Resolver {
       } catch {
         case ex: NoSuchMethodException =>
           val candidateMethods = clazz.getMethods.filter(m => m.getName == methodName).toList
-          ResolutionError.UndefinedJvmMethod(className, methodName, static, sig, candidateMethods, loc).toFailure
-        case ex: NoClassDefFoundError => ResolutionError.MissingJvmDependency(className, ex.getMessage, loc).toFailure
+          ResolutionError.UndefinedJvmMethod(clazz.getName, methodName, static, sig, candidateMethods, loc).toFailure
+        case ex: NoClassDefFoundError => ResolutionError.MissingJvmDependency(clazz.getName, ex.getMessage, loc).toFailure
       }
     }
   }
