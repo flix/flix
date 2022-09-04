@@ -16,7 +16,7 @@
 
 namespace TestArray {
 
-    use Array.sameElements;
+    use Array.sameElements
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //

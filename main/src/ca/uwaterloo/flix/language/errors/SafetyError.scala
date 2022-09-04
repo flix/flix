@@ -344,6 +344,6 @@ object SafetyError {
     }
 
     override def explain(formatter: Formatter): Option[String] =
-      Some("Only tuples and function applications can be parallelized with par.")
+      Some("Only tuples can be parallelized with par.")
   }
 }

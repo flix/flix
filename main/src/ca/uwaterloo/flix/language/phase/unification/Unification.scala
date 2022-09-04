@@ -83,7 +83,13 @@ object Unification {
       //
       // Bools
       //
-      case _ if tpe1.kind == Kind.Bool && tpe2.kind == Kind.Bool => BoolUnification.unify(tpe1, tpe2, renv)
+      case _ if tpe1.kind == Kind.Bool && tpe2.kind == Kind.Bool =>
+        // don't try to unify effects if the `no-bool-effects` flag is on
+        if (flix.options.xnobooleffects) {
+          Ok(Substitution.empty)
+        } else {
+          BoolUnification.unify(tpe1, tpe2, renv)
+        }
 
       //
       // Record Rows

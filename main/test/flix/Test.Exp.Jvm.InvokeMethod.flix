@@ -27,7 +27,7 @@ namespace Test/Exp/Jvm/InvokeMethod {
 
     type alias MyAliasedString = ##java.lang.String
 
-    @test 
+    @test
     def testInvokeMethod06(): Bool \ IO =
         import java.lang.String.toUpperCase(): MyAliasedString \ IO;
         toUpperCase("hello world") == "HELLO WORLD"
