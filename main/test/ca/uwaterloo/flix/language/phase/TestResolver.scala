@@ -444,7 +444,7 @@ class TestResolver extends FunSuite with TestUtils {
          |}
          |
          |namespace B {
-         |    use A.f;
+         |    use A.f
          |    def g(): Int32 = f(1)
          |}
          |""".stripMargin

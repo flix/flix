@@ -49,10 +49,10 @@ namespace C {
 }
 
 namespace D {
-    use A.f;
-    use B.{f => fb};
-    use X/Y.g;
-    use X/Y/Z.{g => gz};
+    use A.f
+    use B.{f => fb}
+    use X/Y.g
+    use X/Y/Z.{g => gz}
 
     @test
     def testNamespace08(): Bool = f() == 1

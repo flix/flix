@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar};
-use Fixpoint/Ram.RamTerm.{RowLoad, LoadLatVar, Lit, Meet};
+use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
+use Fixpoint/Ram.RamTerm.{RowLoad, LoadLatVar, Lit, Meet}
 
 namespace Fixpoint {
     ///

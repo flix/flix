@@ -16,7 +16,7 @@
 
 namespace TestToString {
 
-    use ToString.toString;
+    use ToString.toString
 
     /////////////////////////////////////////////////////////////////////////////
     // Unit                                                                    //
