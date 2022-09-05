@@ -5,85 +5,66 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 
 object UnkindedType {
   case class Var(sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends UnkindedType {
-    override def equals(that: UnkindedType): Boolean = that match {
+    override def equals(that: Any): Boolean = that match {
       case Var(sym2, _) => sym == sym2
       case _ => false
     }
   }
 
   case class Cst(tc: TypeConstructor, loc: SourceLocation) extends UnkindedType {
-    override def equals(that: UnkindedType): Boolean = that match {
+    override def equals(that: Any): Boolean = that match {
       case Cst(tc2, _) => tc == tc2
       case _ => false
     }
   }
 
   case class Enum(sym: Symbol.EnumSym, loc: SourceLocation) extends UnkindedType {
-    override def equals(that: UnkindedType): Boolean = that match {
-      case Enum(sym2, _) => sym == sym2
-      case _ => false
-    }
-    override def equals(obj: Any): Boolean = obj match {
+    override def equals(that: Any): Boolean = that match {
       case Enum(sym2, _) => sym == sym2
       case _ => false
     }
   }
 
   case class UnappliedAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation) extends UnkindedType {
-    override def equals(that: UnkindedType): Boolean = that match {
+    override def equals(that: Any): Boolean = that match {
       case UnappliedAlias(sym2, _) => sym == sym2
       case _ => false
     }
-
   }
 
   case class Apply(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation) extends UnkindedType {
-    override def equals(that: UnkindedType): Boolean = that match {
-      case Apply(tpe1_2, tpe2_2, _) => tpe1 == tpe1_2 && tpe2 == tpe2_2
-      case _ => false
-    }
-    override def equals(obj: Any): Boolean = obj match {
+    override def equals(that: Any): Boolean = that match {
       case Apply(tpe1_2, tpe2_2, _) => tpe1 == tpe1_2 && tpe2 == tpe2_2
       case _ => false
     }
   }
 
   case class Arrow(purAndEff: PurityAndEffect, arity: Int, loc: SourceLocation) extends UnkindedType {
-    override def equals(that: UnkindedType): Boolean = that match {
-      case Arrow(purAndEff2, arity2, _) => purAndEff == purAndEff2 && arity == arity2
-      case _ => false
-    }
-
-    override def equals(obj: Any): Boolean = obj match {
-      case Arrow(PurityAndEffect(pur2, eff2), arity2, _) => purAndEff.pur == pur2 && purAndEff.eff == eff2 && arity == arity2
+    override def equals(that: Any): Boolean = that match {
+      case Arrow(purAndEff2, arity2, _) => purAndEff2 == purAndEff && arity == arity2
       case _ => false
     }
   }
 
   case class ReadWrite(tpe: UnkindedType, loc: SourceLocation) extends UnkindedType {
-    override def equals(that: UnkindedType): Boolean = that match {
-      case ReadWrite(tpe2, _) => tpe == tpe2
-      case _ => false
-    }
-    override def equals(obj: Any): Boolean = obj match {
+    override def equals(that: Any): Boolean = that match {
       case ReadWrite(tpe2, _) => tpe == tpe2
       case _ => false
     }
   }
 
   case class Ascribe(tpe: UnkindedType, kind: Kind, loc: SourceLocation) extends UnkindedType {
-    override def equals(that: UnkindedType): Boolean = that match {
+    override def equals(that: Any): Boolean = that match {
       case Ascribe(tpe2, kind2, _) => tpe == tpe2 && kind == kind2
       case _ => false
     }
   }
 
   case class Alias(cst: Ast.AliasConstructor, args: List[UnkindedType], tpe: UnkindedType, loc: SourceLocation) extends UnkindedType {
-    override def equals(that: UnkindedType): Boolean = that match {
+    override def equals(that: Any): Boolean = that match {
       case Alias(Ast.AliasConstructor(sym2, _), args2, tpe2, _) => cst.sym == sym2 && args == args2 && tpe == tpe2
       case _ => false
     }
-
   }
 
   case class PurityAndEffect(pur: Option[UnkindedType], eff: Option[List[UnkindedType]]) {
@@ -245,8 +226,6 @@ object UnkindedType {
 
 sealed trait UnkindedType {
   def loc: SourceLocation
-
-  def equals(that: UnkindedType): Boolean
 
   /**
     * Maps all the type vars in the type according to the given function `f`.
