@@ -6,9 +6,10 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
+import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -311,7 +312,7 @@ object Safety {
     * the purity of a function is being cast from `pure` -> `ef` -> `impure`.
     *
     */
-  private def isSubTypeOf(tpe1: Type, tpe2: Type): Boolean = (tpe1.baseType, tpe2.baseType) match {
+  private def isSubTypeOf(tpe1: Type, tpe2: Type)(implicit flix: Flix, root: Root): Boolean = (tpe1.baseType, tpe2.baseType) match {
     case (Type.True, Type.KindedVar(_, _)) => true
     case (Type.True, Type.False) => true
     case (Type.KindedVar(_, _), Type.False) => true
@@ -324,6 +325,20 @@ object Safety {
       val pur1 = tpe1.arrowPurityType
       val pur2 = tpe2.arrowPurityType
       val subTypePurity = isSubTypeOf(pur1, pur2)
+
+      // effects
+      // The rule for effect sets is:
+      // S1 < S2 <==> exists S3 . S1 U S3 == S2
+      val loc = tpe1.loc.asSynthetic
+      val eff1 = tpe1.arrowEffectType
+      val eff2 = tpe2.arrowEffectType
+      val tparams = root.defs.filter {
+        case (defnSym, defn) => ???
+      }
+      val effVar = Type.freshVar(Kind.Effect, loc)
+      val effUnion = Type.mkUnion(eff1, effVar, loc)
+      val effRes = Unification.unifiesWith(effUnion, eff2, RigidityEnv(tpe1.typeVars.map(_.sym))) // not correct rigidity env
+
 
       // check that parameters are supertypes
       val args1 = tpe1.arrowArgTypes
@@ -338,7 +353,7 @@ object Safety {
       val actualResTpe = tpe2.arrowResultType
       val subTypeResult = isSubTypeOf(expectedResTpe, actualResTpe)
 
-      subTypePurity && superTypeArgs && subTypeResult
+      subTypePurity && effRes && superTypeArgs && subTypeResult
 
     case _ => tpe1 == tpe2
 
