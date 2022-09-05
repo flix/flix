@@ -17,12 +17,13 @@
 ///
 ///
 ///
-pub class TraverseFilter[t : Type -> Type] with FunctorFilter[t] {
+pub class Witherable[t : Type -> Type] with FunctorFilter[t] {
+
 
     pub def traverseFilter(f: a -> m[Option[b]] \ ef, t: t[a]): m[t[b]] \ ef with Applicative[m]
 
     pub def sequenceFilter(t: t[m[Option[a]]]): m[t[a]] with Applicative[m] =
-        TraverseFilter.traverseFilter(identity, t)
+        Witherable.traverseFilter(identity, t)
 
     // collect function, flatten option?
 

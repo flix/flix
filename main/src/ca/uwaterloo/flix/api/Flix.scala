@@ -176,7 +176,7 @@ class Flix {
     "Reducible.flix" -> LocalResource.get("/src/library/Reducible.flix"),
     "SemiGroup.flix" -> LocalResource.get("/src/library/SemiGroup.flix"),
     "Traversable.flix" -> LocalResource.get("/src/library/Traversable.flix"),
-    "TraverseFilter.flix" -> LocalResource.get("/src/library/TraverseFilter.flix"),
+    "Witherable.flix" -> LocalResource.get("/src/library/Witherable.flix"),
     "UnorderedFoldable.flix" -> LocalResource.get("/src/library/UnorderedFoldable.flix"),
 
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
