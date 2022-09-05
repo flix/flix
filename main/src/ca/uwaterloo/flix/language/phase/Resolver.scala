@@ -33,11 +33,6 @@ import scala.collection.mutable
 object Resolver {
 
   /**
-    * The maximum depth to which type aliases are unfolded.
-    */
-  val RecursionLimit: Int = 25
-
-  /**
     * Symbols of classes that are derivable.
     */
   private val BoxableSym = new Symbol.ClassSym(Nil, "Boxable", SourceLocation.Unknown)
@@ -446,16 +441,6 @@ object Resolver {
       mapN(specVal) {
         spec => ResolvedAst.Op(sym, spec)
       }
-  }
-
-
-  /**
-    * Performs name resolution on the given attribute `a0` in the given namespace `ns0`.
-    */
-  private def visitAttribute(a0: NamedAst.Attribute, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Attribute, ResolutionError] = {
-    for {
-      tpe <- resolveType(a0.tpe, taenv, ns0, root)
-    } yield ResolvedAst.Attribute(a0.ident, tpe, a0.loc)
   }
 
   /**
@@ -2108,24 +2093,6 @@ object Resolver {
   }
 
   /**
-    * Optionally returns the enum with the given `name` in the given namespace `ns0`.
-    */
-  private def lookupEnum(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.Enum] = {
-    if (qname.isUnqualified) {
-      // Case 1: The name is unqualified. Lookup in the current namespace.
-      val enumsInNamespace = root.enums.getOrElse(ns0, Map.empty)
-      enumsInNamespace.get(qname.ident.name) orElse {
-        // Case 1.1: The name was not found in the current namespace. Try the root namespace.
-        val enumsInRootNS = root.enums.getOrElse(Name.RootNS, Map.empty)
-        enumsInRootNS.get(qname.ident.name)
-      }
-    } else {
-      // Case 2: The name is qualified. Look it up in its namespace.
-      root.enums.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
-    }
-  }
-
-  /**
     * Optionally returns the type alias with the given `name` in the given namespace `ns0`.
     */
   private def lookupTypeAlias(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.TypeAlias] = {
@@ -2515,9 +2482,9 @@ object Resolver {
               Type.Cst(TypeConstructor.Native(_), _) =>
 
                 val expectedTpe = Type.getFlixType(method.getReturnType)
-                if (expectedTpe != erasedRetTpe) 
+                if (expectedTpe != erasedRetTpe)
                   ResolutionError.MismatchingReturnType(clazz.getName, methodName, retTpe, expectedTpe, loc).toFailure
-                else 
+                else
                   method.toSuccess
 
             case _ => method.toSuccess
