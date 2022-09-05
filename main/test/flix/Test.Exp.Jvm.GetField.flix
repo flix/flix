@@ -77,4 +77,11 @@ namespace Test/Exp/Jvm/GetField {
         let o = newObject();
         getField(o)
 
+    @test
+    def testGetInheritedField01(): Bool \ IO =
+        import new flix.test.TestClassWithInheritedMethod(): ##flix.test.TestClassWithInheritedMethod as newObj;
+        import get flix.test.TestClassWithInheritedMethod.m_x: Int32 \ {} as getField;
+        let obj = newObj();
+        getField(obj) == 42
+
 }

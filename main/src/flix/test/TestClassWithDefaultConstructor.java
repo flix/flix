@@ -1,8 +1,8 @@
 package flix.test;
 
 abstract public class TestClassWithDefaultConstructor {
-  int m_x;
-  String m_y;
+  public int m_x;
+  public String m_y;
 
   public TestClassWithDefaultConstructor() {
     m_x = 42;
@@ -13,4 +13,10 @@ abstract public class TestClassWithDefaultConstructor {
   public String concreteMethod(String y) {
     return m_y + y;
   }
+
+  public static int staticMethod(int x) {
+    return x + 1;
+  }
+
+  public static int staticField = 123;
 }

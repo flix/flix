@@ -126,4 +126,11 @@ namespace Test/Exp/Jvm/PutStaticField {
         setField("Goodbye World!");
         getField() == "Goodbye World!"
 
+    @test
+    def testPutStaticInheritedField01(): Bool \ IO =
+        import static get flix.test.TestClassWithInheritedMethod.staticField: Int32 \ {} as getField;
+        import static set flix.test.TestClassWithInheritedMethod.staticField: Unit \ IO as setField;
+        setField(456);
+        getField() == 456
+
 }

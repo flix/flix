@@ -1444,9 +1444,9 @@ object Typer {
           resultEff = Type.mkUnion(effs, loc)
         } yield (constrs.flatten, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.GetField(field, exp, loc) =>
+      case KindedAst.Expression.GetField(field, clazz, exp, loc) =>
         val fieldType = getFlixType(field.getType)
-        val classType = getFlixType(field.getDeclaringClass)
+        val classType = getFlixType(clazz)
         for {
           (constrs, tpe, _, eff) <- visitExp(exp)
           objectTyp <- expectTypeM(expected = classType, actual = tpe, exp.loc)
@@ -1455,9 +1455,9 @@ object Typer {
           resultEff = eff
         } yield (constrs, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.PutField(field, exp1, exp2, loc) =>
+      case KindedAst.Expression.PutField(field, clazz, exp1, exp2, loc) =>
         val fieldType = getFlixType(field.getType)
-        val classType = getFlixType(field.getDeclaringClass)
+        val classType = getFlixType(clazz)
         for {
           (constrs1, tpe1, _, eff1) <- visitExp(exp1)
           (constrs2, tpe2, _, eff2) <- visitExp(exp2)
@@ -2146,14 +2146,14 @@ object Typer {
         val eff = Type.mkUnion(as.map(_.eff), loc)
         TypedAst.Expression.InvokeStaticMethod(method, as, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.GetField(field, exp, loc) =>
+      case KindedAst.Expression.GetField(field, _, exp, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = getFlixType(field.getType)
         val pur = Type.Impure
         val eff = e.eff
         TypedAst.Expression.GetField(field, e, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.PutField(field, exp1, exp2, loc) =>
+      case KindedAst.Expression.PutField(field, _, exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = Type.Unit
