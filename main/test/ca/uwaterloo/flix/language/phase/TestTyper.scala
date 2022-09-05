@@ -1522,7 +1522,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestPar.02") {
     val input =
       """
-        |def f(g: Unit -> b & ef): b & ef =
+        |def f(g: Unit -> a & ef): a & ef =
         |    par g()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1536,8 +1536,18 @@ class TestTyper extends FunSuite with TestUtils {
         |    pub def op(): Unit
         |}
         |
-        |def f(): b \ E =
+        |def f(): a \ E =
         |    par f()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("TestPar.04") {
+    val input =
+      """
+        |def f(g: Unit -> b \ ef): b \ ef =
+        |    par g()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
