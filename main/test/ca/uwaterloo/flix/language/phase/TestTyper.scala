@@ -1520,6 +1520,7 @@ class TestTyper extends FunSuite with TestUtils {
 
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.PossibleUpcast](result)
+  }
 
   test("TestPar.01") {
     val input =
