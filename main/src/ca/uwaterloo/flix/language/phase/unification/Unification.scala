@@ -202,7 +202,13 @@ object Unification {
     */
   def expectTypeM(expected: Type, actual: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     def handler(e: TypeError): TypeError = e match {
-      case _: TypeError.MismatchedTypes => TypeError.UnexpectedType(expected, actual, loc)
+      case _: TypeError.MismatchedTypes => 
+        (expected.typeConstructor, actual.typeConstructor) match {
+          case (Some(TypeConstructor.Native(left)), Some(TypeConstructor.Native(right))) if left.isAssignableFrom(right) =>
+            TypeError.PossibleUpcast(expected, actual, loc)
+          case _ =>
+            TypeError.UnexpectedType(expected, actual, loc)
+        }
       case e => e
     }
 
