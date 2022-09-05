@@ -95,7 +95,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestLeq07") {
     val input =
       """
-        |def foo(): {x :: Int32 | r} = {x = 21}
+        |def foo(): {x = Int32 | r} = {x = 21}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.GeneralizationError](result)
@@ -104,7 +104,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestLeq08") {
     val input =
       """
-        |def foo(): {x :: Int32, y :: Int32 | r} = {y = 42, x = 21}
+        |def foo(): {x = Int32, y = Int32 | r} = {y = 42, x = 21}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.GeneralizationError](result)
@@ -135,7 +135,7 @@ class TestTyper extends FunSuite with TestUtils {
   }
 
   test("TestMismatchedTypes.03") {
-    val input = "def foo(): {a :: Int32} = {a = 2} <+> {a = 2}"
+    val input = "def foo(): {a = Int32} = {a = 2} <+> {a = 2}"
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
   }
