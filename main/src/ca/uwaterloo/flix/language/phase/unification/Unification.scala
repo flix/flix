@@ -49,70 +49,68 @@ object Unification {
     case y: Type.KindedVar => unifyVars(x, y, renv)
     case _ =>
 
-    // Check if `x` is rigid.
-    if (renv.isRigid(x.sym)) {
-      return Result.Err(UnificationError.RigidVar(x, tpe))
-    }
+      // Check if `x` is rigid.
+      if (renv.isRigid(x.sym)) {
+        return Result.Err(UnificationError.RigidVar(x, tpe))
+      }
 
-    // Check if `x` occurs within `tpe`.
-    if (tpe.typeVars contains x) {
-      return Result.Err(UnificationError.OccursCheck(x, tpe))
-    }
+      // Check if `x` occurs within `tpe`.
+      if (tpe.typeVars contains x) {
+        return Result.Err(UnificationError.OccursCheck(x, tpe))
+      }
 
-    Result.Ok(Substitution.singleton(x.sym, tpe))
+      Result.Ok(Substitution.singleton(x.sym, tpe))
   }
 
   /**
     * Unifies the two given types `tpe1` and `tpe2`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
-  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
-    (tpe1.kind, tpe2.kind) match {
+  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = (tpe1.kind, tpe2.kind) match {
 
-      //
-      // Effects
-      //
-      case (Kind.Effect, Kind.Effect) =>
-        // don't try to unify effects if the `no-set-effects` flag is on
-        if (flix.options.xnoseteffects) {
-          Ok(Substitution.empty)
-        } else {
-          SetUnification.unify(tpe1, tpe2, renv)
-        }
+    //
+    // Effects
+    //
+    case (Kind.Effect, Kind.Effect) =>
+      // don't try to unify effects if the `no-set-effects` flag is on
+      if (flix.options.xnoseteffects) {
+        Ok(Substitution.empty)
+      } else {
+        SetUnification.unify(tpe1, tpe2, renv)
+      }
 
-      //
-      // Bools
-      //
-      case (Kind.Bool, Kind.Bool) =>
-        // don't try to unify effects if the `no-bool-effects` flag is on
-        if (flix.options.xnobooleffects) {
-          Ok(Substitution.empty)
-        } else {
-          BoolUnification.unify(tpe1, tpe2, renv)
-        }
+    //
+    // Bools
+    //
+    case (Kind.Bool, Kind.Bool) =>
+      // don't try to unify effects if the `no-bool-effects` flag is on
+      if (flix.options.xnobooleffects) {
+        Ok(Substitution.empty)
+      } else {
+        BoolUnification.unify(tpe1, tpe2, renv)
+      }
 
-      //
-      // Record Rows
-      //
-      case (Kind.RecordRow, Kind.RecordRow) => RecordUnification.unifyRows(tpe1, tpe2, renv)
+    //
+    // Record Rows
+    //
+    case (Kind.RecordRow, Kind.RecordRow) => RecordUnification.unifyRows(tpe1, tpe2, renv)
 
-      //
-      // Schema Rows
-      //
-      case (Kind.SchemaRow, Kind.SchemaRow) => SchemaUnification.unifyRows(tpe1, tpe2, renv)
+    //
+    // Schema Rows
+    //
+    case (Kind.SchemaRow, Kind.SchemaRow) => SchemaUnification.unifyRows(tpe1, tpe2, renv)
 
-      //
-      // Other: Star or Arrow
-      //
-      case _ => unifyStarOrArrowTypes(tpe1, tpe2, renv)
-    }
+    //
+    // Other: Star or Arrow
+    //
+    case _ => unifyStarOrArrowTypes(tpe1, tpe2, renv)
   }
 
   /**
     * Unifies the types `tpe1` and `tpe2`.
     * The types must each have a Star or Arrow kind.
     */
-  private def unifyStarOrArrowTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  private def unifyStarOrArrowTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
     case (x: Type.KindedVar, _) => unifyVar(x, tpe2, renv)
 
     case (_, x: Type.KindedVar) => unifyVar(x, tpe1, renv)
@@ -144,7 +142,7 @@ object Unification {
     * Lifts the given type constraints, type, purity, and effect into the inference monad.
     */
   def liftM(tconstrs: List[Ast.TypeConstraint], tpe: Type, pur: Type, eff: Type): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] =
-    InferMonad { case (s, renv) => Ok((s, renv, (tconstrs.map(s.apply), s(tpe), s(pur), s(eff))))}
+    InferMonad { case (s, renv) => Ok((s, renv, (tconstrs.map(s.apply), s(tpe), s(pur), s(eff)))) }
 
   /**
     * Unifies the two given types `tpe1` and `tpe2` lifting their unified types and
