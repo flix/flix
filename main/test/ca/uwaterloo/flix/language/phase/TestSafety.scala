@@ -357,6 +357,7 @@ class TestSafety extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.IllegalParExpression](result)
   }
+
   test("TestIllegalParExpression.02") {
     val input =
       """
