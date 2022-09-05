@@ -299,14 +299,33 @@ object ParsedAst {
   object Imports {
 
     /**
-      * A name with an optional alias.
+      * An import of a single class or interface
       *
       * @param sp1  the position of the first character.
       * @param name the Java class or interface name.
       * @param sp2  the position of the last character.
       */
-    case class Import(sp1: SourcePosition, name: Name.JavaName, sp2: SourcePosition) extends ParsedAst.Import
+    case class ImportOne(sp1: SourcePosition, name: Name.JavaName, sp2: SourcePosition) extends ParsedAst.Import
 
+    /**
+      * An import of multiple classes or interfaces from a single package
+      *
+      * @param sp1 the position of the first character.
+      * @param pkg the Java package name.
+      * @param ids the names of the classes or interfaces.
+      * @param sp2 the position of the last character.
+      */
+    case class ImportMany(sp1: SourcePosition, pkg: Name.JavaName, ids: Seq[NameAndAlias], sp2: SourcePosition) extends ParsedAst.Import
+
+    /**
+      * A name with an optional alias
+      *
+      * @param sp1   the position of the first character.
+      * @param name  the name.
+      * @param alias the optional alias.
+      * @param sp2   the position of the last character.
+      */
+    case class NameAndAlias(sp1: SourcePosition, name: String, alias: Option[Name.Ident], sp2: SourcePosition)
   }
 
   /**

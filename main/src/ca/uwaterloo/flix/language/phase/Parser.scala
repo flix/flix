@@ -354,12 +354,22 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def Import: Rule1[ParsedAst.Import] = rule {
-    keyword("import") ~ WS ~ Imports.Import
+    keyword("import") ~ WS ~ (Imports.ImportMany | Imports.ImportOne)
   }
 
   object Imports {
-    def Import: Rule1[ParsedAst.Import] = rule {
-      SP ~ Names.JavaName ~ SP ~> ParsedAst.Imports.Import
+    def ImportOne: Rule1[ParsedAst.Imports.ImportOne] = rule {
+      SP ~ Names.JavaName ~ SP ~> ParsedAst.Imports.ImportOne
+    }
+
+    def ImportMany: Rule1[ParsedAst.Imports.ImportMany] = {
+      def NameAndAlias: Rule1[ParsedAst.Imports.NameAndAlias] = rule {
+        SP ~ Names.JavaIdentifier ~ optional(WS ~ atomic("=>") ~ WS ~ Names.UpperCaseName) ~ SP ~> ParsedAst.Imports.NameAndAlias
+      }
+
+      rule {
+        SP ~ Names.JavaName ~ atomic(".{") ~ optWS ~ zeroOrMore(NameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Imports.ImportMany
+      }
     }
   }
 
@@ -1728,7 +1738,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     /**
       * An uppercase identifier is an uppercase letter optionally followed by any letter, underscore, or prime.
       */
-    def UpperCaseName: Rule1[Name.Ident] = rule {
+  def UpperCaseName: Rule1[Name.Ident] = rule {
       SP ~ capture(optional("_") ~ Letters.UpperLetter ~ zeroOrMore(Letters.LegalLetter)) ~ SP ~> Name.Ident
     }
 
