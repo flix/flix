@@ -30,18 +30,18 @@ namespace IDE {
     /// - d is the type of analysis data elements.
     ///
     type alias IDE[p, n, d, f, l] = {
-        zero            :: d,
-        main            :: p,
-        cfg             :: List[(n, n)],
-        startNodes      :: List[(p, n)],            // TODO: Ondrej: Should this also be a function?
-        endNodes        :: List[(p, n)],
-        callGraph       :: List[(n, p)],
-        eshIntra        :: List[(n, d, d, f)],      // TODO: Ought to be a function: (n, d)      -> (d, f)
-        eshCallStart    :: List[(n, d, p, d, f)],   // TODO: Ought to be a function: (n, d, p)   -> (d, f)
-        eshEndReturn    :: List[(p, d, n, d, f)],   // TODO: Ought to be a function: (p, d, n)   -> (d, f)
-        id              :: f,
-        apply           :: (f, l) -> l,
-        compose         :: (f, f) -> f
+        zero            = d,
+        main            = p,
+        cfg             = List[(n, n)],
+        startNodes      = List[(p, n)],            // TODO: Ondrej: Should this also be a function?
+        endNodes        = List[(p, n)],
+        callGraph       = List[(n, p)],
+        eshIntra        = List[(n, d, d, f)],      // TODO: Ought to be a function: (n, d)      -> (d, f)
+        eshCallStart    = List[(n, d, p, d, f)],   // TODO: Ought to be a function: (n, d, p)   -> (d, f)
+        eshEndReturn    = List[(p, d, n, d, f)],   // TODO: Ought to be a function: (p, d, n)   -> (d, f)
+        id              = f,
+        apply           = (f, l) -> l,
+        compose         = (f, f) -> f
     }
 
     ///
