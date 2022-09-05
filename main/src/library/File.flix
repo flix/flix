@@ -143,11 +143,11 @@ namespace File {
     /// Statistical information for a file.
     ///
     pub type alias StatInfo = {
-        accessTime       :: Int64,
-        creationTime     :: Int64,
-        modificationTime :: Int64,
-        size             :: Int64,
-        fileType         :: FileType
+        accessTime       = Int64,
+        creationTime     = Int64,
+        modificationTime = Int64,
+        size             = Int64,
+        fileType         = FileType
     }
 
     ///
@@ -301,7 +301,7 @@ namespace File {
     /// `count` - the number of bytes read.
     /// `charSet` - the specific charset to be used to decode the bytes.
     ///
-    pub def readWith(opts: {offset :: Int64, count :: Int32, charSet :: String}, f : String): Result[String, String] \ IO =
+    pub def readWith(opts: {offset = Int64, count = Int32, charSet = String}, f : String): Result[String, String] \ IO =
         if (0 < opts.count) {
             try {
                 import new java.io.File(String): ##java.io.File \ IO as newFile;
@@ -391,7 +391,7 @@ namespace File {
     /// The options `opts` to apply consists of
     /// `charSet` - the specific charset to be used to decode the bytes.
     ///
-    pub def readLinesWith(opts: {charSet :: String}, f: String): Result[List[String], String] \ IO =
+    pub def readLinesWith(opts: {charSet = String}, f: String): Result[List[String], String] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -449,7 +449,7 @@ namespace File {
     /// The options `opts` to apply consists of
     /// `charSet` - the specific charset to be used to decode the bytes.
     ///
-    pub def readLinesIterWith(opts: {charSet :: String}, f: String): Iterator[Result[String, String], Static] \ IO =
+    pub def readLinesIterWith(opts: {charSet = String}, f: String): Iterator[Result[String, String], Static] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -509,7 +509,7 @@ namespace File {
     /// `offset` - the start offset in the given file `f`.
     /// `count` - the number of bytes read.
     ///
-    pub def readBytesWith(opts: {offset :: Int64, count :: Int32}, f: String): Result[Array[Int8, Static], String] \ IO =
+    pub def readBytesWith(opts: {offset = Int64, count = Int32}, f: String): Result[Array[Int8, Static], String] \ IO =
         if (0 < opts.count) {
             try {
                 import new java.io.File(String): ##java.io.File \ IO as newFile;
@@ -992,7 +992,7 @@ namespace File {
     /// - `dst` is a subpath of `src`, or
     /// - an I/O error occurred.
     ///
-    pub def move(src: {src :: String} , dst: String): Result[Unit, String] \ IO =
+    pub def move(src: {src = String} , dst: String): Result[Unit, String] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -1020,7 +1020,7 @@ namespace File {
     /// - `dst` is not a directory, or
     /// - an I/O error occurred.
     ///
-    pub def moveInto(src: {src :: String} , dst: String): Result[Unit, String] \ IO =
+    pub def moveInto(src: {src = String} , dst: String): Result[Unit, String] \ IO =
         try {
             match File.isDirectory(dst) {
                 case Ok(true)  => {
@@ -1051,7 +1051,7 @@ namespace File {
     /// Returns `Ok(())` if `src` was moved.
     /// Returns `Err(msg)` if `src` was not moved, or an I/O error occurred.
     ///
-    pub def moveOver(src: {src :: String}, dst: String): Result[Unit, String] \ IO =
+    pub def moveOver(src: {src = String}, dst: String): Result[Unit, String] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -1081,7 +1081,7 @@ namespace File {
     /// - `dst` is a subpath of `src`, or
     /// - an I/O error occurred.
     ///
-    pub def copy(src: {src :: String} , dst: String): Result[Unit, String] \ IO =
+    pub def copy(src: {src = String} , dst: String): Result[Unit, String] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -1109,7 +1109,7 @@ namespace File {
     /// - `dst` is not a directory, or
     /// - an I/O error occurred.
     ///
-    pub def copyInto(src: {src :: String} , dst: String): Result[Unit, String] \ IO =
+    pub def copyInto(src: {src = String} , dst: String): Result[Unit, String] \ IO =
         try {
             match File.isDirectory(dst) {
                 case Ok(true)  => {
@@ -1140,7 +1140,7 @@ namespace File {
     /// Returns `Ok(())` if `src` was copied.
     /// Returns `Err(msg)` if `src` was not copied, or an I/O error occurred.
     ///
-    pub def copyOver(src: {src :: String}, dst: String): Result[Unit, String] \ IO =
+    pub def copyOver(src: {src = String}, dst: String): Result[Unit, String] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;

@@ -102,7 +102,7 @@ namespace Int8 {
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     @Time(1) @Space(1)
-    pub def logicalRightShift(dist: {dist :: Int32}, x: Int8): Int8 =
+    pub def logicalRightShift(dist: {dist = Int32}, x: Int8): Int8 =
         if (x < 0i8 and dist.dist rem 32 != 0)
             ((x >>> 1) &&& maxValue()) >>> (dist.dist - 1)
         else
@@ -124,7 +124,7 @@ namespace Int8 {
     /// binary representation of `x` right by `distance` bits.
     ///
     @Time(1) @Space(1)
-    pub def rotateRight(dist: {dist :: Int32}, x: Int8): Int8 =
+    pub def rotateRight(dist: {dist = Int32}, x: Int8): Int8 =
         let rem = dist.dist rem size();
         let rot = if (rem >= 0) rem else rem + size();
         (logicalRightShift(dist = rot, x)) ||| (x <<< (size() - rot))
@@ -134,7 +134,7 @@ namespace Int8 {
     /// binary representation of `x` left by `distance` bits.
     ///
     @Time(1) @Space(1)
-    pub def rotateLeft(dist: {dist :: Int32}, x: Int8): Int8 =
+    pub def rotateLeft(dist: {dist = Int32}, x: Int8): Int8 =
         let rem = dist.dist rem size();
         let rot = if (rem >= 0) rem else rem + size();
         (logicalRightShift(dist = size() - rot, x)) ||| (x <<< rot)
@@ -244,7 +244,7 @@ namespace Int8 {
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def getBit(pos: {pos :: Int32}, x: Int8): Int32 =
+    pub def getBit(pos: {pos = Int32}, x: Int8): Int32 =
         if ((x >>> pos.pos) rem 2i8 == 0i8) 0 else 1
 
     ///
@@ -253,7 +253,7 @@ namespace Int8 {
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def setBit(pos: {pos :: Int32}, x: Int8): Int8 = x ||| (1i8 <<< pos.pos)
+    pub def setBit(pos: {pos = Int32}, x: Int8): Int8 = x ||| (1i8 <<< pos.pos)
 
     ///
     /// Returns `x` with the bit at position `pos` cleared (to 0).
@@ -261,7 +261,7 @@ namespace Int8 {
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def clearBit(pos: {pos :: Int32}, x: Int8): Int8 = x &&& ~~~(1i8 <<< pos.pos)
+    pub def clearBit(pos: {pos = Int32}, x: Int8): Int8 = x &&& ~~~(1i8 <<< pos.pos)
 
     ///
     /// Returns `x` with the bit at position `pos` flipped.
@@ -269,7 +269,7 @@ namespace Int8 {
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def flipBit(pos: {pos :: Int32}, x: Int8): Int8 = x ^^^ (1i8 <<< pos.pos)
+    pub def flipBit(pos: {pos = Int32}, x: Int8): Int8 = x ^^^ (1i8 <<< pos.pos)
 
     ///
     /// Returns the integer binary logarithm of `x`.

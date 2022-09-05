@@ -20,7 +20,7 @@ namespace Benchmark {
     /// impure since timing is considered a side-effect in this context.
     ///
     pub enum Benchmark {
-        case Benchmark({name :: String, f :: Unit -> Unit \ IO})
+        case Benchmark({name = String, f = Unit -> Unit \ IO})
     }
 
     ///
@@ -53,7 +53,7 @@ namespace Benchmark {
         Benchmark({name = name, f = fn})
 
     pub enum BenchmarkResult {
-        case Success({name :: String, rounds :: Int32, total :: Int64})
+        case Success({name = String, rounds = Int32, total = Int64})
     }
 
     ///
