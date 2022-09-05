@@ -1,5 +1,5 @@
 namespace Test/Derives/Order {
-    use Order.compare;
+    use Order.compare
 
     pub enum Enum with Eq, Order {
       case EmptyCase

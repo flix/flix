@@ -1,5 +1,5 @@
 namespace Test/Derives/Hash {
-    use Hash.hash;
+    use Hash.hash
 
     pub enum Enum with Hash {
       case EmptyCase

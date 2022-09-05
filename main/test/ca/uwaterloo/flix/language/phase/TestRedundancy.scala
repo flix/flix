@@ -290,7 +290,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       """
         |def f(): ##java.lang.Comparable \ IO =
-        |   object ##java.lang.Comparable {
+        |   new ##java.lang.Comparable {
         |     def compareTo(x: ##java.lang.Object, _y: ##java.lang.Object): Int32 =
         |       let x = 0;
         |       x
@@ -469,7 +469,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       """
         |def f(): ##java.lang.Comparable \ IO =
-        |   object ##java.lang.Comparable {
+        |   new ##java.lang.Comparable {
         |     def compareTo(x: ##java.lang.Object, _y: ##java.lang.Object): Int32 =
         |       0
         |   }
@@ -1170,4 +1170,88 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.DiscardedValue](result)
   }
 
+  test("RedundantUpcast.01") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let _ =
+        |        if (true)
+        |            upcast x -> x + 1
+        |        else
+        |            x -> x + 1;
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[RedundancyError.RedundantUpcast](result)
+  }
+
+  test("RedundantUpcast.02") {
+    val input =
+      """
+        |def f(): Unit & Impure =
+        |    let _ =
+        |        if (true)
+        |            upcast x -> x + 1
+        |        else {
+        |            println(1);
+        |            x -> x + 1
+        |        };
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[RedundancyError.RedundantUpcast](result)
+  }
+  test("RedundantUpcast.03") {
+    val input =
+      """
+        |def f(): Unit & Impure =
+        |    let _ =
+        |        if (true)
+        |            upcast ()
+        |        else {
+        |            let _ = [8; 8];
+        |            ()
+        |        };
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantUpcast](result)
+  }
+
+  test("TestUpcast.04") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let _ =
+        |        if (true)
+        |            upcast (1, "a")
+        |        else
+        |            (1, "a");
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantUpcast](result)
+  }
+
+  test("TestUpcast.05") {
+    val input =
+      """
+        |def f(): Unit & Impure =
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
+        |    import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
+        |    let _ =
+        |        if (true)
+        |            upcast (newObject(), newObject())
+        |        else
+        |            (newObject(), newObject());
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[RedundancyError.RedundantUpcast](result)
+  }
 }

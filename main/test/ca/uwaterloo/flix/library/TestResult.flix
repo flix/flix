@@ -16,7 +16,7 @@
 
 namespace TestResult {
 
-    use Hash.hash;
+    use Hash.hash
 
 /////////////////////////////////////////////////////////////////////////////
 // isOk                                                                    //

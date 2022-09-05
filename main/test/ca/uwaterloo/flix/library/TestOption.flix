@@ -16,7 +16,7 @@
 
 namespace TestOption {
 
-    use Hash.hash;
+    use Hash.hash
 
 /////////////////////////////////////////////////////////////////////////////
 // isEmpty                                                                 //

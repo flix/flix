@@ -140,8 +140,8 @@ instance ToString[Nec[a]] with ToString[a] {
 
 namespace Nec {
 
-    use Functor.{<$>};
-    use Applicative.{<*>};
+    use Functor.{<$>}
+    use Applicative.{<*>}
 
     ///
     /// A datatype for pattern matching on a Nec (traversing left-to-right).
@@ -906,7 +906,7 @@ namespace Nec {
     pub def traverse(f: a -> m[b] \ ef, c: Nec[a]): m[Nec[b]] \ ef with Applicative[m] =
         def loop(l2, k) = match viewLeft(l2) {
             case OneLeft(x)      => k(NecOne <$> f(x))
-            case SomeLeft(x, rs) => loop(rs, ks -> k(consA(f(x), ks)))
+            case SomeLeft(x, rs) => {let ans = f(x); loop(rs, ks -> k(consA(ans, ks)))}
         };
         loop(c, upcast(identity))
 

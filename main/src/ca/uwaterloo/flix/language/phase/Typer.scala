@@ -1423,8 +1423,8 @@ object Typer {
           resultEff = Type.mkUnion(effs, loc)
         } yield (constrs.flatten, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.InvokeMethod(method, exp, args, loc) =>
-        val classType = getFlixType(method.getDeclaringClass)
+      case KindedAst.Expression.InvokeMethod(method, clazz, exp, args, loc) =>
+        val classType = getFlixType(clazz)
         val returnType = getFlixType(method.getReturnType)
         for {
           (baseConstrs, baseTyp, _, baseEff) <- visitExp(exp)
@@ -1595,7 +1595,11 @@ object Typer {
         } yield (constrs, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.Par(exp, _) =>
-        visitExp(exp)
+        for {
+          (constrs, tpe, pur, eff) <- visitExp(exp)
+          resultPur <- expectTypeM(expected = Type.Pure, actual = pur, exp.loc)
+          resultEff <- expectTypeM(expected = Type.Empty, actual = eff, exp.loc)
+        } yield (constrs, tpe, resultPur, resultEff)
 
       case KindedAst.Expression.Lazy(exp, loc) =>
         for {
@@ -2127,7 +2131,7 @@ object Typer {
         val eff = Type.mkUnion(as.map(_.eff), loc)
         TypedAst.Expression.InvokeConstructor(constructor, as, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.InvokeMethod(method, exp, args, loc) =>
+      case KindedAst.Expression.InvokeMethod(method, _, exp, args, loc) =>
         val e = visitExp(exp, subst0)
         val as = args.map(visitExp(_, subst0))
         val tpe = getFlixType(method.getReturnType)

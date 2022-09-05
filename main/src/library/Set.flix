@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use RedBlackTree.RedBlackTree;
+use RedBlackTree.RedBlackTree
 
 ///
 /// The Set type.
@@ -503,6 +503,16 @@ namespace Set {
     @Time(time(f) * size(s) * Int32.log2(size(s))) @Space(space(f) * size(s) * Int32.log2(size(s)))
     pub def flatMap(f: a -> Set[b] \ ef, s: Set[a]): Set[b] \ ef with Order[b] =
         foldLeft((acc, x) -> union(acc, f(x)), empty(), s)
+
+    ///
+    /// Collects the results of applying the partial function `f` to every element in `s`.
+    ///
+    pub def filterMap(f: a -> Option[b] \ ef, s: Set[a]): Set[b] \ ef with Order[b] =
+        let step = (acc, x) -> match f(x) {
+            case None    => acc
+            case Some(v) => insert(v, acc)
+        };
+        foldLeft(step, empty(), s)
 
     ///
     /// Replaces the element `from` with `to` if `from` is in `s`. Otherwise, returns `s`.

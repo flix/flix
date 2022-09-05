@@ -36,8 +36,8 @@ namespace Test/Exp/Jvm/InvokeStaticMethod {
         valueOf(true) == "true"
 
     @test
-    def testInvokeObjectStaticMethod01(): ##java.lang.Object \ IO =
-        import static java.lang.String.valueOf(Bool): ##java.lang.Object \ IO;
+    def testInvokeObjectStaticMethod01(): ##java.lang.String \ IO =
+        import static java.lang.String.valueOf(Bool): ##java.lang.String \ IO;
         valueOf(true)
 
     @test

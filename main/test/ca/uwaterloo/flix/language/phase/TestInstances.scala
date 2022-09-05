@@ -69,9 +69,9 @@ class TestInstances extends FunSuite with TestUtils {
       """
         |class C[a]
         |
-        |instance C[a -> b & p \ e]
+        |instance C[a -> b & p \ ef1]
         |
-        |instance C[x -> y & q \ f]
+        |instance C[x -> y & q \ ef2]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.OverlappingInstances](result)
@@ -233,7 +233,7 @@ class TestInstances extends FunSuite with TestUtils {
       """
         |class C[a]
         |
-        |instance C[a -> a & p \ e]
+        |instance C[a -> a & p \ ef]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.DuplicateTypeVariableOccurrence](result)

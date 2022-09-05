@@ -66,7 +66,7 @@ namespace Test/Dec/Class {
     }
 
     namespace Test07 {
-        use Test/Dec/Class/Test06.C;
+        use Test/Dec/Class/Test06.C
 
         pub def g(x: a): a with C[a] = x
     }
@@ -86,8 +86,8 @@ namespace Test/Dec/Class {
     }
 
     namespace Test09 {
-        class Eff[e : Bool] {
-            pub def isPure(f: a -> b \ e): Bool
+        class Eff[ef : Bool] {
+            pub def isPure(f: a -> b \ ef): Bool
         }
 
         instance Eff[Pure] {

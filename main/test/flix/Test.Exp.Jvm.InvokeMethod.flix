@@ -25,13 +25,27 @@ namespace Test/Exp/Jvm/InvokeMethod {
         import java.lang.String.replaceAll(String, String): String \ IO;
         replaceAll("hello world", "hello", "goodbye") == "goodbye world"
 
+    type alias MyAliasedString = ##java.lang.String
+
+    @test
+    def testInvokeMethod06(): Bool \ IO =
+        import java.lang.String.toUpperCase(): MyAliasedString \ IO;
+        toUpperCase("hello world") == "HELLO WORLD"
+
     @test
     def testInvokePureMethod01(): Bool =
         import java.lang.String.toLowerCase(): _ \ {};
         toLowerCase("HELLO WORLD") == "hello world"
 
     @test
-    def testInvokeObjectMethod01(): ##java.lang.Object \ IO =
-        import java.lang.String.toLowerCase(): ##java.lang.Object \ IO;
+    def testInvokeObjectMethod01(): ##java.lang.String \ IO =
+        import java.lang.String.toLowerCase(): ##java.lang.String \ IO;
         toLowerCase("HELLO WORLD")
+
+    @test
+    def testInvokeInheritedMethod01(): Bool \ IO =
+        import new flix.test.TestClassWithInheritedMethod(): ##flix.test.TestClassWithInheritedMethod as newObj;
+        import flix.test.TestClassWithInheritedMethod.concreteMethod(String): String \ {};
+        let obj = newObj();
+        concreteMethod(obj, "bar") == "foobar"
 }

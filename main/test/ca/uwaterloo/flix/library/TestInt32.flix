@@ -16,7 +16,7 @@
 
 namespace TestInt32 {
 
-    use Mul.mul;
+    use Mul.mul
 
     /////////////////////////////////////////////////////////////////////////////
     // mul                                                                     //
@@ -700,28 +700,28 @@ namespace TestInt32 {
     // fromString                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def fromString01(): Bool = Int32.fromString("Bad") |> Result.isErr
+    def fromString01(): Bool = Int32.fromString("Bad") |> Option.isEmpty
 
     @test
-    def fromString02(): Bool = Int32.fromString(" 1") == Ok(1)
+    def fromString02(): Bool = Int32.fromString(" 1") == Some(1)
 
     @test
-    def fromString03(): Bool = Int32.fromString("1 ") == Ok(1)
+    def fromString03(): Bool = Int32.fromString("1 ") == Some(1)
 
     @test
-    def fromString04(): Bool = Int32.fromString("0") == Ok(0)
+    def fromString04(): Bool = Int32.fromString("0") == Some(0)
 
     @test
-    def fromString05(): Bool = Int32.fromString("1") == Ok(1)
+    def fromString05(): Bool = Int32.fromString("1") == Some(1)
 
     @test
-    def fromString06(): Bool = Int32.fromString("-1") == Ok(-1)
+    def fromString06(): Bool = Int32.fromString("-1") == Some(-1)
 
     @test
-    def fromString07(): Bool = Int32.fromString("2147483647") == Ok(2147483647)
+    def fromString07(): Bool = Int32.fromString("2147483647") == Some(2147483647)
 
     @test
-    def fromString08(): Bool = Int32.fromString("-2147483648") == Ok(-2147483648)
+    def fromString08(): Bool = Int32.fromString("-2147483648") == Some(-2147483648)
 
     /////////////////////////////////////////////////////////////////////////////
     // parse                                                                   //

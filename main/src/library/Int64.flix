@@ -302,15 +302,15 @@ namespace Int64 {
 
     ///
     /// Parse the string `s` as an Int64, leading or trailing whitespace is trimmed.
-    /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
+    /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     @Time(1) @Space(1)
-    pub def fromString(s: String): Result[Int64, String] = try {
+    pub def fromString(s: String): Option[Int64] = try {
         import java.lang.String.strip(): String \ {};
         import static java.lang.Long.parseLong(String): Int64 \ {};
-        Ok(s |> strip |> parseLong)
+        Some(s |> strip |> parseLong)
     } catch {
-        case _: ##java.lang.NumberFormatException => Err("Int64.fromString")
+        case _: ##java.lang.NumberFormatException => None
     }
 
     ///

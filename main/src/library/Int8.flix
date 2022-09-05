@@ -298,15 +298,15 @@ namespace Int8 {
 
     ///
     /// Parse the string `s` as an Int8, leading or trailing whitespace is trimmed.
-    /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
+    /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     @Time(1) @Space(1)
-    pub def fromString(s: String): Result[Int8, String] = try {
+    pub def fromString(s: String): Option[Int8] = try {
         import java.lang.String.strip(): String \ {};
         import static java.lang.Byte.parseByte(String): Int8 \ {};
-        Ok(s |> strip |> parseByte)
+        Some(s |> strip |> parseByte)
     } catch {
-        case _: ##java.lang.NumberFormatException => Err("Int8.fromString")
+        case _: ##java.lang.NumberFormatException => None
     }
 
     ///

@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.phase.unification.BoolFormula._
+import ca.uwaterloo.flix.language.phase.unification.BoolAlgebra._
 import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource, StreamOps}
 
@@ -32,7 +32,7 @@ import scala.collection.immutable.SortedSet
   *
   * We use this table to lookup the minimal formula of a given formula.
   */
-object BoolTable {
+object BoolAlgebraTable {
 
   /**
     * A flag used to control whether to print debug information.
@@ -66,14 +66,14 @@ object BoolTable {
     *
     * The table is pre-computed and initialized when this class is loaded.
     */
-  private lazy val Table: Array[BoolFormula] = initTable()
+  private lazy val Table: Array[BoolAlgebra] = initTable()
 
   /**
     * Attempts to minimize the given formula `f`.
     *
     * Returns the same formula or a smaller formula.
     */
-  def minimizeFormula(f: BoolFormula): BoolFormula = {
+  def minimizeFormula(f: BoolAlgebra): BoolAlgebra = {
     // Compute the number of free variables.
     val numVars = f.freeVars.size
 
@@ -115,10 +115,10 @@ object BoolTable {
     * This is not guaranteed to give a minimal representation. However, it does allow us to
     * use the tabling approach even when a formula overall has more variables than the table.
     */
-  private def minimizeFormulaRecursively(f: BoolFormula): (BoolFormula, SortedSet[Variable]) = f match {
-    case True => (True, SortedSet.empty)
+  private def minimizeFormulaRecursively(f: BoolAlgebra): (BoolAlgebra, SortedSet[Variable]) = f match {
+    case Top => (Top, SortedSet.empty)
 
-    case False => (False, SortedSet.empty)
+    case Bot => (Bot, SortedSet.empty)
 
     case Var(x) => (Var(x), SortedSet(x))
 
@@ -126,7 +126,7 @@ object BoolTable {
       val (f, fvs) = minimizeFormulaRecursively(formula)
       (Neg(f), fvs)
 
-    case Conj(formula1, formula2) =>
+    case Join(formula1, formula2) =>
       // Recursive minimize each sub-formula.
       val (f1, fvs1) = minimizeFormulaRecursively(formula1)
       val (f2, fvs2) = minimizeFormulaRecursively(formula2)
@@ -139,35 +139,35 @@ object BoolTable {
         // The number of free variables does not (yet) exceed the number of variables in the table.
         // Consequence we do not yet minimize. We do not yet minimize in attempt to avoid a
         // potential quadratic blow-up where we would minimize at every level.
-        (Conj(f1, f2), fvs)
+        (Join(f1, f2), fvs)
       } else {
         // The number of variables exceeds the number of variables in the table.
         // We minimize both the left and right sub-formulas and then construct the conjunction.
         // Note: We have to recompute the variables (since a variable could get eliminated).
         val minf1 = alphaRenameAndLookup(f1)
         val minf2 = alphaRenameAndLookup(f2)
-        (Conj(minf1, minf2), minf1.freeVars ++ minf2.freeVars)
+        (Join(minf1, minf2), minf1.freeVars ++ minf2.freeVars)
       }
 
-    case Disj(formula1, formula2) =>
+    case Meet(formula1, formula2) =>
       // This case is similar to the above case.
       val (f1, fvs1) = minimizeFormulaRecursively(formula1)
       val (f2, fvs2) = minimizeFormulaRecursively(formula2)
       val fvs = fvs1 ++ fvs2
 
       if (fvs.size <= MaxVars) {
-        (Disj(f1, f2), fvs)
+        (Meet(f1, f2), fvs)
       } else {
         val minf1 = alphaRenameAndLookup(f1)
         val minf2 = alphaRenameAndLookup(f2)
-        (Disj(minf1, minf2), minf1.freeVars ++ minf2.freeVars)
+        (Meet(minf1, minf2), minf1.freeVars ++ minf2.freeVars)
       }
   }
 
   /**
     * Renames every variable in the given formula `f` and looks it up in the minimal table.
     */
-  private def alphaRenameAndLookup(f: BoolFormula): BoolFormula = {
+  private def alphaRenameAndLookup(f: BoolAlgebra): BoolAlgebra = {
     // Compute a renaming. The first variable is x0, the next is x1, and so forth.
     val m = f.freeVars.toList.zipWithIndex.foldLeft(Bimap.empty[Variable, Variable]) {
       case (macc, (k, v)) => macc + (k -> v)
@@ -179,7 +179,7 @@ object BoolTable {
   /**
     * Attempts to minimize the given Boolean formula `f` using the table.
     */
-  private def lookup(f: BoolFormula): BoolFormula = {
+  private def lookup(f: BoolAlgebra): BoolAlgebra = {
     // If the formula `f` has more variables than `f` then we cannot use the table.
     if (f.freeVars.size > MaxVars) {
       // Return the same formula.
@@ -201,7 +201,7 @@ object BoolTable {
     * @param position the position in the bitvector where to store the result (true/false).
     * @param env      the environment which binds each variable to true or false.
     */
-  private def computeSemanticFunction(f: BoolFormula, fvs: List[Variable], position: Int, env: Array[Boolean]): Int = fvs match {
+  private def computeSemanticFunction(f: BoolAlgebra, fvs: List[Variable], position: Int, env: Array[Boolean]): Int = fvs match {
     case Nil =>
       if (eval(f, env)) 1 << position else 0
 
@@ -228,19 +228,19 @@ object BoolTable {
     *
     * The environment maps the variable with index i to true or false.
     */
-  private def eval(f: BoolFormula, env: Array[Boolean]): Boolean = f match {
-    case True => true
-    case False => false
+  private def eval(f: BoolAlgebra, env: Array[Boolean]): Boolean = f match {
+    case Top => true
+    case Bot => false
     case Var(x) => env(x)
     case Neg(f) => !eval(f, env)
-    case Conj(f1, f2) => eval(f1, env) && eval(f2, env)
-    case Disj(f1, f2) => eval(f1, env) || eval(f2, env)
+    case Join(f1, f2) => eval(f1, env) && eval(f2, env)
+    case Meet(f1, f2) => eval(f1, env) || eval(f2, env)
   }
 
   /**
     * Parses the built-in table into an S-expression and then into an in-memory table.
     */
-  private def initTable(): Array[BoolFormula] = {
+  private def initTable(): Array[BoolAlgebra] = {
     val table = loadTable()
 
     if (Debug) {
@@ -259,7 +259,7 @@ object BoolTable {
   /**
     * Loads the table of minimal Boolean formulas from the disk.
     */
-  private def loadTable(): Array[BoolFormula] = try {
+  private def loadTable(): Array[BoolAlgebra] = try {
     val allLines = readTableFromZip(Path)
 
     // Split the string into lines.
@@ -269,7 +269,7 @@ object BoolTable {
     val formulas = lines.map(parseLine)
 
     // Allocate the result table. The table has size 2^(2^MaxVars).
-    val table = new Array[BoolFormula](1 << (1 << MaxVars))
+    val table = new Array[BoolAlgebra](1 << (1 << MaxVars))
 
     // Fill the table.
     for ((f, i) <- formulas.zipWithIndex) {
@@ -305,19 +305,19 @@ object BoolTable {
     * and(x3,or(and(x0,x1),x2))
     *
     */
-  private def parseLine(l: String): BoolFormula = {
+  private def parseLine(l: String): BoolAlgebra = {
     @tailrec
-    def parse(input: List[Char], stack: List[BoolFormula]): BoolFormula = (input, stack) match {
+    def parse(input: List[Char], stack: List[BoolAlgebra]): BoolAlgebra = (input, stack) match {
       case (Nil, formula :: Nil) => formula
-      case ('T' :: rest, stack) => parse(rest, True :: stack)
-      case ('F' :: rest, stack) => parse(rest, False :: stack)
+      case ('T' :: rest, stack) => parse(rest, Top :: stack)
+      case ('F' :: rest, stack) => parse(rest, Bot :: stack)
       case ('0' :: rest, stack) => parse(rest, Var(0) :: stack)
       case ('1' :: rest, stack) => parse(rest, Var(1) :: stack)
       case ('2' :: rest, stack) => parse(rest, Var(2) :: stack)
       case ('3' :: rest, stack) => parse(rest, Var(3) :: stack)
       case ('n' :: rest, f :: stack) => parse(rest, Neg(f) :: stack)
-      case ('a' :: rest, f2 :: f1 :: stack) => parse(rest, Conj(f1, f2) :: stack)
-      case ('o' :: rest, f2 :: f1 :: stack) => parse(rest, Disj(f1, f2) :: stack)
+      case ('a' :: rest, f2 :: f1 :: stack) => parse(rest, Join(f1, f2) :: stack)
+      case ('o' :: rest, f2 :: f1 :: stack) => parse(rest, Meet(f1, f2) :: stack)
       case _ => throw InternalCompilerException(s"Parse Error. input = ${input.mkString(" :: ")}, stack = $stack.")
     }
 

@@ -92,7 +92,7 @@ object Weeder {
 
     mapN(usesVal, importsVal, declarationsVal) {
       case (uses, imports, decls) =>
-        src -> WeededAst.CompilationUnit(uses.flatten, imports ::: decls.flatten, loc)
+        src -> WeededAst.CompilationUnit(uses.flatten, imports.flatten ::: decls.flatten, loc)
     }
   }
 
@@ -454,15 +454,31 @@ object Weeder {
   /**
     * Performs weeding on the given import `i0`.
     */
-  private def visitImport(i0: ParsedAst.Import): Validation[WeededAst.Declaration, WeederError] = i0 match {
-    case ParsedAst.Imports.Import(sp1, Name.JavaName(_, name, _), sp2) =>
+  private def visitImport(i0: ParsedAst.Import): Validation[List[WeededAst.Declaration], WeederError] = i0 match {
+    case ParsedAst.Imports.ImportOne(sp1, Name.JavaName(_, name, _), sp2) =>
       val loc = mkSL(sp1, sp2)
       val doc = Ast.Doc(Nil, loc)
       val mod = Ast.Modifiers.Empty
       val ident = Name.Ident(sp1, name.last, sp2)
       val tparams = WeededAst.TypeParams.Elided
       val tpe = WeededAst.Type.Native(name.mkString("."), loc)
-      WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc).toSuccess
+      List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc)).toSuccess
+
+    case ParsedAst.Imports.ImportMany(sp1, Name.JavaName(_, pkg, _), ids, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val doc = Ast.Doc(Nil, loc)
+      val mod = Ast.Modifiers.Empty
+      val tparams = WeededAst.TypeParams.Elided
+      val is = ids.map {
+        case ParsedAst.Imports.NameAndAlias(_, name, alias, _) => 
+          val ident = alias match {
+            case Some(id) => id
+            case _ => Name.Ident(sp1, name, sp2)
+          }
+          val tpe = WeededAst.Type.Native((pkg :+ name).mkString("."), loc)
+          WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc)
+      }
+      is.toList.toSuccess
   }
 
   /**
@@ -928,7 +944,7 @@ object Weeder {
               }
 
               // Assemble the lambda expression.
-              val call = WeededAst.Expression.InvokeMethod(className, methodName, as.head, as.tail, ts, loc)
+              val call = WeededAst.Expression.InvokeMethod(className, methodName, as.head, as.tail, ts, tpe, loc)
               val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), purAndEff, loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
@@ -952,7 +968,7 @@ object Weeder {
               //
               if (sig.isEmpty) {
                 val fparam = WeededAst.FormalParam(Name.Ident(sp1, "_", sp2), Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
-                val call = WeededAst.Expression.InvokeStaticMethod(className, methodName, Nil, Nil, loc)
+                val call = WeededAst.Expression.InvokeStaticMethod(className, methodName, Nil, Nil, tpe, loc)
                 val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), purAndEff, loc)
                 val e1 = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
                 return WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc).toSuccess
@@ -976,7 +992,7 @@ object Weeder {
               }
 
               // Assemble the lambda expression.
-              val call = WeededAst.Expression.InvokeStaticMethod(className, methodName, as, ts, loc)
+              val call = WeededAst.Expression.InvokeStaticMethod(className, methodName, as, ts, tpe, loc)
               val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), purAndEff, loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)

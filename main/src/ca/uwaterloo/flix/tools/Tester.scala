@@ -92,7 +92,7 @@ object Tester {
 
           case TestEvent.Success(sym, elapsed) =>
             passed = passed + 1
-            writer.println(s"  ${bgGreen(" PASS ")} $sym ${gray(elapsed.fmt)}")
+            writer.println(s"  ${bgGreen(" PASS ")} $sym ${brightBlack(elapsed.fmt)}")
             terminal.flush()
 
           case TestEvent.Failure(sym, output, elapsed) =>
@@ -128,7 +128,7 @@ object Tester {
               s"Passed: ${green(passed.toString)}, " +
                 s"Failed: ${red(failed.length.toString)}. " +
                 s"Skipped: ${yellow(skipped.toString)}. " +
-                s"Elapsed: ${gray(elapsed.fmt)}."
+                s"Elapsed: ${brightBlack(elapsed.fmt)}."
             )
             terminal.flush()
             finished = true
