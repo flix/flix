@@ -18,6 +18,48 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+sealed trait UnkindedType {
+  def loc: SourceLocation
+
+  /**
+    * Maps all the type vars in the type according to the given function `f`.
+    */
+  def map(f: Symbol.UnkindedTypeVarSym => UnkindedType): UnkindedType = this match {
+    case UnkindedType.Var(sym, _) => f(sym)
+    case t: UnkindedType.Cst => t
+    case t: UnkindedType.Enum => t
+    case t: UnkindedType.UnappliedAlias => t
+    case UnkindedType.Apply(tpe1, tpe2, loc) => UnkindedType.Apply(tpe1.map(f), tpe2.map(f), loc)
+    case UnkindedType.Arrow(purAndEff, arity, loc) => UnkindedType.Arrow(purAndEff.map(_.map(f)), arity, loc)
+    case UnkindedType.ReadWrite(tpe, loc) => UnkindedType.ReadWrite(tpe.map(f), loc)
+    case UnkindedType.Ascribe(tpe, kind, loc) => UnkindedType.Ascribe(tpe.map(f), kind, loc)
+    case UnkindedType.Alias(cst, args, tpe, loc) => UnkindedType.Alias(cst, args.map(_.map(f)), tpe.map(f), loc)
+  }
+
+  /**
+    * Returns the base type.
+    *
+    * For example,
+    * X[a, b, c] returns X
+    *
+    */
+  def baseType: UnkindedType = this match {
+    case UnkindedType.Apply(tpe1, _, _) => tpe1.baseType
+    case t => t
+  }
+
+  /**
+    * Returns the type arguments.
+    *
+    * For example
+    * X[a, b, c] returns [a, b, c]
+    */
+  def typeArguments: List[UnkindedType] = this match {
+    case UnkindedType.Apply(tpe1, tpe2, _) => tpe1.typeArguments :+ tpe2
+    case _ => Nil
+  }
+}
+
 object UnkindedType {
   case class Var(sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
@@ -185,6 +227,7 @@ object UnkindedType {
   }
 
   // TODO remove once typechecking Resolver.lookupJVMMethod is moved to Typer
+
   /**
     * Returns the Flix UnkindedType of a Java Class
     */
@@ -236,47 +279,5 @@ object UnkindedType {
     else {
       UnkindedType.Cst(TypeConstructor.Native(c), SourceLocation.Unknown)
     }
-  }
-}
-
-sealed trait UnkindedType {
-  def loc: SourceLocation
-
-  /**
-    * Maps all the type vars in the type according to the given function `f`.
-    */
-  def map(f: Symbol.UnkindedTypeVarSym => UnkindedType): UnkindedType = this match {
-    case UnkindedType.Var(sym, _) => f(sym)
-    case t: UnkindedType.Cst => t
-    case t: UnkindedType.Enum => t
-    case t: UnkindedType.UnappliedAlias => t
-    case UnkindedType.Apply(tpe1, tpe2, loc) => UnkindedType.Apply(tpe1.map(f), tpe2.map(f), loc)
-    case UnkindedType.Arrow(purAndEff, arity, loc) => UnkindedType.Arrow(purAndEff.map(_.map(f)), arity, loc)
-    case UnkindedType.ReadWrite(tpe, loc) => UnkindedType.ReadWrite(tpe.map(f), loc)
-    case UnkindedType.Ascribe(tpe, kind, loc) => UnkindedType.Ascribe(tpe.map(f), kind, loc)
-    case UnkindedType.Alias(cst, args, tpe, loc) => UnkindedType.Alias(cst, args.map(_.map(f)), tpe.map(f), loc)
-  }
-
-  /**
-    * Returns the base type.
-    *
-    * For example,
-    * X[a, b, c] returns X
-    *
-    */
-  def baseType: UnkindedType = this match {
-    case UnkindedType.Apply(tpe1, _, _) => tpe1.baseType
-    case t => t
-  }
-
-  /**
-    * Returns the type arguments.
-    *
-    * For example
-    * X[a, b, c] returns [a, b, c]
-    */
-  def typeArguments: List[UnkindedType] = this match {
-    case UnkindedType.Apply(tpe1, tpe2, _) => tpe1.typeArguments :+ tpe2
-    case _ => Nil
   }
 }
