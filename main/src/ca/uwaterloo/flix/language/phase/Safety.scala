@@ -45,254 +45,266 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given definition `def0`.
     */
-  private def visitDef(def0: Def): List[CompilationMessage] = visitExp(def0.impl.exp)
+  private def visitDef(def0: Def)(implicit flix: Flix): List[CompilationMessage] = {
+    val rigidityEnv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
+      case (acc, e) => acc.markRigid(e)
+    }
+    visitExp(def0.impl.exp, rigidityEnv)
+  }
+
 
   /**
     * Performs safety and well-formedness checks on the given expression `exp0`.
     */
-  private def visitExp(exp0: Expression): List[CompilationMessage] = exp0 match {
-    case Expression.Unit(_) => Nil
+  private def visitExp(exp0: Expression, rigidityEnv: RigidityEnv)(implicit flix: Flix): List[CompilationMessage] = {
 
-    case Expression.Null(_, _) => Nil
+    def vstExp(exp1: Expression): List[CompilationMessage] = exp1 match {
+      case Expression.Unit(_) => Nil
 
-    case Expression.True(_) => Nil
+      case Expression.Null(_, _) => Nil
 
-    case Expression.False(_) => Nil
+      case Expression.True(_) => Nil
 
-    case Expression.Char(_, _) => Nil
+      case Expression.False(_) => Nil
 
-    case Expression.Float32(_, _) => Nil
+      case Expression.Char(_, _) => Nil
 
-    case Expression.Float64(_, _) => Nil
+      case Expression.Float32(_, _) => Nil
 
-    case Expression.Int8(_, _) => Nil
+      case Expression.Float64(_, _) => Nil
 
-    case Expression.Int16(_, _) => Nil
+      case Expression.Int8(_, _) => Nil
 
-    case Expression.Int32(_, _) => Nil
+      case Expression.Int16(_, _) => Nil
 
-    case Expression.Int64(_, _) => Nil
+      case Expression.Int32(_, _) => Nil
 
-    case Expression.BigInt(_, _) => Nil
+      case Expression.Int64(_, _) => Nil
 
-    case Expression.Str(_, _) => Nil
+      case Expression.BigInt(_, _) => Nil
 
-    case Expression.Default(_, _) => Nil
+      case Expression.Str(_, _) => Nil
 
-    case Expression.Wild(_, _) => Nil
+      case Expression.Default(_, _) => Nil
 
-    case Expression.Var(_, _, _) => Nil
+      case Expression.Wild(_, _) => Nil
 
-    case Expression.Def(_, _, _) => Nil
+      case Expression.Var(_, _, _) => Nil
 
-    case Expression.Sig(_, _, _) => Nil
+      case Expression.Def(_, _, _) => Nil
 
-    case Expression.Hole(_, _, _) => Nil
+      case Expression.Sig(_, _, _) => Nil
 
-    case Expression.Lambda(_, exp, _, _) =>
-      visitExp(exp)
+      case Expression.Hole(_, _, _) => Nil
 
-    case Expression.Apply(exp, exps, _, _, _, _) =>
-      visitExp(exp) ::: exps.flatMap(visitExp)
+      case Expression.Lambda(_, exp, _, _) =>
+        vstExp(exp)
 
-    case Expression.Unary(_, exp, _, _, _, _) =>
-      visitExp(exp)
+      case Expression.Apply(exp, exps, _, _, _, _) =>
+        vstExp(exp) ::: exps.flatMap(vstExp)
 
-    case Expression.Binary(_, exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ::: visitExp(exp2)
+      case Expression.Unary(_, exp, _, _, _, _) =>
+        vstExp(exp)
 
-    case Expression.Let(_, _, exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ::: visitExp(exp2)
+      case Expression.Binary(_, exp1, exp2, _, _, _, _) =>
+        vstExp(exp1) ::: vstExp(exp2)
 
-    case Expression.LetRec(_, _, exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ::: visitExp(exp2)
+      case Expression.Let(_, _, exp1, exp2, _, _, _, _) =>
+        vstExp(exp1) ::: vstExp(exp2)
 
-    case Expression.Region(_, _) =>
-      Nil
+      case Expression.LetRec(_, _, exp1, exp2, _, _, _, _) =>
+        vstExp(exp1) ::: vstExp(exp2)
 
-    case Expression.Scope(_, _, exp, _, _, _, _) =>
-      visitExp(exp)
+      case Expression.Region(_, _) =>
+        Nil
 
-    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
-      visitExp(exp1) ::: visitExp(exp2) ::: visitExp(exp3)
+      case Expression.Scope(_, _, exp, _, _, _, _) =>
+        vstExp(exp)
 
-    case Expression.Stm(exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ::: visitExp(exp2)
+      case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
+        vstExp(exp1) ::: vstExp(exp2) ::: vstExp(exp3)
 
-    case Expression.Discard(exp, _, _, _) =>
-      visitExp(exp)
+      case Expression.Stm(exp1, exp2, _, _, _, _) =>
+        vstExp(exp1) ::: vstExp(exp2)
 
-    case Expression.Match(exp, rules, _, _, _, _) =>
-      visitExp(exp) :::
-        rules.flatMap { case MatchRule(_, g, e) => visitExp(g) ::: visitExp(e) }
+      case Expression.Discard(exp, _, _, _) =>
+        vstExp(exp)
 
-    case Expression.Choose(exps, rules, _, _, _, _) =>
-      exps.flatMap(visitExp) :::
-        rules.flatMap { case ChoiceRule(_, exp) => visitExp(exp) }
+      case Expression.Match(exp, rules, _, _, _, _) =>
+        vstExp(exp) :::
+          rules.flatMap { case MatchRule(_, g, e) => vstExp(g) ::: vstExp(e) }
 
-    case Expression.Tag(_, exp, _, _, _, _) =>
-      visitExp(exp)
+      case Expression.Choose(exps, rules, _, _, _, _) =>
+        exps.flatMap(vstExp) :::
+          rules.flatMap { case ChoiceRule(_, exp) => vstExp(exp) }
 
-    case Expression.Tuple(elms, _, _, _, _) =>
-      elms.flatMap(visitExp)
+      case Expression.Tag(_, exp, _, _, _, _) =>
+        vstExp(exp)
 
-    case Expression.RecordEmpty(_, _) => Nil
+      case Expression.Tuple(elms, _, _, _, _) =>
+        elms.flatMap(vstExp)
 
-    case Expression.RecordSelect(exp, _, _, _, _, _) =>
-      visitExp(exp)
+      case Expression.RecordEmpty(_, _) => Nil
 
-    case Expression.RecordExtend(_, value, rest, _, _, _, _) =>
-      visitExp(value) ::: visitExp(rest)
+      case Expression.RecordSelect(exp, _, _, _, _, _) =>
+        vstExp(exp)
 
-    case Expression.RecordRestrict(_, rest, _, _, _, _) =>
-      visitExp(rest)
+      case Expression.RecordExtend(_, value, rest, _, _, _, _) =>
+        vstExp(value) ::: vstExp(rest)
 
-    case Expression.ArrayLit(elms, exp, _, _, _, _) =>
-      elms.flatMap(visitExp) ::: visitExp(exp)
+      case Expression.RecordRestrict(_, rest, _, _, _, _) =>
+        vstExp(rest)
 
-    case Expression.ArrayNew(exp1, exp2, exp3, _, _, _, _) =>
-      visitExp(exp1) ::: visitExp(exp2) ::: visitExp(exp3)
+      case Expression.ArrayLit(elms, exp, _, _, _, _) =>
+        elms.flatMap(vstExp) ::: vstExp(exp)
 
-    case Expression.ArrayLoad(base, index, _, _, _, _) =>
-      visitExp(base) ::: visitExp(index)
+      case Expression.ArrayNew(exp1, exp2, exp3, _, _, _, _) =>
+        vstExp(exp1) ::: vstExp(exp2) ::: vstExp(exp3)
 
-    case Expression.ArrayLength(base, _, _, _) =>
-      visitExp(base)
+      case Expression.ArrayLoad(base, index, _, _, _, _) =>
+        vstExp(base) ::: vstExp(index)
 
-    case Expression.ArrayStore(base, index, elm, _, _, _) =>
-      visitExp(base) ::: visitExp(index) ::: visitExp(elm)
+      case Expression.ArrayLength(base, _, _, _) =>
+        vstExp(base)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) =>
-      visitExp(base) ::: visitExp(beginIndex) ::: visitExp(endIndex)
+      case Expression.ArrayStore(base, index, elm, _, _, _) =>
+        vstExp(base) ::: vstExp(index) ::: vstExp(elm)
 
-    case Expression.Ref(exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ::: visitExp(exp2)
+      case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) =>
+        vstExp(base) ::: vstExp(beginIndex) ::: vstExp(endIndex)
 
-    case Expression.Deref(exp, _, _, _, _) =>
-      visitExp(exp)
+      case Expression.Ref(exp1, exp2, _, _, _, _) =>
+        vstExp(exp1) ::: vstExp(exp2)
 
-    case Expression.Assign(exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ::: visitExp(exp2)
+      case Expression.Deref(exp, _, _, _, _) =>
+        vstExp(exp)
 
-    case Expression.Ascribe(exp, _, _, _, _) =>
-      visitExp(exp)
+      case Expression.Assign(exp1, exp2, _, _, _, _) =>
+        vstExp(exp1) ::: vstExp(exp2)
 
-    case Expression.Cast(exp, _, _, _, _, _, _, _) =>
-      visitExp(exp)
+      case Expression.Ascribe(exp, _, _, _, _) =>
+        vstExp(exp)
 
-    case Expression.Upcast(exp, tpe, loc) =>
-      val errors =
-        if (isSubTypeOf(Type.eraseAliases(exp.tpe), Type.eraseAliases(tpe))) {
-          List.empty
+      case Expression.Cast(exp, _, _, _, _, _, _, _) =>
+        vstExp(exp)
+
+      case Expression.Upcast(exp, tpe, loc) =>
+        val errors =
+          if (isSubTypeOf(Type.eraseAliases(exp.tpe), Type.eraseAliases(tpe), rigidityEnv)) {
+            List.empty
+          }
+          else {
+            List(UnsafeUpcast(exp, exp1, loc))
+          }
+        vstExp(exp) ::: errors
+
+      case Expression.Without(exp, _, _, _, _, _) =>
+        vstExp(exp)
+
+      case Expression.TryCatch(exp, rules, _, _, _, _) =>
+        vstExp(exp) :::
+          rules.flatMap { case CatchRule(_, _, e) => vstExp(e) }
+
+      case Expression.TryWith(exp, _, rules, _, _, _, _) =>
+        vstExp(exp) :::
+          rules.flatMap { case HandlerRule(_, _, e) => vstExp(e) }
+
+      case Expression.Do(_, exps, _, _, _) =>
+        exps.flatMap(vstExp)
+
+      case Expression.Resume(exp, _, _) =>
+        vstExp(exp)
+
+      case Expression.InvokeConstructor(_, args, _, _, _, _) =>
+        args.flatMap(vstExp)
+
+      case Expression.InvokeMethod(_, exp, args, _, _, _, _) =>
+        vstExp(exp) ::: args.flatMap(vstExp)
+
+      case Expression.InvokeStaticMethod(_, args, _, _, _, _) =>
+        args.flatMap(vstExp)
+
+      case Expression.GetField(_, exp, _, _, _, _) =>
+        vstExp(exp)
+
+      case Expression.PutField(_, exp1, exp2, _, _, _, _) =>
+        vstExp(exp1) ::: vstExp(exp2)
+
+      case Expression.GetStaticField(_, _, _, _, _) =>
+        Nil
+
+      case Expression.PutStaticField(_, exp, _, _, _, _) =>
+        vstExp(exp)
+
+      case Expression.NewObject(_, clazz, tpe, _, _, methods, loc) =>
+        val erasedType = Type.eraseAliases(tpe)
+        checkObjectImplementation(clazz, erasedType, methods, loc) ++
+          methods.flatMap {
+            case JvmMethod(_, _, exp, _, _, _, _) => vstExp(exp)
+          }
+
+      case Expression.NewChannel(exp, _, _, _, _) =>
+        vstExp(exp)
+
+      case Expression.GetChannel(exp, _, _, _, _) =>
+        vstExp(exp)
+
+      case Expression.PutChannel(exp1, exp2, _, _, _, _) =>
+        vstExp(exp1) ::: vstExp(exp2)
+
+      case Expression.SelectChannel(rules, default, _, _, _, _) =>
+        rules.flatMap { case SelectChannelRule(_, chan, body) => vstExp(chan) :::
+          vstExp(body)
+        } :::
+          default.map(vstExp).getOrElse(Nil)
+
+      case Expression.Spawn(exp, _, _, _, _) =>
+        vstExp(exp)
+
+      case Expression.Par(exp, _) =>
+        // Only tuple expressions are allowed to be parallelized with `par`.
+        exp match {
+          case e: Expression.Tuple => vstExp(e)
+          case _ => IllegalParExpression(exp, exp.loc) :: Nil
         }
-        else {
-          List(UnsafeUpcast(exp, exp0, loc))
-        }
-      visitExp(exp) ::: errors
 
-    case Expression.Without(exp, _, _, _, _, _) =>
-      visitExp(exp)
+      case Expression.Lazy(exp, _, _) =>
+        vstExp(exp)
 
-    case Expression.TryCatch(exp, rules, _, _, _, _) =>
-      visitExp(exp) :::
-        rules.flatMap { case CatchRule(_, _, e) => visitExp(e) }
+      case Expression.Force(exp, _, _, _, _) =>
+        vstExp(exp)
 
-    case Expression.TryWith(exp, _, rules, _, _, _, _) =>
-      visitExp(exp) :::
-        rules.flatMap { case HandlerRule(_, _, e) => visitExp(e) }
+      case Expression.FixpointConstraintSet(cs, _, _, _) =>
+        cs.flatMap(checkConstraint(_, rigidityEnv))
 
-    case Expression.Do(_, exps, _, _, _) =>
-      exps.flatMap(visitExp)
+      case Expression.FixpointLambda(_, exp, _, _, _, _, _) =>
+        vstExp(exp)
 
-    case Expression.Resume(exp, _, _) =>
-      visitExp(exp)
+      case Expression.FixpointMerge(exp1, exp2, _, _, _, _, _) =>
+        vstExp(exp1) ::: vstExp(exp2)
 
-    case Expression.InvokeConstructor(_, args, _, _, _, _) =>
-      args.flatMap(visitExp)
+      case Expression.FixpointSolve(exp, _, _, _, _, _) =>
+        vstExp(exp)
 
-    case Expression.InvokeMethod(_, exp, args, _, _, _, _) =>
-      visitExp(exp) ::: args.flatMap(visitExp)
+      case Expression.FixpointFilter(_, exp, _, _, _, _) =>
+        vstExp(exp)
 
-    case Expression.InvokeStaticMethod(_, args, _, _, _, _) =>
-      args.flatMap(visitExp)
+      case Expression.FixpointInject(exp, _, _, _, _, _) =>
+        vstExp(exp)
 
-    case Expression.GetField(_, exp, _, _, _, _) =>
-      visitExp(exp)
+      case Expression.FixpointProject(_, exp, _, _, _, _) =>
+        vstExp(exp)
 
-    case Expression.PutField(_, exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ::: visitExp(exp2)
+      case Expression.Reify(_, _, _, _, _) => Nil
 
-    case Expression.GetStaticField(_, _, _, _, _) =>
-      Nil
+      case Expression.ReifyType(_, _, _, _, _, _) => Nil
 
-    case Expression.PutStaticField(_, exp, _, _, _, _) =>
-      visitExp(exp)
+      case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
+        vstExp(exp1) ++ vstExp(exp2) ++ vstExp(exp3)
 
-    case Expression.NewObject(_, clazz, tpe, _, _, methods, loc) =>
-      val erasedType = Type.eraseAliases(tpe)
-      checkObjectImplementation(clazz, erasedType, methods, loc) ++
-        methods.flatMap {
-          case JvmMethod(_, _, exp, _, _, _, _) => visitExp(exp)
-        }
+    }
 
-    case Expression.NewChannel(exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.GetChannel(exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.PutChannel(exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ::: visitExp(exp2)
-
-    case Expression.SelectChannel(rules, default, _, _, _, _) =>
-      rules.flatMap { case SelectChannelRule(_, chan, body) => visitExp(chan) :::
-        visitExp(body)
-      } :::
-        default.map(visitExp).getOrElse(Nil)
-
-    case Expression.Spawn(exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Par(exp, _) =>
-      // Only tuple expressions are allowed to be parallelized with `par`.
-      exp match {
-        case e: Expression.Tuple => visitExp(e)
-        case _ => IllegalParExpression(exp, exp.loc) :: Nil
-      }
-
-    case Expression.Lazy(exp, _, _) =>
-      visitExp(exp)
-
-    case Expression.Force(exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.FixpointConstraintSet(cs, _, _, _) =>
-      cs.flatMap(checkConstraint)
-
-    case Expression.FixpointLambda(_, exp, _, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.FixpointMerge(exp1, exp2, _, _, _, _, _) =>
-      visitExp(exp1) ::: visitExp(exp2)
-
-    case Expression.FixpointSolve(exp, _, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.FixpointFilter(_, exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.FixpointInject(exp, _, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.FixpointProject(_, exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Reify(_, _, _, _, _) => Nil
-
-    case Expression.ReifyType(_, _, _, _, _, _) => Nil
-
-    case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+    vstExp(exp0)
 
   }
 
@@ -312,7 +324,7 @@ object Safety {
     * the purity of a function is being cast from `pure` -> `ef` -> `impure`.
     *
     */
-  private def isSubTypeOf(tpe1: Type, tpe2: Type)(implicit flix: Flix, root: Root): Boolean = (tpe1.baseType, tpe2.baseType) match {
+  private def isSubTypeOf(tpe1: Type, tpe2: Type, rigidityEnv: RigidityEnv)(implicit flix: Flix): Boolean = (tpe1.baseType, tpe2.baseType) match {
     case (Type.True, Type.KindedVar(_, _)) => true
     case (Type.True, Type.False) => true
     case (Type.KindedVar(_, _), Type.False) => true
@@ -324,7 +336,7 @@ object Safety {
       // purities
       val pur1 = tpe1.arrowPurityType
       val pur2 = tpe2.arrowPurityType
-      val subTypePurity = isSubTypeOf(pur1, pur2)
+      val subTypePurity = isSubTypeOf(pur1, pur2, rigidityEnv)
 
       // effects
       // The rule for effect sets is:
@@ -332,26 +344,22 @@ object Safety {
       val loc = tpe1.loc.asSynthetic
       val eff1 = tpe1.arrowEffectType
       val eff2 = tpe2.arrowEffectType
-      val tparams = root.defs.filter {
-        case (defnSym, defn) => ???
-      }
       val effVar = Type.freshVar(Kind.Effect, loc)
       val effUnion = Type.mkUnion(eff1, effVar, loc)
-      val effRes = Unification.unifiesWith(effUnion, eff2, RigidityEnv(tpe1.typeVars.map(_.sym))) // not correct rigidity env
-
+      val effRes = Unification.unifiesWith(effUnion, eff2, rigidityEnv)
 
       // check that parameters are supertypes
       val args1 = tpe1.arrowArgTypes
       val args2 = tpe2.arrowArgTypes
       val superTypeArgs = args1.zip(args2).forall {
         case (t1, t2) =>
-          isSubTypeOf(t2, t1)
+          isSubTypeOf(t2, t1, rigidityEnv)
       }
 
       // check that result is a subtype
       val expectedResTpe = tpe1.arrowResultType
       val actualResTpe = tpe2.arrowResultType
-      val subTypeResult = isSubTypeOf(expectedResTpe, actualResTpe)
+      val subTypeResult = isSubTypeOf(expectedResTpe, actualResTpe, rigidityEnv)
 
       subTypePurity && effRes && superTypeArgs && subTypeResult
 
@@ -362,7 +370,7 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given constraint `c0`.
     */
-  private def checkConstraint(c0: Constraint): List[CompilationMessage] = {
+  private def checkConstraint(c0: Constraint, rigidityEnv: RigidityEnv)(implicit flix: Flix): List[CompilationMessage] = {
     //
     // Compute the set of positively defined variable symbols in the constraint.
     //
@@ -391,7 +399,7 @@ object Safety {
     // Check that all negative atoms only use positively defined variable symbols
     // and that lattice variables are not used in relational position.
     //
-    val err1 = c0.body.flatMap(checkBodyPredicate(_, posVars, quantVars, latVars))
+    val err1 = c0.body.flatMap(checkBodyPredicate(_, posVars, quantVars, latVars, rigidityEnv))
 
     //
     // Check that the free relational variables in the head atom are not lattice variables.
@@ -405,7 +413,7 @@ object Safety {
     * Performs safety and well-formedness checks on the given body predicate `p0`
     * with the given positively defined variable symbols `posVars`.
     */
-  private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym]): List[CompilationMessage] = p0 match {
+  private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym], rigidityEnv: RigidityEnv)(implicit flix: Flix): List[CompilationMessage] = p0 match {
     case Predicate.Body.Atom(_, den, polarity, _, terms, _, loc) =>
       // check for non-positively bound negative variables.
       val err1 = polarity match {
@@ -433,9 +441,9 @@ object Safety {
       // Combine the messages
       err1 ++ err2
 
-    case Predicate.Body.Guard(exp, _) => visitExp(exp)
+    case Predicate.Body.Guard(exp, _) => visitExp(exp, rigidityEnv)
 
-    case Predicate.Body.Loop(_, exp, _) => visitExp(exp)
+    case Predicate.Body.Loop(_, exp, _) => visitExp(exp, rigidityEnv)
   }
 
   /**
