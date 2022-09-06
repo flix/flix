@@ -174,6 +174,8 @@ object Main {
           System.exit(0)
 
         case Command.Doc =>
+          val result = Packager.doc(cwd, options)
+          System.exit(getCode(result))
 
 
       }
