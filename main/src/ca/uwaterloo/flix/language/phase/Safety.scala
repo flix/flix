@@ -338,15 +338,15 @@ object Safety {
       val pur2 = tpe2.arrowPurityType
       val subTypePurity = isSubTypeOf(pur1, pur2, rigidityEnv)
 
-      // effects
+      // set effects
       // The rule for effect sets is:
       // S1 < S2 <==> exists S3 . S1 U S3 == S2
       val loc = tpe1.loc.asSynthetic
-      val eff1 = tpe1.arrowEffectType
-      val eff2 = tpe2.arrowEffectType
-      val effVar = Type.freshVar(Kind.Effect, loc)
-      val effUnion = Type.mkUnion(eff1, effVar, loc)
-      val effRes = Unification.unifiesWith(effUnion, eff2, rigidityEnv)
+      val s1 = tpe1.arrowEffectType
+      val s2 = tpe2.arrowEffectType
+      val s3 = Type.freshVar(Kind.Effect, loc)
+      val s1s3 = Type.mkUnion(s1, s3, loc)
+      val isEffSubset = Unification.unifiesWith(s1s3, s2, rigidityEnv)
 
       // check that parameters are supertypes
       val args1 = tpe1.arrowArgTypes
@@ -361,7 +361,7 @@ object Safety {
       val actualResTpe = tpe2.arrowResultType
       val subTypeResult = isSubTypeOf(expectedResTpe, actualResTpe, rigidityEnv)
 
-      subTypePurity && effRes && superTypeArgs && subTypeResult
+      subTypePurity && isEffSubset && superTypeArgs && subTypeResult
 
     case _ => tpe1 == tpe2
 
