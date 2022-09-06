@@ -438,7 +438,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.Def.Expression.Ascribe.03") {
     val input =
       """
-        |def foo(): Int32 & ef =
+        |def foo(): Int32 \ ef =
         |  let _x: ef = ???;
         |  123
         |""".stripMargin

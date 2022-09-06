@@ -16,8 +16,8 @@
 
 namespace TestMap {
 
-    use ToString.toString;
-    use Hash.hash;
+    use ToString.toString
+    use Hash.hash
 
 /////////////////////////////////////////////////////////////////////////////
 // size                                                                    //
@@ -720,7 +720,7 @@ def mapWithKey05(): Bool = Map.mapWithKey((k, v) -> k + v, Map#{2 => -1, 5 => 15
                                         == Map#{2 => 1, 5 => 20, 11 => 2, 8 => 16}
 
 @test
-def mapWithKey06(): Bool & Impure =
+def mapWithKey06(): Bool \ IO =
     let range = List.range(0, 2000);
     let m = List.zip(range, range) |> List.toMap;
     let a = new MutList(Static);
@@ -955,7 +955,7 @@ def count06(): Bool = Map.count((k, v) -> k == v, Map#{1 => 2, 2 => 2}) == 1
 def count07(): Bool = Map.count((k, v) -> k == v, Map#{1 => 1, 2 => 2}) == 2
 
 @test
-def count08(): Bool & Impure =
+def count08(): Bool \ IO =
     let range = List.range(0, 2000);
     let m = List.zip(range, range) |> List.toMap;
     let a = new MutList(Static);
@@ -1075,7 +1075,7 @@ def count08(): Bool & Impure =
             Map.sumWith((k, v) -> k + v) == 0
 
     @test
-    def sumWith07(): Bool & Impure =
+    def sumWith07(): Bool \ IO =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(Static);
@@ -1185,7 +1185,7 @@ def count08(): Bool & Impure =
             Map.productWith((k, v) -> k + v) == -400
 
     @test
-    def productWith07(): Bool & Impure =
+    def productWith07(): Bool \ IO =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(Static);
@@ -1903,13 +1903,13 @@ def eq25(): Bool = Map#{1 => 2, 3 => 4, 5 => 6, 7 => 8, 9 => 10} == Map#{7 => 8,
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def foreach01(): Bool & Impure =
+def foreach01(): Bool \ IO =
     let r = ref 21;
     Map.foreach((k, _) -> r := k, Map#{});
     21 == deref r
 
 @test
-def foreach02(): Bool & Impure =
+def foreach02(): Bool \ IO =
     let r = ref 21;
     Map.foreach((k, _) -> r := k, Map#{1 => "Hello World!"});
     1 == deref r
@@ -1947,7 +1947,7 @@ def unfold06(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def unfoldWithIter01(): Bool & Impure =
+def unfoldWithIter01(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (true)
@@ -1961,7 +1961,7 @@ def unfoldWithIter01(): Bool & Impure =
     Map.unfoldWithIter(step) == Map#{}
 
 @test
-def unfoldWithIter02(): Bool & Impure =
+def unfoldWithIter02(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x > 0)
@@ -1975,7 +1975,7 @@ def unfoldWithIter02(): Bool & Impure =
     Map.unfoldWithIter(step) == Map#{0 => '0'}
 
 @test
-def unfoldWithIter03(): Bool & Impure =
+def unfoldWithIter03(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x > 1)
@@ -1989,7 +1989,7 @@ def unfoldWithIter03(): Bool & Impure =
     Map.unfoldWithIter(step) == Map#{0 => '0', 1 => '1'}
 
 @test
-def unfoldWithIter04(): Bool & Impure =
+def unfoldWithIter04(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x >= 10)
@@ -2003,7 +2003,7 @@ def unfoldWithIter04(): Bool & Impure =
     Map.unfoldWithIter(step) == Map#{0 => '0', 1 => '1', 2 => '2', 3 => '3', 4 => '4', 5 => '5', 6 => '6', 7 => '7', 8 => '8', 9 => '9'}
 
 @test
-def unfoldWithIter05(): Bool & Impure =
+def unfoldWithIter05(): Bool \ IO =
     let x = ref 5;
     let step = () ->
         if (deref x >= 10)
@@ -2017,7 +2017,7 @@ def unfoldWithIter05(): Bool & Impure =
     Map.unfoldWithIter(step) == Map#{5 => '5', 6 => '6', 7 => '7', 8 => '8', 9 => '9'}
 
 @test
-def unfoldWithIter06(): Bool & Impure =
+def unfoldWithIter06(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x >= 10)
@@ -2246,7 +2246,7 @@ def query18(): Bool =
         Map.minimumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2}) == Some((-44, 4))
 
     @test
-    def minimumKeyBy05(): Bool & Impure =
+    def minimumKeyBy05(): Bool \ IO =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(Static);
@@ -2298,7 +2298,7 @@ def query18(): Bool =
         Map.minimumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 4 => -44, 5 => 5, 0 => 2}) == Some((4, -44))
 
     @test
-    def minimumValueBy06(): Bool & Impure =
+    def minimumValueBy06(): Bool \ IO =
         let range = List.range(0, 2000);
         let m = List.zip(range, List.reverse(range)) |> List.toMap;
         let a = new MutList(Static);
@@ -2340,7 +2340,7 @@ def query18(): Bool =
     def maximumKeyBy04(): Bool = Map.maximumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 107 => -107, 5 => 5, 0 => 2}) == Some((107, -107))
 
     @test
-    def maximumKeyBy05(): Bool & Impure =
+    def maximumKeyBy05(): Bool \ IO =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(Static);
@@ -2382,7 +2382,7 @@ def query18(): Bool =
     def maximumValueBy04(): Bool = Map.maximumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, -107 => 107,5 => 5, 0 => 2}) == Some((-107, 107))
 
     @test
-    def maximumValueBy05(): Bool & Impure =
+    def maximumValueBy05(): Bool \ IO =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(Static);
@@ -2505,6 +2505,101 @@ def query18(): Bool =
         List.zip(l, List.reverse(l)) |> List.toMap |> Map.iteratorValues(r) |> Iterator.toList == List.range(0, 100) |> List.reverse
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // sequence                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sequence01(): Bool =
+        let m: Map[Int32, Identity[Char]] = Map#{};
+        Map.sequence(m) == Identity(Map#{})
+
+    @test
+    def sequence02(): Bool =
+        let m = Map#{1 => Identity('a')};
+        Map.sequence(m) == Identity(Map#{1 => 'a'})
+
+    @test
+    def sequence03(): Bool =
+        let m = Map#{1 => Identity('a'), 2 => Identity('b')};
+        Map.sequence(m) == Identity(Map#{1 => 'a', 2 => 'b'})
+
+    @test
+    def sequence04(): Bool =
+        let m = Map#{1 => Identity('a'), 2 => Identity('b'), 3 => Identity('c')};
+        Map.sequence(m) == Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'})
+
+    /////////////////////////////////////////////////////////////////////////////
+    // traverse                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def traverse01(): Bool = region r {
+        let st = ref '#' @ r;
+        let m: Map[Int32, Char] = Map#{};
+        let ans = Map.traverse(x -> {st := x; Identity(x)}, m);
+        ans == Identity(Map#{}) and deref st == '#'
+    }
+
+    @test
+    def traverse02(): Bool = region r {
+        let st = ref '#' @ r;
+        let m = Map#{1 => 'a'};
+        let ans = Map.traverse(x -> {st := x; Identity(x)}, m);
+        ans == Identity(Map#{1 => 'a'}) and deref st == 'a'
+    }
+
+    @test
+    def traverse03(): Bool = region r {
+        let st = ref '#' @ r;
+        let m = Map#{1 => 'a', 2 => 'b'};
+        let ans = Map.traverse(x -> {st := x; Identity(x)}, m);
+        ans == Identity(Map#{1 => 'a', 2 => 'b'}) and deref st == 'b'
+    }
+
+    @test
+    def traverse04(): Bool = region r {
+        let st = ref '#' @ r;
+        let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'};
+        let ans = Map.traverse(x -> {st := x; Identity(x)}, m);
+        ans == Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}) and deref st == 'c'
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // traverseWithKey                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def traverseWithKey01(): Bool = region r {
+        let st = ref (0, '#') @ r;
+        let m: Map[Int32, Char] = Map#{};
+        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity(v)}, m);
+        ans == Identity(Map#{}) and deref st == (0, '#')
+    }
+
+    @test
+    def traverseWithKey02(): Bool = region r {
+        let st = ref (0, '#') @ r;
+        let m = Map#{1 => 'a'};
+        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity(v)}, m);
+        ans == Identity(Map#{1 => 'a'}) and deref st == (1, 'a')
+    }
+
+    @test
+    def traverseWithKey03(): Bool = region r {
+        let st = ref (0, '#') @ r;
+        let m = Map#{1 => 'a', 2 => 'b'};
+        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity(v)}, m);
+        ans == Identity(Map#{1 => 'a', 2 => 'b'}) and deref st == (2, 'b')
+    }
+
+    @test
+    def traverseWithKey04(): Bool = region r {
+        let st = ref (0, '#') @ r;
+        let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'};
+        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity(v)}, m);
+        ans == Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}) and deref st == (3, 'c')
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // joinKeys                                                                //

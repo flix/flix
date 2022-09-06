@@ -1,5 +1,5 @@
 // Working with files and directories in Flix.
-def main(): Unit & Impure =
+def main(): Unit \ IO =
   let f = "README.md";
   let dir = "src";
 

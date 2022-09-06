@@ -369,20 +369,20 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def mapImpure01(): Bool & Impure =
-        Nil |> List.toDelayList |> DelayList.map(x -> x + 1 as & Impure) |> DelayList.toList == Nil
+    def mapImpure01(): Bool \ IO =
+        Nil |> List.toDelayList |> DelayList.map(x -> x + 1 as \ IO) |> DelayList.toList == Nil
 
     @test
-    def mapImpure02(): Bool & Impure =
-        (1 :: Nil) |> List.toDelayList |> DelayList.map(x -> x + 1 as & Impure) |> DelayList.toList == 2 :: Nil
+    def mapImpure02(): Bool \ IO =
+        (1 :: Nil) |> List.toDelayList |> DelayList.map(x -> x + 1 as \ IO) |> DelayList.toList == 2 :: Nil
 
     @test
-    def mapImpure03(): Bool & Impure =
-        (1 :: 2 :: Nil) |> List.toDelayList |> DelayList.map(x -> x + 1 as & Impure) |> DelayList.toList == 2 :: 3 :: Nil
+    def mapImpure03(): Bool \ IO =
+        (1 :: 2 :: Nil) |> List.toDelayList |> DelayList.map(x -> x + 1 as \ IO) |> DelayList.toList == 2 :: 3 :: Nil
 
     @test
-    def mapImpure04(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.map(x -> x + 1 as & Impure) |> DelayList.toList == 2 :: 3 :: 4 :: Nil
+    def mapImpure04(): Bool \ IO =
+        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.map(x -> x + 1 as \ IO) |> DelayList.toList == 2 :: 3 :: 4 :: Nil
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -398,27 +398,27 @@ namespace TestDelayList {
             DelayList.toList == 4 :: 6 :: 8 :: Nil
 
     @test
-    def mapMap02(): Bool & Impure =
+    def mapMap02(): Bool \ IO =
         (1 :: 2 :: 3 :: Nil)                     |>
             List.toDelayList                      |>
-            DelayList.map(x -> x + 1 as & Impure) |>
+            DelayList.map(x -> x + 1 as \ IO) |>
             DelayList.map(x -> x * 2)             |>
             DelayList.toList == 4 :: 6 :: 8 :: Nil
 
     @test
-    def mapMap03(): Bool & Impure =
+    def mapMap03(): Bool \ IO =
         (1 :: 2 :: 3 :: Nil)                     |>
             List.toDelayList                      |>
             DelayList.map(x -> x + 1)             |>
-            DelayList.map(x -> x * 2 as & Impure) |>
+            DelayList.map(x -> x * 2 as \ IO) |>
             DelayList.toList == 4 :: 6 :: 8 :: Nil
 
     @test
-    def mapMap04(): Bool & Impure =
+    def mapMap04(): Bool \ IO =
         (1 :: 2 :: 3 :: Nil)                     |>
             List.toDelayList                      |>
-            DelayList.map(x -> x + 1 as & Impure) |>
-            DelayList.map(x -> x * 2 as & Impure) |>
+            DelayList.map(x -> x + 1 as \ IO) |>
+            DelayList.map(x -> x * 2 as \ IO) |>
             DelayList.toList == 4 :: 6 :: 8 :: Nil
 
 
@@ -427,7 +427,7 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def mapFusion01(): Bool & Impure =
+    def mapFusion01(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.map(x -> { l := "a" :: deref l; x }) |>
@@ -435,12 +435,12 @@ namespace TestDelayList {
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
-    def mapFusion02(): Bool & Impure =
+    def mapFusion02(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.map(x -> { l := "a" :: deref l; x } as & Pure) |>
-        DelayList.map(x -> { l := "b" :: deref l; x } as & Pure) |>
-        DelayList.toList as & Impure;
+        DelayList.map(x -> { l := "a" :: deref l; x } as \ {}) |>
+        DelayList.map(x -> { l := "b" :: deref l; x } as \ {}) |>
+        DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
 
@@ -478,28 +478,28 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterImpure01(): Bool & Impure =
-        Nil |> List.toDelayList |> DelayList.filter(x -> x > 100 as & Impure) |> DelayList.toList == Nil
+    def filterImpure01(): Bool \ IO =
+        Nil |> List.toDelayList |> DelayList.filter(x -> x > 100 as \ IO) |> DelayList.toList == Nil
 
     @test
-    def filterImpure02(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> x > 0 as & Impure) |> DelayList.toList == 1 :: 2 :: 3 :: Nil
+    def filterImpure02(): Bool \ IO =
+        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> x > 0 as \ IO) |> DelayList.toList == 1 :: 2 :: 3 :: Nil
 
     @test
-    def filterImpure03(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> x > 1 as & Impure) |> DelayList.toList == 2 :: 3 :: Nil
+    def filterImpure03(): Bool \ IO =
+        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> x > 1 as \ IO) |> DelayList.toList == 2 :: 3 :: Nil
 
     @test
-    def filterImpure04(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> x > 2 as & Impure) |> DelayList.toList == 3 :: Nil
+    def filterImpure04(): Bool \ IO =
+        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> x > 2 as \ IO) |> DelayList.toList == 3 :: Nil
 
     @test
-    def filterImpure05(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> x > 3 as & Impure) |> DelayList.toList == Nil
+    def filterImpure05(): Bool \ IO =
+        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> x > 3 as \ IO) |> DelayList.toList == Nil
 
     @test
-    def filterImpure06(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> x > 100 as & Impure) |> DelayList.toList == Nil
+    def filterImpure06(): Bool \ IO =
+        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> x > 100 as \ IO) |> DelayList.toList == Nil
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -515,27 +515,27 @@ namespace TestDelayList {
             DelayList.toList == 2 :: Nil
 
     @test
-    def filterFilter02(): Bool & Impure =
+    def filterFilter02(): Bool \ IO =
         (1 :: 2 :: 3 :: Nil)                        |>
             List.toDelayList                         |>
-            DelayList.filter(x -> x > 1 as & Impure) |>
+            DelayList.filter(x -> x > 1 as \ IO) |>
             DelayList.filter(x -> x < 3)             |>
             DelayList.toList == 2 :: Nil
 
     @test
-    def filterFilter03(): Bool & Impure =
+    def filterFilter03(): Bool \ IO =
         (1 :: 2 :: 3 :: Nil)                        |>
             List.toDelayList                         |>
             DelayList.filter(x -> x > 1)             |>
-            DelayList.filter(x -> x < 3 as & Impure) |>
+            DelayList.filter(x -> x < 3 as \ IO) |>
             DelayList.toList == 2 :: Nil
 
     @test
-    def filterFilter04(): Bool & Impure =
+    def filterFilter04(): Bool \ IO =
         (1 :: 2 :: 3 :: Nil)                        |>
             List.toDelayList                         |>
-            DelayList.filter(x -> x > 1 as & Impure) |>
-            DelayList.filter(x -> x < 3 as & Impure) |>
+            DelayList.filter(x -> x > 1 as \ IO) |>
+            DelayList.filter(x -> x < 3 as \ IO) |>
             DelayList.toList == 2 :: Nil
 
 
@@ -544,7 +544,7 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterFusion01(): Bool & Impure =
+    def filterFusion01(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.filter(_ -> { l := "a" :: deref l; true }) |>
@@ -552,12 +552,12 @@ namespace TestDelayList {
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
-    def filterFusion02(): Bool & Impure =
+    def filterFusion02(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.filter(_x -> { l := "a" :: deref l; true } as & Pure) |>
-        DelayList.filter(_x -> { l := "b" :: deref l; true } as & Pure) |>
-        DelayList.toList as & Impure;
+        DelayList.filter(_x -> { l := "a" :: deref l; true } as \ {}) |>
+        DelayList.filter(_x -> { l := "b" :: deref l; true } as \ {}) |>
+        DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
 
@@ -566,7 +566,7 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def mapFilterFusion01(): Bool & Impure =
+    def mapFilterFusion01(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.map(   x -> { l := "a" :: deref l; x }) |>
@@ -574,12 +574,12 @@ namespace TestDelayList {
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
-    def mapFilterFusion02(): Bool & Impure =
+    def mapFilterFusion02(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.map(   x -> { l := "a" :: deref l; x }    as & Pure) |>
-        DelayList.filter(_ -> { l := "b" :: deref l; true } as & Pure) |>
-        DelayList.toList as & Impure;
+        DelayList.map(   x -> { l := "a" :: deref l; x }    as \ {}) |>
+        DelayList.filter(_ -> { l := "b" :: deref l; true } as \ {}) |>
+        DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
 
@@ -588,7 +588,7 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterThenMapFusion01(): Bool & Impure =
+    def filterThenMapFusion01(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.filter(_ -> { l := "a" :: deref l; true }) |>
@@ -596,12 +596,12 @@ namespace TestDelayList {
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
-    def filterThenMapFusion02(): Bool & Impure =
+    def filterThenMapFusion02(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.filter(_ -> { l := "a" :: deref l; true } as & Pure) |>
-        DelayList.map(   x -> { l := "b" :: deref l; x    } as & Pure) |>
-        DelayList.toList as & Impure;
+        DelayList.filter(_ -> { l := "a" :: deref l; true } as \ {}) |>
+        DelayList.map(   x -> { l := "b" :: deref l; x    } as \ {}) |>
+        DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -723,7 +723,7 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool & Impure =
+    def foreach01(): Bool \ IO =
         let l = ENil;
         let sb = new StringBuilder(Static);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
@@ -731,7 +731,7 @@ namespace TestDelayList {
         StringBuilder.toString(sb) == ""
 
     @test
-    def foreach02(): Bool & Impure =
+    def foreach02(): Bool \ IO =
         let l = LList(lazy ENil);
         let sb = new StringBuilder(Static);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
@@ -739,7 +739,7 @@ namespace TestDelayList {
         StringBuilder.toString(sb) == ""
 
     @test
-    def foreach03(): Bool & Impure =
+    def foreach03(): Bool \ IO =
         let l = LCons(1, lazy LList(lazy ENil));
         let sb = new StringBuilder(Static);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
@@ -747,7 +747,7 @@ namespace TestDelayList {
         StringBuilder.toString(sb) == "T"
 
     @test
-    def foreach04(): Bool & Impure =
+    def foreach04(): Bool \ IO =
         let l = LCons(-1, lazy LList(lazy ENil));
         let sb = new StringBuilder(Static);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
@@ -755,7 +755,7 @@ namespace TestDelayList {
         StringBuilder.toString(sb) == "F"
 
     @test
-    def foreach05(): Bool & Impure =
+    def foreach05(): Bool \ IO =
         let l = ECons(1, LCons(-1, lazy ENil));
         let sb = new StringBuilder(Static);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
@@ -1406,32 +1406,32 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def zipWithImpure01(): Bool & Impure =
-        ENil: DelayList[Int32] |> DelayList.zipWith((x, y) -> x + y as & Impure, ENil: DelayList[Int32]) == ENil
+    def zipWithImpure01(): Bool \ IO =
+        ENil: DelayList[Int32] |> DelayList.zipWith((x, y) -> x + y as \ IO, ENil: DelayList[Int32]) == ENil
 
     @test
-    def zipWithImpure02(): Bool & Impure =
-    	LList(lazy (ENil: DelayList[Int32])) |> DelayList.zipWith((x, y) -> x + y as & Impure, ENil: DelayList[Int32]) == ENil
+    def zipWithImpure02(): Bool \ IO =
+    	LList(lazy (ENil: DelayList[Int32])) |> DelayList.zipWith((x, y) -> x + y as \ IO, ENil: DelayList[Int32]) == ENil
 
     @test
-    def zipWithImpure03(): Bool & Impure =
-    	ECons(1, ECons(2, ENil)) |> DelayList.zipWith((x, y) -> x + y as & Impure, ENil: DelayList[Int32]) == ENil
+    def zipWithImpure03(): Bool \ IO =
+    	ECons(1, ECons(2, ENil)) |> DelayList.zipWith((x, y) -> x + y as \ IO, ENil: DelayList[Int32]) == ENil
 
     @test
-    def zipWithImpure04(): Bool & Impure =
-    	ENil: DelayList[Int32] |> DelayList.zipWith((x, y) -> x + y as & Impure, ECons(1, ECons(2, ENil))) == ENil
+    def zipWithImpure04(): Bool \ IO =
+    	ENil: DelayList[Int32] |> DelayList.zipWith((x, y) -> x + y as \ IO, ECons(1, ECons(2, ENil))) == ENil
 
     @test
-    def zipWithImpure05(): Bool & Impure =
-    	ECons(1, ECons(2, ENil)) |> DelayList.zipWith((x, y) -> x + y as & Impure, ECons(1, ECons(2, ENil))) == ECons(2, ECons(4, ENil))
+    def zipWithImpure05(): Bool \ IO =
+    	ECons(1, ECons(2, ENil)) |> DelayList.zipWith((x, y) -> x + y as \ IO, ECons(1, ECons(2, ENil))) == ECons(2, ECons(4, ENil))
 
     @test
-    def zipWithImpure06(): Bool & Impure =
-    	ECons(1, ENil) |> DelayList.zipWith((x, y) -> x + y as & Impure, ECons(1, ECons(2, ENil))) == ECons(2, ENil)
+    def zipWithImpure06(): Bool \ IO =
+    	ECons(1, ENil) |> DelayList.zipWith((x, y) -> x + y as \ IO, ECons(1, ECons(2, ENil))) == ECons(2, ENil)
 
     @test
-    def zipWithImpure07(): Bool & Impure =
-    	 LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil)))) |> DelayList.zipWith((x, y) -> x + y as & Impure, LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil))))) == ECons(2, ECons(4, ENil))
+    def zipWithImpure07(): Bool \ IO =
+    	 LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil)))) |> DelayList.zipWith((x, y) -> x + y as \ IO, LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil))))) == ECons(2, ECons(4, ENil))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1445,22 +1445,22 @@ namespace TestDelayList {
             DelayList.zipWith((x, y) -> x + y, ECons(1, ECons(2, ECons(3, ENil)))) == ECons(3, ECons(6, ECons(9, ENil)))
 
     @test
-    def zipWithZipWith02(): Bool & Impure =
+    def zipWithZipWith02(): Bool \ IO =
         ECons(1, ECons(2, ECons(3, ENil))) |>
-            DelayList.zipWith((x, y) -> x + y as & Impure, ECons(1, ECons(2, ECons(3, ENil)))) |>
+            DelayList.zipWith((x, y) -> x + y as \ IO, ECons(1, ECons(2, ECons(3, ENil)))) |>
             DelayList.zipWith((x, y) -> x + y, ECons(1, ECons(2, ECons(3, ENil)))) == ECons(3, ECons(6, ECons(9, ENil)))
 
     @test
-    def zipWithZipWith03(): Bool & Impure =
+    def zipWithZipWith03(): Bool \ IO =
         ECons(1, ECons(2, ECons(3, ENil))) |>
             DelayList.zipWith((x, y) -> x + y, ECons(1, ECons(2, ECons(3, ENil)))) |>
-            DelayList.zipWith((x, y) -> x + y as & Impure, ECons(1, ECons(2, ECons(3, ENil)))) == ECons(3, ECons(6, ECons(9, ENil)))
+            DelayList.zipWith((x, y) -> x + y as \ IO, ECons(1, ECons(2, ECons(3, ENil)))) == ECons(3, ECons(6, ECons(9, ENil)))
 
     @test
-    def zipWithZipWith04(): Bool & Impure =
+    def zipWithZipWith04(): Bool \ IO =
         ECons(1, ECons(2, ECons(3, ENil))) |>
-            DelayList.zipWith((x, y) -> x + y as & Impure, ECons(1, ECons(2, ECons(3, ENil)))) |>
-            DelayList.zipWith((x, y) -> x + y as & Impure, ECons(1, ECons(2, ECons(3, ENil)))) == ECons(3, ECons(6, ECons(9, ENil)))
+            DelayList.zipWith((x, y) -> x + y as \ IO, ECons(1, ECons(2, ECons(3, ENil)))) |>
+            DelayList.zipWith((x, y) -> x + y as \ IO, ECons(1, ECons(2, ECons(3, ENil)))) == ECons(3, ECons(6, ECons(9, ENil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1468,7 +1468,7 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def zipWithFusion01(): Bool & Impure =
+    def zipWithFusion01(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.zipWith((x, y) -> { l := "a" :: deref l; (x, y) }, ECons(1, ECons(2, ECons(3, ENil)))) |>
@@ -1476,12 +1476,12 @@ namespace TestDelayList {
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
-    def zipWithFusion02(): Bool & Impure =
+    def zipWithFusion02(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.zipWith((x, y) -> { l := "a" :: deref l; (x, y) } as & Pure, ECons(1, ECons(2, ECons(3, ENil)))) |>
-        DelayList.zipWith((x, y) -> { l := "b" :: deref l; (x, y) } as & Pure, ECons(1, ECons(2, ECons(3, ENil)))) |>
-        DelayList.toList as & Impure;
+        DelayList.zipWith((x, y) -> { l := "a" :: deref l; (x, y) } as \ {}, ECons(1, ECons(2, ECons(3, ENil)))) |>
+        DelayList.zipWith((x, y) -> { l := "b" :: deref l; (x, y) } as \ {}, ECons(1, ECons(2, ECons(3, ENil)))) |>
+        DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1710,20 +1710,20 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def flatMapImpure01(): Bool & Impure =
-        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i) as & Impure, ENil: DelayList[Int32]) == ENil
+    def flatMapImpure01(): Bool \ IO =
+        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i) as \ IO, ENil: DelayList[Int32]) == ENil
 
     @test
-    def flatMapImpure02(): Bool & Impure =
-        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i) as & Impure, ECons(1, ENil)) == ECons(1, ENil)
+    def flatMapImpure02(): Bool \ IO =
+        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i) as \ IO, ECons(1, ENil)) == ECons(1, ENil)
 
     @test
-    def flatMapImpure03(): Bool & Impure =
-        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i) as & Impure, ECons(1, ECons(2, ECons(3, ENil)))) == ECons(1, ECons(2, ECons(2, ECons(3, ECons(3, ECons(3, ENil))))))
+    def flatMapImpure03(): Bool \ IO =
+        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i) as \ IO, ECons(1, ECons(2, ECons(3, ENil)))) == ECons(1, ECons(2, ECons(2, ECons(3, ECons(3, ECons(3, ENil))))))
 
     @test
-    def flatMapImpure04(): Bool & Impure =
-        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i) as & Impure, ECons(1, LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy ENil))))))) == ECons(1, ECons(2, ECons(2, ECons(3, ECons(3, ECons(3, ENil))))))
+    def flatMapImpure04(): Bool \ IO =
+        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i) as \ IO, ECons(1, LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy ENil))))))) == ECons(1, ECons(2, ECons(2, ECons(3, ECons(3, ECons(3, ENil))))))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1740,28 +1740,28 @@ namespace TestDelayList {
                     ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil))))))))))))))
 
     @test
-    def flatMapFlatMap02(): Bool & Impure =
+    def flatMapFlatMap02(): Bool \ IO =
         ECons(1, ECons(2, ECons(3, ENil)))                                        |>
-        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i) as & Impure) |>
+        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i) as \ IO) |>
         DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i))             ==
             ECons(1,
                 ECons(2, ECons(2, ECons(2, ECons(2,
                     ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil))))))))))))))
 
     @test
-    def flatMapFlatMap03(): Bool & Impure =
+    def flatMapFlatMap03(): Bool \ IO =
         ECons(1, ECons(2, ECons(3, ENil)))                                        |>
         DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i))             |>
-        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i) as & Impure) ==
+        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i) as \ IO) ==
             ECons(1,
                 ECons(2, ECons(2, ECons(2, ECons(2,
                     ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil))))))))))))))
 
     @test
-    def flatMapFlatMap04(): Bool & Impure =
+    def flatMapFlatMap04(): Bool \ IO =
         ECons(1, ECons(2, ECons(3, ENil)))                                        |>
-        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i) as & Impure) |>
-        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i) as & Impure) ==
+        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i) as \ IO) |>
+        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i) as \ IO) ==
             ECons(1,
                 ECons(2, ECons(2, ECons(2, ECons(2,
                     ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil))))))))))))))
@@ -1772,7 +1772,7 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def flatMapFusion01(): Bool & Impure =
+    def flatMapFusion01(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.flatMap(i -> { l := "a" :: deref l; ECons(i, ENil) }) |>
@@ -1780,12 +1780,12 @@ namespace TestDelayList {
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
-    def flatMapFusion02(): Bool & Impure =
+    def flatMapFusion02(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.flatMap(i -> { l := "a" :: deref l; ECons(i, ENil) } as & Pure) |>
-        DelayList.flatMap(i -> { l := "b" :: deref l; ECons(i, ENil) } as & Pure) |>
-        DelayList.toList as & Impure;
+        DelayList.flatMap(i -> { l := "a" :: deref l; ECons(i, ENil) } as \ {}) |>
+        DelayList.flatMap(i -> { l := "b" :: deref l; ECons(i, ENil) } as \ {}) |>
+        DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
 
@@ -1971,28 +1971,28 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def mapWithIndexImpure01(): Bool & Impure =
-    	ENil |> DelayList.mapWithIndex((x, i) -> x + i as & Impure) == ENil
+    def mapWithIndexImpure01(): Bool \ IO =
+    	ENil |> DelayList.mapWithIndex((x, i) -> x + i as \ IO) == ENil
 
     @test
-    def mapWithIndexImpure02(): Bool & Impure =
-    	ECons(1, ENil) |> DelayList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ENil)
+    def mapWithIndexImpure02(): Bool \ IO =
+    	ECons(1, ENil) |> DelayList.mapWithIndex((x, i) -> x + i as \ IO) == ECons(1, ENil)
 
     @test
-    def mapWithIndexImpure03(): Bool & Impure =
-    	ECons(1, ECons(2, ENil)) |> DelayList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ECons(3, ENil))
+    def mapWithIndexImpure03(): Bool \ IO =
+    	ECons(1, ECons(2, ENil)) |> DelayList.mapWithIndex((x, i) -> x + i as \ IO) == ECons(1, ECons(3, ENil))
 
     @test
-    def mapWithIndexImpure04(): Bool & Impure =
-    	ECons(1, ECons(2, ECons(3, ENil))) |> DelayList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ECons(3, ECons(5, ENil)))
+    def mapWithIndexImpure04(): Bool \ IO =
+    	ECons(1, ECons(2, ECons(3, ENil))) |> DelayList.mapWithIndex((x, i) -> x + i as \ IO) == ECons(1, ECons(3, ECons(5, ENil)))
 
     @test
-    def mapWithIndexImpure05(): Bool & Impure =
-        ECons(1, ECons(2, ECons(3, ECons(4, ENil)))) |> DelayList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+    def mapWithIndexImpure05(): Bool \ IO =
+        ECons(1, ECons(2, ECons(3, ECons(4, ENil)))) |> DelayList.mapWithIndex((x, i) -> x + i as \ IO) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
 
     @test
-    def mapWithIndexImpure06(): Bool & Impure =
-    	LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy LList(lazy ENil))))))))) |> DelayList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+    def mapWithIndexImpure06(): Bool \ IO =
+    	LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy LList(lazy ENil))))))))) |> DelayList.mapWithIndex((x, i) -> x + i as \ IO) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2006,22 +2006,22 @@ namespace TestDelayList {
             DelayList.mapWithIndex((x, i) -> x * i) == ECons(0, ECons(3, ECons(10, ENil)))
 
     @test
-    def mapWithIndexMapWithIndex02(): Bool & Impure =
+    def mapWithIndexMapWithIndex02(): Bool \ IO =
         ECons(1, ECons(2, ECons(3, ENil))) |>
-            DelayList.mapWithIndex((x, i) -> x + i as & Impure) |>
+            DelayList.mapWithIndex((x, i) -> x + i as \ IO) |>
             DelayList.mapWithIndex((x, i) -> x * i) == ECons(0, ECons(3, ECons(10, ENil)))
 
     @test
-    def mapWithIndexMapWithIndex03(): Bool & Impure =
+    def mapWithIndexMapWithIndex03(): Bool \ IO =
         ECons(1, ECons(2, ECons(3, ENil))) |>
             DelayList.mapWithIndex((x, i) -> x + i) |>
-            DelayList.mapWithIndex((x, i) -> x * i as & Impure) == ECons(0, ECons(3, ECons(10, ENil)))
+            DelayList.mapWithIndex((x, i) -> x * i as \ IO) == ECons(0, ECons(3, ECons(10, ENil)))
 
     @test
-    def mapWithIndexMapWithIndex04(): Bool & Impure =
+    def mapWithIndexMapWithIndex04(): Bool \ IO =
         ECons(1, ECons(2, ECons(3, ENil))) |>
-            DelayList.mapWithIndex((x, i) -> x + i as & Impure) |>
-            DelayList.mapWithIndex((x, i) -> x * i as & Impure) == ECons(0, ECons(3, ECons(10, ENil)))
+            DelayList.mapWithIndex((x, i) -> x + i as \ IO) |>
+            DelayList.mapWithIndex((x, i) -> x * i as \ IO) == ECons(0, ECons(3, ECons(10, ENil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2029,7 +2029,7 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def mapWithIndexFusion01(): Bool & Impure =
+    def mapWithIndexFusion01(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.mapWithIndex((x, _) -> { l := "a" :: deref l; x }) |>
@@ -2038,12 +2038,12 @@ namespace TestDelayList {
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
-    def mapWithIndexFusion02(): Bool & Impure =
+    def mapWithIndexFusion02(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.mapWithIndex((x, _) -> { l := "a" :: deref l; x } as & Pure) |>
-        DelayList.mapWithIndex((x, _) -> { l := "b" :: deref l; x } as & Pure) |>
-        DelayList.toList as & Impure;
+        DelayList.mapWithIndex((x, _) -> { l := "a" :: deref l; x } as \ {}) |>
+        DelayList.mapWithIndex((x, _) -> { l := "b" :: deref l; x } as \ {}) |>
+        DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
 
@@ -2191,40 +2191,40 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def takeWhileImpure01(): Bool & Impure =
-        DelayList.takeWhile(i -> i > 3 as & Impure, ENil) == ENil
+    def takeWhileImpure01(): Bool \ IO =
+        DelayList.takeWhile(i -> i > 3 as \ IO, ENil) == ENil
 
     @test
-    def takeWhileImpure02(): Bool & Impure =
-        DelayList.takeWhile(i -> i > 3 as & Impure, ECons(1, ENil)) == ENil
+    def takeWhileImpure02(): Bool \ IO =
+        DelayList.takeWhile(i -> i > 3 as \ IO, ECons(1, ENil)) == ENil
 
     @test
-    def takeWhileImpure03(): Bool & Impure =
-        DelayList.takeWhile(i -> i > 3 as & Impure, ECons(4, ENil)) == ECons(4, ENil)
+    def takeWhileImpure03(): Bool \ IO =
+        DelayList.takeWhile(i -> i > 3 as \ IO, ECons(4, ENil)) == ECons(4, ENil)
 
     @test
-    def takeWhileImpure04(): Bool & Impure =
-        DelayList.takeWhile(i -> i > 3 as & Impure, ECons(1, ECons(2, ENil))) == ENil
+    def takeWhileImpure04(): Bool \ IO =
+        DelayList.takeWhile(i -> i > 3 as \ IO, ECons(1, ECons(2, ENil))) == ENil
 
     @test
-    def takeWhileImpure05(): Bool & Impure =
-        DelayList.takeWhile(i -> i > 3 as & Impure, ECons(1, ECons(5, ENil))) == ENil
+    def takeWhileImpure05(): Bool \ IO =
+        DelayList.takeWhile(i -> i > 3 as \ IO, ECons(1, ECons(5, ENil))) == ENil
 
     @test
-    def takeWhileImpure06(): Bool & Impure =
-        DelayList.takeWhile(i -> i > 3 as & Impure, ECons(5, ECons(1, ENil))) == ECons(5, ENil)
+    def takeWhileImpure06(): Bool \ IO =
+        DelayList.takeWhile(i -> i > 3 as \ IO, ECons(5, ECons(1, ENil))) == ECons(5, ENil)
 
     @test
-    def takeWhileImpure07(): Bool & Impure =
-        DelayList.takeWhile(i -> i > 3 as & Impure, ECons(5, ECons(8, ENil))) == ECons(5, ECons(8, ENil))
+    def takeWhileImpure07(): Bool \ IO =
+        DelayList.takeWhile(i -> i > 3 as \ IO, ECons(5, ECons(8, ENil))) == ECons(5, ECons(8, ENil))
 
     @test
-    def takeWhileImpure08(): Bool & Impure =
-        DelayList.takeWhile(i -> i > 3 as & Impure, LList(lazy ECons(5, LList(lazy LCons(8, lazy ENil))))) == ECons(5, ECons(8, ENil))
+    def takeWhileImpure08(): Bool \ IO =
+        DelayList.takeWhile(i -> i > 3 as \ IO, LList(lazy ECons(5, LList(lazy LCons(8, lazy ENil))))) == ECons(5, ECons(8, ENil))
 
     @test
-    def takeWhileImpure09(): Bool & Impure =
-        DelayList.takeWhile(i -> i > 3 as & Impure, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == ECons(4, ECons(6, ENil))
+    def takeWhileImpure09(): Bool \ IO =
+        DelayList.takeWhile(i -> i > 3 as \ IO, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == ECons(4, ECons(6, ENil))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2238,22 +2238,22 @@ namespace TestDelayList {
             DelayList.takeWhile(i -> i < 5) == ECons(4, ENil)
 
     @test
-    def takeWhileTakeWhile02(): Bool & Impure =
+    def takeWhileTakeWhile02(): Bool \ IO =
         ECons(4, ECons(5, ECons(1, ENil)))             |>
-            DelayList.takeWhile(i -> i > 3 as & Impure) |>
+            DelayList.takeWhile(i -> i > 3 as \ IO) |>
             DelayList.takeWhile(i -> i < 5) == ECons(4, ENil)
 
     @test
-    def takeWhileTakeWhile03(): Bool & Impure =
+    def takeWhileTakeWhile03(): Bool \ IO =
         ECons(4, ECons(5, ECons(1, ENil))) |>
             DelayList.takeWhile(i -> i > 3) |>
-            DelayList.takeWhile(i -> i < 5 as & Impure) == ECons(4, ENil)
+            DelayList.takeWhile(i -> i < 5 as \ IO) == ECons(4, ENil)
 
     @test
-    def takeWhileTakeWhile04(): Bool & Impure =
+    def takeWhileTakeWhile04(): Bool \ IO =
         ECons(4, ECons(5, ECons(1, ENil)))             |>
-            DelayList.takeWhile(i -> i > 3 as & Impure) |>
-            DelayList.takeWhile(i -> i < 5 as & Impure) == ECons(4, ENil)
+            DelayList.takeWhile(i -> i > 3 as \ IO) |>
+            DelayList.takeWhile(i -> i < 5 as \ IO) == ECons(4, ENil)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2261,7 +2261,7 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def takeWhileFusion01(): Bool & Impure =
+    def takeWhileFusion01(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.takeWhile(i -> { l := "a" :: deref l; i < 4 }) |>
@@ -2269,30 +2269,30 @@ namespace TestDelayList {
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
-    def takeWhileFusion02(): Bool & Impure =
+    def takeWhileFusion02(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.takeWhile(i -> { l := "a" :: deref l; i < 4 } as & Pure) |>
-        DelayList.takeWhile(i -> { l := "b" :: deref l; i < 4 } as & Pure) |>
-        DelayList.toList as & Impure;
+        DelayList.takeWhile(i -> { l := "a" :: deref l; i < 4 } as \ {}) |>
+        DelayList.takeWhile(i -> { l := "b" :: deref l; i < 4 } as \ {}) |>
+        DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
     @test
-    def takeWhileFusion03(): Bool & Impure =
+    def takeWhileFusion03(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.takeWhile(i -> { l := "a" :: deref l; i < 3 } as & Pure) |>
-        DelayList.takeWhile(i -> { l := "b" :: deref l; i < 2 } as & Pure) |>
-        DelayList.toList as & Impure;
+        DelayList.takeWhile(i -> { l := "a" :: deref l; i < 3 } as \ {}) |>
+        DelayList.takeWhile(i -> { l := "b" :: deref l; i < 2 } as \ {}) |>
+        DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: Nil)
 
     @test
-    def takeWhileFusion04(): Bool & Impure =
+    def takeWhileFusion04(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.takeWhile(i -> { l := "a" :: deref l; i < 3 } as & Pure) |>
-        DelayList.takeWhile(i -> { l := "b" :: deref l; i < 3 } as & Pure) |>
-        DelayList.toList as & Impure;
+        DelayList.takeWhile(i -> { l := "a" :: deref l; i < 3 } as \ {}) |>
+        DelayList.takeWhile(i -> { l := "b" :: deref l; i < 3 } as \ {}) |>
+        DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
 
 
@@ -2342,40 +2342,40 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def dropWhileImpure01(): Bool & Impure =
-        DelayList.dropWhile(i -> i > 3 as & Impure, ENil) == ENil
+    def dropWhileImpure01(): Bool \ IO =
+        DelayList.dropWhile(i -> i > 3 as \ IO, ENil) == ENil
 
     @test
-    def dropWhileImpure02(): Bool & Impure =
-        DelayList.dropWhile(i -> i > 3 as & Impure, ECons(1, ENil)) == ECons(1, ENil)
+    def dropWhileImpure02(): Bool \ IO =
+        DelayList.dropWhile(i -> i > 3 as \ IO, ECons(1, ENil)) == ECons(1, ENil)
 
     @test
-    def dropWhileImpure03(): Bool & Impure =
-        DelayList.dropWhile(i -> i > 3 as & Impure, ECons(4, ENil)) == ENil
+    def dropWhileImpure03(): Bool \ IO =
+        DelayList.dropWhile(i -> i > 3 as \ IO, ECons(4, ENil)) == ENil
 
     @test
-    def dropWhileImpure04(): Bool & Impure =
-        DelayList.dropWhile(i -> i > 3 as & Impure, ECons(1, ECons(2, ENil))) == ECons(1, ECons(2, ENil))
+    def dropWhileImpure04(): Bool \ IO =
+        DelayList.dropWhile(i -> i > 3 as \ IO, ECons(1, ECons(2, ENil))) == ECons(1, ECons(2, ENil))
 
     @test
-    def dropWhileImpure05(): Bool & Impure =
-        DelayList.dropWhile(i -> i > 3 as & Impure, ECons(1, ECons(5, ENil))) == ECons(1, ECons(5, ENil))
+    def dropWhileImpure05(): Bool \ IO =
+        DelayList.dropWhile(i -> i > 3 as \ IO, ECons(1, ECons(5, ENil))) == ECons(1, ECons(5, ENil))
 
     @test
-    def dropWhileImpure06(): Bool & Impure =
-        DelayList.dropWhile(i -> i > 3 as & Impure, ECons(5, ECons(1, ENil))) == ECons(1, ENil)
+    def dropWhileImpure06(): Bool \ IO =
+        DelayList.dropWhile(i -> i > 3 as \ IO, ECons(5, ECons(1, ENil))) == ECons(1, ENil)
 
     @test
-    def dropWhileImpure07(): Bool & Impure =
-        DelayList.dropWhile(i -> i > 3 as & Impure, ECons(5, ECons(8, ENil))) == ENil
+    def dropWhileImpure07(): Bool \ IO =
+        DelayList.dropWhile(i -> i > 3 as \ IO, ECons(5, ECons(8, ENil))) == ENil
 
     @test
-    def dropWhileImpure08(): Bool & Impure =
-        DelayList.dropWhile(i -> i > 3 as & Impure, LList(lazy ECons(5, LCons(8, lazy LList(lazy LCons(9, lazy LList(lazy ECons(10, LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil)))))))))))) == ECons(1, ECons(2, ENil))
+    def dropWhileImpure08(): Bool \ IO =
+        DelayList.dropWhile(i -> i > 3 as \ IO, LList(lazy ECons(5, LCons(8, lazy LList(lazy LCons(9, lazy LList(lazy ECons(10, LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil)))))))))))) == ECons(1, ECons(2, ENil))
 
     @test
-    def dropWhileImpure09(): Bool & Impure =
-        DelayList.dropWhile(i -> i > 3 as & Impure, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))
+    def dropWhileImpure09(): Bool \ IO =
+        DelayList.dropWhile(i -> i > 3 as \ IO, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2389,22 +2389,22 @@ namespace TestDelayList {
             DelayList.dropWhile(i -> i > 1) == ECons(1, ENil)
 
     @test
-    def dropWhileDropWhile02(): Bool & Impure =
+    def dropWhileDropWhile02(): Bool \ IO =
         ECons(4, ECons(5, ECons(1, ENil)))             |>
-            DelayList.dropWhile(i -> i < 5 as & Impure) |>
+            DelayList.dropWhile(i -> i < 5 as \ IO) |>
             DelayList.dropWhile(i -> i > 1) == ECons(1, ENil)
 
     @test
-    def dropWhileDropWhile03(): Bool & Impure =
+    def dropWhileDropWhile03(): Bool \ IO =
         ECons(4, ECons(5, ECons(1, ENil)))     |>
             DelayList.dropWhile(i -> i < 5)     |>
-            DelayList.dropWhile(i -> i > 1 as & Impure) == ECons(1, ENil)
+            DelayList.dropWhile(i -> i > 1 as \ IO) == ECons(1, ENil)
 
     @test
-    def dropWhileDropWhile04(): Bool & Impure =
+    def dropWhileDropWhile04(): Bool \ IO =
         ECons(4, ECons(5, ECons(1, ENil)))             |>
-            DelayList.dropWhile(i -> i < 5 as & Impure) |>
-            DelayList.dropWhile(i -> i > 1 as & Impure) == ECons(1, ENil)
+            DelayList.dropWhile(i -> i < 5 as \ IO) |>
+            DelayList.dropWhile(i -> i > 1 as \ IO) == ECons(1, ENil)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2412,7 +2412,7 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def dropWhileFusion01(): Bool & Impure =
+    def dropWhileFusion01(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.dropWhile(i -> { l := "a" :: deref l; i < 3 }) |>
@@ -2420,30 +2420,30 @@ namespace TestDelayList {
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: Nil)
 
     @test
-    def dropWhileFusion02(): Bool & Impure =
+    def dropWhileFusion02(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.dropWhile(i -> { l := "a" :: deref l; i < 3 } as & Pure) |>
-        DelayList.dropWhile(i -> { l := "b" :: deref l; i < 4 } as & Pure) |>
-        DelayList.toList as & Impure;
+        DelayList.dropWhile(i -> { l := "a" :: deref l; i < 3 } as \ {}) |>
+        DelayList.dropWhile(i -> { l := "b" :: deref l; i < 4 } as \ {}) |>
+        DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: Nil)
 
     @test
-    def dropWhileFusion03(): Bool & Impure =
+    def dropWhileFusion03(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.dropWhile(i -> { l := "a" :: deref l; i < 1 } as & Pure) |>
-        DelayList.dropWhile(i -> { l := "b" :: deref l; i < 3 } as & Pure) |>
-        DelayList.toList as & Impure;
+        DelayList.dropWhile(i -> { l := "a" :: deref l; i < 1 } as \ {}) |>
+        DelayList.dropWhile(i -> { l := "b" :: deref l; i < 3 } as \ {}) |>
+        DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
-    def dropWhileFusion04(): Bool & Impure =
+    def dropWhileFusion04(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.dropWhile(i -> { l := "a" :: deref l; i < 2 } as & Pure) |>
-        DelayList.dropWhile(i -> { l := "b" :: deref l; i < 3 } as & Pure) |>
-        DelayList.toList as & Impure;
+        DelayList.dropWhile(i -> { l := "a" :: deref l; i < 2 } as \ {}) |>
+        DelayList.dropWhile(i -> { l := "b" :: deref l; i < 3 } as \ {}) |>
+        DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "a" :: "b" :: "b" :: Nil)
 
 
@@ -2543,40 +2543,40 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterMapImpure01(): Bool & Impure =
-        DelayList.filterMap(i -> if (i rem 2 == 0) Some(i / 2) else None as & Impure, ENil) == ENil
+    def filterMapImpure01(): Bool \ IO =
+        DelayList.filterMap(i -> if (i rem 2 == 0) Some(i / 2) else None as \ IO, ENil) == ENil
 
     @test
-    def filterMapImpure02(): Bool & Impure =
-        DelayList.filterMap(i -> if (i rem 2 == 0) Some(i / 2) else None as & Impure, ECons(1, ENil)) == ENil
+    def filterMapImpure02(): Bool \ IO =
+        DelayList.filterMap(i -> if (i rem 2 == 0) Some(i / 2) else None as \ IO, ECons(1, ENil)) == ENil
 
     @test
-    def filterMapImpure03(): Bool & Impure =
-        DelayList.filterMap(i -> if (i rem 2 == 0) Some(i / 2) else None as & Impure, ECons(2, ENil)) == ECons(1, ENil)
+    def filterMapImpure03(): Bool \ IO =
+        DelayList.filterMap(i -> if (i rem 2 == 0) Some(i / 2) else None as \ IO, ECons(2, ENil)) == ECons(1, ENil)
 
 	@test
-	def filterMapImpure04(): Bool & Impure =
-		DelayList.filterMap(i -> if (i rem 2 == 0) Some(i / 2) else None as & Impure, ECons(1, ECons(3, ENil))) == ENil
+	def filterMapImpure04(): Bool \ IO =
+		DelayList.filterMap(i -> if (i rem 2 == 0) Some(i / 2) else None as \ IO, ECons(1, ECons(3, ENil))) == ENil
 
 	@test
-	def filterMapImpure05(): Bool & Impure =
-		DelayList.filterMap(i -> if (i rem 2 == 0) Some(i / 2) else None as & Impure, ECons(1, ECons(4, ENil))) == ECons(2, ENil)
+	def filterMapImpure05(): Bool \ IO =
+		DelayList.filterMap(i -> if (i rem 2 == 0) Some(i / 2) else None as \ IO, ECons(1, ECons(4, ENil))) == ECons(2, ENil)
 
 	@test
-	def filterMapImpure06(): Bool & Impure =
-		DelayList.filterMap(i -> if (i rem 2 == 0) Some(i / 2) else None as & Impure, ECons(6, ECons(-1, ENil))) == ECons(3, ENil)
+	def filterMapImpure06(): Bool \ IO =
+		DelayList.filterMap(i -> if (i rem 2 == 0) Some(i / 2) else None as \ IO, ECons(6, ECons(-1, ENil))) == ECons(3, ENil)
 
 	@test
-	def filterMapImpure07(): Bool & Impure =
-		DelayList.filterMap(i -> if (i rem 2 == 0) Some(i / 2) else None as & Impure, ECons(8, ECons(6, ENil))) == ECons(4, ECons(3, ENil))
+	def filterMapImpure07(): Bool \ IO =
+		DelayList.filterMap(i -> if (i rem 2 == 0) Some(i / 2) else None as \ IO, ECons(8, ECons(6, ENil))) == ECons(4, ECons(3, ENil))
 
     @test
-	def filterMapImpure08(): Bool & Impure =
-		DelayList.filterMap(i -> if (i rem 2 == 0) Some(i / 2) else None as & Impure, ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
+	def filterMapImpure08(): Bool \ IO =
+		DelayList.filterMap(i -> if (i rem 2 == 0) Some(i / 2) else None as \ IO, ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
 
     @test
-	def filterMapImpure09(): Bool & Impure =
-		DelayList.filterMap(i -> if (i rem 2 == 0) Some(i / 2) else None as & Impure,
+	def filterMapImpure09(): Bool \ IO =
+		DelayList.filterMap(i -> if (i rem 2 == 0) Some(i / 2) else None as \ IO,
 		    LList(lazy LCons(0, lazy LList(lazy
 		    LCons(1, lazy LList(lazy LCons(2, lazy
 		    LList(lazy LCons(3, lazy LList(lazy
@@ -2595,22 +2595,22 @@ namespace TestDelayList {
             DelayList.filterMap(i -> if (i > 1)      Some(i * 3) else None) == ECons(6, ECons(9, ENil))
 
     @test
-    def filterMapFilterMap02(): Bool & Impure =
+    def filterMapFilterMap02(): Bool \ IO =
         ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
-            DelayList.filterMap(i -> if (i rem 2 == 0) Some(i / 2) else None as & Impure) |>
+            DelayList.filterMap(i -> if (i rem 2 == 0) Some(i / 2) else None as \ IO) |>
             DelayList.filterMap(i -> if (i > 1)      Some(i * 3) else None) == ECons(6, ECons(9, ENil))
 
     @test
-    def filterMapFilterMap03(): Bool & Impure =
+    def filterMapFilterMap03(): Bool \ IO =
         ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
             DelayList.filterMap(i -> if (i rem 2 == 0) Some(i / 2) else None) |>
-            DelayList.filterMap(i -> if (i > 1)      Some(i * 3) else None as & Impure) == ECons(6, ECons(9, ENil))
+            DelayList.filterMap(i -> if (i > 1)      Some(i * 3) else None as \ IO) == ECons(6, ECons(9, ENil))
 
     @test
-    def filterMapFilterMap04(): Bool & Impure =
+    def filterMapFilterMap04(): Bool \ IO =
         ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
-            DelayList.filterMap(i -> if (i rem 2 == 0) Some(i / 2) else None as & Impure) |>
-            DelayList.filterMap(i -> if (i > 1)      Some(i * 3) else None as & Impure) == ECons(6, ECons(9, ENil))
+            DelayList.filterMap(i -> if (i rem 2 == 0) Some(i / 2) else None as \ IO) |>
+            DelayList.filterMap(i -> if (i > 1)      Some(i * 3) else None as \ IO) == ECons(6, ECons(9, ENil))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2618,7 +2618,7 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterMapFusion01(): Bool & Impure =
+    def filterMapFusion01(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.filterMap(x -> { l := "a" :: deref l; Some(x) }) |>
@@ -2626,12 +2626,12 @@ namespace TestDelayList {
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
-    def filterMapFusion02(): Bool & Impure =
+    def filterMapFusion02(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.filterMap(x -> { l := "a" :: deref l; Some(x) } as & Pure) |>
-        DelayList.filterMap(x -> { l := "b" :: deref l; Some(x) } as & Pure) |>
-        DelayList.toList as & Impure;
+        DelayList.filterMap(x -> { l := "a" :: deref l; Some(x) } as \ {}) |>
+        DelayList.filterMap(x -> { l := "b" :: deref l; Some(x) } as \ {}) |>
+        DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
 
@@ -2742,7 +2742,7 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def spanSpanFusion01(): Bool & Impure =
+    def spanSpanFusion01(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.span(x -> { l := "a" :: deref l; x < 3 }) |> fst |>
@@ -2750,12 +2750,12 @@ namespace TestDelayList {
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: Nil)
 
     //@test
-    //def spanSpanFusion02(): Bool & Impure =
+    //def spanSpanFusion02(): Bool \ IO =
     //    let l = ref Nil;
     //    let _ =
     //    (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-    //    DelayList.span(x -> { l := "a" :: deref l; x < 3 } as & Pure) |> fst |>
-    //    DelayList.span(x -> { l := "b" :: deref l; x < 3 } as & Pure) |> fst |>
+    //    DelayList.span(x -> { l := "a" :: deref l; x < 3 } as \ {}) |> fst |>
+    //    DelayList.span(x -> { l := "b" :: deref l; x < 3 } as \ {}) |> fst |>
     //    DelayList.toList;
     //    List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
 
@@ -2936,6 +2936,66 @@ namespace TestDelayList {
         let f = List.toDelayList((x -> x + 1) :: (x -> x * 2) :: Nil);
         let l = List.toDelayList(0 :: 4 :: Nil);
         DelayList.ap(f, l) |> DelayList.toList == 1 :: 5 :: 0 :: 8 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sequence                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sequence01(): Bool =
+        let l: DelayList[Identity[Int32]] = ENil;
+        DelayList.sequence(l) == Identity(ENil)
+
+    @test
+    def sequence02(): Bool =
+        let l = List.toDelayList(Identity(1) :: Nil);
+        DelayList.sequence(l) == Identity(List.toDelayList(1 :: Nil))
+
+    @test
+    def sequence03(): Bool =
+        let l = List.toDelayList(Identity(1) :: Identity(2) :: Nil);
+        DelayList.sequence(l) == Identity(List.toDelayList(1 :: 2 :: Nil))
+
+    @test
+    def sequence04(): Bool =
+        let l = List.toDelayList(Identity(1) :: Identity(2) :: Identity(3) :: Nil);
+        DelayList.sequence(l) == Identity(List.toDelayList(1 :: 2 :: 3 :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // traverse                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def traverse01(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = ENil;
+        let ans = DelayList.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(ENil) and deref st == 0
+    }
+
+    @test
+    def traverse02(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = List.toDelayList(1 :: Nil);
+        let ans = DelayList.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(List.toDelayList(1 :: Nil)) and deref st == 1
+    }
+
+    @test
+    def traverse03(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = List.toDelayList(1 :: 2 :: Nil);
+        let ans = DelayList.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(List.toDelayList(1 :: 2 :: Nil)) and deref st == 2
+    }
+
+    @test
+    def traverse04(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = List.toDelayList(1 :: 2 :: 3 :: Nil);
+        let ans = DelayList.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(List.toDelayList(1 :: 2 :: 3 :: Nil)) and deref st == 3
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // shuffle                                                                 //

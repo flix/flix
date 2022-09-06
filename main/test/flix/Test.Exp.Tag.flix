@@ -128,23 +128,23 @@ namespace Test/Exp/Tag {
 
 
     @test
-    def testArrayOfIntTag01(): A & Impure = OfArrayOfInt([1, 2, 3])
+    def testArrayOfIntTag01(): A \ IO = OfArrayOfInt([1, 2, 3])
 
     @test
-    def testArrayOfIntTag02(): A & Impure = A.OfArrayOfInt([1, 2, 3])
+    def testArrayOfIntTag02(): A \ IO = A.OfArrayOfInt([1, 2, 3])
 
     @test
-    def testArrayOfIntTag03(): A & Impure = Test/Exp/Tag/A.OfArrayOfInt([1, 2, 3])
+    def testArrayOfIntTag03(): A \ IO = Test/Exp/Tag/A.OfArrayOfInt([1, 2, 3])
 
 
     @test
-    def testArrayOfStringTag01(): A & Impure = OfArrayOfString(["a", "b", "c"])
+    def testArrayOfStringTag01(): A \ IO = OfArrayOfString(["a", "b", "c"])
 
     @test
-    def testArrayOfStringTag02(): A & Impure = A.OfArrayOfString(["a", "b", "c"])
+    def testArrayOfStringTag02(): A \ IO = A.OfArrayOfString(["a", "b", "c"])
 
     @test
-    def testArrayOfStringTag03(): A & Impure = Test/Exp/Tag/A.OfArrayOfString(["a", "b", "c"])
+    def testArrayOfStringTag03(): A \ IO = Test/Exp/Tag/A.OfArrayOfString(["a", "b", "c"])
 
 
     @test

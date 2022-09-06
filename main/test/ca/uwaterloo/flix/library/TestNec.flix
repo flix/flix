@@ -16,12 +16,12 @@
 
 namespace TestNec {
 
-    use Hash.hash;
+    use Hash.hash
 
-    use Nec.ViewLeft.{OneLeft, SomeLeft};
-    use Nec.ViewRight.{OneRight, SomeRight};
+    use Nec.ViewLeft.{OneLeft, SomeLeft}
+    use Nec.ViewRight.{OneRight, SomeRight}
 
-    use Nec.{cons, singleton, snoc};
+    use Nec.{cons, singleton, snoc}
 
     def necOf2(x: a, y: a): Nec[a] = cons(x, singleton(y))
 
@@ -1002,6 +1002,22 @@ namespace TestNec {
         Nec.zipWithIndex(necOf8(8, 7, 6, 5, 4, 3, 2, 1)) == necOf8((8, 0), (7, 1), (6, 2), (5, 3), (4, 4), (3, 5), (2, 6), (1, 7))
 
     /////////////////////////////////////////////////////////////////////////////
+    // zipWithA                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithA01(): Bool = Nec.zipWithA((x, y) -> Identity(x + y), singleton(1), singleton(1)) == Identity(singleton(2))
+
+    @test
+    def zipWithA02(): Bool = Nec.zipWithA((x, y) -> Identity(x + y), necOf2(1, 2), singleton(1)) == Identity(singleton(2))
+
+    @test
+    def zipWithA03(): Bool = Nec.zipWithA((x, y) -> Identity(x + y), singleton(1), necOf2(1, 2)) == Identity(singleton(2))
+
+    @test
+    def zipWithA04(): Bool = Nec.zipWithA((x, y) -> Identity(x + y), necOf2(1, 2), necOf2(1, 2)) == Identity(necOf2(2, 4))
+
+    /////////////////////////////////////////////////////////////////////////////
     // mapAccumLeft                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1032,13 +1048,13 @@ namespace TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool & Impure =
+    def foreach01(): Bool \ IO =
         let r = ref 21;
         Nec.foreach(x -> r := x, singleton(1));
         1 == deref r
 
     @test
-    def foreach02(): Bool & Impure =
+    def foreach02(): Bool \ IO =
         let r = ref 21;
         Nec.foreach(x -> r := x, necOf3(1, 2, 3));
         3 == deref r
@@ -1370,6 +1386,21 @@ namespace TestNec {
     @test
     def sequence04(): Bool = Nec.sequence(necOf3(Some(1), Some(2), Some(3))) == Some(necOf3(1, 2, 3))
 
+    @test
+    def sequence05(): Bool =
+        let l = Nec.singleton(Identity(1));
+        Nec.sequence(l) == Identity(Nec.singleton(1))
+
+    @test
+    def sequence06(): Bool =
+        let l = necOf2(Identity(1), Identity(2));
+        Nec.sequence(l) == Identity(necOf2(1, 2))
+
+    @test
+    def sequence07(): Bool =
+        let l = necOf3(Identity(1), Identity(2), Identity(3));
+        Nec.sequence(l) == Identity(necOf3(1, 2, 3))
+
     /////////////////////////////////////////////////////////////////////////////
     // traverse                                                                //
     /////////////////////////////////////////////////////////////////////////////
@@ -1385,6 +1416,30 @@ namespace TestNec {
 
     @test
     def traverse04(): Bool = Nec.traverse(_ -> None: Option[Int32], necOf2(1, 2)) == None
+
+    @test
+    def traverse05(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = Nec.singleton(1);
+        let ans = Nec.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(Nec.singleton(1)) and deref st == 1
+    }
+
+    @test
+    def traverse06(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = necOf2(1, 2);
+        let ans = Nec.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(necOf2(1, 2)) and deref st == 2
+    }
+
+    @test
+    def traverse07(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = necOf3(1, 2, 3);
+        let ans = Nec.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(necOf3(1, 2, 3)) and deref st == 3
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // join                                                                    //

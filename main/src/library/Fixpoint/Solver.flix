@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-use Boxable.{box, unbox};
-use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, Denotation};
-use Fixpoint/Ast.Datalog.{Datalog, Model, Join};
-use Fixpoint/Ast.Constraint.Constraint;
-use Fixpoint/Ast.HeadPredicate.HeadAtom;
-use Fixpoint/Ast.Denotation.{Relational, Latticenal};
-use Fixpoint/Ram.RamSym;
-use Fixpoint/Shared.PredSym;
-use Fixpoint/Shared.PredSym.PredSym;
+use Boxable.{box, unbox}
+use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, Denotation}
+use Fixpoint/Ast.Datalog.{Datalog, Model, Join}
+use Fixpoint/Ast.Constraint.Constraint
+use Fixpoint/Ast.HeadPredicate.HeadAtom
+use Fixpoint/Ast.Denotation.{Relational, Latticenal}
+use Fixpoint/Ram.RamSym
+use Fixpoint/Shared.PredSym
+use Fixpoint/Shared.PredSym.PredSym
 
 namespace Fixpoint {
 
@@ -61,7 +61,7 @@ namespace Fixpoint {
         };
         notifyPostSolve(model);
         model
-    } as & Pure // This casts away the impure effect of notify
+    } as \ {} // This casts away the impure effect of notify
 
     ///
     /// Returns the pairwise union of `d1` and `d2`.
@@ -118,7 +118,7 @@ namespace Fixpoint {
         use Fixpoint/SubstitutePredSym.substitute;
 
         // Import a function that can create new ids.
-        import static dev.flix.runtime.Global.newId(): Int64 & Impure;
+        import static dev.flix.runtime.Global.newId(): Int64 \ IO;
 
         /// Determine all the predicate symbols in `d`.
         let predSyms = predSymsOf(d);
@@ -131,7 +131,7 @@ namespace Fixpoint {
             } else {
                 // Case 2: Introduce a fresh name (index) for the prediate symbol.
                 let PredSym(name, _) = predSym;
-                let newPredSym = PredSym(name, (newId() + 1i64) as & Pure); // We add one because the counter starts at zero.
+                let newPredSym = PredSym(name, (newId() + 1i64) as \ {}); // We add one because the counter starts at zero.
                 Map.insert(predSym, newPredSym, macc)
             }
         };
@@ -149,7 +149,7 @@ namespace Fixpoint {
 
         // Return the result.
         r
-    } as & Pure // This casts away the impure effect of debugging
+    } as \ {} // This casts away the impure effect of debugging
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -498,7 +498,7 @@ namespace Fixpoint {
             Nil
         , p, ts)
 
-    def injectIntoX[f: Type -> Type, t: Type, ef: Bool](f: t -> List[Boxed] & ef, p: PredSym, ts: f[t]): Datalog[Boxed] & ef with Foldable[f] =
+    def injectIntoX[f: Type -> Type, t: Type, ef: Bool](f: t -> List[Boxed] \ ef, p: PredSym, ts: f[t]): Datalog[Boxed] \ ef with Foldable[f] =
         region r {
             let db = new MutMap(r);
             Foldable.foldLeft(() -> t -> {
@@ -702,7 +702,7 @@ namespace Fixpoint {
     ///
     /// Returns an array of facts associated with the given predicate symbol `p` in the given Datalog program `d`.
     ///
-    def factsOf(f: List[v] -> t & ef, p: PredSym, d: Datalog[v]): List[t] & ef = match d {
+    def factsOf(f: List[v] -> t \ ef, p: PredSym, d: Datalog[v]): List[t] \ ef = match d {
         case Datalog(_, cs) => region r {
             let pFacts = new MutList(r);
             List.foreach(c -> match c {
@@ -759,7 +759,7 @@ namespace Fixpoint {
     /// Unsafely casts and prints the given Datalog program `d`.
     ///
     @Internal @Unsafe
-    pub def unsafePrint(d: a): Unit & Impure =
+    pub def unsafePrint(d: a): Unit \ IO =
         println(unsafeCast(d))
 
     ///

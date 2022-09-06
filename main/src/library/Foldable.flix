@@ -23,13 +23,13 @@ pub class Foldable[t : Type -> Type] {
     /// Left-associative fold of a structure.
     /// Applies `f` to a start value `s` and all elements in `t` going from left to right.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, t: t[a]): b & ef
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, t: t[a]): b \ ef
 
     ///
     /// Right-associative fold of a structure.
     /// Applies `f` to a start value `s` and all elements in `t` going from right to left.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, t: t[a]): b & ef
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, t: t[a]): b \ ef
 
     ///
     /// Right-associative fold of a structure.
@@ -37,12 +37,12 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, t: t[a]): b & ef
+    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, t: t[a]): b \ ef
 
     ///
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
     ///
-    pub def count(f: a -> Bool & ef, t: t[a]): Int32 & ef =
+    pub def count(f: a -> Bool \ ef, t: t[a]): Int32 \ ef =
         Foldable.foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, t)
 
     ///
@@ -54,7 +54,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns the sum of all elements in `t` according to the function `f`.
     ///
-    pub def sumWith(f: a -> Int32 & ef, t: t[a]): Int32 & ef =
+    pub def sumWith(f: a -> Int32 \ ef, t: t[a]): Int32 \ ef =
         Foldable.foldLeft((acc, x) -> acc + f(x), 0, t)
 
     ///
@@ -69,7 +69,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns the product of all elements in `t` according to the function `f`.
     ///
-    pub def productWith(f: a -> Int32 & ef, t: t[a]): Int32 & ef =
+    pub def productWith(f: a -> Int32 \ ef, t: t[a]): Int32 \ ef =
         if (Foldable.isEmpty(t))
             0
         else
@@ -80,7 +80,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns `false` if `t` is empty.
     ///
-    pub def exists(f: a -> Bool & ef, t: t[a]): Bool & ef =
+    pub def exists(f: a -> Bool \ ef, t: t[a]): Bool \ ef =
         Foldable.foldRightWithCont((x, k) -> f(x) or k(), false, t)
 
     ///
@@ -88,7 +88,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns `true` if `t` is empty.
     ///
-    pub def forall(f: a -> Bool & ef, t: t[a]): Bool & ef =
+    pub def forall(f: a -> Bool \ ef, t: t[a]): Bool \ ef =
         Foldable.foldRightWithCont((x, k) -> f(x) and k(), true, t)
 
     ///
@@ -112,7 +112,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns `None` if `t` is empty.
     ///
-    pub def findLeft(f: a -> Bool & ef, t: t[a]): Option[a] & ef =
+    pub def findLeft(f: a -> Bool \ ef, t: t[a]): Option[a] \ ef =
         Foldable.foldRightWithCont((x, k) -> if (f(x)) Some(x) else k(), None, t)
 
     ///
@@ -126,7 +126,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
-    pub def foldMap(f: a -> b & ef, t: t[a]): b & ef with Monoid[b] =
+    pub def foldMap(f: a -> b \ ef, t: t[a]): b \ ef with Monoid[b] =
         Foldable.foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), t)
 
     ///
@@ -178,7 +178,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns `None` if `t` is empty.
     ///
-    pub def reduceLeft(f: (a, a) -> a & ef, t: t[a]): Option[a] & ef =
+    pub def reduceLeft(f: (a, a) -> a \ ef, t: t[a]): Option[a] \ ef =
         Foldable.foldLeft((acc, x) -> Some(Option.foldLeft((z, v) -> f(v, z), x, acc)), None, t)
 
     ///
@@ -186,7 +186,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns `None` if `t` is empty.
     ///
-    pub def reduceRight(f: (a, a) -> a & ef, t: t[a]): Option[a] & ef =
+    pub def reduceRight(f: (a, a) -> a \ ef, t: t[a]): Option[a] \ ef =
         Foldable.foldRight((x, acc) -> Some(Option.foldLeft((v, z) -> f(v, z), x, acc)), None, t)
 
     ///
@@ -334,7 +334,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Applies `f` to each element in `t`.
     ///
-    pub def foreach(f: a -> Unit & ef, t: t[a]): Unit & ef =
+    pub def foreach(f: a -> Unit \ ef, t: t[a]): Unit \ ef =
         Foldable.foldLeft((_, x) -> f(x), (), t)
 
 
@@ -349,7 +349,7 @@ pub class Foldable[t : Type -> Type] {
     /// Applies the monadic `f` to a start value `s` and all elements in `t` going
     /// from left to right.
     ///
-    pub def foldLeftM(f: (b, a) -> m[b] & ef, s: b, t: t[a]): m[b] & ef with Monad[m] =
+    pub def foldLeftM(f: (b, a) -> m[b] \ ef, s: b, t: t[a]): m[b] \ ef with Monad[m] =
         let f1 = (x, acc) -> z -> Monad.flatMap(acc, f(z, x));
         s |> Foldable.foldRight(f1, upcast(x1 -> Applicative.point(x1)), t)
 
@@ -359,7 +359,7 @@ pub class Foldable[t : Type -> Type] {
     /// Applies the monadic `f` to a start value `s` and all elements in `t` going
     /// from right to left.
     ///
-    pub def foldRightM(f: (a, b) -> m[b] & ef, s: b, t: t[a]): m[b] & ef with Monad[m] =
+    pub def foldRightM(f: (a, b) -> m[b] \ ef, s: b, t: t[a]): m[b] \ ef with Monad[m] =
         let f1 = (k, x) -> z -> Monad.flatMap(k, f(x, z));
         s |> Foldable.foldLeft(f1, upcast(x1 -> Applicative.point(x1)), t)
 
@@ -369,7 +369,7 @@ pub class Foldable[t : Type -> Type] {
     /// Apply `f` to every value in `t`. `f` is applied for its monadic effect,
     /// the answer it produces is discarded.
     ///
-    pub def foreachM(f: a -> m[b] & ef, t: t[a]): m[Unit] & ef with Monad[m] =
+    pub def foreachM(f: a -> m[b] \ ef, t: t[a]): m[Unit] \ ef with Monad[m] =
         use Applicative.{point, *>};
         Foldable.foldLeftM((acc, a) -> f(a) *> point(acc), (), t)
 
@@ -384,7 +384,7 @@ pub class Foldable[t : Type -> Type] {
     /// Returns the concatenation of the string representation
     /// of each element in `t` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, t: t[a]): String & ef = region r {
+    pub def joinWith(f: a -> String \ ef, sep: String, t: t[a]): String \ ef = region r {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = new StringBuilder(r);
@@ -396,7 +396,7 @@ pub class Foldable[t : Type -> Type] {
 
 namespace Foldable {
 
-    use Applicative.{*>};
+    use Applicative.{*>}
 
     ///
     /// Returns the result of applying `combine` to all the elements in `t`, using `empty` as the initial value.

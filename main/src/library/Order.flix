@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use Bool.{==>, <==>};
+use Bool.{==>, <==>}
 
 ///
 /// A type class for types with a total order.
@@ -338,7 +338,7 @@ instance Order[BigInt] {
 instance Order[String] {
 
     pub def compare(x: String, y: String): Comparison =
-        import java.lang.String.compareTo(String): Int32 & Pure;
+        import java.lang.String.compareTo(String): Int32 \ {};
         Comparison.fromInt32((x `compareTo` y))
 
 }

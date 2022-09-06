@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-use Fixpoint.PredSymsOf;
-use Fixpoint.SubstitutePredSym;
-use Fixpoint/Ast.Denotation;
-use Fixpoint/Shared.PredSym;
+use Fixpoint.PredSymsOf
+use Fixpoint.SubstitutePredSym
+use Fixpoint/Ast.Denotation
+use Fixpoint/Shared.PredSym
 
 namespace Fixpoint/Ram {
 

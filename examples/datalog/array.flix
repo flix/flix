@@ -56,7 +56,7 @@ pub def arrayNeighbourhood(default: Int32, values: List[(Int32, Int32)], paramet
     };
     solve input, p project Neighbourhood
 
-def main(): Unit & Impure =
+def main(): Unit \ IO =
     let values = (1, 13) :: (2, 21) :: (3, 34) :: (5, 55) :: (8, 89) :: Nil;
     let length = 10;
     let default = 0;

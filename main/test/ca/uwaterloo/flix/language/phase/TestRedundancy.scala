@@ -46,15 +46,15 @@ class TestRedundancy extends FunSuite with TestUtils {
 
   test("HiddenVarSym.Select.01") {
     val input =
-      s"""
-         |def f(): Int32 & Impure =
-         |    let c = chan Int32 1;
-         |    select {
-         |        case _x <- c => _x
-         |    }
-         |
+      raw"""
+           |def f(): Int32 \ IO =
+           |    let c = chan Int32 1;
+           |    select {
+           |        case _x <- c => _x
+           |    }
+           |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.HiddenVarSym](result)
   }
 
@@ -255,7 +255,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("ShadowedVar.Select.02") {
     val input =
       """
-        |def f(): Int32 & Impure =
+        |def f(): Int32 \ IO =
         |    let x = 123;
         |    let c = chan Int32 1;
         |    c <- 456;
@@ -265,7 +265,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |    }
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.ShadowedVar](result)
   }
 
@@ -289,14 +289,14 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("ShadowedVar.NewObject.01") {
     val input =
       """
-        |def f(): ##java.lang.Comparable & Impure =
-        |   object ##java.lang.Comparable {
+        |def f(): ##java.lang.Comparable \ IO =
+        |   new ##java.lang.Comparable {
         |     def compareTo(x: ##java.lang.Object, _y: ##java.lang.Object): Int32 =
         |       let x = 0;
         |       x
         |   }
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.ShadowedVar](result)
   }
 
@@ -468,13 +468,13 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedFormalParam.NewObject.01") {
     val input =
       """
-        |def f(): ##java.lang.Comparable & Impure =
-        |   object ##java.lang.Comparable {
+        |def f(): ##java.lang.Comparable \ IO =
+        |   new ##java.lang.Comparable {
         |     def compareTo(x: ##java.lang.Object, _y: ##java.lang.Object): Int32 =
         |       0
         |   }
         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
@@ -737,30 +737,30 @@ class TestRedundancy extends FunSuite with TestUtils {
 
   test("UnusedVarSym.Select.01") {
     val input =
-      s"""
-         |def f(): Int32 & Impure =
-         |    let c = chan Int32 0;
-         |    select {
-         |        case x <- c => 123
-         |    }
-         |
+      raw"""
+           |def f(): Int32 \ IO =
+           |    let c = chan Int32 0;
+           |    select {
+           |        case x <- c => 123
+           |    }
+           |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.UnusedVarSym](result)
   }
 
   test("UnusedVarSym.Select.02") {
     val input =
-      s"""
-         |def f(): Int32 & Impure =
-         |    let c = chan Int32 0;
-         |    select {
-         |        case x <- c => x
-         |        case x <- c => 123
-         |    }
-         |
+      raw"""
+           |def f(): Int32 \ IO =
+           |    let c = chan Int32 0;
+           |    select {
+           |        case x <- c => x
+           |        case x <- c => 123
+           |    }
+           |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.UnusedVarSym](result)
   }
 
@@ -884,11 +884,11 @@ class TestRedundancy extends FunSuite with TestUtils {
 
   test("RedundantPurityCast.02") {
     val input =
-      s"""
-         |pub def f(): Array[Int32, false] & Impure =
-         |  let x = [1, 2, 3];
-         |  x as & Pure
-         |
+      raw"""
+           |pub def f(): Array[Int32, false] \ IO =
+           |  let x = [1, 2, 3];
+           |  x as & Pure
+           |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.RedundantPurityCast](result)
@@ -896,9 +896,9 @@ class TestRedundancy extends FunSuite with TestUtils {
 
   test("RedundantEffectCast.01") {
     val input =
-      s"""
-         |pub def f(g: Int32 -> Int32 & ef): Int32 & ef = g(123) as & ef
-         |
+      raw"""
+           |pub def f(g: Int32 -> Int32 \ ef): Int32 \ ef = g(123) as \ ef
+           |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.RedundantEffectCast](result)
@@ -1061,6 +1061,29 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedDefSym](result)
   }
 
+  test("UnusedEffectSym.01") {
+    val input =
+      """
+        |namespace N {
+        |    eff E
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedEffectSym](result)
+  }
+
+  test("UnusedEffectSym.02") {
+    val input =
+      """
+        |namespace N {
+        |    eff E
+        |    def foo(): Unit \ E = ??? as \ E
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedEffectSym](result)
+  }
+
   test("DiscardedPureValue.01") {
     val input =
       """
@@ -1076,47 +1099,47 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("DiscardedPureValue.02") {
     val input =
       """
-        |def fakePrint(_msg: a): Unit & Impure =
+        |def fakePrint(_msg: a): Unit \ IO =
         |    discard [2];
         |    ()
         |
-        |def f(g: a -> b & ef, x: a): b & ef = g(x)
+        |def f(g: a -> b \ ef, x: a): b \ ef = g(x)
         |
-        |def h(): Unit & Impure = f(fakePrint, discard "hello")
+        |def h(): Unit \ IO = f(fakePrint, discard "hello")
         |""".stripMargin
 
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.DiscardedPureValue](result)
   }
 
   test("RedundantDiscard.01") {
     val input =
       """
-        |def fakePrint(_msg: a): Unit & Impure =
+        |def fakePrint(_msg: a): Unit \ IO =
         |    discard [2];
         |    ()
         |
-        |def f(): Unit & Impure =
+        |def f(): Unit \ IO =
         |    discard fakePrint("hello")
         |
         |""".stripMargin
 
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.RedundantDiscard](result)
   }
 
   test("RedundantDiscard.02") {
     val input =
       """
-        |def f(g: a -> b & ef, x: a): b & ef = g(x)
+        |def f(g: a -> b \ ef, x: a): b \ ef = g(x)
         |
-        |def h(): Unit & Impure =
+        |def h(): Unit \ IO =
         |    let arr = [()];
         |    discard f((i: Int32) -> arr[i], 0)
         |
         |""".stripMargin
 
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.RedundantDiscard](result)
   }
 
@@ -1137,7 +1160,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("DiscardedValue.02") {
     val input =
       """
-        |def f(g: Int32 -> Int32 & ef): Unit & ef = {
+        |def f(g: Int32 -> Int32 \ ef): Unit \ ef = {
         |    g(2);
         |    ()
         |}
@@ -1145,5 +1168,90 @@ class TestRedundancy extends FunSuite with TestUtils {
 
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.DiscardedValue](result)
+  }
+
+  test("RedundantUpcast.01") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let _ =
+        |        if (true)
+        |            upcast x -> x + 1
+        |        else
+        |            x -> x + 1;
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[RedundancyError.RedundantUpcast](result)
+  }
+
+  test("RedundantUpcast.02") {
+    val input =
+      """
+        |def f(): Unit & Impure =
+        |    let _ =
+        |        if (true)
+        |            upcast x -> x + 1
+        |        else {
+        |            println(1);
+        |            x -> x + 1
+        |        };
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[RedundancyError.RedundantUpcast](result)
+  }
+  test("RedundantUpcast.03") {
+    val input =
+      """
+        |def f(): Unit & Impure =
+        |    let _ =
+        |        if (true)
+        |            upcast ()
+        |        else {
+        |            let _ = [8; 8];
+        |            ()
+        |        };
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantUpcast](result)
+  }
+
+  test("TestUpcast.04") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let _ =
+        |        if (true)
+        |            upcast (1, "a")
+        |        else
+        |            (1, "a");
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantUpcast](result)
+  }
+
+  test("TestUpcast.05") {
+    val input =
+      """
+        |def f(): Unit & Impure =
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
+        |    import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
+        |    let _ =
+        |        if (true)
+        |            upcast (newObject(), newObject())
+        |        else
+        |            (newObject(), newObject());
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[RedundancyError.RedundantUpcast](result)
   }
 }

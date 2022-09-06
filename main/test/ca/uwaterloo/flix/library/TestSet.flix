@@ -16,8 +16,8 @@
 
 namespace TestSet {
 
-    use ToString.toString;
-    use Hash.hash;
+    use ToString.toString
+    use Hash.hash
 
 /////////////////////////////////////////////////////////////////////////////
 // size                                                                    //
@@ -499,7 +499,7 @@ def count06(): Bool = Set.count(i -> i > 3, Set#{1, 8}) == 1
 def count07(): Bool = Set.count(i -> i > 3, Set#{7, 6}) == 2
 
 @test
-def count08(): Bool & Impure =
+def count08(): Bool \ IO =
     let range = List.range(0, 2000);
     let s = range |> List.toSet;
     let a = new MutList(Static);
@@ -569,7 +569,7 @@ def count08(): Bool & Impure =
         Set#{10, -10} |> Set.sumWith(x -> x + 1) == 2
 
     @test
-    def sumWith08(): Bool & Impure =
+    def sumWith08(): Bool \ IO =
         let range = List.range(0, 2000);
         let m = range |> List.toSet;
         let a = new MutList(Static);
@@ -635,7 +635,7 @@ def count08(): Bool & Impure =
         Set#{10, -10} |> Set.productWith(x -> x + 1) == -99
 
     @test
-    def productWith08(): Bool & Impure =
+    def productWith08(): Bool \ IO =
         let range = List.range(0, 2000);
         let m = range |> List.toSet;
         let a = new MutList(Static);
@@ -989,7 +989,7 @@ def map14(): Bool = Set.map(x -> x rem 9, Set#{0, 5, 1, -9, -8}) == Set#{5, 1, 0
 def map15(): Bool = Set.map(x -> x rem 9, Set#{0, 5, 1, 10, 7, 19, 28, 2}) == Set#{0, 5, 7, 1, 2}
 
 @test
-def map16(): Bool & Impure =
+def map16(): Bool \ IO =
     let range = List.range(0, 2000);
     let s = List.toSet(range);
     let a = new MutList(Static);
@@ -1029,6 +1029,44 @@ def flatMap09(): Bool = Set.flatMap(x -> Set#{x, 3*x}, Set#{1, 8, 3, 2, 9, -5, -
 
 @test
 def flatMap10(): Bool = Set.flatMap(x -> Set#{x, 2*x, 3*x}, Set#{1, 4, 3, 2}) == Set#{1, 8, 12, 3, 9, 2, 4, 6}
+
+/////////////////////////////////////////////////////////////////////////////
+// filterMap                                                               //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def filterMap01(): Bool =
+    Set.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Set.empty()) == Set.empty()
+
+@test
+def filterMap02(): Bool =
+    Set.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Set#{1}) == Set#{}
+
+@test
+def filterMap03(): Bool =
+    Set.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Set#{2}) == Set#{1}
+
+@test
+def filterMap04(): Bool =
+    Set.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Set#{1, 3}) == Set#{}
+
+@test
+def filterMap05(): Bool =
+    Set.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Set#{1, 4}) == Set#{2}
+
+@test
+def filterMap06(): Bool =
+    Set.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Set#{-1, 6}) == Set#{3}
+
+@test
+def filterMap07(): Bool =
+    Set.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Set#{6, 8}) == Set#{3, 4}
+
+@test
+def filterMap08(): Bool =
+    let s1 = Set#{0, 1, 2, 3, 4, 5, 10};
+    let s2 = Set#{0, 1, 2, 5};
+    Set.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, s1) == s2
 
 /////////////////////////////////////////////////////////////////////////////
 // replace                                                                 //
@@ -1281,13 +1319,13 @@ def eq19(): Bool = Set#{1, 2, 3} == Set#{2, 1, 3}
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def foreach01(): Bool & Impure =
+def foreach01(): Bool \ IO =
     let r = ref 21;
     Set.foreach(x -> r := x, Set#{});
     21 == deref r
 
 @test
-def foreach02(): Bool & Impure =
+def foreach02(): Bool \ IO =
     let r = ref 21;
     Set.foreach(x -> r := x, Set#{42});
     42 == deref r
@@ -1325,7 +1363,7 @@ def unfold06(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def unfoldWithIter01(): Bool & Impure =
+def unfoldWithIter01(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (true)
@@ -1338,7 +1376,7 @@ def unfoldWithIter01(): Bool & Impure =
     Set.unfoldWithIter(step) == Set#{}
 
 @test
-def unfoldWithIter02(): Bool & Impure =
+def unfoldWithIter02(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x > 0)
@@ -1351,7 +1389,7 @@ def unfoldWithIter02(): Bool & Impure =
     Set.unfoldWithIter(step) == Set#{'0'}
 
 @test
-def unfoldWithIter03(): Bool & Impure =
+def unfoldWithIter03(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x > 1)
@@ -1364,7 +1402,7 @@ def unfoldWithIter03(): Bool & Impure =
     Set.unfoldWithIter(step) == Set#{'0', '1'}
 
 @test
-def unfoldWithIter04(): Bool & Impure =
+def unfoldWithIter04(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x >= 10)
@@ -1377,7 +1415,7 @@ def unfoldWithIter04(): Bool & Impure =
     Set.unfoldWithIter(step) == Set#{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
 
 @test
-def unfoldWithIter05(): Bool & Impure =
+def unfoldWithIter05(): Bool \ IO =
     let x = ref 5;
     let step = () ->
         if (deref x >= 10)
@@ -1390,7 +1428,7 @@ def unfoldWithIter05(): Bool & Impure =
     Set.unfoldWithIter(step) == Set#{'5', '6', '7', '8', '9'}
 
 @test
-def unfoldWithIter06(): Bool & Impure =
+def unfoldWithIter06(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x >= 10)
@@ -1478,7 +1516,7 @@ def unfoldWithIter06(): Bool & Impure =
     def minimumBy04(): Bool = Set.minimumBy((x, y) -> x <=> y, Set.range(5, 55)) == Some(5)
 
     @test
-    def minimumBy05(): Bool & Impure =
+    def minimumBy05(): Bool \ IO =
         let s = List.range(0, 2000) |> List.toSet;
         let a = new MutList(Static);
         discard Set.minimumBy((x, y) -> { let b = new MutList(Static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, s);

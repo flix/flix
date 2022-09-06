@@ -185,7 +185,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
 
     // Scan the disk to find changes, and add source to the flix object
     sourceFiles.addSourcesAndPackages(flix)
-    
+
     // Remove any previous definitions, as they may no longer be valid against the new source
     clearFragments()
 
@@ -306,7 +306,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
         val main = Symbol.mkDefnSym("shell1")
 
         val src =
-          s"""def ${main.name}(): Unit & Impure =
+          s"""def ${main.name}(): Unit \\ IO =
              |println($s)
              |""".stripMargin
         flix.addSourceCode("<shell>", src)
@@ -372,10 +372,10 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     compile(entryPoint = Some(main), progress = false) match {
       case Validation.Success(result) =>
         result.getMain match {
-          case Some(m) => 
+          case Some(m) =>
             // Evaluate the main function
             m(Array.empty)
-          
+
           case None =>
         }
 

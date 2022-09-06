@@ -1,5 +1,5 @@
 // Getting information on files with Flix.
-def main(): Unit & Impure =
+def main(): Unit \ IO =
   let f = "README.md";
 
   // Check if the file 'README.md' exists.

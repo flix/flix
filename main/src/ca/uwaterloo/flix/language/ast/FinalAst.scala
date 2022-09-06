@@ -31,7 +31,7 @@ object FinalAst {
     var method: Method = _
   }
 
-  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Name.Tag, FinalAst.Case], tpeDeprecated: MonoType, loc: SourceLocation)
+  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, FinalAst.Case], tpeDeprecated: MonoType, loc: SourceLocation)
 
   sealed trait Expression {
     def tpe: MonoType
@@ -120,13 +120,13 @@ object FinalAst {
 
     case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class Is(sym: Symbol.EnumSym, tag: Name.Tag, exp: FinalAst.Expression, loc: SourceLocation) extends FinalAst.Expression {
+    case class Is(sym: Symbol.CaseSym, exp: FinalAst.Expression, loc: SourceLocation) extends FinalAst.Expression {
       final val tpe: MonoType = MonoType.Bool
     }
 
-    case class Tag(sym: Symbol.EnumSym, tag: Name.Tag, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    case class Tag(sym: Symbol.CaseSym, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class Untag(sym: Symbol.EnumSym, tag: Name.Tag, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    case class Untag(sym: Symbol.CaseSym, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class Index(base: FinalAst.Expression, offset: scala.Int, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
@@ -200,7 +200,7 @@ object FinalAst {
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: FinalAst.Expression, exp: FinalAst.Expression)
 
-  case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: MonoType, loc: SourceLocation)
+  case class Case(sym: Symbol.CaseSym, tpeDeprecated: MonoType, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FinalAst.FormalParam], clo: FinalAst.Expression, retTpe: MonoType, loc: SourceLocation)
 

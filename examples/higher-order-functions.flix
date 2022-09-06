@@ -11,5 +11,5 @@ def twice(f: Int32 -> Int32): Int32 -> Int32 = x -> f(f(x))
 def two(x: Int32): Int32 = twice(inc)(x)
 
 /// Returns 123 plus 4 = 127.
-def main(): Unit & Impure =
+def main(): Unit \ IO =
     println(twice(two)(123))

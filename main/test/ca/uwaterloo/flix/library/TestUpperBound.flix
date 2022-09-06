@@ -15,7 +15,7 @@
  */
 
 namespace TestUpperBound {
-    use UpperBound.maxValue;
+    use UpperBound.maxValue
 
     @test
     def testUnit(): Bool = maxValue() == ()

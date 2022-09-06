@@ -16,8 +16,8 @@
 
 namespace TestFunctor {
 
-    use Functor.{lift, ignore};
-    use Functor.{<$>, <$$>, <$, $>};
+    use Functor.{lift, ignore}
+    use Functor.{<$>, <$$>, <$, $>}
 
 
     /////////////////////////////////////////////////////////////////////////////

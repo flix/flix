@@ -231,7 +231,7 @@ object EarlyTreeShaker {
     case Expression.Choose(exps, rules, _, _, _, _) =>
       visitExps(exps) ++ visitExps(rules.map(_.exp))
 
-    case Expression.Tag(_, _, exp, _, _, _, _) =>
+    case Expression.Tag(_, exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.Tuple(elms, _, _, _, _) =>
@@ -261,10 +261,10 @@ object EarlyTreeShaker {
     case Expression.ArrayLength(base, _, _, _) =>
       visitExp(base)
 
-    case Expression.ArrayStore(base, index, elm, _, _) =>
+    case Expression.ArrayStore(base, index, elm, _, _, _) =>
       visitExp(base) ++ visitExp(index) ++ visitExp(elm)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) =>
       visitExp(base) ++ visitExp(beginIndex) ++ visitExp(endIndex)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
@@ -282,7 +282,7 @@ object EarlyTreeShaker {
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Upcast(exp, _, _, _, _) =>
+    case Expression.Upcast(exp, _, _) =>
       visitExp(exp)
 
     case Expression.TryCatch(exp, rules, _, _, _, _) =>

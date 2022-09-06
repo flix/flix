@@ -568,11 +568,11 @@ object JvmOps {
 
       case Expression.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.Is(_, _, exp, _) => visitExp(exp)
+      case Expression.Is(_, exp, _) => visitExp(exp)
 
-      case Expression.Tag(_, _, exp, _, _) => visitExp(exp)
+      case Expression.Tag(_, exp, _, _) => visitExp(exp)
 
-      case Expression.Untag(_, _, exp, _, _) => visitExp(exp)
+      case Expression.Untag(_, exp, _, _) => visitExp(exp)
 
       case Expression.Index(base, _, _, _) => visitExp(base)
 
@@ -737,12 +737,12 @@ object JvmOps {
 
       // Compute the tag info.
       enum0.cases.foldLeft(Set.empty[TagInfo]) {
-        case (sacc, (_, Case(enumSym, tagName, uninstantiatedTagType, _))) =>
+        case (sacc, (_, Case(caseSym, uninstantiatedTagType, _))) =>
           // TODO: Magnus: It would be nice if this information could be stored somewhere...
           val subst = Unification.unifyTypes(hackMonoType2Type(enum0.tpeDeprecated), hackMonoType2Type(tpe), RigidityEnv.empty).get
           val tagType = subst(hackMonoType2Type(uninstantiatedTagType))
 
-          sacc + TagInfo(enumSym, tagName.name, args, tpe, hackType2MonoType(tagType))
+          sacc + TagInfo(caseSym.enum, caseSym.name, args, tpe, hackType2MonoType(tagType))
       }
     case _ => Set.empty
   }
@@ -952,11 +952,11 @@ object JvmOps {
 
       case Expression.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.Is(_, _, exp, _) => visitExp(exp)
+      case Expression.Is(_, exp, _) => visitExp(exp)
 
-      case Expression.Tag(_, _, exp, _, _) => visitExp(exp)
+      case Expression.Tag(_, exp, _, _) => visitExp(exp)
 
-      case Expression.Untag(_, _, exp, _, _) => visitExp(exp)
+      case Expression.Untag(_, exp, _, _) => visitExp(exp)
 
       case Expression.Index(base, _, _, _) => visitExp(base)
 
@@ -1019,7 +1019,7 @@ object JvmOps {
 
       case Expression.PutStaticField(_, exp, _, _) => visitExp(exp)
 
-      case Expression.NewObject(_, _, _, methods, _) => 
+      case Expression.NewObject(_, _, _, methods, _) =>
         methods.foldLeft(Set.empty[MonoType]) {
           case (sacc, JvmMethod(_, fparams, clo, retTpe, _)) =>
             val fs = fparams.foldLeft(Set(retTpe)) {
@@ -1230,11 +1230,11 @@ object JvmOps {
 
       case Expression.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.Is(_, _, exp, _) => visitExp(exp)
+      case Expression.Is(_, exp, _) => visitExp(exp)
 
-      case Expression.Tag(_, _, exp, _, _) => visitExp(exp)
+      case Expression.Tag(_, exp, _, _) => visitExp(exp)
 
-      case Expression.Untag(_, _, exp, _, _) => visitExp(exp)
+      case Expression.Untag(_, exp, _, _) => visitExp(exp)
 
       case Expression.Index(base, _, _, _) => visitExp(base)
 

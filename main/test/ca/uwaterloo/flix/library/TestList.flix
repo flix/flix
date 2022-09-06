@@ -16,8 +16,8 @@
 
 namespace TestList {
 
-    use ToString.toString;
-    use Hash.hash;
+    use ToString.toString
+    use Hash.hash
 
 /////////////////////////////////////////////////////////////////////////////
 // isEmpty                                                                 //
@@ -1618,6 +1618,30 @@ def zipWithIndex03(): Bool = List.zipWithIndex("a" :: "b" :: Nil) == ("a", 0) ::
 def zipWithIndex04(): Bool = List.zipWithIndex(List.zipWithIndex(true :: false :: Nil)) == ((true, 0), 0) :: ((false, 1), 1) :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
+// zipWithA                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def zipWithA01(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, Nil, Nil) == Identity(Nil)
+
+@test
+def zipWithA02(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, 1 :: Nil, Nil) == Identity(Nil)
+
+@test
+def zipWithA03(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, Nil, true :: Nil) == Identity(Nil)
+
+@test
+def zipWithA04(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, 1 :: Nil, true :: Nil) == Identity(2 :: Nil)
+
+@test
+def zipWithA05(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, 1 :: Nil, false :: Nil) == Identity(1 :: Nil)
+
+@test
+def zipWithA06(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil,
+                      false :: true :: true :: false :: false :: true :: true :: true :: Nil) ==
+                      Identity(1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil)
+
+
+/////////////////////////////////////////////////////////////////////////////
 // unzip                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -1992,13 +2016,13 @@ def toMapWith05(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def foreach01(): Bool & Impure =
+def foreach01(): Bool \ IO =
     let r = ref 21;
     List.foreach(x -> r := x, Nil);
     21 == deref r
 
 @test
-def foreach02(): Bool & Impure =
+def foreach02(): Bool \ IO =
     let r = ref 21;
     List.foreach(x -> r := x, 1 :: 2 :: 3 :: Nil);
     3 == deref r
@@ -2236,7 +2260,7 @@ def unfold06(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def unfoldWithIter01(): Bool & Impure =
+def unfoldWithIter01(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (true)
@@ -2249,7 +2273,7 @@ def unfoldWithIter01(): Bool & Impure =
     List.unfoldWithIter(step) == Nil
 
 @test
-def unfoldWithIter02(): Bool & Impure =
+def unfoldWithIter02(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x > 0)
@@ -2262,7 +2286,7 @@ def unfoldWithIter02(): Bool & Impure =
     List.unfoldWithIter(step) == '0' :: Nil
 
 @test
-def unfoldWithIter03(): Bool & Impure =
+def unfoldWithIter03(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x > 1)
@@ -2275,7 +2299,7 @@ def unfoldWithIter03(): Bool & Impure =
     List.unfoldWithIter(step) == '0' :: '1' :: Nil
 
 @test
-def unfoldWithIter04(): Bool & Impure =
+def unfoldWithIter04(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x >= 10)
@@ -2288,7 +2312,7 @@ def unfoldWithIter04(): Bool & Impure =
     List.unfoldWithIter(step) == '0' :: '1' :: '2' :: '3' :: '4' :: '5' :: '6' :: '7' :: '8' :: '9' :: Nil
 
 @test
-def unfoldWithIter05(): Bool & Impure =
+def unfoldWithIter05(): Bool \ IO =
     let x = ref 5;
     let step = () ->
         if (deref x >= 10)
@@ -2301,7 +2325,7 @@ def unfoldWithIter05(): Bool & Impure =
     List.unfoldWithIter(step) == '5' :: '6' :: '7' :: '8' :: '9' :: Nil
 
 @test
-def unfoldWithIter06(): Bool & Impure =
+def unfoldWithIter06(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (deref x >= 10)
@@ -2319,7 +2343,7 @@ def unfoldWithIter06(): Bool & Impure =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def unfoldWithOkIter01(): Bool & Impure =
+def unfoldWithOkIter01(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (true) {
@@ -2330,7 +2354,7 @@ def unfoldWithOkIter01(): Bool & Impure =
     List.unfoldWithOkIter(step): Result[_, Unit] == Ok(Nil)
 
 @test
-def unfoldWithOkIter02(): Bool & Impure =
+def unfoldWithOkIter02(): Bool \ IO =
     let x = ref 0;
     let step = () ->
         if (true) {
@@ -2341,7 +2365,7 @@ def unfoldWithOkIter02(): Bool & Impure =
     List.unfoldWithOkIter(step) == Err(0)
 
 @test
-def unfoldWithOkIter03(): Bool & Impure =
+def unfoldWithOkIter03(): Bool \ IO =
     let x = ref 1;
     let step = () ->
         if (deref x rem 5 > 0) {
@@ -2721,6 +2745,70 @@ def distinctWith09(): Bool =
         List.reverse(deref z) == List.zip(l, List.range(0, 100))
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // sequence                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    /// TODO - this does not test order of effects.
+    /// We need a more "effective" monad than Identity to show that effects are
+    /// sequenced in left-to-right order.
+    /// This applies to the `sequence` tests on the other container types as well.
+
+    @test
+    def sequence01(): Bool =
+        let l: List[Identity[Int32]] = Nil;
+        List.sequence(l) == Identity(Nil)
+
+    @test
+    def sequence02(): Bool =
+        let l = Identity(1) :: Nil;
+        List.sequence(l) == Identity(1 :: Nil)
+
+    @test
+    def sequence03(): Bool =
+        let l = Identity(1) :: Identity(2) :: Nil;
+        List.sequence(l) == Identity(1 :: 2 :: Nil)
+
+    @test
+    def sequence04(): Bool =
+        let l = Identity(1) :: Identity(2) :: Identity(3) :: Nil;
+        List.sequence(l) == Identity(1 :: 2 :: 3 :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // traverse                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def traverse01(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = Nil;
+        let ans = List.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(Nil) and deref st == 0
+    }
+
+    @test
+    def traverse02(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = 1 :: Nil;
+        let ans = List.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(1 :: Nil) and deref st == 1
+    }
+
+    @test
+    def traverse03(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = 1 :: 2 :: Nil;
+        let ans = List.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(1 :: 2 :: Nil) and deref st == 2
+    }
+
+    @test
+    def traverse04(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = 1 :: 2 :: 3 :: Nil;
+        let ans = List.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(1 :: 2 :: 3 :: Nil) and deref st == 3
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // merge                                                                   //

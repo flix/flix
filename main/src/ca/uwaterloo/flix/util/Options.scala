@@ -42,13 +42,14 @@ object Options {
     xnobooltable = false,
     xstatistics = false,
     xstrictmono = false,
-    xeffects = false
+    xnoseteffects = false,
+    xnobooleffects = false,
   )
 
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, test = true, xeffects = true)
+  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, test = true)
 
   /**
     * Default test options with the standard library.
@@ -103,7 +104,8 @@ case class Options(lib: LibLevel,
                    xnobooltable: Boolean,
                    xstatistics: Boolean,
                    xstrictmono: Boolean,
-                   xeffects: Boolean
+                   xnoseteffects: Boolean,
+                   xnobooleffects: Boolean,
                   )
 
 /**

@@ -107,8 +107,8 @@ namespace Concurrent/Channel {
     /// receiving is syncronized.
     ///
     @Internal
-    pub def new(bufferSize: Int32): Mpmc & Impure =
-        import static dev.flix.runtime.Global.newId(): Int64 & Impure;
+    pub def new(bufferSize: Int32): Mpmc \ IO =
+        import static dev.flix.runtime.Global.newId(): Int64 \ IO;
         let _bufferCheck = if (bufferSize < 0) bug!("bufferSize < 0") else ();
         let unBuffered = bufferSize == 0;
         let reentrantLock = Concurrent/ReentrantLock.new(false);
@@ -129,7 +129,7 @@ namespace Concurrent/Channel {
     /// Implements the expression `c <- e`.
     ///
     @Internal
-    pub def put(e: Boxed, c: Mpmc): Unit & Impure =
+    pub def put(e: Boxed, c: Mpmc): Unit \ IO =
         let Mpmc(_, channelLock, unBuffered, _, elementDeque, _, waitingPutters) = c;
         lock(channelLock);
 
@@ -161,7 +161,7 @@ namespace Concurrent/Channel {
     /// Implements to the expression `<- c`.
     ///
     @Internal
-    pub def get(c: Mpmc): Boxed & Impure =
+    pub def get(c: Mpmc): Boxed \ IO =
         let Mpmc(_, channelLock, _, _, _, _, _) = c;
         lock(channelLock);
 
@@ -176,7 +176,7 @@ namespace Concurrent/Channel {
     /// the index of the channel. Returns None if the default case is chosen.
     ///
     @Internal
-    pub def select(channels: Array[Mpmc, Static], hasDefault: Bool): Option[(Int32, Boxed)] & Impure =
+    pub def select(channels: Array[Mpmc, Static], hasDefault: Bool): Option[(Int32, Boxed)] \ IO =
         // Create a new lock and condition for this select. The condition is
         // potentially put into the waiting getters of the channels if a
         // default isn't defined.
@@ -192,7 +192,7 @@ namespace Concurrent/Channel {
     /// The channel lock is expected to be held.
     ///
     @Internal
-    def awaitAvailableSpace(c: Mpmc): Unit & Impure =
+    def awaitAvailableSpace(c: Mpmc): Unit \ IO =
         let Mpmc(_, _, _, maxQueueSize, elementDeque, _, waitingPutters) = c;
         if (MutDeque.size(elementDeque) == maxQueueSize) {
             awaitCondition(waitingPutters);
@@ -206,7 +206,7 @@ namespace Concurrent/Channel {
     /// element.
     /// The channel lock is expected to be held.
     ///
-    def getHelper(c: Mpmc): Boxed & Impure =
+    def getHelper(c: Mpmc): Boxed \ IO =
         let Mpmc(_, channelLock, _, _, elementDeque, waitingGetters, _) = c;
         // Try to get the element (which could already be taken by someone
         // else)
@@ -248,7 +248,7 @@ namespace Concurrent/Channel {
     /// Try to retrieve the first element and if the channel is empty, return
     /// `None`.
     ///
-    def tryGet(c: Mpmc): Option[Boxed] & Impure =
+    def tryGet(c: Mpmc): Option[Boxed] \ IO =
         let Mpmc(_, channelLock, _, _, elementDeque, _, _) = c;
         // TODO: Optimization possibility. This lock seems redundant since it
         // is already held in selectHelper that calls firstAvailableElement
@@ -269,7 +269,7 @@ namespace Concurrent/Channel {
     /// has an element in the array along with its index. Returns false if the
     /// default case is chosen (no element was immediately available).
     ///
-    def selectHelper(channels: Array[Mpmc, Static], hasDefault: Bool, sortedChannels: Array[Mpmc, Static], selectLock: Concurrent/ReentrantLock.ReentrantLock, selectCondition: Concurrent/Condition.Condition): Option[(Int32, Boxed)] & Impure =
+    def selectHelper(channels: Array[Mpmc, Static], hasDefault: Bool, sortedChannels: Array[Mpmc, Static], selectLock: Concurrent/ReentrantLock.ReentrantLock, selectCondition: Concurrent/Condition.Condition): Option[(Int32, Boxed)] \ IO =
         // bug if the thread is interrupted
         if (threadInterrupted()) bug!("thread interrupted") else
 
@@ -337,14 +337,14 @@ namespace Concurrent/Channel {
     ///
     /// Locks the given channels.
     ///
-    def lockChannels(a: Array[Mpmc, Static]): Unit & Impure =
+    def lockChannels(a: Array[Mpmc, Static]): Unit \ IO =
         let lockChannel = match Mpmc(_, channelLock, _, _, _, _, _) -> lock(channelLock);
         Array.foreach(lockChannel, a)
 
     ///
     /// Unlocks the given channels.
     ///
-    def unlockChannels(a: Array[Mpmc, Static]): Unit & Impure =
+    def unlockChannels(a: Array[Mpmc, Static]): Unit \ IO =
         let unlockChannel = match Mpmc(_, lock, _, _, _, _, _) -> unlock(lock);
         // TODO: Optimization possibility. Golang unlocks their channels in
         // reverse order.
@@ -355,7 +355,7 @@ namespace Concurrent/Channel {
     /// Retrieves the element of the first channel in the array that has one,
     /// if such a channel exists. A runtime error ocurrs if i is out of bounds.
     ///
-    def firstAvailableElement(i: Int32, channels: Array[Mpmc, Static]): Option[(Int32, Boxed)] & Impure =
+    def firstAvailableElement(i: Int32, channels: Array[Mpmc, Static]): Option[(Int32, Boxed)] \ IO =
         if (i < 0 or i >= Array.length(channels)) {
             // i is out of bounds
             bug!("Implementation error: out of bounds ${i}, length ${Array.length(channels)}")
@@ -377,7 +377,7 @@ namespace Concurrent/Channel {
     /// Add a condition to the list of waiting getters.
     /// The channel lock is expected to be held.
     ///
-    def addGetter(l: Concurrent/ReentrantLock.ReentrantLock, cond: Concurrent/Condition.Condition, c: Mpmc): Unit & Impure =
+    def addGetter(l: Concurrent/ReentrantLock.ReentrantLock, cond: Concurrent/Condition.Condition, c: Mpmc): Unit \ IO =
         let pair = (l, cond);
         let Mpmc(_, _, _, _, _, waitingGetters, _) = c;
 
@@ -389,7 +389,7 @@ namespace Concurrent/Channel {
     /// Signals and clears the waiting getters.
     /// The channel lock is expected to be held.
     ///
-    def signalGetters(c: Mpmc): Unit & Impure =
+    def signalGetters(c: Mpmc): Unit \ IO =
         let Mpmc(_, _, _, _, _, waitingGetters, _) = c;
 
         // Signal waitingGetters that there is an element available
@@ -409,7 +409,7 @@ namespace Concurrent/Channel {
     /// Signals and clears the waiting setters.
     /// The channel lock is expected to be held.
     ///
-    def signalPutters(c: Mpmc): Unit & Impure =
+    def signalPutters(c: Mpmc): Unit \ IO =
         let Mpmc(_, _, _, _, _, _, waitingPutters) = c;
 
         // Signal waiting setters that the channel has space
@@ -421,8 +421,8 @@ namespace Concurrent/Channel {
     ///
     /// Wrapper for `java.lang.Thread:interrupted()`.
     ///
-    def threadInterrupted(): Bool & Impure =
-        import static java.lang.Thread.interrupted(): Bool & Impure;
+    def threadInterrupted(): Bool \ IO =
+        import static java.lang.Thread.interrupted(): Bool \ IO;
         interrupted()
 
     ///
@@ -430,7 +430,7 @@ namespace Concurrent/Channel {
     /// `bug!`.
     /// The channel lock is expected to be held.
     ///
-    def awaitCondition(c: Concurrent/Condition.Condition): Unit & Impure =
+    def awaitCondition(c: Concurrent/Condition.Condition): Unit \ IO =
         match Concurrent/Condition.awaitUninterruptibly(c) {
             case Ok(_) => ()
             case Err(_) =>
@@ -442,7 +442,7 @@ namespace Concurrent/Channel {
     /// Wrapper for `Concurrent/Condition.signalAll(c)` that handles `Err` with `bug!`.
     /// The condition lock is expected to be held.
     ///
-    def signalCondition(c: Concurrent/Condition.Condition): Unit & Impure =
+    def signalCondition(c: Concurrent/Condition.Condition): Unit \ IO =
         match Concurrent/Condition.signalAll(c) {
             case Ok(_) => ()
             case Err(_) =>
@@ -454,7 +454,7 @@ namespace Concurrent/Channel {
     /// Wrapper for `Concurrent/ReentrantLock.unlock(l)` that handles `Err` with `bug!`.
     /// The lock is expected to be held.
     ///
-    def unlock(l: Concurrent/ReentrantLock.ReentrantLock): Unit & Impure =
+    def unlock(l: Concurrent/ReentrantLock.ReentrantLock): Unit \ IO =
         match Concurrent/ReentrantLock.unlock(l) {
             case Ok(_) => ()
             case Err(_) =>
@@ -465,7 +465,7 @@ namespace Concurrent/Channel {
     ///
     /// Wrapper for `Concurrent/ReentrantLock.lock(l)`.
     ///
-    def lock(l: Concurrent/ReentrantLock.ReentrantLock): Unit & Impure =
+    def lock(l: Concurrent/ReentrantLock.ReentrantLock): Unit \ IO =
         Concurrent/ReentrantLock.lock(l)
 
 }

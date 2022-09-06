@@ -38,7 +38,7 @@ namespace Char {
     ///
     @Time(1) @Space(1)
     pub def isLetter(c: Char): Bool =
-        import static java.lang.Character.isLetter(Char): Bool & Pure;
+        import static java.lang.Character.isLetter(Char): Bool \ {};
         isLetter(c)
 
     ///
@@ -47,7 +47,7 @@ namespace Char {
     ///
     @Time(1) @Space(1)
     pub def isDigit(c: Char): Bool =
-        import static java.lang.Character.isDigit(Char): Bool & Pure;
+        import static java.lang.Character.isDigit(Char): Bool \ {};
         isDigit(c)
 
     ///
@@ -84,7 +84,7 @@ namespace Char {
     ///
     @Time(1) @Space(1)
     pub def isLowerCase(c: Char): Bool =
-        import static java.lang.Character.isLowerCase(Char): Bool & Pure;
+        import static java.lang.Character.isLowerCase(Char): Bool \ {};
         isLowerCase(c)
 
     ///
@@ -92,7 +92,7 @@ namespace Char {
     ///
     @Time(1) @Space(1)
     pub def isUpperCase(c: Char): Bool =
-        import static java.lang.Character.isUpperCase(Char): Bool & Pure;
+        import static java.lang.Character.isUpperCase(Char): Bool \ {};
         isUpperCase(c)
 
     ///
@@ -100,7 +100,7 @@ namespace Char {
     ///
     @Time(1) @Space(1)
     pub def isWhiteSpace(c: Char): Bool =
-        import static java.lang.Character.isWhitespace(Char): Bool & Pure;
+        import static java.lang.Character.isWhitespace(Char): Bool \ {};
         isWhitespace(c)
 
     ///
@@ -110,7 +110,7 @@ namespace Char {
     ///
     @Time(1) @Space(1)
     pub def toLowerCase(c: Char): Char =
-        import static java.lang.Character.toLowerCase(Char): Char & Pure;
+        import static java.lang.Character.toLowerCase(Char): Char \ {};
         toLowerCase(c)
 
     ///
@@ -120,7 +120,7 @@ namespace Char {
     ///
     @Time(1) @Space(1)
     pub def toUpperCase(c: Char): Char =
-        import static java.lang.Character.toUpperCase(Char): Char & Pure;
+        import static java.lang.Character.toUpperCase(Char): Char \ {};
         toUpperCase(c)
 
     ///

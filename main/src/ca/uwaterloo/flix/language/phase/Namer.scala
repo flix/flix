@@ -313,10 +313,10 @@ object Namer {
       mapN(visitHeadPredicate(h, outerEnv, headEnv, ruleEnv, uenv0, tenv0), traverse(bs)(b => visitBodyPredicate(b, outerEnv, headEnv, ruleEnv, uenv0, tenv0))) {
         case (head, body) =>
           val headParams = headEnv.map {
-            case (_, sym) => NamedAst.ConstraintParam.HeadParam(sym, sym.tvar, sym.loc)
+            case (_, sym) => NamedAst.ConstraintParam.HeadParam(sym, NamedAst.Type.Var(sym.tvar.sym, loc), sym.loc)
           }
           val ruleParam = ruleEnv.map {
-            case (_, sym) => NamedAst.ConstraintParam.RuleParam(sym, sym.tvar, sym.loc)
+            case (_, sym) => NamedAst.ConstraintParam.RuleParam(sym, NamedAst.Type.Var(sym.tvar.sym, loc), sym.loc)
           }
           val cparams = (headParams ++ ruleParam).toList
           NamedAst.Constraint(cparams, head, body, loc)
@@ -343,23 +343,28 @@ object Namer {
 
       val annVal = traverse(ann0)(visitAnnotation(_, Map.empty, uenv0, tenv))
       val mod = visitModifiers(mod0, ns0)
-      mapN(annVal, casesOf(cases0, uenv0, tenv)) {
+      val casesVal = traverse(cases0)(visitCase(_, sym, uenv0, tenv))
+
+      mapN(annVal, casesVal) {
         case (ann, cases) =>
-          NamedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, enumType, loc)
+          val caseMap = cases.foldLeft(Map.empty[String, NamedAst.Case]) {
+            case (acc, caze) => acc + (caze.sym.name -> caze)
+          }
+          NamedAst.Enum(doc, ann, mod, sym, tparams, derives, caseMap, enumType, loc)
       }
   }
 
+
   /**
-    * Performs naming on the given `cases` map.
+    * Performs naming on the given enum case.
     */
-  private def casesOf(cases: Map[Name.Tag, WeededAst.Case], uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[Map[Name.Tag, NamedAst.Case], NameError] = {
-    val casesVal = cases map {
-      case (name, WeededAst.Case(enum, tag, tpe)) =>
-        mapN(visitType(tpe, uenv0, tenv0)) {
-          case t => (name, NamedAst.Case(enum, tag, t))
-        }
-    }
-    mapN(sequence(casesVal))(_.toMap)
+  private def visitCase(case0: WeededAst.Case, enum: Symbol.EnumSym, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.Case, NameError] = case0 match {
+    case WeededAst.Case(ident, tpe0) =>
+      mapN(visitType(tpe0, uenv0, tenv0)) {
+        case tpe =>
+          val sym = Symbol.mkCaseSym(enum, ident)
+          NamedAst.Case(sym, tpe)
+      }
   }
 
   /**
@@ -944,19 +949,21 @@ object Namer {
         case (as, sig) => NamedAst.Expression.InvokeConstructor(className, as, sig, loc)
       }
 
-    case WeededAst.Expression.InvokeMethod(className, methodName, exp, args, sig, loc) =>
+    case WeededAst.Expression.InvokeMethod(className, methodName, exp, args, sig, retTpe, loc) =>
       val expVal = visitExp(exp, env0, uenv0, tenv0)
       val argsVal = traverse(args)(visitExp(_, env0, uenv0, tenv0))
       val sigVal = traverse(sig)(visitType(_, uenv0, tenv0))
-      mapN(expVal, argsVal, sigVal) {
-        case (e, as, sig) => NamedAst.Expression.InvokeMethod(className, methodName, e, as, sig, loc)
+      val retVal = visitType(retTpe, uenv0, tenv0)
+      mapN(expVal, argsVal, sigVal, retVal) {
+        case (e, as, sig, ret) => NamedAst.Expression.InvokeMethod(className, methodName, e, as, sig, ret, loc)
       }
 
-    case WeededAst.Expression.InvokeStaticMethod(className, methodName, args, sig, loc) =>
+    case WeededAst.Expression.InvokeStaticMethod(className, methodName, args, sig, retTpe, loc) =>
       val argsVal = traverse(args)(visitExp(_, env0, uenv0, tenv0))
       val sigVal = traverse(sig)(visitType(_, uenv0, tenv0))
-      mapN(argsVal, sigVal) {
-        case (as, sig) => NamedAst.Expression.InvokeStaticMethod(className, methodName, as, sig, loc)
+      val retVal = visitType(retTpe, uenv0, tenv0)
+      mapN(argsVal, sigVal, retVal) {
+        case (as, sig, ret) => NamedAst.Expression.InvokeStaticMethod(className, methodName, as, sig, ret, loc)
       }
 
     case WeededAst.Expression.GetField(className, fieldName, exp, loc) =>
@@ -1531,8 +1538,8 @@ object Namer {
         case (fvs, WeededAst.CatchRule(ident, _, body)) => fvs ++ filterBoundVars(freeVars(body), List(ident))
       }
     case WeededAst.Expression.InvokeConstructor(_, args, _, _) => args.flatMap(freeVars)
-    case WeededAst.Expression.InvokeMethod(_, _, exp, args, _, _) => freeVars(exp) ++ args.flatMap(freeVars)
-    case WeededAst.Expression.InvokeStaticMethod(_, _, args, _, _) => args.flatMap(freeVars)
+    case WeededAst.Expression.InvokeMethod(_, _, exp, args, _, _, _) => freeVars(exp) ++ args.flatMap(freeVars)
+    case WeededAst.Expression.InvokeStaticMethod(_, _, args, _, _, _) => args.flatMap(freeVars)
     case WeededAst.Expression.GetField(_, _, exp, _) => freeVars(exp)
     case WeededAst.Expression.PutField(_, _, exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.GetStaticField(_, _, _) => Nil
@@ -1925,7 +1932,7 @@ object Namer {
   /**
     * Disambiguate the given tag `tag0` with the given optional enum name `enumOpt0` under the given use environment `uenv0`.
     */
-  private def getDisambiguatedTag(enumOpt0: Option[Name.QName], tag0: Name.Tag, uenv0: UseEnv): (Option[Name.QName], Name.Tag) = {
+  private def getDisambiguatedTag(enumOpt0: Option[Name.QName], tag0: Name.Ident, uenv0: UseEnv): (Option[Name.QName], Name.Ident) = {
     enumOpt0 match {
       case None =>
         // Case 1: The tag is unqualified. Look it up in the use environment.
@@ -2041,7 +2048,7 @@ object Namer {
   /**
     * Represents an environment of "imported" names, including defs, types, and tags.
     */
-  private case class UseEnv(lowerNames: Map[String, Name.QName], upperNames: Map[String, Name.QName], tags: Map[String, (Name.QName, Name.Tag)]) {
+  private case class UseEnv(lowerNames: Map[String, Name.QName], upperNames: Map[String, Name.QName], tags: Map[String, (Name.QName, Name.Ident)]) {
     /**
       * Binds the lowercase name `s` to the qualified name `n`.
       */
@@ -2055,7 +2062,7 @@ object Namer {
     /**
       * Binds the tag name `s` to the qualified name `n` and tag `t`.
       */
-    def addTag(s: String, n: Name.QName, t: Name.Tag): UseEnv = copy(tags = tags + (s -> (n, t)))
+    def addTag(s: String, n: Name.QName, t: Name.Ident): UseEnv = copy(tags = tags + (s -> (n, t)))
   }
 
 }
