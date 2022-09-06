@@ -333,15 +333,19 @@ object Safety {
       right.isAssignableFrom(left)
 
     case (Type.Cst(TypeConstructor.Arrow(n1), _), Type.Cst(TypeConstructor.Arrow(n2), _)) if n1 == n2 =>
+      val loc = tpe1.loc.asSynthetic
+
       // purities
       val pur1 = tpe1.arrowPurityType
       val pur2 = tpe2.arrowPurityType
-      val subTypePurity = isSubTypeOf(pur1, pur2, rigidityEnv)
+      //val subTypePurity = isSubTypeOf(pur1, pur2, rigidityEnv)
+      val pur3 = Type.freshVar(Kind.Bool, loc)
+      val pur1pur3 = Type.mkAnd(pur1, pur2, loc)
+      val subTypePurity = Unification.unifiesWith(pur1pur3, pur2, rigidityEnv)
 
       // set effects
       // The rule for effect sets is:
       // S1 < S2 <==> exists S3 . S1 U S3 == S2
-      val loc = tpe1.loc.asSynthetic
       val s1 = tpe1.arrowEffectType
       val s2 = tpe2.arrowEffectType
       val s3 = Type.freshVar(Kind.Effect, loc)
