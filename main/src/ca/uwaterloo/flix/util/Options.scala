@@ -27,7 +27,6 @@ object Options {
   val Default: Options = Options(
     lib = LibLevel.All,
     debug = false,
-    documentor = false,
     entryPoint = None,
     explain = false,
     incremental = true,
