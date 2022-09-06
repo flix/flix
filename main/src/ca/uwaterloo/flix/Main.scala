@@ -84,7 +84,6 @@ object Main {
     var options = Options.Default.copy(
       lib = cmdOpts.xlib,
       debug = cmdOpts.xdebug,
-      documentor = cmdOpts.documentor,
       entryPoint = entryPoint,
       explain = cmdOpts.explain,
       json = cmdOpts.json,
@@ -174,6 +173,9 @@ object Main {
           }
           System.exit(0)
 
+        case Command.Doc =>
+
+
       }
     } catch {
       case ex: RuntimeException =>
@@ -251,6 +253,8 @@ object Main {
 
     case class Lsp(port: Int) extends Command
 
+    case object Doc extends Command
+
   }
 
   /**
@@ -302,6 +306,8 @@ object Main {
             .required()
         )
 
+      cmd("doc").action((_, c) => c.copy(command = Command.Doc)).text("  generates documentation.")
+
       note("")
 
       opt[String]("args").action((s, c) => c.copy(args = Some(s))).
@@ -310,9 +316,6 @@ object Main {
 
       opt[Unit]("benchmark").action((_, c) => c.copy(benchmark = true)).
         text("runs benchmarks.")
-
-      opt[Unit]("doc").action((_, c) => c.copy(documentor = true)).
-        text("generates HTML documentation.")
 
       opt[String]("entrypoint").action((s, c) => c.copy(entryPoint = Some(s))).
         text("specifies the main entry point.")

@@ -74,7 +74,6 @@ object Options {
   *
   * @param lib                selects the level of libraries to include.
   * @param debug              enables the emission of debugging information.
-  * @param documentor         enables generation of flixdoc.
   * @param entryPoint         specifies the main entry point.
   * @param explain            enables additional explanations.
   * @param json               enable json output.
@@ -91,7 +90,6 @@ object Options {
   */
 case class Options(lib: LibLevel,
                    debug: Boolean,
-                   documentor: Boolean,
                    entryPoint: Option[Symbol.DefnSym],
                    explain: Boolean,
                    incremental: Boolean,

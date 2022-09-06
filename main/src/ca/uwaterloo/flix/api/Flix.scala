@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase._
+import ca.uwaterloo.flix.language.phase.extra.Documentor
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -528,8 +529,7 @@ class Flix {
     initForkJoin()
 
     val result = for {
-      afterDocumentor <- Documentor.run(typedAst)
-      afterLowering <- Lowering.run(afterDocumentor)
+      afterLowering <- Lowering.run(typedAst)
       afterEarlyTreeShaker <- EarlyTreeShaker.run(afterLowering)
       afterMonomorph <- Monomorph.run(afterEarlyTreeShaker)
       afterSimplifier <- Simplifier.run(afterMonomorph)

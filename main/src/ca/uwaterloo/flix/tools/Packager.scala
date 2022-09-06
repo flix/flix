@@ -16,8 +16,9 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast
+import ca.uwaterloo.flix.language.ast.{Ast, TypedAst}
 import ca.uwaterloo.flix.language.ast.Ast.Source
+import ca.uwaterloo.flix.language.phase.extra.Documentor
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.github.GitHub
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
@@ -158,7 +159,7 @@ object Packager {
   /**
     * Type checks the source files for the given project path `p`.
     */
-  def check(p: Path, o: Options): Result[Unit, Int] = {
+  def check(p: Path, o: Options): Result[TypedAst.Root, Int] = {
     // Check that the path is a project path.
     checkProjectPath(p) match {
       case Validation.Success(_) => ()
@@ -173,7 +174,7 @@ object Packager {
     addSourcesAndPackages(p, o)
 
     flix.check() match {
-      case Validation.Success(_) => ().toOk
+      case Validation.Success(root) => root.toOk
       case Validation.Failure(errors) =>
         flix.mkMessages(errors).foreach(println _)
         Result.Err(1)
@@ -370,6 +371,15 @@ object Packager {
       compilationResult =>
         Tester.run(Nil, compilationResult)
         ().toOk
+    }
+  }
+
+  /**
+    * Generates documentation based in the given path and options.
+    */
+  def doc(p: Path, o: Options): Result[Unit, Int] = {
+    check(p, o) map {
+      root => Documentor.run(root)(new Flix().setOptions(o))
     }
   }
 

@@ -1,31 +1,11 @@
-/*
- * Copyright 2021 Magnus Madsen
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix.language.phase.extra
 
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Modifier, TypeConstraint}
-import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.TypedAst.{Annotation, Case, Class, Def, Enum, FormalParam, Instance, Root, Sig, TypeAlias, TypeParam}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
-import ca.uwaterloo.flix.util.Validation
-import ca.uwaterloo.flix.util.Validation._
-import org.json4s.JsonAST._
-import org.json4s.JsonDSL._
+import org.json4s.JsonAST.{JArray, JObject, JString}
 import org.json4s.native.JsonMethods
 
 import java.io.IOException
@@ -51,13 +31,7 @@ object Documentor {
     */
   private implicit val audience: Audience = Audience.External
 
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Documentor") {
-    //
-    // Determine whether to generate documentation.
-    //
-    if (!flix.options.documentor) {
-      return root.toSuccess
-    }
+  def run(root: TypedAst.Root)(implicit flix: Flix): Unit = flix.phase("Documentor") {
 
     //
     // Classes.
@@ -162,8 +136,6 @@ object Documentor {
 
     // Write the string to the path.
     writeString(s, p)
-
-    root.toSuccess
   }
 
   /**
