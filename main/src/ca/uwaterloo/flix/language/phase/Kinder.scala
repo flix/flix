@@ -1088,7 +1088,7 @@ object Kinder {
     case UnkindedType.Enum(sym, loc) =>
       val kind = getEnumKind(root.enums(sym))
       unify(kind, expectedKind) match {
-        case Some(k) => Type.Cst(TypeConstructor.KindedEnum(sym, k), loc).toSuccess
+        case Some(k) => Type.Cst(TypeConstructor.Enum(sym, k), loc).toSuccess
         case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
       }
 
@@ -1112,7 +1112,7 @@ object Kinder {
     * Performs kinding on the given type constructor under the given kind environment.
     */
   private def visitTypeConstructor(tycon: TypeConstructor, root: ResolvedAst.Root)(implicit flix: Flix): Validation[TypeConstructor, KindError] = tycon match {
-    case _: TypeConstructor.KindedEnum => throw InternalCompilerException("Unexpected kinded enum.")
+    case _: TypeConstructor.Enum => throw InternalCompilerException("Unexpected kinded enum.")
     case t => t.toSuccess
   }
 
@@ -1459,7 +1459,7 @@ object Kinder {
     * Gets the kind associated with the type constructor.
     */
   private def getTyconKind(tycon: TypeConstructor, root: ResolvedAst.Root)(implicit flix: Flix): Kind = tycon match {
-    case _: TypeConstructor.KindedEnum => throw InternalCompilerException("Unexpected kinded enum.")
+    case _: TypeConstructor.Enum => throw InternalCompilerException("Unexpected kinded enum.")
     case t => t.kind
   }
 

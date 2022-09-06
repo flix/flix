@@ -532,7 +532,7 @@ object Indexer {
         Index.empty
       case TypeConstructor.RecordRowExtend(field) => Index.occurrenceOf(tpe0) ++ Index.useOf(field)
       case TypeConstructor.SchemaRowExtend(pred) => Index.occurrenceOf(tpe0) ++ Index.useOf(pred)
-      case TypeConstructor.KindedEnum(sym, _) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc)
+      case TypeConstructor.Enum(sym, _) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc)
       case TypeConstructor.Effect(sym) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc)
       case _ => Index.occurrenceOf(tpe0)
     }

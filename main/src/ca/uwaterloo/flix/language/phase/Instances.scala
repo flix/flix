@@ -85,7 +85,7 @@ object Instances {
     def checkOrphan(inst: TypedAst.Instance): List[InstanceError] = inst match {
       case TypedAst.Instance(_, _, _, sym, tpe, _, _, ns, _) => tpe.typeConstructor match {
         // Case 1: Enum type in the same namespace as the instance: not an orphan
-        case Some(TypeConstructor.KindedEnum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => Nil
+        case Some(TypeConstructor.Enum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => Nil
         // Case 2: Any type in the class namespace: not an orphan
         case _ if (sym.clazz.namespace) == ns.idents.map(_.name) => Nil
         // Case 3: Any type outside the class companion namespace and enum declaration namespace: orphan

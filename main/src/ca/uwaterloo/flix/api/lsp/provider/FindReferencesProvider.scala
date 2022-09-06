@@ -74,7 +74,7 @@ object FindReferencesProvider {
           case Type.Cst(tc, _) => tc match {
             case TypeConstructor.RecordRowExtend(field) => findFieldReferences(field)
             case TypeConstructor.SchemaRowExtend(pred) => findPredReferences(pred)
-            case TypeConstructor.KindedEnum(sym, _) => findEnumReferences(sym)
+            case TypeConstructor.Enum(sym, _) => findEnumReferences(sym)
             case TypeConstructor.Effect(sym) => findEffectReferences(sym)
             case _ => mkNotFound(uri, pos)
           }

@@ -442,7 +442,7 @@ object Finalize {
 
             case TypeConstructor.Lazy => MonoType.Lazy(args.head)
 
-            case TypeConstructor.KindedEnum(sym, _) => MonoType.Enum(sym, args)
+            case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym, args)
 
             case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 

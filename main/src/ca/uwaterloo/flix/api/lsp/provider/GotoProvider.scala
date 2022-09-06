@@ -54,7 +54,7 @@ object GotoProvider {
         }
 
         case Entity.Type(t) => t match {
-          case Type.Cst(TypeConstructor.KindedEnum(sym, _), loc) =>
+          case Type.Cst(TypeConstructor.Enum(sym, _), loc) =>
             ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, loc)(root).toJSON)
 
           case Type.Cst(TypeConstructor.Effect(sym), loc) =>

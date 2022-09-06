@@ -643,7 +643,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Str => true
     case TypeConstructor.Channel => true
     case TypeConstructor.Lazy => true
-    case TypeConstructor.KindedEnum(_, _) => true
+    case TypeConstructor.Enum(_, _) => true
     case TypeConstructor.Native(_) => true
     case TypeConstructor.Array => true
     case TypeConstructor.Ref => true

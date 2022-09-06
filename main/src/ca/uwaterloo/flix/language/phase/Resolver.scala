@@ -2602,7 +2602,7 @@ object Resolver {
 
         case TypeConstructor.Channel => Class.forName("java.lang.Object").toSuccess
 
-        case TypeConstructor.KindedEnum(_, _) => Class.forName("java.lang.Object").toSuccess
+        case TypeConstructor.Enum(_, _) => Class.forName("java.lang.Object").toSuccess
 
         case TypeConstructor.Ref => Class.forName("java.lang.Object").toSuccess
 

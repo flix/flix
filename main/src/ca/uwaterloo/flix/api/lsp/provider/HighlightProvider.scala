@@ -70,7 +70,7 @@ object HighlightProvider {
           case Type.Cst(tc, _) => tc match {
             case TypeConstructor.RecordRowExtend(field) => highlightField(field)
             case TypeConstructor.SchemaRowExtend(pred) => highlightPred(pred)
-            case TypeConstructor.KindedEnum(sym, _) => highlightEnum(sym)
+            case TypeConstructor.Enum(sym, _) => highlightEnum(sym)
             case TypeConstructor.Effect(sym) => highlightEffect(sym)
             case _ => mkNotFound(uri, pos)
           }
