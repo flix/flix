@@ -1036,23 +1036,35 @@ object Resolver {
           }
 
         case NamedAst.Expression.GetField(className, fieldName, exp, loc) =>
-          mapN(lookupJvmField(className, fieldName, static = false, loc), visitExp(exp, region)) {
-            case (field, e) => ResolvedAst.Expression.GetField(field, e, loc)
+          flatMapN(lookupJvmClass(className, loc)) {
+            case clazz =>
+              mapN(lookupJvmField(clazz, fieldName, static = false, loc), visitExp(exp, region)) {
+                case (field, e) => ResolvedAst.Expression.GetField(field, clazz, e, loc)
+              }
           }
 
         case NamedAst.Expression.PutField(className, fieldName, exp1, exp2, loc) =>
-          mapN(lookupJvmField(className, fieldName, static = false, loc), visitExp(exp1, region), visitExp(exp2, region)) {
-            case (field, e1, e2) => ResolvedAst.Expression.PutField(field, e1, e2, loc)
+          flatMapN(lookupJvmClass(className, loc)) {
+            case clazz =>
+              mapN(lookupJvmField(clazz, fieldName, static = false, loc), visitExp(exp1, region), visitExp(exp2, region)) {
+                case (field, e1, e2) => ResolvedAst.Expression.PutField(field, clazz, e1, e2, loc)
+              }
           }
 
         case NamedAst.Expression.GetStaticField(className, fieldName, loc) =>
-          mapN(lookupJvmField(className, fieldName, static = true, loc)) {
-            case field => ResolvedAst.Expression.GetStaticField(field, loc)
+          flatMapN(lookupJvmClass(className, loc)) {
+            case clazz =>
+              mapN(lookupJvmField(clazz, fieldName, static = true, loc)) {
+                case field => ResolvedAst.Expression.GetStaticField(field, loc)
+              }
           }
 
         case NamedAst.Expression.PutStaticField(className, fieldName, exp, loc) =>
-          mapN(lookupJvmField(className, fieldName, static = true, loc), visitExp(exp, region)) {
-            case (field, e) => ResolvedAst.Expression.PutStaticField(field, e, loc)
+          flatMapN(lookupJvmClass(className, loc)) {
+            case clazz =>
+              mapN(lookupJvmField(clazz, fieldName, static = true, loc), visitExp(exp, region)) {
+                case (field, e) => ResolvedAst.Expression.PutStaticField(field, e, loc)
+              }
           }
 
         case NamedAst.Expression.NewObject(name, tpe, methods, loc) =>
@@ -2500,25 +2512,23 @@ object Resolver {
   }
 
   /**
-    * Returns the field reflection object for the given `className` and `fieldName`.
+    * Returns the field reflection object for the given `clazz` and `fieldName`.
     */
-  private def lookupJvmField(className: String, fieldName: String, static: Boolean, loc: SourceLocation)(implicit flix: Flix): Validation[Field, ResolutionError] = {
-    flatMapN(lookupJvmClass(className, loc)) {
-      case clazz => try {
-        // Lookup the field.
-        val field = clazz.getField(fieldName)
+  private def lookupJvmField(clazz: Class[_], fieldName: String, static: Boolean, loc: SourceLocation)(implicit flix: Flix): Validation[Field, ResolutionError] = {
+    try {
+      // Lookup the field.
+      val field = clazz.getField(fieldName)
 
-        // Check if the field should be and is static.
-        if (static == Modifier.isStatic(field.getModifiers))
-          field.toSuccess
-        else
-          throw new NoSuchFieldException()
-      } catch {
-        case ex: NoSuchFieldException =>
-          val candidateFields = clazz.getFields.toList
-          ResolutionError.UndefinedJvmField(className, fieldName, static, candidateFields, loc).toFailure
-        case ex: NoClassDefFoundError => ResolutionError.MissingJvmDependency(className, ex.getMessage, loc).toFailure
-      }
+      // Check if the field should be and is static.
+      if (static == Modifier.isStatic(field.getModifiers))
+        field.toSuccess
+      else
+        throw new NoSuchFieldException()
+    } catch {
+      case ex: NoSuchFieldException =>
+        val candidateFields = clazz.getFields.toList
+        ResolutionError.UndefinedJvmField(clazz.getName, fieldName, static, candidateFields, loc).toFailure
+      case ex: NoClassDefFoundError => ResolutionError.MissingJvmDependency(clazz.getName, ex.getMessage, loc).toFailure
     }
   }
 

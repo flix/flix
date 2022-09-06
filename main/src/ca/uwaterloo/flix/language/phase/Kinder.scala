@@ -673,17 +673,17 @@ object Kinder {
         args => KindedAst.Expression.InvokeStaticMethod(method, args, loc)
       }
 
-    case ResolvedAst.Expression.GetField(field, exp0, loc) =>
+    case ResolvedAst.Expression.GetField(field, clazz, exp0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       mapN(expVal) {
-        exp => KindedAst.Expression.GetField(field, exp, loc)
+        exp => KindedAst.Expression.GetField(field, clazz, exp, loc)
       }
 
-    case ResolvedAst.Expression.PutField(field, exp10, exp20, loc) =>
+    case ResolvedAst.Expression.PutField(field, clazz, exp10, exp20, loc) =>
       val exp1Val = visitExp(exp10, kenv0, senv, taenv, henv0, root)
       val exp2Val = visitExp(exp20, kenv0, senv, taenv, henv0, root)
       mapN(exp1Val, exp2Val) {
-        case (exp1, exp2) => KindedAst.Expression.PutField(field, exp1, exp2, loc)
+        case (exp1, exp2) => KindedAst.Expression.PutField(field, clazz, exp1, exp2, loc)
       }
 
     case ResolvedAst.Expression.GetStaticField(field, loc) => KindedAst.Expression.GetStaticField(field, loc).toSuccess

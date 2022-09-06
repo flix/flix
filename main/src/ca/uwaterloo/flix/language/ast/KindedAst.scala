@@ -172,9 +172,9 @@ object KindedAst {
 
     case class InvokeStaticMethod(method: Method, args: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
 
-    case class GetField(field: Field, exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class GetField(field: Field, clazz: java.lang.Class[_], exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
-    case class PutField(field: Field, exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class PutField(field: Field, clazz: java.lang.Class[_], exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
     case class GetStaticField(field: Field, loc: SourceLocation) extends KindedAst.Expression
 
