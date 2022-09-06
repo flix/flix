@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{Annotation, Case, Class, Def, En
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
 import org.json4s.JsonAST.{JArray, JObject, JString}
+import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods
 
 import java.io.IOException
