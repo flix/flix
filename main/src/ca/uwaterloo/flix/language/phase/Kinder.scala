@@ -1340,7 +1340,6 @@ object Kinder {
         case (purAndEffKenv, argKenv) => purAndEffKenv ++ argKenv
       }
 
-    case UnkindedType.ReadWrite(t, _) => inferType(t, Kind.Bool, kenv0, taenv, root)
 
     case UnkindedType.Enum(sym, _) =>
       val tyconKind = getEnumKind(root.enums(sym))
@@ -1351,6 +1350,8 @@ object Kinder {
           kenv => acc ++ kenv
         }
       }
+
+    case UnkindedType.ReadWrite(t, _) => inferType(t, Kind.Beef, kenv0, taenv, root)
 
     case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application")
     case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias")
