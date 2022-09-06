@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, UnkindedType}
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -75,13 +75,14 @@ object ResolutionError {
     * @param tpe the illegal type.
     * @param loc the location where the error occurred.
     */
-  case class IllegalType(tpe: Type, loc: SourceLocation) extends ResolutionError {
+  case class IllegalType(tpe: UnkindedType, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Illegal type."
 
+    // TODO need to format ill-kinded type!
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Illegal type: '${red(FormatType.formatWellKindedType(tpe))}'.
+         |>> Illegal type: '${red(tpe.toString)}'.
          |
          |${code(loc, "illegal type.")}
          |""".stripMargin
@@ -99,13 +100,14 @@ object ResolutionError {
     * @param tpe the illegal type.
     * @param loc the location where the error occurred.
     */
-  case class IllegalNonJavaType(tpe: Type, loc: SourceLocation) extends ResolutionError {
+  case class IllegalNonJavaType(tpe: UnkindedType, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Illegal non-Java type. Expected class or interface type."
 
+    // TODO need to format unkinded types!
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unexpected non-Java type: '${red(FormatType.formatWellKindedType(tpe))}'.
+         |>> Unexpected non-Java type: '${red(tpe.toString)}'.
          |
          |${code(loc, "unexpected type.")}
          |
@@ -736,7 +738,7 @@ object ResolutionError {
     * @param expectedType the expected type.
     * @param loc          the location of the method name.
     */
-  case class MismatchingReturnType(className: String, methodName: String, declaredType: Type, expectedType: Type, loc: SourceLocation) extends ResolutionError {
+  case class MismatchingReturnType(className: String, methodName: String, declaredType: UnkindedType, expectedType: UnkindedType, loc: SourceLocation) extends ResolutionError {
     def summary : String = {
       s"Mismatching return type."
     }

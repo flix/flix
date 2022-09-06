@@ -552,7 +552,7 @@ object Redundancy {
           ((pur, exp.pur), (eff, exp.eff)) match {
             case ((Type.Pure, Type.Pure), (Type.Empty, Type.Empty)) =>
               visitExp(exp, env0, rc) + RedundantPurityCast(loc)
-            case ((Type.KindedVar(pur1, _), Type.KindedVar(pur2, _)), (Type.KindedVar(eff1, _), Type.KindedVar(eff2, _)))
+            case ((Type.Var(pur1, _), Type.Var(pur2, _)), (Type.Var(eff1, _), Type.Var(eff2, _)))
               if pur1 == pur2 && eff1 == eff2 =>
               visitExp(exp, env0, rc) + RedundantEffectCast(loc)
             case _ => visitExp(exp, env0, rc)

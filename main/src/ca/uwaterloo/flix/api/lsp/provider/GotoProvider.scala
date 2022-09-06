@@ -54,13 +54,13 @@ object GotoProvider {
         }
 
         case Entity.Type(t) => t match {
-          case Type.Cst(TypeConstructor.KindedEnum(sym, _), loc) =>
+          case Type.Cst(TypeConstructor.Enum(sym, _), loc) =>
             ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, loc)(root).toJSON)
 
           case Type.Cst(TypeConstructor.Effect(sym), loc) =>
             ("status" -> "success") ~ ("result" -> LocationLink.fromEffectSym(sym, loc).toJSON)
 
-          case Type.KindedVar(sym, loc) =>
+          case Type.Var(sym, loc) =>
             ("status" -> "success") ~ ("result" -> LocationLink.fromTypeVarSym(sym, loc).toJSON)
 
           case _ => mkNotFound(uri, pos)
