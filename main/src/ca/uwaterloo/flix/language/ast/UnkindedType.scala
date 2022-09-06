@@ -20,6 +20,8 @@ import ca.uwaterloo.flix.language.ast.Ast.EliminatedBy
 import ca.uwaterloo.flix.language.phase.Resolver
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import java.util.Objects
+
 sealed trait UnkindedType {
   def loc: SourceLocation
 
@@ -72,6 +74,8 @@ object UnkindedType {
       case Var(sym2, _) => sym == sym2
       case _ => false
     }
+
+    override def hashCode(): Int = Objects.hash(sym)
   }
 
   /**
@@ -82,6 +86,8 @@ object UnkindedType {
       case Cst(tc2, _) => tc == tc2
       case _ => false
     }
+
+    override def hashCode(): Int = Objects.hash(tc)
   }
 
   /**
@@ -92,6 +98,8 @@ object UnkindedType {
       case Enum(sym2, _) => sym == sym2
       case _ => false
     }
+
+    override def hashCode(): Int = Objects.hash(sym)
   }
 
   /**
@@ -104,6 +112,8 @@ object UnkindedType {
       case UnappliedAlias(sym2, _) => sym == sym2
       case _ => false
     }
+
+    override def hashCode(): Int = Objects.hash(sym)
   }
 
   /**
@@ -114,6 +124,8 @@ object UnkindedType {
       case Apply(tpe1_2, tpe2_2, _) => tpe1 == tpe1_2 && tpe2 == tpe2_2
       case _ => false
     }
+
+    override def hashCode(): Int = Objects.hash(tpe1, tpe2)
   }
 
   /**
@@ -124,6 +136,8 @@ object UnkindedType {
       case Arrow(purAndEff2, arity2, _) => purAndEff2 == purAndEff && arity == arity2
       case _ => false
     }
+
+    override def hashCode(): Int = Objects.hash(purAndEff, arity)
   }
 
   /**
@@ -134,6 +148,8 @@ object UnkindedType {
       case ReadWrite(tpe2, _) => tpe == tpe2
       case _ => false
     }
+
+    override def hashCode(): Int = Objects.hash(tpe)
   }
 
   /**
@@ -144,6 +160,8 @@ object UnkindedType {
       case Ascribe(tpe2, kind2, _) => tpe == tpe2 && kind == kind2
       case _ => false
     }
+
+    override def hashCode(): Int = Objects.hash(tpe, kind)
   }
 
   /**
@@ -154,6 +172,8 @@ object UnkindedType {
       case Alias(Ast.AliasConstructor(sym2, _), args2, tpe2, _) => cst.sym == sym2 && args == args2 && tpe == tpe2
       case _ => false
     }
+
+    override def hashCode(): Int = Objects.hash(cst, args, tpe)
   }
 
   case class PurityAndEffect(pur: Option[UnkindedType], eff: Option[List[UnkindedType]]) {
