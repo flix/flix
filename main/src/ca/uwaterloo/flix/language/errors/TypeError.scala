@@ -376,7 +376,7 @@ object TypeError {
     * @param fullType2 the second full type.
     * @param loc       the location where the error occurred.
     */
-  case class OccursCheckError(baseVar: Type.KindedVar, baseType: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
+  case class OccursCheckError(baseVar: Type.Var, baseType: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Unable to unify the type variable '$baseVar' with the type '$baseType'."
 
     def message(formatter: Formatter): String = {
@@ -652,7 +652,7 @@ object TypeError {
     * @param tpe  the type wherein the region variable escapes.
     * @param loc  the location where the error occurred.
     */
-  case class RegionVarEscapes(rvar: Type.KindedVar, tpe: Type, loc: SourceLocation) extends TypeError {
+  case class RegionVarEscapes(rvar: Type.Var, tpe: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Region variable '${formatWellKindedType(rvar)}' escapes its scope."
 
     def message(formatter: Formatter): String = {

@@ -293,12 +293,8 @@ object SimpleType {
     * Creates a simple type from the well-kinded type `t`.
    */
   def fromWellKindedType(t: Type): SimpleType = t.baseType match {
-    case Type.KindedVar(sym, _) =>
+    case Type.Var(sym, _) =>
       mkApply(Var(sym.id, sym.kind, sym.isRegion, sym.text), t.typeArguments.map(fromWellKindedType))
-    case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type.")
-    case _: Type.UnkindedArrow => throw InternalCompilerException("Unexpected unkinded type.")
-    case _: Type.ReadWrite => throw InternalCompilerException("Unexpected unkinded type.")
-    case _: Type.Ascribe => throw InternalCompilerException("Unexpected kind ascription.")
     case Type.Alias(cst, args, _, _) =>
       mkApply(Name(cst.sym.name), (args ++ t.typeArguments).map(fromWellKindedType))
     case Type.Cst(tc, _) => tc match {
@@ -427,8 +423,7 @@ object SimpleType {
       case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Channel => mkApply(Channel, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(fromWellKindedType))
-      case TypeConstructor.KindedEnum(sym, kind) => mkApply(Name(sym.name), t.typeArguments.map(fromWellKindedType))
-      case TypeConstructor.UnkindedEnum(sym) => throw InternalCompilerException("Unexpected unkinded type.")
+      case TypeConstructor.Enum(sym, kind) => mkApply(Name(sym.name), t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Native(clazz) => Name(clazz.getSimpleName)
       case TypeConstructor.Ref => mkApply(Ref, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Tuple(l) =>
@@ -530,7 +525,6 @@ object SimpleType {
       case TypeConstructor.Region => mkApply(Region, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Empty => SimpleType.Empty
       case TypeConstructor.All => SimpleType.All
-      case _: TypeConstructor.UnappliedAlias => throw InternalCompilerException("Unexpected unapplied alias.")
     }
   }
 

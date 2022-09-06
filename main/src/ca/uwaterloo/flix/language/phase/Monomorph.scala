@@ -78,7 +78,7 @@ object Monomorph {
       val t = s(tpe0)
 
       t.map {
-        case Type.KindedVar(sym, loc) if sym.kind == Kind.Bool =>
+        case Type.Var(sym, loc) if sym.kind == Kind.Bool =>
           // TODO: In strict mode we demand that there are no free (uninstantiated) Boolean variables.
           // TODO: In the future we need to decide what should actually happen if such variables occur.
           // TODO: In particular, it seems there are two cases.
@@ -88,9 +88,9 @@ object Monomorph {
             throw UnexpectedNonConstBool(tpe0, loc)
           else
             Type.True
-        case Type.KindedVar(sym, _) if sym.kind == Kind.RecordRow => Type.RecordRowEmpty
-        case Type.KindedVar(sym, _) if sym.kind == Kind.SchemaRow => Type.SchemaRowEmpty
-        case Type.KindedVar(sym, _) if sym.kind == Kind.Effect => Type.Empty
+        case Type.Var(sym, _) if sym.kind == Kind.RecordRow => Type.RecordRowEmpty
+        case Type.Var(sym, _) if sym.kind == Kind.SchemaRow => Type.SchemaRowEmpty
+        case Type.Var(sym, _) if sym.kind == Kind.Effect => Type.Empty
         case _ => Type.Unit
       }
     }
@@ -979,7 +979,7 @@ object Monomorph {
     * Flix does not erase normal types, but it does erase Boolean formulas.
     */
   private def eraseType(tpe: Type)(implicit flix: Flix): Type = tpe match {
-    case Type.KindedVar(_, loc) =>
+    case Type.Var(_, loc) =>
       if (flix.options.xstrictmono)
         throw UnexpectedNonConstBool(tpe, loc)
       else {
@@ -999,13 +999,6 @@ object Monomorph {
       val t = eraseType(tpe)
       Type.Alias(sym, as, t, loc)
 
-    case Type.UnkindedVar(_, loc) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
-
-    case Type.UnkindedArrow(_, _, loc) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
-
-    case Type.ReadWrite(_, loc) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
-
-    case Type.Ascribe(_, _, loc) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
   }
 
 }
