@@ -16,6 +16,8 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.EliminatedBy
+import ca.uwaterloo.flix.language.phase.Resolver
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 sealed trait UnkindedType {
@@ -61,6 +63,10 @@ sealed trait UnkindedType {
 }
 
 object UnkindedType {
+
+  /**
+    * A type variable.
+    */
   case class Var(sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case Var(sym2, _) => sym == sym2
@@ -68,6 +74,9 @@ object UnkindedType {
     }
   }
 
+  /**
+    * A type constant.
+    */
   case class Cst(tc: TypeConstructor, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case Cst(tc2, _) => tc == tc2
@@ -75,6 +84,9 @@ object UnkindedType {
     }
   }
 
+  /**
+    * An unkinded enum.
+    */
   case class Enum(sym: Symbol.EnumSym, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case Enum(sym2, _) => sym == sym2
@@ -82,6 +94,11 @@ object UnkindedType {
     }
   }
 
+  /**
+    * An unapplied alias.
+    * Only exists temporarily in the Resolver until it's converted to an [[Alias]].
+    */
+  @EliminatedBy(Resolver.getClass)
   case class UnappliedAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case UnappliedAlias(sym2, _) => sym == sym2
@@ -89,6 +106,9 @@ object UnkindedType {
     }
   }
 
+  /**
+    * A type application.
+    */
   case class Apply(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case Apply(tpe1_2, tpe2_2, _) => tpe1 == tpe1_2 && tpe2 == tpe2_2
@@ -96,6 +116,9 @@ object UnkindedType {
     }
   }
 
+  /**
+    * A function type.
+    */
   case class Arrow(purAndEff: PurityAndEffect, arity: Int, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case Arrow(purAndEff2, arity2, _) => purAndEff2 == purAndEff && arity == arity2
@@ -103,6 +126,9 @@ object UnkindedType {
     }
   }
 
+  /**
+    * A read or write type.
+    */
   case class ReadWrite(tpe: UnkindedType, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case ReadWrite(tpe2, _) => tpe == tpe2
@@ -110,6 +136,9 @@ object UnkindedType {
     }
   }
 
+  /**
+    * A type with a kind ascription.
+    */
   case class Ascribe(tpe: UnkindedType, kind: Kind, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case Ascribe(tpe2, kind2, _) => tpe == tpe2 && kind == kind2
@@ -117,6 +146,9 @@ object UnkindedType {
     }
   }
 
+  /**
+    * A fully resolved type alias.
+    */
   case class Alias(cst: Ast.AliasConstructor, args: List[UnkindedType], tpe: UnkindedType, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case Alias(Ast.AliasConstructor(sym2, _), args2, tpe2, _) => cst.sym == sym2 && args == args2 && tpe == tpe2
