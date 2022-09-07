@@ -603,12 +603,9 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given type `tpe0`.
     */
   private def visitType(tpe0: Type): Iterator[SemanticToken] = tpe0 match {
-    case Type.KindedVar(_, loc) =>
+    case Type.Var(_, loc) =>
       val t = SemanticToken(SemanticTokenType.TypeParameter, Nil, loc)
       Iterator(t)
-
-    case Type.Ascribe(tpe, _, _) =>
-      visitType(tpe)
 
     case Type.Cst(cst, loc) =>
       if (isVisibleTypeConstructor(cst)) {
@@ -624,15 +621,6 @@ object SemanticTokensProvider {
     case Type.Alias(cst, args, _, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
       Iterator(t) ++ args.flatMap(visitType).iterator
-
-    case _: Type.UnkindedVar =>
-      throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
-
-    case _: Type.UnkindedArrow =>
-      throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
-
-    case _: Type.ReadWrite =>
-      throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
   }
 
   /**
@@ -655,7 +643,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Str => true
     case TypeConstructor.Channel => true
     case TypeConstructor.Lazy => true
-    case TypeConstructor.KindedEnum(_, _) => true
+    case TypeConstructor.Enum(_, _) => true
     case TypeConstructor.Native(_) => true
     case TypeConstructor.Array => true
     case TypeConstructor.Ref => true
@@ -683,9 +671,6 @@ object SemanticTokensProvider {
     case TypeConstructor.Region => false
     case TypeConstructor.Empty => false
     case TypeConstructor.All => false
-
-    case TypeConstructor.UnkindedEnum(_) => throw InternalCompilerException("Unexpected unkinded type.")
-    case TypeConstructor.UnappliedAlias(_) => throw InternalCompilerException("Unexpected unkinded type.")
   }
 
   /**

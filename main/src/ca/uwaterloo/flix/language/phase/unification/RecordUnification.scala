@@ -30,9 +30,9 @@ object RecordUnification {
     */
   def unifyRows(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
 
-    case (tvar: Type.KindedVar, tpe) => Unification.unifyVar(tvar, tpe, renv)
+    case (tvar: Type.Var, tpe) => Unification.unifyVar(tvar, tpe, renv)
 
-    case (tpe, tvar: Type.KindedVar) => Unification.unifyVar(tvar, tpe, renv)
+    case (tpe, tvar: Type.Var) => Unification.unifyVar(tvar, tpe, renv)
 
     case (Type.RecordRowEmpty, Type.RecordRowEmpty) => Ok(Substitution.empty)
 
@@ -71,7 +71,7 @@ object RecordUnification {
           }
         }
       case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(field1), _), fieldType1, _), _, _)) =>
-        val tv = tvar.asKinded
+        val tv = tvar
         // Case 2: The row is a type variable.
         if (staticRow.typeVars contains tv) {
           Err(UnificationError.OccursCheck(tv, staticRow))

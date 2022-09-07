@@ -17,9 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
-import ca.uwaterloo.flix.language.phase.Kinder
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
@@ -46,14 +44,11 @@ sealed trait Type {
     *
     * Returns a sorted set to ensure that the compiler is deterministic.
     */
-  def typeVars: SortedSet[Type.KindedVar] = this match {
-    case x: Type.Var => SortedSet(x.asKinded)
+  def typeVars: SortedSet[Type.Var] = this match {
+    case x: Type.Var => SortedSet(x)
     case Type.Cst(tc, _) => SortedSet.empty
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
-    case Type.Ascribe(tpe, _, _) => tpe.typeVars
     case Type.Alias(_, args, _, _) => args.flatMap(_.typeVars).to(SortedSet)
-    case Type.UnkindedArrow(_, _, _) => SortedSet.empty
-    case Type.ReadWrite(tpe, _) => tpe.typeVars
   }
 
   /**
@@ -77,14 +72,10 @@ sealed trait Type {
     * }}}
     */
   def typeConstructor: Option[TypeConstructor] = this match {
-    case Type.KindedVar(_, _) => None
-    case Type.UnkindedVar(_, _) => None
+    case Type.Var(_, _) => None
     case Type.Cst(tc, _) => Some(tc)
     case Type.Apply(t1, _, _) => t1.typeConstructor
-    case Type.Ascribe(tpe, _, _) => tpe.typeConstructor
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructor
-    case Type.UnkindedArrow(_, _, _) => None
-    case Type.ReadWrite(_, _) => None
   }
 
   /**
@@ -107,14 +98,10 @@ sealed trait Type {
     * Returns a list of all type constructors in `this` type.
     */
   def typeConstructors: List[TypeConstructor] = this match {
-    case Type.KindedVar(_, _) => Nil
-    case Type.UnkindedVar(_, _) => Nil
+    case Type.Var(_, _) => Nil
     case Type.Cst(tc, _) => tc :: Nil
     case Type.Apply(t1, t2, _) => t1.typeConstructors ::: t2.typeConstructors
-    case Type.Ascribe(tpe, _, _) => tpe.typeConstructors
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructors
-    case Type.UnkindedArrow(_, _, _) => Nil
-    case Type.ReadWrite(_, _) => Nil
   }
 
   /**
@@ -140,14 +127,11 @@ sealed trait Type {
   /**
     * Applies `f` to every type variable in `this` type.
     */
-  def map(f: Type.KindedVar => Type): Type = this match {
-    case tvar: Type.Var => f(tvar.asKinded)
+  def map(f: Type.Var => Type): Type = this match {
+    case tvar: Type.Var => f(tvar)
     case Type.Cst(_, _) => this
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(tpe1.map(f), tpe2.map(f), loc)
-    case Type.Ascribe(tpe, kind, loc) => Type.Ascribe(tpe.map(f), kind, loc)
     case Type.Alias(sym, args, tpe, loc) => Type.Alias(sym, args.map(_.map(f)), tpe.map(f), loc)
-    case Type.UnkindedArrow(_, _, _) => this
-    case Type.ReadWrite(tpe, loc) => Type.ReadWrite(tpe.map(f), loc)
   }
 
   /**
@@ -194,14 +178,10 @@ sealed trait Type {
     * Returns the size of `this` type.
     */
   def size: Int = this match {
-    case Type.KindedVar(_, _) => 1
-    case Type.UnkindedVar(_, _) => 1
+    case Type.Var(_, _) => 1
     case Type.Cst(_, _) => 1
-    case Type.Ascribe(tpe, _, _) => tpe.size
     case Type.Apply(tpe1, tpe2, _) => tpe1.size + tpe2.size + 1
     case Type.Alias(_, _, tpe, _) => tpe.size
-    case Type.UnkindedArrow(_, _, _) => 1
-    case Type.ReadWrite(tpe, _) => tpe.size + 1
   }
 
   /**
@@ -368,39 +348,6 @@ object Type {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-    * The union of type variables.
-    */
-  sealed trait Var extends Type {
-    def sym: Symbol.TypeVarSym
-
-    def kind: Kind = this match {
-      case KindedVar(sym, _) => sym.kind
-      case UnkindedVar(_, _) => throw InternalCompilerException("Attempt to access kind of unkinded type variable.")
-    }
-
-    /**
-      * Returns the same type variable with the given text.
-      */
-    def withText(text: Ast.VarText): Var
-
-    /**
-      * Casts this type variable to a kinded type variable.
-      */
-    def asKinded: Type.KindedVar = this match {
-      case tvar: KindedVar => tvar
-      case _: UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable.")
-    }
-
-    /**
-      * Casts this type variable to an unkinded type variable.
-      */
-    def asUnkinded: Type.UnkindedVar = this match {
-      case tvar: UnkindedVar => tvar
-      case _: KindedVar => throw InternalCompilerException("Unexpected kinded type variable.")
-    }
-  }
-
-  /**
     * The union of non-Apply types.
     * Used to restrict the range of return values of [[Type.baseType]].
     */
@@ -409,16 +356,22 @@ object Type {
   /**
     * A type variable.
     */
-  @IntroducedBy(Kinder.getClass)
-  case class KindedVar(sym: Symbol.KindedTypeVarSym, loc: SourceLocation) extends Type with Var with BaseType with Ordered[Type.KindedVar] {
+  case class Var(sym: Symbol.KindedTypeVarSym, loc: SourceLocation) extends Type with BaseType with Ordered[Type.Var] {
 
-    override def withText(text: Ast.VarText): KindedVar = KindedVar(sym.withText(text), loc)
+    def withText(text: Ast.VarText): Var = Var(sym.withText(text), loc)
+
+    def kind: Kind = sym.kind
+
+    /**
+      * Removes the kind from this var.
+      */
+    def withoutKind: UnkindedType.Var = UnkindedType.Var(sym.withoutKind, loc)
 
     /**
       * Returns `true` if `this` type variable is equal to `o`.
       */
     override def equals(o: scala.Any): Boolean = o match {
-      case that: KindedVar => this.sym == that.sym
+      case that: Var => this.sym == that.sym
       case _ => false
     }
 
@@ -430,52 +383,7 @@ object Type {
     /**
       * Compares `this` type variable to `that` type variable.
       */
-    override def compare(that: Type.KindedVar): Int = this.sym.id - that.sym.id
-  }
-
-  /**
-    * A type variable without a kind.
-    */
-  @EliminatedBy(Kinder.getClass)
-  case class UnkindedVar(sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends Type with Var with BaseType with Ordered[Type.UnkindedVar] {
-
-    override def withText(text: Ast.VarText): UnkindedVar = UnkindedVar(sym.withText(text), loc)
-
-    /**
-      * Returns `true` if `this` type variable is equal to `o`.
-      */
-    override def equals(o: scala.Any): Boolean = o match {
-      case that: UnkindedVar => this.sym == that.sym
-      case _ => false
-    }
-
-    /**
-      * Returns the hash code of `this` type variable.
-      */
-    override def hashCode(): Int = sym.hashCode()
-
-    /**
-      * Compares `this` type variable to `that` type variable.
-      */
-    override def compare(that: Type.UnkindedVar): Int = this.sym.id - that.sym.id
-
-    /**
-      * Converts the UnkindedVar to a Var with the given `kind`.
-      */
-    def ascribedWith(kind: Kind): Type.KindedVar = Type.KindedVar(sym.ascribedWith(kind), loc)
-  }
-
-  /**
-    * Represents a type ascribed with a kind.
-    */
-  @EliminatedBy(Kinder.getClass)
-  case class Ascribe(tpe: Type, kind: Kind, loc: SourceLocation) extends Type with BaseType {
-    override def hashCode(): Int = Objects.hash(tpe, kind)
-
-    override def equals(o: Any): Boolean = o match {
-      case that: Ascribe => this.tpe == that.tpe && this.kind == that.kind
-      case _ => false
-    }
+    override def compare(that: Type.Var): Int = this.sym.id - that.sym.id
   }
 
   /**
@@ -527,30 +435,9 @@ object Type {
   /**
     * A type alias, including the arguments passed to it and the type it represents.
     */
-  case class Alias(cst: AliasConstructor, args: List[Type], tpe: Type, loc: SourceLocation) extends Type with BaseType {
+  case class Alias(cst: Ast.AliasConstructor, args: List[Type], tpe: Type, loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = tpe.kind
   }
-
-  /**
-    * An unkinded arrow, holding a yet-unsplit purity and effect.
-    */
-  @EliminatedBy(Kinder.getClass)
-  case class UnkindedArrow(purAndEff: Ast.PurityAndEffect, arity: Int, loc: SourceLocation) extends Type with BaseType {
-    def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type")
-  }
-
-  /**
-    * A type representing a read or write to a region.
-    */
-  @EliminatedBy(Kinder.getClass)
-  case class ReadWrite(tpe: Type, loc: SourceLocation) extends Type with BaseType {
-    def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type")
-  }
-
-  /**
-    * A constructor for a type alias. (Not a valid type by itself).
-    */
-  case class AliasConstructor(sym: Symbol.TypeAliasSym, loc: SourceLocation)
 
   /////////////////////////////////////////////////////////////////////////////
   // Utility Functions                                                       //
@@ -559,17 +446,9 @@ object Type {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(k: Kind, loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): Type.KindedVar = {
+  def freshVar(k: Kind, loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): Type.Var = {
     val sym = Symbol.freshKindedTypeVarSym(text, k, isRegion, loc)
-    Type.KindedVar(sym, loc)
-  }
-
-  /**
-    * Returns a fresh unkinded type variable of the given kind `k` and rigidity `r`.
-    */
-  def freshUnkindedVar(loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): Type.UnkindedVar = {
-    val sym = Symbol.freshUnkindedTypeVarSym(text, isRegion, loc)
-    Type.UnkindedVar(sym, loc)
+    Type.Var(sym, loc)
   }
 
   /**
@@ -742,24 +621,19 @@ object Type {
   def mkChoice(tpe0: Type, isAbsent: Type, isPresent: Type, loc: SourceLocation): Type = {
     val sym = Symbol.mkEnumSym("Choice")
     val kind = Kind.Star ->: Kind.Bool ->: Kind.Bool ->: Kind.Star
-    val tc = TypeConstructor.KindedEnum(sym, kind)
+    val tc = TypeConstructor.Enum(sym, kind)
     Apply(Apply(Apply(Cst(tc, loc), tpe0, loc), isAbsent, loc), isPresent, loc)
   }
 
   /**
     * Construct the enum type constructor for the given symbol `sym` with the given kind `k`.
     */
-  def mkEnum(sym: Symbol.EnumSym, k: Kind, loc: SourceLocation): Type = Type.Cst(TypeConstructor.KindedEnum(sym, k), loc)
+  def mkEnum(sym: Symbol.EnumSym, k: Kind, loc: SourceLocation): Type = Type.Cst(TypeConstructor.Enum(sym, k), loc)
 
   /**
     * Construct the enum type `Sym[ts]`.
     */
-  def mkEnum(sym: Symbol.EnumSym, ts: List[Type], loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.KindedEnum(sym, Kind.mkArrow(ts.length)), loc), ts, loc)
-
-  /**
-    * Construct the enum type `Sym[ts]`.
-    */
-  def mkUnkindedEnum(sym: Symbol.EnumSym, ts: List[Type], loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.UnkindedEnum(sym), loc), ts, loc)
+  def mkEnum(sym: Symbol.EnumSym, ts: List[Type], loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.Enum(sym, Kind.mkArrow(ts.length)), loc), ts, loc)
 
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
@@ -863,7 +737,7 @@ object Type {
     case (_, Type.Cst(TypeConstructor.True, _)) => tpe1
     case (Type.Cst(TypeConstructor.False, _), _) => Type.False
     case (_, Type.Cst(TypeConstructor.False, _)) => Type.False
-    case (Type.KindedVar(sym1, _), Type.KindedVar(sym2, _)) if sym1 == sym2 => tpe1
+    case (Type.Var(sym1, _), Type.Var(sym2, _)) if sym1 == sym2 => tpe1
     case _ => Type.Apply(Type.Apply(Type.And, tpe1, loc), tpe2, loc)
   }
 
@@ -903,7 +777,7 @@ object Type {
     case (_, Type.Cst(TypeConstructor.True, _)) => Type.True
     case (Type.Cst(TypeConstructor.False, _), _) => tpe2
     case (_, Type.Cst(TypeConstructor.False, _)) => tpe1
-    case (Type.KindedVar(sym1, _), Type.KindedVar(sym2, _)) if sym1 == sym2 => tpe1
+    case (Type.Var(sym1, _), Type.Var(sym2, _)) if sym1 == sym2 => tpe1
     case _ => Type.Apply(Type.Apply(Type.Or, tpe1, loc), tpe2, loc)
   }
 
@@ -1009,9 +883,6 @@ object Type {
     case Type.Cst(_, _) => t
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Type.Alias(_, _, tpe, _) => eraseAliases(tpe)
-    case Type.Ascribe(tpe, kind, loc) => Type.Ascribe(tpe, kind, loc)
-    case _: Type.UnkindedArrow => t
-    case Type.ReadWrite(tpe, loc) => Type.ReadWrite(eraseAliases(tpe), loc)
   }
 
   /**

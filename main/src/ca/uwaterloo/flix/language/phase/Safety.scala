@@ -313,9 +313,9 @@ object Safety {
     *
     */
   private def isSubTypeOf(tpe1: Type, tpe2: Type): Boolean = (tpe1.baseType, tpe2.baseType) match {
-    case (Type.True, Type.KindedVar(_, _)) => true
+    case (Type.True, Type.Var(_, _)) => true
     case (Type.True, Type.False) => true
-    case (Type.KindedVar(_, _), Type.False) => true
+    case (Type.Var(_, _), Type.False) => true
 
     case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
       right.isAssignableFrom(left)
