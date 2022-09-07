@@ -169,7 +169,7 @@ object Documentor {
     * Returns `None` if the type is not an `enum` type.
     */
   def getEnum(inst: TypedAst.Instance): Option[Symbol.EnumSym] = inst.tpe.baseType match {
-    case Type.Cst(TypeConstructor.KindedEnum(sym, _), _) => Some(sym)
+    case Type.Cst(TypeConstructor.Enum(sym, _), _) => Some(sym)
     case _ => None
   }
 

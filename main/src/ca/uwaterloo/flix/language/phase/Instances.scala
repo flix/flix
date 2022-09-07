@@ -85,7 +85,7 @@ object Instances {
     def checkOrphan(inst: TypedAst.Instance): List[InstanceError] = inst match {
       case TypedAst.Instance(_, _, _, sym, tpe, _, _, ns, _) => tpe.typeConstructor match {
         // Case 1: Enum type in the same namespace as the instance: not an orphan
-        case Some(TypeConstructor.KindedEnum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => Nil
+        case Some(TypeConstructor.Enum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => Nil
         // Case 2: Any type in the class namespace: not an orphan
         case _ if (sym.clazz.namespace) == ns.idents.map(_.name) => Nil
         // Case 3: Any type outside the class companion namespace and enum declaration namespace: orphan
@@ -101,11 +101,11 @@ object Instances {
     def checkSimple(inst: TypedAst.Instance): List[InstanceError] = inst match {
       case TypedAst.Instance(_, _, _, sym, tpe, _, _, _, _) => tpe match {
         case _: Type.Cst => Nil
-        case _: Type.KindedVar => List(InstanceError.ComplexInstanceType(tpe, sym, sym.loc))
+        case _: Type.Var => List(InstanceError.ComplexInstanceType(tpe, sym, sym.loc))
         case _: Type.Apply =>
-          val (_, errs0) = tpe.typeArguments.foldLeft((List.empty[Type.KindedVar], List.empty[InstanceError])) {
+          val (_, errs0) = tpe.typeArguments.foldLeft((List.empty[Type.Var], List.empty[InstanceError])) {
             // Case 1: Type variable
-            case ((seen, errs), tvar: Type.KindedVar) =>
+            case ((seen, errs), tvar: Type.Var) =>
               // Case 1.1 We've seen it already. Error.
               if (seen.contains(tvar))
                 (seen, List(InstanceError.DuplicateTypeVariableOccurrence(tvar, sym, sym.loc)))
@@ -121,10 +121,6 @@ object Instances {
           }
           errs0
         case Type.Alias(alias, _, _, _) => List(InstanceError.IllegalTypeAliasInstance(alias.sym, sym, sym.loc))
-        case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type.")
-        case _: Type.UnkindedArrow => throw InternalCompilerException("Unexpected unkinded type.")
-        case _: Type.ReadWrite => throw InternalCompilerException("Unexpected unkinded type.")
-        case _: Type.Ascribe => throw InternalCompilerException("Unexpected ascribe type.")
       }
     }
 
@@ -148,14 +144,10 @@ object Instances {
     def generifyBools(tpe0: Type)(implicit flix: Flix): Type = tpe0 match {
       case Type.Cst(TypeConstructor.True, loc) => Type.freshVar(Kind.Bool, loc)
       case Type.Cst(TypeConstructor.False, loc) => Type.freshVar(Kind.Bool, loc)
-      case t: Type.KindedVar => t
+      case t: Type.Var => t
       case t: Type.Cst => t
       case Type.Apply(tpe1, tpe2, loc) => Type.Apply(generifyBools(tpe1), generifyBools(tpe2), loc)
       case Type.Alias(cst, args, tpe, loc) => Type.Alias(cst, args.map(generifyBools), generifyBools(tpe), loc)
-      case _: Type.UnkindedVar => throw InternalCompilerException("unexpected unkinded type")
-      case _: Type.UnkindedArrow => throw InternalCompilerException("unexpected unkinded type")
-      case _: Type.ReadWrite => throw InternalCompilerException("unexpected unkinded type")
-      case _: Type.Ascribe => throw InternalCompilerException("unexpected unkinded type")
     }
 
     /**
