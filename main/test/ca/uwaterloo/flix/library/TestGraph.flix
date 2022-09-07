@@ -397,6 +397,47 @@ namespace TestGraph {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // distances                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def distances01(): Bool =
+        let g = graphWithDist01();
+        Graph.distances(1, g) == Map#{1 => 0}
+
+    @test
+    def distances02(): Bool =
+        let g = graphWithDist02();
+        Graph.distances(1, g) == Map#{1 => 0, 2 => 4}
+
+    @test
+    def distances03(): Bool =
+        let g = graphWithDist02();
+        Graph.distances(2, g) == Map#{2 => 0}
+
+    @test
+    def distances04(): Bool =
+        let g = graphWithDist03();
+        Graph.distances(3, g) == Map#{3 => 0, 4 => 7}
+
+    @test
+    def distances05(): Bool =
+        let g = graphWithDist04();
+        Graph.distances(2, g) == Map#{2 => 0, 3 => 5, 4 => (5 + 7)}
+
+    @test
+    def distances06(): Bool =
+        let g = graphWithDist05();
+        Graph.distances(4, g) == Map#{1 => 5, 2 => (5 + 4), 3 => (5 + 4 + 2), 4 => 0}
+
+    @test
+    def distances07(): Bool =
+        let g = graphWithDist06();
+        Graph.distances(4, g)
+            == Map#{2 => 7, 3 => (7 + 10), 4 => 0, 5 => 2, 6 => 3}
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // distance                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -444,46 +485,5 @@ namespace TestGraph {
     def distance09(): Bool =
         let g = graphWithDist06();
         Graph.distance(src = 1, dst = 6, g) == Some(5 + 2 + 1)
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // distances                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def distances01(): Bool =
-        let g = graphWithDist01();
-        Graph.distances(1, g) == Map#{1 => Some(0)}
-
-    @test
-    def distances02(): Bool =
-        let g = graphWithDist02();
-        Graph.distances(1, g) == Map#{1 => Some(0), 2 => Some(4)}
-
-    @test
-    def distances03(): Bool =
-        let g = graphWithDist02();
-        Graph.distances(2, g) == Map#{1 => None, 2 => Some(0)}
-
-    @test
-    def distances04(): Bool =
-        let g = graphWithDist03();
-        Graph.distances(3, g) == Map#{1 => None, 2 => None, 3 => Some(0), 4 => Some(7)}
-
-    @test
-    def distances05(): Bool =
-        let g = graphWithDist04();
-        Graph.distances(2, g) == Map#{1 => None, 2 => Some(0), 3 => Some(5), 4 => Some(5 + 7)}
-
-    @test
-    def distances06(): Bool =
-        let g = graphWithDist05();
-        Graph.distances(4, g) == Map#{1 => Some(5), 2 => Some(5 + 4), 3 => Some(5 + 4 + 2), 4 => Some(0)}
-
-    @test
-    def distances07(): Bool =
-        let g = graphWithDist06();
-        Graph.distances(4, g)
-            == Map#{1 => None, 2 => Some(7), 3 => Some(7 + 10), 4 => Some(0), 5 => Some(2), 6 => Some(3)}
 
 }

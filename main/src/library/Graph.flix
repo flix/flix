@@ -175,14 +175,8 @@ namespace Graph {
     ///
     /// Returns the shortest distance from `src` to every other vertex in the weighted directed graph `g`.
     ///
-    pub def distances(src: t, g: m[(t, Int32, t)]): Map[t, Option[Int32]] with Foldable[m], Boxable[t] =
+    pub def distances(src: t, g: m[(t, Int32, t)]): Map[t, Int32] with Foldable[m], Boxable[t] =
         let edges = inject g into Edge;
-        let nodes = #{
-            Node(x) :- Edge(x, _, _).
-            Node(x) :- Edge(_, _, x).
-        };
-        let noDists = query edges, nodes select x from Node(x) |> List.toMapWith(_ -> None);
-
         let invEdges = #{
             InvEdge(x, Inv(d), y) :- Edge(x, d, y).
         };
@@ -190,16 +184,19 @@ namespace Graph {
             Dist(src; Inv(0)).
             Dist(y; d + w) :- Dist(x; d), InvEdge(x, w, y).
         };
-        let computeDists = query edges, invEdges, dists select (x, d) from Dist(x; d)
-                            |> List.map(i -> let (x, Inv(d)) = i; (x, Some(d))) |> List.toMap;
 
-        Map.union(computeDists, noDists)
+        let f = (x, acc) -> {
+            let (n, Inv(d)) = x;
+            Map.insert(n, d, acc)
+        };
+
+        query edges, invEdges, dists select (x, d) from Dist(x; d) |> List.foldRight(f, Map.empty())
 
     ///
     /// Returns the shortest distance from `src` to `dst` in the weighted directed graph `g`.
     ///
     pub def distance(src: { src :: t }, dst: { dst :: t }, g: m[(t, Int32, t)]): Option[Int32] with Foldable[m], Boxable[t] =
-        distances(src.src, g) |> Map.getWithDefault(dst.dst, None)
+        distances(src.src, g) |> Map.get(dst.dst)
 
 
 }
