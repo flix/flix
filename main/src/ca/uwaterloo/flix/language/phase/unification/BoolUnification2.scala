@@ -23,9 +23,23 @@ import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
 import scala.annotation.tailrec
+import scala.collection.immutable.SortedSet
 
 object BoolUnification2 {
-  sealed trait Formula
+  sealed trait Formula {
+    /**
+      * Returns the set of type variables in this formula.
+      */
+    def typeVars: SortedSet[Symbol.KindedTypeVarSym] = this match {
+      case Formula.True => SortedSet.empty
+      case Formula.False => SortedSet.empty
+      case Formula.Not(f) => f.typeVars
+      case Formula.And(f1, f2) => f1.typeVars ++ f2.typeVars
+      case Formula.Or(f1, f2) => f1.typeVars ++ f2.typeVars
+      case Formula.Var(sym) => SortedSet(sym)
+    }
+  }
+
   object Formula {
     case object True extends Formula
     case object False extends Formula
@@ -83,7 +97,7 @@ object BoolUnification2 {
     val typeVars = query.typeVars.toList
 
     // Compute the flexible variables.
-    val flexibleTypeVars = renv.getFlexibleVarsOf(typeVars)
+    val flexibleTypeVars = typeVars.filter(renv.isFlexible)
 
     // Determine the order in which to eliminate the variables.
     val freeVars = computeVariableOrder(flexibleTypeVars)
@@ -121,9 +135,9 @@ object BoolUnification2 {
     * actually occur in the source code). We can ensure this by eliminating the
     * synthetic variables first.
     */
-  private def computeVariableOrder(l: List[Type.Var]): List[Type.Var] = {
-    val realVars = l.filter(_.sym.isReal)
-    val synthVars = l.filterNot(_.sym.isReal)
+  private def computeVariableOrder(l: List[Symbol.KindedTypeVarSym]): List[Symbol.KindedTypeVarSym] = {
+    val realVars = l.filter(_.isReal)
+    val synthVars = l.filterNot(_.isReal)
     synthVars ::: realVars
   }
 
@@ -132,7 +146,7 @@ object BoolUnification2 {
     *
     * `flexvs` is the list of remaining flexible variables in the expression.
     */
-  private def successiveVariableElimination(f: Type, flexvs: List[Type.Var])(implicit flix: Flix): Substitution = flexvs match {
+  private def successiveVariableElimination(f: Formula, flexvs: List[Symbol.KindedTypeVarSym])(implicit flix: Flix): Substitution = flexvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
       if (!satisfiable(f))
@@ -141,8 +155,8 @@ object BoolUnification2 {
         throw BooleanUnificationException
 
     case x :: xs =>
-      val t0 = Substitution.singleton(x.sym, Type.False)(f)
-      val t1 = Substitution.singleton(x.sym, Type.True)(f)
+      val t0 = Substitution.singleton(x, Type.False)(f)
+      val t1 = Substitution.singleton(x, Type.True)(f)
       val se = successiveVariableElimination(mkAnd(t0, t1), xs)
 
       val f1 = TypeMinimization.minimizeType(mkOr(se(t0), mkAnd(x, mkNot(se(t1)))))
@@ -176,31 +190,31 @@ object BoolUnification2 {
   /**
     * To unify two Boolean formulas p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
     */
-  private def mkEq(p: Type, q: Type): Type = mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
+  private def mkEq(p: Formula, q: Formula): Formula = mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
 
   /**
     * Returns the negation of the Boolean formula `tpe0`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
-  def mkNot(tpe0: Type): Type = tpe0 match {
-    case Type.True =>
-      Type.False
+  def mkNot(f0: Formula): Formula = f0 match {
+    case Formula.True =>
+      Formula.False
 
-    case Type.False =>
-      Type.True
+    case Formula.False =>
+      Formula.True
 
-    case NOT(x) =>
+    case Formula.Not(x) =>
       x
 
     // ¬(¬x ∨ y) => x ∧ ¬y
-    case OR(NOT(x), y) =>
+    case Formula.Or(Formula.Not(x), y) =>
       mkAnd(x, mkNot(y))
 
     // ¬(x ∨ ¬y) => ¬x ∧ y
-    case OR(x, NOT(y)) =>
+    case Formula.Or(x, Formula.Not(y)) =>
       mkAnd(mkNot(x), y)
 
-    case _ => Type.Apply(Type.Not, tpe0, tpe0.loc)
+    case _ => Formula.Not(f0)
   }
 
   /**
@@ -208,82 +222,82 @@ object BoolUnification2 {
     */
   // NB: The order of cases has been determined by code coverage analysis.
   @tailrec
-  def mkAnd(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
+  def mkAnd(tpe1: Formula, tpe2: Formula): Formula = (tpe1, tpe2) match {
     // T ∧ x => x
-    case (Type.True, _) =>
+    case (Formula.True, _) =>
       tpe2
 
     // x ∧ T => x
-    case (_, Type.True) =>
+    case (_, Formula.True) =>
       tpe1
 
     // F ∧ x => F
-    case (Type.False, _) =>
-      Type.False
+    case (Formula.False, _) =>
+      Formula.False
 
     // x ∧ F => F
-    case (_, Type.False) =>
-      Type.False
+    case (_, Formula.False) =>
+      Formula.False
 
     // ¬x ∧ (x ∨ y) => ¬x ∧ y
-    case (NOT(x1), OR(x2, y)) if x1 == x2 =>
+    case (Formula.Not(x1), Formula.Or(x2, y)) if x1 == x2 =>
       mkAnd(mkNot(x1), y)
 
     // x ∧ ¬x => F
-    case (x1, NOT(x2)) if x1 == x2 =>
-      Type.False
+    case (x1, Formula.Not(x2)) if x1 == x2 =>
+      Formula.False
 
     // ¬x ∧ x => F
-    case (NOT(x1), x2) if x1 == x2 =>
-      Type.False
+    case (Formula.Not(x1), x2) if x1 == x2 =>
+      Formula.False
 
     // x ∧ (x ∧ y) => (x ∧ y)
-    case (x1, AND(x2, y)) if x1 == x2 =>
+    case (x1, Formula.And(x2, y)) if x1 == x2 =>
       mkAnd(x1, y)
 
     // x ∧ (y ∧ x) => (x ∧ y)
-    case (x1, AND(y, x2)) if x1 == x2 =>
+    case (x1, Formula.And(y, x2)) if x1 == x2 =>
       mkAnd(x1, y)
 
     // (x ∧ y) ∧ x) => (x ∧ y)
-    case (AND(x1, y), x2) if x1 == x2 =>
+    case (Formula.And(x1, y), x2) if x1 == x2 =>
       mkAnd(x1, y)
 
     // (x ∧ y) ∧ y) => (x ∧ y)
-    case (AND(x, y1), y2) if y1 == y2 =>
+    case (Formula.And(x, y1), y2) if y1 == y2 =>
       mkAnd(x, y1)
 
     // x ∧ (x ∨ y) => x
-    case (x1, OR(x2, _)) if x1 == x2 =>
+    case (x1, Formula.Or(x2, _)) if x1 == x2 =>
       x1
 
     // (x ∨ y) ∧ x => x
-    case (OR(x1, _), x2) if x1 == x2 =>
+    case (Formula.Or(x1, _), x2) if x1 == x2 =>
       x1
 
     // x ∧ (y ∧ ¬x) => F
-    case (x1, AND(_, NOT(x2))) if x1 == x2 =>
-      Type.False
+    case (x1, Formula.And(_, Formula.Not(x2))) if x1 == x2 =>
+      Formula.False
 
     // (¬x ∧ y) ∧ x => F
-    case (AND(NOT(x1), _), x2) if x1 == x2 =>
-      Type.False
+    case (Formula.And(Formula.Not(x1), _), x2) if x1 == x2 =>
+      Formula.False
 
     // x ∧ ¬(x ∨ y) => F
-    case (x1, NOT(OR(x2, _))) if x1 == x2 =>
-      Type.False
+    case (x1, Formula.Not(Formula.Or(x2, _))) if x1 == x2 =>
+      Formula.False
 
     // ¬(x ∨ y) ∧ x => F
-    case (NOT(OR(x1, _)), x2) if x1 == x2 =>
-      Type.False
+    case (Formula.Not(Formula.Or(x1, _)), x2) if x1 == x2 =>
+      Formula.False
 
     // x ∧ (¬x ∧ y) => F
-    case (x1, AND(NOT(x2), _)) if x1 == x2 =>
-      Type.False
+    case (x1, Formula.And(Formula.Not(x2), _)) if x1 == x2 =>
+      Formula.False
 
     // (¬x ∧ y) ∧ x => F
-    case (AND(NOT(x1), _), x2) if x1 == x2 =>
-      Type.False
+    case (Formula.And(Formula.Not(x1), _), x2) if x1 == x2 =>
+      Formula.False
 
     // x ∧ x => x
     case _ if tpe1 == tpe2 => tpe1
@@ -295,7 +309,7 @@ object BoolUnification2 {
       //        println(s.substring(0, Math.min(len, 300)))
       //      }
 
-      Type.Apply(Type.Apply(Type.And, tpe1, tpe1.loc), tpe2, tpe1.loc)
+      Formula.And(tpe1, tpe2)
   }
 
   /**
@@ -303,52 +317,52 @@ object BoolUnification2 {
     */
   // NB: The order of cases has been determined by code coverage analysis.
   @tailrec
-  def mkOr(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
+  def mkOr(tpe1: Formula, tpe2: Formula): Formula = (tpe1, tpe2) match {
     // T ∨ x => T
-    case (Type.True, _) =>
-      Type.True
+    case (Formula.True, _) =>
+      Formula.True
 
     // F ∨ y => y
-    case (Type.False, _) =>
+    case (Formula.False, _) =>
       tpe2
 
     // x ∨ T => T
-    case (_, Type.True) =>
-      Type.True
+    case (_, Formula.True) =>
+      Formula.True
 
     // x ∨ F => x
-    case (_, Type.False) =>
+    case (_, Formula.False) =>
       tpe1
 
     // x ∨ (y ∨ x) => x ∨ y
-    case (x1, OR(y, x2)) if x1 == x2 =>
+    case (x1, Formula.Or(y, x2)) if x1 == x2 =>
       mkOr(x1, y)
 
     // (x ∨ y) ∨ x => x ∨ y
-    case (OR(x1, y), x2) if x1 == x2 =>
+    case (Formula.Or(x1, y), x2) if x1 == x2 =>
       mkOr(x1, y)
 
     // ¬x ∨ x => T
-    case (NOT(x), y) if x == y =>
-      Type.True
+    case (Formula.Not(x), y) if x == y =>
+      Formula.True
 
     // x ∨ ¬x => T
-    case (x, NOT(y)) if x == y =>
-      Type.True
+    case (x, Formula.Not(y)) if x == y =>
+      Formula.True
 
     // (¬x ∨ y) ∨ x) => T
-    case (OR(NOT(x), _), y) if x == y =>
-      Type.True
+    case (Formula.Or(Formula.Not(x), _), y) if x == y =>
+      Formula.True
 
     // x ∨ (¬x ∨ y) => T
-    case (x, OR(NOT(y), _)) if x == y =>
-      Type.True
+    case (x, Formula.Or(Formula.Not(y), _)) if x == y =>
+      Formula.True
 
     // x ∨ (y ∧ x) => x
-    case (x1, AND(_, x2)) if x1 == x2 => x1
+    case (x1, Formula.And(_, x2)) if x1 == x2 => x1
 
     // (y ∧ x) ∨ x => x
-    case (AND(_, x1), x2) if x1 == x2 => x1
+    case (Formula.And(_, x1), x2) if x1 == x2 => x1
 
     // x ∨ x => x
     case _ if tpe1 == tpe2 =>
@@ -362,31 +376,6 @@ object BoolUnification2 {
       //                println(s.substring(0, Math.min(len, 300)))
       //              }
 
-      Type.Apply(Type.Apply(Type.Or, tpe1, tpe1.loc), tpe2, tpe1.loc)
+      Formula.Or(tpe1, tpe2)
   }
-
-  private object NOT {
-    @inline
-    def unapply(tpe: Type): Option[Type] = tpe match {
-      case Type.Apply(Type.Cst(TypeConstructor.Not, _), x, _) => Some(x)
-      case _ => None
-    }
-  }
-
-  private object AND {
-    @inline
-    def unapply(tpe: Type): Option[(Type, Type)] = tpe match {
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), x, _), y, _) => Some((x, y))
-      case _ => None
-    }
-  }
-
-  private object OR {
-    @inline
-    def unapply(tpe: Type): Option[(Type, Type)] = tpe match {
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _), y, _) => Some((x, y))
-      case _ => None
-    }
-  }
-
 }
