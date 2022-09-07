@@ -124,7 +124,7 @@ object BoolAlgebra {
     * The map `m` must bind each free type variable in `tpe` to a Boolean variable.
     */
   def fromBoolType(tpe: Type, m: Bimap[VarOrEff, Int]): BoolAlgebra = tpe match {
-    case Type.KindedVar(sym, _) => m.getForward(VarOrEff.Var(sym)) match {
+    case Type.Var(sym, _) => m.getForward(VarOrEff.Var(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.")
       case Some(x) => Var(x)
     }
@@ -142,7 +142,7 @@ object BoolAlgebra {
     * The map `m` must bind each free type variable in `tpe` to a Boolean variable.
     */
   def fromEffType(tpe: Type, m: Bimap[VarOrEff, Int]): BoolAlgebra = tpe match {
-    case Type.KindedVar(sym, _) => m.getForward(VarOrEff.Var(sym)) match {
+    case Type.Var(sym, _) => m.getForward(VarOrEff.Var(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.")
       case Some(x) => Var(x)
     }
@@ -179,7 +179,7 @@ object BoolAlgebra {
     case Bot => Type.False
     case Var(x) => m.getBackward(x) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.")
-      case Some(VarOrEff.Var(sym)) => Type.KindedVar(sym, loc)
+      case Some(VarOrEff.Var(sym)) => Type.Var(sym, loc)
       case Some(VarOrEff.Eff(sym)) => throw InternalCompilerException(s"Unexpected effect: '$sym'.")
     }
     case Neg(f1) => Type.mkNot(toBoolType(f1, m, loc), loc)
@@ -197,7 +197,7 @@ object BoolAlgebra {
     case Bot => Type.Empty
     case Var(x) => m.getBackward(x) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.")
-      case Some(VarOrEff.Var(sym)) => Type.KindedVar(sym, loc)
+      case Some(VarOrEff.Var(sym)) => Type.Var(sym, loc)
       case Some(VarOrEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), loc)
     }
     case Neg(f1) => Type.mkComplement(toEffType(f1, m, loc), loc)

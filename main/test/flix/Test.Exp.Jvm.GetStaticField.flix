@@ -98,4 +98,9 @@ namespace Test/Exp/Jvm/GetStaticField {
         import static get flix.test.TestClass.STRING_FIELD: ##java.lang.Object \ IO as getField;
         getField()
 
+    @test
+    def testGetStaticInheritedField01(): Bool =
+        import static get flix.test.TestClassWithInheritedMethod.staticField: Int32 \ {} as getField;
+        getField() == 123
+
 }

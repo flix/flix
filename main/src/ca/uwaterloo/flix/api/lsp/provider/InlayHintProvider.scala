@@ -64,7 +64,7 @@ object InlayHintProvider {
     * Returns `true` if the given type `tpe` is a type variable.
     */
   private def isTypeVar(tpe: Type): Boolean = tpe match {
-    case Type.KindedVar(_, _) => true
+    case Type.Var(_, _) => true
     case _ => false
   }
 
