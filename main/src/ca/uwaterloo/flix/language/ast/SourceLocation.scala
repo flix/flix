@@ -89,6 +89,23 @@ case class SourceLocation(input: Option[ParserInput], source: Source, locationKi
   }
 
   /**
+    * Returns the text at this source location.
+    */
+  def text: Option[String] = input match {
+    case Some(in) =>
+      if (beginLine == endLine) {
+        Some(in.getLine(beginLine).substring(beginCol, endCol + 1)) // MATT are cols 0- or 1-indexed?
+      } else {
+        val lines = List.range(beginLine, endLine + 1).map(in.getLine)
+        val head = lines.head.substring(beginCol)
+        val last = lines.last.substring(0, endCol)
+        val body = lines.tail.init
+        Some((head :: (body :+ last)).mkString(System.lineSeparator()))
+      }
+    case None => None
+  }
+
+  /**
     * Returns a formatted string representation of `this` source location.
     */
   def format: String = s"${source.name}:$beginLine:$beginCol"

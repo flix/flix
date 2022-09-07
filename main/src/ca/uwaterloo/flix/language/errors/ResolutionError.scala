@@ -17,8 +17,9 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, UnkindedType}
-import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, UnkindedType}
+import ca.uwaterloo.flix.language.fmt.Audience
+import ca.uwaterloo.flix.language.fmt.FormatUnkindedType.formatUnkindedType
 import ca.uwaterloo.flix.util.Formatter
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -82,7 +83,7 @@ object ResolutionError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Illegal type: '${red(tpe.toString)}'.
+         |>> Illegal type: '${red(formatUnkindedType(tpe))}'.
          |
          |${code(loc, "illegal type.")}
          |""".stripMargin
@@ -107,7 +108,7 @@ object ResolutionError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unexpected non-Java type: '${red(tpe.toString)}'.
+         |>> Unexpected non-Java type: '${red(formatUnkindedType(tpe))}'.
          |
          |${code(loc, "unexpected type.")}
          |
@@ -739,7 +740,7 @@ object ResolutionError {
     * @param loc          the location of the method name.
     */
   case class MismatchingReturnType(className: String, methodName: String, declaredType: UnkindedType, expectedType: UnkindedType, loc: SourceLocation) extends ResolutionError {
-    def summary : String = {
+    def summary: String = {
       s"Mismatching return type."
     }
 
@@ -747,11 +748,11 @@ object ResolutionError {
       import formatter._
       s"""${line(kind, source.name)}
         >> Mismatched return type for method '${red(methodName)}' in class '${cyan(className)}'.
-        |
-        |${code(loc, "mismatched return type.")}
-        |Declared type: ${declaredType.toString}
-        |Expected type: ${expectedType.toString}
-        |""".stripMargin
+         |
+         |${code(loc, "mismatched return type.")}
+         |Declared type: ${formatUnkindedType(declaredType)}
+         |Expected type: ${formatUnkindedType(expectedType)}
+         |""".stripMargin
     }
 
     /**
