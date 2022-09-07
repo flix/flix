@@ -172,7 +172,10 @@ namespace Graph {
 
     instance Boxable[InvertLattice]
 
-    pub def distances(src: n, g: m[(n, Int32, n)]): Map[n, Option[Int32]] with Foldable[m], Boxable[n] =
+    ///
+    /// Returns the shortest distance from `src` to every other vertex in the weighted directed graph `g`.
+    ///
+    pub def distances(src: t, g: m[(t, Int32, t)]): Map[t, Option[Int32]] with Foldable[m], Boxable[t] =
         let edges = inject g into Edge;
         let nodes = #{
             Node(x) :- Edge(x, _, _).
@@ -191,5 +194,12 @@ namespace Graph {
                             |> List.map(i -> let (x, Inv(d)) = i; (x, Some(d))) |> List.toMap;
 
         Map.union(computeDists, noDists)
+
+    ///
+    /// Returns the shortest distance from `src` to `dst` in the weighted directed graph `g`.
+    ///
+    pub def distance(src: { src :: t }, dst: { dst :: t }, g: m[(t, Int32, t)]): Option[Int32] with Foldable[m], Boxable[t] =
+        distances(src.src, g) |> Map.getWithDefault(dst.dst, None)
+
 
 }
