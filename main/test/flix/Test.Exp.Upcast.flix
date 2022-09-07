@@ -128,4 +128,30 @@ namespace Test/Exp/Upcast {
                 g;
         ()
 
+    pub eff E
+
+    @test
+    def testUpcast13(): Unit =
+        let f = () -> 1;
+        let g = () -> 1 as \ E;
+        let _ =
+            if (true)
+                upcast f
+            else
+                g;
+        ()
+
+    @test
+    def testUpcast14(): Unit =
+        import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
+        import new java.lang.Object(): ##java.lang.Object & Impure \ E as newObject;
+        let f = (_: ##java.lang.Object) -> newStringBuilder();
+        let g = (_: ##java.lang.StringBuilder) -> newObject();
+        let _ =
+            if (true)
+                upcast f
+            else
+                g;
+        ()
+
 }
