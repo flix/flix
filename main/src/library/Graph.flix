@@ -23,7 +23,6 @@ namespace Graph {
         let x = query edges, nodes(), reachability() select (src, dst) from Reachable(src, dst);
         List.toSet(x)
 
-
     ///
     /// Helper function.
     /// Returns a Datalog program which computes the reachable nodes when given a set of `Edge` and `Node` facts.
@@ -119,67 +118,78 @@ namespace Graph {
         0 < (selfReach |> List.length)
 
     ///
-    /// Optionally returns the shortest distance from `src` to `dst` in the weighted directed graph `g`.
+    /// Wrapper type to invert lattice on `Int32`.
     ///
-    pub def distance(src: {src :: t}, dst: {dst :: t}, g: m[(t, d, t)]): Option[d] with Foldable[m], Boxable[t], Boxable[d], Add[d] =
-        let edges = inject g into Edge;
-        let x = query edges, dists(src.src) select x from Distance(n, x) where n == dst.dst;
-        List.minimum(x)
-
-    ///
-    /// Returns the shortest distance from `src` to every other vertex in the weighted directed graph `g`.
-    ///
-    pub def distances(src: t, g: m[(t, d, t)]): Map[t, Option[d]] with Foldable[m], Boxable[t], Boxable[d], Add[d] =
-        let edges = inject g into Edge;
-        let allDists = #{
-            // Collects all the distances `d` from `src` to `n` into a Set.
-            AllDists(n; Set#{d}) :- Distance(n, d).
-        };
-        let reachableDists = query edges, dists(src), allDists select (x, Set.minimum(s)) from AllDists(x; s) |> List.toMap;
-        let unreachableDists = unreachableWithDists(src, g)
-                                |> List.foldRight((x, acc) -> Map.insert(x, None, acc), Map.empty());
-        Map.union(reachableDists, unreachableDists)
-
-    ///
-    /// Helper function for `distance` and `distances`.
-    /// Returns a Datalog program which computes distances to all reachable nodes when given a set of `Edge` facts and a `src`.
-    ///
-    def dists(src: t): #{ Edge(t, d, t) | r } with Boxable[t], Boxable[d], Add[d] = #{
-        // Distance `d` from `src` to `n`.
-        Distance(n, d) :- Edge(src, d, n), if n != src.
-        // If `src` can reach `m` with distance `d1` and
-        // there is an edge from `m` to `n` with distance `d2`
-        // then `src` can reach `n` with distance `d1 + d2`.
-        Distance(n, d1 + d2) :- Distance(m, d1), Edge(m, d2, n), if n != src.
+    enum InvertLattice {
+        case Inv(Int32)
     }
 
-    ///
-    /// Helper function for `distances`.
-    /// Returns a Datalog program which when given a set of `Edge` facts computes the nodes.
-    ///
-    def nodesWithDists(): #{ Edge(t, d, t), Node(t) | r } with Boxable[t], Boxable[d] = #{
-        Node(x) :- Edge(x, _, _).
-        Node(x) :- Edge(_, _, x).
+    instance Eq[InvertLattice] {
+        pub def eq(x: InvertLattice, y: InvertLattice): Bool = match (x, y) {
+            case (Inv(xx), Inv(yy)) => xx `Eq.eq` yy
+        }
     }
 
-    ///
-    /// Helper function for `distances`.
-    /// Returns the vertices that are unreachable from the `src` in the weighted directed graph `g`.
-    ///
-    def unreachableWithDists(src: t, g: m[(t, d, t)]): List[t] with Foldable[m], Boxable[t], Boxable[d] =
+    instance ToString[InvertLattice] {
+        pub def toString(x: InvertLattice): String = match x {
+            case Inv(xx) => ToString.toString(xx)
+        }
+    }
+
+    instance Add[InvertLattice] {
+        pub def add(x: InvertLattice, y: InvertLattice): InvertLattice = match (x, y) {
+            case (Inv(xx), Inv(yy)) => Inv(xx+yy) // no consideration for overflow
+        }
+    }
+
+    instance PartialOrder[InvertLattice] {
+        pub def lessEqual(x: InvertLattice, y: InvertLattice): Bool = match (x, y) {
+            case (Inv(xx), Inv(yy)) => yy `PartialOrder.lessEqual` xx
+        }
+    }
+
+    instance LowerBound[InvertLattice] {
+        pub def minValue(): InvertLattice = Inv(UpperBound.maxValue())
+    }
+
+    instance JoinLattice[InvertLattice] {
+        pub def leastUpperBound(x: InvertLattice, y: InvertLattice): InvertLattice = match (x, y) {
+            case (Inv(xx), Inv(yy)) => Inv(xx `MeetLattice.greatestLowerBound` yy)
+        }
+    }
+
+    instance MeetLattice[InvertLattice] {
+        pub def greatestLowerBound(x: InvertLattice, y: InvertLattice): InvertLattice = match (x, y) {
+            case (Inv(xx), Inv(yy)) => Inv(xx `JoinLattice.leastUpperBound` yy)
+        }
+    }
+
+    instance Order[InvertLattice] {
+        pub def compare(x: InvertLattice, y: InvertLattice): Comparison = match (x, y) {
+            case (Inv(xx), Inv(yy)) => yy <=> xx
+        }
+    }
+
+    instance Boxable[InvertLattice]
+
+    pub def distances(src: n, g: m[(n, Int32, n)]): Map[n, Option[Int32]] with Foldable[m], Boxable[n] =
         let edges = inject g into Edge;
-        let reachabilityFromSrc = #{
-            // A node can reach itself.
-            Reachable(src).
-            // If `src` can reach `m` and there is an edge from `m` to `n`
-            // then `src` can also reach `n`. This adds all node pairs to
-            // the relational that are reachable using any number of nodes.
-            Reachable(n) :- Reachable(m), Edge(m, _, n).
+        let nodes = #{
+            Node(x) :- Edge(x, _, _).
+            Node(x) :- Edge(_, _, x).
         };
-        let unreachablility = #{
-            // If there is a node that is not Reachable from src then it is unreachable.
-            UnReachable(x) :- Node(x), not Reachable(x).
+        let noDists = query edges, nodes select x from Node(x) |> List.toMapWith(_ -> None);
+
+        let invEdges = #{
+            InvEdge(x, Inv(d), y) :- Edge(x, d, y).
         };
-        query edges, nodesWithDists(), reachabilityFromSrc, unreachablility select dst from UnReachable(dst)
+        let dists = #{
+            Dist(src; Inv(0)).
+            Dist(y; d + w) :- Dist(x; d), InvEdge(x, w, y).
+        };
+        let computeDists = query edges, invEdges, dists select (x, d) from Dist(x; d)
+                            |> List.map(i -> let (x, Inv(d)) = i; (x, Some(d))) |> List.toMap;
+
+        Map.union(computeDists, noDists)
 
 }
