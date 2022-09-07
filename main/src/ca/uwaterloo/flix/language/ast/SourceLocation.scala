@@ -38,10 +38,10 @@ object SourceLocation {
   * @param input        the parser input.
   * @param source       the source input.
   * @param locationKind the source location kind.
-  * @param beginLine    the line number where the entity begins.
-  * @param beginCol     the column number where the entity begins.
-  * @param endLine      the line number where the entity ends.
-  * @param endCol       the column number where the entity ends.
+  * @param beginLine    the line number where the entity begins (inclusive).
+  * @param beginCol     the column number where the entity begins (inclusive).
+  * @param endLine      the line number where the entity ends (inclusive).
+  * @param endCol       the column number where the entity ends (exclusive).
   */
 case class SourceLocation(input: Option[ParserInput], source: Source, locationKind: SourceKind, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int) {
 
@@ -94,11 +94,11 @@ case class SourceLocation(input: Option[ParserInput], source: Source, locationKi
   def text: Option[String] = input match {
     case Some(in) =>
       if (beginLine == endLine) {
-        Some(in.getLine(beginLine).substring(beginCol, endCol + 1)) // MATT are cols 0- or 1-indexed?
+        Some(in.getLine(beginLine).substring(beginCol - 1, endCol - 1))
       } else {
         val lines = List.range(beginLine, endLine + 1).map(in.getLine)
-        val head = lines.head.substring(beginCol)
-        val last = lines.last.substring(0, endCol)
+        val head = lines.head.substring(beginCol - 1)
+        val last = lines.last.substring(0, endCol - 1)
         val body = lines.tail.init
         Some((head :: (body :+ last)).mkString(System.lineSeparator()))
       }

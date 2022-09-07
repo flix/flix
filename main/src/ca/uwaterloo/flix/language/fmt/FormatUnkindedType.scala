@@ -27,7 +27,6 @@ object FormatUnkindedType {
   def formatUnkindedType(tpe: UnkindedType): String = {
     tpe.loc.text
       .getOrElse("ERR_UNABLE_TO_FORMAT_TYPE")
-      .linesIterator
-      .mkString(" ")
+      .replaceAll("\\s+", " ")
   }
 }
