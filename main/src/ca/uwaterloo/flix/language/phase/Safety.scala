@@ -322,7 +322,11 @@ object Safety {
     *
     * AND
     *
-    * the purity of a function is being cast from `pure` -> `ef` -> `impure`.
+    * the purity of the expression is being cast from `pure` -> `ef` -> `impure`.
+    *
+    * OR
+    *
+    * the effect set of the expression is a subset of the effect set being cast to.
     *
     */
   private def isSubTypeOf(tpe1: Type, tpe2: Type, rigidityEnv: RigidityEnv)(implicit flix: Flix): Boolean = (tpe1.baseType, tpe2.baseType) match {
