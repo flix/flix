@@ -42,8 +42,10 @@ object Duration {
 
 /**
   * A simple class to format a time duration.
+  *
+  * @param d represents the duration in nanoseconds.
   */
-class Duration(val d: Long) {
+case class Duration(d: Long) {
 
   /**
     * Returns the elapsed time in nanoseconds.

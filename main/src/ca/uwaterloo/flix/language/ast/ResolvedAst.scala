@@ -43,7 +43,7 @@ object ResolvedAst {
 
   case class Spec(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, tparams: ResolvedAst.TypeParams, fparams: List[ResolvedAst.FormalParam], tpe: Type, purAndEff: Ast.PurityAndEffect, tconstrs: List[ResolvedAst.TypeConstraint], loc: SourceLocation)
 
-  case class Enum(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: ResolvedAst.TypeParams, derives: List[Ast.Derivation], cases: Map[Name.Tag, ResolvedAst.Case], tpe: Type, loc: SourceLocation)
+  case class Enum(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: ResolvedAst.TypeParams, derives: List[Ast.Derivation], cases: List[ResolvedAst.Case], tpe: Type, loc: SourceLocation)
 
   case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: ResolvedAst.TypeParams, tpe: Type, loc: SourceLocation)
 
@@ -121,7 +121,7 @@ object ResolvedAst {
 
     case class Choose(star: Boolean, exps: List[ResolvedAst.Expression], rules: List[ResolvedAst.ChoiceRule], loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Tag(sym: Symbol.EnumSym, tag: Name.Tag, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Tag(sym: Ast.CaseSymUse, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Tuple(elms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -169,7 +169,7 @@ object ResolvedAst {
 
     case class InvokeConstructor(constructor: Constructor[_], args: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class InvokeMethod(method: Method, exp: ResolvedAst.Expression, args: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
+    case class InvokeMethod(method: Method, clazz: java.lang.Class[_], exp: ResolvedAst.Expression, args: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class InvokeStaticMethod(method: Method, args: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -255,7 +255,7 @@ object ResolvedAst {
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends ResolvedAst.Pattern
 
-    case class Tag(sym: Symbol.EnumSym, tag: Name.Tag, pat: ResolvedAst.Pattern, loc: SourceLocation) extends ResolvedAst.Pattern
+    case class Tag(sym: Ast.CaseSymUse, pat: ResolvedAst.Pattern, loc: SourceLocation) extends ResolvedAst.Pattern
 
     case class Tuple(elms: List[ResolvedAst.Pattern], loc: SourceLocation) extends ResolvedAst.Pattern
 
@@ -325,7 +325,7 @@ object ResolvedAst {
 
   case class Attribute(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
-  case class Case(ident: Name.Ident, tag: Name.Tag, tpeDeprecated: Type, sc: Scheme)
+  case class Case(sym: Symbol.CaseSym, tpe: Type)
 
   case class Constraint(cparams: List[ResolvedAst.ConstraintParam], head: ResolvedAst.Predicate.Head, body: List[ResolvedAst.Predicate.Body], loc: SourceLocation)
 
@@ -333,9 +333,9 @@ object ResolvedAst {
 
   object ConstraintParam {
 
-    case class HeadParam(sym: Symbol.VarSym, tpe: Type.UnkindedVar, loc: SourceLocation) extends ResolvedAst.ConstraintParam
+    case class HeadParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ResolvedAst.ConstraintParam
 
-    case class RuleParam(sym: Symbol.VarSym, tpe: Type.UnkindedVar, loc: SourceLocation) extends ResolvedAst.ConstraintParam
+    case class RuleParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ResolvedAst.ConstraintParam
 
   }
 

@@ -1,9 +1,9 @@
 namespace Bench/Fixpoint {
 
-    use Benchmark.Benchmark;
-    use Benchmark.defBenchmark;
+    use Benchmark.Benchmark
+    use Benchmark.defBenchmark
 
-    pub def runBenchmarks() : Unit & Impure =
+    pub def runBenchmarks() : Unit \ IO =
         let s1 = Bench/Fixpoint.benchmarks();
         discard Benchmark.runWithBudget(s1 |> List.toArray(Static), 250_000_000_000i64);
         ()

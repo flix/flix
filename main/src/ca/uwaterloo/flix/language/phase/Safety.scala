@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
 import ca.uwaterloo.flix.util.Validation
@@ -129,7 +129,7 @@ object Safety {
       exps.flatMap(visitExp) :::
         rules.flatMap { case ChoiceRule(_, exp) => visitExp(exp) }
 
-    case Expression.Tag(_, _, exp, _, _, _, _) =>
+    case Expression.Tag(_, exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.Tuple(elms, _, _, _, _) =>
@@ -158,10 +158,10 @@ object Safety {
     case Expression.ArrayLength(base, _, _, _) =>
       visitExp(base)
 
-    case Expression.ArrayStore(base, index, elm, _, _) =>
+    case Expression.ArrayStore(base, index, elm, _, _, _) =>
       visitExp(base) ::: visitExp(index) ::: visitExp(elm)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) =>
       visitExp(base) ::: visitExp(beginIndex) ::: visitExp(endIndex)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
@@ -179,9 +179,9 @@ object Safety {
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Upcast(exp, tpe, pur, eff, loc) =>
+    case Expression.Upcast(exp, tpe, loc) =>
       val errors =
-        if (isSoundUpcast(exp, exp0)) {
+        if (isSubTypeOf(Type.eraseAliases(exp.tpe), Type.eraseAliases(tpe))) {
           List.empty
         }
         else {
@@ -228,8 +228,11 @@ object Safety {
       visitExp(exp)
 
     case Expression.NewObject(_, clazz, tpe, _, _, methods, loc) =>
-      checkObjectImplementation(clazz, tpe, methods, loc) ++
-        methods.flatMap { case JvmMethod(_, _, exp, _, _, _, _) => visitExp(exp) }
+      val erasedType = Type.eraseAliases(tpe)
+      checkObjectImplementation(clazz, erasedType, methods, loc) ++
+        methods.flatMap {
+          case JvmMethod(_, _, exp, _, _, _, _) => visitExp(exp)
+        }
 
     case Expression.NewChannel(exp, _, _, _, _) =>
       visitExp(exp)
@@ -250,7 +253,12 @@ object Safety {
       visitExp(exp)
 
     case Expression.Par(exp, _) =>
-      visitExp(exp)
+      // Only tuple and apply expressions are allowed to be parallelized with `par`.
+      exp match {
+        case e: Expression.Tuple => visitExp(e)
+        case e: Expression.Apply => visitExp(e)
+        case _ => IllegalParExpression(exp, exp.loc) :: Nil
+      }
 
     case Expression.Lazy(exp, _, _) =>
       visitExp(exp)
@@ -289,34 +297,52 @@ object Safety {
   }
 
   /**
-    * Checks that an upcast is sound.
+    * Checks that `tpe1` is a subtype of `tpe2`.
     *
-    * An upcast is considered sound if:
+    * `tpe1` is a subtype of `tpe2` if:
     *
-    * (a) the expression has the exact same flix type
+    * (a) `tpe1` has the exact same flix type as `tpe2`
     *
-    * (b) the actual expression is a java subtype of the expected java type
+    * (b) both types are java types and `tpe1` is a subtype of `tpe2`
+    *
+    * (c) both types are functions and `tpe1` is a subtype of `tpe2`
     *
     * AND
     *
-    * the purity is being cast from `pure` -> `ef` -> `impure`.
+    * the purity of a function is being cast from `pure` -> `ef` -> `impure`.
     *
-    * @param actual   the expression being upcast.
-    * @param expected the upcast expression itself.
     */
-  private def isSoundUpcast(actual: Expression, expected: Expression): Boolean = {
-    // check flix types are equal
-    // or java type is subtype of upcast java type
-    // check purity is ok
-    // pure -> ef -> impure
-    // ef -> ef and ef2
-    val types = actual.tpe == expected.tpe
-    val purities = (actual.pur, expected.pur) match {
-      case (Type.Pure, _) => true
-      case (_, Type.Impure) => true
-      case _ => false
-    }
-    types && purities
+  private def isSubTypeOf(tpe1: Type, tpe2: Type): Boolean = (tpe1.baseType, tpe2.baseType) match {
+    case (Type.True, Type.KindedVar(_, _)) => true
+    case (Type.True, Type.False) => true
+    case (Type.KindedVar(_, _), Type.False) => true
+
+    case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
+      right.isAssignableFrom(left)
+
+    case (Type.Cst(TypeConstructor.Arrow(n1), _), Type.Cst(TypeConstructor.Arrow(n2), _)) if n1 == n2 =>
+      // purities
+      val pur1 = tpe1.arrowPurityType
+      val pur2 = tpe2.arrowPurityType
+      val subTypePurity = isSubTypeOf(pur1, pur2)
+
+      // check that parameters are supertypes
+      val args1 = tpe1.arrowArgTypes
+      val args2 = tpe2.arrowArgTypes
+      val superTypeArgs = args1.zip(args2).forall {
+        case (t1, t2) =>
+          isSubTypeOf(t2, t1)
+      }
+
+      // check that result is a subtype
+      val expectedResTpe = tpe1.arrowResultType
+      val actualResTpe = tpe2.arrowResultType
+      val subTypeResult = isSubTypeOf(expectedResTpe, actualResTpe)
+
+      subTypePurity && superTypeArgs && subTypeResult
+
+    case _ => tpe1 == tpe2
+
   }
 
   /**
@@ -520,11 +546,74 @@ object Safety {
     case Pattern.Int64(_, _) => Nil
     case Pattern.BigInt(_, _) => Nil
     case Pattern.Str(_, _) => Nil
-    case Pattern.Tag(_, _, pat, _, _) => visitPat(pat, loc)
+    case Pattern.Tag(_, pat, _, _) => visitPat(pat, loc)
     case Pattern.Tuple(elms, _, _) => visitPats(elms, loc)
     case Pattern.Array(elms, _, _) => visitPats(elms, loc)
     case Pattern.ArrayTailSpread(elms, _, _, _) => visitPats(elms, loc)
     case Pattern.ArrayHeadSpread(_, elms, _, _) => visitPats(elms, loc)
+  }
+
+  /**
+    * Ensures that `methods` fully implement `clazz`
+    */
+  private def checkObjectImplementation(clazz: java.lang.Class[_], tpe: Type, methods: List[JvmMethod], loc: SourceLocation): List[CompilationMessage] = {
+    //
+    // Check that `clazz` doesn't have a non-default constructor
+    //
+    val constructorErrors = if (clazz.isInterface) {
+      // Case 1: Interface. No need for a constructor.
+      List.empty
+    } else {
+      // Case 2: Class. Must have a public non-zero argument constructor.
+      if (hasPublicZeroArgConstructor(clazz))
+        List.empty
+      else
+        List(MissingPublicZeroArgConstructor(clazz, loc))
+    }
+
+    //
+    // Check that `clazz` is public
+    //
+    val visibilityErrors = if (!isPublicClass(clazz))
+      List(NonPublicClass(clazz, loc))
+    else
+      List.empty
+
+    //
+    // Check that the first argument looks like "this"
+    //
+    val thisErrors = methods.flatMap {
+      case JvmMethod(ident, fparams, _, _, _, _, methodLoc) =>
+        // Check that the declared type of `this` matches the type of the class or interface.
+        val fparam = fparams.head
+        val thisType = Type.eraseAliases(fparam.tpe)
+        thisType match {
+          case `tpe` => None
+          case Type.Unit => Some(MissingThis(clazz, ident.name, methodLoc))
+          case _ => Some(IllegalThisType(clazz, fparam.tpe, ident.name, methodLoc))
+        }
+    }
+
+    val flixMethods = getFlixMethodSignatures(methods)
+    val implemented = flixMethods.keySet
+
+    val javaMethods = getJavaMethodSignatures(clazz)
+    val canImplement = javaMethods.keySet
+    val mustImplement = canImplement.filter(m => isAbstractMethod(javaMethods(m)))
+
+    //
+    // Check that there are no unimplemented methods.
+    //
+    val unimplemented = mustImplement diff implemented
+    val unimplementedErrors = unimplemented.map(m => UnimplementedMethod(clazz, javaMethods(m), loc))
+
+    //
+    // Check that there are no methods that aren't in the interface
+    //
+    val extra = implemented diff canImplement
+    val extraErrors = extra.map(m => ExtraMethod(clazz, m.name, flixMethods(m).loc))
+
+    constructorErrors ++ visibilityErrors ++ thisErrors ++ unimplementedErrors ++ extraErrors
   }
 
   /**
@@ -549,30 +638,23 @@ object Safety {
     * Get a Set of MethodSignatures representing the methods of `clazz`. Returns a map to allow subsequent reverse lookup.
     */
   private def getJavaMethodSignatures(clazz: java.lang.Class[_]): Map[MethodSignature, java.lang.reflect.Method] = {
-    val methods = clazz.getMethods.toList.filterNot(m => java.lang.reflect.Modifier.isStatic(m.getModifiers))
+    val methods = clazz.getMethods.toList.filterNot(isStaticMethod)
     methods.foldLeft(Map.empty[MethodSignature, java.lang.reflect.Method]) {
-      case (acc, m) => 
+      case (acc, m) =>
         val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.getFlixType), Type.getFlixType(m.getReturnType))
         acc + (signature -> m)
     }
   }
 
   /**
-    * Return true if a method is abstract (either because it's a non-default member of an interface, or an abstract method of a class)
+    * Return true if the given `clazz` has public zero argument constructor.
     */
-  private def isAbstract(method: java.lang.reflect.Method, clazz: java.lang.Class[_]): Boolean = {
-    if (clazz.isInterface) {
-      !method.isDefault()
-    } else {
-      java.lang.reflect.Modifier.isAbstract(method.getModifiers)
-    }
-  }
-
-  /**
-    * Return true if `clazz` has a non-default (no argument) constructor.
-    */
-  private def hasDefaultConstructor(clazz: java.lang.Class[_]): Boolean = {
+  private def hasPublicZeroArgConstructor(clazz: java.lang.Class[_]): Boolean = {
     try {
+      // We simply use Class.getConstructor whose documentation states:
+      //
+      // Returns a Constructor object that reflects the specified
+      // public constructor of the class represented by this class object.
       clazz.getConstructor()
       true
     } catch {
@@ -581,60 +663,21 @@ object Safety {
   }
 
   /**
-    * Ensures that `methods` fully implement `clazz`
+    * Returns `true` if the given class `c` is public.
     */
-  private def checkObjectImplementation(clazz: java.lang.Class[_], tpe: Type, methods: List[JvmMethod], loc: SourceLocation): List[CompilationMessage] = {
-    // 
-    // Check that `clazz` doesn't have a non-default constructor
-    // 
-    val constructorErrors = if (!clazz.isInterface() && !hasDefaultConstructor(clazz))
-        List(NonDefaultConstructor(clazz, loc))
-      else
-        List.empty
+  private def isPublicClass(c: java.lang.Class[_]): Boolean =
+    java.lang.reflect.Modifier.isPublic(c.getModifiers)
 
-    // 
-    // Check that `clazz` is public
-    // 
-    val visibilityErrors = if (!java.lang.reflect.Modifier.isPublic(clazz.getModifiers))
-        List(InaccessibleSuperclass(clazz, loc))
-      else
-        List.empty
+  /**
+    * Return `true` if the given method `m` is abstract.
+    */
+  private def isAbstractMethod(m: java.lang.reflect.Method): Boolean =
+    java.lang.reflect.Modifier.isAbstract(m.getModifiers)
 
-    //
-    // Check that the first argument looks like "this"
-    //
-    val thisErrors = methods.flatMap {
-      case JvmMethod(ident, fparams, _, _, _, _, methodLoc) =>
-        // Check that the declared type of `this` matches the type of the class or interface.
-        val fparam = fparams.head
-        val thisType = Type.eraseAliases(fparam.tpe)
-        thisType match {
-          case `tpe` => None
-          case Type.Unit => Some(MissingThis(clazz, ident.name, methodLoc))
-          case _ => Some(IllegalThisType(clazz, fparam.tpe, ident.name, methodLoc))
-        }
-    }
-
-    val flixMethods = getFlixMethodSignatures(methods)
-    val implemented = flixMethods.keySet
-
-    val javaMethods = getJavaMethodSignatures(clazz)
-    val canImplement = javaMethods.keySet
-    val mustImplement = canImplement.filter(m => isAbstract(javaMethods(m), clazz))
-
-    //
-    // Check that there are no unimplemented methods.
-    //
-    val unimplemented = mustImplement diff implemented
-    val unimplementedErrors = unimplemented.map(m => UnimplementedMethod(clazz, javaMethods(m), loc))
-
-    //
-    // Check that there are no methods that aren't in the interface
-    //
-    val extra = implemented diff canImplement
-    val extraErrors = extra.map(m => ExtraMethod(clazz, m.name, flixMethods(m).loc))
-
-    constructorErrors ++ visibilityErrors ++ thisErrors ++ unimplementedErrors ++ extraErrors
-  }
+  /**
+    * Returns `true` if the given method `m` is static.
+    */
+  private def isStaticMethod(m: java.lang.reflect.Method): Boolean =
+    java.lang.reflect.Modifier.isStatic(m.getModifiers)
 
 }

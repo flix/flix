@@ -46,7 +46,7 @@ object TypedAst {
 
   case class Impl(exp: TypedAst.Expression, inferredScheme: Scheme)
 
-  case class Enum(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypedAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Name.Tag, TypedAst.Case], tpeDeprecated: Type, loc: SourceLocation)
+  case class Enum(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypedAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Symbol.CaseSym, TypedAst.Case], tpeDeprecated: Type, loc: SourceLocation)
 
   case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[TypedAst.TypeParam], tpe: Type, loc: SourceLocation)
 
@@ -242,7 +242,7 @@ object TypedAst {
 
     case class Choose(exps: List[TypedAst.Expression], rules: List[TypedAst.ChoiceRule], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Tag(sym: Symbol.EnumSym, tag: Name.Tag, exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Tag(sym: Ast.CaseSymUse, exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Tuple(elms: List[TypedAst.Expression], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -268,15 +268,11 @@ object TypedAst {
       def tpe: Type = Type.Int32
     }
 
-    case class ArrayStore(base: TypedAst.Expression, index: TypedAst.Expression, elm: TypedAst.Expression, eff: Type, loc: SourceLocation) extends TypedAst.Expression {
+    case class ArrayStore(base: TypedAst.Expression, index: TypedAst.Expression, elm: TypedAst.Expression, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = Type.Unit
-
-      def pur: Type = Type.Impure
     }
 
-    case class ArraySlice(base: TypedAst.Expression, beginIndex: TypedAst.Expression, endIndex: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression {
-      def pur: Type = Type.Impure
-    }
+    case class ArraySlice(base: TypedAst.Expression, beginIndex: TypedAst.Expression, endIndex: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Ref(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -288,7 +284,11 @@ object TypedAst {
 
     case class Cast(exp: TypedAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], declaredEff: Option[Type], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Upcast(exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Upcast(exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
+      override def pur: Type = exp.pur
+
+      override def eff: Type = exp.eff
+    }
 
     case class Without(exp: TypedAst.Expression, effUse: Ast.EffectSymUse, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -436,7 +436,7 @@ object TypedAst {
       def tpe: Type = Type.Str
     }
 
-    case class Tag(sym: Symbol.EnumSym, tag: Name.Tag, pat: TypedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
+    case class Tag(sym: Ast.CaseSymUse, pat: TypedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
     case class Tuple(elms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
@@ -494,7 +494,7 @@ object TypedAst {
 
   case class Attribute(name: String, tpe: Type, loc: SourceLocation)
 
-  case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: Type, sc: Scheme, loc: SourceLocation)
+  case class Case(sym: Symbol.CaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
 
   case class Constraint(cparams: List[TypedAst.ConstraintParam], head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body], loc: SourceLocation)
 

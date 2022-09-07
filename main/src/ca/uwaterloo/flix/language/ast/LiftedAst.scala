@@ -29,7 +29,7 @@ object LiftedAst {
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[LiftedAst.FormalParam], exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation)
 
-  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Name.Tag, LiftedAst.Case], tpeDeprecated: Type, loc: SourceLocation)
+  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, LiftedAst.Case], tpeDeprecated: Type, loc: SourceLocation)
 
   sealed trait Expression {
     def tpe: Type
@@ -137,13 +137,13 @@ object LiftedAst {
 
     case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class Is(sym: Symbol.EnumSym, tag: Name.Tag, exp: LiftedAst.Expression, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression {
+    case class Is(sym: Symbol.CaseSym, exp: LiftedAst.Expression, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression {
       def tpe: Type = Type.Bool
     }
 
-    case class Tag(sym: Symbol.EnumSym, tag: Name.Tag, exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
+    case class Tag(sym: Symbol.CaseSym, exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class Untag(sym: Symbol.EnumSym, tag: Name.Tag, exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
+    case class Untag(sym: Symbol.CaseSym, exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
     case class Index(base: LiftedAst.Expression, offset: scala.Int, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
@@ -253,7 +253,7 @@ object LiftedAst {
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: LiftedAst.Expression, exp: LiftedAst.Expression)
 
-  case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: Type, loc: SourceLocation)
+  case class Case(sym: Symbol.CaseSym, tpeDeprecated: Type, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[LiftedAst.FormalParam], clo: LiftedAst.Expression, retTpe: Type, purity: Purity, loc: SourceLocation)
 

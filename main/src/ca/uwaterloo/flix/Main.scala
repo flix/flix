@@ -66,7 +66,7 @@ object Main {
     // check if the --lsp flag was passed.
     if (cmdOpts.lsp.nonEmpty) {
       try {
-        val languageServer = new LanguageServer(cmdOpts.lsp.get)
+        val languageServer = new LanguageServer(cmdOpts.lsp.get, Options.Default)
         languageServer.run()
       } catch {
         case ex: BindException =>
@@ -95,7 +95,8 @@ object Main {
       xnobooltable = cmdOpts.xnobooltable,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono,
-      xeffects = cmdOpts.xeffects
+      xnoseteffects = cmdOpts.xnoseteffects,
+      xnobooleffects = cmdOpts.xnobooleffects
     )
 
     // Don't use progress bar if benchmarking.
@@ -160,6 +161,18 @@ object Main {
           val o = options.copy(progress = false)
           val result = Packager.install(project, cwd, o)
           System.exit(getCode(result))
+
+        case Command.Lsp(port) =>
+          val o = options.copy(progress = false)
+          try {
+            val languageServer = new LanguageServer(port, o)
+            languageServer.run()
+          } catch {
+            case ex: BindException =>
+              throw new RuntimeException(ex)
+          }
+          System.exit(0)
+
       }
     } catch {
       case ex: RuntimeException =>
@@ -240,8 +253,7 @@ object Main {
         }
 
         if (cmdOpts.test) {
-          val results = Tester.test(compilationResult)
-          Console.println(results.output(flix.getFormatter))
+          Tester.run(Nil, compilationResult)(flix)
         }
       case Validation.Failure(errors) =>
         flix.mkMessages(errors.sortBy(_.source.name))
@@ -284,7 +296,8 @@ object Main {
                      xnobooltable: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
-                     xeffects: Boolean = false,
+                     xnoseteffects: Boolean = false,
+                     xnobooleffects: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -315,6 +328,8 @@ object Main {
     case object Repl extends Command
 
     case class Install(project: String) extends Command
+
+    case class Lsp(port: Int) extends Command
 
   }
 
@@ -358,6 +373,12 @@ object Main {
       cmd("install").text("  installs the Flix package from the given GitHub <owner>/<repo>")
         .children(
           arg[String]("project").action((project, c) => c.copy(command = Command.Install(project)))
+            .required()
+        )
+
+      cmd("lsp").text("  starts the LSP server and listens on the given port.")
+        .children(
+          arg[Int]("port").action((port, c) => c.copy(command = Command.Lsp(port)))
             .required()
         )
 
@@ -443,8 +464,13 @@ object Main {
       opt[Unit]("Xstrictmono").action((_, c) => c.copy(xstrictmono = true)).
         text("[experimental] enable strict monomorphization.")
 
-      opt[Unit]("Xeffects").action((_, c) => c.copy(xeffects = true)).
-        text("[experimental] enable set effects")
+      // Xno-set-effects
+      opt[Unit]("Xno-set-effects").action((_, c) => c.copy(xnoseteffects = true)).
+        text("[experimental] disable set effects")
+
+      // Xno-bool-effects
+      opt[Unit]("Xno-bool-effects").action((_, c) => c.copy(xnobooleffects = true)).
+        text("[experimental] disable bool effects")
 
       note("")
 

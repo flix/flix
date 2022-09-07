@@ -26,25 +26,25 @@ pub class Reducible[t: Type -> Type] {
     /// Applies `g` to the initial element of `t` and combines it
     /// with the remainder of `t` using `f` going from left to right.
     ///
-    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, t: t[a]): b \ { ef1, ef2 }
+    pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, t: t[a]): b \ { ef1, ef2 }
 
     ///
     /// Right-associative reduction of a structure.
     /// Applies `g` to the initial element of `t` and combines it
     /// with the remainder of `t` using `f` going from right to left.
     ///
-    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, t: t[a]): b \ { ef1, ef2 }
+    pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, t: t[a]): b \ { ef1, ef2 }
 
     ///
     /// Left-associative reduction on `t` using `f`.
     ///
-    pub def reduceLeft(f: (a, a) -> a & ef, t: t[a]): a & ef =
+    pub def reduceLeft(f: (a, a) -> a \ ef, t: t[a]): a \ ef =
         Reducible.reduceLeftTo(f, identity, t)
 
     ///
     /// Right-associative reduction on `t` using `f`.
     ///
-    pub def reduceRight(f: (a, a) -> a & ef, t: t[a]): a & ef =
+    pub def reduceRight(f: (a, a) -> a \ ef, t: t[a]): a \ ef =
         Reducible.reduceRightTo(f, identity, t)
 
     ///
@@ -56,21 +56,21 @@ pub class Reducible[t: Type -> Type] {
     ///
     /// Applies `f` to each element of `t` and combines them using the derived `SemiGroup` instance.
     ///
-    pub def reduceMap(f: a -> b & ef, t: t[a]): b & ef with SemiGroup[b] =
+    pub def reduceMap(f: a -> b \ ef, t: t[a]): b \ ef with SemiGroup[b] =
         Reducible.reduceLeftTo((b, a) -> SemiGroup.combine(b, f(a)), f, t)
 
     ///
     /// Left-associative fold of a structure.
     /// Applies `f` to a start value `s` and all elements in `t` going from left to right.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, t: t[a]): b & ef =
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, t: t[a]): b \ ef =
         Reducible.reduceLeftTo(f, a -> f(s, a), t)
 
     ///
     /// Right-associative fold of a structure.
     /// Applies `f` to a start value `s` and all elements in `t` going from right to left.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, t: t[a]): b & ef =
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, t: t[a]): b \ ef =
         Reducible.reduceRightTo(f, a -> f(a, s), t)
 
     ///
@@ -79,7 +79,7 @@ pub class Reducible[t: Type -> Type] {
     ///
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, t: t[a]): b & ef =
+    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, t: t[a]): b \ ef =
         let f1 = (a, b) -> f(a, upcast(_ -> b));
         Reducible.reduceRightTo(f1, a -> f(a, upcast(_ -> z)), t)
 
@@ -124,7 +124,7 @@ pub class Reducible[t: Type -> Type] {
     ///
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
     ///
-    pub def count(f: a -> Bool & ef, t: t[a]): Int32 & ef =
+    pub def count(f: a -> Bool \ ef, t: t[a]): Int32 \ ef =
         Reducible.foldLeft((acc, a) -> if (f(a)) 1 + acc else acc, 0, t)
 
     ///
@@ -142,7 +142,7 @@ pub class Reducible[t: Type -> Type] {
     ///
     /// Returns the sum of all elements in `t` according to the function `f`.
     ///
-    pub def sumWith(f: a -> Int32 & ef, t: t[a]): Int32 & ef =
+    pub def sumWith(f: a -> Int32 \ ef, t: t[a]): Int32 \ ef =
         Reducible.foldLeft((acc, a) -> f(a) + acc, 0, t)
 
     ///
@@ -154,25 +154,25 @@ pub class Reducible[t: Type -> Type] {
     ///
     /// Returns the product of all elements in `t` according to the function `f`.
     ///
-    pub def productWith(f: a -> Int32 & ef, t: t[a]): Int32 & ef =
+    pub def productWith(f: a -> Int32 \ ef, t: t[a]): Int32 \ ef =
         Reducible.foldLeft((acc, a) -> f(a) * acc, 1, t)
 
     ///
     /// Returns `true` if and only if at least one element in `t` satisfies the predicate `f`.
     ///
-    pub def exists(f: a -> Bool & ef, t: t[a]): Bool & ef =
+    pub def exists(f: a -> Bool \ ef, t: t[a]): Bool \ ef =
         Reducible.foldLeft((acc, a) -> f(a) or acc, false, t)
 
     ///
     /// Returns `true` if and only if all elements in `t` satisfy the predicate `f`.
     ///
-    pub def forall(f: a -> Bool & ef, t: t[a]): Bool & ef =
+    pub def forall(f: a -> Bool \ ef, t: t[a]): Bool \ ef =
         Reducible.foldLeft((acc, a) -> f(a) and acc, true, t)
 
     ///
     /// Applies `f` to each element in `t`.
     ///
-    pub def foreach(f: a -> Unit & ef, t: t[a]): Unit & ef =
+    pub def foreach(f: a -> Unit \ ef, t: t[a]): Unit \ ef =
         Reducible.foldLeft((_, a) -> f(a), (), t)
 
     ///
@@ -180,19 +180,19 @@ pub class Reducible[t: Type -> Type] {
     ///
     /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from left to right.
     ///
-    pub def find(f: a -> Bool & ef, t: t[a]): Option[a] & ef =
+    pub def find(f: a -> Bool \ ef, t: t[a]): Option[a] \ ef =
         Reducible.findLeft(f, t)
 
     ///
     /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from left to right.
     ///
-    pub def findLeft(f: a -> Bool & ef, t: t[a]): Option[a] & ef =
+    pub def findLeft(f: a -> Bool \ ef, t: t[a]): Option[a] \ ef =
         Reducible.foldLeft((acc, a) -> Option.withDefault(default = if (f(a)) Some(a) else None, acc), None, t)
 
     ///
     /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from right to left.
     ///
-    pub def findRight(f: a -> Bool & ef, t: t[a]): Option[a] & ef =
+    pub def findRight(f: a -> Bool \ ef, t: t[a]): Option[a] \ ef =
         Reducible.foldRight((a, acc) -> Option.withDefault(default = if (f(a)) Some(a) else None, acc), None, t)
 
     ///
@@ -228,7 +228,7 @@ pub class Reducible[t: Type -> Type] {
     ///
     /// Returns `t` as a list without the longest prefix that satisfies the predicate `f`.
     ///
-    pub def dropWhile(f: a -> Bool & ef, t: t[a]): List[a] & ef =
+    pub def dropWhile(f: a -> Bool \ ef, t: t[a]): List[a] \ ef =
         (Reducible.foldLeft((acc, a) -> {
             let (c, k) = acc;
             if (c and f(a))
@@ -240,7 +240,7 @@ pub class Reducible[t: Type -> Type] {
     ///
     /// Returns the longest prefix of `t` as a list that satisfies the predicate `f`.
     ///
-    pub def takeWhile(f: a -> Bool & ef, t: t[a]): List[a] & ef =
+    pub def takeWhile(f: a -> Bool \ ef, t: t[a]): List[a] \ ef =
         (Reducible.foldLeft((acc, a) -> {
             let (c, k) = acc;
             if (c and f(a))

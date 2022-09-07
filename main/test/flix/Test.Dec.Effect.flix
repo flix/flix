@@ -1,24 +1,24 @@
 namespace Test/Dec/Effect {
-    eff Console {
+    pub eff Console {
         pub def println(s: String): Unit
     }
 
-    eff Fail {
+    pub eff Fail {
         pub def fail(): Unit
     }
 
-    eff State {
+    pub eff State {
         pub def set_(x: Int32): Unit
     }
 
-    eff Threading {
+    pub eff Threading {
         pub def yield(): Unit
         pub def spawn_(f: Unit -> Unit): Unit
     }
 
-    eff Empty
+    pub eff Empty
 
-    eff EmptyWithParens {
+    pub eff EmptyWithParens {
 
     }
 }

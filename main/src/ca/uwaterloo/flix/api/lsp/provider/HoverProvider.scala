@@ -17,13 +17,14 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, MarkupContent, MarkupKind, Position, Range}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt._
 import ca.uwaterloo.flix.language.phase.unification.TypeMinimization.minimizeType
-import ca.uwaterloo.flix.language.phase.unification.{BoolTable, TypeMinimization}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
+
+import scala.annotation.tailrec
 
 object HoverProvider {
 
@@ -33,34 +34,46 @@ object HoverProvider {
     index.query(uri, pos) match {
       case None => mkNotFound(uri, pos)
 
-      case Some(entity) => entity match {
-
-        case Entity.Case(caze) => hoverType(caze.sc.base, caze.tag.loc, current)
-
-        case Entity.Exp(exp) =>
-          exp match {
-            case Expression.Def(sym, _, loc) => hoverDef(sym, loc, current)
-
-            case Expression.Sig(sym, _, loc) => hoverSig(sym, loc, current)
-
-            case _ => hoverTypeAndEff(exp.tpe, exp.pur, exp.eff, exp.loc, current)
-          }
-
-        case Entity.FormalParam(fparam) => hoverType(fparam.tpe, fparam.loc, current)
-
-        case Entity.Pattern(pat) => hoverType(pat.tpe, pat.loc, current)
-
-        case Entity.Pred(pred, tpe) => hoverType(tpe, pred.loc, current)
-
-        case Entity.LocalVar(sym, tpe) => hoverType(tpe, sym.loc, current)
-
-        case Entity.Type(t) => hoverKind(t, current)
-
-        case Entity.OpUse(sym, loc) => hoverOp(sym, loc, current)
-
-        case _ => mkNotFound(uri, pos)
-      }
+      case Some(entity) => hoverEntity(entity, uri, pos, current)
     }
+  }
+
+  @tailrec
+  private def hoverEntity(entity: Entity, uri: String, pos: Position, current: Boolean)(implicit Index: Index, root: Root, flix: Flix): JObject = entity match {
+
+    case Entity.Case(caze) => hoverType(caze.tpe, caze.sym.loc, current)
+
+    case Entity.DefUse(sym, loc, _) => hoverDef(sym, loc, current)
+
+    case Entity.SigUse(sym, loc, _) => hoverSig(sym, loc, current)
+
+    case Entity.VarUse(_, _, parent) => hoverEntity(parent, uri, pos, current)
+
+    case Entity.CaseUse(_, _, parent) => hoverEntity(parent, uri, pos, current)
+
+    case Entity.Exp(exp) => hoverTypeAndEff(exp.tpe, exp.pur, exp.eff, exp.loc, current)
+
+    case Entity.FormalParam(fparam) => hoverType(fparam.tpe, fparam.loc, current)
+
+    case Entity.Pattern(pat) => hoverType(pat.tpe, pat.loc, current)
+
+    case Entity.Pred(pred, tpe) => hoverType(tpe, pred.loc, current)
+
+    case Entity.LocalVar(sym, tpe) => hoverType(tpe, sym.loc, current)
+
+    case Entity.Type(t) => hoverKind(t, current)
+
+    case Entity.OpUse(sym, loc, _) => hoverOp(sym, loc, current)
+
+    case Entity.Class(_) => mkNotFound(uri, pos)
+    case Entity.Def(_) => mkNotFound(uri, pos)
+    case Entity.Effect(_) => mkNotFound(uri, pos)
+    case Entity.Enum(_) => mkNotFound(uri, pos)
+    case Entity.TypeAlias(_) => mkNotFound(uri, pos)
+    case Entity.Field(_) => mkNotFound(uri, pos)
+    case Entity.Op(_) => mkNotFound(uri, pos)
+    case Entity.Sig(_) => mkNotFound(uri, pos)
+    case Entity.TypeVar(_) => mkNotFound(uri, pos)
   }
 
   private def hoverType(tpe: Type, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root, flix: Flix): JObject = {
@@ -136,16 +149,29 @@ object HoverProvider {
     ("status" -> "success") ~ ("result" -> result)
   }
 
-  private def formatTypAndEff(tpe0: Type, pur0: Type, eff0: Type): String = {
+  private def formatTypAndEff(tpe0: Type, pur0: Type, eff0: Type)(implicit flix: Flix): String = {
+    // TODO deduplicate with CompletionProvider
     val t = FormatType.formatWellKindedType(tpe0)
-    val p = pur0 match {
-      case Type.Cst(TypeConstructor.True, _) => ""
-      case Type.Cst(TypeConstructor.False, _) => " & Impure"
-      case pur => " & " + FormatType.formatWellKindedType(pur)
+
+    // don't show purity if bool effects are turned off
+    val p = if (flix.options.xnobooleffects) {
+      ""
+    } else {
+      pur0 match {
+        case Type.Cst(TypeConstructor.True, _) => ""
+        case Type.Cst(TypeConstructor.False, _) => " & Impure"
+        case pur => " & " + FormatType.formatWellKindedType(pur)
+      }
     }
-    val e = eff0 match {
-      case Type.Cst(TypeConstructor.Empty, _) => ""
-      case eff => " \\ " + FormatType.formatWellKindedType(eff)
+
+    // don't show effect if set effects are turned off
+    val e = if (flix.options.xnoseteffects) {
+      ""
+    } else {
+      eff0 match {
+        case Type.Cst(TypeConstructor.Empty, _) => ""
+        case eff => " \\ " + FormatType.formatWellKindedType(eff)
+      }
     }
     s"$t$p$e"
   }

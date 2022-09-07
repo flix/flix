@@ -299,14 +299,33 @@ object ParsedAst {
   object Imports {
 
     /**
-      * A name with an optional alias.
+      * An import of a single class or interface
       *
       * @param sp1  the position of the first character.
       * @param name the Java class or interface name.
       * @param sp2  the position of the last character.
       */
-    case class Import(sp1: SourcePosition, name: Seq[String], sp2: SourcePosition) extends ParsedAst.Import
+    case class ImportOne(sp1: SourcePosition, name: Name.JavaName, sp2: SourcePosition) extends ParsedAst.Import
 
+    /**
+      * An import of multiple classes or interfaces from a single package
+      *
+      * @param sp1 the position of the first character.
+      * @param pkg the Java package name.
+      * @param ids the names of the classes or interfaces.
+      * @param sp2 the position of the last character.
+      */
+    case class ImportMany(sp1: SourcePosition, pkg: Name.JavaName, ids: Seq[NameAndAlias], sp2: SourcePosition) extends ParsedAst.Import
+
+    /**
+      * A name with an optional alias
+      *
+      * @param sp1   the position of the first character.
+      * @param name  the name.
+      * @param alias the optional alias.
+      * @param sp2   the position of the last character.
+      */
+    case class NameAndAlias(sp1: SourcePosition, name: String, alias: Option[Name.Ident], sp2: SourcePosition)
   }
 
   /**
@@ -387,78 +406,78 @@ object ParsedAst {
       * Float32 Literal (32-bit floating-point number).
       *
       * @param sp1    the position of the first character in the literal.
-      * @param sign   the sign (true if signed).
+      * @param sign   the sign.
       * @param before the digits before the decimal point.
       * @param after  the digits after the decimal point.
       * @param sp2    the position of the last character in the literal.
       */
-    case class Float32(sp1: SourcePosition, sign: Boolean, before: String, after: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class Float32(sp1: SourcePosition, sign: String, before: String, after: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Float64 Literal (64-bit floating-point number).
       *
       * @param sp1    the position of the first character in the literal.
-      * @param sign   the sign (true if signed).
+      * @param sign   the sign.
       * @param before the digits before the decimal point.
       * @param after  the digits after the decimal point.
       * @param sp2    the position of the last character in the literal.
       */
-    case class Float64(sp1: SourcePosition, sign: Boolean, before: String, after: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class Float64(sp1: SourcePosition, sign: String, before: String, after: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Int8 Literal (signed 8-bit integer).
       *
       * @param sp1   the position of the first character in the literal.
-      * @param sign  the sign (true if signed).
+      * @param sign  the sign.
       * @param radix the radix of the literal.
       * @param lit   the int8 literal.
       * @param sp2   the position of the last character in the literal.
       */
-    case class Int8(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class Int8(sp1: SourcePosition, sign: String, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Int16 Literal (signed 16-bit integer).
       *
       * @param sp1   the position of the first character in the literal.
-      * @param sign  the sign (true if signed).
+      * @param sign  the sign.
       * @param radix the radix of the literal.
       * @param lit   the int16 literal.
       * @param sp2   the position of the last character in the literal.
       */
-    case class Int16(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class Int16(sp1: SourcePosition, sign: String, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Int32 Literal (signed 32-bit integer).
       *
       * @param sp1   the position of the first character in the literal.
-      * @param sign  the sign (true if signed).
+      * @param sign  the sign.
       * @param radix the radix of the literal.
       * @param lit   the int32 literal.
       * @param sp2   the position of the last character in the literal.
       */
-    case class Int32(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class Int32(sp1: SourcePosition, sign: String, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Int64 Literal (signed 64-bit integer).
       *
       * @param sp1   the position of the first character in the literal.
-      * @param sign  the sign (true if signed).
+      * @param sign  the sign.
       * @param radix the radix of the literal.
       * @param lit   the int64 literal.
       * @param sp2   the position of the last character in the literal.
       */
-    case class Int64(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class Int64(sp1: SourcePosition, sign: String, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * BigInt Literal (arbitrary sized integer).
       *
       * @param sp1   the position of the first character in the literal.
-      * @param sign  the sign (true if signed).
+      * @param sign  the sign.
       * @param radix the radix of the literal.
       * @param lit   the big int literal.
       * @param sp2   the position of the last character in the literal.
       */
-    case class BigInt(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class BigInt(sp1: SourcePosition, sign: String, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * String Literal.
@@ -1493,7 +1512,7 @@ object ParsedAst {
       * @param fqn the fully qualified Java name.
       * @param sp2 the position of the last character in the type.
       */
-    case class Native(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) extends ParsedAst.Type
+    case class Native(sp1: SourcePosition, fqn: Name.JavaName, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Type Application.
@@ -1916,7 +1935,7 @@ object ParsedAst {
     * @param fqn   the fully-qualified Java name.
     * @param exp   the body expression.
     */
-  case class CatchRule(ident: Name.Ident, fqn: Seq[String], exp: ParsedAst.Expression)
+  case class CatchRule(ident: Name.Ident, fqn: Name.JavaName, exp: ParsedAst.Expression)
 
   /**
     * Effect handler rule.
@@ -2039,7 +2058,7 @@ object ParsedAst {
       * @param purAndEff the purity and effect of the constructor.
       * @param ident     the name given to the imported constructor.
       */
-    case class Constructor(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
+    case class Constructor(fqn: Name.JavaName, sig: Seq[ParsedAst.Type], tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
 
     /**
       * Method Invocation.
@@ -2050,7 +2069,7 @@ object ParsedAst {
       * @param purAndEff the purity and effect of the imported method.
       * @param ident     the optional name given to the imported method.
       */
-    case class Method(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Type, purAndEff: PurityAndEffect, ident: Option[Name.Ident]) extends JvmOp
+    case class Method(fqn: Name.JavaName, sig: Seq[ParsedAst.Type], tpe: Type, purAndEff: PurityAndEffect, ident: Option[Name.Ident]) extends JvmOp
 
     /**
       * Static Method Invocation.
@@ -2061,7 +2080,7 @@ object ParsedAst {
       * @param purAndEff the purity and effect of the imported method.
       * @param ident     the optional name given to the imported method.
       */
-    case class StaticMethod(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Type, purAndEff: PurityAndEffect, ident: Option[Name.Ident]) extends JvmOp
+    case class StaticMethod(fqn: Name.JavaName, sig: Seq[ParsedAst.Type], tpe: Type, purAndEff: PurityAndEffect, ident: Option[Name.Ident]) extends JvmOp
 
     /**
       * Get Object Field.
@@ -2071,7 +2090,7 @@ object ParsedAst {
       * @param purAndEff the purity and effect of the generated function.
       * @param ident     the name given to the imported field.
       */
-    case class GetField(fqn: Seq[String], tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
+    case class GetField(fqn: Name.JavaName, tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
 
     /**
       * Put ObjectField.
@@ -2081,7 +2100,7 @@ object ParsedAst {
       * @param purAndEff the purity and effect of the generated function.
       * @param ident     the name given to the imported field.
       */
-    case class PutField(fqn: Seq[String], tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
+    case class PutField(fqn: Name.JavaName, tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
 
     /**
       * Get Static Field.
@@ -2091,7 +2110,7 @@ object ParsedAst {
       * @param purAndEff the purity and effect of the generated function.
       * @param ident     the name given to the imported field.
       */
-    case class GetStaticField(fqn: Seq[String], tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
+    case class GetStaticField(fqn: Name.JavaName, tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
 
     /**
       * Put Static Field.
@@ -2101,7 +2120,7 @@ object ParsedAst {
       * @param purAndEff the purity and effect of the generated function.
       * @param ident     the name given to the imported field.
       */
-    case class PutStaticField(fqn: Seq[String], tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
+    case class PutStaticField(fqn: Name.JavaName, tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
 
   }
 

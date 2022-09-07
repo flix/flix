@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Magnus Madsen
+ *  Copyright 2022 Matthew Lutze
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -244,6 +244,17 @@ class TestSetUnification extends FunSuite with TestUtils {
     val tpe1 = Type.mkDifference(Type.KindedVar(mkTypeVarSym("e"), loc), Type.mkUnion(print, thro, loc), loc)
     val tpe2 = time
     assertUnifies(tpe1, tpe2, RigidityEnv.empty)
+  }
+
+  test("Test.SetUnification.16") {
+    // e! ∪ ∅ ≐ e!
+    val sym = mkTypeVarSym("e")
+    // build the union rather than going through smart constructors
+    val varE = Type.KindedVar(sym, loc)
+    val tpe1 = Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, loc), varE, loc), Type.Empty, loc)
+    val tpe2 = varE
+    val renv = RigidityEnv.empty.markRigid(sym)
+    assertUnifies(tpe1, tpe2, renv)
   }
 
   test("Test.SetUnification.Fail.01") {

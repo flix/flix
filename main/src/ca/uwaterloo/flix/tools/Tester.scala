@@ -1,125 +1,335 @@
+/*
+ * Copyright 2022 Magnus Madsen
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ca.uwaterloo.flix.tools
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.util.Formatter
+import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
+import ca.uwaterloo.flix.util.Duration
+import org.jline.terminal.{Terminal, TerminalBuilder}
+
+import java.io.{ByteArrayOutputStream, PrintStream, PrintWriter, StringWriter}
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.logging.{Level, Logger}
+import scala.util.matching.Regex
 
 /**
- * Evaluates all tests in a model.
- */
+  * Evaluates all tests in a Flix program.
+  */
 object Tester {
 
   /**
-   * Represents the outcome of a single test.
-   */
-  sealed trait TestResult {
-    /**
-     * The symbol associated with the test.
-     */
-    def sym: Symbol.DefnSym
-  }
+    * Runs all tests.
+    */
+  def run(filters: List[Regex], compilationResult: CompilationResult)(implicit flix: Flix): Unit = {
+    //
+    // Find all test cases (both active and ignored).
+    //
+    val tests = getTestCases(filters, compilationResult)
 
-  object TestResult {
+    // Start the TestRunner and TestReporter.
+    val queue = new ConcurrentLinkedQueue[TestEvent]()
+    val reporter = new TestReporter(queue, tests)
+    val runner = new TestRunner(queue, tests)
+    reporter.start()
+    runner.start()
 
-    /**
-     * Represents a successful test case.
-     */
-    case class Success(sym: Symbol.DefnSym, msg: String) extends TestResult
-
-    /**
-     * Represents a failed test case.
-     */
-    case class Failure(sym: Symbol.DefnSym, msg: String) extends TestResult
-
+    // Wait for everything to complete.
+    reporter.join()
+    runner.join()
   }
 
   /**
-   * Represents the outcome of a run of a suite of tests.
-   */
-  sealed trait OverallTestResult
+    * A class that reports the results of test events as they come in.
+    */
+  private class TestReporter(queue: ConcurrentLinkedQueue[TestEvent], tests: Vector[TestCase])(implicit flix: Flix) extends Thread {
 
-  object OverallTestResult {
+    override def run(): Unit = {
+      // Silence JLine warnings about terminal type.
+      Logger.getLogger("org.jline").setLevel(Level.OFF)
 
-    /**
-     * Represents the outcome where all tests succeeded.
-     */
-    case object Success extends OverallTestResult
+      // Import formatter.
+      val formatter = flix.getFormatter
+      import formatter._
 
-    /**
-     * Represents the outcome where at least one test failed.
-     */
-    case object Failure extends OverallTestResult
+      // Initialize the terminal.
+      implicit val terminal: Terminal = TerminalBuilder
+        .builder()
+        .system(true)
+        .build()
+      val writer = terminal.writer()
 
-    /**
-     * Represents the outcome where no tests were run.
-     */
-    case object NoTests extends OverallTestResult
-  }
+      // Print headline.
+      writer.println(s"Running ${tests.length} tests...")
+      writer.println()
+      writer.flush()
 
-  /**
-   * Represents the results of running all the tests in a given model.
-   */
-  case class TestResults(results: List[TestResult]) {
-    def output(formatter: Formatter): String = {
-      var success = 0
-      var failure = 0
-      val sb = new StringBuilder()
-      for ((ns, tests) <- results.groupBy(_.sym.namespace)) {
-        val namespace = if (ns.isEmpty) "root" else ns.mkString("/")
-        sb.append(formatter.line("Tests", namespace) + System.lineSeparator())
-        for (test <- tests.sortBy(_.sym.loc)) {
-          test match {
-            case TestResult.Success(sym, msg) =>
-              sb.append("  " + formatter.green("✓") + " " + sym.name + System.lineSeparator())
-              success = success + 1
-            case TestResult.Failure(sym, msg) =>
-              sb.append("  " + formatter.red("✗") + " " + sym.name + ": " + msg + " (" + formatter.blue(sym.loc.format) + ")" + System.lineSeparator())
-              failure = failure + 1
-          }
+      // Main event loop.
+      var passed = 0
+      var skipped = 0
+      var failed: List[(Symbol.DefnSym, List[String])] = Nil
+
+      var finished = false
+      while (!finished) {
+        queue.poll() match {
+          case TestEvent.Before(sym) =>
+            // Note: Print \r to reset the caret.
+            writer.print(s"  ${bgYellow(" TEST ")} $sym\r")
+            terminal.flush()
+
+          case TestEvent.Success(sym, elapsed) =>
+            passed = passed + 1
+            writer.println(s"  ${bgGreen(" PASS ")} $sym ${brightBlack(elapsed.fmt)}")
+            terminal.flush()
+
+          case TestEvent.Failure(sym, output, elapsed) =>
+            failed = (sym, output) :: failed
+            val line = output.headOption.map(s => s"(${red(s)})").getOrElse("")
+            writer.println(s"  ${bgRed(" FAIL ")} $sym $line")
+            terminal.flush()
+
+          case TestEvent.Skip(sym) =>
+            skipped = skipped + 1
+            writer.println(s"  ${bgYellow(" SKIP ")} $sym (${yellow("SKIPPED")})")
+            terminal.flush()
+
+          case TestEvent.Finished(elapsed) =>
+            // Print the std out / std err of every failed test.
+            if (failed.nonEmpty) {
+              writer.println()
+              writer.println("-" * 80)
+              writer.println()
+              for ((sym, output) <- failed; if output.nonEmpty) {
+                writer.println(s"  ${bgRed(" FAIL ")} $sym")
+                for (line <- output) {
+                  writer.println(s"    $line")
+                }
+                writer.println()
+              }
+              writer.println("-" * 80)
+            }
+
+            // Print the summary.
+            writer.println()
+            writer.println(
+              s"Passed: ${green(passed.toString)}, " +
+                s"Failed: ${red(failed.length.toString)}. " +
+                s"Skipped: ${yellow(skipped.toString)}. " +
+                s"Elapsed: ${brightBlack(elapsed.fmt)}."
+            )
+            terminal.flush()
+            finished = true
+
+          case _ => // nop
         }
-        sb.append(System.lineSeparator())
       }
-      // Summary
-      if (failure == 0) {
-        sb.append(formatter.green("  Tests Passed!") + s" (Passed: $success / $success)" + System.lineSeparator())
-      } else {
-        sb.append(formatter.red(s"  Tests Failed!") + s" (Passed: $success / ${success + failure})" + System.lineSeparator())
-      }
-      sb.toString()
     }
 
-    def overallResult: OverallTestResult = {
-      if (results.isEmpty) {
-        OverallTestResult.NoTests
-      } else if (results.forall(_.isInstanceOf[TestResult.Success])) {
-        OverallTestResult.Success
-      } else {
-        OverallTestResult.Failure
-      }
-    }
   }
 
   /**
-   * Evaluates all tests.
-   *
-   * Returns a pair of (successful, failed)-tests.
-   */
-  def test(compilationResult: CompilationResult): TestResults = {
-    val results = compilationResult.getTests.toList.map {
-      case (sym, defn) =>
+    * A class that runs all the given tests emitting test events.
+    */
+  private class TestRunner(queue: ConcurrentLinkedQueue[TestEvent], tests: Vector[TestCase])(implicit flix: Flix) extends Thread {
+    /**
+      * Runs all the given tests.
+      */
+    override def run(): Unit = {
+      val start = System.nanoTime()
+      for (testCase <- tests) {
+        runTest(testCase)
+      }
+      val elapsed = System.nanoTime() - start
+      queue.add(TestEvent.Finished(Duration(elapsed)))
+    }
+
+    /**
+      * Runs the given `test` emitting test events.
+      */
+    private def runTest(test: TestCase): Unit = test match {
+      case TestCase(sym, skip, run) =>
+        // Check if the test case should be ignored.
+        if (skip) {
+          queue.add(TestEvent.Skip(sym))
+          return
+        }
+
+        // We are about to run the test case.
+        queue.add(TestEvent.Before(sym))
+
+        // Redirect std out and std err.
+        val redirect = new ConsoleRedirection
+        redirect.redirect()
+
+        // Start the clock.
+        val start = System.nanoTime()
+
         try {
-          val result = defn()
+          // Run the test case.
+          val result = run()
+
+          // Compute elapsed time.
+          val elapsed = System.nanoTime() - start
+
+          // Restore std out and std err.
+          redirect.restore()
+
           result match {
-            case java.lang.Boolean.TRUE => TestResult.Success(sym, "Returned true.")
-            case java.lang.Boolean.FALSE => TestResult.Failure(sym, "Returned false.")
-            case _ => TestResult.Success(sym, "Returned non-boolean value.")
+            case java.lang.Boolean.TRUE =>
+              queue.add(TestEvent.Success(sym, Duration(elapsed)))
+
+            case java.lang.Boolean.FALSE =>
+              queue.add(TestEvent.Failure(sym, "Assertion Error" :: Nil, Duration(elapsed)))
+
+            case _ =>
+              queue.add(TestEvent.Success(sym, Duration(elapsed)))
+
           }
         } catch {
-          case ex: Exception =>
-            TestResult.Failure(sym, ex.getMessage)
+          case ex: Throwable =>
+            // Restore std out and std err.
+            redirect.restore()
+
+            // Compute elapsed time.
+            val elapsed = System.nanoTime() - start
+            queue.add(TestEvent.Failure(sym, redirect.stdOut ++ redirect.stdErr ++ fmtStackTrace(ex), Duration(elapsed)))
         }
     }
-    TestResults(results)
+  }
+
+  /**
+    * A class used to redirect the standard out and standard error streams.
+    */
+  class ConsoleRedirection {
+    private val bytesOut = new ByteArrayOutputStream()
+    private val bytesErr = new ByteArrayOutputStream()
+    private val streamOut = new PrintStream(bytesOut)
+    private val streamErr = new PrintStream(bytesErr)
+
+    private var oldStreamOut: PrintStream = _
+    private var oldStreamErr: PrintStream = _
+
+    /**
+      * Returns the string emitted to the std out during redirection.
+      */
+    def stdOut: List[String] = bytesOut.toString().linesIterator.toList
+
+    /**
+      * Returns the string emitted to the std err during redirection.
+      */
+    def stdErr: List[String] = bytesErr.toString().linesIterator.toList
+
+    /**
+      * Redirect std out and std err.
+      */
+    def redirect(): Unit = {
+      // Store the old streams.
+      oldStreamOut = System.out
+      oldStreamErr = System.err
+
+      // Set the new streams.
+      System.setOut(streamOut)
+      System.setErr(streamErr)
+    }
+
+    /**
+      * Restore the std in and std err to their original streams.
+      */
+    def restore(): Unit = {
+      // Flush the new streams.
+      System.out.flush()
+      System.err.flush()
+
+      // Restore standard out and standard error.
+      System.setOut(oldStreamOut)
+      System.setErr(oldStreamErr)
+    }
+  }
+
+  /**
+    * Returns all test cases from the given compilation `result` which satisfy at least one filter.
+    */
+  private def getTestCases(filters: List[Regex], compilationResult: CompilationResult): Vector[TestCase] = {
+    /**
+      * Returns `true` if at least one filter matches the given symbol _OR_ if there are no filters.
+      */
+    def isMatch(test: TestCase): Boolean = {
+      val name = test.sym.toString
+      filters.isEmpty || filters.exists(regex => regex.matches(name))
+    }
+
+    val allTests = compilationResult.getTests.map {
+      case (sym, TestFn(_, skip, run)) => TestCase(sym, skip, run)
+    }
+
+    allTests.filter(isMatch).toVector.sorted
+  }
+
+  /**
+    * Returns the stack trace of the given exception `ex` as a list of strings.
+    */
+  private def fmtStackTrace(ex: Throwable): Vector[String] = {
+    val sw = new StringWriter()
+    val pw = new PrintWriter(sw)
+    ex.printStackTrace(pw)
+    sw.toString.linesIterator.toVector
+  }
+
+  /**
+    * Represents a single test case.
+    *
+    * @param sym  the Flix symbol.
+    * @param skip true if the test case should be skipped.
+    * @param run  the code to run.
+    */
+  case class TestCase(sym: Symbol.DefnSym, skip: Boolean, run: () => AnyRef) extends Ordered[TestCase] {
+    override def compare(that: TestCase): Int = this.sym.toString.compareTo(that.sym.toString)
+  }
+
+  /**
+    * A common super-type for test events.
+    */
+  sealed trait TestEvent
+
+  object TestEvent {
+
+    /**
+      * A test event emitted immediately before a test case is executed.
+      */
+    case class Before(sym: Symbol.DefnSym) extends TestEvent
+
+    /**
+      * A test event emitted to indicate that a test succeeded.
+      */
+    case class Success(sym: Symbol.DefnSym, d: Duration) extends TestEvent
+
+    /**
+      * A test event emitted to indicate that a test failed.
+      */
+    case class Failure(sym: Symbol.DefnSym, output: List[String], d: Duration) extends TestEvent
+
+    /**
+      * A test event emitted to indicate that a test was ignored.
+      */
+    case class Skip(sym: Symbol.DefnSym) extends TestEvent
+
+    /**
+      * A test event emitted to indicates that testing has completed.
+      */
+    case class Finished(d: Duration) extends TestEvent
   }
 
 }

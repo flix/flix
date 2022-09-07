@@ -151,7 +151,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   def UsesOrImports: Rule1[Seq[ParsedAst.UseOrImport]] = rule {
     // It is important for documentation comments that whitespace is not consumed if no uses are present
-    (optWS ~ oneOrMore((Use | Import) ~ optWS ~ ";").separatedBy(optWS)) | push(Seq.empty)
+    oneOrMore(optWS ~ (Use | Import) ~ ((optWS ~ ";") | WS)) | push(Seq.empty)
   }
 
   def Decls: Rule1[Seq[ParsedAst.Declaration]] = rule {
@@ -354,12 +354,22 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def Import: Rule1[ParsedAst.Import] = rule {
-    keyword("import") ~ WS ~ Imports.Import
+    keyword("import") ~ WS ~ (Imports.ImportMany | Imports.ImportOne)
   }
 
   object Imports {
-    def Import: Rule1[ParsedAst.Import] = rule {
-      SP ~ Names.JavaName ~ SP ~> ParsedAst.Imports.Import
+    def ImportOne: Rule1[ParsedAst.Imports.ImportOne] = rule {
+      SP ~ Names.JavaName ~ SP ~> ParsedAst.Imports.ImportOne
+    }
+
+    def ImportMany: Rule1[ParsedAst.Imports.ImportMany] = {
+      def NameAndAlias: Rule1[ParsedAst.Imports.NameAndAlias] = rule {
+        SP ~ Names.JavaIdentifier ~ optional(WS ~ atomic("=>") ~ WS ~ Names.UpperCaseName) ~ SP ~> ParsedAst.Imports.NameAndAlias
+      }
+
+      rule {
+        SP ~ Names.JavaName ~ atomic(".{") ~ optWS ~ zeroOrMore(NameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Imports.ImportMany
+      }
     }
   }
 
@@ -448,8 +458,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("$DEFAULT$") ~ SP ~> ParsedAst.Literal.Default
     }
 
-    def Sign: Rule1[Boolean] = rule {
-      optional(capture("-")) ~> ((s: Option[String]) => s.nonEmpty)
+    def Sign: Rule1[String] = rule {
+      capture("-" | "+" | "")
     }
 
     def SeparableDecDigits: Rule1[String] = rule {
@@ -667,7 +677,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Unary: Rule1[ParsedAst.Expression] = {
       def UnaryOp1: Rule1[ParsedAst.Operator] = rule {
-        operator("+") | operator("-") | operator("~~~")
+        operator("-") | operator("~~~")
       }
 
       def UnaryOp2: Rule1[ParsedAst.Operator] = rule {
@@ -864,7 +874,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def NewObject: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("object") ~ WS ~ Type ~ optWS ~ "{" ~ optWS ~ zeroOrMore(JvmMethod).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.NewObject
+      SP ~ keyword("new") ~ WS ~ Type ~ optWS ~ "{" ~ optWS ~ zeroOrMore(JvmMethod).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.NewObject
     }
 
     def JvmMethod: Rule1[ParsedAst.JvmMethod] = rule {
@@ -1463,7 +1473,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     private def TypeArguments: Rule1[Seq[ParsedAst.Type]] = rule {
-      "[" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]"
+      "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]"
     }
 
   }
@@ -1728,7 +1738,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     /**
       * An uppercase identifier is an uppercase letter optionally followed by any letter, underscore, or prime.
       */
-    def UpperCaseName: Rule1[Name.Ident] = rule {
+  def UpperCaseName: Rule1[Name.Ident] = rule {
       SP ~ capture(optional("_") ~ Letters.UpperLetter ~ zeroOrMore(Letters.LegalLetter)) ~ SP ~> Name.Ident
     }
 
@@ -1757,21 +1767,21 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       * A greek identifier.
       */
     def GreekName: Rule1[Name.Ident] = rule {
-      SP ~ capture(oneOrMore(Letters.GreekLetter)) ~ SP ~> Name.Ident
+      SP ~ capture(optional("_") ~ oneOrMore(Letters.GreekLetter)) ~ SP ~> Name.Ident
     }
 
     /**
       * A math identifier.
       */
     def MathName: Rule1[Name.Ident] = rule {
-      SP ~ capture(oneOrMore(Letters.MathLetter)) ~ SP ~> Name.Ident
+      SP ~ capture(optional("_") ~ oneOrMore(Letters.MathLetter)) ~ SP ~> Name.Ident
     }
 
     /**
       * An operator identifier.
       */
     def OperatorName: Rule1[Name.Ident] = rule {
-      SP ~ capture(oneOrMore(Letters.OperatorLetter)) ~ SP ~> Name.Ident
+      SP ~ capture(optional("_") ~ oneOrMore(Letters.OperatorLetter)) ~ SP ~> Name.Ident
     }
 
     /**
@@ -1825,15 +1835,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def QualifiedType: Rule1[Name.QName] = UpperCaseQName
 
     def Variable: Rule1[Name.Ident] = rule {
-      LowerCaseName | Wildcard | GreekName | MathName
+      LowerCaseName | GreekName | MathName | Wildcard
     }
 
     def JavaIdentifier: Rule1[String] = rule {
       capture((CharPredicate.Alpha | anyOf("_$")) ~ zeroOrMore(CharPredicate.AlphaNum | anyOf("_$")))
     }
 
-    def JavaName: Rule1[Seq[String]] = rule {
-      oneOrMore(JavaIdentifier).separatedBy(".")
+    def JavaName: Rule1[Name.JavaName] = rule {
+      SP ~ oneOrMore(JavaIdentifier).separatedBy(".") ~ SP ~> Name.JavaName
     }
 
     def JavaMethod: Rule1[Name.Ident] = rule {

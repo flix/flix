@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
-import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation, Fixity, Polarity}
+import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation, Fixity, Modifiers, Polarity}
+import ca.uwaterloo.flix.language.ast.TypedAst.Expression.NewChannel
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
@@ -191,10 +192,10 @@ object Lowering {
     case Enum(doc, ann, mod, sym, tparams, derives, cases0, tpe0, loc) =>
       val tpe = visitType(tpe0)
       val cases = cases0.map {
-        case (_, Case(caseSym, tag, caseTpeDeprecated0, caseSc0, loc)) =>
+        case (_, Case(caseSym, caseTpeDeprecated0, caseSc0, loc)) =>
           val caseTpeDeprecated = visitType(caseTpeDeprecated0)
           val caseSc = visitScheme(caseSc0)
-          (tag, Case(caseSym, tag, caseTpeDeprecated, caseSc, loc))
+          (caseSym, Case(caseSym, caseTpeDeprecated, caseSc, loc))
       }
       Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc)
   }
@@ -368,10 +369,10 @@ object Lowering {
       val t = visitType(tpe)
       Expression.Choose(es, rs, t, pur, eff, loc)
 
-    case Expression.Tag(sym, tag, exp, tpe, pur, eff, loc) =>
+    case Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.Tag(sym, tag, e, t, pur, eff, loc)
+      Expression.Tag(sym, e, t, pur, eff, loc)
 
     case Expression.Tuple(elms, tpe, pur, eff, loc) =>
       val es = visitExps(elms)
@@ -421,18 +422,18 @@ object Lowering {
       val b = visitExp(base)
       Expression.ArrayLength(b, pur, eff, loc)
 
-    case Expression.ArrayStore(base, index, elm, eff, loc) =>
+    case Expression.ArrayStore(base, index, elm, pur, eff, loc) =>
       val b = visitExp(base)
       val i = visitExp(index)
       val e = visitExp(elm)
-      Expression.ArrayStore(b, i, e, eff, loc)
+      Expression.ArrayStore(b, i, e, pur, eff, loc)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, pur, eff, loc) =>
       val b = visitExp(base)
       val bi = visitExp(beginIndex)
       val ei = visitExp(endIndex)
       val t = visitType(tpe)
-      Expression.ArraySlice(b, bi, ei, t, eff, loc)
+      Expression.ArraySlice(b, bi, ei, t, pur, eff, loc)
 
     case Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -462,10 +463,8 @@ object Lowering {
       val t = visitType(tpe)
       Expression.Cast(e, dt, declaredPur, declaredEff, t, pur, eff, loc)
 
-    case Expression.Upcast(exp, tpe, pur, eff, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      Expression.Upcast(e, t, pur, eff, loc)
+    case Expression.Upcast(exp, tpe, loc) =>
+      Expression.Upcast(visitExp(exp), visitType(tpe), loc)
 
     case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
@@ -561,8 +560,23 @@ object Lowering {
       val t = visitType(tpe)
       Expression.Spawn(e, t, pur, eff, loc)
 
-    case Expression.Par(exp, _) =>
-      throw InternalCompilerException("Not Implemented")
+    case Expression.Par(exp, loc0) => exp match {
+      case Expression.Tuple(elms, tpe, pur, eff, loc1) =>
+        val es = visitExps(elms)
+        val t = visitType(tpe)
+        val e = mkParTuple(Expression.Tuple(es, t, pur, eff, loc1))
+        Expression.Cast(e, None, Some(Type.Pure), Some(Type.Empty), t, pur, eff, loc0)
+
+      case Expression.Apply(exp, exps, tpe, pur, eff, loc1) =>
+        val e = visitExp(exp)
+        val es = visitExps(exps)
+        val t = visitType(tpe)
+        val parExp = mkParApply(Expression.Apply(e, es, t, pur, eff, loc1))
+        Expression.Cast(parExp, None, Some(Type.Pure), Some(Type.Empty), t, pur, eff, loc0)
+
+      case _ =>
+        throw InternalCompilerException(s"Unexpected par expression near ${exp.loc.format}: $exp")
+    }
 
     case Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -711,10 +725,10 @@ object Lowering {
 
     case Pattern.Str(_, _) => pat0
 
-    case Pattern.Tag(sym, tag, pat, tpe, loc) =>
+    case Pattern.Tag(sym, pat, tpe, loc) =>
       val p = visitPat(pat)
       val t = visitType(tpe)
-      Pattern.Tag(sym, tag, p, t, loc)
+      Pattern.Tag(sym, p, t, loc)
 
     case Pattern.Tuple(elms, tpe, loc) =>
       val es = elms.map(visitPat)
@@ -990,7 +1004,7 @@ object Lowering {
     case Pattern.Str(lit, loc) =>
       mkBodyTermLit(box(Expression.Str(lit, loc)))
 
-    case Pattern.Tag(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
+    case Pattern.Tag(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
 
     case Pattern.Tuple(_, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
 
@@ -1333,7 +1347,8 @@ object Lowering {
     * Returns a pure tag expression for the given `sym` and given `tag` with the given inner expression `exp`.
     */
   private def mkTag(sym: Symbol.EnumSym, tag: String, exp: Expression, tpe: Type, loc: SourceLocation): Expression = {
-    Expression.Tag(sym, Name.Tag(tag, loc), exp, tpe, Type.Pure, Type.Empty, loc)
+    val caseSym = new Symbol.CaseSym(sym, tag, SourceLocation.Unknown)
+    Expression.Tag(Ast.CaseSymUse(caseSym, loc), exp, tpe, Type.Pure, Type.Empty, loc)
   }
 
   /**
@@ -1344,6 +1359,135 @@ object Lowering {
     val pur = Type.Pure
     val eff = Type.Empty
     Expression.Tuple(exps, tpe, pur, eff, loc)
+  }
+
+  /**
+    * Returns a new `VarSym` for use in a let-binding.
+    *
+    * This function is called `mkLetSym` to avoid confusion with [[mkVarSym]].
+    */
+  private def mkLetSym(prefix: String, loc: SourceLocation)(implicit flix: Flix): Symbol.VarSym = {
+    val name = prefix + Flix.Delimiter + flix.genSym.freshId()
+    Symbol.freshVarSym(name, BoundBy.Let, loc)
+  }
+
+  /**
+    * Returns a list of `GetChannel` expressions based on `symExps`.
+    */
+  private def mkParWaits(symExps: List[(Symbol.VarSym, Expression)]): List[Expression] = {
+    // Make wait expressions `<- ch, ..., <- chn`.
+    symExps.map {
+      case (sym, e) =>
+        val loc = e.loc.asSynthetic
+        Expression.GetChannel(
+          Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc),
+          e.tpe, Type.Impure, e.eff, loc)
+    }
+  }
+
+  /**
+    * Returns a full `par exp` expression.
+    */
+  private def mkParChannels(exp: Expression, chanSymsWithExps: List[(Symbol.VarSym, Expression)]): Expression = {
+    // Make spawn expressions `spawn ch <- exp`.
+    val spawns = chanSymsWithExps.foldRight(exp: Expression) {
+      case ((sym, e), acc) =>
+        val loc = e.loc.asSynthetic
+        val e1 = Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc) // The channel `ch`
+        val e2 = Expression.PutChannel(e1, e, Type.Unit, Type.Impure, Type.mkUnion(e.eff, e1.eff, loc), loc) // The put exp: `ch <- exp0`.
+        val e3 = Expression.Spawn(e2, Type.Unit, Type.Impure, e2.eff, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
+        Expression.Stm(e3, acc, e1.tpe, Type.mkAnd(e3.pur, acc.pur, loc), Type.mkUnion(e3.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
+    }
+
+    // Make let bindings `let ch = chan 1;`.
+    chanSymsWithExps.foldRight(spawns: Expression) {
+      case ((sym, e), acc) =>
+        val loc = e.loc.asSynthetic
+        val chan = Expression.NewChannel(Expression.Int32(1, loc), Type.mkChannel(e.tpe, loc), Type.Impure, Type.Empty, loc) // The channel exp `chan 1`
+        Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), chan, acc, acc.tpe, Type.mkAnd(e.pur, acc.pur, loc), Type.mkUnion(e.eff, acc.eff, loc), loc) // The let-binding `let ch = chan 1`
+    }
+  }
+
+
+  /**
+    * Returns a tuple expression that is evaluated in parallel.
+    *
+    * {{{
+    *   par (exp0, exp1, exp2)
+    * }}}
+    *
+    * is translated to
+    *
+    * {{{
+    *   let ch0 = chan 1;
+    *   let ch1 = chan 1;
+    *   let ch2 = chan 1;
+    *   spawn ch0 <- exp0;
+    *   spawn ch1 <- exp1;
+    *   spawn ch2 <- exp2;
+    *   (<- ch0, <- ch1, <- ch2)
+    * }}}
+    */
+  private def mkParTuple(exp: Expression.Tuple)(implicit flix: Flix): Expression = {
+    val Expression.Tuple(elms, tpe, pur, eff, loc) = exp
+
+    // Generate symbols for each channel.
+    val chanSymsWithExps = elms.map(e => (mkLetSym("channel", e.loc.asSynthetic), e))
+
+    val waitExps = mkParWaits(chanSymsWithExps)
+    val tuple = Expression.Tuple(waitExps, tpe, pur, eff, loc.asSynthetic)
+    mkParChannels(tuple, chanSymsWithExps)
+  }
+
+  /**
+    * Returns an apply expression where the function and its arguments are evaluated in parallel.
+    *
+    * {{{
+    *   par exp0(exp1, exp2, exp3)
+    * }}}
+    *
+    * is translated to
+    *
+    * {{{
+    *   let ch0 = chan 1;
+    *   let ch1 = chan 1;
+    *   let ch2 = chan 1;
+    *   let ch3 = chan 1;
+    *   spawn ch0 <- exp0;
+    *   spawn ch1 <- exp1;
+    *   spawn ch2 <- exp2;
+    *   spawn ch3 <- exp3;
+    *   (<- ch0)(<- ch1, <- ch2, <- ch3)
+    * }}}
+    */
+  private def mkParApply(exp: Expression.Apply)(implicit flix: Flix): Expression = {
+    val exps = liftApplyExps(exp)
+    val chanSymsWithExps = exps.map(e => (mkLetSym("channel", e.loc.asSynthetic), e))
+    val waits = mkParWaits(chanSymsWithExps)
+    val app = mkWaitApply(exp, waits)
+    mkParChannels(app, chanSymsWithExps)
+  }
+
+  /**
+    * Returns a list of all expressions in an `Apply` expression.
+    */
+  private def liftApplyExps(exp: Expression): List[Expression] = exp match {
+    case Expression.Apply(exp, exps, _, _, _, _) => liftApplyExps(exp) ::: exps
+    case e => e :: Nil
+  }
+
+  /**
+    * Returns an `Apply` expression where the sub-expressions have been replaced with
+    * `GetChannel` expressions.
+    *
+    * Assumes that `waits` has the same structure as the output of [[liftApplyExps]].
+    */
+  private def mkWaitApply(exp: Expression, waits: List[Expression]): Expression = exp match {
+    case Expression.Apply(e, exps, tpe, pur, eff, loc) =>
+      val es = waits.takeRight(exps.length)
+      val ws = waits.dropRight(exps.length)
+      Expression.Apply(mkWaitApply(e, ws), es, tpe, pur, eff, loc)
+    case _ => waits.head
   }
 
   /**
@@ -1478,9 +1622,9 @@ object Lowering {
       }
       Expression.Choose(es, rs, tpe, pur, eff, loc)
 
-    case Expression.Tag(sym, tag, exp, tpe, pur, eff, loc) =>
+    case Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
-      Expression.Tag(sym, tag, e, tpe, pur, eff, loc)
+      Expression.Tag(sym, e, tpe, pur, eff, loc)
 
     case Expression.Tuple(elms, tpe, pur, eff, loc) =>
       val es = elms.map(substExp(_, subst))
@@ -1521,16 +1665,16 @@ object Lowering {
       val b = substExp(base, subst)
       Expression.ArrayLength(b, pur, eff, loc)
 
-    case Expression.ArrayStore(base, index, elm, eff, loc) =>
+    case Expression.ArrayStore(base, index, elm, pur, eff, loc) =>
       val b = substExp(base, subst)
       val i = substExp(index, subst)
-      Expression.ArrayStore(b, i, elm, eff, loc)
+      Expression.ArrayStore(b, i, elm, pur, eff, loc)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, pur, eff, loc) =>
       val b = substExp(base, subst)
       val bi = substExp(beginIndex, subst)
       val ei = substExp(endIndex, subst)
-      Expression.ArraySlice(b, bi, ei, tpe, eff, loc)
+      Expression.ArraySlice(b, bi, ei, tpe, pur, eff, loc)
 
     case Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = substExp(exp1, subst)
@@ -1554,9 +1698,8 @@ object Lowering {
       val e = substExp(exp, subst)
       Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
 
-    case Expression.Upcast(exp, tpe, pur, eff, loc) =>
-      val e = substExp(exp0, subst)
-      Expression.Upcast(e, tpe, pur, eff, loc)
+    case Expression.Upcast(exp, tpe, loc) =>
+      Expression.Upcast(substExp(exp, subst), tpe, loc)
 
     case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
@@ -1631,8 +1774,8 @@ object Lowering {
       val e = substExp(exp, subst)
       Expression.Spawn(e, tpe, pur, eff, loc)
 
-    case Expression.Par(exp, _) =>
-      throw InternalCompilerException("Not Implemented")
+    case Expression.Par(exp, loc) =>
+      Expression.Par(substExp(exp, subst), loc)
 
     case Expression.Lazy(exp, tpe, loc) =>
       val e = substExp(exp, subst)

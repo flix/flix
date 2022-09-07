@@ -147,14 +147,14 @@ object ClosureConv {
     case Expression.LetRec(sym, e1, e2, tpe, purity, loc) =>
       Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, purity, loc)
 
-    case Expression.Is(sym, tag, e, purity, loc) =>
-      Expression.Is(sym, tag, visitExp(e), purity, loc)
+    case Expression.Is(sym, e, purity, loc) =>
+      Expression.Is(sym, visitExp(e), purity, loc)
 
-    case Expression.Tag(enum, tag, e, tpe, purity, loc) =>
-      Expression.Tag(enum, tag, visitExp(e), tpe, purity, loc)
+    case Expression.Tag(enum, e, tpe, purity, loc) =>
+      Expression.Tag(enum, visitExp(e), tpe, purity, loc)
 
-    case Expression.Untag(sym, tag, e, tpe, purity, loc) =>
-      Expression.Untag(sym, tag, visitExp(e), tpe, purity, loc)
+    case Expression.Untag(sym, e, tpe, purity, loc) =>
+      Expression.Untag(sym, visitExp(e), tpe, purity, loc)
 
     case Expression.Index(e, offset, tpe, purity, loc) =>
       Expression.Index(visitExp(e), offset, tpe, purity, loc)
@@ -420,11 +420,11 @@ object ClosureConv {
     case Expression.LetRec(sym, exp1, exp2, _, _, _) =>
       filterBoundVar(freeVars(exp1) ++ freeVars(exp2), sym)
 
-    case Expression.Is(_, _, exp, _, _) => freeVars(exp)
+    case Expression.Is(_, exp, _, _) => freeVars(exp)
 
-    case Expression.Untag(_, _, exp, _, _, _) => freeVars(exp)
+    case Expression.Untag(_, exp, _, _, _) => freeVars(exp)
 
-    case Expression.Tag(_, _, exp, _, _, _) => freeVars(exp)
+    case Expression.Tag(_, exp, _, _, _) => freeVars(exp)
 
     case Expression.Index(base, _, _, _, _) => freeVars(base)
 
@@ -639,17 +639,17 @@ object ClosureConv {
         val e2 = visitExp(exp2)
         Expression.LetRec(newSym, e1, e2, tpe, purity, loc)
 
-      case Expression.Is(sym, tag, exp, purity, loc) =>
+      case Expression.Is(sym, exp, purity, loc) =>
         val e = visitExp(exp)
-        Expression.Is(sym, tag, e, purity, loc)
+        Expression.Is(sym, e, purity, loc)
 
-      case Expression.Untag(sym, tag, exp, tpe, purity, loc) =>
+      case Expression.Untag(sym, exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        Expression.Untag(sym, tag, e, tpe, purity, loc)
+        Expression.Untag(sym, e, tpe, purity, loc)
 
-      case Expression.Tag(enum, tag, exp, tpe, purity, loc) =>
+      case Expression.Tag(enum, exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        Expression.Tag(enum, tag, e, tpe, purity, loc)
+        Expression.Tag(enum, e, tpe, purity, loc)
 
       case Expression.Index(exp, offset, tpe, purity, loc) =>
         val e = visitExp(exp)

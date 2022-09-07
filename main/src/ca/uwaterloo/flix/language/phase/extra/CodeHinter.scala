@@ -45,7 +45,7 @@ object CodeHinter {
     * Computes code quality hints for the given enum `enum`.
     */
   private def visitEnum(enum0: TypedAst.Enum)(implicit root: Root, index: Index): List[CodeHint] = {
-    val tagUses = enum0.cases.keys.flatMap(tag => index.usesOf(enum0.sym, tag))
+    val tagUses = enum0.cases.keys.flatMap(sym => index.usesOf(sym))
     val enumUses = index.usesOf(enum0.sym)
     val uses = enumUses ++ tagUses
     val isDeprecated = enum0.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Deprecated])
@@ -169,7 +169,7 @@ object CodeHinter {
         case ChoiceRule(_, exp) => visitExp(exp)
       }
 
-    case Expression.Tag(_, _, exp, _, _, _, _) =>
+    case Expression.Tag(_, exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.Tuple(exps, _, _, _, _) =>
@@ -195,13 +195,13 @@ object CodeHinter {
     case Expression.ArrayLoad(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.ArrayStore(exp1, exp2, exp3, _, _) =>
+    case Expression.ArrayStore(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
     case Expression.ArrayLength(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.ArraySlice(exp1, exp2, exp3, _, _, _) =>
+    case Expression.ArraySlice(exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
@@ -219,7 +219,7 @@ object CodeHinter {
     case Expression.Cast(exp, _, _, _, tpe, pur, _, loc) =>
       checkCast(tpe, pur, loc) ++ visitExp(exp)
 
-    case Expression.Upcast(exp, _, _, _, _) =>
+    case Expression.Upcast(exp, _, _) =>
       visitExp(exp)
 
     case Expression.Without(exp, _, _, _, _, _) =>

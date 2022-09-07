@@ -21,7 +21,8 @@ import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.github.GitHub
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
-import ca.uwaterloo.flix.util.Result.{ToErr, ToOk}
+import ca.uwaterloo.flix.util.Result.{Err, Ok, ToErr, ToOk}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util._
 
 import java.io.{File, PrintWriter}
@@ -141,7 +142,7 @@ object Packager {
 
     newFile(mainSourceFile) {
       """// The main entry point.
-        |def main(): Unit & Impure =
+        |def main(): Unit \ IO =
         |    println("Hello World!")
         |""".stripMargin
     }
@@ -159,8 +160,10 @@ object Packager {
     */
   def check(p: Path, o: Options): Result[Unit, Int] = {
     // Check that the path is a project path.
-    if (!isProjectPath(p))
-      throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
+    checkProjectPath(p) match {
+      case Validation.Success(_) => ()
+      case Validation.Failure(missingPaths) => throw new RuntimeException(s"Missing files or directories: ${missingPaths.mkString(", ")}")
+    }
 
     // Configure a new Flix object.
     implicit val flix: Flix = new Flix()
@@ -183,8 +186,10 @@ object Packager {
   def build(p: Path, o: Options, loadClasses: Boolean = true)(implicit flix: Flix = new Flix()): Result[CompilationResult, Int] = {
     flix.setFormatter(AnsiTerminalFormatter)
     // Check that the path is a project path.
-    if (!isProjectPath(p))
-      throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
+    checkProjectPath(p) match {
+      case Validation.Success(_) => ()
+      case Validation.Failure(missingPaths) => throw new RuntimeException(s"Missing files or directories: ${missingPaths.mkString(", ")}")
+    }
 
     // Configure a new Flix object.
     val newOptions = o.copy(
@@ -251,8 +256,10 @@ object Packager {
     */
   def buildJar(p: Path, o: Options): Result[Unit, Int] = {
     // Check that the path is a project path.
-    if (!isProjectPath(p))
-      throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
+    checkProjectPath(p) match {
+      case Validation.Success(_) => ()
+      case Validation.Failure(missingPaths) => throw new RuntimeException(s"Missing files or directories: ${missingPaths.mkString(", ")}")
+    }
 
     // The path to the jar file.
     val jarFile = getJarFile(p)
@@ -276,8 +283,8 @@ object Packager {
       // Add all class files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
       for ((buildFile, fileNameWithSlashes) <- getAllFiles(getBuildDirectory(p))
-          .map{path=>(path, convertPathToRelativeFileName(getBuildDirectory(p), path))}
-          .sortBy(_._2)) {
+        .map { path => (path, convertPathToRelativeFileName(getBuildDirectory(p), path)) }
+        .sortBy(_._2)) {
         addToZip(zip, fileNameWithSlashes, buildFile)
       }
     } match {
@@ -294,8 +301,10 @@ object Packager {
     */
   def buildPkg(p: Path, o: Options): Result[Unit, Int] = {
     // Check that the path is a project path.
-    if (!isProjectPath(p))
-      throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
+    checkProjectPath(p) match {
+      case Validation.Success(_) => ()
+      case Validation.Failure(missingPaths) => throw new RuntimeException(s"Missing files or directories: ${missingPaths.mkString(", ")}")
+    }
 
     // The path to the fpkg file.
     val pkgFile = getPkgFile(p)
@@ -315,8 +324,8 @@ object Packager {
       // Add all source files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
       for ((sourceFile, fileNameWithSlashes) <- getAllFiles(getSourceDirectory(p))
-          .map{path=>(path, convertPathToRelativeFileName(p, path))}
-          .sortBy(_._2)) {
+        .map { path => (path, convertPathToRelativeFileName(p, path)) }
+        .sortBy(_._2)) {
         addToZip(zip, fileNameWithSlashes, sourceFile)
       }
     } match {
@@ -359,12 +368,8 @@ object Packager {
     implicit val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
     build(p, o) flatMap {
       compilationResult =>
-        val results = Tester.test(compilationResult)
-        Console.println(results.output(flix.getFormatter))
-        results.overallResult match {
-          case Tester.OverallTestResult.Failure => 1.toErr
-          case Tester.OverallTestResult.Success | Tester.OverallTestResult.NoTests => ().toOk
-        }
+        Tester.run(Nil, compilationResult)
+        ().toOk
     }
   }
 
@@ -404,6 +409,30 @@ object Packager {
       Files.exists(getHistoryFile(p)) &&
       Files.exists(getLicenseFile(p)) &&
       Files.exists(getReadmeFile(p))
+
+  /**
+    * Returns a Validation containing the list of missing paths in case the path is not a project path.
+    */
+  def checkProjectPath(p: Path): Validation[Unit, Path] = {
+    val required = List(
+      getSourceDirectory(p),
+      getTestDirectory(p),
+      getHistoryFile(p),
+      getLicenseFile(p),
+      getReadmeFile(p)
+    )
+
+    Validation.traverseX(required) {
+      case path =>
+        if (Files.exists(path)) {
+          ().toSuccess
+        } else {
+          path.toFailure
+        }
+    }
+
+
+  }
 
   /**
     * Returns the package name based on the given path `p`.

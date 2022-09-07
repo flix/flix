@@ -1,6 +1,6 @@
 namespace TestNel {
 
-    use Hash.hash;
+    use Hash.hash
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
@@ -712,6 +712,22 @@ namespace TestNel {
         Nel.zipWithIndex(Nel(1, 2 :: 3 :: 4 :: 5 :: Nil)) == Nel((1, 0), (2, 1) :: (3, 2) :: (4, 3) :: (5, 4) :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
+    // zipWithA                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithA01(): Bool = Nel.zipWithA((x, y) -> Identity(x + y), Nel(1, Nil), Nel(1, Nil)) == Identity(Nel(2, Nil))
+
+    @test
+    def zipWithA02(): Bool = Nel.zipWithA((x, y) -> Identity(x + y), Nel(1, 2 :: Nil), Nel(1, Nil)) == Identity(Nel(2, Nil))
+
+    @test
+    def zipWithA03(): Bool = Nel.zipWithA((x, y) -> Identity(x + y), Nel(1, Nil), Nel(1, 2 :: Nil)) == Identity(Nel(2, Nil))
+
+    @test
+    def zipWithA04(): Bool = Nel.zipWithA((x, y) -> Identity(x + y), Nel(1, 2 :: Nil), Nel(1, 2 :: Nil)) == Identity(Nel(2, 4 :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -771,13 +787,13 @@ namespace TestNel {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool & Impure =
+    def foreach01(): Bool \ IO =
         let r = ref 21;
         Nel.foreach(x -> r := x, Nel.singleton(1));
         1 == deref r
 
     @test
-    def foreach02(): Bool & Impure =
+    def foreach02(): Bool \ IO =
         let r = ref 21;
         Nel.foreach(x -> r := x, Nel(1, 2 :: 3 :: Nil));
         3 == deref r
@@ -975,6 +991,53 @@ namespace TestNel {
     @test
     def iterator02(): Bool = region r {
         Nel(-100, List.range(-99, 100)) |> Nel.iterator(r) |> Iterator.toList == List.range(-100, 100)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sequence                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sequence01(): Bool =
+        let l = Nel.singleton(Identity(1));
+        Nel.sequence(l) == Identity(Nel.singleton(1))
+
+    @test
+    def sequence02(): Bool =
+        let l = Nel.cons(Identity(1), Nel.singleton(Identity(2)));
+        Nel.sequence(l) == Identity(Nel.cons(1, Nel.singleton(2)))
+
+    @test
+    def sequence03(): Bool =
+        let l = Nel.cons(Identity(1), Nel.cons(Identity(2), Nel.singleton(Identity(3))));
+        Nel.sequence(l) == Identity(Nel.cons(1, Nel.cons(2, Nel.singleton(3))))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // traverse                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def traverse01(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = Nel.singleton(1);
+        let ans = Nel.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(Nel.singleton(1)) and deref st == 1
+    }
+
+    @test
+    def traverse02(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = Nel.cons(1, Nel.singleton(2));
+        let ans = Nel.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(Nel.cons(1, Nel.singleton(2))) and deref st == 2
+    }
+
+    @test
+    def traverse03(): Bool = region r {
+        let st = ref 0 @ r;
+        let l = Nel.cons(1, Nel.cons(2, Nel.singleton(3)));
+        let ans = Nel.traverse(x -> {st := x; Identity(x)}, l);
+        ans == Identity(Nel.cons(1, Nel.cons(2, Nel.singleton(3)))) and deref st == 3
     }
 
     /////////////////////////////////////////////////////////////////////////////
