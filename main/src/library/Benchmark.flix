@@ -57,7 +57,7 @@ namespace Benchmark {
     }
 
     ///
-    /// Runs all benchmarks in `bs`. Attempts to spend no more than `budget` time.
+    /// Runs all benchmarks in `bs`. Attempts to spend no more than `budget` milliseconds.
     ///
     @Experimental
     pub def runWithBudget(bs: Array[Benchmark, r], budget: Int64): Int32 \ IO =
