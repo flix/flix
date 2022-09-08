@@ -52,6 +52,11 @@ object BoolAlgebraTable {
   private val MaxVars: Int = 4
 
   /**
+    * The set of variables that the minimization table uses.
+    */
+  private val VarSet: SortedSet[Int] = Range(0, MaxVars).to(SortedSet)
+
+  /**
     * The size a formula (but represented as a type) must have before we try to minimize it.
     */
   val Threshold: Int = 10
@@ -78,7 +83,7 @@ object BoolAlgebraTable {
     val numVars = f.freeVars.size
 
     // Determine whether to minimize once or recursively.
-    val result = if (numVars <= MaxVars) {
+    val result = if (f.freeVars.subsetOf(VarSet)) {
       // Case 1: The number of variables in the formula is less than those of the table.
       // We can immediately lookup the minimal formula in the table.
       if (Debug) println(s"Minimize by lookup ($numVars variables)")

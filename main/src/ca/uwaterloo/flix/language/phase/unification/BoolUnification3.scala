@@ -103,7 +103,8 @@ object BoolUnification3 {
             (key: Symbol.TypeVarSym, value)
         }.toMap
         Ok(Substitution(map))
-      case Failure(_) => Result.Err(UnificationError.MismatchedBools(tpe1, tpe2))
+      case Failure(BooleanUnificationException) => Result.Err(UnificationError.MismatchedBools(tpe1, tpe2))
+      case Failure(error) => throw error
     }
   }
 
