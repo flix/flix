@@ -140,7 +140,7 @@ object BoolAlgebraTable {
       val fvs = fvs1 ++ fvs2
 
       // Determine if we must minimize.
-      if (fvs.size <= MaxVars) {
+      if (fvs.subsetOf(VarSet)) {
         // The number of free variables does not (yet) exceed the number of variables in the table.
         // Consequence we do not yet minimize. We do not yet minimize in attempt to avoid a
         // potential quadratic blow-up where we would minimize at every level.
@@ -160,7 +160,7 @@ object BoolAlgebraTable {
       val (f2, fvs2) = minimizeFormulaRecursively(formula2)
       val fvs = fvs1 ++ fvs2
 
-      if (fvs.size <= MaxVars) {
+      if (fvs.subsetOf(VarSet)) {
         (Meet(f1, f2), fvs)
       } else {
         val minf1 = alphaRenameAndLookup(f1)
