@@ -52,6 +52,19 @@ sealed trait Type {
   }
 
   /**
+    * Gets all the effects in the given type.
+    */
+  def effects: SortedSet[Symbol.EffectSym] = this match {
+    case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(sym)
+
+    case _: Type.Cst => SortedSet.empty
+    case _: Type.Var => SortedSet.empty
+
+    case Type.Apply(tpe1, tpe2, _) => tpe1.effects ++ tpe2.effects
+    case Type.Alias(_, _, tpe, _) => tpe.effects
+  }
+
+  /**
     * Optionally returns the type constructor of `this` type.
     *
     * Return `None` if the type constructor is a variable.

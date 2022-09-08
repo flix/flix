@@ -25,10 +25,14 @@ import scala.annotation.tailrec
 
 object BoolUnification {
 
+  def unify(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+    BoolUnification3.unify(tpe1, tpe2, renv)
+  }
+
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  def unify(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  def unify2(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     ///
     /// Perform aggressive matching to optimize for common cases.
     ///

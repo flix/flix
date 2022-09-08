@@ -92,7 +92,7 @@ object TypeMinimization {
 
     // Compute the variables in `tpe`.
     val tvars = tpe.typeVars.toList.map(tvar => BoolAlgebra.VarOrEff.Var(tvar.sym))
-    val effs = getEffects(tpe).toList.map(BoolAlgebra.VarOrEff.Eff)
+    val effs = tpe.effects.toList.map(BoolAlgebra.VarOrEff.Eff)
 
     // Construct a bi-directional map from type variables to indices.
     // The idea is that the first variable becomes x0, the next x1, and so forth.
@@ -112,19 +112,5 @@ object TypeMinimization {
 
     // Convert the formula back to a type.
     toType(minimized, m, tpe.kind, tpe.loc)
-  }
-
-
-  /**
-    * Gets all the effects in the given type.
-    */
-  private def getEffects(t: Type): SortedSet[Symbol.EffectSym] = t match {
-    case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(sym)
-
-    case _: Type.Cst => SortedSet.empty
-    case _: Type.Var => SortedSet.empty
-
-    case Type.Apply(tpe1, tpe2, loc) => getEffects(tpe1) ++ getEffects(tpe2)
-    case Type.Alias(cst, args, tpe, loc) => getEffects(tpe)
   }
 }
