@@ -35,9 +35,9 @@ namespace Reachable/Imperative {
                     // add all non-reached end points to tasklist
                     let endPoints = MutMap.getWithDefault(node, new MutList(r), edgeMap);
                     foreach(nextNode <- Iterable.iterator(endPoints)) {
-                        let alreadyReached = MutSet.exists(Eq.eq(nextNode), reachable);
+                        let alreadyReached = MutSet.memberOf(nextNode, reachable);
                         if (not alreadyReached)
-                            taskList |> MutDeque.pushBack(nextNode)
+                            taskList |> MutDeque.pushFront(nextNode)
                         else ()
                     };
                     whileLoop()
@@ -59,20 +59,17 @@ namespace Reachable/Functional {
             Map.insert(start, end :: startEdges, map)
         });
         // explore the graph depth first
-        def dfs(node: n, reachable: Set[n]) = {
-            // this node has now been reached
-            let reachable1 = Set.insert(node, reachable);
-            let endPoints = Map.getWithDefault(node, Nil, edgeMap);
-            // visit all non-reached end points and collects their sets
-            (reachable1, endPoints) ||> List.foldLeft(
-                (acc, nextNode) ->
-                    let alreadyReached = Set.exists(Eq.eq(nextNode), reachable);
-                    if (not alreadyReached)
-                        dfs(nextNode, acc)
-                    else acc
-            )
+        def dfs(taskList: List[n], reachable: Set[n]) = match taskList {
+            case Nil => reachable
+            case node :: remaining =>
+                // this node has now been reached
+                let reachable1 = Set.insert(node, reachable);
+                let unreachedNeighbours = edgeMap |>
+                    Map.getWithDefault(node, Nil) |>
+                    List.filter(n -> not Set.memberOf(n, reachable1));
+                dfs(unreachedNeighbours ::: remaining, reachable1)
         };
-        dfs(origin, Set.empty())
+        dfs(origin :: Nil, Set.empty())
 
     @test
     pub def test(): Bool = Graphs.validate(reachable)
