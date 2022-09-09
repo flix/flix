@@ -109,6 +109,8 @@ instance FunctorFilter[List] {
     pub override def filter(f: a -> Bool \ ef, x: List[a]): List[a] \ ef = List.filter(f, x)
 }
 
+instance Witherable[List]
+
 instance SemiGroup[List[a]] {
     pub def combine(x: List[a], y: List[a]): List[a] = x ::: y
 }

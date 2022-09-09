@@ -24,7 +24,7 @@ pub class Witherable[t : Type -> Type] with Traversable[t], FunctorFilter[t] {
     /// Returns the result of applying the applicative partial mapping function `f` to all the elements of the
     /// data structure `t`.
     ///
-    pub def traverseFilter(f: a -> m[Option[b]] \ ef, t: t[a]): m[t[b]] \ ef with Applicative[m] =
+    pub def wither(f: a -> m[Option[b]] \ ef, t: t[a]): m[t[b]] \ ef with Applicative[m] =
         use Functor.{<$>};
         use FunctorFilter.filterMap;
         (identity |> filterMap) <$> Traversable.traverse(f, t)
@@ -33,7 +33,7 @@ pub class Witherable[t : Type -> Type] with Traversable[t], FunctorFilter[t] {
     /// Returns the result of running all the actions in the data structure `t`.
     ///
     pub def sequenceFilter(t: t[m[Option[a]]]): m[t[a]] with Applicative[m] =
-        Witherable.traverseFilter(identity, t)
+        Witherable.wither(identity, t)
 
     // laws: identity, traverse consistency, composition
 }
