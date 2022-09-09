@@ -46,10 +46,10 @@ object Safety {
     * Performs safety and well-formedness checks on the given definition `def0`.
     */
   private def visitDef(def0: Def)(implicit flix: Flix): List[CompilationMessage] = {
-    val rigidityEnv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
+    val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
       case (acc, e) => acc.markRigid(e)
     }
-    visitExp(def0.impl.exp, rigidityEnv)
+    visitExp(def0.impl.exp, renv)
   }
 
 
@@ -329,7 +329,7 @@ object Safety {
     * the effect set of the expression is a subset of the effect set being cast to.
     *
     */
-  private def isSubTypeOf(tpe1: Type, tpe2: Type, rigidityEnv: RigidityEnv)(implicit flix: Flix): Boolean = (tpe1.baseType, tpe2.baseType) match {
+  private def isSubTypeOf(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = (tpe1.baseType, tpe2.baseType) match {
     case (Type.True, Type.Var(_, _)) => true
     case (Type.True, Type.False) => true
     case (Type.Var(_, _), Type.False) => true
@@ -341,7 +341,7 @@ object Safety {
       // purities
       val pur1 = tpe1.arrowPurityType
       val pur2 = tpe2.arrowPurityType
-      val subTypePurity = isSubTypeOf(pur1, pur2, rigidityEnv)
+      val subTypePurity = isSubTypeOf(pur1, pur2, renv)
 
       // set effects
       // The rule for effect sets is:
@@ -351,20 +351,20 @@ object Safety {
       val s2 = tpe2.arrowEffectType
       val s3 = Type.freshVar(Kind.Effect, loc)
       val s1s3 = Type.mkUnion(s1, s3, loc)
-      val isEffSubset = Unification.unifiesWith(s1s3, s2, rigidityEnv)
+      val isEffSubset = Unification.unifiesWith(s1s3, s2, renv)
 
       // check that parameters are supertypes
       val args1 = tpe1.arrowArgTypes
       val args2 = tpe2.arrowArgTypes
       val superTypeArgs = args1.zip(args2).forall {
         case (t1, t2) =>
-          isSubTypeOf(t2, t1, rigidityEnv)
+          isSubTypeOf(t2, t1, renv)
       }
 
       // check that result is a subtype
       val expectedResTpe = tpe1.arrowResultType
       val actualResTpe = tpe2.arrowResultType
-      val subTypeResult = isSubTypeOf(expectedResTpe, actualResTpe, rigidityEnv)
+      val subTypeResult = isSubTypeOf(expectedResTpe, actualResTpe, renv)
 
       subTypePurity && isEffSubset && superTypeArgs && subTypeResult
 
@@ -375,7 +375,7 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given constraint `c0`.
     */
-  private def checkConstraint(c0: Constraint, rigidityEnv: RigidityEnv)(implicit flix: Flix): List[CompilationMessage] = {
+  private def checkConstraint(c0: Constraint, renv: RigidityEnv)(implicit flix: Flix): List[CompilationMessage] = {
     //
     // Compute the set of positively defined variable symbols in the constraint.
     //
@@ -404,7 +404,7 @@ object Safety {
     // Check that all negative atoms only use positively defined variable symbols
     // and that lattice variables are not used in relational position.
     //
-    val err1 = c0.body.flatMap(checkBodyPredicate(_, posVars, quantVars, latVars, rigidityEnv))
+    val err1 = c0.body.flatMap(checkBodyPredicate(_, posVars, quantVars, latVars, renv))
 
     //
     // Check that the free relational variables in the head atom are not lattice variables.
@@ -418,7 +418,7 @@ object Safety {
     * Performs safety and well-formedness checks on the given body predicate `p0`
     * with the given positively defined variable symbols `posVars`.
     */
-  private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym], rigidityEnv: RigidityEnv)(implicit flix: Flix): List[CompilationMessage] = p0 match {
+  private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym], renv: RigidityEnv)(implicit flix: Flix): List[CompilationMessage] = p0 match {
     case Predicate.Body.Atom(_, den, polarity, _, terms, _, loc) =>
       // check for non-positively bound negative variables.
       val err1 = polarity match {
@@ -446,9 +446,9 @@ object Safety {
       // Combine the messages
       err1 ++ err2
 
-    case Predicate.Body.Guard(exp, _) => visitExp(exp, rigidityEnv)
+    case Predicate.Body.Guard(exp, _) => visitExp(exp, renv)
 
-    case Predicate.Body.Loop(_, exp, _) => visitExp(exp, rigidityEnv)
+    case Predicate.Body.Loop(_, exp, _) => visitExp(exp, renv)
   }
 
   /**
