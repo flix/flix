@@ -20,7 +20,12 @@
 pub class Witherable[t : Type -> Type] with Traversable[t], FunctorFilter[t] {
 
 
-    pub def traverseFilter(f: a -> m[Option[b]] \ ef, t: t[a]): m[t[b]] \ ef with Applicative[m] = ???
+    pub def traverseFilter(f: a -> m[Option[b]] \ ef, t: t[a]): m[t[b]] \ ef with Applicative[m] =
+        Traversable.traverse(f, t) |> Functor.map(FunctorFilter.filterMap(identity))
+        // ap: m[a -> b] -> m[a] -> m[b]
+        // point: a -> m[a]
+        // traverse: (a -> m[b]) -> t[a] -> m[t[opt[b]]]
+
 
 
 /*
