@@ -17,15 +17,16 @@
 ///
 ///
 ///
-pub class Witherable[t : Type -> Type] {
+pub class Witherable[t : Type -> Type] with Traversable[t], FunctorFilter[t] {
 
-//  with FunctorFilter[t], or with Functor[t], Foldable[t]?
 
-    pub def traverseFilter(f: a -> m[Option[b]] \ ef, t: t[a]): m[t[b]] \ ef with Applicative[m]
+    pub def traverseFilter(f: a -> m[Option[b]] \ ef, t: t[a]): m[t[b]] \ ef with Applicative[m] = ???
 
+
+/*
     pub def sequenceFilter(t: t[m[Option[a]]]): m[t[a]] with Applicative[m] =
         Witherable.traverseFilter(identity, t)
-
+*/
     // collect function, flatten option?
 
     // laws: identity, traverse consistency, composition
