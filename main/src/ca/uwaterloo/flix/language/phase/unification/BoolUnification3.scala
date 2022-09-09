@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.phase.unification.BoolAlgebra.{VarOrEff, fromBoolType, fromEffType, toType}
+import ca.uwaterloo.flix.language.phase.unification.BoolAlgebra.{VarOrEff, fromBoolType, toType}
 import ca.uwaterloo.flix.language.phase.unification.BoolAlgebraTable.minimizeFormula
 import ca.uwaterloo.flix.util.Result.Ok
 import ca.uwaterloo.flix.util.collection.Bimap
@@ -66,26 +66,17 @@ object BoolUnification3 {
 
     // Compute the variables in `tpe`.
     val tvars = (tpe1.typeVars ++ tpe2.typeVars).toList.map(tvar => BoolAlgebra.VarOrEff.Var(tvar.sym))
-    val effs = (tpe1.effects ++ tpe2.effects).toList.map(BoolAlgebra.VarOrEff.Eff)
 
     // Construct a bi-directional map from type variables to indices.
     // The idea is that the first variable becomes x0, the next x1, and so forth.
-    val m = (tvars ++ effs).zipWithIndex.foldLeft(Bimap.empty[BoolAlgebra.VarOrEff, BoolAlgebraTable.Variable]) {
+    val m = tvars.zipWithIndex.foldLeft(Bimap.empty[BoolAlgebra.VarOrEff, BoolAlgebraTable.Variable]) {
       case (macc, (sym, x)) => macc + (sym -> x)
     }
 
     // Convert the type `tpe` to a Boolean formula.
-    val f1 = tpe1.kind match {
-      case Kind.Bool => fromBoolType(tpe1, m)
-      case Kind.Effect => fromEffType(tpe1, m)
-      case _ => throw InternalCompilerException(s"Unexpected non-Bool/non-Effect kind: '${tpe1.kind}'.")
-    }
+    val f1 = fromBoolType(tpe1, m)
 
-    val f2 = tpe2.kind match {
-      case Kind.Bool => fromBoolType(tpe2, m)
-      case Kind.Effect => fromEffType(tpe2, m)
-      case _ => throw InternalCompilerException(s"Unexpected non-Bool/non-Effect kind: '${tpe2.kind}'.")
-    }
+    val f2 = fromBoolType(tpe2, m)
 
     ///
     /// Run the expensive boolean unification algorithm.
@@ -99,7 +90,7 @@ object BoolUnification3 {
               case Some(VarOrEff.Var(sym)) => sym
               case _ => throw InternalCompilerException(s"unexpected missing var $key0")
             }
-            val value = toType(value0, m, tpe1.kind, tpe1.loc)
+            val value = toType(value0, m, Kind.Bool, tpe1.loc)
             (key: Symbol.TypeVarSym, value)
         }.toMap
         Ok(Substitution(map))
