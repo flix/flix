@@ -81,12 +81,6 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
           val args = args0.map(visit)
           val tpe = visit(tpe0)
           Type.Alias(sym, args, tpe, loc)
-        case Type.UnkindedArrow(Ast.PurityAndEffect(pur0, eff0), arity, loc) =>
-          val pur = pur0.map(visit)
-          val eff = eff0.map(_.map(visit))
-          Type.UnkindedArrow(Ast.PurityAndEffect(pur, eff), arity, loc)
-        case Type.ReadWrite(tpe, loc) => Type.ReadWrite(apply(tpe), loc)
-        case Type.Ascribe(tpe, k, loc) => Type.Ascribe(visit(tpe), k, loc)
       }
 
     // Optimization: Return the type if the substitution is empty. Otherwise visit the type.

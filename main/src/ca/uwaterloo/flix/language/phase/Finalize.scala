@@ -406,7 +406,7 @@ object Finalize {
 
       base match {
         case None => t0 match {
-          case Type.KindedVar(sym, _) => MonoType.Var(sym.id)
+          case Type.Var(sym, _) => MonoType.Var(sym.id)
           case _ => throw InternalCompilerException(s"Unexpected type: $t0")
         }
 
@@ -442,7 +442,7 @@ object Finalize {
 
             case TypeConstructor.Lazy => MonoType.Lazy(args.head)
 
-            case TypeConstructor.KindedEnum(sym, _) => MonoType.Enum(sym, args)
+            case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym, args)
 
             case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
@@ -482,12 +482,6 @@ object Finalize {
             case TypeConstructor.Empty => MonoType.Unit
 
             case TypeConstructor.All => MonoType.Unit
-
-            case TypeConstructor.UnkindedEnum(_) =>
-              throw InternalCompilerException(s"Unexpected type: '$t0'.")
-
-            case TypeConstructor.UnappliedAlias(_) =>
-              throw InternalCompilerException(s"Unexpected type: '$t0'.")
 
             case TypeConstructor.Relation =>
               throw InternalCompilerException(s"Unexpected type: '$t0'.")

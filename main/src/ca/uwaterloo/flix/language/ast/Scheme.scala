@@ -48,7 +48,7 @@ object Scheme {
     //
     // Compute the fresh variables taking the instantiation mode into account.
     //
-    val freshVars = sc.quantifiers.foldLeft(Map.empty[Int, Type.KindedVar]) {
+    val freshVars = sc.quantifiers.foldLeft(Map.empty[Int, Type.Var]) {
       case (macc, tvar) =>
         // Determine the rigidity of the fresh type variable.
         macc + (tvar.id -> Type.freshVar(tvar.kind, tvar.loc, tvar.isRegion, Ast.VarText.Absent))
@@ -57,12 +57,12 @@ object Scheme {
     /**
       * Replaces every variable occurrence in the given type using `freeVars`. Updates the rigidity.
       */
-    def visitTvar(t: Type.KindedVar): Type.KindedVar = t match {
-      case Type.KindedVar(sym, loc) =>
+    def visitTvar(t: Type.Var): Type.Var = t match {
+      case Type.Var(sym, loc) =>
         freshVars.get(sym.id) match {
           case None =>
             // Determine the rigidity of the free type variable.
-            Type.KindedVar(sym, loc)
+            Type.Var(sym, loc)
           case Some(tvar) => tvar
         }
     }

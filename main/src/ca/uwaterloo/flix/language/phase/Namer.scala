@@ -313,10 +313,10 @@ object Namer {
       mapN(visitHeadPredicate(h, outerEnv, headEnv, ruleEnv, uenv0, tenv0), traverse(bs)(b => visitBodyPredicate(b, outerEnv, headEnv, ruleEnv, uenv0, tenv0))) {
         case (head, body) =>
           val headParams = headEnv.map {
-            case (_, sym) => NamedAst.ConstraintParam.HeadParam(sym, NamedAst.Type.Var(sym.tvar.sym, loc), sym.loc)
+            case (_, sym) => NamedAst.ConstraintParam.HeadParam(sym, NamedAst.Type.Var(sym.tvar.sym.withoutKind, loc), sym.loc)
           }
           val ruleParam = ruleEnv.map {
-            case (_, sym) => NamedAst.ConstraintParam.RuleParam(sym, NamedAst.Type.Var(sym.tvar.sym, loc), sym.loc)
+            case (_, sym) => NamedAst.ConstraintParam.RuleParam(sym, NamedAst.Type.Var(sym.tvar.sym.withoutKind, loc), sym.loc)
           }
           val cparams = (headParams ++ ruleParam).toList
           NamedAst.Constraint(cparams, head, body, loc)
@@ -1754,7 +1754,7 @@ object Namer {
 
       // Compute the type of the formal parameter or use the type variable of the symbol.
       val tpeVal = optType match {
-        case None => NamedAst.Type.Var(freshSym.tvar.sym, loc).toSuccess
+        case None => NamedAst.Type.Var(freshSym.tvar.sym.withoutKind, loc).toSuccess
         case Some(t) => visitType(t, uenv0, tenv0)
       }
 

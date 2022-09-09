@@ -80,4 +80,13 @@ namespace Test/Exp/Jvm/PutField {
         let o = newObject();
         setField(o, "Goodbye World");
         getField(o) == "Goodbye World"
+
+    @test
+    def testPutInheritedField01(): Bool \ IO =
+        import new flix.test.TestClassWithInheritedMethod(): ##flix.test.TestClassWithInheritedMethod as newObj;
+        import get flix.test.TestClassWithInheritedMethod.m_x: Int32 \ {} as getField;
+        import set flix.test.TestClassWithInheritedMethod.m_x: Unit \ IO as setField;
+        let obj = newObj();
+        setField(obj, 123);
+        getField(obj) == 123
 }
