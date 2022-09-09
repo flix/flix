@@ -56,7 +56,7 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given expression `exp0`.
     */
-  private def visitExp(exp0: Expression, rigidityEnv: RigidityEnv)(implicit flix: Flix): List[CompilationMessage] = {
+  private def visitExp(exp0: Expression, renv: RigidityEnv)(implicit flix: Flix): List[CompilationMessage] = {
 
     def vstExp(exp1: Expression): List[CompilationMessage] = exp1 match {
       case Expression.Unit(_) => Nil
@@ -190,7 +190,7 @@ object Safety {
 
       case Expression.Upcast(exp, tpe, loc) =>
         val errors =
-          if (isSubTypeOf(Type.eraseAliases(exp.tpe), Type.eraseAliases(tpe), rigidityEnv)) {
+          if (isSubTypeOf(Type.eraseAliases(exp.tpe), Type.eraseAliases(tpe), renv)) {
             List.empty
           }
           else {
@@ -276,7 +276,7 @@ object Safety {
         vstExp(exp)
 
       case Expression.FixpointConstraintSet(cs, _, _, _) =>
-        cs.flatMap(checkConstraint(_, rigidityEnv))
+        cs.flatMap(checkConstraint(_, renv))
 
       case Expression.FixpointLambda(_, exp, _, _, _, _, _) =>
         vstExp(exp)
