@@ -56,9 +56,9 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given expression `exp0`.
     */
-  private def visitExp(exp0: Expression, renv: RigidityEnv)(implicit flix: Flix): List[CompilationMessage] = {
+  private def visitExp(e0: Expression, renv: RigidityEnv)(implicit flix: Flix): List[CompilationMessage] = {
 
-    def vstExp(exp1: Expression): List[CompilationMessage] = exp1 match {
+    def visit(exp0: Expression): List[CompilationMessage] = exp0 match {
       case Expression.Unit(_) => Nil
 
       case Expression.Null(_, _) => Nil
@@ -98,95 +98,95 @@ object Safety {
       case Expression.Hole(_, _, _) => Nil
 
       case Expression.Lambda(_, exp, _, _) =>
-        vstExp(exp)
+        visit(exp)
 
       case Expression.Apply(exp, exps, _, _, _, _) =>
-        vstExp(exp) ::: exps.flatMap(vstExp)
+        visit(exp) ::: exps.flatMap(visit)
 
       case Expression.Unary(_, exp, _, _, _, _) =>
-        vstExp(exp)
+        visit(exp)
 
       case Expression.Binary(_, exp1, exp2, _, _, _, _) =>
-        vstExp(exp1) ::: vstExp(exp2)
+        visit(exp1) ::: visit(exp2)
 
       case Expression.Let(_, _, exp1, exp2, _, _, _, _) =>
-        vstExp(exp1) ::: vstExp(exp2)
+        visit(exp1) ::: visit(exp2)
 
       case Expression.LetRec(_, _, exp1, exp2, _, _, _, _) =>
-        vstExp(exp1) ::: vstExp(exp2)
+        visit(exp1) ::: visit(exp2)
 
       case Expression.Region(_, _) =>
         Nil
 
       case Expression.Scope(_, _, exp, _, _, _, _) =>
-        vstExp(exp)
+        visit(exp)
 
       case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
-        vstExp(exp1) ::: vstExp(exp2) ::: vstExp(exp3)
+        visit(exp1) ::: visit(exp2) ::: visit(exp3)
 
       case Expression.Stm(exp1, exp2, _, _, _, _) =>
-        vstExp(exp1) ::: vstExp(exp2)
+        visit(exp1) ::: visit(exp2)
 
       case Expression.Discard(exp, _, _, _) =>
-        vstExp(exp)
+        visit(exp)
 
       case Expression.Match(exp, rules, _, _, _, _) =>
-        vstExp(exp) :::
-          rules.flatMap { case MatchRule(_, g, e) => vstExp(g) ::: vstExp(e) }
+        visit(exp) :::
+          rules.flatMap { case MatchRule(_, g, e) => visit(g) ::: visit(e) }
 
       case Expression.Choose(exps, rules, _, _, _, _) =>
-        exps.flatMap(vstExp) :::
-          rules.flatMap { case ChoiceRule(_, exp) => vstExp(exp) }
+        exps.flatMap(visit) :::
+          rules.flatMap { case ChoiceRule(_, exp) => visit(exp) }
 
       case Expression.Tag(_, exp, _, _, _, _) =>
-        vstExp(exp)
+        visit(exp)
 
       case Expression.Tuple(elms, _, _, _, _) =>
-        elms.flatMap(vstExp)
+        elms.flatMap(visit)
 
       case Expression.RecordEmpty(_, _) => Nil
 
       case Expression.RecordSelect(exp, _, _, _, _, _) =>
-        vstExp(exp)
+        visit(exp)
 
       case Expression.RecordExtend(_, value, rest, _, _, _, _) =>
-        vstExp(value) ::: vstExp(rest)
+        visit(value) ::: visit(rest)
 
       case Expression.RecordRestrict(_, rest, _, _, _, _) =>
-        vstExp(rest)
+        visit(rest)
 
       case Expression.ArrayLit(elms, exp, _, _, _, _) =>
-        elms.flatMap(vstExp) ::: vstExp(exp)
+        elms.flatMap(visit) ::: visit(exp)
 
       case Expression.ArrayNew(exp1, exp2, exp3, _, _, _, _) =>
-        vstExp(exp1) ::: vstExp(exp2) ::: vstExp(exp3)
+        visit(exp1) ::: visit(exp2) ::: visit(exp3)
 
       case Expression.ArrayLoad(base, index, _, _, _, _) =>
-        vstExp(base) ::: vstExp(index)
+        visit(base) ::: visit(index)
 
       case Expression.ArrayLength(base, _, _, _) =>
-        vstExp(base)
+        visit(base)
 
       case Expression.ArrayStore(base, index, elm, _, _, _) =>
-        vstExp(base) ::: vstExp(index) ::: vstExp(elm)
+        visit(base) ::: visit(index) ::: visit(elm)
 
       case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) =>
-        vstExp(base) ::: vstExp(beginIndex) ::: vstExp(endIndex)
+        visit(base) ::: visit(beginIndex) ::: visit(endIndex)
 
       case Expression.Ref(exp1, exp2, _, _, _, _) =>
-        vstExp(exp1) ::: vstExp(exp2)
+        visit(exp1) ::: visit(exp2)
 
       case Expression.Deref(exp, _, _, _, _) =>
-        vstExp(exp)
+        visit(exp)
 
       case Expression.Assign(exp1, exp2, _, _, _, _) =>
-        vstExp(exp1) ::: vstExp(exp2)
+        visit(exp1) ::: visit(exp2)
 
       case Expression.Ascribe(exp, _, _, _, _) =>
-        vstExp(exp)
+        visit(exp)
 
       case Expression.Cast(exp, _, _, _, _, _, _, _) =>
-        vstExp(exp)
+        visit(exp)
 
       case Expression.Upcast(exp, tpe, loc) =>
         val errors =
@@ -194,118 +194,118 @@ object Safety {
             List.empty
           }
           else {
-            List(UnsafeUpcast(exp, exp1, loc))
+            List(UnsafeUpcast(exp, exp0, loc))
           }
-        vstExp(exp) ::: errors
+        visit(exp) ::: errors
 
       case Expression.Without(exp, _, _, _, _, _) =>
-        vstExp(exp)
+        visit(exp)
 
       case Expression.TryCatch(exp, rules, _, _, _, _) =>
-        vstExp(exp) :::
-          rules.flatMap { case CatchRule(_, _, e) => vstExp(e) }
+        visit(exp) :::
+          rules.flatMap { case CatchRule(_, _, e) => visit(e) }
 
       case Expression.TryWith(exp, _, rules, _, _, _, _) =>
-        vstExp(exp) :::
-          rules.flatMap { case HandlerRule(_, _, e) => vstExp(e) }
+        visit(exp) :::
+          rules.flatMap { case HandlerRule(_, _, e) => visit(e) }
 
       case Expression.Do(_, exps, _, _, _) =>
-        exps.flatMap(vstExp)
+        exps.flatMap(visit)
 
       case Expression.Resume(exp, _, _) =>
-        vstExp(exp)
+        visit(exp)
 
       case Expression.InvokeConstructor(_, args, _, _, _, _) =>
-        args.flatMap(vstExp)
+        args.flatMap(visit)
 
       case Expression.InvokeMethod(_, exp, args, _, _, _, _) =>
-        vstExp(exp) ::: args.flatMap(vstExp)
+        visit(exp) ::: args.flatMap(visit)
 
       case Expression.InvokeStaticMethod(_, args, _, _, _, _) =>
-        args.flatMap(vstExp)
+        args.flatMap(visit)
 
       case Expression.GetField(_, exp, _, _, _, _) =>
-        vstExp(exp)
+        visit(exp)
 
       case Expression.PutField(_, exp1, exp2, _, _, _, _) =>
-        vstExp(exp1) ::: vstExp(exp2)
+        visit(exp1) ::: visit(exp2)
 
       case Expression.GetStaticField(_, _, _, _, _) =>
         Nil
 
       case Expression.PutStaticField(_, exp, _, _, _, _) =>
-        vstExp(exp)
+        visit(exp)
 
       case Expression.NewObject(_, clazz, tpe, _, _, methods, loc) =>
         val erasedType = Type.eraseAliases(tpe)
         checkObjectImplementation(clazz, erasedType, methods, loc) ++
           methods.flatMap {
-            case JvmMethod(_, _, exp, _, _, _, _) => vstExp(exp)
+            case JvmMethod(_, _, exp, _, _, _, _) => visit(exp)
           }
 
       case Expression.NewChannel(exp, _, _, _, _) =>
-        vstExp(exp)
+        visit(exp)
 
       case Expression.GetChannel(exp, _, _, _, _) =>
-        vstExp(exp)
+        visit(exp)
 
       case Expression.PutChannel(exp1, exp2, _, _, _, _) =>
-        vstExp(exp1) ::: vstExp(exp2)
+        visit(exp1) ::: visit(exp2)
 
       case Expression.SelectChannel(rules, default, _, _, _, _) =>
-        rules.flatMap { case SelectChannelRule(_, chan, body) => vstExp(chan) :::
-          vstExp(body)
+        rules.flatMap { case SelectChannelRule(_, chan, body) => visit(chan) :::
+          visit(body)
         } :::
-          default.map(vstExp).getOrElse(Nil)
+          default.map(visit).getOrElse(Nil)
 
       case Expression.Spawn(exp, _, _, _, _) =>
-        vstExp(exp)
+        visit(exp)
 
       case Expression.Par(exp, _) =>
         // Only tuple expressions are allowed to be parallelized with `par`.
         exp match {
-          case e: Expression.Tuple => vstExp(e)
-          case e: Expression.Apply => vstExp(e)
+          case e: Expression.Tuple => visit(e)
+          case e: Expression.Apply => visit(e)
           case _ => IllegalParExpression(exp, exp.loc) :: Nil
         }
 
       case Expression.Lazy(exp, _, _) =>
-        vstExp(exp)
+        visit(exp)
 
       case Expression.Force(exp, _, _, _, _) =>
-        vstExp(exp)
+        visit(exp)
 
       case Expression.FixpointConstraintSet(cs, _, _, _) =>
         cs.flatMap(checkConstraint(_, renv))
 
       case Expression.FixpointLambda(_, exp, _, _, _, _, _) =>
-        vstExp(exp)
+        visit(exp)
 
       case Expression.FixpointMerge(exp1, exp2, _, _, _, _, _) =>
-        vstExp(exp1) ::: vstExp(exp2)
+        visit(exp1) ::: visit(exp2)
 
       case Expression.FixpointSolve(exp, _, _, _, _, _) =>
-        vstExp(exp)
+        visit(exp)
 
       case Expression.FixpointFilter(_, exp, _, _, _, _) =>
-        vstExp(exp)
+        visit(exp)
 
       case Expression.FixpointInject(exp, _, _, _, _, _) =>
-        vstExp(exp)
+        visit(exp)
 
       case Expression.FixpointProject(_, exp, _, _, _, _) =>
-        vstExp(exp)
+        visit(exp)
 
       case Expression.Reify(_, _, _, _, _) => Nil
 
       case Expression.ReifyType(_, _, _, _, _, _) => Nil
 
       case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
-        vstExp(exp1) ++ vstExp(exp2) ++ vstExp(exp3)
+        visit(exp1) ++ visit(exp2) ++ visit(exp3)
 
     }
 
-    vstExp(exp0)
+    visit(e0)
 
   }
 
