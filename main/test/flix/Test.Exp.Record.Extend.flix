@@ -1,20 +1,20 @@
 namespace Test/Exp/Record/Extend {
 
     @test
-    def testRecordExtend01(): { fstName :: String } =
+    def testRecordExtend01(): { fstName = String } =
         let r0 = {};
         let r1 = { +fstName = "Lucky" | r0 };
         r1
 
     @test
-    def testRecordExtend02(): { fstName :: String, lstName :: String } =
+    def testRecordExtend02(): { fstName = String, lstName = String } =
         let r0 = {};
         let r1 = { +fstName = "Lucky" | r0 };
         let r2 = { +lstName = "Luke" | r1 };
         r2
 
     @test
-    def testRecordExtend03(): { fstName :: String, lstName :: String, age :: Int32 } =
+    def testRecordExtend03(): { fstName = String, lstName = String, age = Int32 } =
         let r0 = {};
         let r1 = { +fstName = "Lucky" | r0 };
         let r2 = { +lstName = "Luke" | r1 };
@@ -22,7 +22,7 @@ namespace Test/Exp/Record/Extend {
         r3
 
     @test
-    def testRecordExtend04(): { fstName :: String, lstName :: String, age :: Int32, cowboy :: Bool } =
+    def testRecordExtend04(): { fstName = String, lstName = String, age = Int32, cowboy = Bool } =
         let r0 = {};
         let r1 = { +fstName = "Lucky" | r0 };
         let r2 = { +lstName = "Luke" | r1 };
@@ -48,21 +48,21 @@ namespace Test/Exp/Record/Extend {
         ()
 
     @test
-    def testRecordDuplicateExtend01(): { x :: Bool, x :: Int32, x :: String } =
+    def testRecordDuplicateExtend01(): { x = Bool, x = Int32, x = String } =
         let r0 = { +x = "ab" | {} };
         let r1 = { +x = 1234 | r0 };
         let r2 = { +x = true | r1 };
             r2
 
     @test
-    def testRecordDuplicateExtend02(): { x :: Int32, x :: Int32, x :: Int32 } =
+    def testRecordDuplicateExtend02(): { x = Int32, x = Int32, x = Int32 } =
         let r0 = { +x = 123 | {} };
         let r1 = { +x = 456 | r0 };
         let r2 = { +x = 789 | r1 };
             r2
 
     @test
-    def testRecordDuplicateExtend03(): { x :: Int32, y :: Char, x :: Int32, y :: Char, x :: Int32 } =
+    def testRecordDuplicateExtend03(): { x = Int32, y = Char, x = Int32, y = Char, x = Int32 } =
         let r0 = { +x = 123 | {} };
         let r1 = { +y = 'a' | r0 };
         let r2 = { +x = 456 | r1 };

@@ -172,7 +172,7 @@ namespace Option {
     /// Returns `o` if it is `Some(v)`. Otherwise returns `default`.
     ///
     @Time(1) @Space(1)
-    pub def withDefault(default: {default :: Option[a]}, o: Option[a]): Option[a] = match o {
+    pub def withDefault(default: {default = Option[a]}, o: Option[a]): Option[a] = match o {
         case None    => default.default
         case Some(_) => o
     }
@@ -181,7 +181,7 @@ namespace Option {
     /// Returns `Some(to)` if `o` is `Some(from)`. Otherwise returns `o`.
     ///
     @Time(1) @Space(1)
-    pub def replace(from: {from :: a}, to: {to :: a}, o: Option[a]): Option[a] with Eq[a] = match o {
+    pub def replace(from: {from = a}, to: {to = a}, o: Option[a]): Option[a] with Eq[a] = match o {
         case None    => o
         case Some(v) => Some(if (v == from.from) to.to else v)
     }
