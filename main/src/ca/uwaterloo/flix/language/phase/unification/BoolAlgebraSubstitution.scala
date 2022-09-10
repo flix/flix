@@ -58,9 +58,9 @@ case class BoolAlgebraSubstitution(m: Map[Int, BoolAlgebra]) {
       f0 match {
         case BoolAlgebra.Top => BoolAlgebra.Top
         case BoolAlgebra.Bot => BoolAlgebra.Bot
-        case BoolAlgebra.Neg(f) => BoolUnification3.mkNeg(visit(f))
-        case BoolAlgebra.Join(f1, f2) => BoolUnification3.mkJoin(visit(f1), visit(f2))
-        case BoolAlgebra.Meet(f1, f2) => BoolUnification3.mkMeet(visit(f1), visit(f2))
+        case BoolAlgebra.Neg(f) => BoolUnification.mkNeg(visit(f))
+        case BoolAlgebra.Join(f1, f2) => BoolUnification.mkJoin(visit(f1), visit(f2))
+        case BoolAlgebra.Meet(f1, f2) => BoolUnification.mkMeet(visit(f1), visit(f2))
         case BoolAlgebra.Var(sym) => m.getOrElse(sym, f0)
       }
 

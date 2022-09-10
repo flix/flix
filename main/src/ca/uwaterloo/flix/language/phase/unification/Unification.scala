@@ -367,15 +367,15 @@ object Unification {
 
       case TypeConstructor.Not =>
         val List(t) = tpe.typeArguments
-        BoolUnification.mkNot(purify(tvar, t))
+        BoolTypes.mkNot(purify(tvar, t))
 
       case TypeConstructor.And =>
         val List(t1, t2) = tpe.typeArguments
-        BoolUnification.mkAnd(purify(tvar, t1), purify(tvar, t2))
+        BoolTypes.mkAnd(purify(tvar, t1), purify(tvar, t2))
 
       case TypeConstructor.Or =>
         val List(t1, t2) = tpe.typeArguments
-        BoolUnification.mkOr(purify(tvar, t1), purify(tvar, t2))
+        BoolTypes.mkOr(purify(tvar, t1), purify(tvar, t2))
 
       case _ => throw InternalCompilerException(s"Unexpected non-Boolean type constructor: '$tc'.")
     }

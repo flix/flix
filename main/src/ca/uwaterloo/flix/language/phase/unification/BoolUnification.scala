@@ -16,74 +16,107 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.language.phase.unification.BoolAlgebra.{VarOrEff, fromBoolType, toType}
+import ca.uwaterloo.flix.language.phase.unification.BoolAlgebraTable.minimizeFormula
+import ca.uwaterloo.flix.util.Result.Ok
+import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import scala.annotation.tailrec
+import scala.util.{Failure, Success, Try}
 
 object BoolUnification {
-
-  def unify(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
-    BoolUnification3.unify(tpe1, tpe2, renv)
-  }
 
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  def unify2(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  def unify(tpe10: Type, tpe20: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     ///
     /// Perform aggressive matching to optimize for common cases.
     ///
-    if (tpe1 eq tpe2) {
+    if (tpe10 eq tpe20) {
       return Ok(Substitution.empty)
     }
 
-    tpe1 match {
-      case x: Type.Var if renv.isFlexible(x.sym) =>
-        if (tpe2 eq Type.True)
+    tpe10 match {
+      case x: Type.Var if renv0.isFlexible(x.sym) =>
+        if (tpe20 eq Type.True)
           return Ok(Substitution.singleton(x.sym, Type.True))
-        if (tpe2 eq Type.False)
+        if (tpe20 eq Type.False)
           return Ok(Substitution.singleton(x.sym, Type.False))
 
       case _ => // nop
     }
 
-    tpe2 match {
-      case y: Type.Var if renv.isFlexible(y.sym) =>
-        if (tpe1 eq Type.True)
+    tpe20 match {
+      case y: Type.Var if renv0.isFlexible(y.sym) =>
+        if (tpe10 eq Type.True)
           return Ok(Substitution.singleton(y.sym, Type.True))
-        if (tpe1 eq Type.False)
+        if (tpe10 eq Type.False)
           return Ok(Substitution.singleton(y.sym, Type.False))
 
       case _ => // nop
     }
 
+    // translate the types into formulas
+    // Erase aliases to get a processable type
+    val tpe1 = Type.eraseAliases(tpe10)
+    val tpe2 = Type.eraseAliases(tpe20)
+
+    // Compute the variables in `tpe`.
+    val tvars = (tpe1.typeVars ++ tpe2.typeVars).toList.map(tvar => BoolAlgebra.VarOrEff.Var(tvar.sym))
+
+    // Construct a bi-directional map from type variables to indices.
+    // The idea is that the first variable becomes x0, the next x1, and so forth.
+    val m = tvars.zipWithIndex.foldLeft(Bimap.empty[BoolAlgebra.VarOrEff, BoolAlgebraTable.Variable]) {
+      case (macc, (sym, x)) => macc + (sym -> x)
+    }
+
+    // Convert the type `tpe` to a Boolean formula.
+    val f1 = fromBoolType(tpe1, m)
+
+    val f2 = fromBoolType(tpe2, m)
+
     ///
     /// Run the expensive boolean unification algorithm.
     ///
-    booleanUnification(eraseAliases(tpe1), eraseAliases(tpe2), renv)
+    val renv = renv0.s.toList.flatMap(tvar => m.getForward(VarOrEff.Var(tvar))).toSet
+    booleanUnification(f1, f2, renv) match {
+      case Success(subst0) =>
+        val map = subst0.m.toList.map {
+          case (key0, value0) =>
+            val key = m.getBackward(key0) match {
+              case Some(VarOrEff.Var(sym)) => sym
+              case _ => throw InternalCompilerException(s"unexpected missing var $key0")
+            }
+            val value = toType(value0, m, Kind.Bool, tpe1.loc)
+            (key: Symbol.TypeVarSym, value)
+        }.toMap
+        Ok(Substitution(map))
+      case Failure(BooleanUnificationException) => Result.Err(UnificationError.MismatchedBools(tpe1, tpe2))
+      case Failure(error) => throw error
+    }
   }
 
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  private def booleanUnification(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  private def booleanUnification(tpe1: BoolAlgebra, tpe2: BoolAlgebra, renv: Set[Int])(implicit flix: Flix): Try[BoolAlgebraSubstitution] = {
     // The boolean expression we want to show is 0.
     val query = mkEq(tpe1, tpe2)
 
     // Compute the variables in the query.
-    val typeVars = query.typeVars.toList
+    val typeVars = query.freeVars.toList
 
     // Compute the flexible variables.
-    val flexibleTypeVars = renv.getFlexibleVarsOf(typeVars)
+    val flexibleTypeVars = typeVars.filterNot(renv.contains)
 
     // Determine the order in which to eliminate the variables.
     val freeVars = computeVariableOrder(flexibleTypeVars)
 
     // Eliminate all variables.
-    try {
+    Try {
       val subst = successiveVariableElimination(query, freeVars)
 
       //    if (!subst.isEmpty) {
@@ -95,9 +128,7 @@ object BoolUnification {
       //      }
       //    }
 
-      Ok(subst)
-    } catch {
-      case BooleanUnificationException => Err(UnificationError.MismatchedBools(tpe1, tpe2))
+      subst
     }
   }
 
@@ -115,10 +146,11 @@ object BoolUnification {
     * actually occur in the source code). We can ensure this by eliminating the
     * synthetic variables first.
     */
-  private def computeVariableOrder(l: List[Type.Var]): List[Type.Var] = {
-    val realVars = l.filter(_.sym.isReal)
-    val synthVars = l.filterNot(_.sym.isReal)
-    synthVars ::: realVars
+  private def computeVariableOrder(l: List[Int]): List[Int] = {
+    //    val realVars = l.filter(_.isReal
+    //    val synthVars = l.filterNeg(_.isReal)
+    //    synthVars ::: realVars
+    l
   }
 
   /**
@@ -126,21 +158,21 @@ object BoolUnification {
     *
     * `flexvs` is the list of remaining flexible variables in the expression.
     */
-  private def successiveVariableElimination(f: Type, flexvs: List[Type.Var])(implicit flix: Flix): Substitution = flexvs match {
+  private def successiveVariableElimination(f: BoolAlgebra, flexvs: List[Int])(implicit flix: Flix): BoolAlgebraSubstitution = flexvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
       if (!satisfiable(f))
-        Substitution.empty
+        BoolAlgebraSubstitution.empty
       else
         throw BooleanUnificationException
 
     case x :: xs =>
-      val t0 = Substitution.singleton(x.sym, Type.False)(f)
-      val t1 = Substitution.singleton(x.sym, Type.True)(f)
-      val se = successiveVariableElimination(mkAnd(t0, t1), xs)
+      val t0 = BoolAlgebraSubstitution.singleton(x, BoolAlgebra.Bot)(f)
+      val t1 = BoolAlgebraSubstitution.singleton(x, BoolAlgebra.Top)(f)
+      val se = successiveVariableElimination(mkJoin(t0, t1), xs)
 
-      val f1 = TypeMinimization.minimizeType(mkOr(se(t0), mkAnd(x, mkNot(se(t1)))))
-      val st = Substitution.singleton(x.sym, f1)
+      val f1 = minimizeFormula(mkMeet(se(t0), mkJoin(BoolAlgebra.Var(x), mkNeg(se(t1)))))
+      val st = BoolAlgebraSubstitution.singleton(x, f1)
       st ++ se
   }
 
@@ -153,13 +185,13 @@ object BoolUnification {
     * Returns `true` if the given boolean formula `f` is satisfiable
     * when ALL variables in the formula are flexible.
     */
-  private def satisfiable(f: Type)(implicit flix: Flix): Boolean = f match {
-    case Type.True => true
-    case Type.False => false
+  private def satisfiable(f: BoolAlgebra)(implicit flix: Flix): Boolean = f match {
+    case BoolAlgebra.Top => true
+    case BoolAlgebra.Bot => false
     case _ =>
-      val q = mkEq(f, Type.True)
+      val q = mkEq(f, BoolAlgebra.Top)
       try {
-        successiveVariableElimination(q, q.typeVars.toList)
+        successiveVariableElimination(q, q.freeVars.toList)
         true
       } catch {
         case BooleanUnificationException => false
@@ -170,31 +202,31 @@ object BoolUnification {
   /**
     * To unify two Boolean formulas p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
     */
-  private def mkEq(p: Type, q: Type): Type = mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
+  private def mkEq(p: BoolAlgebra, q: BoolAlgebra): BoolAlgebra = mkMeet(mkJoin(p, mkNeg(q)), mkJoin(mkNeg(p), q))
 
   /**
     * Returns the negation of the Boolean formula `tpe0`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
-  def mkNot(tpe0: Type): Type = tpe0 match {
-    case Type.True =>
-      Type.False
+  def mkNeg(f0: BoolAlgebra): BoolAlgebra = f0 match {
+    case BoolAlgebra.Top =>
+      BoolAlgebra.Bot
 
-    case Type.False =>
-      Type.True
+    case BoolAlgebra.Bot =>
+      BoolAlgebra.Top
 
-    case NOT(x) =>
+    case BoolAlgebra.Neg(x) =>
       x
 
     // ¬(¬x ∨ y) => x ∧ ¬y
-    case OR(NOT(x), y) =>
-      mkAnd(x, mkNot(y))
+    case BoolAlgebra.Meet(BoolAlgebra.Neg(x), y) =>
+      mkJoin(x, mkNeg(y))
 
     // ¬(x ∨ ¬y) => ¬x ∧ y
-    case OR(x, NOT(y)) =>
-      mkAnd(mkNot(x), y)
+    case BoolAlgebra.Meet(x, BoolAlgebra.Neg(y)) =>
+      mkJoin(mkNeg(x), y)
 
-    case _ => Type.Apply(Type.Not, tpe0, tpe0.loc)
+    case _ => BoolAlgebra.Neg(f0)
   }
 
   /**
@@ -202,94 +234,94 @@ object BoolUnification {
     */
   // NB: The order of cases has been determined by code coverage analysis.
   @tailrec
-  def mkAnd(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
+  def mkJoin(tpe1: BoolAlgebra, tpe2: BoolAlgebra): BoolAlgebra = (tpe1, tpe2) match {
     // T ∧ x => x
-    case (Type.True, _) =>
+    case (BoolAlgebra.Top, _) =>
       tpe2
 
     // x ∧ T => x
-    case (_, Type.True) =>
+    case (_, BoolAlgebra.Top) =>
       tpe1
 
     // F ∧ x => F
-    case (Type.False, _) =>
-      Type.False
+    case (BoolAlgebra.Bot, _) =>
+      BoolAlgebra.Bot
 
     // x ∧ F => F
-    case (_, Type.False) =>
-      Type.False
+    case (_, BoolAlgebra.Bot) =>
+      BoolAlgebra.Bot
 
     // ¬x ∧ (x ∨ y) => ¬x ∧ y
-    case (NOT(x1), OR(x2, y)) if x1 == x2 =>
-      mkAnd(mkNot(x1), y)
+    case (BoolAlgebra.Neg(x1), BoolAlgebra.Meet(x2, y)) if x1 == x2 =>
+      mkJoin(mkNeg(x1), y)
 
     // x ∧ ¬x => F
-    case (x1, NOT(x2)) if x1 == x2 =>
-      Type.False
+    case (x1, BoolAlgebra.Neg(x2)) if x1 == x2 =>
+      BoolAlgebra.Bot
 
     // ¬x ∧ x => F
-    case (NOT(x1), x2) if x1 == x2 =>
-      Type.False
+    case (BoolAlgebra.Neg(x1), x2) if x1 == x2 =>
+      BoolAlgebra.Bot
 
     // x ∧ (x ∧ y) => (x ∧ y)
-    case (x1, AND(x2, y)) if x1 == x2 =>
-      mkAnd(x1, y)
+    case (x1, BoolAlgebra.Join(x2, y)) if x1 == x2 =>
+      mkJoin(x1, y)
 
     // x ∧ (y ∧ x) => (x ∧ y)
-    case (x1, AND(y, x2)) if x1 == x2 =>
-      mkAnd(x1, y)
+    case (x1, BoolAlgebra.Join(y, x2)) if x1 == x2 =>
+      mkJoin(x1, y)
 
     // (x ∧ y) ∧ x) => (x ∧ y)
-    case (AND(x1, y), x2) if x1 == x2 =>
-      mkAnd(x1, y)
+    case (BoolAlgebra.Join(x1, y), x2) if x1 == x2 =>
+      mkJoin(x1, y)
 
     // (x ∧ y) ∧ y) => (x ∧ y)
-    case (AND(x, y1), y2) if y1 == y2 =>
-      mkAnd(x, y1)
+    case (BoolAlgebra.Join(x, y1), y2) if y1 == y2 =>
+      mkJoin(x, y1)
 
     // x ∧ (x ∨ y) => x
-    case (x1, OR(x2, _)) if x1 == x2 =>
+    case (x1, BoolAlgebra.Meet(x2, _)) if x1 == x2 =>
       x1
 
     // (x ∨ y) ∧ x => x
-    case (OR(x1, _), x2) if x1 == x2 =>
+    case (BoolAlgebra.Meet(x1, _), x2) if x1 == x2 =>
       x1
 
     // x ∧ (y ∧ ¬x) => F
-    case (x1, AND(_, NOT(x2))) if x1 == x2 =>
-      Type.False
+    case (x1, BoolAlgebra.Join(_, BoolAlgebra.Neg(x2))) if x1 == x2 =>
+      BoolAlgebra.Bot
 
     // (¬x ∧ y) ∧ x => F
-    case (AND(NOT(x1), _), x2) if x1 == x2 =>
-      Type.False
+    case (BoolAlgebra.Join(BoolAlgebra.Neg(x1), _), x2) if x1 == x2 =>
+      BoolAlgebra.Bot
 
     // x ∧ ¬(x ∨ y) => F
-    case (x1, NOT(OR(x2, _))) if x1 == x2 =>
-      Type.False
+    case (x1, BoolAlgebra.Neg(BoolAlgebra.Meet(x2, _))) if x1 == x2 =>
+      BoolAlgebra.Bot
 
     // ¬(x ∨ y) ∧ x => F
-    case (NOT(OR(x1, _)), x2) if x1 == x2 =>
-      Type.False
+    case (BoolAlgebra.Neg(BoolAlgebra.Meet(x1, _)), x2) if x1 == x2 =>
+      BoolAlgebra.Bot
 
     // x ∧ (¬x ∧ y) => F
-    case (x1, AND(NOT(x2), _)) if x1 == x2 =>
-      Type.False
+    case (x1, BoolAlgebra.Join(BoolAlgebra.Neg(x2), _)) if x1 == x2 =>
+      BoolAlgebra.Bot
 
     // (¬x ∧ y) ∧ x => F
-    case (AND(NOT(x1), _), x2) if x1 == x2 =>
-      Type.False
+    case (BoolAlgebra.Join(BoolAlgebra.Neg(x1), _), x2) if x1 == x2 =>
+      BoolAlgebra.Bot
 
     // x ∧ x => x
     case _ if tpe1 == tpe2 => tpe1
 
     case _ =>
-      //      val s = s"And($eff1, $eff2)"
+      //      val s = s"Join($eff1, $eff2)"
       //      val len = s.length
       //      if (true) {
       //        println(s.substring(0, Math.min(len, 300)))
       //      }
 
-      Type.Apply(Type.Apply(Type.And, tpe1, tpe1.loc), tpe2, tpe1.loc)
+      BoolAlgebra.Join(tpe1, tpe2)
   }
 
   /**
@@ -297,52 +329,52 @@ object BoolUnification {
     */
   // NB: The order of cases has been determined by code coverage analysis.
   @tailrec
-  def mkOr(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
+  def mkMeet(tpe1: BoolAlgebra, tpe2: BoolAlgebra): BoolAlgebra = (tpe1, tpe2) match {
     // T ∨ x => T
-    case (Type.True, _) =>
-      Type.True
+    case (BoolAlgebra.Top, _) =>
+      BoolAlgebra.Top
 
     // F ∨ y => y
-    case (Type.False, _) =>
+    case (BoolAlgebra.Bot, _) =>
       tpe2
 
     // x ∨ T => T
-    case (_, Type.True) =>
-      Type.True
+    case (_, BoolAlgebra.Top) =>
+      BoolAlgebra.Top
 
     // x ∨ F => x
-    case (_, Type.False) =>
+    case (_, BoolAlgebra.Bot) =>
       tpe1
 
     // x ∨ (y ∨ x) => x ∨ y
-    case (x1, OR(y, x2)) if x1 == x2 =>
-      mkOr(x1, y)
+    case (x1, BoolAlgebra.Meet(y, x2)) if x1 == x2 =>
+      mkMeet(x1, y)
 
     // (x ∨ y) ∨ x => x ∨ y
-    case (OR(x1, y), x2) if x1 == x2 =>
-      mkOr(x1, y)
+    case (BoolAlgebra.Meet(x1, y), x2) if x1 == x2 =>
+      mkMeet(x1, y)
 
     // ¬x ∨ x => T
-    case (NOT(x), y) if x == y =>
-      Type.True
+    case (BoolAlgebra.Neg(x), y) if x == y =>
+      BoolAlgebra.Top
 
     // x ∨ ¬x => T
-    case (x, NOT(y)) if x == y =>
-      Type.True
+    case (x, BoolAlgebra.Neg(y)) if x == y =>
+      BoolAlgebra.Top
 
     // (¬x ∨ y) ∨ x) => T
-    case (OR(NOT(x), _), y) if x == y =>
-      Type.True
+    case (BoolAlgebra.Meet(BoolAlgebra.Neg(x), _), y) if x == y =>
+      BoolAlgebra.Top
 
     // x ∨ (¬x ∨ y) => T
-    case (x, OR(NOT(y), _)) if x == y =>
-      Type.True
+    case (x, BoolAlgebra.Meet(BoolAlgebra.Neg(y), _)) if x == y =>
+      BoolAlgebra.Top
 
     // x ∨ (y ∧ x) => x
-    case (x1, AND(_, x2)) if x1 == x2 => x1
+    case (x1, BoolAlgebra.Join(_, x2)) if x1 == x2 => x1
 
     // (y ∧ x) ∨ x => x
-    case (AND(_, x1), x2) if x1 == x2 => x1
+    case (BoolAlgebra.Join(_, x1), x2) if x1 == x2 => x1
 
     // x ∨ x => x
     case _ if tpe1 == tpe2 =>
@@ -350,37 +382,12 @@ object BoolUnification {
 
     case _ =>
 
-      //              val s = s"Or($eff1, $eff2)"
+      //              val s = s"Meet($eff1, $eff2)"
       //              val len = s.length
       //              if (len > 30) {
       //                println(s.substring(0, Math.min(len, 300)))
       //              }
 
-      Type.Apply(Type.Apply(Type.Or, tpe1, tpe1.loc), tpe2, tpe1.loc)
+      BoolAlgebra.Meet(tpe1, tpe2)
   }
-
-  private object NOT {
-    @inline
-    def unapply(tpe: Type): Option[Type] = tpe match {
-      case Type.Apply(Type.Cst(TypeConstructor.Not, _), x, _) => Some(x)
-      case _ => None
-    }
-  }
-
-  private object AND {
-    @inline
-    def unapply(tpe: Type): Option[(Type, Type)] = tpe match {
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), x, _), y, _) => Some((x, y))
-      case _ => None
-    }
-  }
-
-  private object OR {
-    @inline
-    def unapply(tpe: Type): Option[(Type, Type)] = tpe match {
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _), y, _) => Some((x, y))
-      case _ => None
-    }
-  }
-
 }
