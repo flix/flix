@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.Main.{CmdOpts, Command}
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.shell.{Shell, SourceProvider}
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
+import ca.uwaterloo.flix.util.Result.{ToErr, ToOk}
 import ca.uwaterloo.flix.util._
 
 import java.io.PrintWriter
@@ -107,14 +108,14 @@ object SimpleRunner {
           Tester.run(Nil, compilationResult)(flix)
         }
 
-        Result.Ok()
+        ().toOk
 
       case Validation.Failure(errors) =>
         flix.mkMessages(errors.sortBy(_.source.name))
           .foreach(println)
         println()
         println(s"Compilation failed with ${errors.length} error(s).")
-        Result.Err(1)
+        1.toErr
     }
   }
 }
