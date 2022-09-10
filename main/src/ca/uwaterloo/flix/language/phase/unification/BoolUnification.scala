@@ -145,13 +145,9 @@ object BoolUnification {
     * type inference) expressed in terms of real variables (i.e. variables that
     * actually occur in the source code). We can ensure this by eliminating the
     * synthetic variables first.
-    *
-    * Since named type symbols are created before fresh ones,
-    * they have lower IDs. By sorting in reverse, we put
-    * synthetic variables in front, eliminating them first.
     */
   private def computeVariableOrder(l: List[Int]): List[Int] = {
-    l.sorted(Ordering.Int.reverse)
+    l // TODO hack
   }
 
   /**
