@@ -17,8 +17,8 @@
 pub type alias Edge[node] = (node, node)
 
 pub type alias Graph[node] = {
-    nodes :: Set[node],
-    edges :: Set[Edge[node]]
+    nodes = Set[node],
+    edges = Set[Edge[node]]
 }
 
 /// Given the undirected graph described by `nodes` and `edges`, connected components are

@@ -417,7 +417,7 @@ namespace Nec {
     ///
     /// Returns `l` with every occurrence of `from` replaced by `to`.
     ///
-    pub def replace(from: {from :: a}, to: {to :: a}, l: Nec[a]): Nec[a] with Eq[a] =
+    pub def replace(from: {from = a}, to: {to = a}, l: Nec[a]): Nec[a] with Eq[a] =
         map(e -> if (e == from.from) to.to else e, l)
 
     ///
