@@ -118,61 +118,6 @@ namespace Graph {
         0 < (selfReach |> List.length)
 
     ///
-    /// Wrapper type to invert lattice on `Int32`.
-    ///
-    enum InvertLattice {
-        case Inv(Int32)
-    }
-
-    instance Eq[InvertLattice] {
-        pub def eq(x: InvertLattice, y: InvertLattice): Bool = match (x, y) {
-            case (Inv(xx), Inv(yy)) => xx `Eq.eq` yy
-        }
-    }
-
-    instance ToString[InvertLattice] {
-        pub def toString(x: InvertLattice): String = match x {
-            case Inv(xx) => ToString.toString(xx)
-        }
-    }
-
-    instance Add[InvertLattice] {
-        pub def add(x: InvertLattice, y: InvertLattice): InvertLattice = match (x, y) {
-            case (Inv(xx), Inv(yy)) => Inv(xx+yy) // no consideration for overflow
-        }
-    }
-
-    instance PartialOrder[InvertLattice] {
-        pub def lessEqual(x: InvertLattice, y: InvertLattice): Bool = match (x, y) {
-            case (Inv(xx), Inv(yy)) => yy `PartialOrder.lessEqual` xx
-        }
-    }
-
-    instance LowerBound[InvertLattice] {
-        pub def minValue(): InvertLattice = Inv(UpperBound.maxValue())
-    }
-
-    instance JoinLattice[InvertLattice] {
-        pub def leastUpperBound(x: InvertLattice, y: InvertLattice): InvertLattice = match (x, y) {
-            case (Inv(xx), Inv(yy)) => Inv(xx `MeetLattice.greatestLowerBound` yy)
-        }
-    }
-
-    instance MeetLattice[InvertLattice] {
-        pub def greatestLowerBound(x: InvertLattice, y: InvertLattice): InvertLattice = match (x, y) {
-            case (Inv(xx), Inv(yy)) => Inv(xx `JoinLattice.leastUpperBound` yy)
-        }
-    }
-
-    instance Order[InvertLattice] {
-        pub def compare(x: InvertLattice, y: InvertLattice): Comparison = match (x, y) {
-            case (Inv(xx), Inv(yy)) => yy <=> xx
-        }
-    }
-
-    instance Boxable[InvertLattice]
-
-    ///
     /// Returns the shortest distance from `src` to every other vertex in the weighted directed graph `g`.
     ///
     pub def distances(src: t, g: m[(t, Int32, t)]): Map[t, Int32] with Foldable[m], Boxable[t] =
