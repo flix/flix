@@ -573,7 +573,7 @@ object PatternExhaustiveness {
     case Some(TypeConstructor.Ref) => 0
     case Some(TypeConstructor.Channel) => 1
     case Some(TypeConstructor.Lazy) => 1
-    case Some(TypeConstructor.KindedEnum(sym, kind)) => 0 // TODO: Correct?
+    case Some(TypeConstructor.Enum(sym, kind)) => 0 // TODO: Correct?
     case Some(TypeConstructor.Native(clazz)) => 0
     case Some(TypeConstructor.Tuple(l)) => l
     case Some(TypeConstructor.RecordRowExtend(_)) => 2

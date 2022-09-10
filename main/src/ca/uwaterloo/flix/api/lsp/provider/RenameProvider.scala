@@ -66,7 +66,7 @@ object RenameProvider {
             case TypeConstructor.SchemaRowExtend(pred) => renamePred(pred, newName)
             case _ => mkNotFound(uri, pos)
           }
-          case Type.KindedVar(sym, loc) => renameTypeVar(sym, newName)
+          case Type.Var(sym, loc) => renameTypeVar(sym, newName)
           case _ => mkNotFound(uri, pos)
         }
 

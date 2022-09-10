@@ -619,8 +619,6 @@ object Ast {
     case class FallbackText(s: String) extends VarText
   }
 
-  case class PurityAndEffect(pur: Option[Type], eff: Option[List[Type]])
-
   /**
     * Enum representing whether a type is ascribed or inferred.
     */
@@ -637,4 +635,10 @@ object Ast {
       */
     case object Inferred extends TypeSource
   }
+
+  /**
+    * A constructor for a type alias. (Not a valid type by itself).
+    */
+  case class AliasConstructor(sym: Symbol.TypeAliasSym, loc: SourceLocation)
+
 }

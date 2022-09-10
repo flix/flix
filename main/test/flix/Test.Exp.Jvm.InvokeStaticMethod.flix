@@ -48,4 +48,9 @@ namespace Test/Exp/Jvm/InvokeStaticMethod {
         } catch {
             case _: ##java.nio.file.InvalidPathException => null as ##java.nio.file.Path
         }
+
+    @test
+    def testInvokeInheritedStaticMethod01(): Bool =
+        import static flix.test.TestClassWithInheritedMethod.staticMethod(Int32): Int32 \ {};
+        staticMethod(1) == 2
 }

@@ -143,7 +143,7 @@ object InstanceError {
     * @param sym  the class symbol.
     * @param loc  the location where the error occurred.
     */
-  case class DuplicateTypeVariableOccurrence(tvar: Type.KindedVar, sym: Symbol.InstanceSym, loc: SourceLocation) extends InstanceError {
+  case class DuplicateTypeVariableOccurrence(tvar: Type.Var, sym: Symbol.InstanceSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = "Duplicate type variable."
 
     def message(formatter: Formatter): String = {

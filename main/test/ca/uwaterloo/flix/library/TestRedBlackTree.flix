@@ -1,6 +1,6 @@
-use RedBlackTree.RedBlackTree;
-use RedBlackTree.RedBlackTree.{Node};
-use RedBlackTree.Color.{Red, Black};
+use RedBlackTree.RedBlackTree
+use RedBlackTree.RedBlackTree.{Node}
+use RedBlackTree.Color.{Red, Black}
 
 namespace TestRedBlackTree {
 
@@ -823,6 +823,45 @@ namespace TestRedBlackTree {
         MutDeque.pushFront((1, 'a'), d2);
 
         d1 `MutDeque.sameElements` d2
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // mapAWithKey (aka traverseWithKey)                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapAWithKey01(): Bool = region r {
+        let st = ref '#' @ r;
+        let t: RedBlackTree.RedBlackTree[Int32, Char] = RedBlackTree.empty();
+        let ans = RedBlackTree.mapAWithKey((_, x) -> {st := x; Identity(x)}, t);
+        ans == Identity(RedBlackTree.empty()) and deref st == '#'
+    }
+
+    @test
+    def mapAWithKey02(): Bool = region r {
+        let st = ref '#' @ r;
+        let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a');
+        let ans = RedBlackTree.mapAWithKey((_, x) -> {st := x; Identity(x)}, t);
+        ans == Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a')) and deref st == 'a'
+    }
+
+    @test
+    def mapAWithKey03(): Bool = region r {
+        let st = ref '#' @ r;
+        let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b');
+        let ans = RedBlackTree.mapAWithKey((_, x) -> {st := x; Identity(x)}, t);
+        ans == Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b')) and deref st == 'b'
+    }
+
+    @test
+    def mapAWithKey04(): Bool = region r {
+        let st = ref '#' @ r;
+        let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(3, 'c');
+        let ans = RedBlackTree.mapAWithKey((_, x) -> {st := x; Identity(x)}, t);
+        ans == Identity(RedBlackTree.empty()
+                            |> RedBlackTree.insert(1, 'a')
+                            |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(3, 'c')) and deref st == 'c'
     }
 
     /////////////////////////////////////////////////////////////////////////////

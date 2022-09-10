@@ -16,8 +16,8 @@
 
 namespace TestList {
 
-    use ToString.toString;
-    use Hash.hash;
+    use ToString.toString
+    use Hash.hash
 
 /////////////////////////////////////////////////////////////////////////////
 // isEmpty                                                                 //
@@ -2749,37 +2749,30 @@ def distinctWith09(): Bool =
     // sequence                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sequence01(): Bool = region r {
-        let st = ref 0 @ r;
-        let l = List.map(x -> {st := x; Identity(x)}, Nil);
-        let ans = List.sequence(l);
-        ans == Identity(Nil) and deref st == 0
-    }
+    /// TODO - this does not test order of effects.
+    /// We need a more "effective" monad than Identity to show that effects are
+    /// sequenced in left-to-right order.
+    /// This applies to the `sequence` tests on the other container types as well.
 
     @test
-    def sequence02(): Bool = region r {
-        let st = ref 0 @ r;
-        let l = List.map(x -> {st := x; Identity(x)}, 1 :: Nil);
-        let ans = List.sequence(l);
-        ans == Identity(1 :: Nil) and deref st == 1
-    }
+    def sequence01(): Bool =
+        let l: List[Identity[Int32]] = Nil;
+        List.sequence(l) == Identity(Nil)
 
     @test
-    def sequence03(): Bool = region r {
-        let st = ref 0 @ r;
-        let l = List.map(x -> {st := x; Identity(x)}, 1 :: 2 :: Nil);
-        let ans = List.sequence(l);
-        ans == Identity(1 :: 2 :: Nil) and deref st == 2
-    }
+    def sequence02(): Bool =
+        let l = Identity(1) :: Nil;
+        List.sequence(l) == Identity(1 :: Nil)
 
     @test
-    def sequence04(): Bool = region r {
-        let st = ref 0 @ r;
-        let l = List.map(x -> {st := x; Identity(x)}, 1 :: 2 :: 3 :: Nil);
-        let ans = List.sequence(l);
-        ans == Identity(1 :: 2 :: 3 :: Nil) and deref st == 3
-    }
+    def sequence03(): Bool =
+        let l = Identity(1) :: Identity(2) :: Nil;
+        List.sequence(l) == Identity(1 :: 2 :: Nil)
+
+    @test
+    def sequence04(): Bool =
+        let l = Identity(1) :: Identity(2) :: Identity(3) :: Nil;
+        List.sequence(l) == Identity(1 :: 2 :: 3 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // traverse                                                                //

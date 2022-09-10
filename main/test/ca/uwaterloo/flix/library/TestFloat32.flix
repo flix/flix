@@ -16,7 +16,7 @@
 
 namespace TestFloat32 {
 
-    use Mul.mul;
+    use Mul.mul
 
     /////////////////////////////////////////////////////////////////////////////
     // mul                                                                     //
@@ -240,40 +240,40 @@ namespace TestFloat32 {
     // fromString                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def fromString01(): Bool = Float32.fromString("Bad") |> Result.isErr
+    def fromString01(): Bool = Float32.fromString("Bad") |> Option.isEmpty
     
     @test
-    def fromString02(): Bool = Float32.fromString(" 1.0") == Ok(1.0f32)
+    def fromString02(): Bool = Float32.fromString(" 1.0") == Some(1.0f32)
     
     @test
-    def fromString03(): Bool = Float32.fromString("1.0 ") == Ok(1.0f32)
+    def fromString03(): Bool = Float32.fromString("1.0 ") == Some(1.0f32)
     
     @test
-    def fromString04(): Bool = Float32.fromString("0.0") == Ok(0.0f32)
+    def fromString04(): Bool = Float32.fromString("0.0") == Some(0.0f32)
     
     @test
-    def fromString05(): Bool = Float32.fromString("1.0") == Ok(1.0f32)
+    def fromString05(): Bool = Float32.fromString("1.0") == Some(1.0f32)
     
     @test
-    def fromString06(): Bool = Float32.fromString("-1.0") == Ok(-1.0f32)
+    def fromString06(): Bool = Float32.fromString("-1.0") == Some(-1.0f32)
     
     @test
-    def fromString07(): Bool = Float32.fromString("3.14") == Ok(3.14f32)
+    def fromString07(): Bool = Float32.fromString("3.14") == Some(3.14f32)
     
     @test
-    def fromString08(): Bool = Float32.fromString("-3.14") == Ok(-3.14f32)
+    def fromString08(): Bool = Float32.fromString("-3.14") == Some(-3.14f32)
     
     @test
     def fromString09(): Bool = match Float32.fromString("NaN") {
-        case Ok(x)  => Float32.isNan(x)
+        case Some(x)  => Float32.isNan(x)
         case _ => false
     }
     
     @test
-    def fromString10(): Bool = Float32.fromString("Infinity") == Ok(Float32.positiveInfinity())
+    def fromString10(): Bool = Float32.fromString("Infinity") == Some(Float32.positiveInfinity())
     
     @test
-    def fromString11(): Bool = Float32.fromString("-Infinity") == Ok(Float32.negativeInfinity())
+    def fromString11(): Bool = Float32.fromString("-Infinity") == Some(Float32.negativeInfinity())
 
     /////////////////////////////////////////////////////////////////////////////
     // tryToInt8                                                               //

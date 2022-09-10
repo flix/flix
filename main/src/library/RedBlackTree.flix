@@ -906,20 +906,23 @@ namespace RedBlackTree {
     ///
     /// Build a node applicatively.
     ///
-    /// This is a helper function for `mapAWithKeyHelper`.
+    /// This is a helper function for `mapAWithKey`.
     ///
     def nodeA(color: Color, left: m[RedBlackTree[k, v]], k: k, value: m[v], right: m[RedBlackTree[k, v]]): m[RedBlackTree[k, v]] with Applicative[m] =
-        ((((l, v, r) -> Node(color, l, k, v, r)) `Functor.map` left) `Applicative.ap` value) `Applicative.ap` right
+        use Functor.{<$>};
+        use Applicative.{<*>};
+        ((((l, v, r) -> Node(color, l, k, v, r)) <$> left) <*> value) <*> right
 
     ///
     /// Returns a RedBlackTree with mappings `k => f(v)` for every `k => v` in `t`.
     ///
     pub def mapAWithKey(f: (k, v1) -> m[v2] \ ef, t: RedBlackTree[k, v1]): m[RedBlackTree[k, v2]] \ ef with Applicative[m] =
         def loop(tt, k) = match tt {
-            case Node(color, left, key, v, right) => loop(left, kl -> loop(right, kr -> k(nodeA(color, kl, key, f(key, v), kr))))
+            case Node(color, left, key, v, right) => loop(left, kl -> {let ans = f(key, v); loop(right, kr -> k(nodeA(color, kl, key, ans, kr)))})
             case _                                => k(Applicative.point(Leaf))
         };
         loop(t, upcast(identity))
+
 
     ///
     /// Applies `cmp` over the tree `t` in parallel and optionally returns the lowest

@@ -186,6 +186,39 @@ object TypeError {
   }
 
   /**
+    * Unexpected type, but upcast might work.
+    *
+    * @param expected the expected type.
+    * @param inferred the inferred type.
+    * @param loc      the location of the inferred type.
+    */
+  case class PossibleUpcast(expected: Type, inferred: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"Expected type '${formatWellKindedType(expected)}' but found type: '${formatWellKindedType(inferred)}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""
+         |>> Expected type: '${red(formatWellKindedType(expected))}' but found type: '${red(formatWellKindedType(inferred))}'.
+         |
+         |${code(loc, "expression has unexpected type.")}
+         |
+         |'${formatWellKindedType(expected)}' appears to be assignable from '${formatWellKindedType(inferred)}'.
+         |Consider using 'upcast'?
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some(
+      s"""Flix does not support sub-typing nor sub-effecting.
+        |
+        |Nevertheless, 'upcast' is way to use both in a safe manner, for example:
+        |
+        |    let s = "Hello World";
+        |    let o: ##java.lang.Object = upcast s;
+        |""".stripMargin
+    )
+  }
+
+  /**
     * Mismatched Types.
     *
     * @param baseType1 the first base type.
@@ -343,7 +376,7 @@ object TypeError {
     * @param fullType2 the second full type.
     * @param loc       the location where the error occurred.
     */
-  case class OccursCheckError(baseVar: Type.KindedVar, baseType: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
+  case class OccursCheckError(baseVar: Type.Var, baseType: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Unable to unify the type variable '$baseVar' with the type '$baseType'."
 
     def message(formatter: Formatter): String = {
@@ -619,7 +652,7 @@ object TypeError {
     * @param tpe  the type wherein the region variable escapes.
     * @param loc  the location where the error occurred.
     */
-  case class RegionVarEscapes(rvar: Type.KindedVar, tpe: Type, loc: SourceLocation) extends TypeError {
+  case class RegionVarEscapes(rvar: Type.Var, tpe: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Region variable '${formatWellKindedType(rvar)}' escapes its scope."
 
     def message(formatter: Formatter): String = {

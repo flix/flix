@@ -444,7 +444,7 @@ class TestResolver extends FunSuite with TestUtils {
          |}
          |
          |namespace B {
-         |    use A.f;
+         |    use A.f
          |    def g(): Int32 = f(1)
          |}
          |""".stripMargin
@@ -1042,7 +1042,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       """
         |def f(): Unit =
-        |    object Int32 {}
+        |    new Int32 {}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalNonJavaType](result)
@@ -1052,7 +1052,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       """
         |def f(): Unit =
-        |    object String {}
+        |    new String {}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalNonJavaType](result)
@@ -1064,7 +1064,7 @@ class TestResolver extends FunSuite with TestUtils {
         |type alias T = Int32
         |
         |def f(): Unit =
-        |    object T {}
+        |    new T {}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalNonJavaType](result)
