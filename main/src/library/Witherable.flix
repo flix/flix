@@ -18,7 +18,7 @@
 /// A type class for data structures that can be traversed in left-to-right
 /// order with an applicative partial functor.
 ///
-pub class Witherable[t : Type -> Type] with Traversable[t], FunctorFilter[t] {
+pub lawful class Witherable[t : Type -> Type] with Traversable[t], FunctorFilter[t] {
 
     ///
     /// Returns the result of applying the applicative partial mapping function `f` to all the elements of the
@@ -35,5 +35,29 @@ pub class Witherable[t : Type -> Type] with Traversable[t], FunctorFilter[t] {
     pub def sequenceWither(t: t[m[Option[a]]]): m[t[a]] with Applicative[m] =
         Witherable.wither(identity, t)
 
-    // laws: identity, traverse consistency, composition
+    ///
+    /// Withering with the identity function wrapped into an applicative preserves the container `t`.
+    ///
+    law identity: forall(f: a -> m[Option[a]], t: t[a]) with Eq[m[t[a]]], Applicative[m] . Witherable.wither(f, t) == Applicative.point(t)
+
+    ///
+    /// sequenceWither identity.
+    ///
+    law identity: forall(f: a -> m[Option[a]], t: t[a]) with Eq[m[t[a]]], Applicative[m] . Witherable.sequenceWither(Functor.map(f, t)) == Applicative.point(t)
+
+/*
+
+    law composition: forall(f: a -> m[Option[b]], g: m[Option[b]] -> g[Option[c]], t: t[a]) with Eq[m[t[c]]], Applicative[m], Applicative[g] .
+        (Functor.map(Witherable.wither(g)) >> Witherable.wither(f))(t) ==  Witherable.wither(Functor.map(Witherable.wither(f)) >> g)(t)
+
+
+    law pureFilter: forall(f: a -> Option[a], t: t[a], m: m[a]) with  Eq[m[t[a]]], Applicative[m] .
+        Witherable.wither(f >> Applicative.point, t) == Applicative.point(FunctorFilter.filterMap(f, t))
+
+
+    law naturality: forall(f: a -> m[Option[b]], t: t[a], m: m[c] -> g[c]) with Eq[g[t[a]]], Applicative[m], Applicative[g] .
+        m(Witherable.wither(f, t)) == Witherable.wither(m(Applicative.point(f)), t)
+
+*/
+
 }
