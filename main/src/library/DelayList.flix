@@ -590,7 +590,7 @@ namespace DelayList {
     /// Does not force the tail of `l`.
     ///
     @Experimental @Lazy
-    pub def replace(from: {from :: a}, to: {to :: a}, l: DelayList[a]): DelayList[a] with Eq[a] =
+    pub def replace(from: {from = a}, to: {to = a}, l: DelayList[a]): DelayList[a] with Eq[a] =
         map(e -> if (from.from == e) to.to else e, l)
 
     ///

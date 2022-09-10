@@ -461,7 +461,7 @@ namespace List {
     /// Returns `l` with every occurrence of `from` replaced by `to`.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def replace(from: {from :: a}, to: {to :: a}, l: List[a]): List[a] with Eq[a] = map(e -> if (e == from.from) to.to else e, l)
+    pub def replace(from: {from = a}, to: {to = a}, l: List[a]): List[a] with Eq[a] = map(e -> if (e == from.from) to.to else e, l)
 
     ///
     /// Returns `l2` with the `n` elements starting at index `i` replaced with the elements of `l1`.

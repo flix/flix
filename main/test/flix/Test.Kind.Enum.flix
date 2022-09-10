@@ -31,7 +31,7 @@ namespace Test/Kind/Enum {
         }
 
         pub enum ERecordRow[a: RecordRow] {
-            case CRecordRow1({ l :: Int32 | a })
+            case CRecordRow1({ l = Int32 | a })
         }
 
         pub enum ESchemaRow[a: SchemaRow] {

@@ -1,11 +1,11 @@
 namespace Test/Exp/Apply/Named {
-    def named(p1: {param1 :: Bool}): Bool = p1.param1
+    def named(p1: {param1 = Bool}): Bool = p1.param1
 
-    def namedNamed(p1: {param1 :: Bool}, _p2: {param2 :: Bool}): Bool = p1.param1
+    def namedNamed(p1: {param1 = Bool}, _p2: {param2 = Bool}): Bool = p1.param1
 
-    def namedUnnamed(p1: {param1 :: Bool}, _p2: Bool): Bool = p1.param1
+    def namedUnnamed(p1: {param1 = Bool}, _p2: Bool): Bool = p1.param1
 
-    def unnamedNamed(p1: Bool, _p2: {param2 :: Bool}): Bool = p1
+    def unnamedNamed(p1: Bool, _p2: {param2 = Bool}): Bool = p1
 
     @test
     def testNamedParam01(): Bool = named(param1 = true)
