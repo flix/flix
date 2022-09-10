@@ -83,6 +83,6 @@ namespace TestWitherable {
     @test
     def sequenceWither07(): Bool =
         let xs = Some(Some(1)) :: Some(None) :: None :: Nil;
-        sequenceWither(xs) == Some(1 :: Nil)
+        sequenceWither(xs) == None
 
 }
