@@ -66,6 +66,21 @@ instance ToString[DelayList[a]] with ToString[a] {
     pub def toString(l: DelayList[a]): String = DelayList.toString(l)
 }
 
+
+instance Foldable[DelayList] {
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldLeft(f, s, l)
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRight(f, s, l)
+    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRightWithCont(f, s, l)
+    override pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) = DelayList.iterator(r, l)
+}
+instance UnorderedFoldable[DelayList] {
+    pub def foldMap(f: a -> b \ ef, l: DelayList[a]): b \ ef with CommutativeMonoid[b] = DelayList.foldMap(f, l)
+    override pub def isEmpty(l: DelayList[a]): Bool = DelayList.isEmpty(l)
+    override pub def exists(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.exists(f, l)
+    override pub def forall(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.forall(f, l)
+    override pub def memberOf(x: a, l: DelayList[a]): Bool with Eq[a] = DelayList.memberOf(x, l)
+}
+
 instance Functor[DelayList] {
     pub def map(f: a -> b \ ef, l: DelayList[a]): DelayList[b] \ ef = DelayList.map(f, l)
 }
@@ -88,25 +103,12 @@ instance Traversable[DelayList] {
     pub override def sequence(l: DelayList[m[a]]): m[DelayList[a]] with Applicative[m] = DelayList.sequence(l)
 }
 
-instance Foldable[DelayList] {
-    pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldLeft(f, s, l)
-    pub def foldRight(f: (a, b) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRight(f, s, l)
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRightWithCont(f, s, l)
-    override pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) = DelayList.iterator(r, l)
-}
-
-instance UnorderedFoldable[DelayList] {
-    pub def foldMap(f: a -> b \ ef, l: DelayList[a]): b \ ef with CommutativeMonoid[b] = DelayList.foldMap(f, l)
-    override pub def isEmpty(l: DelayList[a]): Bool = DelayList.isEmpty(l)
-    override pub def exists(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.exists(f, l)
-    override pub def forall(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.forall(f, l)
-    override pub def memberOf(x: a, l: DelayList[a]): Bool with Eq[a] = DelayList.memberOf(x, l)
-}
-
 instance FunctorFilter[DelayList] {
     pub def filterMap(f: a -> Option[b] \ ef, x: DelayList[a]): DelayList[b] \ ef = DelayList.filterMap(f, x)
     pub override def filter(f: a -> Bool \ ef, x: DelayList[a]): DelayList[a] \ ef = DelayList.filter(f, x)
 }
+
+instance Witherable[DelayList]
 
 instance SemiGroup[DelayList[a]] {
     pub def combine(l1: DelayList[a], l2: DelayList[a]): DelayList[a] = DelayList.append(l1, l2)
