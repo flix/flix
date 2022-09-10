@@ -14,58 +14,54 @@
  *  limitations under the License.
  */
 
-namespace Down {
-
-    pub enum Down[a] {
-        case Inv(a)
-    }
-
-    instance Eq[Down[a]] with Eq[a] {
-        pub def eq(x: Down[a], y: Down[a]): Bool = match (x, y) {
-            case (Inv(xx), Inv(yy)) => xx `Eq.eq` yy
-        }
-    }
-
-    instance ToString[Down[a]] with ToString[a] {
-        pub def toString(x: Down[a]): String = match x {
-            case Inv(xx) => ToString.toString(xx)
-        }
-    }
-
-    instance Add[Down[a]] with Add[a] {
-        pub def add(x: Down[a], y: Down[a]): Down[a] = match (x, y) {
-            case (Inv(xx), Inv(yy)) => Inv(xx + yy) // no consideration for overflow
-        }
-    }
-
-    instance PartialOrder[Down[a]] with PartialOrder[a] {
-        pub def lessEqual(x: Down[a], y: Down[a]): Bool = match (x, y) {
-            case (Inv(xx), Inv(yy)) => yy `PartialOrder.lessEqual` xx
-        }
-    }
-
-    instance LowerBound[Down[a]] with UpperBound[a] {
-        pub def minValue(): Down[a] = Inv(UpperBound.maxValue())
-    }
-
-    instance JoinLattice[Down[a]] with MeetLattice[a] {
-        pub def leastUpperBound(x: Down[a], y: Down[a]): Down[a] = match (x, y) {
-            case (Inv(xx), Inv(yy)) => Inv(xx `MeetLattice.greatestLowerBound` yy)
-        }
-    }
-
-    instance MeetLattice[Down[a]] with JoinLattice[a] {
-        pub def greatestLowerBound(x: Down[a], y: Down[a]): Down[a] = match (x, y) {
-            case (Inv(xx), Inv(yy)) => Inv(xx `JoinLattice.leastUpperBound` yy)
-        }
-    }
-
-    instance Order[Down[a]] with Order[a] {
-        pub def compare(x: Down[a], y: Down[a]): Comparison = match (x, y) {
-            case (Inv(xx), Inv(yy)) => yy <=> xx
-        }
-    }
-
-    instance Boxable[Down[a]] with Order[a], ToString[a]
-
+pub enum Down[a] {
+    case Inv(a)
 }
+
+instance Eq[Down[a]] with Eq[a] {
+    pub def eq(x: Down[a], y: Down[a]): Bool = match (x, y) {
+        case (Inv(xx), Inv(yy)) => xx `Eq.eq` yy
+    }
+}
+
+instance ToString[Down[a]] with ToString[a] {
+    pub def toString(x: Down[a]): String = match x {
+        case Inv(xx) => ToString.toString(xx)
+    }
+}
+
+instance Add[Down[a]] with Add[a] {
+    pub def add(x: Down[a], y: Down[a]): Down[a] = match (x, y) {
+        case (Inv(xx), Inv(yy)) => Inv(xx + yy) // no consideration for overflow
+    }
+}
+
+instance PartialOrder[Down[a]] with PartialOrder[a] {
+    pub def lessEqual(x: Down[a], y: Down[a]): Bool = match (x, y) {
+        case (Inv(xx), Inv(yy)) => yy `PartialOrder.lessEqual` xx
+    }
+}
+
+instance LowerBound[Down[a]] with UpperBound[a] {
+    pub def minValue(): Down[a] = Inv(UpperBound.maxValue())
+}
+
+instance JoinLattice[Down[a]] with MeetLattice[a] {
+    pub def leastUpperBound(x: Down[a], y: Down[a]): Down[a] = match (x, y) {
+        case (Inv(xx), Inv(yy)) => Inv(xx `MeetLattice.greatestLowerBound` yy)
+    }
+}
+
+instance MeetLattice[Down[a]] with JoinLattice[a] {
+    pub def greatestLowerBound(x: Down[a], y: Down[a]): Down[a] = match (x, y) {
+        case (Inv(xx), Inv(yy)) => Inv(xx `JoinLattice.leastUpperBound` yy)
+    }
+}
+
+instance Order[Down[a]] with Order[a] {
+    pub def compare(x: Down[a], y: Down[a]): Comparison = match (x, y) {
+        case (Inv(xx), Inv(yy)) => yy <=> xx
+    }
+}
+
+instance Boxable[Down[a]] with Order[a], ToString[a]
