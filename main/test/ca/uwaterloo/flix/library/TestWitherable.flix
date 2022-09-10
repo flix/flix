@@ -1,6 +1,6 @@
 namespace TestWitherable {
 
-    use Witherable.wither;
+    use Witherable.{wither, sequenceWither};
 
     /////////////////////////////////////////////////////////////////////////////
     // wither                                                                  //
@@ -45,5 +45,44 @@ namespace TestWitherable {
     def wither08(): Bool  =
         let xs = 1 :: 2 :: 3 :: Nil;
         wither(_ -> Some(None: Option[Int32]), xs) == Some(Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sequenceWither                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sequenceWither01(): Bool =
+        let xs: List[Option[Option[Int32]]] = Nil;
+        sequenceWither(xs) == Some(Nil)
+
+    @test
+    def sequenceWither02(): Bool =
+        let xs: List[Option[Option[Int32]]] = None :: Nil;
+        sequenceWither(xs) == None
+
+    @test
+    def sequenceWither03(): Bool =
+        let xs: List[Option[Option[Int32]]] = Some(None) :: Nil;
+        sequenceWither(xs) == Some(Nil)
+
+    @test
+    def sequenceWither04(): Bool =
+        let xs = Some(Some(1)) :: Nil;
+        sequenceWither(xs) == Some(1 :: Nil)
+
+    @test
+    def sequenceWither05(): Bool =
+        let xs = Some(Some(1)) :: Some(Some(2)) :: Nil;
+        sequenceWither(xs) == Some(1 :: 2 :: Nil)
+
+    @test
+    def sequenceWither06(): Bool =
+        let xs = Some(Some(1)) :: Some(None) :: Nil;
+        sequenceWither(xs) == Some(1 :: Nil)
+
+    @test
+    def sequenceWither07(): Bool =
+        let xs = Some(Some(1)) :: Some(None) :: None :: Nil;
+        sequenceWither(xs) == Some(1 :: Nil)
 
 }

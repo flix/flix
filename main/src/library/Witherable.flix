@@ -32,7 +32,7 @@ pub class Witherable[t : Type -> Type] with Traversable[t], FunctorFilter[t] {
     ///
     /// Returns the result of running all the actions in the data structure `t`.
     ///
-    pub def sequenceFilter(t: t[m[Option[a]]]): m[t[a]] with Applicative[m] =
+    pub def sequenceWither(t: t[m[Option[a]]]): m[t[a]] with Applicative[m] =
         Witherable.wither(identity, t)
 
     // laws: identity, traverse consistency, composition
