@@ -133,6 +133,28 @@ object BoolUnification {
   }
 
   /**
+    * A heuristic used to determine the order in which to eliminate variable.
+    *
+    * Semantically the order of variables is immaterial. Changing the order may
+    * yield different unifiers, but they are all equivalent. However, changing
+    * the can lead to significant speed-ups / slow-downs.
+    *
+    * We make the following observation:
+    *
+    * We want to have synthetic variables (i.e. fresh variables introduced during
+    * type inference) expressed in terms of real variables (i.e. variables that
+    * actually occur in the source code). We can ensure this by eliminating the
+    * synthetic variables first.
+    *
+    * Since named type symbols are created before fresh ones,
+    * they have lower IDs. By sorting in reverse, we put
+    * synthetic variables in front, eliminating them first.
+    */
+  private def computeVariableOrder(l: List[Int]): List[Int] = {
+    l.sorted(Ordering.Int.reverse)
+  }
+
+  /**
     * Performs success variable elimination on the given boolean expression `f`.
     *
     * `flexvs` is the list of remaining flexible variables in the expression.
