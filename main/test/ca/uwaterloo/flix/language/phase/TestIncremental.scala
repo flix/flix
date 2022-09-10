@@ -79,7 +79,7 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |""".stripMargin)
     flix.addSourceCode(FileG,
       s"""
-         |pub enum G[a]({ el :: a })
+         |pub enum G[a]({ el = a })
          |""".stripMargin)
     flix.addSourceCode(FileH,
       s"""
@@ -279,7 +279,7 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |""".stripMargin)
     flix.addSourceCode(FileF,
       s"""
-         |pub type alias L[a] = { x :: a }
+         |pub type alias L[a] = { x = a }
          |""".stripMargin)
 
     flix.compile().get
