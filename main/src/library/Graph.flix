@@ -123,15 +123,15 @@ namespace Graph {
     pub def distances(src: t, g: m[(t, Int32, t)]): Map[t, Int32] with Foldable[m], Boxable[t] =
         let edges = inject g into Edge;
         let invEdges = #{
-            InvEdge(x, Inv(d), y) :- Edge(x, d, y).
+            InvEdge(x, Down(d), y) :- Edge(x, d, y).
         };
         let dists = #{
-            Dist(src; Inv(0)).
+            Dist(src; Down(0)).
             Dist(y; d + w) :- Dist(x; d), InvEdge(x, w, y).
         };
 
         let f = (x, acc) -> {
-            let (n, Inv(d)) = x;
+            let (n, Down(d)) = x;
             Map.insert(n, d, acc)
         };
 
