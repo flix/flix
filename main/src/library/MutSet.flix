@@ -102,7 +102,7 @@ namespace MutSet {
     ///
     /// The mutable set `s` is unchanged if the element `from` is not in it.
     ///
-    pub def replace!(from: {from :: a}, to: {to :: a}, s: MutSet[a, r]): Unit \ { Read(r), Write(r) } with Order[a] =
+    pub def replace!(from: {from = a}, to: {to = a}, s: MutSet[a, r]): Unit \ { Read(r), Write(r) } with Order[a] =
         let MutSet(ms) = s;
         ms := Set.replace(from = from.from, to = to.to, deref ms)
 

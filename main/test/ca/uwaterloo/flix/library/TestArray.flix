@@ -5414,7 +5414,7 @@ namespace TestArray {
     }
 
     enum R {
-        case R({i :: Int32, s :: String})
+        case R({i = Int32, s = String})
     }
 
     instance Eq[R] {

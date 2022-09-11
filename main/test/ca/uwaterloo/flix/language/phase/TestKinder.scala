@@ -43,7 +43,7 @@ class TestKinder extends FunSuite with TestUtils {
   }
 
   test("MismatchedTypeParamKind.Implicit.04") {
-    val input = "def f(s: #{X(Int32) | a}, r: {x :: Int32 | a}): Int32 = 123"
+    val input = "def f(s: #{X(Int32) | a}, r: {x = Int32 | a}): Int32 = 123"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -105,7 +105,7 @@ class TestKinder extends FunSuite with TestUtils {
     val input =
       """
         |enum E[a] {
-        |    case A(#{X(Int32) | a}, {x :: Int32 | a})
+        |    case A(#{X(Int32) | a}, {x = Int32 | a})
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -156,7 +156,7 @@ class TestKinder extends FunSuite with TestUtils {
   }
 
   test("MismatchedTypeParamKind.TypeAlias.04") {
-    val input = "type alias T[a] = (#{X(Int32) | a}, {x :: Int32 | a})"
+    val input = "type alias T[a] = (#{X(Int32) | a}, {x = Int32 | a})"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -348,7 +348,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("IllegalTypeApplication.02") {
     val input =
       """
-        |type alias R = {x :: Int32}
+        |type alias R = {x = Int32}
         |
         |def f(p: R[Int32]): Int32 = 123
         |""".stripMargin
@@ -562,7 +562,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.Def.Type.04") {
     val input =
       """
-        |def f[r: Type](x: {name :: Int32 | r} ): Int32 = ???
+        |def f[r: Type](x: {name = Int32 | r} ): Int32 = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -734,7 +734,7 @@ class TestKinder extends FunSuite with TestUtils {
     val input =
       """
         |enum E[a] {
-        |  case C({i :: Int32 | a})
+        |  case C({i = Int32 | a})
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -874,7 +874,7 @@ class TestKinder extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |  pub def f(x: {l ::  Int32 | a}): Int32 = ???
+        |  pub def f(x: {l =  Int32 | a}): Int32 = ???
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)

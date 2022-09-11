@@ -22,13 +22,13 @@ object WeededAst {
 
   case class Root(units: Map[Ast.Source, WeededAst.CompilationUnit], entryPoint: Option[Symbol.DefnSym])
 
-  case class CompilationUnit(uses: List[WeededAst.Use], decls: List[WeededAst.Declaration], loc: SourceLocation)
+  case class CompilationUnit(uses: List[WeededAst.Use], imports: List[WeededAst.Import], decls: List[WeededAst.Declaration], loc: SourceLocation)
 
   sealed trait Declaration
 
   object Declaration {
 
-    case class Namespace(name: Name.NName, uses: List[WeededAst.Use], decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
+    case class Namespace(name: Name.NName, uses: List[WeededAst.Use], imports: List[WeededAst.Import], decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
     // TODO change laws to WeededAst.Law
     case class Class(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, tparam: WeededAst.TypeParam, superClasses: List[WeededAst.TypeConstraint], sigs: List[WeededAst.Declaration.Sig], laws: List[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
@@ -60,6 +60,14 @@ object WeededAst {
     case class UseUpper(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
 
     case class UseTag(qname: Name.QName, tag: Name.Ident, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
+
+  }
+
+  sealed trait Import
+
+  object Import {
+    
+    case class Import(name: Name.JavaName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Import
 
   }
 

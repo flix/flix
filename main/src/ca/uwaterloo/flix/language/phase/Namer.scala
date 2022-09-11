@@ -77,7 +77,7 @@ object Namer {
       /*
        * Namespace.
        */
-      case WeededAst.Declaration.Namespace(ns, uses, decls, loc) =>
+      case WeededAst.Declaration.Namespace(ns, uses, _, decls, loc) =>
         flatMapN(mergeUseEnvs(uses, uenv0)) {
           newEnv =>
             Validation.fold(decls, prog0) {

@@ -135,7 +135,7 @@ namespace Console {
     ///
     /// Returns the string `s` formatted with the given RGB color `c`.
     ///
-    pub def rgb(c: (Int32, Int32 , Int32), s: String, opts: {isFg :: Bool}): String =
+    pub def rgb(c: (Int32, Int32 , Int32), s: String, opts: {isFg = Bool}): String =
         match colorSupport() {
             case ColorSupport.None      => s
             case ColorSupport.Ansi      =>
