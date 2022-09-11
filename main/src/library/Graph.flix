@@ -23,7 +23,6 @@ namespace Graph {
         let x = query edges, nodes(), reachability() select (src, dst) from Reachable(src, dst);
         List.toSet(x)
 
-
     ///
     /// Helper function.
     /// Returns a Datalog program which computes the reachable nodes when given a set of `Edge` and `Node` facts.
@@ -58,7 +57,7 @@ namespace Graph {
         List.toSet(x)
 
     ///
-    /// Helper functions for `reachable` and `unreachable`.
+    /// Helper function for `reachable` and `unreachable`.
     /// Returns a Datalog program which computes the reachable nodes from `src` when given a set of `Edge` facts.
     ///
     def reachabilityFromSrc(src: t): #{ Edge(t, t), Reachable(t) | r } with Boxable[t] = #{
@@ -117,5 +116,32 @@ namespace Graph {
         };
         let selfReach = query edges, reachability select () from Reachable(x, y) where x == y;
         0 < (selfReach |> List.length)
+
+    ///
+    /// Returns the shortest distance from `src` to every other vertex in the weighted directed graph `g`.
+    ///
+    pub def distances(src: t, g: m[(t, Int32, t)]): Map[t, Int32] with Foldable[m], Boxable[t] =
+        let edges = inject g into Edge;
+        let invEdges = #{
+            InvEdge(x, Down(d), y) :- Edge(x, d, y).
+        };
+        let dists = #{
+            Dist(src; Down(0)).
+            Dist(y; d + w) :- Dist(x; d), InvEdge(x, w, y).
+        };
+
+        let f = (x, acc) -> {
+            let (n, Down(d)) = x;
+            Map.insert(n, d, acc)
+        };
+
+        query edges, invEdges, dists select (x, d) from Dist(x; d) |> List.foldRight(f, Map.empty())
+
+    ///
+    /// Returns the shortest distance from `src` to `dst` in the weighted directed graph `g`.
+    ///
+    pub def distance(src: { src :: t }, dst: { dst :: t }, g: m[(t, Int32, t)]): Option[Int32] with Foldable[m], Boxable[t] =
+        distances(src.src, g) |> Map.get(dst.dst)
+
 
 }

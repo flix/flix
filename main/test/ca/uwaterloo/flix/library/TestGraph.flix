@@ -1,5 +1,9 @@
 namespace TestGraph {
 
+    /////////////////////////////////////////////////////////////////////////////
+    // directed graphs                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
     def graph01(): Set[(Int32, Int32)] =
         Set#{}
 
@@ -69,6 +73,77 @@ namespace TestGraph {
             " └─┘   └─┘   └─┘ " ::
             Nil;
         Set#{(1, 2), (2, 3), (3, 4), (4, 1), (5, 6), (6, 5)}
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // weighted directed graph                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    def graphWithDist01(): Set[(Int32, Int32, Int32)] =
+        Set#{}
+
+    def graphWithDist02(): Set[(Int32, Int32, Int32)] =
+        let _graphString =
+            " ┌─┐    ┌─┐ " ::
+            " │1├─4→─┤2│ " ::
+            " └─┘    └─┘ " ::
+            Nil;
+        Set#{(1, 4, 2)}
+
+    def graphWithDist03(): Set[(Int32, Int32, Int32)] =
+        let _graphString =
+            " ┌─┐    ┌─┐ " ::
+            " │1├─4→─┤2│ " ::
+            " └─┘    └─┘ " ::
+            " ┌─┐    ┌─┐ " ::
+            " │3├─7→─┤4│ " ::
+            " └─┘    └─┘ " ::
+            Nil;
+        Set#{(1, 4, 2), (3, 7, 4)}
+
+    def graphWithDist04(): Set[(Int32, Int32, Int32)] =
+        let _graphString =
+            " ┌─┐    ┌─┐ " ::
+            " │1├─4→─┤2│ " ::
+            " └─┘    └┬┘ " ::
+            "         5  " ::
+            "         ↓  " ::
+            " ┌─┐    ┌┴┐ " ::
+            " │4├─←7─┤3│ " ::
+            " └─┘    └─┘ " ::
+            Nil;
+        Set#{(1, 4, 2), (2, 5, 3), (3, 7, 4)}
+
+    def graphWithDist05(): Set[(Int32, Int32, Int32)] =
+        let _graphString =
+            " ┌─┐    ┌─┐ " ::
+            " │1├─4→─┤2│ " ::
+            " └┬┘    └┬┘ " ::
+            "  ↑      2  " ::
+            "  5      ↓  " ::
+            " ┌┴┐    ┌┴┐ " ::
+            " │4├─←1─┤3│ " ::
+            " └─┘    └─┘ " ::
+            Nil;
+        Set#{(1, 4, 2), (2, 2, 3), (3, 1, 4), (4, 5, 1)}
+
+    def graphWithDist06(): Set[(Int32, Int32, Int32)] =
+        let _graphString =
+            " ┌─┐               " ::
+            " │1├─5→──┐         " ::
+            " └┬┘     │         " ::
+            "  2      │         " ::
+            "  ↓      ↓         " ::
+            " ┌┴┐    ┌┴┐    ┌─┐ " ::
+            " │2├─←7─┤4├─2→─┤5│ " ::
+            " └┬┘    └┬┘    └┬┘ " ::
+            "  10     4      1  " ::
+            "  ↓      ↓      ↓  " ::
+            " ┌┴┐    ┌┴┐     │  " ::
+            " │3│    │6├─←───┘  " ::
+            " └─┘    └─┘        " ::
+            Nil;
+        Set#{(1, 2, 2), (1, 5, 4), (2, 10, 3), (4, 7, 2), (4, 2, 5), (4, 4, 6), (5, 1, 6)}
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -280,6 +355,7 @@ namespace TestGraph {
         let s = Set#{Set#{1, 2, 3, 4}, Set#{5, 6}};
         Graph.stronglyConnectedComponents(g) == s
 
+
     /////////////////////////////////////////////////////////////////////////////
     // isCyclic                                                                //
     /////////////////////////////////////////////////////////////////////////////
@@ -318,5 +394,96 @@ namespace TestGraph {
     def isCyclic07(): Bool =
         let g = graph07();
         Graph.isCyclic(g)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // distances                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def distances01(): Bool =
+        let g = graphWithDist01();
+        Graph.distances(1, g) == Map#{1 => 0}
+
+    @test
+    def distances02(): Bool =
+        let g = graphWithDist02();
+        Graph.distances(1, g) == Map#{1 => 0, 2 => 4}
+
+    @test
+    def distances03(): Bool =
+        let g = graphWithDist02();
+        Graph.distances(2, g) == Map#{2 => 0}
+
+    @test
+    def distances04(): Bool =
+        let g = graphWithDist03();
+        Graph.distances(3, g) == Map#{3 => 0, 4 => 7}
+
+    @test
+    def distances05(): Bool =
+        let g = graphWithDist04();
+        Graph.distances(2, g) == Map#{2 => 0, 3 => 5, 4 => (5 + 7)}
+
+    @test
+    def distances06(): Bool =
+        let g = graphWithDist05();
+        Graph.distances(4, g) == Map#{1 => 5, 2 => (5 + 4), 3 => (5 + 4 + 2), 4 => 0}
+
+    @test
+    def distances07(): Bool =
+        let g = graphWithDist06();
+        Graph.distances(4, g)
+            == Map#{2 => 7, 3 => (7 + 10), 4 => 0, 5 => 2, 6 => 3}
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // distance                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def distance01(): Bool =
+        let g = graphWithDist01();
+        Graph.distance(src = 1, dst = 2, g) == None
+
+    @test
+    def distance02(): Bool =
+        let g = graphWithDist02();
+        Graph.distance(src = 1, dst = 2, g) == Some(4)
+
+    @test
+    def distance03(): Bool =
+        let g = graphWithDist02();
+        Graph.distance(src = 2, dst = 1, g) == None
+
+    @test
+    def distance04(): Bool =
+        let g = graphWithDist03();
+        Graph.distance(src = 1, dst = 2, g) == Some(4)
+
+    @test
+    def distance05(): Bool =
+        let g = graphWithDist03();
+        Graph.distance(src = 3, dst = 4, g) == Some(7)
+
+    @test
+    def distance06(): Bool =
+        let g = graphWithDist03();
+        Graph.distance(src = 1, dst = 4, g) == None
+
+    @test
+    def distance07(): Bool =
+        let g = graphWithDist04();
+        Graph.distance(src = 1, dst = 4, g) == Some(4 + 5 + 7)
+
+    @test
+    def distance08(): Bool =
+        let g = graphWithDist05();
+        Graph.distance(src = 4, dst = 2, g) == Some(5 + 4)
+
+    @test
+    def distance09(): Bool =
+        let g = graphWithDist06();
+        Graph.distance(src = 1, dst = 6, g) == Some(5 + 2 + 1)
 
 }
