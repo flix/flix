@@ -102,7 +102,7 @@ namespace Int64 {
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     @Time(1) @Space(1)
-    pub def logicalRightShift(dist: {dist :: Int32}, x: Int64): Int64 =
+    pub def logicalRightShift(dist: {dist = Int32}, x: Int64): Int64 =
         if (x < 0i64 and dist.dist rem size() != 0)
             ((x >>> 1) &&& maxValue()) >>> (dist.dist - 1)
         else
@@ -123,7 +123,7 @@ namespace Int64 {
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` right by `distance` bits.
     ///
-    pub def rotateRight(dist: {dist :: Int32}, x: Int64): Int64 =
+    pub def rotateRight(dist: {dist = Int32}, x: Int64): Int64 =
         (logicalRightShift(dist = dist.dist, x)) ||| (x <<< -dist.dist)
 
     ///
@@ -131,7 +131,7 @@ namespace Int64 {
     /// binary representation of `x` left by `distance` bits.
     ///
     @Time(1) @Space(1)
-    pub def rotateLeft(dist: {dist :: Int32}, x: Int64): Int64 =
+    pub def rotateLeft(dist: {dist = Int32}, x: Int64): Int64 =
         (logicalRightShift(dist = -dist.dist, x)) ||| (x <<< dist.dist)
 
     ///
@@ -239,7 +239,7 @@ namespace Int64 {
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit).
     ///
     @Time(1) @Space(1)
-    pub def getBit(pos: {pos :: Int32}, x: Int64): Int32 =
+    pub def getBit(pos: {pos = Int32}, x: Int64): Int32 =
         if ((x >>> pos.pos) rem 2i64 == 0i64) 0 else 1
 
     ///
@@ -248,7 +248,7 @@ namespace Int64 {
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def setBit(pos: {pos :: Int32}, x: Int64): Int64 = x ||| (1i64 <<< pos.pos)
+    pub def setBit(pos: {pos = Int32}, x: Int64): Int64 = x ||| (1i64 <<< pos.pos)
 
     ///
     /// Returns `x` with the bit at position `position` cleared (to 0).
@@ -256,7 +256,7 @@ namespace Int64 {
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def clearBit(pos: {pos :: Int32}, x: Int64): Int64 = x &&& ~~~(1i64 <<< pos.pos)
+    pub def clearBit(pos: {pos = Int32}, x: Int64): Int64 = x &&& ~~~(1i64 <<< pos.pos)
 
     ///
     /// Returns `x` with the bit at position `position` flipped.
@@ -264,7 +264,7 @@ namespace Int64 {
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
     @Time(1) @Space(1)
-    pub def flipBit(pos: {pos :: Int32}, x: Int64): Int64 = x ^^^ (1i64 <<< pos.pos)
+    pub def flipBit(pos: {pos = Int32}, x: Int64): Int64 = x ^^^ (1i64 <<< pos.pos)
 
     ///
     /// Returns the integer binary logarithm of `x`.
@@ -413,7 +413,7 @@ namespace Int64 {
     ///
     /// Helper function for the `clamp` conversion functions.
     ///
-    def clamp(min: {min :: Int64}, max: {max :: Int64}, x: Int64): Int64 =
+    def clamp(min: {min = Int64}, max: {max = Int64}, x: Int64): Int64 =
         if (x < min.min)
              min.min
         else
@@ -428,7 +428,7 @@ namespace Int64 {
     /// Returns `x` clamped within the Int8 range `min` to `max`.
     ///
     @Time(1) @Space(1)
-    pub def clampToInt8(min: {min :: Int8}, max: {max :: Int8}, x: Int64): Int8 =
+    pub def clampToInt8(min: {min = Int8}, max: {max = Int8}, x: Int64): Int8 =
         import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
         import java.lang.Long.byteValue(): Int8 \ {};
         let mini64 = Int8.toInt64(min.min);
@@ -441,7 +441,7 @@ namespace Int64 {
     /// Returns `x` clamped within the Int16 range `min` to `max`.
     ///
     @Time(1) @Space(1)
-    pub def clampToInt16(min: {min :: Int16}, max: {max :: Int16}, x: Int64): Int16 =
+    pub def clampToInt16(min: {min = Int16}, max: {max = Int16}, x: Int64): Int16 =
         import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
         import java.lang.Long.shortValue(): Int16 \ {};
         let mini64 = Int16.toInt64(min.min);
@@ -455,7 +455,7 @@ namespace Int64 {
     /// Returns `x` clamped within the Int32 range `min` to `max`.
     ///
     @Time(1) @Space(1)
-    pub def clampToInt32(min: {min :: Int32}, max: {max :: Int32}, x: Int64): Int32 =
+    pub def clampToInt32(min: {min = Int32}, max: {max = Int32}, x: Int64): Int32 =
         import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
         import java.lang.Long.intValue(): Int32 \ {};
         let mini64 = Int32.toInt64(min.min);

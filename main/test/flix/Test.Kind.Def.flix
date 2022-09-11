@@ -7,7 +7,7 @@ namespace Test/Kind/Def {
 
             pub def star(x: a): Int32 = ???
 
-            pub def recordRow(x: { l :: Int32 | a }): Int32 = ???
+            pub def recordRow(x: { l = Int32 | a }): Int32 = ???
 
             pub def schemaRow(x: #{ R | a }): Int32 = ???
 
@@ -72,7 +72,7 @@ namespace Test/Kind/Def {
 
             pub def star[a: Type](x: a): Int32 = ???
 
-            pub def recordRow[a: RecordRow](x: { l :: Int32 | a }): Int32 = ???
+            pub def recordRow[a: RecordRow](x: { l = Int32 | a }): Int32 = ???
 
             pub def schemaRow[a: SchemaRow](x: #{ R | a }): Int32 = ???
 

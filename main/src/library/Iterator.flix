@@ -352,7 +352,7 @@ namespace Iterator {
     /// Does *not* consume any elements from the iterator.
     ///
     @Lazy
-    pub def replace(from: {from :: a}, to: {to :: a}, iter: Iterator[a, r]): Iterator[a, r] with Eq[a] =
+    pub def replace(from: {from = a}, to: {to = a}, iter: Iterator[a, r]): Iterator[a, r] with Eq[a] =
         let Iterator(done, next) = iter;
         let next1 = () -> {
             let el = next();
