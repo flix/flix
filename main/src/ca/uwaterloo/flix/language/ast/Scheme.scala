@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.fmt.{Audience, FormatScheme}
+import ca.uwaterloo.flix.language.fmt.{Audience, FormatOptions, FormatScheme}
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -148,7 +148,7 @@ case class Scheme(quantifiers: List[Symbol.KindedTypeVarSym], constraints: List[
     * Returns a human readable representation of the polytype.
     */
   override def toString: String = {
-    FormatScheme.formatScheme(this)(Audience.Internal)
+    FormatScheme.formatSchemeWithOptions(this, FormatOptions.Internal)
   }
 
 }

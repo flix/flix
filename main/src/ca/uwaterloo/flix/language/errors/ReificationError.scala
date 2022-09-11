@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
@@ -38,13 +39,13 @@ object ReificationError {
     * @param tpe the Boolean type that cannot be reified.
     * @param loc the location of the Boolean type.
     */
-  case class IllegalReifiedBool(tpe: Type, loc: SourceLocation) extends ReificationError {
+  case class IllegalReifiedBool(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends ReificationError {
     def summary: String = "Type cannot be reified."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unable to reify the non-constant Bool '${red(FormatType.formatWellKindedType(tpe))}'.
+         |>> Unable to reify the non-constant Bool '${red(FormatType.formatType(tpe))}'.
          |
          |${code(loc, "unable to reify type.")}
          |""".stripMargin
@@ -62,13 +63,13 @@ object ReificationError {
     * @param tpe the type that cannot be reified.
     * @param loc the location of the type.
     */
-  case class IllegalReifiedType(tpe: Type, loc: SourceLocation) extends ReificationError {
+  case class IllegalReifiedType(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends ReificationError {
     def summary: String = "Type cannot be reified."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unable to reify the type '${red(FormatType.formatWellKindedType(tpe))}'.
+         |>> Unable to reify the type '${red(FormatType.formatType(tpe))}'.
          |
          |${code(loc, "unable to reify type.")}
          |""".stripMargin
@@ -86,13 +87,13 @@ object ReificationError {
     * @param tpe the problematic Boolean type.
     * @param loc the location of the Boolean type.
     */
-  case class UnexpectedNonConstBool(tpe: Type, loc: SourceLocation) extends ReificationError {
+  case class UnexpectedNonConstBool(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends ReificationError {
     def summary: String = "Unexpected type."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unexpected Boolean type: '${red(FormatType.formatWellKindedType(tpe))}'.
+         |>> Unexpected Boolean type: '${red(FormatType.formatType(tpe))}'.
          |
          |${code(loc, "unexpected Boolean type.")}
          |""".stripMargin

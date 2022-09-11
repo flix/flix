@@ -384,7 +384,7 @@ object Unification {
   /**
     * Ensures that the region variable `rvar` does not escape in the type `tpe` nor from the context.
     */
-  def noEscapeM(rvar: Type.Var, tpe: Type): InferMonad[Unit] =
+  def noEscapeM(rvar: Type.Var, tpe: Type)(implicit flix: Flix): InferMonad[Unit] =
     InferMonad { case (s, renv) =>
       // Apply the current substitution to `tpe`.
       val t = s(tpe)

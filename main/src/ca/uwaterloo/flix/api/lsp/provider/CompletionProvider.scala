@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatScheme, FormatType}
 import ca.uwaterloo.flix.language.phase.Parser.Letters
 import ca.uwaterloo.flix.language.phase.Resolver.DerivableSyms
-import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 import org.parboiled2.CharPredicate
@@ -255,11 +254,11 @@ object CompletionProvider {
     CompletionItem(label = sym.text,
       sortText = Priority.local(sym.text),
       textEdit = TextEdit(context.range, sym.text),
-      detail = Some(FormatType.formatWellKindedType(tpe)),
+      detail = Some(FormatType.formatType(tpe)),
       kind = CompletionItemKind.Variable)
   }
 
-  private def getVarCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): List[CompletionItem] = {
+  private def getVarCompletions()(implicit context: Context, index: Index, root: TypedAst.Root, flix: Flix): List[CompletionItem] = {
     if (root == null) {
       return Nil
     }
@@ -278,10 +277,10 @@ object CompletionProvider {
   private def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
     case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, pur0, eff0, _) =>
       val args = fparams.map {
-        fparam => s"${fparam.sym.text}: ${FormatType.formatWellKindedType(fparam.tpe)}"
+        fparam => s"${fparam.sym.text}: ${FormatType.formatType(fparam.tpe)}"
       }
 
-      val retTpe = FormatType.formatWellKindedType(retTpe0)
+      val retTpe = FormatType.formatType(retTpe0)
 
       // don't show purity if bool effects are turned off
       val pur = if (flix.options.xnobooleffects) {
@@ -290,7 +289,7 @@ object CompletionProvider {
         pur0 match {
           case Type.Cst(TypeConstructor.True, _) => ""
           case Type.Cst(TypeConstructor.False, _) => " & Impure"
-          case p => " & " + FormatType.formatWellKindedType(p)
+          case p => " & " + FormatType.formatType(p)
         }
       }
 
@@ -300,7 +299,7 @@ object CompletionProvider {
       } else {
         eff0 match {
           case Type.Cst(TypeConstructor.Empty, _) => ""
-          case e => " \\ " + FormatType.formatWellKindedType(e)
+          case e => " \\ " + FormatType.formatType(e)
         }
       }
 
@@ -513,7 +512,7 @@ object CompletionProvider {
   /**
     * Returns a list of completion items based on type classes.
     */
-  private def getInstanceCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+  private def getInstanceCompletions()(implicit context: Context, index: Index, root: TypedAst.Root, flix: Flix): Iterable[CompletionItem] = {
     if (root == null || context.previousWord != "instance") {
       return Nil
     }
@@ -541,8 +540,8 @@ object CompletionProvider {
     /**
       * Formats the given type `tpe`.
       */
-    def fmtType(clazz: TypedAst.Class, tpe: Type, hole: String): String =
-      FormatType.formatWellKindedType(replaceText(clazz.tparam.sym, tpe, hole))
+    def fmtType(clazz: TypedAst.Class, tpe: Type, hole: String)(implicit flix: Flix): String =
+      FormatType.formatType(replaceText(clazz.tparam.sym, tpe, hole))
 
     /**
       * Formats the given class `clazz`.
@@ -554,7 +553,7 @@ object CompletionProvider {
     /**
       * Formats the given formal parameters in `spec`.
       */
-    def fmtFormalParams(clazz: TypedAst.Class, spec: TypedAst.Spec, hole: String): String =
+    def fmtFormalParams(clazz: TypedAst.Class, spec: TypedAst.Spec, hole: String)(implicit flix: Flix): String =
       spec.fparams.map {
         case fparam => s"${fparam.sym.text}: ${fmtType(clazz, fparam.tpe, hole)}"
       }.mkString(", ")
@@ -562,13 +561,13 @@ object CompletionProvider {
     /**
       * Formats the given signature `sig`.
       */
-    def fmtSignature(clazz: TypedAst.Class, sig: TypedAst.Sig, hole: String): String = {
+    def fmtSignature(clazz: TypedAst.Class, sig: TypedAst.Sig, hole: String)(implicit flix: Flix): String = {
       val fparams = fmtFormalParams(clazz, sig.spec, hole)
       val retTpe = fmtType(clazz, sig.spec.retTpe, hole)
       val pur = sig.spec.pur match {
         case Type.Cst(TypeConstructor.True, _) => ""
         case Type.Cst(TypeConstructor.False, _) => " & Impure"
-        case e => " & " + FormatType.formatWellKindedType(e)
+        case e => " & " + FormatType.formatType(e)
       }
       s"    pub def ${sig.sym.name}($fparams): $retTpe$pur = ???"
     }

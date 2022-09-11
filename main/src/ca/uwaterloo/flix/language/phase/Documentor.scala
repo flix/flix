@@ -69,12 +69,13 @@ object Documentor {
             case Ast.Annotation.Internal(_) => true
             case _ => false
           })
+
         val filtered = decls.filter(clazz => clazz.mod.isPublic && !isInternal(clazz)).toList
         val sorted = filtered.sortBy(_.sym.name)
         if (sorted.isEmpty)
           None
         else
-          Some(ns -> JArray(sorted.map(visitClass(_)(root))))
+          Some(ns -> JArray(sorted.map(visitClass(_)(root, flix))))
     }
 
     //
@@ -94,6 +95,7 @@ object Documentor {
             case Ast.Annotation.Internal(_) => true
             case _ => false
           })
+
         val filtered = decls.filter(enum => enum.mod.isPublic && !isInternal(enum)).toList
         val sorted = filtered.sortBy(_.sym.name)
         if (sorted.isEmpty)
@@ -215,15 +217,15 @@ object Documentor {
   /**
     * Returns the given definition `defn0` as a JSON object.
     */
-  private def visitDef(defn0: Def): JObject = {
+  private def visitDef(defn0: Def)(implicit flix: Flix): JObject = {
     ("sym" -> visitDefnSym(defn0.sym)) ~
       ("ann" -> visitAnnotations(defn0.spec.ann)) ~
       ("doc" -> visitDoc(defn0.spec.doc)) ~
       ("name" -> defn0.sym.name) ~
       ("tparams" -> defn0.spec.tparams.map(visitTypeParam)) ~
       ("fparams" -> defn0.spec.fparams.map(visitFormalParam)) ~
-      ("tpe" -> FormatType.formatWellKindedType(defn0.spec.retTpe)) ~
-      ("eff" -> FormatType.formatWellKindedType(defn0.spec.pur)) ~ // TODO change JSON name to `pur`
+      ("tpe" -> FormatType.formatType(defn0.spec.retTpe)) ~
+      ("eff" -> FormatType.formatType(defn0.spec.pur)) ~ // TODO change JSON name to `pur`
       ("tcs" -> defn0.spec.declaredScheme.constraints.map(visitTypeConstraint)) ~
       ("loc" -> visitSourceLocation(defn0.spec.loc))
   }
@@ -231,7 +233,7 @@ object Documentor {
   /**
     * Returns the given instance `inst` as a JSON value.
     */
-  private def visitInstance(sym: Symbol.ClassSym, inst: Instance): JObject = inst match {
+  private def visitInstance(sym: Symbol.ClassSym, inst: Instance)(implicit flix: Flix): JObject = inst match {
     case Instance(_, ann, _, _, tpe, tcs, _, _, loc) =>
       ("sym" -> visitClassSym(sym)) ~
         ("ann" -> visitAnnotations(ann)) ~
@@ -243,12 +245,12 @@ object Documentor {
   /**
     * Returns the given type `tpe` as a JSON value.
     */
-  private def visitType(tpe: Type): JString = JString(FormatType.formatWellKindedType(tpe))
+  private def visitType(tpe: Type)(implicit flix: Flix): JString = JString(FormatType.formatType(tpe))
 
   /**
     * Returns the given type constraint `tc` as a JSON value.
     */
-  private def visitTypeConstraint(tc: TypeConstraint): JObject = tc match {
+  private def visitTypeConstraint(tc: TypeConstraint)(implicit flix: Flix): JObject = tc match {
     case TypeConstraint(head, tpe, _) =>
       ("sym" -> visitClassSym(head.sym)) ~ ("tpe" -> visitType(tpe))
   }
@@ -349,12 +351,12 @@ object Documentor {
   /**
     * Returns the given Type Alias `talias` as a JSON value.
     */
-  private def visitTypeAlias(talias: TypeAlias): JObject = talias match {
+  private def visitTypeAlias(talias: TypeAlias)(implicit flix: Flix): JObject = talias match {
     case TypeAlias(doc, _, sym, tparams, tpe, loc) =>
       ("doc" -> visitDoc(doc)) ~
         ("sym" -> visitTypeAliasSym(sym)) ~
         ("tparams" -> tparams.map(visitTypeParam)) ~
-        ("tpe" -> FormatType.formatWellKindedType(tpe)) ~
+        ("tpe" -> FormatType.formatType(tpe)) ~
         ("loc" -> visitSourceLocation(loc))
   }
 
@@ -369,7 +371,7 @@ object Documentor {
   /**
     * Returns the given formal parameter `fparam` as a JSON value.
     */
-  private def visitFormalParam(fparam: FormalParam): JObject = fparam match {
+  private def visitFormalParam(fparam: FormalParam)(implicit flix: Flix): JObject = fparam match {
     case FormalParam(sym, _, tpe, _, _) =>
       ("name" -> sym.text) ~ ("tpe" -> visitType(tpe))
   }
@@ -377,7 +379,7 @@ object Documentor {
   /**
     * Returns the given Sig `sig` as a JSON value.
     */
-  private def visitSig(sig: Sig): JObject = sig match {
+  private def visitSig(sig: Sig)(implicit flix: Flix): JObject = sig match {
     case Sig(sym, spec, _) =>
       ("sym" -> visitSigSym(sym)) ~
         ("doc" -> visitDoc(spec.doc)) ~
@@ -393,7 +395,7 @@ object Documentor {
   /**
     * Returns the given Enum `enum` as a JSON value.
     */
-  private def visitEnum(enum0: Enum, instances: Map[Symbol.EnumSym, List[Instance]]): JObject = enum0 match {
+  private def visitEnum(enum0: Enum, instances: Map[Symbol.EnumSym, List[Instance]])(implicit flix: Flix): JObject = enum0 match {
     case Enum(doc, ann, _, sym, tparams, derives, cases, _, loc) =>
       ("doc" -> visitDoc(doc)) ~
         ("ann" -> visitAnnotations(ann)) ~
@@ -408,16 +410,16 @@ object Documentor {
   /**
     * Returns the given case `caze` as a JSON value.
     */
-  private def visitCase(caze: Case): JObject = caze match {
+  private def visitCase(caze: Case)(implicit flix: Flix): JObject = caze match {
     case Case(sym, _, _, _) =>
-      val tpe = FormatType.formatWellKindedType(caze.tpe)
+      val tpe = FormatType.formatType(caze.tpe)
       ("tag" -> sym.name) ~ ("tpe" -> tpe)
   }
 
   /**
     * Return the given class `clazz` as a JSON value.
     */
-  private def visitClass(cla: Class)(implicit root: Root): JObject = cla match {
+  private def visitClass(cla: Class)(implicit root: Root, flix: Flix): JObject = cla match {
     case Class(doc, ann, mod, sym, tparam, superClasses, signatures0, _, loc) =>
       val (sigs0, defs0) = signatures0.partition(_.impl.isEmpty)
 

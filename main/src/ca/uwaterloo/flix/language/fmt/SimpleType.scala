@@ -15,7 +15,6 @@
  */
 package ca.uwaterloo.flix.language.fmt
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -293,9 +292,7 @@ object SimpleType {
   /**
     * Creates a simple type from the well-kinded type `t`.
     */
-  def fromWellKindedType(t0: Type)(implicit flix: Flix): SimpleType = {
-    val ignorePur = flix.options.xnobooleffects
-    val ignoreEff = flix.options.xnoseteffects
+  def fromWellKindedType(t0: Type)(implicit fmt: FormatOptions): SimpleType = {
 
     def visit(t: Type): SimpleType = t.baseType match {
       case Type.Var(sym, _) =>
@@ -332,12 +329,12 @@ object SimpleType {
               List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow)
 
             // Case 3: Pure function.
-            case pur :: eff :: tpes if (pur == True || ignorePur) && (eff == Empty || ignoreEff) =>
+            case pur :: eff :: tpes if (pur == True || fmt.ignorePur) && (eff == Empty || fmt.ignoreEff) =>
               // NB: safe to reduce because arity is always at least 2
               tpes.padTo(arity, Hole).reduceRight(PureArrow)
 
             // Case 4: Impure in effect only.
-            case pur :: eff :: tpes if pur == True || ignorePur =>
+            case pur :: eff :: tpes if pur == True || fmt.ignorePur =>
               // NB: safe to take last 2 because arity is always at least 2
               val allTpes = tpes.padTo(arity, Hole)
               val List(lastArg, ret) = allTpes.takeRight(2)
@@ -345,7 +342,7 @@ object SimpleType {
               allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
 
             // Case 5: Impure in purity only.
-            case pur :: eff :: tpes if eff == Empty || ignoreEff =>
+            case pur :: eff :: tpes if eff == Empty || fmt.ignoreEff =>
               // NB: safe to take last 2 because arity is always at least 2
               val allTpes = tpes.padTo(arity, Hole)
               val List(lastArg, ret) = allTpes.takeRight(2)
@@ -556,7 +553,7 @@ object SimpleType {
   /**
     * Transforms the given type, assuming it is a record row.
     */
-  private def fromRecordRow(row0: Type)(implicit flix: Flix): SimpleType = {
+  private def fromRecordRow(row0: Type)(implicit fmt: FormatOptions): SimpleType = {
     def visit(row: Type): SimpleType = row match {
       // Case 1: A fully applied record row.
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(name), _), tpe, _), rest, _) =>
@@ -586,7 +583,7 @@ object SimpleType {
   /**
     * Transforms the given type, assuming it is a schema row.
     */
-  private def fromSchemaRow(row0: Type)(implicit flix: Flix): SimpleType = {
+  private def fromSchemaRow(row0: Type)(implicit fmt: FormatOptions): SimpleType = {
     def visit(row: Type): SimpleType = row match {
       // Case 1: A fully applied record row.
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(name), _), tpe, _), rest, _) =>

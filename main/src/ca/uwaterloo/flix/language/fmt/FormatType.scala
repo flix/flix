@@ -23,10 +23,16 @@ object FormatType {
   /**
     * Transforms the given well-kinded type into a string.
     */
-  def formatWellKindedType(tpe: Type)(implicit audience: Audience, formatOptions: FormatOptions): String = {
-    // TODO: Remove after we're confident in the formatter.
+  def formatType(tpe: Type)(implicit flix: Flix): String = {
+    formatTypeWithOptions(tpe, flix.getFormatOptions)
+  }
+
+  /**
+    * Transforms the given well-kinded type into a string, using the given format options.
+    */
+  def formatTypeWithOptions(tpe: Type, fmt: FormatOptions): String = {
     try {
-      format(SimpleType.fromWellKindedType(tpe))
+      format(SimpleType.fromWellKindedType(tpe)(fmt))(fmt)
     } catch {
       case _: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
     }
@@ -35,15 +41,22 @@ object FormatType {
   /**
     * Transforms the given kinded type variable symbol into a string.
     */
-  def formatTypeVarSym(sym: Symbol.KindedTypeVarSym)(implicit audience: Audience, formatOptions: FormatOptions): String = {
+  def formatTypeVarSym(sym: Symbol.KindedTypeVarSym)(implicit flix: Flix): String = {
+    formatTypeVarSymWithOptions(sym, flix.getFormatOptions)
+  }
+
+  /**
+    * Transforms the given kinded type variable symbol into a string.
+    */
+  def formatTypeVarSymWithOptions(sym: Symbol.KindedTypeVarSym, fmt: FormatOptions): String = {
     val tpe = Type.Var(sym, SourceLocation.Unknown)
-    formatWellKindedType(tpe)
+    formatTypeWithOptions(tpe, fmt)
   }
 
   /**
     * Transforms the given type into a string.
     */
-  private def format(tpe00: SimpleType)(implicit audience: Audience): String = {
+  private def format(tpe00: SimpleType)(implicit fmt: FormatOptions): String = {
 
     /**
       * Wraps the given type with parentheses.
@@ -292,9 +305,9 @@ object FormatType {
           ""
         }
         val string = prefix + suffix
-        audience match {
-          case Audience.Internal => string
-          case Audience.External => text match {
+        fmt.varNames match {
+          case FormatOptions.VarName.IdBased => string
+          case FormatOptions.VarName.NameBased => text match {
             case VarText.Absent => string
             case VarText.SourceText(s) => s
             case VarText.FallbackText(s) => "?" + s + id.toString
