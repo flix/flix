@@ -46,7 +46,7 @@ instance PartialOrder[Down[a]] with PartialOrder[a] {
 }
 
 instance LowerBound[Down[a]] with UpperBound[a] {
-    pub def mDownalue(): Down[a] = Down(UpperBound.maxValue())
+    pub def minValue(): Down[a] = Down(UpperBound.maxValue())
 }
 
 instance JoinLattice[Down[a]] with MeetLattice[a] {
