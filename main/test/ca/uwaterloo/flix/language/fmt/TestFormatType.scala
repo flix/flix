@@ -490,4 +490,40 @@ class TestFormatType extends FunSuite with TestUtils {
 
     assert(actual == expected)
   }
+
+  test("FormatType.NoSet.01") {
+    val pur = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.SourceText("pur"), Kind.Effect, false, loc), loc)
+    val eff = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.SourceText("eff"), Kind.Effect, false, loc), loc)
+
+    val tpe = Type.mkArrowWithEffect(Type.Int64, pur, eff, Type.Int64, loc)
+
+    val expected = "Int64 -> Int64 & pur"
+    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat.copy(ignoreEff = true))
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.NoBool.01") {
+    val pur = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.SourceText("pur"), Kind.Effect, false, loc), loc)
+    val eff = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.SourceText("eff"), Kind.Effect, false, loc), loc)
+
+    val tpe = Type.mkArrowWithEffect(Type.Int64, pur, eff, Type.Int64, loc)
+
+    val expected = "Int64 -> Int64 \\ eff"
+    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat.copy(ignoreEff = true))
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.NoBoolNoSet.01") {
+    val pur = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.SourceText("pur"), Kind.Effect, false, loc), loc)
+    val eff = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.SourceText("eff"), Kind.Effect, false, loc), loc)
+
+    val tpe = Type.mkArrowWithEffect(Type.Int64, pur, eff, Type.Int64, loc)
+
+    val expected = "Int64 -> Int64"
+    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat.copy(ignoreEff = true, ignorePur = true))
+
+    assert(actual == expected)
+  }
 }
