@@ -510,7 +510,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkArrowWithEffect(Type.Int64, pur, eff, Type.Int64, loc)
 
     val expected = "Int64 -> Int64 \\ eff"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat.copy(ignoreEff = true))
+    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat.copy(ignorePur = true))
 
     assert(actual == expected)
   }
