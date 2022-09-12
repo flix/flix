@@ -1080,6 +1080,19 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedTypes](result)
   }
 
+  test("Test.MismatchedTypes.ApplyVar.01") {
+    val input =
+      """
+        |def f[m: Bool -> Type, a: Bool](_: m[a]): m[a] = ???
+        |
+        |enum Box[a](a)
+        |
+        |def g(): Box[Int32] = f(Box(123))
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
   test("Test.ChooseStar.01") {
     val input =
       """
@@ -1510,7 +1523,7 @@ class TestTyper extends FunSuite with TestUtils {
   }
 
   test("TestPossibleUpcast.01") {
-    val input = 
+    val input =
       """
         |def f(): ##flix.test.TestClassWithDefaultConstructor \ IO =
         |    import new flix.test.TestClassWithInheritedMethod(): ##flix.test.TestClassWithInheritedMethod as newObj;
