@@ -945,4 +945,70 @@ object Type {
     }
   }
 
+  /**
+    * Checks that `tpe1` is a subtype of `tpe2`.
+    *
+    * `tpe1` is a subtype of `tpe2` if:
+    *
+    * (a) `tpe1` has the exact same flix type as `tpe2`
+    *
+    * (b) both types are java types and `tpe1` is a subtype of `tpe2`
+    *
+    * (c) both types are functions and `tpe1` is a subtype of `tpe2`
+    *
+    * AND
+    *
+    * the purity of the expression is being cast from `pure` -> `ef` -> `impure`.
+    *
+    * OR
+    *
+    * the effect set of the expression is a subset of the effect set being cast to.
+    *
+    */
+  def isSubTypeOf(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = (tpe1.baseType, tpe2.baseType) match {
+    case (Type.True, Type.Var(_, _)) => true
+    case (Type.True, Type.False) => true
+    case (Type.Var(_, _), Type.False) => true
+
+    case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
+      right.isAssignableFrom(left)
+
+    case (Type.Cst(TypeConstructor.Arrow(n1), _), Type.Cst(TypeConstructor.Arrow(n2), _)) if n1 == n2 =>
+      val loc = tpe1.loc.asSynthetic
+
+      // purities
+      val pur1 = tpe1.arrowPurityType
+      val pur2 = tpe2.arrowPurityType
+      //val subTypePurity = isSubTypeOf(pur1, pur2, rigidityEnv)
+      val pur3 = Type.freshVar(Kind.Bool, loc)
+      val pur1pur3 = Type.mkAnd(pur1, pur3, loc)
+      val subTypePurity = Unification.unifiesWith(pur1pur3, pur2, renv)
+
+      // set effects
+      // The rule for effect sets is:
+      // S1 < S2 <==> exists S3 . S1 U S3 == S2
+      val s1 = tpe1.arrowEffectType
+      val s2 = tpe2.arrowEffectType
+      val s3 = Type.freshVar(Kind.Effect, loc)
+      val s1s3 = Type.mkUnion(s1, s3, loc)
+      val isEffSubset = Unification.unifiesWith(s1s3, s2, renv)
+
+      // check that parameters are supertypes
+      val args1 = tpe1.arrowArgTypes
+      val args2 = tpe2.arrowArgTypes
+      val superTypeArgs = args1.zip(args2).forall {
+        case (t1, t2) =>
+          Type.isSubTypeOf(t2, t1, renv)
+      }
+
+      // check that result is a subtype
+      val expectedResTpe = tpe1.arrowResultType
+      val actualResTpe = tpe2.arrowResultType
+      val subTypeResult = Type.isSubTypeOf(expectedResTpe, actualResTpe, renv)
+
+      subTypePurity && isEffSubset && superTypeArgs && subTypeResult
+
+    case _ => tpe1 == tpe2
+
+  }
 }
