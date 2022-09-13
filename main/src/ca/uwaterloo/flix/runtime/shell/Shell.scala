@@ -374,7 +374,12 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
         result.getMain match {
           case Some(m) =>
             // Evaluate the main function
-            m(Array.empty)
+            try {
+              m(Array.empty)
+            } catch {
+              case ex: Throwable =>
+                ex.printStackTrace(terminal.writer())
+            }
 
           case None =>
         }
