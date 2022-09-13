@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.runtime.shell
 
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.fmt._
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -28,12 +28,8 @@ import ca.uwaterloo.flix.util._
 import org.jline.reader.{EndOfFileException, LineReader, LineReaderBuilder, UserInterruptException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
-import java.nio.file._
-import java.io.File
-import java.util.concurrent.Executors
 import java.util.logging.{Level, Logger}
 import scala.collection.mutable
-import scala.jdk.CollectionConverters._
 import ca.uwaterloo.flix.util.Validation.Failure
 
 class Shell(sourceProvider: SourceProvider, options: Options) {
@@ -71,7 +67,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
   /**
     * Remove any line continuation backslashes from the given string
     */
-  def unescapeLine(s: String) = {
+  def unescapeLine(s: String): String = {
 
     // (?s) enables dotall mode (so . matches newlines)
     val twoBackslashes = raw"(?s)\\\\\n(.*)\n\\\\".r
@@ -174,6 +170,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     case Command.Help => execHelp()
     case Command.Praise => execPraise()
     case Command.Eval(s) => execEval(s)
+    case Command.ReloadAndEval(s) => execReloadAndEval(s)
     case Command.Unknown(s) => execUnknown(s)
     case _ => sourceProvider.execute(cmd, options)
   }
@@ -205,7 +202,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
 
     root match {
       case Some(r) =>
-        if(r.classes.contains(classSym)) {
+        if (r.classes.contains(classSym)) {
           val classDecl = r.classes(classSym)
           w.println(FormatDoc.asMarkDown(classDecl.doc))
         } else if (r.defs.contains(defnSym)) {
@@ -218,7 +215,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
         } else if (r.typeAliases.contains(aliasSym)) {
           val aliasDecl = r.typeAliases(aliasSym)
           w.println(FormatType.formatWellKindedType(aliasDecl.tpe))
-          w.println
+          w.println()
           w.println(FormatDoc.asMarkDown(aliasDecl.doc))
         } else {
           w.println(s"$s not found")
@@ -321,10 +318,18 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
   }
 
   /**
+    * Reloads and evaluates the given source code.
+    */
+  private def execReloadAndEval(s: String)(implicit terminal: Terminal): Unit = {
+    execReload()
+    execEval(s)
+  }
+
+  /**
     * Removes all code fragments, restoring the REPL to an initial state
     */
-  private def clearFragments() = {
-    for(i <- 0 to fragments.length)
+  private def clearFragments(): Unit = {
+    for (i <- 0 to fragments.length)
       flix.remSourceCode("$" + i)
     fragments.clear()
   }
