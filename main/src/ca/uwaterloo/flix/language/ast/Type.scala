@@ -994,20 +994,20 @@ object Type {
 
   }
 
-  def isBoolSubtype(pur1: Type, pur2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = {
-    val loc = pur1.loc.asSynthetic
-    val pur3 = freshVar(Kind.Bool, loc)
-    val pur1pur3 = Type.mkAnd(pur1, pur3, loc)
-    Unification.unifiesWith(pur1pur3, pur2, renv)
+  def isBoolSubtype(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = {
+    val loc = tpe1.loc.asSynthetic
+    val tpe3 = freshVar(Kind.Bool, loc)
+    val tpe1tpe3 = Type.mkAnd(tpe1, tpe3, loc)
+    Unification.unifiesWith(tpe1tpe3, tpe2, renv)
   }
 
-  def isEffectSubtype(eff1: Type, eff2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = {
+  def isEffectSubtype(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = {
     // The rule for effect sets is:
     // S1 < S2 <==> exists S3 . S1 U S3 == S2
-    val loc = eff1.loc.asSynthetic
-    val eff3 = Type.freshVar(Kind.Effect, loc)
-    val eff1eff3 = Type.mkUnion(eff1, eff3, loc)
-    Unification.unifiesWith(eff1eff3, eff2, renv)
+    val loc = tpe1.loc.asSynthetic
+    val tpe3 = Type.freshVar(Kind.Effect, loc)
+    val tpe1tpe3 = Type.mkUnion(tpe1, tpe3, loc)
+    Unification.unifiesWith(tpe1tpe3, tpe2, renv)
   }
 
 }
