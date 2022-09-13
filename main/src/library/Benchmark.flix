@@ -20,7 +20,7 @@ namespace Benchmark {
     /// impure since timing is considered a side-effect in this context.
     ///
     pub enum Benchmark {
-        case Benchmark({name :: String, f :: Unit -> Unit \ IO})
+        case Benchmark({name = String, f = Unit -> Unit \ IO})
     }
 
     ///
@@ -53,11 +53,12 @@ namespace Benchmark {
         Benchmark({name = name, f = fn})
 
     pub enum BenchmarkResult {
-        case Success({name :: String, rounds :: Int32, total :: Int64})
+        case Success({name = String, rounds = Int32, total = Int64})
     }
 
     ///
-    /// Runs all benchmarks in `bs`. Attempts to spend no more than `budget` time.
+    /// Runs all benchmarks in `bs`. Attempts to spend no more than `budget` nanoseconds.
+    /// One seconds is `1_000_000_000i64`.
     ///
     @Experimental
     pub def runWithBudget(bs: Array[Benchmark, r], budget: Int64): Int32 \ IO =

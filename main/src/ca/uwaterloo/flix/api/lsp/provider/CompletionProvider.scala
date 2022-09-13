@@ -523,8 +523,8 @@ object CompletionProvider {
       * with an equivalent variable symbol with the given `newText`.
       */
     def replaceText(tvar: Symbol.TypeVarSym, tpe: Type, newText: String): Type = tpe match {
-      case Type.KindedVar(sym, loc) if tvar == sym => Type.KindedVar(sym.withText(Ast.VarText.SourceText(newText)), loc)
-      case Type.KindedVar(_, _) => tpe
+      case Type.Var(sym, loc) if tvar == sym => Type.Var(sym.withText(Ast.VarText.SourceText(newText)), loc)
+      case Type.Var(_, _) => tpe
       case Type.Cst(_, _) => tpe
 
       case Type.Apply(tpe1, tpe2, loc) =>
@@ -536,11 +536,6 @@ object CompletionProvider {
         val args = args0.map(replaceText(tvar, _, newText))
         val t = replaceText(tvar, tpe0, newText)
         Type.Alias(sym, args, t, loc)
-
-      case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable.")
-      case _: Type.UnkindedArrow => throw InternalCompilerException("Unexpected unkinded arrow.")
-      case _: Type.ReadWrite => throw InternalCompilerException("Unexpected unkinded type.")
-      case _: Type.Ascribe => throw InternalCompilerException("Unexpected kind ascription.")
     }
 
     /**

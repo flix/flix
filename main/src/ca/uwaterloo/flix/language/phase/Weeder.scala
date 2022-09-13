@@ -85,14 +85,15 @@ object Weeder {
     val allImports = unit.usesOrImports.collect {
       case i: ParsedAst.Import => i
     }
+    val importsLegacyVal = traverse(allImports)(visitImportLegacy)
     val importsVal = traverse(allImports)(visitImport)
 
     val declarationsVal = traverse(unit.decls)(visitDecl)
     val loc = mkSL(unit.sp1, unit.sp2)
 
-    mapN(usesVal, importsVal, declarationsVal) {
-      case (uses, imports, decls) =>
-        src -> WeededAst.CompilationUnit(uses.flatten, imports.flatten ::: decls.flatten, loc)
+    mapN(usesVal, importsVal, importsLegacyVal, declarationsVal) {
+      case (uses, imports, importsLegacy, decls) =>
+        src -> WeededAst.CompilationUnit(uses.flatten, imports.flatten, importsLegacy.flatten ::: decls.flatten, loc)
     }
   }
 
@@ -106,12 +107,15 @@ object Weeder {
       }
       val usesVal = traverse(allUses)(visitUse)
 
-      // TODO: Support imports here?
+      val allImports = usesOrImports.collect {
+        case i: ParsedAst.Import => i
+      }
+      val importsVal = traverse(allImports)(visitImport)
 
       val declarationsVal = traverse(decls)(visitDecl)
 
-      mapN(usesVal, declarationsVal) {
-        case (us, ds) => List(WeededAst.Declaration.Namespace(name, us.flatten, ds.flatten, mkSL(sp1, sp2)))
+      mapN(usesVal, importsVal, declarationsVal) {
+        case (us, is, ds) => List(WeededAst.Declaration.Namespace(name, us.flatten, is.flatten, ds.flatten, mkSL(sp1, sp2)))
       }
 
     case d: ParsedAst.Declaration.Def => visitTopDef(d)
@@ -451,10 +455,30 @@ object Weeder {
       us.toSuccess
   }
 
+  private def visitImport(i0: ParsedAst.Import): Validation[List[WeededAst.Import], WeederError] = i0 match {
+    case ParsedAst.Imports.ImportOne(sp1, name, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val ident = Name.Ident(sp1, name.fqn.last, sp2)
+      List(WeededAst.Import.Import(name, ident, loc)).toSuccess
+
+    case ParsedAst.Imports.ImportMany(sp1, pkg, ids, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val is = ids.map {
+        case ParsedAst.Imports.NameAndAlias(_, name, alias, _) => 
+          val fqn = Name.JavaName(pkg.sp1, pkg.fqn :+ name, pkg.sp2)
+          val ident = alias match {
+            case Some(id) => id
+            case _ => Name.Ident(sp1, name, sp2)
+          }
+          WeededAst.Import.Import(fqn, ident, loc)
+      }
+      is.toList.toSuccess
+  }
+
   /**
     * Performs weeding on the given import `i0`.
     */
-  private def visitImport(i0: ParsedAst.Import): Validation[List[WeededAst.Declaration], WeederError] = i0 match {
+  private def visitImportLegacy(i0: ParsedAst.Import): Validation[List[WeededAst.Declaration], WeederError] = i0 match {
     case ParsedAst.Imports.ImportOne(sp1, Name.JavaName(_, name, _), sp2) =>
       val loc = mkSL(sp1, sp2)
       val doc = Ast.Doc(Nil, loc)

@@ -1251,7 +1251,31 @@ class TestRedundancy extends FunSuite with TestUtils {
         |    ()
         |""".stripMargin
 
-    val result = compile(input, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantUpcast](result)
+  }
+
+
+  test("TestUpcast.08") {
+    val input =
+      """
+        |pub eff A
+        |pub eff B
+        |pub eff C
+        |
+        |def f(): Unit =
+        |    let f = () -> () as \ { A, B, C };
+        |    let g = () -> () as \ { A, B, C };
+        |    let _ =
+        |        if (true)
+        |            upcast f
+        |        else
+        |            g;
+        |    ()
+        |
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.RedundantUpcast](result)
   }
 }

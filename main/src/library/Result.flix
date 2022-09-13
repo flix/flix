@@ -66,7 +66,7 @@ namespace Result {
     /// Returns `Ok(v)` if `r` is `Ok(v)`. Otherwise returns `default`.
     ///
     @Time(1) @Space(1)
-    pub def withDefault(default: {default :: Result[t, e2]}, r: Result[t, e1]): Result[t, e2] = match r {
+    pub def withDefault(default: {default = Result[t, e2]}, r: Result[t, e1]): Result[t, e2] = match r {
         case Ok(v)  => Ok(v)
         case Err(_) => default.default
     }
@@ -75,7 +75,7 @@ namespace Result {
     /// Returns `Ok(to)` if `r` is `Ok(from)`. Otherwise returns `r`.
     ///
     @Time(1) @Space(1)
-    pub def replace(from: {from :: t}, to: {to :: t}, r: Result[t, e]): Result[t, e] with Eq[t] = match r {
+    pub def replace(from: {from = t}, to: {to = t}, r: Result[t, e]): Result[t, e] with Eq[t] = match r {
         case Ok(v)  => Ok(if (v == from.from) to.to else v)
         case Err(_) => r
     }

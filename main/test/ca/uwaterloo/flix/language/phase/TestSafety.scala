@@ -326,6 +326,121 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[SafetyError.UnsafeUpcast](result)
   }
 
+  test("TestUpcast.07") {
+    val input =
+      """
+        |pub eff A
+        |pub eff B
+        |pub eff C
+        |
+        |def f(): Unit =
+        |    let f = () -> ();
+        |    let g = () -> () as \ { A, B, C };
+        |    let _ =
+        |        if (true)
+        |            f
+        |        else
+        |            upcast g;
+        |    ()
+        |
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.UnsafeUpcast](result)
+  }
+
+  test("TestUpcast.08") {
+    val input =
+      """
+        |pub eff A
+        |pub eff B
+        |pub eff C
+        |
+        |def f(): Unit =
+        |    let f = () -> () as \ A;
+        |    let g = () -> () as \ { A, B, C };
+        |    let _ =
+        |        if (true)
+        |            f
+        |        else
+        |            upcast g;
+        |    ()
+        |
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.UnsafeUpcast](result)
+  }
+
+  test("TestUpcast.09") {
+    val input =
+      """
+        |pub eff A
+        |pub eff B
+        |pub eff C
+        |
+        |def f(): Unit =
+        |    let f = () -> () as & Impure \ A;
+        |    let g = () -> () as \ { A, B, C };
+        |    let _ =
+        |        if (true)
+        |            upcast f
+        |        else
+        |            g;
+        |    ()
+        |
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.UnsafeUpcast](result)
+  }
+
+  test("TestUpcast.10") {
+    val input =
+      """
+        |pub eff A
+        |pub eff B
+        |pub eff C
+        |
+        |def f(): Unit =
+        |    let f = () -> () as \ A;
+        |    let g = () -> () as \ { A, B, C };
+        |    let _ =
+        |        if (true)
+        |            upcast f
+        |        else
+        |            upcast g;
+        |    ()
+        |
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.UnsafeUpcast](result)
+  }
+
+  test("TestUpcast.11") {
+    val input =
+      """
+        |pub eff A
+        |pub eff B
+        |pub eff C
+        |
+        |def f(): Unit =
+        |    let f = () -> () as & Impure \ A;
+        |    let g = () -> () as \ { A, B, C };
+        |    let _ =
+        |        if (true)
+        |            upcast f
+        |        else
+        |            upcast g;
+        |    ()
+        |
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.UnsafeUpcast](result)
+  }
+
   test("TestNonDefaultConstructor.01") {
     val input =
       """
@@ -353,6 +468,16 @@ class TestSafety extends FunSuite with TestUtils {
       """
         |def f(): Int32 =
         |    par 1
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalParExpression](result)
+  }
+
+  test("TestIllegalParExpression.02") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    par par f()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.IllegalParExpression](result)

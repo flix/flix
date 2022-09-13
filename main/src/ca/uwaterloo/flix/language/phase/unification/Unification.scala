@@ -26,7 +26,7 @@ object Unification {
   /**
     * Unify the two type variables `x` and `y`.
     */
-  private def unifyVars(x: Type.KindedVar, y: Type.KindedVar, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  private def unifyVars(x: Type.Var, y: Type.Var, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // Case 0: types are identical
     if (x.sym == y.sym) {
       Result.Ok(Substitution.empty)
@@ -45,90 +45,96 @@ object Unification {
   /**
     * Unifies the given variable `x` with the given non-variable type `tpe`.
     */
-  def unifyVar(x: Type.KindedVar, tpe: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = tpe match {
-    case y: Type.KindedVar => unifyVars(x, y, renv)
+  def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = tpe match {
+    case y: Type.Var => unifyVars(x, y, renv)
     case _ =>
 
-    // Check if `x` is rigid.
-    if (renv.isRigid(x.sym)) {
-      return Result.Err(UnificationError.RigidVar(x, tpe))
-    }
+      // Check if `x` is rigid.
+      if (renv.isRigid(x.sym)) {
+        return Result.Err(UnificationError.RigidVar(x, tpe))
+      }
 
-    // Check if `x` occurs within `tpe`.
-    if (tpe.typeVars contains x) {
-      return Result.Err(UnificationError.OccursCheck(x, tpe))
-    }
+      // Check if `x` occurs within `tpe`.
+      if (tpe.typeVars contains x) {
+        return Result.Err(UnificationError.OccursCheck(x, tpe))
+      }
 
-    Result.Ok(Substitution.singleton(x.sym, tpe))
+      Result.Ok(Substitution.singleton(x.sym, tpe))
   }
 
   /**
     * Unifies the two given types `tpe1` and `tpe2`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
-  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
-    (tpe1, tpe2) match {
+  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = (tpe1.kind, tpe2.kind) match {
 
-      //
-      // Effects
-      //
-      case _ if tpe1.kind == Kind.Effect && tpe2.kind == Kind.Effect =>
-        // don't try to unify effects if the `no-set-effects` flag is on
-        if (flix.options.xnoseteffects) {
-          Ok(Substitution.empty)
-        } else {
-          SetUnification.unify(tpe1, tpe2, renv)
-        }
-
-      //
-      // Bools
-      //
-      case _ if tpe1.kind == Kind.Bool && tpe2.kind == Kind.Bool =>
-        // don't try to unify effects if the `no-bool-effects` flag is on
-        if (flix.options.xnobooleffects) {
-          Ok(Substitution.empty)
-        } else {
-          BoolUnification.unify(tpe1, tpe2, renv)
-        }
-
-      //
-      // Record Rows
-      //
-      case _ if tpe1.kind == Kind.RecordRow && tpe2.kind == Kind.RecordRow => RecordUnification.unifyRows(tpe1, tpe2, renv)
-
-      //
-      // Schema Rows
-      //
-      case _ if tpe1.kind == Kind.SchemaRow && tpe2.kind == Kind.SchemaRow => SchemaUnification.unifyRows(tpe1, tpe2, renv)
-
-      //
-      // Other: Star or Arrow
-      //
-      case (x: Type.KindedVar, _) => (x.kind, tpe2.kind) match {
-        case _ => unifyVar(x, tpe2, renv)
+    //
+    // Effects
+    //
+    case (Kind.Effect, Kind.Effect) =>
+      // don't try to unify effects if the `no-set-effects` flag is on
+      if (flix.options.xnoseteffects) {
+        Ok(Substitution.empty)
+      } else {
+        SetUnification.unify(tpe1, tpe2, renv)
       }
 
-      case (_, x: Type.KindedVar) => (tpe1.kind, x.kind) match {
-        case _ => unifyVar(x, tpe1, renv)
+    //
+    // Bools
+    //
+    case (Kind.Bool, Kind.Bool) =>
+      // don't try to unify effects if the `no-bool-effects` flag is on
+      if (flix.options.xnobooleffects) {
+        Ok(Substitution.empty)
+      } else {
+        BoolUnification.unify(tpe1, tpe2, renv)
       }
 
-      case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(Substitution.empty)
+    //
+    // Record Rows
+    //
+    case (Kind.RecordRow, Kind.RecordRow) => RecordUnification.unifyRows(tpe1, tpe2, renv)
 
-      case (Type.Alias(_, _, tpe, _), _) => unifyTypes(tpe, tpe2, renv)
+    //
+    // Schema Rows
+    //
+    case (Kind.SchemaRow, Kind.SchemaRow) => SchemaUnification.unifyRows(tpe1, tpe2, renv)
 
-      case (_, Type.Alias(_, _, tpe, _)) => unifyTypes(tpe1, tpe, renv)
+    //
+    // Other: Star or Arrow
+    //
+    case _ => unifyStarOrArrowTypes(tpe1, tpe2, renv)
+  }
 
-      case (Type.Apply(t11, t12, _), Type.Apply(t21, t22, _)) =>
-        unifyTypes(t11, t21, renv) match {
-          case Result.Ok(subst1) => unifyTypes(subst1(t12), subst1(t22), renv) match {
-            case Result.Ok(subst2) => Result.Ok(subst2 @@ subst1)
-            case Result.Err(e) => Result.Err(e)
-          }
+  /**
+    * Unifies the types `tpe1` and `tpe2`.
+    * The types must each have a Star or Arrow kind.
+    */
+  private def unifyStarOrArrowTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
+
+    // ensure the kinds are compatible
+    case _ if !KindUnification.unifiesWith(tpe1.kind, tpe2.kind) => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
+
+    case (x: Type.Var, _) => unifyVar(x, tpe2, renv)
+
+    case (_, x: Type.Var) => unifyVar(x, tpe1, renv)
+
+    case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(Substitution.empty)
+
+    case (Type.Alias(_, _, tpe, _), _) => unifyTypes(tpe, tpe2, renv)
+
+    case (_, Type.Alias(_, _, tpe, _)) => unifyTypes(tpe1, tpe, renv)
+
+    case (Type.Apply(t11, t12, _), Type.Apply(t21, t22, _)) =>
+      unifyTypes(t11, t21, renv) match {
+        case Result.Ok(subst1) => unifyTypes(subst1(t12), subst1(t22), renv) match {
+          case Result.Ok(subst2) => Result.Ok(subst2 @@ subst1)
           case Result.Err(e) => Result.Err(e)
         }
+        case Result.Err(e) => Result.Err(e)
+      }
 
-      case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
-    }
+    case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
   }
 
   /**
@@ -140,7 +146,7 @@ object Unification {
     * Lifts the given type constraints, type, purity, and effect into the inference monad.
     */
   def liftM(tconstrs: List[Ast.TypeConstraint], tpe: Type, pur: Type, eff: Type): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] =
-    InferMonad { case (s, renv) => Ok((s, renv, (tconstrs.map(s.apply), s(tpe), s(pur), s(eff))))}
+    InferMonad { case (s, renv) => Ok((s, renv, (tconstrs.map(s.apply), s(tpe), s(pur), s(eff)))) }
 
   /**
     * Unifies the two given types `tpe1` and `tpe2` lifting their unified types and
@@ -200,7 +206,13 @@ object Unification {
     */
   def expectTypeM(expected: Type, actual: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     def handler(e: TypeError): TypeError = e match {
-      case _: TypeError.MismatchedTypes => TypeError.UnexpectedType(expected, actual, loc)
+      case _: TypeError.MismatchedTypes =>
+        (expected.typeConstructor, actual.typeConstructor) match {
+          case (Some(TypeConstructor.Native(left)), Some(TypeConstructor.Native(right))) if left.isAssignableFrom(right) =>
+            TypeError.PossibleUpcast(expected, actual, loc)
+          case _ =>
+            TypeError.UnexpectedType(expected, actual, loc)
+        }
       case e => e
     }
 
@@ -322,7 +334,7 @@ object Unification {
     *
     * NB: Use with EXTREME CAUTION.
     */
-  def unbindVar(tvar: Type.KindedVar): InferMonad[Unit] =
+  def unbindVar(tvar: Type.Var): InferMonad[Unit] =
     InferMonad { case (s, renv) => {
       Ok((s.unbind(tvar.sym), renv, ()))
     }
@@ -331,7 +343,7 @@ object Unification {
   /**
     * Purifies the given effect `eff` in the type inference monad.
     */
-  def purifyEffM(tvar: Type.KindedVar, eff: Type): InferMonad[Type] =
+  def purifyEffM(tvar: Type.Var, eff: Type): InferMonad[Type] =
     InferMonad { case (s, renv) => {
       val purifiedEff = purify(tvar, s(eff))
       Ok((s, renv, purifiedEff))
@@ -341,10 +353,10 @@ object Unification {
   /**
     * Returns the given Boolean formula `tpe` with the (possibly rigid) type variable `tvar` replaced by `True`.
     */
-  private def purify(tvar: Type.KindedVar, tpe: Type): Type = tpe.typeConstructor match {
+  private def purify(tvar: Type.Var, tpe: Type): Type = tpe.typeConstructor match {
     case None => tpe match {
       case t: Type.Var =>
-        if (tvar.sym == t.asKinded.sym) Type.True else tpe
+        if (tvar.sym == t.sym) Type.True else tpe
       case _ => throw InternalCompilerException(s"Unexpected type constructor: '$tpe'.")
     }
 
@@ -372,7 +384,7 @@ object Unification {
   /**
     * Ensures that the region variable `rvar` does not escape in the type `tpe` nor from the context.
     */
-  def noEscapeM(rvar: Type.KindedVar, tpe: Type): InferMonad[Unit] =
+  def noEscapeM(rvar: Type.Var, tpe: Type): InferMonad[Unit] =
     InferMonad { case (s, renv) =>
       // Apply the current substitution to `tpe`.
       val t = s(tpe)
@@ -390,7 +402,7 @@ object Unification {
   /**
     * Sets the given variable as rigid in the type inference monad.
     */
-  def rigidifyM(rvar: Type.KindedVar): InferMonad[Unit] =
+  def rigidifyM(rvar: Type.Var): InferMonad[Unit] =
     InferMonad {
       case (s, renv) => Ok((s, renv.markRigid(rvar.sym), ()))
     }
