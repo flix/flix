@@ -45,19 +45,4 @@ pub lawful class Witherable[t : Type -> Type] with Traversable[t], FunctorFilter
     ///
     law identity: forall(f: a -> m[Option[a]], t: t[a]) with Eq[m[t[a]]], Applicative[m] . Witherable.sequenceWither(Functor.map(f, t)) == Applicative.point(t)
 
-/*
-
-    law composition: forall(f: a -> m[Option[b]], g: m[Option[b]] -> g[Option[c]], t: t[a]) with Eq[m[t[c]]], Applicative[m], Applicative[g] .
-        (Functor.map(Witherable.wither(g)) >> Witherable.wither(f))(t) ==  Witherable.wither(Functor.map(Witherable.wither(f)) >> g)(t)
-
-
-    law pureFilter: forall(f: a -> Option[a], t: t[a], m: m[a]) with  Eq[m[t[a]]], Applicative[m] .
-        Witherable.wither(f >> Applicative.point, t) == Applicative.point(FunctorFilter.filterMap(f, t))
-
-
-    law naturality: forall(f: a -> m[Option[b]], t: t[a], m: m[c] -> g[c]) with Eq[g[t[a]]], Applicative[m], Applicative[g] .
-        m(Witherable.wither(f, t)) == Witherable.wither(m(Applicative.point(f)), t)
-
-*/
-
 }
