@@ -35,14 +35,4 @@ pub lawful class Witherable[t : Type -> Type] with Traversable[t], FunctorFilter
     pub def sequenceWither(t: t[m[Option[a]]]): m[t[a]] with Applicative[m] =
         Witherable.wither(identity, t)
 
-    ///
-    /// Withering with the identity function wrapped into an applicative preserves the container `t`.
-    ///
-    law identity: forall(f: a -> m[Option[a]], t: t[a]) with Eq[m[t[a]]], Applicative[m] . Witherable.wither(f, t) == Applicative.point(t)
-
-    ///
-    /// sequenceWither identity.
-    ///
-    law identity: forall(f: a -> m[Option[a]], t: t[a]) with Eq[m[t[a]]], Applicative[m] . Witherable.sequenceWither(Functor.map(f, t)) == Applicative.point(t)
-
 }
