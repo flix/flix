@@ -980,7 +980,6 @@ object Type {
       // purities
       val pur1 = tpe1.arrowPurityType
       val pur2 = tpe2.arrowPurityType
-      //val subTypePurity = isSubTypeOf(pur1, pur2, rigidityEnv)
       val pur3 = Type.freshVar(Kind.Bool, loc)
       val pur1pur3 = Type.mkAnd(pur1, pur3, loc)
       val subTypePurity = Unification.unifiesWith(pur1pur3, pur2, renv)
