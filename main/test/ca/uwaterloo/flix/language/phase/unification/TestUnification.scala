@@ -333,7 +333,7 @@ class TestUnification extends FunSuite with TestUtils {
     val tpe2 = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.RecordRow, isRegion = true, loc), loc)
     val renv = RigidityEnv.empty.markRigid(tpe2.sym)
     val result = Unification.unifyTypes(tpe1, tpe2, renv)
-    assert(isOk(result))
+    assert(!isOk(result))
   }
 
   test("Unify.16") {
