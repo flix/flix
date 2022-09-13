@@ -1010,10 +1010,4 @@ object Type {
     Unification.unifiesWith(eff1eff3, eff2, renv)
   }
 
-  def isSubtypeOf(exp0: TypedAst.Expression, exp1: TypedAst.Expression, renv: RigidityEnv)(implicit flix: Flix): Boolean = {
-    isStarSubtype(eraseAliases(exp0.tpe), eraseAliases(exp1.tpe), renv) &&
-      isBoolSubtype(eraseAliases(exp0.pur), eraseAliases(exp1.pur), renv) &&
-      isEffectSubtype(eraseAliases(exp0.eff), eraseAliases(exp1.eff), renv)
-  }
-
 }

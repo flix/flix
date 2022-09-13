@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
 import ca.uwaterloo.flix.util.Validation
@@ -187,15 +187,11 @@ object Safety {
       case Expression.Cast(exp, _, _, _, _, _, _, _) =>
         visit(exp)
 
-      case Expression.Upcast(exp, tpe, loc) =>
-        val errors =
-          if (Type.isSubtypeOf(exp, exp0, renv)) {
-            List.empty
-          }
-          else {
-            List(UnsafeUpcast(exp, exp0, loc))
-          }
-        visit(exp) ::: errors
+      case Expression.Upcast(exp, _, loc) =>
+        if (isSafeUpcast(exp, exp0, renv))
+          visit(exp)
+        else
+          visit(exp) ::: List(UnsafeUpcast(exp, exp0, loc))
 
       case Expression.Without(exp, _, _, _, _, _) =>
         visit(exp)
@@ -643,4 +639,9 @@ object Safety {
   private def isStaticMethod(m: java.lang.reflect.Method): Boolean =
     java.lang.reflect.Modifier.isStatic(m.getModifiers)
 
+  def isSafeUpcast(exp0: TypedAst.Expression, exp1: TypedAst.Expression, renv: RigidityEnv)(implicit flix: Flix): Boolean = {
+    Type.isStarSubtype(Type.eraseAliases(exp0.tpe), Type.eraseAliases(exp1.tpe), renv) &&
+      Type.isBoolSubtype(Type.eraseAliases(exp0.pur), Type.eraseAliases(exp1.pur), renv) &&
+      Type.isEffectSubtype(Type.eraseAliases(exp0.eff), Type.eraseAliases(exp1.eff), renv)
+  }
 }
