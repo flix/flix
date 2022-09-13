@@ -988,7 +988,7 @@ object Type {
         hasEffectSubset(tpe1.arrowEffectType, tpe2.arrowEffectType, renv) &&
         superTypeArgs && subTypeResult
 
-    case _ => tpe1 == tpe2
+    case (t1, t2) => t1 == t2
 
   }
 
