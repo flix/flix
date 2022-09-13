@@ -1011,4 +1011,11 @@ object Type {
     case _ => tpe1 == tpe2
 
   }
+
+  def isMorePure(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = ???
+
+  def hasEffectSubset(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = ???
+
+  def isRegularSubtype(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = ???
+
 }
