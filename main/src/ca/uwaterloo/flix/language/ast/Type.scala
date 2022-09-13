@@ -976,13 +976,15 @@ object Type {
       val args2 = tpe2.arrowArgTypes
       val superTypeArgs = args1.zip(args2).forall {
         case (t1, t2) =>
-          Type.isRegularSubType(t2, t1, renv)
+          Type.isRegularSubType(t2, t1, renv) ||
+            Unification.unifiesWith(t1, t2, renv)
       }
 
       // check that result is a subtype
       val expectedResTpe = tpe1.arrowResultType
       val actualResTpe = tpe2.arrowResultType
-      val subTypeResult = Type.isRegularSubType(expectedResTpe, actualResTpe, renv)
+      val subTypeResult = Type.isRegularSubType(expectedResTpe, actualResTpe, renv) ||
+        Unification.unifiesWith(expectedResTpe, actualResTpe, renv)
 
       isMorePure(tpe1.arrowPurityType, tpe2.arrowPurityType, renv) &&
         hasEffectSubset(tpe1.arrowEffectType, tpe2.arrowEffectType, renv) &&
