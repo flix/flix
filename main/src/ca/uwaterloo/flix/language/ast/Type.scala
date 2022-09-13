@@ -966,56 +966,52 @@ object Type {
     * the effect set of the expression is a subset of the effect set being cast to.
     *
     */
-  def isSubTypeOf(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = (tpe1.baseType, tpe2.baseType) match {
-    case (Type.True, Type.Var(_, _)) => true
-    case (Type.True, Type.False) => true
-    case (Type.Var(_, _), Type.False) => true
-
+  def isRegularSubType(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = (tpe1.baseType, tpe2.baseType) match {
     case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
       right.isAssignableFrom(left)
 
     case (Type.Cst(TypeConstructor.Arrow(n1), _), Type.Cst(TypeConstructor.Arrow(n2), _)) if n1 == n2 =>
-      val loc = tpe1.loc.asSynthetic
-
-      // purities
-      val pur1 = tpe1.arrowPurityType
-      val pur2 = tpe2.arrowPurityType
-      val pur3 = Type.freshVar(Kind.Bool, loc)
-      val pur1pur3 = Type.mkAnd(pur1, pur3, loc)
-      val subTypePurity = Unification.unifiesWith(pur1pur3, pur2, renv)
-
-      // set effects
-      // The rule for effect sets is:
-      // S1 < S2 <==> exists S3 . S1 U S3 == S2
-      val s1 = tpe1.arrowEffectType
-      val s2 = tpe2.arrowEffectType
-      val s3 = Type.freshVar(Kind.Effect, loc)
-      val s1s3 = Type.mkUnion(s1, s3, loc)
-      val isEffSubset = Unification.unifiesWith(s1s3, s2, renv)
-
       // check that parameters are supertypes
       val args1 = tpe1.arrowArgTypes
       val args2 = tpe2.arrowArgTypes
       val superTypeArgs = args1.zip(args2).forall {
         case (t1, t2) =>
-          Type.isSubTypeOf(t2, t1, renv)
+          Type.isRegularSubType(t2, t1, renv)
       }
 
       // check that result is a subtype
       val expectedResTpe = tpe1.arrowResultType
       val actualResTpe = tpe2.arrowResultType
-      val subTypeResult = Type.isSubTypeOf(expectedResTpe, actualResTpe, renv)
+      val subTypeResult = Type.isRegularSubType(expectedResTpe, actualResTpe, renv)
 
-      subTypePurity && isEffSubset && superTypeArgs && subTypeResult
+      isMorePure(tpe1.arrowPurityType, tpe2.arrowPurityType, renv) &&
+        hasEffectSubset(tpe1.arrowEffectType, tpe2.arrowEffectType, renv) &&
+        superTypeArgs && subTypeResult
 
     case _ => tpe1 == tpe2
 
   }
 
-  def isMorePure(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = ???
+  def isMorePure(pur1: Type, pur2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = {
+    val loc = pur1.loc.asSynthetic
+    val pur3 = freshVar(Kind.Bool, loc)
+    val pur1pur3 = Type.mkAnd(pur1, pur3, loc)
+    Unification.unifiesWith(pur1pur3, pur2, renv)
+  }
 
-  def hasEffectSubset(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = ???
+  def hasEffectSubset(eff1: Type, eff2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = {
+    // The rule for effect sets is:
+    // S1 < S2 <==> exists S3 . S1 U S3 == S2
+    val loc = eff1.loc.asSynthetic
+    val eff3 = Type.freshVar(Kind.Effect, loc)
+    val eff1eff3 = Type.mkUnion(eff1, eff3, loc)
+    Unification.unifiesWith(eff1eff3, eff2, renv)
+  }
 
-  def isRegularSubtype(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = ???
+  def isSubtypeOf(exp0: TypedAst.Expression, exp1: TypedAst.Expression, renv: RigidityEnv)(implicit flix: Flix): Boolean = {
+    isRegularSubType(eraseAliases(exp0.tpe), eraseAliases(exp1.tpe), renv) &&
+      isMorePure(eraseAliases(exp0.pur), eraseAliases(exp1.pur), renv) &&
+      hasEffectSubset(eraseAliases(exp0.eff), eraseAliases(exp1.eff), renv)
+  }
 
 }

@@ -188,10 +188,8 @@ object Safety {
         visit(exp)
 
       case Expression.Upcast(exp, tpe, loc) =>
-        val actual = Type.eraseAliases(exp.tpe)
-        val expected = Type.eraseAliases(tpe)
         val errors =
-          if (Type.isSubTypeOf(actual, expected, renv)) {
+          if (Type.isSubtypeOf(exp, exp0, renv)) {
             List.empty
           }
           else {
