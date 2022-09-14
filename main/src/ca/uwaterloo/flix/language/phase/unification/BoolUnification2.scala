@@ -27,14 +27,14 @@ import scala.util.{Failure, Success, Try}
 
 object BoolUnification2 {
 
-  def unify[F](f1: F, f2: F, renv: Set[Int])(implicit flix: Flix, alg: BoolAlgTrait[F]): Option[BoolAlgebraSubstitution2[F]] = {
+  def unify[F](f1: F, f2: F, renv: Set[Int])(implicit flix: Flix, alg: BoolAlgTrait[F]): Option[BoolAlgebraSubstitution[F]] = {
     booleanUnification(f1, f2, renv).toOption
   }
 
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  private def booleanUnification[F](tpe1: F, tpe2: F, renv: Set[Int])(implicit flix: Flix, alg: BoolAlgTrait[F]): Try[BoolAlgebraSubstitution2[F]] = {
+  private def booleanUnification[F](tpe1: F, tpe2: F, renv: Set[Int])(implicit flix: Flix, alg: BoolAlgTrait[F]): Try[BoolAlgebraSubstitution[F]] = {
     // The boolean expression we want to show is 0.
     val query = mkEq(tpe1, tpe2)
 
@@ -87,21 +87,21 @@ object BoolUnification2 {
     *
     * `flexvs` is the list of remaining flexible variables in the expression.
     */
-  private def successiveVariableElimination[F](f: F, flexvs: List[Int])(implicit flix: Flix, alg: BoolAlgTrait[F]): BoolAlgebraSubstitution2[F] = flexvs match {
+  private def successiveVariableElimination[F](f: F, flexvs: List[Int])(implicit flix: Flix, alg: BoolAlgTrait[F]): BoolAlgebraSubstitution[F] = flexvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
       if (!satisfiable(f))
-        BoolAlgebraSubstitution2.empty
+        BoolAlgebraSubstitution.empty
       else
         throw BooleanUnificationException
 
     case x :: xs =>
-      val t0 = BoolAlgebraSubstitution2.singleton(x, alg.mkFalse)(f)
-      val t1 = BoolAlgebraSubstitution2.singleton(x, alg.mkTrue)(f)
+      val t0 = BoolAlgebraSubstitution.singleton(x, alg.mkFalse)(f)
+      val t1 = BoolAlgebraSubstitution.singleton(x, alg.mkTrue)(f)
       val se = successiveVariableElimination(alg.mkAnd(t0, t1), xs)
 
       val f1 = alg.minimize(alg.mkOr(se(t0), alg.mkAnd(alg.mkVar(x), alg.mkNot(se(t1)))))
-      val st = BoolAlgebraSubstitution2.singleton(x, f1)
+      val st = BoolAlgebraSubstitution.singleton(x, f1)
       st ++ se
   }
 

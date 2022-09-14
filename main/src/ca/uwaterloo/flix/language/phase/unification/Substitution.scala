@@ -30,7 +30,7 @@ object Substitution {
   /**
     * Returns the singleton substitution mapping the type variable `x` to `tpe`.
     */
-  def singleton(x: Symbol.TypeVarSym, tpe: Type): Substitution = {
+  def singleton(x: Symbol.KindedTypeVarSym, tpe: Type): Substitution = {
     // Ensure that we do not add any x -> x mappings.
     tpe match {
       case y: Type.Var if x.id == y.sym.id => empty
@@ -113,7 +113,7 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
   /**
     * Removes the binding for the given type variable `tvar` (if it exists).
     */
-  def unbind(tvar: Symbol.TypeVarSym): Substitution = Substitution(m - tvar)
+  def unbind(tvar: Symbol.KindedTypeVarSym): Substitution = Substitution(m - tvar)
 
   /**
     * Returns the left-biased composition of `this` substitution with `that` substitution.

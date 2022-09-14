@@ -15,7 +15,9 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
+import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
   * Companion object for the [[BoolAlgebraSubstitution]] class.
@@ -24,12 +26,12 @@ object BoolAlgebraSubstitution {
   /**
     * Returns the empty substitution.
     */
-  val empty: BoolAlgebraSubstitution = BoolAlgebraSubstitution(Map.empty)
+  def empty[F]: BoolAlgebraSubstitution[F] = BoolAlgebraSubstitution(Map.empty)
 
   /**
     * Returns the singleton substitution mapping the type variable `x` to `tpe`.
     */
-  def singleton(x: Int, f: BoolAlgebra): BoolAlgebraSubstitution = {
+  def singleton[F](x: Int, f: F): BoolAlgebraSubstitution[F] = {
     // Ensure that we do not add any x -> x mappings.
     f match {
       case y: BoolAlgebra.Var if x == y.x => empty
@@ -42,7 +44,7 @@ object BoolAlgebraSubstitution {
 /**
   * A substitution is a map from type variables to types.
   */
-case class BoolAlgebraSubstitution(m: Map[Int, BoolAlgebra]) {
+case class BoolAlgebraSubstitution[F](m: Map[Int, F]) {
 
   /**
     * Returns `true` if `this` is the empty substitution.
@@ -50,22 +52,28 @@ case class BoolAlgebraSubstitution(m: Map[Int, BoolAlgebra]) {
   val isEmpty: Boolean = m.isEmpty
 
   /**
+    * Converts this formula substitution into a type substitution
+    */
+  def toTypeSubstitution(env: Bimap[Symbol.KindedTypeVarSym, Int])(implicit alg: BoolAlgTrait[F]): Substitution = {
+    val map = m.map {
+      case (k0, v0) =>
+        val k = env.getBackward(k0).getOrElse(throw InternalCompilerException(s"missing key $k0"))
+        val v = alg.toType(v0, env)
+        (k, v)
+    }
+    Substitution(map)
+  }
+
+  /**
     * Applies `this` substitution to the given type `tpe0`.
     */
-  def apply(f00: BoolAlgebra): BoolAlgebra = {
-    // NB: The order of cases has been determined by code coverage analysis.
-    def visit(f0: BoolAlgebra): BoolAlgebra =
-      f0 match {
-        case BoolAlgebra.Top => BoolAlgebra.Top
-        case BoolAlgebra.Bot => BoolAlgebra.Bot
-        case BoolAlgebra.Neg(f) => BoolUnification.mkNeg(visit(f))
-        case BoolAlgebra.Join(f1, f2) => BoolUnification.mkJoin(visit(f1), visit(f2))
-        case BoolAlgebra.Meet(f1, f2) => BoolUnification.mkMeet(visit(f1), visit(f2))
-        case BoolAlgebra.Var(sym) => m.getOrElse(sym, f0)
-      }
-
+  def apply(f: F)(implicit alg: BoolAlgTrait[F]): F= {
     // Optimization: Return the type if the substitution is empty. Otherwise visit the type.
-    if (isEmpty) f00 else visit(f00)
+    if (isEmpty) {
+      f
+    } else {
+      alg.map(i => m.getOrElse(i, alg.mkVar(i)), f)
+    }
   }
 
   /**
@@ -76,7 +84,7 @@ case class BoolAlgebraSubstitution(m: Map[Int, BoolAlgebra]) {
   /**
     * Returns the left-biased composition of `this` substitution with `that` substitution.
     */
-  def ++(that: BoolAlgebraSubstitution): BoolAlgebraSubstitution = {
+  def ++(that: BoolAlgebraSubstitution[F]): BoolAlgebraSubstitution[F] = {
     if (this.isEmpty) {
       that
     } else if (that.isEmpty) {
@@ -91,7 +99,7 @@ case class BoolAlgebraSubstitution(m: Map[Int, BoolAlgebra]) {
   /**
     * Returns the composition of `this` substitution with `that` substitution.
     */
-  def @@(that: BoolAlgebraSubstitution): BoolAlgebraSubstitution = {
+  def @@(that: BoolAlgebraSubstitution[F])(implicit alg: BoolAlgTrait[F]): BoolAlgebraSubstitution[F] = {
     // Case 1: Return `that` if `this` is empty.
     if (this.isEmpty) {
       return that
@@ -106,7 +114,7 @@ case class BoolAlgebraSubstitution(m: Map[Int, BoolAlgebra]) {
 
     // NB: Use of mutability improve performance.
     import scala.collection.mutable
-    val newBoolAlgebraMap = mutable.Map.empty[Int, BoolAlgebra]
+    val newBoolAlgebraMap = mutable.Map.empty[Int, F]
 
     // Add all bindings in `that`. (Applying the current substitution).
     for ((x, t) <- that.m) {
