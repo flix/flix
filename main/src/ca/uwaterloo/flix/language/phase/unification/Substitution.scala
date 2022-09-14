@@ -45,7 +45,7 @@ object Substitution {
 /**
   * A substitution is a map from type variables to types.
   */
-case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
+case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
 
   /**
     * Returns `true` if `this` is the empty substitution.
@@ -148,7 +148,7 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
 
     // NB: Use of mutability improve performance.
     import scala.collection.mutable
-    val newTypeMap = mutable.Map.empty[Symbol.TypeVarSym, Type]
+    val newTypeMap = mutable.Map.empty[Symbol.KindedTypeVarSym, Type]
 
     // Add all bindings in `that`. (Applying the current substitution).
     for ((x, t) <- that.m) {

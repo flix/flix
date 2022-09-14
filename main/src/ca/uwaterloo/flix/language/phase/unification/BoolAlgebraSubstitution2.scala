@@ -15,6 +15,10 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
+import ca.uwaterloo.flix.util.collection.Bimap
+import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.util.InternalCompilerException
+
 /**
   * Companion object for the [[BoolAlgebraSubstitution2]] class.
   */
@@ -46,6 +50,19 @@ case class BoolAlgebraSubstitution2[F](m: Map[Int, F]) {
     * Returns `true` if `this` is the empty substitution.
     */
   val isEmpty: Boolean = m.isEmpty
+
+  /**
+    * Converts this formula substitution into a type substitution
+    */
+  def toTypeSubstitution(env: Bimap[Symbol.KindedTypeVarSym, Int])(implicit alg: BoolAlgTrait[F]): Substitution = {
+    val map = m.map {
+      case (k0, v0) =>
+        val k = env.getBackward(k0).getOrElse(throw InternalCompilerException(s"missing key $k0"))
+        val v = alg.toType(v0, env)
+        (k, v)
+    }
+    Substitution(map)
+  }
 
   /**
     * Applies `this` substitution to the given type `tpe0`.

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Result
-import ca.uwaterloo.flix.util.Result.Ok
+import ca.uwaterloo.flix.util.Result.{Ok, ToErr, ToOk}
 
 object BoolUnification {
 
@@ -63,8 +63,9 @@ object BoolUnification {
     val renv = alg.liftRigidityEnv(renv0, env)
 
     BoolUnification2.unify(f1, f2, renv) match {
-      case Some(subst) => // MATT conver to type subst
-      case None => // MATT err
+      case Some(subst) =>
+        subst.toTypeSubstitution(env).toOk
+      case None => UnificationError.MismatchedBools(tpe1, tpe2).toErr
     }
-
   }
+}
