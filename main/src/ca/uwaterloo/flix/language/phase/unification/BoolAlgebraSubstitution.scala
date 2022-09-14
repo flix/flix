@@ -15,9 +15,9 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.Bimap
 
 /**
   * Companion object for the [[BoolAlgebraSubstitution]] class.
@@ -67,7 +67,7 @@ case class BoolAlgebraSubstitution[F](m: Map[Int, F]) {
   /**
     * Applies `this` substitution to the given type `tpe0`.
     */
-  def apply(f: F)(implicit alg: BoolAlgTrait[F]): F= {
+  def apply(f: F)(implicit alg: BoolAlgTrait[F]): F = {
     // Optimization: Return the type if the substitution is empty. Otherwise visit the type.
     if (isEmpty) {
       f
@@ -79,7 +79,7 @@ case class BoolAlgebraSubstitution[F](m: Map[Int, F]) {
   /**
     * Applies `this` substitution to the given types `ts`.
     */
-  def apply(ts: List[BoolAlgebra]): List[BoolAlgebra] = if (isEmpty) ts else ts map apply
+  def apply(ts: List[F])(implicit alg: BoolAlgTrait[F]): List[F] = if (isEmpty) ts else ts map apply
 
   /**
     * Returns the left-biased composition of `this` substitution with `that` substitution.
