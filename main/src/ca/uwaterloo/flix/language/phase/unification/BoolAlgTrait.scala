@@ -41,7 +41,7 @@ trait BoolAlgTrait[F] {
 
   def toType(f: F, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type
 
-  def fromType(t: Type, env: Bimap[Symbol.KindedTypeVarSym, Int]): F = t match {
+  def fromType(t: Type, env: Bimap[Symbol.KindedTypeVarSym, Int]): F = Type.eraseTopAliases(t) match {
     case Type.Var(sym, _) => env.getForward(sym) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.")
       case Some(x) => mkVar(x)

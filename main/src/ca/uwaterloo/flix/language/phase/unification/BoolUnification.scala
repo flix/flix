@@ -25,40 +25,35 @@ object BoolUnification {
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  def unify(tpe10: Type, tpe20: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     ///
     /// Perform aggressive matching to optimize for common cases.
     ///
-    if (tpe10 eq tpe20) {
+    if (tpe1 eq tpe2) {
       return Ok(Substitution.empty)
     }
 
-    tpe10 match {
+    tpe1 match {
       case x: Type.Var if renv0.isFlexible(x.sym) =>
-        if (tpe20 eq Type.True)
+        if (tpe2 eq Type.True)
           return Ok(Substitution.singleton(x.sym, Type.True))
-        if (tpe20 eq Type.False)
+        if (tpe2 eq Type.False)
           return Ok(Substitution.singleton(x.sym, Type.False))
 
       case _ => // nop
     }
 
-    tpe20 match {
+    tpe2 match {
       case y: Type.Var if renv0.isFlexible(y.sym) =>
-        if (tpe10 eq Type.True)
+        if (tpe1 eq Type.True)
           return Ok(Substitution.singleton(y.sym, Type.True))
-        if (tpe10 eq Type.False)
+        if (tpe1 eq Type.False)
           return Ok(Substitution.singleton(y.sym, Type.False))
 
       case _ => // nop
     }
 
     // translate the types into formulas
-    // Erase aliases to get a processable type
-    // MATT move into fromType
-    val tpe1 = Type.eraseAliases(tpe10)
-    val tpe2 = Type.eraseAliases(tpe20)
-
     implicit val alg: BoolAlgTrait[BinaryBoolAlgebra] = BinaryBoolAlgebra.AsBoolAlgTrait
 
     val env = alg.getEnv(List(tpe1, tpe2))
