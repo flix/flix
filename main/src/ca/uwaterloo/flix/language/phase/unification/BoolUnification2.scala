@@ -27,75 +27,8 @@ import scala.util.{Failure, Success, Try}
 
 object BoolUnification2 {
 
-  /**
-    * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
-    */
-  def unify(tpe10: Type, tpe20: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
-    ///
-    /// Perform aggressive matching to optimize for common cases.
-    ///
-    if (tpe10 eq tpe20) {
-      return Ok(Substitution.empty)
-    }
-
-    tpe10 match {
-      case x: Type.Var if renv0.isFlexible(x.sym) =>
-        if (tpe20 eq Type.True)
-          return Ok(Substitution.singleton(x.sym, Type.True))
-        if (tpe20 eq Type.False)
-          return Ok(Substitution.singleton(x.sym, Type.False))
-
-      case _ => // nop
-    }
-
-    tpe20 match {
-      case y: Type.Var if renv0.isFlexible(y.sym) =>
-        if (tpe10 eq Type.True)
-          return Ok(Substitution.singleton(y.sym, Type.True))
-        if (tpe10 eq Type.False)
-          return Ok(Substitution.singleton(y.sym, Type.False))
-
-      case _ => // nop
-    }
-
-    // translate the types into formulas
-    // Erase aliases to get a processable type
-    val tpe1 = Type.eraseAliases(tpe10)
-    val tpe2 = Type.eraseAliases(tpe20)
-
-    // Compute the variables in `tpe`.
-    val tvars = (tpe1.typeVars ++ tpe2.typeVars).toList.map(tvar => BoolAlgebra.VarOrEff.Var(tvar.sym))
-
-    // Construct a bi-directional map from type variables to indices.
-    // The idea is that the first variable becomes x0, the next x1, and so forth.
-    val m = tvars.zipWithIndex.foldLeft(Bimap.empty[BoolAlgebra.VarOrEff, BoolAlgebraTable.Variable]) {
-      case (macc, (sym, x)) => macc + (sym -> x)
-    }
-
-    // Convert the type `tpe` to a Boolean formula.
-    val f1 = fromBoolType(tpe1, m)
-
-    val f2 = fromBoolType(tpe2, m)
-
-    ///
-    /// Run the expensive boolean unification algorithm.
-    ///
-    val renv = renv0.s.toList.flatMap(tvar => m.getForward(VarOrEff.Var(tvar))).toSet
-    booleanUnification(f1, f2, renv) match {
-      case Success(subst0) =>
-        val map = subst0.m.toList.map {
-          case (key0, value0) =>
-            val key = m.getBackward(key0) match {
-              case Some(VarOrEff.Var(sym)) => sym
-              case _ => throw InternalCompilerException(s"unexpected missing var $key0")
-            }
-            val value = toType(value0, m, Kind.Bool, tpe1.loc)
-            (key: Symbol.TypeVarSym, value)
-        }.toMap
-        Ok(Substitution(map))
-      case Failure(BooleanUnificationException) => Result.Err(UnificationError.MismatchedBools(tpe1, tpe2))
-      case Failure(error) => throw error
-    }
+  def unify[F](f1: F, f2: F, renv: Set[Int])(implicit flix: Flix, alg: BoolAlgTrait[F]): Option[BoolAlgebraSubstitution2[F]] = {
+    booleanUnification(f1, f2, renv).toOption
   }
 
   /**
