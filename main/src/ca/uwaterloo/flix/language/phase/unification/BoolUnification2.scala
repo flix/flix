@@ -79,7 +79,7 @@ object BoolUnification2 {
     * synthetic variables first.
     */
   private def computeVariableOrder(l: List[Int]): List[Int] = {
-    l // TODO hack
+    l.reverse // MATT idk just reversing to see what happens
   }
 
   /**
