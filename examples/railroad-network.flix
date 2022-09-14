@@ -1,7 +1,9 @@
-// Define a function that decides whether pairs of railroad stations in `links` are safely connected.
-//
-// Given two railroad stations a and b, if they are only connected through some station c,
-// then they are unsafely connected. Because if c fails there is no way to get from a to b.
+///
+/// Define a function that decides whether pairs of railroad stations in `links` are safely connected.
+///
+/// Given two railroad stations a and b, if they are only connected through some station c,
+/// then they are unsafely connected. Because if c fails there is no way to get from a to b.
+///
 def safeConnects(src: n, links: f[(n, n)]): {safe::List[n], unsafe::List[n]} with Foldable[f], Boxable[n] =
     let db = inject links into Link;
     let pr = #{
@@ -13,20 +15,21 @@ def safeConnects(src: n, links: f[(n, n)]): {safe::List[n], unsafe::List[n]} wit
         Connected(a, b) :- Linked(a, b).
         Connected(a, b) :- Connected(a, c), Linked(c, b).
 
-        // Station x that is a cutpoint between a and b.
+        // Station `x` is a cutpoint between `a` and `b`.
         Cutpoint(x, a, b) :- Connected(a, b), Station(x), not Circumvent(x, a, b).
 
-        // ???
+        // Stations `a` and `b` are linked without using station `x`.
         Circumvent(x, a, b) :- Linked(a, b), if x != a, Station(x), if x != b.
         Circumvent(x, a, b) :- Circumvent(x, a, c), Circumvent(x, c, b).
 
-        // Check the cutpoint is neither station a nor b.
+        // Check the cutpoint is neither station `a` or `b`.
         HasICutPoint(a, b) :- Cutpoint(x, a, b), if x != a, if x != b.
         // Stations are safely connected if there is no cutpoints.
         SafelyConnected(a, b) :- Connected(a, b), not HasICutPoint(a, b).
         // The set of stations not safely connected are unsafely connected.
         UnsafelyConnected(a, b) :- Station(a), Station(b), not SafelyConnected(a, b).
         // All stations.
+        Station(src).
         Station(x) :- Linked(x, _).
     };
     let model = solve db <+> pr;
@@ -34,7 +37,9 @@ def safeConnects(src: n, links: f[(n, n)]): {safe::List[n], unsafe::List[n]} wit
     let unsafe = query model select b from UnsafelyConnected(src, b);
     {safe = safe, unsafe = unsafe}
 
-// Define some example graph to test the function `safeConnects`.
+///
+/// Define some example graph to test the function `safeConnects`.
+///
 def exampleGraph(): Set[(String, String)] =
     // Visual representation of the graph.
     let _graphString =
@@ -72,8 +77,12 @@ def exampleGraph(): Set[(String, String)] =
         ("dalte", "quater")
     }
 
-// Test which of the stations are safely and unsafely connected from `bis`.
+///
+/// Test which of the stations are safely and unsafely connected from `bis`.
+///
 def test(): Unit \ IO =
     let rec = safeConnects("bis", exampleGraph());
+    println("Safe:");
     rec.safe |> List.sort |> List.map(Console.green) |> List.foreach(println);
+    println("Unsafe:");
     rec.unsafe |> List.sort |> List.map(Console.red) |> List.foreach(println)
