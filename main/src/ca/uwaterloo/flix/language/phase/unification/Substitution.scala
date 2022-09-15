@@ -30,7 +30,7 @@ object Substitution {
   /**
     * Returns the singleton substitution mapping the type variable `x` to `tpe`.
     */
-  def singleton(x: Symbol.TypeVarSym, tpe: Type): Substitution = {
+  def singleton(x: Symbol.KindedTypeVarSym, tpe: Type): Substitution = {
     // Ensure that we do not add any x -> x mappings.
     tpe match {
       case y: Type.Var if x.id == y.sym.id => empty
@@ -45,7 +45,7 @@ object Substitution {
 /**
   * A substitution is a map from type variables to types.
   */
-case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
+case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
 
   /**
     * Returns `true` if `this` is the empty substitution.
@@ -65,9 +65,9 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
           val y = visit(t2)
           visit(t1) match {
             // Simplify boolean equations.
-            case Type.Cst(TypeConstructor.Not, _) => BoolUnification.mkNot(y)
-            case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => BoolUnification.mkAnd(x, y)
-            case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => BoolUnification.mkOr(x, y)
+            case Type.Cst(TypeConstructor.Not, _) => BoolTypes.mkNot(y)
+            case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => BoolTypes.mkAnd(x, y)
+            case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => BoolTypes.mkOr(x, y)
 
             // Simplify set expressions
             case Type.Cst(TypeConstructor.Complement, _) => SetUnification.mkComplement(y)
@@ -113,7 +113,7 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
   /**
     * Removes the binding for the given type variable `tvar` (if it exists).
     */
-  def unbind(tvar: Symbol.TypeVarSym): Substitution = Substitution(m - tvar)
+  def unbind(tvar: Symbol.KindedTypeVarSym): Substitution = Substitution(m - tvar)
 
   /**
     * Returns the left-biased composition of `this` substitution with `that` substitution.
@@ -148,7 +148,7 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
 
     // NB: Use of mutability improve performance.
     import scala.collection.mutable
-    val newTypeMap = mutable.Map.empty[Symbol.TypeVarSym, Type]
+    val newTypeMap = mutable.Map.empty[Symbol.KindedTypeVarSym, Type]
 
     // Add all bindings in `that`. (Applying the current substitution).
     for ((x, t) <- that.m) {
