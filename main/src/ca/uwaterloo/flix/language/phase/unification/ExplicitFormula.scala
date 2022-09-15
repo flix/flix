@@ -400,13 +400,13 @@ object ExplicitFormula {
       case _ => ExplicitFormula.Not(f0)
     }
 
-    override def map(formula: ExplicitFormula)(f: Int => ExplicitFormula): ExplicitFormula = formula match {
+    override def map(f: ExplicitFormula)(fn: Int => ExplicitFormula): ExplicitFormula = f match {
       case True => True
       case False => False
-      case And(f1, f2) => mkAnd(map(f1)(f), map(f2)(f))
-      case Or(f1, f2) => mkOr(map(f1)(f), map(f2)(f))
-      case Not(f1) => mkNot(map(f1)(f))
-      case Var(sym) => f(sym)
+      case And(f1, f2) => mkAnd(map(f1)(fn), map(f2)(fn))
+      case Or(f1, f2) => mkOr(map(f1)(fn), map(f2)(fn))
+      case Not(f1) => mkNot(map(f1)(fn))
+      case Var(sym) => fn(sym)
     }
 
     override def mkTrue: ExplicitFormula = True

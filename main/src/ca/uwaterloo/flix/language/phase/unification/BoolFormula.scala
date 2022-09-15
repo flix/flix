@@ -36,14 +36,9 @@ trait BoolFormula[F] {
   def mkFalse: F
 
   /**
-    * Returns the formula representing f1 ∧ f2.
+    * Returns the a variable formula with the given ID.
     */
-  def mkAnd(f1: F, f2: F): F
-
-  /**
-    * Returns the formula representing f1 ∨ f2.
-    */
-  def mkOr(f1: F, f2: F): F
+  def mkVar(id: Int): F
 
   /**
     * Returns the formula representing ¬f1
@@ -51,15 +46,19 @@ trait BoolFormula[F] {
   def mkNot(f1: F): F
 
   /**
-    * Returns the a variable formula with the given ID.
+    * Returns the formula representing f1 ∨ f2.
     */
-  def mkVar(id: Int): F
+  def mkOr(f1: F, f2: F): F
 
   /**
-    * Maps the function over the formula.
-    * The function is executed for each variable in the formula.
+    * Returns the formula representing f1 ∧ f2.
     */
-  def map(formula: F)(f: Int => F): F
+  def mkAnd(f1: F, f2: F): F
+
+  /**
+    * Applies the function fn to every variable occurrence in the formula f.
+    */
+  def map(f: F)(fn: Int => F): F
 
   /**
     * Returns an environment built from the given types.
