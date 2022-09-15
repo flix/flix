@@ -25,58 +25,88 @@ import scala.collection.immutable.SortedSet
   * A type class for Boolean Formulas.
   */
 trait BoolFormula[F] {
+
   /**
-    * Returns the True formula.
+    * Returns `true` if `f` represents TRUE.
+    */
+  def isTrue(f: F): Boolean
+
+  /**
+    * Returns `true` if `f` represents FALSE.
+    */
+  def isFalse(f: F): Boolean
+
+  /**
+    * Returns a representation of TRUE.
     */
   def mkTrue: F
 
   /**
-    * Returns the False formula.
+    * Returns a representation of FALSE.
     */
   def mkFalse: F
 
   /**
-    * Returns the a variable formula with the given ID.
+    * Returns a representation of the variable with the given `id`.
     */
   def mkVar(id: Int): F
 
   /**
-    * Returns the formula representing ¬f1
+    * Returns a representation of the complement of `f`.
     */
-  def mkNot(f1: F): F
+  def mkNot(f: F): F
 
   /**
-    * Returns the formula representing f1 ∨ f2.
+    * Returns a representation of the disjunction of `f1` and `f2`.
     */
   def mkOr(f1: F, f2: F): F
 
   /**
-    * Returns the formula representing f1 ∧ f2.
+    * Returns a representation of the conjunction of `f1` and `f2`.
     */
   def mkAnd(f1: F, f2: F): F
 
   /**
-    * Returns the formula f such that f == False <=> f1 == f2.
+    * Returns a representation of the formula `f1 == f2`.
     */
   def mkEq(f1: F, f2: F): F = mkOr(mkAnd(f1, mkNot(f2)), mkAnd(mkNot(f1), f2))
 
   /**
-    * Returns the set of free variables in the formula.
+    * Returns the set of free variables in `f`.
     */
   def freeVars(f: F): SortedSet[Int]
 
   /**
-    * Applies the function fn to every variable occurrence in the formula f.
+    * Applies the function `fn` to every variable in `f`.
     */
   def map(f: F)(fn: Int => F): F
 
   /**
-    * Returns an environment built from the given types
-    * mapping between type variables and formula variables.
+    * Optional operation. Returns `None` if not implemented.
+    *
+    * Returns `Some(true)` if `f` is satisfiable (i.e. has a satisfying assignment).
+    * Returns `Some(false)` otherwise.
+    */
+  def satisfiable(f: F): Option[Boolean] = None
+
+  /**
+    * Returns a representation equivalent to `f` (but potentially smaller).
+    */
+  def minimize(f: F): F
+
+  /**
+    * Returns an environment built from the given types mapping between type variables and formula variables.
     *
     * This environment should be used in the functions [[toType]] and [[fromType]].
     */
   def getEnv(fs: List[Type]): Bimap[Symbol.KindedTypeVarSym, Int]
+
+  /**
+    * Returns a rigidity environment on formulas that is equivalent to the given one on types.
+    */
+  def liftRigidityEnv(renv: RigidityEnv, env: Bimap[Symbol.KindedTypeVarSym, Int]): SortedSet[Int] = {
+    renv.s.flatMap(env.getForward)
+  }
 
   /**
     * Converts the given formula f into a type.
@@ -99,15 +129,4 @@ trait BoolFormula[F] {
     case _ => throw InternalCompilerException(s"Unexpected type: '$t'.")
   }
 
-  /**
-    * Returns a rigidity environment on formulas that is equivalent to the given one on types.
-    */
-  def liftRigidityEnv(renv: RigidityEnv, env: Bimap[Symbol.KindedTypeVarSym, Int]): SortedSet[Int] = {
-    renv.s.flatMap(env.getForward)
-  }
-
-  /**
-    * Returns an equivalent formula of equal or lesser size.
-    */
-  def minimize(f: F): F
 }

@@ -16,14 +16,8 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.phase.unification.ExplicitFormula.{VarOrEff, fromBoolType, toType}
-import ca.uwaterloo.flix.language.phase.unification.BoolFormulaTable.minimizeFormula
-import ca.uwaterloo.flix.util.Result.Ok
-import ca.uwaterloo.flix.util.collection.Bimap
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
 object FormulaUnification {
 
@@ -115,18 +109,28 @@ object FormulaUnification {
     * when ALL variables in the formula are flexible.
     */
   private def satisfiable[F](f: F)(implicit flix: Flix, alg: BoolFormula[F]): Boolean = {
-    if (f == alg.mkTrue) {
+    if (alg.isTrue(f)) {
       true
-    } else if (f == alg.mkFalse) {
+    } else if (alg.isFalse(f)) {
       false
     } else {
-      val q = alg.mkEq(f, alg.mkTrue)
-      try {
-        successiveVariableElimination(q, alg.freeVars(q).toList)
-        true
-      } catch {
-        case BooleanUnificationException => false
+      alg.satisfiable(f) match {
+        case None => naiveSatisfiable(f)
+        case Some(sat) => sat
       }
+    }
+  }
+
+  /**
+    * Naively computes if `f` is satisfiable using the SVE algorithm.
+    */
+  private def naiveSatisfiable[F](f: F)(implicit flix: Flix, alg: BoolFormula[F]): Boolean = {
+    val q = alg.mkEq(f, alg.mkTrue)
+    try {
+      successiveVariableElimination(q, alg.freeVars(q).toList)
+      true
+    } catch {
+      case BooleanUnificationException => false
     }
   }
 }

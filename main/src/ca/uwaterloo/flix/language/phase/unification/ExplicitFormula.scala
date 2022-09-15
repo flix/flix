@@ -225,6 +225,11 @@ object ExplicitFormula {
   }
 
   implicit val AsBoolAlgTrait: BoolFormula[ExplicitFormula] = new BoolFormula[ExplicitFormula] {
+
+    override def isTrue(f: ExplicitFormula): Boolean = f == ExplicitFormula.True
+
+    override def isFalse(f: ExplicitFormula): Boolean = f == ExplicitFormula.False
+
     @tailrec
     override def mkAnd(alg1: ExplicitFormula, alg2: ExplicitFormula): ExplicitFormula = (alg1, alg2) match {
       // T ∧ x => x
