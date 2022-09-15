@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeC
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
+import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 
 /**
@@ -221,5 +222,231 @@ object ExplicitFormula {
       * An effect constant.
       */
     case class Eff(sym: Symbol.EffectSym) extends VarOrEff
+  }
+
+  implicit val AsBoolAlgTrait: BoolAlgTrait[ExplicitFormula] = new BoolAlgTrait[ExplicitFormula] {
+    @tailrec
+    override def mkAnd(alg1: ExplicitFormula, alg2: ExplicitFormula): ExplicitFormula = (alg1, alg2) match {
+      // T ∧ x => x
+      case (ExplicitFormula.True, _) =>
+        alg2
+
+      // x ∧ T => x
+      case (_, ExplicitFormula.True) =>
+        alg1
+
+      // F ∧ x => F
+      case (ExplicitFormula.False, _) =>
+        ExplicitFormula.False
+
+      // x ∧ F => F
+      case (_, ExplicitFormula.False) =>
+        ExplicitFormula.False
+
+      // ¬x ∧ (x ∨ y) => ¬x ∧ y
+      case (ExplicitFormula.Not(x1), ExplicitFormula.Or(x2, y)) if x1 == x2 =>
+        mkAnd(mkNot(x1), y)
+
+      // x ∧ ¬x => F
+      case (x1, ExplicitFormula.Not(x2)) if x1 == x2 =>
+        ExplicitFormula.False
+
+      // ¬x ∧ x => F
+      case (ExplicitFormula.Not(x1), x2) if x1 == x2 =>
+        ExplicitFormula.False
+
+      // x ∧ (x ∧ y) => (x ∧ y)
+      case (x1, ExplicitFormula.And(x2, y)) if x1 == x2 =>
+        mkAnd(x1, y)
+
+      // x ∧ (y ∧ x) => (x ∧ y)
+      case (x1, ExplicitFormula.And(y, x2)) if x1 == x2 =>
+        mkAnd(x1, y)
+
+      // (x ∧ y) ∧ x) => (x ∧ y)
+      case (ExplicitFormula.And(x1, y), x2) if x1 == x2 =>
+        mkAnd(x1, y)
+
+      // (x ∧ y) ∧ y) => (x ∧ y)
+      case (ExplicitFormula.And(x, y1), y2) if y1 == y2 =>
+        mkAnd(x, y1)
+
+      // x ∧ (x ∨ y) => x
+      case (x1, ExplicitFormula.Or(x2, _)) if x1 == x2 =>
+        x1
+
+      // (x ∨ y) ∧ x => x
+      case (ExplicitFormula.Or(x1, _), x2) if x1 == x2 =>
+        x1
+
+      // x ∧ (y ∧ ¬x) => F
+      case (x1, ExplicitFormula.And(_, ExplicitFormula.Not(x2))) if x1 == x2 =>
+        ExplicitFormula.False
+
+      // (¬x ∧ y) ∧ x => F
+      case (ExplicitFormula.And(ExplicitFormula.Not(x1), _), x2) if x1 == x2 =>
+        ExplicitFormula.False
+
+      // x ∧ ¬(x ∨ y) => F
+      case (x1, ExplicitFormula.Not(ExplicitFormula.Or(x2, _))) if x1 == x2 =>
+        ExplicitFormula.False
+
+      // ¬(x ∨ y) ∧ x => F
+      case (ExplicitFormula.Not(ExplicitFormula.Or(x1, _)), x2) if x1 == x2 =>
+        ExplicitFormula.False
+
+      // x ∧ (¬x ∧ y) => F
+      case (x1, ExplicitFormula.And(ExplicitFormula.Not(x2), _)) if x1 == x2 =>
+        ExplicitFormula.False
+
+      // (¬x ∧ y) ∧ x => F
+      case (ExplicitFormula.And(ExplicitFormula.Not(x1), _), x2) if x1 == x2 =>
+        ExplicitFormula.False
+
+      // x ∧ x => x
+      case _ if alg1 == alg2 => alg1
+
+      case _ =>
+        //      val s = s"And($eff1, $eff2)"
+        //      val len = s.length
+        //      if (true) {
+        //        println(s.substring(0, Math.min(len, 300)))
+        //      }
+
+        ExplicitFormula.And(alg1, alg2)
+    }
+
+    @tailrec
+    override def mkOr(tpe1: ExplicitFormula, tpe2: ExplicitFormula): ExplicitFormula = (tpe1, tpe2) match {
+      // T ∨ x => T
+      case (ExplicitFormula.True, _) =>
+        ExplicitFormula.True
+
+      // F ∨ y => y
+      case (ExplicitFormula.False, _) =>
+        tpe2
+
+      // x ∨ T => T
+      case (_, ExplicitFormula.True) =>
+        ExplicitFormula.True
+
+      // x ∨ F => x
+      case (_, ExplicitFormula.False) =>
+        tpe1
+
+      // x ∨ (y ∨ x) => x ∨ y
+      case (x1, ExplicitFormula.Or(y, x2)) if x1 == x2 =>
+        mkOr(x1, y)
+
+      // (x ∨ y) ∨ x => x ∨ y
+      case (ExplicitFormula.Or(x1, y), x2) if x1 == x2 =>
+        mkOr(x1, y)
+
+      // ¬x ∨ x => T
+      case (ExplicitFormula.Not(x), y) if x == y =>
+        ExplicitFormula.True
+
+      // x ∨ ¬x => T
+      case (x, ExplicitFormula.Not(y)) if x == y =>
+        ExplicitFormula.True
+
+      // (¬x ∨ y) ∨ x) => T
+      case (ExplicitFormula.Or(ExplicitFormula.Not(x), _), y) if x == y =>
+        ExplicitFormula.True
+
+      // x ∨ (¬x ∨ y) => T
+      case (x, ExplicitFormula.Or(ExplicitFormula.Not(y), _)) if x == y =>
+        ExplicitFormula.True
+
+      // x ∨ (y ∧ x) => x
+      case (x1, ExplicitFormula.And(_, x2)) if x1 == x2 => x1
+
+      // (y ∧ x) ∨ x => x
+      case (ExplicitFormula.And(_, x1), x2) if x1 == x2 => x1
+
+      // x ∨ x => x
+      case _ if tpe1 == tpe2 =>
+        tpe1
+
+      case _ =>
+
+        //              val s = s"Or($eff1, $eff2)"
+        //              val len = s.length
+        //              if (len > 30) {
+        //                println(s.substring(0, Math.min(len, 300)))
+        //              }
+
+        ExplicitFormula.Or(tpe1, tpe2)
+    }
+
+    override def mkNot(f0: ExplicitFormula): ExplicitFormula = f0 match {
+      case ExplicitFormula.True =>
+        ExplicitFormula.False
+
+      case ExplicitFormula.False =>
+        ExplicitFormula.True
+
+      case ExplicitFormula.Not(x) =>
+        x
+
+      // ¬(¬x ∨ y) => x ∧ ¬y
+      case ExplicitFormula.Or(ExplicitFormula.Not(x), y) =>
+        mkAnd(x, mkNot(y))
+
+      // ¬(x ∨ ¬y) => ¬x ∧ y
+      case ExplicitFormula.Or(x, ExplicitFormula.Not(y)) =>
+        mkAnd(mkNot(x), y)
+
+      case _ => ExplicitFormula.Not(f0)
+    }
+
+    override def map(g: Int => ExplicitFormula, f: ExplicitFormula): ExplicitFormula = f match {
+      case True => True
+      case False => False
+      case And(f1, f2) => mkAnd(map(g, f1), map(g, f2))
+      case Or(f1, f2) => mkOr(map(g, f1), map(g, f2))
+      case Not(f1) => mkNot(map(g, f1))
+      case Var(sym) => g(sym)
+    }
+
+    override def mkTrue: ExplicitFormula = True
+
+    override def mkFalse: ExplicitFormula = False
+
+    override def mkVar(id: Int): ExplicitFormula = Var(id)
+
+    override def getEnv(fs: List[Type]): Bimap[Symbol.KindedTypeVarSym, Int] = {
+      // Compute the variables in `tpe`.
+      val tvars = fs.flatMap(_.typeVars).map(_.sym).to(SortedSet)
+
+      // Construct a bi-directional map from type variables to indices.
+      // The idea is that the first variable becomes x0, the next x1, and so forth.
+      tvars.zipWithIndex.foldLeft(Bimap.empty[Symbol.KindedTypeVarSym, Int]) {
+        case (macc, (sym, x)) => macc + (sym -> x)
+      }
+    }
+
+    override def toType(f: ExplicitFormula, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = f match {
+      case True => Type.True
+      case False => Type.False
+      case And(f1, f2) => Type.mkApply(Type.And, List(toType(f1, env), toType(f2, env)), SourceLocation.Unknown)
+      case Or(f1, f2) => Type.mkApply(Type.Or, List(toType(f1, env), toType(f2, env)), SourceLocation.Unknown)
+      case Not(f1) => Type.Apply(Type.Not, toType(f1, env), SourceLocation.Unknown)
+      case Var(id) => env.getBackward(id) match {
+        case Some(sym) => Type.Var(sym, SourceLocation.Unknown)
+        case None => throw InternalCompilerException(s"unexpected unknown ID: $id")
+      }
+    }
+
+    override def freeVars(f: ExplicitFormula): SortedSet[Int] = f match {
+      case True => SortedSet.empty
+      case False => SortedSet.empty
+      case And(f1, f2) => freeVars(f1) ++ freeVars(f2)
+      case Or(f1, f2) => freeVars(f1) ++ freeVars(f2)
+      case Not(f1) => freeVars(f1)
+      case Var(id) => SortedSet(id)
+    }
+
+    override def minimize(f: ExplicitFormula): ExplicitFormula = BoolAlgebraTable.minimizeFormula(f)
   }
 }
