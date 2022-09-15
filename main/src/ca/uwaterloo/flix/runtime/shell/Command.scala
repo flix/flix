@@ -101,6 +101,11 @@ object Command {
   case class Eval(s: String) extends Command
 
   /**
+    * Reload and eval source code.
+    */
+  case class ReloadAndEval(s: String) extends Command
+
+  /**
     * Unknown command.
     */
   case class Unknown(s: String) extends Command
@@ -136,51 +141,57 @@ object Command {
       case _ => // no-op
     }
 
-    // 
+    //
     // Init
-    // 
+    //
     if (input == ":init")
       return Command.Init
 
-    // 
+    //
     // Check
-    // 
+    //
     if (input == ":check" || input == ":c")
       return Command.Check
 
-    // 
+    //
     // Build
-    // 
+    //
     if (input == ":build" || input == ":b")
       return Command.Build
 
-    // 
+    //
     // Jar
-    // 
+    //
     if (input == ":jar" || input == ":j")
       return Command.Jar
 
-    // 
+    //
     // Fpkg
-    // 
+    //
     if (input == ":pkg" || input == ":p")
       return Command.Fpkg
 
-    // 
+    //
     // Bench
-    // 
+    //
     if (input == ":bench")
       return Command.Bench
 
-    // 
+    //
+    // Eval
+    //
+    if (input.startsWith(":eval"))
+      return Command.ReloadAndEval(input.drop(":eval".length + 1))
+
+    //
     // Test
-    // 
+    //
     if (input == ":test" || input == ":t")
       return Command.Test
 
-    // 
-    // Intall
-    // 
+    //
+    // Install
+    //
     val installPattern = raw":install\s+(\S+)\s*".r
     input match {
       case installPattern(s) => return Command.Install(s)
