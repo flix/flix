@@ -21,7 +21,9 @@ import ca.uwaterloo.flix.util.collection.Bimap
 
 import scala.collection.immutable.SortedSet
 
-// MATT docs
+/**
+  * A type class for Boolean Formulas.
+  */
 trait BoolFormula[F] {
   def mkTrue: F
 
@@ -35,12 +37,27 @@ trait BoolFormula[F] {
 
   def mkVar(id: Int): F
 
+  /**
+    * Maps the function over the formula.
+    * The function is executed for each variable in the formula.
+    */
   def map(g: Int => F, f: F): F
 
+  /**
+    * Returns an environment built from the given types.
+    *
+    * This environment is used to convert between formulas and types.
+    */
   def getEnv(fs: List[Type]): Bimap[Symbol.KindedTypeVarSym, Int]
 
+  /**
+    * Converts the given formula into a type.
+    */
   def toType(f: F, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type
 
+  /**
+    * Converts the given type into a formula.
+    */
   def fromType(t: Type, env: Bimap[Symbol.KindedTypeVarSym, Int]): F = Type.eraseTopAliases(t) match {
     case Type.Var(sym, _) => env.getForward(sym) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.")
@@ -54,11 +71,20 @@ trait BoolFormula[F] {
     case _ => throw InternalCompilerException(s"Unexpected type: '$t'.")
   }
 
+  /**
+    * Returns a rigidity environment on formulas that is equivalent to the given one on types.
+    */
   def liftRigidityEnv(renv: RigidityEnv, env: Bimap[Symbol.KindedTypeVarSym, Int]): SortedSet[Int] = {
     renv.s.flatMap(env.getForward)
   }
 
+  /**
+    * Returns the set of free variables in the formula.
+    */
   def freeVars(f: F): SortedSet[Int]
 
+  /**
+    * Returns an equivalent formula of equal or lesser size.
+    */
   def minimize(f: F): F
 }
