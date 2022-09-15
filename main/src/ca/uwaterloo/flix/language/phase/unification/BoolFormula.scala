@@ -71,9 +71,10 @@ trait BoolFormula[F] {
   def map(f: F)(fn: Int => F): F
 
   /**
-    * Returns an environment built from the given types.
+    * Returns an environment built from the given types
+    * mapping between type variables and formula variables.
     *
-    * This environment is used to convert between formulas and types.
+    * This environment should be used in the functions [[toType]] and [[fromType]].
     */
   def getEnv(fs: List[Type]): Bimap[Symbol.KindedTypeVarSym, Int]
 
