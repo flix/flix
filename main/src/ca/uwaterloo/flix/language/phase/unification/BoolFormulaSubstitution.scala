@@ -52,19 +52,6 @@ case class BoolFormulaSubstitution[F](m: Map[Int, F]) {
   val isEmpty: Boolean = m.isEmpty
 
   /**
-    * Converts this formula substitution into a type substitution
-    */
-  def toTypeSubstitution(env: Bimap[Symbol.KindedTypeVarSym, Int])(implicit alg: BoolFormula[F]): Substitution = {
-    val map = m.map {
-      case (k0, v0) =>
-        val k = env.getBackward(k0).getOrElse(throw InternalCompilerException(s"missing key $k0"))
-        val v = alg.toType(v0, env)
-        (k, v)
-    }
-    Substitution(map)
-  }
-
-  /**
     * Applies `this` substitution to the given type `tpe0`.
     */
   def apply(f: F)(implicit alg: BoolFormula[F]): F = {
@@ -131,5 +118,18 @@ case class BoolFormulaSubstitution[F](m: Map[Int, F]) {
     }
 
     BoolFormulaSubstitution(newBoolAlgebraMap.toMap) ++ this
+  }
+
+  /**
+    * Converts this formula substitution into a type substitution
+    */
+  def toTypeSubstitution(env: Bimap[Symbol.KindedTypeVarSym, Int])(implicit alg: BoolFormula[F]): Substitution = {
+    val map = m.map {
+      case (k0, v0) =>
+        val k = env.getBackward(k0).getOrElse(throw InternalCompilerException(s"missing key $k0"))
+        val v = alg.toType(v0, env)
+        (k, v)
+    }
+    Substitution(map)
   }
 }
