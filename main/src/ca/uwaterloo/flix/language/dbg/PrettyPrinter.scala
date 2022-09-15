@@ -16,10 +16,11 @@
 
 package ca.uwaterloo.flix.language.dbg
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.fmt.Audience
-import ca.uwaterloo.flix.language.fmt.FormatType.formatWellKindedType
+import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.util.Formatter
 
 import scala.collection.mutable
@@ -30,7 +31,7 @@ object PrettyPrinter {
 
   object Lifted {
 
-    def fmtRoot(root: Root, formatter: Formatter): String = {
+    def fmtRoot(root: Root, formatter: Formatter)(implicit flix: Flix): String = {
       val sb = new mutable.StringBuilder
       for ((sym, defn) <- root.defs.toList.sortBy(_._1.loc)) {
         sb.append(fmtDef(defn, formatter).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
@@ -39,7 +40,7 @@ object PrettyPrinter {
       sb.toString()
     }
 
-    def fmtDef(defn: Def, formatter: Formatter): String = {
+    def fmtDef(defn: Def, formatter: Formatter)(implicit flix: Flix): String = {
       import formatter._
       val sb = new mutable.StringBuilder
       sb.append(s"${bold("def")} ${blue(defn.sym.toString)}(")
@@ -47,7 +48,7 @@ object PrettyPrinter {
         sb.append(s"${fmtParam(fparam, formatter)}, ")
       }
       sb.append("): ")
-      sb.append(formatWellKindedType(defn.exp.tpe))
+      sb.append(formatType(defn.exp.tpe))
       sb.append(" & ")
       sb.append(defn.exp.purity)
       sb.append(" = ")
@@ -57,7 +58,7 @@ object PrettyPrinter {
       sb.toString()
     }
 
-    def fmtExp(exp0: Expression, formatter: Formatter): String = {
+    def fmtExp(exp0: Expression, formatter: Formatter)(implicit flix: Flix): String = {
       def visitExp(e0: Expression): String = e0 match {
         case Expression.Unit(_) => "Unit"
 
@@ -206,7 +207,7 @@ object PrettyPrinter {
           sb.append(formatter.bold("let "))
             .append(fmtSym(sym, formatter))
             .append(": ")
-            .append(formatWellKindedType(exp1.tpe))
+            .append(formatType(exp1.tpe))
             .append(" = ")
             .append(visitExp(exp1).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
             .append(";")
@@ -333,7 +334,7 @@ object PrettyPrinter {
         case Expression.Cast(exp, tpe, _, loc) =>
           visitExp(exp) +
             " as " +
-            formatWellKindedType(tpe)
+            formatType(tpe)
 
         case Expression.TryCatch(exp, rules, tpe, _, loc) =>
           val sb = new mutable.StringBuilder
@@ -461,8 +462,8 @@ object PrettyPrinter {
       visitExp(exp0)
     }
 
-    def fmtParam(p: FormalParam, formatter: Formatter): String = {
-      fmtSym(p.sym, formatter) + ": " + formatWellKindedType(p.tpe)
+    def fmtParam(p: FormalParam, formatter: Formatter)(implicit flix: Flix): String = {
+      fmtSym(p.sym, formatter) + ": " + formatType(p.tpe)
     }
 
     def fmtSym(sym: Symbol.VarSym, formatter: Formatter): String = {
@@ -507,7 +508,7 @@ object PrettyPrinter {
       case BinaryOperator.BitwiseRightShift => ">>>"
     }
 
-    def fmtJvmMethod(method: JvmMethod, formatter: Formatter): String = method match {
+    def fmtJvmMethod(method: JvmMethod, formatter: Formatter)(implicit flix: Flix): String = method match {
       case JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
         s"${formatter.bold("def")} ${formatter.blue(ident.toString)}" +
         fparams.map(fmtParam(_, formatter)).mkString("(", ", ", ")") +
