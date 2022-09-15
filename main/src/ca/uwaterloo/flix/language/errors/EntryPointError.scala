@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.errors
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
@@ -57,14 +58,14 @@ object EntryPointError {
     * @param tpe the result type.
     * @param loc the location where the error occurred.
     */
-  case class IllegalEntryPointResult(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends EntryPointError {
+  case class IllegalEntryPointResult(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError {
 
-    override def summary: String = s"Unexpected entry point result type: ${FormatType.formatWellKindedType(tpe)}."
+    override def summary: String = s"Unexpected entry point result type: ${FormatType.formatType(tpe)}."
 
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> The result type: '${red(FormatType.formatWellKindedType(tpe))}' is not a valid entry point result type.
+         |>> The result type: '${red(FormatType.formatType(tpe))}' is not a valid entry point result type.
          |
          |${code(loc, "unexpected entry point result type.")}
          |""".stripMargin
@@ -73,10 +74,10 @@ object EntryPointError {
     override def explain(formatter: Formatter): Option[String] = Some({
       s"""A ToString instance must be defined for the result type.
          |
-         |To define a string representation of '${FormatType.formatWellKindedType(tpe)}', either:
+         |To define a string representation of '${FormatType.formatType(tpe)}', either:
          |
-         |  (a) define an instance of ToString for '${FormatType.formatWellKindedType(tpe)}', or
-         |  (b) derive an instance of ToString for '${FormatType.formatWellKindedType(tpe)}'.
+         |  (a) define an instance of ToString for '${FormatType.formatType(tpe)}', or
+         |  (b) derive an instance of ToString for '${FormatType.formatType(tpe)}'.
          |
          |To automatically derive an instance, you can write:
          |

@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
+import ca.uwaterloo.flix.language.fmt.{Audience, FormatOptions, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
@@ -200,7 +200,7 @@ sealed trait Type {
   /**
     * Returns a human readable string representation of `this` type.
     */
-  override def toString: String = FormatType.formatWellKindedType(this)(Audience.Internal)
+  override def toString: String = FormatType.formatTypeWithOptions(this, FormatOptions.Internal)
 }
 
 object Type {

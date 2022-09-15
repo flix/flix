@@ -42,18 +42,16 @@ object CodeLensProvider {
       case sym =>
         val args = List(JString(sym.toString))
         val runMain = Command("Run", "flix.runMain", args)
-        val runMainWithArgs = Command("Run with args...", "flix.runMainWithArgs", args)
-        val runMainNewTerminal = Command("Run (in new terminal)", "flix.runMainNewTerminal", args)
-        val runMainNewTerminalWithArgs = Command("Run with args... (in new terminal)", "flix.runMainNewTerminalWithArgs", args)
-        val openInRepl = Command("Open in REPL", "flix.cmdRepl", args)
+        //val runMainWithArgs = Command("Run with args...", "flix.runMainWithArgs", args)
+        val runMainNewTerminal = Command("Run (in new process)", "flix.runMainNewTerminal", args)
+        //val runMainNewTerminalWithArgs = Command("Run with args... (in new terminal)", "flix.runMainNewTerminalWithArgs", args)
         val range = Range.from(sym.loc)
 
         List(
           CodeLens(range, Some(runMain)),
-          CodeLens(range, Some(runMainWithArgs)),
+          //CodeLens(range, Some(runMainWithArgs)),
           CodeLens(range, Some(runMainNewTerminal)),
-          CodeLens(range, Some(runMainNewTerminalWithArgs)),
-          CodeLens(range, Some(openInRepl)),
+          //CodeLens(range, Some(runMainNewTerminalWithArgs)),
         )
     }
   }

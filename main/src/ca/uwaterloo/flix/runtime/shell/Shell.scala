@@ -47,7 +47,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
   /**
     * The Flix instance (the same instance is used for incremental compilation).
     */
-  private val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
+  private implicit val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
 
   /**
     * The result of the most recent compilation
@@ -214,7 +214,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
           w.println(FormatDoc.asMarkDown(enumDecl.doc))
         } else if (r.typeAliases.contains(aliasSym)) {
           val aliasDecl = r.typeAliases(aliasSym)
-          w.println(FormatType.formatWellKindedType(aliasDecl.tpe))
+          w.println(FormatType.formatType(aliasDecl.tpe))
           w.println()
           w.println(FormatDoc.asMarkDown(aliasDecl.doc))
         } else {
