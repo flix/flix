@@ -20,22 +20,22 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
 /**
-  * Companion object for the [[BoolAlgebraSubstitution]] class.
+  * Companion object for the [[BoolFormulaSubstitution]] class.
   */
-object BoolAlgebraSubstitution {
+object BoolFormulaSubstitution {
   /**
     * Returns the empty substitution.
     */
-  def empty[F]: BoolAlgebraSubstitution[F] = BoolAlgebraSubstitution(Map.empty)
+  def empty[F]: BoolFormulaSubstitution[F] = BoolFormulaSubstitution(Map.empty)
 
   /**
     * Returns the singleton substitution mapping the type variable `x` to `tpe`.
     */
-  def singleton[F](x: Int, f: F): BoolAlgebraSubstitution[F] = {
+  def singleton[F](x: Int, f: F): BoolFormulaSubstitution[F] = {
     // Ensure that we do not add any x -> x mappings.
     f match {
       case y: ExplicitFormula.Var if x == y.x => empty
-      case _ => BoolAlgebraSubstitution(Map(x -> f))
+      case _ => BoolFormulaSubstitution(Map(x -> f))
     }
   }
 
@@ -44,7 +44,7 @@ object BoolAlgebraSubstitution {
 /**
   * A substitution is a map from type variables to types.
   */
-case class BoolAlgebraSubstitution[F](m: Map[Int, F]) {
+case class BoolFormulaSubstitution[F](m: Map[Int, F]) {
 
   /**
     * Returns `true` if `this` is the empty substitution.
@@ -84,13 +84,13 @@ case class BoolAlgebraSubstitution[F](m: Map[Int, F]) {
   /**
     * Returns the left-biased composition of `this` substitution with `that` substitution.
     */
-  def ++(that: BoolAlgebraSubstitution[F]): BoolAlgebraSubstitution[F] = {
+  def ++(that: BoolFormulaSubstitution[F]): BoolFormulaSubstitution[F] = {
     if (this.isEmpty) {
       that
     } else if (that.isEmpty) {
       this
     } else {
-      BoolAlgebraSubstitution(
+      BoolFormulaSubstitution(
         this.m ++ that.m.filter(kv => !this.m.contains(kv._1))
       )
     }
@@ -99,7 +99,7 @@ case class BoolAlgebraSubstitution[F](m: Map[Int, F]) {
   /**
     * Returns the composition of `this` substitution with `that` substitution.
     */
-  def @@(that: BoolAlgebraSubstitution[F])(implicit alg: BoolFormula[F]): BoolAlgebraSubstitution[F] = {
+  def @@(that: BoolFormulaSubstitution[F])(implicit alg: BoolFormula[F]): BoolFormulaSubstitution[F] = {
     // Case 1: Return `that` if `this` is empty.
     if (this.isEmpty) {
       return that
@@ -128,6 +128,6 @@ case class BoolAlgebraSubstitution[F](m: Map[Int, F]) {
       }
     }
 
-    BoolAlgebraSubstitution(newBoolAlgebraMap.toMap) ++ this
+    BoolFormulaSubstitution(newBoolAlgebraMap.toMap) ++ this
   }
 }

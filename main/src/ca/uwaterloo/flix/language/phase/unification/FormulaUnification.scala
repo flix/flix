@@ -27,14 +27,14 @@ import scala.util.{Failure, Success, Try}
 
 object FormulaUnification {
 
-  def unify[F](f1: F, f2: F, renv: Set[Int])(implicit flix: Flix, alg: BoolFormula[F]): Option[BoolAlgebraSubstitution[F]] = {
+  def unify[F](f1: F, f2: F, renv: Set[Int])(implicit flix: Flix, alg: BoolFormula[F]): Option[BoolFormulaSubstitution[F]] = {
     booleanUnification(f1, f2, renv).toOption
   }
 
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  private def booleanUnification[F](tpe1: F, tpe2: F, renv: Set[Int])(implicit flix: Flix, alg: BoolFormula[F]): Try[BoolAlgebraSubstitution[F]] = {
+  private def booleanUnification[F](tpe1: F, tpe2: F, renv: Set[Int])(implicit flix: Flix, alg: BoolFormula[F]): Try[BoolFormulaSubstitution[F]] = {
     // The boolean expression we want to show is 0.
     val query = mkEq(tpe1, tpe2)
 
@@ -79,7 +79,7 @@ object FormulaUnification {
     * synthetic variables first.
     */
   private def computeVariableOrder(l: List[Int]): List[Int] = {
-    l.reverse // MATT idk just reversing to see what happens
+    l.reverse // TODO have to reverse the order for regions to work
   }
 
   /**
@@ -87,21 +87,21 @@ object FormulaUnification {
     *
     * `flexvs` is the list of remaining flexible variables in the expression.
     */
-  private def successiveVariableElimination[F](f: F, flexvs: List[Int])(implicit flix: Flix, alg: BoolFormula[F]): BoolAlgebraSubstitution[F] = flexvs match {
+  private def successiveVariableElimination[F](f: F, flexvs: List[Int])(implicit flix: Flix, alg: BoolFormula[F]): BoolFormulaSubstitution[F] = flexvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
       if (!satisfiable(f))
-        BoolAlgebraSubstitution.empty
+        BoolFormulaSubstitution.empty
       else
         throw BooleanUnificationException
 
     case x :: xs =>
-      val t0 = BoolAlgebraSubstitution.singleton(x, alg.mkFalse)(f)
-      val t1 = BoolAlgebraSubstitution.singleton(x, alg.mkTrue)(f)
+      val t0 = BoolFormulaSubstitution.singleton(x, alg.mkFalse)(f)
+      val t1 = BoolFormulaSubstitution.singleton(x, alg.mkTrue)(f)
       val se = successiveVariableElimination(alg.mkAnd(t0, t1), xs)
 
       val f1 = alg.minimize(alg.mkOr(se(t0), alg.mkAnd(alg.mkVar(x), alg.mkNot(se(t1)))))
-      val st = BoolAlgebraSubstitution.singleton(x, f1)
+      val st = BoolFormulaSubstitution.singleton(x, f1)
       st ++ se
   }
 
