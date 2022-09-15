@@ -62,7 +62,7 @@ object BoolUnification {
 
     val renv = alg.liftRigidityEnv(renv0, env)
 
-    BoolUnification2.unify(f1, f2, renv) match {
+    FormulaUnification.unify(f1, f2, renv) match {
       case Some(subst) =>
         subst.toTypeSubstitution(env).toOk
       case None => UnificationError.MismatchedBools(tpe1, tpe2).toErr

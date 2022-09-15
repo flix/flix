@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import scala.util.{Failure, Success, Try}
 
-object BoolUnification2 {
+object FormulaUnification {
 
   def unify[F](f1: F, f2: F, renv: Set[Int])(implicit flix: Flix, alg: BoolFormula[F]): Option[BoolAlgebraSubstitution[F]] = {
     booleanUnification(f1, f2, renv).toOption
