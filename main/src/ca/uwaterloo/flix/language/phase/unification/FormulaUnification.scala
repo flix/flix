@@ -36,7 +36,7 @@ object FormulaUnification {
     */
   private def booleanUnification[F](tpe1: F, tpe2: F, renv: Set[Int])(implicit flix: Flix, alg: BoolFormula[F]): Try[BoolFormulaSubstitution[F]] = {
     // The boolean expression we want to show is 0.
-    val query = mkEq(tpe1, tpe2)
+    val query = alg.mkEq(tpe1, tpe2)
 
     // Compute the variables in the query.
     val typeVars = alg.freeVars(query).toList
@@ -120,7 +120,7 @@ object FormulaUnification {
     } else if (f == alg.mkFalse) {
       false
     } else {
-      val q = mkEq(f, alg.mkTrue)
+      val q = alg.mkEq(f, alg.mkTrue)
       try {
         successiveVariableElimination(q, alg.freeVars(q).toList)
         true
@@ -129,10 +129,4 @@ object FormulaUnification {
       }
     }
   }
-
-
-  /**
-    * To unify two Boolean formulas p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
-    */
-  private def mkEq[F](p: F, q: F)(implicit alg: BoolFormula[F]): F = alg.mkOr(alg.mkAnd(p, alg.mkNot(q)), alg.mkAnd(alg.mkNot(p), q))
 }

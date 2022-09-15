@@ -56,6 +56,11 @@ trait BoolFormula[F] {
   def mkAnd(f1: F, f2: F): F
 
   /**
+    * Returns the formula f such that f == False <=> f1 == f2.
+    */
+  def mkEq(f1: F, f2: F): F = mkOr(mkAnd(f1, mkNot(f2)), mkAnd(mkNot(f1), f2))
+
+  /**
     * Returns the set of free variables in the formula.
     */
   def freeVars(f: F): SortedSet[Int]
