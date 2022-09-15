@@ -32,7 +32,7 @@ import scala.collection.immutable.SortedSet
   *
   * We use this table to lookup the minimal formula of a given formula.
   */
-object BoolAlgebraTable {
+object BoolFormulaTable {
 
   /**
     * A flag used to control whether to print debug information.

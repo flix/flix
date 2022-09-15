@@ -447,6 +447,6 @@ object ExplicitFormula {
       case Var(id) => SortedSet(id)
     }
 
-    override def minimize(f: ExplicitFormula): ExplicitFormula = BoolAlgebraTable.minimizeFormula(f)
+    override def minimize(f: ExplicitFormula): ExplicitFormula = BoolFormulaTable.minimizeFormula(f)
   }
 }

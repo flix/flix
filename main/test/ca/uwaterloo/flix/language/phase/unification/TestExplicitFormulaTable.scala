@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.phase.unification.ExplicitFormula._
-import ca.uwaterloo.flix.language.phase.unification.BoolAlgebraTable._
+import ca.uwaterloo.flix.language.phase.unification.BoolFormulaTable._
 import org.scalatest.FunSuite
 
 class TestExplicitFormulaTable extends FunSuite {
