@@ -20,6 +20,8 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Ok, ToErr, ToOk}
 
+import scala.util.Try
+
 object BoolUnification {
 
   /**
@@ -62,10 +64,118 @@ object BoolUnification {
 
     val renv = alg.liftRigidityEnv(renv0, env)
 
-    FormulaUnification.unify(f1, f2, renv) match {
-      case Some(subst) =>
-        subst.toTypeSubstitution(env).toOk
+    booleanUnification(f1, f2, renv) match {
       case None => UnificationError.MismatchedBools(tpe1, tpe2).toErr
+      case Some(subst) => subst.toTypeSubstitution(env).toOk
+    }
+  }
+
+  /**
+    * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
+    */
+  private def booleanUnification[F](tpe1: F, tpe2: F, renv: Set[Int])(implicit flix: Flix, alg: BoolFormula[F]): Option[BoolFormulaSubstitution[F]] = {
+    // The boolean expression we want to show is 0.
+    val query = alg.mkEq(tpe1, tpe2)
+
+    // Compute the variables in the query.
+    val typeVars = alg.freeVars(query).toList
+
+    // Compute the flexible variables.
+    val flexibleTypeVars = typeVars.filterNot(renv.contains)
+
+    // Determine the order in which to eliminate the variables.
+    val freeVars = computeVariableOrder(flexibleTypeVars)
+
+    // Eliminate all variables.
+    Try {
+      val subst = successiveVariableElimination(query, freeVars)
+
+      //    if (!subst.isEmpty) {
+      //      val s = subst.toString
+      //      val len = s.length
+      //      if (len > 50) {
+      //        println(s.substring(0, Math.min(len, 300)))
+      //        println()
+      //      }
+      //    }
+
+      subst
+    }
+  }.toOption
+
+  /**
+    * A heuristic used to determine the order in which to eliminate variable.
+    *
+    * Semantically the order of variables is immaterial. Changing the order may
+    * yield different unifiers, but they are all equivalent. However, changing
+    * the can lead to significant speed-ups / slow-downs.
+    *
+    * We make the following observation:
+    *
+    * We want to have synthetic variables (i.e. fresh variables introduced during
+    * type inference) expressed in terms of real variables (i.e. variables that
+    * actually occur in the source code). We can ensure this by eliminating the
+    * synthetic variables first.
+    */
+  private def computeVariableOrder(l: List[Int]): List[Int] = {
+    l.reverse // TODO have to reverse the order for regions to work
+  }
+
+  /**
+    * Performs success variable elimination on the given boolean expression `f`.
+    *
+    * `flexvs` is the list of remaining flexible variables in the expression.
+    */
+  private def successiveVariableElimination[F](f: F, flexvs: List[Int])(implicit flix: Flix, alg: BoolFormula[F]): BoolFormulaSubstitution[F] = flexvs match {
+    case Nil =>
+      // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
+      if (!satisfiable(f))
+        BoolFormulaSubstitution.empty
+      else
+        throw BooleanUnificationException
+
+    case x :: xs =>
+      val t0 = BoolFormulaSubstitution.singleton(x, alg.mkFalse)(f)
+      val t1 = BoolFormulaSubstitution.singleton(x, alg.mkTrue)(f)
+      val se = successiveVariableElimination(alg.mkAnd(t0, t1), xs)
+
+      val f1 = alg.minimize(alg.mkOr(se(t0), alg.mkAnd(alg.mkVar(x), alg.mkNot(se(t1)))))
+      val st = BoolFormulaSubstitution.singleton(x, f1)
+      st ++ se
+  }
+
+  /**
+    * An exception thrown to indicate that boolean unification failed.
+    */
+  private case object BooleanUnificationException extends RuntimeException
+
+  /**
+    * Returns `true` if the given boolean formula `f` is satisfiable
+    * when ALL variables in the formula are flexible.
+    */
+  private def satisfiable[F](f: F)(implicit flix: Flix, alg: BoolFormula[F]): Boolean = {
+    if (alg.isTrue(f)) {
+      true
+    } else if (alg.isFalse(f)) {
+      false
+    } else {
+      alg.satisfiable(f) match {
+        case None => naiveSatisfiable(f)
+        case Some(sat) => sat
+      }
+    }
+  }
+
+  /**
+    * Naively computes if `f` is satisfiable using the SVE algorithm.
+    */
+  private def naiveSatisfiable[F](f: F)(implicit flix: Flix, alg: BoolFormula[F]): Boolean = {
+    val q = alg.mkEq(f, alg.mkTrue)
+    try {
+      successiveVariableElimination(q, alg.freeVars(q).toList)
+      true
+    } catch {
+      case BooleanUnificationException => false
     }
   }
 }
