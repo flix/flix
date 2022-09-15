@@ -68,12 +68,12 @@ trait BoolFormula[F] {
   def getEnv(fs: List[Type]): Bimap[Symbol.KindedTypeVarSym, Int]
 
   /**
-    * Converts the given formula into a type.
+    * Converts the given formula f into a type.
     */
   def toType(f: F, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type
 
   /**
-    * Converts the given type into a formula.
+    * Converts the given type t into a formula.
     */
   def fromType(t: Type, env: Bimap[Symbol.KindedTypeVarSym, Int]): F = Type.eraseTopAliases(t) match {
     case Type.Var(sym, _) => env.getForward(sym) match {
