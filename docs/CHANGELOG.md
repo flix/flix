@@ -6,7 +6,10 @@ Version 0.31.0:
 - Language: Added safe `upcast` expression (thanks Jakob!)
 - Language: Added support for top-level imports (thanks Magnus!)
 - Language: Renamed `Impure` to `IO` (thanks Matt!)
-- Language: Update effect syntax (thanks Matt!)
+- Language: Changed effect syntax (thanks Matt!)
+  - old syntax: `& Pure`, new syntax: `\ IO`.
+- Language: Changed record syntax (thanks Jakob!)
+  - old syntax: `{x :: Int32`, new syntax: `{x = Int32}`.
 - Compiler: Re-implemented Test Framework (thanks Magnus!)
 - Compiler: Improved performance of unification (thanks Matt!)
 - Compiler: Incrementalize Instances phase (thanks Magnus!)
