@@ -24,18 +24,18 @@ import scala.collection.immutable.SortedSet
 /**
   * A common super-type for Boolean algebras.
   */
-sealed trait BoolAlgebra {
+sealed trait ExplicitFormula {
 
   /**
     * Returns the free variables in `this` expression.
     */
   final def freeVars: SortedSet[Int] = this match {
-    case BoolAlgebra.Top => SortedSet.empty
-    case BoolAlgebra.Bot => SortedSet.empty
-    case BoolAlgebra.Var(x) => SortedSet(x)
-    case BoolAlgebra.Neg(f) => f.freeVars
-    case BoolAlgebra.Join(f1, f2) => f1.freeVars ++ f2.freeVars
-    case BoolAlgebra.Meet(f1, f2) => f1.freeVars ++ f2.freeVars
+    case ExplicitFormula.True => SortedSet.empty
+    case ExplicitFormula.False => SortedSet.empty
+    case ExplicitFormula.Var(x) => SortedSet(x)
+    case ExplicitFormula.Not(f) => f.freeVars
+    case ExplicitFormula.And(f1, f2) => f1.freeVars ++ f2.freeVars
+    case ExplicitFormula.Or(f1, f2) => f1.freeVars ++ f2.freeVars
   }
 
   /**
@@ -44,78 +44,78 @@ sealed trait BoolAlgebra {
     * The size is the number of joins and meets
     */
   final def size: Int = this match {
-    case BoolAlgebra.Top => 0
-    case BoolAlgebra.Bot => 0
-    case BoolAlgebra.Var(_) => 0
-    case BoolAlgebra.Neg(t) => t.size
-    case BoolAlgebra.Join(t1, t2) => t1.size + t2.size + 1
-    case BoolAlgebra.Meet(t1, t2) => t1.size + t2.size + 1
+    case ExplicitFormula.True => 0
+    case ExplicitFormula.False => 0
+    case ExplicitFormula.Var(_) => 0
+    case ExplicitFormula.Not(t) => t.size
+    case ExplicitFormula.And(t1, t2) => t1.size + t2.size + 1
+    case ExplicitFormula.Or(t1, t2) => t1.size + t2.size + 1
   }
 
   /**
     * Returns a human-readable string representation of `this` expression.
     */
   override def toString: String = this match {
-    case BoolAlgebra.Top => "true"
-    case BoolAlgebra.Bot => "false"
-    case BoolAlgebra.Var(x) => s"x$x"
-    case BoolAlgebra.Neg(f) => f match {
-      case BoolAlgebra.Var(x) => s"!x$x"
+    case ExplicitFormula.True => "true"
+    case ExplicitFormula.False => "false"
+    case ExplicitFormula.Var(x) => s"x$x"
+    case ExplicitFormula.Not(f) => f match {
+      case ExplicitFormula.Var(x) => s"!x$x"
       case _ => s"!($f)"
     }
-    case BoolAlgebra.Join(f1, f2) => s"(and $f1 $f2)"
-    case BoolAlgebra.Meet(f1, f2) => s"(or $f1 $f2)"
+    case ExplicitFormula.And(f1, f2) => s"(and $f1 $f2)"
+    case ExplicitFormula.Or(f1, f2) => s"(or $f1 $f2)"
   }
 
 }
 
-object BoolAlgebra {
+object ExplicitFormula {
 
   /**
     * Represents the constant ⊤.
     */
-  case object Top extends BoolAlgebra
+  case object True extends ExplicitFormula
 
   /**
     * Represents the constant ⊥.
     */
-  case object Bot extends BoolAlgebra
+  case object False extends ExplicitFormula
 
   /**
     * Represents a variable. Variables are numbered by integers.
     */
-  case class Var(x: Int) extends BoolAlgebra
+  case class Var(x: Int) extends ExplicitFormula
 
   /**
     * Represents ¬f
     */
-  case class Neg(f: BoolAlgebra) extends BoolAlgebra
+  case class Not(f: ExplicitFormula) extends ExplicitFormula
 
   /**
     * Represents f1 ⊓ f2
     */
-  case class Join(f1: BoolAlgebra, f2: BoolAlgebra) extends BoolAlgebra
+  case class And(f1: ExplicitFormula, f2: ExplicitFormula) extends ExplicitFormula
 
   /**
     * Represents f1 ⊔ f2
     */
-  case class Meet(f1: BoolAlgebra, f2: BoolAlgebra) extends BoolAlgebra
+  case class Or(f1: ExplicitFormula, f2: ExplicitFormula) extends ExplicitFormula
 
   /**
     * Substitutes all variables in `f` using the substitution map `m`.
     *
     * The map `m` must bind each free variable in `f` to a (new) variable.
     */
-  def substitute(f: BoolAlgebra, m: Bimap[Int, Int]): BoolAlgebra = f match {
-    case Top => Top
-    case Bot => Bot
+  def substitute(f: ExplicitFormula, m: Bimap[Int, Int]): ExplicitFormula = f match {
+    case True => True
+    case False => False
     case Var(x) => m.getForward(x) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: 'x$x'.")
       case Some(y) => Var(y)
     }
-    case Neg(f1) => Neg(substitute(f1, m))
-    case Join(f1, f2) => Join(substitute(f1, m), substitute(f2, m))
-    case Meet(f1, f2) => Meet(substitute(f1, m), substitute(f2, m))
+    case Not(f1) => Not(substitute(f1, m))
+    case And(f1, f2) => And(substitute(f1, m), substitute(f2, m))
+    case Or(f1, f2) => Or(substitute(f1, m), substitute(f2, m))
   }
 
   /**
@@ -123,16 +123,16 @@ object BoolAlgebra {
     *
     * The map `m` must bind each free type variable in `tpe` to a Boolean variable.
     */
-  def fromBoolType(tpe: Type, m: Bimap[VarOrEff, Int]): BoolAlgebra = tpe match {
+  def fromBoolType(tpe: Type, m: Bimap[VarOrEff, Int]): ExplicitFormula = tpe match {
     case Type.Var(sym, _) => m.getForward(VarOrEff.Var(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.")
       case Some(x) => Var(x)
     }
-    case Type.True => Top
-    case Type.False => Bot
-    case Type.Apply(Type.Cst(TypeConstructor.Not, _), tpe1, _) => Neg(fromBoolType(tpe1, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => Join(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => Meet(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
+    case Type.True => True
+    case Type.False => False
+    case Type.Apply(Type.Cst(TypeConstructor.Not, _), tpe1, _) => Not(fromBoolType(tpe1, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => And(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => Or(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
@@ -141,7 +141,7 @@ object BoolAlgebra {
     *
     * The map `m` must bind each free type variable in `tpe` to a Boolean variable.
     */
-  def fromEffType(tpe: Type, m: Bimap[VarOrEff, Int]): BoolAlgebra = tpe match {
+  def fromEffType(tpe: Type, m: Bimap[VarOrEff, Int]): ExplicitFormula = tpe match {
     case Type.Var(sym, _) => m.getForward(VarOrEff.Var(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.")
       case Some(x) => Var(x)
@@ -150,11 +150,11 @@ object BoolAlgebra {
       case None => throw InternalCompilerException(s"Unexpected unbound effect: '$sym'.")
       case Some(x) => Var(x)
     }
-    case Type.All => Top
-    case Type.Empty => Bot
-    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Neg(fromEffType(tpe1, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Join(fromEffType(tpe1, m), fromEffType(tpe2, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => Meet(fromEffType(tpe1, m), fromEffType(tpe2, m))
+    case Type.All => True
+    case Type.Empty => False
+    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Not(fromEffType(tpe1, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => And(fromEffType(tpe1, m), fromEffType(tpe2, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => Or(fromEffType(tpe1, m), fromEffType(tpe2, m))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
@@ -163,7 +163,7 @@ object BoolAlgebra {
     *
     * The map `m` must bind each free variable in `f` to a type variable.
     */
-  def toType(f: BoolAlgebra, m: Bimap[VarOrEff, Int], kind: Kind, loc: SourceLocation): Type = kind match {
+  def toType(f: ExplicitFormula, m: Bimap[VarOrEff, Int], kind: Kind, loc: SourceLocation): Type = kind match {
     case Kind.Bool => toBoolType(f, m, loc)
     case Kind.Effect => toEffType(f, m, loc)
     case _ => throw InternalCompilerException(s"Unexpected kind: '$kind'.")
@@ -174,17 +174,17 @@ object BoolAlgebra {
     *
     * The map `m` must bind each free variable in `f` to a type variable.
     */
-  private def toBoolType(f: BoolAlgebra, m: Bimap[VarOrEff, Int], loc: SourceLocation): Type = f match {
-    case Top => Type.True
-    case Bot => Type.False
+  private def toBoolType(f: ExplicitFormula, m: Bimap[VarOrEff, Int], loc: SourceLocation): Type = f match {
+    case True => Type.True
+    case False => Type.False
     case Var(x) => m.getBackward(x) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.")
       case Some(VarOrEff.Var(sym)) => Type.Var(sym, loc)
       case Some(VarOrEff.Eff(sym)) => throw InternalCompilerException(s"Unexpected effect: '$sym'.")
     }
-    case Neg(f1) => Type.mkNot(toBoolType(f1, m, loc), loc)
-    case Join(t1, t2) => Type.mkAnd(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
-    case Meet(t1, t2) => Type.mkOr(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
+    case Not(f1) => Type.mkNot(toBoolType(f1, m, loc), loc)
+    case And(t1, t2) => Type.mkAnd(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
+    case Or(t1, t2) => Type.mkOr(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
   }
 
   /**
@@ -192,17 +192,17 @@ object BoolAlgebra {
     *
     * The map `m` must bind each free variable in `f` to a type variable.
     */
-  private def toEffType(f: BoolAlgebra, m: Bimap[VarOrEff, Int], loc: SourceLocation): Type = f match {
-    case Top => Type.All
-    case Bot => Type.Empty
+  private def toEffType(f: ExplicitFormula, m: Bimap[VarOrEff, Int], loc: SourceLocation): Type = f match {
+    case True => Type.All
+    case False => Type.Empty
     case Var(x) => m.getBackward(x) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.")
       case Some(VarOrEff.Var(sym)) => Type.Var(sym, loc)
       case Some(VarOrEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), loc)
     }
-    case Neg(f1) => Type.mkComplement(toEffType(f1, m, loc), loc)
-    case Join(t1, t2) => Type.mkIntersection(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
-    case Meet(t1, t2) => Type.mkUnion(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
+    case Not(f1) => Type.mkComplement(toEffType(f1, m, loc), loc)
+    case And(t1, t2) => Type.mkIntersection(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
+    case Or(t1, t2) => Type.mkUnion(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
   }
 
 

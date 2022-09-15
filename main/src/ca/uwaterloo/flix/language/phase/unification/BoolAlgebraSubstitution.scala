@@ -34,7 +34,7 @@ object BoolAlgebraSubstitution {
   def singleton[F](x: Int, f: F): BoolAlgebraSubstitution[F] = {
     // Ensure that we do not add any x -> x mappings.
     f match {
-      case y: BoolAlgebra.Var if x == y.x => empty
+      case y: ExplicitFormula.Var if x == y.x => empty
       case _ => BoolAlgebraSubstitution(Map(x -> f))
     }
   }

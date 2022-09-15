@@ -263,22 +263,22 @@ object BinaryBoolAlgebra {
     }
 
     override def minimize(f: BinaryBoolAlgebra): BinaryBoolAlgebra = {
-      def toBoolAlgebra(f: BinaryBoolAlgebra): BoolAlgebra = f match {
-        case True => BoolAlgebra.Top
-        case False => BoolAlgebra.Bot
-        case And(f1, f2) => BoolAlgebra.Join(toBoolAlgebra(f1), toBoolAlgebra(f2))
-        case Or(f1, f2) => BoolAlgebra.Meet(toBoolAlgebra(f1), toBoolAlgebra(f2))
-        case Not(f1) => BoolAlgebra.Neg(toBoolAlgebra(f1))
-        case Var(id) => BoolAlgebra.Var(id)
+      def toBoolAlgebra(f: BinaryBoolAlgebra): ExplicitFormula = f match {
+        case True => ExplicitFormula.True
+        case False => ExplicitFormula.False
+        case And(f1, f2) => ExplicitFormula.And(toBoolAlgebra(f1), toBoolAlgebra(f2))
+        case Or(f1, f2) => ExplicitFormula.Or(toBoolAlgebra(f1), toBoolAlgebra(f2))
+        case Not(f1) => ExplicitFormula.Not(toBoolAlgebra(f1))
+        case Var(id) => ExplicitFormula.Var(id)
       }
 
-      def fromBoolAlgebra(f: BoolAlgebra): BinaryBoolAlgebra = f match {
-        case BoolAlgebra.Top => True
-        case BoolAlgebra.Bot => False
-        case BoolAlgebra.Var(x) => Var(x)
-        case BoolAlgebra.Neg(f) => Not(fromBoolAlgebra(f))
-        case BoolAlgebra.Join(f1, f2) => And(fromBoolAlgebra(f1), fromBoolAlgebra(f2))
-        case BoolAlgebra.Meet(f1, f2) => Or(fromBoolAlgebra(f1), fromBoolAlgebra(f2))
+      def fromBoolAlgebra(f: ExplicitFormula): BinaryBoolAlgebra = f match {
+        case ExplicitFormula.True => True
+        case ExplicitFormula.False => False
+        case ExplicitFormula.Var(x) => Var(x)
+        case ExplicitFormula.Not(f) => Not(fromBoolAlgebra(f))
+        case ExplicitFormula.And(f1, f2) => And(fromBoolAlgebra(f1), fromBoolAlgebra(f2))
+        case ExplicitFormula.Or(f1, f2) => Or(fromBoolAlgebra(f1), fromBoolAlgebra(f2))
       }
 
       f pipe
