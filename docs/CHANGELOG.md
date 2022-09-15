@@ -7,7 +7,7 @@ Version 0.31.0:
 - Language: Added support for top-level imports (thanks Magnus!)
 - Language: Renamed `Impure` to `IO` (thanks Matt!)
 - Language: Changed effect syntax (thanks Matt!)
-  - old syntax: `& Pure`, new syntax: `\ IO`.
+  - old syntax: `& Impure`, new syntax: `\ IO`.
 - Language: Changed record syntax (thanks Jakob!)
   - old syntax: `{x :: Int32`, new syntax: `{x = Int32}`.
 - Compiler: Re-implemented Test Framework (thanks Magnus!)
