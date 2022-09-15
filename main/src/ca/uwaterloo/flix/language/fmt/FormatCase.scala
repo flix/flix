@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.fmt
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object FormatCase {
@@ -22,7 +23,7 @@ object FormatCase {
   /**
     * Returns a markdown string for the given `caze`.
     */
-  def asMarkDown(caze: TypedAst.Case)(implicit audience: Audience): String = {
+  def asMarkDown(caze: TypedAst.Case)(implicit flix: Flix): String = {
     s"case **${caze.sym.name}**: ${FormatScheme.formatScheme(caze.sc)}"
   }
 

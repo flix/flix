@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatType, FormatTypeConstraint}
@@ -346,7 +347,7 @@ object RedundancyError {
     * @param tpe the type of the expression.
     * @param loc the location of the expression.
     */
-  case class UselessExpression(tpe: Type, loc: SourceLocation) extends RedundancyError {
+  case class UselessExpression(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
     def summary: String = "Useless expression."
 
     def message(formatter: Formatter): String = {
@@ -356,7 +357,7 @@ object RedundancyError {
          |
          |${code(loc, "useless expression.")}
          |
-         |The expression has type '${FormatType.formatWellKindedType(tpe)}'
+         |The expression has type '${FormatType.formatType(tpe)}'
          |""".stripMargin
     }
 
@@ -378,7 +379,7 @@ object RedundancyError {
     * @param tpe the type of the expression.
     * @param loc the location of the expression.
     */
-  case class DiscardedValue(tpe: Type, loc: SourceLocation) extends RedundancyError {
+  case class DiscardedValue(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
     def summary: String = "Non-unit expression value is implicitly discarded."
 
     def message(formatter: Formatter): String = {
@@ -388,7 +389,7 @@ object RedundancyError {
          |
          |${code(loc, "discarded value.")}
          |
-         |The expression has type '${FormatType.formatWellKindedType(tpe)}'
+         |The expression has type '${FormatType.formatType(tpe)}'
          |""".stripMargin
     }
 
@@ -411,7 +412,7 @@ object RedundancyError {
     * @param tpe the type of the expression.
     * @param loc the location of the expression.
     */
-  case class UnderAppliedFunction(tpe: Type, loc: SourceLocation) extends RedundancyError {
+  case class UnderAppliedFunction(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
     def summary: String = "Under applied function. Missing function argument(s)?"
 
     def message(formatter: Formatter): String = {
@@ -421,7 +422,7 @@ object RedundancyError {
          |
          |${code(loc, "the function is not fully-applied and hence has no effect.")}
          |
-         |The function has type '${FormatType.formatWellKindedType(tpe)}'
+         |The function has type '${FormatType.formatType(tpe)}'
          |""".stripMargin
     }
 
@@ -447,7 +448,7 @@ object RedundancyError {
       if (arguments.isEmpty) { // fallback message
         "Missing function argument(s)?"
       } else {
-        val argumentStrings = arguments.map(t => s"${FormatType.formatWellKindedType(t)}").mkString(", ")
+        val argumentStrings = arguments.map(t => s"${FormatType.formatType(t)}").mkString(", ")
         s"Missing argument(s) of type: $argumentStrings."
       }
     }
@@ -546,7 +547,7 @@ object RedundancyError {
     * @param redundantTconstr the tconstr that is made redundant by the other.
     * @param loc              the location where the error occured.
     */
-  case class RedundantTypeConstraint(entailingTconstr: Ast.TypeConstraint, redundantTconstr: Ast.TypeConstraint, loc: SourceLocation) extends RedundancyError {
+  case class RedundantTypeConstraint(entailingTconstr: Ast.TypeConstraint, redundantTconstr: Ast.TypeConstraint, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
     def summary: String = "Redundant type constraint."
 
     def message(formatter: Formatter): String = {
