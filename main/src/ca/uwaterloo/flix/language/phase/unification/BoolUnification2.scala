@@ -27,14 +27,14 @@ import scala.util.{Failure, Success, Try}
 
 object BoolUnification2 {
 
-  def unify[F](f1: F, f2: F, renv: Set[Int])(implicit flix: Flix, alg: BoolAlgTrait[F]): Option[BoolAlgebraSubstitution[F]] = {
+  def unify[F](f1: F, f2: F, renv: Set[Int])(implicit flix: Flix, alg: BoolFormula[F]): Option[BoolAlgebraSubstitution[F]] = {
     booleanUnification(f1, f2, renv).toOption
   }
 
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  private def booleanUnification[F](tpe1: F, tpe2: F, renv: Set[Int])(implicit flix: Flix, alg: BoolAlgTrait[F]): Try[BoolAlgebraSubstitution[F]] = {
+  private def booleanUnification[F](tpe1: F, tpe2: F, renv: Set[Int])(implicit flix: Flix, alg: BoolFormula[F]): Try[BoolAlgebraSubstitution[F]] = {
     // The boolean expression we want to show is 0.
     val query = mkEq(tpe1, tpe2)
 
@@ -87,7 +87,7 @@ object BoolUnification2 {
     *
     * `flexvs` is the list of remaining flexible variables in the expression.
     */
-  private def successiveVariableElimination[F](f: F, flexvs: List[Int])(implicit flix: Flix, alg: BoolAlgTrait[F]): BoolAlgebraSubstitution[F] = flexvs match {
+  private def successiveVariableElimination[F](f: F, flexvs: List[Int])(implicit flix: Flix, alg: BoolFormula[F]): BoolAlgebraSubstitution[F] = flexvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
       if (!satisfiable(f))
@@ -114,7 +114,7 @@ object BoolUnification2 {
     * Returns `true` if the given boolean formula `f` is satisfiable
     * when ALL variables in the formula are flexible.
     */
-  private def satisfiable[F](f: F)(implicit flix: Flix, alg: BoolAlgTrait[F]): Boolean = {
+  private def satisfiable[F](f: F)(implicit flix: Flix, alg: BoolFormula[F]): Boolean = {
     if (f == alg.mkTrue) {
       true
     } else if (f == alg.mkFalse) {
@@ -134,5 +134,5 @@ object BoolUnification2 {
   /**
     * To unify two Boolean formulas p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
     */
-  private def mkEq[F](p: F, q: F)(implicit alg: BoolAlgTrait[F]): F = alg.mkOr(alg.mkAnd(p, alg.mkNot(q)), alg.mkAnd(alg.mkNot(p), q))
+  private def mkEq[F](p: F, q: F)(implicit alg: BoolFormula[F]): F = alg.mkOr(alg.mkAnd(p, alg.mkNot(q)), alg.mkAnd(alg.mkNot(p), q))
 }

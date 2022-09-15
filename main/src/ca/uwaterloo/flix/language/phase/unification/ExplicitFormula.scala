@@ -224,7 +224,7 @@ object ExplicitFormula {
     case class Eff(sym: Symbol.EffectSym) extends VarOrEff
   }
 
-  implicit val AsBoolAlgTrait: BoolAlgTrait[ExplicitFormula] = new BoolAlgTrait[ExplicitFormula] {
+  implicit val AsBoolAlgTrait: BoolFormula[ExplicitFormula] = new BoolFormula[ExplicitFormula] {
     @tailrec
     override def mkAnd(alg1: ExplicitFormula, alg2: ExplicitFormula): ExplicitFormula = (alg1, alg2) match {
       // T ∧ x => x

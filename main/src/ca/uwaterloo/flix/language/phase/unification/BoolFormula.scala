@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.util.collection.Bimap
 import scala.collection.immutable.SortedSet
 
 // MATT docs
-trait BoolAlgTrait[F] {
+trait BoolFormula[F] {
   def mkTrue: F
 
   def mkFalse: F
