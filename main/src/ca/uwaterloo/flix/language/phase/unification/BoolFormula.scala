@@ -25,16 +25,34 @@ import scala.collection.immutable.SortedSet
   * A type class for Boolean Formulas.
   */
 trait BoolFormula[F] {
+  /**
+    * Returns the True formula.
+    */
   def mkTrue: F
 
+  /**
+    * Returns the False formula.
+    */
   def mkFalse: F
 
+  /**
+    * Returns the formula representing f1 ∧ f2.
+    */
   def mkAnd(f1: F, f2: F): F
 
+  /**
+    * Returns the formula representing f1 ∨ f2.
+    */
   def mkOr(f1: F, f2: F): F
 
+  /**
+    * Returns the formula representing ¬f1
+    */
   def mkNot(f1: F): F
 
+  /**
+    * Returns the a variable formula with the given ID.
+    */
   def mkVar(id: Int): F
 
   /**

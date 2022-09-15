@@ -84,12 +84,17 @@ object BoolFormulaTable {
 
     // Determine whether to minimize once or recursively.
     val result = if (f.freeVars.subsetOf(VarSet)) {
-      // Case 1: The number of variables in the formula is less than those of the table.
+      // Case 1: The variables are a subset of those in the table.
       // We can immediately lookup the minimal formula in the table.
       if (Debug) println(s"Minimize by lookup ($numVars variables)")
       lookup(f)
+    } else if (numVars <= MaxVars) {
+      // Case 2: The number of variables is within the limits of the table.
+      // We can look up the result after renaming.
+      if (Debug) println(s"Minimize by alpha rename ($numVars variables)")
+      alphaRenameAndLookup(f)
     } else {
-      // Case 2: The formula has more variables than the table.
+      // Case 3: The formula has more variables than the table.
       // We try to recursively minimize each sub-formula.
       // This does not guarantee that we arrive at a minimal formula, but it is better than nothing.
       if (Debug) println(s"Minimize by recursion ($numVars variables)")
