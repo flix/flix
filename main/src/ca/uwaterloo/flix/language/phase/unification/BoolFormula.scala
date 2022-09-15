@@ -56,6 +56,11 @@ trait BoolFormula[F] {
   def mkAnd(f1: F, f2: F): F
 
   /**
+    * Returns the set of free variables in the formula.
+    */
+  def freeVars(f: F): SortedSet[Int]
+
+  /**
     * Applies the function fn to every variable occurrence in the formula f.
     */
   def map(f: F)(fn: Int => F): F
@@ -94,11 +99,6 @@ trait BoolFormula[F] {
   def liftRigidityEnv(renv: RigidityEnv, env: Bimap[Symbol.KindedTypeVarSym, Int]): SortedSet[Int] = {
     renv.s.flatMap(env.getForward)
   }
-
-  /**
-    * Returns the set of free variables in the formula.
-    */
-  def freeVars(f: F): SortedSet[Int]
 
   /**
     * Returns an equivalent formula of equal or lesser size.
