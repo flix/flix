@@ -41,7 +41,7 @@ trait BoolFormula[F] {
     * Maps the function over the formula.
     * The function is executed for each variable in the formula.
     */
-  def map(g: Int => F, f: F): F
+  def map(formula: F)(f: Int => F): F
 
   /**
     * Returns an environment built from the given types.

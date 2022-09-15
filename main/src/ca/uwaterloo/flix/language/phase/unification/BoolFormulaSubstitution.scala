@@ -72,7 +72,9 @@ case class BoolFormulaSubstitution[F](m: Map[Int, F]) {
     if (isEmpty) {
       f
     } else {
-      alg.map(i => m.getOrElse(i, alg.mkVar(i)), f)
+      alg.map(f) {
+        i => m.getOrElse(i, alg.mkVar(i))
+      }
     }
   }
 
