@@ -1375,9 +1375,14 @@ object Lowering {
     */
   private def mkParWaits(symExps: List[(Symbol.VarSym, Expression)]): List[Expression] = {
     // Make wait expressions `<- ch, ..., <- chn`.
+    var first = true
     symExps.map {
       case (sym, e) =>
-        if (shouldSpawnThread(e)) {
+        val spawnable = shouldSpawnThread(e)
+        if (spawnable && first) { // We do not want to spawn a thread for the first spawnable expression
+          first = false // as we want to evaluate it in the main thread.
+          e
+        } else if (spawnable) {
           val loc = e.loc.asSynthetic
           Expression.GetChannel(
             Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc),
@@ -1395,7 +1400,7 @@ object Lowering {
     // Filter exps that should not be parallelized
     val parallelizableExps = chanSymsWithExps.filter {
       case (_, e) => shouldSpawnThread(e)
-    }
+    }.drop(1) // We drop the leftmost exp because we evaluate it in the main thread.
 
     // Make spawn expressions `spawn ch <- exp`.
     val spawns = parallelizableExps.foldRight(exp: Expression) {
