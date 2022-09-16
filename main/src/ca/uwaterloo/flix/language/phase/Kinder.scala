@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
-import ca.uwaterloo.flix.language.phase.unification.BoolTypes
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, traverse}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
@@ -1212,7 +1211,7 @@ object Kinder {
             // Case 2: There is no necessarily impure effect. Build the formula
             case None =>
               purs.reduceOption({
-                case (t1, t2) => BoolTypes.mkAnd(t1, t2)
+                case (t1, t2) => Type.mkAnd(t1, t2, SourceLocation.Unknown)
               }: (Type, Type) => Type).getOrElse(Type.Pure)
           }
 
