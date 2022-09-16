@@ -1369,15 +1369,22 @@ object Lowering {
 
   /**
     * Returns a list of `GetChannel` expressions based on `symExps`.
+    *
+    * If the expression is either [[Expression.Var]] or a literal expression a [[Expression.GetChannel]] is **not** generated.
+    *
     */
   private def mkParWaits(symExps: List[(Symbol.VarSym, Expression)]): List[Expression] = {
     // Make wait expressions `<- ch, ..., <- chn`.
     symExps.map {
       case (sym, e) =>
-        val loc = e.loc.asSynthetic
-        Expression.GetChannel(
-          Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc),
-          e.tpe, Type.Impure, e.eff, loc)
+        if (shouldSpawnThread(e)) {
+          val loc = e.loc.asSynthetic
+          Expression.GetChannel(
+            Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc),
+            e.tpe, Type.Impure, e.eff, loc)
+        }
+        else
+          e
     }
   }
 
@@ -1385,8 +1392,13 @@ object Lowering {
     * Returns a full `par exp` expression.
     */
   private def mkParChannels(exp: Expression, chanSymsWithExps: List[(Symbol.VarSym, Expression)]): Expression = {
+    // Filter exps that should not be parallelized
+    val parallelizableExps = chanSymsWithExps.filter {
+      case (_, e) => shouldSpawnThread(e)
+    }
+
     // Make spawn expressions `spawn ch <- exp`.
-    val spawns = chanSymsWithExps.foldRight(exp: Expression) {
+    val spawns = parallelizableExps.foldRight(exp: Expression) {
       case ((sym, e), acc) =>
         val loc = e.loc.asSynthetic
         val e1 = Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc) // The channel `ch`
@@ -1396,7 +1408,7 @@ object Lowering {
     }
 
     // Make let bindings `let ch = chan 1;`.
-    chanSymsWithExps.foldRight(spawns: Expression) {
+    parallelizableExps.foldRight(spawns: Expression) {
       case ((sym, e), acc) =>
         val loc = e.loc.asSynthetic
         val chan = Expression.NewChannel(Expression.Int32(1, loc), Type.mkChannel(e.tpe, loc), Type.Impure, Type.Empty, loc) // The channel exp `chan 1`
@@ -1404,6 +1416,24 @@ object Lowering {
     }
   }
 
+
+  def shouldSpawnThread(exp: Expression): Boolean = exp match {
+    case Expression.Unit(_) => false
+    case Expression.Null(_, _) => false
+    case Expression.True(_) => false
+    case Expression.False(_) => false
+    case Expression.Char(_, _) => false
+    case Expression.Float32(_, _) => false
+    case Expression.Float64(_, _) => false
+    case Expression.Int8(_, _) => false
+    case Expression.Int16(_, _) => false
+    case Expression.Int32(_, _) => false
+    case Expression.Int64(_, _) => false
+    case Expression.BigInt(_, _) => false
+    case Expression.Str(_, _) => false
+    case Expression.Var(_, _, _) => false
+    case _ => true
+  }
 
   /**
     * Returns a tuple expression that is evaluated in parallel.
