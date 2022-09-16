@@ -80,7 +80,7 @@ object HoverProvider {
     val minTpe = minimizeType(tpe)
     val markup =
       s"""```flix
-         |${FormatType.formatWellKindedType(minTpe)} ${mkCurrentMsg(current)}
+         |${FormatType.formatType(minTpe)} ${mkCurrentMsg(current)}
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
@@ -104,7 +104,7 @@ object HoverProvider {
     ("status" -> "success") ~ ("result" -> result)
   }
 
-  private def hoverDef(sym: Symbol.DefnSym, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root): JObject = {
+  private def hoverDef(sym: Symbol.DefnSym, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root, flix: Flix): JObject = {
     val defDecl = root.defs(sym)
     val markup =
       s"""```flix
@@ -119,7 +119,7 @@ object HoverProvider {
     ("status" -> "success") ~ ("result" -> result)
   }
 
-  private def hoverSig(sym: Symbol.SigSym, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root): JObject = {
+  private def hoverSig(sym: Symbol.SigSym, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root, flix: Flix): JObject = {
     val sigDecl = root.sigs(sym)
     val markup =
       s"""```flix
@@ -134,7 +134,7 @@ object HoverProvider {
     ("status" -> "success") ~ ("result" -> result)
   }
 
-  private def hoverOp(sym: Symbol.OpSym, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root): JObject = {
+  private def hoverOp(sym: Symbol.OpSym, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root, flix: Flix): JObject = {
     val opDecl = root.effects(sym.eff).ops.find(_.sym == sym).get // guaranteed to be present
     val markup =
       s"""```flix
@@ -151,7 +151,7 @@ object HoverProvider {
 
   private def formatTypAndEff(tpe0: Type, pur0: Type, eff0: Type)(implicit flix: Flix): String = {
     // TODO deduplicate with CompletionProvider
-    val t = FormatType.formatWellKindedType(tpe0)
+    val t = FormatType.formatType(tpe0)
 
     // don't show purity if bool effects are turned off
     val p = if (flix.options.xnobooleffects) {
@@ -160,7 +160,7 @@ object HoverProvider {
       pur0 match {
         case Type.Cst(TypeConstructor.True, _) => ""
         case Type.Cst(TypeConstructor.False, _) => " & Impure"
-        case pur => " & " + FormatType.formatWellKindedType(pur)
+        case pur => " & " + FormatType.formatType(pur)
       }
     }
 
@@ -170,7 +170,7 @@ object HoverProvider {
     } else {
       eff0 match {
         case Type.Cst(TypeConstructor.Empty, _) => ""
-        case eff => " \\ " + FormatType.formatWellKindedType(eff)
+        case eff => " \\ " + FormatType.formatType(eff)
       }
     }
     s"$t$p$e"

@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.fmt
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Scheme
 
 object FormatScheme {
@@ -23,7 +24,7 @@ object FormatScheme {
     * Construct a string representation of the type scheme,  e.g.
     * `∀(a, b).a -> Int -> b with Show[a], Eq[b]`
     */
-  def formatScheme(sc: Scheme)(implicit audience: Audience): String = {
+  def formatScheme(sc: Scheme)(implicit flix: Flix): String = {
     val mainPart = formatSchemeWithoutConstraints(sc)
 
     val tconstrPart =
@@ -36,17 +37,41 @@ object FormatScheme {
   }
 
   /**
+    * Construct a string representation of the type scheme,  e.g.
+    * `∀(a, b).a -> Int -> b with Show[a], Eq[b]`
+    */
+  def formatSchemeWithOptions(sc: Scheme, fmt: FormatOptions): String = {
+    val mainPart = formatSchemeWithoutConstraintsWithOptions(sc, fmt)
+
+    val tconstrPart =
+      if (sc.constraints.isEmpty)
+        ""
+      else
+        " with " + sc.constraints.map(FormatTypeConstraint.formatTypeConstraintWithOptions(_, fmt)).mkString(", ")
+
+    mainPart + tconstrPart
+  }
+
+  /**
     * Construct a string representation of the type scheme, excluding type constraints, e.g.,
     * `∀(a, b).a -> Int -> b`
     */
-  def formatSchemeWithoutConstraints(sc: Scheme)(implicit audience: Audience): String = {
+  def formatSchemeWithoutConstraints(sc: Scheme)(implicit flix: Flix): String = {
+    formatSchemeWithoutConstraintsWithOptions(sc, flix.getFormatOptions)
+  }
+
+  /**
+    * Construct a string representation of the type scheme, excluding type constraints, e.g.,
+    * `∀(a, b).a -> Int -> b`
+    */
+  def formatSchemeWithoutConstraintsWithOptions(sc: Scheme, fmt: FormatOptions): String = {
     val quantifiersPart =
       if (sc.quantifiers.isEmpty)
         ""
       else
-        "∀(" + sc.quantifiers.map(FormatType.formatTypeVarSym).mkString(", ") + "). "
+        "∀(" + sc.quantifiers.map(FormatType.formatTypeVarSymWithOptions(_, fmt)).mkString(", ") + "). "
 
-    val typePart = FormatType.formatWellKindedType(sc.base)
+    val typePart = FormatType.formatTypeWithOptions(sc.base, fmt)
 
     quantifiersPart + typePart
   }

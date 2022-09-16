@@ -15,14 +15,15 @@
  */
 package ca.uwaterloo.flix.language.fmt
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
 
 object FormatEff {
 
-  def formatEff(eff: Type)(implicit audience: Audience): String = eff match {
+  def formatEff(eff: Type)(implicit flix: Flix): String = eff match {
     case Type.Cst(TypeConstructor.True, _) => "Pure"
     case Type.Cst(TypeConstructor.False, _) => "Impure"
-    case _ => FormatType.formatWellKindedType(eff)
+    case _ => FormatType.formatType(eff)
   }
 
 }

@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
@@ -417,6 +418,17 @@ class Flix {
       throw new IllegalArgumentException("'opts' must be non-null.")
     options = opts
     this
+  }
+
+  /**
+    * Returns the format options associated with this Flix instance.
+    */
+  def getFormatOptions: FormatOptions = {
+    FormatOptions(
+      ignorePur = options.xnobooleffects,
+      ignoreEff = options.xnoseteffects,
+      varNames = FormatOptions.VarName.NameBased // TODO add cli option
+    )
   }
 
   /**

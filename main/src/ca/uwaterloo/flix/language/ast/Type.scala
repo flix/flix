@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
+import ca.uwaterloo.flix.language.fmt.{Audience, FormatOptions, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
@@ -49,6 +49,19 @@ sealed trait Type {
     case Type.Cst(tc, _) => SortedSet.empty
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
     case Type.Alias(_, args, _, _) => args.flatMap(_.typeVars).to(SortedSet)
+  }
+
+  /**
+    * Gets all the effects in the given type.
+    */
+  def effects: SortedSet[Symbol.EffectSym] = this match {
+    case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(sym)
+
+    case _: Type.Cst => SortedSet.empty
+    case _: Type.Var => SortedSet.empty
+
+    case Type.Apply(tpe1, tpe2, _) => tpe1.effects ++ tpe2.effects
+    case Type.Alias(_, _, tpe, _) => tpe.effects
   }
 
   /**
@@ -187,7 +200,7 @@ sealed trait Type {
   /**
     * Returns a human readable string representation of `this` type.
     */
-  override def toString: String = FormatType.formatWellKindedType(this)(Audience.Internal)
+  override def toString: String = FormatType.formatTypeWithOptions(this, FormatOptions.Internal)
 }
 
 object Type {
