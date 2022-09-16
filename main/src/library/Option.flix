@@ -132,6 +132,8 @@ instance FunctorFilter[Option] {
     pub override def filter(f: a -> Bool \ ef, o: Option[a]): Option[a] \ ef = Option.filter(f, o)
 }
 
+instance Witherable[Option]
+
 instance SemiGroup[Option[a]] with SemiGroup[a] {
     pub def combine(x: Option[a], y: Option[a]): Option[a] = match (x, y) {
         case (a, None)              => a
