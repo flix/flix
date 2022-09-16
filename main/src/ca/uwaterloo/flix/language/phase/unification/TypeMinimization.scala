@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.unification.ExplicitFormula.{fromBoolType, fromEffType, toType}
+import ca.uwaterloo.flix.language.phase.unification.BoolFormula.{fromBoolType, fromEffType, toType}
 import ca.uwaterloo.flix.language.phase.unification.BoolFormulaTable.minimizeFormula
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
@@ -91,12 +91,12 @@ object TypeMinimization {
     }
 
     // Compute the variables in `tpe`.
-    val tvars = tpe.typeVars.toList.map(tvar => ExplicitFormula.VarOrEff.Var(tvar.sym))
-    val effs = tpe.effects.toList.map(ExplicitFormula.VarOrEff.Eff)
+    val tvars = tpe.typeVars.toList.map(tvar => BoolFormula.VarOrEff.Var(tvar.sym))
+    val effs = tpe.effects.toList.map(BoolFormula.VarOrEff.Eff)
 
     // Construct a bi-directional map from type variables to indices.
     // The idea is that the first variable becomes x0, the next x1, and so forth.
-    val m = (tvars ++ effs).zipWithIndex.foldLeft(Bimap.empty[ExplicitFormula.VarOrEff, BoolFormulaTable.Variable]) {
+    val m = (tvars ++ effs).zipWithIndex.foldLeft(Bimap.empty[BoolFormula.VarOrEff, BoolFormulaTable.Variable]) {
       case (macc, (sym, x)) => macc + (sym -> x)
     }
 
