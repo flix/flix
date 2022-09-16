@@ -1211,7 +1211,7 @@ object Kinder {
             // Case 2: There is no necessarily impure effect. Build the formula
             case None =>
               purs.reduceOption({
-                case (t1, t2) => Type.mkAnd(t1, t2, SourceLocation.Unknown)
+                case (t1, t2) => Type.mkAnd(t1, t2, t2.loc.asSynthetic)
               }: (Type, Type) => Type).getOrElse(Type.Pure)
           }
 
