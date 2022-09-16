@@ -291,241 +291,246 @@ object SimpleType {
 
   /**
     * Creates a simple type from the well-kinded type `t`.
-   */
-  def fromWellKindedType(t: Type): SimpleType = t.baseType match {
-    case Type.Var(sym, _) =>
-      mkApply(Var(sym.id, sym.kind, sym.isRegion, sym.text), t.typeArguments.map(fromWellKindedType))
-    case Type.Alias(cst, args, _, _) =>
-      mkApply(Name(cst.sym.name), (args ++ t.typeArguments).map(fromWellKindedType))
-    case Type.Cst(tc, _) => tc match {
-      case TypeConstructor.Unit => Unit
-      case TypeConstructor.Null => Null
-      case TypeConstructor.Bool => Bool
-      case TypeConstructor.Char => Char
-      case TypeConstructor.Float32 => Float32
-      case TypeConstructor.Float64 => Float64
-      case TypeConstructor.Int8 => Int8
-      case TypeConstructor.Int16 => Int16
-      case TypeConstructor.Int32 => Int32
-      case TypeConstructor.Int64 => Int64
-      case TypeConstructor.BigInt => BigInt
-      case TypeConstructor.Str => Str
+    */
+  def fromWellKindedType(t0: Type)(implicit fmt: FormatOptions): SimpleType = {
 
-      case TypeConstructor.Arrow(arity) =>
-        val args = t.typeArguments.map(fromWellKindedType)
-        args match {
-          // Case 1: No args. Fill everything with a hole.
-          case Nil =>
-            val lastArrow: SimpleType = PolyPurAndEffArrow(Hole, Hole, Hole, Hole)
-            // NB: safe to subtract 2 since arity is always at least 2
-            List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow)
+    def visit(t: Type): SimpleType = t.baseType match {
+      case Type.Var(sym, _) =>
+        mkApply(Var(sym.id, sym.kind, sym.isRegion, sym.text), t.typeArguments.map(visit))
+      case Type.Alias(cst, args, _, _) =>
+        mkApply(Name(cst.sym.name), (args ++ t.typeArguments).map(visit))
+      case Type.Cst(tc, _) => tc match {
+        case TypeConstructor.Unit => Unit
+        case TypeConstructor.Null => Null
+        case TypeConstructor.Bool => Bool
+        case TypeConstructor.Char => Char
+        case TypeConstructor.Float32 => Float32
+        case TypeConstructor.Float64 => Float64
+        case TypeConstructor.Int8 => Int8
+        case TypeConstructor.Int16 => Int16
+        case TypeConstructor.Int32 => Int32
+        case TypeConstructor.Int64 => Int64
+        case TypeConstructor.BigInt => BigInt
+        case TypeConstructor.Str => Str
 
-          // Case 2: Only applied to purity but not effect
-          case pur :: Nil =>
-            val lastArrow: SimpleType = PolyPurAndEffArrow(Hole, pur, Hole, Hole)
-            // NB: safe to subtract 2 since arity is always at least 2
-            List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow)
+        case TypeConstructor.Arrow(arity) =>
+          val args = t.typeArguments.map(visit)
+          args match {
+            // Case 1: No args. Fill everything with a hole.
+            case Nil =>
+              val lastArrow: SimpleType = PolyPurAndEffArrow(Hole, Hole, Hole, Hole)
+              // NB: safe to subtract 2 since arity is always at least 2
+              List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow)
 
-          // Case 3: Pure function.
-          case True :: Empty :: tpes =>
-            // NB: safe to reduce because arity is always at least 2
-            tpes.padTo(arity, Hole).reduceRight(PureArrow)
+            // Case 2: Only applied to purity but not effect
+            case pur :: Nil =>
+              val lastArrow: SimpleType = PolyPurAndEffArrow(Hole, pur, Hole, Hole)
+              // NB: safe to subtract 2 since arity is always at least 2
+              List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow)
 
-          // Case 4: Impure in effect only.
-          case True :: eff :: tpes =>
-            // NB: safe to take last 2 because arity is always at least 2
-            val allTpes = tpes.padTo(arity, Hole)
-            val List(lastArg, ret) = allTpes.takeRight(2)
-            val lastArrow: SimpleType = PolyEffArrow(lastArg, eff, ret)
-            allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
+            // Case 3: Pure function.
+            case pur :: eff :: tpes if (pur == True || fmt.ignorePur) && (eff == Empty || fmt.ignoreEff) =>
+              // NB: safe to reduce because arity is always at least 2
+              tpes.padTo(arity, Hole).reduceRight(PureArrow)
 
-          // Case 5: Impure in purity only.
-          case pur :: Empty :: tpes =>
-            // NB: safe to take last 2 because arity is always at least 2
-            val allTpes = tpes.padTo(arity, Hole)
-            val List(lastArg, ret) = allTpes.takeRight(2)
-            val lastArrow: SimpleType = PolyPurArrow(lastArg, pur, ret)
-            allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
+            // Case 4: Impure in effect only.
+            case pur :: eff :: tpes if pur == True || fmt.ignorePur =>
+              // NB: safe to take last 2 because arity is always at least 2
+              val allTpes = tpes.padTo(arity, Hole)
+              val List(lastArg, ret) = allTpes.takeRight(2)
+              val lastArrow: SimpleType = PolyEffArrow(lastArg, eff, ret)
+              allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
 
-          // Case 6: Impure function.
-          case pur :: eff :: tpes =>
-            // NB: safe to take last 2 because arity is always at least 2
-            val allTpes = tpes.padTo(arity, Hole)
-            val List(lastArg, ret) = allTpes.takeRight(2)
-            val lastArrow: SimpleType = PolyPurAndEffArrow(lastArg, pur, eff, ret)
-            allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
-        }
+            // Case 5: Impure in purity only.
+            case pur :: eff :: tpes if eff == Empty || fmt.ignoreEff =>
+              // NB: safe to take last 2 because arity is always at least 2
+              val allTpes = tpes.padTo(arity, Hole)
+              val List(lastArg, ret) = allTpes.takeRight(2)
+              val lastArrow: SimpleType = PolyPurArrow(lastArg, pur, ret)
+              allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
 
-      case TypeConstructor.RecordRowEmpty => RecordRow(Nil)
-
-      case TypeConstructor.RecordRowExtend(field) =>
-        val args = t.typeArguments.map(fromWellKindedType)
-        args match {
-          // Case 1: No args. ( name: ? | ? )
-          case Nil => RecordRowExtend(RecordFieldType(field.name, Hole) :: Nil, Hole)
-          // Case 2: One arg. ( name: tpe | ? )
-          case tpe :: Nil => RecordRowExtend(RecordFieldType(field.name, tpe) :: Nil, Hole)
-          // Case 3: Fully applied. Dispatch to proper record handler.
-          case _ :: _ :: Nil => fromRecordRow(t)
-          // Case 4: Too many args. Error.
-          case _ :: _ :: _ :: _ => throw new OverAppliedType
-        }
-
-      case TypeConstructor.Record =>
-        val args = t.typeArguments.map(fromWellKindedType)
-        args match {
-          // Case 1: No args. { ? }
-          case Nil => RecordConstructor(Hole)
-          // Case 2: One row argument. Extract its values.
-          case tpe :: Nil => tpe match {
-            case RecordRow(fields) => Record(fields)
-            case RecordRowExtend(fields, rest) => RecordExtend(fields, rest)
-            case nonRecord => RecordConstructor(nonRecord)
+            // Case 6: Impure function.
+            case pur :: eff :: tpes =>
+              // NB: safe to take last 2 because arity is always at least 2
+              val allTpes = tpes.padTo(arity, Hole)
+              val List(lastArg, ret) = allTpes.takeRight(2)
+              val lastArrow: SimpleType = PolyPurAndEffArrow(lastArg, pur, eff, ret)
+              allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
           }
-          // Case 3: Too many args. Error.
-          case _ :: _ :: _ => throw new OverAppliedType
-        }
 
-      case TypeConstructor.SchemaRowEmpty => SchemaRow(Nil)
+        case TypeConstructor.RecordRowEmpty => RecordRow(Nil)
 
-      case TypeConstructor.SchemaRowExtend(pred) =>
-        // erase aliases over the Schema/Relation
-        val args = mapHead(t.typeArguments, Type.eraseTopAliases).map(fromWellKindedType)
-        args match {
-          // Case 1: No args. #( Name(?) | ? )
-          case Nil => SchemaRowExtend(RelationFieldType(pred.name, Hole :: Nil) :: Nil, Hole)
-          // Case 2: One relation arg. #( Name(tpe1, tpe2) | ? )
-          case Relation(tpes) :: Nil => SchemaRowExtend(RelationFieldType(pred.name, tpes) :: Nil, Hole)
-          // Case 3: One lattice arg. #( Name(tpe1; tpe2) | ? )
-          case Lattice(tpes, lat) :: Nil => SchemaRowExtend(LatticeFieldType(pred.name, tpes, lat) :: Nil, Hole)
-          // Case 4: Some non-predicate type.
-          case _ :: Nil => SchemaRowExtend(NonPredFieldType(pred.name, args.head) :: Nil, Hole)
-          // Case 5: Fully applied. Dispatch to proper schema handler.
-          case _ :: _ :: Nil => fromSchemaRow(t)
-          // Case 6: Too many args. Error.
-          case _ :: _ :: _ :: _ => throw new OverAppliedType
-        }
-
-      case TypeConstructor.Schema =>
-        val args = t.typeArguments.map(fromWellKindedType)
-        args match {
-          // Case 1: No args. { ? }
-          case Nil => SchemaConstructor(Hole)
-          // Case 2: One row argument. Extract its values.
-          case tpe :: Nil => tpe match {
-            case SchemaRow(fields) => Schema(fields)
-            case SchemaRowExtend(fields, rest) => SchemaExtend(fields, rest)
-            case nonSchema => SchemaConstructor(nonSchema)
+        case TypeConstructor.RecordRowExtend(field) =>
+          val args = t.typeArguments.map(visit)
+          args match {
+            // Case 1: No args. ( name: ? | ? )
+            case Nil => RecordRowExtend(RecordFieldType(field.name, Hole) :: Nil, Hole)
+            // Case 2: One arg. ( name: tpe | ? )
+            case tpe :: Nil => RecordRowExtend(RecordFieldType(field.name, tpe) :: Nil, Hole)
+            // Case 3: Fully applied. Dispatch to proper record handler.
+            case _ :: _ :: Nil => fromRecordRow(t)
+            // Case 4: Too many args. Error.
+            case _ :: _ :: _ :: _ => throw new OverAppliedType
           }
-          // Case 3: Too many args. Error.
-          case _ :: _ :: _ => throw new OverAppliedType
-        }
-      case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(fromWellKindedType))
-      case TypeConstructor.Channel => mkApply(Channel, t.typeArguments.map(fromWellKindedType))
-      case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(fromWellKindedType))
-      case TypeConstructor.Enum(sym, kind) => mkApply(Name(sym.name), t.typeArguments.map(fromWellKindedType))
-      case TypeConstructor.Native(clazz) => Name(clazz.getSimpleName)
-      case TypeConstructor.Ref => mkApply(Ref, t.typeArguments.map(fromWellKindedType))
-      case TypeConstructor.Tuple(l) =>
-        val tpes = t.typeArguments.map(fromWellKindedType).padTo(l, Hole)
-        Tuple(tpes)
-      case TypeConstructor.Relation =>
-        val args = t.typeArguments.map(fromWellKindedType)
-        args match {
-          case Nil => RelationConstructor
-          case tpe :: Nil => Relation(destructTuple(tpe))
-          case _ :: _ :: _ => throw new OverAppliedType
-        }
-      case TypeConstructor.Lattice =>
-        val args = t.typeArguments.map(fromWellKindedType)
-        args match {
-          case Nil => LatticeConstructor
-          case tpe :: Nil =>
-            val tpesAndLat = destructTuple(tpe)
-            // NB: safe to take init/last since every lattice has a lattice field
-            // MATT not safe in case of alias!
-            val tpes = tpesAndLat.init
-            val lat = tpesAndLat.last
-            Lattice(tpes, lat)
-          case _ :: _ :: _ => throw new OverAppliedType
-        }
-      case TypeConstructor.True => True
-      case TypeConstructor.False => False
-      case TypeConstructor.Not =>
-        t.typeArguments.map(fromWellKindedType) match {
-          case Nil => Not(Hole)
-          case arg :: Nil => Not(arg)
-          case _ :: _ :: _ => throw new OverAppliedType
-        }
 
-      case TypeConstructor.And =>
-        // collapse into a chain of ands
-        t.typeArguments.map(fromWellKindedType).map(splitAnds) match {
-          // Case 1: No args. ? and ?
-          case Nil => And(Hole :: Hole :: Nil)
-          // Case 2: One arg. Take the left and put a hole at the end: tpe1 and tpe2 and ?
-          case args :: Nil => And(args :+ Hole)
-          // Case 3: Multiple args. Concatenate them: tpe1 and tpe2 and tpe3 and tpe4
-          case args1 :: args2 :: Nil => And(args1 ++ args2)
-          // Case 4: Too many args. Error.
-          case _ :: _ :: _ :: _ => throw new OverAppliedType
-        }
+        case TypeConstructor.Record =>
+          val args = t.typeArguments.map(visit)
+          args match {
+            // Case 1: No args. { ? }
+            case Nil => RecordConstructor(Hole)
+            // Case 2: One row argument. Extract its values.
+            case tpe :: Nil => tpe match {
+              case RecordRow(fields) => Record(fields)
+              case RecordRowExtend(fields, rest) => RecordExtend(fields, rest)
+              case nonRecord => RecordConstructor(nonRecord)
+            }
+            // Case 3: Too many args. Error.
+            case _ :: _ :: _ => throw new OverAppliedType
+          }
 
-      case TypeConstructor.Or =>
-        // collapse into a chain of ors
-        t.typeArguments.map(fromWellKindedType).map(splitOrs) match {
-          // Case 1: No args. ? or ?
-          case Nil => Or(Hole :: Hole :: Nil)
-          // Case 2: One arg. Take the left and put a hole at the end: tpe1 or tpe2 or ?
-          case args :: Nil => Or(args :+ Hole)
-          // Case 3: Multiple args. Concatenate them: tpe1 or tpe2 or tpe3 or tpe4
-          case args1 :: args2 :: Nil => Or(args1 ++ args2)
-          // Case 4: Too many args. Error.
-          case _ :: _ :: _ :: _ => throw new OverAppliedType
-        }
+        case TypeConstructor.SchemaRowEmpty => SchemaRow(Nil)
 
-      case TypeConstructor.Complement =>
-        t.typeArguments.map(fromWellKindedType) match {
-          case Nil => Complement(Hole)
-          case arg :: Nil => Complement(arg)
-          case _ :: _ :: _ => throw new OverAppliedType
-        }
+        case TypeConstructor.SchemaRowExtend(pred) =>
+          // erase aliases over the Schema/Relation
+          val args = mapHead(t.typeArguments, Type.eraseTopAliases).map(visit)
+          args match {
+            // Case 1: No args. #( Name(?) | ? )
+            case Nil => SchemaRowExtend(RelationFieldType(pred.name, Hole :: Nil) :: Nil, Hole)
+            // Case 2: One relation arg. #( Name(tpe1, tpe2) | ? )
+            case Relation(tpes) :: Nil => SchemaRowExtend(RelationFieldType(pred.name, tpes) :: Nil, Hole)
+            // Case 3: One lattice arg. #( Name(tpe1; tpe2) | ? )
+            case Lattice(tpes, lat) :: Nil => SchemaRowExtend(LatticeFieldType(pred.name, tpes, lat) :: Nil, Hole)
+            // Case 4: Some non-predicate type.
+            case _ :: Nil => SchemaRowExtend(NonPredFieldType(pred.name, args.head) :: Nil, Hole)
+            // Case 5: Fully applied. Dispatch to proper schema handler.
+            case _ :: _ :: Nil => fromSchemaRow(t)
+            // Case 6: Too many args. Error.
+            case _ :: _ :: _ :: _ => throw new OverAppliedType
+          }
 
-      case TypeConstructor.Union =>
-        // collapse into a chain of unions
-        t.typeArguments.map(fromWellKindedType).map(splitUnions) match {
-          // Case 1: No args. ? + ?
-          case Nil => Union(Hole :: Hole :: Nil)
-          // Case 2: One arg. Take the left and put a hole at the end: tpe1 + tpe2 + ?
-          case args :: Nil => Union(args :+ Hole)
-          // Case 3: Multiple args. Concatenate them: tpe1 + tpe2 + tpe3 + tpe4
-          case args1 :: args2 :: Nil => Union(args1 ++ args2)
-          // Case 4: Too many args. Error.
-          case _ :: _ :: _ :: _ => throw new OverAppliedType
-        }
+        case TypeConstructor.Schema =>
+          val args = t.typeArguments.map(visit)
+          args match {
+            // Case 1: No args. { ? }
+            case Nil => SchemaConstructor(Hole)
+            // Case 2: One row argument. Extract its values.
+            case tpe :: Nil => tpe match {
+              case SchemaRow(fields) => Schema(fields)
+              case SchemaRowExtend(fields, rest) => SchemaExtend(fields, rest)
+              case nonSchema => SchemaConstructor(nonSchema)
+            }
+            // Case 3: Too many args. Error.
+            case _ :: _ :: _ => throw new OverAppliedType
+          }
+        case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(visit))
+        case TypeConstructor.Channel => mkApply(Channel, t.typeArguments.map(visit))
+        case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(visit))
+        case TypeConstructor.Enum(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
+        case TypeConstructor.Native(clazz) => Name(clazz.getSimpleName)
+        case TypeConstructor.Ref => mkApply(Ref, t.typeArguments.map(visit))
+        case TypeConstructor.Tuple(l) =>
+          val tpes = t.typeArguments.map(visit).padTo(l, Hole)
+          Tuple(tpes)
+        case TypeConstructor.Relation =>
+          val args = t.typeArguments.map(visit)
+          args match {
+            case Nil => RelationConstructor
+            case tpe :: Nil => Relation(destructTuple(tpe))
+            case _ :: _ :: _ => throw new OverAppliedType
+          }
+        case TypeConstructor.Lattice =>
+          val args = t.typeArguments.map(visit)
+          args match {
+            case Nil => LatticeConstructor
+            case tpe :: Nil =>
+              val tpesAndLat = destructTuple(tpe)
+              // NB: safe to take init/last since every lattice has a lattice field
+              // MATT not safe in case of alias!
+              val tpes = tpesAndLat.init
+              val lat = tpesAndLat.last
+              Lattice(tpes, lat)
+            case _ :: _ :: _ => throw new OverAppliedType
+          }
+        case TypeConstructor.True => True
+        case TypeConstructor.False => False
+        case TypeConstructor.Not =>
+          t.typeArguments.map(visit) match {
+            case Nil => Not(Hole)
+            case arg :: Nil => Not(arg)
+            case _ :: _ :: _ => throw new OverAppliedType
+          }
 
-      case TypeConstructor.Intersection =>
-        // collapse into a chain of intersections
-        t.typeArguments.map(fromWellKindedType).map(splitIntersections) match {
-          // Case 1: No args. ? & ?
-          case Nil => Intersection(Hole :: Hole :: Nil)
-          // Case 2: One arg. Take the left and put a hole at the end: tpe1 & tpe2 & ?
-          case args :: Nil => Intersection(args :+ Hole)
-          // Case 3: Complement on the right: sugar it into a difference.
-          case args :: List(Complement(tpe)) :: Nil => Difference(joinIntersection(args), tpe)
-          // Case 4: Complement on the left: sugar it into a difference.
-          case List(Complement(tpe)) :: args :: Nil => Difference(joinIntersection(args), tpe)
-          // Case 5: Multiple args. Concatenate them: tpe1 & tpe2 & tpe3 & tpe4
-          case args1 :: args2 :: Nil => Intersection(args1 ++ args2)
-          // Case 6: Too many args. Error.
-          case _ :: _ :: _ :: _ => throw new OverAppliedType
-        }
+        case TypeConstructor.And =>
+          // collapse into a chain of ands
+          t.typeArguments.map(visit).map(splitAnds) match {
+            // Case 1: No args. ? and ?
+            case Nil => And(Hole :: Hole :: Nil)
+            // Case 2: One arg. Take the left and put a hole at the end: tpe1 and tpe2 and ?
+            case args :: Nil => And(args :+ Hole)
+            // Case 3: Multiple args. Concatenate them: tpe1 and tpe2 and tpe3 and tpe4
+            case args1 :: args2 :: Nil => And(args1 ++ args2)
+            // Case 4: Too many args. Error.
+            case _ :: _ :: _ :: _ => throw new OverAppliedType
+          }
 
-      case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(fromWellKindedType))
-      case TypeConstructor.Region => mkApply(Region, t.typeArguments.map(fromWellKindedType))
-      case TypeConstructor.Empty => SimpleType.Empty
-      case TypeConstructor.All => SimpleType.All
+        case TypeConstructor.Or =>
+          // collapse into a chain of ors
+          t.typeArguments.map(visit).map(splitOrs) match {
+            // Case 1: No args. ? or ?
+            case Nil => Or(Hole :: Hole :: Nil)
+            // Case 2: One arg. Take the left and put a hole at the end: tpe1 or tpe2 or ?
+            case args :: Nil => Or(args :+ Hole)
+            // Case 3: Multiple args. Concatenate them: tpe1 or tpe2 or tpe3 or tpe4
+            case args1 :: args2 :: Nil => Or(args1 ++ args2)
+            // Case 4: Too many args. Error.
+            case _ :: _ :: _ :: _ => throw new OverAppliedType
+          }
+
+        case TypeConstructor.Complement =>
+          t.typeArguments.map(visit) match {
+            case Nil => Complement(Hole)
+            case arg :: Nil => Complement(arg)
+            case _ :: _ :: _ => throw new OverAppliedType
+          }
+
+        case TypeConstructor.Union =>
+          // collapse into a chain of unions
+          t.typeArguments.map(visit).map(splitUnions) match {
+            // Case 1: No args. ? + ?
+            case Nil => Union(Hole :: Hole :: Nil)
+            // Case 2: One arg. Take the left and put a hole at the end: tpe1 + tpe2 + ?
+            case args :: Nil => Union(args :+ Hole)
+            // Case 3: Multiple args. Concatenate them: tpe1 + tpe2 + tpe3 + tpe4
+            case args1 :: args2 :: Nil => Union(args1 ++ args2)
+            // Case 4: Too many args. Error.
+            case _ :: _ :: _ :: _ => throw new OverAppliedType
+          }
+
+        case TypeConstructor.Intersection =>
+          // collapse into a chain of intersections
+          t.typeArguments.map(visit).map(splitIntersections) match {
+            // Case 1: No args. ? & ?
+            case Nil => Intersection(Hole :: Hole :: Nil)
+            // Case 2: One arg. Take the left and put a hole at the end: tpe1 & tpe2 & ?
+            case args :: Nil => Intersection(args :+ Hole)
+            // Case 3: Complement on the right: sugar it into a difference.
+            case args :: List(Complement(tpe)) :: Nil => Difference(joinIntersection(args), tpe)
+            // Case 4: Complement on the left: sugar it into a difference.
+            case List(Complement(tpe)) :: args :: Nil => Difference(joinIntersection(args), tpe)
+            // Case 5: Multiple args. Concatenate them: tpe1 & tpe2 & tpe3 & tpe4
+            case args1 :: args2 :: Nil => Intersection(args1 ++ args2)
+            // Case 6: Too many args. Error.
+            case _ :: _ :: _ :: _ => throw new OverAppliedType
+          }
+
+        case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
+        case TypeConstructor.Region => mkApply(Region, t.typeArguments.map(visit))
+        case TypeConstructor.Empty => SimpleType.Empty
+        case TypeConstructor.All => SimpleType.All
+      }
     }
+
+    visit(t0)
   }
 
   /**
@@ -548,7 +553,7 @@ object SimpleType {
   /**
     * Transforms the given type, assuming it is a record row.
     */
-  private def fromRecordRow(row0: Type): SimpleType = {
+  private def fromRecordRow(row0: Type)(implicit fmt: FormatOptions): SimpleType = {
     def visit(row: Type): SimpleType = row match {
       // Case 1: A fully applied record row.
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(name), _), tpe, _), rest, _) =>
@@ -578,7 +583,7 @@ object SimpleType {
   /**
     * Transforms the given type, assuming it is a schema row.
     */
-  private def fromSchemaRow(row0: Type): SimpleType = {
+  private def fromSchemaRow(row0: Type)(implicit fmt: FormatOptions): SimpleType = {
     def visit(row: Type): SimpleType = row match {
       // Case 1: A fully applied record row.
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(name), _), tpe, _), rest, _) =>

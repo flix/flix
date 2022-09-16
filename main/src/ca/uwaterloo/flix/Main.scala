@@ -115,7 +115,8 @@ object Main {
     try {
       cmdOpts.command match {
         case Command.None =>
-        // nop, continue
+          val result = SimpleRunner.run(cwd, cmdOpts, options)
+          System.exit(getCode(result))
 
         case Command.Init =>
           val result = Packager.init(cwd, options)
@@ -177,89 +178,6 @@ object Main {
     } catch {
       case ex: RuntimeException =>
         Console.println(ex.getMessage)
-        System.exit(1)
-    }
-
-    // check if the --Xbenchmark-code-size flag was passed.
-    if (cmdOpts.xbenchmarkCodeSize) {
-      BenchmarkCompiler.benchmarkCodeSize(options)
-      System.exit(0)
-    }
-
-    // check if the --Xbenchmark-incremental flag was passed.
-    if (cmdOpts.xbenchmarkIncremental) {
-      BenchmarkCompiler.benchmarkIncremental(options)
-      System.exit(0)
-    }
-
-    // check if the --Xbenchmark-phases flag was passed.
-    if (cmdOpts.xbenchmarkPhases) {
-      BenchmarkCompiler.benchmarkPhases(options)
-      System.exit(0)
-    }
-
-    // check if the --Xbenchmark-throughput flag was passed.
-    if (cmdOpts.xbenchmarkThroughput) {
-      BenchmarkCompiler.benchmarkThroughput(options)
-      System.exit(0)
-    }
-
-    // check if we should start a REPL
-    if (cmdOpts.command == Command.None && cmdOpts.files.isEmpty) {
-      val shell = new Shell(SourceProvider.ProjectPath(cwd), options)
-      shell.loop()
-      System.exit(0)
-    }
-
-    // configure Flix and add the paths.
-    val flix = new Flix()
-    flix.setOptions(options)
-    for (file <- cmdOpts.files) {
-      val ext = file.getName.split('.').last
-      ext match {
-        case "flix" => flix.addSourcePath(file.toPath)
-        case "fpkg" => flix.addSourcePath(file.toPath)
-        case "jar" => flix.addJar(file.toPath)
-        case _ =>
-          Console.println(s"Unrecognized file extension: '$ext'.")
-          System.exit(1)
-      }
-    }
-    if (Formatter.hasColorSupport)
-      flix.setFormatter(AnsiTerminalFormatter)
-
-    // evaluate main.
-    val timer = new Timer(flix.compile())
-    timer.getResult match {
-      case Validation.Success(compilationResult) =>
-
-        compilationResult.getMain match {
-          case None => // nop
-          case Some(m) =>
-            // Compute the arguments to be passed to main.
-            val args: Array[String] = cmdOpts.args match {
-              case None => Array.empty
-              case Some(a) => a.split(" ")
-            }
-            // Invoke main with the supplied arguments.
-            m(args)
-
-            // Exit.
-            System.exit(0)
-        }
-
-        if (cmdOpts.benchmark) {
-          Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(options)
-        }
-
-        if (cmdOpts.test) {
-          Tester.run(Nil, compilationResult)(flix)
-        }
-      case Validation.Failure(errors) =>
-        flix.mkMessages(errors.sortBy(_.source.name))
-          .foreach(println)
-        println()
-        println(s"Compilation failed with ${errors.length} error(s).")
         System.exit(1)
     }
   }

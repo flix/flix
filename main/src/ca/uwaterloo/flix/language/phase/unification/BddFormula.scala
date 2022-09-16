@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2022 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.language.phase.unification
 
-package ca.uwaterloo.flix.api
+object BddFormula {
 
-object Version {
-  /**
-    * Represents the current version of Flix.
-    */
-  val CurrentVersion: Version = Version(major = 0, minor = 31, revision = 0)
-}
+  class Bdd
 
-/**
-  * A case class to represent versions.
-  */
-case class Version(major: Int, minor: Int, revision: Int) {
-  override val toString: String = s"v$major.$minor.$revision"
+  // TODO: Add an instance of BoolFormula for Bdd.
+
 }

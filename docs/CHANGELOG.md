@@ -1,5 +1,22 @@
 # Changelog
 
+Version 0.31.0:
+- Language: Added new object expressions (thanks Paul!)
+- Language: Added `par` expression (thanks Jakob!)
+- Language: Added safe `upcast` expression (thanks Jakob!)
+- Language: Added support for top-level imports (thanks Magnus!)
+- Language: Renamed `Impure` to `IO` (thanks Matt!)
+- Language: Changed effect syntax (thanks Matt!)
+  - old syntax: `& Impure`, new syntax: `\ IO`.
+- Language: Changed record syntax (thanks Jakob!)
+  - old syntax: `{x :: Int32`, new syntax: `{x = Int32}`.
+- Compiler: Re-implemented Test Framework (thanks Magnus!)
+- Compiler: Improved performance of unification (thanks Matt!)
+- Compiler: Incrementalize Instances phase (thanks Magnus!)
+- Library: Added `MonadZip` type class (thanks Stephen!)
+- Library: Various minor improvements to the Standard Library (thanks Nina, Jakob, Stephen!)
+- VSCode: Improved integration with Flix REPL (thanks Magnus!)
+
 Version 0.30.0:
 
 - Language: `query` now returns a `List` (thanks Jonathan!)
