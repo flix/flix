@@ -74,6 +74,8 @@ instance FunctorFilter[Map[k]] with Order[k] {
     pub override def filter(f: a -> Bool \ ef, m: Map[k, a]): Map[k, a] \ ef = Map.filter(f, m)
 }
 
+instance Witherable[Map[k]] with Order[k]
+
 instance SemiGroup[Map[k,v]] with Order[k], SemiGroup[v] {
     pub def combine(x: Map[k,v], y: Map[k,v]): Map[k,v] = Map.unionWith(SemiGroup.combine, x, y)
 }

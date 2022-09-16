@@ -90,6 +90,8 @@ instance FunctorFilter[Chain] {
     pub override def filter(f: a -> Bool \ ef, x: Chain[a]): Chain[a] \ ef = Chain.filter(f, x)
 }
 
+instance Witherable[Chain]
+
 instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String = region r {
         let sb = new StringBuilder(r);

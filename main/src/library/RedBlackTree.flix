@@ -88,6 +88,7 @@ namespace RedBlackTree {
         pub override def filter(f: a -> Bool \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, a] \ ef = filterImplementation(f, t)
     }
 
+    instance Witherable[RedBlackTree[k]] with Order[k]
 
     ///
     /// The color of a red-black tree node.
