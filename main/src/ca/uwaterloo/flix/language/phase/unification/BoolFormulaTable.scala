@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.phase.unification.ExplicitFormula._
+import ca.uwaterloo.flix.language.phase.unification.BoolFormula._
 import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource, StreamOps}
 
@@ -71,14 +71,14 @@ object BoolFormulaTable {
     *
     * The table is pre-computed and initialized when this class is loaded.
     */
-  private lazy val Table: Array[ExplicitFormula] = initTable()
+  private lazy val Table: Array[BoolFormula] = initTable()
 
   /**
     * Attempts to minimize the given formula `f`.
     *
     * Returns the same formula or a smaller formula.
     */
-  def minimizeFormula(f: ExplicitFormula): ExplicitFormula = {
+  def minimizeFormula(f: BoolFormula): BoolFormula = {
     // Compute the number of free variables.
     val numVars = f.freeVars.size
 
@@ -125,7 +125,7 @@ object BoolFormulaTable {
     * This is not guaranteed to give a minimal representation. However, it does allow us to
     * use the tabling approach even when a formula overall has more variables than the table.
     */
-  private def minimizeFormulaRecursively(f: ExplicitFormula): (ExplicitFormula, SortedSet[Variable]) = f match {
+  private def minimizeFormulaRecursively(f: BoolFormula): (BoolFormula, SortedSet[Variable]) = f match {
     case True => (True, SortedSet.empty)
 
     case False => (False, SortedSet.empty)
@@ -177,7 +177,7 @@ object BoolFormulaTable {
   /**
     * Renames every variable in the given formula `f` and looks it up in the minimal table.
     */
-  private def alphaRenameAndLookup(f: ExplicitFormula): ExplicitFormula = {
+  private def alphaRenameAndLookup(f: BoolFormula): BoolFormula = {
     // Compute a renaming. The first variable is x0, the next is x1, and so forth.
     val m = f.freeVars.toList.zipWithIndex.foldLeft(Bimap.empty[Variable, Variable]) {
       case (macc, (k, v)) => macc + (k -> v)
@@ -189,7 +189,7 @@ object BoolFormulaTable {
   /**
     * Attempts to minimize the given Boolean formula `f` using the table.
     */
-  private def lookup(f: ExplicitFormula): ExplicitFormula = {
+  private def lookup(f: BoolFormula): BoolFormula = {
     // If the formula `f` has more variables than `f` then we cannot use the table.
     if (f.freeVars.size > MaxVars) {
       // Return the same formula.
@@ -211,7 +211,7 @@ object BoolFormulaTable {
     * @param position the position in the bitvector where to store the result (true/false).
     * @param env      the environment which binds each variable to true or false.
     */
-  private def computeSemanticFunction(f: ExplicitFormula, fvs: List[Variable], position: Int, env: Array[Boolean]): Int = fvs match {
+  private def computeSemanticFunction(f: BoolFormula, fvs: List[Variable], position: Int, env: Array[Boolean]): Int = fvs match {
     case Nil =>
       if (eval(f, env)) 1 << position else 0
 
@@ -238,7 +238,7 @@ object BoolFormulaTable {
     *
     * The environment maps the variable with index i to true or false.
     */
-  private def eval(f: ExplicitFormula, env: Array[Boolean]): Boolean = f match {
+  private def eval(f: BoolFormula, env: Array[Boolean]): Boolean = f match {
     case True => true
     case False => false
     case Var(x) => env(x)
@@ -250,7 +250,7 @@ object BoolFormulaTable {
   /**
     * Parses the built-in table into an S-expression and then into an in-memory table.
     */
-  private def initTable(): Array[ExplicitFormula] = {
+  private def initTable(): Array[BoolFormula] = {
     val table = loadTable()
 
     if (Debug) {
@@ -269,7 +269,7 @@ object BoolFormulaTable {
   /**
     * Loads the table of minimal Boolean formulas from the disk.
     */
-  private def loadTable(): Array[ExplicitFormula] = try {
+  private def loadTable(): Array[BoolFormula] = try {
     val allLines = readTableFromZip(Path)
 
     // Split the string into lines.
@@ -279,7 +279,7 @@ object BoolFormulaTable {
     val formulas = lines.map(parseLine)
 
     // Allocate the result table. The table has size 2^(2^MaxVars).
-    val table = new Array[ExplicitFormula](1 << (1 << MaxVars))
+    val table = new Array[BoolFormula](1 << (1 << MaxVars))
 
     // Fill the table.
     for ((f, i) <- formulas.zipWithIndex) {
@@ -315,9 +315,9 @@ object BoolFormulaTable {
     * and(x3,or(and(x0,x1),x2))
     *
     */
-  private def parseLine(l: String): ExplicitFormula = {
+  private def parseLine(l: String): BoolFormula = {
     @tailrec
-    def parse(input: List[Char], stack: List[ExplicitFormula]): ExplicitFormula = (input, stack) match {
+    def parse(input: List[Char], stack: List[BoolFormula]): BoolFormula = (input, stack) match {
       case (Nil, formula :: Nil) => formula
       case ('T' :: rest, stack) => parse(rest, True :: stack)
       case ('F' :: rest, stack) => parse(rest, False :: stack)
