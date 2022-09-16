@@ -1003,7 +1003,7 @@ object Type {
         isEffectSubtype(tpe1.arrowEffectType, tpe2.arrowEffectType, renv) &&
         superTypeArgs && subTypeResult
 
-    case (t1, t2) => t1 == t2
+    case (_, _) => tpe1 == tpe2
 
   }
 
