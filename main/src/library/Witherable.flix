@@ -18,7 +18,7 @@
 /// A type class for data structures that can be traversed in left-to-right
 /// order with an applicative partial functor.
 ///
-pub lawful class Witherable[t : Type -> Type] with Traversable[t], FunctorFilter[t] {
+pub class Witherable[t : Type -> Type] with Traversable[t], FunctorFilter[t] {
 
     ///
     /// Returns the result of applying the applicative partial mapping function `f` to all the elements of the

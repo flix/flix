@@ -73,6 +73,7 @@ instance Foldable[DelayList] {
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRightWithCont(f, s, l)
     override pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) = DelayList.iterator(r, l)
 }
+
 instance UnorderedFoldable[DelayList] {
     pub def foldMap(f: a -> b \ ef, l: DelayList[a]): b \ ef with CommutativeMonoid[b] = DelayList.foldMap(f, l)
     override pub def isEmpty(l: DelayList[a]): Bool = DelayList.isEmpty(l)
