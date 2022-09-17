@@ -158,7 +158,7 @@ class TestTyper extends FunSuite with TestUtils {
       |def g(): Bool = f(mkE)
       |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.UnderApplied](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
   test("TestOverApplied.01") {
