@@ -46,6 +46,10 @@ object Unification {
     * Unifies the given variable `x` with the given non-variable type `tpe`.
     */
   def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = tpe match {
+
+    // ensure the kinds are compatible
+    case _ if !KindUnification.unifiesWith(x.kind, tpe.kind) => Result.Err(UnificationError.MismatchedTypes(x, tpe))
+
     case y: Type.Var => unifyVars(x, y, renv)
     case _ =>
 
@@ -111,9 +115,6 @@ object Unification {
     * The types must each have a Star or Arrow kind.
     */
   private def unifyStarOrArrowTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
-
-    // ensure the kinds are compatible
-    case _ if !KindUnification.unifiesWith(tpe1.kind, tpe2.kind) => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
 
     case (x: Type.Var, _) => unifyVar(x, tpe2, renv)
 
