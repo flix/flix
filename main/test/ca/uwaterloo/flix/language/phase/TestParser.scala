@@ -374,7 +374,7 @@ class TestParser extends FunSuite with TestUtils {
     val input =
       """
         |def f(): Unit =
-        |    foreach (i > 12) ()
+        |    foreach (if x > 12) ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)
@@ -384,7 +384,7 @@ class TestParser extends FunSuite with TestUtils {
     val input =
       """
         |def f(): Unit =
-        |    for (i > 12) ()
+        |    for (if x > 12) ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)
