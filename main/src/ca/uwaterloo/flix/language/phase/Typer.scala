@@ -951,10 +951,10 @@ object Typer {
               acc
             case (acc, ((isAbsentVar, _), KindedAst.ChoicePattern.Present(_, _, _))) =>
               // Case 2: A `Present` pattern forces the `isAbsentVar` to be equal to `false`.
-              BoolTypes.mkAnd(acc, Type.mkEquiv(isAbsentVar, Type.False, loc))
+              Type.mkAnd(acc, Type.mkEquiv(isAbsentVar, Type.False, loc), loc)
             case (acc, ((_, isPresentVar), KindedAst.ChoicePattern.Absent(_))) =>
               // Case 3: An `Absent` pattern forces the `isPresentVar` to be equal to `false`.
-              BoolTypes.mkAnd(acc, Type.mkEquiv(isPresentVar, Type.False, loc))
+              Type.mkAnd(acc, Type.mkEquiv(isPresentVar, Type.False, loc), loc)
           }
 
         /**
@@ -971,10 +971,10 @@ object Typer {
               acc
             case (acc, ((isAbsentVar, _), KindedAst.ChoicePattern.Absent(_))) =>
               // Case 2: An `Absent` pattern may match if the `isAbsentVar` is `true`.
-              BoolTypes.mkAnd(acc, isAbsentVar)
+              Type.mkAnd(acc, isAbsentVar, loc)
             case (acc, ((_, isPresentVar), KindedAst.ChoicePattern.Present(_, _, _))) =>
               // Case 3: A `Present` pattern may match if the `isPresentVar` is `true`.
-              BoolTypes.mkAnd(acc, isPresentVar)
+              Type.mkAnd(acc, isPresentVar, loc)
           }
 
         /**
@@ -982,7 +982,7 @@ object Typer {
           */
         def mkOuterDisj(m: List[List[KindedAst.ChoicePattern]], isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): Type =
           m.foldLeft(Type.False) {
-            case (acc, rule) => BoolTypes.mkOr(acc, mkUnderApprox(isAbsentVars, isPresentVars, rule))
+            case (acc, rule) => Type.mkOr(acc, mkUnderApprox(isAbsentVars, isPresentVars, rule), loc)
           }
 
         /**

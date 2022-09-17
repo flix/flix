@@ -65,9 +65,9 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
           val y = visit(t2)
           visit(t1) match {
             // Simplify boolean equations.
-            case Type.Cst(TypeConstructor.Not, _) => BoolTypes.mkNot(y)
-            case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => BoolTypes.mkAnd(x, y)
-            case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => BoolTypes.mkOr(x, y)
+            case Type.Cst(TypeConstructor.Not, _) => Type.mkNot(y, loc)
+            case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => Type.mkAnd(x, y, loc)
+            case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => Type.mkOr(x, y, loc)
 
             // Simplify set expressions
             case Type.Cst(TypeConstructor.Complement, _) => SetUnification.mkComplement(y)
