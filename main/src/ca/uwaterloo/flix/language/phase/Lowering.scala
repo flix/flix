@@ -1375,22 +1375,30 @@ object Lowering {
     */
   private def mkParWaits(symExps: List[(Symbol.VarSym, Expression)]): List[Expression] = {
     // Make wait expressions `<- ch, ..., <- chn`.
-    var first = true
-    symExps.map {
-      case (sym, e) =>
-        val spawnable = shouldSpawnThread(e)
-        if (spawnable && first) { // We do not want to spawn a thread for the first spawnable expression
-          first = false // as we want to evaluate it in the main thread.
-          e
-        } else if (spawnable) {
-          val loc = e.loc.asSynthetic
-          Expression.GetChannel(
-            Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc),
-            e.tpe, Type.Impure, e.eff, loc)
-        }
-        else
-          e
+
+    // Find the first expression that should be spawned in a new thread.
+    val (nonSpawnableExps, firstSpawnableExp) = symExps.span {
+      case (_, exp) => !shouldSpawnThread(exp)
     }
+
+    // Create GetChannel exps for "spawnable" exps in the tail.
+    // We use the current thread for the head of firstSpawnableExp.
+    val (_, currentThreadExp) = firstSpawnableExp.head
+    val spawnedExps = currentThreadExp :: firstSpawnableExp.tail.map {
+      case (sym, exp) =>
+        val spawnable = shouldSpawnThread(exp)
+        if (spawnable) {
+          val loc = exp.loc.asSynthetic
+          Expression.GetChannel(
+            Expression.Var(sym, Type.mkChannel(exp.tpe, loc), loc),
+            exp.tpe, Type.Impure, exp.eff, loc)
+        } else {
+          exp
+        }
+    }
+
+    // Reassemble lists
+    nonSpawnableExps.map(_._2) ::: spawnedExps
   }
 
   /**
