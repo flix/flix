@@ -1383,8 +1383,8 @@ object Lowering {
 
     // Create GetChannel exps for "spawnable" exps in the tail.
     // We use the current thread for the head of firstSpawnableExp.
-    val (_, currentThreadExp) = firstSpawnableExp.head
-    val spawnedExps = currentThreadExp :: firstSpawnableExp.tail.map {
+    val currentThreadExp = firstSpawnableExp.headOption.map(_._2).toList
+    val spawnedExps = currentThreadExp ::: firstSpawnableExp.drop(1).map {
       case (sym, exp) =>
         val spawnable = shouldSpawnThread(exp)
         if (spawnable) {
@@ -1865,7 +1865,9 @@ object Lowering {
       val e3 = substExp(exp3, subst)
       Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
 
-    case Expression.FixpointConstraintSet(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
+    case Expression.FixpointConstraintSet(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression near ${
+      loc.format
+    }.")
 
   }
 
