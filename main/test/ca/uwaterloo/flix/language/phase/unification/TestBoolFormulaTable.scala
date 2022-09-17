@@ -1,10 +1,10 @@
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.phase.unification.ExplicitFormula._
+import ca.uwaterloo.flix.language.phase.unification.BoolFormula._
 import ca.uwaterloo.flix.language.phase.unification.BoolFormulaTable._
 import org.scalatest.FunSuite
 
-class TestExplicitFormulaTable extends FunSuite {
+class TestBoolFormulaTable extends FunSuite {
 
   test("Minimize.True.01") {
     assertResult(expected = True)(actual = minimizeFormula(True))

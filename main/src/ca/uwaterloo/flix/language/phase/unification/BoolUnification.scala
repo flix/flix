@@ -56,7 +56,7 @@ object BoolUnification {
     }
 
     // translate the types into formulas
-    implicit val alg: BoolFormula[ExplicitFormula] = ExplicitFormula.AsBoolAlgTrait
+    implicit val alg: BoolAlg[BoolFormula] = BoolFormula.AsBoolAlgTrait
 
     val env = alg.getEnv(List(tpe1, tpe2))
     val f1 = alg.fromType(tpe1, env)
@@ -73,7 +73,7 @@ object BoolUnification {
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  private def booleanUnification[F](tpe1: F, tpe2: F, renv: Set[Int])(implicit flix: Flix, alg: BoolFormula[F]): Option[BoolFormulaSubstitution[F]] = {
+  private def booleanUnification[F](tpe1: F, tpe2: F, renv: Set[Int])(implicit flix: Flix, alg: BoolAlg[F]): Option[BoolSubstitution[F]] = {
     // The boolean expression we want to show is 0.
     val query = alg.mkEq(tpe1, tpe2)
 
@@ -126,21 +126,21 @@ object BoolUnification {
     *
     * `flexvs` is the list of remaining flexible variables in the expression.
     */
-  private def successiveVariableElimination[F](f: F, flexvs: List[Int])(implicit flix: Flix, alg: BoolFormula[F]): BoolFormulaSubstitution[F] = flexvs match {
+  private def successiveVariableElimination[F](f: F, flexvs: List[Int])(implicit flix: Flix, alg: BoolAlg[F]): BoolSubstitution[F] = flexvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
       if (!satisfiable(f))
-        BoolFormulaSubstitution.empty
+        BoolSubstitution.empty
       else
         throw BooleanUnificationException
 
     case x :: xs =>
-      val t0 = BoolFormulaSubstitution.singleton(x, alg.mkFalse)(f)
-      val t1 = BoolFormulaSubstitution.singleton(x, alg.mkTrue)(f)
+      val t0 = BoolSubstitution.singleton(x, alg.mkFalse)(f)
+      val t1 = BoolSubstitution.singleton(x, alg.mkTrue)(f)
       val se = successiveVariableElimination(alg.mkAnd(t0, t1), xs)
 
       val f1 = alg.minimize(alg.mkOr(se(t0), alg.mkAnd(alg.mkVar(x), alg.mkNot(se(t1)))))
-      val st = BoolFormulaSubstitution.singleton(x, f1)
+      val st = BoolSubstitution.singleton(x, f1)
       st ++ se
   }
 
@@ -153,7 +153,7 @@ object BoolUnification {
     * Returns `true` if the given boolean formula `f` is satisfiable
     * when ALL variables in the formula are flexible.
     */
-  private def satisfiable[F](f: F)(implicit flix: Flix, alg: BoolFormula[F]): Boolean = {
+  private def satisfiable[F](f: F)(implicit flix: Flix, alg: BoolAlg[F]): Boolean = {
     if (alg.isTrue(f)) {
       true
     } else if (alg.isFalse(f)) {
@@ -169,7 +169,7 @@ object BoolUnification {
   /**
     * Naively computes if `f` is satisfiable using the SVE algorithm.
     */
-  private def naiveSatisfiable[F](f: F)(implicit flix: Flix, alg: BoolFormula[F]): Boolean = {
+  private def naiveSatisfiable[F](f: F)(implicit flix: Flix, alg: BoolAlg[F]): Boolean = {
     val q = alg.mkEq(f, alg.mkTrue)
     try {
       successiveVariableElimination(q, alg.freeVars(q).toList)

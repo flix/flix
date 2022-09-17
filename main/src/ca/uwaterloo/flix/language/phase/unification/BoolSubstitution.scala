@@ -20,22 +20,22 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
 /**
-  * Companion object for the [[BoolFormulaSubstitution]] class.
+  * Companion object for the [[BoolSubstitution]] class.
   */
-object BoolFormulaSubstitution {
+object BoolSubstitution {
   /**
     * Returns the empty substitution.
     */
-  def empty[F]: BoolFormulaSubstitution[F] = BoolFormulaSubstitution(Map.empty)
+  def empty[F]: BoolSubstitution[F] = BoolSubstitution(Map.empty)
 
   /**
     * Returns the singleton substitution mapping the type variable `x` to `tpe`.
     */
-  def singleton[F](x: Int, f: F): BoolFormulaSubstitution[F] = {
+  def singleton[F](x: Int, f: F): BoolSubstitution[F] = {
     // Ensure that we do not add any x -> x mappings.
     f match {
-      case y: ExplicitFormula.Var if x == y.x => empty
-      case _ => BoolFormulaSubstitution(Map(x -> f))
+      case y: BoolFormula.Var if x == y.x => empty
+      case _ => BoolSubstitution(Map(x -> f))
     }
   }
 
@@ -44,7 +44,7 @@ object BoolFormulaSubstitution {
 /**
   * A substitution is a map from type variables to types.
   */
-case class BoolFormulaSubstitution[F](m: Map[Int, F]) {
+case class BoolSubstitution[F](m: Map[Int, F]) {
 
   /**
     * Returns `true` if `this` is the empty substitution.
@@ -54,7 +54,7 @@ case class BoolFormulaSubstitution[F](m: Map[Int, F]) {
   /**
     * Applies `this` substitution to the given type `tpe0`.
     */
-  def apply(f: F)(implicit alg: BoolFormula[F]): F = {
+  def apply(f: F)(implicit alg: BoolAlg[F]): F = {
     // Optimization: Return the type if the substitution is empty. Otherwise visit the type.
     if (isEmpty) {
       f
@@ -68,18 +68,18 @@ case class BoolFormulaSubstitution[F](m: Map[Int, F]) {
   /**
     * Applies `this` substitution to the given types `ts`.
     */
-  def apply(ts: List[F])(implicit alg: BoolFormula[F]): List[F] = if (isEmpty) ts else ts map apply
+  def apply(ts: List[F])(implicit alg: BoolAlg[F]): List[F] = if (isEmpty) ts else ts map apply
 
   /**
     * Returns the left-biased composition of `this` substitution with `that` substitution.
     */
-  def ++(that: BoolFormulaSubstitution[F]): BoolFormulaSubstitution[F] = {
+  def ++(that: BoolSubstitution[F]): BoolSubstitution[F] = {
     if (this.isEmpty) {
       that
     } else if (that.isEmpty) {
       this
     } else {
-      BoolFormulaSubstitution(
+      BoolSubstitution(
         this.m ++ that.m.filter(kv => !this.m.contains(kv._1))
       )
     }
@@ -88,7 +88,7 @@ case class BoolFormulaSubstitution[F](m: Map[Int, F]) {
   /**
     * Returns the composition of `this` substitution with `that` substitution.
     */
-  def @@(that: BoolFormulaSubstitution[F])(implicit alg: BoolFormula[F]): BoolFormulaSubstitution[F] = {
+  def @@(that: BoolSubstitution[F])(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
     // Case 1: Return `that` if `this` is empty.
     if (this.isEmpty) {
       return that
@@ -117,13 +117,13 @@ case class BoolFormulaSubstitution[F](m: Map[Int, F]) {
       }
     }
 
-    BoolFormulaSubstitution(newBoolAlgebraMap.toMap) ++ this
+    BoolSubstitution(newBoolAlgebraMap.toMap) ++ this
   }
 
   /**
     * Converts this formula substitution into a type substitution
     */
-  def toTypeSubstitution(env: Bimap[Symbol.KindedTypeVarSym, Int])(implicit alg: BoolFormula[F]): Substitution = {
+  def toTypeSubstitution(env: Bimap[Symbol.KindedTypeVarSym, Int])(implicit alg: BoolAlg[F]): Substitution = {
     val map = m.map {
       case (k0, v0) =>
         val k = env.getBackward(k0).getOrElse(throw InternalCompilerException(s"missing key $k0"))
