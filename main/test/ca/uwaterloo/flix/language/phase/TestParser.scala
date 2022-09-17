@@ -370,4 +370,24 @@ class TestParser extends FunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
+  test("ParseError.ForeachGuard.01") {
+    val input =
+      """
+        |def f(): Unit =
+        |    foreach (i > 12) ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("ParseError.ForYieldGuard.01") {
+    val input =
+      """
+        |def f(): Unit =
+        |    for (i > 12) ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
 }
