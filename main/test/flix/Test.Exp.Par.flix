@@ -59,4 +59,16 @@ namespace Test/Exp/Par {
         let b = () -> a();
         par f(par (par a(), par b()))
 
+    @test
+    def testPar12(): Bool =
+        let g = (a, b, c) -> a and b and c;
+        let a = () -> List.range(0, 2000) |> List.forall(x -> x > -1);
+        let b = () -> List.range(0, 2000) |> List.forall(x -> x > -1);
+        par g(true, a(), b()) // Should spawn threads for a and b apply exps
+
+    @test
+    def testPar13(): Bool =
+        let g = (a, b, c) -> a and b and c;
+        par g(true, true, true) // Should not spawn any new threads
+
 }
