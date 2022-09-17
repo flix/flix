@@ -1370,6 +1370,8 @@ object Lowering {
   /**
     * Returns a list of `GetChannel` expressions based on `symExps`.
     *
+    * The resulting list has the same length as `symExps`.
+    *
     * If the expression is either [[Expression.Var]] or a literal expression a [[Expression.GetChannel]] is **not** generated.
     *
     */
@@ -1402,7 +1404,7 @@ object Lowering {
   }
 
   /**
-    * Returns a full `par exp` expression.
+    * Returns a full `par exp` expression block.
     */
   private def mkParChannels(exp: Expression, chanSymsWithExps: List[(Symbol.VarSym, Expression)]): Expression = {
     // Filter exps that should not be parallelized
