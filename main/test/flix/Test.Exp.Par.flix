@@ -1,6 +1,7 @@
 namespace Test/Exp/Par {
 
     def f(x: Int32): Bool = x == 1
+    def h(x: Bool, y: Bool, z: Bool): Bool = x and y and z
 
     @test
     def testPar01(): (Int32, Int32, Int32) =
@@ -64,11 +65,19 @@ namespace Test/Exp/Par {
         let g = (a, b, c) -> a and b and c;
         let a = () -> List.range(0, 2000) |> List.forall(x -> x > -1);
         let b = () -> List.range(0, 2000) |> List.forall(x -> x > -1);
-        par g(true, a(), b()) // Should spawn threads for a and b apply exps
+        par g(true, a(), b()) // Should spawn thread for exp `b()` only since g is a variable
+                              // and true is a literal, thus `a()` is evaluated in this thread.
 
     @test
     def testPar13(): Bool =
+        let a = () -> List.range(0, 2000) |> List.forall(x -> x > -1);
+        let b = () -> List.range(0, 2000) |> List.forall(x -> x > -1);
+        let c = () -> List.range(0, 2000) |> List.forall(x -> x > -1);
+        par h(a(), b(), c()) // Should spawn threads for `b()` and `c()`.
+
+    @test
+    def testPar14(): Bool =
         let g = (a, b, c) -> a and b and c;
-        par g(true, true, true) // Should not spawn any new threads
+        par g(true, true, true) // Should not spawn any new threads.
 
 }
