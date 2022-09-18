@@ -1388,8 +1388,7 @@ object Lowering {
     val currentThreadExp = firstSpawnableExp.headOption.map(_._2).toList
     val spawnedExps = currentThreadExp ::: firstSpawnableExp.drop(1).map {
       case (sym, exp) =>
-        val spawnable = shouldSpawnThread(exp)
-        if (spawnable) {
+        if (shouldSpawnThread(exp)) {
           val loc = exp.loc.asSynthetic
           Expression.GetChannel(
             Expression.Var(sym, Type.mkChannel(exp.tpe, loc), loc),
@@ -1410,7 +1409,7 @@ object Lowering {
     // Filter exps that should not be parallelized
     val parallelizableExps = chanSymsWithExps.filter {
       case (_, e) => shouldSpawnThread(e)
-    }.drop(1) // We drop the leftmost exp because we evaluate it in the main thread.
+    }.drop(1) // We drop the leftmost exp because we evaluate it in the current thread.
 
     // Make spawn expressions `spawn ch <- exp`.
     val spawns = parallelizableExps.foldRight(exp: Expression) {
