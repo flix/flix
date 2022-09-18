@@ -200,7 +200,6 @@ object Main {
   case class CmdOpts(command: Command = Command.None,
                      args: Option[String] = None,
                      benchmark: Boolean = false,
-                     documentor: Boolean = false,
                      entryPoint: Option[String] = None,
                      explain: Boolean = false,
                      json: Boolean = false,
