@@ -57,8 +57,11 @@ sourceSets {
 }
 
 jar {
+    inputs.property("releaseVersion", findProperty("releaseVersion"))
+
     manifest {
         attributes 'Main-Class': 'ca.uwaterloo.flix.Main'
+        attributes 'Implementation-Version': inputs.properties['releaseVersion'] ?: ''
     }
 
     from {
@@ -66,7 +69,7 @@ jar {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
         configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
-    
+
     from('main') {
         include '**/*.flix'
         include '**/*.zip'

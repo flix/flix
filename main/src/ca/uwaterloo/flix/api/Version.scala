@@ -20,7 +20,11 @@ object Version {
   /**
     * Represents the current version of Flix.
     */
-  val CurrentVersion: Version = Version(major = 0, minor = 31, revision = 0)
+  val CurrentVersion: Version = {
+    val version = Option(getClass).map(_.getPackage).map(_.getImplementationVersion).getOrElse("0.0.0")
+    val s"$major.$minor.$revision" = version
+    Version(major = major.toInt, minor = minor.toInt, revision = revision.toInt)
+  }
 }
 
 /**
