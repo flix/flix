@@ -464,7 +464,7 @@ object Weeder {
     case ParsedAst.Imports.ImportMany(sp1, pkg, ids, sp2) =>
       val loc = mkSL(sp1, sp2)
       val is = ids.map {
-        case ParsedAst.Imports.NameAndAlias(_, name, alias, _) => 
+        case ParsedAst.Imports.NameAndAlias(_, name, alias, _) =>
           val fqn = Name.JavaName(pkg.sp1, pkg.fqn :+ name, pkg.sp2)
           val ident = alias match {
             case Some(id) => id
@@ -494,7 +494,7 @@ object Weeder {
       val mod = Ast.Modifiers.Empty
       val tparams = WeededAst.TypeParams.Elided
       val is = ids.map {
-        case ParsedAst.Imports.NameAndAlias(_, name, alias, _) => 
+        case ParsedAst.Imports.NameAndAlias(_, name, alias, _) =>
           val ident = alias match {
             case Some(id) => id
             case _ => Name.Ident(sp1, name, sp2)
@@ -755,7 +755,7 @@ object Weeder {
         case e => WeededAst.Expression.Discard(e, loc)
       }
 
-    case ParsedAst.Expression.ForEach(_, frags, exp, _) =>
+    case ParsedAst.Expression.ForEach(_, frag, optFrags, exp, _) =>
       //
       // Rewrites a foreach loop to Iterator.foreach call.
       //
@@ -763,23 +763,42 @@ object Weeder {
       val fqnForEach = "Iterator.foreach"
       val fqnIterator = "Iterable.iterator"
 
-      foldRight(frags)(visitExp(exp, senv)) {
-        case (ParsedAst.ForEachFragment.ForEach(sp11, pat, exp1, sp12), exp0) =>
-          mapN(visitPattern(pat), visitExp(exp1, senv)) {
-            case (p, e1) =>
-              val loc = mkSL(sp11, sp12).asSynthetic
-              val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
-              val iterable = mkApplyFqn(fqnIterator, List(e1), e1.loc)
-              val fparams = List(lambda, iterable)
-              mkApplyFqn(fqnForEach, fparams, loc)
-          }
+      val optFragsVal = optFrags.map {
+        case frags =>
+          foldRight(frags)(visitExp(exp, senv)) {
+            case (ParsedAst.ForEachFragment.ForEach(sp11, pat, exp1, sp12), exp0) =>
+              mapN(visitPattern(pat), visitExp(exp1, senv)) {
+                case (p, e1) =>
+                  val loc = mkSL(sp11, sp12).asSynthetic
+                  val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
+                  val iterable = mkApplyFqn(fqnIterator, List(e1), e1.loc)
+                  val fparams = List(lambda, iterable)
+                  mkApplyFqn(fqnForEach, fparams, loc)
+              }
 
-        case (ParsedAst.ForEachFragment.Guard(sp11, exp1, sp12), exp0) =>
-          mapN(visitExp(exp1, senv)) { e1 =>
-            val loc = mkSL(sp11, sp12).asSynthetic
-            WeededAst.Expression.IfThenElse(e1, exp0, WeededAst.Expression.Unit(loc), loc)
+            case (ParsedAst.ForEachFragment.Guard(sp11, exp1, sp12), exp0) =>
+              mapN(visitExp(exp1, senv)) { e1 =>
+                val loc = mkSL(sp11, sp12).asSynthetic
+                WeededAst.Expression.IfThenElse(e1, exp0, WeededAst.Expression.Unit(loc), loc)
+              }
           }
       }
+
+      flatMapN(optFragsVal.getOrElse(visitExp(exp, senv))) {
+        exp0 =>
+          frag match {
+            case ParsedAst.ForEachFragment.ForEach(sp11, pat, exp1, sp12) =>
+              mapN(visitPattern(pat), visitExp(exp1, senv)) {
+                case (p, e1) =>
+                  val loc = mkSL(sp11, sp12).asSynthetic
+                  val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
+                  val iterable = mkApplyFqn(fqnIterator, List(e1), e1.loc)
+                  val fparams = List(lambda, iterable)
+                  mkApplyFqn(fqnForEach, fparams, loc)
+              }
+          }
+      }
+
 
     case ParsedAst.Expression.ForYield(sp1, frags, exp, sp2) =>
       //
@@ -2983,7 +3002,7 @@ object Weeder {
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Stm(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Discard(sp1, _, _) => sp1
-    case ParsedAst.Expression.ForEach(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.ForEach(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.ForYield(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1

@@ -754,7 +754,7 @@ object ParsedAst {
       * @param exp   the body expression.
       * @param sp2   the position of the last character in the expression.
       */
-    case class ForEach(sp1: SourcePosition, frags: Seq[ForEachFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ForEach(sp1: SourcePosition, frag: ForEachFragment.ForEach, optFrags: Option[Seq[ForEachFragment]], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * ForYield Expression.
