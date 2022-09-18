@@ -1372,7 +1372,7 @@ object Lowering {
     *
     * The resulting list has the same length as `symExps`.
     *
-    * If the expression is either [[Expression.Var]] or a literal expression a [[Expression.GetChannel]] is **not** generated.
+    * If the expression is either [[Expression.Var]], [[Expression.Def]] or a literal expression an [[Expression.GetChannel]] is **not** generated.
     *
     */
   private def mkParWaits(symExps: List[(Symbol.VarSym, Expression)]): List[Expression] = {
@@ -1399,7 +1399,7 @@ object Lowering {
         }
     }
 
-    // Reassemble lists
+    // Reassemble list
     nonSpawnableExps.map(_._2) ::: spawnedExps
   }
 
@@ -1451,6 +1451,7 @@ object Lowering {
     case Expression.BigInt(_, _) => false
     case Expression.Str(_, _) => false
     case Expression.Var(_, _, _) => false
+    case Expression.Def(_, _, _) => false
     case _ => true
   }
 
