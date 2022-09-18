@@ -1432,9 +1432,9 @@ object Lowering {
   }
 
   /**
-    * Determines whether the par expression should spawn a thread for a give expression.
+    * Determines whether the par expression should spawn a thread for the given expression `exp`.
     *
-    * Returns false if `exp` is a literal or a variable. Returns true otherwise.
+    * Returns false if `exp` is a literal, def or a variable. Returns true otherwise.
     */
   private def shouldSpawnThread(exp: Expression): Boolean = exp match {
     case Expression.Unit(_) => false
