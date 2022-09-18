@@ -118,6 +118,7 @@ object CompletionProvider {
       getVarCompletions() ++
       getDefAndSigCompletions() ++
       getWithCompletions() ++
+      getCaseCompletions() ++
       getInstanceCompletions() ++
       getTypeCompletions() ++
       getOpCompletions() ++
@@ -504,6 +505,43 @@ object CompletionProvider {
             insertTextFormat = InsertTextFormat.Snippet,
             kind = CompletionItemKind.Class)
       }
+    } else {
+      Nil
+    }
+  }
+
+  /** 
+    * Returns a list of completion items based on case keyword in match expressions
+    */
+  private def getCaseCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+    if (root == null) {
+      return Nil
+    }
+    
+    //TODO Do not match when declaring enums.
+    val casePattern = raw"\s*ca?s?e?\s?.*".r
+    val wordPattern = "ca?s?e?".r
+
+    val currentWordIsCase = wordPattern matches context.word
+
+    //Currently only suggests enum cases inside the same source file.
+    val iter = index.query(context.uri)
+
+    if (casePattern matches context.prefix) {
+      for {
+        (sym, _) <- iter
+          .flatMap(entity => entity match {
+            case Entity.Enum(e) => e.cases
+            case _ => Map()
+          })
+        name = sym.name
+        completion = if (currentWordIsCase) s"case $name => " else s"$name => "
+      } yield
+        CompletionItem(label = completion,
+          sortText = Priority.high(name),
+          textEdit = TextEdit(context.range, completion),
+          documentation = None,
+          kind = CompletionItemKind.EnumMember)
     } else {
       Nil
     }
