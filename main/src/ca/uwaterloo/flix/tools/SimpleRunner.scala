@@ -17,6 +17,8 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.Main.{CmdOpts, Command}
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.phase.extra.Documentor
 import ca.uwaterloo.flix.runtime.shell.{Shell, SourceProvider}
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util.Result.{ToErr, ToOk}
@@ -30,6 +32,9 @@ import java.nio.file.Path
   */
 object SimpleRunner {
 
+  /**
+    * Executes the `run` command.
+    */
   def run(cwd: Path, cmdOpts: CmdOpts, options: Options): Result[Unit, Int] = {
 
     // check if the --Xbenchmark-code-size flag was passed.
@@ -63,26 +68,10 @@ object SimpleRunner {
       System.exit(0)
     }
 
-    // configure Flix and add the paths.
-    val flix = new Flix()
-    flix.setOptions(options)
-    for (file <- cmdOpts.files) {
-      val ext = file.getName.split('.').last
-      ext match {
-        case "flix" => flix.addSourcePath(file.toPath)
-        case "fpkg" => flix.addSourcePath(file.toPath)
-        case "jar" => flix.addJar(file.toPath)
-        case _ =>
-          Console.println(s"Unrecognized file extension: '$ext'.")
-          System.exit(1)
-      }
-    }
-    if (Formatter.hasColorSupport)
-      flix.setFormatter(AnsiTerminalFormatter)
+    val flix = mkFlix(cmdOpts, options)
 
     // evaluate main.
-    val timer = new Timer(flix.compile())
-    timer.getResult match {
+    flix.compile() match {
       case Validation.Success(compilationResult) =>
 
         compilationResult.getMain match {
@@ -111,11 +100,55 @@ object SimpleRunner {
         ().toOk
 
       case Validation.Failure(errors) =>
-        flix.mkMessages(errors.sortBy(_.source.name))
-          .foreach(println)
-        println()
-        println(s"Compilation failed with ${errors.length} error(s).")
+        reportErrors(errors, flix)
         1.toErr
     }
+  }
+
+  /**
+    * Executes the `doc` command.
+    */
+  def doc(cmdOpts: CmdOpts, options: Options): Result[Unit, Int] = {
+    val flix = mkFlix(cmdOpts, options)
+    flix.check() match {
+      case Validation.Success(root) => Documentor.run(root)(flix).toOk
+      case Validation.Failure(errors) =>
+        reportErrors(errors, flix)
+        1.toErr
+    }
+  }
+
+  /**
+    * Creates a Flix instance using the given optons.
+    */
+  private def mkFlix(cmdOpts: CmdOpts, options: Options): Flix = {
+    // configure Flix and add the paths.
+    val flix = new Flix()
+    flix.setOptions(options)
+    for (file <- cmdOpts.files) {
+      val ext = file.getName.split('.').last
+      ext match {
+        case "flix" => flix.addSourcePath(file.toPath)
+        case "fpkg" => flix.addSourcePath(file.toPath)
+        case "jar" => flix.addJar(file.toPath)
+        case _ =>
+          Console.println(s"Unrecognized file extension: '$ext'.")
+          System.exit(1)
+      }
+    }
+    if (Formatter.hasColorSupport) {
+      flix.setFormatter(AnsiTerminalFormatter)
+    }
+    flix
+  }
+
+  /**
+    * Reports the errors to the appropriate output.
+    */
+  private def reportErrors(errors: LazyList[CompilationMessage], flix: Flix): Unit = {
+    flix.mkMessages(errors.sortBy(_.source.name))
+      .foreach(println)
+    println()
+    println(s"Compilation failed with ${errors.length} error(s).")
   }
 }

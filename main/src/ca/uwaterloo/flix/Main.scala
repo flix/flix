@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.api.lsp.LanguageServer
 import ca.uwaterloo.flix.api.Version
+import ca.uwaterloo.flix.api.lsp.LanguageServer
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.shell.{Shell, SourceProvider}
 import ca.uwaterloo.flix.tools._
@@ -174,7 +174,7 @@ object Main {
           System.exit(0)
 
         case Command.Doc =>
-          val result = Packager.doc(cwd, options)
+          val result = SimpleRunner.doc(cmdOpts, options)
           System.exit(getCode(result))
 
 

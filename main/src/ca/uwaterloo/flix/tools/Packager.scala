@@ -16,23 +16,21 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, TypedAst}
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.phase.extra.Documentor
+import ca.uwaterloo.flix.language.ast.{Ast, TypedAst}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.github.GitHub
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
-import ca.uwaterloo.flix.util.Result.{Err, Ok, ToErr, ToOk}
+import ca.uwaterloo.flix.util.Result.{ToErr, ToOk}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util._
 
 import java.io.{File, PrintWriter}
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
-import java.util.{Calendar, GregorianCalendar, Objects}
 import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
+import java.util.{Calendar, GregorianCalendar}
 import scala.collection.mutable
-import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Using}
 
 /**
@@ -371,15 +369,6 @@ object Packager {
       compilationResult =>
         Tester.run(Nil, compilationResult)
         ().toOk
-    }
-  }
-
-  /**
-    * Generates documentation based in the given path and options.
-    */
-  def doc(p: Path, o: Options): Result[Unit, Int] = {
-    check(p, o) map {
-      root => Documentor.run(root)(new Flix().setOptions(o))
     }
   }
 
