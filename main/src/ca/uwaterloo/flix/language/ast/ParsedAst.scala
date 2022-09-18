@@ -31,10 +31,10 @@ object ParsedAst {
     *
     * A collection of imports and declarations.
     *
-    * @param sp1   the position of the first character in the source.
-    * @param usesOrImports  the uses in the abstract syntax tree.
-    * @param decls the declarations in the abstract syntax tree.
-    * @param sp2   the position of the last character in the source.
+    * @param sp1           the position of the first character in the source.
+    * @param usesOrImports the uses in the abstract syntax tree.
+    * @param decls         the declarations in the abstract syntax tree.
+    * @param sp2           the position of the last character in the source.
     */
   case class CompilationUnit(sp1: SourcePosition, usesOrImports: Seq[ParsedAst.UseOrImport], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition)
 
@@ -749,22 +749,24 @@ object ParsedAst {
     /**
       * ForEach Expression.
       *
-      * @param sp1   the position of the first character in the expression.
-      * @param frags the foreach fragments.
-      * @param exp   the body expression.
-      * @param sp2   the position of the last character in the expression.
+      * @param sp1      the position of the first character in the expression.
+      * @param frag     the first foreach fragment.
+      * @param optFrags the optional sequence of fragments.
+      * @param exp      the body expression.
+      * @param sp2      the position of the last character in the expression.
       */
     case class ForEach(sp1: SourcePosition, frag: ForEachFragment.ForEach, optFrags: Option[Seq[ForEachFragment]], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * ForYield Expression.
       *
-      * @param sp1   the position of the first character in the expression.
-      * @param frags the for-yield fragments.
-      * @param exp   the body expression.
-      * @param sp2   the position of the last character in the expression.
+      * @param sp1      the position of the first character in the expression.
+      * @param frag     the first for-yield fragment.
+      * @param optFrags the optional sequence of fragments.
+      * @param exp      the body expression.
+      * @param sp2      the position of the last character in the expression.
       */
-    case class ForYield(sp1: SourcePosition, frags: Seq[ForYieldFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ForYield(sp1: SourcePosition, frag: ForYieldFragment.ForYield, optFrags: Option[Seq[ForYieldFragment]], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Tag Expression.

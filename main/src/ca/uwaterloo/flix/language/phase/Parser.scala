@@ -556,7 +556,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ keyword("for") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Fragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForYield
+        SP ~ keyword("for") ~ optWS ~ "(" ~ optWS ~ ForYieldFragment ~ optional(optWS ~ ";" ~ optWS ~ oneOrMore(Fragment).separatedBy(optWS ~ ";" ~ optWS)) ~ optWS ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForYield
       }
     }
 

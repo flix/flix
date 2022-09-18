@@ -785,7 +785,7 @@ object Weeder {
       }
 
       flatMapN(optFragsVal.getOrElse(visitExp(exp, senv))) {
-        exp0 =>
+        case exp0 =>
           frag match {
             case ParsedAst.ForEachFragment.ForEach(sp11, pat, exp1, sp12) =>
               mapN(visitPattern(pat), visitExp(exp1, senv)) {
@@ -800,7 +800,7 @@ object Weeder {
       }
 
 
-    case ParsedAst.Expression.ForYield(sp1, frags, exp, sp2) =>
+    case ParsedAst.Expression.ForYield(sp1, frag, optFrags, exp, sp2) =>
       //
       // Rewrites a for-loop to Monad.flatMap.
       //
@@ -814,22 +814,39 @@ object Weeder {
           mkApplyFqn(fqnPoint, List(e), loc)
       }
 
-      foldRight(frags)(yieldExp) {
-        case (ParsedAst.ForYieldFragment.ForYield(sp11, pat, exp1, sp12), exp0) =>
-          mapN(visitPattern(pat), visitExp(exp1, senv)) {
-            case (p, e1) =>
-              val loc = mkSL(sp11, sp12).asSynthetic
-              val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
-              val fparams = List(lambda, e1)
-              mkApplyFqn(fqnFlatMap, fparams, loc)
-          }
+      val optFragsVal = optFrags.map {
+        frags =>
+          foldRight(frags)(yieldExp) {
+            case (ParsedAst.ForYieldFragment.ForYield(sp11, pat, exp1, sp12), exp0) =>
+              mapN(visitPattern(pat), visitExp(exp1, senv)) {
+                case (p, e1) =>
+                  val loc = mkSL(sp11, sp12).asSynthetic
+                  val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
+                  val fparams = List(lambda, e1)
+                  mkApplyFqn(fqnFlatMap, fparams, loc)
+              }
 
-        case (ParsedAst.ForYieldFragment.Guard(sp11, exp1, sp12), exp0) =>
-          mapN(visitExp(exp1, senv)) {
-            case e1 =>
-              val loc = mkSL(sp11, sp12).asSynthetic
-              val zero = mkApplyFqn(fqnZero, List(WeededAst.Expression.Unit(loc)), loc)
-              WeededAst.Expression.IfThenElse(e1, exp0, zero, loc)
+            case (ParsedAst.ForYieldFragment.Guard(sp11, exp1, sp12), exp0) =>
+              mapN(visitExp(exp1, senv)) {
+                case e1 =>
+                  val loc = mkSL(sp11, sp12).asSynthetic
+                  val zero = mkApplyFqn(fqnZero, List(WeededAst.Expression.Unit(loc)), loc)
+                  WeededAst.Expression.IfThenElse(e1, exp0, zero, loc)
+              }
+          }
+      }
+
+      flatMapN(optFragsVal.getOrElse(yieldExp)) {
+        case exp0 =>
+          frag match {
+            case ParsedAst.ForYieldFragment.ForYield(sp11, pat, exp1, sp12) =>
+              mapN(visitPattern(pat), visitExp(exp1, senv)) {
+                case (p, e1) =>
+                  val loc = mkSL(sp11, sp12).asSynthetic
+                  val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
+                  val fparams = List(lambda, e1)
+                  mkApplyFqn(fqnFlatMap, fparams, loc)
+              }
           }
       }
 
@@ -3003,7 +3020,7 @@ object Weeder {
     case ParsedAst.Expression.Stm(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Discard(sp1, _, _) => sp1
     case ParsedAst.Expression.ForEach(sp1, _, _, _, _) => sp1
-    case ParsedAst.Expression.ForYield(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.ForYield(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _) => sp1
