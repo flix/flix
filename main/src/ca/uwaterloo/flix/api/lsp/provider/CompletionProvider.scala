@@ -275,7 +275,7 @@ object CompletionProvider {
   }
 
   private def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
-    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, pur0, eff0, _) =>
+    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, pur0, eff0, _, _) =>
       val args = fparams.map {
         fparam => s"${fparam.sym.text}: ${FormatType.formatType(fparam.tpe)}"
       }
