@@ -216,6 +216,7 @@ object Main {
                      xstrictmono: Boolean = false,
                      xnoseteffects: Boolean = false,
                      xnobooleffects: Boolean = false,
+                     xnooptimizer: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -389,6 +390,10 @@ object Main {
       // Xno-bool-effects
       opt[Unit]("Xno-bool-effects").action((_, c) => c.copy(xnobooleffects = true)).
         text("[experimental] disable bool effects")
+
+      // Xno-optimizer
+      opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
+        text("[experimental] disable compiler optimizations")
 
       note("")
 
