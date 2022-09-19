@@ -162,7 +162,7 @@ namespace Result {
     ///
     pub def productWith(f: t -> Int32 \ ef, r: Result[t, e]): Int32 \ ef =
         if (isErr(r))
-            0
+            1
         else
             foldLeft((acc, x) -> acc * f(x), 1, r)
 

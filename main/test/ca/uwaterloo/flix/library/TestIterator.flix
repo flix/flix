@@ -304,7 +304,7 @@ namespace TestIterator {
 
     @test
     def product01(): Bool = region r {
-        new Iterator(r) |> Iterator.product == 0
+        new Iterator(r) |> Iterator.product == 1
     }
 
     @test
@@ -339,7 +339,7 @@ namespace TestIterator {
 
     @test
     def productWith01(): Bool = region r {
-        new Iterator(r) |> Iterator.productWith(x -> x + 1) == 0
+        new Iterator(r) |> Iterator.productWith(x -> x + 1) == 1
     }
 
     @test
