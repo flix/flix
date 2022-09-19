@@ -153,7 +153,7 @@ namespace Result {
     ///
     pub def product(r: Result[Int32, e]): Int32 =
         if (isErr(r))
-            0
+            1
         else
             foldLeft((acc, x) -> acc * x, 1, r)
 
