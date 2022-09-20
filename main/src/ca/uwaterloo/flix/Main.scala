@@ -398,7 +398,7 @@ object Main {
 
       // Xvirtual-threads
       opt[Unit]("Xvirtual-threads").action((_, c) => c.copy(xvirtualthreads = true)).
-        text("[experimental] enables virtual threads (requires Java 19 with preview)")
+        text("[experimental] enables virtual threads (requires Java 19 with `--enable-preview`.)")
 
       note("")
 
