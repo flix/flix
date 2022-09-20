@@ -45,7 +45,7 @@ object Options {
     xnoseteffects = false,
     xnobooleffects = false,
     xnooptimizer = false,
-    xvirtualthreads = false
+    xvirtualthreads = true
   )
 
   /**

@@ -1068,6 +1068,7 @@ object GenExpression {
       // make a thread and run it
       if (flix.options.xvirtualthreads) {
         visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "startVirtualThread", s"(${JvmName.Runnable.toDescriptor})${JvmName.Thread.toDescriptor}", false)
+        visitor.visitInsn(POP)
       } else {
         visitor.visitTypeInsn(NEW, "java/lang/Thread")
         visitor.visitInsn(DUP_X1)
