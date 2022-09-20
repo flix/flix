@@ -427,7 +427,7 @@ object Namer {
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
 
       val annVal = traverse(ann0)(visitAnnotation(_, Map.empty, uenv0, ienv0, tenv, ns0, prog0))
-      val tpeVal = visitType(tpe0, allowWild = false, uenv0, ienv0, tenv)
+      val tpeVal = visitType(tpe0, allowWild = true, uenv0, ienv0, tenv)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, ienv0, tenv, ns0))
       flatMapN(annVal, tpeVal, tconstrsVal) {
         case (ann, tpe, tconstrs) =>
@@ -1319,7 +1319,7 @@ object Namer {
             NamedAst.Type.Var(Symbol.freshUnkindedTypeVarSym(Ast.VarText.Absent, isRegion = false, loc), loc).toSuccess
           } else {
             // Wild not allowed here. Error.
-            NameError.IllegalWildType()
+            NameError.IllegalWildType(ident, ident.loc).toFailure
           }
         } else {
           tenv0.get(ident.name) match {
