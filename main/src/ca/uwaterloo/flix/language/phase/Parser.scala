@@ -810,8 +810,18 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("let*") ~ WS ~ Pattern ~ optWS ~ optional(":" ~ optWS ~ Type ~ optWS) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetMatchStar
     }
 
-    def LetRecDef: Rule1[ParsedAst.Expression.LetRecDef] = rule {
-      SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ FormalParamList ~ optWS ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetRecDef
+    def LetRecDef: Rule1[ParsedAst.Expression.LetRecDef] = {
+      def SomeTypeAndEffect: Rule1[Option[(ParsedAst.Type, ParsedAst.PurityAndEffect)]] = rule {
+        ":" ~ optWS ~ TypeAndEffect ~ optWS ~> ((tpe: ParsedAst.Type, purAndEff: ParsedAst.PurityAndEffect) => Some((tpe, purAndEff)))
+      }
+
+      def NoTypeAndEffect: Rule1[Option[(ParsedAst.Type, ParsedAst.PurityAndEffect)]] = rule {
+        push(None)
+      }
+
+      rule {
+        SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ FormalParamList ~ optWS ~ (SomeTypeAndEffect | NoTypeAndEffect) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetRecDef
+      }
     }
 
     def LetUse: Rule1[ParsedAst.Expression.Use] = rule {
