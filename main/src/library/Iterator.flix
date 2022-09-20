@@ -165,7 +165,7 @@ namespace Iterator {
     ///
     pub def product(iter: Iterator[Int32, r]): Int32 \ Read(r) =
         if (isEmpty(iter))
-            0
+            1
         else
             foldLeft((acc, x) -> acc * x, 1, iter)
 
@@ -176,7 +176,7 @@ namespace Iterator {
     ///
     pub def productWith(f: a -> Int32 \ ef, iter: Iterator[a, r]): Int32 \ { ef, Read(r) } =
         if (isEmpty(iter))
-            0
+            1
         else
             foldLeft((acc, x) -> acc * f(x), 1, iter)
 

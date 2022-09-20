@@ -1089,7 +1089,7 @@ def count08(): Bool \ IO =
 
     @test
     def productValues01(): Bool =
-        Map.empty() |> Map.productValues == 0
+        Map.empty() |> Map.productValues == 1
 
     @test
     def productValues02(): Bool =
@@ -1123,7 +1123,7 @@ def count08(): Bool \ IO =
 
     @test
     def productKeys01(): Bool =
-        Map.empty() |> Map.productValues == 0
+        Map.empty() |> Map.productValues == 1
 
     @test
     def productKeys02(): Bool =
@@ -1157,7 +1157,7 @@ def count08(): Bool \ IO =
 
     @test
     def productWith01(): Bool =
-        Map.empty() |> Map.productWith((k, v) -> k + v) == 0
+        Map.empty() |> Map.productWith((k, v) -> k + v) == 1
 
     @test
     def productWith02(): Bool =
