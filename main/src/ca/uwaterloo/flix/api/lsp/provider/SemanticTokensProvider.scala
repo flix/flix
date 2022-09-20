@@ -213,10 +213,10 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given `spec`.
     */
   private def visitSpec(spec: Spec): Iterator[SemanticToken] = spec match {
-    case Spec(_, _, _, tparams, fparams, sc, retTpe, pur, eff, _) =>
+    case Spec(_, _, _, tparams, fparams, _, retTpe, pur, eff, tconstrs, _) =>
       val st1 = visitTypeParams(tparams)
       val st2 = visitFormalParams(fparams)
-      val st3 = sc.constraints.iterator.flatMap(visitTypeConstraint)
+      val st3 = tconstrs.iterator.flatMap(visitTypeConstraint)
       val st4 = visitType(retTpe)
       val st5 = visitType(pur)
       val st6 = visitType(eff)

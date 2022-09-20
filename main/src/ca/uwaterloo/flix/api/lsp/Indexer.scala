@@ -72,10 +72,10 @@ object Indexer {
     * Returns a reverse index for the given `spec`.
     */
   private def visitSpec(spec: Spec): Index = spec match {
-    case Spec(_, _, _, tparams, fparams, declaredScheme, retTpe, pur, eff, _) =>
+    case Spec(_, _, _, tparams, fparams, _, retTpe, pur, eff, tconstrs, _) =>
       val idx1 = traverse(tparams)(visitTypeParam)
       val idx2 = traverse(fparams)(visitFormalParam)
-      val idx3 = traverse(declaredScheme.constraints)(visitTypeConstraint)
+      val idx3 = traverse(tconstrs)(visitTypeConstraint)
       val idx4 = visitType(retTpe)
       val idx5 = visitType(pur)
       val idx6 = visitType(eff)
