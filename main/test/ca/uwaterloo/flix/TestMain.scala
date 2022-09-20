@@ -184,7 +184,7 @@ class TestMain extends FunSuite {
     assert(opts.xstrictmono)
   }
 
-  test("--Xvirtualthreads") {
+  test("--Xvirtual-threads") {
     val args = Array("--Xvirtual-threads")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xvirtualthreads)
