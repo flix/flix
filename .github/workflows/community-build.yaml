@@ -40,6 +40,7 @@ jobs:
           - "magnus-madsen/helloworld"
           - "mlutze/fcwg"
           - "JonathanStarup/Flix-ANSI-Terminal"
+          - "mlutze/flix-json"
     runs-on: ubuntu-latest
     steps:
       - name: Set up Java
