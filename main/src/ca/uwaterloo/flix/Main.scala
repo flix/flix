@@ -17,14 +17,13 @@
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.lsp.LanguageServer
-import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.api.Version
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.shell.{Shell, SourceProvider}
 import ca.uwaterloo.flix.tools._
-import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util._
 
-import java.io.{File, PrintWriter}
+import java.io.File
 import java.net.BindException
 import java.nio.file.Paths
 
@@ -96,7 +95,8 @@ object Main {
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono,
       xnoseteffects = cmdOpts.xnoseteffects,
-      xnobooleffects = cmdOpts.xnobooleffects
+      xnobooleffects = cmdOpts.xnobooleffects,
+      xvirtualthreads = cmdOpts.xvirtualthreads
     )
 
     // Don't use progress bar if benchmarking.
@@ -217,6 +217,7 @@ object Main {
                      xnoseteffects: Boolean = false,
                      xnobooleffects: Boolean = false,
                      xnooptimizer: Boolean = false,
+                     xvirtualthreads: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -394,6 +395,10 @@ object Main {
       // Xno-optimizer
       opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
         text("[experimental] disable compiler optimizations")
+
+      // Xvirtual-threads
+      opt[Unit]("Xvirtual-threads").action((_, c) => c.copy(xvirtualthreads = true)).
+        text("[experimental] enables virtual threads (requires Java 19 with `--enable-preview`.)")
 
       note("")
 
