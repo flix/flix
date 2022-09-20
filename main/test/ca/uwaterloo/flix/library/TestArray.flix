@@ -2660,7 +2660,7 @@ namespace TestArray {
 
     @test
     def product01(): Bool = region r {
-        Array.product([]) == 0
+        Array.product([]) == 1
     }
 
     @test
@@ -2695,7 +2695,7 @@ namespace TestArray {
 
     @test
     def productWith01(): Bool = region r {
-        Array.productWith(x -> x + 1, []) == 0
+        Array.productWith(x -> x + 1, []) == 1
     }
 
     @test
