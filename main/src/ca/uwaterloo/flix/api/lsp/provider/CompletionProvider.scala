@@ -26,10 +26,6 @@ import ca.uwaterloo.flix.language.phase.Resolver.DerivableSyms
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 import org.parboiled2.CharPredicate
-import ca.uwaterloo.flix.language.ast.Type.Apply
-import ca.uwaterloo.flix.language.ast.Type.Cst
-import ca.uwaterloo.flix.language.ast.Type.Alias
-import ca.uwaterloo.flix.language.ast.Type.Var
 
 /**
   * CompletionProvider
