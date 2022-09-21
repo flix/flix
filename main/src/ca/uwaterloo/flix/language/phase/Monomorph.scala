@@ -976,6 +976,8 @@ object Monomorph {
         val n = boolVars.foldLeft(m) {
           case (macc, boolVar) => macc + (boolVar -> Type.False)
         }
+        println(m)
+        println(n)
         if (flix.options.xnoreifyeff)
           StrictSubstitution(Substitution(n))
         else

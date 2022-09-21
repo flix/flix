@@ -96,6 +96,7 @@ object Main {
       xstrictmono = cmdOpts.xstrictmono,
       xnoseteffects = cmdOpts.xnoseteffects,
       xnobooleffects = cmdOpts.xnobooleffects,
+      xnooptimizer = cmdOpts.xnooptimizer,
       xvirtualthreads = cmdOpts.xvirtualthreads,
       xnoreifyeff = cmdOpts.xnoreifyeff
     )
