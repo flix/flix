@@ -669,7 +669,7 @@ namespace TestChain {
 
     @test
     def product01(): Bool =
-        List.toChain(Nil) |> Chain.product == 0
+        List.toChain(Nil) |> Chain.product == 1
 
     @test
     def product02(): Bool =
@@ -698,7 +698,7 @@ namespace TestChain {
 
     @test
     def productWith01(): Bool =
-        List.toChain(Nil) |> Chain.productWith(x -> x + 1) == 0
+        List.toChain(Nil) |> Chain.productWith(x -> x + 1) == 1
 
     @test
     def productWith02(): Bool =

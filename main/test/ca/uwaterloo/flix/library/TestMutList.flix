@@ -264,7 +264,7 @@ namespace TestMutList {
 
     @test
     def product01(): Bool = region r {
-        new MutList(r) |> MutList.product == 0
+        new MutList(r) |> MutList.product == 1
     }
 
     @test
@@ -314,7 +314,7 @@ namespace TestMutList {
 
     @test
     def productWith01(): Bool = region r {
-        new MutList(r) |> MutList.productWith(x -> x + 1) == 0
+        new MutList(r) |> MutList.productWith(x -> x + 1) == 1
     }
 
     @test

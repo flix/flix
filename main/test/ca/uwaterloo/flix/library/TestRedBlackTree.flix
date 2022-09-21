@@ -549,7 +549,7 @@ namespace TestRedBlackTree {
 
     @test
     def productValues01(): Bool =
-        RedBlackTree.empty() |> RedBlackTree.productValues == 0
+        RedBlackTree.empty() |> RedBlackTree.productValues == 1
 
     @test
     def productValues02(): Bool =
@@ -583,7 +583,7 @@ namespace TestRedBlackTree {
 
     @test
     def productKeys01(): Bool =
-        RedBlackTree.empty() |> RedBlackTree.productKeys == 0
+        RedBlackTree.empty() |> RedBlackTree.productKeys == 1
 
     @test
     def productKeys02(): Bool =
@@ -617,7 +617,7 @@ namespace TestRedBlackTree {
 
     @test
     def productWith01(): Bool =
-        RedBlackTree.empty() |> RedBlackTree.productWith((k, v) -> k + v) == 0
+        RedBlackTree.empty() |> RedBlackTree.productWith((k, v) -> k + v) == 1
 
     @test
     def productWith02(): Bool =

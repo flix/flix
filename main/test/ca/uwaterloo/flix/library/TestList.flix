@@ -2645,7 +2645,7 @@ def distinctWith09(): Bool =
 
     @test
     def product01(): Bool =
-        List.product(Nil) == 0
+        List.product(Nil) == 1
 
     @test
     def product02(): Bool =
@@ -2674,7 +2674,7 @@ def distinctWith09(): Bool =
 
     @test
     def productWith01(): Bool =
-        List.productWith(x -> x + 1, Nil) == 0
+        List.productWith(x -> x + 1, Nil) == 1
 
     @test
     def productWith02(): Bool =

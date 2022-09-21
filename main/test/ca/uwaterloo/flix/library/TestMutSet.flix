@@ -285,7 +285,7 @@ namespace TestMutSet {
 
     @test
     def product01(): Bool = region r {
-        MutSet.product(new MutSet(r)) == 0
+        MutSet.product(new MutSet(r)) == 1
     }
 
     @test
@@ -339,7 +339,7 @@ namespace TestMutSet {
 
     @test
     def productWith01(): Bool = region r {
-        new MutSet(r) |> MutSet.productWith(x -> x + 1) == 0
+        new MutSet(r) |> MutSet.productWith(x -> x + 1) == 1
     }
 
     @test
