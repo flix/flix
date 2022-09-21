@@ -974,7 +974,7 @@ object Monomorph {
         val m = subst.m
         val boolVars = m.keys.filter(sym => sym.kind == Kind.Bool)
         val n = boolVars.foldLeft(m) {
-          case (macc, boolVar) => macc + (boolVar -> Type.False)
+          case (macc, boolVar) => macc + (boolVar -> Type.True)
         }
         if (flix.options.xnoreifyeff)
           StrictSubstitution(Substitution(n))
