@@ -89,7 +89,7 @@ object Main {
       explain = cmdOpts.explain,
       json = cmdOpts.json,
       output = cmdOpts.output.map(s => Paths.get(s)),
-      progress = true,
+      progress = false,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
       xnobooltable = cmdOpts.xnobooltable,
       xstatistics = cmdOpts.xstatistics,
