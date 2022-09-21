@@ -15,7 +15,7 @@ for pkg in glob.glob("*.fpkg"):
     lines2, time2, totalBytes2, totalClasses2 = run2.stdout.split(",")
 
     classRatio = round((100 * int(totalClasses2)) / int(totalClasses1))
-    bytesRatio = round((100 * int(totalClasses2)) / int(totalClasses1))
+    bytesRatio = round((100 * int(totalBytes2)) / int(totalBytes1))
 
     print(f' Lines: {int(lines1)}', end='')
     print(f' Classes: {int(totalClasses1)} / {int(totalClasses2)} ({classRatio}%)', end='')
