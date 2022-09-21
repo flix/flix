@@ -971,7 +971,16 @@ object Monomorph {
   private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit flix: Flix): StrictSubstitution = {
     Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty) match {
       case Result.Ok(subst) =>
-        StrictSubstitution(subst)
+        val m = subst.m
+        val boolVars = m.keys.filter(sym => sym.kind == Kind.Bool)
+        val n = boolVars.foldLeft(m) {
+          case (macc, boolVar) => macc + (boolVar -> Type.False)
+        }
+        if (flix.options.xnoreifyeff)
+          StrictSubstitution(Substitution(n))
+        else
+          StrictSubstitution(Substitution(m))
+
       case Result.Err(_) =>
         throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.")
     }
