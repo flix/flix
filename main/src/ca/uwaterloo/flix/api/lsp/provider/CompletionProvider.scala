@@ -26,6 +26,10 @@ import ca.uwaterloo.flix.language.phase.Resolver.DerivableSyms
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 import org.parboiled2.CharPredicate
+import ca.uwaterloo.flix.language.ast.Type.Apply
+import ca.uwaterloo.flix.language.ast.Type.Cst
+import ca.uwaterloo.flix.language.ast.Type.Alias
+import ca.uwaterloo.flix.language.ast.Type.Var
 
 /**
   * CompletionProvider
@@ -510,41 +514,61 @@ object CompletionProvider {
     }
   }
 
+  private def caseCompletion(label: String, completion: String)(implicit context: Context): CompletionItem = {
+    CompletionItem(label = label,
+        sortText = Priority.high(label),
+        textEdit = TextEdit(context.range, completion),
+        documentation = None,
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.EnumMember)
+  }
+
+  private def enumCompletionAcc(acc: List[CompletionItem], enm: TypedAst.Enum, currentWordIsCase: Boolean)(implicit context: Context, flix: Flix): List[CompletionItem] = {
+    enm.cases.foldLeft(acc)({
+      case (acc, (sym , cas)) => {
+        val name = sym.name
+        val tpe = cas.tpe
+        val typeString = FormatType.formatType(tpe) match {
+          case "Unit" => ""
+          case x if x.charAt(0) == '(' => x
+          case x => s"($x)"
+        }
+        val typeCompletion = tpe.typeConstructor match {
+          case Some(TypeConstructor.Unit) => ""
+          case Some(TypeConstructor.Tuple(arity)) => List.range(1, arity + 1).map(elem => s"$$$elem").mkString("(", ", ", ")")
+          case _ => "($1)"
+        }
+        val label = if (currentWordIsCase) s"case $name$typeString => " else s"$name$typeString => "
+        val completion = if (currentWordIsCase) s"case $name$typeCompletion => $${0:???}" else s"$name$typeCompletion => $${0:???}"
+        caseCompletion(label, completion) :: acc
+      }
+    })
+  }
+
   /** 
     * Returns a list of completion items based on case keyword in match expressions
     */
-  private def getCaseCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+  private def getCaseCompletions()(implicit context: Context, index: Index, root: TypedAst.Root, flix: Flix): Iterable[CompletionItem] = {
     if (root == null) {
       return Nil
     }
     
-    //TODO Do not match when declaring enums.
     val casePattern = raw"\s*ca?s?e?\s?.*".r
-    val wordPattern = "ca?s?e?".r
 
+    if (!(casePattern matches context.prefix)) {
+      return Nil
+    }
+
+    val wordPattern = "ca?s?e?".r
     val currentWordIsCase = wordPattern matches context.word
 
-    //Currently only suggests enum cases inside the same source file.
-    val iter = index.query(context.uri)
+    //Entities withing same source file
+    val entities = index.query(context.uri)
 
-    if (casePattern matches context.prefix) {
-      for {
-        (sym, _) <- iter
-          .flatMap(entity => entity match {
-            case Entity.Enum(e) => e.cases
-            case _ => Map()
-          })
-        name = sym.name
-        completion = if (currentWordIsCase) s"case $name => " else s"$name => "
-      } yield
-        CompletionItem(label = completion,
-          sortText = Priority.high(name),
-          textEdit = TextEdit(context.range, completion),
-          documentation = None,
-          kind = CompletionItemKind.EnumMember)
-    } else {
-      Nil
-    }
+    entities.foldLeft[List[CompletionItem]](Nil)((acc, entity) => entity match {
+      case Entity.Enum(e) => enumCompletionAcc(acc, e, currentWordIsCase)
+      case _ => acc
+    })
   }
 
   /**

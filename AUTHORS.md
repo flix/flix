@@ -50,3 +50,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Kengo TODA](http://github.com/KengoTODA/)
 - [Darius Tan](https://github.com/thinking-tower)
 - [Paul Butcher](https://github.com/paulbutcher)
+- [Daniel Anker Hermansen](https://github.com/Daniel-Anker-Hermansen)
