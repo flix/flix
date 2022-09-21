@@ -235,7 +235,7 @@ namespace TestMutMap {
 
     @test
     def productValues01(): Bool = region r {
-        new MutMap(r) |> MutMap.productValues == 0
+        new MutMap(r) |> MutMap.productValues == 1
     }
 
     @test
@@ -275,7 +275,7 @@ namespace TestMutMap {
 
     @test
     def productKeys01(): Bool = region r {
-        new MutMap(r) |> MutMap.productValues == 0
+        new MutMap(r) |> MutMap.productValues == 1
     }
 
     @test
@@ -315,7 +315,7 @@ namespace TestMutMap {
 
     @test
     def productWith01(): Bool = region r {
-        new MutMap(r) |> MutMap.productWith((k, v) -> k + v) == 0
+        new MutMap(r) |> MutMap.productWith((k, v) -> k + v) == 1
     }
 
     @test

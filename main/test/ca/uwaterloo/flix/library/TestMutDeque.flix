@@ -646,7 +646,7 @@ namespace TestMutDeque {
     @test
     def product01(): Bool = region r {
         let d = new MutDeque(r);
-        MutDeque.product(d) == 0
+        MutDeque.product(d) == 1
     }
 
     @test
@@ -711,7 +711,7 @@ namespace TestMutDeque {
     @test
     def productWith01(): Bool = region r {
         let d = new MutDeque(r);
-        MutDeque.productWith(x -> x + 1, d) == 0
+        MutDeque.productWith(x -> x + 1, d) == 1
     }
 
     @test

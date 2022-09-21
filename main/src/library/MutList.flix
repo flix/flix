@@ -149,7 +149,7 @@ namespace MutList {
     ///
     pub def product(v: MutList[Int32, r]): Int32 \ Read(r) =
         if (isEmpty(v))
-            0
+            1
         else
             foldLeft((acc, x) -> acc * x, 1, v)
 
@@ -158,7 +158,7 @@ namespace MutList {
     ///
     pub def productWith(f: a -> Int32 \ ef, v: MutList[a, r]): Int32 \ { ef, Read(r) } =
         if (isEmpty(v))
-            0
+            1
         else
             foldLeft((acc, x) -> acc * f(x), 1, v)
 

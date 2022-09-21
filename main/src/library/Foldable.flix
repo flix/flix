@@ -62,7 +62,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     pub def product(t: t[Int32]): Int32 =
         if (Foldable.isEmpty(t))
-            0
+            1
         else
             Foldable.foldLeft((acc, x) -> acc * x, 1, t)
 
@@ -71,7 +71,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     pub def productWith(f: a -> Int32 \ ef, t: t[a]): Int32 \ ef =
         if (Foldable.isEmpty(t))
-            0
+            1
         else
             Foldable.foldLeft((acc, x) -> acc * f(x), 1, t)
 

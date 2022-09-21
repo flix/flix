@@ -181,7 +181,7 @@ def count03(): Bool = Result.count(i -> i == 2, Ok(2)) == 1
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def product01(): Bool = Result.product(Err(false)) == 0
+    def product01(): Bool = Result.product(Err(false)) == 1
 
     @test
     def product02(): Bool = Result.product(Ok(1)) == 1
@@ -195,7 +195,7 @@ def count03(): Bool = Result.count(i -> i == 2, Ok(2)) == 1
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def productWith01(): Bool = Result.productWith(x -> x + 1, Err(false)) == 0
+    def productWith01(): Bool = Result.productWith(x -> x + 1, Err(false)) == 1
 
     @test
     def productWith02(): Bool = Result.productWith(x -> x + 1, Ok(1)) == 2

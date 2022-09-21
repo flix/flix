@@ -1002,7 +1002,7 @@ namespace TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def productKeys01(): Bool = MultiMap.productKeys(empty(): MultiMap[Int32, Int32]) == 0
+    def productKeys01(): Bool = MultiMap.productKeys(empty(): MultiMap[Int32, Int32]) == 1
 
     @test
     def productKeys02(): Bool = MultiMap.productKeys(singleton(1, 2)) == 1
@@ -1023,7 +1023,7 @@ namespace TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def productValues01(): Bool = MultiMap.productValues(empty(): MultiMap[Int32, Int32]) == 0
+    def productValues01(): Bool = MultiMap.productValues(empty(): MultiMap[Int32, Int32]) == 1
 
     @test
     def productValues02(): Bool = MultiMap.productValues(singleton(1, 2)) == 2
@@ -1044,7 +1044,7 @@ namespace TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def productWith01(): Bool = MultiMap.productWith((k, v) -> if (v > k) 10 else 1, empty(): MultiMap[Int32, Int32]) == 0
+    def productWith01(): Bool = MultiMap.productWith((k, v) -> if (v > k) 10 else 1, empty(): MultiMap[Int32, Int32]) == 1
 
     @test
     def productWith02(): Bool = MultiMap.productWith((k, v) -> if (v > k) 10 else 1, singleton(1, 2)) == 10

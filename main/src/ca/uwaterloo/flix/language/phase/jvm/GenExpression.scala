@@ -1060,15 +1060,23 @@ object GenExpression {
 
     case Expression.Spawn(exp, _, loc) =>
       addSourceLine(visitor, loc)
+
       // Compile the expression, putting a function implementing the Runnable interface on the stack
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       visitor.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
+
       // make a thread and run it
-      visitor.visitTypeInsn(NEW, "java/lang/Thread")
-      visitor.visitInsn(DUP_X1)
-      visitor.visitInsn(SWAP)
-      visitor.visitMethodInsn(INVOKESPECIAL, "java/lang/Thread", "<init>", s"(${JvmName.Runnable.toDescriptor})${JvmType.Void.toDescriptor}", false)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Thread", "start", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+      if (flix.options.xvirtualthreads) {
+        visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "startVirtualThread", s"(${JvmName.Runnable.toDescriptor})${JvmName.Thread.toDescriptor}", false)
+        visitor.visitInsn(POP)
+      } else {
+        visitor.visitTypeInsn(NEW, "java/lang/Thread")
+        visitor.visitInsn(DUP_X1)
+        visitor.visitInsn(SWAP)
+        visitor.visitMethodInsn(INVOKESPECIAL, "java/lang/Thread", "<init>", s"(${JvmName.Runnable.toDescriptor})${JvmType.Void.toDescriptor}", false)
+        visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Thread", "start", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+      }
+
       // Put a Unit value on the stack
       visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 

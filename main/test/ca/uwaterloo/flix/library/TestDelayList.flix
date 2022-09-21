@@ -979,7 +979,7 @@ namespace TestDelayList {
 
     @test
     def product01(): Bool =
-        List.toDelayList(Nil) |> DelayList.product == 0
+        List.toDelayList(Nil) |> DelayList.product == 1
 
     @test
     def product02(): Bool =
@@ -1008,7 +1008,7 @@ namespace TestDelayList {
 
     @test
     def productWith01(): Bool =
-        List.toDelayList(Nil) |> DelayList.productWith(x -> x + 1) == 0
+        List.toDelayList(Nil) |> DelayList.productWith(x -> x + 1) == 1
 
     @test
     def productWith02(): Bool =

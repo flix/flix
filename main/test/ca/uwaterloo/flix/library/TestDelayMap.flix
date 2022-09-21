@@ -1841,7 +1841,7 @@ namespace TestDelayMap {
 
     @test
     def productValues01(): Bool =
-        DelayMap.empty() |> DelayMap.productValues == 0
+        DelayMap.empty() |> DelayMap.productValues == 1
 
     @test
     def productValues02(): Bool =
@@ -1875,7 +1875,7 @@ namespace TestDelayMap {
 
     @test
     def productKeys01(): Bool =
-        DelayMap.empty() |> DelayMap.productValues == 0
+        DelayMap.empty() |> DelayMap.productValues == 1
 
     @test
     def productKeys02(): Bool =
@@ -1909,7 +1909,7 @@ namespace TestDelayMap {
 
     @test
     def productWith01(): Bool =
-        DelayMap.empty() |> DelayMap.productWith((k, v) -> k + v) == 0
+        DelayMap.empty() |> DelayMap.productWith((k, v) -> k + v) == 1
 
     @test
     def productWith02(): Bool =
