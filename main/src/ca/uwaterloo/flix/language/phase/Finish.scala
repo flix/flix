@@ -16,8 +16,8 @@ object Finish {
     val totalTime = result.totalTime
     val totalBytes = result.codeSize
     val totalClasses = result.totalClasses
-    
-    println("Lines, Time, Bytes, Classes")
+
+    //println("Lines, Time, Bytes, Classes")
     Console.println(f"$totalLines, $totalTime, $totalBytes, $totalClasses")
 
     result.toSuccess
