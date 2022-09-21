@@ -233,6 +233,10 @@ object Monomorph {
         specializedDefns.put(freshSym, specializedDefn)
       }
 
+      //for (kv <- specializedDefns.keySet.toList.sortBy(_.toString)) {
+        //println(kv)
+      //}
+
       // Reassemble the AST.
       root.copy(
         defs = specializedDefns.toMap
@@ -969,7 +973,9 @@ object Monomorph {
     * Unifies `tpe1` and `tpe2` which must be unifiable.
     */
   private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit flix: Flix): StrictSubstitution = {
-    Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty) match {
+    val t1 = eraseType(tpe1)
+    val t2 = eraseType(tpe2)
+    Unification.unifyTypes(t1, t2, RigidityEnv.empty) match {
       case Result.Ok(subst) =>
         val m = subst.m
         val boolVars = m.keys.filter(sym => sym.kind == Kind.Bool)
@@ -982,7 +988,7 @@ object Monomorph {
           StrictSubstitution(Substitution(m))
 
       case Result.Err(_) =>
-        throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.")
+        throw InternalCompilerException(s"Unable to unify: '$t1' and '$t2'.")
     }
   }
 
@@ -992,13 +998,14 @@ object Monomorph {
     * Flix does not erase normal types, but it does erase Boolean formulas.
     */
   private def eraseType(tpe: Type)(implicit flix: Flix): Type = tpe match {
-    case Type.Var(_, loc) =>
-      if (flix.options.xstrictmono)
-        throw UnexpectedNonConstBool(tpe, loc)
-      else {
-        // TODO: We should return Type.ErasedBool or something.
-        Type.True
-      }
+    case Type.Var(sym, loc) => Type.Var(sym, loc)
+
+    case Type.Cst(TypeConstructor.False, loc) =>
+      if (flix.options.xnoreifyeff) {
+        // If there is are reifyed effects, we erase them to true.
+        Type.Cst(TypeConstructor.True, loc)
+      } else
+        tpe
 
     case Type.Cst(_, _) => tpe
 
