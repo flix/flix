@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package ca.uwaterloo.flix.runtime.shell
 
 import ca.uwaterloo.flix.api.Flix
@@ -55,7 +55,7 @@ case object SourceProvider {
     */
   case class SourceFileList(files: Seq[File]) extends SourceProvider {
     def execute(cmd: Command, options: Options): Unit = {
-      println("No project loaded.") 
+      println("No project loaded.")
     }
   }
 }
@@ -70,7 +70,7 @@ class SourceFiles(sourceProvider: SourceProvider) {
 
   // The sources and libraries currently loaded
   var currentSources: Set[Path] = Set.empty
-  var currentLibs: Set[Path] = Set.empty
+  var currentJars: Set[Path] = Set.empty
 
   // Timestamps at the point the sources were loaded
   var timestamps: Map[Path, Long] = Map.empty
@@ -78,7 +78,7 @@ class SourceFiles(sourceProvider: SourceProvider) {
   /**
     * Scan the disk for changes, and reload anything that's changed
     */
-  def addSourcesAndPackages(flix: Flix) = {
+  def addSourcesAndPackages(flix: Flix): Unit = {
     val previousSources = currentSources
 
     sourceProvider match {
@@ -88,29 +88,28 @@ class SourceFiles(sourceProvider: SourceProvider) {
           val (packages, libraries) = getPackagesAndLibraries(path)
 
           currentSources = sourceFiles ++ packages
-          currentLibs = libraries
+          currentJars = libraries
         }
-  
+
       case SourceProvider.SourceFileList(files) =>
         currentSources = files.map(_.toPath).toSet
     }
 
     for (file <- currentSources
          if hasChanged(file)) {
-      val bytes = Files.readAllBytes(file)
-      val str = new String(bytes, flix.defaultCharset)
-      flix.addSourceCode(file.toString(), str)
+      flix.addSourcePath(file)
     }
 
-    for (file <- currentLibs
-         if hasChanged(file))
+    for (file <- currentJars
+         if hasChanged(file)) {
       flix.addJar(file)
+    }
 
     val deletedSources = previousSources -- currentSources
     for (file <- deletedSources)
       flix.remSourceCode(file.toString)
 
-    timestamps = (currentSources ++ currentLibs).map(f => f -> f.toFile.lastModified).toMap
+    timestamps = (currentSources ++ currentJars).map(f => f -> f.toFile.lastModified).toMap
   }
 
   /**
@@ -138,7 +137,7 @@ class SourceFiles(sourceProvider: SourceProvider) {
 
   /**
     * Returns a set of all the .fpkg and a set of all the .jar files within a project
-    */  
+    */
   private def getPackagesAndLibraries(path: Path): (Set[Path], Set[Path]) = {
     val libraryDirectory = Packager.getLibraryDirectory(path)
     if (libraryDirectory.toFile.isDirectory) {
