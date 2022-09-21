@@ -122,7 +122,7 @@ namespace MutDeque {
     ///
     pub def productWith(f: a -> Int32 \ ef, d: MutDeque[a, r]): Int32 \ { ef, Read(r) } =
         if (isEmpty(d))
-            0
+            1
         else
             foldLeft((acc, x) -> f(x) * acc, 1, d)
 

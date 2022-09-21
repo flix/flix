@@ -583,7 +583,7 @@ def count08(): Bool \ IO =
 
     @test
     def product01(): Bool =
-        Set.product(Set.empty()) == 0
+        Set.product(Set.empty()) == 1
 
     @test
     def product02(): Bool =
@@ -612,7 +612,7 @@ def count08(): Bool \ IO =
 
     @test
     def productWith01(): Bool =
-        Set#{} |> Set.productWith(x -> x + 1) == 0
+        Set#{} |> Set.productWith(x -> x + 1) == 1
 
     @test
     def productWith02(): Bool =

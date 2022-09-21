@@ -19,7 +19,6 @@ import ca.uwaterloo.flix.api.lsp.Index.traverse
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.InternalCompilerException
 
 object Indexer {
 
@@ -253,7 +252,7 @@ object Indexer {
     case Expression.Match(exp, rules, _, _, _, _) =>
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
       val i1 = traverse(rules) {
-        case MatchRule(pat, guard, exp) => visitPat(pat, exp0) ++ visitExp(guard) ++ visitExp(exp)
+        case MatchRule(pat, guard, exp) => visitPat(pat) ++ visitExp(guard) ++ visitExp(exp)
       }
       i0 ++ i1
 
@@ -402,7 +401,7 @@ object Indexer {
     case Expression.Force(exp, _, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.FixpointConstraintSet(cs, _, _, _) => traverse(cs)(visitConstraint(_, exp0))
+    case Expression.FixpointConstraintSet(cs, _, _, _) => traverse(cs)(visitConstraint)
 
     case Expression.FixpointLambda(pparams, exp, _, _, _, _, _) =>
       val i0 = traverse(pparams)(visitPredicateParam)
@@ -441,11 +440,10 @@ object Indexer {
   /**
     * Returns a reverse index for the given pattern `pat0`.
     */
-  private def visitPat(pat0: Pattern, exp0: Expression): Index = pat0 match {
+  private def visitPat(pat0: Pattern): Index = pat0 match {
     case Pattern.Wild(_, _) => Index.occurrenceOf(pat0)
-    case Pattern.Var(sym, _, loc) =>
-      val parent = Entity.Exp(exp0)
-      Index.occurrenceOf(pat0) ++ Index.useOf(sym, loc, parent)
+    case Pattern.Var(sym, tpe, _) =>
+      Index.occurrenceOf(pat0) ++ Index.occurrenceOf(sym, tpe)
     case Pattern.Unit(_) => Index.occurrenceOf(pat0)
     case Pattern.True(_) => Index.occurrenceOf(pat0)
     case Pattern.False(_) => Index.occurrenceOf(pat0)
@@ -459,26 +457,26 @@ object Indexer {
     case Pattern.BigInt(_, _) => Index.occurrenceOf(pat0)
     case Pattern.Str(_, _) => Index.occurrenceOf(pat0)
     case Pattern.Tag(Ast.CaseSymUse(sym, loc), pat, _, _) =>
-      val parent = Entity.Exp(exp0)
-      Index.occurrenceOf(pat0) ++ visitPat(pat, exp0) ++ Index.useOf(sym, loc, parent)
-    case Pattern.Tuple(elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms, exp0)
-    case Pattern.Array(elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms, exp0)
-    case Pattern.ArrayTailSpread(elms, _, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms, exp0)
-    case Pattern.ArrayHeadSpread(_, elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms, exp0)
+      val parent = Entity.Pattern(pat0)
+      Index.occurrenceOf(pat0) ++ visitPat(pat) ++ Index.useOf(sym, loc, parent)
+    case Pattern.Tuple(elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms)
+    case Pattern.Array(elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms)
+    case Pattern.ArrayTailSpread(elms, _, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms)
+    case Pattern.ArrayHeadSpread(_, elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms)
   }
 
   /**
     * Returns a reverse index for the given patterns `pats0`.
     */
-  private def visitPats(pats0: List[Pattern], exp0: Expression): Index = traverse(pats0)(visitPat(_, exp0))
+  private def visitPats(pats0: List[Pattern]): Index = traverse(pats0)(visitPat)
 
   /**
     * Returns a reverse index for the given constraint `c0`.
     */
-  private def visitConstraint(c0: Constraint, exp0: Expression): Index = c0 match {
+  private def visitConstraint(c0: Constraint): Index = c0 match {
     case Constraint(_, head, body, _) =>
       val idx1 = visitHead(head)
-      val idx2 = traverse(body)(visitBody(_, exp0))
+      val idx2 = traverse(body)(visitBody)
       idx1 ++ idx2
   }
 
@@ -492,8 +490,8 @@ object Indexer {
   /**
     * Returns a reverse index for the given body predicate `b0`.
     */
-  private def visitBody(b0: Predicate.Body, exp0: Expression): Index = b0 match {
-    case Body.Atom(pred, _, _, _, terms, tpe, _) => Index.occurrenceOf(pred, tpe) ++ Index.useOf(pred) ++ visitPats(terms, exp0)
+  private def visitBody(b0: Predicate.Body): Index = b0 match {
+    case Body.Atom(pred, _, _, _, terms, tpe, _) => Index.occurrenceOf(pred, tpe) ++ Index.useOf(pred) ++ visitPats(terms)
     case Body.Guard(exp, _) => visitExp(exp)
     case Body.Loop(_, exp, _) => visitExp(exp)
   }

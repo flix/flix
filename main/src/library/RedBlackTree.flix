@@ -834,8 +834,8 @@ namespace RedBlackTree {
                 x * y * z
         };
         match t {
-            case Leaf            => 0
-            case DoubleBlackLeaf => 0
+            case Leaf            => 1
+            case DoubleBlackLeaf => 1
             case _               => loop(t)
         }
 
