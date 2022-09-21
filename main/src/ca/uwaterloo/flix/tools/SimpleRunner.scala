@@ -85,20 +85,20 @@ object SimpleRunner {
     timer.getResult match {
       case Validation.Success(compilationResult) =>
 
-        compilationResult.getMain match {
-          case None => // nop
-          case Some(m) =>
-            // Compute the arguments to be passed to main.
-            val args: Array[String] = cmdOpts.args match {
-              case None => Array.empty
-              case Some(a) => a.split(" ")
-            }
-            // Invoke main with the supplied arguments.
-            m(args)
-
-            // Exit.
-            System.exit(0)
-        }
+//        compilationResult.getMain match {
+//          case None => // nop
+//          case Some(m) =>
+//            // Compute the arguments to be passed to main.
+//            val args: Array[String] = cmdOpts.args match {
+//              case None => Array.empty
+//              case Some(a) => a.split(" ")
+//            }
+//            // Invoke main with the supplied arguments.
+//            m(args)
+//
+//            // Exit.
+//            System.exit(0)
+//        }
 
         if (cmdOpts.benchmark) {
           Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(options)
