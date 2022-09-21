@@ -233,10 +233,6 @@ object Monomorph {
         specializedDefns.put(freshSym, specializedDefn)
       }
 
-      //for (kv <- specializedDefns.keySet.toList.sortBy(_.toString)) {
-        //println(kv)
-      //}
-
       // Reassemble the AST.
       root.copy(
         defs = specializedDefns.toMap
