@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.api.lsp.LanguageServer
 import ca.uwaterloo.flix.api.Version
+import ca.uwaterloo.flix.api.lsp.LanguageServer
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.shell.{Shell, SourceProvider}
 import ca.uwaterloo.flix.tools._
@@ -96,7 +96,8 @@ object Main {
       xstrictmono = cmdOpts.xstrictmono,
       xnoseteffects = cmdOpts.xnoseteffects,
       xnobooleffects = cmdOpts.xnobooleffects,
-      xvirtualthreads = cmdOpts.xvirtualthreads
+      xvirtualthreads = cmdOpts.xvirtualthreads,
+      xnoreifyeff = cmdOpts.xnoreifyeff
     )
 
     // Don't use progress bar if benchmarking.
@@ -218,6 +219,7 @@ object Main {
                      xnobooleffects: Boolean = false,
                      xnooptimizer: Boolean = false,
                      xvirtualthreads: Boolean = false,
+                     xnoreifyeff: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -399,6 +401,11 @@ object Main {
       // Xvirtual-threads
       opt[Unit]("Xvirtual-threads").action((_, c) => c.copy(xvirtualthreads = true)).
         text("[experimental] enables virtual threads (requires Java 19 with `--enable-preview`.)")
+
+      // Xno-reifyeff
+      opt[Unit]("Xno-reifyeff").action((_, c) => c.copy(xnoreifyeff = true)).
+        text("[experimental] disable effect reification.")
+
 
       note("")
 

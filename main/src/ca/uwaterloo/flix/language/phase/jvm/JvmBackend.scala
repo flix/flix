@@ -226,15 +226,14 @@ object JvmBackend {
       }
     }
 
-    val outputBytes = allClasses.map(_._2.bytecode.length).sum
+    val totalClasses =  allClasses.size
+    val totalBytes = allClasses.map(_._2.bytecode.length).sum
 
-    val loadClasses = flix.options.loadClassFiles
-
-    if (!loadClasses) {
+    if (!flix.options.loadClassFiles) {
       //
       // Do not load any classes.
       //
-      new CompilationResult(root, None, Map.empty, flix.getTotalTime, outputBytes).toSuccess
+      new CompilationResult(root, None, Map.empty, flix.getTotalTime, totalClasses, totalBytes).toSuccess
     } else {
       //
       // Loads all the generated classes into the JVM and decorates the AST.
@@ -245,7 +244,7 @@ object JvmBackend {
       //
       // Return the compilation result.
       //
-      new CompilationResult(root, main, getCompiledDefs(root), flix.getTotalTime, outputBytes).toSuccess
+      new CompilationResult(root, main, getCompiledDefs(root), flix.getTotalTime, totalClasses, totalBytes).toSuccess
     }
   }
 

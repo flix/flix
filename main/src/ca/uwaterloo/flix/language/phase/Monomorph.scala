@@ -650,7 +650,9 @@ object Monomorph {
           case _ => false
         }
 
-        if (isPure) {
+        // Note: This is counter-intuitive. We know that the code size for the pure path is
+        // bigger (due to parallelism) hence we should take the impure path (for smallest code size).
+        if (isPure && !flix.options.xnoreifyeff) {
           // Generate a fresh symbol for the let-bound variable.
           val freshSym = Symbol.freshVarSym(sym)
           val env1 = env0 + (sym -> freshSym)
@@ -787,6 +789,8 @@ object Monomorph {
   private def specializeDef(defn: TypedAst.Def, tpe: Type, def2def: Def2Def, defQueue: DefQueue)(implicit flix: Flix): Symbol.DefnSym = {
     // Unify the declared and actual type to obtain the substitution map.
     val subst = infallibleUnify(defn.impl.inferredScheme.base, tpe)
+
+
 
     // Check whether the function definition has already been specialized.
     def2def.get((defn.sym, tpe)) match {

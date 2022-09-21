@@ -12,16 +12,14 @@ import ca.uwaterloo.flix.util.{Duration, Validation}
 object Finish {
 
   def run(result: CompilationResult)(implicit flix: Flix): Validation[CompilationResult, CompilationMessage] = {
-    // Print throughput.
-    if (flix.options.debug) {
-      val totalLines = result.getTotalLines
-      val totalTime = result.totalTime
-      val timeInSeconds = new Duration(totalTime).seconds
-      val linesPerSecond = totalLines.toDouble / timeInSeconds
-      Console.println(f"Compiled $totalLines%,d lines in $timeInSeconds%.1f sec. ($linesPerSecond%,.0f lines/sec).")
-    }
+    val totalLines = result.getTotalLines
+    val totalTime = result.totalTime
+    val totalBytes = result.codeSize
+    val totalClasses = result.totalClasses
+    
+    println("Lines, Time, Bytes, Classes")
+    Console.println(f"$totalLines, $totalTime, $totalBytes, $totalClasses")
 
-    // Return the result.
     result.toSuccess
   }
 

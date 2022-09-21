@@ -30,6 +30,7 @@ class CompilationResult(root: Root,
                         main: Option[Array[String] => Unit],
                         defs: Map[Symbol.DefnSym, () => AnyRef],
                         val totalTime: Long,
+                        val totalClasses: Long,
                         val codeSize: Int) {
 
   /**
