@@ -2,7 +2,7 @@ import glob
 import subprocess
 
 STDLIB_LINES = 33689
-ITERATIONS = 3
+ITERATIONS = 1
 
 def average(lst):
     return float(sum(lst)) / float(len(lst))
@@ -11,7 +11,7 @@ def sec(x):
     return round(float(x) / 1_000_000_000, 1)
 
 for pkg in glob.glob("*.fpkg"):
-    print(pkg, end='')
+    print(pkg.replace(".fpkg", ""), end='')
 
     # Baseline
     times1 = []
@@ -30,17 +30,17 @@ for pkg in glob.glob("*.fpkg"):
         times2.append(int(time2))
     _, _, totalBytes2, totalClasses2 = run2.stdout.split(",")
 
-    avgTime1 = average(times1)
-    avgTime2 = average(times2)
+    avgTime1 = sec(average(times1))
+    avgTime2 = sec(average(times2))
     timeRatio = round(((100 * avgTime1) / avgTime2) - 100)
     classRatio = round((100 * int(totalClasses2)) / int(totalClasses1) - 100)
     bytesRatio = round((100 * int(totalBytes2)) / int(totalBytes1) - 100)
 
-    print(f' & {int(lines1)}', end='')
-    print(f' & {sec(avgTime1)}s', end='')
+    print(f' & {int(lines1):,}', end='')
+    print(f' & {avgTime1}s', end='')
     print(f' & {int(totalBytes1):,}', end='')
     print(f' & {int(totalClasses1):,}', end='')
-    print(f' & {sec(avgTime2)}s (+{timeRatio}\%)', end='')
+    print(f' & {avgTime2}s (+{timeRatio}\%)', end='')
     print(f' & {int(totalBytes2):,} (+{bytesRatio}\%)', end='')
     print(f' & {int(totalClasses2):,} (+{classRatio}\%)', end='')
     print(" \\\\")
