@@ -2,7 +2,7 @@ import glob
 import subprocess
 
 STDLIB_LINES = 33689
-ITERATIONS = 1
+ITERATIONS = 3
 
 def average(lst):
     return float(sum(lst)) / float(len(lst))
@@ -28,7 +28,7 @@ for pkg in glob.glob("*.fpkg"):
         run2 = subprocess.run(["java", "-jar", "flix.jar", "--Xno-optimizer", pkg], capture_output=True, text=True)
         _, time2, _, _ = run1.stdout.split(",")
         times2.append(int(time2))
-    _, time2, totalBytes2, totalClasses2 = run2.stdout.split(",")
+    _, _, totalBytes2, totalClasses2 = run2.stdout.split(",")
 
     avgTime1 = average(times1)
     avgTime2 = average(times2)
