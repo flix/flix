@@ -55,15 +55,15 @@ object Namer {
 
     // collect all the declarations.
     val declarations = mapN(traverse(program.units.values) {
-      case root => mapN(mergeUseEnvs(root.uses, UseEnv.empty)) {
-        case uenv0 => root.decls.map(d => (uenv0, d))
+      case root => mapN(mergeUseEnvs(root.uses, UseEnv.empty), mergeImportEnvs(root.imports, Map.empty)) {
+        case (uenv0, ienv0) => root.decls.map(d => (uenv0, ienv0, d))
       }
     })(_.flatten)
 
     // fold over the top-level declarations.
     flatMapN(declarations) {
       case decls => Validation.fold(decls, prog0) {
-        case (pacc, (uenv0, decl)) => visitDecl(decl, Name.RootNS, uenv0, pacc)
+        case (pacc, (uenv0, ienv0, decl)) => visitDecl(decl, Name.RootNS, uenv0, ienv0, pacc)
       }
     }
   }
@@ -71,19 +71,19 @@ object Namer {
   /**
     * Performs naming on the given declaration `decl0` in the given namespace `ns0` under the given (partial) program `prog0`.
     */
-  private def visitDecl(decl0: WeededAst.Declaration, ns0: Name.NName, uenv0: UseEnv, prog0: NamedAst.Root)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = {
+  private def visitDecl(decl0: WeededAst.Declaration, ns0: Name.NName, uenv0: UseEnv, ienv0: ImportEnv, prog0: NamedAst.Root)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = {
 
     decl0 match {
       /*
        * Namespace.
        */
-      case WeededAst.Declaration.Namespace(ns, uses, _, decls, loc) =>
-        flatMapN(mergeUseEnvs(uses, uenv0)) {
-          newEnv =>
+      case WeededAst.Declaration.Namespace(ns, uses, imports, decls, loc) =>
+        flatMapN(mergeUseEnvs(uses, uenv0), mergeImportEnvs(imports, ienv0)) {
+          (uenv1, ienv1) =>
             Validation.fold(decls, prog0) {
               case (pacc, decl) =>
                 val namespace = Name.NName(ns.sp1, ns0.idents ::: ns.idents, ns.sp2)
-                visitDecl(decl, namespace, newEnv, pacc)
+                visitDecl(decl, namespace, uenv1, ienv1, pacc)
             }
         }
 
@@ -2065,4 +2065,15 @@ object Namer {
     def addTag(s: String, n: Name.QName, t: Name.Ident): UseEnv = copy(tags = tags + (s -> (n, t)))
   }
 
+  private def mergeImportEnvs(imports: List[WeededAst.Import], ienv0: ImportEnv): Validation[ImportEnv, NameError] = {
+    Validation.fold(imports, ienv0) {
+      case (ienv1, WeededAst.Import.Import(name, alias, loc)) =>
+        ienv1.get(alias.name) match {
+          case None => (ienv1 + (alias.name -> name)).toSuccess
+          case Some(otherName) => mkDuplicateNamePair(alias.name, loc, SourceLocation.mk(otherName.sp1, otherName.sp2))
+        }
+    }
+  }
+
+  private type ImportEnv = Map[String, Name.JavaName]
 }
