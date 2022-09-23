@@ -81,7 +81,7 @@ object Main {
     }
 
     // construct flix options.
-    var options = Options.Default.copy(
+    var options = Options(
       lib = cmdOpts.xlib,
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
@@ -90,13 +90,19 @@ object Main {
       json = cmdOpts.json,
       output = cmdOpts.output.map(s => Paths.get(s)),
       progress = true,
-      threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
+      threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       xnobooltable = cmdOpts.xnobooltable,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono,
       xnoseteffects = cmdOpts.xnoseteffects,
       xnobooleffects = cmdOpts.xnobooleffects,
-      xvirtualthreads = cmdOpts.xvirtualthreads
+      xvirtualthreads = cmdOpts.xvirtualthreads,
+      xnooptimizer = cmdOpts.xnooptimizer,
+      incremental = Options.Default.incremental,
+      target = Options.Default.target,
+      test = Options.Default.test,
+      loadClassFiles = Options.Default.loadClassFiles,
+      xallowredundancies = Options.Default.xallowredundancies
     )
 
     // Don't use progress bar if benchmarking.
