@@ -145,4 +145,12 @@ namespace Test/Exp/LetRec {
         def loop(n) = if (n == 0) "hello" else loop(n - 1);
         loop(10) == "hello"
 
+    ///
+    /// Symbolic nested definitions
+    ///
+    @test
+    def testLetRecSymbol01(): Bool =
+        def <><(a, b) = a + " <>< " + b;
+        "left" <>< "right" == "left <>< right"
+
 }

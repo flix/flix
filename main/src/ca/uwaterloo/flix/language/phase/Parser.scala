@@ -811,7 +811,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def LetRecDef: Rule1[ParsedAst.Expression.LetRecDef] = rule {
-      SP ~ keyword("def") ~ WS ~ Names.Variable ~ optWS ~ FormalParamList ~ optWS ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetRecDef
+      SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ FormalParamList ~ optWS ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetRecDef
     }
 
     def LetUse: Rule1[ParsedAst.Expression.Use] = rule {
