@@ -2065,6 +2065,9 @@ object Namer {
     def addTag(s: String, n: Name.QName, t: Name.Ident): UseEnv = copy(tags = tags + (s -> (n, t)))
   }
 
+  /**
+    * Merges the given `imports` into the given import environment `ienv0`.
+    */
   private def mergeImportEnvs(imports: List[WeededAst.Import], ienv0: ImportEnv): Validation[ImportEnv, NameError] = {
     Validation.fold(imports, ienv0) {
       case (ienv1, WeededAst.Import.Import(name, alias, loc)) =>
@@ -2075,5 +2078,8 @@ object Namer {
     }
   }
 
+  /**
+    * Represents an environment of "imported" Java classes or interfaces
+    */
   private type ImportEnv = Map[String, Name.JavaName]
 }
