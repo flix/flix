@@ -567,13 +567,6 @@ object Lowering {
         val e = mkParTuple(Expression.Tuple(es, t, pur, eff, loc1))
         Expression.Cast(e, None, Some(Type.Pure), Some(Type.Empty), t, pur, eff, loc0)
 
-      case Expression.Apply(exp, exps, tpe, pur, eff, loc1) =>
-        val e = visitExp(exp)
-        val es = visitExps(exps)
-        val t = visitType(tpe)
-        val parExp = mkParApply(Expression.Apply(e, es, t, pur, eff, loc1))
-        Expression.Cast(parExp, None, Some(Type.Pure), Some(Type.Empty), t, pur, eff, loc0)
-
       case _ =>
         throw InternalCompilerException(s"Unexpected par expression near ${exp.loc.format}: $exp")
     }
@@ -1433,57 +1426,6 @@ object Lowering {
     val waitExps = mkParWaits(chanSymsWithExps)
     val tuple = Expression.Tuple(waitExps, tpe, pur, eff, loc.asSynthetic)
     mkParChannels(tuple, chanSymsWithExps)
-  }
-
-  /**
-    * Returns an apply expression where the function and its arguments are evaluated in parallel.
-    *
-    * {{{
-    *   par exp0(exp1, exp2, exp3)
-    * }}}
-    *
-    * is translated to
-    *
-    * {{{
-    *   let ch0 = chan 1;
-    *   let ch1 = chan 1;
-    *   let ch2 = chan 1;
-    *   let ch3 = chan 1;
-    *   spawn ch0 <- exp0;
-    *   spawn ch1 <- exp1;
-    *   spawn ch2 <- exp2;
-    *   spawn ch3 <- exp3;
-    *   (<- ch0)(<- ch1, <- ch2, <- ch3)
-    * }}}
-    */
-  private def mkParApply(exp: Expression.Apply)(implicit flix: Flix): Expression = {
-    val exps = liftApplyExps(exp)
-    val chanSymsWithExps = exps.map(e => (mkLetSym("channel", e.loc.asSynthetic), e))
-    val waits = mkParWaits(chanSymsWithExps)
-    val app = mkWaitApply(exp, waits)
-    mkParChannels(app, chanSymsWithExps)
-  }
-
-  /**
-    * Returns a list of all expressions in an `Apply` expression.
-    */
-  private def liftApplyExps(exp: Expression): List[Expression] = exp match {
-    case Expression.Apply(exp, exps, _, _, _, _) => liftApplyExps(exp) ::: exps
-    case e => e :: Nil
-  }
-
-  /**
-    * Returns an `Apply` expression where the sub-expressions have been replaced with
-    * `GetChannel` expressions.
-    *
-    * Assumes that `waits` has the same structure as the output of [[liftApplyExps]].
-    */
-  private def mkWaitApply(exp: Expression, waits: List[Expression]): Expression = exp match {
-    case Expression.Apply(e, exps, tpe, pur, eff, loc) =>
-      val es = waits.takeRight(exps.length)
-      val ws = waits.dropRight(exps.length)
-      Expression.Apply(mkWaitApply(e, ws), es, tpe, pur, eff, loc)
-    case _ => waits.head
   }
 
   /**
