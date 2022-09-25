@@ -55,7 +55,7 @@ object Namer {
 
     // collect all the declarations.
     val declarations = mapN(traverse(program.units.values) {
-      case root => mapN(mergeUseEnvs(root.uses, UseEnv.empty), mergeImportEnvs(root.imports, Map.empty)) {
+      case root => mapN(mergeUseEnvs(root.uses, UseEnv.empty), mergeImportEnvs(root.imports, ImportEnv.empty)) {
         case (uenv0, ienv0) => root.decls.map(d => (uenv0, ienv0, d))
       }
     })(_.flatten)
@@ -2071,15 +2071,24 @@ object Namer {
   private def mergeImportEnvs(imports: List[WeededAst.Import], ienv0: ImportEnv): Validation[ImportEnv, NameError] = {
     Validation.fold(imports, ienv0) {
       case (ienv1, WeededAst.Import.Import(name, alias, loc)) =>
-        ienv1.get(alias.name) match {
-          case None => (ienv1 + (alias.name -> name)).toSuccess
+        ienv1.imports.get(alias.name) match {
+          case None => ienv1.addImport(alias.name, name).toSuccess
           case Some(otherName) => mkDuplicateNamePair(alias.name, loc, SourceLocation.mk(otherName.sp1, otherName.sp2))
         }
     }
   }
 
   /**
+    * Companion object for the [[ImportEnv]] class.
+    */
+  private object ImportEnv {
+    val empty: ImportEnv = ImportEnv(Map.empty)
+  }
+
+  /**
     * Represents an environment of "imported" Java classes or interfaces
     */
-  private type ImportEnv = Map[String, Name.JavaName]
+  private case class ImportEnv(imports: Map[String, Name.JavaName]) {
+    def addImport(s: String, n: Name.JavaName): ImportEnv = copy(imports = imports + (s -> n))
+  }
 }
