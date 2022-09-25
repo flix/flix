@@ -32,31 +32,4 @@ namespace Test/Exp/Par {
         ((par ((1, 2), par (3, 4))) :: (par ((5, 6), par (7, 8))) :: (par (par (9, 10), par (11, 12))) :: Nil) ==
             (par ((1, 2), par (3, 4))) :: (par ((5, 6), par (7, 8))) :: (par (par (9, 10), par (11, 12))) :: Nil
 
-    @test
-    def testPar08(): Bool =
-        par f(1)
-
-    @test
-    def testPar09(): Bool =
-        let f = (a, b, c) -> a and b and c;
-        let a = () -> List.range(0, 2000) |> List.forall(x -> x > -1);
-        let b = () -> a();
-        let c = () -> b();
-        par f(a(), b(), c())
-
-    @test
-    def testPar10(): Bool =
-        let f = (a, b, c) -> a and b and c;
-        let a = () -> List.range(0, 2000) |> List.forall(x -> x > -1);
-        let b = () -> a();
-        let c = () -> b();
-        par f(par a(), par b(), par c())
-
-    @test
-    def testPar11(): Bool =
-        let f = a -> fst(a) and snd(a);
-        let a = () -> List.range(0, 2000) |> List.forall(x -> x > -1);
-        let b = () -> a();
-        par f(par (par a(), par b()))
-
 }

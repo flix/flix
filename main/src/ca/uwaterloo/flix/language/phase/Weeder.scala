@@ -464,7 +464,7 @@ object Weeder {
     case ParsedAst.Imports.ImportMany(sp1, pkg, ids, sp2) =>
       val loc = mkSL(sp1, sp2)
       val is = ids.map {
-        case ParsedAst.Imports.NameAndAlias(_, name, alias, _) => 
+        case ParsedAst.Imports.NameAndAlias(_, name, alias, _) =>
           val fqn = Name.JavaName(pkg.sp1, pkg.fqn :+ name, pkg.sp2)
           val ident = alias match {
             case Some(id) => id
@@ -494,7 +494,7 @@ object Weeder {
       val mod = Ast.Modifiers.Empty
       val tparams = WeededAst.TypeParams.Elided
       val is = ids.map {
-        case ParsedAst.Imports.NameAndAlias(_, name, alias, _) => 
+        case ParsedAst.Imports.NameAndAlias(_, name, alias, _) =>
           val ident = alias match {
             case Some(id) => id
             case _ => Name.Ident(sp1, name, sp2)
@@ -867,7 +867,7 @@ object Weeder {
           WeededAst.Expression.Apply(inner, List(value), loc)
       }
 
-    case ParsedAst.Expression.LetRecDef(sp1, ident, fparams, exp1, exp2, sp2) =>
+    case ParsedAst.Expression.LetRecDef(sp1, ident, fparams, typeAndEff, exp1, exp2, sp2) =>
       val mod = Ast.Modifiers.Empty
       val loc = mkSL(sp1, sp2)
 
@@ -2987,7 +2987,7 @@ object Weeder {
     case ParsedAst.Expression.ForYield(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
-    case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NewObject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Static(sp1, _) => sp1

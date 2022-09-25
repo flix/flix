@@ -153,4 +153,29 @@ namespace Test/Exp/LetRec {
         def <><(a, b) = a + " <>< " + b;
         "left" <>< "right" == "left <>< right"
 
+    ///
+    /// Nested definitions with type ascription
+    ///
+    @test
+    def testLetRecAscribed01(): Bool =
+        def succ(x): Int = x + 1;
+        succ(1) == 2
+
+    ///
+    /// Nested definitions with type ascription
+    ///
+    @test
+    def testLetRecAscribed02(): Bool =
+        def succ(x): Int \ {} = x + 1;
+        succ(1) == 2
+
+    ///
+    /// Nested definitions with type ascription
+    ///
+    @test
+    def testLetRecAscribed03(): Bool \ Impure =
+        def incr(x): Int \ Impure = x := deref x + 1;
+        let r = ref 1;
+        incr(r);
+        deref r == 2
 }
