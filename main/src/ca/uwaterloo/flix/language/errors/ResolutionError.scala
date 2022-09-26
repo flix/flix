@@ -367,29 +367,6 @@ object ResolutionError {
   }
 
   /**
-    * Recursion Limit Error.
-    *
-    * @param ident the type alias symbol.
-    * @param limit the current recursion limit.
-    * @param loc   the location where the error occurred.
-    */
-  case class RecursionLimit(ident: Symbol.TypeAliasSym, limit: Int, loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Recursion limit $limit reached while unfolding the ${ident.name} type alias."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Recursion limit ($limit) reached while unfolding the '${red(ident.name)}' type alias.
-         |
-         |${code(loc, "recursion limit reached.")}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some("Ensure that there is no cyclic definition of type aliases.")
-
-  }
-
-  /**
     * An error raise to indicate a cycle in type aliases.
     *
     * @param path the type reference path from a type alias to itself.
@@ -437,7 +414,7 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UndefinedName(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Undefined name."
+    def summary: String = s"Undefined name: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -457,34 +434,6 @@ object ResolutionError {
   }
 
   /**
-    * Undefined Sig Error.
-    *
-    * @param clazz the class.
-    * @param sig   the unresolved sig.
-    * @param ns    the current namespace.
-    * @param loc   the location where the error occurred.
-    */
-  case class UndefinedSig(clazz: Name.QName, sig: Name.Ident, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Undefined signature."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Undefined signature '${red(sig.name)}' in class '${red(clazz.toString)}'.
-         |
-         |${code(loc, "signature not found")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Possible typo or non-existent class or signature?"
-    })
-
-  }
-
-  /**
     * Undefined Class Error.
     *
     * @param qn  the unresolved class.
@@ -492,7 +441,7 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UndefinedClass(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Undefined class."
+    def summary: String = s"Undefined class: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -518,7 +467,7 @@ object ResolutionError {
     * @param loc   the location where the error occurred.
     */
   case class UndefinedOp(qname: Name.QName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Undefined operation."
+    def summary: String = s"Undefined operation '${qname.toString}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -544,7 +493,7 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UndefinedEffect(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Undefined effect."
+    def summary: String = s"Undefined effect '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -571,7 +520,7 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UndefinedTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Undefined tag."
+    def summary: String = s"Undefined tag: '${tag}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -598,7 +547,7 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UndefinedType(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Undefined type"
+    def summary: String = s"Undefined type: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -624,7 +573,7 @@ object ResolutionError {
     * @param loc  the location of the class name.
     */
   case class UndefinedJvmClass(name: String, loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Undefined class."
+    def summary: String = s"Undefined class: '${name}'."
 
     def message(formatter: Formatter): String = {
       import formatter._

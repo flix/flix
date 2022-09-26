@@ -17,14 +17,13 @@
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.lsp.LanguageServer
-import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.api.Version
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.shell.{Shell, SourceProvider}
 import ca.uwaterloo.flix.tools._
-import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util._
 
-import java.io.{File, PrintWriter}
+import java.io.File
 import java.net.BindException
 import java.nio.file.Paths
 
@@ -82,21 +81,28 @@ object Main {
     }
 
     // construct flix options.
-    var options = Options.Default.copy(
+    var options = Options(
       lib = cmdOpts.xlib,
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
       entryPoint = entryPoint,
       explain = cmdOpts.explain,
+      incremental = Options.Default.incremental,
       json = cmdOpts.json,
-      output = cmdOpts.output.map(s => Paths.get(s)),
       progress = true,
-      threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
+      output = cmdOpts.output.map(s => Paths.get(s)),
+      target = Options.Default.target,
+      test = Options.Default.test,
+      threads = cmdOpts.threads.getOrElse(Options.Default.threads),
+      loadClassFiles = Options.Default.loadClassFiles,
+      xallowredundancies = Options.Default.xallowredundancies,
       xnobooltable = cmdOpts.xnobooltable,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono,
       xnoseteffects = cmdOpts.xnoseteffects,
-      xnobooleffects = cmdOpts.xnobooleffects
+      xnobooleffects = cmdOpts.xnobooleffects,
+      xnooptimizer = cmdOpts.xnooptimizer,
+      xvirtualthreads = cmdOpts.xvirtualthreads,
     )
 
     // Don't use progress bar if benchmarking.
@@ -216,6 +222,8 @@ object Main {
                      xstrictmono: Boolean = false,
                      xnoseteffects: Boolean = false,
                      xnobooleffects: Boolean = false,
+                     xnooptimizer: Boolean = false,
+                     xvirtualthreads: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -389,6 +397,14 @@ object Main {
       // Xno-bool-effects
       opt[Unit]("Xno-bool-effects").action((_, c) => c.copy(xnobooleffects = true)).
         text("[experimental] disable bool effects")
+
+      // Xno-optimizer
+      opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
+        text("[experimental] disable compiler optimizations")
+
+      // Xvirtual-threads
+      opt[Unit]("Xvirtual-threads").action((_, c) => c.copy(xvirtualthreads = true)).
+        text("[experimental] enables virtual threads (requires Java 19 with `--enable-preview`.)")
 
       note("")
 
