@@ -26,6 +26,9 @@ import ca.uwaterloo.flix.language.phase.Resolver.DerivableSyms
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 import org.parboiled2.CharPredicate
+import ca.uwaterloo.flix.language.ast.Type.Apply
+import ca.uwaterloo.flix.language.ast.Type.Alias
+import ca.uwaterloo.flix.language.ast.Type.Cst
 
 /**
   * CompletionProvider
@@ -510,37 +513,6 @@ object CompletionProvider {
     }
   }
 
-  private def caseCompletion(label: String, completion: String)(implicit context: Context): CompletionItem = {
-    CompletionItem(label = label,
-        sortText = Priority.high(label),
-        textEdit = TextEdit(context.range, completion),
-        documentation = None,
-        insertTextFormat = InsertTextFormat.Snippet,
-        kind = CompletionItemKind.EnumMember)
-  }
-
-  private def enumCompletionAcc(acc: List[CompletionItem], enm: TypedAst.Enum, currentWordIsCase: Boolean)(implicit context: Context, flix: Flix): List[CompletionItem] = {
-    enm.cases.foldLeft(acc)({
-      case (acc, (sym , cas)) => {
-        val name = sym.name
-        val tpe = cas.tpe
-        val typeString = FormatType.formatType(tpe) match {
-          case "Unit" => ""
-          case x if x.charAt(0) == '(' => x
-          case x => s"($x)"
-        }
-        val typeCompletion = tpe.typeConstructor match {
-          case Some(TypeConstructor.Unit) => ""
-          case Some(TypeConstructor.Tuple(arity)) => List.range(1, arity + 1).map(elem => s"$$$elem").mkString("(", ", ", ")")
-          case _ => "($1)"
-        }
-        val label = if (currentWordIsCase) s"case $name$typeString => " else s"$name$typeString => "
-        val completion = if (currentWordIsCase) s"case $name$typeCompletion => $${0:???}" else s"$name$typeCompletion => $${0:???}"
-        caseCompletion(label, completion) :: acc
-      }
-    })
-  }
-
   /** 
     * Returns a list of completion items based on case keyword in match expressions
     */
@@ -555,6 +527,7 @@ object CompletionProvider {
       return Nil
     }
 
+    //Checks if the current word is case or not. This prevents "case r" to be completed to "case case red"
     val wordPattern = "ca?s?e?".r
     val currentWordIsCase = wordPattern matches context.word
 
@@ -565,6 +538,44 @@ object CompletionProvider {
       case Entity.Enum(e) => enumCompletionAcc(acc, e, currentWordIsCase)
       case _ => acc
     })
+  }
+
+  /**
+   * Extends a list of completion items with completion items for the cases of an enum.
+   */
+  private def enumCompletionAcc(acc: List[CompletionItem], enm: TypedAst.Enum, currentWordIsCase: Boolean)(implicit context: Context, flix: Flix): List[CompletionItem] = {
+    enm.cases.foldLeft(acc)({
+      case (acc, (sym , cas)) => {
+        val name = sym.name
+        val tpe = cas.tpe
+        val tupleArity = tpe.typeConstructors
+        val typeString = tpe.typeConstructor match {
+          case Some(TypeConstructor.Unit) => ""
+          case Some(TypeConstructor.Tuple(_)) => FormatType.formatType(tpe)
+          case _ => s"(${FormatType.formatType(tpe)})"
+        }
+        val typeCompletion = tpe.typeConstructor match {
+          case Some(TypeConstructor.Unit) => ""
+          case Some(TypeConstructor.Tuple(arity)) => List.range(1, arity + 1).map(elem => s"$$$elem").mkString("(", ", ", ")")
+          case _ => "($1)"
+        }
+        val label = if (currentWordIsCase) s"case $name$typeString => " else s"$name$typeString => "
+        val completion = if (currentWordIsCase) s"case $name$typeCompletion => $${0:???}" else s"$name$typeCompletion => $${0:???}"
+        caseCompletion(label, completion) :: acc
+      }
+    })
+  }
+
+  /**
+   * Returns a completion item based on a label and a completion for an enum case.
+   */
+  private def caseCompletion(label: String, completion: String)(implicit context: Context): CompletionItem = {
+    CompletionItem(label = label,
+        sortText = Priority.high(label),
+        textEdit = TextEdit(context.range, completion),
+        documentation = None,
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.EnumMember)
   }
 
   /**
