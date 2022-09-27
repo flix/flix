@@ -1002,6 +1002,17 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("par") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Par
     }
 
+    def ParYield: Rule1[ParsedAst.Expression.ParYield] = {
+
+      def Fragment: Rule1[ParsedAst.ParYield.Fragment] = rule {
+        SP ~ Names.Variable ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ SP ~> ParsedAst.ParYield.Fragment
+      }
+
+      rule {
+        SP ~ keyword("par") ~ optWS ~ "(" ~ zeroOrMore(Fragment).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ParYield
+      }
+    }
+
     def Lazy: Rule1[ParsedAst.Expression.Lazy] = rule {
       SP ~ keyword("lazy") ~ WS ~ RecordSelect ~ SP ~> ParsedAst.Expression.Lazy
     }
@@ -1748,7 +1759,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     /**
       * An uppercase identifier is an uppercase letter optionally followed by any letter, underscore, or prime.
       */
-  def UpperCaseName: Rule1[Name.Ident] = rule {
+    def UpperCaseName: Rule1[Name.Ident] = rule {
       SP ~ capture(optional("_") ~ Letters.UpperLetter ~ zeroOrMore(Letters.LegalLetter)) ~ SP ~> Name.Ident
     }
 
