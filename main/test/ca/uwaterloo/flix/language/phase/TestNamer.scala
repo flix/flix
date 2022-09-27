@@ -1063,4 +1063,50 @@ class TestNamer extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[NameError.IllegalSignature](result)
   }
+
+  test("DuplicateImport.01") {
+    val input =
+      """
+        |import java.lang.StringBuffer
+        |import java.lang.StringBuffer
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateImport.02") {
+    val input =
+      """
+        |import java.lang.{StringBuffer => StringThingy}
+        |import java.lang.{StringBuffer => StringThingy}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateImport.03") {
+    val input =
+      """
+        |import java.lang.StringBuffer
+        |
+        |namespace A {
+        |    import java.lang.StringBuffer
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateImport.04") {
+    val input =
+      """
+        |import java.lang.{StringBuffer => StringThingy}
+        |
+        |namespace A {
+        |    import java.lang.{StringBuilder => StringThingy}
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
 }
