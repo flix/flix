@@ -685,7 +685,7 @@ object ParsedAst {
       * @param exp2    the body expression.
       * @param sp2     the position of the last character in the expression.
       */
-    case class LetRecDef(sp1: SourcePosition, ident: Name.Ident, fparams: Seq[ParsedAst.FormalParam], exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class LetRecDef(sp1: SourcePosition, ident: Name.Ident, fparams: Seq[ParsedAst.FormalParam], typeAndEff: Option[(ParsedAst.Type, ParsedAst.PurityAndEffect)], exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Let Import Expression.

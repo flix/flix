@@ -35,3 +35,8 @@ namespace Test/Import {
     let subStr = subSequence(sb, 6, 11) as String;
     Assert.eq(subStr, "world")
 }
+
+namespace Test/Import {
+  // Doesn't cause an error because different scope from above
+  import java.lang.CharSequence
+}

@@ -935,12 +935,19 @@ object GenExpression {
       // Push Unit on the stack.
       visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
-    case Expression.NewObject(name, _, tpe, _, loc) =>
+    case Expression.NewObject(name, _, tpe, methods, loc) =>
       addSourceLine(visitor, loc)
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
       visitor.visitTypeInsn(NEW, className)
       visitor.visitInsn(DUP)
       visitor.visitMethodInsn(INVOKESPECIAL, className, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+
+      // For each method, compile the closure which implements the body of that method and store it in a field
+      methods.zipWithIndex.foreach { case (m, i) => 
+        visitor.visitInsn(DUP)
+        GenExpression.compileExpression(m.clo, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(m.clo.tpe).toDescriptor)
+      }
 
     case Expression.NewChannel(exp, _, loc) =>
       addSourceLine(visitor, loc)

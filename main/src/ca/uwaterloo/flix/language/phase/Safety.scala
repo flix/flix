@@ -265,7 +265,6 @@ object Safety {
         // Only tuple expressions are allowed to be parallelized with `par`.
         exp match {
           case e: Expression.Tuple => visit(e)
-          case e: Expression.Apply => visit(e)
           case _ => IllegalParExpression(exp, exp.loc) :: Nil
         }
 

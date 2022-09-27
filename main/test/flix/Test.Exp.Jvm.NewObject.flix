@@ -300,4 +300,15 @@ namespace Test/Exp/Jvm/NewObject {
     };
     abstractMethod(anon, 1) == 2 and
       concreteMethod(anon, "bar") == "flix: bar"
+
+  @test
+  def testMethodClosure01(): Bool \ IO =
+    import java.lang.Object.toString(): String \ {};
+    let x = [1, 2, 3];
+    let y = [4, 5, 6];
+    let anon = new ##java.lang.Object {
+      def toString(_this: ##java.lang.Object): String = Array.toString(Array.append(x, y))
+    };
+    toString(anon) == "[1, 2, 3, 4, 5, 6]"
+
 }
