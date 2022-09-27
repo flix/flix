@@ -85,13 +85,6 @@ object GenAnonymousClasses {
     constructor.visitMethodInsn(INVOKESPECIAL, superClass, JvmName.ConstructorMethod,
       MethodDescriptor.NothingToVoid.toDescriptor, false)
 
-    // For each method, compile the closure which implements the body of that method and store it in a field
-    methods.zipWithIndex.foreach { case (m, i) => 
-      constructor.visitVarInsn(ALOAD, 0)
-      GenExpression.compileExpression(m.clo, constructor, currentClass, Map(), new Label())
-      constructor.visitFieldInsn(PUTFIELD, currentClass.name.toInternalName, s"clo$i", JvmOps.getClosureAbstractClassType(m.clo.tpe).toDescriptor)
-    }
-
     constructor.visitInsn(RETURN)
 
     constructor.visitMaxs(999, 999)
