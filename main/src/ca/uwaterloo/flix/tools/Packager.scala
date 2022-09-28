@@ -21,17 +21,16 @@ import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.github.GitHub
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
-import ca.uwaterloo.flix.util.Result.{Err, Ok, ToErr, ToOk}
+import ca.uwaterloo.flix.util.Result.{ToErr, ToOk}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util._
 
 import java.io.{File, PrintWriter}
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
-import java.util.{Calendar, GregorianCalendar, Objects}
+import java.util.{Calendar, GregorianCalendar}
 import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
 import scala.collection.mutable
-import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Using}
 
 /**
@@ -159,12 +158,6 @@ object Packager {
     * Type checks the source files for the given project path `p`.
     */
   def check(p: Path, o: Options): Result[Unit, Int] = {
-    // Check that the path is a project path.
-    checkProjectPath(p) match {
-      case Validation.Success(_) => ()
-      case Validation.Failure(missingPaths) => throw new RuntimeException(s"Missing files or directories: ${missingPaths.mkString(", ")}")
-    }
-
     // Configure a new Flix object.
     implicit val flix: Flix = new Flix()
     flix.setOptions(o)
@@ -175,7 +168,7 @@ object Packager {
     flix.check() match {
       case Validation.Success(_) => ().toOk
       case Validation.Failure(errors) =>
-        flix.mkMessages(errors).foreach(println _)
+        flix.mkMessages(errors).foreach(println)
         Result.Err(1)
     }
   }
@@ -184,13 +177,6 @@ object Packager {
     * Builds (compiles) the source files for the given project path `p`.
     */
   def build(p: Path, o: Options, loadClasses: Boolean = true)(implicit flix: Flix = new Flix()): Result[CompilationResult, Int] = {
-    flix.setFormatter(AnsiTerminalFormatter)
-    // Check that the path is a project path.
-    checkProjectPath(p) match {
-      case Validation.Success(_) => ()
-      case Validation.Failure(missingPaths) => throw new RuntimeException(s"Missing files or directories: ${missingPaths.mkString(", ")}")
-    }
-
     // Configure a new Flix object.
     val newOptions = o.copy(
       output = Some(getBuildDirectory(p)),
@@ -204,7 +190,7 @@ object Packager {
     flix.compile() match {
       case Validation.Success(r) => Result.Ok(r)
       case Validation.Failure(errors) =>
-        flix.mkMessages(errors).foreach(println _)
+        flix.mkMessages(errors).foreach(println)
         1.toErr
     }
   }
@@ -213,14 +199,21 @@ object Packager {
     * Adds all source files and packages to the given `flix` object.
     */
   private def addSourcesAndPackages(p: Path, o: Options)(implicit flix: Flix): Result[Unit, Int] = {
-    // Add all source files.
+    // Add all files *directly* in `p` (non-recursively).
+    for (sourceFile <- p.toFile.listFiles().map(_.toPath)) {
+      if (sourceFile.getFileName.toString.endsWith(".flix")) {
+        flix.addSourcePath(sourceFile)
+      }
+    }
+
+    // Add all files in `p/src` (recursively).
     for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
       if (sourceFile.getFileName.toString.endsWith(".flix")) {
         flix.addSourcePath(sourceFile)
       }
     }
 
-    // Add all test files.
+    // Add all files in `p/test` (recursively).
     for (testFile <- getAllFiles(getTestDirectory(p))) {
       if (testFile.getFileName.toString.endsWith(".flix")) {
         flix.addSourcePath(testFile)
@@ -244,23 +237,9 @@ object Packager {
   }
 
   /**
-    * @param root the root directory to compute a relative path from the given path
-    * @param path the path to be converted to a relative path based on the given root directory
-    * @return relative file name separated by slashes, like `path/to/file.ext`
-    */
-  private def convertPathToRelativeFileName(root: Path, path: Path): String =
-    root.relativize(path).toString.replace('\\', '/')
-
-  /**
     * Builds a jar package for the given project path `p`.
     */
   def buildJar(p: Path, o: Options): Result[Unit, Int] = {
-    // Check that the path is a project path.
-    checkProjectPath(p) match {
-      case Validation.Success(_) => ()
-      case Validation.Failure(missingPaths) => throw new RuntimeException(s"Missing files or directories: ${missingPaths.mkString(", ")}")
-    }
-
     // The path to the jar file.
     val jarFile = getJarFile(p)
 
@@ -289,10 +268,9 @@ object Packager {
       }
     } match {
       case Success(()) => ().toOk
-      case Failure(e) => {
+      case Failure(e) =>
         println(e.getMessage)
         1.toErr
-      }
     }
   }
 
@@ -300,7 +278,9 @@ object Packager {
     * Builds a flix package for the given project path `p`.
     */
   def buildPkg(p: Path, o: Options): Result[Unit, Int] = {
-    // Check that the path is a project path.
+    //
+    // We require that a Flix package has a specific structure.
+    //
     checkProjectPath(p) match {
       case Validation.Success(_) => ()
       case Validation.Failure(missingPaths) => throw new RuntimeException(s"Missing files or directories: ${missingPaths.mkString(", ")}")
@@ -330,10 +310,9 @@ object Packager {
       }
     } match {
       case Success(()) => ().toOk
-      case Failure(e) => {
+      case Failure(e) =>
         println(e.getMessage)
         1.toErr
-      }
     }
   }
 
@@ -413,7 +392,7 @@ object Packager {
   /**
     * Returns a Validation containing the list of missing paths in case the path is not a project path.
     */
-  def checkProjectPath(p: Path): Validation[Unit, Path] = {
+  private def checkProjectPath(p: Path): Validation[Unit, Path] = {
     val required = List(
       getSourceDirectory(p),
       getTestDirectory(p),
@@ -430,8 +409,6 @@ object Packager {
           path.toFailure
         }
     }
-
-
   }
 
   /**
@@ -591,6 +568,14 @@ object Packager {
     }
     false
   }
+
+  /**
+    * @param root the root directory to compute a relative path from the given path
+    * @param path the path to be converted to a relative path based on the given root directory
+    * @return relative file name separated by slashes, like `path/to/file.ext`
+    */
+  private def convertPathToRelativeFileName(root: Path, path: Path): String =
+    root.relativize(path).toString.replace('\\', '/')
 
   private class FileVisitor extends SimpleFileVisitor[Path] {
     val result: mutable.ListBuffer[Path] = mutable.ListBuffer.empty
