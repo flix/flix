@@ -1038,6 +1038,8 @@ object Namer {
         case e => NamedAst.Expression.Par(e, loc)
       }
 
+    case WeededAst.Expression.ParYield(pats, exps, exp, loc) => ???
+
     case WeededAst.Expression.Lazy(exp, loc) =>
       visitExp(exp, env0, uenv0, ienv0, tenv0) map {
         case e => NamedAst.Expression.Lazy(e, loc)
@@ -1561,6 +1563,7 @@ object Namer {
       rulesFreeVars ++ defaultFreeVars
     case WeededAst.Expression.Spawn(exp, _) => freeVars(exp)
     case WeededAst.Expression.Par(exp, _) => freeVars(exp)
+    case WeededAst.Expression.ParYield(pats, exps, exp, _) => freeVars(pats) ::: freeVars(exps) ::: freeVars(exp)
     case WeededAst.Expression.Lazy(exp, _) => freeVars(exp)
     case WeededAst.Expression.Force(exp, _) => freeVars(exp)
     case WeededAst.Expression.FixpointConstraintSet(cs, _) => cs.flatMap(freeVarsConstraint)
