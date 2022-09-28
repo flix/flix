@@ -2299,6 +2299,6 @@ object ParsedAst {
   trait ParYield
 
   object ParYield {
-    case class Fragment(sp1: SourcePosition, ident: Name.Ident, exp: Expression, sp2: SourcePosition) extends ParYield
+    case class Fragment(sp1: SourcePosition, pat: Pattern, exp: Expression, sp2: SourcePosition) extends ParYield
   }
 }
