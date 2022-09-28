@@ -1039,12 +1039,19 @@ object Namer {
       }
 
     case WeededAst.Expression.ParYield(pats, exps, exp, loc) =>
+      // val sym = Symbol.freshVarSym(ident, BoundBy.Let)
+      // mapN(visitExp(exp1, env0, uenv0, ienv0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), uenv0, ienv0, tenv0)) {
+      //   case (e1, e2) => NamedAst.Expression.Let(sym, mod, e1, e2, loc)
+      // }
+      // TODO: visitExp(exp) with env0 ++ fresh idents -> pats.sym
+      // pats.map(p => p)
       mapN(
         traverse(exps)(visitExp(_, env0, uenv0, ienv0, tenv0)),
         visitExp(exp, env0, uenv0, ienv0, tenv0)) {
-        case (es, e) => NamedAst.Expression.ParYield(pats.map(visitPattern(_, env0, uenv0)), es, e, loc)
+        case (es, e) =>
+          val ps = pats.map(visitPattern(_, env0, uenv0))
+          NamedAst.Expression.ParYield(ps, es, e, loc)
       }
-
 
     case WeededAst.Expression.Lazy(exp, loc) =>
       visitExp(exp, env0, uenv0, ienv0, tenv0) map {
