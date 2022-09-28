@@ -1547,15 +1547,14 @@ object Weeder {
       mapN(visitExp(exp, senv))(WeededAst.Expression.Par(_, mkSL(sp1, sp2)))
 
     case ParsedAst.Expression.ParYield(sp1, exps, exp, sp2) =>
-      mapN(traverse(exps) {
-        case ParsedAst.ParYield.Fragment(sp11, ident, exp, sp22) =>
-          mapN(visitExp(exp, senv)) {
-            case e => (sp11, ident, e, sp22)
+      val expsVal = traverse(exps) {
+        case ParsedAst.ParYield.Fragment(sp11, ident, exp1, sp22) =>
+          mapN(visitExp(exp1, senv)) {
+            case e => (ident, e, mkSL(sp11, sp22))
           }
-      }) {
-        case es => mapN(visitExp(exp, senv)) {
-          case e => WeededAst.Expression.ParYield(es, e, mkSL(sp1, sp2))
-        }
+      }
+      mapN(visitExp(exp, senv), expsVal) {
+        case (e, es) => WeededAst.Expression.ParYield(es, e, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.Lazy(sp1, exp, sp2) =>

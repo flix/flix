@@ -241,7 +241,7 @@ object WeededAst {
 
     case class ReifyEff(ident: Name.Ident, exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class ParYield(exps: List[(SourcePosition, Name.Ident, Expression, SourcePosition)], exp: Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class ParYield(exps: List[(Name.Ident, Expression, SourceLocation)], exp: Expression, loc: SourceLocation) extends WeededAst.Expression
   }
 
   sealed trait Pattern {
