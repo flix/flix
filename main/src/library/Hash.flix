@@ -169,5 +169,8 @@ namespace Hash {
         h1 * magic() + h2
     }
 
-    pub def magic(): Int32 = -1640531535
+    ///
+    /// Returns a number used for combining hash values.
+    ///
+    def magic(): Int32 = -1640531535
 }

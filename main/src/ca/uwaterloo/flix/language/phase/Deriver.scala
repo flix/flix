@@ -688,7 +688,7 @@ object Deriver {
 
       val guard = KindedAst.Expression.True(loc)
 
-      // build a hash code by repeatedly adding elements via the combineDefSym
+      // build a hash code by repeatedly adding elements via the combine function
       // the first hash is the index
       // `2 `combine` hash(x0) `combine` hash(y0)`
       val exp = varSyms.foldLeft(KindedAst.Expression.Int32(index, loc): KindedAst.Expression) {
