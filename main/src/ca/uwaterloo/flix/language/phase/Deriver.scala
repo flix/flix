@@ -598,8 +598,8 @@ object Deriver {
     * instance Hash[E[a]] with Hash[a] {
     *   pub def hash(x: E[a]): Int = match x {
     *     case C0 => 0
-    *     case C1(x0) => 1 * 31 + hash(x0)
-    *     case C2(x0, x1) => (2 * 31 + hash(x0)) * 31 + hash(x1)
+    *     case C1(x0) => 1 `combine` hash(x0)
+    *     case C2(x0, x1) => 2 `combine` hash(x0) `combine` hash(x1)
     *   }
     * }
     * }}}
@@ -680,6 +680,7 @@ object Deriver {
   private def mkHashMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(sym, tpe, _) =>
       val hashSigSym = PredefinedClasses.lookupSigSym("Hash", "hash", root)
+      val combineDefSym = PredefinedClasses.lookupDefSym(List("Hash"), "combine", root)
 
       // get a pattern corresponding to this case, e.g.
       // `case C2(x0, x1)`
@@ -687,30 +688,28 @@ object Deriver {
 
       val guard = KindedAst.Expression.True(loc)
 
-      // build a hash code by repeatedly adding the next hash and multiplying by 31
+      // build a hash code by repeatedly adding elements via the combineDefSym
       // the first hash is the index
-      // `((2 * 31) + hash(x0)) * 31 + hash(y0)`
+      // `2 `combine` hash(x0) `combine` hash(y0)`
       val exp = varSyms.foldLeft(KindedAst.Expression.Int32(index, loc): KindedAst.Expression) {
         case (acc, varSym) =>
-          // `(acc * 31) + hash(varSym)
-          KindedAst.Expression.Binary(
-            SemanticOperator.Int32Op.Add,
-            KindedAst.Expression.Binary(
-              SemanticOperator.Int32Op.Mul,
+          // `acc `combine` hash(varSym)
+          KindedAst.Expression.Apply(
+            KindedAst.Expression.Def(combineDefSym, Type.freshVar(Kind.Star, loc, text = FallbackText("combine")), loc),
+            List(
               acc,
-              KindedAst.Expression.Int32(31, loc),
-              Type.freshVar(Kind.Star, loc, text = FallbackText("product")),
-              loc
+              KindedAst.Expression.Apply(
+                KindedAst.Expression.Sig(hashSigSym, Type.freshVar(Kind.Star, loc, text = FallbackText("hash")), loc),
+                List(mkVarExpr(varSym, loc)),
+                Type.freshVar(Kind.Star, loc, text = FallbackText("hashType")),
+                Type.freshVar(Kind.Bool, loc, text = FallbackText("hashPur")),
+                Type.freshVar(Kind.Effect, loc, text = FallbackText("hashEff")),
+                loc
+              ),
             ),
-            KindedAst.Expression.Apply(
-              KindedAst.Expression.Sig(hashSigSym, Type.freshVar(Kind.Star, loc, text = FallbackText("hash")), loc),
-              List(mkVarExpr(varSym, loc)),
-              Type.freshVar(Kind.Star, loc, text = FallbackText("hashType")),
-              Type.freshVar(Kind.Bool, loc, text = FallbackText("hashPur")),
-              Type.freshVar(Kind.Effect, loc, text = FallbackText("hashEff")),
-              loc
-            ),
-            Type.freshVar(Kind.Star, loc, text = FallbackText("sum")),
+            Type.freshVar(Kind.Star, loc, text = FallbackText("combineType")),
+            Type.freshVar(Kind.Bool, loc, text = FallbackText("combinePur")),
+            Type.freshVar(Kind.Effect, loc, text = FallbackText("combineEff")),
             loc
           )
       }
