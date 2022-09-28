@@ -1038,7 +1038,13 @@ object Namer {
         case e => NamedAst.Expression.Par(e, loc)
       }
 
-    case WeededAst.Expression.ParYield(pats, exps, exp, loc) => ???
+    case WeededAst.Expression.ParYield(pats, exps, exp, loc) =>
+      mapN(
+        traverse(exps)(visitExp(_, env0, uenv0, ienv0, tenv0)),
+        visitExp(exp, env0, uenv0, ienv0, tenv0)) {
+        case (es, e) => NamedAst.Expression.ParYield(pats.map(visitPattern(_, env0, uenv0)), es, e, loc)
+      }
+
 
     case WeededAst.Expression.Lazy(exp, loc) =>
       visitExp(exp, env0, uenv0, ienv0, tenv0) map {
