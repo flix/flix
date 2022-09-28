@@ -1563,7 +1563,7 @@ object Namer {
       rulesFreeVars ++ defaultFreeVars
     case WeededAst.Expression.Spawn(exp, _) => freeVars(exp)
     case WeededAst.Expression.Par(exp, _) => freeVars(exp)
-    case WeededAst.Expression.ParYield(pats, exps, exp, _) => freeVars(pats) ::: freeVars(exps) ::: freeVars(exp)
+    case WeededAst.Expression.ParYield(pats, exps, exp, _) => pats.flatMap(freeVars) ::: exps.flatMap(freeVars) ::: freeVars(exp)
     case WeededAst.Expression.Lazy(exp, _) => freeVars(exp)
     case WeededAst.Expression.Force(exp, _) => freeVars(exp)
     case WeededAst.Expression.FixpointConstraintSet(cs, _) => cs.flatMap(freeVarsConstraint)
