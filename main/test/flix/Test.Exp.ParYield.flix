@@ -6,7 +6,7 @@ namespace Test/Exp/ParYield {
 
     @test
     def testParYield02(): Int32 =
-        let x = par ((a, b) <- (1, 2), (c, d, e) <- (3, 4, 5), f <- 6) yield a + b + c + d + e + f
+        par ((a, b) <- (1, 2), (c, d, e) <- (3, 4, 5), f <- 6) yield a + b + c + d + e + f
 
     @test
     def testParYield03(): Bool =
