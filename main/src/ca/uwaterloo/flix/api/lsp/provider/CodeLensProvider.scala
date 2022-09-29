@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{CodeLens, Command, Index, Range}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Root, Spec}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Annotation, Root, Spec}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.{JArray, JObject, JString}
 import org.json4s.JsonDSL._
 
@@ -27,32 +27,40 @@ object CodeLensProvider {
     * Processes a codelens request.
     */
   def processCodeLens(uri: String)(implicit index: Index, root: Root): JObject = {
-    val codeLenses = getRunCodeLenses(uri)
+    val codeLenses = getRunCodeLenses(uri) ::: getTestCodeLenses(uri)
     ("status" -> "success") ~ ("result" -> JArray(codeLenses.map(_.toJSON)))
   }
 
   /**
-    * Returns code lenses for all possible entry points.
+    * Returns code lenses for running entry points.
     */
   private def getRunCodeLenses(uri: String)(implicit index: Index, root: Root): List[CodeLens] = {
     if (root == null) {
       return Nil
     }
-    getEntryPoints(uri).flatMap {
+
+    getEntryPoints(uri).map {
       case sym =>
         val args = List(JString(sym.toString))
-        val runMain = Command("Run", "flix.runMain", args)
-        //val runMainWithArgs = Command("Run with args...", "flix.runMainWithArgs", args)
-        val runMainNewTerminal = Command("Run (in new process)", "flix.runMainNewTerminal", args)
-        //val runMainNewTerminalWithArgs = Command("Run with args... (in new terminal)", "flix.runMainNewTerminalWithArgs", args)
+        val command = Command("Run", "flix.runMain", args)
         val range = Range.from(sym.loc)
+        CodeLens(range, Some(command))
+    }
+  }
 
-        List(
-          CodeLens(range, Some(runMain)),
-          //CodeLens(range, Some(runMainWithArgs)),
-          CodeLens(range, Some(runMainNewTerminal)),
-          //CodeLens(range, Some(runMainNewTerminalWithArgs)),
-        )
+  /**
+    * Returns code lenses for running tests.
+    */
+  private def getTestCodeLenses(uri: String)(implicit index: Index, root: Root): List[CodeLens] = {
+    if (root == null) {
+      return Nil
+    }
+
+    getTests(uri).map {
+      case sym =>
+        val command = Command("Run Tests", "flix.cmdTests", Nil)
+        val range = Range.from(sym.loc)
+        CodeLens(range, Some(command))
     }
   }
 
@@ -65,10 +73,26 @@ object CodeLensProvider {
   }
 
   /**
+    * Returns all tests in the given `uri`.
+    */
+  private def getTests(uri: String)(implicit root: Root): List[Symbol.DefnSym] = root.defs.foldLeft(List.empty[Symbol.DefnSym]) {
+    case (acc, (sym, defn)) if matchesUri(uri, sym.loc) && isEntryPoint(defn.spec) && isTest(defn.spec) => defn.sym :: acc
+    case (acc, _) => acc
+  }
+
+  /**
     * Returns `true` if the given `spec` is an entry point.
     */
   private def isEntryPoint(s: Spec): Boolean = s.fparams match {
     case fparam :: Nil => isUnitType(fparam.tpe)
+    case _ => false
+  }
+
+  /**
+    * Returns `true` if the given `defn` is marked as a test.
+    */
+  private def isTest(s: Spec): Boolean = s.ann.exists {
+    case Annotation(Ast.Annotation.Test(_), _, _) => true
     case _ => false
   }
 
