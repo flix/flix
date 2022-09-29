@@ -37,7 +37,7 @@ instance ToString[MultiMap[k, v]] with ToString[k], ToString[v] {
 instance Hash[MultiMap[k, v]] with Hash[k], Hash[v] {
     pub def hash(m: MultiMap[k, v]): Int32 =
         let MultiMap(m1) = m;
-        Map.foldLeftWithKey((acc, k, v) -> acc * 17 + Hash.hash(k) + 19 * Hash.hash(v), 7937, m1)
+        Map.foldLeftWithKey((acc, k, v) -> acc `Hash.combine` Hash.hash(k) `Hash.combine` Hash.hash(v), 0, m1)
 }
 
 
