@@ -40,7 +40,7 @@ instance Order[Set[a]] with Order[a] {
 
 instance Hash[Set[a]] with Hash[a] {
     pub def hash(s: Set[a]): Int32 =
-        Set.foldLeft((acc, x) -> acc `Hash.combine` Hash.hash(x), 0, s)
+        Set.foldLeft((acc, x) -> acc `Hash.combine` Hash.hash(x), Hash.magic(), s)
 }
 
 instance ToString[Set[a]] with ToString[a] {
