@@ -94,7 +94,6 @@ object Packager {
     val sourceDirectory = getSourceDirectory(p)
     val testDirectory = getTestDirectory(p)
 
-    val historyFile = getHistoryFile(p)
     val licenseFile = getLicenseFile(p)
     val readmeFile = getReadmeFile(p)
     val mainSourceFile = getMainSourceFile(p)
@@ -103,35 +102,31 @@ object Packager {
     //
     // Check that the project directories and files do not already exist.
     //
-    val allPaths = List(
-      buildDirectory, libraryDirectory, sourceDirectory, testDirectory,
-      historyFile, licenseFile, readmeFile, mainSourceFile, mainTestFile
+    val dirPaths = List(
+      buildDirectory, libraryDirectory, sourceDirectory, testDirectory
     )
-    val pathExists = allPaths.find(f => Files.exists(f))
-    if (pathExists.nonEmpty) {
-      throw new RuntimeException(s"The path: '${pathExists.get}' already exists. Aborting.")
+
+    // blocked directories are those that already exist and are not directories
+    val blockedDirs = dirPaths.filter(p => Files.exists(p) && !Files.isDirectory(p))
+
+    if (blockedDirs.nonEmpty) {
+      throw new RuntimeException(s"The following files already exist and are not directories: ${blockedDirs.mkString(", ")}. Aborting.")
     }
 
     //
     // Create the project directories and files.
     //
-    newDirectory(buildDirectory)
-    newDirectory(libraryDirectory)
-    newDirectory(sourceDirectory)
-    newDirectory(testDirectory)
+    newDirectoryIfAbsent(buildDirectory)
+    newDirectoryIfAbsent(libraryDirectory)
+    newDirectoryIfAbsent(sourceDirectory)
+    newDirectoryIfAbsent(testDirectory)
 
-    newFile(historyFile) {
-      """### v0.1.0
-        |   Initial release.
-        |""".stripMargin
-    }
-
-    newFile(licenseFile) {
+    newFileIfAbsent(licenseFile) {
       """Enter license information here.
         |""".stripMargin
     }
 
-    newFile(readmeFile) {
+    newFileIfAbsent(readmeFile) {
       s"""# $packageName
          |
          |Enter some useful information.
@@ -139,14 +134,14 @@ object Packager {
          |""".stripMargin
     }
 
-    newFile(mainSourceFile) {
+    newFileIfAbsent(mainSourceFile) {
       """// The main entry point.
         |def main(): Unit \ IO =
         |    println("Hello World!")
         |""".stripMargin
     }
 
-    newFile(mainTestFile) {
+    newFileIfAbsent(mainTestFile) {
       """@test
         |def test01(): Bool = 1 + 1 == 2
         |""".stripMargin
@@ -297,7 +292,6 @@ object Packager {
     // Construct a new zip file.
     Using(new ZipOutputStream(Files.newOutputStream(pkgFile))) { zip =>
       // Add required resources.
-      addToZip(zip, "HISTORY.md", getHistoryFile(p))
       addToZip(zip, "LICENSE.md", getLicenseFile(p))
       addToZip(zip, "README.md", getReadmeFile(p))
 
@@ -385,7 +379,6 @@ object Packager {
   def isProjectPath(p: Path): Boolean =
     Files.exists(getSourceDirectory(p)) &&
       Files.exists(getTestDirectory(p)) &&
-      Files.exists(getHistoryFile(p)) &&
       Files.exists(getLicenseFile(p)) &&
       Files.exists(getReadmeFile(p))
 
@@ -396,7 +389,6 @@ object Packager {
     val required = List(
       getSourceDirectory(p),
       getTestDirectory(p),
-      getHistoryFile(p),
       getLicenseFile(p),
       getReadmeFile(p)
     )
@@ -447,11 +439,6 @@ object Packager {
   def getTestDirectory(p: Path): Path = p.resolve("./test/").normalize()
 
   /**
-    * Returns the path to the HISTORY file relative to the given path `p`.
-    */
-  private def getHistoryFile(p: Path): Path = p.resolve("./HISTORY.md").normalize()
-
-  /**
     * Returns the path to the LICENSE file relative to the given path `p`.
     */
   private def getLicenseFile(p: Path): Path = p.resolve("./LICENSE.md").normalize()
@@ -473,24 +460,18 @@ object Packager {
 
   /**
     * Creates a new directory at the given path `p`.
-    *
-    * The directory must not already exist.
+    * The path must not already contain a non-directory.
     */
-  private def newDirectory(p: Path): Unit = {
-    if (Files.exists(p)) throw InternalCompilerException(s"Path '$p' already exists.")
-
+  private def newDirectoryIfAbsent(p: Path): Unit = {
     Files.createDirectories(p)
   }
 
   /**
-    * Creates a new text file at the given path `p` with the given content `s`.
-    *
-    * The file must not already exist.
+    * Creates a new text file at the given path `p` with the given content `s`,
+    * if the file does not already exist.
     */
-  private def newFile(p: Path)(s: String): Unit = {
-    if (Files.exists(p)) throw InternalCompilerException(s"Path '$p' already exists.")
-
-    Files.writeString(p, s, StandardOpenOption.CREATE_NEW)
+  private def newFileIfAbsent(p: Path)(s: String): Unit = {
+    Files.writeString(p, s, StandardOpenOption.CREATE)
   }
 
   /**

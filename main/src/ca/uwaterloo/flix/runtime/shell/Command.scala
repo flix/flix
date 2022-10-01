@@ -162,19 +162,19 @@ object Command {
     //
     // Jar
     //
-    if (input == ":jar" || input == ":j")
+    if (input == ":build-jar" || input == ":jar")
       return Command.Jar
 
     //
     // Fpkg
     //
-    if (input == ":pkg" || input == ":p")
+    if (input == ":build-pkg" || input == ":pkg")
       return Command.Fpkg
 
     //
     // Bench
     //
-    if (input == ":bench")
+    if (input == ":benchmark" || input == ":bench")
       return Command.Bench
 
     //

@@ -29,7 +29,7 @@ instance ToString[Nel[a]] with ToString[a] {
 
 instance Hash[Nel[a]] with Hash[a] {
     pub def hash(l: Nel[a]): Int32 = match l {
-        case Nel(x, xs) => 39119 + Hash.hash(xs) + Hash.hash(x)
+        case Nel(x, xs) => Hash.hash(xs) `Hash.combine` Hash.hash(x)
     }
 }
 
