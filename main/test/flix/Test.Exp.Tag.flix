@@ -15,6 +15,7 @@ namespace Test/Exp/Tag {
         case OfArrayOfInt(Array[Int32, Static])
         case OfArrayOfString(Array[String, Static])
         case OfTuple(Bool, Char, String)
+        case OfRecord({a = Int32}, {b = Char})
     }
 
     @test
@@ -155,6 +156,10 @@ namespace Test/Exp/Tag {
 
     @test
     def testTupleTag03(): A = Test/Exp/Tag/A.OfTuple(true, 'a', "Hello World!")
+
+
+    @test
+    def testRecordTag01(): A = A.OfRecord(a = 123, b = 'x')
 
     pub enum Suit {
         case Hearts, Diamonds, Clubs, Spades
