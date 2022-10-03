@@ -172,5 +172,5 @@ namespace Hash {
     ///
     /// Returns a number used for combining hash values.
     ///
-    def magic(): Int32 = -1640531535
+    pub def magic(): Int32 = -1640531535
 }
