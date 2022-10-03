@@ -139,9 +139,9 @@ namespace Test/Exp/Tuple {
     def testListTuple05(): List[(Int32, Int32)] = (1, 2) :: (3, 4) :: Nil
 
     @test
-    def testNamedTuple01(): {a = Int32}: (a = 123)
+    def testNamedTuple01(): {a = Int32} = (a = 123)
 
     @test
-    def testNamedTuple02(): ({a = Int32}, {b = Char}): = (a = 123, b = 'x')
+    def testNamedTuple02(): ({a = Int32}, {b = Char}) = (a = 123, b = 'x')
 
 }
