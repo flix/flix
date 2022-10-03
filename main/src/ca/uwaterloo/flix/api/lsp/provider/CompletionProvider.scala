@@ -119,6 +119,7 @@ object CompletionProvider {
       getDefAndSigCompletions() ++
       getWithCompletions() ++
       getCaseCompletions() ++
+      getPredicateCompletions() ++
       getInstanceCompletions() ++
       getTypeCompletions() ++
       getOpCompletions() ++
@@ -573,6 +574,28 @@ object CompletionProvider {
         documentation = None,
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.EnumMember)
+  }
+
+  /**
+    * Returns a list of completion for predicates
+    */
+  private def getPredicateCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+    if (root == null) {
+      return Nil
+    }
+
+    index.predDefs.m.concat(index.predUses.m).foldLeft[List[CompletionItem]](Nil)({
+      case (acc, (pred, locs)) => {
+        val priority: String => String = if (locs.exists(loc => loc.source.name == context.uri)) Priority.boost else Priority.low
+        val name = pred.name
+        CompletionItem(label = name,
+          sortText = priority(name),
+          textEdit = TextEdit(context.range, name),
+          documentation = None,
+          insertTextFormat = InsertTextFormat.PlainText,
+          kind = CompletionItemKind.Variable) :: acc
+      }
+    })
   }
 
   /**
