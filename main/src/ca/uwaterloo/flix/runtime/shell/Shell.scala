@@ -302,9 +302,10 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
         // The name of the generated main function.
         val main = Symbol.mkDefnSym("shell1")
 
+        // Cast the println to allow escaping effects
         val src =
           s"""def ${main.name}(): Unit \\ IO =
-             |println($s)
+             |println($s) as \\ IO
              |""".stripMargin
         flix.addSourceCode("<shell>", src)
         run(main)
