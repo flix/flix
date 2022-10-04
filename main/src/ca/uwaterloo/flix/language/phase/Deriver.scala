@@ -597,9 +597,9 @@ object Deriver {
     * {{{
     * instance Hash[E[a]] with Hash[a] {
     *   pub def hash(x: E[a]): Int = match x {
-    *     case C0 => 0
-    *     case C1(x0) => 1 `combine` hash(x0)
-    *     case C2(x0, x1) => 2 `combine` hash(x0) `combine` hash(x1)
+    *     case C0 => 1
+    *     case C1(x0) => 2 `combine` hash(x0)
+    *     case C2(x0, x1) => 3 `combine` hash(x0) `combine` hash(x1)
     *   }
     * }
     * }}}
@@ -675,7 +675,7 @@ object Deriver {
   }
 
   /**
-    * Creates a ToString match rule for the given enum case.
+    * Creates a Hash match rule for the given enum case.
     */
   private def mkHashMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(sym, tpe, _) =>
@@ -689,9 +689,9 @@ object Deriver {
       val guard = KindedAst.Expression.True(loc)
 
       // build a hash code by repeatedly adding elements via the combine function
-      // the first hash is the index
-      // `2 `combine` hash(x0) `combine` hash(y0)`
-      val exp = varSyms.foldLeft(KindedAst.Expression.Int32(index, loc): KindedAst.Expression) {
+      // the first hash is the index + 1
+      // `3 `combine` hash(x0) `combine` hash(y0)`
+      val exp = varSyms.foldLeft(KindedAst.Expression.Int32(index + 1, loc): KindedAst.Expression) {
         case (acc, varSym) =>
           // `acc `combine` hash(varSym)
           KindedAst.Expression.Apply(

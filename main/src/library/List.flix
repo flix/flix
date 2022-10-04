@@ -33,7 +33,7 @@ instance ToString[List[a]] with ToString[a] {
 
 instance Hash[List[a]] with Hash[a] {
     pub def hash(l: List[a]): Int32 =
-        List.foldLeft((acc, x) -> acc `Hash.combine` Hash.hash(x), 0, l)
+        List.foldLeft((acc, x) -> acc `Hash.combine` Hash.hash(x), Hash.magic(), l)
 }
 
 instance Eq[List[a]] with Eq[a] {
