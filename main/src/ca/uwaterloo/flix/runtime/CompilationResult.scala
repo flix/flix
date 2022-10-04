@@ -57,8 +57,19 @@ class CompilationResult(root: Root,
   def getTests: Map[Symbol.DefnSym, TestFn] = {
     defs.collect {
       case (sym, run) if root.defs(sym).ann.isTest =>
-        val skip = root.defs(sym).ann.isSkip
-        (sym -> TestFn(sym, skip, run))
+        val prop = {
+          if (root.defs(sym).formals.map(_.tpe) != List(MonoType.Unit)) {
+            // invalid if not a unit function
+            TestFn.RunProperty.Invalid("Non-unit test function.")
+          } else if (root.defs(sym).ann.isSkip) {
+            // skipped if annotated @Skip
+            TestFn.RunProperty.Skipped
+          } else {
+            // otherwise it is runnable
+            TestFn.RunProperty.Runnable(run)
+          }
+        }
+        (sym -> TestFn(sym, prop))
     }
   }
 

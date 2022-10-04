@@ -81,6 +81,7 @@ object Tester {
       var passed = 0
       var skipped = 0
       var failed: List[(Symbol.DefnSym, List[String])] = Nil
+      var invalid: List[(Symbol.DefnSym, String)] = Nil
 
       var finished = false
       while (!finished) {
@@ -101,6 +102,11 @@ object Tester {
             writer.println(s"  ${bgRed(" FAIL ")} $sym $line")
             terminal.flush()
 
+          case TestEvent.Invalid(sym, reason) =>
+            invalid = (sym, reason) :: invalid
+            writer.println(s"  ${bgRed(" INVALID ")} $sym $reason")
+            terminal.flush()
+
           case TestEvent.Skip(sym) =>
             skipped = skipped + 1
             writer.println(s"  ${bgYellow(" SKIP ")} $sym (${yellow("SKIPPED")})")
@@ -119,6 +125,11 @@ object Tester {
                 }
                 writer.println()
               }
+              for ((sym, reason) <- invalid) {
+                writer.println(s"  ${bgRed(" INVALID ")} $sym")
+                writer.println(s"    $reason")
+                writer.println()
+              }
               writer.println("-" * 80)
             }
 
@@ -127,6 +138,7 @@ object Tester {
             writer.println(
               s"Passed: ${green(passed.toString)}, " +
                 s"Failed: ${red(failed.length.toString)}. " +
+                s"Invalid: ${red(invalid.length.toString)}. " +
                 s"Skipped: ${yellow(skipped.toString)}. " +
                 s"Elapsed: ${brightBlack(elapsed.fmt)}."
             )
@@ -160,12 +172,9 @@ object Tester {
       * Runs the given `test` emitting test events.
       */
     private def runTest(test: TestCase): Unit = test match {
-      case TestCase(sym, skip, run) =>
-        // Check if the test case should be ignored.
-        if (skip) {
-          queue.add(TestEvent.Skip(sym))
-          return
-        }
+      case TestCase(sym, TestFn.RunProperty.Skipped) => queue.add(TestEvent.Skip(sym))
+      case TestCase(sym, TestFn.RunProperty.Invalid(reason)) => queue.add(TestEvent.Invalid(sym, reason))
+      case TestCase(sym, TestFn.RunProperty.Runnable(run)) =>
 
         // We are about to run the test case.
         queue.add(TestEvent.Before(sym))
@@ -272,7 +281,7 @@ object Tester {
     }
 
     val allTests = compilationResult.getTests.map {
-      case (sym, TestFn(_, skip, run)) => TestCase(sym, skip, run)
+      case (sym, TestFn(_, runProp)) => TestCase(sym, runProp)
     }
 
     allTests.filter(isMatch).toVector.sorted
@@ -291,11 +300,10 @@ object Tester {
   /**
     * Represents a single test case.
     *
-    * @param sym  the Flix symbol.
-    * @param skip true if the test case should be skipped.
-    * @param run  the code to run.
+    * @param sym     the Flix symbol.
+    * @param runProp the property relevant to running the test
     */
-  case class TestCase(sym: Symbol.DefnSym, skip: Boolean, run: () => AnyRef) extends Ordered[TestCase] {
+  case class TestCase(sym: Symbol.DefnSym, runProp: TestFn.RunProperty) extends Ordered[TestCase] {
     override def compare(that: TestCase): Int = this.sym.toString.compareTo(that.sym.toString)
   }
 
@@ -325,6 +333,11 @@ object Tester {
       * A test event emitted to indicate that a test was ignored.
       */
     case class Skip(sym: Symbol.DefnSym) extends TestEvent
+
+    /**
+      * A test event emitted to indicate that a test was invalid.
+      */
+    case class Invalid(sym: Symbol.DefnSym, reason: String) extends TestEvent
 
     /**
       * A test event emitted to indicates that testing has completed.

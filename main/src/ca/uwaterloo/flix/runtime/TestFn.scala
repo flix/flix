@@ -20,8 +20,32 @@ import ca.uwaterloo.flix.language.ast.Symbol
 /**
   * Represents a unit test.
   *
-  * @param sym  the Flix def symbol.
-  * @param skip true if the test case is marked @Skip.
-  * @param run  the function code.
+  * @param sym     the Flix def symbol.
+  * @param runProp the property relevant to running the test.
   */
-case class TestFn(sym: Symbol.DefnSym, skip: Boolean, run: () => AnyRef)
+case class TestFn(sym: Symbol.DefnSym, runProp: TestFn.RunProperty)
+
+object TestFn {
+
+  /**
+    * A property relevant to running the unit test.
+    */
+  sealed trait RunProperty
+
+  object RunProperty {
+    /**
+      * Holds the function to execute for running the test.
+      */
+    case class Runnable(run: () => AnyRef) extends RunProperty
+
+    /**
+      * Indicates that the test should be skipped.
+      */
+    case object Skipped extends RunProperty
+
+    /**
+      * Indicates that the test is invalid.
+      */
+    case class Invalid(reason: String) extends RunProperty
+  }
+}

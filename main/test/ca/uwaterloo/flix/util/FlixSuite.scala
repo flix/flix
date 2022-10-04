@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.runtime.TestFn.RunProperty
 import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import org.scalatest.FunSuite
@@ -85,15 +86,20 @@ class FlixSuite(incremental: Boolean) extends FunSuite {
       val testsByName = tests.toList.sortBy(_._1.name)
 
       // Evaluate each tests with a clue of its source location.
-      for ((sym, TestFn(_, _, run)) <- testsByName) {
+      for ((sym, TestFn(_, runProp)) <- testsByName) {
         withClue(sym.loc.format) {
-          // Evaluate the function.
-          val result = run()
-          // Expect the true value, if boolean.
-          if (result.isInstanceOf[java.lang.Boolean]) {
-            if (result != true) {
-              fail("Expected true, but got false.")
-            }
+          runProp match {
+            case RunProperty.Runnable(run) =>
+              // Evaluate the function.
+              val result = run()
+              // Expect the true value, if boolean.
+              if (result.isInstanceOf[java.lang.Boolean]) {
+                if (result != true) {
+                  fail("Expected true, but got false.")
+                }
+              }
+            case RunProperty.Skipped => info(s"Test '$sym' skipped.")
+            case RunProperty.Invalid(reason) => fail(s"Invalid test: $reason")
           }
         }
       }
