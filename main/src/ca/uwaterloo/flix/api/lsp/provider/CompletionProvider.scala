@@ -119,6 +119,7 @@ object CompletionProvider {
       getDefAndSigCompletions() ++
       getWithCompletions() ++
       getCaseCompletions() ++
+      getPredicateCompletions() ++
       getInstanceCompletions() ++
       getTypeCompletions() ++
       getOpCompletions() ++
@@ -519,7 +520,7 @@ object CompletionProvider {
     }
     
     val casePattern = raw"\s*ca?s?e?\s?.*".r
-
+    
     if (!(casePattern matches context.prefix)) {
       return Nil
     }
@@ -528,24 +529,20 @@ object CompletionProvider {
     val wordPattern = "ca?s?e?".r
     val currentWordIsCase = wordPattern matches context.word
 
-    //Entities withing same source file
-    val entities = index.query(context.uri)
-
-    entities.foldLeft[List[CompletionItem]](Nil)((acc, entity) => entity match {
-      case Entity.Enum(e) => enumCompletionAcc(acc, e, currentWordIsCase)
-      case _ => acc
-    })
+    val enums = root.enums.values
+    enums.foldLeft[List[CompletionItem]](Nil)((acc, enm) => enumCompletionAcc(acc, enm, currentWordIsCase))
   }
 
   /**
    * Extends a list of completion items with completion items for the cases of an enum.
    */
   private def enumCompletionAcc(acc: List[CompletionItem], enm: TypedAst.Enum, currentWordIsCase: Boolean)(implicit context: Context, flix: Flix): List[CompletionItem] = {
+    //Selects priority high if enum is in the same source file and boost if not.
+    val priority: String => String = if (enm.loc.source.name == context.uri) Priority.high else Priority.boost
     enm.cases.foldLeft(acc)({
       case (acc, (sym , cas)) => {
         val name = sym.name
         val tpe = cas.tpe
-        val tupleArity = tpe.typeConstructors
         val typeString = tpe.typeConstructor match {
           case Some(TypeConstructor.Unit) => ""
           case Some(TypeConstructor.Tuple(_)) => FormatType.formatType(tpe)
@@ -558,7 +555,7 @@ object CompletionProvider {
         }
         val label = if (currentWordIsCase) s"case $name$typeString => " else s"$name$typeString => "
         val completion = if (currentWordIsCase) s"case $name$typeCompletion => $${0:???}" else s"$name$typeCompletion => $${0:???}"
-        caseCompletion(label, completion) :: acc
+        caseCompletion(label, completion, priority) :: acc
       }
     })
   }
@@ -566,13 +563,35 @@ object CompletionProvider {
   /**
    * Returns a completion item based on a label and a completion for an enum case.
    */
-  private def caseCompletion(label: String, completion: String)(implicit context: Context): CompletionItem = {
+  private def caseCompletion(label: String, completion: String, priority: String => String)(implicit context: Context): CompletionItem = {
     CompletionItem(label = label,
-        sortText = Priority.high(label),
+        sortText = priority(label),
         textEdit = TextEdit(context.range, completion),
         documentation = None,
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.EnumMember)
+  }
+
+  /**
+    * Returns a list of completion for predicates
+    */
+  private def getPredicateCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+    if (root == null) {
+      return Nil
+    }
+
+    index.predDefs.m.concat(index.predUses.m).foldLeft[List[CompletionItem]](Nil)({
+      case (acc, (pred, locs)) => {
+        val priority: String => String = if (locs.exists(loc => loc.source.name == context.uri)) Priority.boost else Priority.low
+        val name = pred.name
+        CompletionItem(label = name,
+          sortText = priority(name),
+          textEdit = TextEdit(context.range, name),
+          documentation = None,
+          insertTextFormat = InsertTextFormat.PlainText,
+          kind = CompletionItemKind.Variable) :: acc
+      }
+    })
   }
 
   /**

@@ -246,9 +246,9 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     w.println("  :init                       Creates a new project in the current directory.")
     w.println("  :check :c                   Checks the current project for errors.")
     w.println("  :build :b                   Builds (i.e. compiles) the current project.")
-    w.println("  :jar :j                     Builds a jar-file from the current project.")
-    w.println("  :pkg :p                     Builds a fpkg-file from the current project.")
-    w.println("  :bench                      Runs the benchmarks for the current project.")
+    w.println("  :build-jar :jar             Builds a jar-file from the current project.")
+    w.println("  :build-pkg :pkg             Builds a fpkg-file from the current project.")
+    w.println("  :benchmark :bench           Runs the benchmarks for the current project.")
     w.println("  :test :t                    Runs the tests for the current project.")
     w.println("  :install     <owner>/<repo> Installs the Flix package from the given GitHub project")
     w.println("  :quit :q                    Terminates the Flix shell.")
@@ -302,9 +302,10 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
         // The name of the generated main function.
         val main = Symbol.mkDefnSym("shell1")
 
+        // Cast the println to allow escaping effects
         val src =
           s"""def ${main.name}(): Unit \\ IO =
-             |println($s)
+             |println($s) as \\ IO
              |""".stripMargin
         flix.addSourceCode("<shell>", src)
         run(main)
