@@ -118,7 +118,8 @@ object BoolUnification {
     * synthetic variables first.
     */
   private def computeVariableOrder(l: List[Int]): List[Int] = {
-    l.reverse // TODO have to reverse the order for regions to work
+//    l.reverse // TODO have to reverse the order for regions to work
+    l // MATT hacky test
   }
 
   /**

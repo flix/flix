@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.phase.Regions
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -390,11 +391,14 @@ object Unification {
       // Apply the current substitution to `tpe`.
       val t = s(tpe)
 
+      val min = TypeMinimization.minimizeType(t)
+
       // Compute the type and effect variables that occur in `t`.
-      val fvs = t.typeVars
+      val fvs = min.typeVars
 
       // Ensure that `rvar` does not occur in `t` (e.g. being returned or as an effect).
-      if (fvs.contains(rvar)) {
+//      if (fvs.contains(rvar)) {
+      if (Regions.relevantTo(rvar, t)) {
         Err(TypeError.RegionVarEscapes(rvar, t, rvar.loc))
       } else
         Ok((s, renv, ()))

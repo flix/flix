@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, RigidityEnv, SourceLocation, Type}
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.phase.unification.{TypeMinimization, Unification}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
@@ -421,16 +422,48 @@ object Regions {
     */
   private def checkType(tpe: Type, loc: SourceLocation)(implicit scope: List[Type.Var], flix: Flix): Validation[Unit, CompilationMessage] = {
     // Compute the region variables that escape.
-    val escapes = regionVarsOf(tpe) -- scope
+    val minned = TypeMinimization.minimizeType(tpe)
+    val regs = regionVarsOf(minned)
+    for (reg <- regs -- scope) {
+      if (relevantTo(reg, minned)) {
+        return TypeError.RegionVarEscapes(reg, minned, loc).toFailure
+      }
+    }
+    ().toSuccess
+    /*
+    val escapes = regionVarsOf(minned) -- scope
 
     // Return an error if a region variable escapes.
     if (escapes.nonEmpty) {
       val rvar = escapes.head
-      return TypeError.RegionVarEscapes(rvar, tpe, loc).toFailure
+      return TypeError.RegionVarEscapes(rvar, minned, loc).toFailure
     }
 
     // Otherwise return success.
     ().toSuccess
+    */
+  }
+
+  def relevantTo(tvar: Type.Var, tpe: Type)(implicit flix: Flix): Boolean = {
+    val t0 = tpe.map {
+      case t if t == tvar => Type.False
+      case t => t
+    }
+
+    val t1 = tpe.map {
+      case t if t == tvar => Type.True
+      case t => t
+    }
+
+    !sameType(t0, t1)
+  }
+
+  private def sameType(t1: Type, t2: Type)(implicit flix: Flix): Boolean = {
+    val renv = (t1.typeVars ++ t2.typeVars).foldLeft(RigidityEnv.empty) {
+      case (acc, tvar) => acc.markRigid(tvar.sym)
+    }
+
+    Unification.unifiesWith(t1, t2, renv)
   }
 
   /**
