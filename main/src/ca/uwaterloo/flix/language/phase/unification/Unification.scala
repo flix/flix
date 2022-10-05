@@ -389,10 +389,10 @@ object Unification {
   def noEscapeM(rvar: Type.Var, tpe: Type)(implicit flix: Flix): InferMonad[Unit] =
     InferMonad { case (s, renv) =>
       // Apply the current substitution to `tpe`.
-      val t = s(tpe)
+      val t = TypeMinimization.minimizeType(s(tpe))
 
       // Compute the type and effect variables that occur in `t`.
-      val fvs = t.typeVars
+//      val fvs = t.typeVars
 
       // Ensure that `rvar` does not occur in `t` (e.g. being returned or as an effect).
 //      if (fvs.contains(rvar)) {
