@@ -1548,8 +1548,7 @@ object Weeder {
 
     case ParsedAst.Expression.ParYield(sp1, frags, exp, sp2) =>
       // Rewrite frags into a nested match-case block where exp is included.
-      val expVal = visitExp(exp, senv)
-      val matches = foldRight(frags)(expVal) {
+      val matches = foldRight(frags)(visitExp(exp, senv)) {
         case (ParsedAst.ParYield.Fragment(sp11, pat, exp0, sp12), acc) =>
           mapN(visitPattern(pat), visitExp(exp0, senv)) {
             case (p, e) =>
@@ -1558,8 +1557,8 @@ object Weeder {
               WeededAst.Expression.Match(e, List(rule), loc)
           }
       }
-      mapN(matches, expVal) {
-        case (e0, e1) => WeededAst.Expression.ParYield(e0, e1, mkSL(sp1, sp2).asSynthetic)
+      mapN(matches) {
+        case e0 => WeededAst.Expression.ParYield(e0, mkSL(sp1, sp2).asSynthetic)
       }
 
     case ParsedAst.Expression.Lazy(sp1, exp, sp2) =>

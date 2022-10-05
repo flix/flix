@@ -1134,9 +1134,9 @@ object Resolver {
             e => ResolvedAst.Expression.Par(e, loc)
           }
 
-        case NamedAst.Expression.ParYield(matchExp, yieldExp, loc) =>
-          mapN(visitExp(matchExp, region), visitExp(yieldExp, region)) {
-            case (e0, e1) => ResolvedAst.Expression.ParYield(e0, e1, loc)
+        case NamedAst.Expression.ParYield(exp, loc) =>
+          mapN(visitExp(exp, region)) {
+            case e => ResolvedAst.Expression.ParYield(e, loc)
           }
 
         case NamedAst.Expression.Lazy(exp, loc) =>
