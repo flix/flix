@@ -840,7 +840,8 @@ object Typer {
 
       case KindedAst.Expression.Scope(sym, regionVar, exp, pvar, loc) =>
         for {
-          _ <- rigidifyM(regionVar)
+          // don't make the region var rigid if the --Xflexible-regions flag is set
+          _ <- if (flix.options.xflexibleregions) InferMonad.point(()) else rigidifyM(regionVar)
           _ <- unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
           (constrs, tpe, pur, eff) <- visitExp(exp)
           purifiedPur <- purifyEffM(regionVar, pur)
