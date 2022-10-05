@@ -86,6 +86,13 @@ object BddFormula {
     }
 
     /**
+      * Returns a representation of the formula `f1 == f2`.
+      */
+    override def mkEq(f1: BddFormula, f2: BddFormula): BddFormula = {
+      new BddFormula(creator.makeXnor(f1.getDD(), f2.getDD()))
+    }
+
+    /**
       * Returns the set of free variables in `f`.
       */
     //TODO: Optimize!
@@ -109,6 +116,20 @@ object BddFormula {
       //TODO: Check correctness
     override def map(f: BddFormula)(fn: Int => BddFormula): BddFormula = {
       val exporter = new DotExporter()
+
+      /*val x2 = creator.makeIthVar(2)
+      val notx2 = creator.makeNot(x2)
+      val node = creator.makeNode(creator.makeTrue(), notx2, 1)
+
+
+      println(exporter.bddToString(node))
+
+      val res = creator.makeCompose(node, 1, creator.makeNot(creator.makeIthVar(1)))
+
+      println(exporter.bddToString(res))
+
+      System.exit(-1)*/
+
       if(f.getDD().isLeaf()) {
         f
       } else {
@@ -147,7 +168,7 @@ object BddFormula {
               case Some(j) => j
               case None => ??? //should never happen
             }
-            substDD = creator.makeCompose(substDD, var_j, creator.makeIthVar(j_prime))
+            substDD = creator.makeReplace(substDD, creator.makeIthVar(var_j), creator.makeIthVar(j_prime))
           }
           println("substVarSet after: " + freeVarsAux(substDD).toString())
           println("SubstDD after")
@@ -167,7 +188,7 @@ object BddFormula {
             case Some(i) => i
             case None => ??? //should never happen
           }
-          res = creator.makeCompose(res, var_i_prime, creator.makeIthVar(old_i))
+          res = creator.makeReplace(res, creator.makeIthVar(var_i_prime), creator.makeIthVar(old_i))
           println("DD after substitution on " + var_i_prime)
           println(exporter.bddToString(res))
         }
