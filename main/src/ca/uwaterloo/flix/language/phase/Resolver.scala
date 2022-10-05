@@ -1134,17 +1134,9 @@ object Resolver {
             e => ResolvedAst.Expression.Par(e, loc)
           }
 
-        case NamedAst.Expression.ParYield(pats, exps, exp, loc) =>
-          // val sym = Symbol.freshVarSym(ident, BoundBy.Let)
-          // mapN(visitExp(exp1, env0, uenv0, ienv0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), uenv0, ienv0, tenv0)) {
-          //   case (e1, e2) => NamedAst.Expression.Let(sym, mod, e1, e2, loc)
-          // }
-          // val env1 = env0 ++ pats.map(p => p.)
-          mapN(
-            traverse(pats)(Patterns.resolve(_, ns0, root)),
-            traverse(exps)(visitExp(_, region)),
-            visitExp(exp, region)) {
-            case (ps, es, e) => ResolvedAst.Expression.ParYield(ps, es, e, loc)
+        case NamedAst.Expression.ParYield(matchExp, yieldExp, loc) =>
+          mapN(visitExp(matchExp, region), visitExp(yieldExp, region)) {
+            case (e0, e1) => ResolvedAst.Expression.ParYield(e0, e1, loc)
           }
 
         case NamedAst.Expression.Lazy(exp, loc) =>

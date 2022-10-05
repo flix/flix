@@ -220,7 +220,7 @@ object ResolvedAst {
 
     case class ReifyEff(sym: Symbol.VarSym, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, exp3: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ParYield(pats: List[Pattern], exps: List[ResolvedAst.Expression], exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class ParYield(matchExp: ResolvedAst.Expression, yieldExp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
   }
 
   sealed trait Pattern {

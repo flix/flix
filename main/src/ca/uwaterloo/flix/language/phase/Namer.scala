@@ -1038,19 +1038,10 @@ object Namer {
         case e => NamedAst.Expression.Par(e, loc)
       }
 
-    case WeededAst.Expression.ParYield(pats, exps, exp, loc) =>
-      // val sym = Symbol.freshVarSym(ident, BoundBy.Let)
-      // mapN(visitExp(exp1, env0, uenv0, ienv0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), uenv0, ienv0, tenv0)) {
-      //   case (e1, e2) => NamedAst.Expression.Let(sym, mod, e1, e2, loc)
-      // }
-      // TODO: visitExp(exp) with env0 ++ fresh idents -> pats.sym
-      // pats.map(p => p)
-      mapN(
-        traverse(exps)(visitExp(_, env0, uenv0, ienv0, tenv0)),
-        visitExp(exp, env0, uenv0, ienv0, tenv0)) {
-        case (es, e) =>
-          val ps = pats.map(visitPattern(_, env0, uenv0))
-          NamedAst.Expression.ParYield(ps, es, e, loc)
+    case WeededAst.Expression.ParYield(matchExp, yieldExp, loc) =>
+      mapN(visitExp(matchExp, env0, uenv0, ienv0, tenv0),
+        visitExp(yieldExp, env0, uenv0, ienv0, tenv0)) {
+        case (e0, e1) => NamedAst.Expression.ParYield(e0, e1, loc)
       }
 
     case WeededAst.Expression.Lazy(exp, loc) =>
@@ -1576,7 +1567,7 @@ object Namer {
       rulesFreeVars ++ defaultFreeVars
     case WeededAst.Expression.Spawn(exp, _) => freeVars(exp)
     case WeededAst.Expression.Par(exp, _) => freeVars(exp)
-    case WeededAst.Expression.ParYield(pats, exps, exp, _) => pats.flatMap(freeVars) ::: exps.flatMap(freeVars) ::: freeVars(exp)
+    case WeededAst.Expression.ParYield(exp0, exp1, _) => freeVars(exp0) ++ freeVars(exp1)
     case WeededAst.Expression.Lazy(exp, _) => freeVars(exp)
     case WeededAst.Expression.Force(exp, _) => freeVars(exp)
     case WeededAst.Expression.FixpointConstraintSet(cs, _) => cs.flatMap(freeVarsConstraint)
