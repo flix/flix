@@ -391,10 +391,8 @@ object Unification {
       // Apply the current substitution to `tpe`.
       val t = s(tpe)
 
-      val min = TypeMinimization.minimizeType(t)
-
       // Compute the type and effect variables that occur in `t`.
-      val fvs = min.typeVars
+      val fvs = t.typeVars
 
       // Ensure that `rvar` does not occur in `t` (e.g. being returned or as an effect).
 //      if (fvs.contains(rvar)) {
