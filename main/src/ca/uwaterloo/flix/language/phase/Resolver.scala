@@ -1211,6 +1211,11 @@ object Resolver {
             case (e1, e2, e3) => ResolvedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
           }
 
+        case NamedAst.Expression.Debug(exp, loc) =>
+          mapN(visitExp(exp, region)) {
+            case e => ResolvedAst.Expression.Debug(e, loc)
+          }
+
       }
 
       /**
