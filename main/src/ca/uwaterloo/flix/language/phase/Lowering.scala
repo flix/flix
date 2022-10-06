@@ -682,7 +682,9 @@ object Lowering {
       // Generate a call to `debug!(s)` which is actually impure.
       // However, we treat it as a pure call here. This also ensures no in-appropriate inlining happens.
       //
-      val line = loc.text match {
+
+      // Compute the source text of the inner expression. (What is being logged.)
+      val line = exp.loc.text match {
         case None => s"[${loc.format}] "
         case Some(sourceText) => s"[${loc.format}] $sourceText = "
       }

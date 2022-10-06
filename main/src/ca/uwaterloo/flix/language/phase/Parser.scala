@@ -939,7 +939,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Debug: Rule1[ParsedAst.Expression.Debug] = rule {
-      SP ~ keyword("dbg") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Debug
+      SP ~ keyword("debug") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Debug
     }
 
     def Discard: Rule1[ParsedAst.Expression.Discard] = rule {
