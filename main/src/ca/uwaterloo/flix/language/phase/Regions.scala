@@ -425,39 +425,42 @@ object Regions {
     val minned = TypeMinimization.minimizeType(tpe)
     val regs = regionVarsOf(minned)
     for (reg <- regs -- scope) {
-      if (relevantTo(reg, minned)) {
+      if (essentialTo(reg, minned)) {
         return TypeError.RegionVarEscapes(reg, minned, loc).toFailure
       }
     }
     ().toSuccess
-    /*
-    val escapes = regionVarsOf(minned) -- scope
+  }
 
-    // Return an error if a region variable escapes.
-    if (escapes.nonEmpty) {
-      val rvar = escapes.head
-      return TypeError.RegionVarEscapes(rvar, minned, loc).toFailure
-    }
-
-    // Otherwise return success.
-    ().toSuccess
+  /**
+    * Returns true iff the type variable `tvar` is essential to the type `tpe`.
+    *
+    * A type variable is essential if its ascription has a bearing on the resulting value.
+    * For example, in the type `a and (not a)`, `a` is not essential since the result is always `false`.
     */
+  def essentialTo(tvar: Type.Var, tpe: Type)(implicit flix: Flix): Boolean = {
+    if (!tpe.typeVars.contains(tvar)) {
+      // Case 1: The type variable is not present in the type. It cannot be essential.
+      false
+    } else {
+      // Case 2: The type variable is present in the type. Give it both values and see if the result changes.
+      val t0 = tpe.map {
+        case t if t == tvar => Type.False
+        case t => t
+      }
+
+      val t1 = tpe.map {
+        case t if t == tvar => Type.True
+        case t => t
+      }
+
+      !sameType(t0, t1)
+    }
   }
 
-  def relevantTo(tvar: Type.Var, tpe: Type)(implicit flix: Flix): Boolean = {
-    val t0 = tpe.map {
-      case t if t == tvar => Type.False
-      case t => t
-    }
-
-    val t1 = tpe.map {
-      case t if t == tvar => Type.True
-      case t => t
-    }
-
-    !sameType(t0, t1)
-  }
-
+  /**
+    * Returns true iff the two types denote the same Boolean function, using the same variables.
+    */
   private def sameType(t1: Type, t2: Type)(implicit flix: Flix): Boolean = {
     val renv = (t1.typeVars ++ t2.typeVars).foldLeft(RigidityEnv.empty) {
       case (acc, tvar) => acc.markRigid(tvar.sym)
