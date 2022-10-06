@@ -232,6 +232,7 @@ object PatternExhaustiveness {
       case Expression.Reify(_, _, _, _, _) => Nil
       case Expression.ReifyType(_, _, _, _, _, _) => Nil
       case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) => List(exp1, exp2, exp3).flatMap(visitExp(_, root))
+      case Expression.Debug(exp, _, _, _, _) => visitExp(exp, root)
     }
   }
 

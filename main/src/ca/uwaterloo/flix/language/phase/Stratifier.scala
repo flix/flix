@@ -471,6 +471,9 @@ object Stratifier {
         case (e1, e2, e3) => Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
       }
 
+    case Expression.Debug(exp, _, _, _, _) =>
+      visitExp(exp)
+
   }
 
   private def visitJvmMethod(method: JvmMethod)(implicit g: LabelledGraph, flix: Flix): Validation[JvmMethod, StratificationError] = method match {
