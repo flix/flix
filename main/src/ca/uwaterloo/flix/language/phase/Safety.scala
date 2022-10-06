@@ -303,7 +303,7 @@ object Safety {
         visit(exp1) ++ visit(exp2) ++ visit(exp3)
 
       case Expression.Debug(exp, _, _, _, _) =>
-        visitExp(exp)
+        visitExp(exp, renv)
 
     }
 

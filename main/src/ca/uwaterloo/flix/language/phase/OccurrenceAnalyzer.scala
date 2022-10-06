@@ -468,6 +468,8 @@ object OccurrenceAnalyzer {
 
     case Expression.MatchError(tpe, loc) =>
       (OccurrenceAst.Expression.MatchError(tpe, loc), OccurInfo.One)
+
+    case Expression.NoInline(exp, tpe, purity, loc) => ???
   }
 
   /**

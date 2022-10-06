@@ -1763,6 +1763,10 @@ object Lowering {
       val e3 = substExp(exp3, subst)
       Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
 
+    case Expression.Debug(exp, tpe, pur, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Debug(e, tpe, pur, eff, loc)
+
     case Expression.FixpointConstraintSet(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
 
   }
