@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, RigidityEnv, SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type}
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.unification.{TypeMinimization, Unification}
+import ca.uwaterloo.flix.language.phase.unification.TypeMinimization
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -443,19 +443,33 @@ object Regions {
       // Case 1: The type variable is not present in the type. It cannot be essential.
       false
     } else {
-      // Case 2: The type variable is present in the type. Give it both values and see if the result changes.
-      val t0 = tpe.map {
-        case t if t == tvar => Type.False
-        case t => t
-      }
-
-      val t1 = tpe.map {
-        case t if t == tvar => Type.True
-        case t => t
-      }
-
-      !sameType(t0, t1)
+      // Case 2: The type variable is present in the type. Check if it is essential to any of the booleans.
+      boolTypesOf(tpe).exists(essentialToBool(tvar, _))
     }
+  }
+
+  // MATT docs
+  def essentialToBool(tvar: Type.Var, tpe: Type)(implicit flix: Flix): Boolean = {
+    val t0 = tpe.map {
+      case t if t == tvar => Type.False
+      case t => t
+    }
+
+    val t1 = tpe.map {
+      case t if t == tvar => Type.True
+      case t => t
+    }
+
+    !sameType(t0, t1)
+  }
+
+  // MATT docs
+  private def boolTypesOf(t0: Type): List[Type] = t0 match {
+    case t if t.kind == Kind.Bool => List(t)
+    case _: Type.Var => Nil
+    case _: Type.Cst => Nil
+    case Type.Apply(tpe1, tpe2, _) => boolTypesOf(tpe1) ::: boolTypesOf(tpe2)
+    case Type.Alias(_, _, tpe, _) => boolTypesOf(tpe)
   }
 
   /**
