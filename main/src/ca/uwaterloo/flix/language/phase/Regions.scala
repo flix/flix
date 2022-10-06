@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, RigidityEnv, SourceLocati
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.{TypeMinimization, Unification}
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import scala.collection.immutable.SortedSet
 
@@ -462,11 +462,20 @@ object Regions {
     * Returns true iff the two types denote the same Boolean function, using the same variables.
     */
   private def sameType(t1: Type, t2: Type)(implicit flix: Flix): Boolean = {
-    val renv = (t1.typeVars ++ t2.typeVars).foldLeft(RigidityEnv.empty) {
-      case (acc, tvar) => acc.markRigid(tvar.sym)
+    val tvars = t1.typeVars ++ t2.typeVars
+
+    def eval(tpe: Type, trueVars: SortedSet[Type.Var]): Boolean = tpe match {
+      case Type.True => true
+      case Type.False => false
+      case Type.Apply(Type.Not, x, _) => eval(x, trueVars)
+      case Type.Apply(Type.Apply(Type.And, x1, _), x2, _) => eval(x1, trueVars) && eval(x2, trueVars)
+      case Type.Apply(Type.Apply(Type.Or, x1, _), x2, _) => eval(x1, trueVars) || eval(x2, trueVars)
+      case tvar: Type.Var => trueVars.contains(tvar)
+      case _ => throw InternalCompilerException(s"unexpected type $tpe")
     }
 
-    Unification.unifiesWith(t1, t2, renv)
+    val subsets = tvars.subsets()
+    subsets.forall(trueVars => eval(t1, trueVars) == eval(t2, trueVars))
   }
 
   /**
