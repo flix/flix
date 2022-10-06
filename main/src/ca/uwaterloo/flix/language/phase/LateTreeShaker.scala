@@ -286,6 +286,9 @@ object LateTreeShaker {
 
     case Expression.MatchError(_, _) =>
       Set.empty
+
+    case Expression.NoInline(exp, _, _, _) =>
+      visitExp(exp)
   }
 
   /**

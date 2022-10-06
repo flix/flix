@@ -382,6 +382,9 @@ object Finalize {
       case LiftedAst.Expression.MatchError(tpe, loc) =>
         val t = visitType(tpe)
         FinalAst.Expression.MatchError(t, loc)
+
+      case LiftedAst.Expression.NoInline(exp, _, _, _) =>
+        visit(exp)
     }
 
     visit(exp0)

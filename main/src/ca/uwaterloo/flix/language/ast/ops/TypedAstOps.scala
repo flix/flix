@@ -739,6 +739,9 @@ object TypedAstOps {
     case Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, _, _) =>
       (freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)) - sym
 
+    case Expression.Debug(exp, _, _, _, _) =>
+      freeVars(exp)
+
   }
 
   /**
