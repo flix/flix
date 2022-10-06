@@ -131,8 +131,8 @@ object Symbol {
   /**
     * Returns the case symbol for the given name `ident` in the given `enum`.
     */
-  def mkCaseSym(enum: Symbol.EnumSym, ident: Ident): CaseSym = {
-    new CaseSym(enum, ident.name, ident.loc)
+  def mkCaseSym(sym: Symbol.EnumSym, ident: Ident): CaseSym = {
+    new CaseSym(sym, ident.name, ident.loc)
   }
 
   /**

@@ -675,6 +675,10 @@ object Lowering {
       val e3 = visitExp(exp3)
       Expression.ReifyEff(sym, e1, e2, e3, t, pur, eff, loc)
 
+    case Expression.Debug(exp, loc) =>
+      ??? // TODO
+
+
   }
 
   /**

@@ -372,6 +372,14 @@ object TypedAst {
 
     case class ReifyEff(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
+    case class Debug(exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
+      def tpe: Type = Type.Unit
+
+      def pur: Type = Type.Pure
+
+      def eff: Type = Type.Empty
+    }
+
   }
 
   sealed trait Pattern {

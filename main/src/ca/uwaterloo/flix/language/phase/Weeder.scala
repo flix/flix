@@ -357,7 +357,7 @@ object Weeder {
   /**
     * Performs weeding on the given enum case `c0`.
     */
-  private def visitCase(c0: ParsedAst.Case, enum: Name.Ident)(implicit flix: Flix): WeededAst.Case = c0 match {
+  private def visitCase(c0: ParsedAst.Case, ident: Name.Ident)(implicit flix: Flix): WeededAst.Case = c0 match {
     case ParsedAst.Case(_, ident, tpe0, _) =>
       val tpe = tpe0.map(visitType).getOrElse(WeededAst.Type.Unit(ident.loc))
       WeededAst.Case(ident, tpe)
@@ -1721,6 +1721,12 @@ object Weeder {
           WeededAst.Expression.ReifyEff(ident, e1, e2, e3, mkSL(sp1, sp2))
       }
 
+    case ParsedAst.Expression.Debug(sp1, exp, sp2) =>
+      mapN(visitExp(exp, senv)) {
+        case e =>
+          WeededAst.Expression.Debug(e, mkSL(sp1, sp2))
+      }
+
   }
 
   /**
@@ -3010,6 +3016,7 @@ object Weeder {
     case ParsedAst.Expression.ReifyBool(sp1, _, _) => sp1
     case ParsedAst.Expression.ReifyType(sp1, _, _) => sp1
     case ParsedAst.Expression.ReifyPurity(sp1, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.Debug(sp1, _, _) => sp1
   }
 
   /**

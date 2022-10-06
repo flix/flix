@@ -518,10 +518,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Expression ~ optional(optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.Stm)
     }
 
-    def Discard: Rule1[ParsedAst.Expression.Discard] = rule {
-      SP ~ keyword("discard") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Discard
-    }
-
     def ForEach: Rule1[ParsedAst.Expression.ForEach] = {
 
       def ForEachFragment: Rule1[ParsedAst.ForEachFragment.ForEach] = rule {
@@ -747,7 +743,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         GetChannel | SelectChannel | Spawn | Par | Lazy | Force | Upcast | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
-        Discard | ForYield | ForEach | NewObject | UnaryLambda | FName | Tag | Hole
+        Discard | Debug| ForYield | ForEach | NewObject | UnaryLambda | FName | Tag | Hole
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -940,6 +936,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Resume: Rule1[ParsedAst.Expression] = rule {
       SP ~ keyword("resume") ~ Argument ~ SP ~> ParsedAst.Expression.Resume
+    }
+
+    def Debug: Rule1[ParsedAst.Expression.Debug] = rule {
+      SP ~ keyword("dbg") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Debug
+    }
+
+    def Discard: Rule1[ParsedAst.Expression.Discard] = rule {
+      SP ~ keyword("discard") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Discard
     }
 
     def Try: Rule1[ParsedAst.Expression] = {

@@ -358,12 +358,12 @@ object Namer {
   /**
     * Performs naming on the given enum case.
     */
-  private def visitCase(case0: WeededAst.Case, enum: Symbol.EnumSym, uenv0: UseEnv, ienv0: ImportEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.Case, NameError] = case0 match {
+  private def visitCase(case0: WeededAst.Case, enumSym: Symbol.EnumSym, uenv0: UseEnv, ienv0: ImportEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.Case, NameError] = case0 match {
     case WeededAst.Case(ident, tpe0) =>
       mapN(visitType(tpe0, uenv0, ienv0, tenv0)) {
         case tpe =>
-          val sym = Symbol.mkCaseSym(enum, ident)
-          NamedAst.Case(sym, tpe)
+          val caseSym = Symbol.mkCaseSym(enumSym, ident)
+          NamedAst.Case(caseSym, tpe)
       }
   }
 
@@ -1100,6 +1100,11 @@ object Namer {
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
       mapN(visitExp(exp1, env0, uenv0, ienv0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), uenv0, ienv0, tenv0), visitExp(exp3, env0, uenv0, ienv0, tenv0)) {
         case (e1, e2, e3) => NamedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
+      }
+
+    case WeededAst.Expression.Debug(exp, loc) =>
+      mapN(visitExp(exp, env0, uenv0, ienv0, tenv0)) {
+        case e => NamedAst.Expression.Debug(e, loc)
       }
 
   }

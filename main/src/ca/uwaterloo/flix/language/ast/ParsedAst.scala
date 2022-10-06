@@ -31,10 +31,10 @@ object ParsedAst {
     *
     * A collection of imports and declarations.
     *
-    * @param sp1   the position of the first character in the source.
-    * @param usesOrImports  the uses in the abstract syntax tree.
-    * @param decls the declarations in the abstract syntax tree.
-    * @param sp2   the position of the last character in the source.
+    * @param sp1           the position of the first character in the source.
+    * @param usesOrImports the uses in the abstract syntax tree.
+    * @param decls         the declarations in the abstract syntax tree.
+    * @param sp2           the position of the last character in the source.
     */
   case class CompilationUnit(sp1: SourcePosition, usesOrImports: Seq[ParsedAst.UseOrImport], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition)
 
@@ -1214,8 +1214,14 @@ object ParsedAst {
       */
     case class ReifyPurity(sp1: SourcePosition, exp1: ParsedAst.Expression, ident: Name.Ident, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
-    case class Debug(exp: ParsedAst.Expression, loc: SourceLocation) extends ParsedAst.Expression
-
+    /**
+      * Debug expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the expression to print.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Debug(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
   }
 
