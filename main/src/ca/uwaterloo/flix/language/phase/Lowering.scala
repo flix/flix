@@ -680,12 +680,16 @@ object Lowering {
     case Expression.Debug(exp, tpe, pur, eff, loc) =>
       //
       // Generate a call to `debug!(s)` which is actually impure.
-      // However, we treat it as a pure call here. This also ensures no in-approriate inlining happens.
+      // However, we treat it as a pure call here. This also ensures no in-appropriate inlining happens.
       //
-      val e1 = visitExp(exp)
+      val line = loc.text match {
+        case None => s"[${loc.format}] "
+        case Some(sourceText) => s"[${loc.format}] $sourceText = "
+      }
+      val e1 = Expression.Str(line, loc)
       val e2 = visitExp(exp)
-      val line = Expression.Binary(SemanticOperator.StringOp.Concat, e1, e2, Type.Unit, Type.Pure, Type.Empty, loc)
-      mkApplyDebug(line)
+      val concat = Expression.Binary(SemanticOperator.StringOp.Concat, e1, e2, Type.Str, Type.Pure, Type.Empty, loc)
+      mkApplyDebug(concat)
   }
 
   /**
@@ -1440,7 +1444,7 @@ object Lowering {
   }
 
   /**
-    * Returns the given expression `exp` in a box.
+    * Applies the given expression `exp` to the `debug` function.
     */
   private def mkApplyDebug(exp: Expression)(implicit root: Root, flix: Flix): Expression = {
     val loc = exp.loc

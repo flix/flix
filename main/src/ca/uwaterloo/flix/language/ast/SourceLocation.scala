@@ -94,6 +94,20 @@ case class SourceLocation(input: Option[ParserInput], source: Source, locationKi
   def format: String = s"${source.name}:$beginLine:$beginCol"
 
   /**
+    * Returns the source text of the source location.
+    */
+  def text: Option[String] = {
+    if (isMultiLine) {
+      None
+    } else {
+      val line = lineAt(beginLine)
+      val b = Math.min(beginCol - 1, line.length)
+      val e = Math.min(endCol - 1, line.length)
+      Some(line.substring(b, e))
+    }
+  }
+
+  /**
     * Returns the hashCode of `this` source location.
     */
   override def hashCode(): Int = source.hashCode() + beginLine + beginCol + endLine + endCol
