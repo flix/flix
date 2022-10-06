@@ -649,7 +649,7 @@ object PatternExhaustiveness {
         case Pattern.Tuple(elms, _, _) => (elms.map(patToCtor), elms.length)
         case a => (List(patToCtor(a)), 1)
       }
-      TyCon.Enum(sym.name, sym.enum, numArgs, args)
+      TyCon.Enum(sym.name, sym.enumSym, numArgs, args)
     }
     case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
     case Pattern.Array(elm, _, _) => TyCon.Array

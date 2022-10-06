@@ -770,6 +770,9 @@ object Stratifier {
 
     case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2) + labelledGraphOfExp(exp3)
+
+    case Expression.Debug(exp, _, _, _, _) =>
+      labelledGraphOfExp(exp)
   }
 
   /**

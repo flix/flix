@@ -1047,7 +1047,7 @@ object Typer {
         } yield (matchConstrs.flatten ++ ruleBodyConstrs.flatten, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.Tag(symUse, exp, tvar, loc) =>
-        if (symUse.sym.enum == Symbol.mkEnumSym("Choice")) {
+        if (symUse.sym.enumSym == Symbol.mkEnumSym("Choice")) {
           //
           // Special Case 1: Absent or Present Tag
           //
@@ -1082,7 +1082,7 @@ object Typer {
           //
 
           // Lookup the enum declaration.
-          val decl = root.enums(symUse.sym.enum)
+          val decl = root.enums(symUse.sym.enumSym)
 
           // Lookup the case declaration.
           val caze = decl.cases(symUse.sym)
@@ -2421,7 +2421,7 @@ object Typer {
 
       case KindedAst.Pattern.Tag(symUse, pat, tvar, loc) =>
         // Lookup the enum declaration.
-        val decl = root.enums(symUse.sym.enum)
+        val decl = root.enums(symUse.sym.enumSym)
 
         // Lookup the case declaration.
         val caze = decl.cases(symUse.sym)
