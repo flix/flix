@@ -1214,6 +1214,9 @@ object ParsedAst {
       */
     case class ReifyPurity(sp1: SourcePosition, exp1: ParsedAst.Expression, ident: Name.Ident, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
+    case class Debug(exp: ParsedAst.Expression, loc: SourceLocation) extends ParsedAst.Expression
+
+
   }
 
   /**
