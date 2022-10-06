@@ -272,9 +272,6 @@ object VarNumbering {
 
       case Expression.MatchError(_, _) =>
         i0
-
-      case Expression.NoInline(exp, _, _, _) =>
-        visitExp(exp, i0)
     }
 
     /**

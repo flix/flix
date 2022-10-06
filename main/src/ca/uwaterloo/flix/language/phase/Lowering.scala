@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Expression.NewChannel
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SemanticOperator, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -55,6 +55,8 @@ object Lowering {
     lazy val Lift3: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift3")
     lazy val Lift4: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift4")
     lazy val Lift5: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift5")
+
+    lazy val Debug: Symbol.DefnSym = Symbol.mkDefnSym("debug")
 
     /**
       * Returns the definition associated with the given symbol `sym`.
@@ -676,8 +678,14 @@ object Lowering {
       Expression.ReifyEff(sym, e1, e2, e3, t, pur, eff, loc)
 
     case Expression.Debug(exp, tpe, pur, eff, loc) =>
-      Expression.Debug(exp, tpe, pur, eff, loc)
-
+      //
+      // Generate a call to `debug!(s)` which is actually impure.
+      // However, we treat it as a pure call here. This also ensures no in-approriate inlining happens.
+      //
+      val e1 = visitExp(exp)
+      val e2 = visitExp(exp)
+      val line = Expression.Binary(SemanticOperator.StringOp.Concat, e1, e2, Type.Unit, Type.Pure, Type.Empty, loc)
+      mkApplyDebug(line)
   }
 
   /**
@@ -1429,6 +1437,16 @@ object Lowering {
     val waitExps = mkParWaits(chanSymsWithExps)
     val tuple = Expression.Tuple(waitExps, tpe, pur, eff, loc.asSynthetic)
     mkParChannels(tuple, chanSymsWithExps)
+  }
+
+  /**
+    * Returns the given expression `exp` in a box.
+    */
+  private def mkApplyDebug(exp: Expression)(implicit root: Root, flix: Flix): Expression = {
+    val loc = exp.loc
+    val tpe = Type.mkImpureArrow(exp.tpe, Type.Unit, loc)
+    val innerExp = Expression.Def(Defs.Debug, tpe, loc)
+    Expression.Apply(innerExp, List(exp), Type.Unit, Type.Pure, Type.Empty, loc)
   }
 
   /**

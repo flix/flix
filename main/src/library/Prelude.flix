@@ -130,6 +130,17 @@ pub def println(x: a): Unit \ IO with ToString[a] =
     x |> ToString.toString |> println(getOut())
 
 ///
+/// Prints the given string `x`.
+///
+/// Note: For internal use only. The actual `debug(exp)` expression is parsed and ultimately rewritten to call this function.
+///
+@Internal
+def debug(x: String): Unit \ IO =
+    import static get java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
+    import java.io.PrintStream.println(String): Unit \ IO;
+    x |> println(getOut())
+
+///
 /// Crashes the current process with the given message `m`.
 ///
 pub def bug!(m: String): a = {
