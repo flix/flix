@@ -89,7 +89,12 @@ case class SourceLocation(input: Option[ParserInput], source: Source, locationKi
   }
 
   /**
-    * Returns a formatted string representation of `this` source location.
+    * Returns a string representation of `this` source location with the line number.
+    */
+  def formatWithLine: String = s"${source.name}:$beginLine"
+
+  /**
+    * Returns a string representation of `this` source location with the line and column numbers.
     */
   def format: String = s"${source.name}:$beginLine:$beginCol"
 

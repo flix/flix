@@ -678,19 +678,10 @@ object Lowering {
       Expression.ReifyEff(sym, e1, e2, e3, t, pur, eff, loc)
 
     case Expression.Debug(exp, tpe, pur, eff, loc) =>
-      //
-      // Generate a call to `debug!(s)` which is actually impure.
-      // However, we treat it as a pure call here. This also ensures no in-appropriate inlining happens.
-      //
-
-      // Compute the source text of the inner expression. (What is being logged.)
-      val line = exp.loc.text match {
-        case None => s"[${loc.format}] "
-        case Some(sourceText) => s"[${loc.format}] $sourceText = "
-      }
+      val line = s"[${loc.formatWithLine}] "
       val e1 = Expression.Str(line, loc)
       val e2 = visitExp(exp)
-      val concat = Expression.Binary(SemanticOperator.StringOp.Concat, e1, e2, Type.Str, Type.Pure, Type.Empty, loc)
+      val concat = Expression.Binary(SemanticOperator.StringOp.Concat, e1, e2, Type.Str, e2.pur, e2.eff, loc)
       mkApplyDebug(concat)
   }
 
@@ -1449,10 +1440,14 @@ object Lowering {
     * Applies the given expression `exp` to the `debug` function.
     */
   private def mkApplyDebug(exp: Expression)(implicit root: Root, flix: Flix): Expression = {
+    //
+    // Generate a call to `debug!(s)` which is actually impure.
+    // However, we treat it as a pure call here. This also ensures no in-appropriate inlining happens.
+    //
     val loc = exp.loc
     val tpe = Type.mkImpureArrow(exp.tpe, Type.Unit, loc)
     val innerExp = Expression.Def(Defs.Debug, tpe, loc)
-    Expression.Apply(innerExp, List(exp), Type.Unit, Type.Pure, Type.Empty, loc)
+    Expression.Apply(innerExp, List(exp), Type.Unit, Type.Impure, Type.Empty, loc)
   }
 
   /**
