@@ -274,7 +274,7 @@ object Inliner {
 
     case OccurrenceAst.Expression.Is(sym, exp, purity, loc) =>
       val e = visitExp(exp, subst0)
-      val enum0 = root.enums(sym.enum)
+      val enum0 = root.enums(sym.enumSym)
       if (enum0.cases.size == 1 && e.purity == Pure)
           LiftedAst.Expression.True(loc)
       else

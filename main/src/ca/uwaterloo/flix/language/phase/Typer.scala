@@ -1047,7 +1047,7 @@ object Typer {
         } yield (matchConstrs.flatten ++ ruleBodyConstrs.flatten, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.Tag(symUse, exp, tvar, loc) =>
-        if (symUse.sym.enum == Symbol.mkEnumSym("Choice")) {
+        if (symUse.sym.enumSym == Symbol.mkEnumSym("Choice")) {
           //
           // Special Case 1: Absent or Present Tag
           //
@@ -1082,7 +1082,7 @@ object Typer {
           //
 
           // Lookup the enum declaration.
-          val decl = root.enums(symUse.sym.enum)
+          val decl = root.enums(symUse.sym.enumSym)
 
           // Lookup the case declaration.
           val caze = decl.cases(symUse.sym)
@@ -1770,6 +1770,15 @@ object Typer {
           resultEff = Type.mkUnion(List(eff1, eff2, eff3), loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultPur, resultEff)
 
+      case KindedAst.Expression.Debug(exp, loc) =>
+        for {
+          (constrs, tpe, pur, eff) <- visitExp(exp)
+          condType <- expectTypeM(expected = Type.Str, actual = tpe, exp.loc)
+          resultTyp = Type.Unit
+          resultPur = pur
+          resultEff = eff
+        } yield (constrs, resultTyp, resultPur, resultEff)
+
     }
 
     /**
@@ -2315,6 +2324,13 @@ object Typer {
         val pur = Type.mkAnd(e1.pur, e2.pur, e3.pur, loc)
         val eff = Type.mkUnion(List(e1.eff, e2.eff, e3.eff), loc)
         TypedAst.Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
+
+      case KindedAst.Expression.Debug(exp, loc) =>
+        val e = visitExp(exp, subst0)
+        val tpe = Type.Unit
+        val pur = e.pur
+        val eff = e.eff
+        TypedAst.Expression.Debug(e, tpe, pur, eff, loc)
     }
 
     /**
@@ -2405,7 +2421,7 @@ object Typer {
 
       case KindedAst.Pattern.Tag(symUse, pat, tvar, loc) =>
         // Lookup the enum declaration.
-        val decl = root.enums(symUse.sym.enum)
+        val decl = root.enums(symUse.sym.enumSym)
 
         // Lookup the case declaration.
         val caze = decl.cases(symUse.sym)

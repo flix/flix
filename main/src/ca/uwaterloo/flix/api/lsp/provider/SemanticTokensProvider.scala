@@ -537,6 +537,9 @@ object SemanticTokensProvider {
       val o = getSemanticTokenType(sym, exp1.tpe)
       val t = SemanticToken(o, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+    case Expression.Debug(exp, _, _, _, _) =>
+      visitExp(exp)
   }
 
   /**

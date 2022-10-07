@@ -373,7 +373,7 @@ object GenExpression {
         Symbol.mkEnumSym("RedBlackTree.RedBlackTree"),
         Symbol.mkEnumSym("RedBlackTree.Color"),
       )
-      if (exp.tpe == MonoType.Unit && whitelistedEnums.contains(sym.enum)) {
+      if (exp.tpe == MonoType.Unit && whitelistedEnums.contains(sym.enumSym)) {
         // TODO: This is could introduce errors by if exp has side effects
         // Read the "unitInstance" field of the appropriate class.
         val declaration = classType.name.toInternalName
