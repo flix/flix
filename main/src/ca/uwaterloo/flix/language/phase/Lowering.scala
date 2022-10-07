@@ -1441,8 +1441,7 @@ object Lowering {
     */
   private def mkApplyDebug(exp: Expression)(implicit root: Root, flix: Flix): Expression = {
     //
-    // Generate a call to `debug!(s)` which is actually impure.
-    // However, we treat it as a pure call here. This also ensures no in-appropriate inlining happens.
+    // Note that we mark the call as impure (even though it may have been typed as pure!)
     //
     val loc = exp.loc
     val tpe = Type.mkImpureArrow(exp.tpe, Type.Unit, loc)

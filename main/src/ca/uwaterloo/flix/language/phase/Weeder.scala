@@ -331,7 +331,7 @@ object Weeder {
             case (macc, caze: ParsedAst.Case) =>
               val tagName = caze.ident
               macc.get(tagName) match {
-                case None => (macc + (tagName -> visitCase(caze, ident))).toSuccess
+                case None => (macc + (tagName -> visitCase(caze))).toSuccess
                 case Some(otherTag) =>
                   val enumName = ident.name
                   val loc1 = otherTag.ident.loc
@@ -357,7 +357,7 @@ object Weeder {
   /**
     * Performs weeding on the given enum case `c0`.
     */
-  private def visitCase(c0: ParsedAst.Case, ident: Name.Ident)(implicit flix: Flix): WeededAst.Case = c0 match {
+  private def visitCase(c0: ParsedAst.Case)(implicit flix: Flix): WeededAst.Case = c0 match {
     case ParsedAst.Case(_, ident, tpe0, _) =>
       val tpe = tpe0.map(visitType).getOrElse(WeededAst.Type.Unit(ident.loc))
       WeededAst.Case(ident, tpe)

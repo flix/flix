@@ -2328,8 +2328,8 @@ object Typer {
       case KindedAst.Expression.Debug(exp, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = Type.Unit
-        val pur = Type.Impure
-        val eff = Type.Empty
+        val pur = e.pur
+        val eff = e.eff
         TypedAst.Expression.Debug(e, tpe, pur, eff, loc)
     }
 
