@@ -963,6 +963,11 @@ class TestTyper extends FunSuite with TestUtils {
         |        case Absent => 1
         |    }
         |
+        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
