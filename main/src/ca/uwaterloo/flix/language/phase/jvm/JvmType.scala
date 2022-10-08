@@ -106,10 +106,4 @@ object JvmType {
   //
 
   val Unit: JvmType.Reference = Reference(BackendObjType.Unit.jvmName)
-
-  //
-  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Scala Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  //
-
-  val ScalaMathPkg: JvmType.Reference = Reference(JvmName.ScalaMathPkg)
 }

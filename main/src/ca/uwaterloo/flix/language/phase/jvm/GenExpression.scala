@@ -373,7 +373,7 @@ object GenExpression {
         Symbol.mkEnumSym("RedBlackTree.RedBlackTree"),
         Symbol.mkEnumSym("RedBlackTree.Color"),
       )
-      if (exp.tpe == MonoType.Unit && whitelistedEnums.contains(sym.enum)) {
+      if (exp.tpe == MonoType.Unit && whitelistedEnums.contains(sym.enumSym)) {
         // TODO: This is could introduce errors by if exp has side effects
         // Read the "unitInstance" field of the appropriate class.
         val declaration = classType.name.toInternalName
@@ -943,7 +943,7 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESPECIAL, className, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
 
       // For each method, compile the closure which implements the body of that method and store it in a field
-      methods.zipWithIndex.foreach { case (m, i) => 
+      methods.zipWithIndex.foreach { case (m, i) =>
         visitor.visitInsn(DUP)
         GenExpression.compileExpression(m.clo, visitor, currentClass, lenv0, entryPoint)
         visitor.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(m.clo.tpe).toDescriptor)
@@ -1410,12 +1410,11 @@ object GenExpression {
         case Int64Op.Exp => (L2D, D2L)
         case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
       }
-      visitor.visitFieldInsn(GETSTATIC, JvmName.ScalaMathPkg.toInternalName, "MODULE$", JvmType.ScalaMathPkg.toDescriptor)
       compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
       visitor.visitInsn(castToDouble)
       compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
       visitor.visitInsn(castToDouble)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.ScalaMathPkg.toInternalName, "pow",
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
         AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
       visitor.visitInsn(castFromDouble)
       sop match {

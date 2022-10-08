@@ -184,7 +184,7 @@ object Main {
       }
     } catch {
       case ex: RuntimeException =>
-        Console.println(ex.getMessage)
+        ex.printStackTrace()
         System.exit(1)
     }
   }
