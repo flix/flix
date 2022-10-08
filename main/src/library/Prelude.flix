@@ -130,15 +130,29 @@ pub def println(x: a): Unit \ IO with ToString[a] =
     x |> ToString.toString |> println(getOut())
 
 ///
-/// Prints the given string `x`.
+/// Prints the given prefix along with a automatic string representation of `x`.
 ///
 /// Note: For internal use only. The actual `debug(exp)` expression is parsed and ultimately rewritten to call this function.
 ///
 @Internal
-def debug(x: String): Unit \ IO =
+def debug(prefix: String, x: a): Unit \ IO =
     import static get java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
     import java.io.PrintStream.println(String): Unit \ IO;
-    x |> println(getOut())
+    import java.lang.Object.toString(): String;
+    let magic = match reifyType a {
+        case ErasedType => toString as a -> String
+        case ReifiedUnit => _ -> "()"
+        case ReifiedBool => (b -> if (b) "true" else "false") as a -> String
+        case ReifiedChar => Char.toString as a -> String
+        case ReifiedFloat32 => Float32.toString as a -> String
+        case ReifiedFloat64 => Float64.toString as a -> String
+        case ReifiedInt8 => Int8.toString as a -> String
+        case ReifiedInt16 => Int16.toString as a -> String
+        case ReifiedInt32 => Int32.toString as a -> String
+        case ReifiedInt64 => Int64.toString as a -> String
+        case ReifiedArray(_) => toString as a -> String
+    };
+    "${prefix} ${magic(x)}" |> println(getOut())
 
 ///
 /// Crashes the current process with the given message `m`.

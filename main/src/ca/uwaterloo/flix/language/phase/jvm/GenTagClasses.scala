@@ -74,12 +74,7 @@ object GenTagClasses {
     * return new Integer(this.value);
     * }
     *
-    * Next, we will generate the `toString()` method which will always throws an exception, since `toString` should not be called.
-    * The `toString` method is always the following:
-    *
-    * public String toString() throws Exception {
-    * throw new Exception("equals method shouldn't be called")
-    * }
+    * Next, we will generate the `toString()` method.
     *
     * Next, we will generate the `hashCode()` method which will always throws an exception, since `hashCode` should not be called.
     * The `hashCode` method is always the following:
@@ -145,9 +140,7 @@ object GenTagClasses {
     // Generate the `getTag` method.
     compileGetTagMethod(visitor, tag.tag)
 
-    // Generate the `toString` method.
-    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String),
-      "toString method shouldn't be called")
+    compileToStringMethod(visitor, tag.tag)
 
     // Generate the `hashCode` method.
     AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
@@ -217,6 +210,14 @@ object GenTagClasses {
     */
   def compileGetTagMethod(visitor: ClassWriter, tag: String)(implicit root: Root, flix: Flix): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getTag", AsmOps.getMethodDescriptor(Nil, JvmType.String), null, null)
+    method.visitLdcInsn(tag)
+    method.visitInsn(ARETURN)
+    method.visitMaxs(1, 1)
+    method.visitEnd()
+  }
+
+  def compileToStringMethod(visitor: ClassWriter, tag: String)(implicit root: Root, flix: Flix): Unit = {
+    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), null, null)
     method.visitLdcInsn(tag)
     method.visitInsn(ARETURN)
     method.visitMaxs(1, 1)
