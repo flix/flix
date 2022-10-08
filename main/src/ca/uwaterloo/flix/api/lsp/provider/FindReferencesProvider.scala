@@ -139,7 +139,7 @@ object FindReferencesProvider {
   }
 
   private def findCaseReferences(sym: Symbol.CaseSym)(implicit index: Index, root: Root): JObject = {
-    val defSite = Location.from(root.enums(sym.enum).cases(sym).loc)
+    val defSite = Location.from(root.enums(sym.enumSym).cases(sym).loc)
     val useSites = index.usesOf(sym)
     val locs = defSite :: useSites.toList.map(Location.from)
     ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))

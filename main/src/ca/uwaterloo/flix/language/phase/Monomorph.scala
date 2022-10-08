@@ -661,6 +661,10 @@ object Monomorph {
         } else {
           visitExp(exp3, env0)
         }
+
+      case Expression.Debug(exp, tpe, pur, eff, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.Debug(e, subst0(tpe), pur, eff, loc)
     }
 
     /**

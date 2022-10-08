@@ -407,6 +407,9 @@ object Regions {
         case (e1, e2, e3) => checkType(tpe, loc)
       }
 
+    case Expression.Debug(exp, _, _, _, _) =>
+      visitExp(exp)
+
   }
 
   def visitJvmMethod(method: JvmMethod)(implicit scope: List[Type.Var], flix: Flix): Validation[Unit, CompilationMessage] = method match {

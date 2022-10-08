@@ -67,7 +67,7 @@ object FormatType {
       * Transforms the given record `fieldType` pair into a string.
       */
     def visitRecordFieldType(fieldType: SimpleType.RecordFieldType): String = fieldType match {
-      case SimpleType.RecordFieldType(field, tpe) => s"$field :: ${visit(tpe, Mode.Type)}"
+      case SimpleType.RecordFieldType(field, tpe) => s"$field = ${visit(tpe, Mode.Type)}"
     }
 
     /**
