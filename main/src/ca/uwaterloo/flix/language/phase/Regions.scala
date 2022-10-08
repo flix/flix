@@ -448,7 +448,10 @@ object Regions {
     }
   }
 
-  // MATT docs
+  /**
+    * Returns true iff the type variable `tvar` is essential to the boolean formula `tpe`.
+    * Assumes that `tvar` is present in the type.
+    */
   def essentialToBool(tvar: Type.Var, tpe: Type)(implicit flix: Flix): Boolean = {
     val t0 = tpe.map {
       case t if t == tvar => Type.False
@@ -463,7 +466,9 @@ object Regions {
     !sameType(t0, t1)
   }
 
-  // MATT docs
+  /**
+    * Extracts all the boolean formulas from the given type `t0`.
+    */
   private def boolTypesOf(t0: Type): List[Type] = t0 match {
     case t if t.kind == Kind.Bool => List(t)
     case _: Type.Var => Nil
@@ -478,6 +483,11 @@ object Regions {
   private def sameType(t1: Type, t2: Type)(implicit flix: Flix): Boolean = {
     val tvars = t1.typeVars ++ t2.typeVars
 
+    /**
+      * Evaluates the given boolean formula,
+      * where `trueVars` are the variables ascribed the value TRUE,
+      * and all other variables are ascribed the value FALSE.
+      */
     def eval(tpe: Type, trueVars: SortedSet[Type.Var]): Boolean = tpe match {
       case Type.True => true
       case Type.False => false
