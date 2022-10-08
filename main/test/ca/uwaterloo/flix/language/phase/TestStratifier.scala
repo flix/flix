@@ -32,7 +32,7 @@ class TestStratifier extends FunSuite with TestUtils {
         |  A(c: String) :- X(c), not A(c).
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[StratificationError](result)
   }
 
@@ -44,7 +44,7 @@ class TestStratifier extends FunSuite with TestUtils {
         |  B(c: String) :- X(c), not A(c).
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[StratificationError](result)
   }
 
@@ -56,7 +56,7 @@ class TestStratifier extends FunSuite with TestUtils {
         |  B(c: String) :- X(c), A(c).
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[StratificationError](result)
   }
 
@@ -77,7 +77,7 @@ class TestStratifier extends FunSuite with TestUtils {
         |  K(c: String) :- X(c), not A(c).
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[StratificationError](result)
   }
 
@@ -89,7 +89,7 @@ class TestStratifier extends FunSuite with TestUtils {
         |  A(c) :- B(c), C(c).
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[StratificationError](result)
   }
 
@@ -101,7 +101,7 @@ class TestStratifier extends FunSuite with TestUtils {
         |  B(c) :- X(c), not B(c).
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[StratificationError](result)
   }
 
@@ -116,7 +116,7 @@ class TestStratifier extends FunSuite with TestUtils {
         |  D(c: String) :- X(c), not A(c).
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[StratificationError](result)
   }
 
@@ -176,7 +176,7 @@ class TestStratifier extends FunSuite with TestUtils {
         |  A(c: String) :- X(c), fix A(c).
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[StratificationError](result)
   }
 
@@ -188,7 +188,7 @@ class TestStratifier extends FunSuite with TestUtils {
         |  B(c: String) :- X(c), fix A(c).
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[StratificationError](result)
   }
 
@@ -202,7 +202,7 @@ class TestStratifier extends FunSuite with TestUtils {
         |  C(c: String) :- A(c).
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[StratificationError](result)
   }
 
