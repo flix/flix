@@ -53,10 +53,10 @@ object InlayHintProvider {
         val label = ": " + FormatType.formatType(minType)
 
         // Hide long inlay hints.
-        if (isTypeVar(minType) || label.length >= 14)
+        if (isTypeVar(minType))
           None
         else
-          Some(InlayHint(pos, label, Some(InlayHintKind.Type), Nil, ""))
+          Some(InlayHint(pos, abbreviate(label, 14), Some(InlayHintKind.Type), Nil, ""))
     }
   }
 
@@ -67,5 +67,16 @@ object InlayHintProvider {
     case Type.Var(_, _) => true
     case _ => false
   }
+
+  /**
+    * Returns `s` if it less than or equal to `l` chars.
+    *
+    * Otherwise returns a prefix of `s` with …
+    */
+  private def abbreviate(s: String, l: Int): String =
+    if (s.length <= l)
+      s
+    else
+      s.substring(0, l - 1) + "…"
 
 }
