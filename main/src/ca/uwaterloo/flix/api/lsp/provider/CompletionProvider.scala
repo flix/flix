@@ -606,11 +606,11 @@ object CompletionProvider {
     val (completion, _) = enm.cases.foldLeft("", 1)({
       case ((acc, z), (sym , cas)) => {
         val (str, k) = cas.tpe.typeConstructor match {
-          case Some(TypeConstructor.Unit) => (s"$sym => $${${z+1}:???}", z + 1)
+          case Some(TypeConstructor.Unit) => (s"${sym.name} => $${${z+1}:???}", z + 1)
           case Some(TypeConstructor.Tuple(arity)) => (List.range(1, arity + 1)
             .map(elem => s"$${${elem + z}:_elem$elem}")
-            .mkString(s"$sym(", ", ", s") => $${${arity + z + 1}:???}"), z + arity + 1)
-          case _ => (s"$sym($${${z + 1}:elem}) => $${${z + 2}:???}", z + 2)
+            .mkString(s"${sym.name}(", ", ", s") => $${${arity + z + 1}:???}"), z + arity + 1)
+          case _ => (s"${sym.name}($${${z + 1}:_elem}) => $${${z + 2}:???}", z + 2)
         }
         (acc + "    case " + str + "\n", k)
       }
