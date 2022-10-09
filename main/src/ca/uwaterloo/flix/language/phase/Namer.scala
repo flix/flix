@@ -92,7 +92,7 @@ object Namer {
         val sigNs = Name.extendNName(ns0, ident)
         val defsAndSigs0 = prog0.defsAndSigs.getOrElse(sigNs, Map.empty)
         val classes0 = prog0.classes.getOrElse(ns0, Map.empty)
-        lookupUpperName(ident, ns0, prog0) match {
+        lookupUpperName(ident, ns0, prog0, uenv0, ienv0) match {
           case LookupResult.NotDefined =>
             // Case 1: The class does not already exist. Update it.
             flatMapN(visitClass(decl, uenv0, ienv0, Map.empty, ns0)) {
@@ -150,7 +150,7 @@ object Namer {
      */
       case enum0@WeededAst.Declaration.Enum(_, _, _, ident, _, _, _, _) =>
         val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
-        lookupUpperName(ident, ns0, prog0) match {
+        lookupUpperName(ident, ns0, prog0, uenv0, ienv0) match {
           case LookupResult.NotDefined =>
             // Case 1: The enum does not exist in the namespace. Update it.
             visitEnum(enum0, uenv0, ienv0, ns0) map {
@@ -167,7 +167,7 @@ object Namer {
      */
       case alias0@WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams0, tpe0, loc) =>
         val typeAliases0 = prog0.typeAliases.getOrElse(ns0, Map.empty)
-        lookupUpperName(ident, ns0, prog0) match {
+        lookupUpperName(ident, ns0, prog0, uenv0, ienv0) match {
           case LookupResult.NotDefined =>
             // Case 1: The type alias does not exist in the namespace. Add it.
             visitTypeAlias(alias0, uenv0, ienv0, ns0) map {
@@ -182,7 +182,7 @@ object Namer {
       case decl@WeededAst.Declaration.Effect(_, _, _, ident, _, _) =>
         val effs0 = prog0.effects.getOrElse(ns0, Map.empty)
         val opNs = Name.extendNName(ns0, ident)
-        lookupUpperName(ident, ns0, prog0) match {
+        lookupUpperName(ident, ns0, prog0, uenv0, ienv0) match {
           case LookupResult.NotDefined =>
             // Case 1: The effect does not exist. Add it.
             flatMapN(visitEffect(decl, uenv0, ienv0, Map.empty, ns0)) {
@@ -242,22 +242,27 @@ object Namer {
   /**
     * Looks up the uppercase name in the given namespace and root.
     */
-  private def lookupUpperName(ident: Name.Ident, ns0: Name.NName, prog0: NamedAst.Root): NameLookupResult = {
+  private def lookupUpperName(ident: Name.Ident, ns0: Name.NName, prog0: NamedAst.Root, uenv0: UseEnv, ienv0: ImportEnv): NameLookupResult = {
     val classes0 = prog0.classes.getOrElse(ns0, Map.empty)
     val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
     val typeAliases0 = prog0.typeAliases.getOrElse(ns0, Map.empty)
     val effects0 = prog0.effects.getOrElse(ns0, Map.empty)
-    (classes0.get(ident.name), enums0.get(ident.name), typeAliases0.get(ident.name), effects0.get(ident.name)) match {
+    val name = ident.name
+    (classes0.get(name), enums0.get(name), typeAliases0.get(name), effects0.get(name), uenv0.upperNames.get(name), ienv0.imports.get(name)) match {
       // Case 1: The name is unused.
-      case (None, None, None, None) => LookupResult.NotDefined
+      case (None, None, None, None, None, None) => LookupResult.NotDefined
       // Case 2: A class with the name already exists.
-      case (Some(clazz), None, None, None) => LookupResult.AlreadyDefined(clazz.sym.loc)
+      case (Some(clazz), None, None, None, None, None) => LookupResult.AlreadyDefined(clazz.sym.loc)
       // Case 3: An enum with the name already exists.
-      case (None, Some(enum), None, None) => LookupResult.AlreadyDefined(enum.sym.loc)
+      case (None, Some(enum), None, None, None, None) => LookupResult.AlreadyDefined(enum.sym.loc)
       // Case 4: A type alias with the name already exists.
-      case (None, None, Some(typeAlias), None) => LookupResult.AlreadyDefined(typeAlias.sym.loc)
+      case (None, None, Some(typeAlias), None, None, None) => LookupResult.AlreadyDefined(typeAlias.sym.loc)
       // Case 5: An effect with the name already exists.
-      case (None, None, None, Some(eff)) => LookupResult.AlreadyDefined(eff.sym.loc)
+      case (None, None, None, Some(eff), None, None) => LookupResult.AlreadyDefined(eff.sym.loc)
+      // Case 6: A use with the same name already exists.
+      case (None, None, None, None, Some(use), None) => LookupResult.AlreadyDefined(use.loc)
+      // Case 7: An import with the same name already exists.
+      case (None, None, None, None, None, Some(imp)) => LookupResult.AlreadyDefined(SourceLocation.mk(imp.sp1, imp.sp2))
       // Impossible.
       case _ => throw InternalCompilerException("Unexpected duplicate name found.")
     }
