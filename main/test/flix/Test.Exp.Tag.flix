@@ -163,7 +163,7 @@ namespace Test/Exp/Tag {
     def testRecordTag01(): A = A.OfRecord(a = 123, b = 'x')
 
     @test
-    def testRecordTag02(): A = A.OfNestedRecord(a = (b = 123, c = 'x'))
+    def testRecordTag02(): A = A.OfRecordOfTuple(a = (b = 123, c = 'x'))
 
     pub enum Suit {
         case Hearts, Diamonds, Clubs, Spades
