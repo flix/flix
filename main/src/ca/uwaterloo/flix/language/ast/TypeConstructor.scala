@@ -322,9 +322,12 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represents a region as a type-level boolean constant.
+    * A type constructor that represents a region.
     */
-  case class RegionToBool(sym: Symbol.RegionSym) extends TypeConstructor {
+  case class Region(sym: Symbol.RegionSym) extends TypeConstructor {
+    /**
+      * A region represented as a type level Boolean.
+      */
     def kind: Kind = Kind.Bool
   }
 
