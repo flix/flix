@@ -43,7 +43,7 @@ instance Boxable[Map[k, v]] with Boxable[k], Boxable[v]
 
 instance Hash[Map[k, v]] with Hash[k], Hash[v] {
     pub def hash(m: Map[k, v]): Int32 =
-        Map.foldLeftWithKey((acc, k, v) -> acc `Hash.combine` Hash.hash(k) `Hash.combine` Hash.hash(v), 0, m)
+        Map.foldLeftWithKey((acc, k, v) -> acc `Hash.combine` Hash.hash(k) `Hash.combine` Hash.hash(v), Hash.magic(), m)
 }
 
 instance Functor[Map[k]] {

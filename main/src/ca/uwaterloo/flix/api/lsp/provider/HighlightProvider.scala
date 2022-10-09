@@ -133,7 +133,7 @@ object HighlightProvider {
   }
 
   private def highlightCase(sym: Symbol.CaseSym)(implicit index: Index, root: Root): JObject = {
-    val write = (root.enums(sym.enum).cases(sym).loc, DocumentHighlightKind.Write)
+    val write = (root.enums(sym.enumSym).cases(sym).loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(write :: reads)
   }
