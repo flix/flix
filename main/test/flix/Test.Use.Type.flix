@@ -1,12 +1,13 @@
-use A.Color
-use A/B.Currency
-use A/B.Kelvin
-use A.{Color => MyColor}
-use A/B.{Currency => MyCurrency}
-use A/B.Meter
-use A/B.{Meter => MyMeter}
 
 namespace X {
+    use A.Color
+    use A/B.Currency
+    use A/B.Kelvin
+    use A.{Color => MyColor}
+    use A/B.{Currency => MyCurrency}
+    use A/B.Meter
+    use A/B.{Meter => MyMeter}
+
     pub def f(): Color = Color.Red
     pub def g(): Color = Color.Red
     pub def h(): Currency = Currency.USD
