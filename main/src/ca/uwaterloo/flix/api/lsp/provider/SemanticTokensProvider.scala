@@ -671,7 +671,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Complement => false
     case TypeConstructor.Union => false
     case TypeConstructor.Intersection => false
-    case TypeConstructor.Region => false
+    case TypeConstructor.RegionToStar => false
     case TypeConstructor.Empty => false
     case TypeConstructor.All => false
   }
