@@ -210,12 +210,12 @@ object TypeError {
 
     def explain(formatter: Formatter): Option[String] = Some(
       s"""Flix does not support sub-typing nor sub-effecting.
-        |
-        |Nevertheless, 'upcast' is way to use both in a safe manner, for example:
-        |
-        |    let s = "Hello World";
-        |    let o: ##java.lang.Object = upcast s;
-        |""".stripMargin
+         |
+         |Nevertheless, 'upcast' is way to use both in a safe manner, for example:
+         |
+         |    let s = "Hello World";
+         |    let o: ##java.lang.Object = upcast s;
+         |""".stripMargin
     )
   }
 
@@ -647,31 +647,31 @@ object TypeError {
   }
 
   /**
-    * An error indicating that a region variable escapes its scope.
+    * An error indicating that a region symbol escapes its scope.
     *
-    * @param rvar the region variable.
-    * @param tpe  the type wherein the region variable escapes.
-    * @param loc  the location where the error occurred.
+    * @param reg the region symbol.
+    * @param tpe the type wherein the region variable escapes.
+    * @param loc the location where the error occurred.
     */
-  case class RegionVarEscapes(rvar: Type.Var, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Region variable '${formatType(rvar)}' escapes its scope."
+  case class RegionVarEscapes(reg: Symbol.RegionSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Region symbol '${reg.text}' escapes its scope."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> The region variable '${red(formatType(rvar))}' escapes its scope.
+         |>> The region symbol '${red(reg.text)}' escapes its scope.
          |
-         |${code(loc, "region variable escapes.")}
+         |${code(loc, "region symbol escapes.")}
          |
          |The escaping expression has type:
          |
          |  ${red(formatType(tpe))}
          |
-         |which contains the region variable.
+         |which contains the region symbol.
          |
-         |The region variable was declared here:
+         |The region symbol was declared here:
          |
-         |${code(rvar.loc, "region variable declared here.")}
+         |${code(reg.loc, "region symbol declared here.")}
          |""".stripMargin
     }
 
@@ -680,10 +680,11 @@ object TypeError {
 
   /**
     * An error indicating the number of effect operation arguments does not match the expected number.
-    * @param op the effect operation symbol.
+    *
+    * @param op       the effect operation symbol.
     * @param expected the expected number of arguments.
-    * @param actual the actual number of arguments.
-    * @param loc the location where the error occurred.
+    * @param actual   the actual number of arguments.
+    * @param loc      the location where the error occurred.
     */
   case class InvalidOpParamCount(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends TypeError {
     override def summary: String = s"Expected $expected parameter(s) but found $actual."

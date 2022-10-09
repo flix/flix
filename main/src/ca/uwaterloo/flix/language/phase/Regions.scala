@@ -49,7 +49,7 @@ object Regions {
       case e => def0
     }
 
-  private def visitExp(exp0: Expression)(implicit scope: List[Type.Var], flix: Flix): Validation[Unit, CompilationMessage] = exp0 match {
+  private def visitExp(exp0: Expression)(implicit scope: List[Symbol.RegionSym], flix: Flix): Validation[Unit, CompilationMessage] = exp0 match {
     case Expression.Unit(_) => ().toSuccess
 
     case Expression.Null(_, _) => ().toSuccess
@@ -121,8 +121,8 @@ object Regions {
     case Expression.Region(_, _) =>
       ().toSuccess
 
-    case Expression.Scope(_, regionVar, exp, tpe, _, _, loc) =>
-      flatMapN(visitExp(exp)(regionVar :: scope, flix)) {
+    case Expression.Scope(_, regSym, exp, tpe, _, _, loc) =>
+      flatMapN(visitExp(exp)(regSym :: scope, flix)) {
         case e => checkType(tpe, loc)
       }
 
@@ -413,7 +413,7 @@ object Regions {
 
   }
 
-  def visitJvmMethod(method: JvmMethod)(implicit scope: List[Type.Var], flix: Flix): Validation[Unit, CompilationMessage] = method match {
+  def visitJvmMethod(method: JvmMethod)(implicit scope: List[Symbol.RegionSym], flix: Flix): Validation[Unit, CompilationMessage] = method match {
     case JvmMethod(_, _, exp, tpe, _, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
@@ -423,7 +423,7 @@ object Regions {
   /**
     * Ensures that no region escapes inside `tpe`.
     */
-  private def checkType(tpe: Type, loc: SourceLocation)(implicit scope: List[Type.Var], flix: Flix): Validation[Unit, CompilationMessage] = {
+  private def checkType(tpe: Type, loc: SourceLocation)(implicit scope: List[Symbol.RegionSym], flix: Flix): Validation[Unit, CompilationMessage] = {
     // Compute the region variables that escape.
     val minned = TypeMinimization.minimizeType(tpe)
     val regs = regionSymsOf(minned)
@@ -442,12 +442,12 @@ object Regions {
     * For example, in the type `a and (not a)`, `a` is not essential since the result is always `false`.
     */
   def essentialTo(sym: Symbol.RegionSym, tpe: Type)(implicit flix: Flix): Boolean = {
-    if (!tpe.typeVars.contains(tvar)) {
+    if (!regionSymsOf(tpe).contains(sym)) {
       // Case 1: The type variable is not present in the type. It cannot be essential.
       false
     } else {
       // Case 2: The type variable is present in the type. Check if it is essential to any of the booleans.
-      boolTypesOf(tpe).exists(essentialToBool(tvar, _))
+      boolTypesOf(tpe).exists(essentialToBool(sym, _))
     }
   }
 
@@ -455,18 +455,22 @@ object Regions {
     * Returns true iff the type variable `tvar` is essential to the boolean formula `tpe`.
     * Assumes that `tvar` is present in the type.
     */
-  def essentialToBool(tvar: Type.Var, tpe: Type)(implicit flix: Flix): Boolean = {
-    val t0 = tpe.map {
-      case t if t == tvar => Type.False
-      case t => t
-    }
+  def essentialToBool(sym: Symbol.RegionSym, tpe: Type)(implicit flix: Flix): Boolean = {
+    val t0 = mapRegion(tpe, sym, Type.False)
 
-    val t1 = tpe.map {
-      case t if t == tvar => Type.True
-      case t => t
-    }
+    val t1 = mapRegion(tpe, sym, Type.True)
 
     !sameType(t0, t1)
+  }
+
+  /**
+    * Returns t[sym -> target]
+    */
+  def mapRegion(t: Type, sym: Symbol.RegionSym, target: Type)(implicit flix: Flix): Type = t match {
+    case Type.Var(_, _) => t
+    case Type.Cst(TypeConstructor.Region(sym1), _) if sym == sym1 => target
+    case Type.Apply(tpe1, tpe2, loc) => Type.Apply(mapRegion(tpe1, sym, target), mapRegion(tpe2, sym, target), loc)
+    case Type.Alias(_, _, tpe, _) => mapRegion(tpe, sym, target)
   }
 
   /**

@@ -1921,12 +1921,12 @@ object Typer {
       case KindedAst.Expression.Region(tpe, loc) =>
         TypedAst.Expression.Region(tpe, loc)
 
-      case KindedAst.Expression.Scope(sym, regionVar, exp, pvar, loc) =>
+      case KindedAst.Expression.Scope(sym, regSym, exp, pvar, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = e.tpe
         val pur = subst0(pvar)
         val eff = e.eff
-        TypedAst.Expression.Scope(sym, regionVar, e, tpe, pur, eff, loc)
+        TypedAst.Expression.Scope(sym, regSym, e, tpe, pur, eff, loc)
 
       case KindedAst.Expression.Match(matchExp, rules, loc) =>
         val e1 = visitExp(matchExp, subst0)
