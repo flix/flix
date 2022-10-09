@@ -1757,7 +1757,7 @@ object Resolver {
       case "Lazy" => UnkindedType.Cst(TypeConstructor.Lazy, loc).toSuccess
       case "Array" => UnkindedType.Cst(TypeConstructor.Array, loc).toSuccess
       case "Ref" => UnkindedType.Cst(TypeConstructor.Ref, loc).toSuccess
-      case "Region" => UnkindedType.Cst(TypeConstructor.Region, loc).toSuccess
+      case "Region" => UnkindedType.Cst(TypeConstructor.RegionToStar, loc).toSuccess
 
       // Disambiguate type.
       case typeName =>
@@ -2646,7 +2646,7 @@ object Resolver {
         case TypeConstructor.Or => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.RecordRowEmpty => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.RecordRowExtend(_) => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.Region => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.RegionToStar => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Relation => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.SchemaRowEmpty => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.SchemaRowExtend(_) => ResolutionError.IllegalType(tpe, loc).toFailure
