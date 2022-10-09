@@ -320,7 +320,7 @@ object CompletionProvider {
       case _ => 0
     }
     val args = fparams.dropRight(paramsToDrop).zipWithIndex.map {
-      case (fparam, idx) => "$" + s"{${idx + 1}:${fparam.sym.text}}"
+      case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.sym.text}}"
     }
     if (args.nonEmpty)
       s"$name(${args.mkString(", ")})"
