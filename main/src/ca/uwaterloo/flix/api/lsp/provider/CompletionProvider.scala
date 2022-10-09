@@ -591,37 +591,51 @@ object CompletionProvider {
     val currentWordIsMatch = wordPattern matches context.word
 
     root.enums.foldLeft[List[CompletionItem]](Nil)((acc, enm) => {
-      if (enm._2.cases.size >= 2 && enm._2.loc.source.name == context.uri) matchCompletion(enm._2, currentWordIsMatch) :: acc else acc
+      if (enm._2.cases.size >= 2) matchCompletion(enm._2, currentWordIsMatch) match {
+        case Some(v) => v :: acc
+        case None => acc
+      }
+      else acc
     })
   }
 
   /**
     * Converts an enum into a exhaustive match completion
     */
-  private def matchCompletion(enm: TypedAst.Enum, currentWordIsMatch: Boolean)(implicit context: Context, flix: Flix): CompletionItem = {
+  private def matchCompletion(enm: TypedAst.Enum, currentWordIsMatch: Boolean)(implicit context: Context, flix: Flix): Option[CompletionItem] = {
     val includeMatch = if (currentWordIsMatch) "match " else ""
+    val priority: String => String = if (enm.loc.source.name == context.uri) {
+      Priority.high
+    }
+    else if (enm.mod.isPublic && enm.sym.namespace.isEmpty) {
+      Priority.boost
+    }
+    else {
+      return None
+    }
     val (completion, _) = enm.cases.foldLeft("", 1)({
       case ((acc, z), (sym , cas)) => {
+        val name = sym.name
         val (str, k) = cas.tpe.typeConstructor match {
-          case Some(TypeConstructor.Unit) => (s"${sym.name} => $${${z+1}:???}", z + 1)
+          case Some(TypeConstructor.Unit) => (s"$name => $${${z+1}:???}", z + 1)
           case Some(TypeConstructor.Tuple(arity)) => (List.range(1, arity + 1)
             .map(elem => s"$${${elem + z}:_elem$elem}")
-            .mkString(s"${sym.name}(", ", ", s") => $${${arity + z + 1}:???}"), z + arity + 1)
-          case _ => (s"${sym.name}($${${z + 1}:_elem}) => $${${z + 2}:???}", z + 2)
+            .mkString(s"$name(", ", ", s") => $${${arity + z + 1}:???}"), z + arity + 1)
+          case _ => (s"$name($${${z + 1}:_elem}) => $${${z + 2}:???}", z + 2)
         }
         (acc + "    case " + str + "\n", k)
       }
     })
-    matchCompletion(enm.sym.name, s"$includeMatch$${1:???} {\n$completion}")
+    Some(matchCompletion(enm.sym.name, s"$includeMatch$${1:???} {\n$completion}", priority))
   }
 
   /**
     * Creates a completion item for an exhaustive match
     */
-  private def matchCompletion(sym: String, completion: String)(implicit context: Context): CompletionItem = {
+  private def matchCompletion(sym: String, completion: String, priority: String => String)(implicit context: Context): CompletionItem = {
     val label = s"match $sym"
     CompletionItem(label = label,
-        sortText = Priority.high(label),
+        sortText = priority(label),
         textEdit = TextEdit(context.range, completion),
         documentation = None,
         insertTextFormat = InsertTextFormat.Snippet,
