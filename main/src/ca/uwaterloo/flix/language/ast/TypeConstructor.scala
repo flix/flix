@@ -321,4 +321,11 @@ object TypeConstructor {
     def kind: Kind = Kind.Bool ->: Kind.Star
   }
 
+  /**
+    * A type constructor that represents a region as a type-level boolean constant.
+    */
+  case class RegionToBool(sym: Symbol.RegionSym) extends TypeConstructor {
+    def kind: Kind = Kind.Bool
+  }
+
 }

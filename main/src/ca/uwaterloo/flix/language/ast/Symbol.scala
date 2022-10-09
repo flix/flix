@@ -638,6 +638,35 @@ object Symbol {
   }
 
   /**
+    * Region Symbol.
+    */
+  final class RegionSym(val id: Int, val text: String, val loc: SourceLocation) extends Ordered[RegionSym] {
+
+    /**
+      * Compares `this` symbol to `that` symbol.
+      */
+    override def compare(that: RegionSym): Int = this.id compare that.id
+
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: RegionSym => this.id == that.id
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = Objects.hash(id)
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = this.text
+  }
+
+  /**
     * Optionally returns the namespace part and name of the given fully qualified string `fqn`.
     *
     * Returns `None` if the `fqn` is not qualified.
