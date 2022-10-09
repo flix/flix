@@ -343,22 +343,21 @@ object Unification {
     }
 
   /**
-    * Purifies the given effect `eff` in the type inference monad.
+    * Purifies the given region `sym` in the type inference monad.
     */
-  def purifyEffM(tvar: Type.Var, eff: Type): InferMonad[Type] =
+  def purifyEffM(sym: Symbol.RegionSym, eff: Type): InferMonad[Type] =
     InferMonad { case (s, renv) => {
-      val purifiedEff = purify(tvar, s(eff))
+      val purifiedEff = purify(sym, s(eff))
       Ok((s, renv, purifiedEff))
     }
     }
 
   /**
-    * Returns the given Boolean formula `tpe` with the (possibly rigid) type variable `tvar` replaced by `True`.
+    * Returns the given Boolean formula `tpe` with the region symbol `sym` replaced by `True`.
     */
-  private def purify(tvar: Type.Var, tpe: Type): Type = tpe.typeConstructor match {
+  private def purify(sym: Symbol.RegionSym, tpe: Type): Type = tpe.typeConstructor match {
     case None => tpe match {
-      case t: Type.Var =>
-        if (tvar.sym == t.sym) Type.True else tpe
+      case t: Type.Var => t
       case _ => throw InternalCompilerException(s"Unexpected type constructor: '$tpe'.")
     }
 
@@ -369,31 +368,38 @@ object Unification {
 
       case TypeConstructor.Not =>
         val List(t) = tpe.typeArguments
-        Type.mkNot(purify(tvar, t), tpe.loc)
+        Type.mkNot(purify(sym, t), tpe.loc)
 
       case TypeConstructor.And =>
         val List(t1, t2) = tpe.typeArguments
-        Type.mkAnd(purify(tvar, t1), purify(tvar, t2), tpe.loc)
+        Type.mkAnd(purify(sym, t1), purify(sym, t2), tpe.loc)
 
       case TypeConstructor.Or =>
         val List(t1, t2) = tpe.typeArguments
-        Type.mkOr(purify(tvar, t1), purify(tvar, t2), tpe.loc)
+        Type.mkOr(purify(sym, t1), purify(sym, t2), tpe.loc)
+
+      case TypeConstructor.Region(sym1) =>
+        if (sym == sym1) {
+          Type.Pure
+        } else {
+          tpe
+        }
 
       case _ => throw InternalCompilerException(s"Unexpected non-Boolean type constructor: '$tc'.")
     }
   }
 
   /**
-    * Ensures that the region variable `rvar` does not escape in the type `tpe` nor from the context.
+    * Ensures that the region symbol `sym` does not escape in the type `tpe` nor from the context.
     */
-  def noEscapeM(rvar: Type.Var, tpe: Type)(implicit flix: Flix): InferMonad[Unit] =
+  def noEscapeM(sym: Symbol.RegionSym, tpe: Type)(implicit flix: Flix): InferMonad[Unit] =
     InferMonad { case (s, renv) =>
       // Apply the current substitution to `tpe`.
       val t = TypeMinimization.minimizeType(s(tpe))
 
       // Check whether the region variable is essential to the type.
-      if (Regions.essentialTo(rvar, t)) {
-        Err(TypeError.RegionVarEscapes(rvar, t, rvar.loc))
+      if (Regions.essentialTo(sym, t)) {
+        Err(TypeError.RegionVarEscapes(sym, t, sym.loc))
       } else
         Ok((s, renv, ()))
     }

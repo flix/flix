@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.TypeMinimization
 import ca.uwaterloo.flix.util.Validation._
@@ -426,7 +426,7 @@ object Regions {
   private def checkType(tpe: Type, loc: SourceLocation)(implicit scope: List[Type.Var], flix: Flix): Validation[Unit, CompilationMessage] = {
     // Compute the region variables that escape.
     val minned = TypeMinimization.minimizeType(tpe)
-    val regs = regionVarsOf(minned)
+    val regs = regionSymsOf(minned)
     for (reg <- regs -- scope) {
       if (essentialTo(reg, minned)) {
         return TypeError.RegionVarEscapes(reg, minned, loc).toFailure
@@ -441,7 +441,7 @@ object Regions {
     * A type variable is essential if its ascription has a bearing on the resulting value.
     * For example, in the type `a and (not a)`, `a` is not essential since the result is always `false`.
     */
-  def essentialTo(tvar: Type.Var, tpe: Type)(implicit flix: Flix): Boolean = {
+  def essentialTo(sym: Symbol.RegionSym, tpe: Type)(implicit flix: Flix): Boolean = {
     if (!tpe.typeVars.contains(tvar)) {
       // Case 1: The type variable is not present in the type. It cannot be essential.
       false
@@ -506,13 +506,12 @@ object Regions {
   }
 
   /**
-    * Returns all region variables in the given type `tpe`.
+    * Returns all region symbols in the given type `t`.
     */
-  private def regionVarsOf(tpe: Type): SortedSet[Type.Var] = tpe.typeVars.filter {
-    case tvar =>
-      val isBool = tvar.sym.kind == Kind.Bool
-      val isRegion = tvar.sym.isRegion
-      isBool && isRegion
-  }
-
+  private def regionSymsOf(t: Type): SortedSet[Symbol.RegionSym] = t match {
+      case Type.Var(_, _) => SortedSet.empty
+      case Type.Cst(TypeConstructor.Region(sym), _) => SortedSet(sym)
+      case Type.Apply(tpe1, tpe2, _) => regionSymsOf(tpe1) ++ regionSymsOf(tpe2)
+      case Type.Alias(_, _, tpe, _) => regionSymsOf(tpe)
+    }
 }

@@ -838,15 +838,15 @@ object Typer {
       case KindedAst.Expression.Region(tpe, _) =>
         liftM(Nil, tpe, Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Scope(sym, regionVar, exp, pvar, loc) =>
+      case KindedAst.Expression.Scope(varSym, regSym, exp, pvar, loc) =>
         for {
           // don't make the region var rigid if the --Xflexible-regions flag is set
-          _ <- if (flix.options.xflexibleregions) InferMonad.point(()) else rigidifyM(regionVar)
-          _ <- unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
+          // MATT ignoring Xflexible-regions
+          _ <- unifyTypeM(varSym.tvar, Type.mkRegionToStar(Type.mkRegion(regSym, regSym.loc), loc), loc)
           (constrs, tpe, pur, eff) <- visitExp(exp)
-          purifiedPur <- purifyEffM(regionVar, pur)
+          purifiedPur <- purifyEffM(regSym, pur)
           resultPur <- unifyTypeM(pvar, purifiedPur, loc)
-          _ <- noEscapeM(regionVar, tpe)
+          _ <- noEscapeM(regSym, tpe)
           resultTyp = tpe
           resultEff = eff
         } yield (constrs, resultTyp, resultPur, resultEff)
@@ -1162,7 +1162,7 @@ object Typer {
 
       case KindedAst.Expression.ArrayLit(exps, exp, tvar, pvar, loc) =>
         val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
-        val regionType = Type.mkRegion(regionVar, loc)
+        val regionType = Type.mkRegionToStar(regionVar, loc)
         for {
           (constrs1, elmTypes, pur1, eff1) <- seqM(exps.map(visitExp)).map(unzip4)
           (constrs2, tpe2, pur2, eff2) <- visitExp(exp)
@@ -1175,7 +1175,7 @@ object Typer {
 
       case KindedAst.Expression.ArrayNew(exp1, exp2, exp3, tvar, pvar, loc) =>
         val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
-        val regionType = Type.mkRegion(regionVar, loc)
+        val regionType = Type.mkRegionToStar(regionVar, loc)
         for {
           (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
@@ -1244,7 +1244,7 @@ object Typer {
 
       case KindedAst.Expression.Ref(exp1, exp2, tvar, pvar, loc) =>
         val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
-        val regionType = Type.mkRegion(regionVar, loc)
+        val regionType = Type.mkRegionToStar(regionVar, loc)
         for {
           (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)

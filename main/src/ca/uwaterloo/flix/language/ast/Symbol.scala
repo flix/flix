@@ -85,6 +85,13 @@ object Symbol {
   }
 
   /**
+    * Returns a fresh region symbol for the given identifier.
+    */
+  def freshRegionSym(ident: Name.Ident)(implicit flix: Flix): RegionSym = {
+    new RegionSym(flix.genSym.freshId(), ident.name, ident.loc)
+  }
+
+  /**
     * Returns a label symbol with the given text.
     */
   def freshLabel(text: String)(implicit flix: Flix): LabelSym = {

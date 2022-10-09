@@ -133,7 +133,7 @@ object NamedAst {
 
     case class Region(tpe: ca.uwaterloo.flix.language.ast.Type, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Scope(sym: Symbol.VarSym, regionVar: Symbol.UnkindedTypeVarSym, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class Scope(sym: Symbol.VarSym, regSym: Symbol.RegionSym, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Match(exp: NamedAst.Expression, rules: List[NamedAst.MatchRule], loc: SourceLocation) extends NamedAst.Expression
 
@@ -388,6 +388,8 @@ object NamedAst {
     case class Write(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Empty(loc: SourceLocation) extends NamedAst.Type
+
+    case class Region(sym: Symbol.RegionSym, loc: SourceLocation) extends NamedAst.Type
 
     case class Ascribe(tpe: NamedAst.Type, kind: Kind, loc: SourceLocation) extends NamedAst.Type
 

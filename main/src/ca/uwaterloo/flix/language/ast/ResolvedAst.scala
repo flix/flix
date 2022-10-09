@@ -116,7 +116,7 @@ object ResolvedAst {
     // MATT why was this a full type
     case class Region(tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Scope(sym: Symbol.VarSym, regionVar: Symbol.UnkindedTypeVarSym, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Scope(varSym: Symbol.VarSym, regSym: Symbol.RegionSym, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Match(exp: ResolvedAst.Expression, rules: List[ResolvedAst.MatchRule], loc: SourceLocation) extends ResolvedAst.Expression
 

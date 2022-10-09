@@ -869,10 +869,16 @@ object Type {
   def mkDifference(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = mkIntersection(tpe1, mkComplement(tpe2, loc), loc)
 
   /**
-    * Returns a Region type for the given region argument `r` with the given source location `loc`.
+    * Builds a star-region type for the given region argument `r` with the given source location `loc`.
     */
-  def mkRegion(r: Type, loc: SourceLocation): Type =
+  def mkRegionToStar(r: Type, loc: SourceLocation): Type =
     Type.Apply(Type.Cst(TypeConstructor.RegionToStar, loc), r, loc)
+
+  /**
+    * Returns a region type for the given region symbol `sym`.
+    */
+  def mkRegion(sym: Symbol.RegionSym, loc: SourceLocation): Type =
+    Type.Cst(TypeConstructor.Region(sym), loc)
 
   /**
     * Returns the type `tpe1 => tpe2`.
