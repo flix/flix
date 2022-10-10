@@ -134,6 +134,7 @@ object FormatType {
       case SimpleType.True => true
       case SimpleType.False => true
       case SimpleType.RegionToBool => true
+      case SimpleType.Region(_, _) => true
       case SimpleType.Empty => true
       case SimpleType.All => true
       case SimpleType.RecordConstructor(_) => true
@@ -154,7 +155,7 @@ object FormatType {
       case SimpleType.Tag(_, _, _) => true
       case SimpleType.Name(_) => true
       case SimpleType.Apply(_, _) => true
-      case SimpleType.Var(_, _, _, _) => true
+      case SimpleType.Var(_, _, _) => true
       case SimpleType.Tuple(_) => true
       case SimpleType.Union(_) => true
     }
@@ -200,6 +201,7 @@ object FormatType {
         case Mode.Purity => "Impure"
       }
       case SimpleType.RegionToBool => "Region"
+      case SimpleType.Region(_, text) => text
       case SimpleType.Empty => "Empty"
       case SimpleType.All => "All"
       case SimpleType.Record(fields) =>
@@ -287,8 +289,8 @@ object FormatType {
         val string = visit(tpe, Mode.Type)
         val strings = tpes.map(visit(_, Mode.Type))
         string + strings.mkString("[", ", ", "]")
-      case SimpleType.Var(id, kind, isRegion, text) =>
-        val prefix: String = kind match {
+      case SimpleType.Var(id, kind, text) =>
+        val idBased: String = kind match {
           case Kind.Wild => "_" + id.toString
           case Kind.Beef => "_b" + id.toString
           case Kind.Star => "t" + id
@@ -299,16 +301,10 @@ object FormatType {
           case Kind.Predicate => "'" + id.toString
           case Kind.Arrow(_, _) => "'" + id.toString
         }
-        val suffix = if (isRegion) {
-          "!"
-        } else {
-          ""
-        }
-        val string = prefix + suffix
         fmt.varNames match {
-          case FormatOptions.VarName.IdBased => string
+          case FormatOptions.VarName.IdBased => idBased
           case FormatOptions.VarName.NameBased => text match {
-            case VarText.Absent => string
+            case VarText.Absent => idBased
             case VarText.SourceText(s) => s
             case VarText.FallbackText(s) => "?" + s + id.toString
           }
