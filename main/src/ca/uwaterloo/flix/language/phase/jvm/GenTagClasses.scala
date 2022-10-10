@@ -140,7 +140,7 @@ object GenTagClasses {
     // Generate the `getTag` method.
     compileGetTagMethod(visitor, tag.tag)
 
-    compileToStringMethod(visitor, tag.tag)
+    compileToStringMethod(visitor, classType, tag)
 
     // Generate the `hashCode` method.
     AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
@@ -216,9 +216,27 @@ object GenTagClasses {
     method.visitEnd()
   }
 
-  def compileToStringMethod(visitor: ClassWriter, tag: String)(implicit root: Root, flix: Flix): Unit = {
+  def compileToStringMethod(visitor: ClassWriter, classType: JvmType.Reference, tag: TagInfo)(implicit root: Root, flix: Flix): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), null, null)
-    method.visitLdcInsn(tag)
+    method.visitLdcInsn("") // for last join call
+
+    method.visitInsn(ICONST_3)
+    method.visitTypeInsn(ANEWARRAY, "java/lang/String")
+    method.visitInsn(DUP)
+    method.visitInsn(ICONST_0)
+    method.visitLdcInsn(tag.sym.name + "." + tag.tag + "(")
+    method.visitInsn(AASTORE)
+    method.visitInsn(DUP)
+    method.visitInsn(ICONST_1)
+    method.visitVarInsn(ALOAD, 0)
+    method.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getBoxedTagValue", AsmOps.getMethodDescriptor(Nil, JvmType.Object), false)
+    method.visitMethodInsn(INVOKEVIRTUAL, JvmType.Object.name.toInternalName, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), false)
+    method.visitInsn(AASTORE)
+    method.visitInsn(DUP)
+    method.visitInsn(ICONST_2)
+    method.visitLdcInsn(")")
+    method.visitInsn(AASTORE)
+    method.visitMethodInsn(INVOKESTATIC, JvmType.String.name.toInternalName, "join", "(Ljava/lang/CharSequence;[Ljava/lang/CharSequence;)Ljava/lang/String;", false)
     method.visitInsn(ARETURN)
     method.visitMaxs(1, 1)
     method.visitEnd()
