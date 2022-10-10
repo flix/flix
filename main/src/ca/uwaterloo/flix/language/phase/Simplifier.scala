@@ -351,7 +351,7 @@ object Simplifier {
       case TypedAst.Expression.Par(_, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
-      case TypedAst.Expression.Debug(_, _, _, _, _) =>
+      case TypedAst.Expression.Debug(_, _, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
     }

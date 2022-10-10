@@ -677,12 +677,10 @@ object Lowering {
       val e3 = visitExp(exp3)
       Expression.ReifyEff(sym, e1, e2, e3, t, pur, eff, loc)
 
-    case Expression.Debug(exp, tpe, pur, eff, loc) =>
-      val line = s"[${loc.formatWithLine}] "
-      val e1 = Expression.Str(line, loc)
-      val e2 = visitExp(exp)
-      val concat = Expression.Binary(SemanticOperator.StringOp.Concat, e1, e2, Type.Str, e2.pur, e2.eff, loc)
-      mkApplyDebug(concat)
+    case Expression.Debug(exp1, exp2, tpe, pur, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      mkApplyDebug(e1, e2, loc)
   }
 
   /**
@@ -1439,14 +1437,13 @@ object Lowering {
   /**
     * Applies the given expression `exp` to the `debug` function.
     */
-  private def mkApplyDebug(exp: Expression)(implicit root: Root, flix: Flix): Expression = {
+  private def mkApplyDebug(exp1: Expression, exp2: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
     //
     // Note that we mark the call as impure (even though it may have been typed as pure!)
     //
-    val loc = exp.loc
-    val tpe = Type.mkImpureArrow(exp.tpe, Type.Unit, loc)
+    val tpe = Type.mkImpureUncurriedArrow(exp1.tpe :: exp2.tpe :: Nil, Type.Unit, loc)
     val innerExp = Expression.Def(Defs.Debug, tpe, loc)
-    Expression.Apply(innerExp, List(exp), Type.Unit, Type.Impure, Type.Empty, loc)
+    Expression.Apply(innerExp, exp1 :: exp2 :: Nil, Type.Unit, Type.Impure, Type.Empty, loc)
   }
 
   /**
@@ -1781,9 +1778,10 @@ object Lowering {
       val e3 = substExp(exp3, subst)
       Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
 
-    case Expression.Debug(exp, tpe, pur, eff, loc) =>
-      val e = substExp(exp, subst)
-      Expression.Debug(e, tpe, pur, eff, loc)
+    case Expression.Debug(exp1, exp2, tpe, pur, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      Expression.Debug(e1, e2, tpe, pur, eff, loc)
 
     case Expression.FixpointConstraintSet(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
 

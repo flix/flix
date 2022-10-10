@@ -1724,7 +1724,10 @@ object Weeder {
     case ParsedAst.Expression.Debug(sp1, exp, sp2) =>
       mapN(visitExp(exp, senv)) {
         case e =>
-          WeededAst.Expression.Debug(e, mkSL(sp1, sp2))
+          val loc = mkSL(sp1, sp2)
+          val line = s"[${loc.formatWithLine}]"
+          val e1 = WeededAst.Expression.Str(line, loc)
+          WeededAst.Expression.Debug(e1, e, loc)
       }
 
   }
