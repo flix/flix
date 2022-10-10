@@ -1039,7 +1039,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Tuple: Rule1[ParsedAst.Expression] = rule {
-      SP ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Tuple
+      SP ~ ArgumentList ~ SP ~> ParsedAst.Expression.Tuple
     }
 
     def Block: Rule1[ParsedAst.Expression] = rule {
