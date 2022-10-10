@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.fmt.{Audience, FormatOptions, FormatType}
+import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
@@ -62,6 +62,19 @@ sealed trait Type {
 
     case Type.Apply(tpe1, tpe2, _) => tpe1.effects ++ tpe2.effects
     case Type.Alias(_, _, tpe, _) => tpe.effects
+  }
+
+  /**
+    * Gets all the regions in the given type.
+    */
+  def regions: SortedSet[Symbol.RegionSym] = this match {
+    case Type.Cst(TypeConstructor.Region(sym), _) => SortedSet(sym)
+
+    case _: Type.Cst => SortedSet.empty
+    case _: Type.Var => SortedSet.empty
+
+    case Type.Apply(tpe1, tpe2, _) => tpe1.regions ++ tpe2.regions
+    case Type.Alias(_, _, tpe, _) => tpe.regions
   }
 
   /**

@@ -641,4 +641,12 @@ object Ast {
     */
   case class AliasConstructor(sym: Symbol.TypeAliasSym, loc: SourceLocation)
 
+  /**
+    * Represents the union of region symbols and type var symbols.
+    */
+  sealed trait RegionOrTypeVar
+  object RegionOrTypeVar {
+    case class Region(sym: Symbol.RegionSym) extends RegionOrTypeVar
+    case class TypeVar(sym: Symbol.KindedTypeVarSym) extends RegionOrTypeVar
+  }
 }

@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.Ast.RegionOrTypeVar
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
@@ -123,12 +123,17 @@ case class BoolSubstitution[F](m: Map[Int, F]) {
   /**
     * Converts this formula substitution into a type substitution
     */
-  def toTypeSubstitution(env: Bimap[Symbol.KindedTypeVarSym, Int])(implicit alg: BoolAlg[F]): Substitution = {
-    val map = m.map {
+  def toTypeSubstitution(env: Bimap[RegionOrTypeVar, Int])(implicit alg: BoolAlg[F]): Substitution = {
+    val map = m.flatMap {
       case (k0, v0) =>
-        val k = env.getBackward(k0).getOrElse(throw InternalCompilerException(s"missing key $k0"))
-        val v = alg.toType(v0, env)
-        (k, v)
+        env.getBackward(k0) match {
+          case None => throw InternalCompilerException(s"missing key $k0")
+          case Some(RegionOrTypeVar.Region(_)) => None
+          case Some(RegionOrTypeVar.TypeVar(sym)) =>
+            val k = sym
+            val v = alg.toType(v0, env)
+            Some((k, v))
+        }
     }
     Substitution(map)
   }

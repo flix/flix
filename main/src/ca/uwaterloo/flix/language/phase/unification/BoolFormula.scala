@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
+import ca.uwaterloo.flix.language.ast.Ast.RegionOrTypeVar
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
@@ -420,25 +421,30 @@ object BoolFormula {
 
     override def mkVar(id: Int): BoolFormula = Var(id)
 
-    override def getEnv(fs: List[Type]): Bimap[Symbol.KindedTypeVarSym, Int] = {
+    override def getEnv(fs: List[Type]): Bimap[RegionOrTypeVar, Int] = {
       // Compute the variables in `tpe`.
       val tvars = fs.flatMap(_.typeVars).map(_.sym).to(SortedSet)
+      val regs = fs.flatMap(_.regions).to(SortedSet)
+
+      // Build a list of the union of tvars and regions
+      val tpes = tvars.toList.map(RegionOrTypeVar.TypeVar) ::: regs.toList.map(RegionOrTypeVar.Region)
 
       // Construct a bi-directional map from type variables to indices.
       // The idea is that the first variable becomes x0, the next x1, and so forth.
-      tvars.zipWithIndex.foldLeft(Bimap.empty[Symbol.KindedTypeVarSym, Int]) {
+      tpes.zipWithIndex.foldLeft(Bimap.empty[RegionOrTypeVar, Int]) {
         case (macc, (sym, x)) => macc + (sym -> x)
       }
     }
 
-    override def toType(f: BoolFormula, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = f match {
+    override def toType(f: BoolFormula, env: Bimap[RegionOrTypeVar, Int]): Type = f match {
       case True => Type.True
       case False => Type.False
       case And(f1, f2) => Type.mkApply(Type.And, List(toType(f1, env), toType(f2, env)), SourceLocation.Unknown)
       case Or(f1, f2) => Type.mkApply(Type.Or, List(toType(f1, env), toType(f2, env)), SourceLocation.Unknown)
       case Not(f1) => Type.Apply(Type.Not, toType(f1, env), SourceLocation.Unknown)
       case Var(id) => env.getBackward(id) match {
-        case Some(sym) => Type.Var(sym, SourceLocation.Unknown)
+        case Some(RegionOrTypeVar.TypeVar(sym)) => Type.Var(sym, SourceLocation.Unknown)
+        case Some(RegionOrTypeVar.Region(sym)) => Type.mkRegion(sym, SourceLocation.Unknown)
         case None => throw InternalCompilerException(s"unexpected unknown ID: $id")
       }
     }

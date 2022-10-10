@@ -15,7 +15,8 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{RigidityEnv, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.Ast.RegionOrTypeVar
+import ca.uwaterloo.flix.language.ast.{RigidityEnv, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
@@ -99,30 +100,41 @@ trait BoolAlg[F] {
     *
     * This environment should be used in the functions [[toType]] and [[fromType]].
     */
-  def getEnv(fs: List[Type]): Bimap[Symbol.KindedTypeVarSym, Int]
+  def getEnv(fs: List[Type]): Bimap[RegionOrTypeVar, Int]
 
   /**
     * Returns a rigidity environment on formulas that is equivalent to the given one on types.
+    * Marks all regions as rigid.
     */
-  def liftRigidityEnv(renv: RigidityEnv, env: Bimap[Symbol.KindedTypeVarSym, Int]): SortedSet[Int] = {
-    renv.s.flatMap(env.getForward)
+  def liftRigidityEnv(renv: RigidityEnv, env: Bimap[RegionOrTypeVar, Int]): SortedSet[Int] = {
+    val varEnv = renv.s.flatMap {
+      tvar => env.getForward(RegionOrTypeVar.TypeVar(tvar))
+    }
+    val regEnv = env.m1.collect {
+      case (RegionOrTypeVar.Region(_), i) => i
+    }
+    varEnv ++ regEnv
   }
 
   /**
     * Converts the given formula f into a type.
     */
-  def toType(f: F, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type
+  def toType(f: F, env: Bimap[RegionOrTypeVar, Int]): Type
 
   /**
     * Converts the given type t into a formula.
     */
-  def fromType(t: Type, env: Bimap[Symbol.KindedTypeVarSym, Int]): F = Type.eraseTopAliases(t) match {
-    case Type.Var(sym, _) => env.getForward(sym) match {
+  def fromType(t: Type, env: Bimap[RegionOrTypeVar, Int]): F = Type.eraseTopAliases(t) match {
+    case Type.Var(sym, _) => env.getForward(RegionOrTypeVar.TypeVar(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.")
       case Some(x) => mkVar(x)
     }
     case Type.True => mkTrue
     case Type.False => mkFalse
+    case Type.Cst(TypeConstructor.Region(sym), _) => env.getForward(RegionOrTypeVar.Region(sym)) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound region: '$sym'.")
+      case Some(x) => mkVar(x)
+    }
     case Type.Apply(Type.Cst(TypeConstructor.Not, _), tpe1, _) => mkNot(fromType(tpe1, env))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => mkAnd(fromType(tpe1, env), fromType(tpe2, env))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => mkOr(fromType(tpe1, env), fromType(tpe2, env))
