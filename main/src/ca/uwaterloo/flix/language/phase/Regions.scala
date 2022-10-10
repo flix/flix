@@ -469,6 +469,7 @@ object Regions {
   def mapRegion(t: Type, sym: Symbol.RegionSym, target: Type)(implicit flix: Flix): Type = t match {
     case Type.Var(_, _) => t
     case Type.Cst(TypeConstructor.Region(sym1), _) if sym == sym1 => target
+    case Type.Cst(_, _) => t
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(mapRegion(tpe1, sym, target), mapRegion(tpe2, sym, target), loc)
     case Type.Alias(_, _, tpe, _) => mapRegion(tpe, sym, target)
   }
@@ -515,6 +516,7 @@ object Regions {
   private def regionSymsOf(t: Type): SortedSet[Symbol.RegionSym] = t match {
       case Type.Var(_, _) => SortedSet.empty
       case Type.Cst(TypeConstructor.Region(sym), _) => SortedSet(sym)
+      case Type.Cst(_, _) => SortedSet.empty
       case Type.Apply(tpe1, tpe2, _) => regionSymsOf(tpe1) ++ regionSymsOf(tpe2)
       case Type.Alias(_, _, tpe, _) => regionSymsOf(tpe)
     }

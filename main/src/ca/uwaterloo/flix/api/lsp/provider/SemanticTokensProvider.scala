@@ -655,6 +655,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Effect(_) => true
     case TypeConstructor.RegionToStar => true
     case TypeConstructor.All => true
+    case TypeConstructor.Region(_) => true
 
     // invisible
     case TypeConstructor.Arrow(_) => false

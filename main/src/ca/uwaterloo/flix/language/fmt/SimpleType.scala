@@ -77,7 +77,7 @@ object SimpleType {
 
   case object False extends SimpleType
 
-  case object Region extends SimpleType
+  case object RegionToBool extends SimpleType
 
   case object Empty extends SimpleType
 
@@ -251,7 +251,12 @@ object SimpleType {
   /**
     * A type variable.
     */
-  case class Var(id: Int, kind: Kind, isRegion: Boolean, text: Ast.VarText) extends SimpleType
+  case class Var(id: Int, kind: Kind, text: Ast.VarText) extends SimpleType
+
+  /**
+    * A region.
+    */
+  case class Region(id: Int, text: String) extends SimpleType
 
   /**
     * A tuple.
@@ -296,7 +301,7 @@ object SimpleType {
 
     def visit(t: Type): SimpleType = t.baseType match {
       case Type.Var(sym, _) =>
-        mkApply(Var(sym.id, sym.kind, sym.isRegion, sym.text), t.typeArguments.map(visit))
+        mkApply(Var(sym.id, sym.kind, sym.text), t.typeArguments.map(visit))
       case Type.Alias(cst, args, _, _) =>
         mkApply(Name(cst.sym.name), (args ++ t.typeArguments).map(visit))
       case Type.Cst(tc, _) => tc match {
@@ -524,7 +529,8 @@ object SimpleType {
           }
 
         case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
-        case TypeConstructor.RegionToStar => mkApply(Region, t.typeArguments.map(visit))
+        case TypeConstructor.RegionToStar => mkApply(RegionToBool, t.typeArguments.map(visit))
+        case TypeConstructor.Region(sym) => mkApply(Region(sym.id, sym.text), t.typeArguments.map(visit))
         case TypeConstructor.Empty => SimpleType.Empty
         case TypeConstructor.All => SimpleType.All
       }

@@ -133,7 +133,7 @@ object FormatType {
       case SimpleType.Lazy => true
       case SimpleType.True => true
       case SimpleType.False => true
-      case SimpleType.Region => true
+      case SimpleType.RegionToBool => true
       case SimpleType.Empty => true
       case SimpleType.All => true
       case SimpleType.RecordConstructor(_) => true
@@ -199,7 +199,7 @@ object FormatType {
         case Mode.Type => "false"
         case Mode.Purity => "Impure"
       }
-      case SimpleType.Region => "Region"
+      case SimpleType.RegionToBool => "Region"
       case SimpleType.Empty => "Empty"
       case SimpleType.All => "All"
       case SimpleType.Record(fields) =>
