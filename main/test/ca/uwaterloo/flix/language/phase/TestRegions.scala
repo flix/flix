@@ -26,6 +26,11 @@ class TestRegions extends FunSuite with TestUtils {
   test("RegionVarEscapes.01") {
     val input =
       """
+        |pub enum Option[t] {
+        |    case None,
+        |    case Some(t)
+        |}
+        |
         |pub def f(): Unit \ IO =
         |    let m = ref None;
         |    region r {
@@ -34,13 +39,18 @@ class TestRegions extends FunSuite with TestUtils {
         |        ()
         |    }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.RegionVarEscapes](result)
   }
 
   test("RegionVarEscapes.02") {
     val input =
       """
+        |pub enum Option[t] {
+        |    case None,
+        |    case Some(t)
+        |}
+        |
         |pub def f(): Unit \ IO =
         |    let m = ref None;
         |    region r {
@@ -49,7 +59,7 @@ class TestRegions extends FunSuite with TestUtils {
         |        ()
         |    }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.RegionVarEscapes](result)
   }
 

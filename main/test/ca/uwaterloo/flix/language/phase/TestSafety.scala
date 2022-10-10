@@ -33,7 +33,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    A(x) :- not B(x).
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, DefaultOptions)
     expectError[IllegalNonPositivelyBoundVariable](result)
   }
 
@@ -44,7 +44,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    R(x) :- not A(x), not B(x).
         |}
     """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, DefaultOptions)
     expectError[IllegalNonPositivelyBoundVariable](result)
   }
 
@@ -55,7 +55,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    R(x) :- not A(x), B(12), if x > 5.
         |}
     """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, DefaultOptions)
     expectError[IllegalNonPositivelyBoundVariable](result)
   }
 
@@ -66,7 +66,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    R(x) :- A(x), not B(_y).
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, DefaultOptions)
     expectError[IllegalNegativelyBoundWildVariable](result)
   }
 
@@ -78,7 +78,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    R(1) :- not A(_x), not B(_y).
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, DefaultOptions)
     expectError[IllegalNegativelyBoundWildVariable](result)
   }
 
@@ -89,7 +89,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    R(1) :- A(y), not A(_y), not B(y).
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, DefaultOptions)
     expectError[IllegalNegativelyBoundWildVariable](result)
   }
 
@@ -100,7 +100,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    A(1) :- not B(_).
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, DefaultOptions)
     expectError[IllegalNegativelyBoundWildcard](result)
   }
 
@@ -111,7 +111,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    A(1) :- not B(_), A(_).
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, DefaultOptions)
     expectError[IllegalNegativelyBoundWildcard](result)
   }
 
@@ -122,7 +122,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    A(1) :- not B(z), A(z), not B(_).
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, DefaultOptions)
     expectError[IllegalNegativelyBoundWildcard](result)
   }
 
@@ -189,7 +189,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    def run(): Unit \ IO = ()
         |  }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.MissingThis](result)
   }
 
@@ -201,7 +201,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    def run(_this: Int32): Unit \ IO = ()
         |  }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.IllegalThisType](result)
   }
 
@@ -210,7 +210,7 @@ class TestSafety extends FunSuite with TestUtils {
       """
         |def f(): ##java.lang.Runnable \ IO = new ##java.lang.Runnable {}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.UnimplementedMethod](result)
   }
 
@@ -223,7 +223,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    def anExtraMethod(_this: ##java.lang.Runnable): Unit \ IO = ()
         |  }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.ExtraMethod](result)
   }
 
@@ -255,7 +255,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    ()
         |""".stripMargin
 
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.UnsafeUpcast](result)
   }
 
@@ -272,7 +272,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    ()
         |""".stripMargin
 
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.UnsafeUpcast](result)
   }
 
@@ -322,7 +322,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    ()
         |""".stripMargin
 
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.UnsafeUpcast](result)
   }
 
@@ -448,7 +448,7 @@ class TestSafety extends FunSuite with TestUtils {
         |  new ##flix.test.TestClassWithNonDefaultConstructor {
         |  }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.MissingPublicZeroArgConstructor](result)
   }
 
@@ -459,7 +459,7 @@ class TestSafety extends FunSuite with TestUtils {
         |  new ##flix.test.TestNonPublicInterface {
         |  }
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.NonPublicClass](result)
   }
 

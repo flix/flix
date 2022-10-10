@@ -372,7 +372,7 @@ class TestTyper extends FunSuite with TestUtils {
         |   true
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MissingInstance](result)
   }
 
@@ -385,7 +385,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |def foo(x: E, y: E): Bool = x == y
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MissingEq](result)
   }
 
@@ -398,7 +398,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |def foo(x: E, y: E): Bool = x <= y
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MissingOrder](result)
   }
 
@@ -411,7 +411,7 @@ class TestTyper extends FunSuite with TestUtils {
          |
          |def foo(x: E): String = ToString.toString(x)
          |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MissingToString](result)
   }
 
@@ -421,7 +421,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def main(): Unit \ IO =
         |    println(x -> x + 41i32)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MissingArrowInstance](result)
   }
 
@@ -865,8 +865,13 @@ class TestTyper extends FunSuite with TestUtils {
         |    };
         |    f(Absent, if (true) Absent else Present(456)) == 1
         |
+        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
   }
 
@@ -882,8 +887,13 @@ class TestTyper extends FunSuite with TestUtils {
         |    };
         |    f(Present(123), if (true) Absent else Present(456)) == 1
         |
+        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
   }
 
@@ -899,8 +909,13 @@ class TestTyper extends FunSuite with TestUtils {
         |    };
         |    f(if (true) Absent else Present(123), if (true) Absent else Present(456)) == 1
         |
+        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
   }
 
@@ -916,8 +931,13 @@ class TestTyper extends FunSuite with TestUtils {
         |    };
         |    f(Absent, if (true) Absent else Present(456)) == 1
         |
+        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
   }
 
@@ -933,8 +953,13 @@ class TestTyper extends FunSuite with TestUtils {
         |    };
         |    f(Present(123), if (true) Absent else Present(456)) == 1
         |
+        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
   }
 
@@ -950,8 +975,13 @@ class TestTyper extends FunSuite with TestUtils {
         |    };
         |    f(if (true) Absent else Present(123), if (true) Absent else Present(456)) == 1
         |
+        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
   }
 
@@ -1005,8 +1035,13 @@ class TestTyper extends FunSuite with TestUtils {
         |    };
         |    f(Absent)
         |
+        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
   }
 
@@ -1024,8 +1059,13 @@ class TestTyper extends FunSuite with TestUtils {
         |    };
         |    f(Present(123))
         |
+        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |    case Absent
+        |    case Present(a)
+        |}
+        |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
   }
 
@@ -1132,7 +1172,7 @@ class TestTyper extends FunSuite with TestUtils {
         |pub def f(): Int32 = 123 as \ IO
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.ImpureDeclaredAsPure](result)
   }
 
@@ -1142,7 +1182,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def f(): Int32 & Pure = 123 as \ IO
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.ImpureDeclaredAsPure](result)
   }
 
@@ -1154,7 +1194,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |def zero(): Int32 & Pure = mkArray().length
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.ImpureDeclaredAsPure](result)
   }
 
@@ -1420,7 +1460,7 @@ class TestTyper extends FunSuite with TestUtils {
         |    ()
         |""".stripMargin
 
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.EffectGeneralizationError](result)
   }
 
@@ -1438,7 +1478,7 @@ class TestTyper extends FunSuite with TestUtils {
         |    ()
         |""".stripMargin
 
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.EffectGeneralizationError](result)
   }
 
@@ -1458,7 +1498,7 @@ class TestTyper extends FunSuite with TestUtils {
         |    ()
         |""".stripMargin
 
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.EffectGeneralizationError](result)
   }
 
@@ -1478,7 +1518,7 @@ class TestTyper extends FunSuite with TestUtils {
         |    ()
         |""".stripMargin
 
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.EffectGeneralizationError](result)
   }
 
@@ -1491,7 +1531,7 @@ class TestTyper extends FunSuite with TestUtils {
         |    x
       """.stripMargin
 
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.PossibleUpcast](result)
   }
 

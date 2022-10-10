@@ -42,13 +42,13 @@ class TestFlixErrors extends FunSuite with TestUtils {
 
   test("HoleError.01") {
     val input = "def main(): Unit = ???"
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectRuntimeError(result, "HoleError")
   }
 
   test("HoleError.02") {
     val input = "def main(): Unit = ?namedHole"
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectRuntimeError(result, "HoleError")
   }
 

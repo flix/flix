@@ -90,7 +90,7 @@ class TestInstances extends FunSuite with TestUtils {
         |
         |instance C[Box[b]]
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.OverlappingInstances](result)
   }
 
@@ -111,7 +111,7 @@ class TestInstances extends FunSuite with TestUtils {
         |
         |def g(x: String): Bool = C.f(x, x)
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.OverlappingInstances](result)
   }
 
@@ -355,7 +355,7 @@ class TestInstances extends FunSuite with TestUtils {
         |    pub def f(x: Bool, y: Int32): Int32 \ IO = 123 as \ IO
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[InstanceError.MismatchedSignatures](result)
   }
 
@@ -370,7 +370,7 @@ class TestInstances extends FunSuite with TestUtils {
         |    pub def f(x: Bool, y: Int32): Int32 \ IO = 123 as \ IO
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[InstanceError.MismatchedSignatures](result)
   }
 

@@ -138,21 +138,40 @@ pub def println(x: a): Unit \ IO with ToString[a] =
 def debug(prefix: String, x: a): Unit \ IO =
     import static get java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
     import java.io.PrintStream.println(String): Unit \ IO;
-    import java.lang.Object.toString(): String;
     let magic = match reifyType a {
-        case ErasedType => toString as a -> String
-        case ReifiedUnit => _ -> "()"
-        case ReifiedBool => (b -> if (b) "true" else "false") as a -> String
-        case ReifiedChar => Char.toString as a -> String
-        case ReifiedFloat32 => Float32.toString as a -> String
-        case ReifiedFloat64 => Float64.toString as a -> String
-        case ReifiedInt8 => Int8.toString as a -> String
-        case ReifiedInt16 => Int16.toString as a -> String
-        case ReifiedInt32 => Int32.toString as a -> String
-        case ReifiedInt64 => Int64.toString as a -> String
-        case ReifiedArray(_) => toString as a -> String
+        case ErasedType =>
+            import java.lang.Object.toString(): String;
+            toString as a -> String
+        case ReifiedUnit =>
+            _ -> "()"
+        case ReifiedBool =>
+            (b -> if (b) "true" else "false") as a -> String
+        case ReifiedChar =>
+            import static java.lang.Character.toString(Char): String \ {};
+            toString as a -> String
+        case ReifiedFloat32 =>
+            import static java.lang.Float.toString(Float32): String \ {};
+            toString as a -> String
+        case ReifiedFloat64 =>
+            import static java.lang.Double.toString(Float64): String \ {};
+            toString as a -> String
+        case ReifiedInt8 =>
+            import static java.lang.Byte.toString(Int8): String \ {};
+            toString as a -> String
+        case ReifiedInt16 =>
+            import static java.lang.Short.toString(Int16): String \ {};
+            toString as a -> String
+        case ReifiedInt32 =>
+            import static java.lang.Integer.toString(Int32): String \ {};
+            toString as a -> String
+        case ReifiedInt64 =>
+            import static java.lang.Long.toString(Int64): String \ {};
+            toString as a -> String
+        case ReifiedArray(_) =>
+            import java.lang.Object.toString(): String;
+            toString as a -> String
     };
-    "${prefix} ${magic(x)}" |> println(getOut())
+    println(getOut(), "${prefix} ${magic(x)}")
 
 ///
 /// Crashes the current process with the given message `m`.
