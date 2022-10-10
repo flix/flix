@@ -206,15 +206,15 @@ def testStringDebugString01(): Bool = debugString("Hello World!") == "Hello Worl
 
 
 @test
-def testArrayOfIntDebugString01(): Bool \ IO = debugString([1, 2, 3]) != ""
+def testArrayOfIntDebugString01(): Bool \ IO = debugString([1, 2, 3]) |> String.startsWith(prefix = "[")
 
 
 @test
-def testArrayOfStringDebugString01(): Bool \ IO = debugString(["a", "b", "c"]) != ""
+def testArrayOfStringDebugString01(): Bool \ IO = debugString(["a", "b", "c"]) |> String.startsWith(prefix = "[")
 
 
 @test
-def testTupleDebugString01(): Bool = debugString((true, 'a', "Hello World!")) == "(true, a, Hello World!)"
+def testTupleDebugString01(): Bool = debugString((true, 'a', "Hello World!")) == "Tuple3"
 
 
 pub enum Suit {
@@ -230,7 +230,7 @@ pub enum Card {
 }
 
 @test
-def testEnumDebugString01(): Bool = debugString(Card(Hearts, N(5))) != ""
+def testEnumDebugString01(): Bool = debugString(Card(Hearts, N(5))) == "Card.Card(Tuple2)"
 
 
 pub enum Poly[a, b] {
@@ -241,13 +241,13 @@ pub enum Poly[a, b] {
 }
 
 @test
-def testPolyDebugString01(): Bool = debugString(Poly.NoneOfThem) != ""
+def testPolyDebugString01(): Bool = debugString(Poly.NoneOfThem) |> String.startsWith(prefix = "Poly.NoneOfThem")
 
 @test
-def testPolyDebugString02(): Bool = debugString(This(123)) != ""
+def testPolyDebugString02(): Bool = debugString(This(123)) == "Poly.This(123)"
 
 @test
-def testPolyDebugString03(): Bool = debugString(That("Hello World!")) == ""
+def testPolyDebugString03(): Bool = debugString(That("Hello World!")) == "Poly.That(Hello World!)"
 
 @test
-def testPolyDebugString04(): Bool = debugString(Both(123, "Hello World!")) == ""
+def testPolyDebugString04(): Bool = debugString(Both(123, "Hello World!")) == "Poly.Both(Tuple2)"
