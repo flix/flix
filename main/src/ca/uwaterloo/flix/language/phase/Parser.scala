@@ -756,7 +756,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def DebugPart: Rule1[ParsedAst.InterpolationPart] = rule {
-        SP ~ atomic("%{") ~ optWS ~ optional(Expression) ~ optWS ~ "}" ~ SP ~> ParsedAst.InterpolationPart.ExpPart
+        SP ~ atomic("%{") ~ optWS ~ optional(Expression) ~ optWS ~ "}" ~ SP ~> ParsedAst.InterpolationPart.DebugPart
       }
 
       def StrPart: Rule1[ParsedAst.InterpolationPart] = rule {
