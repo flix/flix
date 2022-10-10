@@ -407,7 +407,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     // Note that outside of patterns, Strings are parsed as [[Interpolation]]s
     def Str: Rule1[ParsedAst.Literal.Str] = rule {
-      SP ~ "\"" ~ zeroOrMore(!("\"" | atomic("${")) ~ Chars.CharCode) ~ "\"" ~ SP ~> ParsedAst.Literal.Str
+      SP ~ "\"" ~ zeroOrMore(!("\"" | atomic("${") | atomic("%{")) ~ Chars.CharCode) ~ "\"" ~ SP ~> ParsedAst.Literal.Str
     }
 
     def Float: Rule1[ParsedAst.Literal] = rule {
@@ -743,7 +743,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         GetChannel | SelectChannel | Spawn | Par | Lazy | Force | Upcast | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
-        Discard | Debug| ForYield | ForEach | NewObject | UnaryLambda | FName | Tag | Hole
+        Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | FName | Tag | Hole
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -755,12 +755,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         SP ~ atomic("${") ~ optWS ~ optional(Expression) ~ optWS ~ "}" ~ SP ~> ParsedAst.InterpolationPart.ExpPart
       }
 
+      def DebugPart: Rule1[ParsedAst.InterpolationPart] = rule {
+        SP ~ atomic("%{") ~ optWS ~ optional(Expression) ~ optWS ~ "}" ~ SP ~> ParsedAst.InterpolationPart.ExpPart
+      }
+
       def StrPart: Rule1[ParsedAst.InterpolationPart] = rule {
-        SP ~ oneOrMore(!("\"" | atomic("${")) ~ Chars.CharCode) ~ SP ~> ParsedAst.InterpolationPart.StrPart
+        SP ~ oneOrMore(!("\"" | atomic("${") | atomic("%{")) ~ Chars.CharCode) ~ SP ~> ParsedAst.InterpolationPart.StrPart
       }
 
       def InterpolationPart: Rule1[ParsedAst.InterpolationPart] = rule {
-        ExpPart | StrPart
+        ExpPart | DebugPart | StrPart
       }
 
       rule {
