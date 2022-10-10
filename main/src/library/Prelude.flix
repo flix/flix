@@ -138,6 +138,14 @@ pub def println(x: a): Unit \ IO with ToString[a] =
 def debug(prefix: String, x: a): Unit \ IO =
     import static get java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
     import java.io.PrintStream.println(String): Unit \ IO;
+    println(getOut(), "${prefix} ${debugString(x)}")
+
+
+///
+/// Returns an automatic string representation of `x`.
+///
+@Internal
+pub def debugString(x: a): String = {
     let magic = match reifyType a {
         case ErasedType =>
             import java.lang.Object.toString(): String;
@@ -171,7 +179,8 @@ def debug(prefix: String, x: a): Unit \ IO =
             import java.lang.Object.toString(): String;
             toString as a -> String
     };
-    println(getOut(), "${prefix} ${magic(x)}")
+    magic(x)
+}
 
 ///
 /// Crashes the current process with the given message `m`.
