@@ -1740,16 +1740,19 @@ object Weeder {
           WeededAst.Expression.ReifyEff(ident, e1, e2, e3, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.Debug(sp1, exp, sp2) =>
+    case ParsedAst.Expression.Debug(sp1, kind, exp, sp2) =>
       mapN(visitExp(exp, senv)) {
         case e =>
           val loc = mkSL(sp1, sp2)
-          val locPart = s"[${loc.formatWithLine}]"
-          val srcPart = loc.text match {
-            case None => ""
-            case Some(s) => s" $s ="
+          val prefix = kind match {
+            case ParsedAst.DebugKind.Debug => ""
+            case ParsedAst.DebugKind.DebugWithLoc => s"[${loc.formatWithLine}] "
+            case ParsedAst.DebugKind.DebugWithLocAndSrc =>
+              val locPart = s"[${loc.formatWithLine}]"
+              val srcPart = e.loc.text.map(s => s" $s = ").getOrElse("")
+              locPart + srcPart
           }
-          val e1 = WeededAst.Expression.Str(locPart + srcPart, loc)
+          val e1 = WeededAst.Expression.Str(prefix, loc)
           WeededAst.Expression.Debug(e1, e, loc)
       }
 
@@ -3042,7 +3045,7 @@ object Weeder {
     case ParsedAst.Expression.ReifyBool(sp1, _, _) => sp1
     case ParsedAst.Expression.ReifyType(sp1, _, _) => sp1
     case ParsedAst.Expression.ReifyPurity(sp1, _, _, _, _, _) => sp1
-    case ParsedAst.Expression.Debug(sp1, _, _) => sp1
+    case ParsedAst.Expression.Debug(sp1, _, _, _) => sp1
   }
 
   /**

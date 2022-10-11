@@ -1217,11 +1217,12 @@ object ParsedAst {
     /**
       * Debug expression.
       *
-      * @param sp1 the position of the first character in the expression.
-      * @param exp the expression to print.
-      * @param sp2 the position of the last character in the expression.
+      * @param sp1  the position of the first character in the expression.
+      * @param kind the debug kind.
+      * @param exp  the expression to print.
+      * @param sp2  the position of the last character in the expression.
       */
-    case class Debug(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Debug(sp1: SourcePosition, kind: ParsedAst.DebugKind, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
   }
 
@@ -2249,6 +2250,28 @@ object ParsedAst {
       */
     case class LatPredicateWithTypes(sp1: SourcePosition, name: Name.Ident, tpes: Seq[ParsedAst.Type], tpe: ParsedAst.Type, sp2: SourcePosition) extends PredicateType
 
+  }
+
+  /**
+    * A common super-type for debug kinds.
+    */
+  sealed trait DebugKind
+
+  object DebugKind {
+    /**
+      * Print the debugged value (and nothing else).
+      */
+    case object Debug extends DebugKind
+
+    /**
+      * Print the debugged value prefixed with the file name and line number.
+      */
+    case object DebugWithLoc extends DebugKind
+
+    /**
+      * Print the debugged value prefix with the file name and line number, and the source code of the expression.
+      */
+    case object DebugWithLocAndSrc extends DebugKind
   }
 
   /**
