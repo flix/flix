@@ -2258,11 +2258,20 @@ object ParsedAst {
   sealed trait DebugKind
 
   object DebugKind {
+    /**
+      * Only print the debugged value.
+      */
     case object Debug extends DebugKind
 
-    case object DebugWithLine extends DebugKind
+    /**
+      * Print the debugged value prefixed with its file and line number.
+      */
+    case object DebugWithLoc extends DebugKind
 
-    case object DebugWithLineAndText extends DebugKind
+    /**
+      * Print the debugged value prefix with its file and line number, and the source code of the expression.
+      */
+    case object DebugWithLocAndSrc extends DebugKind
   }
 
     /**

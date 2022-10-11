@@ -1746,8 +1746,8 @@ object Weeder {
           val loc = mkSL(sp1, sp2)
           val prefix = kind match {
             case ParsedAst.DebugKind.Debug => ""
-            case ParsedAst.DebugKind.DebugWithLine => s"[${loc.formatWithLine}] "
-            case ParsedAst.DebugKind.DebugWithLineAndText =>
+            case ParsedAst.DebugKind.DebugWithLoc => s"[${loc.formatWithLine}] "
+            case ParsedAst.DebugKind.DebugWithLocAndSrc =>
               val locPart = s"[${loc.formatWithLine}]"
               val srcPart = e.loc.text.map(s => s" $s = ").getOrElse("")
               locPart + srcPart
