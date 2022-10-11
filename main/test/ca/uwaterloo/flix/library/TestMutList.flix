@@ -705,7 +705,7 @@ namespace TestMutList {
 
     @test
     def mapWithIndex02(): Bool = region r {
-        let v = MutList.mapWithIndex((i, _) -> if (x == 8 and i == 1) 42 else 0, MutList.range(r, 7, 10));
+        let v = MutList.mapWithIndex((i, x) -> if (x == 8 and i == 1) 42 else 0, MutList.range(r, 7, 10));
         MutList.sameElements(v, Array.toMutList(r, [0, 42, 0]))
     }
 
@@ -730,7 +730,7 @@ namespace TestMutList {
     @test
     def transformWithIndex!02(): Bool = region r {
         let v = MutList.range(r, 7, 10);
-        MutList.transformWithIndex!((i, _) -> if (x == 8 and i == 1) 42 else 0, v);
+        MutList.transformWithIndex!((i, x) -> if (x == 8 and i == 1) 42 else 0, v);
         MutList.sameElements(v, Array.toMutList(r, [0, 42, 0]))
     }
 
