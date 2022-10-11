@@ -981,43 +981,43 @@ namespace TestArray {
 
     @test
     def mapWithIndex01(): Bool = region r {
-        let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, []);
+        let a = Array.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, []);
         Array.sameElements(a, []: Array[Bool, _])
     }
 
     @test
     def mapWithIndex02(): Bool = region r {
-        let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [1]);
+        let a = Array.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, [1]);
         Array.sameElements(a, [false])
     }
 
     @test
     def mapWithIndex03(): Bool = region r {
-        let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [3]);
+        let a = Array.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, [3]);
         Array.sameElements(a, [true])
     }
 
     @test
     def mapWithIndex04(): Bool = region r {
-        let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [1,2]);
+        let a = Array.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, [1,2]);
         Array.sameElements(a, [false,true])
     }
 
     @test
     def mapWithIndex05(): Bool = region r {
-        let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [1,8]);
+        let a = Array.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, [1,8]);
         Array.sameElements(a, [false,false])
     }
 
     @test
     def mapWithIndex06(): Bool = region r {
-        let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [8,1]);
+        let a = Array.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, [8,1]);
         Array.sameElements(a, [true,true])
     }
 
     @test
     def mapWithIndex07(): Bool = region r {
-        let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [7,8]);
+        let a = Array.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, [7,8]);
         Array.sameElements(a, [true,false])
     }
 

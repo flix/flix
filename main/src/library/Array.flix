@@ -459,10 +459,10 @@ namespace Array {
     /// That is, the result is of the form: `[ f(a[0], 0), f(a[1], 1), ... ]`.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def mapWithIndex(f: (a, Int32) -> b \ ef, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
+    pub def mapWithIndex(f: (Int32, a) -> b \ ef, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
         let r = Scoped.regionOf(a);
-        init(r, i -> f(a[i], i), len)
+        init(r, i -> f(i, a[i]), len)
 
     ///
     /// Apply `f` to every element in array `a` along with that element's index. Array `a` is mutated.
