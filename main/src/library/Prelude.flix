@@ -135,11 +135,11 @@ pub def println(x: a): Unit \ IO with ToString[a] =
 /// Note: For internal use only. The actual `debug(exp)` expression is parsed and ultimately rewritten to call this function.
 ///
 @Internal
-def debug(prefix: String, x: a): Unit \ IO =
+def debug(prefix: String, x: a): a \ IO =
     import static get java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
     import java.io.PrintStream.println(String): Unit \ IO;
-    println(getOut(), "${prefix} ${debugString(x)}")
-
+    println(getOut(), "${prefix} ${debugString(x)}");
+    x
 
 ///
 /// Returns an automatic string representation of `x`.

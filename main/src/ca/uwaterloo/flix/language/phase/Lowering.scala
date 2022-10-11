@@ -1441,9 +1441,9 @@ object Lowering {
     //
     // Note that we mark the call as impure (even though it may have been typed as pure!)
     //
-    val tpe = Type.mkImpureUncurriedArrow(exp1.tpe :: exp2.tpe :: Nil, Type.Unit, loc)
+    val tpe = Type.mkImpureUncurriedArrow(exp1.tpe :: exp2.tpe :: Nil, exp2.tpe, loc)
     val innerExp = Expression.Def(Defs.Debug, tpe, loc)
-    Expression.Apply(innerExp, exp1 :: exp2 :: Nil, Type.Unit, Type.Impure, Type.Empty, loc)
+    Expression.Apply(innerExp, exp1 :: exp2 :: Nil, exp2.tpe, Type.Impure, Type.Empty, loc)
   }
 
   /**
