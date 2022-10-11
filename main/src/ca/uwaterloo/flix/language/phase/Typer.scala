@@ -2327,10 +2327,11 @@ object Typer {
         TypedAst.Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
 
       case KindedAst.Expression.Debug(exp1, exp2, loc) =>
+        // We explicitly mark a `Debug` expression as Impure.
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = Type.Unit
-        val pur = Type.mkAnd(e1.pur, e2.pur, loc)
+        val pur = Type.Impure
         val eff = Type.mkUnion(List(e1.eff, e2.eff), loc)
         TypedAst.Expression.Debug(e1, e2, tpe, pur, eff, loc)
     }
