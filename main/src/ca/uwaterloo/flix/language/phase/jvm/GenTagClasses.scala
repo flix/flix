@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
+import ca.uwaterloo.flix.language.ast.MonoType
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
@@ -217,6 +218,10 @@ object GenTagClasses {
   }
 
   def compileToStringMethod(visitor: ClassWriter, classType: JvmType.Reference, tag: TagInfo)(implicit root: Root, flix: Flix): Unit = {
+    val printParanthesis = tag.tagType match {
+      case MonoType.Tuple(_) => false
+      case _ => true
+    }
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), null, null)
     method.visitLdcInsn("") // for last join call
 
@@ -224,7 +229,7 @@ object GenTagClasses {
     method.visitTypeInsn(ANEWARRAY, "java/lang/String")
     method.visitInsn(DUP)
     method.visitInsn(ICONST_0)
-    method.visitLdcInsn(tag.sym.name + "." + tag.tag + "(")
+    method.visitLdcInsn(tag.tag + (if (printParanthesis) "(" else ""))
     method.visitInsn(AASTORE)
     method.visitInsn(DUP)
     method.visitInsn(ICONST_1)
@@ -234,7 +239,7 @@ object GenTagClasses {
     method.visitInsn(AASTORE)
     method.visitInsn(DUP)
     method.visitInsn(ICONST_2)
-    method.visitLdcInsn(")")
+    method.visitLdcInsn(if (printParanthesis) ")" else "")
     method.visitInsn(AASTORE)
     method.visitMethodInsn(INVOKESTATIC, JvmType.String.name.toInternalName, "join", "(Ljava/lang/CharSequence;[Ljava/lang/CharSequence;)Ljava/lang/String;", false)
     method.visitInsn(ARETURN)

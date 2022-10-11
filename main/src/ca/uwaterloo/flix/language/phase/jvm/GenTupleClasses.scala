@@ -125,7 +125,7 @@ object GenTupleClasses {
     // Emit the code for `getBoxedValue()` method
     compileGetBoxedValueMethod(visitor, classType, targs)
 
-    compileToStringMethod(visitor, targs)
+    compileToStringMethod(visitor, classType)
 
     // Generate `hashCode` method
     AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
@@ -220,11 +220,31 @@ object GenTupleClasses {
     constructor.visitEnd()
   }
 
-  def compileToStringMethod(visitor: ClassWriter, targs: List[JvmType])(implicit root: Root, flix: Flix): Unit = {
+  def compileToStringMethod(visitor: ClassWriter, classType: JvmType.Reference)(implicit root: Root, flix: Flix): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), null, null)
-    method.visitLdcInsn(s"Tuple${targs.length}")
+    method.visitInsn(ICONST_3)
+    method.visitTypeInsn(ANEWARRAY, JvmType.String.name.toInternalName)
+    method.visitInsn(DUP)
+    method.visitInsn(ICONST_0)
+    method.visitLdcInsn("(")
+    method.visitInsn(AASTORE)
+    method.visitInsn(DUP)
+    method.visitInsn(ICONST_1)
+    method.visitLdcInsn(", ")
+    method.visitVarInsn(ALOAD, 0)
+    method.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getBoxedValue", s"()[Ljava/lang/Object;", false)
+    method.visitMethodInsn(INVOKESTATIC, "java/lang/String", "join", "(Ljava/lang/CharSequence;[Ljava/lang/CharSequence;)Ljava/lang/String;", false)
+    method.visitInsn(AASTORE)
+    method.visitInsn(DUP)
+    method.visitInsn(ICONST_2)
+    method.visitLdcInsn(")")
+    method.visitInsn(AASTORE)
+    method.visitVarInsn(ASTORE, 1)
+    method.visitLdcInsn("")
+    method.visitVarInsn(ALOAD, 1)
+    method.visitMethodInsn(INVOKESTATIC, "java/lang/String", "join", "(Ljava/lang/CharSequence;[Ljava/lang/CharSequence;)Ljava/lang/String;", false)
     method.visitInsn(ARETURN)
-    method.visitMaxs(1, 1)
+    method.visitMaxs(999, 999)
     method.visitEnd()
   }
 
