@@ -218,6 +218,9 @@ def testArrayOfStringDebugString01(): Bool \ IO = debugString(["a", "b", "c"]) |
 @test
 def testTupleDebugString01(): Bool = debugString((true, 'a', "Hello World!")) == "(true, a, Hello World!)"
 
+@test
+def testTupleDebugString01(): Bool = debugString((false, 2, ())) == "(false, 2, ())"
+
 
 pub enum Suit {
     case Hearts, Diamonds, Clubs, Spades
@@ -231,9 +234,8 @@ pub enum Card {
     case Card(Suit, Rank)
 }
 
-// TODO update once strings improve
 @test
-def testEnumDebugString01(): Bool = debugString(Card(Hearts, N(5))) |> String.startsWith(prefix = "Card")
+def testEnumDebugString01(): Bool = debugString(Card(Hearts, N(5)))  == "Card(Hearts, N(5))"
 
 
 pub enum Poly[a, b] {
@@ -243,9 +245,8 @@ pub enum Poly[a, b] {
     case Both(a, b)
 }
 
-// TODO update once strings improve
 @test
-def testPolyDebugString01(): Bool = debugString(Poly.NoneOfThem) |> String.startsWith(prefix = "NoneOfThem")
+def testPolyDebugString01(): Bool = debugString(Poly.NoneOfThem) == "NoneOfThem"
 
 @test
 def testPolyDebugString02(): Bool = debugString(This(123)) == "This(123)"
