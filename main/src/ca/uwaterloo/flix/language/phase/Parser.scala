@@ -942,8 +942,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("resume") ~ Argument ~ SP ~> ParsedAst.Expression.Resume
     }
 
-    def Debug: Rule1[ParsedAst.Expression.Debug] = rule {
-      SP ~ keyword("debug") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Debug
+    def Debug: Rule1[ParsedAst.Expression.Debug] = {
+      def DebugKind: Rule1[ParsedAst.DebugKind] = rule {
+        keyword("debug!!!") ~ push(ParsedAst.DebugKind.DebugWithLineAndText) |
+          keyword("debug!!") ~ push(ParsedAst.DebugKind.DebugWithLine) |
+          keyword("debug!") ~ push(ParsedAst.DebugKind.Debug)
+      }
+
+      rule {
+        SP ~ DebugKind ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Debug
+      }
     }
 
     def Discard: Rule1[ParsedAst.Expression.Discard] = rule {
