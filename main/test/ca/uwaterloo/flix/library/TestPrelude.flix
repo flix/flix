@@ -256,3 +256,18 @@ def testPolyDebugString03(): Bool = debugString(That("Hello World!")) == "That(H
 
 @test
 def testPolyDebugString04(): Bool = debugString(Both(123, "Hello World!")) == "Both(123, Hello World!)"
+
+@test
+def testRecordDebugString01(): Bool = debugString({field = (1, 2)}) == "{field = (1, 2)}"
+
+@test
+def testRecordDebugString02(): Bool = {
+    let s = debugString({something = (), other = true});
+    s == "{field = (), other = true}" or s == "{other = true, field = ()}"
+}
+
+@test
+def testRecordDebugString03(): Bool = {
+    let s = debugString({something = {}, other = {single = "ton"}}});
+    s == "{something = {}, other = {single = "ton"}}" or s == "{other = {single = "ton"}, something = {}}"
+}
