@@ -1418,25 +1418,6 @@ namespace List {
         };
         loop(l, Nil)
 
-
-    ///
-    /// Helper function for `permutations`.
-    ///
-    def removeIndex(i: Int32, l: List[a]): List[a] = match (i, l) {
-        case (_, Nil) => l
-        case (0, _ :: xs) => xs
-        case (p, x :: xs) => x :: removeIndex(p - 1, xs)
-    }
-
-
-    ///
-    /// Helper function for `transpose`.
-    ///
-    def uniformHelper(l: List[List[a]], len: Int32): Bool = match l {
-        case Nil     => true
-        case x :: xs => if (length(x) == len) uniformHelper(xs, len) else false
-    }
-
     ///
     /// Returns `true` if and only if `l1` is a prefix of `l2`.
     ///
@@ -1490,14 +1471,5 @@ namespace List {
         case Nil         => Nil
         case _ :: xs     => drop(n - 1, xs)
     }
-
-    ///
-    /// Helper function for `groupBy`.
-    ///
-    def agreeHelper(f: (a, a) -> Bool, a: a, l: List[a]): Bool = match l {
-        case Nil     => true
-        case x :: xs => if (f(x, a) and f(a, x)) agreeHelper(f, a, xs) else false
-    }
-
 }
 
