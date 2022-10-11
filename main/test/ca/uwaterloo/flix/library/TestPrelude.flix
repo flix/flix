@@ -100,7 +100,7 @@ def forwardPipe02(): Bool =
         r == 3
 
 /////////////////////////////////////////////////////////////////////////////
-// ||> (doublePipe)                                                    //
+// ||> (doublePipe)                                                        //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
@@ -154,3 +154,104 @@ def imperativePipe04(): Bool = region r {
     let f = (x) -> a := x;
     (2 !> f) == 2 and (4 !> f) == 4 and deref a == 4
 }
+
+/////////////////////////////////////////////////////////////////////////////
+// debugString                                                             //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def testUnitDebugString01(): Bool = debugString(()) == "()"
+
+
+@test
+def testBoolDebugString01(): Bool = debugString(true) == "true"
+
+@test
+def testBoolDebugString02(): Bool = debugString(false) == "false"
+
+
+@test
+def testCharDebugString01(): Bool = debugString('a') == "a"
+
+@test
+def testCharDebugString02(): Bool = debugString('\u2194') == "\u2194"
+
+
+@test
+def testFloat32DebugString01(): Bool = debugString(21.42f32) == "21.42"
+
+
+@test
+def testInt8DebugString01(): Bool = debugString(42i8) == "42"
+
+
+@test
+def testInt16DebugString01(): Bool = debugString(42i16) == "42"
+
+
+@test
+def testInt32DebugString01(): Bool = debugString(42i32) == "42"
+
+
+@test
+def testInt64DebugString01(): Bool = debugString(42i64) == "42"
+
+
+@test
+def testBigIntDebugString01(): Bool = debugString(42ii) == "42"
+
+
+@test
+def testStringDebugString01(): Bool = debugString("Hello World!") == "Hello World!"
+
+
+// TODO update once strings improve
+@test
+def testArrayOfIntDebugString01(): Bool \ IO = debugString([1, 2, 3]) |> String.startsWith(prefix = "[")
+
+
+// TODO update once strings improve
+@test
+def testArrayOfStringDebugString01(): Bool \ IO = debugString(["a", "b", "c"]) |> String.startsWith(prefix = "[")
+
+
+@test
+def testTupleDebugString01(): Bool = debugString((true, 'a', "Hello World!")) == "(true, a, Hello World!)"
+
+
+pub enum Suit {
+    case Hearts, Diamonds, Clubs, Spades
+}
+
+pub enum Rank {
+    case N(Int32), Jack, Queen, King, Ace
+}
+
+pub enum Card {
+    case Card(Suit, Rank)
+}
+
+// TODO update once strings improve
+@test
+def testEnumDebugString01(): Bool = debugString(Card(Hearts, N(5))) |> String.startsWith(prefix = "Card")
+
+
+pub enum Poly[a, b] {
+    case NoneOfThem,
+    case This(a)
+    case That(b)
+    case Both(a, b)
+}
+
+// TODO update once strings improve
+@test
+def testPolyDebugString01(): Bool = debugString(Poly.NoneOfThem) |> String.startsWith(prefix = "NoneOfThem")
+
+@test
+def testPolyDebugString02(): Bool = debugString(This(123)) == "This(123)"
+
+@test
+def testPolyDebugString03(): Bool = debugString(That("Hello World!")) == "That(Hello World!)"
+
+@test
+def testPolyDebugString04(): Bool = debugString(Both(123, "Hello World!")) == "Both(123, Hello World!)"
