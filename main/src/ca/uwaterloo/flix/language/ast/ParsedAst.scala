@@ -2049,6 +2049,15 @@ object ParsedAst {
       */
     case class StrPart(sp1: SourcePosition, chars: Seq[ParsedAst.CharCode], sp2: SourcePosition) extends InterpolationPart
 
+    /**
+      * Debug part of a string interpolation.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class DebugPart(sp1: SourcePosition, exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends InterpolationPart
+
   }
 
   /**

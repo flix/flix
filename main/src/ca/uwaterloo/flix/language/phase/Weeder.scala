@@ -1368,6 +1368,15 @@ object Weeder {
         mkApplyFqn(fqn, List(e), loc)
       }
 
+      /**
+        * Returns an expression that applies `debugString` to the result of the given expression `e`.
+        */
+      def mkApplyDebugString(e: WeededAst.Expression, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
+        val fqn = "debugString"
+        val loc = mkSL(sp1, sp2).asSynthetic
+        mkApplyFqn(fqn, List(e), loc)
+      }
+
       val loc = mkSL(sp1, sp2)
 
       parts match {
@@ -1395,8 +1404,18 @@ object Weeder {
                   val e2 = mkApplyToString(e, innerSp1, innerSp2)
                   mkConcat(acc, e2, mkSL(innerSp1, innerSp2))
               }
-            // Case 3: empty interpolated expression
+            // Case 3: interpolated debug
+            case (acc, ParsedAst.InterpolationPart.DebugPart(innerSp1, Some(exp), innerSp2)) =>
+              mapN(visitExp(exp, senv)) {
+                e =>
+                  val e2 = mkApplyDebugString(e, innerSp1, innerSp2)
+                  mkConcat(acc, e2, mkSL(innerSp1, innerSp2))
+              }
+            // Case 4: empty interpolated expression
             case (_, ParsedAst.InterpolationPart.ExpPart(innerSp1, None, innerSp2)) =>
+              WeederError.EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2)).toFailure
+            // Case 5: empty interpolated debug
+            case (_, ParsedAst.InterpolationPart.DebugPart(innerSp1, None, innerSp2)) =>
               WeederError.EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2)).toFailure
           }
       }
