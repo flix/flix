@@ -1774,8 +1774,8 @@ object Typer {
         for {
           (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
           _ <- expectTypeM(expected = Type.Str, actual = tpe1, exp1.loc)
-          (constrs2, _, pur2, eff2) <- visitExp(exp2)
-          resultTyp = Type.Unit
+          (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
+          resultTyp = tpe2
           resultPur = Type.mkAnd(pur1, pur2, loc)
           resultEff = Type.mkUnion(List(eff1, eff2), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
@@ -2330,7 +2330,7 @@ object Typer {
         // We explicitly mark a `Debug` expression as Impure.
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
-        val tpe = Type.Unit
+        val tpe = e2.tpe
         val pur = Type.Impure
         val eff = Type.mkUnion(List(e1.eff, e2.eff), loc)
         TypedAst.Expression.Debug(e1, e2, tpe, pur, eff, loc)

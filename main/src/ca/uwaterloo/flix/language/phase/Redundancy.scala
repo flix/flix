@@ -886,7 +886,7 @@ object Redundancy {
     * Returns true if the expression is not pure and not unit type.
     */
   private def isImpureDiscardedValue(exp: Expression): Boolean =
-    !isPure(exp) && exp.tpe != Type.Unit
+    !isPure(exp) && exp.tpe != Type.Unit && !exp.isInstanceOf[Expression.Debug]
 
   /**
     * Returns the free variables in the pattern `p0`.
