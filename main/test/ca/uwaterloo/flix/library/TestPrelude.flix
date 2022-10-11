@@ -219,7 +219,7 @@ def testArrayOfStringDebugString01(): Bool \ IO = debugString(["a", "b", "c"]) |
 def testTupleDebugString01(): Bool = debugString((true, 'a', "Hello World!")) == "(true, a, Hello World!)"
 
 @test
-def testTupleDebugString01(): Bool = debugString((false, 2, ())) == "(false, 2, ())"
+def testTupleDebugString02(): Bool = debugString((false, 2, ())) == "(false, 2, ())"
 
 
 pub enum Suit {
