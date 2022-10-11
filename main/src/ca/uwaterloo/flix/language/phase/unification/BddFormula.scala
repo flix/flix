@@ -22,91 +22,95 @@ import ca.uwaterloo.flix.util.collection.Bimap
 import scala.collection.immutable.SortedSet
 import org.sosy_lab.pjbdd.api.{Builders, DD}
 import org.sosy_lab.pjbdd.util.parser.DotExporter
-import java.util.concurrent.locks.ReentrantLock
+
+import com.juliasoft.beedeedee.bdd.BDD
+import com.juliasoft.beedeedee.factories.Factory
+
 
 object BddFormula {
 
   val creator = Builders.bddBuilder().build()
+  val factory: Factory = Factory.mkER(1000 * 1000, 100000)
 
-  class BddFormula(val dd: DD) {
-    def getDD(): DD = dd
+  class BddFormula(val dd: BDD) {
+    def getDD(): BDD = dd
   }
 
   implicit val AsBoolAlgTrait: BoolAlg[BddFormula] = new BoolAlg[BddFormula] {
     /**
       * Returns `true` if `f` represents TRUE.
       */
-    override def isTrue(f: BddFormula): Boolean = f.getDD().isTrue()
+    override def isTrue(f: BddFormula): Boolean = f.getDD().isOne()
 
     /**
       * Returns `true` if `f` represents FALSE.
       */
-    override def isFalse(f: BddFormula): Boolean = f.getDD().isFalse()
+    override def isFalse(f: BddFormula): Boolean = f.getDD().isZero()
 
     /**
       * Returns a representation of TRUE.
       */
     override def mkTrue: BddFormula = {
-      new BddFormula(creator.makeTrue())
+      new BddFormula(factory.makeOne())
     }
 
     /**
       * Returns a representation of FALSE.
       */
     override def mkFalse: BddFormula = {
-      new BddFormula(creator.makeFalse())
+      new BddFormula(factory.makeZero())
     }
 
     /**
       * Returns a representation of the variable with the given `id`.
       */
     override def mkVar(id: Int): BddFormula = {
-      new BddFormula(creator.makeIthVar(id))
+      new BddFormula(factory.makeVar(id))
     }
 
     /**
       * Returns a representation of the complement of `f`.
       */
     override def mkNot(f: BddFormula): BddFormula = {
-      new BddFormula(creator.makeNot(f.getDD()))
+      new BddFormula(f.getDD().not())
     }
 
     /**
       * Returns a representation of the disjunction of `f1` and `f2`.
       */
     override def mkOr(f1: BddFormula, f2: BddFormula): BddFormula = {
-      new BddFormula(creator.makeOr(f1.getDD(), f2.getDD()))
+      new BddFormula(f1.getDD().or(f2.getDD()))
     }
 
     /**
       * Returns a representation of the conjunction of `f1` and `f2`.
       */
     override def mkAnd(f1: BddFormula, f2: BddFormula): BddFormula = {
-      new BddFormula(creator.makeAnd(f1.getDD(), f2.getDD()))
+      new BddFormula(f1.getDD().and(f2.getDD()))
     }
 
     /**
       * Returns a representation of the formula `f1 == f2`.
       */
     override def mkEq(f1: BddFormula, f2: BddFormula): BddFormula = {
-      new BddFormula(creator.makeXnor(f1.getDD(), f2.getDD()))
+      new BddFormula((f1.getDD().xor(f2.getDD())).not())
     }
 
     /**
       * Returns the set of free variables in `f`.
       */
-    //TODO: Optimize!
+    //TODO: Optimize! (Use .vars)
     override def freeVars(f: BddFormula): SortedSet[Int] = {
       freeVarsAux(f.getDD())
     }
 
-    private def freeVarsAux(dd: DD): SortedSet[Int] = {
-      if (dd.isLeaf()) {
+    private def freeVarsAux(dd: BDD): SortedSet[Int] = {
+      if (dd.isOne || dd.isZero) {
         SortedSet.empty
       } else {
-        SortedSet(dd.getVariable()) ++
-          freeVarsAux(dd.getLow) ++
-          freeVarsAux(dd.getHigh)
+        SortedSet(dd.`var`()) ++
+          freeVarsAux(dd.low()) ++
+          freeVarsAux(dd.high())
       }
     }
 
@@ -130,77 +134,37 @@ object BddFormula {
 
       System.exit(-1)*/
 
-      if(f.getDD().isLeaf()) {
+      if(f.getDD().isOne || f.getDD().isZero) {
         f
       } else {
         val varSet = freeVars(f)
-        println("freeVars in map: " + varSet.toString())
 
         //make x -> x' map
         val maxVar = varSet.max
         val noVars = varSet.size
         val newVarNames = (maxVar+1 to maxVar+noVars).toList
-        println("New names for vars: " + newVarNames.toString())
-        val varMap = varSet.zip(newVarNames).foldLeft(Bimap.empty[Int, Int]) {
+        val varMapForward = varSet.zip(newVarNames).foldLeft(Map.empty[Int, Int]) {
           case (macc, (old_x, new_x)) => macc + (old_x -> new_x)
         }
-        println("Bimap: " + varMap.toString())
+        val varMapBackward = varSet.zip(newVarNames).foldLeft(Map.empty[Int, Int]) {
+          case (macc, (old_x, new_x)) => macc + (new_x -> old_x)
+        }
 
         var res = f.getDD()
-
-        println("Original DD")
-        println(exporter.bddToString(res))
 
         //for each i in varSet create BddFormula' with primed variables
         //and compose f with BddFormula'
         for (var_i <- varSet) {
           val subst = fn(var_i)
-          val substVarSet = freeVars(subst)
 
-          println("substVarSet before: " + substVarSet.toString())
-          var substDD = subst.getDD()
-          println("SubstDD before")
-          println(exporter.bddToString(substDD))
+          val substDD = subst.getDD().replace(varMapForward.asInstanceOf[java.util.Map[Integer, Integer]])
 
-          //create the substitute BDD with the new names
-          for (var_j <- substVarSet) {
-            val j_prime = varMap.getForward(var_j) match {
-              case Some(j) => j
-              case None => ??? //should never happen
-            }
-            substDD = creator.makeReplace(substDD, creator.makeIthVar(var_j), creator.makeIthVar(j_prime))
-          }
-          println("substVarSet after: " + freeVarsAux(substDD).toString())
-          println("SubstDD after")
-          println(exporter.bddToString(substDD))
-
-          res = creator.makeCompose(res, var_i, substDD)
-          println("DD after substitution on " + var_i)
-          println(exporter.bddToString(res))
+          res = res.compose(substDD, var_i)
         }
 
-        val varSetPrime = freeVarsAux(res)
-        println("varSetPrime: " + varSetPrime.toString())
+        res = res.replace(varMapBackward.asInstanceOf[java.util.Map[Integer, Integer]])
 
-        //for each x' map back to x in f
-        for (var_i_prime <- varSetPrime) {
-          val old_i = varMap.getBackward(var_i_prime) match {
-            case Some(i) => i
-            case None => ??? //should never happen
-          }
-          res = creator.makeReplace(res, creator.makeIthVar(var_i_prime), creator.makeIthVar(old_i))
-          println("DD after substitution on " + var_i_prime)
-          println(exporter.bddToString(res))
-        }
-
-        println("varSetRes before return: " + freeVarsAux(res).toString())
-        println("res before return")
-        val resForm = new BddFormula(res)
-        println(exporter.bddToString(res))
-
-        println("")
-        println("")
-        resForm
+        new BddFormula(res)
       }
     }
 
@@ -234,21 +198,21 @@ object BddFormula {
     }
 
     //TODO: Optimize
-    private def createTypeFromBDDAux(dd: DD, tpe: Type, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
-      if (dd.isLeaf()) {
-        return if (dd.isTrue()) tpe else Type.False
+    private def createTypeFromBDDAux(dd: BDD, tpe: Type, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
+      if (dd.isOne() || dd.isZero()) {
+        return if (dd.isOne()) tpe else Type.False
       }
 
-      val currentVar = dd.getVariable()
+      val currentVar = dd.`var`()
       val typeVar = env.getBackward(currentVar) match {
         case Some(sym) => Type.Var(sym, SourceLocation.Unknown)
         case None => throw InternalCompilerException(s"unexpected unknown ID: $currentVar")
       }
 
       val lowType = Type.mkApply(Type.And, List(tpe, Type.Apply(Type.Not, typeVar, SourceLocation.Unknown)), SourceLocation.Unknown)
-      val lowRes = createTypeFromBDDAux(dd.getLow(), lowType, env)
+      val lowRes = createTypeFromBDDAux(dd.low(), lowType, env)
       val highType = Type.mkApply(Type.And, List(tpe, typeVar), SourceLocation.Unknown)
-      val highRes = createTypeFromBDDAux(dd.getHigh(), highType, env)
+      val highRes = createTypeFromBDDAux(dd.high(), highType, env)
 
       (lowRes, highRes) match {
         case (Type.False, Type.False) => Type.False
@@ -264,6 +228,6 @@ object BddFormula {
       * Returns `Some(true)` if `f` is satisfiable (i.e. has a satisfying assignment).
       * Returns `Some(false)` otherwise.
       */
-    override def satisfiable(f: BddFormula): Option[Boolean] = Some(!f.getDD().isFalse())
+    override def satisfiable(f: BddFormula): Option[Boolean] = Some(!f.getDD().isZero())
   }
 }
