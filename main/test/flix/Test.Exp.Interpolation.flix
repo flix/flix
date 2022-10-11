@@ -207,7 +207,7 @@ namespace Test/Exp/Interpolation {
     @test
     def interpolationDebug03(): Bool =
         let x = EnumSansToString.CaseSansToString(123);
-        "my object is %{x}" == "my object is EnumSansToString.CaseSansToString(123)"
+        "my object is %{x}" == "my object is CaseSansToString(123)"
 
     pub enum Color {
         case Red,
