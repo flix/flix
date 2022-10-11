@@ -1744,8 +1744,12 @@ object Weeder {
       mapN(visitExp(exp, senv)) {
         case e =>
           val loc = mkSL(sp1, sp2)
-          val line = s"[${loc.formatWithLine}]"
-          val e1 = WeededAst.Expression.Str(line, loc)
+          val locPart = s"[${loc.formatWithLine}]"
+          val srcPart = loc.text match {
+            case None => ""
+            case Some(s) => s" $s ="
+          }
+          val e1 = WeededAst.Expression.Str(locPart + srcPart, loc)
           WeededAst.Expression.Debug(e1, e, loc)
       }
 
