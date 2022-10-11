@@ -316,8 +316,8 @@ object BackendObjType {
     private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(
       // save the `rest` for the last recursive call
       thisLoad() ~ GETFIELD(this.RestField) ~
-      // build this segment of the string
-      NEW(StringBuilder.jvmName) ~ DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
+        // build this segment of the string
+        NEW(StringBuilder.jvmName) ~ DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
         pushString("{") ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
         thisLoad() ~ GETFIELD(this.LabelField) ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
         pushString(" = ") ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
@@ -328,9 +328,9 @@ object BackendObjType {
     private def ToTailStringMethod: InstanceMethod = Record.ToTailStringMethod.implementation(this.jvmName, IsFinal, Some(
       withName(1, StringBuilder.toTpe) { sb =>
         // save the `rest` for the last recursive call
-          thisLoad() ~ GETFIELD(this.RestField) ~
-        // build this segment of the string
-        sb.load() ~ pushString(", ") ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        thisLoad() ~ GETFIELD(this.RestField) ~
+          // build this segment of the string
+          sb.load() ~ pushString(", ") ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
           thisLoad() ~ GETFIELD(this.LabelField) ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
           pushString(" = ") ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
           thisLoad() ~ GETFIELD(this.ValueField) ~ xToString(this.ValueField.tpe) ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
