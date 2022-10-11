@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type}
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.unification.TypeMinimization
+import ca.uwaterloo.flix.language.phase.unification.{Substitution, TypeMinimization}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -408,8 +408,10 @@ object Regions {
         case (e1, e2, e3) => checkType(tpe, loc)
       }
 
-    case Expression.Debug(exp, _, _, _, _) =>
-      visitExp(exp)
+    case Expression.Debug(exp1, exp2, _, _, tpe, loc) =>
+      flatMapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => checkType(tpe, loc)
+      }
 
   }
 
@@ -456,16 +458,13 @@ object Regions {
     * Assumes that `tvar` is present in the type.
     */
   def essentialToBool(tvar: Type.Var, tpe: Type)(implicit flix: Flix): Boolean = {
-    val t0 = tpe.map {
-      case t if t == tvar => Type.False
-      case t => t
-    }
+    // t0 = tpe[tvar -> False]
+    val t0 = Substitution.singleton(tvar.sym, Type.False).apply(tpe)
 
-    val t1 = tpe.map {
-      case t if t == tvar => Type.True
-      case t => t
-    }
+    // t1 = tpe[tvar -> True]
+    val t1 = Substitution.singleton(tvar.sym, Type.True).apply(tpe)
 
+    // tvar is essential if t0 != t1
     !sameType(t0, t1)
   }
 

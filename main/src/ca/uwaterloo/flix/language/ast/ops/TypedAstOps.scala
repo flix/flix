@@ -283,8 +283,8 @@ object TypedAstOps {
       case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0)
 
-      case Expression.Debug(exp, _, _, _, _) =>
-        visitExp(exp, env0)
+      case Expression.Debug(exp1, exp2, _, _, _, _) =>
+        visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
     }
 
@@ -453,7 +453,7 @@ object TypedAstOps {
     case Expression.Reify(_, _, _, _, _) => Set.empty
     case Expression.ReifyType(_, _, _, _, _, _) => Set.empty
     case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
-    case Expression.Debug(exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.Debug(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
   }
 
   /**
@@ -739,8 +739,8 @@ object TypedAstOps {
     case Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, _, _) =>
       (freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)) - sym
 
-    case Expression.Debug(exp, _, _, _, _) =>
-      freeVars(exp)
+    case Expression.Debug(exp1, exp2, _, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
 
   }
 
