@@ -268,6 +268,6 @@ def testRecordStringify02(): Bool = {
 
 @test
 def testRecordStringify03(): Bool = {
-    let s = stringify({something = {}, other = {single = "ton"}}});
+    let s = stringify({something = {}, other = {single = "ton"}});
     s == "{something = {}, other = {single = "ton"}}" or s == "{other = {single = "ton"}, something = {}}"
 }
