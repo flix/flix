@@ -18,10 +18,11 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type}
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.phase.unification.{Substitution, TypeMinimization}
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import scala.collection.immutable.SortedSet
 
@@ -407,6 +408,11 @@ object Regions {
         case (e1, e2, e3) => checkType(tpe, loc)
       }
 
+    case Expression.Debug(exp1, exp2, _, _, tpe, loc) =>
+      flatMapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => checkType(tpe, loc)
+      }
+
   }
 
   def visitJvmMethod(method: JvmMethod)(implicit scope: List[Type.Var], flix: Flix): Validation[Unit, CompilationMessage] = method match {
@@ -421,16 +427,81 @@ object Regions {
     */
   private def checkType(tpe: Type, loc: SourceLocation)(implicit scope: List[Type.Var], flix: Flix): Validation[Unit, CompilationMessage] = {
     // Compute the region variables that escape.
-    val escapes = regionVarsOf(tpe) -- scope
+    val minned = TypeMinimization.minimizeType(tpe)
+    val regs = regionVarsOf(minned)
+    for (reg <- regs -- scope) {
+      if (essentialTo(reg, minned)) {
+        return TypeError.RegionVarEscapes(reg, minned, loc).toFailure
+      }
+    }
+    ().toSuccess
+  }
 
-    // Return an error if a region variable escapes.
-    if (escapes.nonEmpty) {
-      val rvar = escapes.head
-      return TypeError.RegionVarEscapes(rvar, tpe, loc).toFailure
+  /**
+    * Returns true iff the type variable `tvar` is essential to the type `tpe`.
+    *
+    * A type variable is essential if its ascription has a bearing on the resulting value.
+    * For example, in the type `a and (not a)`, `a` is not essential since the result is always `false`.
+    */
+  def essentialTo(tvar: Type.Var, tpe: Type)(implicit flix: Flix): Boolean = {
+    if (!tpe.typeVars.contains(tvar)) {
+      // Case 1: The type variable is not present in the type. It cannot be essential.
+      false
+    } else {
+      // Case 2: The type variable is present in the type. Check if it is essential to any of the booleans.
+      boolTypesOf(tpe).exists(essentialToBool(tvar, _))
+    }
+  }
+
+  /**
+    * Returns true iff the type variable `tvar` is essential to the boolean formula `tpe`.
+    * Assumes that `tvar` is present in the type.
+    */
+  def essentialToBool(tvar: Type.Var, tpe: Type)(implicit flix: Flix): Boolean = {
+    // t0 = tpe[tvar -> False]
+    val t0 = Substitution.singleton(tvar.sym, Type.False).apply(tpe)
+
+    // t1 = tpe[tvar -> True]
+    val t1 = Substitution.singleton(tvar.sym, Type.True).apply(tpe)
+
+    // tvar is essential if t0 != t1
+    !sameType(t0, t1)
+  }
+
+  /**
+    * Extracts all the boolean formulas from the given type `t0`.
+    */
+  private def boolTypesOf(t0: Type): List[Type] = t0 match {
+    case t if t.kind == Kind.Bool => List(t)
+    case _: Type.Var => Nil
+    case _: Type.Cst => Nil
+    case Type.Apply(tpe1, tpe2, _) => boolTypesOf(tpe1) ::: boolTypesOf(tpe2)
+    case Type.Alias(_, _, tpe, _) => boolTypesOf(tpe)
+  }
+
+  /**
+    * Returns true iff the two types denote the same Boolean function, using the same variables.
+    */
+  private def sameType(t1: Type, t2: Type)(implicit flix: Flix): Boolean = {
+    val tvars = t1.typeVars ++ t2.typeVars
+
+    /**
+      * Evaluates the given boolean formula,
+      * where `trueVars` are the variables ascribed the value TRUE,
+      * and all other variables are ascribed the value FALSE.
+      */
+    def eval(tpe: Type, trueVars: SortedSet[Type.Var]): Boolean = tpe match {
+      case Type.True => true
+      case Type.False => false
+      case Type.Apply(Type.Not, x, _) => eval(x, trueVars)
+      case Type.Apply(Type.Apply(Type.And, x1, _), x2, _) => eval(x1, trueVars) && eval(x2, trueVars)
+      case Type.Apply(Type.Apply(Type.Or, x1, _), x2, _) => eval(x1, trueVars) || eval(x2, trueVars)
+      case tvar: Type.Var => trueVars.contains(tvar)
+      case _ => throw InternalCompilerException(s"unexpected type $tpe")
     }
 
-    // Otherwise return success.
-    ().toSuccess
+    val subsets = tvars.subsets()
+    subsets.forall(trueVars => eval(t1, trueVars) == eval(t2, trueVars))
   }
 
   /**

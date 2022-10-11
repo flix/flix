@@ -80,12 +80,7 @@ object GenTupleClasses {
     * Then we generate the `getBoxedValue()` method which will return an array containing all the elements of the represented
     * tuple but all elements are boxed if their type is not a primitive.
     *
-    * Next, we will generate the `toString()` method which will always throws an exception, since `toString` should not be called.
-    * The `toString` method is always the following:
-    *
-    * public string toString(Object var1) throws Exception {
-    * throw new Exception("toString method shouldn't be called");
-    * }
+    * Next, we will generate the `toString()` method.
     *
     * Then, we will generate the `hashCode()` method which will always throws an exception, since `hashCode` should not be called.
     * The `hashCode` method is always the following:
@@ -130,9 +125,7 @@ object GenTupleClasses {
     // Emit the code for `getBoxedValue()` method
     compileGetBoxedValueMethod(visitor, classType, targs)
 
-    // Generate `toString` method
-    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String),
-      "toString method shouldn't be called")
+    compileToStringMethod(visitor, classType)
 
     // Generate `hashCode` method
     AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
@@ -225,6 +218,34 @@ object GenTupleClasses {
     // Parameters of visit max are thrown away because visitor will calculate the frame and variable stack size
     constructor.visitMaxs(65535, 65535)
     constructor.visitEnd()
+  }
+
+  def compileToStringMethod(visitor: ClassWriter, classType: JvmType.Reference)(implicit root: Root, flix: Flix): Unit = {
+    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), null, null)
+    method.visitInsn(ICONST_3)
+    method.visitTypeInsn(ANEWARRAY, JvmType.String.name.toInternalName)
+    method.visitInsn(DUP)
+    method.visitInsn(ICONST_0)
+    method.visitLdcInsn("(")
+    method.visitInsn(AASTORE)
+    method.visitInsn(DUP)
+    method.visitInsn(ICONST_1)
+    method.visitLdcInsn(", ")
+    method.visitVarInsn(ALOAD, 0)
+    method.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getBoxedValue", s"()[Ljava/lang/Object;", false)
+    method.visitMethodInsn(INVOKESTATIC, "java/lang/String", "join", "(Ljava/lang/CharSequence;[Ljava/lang/CharSequence;)Ljava/lang/String;", false)
+    method.visitInsn(AASTORE)
+    method.visitInsn(DUP)
+    method.visitInsn(ICONST_2)
+    method.visitLdcInsn(")")
+    method.visitInsn(AASTORE)
+    method.visitVarInsn(ASTORE, 1)
+    method.visitLdcInsn("")
+    method.visitVarInsn(ALOAD, 1)
+    method.visitMethodInsn(INVOKESTATIC, "java/lang/String", "join", "(Ljava/lang/CharSequence;[Ljava/lang/CharSequence;)Ljava/lang/String;", false)
+    method.visitInsn(ARETURN)
+    method.visitMaxs(999, 999)
+    method.visitEnd()
   }
 
 }

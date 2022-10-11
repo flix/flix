@@ -65,7 +65,7 @@ object LocationLink {
     * Returns a location link to the given symbol `sym`.
     */
   def fromCaseSym(sym: Symbol.CaseSym, loc: SourceLocation)(implicit root: Root): LocationLink = {
-    val enumDecl = root.enums(sym.enum)
+    val enumDecl = root.enums(sym.enumSym)
     val caseDecl = enumDecl.cases(sym)
     val originSelectionRange = Range.from(loc)
     val targetUri = sym.loc.source.name

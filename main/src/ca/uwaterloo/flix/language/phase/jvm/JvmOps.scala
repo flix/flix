@@ -742,7 +742,7 @@ object JvmOps {
           val subst = Unification.unifyTypes(hackMonoType2Type(enum0.tpeDeprecated), hackMonoType2Type(tpe), RigidityEnv.empty).get
           val tagType = subst(hackMonoType2Type(uninstantiatedTagType))
 
-          sacc + TagInfo(caseSym.enum, caseSym.name, args, tpe, hackType2MonoType(tagType))
+          sacc + TagInfo(caseSym.enumSym, caseSym.name, args, tpe, hackType2MonoType(tagType))
       }
     case _ => Set.empty
   }

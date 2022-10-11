@@ -92,6 +92,7 @@ object FormatExpression {
     case TypedAst.Expression.Reify(t, _, _, _, _) => s"Reify($t)"
     case TypedAst.Expression.ReifyType(t, k, _, _, _, _) => s"ReifyType($t, $k)"
     case TypedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, _, _) => s"ReifyEff($sym, $exp1, $exp2, $exp3)"
+    case TypedAst.Expression.Debug(exp1, exp2, _, _, _, _) => s"Debug($exp1, $exp2)"
   }
 
 }

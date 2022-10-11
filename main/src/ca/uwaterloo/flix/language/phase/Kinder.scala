@@ -812,6 +812,11 @@ object Kinder {
         case (e1, e2, e3) => KindedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
       }
 
+    case ResolvedAst.Expression.Debug(exp1, exp2, loc) =>
+      mapN(visitExp(exp1, kenv0, senv, taenv, henv0, root), visitExp(exp2, kenv0, senv, taenv, henv0, root)) {
+        case (e1, e2) => KindedAst.Expression.Debug(e1, e2, loc)
+      }
+
   }
 
   /**

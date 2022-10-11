@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Expression.NewChannel
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SemanticOperator, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -55,6 +55,8 @@ object Lowering {
     lazy val Lift3: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift3")
     lazy val Lift4: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift4")
     lazy val Lift5: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift5")
+
+    lazy val Debug: Symbol.DefnSym = Symbol.mkDefnSym("debug")
 
     /**
       * Returns the definition associated with the given symbol `sym`.
@@ -675,6 +677,10 @@ object Lowering {
       val e3 = visitExp(exp3)
       Expression.ReifyEff(sym, e1, e2, e3, t, pur, eff, loc)
 
+    case Expression.Debug(exp1, exp2, tpe, pur, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      mkApplyDebug(e1, e2, loc)
   }
 
   /**
@@ -1429,6 +1435,18 @@ object Lowering {
   }
 
   /**
+    * Applies the given expression `exp` to the `debug` function.
+    */
+  private def mkApplyDebug(exp1: Expression, exp2: Expression, loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = {
+    //
+    // Note that we mark the call as impure (even though it may have been typed as pure!)
+    //
+    val tpe = Type.mkImpureUncurriedArrow(exp1.tpe :: exp2.tpe :: Nil, Type.Unit, loc)
+    val innerExp = Expression.Def(Defs.Debug, tpe, loc)
+    Expression.Apply(innerExp, exp1 :: exp2 :: Nil, Type.Unit, Type.Impure, Type.Empty, loc)
+  }
+
+  /**
     * Return a list of quantified variables in the given expression `exp0`.
     *
     * A variable is quantified (i.e. *NOT* lexically bound) if it occurs in the expression `exp0`
@@ -1759,6 +1777,11 @@ object Lowering {
       val e2 = substExp(exp2, subst)
       val e3 = substExp(exp3, subst)
       Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
+
+    case Expression.Debug(exp1, exp2, tpe, pur, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      Expression.Debug(e1, e2, tpe, pur, eff, loc)
 
     case Expression.FixpointConstraintSet(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
 

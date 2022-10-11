@@ -131,8 +131,8 @@ object Symbol {
   /**
     * Returns the case symbol for the given name `ident` in the given `enum`.
     */
-  def mkCaseSym(enum: Symbol.EnumSym, ident: Ident): CaseSym = {
-    new CaseSym(enum, ident.name, ident.loc)
+  def mkCaseSym(sym: Symbol.EnumSym, ident: Ident): CaseSym = {
+    new CaseSym(sym, ident.name, ident.loc)
   }
 
   /**
@@ -411,24 +411,24 @@ object Symbol {
   /**
     * Enum Symbol.
     */
-  final class CaseSym(val enum: Symbol.EnumSym, val name: String, val loc: SourceLocation) {
+  final class CaseSym(val enumSym: Symbol.EnumSym, val name: String, val loc: SourceLocation) {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: CaseSym => this.enum == that.enum && this.name == that.name
+      case that: CaseSym => this.enumSym == that.enumSym && this.name == that.name
       case _ => false
     }
 
     /**
       * Returns the hash code of this symbol.
       */
-    override val hashCode: Int = Objects.hash(enum, name)
+    override val hashCode: Int = Objects.hash(enumSym, name)
 
     /**
       * Human readable representation.
       */
-    override def toString: String = enum.toString + "." + name
+    override def toString: String = enumSym.toString + "." + name
   }
 
   /**

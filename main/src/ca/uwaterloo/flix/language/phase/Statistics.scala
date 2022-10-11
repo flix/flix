@@ -161,6 +161,7 @@ object Statistics {
       case Expression.Reify(t, tpe, pur, eff, loc) => Counter.empty
       case Expression.ReifyType(t, k, tpe, pur, eff, loc) => Counter.empty
       case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+      case Expression.Debug(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
     }
 
     base ++ subExprs

@@ -286,6 +286,7 @@ object LateTreeShaker {
 
     case Expression.MatchError(_, _) =>
       Set.empty
+
   }
 
   /**
