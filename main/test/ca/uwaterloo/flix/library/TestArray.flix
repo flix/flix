@@ -1028,49 +1028,49 @@ namespace TestArray {
     @test
     def transformWithIndex01!(): Bool = region r {
         let a = []: Array[Int32, _];
-        Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
+        Array.transformWithIndex!((i, e) -> if (i < 1) e + 10 else e, a);
         Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def transformWithIndex02!(): Bool = region r {
         let a = [1];
-        Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
+        Array.transformWithIndex!((i, e) -> if (i < 1) e + 10 else e, a);
         Array.sameElements(a, [11])
     }
 
     @test
     def transformWithIndex03!(): Bool = region r {
         let a = [3];
-        Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
+        Array.transformWithIndex!((i, e) -> if (i < 1) e + 10 else e, a);
         Array.sameElements(a, [13])
     }
 
     @test
     def transformWithIndex04!(): Bool = region r {
         let a = [1,2];
-        Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
+        Array.transformWithIndex!((i, e) -> if (i < 1) e + 10 else e, a);
         Array.sameElements(a, [11,2])
     }
 
     @test
     def transformWithIndex05!(): Bool = region r {
         let a = [1,8];
-        Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
+        Array.transformWithIndex!((i, e) -> if (i < 1) e + 10 else e, a);
         Array.sameElements(a, [11,8])
     }
 
     @test
     def transformWithIndex06!(): Bool = region r {
         let a = [8,1];
-        Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
+        Array.transformWithIndex!((i, e) -> if (i < 1) e + 10 else e, a);
         Array.sameElements(a, [18,1])
     }
 
     @test
     def transformWithIndex07!(): Bool = region r {
         let a = [7,8,9];
-        Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
+        Array.transformWithIndex!((i, e) -> if (i < 1) e + 10 else e, a);
         Array.sameElements(a, [17,8,9])
     }
 
