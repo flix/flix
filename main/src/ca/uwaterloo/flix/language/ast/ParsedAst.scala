@@ -1217,10 +1217,10 @@ object ParsedAst {
     /**
       * Debug expression.
       *
-      * @param sp1 the position of the first character in the expression.
+      * @param sp1  the position of the first character in the expression.
       * @param kind the debug kind.
-      * @param exp the expression to print.
-      * @param sp2 the position of the last character in the expression.
+      * @param exp  the expression to print.
+      * @param sp2  the position of the last character in the expression.
       */
     case class Debug(sp1: SourcePosition, kind: ParsedAst.DebugKind, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
@@ -2253,28 +2253,28 @@ object ParsedAst {
   }
 
   /**
-    * A common super-type for schema predicate types.
+    * A common super-type for debug kinds.
     */
   sealed trait DebugKind
 
   object DebugKind {
     /**
-      * Only print the debugged value.
+      * Print the debugged value (and nothing else).
       */
     case object Debug extends DebugKind
 
     /**
-      * Print the debugged value prefixed with its file and line number.
+      * Print the debugged value prefixed with the file name and line number.
       */
     case object DebugWithLoc extends DebugKind
 
     /**
-      * Print the debugged value prefix with its file and line number, and the source code of the expression.
+      * Print the debugged value prefix with the file name and line number, and the source code of the expression.
       */
     case object DebugWithLocAndSrc extends DebugKind
   }
 
-    /**
+  /**
     * Represents an optional purity and optional effect.
     */
   case class PurityAndEffect(pur: Option[Type], eff: Option[EffectSet])
