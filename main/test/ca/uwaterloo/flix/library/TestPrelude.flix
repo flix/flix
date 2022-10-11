@@ -205,7 +205,7 @@ def testBigIntStringify01(): Bool = stringify(42ii) == "42"
 def testStringStringifyStringify01(): Bool = stringify("Hello World!") == "Hello World!"
 
 
-// TODO update once strings improvec
+// TODO update once strings improve
 @test
 def testArrayOfIntStringify01(): Bool \ IO = stringify([1, 2, 3]) |> String.startsWith(prefix = "[")
 
@@ -263,11 +263,11 @@ def testRecordStringify01(): Bool = stringify({field = (1, 2)}) == "{field = (1,
 @test
 def testRecordStringify02(): Bool = {
     let s = stringify({something = (), other = true});
-    s == "{field = (), other = true}" or s == "{other = true, field = ()}"
+    s == "{something = (), other = true}" or s == "{other = true, something = ()}"
 }
 
 @test
 def testRecordStringify03(): Bool = {
-    let s = stringify({something = {}, other = {single = "ton"}});
-    s == "{something = {}, other = {single = "ton"}}" or s == "{other = {single = "ton"}, something = {}}"
+    let s = stringify({something = {}, other = {single = 8}});
+    s == "{something = {}, other = {single = 8}}" or s == "{other = {single = 8}, something = {}}"
 }
