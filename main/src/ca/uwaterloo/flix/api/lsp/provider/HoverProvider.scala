@@ -79,8 +79,9 @@ object HoverProvider {
   private def hoverType(tpe: Type, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root, flix: Flix): JObject = {
     val minTpe = minimizeType(tpe)
     val markup =
-      s"""```flix
-         |${FormatType.formatType(minTpe)} ${mkCurrentMsg(current)}
+      s"""${mkCurrentMsg(current)}
+         |```flix
+         |${FormatType.formatType(minTpe)}
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
@@ -94,8 +95,9 @@ object HoverProvider {
     val minEff = minimizeType(eff)
     val minTpe = minimizeType(tpe)
     val markup =
-      s"""```flix
-         |${formatTypAndEff(minTpe, minPur, minEff)} ${mkCurrentMsg(current)}
+      s"""${mkCurrentMsg(current)}
+         |```flix
+         |${formatTypAndEff(minTpe, minPur, minEff)}
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
@@ -107,8 +109,9 @@ object HoverProvider {
   private def hoverDef(sym: Symbol.DefnSym, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root, flix: Flix): JObject = {
     val defDecl = root.defs(sym)
     val markup =
-      s"""```flix
-         |${FormatSignature.asMarkDown(defDecl)} ${mkCurrentMsg(current)}
+      s"""${mkCurrentMsg(current)}
+         |```flix
+         |${FormatSignature.asMarkDown(defDecl)}
          |```
          |
          |${FormatDoc.asMarkDown(defDecl.spec.doc)}
@@ -122,8 +125,9 @@ object HoverProvider {
   private def hoverSig(sym: Symbol.SigSym, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root, flix: Flix): JObject = {
     val sigDecl = root.sigs(sym)
     val markup =
-      s"""```flix
-         |${FormatSignature.asMarkDown(sigDecl)} ${mkCurrentMsg(current)}
+      s"""${mkCurrentMsg(current)}
+         |```flix
+         |${FormatSignature.asMarkDown(sigDecl)}
          |```
          |
          |${FormatDoc.asMarkDown(sigDecl.spec.doc)}
@@ -137,8 +141,9 @@ object HoverProvider {
   private def hoverOp(sym: Symbol.OpSym, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root, flix: Flix): JObject = {
     val opDecl = root.effects(sym.eff).ops.find(_.sym == sym).get // guaranteed to be present
     val markup =
-      s"""```flix
-         |${FormatSignature.asMarkDown(opDecl)} ${mkCurrentMsg(current)}
+      s"""${mkCurrentMsg(current)}
+         |```flix
+         |${FormatSignature.asMarkDown(opDecl)}
          |```
          |
          |${FormatDoc.asMarkDown(opDecl.spec.doc)}
@@ -178,8 +183,9 @@ object HoverProvider {
 
   private def hoverKind(t: Type, current: Boolean)(implicit index: Index, root: Root): JObject = {
     val markup =
-      s"""```flix
-         |${FormatKind.formatKind(t.kind)} ${mkCurrentMsg(current)}
+      s"""${mkCurrentMsg(current)}
+         |```flix
+         |${FormatKind.formatKind(t.kind)}
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)

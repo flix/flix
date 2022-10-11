@@ -45,7 +45,8 @@ object Options {
     xnoseteffects = false,
     xnobooleffects = false,
     xnooptimizer = false,
-    xvirtualthreads = false
+    xvirtualthreads = false,
+    xflexibleregions = false,
   )
 
   /**
@@ -109,7 +110,8 @@ case class Options(lib: LibLevel,
                    xnoseteffects: Boolean,
                    xnobooleffects: Boolean,
                    xnooptimizer: Boolean,
-                   xvirtualthreads: Boolean
+                   xvirtualthreads: Boolean,
+                   xflexibleregions: Boolean,
                   )
 
 /**

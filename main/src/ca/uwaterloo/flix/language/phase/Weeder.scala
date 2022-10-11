@@ -331,7 +331,7 @@ object Weeder {
             case (macc, caze: ParsedAst.Case) =>
               val tagName = caze.ident
               macc.get(tagName) match {
-                case None => (macc + (tagName -> visitCase(caze, ident))).toSuccess
+                case None => (macc + (tagName -> visitCase(caze))).toSuccess
                 case Some(otherTag) =>
                   val enumName = ident.name
                   val loc1 = otherTag.ident.loc
@@ -357,7 +357,7 @@ object Weeder {
   /**
     * Performs weeding on the given enum case `c0`.
     */
-  private def visitCase(c0: ParsedAst.Case, enum: Name.Ident)(implicit flix: Flix): WeededAst.Case = c0 match {
+  private def visitCase(c0: ParsedAst.Case)(implicit flix: Flix): WeededAst.Case = c0 match {
     case ParsedAst.Case(_, ident, tpe0, _) =>
       val tpe = tpe0.map(visitType).getOrElse(WeededAst.Type.Unit(ident.loc))
       WeededAst.Case(ident, tpe)
@@ -1147,7 +1147,7 @@ object Weeder {
       /*
        * Rewrites empty tuples to Unit and eliminate single-element tuples.
        */
-      traverse(elms)(e => visitExp(e, senv)) map {
+      traverse(elms)(visitArgument(_, senv)) map {
         case Nil =>
           val loc = mkSL(sp1, sp2)
           WeededAst.Expression.Unit(loc)
@@ -1368,6 +1368,15 @@ object Weeder {
         mkApplyFqn(fqn, List(e), loc)
       }
 
+      /**
+        * Returns an expression that applies `debugString` to the result of the given expression `e`.
+        */
+      def mkApplyDebugString(e: WeededAst.Expression, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
+        val fqn = "debugString"
+        val loc = mkSL(sp1, sp2).asSynthetic
+        mkApplyFqn(fqn, List(e), loc)
+      }
+
       val loc = mkSL(sp1, sp2)
 
       parts match {
@@ -1395,8 +1404,18 @@ object Weeder {
                   val e2 = mkApplyToString(e, innerSp1, innerSp2)
                   mkConcat(acc, e2, mkSL(innerSp1, innerSp2))
               }
-            // Case 3: empty interpolated expression
+            // Case 3: interpolated debug
+            case (acc, ParsedAst.InterpolationPart.DebugPart(innerSp1, Some(exp), innerSp2)) =>
+              mapN(visitExp(exp, senv)) {
+                e =>
+                  val e2 = mkApplyDebugString(e, innerSp1, innerSp2)
+                  mkConcat(acc, e2, mkSL(innerSp1, innerSp2))
+              }
+            // Case 4: empty interpolated expression
             case (_, ParsedAst.InterpolationPart.ExpPart(innerSp1, None, innerSp2)) =>
+              WeederError.EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2)).toFailure
+            // Case 5: empty interpolated debug
+            case (_, ParsedAst.InterpolationPart.DebugPart(innerSp1, None, innerSp2)) =>
               WeederError.EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2)).toFailure
           }
       }
@@ -1719,6 +1738,15 @@ object Weeder {
       mapN(visitExp(exp1, senv), visitExp(exp2, senv), visitExp(exp3, senv)) {
         case (e1, e2, e3) =>
           WeededAst.Expression.ReifyEff(ident, e1, e2, e3, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.Debug(sp1, exp, sp2) =>
+      mapN(visitExp(exp, senv)) {
+        case e =>
+          val loc = mkSL(sp1, sp2)
+          val line = s"[${loc.formatWithLine}]"
+          val e1 = WeededAst.Expression.Str(line, loc)
+          WeededAst.Expression.Debug(e1, e, loc)
       }
 
   }
@@ -3010,6 +3038,7 @@ object Weeder {
     case ParsedAst.Expression.ReifyBool(sp1, _, _) => sp1
     case ParsedAst.Expression.ReifyType(sp1, _, _) => sp1
     case ParsedAst.Expression.ReifyPurity(sp1, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.Debug(sp1, _, _) => sp1
   }
 
   /**

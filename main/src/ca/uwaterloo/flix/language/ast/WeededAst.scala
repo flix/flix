@@ -66,7 +66,7 @@ object WeededAst {
   sealed trait Import
 
   object Import {
-    
+
     case class Import(name: Name.JavaName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Import
 
   }
@@ -240,6 +240,8 @@ object WeededAst {
     case class ReifyType(t: WeededAst.Type, k: Kind, loc: SourceLocation) extends WeededAst.Expression
 
     case class ReifyEff(ident: Name.Ident, exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Debug(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
   }
 

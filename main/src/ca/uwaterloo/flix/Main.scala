@@ -103,6 +103,7 @@ object Main {
       xnobooleffects = cmdOpts.xnobooleffects,
       xnooptimizer = cmdOpts.xnooptimizer,
       xvirtualthreads = cmdOpts.xvirtualthreads,
+      xflexibleregions = cmdOpts.xflexibleregions,
     )
 
     // Don't use progress bar if benchmarking.
@@ -183,7 +184,7 @@ object Main {
       }
     } catch {
       case ex: RuntimeException =>
-        Console.println(ex.getMessage)
+        ex.printStackTrace()
         System.exit(1)
     }
   }
@@ -224,6 +225,7 @@ object Main {
                      xnobooleffects: Boolean = false,
                      xnooptimizer: Boolean = false,
                      xvirtualthreads: Boolean = false,
+                     xflexibleregions: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -388,23 +390,27 @@ object Main {
 
       // Xstrictmono
       opt[Unit]("Xstrictmono").action((_, c) => c.copy(xstrictmono = true)).
-        text("[experimental] enable strict monomorphization.")
+        text("[experimental] enables strict monomorphization.")
 
       // Xno-set-effects
       opt[Unit]("Xno-set-effects").action((_, c) => c.copy(xnoseteffects = true)).
-        text("[experimental] disable set effects")
+        text("[experimental] disables set effects.")
 
       // Xno-bool-effects
       opt[Unit]("Xno-bool-effects").action((_, c) => c.copy(xnobooleffects = true)).
-        text("[experimental] disable bool effects")
+        text("[experimental] disables bool effects.")
 
       // Xno-optimizer
       opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
-        text("[experimental] disable compiler optimizations")
+        text("[experimental] disables compiler optimizations")
 
       // Xvirtual-threads
       opt[Unit]("Xvirtual-threads").action((_, c) => c.copy(xvirtualthreads = true)).
         text("[experimental] enables virtual threads (requires Java 19 with `--enable-preview`.)")
+
+      // Xvirtual-threads
+      opt[Unit]("Xflexible-regions").action((_, c) => c.copy(xflexibleregions = true)).
+        text("[experimental] uses flexible variables for regions")
 
       note("")
 

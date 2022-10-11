@@ -312,11 +312,11 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represent the type of regions.
+    * A type constructor that converts a region to a Star type.
     */
-  case object Region extends TypeConstructor {
+  case object RegionToStar extends TypeConstructor {
     /**
-      * The shape of a region is Region[l].
+      * The shape of a star-kind region is Region[l].
       */
     def kind: Kind = Kind.Bool ->: Kind.Star
   }

@@ -355,7 +355,7 @@ object AsmOps {
 
     method.visitCode()
 
-    AsmOps.boxField(method, valueType, classType, "getValue")
+    AsmOps.boxFieldWithGetter(method, valueType, classType, "getValue")
 
     method.visitInsn(ARETURN)
     method.visitMaxs(1, 1)
@@ -453,7 +453,7 @@ object AsmOps {
     * @param classType  class that the field is defined on
     * @param getterName name of the field to be boxed
     */
-  def boxField(method: MethodVisitor, fieldType: JvmType, classType: JvmType.Reference, getterName: String): Unit = {
+  def boxFieldWithGetter(method: MethodVisitor, fieldType: JvmType, classType: JvmType.Reference, getterName: String): Unit = {
 
     /**
       * This method will box the primitive on top of the stack
@@ -480,6 +480,46 @@ object AsmOps {
       case JvmType.Reference(_) =>
         method.visitVarInsn(ALOAD, 0)
         method.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, getterName, getMethodDescriptor(Nil, fieldType), false)
+    }
+  }
+
+  /**
+    * This method box a field with name `name` with type `tpe` on the class `className`
+    * If the field is a primitive then it is boxed using the appropriate java type, if it is not a primitive
+    * then we just return the field
+    *
+    * @param method     MethodVisitor used to emit the code to a method
+    * @param fieldType  type of the field to be boxed
+    * @param classType  class that the field is defined on
+    * @param fieldName name of the field to be boxed
+    */
+  def boxField(method: MethodVisitor, fieldType: JvmType, classType: JvmType.Reference, fieldName: String): Unit = {
+
+    /**
+      * This method will box the primitive on top of the stack
+      */
+    def box(boxedObjectInternalName: String, signature: String): Unit = {
+      method.visitTypeInsn(NEW, boxedObjectInternalName)
+      method.visitInsn(DUP)
+      method.visitVarInsn(ALOAD, 0)
+      method.visitFieldInsn(GETFIELD, classType.name.toInternalName, fieldName, fieldType.toDescriptor)
+      method.visitMethodInsn(INVOKESPECIAL, boxedObjectInternalName, "<init>", signature, false)
+    }
+
+    // based on the type of the field, we pick the appropriate class that boxes the primitive
+    fieldType match {
+      case JvmType.Void => throw InternalCompilerException(s"Unexpected type $fieldType")
+      case JvmType.PrimBool => box(JvmName.Boolean.toInternalName, getMethodDescriptor(List(JvmType.PrimBool), JvmType.Void))
+      case JvmType.PrimChar => box(JvmName.Character.toInternalName, getMethodDescriptor(List(JvmType.PrimChar), JvmType.Void))
+      case JvmType.PrimByte => box(JvmName.Byte.toInternalName, getMethodDescriptor(List(JvmType.PrimByte), JvmType.Void))
+      case JvmType.PrimShort => box(JvmName.Short.toInternalName, getMethodDescriptor(List(JvmType.PrimShort), JvmType.Void))
+      case JvmType.PrimInt => box(JvmName.Integer.toInternalName, getMethodDescriptor(List(JvmType.PrimInt), JvmType.Void))
+      case JvmType.PrimLong => box(JvmName.Long.toInternalName, getMethodDescriptor(List(JvmType.PrimLong), JvmType.Void))
+      case JvmType.PrimFloat => box(JvmName.Float.toInternalName, getMethodDescriptor(List(JvmType.PrimFloat), JvmType.Void))
+      case JvmType.PrimDouble => box(JvmName.Double.toInternalName, getMethodDescriptor(List(JvmType.PrimDouble), JvmType.Void))
+      case JvmType.Reference(_) =>
+        method.visitVarInsn(ALOAD, 0)
+        method.visitFieldInsn(GETFIELD, classType.name.toInternalName, fieldName, fieldType.toDescriptor)
     }
   }
 

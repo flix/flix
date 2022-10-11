@@ -840,7 +840,8 @@ object Typer {
 
       case KindedAst.Expression.Scope(sym, regionVar, exp, pvar, loc) =>
         for {
-          _ <- rigidifyM(regionVar)
+          // don't make the region var rigid if the --Xflexible-regions flag is set
+          _ <- if (flix.options.xflexibleregions) InferMonad.point(()) else rigidifyM(regionVar)
           _ <- unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
           (constrs, tpe, pur, eff) <- visitExp(exp)
           purifiedPur <- purifyEffM(regionVar, pur)
@@ -1046,7 +1047,7 @@ object Typer {
         } yield (matchConstrs.flatten ++ ruleBodyConstrs.flatten, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.Tag(symUse, exp, tvar, loc) =>
-        if (symUse.sym.enum == Symbol.mkEnumSym("Choice")) {
+        if (symUse.sym.enumSym == Symbol.mkEnumSym("Choice")) {
           //
           // Special Case 1: Absent or Present Tag
           //
@@ -1081,7 +1082,7 @@ object Typer {
           //
 
           // Lookup the enum declaration.
-          val decl = root.enums(symUse.sym.enum)
+          val decl = root.enums(symUse.sym.enumSym)
 
           // Lookup the case declaration.
           val caze = decl.cases(symUse.sym)
@@ -1769,6 +1770,16 @@ object Typer {
           resultEff = Type.mkUnion(List(eff1, eff2, eff3), loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultPur, resultEff)
 
+      case KindedAst.Expression.Debug(exp1, exp2, loc) =>
+        for {
+          (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
+          _ <- expectTypeM(expected = Type.Str, actual = tpe1, exp1.loc)
+          (constrs2, _, pur2, eff2) <- visitExp(exp2)
+          resultTyp = Type.Unit
+          resultPur = Type.mkAnd(pur1, pur2, loc)
+          resultEff = Type.mkUnion(List(eff1, eff2), loc)
+        } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
+
     }
 
     /**
@@ -2314,6 +2325,15 @@ object Typer {
         val pur = Type.mkAnd(e1.pur, e2.pur, e3.pur, loc)
         val eff = Type.mkUnion(List(e1.eff, e2.eff, e3.eff), loc)
         TypedAst.Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
+
+      case KindedAst.Expression.Debug(exp1, exp2, loc) =>
+        // We explicitly mark a `Debug` expression as Impure.
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        val tpe = Type.Unit
+        val pur = Type.Impure
+        val eff = Type.mkUnion(List(e1.eff, e2.eff), loc)
+        TypedAst.Expression.Debug(e1, e2, tpe, pur, eff, loc)
     }
 
     /**
@@ -2404,7 +2424,7 @@ object Typer {
 
       case KindedAst.Pattern.Tag(symUse, pat, tvar, loc) =>
         // Lookup the enum declaration.
-        val decl = root.enums(symUse.sym.enum)
+        val decl = root.enums(symUse.sym.enumSym)
 
         // Lookup the case declaration.
         val caze = decl.cases(symUse.sym)
