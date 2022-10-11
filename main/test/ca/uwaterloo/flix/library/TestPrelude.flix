@@ -205,16 +205,18 @@ def testBigIntDebugString01(): Bool = debugString(42ii) == "42"
 def testStringDebugString01(): Bool = debugString("Hello World!") == "Hello World!"
 
 
+// TODO update once strings improve
 @test
 def testArrayOfIntDebugString01(): Bool \ IO = debugString([1, 2, 3]) |> String.startsWith(prefix = "[")
 
 
+// TODO update once strings improve
 @test
 def testArrayOfStringDebugString01(): Bool \ IO = debugString(["a", "b", "c"]) |> String.startsWith(prefix = "[")
 
 
 @test
-def testTupleDebugString01(): Bool = debugString((true, 'a', "Hello World!")) == "Tuple3"
+def testTupleDebugString01(): Bool = debugString((true, 'a', "Hello World!")) == "(true, a, Hello World!)"
 
 
 pub enum Suit {
@@ -229,8 +231,9 @@ pub enum Card {
     case Card(Suit, Rank)
 }
 
+// TODO update once strings improve
 @test
-def testEnumDebugString01(): Bool = debugString(Card(Hearts, N(5))) == "Card.Card(Tuple2)"
+def testEnumDebugString01(): Bool = debugString(Card(Hearts, N(5))) |> String.startsWith(prefix = "Card")
 
 
 pub enum Poly[a, b] {
@@ -240,14 +243,15 @@ pub enum Poly[a, b] {
     case Both(a, b)
 }
 
+// TODO update once strings improve
 @test
-def testPolyDebugString01(): Bool = debugString(Poly.NoneOfThem) |> String.startsWith(prefix = "Poly.NoneOfThem")
+def testPolyDebugString01(): Bool = debugString(Poly.NoneOfThem) |> String.startsWith(prefix = "NoneOfThem")
 
 @test
-def testPolyDebugString02(): Bool = debugString(This(123)) == "Poly.This(123)"
+def testPolyDebugString02(): Bool = debugString(This(123)) == "This(123)"
 
 @test
-def testPolyDebugString03(): Bool = debugString(That("Hello World!")) == "Poly.That(Hello World!)"
+def testPolyDebugString03(): Bool = debugString(That("Hello World!")) == "That(Hello World!)"
 
 @test
-def testPolyDebugString04(): Bool = debugString(Both(123, "Hello World!")) == "Poly.Both(Tuple2)"
+def testPolyDebugString04(): Bool = debugString(Both(123, "Hello World!")) == "Both(123, Hello World!)"
