@@ -1372,7 +1372,7 @@ object Weeder {
         * Returns an expression that applies `debugString` to the result of the given expression `e`.
         */
       def mkApplyDebugString(e: WeededAst.Expression, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
-        val fqn = "debugString"
+        val fqn = "stringify"
         val loc = mkSL(sp1, sp2).asSynthetic
         mkApplyFqn(fqn, List(e), loc)
       }
