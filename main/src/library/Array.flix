@@ -642,7 +642,7 @@ namespace Array {
             [] @ r
         else {
             let b = new(r, x, len2);
-            let f = { (v,i) -> let j = i + i; b[j] = v };
+            let f = { (i, v) -> let j = i + i; b[j] = v };
             foreachWithIndex(f, a);
             b
         }
@@ -1551,13 +1551,13 @@ namespace Array {
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreachWithIndex(f: (a, Int32) -> Unit \ ef, a: Array[a, r]): Unit \ { ef, Read(r) } =
+    pub def foreachWithIndex(f: (Int32, a) -> Unit \ ef, a: Array[a, r]): Unit \ { ef, Read(r) } =
         let len = length(a);
         def loop(i) = {
             if (i >= len)
                 ()
             else {
-                f(a[i], i);
+                f(i, a[i]);
                 loop(i + 1)
             }
         };

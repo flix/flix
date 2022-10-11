@@ -4655,7 +4655,7 @@ namespace TestArray {
     def foreachWithIndex01(): Bool = region r {
         let a = []: Array[Float32, _];
         let sb = new StringBuilder(r);
-        let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.foreachWithIndex(fn, a);
         StringBuilder.toString(sb) == ""
     }
@@ -4664,7 +4664,7 @@ namespace TestArray {
     def foreachWithIndex02(): Bool = region r {
         let a = [0.0];
         let sb = new StringBuilder(r);
-        let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.foreachWithIndex(fn, a);
         StringBuilder.toString(sb) == "F"
     }
@@ -4673,7 +4673,7 @@ namespace TestArray {
     def foreachWithIndex03(): Bool = region r {
         let a = [0.0, 0.1];
         let sb = new StringBuilder(r);
-        let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.foreachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FT"
     }
@@ -4682,7 +4682,7 @@ namespace TestArray {
     def foreachWithIndex04(): Bool = region r {
         let a = [0.0, 0.1, 0.2];
         let sb = new StringBuilder(r);
-        let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.foreachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FTT"
     }
@@ -4691,7 +4691,7 @@ namespace TestArray {
     def foreachWithIndex05(): Bool = region r {
         let a = [0.0, 0.1, 0.2, 0.3];
         let sb = new StringBuilder(r);
-        let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.foreachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FTTT"
     }
