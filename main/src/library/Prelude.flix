@@ -138,14 +138,14 @@ pub def println(x: a): Unit \ IO with ToString[a] =
 def debug(prefix: String, x: a): a \ IO =
     import static get java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
     import java.io.PrintStream.println(String): Unit \ IO;
-    println(getOut(), "${prefix}${debugString(x)}");
+    println(getOut(), "${prefix}%{x}");
     x
 
 ///
 /// Returns an automatic string representation of `x`.
 ///
 @Internal
-pub def debugString(x: a): String = {
+pub def stringify(x: a): String = {
     let magic = match reifyType a {
         case ErasedType =>
             import java.lang.Object.toString(): String;
