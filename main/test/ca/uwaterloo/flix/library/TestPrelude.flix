@@ -156,70 +156,70 @@ def imperativePipe04(): Bool = region r {
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// debugString                                                             //
+// stringify                                                               //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def testUnitDebugString01(): Bool = debugString(()) == "()"
+def testUnitStringify01(): Bool = stringify(()) == "()"
 
 
 @test
-def testBoolDebugString01(): Bool = debugString(true) == "true"
+def testBoolStringify01(): Bool = stringify(true) == "true"
 
 @test
-def testBoolDebugString02(): Bool = debugString(false) == "false"
-
-
-@test
-def testCharDebugString01(): Bool = debugString('a') == "a"
-
-@test
-def testCharDebugString02(): Bool = debugString('\u2194') == "\u2194"
+def testBoolStringify02(): Bool = stringify(false) == "false"
 
 
 @test
-def testFloat32DebugString01(): Bool = debugString(21.42f32) == "21.42"
+def testCharStringify01(): Bool = stringify('a') == "a"
+
+@test
+def testCharStringify02(): Bool = stringify('\u2194') == "\u2194"
 
 
 @test
-def testInt8DebugString01(): Bool = debugString(42i8) == "42"
+def testFloat32Stringify01(): Bool = stringify(21.42f32) == "21.42"
 
 
 @test
-def testInt16DebugString01(): Bool = debugString(42i16) == "42"
+def testInt8Stringify01(): Bool = stringify(42i8) == "42"
 
 
 @test
-def testInt32DebugString01(): Bool = debugString(42i32) == "42"
+def testInt16Stringify01(): Bool = stringify(42i16) == "42"
 
 
 @test
-def testInt64DebugString01(): Bool = debugString(42i64) == "42"
+def testInt32Stringify01(): Bool = stringify(42i32) == "42"
 
 
 @test
-def testBigIntDebugString01(): Bool = debugString(42ii) == "42"
+def testInt64Stringify01(): Bool = stringify(42i64) == "42"
 
 
 @test
-def testStringDebugString01(): Bool = debugString("Hello World!") == "Hello World!"
+def testBigIntStringify01(): Bool = stringify(42ii) == "42"
+
+
+@test
+def testStringStringifyStringify01(): Bool = stringify("Hello World!") == "Hello World!"
 
 
 // TODO update once strings improve
 @test
-def testArrayOfIntDebugString01(): Bool \ IO = debugString([1, 2, 3]) |> String.startsWith(prefix = "[")
+def testArrayOfIntStringify01(): Bool \ IO = stringify([1, 2, 3]) |> String.startsWith(prefix = "[")
 
 
 // TODO update once strings improve
 @test
-def testArrayOfStringDebugString01(): Bool \ IO = debugString(["a", "b", "c"]) |> String.startsWith(prefix = "[")
+def testArrayOfStringStringify01(): Bool \ IO = stringify(["a", "b", "c"]) |> String.startsWith(prefix = "[")
 
 
 @test
-def testTupleDebugString01(): Bool = debugString((true, 'a', "Hello World!")) == "(true, a, Hello World!)"
+def testTupleStringify01(): Bool = stringify((true, 'a', "Hello World!")) == "(true, a, Hello World!)"
 
 @test
-def testTupleDebugString02(): Bool = debugString((false, 2, ())) == "(false, 2, ())"
+def testTupleStringify02(): Bool = stringify((false, 2, ())) == "(false, 2, ())"
 
 
 pub enum Suit {
@@ -235,7 +235,7 @@ pub enum Card {
 }
 
 @test
-def testEnumDebugString01(): Bool = debugString(Card(Hearts, N(5)))  == "Card(Hearts, N(5))"
+def testEnumStringify01(): Bool = stringify(Card(Hearts, N(5)))  == "Card(Hearts, N(5))"
 
 
 pub enum Poly[a, b] {
@@ -246,28 +246,28 @@ pub enum Poly[a, b] {
 }
 
 @test
-def testPolyDebugString01(): Bool = debugString(Poly.NoneOfThem) == "NoneOfThem"
+def testPolyStringify01(): Bool = stringify(Poly.NoneOfThem) == "NoneOfThem"
 
 @test
-def testPolyDebugString02(): Bool = debugString(This(123)) == "This(123)"
+def testPolyStringify02(): Bool = stringify(This(123)) == "This(123)"
 
 @test
-def testPolyDebugString03(): Bool = debugString(That("Hello World!")) == "That(Hello World!)"
+def testPolyStringify03(): Bool = stringify(That("Hello World!")) == "That(Hello World!)"
 
 @test
-def testPolyDebugString04(): Bool = debugString(Both(123, "Hello World!")) == "Both(123, Hello World!)"
+def testPolyStringify04(): Bool = stringify(Both(123, "Hello World!")) == "Both(123, Hello World!)"
 
 @test
-def testRecordDebugString01(): Bool = debugString({field = (1, 2)}) == "{field = (1, 2)}"
+def testRecordStringify01(): Bool = stringify({field = (1, 2)}) == "{field = (1, 2)}"
 
 @test
-def testRecordDebugString02(): Bool = {
-    let s = debugString({something = (), other = true});
+def testRecordStringify02(): Bool = {
+    let s = stringify({something = (), other = true});
     s == "{field = (), other = true}" or s == "{other = true, field = ()}"
 }
 
 @test
-def testRecordDebugString03(): Bool = {
-    let s = debugString({something = {}, other = {single = "ton"}}});
+def testRecordStringify03(): Bool = {
+    let s = stringify({something = {}, other = {single = "ton"}}});
     s == "{something = {}, other = {single = "ton"}}" or s == "{other = {single = "ton"}, something = {}}"
 }

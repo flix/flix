@@ -944,9 +944,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Debug: Rule1[ParsedAst.Expression.Debug] = {
       def DebugKind: Rule1[ParsedAst.DebugKind] = rule {
-        keyword("debug!!!") ~ push(ParsedAst.DebugKind.DebugWithLocAndSrc) |
-          keyword("debug!!") ~ push(ParsedAst.DebugKind.DebugWithLoc) |
-          keyword("debug!") ~ push(ParsedAst.DebugKind.Debug)
+        keyword("debug!!") ~ push(ParsedAst.DebugKind.DebugWithLocAndSrc) |
+          keyword("debug!") ~ push(ParsedAst.DebugKind.DebugWithLoc) |
+          keyword("debug") ~ push(ParsedAst.DebugKind.Debug)
       }
 
       rule {
