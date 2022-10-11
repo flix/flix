@@ -1580,7 +1580,7 @@ namespace Array {
     @Time(length(a)) @Space(1)
     pub def updateSequence!(i: Int32, sub: Array[a, r1], a: Array[a, r2]): Unit \ { Read(r1), Write(r2) } =
         let end = i + length(sub);
-        let f = { (_,ix) ->
+        let f = { (ix, _) ->
             if (ix >= i and ix < end)
                 a[ix] = sub[ix-i]
             else
