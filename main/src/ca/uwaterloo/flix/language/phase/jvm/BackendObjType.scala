@@ -96,6 +96,7 @@ object BackendObjType {
       cm.mkStaticConstructor(StaticConstructor)
       cm.mkConstructor(Constructor)
       cm.mkField(InstanceField)
+      cm.mkMethod(ToStringMethod)
 
       cm.closeClassMaker()
     }
@@ -112,6 +113,10 @@ object BackendObjType {
     ))
 
     def InstanceField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, "INSTANCE", this.toTpe)
+
+    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(
+      pushString("()") ~ ARETURN()
+    ))
   }
 
   case object BigInt extends BackendObjType
