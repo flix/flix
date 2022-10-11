@@ -358,12 +358,12 @@ object Namer {
   /**
     * Performs naming on the given enum case.
     */
-  private def visitCase(case0: WeededAst.Case, enum: Symbol.EnumSym, uenv0: UseEnv, ienv0: ImportEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.Case, NameError] = case0 match {
+  private def visitCase(case0: WeededAst.Case, enumSym: Symbol.EnumSym, uenv0: UseEnv, ienv0: ImportEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.Case, NameError] = case0 match {
     case WeededAst.Case(ident, tpe0) =>
       mapN(visitType(tpe0, uenv0, ienv0, tenv0)) {
         case tpe =>
-          val sym = Symbol.mkCaseSym(enum, ident)
-          NamedAst.Case(sym, tpe)
+          val caseSym = Symbol.mkCaseSym(enumSym, ident)
+          NamedAst.Case(caseSym, tpe)
       }
   }
 
@@ -1102,6 +1102,11 @@ object Namer {
         case (e1, e2, e3) => NamedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
       }
 
+    case WeededAst.Expression.Debug(exp1, exp2, loc) =>
+      mapN(visitExp(exp1, env0, uenv0, ienv0, tenv0), visitExp(exp2, env0, uenv0, ienv0, tenv0)) {
+        case (e1, e2) => NamedAst.Expression.Debug(e1, e2, loc)
+      }
+
   }
 
   /**
@@ -1573,6 +1578,7 @@ object Namer {
     case WeededAst.Expression.Reify(_, _) => Nil
     case WeededAst.Expression.ReifyType(_, _, _) => Nil
     case WeededAst.Expression.ReifyEff(ident, exp1, exp2, exp3, _) => filterBoundVars(freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3), List(ident))
+    case WeededAst.Expression.Debug(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
   }
 
   /**

@@ -481,7 +481,7 @@ object Redundancy {
 
     case Expression.Tag(Ast.CaseSymUse(sym, _), exp, _, _, _, _) =>
       val us = visitExp(exp, env0, rc)
-      Used.of(sym.enum, sym) ++ us
+      Used.of(sym.enumSym, sym) ++ us
 
     case Expression.Tuple(elms, _, _, _, _) =>
       visitExps(elms, env0, rc)
@@ -713,6 +713,9 @@ object Redundancy {
 
     case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, _, _, _) =>
       Used.of(sym) ++ visitExp(exp1, env0, rc) ++ visitExp(exp2, env0, rc) ++ visitExp(exp3, env0, rc)
+
+    case Expression.Debug(exp1, exp2, _, _, _, _) =>
+      visitExp(exp1, env0, rc) ++ visitExp(exp2, env0, rc)
   }
 
   /**
@@ -741,7 +744,7 @@ object Redundancy {
     case Pattern.Int64(_, _) => Used.empty
     case Pattern.BigInt(_, _) => Used.empty
     case Pattern.Str(_, _) => Used.empty
-    case Pattern.Tag(Ast.CaseSymUse(sym, _), _, _, _) => Used.of(sym.enum, sym)
+    case Pattern.Tag(Ast.CaseSymUse(sym, _), _, _, _) => Used.of(sym.enumSym, sym)
     case Pattern.Tuple(elms, _, _) => visitPats(elms)
     case Pattern.Array(elms, _, _) => visitPats(elms)
     case Pattern.ArrayTailSpread(elms, _, _, _) => visitPats(elms)

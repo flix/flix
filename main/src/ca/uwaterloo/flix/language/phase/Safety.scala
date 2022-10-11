@@ -302,6 +302,9 @@ object Safety {
       case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
         visit(exp1) ++ visit(exp2) ++ visit(exp3)
 
+      case Expression.Debug(exp1, exp2, _, _, _, _) =>
+        visit(exp1) ++ visit(exp2)
+
     }
 
     visit(e0)

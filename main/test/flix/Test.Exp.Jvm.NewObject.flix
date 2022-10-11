@@ -311,4 +311,8 @@ namespace Test/Exp/Jvm/NewObject {
     };
     toString(anon) == "[1, 2, 3, 4, 5, 6]"
 
+  @test
+  def testStaticNestedClass01(): ##flix.test.TestClassWithStaticNestedClass$NestedClass \ IO =
+    new ##flix.test.TestClassWithStaticNestedClass$NestedClass {}
+
 }
