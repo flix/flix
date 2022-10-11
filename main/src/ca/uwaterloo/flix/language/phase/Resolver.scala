@@ -1211,9 +1211,9 @@ object Resolver {
             case (e1, e2, e3) => ResolvedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
           }
 
-        case NamedAst.Expression.Debug(exp, loc) =>
-          mapN(visitExp(exp, region)) {
-            case e => ResolvedAst.Expression.Debug(e, loc)
+        case NamedAst.Expression.Debug(exp1, exp2, loc) =>
+          mapN(visitExp(exp1, region), visitExp(exp2, region)) {
+            case (e1, e2) => ResolvedAst.Expression.Debug(e1, e2, loc)
           }
 
       }
@@ -1757,7 +1757,7 @@ object Resolver {
       case "Lazy" => UnkindedType.Cst(TypeConstructor.Lazy, loc).toSuccess
       case "Array" => UnkindedType.Cst(TypeConstructor.Array, loc).toSuccess
       case "Ref" => UnkindedType.Cst(TypeConstructor.Ref, loc).toSuccess
-      case "Region" => UnkindedType.Cst(TypeConstructor.Region, loc).toSuccess
+      case "Region" => UnkindedType.Cst(TypeConstructor.RegionToStar, loc).toSuccess
 
       // Disambiguate type.
       case typeName =>
@@ -2646,7 +2646,7 @@ object Resolver {
         case TypeConstructor.Or => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.RecordRowEmpty => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.RecordRowExtend(_) => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.Region => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.RegionToStar => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Relation => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.SchemaRowEmpty => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.SchemaRowExtend(_) => ResolutionError.IllegalType(tpe, loc).toFailure

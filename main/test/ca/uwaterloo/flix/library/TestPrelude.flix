@@ -100,7 +100,7 @@ def forwardPipe02(): Bool =
         r == 3
 
 /////////////////////////////////////////////////////////////////////////////
-// ||> (doublePipe)                                                    //
+// ||> (doublePipe)                                                        //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
@@ -154,3 +154,105 @@ def imperativePipe04(): Bool = region r {
     let f = (x) -> a := x;
     (2 !> f) == 2 and (4 !> f) == 4 and deref a == 4
 }
+
+/////////////////////////////////////////////////////////////////////////////
+// stringify                                                               //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def testUnitStringify01(): Bool = stringify(()) == "()"
+
+
+@test
+def testBoolStringify01(): Bool = stringify(true) == "true"
+
+@test
+def testBoolStringify02(): Bool = stringify(false) == "false"
+
+
+@test
+def testCharStringify01(): Bool = stringify('a') == "a"
+
+@test
+def testCharStringify02(): Bool = stringify('\u2194') == "\u2194"
+
+
+@test
+def testFloat32Stringify01(): Bool = stringify(21.42f32) == "21.42"
+
+
+@test
+def testInt8Stringify01(): Bool = stringify(42i8) == "42"
+
+
+@test
+def testInt16Stringify01(): Bool = stringify(42i16) == "42"
+
+
+@test
+def testInt32Stringify01(): Bool = stringify(42i32) == "42"
+
+
+@test
+def testInt64Stringify01(): Bool = stringify(42i64) == "42"
+
+
+@test
+def testBigIntStringify01(): Bool = stringify(42ii) == "42"
+
+
+@test
+def testStringStringify01(): Bool = stringify("Hello World!") == "Hello World!"
+
+
+// TODO update once strings improve
+@test
+def testArrayOfIntStringify01(): Bool \ IO = stringify([1, 2, 3]) |> String.startsWith(prefix = "[")
+
+
+// TODO update once strings improve
+@test
+def testArrayOfStringStringify01(): Bool \ IO = stringify(["a", "b", "c"]) |> String.startsWith(prefix = "[")
+
+
+@test
+def testTupleStringify01(): Bool = stringify((true, 'a', "Hello World!")) == "(true, a, Hello World!)"
+
+@test
+def testTupleStringify02(): Bool = stringify((false, 2, ())) == "(false, 2, ())"
+
+
+pub enum Suit {
+    case Hearts, Diamonds, Clubs, Spades
+}
+
+pub enum Rank {
+    case N(Int32), Jack, Queen, King, Ace
+}
+
+pub enum Card {
+    case Card(Suit, Rank)
+}
+
+@test
+def testEnumStringify01(): Bool = stringify(Card(Hearts, N(5)))  == "Card(Hearts, N(5))"
+
+
+pub enum Poly[a, b] {
+    case NoneOfThem,
+    case This(a)
+    case That(b)
+    case Both(a, b)
+}
+
+@test
+def testPolyStringify01(): Bool = stringify(Poly.NoneOfThem) == "NoneOfThem"
+
+@test
+def testPolyStringify02(): Bool = stringify(This(123)) == "This(123)"
+
+@test
+def testPolyStringify03(): Bool = stringify(That("Hello World!")) == "That(Hello World!)"
+
+@test
+def testPolyStringify04(): Bool = stringify(Both(123, "Hello World!")) == "Both(123, Hello World!)"

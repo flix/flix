@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
+import ca.uwaterloo.flix.language.ast.MonoType
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
@@ -74,12 +75,7 @@ object GenTagClasses {
     * return new Integer(this.value);
     * }
     *
-    * Next, we will generate the `toString()` method which will always throws an exception, since `toString` should not be called.
-    * The `toString` method is always the following:
-    *
-    * public String toString() throws Exception {
-    * throw new Exception("equals method shouldn't be called")
-    * }
+    * Next, we will generate the `toString()` method.
     *
     * Next, we will generate the `hashCode()` method which will always throws an exception, since `hashCode` should not be called.
     * The `hashCode` method is always the following:
@@ -145,9 +141,7 @@ object GenTagClasses {
     // Generate the `getTag` method.
     compileGetTagMethod(visitor, tag.tag)
 
-    // Generate the `toString` method.
-    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String),
-      "toString method shouldn't be called")
+    compileToStringMethod(visitor, classType, tag)
 
     // Generate the `hashCode` method.
     AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
@@ -219,6 +213,44 @@ object GenTagClasses {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getTag", AsmOps.getMethodDescriptor(Nil, JvmType.String), null, null)
     method.visitLdcInsn(tag)
     method.visitInsn(ARETURN)
+    method.visitMaxs(1, 1)
+    method.visitEnd()
+  }
+
+  def compileToStringMethod(visitor: ClassWriter, classType: JvmType.Reference, tag: TagInfo)(implicit root: Root, flix: Flix): Unit = {
+    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), null, null)
+    tag.tagType match {
+      case MonoType.Unit => // "$Tag"
+        method.visitLdcInsn(tag.tag)
+        method.visitInsn(ARETURN)
+
+      case _ => // "$Tag($value)" or "$Tag$value" if value already prints "(...)"
+        val printParanthesis = tag.tagType match {
+          case MonoType.Tuple(_) => false
+          case MonoType.Unit => false
+          case _ => true
+        }
+        method.visitLdcInsn("") // for last join call
+
+        method.visitInsn(ICONST_3)
+        method.visitTypeInsn(ANEWARRAY, JvmType.String.name.toInternalName)
+        method.visitInsn(DUP)
+        method.visitInsn(ICONST_0)
+        method.visitLdcInsn(tag.tag + (if (printParanthesis) "(" else ""))
+        method.visitInsn(AASTORE)
+        method.visitInsn(DUP)
+        method.visitInsn(ICONST_1)
+        method.visitVarInsn(ALOAD, 0)
+        method.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getBoxedTagValue", AsmOps.getMethodDescriptor(Nil, JvmType.Object), false)
+        method.visitMethodInsn(INVOKEVIRTUAL, JvmType.Object.name.toInternalName, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), false)
+        method.visitInsn(AASTORE)
+        method.visitInsn(DUP)
+        method.visitInsn(ICONST_2)
+        method.visitLdcInsn(if (printParanthesis) ")" else "")
+        method.visitInsn(AASTORE)
+        method.visitMethodInsn(INVOKESTATIC, JvmType.String.name.toInternalName, "join", "(Ljava/lang/CharSequence;[Ljava/lang/CharSequence;)Ljava/lang/String;", false)
+        method.visitInsn(ARETURN)
+    }
     method.visitMaxs(1, 1)
     method.visitEnd()
   }

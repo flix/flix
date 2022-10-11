@@ -662,9 +662,8 @@ object Monomorph {
           visitExp(exp3, env0)
         }
 
-      case Expression.Debug(exp, tpe, pur, eff, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.Debug(e, subst0(tpe), pur, eff, loc)
+      case Expression.Debug(_, _, _, _, _, loc) =>
+        throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
     }
 
     /**

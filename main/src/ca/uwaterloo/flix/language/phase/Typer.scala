@@ -1770,14 +1770,15 @@ object Typer {
           resultEff = Type.mkUnion(List(eff1, eff2, eff3), loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.Debug(exp, loc) =>
+      case KindedAst.Expression.Debug(exp1, exp2, loc) =>
         for {
-          (constrs, tpe, pur, eff) <- visitExp(exp)
-          condType <- expectTypeM(expected = Type.Str, actual = tpe, exp.loc)
-          resultTyp = Type.Unit
-          resultPur = pur
-          resultEff = eff
-        } yield (constrs, resultTyp, resultPur, resultEff)
+          (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
+          _ <- expectTypeM(expected = Type.Str, actual = tpe1, exp1.loc)
+          (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
+          resultTyp = tpe2
+          resultPur = Type.mkAnd(pur1, pur2, loc)
+          resultEff = Type.mkUnion(List(eff1, eff2), loc)
+        } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
     }
 
@@ -2325,12 +2326,14 @@ object Typer {
         val eff = Type.mkUnion(List(e1.eff, e2.eff, e3.eff), loc)
         TypedAst.Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.Debug(exp, loc) =>
-        val e = visitExp(exp, subst0)
-        val tpe = Type.Unit
-        val pur = e.pur
-        val eff = e.eff
-        TypedAst.Expression.Debug(e, tpe, pur, eff, loc)
+      case KindedAst.Expression.Debug(exp1, exp2, loc) =>
+        // We explicitly mark a `Debug` expression as Impure.
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        val tpe = e2.tpe
+        val pur = Type.Impure
+        val eff = Type.mkUnion(List(e1.eff, e2.eff), loc)
+        TypedAst.Expression.Debug(e1, e2, tpe, pur, eff, loc)
     }
 
     /**

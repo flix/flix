@@ -1147,7 +1147,7 @@ object Weeder {
       /*
        * Rewrites empty tuples to Unit and eliminate single-element tuples.
        */
-      traverse(elms)(e => visitExp(e, senv)) map {
+      traverse(elms)(visitArgument(_, senv)) map {
         case Nil =>
           val loc = mkSL(sp1, sp2)
           WeededAst.Expression.Unit(loc)
@@ -1368,6 +1368,15 @@ object Weeder {
         mkApplyFqn(fqn, List(e), loc)
       }
 
+      /**
+        * Returns an expression that applies `debugString` to the result of the given expression `e`.
+        */
+      def mkApplyDebugString(e: WeededAst.Expression, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
+        val fqn = "stringify"
+        val loc = mkSL(sp1, sp2).asSynthetic
+        mkApplyFqn(fqn, List(e), loc)
+      }
+
       val loc = mkSL(sp1, sp2)
 
       parts match {
@@ -1395,8 +1404,18 @@ object Weeder {
                   val e2 = mkApplyToString(e, innerSp1, innerSp2)
                   mkConcat(acc, e2, mkSL(innerSp1, innerSp2))
               }
-            // Case 3: empty interpolated expression
+            // Case 3: interpolated debug
+            case (acc, ParsedAst.InterpolationPart.DebugPart(innerSp1, Some(exp), innerSp2)) =>
+              mapN(visitExp(exp, senv)) {
+                e =>
+                  val e2 = mkApplyDebugString(e, innerSp1, innerSp2)
+                  mkConcat(acc, e2, mkSL(innerSp1, innerSp2))
+              }
+            // Case 4: empty interpolated expression
             case (_, ParsedAst.InterpolationPart.ExpPart(innerSp1, None, innerSp2)) =>
+              WeederError.EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2)).toFailure
+            // Case 5: empty interpolated debug
+            case (_, ParsedAst.InterpolationPart.DebugPart(innerSp1, None, innerSp2)) =>
               WeederError.EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2)).toFailure
           }
       }
@@ -1721,10 +1740,20 @@ object Weeder {
           WeededAst.Expression.ReifyEff(ident, e1, e2, e3, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.Debug(sp1, exp, sp2) =>
+    case ParsedAst.Expression.Debug(sp1, kind, exp, sp2) =>
       mapN(visitExp(exp, senv)) {
         case e =>
-          WeededAst.Expression.Debug(e, mkSL(sp1, sp2))
+          val loc = mkSL(sp1, sp2)
+          val prefix = kind match {
+            case ParsedAst.DebugKind.Debug => ""
+            case ParsedAst.DebugKind.DebugWithLoc => s"[${loc.formatWithLine}] "
+            case ParsedAst.DebugKind.DebugWithLocAndSrc =>
+              val locPart = s"[${loc.formatWithLine}]"
+              val srcPart = e.loc.text.map(s => s" $s = ").getOrElse("")
+              locPart + srcPart
+          }
+          val e1 = WeededAst.Expression.Str(prefix, loc)
+          WeededAst.Expression.Debug(e1, e, loc)
       }
 
   }
@@ -3016,7 +3045,7 @@ object Weeder {
     case ParsedAst.Expression.ReifyBool(sp1, _, _) => sp1
     case ParsedAst.Expression.ReifyType(sp1, _, _) => sp1
     case ParsedAst.Expression.ReifyPurity(sp1, _, _, _, _, _) => sp1
-    case ParsedAst.Expression.Debug(sp1, _, _) => sp1
+    case ParsedAst.Expression.Debug(sp1, _, _, _) => sp1
   }
 
   /**
