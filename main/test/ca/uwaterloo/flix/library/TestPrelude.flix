@@ -205,14 +205,16 @@ def testBigIntStringify01(): Bool = stringify(42ii) == "42"
 def testStringStringify01(): Bool = stringify("Hello World!") == "Hello World!"
 
 
-// TODO update once strings improve
 @test
-def testArrayOfIntStringify01(): Bool \ IO = stringify([1, 2, 3]) |> String.startsWith(prefix = "[")
+def testArrayOfIntStringify01(): Bool \ IO = stringify([1, 2, 3]) == "[1, 2, 3]"
 
 
-// TODO update once strings improve
 @test
-def testArrayOfStringStringify01(): Bool \ IO = stringify(["a", "b", "c"]) |> String.startsWith(prefix = "[")
+def testArrayOfStringStringify01(): Bool \ IO = stringify(["a", "b", "c"]) == "[a, b, c]"
+
+
+@test
+def testArrayOfArrayOfIntStringify01(): Bool \ IO = stringify([[1, 2], [3, 4]]) == "[[1, 2], [3, 4]]"
 
 
 @test
