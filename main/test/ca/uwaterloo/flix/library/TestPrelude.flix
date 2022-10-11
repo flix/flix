@@ -205,7 +205,7 @@ def testBigIntStringify01(): Bool = stringify(42ii) == "42"
 def testStringStringifyStringify01(): Bool = stringify("Hello World!") == "Hello World!"
 
 
-// TODO update once strings improve
+// TODO update once strings improvec
 @test
 def testArrayOfIntStringify01(): Bool \ IO = stringify([1, 2, 3]) |> String.startsWith(prefix = "[")
 

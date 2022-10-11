@@ -122,66 +122,6 @@ object BackendObjType {
 
   case object BigInt extends BackendObjType
 
-  case object String extends BackendObjType {
-    def BoolValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Bool)(this.jvmName.toTpe), None)
-
-    def CharValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Char)(this.jvmName.toTpe), None)
-
-    // implicit use of Int8 as Int32
-    def Int8ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Int32)(this.jvmName.toTpe), None)
-
-    // implicit use of Int16 as Int32
-    def Int16ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Int32)(this.jvmName.toTpe), None)
-
-    def Int32ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Int32)(this.jvmName.toTpe), None)
-
-    def Int64ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Int64)(this.jvmName.toTpe), None)
-
-    def Float32ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Float32)(this.jvmName.toTpe), None)
-
-    def Float64ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Float64)(this.jvmName.toTpe), None)
-  }
-
-  case object Arrays extends BackendObjType {
-    def BoolArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Bool))(BackendObjType.String.toTpe), None)
-
-    def CharArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Char))(BackendObjType.String.toTpe), None)
-
-    def Int8ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Int8))(BackendObjType.String.toTpe), None)
-
-    def Int16ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Int16))(BackendObjType.String.toTpe), None)
-
-    def Int32ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Int32))(BackendObjType.String.toTpe), None)
-
-    def Int64ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Int64))(BackendObjType.String.toTpe), None)
-
-    def Float32ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Float32))(BackendObjType.String.toTpe), None)
-
-    def Float64ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Float64))(BackendObjType.String.toTpe), None)
-
-    def ObjArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "toString", mkDescriptor(BackendType.Array(BackendObjType.JavaObject.toTpe))(BackendObjType.String.toTpe), None)
-
-    def DeepToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "deepToString", mkDescriptor(BackendType.Array(BackendObjType.JavaObject.toTpe))(BackendObjType.String.toTpe), None)
-  }
-
   case class Channel(tpe: BackendType) extends BackendObjType
 
   case class Lazy(tpe: BackendType) extends BackendObjType
@@ -809,6 +749,66 @@ object BackendObjType {
   //
   // Java Types
   //
+
+  case object String extends BackendObjType {
+    def BoolValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "valueOf", mkDescriptor(BackendType.Bool)(this.jvmName.toTpe), None)
+
+    def CharValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "valueOf", mkDescriptor(BackendType.Char)(this.jvmName.toTpe), None)
+
+    // implicit use of Int8 as Int32
+    def Int8ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "valueOf", mkDescriptor(BackendType.Int32)(this.jvmName.toTpe), None)
+
+    // implicit use of Int16 as Int32
+    def Int16ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "valueOf", mkDescriptor(BackendType.Int32)(this.jvmName.toTpe), None)
+
+    def Int32ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "valueOf", mkDescriptor(BackendType.Int32)(this.jvmName.toTpe), None)
+
+    def Int64ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "valueOf", mkDescriptor(BackendType.Int64)(this.jvmName.toTpe), None)
+
+    def Float32ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "valueOf", mkDescriptor(BackendType.Float32)(this.jvmName.toTpe), None)
+
+    def Float64ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "valueOf", mkDescriptor(BackendType.Float64)(this.jvmName.toTpe), None)
+  }
+
+  case object Arrays extends BackendObjType {
+    def BoolArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Bool))(BackendObjType.String.toTpe), None)
+
+    def CharArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Char))(BackendObjType.String.toTpe), None)
+
+    def Int8ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Int8))(BackendObjType.String.toTpe), None)
+
+    def Int16ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Int16))(BackendObjType.String.toTpe), None)
+
+    def Int32ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Int32))(BackendObjType.String.toTpe), None)
+
+    def Int64ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Int64))(BackendObjType.String.toTpe), None)
+
+    def Float32ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Float32))(BackendObjType.String.toTpe), None)
+
+    def Float64ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Float64))(BackendObjType.String.toTpe), None)
+
+    def ObjArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "toString", mkDescriptor(BackendType.Array(BackendObjType.JavaObject.toTpe))(BackendObjType.String.toTpe), None)
+
+    def DeepToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "deepToString", mkDescriptor(BackendType.Array(BackendObjType.JavaObject.toTpe))(BackendObjType.String.toTpe), None)
+  }
 
   case object JavaObject extends BackendObjType {
 
