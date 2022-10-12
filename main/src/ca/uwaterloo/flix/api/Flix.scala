@@ -229,6 +229,8 @@ class Flix {
     "Fixpoint/Ram/RowVar.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RowVar.flix"),
 
     "Fixpoint/Shared/PredSym.flix" -> LocalResource.get("/src/library/Fixpoint/Shared/PredSym.flix"),
+    
+    "Fixpoint/Tuple/Tuple.flix" -> LocalResource.get("/src/library/Fixpoint/Tuple/Tuple.flix"),
 
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
   )

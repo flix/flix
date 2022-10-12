@@ -901,6 +901,52 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
+  test("DuplicateUpperName.21") {
+    val input =
+      """
+        |import java.sql.Statement
+        |enum Statement
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.22") {
+    val input =
+      """
+        |enum Statement
+        |type alias Statement = Int
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  ignore("DuplicateUpperName.23") {
+    val input =
+      """
+        |import java.sql.Statement
+        |use A.Statement
+        |namespace A {
+        |    enum Statement
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.24") {
+    val input =
+      """
+        |use A.Statement
+        |namespace A {
+        |    enum Statement
+        |}
+        |enum Statement
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
   test("SuspiciousTypeVarName.01") {
     val input =
       s"""

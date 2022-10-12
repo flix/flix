@@ -19,61 +19,6 @@ use Fixpoint/Ast.Denotation
 use Fixpoint/Tuple.Tuple
 
 namespace Fixpoint {
-    namespace Tuple {
-
-        ///
-        /// Uses unsafe immutable array internally for performance.
-        ///
-        pub opaque enum Tuple[v] {
-            case Tuple(Array[v, Static])
-        }
-
-        // NB: Unsafe instance.
-        instance Eq[Tuple[v]] with Eq[v] {
-            pub def eq(x: Tuple[v], y: Tuple[v]): Bool =
-                let Tuple(a) = x;
-                let Tuple(b) = y;
-                Array.sameElements(a, b) as \ {}
-        }
-
-        // NB: Unsafe instance.
-        instance Order[Tuple[v]] with Order[v] {
-            pub def compare(x: Tuple[v], y: Tuple[v]): Comparison =
-                let Tuple(a) = x;
-                let Tuple(b) = y;
-                Array.compare(a, b) as \ {}
-        }
-
-        ///
-        /// Creates an empty tuple consisting of the elements in `l`.
-        ///
-        pub def new(l: f[v]): Tuple[v] with Foldable[f] =
-            Tuple(Foldable.toArray(Static, l)) as \ {}
-
-        ///
-        /// Converts `t` to a list.
-        ///
-        pub def toList(t: Tuple[v]): List[v] = {
-            let Tuple(a) = t;
-            Array.toList(a)
-        } as \ {}
-
-        ///
-        /// Returns the length of `t`.
-        ///
-        pub def length(t: Tuple[v]): Int32 =
-            let Tuple(a) = t;
-            Array.length(a)
-
-        ///
-        /// Returns the value at index `i` in `t`.
-        /// Throws a runtime exception if `v` is out of bounds.
-        ///
-        pub def valueAt(t: Tuple[v], v: Int32): v = {
-            let Tuple(a) = t;
-            a[v]
-        } as \ {}
-    }
 
     type alias Database[v: Type, r: Region] = MutMap[RamSym[v], MutMap[Tuple[v], v, r], r]
     type alias SearchEnv[v: Type, r: Region] = (Array[Tuple[v], r], Array[v, r])
