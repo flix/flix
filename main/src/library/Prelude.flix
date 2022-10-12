@@ -175,9 +175,42 @@ pub def stringify(x: a): String = {
         case ReifiedInt64 =>
             import static java.lang.Long.toString(Int64): String \ {};
             toString as a -> String
-        case ReifiedArray(_) =>
-            import java.lang.Object.toString(): String;
-            toString as a -> String
+        case ReifiedArray(tpe) =>
+            match tpe {
+                case ErasedType =>
+                    import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
+                    toString as a -> String
+                case ReifiedUnit =>
+                    import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
+                    toString as a -> String
+                case ReifiedBool =>
+                    import static java.util.Arrays.toString(Array[Bool, Static]): String;
+                    toString as a -> String
+                case ReifiedChar =>
+                    import static java.util.Arrays.toString(Array[Char, Static]): String;
+                    toString as a -> String
+                case ReifiedFloat32 =>
+                    import static java.util.Arrays.toString(Array[Float32, Static]): String;
+                    toString as a -> String
+                case ReifiedFloat64 =>
+                    import static java.util.Arrays.toString(Array[Float64, Static]): String;
+                    toString as a -> String
+                case ReifiedInt8 =>
+                    import static java.util.Arrays.toString(Array[Int8, Static]): String;
+                    toString as a -> String
+                case ReifiedInt16 =>
+                    import static java.util.Arrays.toString(Array[Int16, Static]): String;
+                    toString as a -> String
+                case ReifiedInt32 =>
+                    import static java.util.Arrays.toString(Array[Int32, Static]): String;
+                    toString as a -> String
+                case ReifiedInt64 =>
+                    import static java.util.Arrays.toString(Array[Int64, Static]): String;
+                    toString as a -> String
+                case ReifiedArray(_) =>
+                    import static java.util.Arrays.deepToString(Array[##java.lang.Object, Static]): String;
+                    deepToString as a -> String
+            }
     };
     magic(x)
 }
