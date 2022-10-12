@@ -254,7 +254,7 @@ namespace Fixpoint {
     /// Note that row variables not unique across rules.
     ///
     def augmentBody(body: List[BodyPredicate[v]]): List[(BodyPredicate[v], RowVar)] =
-        List.mapWithIndex(atom -> i -> match atom {
+        List.mapWithIndex(i -> atom -> match atom {
             case BodyAtom(predSym, _, Polarity.Positive, _, _) => (atom, RowVar.Named("${predSym}$${i}"))
             case _ => (atom, RowVar.Named("IfYouSeeThisYouFoundABug"))
         }, body)
@@ -271,7 +271,7 @@ namespace Fixpoint {
     def unifyVars(body: List[(BodyPredicate[v], RowVar)]): Map[VarSym, RamTerm[v]] =
         List.foldLeft(acc -> match (atom, rowVar) -> match atom {
             case BodyAtom(_, denotation, Polarity.Positive, _, terms) =>
-                List.mapWithIndex(term -> i -> (term, i), terms) |>
+                List.mapWithIndex(i -> term -> (term, i), terms) |>
                 List.foldRight(match (term, i) -> match term {
                     case BodyTerm.Var(var) => match denotation {
                         case Denotation.Relational =>
@@ -306,7 +306,7 @@ namespace Fixpoint {
     ///
     def compileBody(env: Map[VarSym, RamTerm[v]], body: List[(BodyPredicate[v], RowVar)]): List[BoolExp[v]] =
         List.foldRight(match (atom, rowVar) -> acc ->
-            let compileBodyTerm = term -> j -> match term {
+            let compileBodyTerm = j -> term -> match term {
                 case BodyTerm.Wild      => RamTerm.RowLoad(rowVar, j)
                 case BodyTerm.Var(var)  => unwrap(Map.get(var, env))
                 case BodyTerm.Lit(v)    => RamTerm.Lit(v)
@@ -314,7 +314,7 @@ namespace Fixpoint {
             match atom {
                 case BodyAtom(_, denotation, Polarity.Positive, _, terms) =>
                     List.mapWithIndex(compileBodyTerm, terms) |>
-                    List.mapWithIndex(t -> i -> match denotation {
+                    List.mapWithIndex(i -> t -> match denotation {
                         case Denotation.Relational => BoolExp.Eq(RamTerm.RowLoad(rowVar, i), t)
                         case Denotation.Latticenal(_, leq, _, _) =>
                             if (i < List.length(terms) - 1)

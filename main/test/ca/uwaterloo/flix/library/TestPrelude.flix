@@ -205,14 +205,52 @@ def testBigIntStringify01(): Bool = stringify(42ii) == "42"
 def testStringStringifyStringify01(): Bool = stringify("Hello World!") == "Hello World!"
 
 
-// TODO update once strings improve
 @test
-def testArrayOfIntStringify01(): Bool \ IO = stringify([1, 2, 3]) |> String.startsWith(prefix = "[")
+def testArrayOfUnitStringify01(): Bool \ IO = stringify([(), ()]) == "[(), ()]"
 
 
-// TODO update once strings improve
 @test
-def testArrayOfStringStringify01(): Bool \ IO = stringify(["a", "b", "c"]) |> String.startsWith(prefix = "[")
+def testArrayOfBoolStringify01(): Bool \ IO = stringify([true, false]) == "[true, false]"
+
+
+@test
+def testArrayOfCharStringify01(): Bool \ IO = stringify(['a', 'b', 'c']) == "[a, b, c]"
+
+
+@test
+def testArrayOfFloat32Stringify01(): Bool \ IO = stringify([21.42f32, 98.6f32]) == "[21.42, 98.6]"
+
+
+@test
+def testArrayOfInt8Stringify01(): Bool \ IO = stringify([42i8, 43i8]) == "[42, 43]"
+
+
+@test
+def testArrayOfInt16Stringify01(): Bool \ IO = stringify([42i16, 43i16]) == "[42, 43]"
+
+
+@test
+def testArrayOfInt32Stringify01(): Bool \ IO = stringify([42i32, 43i32]) == "[42, 43]"
+
+
+@test
+def testArrayOfInt64Stringify01(): Bool \ IO = stringify([42i64, 43i64]) == "[42, 43]"
+
+
+@test
+def testArrayOfBigIntStringify01(): Bool \ IO = stringify([42ii, 43ii]) == "[42, 43]"
+
+
+@test
+def testArrayOfStringStringify01(): Bool \ IO = stringify(["Hello", "World!"]) == "[Hello, World!]"
+
+
+@test
+def testArrayOfArrayOfIntStringify01(): Bool \ IO = stringify([[1, 2], [3, 4]]) == "[[1, 2], [3, 4]]"
+
+
+@test
+def testArrayOfArrayOfArrayOfIntStringify01(): Bool \ IO = stringify([[[1, 2], [3, 4]], [[5, 6], [7, 8]]]) == "[[[1, 2], [3, 4]], [[5, 6], [7, 8]]]"
 
 
 @test

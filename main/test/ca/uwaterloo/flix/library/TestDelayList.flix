@@ -1943,27 +1943,27 @@ namespace TestDelayList {
 
     @test
     def mapWithIndexPure01(): Bool =
-    	ENil |> DelayList.mapWithIndex((x, i) -> x + i) == ENil
+    	ENil |> DelayList.mapWithIndex((i, x) -> x + i) == ENil
 
     @test
     def mapWithIndexPure02(): Bool =
-    	ECons(1, ENil) |> DelayList.mapWithIndex((x, i) -> x + i) == ECons(1, ENil)
+    	ECons(1, ENil) |> DelayList.mapWithIndex((i, x) -> x + i) == ECons(1, ENil)
 
     @test
     def mapWithIndexPure03(): Bool =
-    	ECons(1, ECons(2, ENil)) |> DelayList.mapWithIndex((x, i) -> x + i) == ECons(1, ECons(3, ENil))
+    	ECons(1, ECons(2, ENil)) |> DelayList.mapWithIndex((i, x) -> x + i) == ECons(1, ECons(3, ENil))
 
     @test
     def mapWithIndexPure04(): Bool =
-    	ECons(1, ECons(2, ECons(3, ENil))) |> DelayList.mapWithIndex((x, i) -> x + i) == ECons(1, ECons(3, ECons(5, ENil)))
+    	ECons(1, ECons(2, ECons(3, ENil))) |> DelayList.mapWithIndex((i, x) -> x + i) == ECons(1, ECons(3, ECons(5, ENil)))
 
     @test
     def mapWithIndexPure05(): Bool =
-        ECons(1, ECons(2, ECons(3, ECons(4, ENil)))) |> DelayList.mapWithIndex((x, i) -> x + i) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+        ECons(1, ECons(2, ECons(3, ECons(4, ENil)))) |> DelayList.mapWithIndex((i, x) -> x + i) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
 
     @test
     def mapWithIndexPure06(): Bool =
-    	LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy LList(lazy ENil))))))))) |> DelayList.mapWithIndex((x, i) -> x + i) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+    	LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy LList(lazy ENil))))))))) |> DelayList.mapWithIndex((i, x) -> x + i) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1972,27 +1972,27 @@ namespace TestDelayList {
 
     @test
     def mapWithIndexImpure01(): Bool \ IO =
-    	ENil |> DelayList.mapWithIndex((x, i) -> x + i as \ IO) == ENil
+    	ENil |> DelayList.mapWithIndex((i, x) -> x + i as \ IO) == ENil
 
     @test
     def mapWithIndexImpure02(): Bool \ IO =
-    	ECons(1, ENil) |> DelayList.mapWithIndex((x, i) -> x + i as \ IO) == ECons(1, ENil)
+    	ECons(1, ENil) |> DelayList.mapWithIndex((i, x) -> x + i as \ IO) == ECons(1, ENil)
 
     @test
     def mapWithIndexImpure03(): Bool \ IO =
-    	ECons(1, ECons(2, ENil)) |> DelayList.mapWithIndex((x, i) -> x + i as \ IO) == ECons(1, ECons(3, ENil))
+    	ECons(1, ECons(2, ENil)) |> DelayList.mapWithIndex((i, x) -> x + i as \ IO) == ECons(1, ECons(3, ENil))
 
     @test
     def mapWithIndexImpure04(): Bool \ IO =
-    	ECons(1, ECons(2, ECons(3, ENil))) |> DelayList.mapWithIndex((x, i) -> x + i as \ IO) == ECons(1, ECons(3, ECons(5, ENil)))
+    	ECons(1, ECons(2, ECons(3, ENil))) |> DelayList.mapWithIndex((i, x) -> x + i as \ IO) == ECons(1, ECons(3, ECons(5, ENil)))
 
     @test
     def mapWithIndexImpure05(): Bool \ IO =
-        ECons(1, ECons(2, ECons(3, ECons(4, ENil)))) |> DelayList.mapWithIndex((x, i) -> x + i as \ IO) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+        ECons(1, ECons(2, ECons(3, ECons(4, ENil)))) |> DelayList.mapWithIndex((i, x) -> x + i as \ IO) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
 
     @test
     def mapWithIndexImpure06(): Bool \ IO =
-    	LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy LList(lazy ENil))))))))) |> DelayList.mapWithIndex((x, i) -> x + i as \ IO) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+    	LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy LList(lazy ENil))))))))) |> DelayList.mapWithIndex((i, x) -> x + i as \ IO) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2002,26 +2002,26 @@ namespace TestDelayList {
     @test
     def mapWithIndexMapWithIndex01(): Bool =
         ECons(1, ECons(2, ECons(3, ENil))) |>
-            DelayList.mapWithIndex((x, i) -> x + i) |>
-            DelayList.mapWithIndex((x, i) -> x * i) == ECons(0, ECons(3, ECons(10, ENil)))
+            DelayList.mapWithIndex((i, x) -> x + i) |>
+            DelayList.mapWithIndex((i, x) -> x * i) == ECons(0, ECons(3, ECons(10, ENil)))
 
     @test
     def mapWithIndexMapWithIndex02(): Bool \ IO =
         ECons(1, ECons(2, ECons(3, ENil))) |>
-            DelayList.mapWithIndex((x, i) -> x + i as \ IO) |>
-            DelayList.mapWithIndex((x, i) -> x * i) == ECons(0, ECons(3, ECons(10, ENil)))
+            DelayList.mapWithIndex((i, x) -> x + i as \ IO) |>
+            DelayList.mapWithIndex((i, x) -> x * i) == ECons(0, ECons(3, ECons(10, ENil)))
 
     @test
     def mapWithIndexMapWithIndex03(): Bool \ IO =
         ECons(1, ECons(2, ECons(3, ENil))) |>
-            DelayList.mapWithIndex((x, i) -> x + i) |>
-            DelayList.mapWithIndex((x, i) -> x * i as \ IO) == ECons(0, ECons(3, ECons(10, ENil)))
+            DelayList.mapWithIndex((i, x) -> x + i) |>
+            DelayList.mapWithIndex((i, x) -> x * i as \ IO) == ECons(0, ECons(3, ECons(10, ENil)))
 
     @test
     def mapWithIndexMapWithIndex04(): Bool \ IO =
         ECons(1, ECons(2, ECons(3, ENil))) |>
-            DelayList.mapWithIndex((x, i) -> x + i as \ IO) |>
-            DelayList.mapWithIndex((x, i) -> x * i as \ IO) == ECons(0, ECons(3, ECons(10, ENil)))
+            DelayList.mapWithIndex((i, x) -> x + i as \ IO) |>
+            DelayList.mapWithIndex((i, x) -> x * i as \ IO) == ECons(0, ECons(3, ECons(10, ENil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2032,8 +2032,8 @@ namespace TestDelayList {
     def mapWithIndexFusion01(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.mapWithIndex((x, _) -> { l := "a" :: deref l; x }) |>
-        DelayList.mapWithIndex((x, _) -> { l := "b" :: deref l; x }) |>
+        DelayList.mapWithIndex((_, x) -> { l := "a" :: deref l; x }) |>
+        DelayList.mapWithIndex((_, x) -> { l := "b" :: deref l; x }) |>
         DelayList.toList;
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
@@ -2041,8 +2041,8 @@ namespace TestDelayList {
     def mapWithIndexFusion02(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.mapWithIndex((x, _) -> { l := "a" :: deref l; x } as \ {}) |>
-        DelayList.mapWithIndex((x, _) -> { l := "b" :: deref l; x } as \ {}) |>
+        DelayList.mapWithIndex((_, x) -> { l := "a" :: deref l; x } as \ {}) |>
+        DelayList.mapWithIndex((_, x) -> { l := "b" :: deref l; x } as \ {}) |>
         DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 

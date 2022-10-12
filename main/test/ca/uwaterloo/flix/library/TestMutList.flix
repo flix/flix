@@ -699,19 +699,19 @@ namespace TestMutList {
 
     @test
     def mapWithIndex01(): Bool = region r {
-        let v = MutList.mapWithIndex((_, i) -> if (i < 3) 0 else 1, MutList.range(r, 0, 6));
+        let v = MutList.mapWithIndex((i, _) -> if (i < 3) 0 else 1, MutList.range(r, 0, 6));
         MutList.sameElements(v, Array.toMutList(r, [0, 0, 0, 1, 1, 1]))
     }
 
     @test
     def mapWithIndex02(): Bool = region r {
-        let v = MutList.mapWithIndex((x, i) -> if (x == 8 and i == 1) 42 else 0, MutList.range(r, 7, 10));
+        let v = MutList.mapWithIndex((i, x) -> if (x == 8 and i == 1) 42 else 0, MutList.range(r, 7, 10));
         MutList.sameElements(v, Array.toMutList(r, [0, 42, 0]))
     }
 
     @test
     def mapWithIndex03(): Bool = region r {
-        let v = MutList.mapWithIndex((_, i) -> if (i == 0) 42 else 0, new MutList(r));
+        let v = MutList.mapWithIndex((i, _) -> if (i == 0) 42 else 0, new MutList(r));
         MutList.sameElements(v, new MutList(r))
     }
 
@@ -723,21 +723,21 @@ namespace TestMutList {
     @test
     def transformWithIndex!01(): Bool = region r {
         let v = MutList.range(r, 0, 6);
-        MutList.transformWithIndex!((_, i) -> if (i < 3) 0 else 1, v);
+        MutList.transformWithIndex!((i, _) -> if (i < 3) 0 else 1, v);
         MutList.sameElements(v, Array.toMutList(r, [0, 0, 0, 1, 1, 1]))
     }
 
     @test
     def transformWithIndex!02(): Bool = region r {
         let v = MutList.range(r, 7, 10);
-        MutList.transformWithIndex!((x, i) -> if (x == 8 and i == 1) 42 else 0, v);
+        MutList.transformWithIndex!((i, x) -> if (x == 8 and i == 1) 42 else 0, v);
         MutList.sameElements(v, Array.toMutList(r, [0, 42, 0]))
     }
 
     @test
     def transformWithIndex!03(): Bool = region r {
         let v = new MutList(r);
-        MutList.transformWithIndex!((_, i) -> if (i == 0) 42 else 0, v);
+        MutList.transformWithIndex!((i, _) -> if (i == 0) 42 else 0, v);
         MutList.sameElements(v, new MutList(r))
     }
 
@@ -1633,7 +1633,7 @@ namespace TestMutList {
     def foreachWithIndex01(): Bool = region r {
         let v1 = MutList.range(r, 0, 100);
         let v2 = new MutList(r);
-        MutList.foreachWithIndex((x, i) -> if (x rem 2 == 0 and i < 10) MutList.push!(x, v2) else (), v1);
+        MutList.foreachWithIndex((i, x) -> if (x rem 2 == 0 and i < 10) MutList.push!(x, v2) else (), v1);
         let l = new MutList(r);
         let xs = 0 :: 2 :: 4 :: 6 :: 8 :: Nil;
         List.foreach(x -> MutList.push!(x, l), xs);
@@ -1644,7 +1644,7 @@ namespace TestMutList {
     def foreachWithIndex02(): Bool = region r {
         let v = MutList.range(r, 1, 4);
         let sb = new StringBuilder(r);
-        let f = (x, i) -> if (x rem 2 == 1 and i == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let f = (i, x) -> if (x rem 2 == 1 and i == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreachWithIndex(f, v);
         StringBuilder.toString(sb) == "TFF"
     }
@@ -1653,7 +1653,7 @@ namespace TestMutList {
     def foreachWithIndex03(): Bool = region r {
         let v = MutList.range(r, 0, 5);
         let sb = new StringBuilder(r);
-        let f = (x, _) -> if (x rem 2 == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let f = (_, x) -> if (x rem 2 == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreachWithIndex(f, v);
         StringBuilder.toString(sb) == "TFTFT"
     }
