@@ -483,13 +483,13 @@ namespace TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def mapWithIndex01(): Bool = Nec.mapWithIndex((_, i) -> i, singleton(21)) == singleton(0)
+    def mapWithIndex01(): Bool = Nec.mapWithIndex((i, _) -> i, singleton(21)) == singleton(0)
 
     @test
-    def mapWithIndex02(): Bool = Nec.mapWithIndex((_, i) -> i, necOf2(21, 42)) == necOf2(0, 1)
+    def mapWithIndex02(): Bool = Nec.mapWithIndex((i, _) -> i, necOf2(21, 42)) == necOf2(0, 1)
 
     @test
-    def mapWithIndex03(): Bool = Nec.mapWithIndex((_, i) -> i, necOf3(21, 42, 84)) == necOf3(0, 1, 2)
+    def mapWithIndex03(): Bool = Nec.mapWithIndex((i, _) -> i, necOf3(21, 42, 84)) == necOf3(0, 1, 2)
 
     /////////////////////////////////////////////////////////////////////////////
     // ap                                                                      //

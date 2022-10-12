@@ -459,22 +459,22 @@ namespace Array {
     /// That is, the result is of the form: `[ f(a[0], 0), f(a[1], 1), ... ]`.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def mapWithIndex(f: (a, Int32) -> b \ ef, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
+    pub def mapWithIndex(f: (Int32, a) -> b \ ef, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
         let r = Scoped.regionOf(a);
-        init(r, i -> f(a[i], i), len)
+        init(r, i -> f(i, a[i]), len)
 
     ///
     /// Apply `f` to every element in array `a` along with that element's index. Array `a` is mutated.
     ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def transformWithIndex!(f: (a, Int32) -> a \ ef, arr: Array[a, r]): Unit \ { ef, Read(r), Write(r) } =
+    pub def transformWithIndex!(f: (Int32, a) -> a \ ef, arr: Array[a, r]): Unit \ { ef, Read(r), Write(r) } =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)
                 ()
             else {
-                arr[i] = f(arr[i], i);
+                arr[i] = f(i, arr[i]);
                 loop(i + 1)
             }
         };
@@ -642,7 +642,7 @@ namespace Array {
             [] @ r
         else {
             let b = new(r, x, len2);
-            let f = { (v,i) -> let j = i + i; b[j] = v };
+            let f = { (i, v) -> let j = i + i; b[j] = v };
             foreachWithIndex(f, a);
             b
         }
@@ -1551,13 +1551,13 @@ namespace Array {
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreachWithIndex(f: (a, Int32) -> Unit \ ef, a: Array[a, r]): Unit \ { ef, Read(r) } =
+    pub def foreachWithIndex(f: (Int32, a) -> Unit \ ef, a: Array[a, r]): Unit \ { ef, Read(r) } =
         let len = length(a);
         def loop(i) = {
             if (i >= len)
                 ()
             else {
-                f(a[i], i);
+                f(i, a[i]);
                 loop(i + 1)
             }
         };
@@ -1580,7 +1580,7 @@ namespace Array {
     @Time(length(a)) @Space(1)
     pub def updateSequence!(i: Int32, sub: Array[a, r1], a: Array[a, r2]): Unit \ { Read(r1), Write(r2) } =
         let end = i + length(sub);
-        let f = { (_,ix) ->
+        let f = { (ix, _) ->
             if (ix >= i and ix < end)
                 a[ix] = sub[ix-i]
             else

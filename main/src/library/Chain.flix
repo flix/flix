@@ -366,11 +366,11 @@ namespace Chain {
     ///
     /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
     ///
-    pub def mapWithIndex(f: (a, Int32) -> b \ ef, c: Chain[a]): Chain[b] \ ef =
+    pub def mapWithIndex(f: (Int32, a) -> b \ ef, c: Chain[a]): Chain[b] \ ef =
         def loop(cc, i, acc) = match viewLeft(cc) {
             case NoneLeft        => acc
             case SomeLeft(x, rs) =>
-                let a = f(x, i);
+                let a = f(i, x);
                 loop(rs, i + 1, snoc(acc, a))
         };
         loop(c, 0, Empty)
