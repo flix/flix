@@ -24,9 +24,12 @@ namespace Fixpoint/Ast {
 
     instance ToString[BodyTerm[v]] {
         pub def toString(term: BodyTerm[v]): String = match term {
-            case BodyTerm.Wild => "_"
-            case BodyTerm.Var(varSym) => ToString.toString(varSym)
-            case BodyTerm.Lit(v) => stringify(v)
+            case BodyTerm.Wild =>
+                "_"
+            case BodyTerm.Var(varSym) =>
+                ToString.toString(varSym)
+            case BodyTerm.Lit(v) =>
+                stringify(v)
         }
     }
 }
