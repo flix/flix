@@ -202,7 +202,7 @@ def testBigIntStringify01(): Bool = stringify(42ii) == "42"
 
 
 @test
-def testStringStringify01(): Bool = stringify("Hello World!") == "Hello World!"
+def testStringStringifyStringify01(): Bool = stringify("Hello World!") == "Hello World!"
 
 
 // TODO update once strings improve
@@ -256,3 +256,18 @@ def testPolyStringify03(): Bool = stringify(That("Hello World!")) == "That(Hello
 
 @test
 def testPolyStringify04(): Bool = stringify(Both(123, "Hello World!")) == "Both(123, Hello World!)"
+
+@test
+def testRecordStringify01(): Bool = stringify({field = (1, 2)}) == "{field = (1, 2)}"
+
+@test
+def testRecordStringify02(): Bool = {
+    let s = stringify({something = (), other = true});
+    s == "{something = (), other = true}" or s == "{other = true, something = ()}"
+}
+
+@test
+def testRecordStringify03(): Bool = {
+    let s = stringify({something = {}, other = {single = 8}});
+    s == "{something = {}, other = {single = 8}}" or s == "{other = {single = 8}, something = {}}"
+}
