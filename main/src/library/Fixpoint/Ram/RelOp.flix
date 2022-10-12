@@ -24,7 +24,7 @@ namespace Fixpoint/Ram {
         case If(List[BoolExp[v]], RelOp[v])
     }
 
-    instance ToString[RelOp[v]] with ToString[v] {
+    instance ToString[RelOp[v]] {
         pub def toString(op: RelOp[v]): String =
             let nl = String.lineSeparator();
             match op {

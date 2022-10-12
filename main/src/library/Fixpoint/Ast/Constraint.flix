@@ -44,7 +44,7 @@ namespace Fixpoint/Ast {
         }
     }
 
-    instance ToString[Constraint[v]] with ToString[v] {
+    instance ToString[Constraint[v]] {
         pub def toString(c: Constraint[v]): String =
             match c {
                 case Constraint(head, body) =>
