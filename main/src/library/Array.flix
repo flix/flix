@@ -1789,11 +1789,11 @@ namespace Array {
             case ReifiedBigInt =>
                 let arr = a as Array[##java.lang.Object, r1];
                 import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
-                copy(arr, b, e) as Array[BigInt, r2]
+                copy(arr, b, e) as Array[a, r2]
             case ReifiedString =>
                 let arr = a as Array[##java.lang.Object, r1];
                 import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
-                copy(arr, b, e) as Array[String, r2]
+                copy(arr, b, e) as Array[a, r2]
             case ReifiedArray(_) =>
                 let arr = a as Array[##java.lang.Object, r1];
                 import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
