@@ -2032,8 +2032,8 @@ namespace TestDelayList {
     def mapWithIndexFusion01(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.mapWithIndex((x, _) -> { l := "a" :: deref l; x }) |>
-        DelayList.mapWithIndex((x, _) -> { l := "b" :: deref l; x }) |>
+        DelayList.mapWithIndex((_, x) -> { l := "a" :: deref l; x }) |>
+        DelayList.mapWithIndex((_, x) -> { l := "b" :: deref l; x }) |>
         DelayList.toList;
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
@@ -2041,8 +2041,8 @@ namespace TestDelayList {
     def mapWithIndexFusion02(): Bool \ IO =
         let l = ref Nil;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.mapWithIndex((x, _) -> { l := "a" :: deref l; x } as \ {}) |>
-        DelayList.mapWithIndex((x, _) -> { l := "b" :: deref l; x } as \ {}) |>
+        DelayList.mapWithIndex((_, x) -> { l := "a" :: deref l; x } as \ {}) |>
+        DelayList.mapWithIndex((_, x) -> { l := "b" :: deref l; x } as \ {}) |>
         DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
