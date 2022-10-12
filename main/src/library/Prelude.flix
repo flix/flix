@@ -132,6 +132,67 @@ pub def println(x: a): Unit \ IO with ToString[a] =
     x |> ToString.toString |> println(getOut())
 
 ///
+///
+///
+@Internal
+pub def escape(s: String): String = region r {
+    let sb = new StringBuilder(r);
+    let it = String.iterate(r, s);
+    foreach (c <- it) {
+        let repl = match c {
+            case '\n' => "\\\n"
+            case '\r' => "\\\r"
+            case '\\' => "\\\\"
+            case '\"' => "\\\""
+            case '\'' => "\\\'"
+            case "\t" => "\\\t"
+
+            case '$' => match Iterator.next(it) {
+                case Some('{') => "\\${"
+                case Some(c2) => ""
+            }
+        }
+    }
+}
+
+@Internal
+pub def escape(s: String): String = region r {
+    import static java.lang.Character.isISOControl(Char): Bool \ {};
+    import static java.lang.Character.isWhitespace(Char): Bool \ {};
+    import static java.lang.Character.isSpaceChar(Char): Bool \ {};
+    import static java.lang.Integer.toString(Int32, Int32): Bool \ {};
+    use StringBuilder.append!;
+
+    /// Escape control codes and whitespace characters (except normal space)
+    def shouldUnicodeEscape(c: Char): Bool = {
+        isISOControl(c) or (isWhitespace(c) and not isSpaceChar(c))
+    };
+
+    let sb = new StringBuilder(r);
+    def visit(l: List[Char]): Unit \ Write(r) = match l {
+        case Nil => ()
+        case '\n' :: tl => append!("\\\n", sb); visit(tl)
+        case '\r' :: tl => append!("\\\r", sb); visit(tl)
+        case '\\' :: tl => append!("\\\\", sb); visit(tl)
+        case '\"' :: tl => append!("\\\"", sb); visit(tl)
+        case '\'' :: tl => append!("\\\'", sb); visit(tl)
+        case '\t' :: tl => append!("\\\t", sb); visit(tl)
+
+        case '$' :: '{' :: tl => append!("\\${", sb); visit(tl)
+        case '$' :: tl => append!("$", sb); visit(tl)
+
+        case c :: tl if (shouldUnicodeEscape(c)) =>
+            let code = Char.toInt32(c) |> toString |> padLeft(4, '0');
+            append!("\\u" + code, sb);
+            visit(tl)
+
+        case c :: tl => append!(c, sb); visit(tl)
+    }
+    visit(String.toList(s));
+    StringBuilder.toString(sb)
+}
+
+///
 /// Prints the given prefix along with a automatic string representation of `x`.
 ///
 /// Note: For internal use only. The actual `debug(exp)` expression is parsed and ultimately rewritten to call this function.
