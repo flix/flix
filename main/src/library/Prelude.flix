@@ -167,7 +167,7 @@ pub def escape(s: String): String = region r {
         case '%' :: tl => discard append(sb, "%"); visit(tl)
 
         case c :: tl if (shouldUnicodeEscape(c)) =>
-            let number = Char.toInt32(c) |> valueOf;
+            let number = c as Int32 |> valueOf;
             let code = format("%04x", [number as ##java.lang.Object]);
             discard append(sb, "\\u" + code);
             visit(tl)
