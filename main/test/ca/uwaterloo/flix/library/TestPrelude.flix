@@ -318,3 +318,26 @@ def testRecordStringify03(): Bool = {
     let s = stringify({something = {}, other = {single = 8}});
     s == "{something = {}, other = {single = 8}}" or s == "{other = {single = 8}, something = {}}"
 }
+
+@test
+def testFunctionStringify01(): Bool = {
+    def f(x: Int32): Int32 = x;
+    let s = stringify(f);
+    s == "Int32 -> Int32"
+}
+
+def toIntFunction(x: a, g: a -> Int32): Int32 = g(x)
+
+@test
+def testFunctionStringify02(): Bool = {
+    let s = stringify(toIntFunction(true));
+    s == "Obj -> Int32"
+}
+
+def thunkFunction(x: a): String -> a = _ -> x
+
+@test
+def testFunctionStringify03(): Bool = {
+    let s = stringify((thunkFunction(42), thunkFunction('a')));
+    s == "(Obj -> Int32, Obj -> Char)"
+}
