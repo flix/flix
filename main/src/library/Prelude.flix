@@ -132,35 +132,15 @@ pub def println(x: a): Unit \ IO with ToString[a] =
     x |> ToString.toString |> println(getOut())
 
 ///
+/// Escapes the given string per Flix's escaping rules.
 ///
-///
-@Internal
-pub def escape(s: String): String = region r {
-    let sb = new StringBuilder(r);
-    let it = String.iterate(r, s);
-    foreach (c <- it) {
-        let repl = match c {
-            case '\n' => "\\\n"
-            case '\r' => "\\\r"
-            case '\\' => "\\\\"
-            case '\"' => "\\\""
-            case '\'' => "\\\'"
-            case "\t" => "\\\t"
-
-            case '$' => match Iterator.next(it) {
-                case Some('{') => "\\${"
-                case Some(c2) => ""
-            }
-        }
-    }
-}
-
 @Internal
 pub def escape(s: String): String = region r {
     import static java.lang.Character.isISOControl(Char): Bool \ {};
     import static java.lang.Character.isWhitespace(Char): Bool \ {};
     import static java.lang.Character.isSpaceChar(Char): Bool \ {};
-    import static java.lang.Integer.toString(Int32, Int32): Bool \ {};
+    import static java.lang.String.format(String, Array[##java.lang.Object, r]): String \ r;
+    import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer \ {};
     use StringBuilder.append!;
 
     /// Escape control codes and whitespace characters (except normal space)
@@ -171,26 +151,27 @@ pub def escape(s: String): String = region r {
     let sb = new StringBuilder(r);
     def visit(l: List[Char]): Unit \ Write(r) = match l {
         case Nil => ()
-        case '\n' :: tl => append!("\\\n", sb); visit(tl)
-        case '\r' :: tl => append!("\\\r", sb); visit(tl)
+        case '\n' :: tl => append!("\\n", sb); visit(tl)
+        case '\r' :: tl => append!("\\r", sb); visit(tl)
         case '\\' :: tl => append!("\\\\", sb); visit(tl)
         case '\"' :: tl => append!("\\\"", sb); visit(tl)
         case '\'' :: tl => append!("\\\'", sb); visit(tl)
-        case '\t' :: tl => append!("\\\t", sb); visit(tl)
+        case '\t' :: tl => append!("\\t", sb); visit(tl)
 
-        case '$' :: '{' :: tl => append!("\\\${", sb); visit(tl)
+        case '$' :: '{' :: tl => append!("\\" + "$" + "{", sb); visit(tl)
         case '$' :: tl => append!("$", sb); visit(tl)
 
-        case '%' :: '{' :: tl => append!("\\\%{", sb); visit(tl)
+        case '%' :: '{' :: tl => append!("\\" + "%" + "{", sb); visit(tl)
         case '%' :: tl => append!("%", sb); visit(tl)
 
         case c :: tl if (shouldUnicodeEscape(c)) =>
-            let code = Char.toInt32(c) |> toString |> padLeft(4, '0');
+            let number = Char.toInt32(c) |> valueOf;
+            let code = format("%04x", [number as ##java.lang.Object]);
             append!("\\u" + code, sb);
             visit(tl)
 
         case c :: tl => append!(c, sb); visit(tl)
-    }
+    };
     visit(String.toList(s));
     StringBuilder.toString(sb)
 }
@@ -245,8 +226,7 @@ pub def stringify(x: a): String = {
             import java.lang.Object.toString(): String;
             toString as a -> String
         case ReifiedString =>
-            import java.lang.Object.toString(): String;
-            toString as a -> String
+            (s -> "\"" + escape(s) + "\"") as a -> String
         case ReifiedArray(tpe) =>
             match tpe {
                 case ErasedType =>
