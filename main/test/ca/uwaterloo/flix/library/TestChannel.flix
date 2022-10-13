@@ -16,7 +16,7 @@
  */
 
  use Concurrent/Channel.Mpmc
- use Concurrent/Channel.assertiveGet
+ use Concurrent/Channel.unsafeGet
  use Concurrent/Channel.get
  use Concurrent/Channel.mpmcAdmin
  use Concurrent/Channel.newChannel
