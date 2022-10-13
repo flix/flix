@@ -136,44 +136,46 @@ pub def println(x: a): Unit \ IO with ToString[a] =
 ///
 @Internal
 pub def escape(s: String): String = region r {
+    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ r as newStringBuilder;
+    import java.lang.StringBuilder.toString(): String \ r;
+    import java.lang.StringBuilder.append(String): ##java.lang.StringBuilder \ r;
     import static java.lang.Character.isISOControl(Char): Bool \ {};
     import static java.lang.Character.isWhitespace(Char): Bool \ {};
     import static java.lang.Character.isSpaceChar(Char): Bool \ {};
     import static java.lang.String.format(String, Array[##java.lang.Object, r]): String \ r;
     import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer \ {};
-    use StringBuilder.append!;
 
     /// Escape control codes and whitespace characters (except normal space)
     def shouldUnicodeEscape(c: Char): Bool = {
         isISOControl(c) or (isWhitespace(c) and not isSpaceChar(c))
     };
 
-    let sb = new StringBuilder(r);
+    let sb = newStringBuilder();
     def visit(l: List[Char]): Unit \ Write(r) = match l {
         case Nil => ()
-        case '\n' :: tl => append!("\\n", sb); visit(tl)
-        case '\r' :: tl => append!("\\r", sb); visit(tl)
-        case '\\' :: tl => append!("\\\\", sb); visit(tl)
-        case '\"' :: tl => append!("\\\"", sb); visit(tl)
-        case '\'' :: tl => append!("\\\'", sb); visit(tl)
-        case '\t' :: tl => append!("\\t", sb); visit(tl)
+        case '\n' :: tl => discard append(sb, "\\n"); visit(tl)
+        case '\r' :: tl => discard append(sb, "\\r"); visit(tl)
+        case '\\' :: tl => discard append(sb, "\\\\"); visit(tl)
+        case '\"' :: tl => discard append(sb, "\\\""); visit(tl)
+        case '\'' :: tl => discard append(sb, "\\\'"); visit(tl)
+        case '\t' :: tl => discard append(sb, "\\t"); visit(tl)
 
-        case '$' :: '{' :: tl => append!("\\" + "$" + "{", sb); visit(tl)
-        case '$' :: tl => append!("$", sb); visit(tl)
+        case '$' :: '{' :: tl => discard append(sb, "\\" + "$" + "{"); visit(tl)
+        case '$' :: tl => discard append(sb, "$"); visit(tl)
 
-        case '%' :: '{' :: tl => append!("\\" + "%" + "{", sb); visit(tl)
-        case '%' :: tl => append!("%", sb); visit(tl)
+        case '%' :: '{' :: tl => discard append(sb, "\\" + "%" + "{"); visit(tl)
+        case '%' :: tl => discard append(sb, "%"); visit(tl)
 
         case c :: tl if (shouldUnicodeEscape(c)) =>
             let number = Char.toInt32(c) |> valueOf;
             let code = format("%04x", [number as ##java.lang.Object]);
-            append!("\\u" + code, sb);
+            discard append(sb, "\\u" + code);
             visit(tl)
 
-        case c :: tl => append!(c, sb); visit(tl)
+        case c :: tl => discard append(sb, "${c}"); visit(tl)
     };
     visit(String.toList(s));
-    StringBuilder.toString(sb)
+    toString(sb)
 }
 
 ///
