@@ -178,8 +178,11 @@ pub def escape(s: String): String = region r {
         case '\'' :: tl => append!("\\\'", sb); visit(tl)
         case '\t' :: tl => append!("\\\t", sb); visit(tl)
 
-        case '$' :: '{' :: tl => append!("\\${", sb); visit(tl)
+        case '$' :: '{' :: tl => append!("\\\${", sb); visit(tl)
         case '$' :: tl => append!("$", sb); visit(tl)
+
+        case '%' :: '{' :: tl => append!("\\\%{", sb); visit(tl)
+        case '%' :: tl => append!("%", sb); visit(tl)
 
         case c :: tl if (shouldUnicodeEscape(c)) =>
             let code = Char.toInt32(c) |> toString |> padLeft(4, '0');
