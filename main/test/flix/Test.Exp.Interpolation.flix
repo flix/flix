@@ -202,7 +202,7 @@ namespace Test/Exp/Interpolation {
     @test
     def interpolationDebug02(): Bool =
         let x = "123";
-        "%{x}" == "123"
+        "%{x}" == "\"123\""
 
     @test
     def interpolationDebug03(): Bool =
