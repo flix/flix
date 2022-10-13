@@ -472,7 +472,7 @@ object BytecodeInstructions {
   def composeN(ins: List[InstructionSet]): InstructionSet =
     ins.foldLeft(nop())(compose)
 
-  /***
+  /**
     * Sequential composition with `sep` between elements.
     */
   def joinN(ins: List[InstructionSet], sep: InstructionSet): InstructionSet = ins match {

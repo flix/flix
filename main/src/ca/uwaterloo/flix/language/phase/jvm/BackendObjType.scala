@@ -167,23 +167,13 @@ object BackendObjType {
     def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, s"arg$index", args(index))
 
     def ToStringMethod: InstanceMethod = {
-      val append = INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
-      // assumes a stringbuilder on top of the stack
-      // will leave a stringbuilder on top of the stack
-      val argsStringIns = args match {
-        case Nil => pushString("()") ~ append
-        case a :: Nil => pushString(a.toErasedString) ~ append
-        case _ =>
-          pushString("(") ~ append ~
-          joinN(args.map(a => pushString(a.toErasedString) ~ append), pushString(", ") ~ append) ~
-          pushString(")") ~ append
+      val argString = args match {
+        case Nil => "()"
+        case arg :: Nil => arg.toErasedString
+        case _ => args.map(_.toErasedString).mkString("(", ", ", ")")
       }
       JavaObject.ToStringMethod.implementation(this.jvmName, Some(
-        NEW(StringBuilder.jvmName) ~ DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
-          argsStringIns ~
-          pushString(" -> ") ~ append ~
-          pushString(result.toErasedString) ~ append ~
-          INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+        pushString(s"$argString -> ${result.toErasedString}") ~
           ARETURN()
       ))
     }
