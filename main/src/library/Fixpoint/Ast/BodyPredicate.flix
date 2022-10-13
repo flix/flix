@@ -48,7 +48,7 @@ namespace Fixpoint/Ast {
         }
     }
 
-    instance ToString[BodyPredicate[v]] with ToString[v] {
+    instance ToString[BodyPredicate[v]] {
         pub def toString(body: BodyPredicate[v]): String =
             def polarityPrefix(p) = match p {
                 case Negative => "not "

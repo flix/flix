@@ -32,7 +32,7 @@ namespace Fixpoint {
     /// The stratification is computed automatically by the solver.
     ///
     @Internal
-    pub def solve(d: Datalog[v]): Datalog[v] with Order[v], ToString[v] =
+    pub def solve(d: Datalog[v]): Datalog[v] with Order[v] =
         stratify(d) |> solveWithStratification(d)
 
     ///
@@ -41,7 +41,7 @@ namespace Fixpoint {
     /// A stratification of `d` is given by `stf`.
     ///
     @Internal
-    def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v], ToString[v] = {
+    def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v] = {
         notifyPreSolve(d, stf);
         let compiler = cs ->
             compile(cs, stf) |>
@@ -113,7 +113,7 @@ namespace Fixpoint {
     /// Renames every predicate symbol in `d` with a fresh name, except for those in `preds`.
     ///
     @Internal
-    pub def rename(preds: List[PredSym], d: Datalog[v]): Datalog[v] with Order[v], ToString[v] = {
+    pub def rename(preds: List[PredSym], d: Datalog[v]): Datalog[v] with Order[v] = {
         use Fixpoint/PredSymsOf.predSymsOf;
         use Fixpoint/SubstitutePredSym.substitute;
 
