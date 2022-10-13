@@ -16,13 +16,13 @@
  */
 
  use Concurrent/Channel.Mpmc
- use Concurrent/Channel.newChannel
  use Concurrent/Channel.assertiveGet
- use Concurrent/Channel.put
  use Concurrent/Channel.get
+ use Concurrent/Channel.mpmcAdmin
+ use Concurrent/Channel.newChannel
+ use Concurrent/Channel.put
  use Concurrent/Channel.selectFrom
  use Concurrent/Channel.unlockLocks
- use Concurrent/Channel.mpmcAdmin
 
  namespace TestChannel {
 

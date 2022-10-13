@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+ use Concurrent/Condition.Condition
+ use Concurrent/Condition.Condition.Condition
+
 namespace Concurrent/ReentrantLock {
 
     ///
@@ -25,14 +28,14 @@ namespace Concurrent/ReentrantLock {
     /// Creates an instance of ReentrantLock with the given fairness policy.
     /// `fair = False` is the default for Java.
     ///
-    pub def newLock(fair: Bool): Concurrent/ReentrantLock.ReentrantLock \ IO =
+    pub def newLock(fair: Bool): ReentrantLock \ IO =
         import new java.util.concurrent.locks.ReentrantLock(Bool): ##java.util.concurrent.locks.ReentrantLock \ IO as reentrantLock;
         ReentrantLock(reentrantLock(fair))
 
     ///
     /// Returns true if this lock has fairness set true.
     ///
-    pub def isFair(lock: Concurrent/ReentrantLock.ReentrantLock): Bool \ {} =
+    pub def isFair(lock: ReentrantLock): Bool \ {} =
         import java.util.concurrent.locks.ReentrantLock.isFair(): Bool \ {};
         let ReentrantLock(l) = lock;
         isFair(l)
@@ -40,7 +43,7 @@ namespace Concurrent/ReentrantLock {
     ///
     /// Acquires the lock.
     ///
-    pub def lock(lock: Concurrent/ReentrantLock.ReentrantLock): Unit \ IO =
+    pub def lock(lock: ReentrantLock): Unit \ IO =
         import java.util.concurrent.locks.ReentrantLock.lock(): Unit \ IO as lockIt;
         let ReentrantLock(l) = lock;
         lockIt(l)
@@ -48,7 +51,7 @@ namespace Concurrent/ReentrantLock {
     ///
     /// Acquires the lock unless the current thread is interrupted.
     ///
-    pub def lockInterruptibly(lock: Concurrent/ReentrantLock.ReentrantLock): Result[Unit, ##java.lang.InterruptedException] \ IO =
+    pub def lockInterruptibly(lock: ReentrantLock): Result[Unit, ##java.lang.InterruptedException] \ IO =
         import java.util.concurrent.locks.ReentrantLock.lockInterruptibly(): Unit \ IO;
         let ReentrantLock(l) = lock;
         try {
@@ -60,16 +63,15 @@ namespace Concurrent/ReentrantLock {
     ///
     /// Returns a Condition instance for use with this Lock instance.
     ///
-    pub def newCondition(lock: Concurrent/ReentrantLock.ReentrantLock): Concurrent/Condition.Condition \ IO =
+    pub def newCondition(lock: ReentrantLock): Condition \ IO =
         import java.util.concurrent.locks.ReentrantLock.newCondition(): ##java.util.concurrent.locks.Condition \ IO;
         let ReentrantLock(l) = lock;
-        use Concurrent/Condition.Condition;
-        Condition.Condition(newCondition(l))
+        Condition(newCondition(l))
 
     ///
     /// Acquires the lock only if it is not held by another thread at the time of invocation.
     ///
-    pub def tryLock(lock: Concurrent/ReentrantLock.ReentrantLock): Bool \ IO =
+    pub def tryLock(lock: ReentrantLock): Bool \ IO =
         import java.util.concurrent.locks.ReentrantLock.tryLock(): Bool \ IO;
         let ReentrantLock(l) = lock;
         tryLock(l)
@@ -77,7 +79,7 @@ namespace Concurrent/ReentrantLock {
     ///
     /// Acquires the lock if it is not held by another thread within the given waiting time (nanos) and the current thread has not been interrupted.
     ///
-    pub def tryLockNanos(lock: Concurrent/ReentrantLock.ReentrantLock, nanosTimeout: Int64): Result[Bool, ##java.lang.InterruptedException] \ IO =
+    pub def tryLockNanos(lock: ReentrantLock, nanosTimeout: Int64): Result[Bool, ##java.lang.InterruptedException] \ IO =
         import java.util.concurrent.locks.ReentrantLock.tryLock(Int64, ##java.util.concurrent.TimeUnit): Bool \ IO;
         import static get java.util.concurrent.TimeUnit.NANOSECONDS: ##java.util.concurrent.TimeUnit \ IO as nano;
         let ReentrantLock(l) = lock;
@@ -90,7 +92,7 @@ namespace Concurrent/ReentrantLock {
     ///
     /// Attempts to release this lock.
     ///
-    pub def unlock(lock: Concurrent/ReentrantLock.ReentrantLock): Result[Unit, ##java.lang.IllegalMonitorStateException] \ IO =
+    pub def unlock(lock: ReentrantLock): Result[Unit, ##java.lang.IllegalMonitorStateException] \ IO =
         import java.util.concurrent.locks.ReentrantLock.unlock(): Unit \ IO;
         let ReentrantLock(l) = lock;
         try {

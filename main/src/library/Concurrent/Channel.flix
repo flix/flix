@@ -19,6 +19,9 @@
 namespace Concurrent/Channel {
     use Concurrent/ReentrantLock.lock
     use Concurrent/ReentrantLock.ReentrantLock
+    use Concurrent/ReentrantLock.newLock
+    use Concurrent/Condition.Condition
+    use Concurrent/ReentrantLock.newCondition
 
     ///
     /// An enum that represents a multiple-producer, multiple-consumer (mpmc)
@@ -74,6 +77,7 @@ namespace Concurrent/Channel {
         MutDeque[a, Static] // elementDeque
     )
 
+    /// Returns the `MpmcAdmin` of `c`.
     pub def mpmcAdmin(c: Mpmc[a]): MpmcAdmin = {
         let Mpmc(admin, _) = c;
         admin
@@ -85,8 +89,8 @@ namespace Concurrent/Channel {
         Bool, // unBuffered
         Int32, // maxSize
         Ref[Int32, Static], // size
-        MutList[(ReentrantLock, Concurrent/Condition.Condition), Static], // waitingGetters
-        Concurrent/Condition.Condition // waitingPutters
+        MutList[(ReentrantLock, Condition), Static], // waitingGetters
+        Condition // waitingPutters
     )
 
     ///
@@ -121,7 +125,7 @@ namespace Concurrent/Channel {
         import static dev.flix.runtime.Global.newId(): Int64 \ IO;
         let _bufferCheck = if (bufferSize < 0) bug!("bufferSize < 0") else ();
         let unBuffered = bufferSize == 0;
-        let reentrantLock = Concurrent/ReentrantLock.newLock(false);
+        let reentrantLock = newLock(false);
         let size = ref 0;
         Mpmc(
             MpmcAdmin(
@@ -131,7 +135,7 @@ namespace Concurrent/Channel {
                 if (unBuffered) 1 else bufferSize,
                 size,
                 new MutList(Static),
-                Concurrent/ReentrantLock.newCondition(reentrantLock)
+                newCondition(reentrantLock)
             ),
             new MutDeque(Static)
         )
@@ -187,6 +191,10 @@ namespace Concurrent/Channel {
         unlock(channelLock);
         element
 
+    ///
+    /// Receives an element from the channel `c`. This will crasah if the
+    /// channel is empty.
+    ///
     @Internal
     pub def assertiveGet(c: Mpmc[a]): a \ IO = {
         let Mpmc(admin, elementDeque) = c;
@@ -223,13 +231,16 @@ namespace Concurrent/Channel {
         // Create a new lock and condition for this select. The condition is
         // potentially put into the waiting getters of the channels if a
         // default isn't defined.
-        let selectLock = Concurrent/ReentrantLock.newLock(false);
-        let selectCondition = Concurrent/ReentrantLock.newCondition(selectLock);
+        let selectLock = newLock(false);
+        let selectCondition = newCondition(selectLock);
 
         // Sort channels to avoid deadlocks
         let sortedLocks = Array.sort(channels) |> Array.map(match MpmcAdmin(_, rlock, _, _, _, _, _) -> rlock);
         selectHelper(channels, blocking, sortedLocks, selectLock, selectCondition)
 
+    ///
+    /// Unlock `locks` in left-to-right order.
+    ///
     @Internal
     pub def unlockLocks(locks: List[ReentrantLock]): Unit \ IO = {
         List.foreach(unlock, locks)
@@ -264,10 +275,10 @@ namespace Concurrent/Channel {
         match optionalElement {
             case None => { // No element was found
                 // Create a new lock and condition
-                let conditionLock = Concurrent/ReentrantLock.newLock(false);
+                let conditionLock = newLock(false);
                 lock(conditionLock);
 
-                let condition = Concurrent/ReentrantLock.newCondition(conditionLock);
+                let condition = newCondition(conditionLock);
                 // Add LockConditionPair to the channel
                 let pair = (conditionLock, condition);
 
@@ -304,7 +315,7 @@ namespace Concurrent/Channel {
         blocking: Bool,
         sortedLocks: Array[ReentrantLock, Static],
         selectLock: ReentrantLock,
-        selectCondition: Concurrent/Condition.Condition
+        selectCondition: Condition
     ): (Int32, List[ReentrantLock]) \ IO =
         // bug if the thread is interrupted
         if (threadInterrupted()) bug!("thread interrupted") else
@@ -357,7 +368,7 @@ namespace Concurrent/Channel {
     /// Add a condition to the list of waiting getters.
     /// The channel lock is expected to be held.
     ///
-    def addGetter(l: ReentrantLock, cond: Concurrent/Condition.Condition, c: MpmcAdmin): Unit \ IO =
+    def addGetter(l: ReentrantLock, cond: Condition, c: MpmcAdmin): Unit \ IO =
         let pair = (l, cond);
         let MpmcAdmin(_, _, _, _, _, waitingGetters, _) = c;
 
@@ -406,11 +417,11 @@ namespace Concurrent/Channel {
         interrupted()
 
     ///
-    /// Wrapper for `Concurrent/Condition.awaitUninterruptibly(c)` that handles `Err` with
+    /// Unsafe wrapper for `Concurrent/Condition.awaitUninterruptibly(c)` that handles `Err` with
     /// `bug!`.
     /// The channel lock is expected to be held.
     ///
-    def awaitCondition(c: Concurrent/Condition.Condition): Unit \ IO =
+    def awaitCondition(c: Condition): Unit \ IO =
         match Concurrent/Condition.awaitUninterruptibly(c) {
             case Ok(_) => ()
             case Err(_) =>
@@ -419,10 +430,10 @@ namespace Concurrent/Channel {
         }
 
     ///
-    /// Wrapper for `Concurrent/Condition.signalAll(c)` that handles `Err` with `bug!`.
+    /// Unsafe wrapper for `Concurrent/Condition.signalAll(c)` that handles `Err` with `bug!`.
     /// The condition lock is expected to be held.
     ///
-    def signalCondition(c: Concurrent/Condition.Condition): Unit \ IO =
+    def signalCondition(c: Condition): Unit \ IO =
         match Concurrent/Condition.signalAll(c) {
             case Ok(_) => ()
             case Err(_) =>
@@ -431,7 +442,7 @@ namespace Concurrent/Channel {
         }
 
     ///
-    /// Wrapper for `Concurrent/ReentrantLock.unlock(l)` that handles `Err` with `bug!`.
+    /// Unsafe wrapper for `Concurrent/ReentrantLock.unlock(l)` that handles `Err` with `bug!`.
     /// The lock is expected to be held.
     ///
     def unlock(l: ReentrantLock): Unit \ IO =
