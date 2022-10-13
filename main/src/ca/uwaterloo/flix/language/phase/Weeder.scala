@@ -1908,6 +1908,12 @@ object Weeder {
             case _ => WeederError.InvalidEscapeSequence('$', mkSL(sp1, sp2)).toFailure
           }
 
+          // Case 3.3 Debug escape
+          case "%" => rest match {
+            case ParsedAst.CharCode.Literal(_, "{", _) :: rest2 => visit(rest2, '{' :: '%' :: acc)
+            case _ => WeederError.InvalidEscapeSequence('%', mkSL(sp1, sp2)).toFailure
+          }
+
           // Case 3.3: Unicode escape
           case "u" => rest match {
             // Case 3.3.1: `\\u` followed by 4 or more literals
