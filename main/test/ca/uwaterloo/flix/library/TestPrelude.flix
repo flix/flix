@@ -205,17 +205,14 @@ def testBigIntStringify01(): Bool = stringify(42ii) == "42"
 def testStringStringify01(): Bool = stringify("Hello World!") == "\"Hello World!\""
 
 @test
-def testStringStringify02(): Bool = stringify("hi" + "$" + "{not-interpolated}") == "\"hi" + "\\" + "$" + "{not-interpolated}\""
+def testStringStringify02(): Bool = stringify("one\ttwo") == "\"one\\ttwo\""
 
 @test
-def testStringStringify03(): Bool = stringify("one\ttwo") == "\"one\\ttwo\""
-
-@test
-def testStringStringify04(): Bool = stringify("\u0000") == "\"\\u0000\""
+def testStringStringify03(): Bool = stringify("\u0000") == "\"\u0000\""
 
 @test
 def testStringStringify05(): Bool = stringify("\n\r\\\"\'\t\${\%{\u1234\u0000") ==
-    "\"" + "\\n" + "\\r" + "\\\\" + "\\\"" + "\\\'" + "\\t" + "\\\${" + "\\\%{" + "\u1234" + "\\u0000" + "\""
+    "\"" + "\\n" + "\\r" + "\\\\" + "\\\"" + "\\\'" + "\\t" + "\${" + "\%{" + "\u1234" + "\u0000" + "\""
 
 @test
 def testArrayOfUnitStringify01(): Bool \ IO = stringify([(), ()]) == "[(), ()]"

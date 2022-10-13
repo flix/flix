@@ -135,71 +135,17 @@ pub def println(x: a): Unit \ IO with ToString[a] =
 /// Escapes the given string per Flix's escaping rules.
 ///
 @Internal
-pub def escape(s: String): String = region r {
-    import java.lang.String.charAt(Int32): Char \ {};
-    import java.lang.String.length(): Int32 \ {};
-    import java.lang.StringBuilder.append(String): ##java.lang.StringBuilder \ r;
-    import java.lang.StringBuilder.toString(): String \ r;
-    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ r as newStringBuilder;
-    import static java.lang.Character.isISOControl(Char): Bool \ {};
-    import static java.lang.Character.isSpaceChar(Char): Bool \ {};
-    import static java.lang.Character.isWhitespace(Char): Bool \ {};
-    import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer \ {};
-    import static java.lang.String.format(String, Array[##java.lang.Object, r]): String \ r;
-
-    /// Escape control codes and whitespace characters (except normal space)
-    def shouldUnicodeEscape(c: Char): Bool = {
-        isISOControl(c) or (isWhitespace(c) and not isSpaceChar(c))
-    };
-
-    let sb = newStringBuilder();
-    def visit(i: Int32): Unit \ Write(r) = {
-        if (i >= length(s)) {
-            ()
-        } else {
-            match charAt(s, i) {
-                case '\n' => discard append(sb, "\\n"); visit(i + 1)
-                case '\r' => discard append(sb, "\\r"); visit(i + 1)
-                case '\\' => discard append(sb, "\\\\"); visit(i + 1)
-                case '\"' => discard append(sb, "\\\""); visit(i + 1)
-                case '\'' => discard append(sb, "\\\'"); visit(i + 1)
-                case '\t' => discard append(sb, "\\t"); visit(i + 1)
-
-                case '$' =>
-                    if (i + 1 < length(s) and charAt(s, i + 1) == '{') {
-                        discard append(sb, "\\" + "$" + "{");
-                        visit(i + 2)
-                    } else {
-                        discard append(sb, "$");
-                        visit(i + 1)
-                    }
-
-
-                case '%' =>
-                    if (i + 1 < length(s) and charAt(s, i + 1) == '{') {
-                        discard append(sb, "\\" + "%" + "{");
-                        visit(i + 2)
-                    } else {
-                        discard append(sb, "%");
-                        visit(i + 1)
-                    }
-
-                case c  =>
-                    if (shouldUnicodeEscape(c)) {
-                        let number = c as Int32 |> valueOf;
-                        let code = format("%04x", [number as ##java.lang.Object]);
-                        discard append(sb, "\\u" + code);
-                        visit(i + 1)
-                    } else {
-                        discard append(sb, "${c}");
-                        visit(i + 1)
-                    }
-            }
-        }
-
-    };
-    visit(0);
-    toString(sb)
+pub def escape(s: String): String = {
+    import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String \ {} as jReplace;
+    def replace(old: String, new: String, subject: String): String = jReplace(subject, old as ##java.lang.CharSequence, new as ##java.lang.CharSequence);
+    s
+        // NB: \\ must come first to avoid clobbering other cases
+        |> replace("\\", "\\\\")
+        |> replace("\n", "\\n")
+        |> replace("\r", "\\r")
+        |> replace("\"", "\\\"")
+        |> replace("\'", "\\\'")
+        |> replace("\t", "\\t")
 }
 
 ///
