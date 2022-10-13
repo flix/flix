@@ -136,14 +136,16 @@ pub def println(x: a): Unit \ IO with ToString[a] =
 ///
 @Internal
 pub def escape(s: String): String = region r {
-    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ r as newStringBuilder;
-    import java.lang.StringBuilder.toString(): String \ r;
+    import java.lang.String.charAt(Int32): Char \ {};
+    import java.lang.String.length(): Int32 \ {};
     import java.lang.StringBuilder.append(String): ##java.lang.StringBuilder \ r;
+    import java.lang.StringBuilder.toString(): String \ r;
+    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ r as newStringBuilder;
     import static java.lang.Character.isISOControl(Char): Bool \ {};
-    import static java.lang.Character.isWhitespace(Char): Bool \ {};
     import static java.lang.Character.isSpaceChar(Char): Bool \ {};
-    import static java.lang.String.format(String, Array[##java.lang.Object, r]): String \ r;
+    import static java.lang.Character.isWhitespace(Char): Bool \ {};
     import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer \ {};
+    import static java.lang.String.format(String, Array[##java.lang.Object, r]): String \ r;
 
     /// Escape control codes and whitespace characters (except normal space)
     def shouldUnicodeEscape(c: Char): Bool = {
@@ -151,30 +153,52 @@ pub def escape(s: String): String = region r {
     };
 
     let sb = newStringBuilder();
-    def visit(l: List[Char]): Unit \ Write(r) = match l {
-        case Nil => ()
-        case '\n' :: tl => discard append(sb, "\\n"); visit(tl)
-        case '\r' :: tl => discard append(sb, "\\r"); visit(tl)
-        case '\\' :: tl => discard append(sb, "\\\\"); visit(tl)
-        case '\"' :: tl => discard append(sb, "\\\""); visit(tl)
-        case '\'' :: tl => discard append(sb, "\\\'"); visit(tl)
-        case '\t' :: tl => discard append(sb, "\\t"); visit(tl)
+    def visit(i: Int32): Unit \ Write(r) = {
+        if (i >= length(s)) {
+            ()
+        } else {
+            match charAt(s, i) {
+                case '\n' => discard append(sb, "\\n"); visit(i + 1)
+                case '\r' => discard append(sb, "\\r"); visit(i + 1)
+                case '\\' => discard append(sb, "\\\\"); visit(i + 1)
+                case '\"' => discard append(sb, "\\\""); visit(i + 1)
+                case '\'' => discard append(sb, "\\\'"); visit(i + 1)
+                case '\t' => discard append(sb, "\\t"); visit(i + 1)
 
-        case '$' :: '{' :: tl => discard append(sb, "\\" + "$" + "{"); visit(tl)
-        case '$' :: tl => discard append(sb, "$"); visit(tl)
+                case '$' =>
+                    if (i + 1 < length(s) and charAt(s, i + 1) == '{') {
+                        discard append(sb, "\\" + "$" + "{");
+                        visit(i + 2)
+                    } else {
+                        discard append(sb, "$");
+                        visit(i + 1)
+                    }
 
-        case '%' :: '{' :: tl => discard append(sb, "\\" + "%" + "{"); visit(tl)
-        case '%' :: tl => discard append(sb, "%"); visit(tl)
 
-        case c :: tl if (shouldUnicodeEscape(c)) =>
-            let number = c as Int32 |> valueOf;
-            let code = format("%04x", [number as ##java.lang.Object]);
-            discard append(sb, "\\u" + code);
-            visit(tl)
+                case '%' =>
+                    if (i + 1 < length(s) and charAt(s, i + 1) == '{') {
+                        discard append(sb, "\\" + "%" + "{");
+                        visit(i + 2)
+                    } else {
+                        discard append(sb, "%");
+                        visit(i + 1)
+                    }
 
-        case c :: tl => discard append(sb, "${c}"); visit(tl)
+                case c  =>
+                    if (shouldUnicodeEscape(c)) {
+                        let number = c as Int32 |> valueOf;
+                        let code = format("%04x", [number as ##java.lang.Object]);
+                        discard append(sb, "\\u" + code);
+                        visit(i + 1)
+                    } else {
+                        discard append(sb, "${c}");
+                        visit(i + 1)
+                    }
+            }
+        }
+
     };
-    visit(String.toList(s));
+    visit(0);
     toString(sb)
 }
 
