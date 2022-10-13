@@ -25,7 +25,7 @@ namespace Concurrent/ReentrantLock {
     /// Creates an instance of ReentrantLock with the given fairness policy.
     /// `fair = False` is the default for Java.
     ///
-    pub def new(fair: Bool): Concurrent/ReentrantLock.ReentrantLock \ IO =
+    pub def newLock(fair: Bool): Concurrent/ReentrantLock.ReentrantLock \ IO =
         import new java.util.concurrent.locks.ReentrantLock(Bool): ##java.util.concurrent.locks.ReentrantLock \ IO as reentrantLock;
         ReentrantLock(reentrantLock(fair))
 
