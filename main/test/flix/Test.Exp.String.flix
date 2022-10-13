@@ -60,4 +60,9 @@ namespace Test/Exp/String {
     @test
     def testString20(): Bool = "\u2603" == "☃"
 
+    @test
+    def testString21(): Bool = "\${" == "$" + "{"
+
+    @test
+    def testString22(): Bool = "\%{" == "%" + "{"
 }
