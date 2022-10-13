@@ -153,6 +153,7 @@ object BackendObjType {
 
       cm.mkConstructor(Constructor)
       args.indices.foreach(argIndex => cm.mkField(ArgField(argIndex)))
+      cm.mkMethod(ToStringMethod)
 
       cm.closeClassMaker()
     }
@@ -164,6 +165,28 @@ object BackendObjType {
     ))
 
     def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, s"arg$index", args(index))
+
+    def ToStringMethod: InstanceMethod = {
+      val append = INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
+      // assumes a stringbuilder on top of the stack
+      // will leave a stringbuilder on top of the stack
+      val argsStringIns = args match {
+        case Nil => pushString("()") ~ append
+        case a :: Nil => pushString(a.toErasedString) ~ append
+        case _ =>
+          pushString("(") ~ append ~
+          joinN(args.map(a => pushString(a.toErasedString) ~ append), pushString(", ") ~ append) ~
+          pushString(")") ~ append
+      }
+      JavaObject.ToStringMethod.implementation(this.jvmName, Some(
+        NEW(StringBuilder.jvmName) ~ DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
+          argsStringIns ~
+          pushString(" -> ") ~ append ~
+          pushString(result.toErasedString) ~ append ~
+          INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+          ARETURN()
+      ))
+    }
   }
 
   case class Continuation(result: BackendType) extends BackendObjType {
