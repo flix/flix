@@ -56,7 +56,7 @@
         put(2, c);
         match selectFrom([mpmcAdmin(c)], true) {
             case (0, locks) =>
-                let i = assertiveGet(c);
+                let i = unsafeGet(c);
                 unlockLocks(locks);
                 i == 2
             case _ => unreachable!()
@@ -67,7 +67,7 @@
         let c = newChannel(1);
         match selectFrom([mpmcAdmin(c)], false) {
             case (0, locks) =>
-                let _ = assertiveGet(c);
+                let _ = unsafeGet(c);
                 unlockLocks(locks);
                 false
             case (-1, locks) =>
@@ -85,11 +85,11 @@
 
         match selectFrom([mpmcAdmin(c1), mpmcAdmin(c2)], true) {
             case (0, locks) =>
-                let _ = assertiveGet(c1);
+                let _ = unsafeGet(c1);
                 unlockLocks(locks);
                 bug!("The channel should be empty")
             case (1, locks) =>
-                let s = assertiveGet(c2);
+                let s = unsafeGet(c2);
                 unlockLocks(locks);
                 s == "hey"
             case _ => unreachable!()
