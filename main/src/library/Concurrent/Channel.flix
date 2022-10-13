@@ -94,28 +94,6 @@ namespace Concurrent/Channel {
     )
 
     ///
-    /// Equality is based on the channel `id` and is needed for the `Order`
-    /// instance.
-    ///
-    instance Eq[MpmcAdmin] {
-        pub def eq(x: MpmcAdmin, y: MpmcAdmin): Bool =
-        let MpmcAdmin(a_id, _, _, _, _, _, _) = x;
-        let MpmcAdmin(b_id, _, _, _, _, _, _) = y;
-        a_id == b_id
-    }
-
-    ///
-    /// Order is based on the channel `id` and is used by `select` to lock
-    /// in a global ordering.
-    ///
-    instance Order[MpmcAdmin] {
-        pub def compare(x: MpmcAdmin, y: MpmcAdmin): Comparison =
-        let MpmcAdmin(a_id, _, _, _, _, _, _) = x;
-        let MpmcAdmin(b_id, _, _, _, _, _, _) = y;
-        a_id <=> b_id
-    }
-
-    ///
     /// Creates a new channel. A runtime error occurs if `bufferSize` is
     /// negative. A channel with `bufferSize` zero means that sending and
     /// receiving is syncronized.
@@ -235,7 +213,9 @@ namespace Concurrent/Channel {
         let selectCondition = newCondition(selectLock);
 
         // Sort channels to avoid deadlocks
-        let sortedLocks = Array.sort(channels) |> Array.map(match MpmcAdmin(_, rlock, _, _, _, _, _) -> rlock);
+        let sortedLocks = channels |>
+            Array.sortBy(match MpmcAdmin(id, _, _, _, _, _, _) -> id) |>
+            Array.map(match MpmcAdmin(_, rlock, _, _, _, _, _) -> rlock);
         selectHelper(channels, blocking, sortedLocks, selectLock, selectCondition)
 
     ///
