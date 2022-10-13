@@ -56,9 +56,15 @@ object BytecodeInstructions {
 
   type InstructionSet = F => F
 
+  /**
+    * Returns the sequential composition of the two instructions.
+    */
+  def compose(i1: InstructionSet, i2: InstructionSet): InstructionSet =
+    f => i2(i1(f))
+
   implicit class ComposeOps(i1: InstructionSet) {
     def ~(i2: InstructionSet): InstructionSet =
-      f => i2(i1(f))
+      compose(i1, i2)
   }
 
   //
@@ -462,6 +468,18 @@ object BytecodeInstructions {
     case BackendType.Array(BackendType.Float64) => INVOKESTATIC(BackendObjType.Arrays.Float64ArrToString)
     case BackendType.Array(BackendType.Reference(_) | BackendType.Array(_)) => INVOKESTATIC(BackendObjType.Arrays.DeepToString)
   }
+
+  def composeN(ins: List[InstructionSet]): InstructionSet =
+    ins.foldLeft(nop())(compose)
+
+  /**
+    * Sequential composition with `sep` between elements.
+    */
+  def joinN(ins: List[InstructionSet], sep: InstructionSet): InstructionSet = ins match {
+    case Nil => nop()
+    case head :: next => head ~ composeN(next.map(e => sep ~ e))
+  }
+
 
   //
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
