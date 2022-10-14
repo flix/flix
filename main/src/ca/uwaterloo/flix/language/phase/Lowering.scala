@@ -56,7 +56,7 @@ object Lowering {
     lazy val Lift4: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift4")
     lazy val Lift5: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift5")
 
-    lazy val Debug: Symbol.DefnSym = Symbol.mkDefnSym("debug")
+    lazy val DebugWithPrefix: Symbol.DefnSym = Symbol.mkDefnSym("debugWithPrefix")
 
     /**
       * Returns the definition associated with the given symbol `sym`.
@@ -1442,7 +1442,7 @@ object Lowering {
     // Note that we mark the call as impure (even though it may have been typed as pure!)
     //
     val tpe = Type.mkImpureUncurriedArrow(exp1.tpe :: exp2.tpe :: Nil, exp2.tpe, loc)
-    val innerExp = Expression.Def(Defs.Debug, tpe, loc)
+    val innerExp = Expression.Def(Defs.DebugWithPrefix, tpe, loc)
     Expression.Apply(innerExp, exp1 :: exp2 :: Nil, exp2.tpe, Type.Impure, Type.Empty, loc)
   }
 
