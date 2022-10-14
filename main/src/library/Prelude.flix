@@ -174,29 +174,28 @@ pub def stringify(x: a): String = {
         case ReifiedBool =>
             (b -> if (b) "true" else "false") as a -> String
         case ReifiedChar =>
-            import static java.lang.Character.toString(Char): String \ {};
-            toString as a -> String
+            (c -> "\'" + escape("${c: Char}") + "\'") as a -> String
         case ReifiedFloat32 =>
             import static java.lang.Float.toString(Float32): String \ {};
-            toString as a -> String
+            (y -> toString(y) + "f32") as a -> String
         case ReifiedFloat64 =>
             import static java.lang.Double.toString(Float64): String \ {};
             toString as a -> String
         case ReifiedInt8 =>
             import static java.lang.Byte.toString(Int8): String \ {};
-            toString as a -> String
+            (y -> toString(y) + "i8") as a -> String
         case ReifiedInt16 =>
             import static java.lang.Short.toString(Int16): String \ {};
-            toString as a -> String
+            (y -> toString(y) + "i16") as a -> String
         case ReifiedInt32 =>
             import static java.lang.Integer.toString(Int32): String \ {};
             toString as a -> String
         case ReifiedInt64 =>
             import static java.lang.Long.toString(Int64): String \ {};
-            toString as a -> String
+            (y -> toString(y) + "i64") as a -> String
         case ReifiedBigInt =>
             import java.lang.Object.toString(): String;
-            toString as a -> String
+            (y -> toString(y) + "ii") as a -> String
         case ReifiedString =>
             (s -> "\"" + escape(s) + "\"") as a -> String
         case ReifiedArray(tpe) =>

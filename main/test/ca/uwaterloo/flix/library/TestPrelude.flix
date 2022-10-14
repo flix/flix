@@ -171,22 +171,25 @@ def testBoolStringify02(): Bool = stringify(false) == "false"
 
 
 @test
-def testCharStringify01(): Bool = stringify('a') == "a"
+def testCharStringify01(): Bool = stringify('a') == "\'a\'"
 
 @test
-def testCharStringify02(): Bool = stringify('\u2194') == "\u2194"
-
-
-@test
-def testFloat32Stringify01(): Bool = stringify(21.42f32) == "21.42"
-
+def testCharStringify02(): Bool = stringify('\u2194') == "\'\u2194\'"
 
 @test
-def testInt8Stringify01(): Bool = stringify(42i8) == "42"
+def testCharStringify03(): Bool = stringify('\t') == "\'\\t\'"
 
 
 @test
-def testInt16Stringify01(): Bool = stringify(42i16) == "42"
+def testFloat32Stringify01(): Bool = stringify(21.42f32) == "21.42f32"
+
+
+@test
+def testInt8Stringify01(): Bool = stringify(42i8) == "42i8"
+
+
+@test
+def testInt16Stringify01(): Bool = stringify(42i16) == "42i16"
 
 
 @test
@@ -194,11 +197,11 @@ def testInt32Stringify01(): Bool = stringify(42i32) == "42"
 
 
 @test
-def testInt64Stringify01(): Bool = stringify(42i64) == "42"
+def testInt64Stringify01(): Bool = stringify(42i64) == "42i64"
 
 
 @test
-def testBigIntStringify01(): Bool = stringify(42ii) == "42"
+def testBigIntStringify01(): Bool = stringify(42ii) == "42ii"
 
 
 @test
