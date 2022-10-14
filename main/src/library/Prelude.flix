@@ -132,6 +132,23 @@ pub def println(x: a): Unit \ IO with ToString[a] =
     x |> ToString.toString |> println(getOut())
 
 ///
+/// Escapes the given string per Flix's escaping rules.
+///
+@Internal
+pub def escape(s: String): String = {
+    import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String \ {} as jReplace;
+    def replace(old: String, new: String, subject: String): String = jReplace(subject, old as ##java.lang.CharSequence, new as ##java.lang.CharSequence);
+    s
+        // NB: \\ must come first to avoid clobbering other cases
+        |> replace("\\", "\\\\")
+        |> replace("\n", "\\n")
+        |> replace("\r", "\\r")
+        |> replace("\"", "\\\"")
+        |> replace("\'", "\\\'")
+        |> replace("\t", "\\t")
+}
+
+///
 /// Prints the given prefix along with a automatic string representation of `x`.
 ///
 /// Note: For internal use only. The actual `debug(exp)` expression is parsed and ultimately rewritten to call this function.
@@ -181,8 +198,7 @@ pub def stringify(x: a): String = {
             import java.lang.Object.toString(): String;
             toString as a -> String
         case ReifiedString =>
-            import java.lang.Object.toString(): String;
-            toString as a -> String
+            (s -> "\"" + escape(s) + "\"") as a -> String
         case ReifiedArray(tpe) =>
             match tpe {
                 case ErasedType =>

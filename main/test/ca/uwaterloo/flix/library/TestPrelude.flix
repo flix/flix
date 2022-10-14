@@ -202,8 +202,17 @@ def testBigIntStringify01(): Bool = stringify(42ii) == "42"
 
 
 @test
-def testStringStringifyStringify01(): Bool = stringify("Hello World!") == "Hello World!"
+def testStringStringify01(): Bool = stringify("Hello World!") == "\"Hello World!\""
 
+@test
+def testStringStringify02(): Bool = stringify("one\ttwo") == "\"one\\ttwo\""
+
+@test
+def testStringStringify03(): Bool = stringify("\u0000") == "\"\u0000\""
+
+@test
+def testStringStringify05(): Bool = stringify("\n\r\\\"\'\t\${\%{\u1234\u0000") ==
+    "\"" + "\\n" + "\\r" + "\\\\" + "\\\"" + "\\\'" + "\\t" + "\${" + "\%{" + "\u1234" + "\u0000" + "\""
 
 @test
 def testArrayOfUnitStringify01(): Bool \ IO = stringify([(), ()]) == "[(), ()]"
@@ -308,4 +317,27 @@ def testRecordStringify02(): Bool = {
 def testRecordStringify03(): Bool = {
     let s = stringify({something = {}, other = {single = 8}});
     s == "{something = {}, other = {single = 8}}" or s == "{other = {single = 8}, something = {}}"
+}
+
+@test
+def testFunctionStringify01(): Bool = {
+    def f(x: Int32): Int32 = x;
+    let s = stringify(f);
+    s == "Int32 -> Int32"
+}
+
+def toIntFunction(x: a, g: a -> Int32): Int32 = g(x)
+
+@test
+def testFunctionStringify02(): Bool = {
+    let s = stringify(toIntFunction(true));
+    s == "Obj -> Int32"
+}
+
+def thunkFunction(x: a): String -> a = _ -> x
+
+@test
+def testFunctionStringify03(): Bool = {
+    let s = stringify((thunkFunction(42), thunkFunction('a')));
+    s == "(Obj -> Int32, Obj -> Char)"
 }
