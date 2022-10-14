@@ -132,6 +132,42 @@ pub def println(x: a): Unit \ IO with ToString[a] =
     x |> ToString.toString |> println(getOut())
 
 ///
+/// Prints the stringified representation of `x`.
+///
+/// WARNING: The debug function is pure hence if the
+/// result is unused it may be removed by the compiler!
+///
+def debug(x: a): a = debugWithPrefix("", x) as \ {}
+
+///
+/// Prints the stringified representation of `x`.
+///
+/// WARNING: The debug function is pure hence if the
+/// result is unused it may be removed by the compiler!
+///
+def debug!(x: a): a = debugWithPrefix("", x) as \ {}
+
+///
+/// Prints the stringified representation of `x`.
+///
+/// WARNING: The debug function is pure hence if the
+/// result is unused it may be removed by the compiler!
+///
+def debug!!(x: a): a = debugWithPrefix("", x) as \ {}
+
+///
+/// Prints the stringified representation of `x` with the given `prefix`.
+///
+/// Note: For internal use only. The actual `debug(exp)` expression is parsed and ultimately rewritten to call this function.
+///
+@Internal
+def debugWithPrefix(prefix: String, x: a): a \ IO =
+    import static get java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
+    import java.io.PrintStream.println(String): Unit \ IO;
+    println(getOut(), "${prefix}%{x}");
+    x
+
+///
 /// Escapes the given string per Flix's escaping rules.
 ///
 @Internal
@@ -147,18 +183,6 @@ pub def escape(s: String): String = {
         |> replace("\'", "\\\'")
         |> replace("\t", "\\t")
 }
-
-///
-/// Prints the given prefix along with a automatic string representation of `x`.
-///
-/// Note: For internal use only. The actual `debug(exp)` expression is parsed and ultimately rewritten to call this function.
-///
-@Internal
-def debug(prefix: String, x: a): a \ IO =
-    import static get java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
-    import java.io.PrintStream.println(String): Unit \ IO;
-    println(getOut(), "${prefix}%{x}");
-    x
 
 ///
 /// Returns an automatic string representation of `x`.
