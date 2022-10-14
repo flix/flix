@@ -46,10 +46,11 @@ namespace Test/Exp/Record/Restrict {
     @test
     pub def testRecordRestrict07(): Bool = {
         // test that restrict does not mutate `r1`.
+        // the arbitrary value juggling is to avoid inlining
         let r1 = {x = 1, y = 1, z = 1};
         let r2 = {-z | r1};
-        let tple = (r1.z + r2.y) |> (i -> (stringify({-x, -y | r1}), i));
-        fst(tple) == "{z = 1}"
+        let tple = (r1.z + r2.y) |> (i -> (r1.z, i));
+        fst(tple) == 1
     }
 
     @test
