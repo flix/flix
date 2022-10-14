@@ -457,18 +457,19 @@ object Weeder {
   private def visitImport(i0: ParsedAst.Import): Validation[List[WeededAst.Import], WeederError] = i0 match {
     case ParsedAst.Imports.ImportOne(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
-      val ident = Name.Ident(sp1, name.fqn.last, sp2)
-      List(WeededAst.Import.Import(name, ident, loc)).toSuccess
+      val alias = name.fqn.last
+      if (raw"[A-Z][A-Za-z0-9_?]*".r matches alias) {
+        List(WeededAst.Import.Import(name, Name.Ident(sp1, alias, sp2), loc)).toSuccess
+      } else {
+        WeederError.IllegalJavaClass(alias, loc).toFailure
+      }
 
     case ParsedAst.Imports.ImportMany(sp1, pkg, ids, sp2) =>
       val loc = mkSL(sp1, sp2)
       val is = ids.map {
         case ParsedAst.Imports.NameAndAlias(_, name, alias, _) =>
           val fqn = Name.JavaName(pkg.sp1, pkg.fqn :+ name, pkg.sp2)
-          val ident = alias match {
-            case Some(id) => id
-            case _ => Name.Ident(sp1, name, sp2)
-          }
+          val ident = alias.getOrElse(Name.Ident(sp1, name, sp2))
           WeededAst.Import.Import(fqn, ident, loc)
       }
       is.toList.toSuccess

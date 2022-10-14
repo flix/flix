@@ -1764,7 +1764,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     /**
       * An uppercase identifier is an uppercase letter optionally followed by any letter, underscore, or prime.
       */
-  def UpperCaseName: Rule1[Name.Ident] = rule {
+    def UpperCaseName: Rule1[Name.Ident] = rule {
       SP ~ capture(optional("_") ~ Letters.UpperLetter ~ zeroOrMore(Letters.LegalLetter)) ~ SP ~> Name.Ident
     }
 
