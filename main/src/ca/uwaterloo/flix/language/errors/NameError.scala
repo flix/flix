@@ -124,32 +124,6 @@ object NameError {
   }
 
   /**
-    * An error raised to indicate that the given uppercase `name` is used twice.
-    *
-    * @param name the clashing name.
-    * @param loc1 the location of the first use.
-    * @param loc2 the location of the second use.
-    */
-  case class DuplicateUseUpper(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    def summary: String = s"Duplicate use of '$name'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Duplicate use of the type or class '${red(name)}'.
-         |
-         |${code(loc1, "the first use was here.")}
-         |
-         |${code(loc2, "the second use was here.")}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = None
-
-    def loc: SourceLocation = loc1
-  }
-
-  /**
     * An error raised to indicate that the given `tag` is used twice.
     *
     * @param name the clashing name.
