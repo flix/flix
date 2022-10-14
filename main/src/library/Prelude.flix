@@ -138,6 +138,18 @@ pub def println(x: a): Unit \ IO with ToString[a] =
 def debug(x: a): a = debugWithPrefix("", x) as \ {}
 
 ///
+/// Prints the stringified representation of `x`.
+///
+@Internal
+def debug!(x: a): a = debugWithPrefix("[n/a]", x) as \ {}
+
+///
+/// Prints the stringified representation of `x`.
+///
+@Internal
+def debug!!(x: a): a = debugWithPrefix("[n/a] n/a - ", x) as \ {}
+
+///
 /// Prints the stringified representation of `x` with the given `prefix`.
 ///
 /// Note: For internal use only. The actual `debug(exp)` expression is parsed and ultimately rewritten to call this function.
