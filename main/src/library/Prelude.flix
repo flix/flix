@@ -134,20 +134,26 @@ pub def println(x: a): Unit \ IO with ToString[a] =
 ///
 /// Prints the stringified representation of `x`.
 ///
-@Internal
+/// WARNING: The debug function is pure hence if the
+/// result is unused it may be removed by the compiler!
+///
 def debug(x: a): a = debugWithPrefix("", x) as \ {}
 
 ///
 /// Prints the stringified representation of `x`.
 ///
-@Internal
-def debug!(x: a): a = debugWithPrefix("[n/a]", x) as \ {}
+/// WARNING: The debug function is pure hence if the
+/// result is unused it may be removed by the compiler!
+///
+def debug!(x: a): a = debugWithPrefix("", x) as \ {}
 
 ///
 /// Prints the stringified representation of `x`.
 ///
-@Internal
-def debug!!(x: a): a = debugWithPrefix("[n/a] n/a - ", x) as \ {}
+/// WARNING: The debug function is pure hence if the
+/// result is unused it may be removed by the compiler!
+///
+def debug!!(x: a): a = debugWithPrefix("", x) as \ {}
 
 ///
 /// Prints the stringified representation of `x` with the given `prefix`.
