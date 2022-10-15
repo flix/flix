@@ -593,7 +593,7 @@ object Safety {
       // Case 1: Interface. No need for a constructor.
       List.empty
     } else {
-      // Case 2: Class. Must have a public non-zero argument constructor.
+      // Case 2: Class. Must have a non-private zero argument constructor.
       if (hasNonPrivateZeroArgConstructor(clazz))
         List.empty
       else
