@@ -317,12 +317,15 @@ object BackendObjType {
         case TrueBranch =>
           thisLoad() ~ GETFIELD(RestField) ~ ARETURN()
         case FalseBranch =>
-          thisLoad() ~
-            DUP() ~ GETFIELD(RestField) ~
+          NEW(this.jvmName) ~ DUP() ~ INVOKESPECIAL(this.Constructor) ~
+            DUP() ~ thisLoad() ~ GETFIELD(LabelField) ~ PUTFIELD(LabelField) ~
+            DUP() ~ thisLoad() ~ GETFIELD(ValueField) ~ PUTFIELD(ValueField) ~
+            DUP() ~ // get the new restricted rest to put
+            thisLoad() ~ GETFIELD(RestField) ~
             ALOAD(1) ~
             INVOKEINTERFACE(Record.RestrictFieldMethod) ~
-            PUTFIELD(RestField) ~
-            thisLoad() ~ ARETURN()
+            PUTFIELD(RestField) ~ // put the rest field and return
+            ARETURN()
       }
     ))
 
