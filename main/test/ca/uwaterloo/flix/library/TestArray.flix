@@ -4520,41 +4520,6 @@ namespace TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // init2                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def init201(): Bool = region r {
-        let (a,b) = Array.init2(r, r, x -> (x, true), 0);
-        Array.sameElements(a, []: Array[Int32, _]) and Array.sameElements(b, []: Array[Bool, _])
-    }
-
-    @test
-    def init202(): Bool = region r {
-        let (a,b) = Array.init2(r, r, x -> (x, true), -1);
-        Array.sameElements(a, []: Array[Int32, _]) and Array.sameElements(b, []: Array[Bool, _])
-    }
-
-    @test
-    def init203(): Bool = region r {
-        let (a,b) = Array.init2(r, r, x -> (x, true), 1);
-        Array.sameElements(a, [0]) and Array.sameElements(b, [true])
-    }
-
-    @test
-    def init204(): Bool = region r {
-        let (a,b) = Array.init2(r, r, x -> (x, true), 2);
-        Array.sameElements(a, [0,1]) and Array.sameElements(b, [true, true])
-    }
-
-    @test
-    def init205(): Bool = region r {
-        let (a,b) = Array.init2(r, r, x -> (x, true), 50);
-        Array.length(a) == 50 and Array.length(b) == 50
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // sameElements                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
