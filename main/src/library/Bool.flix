@@ -79,4 +79,15 @@ namespace Bool {
     ///
     pub def <==>(x: Bool, y: Bool): Bool = x == y
 
+    ///
+    /// Parse the string `s` as a Bool, leading or trailing whitespace is trimmed.
+    /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
+    ///
+    @Time(1) @Space(1)
+    pub def fromString(s: String): Option[Bool] = match String.trim(s) {
+        case "true"  => Some(true)
+        case "false" => Some(false)
+        case _       => None
+    }
+
 }

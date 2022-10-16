@@ -132,4 +132,23 @@ namespace Bool {
     @test
     def orTest04(): Bool = or(true, lazy true) == true
 
+    /////////////////////////////////////////////////////////////////////////////
+    // fromString                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def fromString01(): Bool = Bool.fromString("Bad") == None
+
+    @test
+    def fromString02(): Bool = Bool.fromString(" true") == Some(true)
+
+    @test
+    def fromString03(): Bool = Bool.fromString("true ") == Some(true)
+
+    @test
+    def fromString04(): Bool = Bool.fromString("true") == Some(true)
+
+    @test
+    def fromString05(): Bool = Bool.fromString("false") == Some(false)
+
 }
