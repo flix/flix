@@ -220,6 +220,8 @@ object KindedAst {
 
     case class Debug(exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
+    case class Mask(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+
   }
 
   sealed trait Pattern {

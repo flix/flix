@@ -413,6 +413,10 @@ object Regions {
         case (e1, e2) => checkType(tpe, loc)
       }
 
+    case Expression.Mask(exp, _, _, tpe, loc) =>
+      flatMapN(visitExp(exp)) {
+        case e => checkType(tpe, loc)
+      }
   }
 
   def visitJvmMethod(method: JvmMethod)(implicit scope: List[Type.Var], flix: Flix): Validation[Unit, CompilationMessage] = method match {

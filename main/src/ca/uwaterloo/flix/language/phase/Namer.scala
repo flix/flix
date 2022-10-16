@@ -55,9 +55,9 @@ object Namer {
 
     // collect all the declarations.
     val declarations = mapN(traverse(program.units.values) {
-      case root => 
+      case root =>
         flatMapN(mergeUseEnvs(root.uses, Name.RootNS, UseEnv.empty, ImportEnv.empty, prog0)) {
-          case uenv0 => 
+          case uenv0 =>
             mapN(mergeImportEnvs(root.imports, ImportEnv.empty, uenv0, Name.RootNS, prog0)) {
               case ienv0 => root.decls.map(d => (uenv0, ienv0, d))
             }
@@ -1117,6 +1117,11 @@ object Namer {
     case WeededAst.Expression.Debug(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, ienv0, tenv0, ns0, prog0), visitExp(exp2, env0, uenv0, ienv0, tenv0, ns0, prog0)) {
         case (e1, e2) => NamedAst.Expression.Debug(e1, e2, loc)
+      }
+
+    case WeededAst.Expression.Mask(exp, loc) =>
+      mapN(visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0)) {
+        case e => NamedAst.Expression.Mask(e, loc)
       }
 
   }

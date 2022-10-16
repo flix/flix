@@ -222,6 +222,8 @@ object ResolvedAst {
 
     case class Debug(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class Mask(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
   }
 
   sealed trait Pattern {

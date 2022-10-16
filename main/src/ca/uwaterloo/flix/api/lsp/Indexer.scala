@@ -433,6 +433,9 @@ object Indexer {
 
     case Expression.Debug(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
+
+    case Expression.Mask(exp, _, _, _, _) =>
+      visitExp(exp)
   }
 
   /**

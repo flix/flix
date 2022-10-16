@@ -354,6 +354,8 @@ object Simplifier {
       case TypedAst.Expression.Debug(_, _, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
+      case TypedAst.Expression.Mask(_, _, _, _, _) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.")
     }
 
     /**

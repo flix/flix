@@ -1780,6 +1780,11 @@ object Typer {
           resultEff = Type.mkUnion(List(eff1, eff2), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
+      case KindedAst.Expression.Mask(exp, _) =>
+        for {
+          (constrs, tpe, pur, eff) <- visitExp(exp)
+        } yield (constrs, tpe, Type.Pure, Type.Empty)
+
     }
 
     /**
@@ -2334,6 +2339,14 @@ object Typer {
         val pur = Type.Impure
         val eff = Type.mkUnion(List(e1.eff, e2.eff), loc)
         TypedAst.Expression.Debug(e1, e2, tpe, pur, eff, loc)
+
+      case KindedAst.Expression.Mask(exp, loc) =>
+        // We explicitly mark a `Mask` expression as Impure.
+        val e = visitExp(exp, subst0)
+        val tpe = e.tpe
+        val pur = Type.Impure
+        val eff = e.eff
+        TypedAst.Expression.Mask(e, tpe, pur, eff, loc)
     }
 
     /**

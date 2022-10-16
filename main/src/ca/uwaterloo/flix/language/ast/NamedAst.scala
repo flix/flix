@@ -241,6 +241,8 @@ object NamedAst {
 
     case class Debug(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
+    case class Mask(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
   }
 
   sealed trait Pattern {

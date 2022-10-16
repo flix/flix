@@ -1757,6 +1757,11 @@ object Weeder {
           WeededAst.Expression.Debug(e1, e, loc)
       }
 
+    case ParsedAst.Expression.Mask(sp1, exp, sp2) =>
+      mapN(visitExp(exp, senv)) {
+        case e => WeededAst.Expression.Mask(e, mkSL(sp1, sp2))
+      }
+
   }
 
   /**
@@ -3053,6 +3058,7 @@ object Weeder {
     case ParsedAst.Expression.ReifyType(sp1, _, _) => sp1
     case ParsedAst.Expression.ReifyPurity(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.Debug(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.Mask(sp1, _, _) => sp1
   }
 
   /**

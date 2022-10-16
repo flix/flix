@@ -305,6 +305,8 @@ object Safety {
       case Expression.Debug(exp1, exp2, _, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
+      case Expression.Mask(exp, _, _, _, _) =>
+        visit(exp)
     }
 
     visit(e0)

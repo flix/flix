@@ -1224,6 +1224,15 @@ object ParsedAst {
       */
     case class Debug(sp1: SourcePosition, kind: ParsedAst.DebugKind, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
+    /**
+      * Mask expression
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the expression to mask.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Mask(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
   }
 
   /**

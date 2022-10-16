@@ -1216,6 +1216,11 @@ object Resolver {
             case (e1, e2) => ResolvedAst.Expression.Debug(e1, e2, loc)
           }
 
+        case NamedAst.Expression.Mask(exp, loc) =>
+          val eVal = visitExp(exp, region)
+          mapN(eVal) {
+            case e => ResolvedAst.Expression.Mask(e)
+          }
       }
 
       /**
