@@ -457,7 +457,7 @@ object TypedAstOps {
     case Expression.ReifyType(_, _, _, _, _, _) => Set.empty
     case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
     case Expression.Debug(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expression.Mask(exp, _, _, _, _,) => sigSymsOf(exp)
+    case Expression.Mask(exp, _, _, _, _) => sigSymsOf(exp)
   }
 
   /**
