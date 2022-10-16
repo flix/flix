@@ -593,8 +593,8 @@ object Safety {
       // Case 1: Interface. No need for a constructor.
       List.empty
     } else {
-      // Case 2: Class. Must have a public non-zero argument constructor.
-      if (hasPublicZeroArgConstructor(clazz))
+      // Case 2: Class. Must have a non-private zero argument constructor.
+      if (hasNonPrivateZeroArgConstructor(clazz))
         List.empty
       else
         List(MissingPublicZeroArgConstructor(clazz, loc))
@@ -676,16 +676,12 @@ object Safety {
   }
 
   /**
-    * Return true if the given `clazz` has public zero argument constructor.
+    * Return true if the given `clazz` has a non-private zero argument constructor.
     */
-  private def hasPublicZeroArgConstructor(clazz: java.lang.Class[_]): Boolean = {
+  private def hasNonPrivateZeroArgConstructor(clazz: java.lang.Class[_]): Boolean = {
     try {
-      // We simply use Class.getConstructor whose documentation states:
-      //
-      // Returns a Constructor object that reflects the specified
-      // public constructor of the class represented by this class object.
-      clazz.getConstructor()
-      true
+      val constructor = clazz.getDeclaredConstructor()
+      !java.lang.reflect.Modifier.isPrivate(constructor.getModifiers())
     } catch {
       case _: NoSuchMethodException => false
     }
