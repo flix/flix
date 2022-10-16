@@ -2242,7 +2242,7 @@ object Typer {
       case KindedAst.Expression.Par(exp, loc) =>
         TypedAst.Expression.Par(visitExp(exp, subst0), loc)
 
-      case KindedAst.Expression.Par(exp, loc) =>
+      case KindedAst.Expression.ParYield(exp, loc) =>
         TypedAst.Expression.ParYield(visitExp(exp, subst0), loc)
 
       case KindedAst.Expression.Lazy(exp, loc) =>
