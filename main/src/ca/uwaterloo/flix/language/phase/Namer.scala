@@ -1596,6 +1596,7 @@ object Namer {
     case WeededAst.Expression.ReifyType(_, _, _) => Nil
     case WeededAst.Expression.ReifyEff(ident, exp1, exp2, exp3, _) => filterBoundVars(freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3), List(ident))
     case WeededAst.Expression.Debug(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.Mask(exp, _) => freeVars(exp)
   }
 
   /**
