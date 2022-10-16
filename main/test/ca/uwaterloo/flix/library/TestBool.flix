@@ -151,4 +151,19 @@ namespace Bool {
     @test
     def fromString05(): Bool = Bool.fromString("false") == Some(false)
 
+    @test
+    def fromString06(): Bool = Bool.fromString("   false") == Some(false)
+
+    @test
+    def fromString07(): Bool = Bool.fromString("yes") == None
+
+    @test
+    def fromString08(): Bool = Bool.fromString("no") == None
+
+    @test
+    def fromString09(): Bool = Bool.fromString("true 1") == None
+
+    @test
+    def fromString10(): Bool = Bool.fromString("0false") == None
+
 }
