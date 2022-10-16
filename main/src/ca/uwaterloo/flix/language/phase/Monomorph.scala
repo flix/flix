@@ -661,6 +661,9 @@ object Monomorph {
         } else {
           visitExp(exp3, env0)
         }
+
+      case Expression.Debug(_, _, _, _, _, loc) =>
+        throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
     }
 
     /**
@@ -943,6 +946,14 @@ object Monomorph {
 
         case TypeConstructor.Int64 =>
           val caseSym = new Symbol.CaseSym(sym, "ReifiedInt64", SourceLocation.Unknown)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+
+        case TypeConstructor.BigInt =>
+          val caseSym = new Symbol.CaseSym(sym, "ReifiedBigInt", SourceLocation.Unknown)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+
+        case TypeConstructor.Str =>
+          val caseSym = new Symbol.CaseSym(sym, "ReifiedString", SourceLocation.Unknown)
           Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Array =>

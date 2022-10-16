@@ -573,12 +573,12 @@ object ResolutionError {
     * @param loc  the location of the class name.
     */
   case class UndefinedJvmClass(name: String, loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Undefined class: '${name}'."
+    def summary: String = s"Undefined Java class: '${name}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Undefined class '${red(name)}'.
+         |>> Undefined Java class '${red(name)}'.
          |
          |${code(loc, "undefined class.")}
          |""".stripMargin
@@ -587,7 +587,12 @@ object ResolutionError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = {
+      if (raw".*\.[A-Z].*\.[A-Z].*".r matches name)
+        Some(s"Static nested classes should be specified using '$$', e.g. java.util.Locale$$Builder")
+      else
+        None
+    }
   }
 
   /**

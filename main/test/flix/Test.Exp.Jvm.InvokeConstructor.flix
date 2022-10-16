@@ -54,4 +54,9 @@ namespace Test/Exp/Jvm/InvokeConstructor {
     def testInvokeObjectConstructor01(): ##java.lang.Object \ IO =
         import new java.lang.String(String): ##java.lang.Object \ IO as newString;
         newString("Hello World")
+
+    @test
+    def testInvokeStaticNestedConstructor01(): ##java.util.Locale$Builder \ IO =
+        import new java.util.Locale$Builder(): ##java.util.Locale$Builder as newBuilder;
+        newBuilder()
 }

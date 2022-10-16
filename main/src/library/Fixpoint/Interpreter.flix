@@ -19,74 +19,19 @@ use Fixpoint/Ast.Denotation
 use Fixpoint/Tuple.Tuple
 
 namespace Fixpoint {
-    namespace Tuple {
-
-        ///
-        /// Uses unsafe immutable array internally for performance.
-        ///
-        pub opaque enum Tuple[v] {
-            case Tuple(Array[v, Static])
-        }
-
-        // NB: Unsafe instance.
-        instance Eq[Tuple[v]] with Eq[v] {
-            pub def eq(x: Tuple[v], y: Tuple[v]): Bool =
-                let Tuple(a) = x;
-                let Tuple(b) = y;
-                Array.sameElements(a, b) as \ {}
-        }
-
-        // NB: Unsafe instance.
-        instance Order[Tuple[v]] with Order[v] {
-            pub def compare(x: Tuple[v], y: Tuple[v]): Comparison =
-                let Tuple(a) = x;
-                let Tuple(b) = y;
-                Array.compare(a, b) as \ {}
-        }
-
-        ///
-        /// Creates an empty tuple consisting of the elements in `l`.
-        ///
-        pub def new(l: f[v]): Tuple[v] with Foldable[f] =
-            Tuple(Foldable.toArray(Static, l)) as \ {}
-
-        ///
-        /// Converts `t` to a list.
-        ///
-        pub def toList(t: Tuple[v]): List[v] = {
-            let Tuple(a) = t;
-            Array.toList(a)
-        } as \ {}
-
-        ///
-        /// Returns the length of `t`.
-        ///
-        pub def length(t: Tuple[v]): Int32 =
-            let Tuple(a) = t;
-            Array.length(a)
-
-        ///
-        /// Returns the value at index `i` in `t`.
-        /// Throws a runtime exception if `v` is out of bounds.
-        ///
-        pub def valueAt(t: Tuple[v], v: Int32): v = {
-            let Tuple(a) = t;
-            a[v]
-        } as \ {}
-    }
 
     type alias Database[v: Type, r: Region] = MutMap[RamSym[v], MutMap[Tuple[v], v, r], r]
     type alias SearchEnv[v: Type, r: Region] = (Array[Tuple[v], r], Array[v, r])
 
-    def interpret(r: Region[r], stmt: RamStmt[v]): Database[v, r] \ Write(r) with Order[v], ToString[v] =
+    def interpret(r: Region[r], stmt: RamStmt[v]): Database[v, r] \ Write(r) with Order[v] =
         interpretWithDatabase(new MutMap(r), stmt)
 
-    def interpretWithDatabase(db: Database[v, r], stmt: RamStmt[v]): Database[v, r] \ { Read(r), Write(r) } with Order[v], ToString[v] =
+    def interpretWithDatabase(db: Database[v, r], stmt: RamStmt[v]): Database[v, r] \ { Read(r), Write(r) } with Order[v] =
         notifyPreInterpret(stmt) as \ r; // This casts away the impure effect of notify
         evalStmt(db, stmt);
         db
 
-    def evalStmt(db: Database[v, r], stmt: RamStmt[v]): Unit \ { Read(r), Write(r) } with Order[v], ToString[v] =
+    def evalStmt(db: Database[v, r], stmt: RamStmt[v]): Unit \ { Read(r), Write(r) } with Order[v] =
         let r = Scoped.regionOf(db);
         match stmt {
             case RamStmt.Insert(relOp) => evalOp(db, allocEnv(r, 0, relOp), relOp)
@@ -119,7 +64,7 @@ namespace Fixpoint {
         case RelOp.If(_, then) => allocEnv(r, depth, then)
     }
 
-    def evalOp(db: Database[v, r1], env: SearchEnv[v, r2], op: RelOp[v]): Unit \ { Read(r1), Write(r1), Read(r2), Write(r2) } with Order[v], ToString[v] =
+    def evalOp(db: Database[v, r1], env: SearchEnv[v, r2], op: RelOp[v]): Unit \ { Read(r1), Write(r1), Read(r2), Write(r2) } with Order[v] =
         let r1 = Scoped.regionOf(db);
         match op {
             case RelOp.Search(RowVar.Index(i), ramSym, body) =>
@@ -164,7 +109,7 @@ namespace Fixpoint {
             case _ => ()
         }
 
-    def evalQuery(env: SearchEnv[v, r], query: List[(Int32, RamTerm[v])], tuple: Tuple[v]): Comparison \ Read(r) with Order[v], ToString[v] =
+    def evalQuery(env: SearchEnv[v, r], query: List[(Int32, RamTerm[v])], tuple: Tuple[v]): Comparison \ Read(r) with Order[v] =
         match query {
             case Nil => EqualTo
             case (j, t) :: tl => match Fixpoint/Tuple.valueAt(tuple, j) <=> evalTerm(env, t) {
@@ -173,7 +118,7 @@ namespace Fixpoint {
             }
         }
 
-    def evalBoolExp(db: Database[v, r1], env: SearchEnv[v, r2], es: List[BoolExp[v]]): Bool \ { Read(r1), Read(r2) } with Order[v], ToString[v] =
+    def evalBoolExp(db: Database[v, r1], env: SearchEnv[v, r2], es: List[BoolExp[v]]): Bool \ { Read(r1), Read(r2) } with Order[v] =
         let r1 = Scoped.regionOf(db);
         List.forall(exp -> match exp {
             case BoolExp.Empty(ramSym) =>
@@ -227,7 +172,7 @@ namespace Fixpoint {
                 f(v1)(v2)(v3)(v4)(v5)
         }, es)
 
-    def evalTerm(env: SearchEnv[v, r], term: RamTerm[v]): v \ Read(r) with ToString[v] = match term {
+    def evalTerm(env: SearchEnv[v, r], term: RamTerm[v]): v \ Read(r) = match term {
         case RamTerm.Lit(v) => v
         case RamTerm.RowLoad(RowVar.Index(i), index) =>
             let (tupleEnv, _) = env;

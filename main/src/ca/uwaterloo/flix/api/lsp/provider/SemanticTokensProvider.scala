@@ -537,6 +537,9 @@ object SemanticTokensProvider {
       val o = getSemanticTokenType(sym, exp1.tpe)
       val t = SemanticToken(o, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+    case Expression.Debug(exp1, exp2, _, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
   }
 
   /**
@@ -650,6 +653,8 @@ object SemanticTokensProvider {
     case TypeConstructor.True => true
     case TypeConstructor.False => true
     case TypeConstructor.Effect(_) => true
+    case TypeConstructor.RegionToStar => true
+    case TypeConstructor.All => true
 
     // invisible
     case TypeConstructor.Arrow(_) => false
@@ -668,9 +673,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Complement => false
     case TypeConstructor.Union => false
     case TypeConstructor.Intersection => false
-    case TypeConstructor.Region => false
     case TypeConstructor.Empty => false
-    case TypeConstructor.All => false
   }
 
   /**

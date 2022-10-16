@@ -73,8 +73,9 @@ object JvmName {
   //
 
   val JavaLang: List[String] = List("java", "lang")
+  val JavaUtil: List[String] = List("java", "util")
 
-  val AtomicLong: JvmName = JvmName(List("java", "util", "concurrent", "atomic"), "AtomicLong")
+  val AtomicLong: JvmName = JvmName(JavaUtil ::: List("concurrent", "atomic"), "AtomicLong")
   val Boolean: JvmName = JvmName(JavaLang, "Boolean")
   val Byte: JvmName = JvmName(JavaLang, "Byte")
   val Character: JvmName = JvmName(JavaLang, "Character")
@@ -86,6 +87,7 @@ object JvmName {
   val Function: JvmName = JvmName(List("java", "util", "function"), "Function")
   val Integer: JvmName = JvmName(JavaLang, "Integer")
   val Long: JvmName = JvmName(JavaLang, "Long")
+  val Math: JvmName = JvmName(JavaLang, "Math")
   val Runnable: JvmName = JvmName(JavaLang, "Runnable")
   val Short: JvmName = JvmName(JavaLang, "Short")
   val System: JvmName = JvmName(JavaLang, "System")
@@ -103,12 +105,6 @@ object JvmName {
 
   // Deprecated: Should not be used in new code.
   val Channel: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "Channel")
-
-  //
-  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Scala Names ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  //
-
-  val ScalaMathPkg: JvmName = JvmName(List("scala", "math"), "package$")
 }
 
 /**

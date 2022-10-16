@@ -31,10 +31,10 @@ object ParsedAst {
     *
     * A collection of imports and declarations.
     *
-    * @param sp1   the position of the first character in the source.
-    * @param usesOrImports  the uses in the abstract syntax tree.
-    * @param decls the declarations in the abstract syntax tree.
-    * @param sp2   the position of the last character in the source.
+    * @param sp1           the position of the first character in the source.
+    * @param usesOrImports the uses in the abstract syntax tree.
+    * @param decls         the declarations in the abstract syntax tree.
+    * @param sp2           the position of the last character in the source.
     */
   case class CompilationUnit(sp1: SourcePosition, usesOrImports: Seq[ParsedAst.UseOrImport], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition)
 
@@ -783,7 +783,7 @@ object ParsedAst {
       * @param elms the elements of the tuple.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Record Literal Expression.
@@ -1215,6 +1215,16 @@ object ParsedAst {
       * @param sp2   the position of the last character in the expression.
       */
     case class ReifyPurity(sp1: SourcePosition, exp1: ParsedAst.Expression, ident: Name.Ident, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Debug expression.
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param kind the debug kind.
+      * @param exp  the expression to print.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class Debug(sp1: SourcePosition, kind: ParsedAst.DebugKind, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
   }
 
@@ -2042,6 +2052,15 @@ object ParsedAst {
       */
     case class StrPart(sp1: SourcePosition, chars: Seq[ParsedAst.CharCode], sp2: SourcePosition) extends InterpolationPart
 
+    /**
+      * Debug part of a string interpolation.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class DebugPart(sp1: SourcePosition, exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends InterpolationPart
+
   }
 
   /**
@@ -2233,6 +2252,28 @@ object ParsedAst {
       */
     case class LatPredicateWithTypes(sp1: SourcePosition, name: Name.Ident, tpes: Seq[ParsedAst.Type], tpe: ParsedAst.Type, sp2: SourcePosition) extends PredicateType
 
+  }
+
+  /**
+    * A common super-type for debug kinds.
+    */
+  sealed trait DebugKind
+
+  object DebugKind {
+    /**
+      * Print the debugged value (and nothing else).
+      */
+    case object Debug extends DebugKind
+
+    /**
+      * Print the debugged value prefixed with the file name and line number.
+      */
+    case object DebugWithLoc extends DebugKind
+
+    /**
+      * Print the debugged value prefix with the file name and line number, and the source code of the expression.
+      */
+    case object DebugWithLocAndSrc extends DebugKind
   }
 
   /**

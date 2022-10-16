@@ -66,9 +66,9 @@ object PredefinedClasses {
     */
   def lookupCaseSym(enumName: String, cazeName: String, root: KindedAst.Root): Symbol.CaseSym = {
     val enumKey = new Symbol.EnumSym(Nil, enumName, SourceLocation.Unknown)
-    val enum = root.enums.getOrElse(enumKey, throw InternalCompilerException(s"The definition '$enumKey' is not defined."))
-    val cazeKey = new Symbol.CaseSym(enum.sym, cazeName, SourceLocation.Unknown)
-    enum.cases.getOrElse(cazeKey, throw InternalCompilerException(s"The definition '$enumKey' is not defined.")).sym
+    val enumDecl = root.enums.getOrElse(enumKey, throw InternalCompilerException(s"The definition '$enumKey' is not defined."))
+    val cazeKey = new Symbol.CaseSym(enumDecl.sym, cazeName, SourceLocation.Unknown)
+    enumDecl.cases.getOrElse(cazeKey, throw InternalCompilerException(s"The definition '$enumKey' is not defined.")).sym
   }
 
 

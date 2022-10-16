@@ -95,7 +95,7 @@ namespace StringBuilder {
     /// Append the array of strings `a` separating each pair of string with `sep` to the StringBuilder `sb`.
     ///
     pub def intercalate!(sep: String, a: Array[String, r1], sb: StringBuilder[r2]): Unit \ { Read(r1), Write(r2) } =
-        let append1! = (s,i) ->
+        let append1! = (i, s) ->
             if (i > 0) {
                 appendString!(sep, sb);
                 appendString!(s, sb)
