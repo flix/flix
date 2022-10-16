@@ -818,9 +818,9 @@ object Kinder {
       }
 
     case ResolvedAst.Expression.Mask(exp, loc) =>
-      val e1Val = visitExp(exp, kenv0, senv, taenv, henv0, root)
-      mapN(e1Val) {
-        case e1 => KindedAst.Expression.Mask()
+      val eVal = visitExp(exp, kenv0, senv, taenv, henv0, root)
+      mapN(eVal) {
+        case e => KindedAst.Expression.Mask(e, loc)
       }
 
   }

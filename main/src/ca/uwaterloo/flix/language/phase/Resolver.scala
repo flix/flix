@@ -1219,7 +1219,7 @@ object Resolver {
         case NamedAst.Expression.Mask(exp, loc) =>
           val eVal = visitExp(exp, region)
           mapN(eVal) {
-            case e => ResolvedAst.Expression.Mask(e)
+            case e => ResolvedAst.Expression.Mask(e, loc)
           }
       }
 
