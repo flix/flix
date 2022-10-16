@@ -1279,7 +1279,25 @@ namespace Array {
     ///
     @Time(length(a)) @Space(length(a))
     pub def unzip(r1: Region[r1], r2: Region[r2], a: Array[(a, b), r3]): (Array[a, r1], Array[b, r2]) \ { Write(r1, r2), Read(r3) } =
-        init2(r1, r2, i -> a[i], length(a))
+        let len = length(a);
+        if (len <= 0)
+            ([] @ r1, [] @ r2)
+        else {
+            let (x, y) = a[0];
+            let arr = new(r1, x, len);
+            let brr = new(r2, y, len);
+            def loop(i) = {
+                if (i < len) {
+                    let (l, r) = a[i];
+                    arr[i] = l;
+                    brr[i] = r;
+                    loop(i + 1)
+                } else
+                    ()
+            };
+            loop(1);
+            (arr, brr)
+        }
 
     ///
     /// Alias for `foldLeft2`.
@@ -1461,30 +1479,6 @@ namespace Array {
             };
             loop(1);
             a
-        }
-
-    ///
-    /// Build a pair of arrays of length `len` by applying `f` to the successive indices.
-    ///
-    @Time(time(f) * len) @Space(space(f) * len)
-    pub def init2(r1: Region[r1], r2: Region[r2], f: Int32 -> (a, b) \ ef, len: Int32): (Array[a, r1], Array[b, r2]) \ { ef, Write(r1, r2) } =
-        if (len <= 0)
-            ([] @ r1, [] @ r2)
-        else {
-            let (x, y) = f(0);
-            let arr = new(r1, x, len);
-            let brr = new(r2, y, len);
-            def loop(i) = {
-                if (i < len) {
-                    let (a, b) = f(i);
-                    arr[i] = a;
-                    brr[i] = b;
-                    loop(i + 1)
-                } else
-                    ()
-            };
-            loop(1);
-            (arr, brr)
         }
 
     ///
