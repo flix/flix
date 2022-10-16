@@ -83,7 +83,7 @@ namespace RedBlackTree {
             mapAWithKey((_, v) -> v, t)
     }
 
-    instance FunctorFilter[RedBlackTree[k]] with Order[k] {
+    instance Filterable[RedBlackTree[k]] with Order[k] {
         pub def filterMap(f: a -> Option[b] \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] \ ef = filterMapImplementation(f, t)
         pub override def filter(f: a -> Bool \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, a] \ ef = filterImplementation(f, t)
     }
@@ -1039,8 +1039,8 @@ namespace RedBlackTree {
 
     ///
     /// Temporary hack!
-    /// A concrete implementation of `filter` that the `FunctorFilter` instance can use.
-    /// If `FunctorFilter.filter` calls `filter` it appears to invoke a cycle and the concrete
+    /// A concrete implementation of `filter` that the `Filterable` instance can use.
+    /// If `Filterable.filter` calls `filter` it appears to invoke a cycle and the concrete
     /// implementation is never called.
     ///
     def filterImplementation(f: v -> Bool \ ef, t: RedBlackTree[k, v]): RedBlackTree[k, v] \ ef with Order[k] =
@@ -1056,7 +1056,7 @@ namespace RedBlackTree {
 
     ///
     /// Temporary hack!
-    /// A concrete implementation of `filterMap` that the `FunctorFilter` instance can use.
+    /// A concrete implementation of `filterMap` that the `Filterable` instance can use.
     ///
     def filterMapImplementation(f: a -> Option[b] \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] \ ef with Order[k] =
         let step = (acc, k, a) -> match f(a) {

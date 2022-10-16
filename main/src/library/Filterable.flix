@@ -17,7 +17,7 @@
 ///
 /// A type class for filtering container functors.
 ///
-pub class FunctorFilter[m : Type -> Type] with Functor[m] {
+pub class Filterable[m : Type -> Type] with Functor[m] {
 
     ///
     /// Applies the partial function `f` to every element in `x` collecting the results.
@@ -27,6 +27,6 @@ pub class FunctorFilter[m : Type -> Type] with Functor[m] {
     ///
     /// Applies `f` to every element in `x`. Keeps every element that satisfies `f`.
     ///
-    pub def filter(f: a -> Bool \ ef, t: m[a]): m[a] \ ef = FunctorFilter.filterMap(x -> if (f(x)) Some(x) else None, t)
+    pub def filter(f: a -> Bool \ ef, t: m[a]): m[a] \ ef = Filterable.filterMap(x -> if (f(x)) Some(x) else None, t)
 
 }
