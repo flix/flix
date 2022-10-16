@@ -196,6 +196,8 @@ object ResolvedAst {
 
     case class Par(exp: Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class ParYield(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Lazy(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Force(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
@@ -220,7 +222,6 @@ object ResolvedAst {
 
     case class ReifyEff(sym: Symbol.VarSym, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, exp3: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ParYield(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
     case class Debug(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
   }

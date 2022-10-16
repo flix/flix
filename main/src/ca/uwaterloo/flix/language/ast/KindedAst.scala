@@ -194,6 +194,8 @@ object KindedAst {
 
     case class Par(exp: Expression, loc: SourceLocation) extends KindedAst.Expression
 
+    case class ParYield(exp: Expression, loc: SourceLocation) extends KindedAst.Expression
+
     case class Lazy(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
     case class Force(exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
