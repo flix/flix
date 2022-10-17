@@ -714,9 +714,6 @@ object Redundancy {
     case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, _, _, _) =>
       Used.of(sym) ++ visitExp(exp1, env0, rc) ++ visitExp(exp2, env0, rc) ++ visitExp(exp3, env0, rc)
 
-    case Expression.Debug(exp1, exp2, _, _, _, _) =>
-      visitExp(exp1, env0, rc) ++ visitExp(exp2, env0, rc)
-
     case Expression.Mask(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
   }

@@ -1211,11 +1211,6 @@ object Resolver {
             case (e1, e2, e3) => ResolvedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
           }
 
-        case NamedAst.Expression.Debug(exp1, exp2, loc) =>
-          mapN(visitExp(exp1, region), visitExp(exp2, region)) {
-            case (e1, e2) => ResolvedAst.Expression.Debug(e1, e2, loc)
-          }
-
         case NamedAst.Expression.Mask(exp, loc) =>
           val eVal = visitExp(exp, region)
           mapN(eVal) {

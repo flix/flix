@@ -408,11 +408,6 @@ object Regions {
         case (e1, e2, e3) => checkType(tpe, loc)
       }
 
-    case Expression.Debug(exp1, exp2, _, _, tpe, loc) =>
-      flatMapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => checkType(tpe, loc)
-      }
-
     case Expression.Mask(exp, _, _, tpe, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)

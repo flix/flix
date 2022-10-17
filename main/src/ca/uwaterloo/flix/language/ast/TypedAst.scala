@@ -374,9 +374,6 @@ object TypedAst {
     case class ReifyEff(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     @EliminatedBy(Lowering.getClass)
-    case class Debug(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-
-    @EliminatedBy(Lowering.getClass)
     case class Mask(exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
   }

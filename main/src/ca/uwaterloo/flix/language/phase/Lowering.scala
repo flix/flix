@@ -677,11 +677,6 @@ object Lowering {
       val e3 = visitExp(exp3)
       Expression.ReifyEff(sym, e1, e2, e3, t, pur, eff, loc)
 
-    case Expression.Debug(exp1, exp2, _, _, _, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      mkApplyDebug(e1, e2, loc)
-
     case Expression.Mask(exp, _, _, _, _) =>
       visitExp(exp)
   }
@@ -1780,11 +1775,6 @@ object Lowering {
       val e2 = substExp(exp2, subst)
       val e3 = substExp(exp3, subst)
       Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
-
-    case Expression.Debug(exp1, exp2, tpe, pur, eff, loc) =>
-      val e1 = substExp(exp1, subst)
-      val e2 = substExp(exp2, subst)
-      Expression.Debug(e1, e2, tpe, pur, eff, loc)
 
     case Expression.Mask(exp, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)

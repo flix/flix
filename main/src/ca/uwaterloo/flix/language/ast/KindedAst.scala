@@ -218,8 +218,6 @@ object KindedAst {
 
     case class ReifyEff(sym: Symbol.VarSym, exp1: KindedAst.Expression, exp2: KindedAst.Expression, exp3: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Debug(exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
-
     case class Mask(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
   }
