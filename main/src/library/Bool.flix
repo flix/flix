@@ -84,10 +84,17 @@ namespace Bool {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     @Time(1) @Space(1)
-    pub def fromString(s: String): Option[Bool] = match String.trim(s) {
-        case "true"  => Some(true)
-        case "false" => Some(false)
-        case _       => None
-    }
+    pub def fromString(s: String): Opt[Bool] =
+        import java.lang.String.strip(): String \ {};
+        match strip(s) {
+            case "true"  => S(true)
+            case "false" => S(false)
+            case _       => N
+        }
 
+}
+
+pub enum Opt[a] {
+    case S(a)
+    case N
 }

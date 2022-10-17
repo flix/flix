@@ -611,4 +611,12 @@ namespace Option {
     pub def enumerator(r: Region[r], o: Option[a]): Iterator[(a, Int32), r] \ Write(r) =
         iterator(r, o) |> Iterator.zipWithIndex
 
+    ///
+    /// Returns
+    ///
+    pub def fromOpt(o: Opt[a]): Option[a] = match o {
+        case S(a) => Some(a)
+        case N    => None
+    }
+
 }
