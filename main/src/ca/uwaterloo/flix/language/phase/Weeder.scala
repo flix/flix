@@ -1754,7 +1754,8 @@ object Weeder {
               locPart + srcPart
           }
           val e1 = WeededAst.Expression.Str(prefix, loc)
-          WeededAst.Expression.Debug(e1, e, loc)
+          val call = mkApplyFqn("debugWithPrefix", List(e1, e), loc)
+          WeededAst.Expression.Mask(call, loc)
       }
 
     case ParsedAst.Expression.Mask(sp1, exp, sp2) =>
