@@ -612,7 +612,7 @@ namespace Option {
         iterator(r, o) |> Iterator.zipWithIndex
 
     ///
-    /// Returns
+    /// Returns `o` as an `Option` type.
     ///
     pub def fromOpt(o: Opt[a]): Option[a] = match o {
         case S(a) => Some(a)
