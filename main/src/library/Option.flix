@@ -614,9 +614,11 @@ namespace Option {
     ///
     /// Returns `o` as an `Option` type.
     ///
-    pub def fromOpt(o: Opt[a]): Option[a] = match o {
-        case S(a) => Some(a)
-        case N    => None
-    }
+    pub def fromOpt(o: Bool.Opt[a]): Option[a] =
+        use Bool.Opt;
+        match o {
+            case Opt.Some(a) => Some(a)
+            case Opt.None    => None
+        }
 
 }

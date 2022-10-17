@@ -87,14 +87,14 @@ namespace Bool {
     pub def fromString(s: String): Opt[Bool] =
         import java.lang.String.strip(): String \ {};
         match strip(s) {
-            case "true"  => S(true)
-            case "false" => S(false)
-            case _       => N
+            case "true"  => Opt.Some(true)
+            case "false" => Opt.Some(false)
+            case _       => Opt.None
         }
 
-}
+    pub enum Opt[a] {
+        case Some(a)
+        case None
+    }
 
-pub enum Opt[a] {
-    case S(a)
-    case N
 }
