@@ -104,7 +104,7 @@ instance Traversable[List] {
     pub override def sequence(t: List[m[a]]): m[List[a]] with Applicative[m] = List.sequence(t)
 }
 
-instance FunctorFilter[List] {
+instance Filterable[List] {
     pub def filterMap(f: a -> Option[b] \ ef, x: List[a]): List[b] \ ef = List.filterMap(f, x)
     pub override def filter(f: a -> Bool \ ef, x: List[a]): List[a] \ ef = List.filter(f, x)
 }
