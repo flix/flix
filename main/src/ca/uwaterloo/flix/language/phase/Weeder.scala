@@ -458,7 +458,7 @@ object Weeder {
     case ParsedAst.Imports.ImportOne(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
       val alias = name.fqn.last
-      if (raw"[A-Z][A-Za-z0-9_?]*".r matches alias) {
+      if (raw"[A-Z][A-Za-z0-9_!]*".r matches alias) {
         List(WeededAst.Import.Import(name, Name.Ident(sp1, alias, sp2), loc)).toSuccess
       } else {
         WeederError.IllegalJavaClass(alias, loc).toFailure

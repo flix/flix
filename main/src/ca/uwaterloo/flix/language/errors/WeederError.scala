@@ -865,6 +865,9 @@ object WeederError {
     })
   }
 
+  /**
+    * An error raised to indicate that an imported Java name is not a valid Flix identifier
+    */
   case class IllegalJavaClass(name: String, loc: SourceLocation) extends WeederError {
     def summary: String = "${name} is not a valid Flix identifer."
 
@@ -873,7 +876,7 @@ object WeederError {
       s"""${line(kind, source.name)}
          |>> ${red(name)} is not a valid Flix identifer.
          |
-         |${code(loc, "illegal identifer")}
+         |${code(loc, "identifer")}
          |
          |""".stripMargin
     }
