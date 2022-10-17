@@ -92,7 +92,7 @@ namespace Bool {
             case _       => Opt.None
         }
 
-    pub enum Opt[a] {
+    pub enum Opt[a] with Eq {
         case Some(a)
         case None
     }
