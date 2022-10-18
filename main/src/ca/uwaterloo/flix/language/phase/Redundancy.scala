@@ -560,6 +560,9 @@ object Redundancy {
         case _ => visitExp(exp, env0, rc)
       }
 
+    case Expression.Mask(exp, _, _, _, _) =>
+      visitExp(exp, env0, rc)
+
     case Expression.Upcast(exp, tpe, loc) =>
       if (exp.tpe == tpe)
         visitExp(exp, env0, rc) + RedundantUpcast(loc)
@@ -713,9 +716,6 @@ object Redundancy {
 
     case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, _, _, _) =>
       Used.of(sym) ++ visitExp(exp1, env0, rc) ++ visitExp(exp2, env0, rc) ++ visitExp(exp3, env0, rc)
-
-    case Expression.Debug(exp1, exp2, _, _, _, _) =>
-      visitExp(exp1, env0, rc) ++ visitExp(exp2, env0, rc)
   }
 
   /**
@@ -886,7 +886,7 @@ object Redundancy {
     * Returns true if the expression is not pure and not unit type.
     */
   private def isImpureDiscardedValue(exp: Expression): Boolean =
-    !isPure(exp) && exp.tpe != Type.Unit && !exp.isInstanceOf[Expression.Debug]
+    !isPure(exp) && exp.tpe != Type.Unit && !exp.isInstanceOf[Expression.Mask]
 
   /**
     * Returns the free variables in the pattern `p0`.

@@ -241,6 +241,11 @@ object Regions {
         case e => checkType(tpe, loc)
       }
 
+    case Expression.Mask(exp, _, _, tpe, loc) =>
+      flatMapN(visitExp(exp)) {
+        case e => checkType(tpe, loc)
+      }
+
     case Expression.Upcast(exp, tpe, loc) =>
       flatMapN(visitExp(exp)) {
         case _ => checkType(tpe, loc)
@@ -407,12 +412,6 @@ object Regions {
       flatMapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
         case (e1, e2, e3) => checkType(tpe, loc)
       }
-
-    case Expression.Debug(exp1, exp2, _, _, tpe, loc) =>
-      flatMapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => checkType(tpe, loc)
-      }
-
   }
 
   def visitJvmMethod(method: JvmMethod)(implicit scope: List[Type.Var], flix: Flix): Validation[Unit, CompilationMessage] = method match {

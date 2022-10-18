@@ -1300,6 +1300,12 @@ object Typer {
           resultEff = declaredEff.getOrElse(actualEff)
         } yield (constrs, resultTyp, resultPur, resultEff)
 
+      case KindedAst.Expression.Mask(exp, _) =>
+        // A mask expression is unsound; the type system assumes the expression is pure.
+        for {
+          (constrs, tpe, pur, eff) <- visitExp(exp)
+        } yield (constrs, tpe, Type.Pure, Type.Empty)
+
       case KindedAst.Expression.Upcast(exp, tvar, loc) =>
         for {
           (constrs, _, pur, eff) <- visitExp(exp)
@@ -1770,16 +1776,6 @@ object Typer {
           resultEff = Type.mkUnion(List(eff1, eff2, eff3), loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.Debug(exp1, exp2, loc) =>
-        for {
-          (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
-          _ <- expectTypeM(expected = Type.Str, actual = tpe1, exp1.loc)
-          (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
-          resultTyp = tpe2
-          resultPur = Type.mkAnd(pur1, pur2, loc)
-          resultEff = Type.mkUnion(List(eff1, eff2), loc)
-        } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
-
     }
 
     /**
@@ -2089,6 +2085,14 @@ object Typer {
         val eff = declaredEff.getOrElse(e.eff)
         TypedAst.Expression.Cast(e, dt, dp, de, tpe, pur, eff, loc)
 
+      case KindedAst.Expression.Mask(exp, loc) =>
+        // We explicitly mark a `Mask` expression as Impure.
+        val e = visitExp(exp, subst0)
+        val tpe = e.tpe
+        val pur = Type.Impure
+        val eff = e.eff
+        TypedAst.Expression.Mask(e, tpe, pur, eff, loc)
+
       case KindedAst.Expression.Upcast(exp, tvar, loc) =>
         TypedAst.Expression.Upcast(visitExp(exp, subst0), subst0(tvar), loc)
 
@@ -2325,15 +2329,6 @@ object Typer {
         val pur = Type.mkAnd(e1.pur, e2.pur, e3.pur, loc)
         val eff = Type.mkUnion(List(e1.eff, e2.eff, e3.eff), loc)
         TypedAst.Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
-
-      case KindedAst.Expression.Debug(exp1, exp2, loc) =>
-        // We explicitly mark a `Debug` expression as Impure.
-        val e1 = visitExp(exp1, subst0)
-        val e2 = visitExp(exp2, subst0)
-        val tpe = e2.tpe
-        val pur = Type.Impure
-        val eff = Type.mkUnion(List(e1.eff, e2.eff), loc)
-        TypedAst.Expression.Debug(e1, e2, tpe, pur, eff, loc)
     }
 
     /**
