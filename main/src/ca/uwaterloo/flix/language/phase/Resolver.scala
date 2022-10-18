@@ -1853,6 +1853,12 @@ object Resolver {
       fqn match {
         case "java.math.BigInteger" => UnkindedType.Cst(TypeConstructor.BigInt, loc).toSuccess
         case "java.lang.String" => UnkindedType.Cst(TypeConstructor.Str, loc).toSuccess
+        case "java.util.function.IntFunction" =>
+          UnkindedType.mkImpureArrow(
+            UnkindedType.Cst(TypeConstructor.Int32, loc),
+            UnkindedType.mkObject(loc), loc
+          ).toSuccess
+
         case _ => lookupJvmClass(fqn, loc) map {
           case clazz => UnkindedType.Cst(TypeConstructor.Native(clazz), loc)
         }
