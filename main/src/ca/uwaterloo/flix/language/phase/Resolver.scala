@@ -2639,7 +2639,6 @@ object Resolver {
 
         case TypeConstructor.All => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.And => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.Arrow(_) => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Complement => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Effect(_) => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Empty => ResolutionError.IllegalType(tpe, loc).toFailure
@@ -2662,18 +2661,26 @@ object Resolver {
 
       }
 
-      // Case 2: Enum. Return an object type.
+      // Case 2: Arrow. Convert to Java function interface
+      case UnkindedType.Arrow(_, _, _) =>
+        val targsVal = traverse(erased.typeArguments)(targ => getJVMType(targ, targ.loc))
+        flatMapN(targsVal) {
+          case int :: obj :: Nil if int == classOf[Int] && obj == classOf[AnyRef] =>
+            Class.forName("java.util.function.IntFunction").toSuccess
+          case _ => ResolutionError.IllegalType(tpe, loc).toFailure
+        }
+
+      // Case 3: Enum. Return an object type.
       case _: UnkindedType.Enum => Class.forName("java.lang.Object").toSuccess
 
-      // Case 3: Ascription. Ignore it and recurse.
+      // Case 4: Ascription. Ignore it and recurse.
       case UnkindedType.Ascribe(t, _, _) => getJVMType(UnkindedType.mkApply(t, erased.typeArguments, loc), loc)
 
-      // Case 4: Illegal type. Error.
+      // Case 5: Illegal type. Error.
       case _: UnkindedType.Var => ResolutionError.IllegalType(tpe, loc).toFailure
-      case _: UnkindedType.Arrow => ResolutionError.IllegalType(tpe, loc).toFailure
       case _: UnkindedType.ReadWrite => ResolutionError.IllegalType(tpe, loc).toFailure
 
-      // Case 5: Unexpected type. Crash.
+      // Case 6: Unexpected type. Crash.
       case t: UnkindedType.Apply => throw InternalCompilerException(s"unexpected type: $t")
       case t: UnkindedType.UnappliedAlias => throw InternalCompilerException(s"unexpected type: $t")
       case t: UnkindedType.Alias => throw InternalCompilerException(s"unexpected type: $t")
