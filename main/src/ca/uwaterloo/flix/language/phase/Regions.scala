@@ -241,6 +241,11 @@ object Regions {
         case e => checkType(tpe, loc)
       }
 
+    case Expression.Mask(exp, _, _, tpe, loc) =>
+      flatMapN(visitExp(exp)) {
+        case e => checkType(tpe, loc)
+      }
+
     case Expression.Upcast(exp, tpe, loc) =>
       flatMapN(visitExp(exp)) {
         case _ => checkType(tpe, loc)
@@ -406,11 +411,6 @@ object Regions {
     case Expression.ReifyEff(_, exp1, exp2, exp3, tpe, _, _, loc) =>
       flatMapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
         case (e1, e2, e3) => checkType(tpe, loc)
-      }
-
-    case Expression.Mask(exp, _, _, tpe, loc) =>
-      flatMapN(visitExp(exp)) {
-        case e => checkType(tpe, loc)
       }
   }
 
