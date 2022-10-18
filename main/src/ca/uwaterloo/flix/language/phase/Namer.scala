@@ -890,6 +890,11 @@ object Namer {
         case (e, t, f) => NamedAst.Expression.Cast(e, t, f, loc)
       }
 
+    case WeededAst.Expression.Mask(exp, loc) =>
+      mapN(visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0)) {
+        case e => NamedAst.Expression.Mask(e, loc)
+      }
+
     case WeededAst.Expression.Upcast(exp, loc) =>
       mapN(visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0)) {
         case e => NamedAst.Expression.Upcast(e, loc)
@@ -1112,11 +1117,6 @@ object Namer {
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
       mapN(visitExp(exp1, env0, uenv0, ienv0, tenv0, ns0, prog0), visitExp(exp2, env0 + (ident.name -> sym), uenv0, ienv0, tenv0, ns0, prog0), visitExp(exp3, env0, uenv0, ienv0, tenv0, ns0, prog0)) {
         case (e1, e2, e3) => NamedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
-      }
-
-    case WeededAst.Expression.Mask(exp, loc) =>
-      mapN(visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0)) {
-        case e => NamedAst.Expression.Mask(e, loc)
       }
 
   }
@@ -1546,6 +1546,7 @@ object Namer {
     case WeededAst.Expression.Assign(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Ascribe(exp, _, _, _) => freeVars(exp)
     case WeededAst.Expression.Cast(exp, _, _, _) => freeVars(exp)
+    case WeededAst.Expression.Mask(exp, _) => freeVars(exp)
     case WeededAst.Expression.Upcast(exp, _) => freeVars(exp)
     case WeededAst.Expression.Without(exp, _, _) => freeVars(exp)
     case WeededAst.Expression.Do(_, exps, _) => exps.flatMap(freeVars)
@@ -1590,7 +1591,6 @@ object Namer {
     case WeededAst.Expression.Reify(_, _) => Nil
     case WeededAst.Expression.ReifyType(_, _, _) => Nil
     case WeededAst.Expression.ReifyEff(ident, exp1, exp2, exp3, _) => filterBoundVars(freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3), List(ident))
-    case WeededAst.Expression.Mask(exp, _) => freeVars(exp)
   }
 
   /**

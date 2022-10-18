@@ -1300,6 +1300,12 @@ object Typer {
           resultEff = declaredEff.getOrElse(actualEff)
         } yield (constrs, resultTyp, resultPur, resultEff)
 
+      case KindedAst.Expression.Mask(exp, _) =>
+        // A mask expression is unsound; the type system assumes the expression is pure.
+        for {
+          (constrs, tpe, pur, eff) <- visitExp(exp)
+        } yield (constrs, tpe, Type.Pure, Type.Empty)
+
       case KindedAst.Expression.Upcast(exp, tvar, loc) =>
         for {
           (constrs, _, pur, eff) <- visitExp(exp)
@@ -1770,11 +1776,6 @@ object Typer {
           resultEff = Type.mkUnion(List(eff1, eff2, eff3), loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.Mask(exp, _) =>
-        for {
-          (constrs, tpe, pur, eff) <- visitExp(exp)
-        } yield (constrs, tpe, Type.Pure, Type.Empty)
-
     }
 
     /**
@@ -2084,6 +2085,14 @@ object Typer {
         val eff = declaredEff.getOrElse(e.eff)
         TypedAst.Expression.Cast(e, dt, dp, de, tpe, pur, eff, loc)
 
+      case KindedAst.Expression.Mask(exp, loc) =>
+        // We explicitly mark a `Mask` expression as Impure.
+        val e = visitExp(exp, subst0)
+        val tpe = e.tpe
+        val pur = Type.Impure
+        val eff = e.eff
+        TypedAst.Expression.Mask(e, tpe, pur, eff, loc)
+
       case KindedAst.Expression.Upcast(exp, tvar, loc) =>
         TypedAst.Expression.Upcast(visitExp(exp, subst0), subst0(tvar), loc)
 
@@ -2320,14 +2329,6 @@ object Typer {
         val pur = Type.mkAnd(e1.pur, e2.pur, e3.pur, loc)
         val eff = Type.mkUnion(List(e1.eff, e2.eff, e3.eff), loc)
         TypedAst.Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
-
-      case KindedAst.Expression.Mask(exp, loc) =>
-        // We explicitly mark a `Mask` expression as Impure.
-        val e = visitExp(exp, subst0)
-        val tpe = e.tpe
-        val pur = Type.Impure
-        val eff = e.eff
-        TypedAst.Expression.Mask(e, tpe, pur, eff, loc)
     }
 
     /**

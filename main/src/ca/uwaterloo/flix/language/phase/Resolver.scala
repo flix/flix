@@ -934,6 +934,12 @@ object Resolver {
             case (e, t, f) => ResolvedAst.Expression.Cast(e, t, f, loc)
           }
 
+        case NamedAst.Expression.Mask(exp, loc) =>
+          val eVal = visitExp(exp, region)
+          mapN(eVal) {
+            case e => ResolvedAst.Expression.Mask(e, loc)
+          }
+
         case NamedAst.Expression.Upcast(exp, loc) =>
           mapN(visitExp(exp, region)) {
             case e => ResolvedAst.Expression.Upcast(e, loc)
@@ -1209,12 +1215,6 @@ object Resolver {
           val e3Val = visitExp(exp3, region)
           mapN(e1Val, e2Val, e3Val) {
             case (e1, e2, e3) => ResolvedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
-          }
-
-        case NamedAst.Expression.Mask(exp, loc) =>
-          val eVal = visitExp(exp, region)
-          mapN(eVal) {
-            case e => ResolvedAst.Expression.Mask(e, loc)
           }
       }
 
