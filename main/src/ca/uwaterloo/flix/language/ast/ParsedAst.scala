@@ -986,6 +986,15 @@ object ParsedAst {
     case class Cast(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], purAndEff: ParsedAst.PurityAndEffect, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Mask expression
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the expression to mask.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Mask(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Upcast Expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -1223,15 +1232,6 @@ object ParsedAst {
       * @param sp2  the position of the last character in the expression.
       */
     case class Debug(sp1: SourcePosition, kind: ParsedAst.DebugKind, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Mask expression
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param exp the expression to mask.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class Mask(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
   }
 

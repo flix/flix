@@ -154,6 +154,8 @@ object KindedAst {
 
     case class Cast(exp: KindedAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], declaredEff: Option[Type], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
+    case class Mask(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+
     case class Upcast(exp: KindedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class Without(exp: KindedAst.Expression, eff: Ast.EffectSymUse, loc: SourceLocation) extends KindedAst.Expression
@@ -217,8 +219,6 @@ object KindedAst {
     case class ReifyType(t: Type, k: Kind, loc: SourceLocation) extends KindedAst.Expression
 
     case class ReifyEff(sym: Symbol.VarSym, exp1: KindedAst.Expression, exp2: KindedAst.Expression, exp3: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
-
-    case class Mask(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
   }
 
