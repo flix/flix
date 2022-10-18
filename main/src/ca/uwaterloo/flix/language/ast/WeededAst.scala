@@ -177,6 +177,8 @@ object WeededAst {
 
     case class Cast(exp: WeededAst.Expression, declaredType: Option[WeededAst.Type], declaredEff: WeededAst.PurityAndEffect, loc: SourceLocation) extends WeededAst.Expression
 
+    case class Mask(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class Upcast(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Without(exp: WeededAst.Expression, eff: Name.QName, loc: SourceLocation) extends WeededAst.Expression
@@ -240,8 +242,6 @@ object WeededAst {
     case class ReifyType(t: WeededAst.Type, k: Kind, loc: SourceLocation) extends WeededAst.Expression
 
     case class ReifyEff(ident: Name.Ident, exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Debug(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
   }
 

@@ -662,7 +662,7 @@ object Monomorph {
           visitExp(exp3, env0)
         }
 
-      case Expression.Debug(_, _, _, _, _, loc) =>
+      case Expression.Mask(_, _, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
     }
 

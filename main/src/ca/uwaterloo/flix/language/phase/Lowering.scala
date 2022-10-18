@@ -465,6 +465,9 @@ object Lowering {
       val t = visitType(tpe)
       Expression.Cast(e, dt, declaredPur, declaredEff, t, pur, eff, loc)
 
+    case Expression.Mask(exp, _, _, _, _) =>
+      visitExp(exp)
+
     case Expression.Upcast(exp, tpe, loc) =>
       Expression.Upcast(visitExp(exp), visitType(tpe), loc)
 
@@ -676,11 +679,6 @@ object Lowering {
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
       Expression.ReifyEff(sym, e1, e2, e3, t, pur, eff, loc)
-
-    case Expression.Debug(exp1, exp2, tpe, pur, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      mkApplyDebug(e1, e2, loc)
   }
 
   /**
@@ -1654,6 +1652,10 @@ object Lowering {
       val e = substExp(exp, subst)
       Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
 
+    case Expression.Mask(exp, tpe, pur, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Mask(e, tpe, pur, eff, loc)
+
     case Expression.Upcast(exp, tpe, loc) =>
       Expression.Upcast(substExp(exp, subst), tpe, loc)
 
@@ -1777,11 +1779,6 @@ object Lowering {
       val e2 = substExp(exp2, subst)
       val e3 = substExp(exp3, subst)
       Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
-
-    case Expression.Debug(exp1, exp2, tpe, pur, eff, loc) =>
-      val e1 = substExp(exp1, subst)
-      val e2 = substExp(exp2, subst)
-      Expression.Debug(e1, e2, tpe, pur, eff, loc)
 
     case Expression.FixpointConstraintSet(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
 
