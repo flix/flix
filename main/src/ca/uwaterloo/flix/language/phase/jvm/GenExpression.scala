@@ -806,8 +806,7 @@ object GenExpression {
       // Retrieve the signature.
       val signature = constructor.getParameterTypes
 
-      // Invoke the constructor
-      compileInvoke(visitor, args, signature, currentClass, lenv0, entryPoint)
+      pushArgs(visitor, args, signature, currentClass, lenv0, entryPoint)
 
       // Call the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, declaration, "<init>", descriptor, false)
@@ -824,8 +823,7 @@ object GenExpression {
       // Retrieve the signature.
       val signature = method.getParameterTypes
 
-      // Invoke the method
-      compileInvoke(visitor, args, signature, currentClass, lenv0, entryPoint)
+      pushArgs(visitor, args, signature, currentClass, lenv0, entryPoint)
 
       val declaration = asm.Type.getInternalName(method.getDeclaringClass)
       val name = method.getName
@@ -846,7 +844,7 @@ object GenExpression {
     case Expression.InvokeStaticMethod(method, args, _, loc) =>
       addSourceLine(visitor, loc)
       val signature = method.getParameterTypes
-      compileInvoke(visitor, args, signature, currentClass, lenv0, entryPoint)
+      pushArgs(visitor, args, signature, currentClass, lenv0, entryPoint)
       val declaration = asm.Type.getInternalName(method.getDeclaringClass)
       val name = method.getName
       val descriptor = asm.Type.getMethodDescriptor(method)
@@ -1645,7 +1643,10 @@ object GenExpression {
     visitor.visitLineNumber(loc.beginLine, label)
   }
 
-  private def compileInvoke(visitor: MethodVisitor, args: List[Expression], signature: Array[Class[_ <: Object]], currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): Unit = {
+  /**
+    * Pushes arguments onto the stack ready to invoke a method
+    */
+  private def pushArgs(visitor: MethodVisitor, args: List[Expression], signature: Array[Class[_ <: Object]], currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): Unit = {
     // Evaluate arguments left-to-right and push them onto the stack.
     for ((arg, argType) <- args.zip(signature)) {
       compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
