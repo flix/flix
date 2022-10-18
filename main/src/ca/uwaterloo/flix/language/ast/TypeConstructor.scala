@@ -99,6 +99,7 @@ object TypeConstructor {
   /**
     * A type constructor that represents the type of functions.
     */
+  @IntroducedBy(Kinder.getClass)
   case class Arrow(arity: Int) extends TypeConstructor {
     def kind: Kind = Kind.Bool ->: Kind.Effect ->: Kind.mkArrow(arity)
   }

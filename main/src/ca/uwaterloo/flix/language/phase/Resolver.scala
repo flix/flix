@@ -2509,26 +2509,27 @@ object Resolver {
   private def lookupJvmMethod(clazz: Class[_], methodName: String, signature: List[UnkindedType], retTpe: UnkindedType, static: Boolean, loc: SourceLocation)(implicit flix: Flix): Validation[Method, ResolutionError] = {
     // Lookup the signature.
     flatMapN(lookupSignature(signature, loc)) {
-      sig => try {
-        // Lookup the method with the appropriate signature.
-        val method = clazz.getMethod(methodName, sig: _*)
+      sig =>
+        try {
+          // Lookup the method with the appropriate signature.
+          val method = clazz.getMethod(methodName, sig: _*)
 
-        // Check if the method should be and is static.
-        if (static != Modifier.isStatic(method.getModifiers)) {
-          throw new NoSuchMethodException()
-        } else {
-          // Check that the return type of the method matches the declared type.
-          // We currently don't know how to handle all possible return types,
-          // so only check the straightforward cases for now and succeed all others.
-          // TODO move to typer
-          val erasedRetTpe = UnkindedType.eraseAliases(retTpe)
-          erasedRetTpe.baseType match {
-            case UnkindedType.Cst(TypeConstructor.Unit, _) | UnkindedType.Cst(TypeConstructor.Bool, _) |
-                 UnkindedType.Cst(TypeConstructor.Char, _) | UnkindedType.Cst(TypeConstructor.Float32, _) |
-                 UnkindedType.Cst(TypeConstructor.Float64, _) | UnkindedType.Cst(TypeConstructor.Int8, _) |
-                 UnkindedType.Cst(TypeConstructor.Int16, _) | UnkindedType.Cst(TypeConstructor.Int32, _) |
-                 UnkindedType.Cst(TypeConstructor.Int64, _) | UnkindedType.Cst(TypeConstructor.BigInt, _) |
-                 UnkindedType.Cst(TypeConstructor.Str, _) | UnkindedType.Cst(TypeConstructor.Native(_), _) =>
+          // Check if the method should be and is static.
+          if (static != Modifier.isStatic(method.getModifiers)) {
+            throw new NoSuchMethodException()
+          } else {
+            // Check that the return type of the method matches the declared type.
+            // We currently don't know how to handle all possible return types,
+            // so only check the straightforward cases for now and succeed all others.
+            // TODO move to typer
+            val erasedRetTpe = UnkindedType.eraseAliases(retTpe)
+            erasedRetTpe.baseType match {
+              case UnkindedType.Cst(TypeConstructor.Unit, _) | UnkindedType.Cst(TypeConstructor.Bool, _) |
+                   UnkindedType.Cst(TypeConstructor.Char, _) | UnkindedType.Cst(TypeConstructor.Float32, _) |
+                   UnkindedType.Cst(TypeConstructor.Float64, _) | UnkindedType.Cst(TypeConstructor.Int8, _) |
+                   UnkindedType.Cst(TypeConstructor.Int16, _) | UnkindedType.Cst(TypeConstructor.Int32, _) |
+                   UnkindedType.Cst(TypeConstructor.Int64, _) | UnkindedType.Cst(TypeConstructor.BigInt, _) |
+                   UnkindedType.Cst(TypeConstructor.Str, _) | UnkindedType.Cst(TypeConstructor.Native(_), _) =>
 
                 val expectedTpe = UnkindedType.getFlixType(method.getReturnType)
                 if (expectedTpe != erasedRetTpe)
@@ -2536,15 +2537,15 @@ object Resolver {
                 else
                   method.toSuccess
 
-            case _ => method.toSuccess
+              case _ => method.toSuccess
+            }
           }
+        } catch {
+          case ex: NoSuchMethodException =>
+            val candidateMethods = clazz.getMethods.filter(m => m.getName == methodName).toList
+            ResolutionError.UndefinedJvmMethod(clazz.getName, methodName, static, sig, candidateMethods, loc).toFailure
+          case ex: NoClassDefFoundError => ResolutionError.MissingJvmDependency(clazz.getName, ex.getMessage, loc).toFailure
         }
-      } catch {
-        case ex: NoSuchMethodException =>
-          val candidateMethods = clazz.getMethods.filter(m => m.getName == methodName).toList
-          ResolutionError.UndefinedJvmMethod(clazz.getName, methodName, static, sig, candidateMethods, loc).toFailure
-        case ex: NoClassDefFoundError => ResolutionError.MissingJvmDependency(clazz.getName, ex.getMessage, loc).toFailure
-      }
     }
   }
 
@@ -2613,8 +2614,6 @@ object Resolver {
 
         case TypeConstructor.Channel => Class.forName("java.lang.Object").toSuccess
 
-        case TypeConstructor.Enum(_, _) => Class.forName("java.lang.Object").toSuccess
-
         case TypeConstructor.Ref => Class.forName("java.lang.Object").toSuccess
 
         case TypeConstructor.Tuple(_) => Class.forName("java.lang.Object").toSuccess
@@ -2646,7 +2645,7 @@ object Resolver {
         case TypeConstructor.Intersection => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Lattice => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Lazy => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.Not=> ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Not => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Null => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Or => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.RecordRowEmpty => ResolutionError.IllegalType(tpe, loc).toFailure
@@ -2658,6 +2657,8 @@ object Resolver {
         case TypeConstructor.True => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Union => ResolutionError.IllegalType(tpe, loc).toFailure
 
+        case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t")
+        case t: TypeConstructor.Enum => throw InternalCompilerException(s"unexpected type: $t")
 
       }
 
