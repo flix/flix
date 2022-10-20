@@ -20,7 +20,21 @@ namespace Object {
     ///
     pub def isNull(x: a): Bool =
         import static java.util.Objects.isNull(##java.lang.Object): Bool \ {};
-        isNull(x as ##java.lang.Object)
+        match reifyType a {
+            case ReifiedType.ReifiedUnit => false
+            case ReifiedType.ReifiedBool => false
+            case ReifiedType.ReifiedChar => false
+            case ReifiedType.ReifiedFloat32 => false
+            case ReifiedType.ReifiedFloat64 => false
+            case ReifiedType.ReifiedInt8 => false
+            case ReifiedType.ReifiedInt16 => false
+            case ReifiedType.ReifiedInt32 => false
+            case ReifiedType.ReifiedInt64 => false
+            case ReifiedType.ReifiedBigInt => isNull(x as ##java.lang.Object)
+            case ReifiedType.ReifiedString => isNull(x as ##java.lang.Object)
+            case ReifiedType.ReifiedArray(_) => isNull(x as ##java.lang.Object)
+            case ReifiedType.ErasedType => isNull(x as ##java.lang.Object)
+        }
 
     ///
     /// Returns `None` if the given value `x` is `null`, otherwise returns `Some(x)`.
