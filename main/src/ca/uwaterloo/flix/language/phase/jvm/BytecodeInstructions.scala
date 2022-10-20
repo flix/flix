@@ -447,6 +447,10 @@ object BytecodeInstructions {
     case BackendType.Array(_) | BackendType.Reference(_) => ASTORE(index)
   }
 
+  /**
+    * Converts the top of the stack to a string (including null), assuming that
+    * `tpe` accurately represents its type.
+    */
   def xToString(tpe: BackendType): InstructionSet = tpe match {
     case BackendType.Bool => INVOKESTATIC(BackendObjType.String.BoolValueOf)
     case BackendType.Char => INVOKESTATIC(BackendObjType.String.CharValueOf)
@@ -456,7 +460,7 @@ object BytecodeInstructions {
     case BackendType.Int64 => INVOKESTATIC(BackendObjType.String.Int64ValueOf)
     case BackendType.Float32 => INVOKESTATIC(BackendObjType.String.Float32ValueOf)
     case BackendType.Float64 => INVOKESTATIC(BackendObjType.String.Float64ValueOf)
-    case BackendType.Reference(_) => INVOKEVIRTUAL(BackendObjType.JavaObject.ToStringMethod)
+    case BackendType.Reference(_) => INVOKESTATIC(BackendObjType.String.ObjectValueOf)
 
     case BackendType.Array(BackendType.Bool) => INVOKESTATIC(BackendObjType.Arrays.BoolArrToString)
     case BackendType.Array(BackendType.Char) => INVOKESTATIC(BackendObjType.Arrays.CharArrToString)

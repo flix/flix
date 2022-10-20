@@ -171,17 +171,20 @@ def debugWithPrefix(prefix: String, x: a): a \ IO =
 /// Escapes the given string per Flix's escaping rules.
 ///
 @Internal
-pub def escape(s: String): String = {
+pub def escape(enclosing: {enclosing = String}, s: String): String = {
+    import static java.util.Objects.isNull(##java.lang.Object): Bool \ {};
     import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String \ {} as jReplace;
     def replace(old: String, new: String, subject: String): String = jReplace(subject, old as ##java.lang.CharSequence, new as ##java.lang.CharSequence);
-    s
+    if (isNull(s as ##java.lang.Object)) "null" else
+    let res = s
         // NB: \\ must come first to avoid clobbering other cases
         |> replace("\\", "\\\\")
         |> replace("\n", "\\n")
         |> replace("\r", "\\r")
         |> replace("\"", "\\\"")
         |> replace("\'", "\\\'")
-        |> replace("\t", "\\t")
+        |> replace("\t", "\\t");
+    "${enclosing.enclosing}${res}${enclosing.enclosing}"
 }
 
 ///
@@ -191,14 +194,14 @@ pub def escape(s: String): String = {
 pub def stringify(x: a): String = {
     let magic = match reifyType a {
         case ErasedType =>
-            import java.lang.Object.toString(): String;
-            toString as a -> String
+            import static java.lang.String.valueOf(##java.lang.Object): String;
+            valueOf as a -> String
         case ReifiedUnit =>
             _ -> "()"
         case ReifiedBool =>
             (b -> if (b) "true" else "false") as a -> String
         case ReifiedChar =>
-            (c -> "\'" + escape("${c: Char}") + "\'") as a -> String
+            (c -> escape(enclosing = "\'", "${c: Char}")) as a -> String
         case ReifiedFloat32 =>
             import static java.lang.Float.toString(Float32): String \ {};
             (y -> toString(y) + "f32") as a -> String
@@ -218,10 +221,11 @@ pub def stringify(x: a): String = {
             import static java.lang.Long.toString(Int64): String \ {};
             (y -> toString(y) + "i64") as a -> String
         case ReifiedBigInt =>
-            import java.lang.Object.toString(): String;
-            (y -> toString(y) + "ii") as a -> String
+            import static java.util.Objects.isNull(##java.lang.Object): Bool \ {};
+            import static java.lang.String.valueOf(##java.lang.Object): String;
+            (y -> valueOf(y) + (if (isNull(y)) "" else "ii")) as a -> String
         case ReifiedString =>
-            (s -> "\"" + escape(s) + "\"") as a -> String
+            (s -> escape(enclosing = "\"", s)) as a -> String
         case ReifiedArray(tpe) =>
             match tpe {
                 case ErasedType =>

@@ -344,3 +344,39 @@ def testFunctionStringify03(): Bool = {
     let s = stringify((thunkFunction(42), thunkFunction('a')));
     s == "(Obj -> Int32, Obj -> Char)"
 }
+
+@test
+def testNullStringify01(): Bool = {
+    let s = stringify(null);
+    s == "null"
+}
+
+@test
+def testNullStringify02(): Bool = {
+    let s = stringify(null as String);
+    s == "null"
+}
+
+@test
+def testNullStringify03(): Bool = {
+    let s = stringify(null as BigInt);
+    s == "null"
+}
+
+@test
+def testNullStringify04(): Bool = {
+    let s = stringify(This(null as String));
+    s == "This"
+}
+
+@test
+def testNullStringify05(): Bool = {
+    let s = stringify((null, 42));
+    s == "(null, 42)"
+}
+
+@test
+def testNullStringify06(): Bool = region r {
+    let s = stringify([null as String, "42"] @ r);
+    s == "[null, 42]"
+}

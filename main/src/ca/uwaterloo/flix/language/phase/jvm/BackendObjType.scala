@@ -792,6 +792,9 @@ object BackendObjType {
 
     def Float64ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
       "valueOf", mkDescriptor(BackendType.Float64)(this.jvmName.toTpe), None)
+
+    def ObjectValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "valueOf", mkDescriptor(BackendObjType.JavaObject.toTpe)(this.jvmName.toTpe), None)
   }
 
   case object Arrays extends BackendObjType {
