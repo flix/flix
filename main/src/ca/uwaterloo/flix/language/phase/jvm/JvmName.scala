@@ -84,7 +84,7 @@ object JvmName {
   val Error: JvmName = JvmName(JavaLang, "Error")
   val Exception: JvmName = JvmName(JavaLang, "Exception")
   val Float: JvmName = JvmName(JavaLang, "Float")
-  val Function: JvmName = JvmName(List("java", "util", "function"), "Function")
+  val IntFunction: JvmName = JvmName(JavaUtil ::: List("function"), "IntFunction")
   val Integer: JvmName = JvmName(JavaLang, "Integer")
   val Long: JvmName = JvmName(JavaLang, "Long")
   val Math: JvmName = JvmName(JavaLang, "Math")
