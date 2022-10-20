@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, JavaUtil, MethodDescriptor, RootPackage}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, JavaUtil, IntFunction, MethodDescriptor, RootPackage}
 import org.objectweb.asm.Opcodes
 
 /**
@@ -148,11 +148,26 @@ object BackendObjType {
   //case class Enum(sym: Symbol.EnumSym, args: List[BackendType]) extends BackendObjType
 
   case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType {
+
+    /**
+      * Returns true if the type is Int32 -> JavaObject.
+      */
+    def intFunction(): Boolean = {
+      (args, result) match {
+        case (BackendType.Int32 :: Nil, BackendType.Reference(BackendObjType.JavaObject)) =>
+          true
+        case _ => false
+      }
+    }
+
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkAbstractClass(this.jvmName, superClass = continuation.jvmName)
+      val interfaces = if (intFunction()) List(IntFunction) else Nil
+
+      val cm = ClassMaker.mkAbstractClass(this.jvmName, superClass = continuation.jvmName, interfaces)
 
       cm.mkConstructor(Constructor)
       args.indices.foreach(argIndex => cm.mkField(ArgField(argIndex)))
+      if (intFunction()) cm.mkMethod(IntFunctionApplyMethod)
       cm.mkMethod(ToStringMethod)
 
       cm.closeClassMaker()
@@ -165,6 +180,13 @@ object BackendObjType {
     ))
 
     def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, s"arg$index", args(index))
+
+    def IntFunctionApplyMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
+      mkDescriptor(BackendType.Int32)(JavaObject.toTpe),
+      Some(
+        // alias for unwind
+        thisLoad() ~ INVOKEVIRTUAL(continuation.UnwindMethod) ~ ARETURN()
+      ))
 
     def ToStringMethod: InstanceMethod = {
       val argString = args match {
