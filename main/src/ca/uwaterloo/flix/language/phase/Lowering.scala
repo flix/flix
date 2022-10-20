@@ -19,7 +19,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation, Fixity, Modifiers, Polarity}
-import ca.uwaterloo.flix.language.ast.TypedAst.Expression.NewChannel
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
@@ -58,6 +57,10 @@ object Lowering {
 
     lazy val DebugWithPrefix: Symbol.DefnSym = Symbol.mkDefnSym("debugWithPrefix")
 
+    lazy val ChannelNew: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.newChannel")
+    lazy val ChannelPut: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.put")
+    lazy val ChannelGet: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.get")
+
     /**
       * Returns the definition associated with the given symbol `sym`.
       */
@@ -89,6 +92,8 @@ object Lowering {
     lazy val Boxed: Symbol.EnumSym = Symbol.mkEnumSym("Boxed")
 
     lazy val FList: Symbol.EnumSym = Symbol.mkEnumSym("List")
+
+    lazy val ChannelMpmc: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent/Channel.Mpmc")
   }
 
   private object Sigs {
@@ -123,6 +128,8 @@ object Lowering {
 
     lazy val Comparison: Type = Type.mkEnum(Enums.Comparison, Nil, SourceLocation.Unknown)
     lazy val Boxed: Type = Type.mkEnum(Enums.Boxed, Nil, SourceLocation.Unknown)
+
+    lazy val ChannelMpmc: Type = Type.mkEnum(Enums.ChannelMpmc, Boxed :: Nil, SourceLocation.Unknown)
 
     def mkList(t: Type, loc: SourceLocation): Type = Type.mkEnum(Enums.FList, List(t), loc)
 
@@ -540,19 +547,22 @@ object Lowering {
 
     case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
-      val t = visitType(tpe)
-      Expression.NewChannel(e, t, pur, eff, loc)
+      val unboxedChannelType = Type.mkEnum(Enums.ChannelMpmc, e.tpe :: Nil, loc)
+      val newChannel = Expression.Def(Defs.ChannelNew, Type.mkImpureArrow(Type.Int32, unboxedChannelType, loc), loc)
+      Expression.Apply(newChannel, e :: Nil, unboxedChannelType, pur, eff, loc)
 
     case Expression.GetChannel(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
-      val t = visitType(tpe)
-      Expression.GetChannel(e, t, pur, eff, loc)
+      // val unboxedChannelType = Type.mkEnum(Enums.ChannelMpmc, e.tpe :: Nil, loc)
+      val getChannel = Expression.Def(Defs.ChannelGet, Type.mkImpureArrow(Types.ChannelMpmc, Types.Boxed, loc), loc)
+      Expression.Apply(getChannel, e :: Nil, e.tpe, pur, eff, loc)
 
     case Expression.PutChannel(exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      val t = visitType(tpe)
-      Expression.PutChannel(e1, e2, t, pur, eff, loc)
+      val unboxedChannelType = Type.mkEnum(Enums.ChannelMpmc, e2.tpe :: Nil, loc)
+      val putChannel = Expression.Def(Defs.ChannelPut, Type.mkImpureUncurriedArrow(List(e2.tpe, unboxedChannelType), Type.Unit, loc), loc)
+      Expression.Apply(putChannel, List(e2, e1), Type.Unit, pur, eff, loc)
 
     case Expression.SelectChannel(rules, default, tpe, pur, eff, loc) =>
       val rs = rules.map(visitSelectChannelRule)
