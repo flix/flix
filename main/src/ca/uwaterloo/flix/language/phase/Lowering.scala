@@ -129,8 +129,6 @@ object Lowering {
     lazy val Comparison: Type = Type.mkEnum(Enums.Comparison, Nil, SourceLocation.Unknown)
     lazy val Boxed: Type = Type.mkEnum(Enums.Boxed, Nil, SourceLocation.Unknown)
 
-    lazy val ChannelMpmc: Type = Type.mkEnum(Enums.ChannelMpmc, Boxed :: Nil, SourceLocation.Unknown)
-
     def mkList(t: Type, loc: SourceLocation): Type = Type.mkEnum(Enums.FList, List(t), loc)
 
     //
@@ -547,21 +545,20 @@ object Lowering {
 
     case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
-      val unboxedChannelType = Type.mkEnum(Enums.ChannelMpmc, e.tpe :: Nil, loc)
-      val newChannel = Expression.Def(Defs.ChannelNew, Type.mkImpureArrow(Type.Int32, unboxedChannelType, loc), loc)
-      Expression.Apply(newChannel, e :: Nil, unboxedChannelType, pur, eff, loc)
+      val t = visitType(tpe)
+      val newChannel = Expression.Def(Defs.ChannelNew, Type.mkImpureArrow(e.tpe, t, loc), loc)
+      Expression.Apply(newChannel, e :: Nil, t, pur, eff, loc)
 
     case Expression.GetChannel(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
-      // val unboxedChannelType = Type.mkEnum(Enums.ChannelMpmc, e.tpe :: Nil, loc)
-      val getChannel = Expression.Def(Defs.ChannelGet, Type.mkImpureArrow(Types.ChannelMpmc, Types.Boxed, loc), loc)
-      Expression.Apply(getChannel, e :: Nil, e.tpe, pur, eff, loc)
+      val t = visitType(tpe)
+      val getChannel = Expression.Def(Defs.ChannelGet, Type.mkImpureArrow(e.tpe, t, loc), loc)
+      Expression.Apply(getChannel, e :: Nil, t, pur, eff, loc)
 
-    case Expression.PutChannel(exp1, exp2, tpe, pur, eff, loc) =>
+    case Expression.PutChannel(exp1, exp2, _, pur, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      val unboxedChannelType = Type.mkEnum(Enums.ChannelMpmc, e2.tpe :: Nil, loc)
-      val putChannel = Expression.Def(Defs.ChannelPut, Type.mkImpureUncurriedArrow(List(e2.tpe, unboxedChannelType), Type.Unit, loc), loc)
+      val putChannel = Expression.Def(Defs.ChannelPut, Type.mkImpureUncurriedArrow(List(e2.tpe, e1.tpe), Type.Unit, loc), loc)
       Expression.Apply(putChannel, List(e2, e1), Type.Unit, pur, eff, loc)
 
     case Expression.SelectChannel(rules, default, tpe, pur, eff, loc) =>
@@ -777,6 +774,9 @@ object Lowering {
         case Kind.SchemaRow => Type.Var(sym.withKind(Kind.Star), loc)
         case _ => tpe0
       }
+
+      case Type.Cst(TypeConstructor.Channel, tpe2) =>
+        Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), tpe2)
 
       case Type.Cst(_, _) => tpe0
 
