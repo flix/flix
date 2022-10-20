@@ -27,6 +27,7 @@ import java.util.concurrent.locks.ReentrantLock
 object BddFormula {
 
   val creator = Builders.bddBuilder().build()
+  val lock = new ReentrantLock()
 
   class BddFormula(val dd: DD) {
     def getDD(): DD = dd
@@ -115,20 +116,30 @@ object BddFormula {
       */
       //TODO: Check correctness
     override def map(f: BddFormula)(fn: Int => BddFormula): BddFormula = {
+      lock.lock()
       val exporter = new DotExporter()
 
-      /*val x2 = creator.makeIthVar(2)
+      val x2 = creator.makeIthVar(2)
       val notx2 = creator.makeNot(x2)
       val node = creator.makeNode(creator.makeTrue(), notx2, 1)
-
-
+      println("Original f: x1 NAND x2")
       println(exporter.bddToString(node))
 
-      val res = creator.makeCompose(node, 1, creator.makeNot(creator.makeIthVar(1)))
+      val x1 = creator.makeIthVar(1)
+      val notx1 = creator.makeNot(x1)
+      println("f|1<-x1 using makeCompose")
+      val res = creator.makeCompose(node, 1, x1)
 
       println(exporter.bddToString(res))
 
-      System.exit(-1)*/
+      val and1 = creator.makeAnd(notx1, creator.makeTrue())
+      val and2 = creator.makeAnd(x1, notx2)
+      val or = creator.makeOr(and1, and2)
+      println("f|1<-x1 using formula")
+      println(exporter.bddToString(or))
+
+      System.exit(-1)
+      lock.unlock()
 
       if(f.getDD().isLeaf()) {
         f
