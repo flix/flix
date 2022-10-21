@@ -578,10 +578,12 @@ object Lowering {
       val maybeD = default.map(visitExp)
       val t = visitType(tpe)
 
-      val admins = rs map {
-        case SelectChannelRule(_, c, _) =>
+      val channels = (rs map { case SelectChannelRule(_, c, _) => (mkLetSym("chan", loc), c) }).toArray
+
+      val admins = rs.zipWithIndex map {
+        case (SelectChannelRule(_, c, _), i) =>
           val admin = Expression.Def(Defs.ChannelMpmcAdmin, Type.mkPureArrow(c.tpe, Types.ChannelMpmcAdmin, loc), loc)
-          Expression.Apply(admin, List(c), Types.ChannelMpmcAdmin, pur, eff, loc)
+          Expression.Apply(admin, List(Expression.Var(channels(i)._1, c.tpe, loc)), Types.ChannelMpmcAdmin, pur, eff, loc)
       }
       val adminArray = mkArray(admins, Types.ChannelMpmcAdmin, loc)
 
@@ -605,7 +607,7 @@ object Lowering {
             case _ => throw InternalCompilerException("Unexpected channel type found.")
           }
           val get = Expression.Def(Defs.ChannelUnsafeGetAndUnlock, Type.mkImpureUncurriedArrow(List(chan.tpe, locksType), getTpe, loc), loc)
-          val getExp = Expression.Apply(get, List(chan, Expression.Var(locksSym, locksType, loc)), getTpe, pur, eff, loc)
+          val getExp = Expression.Apply(get, List(Expression.Var(channels(i)._1, chan.tpe, loc), Expression.Var(locksSym, locksType, loc)), getTpe, pur, eff, loc)
           val e = Expression.Let(sym, Ast.Modifiers.Empty, getExp, exp, exp.tpe, pur, eff, loc)
           MatchRule(pat, Expression.True(loc), e)
       }
@@ -624,7 +626,11 @@ object Lowering {
           List(unreachableMatch)
       }
 
-      Expression.Match(selectExp, cases ++ extraCases, tpe, pur, eff, loc)
+      val matchExp = Expression.Match(selectExp, cases ++ extraCases, t, pur, eff, loc)
+
+      channels.foldRight[Expression](matchExp) {
+        case ((sym, c), e) => Expression.Let(sym, Modifiers.Empty, c, e, t, pur, eff, loc)
+      }
 
     case Expression.Spawn(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)

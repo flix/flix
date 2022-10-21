@@ -382,4 +382,17 @@ namespace Test/Exp/Concurrency/Select {
         ()
     }
 
+    @test
+    def testSelectSideEffecting01(): Bool \ IO = {
+        def mkChan(): Channel[Int32] \ IO = {
+            let c = chan Int32 1;
+            c <- 42;
+            c
+        };
+
+        select {
+            case x <- mkChan() => x == 42
+        }
+    }
+
 }
