@@ -363,6 +363,13 @@ object SemanticTokensProvider {
           acc ++ visitPat(pat) ++ visitExp(guard) ++ visitExp(exp)
       }
 
+    case Expression.MatchType(matchExp, rules, _, _, _, _) =>
+      val m = visitExp(matchExp)
+      rules.foldLeft(m) {
+        case (acc, MatchTypeRule(_, tpe, exp)) =>
+          acc ++ visitType(tpe) ++ visitExp(exp) // MATT visit varSym?
+      }
+
     case Expression.Choose(exps, rules, tpe, eff, loc, _) =>
       Iterator.empty // TODO: Choose expression.
 

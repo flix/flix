@@ -136,6 +136,10 @@ object Safety {
         visit(exp) :::
           rules.flatMap { case MatchRule(_, g, e) => visit(g) ::: visit(e) }
 
+      case Expression.MatchType(exp, rules, _, _, _, _) =>
+        visit(exp) :::
+          rules.flatMap { case MatchTypeRule(_, _, e) => visit(e) }
+
       case Expression.Choose(exps, rules, _, _, _, _) =>
         exps.flatMap(visit) :::
           rules.flatMap { case ChoiceRule(_, exp) => visit(exp) }

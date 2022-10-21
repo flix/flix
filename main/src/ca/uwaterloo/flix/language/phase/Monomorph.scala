@@ -394,6 +394,8 @@ object Monomorph {
         }
         Expression.Match(visitExp(exp, env0), rs, subst0(tpe), pur, eff, loc)
 
+        // MATT MAGIC HERE
+
       case Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
         val es = exps.map(visitExp(_, env0))
         val rs = rules.map {

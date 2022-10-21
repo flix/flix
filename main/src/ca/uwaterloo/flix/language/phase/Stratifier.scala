@@ -199,6 +199,17 @@ object Stratifier {
         case (m, rs) => Expression.Match(m, rs, tpe, pur, eff, loc)
       }
 
+    case Expression.MatchType(exp, rules, tpe, pur, eff, loc) =>
+      val matchVal = visitExp(exp)
+      val rulesVal = traverse(rules) {
+        case MatchTypeRule(sym, t, body) => mapN(visitExp(body)) {
+          case b => MatchTypeRule(sym, t, b)
+        }
+      }
+      mapN(matchVal, rulesVal) {
+        case (m, rs) => Expression.MatchType(m, rs, tpe, pur, eff, loc)
+      }
+
     case Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
       val expsVal = traverse(exps)(visitExp)
       val rulesVal = traverse(rules) {
@@ -596,6 +607,12 @@ object Stratifier {
       val dg = labelledGraphOfExp(exp)
       rules.foldLeft(dg) {
         case (acc, MatchRule(_, g, b)) => acc + labelledGraphOfExp(g) + labelledGraphOfExp(b)
+      }
+
+    case Expression.MatchType(exp, rules, _, _, _, _) =>
+      val dg = labelledGraphOfExp(exp)
+      rules.foldLeft(dg) {
+        case (acc, MatchTypeRule(_, _, b)) => acc + labelledGraphOfExp(b)
       }
 
     case Expression.Choose(exps, rules, _, _, _, _) =>
