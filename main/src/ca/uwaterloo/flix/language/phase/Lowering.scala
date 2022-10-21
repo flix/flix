@@ -607,18 +607,18 @@ object Lowering {
           val get = Expression.Def(Defs.ChannelUnsafeGetAndUnlock, Type.mkImpureUncurriedArrow(List(chan.tpe, locksType), getTpe, loc), loc)
           val getExp = Expression.Apply(get, List(chan, Expression.Var(locksSym, locksType, loc)), getTpe, pur, eff, loc)
           val e = Expression.Let(sym, Ast.Modifiers.Empty, getExp, exp, exp.tpe, pur, eff, loc)
-          MatchRule(pat, Expression.False(loc), e)
+          MatchRule(pat, Expression.True(loc), e)
       }
 
       val unreachable = Expression.Def(Defs.Unreachable, Type.mkPureArrow(Type.Unit, t, loc), loc)
       val unreachableExp = Expression.Apply(unreachable, Nil, t, pur, eff, loc)
-      val unreachableMatch = MatchRule(Pattern.Wild(t, loc), Expression.False(loc), unreachableExp)
+      val unreachableMatch = MatchRule(Pattern.Wild(Type.freshVar(Kind.Star, loc, text = Ast.VarText.FallbackText("wild")), loc), Expression.True(loc), unreachableExp)
 
       val extraCases = maybeD match {
         case Some(d) =>
           val locksSym = mkLetSym("locks", loc)
           val pat = Pattern.Tuple(List(Pattern.Int32(-1, loc), Pattern.Var(locksSym, locksType, loc)), selectRetTpe, loc)
-          val defaultMatch = MatchRule(pat, Expression.False(loc), d)
+          val defaultMatch = MatchRule(pat, Expression.True(loc), d)
           List(defaultMatch, unreachableMatch)
         case _ =>
           List(unreachableMatch)
