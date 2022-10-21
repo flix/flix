@@ -747,6 +747,16 @@ object ParsedAst {
     case class Match(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.MatchRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Type Match Expression.
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param exp   the value expression.
+      * @param rules the rules of the type match.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class MatchType(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.MatchTypeRule], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Choose Expression.
       *
       * @param sp1   the position of the first character in the expression.
@@ -756,16 +766,6 @@ object ParsedAst {
       * @param sp2   the position of the last character in the expression.
       */
     case class Choose(sp1: SourcePosition, star: Boolean, exps: Seq[ParsedAst.Expression], rules: Seq[ChoiceRule], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Type Match Expression.
-      *
-      * @param sp1   the position of the first character in the expression.
-      * @param exp   the value expression.
-      * @param rules the rules of the type match.
-      * @param sp2   the position of the last character in the expression.
-      */
-    case class MatchType(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.MatchTypeRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * ForEach Expression.
@@ -1997,15 +1997,6 @@ object ParsedAst {
   case class ChoiceRule(sp1: SourcePosition, pat: Seq[ParsedAst.ChoicePattern], exp: ParsedAst.Expression, sp2: SourcePosition)
 
   /**
-    * A pattern match rule consists of a pattern, an optional pattern guard, and a body expression.
-    *
-    * @param pat   the pattern of the rule.
-    * @param guard the optional guard of the rule.
-    * @param exp   the body expression of the rule.
-    */
-  case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression)
-
-  /**
     * A type match rule consists of a variable, a type, and a body expression.
     *
     * @param ident the variable of the rule.
@@ -2013,6 +2004,15 @@ object ParsedAst {
     * @param exp   the body expression of the rule.
     */
   case class MatchTypeRule(ident: Name.Ident, tpe: ParsedAst.Type, exp: ParsedAst.Expression)
+
+  /**
+    * A pattern match rule consists of a pattern, an optional pattern guard, and a body expression.
+    *
+    * @param pat   the pattern of the rule.
+    * @param guard the optional guard of the rule.
+    * @param exp   the body expression of the rule.
+    */
+  case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression)
 
   /**
     * A select channel rule consists of an identifier, a channel expression, and a body expression.
