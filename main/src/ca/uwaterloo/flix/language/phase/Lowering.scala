@@ -555,24 +555,58 @@ object Lowering {
       val ms = methods.map(visitJvmMethod)
       Expression.NewObject(name, clazz, t, pur, eff, ms, loc)
 
+    // New channel expressions are rewritten as follows:
+    //     chan Int32 10
+    // becomes:
+    //     newChannel[Int32](10)
+    //
     case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       val newChannel = Expression.Def(Defs.ChannelNew, Type.mkImpureArrow(e.tpe, t, loc), loc)
       Expression.Apply(newChannel, e :: Nil, t, pur, eff, loc)
 
+    // Channel get expressions are rewritten as follows:
+    //     <- c
+    // becomes:
+    //     get(c)
     case Expression.GetChannel(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       val getChannel = Expression.Def(Defs.ChannelGet, Type.mkImpureArrow(e.tpe, t, loc), loc)
       Expression.Apply(getChannel, e :: Nil, t, pur, eff, loc)
 
+    // Channel put expressions are rewritten as follows:
+    //     c <- 42
+    // becomes:
+    //     put(42, c)
     case Expression.PutChannel(exp1, exp2, _, pur, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val putChannel = Expression.Def(Defs.ChannelPut, Type.mkImpureUncurriedArrow(List(e2.tpe, e1.tpe), Type.Unit, loc), loc)
       Expression.Apply(putChannel, List(e2, e1), Type.Unit, pur, eff, loc)
 
+    // Channel select expressions are rewritten as follows:
+    //     select {
+    //         case x <- ?ch1 => ?handlech1
+    //         case y <- ?ch2 => ?handlech2
+    //         case _ => ?default
+    //     }
+    // becomes:
+    //     let ch1 = ?ch1;
+    //     let ch2 = ?ch2;
+    //     match selectFrom([mpmcAdmin(c1), mpmcAdmin(c2)]) @ Static, false) {  // true if no default
+    //         case (0, locks) =>
+    //             let x = unsafeGetAndUnlock(c1, locks);
+    //             ?handlech1
+    //         case (1, locks) =>
+    //             let y = unsafeGetAndUnlock(c2, locks);
+    //             ?handlech2
+    //         case (-1, _) =>                                                  // omitted if no default
+    //             ?default                                                     //
+    //         case _ =>
+    //             unreachable!()
+    //     }
     case Expression.SelectChannel(rules, default, tpe, pur, eff, loc) =>
       val rs = rules.map(visitSelectChannelRule)
       val maybeD = default.map(visitExp)
@@ -840,6 +874,7 @@ object Lowering {
         case _ => tpe0
       }
 
+      // Special case for Channel[_], which is rewritten to Concurrent/Channel.Mpmc
       case Type.Cst(TypeConstructor.Channel, loc) =>
         Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc)
 
