@@ -394,7 +394,17 @@ object Monomorph {
         }
         Expression.Match(visitExp(exp, env0), rs, subst0(tpe), pur, eff, loc)
 
-        // MATT MAGIC HERE
+      case Expression.MatchType(exp, rules, tpe, pur, eff, loc) =>
+        val e = visitExp(exp, env0)
+        rules.collectFirst{
+          case MatchTypeRule(sym, t, body0)
+            // use empty rigidity environment since we're monomorphed
+            if Unification.unifiesWith(e.tpe, subst0(t), RigidityEnv.empty) =>
+              val body = visitExp(body0, env0)
+              Expression.Let(sym, Modifiers.Empty, e, body, subst0(tpe), pur, eff, loc)
+
+        }.get
+        // MATT handle failure
 
       case Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
         val es = exps.map(visitExp(_, env0))
