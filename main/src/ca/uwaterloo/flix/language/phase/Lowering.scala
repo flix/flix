@@ -612,7 +612,7 @@ object Lowering {
       val d = default.map(visitExp)
       val t = visitType(tpe)
 
-      val channels = (rs map { case SelectChannelRule(_, c, _) => (mkLetSym("chan", loc), c) })
+      val channels = rs map { case SelectChannelRule(_, c, _) => (mkLetSym("chan", loc), c) }
       val adminArray = mkChannelAdminArray(rs, channels, loc)
       val selectExp = mkChannelSelect(adminArray, d, loc)
       val cases = mkChannelCases(rs, channels, selectExp.tpe, pur, eff, loc)
