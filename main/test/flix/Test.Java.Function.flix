@@ -9,22 +9,24 @@ namespace Test/Java/Function {
    def testIntFunction(): Bool \ IO = {
         import static java.util.stream.IntStream.of(Int32): IntStream \ IO;
         import java.util.stream.IntStream.mapToObj(IntFunction): Stream \ IO;
-        import java.util.stream.Stream.count(): Int64 \ IO;
-        import java.util.stream.Stream.distinct(): Stream \ IO;
-        import new java.lang.Object(): Object \ IO as newObject;
-        let stream0 = of(1);
-        let stream1 = mapToObj(stream0, _ -> newObject());
-        count(distinct(stream1)) == 1i64
+        import java.util.stream.Stream.findFirst(): ##java.util.Optional \ IO;
+        import java.util.Optional.get(): Object;
+        import java.lang.Object.toString(): String;
+        let stream0 = of(42);
+        let f = i -> new Object {
+            def toString(_this: Object): String = "${i}"
+        };
+        let stream1 = mapToObj(stream0, f);
+        toString(get(findFirst(stream1))) == "42"
     }
 
-//   @Test
-//   def testUnaryIntOperator(): Bool \ IO = {
-//        import static java.util.stream.IntStream.of(Int32): IntStream \ IO;
-//        import java.util.stream.IntStream.map(IntUnaryOperator): IntStream \ IO;
-//        import java.util.stream.IntStream.count(): Int64 \ IO;
-//        import java.util.stream.IntStream.distinct(): IntStream \ IO;
-//        let stream0 = of(1);
-//        let stream1 = map(stream0, _ -> 123 as \ IO); // TODO change to upcast
-//        count(distinct(stream1)) == 1i64
-//    }
+  @Test
+  def testUnaryIntOperator(): Bool \ IO = {
+       import static java.util.stream.IntStream.of(Int32): IntStream \ IO;
+       import java.util.stream.IntStream.map(IntUnaryOperator): IntStream \ IO;
+       import java.util.stream.IntStream.sum(): Int32 \ IO;
+       let stream0 = of(5);
+       let stream1 = map(stream0, upcast(i -> i+7));
+       sum(stream1) == 12
+   }
 }
