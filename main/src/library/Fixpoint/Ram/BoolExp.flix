@@ -30,7 +30,7 @@ namespace Fixpoint/Ram {
         case Guard5(v -> v -> v -> v -> v -> Bool, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
     }
 
-    instance ToString[BoolExp[v]] with ToString[v] {
+    instance ToString[BoolExp[v]] {
         pub def toString(exp: BoolExp[v]): String =
             match exp {
                 case Empty(ramSym) => "${ramSym} == ∅"

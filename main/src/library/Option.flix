@@ -127,7 +127,7 @@ instance Traversable[Option] {
 
 }
 
-instance FunctorFilter[Option] {
+instance Filterable[Option] {
     pub def filterMap(f: a -> Option[b] \ ef, o: Option[a]): Option[b] \ ef = Option.flatMap(f, o)
     pub override def filter(f: a -> Bool \ ef, o: Option[a]): Option[a] \ ef = Option.filter(f, o)
 }

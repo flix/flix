@@ -38,7 +38,7 @@ namespace Fixpoint/Ast {
         }
     }
 
-    instance ToString[HeadPredicate[v]] with ToString[v] {
+    instance ToString[HeadPredicate[v]] {
         pub def toString(head: HeadPredicate[v]): String =
             match head {
                 case HeadAtom(predSym, Relational, terms) => "${predSym}(${terms |> List.join(", ")})"

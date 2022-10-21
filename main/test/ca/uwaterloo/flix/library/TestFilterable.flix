@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-namespace TestFunctorFilter {
+namespace TestFilterable {
 
-    use FunctorFilter.{filter, filterMap}
+    use Filterable.{filter, filterMap}
 
     def isOdd(i: Int32): Bool = not (i mod 2 == 0)
 

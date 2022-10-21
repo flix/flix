@@ -104,7 +104,7 @@ instance Traversable[DelayList] {
     pub override def sequence(l: DelayList[m[a]]): m[DelayList[a]] with Applicative[m] = DelayList.sequence(l)
 }
 
-instance FunctorFilter[DelayList] {
+instance Filterable[DelayList] {
     pub def filterMap(f: a -> Option[b] \ ef, x: DelayList[a]): DelayList[b] \ ef = DelayList.filterMap(f, x)
     pub override def filter(f: a -> Bool \ ef, x: DelayList[a]): DelayList[a] \ ef = DelayList.filter(f, x)
 }
@@ -462,10 +462,10 @@ namespace DelayList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     @Experimental @LazyWhenPure
-    pub def mapWithIndex(f: (a, Int32) -> b \ ef, l: DelayList[a]): DelayList[b] \ ef =
+    pub def mapWithIndex(f: (Int32, a) -> b \ ef, l: DelayList[a]): DelayList[b] \ ef =
         let f1 = (args) -> f(fst(args), snd(args));
         reifyEff(f1) {
-            case Pure(g) => mapWithIndexL((x, i) -> g((x, i)), l)
+            case Pure(g) => mapWithIndexL((i, x) -> g((i, x)), l)
             case _       => mapWithIndexE(f, l)
         }
 
@@ -475,11 +475,11 @@ namespace DelayList {
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
     @Lazy
-    def mapWithIndexL(f: (a, Int32) -> b, l: DelayList[a]): DelayList[b] =
+    def mapWithIndexL(f: (Int32, a) -> b, l: DelayList[a]): DelayList[b] =
         def loop(ll, i) = match ll {
             case ENil         => ENil
-            case ECons(x, xs) => LCons(f(x, i), lazy loop(      xs, i + 1))
-            case LCons(x, xs) => LCons(f(x, i), lazy loop(force xs, i + 1))
+            case ECons(x, xs) => LCons(f(i, x), lazy loop(      xs, i + 1))
+            case LCons(x, xs) => LCons(f(i, x), lazy loop(force xs, i + 1))
             case LList(xs)    => LList(         lazy loop(force xs, i    ))
         };
         LList(lazy loop(l, 0))
@@ -489,14 +489,14 @@ namespace DelayList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def mapWithIndexE(f: (a, Int32) -> b \ ef, l: DelayList[a]): DelayList[b] \ ef =
+    def mapWithIndexE(f: (Int32, a) -> b \ ef, l: DelayList[a]): DelayList[b] \ ef =
         def loop(ll, i, k) = match ll {
             case ENil => k(ENil)
             case ECons(x, xs) =>
-                let x1 = f(x, i);
+                let x1 = f(i, x);
                 loop(xs, i + 1, ks -> k(ECons(x1, ks)))
             case LCons(x, xs) =>
-                let x1 = f(x, i);
+                let x1 = f(i, x);
                 loop(force xs, i + 1, ks -> k(ECons(x1, ks)))
             case LList(xs) => loop(force xs, i, k)
         };

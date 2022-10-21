@@ -315,4 +315,7 @@ namespace Test/Exp/Jvm/NewObject {
   def testStaticNestedClass01(): ##flix.test.TestClassWithStaticNestedClass$NestedClass \ IO =
     new ##flix.test.TestClassWithStaticNestedClass$NestedClass {}
 
+  @test
+  def testClassWithProtectedConstructor01(): ##flix.test.TestClassWithProtectedConstructor \ IO =
+    new ##flix.test.TestClassWithProtectedConstructor {}
 }

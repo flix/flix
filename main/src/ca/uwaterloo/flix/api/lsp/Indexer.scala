@@ -316,6 +316,9 @@ object Indexer {
       val de = declaredEff.map(visitType).getOrElse(Index.empty)
       visitExp(exp) ++ dt ++ dp ++ de ++ Index.occurrenceOf(exp0)
 
+    case Expression.Mask(exp, _, _, _, _) =>
+      visitExp(exp)
+
     case Expression.Upcast(exp, tpe, _) =>
       visitExp(exp) ++ visitType(tpe) ++ Index.occurrenceOf(exp0)
 
@@ -430,9 +433,6 @@ object Indexer {
 
     case Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(sym, exp1.tpe) ++ Index.occurrenceOf(exp0)
-
-    case Expression.Debug(exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
   }
 
   /**

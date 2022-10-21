@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, MethodDescriptor, RootPackage}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, JavaUtil, IntFunction, MethodDescriptor, RootPackage}
 import org.objectweb.asm.Opcodes
 
 /**
@@ -55,6 +55,7 @@ sealed trait BackendObjType {
     // Java classes
     case BackendObjType.JavaObject => JvmName(JavaLang, "Object")
     case BackendObjType.String => JvmName(JavaLang, "String")
+    case BackendObjType.Arrays => JvmName(JavaUtil, "Arrays")
     case BackendObjType.StringBuilder => JvmName(JavaLang, "StringBuilder")
     case BackendObjType.Objects => JvmName(JavaLang, "Objects")
   }
@@ -96,6 +97,7 @@ object BackendObjType {
       cm.mkStaticConstructor(StaticConstructor)
       cm.mkConstructor(Constructor)
       cm.mkField(InstanceField)
+      cm.mkMethod(ToStringMethod)
 
       cm.closeClassMaker()
     }
@@ -112,11 +114,13 @@ object BackendObjType {
     ))
 
     def InstanceField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, "INSTANCE", this.toTpe)
+
+    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(
+      pushString("()") ~ ARETURN()
+    ))
   }
 
   case object BigInt extends BackendObjType
-
-  case object String extends BackendObjType
 
   case class Channel(tpe: BackendType) extends BackendObjType
 
@@ -144,11 +148,27 @@ object BackendObjType {
   //case class Enum(sym: Symbol.EnumSym, args: List[BackendType]) extends BackendObjType
 
   case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType {
+
+    /**
+      * Returns true if the type is Int32 -> JavaObject.
+      */
+    def intFunction(): Boolean = {
+      (args, result) match {
+        case (BackendType.Int32 :: Nil, BackendType.Reference(BackendObjType.JavaObject)) =>
+          true
+        case _ => false
+      }
+    }
+
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkAbstractClass(this.jvmName, superClass = continuation.jvmName)
+      val interfaces = if (intFunction()) List(IntFunction) else Nil
+
+      val cm = ClassMaker.mkAbstractClass(this.jvmName, superClass = continuation.jvmName, interfaces)
 
       cm.mkConstructor(Constructor)
       args.indices.foreach(argIndex => cm.mkField(ArgField(argIndex)))
+      if (intFunction()) cm.mkMethod(IntFunctionApplyMethod)
+      cm.mkMethod(ToStringMethod)
 
       cm.closeClassMaker()
     }
@@ -160,6 +180,25 @@ object BackendObjType {
     ))
 
     def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, s"arg$index", args(index))
+
+    def IntFunctionApplyMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
+      mkDescriptor(BackendType.Int32)(JavaObject.toTpe),
+      Some(
+        // alias for unwind
+        thisLoad() ~ INVOKEVIRTUAL(continuation.UnwindMethod) ~ ARETURN()
+      ))
+
+    def ToStringMethod: InstanceMethod = {
+      val argString = args match {
+        case Nil => "()"
+        case arg :: Nil => arg.toErasedString
+        case _ => args.map(_.toErasedString).mkString("(", ", ", ")")
+      }
+      JavaObject.ToStringMethod.implementation(this.jvmName, Some(
+        pushString(s"$argString -> ${result.toErasedString}") ~
+          ARETURN()
+      ))
+    }
   }
 
   case class Continuation(result: BackendType) extends BackendObjType {
@@ -214,6 +253,8 @@ object BackendObjType {
       cm.mkField(InstanceField)
       cm.mkMethod(LookupFieldMethod)
       cm.mkMethod(RestrictFieldMethod)
+      cm.mkMethod(ToStringMethod)
+      cm.mkMethod(ToTailStringMethod)
 
       cm.closeClassMaker()
     }
@@ -242,6 +283,17 @@ object BackendObjType {
       throwUnsupportedOperationException(
         s"${Record.RestrictFieldMethod.name} method shouldn't be called")
     ))
+
+    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(
+      pushString("{}") ~ ARETURN()
+    ))
+
+    private def ToTailStringMethod: InstanceMethod = Record.ToTailStringMethod.implementation(this.jvmName, IsFinal, Some(
+      withName(1, StringBuilder.toTpe) { sb =>
+        sb.load() ~ pushString("}") ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+          INVOKEVIRTUAL(JavaObject.ToStringMethod) ~ ARETURN()
+      }
+    ))
   }
 
   case class RecordExtend(field: String, value: BackendType, rest: BackendType) extends BackendObjType {
@@ -254,6 +306,8 @@ object BackendObjType {
       cm.mkField(RestField)
       cm.mkMethod(LookupFieldMethod)
       cm.mkMethod(RestrictFieldMethod)
+      cm.mkMethod(ToStringMethod)
+      cm.mkMethod(ToTailStringMethod)
 
       cm.closeClassMaker()
     }
@@ -285,12 +339,42 @@ object BackendObjType {
         case TrueBranch =>
           thisLoad() ~ GETFIELD(RestField) ~ ARETURN()
         case FalseBranch =>
-          thisLoad() ~
-            DUP() ~ GETFIELD(RestField) ~
+          NEW(this.jvmName) ~ DUP() ~ INVOKESPECIAL(this.Constructor) ~
+            DUP() ~ thisLoad() ~ GETFIELD(LabelField) ~ PUTFIELD(LabelField) ~
+            DUP() ~ thisLoad() ~ GETFIELD(ValueField) ~ PUTFIELD(ValueField) ~
+            DUP() ~ // get the new restricted rest to put
+            thisLoad() ~ GETFIELD(RestField) ~
             ALOAD(1) ~
             INVOKEINTERFACE(Record.RestrictFieldMethod) ~
-            PUTFIELD(RestField) ~
-            thisLoad() ~ ARETURN()
+            PUTFIELD(RestField) ~ // put the rest field and return
+            ARETURN()
+      }
+    ))
+
+    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(
+      // save the `rest` for the last recursive call
+      thisLoad() ~ GETFIELD(this.RestField) ~
+        // build this segment of the string
+        NEW(StringBuilder.jvmName) ~ DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
+        pushString("{") ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        thisLoad() ~ GETFIELD(this.LabelField) ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        pushString(" = ") ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        thisLoad() ~ GETFIELD(this.ValueField) ~ xToString(this.ValueField.tpe) ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        INVOKEINTERFACE(Record.ToTailStringMethod) ~ ARETURN()
+    ))
+
+    private def ToTailStringMethod: InstanceMethod = Record.ToTailStringMethod.implementation(this.jvmName, IsFinal, Some(
+      withName(1, StringBuilder.toTpe) { sb =>
+        // save the `rest` for the last recursive call
+        thisLoad() ~ GETFIELD(this.RestField) ~
+          // build this segment of the string
+          sb.load() ~ pushString(", ") ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+          thisLoad() ~ GETFIELD(this.LabelField) ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+          pushString(" = ") ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+          thisLoad() ~ GETFIELD(this.ValueField) ~ xToString(this.ValueField.tpe) ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+          // call the tailString of `rest`
+          INVOKEINTERFACE(Record.ToTailStringMethod) ~ ARETURN()
+
       }
     ))
 
@@ -310,6 +394,7 @@ object BackendObjType {
 
       cm.mkInterfaceMethod(LookupFieldMethod)
       cm.mkInterfaceMethod(RestrictFieldMethod)
+      cm.mkInterfaceMethod(ToTailStringMethod)
 
       cm.closeClassMaker()
     }
@@ -319,6 +404,9 @@ object BackendObjType {
 
     def RestrictFieldMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "restrictField",
       mkDescriptor(String.toTpe)(this.toTpe))
+
+    def ToTailStringMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "toTailString",
+      mkDescriptor(StringBuilder.toTpe)(String.toTpe))
   }
 
   // case object SchemaEmpty extends BackendObjType
@@ -699,6 +787,66 @@ object BackendObjType {
   //
   // Java Types
   //
+
+  case object String extends BackendObjType {
+    def BoolValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "valueOf", mkDescriptor(BackendType.Bool)(this.jvmName.toTpe), None)
+
+    def CharValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "valueOf", mkDescriptor(BackendType.Char)(this.jvmName.toTpe), None)
+
+    // implicit use of Int8 as Int32
+    def Int8ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "valueOf", mkDescriptor(BackendType.Int32)(this.jvmName.toTpe), None)
+
+    // implicit use of Int16 as Int32
+    def Int16ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "valueOf", mkDescriptor(BackendType.Int32)(this.jvmName.toTpe), None)
+
+    def Int32ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "valueOf", mkDescriptor(BackendType.Int32)(this.jvmName.toTpe), None)
+
+    def Int64ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "valueOf", mkDescriptor(BackendType.Int64)(this.jvmName.toTpe), None)
+
+    def Float32ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "valueOf", mkDescriptor(BackendType.Float32)(this.jvmName.toTpe), None)
+
+    def Float64ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "valueOf", mkDescriptor(BackendType.Float64)(this.jvmName.toTpe), None)
+  }
+
+  case object Arrays extends BackendObjType {
+    def BoolArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Bool))(BackendObjType.String.toTpe), None)
+
+    def CharArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Char))(BackendObjType.String.toTpe), None)
+
+    def Int8ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Int8))(BackendObjType.String.toTpe), None)
+
+    def Int16ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Int16))(BackendObjType.String.toTpe), None)
+
+    def Int32ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Int32))(BackendObjType.String.toTpe), None)
+
+    def Int64ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Int64))(BackendObjType.String.toTpe), None)
+
+    def Float32ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Float32))(BackendObjType.String.toTpe), None)
+
+    def Float64ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Float64))(BackendObjType.String.toTpe), None)
+
+    def ObjArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "toString", mkDescriptor(BackendType.Array(BackendObjType.JavaObject.toTpe))(BackendObjType.String.toTpe), None)
+
+    def DeepToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
+      "deepToString", mkDescriptor(BackendType.Array(BackendObjType.JavaObject.toTpe))(BackendObjType.String.toTpe), None)
+  }
 
   case object JavaObject extends BackendObjType {
 

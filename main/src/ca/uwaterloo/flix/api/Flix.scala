@@ -168,7 +168,7 @@ class Flix {
     "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
-    "FunctorFilter.flix" -> LocalResource.get("/src/library/FunctorFilter.flix"),
+    "Filterable.flix" -> LocalResource.get("/src/library/Filterable.flix"),
     "Group.flix" -> LocalResource.get("/src/library/Group.flix"),
     "Identity.flix" -> LocalResource.get("/src/library/Identity.flix"),
     "Monad.flix" -> LocalResource.get("/src/library/Monad.flix"),
@@ -229,6 +229,8 @@ class Flix {
     "Fixpoint/Ram/RowVar.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RowVar.flix"),
 
     "Fixpoint/Shared/PredSym.flix" -> LocalResource.get("/src/library/Fixpoint/Shared/PredSym.flix"),
+
+    "Fixpoint/Tuple/Tuple.flix" -> LocalResource.get("/src/library/Fixpoint/Tuple/Tuple.flix"),
 
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
   )

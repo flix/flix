@@ -104,7 +104,7 @@ instance Traversable[List] {
     pub override def sequence(t: List[m[a]]): m[List[a]] with Applicative[m] = List.sequence(t)
 }
 
-instance FunctorFilter[List] {
+instance Filterable[List] {
     pub def filterMap(f: a -> Option[b] \ ef, x: List[a]): List[b] \ ef = List.filterMap(f, x)
     pub override def filter(f: a -> Bool \ ef, x: List[a]): List[a] \ ef = List.filter(f, x)
 }
@@ -386,11 +386,11 @@ namespace List {
     /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
     ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
-    pub def mapWithIndex(f: (a, Int32) -> b \ ef, l: List[a]): List[b] \ ef =
+    pub def mapWithIndex(f: (Int32, a) -> b \ ef, l: List[a]): List[b] \ ef =
         def loop(ll, i, k) = match ll {
             case Nil     => k(Nil)
             case x :: xs =>
-                let y = f(x, i);
+                let y = f(i, x);
                 loop(xs, i + 1, ys -> k(y :: ys))
         };
         loop(l, 0, identity)

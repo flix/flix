@@ -194,9 +194,9 @@ namespace String {
     /// Returns the result of applying `f` to every character in `s` along with that character's index.
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
-    pub def mapWithIndex(f: (Char, Int32) -> Char \ ef, s: String): String \ ef =
+    pub def mapWithIndex(f: (Int32, Char) -> Char \ ef, s: String): String \ ef =
         let len = length(s);
-        init(i -> f(charAt(i, s), i), len)
+        init(i -> f(i, charAt(i, s)), len)
 
     ///
     /// Returns the reverse of `s`.

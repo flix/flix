@@ -168,6 +168,9 @@ object TypedAstOps {
       case Expression.Cast(exp, _, _, _, _, _, _, _) =>
         visitExp(exp, env0)
 
+      case Expression.Mask(exp, _, _, _, _) =>
+        visitExp(exp, env0)
+
       case Expression.Upcast(exp, _, _) =>
         visitExp(exp, env0)
 
@@ -282,9 +285,6 @@ object TypedAstOps {
 
       case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0)
-
-      case Expression.Debug(exp1, exp2, _, _, _, _) =>
-        visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
     }
 
@@ -421,6 +421,7 @@ object TypedAstOps {
     case Expression.Assign(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Ascribe(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Cast(exp, _, _, _, _, _, _, _) => sigSymsOf(exp)
+    case Expression.Mask(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Upcast(exp, _, _) => sigSymsOf(exp)
     case Expression.Without(exp, _, _, _, _, _) => sigSymsOf(exp)
     case Expression.TryCatch(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
@@ -453,7 +454,6 @@ object TypedAstOps {
     case Expression.Reify(_, _, _, _, _) => Set.empty
     case Expression.ReifyType(_, _, _, _, _, _) => Set.empty
     case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
-    case Expression.Debug(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
   }
 
   /**
@@ -629,6 +629,9 @@ object TypedAstOps {
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
       freeVars(exp)
 
+    case Expression.Mask(exp, _, _, _, _) =>
+      freeVars(exp)
+
     case Expression.Upcast(exp, _, _) =>
       freeVars(exp)
 
@@ -738,10 +741,6 @@ object TypedAstOps {
 
     case Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, _, _) =>
       (freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)) - sym
-
-    case Expression.Debug(exp1, exp2, _, _, _, _) =>
-      freeVars(exp1) ++ freeVars(exp2)
-
   }
 
   /**

@@ -85,7 +85,7 @@ instance Traversable[Chain] {
     pub override def sequence(t: Chain[m[a]]): m[Chain[a]] with Applicative[m] = Chain.sequence(t)
 }
 
-instance FunctorFilter[Chain] {
+instance Filterable[Chain] {
     pub def filterMap(f: a -> Option[b] \ ef, x: Chain[a]): Chain[b] \ ef = Chain.filterMap(f, x)
     pub override def filter(f: a -> Bool \ ef, x: Chain[a]): Chain[a] \ ef = Chain.filter(f, x)
 }
@@ -366,11 +366,11 @@ namespace Chain {
     ///
     /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
     ///
-    pub def mapWithIndex(f: (a, Int32) -> b \ ef, c: Chain[a]): Chain[b] \ ef =
+    pub def mapWithIndex(f: (Int32, a) -> b \ ef, c: Chain[a]): Chain[b] \ ef =
         def loop(cc, i, acc) = match viewLeft(cc) {
             case NoneLeft        => acc
             case SomeLeft(x, rs) =>
-                let a = f(x, i);
+                let a = f(i, x);
                 loop(rs, i + 1, snoc(acc, a))
         };
         loop(c, 0, Empty)

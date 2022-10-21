@@ -370,10 +370,10 @@ namespace Nec {
     ///
     /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
     ///
-    pub def mapWithIndex(f: (a, Int32) -> b \ ef, c: Nec[a]): Nec[b] \ ef =
+    pub def mapWithIndex(f: (Int32, a) -> b \ ef, c: Nec[a]): Nec[b] \ ef =
         def loop(c1: Nec[a], i: Int32, k: Nec[b] -> Nec[b] \ ef) = match viewLeft(c1) {
-            case OneLeft(x)      => {let a = f(x, i); k(NecOne(a))}
-            case SomeLeft(x, rs) => loop(rs, i+1, ks -> {let a = f(x, i); k(cons(a, ks))})
+            case OneLeft(x)      => {let a = f(i, x); k(NecOne(a))}
+            case SomeLeft(x, rs) => loop(rs, i+1, ks -> {let a = f(i, x); k(cons(a, ks))})
         };
         loop(c, 0, upcast(identity))
 
