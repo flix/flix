@@ -21,19 +21,19 @@ namespace Object {
     pub def isNull(x: a): Bool =
         import static java.util.Objects.isNull(##java.lang.Object): Bool \ {};
         match reifyType a {
-            case ReifiedType.ReifiedUnit => false
-            case ReifiedType.ReifiedBool => false
-            case ReifiedType.ReifiedChar => false
-            case ReifiedType.ReifiedFloat32 => false
-            case ReifiedType.ReifiedFloat64 => false
-            case ReifiedType.ReifiedInt8 => false
-            case ReifiedType.ReifiedInt16 => false
-            case ReifiedType.ReifiedInt32 => false
-            case ReifiedType.ReifiedInt64 => false
-            case ReifiedType.ReifiedBigInt => isNull(x as ##java.lang.Object)
-            case ReifiedType.ReifiedString => isNull(x as ##java.lang.Object)
-            case ReifiedType.ReifiedArray(_) => isNull(x as ##java.lang.Object)
-            case ReifiedType.ErasedType => isNull(x as ##java.lang.Object)
+            case ReifiedUnit => false
+            case ReifiedBool => false
+            case ReifiedChar => false
+            case ReifiedFloat32 => false
+            case ReifiedFloat64 => false
+            case ReifiedInt8 => false
+            case ReifiedInt16 => false
+            case ReifiedInt32 => false
+            case ReifiedInt64 => false
+            case ReifiedBigInt => isNull(x as ##java.lang.Object)
+            case ReifiedString => isNull(x as ##java.lang.Object)
+            case ReifiedArray(_) => isNull(x as ##java.lang.Object)
+            case ErasedType => isNull(x as ##java.lang.Object)
         }
 
     ///
