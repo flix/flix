@@ -116,30 +116,34 @@ object BddFormula {
       */
       //TODO: Check correctness
     override def map(f: BddFormula)(fn: Int => BddFormula): BddFormula = {
-      lock.lock()
       val exporter = new DotExporter()
+        lock.lock()
 
-      val x2 = creator.makeIthVar(2)
-      val notx2 = creator.makeNot(x2)
-      val node = creator.makeNode(creator.makeTrue(), notx2, 1)
-      println("Original f: x1 NAND x2")
-      println(exporter.bddToString(node))
+        val creator = Builders.bddBuilder().build()
 
-      val x1 = creator.makeIthVar(1)
-      val notx1 = creator.makeNot(x1)
-      println("f|1<-x1 using makeCompose")
-      val res = creator.makeCompose(node, 1, x1)
+        val x1 = creator.makeIthVar(1)
+        val notx1 = creator.makeNot(x1)
+        val x2 = creator.makeIthVar(2)
 
-      println(exporter.bddToString(res))
+        val nand = creator.makeNand(x1,x2)
+        val comp = creator.makeCompose(nand, 1, notx1)
 
-      val and1 = creator.makeAnd(notx1, creator.makeTrue())
-      val and2 = creator.makeAnd(x1, notx2)
-      val or = creator.makeOr(and1, and2)
-      println("f|1<-x1 using formula")
-      println(exporter.bddToString(or))
+        println("Original f: x1 NAND x2")
+        println(exporter.bddToString(nand))
 
-      System.exit(-1)
-      lock.unlock()
+
+        println("f|1<-x1 using makeCompose")
+        println(exporter.bddToString(comp))
+
+        val and1 : DD = creator.makeAnd(creator.makeNot(notx1), creator.restrict(nand, 1, false))
+        val and2 : DD = creator.makeAnd(notx1, creator.restrict(nand, 1, true))
+        val or = creator.makeOr(and1, and2)
+
+        println("f|1<-x1 using formula")
+        println(exporter.bddToString(or))
+
+        System.exit(-1)
+        lock.unlock()
 
       if(f.getDD().isLeaf()) {
         f
