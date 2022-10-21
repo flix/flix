@@ -189,7 +189,7 @@ namespace Concurrent/Channel {
     /// Assumes the channel to be non-empty.
     ///
     @Internal
-    pub def getAndUnlock(c: Mpmc[a], locks: List[ReentrantLock]): a \ IO = {
+    pub def unsafeGetAndUnlock(c: Mpmc[a], locks: List[ReentrantLock]): a \ IO = {
         let Mpmc(admin, elementDeque) = c;
         let MpmcAdmin(_, channelLock, _, _, size, _, _) = admin;
         lock(channelLock);
@@ -201,7 +201,7 @@ namespace Concurrent/Channel {
 
         let value = match optionalElement {
             case None =>
-                // The compiler should only use `getAndUnlock` based on the
+                // The compiler should only use `unsafeGetAndUnlock` based on the
                 // guaranteed output of `select`, so this should never happen.
                 bug!("assertiveGet could not retrieve channel element")
 
