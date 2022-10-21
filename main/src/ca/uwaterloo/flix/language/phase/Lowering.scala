@@ -613,53 +613,10 @@ object Lowering {
       val t = visitType(tpe)
 
       val channels = (rs map { case SelectChannelRule(_, c, _) => (mkLetSym("chan", loc), c) }).toArray
-
-      val admins = rs.zipWithIndex map {
-        case (SelectChannelRule(_, c, _), i) =>
-          val admin = Expression.Def(Defs.ChannelMpmcAdmin, Type.mkPureArrow(c.tpe, Types.ChannelMpmcAdmin, loc), loc)
-          Expression.Apply(admin, List(Expression.Var(channels(i)._1, c.tpe, loc)), Types.ChannelMpmcAdmin, pur, eff, loc)
-      }
-      val adminArray = mkArray(admins, Types.ChannelMpmcAdmin, loc)
-
-      val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
-
-      val selectRetTpe = Type.mkTuple(List(Type.Int32, locksType), loc)
-      val selectTpe = Type.mkImpureUncurriedArrow(List(adminArray.tpe, Type.Bool), selectRetTpe, loc)
-      val select = Expression.Def(Defs.ChannelSelectFrom, selectTpe, loc)
-      val blocking = maybeD match {
-        case Some(_) => Expression.False(loc)
-        case None => Expression.True(loc)
-      }
-      val selectExp = Expression.Apply(select, List(adminArray, blocking), selectRetTpe, pur, eff, loc)
-
-      val cases = rs.zipWithIndex map {
-        case (SelectChannelRule(sym, chan, exp), i) =>
-          val locksSym = mkLetSym("locks", loc)
-          val pat = Pattern.Tuple(List(Pattern.Int32(i, loc), Pattern.Var(locksSym, locksType, loc)), selectRetTpe, loc)
-          val getTpe = chan.tpe match {
-            case Type.Apply(_, t, _) => t
-            case _ => throw InternalCompilerException("Unexpected channel type found.")
-          }
-          val get = Expression.Def(Defs.ChannelUnsafeGetAndUnlock, Type.mkImpureUncurriedArrow(List(chan.tpe, locksType), getTpe, loc), loc)
-          val getExp = Expression.Apply(get, List(Expression.Var(channels(i)._1, chan.tpe, loc), Expression.Var(locksSym, locksType, loc)), getTpe, pur, eff, loc)
-          val e = Expression.Let(sym, Ast.Modifiers.Empty, getExp, exp, exp.tpe, pur, eff, loc)
-          MatchRule(pat, Expression.True(loc), e)
-      }
-
-      val unreachable = Expression.Def(Defs.Unreachable, Type.mkPureArrow(Type.Unit, t, loc), loc)
-      val unreachableExp = Expression.Apply(unreachable, Nil, t, pur, eff, loc)
-      val unreachableMatch = MatchRule(Pattern.Wild(Type.freshVar(Kind.Star, loc, text = Ast.VarText.FallbackText("wild")), loc), Expression.True(loc), unreachableExp)
-
-      val extraCases = maybeD match {
-        case Some(d) =>
-          val locksSym = mkLetSym("locks", loc)
-          val pat = Pattern.Tuple(List(Pattern.Int32(-1, loc), Pattern.Var(locksSym, locksType, loc)), selectRetTpe, loc)
-          val defaultMatch = MatchRule(pat, Expression.True(loc), d)
-          List(defaultMatch, unreachableMatch)
-        case _ =>
-          List(unreachableMatch)
-      }
-
+      val adminArray = mkChannelAdminArray(rs, channels, pur, eff, loc)
+      val selectExp = mkChannelSelect(adminArray, maybeD, pur, eff, loc)
+      val cases = mkChannelCases(rs, channels, selectExp.tpe, pur, eff, loc)
+      val extraCases = mkChannelDefaultCases(maybeD, t, selectExp.tpe, pur, eff, loc)
       val matchExp = Expression.Match(selectExp, cases ++ extraCases, t, pur, eff, loc)
 
       channels.foldRight[Expression](matchExp) {
@@ -1350,6 +1307,75 @@ object Lowering {
     val varExps = fvs.map(kv => mkVarSym(kv._1))
     val innerExp = mkTuple(liftedExp :: varExps, loc)
     mkTag(Enums.HeadTerm, s"App$arity", innerExp, Types.HeadTerm, loc)
+  }
+
+  /**
+    * Make the array of MpmcAdmin objects which will be passed to `selectFrom`
+    */
+  private def mkChannelAdminArray(rs: List[SelectChannelRule], channels: Array[(Symbol.VarSym, Expression)], pur: Type, eff: Type, loc: SourceLocation): Expression = {
+    val admins = rs.zipWithIndex map {
+      case (SelectChannelRule(_, c, _), i) =>
+        val admin = Expression.Def(Defs.ChannelMpmcAdmin, Type.mkPureArrow(c.tpe, Types.ChannelMpmcAdmin, loc), loc)
+        Expression.Apply(admin, List(Expression.Var(channels(i)._1, c.tpe, loc)), Types.ChannelMpmcAdmin, pur, eff, loc)
+    }
+    mkArray(admins, Types.ChannelMpmcAdmin, loc)
+  }
+
+  /**
+    * Construct a call to `selectFrom` given an array of MpmcAdmin objects and optional default
+    */
+  private def mkChannelSelect(adminArray: Expression, maybeD: Option[Expression], pur: Type, eff: Type, loc: SourceLocation): Expression = {
+    val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
+
+    val selectRetTpe = Type.mkTuple(List(Type.Int32, locksType), loc)
+    val selectTpe = Type.mkImpureUncurriedArrow(List(adminArray.tpe, Type.Bool), selectRetTpe, loc)
+    val select = Expression.Def(Defs.ChannelSelectFrom, selectTpe, loc)
+    val blocking = maybeD match {
+      case Some(_) => Expression.False(loc)
+      case None => Expression.True(loc)
+    }
+    Expression.Apply(select, List(adminArray, blocking), selectRetTpe, pur, eff, loc)
+  }
+
+  /**
+    * Construct a sequence of MatchRules corresponding to the given SelectChannelRules
+    */
+  private def mkChannelCases(rs: List[SelectChannelRule], channels: Array[(Symbol.VarSym, Expression)], retTpe: Type, pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): List[MatchRule] = {
+    val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
+
+    rs.zipWithIndex map {
+      case (SelectChannelRule(sym, chan, exp), i) =>
+        val locksSym = mkLetSym("locks", loc)
+        val pat = Pattern.Tuple(List(Pattern.Int32(i, loc), Pattern.Var(locksSym, locksType, loc)), retTpe, loc)
+        val getTpe = chan.tpe match {
+          case Type.Apply(_, t, _) => t
+          case _ => throw InternalCompilerException("Unexpected channel type found.")
+        }
+        val get = Expression.Def(Defs.ChannelUnsafeGetAndUnlock, Type.mkImpureUncurriedArrow(List(chan.tpe, locksType), getTpe, loc), loc)
+        val getExp = Expression.Apply(get, List(Expression.Var(channels(i)._1, chan.tpe, loc), Expression.Var(locksSym, locksType, loc)), getTpe, pur, eff, loc)
+        val e = Expression.Let(sym, Ast.Modifiers.Empty, getExp, exp, exp.tpe, pur, eff, loc)
+        MatchRule(pat, Expression.True(loc), e)
+    }
+  }
+
+  /**
+    * Construct additional MatchRules to handle the (optional) default and unreachable cases
+    */
+  private def mkChannelDefaultCases(maybeD: Option[Expression], t: Type, retTpe: Type, pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): List[MatchRule] = {
+    val unreachable = Expression.Def(Defs.Unreachable, Type.mkPureArrow(Type.Unit, t, loc), loc)
+    val unreachableExp = Expression.Apply(unreachable, Nil, t, pur, eff, loc)
+    val unreachableMatch = MatchRule(Pattern.Wild(Type.freshVar(Kind.Star, loc, text = Ast.VarText.FallbackText("wild")), loc), Expression.True(loc), unreachableExp)
+
+    val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
+    maybeD match {
+      case Some(d) =>
+        val locksSym = mkLetSym("locks", loc)
+        val pat = Pattern.Tuple(List(Pattern.Int32(-1, loc), Pattern.Var(locksSym, locksType, loc)), retTpe, loc)
+        val defaultMatch = MatchRule(pat, Expression.True(loc), d)
+        List(defaultMatch, unreachableMatch)
+      case _ =>
+        List(unreachableMatch)
+    }
   }
 
   /**
