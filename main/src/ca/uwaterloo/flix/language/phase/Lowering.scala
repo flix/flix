@@ -557,8 +557,8 @@ object Lowering {
 
     // New channel expressions are rewritten as follows:
     //     chan Int32 10
-    // becomes:
-    //     newChannel[Int32](10)
+    // becomes a call to the standard library function:
+    //     Concurrent/Channel.newChannel(10)
     //
     case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
@@ -568,8 +568,8 @@ object Lowering {
 
     // Channel get expressions are rewritten as follows:
     //     <- c
-    // becomes:
-    //     get(c)
+    // becomes a call to the standard library function:
+    //     Concurrent/Channel.get(c)
     case Expression.GetChannel(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
@@ -578,8 +578,8 @@ object Lowering {
 
     // Channel put expressions are rewritten as follows:
     //     c <- 42
-    // becomes:
-    //     put(42, c)
+    // becomes a call to the standard library function:
+    //     Concurrent/Channel.put(42, c)
     case Expression.PutChannel(exp1, exp2, _, pur, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -602,8 +602,8 @@ object Lowering {
     //         case (1, locks) =>
     //             let y = unsafeGetAndUnlock(ch2, locks);
     //             ?handlech2
-    //         case (-1, _) =>                                                  // omitted if no default
-    //             ?default                                                     //
+    //         case (-1, _) =>                                                  // Omitted if no default
+    //             ?default                                                     // Unlock is handled by selectFrom
     //         case _ =>
     //             unreachable!()
     //     }
