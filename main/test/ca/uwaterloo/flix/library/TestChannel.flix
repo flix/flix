@@ -16,14 +16,13 @@
  */
 
  use Concurrent/Channel.Mpmc
- use Concurrent/Channel.unsafeGet
+ use Concurrent/Channel.getAndUnlock
  use Concurrent/Channel.get
  use Concurrent/Channel.mpmcAdmin
  use Concurrent/Channel.newChannel
  use Concurrent/Channel.put
  use Concurrent/Channel.selectFrom
- use Concurrent/Channel.unlockLocks
-
+ 
  namespace TestChannel {
 
     @test
@@ -56,8 +55,7 @@
         put(2, c);
         match selectFrom([mpmcAdmin(c)], true) {
             case (0, locks) =>
-                let i = unsafeGet(c);
-                unlockLocks(locks);
+                let i = getAndUnlock(c, locks);
                 i == 2
             case _ => unreachable!()
         }
@@ -67,11 +65,9 @@
         let c = newChannel(1);
         match selectFrom([mpmcAdmin(c)], false) {
             case (0, locks) =>
-                let _ = unsafeGet(c);
-                unlockLocks(locks);
+                let _ = getAndUnlock(c, locks);
                 false
-            case (-1, locks) =>
-                unlockLocks(locks);
+            case (-1, _) =>
                 true
             case _ => unreachable!()
         }
@@ -85,12 +81,10 @@
 
         match selectFrom([mpmcAdmin(c1), mpmcAdmin(c2)], true) {
             case (0, locks) =>
-                let _ = unsafeGet(c1);
-                unlockLocks(locks);
+                let _ = getAndUnlock(c1, locks);
                 bug!("The channel should be empty")
             case (1, locks) =>
-                let s = unsafeGet(c2);
-                unlockLocks(locks);
+                let s = getAndUnlock(c2, locks);
                 s == "hey"
             case _ => unreachable!()
         }
