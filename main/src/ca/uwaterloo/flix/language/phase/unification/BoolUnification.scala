@@ -21,9 +21,8 @@ import ca.uwaterloo.flix.language.phase.unification.BddFormula.BddFormula
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Ok, ToErr, ToOk}
 
-import scala.util.Try
-
 import java.util.concurrent.locks.ReentrantLock
+import scala.util.Try
 
 object BoolUnification {
 
@@ -61,8 +60,8 @@ object BoolUnification {
     }
 
     // translate the types into formulas
+    //lock.lock()
     //implicit val alg: BoolAlg[BoolFormula] = BoolFormula.AsBoolAlgTrait
-    lock.lock()
     implicit val alg: BoolAlg[BddFormula] = BddFormula.AsBoolAlgTrait
 
     val env = alg.getEnv(List(tpe1, tpe2))
@@ -75,7 +74,7 @@ object BoolUnification {
       case None => UnificationError.MismatchedBools(tpe1, tpe2).toErr
       case Some(subst) => subst.toTypeSubstitution(env).toOk
     }
-    lock.unlock()
+    //lock.unlock()
     res
   }
 

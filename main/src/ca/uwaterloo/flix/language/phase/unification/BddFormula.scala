@@ -20,17 +20,16 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
 import scala.collection.immutable.SortedSet
-import org.sosy_lab.pjbdd.api.{Builders, DD}
-import org.sosy_lab.pjbdd.util.parser.DotExporter
-
 import com.juliasoft.beedeedee.bdd.BDD
 import com.juliasoft.beedeedee.factories.Factory
+
+import java.util.concurrent.locks.ReentrantLock
 
 
 object BddFormula {
 
-  val creator = Builders.bddBuilder().build()
-  val factory: Factory = Factory.mkER(1000 * 1000, 100000)
+  val factory: Factory = Factory.mk(10, 10, 0)
+  val lock = new ReentrantLock()
 
   class BddFormula(val dd: BDD) {
     def getDD(): BDD = dd
@@ -90,28 +89,17 @@ object BddFormula {
     }
 
     /**
-      * Returns a representation of the formula `f1 == f2`.
-      */
-    override def mkEq(f1: BddFormula, f2: BddFormula): BddFormula = {
-      new BddFormula((f1.getDD().xor(f2.getDD())).not())
-    }
-
-    /**
       * Returns the set of free variables in `f`.
       */
-    //TODO: Optimize! (Use .vars)
     override def freeVars(f: BddFormula): SortedSet[Int] = {
-      freeVarsAux(f.getDD())
-    }
-
-    private def freeVarsAux(dd: BDD): SortedSet[Int] = {
-      if (dd.isOne || dd.isZero) {
-        SortedSet.empty
-      } else {
-        SortedSet(dd.`var`()) ++
-          freeVarsAux(dd.low()) ++
-          freeVarsAux(dd.high())
+      val bitset = f.getDD().vars()
+      var res : SortedSet[Int] = SortedSet.empty
+      var i = bitset.nextSetBit(0)
+      while (i >= 0) {
+        res = res ++ SortedSet(i)
+        i = bitset.nextSetBit(i + 1)
       }
+      res
     }
 
     /**
@@ -119,20 +107,26 @@ object BddFormula {
       */
       //TODO: Check correctness
     override def map(f: BddFormula)(fn: Int => BddFormula): BddFormula = {
-      val exporter = new DotExporter()
+      //val exporter = new DotExporter()
+      /*lock.lock()
+      val x1 = factory.makeVar(1)
+      val notx1 = x1.not()
+      val x2 = factory.makeVar(2)
+      val notx2 = x2.not()
+      val nand = x1.nand(x2)
+      printBdd(nand, "Original f: x1 NAND x2")
 
-      /*val x2 = creator.makeIthVar(2)
-      val notx2 = creator.makeNot(x2)
-      val node = creator.makeNode(creator.makeTrue(), notx2, 1)
+      val and1 = notx1.and(factory.makeOne())
+      val and2 = x1.and(notx2)
+      val or = and1.or(and2)
+      printBdd(or, "f|1 <- x1 using formula")
 
+      val res = nand.compose(x1, 1)
+      printBdd(res, "f|1 <- x1 using makeCompose")
 
-      println(exporter.bddToString(node))
+      System.exit(-1)
 
-      val res = creator.makeCompose(node, 1, creator.makeNot(creator.makeIthVar(1)))
-
-      println(exporter.bddToString(res))
-
-      System.exit(-1)*/
+      //lock.unlock()*/
 
       if(f.getDD().isOne || f.getDD().isZero) {
         f
@@ -149,21 +143,53 @@ object BddFormula {
         val varMapBackward = varSet.zip(newVarNames).foldLeft(Map.empty[Int, Int]) {
           case (macc, (old_x, new_x)) => macc + (new_x -> old_x)
         }
-
         var res = f.getDD()
 
         //for each i in varSet create BddFormula' with primed variables
         //and compose f with BddFormula'
         for (var_i <- varSet) {
+          if (res.isOne || res.isZero) {
+            return new BddFormula(res)
+          }
+
           val subst = fn(var_i)
+          var substDD = subst.getDD()
 
-          val substDD = subst.getDD().replace(varMapForward.asInstanceOf[java.util.Map[Integer, Integer]])
+          /*if (substDD.isOne) {
+            //println("Stopping early 2");
+            res = res.restrict(var_i, true)
+          } else if (substDD.isZero) {
+            //println("Stopping early 3");
+            res = res.restrict(var_i, false)
+          } else {*/
+            /*for (var_j <- freeVars(subst)) {
+              val j_prime = varMapForward(var_j)
+              substDD = substDD.compose(factory.makeVar(j_prime), var_j)
+            }*/
+            //println(freeVars(subst))
 
-          res = res.compose(substDD, var_i)
+            //printBdd(subst.getDD(), "SubstDD before:")
+
+            //println("Hello1")
+            subst.getDD().replaceWith(varMapForward.asInstanceOf[java.util.Map[Integer, Integer]])
+            //println("Hello2")
+            //printBdd(substDD, "SubstDD after:")
+
+            res.compose(substDD, var_i)
+            //printBdd(res, "Res after comp:")
+
+          //}
         }
 
-        res = res.replace(varMapBackward.asInstanceOf[java.util.Map[Integer, Integer]])
+        /*for(i_prime <- freeVars(new BddFormula(res))) {
+          val var_i = varMapBackward(i_prime)
+          res = res.compose(factory.makeVar(var_i), i_prime)
+        }*/
 
+        res.replaceWith(varMapBackward.asInstanceOf[java.util.Map[Integer, Integer]])
+        //printBdd(res, "Res before return:")
+
+        //println("Done")
         new BddFormula(res)
       }
     }
@@ -194,14 +220,14 @@ object BddFormula {
       * Converts the given formula f into a type.
       */
     override def toType(f: BddFormula, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
-      createTypeFromBDDAux(f.getDD(), Type.True, env)
+      val res = createTypeFromBDDAux(f.getDD(), Type.True, env)
+      res
     }
 
     //TODO: Optimize
     private def createTypeFromBDDAux(dd: BDD, tpe: Type, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
-      if (dd.isOne() || dd.isZero()) {
-        return if (dd.isOne()) tpe else Type.False
-      }
+      if(dd.isOne()) return tpe
+      if(dd.isZero()) return Type.False
 
       val currentVar = dd.`var`()
       val typeVar = env.getBackward(currentVar) match {
@@ -229,5 +255,30 @@ object BddFormula {
       * Returns `Some(false)` otherwise.
       */
     override def satisfiable(f: BddFormula): Option[Boolean] = Some(!f.getDD().isZero())
+
+    def printBdd(bdd : BDD, title : String) {
+      lock.lock()
+      println(title)
+      __printBdd(" ", bdd, false);
+      lock.unlock()
+    }
+
+    //HELPER workhorse function for printing the bdd
+    def __printBdd (prefix : String, bdd : BDD, isLeft : Boolean) {
+      print(prefix)
+      print(if (isLeft) "├─T─" else "└─F─")
+
+      if (bdd.isOne || bdd.isZero) {
+        println(bdd.isOne())
+        return
+      } else {
+        println("x" + bdd.`var`())
+      }
+
+      val newString : String = if (isLeft) "│   " else "    "
+      // enter the next tree level - left and right branch
+      __printBdd(prefix + newString, bdd.high(), true)
+      __printBdd(prefix + newString, bdd.low(), false)
+    }
   }
 }
