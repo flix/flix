@@ -192,6 +192,13 @@ object UnkindedType {
   }
 
   /**
+    * Returns the Int32 type.
+    */
+  def mkInt32(loc: SourceLocation): UnkindedType = {
+    UnkindedType.Cst(TypeConstructor.Int32, loc)
+  }
+
+  /**
     * Returns the ##java.lang.Object type.
     */
   def mkObject(loc: SourceLocation): UnkindedType = {
