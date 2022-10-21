@@ -192,10 +192,33 @@ object UnkindedType {
   }
 
   /**
+    * Returns the Int32 type.
+    */
+  def mkInt32(loc: SourceLocation): UnkindedType = {
+    UnkindedType.Cst(TypeConstructor.Int32, loc)
+  }
+
+  /**
+    * Returns the ##java.lang.Object type.
+    */
+  def mkObject(loc: SourceLocation): UnkindedType = {
+    val obj = Class.forName("java.lang.Object")
+    UnkindedType.Cst(TypeConstructor.Native(obj), loc)
+  }
+
+  /**
     * Constructs the apply type base[t_1, ,..., t_n].
     */
   def mkApply(base: UnkindedType, ts: List[UnkindedType], loc: SourceLocation): UnkindedType = ts.foldLeft(base) {
     case (acc, t) => Apply(acc, t, loc)
+  }
+
+  /**
+    * Constructs the type a -> b \ IO
+    */
+  def mkImpureArrow(a: UnkindedType, b: UnkindedType, loc: SourceLocation): UnkindedType = {
+    val purAndEff = PurityAndEffect(Some(UnkindedType.Cst(TypeConstructor.False, loc)), None)
+    mkApply(UnkindedType.Arrow(purAndEff, 2, loc), List(a, b), loc)
   }
 
   /**

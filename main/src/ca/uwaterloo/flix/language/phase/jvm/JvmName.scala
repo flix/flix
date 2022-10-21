@@ -74,6 +74,7 @@ object JvmName {
 
   val JavaLang: List[String] = List("java", "lang")
   val JavaUtil: List[String] = List("java", "util")
+  val JavaUtilFunction: List[String] = JavaUtil ::: List("function")
 
   val AtomicLong: JvmName = JvmName(JavaUtil ::: List("concurrent", "atomic"), "AtomicLong")
   val Boolean: JvmName = JvmName(JavaLang, "Boolean")
@@ -84,7 +85,8 @@ object JvmName {
   val Error: JvmName = JvmName(JavaLang, "Error")
   val Exception: JvmName = JvmName(JavaLang, "Exception")
   val Float: JvmName = JvmName(JavaLang, "Float")
-  val Function: JvmName = JvmName(List("java", "util", "function"), "Function")
+  val IntFunction: JvmName = JvmName(JavaUtilFunction, "IntFunction")
+  val IntUnaryOperator: JvmName = JvmName(JavaUtilFunction, "IntUnaryOperator")
   val Integer: JvmName = JvmName(JavaLang, "Integer")
   val Long: JvmName = JvmName(JavaLang, "Long")
   val Math: JvmName = JvmName(JavaLang, "Math")
