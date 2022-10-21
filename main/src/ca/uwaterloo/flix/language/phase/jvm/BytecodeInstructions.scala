@@ -56,9 +56,15 @@ object BytecodeInstructions {
 
   type InstructionSet = F => F
 
+  /**
+    * Returns the sequential composition of the two instructions.
+    */
+  def compose(i1: InstructionSet, i2: InstructionSet): InstructionSet =
+    f => i2(i1(f))
+
   implicit class ComposeOps(i1: InstructionSet) {
     def ~(i2: InstructionSet): InstructionSet =
-      f => i2(i1(f))
+      compose(i1, i2)
   }
 
   //
@@ -440,6 +446,40 @@ object BytecodeInstructions {
     case BackendType.Float64 => DSTORE(index)
     case BackendType.Array(_) | BackendType.Reference(_) => ASTORE(index)
   }
+
+  def xToString(tpe: BackendType): InstructionSet = tpe match {
+    case BackendType.Bool => INVOKESTATIC(BackendObjType.String.BoolValueOf)
+    case BackendType.Char => INVOKESTATIC(BackendObjType.String.CharValueOf)
+    case BackendType.Int8 => INVOKESTATIC(BackendObjType.String.Int8ValueOf)
+    case BackendType.Int16 => INVOKESTATIC(BackendObjType.String.Int16ValueOf)
+    case BackendType.Int32 => INVOKESTATIC(BackendObjType.String.Int32ValueOf)
+    case BackendType.Int64 => INVOKESTATIC(BackendObjType.String.Int64ValueOf)
+    case BackendType.Float32 => INVOKESTATIC(BackendObjType.String.Float32ValueOf)
+    case BackendType.Float64 => INVOKESTATIC(BackendObjType.String.Float64ValueOf)
+    case BackendType.Reference(_) => INVOKEVIRTUAL(BackendObjType.JavaObject.ToStringMethod)
+
+    case BackendType.Array(BackendType.Bool) => INVOKESTATIC(BackendObjType.Arrays.BoolArrToString)
+    case BackendType.Array(BackendType.Char) => INVOKESTATIC(BackendObjType.Arrays.CharArrToString)
+    case BackendType.Array(BackendType.Int8) => INVOKESTATIC(BackendObjType.Arrays.Int8ArrToString)
+    case BackendType.Array(BackendType.Int16) => INVOKESTATIC(BackendObjType.Arrays.Int16ArrToString)
+    case BackendType.Array(BackendType.Int32) => INVOKESTATIC(BackendObjType.Arrays.Int32ArrToString)
+    case BackendType.Array(BackendType.Int64) => INVOKESTATIC(BackendObjType.Arrays.Int64ArrToString)
+    case BackendType.Array(BackendType.Float32) => INVOKESTATIC(BackendObjType.Arrays.Float32ArrToString)
+    case BackendType.Array(BackendType.Float64) => INVOKESTATIC(BackendObjType.Arrays.Float64ArrToString)
+    case BackendType.Array(BackendType.Reference(_) | BackendType.Array(_)) => INVOKESTATIC(BackendObjType.Arrays.DeepToString)
+  }
+
+  def composeN(ins: List[InstructionSet]): InstructionSet =
+    ins.foldLeft(nop())(compose)
+
+  /**
+    * Sequential composition with `sep` between elements.
+    */
+  def joinN(ins: List[InstructionSet], sep: InstructionSet): InstructionSet = ins match {
+    case Nil => nop()
+    case head :: next => head ~ composeN(next.map(e => sep ~ e))
+  }
+
 
   //
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

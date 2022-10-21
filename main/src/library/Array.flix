@@ -459,22 +459,22 @@ namespace Array {
     /// That is, the result is of the form: `[ f(a[0], 0), f(a[1], 1), ... ]`.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def mapWithIndex(f: (a, Int32) -> b \ ef, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
+    pub def mapWithIndex(f: (Int32, a) -> b \ ef, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
         let r = Scoped.regionOf(a);
-        init(r, i -> f(a[i], i), len)
+        init(r, i -> f(i, a[i]), len)
 
     ///
     /// Apply `f` to every element in array `a` along with that element's index. Array `a` is mutated.
     ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def transformWithIndex!(f: (a, Int32) -> a \ ef, arr: Array[a, r]): Unit \ { ef, Read(r), Write(r) } =
+    pub def transformWithIndex!(f: (Int32, a) -> a \ ef, arr: Array[a, r]): Unit \ { ef, Read(r), Write(r) } =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)
                 ()
             else {
-                arr[i] = f(arr[i], i);
+                arr[i] = f(i, arr[i]);
                 loop(i + 1)
             }
         };
@@ -642,7 +642,7 @@ namespace Array {
             [] @ r
         else {
             let b = new(r, x, len2);
-            let f = { (v,i) -> let j = i + i; b[j] = v };
+            let f = { (i, v) -> let j = i + i; b[j] = v };
             foreachWithIndex(f, a);
             b
         }
@@ -1279,7 +1279,25 @@ namespace Array {
     ///
     @Time(length(a)) @Space(length(a))
     pub def unzip(r1: Region[r1], r2: Region[r2], a: Array[(a, b), r3]): (Array[a, r1], Array[b, r2]) \ { Write(r1, r2), Read(r3) } =
-        init2(r1, r2, i -> a[i], length(a))
+        let len = length(a);
+        if (len <= 0)
+            ([] @ r1, [] @ r2)
+        else {
+            let (x, y) = a[0];
+            let arr = new(r1, x, len);
+            let brr = new(r2, y, len);
+            def loop(i) = {
+                if (i < len) {
+                    let (l, r) = a[i];
+                    arr[i] = l;
+                    brr[i] = r;
+                    loop(i + 1)
+                } else
+                    ()
+            };
+            loop(1);
+            (arr, brr)
+        }
 
     ///
     /// Alias for `foldLeft2`.
@@ -1464,30 +1482,6 @@ namespace Array {
         }
 
     ///
-    /// Build a pair of arrays of length `len` by applying `f` to the successive indices.
-    ///
-    @Time(time(f) * len) @Space(space(f) * len)
-    pub def init2(r1: Region[r1], r2: Region[r2], f: Int32 -> (a, b) \ ef, len: Int32): (Array[a, r1], Array[b, r2]) \ { ef, Write(r1, r2) } =
-        if (len <= 0)
-            ([] @ r1, [] @ r2)
-        else {
-            let (x, y) = f(0);
-            let arr = new(r1, x, len);
-            let brr = new(r2, y, len);
-            def loop(i) = {
-                if (i < len) {
-                    let (a, b) = f(i);
-                    arr[i] = a;
-                    brr[i] = b;
-                    loop(i + 1)
-                } else
-                    ()
-            };
-            loop(1);
-            (arr, brr)
-        }
-
-    ///
     /// Returns `true` if arrays `a` and `b` have the same elements in the same order, i.e. are structurally equal.
     ///
     @Time(length(a)) @Space(1)
@@ -1551,13 +1545,13 @@ namespace Array {
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreachWithIndex(f: (a, Int32) -> Unit \ ef, a: Array[a, r]): Unit \ { ef, Read(r) } =
+    pub def foreachWithIndex(f: (Int32, a) -> Unit \ ef, a: Array[a, r]): Unit \ { ef, Read(r) } =
         let len = length(a);
         def loop(i) = {
             if (i >= len)
                 ()
             else {
-                f(a[i], i);
+                f(i, a[i]);
                 loop(i + 1)
             }
         };
@@ -1580,7 +1574,7 @@ namespace Array {
     @Time(length(a)) @Space(1)
     pub def updateSequence!(i: Int32, sub: Array[a, r1], a: Array[a, r2]): Unit \ { Read(r1), Write(r2) } =
         let end = i + length(sub);
-        let f = { (_,ix) ->
+        let f = { (ix, _) ->
             if (ix >= i and ix < end)
                 a[ix] = sub[ix-i]
             else
@@ -1785,6 +1779,14 @@ namespace Array {
             case ReifiedInt64 =>
                 let arr = a as Array[Int64, r1];
                 import static java.util.Arrays.copyOfRange(Array[Int64, r1], Int32, Int32): Array[Int64, r2] \ { Read(r1), Write(r2) } as copy;
+                copy(arr, b, e) as Array[a, r2]
+            case ReifiedBigInt =>
+                let arr = a as Array[##java.lang.Object, r1];
+                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
+                copy(arr, b, e) as Array[a, r2]
+            case ReifiedString =>
+                let arr = a as Array[##java.lang.Object, r1];
+                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedArray(_) =>
                 let arr = a as Array[##java.lang.Object, r1];

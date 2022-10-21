@@ -457,18 +457,19 @@ object Weeder {
   private def visitImport(i0: ParsedAst.Import): Validation[List[WeededAst.Import], WeederError] = i0 match {
     case ParsedAst.Imports.ImportOne(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
-      val ident = Name.Ident(sp1, name.fqn.last, sp2)
-      List(WeededAst.Import.Import(name, ident, loc)).toSuccess
+      val alias = name.fqn.last
+      if (raw"[A-Z][A-Za-z0-9_!]*".r matches alias) {
+        List(WeededAst.Import.Import(name, Name.Ident(sp1, alias, sp2), loc)).toSuccess
+      } else {
+        WeederError.IllegalJavaClass(alias, loc).toFailure
+      }
 
     case ParsedAst.Imports.ImportMany(sp1, pkg, ids, sp2) =>
       val loc = mkSL(sp1, sp2)
       val is = ids.map {
         case ParsedAst.Imports.NameAndAlias(_, name, alias, _) =>
           val fqn = Name.JavaName(pkg.sp1, pkg.fqn :+ name, pkg.sp2)
-          val ident = alias match {
-            case Some(id) => id
-            case _ => Name.Ident(sp1, name, sp2)
-          }
+          val ident = alias.getOrElse(Name.Ident(sp1, name, sp2))
           WeededAst.Import.Import(fqn, ident, loc)
       }
       is.toList.toSuccess
@@ -1372,7 +1373,7 @@ object Weeder {
         * Returns an expression that applies `debugString` to the result of the given expression `e`.
         */
       def mkApplyDebugString(e: WeededAst.Expression, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
-        val fqn = "debugString"
+        val fqn = "stringify"
         val loc = mkSL(sp1, sp2).asSynthetic
         mkApplyFqn(fqn, List(e), loc)
       }
@@ -1453,6 +1454,11 @@ object Weeder {
       val f = visitPurityAndEffect(declaredEff)
       mapN(visitExp(exp, senv)) {
         case e => WeededAst.Expression.Cast(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
+      }
+
+    case ParsedAst.Expression.Mask(sp1, exp, sp2) =>
+      mapN(visitExp(exp, senv)) {
+        case e => WeededAst.Expression.Mask(e, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.Upcast(sp1, exp, sp2) =>
@@ -1740,13 +1746,21 @@ object Weeder {
           WeededAst.Expression.ReifyEff(ident, e1, e2, e3, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.Debug(sp1, exp, sp2) =>
+    case ParsedAst.Expression.Debug(sp1, kind, exp, sp2) =>
       mapN(visitExp(exp, senv)) {
         case e =>
           val loc = mkSL(sp1, sp2)
-          val line = s"[${loc.formatWithLine}]"
-          val e1 = WeededAst.Expression.Str(line, loc)
-          WeededAst.Expression.Debug(e1, e, loc)
+          val prefix = kind match {
+            case ParsedAst.DebugKind.Debug => ""
+            case ParsedAst.DebugKind.DebugWithLoc => s"[${loc.formatWithLine}] "
+            case ParsedAst.DebugKind.DebugWithLocAndSrc =>
+              val locPart = s"[${loc.formatWithLine}]"
+              val srcPart = e.loc.text.map(s => s" $s = ").getOrElse("")
+              locPart + srcPart
+          }
+          val e1 = WeededAst.Expression.Str(prefix, loc)
+          val call = mkApplyFqn("debugWithPrefix", List(e1, e), loc)
+          WeededAst.Expression.Mask(call, loc)
       }
 
   }
@@ -1899,6 +1913,12 @@ object Weeder {
           case "$" => rest match {
             case ParsedAst.CharCode.Literal(_, "{", _) :: rest2 => visit(rest2, '{' :: '$' :: acc)
             case _ => WeederError.InvalidEscapeSequence('$', mkSL(sp1, sp2)).toFailure
+          }
+
+          // Case 3.3 Debug escape
+          case "%" => rest match {
+            case ParsedAst.CharCode.Literal(_, "{", _) :: rest2 => visit(rest2, '{' :: '%' :: acc)
+            case _ => WeederError.InvalidEscapeSequence('%', mkSL(sp1, sp2)).toFailure
           }
 
           // Case 3.3: Unicode escape
@@ -3014,6 +3034,7 @@ object Weeder {
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Cast(e1, _, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.Mask(sp1, _, _) => sp1
     case ParsedAst.Expression.Upcast(sp1, _, _) => sp1
     case ParsedAst.Expression.Without(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Do(sp1, _, _, _) => sp1
@@ -3038,7 +3059,7 @@ object Weeder {
     case ParsedAst.Expression.ReifyBool(sp1, _, _) => sp1
     case ParsedAst.Expression.ReifyType(sp1, _, _) => sp1
     case ParsedAst.Expression.ReifyPurity(sp1, _, _, _, _, _) => sp1
-    case ParsedAst.Expression.Debug(sp1, _, _) => sp1
+    case ParsedAst.Expression.Debug(sp1, _, _, _) => sp1
   }
 
   /**

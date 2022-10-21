@@ -981,43 +981,43 @@ namespace TestArray {
 
     @test
     def mapWithIndex01(): Bool = region r {
-        let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, []);
+        let a = Array.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, []);
         Array.sameElements(a, []: Array[Bool, _])
     }
 
     @test
     def mapWithIndex02(): Bool = region r {
-        let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [1]);
+        let a = Array.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, [1]);
         Array.sameElements(a, [false])
     }
 
     @test
     def mapWithIndex03(): Bool = region r {
-        let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [3]);
+        let a = Array.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, [3]);
         Array.sameElements(a, [true])
     }
 
     @test
     def mapWithIndex04(): Bool = region r {
-        let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [1,2]);
+        let a = Array.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, [1,2]);
         Array.sameElements(a, [false,true])
     }
 
     @test
     def mapWithIndex05(): Bool = region r {
-        let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [1,8]);
+        let a = Array.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, [1,8]);
         Array.sameElements(a, [false,false])
     }
 
     @test
     def mapWithIndex06(): Bool = region r {
-        let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [8,1]);
+        let a = Array.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, [8,1]);
         Array.sameElements(a, [true,true])
     }
 
     @test
     def mapWithIndex07(): Bool = region r {
-        let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [7,8]);
+        let a = Array.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, [7,8]);
         Array.sameElements(a, [true,false])
     }
 
@@ -1028,49 +1028,49 @@ namespace TestArray {
     @test
     def transformWithIndex01!(): Bool = region r {
         let a = []: Array[Int32, _];
-        Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
+        Array.transformWithIndex!((i, e) -> if (i < 1) e + 10 else e, a);
         Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def transformWithIndex02!(): Bool = region r {
         let a = [1];
-        Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
+        Array.transformWithIndex!((i, e) -> if (i < 1) e + 10 else e, a);
         Array.sameElements(a, [11])
     }
 
     @test
     def transformWithIndex03!(): Bool = region r {
         let a = [3];
-        Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
+        Array.transformWithIndex!((i, e) -> if (i < 1) e + 10 else e, a);
         Array.sameElements(a, [13])
     }
 
     @test
     def transformWithIndex04!(): Bool = region r {
         let a = [1,2];
-        Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
+        Array.transformWithIndex!((i, e) -> if (i < 1) e + 10 else e, a);
         Array.sameElements(a, [11,2])
     }
 
     @test
     def transformWithIndex05!(): Bool = region r {
         let a = [1,8];
-        Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
+        Array.transformWithIndex!((i, e) -> if (i < 1) e + 10 else e, a);
         Array.sameElements(a, [11,8])
     }
 
     @test
     def transformWithIndex06!(): Bool = region r {
         let a = [8,1];
-        Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
+        Array.transformWithIndex!((i, e) -> if (i < 1) e + 10 else e, a);
         Array.sameElements(a, [18,1])
     }
 
     @test
     def transformWithIndex07!(): Bool = region r {
         let a = [7,8,9];
-        Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
+        Array.transformWithIndex!((i, e) -> if (i < 1) e + 10 else e, a);
         Array.sameElements(a, [17,8,9])
     }
 
@@ -4520,41 +4520,6 @@ namespace TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // init2                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def init201(): Bool = region r {
-        let (a,b) = Array.init2(r, r, x -> (x, true), 0);
-        Array.sameElements(a, []: Array[Int32, _]) and Array.sameElements(b, []: Array[Bool, _])
-    }
-
-    @test
-    def init202(): Bool = region r {
-        let (a,b) = Array.init2(r, r, x -> (x, true), -1);
-        Array.sameElements(a, []: Array[Int32, _]) and Array.sameElements(b, []: Array[Bool, _])
-    }
-
-    @test
-    def init203(): Bool = region r {
-        let (a,b) = Array.init2(r, r, x -> (x, true), 1);
-        Array.sameElements(a, [0]) and Array.sameElements(b, [true])
-    }
-
-    @test
-    def init204(): Bool = region r {
-        let (a,b) = Array.init2(r, r, x -> (x, true), 2);
-        Array.sameElements(a, [0,1]) and Array.sameElements(b, [true, true])
-    }
-
-    @test
-    def init205(): Bool = region r {
-        let (a,b) = Array.init2(r, r, x -> (x, true), 50);
-        Array.length(a) == 50 and Array.length(b) == 50
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // sameElements                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -4655,7 +4620,7 @@ namespace TestArray {
     def foreachWithIndex01(): Bool = region r {
         let a = []: Array[Float32, _];
         let sb = new StringBuilder(r);
-        let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.foreachWithIndex(fn, a);
         StringBuilder.toString(sb) == ""
     }
@@ -4664,7 +4629,7 @@ namespace TestArray {
     def foreachWithIndex02(): Bool = region r {
         let a = [0.0];
         let sb = new StringBuilder(r);
-        let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.foreachWithIndex(fn, a);
         StringBuilder.toString(sb) == "F"
     }
@@ -4673,7 +4638,7 @@ namespace TestArray {
     def foreachWithIndex03(): Bool = region r {
         let a = [0.0, 0.1];
         let sb = new StringBuilder(r);
-        let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.foreachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FT"
     }
@@ -4682,7 +4647,7 @@ namespace TestArray {
     def foreachWithIndex04(): Bool = region r {
         let a = [0.0, 0.1, 0.2];
         let sb = new StringBuilder(r);
-        let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.foreachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FTT"
     }
@@ -4691,7 +4656,7 @@ namespace TestArray {
     def foreachWithIndex05(): Bool = region r {
         let a = [0.0, 0.1, 0.2, 0.3];
         let sb = new StringBuilder(r);
-        let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.foreachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FTTT"
     }

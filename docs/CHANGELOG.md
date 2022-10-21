@@ -1,5 +1,18 @@
 # Changelog
 
+Version 0.32.0:
+- Language: Added new debugging facilities (thanks Jonathan, Matt, Magnus, Paul!)
+  - Added `stringify` construct.
+  - Added `debug`, `debug!` and `debug!!` constructs.
+  - Added debug string interpolation.
+- Language: Allow labelled arguments in enums and tuples (thanks Matt!)
+- Language: Added experimental support for Virtual Threads (thanks Magnus!)
+- Compiler: Fixed a bug in code generation for `NewObject` (thanks Paul!)
+- Compiler: Fixed a bug in code generation for `RecordRestrict` (thanks Jonathan!)
+- VSCode: Added support for match completion (thanks Daniel!)
+- VSCode: Added support for auto-completion of cases (thanks Daniel!)
+- VSCode: Improved integration between VSCode and the REPL (thanks Magnus!)
+
 Version 0.31.0:
 - Language: Added new object expressions (thanks Paul!)
 - Language: Added `par` expression (thanks Jakob!)

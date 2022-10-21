@@ -492,25 +492,25 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def mapWithIndex01(): Bool = Chain.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, Chain.empty()) == Chain.empty()
+    def mapWithIndex01(): Bool = Chain.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, Chain.empty()) == Chain.empty()
 
     @test
-    def mapWithIndex02(): Bool = Chain.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, Chain.singleton(1)) == Chain.singleton(false)
+    def mapWithIndex02(): Bool = Chain.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, Chain.singleton(1)) == Chain.singleton(false)
 
     @test
-    def mapWithIndex03(): Bool = Chain.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, Chain.singleton(3)) == Chain.singleton(true)
+    def mapWithIndex03(): Bool = Chain.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, Chain.singleton(3)) == Chain.singleton(true)
 
     @test
-    def mapWithIndex04(): Bool = Chain.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, List.toChain(1 :: 2 :: Nil)) == List.toChain(false :: true :: Nil)
+    def mapWithIndex04(): Bool = Chain.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, List.toChain(1 :: 2 :: Nil)) == List.toChain(false :: true :: Nil)
 
     @test
-    def mapWithIndex05(): Bool = Chain.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, List.toChain(1 :: 8 :: Nil)) == List.toChain(false :: false :: Nil)
+    def mapWithIndex05(): Bool = Chain.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, List.toChain(1 :: 8 :: Nil)) == List.toChain(false :: false :: Nil)
 
     @test
-    def mapWithIndex06(): Bool = Chain.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, List.toChain(8 :: 1 :: Nil)) == List.toChain(true :: true :: Nil)
+    def mapWithIndex06(): Bool = Chain.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, List.toChain(8 :: 1 :: Nil)) == List.toChain(true :: true :: Nil)
 
     @test
-    def mapWithIndex07(): Bool = Chain.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, List.toChain(7 :: 8 :: Nil)) == List.toChain(true :: false :: Nil)
+    def mapWithIndex07(): Bool = Chain.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, List.toChain(7 :: 8 :: Nil)) == List.toChain(true :: false :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // flatMap                                                                 //

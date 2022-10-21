@@ -26,6 +26,8 @@ pub enum ReifiedType with Eq, Order, ToString {
     case ReifiedInt16,
     case ReifiedInt32,
     case ReifiedInt64,
+    case ReifiedBigInt,
+    case ReifiedString,
     case ReifiedArray(ReifiedType)
 }
 
@@ -130,22 +132,63 @@ pub def println(x: a): Unit \ IO with ToString[a] =
     x |> ToString.toString |> println(getOut())
 
 ///
-/// Prints the given prefix along with a automatic string representation of `x`.
+/// Prints the stringified representation of `x`.
+///
+/// WARNING: The debug function is pure hence if the
+/// result is unused it may be removed by the compiler!
+///
+def debug(x: a): a = debugWithPrefix("", x) as \ {}
+
+///
+/// Prints the stringified representation of `x`.
+///
+/// WARNING: The debug function is pure hence if the
+/// result is unused it may be removed by the compiler!
+///
+def debug!(x: a): a = debugWithPrefix("", x) as \ {}
+
+///
+/// Prints the stringified representation of `x`.
+///
+/// WARNING: The debug function is pure hence if the
+/// result is unused it may be removed by the compiler!
+///
+def debug!!(x: a): a = debugWithPrefix("", x) as \ {}
+
+///
+/// Prints the stringified representation of `x` with the given `prefix`.
 ///
 /// Note: For internal use only. The actual `debug(exp)` expression is parsed and ultimately rewritten to call this function.
 ///
 @Internal
-def debug(prefix: String, x: a): Unit \ IO =
+def debugWithPrefix(prefix: String, x: a): a \ IO =
     import static get java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
     import java.io.PrintStream.println(String): Unit \ IO;
-    println(getOut(), "${prefix} ${debugString(x)}")
+    println(getOut(), "${prefix}%{x}");
+    x
 
+///
+/// Escapes the given string per Flix's escaping rules.
+///
+@Internal
+pub def escape(s: String): String = {
+    import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String \ {} as jReplace;
+    def replace(old: String, new: String, subject: String): String = jReplace(subject, old as ##java.lang.CharSequence, new as ##java.lang.CharSequence);
+    s
+        // NB: \\ must come first to avoid clobbering other cases
+        |> replace("\\", "\\\\")
+        |> replace("\n", "\\n")
+        |> replace("\r", "\\r")
+        |> replace("\"", "\\\"")
+        |> replace("\'", "\\\'")
+        |> replace("\t", "\\t")
+}
 
 ///
 /// Returns an automatic string representation of `x`.
 ///
 @Internal
-pub def debugString(x: a): String = {
+pub def stringify(x: a): String = {
     let magic = match reifyType a {
         case ErasedType =>
             import java.lang.Object.toString(): String;
@@ -155,29 +198,72 @@ pub def debugString(x: a): String = {
         case ReifiedBool =>
             (b -> if (b) "true" else "false") as a -> String
         case ReifiedChar =>
-            import static java.lang.Character.toString(Char): String \ {};
-            toString as a -> String
+            (c -> "\'" + escape("${c: Char}") + "\'") as a -> String
         case ReifiedFloat32 =>
             import static java.lang.Float.toString(Float32): String \ {};
-            toString as a -> String
+            (y -> toString(y) + "f32") as a -> String
         case ReifiedFloat64 =>
             import static java.lang.Double.toString(Float64): String \ {};
             toString as a -> String
         case ReifiedInt8 =>
             import static java.lang.Byte.toString(Int8): String \ {};
-            toString as a -> String
+            (y -> toString(y) + "i8") as a -> String
         case ReifiedInt16 =>
             import static java.lang.Short.toString(Int16): String \ {};
-            toString as a -> String
+            (y -> toString(y) + "i16") as a -> String
         case ReifiedInt32 =>
             import static java.lang.Integer.toString(Int32): String \ {};
             toString as a -> String
         case ReifiedInt64 =>
             import static java.lang.Long.toString(Int64): String \ {};
-            toString as a -> String
-        case ReifiedArray(_) =>
+            (y -> toString(y) + "i64") as a -> String
+        case ReifiedBigInt =>
             import java.lang.Object.toString(): String;
-            toString as a -> String
+            (y -> toString(y) + "ii") as a -> String
+        case ReifiedString =>
+            (s -> "\"" + escape(s) + "\"") as a -> String
+        case ReifiedArray(tpe) =>
+            match tpe {
+                case ErasedType =>
+                    import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
+                    toString as a -> String
+                case ReifiedUnit =>
+                    import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
+                    toString as a -> String
+                case ReifiedBool =>
+                    import static java.util.Arrays.toString(Array[Bool, Static]): String;
+                    toString as a -> String
+                case ReifiedChar =>
+                    import static java.util.Arrays.toString(Array[Char, Static]): String;
+                    toString as a -> String
+                case ReifiedFloat32 =>
+                    import static java.util.Arrays.toString(Array[Float32, Static]): String;
+                    toString as a -> String
+                case ReifiedFloat64 =>
+                    import static java.util.Arrays.toString(Array[Float64, Static]): String;
+                    toString as a -> String
+                case ReifiedInt8 =>
+                    import static java.util.Arrays.toString(Array[Int8, Static]): String;
+                    toString as a -> String
+                case ReifiedInt16 =>
+                    import static java.util.Arrays.toString(Array[Int16, Static]): String;
+                    toString as a -> String
+                case ReifiedInt32 =>
+                    import static java.util.Arrays.toString(Array[Int32, Static]): String;
+                    toString as a -> String
+                case ReifiedInt64 =>
+                    import static java.util.Arrays.toString(Array[Int64, Static]): String;
+                    toString as a -> String
+                case ReifiedBigInt =>
+                    import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
+                    toString as a -> String
+                case ReifiedString =>
+                    import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
+                    toString as a -> String
+                case ReifiedArray(_) =>
+                    import static java.util.Arrays.deepToString(Array[##java.lang.Object, Static]): String;
+                    deepToString as a -> String
+            }
     };
     magic(x)
 }

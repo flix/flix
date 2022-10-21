@@ -437,25 +437,25 @@ def lift302(): Bool = List.lift3((x,y,z) -> (x,y,z), 1 :: 2 :: 3 :: Nil, "a" :: 
 // mapWithIndex                                                            //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def mapWithIndex01(): Bool = List.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, Nil) == Nil
+def mapWithIndex01(): Bool = List.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, Nil) == Nil
 
 @test
-def mapWithIndex02(): Bool = List.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, 1 :: Nil) == false :: Nil
+def mapWithIndex02(): Bool = List.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, 1 :: Nil) == false :: Nil
 
 @test
-def mapWithIndex03(): Bool = List.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, 3 :: Nil) == true :: Nil
+def mapWithIndex03(): Bool = List.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, 3 :: Nil) == true :: Nil
 
 @test
-def mapWithIndex04(): Bool = List.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, 1 :: 2 :: Nil) == false :: true :: Nil
+def mapWithIndex04(): Bool = List.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, 1 :: 2 :: Nil) == false :: true :: Nil
 
 @test
-def mapWithIndex05(): Bool = List.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, 1 :: 8 :: Nil) == false :: false :: Nil
+def mapWithIndex05(): Bool = List.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, 1 :: 8 :: Nil) == false :: false :: Nil
 
 @test
-def mapWithIndex06(): Bool = List.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, 8 :: 1 :: Nil) == true :: true :: Nil
+def mapWithIndex06(): Bool = List.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, 8 :: 1 :: Nil) == true :: true :: Nil
 
 @test
-def mapWithIndex07(): Bool = List.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, 7 :: 8 :: Nil) == true :: false :: Nil
+def mapWithIndex07(): Bool = List.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, 7 :: 8 :: Nil) == true :: false :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // flatMap                                                                 //

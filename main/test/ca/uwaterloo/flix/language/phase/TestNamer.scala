@@ -414,7 +414,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUseUpper](result)
+    expectError[NameError.DuplicateUpperName](result)
   }
 
   test("DuplicateUseUpper.02") {
@@ -439,7 +439,7 @@ class TestNamer extends FunSuite with TestUtils {
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUseUpper](result)
+    expectError[NameError.DuplicateUpperName](result)
   }
 
   test("DuplicateUseUpper.03") {
@@ -465,7 +465,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUseUpper](result)
+    expectError[NameError.DuplicateUpperName](result)
   }
 
   test("DuplicateUseTag.01") {
@@ -896,6 +896,84 @@ class TestNamer extends FunSuite with TestUtils {
       """
         |class C[a]
         |eff C
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.21") {
+    val input =
+      """
+        |import java.sql.Statement
+        |enum Statement
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.22") {
+    val input =
+      """
+        |enum Statement
+        |type alias Statement = Int
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.23") {
+    val input =
+      """
+        |use A.Statement
+        |enum Statement
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.24") {
+    val input =
+      """
+        |import java.sql.Statement
+        |namespace A {
+        |    enum Statement
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+  
+  test("DuplicateUpperName.25") {
+    val input =
+      """
+        |namespace A {
+        |    use B.Statement
+        |    import java.sql.Statement
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.26") {
+    val input =
+      """
+        |enum Statement
+        |namespace A {
+        |    use B.Statement
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.27") {
+    val input =
+      """
+        |enum Statement
+        |namespace A {
+        |    import B.Statement
+        |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)

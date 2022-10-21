@@ -29,7 +29,7 @@ namespace Fixpoint/Ram {
         case Comment(String)
     }
 
-    instance ToString[RamStmt[v]] with ToString[v] {
+    instance ToString[RamStmt[v]] {
         pub def toString(stmt: RamStmt[v]): String =
             let nl = String.lineSeparator();
             match stmt {

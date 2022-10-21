@@ -740,7 +740,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Static | Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
         ReifyType | ReifyPurity | Choose | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
-        GetChannel | SelectChannel | Spawn | Par | Lazy | Force | Upcast | Intrinsic | New | ArrayLit | ArrayNew |
+        GetChannel | SelectChannel | Spawn | Par | Lazy | Force | Upcast | Mask | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
         Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | FName | Tag | Hole
@@ -942,8 +942,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("resume") ~ Argument ~ SP ~> ParsedAst.Expression.Resume
     }
 
-    def Debug: Rule1[ParsedAst.Expression.Debug] = rule {
-      SP ~ keyword("debug") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Debug
+    def Debug: Rule1[ParsedAst.Expression.Debug] = {
+      def DebugKind: Rule1[ParsedAst.DebugKind] = rule {
+        keyword("debug!!") ~ push(ParsedAst.DebugKind.DebugWithLocAndSrc) |
+          keyword("debug!") ~ push(ParsedAst.DebugKind.DebugWithLoc) |
+          keyword("debug") ~ push(ParsedAst.DebugKind.Debug)
+      }
+
+      rule {
+        SP ~ DebugKind ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Debug
+      }
+    }
+
+    def Mask: Rule1[ParsedAst.Expression.Mask] = rule {
+      SP ~ keyword("$MASK$") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Mask
     }
 
     def Discard: Rule1[ParsedAst.Expression.Discard] = rule {
@@ -1756,7 +1768,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     /**
       * An uppercase identifier is an uppercase letter optionally followed by any letter, underscore, or prime.
       */
-  def UpperCaseName: Rule1[Name.Ident] = rule {
+    def UpperCaseName: Rule1[Name.Ident] = rule {
       SP ~ capture(optional("_") ~ Letters.UpperLetter ~ zeroOrMore(Letters.LegalLetter)) ~ SP ~> Name.Ident
     }
 

@@ -418,6 +418,9 @@ object SemanticTokensProvider {
     case Expression.Cast(exp, _, _, _, tpe, _, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 
+    case Expression.Mask(exp, _, _, _, _) =>
+      visitExp(exp)
+
     case Expression.Upcast(exp, tpe, _) =>
       visitExp(exp) ++ visitType(tpe)
 
@@ -537,9 +540,6 @@ object SemanticTokensProvider {
       val o = getSemanticTokenType(sym, exp1.tpe)
       val t = SemanticToken(o, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-
-    case Expression.Debug(exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
   }
 
   /**

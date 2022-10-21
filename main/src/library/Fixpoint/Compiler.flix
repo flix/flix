@@ -35,7 +35,7 @@ namespace Fixpoint {
     /// This means to compile all rules in stratum 0, then stratum 1 and so on.
     /// A rule belongs to the same stratum as its head predicate.
     ///
-    def compile(d: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] with ToString[v] = match d {
+    def compile(d: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] = match d {
         case Datalog(facts, rules) => region r {
             let stmts = new MutList(r);
             List.foreach(compileRule(stmts), facts);
@@ -68,7 +68,7 @@ namespace Fixpoint {
     /// Note that Eval-Rule is the code emitted by `compileRule`
     /// and Eval-Rule-Incr is the code emitted by `compileRuleIncr`.
     ///
-    def compileStratum(stmts: MutList[RamStmt[v], r], stratum: List[Constraint[v]]): Unit \ Write(r) with ToString[v] = region r {
+    def compileStratum(stmts: MutList[RamStmt[v], r], stratum: List[Constraint[v]]): Unit \ Write(r) = region r {
         let idb = List.foldRight(match Constraint(HeadAtom(pred, den, terms), _) -> {
             let arity = List.length(terms);
             Map.insert(pred, (arity, den))
@@ -122,7 +122,7 @@ namespace Fixpoint {
     ///         end
     ///     end
     ///
-    def compileRule(stmts: MutList[RamStmt[v], r], rule: Constraint[v]): Unit \ Write(r) with ToString[v] = match rule {
+    def compileRule(stmts: MutList[RamStmt[v], r], rule: Constraint[v]): Unit \ Write(r) = match rule {
         case Constraint(HeadAtom(headSym, headDen, headTerms), body) =>
             let augBody = augmentBody(body);
             let env = unifyVars(augBody);
@@ -174,7 +174,7 @@ namespace Fixpoint {
     /// Note that there are two join loops, because there are two positive atoms.
     /// Also note how in the first loop, `B` is the focused atom and `C` is focused in the second loop.
     ///
-    def compileRuleIncr(stmts: MutList[RamStmt[v], r], rule: Constraint[v]): Unit \ Write(r) with ToString[v] = match rule {
+    def compileRuleIncr(stmts: MutList[RamStmt[v], r], rule: Constraint[v]): Unit \ Write(r) = match rule {
         case Constraint(HeadAtom(headSym, headDen, headTerms), body) =>
             let augBody = augmentBody(body);
             let env = unifyVars(augBody);
@@ -254,7 +254,7 @@ namespace Fixpoint {
     /// Note that row variables not unique across rules.
     ///
     def augmentBody(body: List[BodyPredicate[v]]): List[(BodyPredicate[v], RowVar)] =
-        List.mapWithIndex(atom -> i -> match atom {
+        List.mapWithIndex(i -> atom -> match atom {
             case BodyAtom(predSym, _, Polarity.Positive, _, _) => (atom, RowVar.Named("${predSym}$${i}"))
             case _ => (atom, RowVar.Named("IfYouSeeThisYouFoundABug"))
         }, body)
@@ -271,7 +271,7 @@ namespace Fixpoint {
     def unifyVars(body: List[(BodyPredicate[v], RowVar)]): Map[VarSym, RamTerm[v]] =
         List.foldLeft(acc -> match (atom, rowVar) -> match atom {
             case BodyAtom(_, denotation, Polarity.Positive, _, terms) =>
-                List.mapWithIndex(term -> i -> (term, i), terms) |>
+                List.mapWithIndex(i -> term -> (term, i), terms) |>
                 List.foldRight(match (term, i) -> match term {
                     case BodyTerm.Var(var) => match denotation {
                         case Denotation.Relational =>
@@ -306,7 +306,7 @@ namespace Fixpoint {
     ///
     def compileBody(env: Map[VarSym, RamTerm[v]], body: List[(BodyPredicate[v], RowVar)]): List[BoolExp[v]] =
         List.foldRight(match (atom, rowVar) -> acc ->
-            let compileBodyTerm = term -> j -> match term {
+            let compileBodyTerm = j -> term -> match term {
                 case BodyTerm.Wild      => RamTerm.RowLoad(rowVar, j)
                 case BodyTerm.Var(var)  => unwrap(Map.get(var, env))
                 case BodyTerm.Lit(v)    => RamTerm.Lit(v)
@@ -314,7 +314,7 @@ namespace Fixpoint {
             match atom {
                 case BodyAtom(_, denotation, Polarity.Positive, _, terms) =>
                     List.mapWithIndex(compileBodyTerm, terms) |>
-                    List.mapWithIndex(t -> i -> match denotation {
+                    List.mapWithIndex(i -> t -> match denotation {
                         case Denotation.Relational => BoolExp.Eq(RamTerm.RowLoad(rowVar, i), t)
                         case Denotation.Latticenal(_, leq, _, _) =>
                             if (i < List.length(terms) - 1)

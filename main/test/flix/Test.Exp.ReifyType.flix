@@ -55,6 +55,18 @@ namespace Test/Exp/ReifyType {
     def reifyInt6402(): Bool = reflect(1i64) == ReifiedInt64
 
     @test
+    def reifyBigInt01(): Bool = reifyType BigInt == ReifiedBigInt
+
+    @test
+    def reifyBigInt02(): Bool = reflect(1ii) == ReifiedBigInt
+
+    @test
+    def reifyString01(): Bool = reifyType String == ReifiedString
+
+    @test
+    def reifyString02(): Bool = reflect("hello") == ReifiedString
+
+    @test
     def reifyArrayUnit3201(): Bool = reifyType Array[Unit, Static] == ReifiedArray(ReifiedUnit)
 
     @test
@@ -107,6 +119,18 @@ namespace Test/Exp/ReifyType {
 
     @test
     def reifyArrayInt6402(): Bool \ IO = reflect([1i64]) == ReifiedArray(ReifiedInt64)
+
+    @test
+    def reifyArrayBigInt01(): Bool = reifyType Array[BigInt, Static] == ReifiedArray(ReifiedBigInt)
+
+    @test
+    def reifyArrayBigInt02(): Bool \ IO = reflect([1ii]) == ReifiedArray(ReifiedBigInt)
+
+    @test
+    def reifyArrayString01(): Bool = reifyType Array[String, Static] == ReifiedArray(ReifiedString)
+
+    @test
+    def reifyArrayString02(): Bool \ IO = reflect(["hello"]) == ReifiedArray(ReifiedString)
 
     def reflect(_: a): ReifiedType = reifyType a
 
