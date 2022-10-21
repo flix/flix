@@ -595,12 +595,12 @@ object Lowering {
     // becomes:
     //     let ch1 = ?ch1;
     //     let ch2 = ?ch2;
-    //     match selectFrom([mpmcAdmin(c1), mpmcAdmin(c2)]) @ Static, false) {  // true if no default
+    //     match selectFrom([mpmcAdmin(ch1), mpmcAdmin(ch2)]) @ Static, false) {  // true if no default
     //         case (0, locks) =>
-    //             let x = unsafeGetAndUnlock(c1, locks);
+    //             let x = unsafeGetAndUnlock(ch1, locks);
     //             ?handlech1
     //         case (1, locks) =>
-    //             let y = unsafeGetAndUnlock(c2, locks);
+    //             let y = unsafeGetAndUnlock(ch2, locks);
     //             ?handlech2
     //         case (-1, _) =>                                                  // omitted if no default
     //             ?default                                                     //
