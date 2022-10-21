@@ -19,7 +19,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation, Fixity, Modifiers, Polarity}
-import ca.uwaterloo.flix.language.ast.TypedAst.Expression.NewChannel
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
@@ -58,6 +57,15 @@ object Lowering {
 
     lazy val DebugWithPrefix: Symbol.DefnSym = Symbol.mkDefnSym("debugWithPrefix")
 
+    lazy val ChannelNew: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.newChannel")
+    lazy val ChannelPut: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.put")
+    lazy val ChannelGet: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.get")
+    lazy val ChannelMpmcAdmin: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.mpmcAdmin")
+    lazy val ChannelSelectFrom: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.selectFrom")
+    lazy val ChannelUnsafeGetAndUnlock: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.unsafeGetAndUnlock")
+
+    lazy val Unreachable: Symbol.DefnSym = Symbol.mkDefnSym("unreachable!")
+
     /**
       * Returns the definition associated with the given symbol `sym`.
       */
@@ -89,6 +97,11 @@ object Lowering {
     lazy val Boxed: Symbol.EnumSym = Symbol.mkEnumSym("Boxed")
 
     lazy val FList: Symbol.EnumSym = Symbol.mkEnumSym("List")
+
+    lazy val ChannelMpmc: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent/Channel.Mpmc")
+    lazy val ChannelMpmcAdmin: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent/Channel.MpmcAdmin")
+
+    lazy val ConcurrentReentrantLock: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent/ReentrantLock.ReentrantLock")
   }
 
   private object Sigs {
@@ -123,6 +136,10 @@ object Lowering {
 
     lazy val Comparison: Type = Type.mkEnum(Enums.Comparison, Nil, SourceLocation.Unknown)
     lazy val Boxed: Type = Type.mkEnum(Enums.Boxed, Nil, SourceLocation.Unknown)
+
+    lazy val ChannelMpmcAdmin: Type = Type.mkEnum(Enums.ChannelMpmcAdmin, Nil, SourceLocation.Unknown)
+
+    lazy val ConcurrentReentrantLock: Type = Type.mkEnum(Enums.ConcurrentReentrantLock, Nil, SourceLocation.Unknown)
 
     def mkList(t: Type, loc: SourceLocation): Type = Type.mkEnum(Enums.FList, List(t), loc)
 
@@ -541,24 +558,73 @@ object Lowering {
     case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.NewChannel(e, t, pur, eff, loc)
+      val newChannel = Expression.Def(Defs.ChannelNew, Type.mkImpureArrow(e.tpe, t, loc), loc)
+      Expression.Apply(newChannel, e :: Nil, t, pur, eff, loc)
 
     case Expression.GetChannel(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.GetChannel(e, t, pur, eff, loc)
+      val getChannel = Expression.Def(Defs.ChannelGet, Type.mkImpureArrow(e.tpe, t, loc), loc)
+      Expression.Apply(getChannel, e :: Nil, t, pur, eff, loc)
 
-    case Expression.PutChannel(exp1, exp2, tpe, pur, eff, loc) =>
+    case Expression.PutChannel(exp1, exp2, _, pur, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      val t = visitType(tpe)
-      Expression.PutChannel(e1, e2, t, pur, eff, loc)
+      val putChannel = Expression.Def(Defs.ChannelPut, Type.mkImpureUncurriedArrow(List(e2.tpe, e1.tpe), Type.Unit, loc), loc)
+      Expression.Apply(putChannel, List(e2, e1), Type.Unit, pur, eff, loc)
 
     case Expression.SelectChannel(rules, default, tpe, pur, eff, loc) =>
       val rs = rules.map(visitSelectChannelRule)
-      val d = default.map(visitExp)
+      val maybeD = default.map(visitExp)
       val t = visitType(tpe)
-      Expression.SelectChannel(rs, d, t, pur, eff, loc)
+
+      val admins = rs map {
+        case SelectChannelRule(_, c, _) =>
+          val admin = Expression.Def(Defs.ChannelMpmcAdmin, Type.mkPureArrow(c.tpe, Types.ChannelMpmcAdmin, loc), loc)
+          Expression.Apply(admin, List(c), Types.ChannelMpmcAdmin, pur, eff, loc)
+      }
+      val adminArray = mkArray(admins, Types.ChannelMpmcAdmin, loc)
+
+      val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
+
+      val selectRetTpe = Type.mkTuple(List(Type.Int32, locksType), loc)
+      val selectTpe = Type.mkImpureUncurriedArrow(List(adminArray.tpe, Type.Bool), selectRetTpe, loc)
+      val select = Expression.Def(Defs.ChannelSelectFrom, selectTpe, loc)
+      val blocking = maybeD match {
+        case Some(_) => Expression.False(loc)
+        case None => Expression.True(loc)
+      }
+      val selectExp = Expression.Apply(select, List(adminArray, blocking), selectRetTpe, pur, eff, loc)
+
+      val cases = rs.zipWithIndex map {
+        case (SelectChannelRule(sym, chan, exp), i) =>
+          val locksSym = mkLetSym("locks", loc)
+          val pat = Pattern.Tuple(List(Pattern.Int32(i, loc), Pattern.Var(locksSym, locksType, loc)), selectRetTpe, loc)
+          val getTpe = chan.tpe match {
+            case Type.Apply(_, t, _) => t
+            case _ => throw InternalCompilerException("Unexpected channel type found.")
+          }
+          val get = Expression.Def(Defs.ChannelUnsafeGetAndUnlock, Type.mkImpureUncurriedArrow(List(chan.tpe, locksType), getTpe, loc), loc)
+          val getExp = Expression.Apply(get, List(chan, Expression.Var(locksSym, locksType, loc)), getTpe, pur, eff, loc)
+          val e = Expression.Let(sym, Ast.Modifiers.Empty, getExp, exp, exp.tpe, pur, eff, loc)
+          MatchRule(pat, Expression.False(loc), e)
+      }
+
+      val unreachable = Expression.Def(Defs.Unreachable, Type.mkPureArrow(Type.Unit, t, loc), loc)
+      val unreachableExp = Expression.Apply(unreachable, Nil, t, pur, eff, loc)
+      val unreachableMatch = MatchRule(Pattern.Wild(t, loc), Expression.False(loc), unreachableExp)
+
+      val extraCases = maybeD match {
+        case Some(d) =>
+          val locksSym = mkLetSym("locks", loc)
+          val pat = Pattern.Tuple(List(Pattern.Int32(-1, loc), Pattern.Var(locksSym, locksType, loc)), selectRetTpe, loc)
+          val defaultMatch = MatchRule(pat, Expression.False(loc), d)
+          List(defaultMatch, unreachableMatch)
+        case _ =>
+          List(unreachableMatch)
+      }
+
+      Expression.Match(selectExp, cases ++ extraCases, tpe, pur, eff, loc)
 
     case Expression.Spawn(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
@@ -767,6 +833,9 @@ object Lowering {
         case Kind.SchemaRow => Type.Var(sym.withKind(Kind.Star), loc)
         case _ => tpe0
       }
+
+      case Type.Cst(TypeConstructor.Channel, loc) =>
+        Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc)
 
       case Type.Cst(_, _) => tpe0
 
