@@ -185,11 +185,11 @@ namespace Concurrent/Channel {
         element
 
     ///
-    /// Retrieves an element from the channel `c`.
+    /// Retrieves an element from the channel `c` and unlocks `locks` after doing so.
     /// Assumes the channel to be non-empty.
     ///
     @Internal
-    pub def unsafeGet(c: Mpmc[a]): a \ IO = {
+    pub def unsafeGetAndUnlock(c: Mpmc[a], locks: List[ReentrantLock]): a \ IO = {
         let Mpmc(admin, elementDeque) = c;
         let MpmcAdmin(_, channelLock, _, _, size, _, _) = admin;
         lock(channelLock);
@@ -199,9 +199,9 @@ namespace Concurrent/Channel {
         let optionalElement = MutDeque.popFront(elementDeque);
         size := deref size - 1;
 
-        match optionalElement {
+        let value = match optionalElement {
             case None =>
-                // The compiler should only use `unsafeGet` based on the
+                // The compiler should only use `unsafeGetAndUnlock` based on the
                 // guaranteed output of `select`, so this should never happen.
                 bug!("assertiveGet could not retrieve channel element")
 
@@ -210,7 +210,12 @@ namespace Concurrent/Channel {
                 signalPutters(admin);
                 unlock(channelLock);
                 element
-        }
+        };
+
+        // Unlock all the locks
+        List.foreach(unlock, locks);
+
+        value
     }
 
     ///
@@ -218,7 +223,9 @@ namespace Concurrent/Channel {
     /// along with a set of locks to be unlocked after retrieval.
     /// Returns `(-1, _)` if no channels have elements and `blocking == false`,
     /// otherwise this blocks.
-    /// OBS: Caller Must call `unlockLocks` on the returned list of locks post call.
+    /// OBS: In the blocking case, caller Must call `unlockLocks` on the
+    ///      returned list of locks post call.
+    ///      In the non-blocking case, selectFrom unlocks all locks first
     ///
     @Internal
     pub def selectFrom(
@@ -236,14 +243,6 @@ namespace Concurrent/Channel {
             Array.sortBy(match MpmcAdmin(id, _, _, _, _, _, _) -> id) |>
             Array.map(match MpmcAdmin(_, rlock, _, _, _, _, _) -> rlock);
         selectHelper(channels, blocking, sortedLocks, selectLock, selectCondition)
-
-    ///
-    /// Unlock all locks in `locks`.
-    ///
-    @Internal
-    pub def unlockLocks(locks: List[ReentrantLock]): Unit \ IO = {
-        List.foreach(unlock, locks)
-    }
 
     ///
     /// The fairness policy of the locks.
@@ -315,8 +314,9 @@ namespace Concurrent/Channel {
     ///
     /// Recursive helper function for select, returns the index of the first
     /// channel that has an element in the array along with a set of locks to
-    /// be unlocked after retrieval. Returns `(-1, _)` if no channels have
-    /// elements and `blocking == false`, otherwise this blocks.
+    /// be unlocked after retrieval. Returns `(-1, _)` and unlocks
+    /// `sortedLocks` if no channels have elements and `blocking == false`,
+    /// otherwise this blocks.
     ///
     def selectHelper(
         channels: Array[MpmcAdmin, Static],
@@ -373,8 +373,11 @@ namespace Concurrent/Channel {
 
                     // Try again
                     selectHelper(channels, blocking, sortedLocks, selectLock, selectCondition)
-                } else
-                    (-1, Array.toList(sortedLocks) `List.append` (selectLock :: Nil))
+                } else {
+                    (Array.toList(sortedLocks) `List.append` (selectLock :: Nil)) |>
+                        List.foreach(unlock);
+                    (-1, Nil)
+                }
             }
         }
 
