@@ -395,4 +395,16 @@ namespace Test/Exp/Concurrency/Select {
         }
     }
 
+    @test
+    def testSelectSideEffecting02(): Bool \ IO = {
+        let c1 = chan Int32 10;
+        let c2 = chan Int32 10;
+        let c3 = chan Int32 10;
+
+        select {
+            case x <- {c3 <- 1; c1} => x + (<- c2) + (<- c3) == 6
+            case x <- {c2 <- 2; c2} => x + (<- c1) + (<- c3) == 6
+            case x <- {c1 <- 3; c3} => x + (<- c1) + (<- c2) == 6
+        }
+    }
 }
