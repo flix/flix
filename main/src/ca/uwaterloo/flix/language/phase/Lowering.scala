@@ -64,8 +64,6 @@ object Lowering {
     lazy val ChannelSelectFrom: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.selectFrom")
     lazy val ChannelUnsafeGetAndUnlock: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.unsafeGetAndUnlock")
 
-    lazy val Unreachable: Symbol.DefnSym = Symbol.mkDefnSym("unreachable!")
-
     /**
       * Returns the definition associated with the given symbol `sym`.
       */
@@ -570,6 +568,7 @@ object Lowering {
     //     <- c
     // becomes a call to the standard library function:
     //     Concurrent/Channel.get(c)
+    //
     case Expression.GetChannel(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
@@ -580,6 +579,7 @@ object Lowering {
     //     c <- 42
     // becomes a call to the standard library function:
     //     Concurrent/Channel.put(42, c)
+    //
     case Expression.PutChannel(exp1, exp2, _, pur, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -604,9 +604,9 @@ object Lowering {
     //             ?handlech2
     //         case (-1, _) =>                                                  // Omitted if no default
     //             ?default                                                     // Unlock is handled by selectFrom
-    //         case _ =>
-    //             unreachable!()
     //     }
+    // Note: match is not exhaustive: we're relying on the simplifier to handle this for us
+    //
     case Expression.SelectChannel(rules, default, tpe, pur, eff, loc) =>
       val rs = rules.map(visitSelectChannelRule)
       val d = default.map(visitExp)
@@ -616,7 +616,7 @@ object Lowering {
       val adminArray = mkChannelAdminArray(rs, channels, loc)
       val selectExp = mkChannelSelect(adminArray, d, loc)
       val cases = mkChannelCases(rs, channels, selectExp.tpe, pur, eff, loc)
-      val extraCases = mkChannelDefaultCases(d, t, selectExp.tpe, pur, eff, loc)
+      val extraCases = mkChannelDefaultCase(d, t, selectExp.tpe, pur, eff, loc)
       val matchExp = Expression.Match(selectExp, cases ++ extraCases, t, pur, eff, loc)
 
       channels.foldRight[Expression](matchExp) {
@@ -1359,22 +1359,18 @@ object Lowering {
   }
 
   /**
-    * Construct additional MatchRules to handle the (optional) default and unreachable cases
+    * Construct additional MatchRule to handle the (optional) default case
     */
-  private def mkChannelDefaultCases(default: Option[Expression], t: Type, retTpe: Type, pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): List[MatchRule] = {
-    val unreachable = Expression.Def(Defs.Unreachable, Type.mkPureArrow(Type.Unit, t, loc), loc)
-    val unreachableExp = Expression.Apply(unreachable, Nil, t, pur, eff, loc)
-    val unreachableMatch = MatchRule(Pattern.Wild(Type.freshVar(Kind.Star, loc, text = Ast.VarText.FallbackText("wild")), loc), Expression.True(loc), unreachableExp)
-
+  private def mkChannelDefaultCase(default: Option[Expression], t: Type, retTpe: Type, pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): List[MatchRule] = {
     val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
     default match {
       case Some(d) =>
         val locksSym = mkLetSym("locks", loc)
         val pat = Pattern.Tuple(List(Pattern.Int32(-1, loc), Pattern.Var(locksSym, locksType, loc)), retTpe, loc)
         val defaultMatch = MatchRule(pat, Expression.True(loc), d)
-        List(defaultMatch, unreachableMatch)
+        List(defaultMatch)
       case _ =>
-        List(unreachableMatch)
+        List()
     }
   }
 
