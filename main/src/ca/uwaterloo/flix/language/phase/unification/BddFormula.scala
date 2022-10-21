@@ -24,11 +24,14 @@ import com.juliasoft.beedeedee.bdd.BDD
 import com.juliasoft.beedeedee.factories.Factory
 
 import java.util.concurrent.locks.ReentrantLock
+import scala.collection.mutable
+import scala.jdk.CollectionConverters._
+import scala.sys.exit
 
 
 object BddFormula {
 
-  val factory: Factory = Factory.mk(10, 10, 0)
+  val factory: Factory = Factory.mk(1000 * 1000, 100000)
   val lock = new ReentrantLock()
 
   class BddFormula(val dd: BDD) {
@@ -92,8 +95,11 @@ object BddFormula {
       * Returns the set of free variables in `f`.
       */
     override def freeVars(f: BddFormula): SortedSet[Int] = {
-      val bitset = f.getDD().vars()
       var res : SortedSet[Int] = SortedSet.empty
+      if (f.getDD().isOne || f.getDD().isZero) {
+        return res
+      }
+      val bitset = f.getDD().vars()
       var i = bitset.nextSetBit(0)
       while (i >= 0) {
         res = res ++ SortedSet(i)
@@ -107,7 +113,6 @@ object BddFormula {
       */
       //TODO: Check correctness
     override def map(f: BddFormula)(fn: Int => BddFormula): BddFormula = {
-      //val exporter = new DotExporter()
       /*lock.lock()
       val x1 = factory.makeVar(1)
       val notx1 = x1.not()
@@ -131,65 +136,61 @@ object BddFormula {
       if(f.getDD().isOne || f.getDD().isZero) {
         f
       } else {
-        val varSet = freeVars(f)
+        val varSetF = freeVars(f)
+        //println("DD var set: " + varSetF)
+
+        var varSetFull = varSetF
+        for(var_i <- varSetF) {
+          val subst_i = fn(var_i)
+          val varSet_i = freeVars(subst_i)
+          varSetFull = varSetFull ++ varSet_i
+        }
+        //println("Full var set: " + varSetFull)
+        if(varSetF != varSetFull) {
+          /*println("Var sets not equal")
+          println("Orig: " + varSetF)
+          println("Full: " + varSetFull)*/
+        }
 
         //make x -> x' map
-        val maxVar = varSet.max
-        val noVars = varSet.size
+        val maxVar = varSetFull.max
+        val noVars = varSetFull.size
         val newVarNames = (maxVar+1 to maxVar+noVars).toList
-        val varMapForward = varSet.zip(newVarNames).foldLeft(Map.empty[Int, Int]) {
+        val varMapForward = varSetFull.zip(newVarNames).foldLeft(Map.empty[Int, Int]) {
           case (macc, (old_x, new_x)) => macc + (old_x -> new_x)
         }
-        val varMapBackward = varSet.zip(newVarNames).foldLeft(Map.empty[Int, Int]) {
+        val varMapBackward = varSetFull.zip(newVarNames).foldLeft(Map.empty[Int, Int]) {
           case (macc, (old_x, new_x)) => macc + (new_x -> old_x)
         }
         var res = f.getDD()
+        //printBdd(res, "Original BDD")
 
         //for each i in varSet create BddFormula' with primed variables
         //and compose f with BddFormula'
-        for (var_i <- varSet) {
-          if (res.isOne || res.isZero) {
-            return new BddFormula(res)
-          }
-
+        for (var_i <- varSetF) {
           val subst = fn(var_i)
           var substDD = subst.getDD()
-
-          /*if (substDD.isOne) {
-            //println("Stopping early 2");
+          if(substDD.isOne()) {
+            //println("Var: " + var_i + " = true")
             res = res.restrict(var_i, true)
-          } else if (substDD.isZero) {
-            //println("Stopping early 3");
+          } else if(substDD.isZero()) {
+            //println("Var: " + var_i + " = false")
             res = res.restrict(var_i, false)
-          } else {*/
-            /*for (var_j <- freeVars(subst)) {
-              val j_prime = varMapForward(var_j)
-              substDD = substDD.compose(factory.makeVar(j_prime), var_j)
-            }*/
-            //println(freeVars(subst))
-
-            //printBdd(subst.getDD(), "SubstDD before:")
-
-            //println("Hello1")
-            subst.getDD().replaceWith(varMapForward.asInstanceOf[java.util.Map[Integer, Integer]])
-            //println("Hello2")
-            //printBdd(substDD, "SubstDD after:")
-
-            res.compose(substDD, var_i)
-            //printBdd(res, "Res after comp:")
-
-          //}
+          } else if(!substDD.isEquivalentTo(factory.makeVar(var_i))) {
+            //println("Var: " + var_i)
+            //printBdd(substDD, "Subst before")
+            substDD = substDD.replace(varMapForward.asJava.asInstanceOf[java.util.Map[Integer,Integer]])
+            //printBdd(substDD, "Subst after")
+            res = res.compose(substDD, var_i)
+            //printBdd(res, "Res after subst")
+          }
         }
 
-        /*for(i_prime <- freeVars(new BddFormula(res))) {
-          val var_i = varMapBackward(i_prime)
-          res = res.compose(factory.makeVar(var_i), i_prime)
-        }*/
+        //printBdd(res, "Res before replacement")
+        res = res.replace(varMapBackward.asJava.asInstanceOf[java.util.Map[Integer,Integer]])
+        //printBdd(res, "Res after replacement")
+        //println()
 
-        res.replaceWith(varMapBackward.asInstanceOf[java.util.Map[Integer, Integer]])
-        //printBdd(res, "Res before return:")
-
-        //println("Done")
         new BddFormula(res)
       }
     }
@@ -220,8 +221,8 @@ object BddFormula {
       * Converts the given formula f into a type.
       */
     override def toType(f: BddFormula, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
-      val res = createTypeFromBDDAux(f.getDD(), Type.True, env)
-      res
+      //printBdd(f.getDD(), "toType")
+      createTypeFromBDDAux(f.getDD(), Type.True, env)
     }
 
     //TODO: Optimize
@@ -232,7 +233,7 @@ object BddFormula {
       val currentVar = dd.`var`()
       val typeVar = env.getBackward(currentVar) match {
         case Some(sym) => Type.Var(sym, SourceLocation.Unknown)
-        case None => throw InternalCompilerException(s"unexpected unknown ID: $currentVar")
+        case None => /*printBdd(dd, "Wrong dd"); println(env);*/ throw InternalCompilerException(s"unexpected unknown ID: $currentVar")
       }
 
       val lowType = Type.mkApply(Type.And, List(tpe, Type.Apply(Type.Not, typeVar, SourceLocation.Unknown)), SourceLocation.Unknown)
