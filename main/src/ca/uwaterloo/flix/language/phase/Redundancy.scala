@@ -264,6 +264,8 @@ object Redundancy {
 
     case Expression.Float64(_, _) => Used.empty
 
+    case Expression.BigDecimal(_, _) => Used.empty
+
     case Expression.Int8(_, _) => Used.empty
 
     case Expression.Int16(_, _) => Used.empty
@@ -738,6 +740,7 @@ object Redundancy {
     case Pattern.Char(_, _) => Used.empty
     case Pattern.Float32(_, _) => Used.empty
     case Pattern.Float64(_, _) => Used.empty
+    case Pattern.BigDecimal(_, _) => Used.empty
     case Pattern.Int8(_, _) => Used.empty
     case Pattern.Int16(_, _) => Used.empty
     case Pattern.Int32(_, _) => Used.empty
@@ -900,6 +903,7 @@ object Redundancy {
     case Pattern.Char(_, _) => Set.empty
     case Pattern.Float32(_, _) => Set.empty
     case Pattern.Float64(_, _) => Set.empty
+    case Pattern.BigDecimal(_, _) => Set.empty
     case Pattern.Int8(_, _) => Set.empty
     case Pattern.Int16(_, _) => Set.empty
     case Pattern.Int32(_, _) => Set.empty

@@ -260,6 +260,8 @@ object Lowering {
 
     case Expression.Float64(_, _) => exp0
 
+    case Expression.BigDecimal(_, _) => exp0
+
     case Expression.Int8(_, _) => exp0
 
     case Expression.Int16(_, _) => exp0
@@ -710,6 +712,8 @@ object Lowering {
 
     case Pattern.Float64(_, _) => pat0
 
+    case Pattern.BigDecimal(_, _) => pat0
+
     case Pattern.Int8(_, _) => pat0
 
     case Pattern.Int16(_, _) => pat0
@@ -978,6 +982,9 @@ object Lowering {
 
     case Pattern.Float64(lit, loc) =>
       mkBodyTermLit(box(Expression.Float64(lit, loc)))
+
+    case Pattern.BigDecimal(lit, loc) =>
+      mkBodyTermLit(box(Expression.BigDecimal(lit, loc)))
 
     case Pattern.Int8(lit, loc) =>
       mkBodyTermLit(box(Expression.Int8(lit, loc)))
@@ -1484,6 +1491,8 @@ object Lowering {
     case Expression.Float32(_, _) => exp0
 
     case Expression.Float64(_, _) => exp0
+
+    case Expression.BigDecimal(_, _) => exp0
 
     case Expression.Int8(_, _) => exp0
 

@@ -98,6 +98,8 @@ object LambdaLift {
 
       case SimplifiedAst.Expression.Float64(lit, loc) => LiftedAst.Expression.Float64(lit, loc)
 
+      case SimplifiedAst.Expression.BigDecimal(lit, loc) => LiftedAst.Expression.BigDecimal(lit, loc)
+
       case SimplifiedAst.Expression.Int8(lit, loc) => LiftedAst.Expression.Int8(lit, loc)
 
       case SimplifiedAst.Expression.Int16(lit, loc) => LiftedAst.Expression.Int16(lit, loc)
