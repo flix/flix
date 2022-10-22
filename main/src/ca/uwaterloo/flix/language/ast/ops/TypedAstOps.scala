@@ -40,6 +40,8 @@ object TypedAstOps {
 
       case Expression.Float64(lit, loc) => Map.empty
 
+      case Expression.BigDecimal(lit, loc) => Map.empty
+
       case Expression.Int8(lit, loc) => Map.empty
 
       case Expression.Int16(lit, loc) => Map.empty
@@ -342,6 +344,7 @@ object TypedAstOps {
     case Pattern.Char(lit, loc) => Map.empty
     case Pattern.Float32(lit, loc) => Map.empty
     case Pattern.Float64(lit, loc) => Map.empty
+    case Pattern.BigDecimal(lit, loc) => Map.empty
     case Pattern.Int8(lit, loc) => Map.empty
     case Pattern.Int16(lit, loc) => Map.empty
     case Pattern.Int32(lit, loc) => Map.empty
@@ -379,6 +382,7 @@ object TypedAstOps {
     case Expression.Char(_, _) => Set.empty
     case Expression.Float32(_, _) => Set.empty
     case Expression.Float64(_, _) => Set.empty
+    case Expression.BigDecimal(_, _) => Set.empty
     case Expression.Int8(_, _) => Set.empty
     case Expression.Int16(_, _) => Set.empty
     case Expression.Int32(_, _) => Set.empty
@@ -498,6 +502,8 @@ object TypedAstOps {
     case Expression.Float32(_, _) => Map.empty
 
     case Expression.Float64(_, _) => Map.empty
+
+    case Expression.BigDecimal(_, _) => Map.empty
 
     case Expression.Int8(_, _) => Map.empty
 
@@ -755,6 +761,7 @@ object TypedAstOps {
     case Pattern.Char(_, _) => Map.empty
     case Pattern.Float32(_, _) => Map.empty
     case Pattern.Float64(_, _) => Map.empty
+    case Pattern.BigDecimal(_, _) => Map.empty
     case Pattern.Int8(_, _) => Map.empty
     case Pattern.Int16(_, _) => Map.empty
     case Pattern.Int32(_, _) => Map.empty

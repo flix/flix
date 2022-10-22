@@ -81,6 +81,8 @@ object ResolvedAst {
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends ResolvedAst.Expression
@@ -245,6 +247,8 @@ object ResolvedAst {
     case class Float32(lit: scala.Float, loc: SourceLocation) extends ResolvedAst.Pattern
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends ResolvedAst.Pattern
+
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends ResolvedAst.Pattern
 
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends ResolvedAst.Pattern
 

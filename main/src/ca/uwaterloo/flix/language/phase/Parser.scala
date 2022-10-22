@@ -411,7 +411,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Float: Rule1[ParsedAst.Literal] = rule {
-      Float32 | Float64 | FloatDefault
+      Float32 | Float64 | BigDecimal | FloatDefault
     }
 
     def FloatDefault: Rule1[ParsedAst.Literal.Float64] = rule {
@@ -424,6 +424,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Float64: Rule1[ParsedAst.Literal.Float64] = rule {
       SP ~ Sign ~ SeparableDecDigits ~ "." ~ SeparableDecDigits ~ atomic("f64") ~ SP ~> ParsedAst.Literal.Float64
+    }
+
+    def BigDecimal: Rule1[ParsedAst.Literal.BigDecimal] = rule {
+      SP ~ Sign ~ SeparableDecDigits ~ "." ~ SeparableDecDigits ~ atomic("ff") ~ SP ~> ParsedAst.Literal.BigDecimal
     }
 
     def Int: Rule1[ParsedAst.Literal] = rule {

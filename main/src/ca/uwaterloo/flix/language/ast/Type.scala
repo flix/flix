@@ -242,6 +242,11 @@ object Type {
   val Float64: Type = Type.Cst(TypeConstructor.Float64, SourceLocation.Unknown)
 
   /**
+    * Represents the BigDecimal type.
+    */
+  val BigDecimal: Type = Type.Cst(TypeConstructor.BigDecimal, SourceLocation.Unknown)
+
+  /**
     * Represents the Int8 type.
     */
   val Int8: Type = Type.Cst(TypeConstructor.Int8, SourceLocation.Unknown)
