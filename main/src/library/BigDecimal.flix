@@ -16,6 +16,16 @@
 
 namespace BigDecimal {
 
-    pub def placeholder(): String = "TODO"
+    ///
+    /// Parse the string `s` as an BigDecimal, leading or trailing whitespace is trimmed.
+    /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
+    ///
+    pub def fromString(s: String): Option[BigDecimal] = try {
+        import java.lang.String.strip(): String \ {};
+        import new java.math.BigDecimal(String): BigDecimal \ {} as parseBigDecimal;
+        Some(s |> strip |> parseBigDecimal)
+    } catch {
+        case _: ##java.lang.NumberFormatException => None
+    }
 
 }
