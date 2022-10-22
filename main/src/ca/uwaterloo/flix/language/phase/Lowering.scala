@@ -616,8 +616,8 @@ object Lowering {
       val adminArray = mkChannelAdminArray(rs, channels, loc)
       val selectExp = mkChannelSelect(adminArray, d, loc)
       val cases = mkChannelCases(rs, channels, selectExp.tpe, pur, eff, loc)
-      val extraCases = mkChannelDefaultCase(d, t, selectExp.tpe, pur, eff, loc)
-      val matchExp = Expression.Match(selectExp, cases ++ extraCases, t, pur, eff, loc)
+      val defaultCase = mkSelectDefaultCase(d, t, selectExp.tpe, pur, eff, loc)
+      val matchExp = Expression.Match(selectExp, cases ++ defaultCase, t, pur, eff, loc)
 
       channels.foldRight[Expression](matchExp) {
         case ((sym, c), e) => Expression.Let(sym, Modifiers.Empty, c, e, t, pur, eff, loc)
@@ -1360,14 +1360,15 @@ object Lowering {
 
   /**
     * Construct additional MatchRule to handle the (optional) default case
+    * NB: Does not need to unlock because that is handled inside Concurrent/Channel.selectFrom.
     */
-  private def mkChannelDefaultCase(default: Option[Expression], t: Type, retTpe: Type, pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): List[MatchRule] = {
+  private def mkSelectDefaultCase(default: Option[Expression], t: Type, retTpe: Type, pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): List[MatchRule] = {
     val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
     default match {
-      case Some(d) =>
+      case Some(defaultExp) =>
         val locksSym = mkLetSym("locks", loc)
         val pat = Pattern.Tuple(List(Pattern.Int32(-1, loc), Pattern.Var(locksSym, locksType, loc)), retTpe, loc)
-        val defaultMatch = MatchRule(pat, Expression.True(loc), d)
+        val defaultMatch = MatchRule(pat, Expression.True(loc), defaultExp)
         List(defaultMatch)
       case _ =>
         List()
