@@ -1363,7 +1363,6 @@ object Lowering {
     * NB: Does not need to unlock because that is handled inside Concurrent/Channel.selectFrom.
     */
   private def mkSelectDefaultCase(default: Option[Expression], t: Type, loc: SourceLocation)(implicit flix: Flix): List[MatchRule] = {
-    val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
     default match {
       case Some(defaultExp) =>
         val pat = mkTuplePattern(List(Pattern.Int32(-1, loc), mkWildPattern(loc)), loc)
