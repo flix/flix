@@ -34,13 +34,16 @@ namespace Test/Exp/Cast {
     def testCast11(): BigInt = 0ii as BigInt
 
     @test
-    def testCast12(): String = "hello world" as String
+    def testCast12(): BigDecimal = 0.0ff as BigDecimal
 
     @test
-    def testCast13(): (Int32, Int32, Int32) = (1, 2, 3) as (Int32, Int32, Int32)
+    def testCast13(): String = "hello world" as String
 
     @test
-    def testCast14(): Option[Int32] = Some(42) as Option[Int32]
+    def testCast14(): (Int32, Int32, Int32) = (1, 2, 3) as (Int32, Int32, Int32)
+
+    @test
+    def testCast15(): Option[Int32] = Some(42) as Option[Int32]
 
     @test
     def testCastWithEff01(): Unit \ IO = () as Unit \ IO

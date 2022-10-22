@@ -76,6 +76,11 @@ instance Eq[Float64] {
     pub override def neq(x: Float64, y: Float64): Bool = $FLOAT64_NEQ$(x, y)
 }
 
+instance Eq[BigDecimal] {
+    pub def eq(x: BigDecimal, y: BigDecimal): Bool = $BIGDECIMAL_EQ$(x, y)
+    pub override def neq(x: BigDecimal, y: BigDecimal): Bool = $BIGDECIMAL_NEQ$(x, y)
+}
+
 instance Eq[Int8] {
     pub def eq(x: Int8, y: Int8): Bool = $INT8_EQ$(x, y)
     pub override def neq(x: Int8, y: Int8): Bool = $INT8_NEQ$(x, y)
