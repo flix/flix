@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.UnkindedType.{mkAnd, mkComplement, mkEffect, mkEnum, mkIntersection, mkNot, mkOr, mkPredicate, mkUnappliedTypeAlias, mkUncurriedArrowWithEffect, mkUnion}
+import ca.uwaterloo.flix.language.ast.UnkindedType.{mkAnd, mkComplement, mkEffect, mkEnum, mkIntersection, mkNot, mkOr, mkPredicate, mkUncurriedArrowWithEffect, mkUnion}
 import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Validation._
