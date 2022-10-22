@@ -44,6 +44,12 @@ object Resolver {
   val DerivableSyms: List[Symbol.ClassSym] = List(BoxableSym, EqSym, OrderSym, ToStringSym, HashSym)
 
   /**
+    * Java classes for primitives and Object
+    */
+  private val Int = classOf[Int]
+  private val Object = classOf[AnyRef]
+
+  /**
     * Performs name resolution on the given program `root`.
     */
   def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
@@ -1854,11 +1860,8 @@ object Resolver {
       fqn match {
         case "java.math.BigInteger" => UnkindedType.Cst(TypeConstructor.BigInt, loc).toSuccess
         case "java.lang.String" => UnkindedType.Cst(TypeConstructor.Str, loc).toSuccess
-        case "java.util.function.IntFunction" =>
-          UnkindedType.mkImpureArrow(
-            UnkindedType.Cst(TypeConstructor.Int32, loc),
-            UnkindedType.mkObject(loc), loc
-          ).toSuccess
+        case "java.util.function.IntFunction" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkObject(loc), loc).toSuccess
+        case "java.util.function.IntUnaryOperator" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkInt32(loc), loc).toSuccess
 
         case _ => lookupJvmClass(fqn, loc) map {
           case clazz => UnkindedType.Cst(TypeConstructor.Native(clazz), loc)
@@ -2667,8 +2670,8 @@ object Resolver {
       case UnkindedType.Arrow(_, _, _) =>
         val targsVal = traverse(erased.typeArguments)(targ => getJVMType(targ, targ.loc))
         flatMapN(targsVal) {
-          case int :: obj :: Nil if int == classOf[Int] && obj == classOf[AnyRef] =>
-            Class.forName("java.util.function.IntFunction").toSuccess
+          case Int :: Object :: Nil => Class.forName("java.util.function.IntFunction").toSuccess
+          case Int :: Int :: Nil => Class.forName("java.util.function.IntUnaryOperator").toSuccess
           case _ => ResolutionError.IllegalType(tpe, loc).toFailure
         }
 

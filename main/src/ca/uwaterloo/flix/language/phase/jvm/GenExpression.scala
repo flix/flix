@@ -803,24 +803,11 @@ object GenExpression {
       visitor.visitTypeInsn(NEW, declaration)
       // Duplicate the reference since the first argument for a constructor call is the reference to the object
       visitor.visitInsn(DUP)
-      // Evaluate arguments left-to-right and push them onto the stack.
-      for (arg <- args) {
-        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
-        // Cast the argument to the right type.
-        arg.tpe match {
-          // NB: This is not exhaustive. In the new backend we should handle all types, including multidim arrays.
-          case MonoType.Array(MonoType.Float32) => visitor.visitTypeInsn(CHECKCAST, "[F")
-          case MonoType.Array(MonoType.Float64) => visitor.visitTypeInsn(CHECKCAST, "[D")
-          case MonoType.Array(MonoType.Int8) => visitor.visitTypeInsn(CHECKCAST, "[B")
-          case MonoType.Array(MonoType.Int16) => visitor.visitTypeInsn(CHECKCAST, "[S")
-          case MonoType.Array(MonoType.Int32) => visitor.visitTypeInsn(CHECKCAST, "[I")
-          case MonoType.Array(MonoType.Int64) => visitor.visitTypeInsn(CHECKCAST, "[J")
-          case MonoType.Native(clazz) =>
-            val argType = asm.Type.getInternalName(clazz)
-            visitor.visitTypeInsn(CHECKCAST, argType)
-          case _ => // nop
-        }
-      }
+      // Retrieve the signature.
+      val signature = constructor.getParameterTypes
+
+      pushArgs(visitor, args, signature, currentClass, lenv0, entryPoint)
+
       // Call the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, declaration, "<init>", descriptor, false)
 
@@ -836,25 +823,8 @@ object GenExpression {
       // Retrieve the signature.
       val signature = method.getParameterTypes
 
-      // Evaluate arguments left-to-right and push them onto the stack.
-      for ((arg, argType) <- args.zip(signature)) {
-        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
-        if (!argType.isPrimitive) {
-          // NB: Really just a hack because the backend does not support array JVM types properly.
-          visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
-        } else {
-          arg.tpe match {
-            // NB: This is not exhaustive. In the new backend we should handle all types, including multidim arrays.
-            case MonoType.Array(MonoType.Float32) => visitor.visitTypeInsn(CHECKCAST, "[F")
-            case MonoType.Array(MonoType.Float64) => visitor.visitTypeInsn(CHECKCAST, "[D")
-            case MonoType.Array(MonoType.Int8) => visitor.visitTypeInsn(CHECKCAST, "[B")
-            case MonoType.Array(MonoType.Int16) => visitor.visitTypeInsn(CHECKCAST, "[S")
-            case MonoType.Array(MonoType.Int32) => visitor.visitTypeInsn(CHECKCAST, "[I")
-            case MonoType.Array(MonoType.Int64) => visitor.visitTypeInsn(CHECKCAST, "[J")
-            case _ => // nop
-          }
-        }
-      }
+      pushArgs(visitor, args, signature, currentClass, lenv0, entryPoint)
+
       val declaration = asm.Type.getInternalName(method.getDeclaringClass)
       val name = method.getName
       val descriptor = asm.Type.getMethodDescriptor(method)
@@ -874,24 +844,7 @@ object GenExpression {
     case Expression.InvokeStaticMethod(method, args, _, loc) =>
       addSourceLine(visitor, loc)
       val signature = method.getParameterTypes
-      for ((arg, argType) <- args.zip(signature)) {
-        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
-        if (!argType.isPrimitive) {
-          // NB: Really just a hack because the backend does not support array JVM types properly.
-          visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
-        } else {
-          arg.tpe match {
-            // NB: This is not exhaustive. In the new backend we should handle all types, including multidim arrays.
-            case MonoType.Array(MonoType.Float32) => visitor.visitTypeInsn(CHECKCAST, "[F")
-            case MonoType.Array(MonoType.Float64) => visitor.visitTypeInsn(CHECKCAST, "[D")
-            case MonoType.Array(MonoType.Int8) => visitor.visitTypeInsn(CHECKCAST, "[B")
-            case MonoType.Array(MonoType.Int16) => visitor.visitTypeInsn(CHECKCAST, "[S")
-            case MonoType.Array(MonoType.Int32) => visitor.visitTypeInsn(CHECKCAST, "[I")
-            case MonoType.Array(MonoType.Int64) => visitor.visitTypeInsn(CHECKCAST, "[J")
-            case _ => // nop
-          }
-        }
-      }
+      pushArgs(visitor, args, signature, currentClass, lenv0, entryPoint)
       val declaration = asm.Type.getInternalName(method.getDeclaringClass)
       val name = method.getName
       val descriptor = asm.Type.getMethodDescriptor(method)
@@ -1690,4 +1643,28 @@ object GenExpression {
     visitor.visitLineNumber(loc.beginLine, label)
   }
 
+  /**
+    * Pushes arguments onto the stack ready to invoke a method
+    */
+  private def pushArgs(visitor: MethodVisitor, args: List[Expression], signature: Array[Class[_ <: Object]], currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): Unit = {
+    // Evaluate arguments left-to-right and push them onto the stack.
+    for ((arg, argType) <- args.zip(signature)) {
+      compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
+      if (!argType.isPrimitive) {
+        // NB: Really just a hack because the backend does not support array JVM types properly.
+        visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+      } else {
+        arg.tpe match {
+          // NB: This is not exhaustive. In the new backend we should handle all types, including multidim arrays.
+          case MonoType.Array(MonoType.Float32) => visitor.visitTypeInsn(CHECKCAST, "[F")
+          case MonoType.Array(MonoType.Float64) => visitor.visitTypeInsn(CHECKCAST, "[D")
+          case MonoType.Array(MonoType.Int8) => visitor.visitTypeInsn(CHECKCAST, "[B")
+          case MonoType.Array(MonoType.Int16) => visitor.visitTypeInsn(CHECKCAST, "[S")
+          case MonoType.Array(MonoType.Int32) => visitor.visitTypeInsn(CHECKCAST, "[I")
+          case MonoType.Array(MonoType.Int64) => visitor.visitTypeInsn(CHECKCAST, "[J")
+          case _ => // nop
+        }
+      }
+    }
+  }
 }
