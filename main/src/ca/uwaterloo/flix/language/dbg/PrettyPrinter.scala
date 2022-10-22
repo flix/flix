@@ -74,6 +74,8 @@ object PrettyPrinter {
 
         case Expression.Float64(lit, _) => lit.toString + "f32"
 
+        case Expression.BigDecimal(lit, _) => lit.toString() + "ff"
+
         case Expression.Int8(lit, _) => lit.toString + "i8"
 
         case Expression.Int16(lit, _) => lit.toString + "i16"

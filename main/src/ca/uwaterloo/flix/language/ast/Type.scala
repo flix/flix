@@ -500,6 +500,11 @@ object Type {
   def mkFloat64(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Float64, loc)
 
   /**
+    * Returns the BigDecimal type with the given source location `loc`.
+    */
+  def mkBigDecimal(loc: SourceLocation): Type = Type.Cst(TypeConstructor.BigDecimal, loc)
+
+  /**
     * Returns the Int8 type with the given source location `loc`.
     */
   def mkInt8(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Int8, loc)
@@ -941,6 +946,9 @@ object Type {
     }
     else if (c == java.lang.Double.TYPE) {
       Type.Float64
+    }
+    else if (c == classOf[java.math.BigDecimal]) {
+      Type.BigDecimal
     }
     else if (c == classOf[java.math.BigInteger]) {
       Type.BigInt
