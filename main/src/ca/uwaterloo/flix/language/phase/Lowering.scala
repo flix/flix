@@ -615,8 +615,8 @@ object Lowering {
       val channels = rs map { case SelectChannelRule(_, c, _) => (mkLetSym("chan", loc), c) }
       val adminArray = mkChannelAdminArray(rs, channels, loc)
       val selectExp = mkChannelSelect(adminArray, d, loc)
-      val cases = mkChannelCases(rs, channels, selectExp.tpe, pur, eff, loc)
-      val defaultCase = mkSelectDefaultCase(d, t, selectExp.tpe, pur, eff, loc)
+      val cases = mkChannelCases(rs, channels, pur, eff, loc)
+      val defaultCase = mkSelectDefaultCase(d, t, loc)
       val matchExp = Expression.Match(selectExp, cases ++ defaultCase, t, pur, eff, loc)
 
       channels.foldRight[Expression](matchExp) {
@@ -1340,13 +1340,13 @@ object Lowering {
   /**
     * Construct a sequence of MatchRules corresponding to the given SelectChannelRules
     */
-  private def mkChannelCases(rs: List[SelectChannelRule], channels: List[(Symbol.VarSym, Expression)], retTpe: Type, pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): List[MatchRule] = {
+  private def mkChannelCases(rs: List[SelectChannelRule], channels: List[(Symbol.VarSym, Expression)], pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): List[MatchRule] = {
     val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
 
     rs.zip(channels).zipWithIndex map {
       case ((SelectChannelRule(sym, chan, exp), channel), i) =>
         val locksSym = mkLetSym("locks", loc)
-        val pat = Pattern.Tuple(List(Pattern.Int32(i, loc), Pattern.Var(locksSym, locksType, loc)), retTpe, loc)
+        val pat = mkTuplePattern(List(Pattern.Int32(i, loc), Pattern.Var(locksSym, locksType, loc)), loc)
         val getTpe = chan.tpe match {
           case Type.Apply(_, t, _) => t
           case _ => throw InternalCompilerException("Unexpected channel type found.")
@@ -1362,12 +1362,11 @@ object Lowering {
     * Construct additional MatchRule to handle the (optional) default case
     * NB: Does not need to unlock because that is handled inside Concurrent/Channel.selectFrom.
     */
-  private def mkSelectDefaultCase(default: Option[Expression], t: Type, retTpe: Type, pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): List[MatchRule] = {
+  private def mkSelectDefaultCase(default: Option[Expression], t: Type, loc: SourceLocation)(implicit flix: Flix): List[MatchRule] = {
     val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
     default match {
       case Some(defaultExp) =>
-        val locksSym = mkLetSym("locks", loc)
-        val pat = Pattern.Tuple(List(Pattern.Int32(-1, loc), Pattern.Var(locksSym, locksType, loc)), retTpe, loc)
+        val pat = mkTuplePattern(List(Pattern.Int32(-1, loc), mkWildPattern(loc)), loc)
         val defaultMatch = MatchRule(pat, Expression.True(loc), defaultExp)
         List(defaultMatch)
       case _ =>
@@ -1575,6 +1574,20 @@ object Lowering {
     val tpe = Type.mkImpureUncurriedArrow(exp1.tpe :: exp2.tpe :: Nil, exp2.tpe, loc)
     val innerExp = Expression.Def(Defs.DebugWithPrefix, tpe, loc)
     Expression.Apply(innerExp, exp1 :: exp2 :: Nil, exp2.tpe, Type.Impure, Type.Empty, loc)
+  }
+
+  /**
+    * Returns a Pattern representing a tuple of patterns.
+    */
+  def mkTuplePattern(patterns: List[Pattern], loc: SourceLocation): Pattern = {
+    Pattern.Tuple(patterns, Type.mkTuple(patterns.map(_.tpe), loc), loc)
+  }
+
+  /**
+    * Returns a wilcard (match anything) pattern.
+    */
+  def mkWildPattern(loc: SourceLocation)(implicit flix: Flix): Pattern = {
+    Pattern.Wild(Type.freshVar(Kind.Star, loc, text = Ast.VarText.FallbackText("wild")), loc)
   }
 
   /**
