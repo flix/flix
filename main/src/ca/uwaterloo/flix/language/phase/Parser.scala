@@ -907,11 +907,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def TypeMatch: Rule1[ParsedAst.Expression.MatchType] = {
       def Rule: Rule1[ParsedAst.MatchTypeRule] = rule {
-          keyword("case") ~ WS ~ Names.Variable ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ atomic("=>") ~ optWS ~ Stm ~> ParsedAst.MatchRule
+          keyword("case") ~ WS ~ Names.Variable ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ atomic("=>") ~ optWS ~ Stm ~> ParsedAst.MatchTypeRule
       }
 
       rule {
-        SP ~ keyword("matchType") ~ WS ~ Expression ~ optWS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Match
+        SP ~ keyword("matchType") ~ WS ~ Expression ~ optWS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.MatchType
       }
     }
 
