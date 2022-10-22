@@ -28,6 +28,12 @@ namespace Test/Exp/Tuple {
     def testFloat64Tuple02(): (Float64, Float64, Float64) = (123.456f64, 456.789f64, 789.123f64)
 
     @test
+    def testBigDecimalTuple01(): (BigDecimal, BigDecimal) = (123.456ff, 456.789ff)
+
+    @test
+    def testBigDecimalTuple02(): (BigDecimal, BigDecimal, BigDecimal) = (123.456ff, 456.789ff, 789.123ff)
+
+    @test
     def testInt8Tuple01(): (Int8, Int8) = (1i8, 2i8)
 
     @test

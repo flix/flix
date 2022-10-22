@@ -16,6 +16,9 @@ namespace Test/Exp/Default {
     def testDefaultFloat64(): Bool = ($DEFAULT$: Float64) == 0.0f64
 
     @test
+    def testDefaultBigDecimal(): Bool = ($DEFAULT$: BigDecimal) == 0.0ff
+
+    @test
     def testDefaultInt8(): Bool = ($DEFAULT$: Int8) == 0i8
 
     @test
