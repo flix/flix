@@ -99,6 +99,36 @@ namespace BigDecimal {
         precision(x)
 
     ///
+    /// Returns `x` rounded up to a BigDecimal representing the nearest larger integer value.
+    ///
+    @Time(1) @Space(1)
+    pub def ceil(x: BigDecimal): BigDecimal =
+        import java.math.BigDecimal.setScale(Int32, ##java.math.RoundingMode): ##java.math.BigDecimal \ {};
+        import static get java.math.RoundingMode.CEILING: ##java.math.RoundingMode \ {} as getCeiling;
+        setScale(x, 0, getCeiling())
+
+    ///
+    /// Returns `x` rounded down to a BigDecimal representing the nearest smaller integer value.
+    ///
+    @Time(1) @Space(1)
+    pub def floor(x: BigDecimal): BigDecimal =
+        import java.math.BigDecimal.setScale(Int32, ##java.math.RoundingMode): ##java.math.BigDecimal \ {};
+        import static get java.math.RoundingMode.FLOOR: ##java.math.RoundingMode \ {} as getFloor;
+        setScale(x, 0, getFloor())
+
+    ///
+    /// Returns `x` rounded to a BigDecimal representing the nearest integer value.
+    ///
+    /// The rounding may be upwards or downwards. If the rounding up and rounding down are equally
+    /// close, `x` will be rounded to an even value (i.e. `round(0.5ff64) == 0.0ff64`).
+    ///
+    @Time(1) @Space(1)
+    pub def round(x: BigDecimal): BigDecimal =
+        import java.math.BigDecimal.setScale(Int32, ##java.math.RoundingMode): ##java.math.BigDecimal \ {};
+        import static get java.math.RoundingMode.HALF_EVEN: ##java.math.RoundingMode \ {} as getHalfEven;
+        setScale(x, 0, getHalfEven())
+
+    ///
     /// Convert `x` to an `Option[Int8]`.
     ///
     /// Returns `Some(x as Int8)` if the numeric value of `x` is within the range
