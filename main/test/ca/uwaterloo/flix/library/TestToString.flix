@@ -84,6 +84,22 @@ namespace TestToString {
     def float64ToString04(): Bool = toString(3.14f64) == "3.14"
 
     /////////////////////////////////////////////////////////////////////////////
+    // BigDecimal                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bigDecimalToString01(): Bool = toString(0.0ff) == "0.0"
+
+    @test
+    def bigDecimalToString02(): Bool = toString(1.0ff) == "1.0"
+
+    @test
+    def bigDecimalToString03(): Bool = toString(-1.0ff) == "-1.0"
+
+    @test
+    def bigDecimalToString04(): Bool = toString(3.14ff) == "3.14"
+
+    /////////////////////////////////////////////////////////////////////////////
     // Int8                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 

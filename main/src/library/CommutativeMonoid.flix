@@ -55,6 +55,8 @@ instance CommutativeMonoid[Float32]
 
 instance CommutativeMonoid[Float64]
 
+instance CommutativeMonoid[BigDecimal]
+
 instance CommutativeMonoid[(a1, a2)] with CommutativeMonoid[a1], CommutativeMonoid[a2]
 
 instance CommutativeMonoid[(a1, a2, a3)] with CommutativeMonoid[a1], CommutativeMonoid[a2], CommutativeMonoid[a3]

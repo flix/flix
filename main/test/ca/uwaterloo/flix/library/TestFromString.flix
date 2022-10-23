@@ -54,6 +54,12 @@ namespace TestFromString {
     def testFromStringFloat64Bad(): Bool = fromString("ABC") == None: Option[Float64]
 
     @test
+    def testFromStringBigDecimalGood(): Bool = fromString("123.0") == Some(123.0ff)
+
+    @test
+    def testFromStringBigDecimalBad(): Bool = fromString("ABC") == None: Option[BigDecimal]
+
+    @test
     def testFromStringInt8Good(): Bool = fromString("123") == Some(123i8)
 
     @test
