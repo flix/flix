@@ -92,8 +92,9 @@ class Flix {
     "BitwiseShr.flix" -> LocalResource.get("/src/library/BitwiseShr.flix"),
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
 
-    // Channels
+    // Channels and Threads
     "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
+    "Thread.flix" -> LocalResource.get("/src/library/Thread.flix"),
 
     // Built-in
     "Eq.flix" -> LocalResource.get("/src/library/Eq.flix"),

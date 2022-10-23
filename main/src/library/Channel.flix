@@ -31,12 +31,24 @@ namespace Channel {
     pub def unbuffered(): (Sender[t], Receiver[t]) \ IO = buffered(0)
 
     ///
-    /// Receives a message from the given channel.
+    /// Receives a message from the given channel `r`.
+    ///
+    /// Blocks until a message is dequeued.
     ///
     pub def recv(r: Receiver[t]): t \ IO = <- r
 
     ///
+    /// Optionally receives a message from the given channel `r` without blocking.
+    ///
+    pub def tryRecv(r: Receiver[t]): Option[t] \ IO = select {
+        case m <- r => Some(m)
+        case _      => None
+    }
+
+    ///
     /// Sends the message `m` on the given channel `s`.
+    ///
+    /// Blocks until the message is enqueue.
     ///
     pub def send(r: Sender[t]): t \ IO = <- r
 
