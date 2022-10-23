@@ -13,11 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+type alias Sender[t] = Channel[t]
+type alias Receiver[t] = Channel[t]
 
 namespace Channel {
 
-    def buffered(n: Int32): Unit = ()
+    ///
+    /// Returns a new buffered channel with capacity for `n` elements.
+    ///
+    pub def buffered(n: Int32): (Sender[t], Receiver[t]) \ IO =
+        let c = chan t n;
+        (c, c)
 
+    ///
+    /// Returns a new unbuffered channel (i.e. a channel with zero capacity).
+    ///
+    pub def unbuffered(): (Sender[t], Receiver[t]) \ IO = buffered(0)
+
+    ///
+    /// Receives a message from the given channel.
+    ///
+    pub def recv(r: Receiver[t]): t \ IO = <- r
+
+    ///
+    /// Sends the message `m` on the given channel `s`.
+    ///
+    pub def send(r: Sender[t]): t \ IO = <- r
 
 }
-
