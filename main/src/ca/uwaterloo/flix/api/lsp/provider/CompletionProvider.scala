@@ -613,7 +613,15 @@ object CompletionProvider {
     else {
       return None
     }
-    val (completion, _) = enm.cases.foldLeft("", 1)({
+    val (completion, _) = enm.cases.toList.sortWith{
+      case ((sym1, _), (sym2, _)) => {
+        // Sort the cases by definition order
+        val onEarlierLine = sym1.loc.beginLine < sym2.loc.beginLine
+        val onSameLine = sym1.loc.beginLine == sym2.loc.beginLine
+        val onEarlierCol = sym1.loc.beginCol < sym2.loc.beginCol
+        onEarlierLine || (onSameLine && onEarlierCol)
+      }
+    }.foldLeft(("", 1))({
       case ((acc, z), (sym , cas)) => {
         val name = sym.name
         val (str, k) = cas.tpe.typeConstructor match {
