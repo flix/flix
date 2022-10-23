@@ -53,6 +53,7 @@ object CompletionProvider {
     "Char",
     "Float32",
     "Float64",
+    "BigDecimal",
     "Int8",
     "Int16",
     "Int32",
@@ -512,16 +513,16 @@ object CompletionProvider {
     }
   }
 
-  /** 
+  /**
     * Returns a list of completion items based on case keyword in match expressions
     */
   private def getCaseCompletions()(implicit context: Context, index: Index, root: TypedAst.Root, flix: Flix): Iterable[CompletionItem] = {
     if (root == null) {
       return Nil
     }
-    
+
     val casePattern = raw"\s*ca?s?e?\s?.*".r
-    
+
     if (!(casePattern matches context.prefix)) {
       return Nil
     }
@@ -580,7 +581,7 @@ object CompletionProvider {
     if (root == null) {
       return Nil
     }
-    
+
     val matchPattern = raw".*\s*ma?t?c?h?\s?.*".r
 
     if (!(matchPattern matches context.prefix)) {

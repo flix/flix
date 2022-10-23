@@ -107,6 +107,8 @@ object CodeHinter {
 
     case Expression.Float64(_, _) => Nil
 
+    case Expression.BigDecimal(_, _) => Nil
+
     case Expression.Int8(_, _) => Nil
 
     case Expression.Int16(_, _) => Nil

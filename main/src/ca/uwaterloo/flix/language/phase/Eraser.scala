@@ -86,6 +86,9 @@ object Eraser {
     case FinalAst.Expression.Float64(lit, loc) =>
       ErasedAst.Expression.Float64(lit, loc)
 
+    case FinalAst.Expression.BigDecimal(lit, loc) =>
+      ErasedAst.Expression.BigDecimal(lit, loc)
+
     case FinalAst.Expression.Int8(lit, loc) =>
       ErasedAst.Expression.Int8(lit, loc)
 

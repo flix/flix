@@ -164,6 +164,8 @@ object OccurrenceAnalyzer {
 
     case Expression.Float64(lit, loc) => (OccurrenceAst.Expression.Float64(lit, loc), OccurInfo.One)
 
+    case Expression.BigDecimal(lit, loc) => (OccurrenceAst.Expression.BigDecimal(lit, loc), OccurInfo.One)
+
     case Expression.Int8(lit, loc) => (OccurrenceAst.Expression.Int8(lit, loc), OccurInfo.One)
 
     case Expression.Int16(lit, loc) => (OccurrenceAst.Expression.Int16(lit, loc), OccurInfo.One)

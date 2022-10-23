@@ -399,6 +399,9 @@ object UnkindedType {
     else if (c == java.lang.Double.TYPE) {
       UnkindedType.Cst(TypeConstructor.Float64, SourceLocation.Unknown)
     }
+    else if (c == classOf[java.math.BigDecimal]) {
+      UnkindedType.Cst(TypeConstructor.BigDecimal, SourceLocation.Unknown)
+    }
     else if (c == classOf[java.math.BigInteger]) {
       UnkindedType.Cst(TypeConstructor.BigInt, SourceLocation.Unknown)
     }

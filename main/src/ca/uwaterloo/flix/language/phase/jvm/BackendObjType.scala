@@ -36,6 +36,7 @@ sealed trait BackendObjType {
     */
   val jvmName: JvmName = this match {
     case BackendObjType.Unit => JvmName(DevFlixRuntime, "Unit")
+    case BackendObjType.BigDecimal => JvmName(List("java", "math"), "BigDecimal")
     case BackendObjType.BigInt => JvmName(List("java", "math"), "BigInteger")
     case BackendObjType.Channel(_) => JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), mkName("Channel"))
     case BackendObjType.Lazy(tpe) => JvmName(RootPackage, mkName("Lazy", tpe))
@@ -119,6 +120,8 @@ object BackendObjType {
       pushString("()") ~ ARETURN()
     ))
   }
+
+  case object BigDecimal extends BackendObjType
 
   case object BigInt extends BackendObjType
 

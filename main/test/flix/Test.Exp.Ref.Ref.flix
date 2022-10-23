@@ -34,22 +34,25 @@ namespace Test/Exp/Ref/Ref {
     def testRef11(): Ref[BigInt, Static] \ IO = ref 0ii
 
     @test
-    def testRef12(): Ref[String, Static] \ IO = ref "Hello World!"
+    def testRef12(): Ref[BigDecimal, Static] \ IO = ref 0.0ff
 
     @test
-    def testRef13(): Ref[(Int32, Int32, Int32), Static] \ IO = ref (1, 2, 3)
+    def testRef13(): Ref[String, Static] \ IO = ref "Hello World!"
 
     @test
-    def testRef14(): Ref[Option[Int32], Static] \ IO = ref None : Option[Int32]
+    def testRef14(): Ref[(Int32, Int32, Int32), Static] \ IO = ref (1, 2, 3)
 
     @test
-    def testRef15(): Ref[Option[Int32], Static] \ IO = ref Some(42)
+    def testRef15(): Ref[Option[Int32], Static] \ IO = ref None : Option[Int32]
 
     @test
-    def testRef16(): Ref[Result[Int32, String], Static] \ IO = ref Ok(42): Result[Int32, String]
+    def testRef16(): Ref[Option[Int32], Static] \ IO = ref Some(42)
 
     @test
-    def testRef17(): Ref[Result[Int32, String], Static] \ IO = ref Err("Goodbye World!"): Result[Int32, String]
+    def testRef17(): Ref[Result[Int32, String], Static] \ IO = ref Ok(42): Result[Int32, String]
+
+    @test
+    def testRef18(): Ref[Result[Int32, String], Static] \ IO = ref Err("Goodbye World!"): Result[Int32, String]
 
     @test
     def testRefRegion01(): Unit = // Pure

@@ -76,6 +76,11 @@ object OccurrenceAst {
       def purity: Purity = Pure
     }
 
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends OccurrenceAst.Expression {
+      def tpe: Type = Type.BigDecimal
+      def purity: Purity = Pure
+    }
+
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends OccurrenceAst.Expression {
       def tpe: Type = Type.Int8
       def purity: Purity = Pure

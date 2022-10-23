@@ -75,6 +75,8 @@ object Simplifier {
 
       case TypedAst.Expression.Float64(lit, loc) => SimplifiedAst.Expression.Float64(lit, loc)
 
+      case TypedAst.Expression.BigDecimal(lit, loc) => SimplifiedAst.Expression.BigDecimal(lit, loc)
+
       case TypedAst.Expression.Int8(lit, loc) => SimplifiedAst.Expression.Int8(lit, loc)
 
       case TypedAst.Expression.Int16(lit, loc) => SimplifiedAst.Expression.Int16(lit, loc)
@@ -381,6 +383,7 @@ object Simplifier {
       case TypedAst.Pattern.Char(lit, loc) => SimplifiedAst.Expression.Char(lit, loc)
       case TypedAst.Pattern.Float32(lit, loc) => SimplifiedAst.Expression.Float32(lit, loc)
       case TypedAst.Pattern.Float64(lit, loc) => SimplifiedAst.Expression.Float64(lit, loc)
+      case TypedAst.Pattern.BigDecimal(lit, loc) => SimplifiedAst.Expression.BigDecimal(lit, loc)
       case TypedAst.Pattern.Int8(lit, loc) => SimplifiedAst.Expression.Int8(lit, loc)
       case TypedAst.Pattern.Int16(lit, loc) => SimplifiedAst.Expression.Int16(lit, loc)
       case TypedAst.Pattern.Int32(lit, loc) => SimplifiedAst.Expression.Int32(lit, loc)
@@ -407,6 +410,7 @@ object Simplifier {
       case TypedAst.Pattern.Char(lit, loc) => true
       case TypedAst.Pattern.Float32(lit, loc) => true
       case TypedAst.Pattern.Float64(lit, loc) => true
+      case TypedAst.Pattern.BigDecimal(lit, loc) => true
       case TypedAst.Pattern.Int8(lit, loc) => true
       case TypedAst.Pattern.Int16(lit, loc) => true
       case TypedAst.Pattern.Int32(lit, loc) => true
@@ -438,6 +442,7 @@ object Simplifier {
         case Some(TypeConstructor.Char) => SemanticOperator.CharOp.Eq
         case Some(TypeConstructor.Float32) => SemanticOperator.Float32Op.Eq
         case Some(TypeConstructor.Float64) => SemanticOperator.Float64Op.Eq
+        case Some(TypeConstructor.BigDecimal) => SemanticOperator.BigDecimalOp.Eq
         case Some(TypeConstructor.Int8) => SemanticOperator.Int8Op.Eq
         case Some(TypeConstructor.Int16) => SemanticOperator.Int16Op.Eq
         case Some(TypeConstructor.Int32) => SemanticOperator.Int32Op.Eq
@@ -904,6 +909,8 @@ object Simplifier {
       case SimplifiedAst.Expression.Float32(_, _) => e
 
       case SimplifiedAst.Expression.Float64(_, _) => e
+
+      case SimplifiedAst.Expression.BigDecimal(_, _) => e
 
       case SimplifiedAst.Expression.Int8(_, _) => e
 

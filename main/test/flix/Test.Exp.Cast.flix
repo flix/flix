@@ -34,13 +34,16 @@ namespace Test/Exp/Cast {
     def testCast11(): BigInt = 0ii as BigInt
 
     @test
-    def testCast12(): String = "hello world" as String
+    def testCast12(): BigDecimal = 0.0ff as BigDecimal
 
     @test
-    def testCast13(): (Int32, Int32, Int32) = (1, 2, 3) as (Int32, Int32, Int32)
+    def testCast13(): String = "hello world" as String
 
     @test
-    def testCast14(): Option[Int32] = Some(42) as Option[Int32]
+    def testCast14(): (Int32, Int32, Int32) = (1, 2, 3) as (Int32, Int32, Int32)
+
+    @test
+    def testCast15(): Option[Int32] = Some(42) as Option[Int32]
 
     @test
     def testCastWithEff01(): Unit \ IO = () as Unit \ IO
@@ -76,13 +79,16 @@ namespace Test/Exp/Cast {
     def testCastWithEff11(): BigInt \ IO = 0ii as BigInt \ IO
 
     @test
-    def testCastWithEff12(): String \ IO = "hello world" as String \ IO
+    def testCastWithEff12(): BigDecimal \ IO = 0.0ff as BigDecimal \ IO
 
     @test
-    def testCastWithEff13(): (Int32, Int32, Int32) \ IO = (1, 2, 3) as (Int32, Int32, Int32) \ IO
+    def testCastWithEff13(): String \ IO = "hello world" as String \ IO
 
     @test
-    def testCastWithEff14(): Option[Int32] \ IO = Some(42) as Option[Int32] \ IO
+    def testCastWithEff14(): (Int32, Int32, Int32) \ IO = (1, 2, 3) as (Int32, Int32, Int32) \ IO
+
+    @test
+    def testCastWithEff15(): Option[Int32] \ IO = Some(42) as Option[Int32] \ IO
 
     @test
     def testCastWithWildAndEff01(): Unit \ IO = () as \ IO
@@ -118,12 +124,15 @@ namespace Test/Exp/Cast {
     def testCastWithWildAndEff11(): BigInt \ IO = 0ii as \ IO
 
     @test
-    def testCastWithWildAndEff12(): String \ IO = "hello world" as \ IO
+    def testCastWithWildAndEff12(): BigDecimal \ IO = 0.0ff as \ IO
 
     @test
-    def testCastWithWildAndEff13(): (Int32, Int32, Int32) \ IO = (1, 2, 3) as \ IO
+    def testCastWithWildAndEff13(): String \ IO = "hello world" as \ IO
 
     @test
-    def testCastWithWildAndEff14(): Option[Int32] \ IO = Some(42) as \ IO
+    def testCastWithWildAndEff14(): (Int32, Int32, Int32) \ IO = (1, 2, 3) as \ IO
+
+    @test
+    def testCastWithWildAndEff15(): Option[Int32] \ IO = Some(42) as \ IO
 
 }

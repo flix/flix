@@ -99,6 +99,8 @@ object NamedAst {
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends NamedAst.Expression
 
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends NamedAst.Expression
+
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends NamedAst.Expression
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends NamedAst.Expression
@@ -264,6 +266,8 @@ object NamedAst {
     case class Float32(lit: scala.Float, loc: SourceLocation) extends NamedAst.Pattern
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends NamedAst.Pattern
+
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends NamedAst.Pattern
 
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends NamedAst.Pattern
 
