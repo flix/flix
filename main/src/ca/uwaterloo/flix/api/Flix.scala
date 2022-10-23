@@ -92,6 +92,9 @@ class Flix {
     "BitwiseShr.flix" -> LocalResource.get("/src/library/BitwiseShr.flix"),
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
 
+    // Channels
+    "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
+
     // Built-in
     "Eq.flix" -> LocalResource.get("/src/library/Eq.flix"),
     "Hash.flix" -> LocalResource.get("/src/library/Hash.flix"),
@@ -191,8 +194,6 @@ class Flix {
     "Concurrent/Channel.flix" -> LocalResource.get("/src/library/Concurrent/Channel.flix"),
     "Concurrent/Condition.flix" -> LocalResource.get("/src/library/Concurrent/Condition.flix"),
     "Concurrent/ReentrantLock.flix" -> LocalResource.get("/src/library/Concurrent/ReentrantLock.flix"),
-    "Concurrent/Channel/Ticker.flix" -> LocalResource.get("/src/library/Concurrent/Channel/Ticker.flix"),
-    "Concurrent/Channel/Timer.flix" -> LocalResource.get("/src/library/Concurrent/Channel/Timer.flix"),
 
     "Time/Duration.flix" -> LocalResource.get("/src/library/Time/Duration.flix"),
     "Time/Epoch.flix" -> LocalResource.get("/src/library/Time/Epoch.flix"),
