@@ -49,12 +49,8 @@ object Lowering {
     lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.union")
     lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.project")
     lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.rename")
-
-    lazy val Lift1: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift1")
-    lazy val Lift2: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift2")
-    lazy val Lift3: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift3")
-    lazy val Lift4: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift4")
-    lazy val Lift5: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift5")
+    def ProjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint.injectInto$arity")
+    def Facts(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint.facts$arity")
 
     lazy val DebugWithPrefix: Symbol.DefnSym = Symbol.mkDefnSym("debugWithPrefix")
 
@@ -630,7 +626,7 @@ object Lowering {
       }
 
       // Compute the symbol of the function.
-      val sym = Symbol.mkDefnSym(s"Fixpoint.injectInto$arity")
+      val sym = Defs.ProjectInto(arity)
 
       // The type of the function.
       val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, exp.tpe), Types.Datalog, loc)
@@ -653,7 +649,7 @@ object Lowering {
       }
 
       // Compute the symbol of the function.
-      val sym = Symbol.mkDefnSym(s"Fixpoint.facts$arity")
+      val sym = Defs.Facts(arity)
 
       // The type of the function.
       val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, Types.Datalog), tpe, loc)
