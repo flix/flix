@@ -2644,7 +2644,6 @@ object Typer {
     val classes = List(
       PredefinedClasses.lookupClassSym("Boxable", root),
       PredefinedClasses.lookupClassSym("Eq", root),
-      PredefinedClasses.lookupClassSym("ToString", root),
     )
     classes.map(clazz => Ast.TypeConstraint(Ast.TypeConstraint.Head(clazz, loc), tpe, loc))
   }
@@ -2656,7 +2655,6 @@ object Typer {
     val classes = List(
       PredefinedClasses.lookupClassSym("Boxable", root),
       PredefinedClasses.lookupClassSym("Eq", root),
-      PredefinedClasses.lookupClassSym("ToString", root),
       PredefinedClasses.lookupClassSym("PartialOrder", root),
       PredefinedClasses.lookupClassSym("LowerBound", root),
       PredefinedClasses.lookupClassSym("JoinLattice", root),
