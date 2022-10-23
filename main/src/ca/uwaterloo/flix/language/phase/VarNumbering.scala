@@ -74,6 +74,8 @@ object VarNumbering {
 
       case Expression.Float64(_, _) => i0
 
+      case Expression.BigDecimal(_, _) => i0
+
       case Expression.Int8(_, _) => i0
 
       case Expression.Int16(_, _) => i0

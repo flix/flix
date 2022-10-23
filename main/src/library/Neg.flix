@@ -32,6 +32,10 @@ instance Neg[Float64] {
     pub def neg(x: Float64): Float64 = $FLOAT64_NEG$(x)
 }
 
+instance Neg[BigDecimal] {
+    pub def neg(x: BigDecimal): BigDecimal = $BIGDECIMAL_NEG$(x)
+}
+
 instance Neg[Int8] {
     pub def neg(x: Int8): Int8 = $INT8_NEG$(x)
 }

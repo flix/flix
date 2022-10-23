@@ -67,6 +67,10 @@ object FinalAst {
       final val tpe = MonoType.Float64
     }
 
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends FinalAst.Expression {
+      final val tpe = MonoType.BigDecimal
+    }
+
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends FinalAst.Expression {
       final val tpe = MonoType.Int8
     }

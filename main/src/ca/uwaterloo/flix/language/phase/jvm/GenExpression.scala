@@ -75,6 +75,14 @@ object GenExpression {
         case _ => visitor.visitLdcInsn(d)
       }
 
+    case Expression.BigDecimal(dd, loc) =>
+      addSourceLine(visitor, loc)
+      visitor.visitTypeInsn(NEW, BackendObjType.BigDecimal.jvmName.toInternalName)
+      visitor.visitInsn(DUP)
+      visitor.visitLdcInsn(dd.toString)
+      visitor.visitMethodInsn(INVOKESPECIAL, BackendObjType.BigDecimal.jvmName.toInternalName, "<init>",
+        AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
+
     case Expression.Int8(b, loc) =>
       addSourceLine(visitor, loc)
       compileInt(visitor, b)
@@ -1280,6 +1288,9 @@ object GenExpression {
   private def compileUnaryMinusExpr(visitor: MethodVisitor, sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = sop match {
     case Float32Op.Neg => visitor.visitInsn(FNEG)
     case Float64Op.Neg => visitor.visitInsn(DNEG)
+    case BigDecimalOp.Neg =>
+      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "negate",
+        AsmOps.getMethodDescriptor(Nil, JvmType.BigDecimal), false)
     case Int8Op.Neg =>
       visitor.visitInsn(INEG)
       visitor.visitInsn(I2B)
@@ -1379,17 +1390,20 @@ object GenExpression {
     } else {
       compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
       compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
-      val (intOp, longOp, floatOp, doubleOp, bigIntOp) = o match {
-        case BinaryOperator.Plus => (IADD, LADD, FADD, DADD, "add")
-        case BinaryOperator.Minus => (ISUB, LSUB, FSUB, DSUB, "subtract")
-        case BinaryOperator.Times => (IMUL, LMUL, FMUL, DMUL, "multiply")
-        case BinaryOperator.Remainder => (IREM, LREM, FREM, DREM, "remainder")
-        case BinaryOperator.Divide => (IDIV, LDIV, FDIV, DDIV, "divide")
+      val (intOp, longOp, floatOp, doubleOp, bigDecimalOp, bigIntOp) = o match {
+        case BinaryOperator.Plus => (IADD, LADD, FADD, DADD, "add", "add")
+        case BinaryOperator.Minus => (ISUB, LSUB, FSUB, DSUB, "subtract", "subtract")
+        case BinaryOperator.Times => (IMUL, LMUL, FMUL, DMUL, "multiply", "multiply")
+        case BinaryOperator.Remainder => (IREM, LREM, FREM, DREM, "remainder", "remainder")
+        case BinaryOperator.Divide => (IDIV, LDIV, FDIV, DDIV, "divide", "divide")
         case BinaryOperator.Exponentiate => throw InternalCompilerException("BinaryOperator.Exponentiate already handled.")
       }
       sop match {
         case Float32Op.Add | Float32Op.Sub | Float32Op.Mul | Float32Op.Div => visitor.visitInsn(floatOp)
         case Float64Op.Add | Float64Op.Sub | Float64Op.Mul | Float64Op.Div => visitor.visitInsn(doubleOp)
+        case BigDecimalOp.Add | BigDecimalOp.Sub | BigDecimalOp.Mul | BigDecimalOp.Div =>
+          visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, bigDecimalOp,
+            AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.BigDecimal), false)
         case Int8Op.Add | Int8Op.Sub | Int8Op.Mul | Int8Op.Div | Int8Op.Rem =>
           visitor.visitInsn(intOp)
           visitor.visitInsn(I2B)
@@ -1488,6 +1502,11 @@ object GenExpression {
       case Float64Op.Lt | Float64Op.Le | Float64Op.Gt | Float64Op.Ge | Float64Op.Eq | Float64Op.Neq =>
         visitor.visitInsn(doubleOp)
         visitor.visitJumpInsn(cmp, condElse)
+      case BigDecimalOp.Lt | BigDecimalOp.Le | BigDecimalOp.Gt | BigDecimalOp.Ge | BigDecimalOp.Eq | BigDecimalOp.Neq =>
+        visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
+          AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
+        visitor.visitInsn(ICONST_0)
+        visitor.visitJumpInsn(intOp, condElse)
       case CharOp.Lt | CharOp.Le | CharOp.Gt | CharOp.Ge | CharOp.Eq | CharOp.Neq => visitor.visitJumpInsn(intOp, condElse)
       case Int8Op.Lt | Int8Op.Le | Int8Op.Gt | Int8Op.Ge | Int8Op.Eq | Int8Op.Neq => visitor.visitJumpInsn(intOp, condElse)
       case Int16Op.Lt | Int16Op.Le | Int16Op.Gt | Int16Op.Ge | Int16Op.Eq | Int16Op.Neq => visitor.visitJumpInsn(intOp, condElse)

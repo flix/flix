@@ -38,6 +38,8 @@ object MonoType {
 
   case object Float64 extends MonoType
 
+  case object BigDecimal extends MonoType
+
   case object Int8 extends MonoType
 
   case object Int16 extends MonoType

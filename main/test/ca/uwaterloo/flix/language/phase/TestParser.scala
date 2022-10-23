@@ -304,6 +304,33 @@ class TestParser extends FunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
+  test("ParseError.BigDecimal.01") {
+    val input =
+      s"""
+         |def f(): BigDecimal = 1_.0ff
+         """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("ParseError.BigDecimal.02") {
+    val input =
+      s"""
+         |def f(): BigDecimal = 1_000_.0ff
+         """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("ParseError.BigDecimal.03") {
+    val input =
+      s"""
+         |def f(): Float64 = 1.0_ff
+         """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
   test("ParseError.Regression.01") {
     val input =
       s"""

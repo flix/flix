@@ -633,6 +633,8 @@ object Resolver {
 
         case NamedAst.Expression.Float64(lit, loc) => ResolvedAst.Expression.Float64(lit, loc).toSuccess
 
+        case NamedAst.Expression.BigDecimal(lit, loc) => ResolvedAst.Expression.BigDecimal(lit, loc).toSuccess
+
         case NamedAst.Expression.Int8(lit, loc) => ResolvedAst.Expression.Int8(lit, loc).toSuccess
 
         case NamedAst.Expression.Int16(lit, loc) => ResolvedAst.Expression.Int16(lit, loc).toSuccess
@@ -1268,6 +1270,8 @@ object Resolver {
 
         case NamedAst.Pattern.Float64(lit, loc) => ResolvedAst.Pattern.Float64(lit, loc).toSuccess
 
+        case NamedAst.Pattern.BigDecimal(lit, loc) => ResolvedAst.Pattern.BigDecimal(lit, loc).toSuccess
+
         case NamedAst.Pattern.Int8(lit, loc) => ResolvedAst.Pattern.Int8(lit, loc).toSuccess
 
         case NamedAst.Pattern.Int16(lit, loc) => ResolvedAst.Pattern.Int16(lit, loc).toSuccess
@@ -1754,6 +1758,7 @@ object Resolver {
       case "Char" => UnkindedType.Cst(TypeConstructor.Char, loc).toSuccess
       case "Float32" => UnkindedType.Cst(TypeConstructor.Float32, loc).toSuccess
       case "Float64" => UnkindedType.Cst(TypeConstructor.Float64, loc).toSuccess
+      case "BigDecimal" => UnkindedType.Cst(TypeConstructor.BigDecimal, loc).toSuccess
       case "Int8" => UnkindedType.Cst(TypeConstructor.Int8, loc).toSuccess
       case "Int16" => UnkindedType.Cst(TypeConstructor.Int16, loc).toSuccess
       case "Int32" => UnkindedType.Cst(TypeConstructor.Int32, loc).toSuccess
@@ -1858,6 +1863,7 @@ object Resolver {
 
     case NamedAst.Type.Native(fqn, loc) =>
       fqn match {
+        case "java.math.BigDecimal" => UnkindedType.Cst(TypeConstructor.BigDecimal, loc).toSuccess
         case "java.math.BigInteger" => UnkindedType.Cst(TypeConstructor.BigInt, loc).toSuccess
         case "java.lang.String" => UnkindedType.Cst(TypeConstructor.Str, loc).toSuccess
         case "java.util.function.IntFunction" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkObject(loc), loc).toSuccess
@@ -2530,10 +2536,11 @@ object Resolver {
             erasedRetTpe.baseType match {
               case UnkindedType.Cst(TypeConstructor.Unit, _) | UnkindedType.Cst(TypeConstructor.Bool, _) |
                    UnkindedType.Cst(TypeConstructor.Char, _) | UnkindedType.Cst(TypeConstructor.Float32, _) |
-                   UnkindedType.Cst(TypeConstructor.Float64, _) | UnkindedType.Cst(TypeConstructor.Int8, _) |
-                   UnkindedType.Cst(TypeConstructor.Int16, _) | UnkindedType.Cst(TypeConstructor.Int32, _) |
-                   UnkindedType.Cst(TypeConstructor.Int64, _) | UnkindedType.Cst(TypeConstructor.BigInt, _) |
-                   UnkindedType.Cst(TypeConstructor.Str, _) | UnkindedType.Cst(TypeConstructor.Native(_), _) =>
+                   UnkindedType.Cst(TypeConstructor.Float64, _) | UnkindedType.Cst(TypeConstructor.BigDecimal, _) |
+                   UnkindedType.Cst(TypeConstructor.Int8, _) | UnkindedType.Cst(TypeConstructor.Int16, _) |
+                   UnkindedType.Cst(TypeConstructor.Int32, _) | UnkindedType.Cst(TypeConstructor.Int64, _) |
+                   UnkindedType.Cst(TypeConstructor.BigInt, _) | UnkindedType.Cst(TypeConstructor.Str, _) |
+                   UnkindedType.Cst(TypeConstructor.Native(_), _) =>
 
                 val expectedTpe = UnkindedType.getFlixType(method.getReturnType)
                 if (expectedTpe != erasedRetTpe)
@@ -2603,6 +2610,8 @@ object Resolver {
         case TypeConstructor.Float32 => classOf[Float].toSuccess
 
         case TypeConstructor.Float64 => classOf[Double].toSuccess
+
+        case TypeConstructor.BigDecimal => Class.forName("java.math.BigDecimal").toSuccess
 
         case TypeConstructor.Int8 => classOf[Byte].toSuccess
 

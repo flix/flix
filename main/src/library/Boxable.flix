@@ -203,6 +203,8 @@ instance Boxable[Float64] {
     }
 }
 
+instance Boxable[BigDecimal]
+
 instance Boxable[BigInt]
 
 instance Boxable[String]

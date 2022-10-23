@@ -64,6 +64,8 @@ object Regions {
 
     case Expression.Float64(_, _) => ().toSuccess
 
+    case Expression.BigDecimal(_, _) => ().toSuccess
+
     case Expression.Int8(_, _) => ().toSuccess
 
     case Expression.Int16(_, _) => ().toSuccess

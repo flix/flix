@@ -87,6 +87,12 @@ instance ToString[BigInt] {
         toString(x)
 }
 
+instance ToString[BigDecimal] {
+    pub def toString(x: BigDecimal): String =
+        import java.math.BigDecimal.toString(): String \ {};
+        toString(x)
+}
+
 instance ToString[(a1, a2)] with ToString[a1], ToString[a2] {
     pub def toString(t: (a1, a2)): String = match t {
         case (x1, x2) =>

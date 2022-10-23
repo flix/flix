@@ -121,6 +121,7 @@ class Flix {
     "Array.flix" -> LocalResource.get("/src/library/Array.flix"),
     "Assert.flix" -> LocalResource.get("/src/library/Assert.flix"),
     "Benchmark.flix" -> LocalResource.get("/src/library/Benchmark.flix"),
+    "BigDecimal.flix" -> LocalResource.get("/src/library/BigDecimal.flix"),
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),

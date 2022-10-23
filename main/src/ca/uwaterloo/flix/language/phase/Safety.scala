@@ -73,6 +73,8 @@ object Safety {
 
       case Expression.Float64(_, _) => Nil
 
+      case Expression.BigDecimal(_, _) => Nil
+
       case Expression.Int8(_, _) => Nil
 
       case Expression.Int16(_, _) => Nil
@@ -568,6 +570,7 @@ object Safety {
     case Pattern.Char(_, _) => Nil
     case Pattern.Float32(_, _) => Nil
     case Pattern.Float64(_, _) => Nil
+    case Pattern.BigDecimal(_, _) => Nil
     case Pattern.Int8(_, _) => Nil
     case Pattern.Int16(_, _) => Nil
     case Pattern.Int32(_, _) => Nil

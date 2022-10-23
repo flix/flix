@@ -68,6 +68,7 @@ object Optimizer {
     case Expression.Char(_, _) => true
     case Expression.Float32(_, _) => true
     case Expression.Float64(_, _) => true
+    case Expression.BigDecimal(_, _) => true
     case Expression.Int8(_, _) => true
     case Expression.Int16(_, _) => true
     case Expression.Int32(_, _) => true

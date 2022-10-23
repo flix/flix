@@ -85,6 +85,9 @@ object Finalize {
       case LiftedAst.Expression.Float64(lit, loc) =>
         FinalAst.Expression.Float64(lit, loc)
 
+      case LiftedAst.Expression.BigDecimal(lit, loc) =>
+        FinalAst.Expression.BigDecimal(lit, loc)
+
       case LiftedAst.Expression.Int8(lit, loc) =>
         FinalAst.Expression.Int8(lit, loc)
 
@@ -423,6 +426,8 @@ object Finalize {
             case TypeConstructor.Float32 => MonoType.Float32
 
             case TypeConstructor.Float64 => MonoType.Float64
+
+            case TypeConstructor.BigDecimal => MonoType.BigDecimal
 
             case TypeConstructor.Int8 => MonoType.Int8
 

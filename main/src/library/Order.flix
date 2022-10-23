@@ -235,6 +235,26 @@ instance Order[Float64] {
 
 }
 
+instance Order[BigDecimal] {
+
+    pub override def less(x: BigDecimal, y: BigDecimal): Bool = $BIGDECIMAL_LT$(x, y)
+
+    pub override def lessEqual(x: BigDecimal, y: BigDecimal): Bool = $BIGDECIMAL_LE$(x, y)
+
+    pub override def greater(x: BigDecimal, y: BigDecimal): Bool = $BIGDECIMAL_GT$(x, y)
+
+    pub override def greaterEqual(x: BigDecimal, y: BigDecimal): Bool = $BIGDECIMAL_GE$(x, y)
+
+    pub def compare(x: BigDecimal, y: BigDecimal): Comparison =
+        if ($BIGDECIMAL_LT$(x, y))
+            LessThan
+        else if ($BIGDECIMAL_GT$(x, y))
+            GreaterThan
+        else
+            EqualTo
+
+}
+
 instance Order[Int8] {
 
     pub override def less(x: Int8, y: Int8): Bool = $INT8_LT$(x, y)

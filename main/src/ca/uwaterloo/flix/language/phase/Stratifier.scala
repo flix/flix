@@ -109,6 +109,8 @@ object Stratifier {
 
     case Expression.Float64(_, _) => exp0.toSuccess
 
+    case Expression.BigDecimal(_, _) => exp0.toSuccess
+
     case Expression.Int8(_, _) => exp0.toSuccess
 
     case Expression.Int16(_, _) => exp0.toSuccess
@@ -527,6 +529,8 @@ object Stratifier {
     case Expression.Float32(_, _) => LabelledGraph.empty
 
     case Expression.Float64(_, _) => LabelledGraph.empty
+
+    case Expression.BigDecimal(_, _) => LabelledGraph.empty
 
     case Expression.Int8(_, _) => LabelledGraph.empty
 

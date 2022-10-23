@@ -41,6 +41,12 @@ namespace Test/Exp/Discard {
         discard arr[0]
 
     @test
+    def testBigDecimalDiscard01(): Unit \ IO =
+        let arr = [9999999.0ff];
+        discard arr[0]
+
+
+    @test
     def testInt8Discard01(): Unit \ IO =
         let arr = [8i8];
         discard arr[0]
