@@ -1077,7 +1077,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("UndefinedTypeVar.Expression.01") {
     val input =
       """
-        |def f(): Bool = matchType () {
+        |def f(): Bool = typematch () {
         |    case _: a => true
         |    case _: _ => false
         |}

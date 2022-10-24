@@ -474,11 +474,11 @@ object Kinder {
         case (exp, rules) => KindedAst.Expression.Match(exp, rules, loc)
       }
 
-    case ResolvedAst.Expression.MatchType(exp0, rules0, loc) =>
+    case ResolvedAst.Expression.TypeMatch(exp0, rules0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       val rulesVal = traverse(rules0)(visitMatchTypeRule(_, kenv0, senv, taenv, henv0, root))
       mapN(expVal, rulesVal) {
-        case (exp, rules) => KindedAst.Expression.MatchType(exp, rules, loc)
+        case (exp, rules) => KindedAst.Expression.TypeMatch(exp, rules, loc)
       }
 
     case ResolvedAst.Expression.Choose(star, exps0, rules0, loc) =>

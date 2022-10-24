@@ -1116,7 +1116,7 @@ object Weeder {
         case (e, rs) => WeededAst.Expression.Match(e, rs, loc)
       }
 
-    case ParsedAst.Expression.MatchType(sp1, exp, rules, sp2) =>
+    case ParsedAst.Expression.TypeMatch(sp1, exp, rules, sp2) =>
       val loc = mkSL(sp1, sp2)
       val rulesVal = traverse(rules) {
         case ParsedAst.MatchTypeRule(ident, tpe, body) =>
@@ -1127,7 +1127,7 @@ object Weeder {
           }
       }
       mapN(visitExp(exp, senv), rulesVal) {
-        case (e, rs) => WeededAst.Expression.MatchType(e, rs, loc)
+        case (e, rs) => WeededAst.Expression.TypeMatch(e, rs, loc)
       }
 
     case ParsedAst.Expression.Choose(sp1, star, exps, rules, sp2) =>
@@ -3058,7 +3058,7 @@ object Weeder {
     case ParsedAst.Expression.Scope(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Choose(sp1, _, _, _, _) => sp1
-    case ParsedAst.Expression.MatchType(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.TypeMatch(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordLit(sp1, _, _) => sp1

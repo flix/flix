@@ -893,7 +893,7 @@ object Typer {
           resultEff = Type.mkUnion(eff :: guardEffs ::: bodyEffs, loc)
         } yield (constrs ++ guardConstrs.flatten ++ bodyConstrs.flatten, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.MatchType(exp, rules, loc) =>
+      case KindedAst.Expression.TypeMatch(exp, rules, loc) =>
         val bodies = rules.map(_.exp)
 
         for {
@@ -1983,7 +1983,7 @@ object Typer {
         }
         TypedAst.Expression.Match(e1, rs, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.MatchType(matchExp, rules, loc) =>
+      case KindedAst.Expression.TypeMatch(matchExp, rules, loc) =>
         val e1 = visitExp(matchExp, subst0)
         val rs = rules map {
           case KindedAst.MatchTypeRule(sym, tpe0, exp) =>
@@ -1998,7 +1998,7 @@ object Typer {
         val eff = rs.foldLeft(e1.eff) {
           case (acc, TypedAst.MatchTypeRule(_, _, b)) => Type.mkUnion(List(b.eff, acc), loc)
         }
-        TypedAst.Expression.MatchType(e1, rs, tpe, pur, eff, loc)
+        TypedAst.Expression.TypeMatch(e1, rs, tpe, pur, eff, loc)
 
       case KindedAst.Expression.Choose(_, exps, rules, tvar, loc) =>
         val es = exps.map(visitExp(_, subst0))

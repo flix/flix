@@ -137,7 +137,7 @@ object Safety {
         visit(exp) :::
           rules.flatMap { case MatchRule(_, g, e) => visit(g) ::: visit(e) }
 
-      case Expression.MatchType(exp, rules, _, _, _, _) =>
+      case Expression.TypeMatch(exp, rules, _, _, _, _) =>
         // check whether the last case in the type match looks like `...: _`
         val missingDefault = rules.last match {
           case MatchTypeRule(_, tpe, _) => tpe match {

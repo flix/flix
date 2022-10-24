@@ -457,7 +457,7 @@ object Redundancy {
 
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
-    case Expression.MatchType(exp, rules, _, _, _, _) =>
+    case Expression.TypeMatch(exp, rules, _, _, _, _) =>
       // Visit the match expression.
       val usedMatch = visitExp(exp, env0, rc)
 

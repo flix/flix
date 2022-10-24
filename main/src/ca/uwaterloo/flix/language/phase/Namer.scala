@@ -756,7 +756,7 @@ object Namer {
         case (e, rs) => NamedAst.Expression.Match(e, rs, loc)
       }
 
-    case WeededAst.Expression.MatchType(exp, rules, loc) =>
+    case WeededAst.Expression.TypeMatch(exp, rules, loc) =>
       val expVal = visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0)
       val rulesVal = traverse(rules) {
         case WeededAst.MatchTypeRule(ident, tpe, body) =>
@@ -770,7 +770,7 @@ object Namer {
           }
       }
       mapN(expVal, rulesVal) {
-        case (e, rs) => NamedAst.Expression.MatchType(e, rs, loc)
+        case (e, rs) => NamedAst.Expression.TypeMatch(e, rs, loc)
       }
 
     case WeededAst.Expression.Choose(star, exps, rules, loc) =>
@@ -1547,7 +1547,7 @@ object Namer {
     case WeededAst.Expression.Match(exp, rules, _) => freeVars(exp) ++ rules.flatMap {
       case WeededAst.MatchRule(pat, guard, body) => filterBoundVars(freeVars(guard) ++ freeVars(body), freeVars(pat))
     }
-    case WeededAst.Expression.MatchType(exp, rules, _) => freeVars(exp) ++ rules.flatMap {
+    case WeededAst.Expression.TypeMatch(exp, rules, _) => freeVars(exp) ++ rules.flatMap {
       case WeededAst.MatchTypeRule(ident, _, body) => filterBoundVars(freeVars(body), List(ident))
     }
     case WeededAst.Expression.Choose(_, exps, rules, _) => exps.flatMap(freeVars) ++ rules.flatMap {

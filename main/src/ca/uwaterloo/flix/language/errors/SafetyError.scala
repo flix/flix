@@ -351,7 +351,7 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate that a MatchType expression is missing a default case.
+    * An error raised to indicate that a TypeMatch expression is missing a default case.
     *
     * @param loc the location where the error occurred.
     */
@@ -369,9 +369,9 @@ object SafetyError {
 
     override def explain(formatter: Formatter): Option[String] = Some({
       s"""
-         | A matchType expression must have a default case. For example:
+         | A typematch expression must have a default case. For example:
          |
-         | matchType x {
+         | typematch x {
          |     case y: Int32 => ...
          |     case _: _ => ... // default case
          | }

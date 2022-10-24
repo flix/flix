@@ -399,7 +399,7 @@ object Monomorph {
         }
         Expression.Match(visitExp(exp, env0), rs, subst0(tpe), pur, eff, loc)
 
-      case Expression.MatchType(exp, rules, tpe, pur0, eff0, loc) =>
+      case Expression.TypeMatch(exp, rules, tpe, pur0, eff0, loc) =>
         // use the non-strict substitution
         // to allow free type variables to match with anything
         val expTpe = subst0.nonStrict(exp.tpe)
@@ -420,7 +420,7 @@ object Monomorph {
               val eff = Type.mkUnion(exp.eff, body0.eff, loc.asSynthetic)
               Expression.Let(freshSym, Modifiers.Empty, e, body, subst0(tpe), pur, eff, loc)
 
-        }.getOrElse(throw InternalCompilerException("Unexpected matchType failure."))
+        }.getOrElse(throw InternalCompilerException("Unexpected typematch failure."))
 
       case Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
         val es = exps.map(visitExp(_, env0))

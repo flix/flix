@@ -486,7 +486,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("TestMissingDefaultMatchTypeCase.01") {
     val input =
       """
-        |def f(): Bool = matchType () {
+        |def f(): Bool = typematch () {
         |    case _: Unit => true
         |}
         |""".stripMargin
@@ -497,7 +497,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("TestMissingDefaultMatchTypeCase.02") {
     val input =
       """
-        |def f(x: a): Bool = matchType x {
+        |def f(x: a): Bool = typematch x {
         |    case _: a => true
         |}
         |""".stripMargin

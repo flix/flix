@@ -363,7 +363,7 @@ object SemanticTokensProvider {
           acc ++ visitPat(pat) ++ visitExp(guard) ++ visitExp(exp)
       }
 
-    case Expression.MatchType(matchExp, rules, _, _, _, _) =>
+    case Expression.TypeMatch(matchExp, rules, _, _, _, _) =>
       val m = visitExp(matchExp)
       rules.foldLeft(m) {
         case (acc, MatchTypeRule(sym, tpe, exp)) =>

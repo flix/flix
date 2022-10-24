@@ -151,7 +151,7 @@ object Regions {
         case (m, rs) => checkType(tpe, loc)
       }
 
-    case Expression.MatchType(exp, rules, tpe, _, _, loc) =>
+    case Expression.TypeMatch(exp, rules, tpe, _, _, loc) =>
       val matchVal = visitExp(exp)
       val rulesVal = traverse(rules) {
         case MatchTypeRule(_, _, body) => flatMapN(visitExp(body)) {

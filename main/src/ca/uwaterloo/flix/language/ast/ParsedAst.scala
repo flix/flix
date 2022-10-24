@@ -754,7 +754,7 @@ object ParsedAst {
       * @param rules the rules of the type match.
       * @param sp2   the position of the last character in the expression.
       */
-    case class MatchType(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.MatchTypeRule], sp2: SourcePosition) extends ParsedAst.Expression
+    case class TypeMatch(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.MatchTypeRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Choose Expression.
