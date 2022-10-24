@@ -396,12 +396,18 @@ object Monomorph {
 
       case Expression.MatchType(exp, rules, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
-        rules.collectFirst{
+        // we make the tvars in `exp`'s type rigid
+        // so that Nil: List[x%123] can only match List[_]
+        val renv = e.tpe.typeVars
+        rules.collectFirst {
           case MatchTypeRule(sym, t, body0)
             // use empty rigidity environment since we're monomorphed
             if Unification.unifiesWith(e.tpe, subst0(t), RigidityEnv.empty) =>
-              val body = visitExp(body0, env0)
-              Expression.Let(sym, Modifiers.Empty, e, body, subst0(tpe), pur, eff, loc)
+              // Generate a fresh symbol for the let-bound variable.
+              val freshSym = Symbol.freshVarSym(sym)
+              val env1 = env0 + (sym -> freshSym)
+              val body = visitExp(body0, env1)
+              Expression.Let(freshSym, Modifiers.Empty, e, body, subst0(tpe), pur, eff, loc)
 
         }.get
         // MATT handle failure

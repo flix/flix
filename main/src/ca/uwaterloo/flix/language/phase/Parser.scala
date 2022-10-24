@@ -742,7 +742,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
       Static | Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
-        ReifyType | ReifyPurity | Choose | Match | LambdaMatch | Try | Lambda | Tuple |
+        ReifyType | ReifyPurity | Choose | MatchType | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Par | Lazy | Force | Upcast | Mask | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
@@ -905,7 +905,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def TypeMatch: Rule1[ParsedAst.Expression.MatchType] = {
+    def MatchType: Rule1[ParsedAst.Expression.MatchType] = {
       def Rule: Rule1[ParsedAst.MatchTypeRule] = rule {
           keyword("case") ~ WS ~ Names.Variable ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ atomic("=>") ~ optWS ~ Stm ~> ParsedAst.MatchTypeRule
       }
