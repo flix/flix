@@ -389,7 +389,7 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def toBigDecimal(x: Int16): BigDecimal =
-        import new java.math.BigDecimal(Int32): ##java.math.BigDecimal \ {} as fromInt32;
+        import new java.math.BigDecimal(Int32): BigDecimal \ {} as fromInt32;
         Int16.toInt32(x) |> fromInt32
 
     ///
