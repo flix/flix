@@ -22,7 +22,8 @@ namespace Channel {
     /// Returns a new buffered channel with capacity for `n` elements.
     ///
     pub def buffered(n: Int32): (Sender[t], Receiver[t]) \ IO =
-        let c = chan t n;
+        let m = if (n < 0) 0 else n;
+        let c = chan t m;
         (c, c)
 
     ///
@@ -36,14 +37,6 @@ namespace Channel {
     /// Blocks until a message is dequeued.
     ///
     pub def recv(r: Receiver[t]): t \ IO = <- r
-
-    ///
-    /// Optionally receives a message from the given channel `r` without blocking.
-    ///
-    pub def tryRecv(r: Receiver[t]): Option[t] \ IO = select {
-        case m <- r => Some(m)
-        case _      => None
-    }
 
     ///
     /// Sends the message `m` on the given channel `s`.
