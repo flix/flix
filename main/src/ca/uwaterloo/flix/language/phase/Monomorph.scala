@@ -400,16 +400,17 @@ object Monomorph {
         Expression.Match(visitExp(exp, env0), rs, subst0(tpe), pur, eff, loc)
 
       case Expression.MatchType(exp, rules, tpe, pur, eff, loc) =>
+        // use the non-strict substitution
+        // to allow free type variables to match with anything
+        val expTpe = subst0.nonStrict(exp.tpe)
         // make the tvars in `exp`'s type rigid
         // so that Nil: List[x%123] can only match List[_]
-        val renv = exp.tpe.typeVars.foldLeft(RigidityEnv.empty) {
+        val renv = expTpe.typeVars.foldLeft(RigidityEnv.empty) {
           case (acc, Type.Var(sym, _)) => acc.markRigid(sym)
         }
         rules.collectFirst {
           case MatchTypeRule(sym, t, body0)
-            // use the non-strict substitution
-            // to allow free type variables to match with anything
-            if Unification.unifiesWith(subst0.nonStrict(exp.tpe), subst0.nonStrict(t), renv) =>
+            if Unification.unifiesWith(expTpe, subst0.nonStrict(t), renv) =>
               // Generate a fresh symbol for the let-bound variable.
               val freshSym = Symbol.freshVarSym(sym)
               val env1 = env0 + (sym -> freshSym)
