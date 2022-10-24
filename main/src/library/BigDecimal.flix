@@ -36,7 +36,7 @@ namespace BigDecimal {
     /// Returns the absolute value of `x`.
     ///
     pub def abs(x: BigDecimal): BigDecimal =
-        import java.math.BigDecimal.abs(): ##java.math.BigDecimal \ {};
+        import java.math.BigDecimal.abs(): BigDecimal \ {};
         abs(x)
 
     ///
@@ -48,7 +48,7 @@ namespace BigDecimal {
     /// Returns `1` if `x > y`, `-1` if `x < y`, and `0` if `x = y`.
     ///
     pub def compare(x: BigDecimal, y: BigDecimal): Int32 =
-        import java.math.BigDecimal.compareTo(##java.math.BigDecimal): Int32 \ {};
+        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
         compareTo(x, y)
 
     ///
@@ -103,7 +103,7 @@ namespace BigDecimal {
     ///
     @Time(1) @Space(1)
     pub def ceil(x: BigDecimal): BigDecimal =
-        import java.math.BigDecimal.setScale(Int32, ##java.math.RoundingMode): ##java.math.BigDecimal \ {};
+        import java.math.BigDecimal.setScale(Int32, ##java.math.RoundingMode): BigDecimal \ {};
         import static get java.math.RoundingMode.CEILING: ##java.math.RoundingMode \ {} as getCeiling;
         setScale(x, 0, getCeiling())
 
@@ -112,7 +112,7 @@ namespace BigDecimal {
     ///
     @Time(1) @Space(1)
     pub def floor(x: BigDecimal): BigDecimal =
-        import java.math.BigDecimal.setScale(Int32, ##java.math.RoundingMode): ##java.math.BigDecimal \ {};
+        import java.math.BigDecimal.setScale(Int32, ##java.math.RoundingMode): BigDecimal \ {};
         import static get java.math.RoundingMode.FLOOR: ##java.math.RoundingMode \ {} as getFloor;
         setScale(x, 0, getFloor())
 
@@ -124,7 +124,7 @@ namespace BigDecimal {
     ///
     @Time(1) @Space(1)
     pub def round(x: BigDecimal): BigDecimal =
-        import java.math.BigDecimal.setScale(Int32, ##java.math.RoundingMode): ##java.math.BigDecimal \ {};
+        import java.math.BigDecimal.setScale(Int32, ##java.math.RoundingMode): BigDecimal \ {};
         import static get java.math.RoundingMode.HALF_EVEN: ##java.math.RoundingMode \ {} as getHalfEven;
         setScale(x, 0, getHalfEven())
 

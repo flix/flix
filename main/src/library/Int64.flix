@@ -417,7 +417,7 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def toBigDecimal(x: Int64): BigDecimal =
-        import new java.math.BigDecimal(Int64): ##java.math.BigDecimal \ {} as fromInt64;
+        import new java.math.BigDecimal(Int64): BigDecimal \ {} as fromInt64;
         fromInt64(x)
 
     ///
