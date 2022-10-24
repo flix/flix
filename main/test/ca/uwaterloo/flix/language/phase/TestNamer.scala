@@ -942,7 +942,7 @@ class TestNamer extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
   }
-  
+
   test("DuplicateUpperName.25") {
     val input =
       """
@@ -1069,6 +1069,18 @@ class TestNamer extends FunSuite with TestUtils {
         |class A[a]
         |class B[a]
         |class C[a] with A[a], B[b]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Expression.01") {
+    val input =
+      """
+        |def f(): Bool = matchType () {
+        |    case _: a => true
+        |    case _: _ => false
+        |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[NameError.UndefinedTypeVar](result)
