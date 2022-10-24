@@ -17,7 +17,6 @@ type alias Sender[t] = Channel[t]
 type alias Receiver[t] = Channel[t]
 
 namespace Channel {
-
     use Time.Duration
 
     ///
