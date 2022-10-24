@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 namespace Thread {
+    use Time.Duration
+    use Time.Duration.Duration
 
     ///
     /// Sleeps for the given duration `d`.
     ///
-    pub def sleep(d: Int64): Unit \ IO =
+    pub def sleep(d: Duration): Unit \ IO =
         // Note: Java expects milliseconds.
         import static java.lang.Thread.sleep(Int64): Unit \ IO as jsleep;
-        jsleep(d)
+        let Duration(ns) = d;
+        jsleep(ns / 1_000i64)
 
 }

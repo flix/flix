@@ -18,6 +18,8 @@ type alias Receiver[t] = Channel[t]
 
 namespace Channel {
 
+    use Time.Duration
+
     ///
     /// Returns a new buffered channel with capacity for `n` elements.
     ///
@@ -44,5 +46,13 @@ namespace Channel {
     /// Blocks until the message is enqueue.
     ///
     pub def send(r: Sender[t]): t \ IO = <- r
+
+    ///
+    /// Returns a channel that receives the `Unit` message after duration `d`.
+    ///
+    pub def timeout(d: Duration): Receiver[Unit] \ IO =
+        let (s, r) = Channel.unbuffered();
+        spawn { Thread.sleep(d); s <- () };
+        r
 
 }
