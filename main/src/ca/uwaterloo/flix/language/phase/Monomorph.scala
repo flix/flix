@@ -417,8 +417,7 @@ object Monomorph {
               val body = visitExp(body0, env1)
               Expression.Let(freshSym, Modifiers.Empty, e, body, subst0(tpe), pur, eff, loc)
 
-        }.get
-        // MATT handle failure
+        }.getOrElse(throw InternalCompilerException("Unexpected matchType failure."))
 
       case Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
         val es = exps.map(visitExp(_, env0))
