@@ -29,7 +29,7 @@ namespace Time/Duration {
     /// Returns a duration of `n` micro seconds.
     ///
     @Experimental
-    pub def fromMicroSeconds(n: Int32): Duration = Duration(toInt64(n) * 1_00i64)
+    pub def fromMicroSeconds(n: Int32): Duration = Duration(toInt64(n) * 1_000i64)
 
     ///
     /// Returns a duration of `n` milli seconds.
