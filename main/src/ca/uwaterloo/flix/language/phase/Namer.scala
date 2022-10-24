@@ -762,7 +762,7 @@ object Namer {
         case WeededAst.MatchTypeRule(ident, tpe, body) =>
           // extend the environment with the variable
           // and perform naming on the rule body under the extended environment.
-          val sym = Symbol.freshVarSym(ident, BoundBy.Pattern) // MATT new boundby
+          val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
           val env1 = Map(ident.name -> sym)
           val extendedEnv = env0 ++ env1
           mapN(visitType(tpe, uenv0, ienv0, tenv0), visitExp(body, extendedEnv, uenv0, ienv0, tenv0, ns0, prog0)) {

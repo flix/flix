@@ -174,7 +174,6 @@ object PatternExhaustiveness {
         val ruleExps = rules.map(_.exp)
         val expsErrs = (exp :: ruleExps).flatMap(visitExp(_, root))
         expsErrs
-        // MATT require default pattern
 
       case Expression.Choose(exps, rules, _, _, _, _) =>
         val ruleExps = rules.map(_.exp)
