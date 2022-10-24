@@ -71,6 +71,10 @@ instance SemiGroup[Float64] {
     pub def combine(x: Float64, y: Float64): Float64 = x + y
 }
 
+instance SemiGroup[BigDecimal] {
+    pub def combine(x: BigDecimal, y: BigDecimal): BigDecimal = x + y
+}
+
 instance SemiGroup[String] {
     pub def combine(x: String, y: String): String = x + y
 }

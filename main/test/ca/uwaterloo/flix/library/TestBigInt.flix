@@ -626,6 +626,18 @@ namespace TestBigInt {
         step() == None
 
     /////////////////////////////////////////////////////////////////////////////
+    // toBigDecimal                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toBigDecimal01(): Bool = BigInt.toBigDecimal(0ii) == 0.0ff
+
+    @test
+    def toBigDecimal02(): Bool = BigInt.toBigDecimal(1ii) == 1.0ff
+
+    @test
+    def toBigDecimal03(): Bool = BigInt.toBigDecimal(-1ii) == -1.0ff
+
+    /////////////////////////////////////////////////////////////////////////////
     // clampToInt8                                                             //
     /////////////////////////////////////////////////////////////////////////////
     @test

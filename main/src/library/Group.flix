@@ -105,6 +105,11 @@ instance Group[Float64] {
     override pub def remove(x: Float64, y: Float64): Float64 = x - y
 }
 
+instance Group[BigDecimal] {
+    pub def inverse(x: BigDecimal): BigDecimal = -x
+    override pub def remove(x: BigDecimal, y: BigDecimal): BigDecimal = x - y
+}
+
 instance Group[(a1, a2)] with Group[a1], Group[a2] {
     pub def inverse(x: (a1, a2)): (a1, a2) = match x {
         case (a1, a2) => (Group.inverse(a1), Group.inverse(a2))

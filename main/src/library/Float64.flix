@@ -242,6 +242,23 @@ namespace Float64 {
             Some(valueOf(x) |> floatValue)
 
     ///
+    /// Convert `x` to an `Option[BigDecimal]`.
+    ///
+    /// Returns `Some(x as BigDecimal)` if the numeric value of `x` is representable
+    /// as a BigDecimal value.
+    ///
+    /// If `x` is NaN or infinity return `None`.
+    ///
+    @Time(1) @Space(1)
+    pub def tryToBigDecimal(x: Float64): Option[BigDecimal] =
+        import new java.math.BigDecimal(Float64): BigDecimal \ {} as fromFloat64;
+        try {
+            Some(fromFloat64(x))
+        } catch {
+            case _: ##java.lang.NumberFormatException => None
+        }
+
+    ///
     /// Helper function for the `clamp` conversion functions.
     ///
     def clamp(x: Float64, minimum: Float64, maximum: Float64): Float64 =

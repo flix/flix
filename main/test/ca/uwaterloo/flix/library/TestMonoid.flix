@@ -141,6 +141,22 @@ namespace TestMonoid {
     def combineFloat6404(): Bool = combine(1.0f64, 2.0f64) == 3.0f64
 
     /////////////////////////////////////////////////////////////////////////////
+    // BigDecimal                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def combineBigDecimal01(): Bool = combine(0.0ff, 0.0ff) == 0.0ff
+
+    @test
+    def combineBigDecimal02(): Bool = combine(1.0ff, 0.0ff) == 1.0ff
+
+    @test
+    def combineBigDecimal03(): Bool = combine(0.0ff, 2.0ff) == 2.0ff
+
+    @test
+    def combineBigDecimal04(): Bool = combine(1.0ff, 2.0ff) == 3.0ff
+
+    /////////////////////////////////////////////////////////////////////////////
     // String                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
