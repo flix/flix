@@ -125,7 +125,8 @@ object CompletionProvider {
       getInstanceCompletions() ++
       getTypeCompletions() ++
       getOpCompletions() ++
-      getEffectCompletions()
+      getEffectCompletions() ++
+      getImportCompletions()
   }
 
   /**
@@ -845,6 +846,70 @@ object CompletionProvider {
           documentation = Some(t.doc.text),
           insertTextFormat = InsertTextFormat.Snippet,
           kind = CompletionItemKind.Enum)
+    }
+  }
+
+  /**
+    * Get completions for java imports.
+    */
+  private def getImportCompletions()(implicit context: Context, root: TypedAst.Root): Iterable[CompletionItem] = {
+    if (root == null) Nil else getImportNewCompletions()
+  }
+
+  /**
+    * Get completions for importing java constructors.
+    */
+  private def getImportNewCompletions()(implicit context: Context): Iterable[CompletionItem] = {
+    val regex = raw"\s*.*import\s+new\s+(.*)".r
+    context.prefix match {
+      case regex(clazz) => {
+        try {
+          val clazzObject = java.lang.Class.forName(clazz)
+          clazzObject.getConstructors().map(constructor => {
+            val types = constructor.getParameters().map(param => convertJavaClassToFlixType(param.getType())).mkString("(", ", ", ")")
+            // Gets the name of the type excluding the package to use as a suggestion for the name of the constructor.
+            val className = clazz.split('.').last
+            val label = s"$clazz$types"
+            val replace = s"$clazz$types: ${convertJavaClassToFlixType(clazzObject)} \\ IO as $${0:new$className};"
+            CompletionItem(
+              label = label,
+              // Prioritise constructors with fewer parameters.
+              sortText = Priority.high(s"${constructor.getParameterCount()}$label"),
+              textEdit = TextEdit(context.range, replace),
+              documentation = None,
+              insertTextFormat = InsertTextFormat.Snippet,
+              kind = CompletionItemKind.Constructor)
+          })
+        }
+        catch {
+          case _: Throwable => Nil
+        }
+      }
+      case _ => Nil
+    }
+  }
+
+  /**
+    * Converts a Java Class Object into a string representing the type in flix syntax. 
+    * I.e. java.lang.String => String, byte => Int8, java.lang.Object[] => Array[##java.lang.Object, false].
+    */
+  private def convertJavaClassToFlixType(clazz: Class[_ <: Object]): String = {
+    if (clazz.isArray()) {
+      s"Array[${convertJavaClassToFlixType(clazz.getComponentType())}, false]"
+    }
+    else {
+      clazz.getName() match {
+        case "byte" => "Int8"
+        case "short" => "Int16"
+        case "int" => "Int32"
+        case "long" => "Int64"
+        case "float" => "Float32"
+        case "double" => "Float64"
+        case "boolean" => "Bool"
+        case "char" => "Char"
+        case "java.lang.String" => "String"
+        case other => s"##$other"
+      }
     }
   }
 
