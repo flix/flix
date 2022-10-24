@@ -15,31 +15,32 @@
  */
 
 namespace Time/Duration {
-    use Time.Duration;
-    use Time.Duration.Duration;
+    use Int32.toInt64
+    use Time.Duration
+    use Time.Duration.Duration
 
     ///
     /// Returns a duration of `n` nano seconds.
     ///
     @Experimental
-    pub def fromNanoSeconds(n: Int64): Duration = Duration(n)
+    pub def fromNanoSeconds(n: Int32): Duration = Duration(toInt64(n))
 
     ///
     /// Returns a duration of `n` micro seconds.
     ///
     @Experimental
-    pub def fromMicroSeconds(n: Int64): Duration = Duration(n * 1_00i64)
+    pub def fromMicroSeconds(n: Int32): Duration = Duration(toInt64(n) * 1_00i64)
 
     ///
     /// Returns a duration of `n` milli seconds.
     ///
     @Experimental
-    pub def fromMilliSeconds(n: Int64): Duration = Duration(n * 1_000_000i64)
+    pub def fromMilliSeconds(n: Int32): Duration = Duration(toInt64(n) * 1_000_000i64)
 
     ///
     /// Returns a duration of `n` seconds.
     ///
     @Experimental
-    pub def fromSeconds(n: Int64): Duration = Duration(n * 1_000_000_000i64)
+    pub def fromSeconds(n: Int32): Duration = Duration(toInt64(n) * 1_000_000_000i64)
 
 }
