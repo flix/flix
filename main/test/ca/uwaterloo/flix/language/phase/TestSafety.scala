@@ -483,4 +483,25 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[SafetyError.IllegalParExpression](result)
   }
 
+  test("TestMissingDefaultMatchTypeCase.01") {
+    val input =
+      """
+        |def f(): Bool = matchType () {
+        |    case _: Unit => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.MissingDefaultMatchTypeCase](result)
+  }
+
+  test("TestMissingDefaultMatchTypeCase.02") {
+    val input =
+      """
+        |def f(x: a): Bool = matchType x {
+        |    case _: a => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.MissingDefaultMatchTypeCase](result)
+  }
 }

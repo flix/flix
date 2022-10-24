@@ -19,6 +19,7 @@ import scala.annotation.tailrec
   * Performs safety and well-formedness checks on:
   *  - Datalog constraints
   *  - Anonymous objects
+  *  - TypeMatch expressions
   */
 object Safety {
 
@@ -137,7 +138,14 @@ object Safety {
           rules.flatMap { case MatchRule(_, g, e) => visit(g) ::: visit(e) }
 
       case Expression.MatchType(exp, rules, _, _, _, _) =>
-        visit(exp) :::
+        // check whether the last case in the
+        val missingDefault = rules.last match {
+          case MatchTypeRule(_, tpe, _) => tpe match {
+            case Type.Var(sym, _) if renv.isFlexible(sym) => Nil
+            case _ => List(SafetyError.MissingDefaultMatchTypeCase(exp.loc))
+          }
+        }
+        visit(exp) ::: missingDefault :::
           rules.flatMap { case MatchTypeRule(_, _, e) => visit(e) }
 
       case Expression.Choose(exps, rules, _, _, _, _) =>

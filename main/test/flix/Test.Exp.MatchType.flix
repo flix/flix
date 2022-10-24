@@ -272,8 +272,16 @@ namespace Test/Exp/ReifyType {
     }
 
     @test
-    def matchTypePolymorphic(): Bool = matchType Nil {
+    def matchTypePolymorphic01(): Bool = matchType Nil {
         case _: List[Unit] => false
         case _: List[_] => true
+        case _: _ => true
+    }
+
+    @test
+    def matchTypePolymorphic02(): Bool = matchType (Nil: List[String]) {
+        case _: List[Unit] => false
+        case _: List[String] => true
+        case _: _ => false
     }
 }
