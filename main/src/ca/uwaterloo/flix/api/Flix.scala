@@ -95,6 +95,7 @@ class Flix {
     // Channels and Threads
     "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
     "Thread.flix" -> LocalResource.get("/src/library/Thread.flix"),
+    "Time.flix" -> LocalResource.get("/src/library/Time.flix"),
 
     // Built-in
     "Eq.flix" -> LocalResource.get("/src/library/Eq.flix"),
