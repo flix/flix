@@ -263,4 +263,17 @@ namespace Test/Exp/ReifyType {
         case x: Array[String, Static] => Array.sameElements(x, ["hello"])
         case _: _ => false
     }
+
+    @test
+    def matchTypeFallThrough01(): Bool = matchType "hello" {
+        case x: Int8 => x == 123i8
+        case x: Int64 => x == 123i64
+        case _: _ => true
+    }
+
+    @test
+    def matchTypePolymorphic(): Bool = matchType Nil {
+        case _: List[Unit] => false
+        case _: List[_] => true
+    }
 }
