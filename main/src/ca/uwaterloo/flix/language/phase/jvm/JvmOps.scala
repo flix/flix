@@ -55,6 +55,7 @@ object JvmOps {
     case MonoType.Char => JvmType.PrimChar
     case MonoType.Float32 => JvmType.PrimFloat
     case MonoType.Float64 => JvmType.PrimDouble
+    case MonoType.BigDecimal => JvmType.BigDecimal
     case MonoType.Int8 => JvmType.PrimByte
     case MonoType.Int16 => JvmType.PrimShort
     case MonoType.Int32 => JvmType.PrimInt
@@ -509,6 +510,8 @@ object JvmOps {
 
       case Expression.Float64(_, _) => Set.empty
 
+      case Expression.BigDecimal(_, _) => Set.empty
+
       case Expression.Int8(_, _) => Set.empty
 
       case Expression.Int16(_, _) => Set.empty
@@ -755,6 +758,7 @@ object JvmOps {
     case MonoType.Char => Type.Char
     case MonoType.Float32 => Type.Float32
     case MonoType.Float64 => Type.Float64
+    case MonoType.BigDecimal => Type.BigDecimal
     case MonoType.Int8 => Type.Int8
     case MonoType.Int16 => Type.Int16
     case MonoType.Int32 => Type.Int32
@@ -894,6 +898,8 @@ object JvmOps {
       case Expression.Float32(_, _) => Set.empty
 
       case Expression.Float64(_, _) => Set.empty
+
+      case Expression.BigDecimal(_, _) => Set.empty
 
       case Expression.Int8(_, _) => Set.empty
 
@@ -1110,6 +1116,7 @@ object JvmOps {
       case MonoType.Char => Set(tpe)
       case MonoType.Float32 => Set(tpe)
       case MonoType.Float64 => Set(tpe)
+      case MonoType.BigDecimal => Set(tpe)
       case MonoType.Int8 => Set(tpe)
       case MonoType.Int16 => Set(tpe)
       case MonoType.Int32 => Set(tpe)
@@ -1172,6 +1179,8 @@ object JvmOps {
       case Expression.Float32(_, _) => Set.empty
 
       case Expression.Float64(_, _) => Set.empty
+
+      case Expression.BigDecimal(_, _) => Set.empty
 
       case Expression.Int8(_, _) => Set.empty
 

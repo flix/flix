@@ -87,6 +87,7 @@ object Statistics {
       case Expression.Char(lit, loc) => Counter.empty
       case Expression.Float32(lit, loc) => Counter.empty
       case Expression.Float64(lit, loc) => Counter.empty
+      case Expression.BigDecimal(lit, loc) => Counter.empty
       case Expression.Int8(lit, loc) => Counter.empty
       case Expression.Int16(lit, loc) => Counter.empty
       case Expression.Int32(lit, loc) => Counter.empty

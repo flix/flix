@@ -43,6 +43,13 @@ namespace Test/Exp/Ref/Assign {
     }
 
     @test
+    def testAssignBigDecimal01(): Bool = region r {
+        let l = ref 123.456ff @ r;
+        l := 456.123ff;
+        deref l == 456.123ff
+    }
+
+    @test
     def testAssignInt801(): Bool = region r {
         let l = ref 123i8 @ r;
         l := 111i8;

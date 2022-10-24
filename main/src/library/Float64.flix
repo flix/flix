@@ -211,7 +211,7 @@ namespace Float64 {
     ///
     @Time(1) @Space(1)
     pub def tryToBigInt(x: Float64): Option[BigInt] =
-        import static java.math.BigDecimal.valueOf(Float64): ##java.math.BigDecimal \ {};
+        import static java.math.BigDecimal.valueOf(Float64): BigDecimal \ {};
         import java.math.BigDecimal.toBigInteger(): BigInt \ {};
         try {
             Some(x |> valueOf |> toBigInteger)
