@@ -254,7 +254,7 @@ object VarNumbering {
       case Expression.SelectChannel(rules, default, _, _) =>
         var currentOffset = i0
         for (r <- rules) {
-          currentOffset = visitSymbolAssignment(r.sym, r.chan.tpe.typeArguments.head, currentOffset)
+          currentOffset = visitSymbolAssignment(r.sym, Type.eraseAliases(r.chan.tpe).typeArguments.head, currentOffset)
           currentOffset = visitExp(r.chan, currentOffset)
           currentOffset = visitExp(r.exp, currentOffset)
         }
