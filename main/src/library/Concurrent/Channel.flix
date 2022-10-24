@@ -62,12 +62,14 @@ namespace Concurrent/Channel {
     /// non-polymorphic aspects relevant to select is split into its own
     /// structure on which select can operate.
     ///
+    @Internal
     pub enum Mpmc[a](
         MpmcAdmin, // admin
         MutDeque[a, Static] // elementDeque
     )
 
     /// Returns the `MpmcAdmin` of `c`.
+    @Internal
     pub def mpmcAdmin(c: Mpmc[a]): MpmcAdmin = {
         let Mpmc(admin, _) = c;
         admin
