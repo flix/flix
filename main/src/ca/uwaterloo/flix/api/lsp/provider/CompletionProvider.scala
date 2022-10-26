@@ -278,9 +278,13 @@ object CompletionProvider {
     iter.toList
   }
 
+  private def isUnitType(tpe: Type): Boolean = tpe == Type.Unit
+
+  private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams(0).tpe)
+
   private def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
     case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, pur0, eff0, _, _) =>
-      val args = if (fparams.length == 1 && fparams(0).tpe.typeConstructor == Some(TypeConstructor.Unit)) 
+      val args = if (isUnitFunction(fparams)) 
         Nil
       else
         fparams.map {
@@ -326,14 +330,14 @@ object CompletionProvider {
       case _ => 0
     }
 
-    val paramsIsUnit = fparams.length == 1 && fparams(0).tpe.typeConstructor == Some(TypeConstructor.Unit)
+    val functionIsUnit = isUnitFunction(fparams)
 
-    if (paramsToDrop > fparams.length || (paramsIsUnit && paramsToDrop > 0)) return None
+    if (paramsToDrop > fparams.length || (functionIsUnit && paramsToDrop > 0)) return None
 
     val args = fparams.dropRight(paramsToDrop).zipWithIndex.map {
       case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.sym.text}}"
     }
-    if (paramsIsUnit)
+    if (functionIsUnit)
       Some(s"$name()")
     else if (args.nonEmpty)
       Some(s"$name(${args.mkString(", ")})")
@@ -362,51 +366,43 @@ object CompletionProvider {
 
   private def defCompletion(decl: TypedAst.Def)(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): Option[CompletionItem] = {
     val name = decl.sym.toString
-    val snippet = getApplySnippet(name, decl.spec.fparams) match {
-      case Some(v) => v
-      case None => return None
-    }
-    Some(CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
-      sortText = Priority.normal(name),
-      filterText = Some(getFilterTextForName(name)),
-      textEdit = TextEdit(context.range, snippet),
-      detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
-      documentation = Some(decl.spec.doc.text),
-      insertTextFormat = InsertTextFormat.Snippet,
-      kind = CompletionItemKind.Function))
+    getApplySnippet(name, decl.spec.fparams).map(snippet => {
+      CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
+        sortText = Priority.normal(name),
+        filterText = Some(getFilterTextForName(name)),
+        textEdit = TextEdit(context.range, snippet),
+        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
+        documentation = Some(decl.spec.doc.text),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Function)
+    })
   }
 
   private def sigCompletion(decl: TypedAst.Sig)(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): Option[CompletionItem] = {
     val name = decl.sym.toString
-    val snippet = getApplySnippet(name, decl.spec.fparams) match {
-      case Some(v) => v
-      case None => return None
-    }
-    Some(CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
-      sortText = Priority.normal(name),
-      filterText = Some(getFilterTextForName(name)),
-      textEdit = TextEdit(context.range, snippet),
-      detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
-      documentation = Some(decl.spec.doc.text),
-      insertTextFormat = InsertTextFormat.Snippet,
-      kind = CompletionItemKind.Interface))
+    getApplySnippet(name, decl.spec.fparams).map(snippet => 
+      CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
+        sortText = Priority.normal(name),
+        filterText = Some(getFilterTextForName(name)),
+        textEdit = TextEdit(context.range, snippet),
+        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
+        documentation = Some(decl.spec.doc.text),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Interface))
   }
 
   private def opCompletion(decl: TypedAst.Op)(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): Option[CompletionItem] = {
     // NB: priority is high because only an op can come after `do`
     val name = decl.sym.toString
-    val snippet = getApplySnippet(name, decl.spec.fparams) match {
-      case Some(v) => v
-      case None => return None
-    }
-    Some(CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
-      sortText = Priority.high(name),
-      filterText = Some(getFilterTextForName(name)),
-      textEdit = TextEdit(context.range, snippet),
-      detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
-      documentation = Some(decl.spec.doc.text),
-      insertTextFormat = InsertTextFormat.Snippet,
-      kind = CompletionItemKind.Interface))
+    getApplySnippet(name, decl.spec.fparams).map(snippet => 
+      CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
+        sortText = Priority.high(name),
+        filterText = Some(getFilterTextForName(name)),
+        textEdit = TextEdit(context.range, snippet),
+        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
+        documentation = Some(decl.spec.doc.text),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Interface))
   }
 
   /**
@@ -468,9 +464,9 @@ object CompletionProvider {
     val word = context.word
     val uri = context.uri
 
-    val defSuggestions = root.defs.values.filter(matchesDef(_, word, uri)).map(defCompletion)
-    val sigSuggestions = root.sigs.values.filter(matchesSig(_, word, uri)).map(sigCompletion)
-    (defSuggestions ++ sigSuggestions).collect{case Some(value) => value}
+    val defSuggestions = root.defs.values.filter(matchesDef(_, word, uri)).flatMap(defCompletion)
+    val sigSuggestions = root.sigs.values.filter(matchesSig(_, word, uri)).flatMap(sigCompletion)
+    defSuggestions ++ sigSuggestions
   }
 
   private def getOpCompletions()(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
@@ -481,7 +477,7 @@ object CompletionProvider {
     val word = context.word
     val uri = context.uri
 
-    root.effects.values.flatMap(_.ops).filter(matchesOp(_, word, uri)).map(opCompletion).collect{case Some(value) => value}
+    root.effects.values.flatMap(_.ops).filter(matchesOp(_, word, uri)).flatMap(opCompletion)
   }
 
   /**
