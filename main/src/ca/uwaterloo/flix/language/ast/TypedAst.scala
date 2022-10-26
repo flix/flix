@@ -123,6 +123,14 @@ object TypedAst {
       def eff: Type = Type.Empty
     }
 
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends TypedAst.Expression {
+      def tpe: Type = Type.BigDecimal
+
+      def pur: Type = Type.Pure
+
+      def eff: Type = Type.Empty
+    }
+
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = Type.Int8
 
@@ -414,6 +422,10 @@ object TypedAst {
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends TypedAst.Pattern {
       def tpe: Type = Type.Float64
+    }
+
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends TypedAst.Pattern {
+      def tpe: Type = Type.BigDecimal
     }
 
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Pattern {

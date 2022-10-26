@@ -242,6 +242,11 @@ object Type {
   val Float64: Type = Type.Cst(TypeConstructor.Float64, SourceLocation.Unknown)
 
   /**
+    * Represents the BigDecimal type.
+    */
+  val BigDecimal: Type = Type.Cst(TypeConstructor.BigDecimal, SourceLocation.Unknown)
+
+  /**
     * Represents the Int8 type.
     */
   val Int8: Type = Type.Cst(TypeConstructor.Int8, SourceLocation.Unknown)
@@ -493,6 +498,11 @@ object Type {
     * Returns the Float64 type with the given source location `loc`.
     */
   def mkFloat64(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Float64, loc)
+
+  /**
+    * Returns the BigDecimal type with the given source location `loc`.
+    */
+  def mkBigDecimal(loc: SourceLocation): Type = Type.Cst(TypeConstructor.BigDecimal, loc)
 
   /**
     * Returns the Int8 type with the given source location `loc`.
@@ -936,6 +946,9 @@ object Type {
     }
     else if (c == java.lang.Double.TYPE) {
       Type.Float64
+    }
+    else if (c == classOf[java.math.BigDecimal]) {
+      Type.BigDecimal
     }
     else if (c == classOf[java.math.BigInteger]) {
       Type.BigInt

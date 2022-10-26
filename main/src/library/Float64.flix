@@ -211,7 +211,7 @@ namespace Float64 {
     ///
     @Time(1) @Space(1)
     pub def tryToBigInt(x: Float64): Option[BigInt] =
-        import static java.math.BigDecimal.valueOf(Float64): ##java.math.BigDecimal \ {};
+        import static java.math.BigDecimal.valueOf(Float64): BigDecimal \ {};
         import java.math.BigDecimal.toBigInteger(): BigInt \ {};
         try {
             Some(x |> valueOf |> toBigInteger)
@@ -240,6 +240,23 @@ namespace Float64 {
             None
         else
             Some(valueOf(x) |> floatValue)
+
+    ///
+    /// Convert `x` to an `Option[BigDecimal]`.
+    ///
+    /// Returns `Some(x as BigDecimal)` if the numeric value of `x` is representable
+    /// as a BigDecimal value.
+    ///
+    /// If `x` is NaN or infinity return `None`.
+    ///
+    @Time(1) @Space(1)
+    pub def tryToBigDecimal(x: Float64): Option[BigDecimal] =
+        import new java.math.BigDecimal(Float64): BigDecimal \ {} as fromFloat64;
+        try {
+            Some(fromFloat64(x))
+        } catch {
+            case _: ##java.lang.NumberFormatException => None
+        }
 
     ///
     /// Helper function for the `clamp` conversion functions.

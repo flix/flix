@@ -116,6 +116,11 @@ namespace Test/Exp/LetRec {
         loop(10) == 123.456f64
 
     @test
+    def testLetRecBigDecimal01(): Bool =
+        def loop(n) = if (n == 0) 123.456ff else loop(n - 1);
+        loop(10) == 123.456ff
+
+    @test
     def testLetRecInt801(): Bool =
         def loop(n) = if (n == 0) 123i8 else loop(n - 1);
         loop(10) == 123i8

@@ -38,6 +38,8 @@ instance CommutativeGroup[Float32]
 
 instance CommutativeGroup[Float64]
 
+instance CommutativeGroup[BigDecimal]
+
 instance CommutativeGroup[(a1, a2)] with CommutativeGroup[a1], CommutativeGroup[a2]
 
 instance CommutativeGroup[(a1, a2, a3)] with CommutativeGroup[a1], CommutativeGroup[a2], CommutativeGroup[a3]

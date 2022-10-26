@@ -185,6 +185,11 @@ class TestUnification extends FunSuite with TestUtils {
     assert(isOk(result))
   }
 
+  test("Unify.BigDecimal") {
+    val result = Unification.unifyTypes(Type.BigDecimal, Type.BigDecimal, RigidityEnv.empty)
+    assert(isOk(result))
+  }
+
   test("Unify.Int8") {
     val result = Unification.unifyTypes(Type.Int8, Type.Int8, RigidityEnv.empty)
     assert(isOk(result))
