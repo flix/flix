@@ -221,7 +221,7 @@ object WeededAst {
 
     case class Par(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class ParYield(exp: Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class ParYield(frags: List[WeededAst.ParYield.Fragment], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Lazy(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
@@ -458,4 +458,9 @@ object WeededAst {
 
   case class PurityAndEffect(pur: Option[Type], eff: Option[List[Type]])
 
+  object ParYield {
+
+    case class Fragment(ident: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation)
+
+  }
 }
