@@ -160,8 +160,8 @@ object Main {
           System.exit(getCode(result))
 
         case Command.Repl =>
-          val source = if (cmdOpts.files.isEmpty) SourceProvider.ProjectPath(cwd) else SourceProvider.SourceFileList(cmdOpts.files)
-          val shell = new Shell(source, options)
+          val sourceProvider = if (cmdOpts.files.isEmpty) SourceProvider.ProjectPath(cwd) else SourceProvider.SourceFileList(cmdOpts.files)
+          val shell = new Shell(sourceProvider, options)
           shell.loop()
           System.exit(0)
 
