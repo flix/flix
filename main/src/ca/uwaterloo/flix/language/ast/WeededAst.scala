@@ -460,7 +460,7 @@ object WeededAst {
 
   object ParYield {
 
-    case class Fragment(ident: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation)
+    case class Fragment(pat: WeededAst.Pattern, exp: WeededAst.Expression, loc: SourceLocation)
 
   }
 }

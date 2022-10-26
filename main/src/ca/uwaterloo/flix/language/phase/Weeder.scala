@@ -1587,8 +1587,8 @@ object Weeder {
 
     case ParsedAst.Expression.ParYield(sp1, frags, exp, sp2) =>
       val fragVals = traverse(frags) {
-        case ParsedAst.ParYield.Fragment(fsp1, ident, e, fsp2) => mapN(visitExp(e, senv)) {
-          case e1 => WeededAst.ParYield.Fragment(ident, e1, mkSL(fsp1, fsp2))
+        case ParsedAst.ParYield.Fragment(fsp1, pat, e, fsp2) => mapN(visitPattern(pat), visitExp(e, senv)) {
+          case (p, e1) => WeededAst.ParYield.Fragment(p, e1, mkSL(fsp1, fsp2))
         }
       }
 

@@ -1057,7 +1057,42 @@ object Namer {
         case e => NamedAst.Expression.Par(e, loc)
       }
 
-    case WeededAst.Expression.ParYield(frags, exp, loc) => ???
+    case WeededAst.Expression.ParYield(frags, exp, loc) =>
+      val finalEnv = frags.foldLeft(env0) {
+        case (enva, WeededAst.ParYield.Fragment(pat, _, _)) =>
+          val (_, env1) = visitPattern(pat, uenv0)
+          enva ++ env1
+      }
+
+      val fragsVal = traverse(frags) {
+        case WeededAst.ParYield.Fragment(pat, e, loc) =>
+          val (p, env1) = visitPattern(pat, uenv0)
+          mapN(visitExp(e, env0 ++ env1, uenv0, ienv0, tenv0, ns0, prog0)) {
+            case e1 => NamedAst.ParYield.Fragment(p, e1, loc)
+          }
+      }
+
+      mapN(fragsVal, visitExp(exp, finalEnv, uenv0, ienv0, tenv0, ns0, prog0)) {
+        case (fs, e) => NamedAst.Expression.ParYield(fs, e, loc)
+      }
+
+
+    /*
+    val expVal = visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0)
+    val rulesVal = traverse(rules) {
+      case WeededAst.MatchRule(pat, guard, body) =>
+        // extend the environment with every variable occurring in the pattern
+        // and perform naming on the rule guard and body under the extended environment.
+        val (p, env1) = visitPattern(pat, uenv0)
+        val extendedEnv = env0 ++ env1
+        mapN(visitExp(guard, extendedEnv, uenv0, ienv0, tenv0, ns0, prog0), visitExp(body, extendedEnv, uenv0, ienv0, tenv0, ns0, prog0)) {
+          case (g, b) => NamedAst.MatchRule(p, g, b)
+        }
+    }
+    mapN(expVal, rulesVal) {
+      case (e, rs) => NamedAst.Expression.Match(e, rs, loc)
+    }
+     */
 
     case WeededAst.Expression.Lazy(exp, loc) =>
       visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0) map {
@@ -1586,7 +1621,7 @@ object Namer {
       rulesFreeVars ++ defaultFreeVars
     case WeededAst.Expression.Spawn(exp, _) => freeVars(exp)
     case WeededAst.Expression.Par(exp, _) => freeVars(exp)
-    case WeededAst.Expression.ParYield(exp, _) => freeVars(exp)
+    case WeededAst.Expression.ParYield(frags, exp, _) => frags.flatMap(f => freeVars(f.exp)) ::: freeVars(exp)
     case WeededAst.Expression.Lazy(exp, _) => freeVars(exp)
     case WeededAst.Expression.Force(exp, _) => freeVars(exp)
     case WeededAst.Expression.FixpointConstraintSet(cs, _) => cs.flatMap(freeVarsConstraint)

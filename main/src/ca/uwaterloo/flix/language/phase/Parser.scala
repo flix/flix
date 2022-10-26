@@ -1030,7 +1030,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def ParYield: Rule1[ParsedAst.Expression.ParYield] = {
 
       def Fragment: Rule1[ParsedAst.ParYield.Fragment] = rule {
-        SP ~ Names.Variable ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ SP ~> ParsedAst.ParYield.Fragment
+        SP ~ Pattern ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ SP ~> ParsedAst.ParYield.Fragment
       }
 
       rule {

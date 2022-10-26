@@ -1149,10 +1149,7 @@ object Resolver {
             e => ResolvedAst.Expression.Par(e, loc)
           }
 
-        case NamedAst.Expression.ParYield(exp, loc) =>
-          mapN(visitExp(exp, region)) {
-            case e => ResolvedAst.Expression.ParYield(e, loc)
-          }
+        case NamedAst.Expression.ParYield(frags, exp, loc) => ???
 
         case NamedAst.Expression.Lazy(exp, loc) =>
           val eVal = visitExp(exp, region)

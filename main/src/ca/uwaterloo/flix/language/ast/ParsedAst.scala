@@ -2358,7 +2358,7 @@ object ParsedAst {
   }
 
   object ParYield {
-    case class Fragment(sp1: SourcePosition, ident: Name.Ident, exp: Expression, sp2: SourcePosition)
+    case class Fragment(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: Expression, sp2: SourcePosition)
 
   }
 }
