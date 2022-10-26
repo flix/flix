@@ -615,7 +615,7 @@ object CompletionProvider {
     else {
       return None
     }
-    val (completion, _) = enm.cases.foldLeft("", 1)({
+    val (completion, _) = enm.cases.toList.sortBy(_._1.loc).foldLeft(("", 1))({
       case ((acc, z), (sym , cas)) => {
         val name = sym.name
         val (str, k) = cas.tpe.typeConstructor match {

@@ -99,6 +99,25 @@ namespace TestHash {
     def float64Hash05(): Bool = hash(123.1f64) != hash(124.1f64)
 
     /////////////////////////////////////////////////////////////////////////////
+    // BigDecimal                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bigDecimalHash01(): Bool = hash(123.0ff) == hash(123.0ff)
+
+    @test
+    def bigDecimalHash02(): Bool = hash(123.0ff) != hash(124.0ff)
+
+    @test
+    def bigDecimalHash03(): Bool = hash(123.0ff) != hash(124.0ff)
+
+    @test
+    def bigDecimalHash04(): Bool = hash(0.0ff) == hash(0.0ff)
+
+    @test
+    def bigDecimalHash05(): Bool = hash(123.1ff) != hash(124.1ff)
+
+    /////////////////////////////////////////////////////////////////////////////
     // Int8                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 

@@ -410,6 +410,16 @@ namespace Int32 {
         (valueOf(x) |> doubleValue)
 
     ///
+    /// Convert `x` to a Float64.
+    ///
+    /// The numeric value of `x` is preserved exactly.
+    ///
+    @Time(1) @Space(1)
+    pub def toBigDecimal(x: Int32): BigDecimal =
+        import new java.math.BigDecimal(Int32): BigDecimal \ {} as fromInt32;
+        fromInt32(x)
+
+    ///
     /// Helper function for the `clamp` conversion functions.
     ///
     def clamp(min: {min = Int32}, max: {max = Int32}, x: Int32): Int32 =

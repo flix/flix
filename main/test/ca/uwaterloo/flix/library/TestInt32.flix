@@ -868,6 +868,24 @@ namespace TestInt32 {
     def toFloat6405(): Bool = Int32.toFloat64(-2147483648) == -2147483648.0f64
 
     /////////////////////////////////////////////////////////////////////////////
+    // toBigDecimal                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toBigDecimal01(): Bool = Int32.toBigDecimal(0) == 0.0ff
+
+    @test
+    def toBigDecimal02(): Bool = Int32.toBigDecimal(1) == 1.0ff
+
+    @test
+    def toBigDecimal03(): Bool = Int32.toBigDecimal(-1) == -1.0ff
+
+    @test
+    def toBigDecimal04(): Bool = Int32.toBigDecimal(2147483647) == 2147483647.0ff
+
+    @test
+    def toBigDecimal05(): Bool = Int32.toBigDecimal(-2147483648) == -2147483648.0ff
+
+    /////////////////////////////////////////////////////////////////////////////
     // clampToInt8                                                             //
     /////////////////////////////////////////////////////////////////////////////
     @test
