@@ -882,7 +882,8 @@ object CompletionProvider {
           })
         }
         catch {
-          case _: Throwable => Nil
+          //If the user did not type a valid class or is not finished typing it we do not show any completion suggestions
+          case _: ClassNotFoundException => Nil
         }
       }
       case _ => Nil
@@ -895,7 +896,7 @@ object CompletionProvider {
     */
   private def convertJavaClassToFlixType(clazz: Class[_ <: Object]): String = {
     if (clazz.isArray()) {
-      s"Array[${convertJavaClassToFlixType(clazz.getComponentType())}, false]"
+      s"Array[${convertJavaClassToFlixType(clazz.getComponentType())}, Static]"
     }
     else {
       clazz.getName() match {
@@ -908,6 +909,10 @@ object CompletionProvider {
         case "boolean" => "Bool"
         case "char" => "Char"
         case "java.lang.String" => "String"
+        case "java.math.BigInteger" => "BigInt"
+        case "java.math.BigDecimal" => "BigDecimal"
+        case "java.util.function.IntFunction" => "Int32 => ##java.lang.Object"
+        case "java.util.function.IntUnaryOperator" => "Int32 => Int32"
         case other => s"##$other"
       }
     }
