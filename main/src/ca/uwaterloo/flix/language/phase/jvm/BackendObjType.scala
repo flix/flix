@@ -163,6 +163,7 @@ object BackendObjType {
       def jvmName: JvmName = this match {
         case IntFunction => JvmName.IntFunction
         case IntUnaryOperator => JvmName.IntUnaryOperator
+        case IntPredicate => JvmName.IntPredicate
       }
 
       /**
@@ -184,6 +185,13 @@ object BackendObjType {
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ IRETURN()
           ))
+        case IntPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
+          mkDescriptor(BackendType.Int32)(BackendType.Bool),
+          Some(
+            thisLoad() ~
+              DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
+              INVOKEVIRTUAL(continuation.UnwindMethod) ~ IRETURN()
+          ))
       }
     }
 
@@ -192,6 +200,9 @@ object BackendObjType {
 
     // Int32 -> Int32
     case object IntUnaryOperator extends FunctionInterface
+
+    // Int32 -> Bool
+    case object IntPredicate extends FunctionInterface
 
     /**
       * Returns the specialized java function interface of the function type.
@@ -202,6 +213,8 @@ object BackendObjType {
           Some(IntFunction)
         case (BackendType.Int32 :: Nil, BackendType.Int32) =>
           Some(IntUnaryOperator)
+        case (BackendType.Int32 :: Nil, BackendType.Bool) =>
+          Some(IntPredicate)
         case _ => None
       }
     }

@@ -199,6 +199,13 @@ object UnkindedType {
   }
 
   /**
+   * Returns the Bool type.
+   */
+  def mkBool(loc: SourceLocation): UnkindedType = {
+    UnkindedType.Cst(TypeConstructor.Bool, loc)
+  }
+
+  /**
     * Returns the ##java.lang.Object type.
     */
   def mkObject(loc: SourceLocation): UnkindedType = {
