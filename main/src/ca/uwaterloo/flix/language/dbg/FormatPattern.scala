@@ -19,6 +19,7 @@ object FormatPattern {
     case TypedAst.Pattern.Char(lit, _) => s"'$lit'"
     case TypedAst.Pattern.Float32(lit, _) => s"${lit}f32"
     case TypedAst.Pattern.Float64(lit, _) => s"${lit}f64"
+    case TypedAst.Pattern.BigDecimal(lit, _) => s"${lit}ff"
     case TypedAst.Pattern.Int8(lit, _) => s"${lit}i8"
     case TypedAst.Pattern.Int16(lit, _) => s"${lit}i16"
     case TypedAst.Pattern.Int32(lit, _) => s"${lit}i32"

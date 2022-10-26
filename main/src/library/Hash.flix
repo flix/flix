@@ -55,6 +55,12 @@ instance Hash[Float64] {
         hashCode(x)
 }
 
+instance Hash[BigDecimal] {
+    pub def hash(x: BigDecimal): Int32 =
+        import java.math.BigDecimal.hashCode(): Int32 \ {};
+        hashCode(x)
+}
+
 instance Hash[Int8] {
     pub def hash(x: Int8): Int32 =
         import static java.lang.Byte.hashCode(Int8): Int32 \ {};

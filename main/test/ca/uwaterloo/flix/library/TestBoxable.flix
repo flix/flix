@@ -126,6 +126,31 @@ namespace TestBoxable {
     def float64ToString01(): Bool = "${box(123.0f64)}" == "123.0"
 
     /////////////////////////////////////////////////////////////////////////////
+    // BigDecimal                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bigDecimalUnbox01(): Bool = unbox(box(0.0ff)) == 0.0ff
+
+    @test
+    def bigDecimalUnbox02(): Bool = unbox(box(1.0ff)) == 1.0ff
+
+    @test
+    def bigDecimalUnbox03(): Bool = unbox(box(-1.0ff)) == -1.0ff
+
+    @test
+    def bigDecimalUnbox04(): Bool = unbox(box(3.14ff)) == 3.14ff
+
+    @test
+    def bigDecimalCompare01(): Bool = box(0.0ff) == box(0.0ff)
+
+    @test
+    def bigDecimalCompare02(): Bool = box(0.0ff) < box(1.0ff)
+
+    @test
+    def bigDecimalToString01(): Bool = "${box(123.0ff)}" == "123.0"
+
+    /////////////////////////////////////////////////////////////////////////////
     // Int8                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 

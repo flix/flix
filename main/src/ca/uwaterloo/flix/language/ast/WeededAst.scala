@@ -101,6 +101,8 @@ object WeededAst {
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends WeededAst.Expression
 
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends WeededAst.Expression
+
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends WeededAst.Expression
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends WeededAst.Expression
@@ -266,6 +268,8 @@ object WeededAst {
     case class Float32(lit: scala.Float, loc: SourceLocation) extends WeededAst.Pattern
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends WeededAst.Pattern
+
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends WeededAst.Pattern
 
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends WeededAst.Pattern
 

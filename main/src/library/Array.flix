@@ -1764,6 +1764,10 @@ namespace Array {
                 let arr = a as Array[Float64, r1];
                 import static java.util.Arrays.copyOfRange(Array[Float64, r1], Int32, Int32): Array[Float64, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
+            case ReifiedBigDecimal =>
+                let arr = a as Array[##java.lang.Object, r1];
+                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
+                copy(arr, b, e) as Array[a, r2]
             case ReifiedInt8 =>
                 let arr = a as Array[Int8, r1];
                 import static java.util.Arrays.copyOfRange(Array[Int8, r1], Int32, Int32): Array[Int8, r2] \ { Read(r1), Write(r2) } as copy;

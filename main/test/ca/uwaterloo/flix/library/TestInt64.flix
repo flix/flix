@@ -913,6 +913,24 @@ namespace TestInt64 {
     def toFloat6405(): Bool = Int64.toFloat64(-9223372036854775808i64) == -9223372036854775808.0f64
 
     /////////////////////////////////////////////////////////////////////////////
+    // toBigDecimal                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toBigDecimal01(): Bool = Int64.toBigDecimal(0i64) == 0.0ff
+
+    @test
+    def toBigDecimal02(): Bool = Int64.toBigDecimal(1i64) == 1.0ff
+
+    @test
+    def toBigDecimal03(): Bool = Int64.toBigDecimal(-1i64) == -1.0ff
+
+    @test
+    def toBigDecimal04(): Bool = Int64.toBigDecimal(9223372036854775807i64) == 9223372036854775807.0ff
+
+    @test
+    def toBigDecimal05(): Bool = Int64.toBigDecimal(-9223372036854775808i64) == -9223372036854775808.0ff
+
+    /////////////////////////////////////////////////////////////////////////////
     // clampToInt8                                                             //
     /////////////////////////////////////////////////////////////////////////////
     @test

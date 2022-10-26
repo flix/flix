@@ -431,7 +431,7 @@ namespace Iterator {
     /// Returns an iterator where the element at index `i` is `(a, i)` where
     /// `a` is the element at index `i` in `iter`.
     ///
-    /// Does *not* consume any elements from either iterator.
+    /// Does *not* consume any elements from the iterator.
     ///
     /// The original iterator `iter` should *not* be reused.
     ///

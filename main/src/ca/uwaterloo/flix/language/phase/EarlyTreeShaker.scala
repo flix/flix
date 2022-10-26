@@ -156,6 +156,9 @@ object EarlyTreeShaker {
     case Expression.Float64(_, _) =>
       Set.empty
 
+    case Expression.BigDecimal(_, _) =>
+      Set.empty
+
     case Expression.Int8(_, _) =>
       Set.empty
 

@@ -226,6 +226,18 @@ namespace Float32 {
         (valueOf(x) |> doubleValue)
 
     ///
+    /// Convert `x` to an `Option[BigDecimal]`.
+    ///
+    /// Returns `Some(x as BigDecimal)` if the numeric value of `x` is representable
+    /// as a BigDecimal value.
+    ///
+    /// If `x` is NaN or infinity return `None`.
+    ///
+    @Time(1) @Space(1)
+    pub def tryToBigDecimal(x: Float32): Option[BigDecimal] =
+        toFloat64(x) |> Float64.tryToBigDecimal
+
+    ///
     /// Helper function for the `clamp` conversion functions.
     ///
     def clamp(x: Float32, minimum: Float32, maximum: Float32): Float32 =

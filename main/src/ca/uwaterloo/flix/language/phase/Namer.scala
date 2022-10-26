@@ -650,6 +650,8 @@ object Namer {
 
     case WeededAst.Expression.Float64(lit, loc) => NamedAst.Expression.Float64(lit, loc).toSuccess
 
+    case WeededAst.Expression.BigDecimal(lit, loc) => NamedAst.Expression.BigDecimal(lit, loc).toSuccess
+
     case WeededAst.Expression.Int8(lit, loc) => NamedAst.Expression.Int8(lit, loc).toSuccess
 
     case WeededAst.Expression.Int16(lit, loc) => NamedAst.Expression.Int16(lit, loc).toSuccess
@@ -1140,6 +1142,7 @@ object Namer {
       case WeededAst.Pattern.Char(lit, loc) => NamedAst.Pattern.Char(lit, loc)
       case WeededAst.Pattern.Float32(lit, loc) => NamedAst.Pattern.Float32(lit, loc)
       case WeededAst.Pattern.Float64(lit, loc) => NamedAst.Pattern.Float64(lit, loc)
+      case WeededAst.Pattern.BigDecimal(lit, loc) => NamedAst.Pattern.BigDecimal(lit, loc)
       case WeededAst.Pattern.Int8(lit, loc) => NamedAst.Pattern.Int8(lit, loc)
       case WeededAst.Pattern.Int16(lit, loc) => NamedAst.Pattern.Int16(lit, loc)
       case WeededAst.Pattern.Int32(lit, loc) => NamedAst.Pattern.Int32(lit, loc)
@@ -1195,6 +1198,7 @@ object Namer {
       case WeededAst.Pattern.Char(lit, loc) => NamedAst.Pattern.Char(lit, loc)
       case WeededAst.Pattern.Float32(lit, loc) => NamedAst.Pattern.Float32(lit, loc)
       case WeededAst.Pattern.Float64(lit, loc) => NamedAst.Pattern.Float64(lit, loc)
+      case WeededAst.Pattern.BigDecimal(lit, loc) => NamedAst.Pattern.BigDecimal(lit, loc)
       case WeededAst.Pattern.Int8(lit, loc) => NamedAst.Pattern.Int8(lit, loc)
       case WeededAst.Pattern.Int16(lit, loc) => NamedAst.Pattern.Int16(lit, loc)
       case WeededAst.Pattern.Int32(lit, loc) => NamedAst.Pattern.Int32(lit, loc)
@@ -1504,6 +1508,7 @@ object Namer {
     case WeededAst.Expression.Char(_, _) => Nil
     case WeededAst.Expression.Float32(_, _) => Nil
     case WeededAst.Expression.Float64(_, _) => Nil
+    case WeededAst.Expression.BigDecimal(_, _) => Nil
     case WeededAst.Expression.Int8(_, _) => Nil
     case WeededAst.Expression.Int16(_, _) => Nil
     case WeededAst.Expression.Int32(_, _) => Nil
@@ -1605,6 +1610,7 @@ object Namer {
     case WeededAst.Pattern.Char(lit, loc) => Nil
     case WeededAst.Pattern.Float32(lit, loc) => Nil
     case WeededAst.Pattern.Float64(lit, loc) => Nil
+    case WeededAst.Pattern.BigDecimal(lit, loc) => Nil
     case WeededAst.Pattern.Int8(lit, loc) => Nil
     case WeededAst.Pattern.Int16(lit, loc) => Nil
     case WeededAst.Pattern.Int32(lit, loc) => Nil

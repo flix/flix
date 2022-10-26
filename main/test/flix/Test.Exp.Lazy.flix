@@ -25,6 +25,10 @@ namespace Test/Exp/Lazy {
         lazy 12.34f64
 
     @test
+    def testBigDecimalLazy01(): Lazy[BigDecimal] =
+        lazy 12.34ff
+
+    @test
     def testInt8Lazy01(): Lazy[Int8] =
         lazy 12i8
 

@@ -22,6 +22,7 @@ pub enum ReifiedType with Eq, Order, ToString {
     case ReifiedChar,
     case ReifiedFloat32,
     case ReifiedFloat64,
+    case ReifiedBigDecimal,
     case ReifiedInt8,
     case ReifiedInt16,
     case ReifiedInt32,
@@ -205,6 +206,9 @@ pub def stringify(x: a): String = {
         case ReifiedFloat64 =>
             import static java.lang.Double.toString(Float64): String \ {};
             toString as a -> String
+        case ReifiedBigDecimal =>
+            import java.lang.Object.toString(): String;
+            (y -> toString(y) + "ff") as a -> String
         case ReifiedInt8 =>
             import static java.lang.Byte.toString(Int8): String \ {};
             (y -> toString(y) + "i8") as a -> String
@@ -241,6 +245,9 @@ pub def stringify(x: a): String = {
                     toString as a -> String
                 case ReifiedFloat64 =>
                     import static java.util.Arrays.toString(Array[Float64, Static]): String;
+                    toString as a -> String
+                case ReifiedBigDecimal =>
+                    import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
                     toString as a -> String
                 case ReifiedInt8 =>
                     import static java.util.Arrays.toString(Array[Int8, Static]): String;

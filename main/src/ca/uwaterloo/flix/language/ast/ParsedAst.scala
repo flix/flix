@@ -425,6 +425,17 @@ object ParsedAst {
     case class Float64(sp1: SourcePosition, sign: String, before: String, after: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
+      * BigDecimal Literal (arbitrary sized floating-point number).
+      *
+      * @param sp1    the position of the first character in the literal.
+      * @param sign   the sign.
+      * @param before the digits before the decimal point.
+      * @param after  the digits after the decimal point.
+      * @param sp2    the position of the last character in the literal.
+      */
+    case class BigDecimal(sp1: SourcePosition, sign: String, before: String, after: String, sp2: SourcePosition) extends ParsedAst.Literal
+
+    /**
       * Int8 Literal (signed 8-bit integer).
       *
       * @param sp1   the position of the first character in the literal.

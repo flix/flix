@@ -31,6 +31,12 @@ namespace Test/Exp/Fixpoint/Constraint {
     }
 
     @test
+    def testBigDecimalConstraint01(): #{A(BigDecimal), R(BigDecimal)} = #{
+        A(0.0ff). A(21.42ff). A(123.456ff).
+        R(x) :- A(x).
+    }
+
+    @test
     def testInt8Constraint01(): #{A(Int8), R(Int8)} = #{
         A(0i8). A(21i8). A(42i8).
         R(x) :- A(x).

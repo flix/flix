@@ -80,6 +80,8 @@ object KindedAst {
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends KindedAst.Expression
 
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends KindedAst.Expression
+
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends KindedAst.Expression
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends KindedAst.Expression
@@ -243,6 +245,8 @@ object KindedAst {
     case class Float32(lit: scala.Float, loc: SourceLocation) extends KindedAst.Pattern
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends KindedAst.Pattern
+
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends KindedAst.Pattern
 
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends KindedAst.Pattern
 
