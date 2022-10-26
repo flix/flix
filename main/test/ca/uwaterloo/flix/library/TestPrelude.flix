@@ -345,23 +345,23 @@ def testFunctionStringify03(): Bool = {
     s == "(Obj -> Int32, Obj -> Char)"
 }
 
-@test
-def testNullStringify01(): Bool = {
-    let s = stringify(null);
-    s == "null"
-}
+// @test
+// def testNullStringify01(): Bool = {
+//     let s = stringify(null);
+//     s == "null"
+// }
 
-@test
-def testNullStringify02(): Bool = {
-    let s = stringify(null as String);
-    s == "null"
-}
+// @test
+// def testNullStringify02(): Bool = {
+//     let s = stringify(null as String);
+//     s == "null"
+// }
 
-@test
-def testNullStringify03(): Bool = {
-    let s = stringify(null as BigInt);
-    s == "null"
-}
+// @test
+// def testNullStringify03(): Bool = {
+//     let s = stringify(null as BigInt);
+//     s == "null"
+// }
 
 @test
 def testNullStringify04(): Bool = {
@@ -379,4 +379,10 @@ def testNullStringify05(): Bool = {
 def testNullStringify06(): Bool = region r {
     let s = stringify([null as String, "42"] @ r);
     s == "[null, 42]"
+}
+
+@test
+def testNullStringify07(): Bool = {
+    let s = stringify({field = null as String});
+    s == "{field = null}"
 }
