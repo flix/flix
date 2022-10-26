@@ -374,15 +374,6 @@ object Packager {
   }
 
   /**
-    * Returns `true` if the given path `p` appears to be a flix project path.
-    */
-  def isProjectPath(p: Path): Boolean =
-    Files.exists(getSourceDirectory(p)) &&
-      Files.exists(getTestDirectory(p)) &&
-      Files.exists(getLicenseFile(p)) &&
-      Files.exists(getReadmeFile(p))
-
-  /**
     * Returns a Validation containing the list of missing paths in case the path is not a project path.
     */
   private def checkProjectPath(p: Path): Validation[Unit, Path] = {
@@ -506,9 +497,13 @@ object Packager {
     * Returns all files in the given path `p`.
     */
   def getAllFiles(p: Path): List[Path] = {
-    val visitor = new FileVisitor
-    Files.walkFileTree(p, visitor)
-    visitor.result.toList
+    if (Files.isReadable(p) && Files.isDirectory(p)) {
+      val visitor = new FileVisitor
+      Files.walkFileTree(p, visitor)
+      visitor.result.toList
+    } else {
+      Nil
+    }
   }
 
   /**
