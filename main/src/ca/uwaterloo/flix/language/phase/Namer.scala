@@ -1057,10 +1057,7 @@ object Namer {
         case e => NamedAst.Expression.Par(e, loc)
       }
 
-    case WeededAst.Expression.ParYield(exp, loc) =>
-      mapN(visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0)) {
-        case e => NamedAst.Expression.ParYield(e, loc)
-      }
+    case WeededAst.Expression.ParYield(frags, exp, loc) => ???
 
     case WeededAst.Expression.Lazy(exp, loc) =>
       visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0) map {
