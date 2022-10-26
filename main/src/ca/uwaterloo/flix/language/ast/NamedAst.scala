@@ -99,6 +99,8 @@ object NamedAst {
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends NamedAst.Expression
 
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends NamedAst.Expression
+
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends NamedAst.Expression
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends NamedAst.Expression
@@ -175,6 +177,8 @@ object NamedAst {
 
     case class Cast(exp: NamedAst.Expression, declaredType: Option[NamedAst.Type], declaredEff: NamedAst.PurityAndEffect, loc: SourceLocation) extends NamedAst.Expression
 
+    case class Mask(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
     case class Upcast(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Without(exp: NamedAst.Expression, eff: Name.QName, loc: SourceLocation) extends NamedAst.Expression
@@ -241,8 +245,6 @@ object NamedAst {
 
     case class ReifyEff(sym: Symbol.VarSym, exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Debug(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
-
   }
 
   sealed trait Pattern {
@@ -266,6 +268,8 @@ object NamedAst {
     case class Float32(lit: scala.Float, loc: SourceLocation) extends NamedAst.Pattern
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends NamedAst.Pattern
+
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends NamedAst.Pattern
 
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends NamedAst.Pattern
 

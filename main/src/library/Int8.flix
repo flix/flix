@@ -376,4 +376,13 @@ namespace Int8 {
         import java.lang.Byte.doubleValue(): Float64 \ {};
         (valueOf(x) |> doubleValue)
 
+    ///
+    /// Convert `x` to a BigDecimal.
+    ///
+    /// The numeric value of `x` is preserved exactly.
+    ///
+    @Time(1) @Space(1)
+    pub def toBigDecimal(x: Int8): BigDecimal =
+        import new java.math.BigDecimal(Int32): BigDecimal \ {} as fromInt32;
+        Int8.toInt32(x) |> fromInt32
 }

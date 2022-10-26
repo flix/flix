@@ -17,7 +17,7 @@
 ///
 /// A type class for types that can be boxed.
 ///
-pub class Boxable[a] with Order[a], ToString[a] {
+pub class Boxable[a] with Order[a] {
 
     ///
     /// Boxes the given `x`.
@@ -25,16 +25,15 @@ pub class Boxable[a] with Order[a], ToString[a] {
     pub def box(x: a): Boxed = {
         let value = x as ##java.lang.Object;
         let compare = (o1, o2) -> Order.compare(o1 as a, o2 as a);
-        let toString = o -> ToString.toString(o as a);
-        BoxedObject(value, compare, toString)
+        BoxedObject(value, compare)
     }
 
     ///
     /// Unboxes the given `x`.
     ///
     pub def unbox(x: Boxed): a = match x {
-        case BoxedObject(v, _, _) => v as a
-        case _                    => ?bug
+        case BoxedObject(v, _) => v as a
+        case _                 => ?bug
     }
 
 }
@@ -135,8 +134,7 @@ instance Boxable[Unit] {
     pub override def box(x: Unit): Boxed = {
         let value = x as ##java.lang.Object;
         let compare = (o1, o2) -> Order.compare(o1 as Unit, o2 as Unit);
-        let toString = o -> ToString.toString(o as Unit);
-        BoxedObject(value, compare, toString)
+        BoxedObject(value, compare)
     }
     pub override def unbox(_: Boxed): Unit = ()
 }
@@ -204,6 +202,8 @@ instance Boxable[Float64] {
         case _               => ?bug
     }
 }
+
+instance Boxable[BigDecimal]
 
 instance Boxable[BigInt]
 

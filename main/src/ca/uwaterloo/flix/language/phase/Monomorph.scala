@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
+import java.math.BigDecimal
 import java.math.BigInteger
 import scala.collection.mutable
 
@@ -294,6 +295,8 @@ object Monomorph {
 
       case Expression.Float64(lit, loc) => Expression.Float64(lit, loc)
 
+      case Expression.BigDecimal(lit, loc) => Expression.BigDecimal(lit, loc)
+
       case Expression.Int8(lit, loc) => Expression.Int8(lit, loc)
 
       case Expression.Int16(lit, loc) => Expression.Int16(lit, loc)
@@ -320,6 +323,7 @@ object Monomorph {
             case TypeConstructor.Char => Expression.Char('0', loc)
             case TypeConstructor.Float32 => Expression.Float32(0, loc)
             case TypeConstructor.Float64 => Expression.Float64(0, loc)
+            case TypeConstructor.BigDecimal => Expression.BigDecimal(BigDecimal.ZERO, loc)
             case TypeConstructor.Int8 => Expression.Int8(0, loc)
             case TypeConstructor.Int16 => Expression.Int16(0, loc)
             case TypeConstructor.Int32 => Expression.Int32(0, loc)
@@ -662,7 +666,7 @@ object Monomorph {
           visitExp(exp3, env0)
         }
 
-      case Expression.Debug(_, _, _, _, _, loc) =>
+      case Expression.Mask(_, _, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
     }
 
@@ -683,6 +687,7 @@ object Monomorph {
       case Pattern.Char(lit, loc) => (Pattern.Char(lit, loc), Map.empty)
       case Pattern.Float32(lit, loc) => (Pattern.Float32(lit, loc), Map.empty)
       case Pattern.Float64(lit, loc) => (Pattern.Float64(lit, loc), Map.empty)
+      case Pattern.BigDecimal(lit, loc) => (Pattern.BigDecimal(lit, loc), Map.empty)
       case Pattern.Int8(lit, loc) => (Pattern.Int8(lit, loc), Map.empty)
       case Pattern.Int16(lit, loc) => (Pattern.Int16(lit, loc), Map.empty)
       case Pattern.Int32(lit, loc) => (Pattern.Int32(lit, loc), Map.empty)
@@ -930,6 +935,10 @@ object Monomorph {
 
         case TypeConstructor.Float64 =>
           val caseSym = new Symbol.CaseSym(sym, "ReifiedFloat64", SourceLocation.Unknown)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+
+        case TypeConstructor.BigDecimal =>
+          val caseSym = new Symbol.CaseSym(sym, "ReifiedBigDecimal", SourceLocation.Unknown)
           Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Int8 =>

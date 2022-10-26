@@ -121,6 +121,7 @@ object FormatType {
       case SimpleType.Char => true
       case SimpleType.Float32 => true
       case SimpleType.Float64 => true
+      case SimpleType.BigDecimal => true
       case SimpleType.Int8 => true
       case SimpleType.Int16 => true
       case SimpleType.Int32 => true
@@ -181,6 +182,7 @@ object FormatType {
       case SimpleType.Char => "Char"
       case SimpleType.Float32 => "Float32"
       case SimpleType.Float64 => "Float64"
+      case SimpleType.BigDecimal => "BigDecimal"
       case SimpleType.Int8 => "Int8"
       case SimpleType.Int16 => "Int16"
       case SimpleType.Int32 => "Int32"

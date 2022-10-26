@@ -55,6 +55,13 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represent the type of arbitrary-precision floating point numbers.
+    */
+  case object BigDecimal extends TypeConstructor {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
     * A type constructor that represent the type of 8-bit integers.
     */
   case object Int8 extends TypeConstructor {
@@ -99,6 +106,7 @@ object TypeConstructor {
   /**
     * A type constructor that represents the type of functions.
     */
+  @IntroducedBy(Kinder.getClass)
   case class Arrow(arity: Int) extends TypeConstructor {
     def kind: Kind = Kind.Bool ->: Kind.Effect ->: Kind.mkArrow(arity)
   }

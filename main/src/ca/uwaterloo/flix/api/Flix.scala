@@ -92,6 +92,11 @@ class Flix {
     "BitwiseShr.flix" -> LocalResource.get("/src/library/BitwiseShr.flix"),
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
 
+    // Channels and Threads
+    "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
+    "Thread.flix" -> LocalResource.get("/src/library/Thread.flix"),
+    "Time.flix" -> LocalResource.get("/src/library/Time.flix"),
+
     // Built-in
     "Eq.flix" -> LocalResource.get("/src/library/Eq.flix"),
     "Hash.flix" -> LocalResource.get("/src/library/Hash.flix"),
@@ -121,6 +126,7 @@ class Flix {
     "Array.flix" -> LocalResource.get("/src/library/Array.flix"),
     "Assert.flix" -> LocalResource.get("/src/library/Assert.flix"),
     "Benchmark.flix" -> LocalResource.get("/src/library/Benchmark.flix"),
+    "BigDecimal.flix" -> LocalResource.get("/src/library/BigDecimal.flix"),
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
@@ -168,7 +174,7 @@ class Flix {
     "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
-    "FunctorFilter.flix" -> LocalResource.get("/src/library/FunctorFilter.flix"),
+    "Filterable.flix" -> LocalResource.get("/src/library/Filterable.flix"),
     "Group.flix" -> LocalResource.get("/src/library/Group.flix"),
     "Identity.flix" -> LocalResource.get("/src/library/Identity.flix"),
     "Monad.flix" -> LocalResource.get("/src/library/Monad.flix"),
@@ -190,8 +196,6 @@ class Flix {
     "Concurrent/Channel.flix" -> LocalResource.get("/src/library/Concurrent/Channel.flix"),
     "Concurrent/Condition.flix" -> LocalResource.get("/src/library/Concurrent/Condition.flix"),
     "Concurrent/ReentrantLock.flix" -> LocalResource.get("/src/library/Concurrent/ReentrantLock.flix"),
-    "Concurrent/Channel/Ticker.flix" -> LocalResource.get("/src/library/Concurrent/Channel/Ticker.flix"),
-    "Concurrent/Channel/Timer.flix" -> LocalResource.get("/src/library/Concurrent/Channel/Timer.flix"),
 
     "Time/Duration.flix" -> LocalResource.get("/src/library/Time/Duration.flix"),
     "Time/Epoch.flix" -> LocalResource.get("/src/library/Time/Epoch.flix"),
@@ -229,7 +233,7 @@ class Flix {
     "Fixpoint/Ram/RowVar.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RowVar.flix"),
 
     "Fixpoint/Shared/PredSym.flix" -> LocalResource.get("/src/library/Fixpoint/Shared/PredSym.flix"),
-    
+
     "Fixpoint/Tuple/Tuple.flix" -> LocalResource.get("/src/library/Fixpoint/Tuple/Tuple.flix"),
 
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),

@@ -104,6 +104,8 @@ object Inliner {
 
     case OccurrenceAst.Expression.Float64(lit, loc) => LiftedAst.Expression.Float64(lit, loc)
 
+    case OccurrenceAst.Expression.BigDecimal(lit, loc) => LiftedAst.Expression.BigDecimal(lit, loc)
+
     case OccurrenceAst.Expression.Int8(lit, loc) => LiftedAst.Expression.Int8(lit, loc)
 
     case OccurrenceAst.Expression.Int16(lit, loc) => LiftedAst.Expression.Int16(lit, loc)
@@ -567,6 +569,7 @@ object Inliner {
     case LiftedAst.Expression.Char(_, _) => true
     case LiftedAst.Expression.Float32(_, _) => true
     case LiftedAst.Expression.Float64(_, _) => true
+    case LiftedAst.Expression.BigDecimal(_, _) => true
     case LiftedAst.Expression.Int8(_, _) => true
     case LiftedAst.Expression.Int16(_, _) => true
     case LiftedAst.Expression.Int32(_, _) => true
@@ -594,6 +597,8 @@ object Inliner {
     case OccurrenceAst.Expression.Float32(lit, loc) => LiftedAst.Expression.Float32(lit, loc)
 
     case OccurrenceAst.Expression.Float64(lit, loc) => LiftedAst.Expression.Float64(lit, loc)
+
+    case OccurrenceAst.Expression.BigDecimal(lit, loc) => LiftedAst.Expression.BigDecimal(lit, loc)
 
     case OccurrenceAst.Expression.Int8(lit, loc) => LiftedAst.Expression.Int8(lit, loc)
 

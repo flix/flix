@@ -176,6 +176,9 @@ object Indexer {
     case Expression.Float64(_, _) =>
       Index.occurrenceOf(exp0)
 
+    case Expression.BigDecimal(_, _) =>
+      Index.occurrenceOf(exp0)
+
     case Expression.Int8(_, _) =>
       Index.occurrenceOf(exp0)
 
@@ -316,6 +319,9 @@ object Indexer {
       val de = declaredEff.map(visitType).getOrElse(Index.empty)
       visitExp(exp) ++ dt ++ dp ++ de ++ Index.occurrenceOf(exp0)
 
+    case Expression.Mask(exp, _, _, _, _) =>
+      visitExp(exp)
+
     case Expression.Upcast(exp, tpe, _) =>
       visitExp(exp) ++ visitType(tpe) ++ Index.occurrenceOf(exp0)
 
@@ -430,9 +436,6 @@ object Indexer {
 
     case Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(sym, exp1.tpe) ++ Index.occurrenceOf(exp0)
-
-    case Expression.Debug(exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
   }
 
   /**
@@ -453,6 +456,7 @@ object Indexer {
     case Pattern.Char(_, _) => Index.occurrenceOf(pat0)
     case Pattern.Float32(_, _) => Index.occurrenceOf(pat0)
     case Pattern.Float64(_, _) => Index.occurrenceOf(pat0)
+    case Pattern.BigDecimal(_, _) => Index.occurrenceOf(pat0)
     case Pattern.Int8(_, _) => Index.occurrenceOf(pat0)
     case Pattern.Int16(_, _) => Index.occurrenceOf(pat0)
     case Pattern.Int32(_, _) => Index.occurrenceOf(pat0)

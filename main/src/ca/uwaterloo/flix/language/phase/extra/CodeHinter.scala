@@ -107,6 +107,8 @@ object CodeHinter {
 
     case Expression.Float64(_, _) => Nil
 
+    case Expression.BigDecimal(_, _) => Nil
+
     case Expression.Int8(_, _) => Nil
 
     case Expression.Int16(_, _) => Nil
@@ -219,6 +221,9 @@ object CodeHinter {
     case Expression.Cast(exp, _, _, _, tpe, pur, _, loc) =>
       checkCast(tpe, pur, loc) ++ visitExp(exp)
 
+    case Expression.Mask(exp, _, _, _, _) =>
+      visitExp(exp)
+
     case Expression.Upcast(exp, _, _) =>
       visitExp(exp)
 
@@ -322,9 +327,6 @@ object CodeHinter {
 
     case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-
-    case Expression.Debug(exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
   }
 
   /**

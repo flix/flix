@@ -109,6 +109,8 @@ object Stratifier {
 
     case Expression.Float64(_, _) => exp0.toSuccess
 
+    case Expression.BigDecimal(_, _) => exp0.toSuccess
+
     case Expression.Int8(_, _) => exp0.toSuccess
 
     case Expression.Int16(_, _) => exp0.toSuccess
@@ -287,6 +289,11 @@ object Stratifier {
     case Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
+      }
+
+    case Expression.Mask(exp, tpe, pur, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Mask(e, tpe, pur, eff, loc)
       }
 
     case Expression.Upcast(exp, tpe, loc) =>
@@ -470,11 +477,6 @@ object Stratifier {
       mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
         case (e1, e2, e3) => Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
       }
-
-    case Expression.Debug(exp1, exp2, tpe, pur, eff, loc) =>
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.Debug(e1, e2, tpe, pur, eff, loc)
-      }
   }
 
   private def visitJvmMethod(method: JvmMethod)(implicit g: LabelledGraph, flix: Flix): Validation[JvmMethod, StratificationError] = method match {
@@ -527,6 +529,8 @@ object Stratifier {
     case Expression.Float32(_, _) => LabelledGraph.empty
 
     case Expression.Float64(_, _) => LabelledGraph.empty
+
+    case Expression.BigDecimal(_, _) => LabelledGraph.empty
 
     case Expression.Int8(_, _) => LabelledGraph.empty
 
@@ -658,6 +662,9 @@ object Stratifier {
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
+    case Expression.Mask(exp, _, _, _, _) =>
+      labelledGraphOfExp(exp)
+
     case Expression.Upcast(exp, _, _) =>
       labelledGraphOfExp(exp)
 
@@ -774,9 +781,6 @@ object Stratifier {
 
     case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2) + labelledGraphOfExp(exp3)
-
-    case Expression.Debug(exp1, exp2, _, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
   }
 
   /**

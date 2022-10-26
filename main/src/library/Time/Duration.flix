@@ -14,52 +14,33 @@
  * limitations under the License.
  */
 
-namespace Time {
+namespace Time/Duration {
+    use Int32.toInt64
+    use Time.Duration
+    use Time.Duration.Duration
 
-    namespace Duration {
+    ///
+    /// Returns a duration of `n` nano seconds.
+    ///
+    @Experimental
+    pub def fromNanoSeconds(n: Int32): Duration = Duration(toInt64(n))
 
-        ///
-        /// Returns the number of nanoseconds in one 24 hour day.
-        ///
-        @Experimental
-        pub def oneDay(): Int64 = 24i64 * oneHour()
+    ///
+    /// Returns a duration of `n` micro seconds.
+    ///
+    @Experimental
+    pub def fromMicroSeconds(n: Int32): Duration = Duration(toInt64(n) * 1_000i64)
 
-        ///
-        /// Returns the number of nanoseconds in one hour.
-        ///
-        @Experimental
-        pub def oneHour(): Int64 = 60i64 * oneMinute()
+    ///
+    /// Returns a duration of `n` milli seconds.
+    ///
+    @Experimental
+    pub def fromMilliSeconds(n: Int32): Duration = Duration(toInt64(n) * 1_000_000i64)
 
-        ///
-        /// Returns the number of nanoseconds in one minute.
-        ///
-        @Experimental
-        pub def oneMinute(): Int64 = 60i64 * oneSecond()
-
-        ///
-        /// Returns the number of nanoseconds in one second.
-        ///
-        @Experimental
-        pub def oneSecond(): Int64 = 1000i64 * oneMillisecond()
-
-        ///
-        /// Returns the number of nanoseconds in one millisecond.
-        ///
-        @Experimental
-        pub def oneMillisecond(): Int64 = 1000i64 * oneMicrosecond()
-
-        ///
-        /// Returns the number of nanoseconds in one microsecond.
-        ///
-        @Experimental
-        pub def oneMicrosecond(): Int64 = 1000i64 * oneNanosecond()
-
-        ///
-        /// Returns the number of nanoseconds in one nanosecond, i.e. one.
-        ///
-        @Experimental
-        pub def oneNanosecond(): Int64 = 1i64
-
-    }
+    ///
+    /// Returns a duration of `n` seconds.
+    ///
+    @Experimental
+    pub def fromSeconds(n: Int32): Duration = Duration(toInt64(n) * 1_000_000_000i64)
 
 }

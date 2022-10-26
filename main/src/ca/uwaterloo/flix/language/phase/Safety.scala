@@ -73,6 +73,8 @@ object Safety {
 
       case Expression.Float64(_, _) => Nil
 
+      case Expression.BigDecimal(_, _) => Nil
+
       case Expression.Int8(_, _) => Nil
 
       case Expression.Int16(_, _) => Nil
@@ -188,6 +190,9 @@ object Safety {
       case Expression.Cast(exp, _, _, _, _, _, _, _) =>
         visit(exp)
 
+      case Expression.Mask(exp, _, _, _, _) =>
+        visit(exp)
+
       case Expression.Upcast(exp, tpe, loc) =>
         val errors =
           if (isSubTypeOf(Type.eraseAliases(exp.tpe), Type.eraseAliases(tpe), renv)) {
@@ -301,10 +306,6 @@ object Safety {
 
       case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
         visit(exp1) ++ visit(exp2) ++ visit(exp3)
-
-      case Expression.Debug(exp1, exp2, _, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
-
     }
 
     visit(e0)
@@ -569,6 +570,7 @@ object Safety {
     case Pattern.Char(_, _) => Nil
     case Pattern.Float32(_, _) => Nil
     case Pattern.Float64(_, _) => Nil
+    case Pattern.BigDecimal(_, _) => Nil
     case Pattern.Int8(_, _) => Nil
     case Pattern.Int16(_, _) => Nil
     case Pattern.Int32(_, _) => Nil
@@ -593,8 +595,8 @@ object Safety {
       // Case 1: Interface. No need for a constructor.
       List.empty
     } else {
-      // Case 2: Class. Must have a public non-zero argument constructor.
-      if (hasPublicZeroArgConstructor(clazz))
+      // Case 2: Class. Must have a non-private zero argument constructor.
+      if (hasNonPrivateZeroArgConstructor(clazz))
         List.empty
       else
         List(MissingPublicZeroArgConstructor(clazz, loc))
@@ -676,16 +678,12 @@ object Safety {
   }
 
   /**
-    * Return true if the given `clazz` has public zero argument constructor.
+    * Return true if the given `clazz` has a non-private zero argument constructor.
     */
-  private def hasPublicZeroArgConstructor(clazz: java.lang.Class[_]): Boolean = {
+  private def hasNonPrivateZeroArgConstructor(clazz: java.lang.Class[_]): Boolean = {
     try {
-      // We simply use Class.getConstructor whose documentation states:
-      //
-      // Returns a Constructor object that reflects the specified
-      // public constructor of the class represented by this class object.
-      clazz.getConstructor()
-      true
+      val constructor = clazz.getDeclaredConstructor()
+      !java.lang.reflect.Modifier.isPrivate(constructor.getModifiers())
     } catch {
       case _: NoSuchMethodException => false
     }

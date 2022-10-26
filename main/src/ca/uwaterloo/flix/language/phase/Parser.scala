@@ -411,7 +411,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Float: Rule1[ParsedAst.Literal] = rule {
-      Float32 | Float64 | FloatDefault
+      Float32 | Float64 | BigDecimal | FloatDefault
     }
 
     def FloatDefault: Rule1[ParsedAst.Literal.Float64] = rule {
@@ -424,6 +424,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Float64: Rule1[ParsedAst.Literal.Float64] = rule {
       SP ~ Sign ~ SeparableDecDigits ~ "." ~ SeparableDecDigits ~ atomic("f64") ~ SP ~> ParsedAst.Literal.Float64
+    }
+
+    def BigDecimal: Rule1[ParsedAst.Literal.BigDecimal] = rule {
+      SP ~ Sign ~ SeparableDecDigits ~ "." ~ SeparableDecDigits ~ atomic("ff") ~ SP ~> ParsedAst.Literal.BigDecimal
     }
 
     def Int: Rule1[ParsedAst.Literal] = rule {
@@ -740,10 +744,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Static | Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
         ReifyType | ReifyPurity | Choose | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
-        GetChannel | SelectChannel | Spawn | ParYield | Par | Lazy | Force | Upcast | Intrinsic | New | ArrayLit | ArrayNew |
-        FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
-        FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
-        Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | FName | Tag | Hole
+        GetChannel | SelectChannel | Spawn | ParYield | Par | Lazy | Force | Upcast | Mask | Intrinsic | New |
+        ArrayLit | ArrayNew | FNil | FSet | FMap | ConstraintSet |
+        FixpointLambda | FixpointProject | FixpointSolveWithProject | FixpointQueryWithSelect |
+        ConstraintSingleton | Interpolation | Literal | Resume | Do | Discard | Debug | ForYield | ForEach |
+        NewObject | UnaryLambda | FName | Tag | Hole
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -952,6 +957,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         SP ~ DebugKind ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Debug
       }
+    }
+
+    def Mask: Rule1[ParsedAst.Expression.Mask] = rule {
+      SP ~ keyword("$MASK$") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Mask
     }
 
     def Discard: Rule1[ParsedAst.Expression.Discard] = rule {

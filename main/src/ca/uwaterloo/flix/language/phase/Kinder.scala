@@ -372,6 +372,8 @@ object Kinder {
 
     case ResolvedAst.Expression.Float64(lit, loc) => KindedAst.Expression.Float64(lit, loc).toSuccess
 
+    case ResolvedAst.Expression.BigDecimal(lit, loc) => KindedAst.Expression.BigDecimal(lit, loc).toSuccess
+
     case ResolvedAst.Expression.Int8(lit, loc) => KindedAst.Expression.Int8(lit, loc).toSuccess
 
     case ResolvedAst.Expression.Int16(lit, loc) => KindedAst.Expression.Int16(lit, loc).toSuccess
@@ -606,6 +608,12 @@ object Kinder {
           KindedAst.Expression.Cast(exp, declaredType.headOption, declaredPur, declaredEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
+    case ResolvedAst.Expression.Mask(exp, loc) =>
+      val eVal = visitExp(exp, kenv0, senv, taenv, henv0, root)
+      mapN(eVal) {
+        case e => KindedAst.Expression.Mask(e, loc)
+      }
+
     case ResolvedAst.Expression.Upcast(exp, loc) =>
       mapN(visitExp(exp, kenv0, senv, taenv, henv0, root)) { e =>
         KindedAst.Expression.Upcast(e, Type.freshVar(Kind.Star, loc), loc)
@@ -815,11 +823,6 @@ object Kinder {
         case (e1, e2, e3) => KindedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
       }
 
-    case ResolvedAst.Expression.Debug(exp1, exp2, loc) =>
-      mapN(visitExp(exp1, kenv0, senv, taenv, henv0, root), visitExp(exp2, kenv0, senv, taenv, henv0, root)) {
-        case (e1, e2) => KindedAst.Expression.Debug(e1, e2, loc)
-      }
-
   }
 
   /**
@@ -899,6 +902,7 @@ object Kinder {
     case ResolvedAst.Pattern.Char(lit, loc) => KindedAst.Pattern.Char(lit, loc).toSuccess
     case ResolvedAst.Pattern.Float32(lit, loc) => KindedAst.Pattern.Float32(lit, loc).toSuccess
     case ResolvedAst.Pattern.Float64(lit, loc) => KindedAst.Pattern.Float64(lit, loc).toSuccess
+    case ResolvedAst.Pattern.BigDecimal(lit, loc) => KindedAst.Pattern.BigDecimal(lit, loc).toSuccess
     case ResolvedAst.Pattern.Int8(lit, loc) => KindedAst.Pattern.Int8(lit, loc).toSuccess
     case ResolvedAst.Pattern.Int16(lit, loc) => KindedAst.Pattern.Int16(lit, loc).toSuccess
     case ResolvedAst.Pattern.Int32(lit, loc) => KindedAst.Pattern.Int32(lit, loc).toSuccess

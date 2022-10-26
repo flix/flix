@@ -80,6 +80,8 @@ object KindedAst {
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends KindedAst.Expression
 
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends KindedAst.Expression
+
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends KindedAst.Expression
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends KindedAst.Expression
@@ -154,6 +156,8 @@ object KindedAst {
 
     case class Cast(exp: KindedAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], declaredEff: Option[Type], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
+    case class Mask(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+
     case class Upcast(exp: KindedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class Without(exp: KindedAst.Expression, eff: Ast.EffectSymUse, loc: SourceLocation) extends KindedAst.Expression
@@ -220,8 +224,6 @@ object KindedAst {
 
     case class ReifyEff(sym: Symbol.VarSym, exp1: KindedAst.Expression, exp2: KindedAst.Expression, exp3: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Debug(exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
-
   }
 
   sealed trait Pattern {
@@ -245,6 +247,8 @@ object KindedAst {
     case class Float32(lit: scala.Float, loc: SourceLocation) extends KindedAst.Pattern
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends KindedAst.Pattern
+
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends KindedAst.Pattern
 
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends KindedAst.Pattern
 

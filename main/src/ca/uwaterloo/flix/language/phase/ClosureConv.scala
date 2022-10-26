@@ -64,6 +64,8 @@ object ClosureConv {
 
     case Expression.Float64(_, _) => exp0
 
+    case Expression.BigDecimal(_, _) => exp0
+
     case Expression.Int8(_, _) => exp0
 
     case Expression.Int16(_, _) => exp0
@@ -377,6 +379,8 @@ object ClosureConv {
 
     case Expression.Float64(_, _) => SortedSet.empty
 
+    case Expression.BigDecimal(_, _) => SortedSet.empty
+
     case Expression.Int8(_, _) => SortedSet.empty
 
     case Expression.Int16(_, _) => SortedSet.empty
@@ -557,6 +561,8 @@ object ClosureConv {
       case Expression.Float32(_, _) => e
 
       case Expression.Float64(_, _) => e
+
+      case Expression.BigDecimal(_, _) => e
 
       case Expression.Int8(_, _) => e
 

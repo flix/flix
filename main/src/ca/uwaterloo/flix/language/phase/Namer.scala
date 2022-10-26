@@ -650,6 +650,8 @@ object Namer {
 
     case WeededAst.Expression.Float64(lit, loc) => NamedAst.Expression.Float64(lit, loc).toSuccess
 
+    case WeededAst.Expression.BigDecimal(lit, loc) => NamedAst.Expression.BigDecimal(lit, loc).toSuccess
+
     case WeededAst.Expression.Int8(lit, loc) => NamedAst.Expression.Int8(lit, loc).toSuccess
 
     case WeededAst.Expression.Int16(lit, loc) => NamedAst.Expression.Int16(lit, loc).toSuccess
@@ -890,6 +892,11 @@ object Namer {
         case (e, t, f) => NamedAst.Expression.Cast(e, t, f, loc)
       }
 
+    case WeededAst.Expression.Mask(exp, loc) =>
+      mapN(visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0)) {
+        case e => NamedAst.Expression.Mask(e, loc)
+      }
+
     case WeededAst.Expression.Upcast(exp, loc) =>
       mapN(visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0)) {
         case e => NamedAst.Expression.Upcast(e, loc)
@@ -1119,11 +1126,6 @@ object Namer {
         case (e1, e2, e3) => NamedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
       }
 
-    case WeededAst.Expression.Debug(exp1, exp2, loc) =>
-      mapN(visitExp(exp1, env0, uenv0, ienv0, tenv0, ns0, prog0), visitExp(exp2, env0, uenv0, ienv0, tenv0, ns0, prog0)) {
-        case (e1, e2) => NamedAst.Expression.Debug(e1, e2, loc)
-      }
-
   }
 
   /**
@@ -1145,6 +1147,7 @@ object Namer {
       case WeededAst.Pattern.Char(lit, loc) => NamedAst.Pattern.Char(lit, loc)
       case WeededAst.Pattern.Float32(lit, loc) => NamedAst.Pattern.Float32(lit, loc)
       case WeededAst.Pattern.Float64(lit, loc) => NamedAst.Pattern.Float64(lit, loc)
+      case WeededAst.Pattern.BigDecimal(lit, loc) => NamedAst.Pattern.BigDecimal(lit, loc)
       case WeededAst.Pattern.Int8(lit, loc) => NamedAst.Pattern.Int8(lit, loc)
       case WeededAst.Pattern.Int16(lit, loc) => NamedAst.Pattern.Int16(lit, loc)
       case WeededAst.Pattern.Int32(lit, loc) => NamedAst.Pattern.Int32(lit, loc)
@@ -1200,6 +1203,7 @@ object Namer {
       case WeededAst.Pattern.Char(lit, loc) => NamedAst.Pattern.Char(lit, loc)
       case WeededAst.Pattern.Float32(lit, loc) => NamedAst.Pattern.Float32(lit, loc)
       case WeededAst.Pattern.Float64(lit, loc) => NamedAst.Pattern.Float64(lit, loc)
+      case WeededAst.Pattern.BigDecimal(lit, loc) => NamedAst.Pattern.BigDecimal(lit, loc)
       case WeededAst.Pattern.Int8(lit, loc) => NamedAst.Pattern.Int8(lit, loc)
       case WeededAst.Pattern.Int16(lit, loc) => NamedAst.Pattern.Int16(lit, loc)
       case WeededAst.Pattern.Int32(lit, loc) => NamedAst.Pattern.Int32(lit, loc)
@@ -1509,6 +1513,7 @@ object Namer {
     case WeededAst.Expression.Char(_, _) => Nil
     case WeededAst.Expression.Float32(_, _) => Nil
     case WeededAst.Expression.Float64(_, _) => Nil
+    case WeededAst.Expression.BigDecimal(_, _) => Nil
     case WeededAst.Expression.Int8(_, _) => Nil
     case WeededAst.Expression.Int16(_, _) => Nil
     case WeededAst.Expression.Int32(_, _) => Nil
@@ -1551,6 +1556,7 @@ object Namer {
     case WeededAst.Expression.Assign(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Ascribe(exp, _, _, _) => freeVars(exp)
     case WeededAst.Expression.Cast(exp, _, _, _) => freeVars(exp)
+    case WeededAst.Expression.Mask(exp, _) => freeVars(exp)
     case WeededAst.Expression.Upcast(exp, _) => freeVars(exp)
     case WeededAst.Expression.Without(exp, _, _) => freeVars(exp)
     case WeededAst.Expression.Do(_, exps, _) => exps.flatMap(freeVars)
@@ -1596,7 +1602,6 @@ object Namer {
     case WeededAst.Expression.Reify(_, _) => Nil
     case WeededAst.Expression.ReifyType(_, _, _) => Nil
     case WeededAst.Expression.ReifyEff(ident, exp1, exp2, exp3, _) => filterBoundVars(freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3), List(ident))
-    case WeededAst.Expression.Debug(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
   }
 
   /**
@@ -1611,6 +1616,7 @@ object Namer {
     case WeededAst.Pattern.Char(lit, loc) => Nil
     case WeededAst.Pattern.Float32(lit, loc) => Nil
     case WeededAst.Pattern.Float64(lit, loc) => Nil
+    case WeededAst.Pattern.BigDecimal(lit, loc) => Nil
     case WeededAst.Pattern.Int8(lit, loc) => Nil
     case WeededAst.Pattern.Int16(lit, loc) => Nil
     case WeededAst.Pattern.Int32(lit, loc) => Nil

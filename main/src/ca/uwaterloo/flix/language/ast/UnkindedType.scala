@@ -192,10 +192,33 @@ object UnkindedType {
   }
 
   /**
+    * Returns the Int32 type.
+    */
+  def mkInt32(loc: SourceLocation): UnkindedType = {
+    UnkindedType.Cst(TypeConstructor.Int32, loc)
+  }
+
+  /**
+    * Returns the ##java.lang.Object type.
+    */
+  def mkObject(loc: SourceLocation): UnkindedType = {
+    val obj = Class.forName("java.lang.Object")
+    UnkindedType.Cst(TypeConstructor.Native(obj), loc)
+  }
+
+  /**
     * Constructs the apply type base[t_1, ,..., t_n].
     */
   def mkApply(base: UnkindedType, ts: List[UnkindedType], loc: SourceLocation): UnkindedType = ts.foldLeft(base) {
     case (acc, t) => Apply(acc, t, loc)
+  }
+
+  /**
+    * Constructs the type a -> b \ IO
+    */
+  def mkImpureArrow(a: UnkindedType, b: UnkindedType, loc: SourceLocation): UnkindedType = {
+    val purAndEff = PurityAndEffect(Some(UnkindedType.Cst(TypeConstructor.False, loc)), None)
+    mkApply(UnkindedType.Arrow(purAndEff, 2, loc), List(a, b), loc)
   }
 
   /**
@@ -264,6 +287,74 @@ object UnkindedType {
   }
 
   /**
+    * Construct the enum type constructor for the given symbol `sym` with the given kind `k`.
+    */
+  def mkEnum(sym: Symbol.EnumSym, loc: SourceLocation): UnkindedType = UnkindedType.Enum(sym, loc)
+
+  /**
+    * Construct the effect type for the given symbol.
+    */
+  def mkEffect(sym: Symbol.EffectSym, loc: SourceLocation): UnkindedType = UnkindedType.Cst(TypeConstructor.Effect(sym), loc)
+
+  /**
+    * Constructs a predicate type.
+    */
+  def mkPredicate(den: Ast.Denotation, ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
+    val tycon = den match {
+      case Ast.Denotation.Relational => UnkindedType.Cst(TypeConstructor.Relation, loc)
+      case Ast.Denotation.Latticenal => UnkindedType.Cst(TypeConstructor.Lattice, loc)
+    }
+    val ts = ts0 match {
+      case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
+      case x :: Nil => x
+      case xs => UnkindedType.mkTuple(xs, loc)
+    }
+
+    UnkindedType.Apply(tycon, ts, loc)
+  }
+
+  /**
+    * Returns the type `Not(tpe1)`.
+    */
+  def mkNot(tpe1: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Not, loc), List(tpe1), loc)
+
+  /**
+    * Returns the type `And(tpe1, tpe2)`.
+    */
+  def mkAnd(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.And, loc), List(tpe1, tpe2), loc)
+
+  /**
+    * Returns the type `Or(tpe1, tpe2)`.
+    */
+  def mkOr(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Or, loc), List(tpe1, tpe2), loc)
+
+  /**
+    * Returns the type `Complement(tpe1)`.
+    */
+  def mkComplement(tpe1: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Complement, loc), List(tpe1), loc)
+
+  /**
+    * Returns the type `Union(tpe1, tpe2)`.
+    */
+  def mkUnion(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Union, loc), List(tpe1, tpe2), loc)
+
+  /**
+    * Returns the type `Intersection(tpe1, tpe2)`.
+    */
+  def mkIntersection(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Intersection, loc), List(tpe1, tpe2), loc)
+
+  /**
+    * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
+    */
+  def mkUncurriedArrowWithEffect(as: List[UnkindedType], e: UnkindedType.PurityAndEffect, b: UnkindedType, loc: SourceLocation): UnkindedType = {
+    val arrow = UnkindedType.Arrow(e, as.length + 1, loc)
+    val inner = as.foldLeft(arrow: UnkindedType) {
+      case (acc, x) => UnkindedType.Apply(acc, x, loc)
+    }
+    UnkindedType.Apply(inner, b, loc)
+  }
+
+  /**
     * Erases all the aliases from the type.
     */
   def eraseAliases(tpe0: UnkindedType): UnkindedType = tpe0 match {
@@ -307,6 +398,9 @@ object UnkindedType {
     }
     else if (c == java.lang.Double.TYPE) {
       UnkindedType.Cst(TypeConstructor.Float64, SourceLocation.Unknown)
+    }
+    else if (c == classOf[java.math.BigDecimal]) {
+      UnkindedType.Cst(TypeConstructor.BigDecimal, SourceLocation.Unknown)
     }
     else if (c == classOf[java.math.BigInteger]) {
       UnkindedType.Cst(TypeConstructor.BigInt, SourceLocation.Unknown)

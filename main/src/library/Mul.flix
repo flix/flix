@@ -32,6 +32,10 @@ instance Mul[Float64] {
     pub def mul(x: Float64, y: Float64): Float64 = $FLOAT64_MUL$(x, y)
 }
 
+instance Mul[BigDecimal] {
+    pub def mul(x: BigDecimal, y: BigDecimal): BigDecimal = $BIGDECIMAL_MUL$(x, y)
+}
+
 instance Mul[Int8] {
     pub def mul(x: Int8, y: Int8): Int8 = $INT8_MUL$(x, y)
 }

@@ -18,11 +18,12 @@ object FormatExpression {
     case TypedAst.Expression.Char(lit, _) => "'" + lit + "'"
     case TypedAst.Expression.Float32(lit, _) => s"${lit}f32"
     case TypedAst.Expression.Float64(lit, _) => s"${lit}f64"
+    case TypedAst.Expression.BigDecimal(lit, _) => s"${lit}ff"
     case TypedAst.Expression.Int8(lit, _) => s"${lit}i8"
     case TypedAst.Expression.Int16(lit, _) => s"${lit}i16"
     case TypedAst.Expression.Int32(lit, _) => s"${lit}i32"
     case TypedAst.Expression.Int64(lit, _) => s"${lit}i64"
-    case TypedAst.Expression.BigInt(lit, _) => s"${lit}i64"
+    case TypedAst.Expression.BigInt(lit, _) => s"${lit}ii"
     case TypedAst.Expression.Str(lit, _) => "\"" + lit + "\""
     case TypedAst.Expression.Default(_, _) => s"default"
     case TypedAst.Expression.Wild(_, _) => "_"
@@ -60,6 +61,7 @@ object FormatExpression {
     case TypedAst.Expression.Assign(exp1, exp2, _, _, _, _) => s"Assign($exp1, $exp2)"
     case TypedAst.Expression.Ascribe(exp, tpe, _, _, _) => s"Ascribe($exp, $tpe)"
     case TypedAst.Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, eff, _, _) => s"Cast($exp, $declaredType, $declaredPur, $declaredEff, $tpe, $eff)"
+    case TypedAst.Expression.Mask(exp, _, _, _, _) => s"Mask($exp)"
     case TypedAst.Expression.Upcast(exp, tpe, loc) => s"Upcast($exp, $tpe, $loc)"
     case TypedAst.Expression.Without(exp, sym, _, _, _, _) => s"Without($exp, $sym)"
     case TypedAst.Expression.TryCatch(exp, rules, _, _, _, _) => s"TryCatch($exp, ${rules.mkString(", ")})"
@@ -92,7 +94,6 @@ object FormatExpression {
     case TypedAst.Expression.Reify(t, _, _, _, _) => s"Reify($t)"
     case TypedAst.Expression.ReifyType(t, k, _, _, _, _) => s"ReifyType($t, $k)"
     case TypedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, _, _) => s"ReifyEff($sym, $exp1, $exp2, $exp3)"
-    case TypedAst.Expression.Debug(exp1, exp2, _, _, _, _) => s"Debug($exp1, $exp2)"
   }
 
 }
