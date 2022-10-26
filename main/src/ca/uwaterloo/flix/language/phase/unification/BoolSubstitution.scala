@@ -59,7 +59,6 @@ case class BoolSubstitution[F](m: Map[Int, F]) {
     if (isEmpty) {
       f
     } else {
-      //println("subst map: " + m)
       alg.map(f) {
         i => m.getOrElse(i, alg.mkVar(i))
       }
@@ -128,7 +127,6 @@ case class BoolSubstitution[F](m: Map[Int, F]) {
     val map = m.map {
       case (k0, v0) =>
         val k = env.getBackward(k0).getOrElse(throw InternalCompilerException(s"missing key $k0"))
-        //println(k0)
         val v = alg.toType(v0, env)
         (k, v)
     }

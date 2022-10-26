@@ -26,8 +26,6 @@ import scala.util.Try
 
 object BoolUnification {
 
-  val lock = new ReentrantLock();
-
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
@@ -60,7 +58,6 @@ object BoolUnification {
     }
 
     // translate the types into formulas
-    lock.lock()
     //implicit val alg: BoolAlg[BoolFormula] = BoolFormula.AsBoolAlgTrait
     implicit val alg: BoolAlg[BddFormula] = BddFormula.AsBoolAlgTrait
 
@@ -70,14 +67,10 @@ object BoolUnification {
 
     val renv = alg.liftRigidityEnv(renv0, env)
 
-    /*println()
-    println("Call to boolUnification")
-    println("Env: " + env)*/
     val res : Result[Substitution, UnificationError] = booleanUnification(f1, f2, renv) match {
       case None => UnificationError.MismatchedBools(tpe1, tpe2).toErr
-      case Some(subst) => /*println("Final: " + subst);*/ subst.toTypeSubstitution(env).toOk
+      case Some(subst) => subst.toTypeSubstitution(env).toOk
     }
-    lock.unlock()
     res
   }
 
@@ -139,7 +132,6 @@ object BoolUnification {
     */
   private def successiveVariableElimination[F](f: F, flexvs: List[Int])(implicit flix: Flix, alg: BoolAlg[F]): BoolSubstitution[F] = flexvs match {
     case Nil =>
-      //println("SVE, empty")
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
       if (!satisfiable(f))
         BoolSubstitution.empty
@@ -147,17 +139,13 @@ object BoolUnification {
         throw BooleanUnificationException
 
     case x :: xs =>
-      //println("SVE, non-empty")
       val t0 = BoolSubstitution.singleton(x, alg.mkFalse)(f)
       val t1 = BoolSubstitution.singleton(x, alg.mkTrue)(f)
       val se = successiveVariableElimination(alg.mkAnd(t0, t1), xs)
-      //println("Intermediate (a): " + se)
 
       val f1 = alg.minimize(alg.mkOr(se(t0), alg.mkAnd(alg.mkVar(x), alg.mkNot(se(t1)))))
       val st = BoolSubstitution.singleton(x, f1)
-      //println("Intermediate (b): " + st)
       val res = st ++ se
-      //println("Intermediate: " + res)
       res
   }
 

@@ -3846,26 +3846,6 @@ namespace Result {
     }
 
     ///
-    /// Returns the result of applying `f` to a start value `s` and the elements in `l`
-    /// going from right to left.
-    ///
-    /// If at any step applying `f` fails (i.e. it produces a `Err(e)` value) the traversal
-    /// of `l` is short-circuited and `Err(e)` is returned.
-    ///
-    /// If `f` is successfully applied to all elements in `l` the result is of the form:
-    /// `Ok(f(x1, ...f(xn-1, f(xn, s))...))`.
-    ///
-    pub def foldRightM(f: (a, b) -> Result[b, e] \ ef, s: b, l: List[a]): Result[b, e] \ ef =
-        def loop(ll, k) = match ll {
-            case Nil     => k(s)
-            case x :: xs => loop(xs, s1 -> match f(x, s1) {
-                case Ok(s2) => k(s2)
-                case Err(e) => Err(e)
-            })
-        };
-        loop(l, upcast(s1 -> Ok(s1)))
-
-    ///
     /// Returns a one-element list of the value `v` if `r` is `Ok(v)`. Otherwise returns the empty list.
     ///
     @Time(1) @Space(1)
@@ -4632,46 +4612,12 @@ instance Functor[Nel] {
     pub def map(f: a -> b \ ef, l: Nel[a]): Nel[b] \ ef = Nel.map(f, l)
 }
 
-instance Applicative[Nel] {
-    pub def point(x: a): Nel[a] = Nel.singleton(x)
-    pub def ap(f: Nel[a -> b \ ef], x: Nel[a]): Nel[b] \ ef = Nel.ap(f, x)
-}
-
-instance Monad[Nel] {
-    pub def flatMap(f: a -> Nel[b] \ ef, x : Nel[a]) : Nel[b] \ ef = Nel.flatMap(f, x)
-}
-
-instance MonadZip[Nel] {
-    pub def zipWith(f: (a, b) -> c \ ef, xs: Nel[a], ys: Nel[b]): Nel[c] \ ef = Nel.zipWith(f, xs, ys)
-    pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Nel[a], ys: Nel[b]): f[Nel[c]] \ ef with Applicative[f] = Nel.zipWithA(f, xs, ys)
-    pub override def zip(xs: Nel[a], ys: Nel[b]): Nel[(a, b)] = Nel.zip(xs, ys)
-    pub override def unzip(xs: Nel[(a, b)]): (Nel[a], Nel[b]) = Nel.unzip(xs)
-}
-
 instance UnorderedFoldable[Nel] {
     pub def foldMap(f: a -> b \ ef, l: Nel[a]): b \ ef with CommutativeMonoid[b] = Nel.foldMap(f, l)
     override pub def isEmpty(_: Nel[a]): Bool = false
     override pub def exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
     override pub def forall(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forall(f, l)
     override pub def memberOf(x: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(x, l)
-}
-
-instance Reducible[Nel] {
-    pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ {ef1, ef2} = Nel.reduceLeftTo(f, g, l)
-    pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ {ef1, ef2} = Nel.reduceRightTo(f, g, l)
-    override pub def head(l: Nel[a]): a = Nel.head(l)
-    override pub def last(l: Nel[a]): a = Nel.last(l)
-    override pub def init(l: Nel[a]): List[a] = Nel.init(l)
-    override pub def tail(l: Nel[a]): List[a] = Nel.tail(l)
-    override pub def exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
-    override pub def forall(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forall(f, l)
-    override pub def find(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.find(f, l)
-    override pub def findLeft(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.findLeft(f, l)
-    override pub def findRight(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.findRight(f, l)
-    override pub def memberOf(a: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(a, l)
-    override pub def dropWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.dropWhile(f, l)
-    override pub def takeWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.takeWhile(f, l)
-    override pub def toList(l: Nel[a]): List[a] = Nel.toList(l)
 }
 
 instance SemiGroup[Nel[a]] {
@@ -4793,17 +4739,6 @@ namespace Nel {
     }
 
     ///
-    /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
-    ///
-    @Time(time(f) * length(l)) @Space(space(f))
-    pub def findRight(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = match l {
-        case Nel(x, xs) => match List.findRight(f, xs) {
-            case None    => if (f(x)) Some(x) else None
-            case Some(y) => Some(y)
-        }
-    }
-
-    ///
     /// Returns the result of applying `f` to every element in `l`.
     ///
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
@@ -4824,26 +4759,6 @@ namespace Nel {
         match List.mapWithIndex(f, x :: xs) {
             case y :: ys => Nel(y, ys)
             case _       => unreachable!()
-        }
-
-    ///
-    /// Apply every function from `f` to every argument from `l` and return a non-empty list with all results.
-    /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
-    /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
-    ///
-    pub def ap(f: Nel[a -> b \ ef], l: Nel[a]) : Nel[b] \ ef =
-        // Note - loop has been worker-wrapper transformed to represent the list of
-        // functions as head (f1) and tail (fs) so we never have an empty list to deal with.
-        def loop(f1, fs, k) = match fs {
-            case Nil      => k(map(f1, l))
-            case f2 :: rs =>
-                let ks1 = map(f1, l);
-                loop(f2, rs, ks2 ->
-                  k(append(ks1, ks2)))
-        };
-        match f {
-            case Nel(f1, Nil) => map(f1, l)
-            case Nel(f1, rs)  => loop(f1, rs, upcast(identity))
         }
 
     ///
@@ -4919,15 +4834,6 @@ namespace Nel {
     }
 
     ///
-    /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
-    ///
-    pub def foldRight(f: (a, b) -> b \ ef, s: b, l: Nel[a]): b \ ef = match l {
-        case Nel(x, xs) => f(x, List.foldRight(f, s, xs))
-    }
-
-    ///
     /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
@@ -4953,38 +4859,12 @@ namespace Nel {
     }
 
     ///
-    /// Right-associative reduction of a structure.
-    /// Applies `g` to the initial element of `l` and combines it
-    /// with the remainder of `l` using `f` going from right to left.
-    ///
-    pub def reduceRightTo(f: (a, b) -> b & ef1 \ ef1_, g: a -> b & ef2 \ ef2_, l: Nel[a]): b & (ef1 and ef2) \ (ef1_ + ef2_) =
-        def loop(ll, k) = match ll {
-            case x :: Nil => k(g(x))
-            case x :: xs  => loop(xs, ks -> k(f(x, ks)))
-            case _        => unreachable!()
-        };
-        let Nel(x, xs) = l;
-        loop(x :: xs, ks -> ks as & (ef1 and ef2) \ (ef1_ + ef2_))
-
-    ///
     /// Applies `f` to all elements in `l` going from left to right until a single value `v` is obtained.
     ///
     /// That is, the result is of the form: `f(...f(f(x1, x2), x3)..., xn)`
     ///
     pub def reduceLeft(f: (a, a) -> a \ ef, l: Nel[a]): a \ ef = match l {
         case Nel(x, xs) => List.foldLeft(f, x, xs)
-    }
-
-    ///
-    /// Applies `f` to all elements in `l` going from right to left until a single value `v` is obtained.
-    ///
-    /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
-    ///
-    pub def reduceRight(f: (a, a) -> a \ ef, l: Nel[a]): a \ ef = match l {
-        case Nel(x, xs) => match List.reduceRight(f, x :: xs) {
-            case None    => unreachable!()
-            case Some(v) => v
-        }
     }
 
     ///
@@ -5017,18 +4897,6 @@ namespace Nel {
     @Time(time(f) * length(l)) @Space(space(f))
     pub def forall(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = match l {
         case Nel(x, xs) => if (f(x)) List.forall(f, xs) else false
-    }
-
-    ///
-    /// Returns a list of every element in `l` that satisfies the predicate `f`.
-    ///
-    @Time(time(f) * length(l)) @Space(space(f) * length(l))
-    pub def filter(f: a -> Bool, l: Nel[a]): List[a] = match l {
-        case Nel(x, xs) =>
-            if (f(x))
-                x :: List.filter(f, xs)
-            else
-                List.filter(f, xs)
     }
 
     ///
@@ -5075,18 +4943,6 @@ namespace Nel {
         match l {
             case Nel(x, xs) => Nel((x, 0), loop(xs, identity, 1))
         }
-
-    ///
-    /// Generalize `zipWith` to an applicative functor `f`.
-    ///
-    pub def zipWithA(f: (a, b) -> m[c] \ ef, xs: Nel[a], ys: Nel[b]): m[Nel[c]] \ ef with Applicative[m] =
-        use Functor.{<$>};
-        use Applicative.{<*>};
-        match (xs, ys) {
-            case (Nel(x, l1), Nel(y, l2)) => ((c, cs) -> Nel(c, cs)) <$> f(x, y) <*> List.zipWithA(f, l1, l2)
-        }
-
-
 
     ///
     /// Returns `l` as a normal list.
@@ -5437,37 +5293,12 @@ instance Monad[Nec] {
     pub def flatMap(f: a -> Nec[b] \ ef, x : Nec[a]) : Nec[b] \ ef = Nec.flatMap(f, x)
 }
 
-instance MonadZip[Nec] {
-    pub def zipWith(f: (a, b) -> c \ ef, xs: Nec[a], ys: Nec[b]): Nec[c] \ ef = Nec.zipWith(f, xs, ys)
-    pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Nec[a], ys: Nec[b]): f[Nec[c]] \ ef with Applicative[f] = Nec.zipWithA(f, xs, ys)
-    pub override def zip(xs: Nec[a], ys: Nec[b]): Nec[(a, b)] = Nec.zip(xs, ys)
-    pub override def unzip(xs: Nec[(a, b)]): (Nec[a], Nec[b]) = Nec.unzip(xs)
-}
-
 instance UnorderedFoldable[Nec] {
     pub def foldMap(f: a -> b \ ef, c: Nec[a]): b \ ef with CommutativeMonoid[b] = Nec.foldMap(f, c)
     override pub def isEmpty(_: Nec[a]): Bool = false
     override pub def exists(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.exists(f, c)
     override pub def forall(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.forall(f, c)
     override pub def memberOf(x: a, c: Nec[a]): Bool with Eq[a] = Nec.memberOf(x, c)
-}
-
-instance Reducible[Nec] {
-    pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, l: Nec[a]): b \ {ef1, ef2} = Nec.reduceLeftTo(f, g, l)
-    pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, l: Nec[a]): b \ {ef1, ef2} = Nec.reduceRightTo(f, g, l)
-    override pub def head(l: Nec[a]): a = Nec.head(l)
-    override pub def last(l: Nec[a]): a = Nec.last(l)
-    override pub def init(l: Nec[a]): List[a] = Nec.init(l)
-    override pub def tail(l: Nec[a]): List[a] = Nec.tail(l)
-    override pub def exists(f: a -> Bool \ ef, l: Nec[a]): Bool \ ef = Nec.exists(f, l)
-    override pub def forall(f: a -> Bool \ ef, l: Nec[a]): Bool \ ef = Nec.forall(f, l)
-    override pub def find(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.find(f, l)
-    override pub def findLeft(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.findLeft(f, l)
-    override pub def findRight(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.findRight(f, l)
-    override pub def memberOf(a: a, l: Nec[a]): Bool with Eq[a] = Nec.memberOf(a, l)
-    override pub def dropWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.dropWhileLeft(f, l)
-    override pub def takeWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.takeWhileLeft(f, l)
-    override pub def toList(l: Nec[a]): List[a] = Nec.toList(l)
 }
 
 namespace Nec {
@@ -5899,22 +5730,6 @@ namespace Nec {
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), c)
 
     ///
-    /// Collects the results of applying the partial function `f` to every element in `c`.
-    ///
-    pub def filterMap(f: a -> Option[b] \ ef, c: Nec[a]): List[b] \ ef =
-        def loop(l, k) = match viewLeft(l) {
-            case OneLeft(x)      => match (f(x)) {
-                case Some(a) => k(a :: Nil)
-                case None    => k(Nil)
-            }
-            case SomeLeft(x, rs) => match f(x) {
-                case Some(a) => loop(rs, ks -> k(a :: ks))
-                case None    => loop(rs, k)
-            }
-        };
-        loop(c, upcast(identity))
-
-    ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `c`.
     ///
     /// Returns `None` if f(c) for every element of c is `None`.
@@ -5983,52 +5798,6 @@ namespace Nec {
         loop(c, k -> k, 0)
 
     ///
-    /// Generalize `zipWith` to an applicative functor `f`.
-    ///
-    pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Nec[a], ys: Nec[b]): f[Nec[c]] \ ef with Applicative[f] =
-        def loop(v1, v2, k) = match (v1, v2) {
-            case (SomeLeft(x, c1), SomeLeft(y, c2)) => loop(viewLeft(c1), viewLeft(c2), ks -> k(cons <$> f(x,y) <*> ks))
-            case (SomeLeft(x, _), OneLeft(y))       => k(singleton <$> f(x,y))
-            case (OneLeft(x), SomeLeft(y, _))       => k(singleton <$> f(x,y))
-            case (OneLeft(x), OneLeft(y))           => k(singleton <$> f(x,y))
-        };
-        loop(viewLeft(xs), viewLeft(ys), upcast(identity))
-
-    ///
-    /// `mapAccumLeft` is a stateful version of `map`. The accumulating parameter `s` is updated at each
-    /// step in a left-to-right traversal.
-    ///
-    pub def mapAccumLeft(f: (s, a) -> (s, b) \ ef, start: s, c: Nec[a]): (s, Nec[b]) \ ef =
-        def loop(s1, c1, k) = match viewLeft(c1) {
-            case OneLeft(x)      => {
-                let (s2, x1) = f(s1, x);
-                k((s2, NecOne(x1)))
-            }
-            case SomeLeft(x, rs) => {
-                let (s2, x1) = f(s1, x);
-                loop(s2, rs, match (s3, ks) -> k((s3, cons(x1, ks))))
-            }
-        };
-        loop(start, c, upcast(identity))
-
-    ///
-    /// `mapAccumRight` is a stateful version of `map`. The accumulating parameter `s` is updated at each
-    /// step in a right-to-left traversal.
-    ///
-    pub def mapAccumRight(f: (s, a) -> (s, b) \ ef, start: s, c: Nec[a]): (s, Nec[b]) \ ef =
-        def loop(s1, c1, k) = match viewRight(c1) {
-            case OneRight(x)      => {
-                let (s2, x1) = f(s1, x);
-                k((s2, NecOne(x1)))
-            }
-            case SomeRight(rs, x) => {
-                let (s2, x1) = f(s1, x);
-                loop(s2, rs, match (s3, ks) -> k((s3, snoc(ks, x1))))
-           }
-        };
-        loop(start, c, upcast(identity))
-
-    ///
     /// Applies `f` to every element of `c`.
     ///
     pub def foreach(f: a -> Unit \ ef, c: Nec[a]): Unit \ ef = match viewLeft(c) {
@@ -6059,17 +5828,6 @@ namespace Nec {
             case SomeLeft(x, rs) => loop(rs, ks -> k(consA(x, ks)))
         };
         loop(c, ks -> ks)
-
-    ///
-    /// Returns the result of applying the applicative mapping function `f` to all the elements of the
-    /// Nec `c`.
-    ///
-    pub def traverse(f: a -> m[b] \ ef, c: Nec[a]): m[Nec[b]] \ ef with Applicative[m] =
-        def loop(l2, k) = match viewLeft(l2) {
-            case OneLeft(x)      => k(NecOne <$> f(x))
-            case SomeLeft(x, rs) => {let ans = f(x); loop(rs, ks -> k(consA(ans, ks)))}
-        };
-        loop(c, upcast(identity))
 
     ///
     /// Applies `combine` to all elements in `c` until a single value is obtained.
@@ -6138,17 +5896,6 @@ namespace Nec {
             case SomeRight(rs, x) => if (f(x)) loop(rs) else toList(rs `snoc` x)
         };
         loop(c)
-
-    ///
-    /// Returns the longest prefix of `c` that satisfies the predicate `f`.
-    ///
-    pub def takeWhileLeft(f: a -> Bool \ ef, c: Nec[a]): List[a] \ ef =
-        def loop(c1, k) = match viewLeft(c1) {
-            case OneLeft(x)      => if (f(x)) k(x :: Nil) else k(Nil)
-            case SomeLeft(x, rs) => if (f(x)) loop(rs, ks -> k(x :: ks)) else k(Nil)
-        };
-        loop(c, upcast(identity))
-
 
     ///
     /// Returns the longest prefix of `c` that satisfies the predicate `f`.
@@ -6491,13 +6238,6 @@ instance Monad[Chain] {
 
 instance MonadZero[Chain] {
     pub def empty(): Chain[a] = Chain.empty()
-}
-
-instance MonadZip[Chain] {
-    pub def zipWith(f: (a, b) -> c \ ef, xs: Chain[a], ys: Chain[b]): Chain[c] \ ef = Chain.zipWith(f, xs, ys)
-    pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Chain[a], ys: Chain[b]): f[Chain[c]] \ ef with Applicative[f] = Chain.zipWithA(f, xs, ys)
-    pub override def zip(xs: Chain[a], ys: Chain[b]): Chain[(a, b)] = Chain.zip(xs, ys)
-    pub override def unzip(xs: Chain[(a, b)]): (Chain[a], Chain[b]) = Chain.unzip(xs)
 }
 
 instance UnorderedFoldable[Chain] {
@@ -7050,19 +6790,6 @@ namespace Chain {
         loop(c1, c2, empty())
 
     ///
-    /// Generalize `zipWith` to an applicative functor `f`.
-    ///
-    pub def zipWithA(f: (a, b) -> m[c] \ ef, xs: Chain[a], ys: Chain[b]): m[Chain[c]] \ ef with Applicative[m] =
-        use Functor.{<$>};
-        use Applicative.{<*>, point};
-        def loop(v1, v2, k) = match (v1, v2) {
-            case (SomeLeft(x, c1), SomeLeft(y, c2)) => loop(viewLeft(c1), viewLeft(c2), ks -> k(cons <$> f(x,y) <*> ks))
-            case (_, _)                             => k(point(empty()))
-        };
-        loop(viewLeft(xs), viewLeft(ys), upcast(identity))
-
-
-    ///
     /// Returns a pair of chains, the first containing all first components in `c`
     /// and the second containing all second components in `c`.
     ///
@@ -7166,17 +6893,6 @@ namespace Chain {
         loop(viewLeft(c), Applicative.point(empty()))
 
     ///
-    /// Returns the result of applying the applicative mapping function `f` to all the elements of the
-    /// chain `c`.
-    ///
-    pub def traverse(f: a -> m[b] \ ef, c: Chain[a]): m[Chain[b]] \ ef with Applicative[m] =
-        def loop(v, acc) = match v {
-            case NoneLeft        => upcast(() -> acc)()
-            case SomeLeft(x, rs) => loop(viewLeft(rs), snocA(acc, f(x)))
-        };
-        loop(viewLeft(c), Applicative.point(empty()))
-
-    ///
     /// Returns a chain where each element `e` is mapped to `(e, i)` where `i`
     /// is the index of `e`.
     ///
@@ -7188,22 +6904,6 @@ namespace Chain {
         loop(c, Empty, 0)
 
 }
-
-/*
- * Copyright 2021 Jakob Schneider Villumsen
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 pub enum DelayList[a] {
     case ENil,
@@ -7727,24 +7427,6 @@ namespace DelayList {
     }
 
     ///
-    /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    @Experimental
-    pub def foldRight(f: (a, b) -> b \ ef, s: b, l: DelayList[a]): b \ ef =
-        def loop(ll, k) = match ll {
-            case ENil         => k(s)
-            case ECons(x, xs) => loop(      xs, ks -> k(f(x, ks)))
-            case LCons(x, xs) => loop(force xs, ks -> k(f(x, ks)))
-            case LList(xs)    => loop(force xs, k)
-        };
-        loop(l, upcast(identity)) // NB: Cast required because the identity continuation is pure,
-                                  // but the intermediate continuations are effect polymorphic.
-
-    ///
     /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
@@ -7799,25 +7481,6 @@ namespace DelayList {
         case LList(xs)    => reduceLeft(f, force xs)
     }
 
-    ///
-    /// Applies `f` to all elements in `l` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
-    ///
-    /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
-    ///
-    /// Returns `None` if `l` is empty.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    @Experimental
-    pub def reduceRight(f: (a, a) -> a \ ef, l: DelayList[a]): Option[a] \ ef =
-        def loop(ll, k) = match ll {
-            case ECons(x, xs) => if (isEmpty(      xs)) k(x) else loop(      xs, ks -> k(f(x, ks)))
-            case LCons(x, xs) => if (isEmpty(force xs)) k(x) else loop(force xs, ks -> k(f(x, ks)))
-            case LList(xs)    => loop(force xs, k)
-            case _            => unreachable!()
-        };
-        if (isEmpty(l)) None else Some(loop(l, upcast(identity))) // NB: Cast required because the identity continuation is pure,
-                                                                  // but the intermediate continuations are effect polymorphic.
     ///
     /// Returns a `DelayList` with every element in `l` that satisfies the predicate `f`.
     ///
@@ -7935,21 +7598,6 @@ namespace DelayList {
         case LList(xs)    =>                        findLeft(f, force xs)
     }
 
-    ///
-    /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    @Experimental
-    pub def findRight(f: a -> Bool \ ef, l: DelayList[a]): Option[a] \ ef =
-        def loop(ll, k) = match ll {
-            case ENil         => k()
-            case ECons(x, xs) => loop(      xs, () -> if (f(x)) Some(x) else k())
-            case LCons(x, xs) => loop(force xs, () -> if (f(x)) Some(x) else k())
-            case LList(xs)    => loop(force xs, k)
-        };
-        loop(l, upcast(() -> None)) // NB: Cast required because the identity continuation is pure,
-                                    // but the intermediate continuations are effect polymorphic.
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `l`.
     ///
@@ -8319,21 +7967,6 @@ namespace DelayList {
         };
         loop(l, identity)
 
-    ///
-    /// Returns the result of applying the applicative mapping function `f` to all the elements of the
-    /// DelayList `l`.
-    ///
-    @Experimental
-    pub def traverse(f: a -> m[b] \ ef, l: DelayList[a]): m[DelayList[b]] \ ef with Applicative[m] =
-        def loop(ll, k) = match ll {
-            case ENil         => k(Applicative.point(ENil))
-            case ECons(x, xs) => {let ans = f(x); loop(xs, ks -> k(consA(ans, ks)))}
-            case LCons(x, xs) => {let ans = f(x); loop(force xs, ks -> k(consA(ans, ks)))}
-            case LList(xs)    => loop(force xs, k)
-        };
-        loop(l, upcast(identity)) // NB: Cast required because the identity continuation is pure,
-                                  // but the intermediate continuations are effect polymorphic.
-
 }
 
 
@@ -8665,26 +8298,6 @@ namespace Option {
             case None     => None
         }
     }
-
-    ///
-    /// Returns the result of applying `f` to a start value `s` and the elements in `l`
-    /// going from right to left.
-    ///
-    /// If at any step applying `f` fails (i.e. it produces a `None` value) the traversal
-    /// of `l` is short-circuited and `None` is returned.
-    ///
-    /// If `f` is successfully applied to al elements in `l` the result is of the form:
-    /// `Some(f(x1, ...f(xn-1, f(xn, s))...))`.
-    ///
-    pub def foldRightM(f: (a, b) -> Option[b] \ ef, s: b, l: List[a]): Option[b] \ ef =
-        def loop(ll, k) = match ll {
-            case Nil     => k(s)
-            case x :: xs => loop(xs, s1 -> match f(x, s1) {
-                case Some(s2) => k(s2)
-                case None     => None
-            })
-        };
-        loop(l, upcast(s1 -> Some(s1)))
 
     ///
     /// Returns a one-element list of the value `v` if `o` is `Some(v)`. Otherwise returns the empty list.
@@ -9080,42 +8693,6 @@ pub class Foldable[t : Type -> Type] {
     pub def foreach(f: a -> Unit \ ef, t: t[a]): Unit \ ef =
         Foldable.foldLeft((_, x) -> f(x), (), t)
 
-
-    // Acknowledgement: `foldLeftM` and `foldRightM` are derived from Haskell's Data.Foldable.
-    // Because they use CPS, the implementations work for both strict and lazy languages.
-    // Counterintuitively `foldLeftM` uses a right-fold and `foldRighM` uses a left-fold
-    // but the "direction of travel" is observably correct.
-
-    ///
-    /// A monadic version of `foldLeft`.
-    ///
-    /// Applies the monadic `f` to a start value `s` and all elements in `t` going
-    /// from left to right.
-    ///
-    pub def foldLeftM(f: (b, a) -> m[b] \ ef, s: b, t: t[a]): m[b] \ ef with Monad[m] =
-        let f1 = (x, acc) -> z -> Monad.flatMap(acc, f(z, x));
-        s |> Foldable.foldRight(f1, upcast(x1 -> Applicative.point(x1)), t)
-
-    ///
-    /// A monadic version of `foldRight`.
-    ///
-    /// Applies the monadic `f` to a start value `s` and all elements in `t` going
-    /// from right to left.
-    ///
-    pub def foldRightM(f: (a, b) -> m[b] \ ef, s: b, t: t[a]): m[b] \ ef with Monad[m] =
-        let f1 = (k, x) -> z -> Monad.flatMap(k, f(x, z));
-        s |> Foldable.foldLeft(f1, upcast(x1 -> Applicative.point(x1)), t)
-
-    ///
-    /// A monadic version of `foreach`.
-    ///
-    /// Apply `f` to every value in `t`. `f` is applied for its monadic effect,
-    /// the answer it produces is discarded.
-    ///
-    pub def foreachM(f: a -> m[b] \ ef, t: t[a]): m[Unit] \ ef with Monad[m] =
-        use Applicative.{point, *>};
-        Foldable.foldLeftM((acc, a) -> f(a) *> point(acc), (), t)
-
 }
 
 namespace Foldable {
@@ -9188,24 +8765,12 @@ instance MonadZero[List] {
     pub def empty(): List[a] = Nil
 }
 
-instance MonadZip[List] {
-    pub def zipWith(f: (a, b) -> c \ ef, xs: List[a], ys: List[b]): List[c] \ ef = List.zipWith(f, xs, ys)
-    pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: List[a], ys: List[b]): f[List[c]] \ ef with Applicative[f] = List.zipWithA(f, xs, ys)
-    pub override def zip(xs: List[a], ys: List[b]): List[(a, b)] = List.zip(xs, ys)
-    pub override def unzip(xs: List[(a, b)]): (List[a], List[b]) = List.unzip(xs)
-}
-
 instance UnorderedFoldable[List] {
     pub def foldMap(f: a -> b \ ef, l: List[a]): b \ ef with CommutativeMonoid[b] = List.foldMap(f, l)
     override pub def isEmpty(l: List[a]): Bool = List.isEmpty(l)
     override pub def exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.exists(f, l)
     override pub def forall(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.forall(f, l)
     override pub def memberOf(x: a, l: List[a]): Bool with Eq[a] = List.memberOf(x, l)
-}
-
-instance Filterable[List] {
-    pub def filterMap(f: a -> Option[b] \ ef, x: List[a]): List[b] \ ef = List.filterMap(f, x)
-    pub override def filter(f: a -> Bool \ ef, x: List[a]): List[a] \ ef = List.filter(f, x)
 }
 
 instance SemiGroup[List[a]] {
@@ -9260,6 +8825,8 @@ namespace List {
             case _ :: xs => loop(xs, acc + 1)
         };
         loop(l, 0)
+
+
 
     ///
     /// Returns `l2` appended to `l1`.
@@ -9337,17 +8904,6 @@ namespace List {
     }
 
     ///
-    /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
-    ///
-    @Time(time(f) * length(l)) @Space(space(f))
-    pub def findRight(f: a -> Bool \ ef, l: List[a]): Option[a] \ ef =
-        def loop(ll, k) = match ll {
-            case Nil     => k()
-            case x :: xs => loop(xs, () -> if (f(x)) Some(x) else k())
-        };
-        loop(l, upcast(() -> None))
-
-    ///
     /// Returns a list of all integers between `b` (inclusive) and `e` (exclusive).
     ///
     /// Returns `Nil` if `b >= e`.
@@ -9393,20 +8949,6 @@ namespace List {
                 loop(xs, ks -> k(y :: ks), y)
         };
         loop(l, ks -> s :: ks, s)
-
-    ///
-    /// Accumulates the result of applying `f` to `l` going right to left.
-    ///
-    /// That is, the result is of the form: `... f(xn-1, f(xn, s)) :: f(xn, s) :: s`.
-    ///
-    pub def scanRight(f: (a, b) -> b \ ef, s: b, l: List[a]): List[b] \ ef =
-        def loop(ll, k) = match ll {
-            case Nil     => k(s :: Nil)
-            case x :: xs => loop(xs, ks -> match ks {
-                case ss :: _ => k(f(x, ss) :: ks)
-                case _       => unreachable!()})
-        };
-        loop(l, upcast(identity))
 
     ///
     /// Returns the result of applying `f` to every element in `l`.
@@ -9768,23 +9310,6 @@ namespace List {
     }
 
     ///
-    /// Applies `f` to all elements in `l` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
-    ///
-    /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
-    ///
-    /// Returns `None` if `l` is empty.
-    ///
-    pub def reduceRight(f: (a, a) -> a \ ef, l: List[a]): Option[a] \ ef =
-        def loop(ll, k) = match ll {
-            case Nil     => k(None)
-            case x :: xs => loop(xs, ks -> k(match ks {
-                case None    => Some(x)
-                case Some(v) => Some(f(x, v))
-            }))
-        };
-        loop(l, upcast(identity))
-
-    ///
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
     ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
@@ -9824,17 +9349,6 @@ namespace List {
         case x :: xs => if (f(x)) forall(f, xs) else false
     }
 
-    ///
-    /// Returns a list of every element in `l` that satisfies the predicate `f`.
-    ///
-    @Time(time(f) * length(l)) @Space(space(f) * length(l))
-    pub def filter(f: a -> Bool \ ef, l: List[a]): List[a] \ ef =
-        def loop(ll, k) = match ll {
-            case Nil     => k(Nil)
-            case x :: xs => if (f(x)) loop(xs, ks -> k(x :: ks)) else loop(xs, k)
-        };
-        loop(l, upcast(identity)) // NB: Cast required because the identity continuation is pure,
-                                  // but the intermediate continuations are effect polymorphic
     ///
     /// Returns the sublist of `l` without the last element.
     /// Returns `None` if the list `l` is `Nil`.
@@ -10051,20 +9565,6 @@ namespace List {
         loop(l, 0, identity)
 
     ///
-    /// Generalize `zipWith` to an applicative functor `f`.
-    ///
-    pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: List[a], ys: List[b]): f[List[c]] \ ef with Applicative[f] =
-        use Functor.{<$>};
-        use Applicative.{<*>};
-        def loop(l1, l2, k) = match (l1, l2) {
-            case (x :: rs1, y :: rs2) => loop(rs1, rs2, ks -> k(((z, zs) -> z :: zs) <$> f(x, y) <*> ks))
-            case (_, _)               => k(Applicative.point(Nil))
-        };
-        loop(xs, ys, upcast(identity))
-
-
-
-    ///
     /// Returns a pair of lists, the first containing all first components in `l`
     /// and the second containing all second components in `l`.
     ///
@@ -10129,20 +9629,6 @@ namespace List {
         case (x :: xs, y :: ys) => foldLeft2(f, f(c, x, y), xs, ys)
         case _                  => c
     }
-
-    ///
-    /// Accumulates the result of applying `f` pairwise to the elements of `l1` and `l2`
-    /// starting with the initial value `c` and going from right to left.
-    ///
-    @Time(time(f) * Int32.min(length(l1), length(l2))) @Space(space(f) * Int32.min(length(l1), length(l2)))
-    pub def foldRight2(f: (a, b, c) -> c \ ef, c: c, l1: List[a], l2: List[b]): c \ ef =
-        def loop(ll1, ll2, k) = match (ll1, ll2) {
-            case (x :: xs, y :: ys) => loop(xs, ys, ks -> k(f(x, y, ks)))
-            case _                  => k(c)
-        };
-        let len1 = length(l1);
-        let len2 = length(l2);
-        loop(drop(len1 - len2, l1), drop(len2 - len1, l2), upcast(identity))
 
     ///
     /// Returns the result of mapping each element and combining the results.
@@ -10324,17 +9810,6 @@ namespace List {
             case mx :: rs => loop(rs, ks -> k(consA(mx, ks)))
         };
         loop(l, identity)
-
-    ///
-    /// Returns the result of applying the applicative mapping function `f` to all the elements of the
-    /// list `l` going from left to right.
-    ///
-    pub def traverse(f: a -> m[b] \ ef, l: List[a]): m[List[b]] \ ef with Applicative[m] =
-        def loop(ll, k) = match ll {
-            case Nil     => k(Applicative.point(Nil))
-            case x :: xs => {let ans = f(x); loop(xs, ks -> k(consA(ans, ks)))}
-        };
-        loop(l, upcast(identity))
 
     ///
     /// Merges the two lists `l1` and `l2`. Assuming they are both sorted.

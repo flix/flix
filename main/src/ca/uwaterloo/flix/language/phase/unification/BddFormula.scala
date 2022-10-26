@@ -255,7 +255,7 @@ object BddFormula {
       * Returns `Some(true)` if `f` is satisfiable (i.e. has a satisfying assignment).
       * Returns `Some(false)` otherwise.
       */
-    override def satisfiable(f: BddFormula): Option[Boolean] = Some(!f.getDD().isZero())
+    override def satisfiable(f: BddFormula): Option[Boolean] = Some(!isFalse(f))
 
     def printBdd(bdd : BDD, title : String) {
       lock.lock()
