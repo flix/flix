@@ -242,7 +242,7 @@ object GenTagClasses {
         method.visitInsn(ICONST_1)
         method.visitVarInsn(ALOAD, 0)
         method.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getBoxedTagValue", AsmOps.getMethodDescriptor(Nil, JvmType.Object), false)
-        method.visitMethodInsn(INVOKEVIRTUAL, JvmType.Object.name.toInternalName, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), false)
+        method.visitMethodInsn(INVOKESTATIC, JvmType.String.name.toInternalName, "valueOf", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.String), false)
         method.visitInsn(AASTORE)
         method.visitInsn(DUP)
         method.visitInsn(ICONST_2)
