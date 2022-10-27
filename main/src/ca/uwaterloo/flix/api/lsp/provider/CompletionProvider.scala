@@ -946,7 +946,7 @@ object CompletionProvider {
   }
 
   /**
-    * returns a completiong from a java executable (method/constructor) instace.
+    * returns a completion from a java executable (method/constructor) instace.
     * clazz is the clazz in string form used for the completion.
     * aliasSuggestion is used to suggest a alias for the function if applicable.
     */
