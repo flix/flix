@@ -49,6 +49,10 @@ instance LowerBound[Down[a]] with UpperBound[a] {
     pub def minValue(): Down[a] = Down(UpperBound.maxValue())
 }
 
+instance UpperBound[Down[a]] with LowerBound[a] {
+    pub def maxValue(): Down[a] = Down(LowerBound.minValue())
+}
+
 instance JoinLattice[Down[a]] with MeetLattice[a] {
     pub def leastUpperBound(x: Down[a], y: Down[a]): Down[a] = match (x, y) {
         case (Down(xx), Down(yy)) => Down(xx `MeetLattice.greatestLowerBound` yy)
