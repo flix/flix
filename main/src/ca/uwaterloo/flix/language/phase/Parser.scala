@@ -411,7 +411,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Float: Rule1[ParsedAst.Literal] = rule {
-      Float32 | Float64 | FloatDefault
+      Float32 | Float64 | BigDecimal | FloatDefault
     }
 
     def FloatDefault: Rule1[ParsedAst.Literal.Float64] = rule {
@@ -424,6 +424,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Float64: Rule1[ParsedAst.Literal.Float64] = rule {
       SP ~ Sign ~ SeparableDecDigits ~ "." ~ SeparableDecDigits ~ atomic("f64") ~ SP ~> ParsedAst.Literal.Float64
+    }
+
+    def BigDecimal: Rule1[ParsedAst.Literal.BigDecimal] = rule {
+      SP ~ Sign ~ SeparableDecDigits ~ "." ~ SeparableDecDigits ~ atomic("ff") ~ SP ~> ParsedAst.Literal.BigDecimal
     }
 
     def Int: Rule1[ParsedAst.Literal] = rule {
@@ -738,7 +742,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
       Static | Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
-        ReifyType | ReifyPurity | Choose | Match | LambdaMatch | Try | Lambda | Tuple |
+        ReifyType | ReifyPurity | Choose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Par | Lazy | Force | Upcast | Mask | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
@@ -898,6 +902,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         SP ~ keyword("match") ~ WS ~ Expression ~ optWS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Match
+      }
+    }
+
+    def TypeMatch: Rule1[ParsedAst.Expression.TypeMatch] = {
+      def Rule: Rule1[ParsedAst.MatchTypeRule] = rule {
+          keyword("case") ~ WS ~ Names.Variable ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ atomic("=>") ~ optWS ~ Stm ~> ParsedAst.MatchTypeRule
+      }
+
+      rule {
+        SP ~ keyword("typematch") ~ WS ~ Expression ~ optWS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.TypeMatch
       }
     }
 

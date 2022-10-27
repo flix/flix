@@ -22,7 +22,6 @@ import ca.uwaterloo.flix.util.Options
 
 import java.nio.file.{Files, Path}
 import java.io.File
-import scala.collection.mutable
 
 /**
   * The location from which source files should be loaded
@@ -37,7 +36,7 @@ case object SourceProvider {
     * Represents a project.
     */
   case class ProjectPath(path: Path) extends SourceProvider {
-    def execute(cmd: Command, options: Options) = cmd match {
+    def execute(cmd: Command, options: Options): Unit = cmd match {
       case Command.Init => Packager.init(path, options)
       case Command.Check => Packager.check(path, options)
       case Command.Build => Packager.build(path, options, loadClasses = false)
@@ -63,8 +62,8 @@ case object SourceProvider {
 /**
   * Represents the source files loaded by the REPL
   *
-  * @param source Either a path representing the current directory (if the REPL is started with no arguments)
-  *               or a seqence of files (if the REPL is started with a list of file to load)
+  * @param sourceProvider Either a path representing the current directory (if the REPL is started with no arguments) or
+  *                       a seqence of files (if the REPL is started with a list of file to load)
   */
 class SourceFiles(sourceProvider: SourceProvider) {
 
@@ -83,13 +82,11 @@ class SourceFiles(sourceProvider: SourceProvider) {
 
     sourceProvider match {
       case SourceProvider.ProjectPath(path) =>
-        if (Packager.isProjectPath(path)) {
-          val sourceFiles = getSourceFiles(path)
-          val (packages, libraries) = getPackagesAndLibraries(path)
+        val sourceFiles = getSourceFiles(path)
+        val (packages, libraries) = getPackagesAndLibraries(path)
 
-          currentSources = sourceFiles ++ packages
-          currentJars = libraries
-        }
+        currentSources = sourceFiles ++ packages
+        currentJars = libraries
 
       case SourceProvider.SourceFileList(files) =>
         currentSources = files.map(_.toPath).toSet
@@ -130,9 +127,11 @@ class SourceFiles(sourceProvider: SourceProvider) {
     * Return a set of all .flix files within a project
     */
   private def getSourceFiles(path: Path): Set[Path] = {
+    import scala.jdk.StreamConverters._
+    val currentDirFiles = Files.list(path).toScala(Iterator)
     val sourceFiles = Packager.getAllFiles(Packager.getSourceDirectory(path))
     val testFiles = Packager.getAllFiles(Packager.getTestDirectory(path))
-    filterByExt(sourceFiles ++ testFiles, ".flix").toSet
+    filterByExt(sourceFiles ++ testFiles ++ currentDirFiles, ".flix")
   }
 
   /**

@@ -123,6 +123,14 @@ object TypedAst {
       def eff: Type = Type.Empty
     }
 
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends TypedAst.Expression {
+      def tpe: Type = Type.BigDecimal
+
+      def pur: Type = Type.Pure
+
+      def eff: Type = Type.Empty
+    }
+
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = Type.Int8
 
@@ -240,6 +248,8 @@ object TypedAst {
     }
 
     case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
+    case class TypeMatch(exp: TypedAst.Expression, rules: List[TypedAst.MatchTypeRule], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Choose(exps: List[TypedAst.Expression], rules: List[TypedAst.ChoiceRule], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -416,6 +426,10 @@ object TypedAst {
       def tpe: Type = Type.Float64
     }
 
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends TypedAst.Pattern {
+      def tpe: Type = Type.BigDecimal
+    }
+
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Pattern {
       def tpe: Type = Type.Int8
     }
@@ -531,6 +545,8 @@ object TypedAst {
   case class ChoiceRule(pat: List[TypedAst.ChoicePattern], exp: TypedAst.Expression)
 
   case class MatchRule(pat: TypedAst.Pattern, guard: TypedAst.Expression, exp: TypedAst.Expression)
+
+  case class MatchTypeRule(sym: Symbol.VarSym, tpe: Type, exp: TypedAst.Expression)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: TypedAst.Expression, exp: TypedAst.Expression)
 

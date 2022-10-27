@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
+import java.math.BigDecimal
 import java.math.BigInteger
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -540,6 +541,19 @@ object Weeder {
           case ("FLOAT64_LE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float64Op.Le, e1, e2, loc).toSuccess
           case ("FLOAT64_GT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float64Op.Gt, e1, e2, loc).toSuccess
           case ("FLOAT64_GE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float64Op.Ge, e1, e2, loc).toSuccess
+
+          case ("BIGDECIMAL_NEG", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.BigDecimalOp.Neg, e1, loc).toSuccess
+          case ("BIGDECIMAL_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigDecimalOp.Add, e1, e2, loc).toSuccess
+          case ("BIGDECIMAL_SUB", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigDecimalOp.Sub, e1, e2, loc).toSuccess
+          case ("BIGDECIMAL_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigDecimalOp.Mul, e1, e2, loc).toSuccess
+          case ("BIGDECIMAL_DIV", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigDecimalOp.Div, e1, e2, loc).toSuccess
+          case ("BIGDECIMAL_EXP", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigDecimalOp.Exp, e1, e2, loc).toSuccess
+          case ("BIGDECIMAL_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigDecimalOp.Eq, e1, e2, loc).toSuccess
+          case ("BIGDECIMAL_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigDecimalOp.Neq, e1, e2, loc).toSuccess
+          case ("BIGDECIMAL_LT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigDecimalOp.Lt, e1, e2, loc).toSuccess
+          case ("BIGDECIMAL_LE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigDecimalOp.Le, e1, e2, loc).toSuccess
+          case ("BIGDECIMAL_GT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigDecimalOp.Gt, e1, e2, loc).toSuccess
+          case ("BIGDECIMAL_GE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigDecimalOp.Ge, e1, e2, loc).toSuccess
 
           case ("INT8_NEG", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.Int8Op.Neg, e1, loc).toSuccess
           case ("INT8_NOT", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.Int8Op.Not, e1, loc).toSuccess
@@ -1100,6 +1114,20 @@ object Weeder {
       }
       mapN(visitExp(exp, senv), rulesVal) {
         case (e, rs) => WeededAst.Expression.Match(e, rs, loc)
+      }
+
+    case ParsedAst.Expression.TypeMatch(sp1, exp, rules, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val rulesVal = traverse(rules) {
+        case ParsedAst.MatchTypeRule(ident, tpe, body) =>
+          val t = visitType(tpe)
+          mapN(visitExp(body, senv)) {
+            // Pattern match without guard.
+            case e => WeededAst.MatchTypeRule(ident, t, e)
+          }
+      }
+      mapN(visitExp(exp, senv), rulesVal) {
+        case (e, rs) => WeededAst.Expression.TypeMatch(e, rs, loc)
       }
 
     case ParsedAst.Expression.Choose(sp1, star, exps, rules, sp2) =>
@@ -1983,6 +2011,11 @@ object Weeder {
         case lit => WeededAst.Expression.Float64(lit, mkSL(sp1, sp2))
       }
 
+    case ParsedAst.Literal.BigDecimal(sp1, sign, before, after, sp2) =>
+      toBigDecimal(sign, before, after, mkSL(sp1, sp2)) map {
+        case lit => WeededAst.Expression.BigDecimal(lit, mkSL(sp1, sp2))
+      }
+
     case ParsedAst.Literal.Int8(sp1, sign, radix, digits, sp2) =>
       toInt8(sign, radix, digits, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Expression.Int8(lit, mkSL(sp1, sp2))
@@ -2037,6 +2070,10 @@ object Weeder {
     case ParsedAst.Literal.Float64(sp1, sign, before, after, sp2) =>
       toFloat64(sign, before, after, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Pattern.Float64(lit, mkSL(sp1, sp2))
+      }
+    case ParsedAst.Literal.BigDecimal(sp1, sign, before, after, sp2) =>
+      toBigDecimal(sign, before, after, mkSL(sp1, sp2)) map {
+        case lit => WeededAst.Pattern.BigDecimal(lit, mkSL(sp1, sp2))
       }
     case ParsedAst.Literal.Int8(sp1, sign, radix, digits, sp2) =>
       toInt8(sign, radix, digits, mkSL(sp1, sp2)) map {
@@ -2926,6 +2963,16 @@ object Weeder {
   }
 
   /**
+    * Attempts to parse the given big decimal with `sign` digits `before` and `after` the comma.
+    */
+  private def toBigDecimal(sign: String, before: String, after: String, loc: SourceLocation): Validation[BigDecimal, WeederError] = try {
+    val s = s"$sign$before.$after"
+    new BigDecimal(stripUnderscores(s)).toSuccess
+  } catch {
+    case _: NumberFormatException => IllegalFloat(loc).toFailure
+  }
+
+  /**
     * Attempts to parse the given int8 with `sign` and `digits`.
     */
   private def toInt8(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Byte, WeederError] = try {
@@ -3011,6 +3058,7 @@ object Weeder {
     case ParsedAst.Expression.Scope(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Choose(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.TypeMatch(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordLit(sp1, _, _) => sp1

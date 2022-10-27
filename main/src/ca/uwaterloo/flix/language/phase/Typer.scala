@@ -501,6 +501,9 @@ object Typer {
       case KindedAst.Expression.Float64(_, _) =>
         liftM(List.empty, Type.Float64, Type.Pure, Type.Empty)
 
+      case KindedAst.Expression.BigDecimal(_, _) =>
+        liftM(List.empty, Type.BigDecimal, Type.Pure, Type.Empty)
+
       case KindedAst.Expression.Int8(_, _) =>
         liftM(List.empty, Type.Int8, Type.Pure, Type.Empty)
 
@@ -567,6 +570,14 @@ object Typer {
           for {
             (constrs, tpe, pur, eff) <- visitExp(exp)
             resultTyp <- expectTypeM(expected = Type.Float64, actual = tpe, bind = tvar, exp.loc)
+            resultPur = pur
+            resultEff = eff
+          } yield (constrs, resultTyp, resultPur, resultEff)
+
+        case SemanticOperator.BigDecimalOp.Neg =>
+          for {
+            (constrs, tpe, pur, eff) <- visitExp(exp)
+            resultTyp <- expectTypeM(expected = Type.BigDecimal, actual = tpe, bind = tvar, exp.loc)
             resultPur = pur
             resultEff = eff
           } yield (constrs, resultTyp, resultPur, resultEff)
@@ -647,6 +658,18 @@ object Typer {
             lhs <- expectTypeM(expected = Type.Float64, actual = tpe1, exp1.loc)
             rhs <- expectTypeM(expected = Type.Float64, actual = tpe2, exp2.loc)
             resultTyp <- unifyTypeM(tvar, Type.Float64, loc)
+            resultPur = Type.mkAnd(pur1, pur2, loc)
+            resultEff = Type.mkUnion(eff1, eff2, loc)
+          } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
+
+        case SemanticOperator.BigDecimalOp.Add | SemanticOperator.BigDecimalOp.Sub | SemanticOperator.BigDecimalOp.Mul | SemanticOperator.BigDecimalOp.Div
+             | SemanticOperator.BigDecimalOp.Exp =>
+          for {
+            (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
+            (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
+            lhs <- expectTypeM(expected = Type.BigDecimal, actual = tpe1, exp1.loc)
+            rhs <- expectTypeM(expected = Type.BigDecimal, actual = tpe2, exp2.loc)
+            resultTyp <- unifyTypeM(tvar, Type.BigDecimal, loc)
             resultPur = Type.mkAnd(pur1, pur2, loc)
             resultEff = Type.mkUnion(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
@@ -734,6 +757,7 @@ object Typer {
              | SemanticOperator.CharOp.Eq | SemanticOperator.CharOp.Neq
              | SemanticOperator.Float32Op.Eq | SemanticOperator.Float32Op.Neq
              | SemanticOperator.Float64Op.Eq | SemanticOperator.Float64Op.Neq
+             | SemanticOperator.BigDecimalOp.Eq | SemanticOperator.BigDecimalOp.Neq
              | SemanticOperator.Int8Op.Eq | SemanticOperator.Int8Op.Neq
              | SemanticOperator.Int16Op.Eq | SemanticOperator.Int16Op.Neq
              | SemanticOperator.Int32Op.Eq | SemanticOperator.Int32Op.Neq
@@ -752,6 +776,7 @@ object Typer {
         case SemanticOperator.CharOp.Lt | SemanticOperator.CharOp.Le | SemanticOperator.CharOp.Gt | SemanticOperator.CharOp.Ge
              | SemanticOperator.Float32Op.Lt | SemanticOperator.Float32Op.Le | SemanticOperator.Float32Op.Gt | SemanticOperator.Float32Op.Ge
              | SemanticOperator.Float64Op.Lt | SemanticOperator.Float64Op.Le | SemanticOperator.Float64Op.Gt | SemanticOperator.Float64Op.Ge
+             | SemanticOperator.BigDecimalOp.Lt | SemanticOperator.BigDecimalOp.Le | SemanticOperator.BigDecimalOp.Gt | SemanticOperator.BigDecimalOp.Ge
              | SemanticOperator.Int8Op.Lt | SemanticOperator.Int8Op.Le | SemanticOperator.Int8Op.Gt | SemanticOperator.Int8Op.Ge
              | SemanticOperator.Int16Op.Lt | SemanticOperator.Int16Op.Le | SemanticOperator.Int16Op.Gt | SemanticOperator.Int16Op.Ge
              | SemanticOperator.Int32Op.Lt | SemanticOperator.Int32Op.Le | SemanticOperator.Int32Op.Gt | SemanticOperator.Int32Op.Ge
@@ -867,6 +892,19 @@ object Typer {
           resultPur = Type.mkAnd(pur :: guardPurs ::: bodyPurs, loc)
           resultEff = Type.mkUnion(eff :: guardEffs ::: bodyEffs, loc)
         } yield (constrs ++ guardConstrs.flatten ++ bodyConstrs.flatten, resultTyp, resultPur, resultEff)
+
+      case KindedAst.Expression.TypeMatch(exp, rules, loc) =>
+        val bodies = rules.map(_.exp)
+
+        for {
+          (constrs, tpe, pur, eff) <- visitExp(exp)
+          // unify each rule's variable with its type
+          _ <- seqM(rules.map(rule => unifyTypeM(rule.sym.tvar, rule.tpe, rule.sym.loc)))
+          (bodyConstrs, bodyTypes, bodyPurs, bodyEffs) <- seqM(bodies map visitExp).map(unzip4)
+          resultTyp <- unifyTypeM(bodyTypes, loc)
+          resultPur = Type.mkAnd(pur :: bodyPurs, loc)
+          resultEff = Type.mkUnion(eff :: bodyEffs, loc)
+        } yield (constrs ++ bodyConstrs.flatten, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.Choose(star, exps0, rules0, tvar, loc) =>
 
@@ -1840,6 +1878,8 @@ object Typer {
 
       case KindedAst.Expression.Float64(lit, loc) => TypedAst.Expression.Float64(lit, loc)
 
+      case KindedAst.Expression.BigDecimal(lit, loc) => TypedAst.Expression.BigDecimal(lit, loc)
+
       case KindedAst.Expression.Int8(lit, loc) => TypedAst.Expression.Int8(lit, loc)
 
       case KindedAst.Expression.Int16(lit, loc) => TypedAst.Expression.Int16(lit, loc)
@@ -1942,6 +1982,23 @@ object Typer {
           case (acc, TypedAst.MatchRule(_, g, b)) => Type.mkUnion(List(g.eff, b.eff, acc), loc)
         }
         TypedAst.Expression.Match(e1, rs, tpe, pur, eff, loc)
+
+      case KindedAst.Expression.TypeMatch(matchExp, rules, loc) =>
+        val e1 = visitExp(matchExp, subst0)
+        val rs = rules map {
+          case KindedAst.MatchTypeRule(sym, tpe0, exp) =>
+            val t = subst0(tpe0)
+            val b = visitExp(exp, subst0)
+            TypedAst.MatchTypeRule(sym, t, b)
+        }
+        val tpe = rs.head.exp.tpe
+        val pur = rs.foldLeft(e1.pur) {
+          case (acc, TypedAst.MatchTypeRule(_, _, b)) => Type.mkAnd(b.pur, acc, loc)
+        }
+        val eff = rs.foldLeft(e1.eff) {
+          case (acc, TypedAst.MatchTypeRule(_, _, b)) => Type.mkUnion(List(b.eff, acc), loc)
+        }
+        TypedAst.Expression.TypeMatch(e1, rs, tpe, pur, eff, loc)
 
       case KindedAst.Expression.Choose(_, exps, rules, tvar, loc) =>
         val es = exps.map(visitExp(_, subst0))
@@ -2405,6 +2462,8 @@ object Typer {
 
       case KindedAst.Pattern.Float64(i, loc) => liftM(Type.Float64)
 
+      case KindedAst.Pattern.BigDecimal(i, loc) => liftM(Type.BigDecimal)
+
       case KindedAst.Pattern.Int8(i, loc) => liftM(Type.Int8)
 
       case KindedAst.Pattern.Int16(i, loc) => liftM(Type.Int16)
@@ -2492,6 +2551,7 @@ object Typer {
       case KindedAst.Pattern.Char(lit, loc) => TypedAst.Pattern.Char(lit, loc)
       case KindedAst.Pattern.Float32(lit, loc) => TypedAst.Pattern.Float32(lit, loc)
       case KindedAst.Pattern.Float64(lit, loc) => TypedAst.Pattern.Float64(lit, loc)
+      case KindedAst.Pattern.BigDecimal(lit, loc) => TypedAst.Pattern.BigDecimal(lit, loc)
       case KindedAst.Pattern.Int8(lit, loc) => TypedAst.Pattern.Int8(lit, loc)
       case KindedAst.Pattern.Int16(lit, loc) => TypedAst.Pattern.Int16(lit, loc)
       case KindedAst.Pattern.Int32(lit, loc) => TypedAst.Pattern.Int32(lit, loc)
@@ -2614,7 +2674,6 @@ object Typer {
     val classes = List(
       PredefinedClasses.lookupClassSym("Boxable", root),
       PredefinedClasses.lookupClassSym("Eq", root),
-      PredefinedClasses.lookupClassSym("ToString", root),
     )
     classes.map(clazz => Ast.TypeConstraint(Ast.TypeConstraint.Head(clazz, loc), tpe, loc))
   }
@@ -2626,7 +2685,6 @@ object Typer {
     val classes = List(
       PredefinedClasses.lookupClassSym("Boxable", root),
       PredefinedClasses.lookupClassSym("Eq", root),
-      PredefinedClasses.lookupClassSym("ToString", root),
       PredefinedClasses.lookupClassSym("PartialOrder", root),
       PredefinedClasses.lookupClassSym("LowerBound", root),
       PredefinedClasses.lookupClassSym("JoinLattice", root),

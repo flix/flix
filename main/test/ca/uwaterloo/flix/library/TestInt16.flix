@@ -904,6 +904,24 @@ namespace TestInt16 {
     def toFloat6405(): Bool = Int16.toFloat64(-32768i16) == -32768.0f64
 
     /////////////////////////////////////////////////////////////////////////////
+    // toBigDecimal                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toBigDecimal01(): Bool = Int16.toBigDecimal(0i16) == 0.0ff
+
+    @test
+    def toBigDecimal02(): Bool = Int16.toBigDecimal(1i16) == 1.0ff
+
+    @test
+    def toBigDecimal03(): Bool = Int16.toBigDecimal(-1i16) == -1.0ff
+
+    @test
+    def toBigDecimal04(): Bool = Int16.toBigDecimal(32767i16) == 32767.0ff
+
+    @test
+    def toBigDecimal05(): Bool = Int16.toBigDecimal(-32768i16) == -32768.0ff
+
+    /////////////////////////////////////////////////////////////////////////////
     // clampToInt8                                                             //
     /////////////////////////////////////////////////////////////////////////////
     @test

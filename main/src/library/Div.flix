@@ -32,6 +32,10 @@ instance Div[Float64] {
     pub def div(x: Float64, y: Float64): Float64 = $FLOAT64_DIV$(x, y)
 }
 
+instance Div[BigDecimal] {
+    pub def div(x: BigDecimal, y: BigDecimal): BigDecimal = $BIGDECIMAL_DIV$(x, y)
+}
+
 instance Div[Int8] {
     pub def div(x: Int8, y: Int8): Int8 =
         if (y == 0i8)

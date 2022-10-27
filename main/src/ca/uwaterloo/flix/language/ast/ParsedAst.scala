@@ -425,6 +425,17 @@ object ParsedAst {
     case class Float64(sp1: SourcePosition, sign: String, before: String, after: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
+      * BigDecimal Literal (arbitrary sized floating-point number).
+      *
+      * @param sp1    the position of the first character in the literal.
+      * @param sign   the sign.
+      * @param before the digits before the decimal point.
+      * @param after  the digits after the decimal point.
+      * @param sp2    the position of the last character in the literal.
+      */
+    case class BigDecimal(sp1: SourcePosition, sign: String, before: String, after: String, sp2: SourcePosition) extends ParsedAst.Literal
+
+    /**
       * Int8 Literal (signed 8-bit integer).
       *
       * @param sp1   the position of the first character in the literal.
@@ -734,6 +745,16 @@ object ParsedAst {
       * @param sp2   the position of the last character in the expression.
       */
     case class Match(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.MatchRule], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Type Match Expression.
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param exp   the value expression.
+      * @param rules the rules of the type match.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class TypeMatch(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.MatchTypeRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Choose Expression.
@@ -1974,6 +1995,15 @@ object ParsedAst {
     * @param sp2 the position of the first character in the rule.
     */
   case class ChoiceRule(sp1: SourcePosition, pat: Seq[ParsedAst.ChoicePattern], exp: ParsedAst.Expression, sp2: SourcePosition)
+
+  /**
+    * A type match rule consists of a variable, a type, and a body expression.
+    *
+    * @param ident the variable of the rule.
+    * @param tpe   the type of the rule
+    * @param exp   the body expression of the rule.
+    */
+  case class MatchTypeRule(ident: Name.Ident, tpe: ParsedAst.Type, exp: ParsedAst.Expression)
 
   /**
     * A pattern match rule consists of a pattern, an optional pattern guard, and a body expression.

@@ -17,7 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation}
+import ca.uwaterloo.flix.language.ast.Ast.BoundBy
+import ca.uwaterloo.flix.language.ast.UnkindedType.{mkAnd, mkComplement, mkEffect, mkEnum, mkIntersection, mkNot, mkOr, mkPredicate, mkUncurriedArrowWithEffect, mkUnion}
 import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Validation._
@@ -46,6 +47,7 @@ object Resolver {
     * Java classes for primitives and Object
     */
   private val Int = classOf[Int]
+  private val Boolean = classOf[Boolean]
   private val Object = classOf[AnyRef]
 
   /**
@@ -632,6 +634,8 @@ object Resolver {
 
         case NamedAst.Expression.Float64(lit, loc) => ResolvedAst.Expression.Float64(lit, loc).toSuccess
 
+        case NamedAst.Expression.BigDecimal(lit, loc) => ResolvedAst.Expression.BigDecimal(lit, loc).toSuccess
+
         case NamedAst.Expression.Int8(lit, loc) => ResolvedAst.Expression.Int8(lit, loc).toSuccess
 
         case NamedAst.Expression.Int16(lit, loc) => ResolvedAst.Expression.Int16(lit, loc).toSuccess
@@ -733,6 +737,22 @@ object Resolver {
           val rsVal = rulesVal
           mapN(eVal, rsVal) {
             case (e, rs) => ResolvedAst.Expression.Match(e, rs, loc)
+          }
+
+        case NamedAst.Expression.TypeMatch(exp, rules, loc) =>
+          val rulesVal = traverse(rules) {
+            case NamedAst.MatchTypeRule(sym, tpe, body) =>
+              val tVal = resolveType(tpe, taenv, ns0, root)
+              val bVal = visitExp(body, region)
+              mapN(tVal, bVal) {
+                case (t, b) => ResolvedAst.MatchTypeRule(sym, t, b)
+              }
+          }
+
+          val eVal = visitExp(exp, region)
+          val rsVal = rulesVal
+          mapN(eVal, rsVal) {
+            case (e, rs) => ResolvedAst.Expression.TypeMatch(e, rs, loc)
           }
 
         case NamedAst.Expression.Choose(star, exps, rules, loc) =>
@@ -1267,6 +1287,8 @@ object Resolver {
 
         case NamedAst.Pattern.Float64(lit, loc) => ResolvedAst.Pattern.Float64(lit, loc).toSuccess
 
+        case NamedAst.Pattern.BigDecimal(lit, loc) => ResolvedAst.Pattern.BigDecimal(lit, loc).toSuccess
+
         case NamedAst.Pattern.Int8(lit, loc) => ResolvedAst.Pattern.Int8(lit, loc).toSuccess
 
         case NamedAst.Pattern.Int16(lit, loc) => ResolvedAst.Pattern.Int16(lit, loc).toSuccess
@@ -1753,6 +1775,7 @@ object Resolver {
       case "Char" => UnkindedType.Cst(TypeConstructor.Char, loc).toSuccess
       case "Float32" => UnkindedType.Cst(TypeConstructor.Float32, loc).toSuccess
       case "Float64" => UnkindedType.Cst(TypeConstructor.Float64, loc).toSuccess
+      case "BigDecimal" => UnkindedType.Cst(TypeConstructor.BigDecimal, loc).toSuccess
       case "Int8" => UnkindedType.Cst(TypeConstructor.Int8, loc).toSuccess
       case "Int16" => UnkindedType.Cst(TypeConstructor.Int16, loc).toSuccess
       case "Int32" => UnkindedType.Cst(TypeConstructor.Int32, loc).toSuccess
@@ -1785,7 +1808,7 @@ object Resolver {
       }
 
     case NamedAst.Type.Enum(sym, loc) =>
-      mkUnkindedEnum(sym, loc).toSuccess
+      mkEnum(sym, loc).toSuccess
 
     case NamedAst.Type.Tuple(elms0, loc) =>
       val elmsVal = traverse(elms0)(tpe => semiResolveType(tpe, ns0, root))
@@ -1857,10 +1880,12 @@ object Resolver {
 
     case NamedAst.Type.Native(fqn, loc) =>
       fqn match {
+        case "java.math.BigDecimal" => UnkindedType.Cst(TypeConstructor.BigDecimal, loc).toSuccess
         case "java.math.BigInteger" => UnkindedType.Cst(TypeConstructor.BigInt, loc).toSuccess
         case "java.lang.String" => UnkindedType.Cst(TypeConstructor.Str, loc).toSuccess
         case "java.util.function.IntFunction" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkObject(loc), loc).toSuccess
         case "java.util.function.IntUnaryOperator" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkInt32(loc), loc).toSuccess
+        case "java.util.function.IntPredicate" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkBool(loc), loc).toSuccess
 
         case _ => lookupJvmClass(fqn, loc) map {
           case clazz => UnkindedType.Cst(TypeConstructor.Native(clazz), loc)
@@ -2390,7 +2415,7 @@ object Resolver {
     */
   private def getEnumTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[UnkindedType, ResolutionError] =
     getEnumIfAccessible(enum0, ns0, loc) map {
-      case enum => mkUnkindedEnum(enum.sym, loc)
+      case enum => mkEnum(enum.sym, loc)
     }
 
   /**
@@ -2529,10 +2554,11 @@ object Resolver {
             erasedRetTpe.baseType match {
               case UnkindedType.Cst(TypeConstructor.Unit, _) | UnkindedType.Cst(TypeConstructor.Bool, _) |
                    UnkindedType.Cst(TypeConstructor.Char, _) | UnkindedType.Cst(TypeConstructor.Float32, _) |
-                   UnkindedType.Cst(TypeConstructor.Float64, _) | UnkindedType.Cst(TypeConstructor.Int8, _) |
-                   UnkindedType.Cst(TypeConstructor.Int16, _) | UnkindedType.Cst(TypeConstructor.Int32, _) |
-                   UnkindedType.Cst(TypeConstructor.Int64, _) | UnkindedType.Cst(TypeConstructor.BigInt, _) |
-                   UnkindedType.Cst(TypeConstructor.Str, _) | UnkindedType.Cst(TypeConstructor.Native(_), _) =>
+                   UnkindedType.Cst(TypeConstructor.Float64, _) | UnkindedType.Cst(TypeConstructor.BigDecimal, _) |
+                   UnkindedType.Cst(TypeConstructor.Int8, _) | UnkindedType.Cst(TypeConstructor.Int16, _) |
+                   UnkindedType.Cst(TypeConstructor.Int32, _) | UnkindedType.Cst(TypeConstructor.Int64, _) |
+                   UnkindedType.Cst(TypeConstructor.BigInt, _) | UnkindedType.Cst(TypeConstructor.Str, _) |
+                   UnkindedType.Cst(TypeConstructor.Native(_), _) =>
 
                 val expectedTpe = UnkindedType.getFlixType(method.getReturnType)
                 if (expectedTpe != erasedRetTpe)
@@ -2603,6 +2629,8 @@ object Resolver {
 
         case TypeConstructor.Float64 => classOf[Double].toSuccess
 
+        case TypeConstructor.BigDecimal => Class.forName("java.math.BigDecimal").toSuccess
+
         case TypeConstructor.Int8 => classOf[Byte].toSuccess
 
         case TypeConstructor.Int16 => classOf[Short].toSuccess
@@ -2671,6 +2699,7 @@ object Resolver {
         flatMapN(targsVal) {
           case Int :: Object :: Nil => Class.forName("java.util.function.IntFunction").toSuccess
           case Int :: Int :: Nil => Class.forName("java.util.function.IntUnaryOperator").toSuccess
+          case Int :: Boolean :: Nil => Class.forName("java.util.function.IntPredicate").toSuccess
           case _ => ResolutionError.IllegalType(tpe, loc).toFailure
         }
 
@@ -2692,95 +2721,9 @@ object Resolver {
   }
 
   /**
-    * Returns a synthetic namespace obtained from the given sequence of namespace `parts`.
-    */
-  private def getNS(parts: List[String]): Name.NName = {
-    val sp1 = SourcePosition.Unknown
-    val sp2 = SourcePosition.Unknown
-    val idents = parts.map(s => Name.Ident(sp1, s, sp2))
-    Name.NName(sp1, idents, sp2)
-  }
-
-  /**
-    * Construct the enum type constructor for the given symbol `sym` with the given kind `k`.
-    */
-  def mkUnkindedEnum(sym: Symbol.EnumSym, loc: SourceLocation): UnkindedType = UnkindedType.Enum(sym, loc)
-
-  /**
-    * Construct the enum type `Sym[ts]`.
-    */
-  def mkUnkindedEnum(sym: Symbol.EnumSym, ts: List[Symbol.UnkindedTypeVarSym], loc: SourceLocation): UnkindedType = {
-    val args = ts.map(sym => UnkindedType.Var(sym, sym.loc))
-    UnkindedType.mkApply(UnkindedType.Enum(sym, loc), args, loc)
-  }
-
-  /**
     * Construct the type alias type constructor for the given symbol `sym` with the given kind `k`.
     */
   def mkUnappliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation): UnkindedType = UnkindedType.UnappliedAlias(sym, loc)
-
-  /**
-    * Construct the effect type for the given symbol.
-    */
-  def mkEffect(sym: Symbol.EffectSym, loc: SourceLocation): UnkindedType = UnkindedType.Cst(TypeConstructor.Effect(sym), loc)
-
-  /**
-    * Constructs a predicate type.
-    */
-  private def mkPredicate(den: Ast.Denotation, ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
-    val tycon = den match {
-      case Denotation.Relational => UnkindedType.Cst(TypeConstructor.Relation, loc)
-      case Denotation.Latticenal => UnkindedType.Cst(TypeConstructor.Lattice, loc)
-    }
-    val ts = ts0 match {
-      case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
-      case x :: Nil => x
-      case xs => UnkindedType.mkTuple(xs, loc)
-    }
-
-    UnkindedType.Apply(tycon, ts, loc)
-  }
-
-  /**
-    * Returns the type `Not(tpe1)`.
-    */
-  private def mkNot(tpe1: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Not, loc), List(tpe1), loc)
-
-  /**
-    * Returns the type `And(tpe1, tpe2)`.
-    */
-  private def mkAnd(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.And, loc), List(tpe1, tpe2), loc)
-
-  /**
-    * Returns the type `Or(tpe1, tpe2)`.
-    */
-  private def mkOr(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Or, loc), List(tpe1, tpe2), loc)
-
-  /**
-    * Returns the type `Complement(tpe1)`.
-    */
-  private def mkComplement(tpe1: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Complement, loc), List(tpe1), loc)
-
-  /**
-    * Returns the type `Union(tpe1, tpe2)`.
-    */
-  private def mkUnion(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Union, loc), List(tpe1, tpe2), loc)
-
-  /**
-    * Returns the type `Intersection(tpe1, tpe2)`.
-    */
-  private def mkIntersection(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Intersection, loc), List(tpe1, tpe2), loc)
-
-  /**
-    * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
-    */
-  def mkUncurriedArrowWithEffect(as: List[UnkindedType], e: UnkindedType.PurityAndEffect, b: UnkindedType, loc: SourceLocation): UnkindedType = {
-    val arrow = UnkindedType.Arrow(e, as.length + 1, loc)
-    val inner = as.foldLeft(arrow: UnkindedType) {
-      case (acc, x) => UnkindedType.Apply(acc, x, loc)
-    }
-    UnkindedType.Apply(inner, b, loc)
-  }
 
   /**
     * Returns either the explicit region (if present), the current region (if present), or the global region.

@@ -59,6 +59,8 @@ object PatternExhaustiveness {
 
     case object Char extends TyCon
 
+    case object BigDecimal extends TyCon
+
     case object BigInt extends TyCon
 
     case object Int8 extends TyCon
@@ -141,6 +143,7 @@ object PatternExhaustiveness {
       case Expression.Char(_, _) => Nil
       case Expression.Float32(_, _) => Nil
       case Expression.Float64(_, _) => Nil
+      case Expression.BigDecimal(_, _) => Nil
       case Expression.Int8(_, _) => Nil
       case Expression.Int16(_, _) => Nil
       case Expression.Int32(_, _) => Nil
@@ -166,6 +169,11 @@ object PatternExhaustiveness {
         val expsErrs = (exp :: ruleExps ::: guards).flatMap(visitExp(_, root))
         val rulesErrs = checkRules(exp, rules, root)
         expsErrs ::: rulesErrs
+
+      case Expression.TypeMatch(exp, rules, _, _, _, _) =>
+        val ruleExps = rules.map(_.exp)
+        val expsErrs = (exp :: ruleExps).flatMap(visitExp(_, root))
+        expsErrs
 
       case Expression.Choose(exps, rules, _, _, _, _) =>
         val ruleExps = rules.map(_.exp)
@@ -532,6 +540,7 @@ object PatternExhaustiveness {
     case TyCon.True => 0
     case TyCon.False => 0
     case TyCon.Char => 0
+    case TyCon.BigDecimal => 0
     case TyCon.BigInt => 0
     case TyCon.Int8 => 0
     case TyCon.Int16 => 0
@@ -557,6 +566,7 @@ object PatternExhaustiveness {
     case Some(TypeConstructor.Char) => 0
     case Some(TypeConstructor.Float32) => 0
     case Some(TypeConstructor.Float64) => 0
+    case Some(TypeConstructor.BigDecimal) => 0
     case Some(TypeConstructor.Int8) => 0
     case Some(TypeConstructor.Int16) => 0
     case Some(TypeConstructor.Int32) => 0
@@ -593,6 +603,7 @@ object PatternExhaustiveness {
     case TyCon.True => "True"
     case TyCon.False => "False"
     case TyCon.Char => "Char"
+    case TyCon.BigDecimal => "BigDecimal"
     case TyCon.BigInt => "BigInt"
     case TyCon.Int8 => "Int8"
     case TyCon.Int16 => "Int16"
@@ -638,6 +649,7 @@ object PatternExhaustiveness {
     case Pattern.Char(_, _) => TyCon.Char
     case Pattern.Float32(_, _) => TyCon.Float32
     case Pattern.Float64(_, _) => TyCon.Float64
+    case Pattern.BigDecimal(_, _) => TyCon.BigDecimal
     case Pattern.Int8(_, _) => TyCon.Int8
     case Pattern.Int16(_, _) => TyCon.Int16
     case Pattern.Int32(_, _) => TyCon.Int32

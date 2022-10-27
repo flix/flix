@@ -99,6 +99,8 @@ object NamedAst {
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends NamedAst.Expression
 
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends NamedAst.Expression
+
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends NamedAst.Expression
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends NamedAst.Expression
@@ -136,6 +138,8 @@ object NamedAst {
     case class Scope(sym: Symbol.VarSym, regionVar: Symbol.UnkindedTypeVarSym, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Match(exp: NamedAst.Expression, rules: List[NamedAst.MatchRule], loc: SourceLocation) extends NamedAst.Expression
+
+    case class TypeMatch(exp: NamedAst.Expression, rules: List[NamedAst.MatchTypeRule], loc: SourceLocation) extends NamedAst.Expression
 
     case class Choose(star: Boolean, exps: List[NamedAst.Expression], rules: List[NamedAst.ChoiceRule], loc: SourceLocation) extends NamedAst.Expression
 
@@ -264,6 +268,8 @@ object NamedAst {
     case class Float32(lit: scala.Float, loc: SourceLocation) extends NamedAst.Pattern
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends NamedAst.Pattern
+
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends NamedAst.Pattern
 
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends NamedAst.Pattern
 
@@ -446,6 +452,8 @@ object NamedAst {
   case class ChoiceRule(pat: List[NamedAst.ChoicePattern], exp: NamedAst.Expression)
 
   case class MatchRule(pat: NamedAst.Pattern, guard: NamedAst.Expression, exp: NamedAst.Expression)
+
+  case class MatchTypeRule(sym: Symbol.VarSym, tpe: NamedAst.Type, exp: NamedAst.Expression)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: NamedAst.Expression, exp: NamedAst.Expression)
 

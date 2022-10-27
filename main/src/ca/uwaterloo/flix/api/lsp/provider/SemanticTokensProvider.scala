@@ -301,6 +301,8 @@ object SemanticTokensProvider {
 
     case Expression.Float64(_, _) => Iterator.empty
 
+    case Expression.BigDecimal(_, _) => Iterator.empty
+
     case Expression.Int8(_, _) => Iterator.empty
 
     case Expression.Int16(_, _) => Iterator.empty
@@ -359,6 +361,15 @@ object SemanticTokensProvider {
       rules.foldLeft(m) {
         case (acc, MatchRule(pat, guard, exp)) =>
           acc ++ visitPat(pat) ++ visitExp(guard) ++ visitExp(exp)
+      }
+
+    case Expression.TypeMatch(matchExp, rules, _, _, _, _) =>
+      val m = visitExp(matchExp)
+      rules.foldLeft(m) {
+        case (acc, MatchTypeRule(sym, tpe, exp)) =>
+          val o = getSemanticTokenType(sym, tpe)
+          val t = SemanticToken(o, Nil, sym.loc)
+          acc ++ Iterator(t) ++ visitType(tpe) ++ visitExp(exp)
       }
 
     case Expression.Choose(exps, rules, tpe, eff, loc, _) =>
@@ -573,6 +584,8 @@ object SemanticTokensProvider {
 
     case Pattern.Float64(_, _) => Iterator.empty
 
+    case Pattern.BigDecimal(_, _) => Iterator.empty
+
     case Pattern.Int8(_, _) => Iterator.empty
 
     case Pattern.Int16(_, _) => Iterator.empty
@@ -638,6 +651,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Char => true
     case TypeConstructor.Float32 => true
     case TypeConstructor.Float64 => true
+    case TypeConstructor.BigDecimal => true
     case TypeConstructor.Int8 => true
     case TypeConstructor.Int16 => true
     case TypeConstructor.Int32 => true

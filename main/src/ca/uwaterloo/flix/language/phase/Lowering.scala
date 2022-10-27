@@ -48,12 +48,8 @@ object Lowering {
     lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.union")
     lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.project")
     lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.rename")
-
-    lazy val Lift1: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift1")
-    lazy val Lift2: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift2")
-    lazy val Lift3: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift3")
-    lazy val Lift4: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift4")
-    lazy val Lift5: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift5")
+    def ProjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint.injectInto$arity")
+    def Facts(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint.facts$arity")
 
     lazy val DebugWithPrefix: Symbol.DefnSym = Symbol.mkDefnSym("debugWithPrefix")
 
@@ -275,6 +271,8 @@ object Lowering {
 
     case Expression.Float64(_, _) => exp0
 
+    case Expression.BigDecimal(_, _) => exp0
+
     case Expression.Int8(_, _) => exp0
 
     case Expression.Int16(_, _) => exp0
@@ -379,6 +377,12 @@ object Lowering {
       val rs = rules.map(visitMatchRule)
       val t = visitType(tpe)
       Expression.Match(e, rs, t, pur, eff, loc)
+
+    case Expression.TypeMatch(exp, rules, tpe, pur, eff, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map(visitMatchTypeRule)
+      val t = visitType(tpe)
+      Expression.TypeMatch(e, rs, t, pur, eff, loc)
 
     case Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
       val es = visitExps(exps)
@@ -693,7 +697,7 @@ object Lowering {
       }
 
       // Compute the symbol of the function.
-      val sym = Symbol.mkDefnSym(s"Fixpoint.injectInto$arity")
+      val sym = Defs.ProjectInto(arity)
 
       // The type of the function.
       val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, exp.tpe), Types.Datalog, loc)
@@ -716,7 +720,7 @@ object Lowering {
       }
 
       // Compute the symbol of the function.
-      val sym = Symbol.mkDefnSym(s"Fixpoint.facts$arity")
+      val sym = Defs.Facts(arity)
 
       // The type of the function.
       val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, Types.Datalog), tpe, loc)
@@ -772,6 +776,8 @@ object Lowering {
     case Pattern.Float32(_, _) => pat0
 
     case Pattern.Float64(_, _) => pat0
+
+    case Pattern.BigDecimal(_, _) => pat0
 
     case Pattern.Int8(_, _) => pat0
 
@@ -904,6 +910,15 @@ object Lowering {
       val g = visitExp(guard)
       val e = visitExp(exp)
       MatchRule(p, g, e)
+  }
+
+  /**
+    * Lowers the given match rule `rule0`.
+    */
+  private def visitMatchTypeRule(rule0: MatchTypeRule)(implicit root: Root, flix: Flix): MatchTypeRule = rule0 match {
+    case MatchTypeRule(sym, tpe, exp) =>
+      val e = visitExp(exp)
+      MatchTypeRule(sym, tpe, e)
   }
 
   /**
@@ -1045,6 +1060,9 @@ object Lowering {
 
     case Pattern.Float64(lit, loc) =>
       mkBodyTermLit(box(Expression.Float64(lit, loc)))
+
+    case Pattern.BigDecimal(lit, loc) =>
+      mkBodyTermLit(box(Expression.BigDecimal(lit, loc)))
 
     case Pattern.Int8(lit, loc) =>
       mkBodyTermLit(box(Expression.Int8(lit, loc)))
@@ -1630,6 +1648,8 @@ object Lowering {
 
     case Expression.Float64(_, _) => exp0
 
+    case Expression.BigDecimal(_, _) => exp0
+
     case Expression.Int8(_, _) => exp0
 
     case Expression.Int16(_, _) => exp0
@@ -1711,6 +1731,8 @@ object Lowering {
       Expression.Discard(e, pur, eff, loc)
 
     case Expression.Match(_, _, _, _, _, _) => ??? // TODO
+
+    case Expression.TypeMatch(_, _, _, _, _, _) => ??? // TODO
 
     case Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
       val es = exps.map(substExp(_, subst))

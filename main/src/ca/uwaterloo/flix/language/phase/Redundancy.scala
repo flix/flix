@@ -264,6 +264,8 @@ object Redundancy {
 
     case Expression.Float64(_, _) => Used.empty
 
+    case Expression.BigDecimal(_, _) => Used.empty
+
     case Expression.Int8(_, _) => Used.empty
 
     case Expression.Int16(_, _) => Used.empty
@@ -451,6 +453,34 @@ object Redundancy {
 
           // Combine everything together.
           (usedPatGuardAndBody -- fvs) ++ unusedVarSyms ++ shadowedVarSyms
+      }
+
+      usedMatch ++ usedRules.reduceLeft(_ ++ _)
+
+    case Expression.TypeMatch(exp, rules, _, _, _, _) =>
+      // Visit the match expression.
+      val usedMatch = visitExp(exp, env0, rc)
+
+      // Visit each match rule.
+      val usedRules = rules map {
+        case MatchTypeRule(sym, _, body) =>
+          // Get the free var from the sym
+          val fvs = Set(sym)
+
+          // Extend the environment with the free variables.
+          val extendedEnv = env0 ++ fvs
+
+          // Visit the pattern, guard and body.
+          val usedBody = visitExp(body, extendedEnv, rc)
+
+          // Check for unused variable symbols.
+          val unusedVarSyms = fvs.filter(sym => deadVarSym(sym, usedBody)).map(UnusedVarSym)
+
+          // Check for shadowed variable symbols.
+          val shadowedVarSyms = fvs.map(sym => shadowing(sym, env0)).foldLeft(Used.empty)(_ ++ _)
+
+          // Combine everything together.
+          (usedBody -- fvs) ++ unusedVarSyms ++ shadowedVarSyms
       }
 
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
@@ -738,6 +768,7 @@ object Redundancy {
     case Pattern.Char(_, _) => Used.empty
     case Pattern.Float32(_, _) => Used.empty
     case Pattern.Float64(_, _) => Used.empty
+    case Pattern.BigDecimal(_, _) => Used.empty
     case Pattern.Int8(_, _) => Used.empty
     case Pattern.Int16(_, _) => Used.empty
     case Pattern.Int32(_, _) => Used.empty
@@ -900,6 +931,7 @@ object Redundancy {
     case Pattern.Char(_, _) => Set.empty
     case Pattern.Float32(_, _) => Set.empty
     case Pattern.Float64(_, _) => Set.empty
+    case Pattern.BigDecimal(_, _) => Set.empty
     case Pattern.Int8(_, _) => Set.empty
     case Pattern.Int16(_, _) => Set.empty
     case Pattern.Int32(_, _) => Set.empty

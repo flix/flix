@@ -650,6 +650,8 @@ object Namer {
 
     case WeededAst.Expression.Float64(lit, loc) => NamedAst.Expression.Float64(lit, loc).toSuccess
 
+    case WeededAst.Expression.BigDecimal(lit, loc) => NamedAst.Expression.BigDecimal(lit, loc).toSuccess
+
     case WeededAst.Expression.Int8(lit, loc) => NamedAst.Expression.Int8(lit, loc).toSuccess
 
     case WeededAst.Expression.Int16(lit, loc) => NamedAst.Expression.Int16(lit, loc).toSuccess
@@ -752,6 +754,23 @@ object Namer {
       }
       mapN(expVal, rulesVal) {
         case (e, rs) => NamedAst.Expression.Match(e, rs, loc)
+      }
+
+    case WeededAst.Expression.TypeMatch(exp, rules, loc) =>
+      val expVal = visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0)
+      val rulesVal = traverse(rules) {
+        case WeededAst.MatchTypeRule(ident, tpe, body) =>
+          // extend the environment with the variable
+          // and perform naming on the rule body under the extended environment.
+          val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
+          val env1 = Map(ident.name -> sym)
+          val extendedEnv = env0 ++ env1
+          mapN(visitType(tpe, uenv0, ienv0, tenv0), visitExp(body, extendedEnv, uenv0, ienv0, tenv0, ns0, prog0)) {
+            case (t, b) => NamedAst.MatchTypeRule(sym, t, b)
+          }
+      }
+      mapN(expVal, rulesVal) {
+        case (e, rs) => NamedAst.Expression.TypeMatch(e, rs, loc)
       }
 
     case WeededAst.Expression.Choose(star, exps, rules, loc) =>
@@ -1140,6 +1159,7 @@ object Namer {
       case WeededAst.Pattern.Char(lit, loc) => NamedAst.Pattern.Char(lit, loc)
       case WeededAst.Pattern.Float32(lit, loc) => NamedAst.Pattern.Float32(lit, loc)
       case WeededAst.Pattern.Float64(lit, loc) => NamedAst.Pattern.Float64(lit, loc)
+      case WeededAst.Pattern.BigDecimal(lit, loc) => NamedAst.Pattern.BigDecimal(lit, loc)
       case WeededAst.Pattern.Int8(lit, loc) => NamedAst.Pattern.Int8(lit, loc)
       case WeededAst.Pattern.Int16(lit, loc) => NamedAst.Pattern.Int16(lit, loc)
       case WeededAst.Pattern.Int32(lit, loc) => NamedAst.Pattern.Int32(lit, loc)
@@ -1195,6 +1215,7 @@ object Namer {
       case WeededAst.Pattern.Char(lit, loc) => NamedAst.Pattern.Char(lit, loc)
       case WeededAst.Pattern.Float32(lit, loc) => NamedAst.Pattern.Float32(lit, loc)
       case WeededAst.Pattern.Float64(lit, loc) => NamedAst.Pattern.Float64(lit, loc)
+      case WeededAst.Pattern.BigDecimal(lit, loc) => NamedAst.Pattern.BigDecimal(lit, loc)
       case WeededAst.Pattern.Int8(lit, loc) => NamedAst.Pattern.Int8(lit, loc)
       case WeededAst.Pattern.Int16(lit, loc) => NamedAst.Pattern.Int16(lit, loc)
       case WeededAst.Pattern.Int32(lit, loc) => NamedAst.Pattern.Int32(lit, loc)
@@ -1504,6 +1525,7 @@ object Namer {
     case WeededAst.Expression.Char(_, _) => Nil
     case WeededAst.Expression.Float32(_, _) => Nil
     case WeededAst.Expression.Float64(_, _) => Nil
+    case WeededAst.Expression.BigDecimal(_, _) => Nil
     case WeededAst.Expression.Int8(_, _) => Nil
     case WeededAst.Expression.Int16(_, _) => Nil
     case WeededAst.Expression.Int32(_, _) => Nil
@@ -1524,6 +1546,9 @@ object Namer {
     case WeededAst.Expression.Scope(ident, exp, _) => filterBoundVars(freeVars(exp), List(ident))
     case WeededAst.Expression.Match(exp, rules, _) => freeVars(exp) ++ rules.flatMap {
       case WeededAst.MatchRule(pat, guard, body) => filterBoundVars(freeVars(guard) ++ freeVars(body), freeVars(pat))
+    }
+    case WeededAst.Expression.TypeMatch(exp, rules, _) => freeVars(exp) ++ rules.flatMap {
+      case WeededAst.MatchTypeRule(ident, _, body) => filterBoundVars(freeVars(body), List(ident))
     }
     case WeededAst.Expression.Choose(_, exps, rules, _) => exps.flatMap(freeVars) ++ rules.flatMap {
       case WeededAst.ChoiceRule(pat, exp) => filterBoundVars(freeVars(exp), pat.flatMap(freeVars))
@@ -1605,6 +1630,7 @@ object Namer {
     case WeededAst.Pattern.Char(lit, loc) => Nil
     case WeededAst.Pattern.Float32(lit, loc) => Nil
     case WeededAst.Pattern.Float64(lit, loc) => Nil
+    case WeededAst.Pattern.BigDecimal(lit, loc) => Nil
     case WeededAst.Pattern.Int8(lit, loc) => Nil
     case WeededAst.Pattern.Int16(lit, loc) => Nil
     case WeededAst.Pattern.Int32(lit, loc) => Nil

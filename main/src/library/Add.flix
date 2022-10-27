@@ -32,6 +32,10 @@ instance Add[Float64] {
     pub def add(x: Float64, y: Float64): Float64 = $FLOAT64_ADD$(x, y)
 }
 
+instance Add[BigDecimal] {
+    pub def add(x: BigDecimal, y: BigDecimal): BigDecimal = $BIGDECIMAL_ADD$(x, y)
+}
+
 instance Add[Int8] {
     pub def add(x: Int8, y: Int8): Int8 = $INT8_ADD$(x, y)
 }

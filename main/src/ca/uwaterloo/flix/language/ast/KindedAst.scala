@@ -80,6 +80,8 @@ object KindedAst {
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends KindedAst.Expression
 
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends KindedAst.Expression
+
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends KindedAst.Expression
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends KindedAst.Expression
@@ -117,6 +119,8 @@ object KindedAst {
     case class Scope(sym: Symbol.VarSym, regionVar: Type.Var, exp1: KindedAst.Expression, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class Match(exp: KindedAst.Expression, rules: List[KindedAst.MatchRule], loc: SourceLocation) extends KindedAst.Expression
+
+    case class TypeMatch(exp: KindedAst.Expression, rules: List[KindedAst.MatchTypeRule], loc: SourceLocation) extends KindedAst.Expression
 
     case class Choose(star: Boolean, exps: List[KindedAst.Expression], rules: List[KindedAst.ChoiceRule], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
@@ -244,6 +248,8 @@ object KindedAst {
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends KindedAst.Pattern
 
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends KindedAst.Pattern
+
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends KindedAst.Pattern
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends KindedAst.Pattern
@@ -339,6 +345,8 @@ object KindedAst {
   case class ChoiceRule(pat: List[KindedAst.ChoicePattern], exp: KindedAst.Expression)
 
   case class MatchRule(pat: KindedAst.Pattern, guard: KindedAst.Expression, exp: KindedAst.Expression)
+
+  case class MatchTypeRule(sym: Symbol.VarSym, tpe: Type, exp: KindedAst.Expression)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: KindedAst.Expression, exp: KindedAst.Expression)
 

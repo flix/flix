@@ -156,6 +156,9 @@ object EarlyTreeShaker {
     case Expression.Float64(_, _) =>
       Set.empty
 
+    case Expression.BigDecimal(_, _) =>
+      Set.empty
+
     case Expression.Int8(_, _) =>
       Set.empty
 
@@ -227,6 +230,9 @@ object EarlyTreeShaker {
 
     case Expression.Match(exp, rules, _, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp)) ++ visitExps(rules.map(_.guard))
+
+    case Expression.TypeMatch(exp, rules, _, _, _, _) =>
+      visitExp(exp) ++ visitExps(rules.map(_.exp))
 
     case Expression.Choose(exps, rules, _, _, _, _) =>
       visitExps(exps) ++ visitExps(rules.map(_.exp))
