@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.IntroducedBy
+import ca.uwaterloo.flix.language.ast.Ast.{IntroducedBy, EliminatedBy}
 import ca.uwaterloo.flix.language.phase.Kinder
 
 /**
@@ -168,6 +168,7 @@ object TypeConstructor {
   /**
     * A type constructor that represent the type of channels.
     */
+  @EliminatedBy(Lowering.getClass)
   case object Channel extends TypeConstructor {
     /**
       * The shape of a channel is Channel[t].

@@ -1332,9 +1332,9 @@ object Lowering {
     */
   private def mkChannelAdminArray(rs: List[SelectChannelRule], channels: List[(Symbol.VarSym, Expression)], loc: SourceLocation): Expression = {
     val admins = rs.zip(channels) map {
-      case (SelectChannelRule(_, c, _), channel) =>
+      case (SelectChannelRule(_, c, _), (chanSym, _)) =>
         val admin = Expression.Def(Defs.ChannelMpmcAdmin, Type.mkPureArrow(c.tpe, Types.ChannelMpmcAdmin, loc), loc)
-        Expression.Apply(admin, List(Expression.Var(channel._1, c.tpe, loc)), Types.ChannelMpmcAdmin, Type.Pure, Type.Empty, loc)
+        Expression.Apply(admin, List(Expression.Var(chanSym, c.tpe, loc)), Types.ChannelMpmcAdmin, Type.Pure, Type.Empty, loc)
     }
     mkArray(admins, Types.ChannelMpmcAdmin, loc)
   }
@@ -1362,7 +1362,7 @@ object Lowering {
     val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
 
     rs.zip(channels).zipWithIndex map {
-      case ((SelectChannelRule(sym, chan, exp), channel), i) =>
+      case ((SelectChannelRule(sym, chan, exp), (chSym, _)), i) =>
         val locksSym = mkLetSym("locks", loc)
         val pat = mkTuplePattern(List(Pattern.Int32(i, loc), Pattern.Var(locksSym, locksType, loc)), loc)
         val getTpe = chan.tpe match {
@@ -1370,7 +1370,7 @@ object Lowering {
           case _ => throw InternalCompilerException("Unexpected channel type found.")
         }
         val get = Expression.Def(Defs.ChannelUnsafeGetAndUnlock, Type.mkImpureUncurriedArrow(List(chan.tpe, locksType), getTpe, loc), loc)
-        val getExp = Expression.Apply(get, List(Expression.Var(channel._1, chan.tpe, loc), Expression.Var(locksSym, locksType, loc)), getTpe, pur, eff, loc)
+        val getExp = Expression.Apply(get, List(Expression.Var(chSym, chan.tpe, loc), Expression.Var(locksSym, locksType, loc)), getTpe, pur, eff, loc)
         val e = Expression.Let(sym, Ast.Modifiers.Empty, getExp, exp, exp.tpe, pur, eff, loc)
         MatchRule(pat, Expression.True(loc), e)
     }
