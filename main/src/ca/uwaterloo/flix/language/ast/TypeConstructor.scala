@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{IntroducedBy, EliminatedBy}
-import ca.uwaterloo.flix.language.phase.Kinder
+import ca.uwaterloo.flix.language.phase.{Kinder, Lowering}
 
 /**
   * Representation of type constructors.
