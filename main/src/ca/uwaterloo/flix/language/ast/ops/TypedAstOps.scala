@@ -101,6 +101,13 @@ object TypedAstOps {
             macc ++ visitExp(guard, env0) ++ visitExp(exp, binds(pat) ++ env0)
         }
 
+      case Expression.TypeMatch(matchExp, rules, _, _, _, _) =>
+        val m = visitExp(matchExp, env0)
+        rules.foldLeft(m) {
+          case (macc, MatchTypeRule(sym, tpe, exp)) =>
+            macc ++ visitExp(exp, Map(sym -> tpe) ++ env0)
+        }
+
       case Expression.Choose(exps, rules, _, _, _, _) =>
         val m1 = exps.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
           case (acc, exp) => acc ++ visitExp(exp, env0)
@@ -407,6 +414,7 @@ object TypedAstOps {
     case Expression.Stm(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Discard(exp, _, _, _) => sigSymsOf(exp)
     case Expression.Match(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ sigSymsOf(rule.guard))
+    case Expression.TypeMatch(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.Choose(exps, rules, _, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.Tag(_, exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Tuple(elms, _, _, _, _) => elms.flatMap(sigSymsOf).toSet
@@ -567,6 +575,11 @@ object TypedAstOps {
     case Expression.Match(exp, rules, _, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
         case (acc, MatchRule(pat, guard, exp)) => acc ++ (freeVars(guard) ++ freeVars(exp)) -- freeVars(pat).keys
+      }
+
+    case Expression.TypeMatch(exp, rules, _, _, _, _) =>
+      rules.foldLeft(freeVars(exp)) {
+        case (acc, MatchTypeRule(sym, _, exp)) => acc ++ (freeVars(exp) - sym)
       }
 
     case Expression.Choose(exps, rules, _, _, _, _) =>

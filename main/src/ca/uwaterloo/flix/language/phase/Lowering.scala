@@ -363,6 +363,12 @@ object Lowering {
       val t = visitType(tpe)
       Expression.Match(e, rs, t, pur, eff, loc)
 
+    case Expression.TypeMatch(exp, rules, tpe, pur, eff, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map(visitMatchTypeRule)
+      val t = visitType(tpe)
+      Expression.TypeMatch(e, rs, t, pur, eff, loc)
+
     case Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
       val es = visitExps(exps)
       val rs = rules.map(visitChoiceRule)
@@ -837,6 +843,15 @@ object Lowering {
       val g = visitExp(guard)
       val e = visitExp(exp)
       MatchRule(p, g, e)
+  }
+
+  /**
+    * Lowers the given match rule `rule0`.
+    */
+  private def visitMatchTypeRule(rule0: MatchTypeRule)(implicit root: Root, flix: Flix): MatchTypeRule = rule0 match {
+    case MatchTypeRule(sym, tpe, exp) =>
+      val e = visitExp(exp)
+      MatchTypeRule(sym, tpe, e)
   }
 
   /**
@@ -1571,6 +1586,8 @@ object Lowering {
       Expression.Discard(e, pur, eff, loc)
 
     case Expression.Match(_, _, _, _, _, _) => ??? // TODO
+
+    case Expression.TypeMatch(_, _, _, _, _, _) => ??? // TODO
 
     case Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
       val es = exps.map(substExp(_, subst))

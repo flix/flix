@@ -739,6 +739,22 @@ object Resolver {
             case (e, rs) => ResolvedAst.Expression.Match(e, rs, loc)
           }
 
+        case NamedAst.Expression.TypeMatch(exp, rules, loc) =>
+          val rulesVal = traverse(rules) {
+            case NamedAst.MatchTypeRule(sym, tpe, body) =>
+              val tVal = resolveType(tpe, taenv, ns0, root)
+              val bVal = visitExp(body, region)
+              mapN(tVal, bVal) {
+                case (t, b) => ResolvedAst.MatchTypeRule(sym, t, b)
+              }
+          }
+
+          val eVal = visitExp(exp, region)
+          val rsVal = rulesVal
+          mapN(eVal, rsVal) {
+            case (e, rs) => ResolvedAst.Expression.TypeMatch(e, rs, loc)
+          }
+
         case NamedAst.Expression.Choose(star, exps, rules, loc) =>
           val expsVal = traverse(exps)(visitExp(_, region))
           val rulesVal = traverse(rules) {

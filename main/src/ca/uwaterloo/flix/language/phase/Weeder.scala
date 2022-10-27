@@ -1116,6 +1116,20 @@ object Weeder {
         case (e, rs) => WeededAst.Expression.Match(e, rs, loc)
       }
 
+    case ParsedAst.Expression.TypeMatch(sp1, exp, rules, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val rulesVal = traverse(rules) {
+        case ParsedAst.MatchTypeRule(ident, tpe, body) =>
+          val t = visitType(tpe)
+          mapN(visitExp(body, senv)) {
+            // Pattern match without guard.
+            case e => WeededAst.MatchTypeRule(ident, t, e)
+          }
+      }
+      mapN(visitExp(exp, senv), rulesVal) {
+        case (e, rs) => WeededAst.Expression.TypeMatch(e, rs, loc)
+      }
+
     case ParsedAst.Expression.Choose(sp1, star, exps, rules, sp2) =>
       //
       // Check for mismatched arity of `exps` and `rules`.
@@ -3044,6 +3058,7 @@ object Weeder {
     case ParsedAst.Expression.Scope(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Choose(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.TypeMatch(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordLit(sp1, _, _) => sp1

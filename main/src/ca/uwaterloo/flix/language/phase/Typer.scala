@@ -893,6 +893,19 @@ object Typer {
           resultEff = Type.mkUnion(eff :: guardEffs ::: bodyEffs, loc)
         } yield (constrs ++ guardConstrs.flatten ++ bodyConstrs.flatten, resultTyp, resultPur, resultEff)
 
+      case KindedAst.Expression.TypeMatch(exp, rules, loc) =>
+        val bodies = rules.map(_.exp)
+
+        for {
+          (constrs, tpe, pur, eff) <- visitExp(exp)
+          // unify each rule's variable with its type
+          _ <- seqM(rules.map(rule => unifyTypeM(rule.sym.tvar, rule.tpe, rule.sym.loc)))
+          (bodyConstrs, bodyTypes, bodyPurs, bodyEffs) <- seqM(bodies map visitExp).map(unzip4)
+          resultTyp <- unifyTypeM(bodyTypes, loc)
+          resultPur = Type.mkAnd(pur :: bodyPurs, loc)
+          resultEff = Type.mkUnion(eff :: bodyEffs, loc)
+        } yield (constrs ++ bodyConstrs.flatten, resultTyp, resultPur, resultEff)
+
       case KindedAst.Expression.Choose(star, exps0, rules0, tvar, loc) =>
 
         /**
@@ -1969,6 +1982,23 @@ object Typer {
           case (acc, TypedAst.MatchRule(_, g, b)) => Type.mkUnion(List(g.eff, b.eff, acc), loc)
         }
         TypedAst.Expression.Match(e1, rs, tpe, pur, eff, loc)
+
+      case KindedAst.Expression.TypeMatch(matchExp, rules, loc) =>
+        val e1 = visitExp(matchExp, subst0)
+        val rs = rules map {
+          case KindedAst.MatchTypeRule(sym, tpe0, exp) =>
+            val t = subst0(tpe0)
+            val b = visitExp(exp, subst0)
+            TypedAst.MatchTypeRule(sym, t, b)
+        }
+        val tpe = rs.head.exp.tpe
+        val pur = rs.foldLeft(e1.pur) {
+          case (acc, TypedAst.MatchTypeRule(_, _, b)) => Type.mkAnd(b.pur, acc, loc)
+        }
+        val eff = rs.foldLeft(e1.eff) {
+          case (acc, TypedAst.MatchTypeRule(_, _, b)) => Type.mkUnion(List(b.eff, acc), loc)
+        }
+        TypedAst.Expression.TypeMatch(e1, rs, tpe, pur, eff, loc)
 
       case KindedAst.Expression.Choose(_, exps, rules, tvar, loc) =>
         val es = exps.map(visitExp(_, subst0))

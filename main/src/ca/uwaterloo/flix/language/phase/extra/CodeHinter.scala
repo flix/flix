@@ -166,6 +166,11 @@ object CodeHinter {
         case MatchRule(_, guard, exp) => visitExp(guard) ++ visitExp(exp)
       }
 
+    case Expression.TypeMatch(matchExp, rules, _, _, _, _) =>
+      visitExp(matchExp) ++ rules.flatMap {
+        case MatchTypeRule(_, _, exp) => visitExp(exp)
+      }
+
     case Expression.Choose(exps, rules, _, _, _, _) =>
       visitExps(exps) ++ rules.flatMap {
         case ChoiceRule(_, exp) => visitExp(exp)

@@ -1,8 +1,11 @@
 package ca.uwaterloo.flix.language.errors
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.fmt.Audience
+import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -345,5 +348,35 @@ object SafetyError {
 
     override def explain(formatter: Formatter): Option[String] =
       Some("Only tuples and function applications can be parallelized with par.")
+  }
+
+  /**
+    * An error raised to indicate that a TypeMatch expression is missing a default case.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class MissingDefaultMatchTypeCase(loc: SourceLocation) extends SafetyError {
+    override def summary: String = s"Missing default case."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Missing default case.
+         |
+         |${code(loc, "missing default case.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+         | A typematch expression must have a default case. For example:
+         |
+         | typematch x {
+         |     case y: Int32 => ...
+         |     case _: _ => ... // default case
+         | }
+         |
+         |""".stripMargin
+    })
   }
 }
