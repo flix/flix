@@ -382,4 +382,44 @@ namespace Test/Exp/Concurrency/Select {
         ()
     }
 
+    @test
+    def testSelectSideEffecting01(): Bool \ IO = {
+        def mkChan(): Channel[Int32] \ IO = {
+            let c = chan Int32 1;
+            c <- 42;
+            c
+        };
+
+        select {
+            case x <- mkChan() => x == 42
+        }
+    }
+
+    @test
+    def testSelectSideEffecting02(): Bool \ IO = {
+        let c1 = chan Int32 10;
+        let c2 = chan Int32 10;
+        let c3 = chan Int32 10;
+
+        select {
+            case x <- {c3 <- 1; c1} => x + (<- c2) + (<- c3) == 6
+            case x <- {c2 <- 2; c2} => x + (<- c1) + (<- c3) == 6
+            case x <- {c1 <- 3; c3} => x + (<- c1) + (<- c2) == 6
+        }
+    }
+
+    type alias MyReceiver = Receiver[Int32]
+
+    @test
+    def testSelectAliasedChannel(): Bool \ IO = {
+        let c = chan Int32 1;
+
+        def useChan(ch: MyReceiver) : Bool =
+            select {
+                case x <- ch => x == 42
+            };
+
+        c <- 42;
+        useChan(c)
+    }
 }
