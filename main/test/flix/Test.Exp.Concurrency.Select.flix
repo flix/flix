@@ -407,4 +407,19 @@ namespace Test/Exp/Concurrency/Select {
             case x <- {c1 <- 3; c3} => x + (<- c1) + (<- c2) == 6
         }
     }
+
+    type alias MyReceiver = Receiver[Int32]
+
+    @test
+    def testSelectAliasedChannel(): Bool \ IO = {
+        let c = chan Int32 1;
+
+        def useChan(ch: MyReceiver) : Bool =
+            select {
+                case x <- ch => x == 42
+            };
+
+        c <- 42;
+        useChan(c)
+    }
 }

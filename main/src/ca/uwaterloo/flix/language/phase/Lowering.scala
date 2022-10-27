@@ -1365,7 +1365,7 @@ object Lowering {
       case ((SelectChannelRule(sym, chan, exp), (chSym, _)), i) =>
         val locksSym = mkLetSym("locks", loc)
         val pat = mkTuplePattern(List(Pattern.Int32(i, loc), Pattern.Var(locksSym, locksType, loc)), loc)
-        val getTpe = chan.tpe match {
+        val getTpe = Type.eraseTopAliases(chan.tpe) match {
           case Type.Apply(_, t, _) => t
           case _ => throw InternalCompilerException("Unexpected channel type found.")
         }
