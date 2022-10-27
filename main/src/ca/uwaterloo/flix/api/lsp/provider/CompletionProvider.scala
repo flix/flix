@@ -26,6 +26,9 @@ import ca.uwaterloo.flix.language.phase.Resolver.DerivableSyms
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 import org.parboiled2.CharPredicate
+import java.lang.reflect.Executable
+import java.lang.reflect.Constructor
+import java.lang.reflect.Method
 
 /**
   * CompletionProvider
@@ -853,33 +856,21 @@ object CompletionProvider {
     * Get completions for java imports.
     */
   private def getImportCompletions()(implicit context: Context, root: TypedAst.Root): Iterable[CompletionItem] = {
-    if (root == null) Nil else getImportNewCompletions()
+    if (root == null) Nil else getImportNewCompletions() ++ getImportMethodCompletions()
   }
 
   /**
     * Get completions for importing java constructors.
     */
   private def getImportNewCompletions()(implicit context: Context): Iterable[CompletionItem] = {
-    val regex = raw"\s*.*import\s+new\s+(.*)".r
+    val regex = raw"\s*import\s+new\s+(.*)".r
     context.prefix match {
       case regex(clazz) => {
         try {
           val clazzObject = java.lang.Class.forName(clazz)
-          clazzObject.getConstructors().map(constructor => {
-            val types = constructor.getParameters().map(param => convertJavaClassToFlixType(param.getType())).mkString("(", ", ", ")")
-            // Gets the name of the type excluding the package to use as a suggestion for the name of the constructor.
-            val className = clazz.split('.').last
-            val label = s"$clazz$types"
-            val replace = s"$clazz$types: ${convertJavaClassToFlixType(clazzObject)} \\ IO as $${0:new$className};"
-            CompletionItem(
-              label = label,
-              // Prioritise constructors with fewer parameters.
-              sortText = Priority.high(s"${constructor.getParameterCount()}$label"),
-              textEdit = TextEdit(context.range, replace),
-              documentation = None,
-              insertTextFormat = InsertTextFormat.Snippet,
-              kind = CompletionItemKind.Constructor)
-          })
+          // Gets the name of the type excluding the package to use as a suggestion for the name of the constructor.
+          val className = clazz.split('.').last
+          clazzObject.getConstructors().map(constructor => executableCompletion(constructor, clazz, Some(s"new$className")))
         }
         catch {
           //If the user did not type a valid class or is not finished typing it we do not show any completion suggestions
@@ -888,6 +879,78 @@ object CompletionProvider {
       }
       case _ => Nil
     }
+  }
+
+  /**
+    * Get completions for method imports (both static and instance methods)
+    */
+  private def getImportMethodCompletions()(implicit context: Context): Iterable[CompletionItem] = {
+    val instance = raw"\s*import\s+(.*)".r
+    val static = raw"\s*import\s+static\s+(.*)".r
+    context.prefix match {
+      // We match on static first because import static ... would also match on instance regex.
+      case static(clazz) => methodsCompletion(clazz, true)
+      case instance(clazz) => methodsCompletion(clazz, false)
+      case _ => Nil
+    }
+  }
+
+  /**
+    * Convert methods of a class into completionitems 
+    */
+  private def methodsCompletion(clazz: String, isStatic: Boolean)(implicit context: Context): Iterable[CompletionItem] = {
+    // So VSCode is supposed to keep the suggestions as long as what we type does not invalidate it.
+    // However, after usually two more characters VSCode will remove the autocompletions, so to make sure
+    // that they stay we must send them again. Therefore we both test if what is currently typed is a class
+    // and if what is before the last period is a class. This looks a little messy but if you nest try-catch 
+    // clauses which would be slightly cleaner it crashes the scala compiler.
+    // We catch on ClassNotFoundException if a complete class name has not been typed (yet) or is incorrectly typed
+    val clazzExcludingMethod = clazz.split('.').dropRight(1).mkString(".")
+    (try {
+      Some((java.lang.Class.forName(clazz), clazz))
+    }
+    catch {
+      case _: ClassNotFoundException => None
+    }).orElse(try {
+        Some((java.lang.Class.forName(clazzExcludingMethod), clazzExcludingMethod))
+      }
+      catch {
+        case _: ClassNotFoundException => None
+      }) match {
+          case Some((clazzObject, clazz)) => clazzObject.getMethods()
+            // Filter if the method is static or not. Java does not have a method for testing whether a method is static,
+            // but it does have one method which returns null for static methods and only static methods so we can abuse that.
+            .filter((method) => (method.getAnnotatedReceiverType() == null) == isStatic)
+            .map((method) => executableCompletion(method, clazz, None))
+          case None => Nil
+        }
+  }
+
+  /**
+    * returns a completiong from a java executable (method/constructor) instace.
+    * clazz is the clazz in string form used for the completion.
+    * aliasSuggestion is used to suggest a alias for the function if applicable.
+    */
+  private def executableCompletion(exec: Executable, clazz: String, aliasSuggestion: Option[String])(implicit context: Context): CompletionItem = {
+    val typesString = exec.getParameters().map(param => convertJavaClassToFlixType(param.getType())).mkString("(", ", ", ")")
+    val finalAliasSuggestion = aliasSuggestion match {
+      case Some(aliasSuggestion) => s" as $${0:$aliasSuggestion}"
+      case None => ""
+    }
+    // Get the name of the function if it is not a constructor.
+    val name = if (exec.isInstanceOf[Constructor[_ <: Object]]) "" else s".${exec.getName}"
+    // So for constructors we do not have a return type method but we know it is the declaring class.
+    val returnType = if (exec.isInstanceOf[Method]) exec.asInstanceOf[Method].getReturnType() else exec.getDeclaringClass()
+    val label = s"$clazz$name$typesString"
+    val replace = s"$clazz$name$typesString: ${convertJavaClassToFlixType(returnType)} \\ IO$finalAliasSuggestion;"
+    CompletionItem(
+      label = label,
+      // Prioritise executables with fewer parameters.
+      sortText = Priority.high(s"${exec.getParameterCount()}$label"),
+      textEdit = TextEdit(context.range, replace),
+      documentation = None,
+      insertTextFormat = InsertTextFormat.Snippet,
+      kind = CompletionItemKind.Method)
   }
 
   /**
