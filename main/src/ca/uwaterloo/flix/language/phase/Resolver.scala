@@ -47,6 +47,7 @@ object Resolver {
     * Java classes for primitives and Object
     */
   private val Int = classOf[Int]
+  private val Boolean = classOf[Boolean]
   private val Object = classOf[AnyRef]
 
   /**
@@ -736,6 +737,22 @@ object Resolver {
           val rsVal = rulesVal
           mapN(eVal, rsVal) {
             case (e, rs) => ResolvedAst.Expression.Match(e, rs, loc)
+          }
+
+        case NamedAst.Expression.TypeMatch(exp, rules, loc) =>
+          val rulesVal = traverse(rules) {
+            case NamedAst.MatchTypeRule(sym, tpe, body) =>
+              val tVal = resolveType(tpe, taenv, ns0, root)
+              val bVal = visitExp(body, region)
+              mapN(tVal, bVal) {
+                case (t, b) => ResolvedAst.MatchTypeRule(sym, t, b)
+              }
+          }
+
+          val eVal = visitExp(exp, region)
+          val rsVal = rulesVal
+          mapN(eVal, rsVal) {
+            case (e, rs) => ResolvedAst.Expression.TypeMatch(e, rs, loc)
           }
 
         case NamedAst.Expression.Choose(star, exps, rules, loc) =>
@@ -1868,6 +1885,7 @@ object Resolver {
         case "java.lang.String" => UnkindedType.Cst(TypeConstructor.Str, loc).toSuccess
         case "java.util.function.IntFunction" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkObject(loc), loc).toSuccess
         case "java.util.function.IntUnaryOperator" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkInt32(loc), loc).toSuccess
+        case "java.util.function.IntPredicate" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkBool(loc), loc).toSuccess
 
         case _ => lookupJvmClass(fqn, loc) map {
           case clazz => UnkindedType.Cst(TypeConstructor.Native(clazz), loc)
@@ -2681,6 +2699,7 @@ object Resolver {
         flatMapN(targsVal) {
           case Int :: Object :: Nil => Class.forName("java.util.function.IntFunction").toSuccess
           case Int :: Int :: Nil => Class.forName("java.util.function.IntUnaryOperator").toSuccess
+          case Int :: Boolean :: Nil => Class.forName("java.util.function.IntPredicate").toSuccess
           case _ => ResolutionError.IllegalType(tpe, loc).toFailure
         }
 
