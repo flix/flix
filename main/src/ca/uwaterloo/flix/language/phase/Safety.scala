@@ -641,8 +641,9 @@ object Safety {
     val implemented = flixMethods.keySet
 
     val javaMethods = getJavaMethodSignatures(clazz)
+    val objectMethods = getJavaMethodSignatures(classOf[Object]).keySet
     val canImplement = javaMethods.keySet
-    val mustImplement = canImplement.filter(m => isAbstractMethod(javaMethods(m)))
+    val mustImplement = canImplement.filter(m => isAbstractMethod(javaMethods(m)) && !objectMethods.contains(m))
 
     //
     // Check that there are no unimplemented methods.
