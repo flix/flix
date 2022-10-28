@@ -413,29 +413,6 @@ object Inliner {
       }
       LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
-    case OccurrenceAst.Expression.NewChannel(exp, tpe, loc) =>
-      val e = visitExp(exp, subst0)
-      LiftedAst.Expression.NewChannel(e, tpe, loc)
-
-    case OccurrenceAst.Expression.GetChannel(exp, tpe, loc) =>
-      val e = visitExp(exp, subst0)
-      LiftedAst.Expression.GetChannel(e, tpe, loc)
-
-    case OccurrenceAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
-      val e1 = visitExp(exp1, subst0)
-      val e2 = visitExp(exp2, subst0)
-      LiftedAst.Expression.PutChannel(e1, e2, tpe, loc)
-
-    case OccurrenceAst.Expression.SelectChannel(rules, default, tpe, loc) =>
-      val rs = rules.map {
-        case OccurrenceAst.SelectChannelRule(sym, chan, exp) =>
-          val c = visitExp(chan, subst0)
-          val e = visitExp(exp, subst0)
-          LiftedAst.SelectChannelRule(sym, c, e)
-      }
-      val d = default.map(visitExp(_, subst0))
-      LiftedAst.Expression.SelectChannel(rs, d, tpe, loc)
-
     case OccurrenceAst.Expression.Spawn(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
       LiftedAst.Expression.Spawn(e, tpe, loc)
@@ -536,13 +513,6 @@ object Inliner {
         case (sym, exp) => sym -> rewriteTailCalls(exp)
       }
       OccurrenceAst.Expression.Branch(e0, br, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.SelectChannel(rules, default, tpe, loc) =>
-      val rs = rules map {
-        case OccurrenceAst.SelectChannelRule(sym, chan, exp) => OccurrenceAst.SelectChannelRule(sym, chan, rewriteTailCalls(exp))
-      }
-      val d = default.map(exp => rewriteTailCalls(exp))
-      OccurrenceAst.Expression.SelectChannel(rs, d, tpe, loc)
 
     case OccurrenceAst.Expression.ApplyCloTail(exp, args, tpe, purity, loc) => OccurrenceAst.Expression.ApplyClo(exp, args, tpe, purity, loc)
 
@@ -810,31 +780,6 @@ object Inliner {
           LiftedAst.JvmMethod(ident, f, c, retTpe, purity, loc)
       }
       LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
-
-    case OccurrenceAst.Expression.NewChannel(exp, tpe, loc) =>
-      val e = substituteExp(exp, env0)
-      LiftedAst.Expression.NewChannel(e, tpe, loc)
-
-    case OccurrenceAst.Expression.GetChannel(exp, tpe, loc) =>
-      val e = substituteExp(exp, env0)
-      LiftedAst.Expression.GetChannel(e, tpe, loc)
-
-    case OccurrenceAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
-      val e1 = substituteExp(exp1, env0)
-      val e2 = substituteExp(exp2, env0)
-      LiftedAst.Expression.PutChannel(e1, e2, tpe, loc)
-
-    case OccurrenceAst.Expression.SelectChannel(rules, default, tpe, loc) =>
-      val rs = rules.map {
-        case OccurrenceAst.SelectChannelRule(sym, chan, exp) =>
-          val freshVar = Symbol.freshVarSym(sym)
-          val env1 = env0 + (sym -> freshVar)
-          val c = substituteExp(chan, env1)
-          val e = substituteExp(exp, env1)
-          LiftedAst.SelectChannelRule(freshVar, c, e)
-      }
-      val d = default.map(substituteExp(_, env0))
-      LiftedAst.Expression.SelectChannel(rs, d, tpe, loc)
 
     case OccurrenceAst.Expression.Spawn(exp, tpe, loc) =>
       val e = substituteExp(exp, env0)

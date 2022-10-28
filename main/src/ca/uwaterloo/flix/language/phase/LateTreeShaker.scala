@@ -261,20 +261,6 @@ object LateTreeShaker {
     case Expression.NewObject(_, _, _, _, methods, _) =>
       visitExps(methods.map(_.clo))
 
-    case Expression.NewChannel(exp, _, _) =>
-      visitExp(exp)
-
-    case Expression.GetChannel(exp, _, _) =>
-      visitExp(exp)
-
-    case Expression.PutChannel(exp1, exp2, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.SelectChannel(rules, default, _, _) =>
-      val rs = visitExps(rules.map(_.chan)) ++ visitExps(rules.map(_.exp))
-      val d = default.map(visitExp).getOrElse(Set.empty)
-      rs ++ d
-
     case Expression.Spawn(exp, _, _) =>
       visitExp(exp)
 

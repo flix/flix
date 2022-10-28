@@ -251,23 +251,6 @@ object Eraser {
           ErasedAst.JvmMethod(ident, f, visitExp(clo), retTpe, loc)
       }
       ErasedAst.Expression.NewObject(name, clazz, tpe, methods, loc)
-
-    case FinalAst.Expression.NewChannel(exp, tpe, loc) =>
-      ErasedAst.Expression.NewChannel(visitExp(exp), tpe, loc)
-
-    case FinalAst.Expression.GetChannel(exp, tpe, loc) =>
-      ErasedAst.Expression.GetChannel(visitExp(exp), tpe, loc)
-
-    case FinalAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
-      ErasedAst.Expression.PutChannel(visitExp(exp1), visitExp(exp2), tpe, loc)
-
-    case FinalAst.Expression.SelectChannel(rules0, default, tpe, loc) =>
-      val rules = rules0.map {
-        case FinalAst.SelectChannelRule(ruleSym, ruleChan, ruleExp) =>
-          ErasedAst.SelectChannelRule(ruleSym, visitExp(ruleChan), visitExp(ruleExp))
-      }
-      ErasedAst.Expression.SelectChannel(rules, default.map(visitExp), tpe, loc)
-
     case FinalAst.Expression.Spawn(exp, tpe, loc) =>
       ErasedAst.Expression.Spawn(visitExp(exp), tpe, loc)
 
