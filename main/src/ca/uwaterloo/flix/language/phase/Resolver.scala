@@ -2697,10 +2697,15 @@ object Resolver {
       // Case 2: Arrow. Convert to Java function interface
       case UnkindedType.Arrow(_, _, _) =>
         val targsVal = traverse(erased.typeArguments)(targ => getJVMType(targ, targ.loc))
+        val returnsUnit = erased.typeArguments.lastOption match {
+          case Some(ty) => isBaseTypeUnit(ty)
+          case None => false
+        }
         flatMapN(targsVal) {
           case Int :: Int :: Nil => Class.forName("java.util.function.IntUnaryOperator").toSuccess
           case Int :: Boolean :: Nil => Class.forName("java.util.function.IntPredicate").toSuccess
-          case Int :: Object :: Nil => Class.forName("java.util.function.IntConsumer").toSuccess  /// SPT temp
+          case Int :: Object :: Nil =>
+              if (returnsUnit) Class.forName("java.util.function.IntConsumer").toSuccess  else Class.forName("java.util.function.IntFunction").toSuccess
           case _ => ResolutionError.IllegalType(tpe, loc).toFailure
         }
 
@@ -2721,7 +2726,20 @@ object Resolver {
     }
   }
 
-  /**
+  private def isBaseTypeUnit(tpe: UnkindedType):  Boolean = {
+    val erased = UnkindedType.eraseAliases(tpe)
+    val baseType = erased.baseType
+    baseType match {
+      // Case 1: Constant: Match on the type.
+      case UnkindedType.Cst(tc, _) => tc match {
+        case TypeConstructor.Unit => true
+        case _ => false
+      }
+      case _ => false
+    }
+  }
+
+            /**
     * Construct the type alias type constructor for the given symbol `sym` with the given kind `k`.
     */
   def mkUnappliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation): UnkindedType = UnkindedType.UnappliedAlias(sym, loc)
