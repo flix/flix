@@ -206,6 +206,13 @@ object UnkindedType {
   }
 
   /**
+   * Returns the Unit type.
+   */
+  def mkUnit(loc: SourceLocation): UnkindedType = {
+    UnkindedType.Cst(TypeConstructor.Unit, loc)
+  }
+
+  /**
     * Returns the ##java.lang.Object type.
     */
   def mkObject(loc: SourceLocation): UnkindedType = {

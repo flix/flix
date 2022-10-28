@@ -1886,6 +1886,7 @@ object Resolver {
         case "java.util.function.IntFunction" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkObject(loc), loc).toSuccess
         case "java.util.function.IntUnaryOperator" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkInt32(loc), loc).toSuccess
         case "java.util.function.IntPredicate" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkBool(loc), loc).toSuccess
+        case "java.util.function.IntConsumer" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkUnit(loc), loc).toSuccess
 
         case _ => lookupJvmClass(fqn, loc) map {
           case clazz => UnkindedType.Cst(TypeConstructor.Native(clazz), loc)
@@ -2697,9 +2698,9 @@ object Resolver {
       case UnkindedType.Arrow(_, _, _) =>
         val targsVal = traverse(erased.typeArguments)(targ => getJVMType(targ, targ.loc))
         flatMapN(targsVal) {
-          case Int :: Object :: Nil => Class.forName("java.util.function.IntFunction").toSuccess
           case Int :: Int :: Nil => Class.forName("java.util.function.IntUnaryOperator").toSuccess
           case Int :: Boolean :: Nil => Class.forName("java.util.function.IntPredicate").toSuccess
+          case Int :: Object :: Nil => Class.forName("java.util.function.IntConsumer").toSuccess  /// SPT temp
           case _ => ResolutionError.IllegalType(tpe, loc).toFailure
         }
 

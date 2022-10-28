@@ -88,6 +88,7 @@ object JvmName {
   val IntFunction: JvmName = JvmName(JavaUtilFunction, "IntFunction")
   val IntUnaryOperator: JvmName = JvmName(JavaUtilFunction, "IntUnaryOperator")
   val IntPredicate: JvmName = JvmName(JavaUtilFunction, "IntPredicate")
+  val IntConsumer: JvmName = JvmName(JavaUtilFunction, "IntConsumer")
   val Integer: JvmName = JvmName(JavaLang, "Integer")
   val Long: JvmName = JvmName(JavaLang, "Long")
   val Math: JvmName = JvmName(JavaLang, "Math")
