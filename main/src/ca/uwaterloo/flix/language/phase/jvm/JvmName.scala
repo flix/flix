@@ -103,11 +103,6 @@ object JvmName {
 
   val DevFlixRuntime: List[String] = List("dev", "flix", "runtime")
 
-  val ProxyObject: JvmName = JvmName(DevFlixRuntime, "ProxyObject")
-  val SelectChoice: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "SelectChoice")
-
-  // Deprecated: Should not be used in new code.
-  val Channel: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "Channel")
 }
 
 /**

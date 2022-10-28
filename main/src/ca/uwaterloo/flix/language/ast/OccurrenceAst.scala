@@ -241,8 +241,6 @@ object OccurrenceAst {
 
   }
 
-  case class SelectChannelRule(sym: Symbol.VarSym, chan: OccurrenceAst.Expression, exp: OccurrenceAst.Expression)
-
   case class Case(sym: Symbol.CaseSym, tpeDeprecated: Type, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[OccurrenceAst.FormalParam], clo: OccurrenceAst.Expression, retTpe: Type, purity: Purity, loc: SourceLocation)
