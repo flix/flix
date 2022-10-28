@@ -266,8 +266,6 @@ object SimplifiedAst {
 
   }
 
-  case class SelectChannelRule(sym: Symbol.VarSym, chan: SimplifiedAst.Expression, exp: SimplifiedAst.Expression)
-
   case class Case(sym: Symbol.CaseSym, tpeDeprecated: Type, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, retTpe: Type, purity: Purity, loc: SourceLocation)

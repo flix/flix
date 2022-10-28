@@ -240,8 +240,6 @@ object LiftedAst {
 
   }
 
-  case class SelectChannelRule(sym: Symbol.VarSym, chan: LiftedAst.Expression, exp: LiftedAst.Expression)
-
   case class Case(sym: Symbol.CaseSym, tpeDeprecated: Type, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[LiftedAst.FormalParam], clo: LiftedAst.Expression, retTpe: Type, purity: Purity, loc: SourceLocation)

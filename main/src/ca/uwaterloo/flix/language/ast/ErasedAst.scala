@@ -256,8 +256,6 @@ object ErasedAst {
     }
   }
 
-  case class SelectChannelRule(sym: Symbol.VarSym, chan: ErasedAst.Expression, exp: ErasedAst.Expression)
-
   case class Case(sym: Symbol.CaseSym, tpeDeprecated: MonoType, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[ErasedAst.FormalParam], clo: ErasedAst.Expression, retTpe: MonoType, loc: SourceLocation)
