@@ -281,6 +281,14 @@ namespace Test/Exp/Jvm/NewObject {
     runTest(anon)
 
   @test
+  def testFunctionalInterface02(): Bool \ IO =
+    import java.util.Comparator.compare(##java.lang.Object, ##java.lang.Object): Int32;
+    let anon = new ##java.util.Comparator {
+      def compare(_this: ##java.util.Comparator, _t: ##java.lang.Object, _u: ##java.lang.Object): Int32 = 0
+    };
+    compare(anon, "foo" as Object, "bar" as Object) == 0
+
+  @test
   def testClassWithDefaultConstructor01(): Bool \ IO =
     import flix.test.TestClassWithDefaultConstructor.abstractMethod(Int32): Int32;
     import flix.test.TestClassWithDefaultConstructor.concreteMethod(String): String;
