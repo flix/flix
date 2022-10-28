@@ -565,8 +565,7 @@ object Lowering {
     case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      val newChannel = Expression.Def(Defs.ChannelNew, Type.mkImpureArrow(e.tpe, t, loc), loc)
-      Expression.Apply(newChannel, e :: Nil, t, pur, eff, loc)
+      mkNewChannel(e, t, pur, eff, loc)
 
     // Channel get expressions are rewritten as follows:
     //     <- c
@@ -576,8 +575,7 @@ object Lowering {
     case Expression.GetChannel(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      val getChannel = Expression.Def(Defs.ChannelGet, Type.mkImpureArrow(e.tpe, t, loc), loc)
-      Expression.Apply(getChannel, e :: Nil, t, pur, eff, loc)
+      mkGetChannel(e, t, pur, eff, loc)
 
     // Channel put expressions are rewritten as follows:
     //     c <- 42
@@ -587,8 +585,7 @@ object Lowering {
     case Expression.PutChannel(exp1, exp2, _, pur, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      val putChannel = Expression.Def(Defs.ChannelPut, Type.mkImpureUncurriedArrow(List(e2.tpe, e1.tpe), Type.Unit, loc), loc)
-      Expression.Apply(putChannel, List(e2, e1), Type.Unit, pur, eff, loc)
+      mkPutChannel(e1, e2, pur, eff, loc)
 
     // Channel select expressions are rewritten as follows:
     //     select {
@@ -1328,6 +1325,30 @@ object Lowering {
   }
 
   /**
+    * Make a new channel expression
+    */
+  private def mkNewChannel(exp: Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation): Expression = {
+    val newChannel = Expression.Def(Defs.ChannelNew, Type.mkImpureArrow(exp.tpe, tpe, loc), loc)
+    Expression.Apply(newChannel, exp :: Nil, tpe, pur, eff, loc)
+  }
+
+  /**
+    * Make a channel get expression
+    */
+  private def mkGetChannel(exp: Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation): Expression = {
+    val getChannel = Expression.Def(Defs.ChannelGet, Type.mkImpureArrow(exp.tpe, tpe, loc), loc)
+    Expression.Apply(getChannel, exp :: Nil, tpe, pur, eff, loc)
+  }
+
+  /**
+    * Make a channel put expression
+    */
+  private def mkPutChannel(exp1: Expression, exp2: Expression, pur: Type, eff: Type, loc: SourceLocation): Expression = {
+    val putChannel = Expression.Def(Defs.ChannelPut, Type.mkImpureUncurriedArrow(List(exp2.tpe, exp1.tpe), Type.Unit, loc), loc)
+    Expression.Apply(putChannel, List(exp2, exp1), Type.Unit, pur, eff, loc)
+  }
+
+  /**
     * Make the array of MpmcAdmin objects which will be passed to `selectFrom`
     */
   private def mkChannelAdminArray(rs: List[SelectChannelRule], channels: List[(Symbol.VarSym, Expression)], loc: SourceLocation): Expression = {
@@ -1514,6 +1535,20 @@ object Lowering {
   }
 
   /**
+    * The type of a channel which can transmit variables of type `tpe`
+    */
+  private def mkChannelTpe(tpe: Type, loc: SourceLocation): Type = {
+    Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), tpe, loc)
+  }
+
+  /**
+    * An expression for a channel variable called `sym`
+    */
+  private def mkChannelExp(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation): Expression = {
+    Expression.Var(sym, mkChannelTpe(tpe, loc), loc)
+  }
+
+  /**
     * Returns a list of `GetChannel` expressions based on `symExps`.
     */
   private def mkParWaits(symExps: List[(Symbol.VarSym, Expression)]): List[Expression] = {
@@ -1521,9 +1556,8 @@ object Lowering {
     symExps.map {
       case (sym, e) =>
         val loc = e.loc.asSynthetic
-        Expression.GetChannel(
-          Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc),
-          e.tpe, Type.Impure, e.eff, loc)
+        val chExp = mkChannelExp(sym, e.tpe, loc)
+        mkGetChannel(chExp, e.tpe, Type.Impure, e.eff, loc)
     }
   }
 
@@ -1535,8 +1569,8 @@ object Lowering {
     val spawns = chanSymsWithExps.foldRight(exp: Expression) {
       case ((sym, e), acc) =>
         val loc = e.loc.asSynthetic
-        val e1 = Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc) // The channel `ch`
-        val e2 = Expression.PutChannel(e1, e, Type.Unit, Type.Impure, Type.mkUnion(e.eff, e1.eff, loc), loc) // The put exp: `ch <- exp0`.
+        val e1 = mkChannelExp(sym, e.tpe, loc) // The channel `ch`
+        val e2 = mkPutChannel(e1, e, Type.Impure, Type.mkUnion(e.eff, e1.eff, loc), loc) // The put exp: `ch <- exp0`.
         val e3 = Expression.Spawn(e2, Type.Unit, Type.Impure, e2.eff, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
         Expression.Stm(e3, acc, e1.tpe, Type.mkAnd(e3.pur, acc.pur, loc), Type.mkUnion(e3.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
     }
@@ -1545,7 +1579,7 @@ object Lowering {
     chanSymsWithExps.foldRight(spawns: Expression) {
       case ((sym, e), acc) =>
         val loc = e.loc.asSynthetic
-        val chan = Expression.NewChannel(Expression.Int32(1, loc), Type.mkChannel(e.tpe, loc), Type.Impure, Type.Empty, loc) // The channel exp `chan 1`
+        val chan = mkNewChannel(Expression.Int32(1, loc), mkChannelTpe(e.tpe, loc), Type.Impure, Type.Empty, loc) // The channel exp `chan 1`
         Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), chan, acc, acc.tpe, Type.mkAnd(e.pur, acc.pur, loc), Type.mkUnion(e.eff, acc.eff, loc), loc) // The let-binding `let ch = chan 1`
     }
   }
