@@ -1,8 +1,8 @@
 # Changelog
 
 Version 0.33.0:
-- Language: Added support for BigDecimal (thanks Stephen!)
-- Language: Simplified channel API (thanks Magnus, Paul!)
+- Language: Added support for `BigDecimal` (thanks Stephen!)
+- Language: Simplified the channel API (thanks Magnus, Paul!)
 - Compiler: The channel implementation is now independent of the compiler (thanks Jonathan, Paul!)
 - VSCode: Added support for auto-complete of imports (thanks Daniel!)
 - VSCode: Fixed a bug where VSCode and the REPL could get out sync (thanks Magnus!)
