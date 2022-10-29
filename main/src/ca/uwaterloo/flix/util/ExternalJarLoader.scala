@@ -46,7 +46,7 @@ class ExternalJarLoader extends URLClassLoader(Array.empty, null) {
         if (name == "dev.flix.runtime.Global")
           super.findSystemClass(name)
         // Special case for testing to allow us to load test classes
-        else if (name.startsWith(("flix.test.")))
+        else if (name.startsWith(("dev.flix.test.")))
           super.findSystemClass(name)
         else
           throw e

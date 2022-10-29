@@ -1525,9 +1525,9 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestPossibleUpcast.01") {
     val input =
       """
-        |def f(): ##flix.test.TestClassWithDefaultConstructor \ IO =
-        |    import new flix.test.TestClassWithInheritedMethod(): ##flix.test.TestClassWithInheritedMethod as newObj;
-        |    let x: ##flix.test.TestClassWithDefaultConstructor = newObj();
+        |def f(): ##dev.flix.test.TestClassWithDefaultConstructor \ IO =
+        |    import new dev.flix.test.TestClassWithInheritedMethod(): ##dev.flix.test.TestClassWithInheritedMethod as newObj;
+        |    let x: ##dev.flix.test.TestClassWithDefaultConstructor = newObj();
         |    x
       """.stripMargin
 
