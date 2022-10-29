@@ -51,7 +51,7 @@ namespace Test/Exp/Jvm/InvokeStaticMethod {
 
     @test
     def testInvokeInheritedStaticMethod01(): Bool =
-        import static flix.test.TestClassWithInheritedMethod.staticMethod(Int32): Int32 \ {};
+        import static dev.flix.test.TestClassWithInheritedMethod.staticMethod(Int32): Int32 \ {};
         staticMethod(1) == 2
 
     @test
