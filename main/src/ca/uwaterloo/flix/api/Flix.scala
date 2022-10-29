@@ -42,7 +42,7 @@ object Flix {
 /**
   * Main programmatic interface for Flix.
   */
-class Flix(testing: Boolean = false) {
+class Flix {
 
   /**
     * A sequence of inputs to be parsed into Flix ASTs.
@@ -287,7 +287,7 @@ class Flix(testing: Boolean = false) {
   /**
     * A class loader for loading external JARs.
     */
-  val jarLoader = new ExternalJarLoader(testing)
+  val jarLoader = new ExternalJarLoader
 
   /**
     * Adds the given string `s` to the list of strings to be parsed.

@@ -29,7 +29,7 @@ class FlixSuite(incremental: Boolean) extends FunSuite {
   /**
     * A global Flix instance that is used if incremental compilation is enabled.
     */
-  var flix = new Flix(true)
+  var flix = new Flix
 
   def mkTestDir(path: String)(implicit options: Options): Unit = {
     val iter = Files.walk(Paths.get(path), 1)
