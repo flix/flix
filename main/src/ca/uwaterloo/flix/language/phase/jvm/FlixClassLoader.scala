@@ -25,8 +25,11 @@ import scala.collection.mutable
   * A custom class loader to load generated class files.
   *
   * @param classes A map from internal names (strings) to JvmClasses.
+  * 
+  * We pass null as the `ClassLoader` parent to avoid it delegating to the system classloader
+  * (otherwise compiled Flix code has access to all classes within the compiler)
   */
-class FlixClassLoader(classes: Map[String, JvmClass])(implicit flix: Flix) extends ClassLoader {
+class FlixClassLoader(classes: Map[String, JvmClass])(implicit flix: Flix) extends ClassLoader(null) {
 
   /**
     * An internal cache of already loaded classes.
