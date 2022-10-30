@@ -1633,13 +1633,6 @@ object Typer {
           resultEff <- expectTypeM(expected = Type.Empty, actual = eff, exp.loc)
         } yield (constrs, tpe, resultPur, resultEff)
 
-      case KindedAst.Expression.ParYield(exp, _) =>
-        for {
-          (constrs, tpe, pur, eff) <- visitExp(exp)
-          resultPur <- expectTypeM(expected = Type.Pure, actual = pur, exp.loc)
-          resultEff <- expectTypeM(expected = Type.Empty, actual = eff, exp.loc)
-        } yield (constrs, tpe, resultPur, resultEff)
-
       case KindedAst.Expression.Lazy(exp, loc) =>
         for {
           (constrs, tpe, pur, eff) <- visitExp(exp)
@@ -2272,9 +2265,6 @@ object Typer {
 
       case KindedAst.Expression.Par(exp, loc) =>
         TypedAst.Expression.Par(visitExp(exp, subst0), loc)
-
-      case KindedAst.Expression.ParYield(exp, loc) =>
-        TypedAst.Expression.ParYield(visitExp(exp, subst0), loc)
 
       case KindedAst.Expression.Lazy(exp, loc) =>
         val e = visitExp(exp, subst0)
