@@ -76,7 +76,7 @@ namespace TestGraph {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // weighted directed Graph                                                 //
+    // weighted directed graph                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     def graphWithDist01(): Set[(Int32, Int32, Int32)] =
