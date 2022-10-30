@@ -444,8 +444,8 @@ class TestSafety extends FunSuite with TestUtils {
   test("TestNonDefaultConstructor.01") {
     val input =
       """
-        |def f(): ##flix.test.TestClassWithNonDefaultConstructor \ IO =
-        |  new ##flix.test.TestClassWithNonDefaultConstructor {
+        |def f(): ##dev.flix.test.TestClassWithNonDefaultConstructor \ IO =
+        |  new ##dev.flix.test.TestClassWithNonDefaultConstructor {
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -455,8 +455,8 @@ class TestSafety extends FunSuite with TestUtils {
   test("TestNonPublicInterface.01") {
     val input =
       """
-        |def f(): ##flix.test.TestNonPublicInterface \ IO =
-        |  new ##flix.test.TestNonPublicInterface {
+        |def f(): ##dev.flix.test.TestNonPublicInterface \ IO =
+        |  new ##dev.flix.test.TestNonPublicInterface {
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -483,4 +483,25 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[SafetyError.IllegalParExpression](result)
   }
 
+  test("TestMissingDefaultMatchTypeCase.01") {
+    val input =
+      """
+        |def f(): Bool = typematch () {
+        |    case _: Unit => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.MissingDefaultMatchTypeCase](result)
+  }
+
+  test("TestMissingDefaultMatchTypeCase.02") {
+    val input =
+      """
+        |def f(x: a): Bool = typematch x {
+        |    case _: a => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.MissingDefaultMatchTypeCase](result)
+  }
 }

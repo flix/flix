@@ -756,6 +756,23 @@ object Namer {
         case (e, rs) => NamedAst.Expression.Match(e, rs, loc)
       }
 
+    case WeededAst.Expression.TypeMatch(exp, rules, loc) =>
+      val expVal = visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0)
+      val rulesVal = traverse(rules) {
+        case WeededAst.MatchTypeRule(ident, tpe, body) =>
+          // extend the environment with the variable
+          // and perform naming on the rule body under the extended environment.
+          val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
+          val env1 = Map(ident.name -> sym)
+          val extendedEnv = env0 ++ env1
+          mapN(visitType(tpe, uenv0, ienv0, tenv0), visitExp(body, extendedEnv, uenv0, ienv0, tenv0, ns0, prog0)) {
+            case (t, b) => NamedAst.MatchTypeRule(sym, t, b)
+          }
+      }
+      mapN(expVal, rulesVal) {
+        case (e, rs) => NamedAst.Expression.TypeMatch(e, rs, loc)
+      }
+
     case WeededAst.Expression.Choose(star, exps, rules, loc) =>
       val expsVal = traverse(exps)(visitExp(_, env0, uenv0, ienv0, tenv0, ns0, prog0))
       val rulesVal = traverse(rules) {
@@ -1566,6 +1583,9 @@ object Namer {
     case WeededAst.Expression.Scope(ident, exp, _) => filterBoundVars(freeVars(exp), List(ident))
     case WeededAst.Expression.Match(exp, rules, _) => freeVars(exp) ++ rules.flatMap {
       case WeededAst.MatchRule(pat, guard, body) => filterBoundVars(freeVars(guard) ++ freeVars(body), freeVars(pat))
+    }
+    case WeededAst.Expression.TypeMatch(exp, rules, _) => freeVars(exp) ++ rules.flatMap {
+      case WeededAst.MatchTypeRule(ident, _, body) => filterBoundVars(freeVars(body), List(ident))
     }
     case WeededAst.Expression.Choose(_, exps, rules, _) => exps.flatMap(freeVars) ++ rules.flatMap {
       case WeededAst.ChoiceRule(pat, exp) => filterBoundVars(freeVars(exp), pat.flatMap(freeVars))

@@ -87,6 +87,7 @@ object JvmName {
   val Float: JvmName = JvmName(JavaLang, "Float")
   val IntFunction: JvmName = JvmName(JavaUtilFunction, "IntFunction")
   val IntUnaryOperator: JvmName = JvmName(JavaUtilFunction, "IntUnaryOperator")
+  val IntPredicate: JvmName = JvmName(JavaUtilFunction, "IntPredicate")
   val Integer: JvmName = JvmName(JavaLang, "Integer")
   val Long: JvmName = JvmName(JavaLang, "Long")
   val Math: JvmName = JvmName(JavaLang, "Math")
@@ -102,11 +103,6 @@ object JvmName {
 
   val DevFlixRuntime: List[String] = List("dev", "flix", "runtime")
 
-  val ProxyObject: JvmName = JvmName(DevFlixRuntime, "ProxyObject")
-  val SelectChoice: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "SelectChoice")
-
-  // Deprecated: Should not be used in new code.
-  val Channel: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "Channel")
 }
 
 /**
