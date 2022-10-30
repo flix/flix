@@ -1093,24 +1093,6 @@ object Namer {
         case (fs, e) => NamedAst.Expression.ParYield(fs, e, loc)
       }
 
-
-    /*
-    val expVal = visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0)
-    val rulesVal = traverse(rules) {
-      case WeededAst.MatchRule(pat, guard, body) =>
-        // extend the environment with every variable occurring in the pattern
-        // and perform naming on the rule guard and body under the extended environment.
-        val (p, env1) = visitPattern(pat, uenv0)
-        val extendedEnv = env0 ++ env1
-        mapN(visitExp(guard, extendedEnv, uenv0, ienv0, tenv0, ns0, prog0), visitExp(body, extendedEnv, uenv0, ienv0, tenv0, ns0, prog0)) {
-          case (g, b) => NamedAst.MatchRule(p, g, b)
-        }
-    }
-    mapN(expVal, rulesVal) {
-      case (e, rs) => NamedAst.Expression.Match(e, rs, loc)
-    }
-     */
-
     case WeededAst.Expression.Lazy(exp, loc) =>
       visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0) map {
         case e => NamedAst.Expression.Lazy(e, loc)
