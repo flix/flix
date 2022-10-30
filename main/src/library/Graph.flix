@@ -108,7 +108,7 @@ namespace Graph {
     /// Returns the shortest distance between all pairs of vertices in the
     /// weighted directed graph `g`.
     ///
-    pub def allPairsDistances(g: m[(t, Int32, t)]): Map[(t, t), Int32] with Foldable[m], Boxable[t] = {
+    pub def distances(g: m[(t, Int32, t)]): Map[(t, t), Int32] with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
         let dists = #{
             // Initialize all node distances to `0`.
@@ -133,7 +133,7 @@ namespace Graph {
     /// Returns the shortest distance from `src` to every other vertex in the
     /// weighted directed graph `g`.
     ///
-    pub def distances(src: t, g: m[(t, Int32, t)]): Map[t, Int32] with Foldable[m], Boxable[t] = {
+    pub def distancesFrom(src: t, g: m[(t, Int32, t)]): Map[t, Int32] with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
         let dists = #{
             Dist(src; Down(0)).
