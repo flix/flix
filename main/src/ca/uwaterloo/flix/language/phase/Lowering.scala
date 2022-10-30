@@ -640,6 +640,8 @@ object Lowering {
         throw InternalCompilerException(s"Unexpected par expression near ${exp.loc.format}: $exp")
     }
 
+    case Expression.ParYield(frags, exp, tpe, pur, eff, loc) => ???
+
     case Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
@@ -1935,6 +1937,8 @@ object Lowering {
 
     case Expression.Par(exp, loc) =>
       Expression.Par(substExp(exp, subst), loc)
+
+    case Expression.ParYield(frags, exp, tpe, pur, eff, loc) => ???
 
     case Expression.Lazy(exp, tpe, loc) =>
       val e = substExp(exp, subst)

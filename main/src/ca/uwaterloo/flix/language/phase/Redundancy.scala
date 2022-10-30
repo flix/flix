@@ -708,6 +708,8 @@ object Redundancy {
     case Expression.Par(exp, _) =>
       visitExp(exp, env0, rc)
 
+    case Expression.ParYield(frags, exp, tpe, pur, eff, loc) => ???
+
     case Expression.Lazy(exp, _, _) =>
       visitExp(exp, env0, rc)
 

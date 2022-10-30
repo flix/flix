@@ -1646,7 +1646,19 @@ object Typer {
           resultEff <- expectTypeM(expected = Type.Empty, actual = eff, exp.loc)
         } yield (constrs, tpe, resultPur, resultEff)
 
-      case KindedAst.Expression.ParYield(frags, exp, _) => ???
+      case KindedAst.Expression.ParYield(frags, exp, loc) =>
+        val patterns = frags.map(_.pat)
+        val parExps = frags.map(_.exp)
+        for {
+          (constrs, tpe, pur, eff) <- visitExp(exp)
+          patternTypes <- inferPatterns(patterns, root)
+          (parExpConstrs, parExpTypes, parExpPurs, parExpEffs) <- seqM(parExps map visitExp).map(unzip4)
+          _ <- InferMonad.point(patternTypes.zip(parExpTypes).map(ts => unifyTypeM(List(ts._1, ts._2), loc)))
+          actualPurs = Type.mkAnd(pur :: parExpPurs, loc)
+          actualEffs = Type.mkUnion(eff :: parExpEffs, loc)
+          resultPur <- expectTypeM(expected = Type.Pure, actual = actualPurs, loc)
+          resultEff <- expectTypeM(expected = Type.Empty, actual = actualEffs, loc)
+        } yield (constrs ++ parExpConstrs.flatten, tpe, resultPur, resultEff)
 
       case KindedAst.Expression.Lazy(exp, loc) =>
         for {
@@ -2298,7 +2310,22 @@ object Typer {
       case KindedAst.Expression.Par(exp, loc) =>
         TypedAst.Expression.Par(visitExp(exp, subst0), loc)
 
-      case KindedAst.Expression.ParYield(frags, exp, loc) => ???
+      case KindedAst.Expression.ParYield(frags, exp, loc) =>
+        val e = visitExp(exp, subst0)
+        val fs = frags map {
+          case KindedAst.ParYield.Fragment(pat, e0, l0) =>
+            val p = reassemblePattern(pat, root, subst0)
+            val e1 = visitExp(e0, subst0)
+            TypedAst.ParYield.Fragment(p, e1, l0)
+        }
+        val tpe = e.tpe
+        val pur = fs.foldLeft(e.pur) {
+          case (acc, TypedAst.ParYield.Fragment(_, e1, _)) => Type.mkAnd(acc, e1.pur, loc)
+        }
+        val eff = fs.foldLeft(e.eff) {
+          case (acc, TypedAst.ParYield.Fragment(_, e1, _)) => Type.mkUnion(acc, e1.eff, loc)
+        }
+        TypedAst.Expression.ParYield(fs, e, tpe, pur, eff, loc)
 
       case KindedAst.Expression.Lazy(exp, loc) =>
         val e = visitExp(exp, subst0)

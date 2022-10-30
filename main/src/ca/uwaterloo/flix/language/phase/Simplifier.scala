@@ -340,6 +340,8 @@ object Simplifier {
       case TypedAst.Expression.Par(_, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
+      case TypedAst.Expression.ParYield(frags, exp, tpe, pur, eff, loc) => ???
+
       case TypedAst.Expression.Mask(_, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 

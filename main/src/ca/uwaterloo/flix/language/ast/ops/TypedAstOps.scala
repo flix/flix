@@ -259,6 +259,15 @@ object TypedAstOps {
 
       case Expression.Par(exp, _) => visitExp(exp, env0)
 
+      case Expression.ParYield(frags, exp, _, _, _, _) =>
+        val boundEnv = frags.foldLeft(env0) {
+          case (acc, ParYield.Fragment(p, _, _)) =>
+            binds(p) ++ acc
+        }
+        visitExp(exp, boundEnv) ++ frags.flatMap {
+          case ParYield.Fragment(_, e, _) => visitExp(e, env0)
+        }
+
       case Expression.Lazy(exp, tpe, loc) => visitExp(exp, env0)
 
       case Expression.Force(exp, _, _, _, _) => visitExp(exp, env0)
@@ -454,6 +463,7 @@ object TypedAstOps {
     case Expression.SelectChannel(rules, default, _, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.chan) ++ sigSymsOf(rule.exp)).toSet ++ default.toSet.flatMap(sigSymsOf)
     case Expression.Spawn(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Par(exp, _) => sigSymsOf(exp)
+    case Expression.ParYield(frags, exp, _, _, _, _) => sigSymsOf(exp) ++ frags.flatMap(f => sigSymsOf(f.exp))
     case Expression.Lazy(exp, _, _) => sigSymsOf(exp)
     case Expression.Force(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointConstraintSet(_, _, _, _) => Set.empty
@@ -722,6 +732,12 @@ object TypedAstOps {
 
     case Expression.Par(exp, _) =>
       freeVars(exp)
+
+    case Expression.ParYield(frags, exp, _, _, _, _) =>
+      val freeFragVars = frags.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, ParYield.Fragment(p, e, _)) => acc ++ freeVars(p) ++ freeVars(e)
+      }
+      freeVars(exp) -- freeFragVars.keys
 
     case Expression.Lazy(exp, _, _) =>
       freeVars(exp)

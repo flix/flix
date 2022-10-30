@@ -285,6 +285,8 @@ object Safety {
           case _ => IllegalParExpression(exp, exp.loc) :: Nil
         }
 
+      case Expression.ParYield(frags, exp, tpe, pur, eff, loc) => ???
+
       case Expression.Lazy(exp, _, _) =>
         visit(exp)
 

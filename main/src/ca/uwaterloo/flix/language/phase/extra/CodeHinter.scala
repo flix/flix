@@ -297,6 +297,8 @@ object CodeHinter {
     case Expression.Par(exp, _) =>
       visitExp(exp)
 
+    case Expression.ParYield(frags, exp, tpe, pur, eff, loc) => ???
+
     case Expression.Lazy(exp, _, _) =>
       visitExp(exp)
 

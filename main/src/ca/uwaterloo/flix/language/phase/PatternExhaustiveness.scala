@@ -229,6 +229,7 @@ object PatternExhaustiveness {
 
       case Expression.Spawn(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Par(exp, _) => visitExp(exp, root)
+      case Expression.ParYield(frags, exp, tpe, pur, eff, loc) => ???
       case Expression.Lazy(exp, _, _) => visitExp(exp, root)
       case Expression.Force(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.FixpointConstraintSet(cs, _, _, _) => cs.flatMap(visitConstraint(_, root))

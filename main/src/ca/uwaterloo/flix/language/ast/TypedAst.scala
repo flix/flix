@@ -354,6 +354,8 @@ object TypedAst {
       def eff: Type = exp.eff
     }
 
+    case class ParYield(frags: List[TypedAst.ParYield.Fragment], exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
     case class Lazy(exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def pur: Type = Type.Pure
 
@@ -552,4 +554,8 @@ object TypedAst {
 
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
 
+  object ParYield {
+
+    case class Fragment(pat: TypedAst.Pattern, exp: TypedAst.Expression, loc: SourceLocation)
+  }
 }

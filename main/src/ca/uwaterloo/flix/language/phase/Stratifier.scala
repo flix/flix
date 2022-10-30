@@ -420,6 +420,8 @@ object Stratifier {
     case Expression.Par(exp, loc) =>
       mapN(visitExp(exp))(Expression.Par(_, loc))
 
+    case Expression.ParYield(frags, exp, tpe, pur, eff, loc) => ???
+
     case Expression.Lazy(exp, tpe, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Lazy(e, tpe, loc)
@@ -760,6 +762,8 @@ object Stratifier {
 
     case Expression.Par(exp, _) =>
       labelledGraphOfExp(exp)
+
+    case Expression.ParYield(frags, exp, tpe, pur, eff, loc) => ???
 
     case Expression.Lazy(exp, _, _) =>
       labelledGraphOfExp(exp)
