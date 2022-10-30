@@ -82,9 +82,9 @@ object Namer {
        * Namespace.
        */
       case WeededAst.Declaration.Namespace(ns, uses, imports, decls, loc) =>
-        flatMapN(mergeUseEnvs(uses, ns0, uenv0, ienv0, prog0)) {
+        flatMapN(mergeUseEnvs(uses, ns0, UseEnv.empty, ImportEnv.empty, prog0)) {
           case uenv1 =>
-            flatMapN(mergeImportEnvs(imports, ienv0, uenv1, ns0, prog0)) {
+            flatMapN(mergeImportEnvs(imports, ImportEnv.empty, uenv1, ns0, prog0)) {
               case ienv1 =>
                 Validation.fold(decls, prog0) {
                   case (pacc, decl) =>

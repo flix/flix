@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
-
 namespace Fixpoint {
+    
+    use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
+
     ///
     /// Hoist and query optimize `stmt`.
     ///
