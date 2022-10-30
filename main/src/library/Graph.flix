@@ -153,7 +153,7 @@ namespace Graph {
     /// directed graph `g`.
     ///
     pub def distance(src: { src :: t }, dst: { dst :: t }, g: m[(t, Int32, t)]): Option[Int32] with Foldable[m], Boxable[t] =
-        distances(src.src, g) |> Map.get(dst.dst)
+        distancesFrom(src.src, g) |> Map.get(dst.dst)
 
     // -------------------------------------------------------------------------
     // Private Functions -------------------------------------------------------
