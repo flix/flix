@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-namespace Graph {
+namespace GGraph {
 
     ///
     /// Returns the transitive closure of the directed graph `g`.
@@ -21,8 +21,8 @@ namespace Graph {
     pub def closure(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Boxable[t] =
         let edges = inject g into Edge;
         let res = query edges, nodes(), reachability()
-                select (src, dst)
-                from Reachable(src, dst);
+                  select (src, dst)
+                  from Reachable(src, dst);
         List.toSet(res)
 
     ///
@@ -32,8 +32,8 @@ namespace Graph {
     pub def reachable(src: t, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] =
         let edges = inject g into Edge;
         let res = query edges, reachabilityFromSrc(src)
-                select dst
-                from Reachable(dst);
+                  select dst
+                  from Reachable(dst);
         List.toSet(res)
 
     ///
@@ -48,8 +48,8 @@ namespace Graph {
             UnReachable(x) :- Node(x), not Reachable(x).
         };
         let res = query edges, nodes(), reachabilityFromSrc(src), unreachablility
-                select dst
-                from UnReachable(dst);
+                  select dst
+                  from UnReachable(dst);
         List.toSet(res)
 
     ///
@@ -76,8 +76,8 @@ namespace Graph {
             Components(s) :- fix Connected(n; s), if Some(n) == Set.minimum(s).
         };
         let res = query edges, nodes(), reachability(), connected, components
-                   select x
-                   from Components(x);
+                  select x
+                  from Components(x);
         List.toSet(res)
 
     ///
@@ -94,9 +94,9 @@ namespace Graph {
             Reachable(n1, n2) :- Reachable(n1, m), Edge(m, n2).
         };
         let res = query edges, reachability
-                        select ()
-                        from Reachable(x, y)
-                        where x == y;
+                  select ()
+                  from Reachable(x, y)
+                  where x == y;
         List.length(res) > 0
 
     ///
@@ -115,8 +115,8 @@ namespace Graph {
             Map.insert(n, d, acc)
         };
         let res = query edges, dists
-                    select (x, d)
-                    from Dist(x; d);
+                  select (x, d)
+                  from Dist(x; d);
         List.foldRight(f, Map.empty(), res)
 
     ///
