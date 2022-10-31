@@ -1564,7 +1564,7 @@ object Typer {
         for {
           (constrs, tpe, _, eff) <- visitExp(exp)
           _ <- expectTypeM(expected = Type.Int32, actual = tpe, exp.loc)
-          resultTyp <- liftM(Type.mkChannel(tpe, loc))
+          resultTyp <- liftM(Type.freshVar(Kind.Star, loc, text = FallbackText("channel")))
           resultPur = Type.Impure
           resultEff = eff
         } yield (constrs, resultTyp, resultPur, resultEff)
