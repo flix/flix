@@ -384,15 +384,15 @@ namespace RedBlackTree {
         else
             match t {
                 case Node(_, a, k, v, b) =>
-                    let chanL = chan Bool 1;
-                    let chanR = chan Bool 1;
+                    let (sL, rL) = Channel.buffered(1);
+                    let (sR, rR) = Channel.buffered(1);
                     if (f(k, v))
                         true
                     else {
-                        spawn (chanL <- parExists((n - 2) / 2, f, a)); // We divide the rest of the threads as follows:
-                        spawn (chanR <- parExists((n - 2) / 2, f, b)); // We spawn two new threads leaving us with n - 2
-                        let a1 = <- chanL;                             // that we distribute over the two spanned threads.
-                        let b1 = <- chanR;
+                        spawn (Channel.send(parExists((n - 2) / 2, f, a), sL)); // We divide the rest of the threads as follows:
+                        spawn (Channel.send(parExists((n - 2) / 2, f, b), sR)); // We spawn two new threads leaving us with n - 2
+                        let a1 = Channel.recv(rL);                              // that we distribute over the two spanned threads.
+                        let b1 = Channel.recv(rR);
                         a1 or b1
                     }
                 case _ => false
@@ -440,15 +440,15 @@ namespace RedBlackTree {
         else
             match t {
                 case Node(_, a, k, v, b) =>
-                    let chanL = chan Bool 1;
-                    let chanR = chan Bool 1;
+                    let (sL, rL) = Channel.buffered(1);
+                    let (sR, rR) = Channel.buffered(1);
                     if (not f(k, v))
                         false
                     else {
-                        spawn (chanL <- parForall((n - 2) / 2, f, a)); // We divide the rest of the threads as follows:
-                        spawn (chanR <- parForall((n - 2) / 2, f, b)); // We spawn two new threads leaving us with n - 2
-                        let a1 = <- chanL;                             // that we distribute over the two spanned threads.
-                        let b1 = <- chanR;
+                        spawn (Channel.send(parForall((n - 2) / 2, f, a), sL)); // We divide the rest of the threads as follows:
+                        spawn (Channel.send(parForall((n - 2) / 2, f, b), sR)); // We spawn two new threads leaving us with n - 2
+                        let a1 = Channel.recv(rL);                              // that we distribute over the two spanned threads.
+                        let b1 = Channel.recv(rR);
                         a1 and b1
                     }
                 case _ => false
@@ -654,13 +654,13 @@ namespace RedBlackTree {
                 case Leaf                   => Leaf
                 case DoubleBlackLeaf        => DoubleBlackLeaf
                 case Node(c, a, k, v, b)    =>
-                    let chanL = chan RedBlackTree[k, v2] 1;
-                    let chanR = chan RedBlackTree[k, v2] 1;
-                    spawn (chanL <- parMapWithKey((n - 2) / 2, f, a)); // We divide the rest of the threads as follows:
-                    spawn (chanR <- parMapWithKey((n - 2) / 2, f, b)); // We spawn two new threads leaving us with n - 2
-                    let v1 = f(k, v);                                  // that we distribute over the two spanned threads.
-                    let a1 = <- chanL;
-                    let b1 = <- chanR;
+                    let (sL, rL) = Channel.buffered(1);
+                    let (sR, rR) = Channel.buffered(1);
+                    spawn (Channel.send(parMapWithKey((n - 2) / 2, f, a), sL)); // We divide the rest of the threads as follows:
+                    spawn (Channel.send(parMapWithKey((n - 2) / 2, f, b), sR)); // We spawn two new threads leaving us with n - 2
+                    let v1 = f(k, v);                                           // that we distribute over the two spanned threads.
+                    let a1 = Channel.recv(rL);
+                    let b1 = Channel.recv(rR);
                     Node(c, a1, k, v1, b1)
             }
     }
@@ -713,13 +713,13 @@ namespace RedBlackTree {
                 case Leaf                   => 0
                 case DoubleBlackLeaf        => 0
                 case Node(_, a, k, v, b)    =>
-                    let chanL = chan Int32 1;
-                    let chanR = chan Int32 1;
-                    spawn (chanL <- parCount((n - 2) / 2, f, a)); // We divide the rest of the threads as follows:
-                    spawn (chanR <- parCount((n - 2) / 2, f, b)); // We spawn two new threads leaving us with n - 2
-                    let v1 = if (f(k, v)) 1 else 0;               // that we distribute over the two spanned threads.
-                    let a1 = <- chanL;
-                    let b1 = <- chanR;
+                    let (sL, rL) = Channel.buffered(1);
+                    let (sR, rR) = Channel.buffered(1);
+                    spawn (Channel.send(parCount((n - 2) / 2, f, a), sL)); // We divide the rest of the threads as follows:
+                    spawn (Channel.send(parCount((n - 2) / 2, f, b), sR)); // We spawn two new threads leaving us with n - 2
+                    let v1 = if (f(k, v)) 1 else 0;                        // that we distribute over the two spanned threads.
+                    let a1 = Channel.recv(rL);
+                    let b1 = Channel.recv(rR);
                     a1 + v1 + b1
             }
 
@@ -780,13 +780,13 @@ namespace RedBlackTree {
                 case Leaf                   => 0
                 case DoubleBlackLeaf        => 0
                 case Node(_, a, k, v, b)    =>
-                    let chanL = chan Int32 1;
-                    let chanR = chan Int32 1;
-                    spawn (chanL <- parSumWith((n - 2) / 2, f, a)); // We divide the rest of the threads as follows:
-                    spawn (chanR <- parSumWith((n - 2) / 2, f, b)); // We spawn two new threads leaving us with n - 2
-                    let v1 = f(k, v);                               // that we distribute over the two spanned threads.
-                    let a1 = <- chanL;
-                    let b1 = <- chanR;
+                    let (sL, rL) = Channel.buffered(1);
+                    let (sR, rR) = Channel.buffered(1);
+                    spawn (Channel.send(parSumWith((n - 2) / 2, f, a), sL)); // We divide the rest of the threads as follows:
+                    spawn (Channel.send(parSumWith((n - 2) / 2, f, b), sR)); // We spawn two new threads leaving us with n - 2
+                    let v1 = f(k, v);                                        // that we distribute over the two spanned threads.
+                    let a1 = Channel.recv(rL);
+                    let b1 = Channel.recv(rR);
                     a1 + v1 + b1
             }
 
@@ -856,13 +856,13 @@ namespace RedBlackTree {
                 case Leaf                   => 1
                 case DoubleBlackLeaf        => 1
                 case Node(_, a, k, v, b)    =>
-                    let chanL = chan Int32 1;
-                    let chanR = chan Int32 1;
-                    spawn (chanL <- parProductWith((n - 2) / 2, f, a)); // We divide the rest of the threads as follows:
-                    spawn (chanR <- parProductWith((n - 2) / 2, f, b)); // We spawn two new threads leaving us with n - 2
-                    let v1 = f(k, v);                                   // that we distribute over the two spanned threads.
-                    let a1 = <- chanL;
-                    let b1 = <- chanR;
+                    let (sL, rL) = Channel.buffered(1);
+                    let (sR, rR) = Channel.buffered(1);
+                    spawn (Channel.send(parProductWith((n - 2) / 2, f, a), sL)); // We divide the rest of the threads as follows:
+                    spawn (Channel.send(parProductWith((n - 2) / 2, f, b), sR)); // We spawn two new threads leaving us with n - 2
+                    let v1 = f(k, v);                                            // that we distribute over the two spanned threads.
+                    let a1 = Channel.recv(rL);
+                    let b1 = Channel.recv(rR);
                     a1 * v1 * b1
             }
     }
@@ -968,16 +968,16 @@ namespace RedBlackTree {
                 case Leaf                => None
                 case DoubleBlackLeaf     => None
                 case Node(_, a, k, v, b) =>
-                    let chanL = chan Option[(k, v)] 1;
-                    let chanR = chan Option[(k, v)] 1;
-                    spawn (chanL <- parLimitBy((n - 2) / 2, cmp, a));
-                    spawn (chanR <- parLimitBy((n - 2) / 2, cmp, b));
-                    let a1 = <- chanL;
+                    let (sL, rL) = Channel.buffered(1);
+                    let (sR, rR) = Channel.buffered(1);
+                    spawn (Channel.send(parLimitBy((n - 2) / 2, cmp, a), sL));
+                    spawn (Channel.send(parLimitBy((n - 2) / 2, cmp, b), sR));
+                    let a1 = Channel.recv(rL);
                     let res = match a1 {
                         case None         => (k, v)
                         case Some(kl, vl) => cmp(kl, vl, k, v)
                     };
-                    let b1 = <- chanR;
+                    let b1 = Channel.recv(rR);
                     match b1 {
                         case None         => Some(res)
                         case Some(kr, vr) =>

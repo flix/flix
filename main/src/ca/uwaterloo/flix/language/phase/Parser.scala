@@ -561,11 +561,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Assign: Rule1[ParsedAst.Expression] = rule {
-      PutChannel ~ optional(optWS ~ operatorX(":=") ~ optWS ~ PutChannel ~ SP ~> ParsedAst.Expression.Assign)
-    }
-
-    def PutChannel: Rule1[ParsedAst.Expression] = rule {
-      LogicalOr ~ optional(optWS ~ operatorX("<-") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.PutChannel)
+      LogicalOr ~ optional(optWS ~ operatorX(":=") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.Assign)
     }
 
     def LogicalOr: Rule1[ParsedAst.Expression] = {
@@ -743,8 +739,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Expression] = rule {
       Static | Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
         ReifyType | ReifyPurity | Choose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
-        RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
-        GetChannel | SelectChannel | Spawn | Par | Lazy | Force | Upcast | Mask | Intrinsic | New | ArrayLit | ArrayNew |
+        RecordOperation | RecordLiteral | Block | RecordSelectLambda | 
+        SelectChannel | Spawn | Par | Lazy | Force | Upcast | Mask | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
         Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | FName | Tag | Hole
@@ -1004,14 +1000,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def RecordSelect: Rule1[ParsedAst.Expression] = rule {
       ArraySlice ~ zeroOrMore(optWS ~ "." ~ Names.Field ~ SP ~> ParsedAst.Expression.RecordSelect)
-    }
-
-    def NewChannel: Rule1[ParsedAst.Expression.NewChannel] = rule {
-      SP ~ keyword("chan") ~ WS ~ Type ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.NewChannel
-    }
-
-    def GetChannel: Rule1[ParsedAst.Expression.GetChannel] = rule {
-      SP ~ operatorX("<-") ~ WS ~ RecordSelect ~ SP ~> ParsedAst.Expression.GetChannel
     }
 
     def SelectChannel: Rule1[ParsedAst.Expression.SelectChannel] = {
