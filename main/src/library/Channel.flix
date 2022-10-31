@@ -37,7 +37,7 @@ namespace Channel {
     ///
     /// Blocks until a message is dequeued.
     ///
-    pub def recv(r: Receiver[t]): t \ IO = <- r
+    pub def recv(r: Receiver[t]): t \ IO = $CHANNEL_GET$(r)
 
     ///
     /// Sends the message `m` on the given channel `s`.
