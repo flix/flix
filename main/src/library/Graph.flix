@@ -18,29 +18,31 @@ namespace Graph {
     ///
     /// Returns the transitive closure of the directed graph `g`.
     ///
-    pub def closure(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Boxable[t] =
+    pub def closure(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
         let res = query edges, nodes(), reachability()
                   select (src, dst)
                   from Reachable(src, dst);
         List.toSet(res)
+    }
 
     ///
     /// Returns the vertices that are reachable from the `src` in the directed
     /// graph `g`.
     ///
-    pub def reachable(src: t, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] =
+    pub def reachable(src: t, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
         let res = query edges, reachabilityFromSrc(src)
                   select dst
                   from Reachable(dst);
         List.toSet(res)
+    }
 
     ///
     /// Returns the vertices that are unreachable from the `src` in the directed
     /// graph `g`.
     ///
-    pub def unreachable(src: t, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] =
+    pub def unreachable(src: t, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
         let unreachablility = #{
             // If there is a node that is not Reachable from src then it is
@@ -51,6 +53,7 @@ namespace Graph {
                   select dst
                   from UnReachable(dst);
         List.toSet(res)
+    }
 
     ///
     /// Returns `true` if there is a path from `src` to `dst` in the directed
@@ -62,7 +65,7 @@ namespace Graph {
     ///
     /// Returns the strongly connected components of the directed graph `g`.
     ///
-    pub def stronglyConnectedComponents(g: m[(t, t)]): Set[Set[t]] with Foldable[m], Boxable[t] =
+    pub def stronglyConnectedComponents(g: m[(t, t)]): Set[Set[t]] with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
         let connected = #{
             // If `n1` can reach `n2` and `n2` can reach `n1` then they are part
@@ -79,11 +82,12 @@ namespace Graph {
                   select x
                   from Components(x);
         List.toSet(res)
+    }
 
     ///
     /// Returns `true` if the directed graph `g` contains at least one cycle.
     ///
-    pub def isCyclic(g: m[(t, t)]): Bool with Foldable[m], Boxable[t] =
+    pub def isCyclic(g: m[(t, t)]): Bool with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
         let reachability = #{
             // Reachability given the edges.
@@ -98,33 +102,58 @@ namespace Graph {
                   from Reachable(x, y)
                   where x == y;
         List.length(res) > 0
+    }
+
+    ///
+    /// Returns the shortest distance between all pairs of vertices in the
+    /// weighted directed graph `g`.
+    ///
+    pub def distances(g: m[(t, Int32, t)]): Map[(t, t), Int32] with Foldable[m], Boxable[t] = {
+        let edges = inject g into Edge;
+        let dists = #{
+            // Initialize all node distances to `0`.
+            Dist(x, x; Down(0)) :- Edge(x, _, _).
+            Dist(x, x; Down(0)) :- Edge(_, _, x).
+            // Add distances from the edges.
+            Dist(x, y; Down(d)) :- Edge(x, d, y).
+            // Add transitive distances.
+            Dist(x, y; d1 + Down(d2)) :- Dist(x, z; d1) , Edge(z, d2, y).
+        };
+        let mapping = #{
+            // Create the output mapping.
+            Mapping((x, y), destructDown(d)) :- fix Dist(x, y; d).
+        };
+        let res = query edges, dists, mapping
+                  select (p, d)
+                  from Mapping(p, d);
+        res |> List.toMap
+    }
 
     ///
     /// Returns the shortest distance from `src` to every other vertex in the
     /// weighted directed graph `g`.
     ///
-    pub def distances(src: t, g: m[(t, Int32, t)]): Map[t, Int32] with Foldable[m], Boxable[t] =
+    pub def distancesFrom(src: t, g: m[(t, Int32, t)]): Map[t, Int32] with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
         let dists = #{
             Dist(src; Down(0)).
             Dist(y; d + Down(w)) :- Dist(x; d), Edge(x, w, y).
         };
-
-        let f = (x, acc) -> {
-            let (n, Down(d)) = x;
-            Map.insert(n, d, acc)
+        let mapping = #{
+            Mapping(x, destructDown(d)) :- fix Dist(x; d).
         };
-        let res = query edges, dists
+        let res = query edges, dists, mapping
                   select (x, d)
-                  from Dist(x; d);
-        List.foldRight(f, Map.empty(), res)
+                  from Mapping(x, d);
+        res |> List.toMap
+    }
 
     ///
     /// Returns the shortest distance from `src` to `dst` in the weighted
     /// directed graph `g`.
     ///
     pub def distance(src: { src :: t }, dst: { dst :: t }, g: m[(t, Int32, t)]): Option[Int32] with Foldable[m], Boxable[t] =
-        distances(src.src, g) |> Map.get(dst.dst)
+        distancesFrom(src.src, g) |> Map.get(dst.dst)
 
     // -------------------------------------------------------------------------
     // Private Functions -------------------------------------------------------
@@ -163,6 +192,14 @@ namespace Graph {
         // `src` can also reach `n`. This adds all node pairs to the relational
         // that are reachable using any number of nodes.
         Reachable(n) :- Reachable(m), Edge(m, n).
+    }
+
+    ///
+    /// Returns the value inside the `d` value.
+    ///
+    pub def destructDown(d: Down[a]): a = {
+        let Down(a) = d;
+        a
     }
 
 }
