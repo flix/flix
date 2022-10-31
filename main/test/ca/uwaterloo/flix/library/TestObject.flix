@@ -23,6 +23,9 @@ namespace TestObject {
     def isNullUnit01(): Bool = not Object.isNull(())
 
     @test
+    def isNullUnit02(): Bool = Object.isNull(null as Unit)
+
+    @test
     def isNullBool01(): Bool = not Object.isNull(true)
 
     @test
