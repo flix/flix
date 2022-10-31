@@ -2257,7 +2257,7 @@ object Typer {
         val e = visitExp(exp, subst0)
         val pur = Type.Impure
         val eff = e.eff
-        TypedAst.Expression.NewChannel(e, Type.mkChannel(elmType, loc), pur, eff, loc)
+        TypedAst.Expression.NewChannel(e, Type.mkChannel(subst0(elmType), loc), pur, eff, loc)
 
       case KindedAst.Expression.GetChannel(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
