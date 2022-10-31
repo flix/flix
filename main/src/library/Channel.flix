@@ -24,7 +24,7 @@ namespace Channel {
     ///
     pub def buffered(n: Int32): (Sender[t], Receiver[t]) \ IO =
         let m = if (n < 0) 0 else n;
-        let c = chan t m;
+        let c = $CHANNEL_NEW$(m);
         (c, c)
 
     ///

@@ -2,197 +2,197 @@ namespace Test/Exp/Concurrency/Unbuffered {
 
     @test
     def testUnbufferedChannelPutGet01(): Bool \ IO =
-        let c = chan Unit 0;
-        spawn Channel.send((), c);
-        () == Channel.recv(c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.send((), s);
+        () == Channel.recv(r)
 
     @test
     def testUnbufferedChannelPutGet02(): Bool \ IO =
-        let c = chan Bool 0;
-        spawn Channel.send(true, c);
-        true == Channel.recv(c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.send(true, s);
+        true == Channel.recv(r)
 
     @test
     def testUnbufferedChannelPutGet03(): Bool \ IO =
-        let c = chan Float32 0;
-        spawn Channel.send(123.456f32, c);
-        123.456f32 == Channel.recv(c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.send(123.456f32, s);
+        123.456f32 == Channel.recv(r)
 
     @test
     def testUnbufferedChannelPutGet04(): Bool \ IO =
-        let c = chan Float64 0;
-        spawn Channel.send(123.456f64, c);
-        123.456f64 == Channel.recv(c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.send(123.456f64, s);
+        123.456f64 == Channel.recv(r)
 
     @test
     def testUnbufferedChannelPutGet05(): Bool \ IO =
-        let c = chan Int8 0;
-        spawn Channel.send(42i8, c);
-        42i8 == Channel.recv(c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.send(42i8, s);
+        42i8 == Channel.recv(r)
 
     @test
     def testUnbufferedChannelPutGet06(): Bool \ IO =
-        let c = chan Int16 0;
-        spawn Channel.send(42i16, c);
-        42i16 == Channel.recv(c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.send(42i16, s);
+        42i16 == Channel.recv(r)
 
     @test
     def testUnbufferedChannelPutGet07(): Bool \ IO =
-        let c = chan Int32 0;
-        spawn Channel.send(42i32, c);
-        42i32 == Channel.recv(c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.send(42i32, s);
+        42i32 == Channel.recv(r)
 
     @test
     def testUnbufferedChannelPutGet08(): Bool \ IO =
-        let c = chan Int64 0;
-        spawn Channel.send(42i64, c);
-        42i64 == Channel.recv(c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.send(42i64, s);
+        42i64 == Channel.recv(r)
 
     @test
     def testUnbufferedChannelPutGet09(): Bool \ IO =
-        let c = chan BigInt 0;
-        spawn Channel.send(42ii, c);
-        42ii == Channel.recv(c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.send(42ii, s);
+        42ii == Channel.recv(r)
 
     @test
     def testUnbufferedChannelPutGet10(): Bool \ IO =
-        let c = chan String 0;
-        spawn Channel.send("Hello World!", c);
-        "Hello World!" == Channel.recv(c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.send("Hello World!", s);
+        "Hello World!" == Channel.recv(r)
 
     @test
     def testUnbufferedChannelPutGet11(): Bool \ IO =
-        let c: Channel[Option[Int32]] = chan Option[Int32] 0;
-        spawn Channel.send(None, c);
-        None == Channel.recv(c)
+        let (s, r): (Sender[Option[Int32]], Receiver[Option[Int32]]) = Channel.unbuffered();
+        spawn Channel.send(None, s);
+        None == Channel.recv(r)
 
     @test
     def testUnbufferedChannelPutGet12(): Bool \ IO =
-        let c = chan Option[Int32] 0;
-        spawn Channel.send(Some(123), c);
-        Some(123) == Channel.recv(c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.send(Some(123), s);
+        Some(123) == Channel.recv(r)
 
     @test
     def testUnbufferedChannelPutGet13(): Bool \ IO =
-        let c: Channel[Result[Int32, String]] = chan Result[Int32, String] 0;
-        spawn Channel.send(Ok(123), c);
-        Ok(123) == Channel.recv(c)
+        let (s, r): (Sender[Result[Int32, String]], Receiver[Result[Int32, String]]) = Channel.unbuffered();
+        spawn Channel.send(Ok(123), s);
+        Ok(123) == Channel.recv(r)
 
     @test
     def testUnbufferedChannelPutGet14(): Bool \ IO =
-        let c: Channel[Result[Int32, String]] = chan Result[Int32, String] 0;
-        spawn Channel.send(Err("Goodbye World!"), c);
-        Err("Goodbye World!") == Channel.recv(c)
+        let (s, r): (Sender[Result[Int32, String]], Receiver[Result[Int32, String]]) = Channel.unbuffered();
+        spawn Channel.send(Err("Goodbye World!"), s);
+        Err("Goodbye World!") == Channel.recv(r)
 
     @test
     def testUnbufferedChannelPutGet15(): Bool \ IO =
-        let c = chan Array[Int32, Static] 0;
-        spawn Channel.send([1, 2, 3], c);
-        2 == (Channel.recv(c))[1]
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.send([1, 2, 3], s);
+        2 == (Channel.recv(r))[1]
 
     @test
     def testUnbufferedChannelPutGet16(): Bool \ IO =
-        let c1 = chan Channel[Int32] 0;
-        let c2 = chan Int32 0;
-        spawn Channel.send(c2, c1);
-        spawn Channel.send(42, c2);
-        42 == Channel.recv(Channel.recv(c1)
-)
+        let (s1, r1) = Channel.unbuffered();
+        let (s2, _) = Channel.unbuffered();
+        spawn Channel.send(s2, s1);
+        spawn Channel.send(42, s2);
+        42 == Channel.recv(Channel.recv(r1))
+
     @test
     def testUnbufferedChannelGetPut01(): Unit \ IO =
-        let c = chan Unit 0;
-        spawn Channel.recv(c);
-        Channel.send((), c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.recv(r);
+        Channel.send((), s)
 
     @test
     def testUnbufferedChannelGetPut02(): Unit \ IO =
-        let c = chan Bool 0;
-        spawn Channel.recv(c);
-        Channel.send(true, c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.recv(r);
+        Channel.send(true, s)
 
     @test
     def testUnbufferedChannelGetPut03(): Unit \ IO =
-        let c = chan Float32 0;
-        spawn Channel.recv(c);
-        Channel.send(123.456f32, c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.recv(r);
+        Channel.send(123.456f32, s)
 
     @test
     def testUnbufferedChannelGetPut04(): Unit \ IO =
-        let c = chan Float64 0;
-        spawn Channel.recv(c);
-        Channel.send(123.456f64, c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.recv(r);
+        Channel.send(123.456f64, s)
 
     @test
     def testUnbufferedChannelGetPut05(): Unit \ IO =
-        let c = chan Int8 0;
-        spawn Channel.recv(c);
-        Channel.send(42i8, c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.recv(r);
+        Channel.send(42i8, s)
     @test
 
     def testUnbufferedChannelGetPut06(): Unit \ IO =
-        let c = chan Int16 0;
-        spawn Channel.recv(c);
-        Channel.send(42i16, c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.recv(r);
+        Channel.send(42i16, s)
 
     @test
     def testUnbufferedChannelGetPut07(): Unit \ IO =
-        let c = chan Int32 0;
-        spawn Channel.recv(c);
-        Channel.send(42i32, c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.recv(r);
+        Channel.send(42i32, s)
 
     @test
     def testUnbufferedChannelGetPut08(): Unit \ IO =
-        let c = chan Int64 0;
-        spawn Channel.recv(c);
-        Channel.send(42i64, c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.recv(r);
+        Channel.send(42i64, s)
 
     @test
     def testUnbufferedChannelGetPut09(): Unit \ IO =
-        let c = chan BigInt 0;
-        spawn Channel.recv(c);
-        Channel.send(42ii, c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.recv(r);
+        Channel.send(42ii, s)
 
     @test
     def testUnbufferedChannelGetPut10(): Unit \ IO =
-        let c = chan String 0;
-        spawn Channel.recv(c);
-        Channel.send("Hello World!", c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.recv(r);
+        Channel.send("Hello World!", s)
 
     @test
     def testUnbufferedChannelGetPut11(): Unit \ IO =
-        let c = chan Option[Int32] 0;
-        spawn Channel.recv(c);
-        Channel.send(None, c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.recv(r);
+        Channel.send(None, s)
 
     @test
     def testUnbufferedChannelGetPut12(): Unit \ IO =
-        let c = chan Option[Int32] 0;
-        spawn Channel.recv(c);
-        Channel.send(Some(123), c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.recv(r);
+        Channel.send(Some(123), s)
 
     @test
     def testUnbufferedChannelGetPut13(): Unit \ IO =
-        let c = chan Result[Int32, String] 0;
-        spawn Channel.recv(c);
-        Channel.send(Ok(123), c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.recv(r);
+        Channel.send(Ok(123), s)
 
     @test
     def testUnbufferedChannelGetPut14(): Unit \ IO =
-        let c = chan Result[Int32, String] 0;
-        spawn Channel.recv(c);
-        Channel.send(Err("Goodbye World!"), c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.recv(r);
+        Channel.send(Err("Goodbye World!"), s)
 
     @test
     def testUnbufferedChannelGetPut15(): Unit \ IO =
-        let c = chan Array[Int32, Static] 0;
-        spawn Channel.recv(c);
-        Channel.send([1, 2, 3], c)
+        let (s, r) = Channel.unbuffered();
+        spawn Channel.recv(r);
+        Channel.send([1, 2, 3], s)
 
     @test
     def testUnbufferedChannelGetPut16(): Unit \ IO =
-        let c1 = chan Channel[Int32] 0;
-        let c2 = chan Int32 0;
-        spawn Channel.recv(Channel.recv(c1));
-        spawn Channel.send(c2, c1);
-        Channel.send(42, c2)
+        let (s1, r1) = Channel.unbuffered();
+        let (s2, _) = Channel.unbuffered();
+        spawn Channel.recv(Channel.recv(r1));
+        spawn Channel.send(s2, s1);
+        Channel.send(42, s2)
 }
