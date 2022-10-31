@@ -82,6 +82,7 @@ object Namer {
        * Namespace.
        */
       case WeededAst.Declaration.Namespace(ns, uses, imports, decls, loc) =>
+        // Note: Opening a new namespace clears all current imports and uses. // Hence we pass empty import and use environments.
         flatMapN(mergeUseEnvs(uses, ns0, UseEnv.empty, ImportEnv.empty, prog0)) {
           case uenv1 =>
             flatMapN(mergeImportEnvs(imports, ImportEnv.empty, uenv1, ns0, prog0)) {
