@@ -717,7 +717,7 @@ object Kinder {
     case ResolvedAst.Expression.NewChannel(exp0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       mapN(expVal) {
-        case exp => KindedAst.Expression.NewChannel(exp, loc)
+        case exp => KindedAst.Expression.NewChannel(exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.GetChannel(exp0, loc) =>

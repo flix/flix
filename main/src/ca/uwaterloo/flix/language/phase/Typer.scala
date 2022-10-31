@@ -1560,11 +1560,11 @@ object Typer {
         } yield (constrs.flatten, resultTyp, resultPur, resultEff)
 
 
-      case KindedAst.Expression.NewChannel(exp, loc) =>
+      case KindedAst.Expression.NewChannel(exp, elmType, loc) =>
         for {
           (constrs, tpe, _, eff) <- visitExp(exp)
           _ <- expectTypeM(expected = Type.Int32, actual = tpe, exp.loc)
-          resultTyp <- liftM(Type.freshVar(Kind.Star, loc, text = FallbackText("channel")))
+          resultTyp <- liftM(elmType)
           resultPur = Type.Impure
           resultEff = eff
         } yield (constrs, resultTyp, resultPur, resultEff)
@@ -2253,11 +2253,11 @@ object Typer {
         val ms = methods map visitJvmMethod
         TypedAst.Expression.NewObject(name, clazz, tpe, pur, eff, ms, loc)
 
-      case KindedAst.Expression.NewChannel(exp, loc) =>
+      case KindedAst.Expression.NewChannel(exp, elmType, loc) =>
         val e = visitExp(exp, subst0)
         val pur = Type.Impure
         val eff = e.eff
-        TypedAst.Expression.NewChannel(e, Type.mkChannel(e.tpe, loc), pur, eff, loc)
+        TypedAst.Expression.NewChannel(e, Type.mkChannel(elmType, loc), pur, eff, loc)
 
       case KindedAst.Expression.GetChannel(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
