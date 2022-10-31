@@ -20,10 +20,58 @@ namespace TestObject {
     // isNull                                                                  //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def isNull01(): Bool = Object.isNull(null)
+    def isNullUnit01(): Bool = not Object.isNull(())
 
     @test
-    def isNull02(): Bool = not Object.isNull("")
+    def isNullUnit02(): Bool = Object.isNull(null as Unit)
+
+    @test
+    def isNullBool01(): Bool = not Object.isNull(true)
+
+    @test
+    def isNullChar01(): Bool = not Object.isNull('a')
+
+    @test
+    def isNullFloat32_01(): Bool = not Object.isNull(123.0f32)
+
+    @test
+    def isNullFloat64_01(): Bool = not Object.isNull(123.0f64)
+
+    @test
+    def isNullInt8_01(): Bool = not Object.isNull(123i8)
+
+    @test
+    def isNullInt16_01(): Bool = not Object.isNull(123i16)
+
+    @test
+    def isNullInt32_01(): Bool = not Object.isNull(123i32)
+
+    @test
+    def isNullInt64_01(): Bool = not Object.isNull(123i64)
+
+    @test
+    def isNullBigInt01(): Bool = not Object.isNull(123ii)
+
+    @test
+    def isNullBigInt02(): Bool = Object.isNull(null as BigInt)
+
+    @test
+    def isNullString01(): Bool = not Object.isNull("hello")
+
+    @test
+    def isNullString02(): Bool = Object.isNull(null as String)
+
+    @test
+    def isNullArray01(): Bool \ IO = not Object.isNull([])
+
+    @test
+    def isNullArray02(): Bool = Object.isNull(null as Array[Int32, Static])
+
+    @test
+    def isNullOther01(): Bool = not Object.isNull(1 :: 2 :: Nil)
+
+    @test
+    def isNullOther02(): Bool = Object.isNull(null as List[Int32])
 
     /////////////////////////////////////////////////////////////////////////////
     // toOption                                                                //
