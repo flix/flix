@@ -44,7 +44,7 @@ namespace Channel {
     ///
     /// Blocks until the message is enqueued.
     ///
-    pub def send(m: t, s: Sender[t]): Unit \ IO = s <- m
+    pub def send(m: t, s: Sender[t]): Unit \ IO = $CHANNEL_PUT$(s, m)
 
     ///
     /// Returns a channel that receives the `Unit` message after duration `d`.
