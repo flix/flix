@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use Fixpoint.PredSymsOf
-use Fixpoint/PredSymsOf.predSymsOf
-use Fixpoint.SubstitutePredSym
-use Fixpoint/SubstitutePredSym.substitute
-use Fixpoint/Tuple.Tuple
-use Fixpoint/Shared.PredSym
-use Fixpoint/Ram.RamSym
 
 namespace Fixpoint/Ast {
+
+    use Fixpoint.PredSymsOf
+    use Fixpoint/PredSymsOf.predSymsOf
+    use Fixpoint.SubstitutePredSym
+    use Fixpoint/SubstitutePredSym.substitute
+    use Fixpoint/Tuple.Tuple
+    use Fixpoint/Shared.PredSym
+    use Fixpoint/Ram.RamSym
 
     @Internal
     pub enum Datalog[v] {

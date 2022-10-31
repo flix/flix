@@ -318,7 +318,7 @@ namespace Test/Exp/ReifyType {
     pub eff E
 
     //////////////////////////////////////
-    // reflecting on input              //
+    // Reflecting on input              //
     //////////////////////////////////////
 
     def reflectBool(x: a): Bool = typematch x {
@@ -492,7 +492,63 @@ namespace Test/Exp/ReifyType {
     def polyMatchTypeString_04(): Bool = not reflectString('a')
 
     //////////////////////////////////////
-    // Complex test                     //
+    // Emulating $DEFAULT$              //
+    //////////////////////////////////////
+
+    def default(): a = typematch (Proxy: Proxy[a]) {
+        case _: Proxy[Unit] => () as a
+        case _: Proxy[Bool] => false as a
+        case _: Proxy[Char] => '0' as a
+        case _: Proxy[Float32] => 0.0f32 as a
+        case _: Proxy[Float64] => 0.0f64 as a
+        case _: Proxy[BigDecimal] => 0.0ff as a
+        case _: Proxy[Int8] => 0i8 as a
+        case _: Proxy[Int16] => 0i16 as a
+        case _: Proxy[Int32] => 0i32 as a
+        case _: Proxy[Int64] => 0i64 as a
+        case _: Proxy[BigInt] => 0ii as a
+        case _: _ => null as a
+    }
+
+    @test
+    def testDefaultUnit(): Bool = (default(): Unit) == ()
+
+    @test
+    def testDefaultBool(): Bool = (default(): Bool) == false
+
+    @test
+    def testDefaultChar(): Bool = (default(): Char) == '0'
+
+    @test
+    def testDefaultFloat32(): Bool = (default(): Float32) == 0.0f32
+
+    @test
+    def testDefaultFloat64(): Bool = (default(): Float64) == 0.0f64
+
+    @test
+    def testDefaultBigDecimal(): Bool = (default(): BigDecimal) == 0.0ff
+
+    @test
+    def testDefaultInt8(): Bool = (default(): Int8) == 0i8
+
+    @test
+    def testDefaultInt16(): Bool = (default(): Int16) == 0i16
+
+    @test
+    def testDefaultInt32(): Bool = (default(): Int32) == 0i32
+
+    @test
+    def testDefaultInt64(): Bool = (default(): Int64) == 0i64
+
+    @test
+    def testDefaultBigInt(): Bool = (default(): BigInt) == 0ii
+
+    @test
+    def testDefaultList(): Bool = Object.isNull(default(): List[String])
+
+
+    //////////////////////////////////////
+    // Complex tests                    //
     //////////////////////////////////////
 
     def sameTypes(x: a, _: b): Bool = typematch x {
