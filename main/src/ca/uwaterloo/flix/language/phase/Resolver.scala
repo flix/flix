@@ -1112,11 +1112,10 @@ object Resolver {
               }
           }
 
-        case NamedAst.Expression.NewChannel(exp, tpe, loc) =>
-          val tVal = resolveType(tpe, taenv, ns0, root)
+        case NamedAst.Expression.NewChannel(exp, loc) =>
           val eVal = visitExp(exp, region)
-          mapN(tVal, eVal) {
-            case (t, e) => ResolvedAst.Expression.NewChannel(e, t, loc)
+          mapN(eVal) {
+            case e => ResolvedAst.Expression.NewChannel(e, loc)
           }
 
         case NamedAst.Expression.GetChannel(exp, loc) =>

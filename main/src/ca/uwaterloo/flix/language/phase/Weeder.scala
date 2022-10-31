@@ -1561,9 +1561,9 @@ object Weeder {
       }
 
     // TODO SJ: Rewrite to Ascribe(newch, Channel[Int32]), to remove the tpe (and get tvar like everything else)
-    case ParsedAst.Expression.NewChannel(sp1, tpe, exp, sp2) =>
+    case ParsedAst.Expression.NewChannel(sp1, _, exp, sp2) =>
       visitExp(exp, senv) map {
-        case e => WeededAst.Expression.NewChannel(e, visitType(tpe), mkSL(sp1, sp2))
+        case e => WeededAst.Expression.NewChannel(e, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.GetChannel(sp1, exp, sp2) =>
