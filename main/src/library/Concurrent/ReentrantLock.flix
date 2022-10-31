@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
- use Concurrent/Condition.Condition
- use Concurrent/Condition.Condition.Condition
-
 namespace Concurrent/ReentrantLock {
+
+    use Concurrent/Condition.Condition
+    use Concurrent/Condition.Condition.Condition
 
     ///
     /// A wrapper around a Java ReentrantLock.

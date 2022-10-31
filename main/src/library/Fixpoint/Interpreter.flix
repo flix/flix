@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar, toDenotation}
-use Fixpoint/Ast.Denotation
-use Fixpoint/Tuple.Tuple
-
 namespace Fixpoint {
+
+    use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar, toDenotation}
+    use Fixpoint/Ast.Denotation
+    use Fixpoint/Tuple.Tuple
 
     type alias Database[v: Type, r: Region] = MutMap[RamSym[v], MutMap[Tuple[v], v, r], r]
     type alias SearchEnv[v: Type, r: Region] = (Array[Tuple[v], r], Array[v, r])
