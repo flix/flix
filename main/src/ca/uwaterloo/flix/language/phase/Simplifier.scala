@@ -254,29 +254,16 @@ object Simplifier {
         SimplifiedAst.Expression.NewObject(name, clazz, tpe, simplifyPurity(pur), methods, loc)
 
       case TypedAst.Expression.NewChannel(exp, tpe, pur, eff, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.NewChannel(e, tpe, loc)
+        throw new InternalCompilerException("Unexpected NewChannel")
 
       case TypedAst.Expression.GetChannel(exp, tpe, pur, eff, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.GetChannel(e, tpe, loc)
+        throw new InternalCompilerException("Unexpected GetChannel")
 
       case TypedAst.Expression.PutChannel(exp1, exp2, tpe, pur, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        SimplifiedAst.Expression.PutChannel(e1, e2, tpe, loc)
+        throw new InternalCompilerException("Unexpected PutChannel")
 
       case TypedAst.Expression.SelectChannel(rules, default, tpe, pur, eff, loc) =>
-        val rs = rules map {
-          case TypedAst.SelectChannelRule(sym, chan, exp) =>
-            val c = visitExp(chan)
-            val e = visitExp(exp)
-            SimplifiedAst.SelectChannelRule(sym, c, e)
-        }
-
-        val d = default.map(visitExp)
-
-        SimplifiedAst.Expression.SelectChannel(rs, d, tpe, loc)
+        throw new InternalCompilerException("Unexpected SelectChannel")
 
       case TypedAst.Expression.Spawn(exp, tpe, pur, eff, loc) =>
         // Wrap the expression in a closure: () -> tpe \ eff
@@ -1070,31 +1057,6 @@ object Simplifier {
       case SimplifiedAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
         val methods = methods0 map visitJvmMethod
         SimplifiedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
-
-      case SimplifiedAst.Expression.NewChannel(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.NewChannel(e, tpe, loc)
-
-      case SimplifiedAst.Expression.GetChannel(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.GetChannel(e, tpe, loc)
-
-      case SimplifiedAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        SimplifiedAst.Expression.PutChannel(e1, e2, tpe, loc)
-
-      case SimplifiedAst.Expression.SelectChannel(rules, default, tpe, loc) =>
-        val rs = rules map {
-          case SimplifiedAst.SelectChannelRule(sym, chan, exp) =>
-            val c = visitExp(chan)
-            val e = visitExp(exp)
-            SimplifiedAst.SelectChannelRule(sym, c, e)
-        }
-
-        val d = default.map(visitExp)
-
-        SimplifiedAst.Expression.SelectChannel(rs, d, tpe, loc)
 
       case SimplifiedAst.Expression.Spawn(exp, tpe, loc) =>
         val e = visitExp(exp)
