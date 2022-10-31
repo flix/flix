@@ -1,13 +1,13 @@
-import java.lang.Object
-import dev.flix.test.{TestBoolArrayInterface, TestBoolInterface, TestCharArrayInterface, TestCharInterface, 
-                  TestClass, TestClassWithDefaultConstructor, TestClassWithNonDefaultConstructor, TestDefaultMethods, 
-                  TestFloat32ArrayInterface, TestFloat32Interface, TestFloat64ArrayInterface, TestFloat64Interface, 
-                  TestFunctionalInterface, TestGenericInterface, TestGenericMethod, TestInt8ArrayInterface, 
-                  TestInt16ArrayInterface, TestInt16Interface, TestInt32ArrayInterface, TestInt32Interface, 
-                  TestInt64ArrayInterface, TestInt64Interface, TestNonPublicInterface, TestOverloadedMethods, 
-                  TestStackOffsets, TestThrowingInterface, TestVarargsInterface, TestVoidInterface}
-
 namespace Test/Exp/Jvm/NewObject {
+
+  import java.lang.Object
+  import dev.flix.test.{TestBoolArrayInterface, TestBoolInterface, TestCharArrayInterface, TestCharInterface, 
+                    TestClass, TestClassWithDefaultConstructor, TestClassWithNonDefaultConstructor, TestDefaultMethods, 
+                    TestFloat32ArrayInterface, TestFloat32Interface, TestFloat64ArrayInterface, TestFloat64Interface, 
+                    TestFunctionalInterface, TestGenericInterface, TestGenericMethod, TestInt8ArrayInterface, 
+                    TestInt16ArrayInterface, TestInt16Interface, TestInt32ArrayInterface, TestInt32Interface, 
+                    TestInt64ArrayInterface, TestInt64Interface, TestNonPublicInterface, TestOverloadedMethods, 
+                    TestStackOffsets, TestThrowingInterface, TestVarargsInterface, TestVoidInterface}
 
   def implementSerializable(): ##java.io.Serializable \ IO =
     new ##java.io.Serializable { }

@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
-use Fixpoint/Ram.RamTerm.{RowLoad, LoadLatVar, Lit, Meet}
-
 namespace Fixpoint {
+
+    use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
+    use Fixpoint/Ram.RamTerm.{RowLoad, LoadLatVar, Lit, Meet}
+
     ///
     /// Optimize and simplify `stmt` by deleting redundant code and reordering code.
     /// Examples of redundancy include `x[i] == x[i]` or `x ⊓ y ≤ x`.

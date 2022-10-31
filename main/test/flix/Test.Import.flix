@@ -1,7 +1,7 @@
-import java.lang.{StringBuffer, CharSequence => ASeqOfChars}
-import java.lang.{StringBuffer => RenamedBuffer1}
-
 namespace Test/Import {
+
+  import java.lang.{StringBuffer, CharSequence => ASeqOfChars}
+  import java.lang.{StringBuffer => RenamedBuffer1}
 
   // Don't cause an error because different names from above
   import java.lang.{StringBuffer => RenamedBuffer2, CharSequence}
@@ -25,6 +25,7 @@ namespace Test/Import {
 
 namespace Test/Import {
   // Doesn't cause an error because different scope from above
+  import java.lang.{StringBuffer => RenamedBuffer1}
   import java.lang.CharSequence
 
   @test

@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use Fixpoint/Shared.PredSym
 
 namespace Fixpoint {
+
+    use Fixpoint/Shared.PredSym
+
     ///
     /// A type class for types that contain predicate symbols.
     ///
