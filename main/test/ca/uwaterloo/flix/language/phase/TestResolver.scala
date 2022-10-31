@@ -1126,4 +1126,62 @@ class TestResolver extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
+
+  test("UseClearedInNamespace.01") {
+    val input =
+      """
+        |use A.X
+        |namespace A {
+        |  enum X
+        |}
+        |namespace B {
+        |  def foo(): X = ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedType](result)
+  }
+
+  test("UseClearedInNamespace.02") {
+    val input =
+      """
+        |namespace A {
+        |  enum X
+        |}
+        |namespace B {
+        |  use A.X
+        |  namespace C {
+        |     def foo(): X = ???
+        |  }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedType](result)
+  }
+
+  test("ImportClearedInNamespace.01") {
+    val input =
+      """
+        |import java.lang.StringBuffer
+        |namespace A {
+        |  def foo(): StringBuffer = ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedType](result)
+  }
+
+  test("ImportClearedInNamespace.02") {
+    val input =
+      """
+        |namespace A {
+        |  import java.lang.StringBuffer
+        |  namespace B {
+        |     def foo(): StringBuffer = ???
+        |  }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedType](result)
+  }
 }

@@ -4,6 +4,13 @@
 pub type alias Static = false
 
 ///
+/// An enum that holds type information where a witness is not available.
+///
+pub enum Proxy[_] {
+    case Proxy
+}
+
+///
 /// The Reified Flix Bools.
 ///
 pub enum ReifiedBool with Eq, Order, ToString {
