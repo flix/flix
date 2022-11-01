@@ -62,7 +62,7 @@ namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannel11(): Bool \ IO =
-        let c = chan Option[Int32] 1;
+        let c: Channel[Option[Int32]] = chan Option[Int32] 1;
         Channel.send(None, c);
         None == Channel.recv(c)
 
@@ -74,13 +74,13 @@ namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannel13(): Bool \ IO =
-        let c = chan Result[Int32, String] 1;
+        let c: Channel[Result[Int32, String]] = chan Result[Int32, String] 1;
         Channel.send(Ok(123), c);
         Ok(123) == Channel.recv(c)
 
     @test
     def testBufferedChannel14(): Bool \ IO =
-        let c = chan Result[Int32, String] 1;
+        let c: Channel[Result[Int32, String]] = chan Result[Int32, String] 1;
         Channel.send(Err("Goodbye World!"), c);
         Err("Goodbye World!") == Channel.recv(c)
 
@@ -160,7 +160,7 @@ namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannelWithSpawn11(): Bool \ IO =
-        let c = chan Option[Int32] 1;
+        let c: Channel[Option[Int32]] = chan Option[Int32] 1;
         spawn Channel.send(None, c);
         None == Channel.recv(c)
 
@@ -172,13 +172,13 @@ namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannelWithSpawn13(): Bool \ IO =
-        let c = chan Result[Int32, String] 1;
+        let c: Channel[Result[Int32, String]] = chan Result[Int32, String] 1;
         spawn Channel.send(Ok(123), c);
         Ok(123) == Channel.recv(c)
 
     @test
     def testBufferedChannelWithSpawn14(): Bool \ IO =
-        let c = chan Result[Int32, String] 1;
+        let c: Channel[Result[Int32, String]] = chan Result[Int32, String] 1;
         spawn Channel.send(Err("Goodbye World!"), c);
         Err("Goodbye World!") == Channel.recv(c)
 
