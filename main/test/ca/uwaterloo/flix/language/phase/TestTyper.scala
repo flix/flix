@@ -1000,7 +1000,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.GeneralizationError](result)
   }
 
   test("Test.Choice.Param.02") {
@@ -1018,7 +1018,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.GeneralizationError](result)
   }
 
   test("Test.Choice.Empty.01") {
