@@ -49,7 +49,7 @@ namespace MutList {
     /// Returns a new empty mutable list with a default capacity.
     ///
     pub def new(r: Region[r]): MutList[a, r] \ Write(r) =
-        MutList(ref ([Reflection.default(); minCapacity()] @ r) @ r, ref 0 @ r)
+        MutList(ref ([Reflect.default(); minCapacity()] @ r) @ r, ref 0 @ r)
 
     ///
     /// Returns a mutable list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -60,7 +60,7 @@ namespace MutList {
         let minCap = minCapacity();
         let d = e - b;
         let c = Order.max(d, minCap);
-        let f = i -> { let x = b + i; if (x < e) x else Reflection.default() };
+        let f = i -> { let x = b + i; if (x < e) x else Reflect.default() };
         MutList(ref Array.init(r, f, c) @ r, ref d @ r)
 
     ///
@@ -527,7 +527,7 @@ namespace MutList {
     ///
     pub def clear!(v: MutList[a, r]): Unit \ { Read(r), Write(r) } =
         let MutList(a, l) = v;
-        a := [Reflection.default(); Array.length(deref a)] @ Scoped.regionOf(v);
+        a := [Reflect.default(); Array.length(deref a)] @ Scoped.regionOf(v);
         l := 0
 
     ///
@@ -552,7 +552,7 @@ namespace MutList {
         if (len > 0)
             let last = (deref a)[len - 1];
             l := len - 1;
-            Array.put(Reflection.default(), len - 1, deref a);
+            Array.put(Reflect.default(), len - 1, deref a);
             compress!(v);
             Some(last)
         else
@@ -606,7 +606,7 @@ namespace MutList {
                 loop(i1 + 1)
             }
             else if (i1 == n) {
-                a[i1] = Reflection.default()
+                a[i1] = Reflect.default()
             }
             else
                 ()
@@ -709,7 +709,7 @@ namespace MutList {
             let minCap = minCapacity();
             let c = Order.max(l, minCap);
             l0 := l;
-            Array.updateSequence!(0, deref a, [Reflection.default(); c] @ Scoped.regionOf(v))
+            Array.updateSequence!(0, deref a, [Reflect.default(); c] @ Scoped.regionOf(v))
         }
         else
             ()

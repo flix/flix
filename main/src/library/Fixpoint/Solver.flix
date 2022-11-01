@@ -506,7 +506,7 @@ namespace Fixpoint {
                 let arity = List.length(vs);
                 let ramSym = RamSym.Full(p, arity, Denotation.Relational);
                 let rel = MutMap.getOrElsePut!(ramSym, new MutMap(r), db);
-                MutMap.put!(Fixpoint/Tuple.new(vs), Reflection.default(), rel)
+                MutMap.put!(Fixpoint/Tuple.new(vs), Reflect.default(), rel)
             }, (), ts);
             toModel(db)
         }

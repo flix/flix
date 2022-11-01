@@ -1,4 +1,4 @@
-namespace Reflection {
+namespace Reflect {
 
     @Unsafe
     pub def default(): a = typematch (Proxy: Proxy[a]) {

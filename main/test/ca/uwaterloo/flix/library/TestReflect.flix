@@ -1,5 +1,5 @@
-namespace TestReflection {
-    use Reflection.default
+namespace TestReflect {
+    use Reflect.default
 
     @test
     def testDefaultUnit(): Bool = (default(): Unit) == ()
@@ -36,6 +36,4 @@ namespace TestReflection {
 
     @test
     def testDefaultList(): Bool = Object.isNull(default(): List[String])
-
-
 }
