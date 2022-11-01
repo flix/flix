@@ -891,4 +891,31 @@ class TestKinder extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
+
+  test("KindError.TypeMatch.01") {
+    val input =
+      """
+        |def f(x: a[b]): Unit = typematch x {
+        |    case _: b[a] => ()
+        |    case _: _ => ()
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.TypeMatch.02") {
+    val input =
+      """
+        |
+        |enum E[_]
+        |
+        |def f(x: a): Unit = typematch x {
+        |    case _: E => ()
+        |    case _: _ => ()
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
 }
