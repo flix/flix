@@ -241,7 +241,7 @@ object Typer {
     * Infers the type of the given definition `defn0`.
     */
   private def typeCheckDecl(spec0: KindedAst.Spec, exp0: KindedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], loc: SourceLocation)(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
-    case KindedAst.Spec(_, _, _, _, fparams0, sc, _, _, _, _, _) =>
+    case KindedAst.Spec(_, _, _, tparams0, fparams0, sc, _, _, _, _, _) =>
 
       ///
       /// Infer the type of the expression `exp0`.
@@ -267,7 +267,7 @@ object Typer {
           /// (or y) to determine the type of floating-point or integer operations.
           ///
           val initialSubst = getSubstFromParams(fparams0)
-          val initialRenv = getRigidityFromParams(fparams0)
+          val initialRenv = RigidityEnv.ofRigidVars(tparams0.map(_.sym))
 
           run(initialSubst, initialRenv) match {
             case Ok((subst, renv0, (partialTconstrs, partialType))) =>
@@ -2704,15 +2704,6 @@ object Typer {
     (params zip declaredTypes).foldLeft(Substitution.empty) {
       case (macc, (KindedAst.FormalParam(sym, _, _, _, _), declaredType)) =>
         macc ++ Substitution.singleton(sym.tvar.sym, declaredType)
-    }
-  }
-
-  /**
-    * Collects all the type variables from the formal params and sets them as rigid.
-    */
-  private def getRigidityFromParams(params: List[KindedAst.FormalParam])(implicit flix: Flix): RigidityEnv = {
-    params.flatMap(_.tpe.typeVars).foldLeft(RigidityEnv.empty) {
-      case (renv, tvar) => renv.markRigid(tvar.sym)
     }
   }
 

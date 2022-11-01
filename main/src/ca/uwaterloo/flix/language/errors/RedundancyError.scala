@@ -609,4 +609,30 @@ object RedundancyError {
     def explain(formatter: Formatter): Option[String] = None
   }
 
+  /**
+    * @param expType   The type of the matched expression.
+    * @param matchType The type of the case.
+    * @param loc       The location where the error occurred.
+    */
+  case class UnreachableTypeMatchCase(expType: Type, matchType: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+    def summary: String = "Unreachable type match case."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unreachable match case.
+         |
+         |${code(loc, "unreachable case.")}
+         |
+         |This case is unreachable because the matched
+         |expression's type cannot unify with the case type.
+         |
+         |Expression type: ${FormatType.formatType(expType)}
+         |Match type:      ${FormatType.formatType(matchType)}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
 }

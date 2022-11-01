@@ -20,10 +20,10 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
-import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
+import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -91,7 +91,8 @@ object Redundancy {
     val usedExp = sig.impl match {
       case None => Used.empty
       case Some(impl) =>
-        visitExp(impl.exp, Env.empty ++ sig.spec.fparams.map(_.sym), RecursionContext.ofSig(sig.sym))
+        val renv = RigidityEnv.ofRigidVars(sig.spec.tparams.map(_.sym))
+        visitExp(impl.exp, Env.empty ++ sig.spec.fparams.map(_.sym), RecursionContext.ofSig(sig.sym))(flix, renv)
     }
 
     // Check for unused parameters and remove all variable symbols.
@@ -116,7 +117,8 @@ object Redundancy {
   private def visitDef(defn: Def)(implicit root: Root, flix: Flix): Used = {
 
     // Compute the used symbols inside the definition.
-    val usedExp = visitExp(defn.impl.exp, Env.empty ++ defn.spec.fparams.map(_.sym), RecursionContext.ofDef(defn.sym))
+    val renv = RigidityEnv.ofRigidVars(defn.spec.tparams.map(_.sym))
+    val usedExp = visitExp(defn.impl.exp, Env.empty ++ defn.spec.fparams.map(_.sym), RecursionContext.ofDef(defn.sym))(flix, renv)
 
     val unusedFormalParams = findUnusedFormalParameters(defn.spec.fparams, usedExp)
     val unusedTypeParams = findUnusedTypeParameters(defn.spec)
@@ -249,7 +251,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given expression `e0` under the given environment `env0`.
     */
-  private def visitExp(e0: Expression, env0: Env, rc: RecursionContext)(implicit flix: Flix): Used = e0 match {
+  private def visitExp(e0: Expression, env0: Env, rc: RecursionContext)(implicit flix: Flix, renv: RigidityEnv): Used = e0 match {
     case Expression.Unit(_) => Used.empty
 
     case Expression.Null(_, _) => Used.empty
@@ -483,7 +485,38 @@ object Redundancy {
           (usedBody -- fvs) ++ unusedVarSyms ++ shadowedVarSyms
       }
 
-      usedMatch ++ usedRules.reduceLeft(_ ++ _)
+      //
+      // A rule is reachable if there is a way to substitute the variables
+      // bound by the signature (i.e. in the renv)
+      // such that the argument expression's type matches the case type.
+      //
+      // To find this substitution:
+      // 1. We mark all unbound variables in the expression type as rigid
+      //    because they can only match with free variables
+      // 2. We refresh all the bound variables in the expression type
+      //    because they can be instantiated to any type.
+      //
+
+      // mark the expression's unbound variables as rigid
+      val newRenv = renv ++ RigidityEnv.ofRigidVars(exp.tpe.typeVars.map(_.sym))
+
+      // refresh the bound variables in the expression type
+      val subst = renv.getRigidVarsOf(exp.tpe.typeVars.toList).foldLeft(Substitution.empty) {
+        case (s, tvar) => s ++ Substitution.singleton(tvar.sym, Type.freshVar(tvar.kind, tvar.loc))
+      }
+      val expTpe = subst(exp.tpe)
+
+      // Check that all the rules are reachable
+      val reachableRules = rules map {
+        case MatchTypeRule(sym, tpe, _) =>
+          if (Unification.unifiesWith(expTpe, tpe, newRenv)) {
+            Used.empty
+          } else {
+            Used.empty + RedundancyError.UnreachableTypeMatchCase(exp.tpe, tpe, sym.loc)
+          }
+      }
+
+      usedMatch ++ usedRules.reduceLeft(_ ++ _) ++ reachableRules.reduceLeft(_ ++ _)
 
     case Expression.Choose(exps, rules, _, _, _, _) =>
       val usedMatch = visitExps(exps, env0, rc)
@@ -751,7 +784,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given list of expressions `es` under the given environment `env0`.
     */
-  private def visitExps(es: List[Expression], env0: Env, rc: RecursionContext)(implicit flix: Flix): Used =
+  private def visitExps(es: List[Expression], env0: Env, rc: RecursionContext)(implicit flix: Flix, renv: RigidityEnv): Used =
     es.foldLeft(Used.empty) {
       case (acc, exp) => acc ++ visitExp(exp, env0, rc)
     }
@@ -792,7 +825,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given constraint `c0` under the given environment `env0`.
     */
-  private def visitConstraint(c0: Constraint, env0: Env, rc: RecursionContext)(implicit flix: Flix): Used = {
+  private def visitConstraint(c0: Constraint, env0: Env, rc: RecursionContext)(implicit flix: Flix, renv: RigidityEnv): Used = {
     val head = visitHeadPred(c0.head, env0, rc: RecursionContext)
     val body = c0.body.foldLeft(Used.empty) {
       case (acc, b) => acc ++ visitBodyPred(b, env0, rc: RecursionContext)
@@ -821,7 +854,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given head predicate `h0` under the given environment `env0`.
     */
-  private def visitHeadPred(h0: Predicate.Head, env0: Env, rc: RecursionContext)(implicit flix: Flix): Used = h0 match {
+  private def visitHeadPred(h0: Predicate.Head, env0: Env, rc: RecursionContext)(implicit flix: Flix, renv: RigidityEnv): Used = h0 match {
     case Head.Atom(_, _, terms, _, _) =>
       visitExps(terms, env0, rc)
   }
@@ -829,7 +862,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given body predicate `h0` under the given environment `env0`.
     */
-  private def visitBodyPred(b0: Predicate.Body, env0: Env, rc: RecursionContext)(implicit flix: Flix): Used = b0 match {
+  private def visitBodyPred(b0: Predicate.Body, env0: Env, rc: RecursionContext)(implicit flix: Flix, renv: RigidityEnv): Used = b0 match {
     case Body.Atom(_, _, _, _, terms, _, _) =>
       terms.foldLeft(Used.empty) {
         case (acc, term) => acc ++ Used.of(freeVars(term))
@@ -994,7 +1027,7 @@ object Redundancy {
     * Returns `true` if the given definition `decl` is unused according to `used`.
     */
   private def deadEffect(decl: Effect, used: Used)(implicit root: Root): Boolean =
-      !decl.mod.isPublic &&
+    !decl.mod.isPublic &&
       !decl.sym.name.startsWith("_") &&
       !used.effectSyms.contains(decl.sym)
 

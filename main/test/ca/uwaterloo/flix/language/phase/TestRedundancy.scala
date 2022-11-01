@@ -1278,4 +1278,51 @@ class TestRedundancy extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.RedundantUpcast](result)
   }
+
+  test("TestUnreachableTypeMatchCase.01") {
+    val input =
+      """
+        |def f(): Unit =
+        |    typematch () {
+        |        case _: Int32 => ()
+        |        case _: _ => ()
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnreachableTypeMatchCase](result)
+  }
+
+  test("TestUnreachableTypeMatchCase.02") {
+    val input =
+      """
+        |enum E[_] {
+        |    case E
+        |}
+        |
+        |def f(): Unit =
+        |    typematch E {
+        |        case _: E[Int32] => ()
+        |        case _: _ => ()
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnreachableTypeMatchCase](result)
+  }
+
+  test("TestUnreachableTypeMatchCase.03") {
+    val input =
+      """
+        |enum E[_] {
+        |    case E
+        |}
+        |
+        |def f(_: a): Unit =
+        |    typematch E {
+        |        case _: E[a] => ()
+        |        case _: _ => ()
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnreachableTypeMatchCase](result)
+  }
 }

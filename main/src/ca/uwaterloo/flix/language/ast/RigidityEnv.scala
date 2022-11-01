@@ -23,6 +23,11 @@ object RigidityEnv {
     * The empty rigidity environment.
     */
   val empty: RigidityEnv = RigidityEnv(SortedSet.empty)
+
+  /**
+    * Returns the rigidity environment in which the given variables are rigid.
+    */
+  def ofRigidVars(tvars: Iterable[Symbol.KindedTypeVarSym]): RigidityEnv = RigidityEnv(tvars.to(SortedSet))
 }
 
 /**
@@ -58,6 +63,11 @@ case class RigidityEnv(s: SortedSet[Symbol.KindedTypeVarSym]) {
     * Returns the flexible vars from the given list.
     */
   def getFlexibleVarsOf(tvars: List[Type.Var]): List[Type.Var] = tvars.filter(tvar => isFlexible(tvar.sym))
+
+  /**
+    * Returns the flexible vars from the given list.
+    */
+  def getRigidVarsOf(tvars: List[Type.Var]): List[Type.Var] = tvars.filter(tvar => isRigid(tvar.sym))
 
   /**
     * Marks the given `sym` as rigid in this environment.

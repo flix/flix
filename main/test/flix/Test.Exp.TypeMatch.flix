@@ -676,22 +676,13 @@ namespace Test/Exp/ReifyType {
     }
 
     @Test
-    def matchTypeFallThrough01(): Bool = typematch "hello" {
-        case x: Int8 => x == 123i8
-        case x: Int64 => x == 123i64
-        case _: _ => true
-    }
-
-    @Test
     def matchTypePolymorphic01(): Bool = typematch Nil {
-        case _: List[Unit] => false
         case _: List[_] => true
-        case _: _ => true
+        case _: _ => false
     }
 
     @Test
     def matchTypePolymorphic02(): Bool = typematch (Nil: List[String]) {
-        case _: List[Unit] => false
         case _: List[String] => true
         case _: _ => false
     }
