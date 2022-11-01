@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, ParYield, Pattern}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -226,9 +226,14 @@ object PatternExhaustiveness {
         val chans = rules.map(_.chan)
         (ruleExps ::: chans ::: default.toList).flatMap(visitExp(_, root))
 
-      case Expression.Spawn(exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.Spawn(exp, _, _, _, loc) => visitExp(exp, root)
       case Expression.Par(exp, _) => visitExp(exp, root)
       case Expression.ParYield(frags, exp, tpe, pur, eff, loc) => ???
+        val fragsExps = frags.map(_.exp)
+        val expsErrs = (exp :: fragsExps).flatMap(visitExp(_, root))
+        val fragsErrs = checkFrags(frags, root, loc)
+        expsErrs ::: fragsErrs
+
       case Expression.Lazy(exp, _, _) => visitExp(exp, root)
       case Expression.Force(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.FixpointConstraintSet(cs, _, _, _) => cs.flatMap(visitConstraint(_, root))
@@ -262,6 +267,21 @@ object PatternExhaustiveness {
     case TypedAst.Predicate.Body.Atom(_, _, _, _, _, _, _) => Nil
     case TypedAst.Predicate.Body.Guard(exp, _) => visitExp(exp, root)
     case TypedAst.Predicate.Body.Loop(_, exp, _) => visitExp(exp, root)
+  }
+
+  /**
+    * Check that the given ParYield fragments are exhaustive for their corresponding expressions.
+    *
+    * @param frags The fragments to check
+    * @param root  The root of the tree
+    * @param loc   the source location of the ParYield expression.
+    * @return
+    */
+  private def checkFrags(frags: List[ParYield.Fragment], root: TypedAst.Root, loc: SourceLocation): List[NonExhaustiveMatchError] = {
+    findNonMatchingPat(frags.map(f => List(f.pat)), 1, root) match {
+      case Exhaustive => Nil
+      case NonExhaustive(ctors) => ??? // (NonExhaustiveMatchError(frags, prettyPrintCtor(ctors.head),loc))
+    }
   }
 
   /**
