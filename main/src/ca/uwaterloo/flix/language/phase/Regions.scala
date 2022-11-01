@@ -370,7 +370,15 @@ object Regions {
     case Expression.Par(exp, loc) =>
       flatMapN(visitExp(exp))(_ => checkType(exp.tpe, loc))
 
-    case Expression.ParYield(frags, exp, tpe, pur, eff, loc) => ???
+    case Expression.ParYield(frags, exp, tpe, _, _, loc) =>
+      val fragsVal = traverse(frags) {
+        case ParYield.Fragment(_, e, _) => flatMapN(visitExp(e)) {
+          case e1 => ().toSuccess
+        }
+      }
+      flatMapN(fragsVal, visitExp(exp)) {
+        case (fs, e) => checkType(tpe, loc)
+      }
 
     case Expression.Lazy(exp, tpe, loc) =>
       flatMapN(visitExp(exp)) {
