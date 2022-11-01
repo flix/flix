@@ -522,9 +522,6 @@ object Typer {
       case KindedAst.Expression.Str(_, _) =>
         liftM(List.empty, Type.Str, Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Default(tvar, _) =>
-        liftM(List.empty, tvar, Type.Pure, Type.Empty)
-
       case KindedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
         val argType = fparam.tpe
         val argTypeVar = fparam.sym.tvar
@@ -1891,8 +1888,6 @@ object Typer {
       case KindedAst.Expression.BigInt(lit, loc) => TypedAst.Expression.BigInt(lit, loc)
 
       case KindedAst.Expression.Str(lit, loc) => TypedAst.Expression.Str(lit, loc)
-
-      case KindedAst.Expression.Default(tvar, loc) => TypedAst.Expression.Default(subst0(tvar), loc)
 
       case KindedAst.Expression.Apply(exp, exps, tvar, pvar, evar, loc) =>
         val e = visitExp(exp, subst0)

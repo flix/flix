@@ -60,7 +60,7 @@ namespace Fixpoint {
     def allocEnv(r: Region[r], depth: Int32, relOp: RelOp[v]): SearchEnv[v, r] \ Write(r) = match relOp {
         case RelOp.Search(_, _, body) => allocEnv(r, depth + 1, body)
         case RelOp.Query(_, _, _, body) => allocEnv(r, depth + 1, body)
-        case RelOp.Project(_) => (Array.new(r, Fixpoint/Tuple.new(Nil), depth), Array.new(r, $DEFAULT$, depth))
+        case RelOp.Project(_) => (Array.new(r, Fixpoint/Tuple.new(Nil), depth), Array.new(r, Reflect.default(), depth))
         case RelOp.If(_, then) => allocEnv(r, depth, then)
     }
 
@@ -86,7 +86,7 @@ namespace Fixpoint {
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>
                         let tuple = Fixpoint/Tuple.new(List.map(evalTerm(env), terms));
-                        MutMap.put!(tuple, $DEFAULT$, rel)
+                        MutMap.put!(tuple, Reflect.default(), rel)
                     case Denotation.Latticenal(bot, leq, lub, _) =>
                         // assume that length(terms) > 0
                         let len = List.length(terms);

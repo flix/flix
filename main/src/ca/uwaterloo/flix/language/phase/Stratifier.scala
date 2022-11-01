@@ -123,8 +123,6 @@ object Stratifier {
 
     case Expression.Str(_, _) => exp0.toSuccess
 
-    case Expression.Default(_, _) => exp0.toSuccess
-
     case Expression.Wild(_, _) => exp0.toSuccess
 
     case Expression.Var(_, _, _) => exp0.toSuccess
@@ -554,8 +552,6 @@ object Stratifier {
     case Expression.BigInt(_, _) => LabelledGraph.empty
 
     case Expression.Str(_, _) => LabelledGraph.empty
-
-    case Expression.Default(_, _) => LabelledGraph.empty
 
     case Expression.Wild(_, _) => LabelledGraph.empty
 

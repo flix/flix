@@ -666,8 +666,6 @@ object Namer {
 
     case WeededAst.Expression.Str(lit, loc) => NamedAst.Expression.Str(lit, loc).toSuccess
 
-    case WeededAst.Expression.Default(loc) => NamedAst.Expression.Default(loc).toSuccess
-
     case WeededAst.Expression.Apply(exp, exps, loc) =>
       mapN(visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0), traverse(exps)(visitExp(_, env0, uenv0, ienv0, tenv0, ns0, prog0))) {
         case (e, es) => NamedAst.Expression.Apply(e, es, loc)
@@ -1534,7 +1532,6 @@ object Namer {
     case WeededAst.Expression.Int64(_, _) => Nil
     case WeededAst.Expression.BigInt(_, _) => Nil
     case WeededAst.Expression.Str(_, _) => Nil
-    case WeededAst.Expression.Default(_) => Nil
     case WeededAst.Expression.Apply(exp, exps, _) => freeVars(exp) ++ exps.flatMap(freeVars)
     case WeededAst.Expression.Lambda(fparam, exp, _) => filterBoundVars(freeVars(exp), List(fparam.ident))
     case WeededAst.Expression.Unary(_, exp, _) => freeVars(exp)

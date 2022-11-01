@@ -41,7 +41,7 @@ object Weeder {
     * Users must not define fields or variables with these names.
     */
   private val ReservedWords = Set(
-    "!=", "$DEFAULT$", "&&&", "*", "**", "+", "-", "..", "/", ":", "::", ":::", ":=", "<", "<+>", "<-", "<<<", "<=",
+    "!=", "&&&", "*", "**", "+", "-", "..", "/", ":", "::", ":::", ":=", "<", "<+>", "<-", "<<<", "<=",
     "<=>", "==", "=>", ">", ">=", ">>>", "???", "@", "Absent", "Bool", "Impure", "Nil", "Predicate", "Present", "Pure",
     "Read", "RecordRow", "Region", "SchemaRow", "Type", "Write", "^^^", "alias", "case", "catch", "chan",
     "class", "def", "deref", "else", "enum", "false", "fix", "force",
@@ -2049,9 +2049,6 @@ object Weeder {
       weedCharSequence(chars) map {
         string => WeededAst.Expression.Str(string, mkSL(sp1, sp2))
       }
-
-    case ParsedAst.Literal.Default(sp1, sp2) =>
-      WeededAst.Expression.Default(mkSL(sp1, sp2)).toSuccess
   }
 
   /**
@@ -2103,8 +2100,6 @@ object Weeder {
       weedCharSequence(chars) map {
         string => WeededAst.Pattern.Str(string, mkSL(sp1, sp2))
       }
-    case ParsedAst.Literal.Default(sp1, sp2) =>
-      throw InternalCompilerException(s"Illegal default pattern near: ${mkSL(sp1, sp2).format}")
   }
 
   /**

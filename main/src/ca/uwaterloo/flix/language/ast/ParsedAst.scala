@@ -498,14 +498,6 @@ object ParsedAst {
       * @param sp2   the position of the last character in the literal.
       */
     case class Str(sp1: SourcePosition, chars: Seq[ParsedAst.CharCode], sp2: SourcePosition) extends ParsedAst.Literal
-
-    /**
-      * Default Literal.
-      *
-      * @param sp1 the position of the first character in the literal.
-      * @param sp2 the position of the last character in the literal.
-      */
-    case class Default(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Literal
   }
 
   /**
