@@ -1579,4 +1579,47 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedBools](result)
   }
 
+  test("TestParYield.01") {
+    val input =
+      """
+        | def f(g: Unit -> Unit \ Impure): Unit \ Impure =
+        |     let _ = par (x <- { 1 as & Impure }) yield x;
+        |     g()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("TestParYield.02") {
+    val input =
+      """
+        | def f(g: Unit -> Unit \ Impure): Unit \ Impure =
+        |     let _ = par (x <- { 1 as \ Impure }) yield x;
+        |     g()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("TestParYield.03") {
+    val input =
+      """
+        | def f(g: Unit -> Unit \ Impure): Unit \ Impure =
+        |     let _ = par (x <- 1) yield { x as & Impure };
+        |     g()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("TestParYield.04") {
+    val input =
+      """
+        | def f(g: Unit -> Unit \ Impure): Unit \ Impure =
+        |     let _ = par (x <- 1) yield { x as \ Impure };
+        |     g()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedBools](result)
+  }
 }
