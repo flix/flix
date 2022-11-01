@@ -42,7 +42,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.zip.ZipInputStream
 import scala.collection.mutable
-import java.io.IOException
 import java.io.FileNotFoundException
 import ca.uwaterloo.flix.util.collection.MultiMap
 
