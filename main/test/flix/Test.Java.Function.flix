@@ -28,7 +28,7 @@ namespace Test/Java/Function {
     }
 
   @Test
-  def testUnaryIntOperator(): Bool \ IO = {
+  def testIntUnaryOperator(): Bool \ IO = {
        import static java.util.stream.IntStream.of(Int32): IntStream \ IO;
        import java.util.stream.IntStream.map(IntUnaryOperator): IntStream \ IO;
        import java.util.stream.IntStream.sum(): Int32 \ IO;
@@ -73,7 +73,7 @@ namespace Test/Java/Function {
     }
 
   @Test
-  def testUnaryLongOperator(): Bool \ IO = {
+  def testLongUnaryOperator(): Bool \ IO = {
        import static java.util.stream.LongStream.of(Int64): LongStream \ IO;
        import java.util.stream.LongStream.map(LongUnaryOperator): LongStream \ IO;
        import java.util.stream.LongStream.sum(): Int64 \ IO;
