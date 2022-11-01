@@ -56,21 +56,21 @@ namespace Test/Unused/Var {
 
     @test
     def testUnusedVar10(): Int32 \ IO =
-        let c = chan Int32 1;
-        c <- 0;
+        let (s, r) = Channel.buffered(1);
+        Channel.send(0, s);
         select {
-            case _foo <- c => 123
+            case _foo <- r => 123
         }
 
     @test
     def testUnusedVar11(): Int32 \ IO =
-        let c1 = chan Int32 1;
-        let c2 = chan Int32 1;
-        c1 <- 0;
-        c2 <- 0;
+        let (s1, r1) = Channel.buffered(1);
+        let (s2, r2) = Channel.buffered(1);
+        Channel.send(0, s1);
+        Channel.send(0, s2);
         select {
-            case _foo <- c1 => 123
-            case _bar <- c2 => 456
+            case _foo <- r1 => 123
+            case _bar <- r2 => 456
         }
 
     // NB: Compile, but not execute.
