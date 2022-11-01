@@ -1325,4 +1325,56 @@ class TestRedundancy extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.UnreachableTypeMatchCase](result)
   }
+
+  test("TestUnreachableTypeMatchCase.04") {
+    val input =
+      """
+        |enum E[_] {
+        |    case E
+        |}
+        |
+        |def f(_: a): Unit =
+        |    typematch (E, E) {
+        |        case _: (E[_], E[_]) => ()
+        |        case _: (E[a], E[a]) => ()
+        |        case _: _ => ()
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnreachableTypeMatchCase](result)
+  }
+
+  test("TestUnreachableTypeMatchCase.05") {
+    val input =
+      """
+        |enum E[_, _] {
+        |    case E
+        |}
+        |
+        |def f(_: a): Unit =
+        |    typematch E {
+        |        case _: E[_, a] => ()
+        |        case _: _ => ()
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnreachableTypeMatchCase](result)
+  }
+
+  test("TestUnreachableTypeMatchCase.06") {
+    val input =
+      """
+        |enum E[_] {
+        |    case E
+        |}
+        |
+        |def f(x: a): Unit =
+        |    typematch x {
+        |        case _: E[a] => ()
+        |        case _: _ => ()
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnreachableTypeMatchCase](result)
+  }
 }
