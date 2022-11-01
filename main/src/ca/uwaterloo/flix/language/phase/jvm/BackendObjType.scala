@@ -164,6 +164,7 @@ object BackendObjType {
         case IntFunction => JvmName.IntFunction
         case IntUnaryOperator => JvmName.IntUnaryOperator
         case IntPredicate => JvmName.IntPredicate
+        case IntConsumer => JvmName.IntConsumer
       }
 
       /**
@@ -192,6 +193,13 @@ object BackendObjType {
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ IRETURN()
           ))
+        case IntConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
+          mkDescriptor(BackendType.Int32)(VoidableType.Void),
+          Some(
+            thisLoad() ~
+              DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
+              INVOKEVIRTUAL(continuation.UnwindMethod) ~ RETURN()
+          ))
       }
     }
 
@@ -204,24 +212,27 @@ object BackendObjType {
     // Int32 -> Bool
     case object IntPredicate extends FunctionInterface
 
+    // Int32 -> Unit
+    case object IntConsumer extends FunctionInterface
+
     /**
-      * Returns the specialized java function interface of the function type.
+      * Returns the specialized java function interfaces of the function type.
       */
-    def specialization(): Option[FunctionInterface] = {
+    def specialization(): List[FunctionInterface] = {
       (args, result) match {
         case (BackendType.Int32 :: Nil, BackendType.Reference(BackendObjType.JavaObject)) =>
-          Some(IntFunction)
+          IntFunction :: IntConsumer :: Nil
         case (BackendType.Int32 :: Nil, BackendType.Int32) =>
-          Some(IntUnaryOperator)
+          IntUnaryOperator :: Nil
         case (BackendType.Int32 :: Nil, BackendType.Bool) =>
-          Some(IntPredicate)
-        case _ => None
+          IntPredicate :: Nil
+        case _ => Nil
       }
     }
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val specializedInterface = specialization()
-      val interfaces = specializedInterface.toList.map(_.jvmName)
+      val interfaces = specializedInterface.map(_.jvmName)
 
       val cm = ClassMaker.mkAbstractClass(this.jvmName, superClass = continuation.jvmName, interfaces)
 
