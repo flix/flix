@@ -150,7 +150,6 @@ object PatternExhaustiveness {
       case Expression.Int64(_, _) => Nil
       case Expression.BigInt(_, _) => Nil
       case Expression.Str(_, _) => Nil
-      case Expression.Default(_, _) => Nil
       case Expression.Lambda(_, body, _, _) => visitExp(body, root)
       case Expression.Apply(exp, exps, _, _, _, _) => (exp :: exps).flatMap(visitExp(_, root))
       case Expression.Unary(_, exp, _, _, _, _) => visitExp(exp, root)

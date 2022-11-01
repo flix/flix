@@ -24,7 +24,7 @@ namespace Channel {
     ///
     pub def buffered(n: Int32): (Sender[t], Receiver[t]) \ IO =
         let m = if (n < 0) 0 else n;
-        let c = chan t m;
+        let c = $CHANNEL_NEW$(m);
         (c, c)
 
     ///
@@ -37,14 +37,14 @@ namespace Channel {
     ///
     /// Blocks until a message is dequeued.
     ///
-    pub def recv(r: Receiver[t]): t \ IO = <- r
+    pub def recv(r: Receiver[t]): t \ IO = $CHANNEL_GET$(r)
 
     ///
     /// Sends the message `m` on the given channel `s`.
     ///
     /// Blocks until the message is enqueued.
     ///
-    pub def send(m: t, s: Sender[t]): Unit \ IO = s <- m
+    pub def send(m: t, s: Sender[t]): Unit \ IO = $CHANNEL_PUT$(s, m)
 
     ///
     /// Returns a channel that receives the `Unit` message after duration `d`.

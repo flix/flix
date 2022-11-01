@@ -179,12 +179,6 @@ object TypedAst {
       def eff: Type = Type.Empty
     }
 
-    case class Default(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
     case class Wild(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def pur: Type = Type.Pure
 

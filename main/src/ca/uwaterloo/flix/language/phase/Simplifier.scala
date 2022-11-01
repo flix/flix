@@ -283,9 +283,6 @@ object Simplifier {
         val e = visitExp(exp)
         SimplifiedAst.Expression.Force(e, tpe, loc)
 
-      case TypedAst.Expression.Default(_, _) =>
-        throw InternalCompilerException(s"Unexpected expression: $exp0.")
-
       case TypedAst.Expression.Wild(_, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 

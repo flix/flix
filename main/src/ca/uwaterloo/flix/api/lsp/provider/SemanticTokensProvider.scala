@@ -315,8 +315,6 @@ object SemanticTokensProvider {
 
     case Expression.Str(_, _) => Iterator.empty
 
-    case Expression.Default(_, _) => Iterator.empty
-
     case Expression.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp)
 

@@ -3,6 +3,7 @@ namespace Test/Java/Function {
     import java.util.function.IntFunction
     import java.util.function.IntUnaryOperator
     import java.util.function.IntPredicate
+    import java.util.function.IntConsumer
     import java.util.stream.IntStream
     import java.util.stream.Stream
 
@@ -40,5 +41,17 @@ namespace Test/Java/Function {
        let stream1 = filter(stream0, upcast(i -> i mod 2 == 0));
        sum(stream1) == 20
    }
+
+  @Test
+  def testIntConsumer(): Bool \ IO = {
+       import static java.util.stream.IntStream.range(Int32, Int32): IntStream \ IO;
+       import java.util.stream.IntStream.forEach(IntConsumer): Unit \ IO;
+       let st = ref 0;
+       let stream = range(0, 9);
+       let _ = forEach(stream, i -> st := i);
+       deref st == 8
+   }
+
+
 
 }

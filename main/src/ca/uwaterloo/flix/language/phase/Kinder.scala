@@ -386,8 +386,6 @@ object Kinder {
 
     case ResolvedAst.Expression.Str(lit, loc) => KindedAst.Expression.Str(lit, loc).toSuccess
 
-    case ResolvedAst.Expression.Default(loc) => KindedAst.Expression.Default(Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
-
     case ResolvedAst.Expression.Apply(exp0, exps0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       val expsVal = traverse(exps0)(visitExp(_, kenv0, senv, taenv, henv0, root))
@@ -714,11 +712,10 @@ object Kinder {
         methods => KindedAst.Expression.NewObject(name, clazz, methods, loc)
       }
 
-    case ResolvedAst.Expression.NewChannel(exp0, tpe0, loc) =>
+    case ResolvedAst.Expression.NewChannel(exp0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
-      val tpeVal = visitType(tpe0, Kind.Star, kenv0, senv, taenv, root)
-      mapN(expVal, tpeVal) {
-        case (exp, tpe) => KindedAst.Expression.NewChannel(exp, tpe, loc)
+      mapN(expVal) {
+        case exp => KindedAst.Expression.NewChannel(exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.GetChannel(exp0, loc) =>

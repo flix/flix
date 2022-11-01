@@ -648,8 +648,6 @@ object Resolver {
 
         case NamedAst.Expression.Str(lit, loc) => ResolvedAst.Expression.Str(lit, loc).toSuccess
 
-        case NamedAst.Expression.Default(loc) => ResolvedAst.Expression.Default(loc).toSuccess
-
         case app@NamedAst.Expression.Apply(NamedAst.Expression.DefOrSig(qname, env, innerLoc), exps, outerLoc) =>
           flatMapN(lookupDefOrSig(qname, ns0, env, root)) {
             case NamedAst.DefOrSig.Def(defn) => visitApplyDef(app, defn, exps, region, innerLoc, outerLoc)
@@ -1112,11 +1110,10 @@ object Resolver {
               }
           }
 
-        case NamedAst.Expression.NewChannel(exp, tpe, loc) =>
-          val tVal = resolveType(tpe, taenv, ns0, root)
+        case NamedAst.Expression.NewChannel(exp, loc) =>
           val eVal = visitExp(exp, region)
-          mapN(tVal, eVal) {
-            case (t, e) => ResolvedAst.Expression.NewChannel(e, t, loc)
+          mapN(eVal) {
+            case e => ResolvedAst.Expression.NewChannel(e, loc)
           }
 
         case NamedAst.Expression.GetChannel(exp, loc) =>
@@ -1900,6 +1897,7 @@ object Resolver {
         case "java.util.function.IntFunction" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkObject(loc), loc).toSuccess
         case "java.util.function.IntUnaryOperator" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkInt32(loc), loc).toSuccess
         case "java.util.function.IntPredicate" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkBool(loc), loc).toSuccess
+        case "java.util.function.IntConsumer" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkUnit(loc), loc).toSuccess
 
         case _ => lookupJvmClass(fqn, loc) map {
           case clazz => UnkindedType.Cst(TypeConstructor.Native(clazz), loc)
@@ -2710,10 +2708,15 @@ object Resolver {
       // Case 2: Arrow. Convert to Java function interface
       case UnkindedType.Arrow(_, _, _) =>
         val targsVal = traverse(erased.typeArguments)(targ => getJVMType(targ, targ.loc))
+        val returnsUnit = erased.typeArguments.lastOption match {
+          case Some(ty) => isBaseTypeUnit(ty)
+          case None => false
+        }
         flatMapN(targsVal) {
-          case Int :: Object :: Nil => Class.forName("java.util.function.IntFunction").toSuccess
           case Int :: Int :: Nil => Class.forName("java.util.function.IntUnaryOperator").toSuccess
           case Int :: Boolean :: Nil => Class.forName("java.util.function.IntPredicate").toSuccess
+          case Int :: Object :: Nil =>
+              if (returnsUnit) Class.forName("java.util.function.IntConsumer").toSuccess  else Class.forName("java.util.function.IntFunction").toSuccess
           case _ => ResolutionError.IllegalType(tpe, loc).toFailure
         }
 
@@ -2734,7 +2737,20 @@ object Resolver {
     }
   }
 
-  /**
+  private def isBaseTypeUnit(tpe: UnkindedType):  Boolean = {
+    val erased = UnkindedType.eraseAliases(tpe)
+    val baseType = erased.baseType
+    baseType match {
+      // Case 1: Constant: Match on the type.
+      case UnkindedType.Cst(tc, _) => tc match {
+        case TypeConstructor.Unit => true
+        case _ => false
+      }
+      case _ => false
+    }
+  }
+
+            /**
     * Construct the type alias type constructor for the given symbol `sym` with the given kind `k`.
     */
   def mkUnappliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation): UnkindedType = UnkindedType.UnappliedAlias(sym, loc)

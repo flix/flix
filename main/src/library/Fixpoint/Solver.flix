@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-use Boxable.{box, unbox}
-use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, Denotation}
-use Fixpoint/Ast.Datalog.{Datalog, Model, Join}
-use Fixpoint/Ast.Constraint.Constraint
-use Fixpoint/Ast.HeadPredicate.HeadAtom
-use Fixpoint/Ast.Denotation.{Relational, Latticenal}
-use Fixpoint/Ram.RamSym
-use Fixpoint/Shared.PredSym
-use Fixpoint/Shared.PredSym.PredSym
-
 namespace Fixpoint {
+
+    use Boxable.{box, unbox}
+    use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, Denotation}
+    use Fixpoint/Ast.Datalog.{Datalog, Model, Join}
+    use Fixpoint/Ast.Constraint.Constraint
+    use Fixpoint/Ast.HeadPredicate.HeadAtom
+    use Fixpoint/Ast.Denotation.{Relational, Latticenal}
+    use Fixpoint/Ram.RamSym
+    use Fixpoint/Shared.PredSym
+    use Fixpoint/Shared.PredSym.PredSym
 
     ///
     /// Returns the minimal model of the given Datalog program `d`.
@@ -506,7 +506,7 @@ namespace Fixpoint {
                 let arity = List.length(vs);
                 let ramSym = RamSym.Full(p, arity, Denotation.Relational);
                 let rel = MutMap.getOrElsePut!(ramSym, new MutMap(r), db);
-                MutMap.put!(Fixpoint/Tuple.new(vs), $DEFAULT$, rel)
+                MutMap.put!(Fixpoint/Tuple.new(vs), Reflect.default(), rel)
             }, (), ts);
             toModel(db)
         }

@@ -197,9 +197,6 @@ object Indexer {
     case Expression.Str(_, _) =>
       Index.occurrenceOf(exp0)
 
-    case Expression.Default(_, _) =>
-      Index.occurrenceOf(exp0)
-
     case Expression.Wild(_, _) =>
       Index.occurrenceOf(exp0)
 

@@ -278,8 +278,6 @@ object Redundancy {
 
     case Expression.Str(_, _) => Used.empty
 
-    case Expression.Default(_, _) => Used.empty
-
     case Expression.Wild(_, _) => Used.empty
 
     case Expression.Var(sym, _, loc) => (sym.isWild, rc.vars.contains(sym)) match {

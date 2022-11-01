@@ -285,10 +285,6 @@ object Lowering {
 
     case Expression.Str(_, _) => exp0
 
-    case Expression.Default(tpe, loc) =>
-      val t = visitType(tpe)
-      Expression.Default(t, loc)
-
     case Expression.Wild(tpe, loc) =>
       val t = visitType(tpe)
       Expression.Wild(t, loc)
@@ -1697,8 +1693,6 @@ object Lowering {
     case Expression.BigInt(_, _) => exp0
 
     case Expression.Str(_, _) => exp0
-
-    case Expression.Default(_, _) => exp0
 
     case Expression.Wild(_, _) => exp0
 

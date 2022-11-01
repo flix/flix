@@ -522,9 +522,6 @@ object Typer {
       case KindedAst.Expression.Str(_, _) =>
         liftM(List.empty, Type.Str, Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Default(tvar, _) =>
-        liftM(List.empty, tvar, Type.Pure, Type.Empty)
-
       case KindedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
         val argType = fparam.tpe
         val argTypeVar = fparam.sym.tvar
@@ -1560,11 +1557,11 @@ object Typer {
         } yield (constrs.flatten, resultTyp, resultPur, resultEff)
 
 
-      case KindedAst.Expression.NewChannel(exp, declaredType, loc) =>
+      case KindedAst.Expression.NewChannel(exp, elmType, loc) =>
         for {
           (constrs, tpe, _, eff) <- visitExp(exp)
           _ <- expectTypeM(expected = Type.Int32, actual = tpe, exp.loc)
-          resultTyp <- liftM(Type.mkChannel(declaredType, loc))
+          resultTyp <- liftM(Type.mkChannel(elmType, loc))
           resultPur = Type.Impure
           resultEff = eff
         } yield (constrs, resultTyp, resultPur, resultEff)
@@ -1905,8 +1902,6 @@ object Typer {
       case KindedAst.Expression.BigInt(lit, loc) => TypedAst.Expression.BigInt(lit, loc)
 
       case KindedAst.Expression.Str(lit, loc) => TypedAst.Expression.Str(lit, loc)
-
-      case KindedAst.Expression.Default(tvar, loc) => TypedAst.Expression.Default(subst0(tvar), loc)
 
       case KindedAst.Expression.Apply(exp, exps, tvar, pvar, evar, loc) =>
         val e = visitExp(exp, subst0)
@@ -2267,11 +2262,11 @@ object Typer {
         val ms = methods map visitJvmMethod
         TypedAst.Expression.NewObject(name, clazz, tpe, pur, eff, ms, loc)
 
-      case KindedAst.Expression.NewChannel(exp, tpe, loc) =>
+      case KindedAst.Expression.NewChannel(exp, elmType, loc) =>
         val e = visitExp(exp, subst0)
         val pur = Type.Impure
         val eff = e.eff
-        TypedAst.Expression.NewChannel(e, Type.mkChannel(tpe, loc), pur, eff, loc)
+        TypedAst.Expression.NewChannel(e, Type.mkChannel(subst0(elmType), loc), pur, eff, loc)
 
       case KindedAst.Expression.GetChannel(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)

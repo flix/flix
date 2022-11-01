@@ -78,8 +78,6 @@ object Regions {
 
     case Expression.Str(_, _) => ().toSuccess
 
-    case Expression.Default(_, _) => ().toSuccess
-
     case Expression.Wild(_, _) => ().toSuccess
 
     case Expression.Var(_, tpe, loc) => checkType(tpe, loc)

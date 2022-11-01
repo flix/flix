@@ -395,7 +395,6 @@ namespace TestGraph {
         let g = graph07();
         Graph.isCyclic(g)
 
-
     /////////////////////////////////////////////////////////////////////////////
     // distances                                                               //
     /////////////////////////////////////////////////////////////////////////////
@@ -403,37 +402,133 @@ namespace TestGraph {
     @test
     def distances01(): Bool =
         let g = graphWithDist01();
-        Graph.distances(1, g) == Map#{1 => 0}
+        Graph.distances(g) == Map.empty()
 
     @test
     def distances02(): Bool =
         let g = graphWithDist02();
-        Graph.distances(1, g) == Map#{1 => 0, 2 => 4}
+        Graph.distances(g) == Map#{
+            (1, 1) => 0,
+            (2, 2) => 0,
+
+            (1, 2) => 4
+        }
 
     @test
     def distances03(): Bool =
-        let g = graphWithDist02();
-        Graph.distances(2, g) == Map#{2 => 0}
+        let g = graphWithDist03();
+        Graph.distances(g) == Map#{
+            (1, 1) => 0,
+            (2, 2) => 0,
+            (3, 3) => 0,
+            (4, 4) => 0,
+
+            (1, 2) => 4,
+            (3, 4) => 7
+        }
 
     @test
     def distances04(): Bool =
-        let g = graphWithDist03();
-        Graph.distances(3, g) == Map#{3 => 0, 4 => 7}
+        let g = graphWithDist04();
+        Graph.distances(g) == Map#{
+            (1, 1) => 0,
+            (2, 2) => 0,
+            (3, 3) => 0,
+            (4, 4) => 0,
+
+            (1, 2) => 4,
+            (1, 3) => 4+5,
+            (1, 4) => 4+5+7,
+            (2, 3) => 5,
+            (2, 4) => 5+7,
+            (3, 4) => 7
+        }
 
     @test
     def distances05(): Bool =
-        let g = graphWithDist04();
-        Graph.distances(2, g) == Map#{2 => 0, 3 => 5, 4 => (5 + 7)}
+        let g = graphWithDist05();
+        Graph.distances(g) == Map#{
+            (1, 1) => 0,
+            (2, 2) => 0,
+            (3, 3) => 0,
+            (4, 4) => 0,
+
+            (1, 2) => 4,
+            (1, 3) => 4+2,
+            (1, 4) => 4+2+1,
+            (2, 1) => 2+1+5,
+            (2, 3) => 2,
+            (2, 4) => 2+1,
+            (3, 1) => 1+5,
+            (3, 2) => 1+5+4,
+            (3, 4) => 1,
+            (4, 1) => 5,
+            (4, 2) => 5+4,
+            (4, 3) => 5+4+2
+        }
 
     @test
     def distances06(): Bool =
-        let g = graphWithDist05();
-        Graph.distances(4, g) == Map#{1 => 5, 2 => (5 + 4), 3 => (5 + 4 + 2), 4 => 0}
+        let g = graphWithDist06();
+        Graph.distances(g) == Map#{
+            (1, 1) => 0,
+            (2, 2) => 0,
+            (3, 3) => 0,
+            (4, 4) => 0,
+            (5, 5) => 0,
+            (6, 6) => 0,
+
+            (1, 2) => 2,
+            (1, 3) => 2+10,
+            (1, 4) => 5,
+            (1, 5) => 5+2,
+            (1, 6) => 5+2+1,
+            (2, 3) => 10,
+            (4, 2) => 7,
+            (4, 3) => 7+10,
+            (4, 5) => 2,
+            (4, 6) => 3,
+            (5, 6) => 1
+        }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // distancesFrom                                                           //
+    /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def distances07(): Bool =
+    def distancesFrom01(): Bool =
+        let g = graphWithDist01();
+        Graph.distancesFrom(1, g) == Map#{1 => 0}
+
+    @test
+    def distancesFrom02(): Bool =
+        let g = graphWithDist02();
+        Graph.distancesFrom(1, g) == Map#{1 => 0, 2 => 4}
+
+    @test
+    def distancesFrom03(): Bool =
+        let g = graphWithDist02();
+        Graph.distancesFrom(2, g) == Map#{2 => 0}
+
+    @test
+    def distancesFrom04(): Bool =
+        let g = graphWithDist03();
+        Graph.distancesFrom(3, g) == Map#{3 => 0, 4 => 7}
+
+    @test
+    def distancesFrom05(): Bool =
+        let g = graphWithDist04();
+        Graph.distancesFrom(2, g) == Map#{2 => 0, 3 => 5, 4 => (5 + 7)}
+
+    @test
+    def distancesFrom06(): Bool =
+        let g = graphWithDist05();
+        Graph.distancesFrom(4, g) == Map#{1 => 5, 2 => (5 + 4), 3 => (5 + 4 + 2), 4 => 0}
+
+    @test
+    def distancesFrom07(): Bool =
         let g = graphWithDist06();
-        Graph.distances(4, g)
+        Graph.distancesFrom(4, g)
             == Map#{2 => 7, 3 => (7 + 10), 4 => 0, 5 => 2, 6 => 3}
 
 

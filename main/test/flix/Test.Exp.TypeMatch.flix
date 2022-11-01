@@ -318,7 +318,7 @@ namespace Test/Exp/ReifyType {
     pub eff E
 
     //////////////////////////////////////
-    // reflecting on input              //
+    // Reflecting on input              //
     //////////////////////////////////////
 
     def reflectBool(x: a): Bool = typematch x {
@@ -492,7 +492,7 @@ namespace Test/Exp/ReifyType {
     def polyMatchTypeString_04(): Bool = not reflectString('a')
 
     //////////////////////////////////////
-    // Complex test                     //
+    // Complex tests                    //
     //////////////////////////////////////
 
     def sameTypes(x: a, _: b): Bool = typematch x {
