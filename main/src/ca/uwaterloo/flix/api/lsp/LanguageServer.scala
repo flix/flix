@@ -42,6 +42,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.zip.ZipInputStream
 import scala.collection.mutable
+import java.io.IOException
+import java.io.FileNotFoundException
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 /**
   * A Compiler Interface for the Language Server Protocol.
@@ -97,6 +100,38 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     * The current compilation errors.
     */
   private var currentErrors: List[CompilationMessage] = Nil
+
+  /**
+    * The java classes in the jdk classList
+    */
+  private val javaClasses: MultiMap[List[String], String] = sys.env.get("JAVA_HOME") match {
+    case None => MultiMap.empty
+    case Some(home) =>
+      val path = s"$home/lib/classlist"
+      try {
+        val file = scala.io.Source.fromFile(path)
+        val map = file.getLines()
+          // Filter the classlist file
+          .drop(5)
+          .filter(clazz => !clazz.contains("$"))
+          .filter(clazz => !clazz.contains("@"))
+          .foldLeft[MultiMap[List[String], String]](MultiMap.empty){
+            case (acc, clazz) =>
+              val clazzPath = clazz.split('/').toList
+              // Create a mapping from all prefixes to the next packages/classes
+              (0 until clazzPath.length).foldLeft(acc){
+                case (acc, prefixIdx) =>
+                  acc + (clazzPath.slice(0, prefixIdx) -> clazzPath(prefixIdx))
+              }
+          }
+        file.close
+        map
+      }
+      catch {
+        // If the users JDK does not include a classlist file or scala cannot find the file no map is created.
+        case _: FileNotFoundException => MultiMap.empty
+      }
+  }
 
   /**
     * Invoked when the server is started.
@@ -263,7 +298,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
 
     case Request.Complete(id, uri, pos) =>
-      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root)
+      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root, javaClasses)
 
     case Request.Highlight(id, uri, pos) =>
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)
