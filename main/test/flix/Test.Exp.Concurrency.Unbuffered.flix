@@ -62,7 +62,7 @@ namespace Test/Exp/Concurrency/Unbuffered {
 
     @test
     def testUnbufferedChannelPutGet11(): Bool \ IO =
-        let c = chan Option[Int32] 0;
+        let c: Channel[Option[Int32]] = chan Option[Int32] 0;
         spawn Channel.send(None, c);
         None == Channel.recv(c)
 
@@ -74,13 +74,13 @@ namespace Test/Exp/Concurrency/Unbuffered {
 
     @test
     def testUnbufferedChannelPutGet13(): Bool \ IO =
-        let c = chan Result[Int32, String] 0;
+        let c: Channel[Result[Int32, String]] = chan Result[Int32, String] 0;
         spawn Channel.send(Ok(123), c);
         Ok(123) == Channel.recv(c)
 
     @test
     def testUnbufferedChannelPutGet14(): Bool \ IO =
-        let c = chan Result[Int32, String] 0;
+        let c: Channel[Result[Int32, String]] = chan Result[Int32, String] 0;
         spawn Channel.send(Err("Goodbye World!"), c);
         Err("Goodbye World!") == Channel.recv(c)
 
