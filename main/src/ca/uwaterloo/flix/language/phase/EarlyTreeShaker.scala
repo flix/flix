@@ -177,9 +177,6 @@ object EarlyTreeShaker {
     case Expression.Str(_, _) =>
       Set.empty
 
-    case Expression.Default(_, _) =>
-      Set.empty
-
     case Expression.Wild(_, _) =>
       Set.empty
 
