@@ -464,13 +464,13 @@ namespace DelayMap {
             else
                 match tt {
                     case Node(_, a, _, v, b) =>
-                        let chanL = chan Unit 1;
-                        let chanR = chan Unit 1;
-                        spawn (chanL <- parLoop((n - 2) / 2, a)); // We divide the rest of the threads as follows:
-                        spawn (chanR <- parLoop((n - 2) / 2, b)); // We spawn two new threads leaving us with n - 2
-                        let _ = force v;                          // that we distribute over the two spanned threads.
-                        <- chanL;
-                        <- chanR
+                        let (sL, rL) = Channel.buffered(1);
+                        let (sR, rR) = Channel.buffered(1);
+                        spawn (Channel.send(parLoop((n - 2) / 2, a), sL)); // We divide the rest of the threads as follows:
+                        spawn (Channel.send(parLoop((n - 2) / 2, b), sR)); // We spawn two new threads leaving us with n - 2
+                        let _ = force v;                                   // that we distribute over the two spanned threads.
+                        Channel.recv(rL);
+                        Channel.recv(rR)
                     case _ => ()
                 }
         };
