@@ -226,9 +226,10 @@ object PatternExhaustiveness {
         val chans = rules.map(_.chan)
         (ruleExps ::: chans ::: default.toList).flatMap(visitExp(_, root))
 
-      case Expression.Spawn(exp, _, _, _, loc) => visitExp(exp, root)
+      case Expression.Spawn(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Par(exp, _) => visitExp(exp, root)
-      case Expression.ParYield(frags, exp, tpe, pur, eff, loc) => ???
+
+      case Expression.ParYield(frags, exp, _, _, _, loc) =>
         val fragsExps = frags.map(_.exp)
         val expsErrs = (exp :: fragsExps).flatMap(visitExp(_, root))
         val fragsErrs = checkFrags(frags, root, loc)
@@ -280,7 +281,7 @@ object PatternExhaustiveness {
   private def checkFrags(frags: List[ParYield.Fragment], root: TypedAst.Root, loc: SourceLocation): List[NonExhaustiveMatchError] = {
     findNonMatchingPat(frags.map(f => List(f.pat)), 1, root) match {
       case Exhaustive => Nil
-      case NonExhaustive(ctors) => ??? // (NonExhaustiveMatchError(frags, prettyPrintCtor(ctors.head),loc))
+      case NonExhaustive(ctors) => List(NonExhaustiveMatchError(prettyPrintCtor(ctors.head), loc))
     }
   }
 
@@ -295,7 +296,7 @@ object PatternExhaustiveness {
   private def checkRules(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], root: TypedAst.Root): List[NonExhaustiveMatchError] = {
     findNonMatchingPat(rules.map(r => List(r.pat)), 1, root) match {
       case Exhaustive => Nil
-      case NonExhaustive(ctors) => List(NonExhaustiveMatchError(rules, prettyPrintCtor(ctors.head), exp.loc))
+      case NonExhaustive(ctors) => List(NonExhaustiveMatchError(prettyPrintCtor(ctors.head), exp.loc))
     }
   }
 
