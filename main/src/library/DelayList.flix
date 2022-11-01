@@ -1171,7 +1171,7 @@ namespace DelayList {
     ///
     @Experimental
     pub def toArray(r: Region[r], l: DelayList[a]): Array[a, r] \ Write(r) =
-        let a = [$DEFAULT$; length(l)] @ r;
+        let a = [Reflect.default(); length(l)] @ r;
         foreach(match (y, i) -> a[i] = y, zipWithIndex(l));
         a
 

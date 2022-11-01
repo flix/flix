@@ -94,7 +94,6 @@ object Statistics {
       case Expression.Int64(lit, loc) => Counter.empty
       case Expression.BigInt(lit, loc) => Counter.empty
       case Expression.Str(lit, loc) => Counter.empty
-      case Expression.Default(tpe, loc) => Counter.empty
       case Expression.Wild(tpe, loc) => Counter.empty
       case Expression.Var(sym, tpe, loc) => Counter.empty
       case Expression.Def(sym, tpe, loc) => Counter.empty

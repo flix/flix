@@ -88,8 +88,6 @@ object Safety {
 
       case Expression.Str(_, _) => Nil
 
-      case Expression.Default(_, _) => Nil
-
       case Expression.Wild(_, _) => Nil
 
       case Expression.Var(_, _, _) => Nil

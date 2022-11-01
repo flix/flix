@@ -41,7 +41,7 @@ object Weeder {
     * Users must not define fields or variables with these names.
     */
   private val ReservedWords = Set(
-    "!=", "$DEFAULT$", "&&&", "*", "**", "+", "-", "..", "/", ":", "::", ":::", ":=", "<", "<+>", "<-", "<<<", "<=",
+    "!=", "&&&", "*", "**", "+", "-", "..", "/", ":", "::", ":::", ":=", "<", "<+>", "<-", "<<<", "<=",
     "<=>", "==", "=>", ">", ">=", ">>>", "???", "@", "Absent", "Bool", "Impure", "Nil", "Predicate", "Present", "Pure",
     "Read", "RecordRow", "Region", "SchemaRow", "Type", "Write", "^^^", "alias", "case", "catch", "chan",
     "class", "def", "deref", "else", "enum", "false", "fix", "force",
@@ -660,6 +660,7 @@ object Weeder {
 
           case ("CHANNEL_GET", e1 :: Nil) => WeededAst.Expression.GetChannel(e1, loc).toSuccess
           case ("CHANNEL_PUT", e1 :: e2 :: Nil) => WeededAst.Expression.PutChannel(e1, e2, loc).toSuccess
+          case ("CHANNEL_NEW", e1 :: Nil) => WeededAst.Expression.NewChannel(e1, loc).toSuccess
 
           case _ => WeederError.IllegalIntrinsic(loc).toFailure
         }
@@ -1561,9 +1562,9 @@ object Weeder {
       }
 
     // TODO SJ: Rewrite to Ascribe(newch, Channel[Int32]), to remove the tpe (and get tvar like everything else)
-    case ParsedAst.Expression.NewChannel(sp1, tpe, exp, sp2) =>
+    case ParsedAst.Expression.NewChannel(sp1, _, exp, sp2) =>
       visitExp(exp, senv) map {
-        case e => WeededAst.Expression.NewChannel(e, visitType(tpe), mkSL(sp1, sp2))
+        case e => WeededAst.Expression.NewChannel(e, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.GetChannel(sp1, exp, sp2) =>
@@ -2048,9 +2049,6 @@ object Weeder {
       weedCharSequence(chars) map {
         string => WeededAst.Expression.Str(string, mkSL(sp1, sp2))
       }
-
-    case ParsedAst.Literal.Default(sp1, sp2) =>
-      WeededAst.Expression.Default(mkSL(sp1, sp2)).toSuccess
   }
 
   /**
@@ -2102,8 +2100,6 @@ object Weeder {
       weedCharSequence(chars) map {
         string => WeededAst.Pattern.Str(string, mkSL(sp1, sp2))
       }
-    case ParsedAst.Literal.Default(sp1, sp2) =>
-      throw InternalCompilerException(s"Illegal default pattern near: ${mkSL(sp1, sp2).format}")
   }
 
   /**
