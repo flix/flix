@@ -648,8 +648,6 @@ object Resolver {
 
         case NamedAst.Expression.Str(lit, loc) => ResolvedAst.Expression.Str(lit, loc).toSuccess
 
-        case NamedAst.Expression.Default(loc) => ResolvedAst.Expression.Default(loc).toSuccess
-
         case app@NamedAst.Expression.Apply(NamedAst.Expression.DefOrSig(qname, env, innerLoc), exps, outerLoc) =>
           flatMapN(lookupDefOrSig(qname, ns0, env, root)) {
             case NamedAst.DefOrSig.Def(defn) => visitApplyDef(app, defn, exps, region, innerLoc, outerLoc)
