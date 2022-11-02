@@ -279,10 +279,11 @@ object PatternExhaustiveness {
     * @return
     */
   private def checkFrags(frags: List[ParYield.Fragment], root: TypedAst.Root, loc: SourceLocation): List[NonExhaustiveMatchError] = {
-    findNonMatchingPat(frags.map(f => List(f.pat)), 1, root) match {
+    // Call findNonMatchingPat for each pattern individually
+    frags.flatMap(f => findNonMatchingPat(List(List(f.pat)), 1, root) match {
       case Exhaustive => Nil
-      case NonExhaustive(ctors) => List(NonExhaustiveMatchError(prettyPrintCtor(ctors.head), loc))
-    }
+      case NonExhaustive(ctors) => NonExhaustiveMatchError(prettyPrintCtor(ctors.head), loc) :: Nil
+    })
   }
 
   /**
