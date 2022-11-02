@@ -715,7 +715,7 @@ object Redundancy {
           // Extend env
           val extendedEnv = envAcc ++ fvs
 
-          // Check that the pattern does not shadow any previous or anything else
+          // Check that the free vars don't shadow any previous par yield vars or anything else
           val shadowedVars = findShadowedVarSyms(fvs, envAcc)
 
           val usedPat = visitPat(p)
