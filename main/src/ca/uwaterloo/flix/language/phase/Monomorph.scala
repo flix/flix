@@ -95,6 +95,11 @@ object Monomorph {
         case _ => Type.Unit
       }
     }
+
+    /**
+      * Returns the non-strict version of this substitution.
+      */
+    def nonStrict: Substitution = s
   }
 
   /**
@@ -309,31 +314,6 @@ object Monomorph {
 
       case Expression.Str(lit, loc) => Expression.Str(lit, loc)
 
-      case Expression.Default(tpe, loc) =>
-        //
-        // Replace a default literal by the actual default value based on its type.
-        //
-        subst0(tpe).typeConstructor match {
-          case None =>
-            throw ReifyTypeException(tpe, loc)
-
-          case Some(tc) => tc match {
-            case TypeConstructor.Unit => Expression.Unit(loc)
-            case TypeConstructor.Bool => Expression.False(loc)
-            case TypeConstructor.Char => Expression.Char('0', loc)
-            case TypeConstructor.Float32 => Expression.Float32(0, loc)
-            case TypeConstructor.Float64 => Expression.Float64(0, loc)
-            case TypeConstructor.BigDecimal => Expression.BigDecimal(BigDecimal.ZERO, loc)
-            case TypeConstructor.Int8 => Expression.Int8(0, loc)
-            case TypeConstructor.Int16 => Expression.Int16(0, loc)
-            case TypeConstructor.Int32 => Expression.Int32(0, loc)
-            case TypeConstructor.Int64 => Expression.Int64(0, loc)
-            case TypeConstructor.BigInt => Expression.BigInt(BigInteger.ZERO, loc)
-            case TypeConstructor.Str => Expression.Str("", loc)
-            case _ => Expression.Null(subst0(tpe), loc)
-          }
-        }
-
       case Expression.Lambda(fparam, exp, tpe, loc) =>
         val (p, env1) = specializeFormalParam(fparam, subst0)
         val e = visitExp(exp, env0 ++ env1)
@@ -393,6 +373,29 @@ object Monomorph {
             MatchRule(p, g, b)
         }
         Expression.Match(visitExp(exp, env0), rs, subst0(tpe), pur, eff, loc)
+
+      case Expression.TypeMatch(exp, rules, tpe, pur0, eff0, loc) =>
+        // use the non-strict substitution
+        // to allow free type variables to match with anything
+        val expTpe = subst0.nonStrict(exp.tpe)
+        // make the tvars in `exp`'s type rigid
+        // so that Nil: List[x%123] can only match List[_]
+        val renv = expTpe.typeVars.foldLeft(RigidityEnv.empty) {
+          case (acc, Type.Var(sym, _)) => acc.markRigid(sym)
+        }
+        rules.collectFirst {
+          case MatchTypeRule(sym, t, body0)
+            if Unification.unifiesWith(expTpe, subst0.nonStrict(t), renv) =>
+              // Generate a fresh symbol for the let-bound variable.
+              val freshSym = Symbol.freshVarSym(sym)
+              val env1 = env0 + (sym -> freshSym)
+              val e = visitExp(exp, env0)
+              val body = visitExp(body0, env1)
+              val pur = Type.mkAnd(exp.pur, body0.pur, loc.asSynthetic)
+              val eff = Type.mkUnion(exp.eff, body0.eff, loc.asSynthetic)
+              Expression.Let(freshSym, Modifiers.Empty, e, body, subst0(tpe), pur, eff, loc)
+
+        }.getOrElse(throw InternalCompilerException("Unexpected typematch failure."))
 
       case Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
         val es = exps.map(visitExp(_, env0))

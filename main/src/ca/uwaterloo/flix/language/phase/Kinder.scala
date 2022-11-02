@@ -386,8 +386,6 @@ object Kinder {
 
     case ResolvedAst.Expression.Str(lit, loc) => KindedAst.Expression.Str(lit, loc).toSuccess
 
-    case ResolvedAst.Expression.Default(loc) => KindedAst.Expression.Default(Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
-
     case ResolvedAst.Expression.Apply(exp0, exps0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       val expsVal = traverse(exps0)(visitExp(_, kenv0, senv, taenv, henv0, root))
@@ -472,6 +470,13 @@ object Kinder {
       val rulesVal = traverse(rules0)(visitMatchRule(_, kenv0, senv, taenv, henv0, root))
       mapN(expVal, rulesVal) {
         case (exp, rules) => KindedAst.Expression.Match(exp, rules, loc)
+      }
+
+    case ResolvedAst.Expression.TypeMatch(exp0, rules0, loc) =>
+      val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
+      val rulesVal = traverse(rules0)(visitMatchTypeRule(_, kenv0, senv, taenv, henv0, root))
+      mapN(expVal, rulesVal) {
+        case (exp, rules) => KindedAst.Expression.TypeMatch(exp, rules, loc)
       }
 
     case ResolvedAst.Expression.Choose(star, exps0, rules0, loc) =>
@@ -707,11 +712,10 @@ object Kinder {
         methods => KindedAst.Expression.NewObject(name, clazz, methods, loc)
       }
 
-    case ResolvedAst.Expression.NewChannel(exp0, tpe0, loc) =>
+    case ResolvedAst.Expression.NewChannel(exp0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
-      val tpeVal = visitType(tpe0, Kind.Star, kenv0, senv, taenv, root)
-      mapN(expVal, tpeVal) {
-        case (exp, tpe) => KindedAst.Expression.NewChannel(exp, tpe, loc)
+      mapN(expVal) {
+        case exp => KindedAst.Expression.NewChannel(exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.GetChannel(exp0, loc) =>
@@ -832,6 +836,18 @@ object Kinder {
       val expVal = visitExp(exp0, kenv, senv, taenv, henv, root)
       mapN(patVal, guardVal, expVal) {
         case (pat, guard, exp) => KindedAst.MatchRule(pat, guard, exp)
+      }
+  }
+
+  /**
+    * Performs kinding on the given match rule under the given kind environment.
+    */
+  private def visitMatchTypeRule(rule0: ResolvedAst.MatchTypeRule, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.MatchTypeRule, KindError] = rule0 match {
+    case ResolvedAst.MatchTypeRule(sym, tpe0, exp0) =>
+      val tpeVal = visitType(tpe0, Kind.Star, kenv, senv, taenv, root)
+      val expVal = visitExp(exp0, kenv, senv, taenv, henv, root)
+      mapN(tpeVal, expVal) {
+        case (tpe, exp) => KindedAst.MatchTypeRule(sym, tpe, exp)
       }
   }
 

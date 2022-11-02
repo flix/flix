@@ -94,8 +94,6 @@ object KindedAst {
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Default(tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
-
     case class Apply(exp: KindedAst.Expression, exps: List[KindedAst.Expression], tpe: Type.Var, pur: Type.Var, eff: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class Lambda(fparam: KindedAst.FormalParam, exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
@@ -119,6 +117,8 @@ object KindedAst {
     case class Scope(sym: Symbol.VarSym, regionVar: Type.Var, exp1: KindedAst.Expression, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class Match(exp: KindedAst.Expression, rules: List[KindedAst.MatchRule], loc: SourceLocation) extends KindedAst.Expression
+
+    case class TypeMatch(exp: KindedAst.Expression, rules: List[KindedAst.MatchTypeRule], loc: SourceLocation) extends KindedAst.Expression
 
     case class Choose(star: Boolean, exps: List[KindedAst.Expression], rules: List[KindedAst.ChoiceRule], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
@@ -186,7 +186,7 @@ object KindedAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[_], methods: List[KindedAst.JvmMethod], loc: SourceLocation) extends KindedAst.Expression
 
-    case class NewChannel(exp: KindedAst.Expression, tpe: Type, loc: SourceLocation) extends KindedAst.Expression
+    case class NewChannel(exp: KindedAst.Expression, elmType: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class GetChannel(exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
@@ -343,6 +343,8 @@ object KindedAst {
   case class ChoiceRule(pat: List[KindedAst.ChoicePattern], exp: KindedAst.Expression)
 
   case class MatchRule(pat: KindedAst.Pattern, guard: KindedAst.Expression, exp: KindedAst.Expression)
+
+  case class MatchTypeRule(sym: Symbol.VarSym, tpe: Type, exp: KindedAst.Expression)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: KindedAst.Expression, exp: KindedAst.Expression)
 

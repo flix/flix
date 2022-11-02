@@ -522,9 +522,6 @@ object Typer {
       case KindedAst.Expression.Str(_, _) =>
         liftM(List.empty, Type.Str, Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Default(tvar, _) =>
-        liftM(List.empty, tvar, Type.Pure, Type.Empty)
-
       case KindedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
         val argType = fparam.tpe
         val argTypeVar = fparam.sym.tvar
@@ -892,6 +889,19 @@ object Typer {
           resultPur = Type.mkAnd(pur :: guardPurs ::: bodyPurs, loc)
           resultEff = Type.mkUnion(eff :: guardEffs ::: bodyEffs, loc)
         } yield (constrs ++ guardConstrs.flatten ++ bodyConstrs.flatten, resultTyp, resultPur, resultEff)
+
+      case KindedAst.Expression.TypeMatch(exp, rules, loc) =>
+        val bodies = rules.map(_.exp)
+
+        for {
+          (constrs, tpe, pur, eff) <- visitExp(exp)
+          // unify each rule's variable with its type
+          _ <- seqM(rules.map(rule => unifyTypeM(rule.sym.tvar, rule.tpe, rule.sym.loc)))
+          (bodyConstrs, bodyTypes, bodyPurs, bodyEffs) <- seqM(bodies map visitExp).map(unzip4)
+          resultTyp <- unifyTypeM(bodyTypes, loc)
+          resultPur = Type.mkAnd(pur :: bodyPurs, loc)
+          resultEff = Type.mkUnion(eff :: bodyEffs, loc)
+        } yield (constrs ++ bodyConstrs.flatten, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.Choose(star, exps0, rules0, tvar, loc) =>
 
@@ -1547,11 +1557,11 @@ object Typer {
         } yield (constrs.flatten, resultTyp, resultPur, resultEff)
 
 
-      case KindedAst.Expression.NewChannel(exp, declaredType, loc) =>
+      case KindedAst.Expression.NewChannel(exp, elmType, loc) =>
         for {
           (constrs, tpe, _, eff) <- visitExp(exp)
           _ <- expectTypeM(expected = Type.Int32, actual = tpe, exp.loc)
-          resultTyp <- liftM(Type.mkChannel(declaredType, loc))
+          resultTyp <- liftM(Type.mkChannel(elmType, loc))
           resultPur = Type.Impure
           resultEff = eff
         } yield (constrs, resultTyp, resultPur, resultEff)
@@ -1879,8 +1889,6 @@ object Typer {
 
       case KindedAst.Expression.Str(lit, loc) => TypedAst.Expression.Str(lit, loc)
 
-      case KindedAst.Expression.Default(tvar, loc) => TypedAst.Expression.Default(subst0(tvar), loc)
-
       case KindedAst.Expression.Apply(exp, exps, tvar, pvar, evar, loc) =>
         val e = visitExp(exp, subst0)
         val es = exps.map(visitExp(_, subst0))
@@ -1969,6 +1977,23 @@ object Typer {
           case (acc, TypedAst.MatchRule(_, g, b)) => Type.mkUnion(List(g.eff, b.eff, acc), loc)
         }
         TypedAst.Expression.Match(e1, rs, tpe, pur, eff, loc)
+
+      case KindedAst.Expression.TypeMatch(matchExp, rules, loc) =>
+        val e1 = visitExp(matchExp, subst0)
+        val rs = rules map {
+          case KindedAst.MatchTypeRule(sym, tpe0, exp) =>
+            val t = subst0(tpe0)
+            val b = visitExp(exp, subst0)
+            TypedAst.MatchTypeRule(sym, t, b)
+        }
+        val tpe = rs.head.exp.tpe
+        val pur = rs.foldLeft(e1.pur) {
+          case (acc, TypedAst.MatchTypeRule(_, _, b)) => Type.mkAnd(b.pur, acc, loc)
+        }
+        val eff = rs.foldLeft(e1.eff) {
+          case (acc, TypedAst.MatchTypeRule(_, _, b)) => Type.mkUnion(List(b.eff, acc), loc)
+        }
+        TypedAst.Expression.TypeMatch(e1, rs, tpe, pur, eff, loc)
 
       case KindedAst.Expression.Choose(_, exps, rules, tvar, loc) =>
         val es = exps.map(visitExp(_, subst0))
@@ -2223,11 +2248,11 @@ object Typer {
         val ms = methods map visitJvmMethod
         TypedAst.Expression.NewObject(name, clazz, tpe, pur, eff, ms, loc)
 
-      case KindedAst.Expression.NewChannel(exp, tpe, loc) =>
+      case KindedAst.Expression.NewChannel(exp, elmType, loc) =>
         val e = visitExp(exp, subst0)
         val pur = Type.Impure
         val eff = e.eff
-        TypedAst.Expression.NewChannel(e, Type.mkChannel(tpe, loc), pur, eff, loc)
+        TypedAst.Expression.NewChannel(e, Type.mkChannel(subst0(elmType), loc), pur, eff, loc)
 
       case KindedAst.Expression.GetChannel(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)

@@ -1,8 +1,8 @@
-use RedBlackTree.RedBlackTree
-use RedBlackTree.RedBlackTree.{Node}
-use RedBlackTree.Color.{Red, Black}
-
 namespace TestRedBlackTree {
+
+    use RedBlackTree.RedBlackTree
+    use RedBlackTree.RedBlackTree.{Node}
+    use RedBlackTree.Color.{Red, Black}
 
     @test
     def testSize01(): Bool =

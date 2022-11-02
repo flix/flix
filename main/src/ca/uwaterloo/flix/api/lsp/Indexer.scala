@@ -197,9 +197,6 @@ object Indexer {
     case Expression.Str(_, _) =>
       Index.occurrenceOf(exp0)
 
-    case Expression.Default(_, _) =>
-      Index.occurrenceOf(exp0)
-
     case Expression.Wild(_, _) =>
       Index.occurrenceOf(exp0)
 
@@ -256,6 +253,13 @@ object Indexer {
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
       val i1 = traverse(rules) {
         case MatchRule(pat, guard, exp) => visitPat(pat) ++ visitExp(guard) ++ visitExp(exp)
+      }
+      i0 ++ i1
+
+    case Expression.TypeMatch(exp, rules, _, _, _, _) =>
+      val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
+      val i1 = traverse(rules) {
+        case MatchTypeRule(sym, tpe, exp) => Index.occurrenceOf(sym, tpe) ++ visitExp(exp)
       }
       i0 ++ i1
 

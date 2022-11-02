@@ -78,8 +78,6 @@ object Regions {
 
     case Expression.Str(_, _) => ().toSuccess
 
-    case Expression.Default(_, _) => ().toSuccess
-
     case Expression.Wild(_, _) => ().toSuccess
 
     case Expression.Var(_, tpe, loc) => checkType(tpe, loc)
@@ -145,6 +143,17 @@ object Regions {
       val rulesVal = traverse(rules) {
         case MatchRule(pat, guard, body) => flatMapN(visitExp(guard), visitExp(body)) {
           case (g, b) => ().toSuccess
+        }
+      }
+      flatMapN(matchVal, rulesVal) {
+        case (m, rs) => checkType(tpe, loc)
+      }
+
+    case Expression.TypeMatch(exp, rules, tpe, _, _, loc) =>
+      val matchVal = visitExp(exp)
+      val rulesVal = traverse(rules) {
+        case MatchTypeRule(_, _, body) => flatMapN(visitExp(body)) {
+          case b => ().toSuccess
         }
       }
       flatMapN(matchVal, rulesVal) {

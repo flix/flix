@@ -726,7 +726,7 @@ namespace Test/Exp/Regions {
         region _ {
             region r2 {
                 region r3 {
-                    let a: Array[MutMap[Int32, MutList[Int32, r3], r2], Static] = [$DEFAULT$; 8] @ Static;
+                    let a: Array[MutMap[Int32, MutList[Int32, r3], r2], Static] = [Reflect.default(); 8] @ Static;
                     let m = new MutMap(r2);
                     let l = new MutList(r3);
                     MutList.push!(1, l);
@@ -1365,7 +1365,7 @@ namespace Test/Exp/Regions {
         region _ {
             region r2 {
                 region r3 {
-                    let a: Ref[Array[Ref[MutMap[Int32, Ref[MutList[Int32, r3], Static], r2], r3], Static], r2] = ref [$DEFAULT$; 8] @ Static @ r2;
+                    let a: Ref[Array[Ref[MutMap[Int32, Ref[MutList[Int32, r3], Static], r2], r3], Static], r2] = ref [Reflect.default(); 8] @ Static @ r2;
                     let m = ref new MutMap(r2) @ r3;
                     let l = ref new MutList(r3) @ Static;
                     MutList.push!(1, deref l);

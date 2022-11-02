@@ -278,8 +278,6 @@ object Redundancy {
 
     case Expression.Str(_, _) => Used.empty
 
-    case Expression.Default(_, _) => Used.empty
-
     case Expression.Wild(_, _) => Used.empty
 
     case Expression.Var(sym, _, loc) => (sym.isWild, rc.vars.contains(sym)) match {
@@ -453,6 +451,34 @@ object Redundancy {
 
           // Combine everything together.
           (usedPatGuardAndBody -- fvs) ++ unusedVarSyms ++ shadowedVarSyms
+      }
+
+      usedMatch ++ usedRules.reduceLeft(_ ++ _)
+
+    case Expression.TypeMatch(exp, rules, _, _, _, _) =>
+      // Visit the match expression.
+      val usedMatch = visitExp(exp, env0, rc)
+
+      // Visit each match rule.
+      val usedRules = rules map {
+        case MatchTypeRule(sym, _, body) =>
+          // Get the free var from the sym
+          val fvs = Set(sym)
+
+          // Extend the environment with the free variables.
+          val extendedEnv = env0 ++ fvs
+
+          // Visit the pattern, guard and body.
+          val usedBody = visitExp(body, extendedEnv, rc)
+
+          // Check for unused variable symbols.
+          val unusedVarSyms = fvs.filter(sym => deadVarSym(sym, usedBody)).map(UnusedVarSym)
+
+          // Check for shadowed variable symbols.
+          val shadowedVarSyms = fvs.map(sym => shadowing(sym, env0)).foldLeft(Used.empty)(_ ++ _)
+
+          // Combine everything together.
+          (usedBody -- fvs) ++ unusedVarSyms ++ shadowedVarSyms
       }
 
       usedMatch ++ usedRules.reduceLeft(_ ++ _)

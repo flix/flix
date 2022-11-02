@@ -19,6 +19,7 @@ import scala.annotation.tailrec
   * Performs safety and well-formedness checks on:
   *  - Datalog constraints
   *  - Anonymous objects
+  *  - TypeMatch expressions
   */
 object Safety {
 
@@ -87,8 +88,6 @@ object Safety {
 
       case Expression.Str(_, _) => Nil
 
-      case Expression.Default(_, _) => Nil
-
       case Expression.Wild(_, _) => Nil
 
       case Expression.Var(_, _, _) => Nil
@@ -135,6 +134,17 @@ object Safety {
       case Expression.Match(exp, rules, _, _, _, _) =>
         visit(exp) :::
           rules.flatMap { case MatchRule(_, g, e) => visit(g) ::: visit(e) }
+
+      case Expression.TypeMatch(exp, rules, _, _, _, _) =>
+        // check whether the last case in the type match looks like `...: _`
+        val missingDefault = rules.last match {
+          case MatchTypeRule(_, tpe, _) => tpe match {
+            case Type.Var(sym, _) if renv.isFlexible(sym) => Nil
+            case _ => List(SafetyError.MissingDefaultMatchTypeCase(exp.loc))
+          }
+        }
+        visit(exp) ::: missingDefault :::
+          rules.flatMap { case MatchTypeRule(_, _, e) => visit(e) }
 
       case Expression.Choose(exps, rules, _, _, _, _) =>
         exps.flatMap(visit) :::
@@ -629,8 +639,9 @@ object Safety {
     val implemented = flixMethods.keySet
 
     val javaMethods = getJavaMethodSignatures(clazz)
+    val objectMethods = getJavaMethodSignatures(classOf[Object]).keySet
     val canImplement = javaMethods.keySet
-    val mustImplement = canImplement.filter(m => isAbstractMethod(javaMethods(m)))
+    val mustImplement = canImplement.filter(m => isAbstractMethod(javaMethods(m)) && !objectMethods.contains(m))
 
     //
     // Check that there are no unimplemented methods.

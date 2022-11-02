@@ -19,7 +19,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation, Fixity, Modifiers, Polarity}
-import ca.uwaterloo.flix.language.ast.TypedAst.Expression.NewChannel
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
@@ -54,6 +53,13 @@ object Lowering {
 
     lazy val DebugWithPrefix: Symbol.DefnSym = Symbol.mkDefnSym("debugWithPrefix")
 
+    lazy val ChannelNew: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.newChannel")
+    lazy val ChannelPut: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.put")
+    lazy val ChannelGet: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.get")
+    lazy val ChannelMpmcAdmin: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.mpmcAdmin")
+    lazy val ChannelSelectFrom: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.selectFrom")
+    lazy val ChannelUnsafeGetAndUnlock: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.unsafeGetAndUnlock")
+
     /**
       * Returns the definition associated with the given symbol `sym`.
       */
@@ -85,6 +91,11 @@ object Lowering {
     lazy val Boxed: Symbol.EnumSym = Symbol.mkEnumSym("Boxed")
 
     lazy val FList: Symbol.EnumSym = Symbol.mkEnumSym("List")
+
+    lazy val ChannelMpmc: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent/Channel.Mpmc")
+    lazy val ChannelMpmcAdmin: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent/Channel.MpmcAdmin")
+
+    lazy val ConcurrentReentrantLock: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent/ReentrantLock.ReentrantLock")
   }
 
   private object Sigs {
@@ -119,6 +130,10 @@ object Lowering {
 
     lazy val Comparison: Type = Type.mkEnum(Enums.Comparison, Nil, SourceLocation.Unknown)
     lazy val Boxed: Type = Type.mkEnum(Enums.Boxed, Nil, SourceLocation.Unknown)
+
+    lazy val ChannelMpmcAdmin: Type = Type.mkEnum(Enums.ChannelMpmcAdmin, Nil, SourceLocation.Unknown)
+
+    lazy val ConcurrentReentrantLock: Type = Type.mkEnum(Enums.ConcurrentReentrantLock, Nil, SourceLocation.Unknown)
 
     def mkList(t: Type, loc: SourceLocation): Type = Type.mkEnum(Enums.FList, List(t), loc)
 
@@ -270,10 +285,6 @@ object Lowering {
 
     case Expression.Str(_, _) => exp0
 
-    case Expression.Default(tpe, loc) =>
-      val t = visitType(tpe)
-      Expression.Default(t, loc)
-
     case Expression.Wild(tpe, loc) =>
       val t = visitType(tpe)
       Expression.Wild(t, loc)
@@ -362,6 +373,12 @@ object Lowering {
       val rs = rules.map(visitMatchRule)
       val t = visitType(tpe)
       Expression.Match(e, rs, t, pur, eff, loc)
+
+    case Expression.TypeMatch(exp, rules, tpe, pur, eff, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map(visitMatchTypeRule)
+      val t = visitType(tpe)
+      Expression.TypeMatch(e, rs, t, pur, eff, loc)
 
     case Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
       val es = visitExps(exps)
@@ -536,27 +553,72 @@ object Lowering {
       val ms = methods.map(visitJvmMethod)
       Expression.NewObject(name, clazz, t, pur, eff, ms, loc)
 
+    // New channel expressions are rewritten as follows:
+    //     chan Int32 10
+    // becomes a call to the standard library function:
+    //     Concurrent/Channel.newChannel(10)
+    //
     case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.NewChannel(e, t, pur, eff, loc)
+      mkNewChannel(e, t, pur, eff, loc)
 
+    // Channel get expressions are rewritten as follows:
+    //     <- c
+    // becomes a call to the standard library function:
+    //     Concurrent/Channel.get(c)
+    //
     case Expression.GetChannel(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.GetChannel(e, t, pur, eff, loc)
+      mkGetChannel(e, t, pur, eff, loc)
 
-    case Expression.PutChannel(exp1, exp2, tpe, pur, eff, loc) =>
+    // Channel put expressions are rewritten as follows:
+    //     c <- 42
+    // becomes a call to the standard library function:
+    //     Concurrent/Channel.put(42, c)
+    //
+    case Expression.PutChannel(exp1, exp2, _, pur, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      val t = visitType(tpe)
-      Expression.PutChannel(e1, e2, t, pur, eff, loc)
+      mkPutChannel(e1, e2, pur, eff, loc)
 
+    // Channel select expressions are rewritten as follows:
+    //     select {
+    //         case x <- ?ch1 => ?handlech1
+    //         case y <- ?ch2 => ?handlech2
+    //         case _ => ?default
+    //     }
+    // becomes:
+    //     let ch1 = ?ch1;
+    //     let ch2 = ?ch2;
+    //     match selectFrom([mpmcAdmin(ch1), mpmcAdmin(ch2)]) @ Static, false) {  // true if no default
+    //         case (0, locks) =>
+    //             let x = unsafeGetAndUnlock(ch1, locks);
+    //             ?handlech1
+    //         case (1, locks) =>
+    //             let y = unsafeGetAndUnlock(ch2, locks);
+    //             ?handlech2
+    //         case (-1, _) =>                                                  // Omitted if no default
+    //             ?default                                                     // Unlock is handled by selectFrom
+    //     }
+    // Note: match is not exhaustive: we're relying on the simplifier to handle this for us
+    //
     case Expression.SelectChannel(rules, default, tpe, pur, eff, loc) =>
       val rs = rules.map(visitSelectChannelRule)
       val d = default.map(visitExp)
       val t = visitType(tpe)
-      Expression.SelectChannel(rs, d, t, pur, eff, loc)
+
+      val channels = rs map { case SelectChannelRule(_, c, _) => (mkLetSym("chan", loc), c) }
+      val adminArray = mkChannelAdminArray(rs, channels, loc)
+      val selectExp = mkChannelSelect(adminArray, d, loc)
+      val cases = mkChannelCases(rs, channels, pur, eff, loc)
+      val defaultCase = mkSelectDefaultCase(d, t, loc)
+      val matchExp = Expression.Match(selectExp, cases ++ defaultCase, t, pur, eff, loc)
+
+      channels.foldRight[Expression](matchExp) {
+        case ((sym, c), e) => Expression.Let(sym, Modifiers.Empty, c, e, t, pur, eff, loc)
+      }
 
     case Expression.Spawn(exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
@@ -768,6 +830,10 @@ object Lowering {
         case _ => tpe0
       }
 
+      // Special case for Channel[_], which is rewritten to Concurrent/Channel.Mpmc
+      case Type.Cst(TypeConstructor.Channel, loc) =>
+        Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc)
+
       case Type.Cst(_, _) => tpe0
 
       case Type.Apply(tpe1, tpe2, loc) =>
@@ -837,6 +903,15 @@ object Lowering {
       val g = visitExp(guard)
       val e = visitExp(exp)
       MatchRule(p, g, e)
+  }
+
+  /**
+    * Lowers the given match rule `rule0`.
+    */
+  private def visitMatchTypeRule(rule0: MatchTypeRule)(implicit root: Root, flix: Flix): MatchTypeRule = rule0 match {
+    case MatchTypeRule(sym, tpe, exp) =>
+      val e = visitExp(exp)
+      MatchTypeRule(sym, tpe, e)
   }
 
   /**
@@ -1246,6 +1321,94 @@ object Lowering {
   }
 
   /**
+    * Make a new channel expression
+    */
+  private def mkNewChannel(exp: Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation): Expression = {
+    val newChannel = Expression.Def(Defs.ChannelNew, Type.mkImpureArrow(exp.tpe, tpe, loc), loc)
+    Expression.Apply(newChannel, exp :: Nil, tpe, pur, eff, loc)
+  }
+
+  /**
+    * Make a channel get expression
+    */
+  private def mkGetChannel(exp: Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation): Expression = {
+    val getChannel = Expression.Def(Defs.ChannelGet, Type.mkImpureArrow(exp.tpe, tpe, loc), loc)
+    Expression.Apply(getChannel, exp :: Nil, tpe, pur, eff, loc)
+  }
+
+  /**
+    * Make a channel put expression
+    */
+  private def mkPutChannel(exp1: Expression, exp2: Expression, pur: Type, eff: Type, loc: SourceLocation): Expression = {
+    val putChannel = Expression.Def(Defs.ChannelPut, Type.mkImpureUncurriedArrow(List(exp2.tpe, exp1.tpe), Type.Unit, loc), loc)
+    Expression.Apply(putChannel, List(exp2, exp1), Type.Unit, pur, eff, loc)
+  }
+
+  /**
+    * Make the array of MpmcAdmin objects which will be passed to `selectFrom`
+    */
+  private def mkChannelAdminArray(rs: List[SelectChannelRule], channels: List[(Symbol.VarSym, Expression)], loc: SourceLocation): Expression = {
+    val admins = rs.zip(channels) map {
+      case (SelectChannelRule(_, c, _), (chanSym, _)) =>
+        val admin = Expression.Def(Defs.ChannelMpmcAdmin, Type.mkPureArrow(c.tpe, Types.ChannelMpmcAdmin, loc), loc)
+        Expression.Apply(admin, List(Expression.Var(chanSym, c.tpe, loc)), Types.ChannelMpmcAdmin, Type.Pure, Type.Empty, loc)
+    }
+    mkArray(admins, Types.ChannelMpmcAdmin, loc)
+  }
+
+  /**
+    * Construct a call to `selectFrom` given an array of MpmcAdmin objects and optional default
+    */
+  private def mkChannelSelect(adminArray: Expression, default: Option[Expression], loc: SourceLocation): Expression = {
+    val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
+
+    val selectRetTpe = Type.mkTuple(List(Type.Int32, locksType), loc)
+    val selectTpe = Type.mkImpureUncurriedArrow(List(adminArray.tpe, Type.Bool), selectRetTpe, loc)
+    val select = Expression.Def(Defs.ChannelSelectFrom, selectTpe, loc)
+    val blocking = default match {
+      case Some(_) => Expression.False(loc)
+      case None => Expression.True(loc)
+    }
+    Expression.Apply(select, List(adminArray, blocking), selectRetTpe, Type.Impure, Type.Empty, loc)
+  }
+
+  /**
+    * Construct a sequence of MatchRules corresponding to the given SelectChannelRules
+    */
+  private def mkChannelCases(rs: List[SelectChannelRule], channels: List[(Symbol.VarSym, Expression)], pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): List[MatchRule] = {
+    val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
+
+    rs.zip(channels).zipWithIndex map {
+      case ((SelectChannelRule(sym, chan, exp), (chSym, _)), i) =>
+        val locksSym = mkLetSym("locks", loc)
+        val pat = mkTuplePattern(List(Pattern.Int32(i, loc), Pattern.Var(locksSym, locksType, loc)), loc)
+        val getTpe = Type.eraseTopAliases(chan.tpe) match {
+          case Type.Apply(_, t, _) => t
+          case _ => throw InternalCompilerException("Unexpected channel type found.")
+        }
+        val get = Expression.Def(Defs.ChannelUnsafeGetAndUnlock, Type.mkImpureUncurriedArrow(List(chan.tpe, locksType), getTpe, loc), loc)
+        val getExp = Expression.Apply(get, List(Expression.Var(chSym, chan.tpe, loc), Expression.Var(locksSym, locksType, loc)), getTpe, pur, eff, loc)
+        val e = Expression.Let(sym, Ast.Modifiers.Empty, getExp, exp, exp.tpe, pur, eff, loc)
+        MatchRule(pat, Expression.True(loc), e)
+    }
+  }
+
+  /**
+    * Construct additional MatchRule to handle the (optional) default case
+    * NB: Does not need to unlock because that is handled inside Concurrent/Channel.selectFrom.
+    */
+  private def mkSelectDefaultCase(default: Option[Expression], t: Type, loc: SourceLocation)(implicit flix: Flix): List[MatchRule] = {
+    default match {
+      case Some(defaultExp) =>
+        val pat = mkTuplePattern(List(Pattern.Int32(-1, loc), mkWildPattern(loc)), loc)
+        val defaultMatch = MatchRule(pat, Expression.True(loc), defaultExp)
+        List(defaultMatch)
+      case _ =>
+        List()
+    }
+  }
+
+  /**
     * Lifts the given lambda expression `exp0` with the given argument types `argTypes`.
     *
     * Note: liftX and liftXb are similar and should probably be maintained together.
@@ -1368,6 +1531,20 @@ object Lowering {
   }
 
   /**
+    * The type of a channel which can transmit variables of type `tpe`
+    */
+  private def mkChannelTpe(tpe: Type, loc: SourceLocation): Type = {
+    Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), tpe, loc)
+  }
+
+  /**
+    * An expression for a channel variable called `sym`
+    */
+  private def mkChannelExp(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation): Expression = {
+    Expression.Var(sym, mkChannelTpe(tpe, loc), loc)
+  }
+
+  /**
     * Returns a list of `GetChannel` expressions based on `symExps`.
     */
   private def mkParWaits(symExps: List[(Symbol.VarSym, Expression)]): List[Expression] = {
@@ -1375,9 +1552,8 @@ object Lowering {
     symExps.map {
       case (sym, e) =>
         val loc = e.loc.asSynthetic
-        Expression.GetChannel(
-          Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc),
-          e.tpe, Type.Impure, e.eff, loc)
+        val chExp = mkChannelExp(sym, e.tpe, loc)
+        mkGetChannel(chExp, e.tpe, Type.Impure, e.eff, loc)
     }
   }
 
@@ -1389,8 +1565,8 @@ object Lowering {
     val spawns = chanSymsWithExps.foldRight(exp: Expression) {
       case ((sym, e), acc) =>
         val loc = e.loc.asSynthetic
-        val e1 = Expression.Var(sym, Type.mkChannel(e.tpe, loc), loc) // The channel `ch`
-        val e2 = Expression.PutChannel(e1, e, Type.Unit, Type.Impure, Type.mkUnion(e.eff, e1.eff, loc), loc) // The put exp: `ch <- exp0`.
+        val e1 = mkChannelExp(sym, e.tpe, loc) // The channel `ch`
+        val e2 = mkPutChannel(e1, e, Type.Impure, Type.mkUnion(e.eff, e1.eff, loc), loc) // The put exp: `ch <- exp0`.
         val e3 = Expression.Spawn(e2, Type.Unit, Type.Impure, e2.eff, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
         Expression.Stm(e3, acc, e1.tpe, Type.mkAnd(e3.pur, acc.pur, loc), Type.mkUnion(e3.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
     }
@@ -1399,7 +1575,7 @@ object Lowering {
     chanSymsWithExps.foldRight(spawns: Expression) {
       case ((sym, e), acc) =>
         val loc = e.loc.asSynthetic
-        val chan = Expression.NewChannel(Expression.Int32(1, loc), Type.mkChannel(e.tpe, loc), Type.Impure, Type.Empty, loc) // The channel exp `chan 1`
+        val chan = mkNewChannel(Expression.Int32(1, loc), mkChannelTpe(e.tpe, loc), Type.Impure, Type.Empty, loc) // The channel exp `chan 1`
         Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), chan, acc, acc.tpe, Type.mkAnd(e.pur, acc.pur, loc), Type.mkUnion(e.eff, acc.eff, loc), loc) // The let-binding `let ch = chan 1`
     }
   }
@@ -1445,6 +1621,20 @@ object Lowering {
     val tpe = Type.mkImpureUncurriedArrow(exp1.tpe :: exp2.tpe :: Nil, exp2.tpe, loc)
     val innerExp = Expression.Def(Defs.DebugWithPrefix, tpe, loc)
     Expression.Apply(innerExp, exp1 :: exp2 :: Nil, exp2.tpe, Type.Impure, Type.Empty, loc)
+  }
+
+  /**
+    * Returns a Pattern representing a tuple of patterns.
+    */
+  def mkTuplePattern(patterns: List[Pattern], loc: SourceLocation): Pattern = {
+    Pattern.Tuple(patterns, Type.mkTuple(patterns.map(_.tpe), loc), loc)
+  }
+
+  /**
+    * Returns a wilcard (match anything) pattern.
+    */
+  def mkWildPattern(loc: SourceLocation)(implicit flix: Flix): Pattern = {
+    Pattern.Wild(Type.freshVar(Kind.Star, loc, text = Ast.VarText.FallbackText("wild")), loc)
   }
 
   /**
@@ -1501,8 +1691,6 @@ object Lowering {
     case Expression.BigInt(_, _) => exp0
 
     case Expression.Str(_, _) => exp0
-
-    case Expression.Default(_, _) => exp0
 
     case Expression.Wild(_, _) => exp0
 
@@ -1571,6 +1759,8 @@ object Lowering {
       Expression.Discard(e, pur, eff, loc)
 
     case Expression.Match(_, _, _, _, _, _) => ??? // TODO
+
+    case Expression.TypeMatch(_, _, _, _, _, _) => ??? // TODO
 
     case Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
       val es = exps.map(substExp(_, subst))

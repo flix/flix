@@ -54,8 +54,6 @@ object TypedAstOps {
 
       case Expression.Str(lit, loc) => Map.empty
 
-      case Expression.Default(tpe, loc) => Map.empty
-
       case Expression.Lambda(fparam, exp, tpe, loc) =>
         val env1 = Map(fparam.sym -> fparam.tpe)
         visitExp(exp, env0 ++ env1)
@@ -99,6 +97,13 @@ object TypedAstOps {
         rules.foldLeft(m) {
           case (macc, MatchRule(pat, guard, exp)) =>
             macc ++ visitExp(guard, env0) ++ visitExp(exp, binds(pat) ++ env0)
+        }
+
+      case Expression.TypeMatch(matchExp, rules, _, _, _, _) =>
+        val m = visitExp(matchExp, env0)
+        rules.foldLeft(m) {
+          case (macc, MatchTypeRule(sym, tpe, exp)) =>
+            macc ++ visitExp(exp, Map(sym -> tpe) ++ env0)
         }
 
       case Expression.Choose(exps, rules, _, _, _, _) =>
@@ -389,7 +394,6 @@ object TypedAstOps {
     case Expression.Int64(_, _) => Set.empty
     case Expression.BigInt(_, _) => Set.empty
     case Expression.Str(_, _) => Set.empty
-    case Expression.Default(_, _) => Set.empty
     case Expression.Wild(_, _) => Set.empty
     case Expression.Var(_, _, _) => Set.empty
     case Expression.Def(_, _, _) => Set.empty
@@ -407,6 +411,7 @@ object TypedAstOps {
     case Expression.Stm(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Discard(exp, _, _, _) => sigSymsOf(exp)
     case Expression.Match(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ sigSymsOf(rule.guard))
+    case Expression.TypeMatch(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.Choose(exps, rules, _, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.Tag(_, exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Tuple(elms, _, _, _, _) => elms.flatMap(sigSymsOf).toSet
@@ -517,8 +522,6 @@ object TypedAstOps {
 
     case Expression.Str(_, _) => Map.empty
 
-    case Expression.Default(_, _) => Map.empty
-
     case Expression.Wild(_, _) => Map.empty
 
     case Expression.Var(sym, tpe, _) => Map(sym -> tpe)
@@ -567,6 +570,11 @@ object TypedAstOps {
     case Expression.Match(exp, rules, _, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
         case (acc, MatchRule(pat, guard, exp)) => acc ++ (freeVars(guard) ++ freeVars(exp)) -- freeVars(pat).keys
+      }
+
+    case Expression.TypeMatch(exp, rules, _, _, _, _) =>
+      rules.foldLeft(freeVars(exp)) {
+        case (acc, MatchTypeRule(sym, _, exp)) => acc ++ (freeVars(exp) - sym)
       }
 
     case Expression.Choose(exps, rules, _, _, _, _) =>

@@ -115,6 +115,9 @@ class Flix {
     // Boxable
     "Boxable.flix" -> LocalResource.get("/src/library/Boxable.flix"),
     "Boxed.flix" -> LocalResource.get("/src/library/Boxed.flix"),
+
+    // Reflect
+    "Reflect.flix" -> LocalResource.get("/src/library/Reflect.flix")
   )
 
   /**

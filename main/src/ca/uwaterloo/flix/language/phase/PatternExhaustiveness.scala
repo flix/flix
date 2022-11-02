@@ -150,7 +150,6 @@ object PatternExhaustiveness {
       case Expression.Int64(_, _) => Nil
       case Expression.BigInt(_, _) => Nil
       case Expression.Str(_, _) => Nil
-      case Expression.Default(_, _) => Nil
       case Expression.Lambda(_, body, _, _) => visitExp(body, root)
       case Expression.Apply(exp, exps, _, _, _, _) => (exp :: exps).flatMap(visitExp(_, root))
       case Expression.Unary(_, exp, _, _, _, _) => visitExp(exp, root)
@@ -169,6 +168,11 @@ object PatternExhaustiveness {
         val expsErrs = (exp :: ruleExps ::: guards).flatMap(visitExp(_, root))
         val rulesErrs = checkRules(exp, rules, root)
         expsErrs ::: rulesErrs
+
+      case Expression.TypeMatch(exp, rules, _, _, _, _) =>
+        val ruleExps = rules.map(_.exp)
+        val expsErrs = (exp :: ruleExps).flatMap(visitExp(_, root))
+        expsErrs
 
       case Expression.Choose(exps, rules, _, _, _, _) =>
         val ruleExps = rules.map(_.exp)

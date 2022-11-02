@@ -115,8 +115,6 @@ object WeededAst {
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Default(loc: SourceLocation) extends WeededAst.Expression
-
     case class Apply(exp: WeededAst.Expression, exps: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class Lambda(fparam: WeededAst.FormalParam, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
@@ -140,6 +138,8 @@ object WeededAst {
     case class Scope(ident: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Match(exp: WeededAst.Expression, rules: List[WeededAst.MatchRule], loc: SourceLocation) extends WeededAst.Expression
+
+    case class TypeMatch(exp: WeededAst.Expression, rules: List[WeededAst.MatchTypeRule], loc: SourceLocation) extends WeededAst.Expression
 
     case class Choose(star: Boolean, exps: List[WeededAst.Expression], rules: List[WeededAst.ChoiceRule], loc: SourceLocation) extends WeededAst.Expression
 
@@ -209,7 +209,7 @@ object WeededAst {
 
     case class NewObject(tpe: WeededAst.Type, methods: List[JvmMethod], loc: SourceLocation) extends WeededAst.Expression
 
-    case class NewChannel(exp: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
+    case class NewChannel(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class GetChannel(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
@@ -441,6 +441,8 @@ object WeededAst {
   case class Constraint(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation)
 
   case class MatchRule(pat: WeededAst.Pattern, guard: WeededAst.Expression, exp: WeededAst.Expression)
+
+  case class MatchTypeRule(ident: Name.Ident, tpe: WeededAst.Type, exp: WeededAst.Expression)
 
   case class SelectChannelRule(ident: Name.Ident, channel: WeededAst.Expression, exp: WeededAst.Expression)
 

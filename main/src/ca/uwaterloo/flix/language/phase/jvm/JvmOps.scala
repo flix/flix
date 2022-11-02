@@ -649,18 +649,6 @@ object JvmOps {
           case (sacc, JvmMethod(_, _, clo, _, _)) => sacc ++ visitExp(clo)
         }
 
-      case Expression.NewChannel(exp, _, _) => visitExp(exp)
-
-      case Expression.GetChannel(exp, _, _) => visitExp(exp)
-
-      case Expression.PutChannel(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
-
-      case Expression.SelectChannel(rules, default, _, _) =>
-        val rs = rules.foldLeft(Set.empty[ClosureInfo])((old, rule) =>
-          old ++ visitExp(rule.chan) ++ visitExp(rule.exp))
-        val d = default.map(visitExp).getOrElse(Set.empty)
-        rs ++ d
-
       case Expression.Spawn(exp, _, _) => visitExp(exp)
 
       case Expression.Lazy(exp, _, _) => visitExp(exp)
@@ -1034,17 +1022,6 @@ object JvmOps {
             sacc ++ fs ++ visitExp(clo)
       }
 
-      case Expression.NewChannel(exp, _, _) => visitExp(exp)
-
-      case Expression.GetChannel(exp, _, _) => visitExp(exp)
-
-      case Expression.PutChannel(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
-
-      case Expression.SelectChannel(rules, default, _, _) =>
-        val rs = rules.foldLeft(Set.empty[MonoType])((old, rule) => old ++ visitExp(rule.chan) ++ visitExp(rule.exp))
-        val d = default.map(visitExp).getOrElse(Set.empty)
-        rs ++ d
-
       case Expression.Spawn(exp, _, _) => visitExp(exp)
 
       case Expression.Lazy(exp, _, _) => visitExp(exp)
@@ -1307,17 +1284,6 @@ object JvmOps {
       case Expression.PutStaticField(_, exp, _, _) => visitExp(exp)
 
       case obj: Expression.NewObject => Set(obj)
-
-      case Expression.NewChannel(exp, _, _) => visitExp(exp)
-
-      case Expression.GetChannel(exp, _, _) => visitExp(exp)
-
-      case Expression.PutChannel(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
-
-      case Expression.SelectChannel(rules, default, _, _) =>
-        val rs = rules.foldLeft(Set.empty[Expression.NewObject])((old, rule) => old ++ visitExp(rule.chan) ++ visitExp(rule.exp))
-        val d = default.map(visitExp).getOrElse(Set.empty)
-        rs ++ d
 
       case Expression.Spawn(exp, _, _) => visitExp(exp)
 

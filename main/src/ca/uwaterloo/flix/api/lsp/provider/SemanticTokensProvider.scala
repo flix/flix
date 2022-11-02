@@ -315,8 +315,6 @@ object SemanticTokensProvider {
 
     case Expression.Str(_, _) => Iterator.empty
 
-    case Expression.Default(_, _) => Iterator.empty
-
     case Expression.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp)
 
@@ -361,6 +359,15 @@ object SemanticTokensProvider {
       rules.foldLeft(m) {
         case (acc, MatchRule(pat, guard, exp)) =>
           acc ++ visitPat(pat) ++ visitExp(guard) ++ visitExp(exp)
+      }
+
+    case Expression.TypeMatch(matchExp, rules, _, _, _, _) =>
+      val m = visitExp(matchExp)
+      rules.foldLeft(m) {
+        case (acc, MatchTypeRule(sym, tpe, exp)) =>
+          val o = getSemanticTokenType(sym, tpe)
+          val t = SemanticToken(o, Nil, sym.loc)
+          acc ++ Iterator(t) ++ visitType(tpe) ++ visitExp(exp)
       }
 
     case Expression.Choose(exps, rules, tpe, eff, loc, _) =>
