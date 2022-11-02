@@ -11,10 +11,23 @@ pub enum List[t] {
 
 namespace List {
 
-    pub def foldRight(f: (a, b) -> b \ ef, s: b, l: List[a]): b \ ef =
+    pub def breaks(f: Int32 -> Int32 \ ef, s: Int32, l: List[Int32]): Int32 \ ef =
         def loop(ll, k) = match ll {
             case Nil     => k(s)
-            case x :: xs => loop(xs, ks -> k(f(x, ks)))
+            case x :: _ => f(x)
+        };
+        loop(l, upcast(identity))
+
+    pub def works_inlined(f: Int32 -> Int32 \ ef, s: Int32, l: List[Int32]): Int32 \ ef =
+        match l {
+            case Nil => upcast(identity)(s)
+            case x :: _ => f(x)
+        }
+
+    pub def works_no_f(s: Int32, l: List[Int32]): Int32 \ ef =
+        def loop(ll, k) = match ll {
+            case Nil     => k(s)
+            case x :: _ => k(x)
         };
         loop(l, upcast(identity))
 
