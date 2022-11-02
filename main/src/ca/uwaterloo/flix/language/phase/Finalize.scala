@@ -85,6 +85,9 @@ object Finalize {
       case LiftedAst.Expression.Float64(lit, loc) =>
         FinalAst.Expression.Float64(lit, loc)
 
+      case LiftedAst.Expression.BigDecimal(lit, loc) =>
+        FinalAst.Expression.BigDecimal(lit, loc)
+
       case LiftedAst.Expression.Int8(lit, loc) =>
         FinalAst.Expression.Int8(lit, loc)
 
@@ -333,33 +336,6 @@ object Finalize {
         val ms = methods.map(visitJvmMethod(_, m))
         FinalAst.Expression.NewObject(name, clazz, t, ms, loc)
 
-      case LiftedAst.Expression.NewChannel(exp, tpe, loc) =>
-        val e = visit(exp)
-        val t = visitType(tpe)
-        FinalAst.Expression.NewChannel(e, t, loc)
-
-      case LiftedAst.Expression.GetChannel(exp, tpe, loc) =>
-        val e = visit(exp)
-        val t = visitType(tpe)
-        FinalAst.Expression.GetChannel(e, t, loc)
-
-      case LiftedAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
-        val e1 = visit(exp1)
-        val e2 = visit(exp2)
-        val t = visitType(tpe)
-        FinalAst.Expression.PutChannel(e1, e2, t, loc)
-
-      case LiftedAst.Expression.SelectChannel(rules, default, tpe, loc) =>
-        val rs = rules map {
-          case LiftedAst.SelectChannelRule(sym, chan, exp) =>
-            val c = visit(chan)
-            val e = visit(exp)
-            FinalAst.SelectChannelRule(sym, c, e)
-        }
-        val d = default.map(exp => visit(exp))
-        val t = visitType(tpe)
-        FinalAst.Expression.SelectChannel(rs, d, t, loc)
-
       case LiftedAst.Expression.Spawn(exp, tpe, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
@@ -423,6 +399,8 @@ object Finalize {
             case TypeConstructor.Float32 => MonoType.Float32
 
             case TypeConstructor.Float64 => MonoType.Float64
+
+            case TypeConstructor.BigDecimal => MonoType.BigDecimal
 
             case TypeConstructor.Int8 => MonoType.Int8
 

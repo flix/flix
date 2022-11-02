@@ -53,6 +53,8 @@ object SimpleType {
 
   case object Float64 extends SimpleType
 
+  case object BigDecimal extends SimpleType
+
   case object Int8 extends SimpleType
 
   case object Int16 extends SimpleType
@@ -306,6 +308,7 @@ object SimpleType {
         case TypeConstructor.Char => Char
         case TypeConstructor.Float32 => Float32
         case TypeConstructor.Float64 => Float64
+        case TypeConstructor.BigDecimal => BigDecimal
         case TypeConstructor.Int8 => Int8
         case TypeConstructor.Int16 => Int16
         case TypeConstructor.Int32 => Int32

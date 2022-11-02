@@ -59,4 +59,9 @@ namespace Test/Exp/Jvm/InvokeConstructor {
     def testInvokeStaticNestedConstructor01(): ##java.util.Locale$Builder \ IO =
         import new java.util.Locale$Builder(): ##java.util.Locale$Builder as newBuilder;
         newBuilder()
+
+    @test
+    def testInvokeConstructorWithArrayParam(): ##java.net.URLClassLoader \ IO =
+        import new java.net.URLClassLoader(Array[##java.net.URL, _]): ##java.net.URLClassLoader \ IO as newClassLoader;
+        newClassLoader([])
 }

@@ -383,6 +383,16 @@ namespace Int16 {
         (valueOf(x) |> doubleValue)
 
     ///
+    /// Convert `x` to a BigDecimal.
+    ///
+    /// The numeric value of `x` is preserved exactly.
+    ///
+    @Time(1) @Space(1)
+    pub def toBigDecimal(x: Int16): BigDecimal =
+        import new java.math.BigDecimal(Int32): BigDecimal \ {} as fromInt32;
+        Int16.toInt32(x) |> fromInt32
+
+    ///
     /// Helper function for the `clamp` conversion function.
     ///
     def clamp(min: {min = Int16}, max: {max = Int16}, x: Int16): Int16 =

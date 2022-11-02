@@ -82,9 +82,11 @@ object Namer {
        * Namespace.
        */
       case WeededAst.Declaration.Namespace(ns, uses, imports, decls, loc) =>
-        flatMapN(mergeUseEnvs(uses, ns0, uenv0, ienv0, prog0)) {
+        // Note: Opening a new namespace clears all current imports and uses.
+        // Hence we pass empty import and use environments.
+        flatMapN(mergeUseEnvs(uses, ns0, UseEnv.empty, ImportEnv.empty, prog0)) {
           case uenv1 =>
-            flatMapN(mergeImportEnvs(imports, ienv0, uenv1, ns0, prog0)) {
+            flatMapN(mergeImportEnvs(imports, ImportEnv.empty, uenv1, ns0, prog0)) {
               case ienv1 =>
                 Validation.fold(decls, prog0) {
                   case (pacc, decl) =>
@@ -650,6 +652,8 @@ object Namer {
 
     case WeededAst.Expression.Float64(lit, loc) => NamedAst.Expression.Float64(lit, loc).toSuccess
 
+    case WeededAst.Expression.BigDecimal(lit, loc) => NamedAst.Expression.BigDecimal(lit, loc).toSuccess
+
     case WeededAst.Expression.Int8(lit, loc) => NamedAst.Expression.Int8(lit, loc).toSuccess
 
     case WeededAst.Expression.Int16(lit, loc) => NamedAst.Expression.Int16(lit, loc).toSuccess
@@ -661,8 +665,6 @@ object Namer {
     case WeededAst.Expression.BigInt(lit, loc) => NamedAst.Expression.BigInt(lit, loc).toSuccess
 
     case WeededAst.Expression.Str(lit, loc) => NamedAst.Expression.Str(lit, loc).toSuccess
-
-    case WeededAst.Expression.Default(loc) => NamedAst.Expression.Default(loc).toSuccess
 
     case WeededAst.Expression.Apply(exp, exps, loc) =>
       mapN(visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0), traverse(exps)(visitExp(_, env0, uenv0, ienv0, tenv0, ns0, prog0))) {
@@ -752,6 +754,23 @@ object Namer {
       }
       mapN(expVal, rulesVal) {
         case (e, rs) => NamedAst.Expression.Match(e, rs, loc)
+      }
+
+    case WeededAst.Expression.TypeMatch(exp, rules, loc) =>
+      val expVal = visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0)
+      val rulesVal = traverse(rules) {
+        case WeededAst.MatchTypeRule(ident, tpe, body) =>
+          // extend the environment with the variable
+          // and perform naming on the rule body under the extended environment.
+          val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
+          val env1 = Map(ident.name -> sym)
+          val extendedEnv = env0 ++ env1
+          mapN(visitType(tpe, uenv0, ienv0, tenv0), visitExp(body, extendedEnv, uenv0, ienv0, tenv0, ns0, prog0)) {
+            case (t, b) => NamedAst.MatchTypeRule(sym, t, b)
+          }
+      }
+      mapN(expVal, rulesVal) {
+        case (e, rs) => NamedAst.Expression.TypeMatch(e, rs, loc)
       }
 
     case WeededAst.Expression.Choose(star, exps, rules, loc) =>
@@ -1008,9 +1027,9 @@ object Namer {
           NamedAst.Expression.NewObject(name, tpe, ms, loc)
       }
 
-    case WeededAst.Expression.NewChannel(exp, tpe, loc) =>
-      mapN(visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0), visitType(tpe, uenv0, ienv0, tenv0)) {
-        case (e, t) => NamedAst.Expression.NewChannel(e, t, loc)
+    case WeededAst.Expression.NewChannel(exp, loc) =>
+      mapN(visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0)) {
+        case e => NamedAst.Expression.NewChannel(e, loc)
       }
 
     case WeededAst.Expression.GetChannel(exp, loc) =>
@@ -1140,6 +1159,7 @@ object Namer {
       case WeededAst.Pattern.Char(lit, loc) => NamedAst.Pattern.Char(lit, loc)
       case WeededAst.Pattern.Float32(lit, loc) => NamedAst.Pattern.Float32(lit, loc)
       case WeededAst.Pattern.Float64(lit, loc) => NamedAst.Pattern.Float64(lit, loc)
+      case WeededAst.Pattern.BigDecimal(lit, loc) => NamedAst.Pattern.BigDecimal(lit, loc)
       case WeededAst.Pattern.Int8(lit, loc) => NamedAst.Pattern.Int8(lit, loc)
       case WeededAst.Pattern.Int16(lit, loc) => NamedAst.Pattern.Int16(lit, loc)
       case WeededAst.Pattern.Int32(lit, loc) => NamedAst.Pattern.Int32(lit, loc)
@@ -1195,6 +1215,7 @@ object Namer {
       case WeededAst.Pattern.Char(lit, loc) => NamedAst.Pattern.Char(lit, loc)
       case WeededAst.Pattern.Float32(lit, loc) => NamedAst.Pattern.Float32(lit, loc)
       case WeededAst.Pattern.Float64(lit, loc) => NamedAst.Pattern.Float64(lit, loc)
+      case WeededAst.Pattern.BigDecimal(lit, loc) => NamedAst.Pattern.BigDecimal(lit, loc)
       case WeededAst.Pattern.Int8(lit, loc) => NamedAst.Pattern.Int8(lit, loc)
       case WeededAst.Pattern.Int16(lit, loc) => NamedAst.Pattern.Int16(lit, loc)
       case WeededAst.Pattern.Int32(lit, loc) => NamedAst.Pattern.Int32(lit, loc)
@@ -1504,13 +1525,13 @@ object Namer {
     case WeededAst.Expression.Char(_, _) => Nil
     case WeededAst.Expression.Float32(_, _) => Nil
     case WeededAst.Expression.Float64(_, _) => Nil
+    case WeededAst.Expression.BigDecimal(_, _) => Nil
     case WeededAst.Expression.Int8(_, _) => Nil
     case WeededAst.Expression.Int16(_, _) => Nil
     case WeededAst.Expression.Int32(_, _) => Nil
     case WeededAst.Expression.Int64(_, _) => Nil
     case WeededAst.Expression.BigInt(_, _) => Nil
     case WeededAst.Expression.Str(_, _) => Nil
-    case WeededAst.Expression.Default(_) => Nil
     case WeededAst.Expression.Apply(exp, exps, _) => freeVars(exp) ++ exps.flatMap(freeVars)
     case WeededAst.Expression.Lambda(fparam, exp, _) => filterBoundVars(freeVars(exp), List(fparam.ident))
     case WeededAst.Expression.Unary(_, exp, _) => freeVars(exp)
@@ -1524,6 +1545,9 @@ object Namer {
     case WeededAst.Expression.Scope(ident, exp, _) => filterBoundVars(freeVars(exp), List(ident))
     case WeededAst.Expression.Match(exp, rules, _) => freeVars(exp) ++ rules.flatMap {
       case WeededAst.MatchRule(pat, guard, body) => filterBoundVars(freeVars(guard) ++ freeVars(body), freeVars(pat))
+    }
+    case WeededAst.Expression.TypeMatch(exp, rules, _) => freeVars(exp) ++ rules.flatMap {
+      case WeededAst.MatchTypeRule(ident, _, body) => filterBoundVars(freeVars(body), List(ident))
     }
     case WeededAst.Expression.Choose(_, exps, rules, _) => exps.flatMap(freeVars) ++ rules.flatMap {
       case WeededAst.ChoiceRule(pat, exp) => filterBoundVars(freeVars(exp), pat.flatMap(freeVars))
@@ -1567,7 +1591,7 @@ object Namer {
     case WeededAst.Expression.GetStaticField(_, _, _) => Nil
     case WeededAst.Expression.PutStaticField(_, _, exp, _) => freeVars(exp)
     case WeededAst.Expression.NewObject(_, methods, _) => methods.flatMap(m => freeVars(m.exp))
-    case WeededAst.Expression.NewChannel(exp, _, _) => freeVars(exp)
+    case WeededAst.Expression.NewChannel(exp, _) => freeVars(exp)
     case WeededAst.Expression.GetChannel(exp, _) => freeVars(exp)
     case WeededAst.Expression.PutChannel(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.SelectChannel(rules, default, _) =>
@@ -1605,6 +1629,7 @@ object Namer {
     case WeededAst.Pattern.Char(lit, loc) => Nil
     case WeededAst.Pattern.Float32(lit, loc) => Nil
     case WeededAst.Pattern.Float64(lit, loc) => Nil
+    case WeededAst.Pattern.BigDecimal(lit, loc) => Nil
     case WeededAst.Pattern.Int8(lit, loc) => Nil
     case WeededAst.Pattern.Int16(lit, loc) => Nil
     case WeededAst.Pattern.Int32(lit, loc) => Nil

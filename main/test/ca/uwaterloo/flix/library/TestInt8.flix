@@ -888,4 +888,22 @@ namespace TestInt8 {
     @test
     def toFloat6405(): Bool = Int8.toFloat64(-128i8) == -128.0f64
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toBigDecimal                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toBigDecimal01(): Bool = Int8.toBigDecimal(0i8) == 0.0ff
+
+    @test
+    def toBigDecimal02(): Bool = Int8.toBigDecimal(1i8) == 1.0ff
+
+    @test
+    def toBigDecimal03(): Bool = Int8.toBigDecimal(-1i8) == -1.0ff
+
+    @test
+    def toBigDecimal04(): Bool = Int8.toBigDecimal(127i8) == 127.0ff
+
+    @test
+    def toBigDecimal05(): Bool = Int8.toBigDecimal(-128i8) == -128.0ff
+
 }

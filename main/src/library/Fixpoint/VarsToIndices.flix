@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
-
 /// The purpose of this phase is to lower row variables in searches and queries to array indices.
 /// This implies substituting named references to row variables with indices
 /// in where clauses, range queries and project operations.
 namespace Fixpoint {
+
+    use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
 
     @Internal
     pub def lowerStmt(stmt: RamStmt[v]): RamStmt[v] = match stmt {

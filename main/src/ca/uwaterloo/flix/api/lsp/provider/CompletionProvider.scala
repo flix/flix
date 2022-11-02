@@ -26,6 +26,9 @@ import ca.uwaterloo.flix.language.phase.Resolver.DerivableSyms
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 import org.parboiled2.CharPredicate
+import java.lang.reflect.Executable
+import java.lang.reflect.Constructor
+import java.lang.reflect.Method
 
 /**
   * CompletionProvider
@@ -53,6 +56,7 @@ object CompletionProvider {
     "Char",
     "Float32",
     "Float64",
+    "BigDecimal",
     "Int8",
     "Int16",
     "Int32",
@@ -124,7 +128,8 @@ object CompletionProvider {
       getInstanceCompletions() ++
       getTypeCompletions() ++
       getOpCompletions() ++
-      getEffectCompletions()
+      getEffectCompletions() ++
+      getImportCompletions()
   }
 
   /**
@@ -277,11 +282,18 @@ object CompletionProvider {
     iter.toList
   }
 
+  private def isUnitType(tpe: Type): Boolean = tpe == Type.Unit
+
+  private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams(0).tpe)
+
   private def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
     case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, pur0, eff0, _, _) =>
-      val args = fparams.map {
-        fparam => s"${fparam.sym.text}: ${FormatType.formatType(fparam.tpe)}"
-      }
+      val args = if (isUnitFunction(fparams)) 
+        Nil
+      else
+        fparams.map {
+          fparam => s"${fparam.sym.text}: ${FormatType.formatType(fparam.tpe)}"
+        }
 
       val retTpe = FormatType.formatType(retTpe0)
 
@@ -313,20 +325,28 @@ object CompletionProvider {
     * Generate a snippet which represents calling a function.
     * Drops the last one or two arguments in the event that the function is in a pipeline
     * (i.e. is preceeded by `|>`, `!>`, or `||>`)
+    * Returns None if there are two few arguments.
     */
-  private def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam])(implicit context: Context): String = {
+  private def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam])(implicit context: Context): Option[String] = {
     val paramsToDrop = context.previousWord match {
       case "||>" => 2
       case "|>" | "!>" => 1
       case _ => 0
     }
+
+    val functionIsUnit = isUnitFunction(fparams)
+
+    if (paramsToDrop > fparams.length || (functionIsUnit && paramsToDrop > 0)) return None
+
     val args = fparams.dropRight(paramsToDrop).zipWithIndex.map {
       case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.sym.text}}"
     }
-    if (args.nonEmpty)
-      s"$name(${args.mkString(", ")})"
+    if (functionIsUnit)
+      Some(s"$name()")
+    else if (args.nonEmpty)
+      Some(s"$name(${args.mkString(", ")})")
     else
-      name
+      Some(name)
   }
 
   /**
@@ -348,41 +368,45 @@ object CompletionProvider {
     s"${name}("
   }
 
-  private def defCompletion(decl: TypedAst.Def)(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): CompletionItem = {
+  private def defCompletion(decl: TypedAst.Def)(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): Option[CompletionItem] = {
     val name = decl.sym.toString
-    CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
-      sortText = Priority.normal(name),
-      filterText = Some(getFilterTextForName(name)),
-      textEdit = TextEdit(context.range, getApplySnippet(name, decl.spec.fparams)),
-      detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
-      documentation = Some(decl.spec.doc.text),
-      insertTextFormat = InsertTextFormat.Snippet,
-      kind = CompletionItemKind.Function)
+    getApplySnippet(name, decl.spec.fparams).map(snippet => {
+      CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
+        sortText = Priority.normal(name),
+        filterText = Some(getFilterTextForName(name)),
+        textEdit = TextEdit(context.range, snippet),
+        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
+        documentation = Some(decl.spec.doc.text),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Function)
+    })
   }
 
-  private def sigCompletion(decl: TypedAst.Sig)(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): CompletionItem = {
+  private def sigCompletion(decl: TypedAst.Sig)(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): Option[CompletionItem] = {
     val name = decl.sym.toString
-    CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
-      sortText = Priority.normal(name),
-      filterText = Some(getFilterTextForName(name)),
-      textEdit = TextEdit(context.range, getApplySnippet(name, decl.spec.fparams)),
-      detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
-      documentation = Some(decl.spec.doc.text),
-      insertTextFormat = InsertTextFormat.Snippet,
-      kind = CompletionItemKind.Interface)
+    getApplySnippet(name, decl.spec.fparams).map(snippet => 
+      CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
+        sortText = Priority.normal(name),
+        filterText = Some(getFilterTextForName(name)),
+        textEdit = TextEdit(context.range, snippet),
+        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
+        documentation = Some(decl.spec.doc.text),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Interface))
   }
 
-  private def opCompletion(decl: TypedAst.Op)(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): CompletionItem = {
+  private def opCompletion(decl: TypedAst.Op)(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): Option[CompletionItem] = {
     // NB: priority is high because only an op can come after `do`
     val name = decl.sym.toString
-    CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
-      sortText = Priority.high(name),
-      filterText = Some(getFilterTextForName(name)),
-      textEdit = TextEdit(context.range, getApplySnippet(name, decl.spec.fparams)),
-      detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
-      documentation = Some(decl.spec.doc.text),
-      insertTextFormat = InsertTextFormat.Snippet,
-      kind = CompletionItemKind.Interface)
+    getApplySnippet(name, decl.spec.fparams).map(snippet => 
+      CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
+        sortText = Priority.high(name),
+        filterText = Some(getFilterTextForName(name)),
+        textEdit = TextEdit(context.range, snippet),
+        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
+        documentation = Some(decl.spec.doc.text),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Interface))
   }
 
   /**
@@ -444,8 +468,8 @@ object CompletionProvider {
     val word = context.word
     val uri = context.uri
 
-    val defSuggestions = root.defs.values.filter(matchesDef(_, word, uri)).map(defCompletion)
-    val sigSuggestions = root.sigs.values.filter(matchesSig(_, word, uri)).map(sigCompletion)
+    val defSuggestions = root.defs.values.filter(matchesDef(_, word, uri)).flatMap(defCompletion)
+    val sigSuggestions = root.sigs.values.filter(matchesSig(_, word, uri)).flatMap(sigCompletion)
     defSuggestions ++ sigSuggestions
   }
 
@@ -457,7 +481,7 @@ object CompletionProvider {
     val word = context.word
     val uri = context.uri
 
-    root.effects.values.flatMap(_.ops).filter(matchesOp(_, word, uri)).map(opCompletion)
+    root.effects.values.flatMap(_.ops).filter(matchesOp(_, word, uri)).flatMap(opCompletion)
   }
 
   /**
@@ -512,16 +536,16 @@ object CompletionProvider {
     }
   }
 
-  /** 
+  /**
     * Returns a list of completion items based on case keyword in match expressions
     */
   private def getCaseCompletions()(implicit context: Context, index: Index, root: TypedAst.Root, flix: Flix): Iterable[CompletionItem] = {
     if (root == null) {
       return Nil
     }
-    
+
     val casePattern = raw"\s*ca?s?e?\s?.*".r
-    
+
     if (!(casePattern matches context.prefix)) {
       return Nil
     }
@@ -580,7 +604,7 @@ object CompletionProvider {
     if (root == null) {
       return Nil
     }
-    
+
     val matchPattern = raw".*\s*ma?t?c?h?\s?.*".r
 
     if (!(matchPattern matches context.prefix)) {
@@ -613,7 +637,7 @@ object CompletionProvider {
     else {
       return None
     }
-    val (completion, _) = enm.cases.foldLeft("", 1)({
+    val (completion, _) = enm.cases.toList.sortBy(_._1.loc).foldLeft(("", 1))({
       case ((acc, z), (sym , cas)) => {
         val name = sym.name
         val (str, k) = cas.tpe.typeConstructor match {
@@ -844,6 +868,136 @@ object CompletionProvider {
           documentation = Some(t.doc.text),
           insertTextFormat = InsertTextFormat.Snippet,
           kind = CompletionItemKind.Enum)
+    }
+  }
+
+  /**
+    * Get completions for java imports.
+    */
+  private def getImportCompletions()(implicit context: Context, root: TypedAst.Root): Iterable[CompletionItem] = {
+    if (root == null) Nil else getImportNewCompletions() ++ getImportMethodCompletions()
+  }
+
+  /**
+    * Get completions for importing java constructors.
+    */
+  private def getImportNewCompletions()(implicit context: Context): Iterable[CompletionItem] = {
+    val regex = raw"\s*import\s+new\s+(.*)".r
+    context.prefix match {
+      case regex(clazz) => {
+        try {
+          val clazzObject = java.lang.Class.forName(clazz)
+          // Gets the name of the type excluding the package to use as a suggestion for the name of the constructor.
+          val className = clazz.split('.').last
+          clazzObject.getConstructors().map(constructor => executableCompletion(constructor, clazz, Some(s"new$className")))
+        }
+        catch {
+          //If the user did not type a valid class or is not finished typing it we do not show any completion suggestions
+          case _: ClassNotFoundException => Nil
+        }
+      }
+      case _ => Nil
+    }
+  }
+
+  /**
+    * Get completions for method imports (both static and instance methods)
+    */
+  private def getImportMethodCompletions()(implicit context: Context): Iterable[CompletionItem] = {
+    val instance = raw"\s*import\s+(.*)".r
+    val static = raw"\s*import\s+static\s+(.*)".r
+    context.prefix match {
+      // We match on static first because import static ... would also match on instance regex.
+      case static(clazz) => methodsCompletion(clazz, true)
+      case instance(clazz) => methodsCompletion(clazz, false)
+      case _ => Nil
+    }
+  }
+
+  /**
+    * Convert methods of a class into completionitems 
+    */
+  private def methodsCompletion(clazz: String, isStatic: Boolean)(implicit context: Context): Iterable[CompletionItem] = {
+    // So VSCode is supposed to keep the suggestions as long as what we type does not invalidate it.
+    // However, after usually two more characters VSCode will remove the autocompletions, so to make sure
+    // that they stay we must send them again. Therefore we both test if what is currently typed is a class
+    // and if what is before the last period is a class. This looks a little messy but if you nest try-catch 
+    // clauses which would be slightly cleaner it crashes the scala compiler.
+    // We catch on ClassNotFoundException if a complete class name has not been typed (yet) or is incorrectly typed
+    val clazzExcludingMethod = clazz.split('.').dropRight(1).mkString(".")
+    (try {
+      Some((java.lang.Class.forName(clazz), clazz))
+    }
+    catch {
+      case _: ClassNotFoundException => None
+    }).orElse(try {
+        Some((java.lang.Class.forName(clazzExcludingMethod), clazzExcludingMethod))
+      }
+      catch {
+        case _: ClassNotFoundException => None
+      }) match {
+          case Some((clazzObject, clazz)) => clazzObject.getMethods()
+            // Filter if the method is static or not. Java does not have a method for testing whether a method is static,
+            // but it does have one method which returns null for static methods and only static methods so we can abuse that.
+            .filter((method) => (method.getAnnotatedReceiverType() == null) == isStatic)
+            .map((method) => executableCompletion(method, clazz, None))
+          case None => Nil
+        }
+  }
+
+  /**
+    * returns a completion from a java executable (method/constructor) instace.
+    * clazz is the clazz in string form used for the completion.
+    * aliasSuggestion is used to suggest a alias for the function if applicable.
+    */
+  private def executableCompletion(exec: Executable, clazz: String, aliasSuggestion: Option[String])(implicit context: Context): CompletionItem = {
+    val typesString = exec.getParameters().map(param => convertJavaClassToFlixType(param.getType())).mkString("(", ", ", ")")
+    val finalAliasSuggestion = aliasSuggestion match {
+      case Some(aliasSuggestion) => s" as $${0:$aliasSuggestion}"
+      case None => ""
+    }
+    // Get the name of the function if it is not a constructor.
+    val name = if (exec.isInstanceOf[Constructor[_ <: Object]]) "" else s".${exec.getName}"
+    // So for constructors we do not have a return type method but we know it is the declaring class.
+    val returnType = if (exec.isInstanceOf[Method]) exec.asInstanceOf[Method].getReturnType() else exec.getDeclaringClass()
+    val label = s"$clazz$name$typesString"
+    val replace = s"$clazz$name$typesString: ${convertJavaClassToFlixType(returnType)} \\ IO$finalAliasSuggestion;"
+    CompletionItem(
+      label = label,
+      // Prioritise executables with fewer parameters.
+      sortText = Priority.high(s"${exec.getParameterCount()}$label"),
+      textEdit = TextEdit(context.range, replace),
+      documentation = None,
+      insertTextFormat = InsertTextFormat.Snippet,
+      kind = CompletionItemKind.Method)
+  }
+
+  /**
+    * Converts a Java Class Object into a string representing the type in flix syntax. 
+    * I.e. java.lang.String => String, byte => Int8, java.lang.Object[] => Array[##java.lang.Object, false].
+    */
+  private def convertJavaClassToFlixType(clazz: Class[_ <: Object]): String = {
+    if (clazz.isArray()) {
+      s"Array[${convertJavaClassToFlixType(clazz.getComponentType())}, Static]"
+    }
+    else {
+      clazz.getName() match {
+        case "byte" => "Int8"
+        case "short" => "Int16"
+        case "int" => "Int32"
+        case "long" => "Int64"
+        case "float" => "Float32"
+        case "double" => "Float64"
+        case "boolean" => "Bool"
+        case "char" => "Char"
+        case "java.lang.String" => "String"
+        case "java.math.BigInteger" => "BigInt"
+        case "java.math.BigDecimal" => "BigDecimal"
+        case "java.util.function.IntFunction" => "Int32 => ##java.lang.Object"
+        case "java.util.function.IntUnaryOperator" => "Int32 => Int32"
+        case "void" => "Unit"
+        case other => s"##$other"
+      }
     }
   }
 

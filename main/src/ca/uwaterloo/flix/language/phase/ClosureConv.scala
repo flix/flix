@@ -64,6 +64,8 @@ object ClosureConv {
 
     case Expression.Float64(_, _) => exp0
 
+    case Expression.BigDecimal(_, _) => exp0
+
     case Expression.Int8(_, _) => exp0
 
     case Expression.Int16(_, _) => exp0
@@ -272,31 +274,6 @@ object ClosureConv {
       }
       Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
-    case Expression.NewChannel(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.NewChannel(e, tpe, loc)
-
-    case Expression.GetChannel(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.GetChannel(e, tpe, loc)
-
-    case Expression.PutChannel(exp1, exp2, tpe, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expression.PutChannel(e1, e2, tpe, loc)
-
-    case Expression.SelectChannel(rules, default, tpe, loc) =>
-      val rs = rules map {
-        case SelectChannelRule(sym, chan, exp) =>
-          val c = visitExp(chan)
-          val e = visitExp(exp)
-          SelectChannelRule(sym, c, e)
-      }
-
-      val d = default.map(visitExp(_))
-
-      Expression.SelectChannel(rs, d, tpe, loc)
-
     case Expression.Spawn(exp, tpe, loc) =>
       val e = visitExp(exp)
       Expression.Spawn(e, tpe, loc)
@@ -376,6 +353,8 @@ object ClosureConv {
     case Expression.Float32(_, _) => SortedSet.empty
 
     case Expression.Float64(_, _) => SortedSet.empty
+
+    case Expression.BigDecimal(_, _) => SortedSet.empty
 
     case Expression.Int8(_, _) => SortedSet.empty
 
@@ -483,18 +462,6 @@ object ClosureConv {
           acc ++ filterBoundParams(freeVars(exp), fparams)
       }
 
-    case Expression.NewChannel(exp, _, _) => freeVars(exp)
-
-    case Expression.GetChannel(exp, _, _) => freeVars(exp)
-
-    case Expression.PutChannel(exp1, exp2, _, _) => freeVars(exp1) ++ freeVars(exp2)
-
-    case Expression.SelectChannel(rules, default, _, _) =>
-      rules.foldLeft(default.map(freeVars).getOrElse(SortedSet.empty[FreeVar])) {
-        case (acc, SelectChannelRule(sym, chan, exp)) =>
-          acc ++ filterBoundVar(freeVars(exp) ++ freeVars(chan), sym)
-      }
-
     case Expression.Spawn(exp, _, _) => freeVars(exp)
 
     case Expression.Lazy(exp, _, _) => freeVars(exp)
@@ -557,6 +524,8 @@ object ClosureConv {
       case Expression.Float32(_, _) => e
 
       case Expression.Float64(_, _) => e
+
+      case Expression.BigDecimal(_, _) => e
 
       case Expression.Int8(_, _) => e
 
@@ -764,31 +733,6 @@ object ClosureConv {
       case Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
         val methods = methods0.map(visitJvmMethod(_, subst))
         Expression.NewObject(name, clazz, tpe, purity, methods, loc)
-
-      case Expression.NewChannel(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        Expression.NewChannel(e, tpe, loc)
-
-      case Expression.GetChannel(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        Expression.GetChannel(e, tpe, loc)
-
-      case Expression.PutChannel(exp1, exp2, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        Expression.PutChannel(e1, e2, eff, loc)
-
-      case Expression.SelectChannel(rules, default, tpe, loc) =>
-        val rs = rules map {
-          case SelectChannelRule(sym, chan, exp) =>
-            val c = visitExp(chan)
-            val e = visitExp(exp)
-            SelectChannelRule(sym, c, e)
-        }
-
-        val d = default.map(visitExp)
-
-        Expression.SelectChannel(rs, d, tpe, loc)
 
       case Expression.Spawn(exp, tpe, loc) =>
         val e = visitExp(exp)

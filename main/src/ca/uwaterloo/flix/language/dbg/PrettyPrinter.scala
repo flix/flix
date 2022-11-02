@@ -74,6 +74,8 @@ object PrettyPrinter {
 
         case Expression.Float64(lit, _) => lit.toString + "f32"
 
+        case Expression.BigDecimal(lit, _) => lit.toString() + "ff"
+
         case Expression.Int8(lit, _) => lit.toString + "i8"
 
         case Expression.Int16(lit, _) => lit.toString + "i16"
@@ -417,37 +419,6 @@ object PrettyPrinter {
           "object " +
             clazz.getName +
             methods.map(fmtJvmMethod(_, formatter)).mkString("{ ", " ", " }")
-
-        case Expression.NewChannel(exp, tpe, loc) => "Channel" + " " + visitExp(exp)
-
-        case Expression.PutChannel(exp1, exp2, tpe, loc) => visitExp(exp1) + " <- " + visitExp(exp2)
-
-        case Expression.GetChannel(exp, tpe, loc) => "<- " + visitExp(exp)
-
-        case Expression.SelectChannel(rules, default, tpe, loc) =>
-          val sb = new mutable.StringBuilder
-          sb.append("select {")
-            .append(System.lineSeparator())
-          for (SelectChannelRule(sym, chan, exp) <- rules) {
-            sb.append("  case ")
-              .append(fmtSym(sym, formatter))
-              .append(" <- ")
-              .append(visitExp(chan).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
-              .append(" => ")
-              .append(System.lineSeparator())
-              .append((" " * 4) + visitExp(exp).replace(System.lineSeparator(), System.lineSeparator() + (" " * 4)))
-              .append(System.lineSeparator())
-          }
-          default match {
-            case Some(exp) =>
-              sb.append("  case _ => ")
-                .append(System.lineSeparator())
-                .append((" " * 4) + visitExp(exp).replace(System.lineSeparator(), System.lineSeparator() + (" " * 4)))
-                .append(System.lineSeparator())
-            case None =>
-          }
-          sb.append("}")
-            .toString()
 
         case Expression.Spawn(exp, tpe, loc) => "spawn " + visitExp(exp)
 

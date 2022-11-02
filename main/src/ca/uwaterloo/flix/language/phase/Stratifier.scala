@@ -109,6 +109,8 @@ object Stratifier {
 
     case Expression.Float64(_, _) => exp0.toSuccess
 
+    case Expression.BigDecimal(_, _) => exp0.toSuccess
+
     case Expression.Int8(_, _) => exp0.toSuccess
 
     case Expression.Int16(_, _) => exp0.toSuccess
@@ -120,8 +122,6 @@ object Stratifier {
     case Expression.BigInt(_, _) => exp0.toSuccess
 
     case Expression.Str(_, _) => exp0.toSuccess
-
-    case Expression.Default(_, _) => exp0.toSuccess
 
     case Expression.Wild(_, _) => exp0.toSuccess
 
@@ -195,6 +195,17 @@ object Stratifier {
       }
       mapN(matchVal, rulesVal) {
         case (m, rs) => Expression.Match(m, rs, tpe, pur, eff, loc)
+      }
+
+    case Expression.TypeMatch(exp, rules, tpe, pur, eff, loc) =>
+      val matchVal = visitExp(exp)
+      val rulesVal = traverse(rules) {
+        case MatchTypeRule(sym, t, body) => mapN(visitExp(body)) {
+          case b => MatchTypeRule(sym, t, b)
+        }
+      }
+      mapN(matchVal, rulesVal) {
+        case (m, rs) => Expression.TypeMatch(m, rs, tpe, pur, eff, loc)
       }
 
     case Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
@@ -528,6 +539,8 @@ object Stratifier {
 
     case Expression.Float64(_, _) => LabelledGraph.empty
 
+    case Expression.BigDecimal(_, _) => LabelledGraph.empty
+
     case Expression.Int8(_, _) => LabelledGraph.empty
 
     case Expression.Int16(_, _) => LabelledGraph.empty
@@ -539,8 +552,6 @@ object Stratifier {
     case Expression.BigInt(_, _) => LabelledGraph.empty
 
     case Expression.Str(_, _) => LabelledGraph.empty
-
-    case Expression.Default(_, _) => LabelledGraph.empty
 
     case Expression.Wild(_, _) => LabelledGraph.empty
 
@@ -592,6 +603,12 @@ object Stratifier {
       val dg = labelledGraphOfExp(exp)
       rules.foldLeft(dg) {
         case (acc, MatchRule(_, g, b)) => acc + labelledGraphOfExp(g) + labelledGraphOfExp(b)
+      }
+
+    case Expression.TypeMatch(exp, rules, _, _, _, _) =>
+      val dg = labelledGraphOfExp(exp)
+      rules.foldLeft(dg) {
+        case (acc, MatchTypeRule(_, _, b)) => acc + labelledGraphOfExp(b)
       }
 
     case Expression.Choose(exps, rules, _, _, _, _) =>

@@ -44,8 +44,8 @@ namespace Test/Exp/Jvm/InvokeMethod {
 
     @test
     def testInvokeInheritedMethod01(): Bool \ IO =
-        import new flix.test.TestClassWithInheritedMethod(): ##flix.test.TestClassWithInheritedMethod as newObj;
-        import flix.test.TestClassWithInheritedMethod.concreteMethod(String): String \ {};
+        import new dev.flix.test.TestClassWithInheritedMethod(): ##dev.flix.test.TestClassWithInheritedMethod as newObj;
+        import dev.flix.test.TestClassWithInheritedMethod.concreteMethod(String): String \ {};
         let obj = newObj();
         concreteMethod(obj, "bar") == "foobar"
 }

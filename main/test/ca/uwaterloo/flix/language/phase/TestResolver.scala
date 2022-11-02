@@ -1070,4 +1070,118 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.IllegalNonJavaType](result)
   }
 
+  test("ParentNamespaceNotVisible.01") {
+    val input =
+      """
+        |namespace A {
+        |    pub enum X
+        |    namespace B {
+        |        def foo(): X = ???
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedType](result)
+  }
+
+  test("ParentNamespaceNotVisible.02") {
+    val input =
+      """
+        |namespace A {
+        |    pub type alias X = Int32
+        |    namespace B {
+        |        def foo(): X = ???
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedType](result)
+  }
+
+  test("ParentNamespaceNotVisible.03") {
+    val input =
+      """
+        |namespace A {
+        |    pub class X[a]
+        |    namespace B {
+        |        enum Y
+        |        instance X[Y] 
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedClass](result)
+  }
+
+  test("ParentNamespaceNotVisible.04") {
+    val input =
+      """
+        |namespace A {
+        |    pub def x(): Int32 = ???
+        |    namespace B {
+        |        def foo(): Int32 = x()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedName](result)
+  }
+
+  test("UseClearedInNamespace.01") {
+    val input =
+      """
+        |use A.X
+        |namespace A {
+        |  enum X
+        |}
+        |namespace B {
+        |  def foo(): X = ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedType](result)
+  }
+
+  test("UseClearedInNamespace.02") {
+    val input =
+      """
+        |namespace A {
+        |  enum X
+        |}
+        |namespace B {
+        |  use A.X
+        |  namespace C {
+        |     def foo(): X = ???
+        |  }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedType](result)
+  }
+
+  test("ImportClearedInNamespace.01") {
+    val input =
+      """
+        |import java.lang.StringBuffer
+        |namespace A {
+        |  def foo(): StringBuffer = ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedType](result)
+  }
+
+  test("ImportClearedInNamespace.02") {
+    val input =
+      """
+        |namespace A {
+        |  import java.lang.StringBuffer
+        |  namespace B {
+        |     def foo(): StringBuffer = ???
+        |  }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedType](result)
+  }
 }

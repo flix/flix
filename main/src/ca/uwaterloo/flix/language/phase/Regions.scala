@@ -64,6 +64,8 @@ object Regions {
 
     case Expression.Float64(_, _) => ().toSuccess
 
+    case Expression.BigDecimal(_, _) => ().toSuccess
+
     case Expression.Int8(_, _) => ().toSuccess
 
     case Expression.Int16(_, _) => ().toSuccess
@@ -75,8 +77,6 @@ object Regions {
     case Expression.BigInt(_, _) => ().toSuccess
 
     case Expression.Str(_, _) => ().toSuccess
-
-    case Expression.Default(_, _) => ().toSuccess
 
     case Expression.Wild(_, _) => ().toSuccess
 
@@ -143,6 +143,17 @@ object Regions {
       val rulesVal = traverse(rules) {
         case MatchRule(pat, guard, body) => flatMapN(visitExp(guard), visitExp(body)) {
           case (g, b) => ().toSuccess
+        }
+      }
+      flatMapN(matchVal, rulesVal) {
+        case (m, rs) => checkType(tpe, loc)
+      }
+
+    case Expression.TypeMatch(exp, rules, tpe, _, _, loc) =>
+      val matchVal = visitExp(exp)
+      val rulesVal = traverse(rules) {
+        case MatchTypeRule(_, _, body) => flatMapN(visitExp(body)) {
+          case b => ().toSuccess
         }
       }
       flatMapN(matchVal, rulesVal) {

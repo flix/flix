@@ -75,6 +75,14 @@ object GenExpression {
         case _ => visitor.visitLdcInsn(d)
       }
 
+    case Expression.BigDecimal(dd, loc) =>
+      addSourceLine(visitor, loc)
+      visitor.visitTypeInsn(NEW, BackendObjType.BigDecimal.jvmName.toInternalName)
+      visitor.visitInsn(DUP)
+      visitor.visitLdcInsn(dd.toString)
+      visitor.visitMethodInsn(INVOKESPECIAL, BackendObjType.BigDecimal.jvmName.toInternalName, "<init>",
+        AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
+
     case Expression.Int8(b, loc) =>
       addSourceLine(visitor, loc)
       compileInt(visitor, b)
@@ -803,24 +811,11 @@ object GenExpression {
       visitor.visitTypeInsn(NEW, declaration)
       // Duplicate the reference since the first argument for a constructor call is the reference to the object
       visitor.visitInsn(DUP)
-      // Evaluate arguments left-to-right and push them onto the stack.
-      for (arg <- args) {
-        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
-        // Cast the argument to the right type.
-        arg.tpe match {
-          // NB: This is not exhaustive. In the new backend we should handle all types, including multidim arrays.
-          case MonoType.Array(MonoType.Float32) => visitor.visitTypeInsn(CHECKCAST, "[F")
-          case MonoType.Array(MonoType.Float64) => visitor.visitTypeInsn(CHECKCAST, "[D")
-          case MonoType.Array(MonoType.Int8) => visitor.visitTypeInsn(CHECKCAST, "[B")
-          case MonoType.Array(MonoType.Int16) => visitor.visitTypeInsn(CHECKCAST, "[S")
-          case MonoType.Array(MonoType.Int32) => visitor.visitTypeInsn(CHECKCAST, "[I")
-          case MonoType.Array(MonoType.Int64) => visitor.visitTypeInsn(CHECKCAST, "[J")
-          case MonoType.Native(clazz) =>
-            val argType = asm.Type.getInternalName(clazz)
-            visitor.visitTypeInsn(CHECKCAST, argType)
-          case _ => // nop
-        }
-      }
+      // Retrieve the signature.
+      val signature = constructor.getParameterTypes
+
+      pushArgs(visitor, args, signature, currentClass, lenv0, entryPoint)
+
       // Call the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, declaration, "<init>", descriptor, false)
 
@@ -836,25 +831,8 @@ object GenExpression {
       // Retrieve the signature.
       val signature = method.getParameterTypes
 
-      // Evaluate arguments left-to-right and push them onto the stack.
-      for ((arg, argType) <- args.zip(signature)) {
-        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
-        if (!argType.isPrimitive) {
-          // NB: Really just a hack because the backend does not support array JVM types properly.
-          visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
-        } else {
-          arg.tpe match {
-            // NB: This is not exhaustive. In the new backend we should handle all types, including multidim arrays.
-            case MonoType.Array(MonoType.Float32) => visitor.visitTypeInsn(CHECKCAST, "[F")
-            case MonoType.Array(MonoType.Float64) => visitor.visitTypeInsn(CHECKCAST, "[D")
-            case MonoType.Array(MonoType.Int8) => visitor.visitTypeInsn(CHECKCAST, "[B")
-            case MonoType.Array(MonoType.Int16) => visitor.visitTypeInsn(CHECKCAST, "[S")
-            case MonoType.Array(MonoType.Int32) => visitor.visitTypeInsn(CHECKCAST, "[I")
-            case MonoType.Array(MonoType.Int64) => visitor.visitTypeInsn(CHECKCAST, "[J")
-            case _ => // nop
-          }
-        }
-      }
+      pushArgs(visitor, args, signature, currentClass, lenv0, entryPoint)
+
       val declaration = asm.Type.getInternalName(method.getDeclaringClass)
       val name = method.getName
       val descriptor = asm.Type.getMethodDescriptor(method)
@@ -874,24 +852,7 @@ object GenExpression {
     case Expression.InvokeStaticMethod(method, args, _, loc) =>
       addSourceLine(visitor, loc)
       val signature = method.getParameterTypes
-      for ((arg, argType) <- args.zip(signature)) {
-        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
-        if (!argType.isPrimitive) {
-          // NB: Really just a hack because the backend does not support array JVM types properly.
-          visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
-        } else {
-          arg.tpe match {
-            // NB: This is not exhaustive. In the new backend we should handle all types, including multidim arrays.
-            case MonoType.Array(MonoType.Float32) => visitor.visitTypeInsn(CHECKCAST, "[F")
-            case MonoType.Array(MonoType.Float64) => visitor.visitTypeInsn(CHECKCAST, "[D")
-            case MonoType.Array(MonoType.Int8) => visitor.visitTypeInsn(CHECKCAST, "[B")
-            case MonoType.Array(MonoType.Int16) => visitor.visitTypeInsn(CHECKCAST, "[S")
-            case MonoType.Array(MonoType.Int32) => visitor.visitTypeInsn(CHECKCAST, "[I")
-            case MonoType.Array(MonoType.Int64) => visitor.visitTypeInsn(CHECKCAST, "[J")
-            case _ => // nop
-          }
-        }
-      }
+      pushArgs(visitor, args, signature, currentClass, lenv0, entryPoint)
       val declaration = asm.Type.getInternalName(method.getDeclaringClass)
       val name = method.getName
       val descriptor = asm.Type.getMethodDescriptor(method)
@@ -948,122 +909,6 @@ object GenExpression {
         GenExpression.compileExpression(m.clo, visitor, currentClass, lenv0, entryPoint)
         visitor.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(m.clo.tpe).toDescriptor)
       }
-
-    case Expression.NewChannel(exp, _, loc) =>
-      addSourceLine(visitor, loc)
-      visitor.visitTypeInsn(NEW, JvmName.Channel.toInternalName)
-      visitor.visitInsn(DUP)
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitMethodInsn(INVOKESPECIAL, JvmName.Channel.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(JvmType.PrimInt), JvmType.Void), false)
-
-    case Expression.GetChannel(exp, tpe, loc) =>
-      addSourceLine(visitor, loc)
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitTypeInsn(CHECKCAST, JvmName.Channel.toInternalName)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Channel.toInternalName, "get", AsmOps.getMethodDescriptor(Nil, JvmType.Object), false)
-      AsmOps.castIfNotPrimAndUnbox(visitor, JvmOps.getJvmType(tpe))
-
-    case Expression.PutChannel(exp1, exp2, _, loc) =>
-      addSourceLine(visitor, loc)
-      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitTypeInsn(CHECKCAST, JvmName.Channel.toInternalName)
-      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-      AsmOps.boxIfPrim(visitor, JvmOps.getJvmType(exp2.tpe))
-      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Channel.toInternalName, "put", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
-      // push unit on the stack
-      visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
-
-
-    case Expression.SelectChannel(rules, default, _, loc) =>
-      addSourceLine(visitor, loc)
-      // Make a new Channel[] containing all channel expressions
-
-      // Calculate the size of the array and initiate it
-      compileInt(visitor, rules.size)
-      visitor.visitTypeInsn(ANEWARRAY, JvmName.Channel.toInternalName)
-      for ((rule, index) <- rules.zipWithIndex) {
-        // Dup so we end up with an array on top of the stack
-        visitor.visitInsn(DUP)
-        // Compile the index
-        compileInt(visitor, index)
-        // Compile the chan expression 100
-        compileExpression(rule.chan, visitor, currentClass, lenv0, entryPoint)
-        // Cast the type from Object to Channel
-        visitor.visitTypeInsn(CHECKCAST, JvmName.Channel.toInternalName)
-        // Store the expression in the array
-        visitor.visitInsn(AASTORE)
-      }
-
-      // If this select has a default, we want to call select with true
-      if (default.isDefined) {
-        visitor.visitInsn(ICONST_1)
-      } else {
-        visitor.visitInsn(ICONST_0)
-      }
-
-
-      // Invoke select in Channel. This puts a SelectChoice on the stack
-      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Channel.toInternalName, "select", "([Lca/uwaterloo/flix/runtime/interpreter/Channel;Z)Lca/uwaterloo/flix/runtime/interpreter/SelectChoice;", false)
-
-      // Check if the default case was selected
-      val defaultLabel = new Label()
-      visitor.visitInsn(DUP)
-      visitor.visitFieldInsn(GETFIELD, JvmName.SelectChoice.toInternalName, "defaultChoice", JvmType.PrimBool.toDescriptor)
-      // Jump if needed
-      visitor.visitJumpInsn(IFNE, defaultLabel)
-
-      // Dup since we need to get the element and the relevant index
-      visitor.visitInsn(DUP)
-      // Get the relevant branchNumber and put it on the stack
-      visitor.visitFieldInsn(GETFIELD, JvmName.SelectChoice.toInternalName, "branchNumber", JvmType.PrimInt.toDescriptor)
-
-      val labels: List[Label] = rules.map(_ => new Label())
-      val lookupErrorLabel: Label = new Label()
-      val completedLabel: Label = new Label()
-      // Find the correct branch with a table switch
-      visitor.visitTableSwitchInsn(0, rules.length - 1, lookupErrorLabel, labels: _*)
-
-      for ((rule, label) <- rules.zip(labels)) {
-        visitor.visitLabel(label)
-        // The SelectChoice is on top of the stack. We get the element of the channel
-        visitor.visitFieldInsn(GETFIELD, JvmName.SelectChoice.toInternalName, "element", JvmType.Object.toDescriptor)
-        // Jvm Type of the elementType
-        val channelType = rule.chan.tpe.asInstanceOf[MonoType.Channel].tpe
-        val jvmType = JvmOps.getErasedJvmType(channelType)
-        // Unbox if needed for primitives
-        AsmOps.castIfNotPrimAndUnbox(visitor, jvmType)
-        // Store instruction for `jvmType`
-        val iStore = AsmOps.getStoreInstruction(jvmType)
-        // Extend the environment with the element from the channel
-        visitor.visitVarInsn(iStore, rule.sym.getStackOffset + 1)
-        // Finally compile the body of the selected rule
-        compileExpression(rule.exp, visitor, currentClass, lenv0, entryPoint)
-        // Jump out of the cases so we do not fall through to the next one
-        visitor.visitJumpInsn(GOTO, completedLabel)
-      }
-
-      // TableSwitch instruction jumps here if "0 <= index < rules.length" is not satisfied.
-      visitor.visitLabel(lookupErrorLabel)
-      // TODO: throw a better error
-      // Throw exception
-      visitor.visitInsn(ACONST_NULL)
-      visitor.visitInsn(ATHROW)
-
-      // Place the default label
-      visitor.visitLabel(defaultLabel)
-      // Pop the SelectChoice
-      visitor.visitInsn(POP)
-      // If we have a default case we can compile that, otherwise we write
-      // an error we will never hit to satisfy the jvm
-      if (default.isDefined) {
-        compileExpression(default.get, visitor, currentClass, lenv0, entryPoint)
-      } else {
-        visitor.visitInsn(ACONST_NULL)
-        visitor.visitInsn(ATHROW)
-      }
-
-      // Jump here if the correct rule has been evaluated
-      visitor.visitLabel(completedLabel)
 
     case Expression.Spawn(exp, _, loc) =>
       addSourceLine(visitor, loc)
@@ -1327,6 +1172,9 @@ object GenExpression {
   private def compileUnaryMinusExpr(visitor: MethodVisitor, sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = sop match {
     case Float32Op.Neg => visitor.visitInsn(FNEG)
     case Float64Op.Neg => visitor.visitInsn(DNEG)
+    case BigDecimalOp.Neg =>
+      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "negate",
+        AsmOps.getMethodDescriptor(Nil, JvmType.BigDecimal), false)
     case Int8Op.Neg =>
       visitor.visitInsn(INEG)
       visitor.visitInsn(I2B)
@@ -1426,17 +1274,20 @@ object GenExpression {
     } else {
       compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
       compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
-      val (intOp, longOp, floatOp, doubleOp, bigIntOp) = o match {
-        case BinaryOperator.Plus => (IADD, LADD, FADD, DADD, "add")
-        case BinaryOperator.Minus => (ISUB, LSUB, FSUB, DSUB, "subtract")
-        case BinaryOperator.Times => (IMUL, LMUL, FMUL, DMUL, "multiply")
-        case BinaryOperator.Remainder => (IREM, LREM, FREM, DREM, "remainder")
-        case BinaryOperator.Divide => (IDIV, LDIV, FDIV, DDIV, "divide")
+      val (intOp, longOp, floatOp, doubleOp, bigDecimalOp, bigIntOp) = o match {
+        case BinaryOperator.Plus => (IADD, LADD, FADD, DADD, "add", "add")
+        case BinaryOperator.Minus => (ISUB, LSUB, FSUB, DSUB, "subtract", "subtract")
+        case BinaryOperator.Times => (IMUL, LMUL, FMUL, DMUL, "multiply", "multiply")
+        case BinaryOperator.Remainder => (IREM, LREM, FREM, DREM, "remainder", "remainder")
+        case BinaryOperator.Divide => (IDIV, LDIV, FDIV, DDIV, "divide", "divide")
         case BinaryOperator.Exponentiate => throw InternalCompilerException("BinaryOperator.Exponentiate already handled.")
       }
       sop match {
         case Float32Op.Add | Float32Op.Sub | Float32Op.Mul | Float32Op.Div => visitor.visitInsn(floatOp)
         case Float64Op.Add | Float64Op.Sub | Float64Op.Mul | Float64Op.Div => visitor.visitInsn(doubleOp)
+        case BigDecimalOp.Add | BigDecimalOp.Sub | BigDecimalOp.Mul | BigDecimalOp.Div =>
+          visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, bigDecimalOp,
+            AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.BigDecimal), false)
         case Int8Op.Add | Int8Op.Sub | Int8Op.Mul | Int8Op.Div | Int8Op.Rem =>
           visitor.visitInsn(intOp)
           visitor.visitInsn(I2B)
@@ -1535,6 +1386,11 @@ object GenExpression {
       case Float64Op.Lt | Float64Op.Le | Float64Op.Gt | Float64Op.Ge | Float64Op.Eq | Float64Op.Neq =>
         visitor.visitInsn(doubleOp)
         visitor.visitJumpInsn(cmp, condElse)
+      case BigDecimalOp.Lt | BigDecimalOp.Le | BigDecimalOp.Gt | BigDecimalOp.Ge | BigDecimalOp.Eq | BigDecimalOp.Neq =>
+        visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
+          AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
+        visitor.visitInsn(ICONST_0)
+        visitor.visitJumpInsn(intOp, condElse)
       case CharOp.Lt | CharOp.Le | CharOp.Gt | CharOp.Ge | CharOp.Eq | CharOp.Neq => visitor.visitJumpInsn(intOp, condElse)
       case Int8Op.Lt | Int8Op.Le | Int8Op.Gt | Int8Op.Ge | Int8Op.Eq | Int8Op.Neq => visitor.visitJumpInsn(intOp, condElse)
       case Int16Op.Lt | Int16Op.Le | Int16Op.Gt | Int16Op.Ge | Int16Op.Eq | Int16Op.Neq => visitor.visitJumpInsn(intOp, condElse)
@@ -1690,4 +1546,28 @@ object GenExpression {
     visitor.visitLineNumber(loc.beginLine, label)
   }
 
+  /**
+    * Pushes arguments onto the stack ready to invoke a method
+    */
+  private def pushArgs(visitor: MethodVisitor, args: List[Expression], signature: Array[Class[_ <: Object]], currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): Unit = {
+    // Evaluate arguments left-to-right and push them onto the stack.
+    for ((arg, argType) <- args.zip(signature)) {
+      compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
+      if (!argType.isPrimitive) {
+        // NB: Really just a hack because the backend does not support array JVM types properly.
+        visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+      } else {
+        arg.tpe match {
+          // NB: This is not exhaustive. In the new backend we should handle all types, including multidim arrays.
+          case MonoType.Array(MonoType.Float32) => visitor.visitTypeInsn(CHECKCAST, "[F")
+          case MonoType.Array(MonoType.Float64) => visitor.visitTypeInsn(CHECKCAST, "[D")
+          case MonoType.Array(MonoType.Int8) => visitor.visitTypeInsn(CHECKCAST, "[B")
+          case MonoType.Array(MonoType.Int16) => visitor.visitTypeInsn(CHECKCAST, "[S")
+          case MonoType.Array(MonoType.Int32) => visitor.visitTypeInsn(CHECKCAST, "[I")
+          case MonoType.Array(MonoType.Int64) => visitor.visitTypeInsn(CHECKCAST, "[J")
+          case _ => // nop
+        }
+      }
+    }
+  }
 }

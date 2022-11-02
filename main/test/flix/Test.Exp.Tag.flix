@@ -6,6 +6,7 @@ namespace Test/Exp/Tag {
         case OfChar(Char)
         case OfFloat32(Float32)
         case OfFloat64(Float64)
+        case OfBigDecimal(BigDecimal)
         case OfInt8(Int8)
         case OfInt16(Int16)
         case OfInt32(Int32)
@@ -67,6 +68,16 @@ namespace Test/Exp/Tag {
 
     @test
     def testFloat64Tag03(): A = Test/Exp/Tag/A.OfFloat64(21.42f64)
+
+
+    @test
+    def testBigDecimalTag01(): A = OfBigDecimal(21.42ff)
+
+    @test
+    def testBigDecimalTag02(): A = A.OfBigDecimal(21.42ff)
+
+    @test
+    def testBigDecimalTag03(): A = Test/Exp/Tag/A.OfBigDecimal(21.42ff)
 
 
     @test

@@ -33,6 +33,12 @@ namespace Test/Exp/Force {
         v == force x
 
     @test
+    def testBigDecimalForce01(): Bool =
+        let v = 12.34ff;
+        let x = lazy v;
+        v == force x
+
+    @test
     def testInt8Force01(): Bool =
         let v = 12i8;
         let x = lazy v;

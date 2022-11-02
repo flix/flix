@@ -75,6 +75,8 @@ object Simplifier {
 
       case TypedAst.Expression.Float64(lit, loc) => SimplifiedAst.Expression.Float64(lit, loc)
 
+      case TypedAst.Expression.BigDecimal(lit, loc) => SimplifiedAst.Expression.BigDecimal(lit, loc)
+
       case TypedAst.Expression.Int8(lit, loc) => SimplifiedAst.Expression.Int8(lit, loc)
 
       case TypedAst.Expression.Int16(lit, loc) => SimplifiedAst.Expression.Int16(lit, loc)
@@ -252,29 +254,16 @@ object Simplifier {
         SimplifiedAst.Expression.NewObject(name, clazz, tpe, simplifyPurity(pur), methods, loc)
 
       case TypedAst.Expression.NewChannel(exp, tpe, pur, eff, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.NewChannel(e, tpe, loc)
+        throw new InternalCompilerException("Unexpected NewChannel")
 
       case TypedAst.Expression.GetChannel(exp, tpe, pur, eff, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.GetChannel(e, tpe, loc)
+        throw new InternalCompilerException("Unexpected GetChannel")
 
       case TypedAst.Expression.PutChannel(exp1, exp2, tpe, pur, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        SimplifiedAst.Expression.PutChannel(e1, e2, tpe, loc)
+        throw new InternalCompilerException("Unexpected PutChannel")
 
       case TypedAst.Expression.SelectChannel(rules, default, tpe, pur, eff, loc) =>
-        val rs = rules map {
-          case TypedAst.SelectChannelRule(sym, chan, exp) =>
-            val c = visitExp(chan)
-            val e = visitExp(exp)
-            SimplifiedAst.SelectChannelRule(sym, c, e)
-        }
-
-        val d = default.map(visitExp)
-
-        SimplifiedAst.Expression.SelectChannel(rs, d, tpe, loc)
+        throw new InternalCompilerException("Unexpected SelectChannel")
 
       case TypedAst.Expression.Spawn(exp, tpe, pur, eff, loc) =>
         // Wrap the expression in a closure: () -> tpe \ eff
@@ -293,9 +282,6 @@ object Simplifier {
       case TypedAst.Expression.Force(exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Force(e, tpe, loc)
-
-      case TypedAst.Expression.Default(_, _) =>
-        throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
       case TypedAst.Expression.Wild(_, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
@@ -353,6 +339,9 @@ object Simplifier {
 
       case TypedAst.Expression.Mask(_, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
+
+      case TypedAst.Expression.TypeMatch(_, _, _, _, _, _) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.")
     }
 
     /**
@@ -381,6 +370,7 @@ object Simplifier {
       case TypedAst.Pattern.Char(lit, loc) => SimplifiedAst.Expression.Char(lit, loc)
       case TypedAst.Pattern.Float32(lit, loc) => SimplifiedAst.Expression.Float32(lit, loc)
       case TypedAst.Pattern.Float64(lit, loc) => SimplifiedAst.Expression.Float64(lit, loc)
+      case TypedAst.Pattern.BigDecimal(lit, loc) => SimplifiedAst.Expression.BigDecimal(lit, loc)
       case TypedAst.Pattern.Int8(lit, loc) => SimplifiedAst.Expression.Int8(lit, loc)
       case TypedAst.Pattern.Int16(lit, loc) => SimplifiedAst.Expression.Int16(lit, loc)
       case TypedAst.Pattern.Int32(lit, loc) => SimplifiedAst.Expression.Int32(lit, loc)
@@ -407,6 +397,7 @@ object Simplifier {
       case TypedAst.Pattern.Char(lit, loc) => true
       case TypedAst.Pattern.Float32(lit, loc) => true
       case TypedAst.Pattern.Float64(lit, loc) => true
+      case TypedAst.Pattern.BigDecimal(lit, loc) => true
       case TypedAst.Pattern.Int8(lit, loc) => true
       case TypedAst.Pattern.Int16(lit, loc) => true
       case TypedAst.Pattern.Int32(lit, loc) => true
@@ -438,6 +429,7 @@ object Simplifier {
         case Some(TypeConstructor.Char) => SemanticOperator.CharOp.Eq
         case Some(TypeConstructor.Float32) => SemanticOperator.Float32Op.Eq
         case Some(TypeConstructor.Float64) => SemanticOperator.Float64Op.Eq
+        case Some(TypeConstructor.BigDecimal) => SemanticOperator.BigDecimalOp.Eq
         case Some(TypeConstructor.Int8) => SemanticOperator.Int8Op.Eq
         case Some(TypeConstructor.Int16) => SemanticOperator.Int16Op.Eq
         case Some(TypeConstructor.Int32) => SemanticOperator.Int32Op.Eq
@@ -905,6 +897,8 @@ object Simplifier {
 
       case SimplifiedAst.Expression.Float64(_, _) => e
 
+      case SimplifiedAst.Expression.BigDecimal(_, _) => e
+
       case SimplifiedAst.Expression.Int8(_, _) => e
 
       case SimplifiedAst.Expression.Int16(_, _) => e
@@ -1060,31 +1054,6 @@ object Simplifier {
       case SimplifiedAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
         val methods = methods0 map visitJvmMethod
         SimplifiedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
-
-      case SimplifiedAst.Expression.NewChannel(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.NewChannel(e, tpe, loc)
-
-      case SimplifiedAst.Expression.GetChannel(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.GetChannel(e, tpe, loc)
-
-      case SimplifiedAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        SimplifiedAst.Expression.PutChannel(e1, e2, tpe, loc)
-
-      case SimplifiedAst.Expression.SelectChannel(rules, default, tpe, loc) =>
-        val rs = rules map {
-          case SimplifiedAst.SelectChannelRule(sym, chan, exp) =>
-            val c = visitExp(chan)
-            val e = visitExp(exp)
-            SimplifiedAst.SelectChannelRule(sym, c, e)
-        }
-
-        val d = default.map(visitExp)
-
-        SimplifiedAst.Expression.SelectChannel(rs, d, tpe, loc)
 
       case SimplifiedAst.Expression.Spawn(exp, tpe, loc) =>
         val e = visitExp(exp)

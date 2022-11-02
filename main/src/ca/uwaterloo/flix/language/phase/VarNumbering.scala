@@ -74,6 +74,8 @@ object VarNumbering {
 
       case Expression.Float64(_, _) => i0
 
+      case Expression.BigDecimal(_, _) => i0
+
       case Expression.Int8(_, _) => i0
 
       case Expression.Int16(_, _) => i0
@@ -238,25 +240,6 @@ object VarNumbering {
       case Expression.NewObject(_, _, _, _, _, _) =>
         // TODO - think about this after we've worked out what's going on in lambda lifting for NewObject
         i0
-
-      case Expression.NewChannel(exp, _, _) =>
-        visitExp(exp, i0)
-
-      case Expression.GetChannel(exp, _, _) =>
-        visitExp(exp, i0)
-
-      case Expression.PutChannel(exp1, exp2, _, _) =>
-        val i1 = visitExp(exp1, i0)
-        visitExp(exp2, i1)
-
-      case Expression.SelectChannel(rules, default, _, _) =>
-        var currentOffset = i0
-        for (r <- rules) {
-          currentOffset = visitSymbolAssignment(r.sym, r.chan.tpe.typeArguments.head, currentOffset)
-          currentOffset = visitExp(r.chan, currentOffset)
-          currentOffset = visitExp(r.exp, currentOffset)
-        }
-        default.map(visitExp(_, currentOffset)).getOrElse(currentOffset)
 
       case Expression.Spawn(exp, _, _) =>
         visitExp(exp, i0)

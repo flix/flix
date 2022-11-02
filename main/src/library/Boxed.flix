@@ -26,58 +26,52 @@ pub enum Boxed {
     case BoxedInt64(Int64)
     case BoxedFloat32(Float32)
     case BoxedFloat64(Float64)
-    case BoxedValue(##java.lang.Object)
     case BoxedObject(
         ##java.lang.Object,
-        (##java.lang.Object, ##java.lang.Object) -> Comparison,
-        ##java.lang.Object -> String)
+        (##java.lang.Object, ##java.lang.Object) -> Comparison
+    )
 }
 
 instance Eq[Boxed] {
     pub def eq(b1: Boxed, b2: Boxed): Bool = match (b1, b2) {
-        case (BoxedBool(v1),            BoxedBool(v2))          => v1 == v2
-        case (BoxedChar(v1),            BoxedChar(v2))          => v1 == v2
-        case (BoxedInt8(v1),            BoxedInt8(v2))          => v1 == v2
-        case (BoxedInt16(v1),           BoxedInt16(v2))         => v1 == v2
-        case (BoxedInt32(v1),           BoxedInt32(v2))         => v1 == v2
-        case (BoxedInt64(v1),           BoxedInt64(v2))         => v1 == v2
-        case (BoxedFloat32(v1),         BoxedFloat32(v2))       => v1 == v2
-        case (BoxedFloat64(v1),         BoxedFloat64(v2))       => v1 == v2
-        case (_,                        BoxedValue(_))          => bug!("Eq is not supported for BoxedValue")
-        case (BoxedValue(_),            _)                      => bug!("Eq is not supported for BoxedValue")
-        case (BoxedObject(v1, cmp1, _), BoxedObject(v2, _, _))  => cmp1(v1, v2) == EqualTo
-        case _                                                  => bug!("Mismatched types.")
+        case (BoxedBool(v1),         BoxedBool(v2))      => v1 == v2
+        case (BoxedChar(v1),         BoxedChar(v2))      => v1 == v2
+        case (BoxedInt8(v1),         BoxedInt8(v2))      => v1 == v2
+        case (BoxedInt16(v1),        BoxedInt16(v2))     => v1 == v2
+        case (BoxedInt32(v1),        BoxedInt32(v2))     => v1 == v2
+        case (BoxedInt64(v1),        BoxedInt64(v2))     => v1 == v2
+        case (BoxedFloat32(v1),      BoxedFloat32(v2))   => v1 == v2
+        case (BoxedFloat64(v1),      BoxedFloat64(v2))   => v1 == v2
+        case (BoxedObject(v1, cmp1), BoxedObject(v2, _)) => cmp1(v1, v2) == EqualTo
+        case _                                           => bug!("Mismatched types.")
     }
 }
 
 instance Order[Boxed] {
     pub def compare(b1: Boxed, b2: Boxed): Comparison = match (b1, b2) {
-        case (BoxedBool(v1),            BoxedBool(v2))          => v1 <=> v2
-        case (BoxedChar(v1),            BoxedChar(v2))          => v1 <=> v2
-        case (BoxedInt8(v1),            BoxedInt8(v2))          => v1 <=> v2
-        case (BoxedInt16(v1),           BoxedInt16(v2))         => v1 <=> v2
-        case (BoxedInt32(v1),           BoxedInt32(v2))         => v1 <=> v2
-        case (BoxedInt64(v1),           BoxedInt64(v2))         => v1 <=> v2
-        case (BoxedFloat32(v1),         BoxedFloat32(v2))       => v1 <=> v2
-        case (BoxedFloat64(v1),         BoxedFloat64(v2))       => v1 <=> v2
-        case (_,                        BoxedValue(_))          => bug!("Order is not supported for BoxedValue")
-        case (BoxedValue(_),            _)                      => bug!("Order is not supported for BoxedValue")
-        case (BoxedObject(v1, cmp1, _), BoxedObject(v2, _, _))  => cmp1(v1, v2)
-        case _                                                  => bug!("Mismatched types.")
+        case (BoxedBool(v1),         BoxedBool(v2))      => v1 <=> v2
+        case (BoxedChar(v1),         BoxedChar(v2))      => v1 <=> v2
+        case (BoxedInt8(v1),         BoxedInt8(v2))      => v1 <=> v2
+        case (BoxedInt16(v1),        BoxedInt16(v2))     => v1 <=> v2
+        case (BoxedInt32(v1),        BoxedInt32(v2))     => v1 <=> v2
+        case (BoxedInt64(v1),        BoxedInt64(v2))     => v1 <=> v2
+        case (BoxedFloat32(v1),      BoxedFloat32(v2))   => v1 <=> v2
+        case (BoxedFloat64(v1),      BoxedFloat64(v2))   => v1 <=> v2
+        case (BoxedObject(v1, cmp1), BoxedObject(v2, _)) => cmp1(v1, v2)
+        case _                                           => bug!("Mismatched types.")
     }
 }
 
 instance ToString[Boxed] {
     pub def toString(b: Boxed): String = match b {
-        case BoxedBool(v)           => ToString.toString(v)
-        case BoxedChar(v)           => ToString.toString(v)
-        case BoxedInt8(v)           => ToString.toString(v)
-        case BoxedInt16(v)          => ToString.toString(v)
-        case BoxedInt32(v)          => ToString.toString(v)
-        case BoxedInt64(v)          => ToString.toString(v)
-        case BoxedFloat32(v)        => ToString.toString(v)
-        case BoxedFloat64(v)        => ToString.toString(v)
-        case BoxedValue(_)          => bug!("ToString is not supported for BoxedValue")
-        case BoxedObject(v, _, to)  => to(v)
+        case BoxedBool(v)      => ToString.toString(v)
+        case BoxedChar(v)      => ToString.toString(v)
+        case BoxedInt8(v)      => ToString.toString(v)
+        case BoxedInt16(v)     => ToString.toString(v)
+        case BoxedInt32(v)     => ToString.toString(v)
+        case BoxedInt64(v)     => ToString.toString(v)
+        case BoxedFloat32(v)   => ToString.toString(v)
+        case BoxedFloat64(v)   => ToString.toString(v)
+        case BoxedObject(v, _) => stringify(v)
     }
 }

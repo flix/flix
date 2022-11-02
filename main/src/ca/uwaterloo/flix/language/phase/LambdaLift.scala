@@ -98,6 +98,8 @@ object LambdaLift {
 
       case SimplifiedAst.Expression.Float64(lit, loc) => LiftedAst.Expression.Float64(lit, loc)
 
+      case SimplifiedAst.Expression.BigDecimal(lit, loc) => LiftedAst.Expression.BigDecimal(lit, loc)
+
       case SimplifiedAst.Expression.Int8(lit, loc) => LiftedAst.Expression.Int8(lit, loc)
 
       case SimplifiedAst.Expression.Int16(lit, loc) => LiftedAst.Expression.Int16(lit, loc)
@@ -325,31 +327,6 @@ object LambdaLift {
       case SimplifiedAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
         val methods = methods0.map(visitJvmMethod)
         LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
-
-      case SimplifiedAst.Expression.NewChannel(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        LiftedAst.Expression.NewChannel(e, tpe, loc)
-
-      case SimplifiedAst.Expression.GetChannel(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        LiftedAst.Expression.GetChannel(e, tpe, loc)
-
-      case SimplifiedAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        LiftedAst.Expression.PutChannel(e1, e2, tpe, loc)
-
-      case SimplifiedAst.Expression.SelectChannel(rules, default, tpe, loc) =>
-        val rs = rules map {
-          case SimplifiedAst.SelectChannelRule(sym, chan, exp) =>
-            val c = visitExp(chan)
-            val e = visitExp(exp)
-            LiftedAst.SelectChannelRule(sym, c, e)
-        }
-
-        val d = default.map(visitExp)
-
-        LiftedAst.Expression.SelectChannel(rs, d, tpe, loc)
 
       case SimplifiedAst.Expression.Spawn(exp, tpe, loc) =>
         val e = visitExp(exp)

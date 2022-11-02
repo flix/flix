@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.IntroducedBy
-import ca.uwaterloo.flix.language.phase.Kinder
+import ca.uwaterloo.flix.language.ast.Ast.{IntroducedBy, EliminatedBy}
+import ca.uwaterloo.flix.language.phase.{Kinder, Lowering}
 
 /**
   * Representation of type constructors.
@@ -51,6 +51,13 @@ object TypeConstructor {
     * A type constructor that represent the type of 64-bit floating point numbers.
     */
   case object Float64 extends TypeConstructor {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
+    * A type constructor that represent the type of arbitrary-precision floating point numbers.
+    */
+  case object BigDecimal extends TypeConstructor {
     def kind: Kind = Kind.Star
   }
 
@@ -161,6 +168,7 @@ object TypeConstructor {
   /**
     * A type constructor that represent the type of channels.
     */
+  @EliminatedBy(Lowering.getClass)
   case object Channel extends TypeConstructor {
     /**
       * The shape of a channel is Channel[t].

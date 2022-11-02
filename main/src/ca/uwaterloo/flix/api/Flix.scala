@@ -92,6 +92,11 @@ class Flix {
     "BitwiseShr.flix" -> LocalResource.get("/src/library/BitwiseShr.flix"),
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
 
+    // Channels and Threads
+    "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
+    "Thread.flix" -> LocalResource.get("/src/library/Thread.flix"),
+    "Time.flix" -> LocalResource.get("/src/library/Time.flix"),
+
     // Built-in
     "Eq.flix" -> LocalResource.get("/src/library/Eq.flix"),
     "Hash.flix" -> LocalResource.get("/src/library/Hash.flix"),
@@ -110,6 +115,9 @@ class Flix {
     // Boxable
     "Boxable.flix" -> LocalResource.get("/src/library/Boxable.flix"),
     "Boxed.flix" -> LocalResource.get("/src/library/Boxed.flix"),
+
+    // Reflect
+    "Reflect.flix" -> LocalResource.get("/src/library/Reflect.flix")
   )
 
   /**
@@ -121,6 +129,7 @@ class Flix {
     "Array.flix" -> LocalResource.get("/src/library/Array.flix"),
     "Assert.flix" -> LocalResource.get("/src/library/Assert.flix"),
     "Benchmark.flix" -> LocalResource.get("/src/library/Benchmark.flix"),
+    "BigDecimal.flix" -> LocalResource.get("/src/library/BigDecimal.flix"),
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
@@ -190,8 +199,6 @@ class Flix {
     "Concurrent/Channel.flix" -> LocalResource.get("/src/library/Concurrent/Channel.flix"),
     "Concurrent/Condition.flix" -> LocalResource.get("/src/library/Concurrent/Condition.flix"),
     "Concurrent/ReentrantLock.flix" -> LocalResource.get("/src/library/Concurrent/ReentrantLock.flix"),
-    "Concurrent/Channel/Ticker.flix" -> LocalResource.get("/src/library/Concurrent/Channel/Ticker.flix"),
-    "Concurrent/Channel/Timer.flix" -> LocalResource.get("/src/library/Concurrent/Channel/Timer.flix"),
 
     "Time/Duration.flix" -> LocalResource.get("/src/library/Time/Duration.flix"),
     "Time/Epoch.flix" -> LocalResource.get("/src/library/Time/Epoch.flix"),

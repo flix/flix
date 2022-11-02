@@ -82,6 +82,12 @@ object SimplifiedAst {
       def purity: Purity = Pure
     }
 
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends SimplifiedAst.Expression {
+      def tpe: Type = Type.BigDecimal
+
+      def purity: Purity = Pure
+    }
+
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Int8
 
@@ -238,22 +244,6 @@ object SimplifiedAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, purity: Purity, methods: List[SimplifiedAst.JvmMethod], loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class NewChannel(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class GetChannel(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class PutChannel(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class SelectChannel(rules: List[SimplifiedAst.SelectChannelRule], default: Option[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
-      def purity: Purity = Impure
-    }
-
     case class Spawn(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
       def purity: Purity = Impure
     }
@@ -275,8 +265,6 @@ object SimplifiedAst {
     }
 
   }
-
-  case class SelectChannelRule(sym: Symbol.VarSym, chan: SimplifiedAst.Expression, exp: SimplifiedAst.Expression)
 
   case class Case(sym: Symbol.CaseSym, tpeDeprecated: Type, loc: SourceLocation)
 

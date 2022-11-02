@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
+import java.math.BigDecimal
 import java.math.BigInteger
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -40,7 +41,7 @@ object Weeder {
     * Users must not define fields or variables with these names.
     */
   private val ReservedWords = Set(
-    "!=", "$DEFAULT$", "&&&", "*", "**", "+", "-", "..", "/", ":", "::", ":::", ":=", "<", "<+>", "<-", "<<<", "<=",
+    "!=", "&&&", "*", "**", "+", "-", "..", "/", ":", "::", ":::", ":=", "<", "<+>", "<-", "<<<", "<=",
     "<=>", "==", "=>", ">", ">=", ">>>", "???", "@", "Absent", "Bool", "Impure", "Nil", "Predicate", "Present", "Pure",
     "Read", "RecordRow", "Region", "SchemaRow", "Type", "Write", "^^^", "alias", "case", "catch", "chan",
     "class", "def", "deref", "else", "enum", "false", "fix", "force",
@@ -541,6 +542,19 @@ object Weeder {
           case ("FLOAT64_GT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float64Op.Gt, e1, e2, loc).toSuccess
           case ("FLOAT64_GE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float64Op.Ge, e1, e2, loc).toSuccess
 
+          case ("BIGDECIMAL_NEG", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.BigDecimalOp.Neg, e1, loc).toSuccess
+          case ("BIGDECIMAL_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigDecimalOp.Add, e1, e2, loc).toSuccess
+          case ("BIGDECIMAL_SUB", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigDecimalOp.Sub, e1, e2, loc).toSuccess
+          case ("BIGDECIMAL_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigDecimalOp.Mul, e1, e2, loc).toSuccess
+          case ("BIGDECIMAL_DIV", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigDecimalOp.Div, e1, e2, loc).toSuccess
+          case ("BIGDECIMAL_EXP", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigDecimalOp.Exp, e1, e2, loc).toSuccess
+          case ("BIGDECIMAL_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigDecimalOp.Eq, e1, e2, loc).toSuccess
+          case ("BIGDECIMAL_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigDecimalOp.Neq, e1, e2, loc).toSuccess
+          case ("BIGDECIMAL_LT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigDecimalOp.Lt, e1, e2, loc).toSuccess
+          case ("BIGDECIMAL_LE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigDecimalOp.Le, e1, e2, loc).toSuccess
+          case ("BIGDECIMAL_GT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigDecimalOp.Gt, e1, e2, loc).toSuccess
+          case ("BIGDECIMAL_GE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigDecimalOp.Ge, e1, e2, loc).toSuccess
+
           case ("INT8_NEG", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.Int8Op.Neg, e1, loc).toSuccess
           case ("INT8_NOT", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.Int8Op.Not, e1, loc).toSuccess
           case ("INT8_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int8Op.Add, e1, e2, loc).toSuccess
@@ -643,6 +657,10 @@ object Weeder {
 
           case ("STRING_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.StringOp.Eq, e1, e2, loc).toSuccess
           case ("STRING_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.StringOp.Neq, e1, e2, loc).toSuccess
+
+          case ("CHANNEL_GET", e1 :: Nil) => WeededAst.Expression.GetChannel(e1, loc).toSuccess
+          case ("CHANNEL_PUT", e1 :: e2 :: Nil) => WeededAst.Expression.PutChannel(e1, e2, loc).toSuccess
+          case ("CHANNEL_NEW", e1 :: Nil) => WeededAst.Expression.NewChannel(e1, loc).toSuccess
 
           case _ => WeederError.IllegalIntrinsic(loc).toFailure
         }
@@ -1102,6 +1120,20 @@ object Weeder {
         case (e, rs) => WeededAst.Expression.Match(e, rs, loc)
       }
 
+    case ParsedAst.Expression.TypeMatch(sp1, exp, rules, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val rulesVal = traverse(rules) {
+        case ParsedAst.MatchTypeRule(ident, tpe, body) =>
+          val t = visitType(tpe)
+          mapN(visitExp(body, senv)) {
+            // Pattern match without guard.
+            case e => WeededAst.MatchTypeRule(ident, t, e)
+          }
+      }
+      mapN(visitExp(exp, senv), rulesVal) {
+        case (e, rs) => WeededAst.Expression.TypeMatch(e, rs, loc)
+      }
+
     case ParsedAst.Expression.Choose(sp1, star, exps, rules, sp2) =>
       //
       // Check for mismatched arity of `exps` and `rules`.
@@ -1527,22 +1559,6 @@ object Weeder {
       val loc = mkSL(sp1, sp2)
       mapN(expVal, rulesVal) {
         case (exp, rules) => WeededAst.Expression.TryWith(exp, eff, rules, loc)
-      }
-
-    // TODO SJ: Rewrite to Ascribe(newch, Channel[Int32]), to remove the tpe (and get tvar like everything else)
-    case ParsedAst.Expression.NewChannel(sp1, tpe, exp, sp2) =>
-      visitExp(exp, senv) map {
-        case e => WeededAst.Expression.NewChannel(e, visitType(tpe), mkSL(sp1, sp2))
-      }
-
-    case ParsedAst.Expression.GetChannel(sp1, exp, sp2) =>
-      visitExp(exp, senv) map {
-        case e => WeededAst.Expression.GetChannel(e, mkSL(sp1, sp2))
-      }
-
-    case ParsedAst.Expression.PutChannel(exp1, exp2, sp2) =>
-      mapN(visitExp(exp1, senv), visitExp(exp2, senv)) {
-        case (e1, e2) => WeededAst.Expression.PutChannel(e1, e2, mkSL(leftMostSourcePosition(exp1), sp2))
       }
 
     case ParsedAst.Expression.SelectChannel(sp1, rules, default, sp2) =>
@@ -1983,6 +1999,11 @@ object Weeder {
         case lit => WeededAst.Expression.Float64(lit, mkSL(sp1, sp2))
       }
 
+    case ParsedAst.Literal.BigDecimal(sp1, sign, before, after, sp2) =>
+      toBigDecimal(sign, before, after, mkSL(sp1, sp2)) map {
+        case lit => WeededAst.Expression.BigDecimal(lit, mkSL(sp1, sp2))
+      }
+
     case ParsedAst.Literal.Int8(sp1, sign, radix, digits, sp2) =>
       toInt8(sign, radix, digits, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Expression.Int8(lit, mkSL(sp1, sp2))
@@ -2012,9 +2033,6 @@ object Weeder {
       weedCharSequence(chars) map {
         string => WeededAst.Expression.Str(string, mkSL(sp1, sp2))
       }
-
-    case ParsedAst.Literal.Default(sp1, sp2) =>
-      WeededAst.Expression.Default(mkSL(sp1, sp2)).toSuccess
   }
 
   /**
@@ -2037,6 +2055,10 @@ object Weeder {
     case ParsedAst.Literal.Float64(sp1, sign, before, after, sp2) =>
       toFloat64(sign, before, after, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Pattern.Float64(lit, mkSL(sp1, sp2))
+      }
+    case ParsedAst.Literal.BigDecimal(sp1, sign, before, after, sp2) =>
+      toBigDecimal(sign, before, after, mkSL(sp1, sp2)) map {
+        case lit => WeededAst.Pattern.BigDecimal(lit, mkSL(sp1, sp2))
       }
     case ParsedAst.Literal.Int8(sp1, sign, radix, digits, sp2) =>
       toInt8(sign, radix, digits, mkSL(sp1, sp2)) map {
@@ -2062,8 +2084,6 @@ object Weeder {
       weedCharSequence(chars) map {
         string => WeededAst.Pattern.Str(string, mkSL(sp1, sp2))
       }
-    case ParsedAst.Literal.Default(sp1, sp2) =>
-      throw InternalCompilerException(s"Illegal default pattern near: ${mkSL(sp1, sp2).format}")
   }
 
   /**
@@ -2926,6 +2946,16 @@ object Weeder {
   }
 
   /**
+    * Attempts to parse the given big decimal with `sign` digits `before` and `after` the comma.
+    */
+  private def toBigDecimal(sign: String, before: String, after: String, loc: SourceLocation): Validation[BigDecimal, WeederError] = try {
+    val s = s"$sign$before.$after"
+    new BigDecimal(stripUnderscores(s)).toSuccess
+  } catch {
+    case _: NumberFormatException => IllegalFloat(loc).toFailure
+  }
+
+  /**
     * Attempts to parse the given int8 with `sign` and `digits`.
     */
   private def toInt8(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Byte, WeederError] = try {
@@ -3011,6 +3041,7 @@ object Weeder {
     case ParsedAst.Expression.Scope(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Choose(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.TypeMatch(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordLit(sp1, _, _) => sp1
@@ -3040,9 +3071,6 @@ object Weeder {
     case ParsedAst.Expression.Do(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Resume(sp1, _, _) => sp1
     case ParsedAst.Expression.Try(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.NewChannel(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.GetChannel(sp1, _, _) => sp1
-    case ParsedAst.Expression.PutChannel(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.SelectChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Spawn(sp1, _, _) => sp1
     case ParsedAst.Expression.Par(sp1, _, _) => sp1

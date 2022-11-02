@@ -178,7 +178,7 @@ namespace BigInt {
     ///
     pub def tryToFloat32(x: BigInt): Option[Float32] =
         use Option.flatMap;
-        import new java.math.BigDecimal(BigInt): ##java.math.BigDecimal \ {} as newBigDecimal;
+        import new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
         import java.math.BigDecimal.floatValue(): Float32 \ {};
         let xd = newBigDecimal(x);
         let d = floatValue(xd);
@@ -201,7 +201,7 @@ namespace BigInt {
     ///
     pub def tryToFloat64(x: BigInt): Option[Float64] =
         use Option.flatMap;
-        import new java.math.BigDecimal(BigInt): ##java.math.BigDecimal \ {} as newBigDecimal;
+        import new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
         import java.math.BigDecimal.doubleValue(): Float64 \ {};
         let xd = newBigDecimal(x);
         let d = doubleValue(xd);
@@ -211,6 +211,14 @@ namespace BigInt {
             None
         else
             Some(d)
+
+
+    ///
+    /// Convert `x` to an `BigDecimal`.
+    ///
+    pub def toBigDecimal(x: BigInt): BigDecimal =
+        import new java.math.BigDecimal(BigInt): BigDecimal \ {} as fromBigInteger;
+        fromBigInteger(x)
 
     ///
     /// Helper function for the `clamp` conversion functions.
@@ -295,7 +303,7 @@ namespace BigInt {
     ///
     pub def clampToFloat32(x: BigInt, minimum: Float32, maximum: Float32): Float32 =
         use Option.flatMap;
-        import new java.math.BigDecimal(BigInt): ##java.math.BigDecimal \ {} as newBigDecimal;
+        import new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
         import java.math.BigDecimal.floatValue(): Float32 \ {};
         let step = () -> {
             let* f32min = Float32.tryToBigInt(minimum);
@@ -316,7 +324,7 @@ namespace BigInt {
     ///
     pub def clampToFloat64(x: BigInt, minimum: Float64, maximum: Float64): Float64 =
         use Option.flatMap;
-        import new java.math.BigDecimal(BigInt): ##java.math.BigDecimal \ {} as newBigDecimal;
+        import new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
         import java.math.BigDecimal.doubleValue(): Float64 \ {};
         let step = () -> {
             let* f64min = Float64.tryToBigInt(minimum);

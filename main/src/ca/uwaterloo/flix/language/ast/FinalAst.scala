@@ -67,6 +67,10 @@ object FinalAst {
       final val tpe = MonoType.Float64
     }
 
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends FinalAst.Expression {
+      final val tpe = MonoType.BigDecimal
+    }
+
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends FinalAst.Expression {
       final val tpe = MonoType.Int8
     }
@@ -178,14 +182,6 @@ object FinalAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[FinalAst.JvmMethod], loc: SourceLocation) extends FinalAst.Expression
 
-    case class NewChannel(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class GetChannel(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class PutChannel(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class SelectChannel(rules: List[FinalAst.SelectChannelRule], default: Option[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
     case class Spawn(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class Lazy(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
@@ -197,8 +193,6 @@ object FinalAst {
     case class MatchError(tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
   }
-
-  case class SelectChannelRule(sym: Symbol.VarSym, chan: FinalAst.Expression, exp: FinalAst.Expression)
 
   case class Case(sym: Symbol.CaseSym, tpeDeprecated: MonoType, loc: SourceLocation)
 

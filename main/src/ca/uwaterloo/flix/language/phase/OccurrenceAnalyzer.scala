@@ -164,6 +164,8 @@ object OccurrenceAnalyzer {
 
     case Expression.Float64(lit, loc) => (OccurrenceAst.Expression.Float64(lit, loc), OccurInfo.One)
 
+    case Expression.BigDecimal(lit, loc) => (OccurrenceAst.Expression.BigDecimal(lit, loc), OccurInfo.One)
+
     case Expression.Int8(lit, loc) => (OccurrenceAst.Expression.Int8(lit, loc), OccurInfo.One)
 
     case Expression.Int16(lit, loc) => (OccurrenceAst.Expression.Int16(lit, loc), OccurInfo.One)
@@ -420,36 +422,6 @@ object OccurrenceAnalyzer {
       }.unzip
       val o2 = o1.foldLeft(OccurInfo.Empty)((acc, o3) => combineAllSeq(acc, o3))
       (OccurrenceAst.Expression.NewObject(name, clazz, tpe, purity, ms, loc), o2.increaseSizeByOne())
-
-    case Expression.NewChannel(exp, tpe, loc) =>
-      val (e, o) = visitExp(sym0, exp)
-      (OccurrenceAst.Expression.NewChannel(e, tpe, loc), o.increaseSizeByOne())
-
-    case Expression.GetChannel(exp, tpe, loc) =>
-      val (e, o) = visitExp(sym0, exp)
-      (OccurrenceAst.Expression.GetChannel(e, tpe, loc), o.increaseSizeByOne())
-
-    case Expression.PutChannel(exp1, exp2, tpe, loc) =>
-      val (e1, o1) = visitExp(sym0, exp1)
-      val (e2, o2) = visitExp(sym0, exp2)
-      val o3 = combineAllSeq(o1, o2)
-      (OccurrenceAst.Expression.PutChannel(e1, e2, tpe, loc), o3.increaseSizeByOne())
-
-    case Expression.SelectChannel(rules, default, tpe, loc) =>
-      val (rs, o1, o2) = rules.map(r => {
-        val (c, o3) = visitExp(sym0, r.chan)
-        val (e, o4) = visitExp(sym0, r.exp)
-        (OccurrenceAst.SelectChannelRule(r.sym, c, e), o3, o4)
-      }).unzip3
-
-      val o5 = o1.foldLeft(OccurInfo.Empty)((acc, o6) => combineAllSeq(acc, o6))
-      val o7 = o2.foldLeft(OccurInfo.Empty)((acc, o8) => combineAllBranch(acc, o8))
-
-      val (d1, o9) = default.map(visitExp(sym0, _)).unzip
-      val o10 = combineAllBranch(o9.getOrElse(OccurInfo.Empty), o7)
-
-      val o11 = combineAllSeq(o5, o10)
-      (OccurrenceAst.Expression.SelectChannel(rs, d1, tpe, loc), o11.increaseSizeByOne())
 
     case Expression.Spawn(exp, tpe, loc) =>
       val (e, o1) = visitExp(sym0, exp)
