@@ -444,10 +444,10 @@ object Redundancy {
           val usedPatGuardAndBody = usedPat ++ usedGuard ++ usedBody
 
           // Check for unused variable symbols.
-          val unusedVarSyms = fvs.filter(sym => deadVarSym(sym, usedPatGuardAndBody)).map(UnusedVarSym)
+          val unusedVarSyms = findUnusedVarSyms(fvs, usedPatGuardAndBody)
 
           // Check for shadowed variable symbols.
-          val shadowedVarSyms = fvs.map(sym => shadowing(sym, env0)).foldLeft(Used.empty)(_ ++ _)
+          val shadowedVarSyms = findShadowedVarSyms(fvs, env0)
 
           // Combine everything together.
           (usedPatGuardAndBody -- fvs) ++ unusedVarSyms ++ shadowedVarSyms
@@ -706,8 +706,45 @@ object Redundancy {
     case Expression.Par(exp, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.ParYield(frags, exp, tpe, pur, eff, loc) => ???
+    case Expression.ParYield(frags, exp, _, _, _, _) =>
+      val (used, env1, fvs) = frags.foldLeft((Used.empty, env0, Set.empty[Symbol.VarSym])) {
+        case ((usedAcc, envAcc, fvsAcc), ParYield.Fragment(p, e, _)) =>
+          // Find free vars in pattern
+          val fvs = freeVars(p)
 
+          // Extend env
+          val extendedEnv = envAcc ++ fvs
+
+          // Check that the pattern does not shadow any previous or anything else
+          val shadowedVars = findShadowedVarSyms(fvs, envAcc)
+
+          val usedPat = visitPat(p)
+
+          // Check under env0 since each exp should be independent
+          val usedExp = visitExp(e, env0, rc)
+
+          val allUsed = usedAcc ++ usedPat ++ usedExp ++ shadowedVars
+
+          (allUsed, extendedEnv, fvsAcc ++ fvs)
+      }
+
+      val usedYield = visitExp(exp, env1, rc)
+      val unusedVarSyms = findUnusedVarSyms(fvs, usedYield)
+      (usedYield -- fvs) ++ unusedVarSyms ++ used
+
+    /*
+
+    val fvs = usedFrags.foldLeft(Set.empty[Symbol.VarSym]) {
+      case (acc, (_, fvs)) => acc ++ fvs
+    }
+
+    val extendedEnv = env0 ++ fvs
+    val usedYield = visitExp(exp, extendedEnv, rc)
+    val unusedVarSyms = findUnusedVarSyms(fvs, usedYield)
+    val shadowedVarSyms = findShadowedVarSyms(fvs, env0)
+
+    (usedYield -- fvs) ++ unusedVarSyms ++ shadowedVarSyms ++ usedFrags.map(_._1).reduceLeft(_ ++ _)
+*/
     case Expression.Lazy(exp, _, _) =>
       visitExp(exp, env0, rc)
 
@@ -746,6 +783,14 @@ object Redundancy {
 
     case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, _, _, _) =>
       Used.of(sym) ++ visitExp(exp1, env0, rc) ++ visitExp(exp2, env0, rc) ++ visitExp(exp3, env0, rc)
+  }
+
+  private def findShadowedVarSyms(freeVars: Set[Symbol.VarSym], env0: Env): Used = {
+    freeVars.map(sym => shadowing(sym, env0)).foldLeft(Used.empty)(_ ++ _)
+  }
+
+  private def findUnusedVarSyms(freeVars: Set[Symbol.VarSym], usedSyms: Used): Set[UnusedVarSym] = {
+    freeVars.filter(sym => deadVarSym(sym, usedSyms)).map(UnusedVarSym)
   }
 
   /**
@@ -994,7 +1039,7 @@ object Redundancy {
     * Returns `true` if the given definition `decl` is unused according to `used`.
     */
   private def deadEffect(decl: Effect, used: Used)(implicit root: Root): Boolean =
-      !decl.mod.isPublic &&
+    !decl.mod.isPublic &&
       !decl.sym.name.startsWith("_") &&
       !used.effectSyms.contains(decl.sym)
 
