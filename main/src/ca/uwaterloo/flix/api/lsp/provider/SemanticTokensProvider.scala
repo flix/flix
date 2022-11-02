@@ -656,7 +656,8 @@ object SemanticTokensProvider {
     case TypeConstructor.Int64 => true
     case TypeConstructor.BigInt => true
     case TypeConstructor.Str => true
-    case TypeConstructor.Channel => true
+    case TypeConstructor.Sender => true
+    case TypeConstructor.Receiver => true
     case TypeConstructor.Lazy => true
     case TypeConstructor.Enum(_, _) => true
     case TypeConstructor.Native(_) => true

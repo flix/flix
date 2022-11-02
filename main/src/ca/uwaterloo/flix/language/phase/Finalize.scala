@@ -416,7 +416,9 @@ object Finalize {
 
             case TypeConstructor.RecordRowEmpty => MonoType.RecordEmpty()
 
-            case TypeConstructor.Channel => MonoType.Channel(args.head)
+            case TypeConstructor.Sender => MonoType.Sender(args.head)
+
+            case TypeConstructor.Receiver => MonoType.Receiver(args.head)
 
             case TypeConstructor.Lazy => MonoType.Lazy(args.head)
 

@@ -830,8 +830,11 @@ object Lowering {
         case _ => tpe0
       }
 
-      // Special case for Channel[_], which is rewritten to Concurrent/Channel.Mpmc
-      case Type.Cst(TypeConstructor.Channel, loc) =>
+      // Special case for Sender[_] and Receiver[_], both of which are rewritten to Concurrent/Channel.Mpmc
+      case Type.Cst(TypeConstructor.Sender, loc) =>
+        Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc)
+
+      case Type.Cst(TypeConstructor.Receiver, loc) =>
         Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc)
 
       case Type.Cst(_, _) => tpe0
