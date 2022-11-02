@@ -472,10 +472,10 @@ object Redundancy {
           val usedBody = visitExp(body, extendedEnv, rc)
 
           // Check for unused variable symbols.
-          val unusedVarSyms = fvs.filter(sym => deadVarSym(sym, usedBody)).map(UnusedVarSym)
+          val unusedVarSyms = findUnusedVarSyms(fvs, usedBody)
 
           // Check for shadowed variable symbols.
-          val shadowedVarSyms = fvs.map(sym => shadowing(sym, env0)).foldLeft(Used.empty)(_ ++ _)
+          val shadowedVarSyms = findShadowedVarSyms(fvs, env0)
 
           // Combine everything together.
           (usedBody -- fvs) ++ unusedVarSyms ++ shadowedVarSyms
@@ -497,10 +497,10 @@ object Redundancy {
           val usedBody = visitExp(exp, extendedEnv, rc)
 
           // Check for unused variable symbols.
-          val unusedVarSyms = fvs.filter(sym => deadVarSym(sym, usedBody)).map(UnusedVarSym)
+          val unusedVarSyms = findUnusedVarSyms(fvs, usedBody)
 
           // Check for shadowed variable symbols.
-          val shadowedVarSyms = fvs.map(sym => shadowing(sym, env0)).foldLeft(Used.empty)(_ ++ _)
+          val shadowedVarSyms = findShadowedVarSyms(fvs, env0)
 
           // Combine everything together.
           (usedBody -- fvs ++ unusedVarSyms) ++ shadowedVarSyms
