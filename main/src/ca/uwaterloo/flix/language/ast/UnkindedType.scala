@@ -206,6 +206,13 @@ object UnkindedType {
   }
 
   /**
+    * Returns the Float64 type.
+    */
+  def mkFloat64(loc: SourceLocation): UnkindedType = {
+    UnkindedType.Cst(TypeConstructor.Float64, loc)
+  }
+
+  /**
    * Returns the Bool type.
    */
   def mkBool(loc: SourceLocation): UnkindedType = {
