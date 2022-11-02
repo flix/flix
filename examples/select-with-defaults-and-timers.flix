@@ -1,15 +1,15 @@
 /// Sends the value `x` on the channel `c` after a delay.
-def slow(x: Int32, c: Sender[Int32]): Unit \ IO =
+def slow(x: Int32, s: Sender[Int32]): Unit \ IO =
     use Time/Duration.fromSeconds;
     Thread.sleep(fromSeconds(10));
-    c <- x;
+    Channel.send(x, s);
     ()
 
 /// Reads a value from the channel `c`.
 /// Returns the default value `1` if `c` is not ready.
-def recvWithDefault(c: Receiver[Int32]): Int32 \ IO =
+def recvWithDefault(r: Receiver[Int32]): Int32 \ IO =
     select {
-        case x <- c => x
+        case x <- r => x
         case _      => 1
     }
 

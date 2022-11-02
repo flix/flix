@@ -47,6 +47,7 @@ object Resolver {
     * Java classes for primitives and Object
     */
   private val Int = classOf[Int]
+  private val Long = classOf[Long]
   private val Boolean = classOf[Boolean]
   private val Object = classOf[AnyRef]
 
@@ -1898,7 +1899,10 @@ object Resolver {
         case "java.util.function.IntUnaryOperator" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkInt32(loc), loc).toSuccess
         case "java.util.function.IntPredicate" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkBool(loc), loc).toSuccess
         case "java.util.function.IntConsumer" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkUnit(loc), loc).toSuccess
-
+        case "java.util.function.LongFunction" => UnkindedType.mkImpureArrow(UnkindedType.mkInt64(loc), UnkindedType.mkObject(loc), loc).toSuccess
+        case "java.util.function.LongUnaryOperator" => UnkindedType.mkImpureArrow(UnkindedType.mkInt64(loc), UnkindedType.mkInt64(loc), loc).toSuccess
+        case "java.util.function.LongPredicate" => UnkindedType.mkImpureArrow(UnkindedType.mkInt64(loc), UnkindedType.mkBool(loc), loc).toSuccess
+        case "java.util.function.LongConsumer" => UnkindedType.mkImpureArrow(UnkindedType.mkInt64(loc), UnkindedType.mkUnit(loc), loc).toSuccess
         case _ => lookupJvmClass(fqn, loc) map {
           case clazz => UnkindedType.Cst(TypeConstructor.Native(clazz), loc)
         }
@@ -2717,6 +2721,10 @@ object Resolver {
           case Int :: Boolean :: Nil => Class.forName("java.util.function.IntPredicate").toSuccess
           case Int :: Object :: Nil =>
               if (returnsUnit) Class.forName("java.util.function.IntConsumer").toSuccess  else Class.forName("java.util.function.IntFunction").toSuccess
+          case Long :: Long :: Nil => Class.forName("java.util.function.LongUnaryOperator").toSuccess
+          case Long :: Boolean :: Nil => Class.forName("java.util.function.LongPredicate").toSuccess
+          case Long :: Object :: Nil =>
+            if (returnsUnit) Class.forName("java.util.function.LongConsumer").toSuccess  else Class.forName("java.util.function.LongFunction").toSuccess
           case _ => ResolutionError.IllegalType(tpe, loc).toFailure
         }
 

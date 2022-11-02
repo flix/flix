@@ -125,6 +125,7 @@ object CompletionProvider {
       getCaseCompletions() ++
       getMatchCompletitions() ++
       getPredicateCompletions() ++
+      getFieldCompletions() ++
       getInstanceCompletions() ++
       getTypeCompletions() ++
       getOpCompletions() ++
@@ -689,6 +690,37 @@ object CompletionProvider {
   }
 
   /**
+   * Gets completions for record fields
+   */
+  private def getFieldCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+    // Do not get field completions if we are importing or using.
+    if (root == null || context.prefix.contains("import") || context.prefix.contains("use")) {
+      return Nil
+    }
+
+    val regex = raw"(.*)[.].*".r
+
+    context.word match {
+      case regex(prefix) => {
+        index.fieldDefs.m.concat(index.fieldUses.m)
+          .filter{case (_, locs) => locs.exists(loc => loc.source.name == context.uri)}
+          .foldLeft[List[CompletionItem]](Nil){
+          case (acc, (field, locs)) => {
+            val name = s"$prefix.${field.name}"
+            CompletionItem(label = name,
+              sortText = Priority.high(name),
+              textEdit = TextEdit(context.range, name),
+              documentation = None,
+              insertTextFormat = InsertTextFormat.PlainText,
+              kind = CompletionItemKind.Variable) :: acc
+          }
+        }
+      }
+      case _ => Nil
+    }
+  }
+
+  /**
     * Returns a list of completion items based on type classes.
     */
   private def getInstanceCompletions()(implicit context: Context, index: Index, root: TypedAst.Root, flix: Flix): Iterable[CompletionItem] = {
@@ -995,6 +1027,7 @@ object CompletionProvider {
         case "java.math.BigDecimal" => "BigDecimal"
         case "java.util.function.IntFunction" => "Int32 => ##java.lang.Object"
         case "java.util.function.IntUnaryOperator" => "Int32 => Int32"
+        case "void" => "Unit"
         case other => s"##$other"
       }
     }

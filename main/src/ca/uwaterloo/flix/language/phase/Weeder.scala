@@ -1561,22 +1561,6 @@ object Weeder {
         case (exp, rules) => WeededAst.Expression.TryWith(exp, eff, rules, loc)
       }
 
-    // TODO SJ: Rewrite to Ascribe(newch, Channel[Int32]), to remove the tpe (and get tvar like everything else)
-    case ParsedAst.Expression.NewChannel(sp1, _, exp, sp2) =>
-      visitExp(exp, senv) map {
-        case e => WeededAst.Expression.NewChannel(e, mkSL(sp1, sp2))
-      }
-
-    case ParsedAst.Expression.GetChannel(sp1, exp, sp2) =>
-      visitExp(exp, senv) map {
-        case e => WeededAst.Expression.GetChannel(e, mkSL(sp1, sp2))
-      }
-
-    case ParsedAst.Expression.PutChannel(exp1, exp2, sp2) =>
-      mapN(visitExp(exp1, senv), visitExp(exp2, senv)) {
-        case (e1, e2) => WeededAst.Expression.PutChannel(e1, e2, mkSL(leftMostSourcePosition(exp1), sp2))
-      }
-
     case ParsedAst.Expression.SelectChannel(sp1, rules, default, sp2) =>
       val rulesVal = traverse(rules) {
         case ParsedAst.SelectChannelRule(ident, chan, body) => mapN(visitExp(chan, senv), visitExp(body, senv)) {
@@ -3098,9 +3082,6 @@ object Weeder {
     case ParsedAst.Expression.Do(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Resume(sp1, _, _) => sp1
     case ParsedAst.Expression.Try(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.NewChannel(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.GetChannel(sp1, _, _) => sp1
-    case ParsedAst.Expression.PutChannel(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.SelectChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Spawn(sp1, _, _) => sp1
     case ParsedAst.Expression.Par(sp1, _, _) => sp1
