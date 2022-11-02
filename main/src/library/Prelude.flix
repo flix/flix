@@ -231,31 +231,31 @@ pub def stringify(x: a): String = typematch x {
         toString(y as Array[##java.lang.Object, Static]) as \ {}
     case y: Array[Bool, _] =>
         import static java.util.Arrays.toString(Array[Bool, Static]): String;
-        toString(y) as \ {}
+        toString(y as Array[Bool, Static]) as \ {}
     case y: Array[Char, _] =>
         import static java.util.Arrays.toString(Array[Char, Static]): String;
-        toString(y) as \ {}
+        toString(y as Array[Char, Static]) as \ {}
     case y: Array[Float32, _] =>
         import static java.util.Arrays.toString(Array[Float32, Static]): String;
-        toString(y) as \ {}
+        toString(y as Array[Float32, Static]) as \ {}
     case y: Array[Float64, _] =>
         import static java.util.Arrays.toString(Array[Float64, Static]): String;
-        toString(y) as \ {}
+        toString(y as Array[Float64, Static]) as \ {}
     case y: Array[BigDecimal, _] =>
         import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
         toString(y as Array[##java.lang.Object, Static]) as \ {}
     case y: Array[Int8, _] =>
         import static java.util.Arrays.toString(Array[Int8, Static]): String;
-        toString(y) as \ {}
+        toString(y as Array[Int8, Static]) as \ {}
     case y: Array[Int16, _] =>
         import static java.util.Arrays.toString(Array[Int16, Static]): String;
-        toString(y) as \ {}
+        toString(y as Array[Int16, Static]) as \ {}
     case y: Array[Int32, _] =>
         import static java.util.Arrays.toString(Array[Int32, Static]): String;
-        toString(y) as \ {}
+        toString(y as Array[Int32, Static]) as \ {}
     case y: Array[Int64, _] =>
         import static java.util.Arrays.toString(Array[Int64, Static]): String;
-        toString(y) as \ {}
+        toString(y as Array[Int64, Static]) as \ {}
     case y: Array[BigInt, _] =>
         import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
         toString(y as Array[##java.lang.Object, Static]) as \ {}
