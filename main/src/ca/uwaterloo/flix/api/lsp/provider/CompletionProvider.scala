@@ -1027,6 +1027,7 @@ object CompletionProvider {
         case "java.math.BigDecimal" => "BigDecimal"
         case "java.util.function.IntFunction" => "Int32 => ##java.lang.Object"
         case "java.util.function.IntUnaryOperator" => "Int32 => Int32"
+        case "void" => "Unit"
         case other => s"##$other"
       }
     }
