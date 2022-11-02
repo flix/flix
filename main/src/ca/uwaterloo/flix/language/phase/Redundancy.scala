@@ -718,12 +718,14 @@ object Redundancy {
           // Check that the free vars don't shadow any previous par yield vars or anything else
           val shadowedVars = findShadowedVarSyms(fvs, envAcc)
 
+          // Visit pattern
           val usedPat = visitPat(p)
+          val unusedVars = findUnusedVarSyms(fvs, usedPat)
 
-          // Check under env0 since each exp should be independent
+          // Visit exp under env0 since each exp should be independent
           val usedExp = visitExp(e, env0, rc)
 
-          val allUsed = usedAcc ++ usedPat ++ usedExp ++ shadowedVars -- fvs
+          val allUsed = usedAcc ++ (usedPat ++ usedExp -- fvs) ++ shadowedVars ++ unusedVars
 
           (allUsed, extendedEnv, fvsAcc ++ fvs)
       }
