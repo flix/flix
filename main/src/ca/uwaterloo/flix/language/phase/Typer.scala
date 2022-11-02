@@ -895,6 +895,8 @@ object Typer {
 
         for {
           (constrs, tpe, pur, eff) <- visitExp(exp)
+          // rigidify all the type vars in the rules
+          _ <- seqM(rules.flatMap(rule => rule.tpe.typeVars.toList.map(rigidifyM)))
           // unify each rule's variable with its type
           _ <- seqM(rules.map(rule => unifyTypeM(rule.sym.tvar, rule.tpe, rule.sym.loc)))
           (bodyConstrs, bodyTypes, bodyPurs, bodyEffs) <- seqM(bodies map visitExp).map(unzip4)
