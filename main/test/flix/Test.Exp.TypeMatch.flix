@@ -584,9 +584,9 @@ namespace Test/Exp/ReifyType {
     /// If both or neither is pure, applies `f1`.
     ///
     def applyThePureOne(f1: a -> b \ ef1, f2: a -> b \ ef2, x: a): b \ ef1 = typematch f1 {
-        case f: _ -> _ \ {} => f(x)
+        case f: a -> b \ {} => f(x)
         case _: _ => typematch f2 {
-            case f: _ -> _ \ {} => f(x)
+            case f: a -> b \ {} => f(x)
             case _: _ => f1(x)
         }
     }

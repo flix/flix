@@ -1579,4 +1579,18 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedBools](result)
   }
 
+  test("TestTypeMatch.01") {
+    val input =
+      """
+        |def takesString(_: String): Unit = ()
+        |
+        |def f(): Unit = typematch 123 {
+        |    case x: _ => takesString(x)
+        |    case _: _ => ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
 }
