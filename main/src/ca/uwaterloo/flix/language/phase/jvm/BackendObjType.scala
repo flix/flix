@@ -161,6 +161,9 @@ object BackendObjType {
         * The JvmName of the interface.
         */
       def jvmName: JvmName = this match {
+        case ObjFunction => JvmName.ObjFunction
+        case ObjConsumer => JvmName.ObjConsumer
+        case ObjPredicate => JvmName.ObjPredicate
         case IntFunction => JvmName.IntFunction
         case IntConsumer => JvmName.IntConsumer
         case IntPredicate => JvmName.IntPredicate
@@ -180,6 +183,27 @@ object BackendObjType {
         * These methods should do the same as a non-tail call in genExpression.
         */
       def functionMethod: InstanceMethod = this match {
+        case ObjFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
+          mkDescriptor(JavaObject.toTpe)(JavaObject.toTpe),
+          Some(
+            thisLoad() ~
+              DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
+              INVOKEVIRTUAL(continuation.UnwindMethod) ~ ARETURN()
+          ))
+        case ObjConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
+          mkDescriptor(JavaObject.toTpe)(VoidableType.Void),
+          Some(
+            thisLoad() ~
+              DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
+              INVOKEVIRTUAL(continuation.UnwindMethod) ~ RETURN()
+          ))
+        case ObjPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
+          mkDescriptor(JavaObject.toTpe)(BackendType.Bool),
+          Some(
+            thisLoad() ~
+              DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
+              INVOKEVIRTUAL(continuation.UnwindMethod) ~ IRETURN()
+          ))
         case IntFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
           mkDescriptor(BackendType.Int32)(JavaObject.toTpe),
           Some(
@@ -268,6 +292,15 @@ object BackendObjType {
       }
     }
 
+    // JavaObject -> JavaObject
+    case object ObjFunction extends FunctionInterface
+
+    // JavaObject -> Unit
+    case object ObjConsumer extends FunctionInterface
+
+    // JavaObject -> Bool
+    case object ObjPredicate extends FunctionInterface
+
     // Int32 -> JavaObject
     case object IntFunction extends FunctionInterface
 
@@ -309,6 +342,10 @@ object BackendObjType {
       */
     def specialization(): List[FunctionInterface] = {
       (args, result) match {
+        case (BackendType.Reference(BackendObjType.JavaObject) :: Nil, BackendType.Reference(BackendObjType.JavaObject)) =>
+          ObjFunction :: ObjConsumer :: Nil
+        case (BackendType.Reference(BackendObjType.JavaObject) :: Nil, BackendType.Bool) =>
+          ObjPredicate :: Nil
         case (BackendType.Int32 :: Nil, BackendType.Reference(BackendObjType.JavaObject)) =>
           IntFunction :: IntConsumer :: Nil
         case (BackendType.Int32 :: Nil, BackendType.Bool) =>
