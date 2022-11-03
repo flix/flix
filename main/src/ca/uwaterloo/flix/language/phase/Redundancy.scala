@@ -725,7 +725,7 @@ object Redundancy {
           // Visit exp under env0 since each exp should be independent
           val usedExp = visitExp(e, env0, rc)
 
-          val allUsed = usedAcc ++ (usedPat ++ usedExp -- fvs) ++ shadowedVars ++ unusedVars
+          val allUsed = usedAcc ++ usedPat ++ usedExp ++ shadowedVars
 
           (allUsed, extendedEnv, fvsAcc ++ fvs)
       }
