@@ -416,9 +416,9 @@ object Finalize {
 
             case TypeConstructor.RecordRowEmpty => MonoType.RecordEmpty()
 
-            case TypeConstructor.Sender => throw new InternalCompilerException("Unexpected Sender")
+            case TypeConstructor.Sender => MonoType.Sender(args.head)
 
-            case TypeConstructor.Receiver => throw new InternalCompilerException("Unexpected Receiver")
+            case TypeConstructor.Receiver => MonoType.Receiver(args.head)
 
             case TypeConstructor.Lazy => MonoType.Lazy(args.head)
 
