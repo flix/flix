@@ -48,7 +48,9 @@ object Lowering {
     lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.union")
     lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.project")
     lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.rename")
+
     def ProjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint.injectInto$arity")
+
     def Facts(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint.facts$arity")
 
     lazy val DebugWithPrefix: Symbol.DefnSym = Symbol.mkDefnSym("debugWithPrefix")
@@ -636,7 +638,13 @@ object Lowering {
         throw InternalCompilerException(s"Unexpected par expression near ${exp.loc.format}: $exp")
     }
 
-    case Expression.ParYield(frags, exp, tpe, pur, eff, loc) => ???
+    case Expression.ParYield(frags, exp, tpe, pur, eff, loc) =>
+      val fs = frags.map {
+        case ParYield.Fragment(pat, e, loc) => (visitPat(pat), visitExp(e), loc)
+      }
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      mkParYield(fs, e, t, pur, eff, loc)
 
     case Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -1582,6 +1590,32 @@ object Lowering {
     }
   }
 
+  def mkLetMatch(exp: Expression, pat: Pattern, body: Expression): Expression = {
+    val expLoc = exp.loc.asSynthetic
+    val rule = List(MatchRule(pat, Expression.True(pat.loc.asSynthetic), body))
+    val pur = Type.mkAnd(exp.pur, body.pur, expLoc)
+    val eff = Type.mkUnion(exp.eff, body.eff, expLoc)
+    Expression.Match(exp, rule, body.tpe, pur, eff, expLoc)
+  }
+
+  def mkBoundParWaits(patSymExps: List[(Pattern, Symbol.VarSym, Expression)], exp: Expression): Expression =
+    patSymExps.map {
+      case (p, sym, e) =>
+        val loc = e.loc.asSynthetic
+        val chExp = mkChannelExp(sym, e.tpe, loc)
+        (p, mkGetChannel(chExp, e.tpe, Type.Impure, e.eff, loc))
+    }.foldRight(exp) {
+      case ((pat, chan), e) => mkLetMatch(chan, pat, e)
+    }
+
+  def mkParYield(frags: List[(Pattern, Expression, SourceLocation)], exp: Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): Expression = {
+    // Generate symbols for each channel.
+    val chanSymsWithPatAndExp = frags.map { case (p, e, l) => (p, mkLetSym("channel", l.asSynthetic), e) }
+    val desugaredYieldExp = mkBoundParWaits(chanSymsWithPatAndExp, exp)
+    val chanSymsWithExp = chanSymsWithPatAndExp.map { case (p, s, e) => (s, e) }
+    val blockExp = mkParChannels(desugaredYieldExp, chanSymsWithExp)
+    Expression.Cast(blockExp, None, Some(Type.Pure), Some(Type.Empty), tpe, pur, eff, loc.asSynthetic)
+  }
 
   /**
     * Returns a tuple expression that is evaluated in parallel.
