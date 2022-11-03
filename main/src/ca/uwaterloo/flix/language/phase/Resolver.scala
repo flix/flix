@@ -1883,6 +1883,9 @@ object Resolver {
         case "java.math.BigDecimal" => UnkindedType.Cst(TypeConstructor.BigDecimal, loc).toSuccess
         case "java.math.BigInteger" => UnkindedType.Cst(TypeConstructor.BigInt, loc).toSuccess
         case "java.lang.String" => UnkindedType.Cst(TypeConstructor.Str, loc).toSuccess
+        case "java.util.function.Function" => UnkindedType.mkImpureArrow(UnkindedType.mkObject(loc), UnkindedType.mkObject(loc), loc).toSuccess
+        case "java.util.function.Consumer" => UnkindedType.mkImpureArrow(UnkindedType.mkObject(loc), UnkindedType.mkUnit(loc), loc).toSuccess
+        case "java.util.function.Predicate" => UnkindedType.mkImpureArrow(UnkindedType.mkObject(loc), UnkindedType.mkBool(loc), loc).toSuccess
         case "java.util.function.IntFunction" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkObject(loc), loc).toSuccess
         case "java.util.function.IntConsumer" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkUnit(loc), loc).toSuccess
         case "java.util.function.IntPredicate" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkBool(loc), loc).toSuccess
@@ -2711,6 +2714,9 @@ object Resolver {
           case None => false
         }
         flatMapN(targsVal) {
+          case Object :: Object :: Nil =>
+            if (returnsUnit) Class.forName("java.util.function.Consumer").toSuccess  else Class.forName("java.util.function.Function").toSuccess
+          case Object :: Boolean :: Nil => Class.forName("java.util.function.Predicate").toSuccess
           case Int :: Object :: Nil =>
             if (returnsUnit) Class.forName("java.util.function.IntConsumer").toSuccess  else Class.forName("java.util.function.IntFunction").toSuccess
           case Int :: Boolean :: Nil => Class.forName("java.util.function.IntPredicate").toSuccess
