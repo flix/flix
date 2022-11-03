@@ -495,7 +495,7 @@ object SemanticTokensProvider {
         case (acc, m) => acc ++ visitJvmMethod(m)
       }
 
-    case Expression.NewChannel(exp, _, _, _, _) => visitExp(exp)
+    case Expression.NewChannel(exp, _, _, _, _, _) => visitExp(exp)
 
     case Expression.GetChannel(exp, _, _, _, _) => visitExp(exp)
 

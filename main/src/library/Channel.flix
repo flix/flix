@@ -22,9 +22,8 @@ namespace Channel {
     ///
     pub def buffered(n: Int32): (Sender[t], Receiver[t]) \ IO =
         let m = if (n < 0) 0 else n;
-        let c: Sender[t] = $CHANNEL_NEW$(m);
-        (c as Sender[t], c as Receiver[t])
-
+        $CHANNEL_NEW$(m)
+        
     ///
     /// Returns a new unbuffered channel (i.e. a channel with zero capacity).
     ///
