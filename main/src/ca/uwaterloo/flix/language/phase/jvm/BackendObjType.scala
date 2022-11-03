@@ -161,14 +161,21 @@ object BackendObjType {
         * The JvmName of the interface.
         */
       def jvmName: JvmName = this match {
+        case ObjFunction => JvmName.ObjFunction
+        case ObjConsumer => JvmName.ObjConsumer
+        case ObjPredicate => JvmName.ObjPredicate
         case IntFunction => JvmName.IntFunction
-        case IntUnaryOperator => JvmName.IntUnaryOperator
-        case IntPredicate => JvmName.IntPredicate
         case IntConsumer => JvmName.IntConsumer
+        case IntPredicate => JvmName.IntPredicate
+        case IntUnaryOperator => JvmName.IntUnaryOperator
         case LongFunction => JvmName.LongFunction
-        case LongUnaryOperator => JvmName.LongUnaryOperator
-        case LongPredicate => JvmName.LongPredicate
         case LongConsumer => JvmName.LongConsumer
+        case LongPredicate => JvmName.LongPredicate
+        case LongUnaryOperator => JvmName.LongUnaryOperator
+        case DoubleFunction => JvmName.DoubleFunction
+        case DoubleConsumer => JvmName.DoubleConsumer
+        case DoublePredicate => JvmName.DoublePredicate
+        case DoubleUnaryOperator => JvmName.DoubleUnaryOperator
       }
 
       /**
@@ -176,26 +183,33 @@ object BackendObjType {
         * These methods should do the same as a non-tail call in genExpression.
         */
       def functionMethod: InstanceMethod = this match {
+        case ObjFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
+          mkDescriptor(JavaObject.toTpe)(JavaObject.toTpe),
+          Some(
+            thisLoad() ~
+              DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
+              INVOKEVIRTUAL(continuation.UnwindMethod) ~ ARETURN()
+          ))
+        case ObjConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
+          mkDescriptor(JavaObject.toTpe)(VoidableType.Void),
+          Some(
+            thisLoad() ~
+              DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
+              INVOKEVIRTUAL(continuation.UnwindMethod) ~ RETURN()
+          ))
+        case ObjPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
+          mkDescriptor(JavaObject.toTpe)(BackendType.Bool),
+          Some(
+            thisLoad() ~
+              DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
+              INVOKEVIRTUAL(continuation.UnwindMethod) ~ IRETURN()
+          ))
         case IntFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
           mkDescriptor(BackendType.Int32)(JavaObject.toTpe),
           Some(
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ ARETURN()
-          ))
-        case IntUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsInt",
-          mkDescriptor(BackendType.Int32)(BackendType.Int32),
-          Some(
-            thisLoad() ~
-              DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              INVOKEVIRTUAL(continuation.UnwindMethod) ~ IRETURN()
-          ))
-        case IntPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
-          mkDescriptor(BackendType.Int32)(BackendType.Bool),
-          Some(
-            thisLoad() ~
-              DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              INVOKEVIRTUAL(continuation.UnwindMethod) ~ IRETURN()
           ))
         case IntConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(BackendType.Int32)(VoidableType.Void),
@@ -204,26 +218,26 @@ object BackendObjType {
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ RETURN()
           ))
+        case IntPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
+          mkDescriptor(BackendType.Int32)(BackendType.Bool),
+          Some(
+            thisLoad() ~
+              DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
+              INVOKEVIRTUAL(continuation.UnwindMethod) ~ IRETURN()
+          ))
+        case IntUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsInt",
+          mkDescriptor(BackendType.Int32)(BackendType.Int32),
+          Some(
+            thisLoad() ~
+              DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
+              INVOKEVIRTUAL(continuation.UnwindMethod) ~ IRETURN()
+          ))
         case LongFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
           mkDescriptor(BackendType.Int64)(JavaObject.toTpe),
           Some(
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ ARETURN()
-          ))
-        case LongUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsLong",
-          mkDescriptor(BackendType.Int64)(BackendType.Int64),
-          Some(
-            thisLoad() ~
-              DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              INVOKEVIRTUAL(continuation.UnwindMethod) ~ LRETURN()
-          ))
-        case LongPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
-          mkDescriptor(BackendType.Int64)(BackendType.Bool),
-          Some(
-            thisLoad() ~
-              DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              INVOKEVIRTUAL(continuation.UnwindMethod) ~ IRETURN()
           ))
         case LongConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(BackendType.Int64)(VoidableType.Void),
@@ -232,50 +246,124 @@ object BackendObjType {
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ RETURN()
           ))
+        case LongPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
+          mkDescriptor(BackendType.Int64)(BackendType.Bool),
+          Some(
+            thisLoad() ~
+              DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
+              INVOKEVIRTUAL(continuation.UnwindMethod) ~ IRETURN()
+          ))
+        case LongUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsLong",
+          mkDescriptor(BackendType.Int64)(BackendType.Int64),
+          Some(
+            thisLoad() ~
+              DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
+              INVOKEVIRTUAL(continuation.UnwindMethod) ~ LRETURN()
+          ))
+        case DoubleFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
+          mkDescriptor(BackendType.Float64)(JavaObject.toTpe),
+          Some(
+            thisLoad() ~
+              DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
+              INVOKEVIRTUAL(continuation.UnwindMethod) ~ ARETURN()
+          ))
+        case DoubleConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
+          mkDescriptor(BackendType.Float64)(VoidableType.Void),
+          Some(
+            thisLoad() ~
+              DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
+              INVOKEVIRTUAL(continuation.UnwindMethod) ~ RETURN()
+          ))
+        case DoublePredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
+          mkDescriptor(BackendType.Float64)(BackendType.Bool),
+          Some(
+            thisLoad() ~
+              DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
+              INVOKEVIRTUAL(continuation.UnwindMethod) ~ IRETURN()
+          ))
+        case DoubleUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsDouble",
+          mkDescriptor(BackendType.Float64)(BackendType.Float64),
+          Some(
+            thisLoad() ~
+              DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
+              INVOKEVIRTUAL(continuation.UnwindMethod) ~ DRETURN()
+          ))
+
       }
     }
+
+    // JavaObject -> JavaObject
+    case object ObjFunction extends FunctionInterface
+
+    // JavaObject -> Unit
+    case object ObjConsumer extends FunctionInterface
+
+    // JavaObject -> Bool
+    case object ObjPredicate extends FunctionInterface
 
     // Int32 -> JavaObject
     case object IntFunction extends FunctionInterface
 
-    // Int32 -> Int32
-    case object IntUnaryOperator extends FunctionInterface
+    // Int32 -> Unit
+    case object IntConsumer extends FunctionInterface
 
     // Int32 -> Bool
     case object IntPredicate extends FunctionInterface
 
-    // Int32 -> Unit
-    case object IntConsumer extends FunctionInterface
+    // Int32 -> Int32
+    case object IntUnaryOperator extends FunctionInterface
 
     // Int64 -> JavaObject
     case object LongFunction extends FunctionInterface
 
-    // Int64 -> Int64
-    case object LongUnaryOperator extends FunctionInterface
+    // Int64 -> Unit
+    case object LongConsumer extends FunctionInterface
 
     // Int64 -> Bool
     case object LongPredicate extends FunctionInterface
 
-    // Int64 -> Unit
-    case object LongConsumer extends FunctionInterface
+    // Int64 -> Int64
+    case object LongUnaryOperator extends FunctionInterface
+
+    // Float64 -> JavaObject
+    case object DoubleFunction extends FunctionInterface
+
+    // Float64 -> Unit
+    case object DoubleConsumer extends FunctionInterface
+
+    // Float64 -> Bool
+    case object DoublePredicate extends FunctionInterface
+
+    // Float64 -> Float64
+    case object DoubleUnaryOperator extends FunctionInterface
 
     /**
       * Returns the specialized java function interfaces of the function type.
       */
     def specialization(): List[FunctionInterface] = {
       (args, result) match {
+        case (BackendType.Reference(BackendObjType.JavaObject) :: Nil, BackendType.Reference(BackendObjType.JavaObject)) =>
+          ObjFunction :: ObjConsumer :: Nil
+        case (BackendType.Reference(BackendObjType.JavaObject) :: Nil, BackendType.Bool) =>
+          ObjPredicate :: Nil
         case (BackendType.Int32 :: Nil, BackendType.Reference(BackendObjType.JavaObject)) =>
           IntFunction :: IntConsumer :: Nil
-        case (BackendType.Int32 :: Nil, BackendType.Int32) =>
-          IntUnaryOperator :: Nil
         case (BackendType.Int32 :: Nil, BackendType.Bool) =>
           IntPredicate :: Nil
+        case (BackendType.Int32 :: Nil, BackendType.Int32) =>
+          IntUnaryOperator :: Nil
         case (BackendType.Int64 :: Nil, BackendType.Reference(BackendObjType.JavaObject)) =>
           LongFunction :: LongConsumer :: Nil
-        case (BackendType.Int64 :: Nil, BackendType.Int64) =>
-          LongUnaryOperator :: Nil
         case (BackendType.Int64 :: Nil, BackendType.Bool) =>
           LongPredicate :: Nil
+        case (BackendType.Int64 :: Nil, BackendType.Int64) =>
+          LongUnaryOperator :: Nil
+        case (BackendType.Float64 :: Nil, BackendType.Reference(BackendObjType.JavaObject)) =>
+          DoubleFunction :: DoubleConsumer :: Nil
+        case (BackendType.Float64 :: Nil, BackendType.Bool) =>
+          DoublePredicate :: Nil
+        case (BackendType.Float64 :: Nil, BackendType.Float64) =>
+          DoubleUnaryOperator :: Nil
         case _ => Nil
       }
     }
