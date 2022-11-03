@@ -1711,17 +1711,18 @@ object Resolver {
       case Some(qname) =>
         // Case 2: The name is qualified.
 
-        // Determine where to search for the enum.
-        val enumsInNS = if (qname.isUnqualified) {
-          // The name is unqualified (e.g. Option.None) so search in the current namespace.
-          root.enums.getOrElse(ns0, Map.empty[String, NamedAst.Enum])
+        def lookupEnumInNs(ns: Name.NName) = root.enums.get(ns) flatMap { _.get(qname.ident.name) }
+
+        val enumOpt = if (qname.isUnqualified) {
+          // The name is unqualified (e.g. Option.None), so first search the current namespace,
+          // if it's not found there, search the root namespace.
+          lookupEnumInNs(ns0).orElse(lookupEnumInNs(Name.RootNS))
         } else {
           // The name is qualified (e.g. Foo/Bar/Baz.Qux) so search in the Foo/Bar/Baz namespace.
-          root.enums.getOrElse(qname.namespace, Map.empty[String, NamedAst.Enum])
+          lookupEnumInNs(qname.namespace)
         }
 
-        // Lookup the enum declaration.
-        enumsInNS.get(qname.ident.name) match {
+        enumOpt match {
           case None =>
             // Case 2.1: The enum does not exist.
             ResolutionError.UndefinedType(qname, ns0, qname.loc).toFailure
