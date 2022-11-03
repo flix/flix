@@ -1282,8 +1282,8 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("TestParYield.01") {
     val input =
       """
-        |def g(): Int32 = 1
         |def f(): Int32 =
+        |    let g = () -> 1;
         |    par (g <- 5) yield g
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
