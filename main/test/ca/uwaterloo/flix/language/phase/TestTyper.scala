@@ -1612,6 +1612,16 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedBools](result)
   }
 
+  test("TestParYield.04") {
+    val input =
+      """
+        | def f(): Int32 =
+        |     par (a <- true) yield a;
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
   test("TestTypeMatch.01") {
     val input =
       """
