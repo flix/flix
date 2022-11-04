@@ -1652,7 +1652,7 @@ object Typer {
           (constrs, tpe, pur, eff) <- visitExp(exp)
           patternTypes <- inferPatterns(patterns, root)
           (parExpConstrs, parExpTypes, parExpPurs, parExpEffs) <- seqM(parExps map visitExp).map(unzip4)
-          _ <- InferMonad.point(patternTypes.zip(parExpTypes).map(ts => unifyTypeM(List(ts._1, ts._2), loc)))
+          _ <- seqM(patternTypes.zip(parExpTypes).map(ts => unifyTypeM(List(ts._1, ts._2), loc)))
           actualPurs = Type.mkAnd(pur :: parExpPurs, loc)
           actualEffs = Type.mkUnion(eff :: parExpEffs, loc)
           resultPur <- expectTypeM(expected = Type.Pure, actual = actualPurs, loc)
