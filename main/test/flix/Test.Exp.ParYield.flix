@@ -18,4 +18,12 @@ namespace Test/Exp/ParYield {
     def testParYield04(): Int32 =
         par (a <- let a = 1; a) yield a
 
+    @test
+    def testParYield05(): Int32 =
+        par (a <- 5, b <- let a = 1; a) yield a + b
+
+    @test
+    def testParYield06(): Bool =
+        (par (a <- 5, b <- let a = 1; a) yield a + b) == 6
+
 }

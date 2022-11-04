@@ -1195,5 +1195,4 @@ class TestResolver extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
-
 }

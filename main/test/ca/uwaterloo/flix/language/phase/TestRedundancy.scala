@@ -1330,6 +1330,4 @@ class TestRedundancy extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.UnusedVarSym](result)
   }
-
-
 }
