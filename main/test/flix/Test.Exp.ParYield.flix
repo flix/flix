@@ -14,4 +14,8 @@ namespace Test/Exp/ParYield {
         let x = par (a <- 1, b <- 2, c <- 3) yield a + b + c;
         x == 6
 
+    @test
+    def testParYield04(): Int32 =
+        par (a <- let a = 1; a) yield a
+
 }

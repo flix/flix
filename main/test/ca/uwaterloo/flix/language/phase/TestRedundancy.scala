@@ -1321,4 +1321,15 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedVar](result)
   }
 
+  test("TestParYield.05") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    par (a <- 5) yield 1
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
+
 }
