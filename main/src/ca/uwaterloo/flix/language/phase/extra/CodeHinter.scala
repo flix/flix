@@ -295,7 +295,10 @@ object CodeHinter {
     case Expression.Par(exp, _) =>
       visitExp(exp)
 
-    case Expression.ParYield(frags, exp, tpe, pur, eff, loc) => ???
+    case Expression.ParYield(frags, exp, _, _, _, _) =>
+      frags.flatMap {
+        case ParYieldFragment(_, e, _) => visitExp(e)
+      } ++ visitExp(exp)
 
     case Expression.Lazy(exp, _, _) =>
       visitExp(exp)
