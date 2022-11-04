@@ -58,7 +58,7 @@ namespace Test/Exp/ParYield {
 
     @test
     def testParYield14(): Bool = region r {
-        let a = ref 10;
+        let a = ref 10 @ r;
         (par (x <- 1) yield x + deref a) == 11
     }
 }
