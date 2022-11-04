@@ -1640,13 +1640,13 @@ object Lowering {
     * The parameter `exp` should already have its patterns
     * and expressions visited by the [[visitPat]] and [[visitExp]] function respectively.
     */
-  def mkParYield(exp: Expression.ParYield)(implicit flix: Flix): Expression = {
+  def mkParYield(parYieldExp: Expression.ParYield)(implicit flix: Flix): Expression = {
     // Generate symbols for each channel.
-    val chanSymsWithPatAndExp = exp.frags.map { case ParYieldFragment(p, e, l) => (p, mkLetSym("channel", l.asSynthetic), e) }
-    val desugaredYieldExp = mkBoundParWaits(chanSymsWithPatAndExp, exp)
+    val chanSymsWithPatAndExp = parYieldExp.frags.map { case ParYieldFragment(p, e, l) => (p, mkLetSym("channel", l.asSynthetic), e) }
+    val desugaredYieldExp = mkBoundParWaits(chanSymsWithPatAndExp, parYieldExp.exp)
     val chanSymsWithExp = chanSymsWithPatAndExp.map { case (_, s, e) => (s, e) }
     val blockExp = mkParChannels(desugaredYieldExp, chanSymsWithExp)
-    Expression.Cast(blockExp, None, Some(Type.Pure), Some(Type.Empty), exp.tpe, exp.pur, exp.eff, exp.loc.asSynthetic)
+    Expression.Cast(blockExp, None, Some(Type.Pure), Some(Type.Empty), parYieldExp.tpe, parYieldExp.pur, parYieldExp.eff, parYieldExp.loc.asSynthetic)
   }
 
   /**
