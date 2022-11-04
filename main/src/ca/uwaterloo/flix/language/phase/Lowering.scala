@@ -1591,6 +1591,19 @@ object Lowering {
     }
   }
 
+  /**
+    * Returns a desugared let-match expression, i.e.
+    * {{{
+    *   let pattern = exp;
+    *   body
+    * }}}
+    * is desugared to
+    * {{{
+    *   match exp {
+    *     case pattern => body
+    *   }
+    * }}}
+    */
   def mkLetMatch(exp: Expression, pat: Pattern, body: Expression): Expression = {
     val expLoc = exp.loc.asSynthetic
     val rule = List(MatchRule(pat, Expression.True(pat.loc.asSynthetic), body))
