@@ -1648,13 +1648,14 @@ object Typer {
       case KindedAst.Expression.ParYield(frags, exp, loc) =>
         val patterns = frags.map(_.pat)
         val parExps = frags.map(_.exp)
+        val patLocs = frags.map(_.loc)
         for {
           (constrs, tpe, pur, eff) <- visitExp(exp)
           patternTypes <- inferPatterns(patterns, root)
           (fragConstrs, fragTypes, fragPurs, fragEffs) <- seqM(parExps map visitExp).map(unzip4)
-          _ <- seqM(patternTypes.zip(fragTypes).map { case (patTpe, expTpe) => unifyTypeM(List(patTpe, expTpe), loc) })
-          resultFragPurs <- seqM(fragPurs.map(p => expectTypeM(expected = Type.Pure, actual = p, loc)))
-          resultFragEffs <- seqM(fragEffs.map(e => expectTypeM(expected = Type.Empty, actual = e, loc)))
+          _ <- seqM(patternTypes.zip(fragTypes).zip(patLocs).map { case ((patTpe, expTpe), l) => unifyTypeM(List(patTpe, expTpe), l) })
+          resultFragPurs <- seqM(fragPurs.zip(patLocs) map { case (p, l) => expectTypeM(expected = Type.Pure, actual = p, l) })
+          resultFragEffs <- seqM(fragEffs.zip(patLocs) map { case (e, l) => expectTypeM(expected = Type.Empty, actual = e, l) })
           resultPur <- unifyTypeM(pur :: resultFragPurs, loc)
           resultEff <- unifyTypeM(eff :: resultFragEffs, loc)
         } yield (constrs ++ fragConstrs.flatten, tpe, resultPur, resultEff)
