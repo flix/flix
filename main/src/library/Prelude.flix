@@ -196,81 +196,96 @@ pub def escape(s: String): String = {
 /// Returns an automatic string representation of `x`.
 ///
 @Internal @Unsafe
-pub def stringify(x: a): String = typematch x {
-    case _: Unit => "()"
-    case b: Bool =>  if (b) "true" else "false"
-    case c: Char => "\'" + escape("${c: Char}") + "\'"
-    case y: Float32 =>
-        import static java.lang.Float.toString(Float32): String \ {};
-        toString(y) + "f32"
-    case y: Float64 =>
-        import static java.lang.Double.toString(Float64): String \ {};
-        toString(y)
-    case y: BigDecimal =>
-        import java.math.BigDecimal.toString(): String \ {};
-        toString(y) + "ff"
-    case y: Int8 =>
-        import static java.lang.Byte.toString(Int8): String \ {};
-        toString(y) + "i8"
-    case y: Int16 =>
-        import static java.lang.Short.toString(Int16): String \ {};
-        toString(y) + "i16"
-    case y: Int32 =>
-        import static java.lang.Integer.toString(Int32): String \ {};
-        toString(y)
-    case y: Int64 =>
-        import static java.lang.Long.toString(Int64): String \ {};
-        toString(y) + "i64"
-    case y: BigInt =>
-        import java.math.BigInteger.toString(): String \ {};
-        toString(y) + "ii"
-    case s: String =>
-        "\"" + escape(s) + "\""
-    case y: Array[Unit, _] =>
-        import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
-        toString(y as Array[##java.lang.Object, Static]) as \ {}
-    case y: Array[Bool, _] =>
-        import static java.util.Arrays.toString(Array[Bool, Static]): String;
-        toString(y as Array[Bool, Static]) as \ {}
-    case y: Array[Char, _] =>
-        import static java.util.Arrays.toString(Array[Char, Static]): String;
-        toString(y as Array[Char, Static]) as \ {}
-    case y: Array[Float32, _] =>
-        import static java.util.Arrays.toString(Array[Float32, Static]): String;
-        toString(y as Array[Float32, Static]) as \ {}
-    case y: Array[Float64, _] =>
-        import static java.util.Arrays.toString(Array[Float64, Static]): String;
-        toString(y as Array[Float64, Static]) as \ {}
-    case y: Array[BigDecimal, _] =>
-        import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
-        toString(y as Array[##java.lang.Object, Static]) as \ {}
-    case y: Array[Int8, _] =>
-        import static java.util.Arrays.toString(Array[Int8, Static]): String;
-        toString(y as Array[Int8, Static]) as \ {}
-    case y: Array[Int16, _] =>
-        import static java.util.Arrays.toString(Array[Int16, Static]): String;
-        toString(y as Array[Int16, Static]) as \ {}
-    case y: Array[Int32, _] =>
-        import static java.util.Arrays.toString(Array[Int32, Static]): String;
-        toString(y as Array[Int32, Static]) as \ {}
-    case y: Array[Int64, _] =>
-        import static java.util.Arrays.toString(Array[Int64, Static]): String;
-        toString(y as Array[Int64, Static]) as \ {}
-    case y: Array[BigInt, _] =>
-        import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
-        toString(y as Array[##java.lang.Object, Static]) as \ {}
-    case y: Array[String, _] =>
-        import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
-        toString(y as Array[##java.lang.Object, Static]) as \ {}
-    case y: Array[Array[_, _], _] =>
-        import static java.util.Arrays.deepToString(Array[##java.lang.Object, Static]): String;
-        deepToString(y as Array[##java.lang.Object, Static]) as \ {}
-    case y: Array[_, _] =>
-        import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
-        toString(y as Array[##java.lang.Object, Static]) as \ {}
-    case y: _ =>
-        import static java.util.Objects.toString(##java.lang.Object): String;
-        toString(y as ##java.lang.Object) as \ {}
+pub def stringify(x: a): String = {
+    import static java.util.Objects.isNull(##java.lang.Object): Bool \ {};
+    typematch x {
+        case _: Unit => "()"
+        case b: Bool =>  if (b) "true" else "false"
+        case c: Char => "\'" + escape("${c: Char}") + "\'"
+        case y: Float32 =>
+            import static java.lang.Float.toString(Float32): String \ {};
+            toString(y) + "f32"
+        case y: Float64 =>
+            import static java.lang.Double.toString(Float64): String \ {};
+            toString(y)
+        case y: BigDecimal =>
+            import java.math.BigDecimal.toString(): String \ {};
+            if (isNull(y as ##java.lang.Object)) {
+                "null"
+            } else {
+                toString(y) + "ff"
+            }
+        case y: Int8 =>
+            import static java.lang.Byte.toString(Int8): String \ {};
+            toString(y) + "i8"
+        case y: Int16 =>
+            import static java.lang.Short.toString(Int16): String \ {};
+            toString(y) + "i16"
+        case y: Int32 =>
+            import static java.lang.Integer.toString(Int32): String \ {};
+            toString(y)
+        case y: Int64 =>
+            import static java.lang.Long.toString(Int64): String \ {};
+            toString(y) + "i64"
+        case y: BigInt =>
+            import java.math.BigInteger.toString(): String \ {};
+            if (isNull(y as ##java.lang.Object)) {
+                "null"
+            } else {
+                toString(y) + "ii"
+            }
+        case s: String =>
+            if (isNull(s as ##java.lang.Object)) {
+                "null"
+            } else {
+                "\"" + escape(s) + "\""
+            }
+        case y: Array[Unit, _] =>
+            import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
+            toString(y as Array[##java.lang.Object, Static]) as \ {}
+        case y: Array[Bool, _] =>
+            import static java.util.Arrays.toString(Array[Bool, Static]): String;
+            toString(y as Array[Bool, Static]) as \ {}
+        case y: Array[Char, _] =>
+            import static java.util.Arrays.toString(Array[Char, Static]): String;
+            toString(y as Array[Char, Static]) as \ {}
+        case y: Array[Float32, _] =>
+            import static java.util.Arrays.toString(Array[Float32, Static]): String;
+            toString(y as Array[Float32, Static]) as \ {}
+        case y: Array[Float64, _] =>
+            import static java.util.Arrays.toString(Array[Float64, Static]): String;
+            toString(y as Array[Float64, Static]) as \ {}
+        case y: Array[BigDecimal, _] =>
+            import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
+            toString(y as Array[##java.lang.Object, Static]) as \ {}
+        case y: Array[Int8, _] =>
+            import static java.util.Arrays.toString(Array[Int8, Static]): String;
+            toString(y as Array[Int8, Static]) as \ {}
+        case y: Array[Int16, _] =>
+            import static java.util.Arrays.toString(Array[Int16, Static]): String;
+            toString(y as Array[Int16, Static]) as \ {}
+        case y: Array[Int32, _] =>
+            import static java.util.Arrays.toString(Array[Int32, Static]): String;
+            toString(y as Array[Int32, Static]) as \ {}
+        case y: Array[Int64, _] =>
+            import static java.util.Arrays.toString(Array[Int64, Static]): String;
+            toString(y as Array[Int64, Static]) as \ {}
+        case y: Array[BigInt, _] =>
+            import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
+            toString(y as Array[##java.lang.Object, Static]) as \ {}
+        case y: Array[String, _] =>
+            import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
+            toString(y as Array[##java.lang.Object, Static]) as \ {}
+        case y: Array[Array[_, _], _] =>
+            import static java.util.Arrays.deepToString(Array[##java.lang.Object, Static]): String;
+            deepToString(y as Array[##java.lang.Object, Static]) as \ {}
+        case y: Array[_, _] =>
+            import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
+            toString(y as Array[##java.lang.Object, Static]) as \ {}
+        case y: _ =>
+            import static java.util.Objects.toString(##java.lang.Object): String;
+            toString(y as ##java.lang.Object) as \ {}
+    }
 }
 
 ///
