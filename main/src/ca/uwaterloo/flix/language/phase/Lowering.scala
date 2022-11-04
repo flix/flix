@@ -640,11 +640,12 @@ object Lowering {
 
     case Expression.ParYield(frags, exp, tpe, pur, eff, loc) =>
       val fs = frags.map {
-        case ParYieldFragment(pat, e, loc) => (visitPat(pat), visitExp(e), loc)
+        case ParYieldFragment(pat, e, loc) => ParYieldFragment(visitPat(pat), visitExp(e), loc)
       }
       val e = visitExp(exp)
       val t = visitType(tpe)
-      mkParYield(fs, e, t, pur, eff, loc)
+      val e1 = Expression.ParYield(fs, e, t, pur, eff, loc)
+      mkParYield(e1)
 
     case Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -1608,13 +1609,18 @@ object Lowering {
       case ((pat, chan), e) => mkLetMatch(chan, pat, e)
     }
 
-  def mkParYield(frags: List[(Pattern, Expression, SourceLocation)], exp: Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): Expression = {
+  /**
+    * Returns a desugared [[Expression.ParYield]] expression.
+    * The parameter `exp` should already have its patterns
+    * and expressions visited by the [[visitPat]] and [[visitExp]] function respectively.
+    */
+  def mkParYield(exp: Expression.ParYield)(implicit flix: Flix): Expression = {
     // Generate symbols for each channel.
-    val chanSymsWithPatAndExp = frags.map { case (p, e, l) => (p, mkLetSym("channel", l.asSynthetic), e) }
+    val chanSymsWithPatAndExp = exp.frags.map { case ParYieldFragment(p, e, l) => (p, mkLetSym("channel", l.asSynthetic), e) }
     val desugaredYieldExp = mkBoundParWaits(chanSymsWithPatAndExp, exp)
-    val chanSymsWithExp = chanSymsWithPatAndExp.map { case (p, s, e) => (s, e) }
+    val chanSymsWithExp = chanSymsWithPatAndExp.map { case (_, s, e) => (s, e) }
     val blockExp = mkParChannels(desugaredYieldExp, chanSymsWithExp)
-    Expression.Cast(blockExp, None, Some(Type.Pure), Some(Type.Empty), tpe, pur, eff, loc.asSynthetic)
+    Expression.Cast(blockExp, None, Some(Type.Pure), Some(Type.Empty), exp.tpe, exp.pur, exp.eff, exp.loc.asSynthetic)
   }
 
   /**
