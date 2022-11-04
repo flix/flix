@@ -1079,8 +1079,8 @@ object Namer {
       var finalEnv = env0
 
       val fragsVal = traverse(frags) {
-        case WeededAst.ParYieldFragment(p, e, l) =>
-          val (p, env1) = visitPattern(p, uenv0)
+        case WeededAst.ParYieldFragment(pat, e, l) =>
+          val (p, env1) = visitPattern(pat, uenv0)
           finalEnv = finalEnv ++ env1
           mapN(visitExp(e, env0, uenv0, ienv0, tenv0, ns0, prog0)) {
             case e1 => NamedAst.ParYieldFragment(p, e1, l)
