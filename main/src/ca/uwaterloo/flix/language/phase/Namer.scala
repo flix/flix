@@ -1332,20 +1332,24 @@ object Namer {
         if (qname.isUnqualified) {
           val name = qname.ident.name
           // Disambiguate the qname.
-          (tenv0.get(name), uenv0.upperNames.get(name)) match {
-            case (None, None) =>
+          (tenv0.get(name), uenv0.upperNames.get(name), ienv0.imports.get(name)) match {
+            case (None, None, None) =>
               // Case 1: the name is top-level type.
               NamedAst.Type.Ambiguous(qname, loc).toSuccess
 
-            case (Some(tvar), None) =>
+            case (Some(tvar), None, None) =>
               // Case 2: the name is a type variable.
               NamedAst.Type.Var(tvar, loc).toSuccess
 
-            case (None, Some(actualQName)) =>
+            case (None, Some(actualQName), None) =>
               // Case 3: the name is a use.
               NamedAst.Type.Ambiguous(actualQName, loc).toSuccess
 
-            case (Some(tvar), Some(qname)) =>
+            case (None, None, Some(name)) =>
+              // Case 4: the name is an imported class or interface
+              NamedAst.Type.Native(name.toString, SourceLocation.mk(name.sp1, name.sp2)).toSuccess
+
+            case _ =>
               // Case 4: the name is ambiguous.
               throw InternalCompilerException(s"Unexpected ambiguous type.")
           }
