@@ -50,4 +50,15 @@ namespace Test/Exp/ParYield {
     def testParYield12(): Bool =
         (par (a <- par (a <- par (a <- 1) yield a) yield a) yield a) == 1
 
+    @test
+    def testParYield13(): Int32 = region r {
+        let a = ref 10;
+        par (x <- 1) yield x + deref a
+    }
+
+    @test
+    def testParYield14(): Bool = region r {
+        let a = ref 10;
+        (par (x <- 1) yield x + deref a) == 11
+    }
 }

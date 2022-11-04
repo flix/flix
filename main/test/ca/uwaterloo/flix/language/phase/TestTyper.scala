@@ -1605,18 +1605,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """
         | def f(g: Unit -> Unit \ Impure): Unit \ Impure =
-        |     let _ = par (x <- 1) yield { x as & Impure };
-        |     g()
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestParYield.04") {
-    val input =
-      """
-        | def f(g: Unit -> Unit \ Impure): Unit \ Impure =
-        |     let _ = par (x <- 1) yield { x as \ Impure };
+        |     let _ = par (a <- 1, b <- { 1 as \ Impure }) yield (a, b);
         |     g()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
