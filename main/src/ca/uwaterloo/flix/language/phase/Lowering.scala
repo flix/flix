@@ -1599,6 +1599,19 @@ object Lowering {
     Expression.Match(exp, rule, body.tpe, pur, eff, expLoc)
   }
 
+  /**
+    * Returns an expression where the pattern variables used in `exp` are
+    * bound to [[Expression.GetChannel]] expressions,
+    * i.e.
+    * {{{
+    *   let pat1 = <- ch1;
+    *   let pat2 = <- ch2;
+    *   let pat3 = <- ch3;
+    *   ...
+    *   let patn = <- chn;
+    *   exp
+    * }}}
+    */
   def mkBoundParWaits(patSymExps: List[(Pattern, Symbol.VarSym, Expression)], exp: Expression): Expression =
     patSymExps.map {
       case (p, sym, e) =>
