@@ -787,10 +787,18 @@ object Redundancy {
       Used.of(sym) ++ visitExp(exp1, env0, rc) ++ visitExp(exp2, env0, rc) ++ visitExp(exp3, env0, rc)
   }
 
+  /**
+    * Returns the symbols that the free variables shadow in env0.
+    */
   private def findShadowedVarSyms(freeVars: Set[Symbol.VarSym], env0: Env): Used = {
     freeVars.map(sym => shadowing(sym, env0)).foldLeft(Used.empty)(_ ++ _)
   }
 
+  /**
+    * Returns the set of unused vars from `freeVars` in `usedSyms`.
+    * I.e. if an element in `freeVars` is **not** used in `usedSyms` then
+    * it is a member of the returned set.
+    */
   private def findUnusedVarSyms(freeVars: Set[Symbol.VarSym], usedSyms: Used): Set[UnusedVarSym] = {
     freeVars.filter(sym => deadVarSym(sym, usedSyms)).map(UnusedVarSym)
   }
