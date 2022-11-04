@@ -1654,11 +1654,9 @@ object Typer {
           patternTypes <- inferPatterns(patterns, root)
           (fragConstrs, fragTypes, fragPurs, fragEffs) <- seqM(parExps map visitExp).map(unzip4)
           _ <- seqM(patternTypes.zip(fragTypes).zip(patLocs).map { case ((patTpe, expTpe), l) => unifyTypeM(List(patTpe, expTpe), l) })
-          resultFragPurs <- seqM(fragPurs.zip(patLocs) map { case (p, l) => expectTypeM(expected = Type.Pure, actual = p, l) })
-          resultFragEffs <- seqM(fragEffs.zip(patLocs) map { case (e, l) => expectTypeM(expected = Type.Empty, actual = e, l) })
-          resultPur <- unifyTypeM(pur :: resultFragPurs, loc)
-          resultEff <- unifyTypeM(eff :: resultFragEffs, loc)
-        } yield (constrs ++ fragConstrs.flatten, tpe, resultPur, resultEff)
+          _ <- seqM(fragPurs.zip(patLocs) map { case (p, l) => expectTypeM(expected = Type.Pure, actual = p, l) })
+          _ <- seqM(fragEffs.zip(patLocs) map { case (e, l) => expectTypeM(expected = Type.Empty, actual = e, l) })
+        } yield (constrs ++ fragConstrs.flatten, tpe, pur, eff)
 
       case KindedAst.Expression.Lazy(exp, loc) =>
         for {
