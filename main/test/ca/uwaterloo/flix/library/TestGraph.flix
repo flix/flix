@@ -699,7 +699,7 @@ namespace TestGraph {
     }
 
     @test
-    pub def toUndirected07(): Bool = {
+    def toUndirected07(): Bool = {
         let g = graph07() |> Set.toList |> Graph.toUndirected;
         g == Set#{
             (1, 2), (2, 1),
@@ -708,6 +708,66 @@ namespace TestGraph {
             (2, 5), (5, 2),
             (3, 4), (4, 3),
             (5, 6), (6, 5)
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // toUndirectedWeighted                                                   //
+    ////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toUndirectedWeighted01(): Bool = {
+        let g = graphWithDist01() |> Set.toList |> Graph.toUndirectedWeighted;
+        g == Set#{}
+    }
+
+    @test
+    def toUndirectedWeighted02(): Bool = {
+        let g = graphWithDist02() |> Set.toList |> Graph.toUndirectedWeighted;
+        g == Set#{(1, 4, 2), (2, 4, 1)}
+    }
+
+    @test
+    def toUndirectedWeighted03(): Bool = {
+        let g = graphWithDist03() |> Set.toList |> Graph.toUndirectedWeighted;
+        g == Set#{
+            (1, 4, 2), (2, 4, 1),
+            (3, 7, 4), (4, 7, 3)
+        }
+    }
+
+    @test
+    def toUndirectedWeighted04(): Bool = {
+        let g = graphWithDist04() |> Set.toList |> Graph.toUndirectedWeighted;
+        g == Set#{
+            (1, 4, 2), (2, 4, 1),
+            (2, 5, 3), (3, 5, 2),
+            (3, 7, 4), (4, 7, 3)
+        }
+    }
+
+    @test
+    def toUndirectedWeighted05(): Bool = {
+        let g = graphWithDist05() |> Set.toList |> Graph.toUndirectedWeighted;
+        g == Set#{
+            (1, 4, 2), (2, 4, 1),
+            (1, 5, 4), (4, 5, 1),
+            (2, 2, 3), (3, 2, 2),
+            (3, 1, 4), (4, 1, 3)
+        }
+    }
+
+    @test
+    def toUndirectedWeighted06(): Bool = {
+        let g = graphWithDist06() |> Set.toList |> Graph.toUndirectedWeighted;
+        g == Set#{
+            (1, 2, 2), (2, 2, 1),
+            (1, 5, 4), (4, 5, 1),
+            (2, 10, 3), (3, 10, 2),
+            (2, 7, 4), (4, 7, 2),
+            (4, 2, 5), (5, 2, 4),
+            (4, 4, 6), (6, 4, 4),
+            (5, 1, 6), (6, 1, 5)
         }
     }
 }

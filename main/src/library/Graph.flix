@@ -165,6 +165,16 @@ namespace Graph {
             Set.flatMap(match (a, b) -> Set#{(a, b), (b, a)})
     }
 
+    ///
+    /// Returns a copy of `g` where `(a, w, b)` edges is added for all edges
+    /// `(b, w, a)` in `g`, i.e. An undirected graph in directed representation.
+    ///
+    pub def toUndirectedWeighted(g: m[(t, Int32, t)]): Set[(t, Int32, t)] with Foldable[m], Boxable[t] = {
+        g |>
+            Foldable.toSet |>
+            Set.flatMap(match (a, w, b) -> Set#{(a, w, b), (b, w, a)})
+    }
+
     // -------------------------------------------------------------------------
     // Private Functions -------------------------------------------------------
     // -------------------------------------------------------------------------
