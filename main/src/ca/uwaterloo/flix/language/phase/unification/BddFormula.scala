@@ -91,15 +91,23 @@ object BddFormula {
       new BddFormula(f1.getDD().and(f2.getDD()))
     }
 
+    override def mkXor(f1: BddFormula, f2: BddFormula): BddFormula = {
+      new BddFormula(f1.getDD().xor(f2.getDD()))
+    }
+
     /**
       * Returns the set of free variables in `f`.
       */
     override def freeVars(f: BddFormula): SortedSet[Int] = {
-      var res : SortedSet[Int] = SortedSet.empty
-      if (f.getDD().isOne || f.getDD().isZero) {
+      freeVarsAux(f.getDD())
+    }
+
+    def freeVarsAux(dd: BDD): SortedSet[Int] = {
+      var res: SortedSet[Int] = SortedSet.empty
+      if (dd.isOne || dd.isZero) {
         return res
       }
-      val bitset = f.getDD().vars()
+      val bitset = dd.vars()
       var i = bitset.nextSetBit(0)
       while (i >= 0) {
         res = res ++ SortedSet(i)
@@ -113,43 +121,16 @@ object BddFormula {
       */
       //TODO: Check correctness
     override def map(f: BddFormula)(fn: Int => BddFormula): BddFormula = {
-      /*lock.lock()
-      val x1 = factory.makeVar(1)
-      val notx1 = x1.not()
-      val x2 = factory.makeVar(2)
-      val notx2 = x2.not()
-      val nand = x1.nand(x2)
-      printBdd(nand, "Original f: x1 NAND x2")
-
-      val and1 = notx1.and(factory.makeOne())
-      val and2 = x1.and(notx2)
-      val or = and1.or(and2)
-      printBdd(or, "f|1 <- x1 using formula")
-
-      val res = nand.compose(x1, 1)
-      printBdd(res, "f|1 <- x1 using makeCompose")
-
-      System.exit(-1)
-
-      //lock.unlock()*/
-
       if(f.getDD().isOne || f.getDD().isZero) {
         f
       } else {
         val varSetF = freeVars(f)
-        //println("DD var set: " + varSetF)
 
         var varSetFull = varSetF
         for(var_i <- varSetF) {
           val subst_i = fn(var_i)
           val varSet_i = freeVars(subst_i)
           varSetFull = varSetFull ++ varSet_i
-        }
-        //println("Full var set: " + varSetFull)
-        if(varSetF != varSetFull) {
-          /*println("Var sets not equal")
-          println("Orig: " + varSetF)
-          println("Full: " + varSetFull)*/
         }
 
         //make x -> x' map
@@ -159,11 +140,10 @@ object BddFormula {
         val varMapForward = varSetFull.zip(newVarNames).foldLeft(Map.empty[Int, Int]) {
           case (macc, (old_x, new_x)) => macc + (old_x -> new_x)
         }
-        val varMapBackward = varSetFull.zip(newVarNames).foldLeft(Map.empty[Int, Int]) {
+        val varMapBackward = varSetFull.zip(newVarNames).foldLeft(mutable.Map.empty[Int, Int]) {
           case (macc, (old_x, new_x)) => macc + (new_x -> old_x)
         }
         var res = f.getDD()
-        //printBdd(res, "Original BDD")
 
         //for each i in varSet create BddFormula' with primed variables
         //and compose f with BddFormula'
@@ -171,25 +151,30 @@ object BddFormula {
           val subst = fn(var_i)
           var substDD = subst.getDD()
           if(substDD.isOne()) {
-            //println("Var: " + var_i + " = true")
             res = res.restrict(var_i, true)
           } else if(substDD.isZero()) {
-            //println("Var: " + var_i + " = false")
             res = res.restrict(var_i, false)
           } else if(!substDD.isEquivalentTo(factory.makeVar(var_i))) {
-            //println("Var: " + var_i)
-            //printBdd(substDD, "Subst before")
             substDD = substDD.replace(varMapForward.asJava.asInstanceOf[java.util.Map[Integer,Integer]])
-            //printBdd(substDD, "Subst after")
             res = res.compose(substDD, var_i)
-            //printBdd(res, "Res after subst")
           }
         }
 
-        //printBdd(res, "Res before replacement")
+        val varSetRes = freeVarsAux(res)
+        for(var_k <- varSetRes) {
+          if(varMapForward contains var_k) {
+            val k_prime = varMapForward.get(var_k) match  {
+              case Some(k) => k
+              case None => ??? //cannot happen
+            }
+            varMapBackward.remove(k_prime)
+            if(varSetRes.contains(k_prime)) {
+              res = res.compose(factory.makeVar(var_k), k_prime)
+            }
+          }
+        }
+
         res = res.replace(varMapBackward.asJava.asInstanceOf[java.util.Map[Integer,Integer]])
-        //printBdd(res, "Res after replacement")
-        //println()
 
         new BddFormula(res)
       }
