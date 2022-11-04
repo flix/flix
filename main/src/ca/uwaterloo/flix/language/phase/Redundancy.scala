@@ -708,7 +708,7 @@ object Redundancy {
 
     case Expression.ParYield(frags, exp, _, _, _, _) =>
       val (used, env1, fvs) = frags.foldLeft((Used.empty, env0, Set.empty[Symbol.VarSym])) {
-        case ((usedAcc, envAcc, fvsAcc), ParYield.Fragment(p, e, _)) =>
+        case ((usedAcc, envAcc, fvsAcc), ParYieldFragment(p, e, _)) =>
           // Find free vars in pattern
           val fvs = freeVars(p)
 

@@ -1077,16 +1077,16 @@ object Namer {
     case WeededAst.Expression.ParYield(frags, exp, loc) =>
       // Visit patterns and collect an env
       val (pats, finalEnv) = frags.foldRight((List.empty[NamedAst.Pattern], env0)) {
-        case (WeededAst.ParYield.Fragment(pat, _, _), (pats, envAcc)) =>
+        case (WeededAst.ParYieldFragment(pat, _, _), (pats, envAcc)) =>
           val (p, env1) = visitPattern(pat, uenv0)
           (p :: pats, envAcc ++ env1)
       }
 
       // Fragments exps are visited in env0 and paired with the previously visited pattern
       val fragsVal = traverse(frags.zip(pats)) {
-        case (WeededAst.ParYield.Fragment(_, e, l), pat) =>
+        case (WeededAst.ParYieldFragment(_, e, l), pat) =>
           mapN(visitExp(e, env0, uenv0, ienv0, tenv0, ns0, prog0)) {
-            case e1 => NamedAst.ParYield.Fragment(pat, e1, l)
+            case e1 => NamedAst.ParYieldFragment(pat, e1, l)
           }
       }
 

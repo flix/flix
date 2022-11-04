@@ -219,7 +219,7 @@ object NamedAst {
 
     case class Par(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class ParYield(frags: List[NamedAst.ParYield.Fragment], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class ParYield(frags: List[NamedAst.ParYieldFragment], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Lazy(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
@@ -477,7 +477,6 @@ object NamedAst {
 
   case class PurityAndEffect(pur: Option[Type], eff: Option[List[Type]])
 
-  object ParYield {
-    case class Fragment(pat: Pattern, exp: Expression, loc: SourceLocation)
-  }
+  case class ParYieldFragment(pat: Pattern, exp: Expression, loc: SourceLocation)
+
 }

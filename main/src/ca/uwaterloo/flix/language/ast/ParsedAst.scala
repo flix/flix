@@ -1082,7 +1082,7 @@ object ParsedAst {
       */
     case class Par(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
-    case class ParYield(sp1: SourcePosition, frags: Seq[ParsedAst.ParYield.Fragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ParYield(sp1: SourcePosition, frags: Seq[ParsedAst.ParYieldFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Lazy Expression.
@@ -2340,8 +2340,5 @@ object ParsedAst {
 
   }
 
-  object ParYield {
-    case class Fragment(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: Expression, sp2: SourcePosition)
-
-  }
+  case class ParYieldFragment(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: Expression, sp2: SourcePosition)
 }

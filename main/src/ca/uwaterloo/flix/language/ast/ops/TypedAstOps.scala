@@ -259,11 +259,11 @@ object TypedAstOps {
 
       case Expression.ParYield(frags, exp, _, _, _, _) =>
         val boundEnv = frags.foldLeft(env0) {
-          case (acc, ParYield.Fragment(p, _, _)) =>
+          case (acc, ParYieldFragment(p, _, _)) =>
             binds(p) ++ acc
         }
         visitExp(exp, boundEnv) ++ frags.flatMap {
-          case ParYield.Fragment(_, e, _) => visitExp(e, env0)
+          case ParYieldFragment(_, e, _) => visitExp(e, env0)
         }
 
       case Expression.Lazy(exp, tpe, loc) => visitExp(exp, env0)
@@ -730,7 +730,7 @@ object TypedAstOps {
 
     case Expression.ParYield(frags, exp, _, _, _, _) =>
       val freeFragVars = frags.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (acc, ParYield.Fragment(p, e, _)) => acc ++ freeVars(p) ++ freeVars(e)
+        case (acc, ParYieldFragment(p, e, _)) => acc ++ freeVars(p) ++ freeVars(e)
       }
       freeVars(exp) -- freeFragVars.keys
 

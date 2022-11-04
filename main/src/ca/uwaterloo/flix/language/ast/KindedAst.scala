@@ -198,7 +198,7 @@ object KindedAst {
 
     case class Par(exp: Expression, loc: SourceLocation) extends KindedAst.Expression
 
-    case class ParYield(frags: List[KindedAst.ParYield.Fragment], exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class ParYield(frags: List[KindedAst.ParYieldFragment], exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
     case class Lazy(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
@@ -352,9 +352,6 @@ object KindedAst {
 
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
 
-  object ParYield {
+  case class ParYieldFragment(pat: KindedAst.Pattern, exp: KindedAst.Expression, loc: SourceLocation)
 
-    case class Fragment(pat: KindedAst.Pattern, exp: KindedAst.Expression, loc: SourceLocation)
-
-  }
 }

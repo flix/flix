@@ -200,7 +200,7 @@ object ResolvedAst {
 
     case class Par(exp: Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ParYield(frags: List[ResolvedAst.ParYield.Fragment], exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class ParYield(frags: List[ResolvedAst.ParYieldFragment], exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Lazy(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -388,7 +388,6 @@ object ResolvedAst {
 
   case class TypeConstraint(head: Ast.TypeConstraint.Head, tpe: UnkindedType, loc: SourceLocation)
 
-  object ParYield {
-    case class Fragment(pat: ResolvedAst.Pattern, exp: Expression, loc: SourceLocation)
-  }
+  case class ParYieldFragment(pat: ResolvedAst.Pattern, exp: Expression, loc: SourceLocation)
+
 }

@@ -640,7 +640,7 @@ object Lowering {
 
     case Expression.ParYield(frags, exp, tpe, pur, eff, loc) =>
       val fs = frags.map {
-        case ParYield.Fragment(pat, e, loc) => (visitPat(pat), visitExp(e), loc)
+        case ParYieldFragment(pat, e, loc) => (visitPat(pat), visitExp(e), loc)
       }
       val e = visitExp(exp)
       val t = visitType(tpe)

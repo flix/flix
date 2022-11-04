@@ -372,7 +372,7 @@ object Regions {
 
     case Expression.ParYield(frags, exp, tpe, _, _, loc) =>
       val fragsVal = traverse(frags) {
-        case ParYield.Fragment(_, e, _) => flatMapN(visitExp(e)) {
+        case ParYieldFragment(_, e, _) => flatMapN(visitExp(e)) {
           case e1 => ().toSuccess
         }
       }

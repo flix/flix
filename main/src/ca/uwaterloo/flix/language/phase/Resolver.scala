@@ -1167,11 +1167,11 @@ object Resolver {
 
         case NamedAst.Expression.ParYield(frags, exp, loc) =>
           val fragsVal = traverse(frags) {
-            case NamedAst.ParYield.Fragment(pat, e0, l0) =>
+            case NamedAst.ParYieldFragment(pat, e0, l0) =>
               val pVal = Patterns.resolve(pat, ns0, root)
               val e0Val = visitExp(e0, region)
               mapN(pVal, e0Val) {
-                case (p, e1) => ResolvedAst.ParYield.Fragment(p, e1, l0)
+                case (p, e1) => ResolvedAst.ParYieldFragment(p, e1, l0)
               }
           }
 

@@ -517,7 +517,7 @@ object SemanticTokensProvider {
     case Expression.ParYield(frags, exp, _, _, _, _) =>
       val e0 = visitExp(exp)
       frags.foldLeft(e0) {
-        case (acc, ParYield.Fragment(p, e, _)) =>
+        case (acc, ParYieldFragment(p, e, _)) =>
           acc ++ visitPat(p) ++ visitExp(e)
       }
 

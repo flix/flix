@@ -408,7 +408,7 @@ object Indexer {
     case Expression.ParYield(frags, exp, _, _, _, _) =>
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
       val i1 = traverse(frags) {
-        case ParYield.Fragment(p, e, _) => visitPat(p) ++ visitExp(e)
+        case ParYieldFragment(p, e, _) => visitPat(p) ++ visitExp(e)
       }
       i0 ++ i1
 

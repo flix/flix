@@ -420,8 +420,8 @@ object Stratifier {
 
     case Expression.ParYield(frags, exp, tpe, pur, eff, loc) =>
       val fragsVal = traverse(frags) {
-        case ParYield.Fragment(p, e, l) => mapN(visitExp(e)) {
-          case e1 => ParYield.Fragment(p, e1, l)
+        case ParYieldFragment(p, e, l) => mapN(visitExp(e)) {
+          case e1 => ParYieldFragment(p, e1, l)
         }
       }
       mapN(fragsVal, visitExp(exp)) {
@@ -769,7 +769,7 @@ object Stratifier {
 
     case Expression.ParYield(frags, exp, _, _, _, _) =>
       frags.foldLeft(labelledGraphOfExp(exp)) {
-        case (acc, ParYield.Fragment(_, e, _)) => acc + labelledGraphOfExp(e)
+        case (acc, ParYieldFragment(_, e, _)) => acc + labelledGraphOfExp(e)
       }
 
     case Expression.Lazy(exp, _, _) =>
