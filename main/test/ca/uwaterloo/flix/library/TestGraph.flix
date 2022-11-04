@@ -770,4 +770,14 @@ namespace TestGraph {
             (5, 1, 6), (6, 1, 5)
         }
     }
+
+    @test
+    def toUndirected07(): Bool = {
+        let g0 = Set#{(7, 9, 13), (13, 8, 7)};
+        let g = g0 |> Set.toList |> Graph.toUndirectedWeighted;
+        g == Set#{
+            (7, 9, 13), (13, 9, 7),
+            (7, 8, 13), (13, 8, 7)
+        }
+    }
 }
