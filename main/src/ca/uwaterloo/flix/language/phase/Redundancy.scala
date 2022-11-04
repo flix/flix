@@ -707,32 +707,9 @@ object Redundancy {
       visitExp(exp, env0, rc)
 
     case Expression.ParYield(frags, exp, _, _, _, _) =>
-      val (used, env1, fvs) = frags.foldLeft((Used.empty, env0, Set.empty[Symbol.VarSym])) {
-        case ((usedAcc, envAcc, fvsAcc), ParYieldFragment(p, e, _)) =>
-          // Find free vars in pattern
-          val fvs = freeVars(p)
-
-          // Check that the free vars don't shadow any previous par yield vars or anything else
-          val shadowedVars = findShadowedVarSyms(fvs, envAcc)
-
-          // Extend env
-          val extendedEnv = envAcc ++ fvs
-
-          // Visit pattern
-          val usedPat = visitPat(p)
-
-          // Visit exp under env0 since each exp should be independent
-          val usedExp = visitExp(e, env0, rc)
-
-          // Combine everything
-          val allUsed = usedAcc ++ usedPat ++ usedExp ++ shadowedVars
-
-          (allUsed, extendedEnv, fvsAcc ++ fvs)
-      }
-
+      val (used, env1, fvs) = visitParYieldFragments(frags, env0, rc)
       val usedYield = visitExp(exp, env1, rc)
       val unusedVarSyms = findUnusedVarSyms(fvs, usedYield)
-
       (usedYield -- fvs) ++ unusedVarSyms ++ used
 
     case Expression.Lazy(exp, _, _) =>
@@ -773,6 +750,42 @@ object Redundancy {
 
     case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, _, _, _) =>
       Used.of(sym) ++ visitExp(exp1, env0, rc) ++ visitExp(exp2, env0, rc) ++ visitExp(exp3, env0, rc)
+  }
+
+  /**
+    * Visits the [[ParYieldFragment]]s `frags`.
+    *
+    * Returns a tuple of three entries:
+    *
+    * 1. The used variables
+    *
+    * 2. An updated environment with the free variables
+    *
+    * 3. All the free variables.
+    */
+  private def visitParYieldFragments(frags: List[ParYieldFragment], env0: Env, rc: RecursionContext)(implicit flix: Flix): (Used, Env, Set[Symbol.VarSym]) = {
+    frags.foldLeft((Used.empty, env0, Set.empty[Symbol.VarSym])) {
+      case ((usedAcc, envAcc, fvsAcc), ParYieldFragment(p, e, _)) =>
+        // Find free vars in pattern
+        val fvs = freeVars(p)
+
+        // Check that the free vars don't shadow any previous par yield vars or anything else
+        val shadowedVars = findShadowedVarSyms(fvs, envAcc)
+
+        // Extend env
+        val extendedEnv = envAcc ++ fvs
+
+        // Visit pattern
+        val usedPat = visitPat(p)
+
+        // Visit exp under env0 since each exp should be independent
+        val usedExp = visitExp(e, env0, rc)
+
+        // Combine everything
+        val allUsed = usedAcc ++ usedPat ++ usedExp ++ shadowedVars
+
+        (allUsed, extendedEnv, fvsAcc ++ fvs)
+    }
   }
 
   /**
