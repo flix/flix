@@ -1225,4 +1225,37 @@ class TestNamer extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[NameError.IllegalWildType](result)
   }
+
+  test("IllegalWildType.04") {
+    val input =
+      """
+        |def foo(): String = 123 as _
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalWildType](result)
+  }
+
+  test("IllegalWildType.05") {
+    val input =
+      """
+        |def foo(): String \ IO = {
+        |    import java.util.Arrays.deepToString(Array[_, _], Int32): String \ IO;
+        |    deepToString([])
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalWildType](result)
+  }
+
+  test("IllegalWildType.06") {
+    val input =
+      """
+        |def foo(): String \ IO = {
+        |    import java.util.Arrays.deepToString(Array[Int32, Static], Int32): _ \ IO;
+        |    deepToString([])
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalWildType](result)
+  }
 }

@@ -47,7 +47,7 @@ namespace Test/Exp/Jvm/GetStaticFieldStaticInnerClass {
 
     @test
     def testGetStaticPureField01(): Bool =
-        import static get dev.flix.test.TestClass$_StaticNestedClass.STRING_FIELD: _ \ {} as getField;
+        import static get dev.flix.test.TestClass$_StaticNestedClass.STRING_FIELD: String \ {} as getField;
         getField() == "Hello World"
 
     @test
