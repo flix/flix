@@ -594,7 +594,8 @@ object Monomorph {
       case Expression.Par(_, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
-      case Expression.ParYield(frags, exp, tpe, pur, eff, loc) => ???
+      case Expression.ParYield(_, _, _, _, _, loc) =>
+        throw InternalCompilerException(s"Unexpected expression near: ${loc.format}")
 
       case Expression.Lazy(exp, tpe, loc) =>
         val e = visitExp(exp, env0)
