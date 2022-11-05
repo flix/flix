@@ -259,7 +259,9 @@ object Lowering {
   private def visitExp(exp0: Expression)(implicit root: Root, flix: Flix): Expression = exp0 match {
     case Expression.Unit(_) => exp0
 
-    case Expression.Null(_, _) => exp0
+    case Expression.Null(tpe, loc) => 
+      val t = visitType(tpe)
+      Expression.Null(t, loc)
 
     case Expression.True(_) => exp0
 
