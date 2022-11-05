@@ -155,6 +155,26 @@ namespace Graph {
     pub def distance(src: { src :: t }, dst: { dst :: t }, g: m[(t, Int32, t)]): Option[Int32] with Foldable[m], Boxable[t] =
         distancesFrom(src.src, g) |> Map.get(dst.dst)
 
+    ///
+    /// Returns a copy of `g` where `(a, b)` edges is added for all edges
+    /// `(b, a)` in `g`, i.e. An undirected graph in directed representation.
+    ///
+    pub def toUndirected(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Boxable[t] = {
+        g |>
+            Foldable.toSet |>
+            Set.flatMap(match (a, b) -> Set#{(a, b), (b, a)})
+    }
+
+    ///
+    /// Returns a copy of `g` where `(a, w, b)` edges is added for all edges
+    /// `(b, w, a)` in `g`, i.e. An undirected graph in directed representation.
+    ///
+    pub def toUndirectedWeighted(g: m[(t, Int32, t)]): Set[(t, Int32, t)] with Foldable[m], Boxable[t] = {
+        g |>
+            Foldable.toSet |>
+            Set.flatMap(match (a, w, b) -> Set#{(a, w, b), (b, w, a)})
+    }
+
     // -------------------------------------------------------------------------
     // Private Functions -------------------------------------------------------
     // -------------------------------------------------------------------------
