@@ -37,7 +37,7 @@ namespace System {
             // note: BufferedReader.readLine can block
             import java.io.BufferedReader.readLine(): String \ IO as brReadLine;
 
-            let br = newBufferedReader(newInputStream(getSystemIn()) as ##java.io.Reader); // up-cast to superclass
+            let br = newBufferedReader(upcast newInputStream(getSystemIn())); // up-cast to superclass
             let nextLine = ref None;
             let done = () -> match deref nextLine {
                 case Some(line) =>
