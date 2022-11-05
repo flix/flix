@@ -558,10 +558,14 @@ object Lowering {
     // becomes a call to the standard library function:
     //     Concurrent/Channel.newChannel(10)
     //
-    case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
+    case Expression.NewChannel(exp, tpe, elmTpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      mkNewChannel(e, t, pur, eff, loc)
+      val chTpe = mkChannelTpe(elmTpe, loc)
+      val ch = mkNewChannel(e, chTpe, pur, eff, loc)
+      val sym = mkLetSym("ch", loc)
+      val tuple = Expression.Tuple(List(Expression.Var(sym, chTpe, loc), Expression.Var(sym, chTpe, loc)), t, pur, eff, loc)
+      Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), ch, tuple, chTpe, pur, eff, loc)
 
     // Channel get expressions are rewritten as follows:
     //     <- c
@@ -830,8 +834,11 @@ object Lowering {
         case _ => tpe0
       }
 
-      // Special case for Channel[_], which is rewritten to Concurrent/Channel.Mpmc
-      case Type.Cst(TypeConstructor.Channel, loc) =>
+      // Special case for Sender[_] and Receiver[_], both of which are rewritten to Concurrent/Channel.Mpmc
+      case Type.Cst(TypeConstructor.Sender, loc) =>
+        Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc)
+
+      case Type.Cst(TypeConstructor.Receiver, loc) =>
         Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc)
 
       case Type.Cst(_, _) => tpe0
@@ -1908,9 +1915,9 @@ object Lowering {
 
     case Expression.NewObject(_, _, _, _, _, _, _) => exp0
 
-    case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
+    case Expression.NewChannel(exp, tpe, elmTpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
-      Expression.NewChannel(e, tpe, pur, eff, loc)
+      Expression.NewChannel(e, tpe, elmTpe, pur, eff, loc)
 
     case Expression.GetChannel(exp, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)

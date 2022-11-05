@@ -1781,7 +1781,8 @@ object Resolver {
       case "Int64" => UnkindedType.Cst(TypeConstructor.Int64, loc).toSuccess
       case "BigInt" => UnkindedType.Cst(TypeConstructor.BigInt, loc).toSuccess
       case "String" => UnkindedType.Cst(TypeConstructor.Str, loc).toSuccess
-      case "Channel" => UnkindedType.Cst(TypeConstructor.Channel, loc).toSuccess
+      case "Sender" => UnkindedType.Cst(TypeConstructor.Sender, loc).toSuccess
+      case "Receiver" => UnkindedType.Cst(TypeConstructor.Receiver, loc).toSuccess
       case "Lazy" => UnkindedType.Cst(TypeConstructor.Lazy, loc).toSuccess
       case "Array" => UnkindedType.Cst(TypeConstructor.Array, loc).toSuccess
       case "Ref" => UnkindedType.Cst(TypeConstructor.Ref, loc).toSuccess
@@ -2653,7 +2654,9 @@ object Resolver {
 
         case TypeConstructor.Str => Class.forName("java.lang.String").toSuccess
 
-        case TypeConstructor.Channel => Class.forName("java.lang.Object").toSuccess
+        case TypeConstructor.Sender => Class.forName("java.lang.Object").toSuccess
+
+        case TypeConstructor.Receiver => Class.forName("java.lang.Object").toSuccess
 
         case TypeConstructor.Ref => Class.forName("java.lang.Object").toSuccess
 
