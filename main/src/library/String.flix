@@ -276,9 +276,8 @@ namespace String {
         import java.util.regex.Matcher.find(Int32): Bool \ Write(r);
         let _ = r; // This avoids a redundancy error.
         try {
-            let cs1 = s as ##java.lang.CharSequence;
             let p1 = compile(pattern);
-            let m1 = matcher(p1, cs1);
+            let m1 = matcher(p1, upcast s);
             find(m1, 0)
         } catch {
             case _: ##java.util.regex.PatternSyntaxException => false
@@ -775,9 +774,7 @@ namespace String {
     ///
     pub def replace(from: {from = String}, to: {to = String}, s: String): String =
         import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String \ {};
-        let t = from.from as ##java.lang.CharSequence;
-        let r = to.to as ##java.lang.CharSequence;
-        replace(s, t, r)
+        replace(s, upcast from.from, upcast to.to)
 
     ///
     /// Returns `s` with every match of the character `target` replaced by the character `rep`.

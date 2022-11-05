@@ -19,6 +19,7 @@ import scala.annotation.tailrec
   * Performs safety and well-formedness checks on:
   *  - Datalog constraints
   *  - Anonymous objects
+  *  - Upcast expressions
   *  - TypeMatch expressions
   */
 object Safety {
@@ -349,6 +350,15 @@ object Safety {
 
     case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
       right.isAssignableFrom(left)
+
+    case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+      right.isAssignableFrom(classOf[java.lang.String])
+
+    case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+      right.isAssignableFrom(classOf[java.math.BigInteger])
+
+    case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+      right.isAssignableFrom(classOf[java.math.BigDecimal])
 
     case (Type.Cst(TypeConstructor.Arrow(n1), _), Type.Cst(TypeConstructor.Arrow(n2), _)) if n1 == n2 =>
       // purities
