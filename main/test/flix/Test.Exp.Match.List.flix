@@ -1,7 +1,7 @@
 namespace Test/Exp/Match/List {
 
     // Define an enum with a `Cons` tag to ensure that it's not used in any of the following tests
-    enum Foo {
+    pub enum Foo {
         case Cons
     }
 
