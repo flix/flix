@@ -240,4 +240,20 @@ namespace Test/Exp/Tag {
     @test
     def testPolyTag12(): Poly[Int32, String] = Test/Exp/Tag/Poly.Both(123, "Hello World!")
 
+    @test
+    def testTopLevelTag01(): Option[Int32] = Some(1)
+
+    @test
+    def testTopLevelTag02(): Option[Int32] = Option.Some(1)
+
+    // Local version of List to make sure that this is used instead of top level
+    enum List {
+        case Cons(String)
+    }
+
+    @test
+    def testTopLevelTag03(): List = Cons("Foo")
+
+    @test
+    def testTopLevelTag04(): List = List.Cons("Foo")
 }

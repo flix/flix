@@ -90,4 +90,9 @@ namespace Test/Exp/Match/Tag {
         case Some(Err(_)) => true
     }
 
+    @test
+    def testMatchTopLevel01(): Bool = match (Option.Some(1)) {
+        case Option.None    => false
+        case Option.Some(_) => true
+    }
 }
