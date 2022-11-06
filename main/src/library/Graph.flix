@@ -174,6 +174,35 @@ namespace Graph {
             Foldable.toSet |>
             Set.flatMap(match (a, w, b) -> Set#{(a, w, b), (b, w, a)})
     }
+    
+    ///
+    /// Returns all nodes of `g` without outgoing edges.
+    ///
+    pub def sinks(g: m[(t, t)]): List[t] with Foldable[m], Boxable[t] = {
+        let edges = project g into Edge;
+        let sinks = #{
+            Out(n) :- Edge(n, _).
+            Sink(n) :- Node(n), not Out(n).
+        };
+        query edges, nodes(), sinks
+        select n
+        from Sink(n)
+    }
+
+    ///
+    /// Returns a GraphViz, DOT file of the graph `g`.
+    /// The string representation of nodes must not contain quotes.
+    ///
+    pub def toGraphViz(g: m[((t, t))]): String with Foldable[m], Boxable[t], ToString[t] = region r {
+        let sb = new StringBuilder(r);
+        def output(s) = StringBuilder.appendLine!(s, sb);
+        output("digraph {");
+        foreach((x, y) <- Foldable.iterator(r, g)) {
+            output("  \"${x}\" -> \"${y}\"")
+        };
+        output("}");
+        StringBuilder.toString(sb)
+    }
 
     // -------------------------------------------------------------------------
     // Private Functions -------------------------------------------------------
