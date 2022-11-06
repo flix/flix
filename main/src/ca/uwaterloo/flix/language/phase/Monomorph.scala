@@ -560,9 +560,9 @@ object Monomorph {
         val methods = methods0.map(visitJvmMethod(_, env0))
         Expression.NewObject(name, clazz, subst0(tpe), pur, eff, methods, loc)
 
-      case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
+      case Expression.NewChannel(exp, tpe, elmTpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
-        Expression.NewChannel(e, subst0(tpe), pur, eff, loc)
+        Expression.NewChannel(e, subst0(tpe), subst0(elmTpe), pur, eff, loc)
 
       case Expression.GetChannel(exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)

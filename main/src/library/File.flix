@@ -687,7 +687,7 @@ namespace File {
             let javaFile = newFile(f);
             // 2nd parameter `true` is for append.
             let fileWriter = newFileWriter(javaFile, true);
-            let printWriter = newPrintWriter(fileWriter as ##java.io.Writer);
+            let printWriter = newPrintWriter(upcast fileWriter);
 
             println(printWriter, "${data}");
             close(printWriter);
@@ -723,7 +723,7 @@ namespace File {
             let javaFile = newFile(f);
             // 2nd parameter `true` is for append.
             let fileWriter = newFileWriter(javaFile, true);
-            let printWriter = newPrintWriter(fileWriter as ##java.io.Writer);
+            let printWriter = newPrintWriter(upcast fileWriter);
 
             Foldable.foreach(line -> println(printWriter, line), data);
             close(printWriter);
@@ -760,7 +760,7 @@ namespace File {
 
             let javaFile = newFile(f);
             let fileStream = newFileStream(javaFile);
-            let printWriter = newPrintWriter(fileStream as ##java.io.OutputStream);
+            let printWriter = newPrintWriter(upcast fileStream);
 
             let dataAsArray = Foldable.toArray(Static, data);
             write(fileStream, dataAsArray);
@@ -797,7 +797,7 @@ namespace File {
             let javaFile = newFile(f);
             // 2nd parameter `true` is for append.
             let fileStream = newFileStream(javaFile, true);
-            let printWriter = newPrintWriter(fileStream as ##java.io.OutputStream);
+            let printWriter = newPrintWriter(upcast fileStream);
 
             let dataAsArray = Foldable.toArray(Static, data);
             write(fileStream, dataAsArray);
@@ -956,7 +956,7 @@ namespace File {
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let javaStream = walk(javaPath, []);
-            let javaIter = iterator(javaStream as ##java.util.stream.BaseStream);
+            let javaIter = iterator(upcast javaStream);
 
             let iter = fromJavaIter(javaIter);
             Ok(Iterator.mapL(pathToString, iter))
@@ -1063,7 +1063,7 @@ namespace File {
 
             let srcFile = newFile(src.src);
             let srcPath = toPath(srcFile);
-            discard move(srcPath, dstPath, [getOverwrite() as ##java.nio.file.CopyOption]);
+            discard move(srcPath, dstPath, [upcast getOverwrite()]);
 
             Ok()
         } catch {
@@ -1152,7 +1152,7 @@ namespace File {
 
             let srcFile = newFile(src.src);
             let srcPath = toPath(srcFile);
-            discard copy(srcPath, dstPath, [getOverwrite() as ##java.nio.file.CopyOption]);
+            discard copy(srcPath, dstPath, [upcast getOverwrite()]);
 
             Ok()
         } catch {

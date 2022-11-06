@@ -125,6 +125,7 @@ object CompletionProvider {
       getCaseCompletions() ++
       getMatchCompletitions() ++
       getPredicateCompletions() ++
+      getFieldCompletions() ++
       getInstanceCompletions() ++
       getTypeCompletions() ++
       getOpCompletions() ++
@@ -686,6 +687,37 @@ object CompletionProvider {
           kind = CompletionItemKind.Variable) :: acc
       }
     })
+  }
+
+  /**
+   * Gets completions for record fields
+   */
+  private def getFieldCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+    // Do not get field completions if we are importing or using.
+    if (root == null || context.prefix.contains("import") || context.prefix.contains("use")) {
+      return Nil
+    }
+
+    val regex = raw"(.*)[.].*".r
+
+    context.word match {
+      case regex(prefix) => {
+        index.fieldDefs.m.concat(index.fieldUses.m)
+          .filter{case (_, locs) => locs.exists(loc => loc.source.name == context.uri)}
+          .foldLeft[List[CompletionItem]](Nil){
+          case (acc, (field, locs)) => {
+            val name = s"$prefix.${field.name}"
+            CompletionItem(label = name,
+              sortText = Priority.high(name),
+              textEdit = TextEdit(context.range, name),
+              documentation = None,
+              insertTextFormat = InsertTextFormat.PlainText,
+              kind = CompletionItemKind.Variable) :: acc
+          }
+        }
+      }
+      case _ => Nil
+    }
   }
 
   /**
