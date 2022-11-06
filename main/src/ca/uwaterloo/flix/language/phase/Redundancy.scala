@@ -278,8 +278,6 @@ object Redundancy {
 
     case Expression.Str(_, _) => Used.empty
 
-    case Expression.Default(_, _) => Used.empty
-
     case Expression.Wild(_, _) => Used.empty
 
     case Expression.Var(sym, _, loc) => (sym.isWild, rc.vars.contains(sym)) match {
@@ -662,7 +660,7 @@ object Redundancy {
           acc ++ used ++ unusedFParams
       }
 
-    case Expression.NewChannel(exp, _, _, _, _) =>
+    case Expression.NewChannel(exp, _, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
     case Expression.GetChannel(exp, _, _, _, _) =>

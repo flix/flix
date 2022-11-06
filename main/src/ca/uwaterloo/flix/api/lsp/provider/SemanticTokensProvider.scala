@@ -315,8 +315,6 @@ object SemanticTokensProvider {
 
     case Expression.Str(_, _) => Iterator.empty
 
-    case Expression.Default(_, _) => Iterator.empty
-
     case Expression.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp)
 
@@ -497,7 +495,7 @@ object SemanticTokensProvider {
         case (acc, m) => acc ++ visitJvmMethod(m)
       }
 
-    case Expression.NewChannel(exp, _, _, _, _) => visitExp(exp)
+    case Expression.NewChannel(exp, _, _, _, _, _) => visitExp(exp)
 
     case Expression.GetChannel(exp, _, _, _, _) => visitExp(exp)
 
@@ -658,7 +656,8 @@ object SemanticTokensProvider {
     case TypeConstructor.Int64 => true
     case TypeConstructor.BigInt => true
     case TypeConstructor.Str => true
-    case TypeConstructor.Channel => true
+    case TypeConstructor.Sender => true
+    case TypeConstructor.Receiver => true
     case TypeConstructor.Lazy => true
     case TypeConstructor.Enum(_, _) => true
     case TypeConstructor.Native(_) => true

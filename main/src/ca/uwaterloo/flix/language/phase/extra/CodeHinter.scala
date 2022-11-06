@@ -121,8 +121,6 @@ object CodeHinter {
 
     case Expression.Str(_, _) => Nil
 
-    case Expression.Default(_, _) => Nil
-
     case Expression.Lambda(_, exp, _, _) =>
       checkPurity(exp.pur, exp.loc) ++ visitExp(exp)
 
@@ -277,7 +275,7 @@ object CodeHinter {
         case JvmMethod(_, _, exp, _, _, _, _) => visitExp(exp)
       }
 
-    case Expression.NewChannel(exp, _, _, _, _) =>
+    case Expression.NewChannel(exp, _, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.GetChannel(exp, _, _, _, _) =>

@@ -41,7 +41,7 @@ object Weeder {
     * Users must not define fields or variables with these names.
     */
   private val ReservedWords = Set(
-    "!=", "$DEFAULT$", "&&&", "*", "**", "+", "-", "..", "/", ":", "::", ":::", ":=", "<", "<+>", "<-", "<<<", "<=",
+    "!=", "&&&", "*", "**", "+", "-", "..", "/", ":", "::", ":::", ":=", "<", "<+>", "<-", "<<<", "<=",
     "<=>", "==", "=>", ">", ">=", ">>>", "???", "@", "Absent", "Bool", "Impure", "Nil", "Predicate", "Present", "Pure",
     "Read", "RecordRow", "Region", "SchemaRow", "Type", "Write", "^^^", "alias", "case", "catch", "chan",
     "class", "def", "deref", "else", "enum", "false", "fix", "force",
@@ -1562,22 +1562,6 @@ object Weeder {
         case (exp, rules) => WeededAst.Expression.TryWith(exp, eff, rules, loc)
       }
 
-    // TODO SJ: Rewrite to Ascribe(newch, Channel[Int32]), to remove the tpe (and get tvar like everything else)
-    case ParsedAst.Expression.NewChannel(sp1, _, exp, sp2) =>
-      visitExp(exp, senv) map {
-        case e => WeededAst.Expression.NewChannel(e, mkSL(sp1, sp2))
-      }
-
-    case ParsedAst.Expression.GetChannel(sp1, exp, sp2) =>
-      visitExp(exp, senv) map {
-        case e => WeededAst.Expression.GetChannel(e, mkSL(sp1, sp2))
-      }
-
-    case ParsedAst.Expression.PutChannel(exp1, exp2, sp2) =>
-      mapN(visitExp(exp1, senv), visitExp(exp2, senv)) {
-        case (e1, e2) => WeededAst.Expression.PutChannel(e1, e2, mkSL(leftMostSourcePosition(exp1), sp2))
-      }
-
     case ParsedAst.Expression.SelectChannel(sp1, rules, default, sp2) =>
       val rulesVal = traverse(rules) {
         case ParsedAst.SelectChannelRule(ident, chan, body) => mapN(visitExp(chan, senv), visitExp(body, senv)) {
@@ -1813,7 +1797,7 @@ object Weeder {
     val loc = mkSL(sp1, sp2).asSynthetic
 
     // The name of the lambda parameter.
-    val ident = Name.Ident(sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), sp2)
+    val ident = Name.Ident(sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), sp2).asSynthetic
 
     // Construct the body of the lambda expression.
     val varOrRef = WeededAst.Expression.VarOrDefOrSig(ident, loc)
@@ -2016,8 +2000,8 @@ object Weeder {
         case lit => WeededAst.Expression.Float64(lit, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Literal.BigDecimal(sp1, sign, before, after, sp2) =>
-      toBigDecimal(sign, before, after, mkSL(sp1, sp2)) map {
+    case ParsedAst.Literal.BigDecimal(sp1, sign, before, after, power, sp2) =>
+      toBigDecimal(sign, before, after, power, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Expression.BigDecimal(lit, mkSL(sp1, sp2))
       }
 
@@ -2050,9 +2034,6 @@ object Weeder {
       weedCharSequence(chars) map {
         string => WeededAst.Expression.Str(string, mkSL(sp1, sp2))
       }
-
-    case ParsedAst.Literal.Default(sp1, sp2) =>
-      WeededAst.Expression.Default(mkSL(sp1, sp2)).toSuccess
   }
 
   /**
@@ -2076,8 +2057,8 @@ object Weeder {
       toFloat64(sign, before, after, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Pattern.Float64(lit, mkSL(sp1, sp2))
       }
-    case ParsedAst.Literal.BigDecimal(sp1, sign, before, after, sp2) =>
-      toBigDecimal(sign, before, after, mkSL(sp1, sp2)) map {
+    case ParsedAst.Literal.BigDecimal(sp1, sign, before, after, power, sp2) =>
+      toBigDecimal(sign, before, after, power, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Pattern.BigDecimal(lit, mkSL(sp1, sp2))
       }
     case ParsedAst.Literal.Int8(sp1, sign, radix, digits, sp2) =>
@@ -2104,8 +2085,6 @@ object Weeder {
       weedCharSequence(chars) map {
         string => WeededAst.Pattern.Str(string, mkSL(sp1, sp2))
       }
-    case ParsedAst.Literal.Default(sp1, sp2) =>
-      throw InternalCompilerException(s"Illegal default pattern near: ${mkSL(sp1, sp2).format}")
   }
 
   /**
@@ -2971,8 +2950,16 @@ object Weeder {
   /**
     * Attempts to parse the given big decimal with `sign` digits `before` and `after` the comma.
     */
-  private def toBigDecimal(sign: String, before: String, after: String, loc: SourceLocation): Validation[BigDecimal, WeederError] = try {
-    val s = s"$sign$before.$after"
+  private def toBigDecimal(sign: String, before: String, after: Option[String], power: Option[String], loc: SourceLocation): Validation[BigDecimal, WeederError] = try {
+    val frac = after match {
+      case Some(digits) => "." + digits
+      case None => ""
+    }
+    val pow = power match {
+      case Some(digits) => "e" + digits
+      case None => ""
+    }
+    val s = s"$sign$before$frac$pow"
     new BigDecimal(stripUnderscores(s)).toSuccess
   } catch {
     case _: NumberFormatException => IllegalFloat(loc).toFailure
@@ -3094,9 +3081,6 @@ object Weeder {
     case ParsedAst.Expression.Do(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Resume(sp1, _, _) => sp1
     case ParsedAst.Expression.Try(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.NewChannel(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.GetChannel(sp1, _, _) => sp1
-    case ParsedAst.Expression.PutChannel(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.SelectChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Spawn(sp1, _, _) => sp1
     case ParsedAst.Expression.Par(sp1, _, _) => sp1

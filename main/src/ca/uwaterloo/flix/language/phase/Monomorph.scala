@@ -314,31 +314,6 @@ object Monomorph {
 
       case Expression.Str(lit, loc) => Expression.Str(lit, loc)
 
-      case Expression.Default(tpe, loc) =>
-        //
-        // Replace a default literal by the actual default value based on its type.
-        //
-        subst0(tpe).typeConstructor match {
-          case None =>
-            throw ReifyTypeException(tpe, loc)
-
-          case Some(tc) => tc match {
-            case TypeConstructor.Unit => Expression.Unit(loc)
-            case TypeConstructor.Bool => Expression.False(loc)
-            case TypeConstructor.Char => Expression.Char('0', loc)
-            case TypeConstructor.Float32 => Expression.Float32(0, loc)
-            case TypeConstructor.Float64 => Expression.Float64(0, loc)
-            case TypeConstructor.BigDecimal => Expression.BigDecimal(BigDecimal.ZERO, loc)
-            case TypeConstructor.Int8 => Expression.Int8(0, loc)
-            case TypeConstructor.Int16 => Expression.Int16(0, loc)
-            case TypeConstructor.Int32 => Expression.Int32(0, loc)
-            case TypeConstructor.Int64 => Expression.Int64(0, loc)
-            case TypeConstructor.BigInt => Expression.BigInt(BigInteger.ZERO, loc)
-            case TypeConstructor.Str => Expression.Str("", loc)
-            case _ => Expression.Null(subst0(tpe), loc)
-          }
-        }
-
       case Expression.Lambda(fparam, exp, tpe, loc) =>
         val (p, env1) = specializeFormalParam(fparam, subst0)
         val e = visitExp(exp, env0 ++ env1)
@@ -585,9 +560,9 @@ object Monomorph {
         val methods = methods0.map(visitJvmMethod(_, env0))
         Expression.NewObject(name, clazz, subst0(tpe), pur, eff, methods, loc)
 
-      case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
+      case Expression.NewChannel(exp, tpe, elmTpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
-        Expression.NewChannel(e, subst0(tpe), pur, eff, loc)
+        Expression.NewChannel(e, subst0(tpe), subst0(elmTpe), pur, eff, loc)
 
       case Expression.GetChannel(exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)

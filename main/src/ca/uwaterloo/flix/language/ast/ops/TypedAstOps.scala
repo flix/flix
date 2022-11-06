@@ -54,8 +54,6 @@ object TypedAstOps {
 
       case Expression.Str(lit, loc) => Map.empty
 
-      case Expression.Default(tpe, loc) => Map.empty
-
       case Expression.Lambda(fparam, exp, tpe, loc) =>
         val env1 = Map(fparam.sym -> fparam.tpe)
         visitExp(exp, env0 ++ env1)
@@ -240,7 +238,7 @@ object TypedAstOps {
             macc ++ visitExp(exp, env0 ++ env1)
         }
 
-      case Expression.NewChannel(exp, _, _, _, _) => visitExp(exp, env0)
+      case Expression.NewChannel(exp, _, _, _, _, _) => visitExp(exp, env0)
 
       case Expression.GetChannel(exp, _, _, _, _) => visitExp(exp, env0)
 
@@ -396,7 +394,6 @@ object TypedAstOps {
     case Expression.Int64(_, _) => Set.empty
     case Expression.BigInt(_, _) => Set.empty
     case Expression.Str(_, _) => Set.empty
-    case Expression.Default(_, _) => Set.empty
     case Expression.Wild(_, _) => Set.empty
     case Expression.Var(_, _, _) => Set.empty
     case Expression.Def(_, _, _) => Set.empty
@@ -448,7 +445,7 @@ object TypedAstOps {
     case Expression.GetStaticField(_, _, _, _, _) => Set.empty
     case Expression.PutStaticField(_, exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.NewObject(_, _, _, _, _, methods, _) => methods.flatMap(method => sigSymsOf(method.exp)).toSet
-    case Expression.NewChannel(exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.NewChannel(exp, _, _, _, _, _) => sigSymsOf(exp)
     case Expression.GetChannel(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.PutChannel(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.SelectChannel(rules, default, _, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.chan) ++ sigSymsOf(rule.exp)).toSet ++ default.toSet.flatMap(sigSymsOf)
@@ -524,8 +521,6 @@ object TypedAstOps {
     case Expression.BigInt(_, _) => Map.empty
 
     case Expression.Str(_, _) => Map.empty
-
-    case Expression.Default(_, _) => Map.empty
 
     case Expression.Wild(_, _) => Map.empty
 
@@ -702,7 +697,7 @@ object TypedAstOps {
         case (acc, JvmMethod(_, fparams, exp, _, _, _, _)) => acc ++ freeVars(exp) -- fparams.map(_.sym)
       }
 
-    case Expression.NewChannel(exp, _, _, _, _) =>
+    case Expression.NewChannel(exp, _, _, _, _, _) =>
       freeVars(exp)
 
     case Expression.GetChannel(exp, _, _, _, _) =>

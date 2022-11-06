@@ -13,7 +13,7 @@ namespace Test/Exp/Null {
     def testNullArray01(): Array[String, Static] = null as Array[String, Static]
 
     @test
-    def testNullChannel01(): Channel[String] = null as Channel[String]
+    def testNullChannel01(): Receiver[String] = null as Receiver[String]
 
     @test
     def testNullRecord01(): {} = null as {}

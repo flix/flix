@@ -78,8 +78,6 @@ object Regions {
 
     case Expression.Str(_, _) => ().toSuccess
 
-    case Expression.Default(_, _) => ().toSuccess
-
     case Expression.Wild(_, _) => ().toSuccess
 
     case Expression.Var(_, tpe, loc) => checkType(tpe, loc)
@@ -331,7 +329,7 @@ object Regions {
         case ms => checkType(tpe, loc)
       }
 
-    case Expression.NewChannel(exp, tpe, _, _, loc) =>
+    case Expression.NewChannel(exp, tpe, _, _, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }

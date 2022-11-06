@@ -129,7 +129,7 @@ object BackendType {
     case MonoType.Int32 => Int32
     case MonoType.Int64 => Int64
     case MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt | MonoType.Str | MonoType.Array(_) |
-         MonoType.Channel(_) | MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) | MonoType.Enum(_, _) |
+         MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) | MonoType.Enum(_, _) |
          MonoType.Arrow(_, _) | MonoType.RecordEmpty() | MonoType.RecordExtend(_, _, _) |
          MonoType.SchemaEmpty() | MonoType.SchemaExtend(_, _, _) | MonoType.Relation(_) |
          MonoType.Lattice(_) | MonoType.Native(_) | MonoType.Var(_) => BackendObjType.JavaObject.toTpe

@@ -94,7 +94,6 @@ object Statistics {
       case Expression.Int64(lit, loc) => Counter.empty
       case Expression.BigInt(lit, loc) => Counter.empty
       case Expression.Str(lit, loc) => Counter.empty
-      case Expression.Default(tpe, loc) => Counter.empty
       case Expression.Wild(tpe, loc) => Counter.empty
       case Expression.Var(sym, tpe, loc) => Counter.empty
       case Expression.Def(sym, tpe, loc) => Counter.empty
@@ -146,7 +145,7 @@ object Statistics {
       case Expression.GetStaticField(field, tpe, pur, eff, loc) => Counter.empty
       case Expression.PutStaticField(field, exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.NewObject(name, clazz, tpe, pur, eff, methods, loc) => Counter.merge(methods.map(visitJvmMethod))
-      case Expression.NewChannel(exp, tpe, pur, eff, loc) => visitExp(exp)
+      case Expression.NewChannel(exp, tpe, elmTpe, pur, eff, loc) => visitExp(exp)
       case Expression.GetChannel(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.PutChannel(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.SelectChannel(rules, default, tpe, pur, eff, loc) => Counter.merge(rules.map(visitSelectChannelRule)) ++ Counter.merge(default.map(visitExp))

@@ -150,7 +150,6 @@ object PatternExhaustiveness {
       case Expression.Int64(_, _) => Nil
       case Expression.BigInt(_, _) => Nil
       case Expression.Str(_, _) => Nil
-      case Expression.Default(_, _) => Nil
       case Expression.Lambda(_, body, _, _) => visitExp(body, root)
       case Expression.Apply(exp, exps, _, _, _, _) => (exp :: exps).flatMap(visitExp(_, root))
       case Expression.Unary(_, exp, _, _, _, _) => visitExp(exp, root)
@@ -218,7 +217,7 @@ object PatternExhaustiveness {
       case Expression.GetStaticField(_, _, _, _, _) => Nil
       case Expression.PutStaticField(_, exp, _, _, _, _) => visitExp(exp, root)
       case Expression.NewObject(_, _, _, _, _, methods, _) => methods.flatMap(m => visitExp(m.exp, root))
-      case Expression.NewChannel(exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.NewChannel(exp, _, _, _, _, _) => visitExp(exp, root)
       case Expression.GetChannel(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.PutChannel(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
 
@@ -582,7 +581,6 @@ object PatternExhaustiveness {
     case Some(TypeConstructor.Arrow(length)) => length
     case Some(TypeConstructor.Array) => 1
     case Some(TypeConstructor.Ref) => 0
-    case Some(TypeConstructor.Channel) => 1
     case Some(TypeConstructor.Lazy) => 1
     case Some(TypeConstructor.Enum(sym, kind)) => 0 // TODO: Correct?
     case Some(TypeConstructor.Native(clazz)) => 0

@@ -47,6 +47,8 @@ object Resolver {
     * Java classes for primitives and Object
     */
   private val Int = classOf[Int]
+  private val Long = classOf[Long]
+  private val Double = classOf[Double]
   private val Boolean = classOf[Boolean]
   private val Object = classOf[AnyRef]
 
@@ -647,8 +649,6 @@ object Resolver {
         case NamedAst.Expression.BigInt(lit, loc) => ResolvedAst.Expression.BigInt(lit, loc).toSuccess
 
         case NamedAst.Expression.Str(lit, loc) => ResolvedAst.Expression.Str(lit, loc).toSuccess
-
-        case NamedAst.Expression.Default(loc) => ResolvedAst.Expression.Default(loc).toSuccess
 
         case app@NamedAst.Expression.Apply(NamedAst.Expression.DefOrSig(qname, env, innerLoc), exps, outerLoc) =>
           flatMapN(lookupDefOrSig(qname, ns0, env, root)) {
@@ -1712,17 +1712,18 @@ object Resolver {
       case Some(qname) =>
         // Case 2: The name is qualified.
 
-        // Determine where to search for the enum.
-        val enumsInNS = if (qname.isUnqualified) {
-          // The name is unqualified (e.g. Option.None) so search in the current namespace.
-          root.enums.getOrElse(ns0, Map.empty[String, NamedAst.Enum])
+        def lookupEnumInNs(ns: Name.NName) = root.enums.get(ns) flatMap { _.get(qname.ident.name) }
+
+        val enumOpt = if (qname.isUnqualified) {
+          // The name is unqualified (e.g. Option.None), so first search the current namespace,
+          // if it's not found there, search the root namespace.
+          lookupEnumInNs(ns0).orElse(lookupEnumInNs(Name.RootNS))
         } else {
           // The name is qualified (e.g. Foo/Bar/Baz.Qux) so search in the Foo/Bar/Baz namespace.
-          root.enums.getOrElse(qname.namespace, Map.empty[String, NamedAst.Enum])
+          lookupEnumInNs(qname.namespace)
         }
 
-        // Lookup the enum declaration.
-        enumsInNS.get(qname.ident.name) match {
+        enumOpt match {
           case None =>
             // Case 2.1: The enum does not exist.
             ResolutionError.UndefinedType(qname, ns0, qname.loc).toFailure
@@ -1781,7 +1782,8 @@ object Resolver {
       case "Int64" => UnkindedType.Cst(TypeConstructor.Int64, loc).toSuccess
       case "BigInt" => UnkindedType.Cst(TypeConstructor.BigInt, loc).toSuccess
       case "String" => UnkindedType.Cst(TypeConstructor.Str, loc).toSuccess
-      case "Channel" => UnkindedType.Cst(TypeConstructor.Channel, loc).toSuccess
+      case "Sender" => UnkindedType.Cst(TypeConstructor.Sender, loc).toSuccess
+      case "Receiver" => UnkindedType.Cst(TypeConstructor.Receiver, loc).toSuccess
       case "Lazy" => UnkindedType.Cst(TypeConstructor.Lazy, loc).toSuccess
       case "Array" => UnkindedType.Cst(TypeConstructor.Array, loc).toSuccess
       case "Ref" => UnkindedType.Cst(TypeConstructor.Ref, loc).toSuccess
@@ -1882,11 +1884,21 @@ object Resolver {
         case "java.math.BigDecimal" => UnkindedType.Cst(TypeConstructor.BigDecimal, loc).toSuccess
         case "java.math.BigInteger" => UnkindedType.Cst(TypeConstructor.BigInt, loc).toSuccess
         case "java.lang.String" => UnkindedType.Cst(TypeConstructor.Str, loc).toSuccess
+        case "java.util.function.Function" => UnkindedType.mkImpureArrow(UnkindedType.mkObject(loc), UnkindedType.mkObject(loc), loc).toSuccess
+        case "java.util.function.Consumer" => UnkindedType.mkImpureArrow(UnkindedType.mkObject(loc), UnkindedType.mkUnit(loc), loc).toSuccess
+        case "java.util.function.Predicate" => UnkindedType.mkImpureArrow(UnkindedType.mkObject(loc), UnkindedType.mkBool(loc), loc).toSuccess
         case "java.util.function.IntFunction" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkObject(loc), loc).toSuccess
-        case "java.util.function.IntUnaryOperator" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkInt32(loc), loc).toSuccess
-        case "java.util.function.IntPredicate" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkBool(loc), loc).toSuccess
         case "java.util.function.IntConsumer" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkUnit(loc), loc).toSuccess
-
+        case "java.util.function.IntPredicate" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkBool(loc), loc).toSuccess
+        case "java.util.function.IntUnaryOperator" => UnkindedType.mkImpureArrow(UnkindedType.mkInt32(loc), UnkindedType.mkInt32(loc), loc).toSuccess
+        case "java.util.function.LongFunction" => UnkindedType.mkImpureArrow(UnkindedType.mkInt64(loc), UnkindedType.mkObject(loc), loc).toSuccess
+        case "java.util.function.LongConsumer" => UnkindedType.mkImpureArrow(UnkindedType.mkInt64(loc), UnkindedType.mkUnit(loc), loc).toSuccess
+        case "java.util.function.LongPredicate" => UnkindedType.mkImpureArrow(UnkindedType.mkInt64(loc), UnkindedType.mkBool(loc), loc).toSuccess
+        case "java.util.function.LongUnaryOperator" => UnkindedType.mkImpureArrow(UnkindedType.mkInt64(loc), UnkindedType.mkInt64(loc), loc).toSuccess
+        case "java.util.function.DoubleFunction" => UnkindedType.mkImpureArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkObject(loc), loc).toSuccess
+        case "java.util.function.DoubleConsumer" => UnkindedType.mkImpureArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkUnit(loc), loc).toSuccess
+        case "java.util.function.DoublePredicate" => UnkindedType.mkImpureArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkBool(loc), loc).toSuccess
+        case "java.util.function.DoubleUnaryOperator" => UnkindedType.mkImpureArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkFloat64(loc), loc).toSuccess
         case _ => lookupJvmClass(fqn, loc) map {
           case clazz => UnkindedType.Cst(TypeConstructor.Native(clazz), loc)
         }
@@ -2643,7 +2655,9 @@ object Resolver {
 
         case TypeConstructor.Str => Class.forName("java.lang.String").toSuccess
 
-        case TypeConstructor.Channel => Class.forName("java.lang.Object").toSuccess
+        case TypeConstructor.Sender => Class.forName("java.lang.Object").toSuccess
+
+        case TypeConstructor.Receiver => Class.forName("java.lang.Object").toSuccess
 
         case TypeConstructor.Ref => Class.forName("java.lang.Object").toSuccess
 
@@ -2701,10 +2715,21 @@ object Resolver {
           case None => false
         }
         flatMapN(targsVal) {
-          case Int :: Int :: Nil => Class.forName("java.util.function.IntUnaryOperator").toSuccess
-          case Int :: Boolean :: Nil => Class.forName("java.util.function.IntPredicate").toSuccess
+          case Object :: Object :: Nil =>
+            if (returnsUnit) Class.forName("java.util.function.Consumer").toSuccess  else Class.forName("java.util.function.Function").toSuccess
+          case Object :: Boolean :: Nil => Class.forName("java.util.function.Predicate").toSuccess
           case Int :: Object :: Nil =>
-              if (returnsUnit) Class.forName("java.util.function.IntConsumer").toSuccess  else Class.forName("java.util.function.IntFunction").toSuccess
+            if (returnsUnit) Class.forName("java.util.function.IntConsumer").toSuccess  else Class.forName("java.util.function.IntFunction").toSuccess
+          case Int :: Boolean :: Nil => Class.forName("java.util.function.IntPredicate").toSuccess
+          case Int :: Int :: Nil => Class.forName("java.util.function.IntUnaryOperator").toSuccess
+          case Long :: Object :: Nil =>
+            if (returnsUnit) Class.forName("java.util.function.LongConsumer").toSuccess  else Class.forName("java.util.function.LongFunction").toSuccess
+          case Long :: Boolean :: Nil => Class.forName("java.util.function.LongPredicate").toSuccess
+          case Long :: Long :: Nil => Class.forName("java.util.function.LongUnaryOperator").toSuccess
+          case Double :: Object :: Nil =>
+            if (returnsUnit) Class.forName("java.util.function.DoubleConsumer").toSuccess  else Class.forName("java.util.function.DoubleFunction").toSuccess
+          case Double :: Boolean :: Nil => Class.forName("java.util.function.DoublePredicate").toSuccess
+          case Double :: Double :: Nil => Class.forName("java.util.function.DoubleUnaryOperator").toSuccess
           case _ => ResolutionError.IllegalType(tpe, loc).toFailure
         }
 

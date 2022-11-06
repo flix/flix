@@ -92,11 +92,11 @@ namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannel16(): Bool \ IO =
-        let c1 = chan Channel[Int32] 1;
-        let c2 = chan Int32 1;
-        Channel.send(c2, c1);
-        Channel.send(42, c2);
-        42 == Channel.recv(Channel.recv(c1))
+        let (s1, r1) = Channel.buffered(1);
+        let (s2, r2) = Channel.buffered(1);
+        Channel.send(r2, s1);
+        Channel.send(42, s2);
+        42 == Channel.recv(Channel.recv(r1))
 
     @test
     def testBufferedChannelWithSpawn01(): Bool \ IO =
@@ -191,8 +191,8 @@ namespace Test/Exp/Concurrency/Buffered {
     @test
     def testBufferedChannelWithSpawn16(): Bool \ IO =
         let (s1, r1) = Channel.buffered(1);
-        let (s2, _) = Channel.buffered(1);
-        spawn Channel.send(s2, s1);
+        let (s2, r2) = Channel.buffered(1);
+        spawn Channel.send(r2, s1);
         spawn Channel.send(42, s2);
         42 == Channel.recv(Channel.recv(r1))
 
