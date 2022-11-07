@@ -919,6 +919,11 @@ object Namer {
         case e => NamedAst.Expression.Upcast(e, loc)
       }
 
+    case WeededAst.Expression.Supercast(exp, loc) =>
+      mapN(visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0)) {
+        case e => NamedAst.Expression.Supercast(e, loc)
+      }
+
     case WeededAst.Expression.Without(exp, eff, loc) =>
       val expVal = visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0)
       val f = getClassOrEffect(eff, uenv0)

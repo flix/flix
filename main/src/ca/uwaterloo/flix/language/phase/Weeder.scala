@@ -1499,6 +1499,11 @@ object Weeder {
         case e => WeededAst.Expression.Upcast(e, mkSL(sp1, sp2))
       }
 
+    case ParsedAst.Expression.Supercast(sp1, exp, sp2) =>
+      mapN(visitExp(exp, senv)) {
+        case e => WeededAst.Expression.Supercast(e, mkSL(sp1, sp2))
+      }
+
     case ParsedAst.Expression.Without(exp, effs, sp2) =>
       val loc = mkSL(leftMostSourcePosition(exp), sp2)
       // NB: We only give the innermost expression a real location
