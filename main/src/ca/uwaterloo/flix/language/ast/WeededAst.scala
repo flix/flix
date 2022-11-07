@@ -87,7 +87,7 @@ object WeededAst {
 
     case class Use(uses: List[WeededAst.Use], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Constant(cst: Ast.Constant, loc: SourceLocation) extends WeededAst.Expression
+    case class Cst(cst: Ast.Constant, loc: SourceLocation) extends WeededAst.Expression
 
     case class Apply(exp: WeededAst.Expression, exps: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 

@@ -638,33 +638,33 @@ object Namer {
         }
       }
 
-    case WeededAst.Expression.Constant(Ast.Constant.Unit, loc) => NamedAst.Expression.Unit(loc).toSuccess
+    case WeededAst.Expression.Cst(Ast.Constant.Unit, loc) => NamedAst.Expression.Unit(loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Constant.Null, loc) => NamedAst.Expression.Null(loc).toSuccess
+    case WeededAst.Expression.Cst(Ast.Constant.Null, loc) => NamedAst.Expression.Null(loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Constant.Bool(true), loc) => NamedAst.Expression.True(loc).toSuccess
+    case WeededAst.Expression.Cst(Ast.Constant.Bool(true), loc) => NamedAst.Expression.True(loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Constant.Bool(false), loc) => NamedAst.Expression.False(loc).toSuccess
+    case WeededAst.Expression.Cst(Ast.Constant.Bool(false), loc) => NamedAst.Expression.False(loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Constant.Char(lit), loc) => NamedAst.Expression.Char(lit, loc).toSuccess
+    case WeededAst.Expression.Cst(Ast.Constant.Char(lit), loc) => NamedAst.Expression.Char(lit, loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Constant.Float32(lit), loc) => NamedAst.Expression.Float32(lit, loc).toSuccess
+    case WeededAst.Expression.Cst(Ast.Constant.Float32(lit), loc) => NamedAst.Expression.Float32(lit, loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Constant.Float64(lit), loc) => NamedAst.Expression.Float64(lit, loc).toSuccess
+    case WeededAst.Expression.Cst(Ast.Constant.Float64(lit), loc) => NamedAst.Expression.Float64(lit, loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Constant.BigDecimal(lit), loc) => NamedAst.Expression.BigDecimal(lit, loc).toSuccess
+    case WeededAst.Expression.Cst(Ast.Constant.BigDecimal(lit), loc) => NamedAst.Expression.BigDecimal(lit, loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Constant.Int8(lit), loc) => NamedAst.Expression.Int8(lit, loc).toSuccess
+    case WeededAst.Expression.Cst(Ast.Constant.Int8(lit), loc) => NamedAst.Expression.Int8(lit, loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Constant.Int16(lit), loc) => NamedAst.Expression.Int16(lit, loc).toSuccess
+    case WeededAst.Expression.Cst(Ast.Constant.Int16(lit), loc) => NamedAst.Expression.Int16(lit, loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Constant.Int32(lit), loc) => NamedAst.Expression.Int32(lit, loc).toSuccess
+    case WeededAst.Expression.Cst(Ast.Constant.Int32(lit), loc) => NamedAst.Expression.Int32(lit, loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Constant.Int64(lit), loc) => NamedAst.Expression.Int64(lit, loc).toSuccess
+    case WeededAst.Expression.Cst(Ast.Constant.Int64(lit), loc) => NamedAst.Expression.Int64(lit, loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Constant.BigInt(lit), loc) => NamedAst.Expression.BigInt(lit, loc).toSuccess
+    case WeededAst.Expression.Cst(Ast.Constant.BigInt(lit), loc) => NamedAst.Expression.BigInt(lit, loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Constant.Str(lit), loc) => NamedAst.Expression.Str(lit, loc).toSuccess
+    case WeededAst.Expression.Cst(Ast.Constant.Str(lit), loc) => NamedAst.Expression.Str(lit, loc).toSuccess
 
     case WeededAst.Expression.Apply(exp, exps, loc) =>
       mapN(visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0), traverse(exps)(visitExp(_, env0, uenv0, ienv0, tenv0, ns0, prog0))) {
@@ -1520,20 +1520,20 @@ object Namer {
     case WeededAst.Expression.DefOrSig(_, _) => Nil
     case WeededAst.Expression.Hole(_, _) => Nil
     case WeededAst.Expression.Use(_, exp, _) => freeVars(exp)
-    case WeededAst.Expression.Constant(Ast.Constant.Unit, _) => Nil
-    case WeededAst.Expression.Constant(Ast.Constant.Null, _) => Nil
-    case WeededAst.Expression.Constant(Ast.Constant.Bool(true), _) => Nil
-    case WeededAst.Expression.Constant(Ast.Constant.Bool(false), _) => Nil
-    case WeededAst.Expression.Constant(Ast.Constant.Char(_), _) => Nil
-    case WeededAst.Expression.Constant(Ast.Constant.Float32(_), _) => Nil
-    case WeededAst.Expression.Constant(Ast.Constant.Float64(_), _) => Nil
-    case WeededAst.Expression.Constant(Ast.Constant.BigDecimal(_), _) => Nil
-    case WeededAst.Expression.Constant(Ast.Constant.Int8(_), _) => Nil
-    case WeededAst.Expression.Constant(Ast.Constant.Int16(_), _) => Nil
-    case WeededAst.Expression.Constant(Ast.Constant.Int32(_), _) => Nil
-    case WeededAst.Expression.Constant(Ast.Constant.Int64(_), _) => Nil
-    case WeededAst.Expression.Constant(Ast.Constant.BigInt(_), _) => Nil
-    case WeededAst.Expression.Constant(Ast.Constant.Str(_), _) => Nil
+    case WeededAst.Expression.Cst(Ast.Constant.Unit, _) => Nil
+    case WeededAst.Expression.Cst(Ast.Constant.Null, _) => Nil
+    case WeededAst.Expression.Cst(Ast.Constant.Bool(true), _) => Nil
+    case WeededAst.Expression.Cst(Ast.Constant.Bool(false), _) => Nil
+    case WeededAst.Expression.Cst(Ast.Constant.Char(_), _) => Nil
+    case WeededAst.Expression.Cst(Ast.Constant.Float32(_), _) => Nil
+    case WeededAst.Expression.Cst(Ast.Constant.Float64(_), _) => Nil
+    case WeededAst.Expression.Cst(Ast.Constant.BigDecimal(_), _) => Nil
+    case WeededAst.Expression.Cst(Ast.Constant.Int8(_), _) => Nil
+    case WeededAst.Expression.Cst(Ast.Constant.Int16(_), _) => Nil
+    case WeededAst.Expression.Cst(Ast.Constant.Int32(_), _) => Nil
+    case WeededAst.Expression.Cst(Ast.Constant.Int64(_), _) => Nil
+    case WeededAst.Expression.Cst(Ast.Constant.BigInt(_), _) => Nil
+    case WeededAst.Expression.Cst(Ast.Constant.Str(_), _) => Nil
     case WeededAst.Expression.Apply(exp, exps, _) => freeVars(exp) ++ exps.flatMap(freeVars)
     case WeededAst.Expression.Lambda(fparam, exp, _) => filterBoundVars(freeVars(exp), List(fparam.ident))
     case WeededAst.Expression.Unary(_, exp, _) => freeVars(exp)
