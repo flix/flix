@@ -206,12 +206,7 @@ object Safety {
 
       case Expression.Upcast(exp, tpe, loc) =>
         val errors =
-          if (isSubTypeOf(Type.eraseAliases(exp.tpe), Type.eraseAliases(tpe), renv)) {
-            List.empty
-          }
-          else {
-            List(UnsafeUpcast(exp, exp0, loc))
-          }
+          checkUpcastSafety(exp0, exp, tpe, renv, loc)
         visit(exp) ::: errors
 
       case Expression.Supercast(exp, tpe, loc) =>
@@ -325,6 +320,18 @@ object Safety {
 
     visit(e0)
 
+  }
+
+  /**
+    * Returns a list of errors if the the upcast is invalid.
+    */
+  private def checkUpcastSafety(exp0: Expression, exp: Expression, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
+    if (isSubTypeOf(Type.eraseAliases(exp.tpe), Type.eraseAliases(tpe), renv)) {
+      List.empty
+    }
+    else {
+      List(UnsafeUpcast(exp, exp0, loc))
+    }
   }
 
   /**
