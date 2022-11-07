@@ -849,9 +849,9 @@ object Typer {
         val expectedType = Type.mkArrowWithEffect(a, p, ef, b, loc)
         for {
           (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
+          arrowTyp <- unifyTypeM(expectedType, tpe1, exp1.loc)
+          boundVar <- unifyTypeM(sym.tvar, tpe1, exp1.loc)
           (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
-          arrowTyp <- unifyTypeM(expectedType, tpe1, loc)
-          boundVar <- unifyTypeM(sym.tvar, tpe1, loc)
           resultTyp = tpe2
           resultPur = Type.mkAnd(pur1, pur2, loc)
           resultEff = Type.mkUnion(eff1, eff2, loc)
