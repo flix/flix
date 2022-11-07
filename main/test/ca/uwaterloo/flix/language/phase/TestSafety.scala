@@ -565,7 +565,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
         |    let _ =
         |        if (true)
-        |            supercast(StringBuilder())
+        |            supercast(newStringBuilder())
         |        else
         |            supercast(newStringBuilder());
         |    ()
