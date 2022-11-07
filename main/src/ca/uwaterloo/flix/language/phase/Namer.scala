@@ -638,33 +638,33 @@ object Namer {
         }
       }
 
-    case WeededAst.Expression.Constant(Ast.Cst.Unit, loc) => NamedAst.Expression.Unit(loc).toSuccess
+    case WeededAst.Expression.Constant(Ast.Constant.Unit, loc) => NamedAst.Expression.Unit(loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Cst.Null, loc) => NamedAst.Expression.Null(loc).toSuccess
+    case WeededAst.Expression.Constant(Ast.Constant.Null, loc) => NamedAst.Expression.Null(loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Cst.Bool(true), loc) => NamedAst.Expression.True(loc).toSuccess
+    case WeededAst.Expression.Constant(Ast.Constant.Bool(true), loc) => NamedAst.Expression.True(loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Cst.Bool(false), loc) => NamedAst.Expression.False(loc).toSuccess
+    case WeededAst.Expression.Constant(Ast.Constant.Bool(false), loc) => NamedAst.Expression.False(loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Cst.Char(lit), loc) => NamedAst.Expression.Char(lit, loc).toSuccess
+    case WeededAst.Expression.Constant(Ast.Constant.Char(lit), loc) => NamedAst.Expression.Char(lit, loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Cst.Float32(lit), loc) => NamedAst.Expression.Float32(lit, loc).toSuccess
+    case WeededAst.Expression.Constant(Ast.Constant.Float32(lit), loc) => NamedAst.Expression.Float32(lit, loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Cst.Float64(lit), loc) => NamedAst.Expression.Float64(lit, loc).toSuccess
+    case WeededAst.Expression.Constant(Ast.Constant.Float64(lit), loc) => NamedAst.Expression.Float64(lit, loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Cst.BigDecimal(lit), loc) => NamedAst.Expression.BigDecimal(lit, loc).toSuccess
+    case WeededAst.Expression.Constant(Ast.Constant.BigDecimal(lit), loc) => NamedAst.Expression.BigDecimal(lit, loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Cst.Int8(lit), loc) => NamedAst.Expression.Int8(lit, loc).toSuccess
+    case WeededAst.Expression.Constant(Ast.Constant.Int8(lit), loc) => NamedAst.Expression.Int8(lit, loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Cst.Int16(lit), loc) => NamedAst.Expression.Int16(lit, loc).toSuccess
+    case WeededAst.Expression.Constant(Ast.Constant.Int16(lit), loc) => NamedAst.Expression.Int16(lit, loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Cst.Int32(lit), loc) => NamedAst.Expression.Int32(lit, loc).toSuccess
+    case WeededAst.Expression.Constant(Ast.Constant.Int32(lit), loc) => NamedAst.Expression.Int32(lit, loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Cst.Int64(lit), loc) => NamedAst.Expression.Int64(lit, loc).toSuccess
+    case WeededAst.Expression.Constant(Ast.Constant.Int64(lit), loc) => NamedAst.Expression.Int64(lit, loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Cst.BigInt(lit), loc) => NamedAst.Expression.BigInt(lit, loc).toSuccess
+    case WeededAst.Expression.Constant(Ast.Constant.BigInt(lit), loc) => NamedAst.Expression.BigInt(lit, loc).toSuccess
 
-    case WeededAst.Expression.Constant(Ast.Cst.Str(lit), loc) => NamedAst.Expression.Str(lit, loc).toSuccess
+    case WeededAst.Expression.Constant(Ast.Constant.Str(lit), loc) => NamedAst.Expression.Str(lit, loc).toSuccess
 
     case WeededAst.Expression.Apply(exp, exps, loc) =>
       mapN(visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0), traverse(exps)(visitExp(_, env0, uenv0, ienv0, tenv0, ns0, prog0))) {
@@ -1153,20 +1153,20 @@ object Namer {
         val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
         m += (ident.name -> sym)
         NamedAst.Pattern.Var(sym, loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Unit, loc) => NamedAst.Pattern.Unit(loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Bool(true), loc) => NamedAst.Pattern.True(loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Bool(false), loc) => NamedAst.Pattern.False(loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Char(lit), loc) => NamedAst.Pattern.Char(lit, loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Float32(lit), loc) => NamedAst.Pattern.Float32(lit, loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Float64(lit), loc) => NamedAst.Pattern.Float64(lit, loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.BigDecimal(lit), loc) => NamedAst.Pattern.BigDecimal(lit, loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Int8(lit), loc) => NamedAst.Pattern.Int8(lit, loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Int16(lit), loc) => NamedAst.Pattern.Int16(lit, loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Int32(lit), loc) => NamedAst.Pattern.Int32(lit, loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Int64(lit), loc) => NamedAst.Pattern.Int64(lit, loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.BigInt(lit), loc) => NamedAst.Pattern.BigInt(lit, loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Str(lit), loc) => NamedAst.Pattern.Str(lit, loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Null, loc) => throw InternalCompilerException("unexpected null pattern")
+      case WeededAst.Pattern.Cst(Ast.Constant.Unit, loc) => NamedAst.Pattern.Unit(loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.Bool(true), loc) => NamedAst.Pattern.True(loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.Bool(false), loc) => NamedAst.Pattern.False(loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.Char(lit), loc) => NamedAst.Pattern.Char(lit, loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.Float32(lit), loc) => NamedAst.Pattern.Float32(lit, loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.Float64(lit), loc) => NamedAst.Pattern.Float64(lit, loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.BigDecimal(lit), loc) => NamedAst.Pattern.BigDecimal(lit, loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.Int8(lit), loc) => NamedAst.Pattern.Int8(lit, loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.Int16(lit), loc) => NamedAst.Pattern.Int16(lit, loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.Int32(lit), loc) => NamedAst.Pattern.Int32(lit, loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.Int64(lit), loc) => NamedAst.Pattern.Int64(lit, loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.BigInt(lit), loc) => NamedAst.Pattern.BigInt(lit, loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.Str(lit), loc) => NamedAst.Pattern.Str(lit, loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern")
 
       case WeededAst.Pattern.Tag(enumOpt0, tag0, pat, loc) =>
         val (enumOpt, tag) = getDisambiguatedTag(enumOpt0, tag0, uenv0)
@@ -1210,20 +1210,20 @@ object Namer {
       case WeededAst.Pattern.Var(ident, loc) =>
         val sym = env0(ident.name)
         NamedAst.Pattern.Var(sym, loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Unit, loc) => NamedAst.Pattern.Unit(loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Bool(true), loc) => NamedAst.Pattern.True(loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Bool(false), loc) => NamedAst.Pattern.False(loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Char(lit), loc) => NamedAst.Pattern.Char(lit, loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Float32(lit), loc) => NamedAst.Pattern.Float32(lit, loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Float64(lit), loc) => NamedAst.Pattern.Float64(lit, loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.BigDecimal(lit), loc) => NamedAst.Pattern.BigDecimal(lit, loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Int8(lit), loc) => NamedAst.Pattern.Int8(lit, loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Int16(lit), loc) => NamedAst.Pattern.Int16(lit, loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Int32(lit), loc) => NamedAst.Pattern.Int32(lit, loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Int64(lit), loc) => NamedAst.Pattern.Int64(lit, loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.BigInt(lit), loc) => NamedAst.Pattern.BigInt(lit, loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Str(lit), loc) => NamedAst.Pattern.Str(lit, loc)
-      case WeededAst.Pattern.Constant(Ast.Cst.Null, loc) => throw InternalCompilerException("unexpected null pattern")
+      case WeededAst.Pattern.Cst(Ast.Constant.Unit, loc) => NamedAst.Pattern.Unit(loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.Bool(true), loc) => NamedAst.Pattern.True(loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.Bool(false), loc) => NamedAst.Pattern.False(loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.Char(lit), loc) => NamedAst.Pattern.Char(lit, loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.Float32(lit), loc) => NamedAst.Pattern.Float32(lit, loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.Float64(lit), loc) => NamedAst.Pattern.Float64(lit, loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.BigDecimal(lit), loc) => NamedAst.Pattern.BigDecimal(lit, loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.Int8(lit), loc) => NamedAst.Pattern.Int8(lit, loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.Int16(lit), loc) => NamedAst.Pattern.Int16(lit, loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.Int32(lit), loc) => NamedAst.Pattern.Int32(lit, loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.Int64(lit), loc) => NamedAst.Pattern.Int64(lit, loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.BigInt(lit), loc) => NamedAst.Pattern.BigInt(lit, loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.Str(lit), loc) => NamedAst.Pattern.Str(lit, loc)
+      case WeededAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern")
 
       case WeededAst.Pattern.Tag(enumOpt0, tag0, pat, loc) =>
         val (enumOpt, tag) = getDisambiguatedTag(enumOpt0, tag0, uenv0)
@@ -1520,20 +1520,20 @@ object Namer {
     case WeededAst.Expression.DefOrSig(_, _) => Nil
     case WeededAst.Expression.Hole(_, _) => Nil
     case WeededAst.Expression.Use(_, exp, _) => freeVars(exp)
-    case WeededAst.Expression.Constant(Ast.Cst.Unit, _) => Nil
-    case WeededAst.Expression.Constant(Ast.Cst.Null, _) => Nil
-    case WeededAst.Expression.Constant(Ast.Cst.Bool(true), _) => Nil
-    case WeededAst.Expression.Constant(Ast.Cst.Bool(false), _) => Nil
-    case WeededAst.Expression.Constant(Ast.Cst.Char(_), _) => Nil
-    case WeededAst.Expression.Constant(Ast.Cst.Float32(_), _) => Nil
-    case WeededAst.Expression.Constant(Ast.Cst.Float64(_), _) => Nil
-    case WeededAst.Expression.Constant(Ast.Cst.BigDecimal(_), _) => Nil
-    case WeededAst.Expression.Constant(Ast.Cst.Int8(_), _) => Nil
-    case WeededAst.Expression.Constant(Ast.Cst.Int16(_), _) => Nil
-    case WeededAst.Expression.Constant(Ast.Cst.Int32(_), _) => Nil
-    case WeededAst.Expression.Constant(Ast.Cst.Int64(_), _) => Nil
-    case WeededAst.Expression.Constant(Ast.Cst.BigInt(_), _) => Nil
-    case WeededAst.Expression.Constant(Ast.Cst.Str(_), _) => Nil
+    case WeededAst.Expression.Constant(Ast.Constant.Unit, _) => Nil
+    case WeededAst.Expression.Constant(Ast.Constant.Null, _) => Nil
+    case WeededAst.Expression.Constant(Ast.Constant.Bool(true), _) => Nil
+    case WeededAst.Expression.Constant(Ast.Constant.Bool(false), _) => Nil
+    case WeededAst.Expression.Constant(Ast.Constant.Char(_), _) => Nil
+    case WeededAst.Expression.Constant(Ast.Constant.Float32(_), _) => Nil
+    case WeededAst.Expression.Constant(Ast.Constant.Float64(_), _) => Nil
+    case WeededAst.Expression.Constant(Ast.Constant.BigDecimal(_), _) => Nil
+    case WeededAst.Expression.Constant(Ast.Constant.Int8(_), _) => Nil
+    case WeededAst.Expression.Constant(Ast.Constant.Int16(_), _) => Nil
+    case WeededAst.Expression.Constant(Ast.Constant.Int32(_), _) => Nil
+    case WeededAst.Expression.Constant(Ast.Constant.Int64(_), _) => Nil
+    case WeededAst.Expression.Constant(Ast.Constant.BigInt(_), _) => Nil
+    case WeededAst.Expression.Constant(Ast.Constant.Str(_), _) => Nil
     case WeededAst.Expression.Apply(exp, exps, _) => freeVars(exp) ++ exps.flatMap(freeVars)
     case WeededAst.Expression.Lambda(fparam, exp, _) => filterBoundVars(freeVars(exp), List(fparam.ident))
     case WeededAst.Expression.Unary(_, exp, _) => freeVars(exp)
@@ -1625,20 +1625,20 @@ object Namer {
   private def freeVars(pat0: WeededAst.Pattern): List[Name.Ident] = pat0 match {
     case WeededAst.Pattern.Var(ident, loc) => List(ident)
     case WeededAst.Pattern.Wild(loc) => Nil
-    case WeededAst.Pattern.Constant(Ast.Cst.Unit, loc) => Nil
-    case WeededAst.Pattern.Constant(Ast.Cst.Bool(true), loc) => Nil
-    case WeededAst.Pattern.Constant(Ast.Cst.Bool(false), loc) => Nil
-    case WeededAst.Pattern.Constant(Ast.Cst.Char(lit), loc) => Nil
-    case WeededAst.Pattern.Constant(Ast.Cst.Float32(lit), loc) => Nil
-    case WeededAst.Pattern.Constant(Ast.Cst.Float64(lit), loc) => Nil
-    case WeededAst.Pattern.Constant(Ast.Cst.BigDecimal(lit), loc) => Nil
-    case WeededAst.Pattern.Constant(Ast.Cst.Int8(lit), loc) => Nil
-    case WeededAst.Pattern.Constant(Ast.Cst.Int16(lit), loc) => Nil
-    case WeededAst.Pattern.Constant(Ast.Cst.Int32(lit), loc) => Nil
-    case WeededAst.Pattern.Constant(Ast.Cst.Int64(lit), loc) => Nil
-    case WeededAst.Pattern.Constant(Ast.Cst.BigInt(lit), loc) => Nil
-    case WeededAst.Pattern.Constant(Ast.Cst.Str(lit), loc) => Nil
-    case WeededAst.Pattern.Constant(Ast.Cst.Null, loc) => throw InternalCompilerException("unexpected null pattern")
+    case WeededAst.Pattern.Cst(Ast.Constant.Unit, loc) => Nil
+    case WeededAst.Pattern.Cst(Ast.Constant.Bool(true), loc) => Nil
+    case WeededAst.Pattern.Cst(Ast.Constant.Bool(false), loc) => Nil
+    case WeededAst.Pattern.Cst(Ast.Constant.Char(lit), loc) => Nil
+    case WeededAst.Pattern.Cst(Ast.Constant.Float32(lit), loc) => Nil
+    case WeededAst.Pattern.Cst(Ast.Constant.Float64(lit), loc) => Nil
+    case WeededAst.Pattern.Cst(Ast.Constant.BigDecimal(lit), loc) => Nil
+    case WeededAst.Pattern.Cst(Ast.Constant.Int8(lit), loc) => Nil
+    case WeededAst.Pattern.Cst(Ast.Constant.Int16(lit), loc) => Nil
+    case WeededAst.Pattern.Cst(Ast.Constant.Int32(lit), loc) => Nil
+    case WeededAst.Pattern.Cst(Ast.Constant.Int64(lit), loc) => Nil
+    case WeededAst.Pattern.Cst(Ast.Constant.BigInt(lit), loc) => Nil
+    case WeededAst.Pattern.Cst(Ast.Constant.Str(lit), loc) => Nil
+    case WeededAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern")
     case WeededAst.Pattern.Tag(enumName, tagName, p, loc) => freeVars(p)
     case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
     case WeededAst.Pattern.Array(elms, loc) => elms flatMap freeVars
