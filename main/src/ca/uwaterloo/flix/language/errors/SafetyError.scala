@@ -121,7 +121,7 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate an illegal relational use of the lattice variable `sym`.
+    * An error raised to indicate an invalid use of upcast.
     *
     * @param actual   the expression being upcast.
     * @param expected the upcast expression itself.
@@ -139,6 +139,31 @@ object SafetyError {
          |
          |Actual type:      ${actual.tpe}
          |Tried casting to: ${expected.tpe}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate an invalid use of supercast.
+    *
+    * @param actual   the type of the expression being upcast.
+    * @param expected the type being cast to, i.e. the type of the supercast expression itself.
+    * @param loc      the source location of the unsafe supercast.
+    */
+  case class UnsafeSupercast(actual: Type, expected: Type, loc: SourceLocation) extends SafetyError {
+    override def summary: String = "Unsafe upcast."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> The following upcast is unsafe and not allowed.
+         |
+         |${code(loc, "the upcast occurs here.")}
+         |
+         |Actual type:      $actual
+         |Tried casting to: $expected
          |""".stripMargin
     }
 

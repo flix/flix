@@ -205,8 +205,7 @@ object Safety {
         visit(exp)
 
       case Expression.Upcast(exp, tpe, loc) =>
-        val errors =
-          checkUpcastSafety(exp0, exp, tpe, renv, loc)
+        val errors = checkUpcastSafety(exp0, exp, tpe, renv, loc)
         visit(exp) ::: errors
 
       case Expression.Supercast(exp, tpe, loc) =>
@@ -323,30 +322,6 @@ object Safety {
   }
 
   /**
-    * Returns a list of errors if the the upcast is invalid.
-    */
-  private def checkUpcastSafety(exp0: Expression, exp: Expression, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
-    if (isSubTypeOf(Type.eraseAliases(exp.tpe), Type.eraseAliases(tpe), renv)) {
-      List.empty
-    }
-    else {
-      List(UnsafeUpcast(exp, exp0, loc))
-    }
-  }
-
-  /**
-    * Returns a list of errors if the the supercast is invalid.
-    */
-  private def checkSupercastSafety(exp0: Expression, exp: Expression, tpe: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
-    val tpe1 = Type.eraseAliases(exp.tpe)
-    val tpe2 = Type.eraseAliases(tpe)
-    if (isJavaSubTypeOf(tpe1, tpe2))
-      List.empty
-    else
-      List(UnsafeUpcast(exp, exp0, loc))
-  }
-
-  /**
     * Checks that `tpe1` is a subtype of `tpe2`.
     *
     * `tpe1` is a subtype of `tpe2` if:
@@ -428,6 +403,30 @@ object Safety {
       right.isAssignableFrom(left)
 
     case _ => false
+  }
+
+  /**
+    * Returns a list of errors if the the upcast is invalid.
+    */
+  private def checkUpcastSafety(exp0: Expression, exp: Expression, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
+    if (isSubTypeOf(Type.eraseAliases(exp.tpe), Type.eraseAliases(tpe), renv)) {
+      List.empty
+    }
+    else {
+      List(UnsafeUpcast(exp, exp0, loc))
+    }
+  }
+
+  /**
+    * Returns a list of errors if the the supercast is invalid.
+    */
+  private def checkSupercastSafety(exp0: Expression, exp: Expression, tpe: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
+    val tpe1 = Type.eraseAliases(exp.tpe)
+    val tpe2 = Type.eraseAliases(tpe)
+    if (isJavaSubTypeOf(tpe1, tpe2))
+      List.empty
+    else
+      List(UnsafeSupercast(exp.tpe, tpe, loc))
   }
 
   /**
