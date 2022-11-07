@@ -175,6 +175,23 @@ namespace Graph {
             Set.flatMap(match (a, w, b) -> Set#{(a, w, b), (b, w, a)})
     }
 
+    ///
+    /// Returns a GraphViz, DOT string of the graph `g`.
+    /// The strings of nodes are put in quotes with existing quotes escaped,
+    /// otherwise DOT identifier validity is up to the caller.
+    ///
+    pub def toGraphViz(g: m[((t, t))]): String with Foldable[m], Boxable[t], ToString[t] = region r {
+        let sb = new StringBuilder(r);
+        def output(s) = StringBuilder.appendLine!(s, sb);
+        def sanitize(s) = "\"${String.replace(from = "\"", to = "\\\"", "${s}")}\"";
+        output("digraph {");
+        foreach((x, y) <- Foldable.iterator(r, g)) {
+            output("  ${sanitize(x)} -> ${sanitize(y)}")
+        };
+        output("}");
+        StringBuilder.toString(sb)
+    }
+
     // -------------------------------------------------------------------------
     // Private Functions -------------------------------------------------------
     // -------------------------------------------------------------------------

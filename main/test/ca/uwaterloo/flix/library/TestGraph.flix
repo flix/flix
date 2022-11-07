@@ -780,4 +780,50 @@ namespace TestGraph {
             (7, 8, 13), (13, 8, 7)
         }
     }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // toUndirectedWeighted                                                   //
+    ////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toGraphViz01(): Bool = {
+        Graph.toGraphViz(graph01()) == String.unlines(
+            "digraph {" ::
+            "}" ::
+            Nil
+        )
+    }
+
+    @test
+    pub def toGraphViz02(): Bool = {
+        let g = Set#{
+            ("node \"A\"", "node \"B\"")
+        };
+        Graph.toGraphViz(g) == String.unlines(
+            "digraph {" ::
+            "  \"node \\\"A\\\"\" -> \"node \\\"B\\\"\"" ::
+            "}" ::
+            Nil
+        )
+    }
+
+    @test
+    def toGraphViz03(): Bool = {
+        let test1 = Graph.toGraphViz(graph03()) == String.unlines(
+            "digraph {" ::
+            "  \"1\" -> \"2\"" ::
+            "  \"3\" -> \"4\"" ::
+            "}" ::
+            Nil
+        );
+        let test2 = Graph.toGraphViz(graph03()) == String.unlines(
+            "digraph {" ::
+            "  \"3\" -> \"4\"" ::
+            "  \"1\" -> \"2\"" ::
+            "}" ::
+            Nil
+        );
+        test1 or test2
+    }
+
 }
