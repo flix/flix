@@ -427,7 +427,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def BigDecimal: Rule1[ParsedAst.Literal.BigDecimal] = rule {
-      SP ~ Sign ~ SeparableDecDigits ~ "." ~ SeparableDecDigits ~ atomic("ff") ~ SP ~> ParsedAst.Literal.BigDecimal
+      SP ~ Sign ~ SeparableDecDigits ~ optional("." ~ SeparableDecDigits) ~ optional(("e" | "E") ~ SeparableDecDigits) ~ atomic("ff") ~ SP ~> ParsedAst.Literal.BigDecimal
     }
 
     def Int: Rule1[ParsedAst.Literal] = rule {
@@ -735,7 +735,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Expression] = rule {
       Static | Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
         ReifyType | ReifyPurity | Choose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
-        RecordOperation | RecordLiteral | Block | RecordSelectLambda | 
+        RecordOperation | RecordLiteral | Block | RecordSelectLambda |
         SelectChannel | Spawn | Par | Lazy | Force | Upcast | Mask | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
@@ -1000,7 +1000,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def SelectChannel: Rule1[ParsedAst.Expression.SelectChannel] = {
       def SelectChannelRule: Rule1[ParsedAst.SelectChannelRule] = rule {
-        keyword("case") ~ WS ~ Names.Variable ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ optWS ~ atomic("=>") ~ optWS ~ Stm ~> ParsedAst.SelectChannelRule
+        keyword("case") ~ WS ~ Names.Variable ~ optWS ~ atomic("<-") ~ optWS ~ optional(atomic("Channel.")) ~ atomic("recv") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ atomic("=>") ~ optWS ~ Stm ~> ParsedAst.SelectChannelRule
       }
 
       def SelectChannelDefault: Rule1[ParsedAst.Expression] = rule {

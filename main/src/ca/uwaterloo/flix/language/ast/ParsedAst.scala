@@ -433,7 +433,7 @@ object ParsedAst {
       * @param after  the digits after the decimal point.
       * @param sp2    the position of the last character in the literal.
       */
-    case class BigDecimal(sp1: SourcePosition, sign: String, before: String, after: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class BigDecimal(sp1: SourcePosition, sign: String, before: String, after: Option[String], power: Option[String], sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Int8 Literal (signed 8-bit integer).

@@ -1,5 +1,10 @@
 namespace Test/Exp/List {
 
+    // Define an enum with a `Cons` tag to ensure that it's not used in any of the following tests
+    pub enum Foo {
+        case Cons
+    }
+
     @test
     def testList01(): List[Int32] = Nil
 

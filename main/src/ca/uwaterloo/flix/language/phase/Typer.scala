@@ -849,9 +849,9 @@ object Typer {
         val expectedType = Type.mkArrowWithEffect(a, p, ef, b, loc)
         for {
           (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
+          arrowTyp <- unifyTypeM(expectedType, tpe1, exp1.loc)
+          boundVar <- unifyTypeM(sym.tvar, tpe1, exp1.loc)
           (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
-          arrowTyp <- unifyTypeM(expectedType, tpe1, loc)
-          boundVar <- unifyTypeM(sym.tvar, tpe1, loc)
           resultTyp = tpe2
           resultPur = Type.mkAnd(pur1, pur2, loc)
           resultEff = Type.mkUnion(eff1, eff2, loc)
@@ -1563,14 +1563,14 @@ object Typer {
         for {
           (constrs, tpe, _, eff) <- visitExp(exp)
           _ <- expectTypeM(expected = Type.Int32, actual = tpe, exp.loc)
-          resultTyp <- liftM(Type.mkChannel(elmType, loc))
+          resultTyp <- liftM(Type.mkTuple(List(Type.mkSender(elmType, loc), Type.mkReceiver(elmType, loc)), loc))
           resultPur = Type.Impure
           resultEff = eff
         } yield (constrs, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.GetChannel(exp, tvar, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
-        val channelType = Type.mkChannel(elmVar, loc)
+        val channelType = Type.mkReceiver(elmVar, loc)
 
         for {
           (constrs, tpe, _, eff) <- visitExp(exp)
@@ -1582,7 +1582,7 @@ object Typer {
 
       case KindedAst.Expression.PutChannel(exp1, exp2, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
-        val channelType = Type.mkChannel(elmVar, loc)
+        val channelType = Type.mkSender(elmVar, loc)
 
         for {
           (constrs1, tpe1, _, eff1) <- visitExp(exp1)
@@ -1604,7 +1604,7 @@ object Typer {
             case KindedAst.SelectChannelRule(sym, chan, body) => for {
               (chanConstrs, chanType, _, chanEff) <- visitExp(chan)
               (bodyConstrs, bodyType, _, bodyEff) <- visitExp(body)
-              _ <- unifyTypeM(chanType, Type.mkChannel(sym.tvar, sym.loc), sym.loc)
+              _ <- unifyTypeM(chanType, Type.mkReceiver(sym.tvar, sym.loc), sym.loc)
               resultCon = chanConstrs ++ bodyConstrs
               resultTyp = bodyType
               resultPur = Type.Impure
@@ -2250,11 +2250,11 @@ object Typer {
         val ms = methods map visitJvmMethod
         TypedAst.Expression.NewObject(name, clazz, tpe, pur, eff, ms, loc)
 
-      case KindedAst.Expression.NewChannel(exp, elmType, loc) =>
+      case KindedAst.Expression.NewChannel(exp, elmTpe, loc) =>
         val e = visitExp(exp, subst0)
         val pur = Type.Impure
         val eff = e.eff
-        TypedAst.Expression.NewChannel(e, Type.mkChannel(subst0(elmType), loc), pur, eff, loc)
+        TypedAst.Expression.NewChannel(e, Type.mkTuple(List(Type.mkSender(elmTpe, loc), Type.mkReceiver(elmTpe, loc)), loc), elmTpe, pur, eff, loc)
 
       case KindedAst.Expression.GetChannel(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)

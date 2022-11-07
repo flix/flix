@@ -861,7 +861,7 @@ object Weeder {
 
       mapN(visitFormalParams(fparams, Presence.Optional), visitExp(exp1, senv), visitExp(exp2, senv)) {
         case (fp, e1, e2) =>
-          val lambda = mkCurried(fp, e1, loc)
+          val lambda = mkCurried(fp, e1, e1.loc)
           WeededAst.Expression.LetRec(ident, mod, lambda, e2, loc)
       }
 
@@ -1329,9 +1329,10 @@ object Weeder {
       mapN(visitExp(exp1, senv), visitExp(exp2, senv)) {
         case (e1, e2) =>
           val loc = mkSL(sp1, sp2)
+          val enum = Name.mkQName("List", sp1, sp2)
           val tag = Name.Ident(sp1, "Cons", sp2)
           val exp = WeededAst.Expression.Tuple(List(e1, e2), loc)
-          WeededAst.Expression.Tag(None, tag, Some(exp), loc)
+          WeededAst.Expression.Tag(Some(enum), tag, Some(exp), loc)
       }
 
     case ParsedAst.Expression.FAppend(exp1, sp1, sp2, exp2) =>
@@ -1796,7 +1797,7 @@ object Weeder {
     val loc = mkSL(sp1, sp2).asSynthetic
 
     // The name of the lambda parameter.
-    val ident = Name.Ident(sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), sp2)
+    val ident = Name.Ident(sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), sp2).asSynthetic
 
     // Construct the body of the lambda expression.
     val varOrRef = WeededAst.Expression.VarOrDefOrSig(ident, loc)
@@ -1999,8 +2000,8 @@ object Weeder {
         case lit => WeededAst.Expression.Float64(lit, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Literal.BigDecimal(sp1, sign, before, after, sp2) =>
-      toBigDecimal(sign, before, after, mkSL(sp1, sp2)) map {
+    case ParsedAst.Literal.BigDecimal(sp1, sign, before, after, power, sp2) =>
+      toBigDecimal(sign, before, after, power, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Expression.BigDecimal(lit, mkSL(sp1, sp2))
       }
 
@@ -2056,8 +2057,8 @@ object Weeder {
       toFloat64(sign, before, after, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Pattern.Float64(lit, mkSL(sp1, sp2))
       }
-    case ParsedAst.Literal.BigDecimal(sp1, sign, before, after, sp2) =>
-      toBigDecimal(sign, before, after, mkSL(sp1, sp2)) map {
+    case ParsedAst.Literal.BigDecimal(sp1, sign, before, after, power, sp2) =>
+      toBigDecimal(sign, before, after, power, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Pattern.BigDecimal(lit, mkSL(sp1, sp2))
       }
     case ParsedAst.Literal.Int8(sp1, sign, radix, digits, sp2) =>
@@ -2189,9 +2190,10 @@ object Weeder {
         mapN(visitPattern(pat1), visitPattern(pat2)) {
           case (hd, tl) =>
             val loc = mkSL(sp1, sp2)
+            val enum = Name.mkQName("List", sp1, sp2)
             val tag = Name.Ident(sp1, "Cons", sp2)
             val pat = WeededAst.Pattern.Tuple(List(hd, tl), loc)
-            WeededAst.Pattern.Tag(None, tag, pat, loc)
+            WeededAst.Pattern.Tag(Some(enum), tag, pat, loc)
         }
 
     }
@@ -2948,8 +2950,16 @@ object Weeder {
   /**
     * Attempts to parse the given big decimal with `sign` digits `before` and `after` the comma.
     */
-  private def toBigDecimal(sign: String, before: String, after: String, loc: SourceLocation): Validation[BigDecimal, WeederError] = try {
-    val s = s"$sign$before.$after"
+  private def toBigDecimal(sign: String, before: String, after: Option[String], power: Option[String], loc: SourceLocation): Validation[BigDecimal, WeederError] = try {
+    val frac = after match {
+      case Some(digits) => "." + digits
+      case None => ""
+    }
+    val pow = power match {
+      case Some(digits) => "e" + digits
+      case None => ""
+    }
+    val s = s"$sign$before$frac$pow"
     new BigDecimal(stripUnderscores(s)).toSuccess
   } catch {
     case _: NumberFormatException => IllegalFloat(loc).toFailure
