@@ -1348,9 +1348,10 @@ object Typer {
           (constrs, _, pur, eff) <- visitExp(exp)
         } yield (constrs, tvar, pur, eff)
 
-      case KindedAst.Expression.Supercast(exp, tvar, _) =>
+      case KindedAst.Expression.Supercast(exp, tvar, loc) =>
         for {
-          (constrs, _, pur, eff) <- visitExp(exp)
+          (constrs, tpe, pur, eff) <- visitExp(exp)
+          // _ = expectTypeM(expected = Type.Cst(TypeConstructor.Native(classOf[java.lang.Object]), loc), actual = tpe, loc)
         } yield (constrs, tvar, pur, eff)
 
       case KindedAst.Expression.Without(exp, effUse, loc) =>
