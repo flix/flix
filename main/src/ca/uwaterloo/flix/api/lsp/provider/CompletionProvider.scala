@@ -29,6 +29,7 @@ import org.parboiled2.CharPredicate
 import java.lang.reflect.Executable
 import java.lang.reflect.Constructor
 import java.lang.reflect.Method
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 /**
   * CompletionProvider
@@ -98,7 +99,7 @@ object CompletionProvider {
   /**
     * Process a completion request.
     */
-  def autoComplete(uri: String, pos: Position, source: Option[String], currentErrors: List[CompilationMessage])(implicit flix: Flix, index: Index, root: TypedAst.Root): JObject = {
+  def autoComplete(uri: String, pos: Position, source: Option[String], currentErrors: List[CompilationMessage])(implicit flix: Flix, index: Index, root: TypedAst.Root, javaClasses: MultiMap[List[String], String]): JObject = {
     //
     // To the best of my knowledge, completions should never be Nil. It could only happen if source was None
     // (what would having no source even mean?) or if the position represented by pos was invalid with respect
@@ -106,13 +107,13 @@ object CompletionProvider {
     //
     val completions = source.flatMap(getContext(_, uri, pos)) match {
       case None => Nil
-      case Some(context) => getCompletions()(context, flix, index, root) ++ getCompletionsFromErrors(pos, currentErrors)(context, index, root)
+      case Some(context) => getCompletions()(context, flix, index, root, javaClasses) ++ getCompletionsFromErrors(pos, currentErrors)(context, index, root)
     }
 
     ("status" -> "success") ~ ("result" -> CompletionList(isIncomplete = true, completions).toJSON)
   }
 
-  private def getCompletions()(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+  private def getCompletions()(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root, javaClasses: MultiMap[List[String], String]): Iterable[CompletionItem] = {
     //
     // The order of this list doesn't matter because suggestions are ordered
     // through sortText
@@ -906,8 +907,8 @@ object CompletionProvider {
   /**
     * Get completions for java imports.
     */
-  private def getImportCompletions()(implicit context: Context, root: TypedAst.Root): Iterable[CompletionItem] = {
-    if (root == null) Nil else getImportNewCompletions() ++ getImportMethodCompletions()
+  private def getImportCompletions()(implicit context: Context, root: TypedAst.Root, javaClasses: MultiMap[List[String], String]): Iterable[CompletionItem] = {
+    if (root == null) Nil else getImportNewCompletions() ++ getImportMethodCompletions() ++ getJavaClassCompletions()
   }
 
   /**
@@ -1002,6 +1003,40 @@ object CompletionProvider {
       documentation = None,
       insertTextFormat = InsertTextFormat.Snippet,
       kind = CompletionItemKind.Method)
+  }
+
+  /**
+   * Gets completions for java packages/classes
+   */
+  private def getJavaClassCompletions()(implicit context: Context, javaClasses: MultiMap[List[String], String]): Iterable[CompletionItem] = {
+    val regex = raw"\s*import\s+(?:.*\s+)*(.*)".r
+    context.prefix match {
+      case regex(clazz) => {
+        val path = clazz.split('.').toList;
+        // Get completions for if we are currently typing the next package/class and if we have just finished typing a package
+        javaClassCompletionsFromPrefix(path) ++ javaClassCompletionsFromPrefix(path.dropRight(1))
+      }
+      case _ => Nil
+    }
+  }
+
+  /**
+    * Gets completions from a java path prefix
+    */
+  private def javaClassCompletionsFromPrefix(prefix: List[String])(implicit context: Context, javaClasses: MultiMap[List[String], String]): Iterable[CompletionItem] = {
+    javaClasses(prefix).map(clazz => {
+      val label = prefix match {
+        case Nil => clazz
+        case v => v.mkString("",".",s".$clazz")
+      }
+    CompletionItem(
+      label = label,
+      sortText = Priority.high(label),
+      textEdit = TextEdit(context.range, label),
+      documentation = None,
+      insertTextFormat = InsertTextFormat.PlainText,
+      kind = CompletionItemKind.Class)
+    })
   }
 
   /**
