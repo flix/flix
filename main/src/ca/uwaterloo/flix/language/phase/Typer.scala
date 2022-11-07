@@ -1343,7 +1343,12 @@ object Typer {
           (constrs, tpe, pur, eff) <- visitExp(exp)
         } yield (constrs, tpe, Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Upcast(exp, tvar, loc) =>
+      case KindedAst.Expression.Upcast(exp, tvar, _) =>
+        for {
+          (constrs, _, pur, eff) <- visitExp(exp)
+        } yield (constrs, tvar, pur, eff)
+
+      case KindedAst.Expression.Supercast(exp, tvar, _) =>
         for {
           (constrs, _, pur, eff) <- visitExp(exp)
         } yield (constrs, tvar, pur, eff)
@@ -2148,7 +2153,12 @@ object Typer {
         TypedAst.Expression.Mask(e, tpe, pur, eff, loc)
 
       case KindedAst.Expression.Upcast(exp, tvar, loc) =>
-        TypedAst.Expression.Upcast(visitExp(exp, subst0), subst0(tvar), loc)
+        val e = visitExp(exp, subst0)
+        TypedAst.Expression.Upcast(e, subst0(tvar), loc)
+
+      case KindedAst.Expression.Supercast(exp, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        TypedAst.Expression.Supercast(e, subst0(tvar), loc)
 
       case KindedAst.Expression.Without(exp, effUse, loc) =>
         val e = visitExp(exp, subst0)
