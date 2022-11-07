@@ -377,7 +377,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Literal: Rule1[ParsedAst.Literal] = rule {
-    Literals.Null | Literals.Bool | Literals.Char | Literals.Str | Literals.Default | Literals.Float | Literals.Int
+    Literals.Null | Literals.Bool | Literals.Char | Literals.Str | Literals.Float | Literals.Int
   }
 
   object Literals {
@@ -427,7 +427,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def BigDecimal: Rule1[ParsedAst.Literal.BigDecimal] = rule {
-      SP ~ Sign ~ SeparableDecDigits ~ "." ~ SeparableDecDigits ~ atomic("ff") ~ SP ~> ParsedAst.Literal.BigDecimal
+      SP ~ Sign ~ SeparableDecDigits ~ optional("." ~ SeparableDecDigits) ~ optional(("e" | "E") ~ SeparableDecDigits) ~ atomic("ff") ~ SP ~> ParsedAst.Literal.BigDecimal
     }
 
     def Int: Rule1[ParsedAst.Literal] = rule {
@@ -456,10 +456,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def BigInt: Rule1[ParsedAst.Literal.BigInt] = rule {
       SP ~ Sign ~ RadixedInt ~ atomic("ii") ~ SP ~> ParsedAst.Literal.BigInt
-    }
-
-    def Default: Rule1[ParsedAst.Literal.Default] = rule {
-      SP ~ keyword("$DEFAULT$") ~ SP ~> ParsedAst.Literal.Default
     }
 
     def Sign: Rule1[String] = rule {
@@ -561,11 +557,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Assign: Rule1[ParsedAst.Expression] = rule {
-      PutChannel ~ optional(optWS ~ operatorX(":=") ~ optWS ~ PutChannel ~ SP ~> ParsedAst.Expression.Assign)
-    }
-
-    def PutChannel: Rule1[ParsedAst.Expression] = rule {
-      LogicalOr ~ optional(optWS ~ operatorX("<-") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.PutChannel)
+      LogicalOr ~ optional(optWS ~ operatorX(":=") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.Assign)
     }
 
     def LogicalOr: Rule1[ParsedAst.Expression] = {
@@ -743,8 +735,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Expression] = rule {
       Static | Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
         ReifyType | ReifyPurity | Choose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
-        RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
-        GetChannel | SelectChannel | Spawn | Par | Lazy | Force | Upcast | Mask | Intrinsic | New | ArrayLit | ArrayNew |
+        RecordOperation | RecordLiteral | Block | RecordSelectLambda |
+        SelectChannel | Spawn | Par | Lazy | Force | Upcast | Mask | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
         Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | FName | Tag | Hole
@@ -1006,17 +998,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       ArraySlice ~ zeroOrMore(optWS ~ "." ~ Names.Field ~ SP ~> ParsedAst.Expression.RecordSelect)
     }
 
-    def NewChannel: Rule1[ParsedAst.Expression.NewChannel] = rule {
-      SP ~ keyword("chan") ~ WS ~ Type ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.NewChannel
-    }
-
-    def GetChannel: Rule1[ParsedAst.Expression.GetChannel] = rule {
-      SP ~ operatorX("<-") ~ WS ~ RecordSelect ~ SP ~> ParsedAst.Expression.GetChannel
-    }
-
     def SelectChannel: Rule1[ParsedAst.Expression.SelectChannel] = {
       def SelectChannelRule: Rule1[ParsedAst.SelectChannelRule] = rule {
-        keyword("case") ~ WS ~ Names.Variable ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ optWS ~ atomic("=>") ~ optWS ~ Stm ~> ParsedAst.SelectChannelRule
+        keyword("case") ~ WS ~ Names.Variable ~ optWS ~ atomic("<-") ~ optWS ~ optional(atomic("Channel.")) ~ atomic("recv") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ atomic("=>") ~ optWS ~ Stm ~> ParsedAst.SelectChannelRule
       }
 
       def SelectChannelDefault: Rule1[ParsedAst.Expression] = rule {

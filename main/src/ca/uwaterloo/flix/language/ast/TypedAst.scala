@@ -179,12 +179,6 @@ object TypedAst {
       def eff: Type = Type.Empty
     }
 
-    case class Default(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
     case class Wild(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def pur: Type = Type.Pure
 
@@ -336,7 +330,7 @@ object TypedAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, pur: Type, eff: Type, methods: List[TypedAst.JvmMethod], loc: SourceLocation) extends TypedAst.Expression
 
-    case class NewChannel(exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class NewChannel(exp: TypedAst.Expression, tpe: Type, elmTpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class GetChannel(exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 

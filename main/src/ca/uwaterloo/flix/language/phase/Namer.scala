@@ -666,8 +666,6 @@ object Namer {
 
     case WeededAst.Expression.Str(lit, loc) => NamedAst.Expression.Str(lit, loc).toSuccess
 
-    case WeededAst.Expression.Default(loc) => NamedAst.Expression.Default(loc).toSuccess
-
     case WeededAst.Expression.Apply(exp, exps, loc) =>
       mapN(visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0), traverse(exps)(visitExp(_, env0, uenv0, ienv0, tenv0, ns0, prog0))) {
         case (e, es) => NamedAst.Expression.Apply(e, es, loc)
@@ -1029,9 +1027,9 @@ object Namer {
           NamedAst.Expression.NewObject(name, tpe, ms, loc)
       }
 
-    case WeededAst.Expression.NewChannel(exp, tpe, loc) =>
-      mapN(visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0), visitType(tpe, uenv0, ienv0, tenv0)) {
-        case (e, t) => NamedAst.Expression.NewChannel(e, t, loc)
+    case WeededAst.Expression.NewChannel(exp, loc) =>
+      mapN(visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0)) {
+        case e => NamedAst.Expression.NewChannel(e, loc)
       }
 
     case WeededAst.Expression.GetChannel(exp, loc) =>
@@ -1534,7 +1532,6 @@ object Namer {
     case WeededAst.Expression.Int64(_, _) => Nil
     case WeededAst.Expression.BigInt(_, _) => Nil
     case WeededAst.Expression.Str(_, _) => Nil
-    case WeededAst.Expression.Default(_) => Nil
     case WeededAst.Expression.Apply(exp, exps, _) => freeVars(exp) ++ exps.flatMap(freeVars)
     case WeededAst.Expression.Lambda(fparam, exp, _) => filterBoundVars(freeVars(exp), List(fparam.ident))
     case WeededAst.Expression.Unary(_, exp, _) => freeVars(exp)
@@ -1594,7 +1591,7 @@ object Namer {
     case WeededAst.Expression.GetStaticField(_, _, _) => Nil
     case WeededAst.Expression.PutStaticField(_, _, exp, _) => freeVars(exp)
     case WeededAst.Expression.NewObject(_, methods, _) => methods.flatMap(m => freeVars(m.exp))
-    case WeededAst.Expression.NewChannel(exp, _, _) => freeVars(exp)
+    case WeededAst.Expression.NewChannel(exp, _) => freeVars(exp)
     case WeededAst.Expression.GetChannel(exp, _) => freeVars(exp)
     case WeededAst.Expression.PutChannel(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.SelectChannel(rules, default, _) =>

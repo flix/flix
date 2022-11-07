@@ -130,7 +130,8 @@ object FormatType {
       case SimpleType.Str => true
       case SimpleType.Array => true
       case SimpleType.Ref => true
-      case SimpleType.Channel => true
+      case SimpleType.Sender => true
+      case SimpleType.Receiver => true
       case SimpleType.Lazy => true
       case SimpleType.True => true
       case SimpleType.False => true
@@ -191,7 +192,8 @@ object FormatType {
       case SimpleType.Str => "String"
       case SimpleType.Array => "Array"
       case SimpleType.Ref => "Ref"
-      case SimpleType.Channel => "Channel"
+      case SimpleType.Sender => "Sender"
+      case SimpleType.Receiver => "Receiver"
       case SimpleType.Lazy => "Lazy"
       case SimpleType.True => mode match {
         case Mode.Type => "true"

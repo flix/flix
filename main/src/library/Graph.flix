@@ -155,9 +155,69 @@ namespace Graph {
     pub def distance(src: { src :: t }, dst: { dst :: t }, g: m[(t, Int32, t)]): Option[Int32] with Foldable[m], Boxable[t] =
         distancesFrom(src.src, g) |> Map.get(dst.dst)
 
+    ///
+    /// Returns a copy of `g` where `(a, b)` edges is added for all edges
+    /// `(b, a)` in `g`, i.e. An undirected graph in directed representation.
+    ///
+    pub def toUndirected(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Boxable[t] = {
+        g |>
+            Foldable.toSet |>
+            Set.flatMap(match (a, b) -> Set#{(a, b), (b, a)})
+    }
+
+    ///
+    /// Returns a copy of `g` where `(a, w, b)` edges is added for all edges
+    /// `(b, w, a)` in `g`, i.e. An undirected graph in directed representation.
+    ///
+    pub def toUndirectedWeighted(g: m[(t, Int32, t)]): Set[(t, Int32, t)] with Foldable[m], Boxable[t] = {
+        g |>
+            Foldable.toSet |>
+            Set.flatMap(match (a, w, b) -> Set#{(a, w, b), (b, w, a)})
+    }
+
+    ///
+    /// Returns a Graphviz (DOT) string of the graph `g`.
+    /// The strings of nodes are put in quotes with existing quotes escaped,
+    /// otherwise DOT identifier validity is up to the caller.
+    ///
+    pub def toGraphviz(g: m[((t, t))]): String with Foldable[m], Boxable[t], ToString[t] = region r {
+        let sb = new StringBuilder(r);
+        def output(s) = StringBuilder.appendLine!(s, sb);
+        output("digraph {");
+        foreach((x, y) <- Foldable.iterator(r, g)) {
+            output("  ${graphvizId(x)} -> ${graphvizId(y)}")
+        };
+        output("}");
+        StringBuilder.toString(sb)
+    }
+
+    ///
+    /// Returns a Graphviz (DOT) string of the graph `g`.
+    /// The strings of nodes are put in quotes with existing quotes escaped,
+    /// otherwise DOT identifier validity is up to the caller.
+    ///
+    pub def toGraphvizWeighted(g: m[((t, Int32, t))]): String with Foldable[m], Boxable[t], ToString[t] = region r {
+        let sb = new StringBuilder(r);
+        def output(s) = StringBuilder.appendLine!(s, sb);
+        output("digraph {");
+        foreach((x, w, y) <- Foldable.iterator(r, g)) {
+            output("  ${graphvizId(x)} -> ${graphvizId(y)} [label = ${w}]")
+        };
+        output("}");
+        StringBuilder.toString(sb)
+    }
+
     // -------------------------------------------------------------------------
     // Private Functions -------------------------------------------------------
     // -------------------------------------------------------------------------
+
+    ///
+    /// Wraps `toString(id)` with double quotes and escapes any existing quotes
+    /// with backslash.
+    ///
+    def graphvizId(id: t): String with ToString[t] = {
+        "\"${String.replace(from = "\"", to = "\\\"", "${id}")}\""
+    }
 
     ///
     /// Returns a Datalog program which computes the reachable nodes when given

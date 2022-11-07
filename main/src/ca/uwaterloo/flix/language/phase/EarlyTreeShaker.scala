@@ -177,9 +177,6 @@ object EarlyTreeShaker {
     case Expression.Str(_, _) =>
       Set.empty
 
-    case Expression.Default(_, _) =>
-      Set.empty
-
     case Expression.Wild(_, _) =>
       Set.empty
 
@@ -318,7 +315,7 @@ object EarlyTreeShaker {
     case Expression.NewObject(_, _, _, _, _, methods, _) =>
       visitExps(methods.map(_.exp))
 
-    case Expression.NewChannel(exp, _, _, _, _) =>
+    case Expression.NewChannel(exp, _, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.GetChannel(exp, _, _, _, _) =>
