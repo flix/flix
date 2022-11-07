@@ -519,10 +519,27 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.UnsafeSupercast](result)
+    expectError[SafetyError.NonJavaTypeSupercast](result)
   }
 
   test("TestSupercast.02") {
+    val input =
+      """
+        |def f(): Unit \ Impure =
+        |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
+        |    let _ =
+        |        if (true)
+        |            1 as \ Impure
+        |        else
+        |            supercast(newObject());
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.NonJavaTypeSupercast](result)
+  }
+
+  test("TestSupercast.03") {
     val input =
       """
         |def f(): Unit \ Impure =
@@ -540,7 +557,7 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[SafetyError.UnsafeSupercast](result)
   }
 
-  test("TestSupercast.03") {
+  test("TestSupercast.04") {
     val input =
       """
         |def f(): Unit \ Impure =
@@ -555,10 +572,10 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.UnsafeSupercast](result)
+    expectError[SafetyError.TypeVariableSupercast](result)
   }
 
-  test("TestSupercast.04") {
+  test("TestSupercast.05") {
     val input =
       """
         |def f(): Unit \ Impure =
@@ -572,6 +589,6 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.UnsafeSupercast](result)
+    expectError[SafetyError.TypeVariableSupercast](result)
   }
 }

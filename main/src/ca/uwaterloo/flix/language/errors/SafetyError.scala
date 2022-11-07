@@ -200,13 +200,12 @@ object SafetyError {
          |
          |Actual type:      $actual
          |Tried casting to: $expected
+         |
+         |Did you try to supercast two types at the same time?
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""Did you try to supercast two types at the same time?
-         |""".stripMargin
-    })
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**

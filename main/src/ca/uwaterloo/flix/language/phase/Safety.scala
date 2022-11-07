@@ -415,14 +415,14 @@ object Safety {
     case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
       if (right.isAssignableFrom(left)) JavaSubTypeResult.Castable else JavaSubTypeResult.NonCastable
 
+    case (_, Type.Var(_, _)) =>
+      JavaSubTypeResult.TypeVariable
+
     case (Type.Cst(TypeConstructor.Native(_), _), _) =>
       JavaSubTypeResult.NonJavaType(tpe2)
 
     case (_, Type.Cst(TypeConstructor.Native(_), _)) =>
       JavaSubTypeResult.NonJavaType(tpe1)
-
-    case (_, Type.Var(_, _)) =>
-      JavaSubTypeResult.TypeVariable
 
     case _ => JavaSubTypeResult.NonCastable
   }
