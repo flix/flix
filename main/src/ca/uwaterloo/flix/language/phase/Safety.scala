@@ -209,7 +209,7 @@ object Safety {
         visit(exp) ::: errors
 
       case Expression.Supercast(exp, tpe, loc) =>
-        val errors = checkSupercastSafety(exp0, exp, tpe, loc)
+        val errors = checkSupercastSafety(exp, tpe, loc)
         visit(exp) ::: errors
 
       case Expression.Without(exp, _, _, _, _, _) =>
@@ -398,7 +398,7 @@ object Safety {
     * and `tpe1` is a subtype of `tpe2`.
     */
   private def isJavaSubTypeOf(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = (tpe1.baseType, tpe2.baseType) match {
-    // TODO: Maybe return an enum denoting the different cases: castable, not castable, not java type
+    // TODO: Maybe return an enum denoting the different cases: castable, not castable, not java type, type variable (2 supercasts?)
     case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
       right.isAssignableFrom(left)
 
@@ -420,13 +420,13 @@ object Safety {
   /**
     * Returns a list of errors if the the supercast is invalid.
     */
-  private def checkSupercastSafety(exp0: Expression, exp: Expression, tpe: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
+  private def checkSupercastSafety(exp: Expression, tpe: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
     val tpe1 = Type.eraseAliases(exp.tpe)
     val tpe2 = Type.eraseAliases(tpe)
     if (isJavaSubTypeOf(tpe1, tpe2))
-      List.empty
+      Nil
     else
-      List(UnsafeSupercast(exp.tpe, tpe, loc))
+      UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
   }
 
   /**
