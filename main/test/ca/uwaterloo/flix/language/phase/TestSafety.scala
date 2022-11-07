@@ -504,4 +504,57 @@ class TestSafety extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.MissingDefaultMatchTypeCase](result)
   }
+
+  test("TestSupercast.01") {
+    val input =
+      """
+        |def f(): Unit \ Impure =
+        |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
+        |    let _ =
+        |        if (true)
+        |            supercast(1 as \ Impure)
+        |        else
+        |            newObject();
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.UnsafeSupercast](result)
+  }
+
+  test("TestSupercast.02") {
+    val input =
+      """
+        |def f(): Unit \ Impure =
+        |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
+        |    let _ =
+        |        if (true)
+        |            supercast(newObject())
+        |        else
+        |            newStringBuilder();
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.UnsafeSupercast](result)
+  }
+
+  test("TestSupercast.03") {
+    val input =
+      """
+        |def f(): Unit \ Impure =
+        |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
+        |    let _ =
+        |        if (true)
+        |            supercast(newObject())
+        |        else
+        |            supercast(newStringBuilder());
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.UnsafeSupercast](result)
+  }
 }
