@@ -416,6 +416,7 @@ object Safety {
     * and `tpe1` is a subtype of `tpe2`.
     */
   private def isJavaSubTypeOf(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = (tpe1.baseType, tpe2.baseType) match {
+    // TODO: Maybe return an enum denoting the different cases: castable, not castable, not java type
     case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
       right.isAssignableFrom(left)
 
