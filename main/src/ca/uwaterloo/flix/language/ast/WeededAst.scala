@@ -87,33 +87,7 @@ object WeededAst {
 
     case class Use(uses: List[WeededAst.Use], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Unit(loc: SourceLocation) extends WeededAst.Expression
-
-    case class Null(loc: SourceLocation) extends WeededAst.Expression
-
-    case class True(loc: SourceLocation) extends WeededAst.Expression
-
-    case class False(loc: SourceLocation) extends WeededAst.Expression
-
-    case class Char(lit: scala.Char, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Float32(lit: scala.Float, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Float64(lit: scala.Double, loc: SourceLocation) extends WeededAst.Expression
-
-    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Int8(lit: scala.Byte, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Int16(lit: scala.Short, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Int32(lit: scala.Int, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Int64(lit: scala.Long, loc: SourceLocation) extends WeededAst.Expression
-
-    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends WeededAst.Expression
+    case class Constant(cst: Ast.Constant, loc: SourceLocation) extends WeededAst.Expression
 
     case class Apply(exp: WeededAst.Expression, exps: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
