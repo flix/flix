@@ -176,17 +176,32 @@ namespace Graph {
     }
 
     ///
-    /// Returns a GraphViz, DOT string of the graph `g`.
+    /// Returns a Graphviz (DOT) string of the graph `g`.
     /// The strings of nodes are put in quotes with existing quotes escaped,
     /// otherwise DOT identifier validity is up to the caller.
     ///
-    pub def toGraphViz(g: m[((t, t))]): String with Foldable[m], Boxable[t], ToString[t] = region r {
+    pub def toGraphviz(g: m[((t, t))]): String with Foldable[m], Boxable[t], ToString[t] = region r {
         let sb = new StringBuilder(r);
         def output(s) = StringBuilder.appendLine!(s, sb);
-        def sanitize(s) = "\"${String.replace(from = "\"", to = "\\\"", "${s}")}\"";
         output("digraph {");
         foreach((x, y) <- Foldable.iterator(r, g)) {
-            output("  ${sanitize(x)} -> ${sanitize(y)}")
+            output("  ${graphvizId(x)} -> ${graphvizId(y)}")
+        };
+        output("}");
+        StringBuilder.toString(sb)
+    }
+
+    ///
+    /// Returns a Graphviz (DOT) string of the graph `g`.
+    /// The strings of nodes are put in quotes with existing quotes escaped,
+    /// otherwise DOT identifier validity is up to the caller.
+    ///
+    pub def toGraphvizWeighted(g: m[((t, Int32, t))]): String with Foldable[m], Boxable[t], ToString[t] = region r {
+        let sb = new StringBuilder(r);
+        def output(s) = StringBuilder.appendLine!(s, sb);
+        output("digraph {");
+        foreach((x, w, y) <- Foldable.iterator(r, g)) {
+            output("  ${graphvizId(x)} -> ${graphvizId(y)} [label = ${w}]")
         };
         output("}");
         StringBuilder.toString(sb)
@@ -195,6 +210,14 @@ namespace Graph {
     // -------------------------------------------------------------------------
     // Private Functions -------------------------------------------------------
     // -------------------------------------------------------------------------
+
+    ///
+    /// Wraps `toString(id)` with double quotes and escapes any existing quotes
+    /// with backslash.
+    ///
+    def graphvizId(id: t): String with ToString[t] = {
+        "\"${String.replace(from = "\"", to = "\\\"", "${id}")}\""
+    }
 
     ///
     /// Returns a Datalog program which computes the reachable nodes when given
