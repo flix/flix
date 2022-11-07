@@ -261,7 +261,7 @@ object Lowering {
   private def visitExp(exp0: Expression)(implicit root: Root, flix: Flix): Expression = exp0 match {
     case Expression.Unit(_) => exp0
 
-    case Expression.Null(tpe, loc) => 
+    case Expression.Null(tpe, loc) =>
       val t = visitType(tpe)
       Expression.Null(t, loc)
 
@@ -2007,7 +2007,13 @@ object Lowering {
     case Expression.Par(exp, loc) =>
       Expression.Par(substExp(exp, subst), loc)
 
-    case Expression.ParYield(frags, exp, tpe, pur, eff, loc) => ???
+    case Expression.ParYield(frags, exp, tpe, pur, eff, loc) =>
+      val fs = frags map {
+        case ParYieldFragment(p, e, l) =>
+          ParYieldFragment(p, substExp(e, subst), l)
+      }
+      val e = substExp(exp, subst)
+      Expression.ParYield(fs, e, tpe, pur, eff, loc)
 
     case Expression.Lazy(exp, tpe, loc) =>
       val e = substExp(exp, subst)
