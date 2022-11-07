@@ -26,8 +26,7 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
-import java.math.BigDecimal
-import java.math.BigInteger
+import java.math.{BigDecimal, BigInteger}
 import scala.annotation.tailrec
 import scala.collection.mutable
 
@@ -497,7 +496,10 @@ object Weeder {
         case (us, e) => WeededAst.Expression.Use(us, e, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.Lit(_, lit, _) => lit2exp(lit)
+    case ParsedAst.Expression.Lit(sp1, lit, sp2) =>
+      mapN(weedLiteral(lit)) {
+        case l => WeededAst.Expression.Constant(l, mkSL(sp1, sp2))
+      }
 
     case ParsedAst.Expression.Intrinsic(sp1, op, exps, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -1968,128 +1970,77 @@ object Weeder {
   }
 
   /**
-    * Translates the given literal to an expression.
+    * Performs weeding on the given literal.
     */
-  private def lit2exp(lit0: ParsedAst.Literal)(implicit flix: Flix): Validation[WeededAst.Expression, WeederError] = lit0 match {
-    case ParsedAst.Literal.Unit(sp1, sp2) =>
-      WeededAst.Expression.Constant(Ast.Constant.Unit, mkSL(sp1, sp2)).toSuccess
+  private def weedLiteral(lit0: ParsedAst.Literal)(implicit flix: Flix): Validation[Ast.Constant, WeederError] = lit0 match {
+    case ParsedAst.Literal.Unit(_, _) =>
+      Ast.Constant.Unit.toSuccess
 
-    case ParsedAst.Literal.Null(sp1, sp2) =>
-      WeededAst.Expression.Constant(Ast.Constant.Null, mkSL(sp1, sp2)).toSuccess
+    case ParsedAst.Literal.Null(_, _) =>
+      Ast.Constant.Null.toSuccess
 
-    case ParsedAst.Literal.True(sp1, sp2) =>
-      WeededAst.Expression.Constant(Ast.Constant.Bool(true), mkSL(sp1, sp2)).toSuccess
+    case ParsedAst.Literal.True(_, _) =>
+      Ast.Constant.Bool(true).toSuccess
 
-    case ParsedAst.Literal.False(sp1, sp2) =>
-      WeededAst.Expression.Constant(Ast.Constant.Bool(false), mkSL(sp1, sp2)).toSuccess
+    case ParsedAst.Literal.False(_, _) =>
+      Ast.Constant.Bool(false).toSuccess
 
     case ParsedAst.Literal.Char(sp1, chars, sp2) =>
       flatMapN(weedCharSequence(chars)) {
-        case string if string.lengthIs == 1 => WeededAst.Expression.Constant(Ast.Constant.Char(string.head), mkSL(sp1, sp2)).toSuccess
+        case string if string.lengthIs == 1 => Ast.Constant.Char(string.head).toSuccess
         case string => WeederError.NonSingleCharacter(string, mkSL(sp1, sp2)).toFailure
       }
 
     case ParsedAst.Literal.Float32(sp1, sign, before, after, sp2) =>
       toFloat32(sign, before, after, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Expression.Constant(Ast.Constant.Float32(lit), mkSL(sp1, sp2))
+        case lit => Ast.Constant.Float32(lit)
       }
 
     case ParsedAst.Literal.Float64(sp1, sign, before, after, sp2) =>
       toFloat64(sign, before, after, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Expression.Constant(Ast.Constant.Float64(lit), mkSL(sp1, sp2))
+        case lit => Ast.Constant.Float64(lit)
       }
 
     case ParsedAst.Literal.BigDecimal(sp1, sign, before, after, power, sp2) =>
       toBigDecimal(sign, before, after, power, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Expression.Constant(Ast.Constant.BigDecimal(lit), mkSL(sp1, sp2))
+        case lit => Ast.Constant.BigDecimal(lit)
       }
 
     case ParsedAst.Literal.Int8(sp1, sign, radix, digits, sp2) =>
       toInt8(sign, radix, digits, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Expression.Constant(Ast.Constant.Int8(lit), mkSL(sp1, sp2))
+        case lit => Ast.Constant.Int8(lit)
       }
 
     case ParsedAst.Literal.Int16(sp1, sign, radix, digits, sp2) =>
       toInt16(sign, radix, digits, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Expression.Constant(Ast.Constant.Int16(lit), mkSL(sp1, sp2))
+        case lit => Ast.Constant.Int16(lit)
       }
 
     case ParsedAst.Literal.Int32(sp1, sign, radix, digits, sp2) =>
       toInt32(sign, radix, digits, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Expression.Constant(Ast.Constant.Int32(lit), mkSL(sp1, sp2))
+        case lit => Ast.Constant.Int32(lit)
       }
 
     case ParsedAst.Literal.Int64(sp1, sign, radix, digits, sp2) =>
       toInt64(sign, radix, digits, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Expression.Constant(Ast.Constant.Int64(lit), mkSL(sp1, sp2))
+        case lit => Ast.Constant.Int64(lit)
       }
 
     case ParsedAst.Literal.BigInt(sp1, sign, radix, digits, sp2) =>
       toBigInt(sign, radix, digits, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Expression.Constant(Ast.Constant.BigInt(lit), mkSL(sp1, sp2))
+        case lit => Ast.Constant.BigInt(lit)
       }
 
-    case ParsedAst.Literal.Str(sp1, chars, sp2) =>
+    case ParsedAst.Literal.Str(_, chars, _) =>
       weedCharSequence(chars) map {
-        string => WeededAst.Expression.Constant(Ast.Constant.Str(string), mkSL(sp1, sp2))
-      }
-  }
-
-  /**
-    * Weeds the given pattern.
-    */
-  private def visitLitPat(pat0: ParsedAst.Literal): Validation[WeededAst.Pattern, WeederError] = pat0 match {
-    case ParsedAst.Literal.Unit(sp1, sp2) => WeededAst.Pattern.Constant(Ast.Constant.Unit, mkSL(sp1, sp2)).toSuccess
-    case ParsedAst.Literal.Null(sp1, sp2) => WeederError.IllegalNullPattern(mkSL(sp1, sp2)).toFailure
-    case ParsedAst.Literal.True(sp1, sp2) => WeededAst.Pattern.Constant(Ast.Constant.Bool(true), mkSL(sp1, sp2)).toSuccess
-    case ParsedAst.Literal.False(sp1, sp2) => WeededAst.Pattern.Constant(Ast.Constant.Bool(false), mkSL(sp1, sp2)).toSuccess
-    case ParsedAst.Literal.Char(sp1, chars, sp2) =>
-      flatMapN(weedCharSequence(chars)) {
-        case string if string.lengthIs == 1 => WeededAst.Pattern.Constant(Ast.Constant.Char(string.head), mkSL(sp1, sp2)).toSuccess
-        case string => WeederError.NonSingleCharacter(string, mkSL(sp1, sp2)).toFailure
-      }
-    case ParsedAst.Literal.Float32(sp1, sign, before, after, sp2) =>
-      toFloat32(sign, before, after, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Pattern.Constant(Ast.Constant.Float32(lit), mkSL(sp1, sp2))
-      }
-    case ParsedAst.Literal.Float64(sp1, sign, before, after, sp2) =>
-      toFloat64(sign, before, after, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Pattern.Constant(Ast.Constant.Float64(lit), mkSL(sp1, sp2))
-      }
-    case ParsedAst.Literal.BigDecimal(sp1, sign, before, after, power, sp2) =>
-      toBigDecimal(sign, before, after, power, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Pattern.Constant(Ast.Constant.BigDecimal(lit), mkSL(sp1, sp2))
-      }
-    case ParsedAst.Literal.Int8(sp1, sign, radix, digits, sp2) =>
-      toInt8(sign, radix, digits, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Pattern.Constant(Ast.Constant.Int8(lit), mkSL(sp1, sp2))
-      }
-    case ParsedAst.Literal.Int16(sp1, sign, radix, digits, sp2) =>
-      toInt16(sign, radix, digits, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Pattern.Constant(Ast.Constant.Int16(lit), mkSL(sp1, sp2))
-      }
-    case ParsedAst.Literal.Int32(sp1, sign, radix, digits, sp2) =>
-      toInt32(sign, radix, digits, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Pattern.Constant(Ast.Constant.Int32(lit), mkSL(sp1, sp2))
-      }
-    case ParsedAst.Literal.Int64(sp1, sign, radix, digits, sp2) =>
-      toInt64(sign, radix, digits, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Pattern.Constant(Ast.Constant.Int64(lit), mkSL(sp1, sp2))
-      }
-    case ParsedAst.Literal.BigInt(sp1, sign, radix, digits, sp2) =>
-      toBigInt(sign, radix, digits, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Pattern.Constant(Ast.Constant.BigInt(lit), mkSL(sp1, sp2))
-      }
-    case ParsedAst.Literal.Str(sp1, chars, sp2) =>
-      weedCharSequence(chars) map {
-        string => WeededAst.Pattern.Constant(Ast.Constant.Str(string), mkSL(sp1, sp2))
+        string => Ast.Constant.Str(string)
       }
   }
 
   /**
     * Compiles a parsed pattern into a weeded pattern.
     */
-  private def visitPattern(pattern: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = {
+  private def visitPattern(pattern: ParsedAst.Pattern)(implicit flix: Flix): Validation[WeededAst.Pattern, WeederError] = {
     /*
      *  Check for non-linear pattern, i.e. if a variable occurs multiple times.
      */
@@ -2113,7 +2064,11 @@ object Weeder {
           }
         }
 
-      case ParsedAst.Pattern.Lit(_, lit, _) => visitLitPat(lit)
+      case ParsedAst.Pattern.Lit(sp1, lit, sp2) =>
+        flatMapN(weedLiteral(lit)) {
+          case Ast.Constant.Null => WeederError.IllegalNullPattern(mkSL(sp1, sp2)).toFailure
+          case l => WeededAst.Pattern.Constant(l, mkSL(sp1, sp2)).toSuccess
+        }
 
       case ParsedAst.Pattern.Tag(sp1, qname, o, sp2) =>
         /*
