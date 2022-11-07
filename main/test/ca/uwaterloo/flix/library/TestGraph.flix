@@ -780,4 +780,96 @@ namespace TestGraph {
             (7, 8, 13), (13, 8, 7)
         }
     }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // toGraphviz                                                             //
+    ////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toGraphviz01(): Bool = {
+        Graph.toGraphviz(graph01()) == String.unlines(
+            "digraph {" ::
+            "}" ::
+            Nil
+        )
+    }
+
+    @test
+    pub def toGraphviz02(): Bool = {
+        let g = Set#{
+            ("node \"A\"", "node \"B\"")
+        };
+        Graph.toGraphviz(g) == String.unlines(
+            "digraph {" ::
+            "  \"node \\\"A\\\"\" -> \"node \\\"B\\\"\"" ::
+            "}" ::
+            Nil
+        )
+    }
+
+    @test
+    def toGraphviz03(): Bool = {
+        let test1 = Graph.toGraphviz(graph03()) == String.unlines(
+            "digraph {" ::
+            "  \"1\" -> \"2\"" ::
+            "  \"3\" -> \"4\"" ::
+            "}" ::
+            Nil
+        );
+        let test2 = Graph.toGraphviz(graph03()) == String.unlines(
+            "digraph {" ::
+            "  \"3\" -> \"4\"" ::
+            "  \"1\" -> \"2\"" ::
+            "}" ::
+            Nil
+        );
+        test1 or test2
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // toGraphvizWeighted                                                     //
+    ////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toGraphvizWeighted01(): Bool = {
+        Graph.toGraphvizWeighted(graphWithDist01()) == String.unlines(
+            "digraph {" ::
+            "}" ::
+            Nil
+        )
+    }
+
+    @test
+    pub def toGraphvizWeighted02(): Bool = {
+        let g = Set#{
+            ("node \"A\"", -42, "node \"B\"")
+        };
+        Graph.toGraphvizWeighted(g) == String.unlines(
+            "digraph {" ::
+            "  \"node \\\"A\\\"\" -> \"node \\\"B\\\"\" [label = -42]" ::
+            "}" ::
+            Nil
+        )
+    }
+
+    @test
+    def toGraphvizWeighted03(): Bool = {
+        let gv = Graph.toGraphvizWeighted(graphWithDist03());
+        let test1 = gv == String.unlines(
+            "digraph {" ::
+            "  \"1\" -> \"2\" [label = 4]" ::
+            "  \"3\" -> \"4\" [label = 7]" ::
+            "}" ::
+            Nil
+        );
+        let test2 = gv == String.unlines(
+            "digraph {" ::
+            "  \"3\" -> \"4\" [label = 7]" ::
+            "  \"1\" -> \"2\" [label = 4]" ::
+            "}" ::
+            Nil
+        );
+        test1 or test2
+    }
+
 }
