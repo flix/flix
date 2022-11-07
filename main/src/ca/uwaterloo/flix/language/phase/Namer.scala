@@ -1577,6 +1577,7 @@ object Namer {
     case WeededAst.Expression.Cast(exp, _, _, _) => freeVars(exp)
     case WeededAst.Expression.Mask(exp, _) => freeVars(exp)
     case WeededAst.Expression.Upcast(exp, _) => freeVars(exp)
+    case WeededAst.Expression.Supercast(exp, _) => freeVars(exp)
     case WeededAst.Expression.Without(exp, _, _) => freeVars(exp)
     case WeededAst.Expression.Do(_, exps, _) => exps.flatMap(freeVars)
     case WeededAst.Expression.Resume(exp, _) => freeVars(exp)

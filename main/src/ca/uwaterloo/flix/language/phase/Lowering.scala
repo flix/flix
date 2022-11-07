@@ -259,7 +259,7 @@ object Lowering {
   private def visitExp(exp0: Expression)(implicit root: Root, flix: Flix): Expression = exp0 match {
     case Expression.Unit(_) => exp0
 
-    case Expression.Null(tpe, loc) => 
+    case Expression.Null(tpe, loc) =>
       val t = visitType(tpe)
       Expression.Null(t, loc)
 
@@ -486,7 +486,14 @@ object Lowering {
       visitExp(exp)
 
     case Expression.Upcast(exp, tpe, loc) =>
-      Expression.Upcast(visitExp(exp), visitType(tpe), loc)
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      Expression.Upcast(e, t, loc)
+
+    case Expression.Supercast(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      Expression.Supercast(e, t, loc)
 
     case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
@@ -1861,7 +1868,12 @@ object Lowering {
       Expression.Mask(e, tpe, pur, eff, loc)
 
     case Expression.Upcast(exp, tpe, loc) =>
-      Expression.Upcast(substExp(exp, subst), tpe, loc)
+      val e = substExp(exp, subst)
+      Expression.Upcast(e, tpe, loc)
+
+    case Expression.Supercast(exp, tpe, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Supercast(e, tpe, loc)
 
     case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)

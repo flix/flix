@@ -181,6 +181,9 @@ object TypedAstOps {
       case Expression.Upcast(exp, _, _) =>
         visitExp(exp, env0)
 
+      case Expression.Supercast(exp, _, _) =>
+        visitExp(exp, env0)
+
       case Expression.Without(exp, _, _, _, _, _) =>
         visitExp(exp, env0)
 
@@ -432,6 +435,7 @@ object TypedAstOps {
     case Expression.Cast(exp, _, _, _, _, _, _, _) => sigSymsOf(exp)
     case Expression.Mask(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Upcast(exp, _, _) => sigSymsOf(exp)
+    case Expression.Supercast(exp, _, _) => sigSymsOf(exp)
     case Expression.Without(exp, _, _, _, _, _) => sigSymsOf(exp)
     case Expression.TryCatch(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.TryWith(exp, _, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
@@ -647,6 +651,9 @@ object TypedAstOps {
       freeVars(exp)
 
     case Expression.Upcast(exp, _, _) =>
+      freeVars(exp)
+
+    case Expression.Supercast(exp, _, _) =>
       freeVars(exp)
 
     case Expression.TryCatch(exp, rules, _, _, _, _) =>

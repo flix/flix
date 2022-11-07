@@ -214,6 +214,8 @@ object Safety {
           }
         visit(exp) ::: errors
 
+      case Expression.Supercast(exp, tpe, loc) => ???
+
       case Expression.Without(exp, _, _, _, _, _) =>
         visit(exp)
 

@@ -329,6 +329,9 @@ object Indexer {
     case Expression.Upcast(exp, tpe, _) =>
       visitExp(exp) ++ visitType(tpe) ++ Index.occurrenceOf(exp0)
 
+    case Expression.Supercast(exp, tpe, _) =>
+      visitExp(exp) ++ visitType(tpe) ++ Index.occurrenceOf(exp0)
+
     case Expression.Without(exp, effUse, _, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(effUse.sym, effUse.loc)
 
