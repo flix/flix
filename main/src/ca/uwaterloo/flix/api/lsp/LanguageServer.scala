@@ -42,8 +42,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.zip.ZipInputStream
 import scala.collection.mutable
-import java.io.FileNotFoundException
 import ca.uwaterloo.flix.util.collection.MultiMap
+import scala.util.Using
+import java.io.IOException
+import java.nio.file.Files
 
 /**
   * A Compiler Interface for the Language Server Protocol.
@@ -103,33 +105,40 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * The java classes in the jdk classList
     */
-  private val javaClasses: MultiMap[List[String], String] = sys.env.get("JAVA_HOME") match {
+  private lazy val javaClasses: MultiMap[List[String], String] = sys.env.get("JAVA_HOME") match {
     case None => MultiMap.empty
     case Some(home) =>
-      val path = s"$home/lib/classlist"
-      try {
-        val file = scala.io.Source.fromFile(path)
-        val map = file.getLines()
-          // Filter the classlist file
-          .drop(5)
-          .filter(clazz => !clazz.contains("$"))
-          .filter(clazz => !clazz.contains("@"))
-          .foldLeft[MultiMap[List[String], String]](MultiMap.empty){
-            case (acc, clazz) =>
-              val clazzPath = clazz.split('/').toList
-              // Create a mapping from all prefixes to the next packages/classes
-              (0 until clazzPath.length).foldLeft(acc){
-                case (acc, prefixIdx) =>
-                  acc + (clazzPath.slice(0, prefixIdx) -> clazzPath(prefixIdx))
-              }
-          }
-        file.close
-        map
-      }
-      catch {
-        // If the users JDK does not include a classlist file or scala cannot find the file no map is created.
-        case _: FileNotFoundException => MultiMap.empty
-      }
+      val path = java.nio.file.Paths.get(home, "lib", "classlist")
+      if (Files.exists(path) && Files.isRegularFile(path) && Files.isReadable(path))   
+        try {
+          val fileContents = Files.readString(path)
+          fileContents.linesIterator
+            // Filter the classlist file
+            .drop(5)
+            // Filter out inner classes
+            .filter(clazz => !clazz.contains("$"))
+            // Filter out lambda-invoke/lambda-proxy lines
+            .filter(clazz => !clazz.contains("@"))
+            // Create a multimap from all class path prefixes to the next packages/classes
+            // I.e java.lang.string
+            // [] => {java}
+            // [java] => {lang}
+            // [java, lang] => {String}
+            .foldLeft[MultiMap[List[String], String]](MultiMap.empty){
+              case (acc, clazz) =>
+                val clazzPath = clazz.split('/').toList
+                (0 until clazzPath.length).foldLeft(acc){
+                  case (acc, prefixIdx) =>
+                    acc + (clazzPath.slice(0, prefixIdx) -> clazzPath(prefixIdx))
+                }
+            }
+        }
+        catch {
+          // If any IO error occurs, i.e the file not existing in the users JDK, we return an empty map.
+          case _: IOException => MultiMap.empty
+        }
+      else
+        MultiMap.empty
   }
 
   /**
