@@ -79,6 +79,9 @@ object Ast {
     override def hashCode(): Int = input.hashCode()
   }
 
+  /**
+    * A common supertype for constant values.
+    */
   sealed trait Constant
   object Constant {
     case class Unit(loc: SourceLocation) extends Constant
