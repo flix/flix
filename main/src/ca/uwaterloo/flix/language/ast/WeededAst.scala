@@ -87,7 +87,7 @@ object WeededAst {
 
     case class Use(uses: List[WeededAst.Use], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Constant(cst: Ast.Constant, loc: SourceLocation) extends WeededAst.Expression
+    case class Constant(cst: Ast.Cst, loc: SourceLocation) extends WeededAst.Expression
 
     case class Apply(exp: WeededAst.Expression, exps: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
@@ -231,7 +231,7 @@ object WeededAst {
 
     case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Pattern
 
-    case class Constant(cst: Ast.Constant, loc: SourceLocation) extends WeededAst.Pattern
+    case class Constant(cst: Ast.Cst, loc: SourceLocation) extends WeededAst.Pattern
 
     case class Tag(qname: Option[Name.QName], tag: Name.Ident, pat: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
 
