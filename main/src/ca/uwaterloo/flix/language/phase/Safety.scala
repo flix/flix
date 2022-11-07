@@ -259,7 +259,7 @@ object Safety {
             case JvmMethod(_, _, exp, _, _, _, _) => visit(exp)
           }
 
-      case Expression.NewChannel(exp, _, _, _, _) =>
+      case Expression.NewChannel(exp, _, _, _, _, _) =>
         visit(exp)
 
       case Expression.GetChannel(exp, _, _, _, _) =>

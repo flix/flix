@@ -59,7 +59,7 @@ namespace Test/Unused/Var {
         let (s, r) = Channel.buffered(1);
         Channel.send(0, s);
         select {
-            case _foo <- r => 123
+            case _foo <- recv(r) => 123
         }
 
     @test
@@ -69,8 +69,8 @@ namespace Test/Unused/Var {
         Channel.send(0, s1);
         Channel.send(0, s2);
         select {
-            case _foo <- r1 => 123
-            case _bar <- r2 => 456
+            case _foo <- recv(r1) => 123
+            case _bar <- recv(r2) => 456
         }
 
     // NB: Compile, but not execute.

@@ -50,7 +50,7 @@ class TestRedundancy extends FunSuite with TestUtils {
            |def f(): Int32 \ IO =
            |    let (_, r) = Channel.buffered(1);
            |    select {
-           |        case _x <- r => _x
+           |        case _x <- recv(r) => _x
            |    }
            |
        """.stripMargin
@@ -260,8 +260,8 @@ class TestRedundancy extends FunSuite with TestUtils {
         |    let (s, r) = Channel.buffered(1);
         |    Channel.send(456, s);
         |    select {
-        |        case y <- r => y
-        |        case x <- r => x
+        |        case y <- recv(r) => y
+        |        case x <- recv(r) => x
         |    }
         |
       """.stripMargin
@@ -741,7 +741,7 @@ class TestRedundancy extends FunSuite with TestUtils {
            |def f(): Int32 \ IO =
            |    let (_, r) = Channel.unbuffered();
            |    select {
-           |        case x <- r => 123
+           |        case x <- recv(r) => 123
            |    }
            |
        """.stripMargin
@@ -755,8 +755,8 @@ class TestRedundancy extends FunSuite with TestUtils {
            |def f(): Int32 \ IO =
            |    let (_, r) = Channel.unbuffered();
            |    select {
-           |        case x <- r => x
-           |        case x <- r => 123
+           |        case x <- recv(r) => x
+           |        case x <- recv(r) => 123
            |    }
            |
        """.stripMargin
