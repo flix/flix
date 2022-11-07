@@ -2039,50 +2039,50 @@ object Weeder {
     * Weeds the given pattern.
     */
   private def visitLitPat(pat0: ParsedAst.Literal): Validation[WeededAst.Pattern, WeederError] = pat0 match {
-    case ParsedAst.Literal.Unit(sp1, sp2) => WeededAst.Pattern.Unit(mkSL(sp1, sp2)).toSuccess
+    case ParsedAst.Literal.Unit(sp1, sp2) => WeededAst.Pattern.Constant(Ast.Constant.Unit, mkSL(sp1, sp2)).toSuccess
     case ParsedAst.Literal.Null(sp1, sp2) => WeederError.IllegalNullPattern(mkSL(sp1, sp2)).toFailure
-    case ParsedAst.Literal.True(sp1, sp2) => WeededAst.Pattern.True(mkSL(sp1, sp2)).toSuccess
-    case ParsedAst.Literal.False(sp1, sp2) => WeededAst.Pattern.False(mkSL(sp1, sp2)).toSuccess
+    case ParsedAst.Literal.True(sp1, sp2) => WeededAst.Pattern.Constant(Ast.Constant.Bool(true), mkSL(sp1, sp2)).toSuccess
+    case ParsedAst.Literal.False(sp1, sp2) => WeededAst.Pattern.Constant(Ast.Constant.Bool(false), mkSL(sp1, sp2)).toSuccess
     case ParsedAst.Literal.Char(sp1, chars, sp2) =>
       flatMapN(weedCharSequence(chars)) {
-        case string if string.lengthIs == 1 => WeededAst.Pattern.Char(string.head, mkSL(sp1, sp2)).toSuccess
+        case string if string.lengthIs == 1 => WeededAst.Pattern.Constant(Ast.Constant.Char(string.head), mkSL(sp1, sp2)).toSuccess
         case string => WeederError.NonSingleCharacter(string, mkSL(sp1, sp2)).toFailure
       }
     case ParsedAst.Literal.Float32(sp1, sign, before, after, sp2) =>
       toFloat32(sign, before, after, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Pattern.Float32(lit, mkSL(sp1, sp2))
+        case lit => WeededAst.Pattern.Constant(Ast.Constant.Float32(lit), mkSL(sp1, sp2))
       }
     case ParsedAst.Literal.Float64(sp1, sign, before, after, sp2) =>
       toFloat64(sign, before, after, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Pattern.Float64(lit, mkSL(sp1, sp2))
+        case lit => WeededAst.Pattern.Constant(Ast.Constant.Float64(lit), mkSL(sp1, sp2))
       }
     case ParsedAst.Literal.BigDecimal(sp1, sign, before, after, power, sp2) =>
       toBigDecimal(sign, before, after, power, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Pattern.BigDecimal(lit, mkSL(sp1, sp2))
+        case lit => WeededAst.Pattern.Constant(Ast.Constant.BigDecimal(lit), mkSL(sp1, sp2))
       }
     case ParsedAst.Literal.Int8(sp1, sign, radix, digits, sp2) =>
       toInt8(sign, radix, digits, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Pattern.Int8(lit, mkSL(sp1, sp2))
+        case lit => WeededAst.Pattern.Constant(Ast.Constant.Int8(lit), mkSL(sp1, sp2))
       }
     case ParsedAst.Literal.Int16(sp1, sign, radix, digits, sp2) =>
       toInt16(sign, radix, digits, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Pattern.Int16(lit, mkSL(sp1, sp2))
+        case lit => WeededAst.Pattern.Constant(Ast.Constant.Int16(lit), mkSL(sp1, sp2))
       }
     case ParsedAst.Literal.Int32(sp1, sign, radix, digits, sp2) =>
       toInt32(sign, radix, digits, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Pattern.Int32(lit, mkSL(sp1, sp2))
+        case lit => WeededAst.Pattern.Constant(Ast.Constant.Int32(lit), mkSL(sp1, sp2))
       }
     case ParsedAst.Literal.Int64(sp1, sign, radix, digits, sp2) =>
       toInt64(sign, radix, digits, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Pattern.Int64(lit, mkSL(sp1, sp2))
+        case lit => WeededAst.Pattern.Constant(Ast.Constant.Int64(lit), mkSL(sp1, sp2))
       }
     case ParsedAst.Literal.BigInt(sp1, sign, radix, digits, sp2) =>
       toBigInt(sign, radix, digits, mkSL(sp1, sp2)) map {
-        case lit => WeededAst.Pattern.BigInt(lit, mkSL(sp1, sp2))
+        case lit => WeededAst.Pattern.Constant(Ast.Constant.BigInt(lit), mkSL(sp1, sp2))
       }
     case ParsedAst.Literal.Str(sp1, chars, sp2) =>
       weedCharSequence(chars) map {
-        string => WeededAst.Pattern.Str(string, mkSL(sp1, sp2))
+        string => WeededAst.Pattern.Constant(Ast.Constant.Str(string), mkSL(sp1, sp2))
       }
   }
 
@@ -2123,7 +2123,7 @@ object Weeder {
         o match {
           case None =>
             val loc = mkSL(sp1, sp2)
-            val lit = WeededAst.Pattern.Unit(loc.asSynthetic)
+            val lit = WeededAst.Pattern.Constant(Ast.Constant.Unit, loc.asSynthetic)
             WeededAst.Pattern.Tag(enum, tag, lit, loc).toSuccess
           case Some(pat) => visit(pat) map {
             case p => WeededAst.Pattern.Tag(enum, tag, p, mkSL(sp1, sp2))
@@ -2137,7 +2137,7 @@ object Weeder {
          * Rewrites empty tuples to Unit and eliminate single-element tuples.
          */
         traverse(pats)(visit) map {
-          case Nil => WeededAst.Pattern.Unit(loc)
+          case Nil => WeededAst.Pattern.Constant(Ast.Constant.Unit, loc)
           case x :: Nil => x
           case xs => WeededAst.Pattern.Tuple(xs, loc)
         }
@@ -2179,7 +2179,7 @@ object Weeder {
          */
         val loc = mkSL(sp1, sp2)
         val tag = Name.Ident(sp1, "Nil", sp2)
-        val pat = WeededAst.Pattern.Unit(loc.asSynthetic)
+        val pat = WeededAst.Pattern.Constant(Ast.Constant.Unit, loc.asSynthetic)
         WeededAst.Pattern.Tag(None, tag, pat, loc).toSuccess
 
       case ParsedAst.Pattern.FCons(pat1, sp1, sp2, pat2) =>

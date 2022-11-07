@@ -231,31 +231,7 @@ object WeededAst {
 
     case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Pattern
 
-    case class Unit(loc: SourceLocation) extends WeededAst.Pattern
-
-    case class True(loc: SourceLocation) extends WeededAst.Pattern
-
-    case class False(loc: SourceLocation) extends WeededAst.Pattern
-
-    case class Char(lit: scala.Char, loc: SourceLocation) extends WeededAst.Pattern
-
-    case class Float32(lit: scala.Float, loc: SourceLocation) extends WeededAst.Pattern
-
-    case class Float64(lit: scala.Double, loc: SourceLocation) extends WeededAst.Pattern
-
-    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends WeededAst.Pattern
-
-    case class Int8(lit: scala.Byte, loc: SourceLocation) extends WeededAst.Pattern
-
-    case class Int16(lit: scala.Short, loc: SourceLocation) extends WeededAst.Pattern
-
-    case class Int32(lit: scala.Int, loc: SourceLocation) extends WeededAst.Pattern
-
-    case class Int64(lit: scala.Long, loc: SourceLocation) extends WeededAst.Pattern
-
-    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends WeededAst.Pattern
-
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends WeededAst.Pattern
+    case class Constant(cst: Ast.Constant, loc: SourceLocation) extends WeededAst.Pattern
 
     case class Tag(qname: Option[Name.QName], tag: Name.Ident, pat: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
 
