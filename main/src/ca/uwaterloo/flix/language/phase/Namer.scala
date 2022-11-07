@@ -1166,6 +1166,7 @@ object Namer {
       case WeededAst.Pattern.Constant(Ast.Constant.Int64(lit), loc) => NamedAst.Pattern.Int64(lit, loc)
       case WeededAst.Pattern.Constant(Ast.Constant.BigInt(lit), loc) => NamedAst.Pattern.BigInt(lit, loc)
       case WeededAst.Pattern.Constant(Ast.Constant.Str(lit), loc) => NamedAst.Pattern.Str(lit, loc)
+      case WeededAst.Pattern.Constant(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern")
 
       case WeededAst.Pattern.Tag(enumOpt0, tag0, pat, loc) =>
         val (enumOpt, tag) = getDisambiguatedTag(enumOpt0, tag0, uenv0)
@@ -1222,6 +1223,7 @@ object Namer {
       case WeededAst.Pattern.Constant(Ast.Constant.Int64(lit), loc) => NamedAst.Pattern.Int64(lit, loc)
       case WeededAst.Pattern.Constant(Ast.Constant.BigInt(lit), loc) => NamedAst.Pattern.BigInt(lit, loc)
       case WeededAst.Pattern.Constant(Ast.Constant.Str(lit), loc) => NamedAst.Pattern.Str(lit, loc)
+      case WeededAst.Pattern.Constant(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern")
 
       case WeededAst.Pattern.Tag(enumOpt0, tag0, pat, loc) =>
         val (enumOpt, tag) = getDisambiguatedTag(enumOpt0, tag0, uenv0)
@@ -1636,6 +1638,7 @@ object Namer {
     case WeededAst.Pattern.Constant(Ast.Constant.Int64(lit), loc) => Nil
     case WeededAst.Pattern.Constant(Ast.Constant.BigInt(lit), loc) => Nil
     case WeededAst.Pattern.Constant(Ast.Constant.Str(lit), loc) => Nil
+    case WeededAst.Pattern.Constant(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern")
     case WeededAst.Pattern.Tag(enumName, tagName, p, loc) => freeVars(p)
     case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
     case WeededAst.Pattern.Array(elms, loc) => elms flatMap freeVars
