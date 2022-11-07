@@ -123,11 +123,11 @@ object SafetyError {
   /**
     * An error raised to indicate an invalid use of upcast.
     *
-    * @param actual   the expression being upcast.
-    * @param expected the upcast expression itself.
+    * @param actual   the type of the expression being upcast.
+    * @param expected the type being cast to, i.e. the type of the upcast expression itself.
     * @param loc      the source location of the unsafe upcast.
     */
-  case class UnsafeUpcast(actual: Expression, expected: Expression, loc: SourceLocation) extends SafetyError {
+  case class UnsafeUpcast(actual: Type, expected: Type, loc: SourceLocation) extends SafetyError {
     override def summary: String = "Unsafe upcast."
 
     override def message(formatter: Formatter): String = {
@@ -137,8 +137,8 @@ object SafetyError {
          |
          |${code(loc, "the upcast occurs here.")}
          |
-         |Actual type:      ${actual.tpe}
-         |Tried casting to: ${expected.tpe}
+         |Actual type:      $actual
+         |Tried casting to: $expected
          |""".stripMargin
     }
 
@@ -148,7 +148,7 @@ object SafetyError {
   /**
     * An error raised to indicate an invalid use of supercast.
     *
-    * @param actual   the type of the expression being upcast.
+    * @param actual   the type of the expression being supercast.
     * @param expected the type being cast to, i.e. the type of the supercast expression itself.
     * @param loc      the source location of the unsafe supercast.
     */
