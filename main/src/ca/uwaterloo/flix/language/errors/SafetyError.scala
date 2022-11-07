@@ -153,14 +153,14 @@ object SafetyError {
     * @param loc      the source location of the unsafe supercast.
     */
   case class UnsafeSupercast(actual: Type, expected: Type, loc: SourceLocation) extends SafetyError {
-    override def summary: String = "Unsafe upcast."
+    override def summary: String = "Unsafe supercast."
 
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> The following upcast is unsafe and not allowed.
+         |>> The following supercast is unsafe and not allowed.
          |
-         |${code(loc, "the upcast occurs here.")}
+         |${code(loc, "the supercast occurs here.")}
          |
          |Actual type:      $actual
          |Tried casting to: $expected
