@@ -215,6 +215,7 @@ namespace Graph {
                   select (n, d)
                   from OutDegree(n, d);
         List.toMap(res)
+    }
 
     /// Returns a Graphviz (DOT) string of the graph `g`.
     /// The strings of nodes are put in quotes with existing quotes escaped,
