@@ -79,6 +79,33 @@ object Ast {
     override def hashCode(): Int = input.hashCode()
   }
 
+  sealed trait Constant
+  object Constant {
+    case class Unit(loc: SourceLocation) extends Constant
+
+    case class Null(loc: SourceLocation) extends Constant
+
+    case class Bool(lit: scala.Boolean, loc: SourceLocation) extends Constant
+
+    case class Char(lit: scala.Char, loc: SourceLocation) extends Constant
+
+    case class Float32(lit: scala.Float, loc: SourceLocation) extends Constant
+
+    case class Float64(lit: scala.Double, loc: SourceLocation) extends Constant
+
+    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends Constant
+
+    case class Int8(lit: scala.Byte, loc: SourceLocation) extends Constant
+
+    case class Int16(lit: scala.Short, loc: SourceLocation) extends Constant
+
+    case class Int32(lit: scala.Int, loc: SourceLocation) extends Constant
+
+    case class Int64(lit: scala.Long, loc: SourceLocation) extends Constant
+
+    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends Constant
+  }
+
   /**
     * A common super type for AST nodes that represent annotations.
     */
