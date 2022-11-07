@@ -430,7 +430,7 @@ object Deriver {
       // ```compare(x0, y0) `thenCompare` lazy compare(x1, y1)```
       val exp = compares match {
         // Case 1: no variables to compare; just return true
-        case Nil => KindedAst.Expression.Tag(Ast.CaseSymUse(equalToSym, loc), KindedAst.Expression.Cst(Ast.Constant.Unit, loc), Type.freshVar(Kind.Star, loc, text = FallbackText("tag")), loc)
+        case Nil => KindedAst.Expression.Tag(Ast.CaseSymUse(equalToSym, loc), KindedAst.Expression.Cst(Ast.Constant.Bool(true), loc), Type.freshVar(Kind.Star, loc, text = FallbackText("tag")), loc)
         // Case 2: multiple comparisons to be done; wrap them in Order.thenCompare
         case cmps => cmps.reduceRight(thenCompare)
       }

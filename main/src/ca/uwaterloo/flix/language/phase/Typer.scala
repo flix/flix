@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
+import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation, Stratification}
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
@@ -881,7 +881,7 @@ object Typer {
           patternTypes <- inferPatterns(patterns, root)
           patternType <- unifyTypeM(tpe :: patternTypes, loc)
           (guardConstrs, guardTypes, guardPurs, guardEffs) <- traverseM(guards)(visitExp).map(unzip4)
-          guardType <- traverseM(guardTypes.zip(guardLocs)) { case (gTpe, gLoc) => expectTypeM(expected = Type.Bool, actual = gTpe, loc = gLoc)}
+          guardType <- traverseM(guardTypes.zip(guardLocs)) { case (gTpe, gLoc) => expectTypeM(expected = Type.Bool, actual = gTpe, loc = gLoc) }
           (bodyConstrs, bodyTypes, bodyPurs, bodyEffs) <- traverseM(bodies)(visitExp).map(unzip4)
           resultTyp <- unifyTypeM(bodyTypes, loc)
           resultPur = Type.mkAnd(pur :: guardPurs ::: bodyPurs, loc)
@@ -1873,33 +1873,10 @@ object Typer {
       case KindedAst.Expression.Hole(sym, tpe, loc) =>
         TypedAst.Expression.Hole(sym, subst0(tpe), loc)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Unit, loc) => TypedAst.Expression.Unit(loc)
+      // change null to Unit type
+      case KindedAst.Expression.Cst(Ast.Constant.Null, loc) => TypedAst.Expression.Constant(Ast.Constant.Null, Type.Unit, loc)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Null, loc) => TypedAst.Expression.Null(Type.Unit, loc)
-
-      case KindedAst.Expression.Cst(Ast.Constant.Bool(true), loc) => TypedAst.Expression.True(loc)
-
-      case KindedAst.Expression.Cst(Ast.Constant.Bool(false), loc) => TypedAst.Expression.False(loc)
-
-      case KindedAst.Expression.Cst(Ast.Constant.Char(lit), loc) => TypedAst.Expression.Char(lit, loc)
-
-      case KindedAst.Expression.Cst(Ast.Constant.Float32(lit), loc) => TypedAst.Expression.Float32(lit, loc)
-
-      case KindedAst.Expression.Cst(Ast.Constant.Float64(lit), loc) => TypedAst.Expression.Float64(lit, loc)
-
-      case KindedAst.Expression.Cst(Ast.Constant.BigDecimal(lit), loc) => TypedAst.Expression.BigDecimal(lit, loc)
-
-      case KindedAst.Expression.Cst(Ast.Constant.Int8(lit), loc) => TypedAst.Expression.Int8(lit, loc)
-
-      case KindedAst.Expression.Cst(Ast.Constant.Int16(lit), loc) => TypedAst.Expression.Int16(lit, loc)
-
-      case KindedAst.Expression.Cst(Ast.Constant.Int32(lit), loc) => TypedAst.Expression.Int32(lit, loc)
-
-      case KindedAst.Expression.Cst(Ast.Constant.Int64(lit), loc) => TypedAst.Expression.Int64(lit, loc)
-
-      case KindedAst.Expression.Cst(Ast.Constant.BigInt(lit), loc) => TypedAst.Expression.BigInt(lit, loc)
-
-      case KindedAst.Expression.Cst(Ast.Constant.Str(lit), loc) => TypedAst.Expression.Str(lit, loc)
+      case KindedAst.Expression.Cst(cst, loc) => TypedAst.Expression.Constant(cst, constantType(cst), loc)
 
       case KindedAst.Expression.Apply(exp, exps, tvar, pvar, evar, loc) =>
         val e = visitExp(exp, subst0)
@@ -2137,7 +2114,7 @@ object Typer {
 
       case KindedAst.Expression.Cast(KindedAst.Expression.Cst(Ast.Constant.Null, _), _, _, _, tvar, loc) =>
         val t = subst0(tvar)
-        TypedAst.Expression.Null(t, loc)
+        TypedAst.Expression.Constant(Ast.Constant.Null, t, loc)
 
       case KindedAst.Expression.Cast(exp, declaredType, declaredPur, declaredEff, tvar, loc) =>
         val e = visitExp(exp, subst0)
@@ -2569,20 +2546,7 @@ object Typer {
     def visit(p: KindedAst.Pattern): TypedAst.Pattern = p match {
       case KindedAst.Pattern.Wild(tvar, loc) => TypedAst.Pattern.Wild(subst0(tvar), loc)
       case KindedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(sym, subst0(tvar), loc)
-      case KindedAst.Pattern.Cst(Ast.Constant.Unit, loc) => TypedAst.Pattern.Unit(loc)
-      case KindedAst.Pattern.Cst(Ast.Constant.Bool(true), loc) => TypedAst.Pattern.True(loc)
-      case KindedAst.Pattern.Cst(Ast.Constant.Bool(false), loc) => TypedAst.Pattern.False(loc)
-      case KindedAst.Pattern.Cst(Ast.Constant.Char(lit), loc) => TypedAst.Pattern.Char(lit, loc)
-      case KindedAst.Pattern.Cst(Ast.Constant.Float32(lit), loc) => TypedAst.Pattern.Float32(lit, loc)
-      case KindedAst.Pattern.Cst(Ast.Constant.Float64(lit), loc) => TypedAst.Pattern.Float64(lit, loc)
-      case KindedAst.Pattern.Cst(Ast.Constant.BigDecimal(lit), loc) => TypedAst.Pattern.BigDecimal(lit, loc)
-      case KindedAst.Pattern.Cst(Ast.Constant.Int8(lit), loc) => TypedAst.Pattern.Int8(lit, loc)
-      case KindedAst.Pattern.Cst(Ast.Constant.Int16(lit), loc) => TypedAst.Pattern.Int16(lit, loc)
-      case KindedAst.Pattern.Cst(Ast.Constant.Int32(lit), loc) => TypedAst.Pattern.Int32(lit, loc)
-      case KindedAst.Pattern.Cst(Ast.Constant.Int64(lit), loc) => TypedAst.Pattern.Int64(lit, loc)
-      case KindedAst.Pattern.Cst(Ast.Constant.BigInt(lit), loc) => TypedAst.Pattern.BigInt(lit, loc)
-      case KindedAst.Pattern.Cst(Ast.Constant.Str(lit), loc) => TypedAst.Pattern.Str(lit, loc)
-      case KindedAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern")
+      case KindedAst.Pattern.Cst(cst, loc) => TypedAst.Pattern.Constant(cst, constantType(cst), loc)
 
       case KindedAst.Pattern.Tag(sym, pat, tvar, loc) => TypedAst.Pattern.Tag(sym, visit(pat), subst0(tvar), loc)
 
@@ -2759,6 +2723,25 @@ object Typer {
     * Returns an open schema type.
     */
   private def mkAnySchemaRowType(loc: SourceLocation)(implicit flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc, text = FallbackText("row"))
+
+  /**
+    * Returns the type of the given constant.
+    */
+  private def constantType(cst: Ast.Constant): Type = cst match {
+    case Constant.Unit => Type.Unit
+    case Constant.Null => Type.Null
+    case Constant.Bool(_) => Type.Bool
+    case Constant.Char(_) => Type.Char
+    case Constant.Float32(_) => Type.Float32
+    case Constant.Float64(_) => Type.Float64
+    case Constant.BigDecimal(_) => Type.BigDecimal
+    case Constant.Int8(_) => Type.Int8
+    case Constant.Int16(_) => Type.Int16
+    case Constant.Int32(_) => Type.Int32
+    case Constant.Int64(_) => Type.Int64
+    case Constant.BigInt(_) => Type.BigInt
+    case Constant.Str(_) => Type.Str
+  }
 
 
   /**

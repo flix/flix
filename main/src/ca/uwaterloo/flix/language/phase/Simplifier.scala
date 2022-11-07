@@ -61,33 +61,33 @@ object Simplifier {
 
       case TypedAst.Expression.Hole(sym, tpe, loc) => SimplifiedAst.Expression.HoleError(sym, tpe, loc)
 
-      case TypedAst.Expression.Unit(loc) => SimplifiedAst.Expression.Unit(loc)
+      case TypedAst.Expression.Constant(Ast.Constant.Unit, _, loc) => SimplifiedAst.Expression.Unit(loc)
 
-      case TypedAst.Expression.Null(tpe, loc) => SimplifiedAst.Expression.Null(tpe, loc)
+      case TypedAst.Expression.Constant(Ast.Constant.Null, tpe, loc) => SimplifiedAst.Expression.Null(tpe, loc)
 
-      case TypedAst.Expression.True(loc) => SimplifiedAst.Expression.True(loc)
+      case TypedAst.Expression.Constant(Ast.Constant.Bool(true), _, loc) => SimplifiedAst.Expression.True(loc)
 
-      case TypedAst.Expression.False(loc) => SimplifiedAst.Expression.False(loc)
+      case TypedAst.Expression.Constant(Ast.Constant.Bool(false), _, loc) => SimplifiedAst.Expression.False(loc)
 
-      case TypedAst.Expression.Char(lit, loc) => SimplifiedAst.Expression.Char(lit, loc)
+      case TypedAst.Expression.Constant(Ast.Constant.Char(lit), _, loc) => SimplifiedAst.Expression.Char(lit, loc)
 
-      case TypedAst.Expression.Float32(lit, loc) => SimplifiedAst.Expression.Float32(lit, loc)
+      case TypedAst.Expression.Constant(Ast.Constant.Float32(lit), _, loc) => SimplifiedAst.Expression.Float32(lit, loc)
 
-      case TypedAst.Expression.Float64(lit, loc) => SimplifiedAst.Expression.Float64(lit, loc)
+      case TypedAst.Expression.Constant(Ast.Constant.Float64(lit), _, loc) => SimplifiedAst.Expression.Float64(lit, loc)
 
-      case TypedAst.Expression.BigDecimal(lit, loc) => SimplifiedAst.Expression.BigDecimal(lit, loc)
+      case TypedAst.Expression.Constant(Ast.Constant.BigDecimal(lit), _, loc) => SimplifiedAst.Expression.BigDecimal(lit, loc)
 
-      case TypedAst.Expression.Int8(lit, loc) => SimplifiedAst.Expression.Int8(lit, loc)
+      case TypedAst.Expression.Constant(Ast.Constant.Int8(lit), _, loc) => SimplifiedAst.Expression.Int8(lit, loc)
 
-      case TypedAst.Expression.Int16(lit, loc) => SimplifiedAst.Expression.Int16(lit, loc)
+      case TypedAst.Expression.Constant(Ast.Constant.Int16(lit), _, loc) => SimplifiedAst.Expression.Int16(lit, loc)
 
-      case TypedAst.Expression.Int32(lit, loc) => SimplifiedAst.Expression.Int32(lit, loc)
+      case TypedAst.Expression.Constant(Ast.Constant.Int32(lit), _, loc) => SimplifiedAst.Expression.Int32(lit, loc)
 
-      case TypedAst.Expression.Int64(lit, loc) => SimplifiedAst.Expression.Int64(lit, loc)
+      case TypedAst.Expression.Constant(Ast.Constant.Int64(lit), _, loc) => SimplifiedAst.Expression.Int64(lit, loc)
 
-      case TypedAst.Expression.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit, loc)
+      case TypedAst.Expression.Constant(Ast.Constant.BigInt(lit), _, loc) => SimplifiedAst.Expression.BigInt(lit, loc)
 
-      case TypedAst.Expression.Str(lit, loc) => SimplifiedAst.Expression.Str(lit, loc)
+      case TypedAst.Expression.Constant(Ast.Constant.Str(lit), _, loc) => SimplifiedAst.Expression.Str(lit, loc)
 
       case TypedAst.Expression.Lambda(fparam, exp, tpe, loc) =>
         val p = visitFormalParam(fparam)
@@ -367,19 +367,20 @@ object Simplifier {
       * Returns the given pattern `pat0` as an expression.
       */
     def pat2exp(pat0: TypedAst.Pattern): SimplifiedAst.Expression = pat0 match {
-      case TypedAst.Pattern.Unit(loc) => SimplifiedAst.Expression.Unit(loc)
-      case TypedAst.Pattern.True(loc) => SimplifiedAst.Expression.True(loc)
-      case TypedAst.Pattern.False(loc) => SimplifiedAst.Expression.False(loc)
-      case TypedAst.Pattern.Char(lit, loc) => SimplifiedAst.Expression.Char(lit, loc)
-      case TypedAst.Pattern.Float32(lit, loc) => SimplifiedAst.Expression.Float32(lit, loc)
-      case TypedAst.Pattern.Float64(lit, loc) => SimplifiedAst.Expression.Float64(lit, loc)
-      case TypedAst.Pattern.BigDecimal(lit, loc) => SimplifiedAst.Expression.BigDecimal(lit, loc)
-      case TypedAst.Pattern.Int8(lit, loc) => SimplifiedAst.Expression.Int8(lit, loc)
-      case TypedAst.Pattern.Int16(lit, loc) => SimplifiedAst.Expression.Int16(lit, loc)
-      case TypedAst.Pattern.Int32(lit, loc) => SimplifiedAst.Expression.Int32(lit, loc)
-      case TypedAst.Pattern.Int64(lit, loc) => SimplifiedAst.Expression.Int64(lit, loc)
-      case TypedAst.Pattern.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit, loc)
-      case TypedAst.Pattern.Str(lit, loc) => SimplifiedAst.Expression.Str(lit, loc)
+      case TypedAst.Pattern.Constant(Ast.Constant.Unit, _, loc) => SimplifiedAst.Expression.Unit(loc)
+      case TypedAst.Pattern.Constant(Ast.Constant.Bool(true), _, loc) => SimplifiedAst.Expression.True(loc)
+      case TypedAst.Pattern.Constant(Ast.Constant.Bool(false), _, loc) => SimplifiedAst.Expression.False(loc)
+      case TypedAst.Pattern.Constant(Ast.Constant.Char(lit), _, loc) => SimplifiedAst.Expression.Char(lit, loc)
+      case TypedAst.Pattern.Constant(Ast.Constant.Float32(lit), _, loc) => SimplifiedAst.Expression.Float32(lit, loc)
+      case TypedAst.Pattern.Constant(Ast.Constant.Float64(lit), _, loc) => SimplifiedAst.Expression.Float64(lit, loc)
+      case TypedAst.Pattern.Constant(Ast.Constant.BigDecimal(lit), _, loc) => SimplifiedAst.Expression.BigDecimal(lit, loc)
+      case TypedAst.Pattern.Constant(Ast.Constant.Int8(lit), _, loc) => SimplifiedAst.Expression.Int8(lit, loc)
+      case TypedAst.Pattern.Constant(Ast.Constant.Int16(lit), _, loc) => SimplifiedAst.Expression.Int16(lit, loc)
+      case TypedAst.Pattern.Constant(Ast.Constant.Int32(lit), _, loc) => SimplifiedAst.Expression.Int32(lit, loc)
+      case TypedAst.Pattern.Constant(Ast.Constant.Int64(lit), _, loc) => SimplifiedAst.Expression.Int64(lit, loc)
+      case TypedAst.Pattern.Constant(Ast.Constant.BigInt(lit), _, loc) => SimplifiedAst.Expression.BigInt(lit, loc)
+      case TypedAst.Pattern.Constant(Ast.Constant.Str(lit), _, loc) => SimplifiedAst.Expression.Str(lit, loc)
+      case TypedAst.Pattern.Constant(Ast.Constant.Null, _, loc) => throw InternalCompilerException("unexpected null pattern")
       case TypedAst.Pattern.Tag(Ast.CaseSymUse(sym, _), p, tpe, loc) =>
         val e = pat2exp(p)
         SimplifiedAst.Expression.Tag(sym, e, tpe, e.purity, loc)
@@ -394,19 +395,7 @@ object Simplifier {
       * Returns `true` if the given pattern `pat0` is a literal.
       */
     def isPatLiteral(pat0: TypedAst.Pattern): Boolean = pat0 match {
-      case TypedAst.Pattern.Unit(loc) => true
-      case TypedAst.Pattern.True(loc) => true
-      case TypedAst.Pattern.False(loc) => true
-      case TypedAst.Pattern.Char(lit, loc) => true
-      case TypedAst.Pattern.Float32(lit, loc) => true
-      case TypedAst.Pattern.Float64(lit, loc) => true
-      case TypedAst.Pattern.BigDecimal(lit, loc) => true
-      case TypedAst.Pattern.Int8(lit, loc) => true
-      case TypedAst.Pattern.Int16(lit, loc) => true
-      case TypedAst.Pattern.Int32(lit, loc) => true
-      case TypedAst.Pattern.Int64(lit, loc) => true
-      case TypedAst.Pattern.BigInt(lit, loc) => true
-      case TypedAst.Pattern.Str(lit, loc) => true
+      case TypedAst.Pattern.Constant(_, _, _) => true
       case _ => false
     }
 

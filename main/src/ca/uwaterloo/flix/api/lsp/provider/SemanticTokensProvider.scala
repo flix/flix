@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, TypeConstraint}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
@@ -287,33 +286,7 @@ object SemanticTokensProvider {
 
     case Expression.Hole(_, _, _) => Iterator.empty
 
-    case Expression.Unit(_) => Iterator.empty
-
-    case Expression.Null(_, _) => Iterator.empty
-
-    case Expression.True(_) => Iterator.empty
-
-    case Expression.False(_) => Iterator.empty
-
-    case Expression.Char(_, _) => Iterator.empty
-
-    case Expression.Float32(_, _) => Iterator.empty
-
-    case Expression.Float64(_, _) => Iterator.empty
-
-    case Expression.BigDecimal(_, _) => Iterator.empty
-
-    case Expression.Int8(_, _) => Iterator.empty
-
-    case Expression.Int16(_, _) => Iterator.empty
-
-    case Expression.Int32(_, _) => Iterator.empty
-
-    case Expression.Int64(_, _) => Iterator.empty
-
-    case Expression.BigInt(_, _) => Iterator.empty
-
-    case Expression.Str(_, _) => Iterator.empty
+    case Expression.Constant(_, _, _) => Iterator.empty
 
     case Expression.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp)
@@ -577,31 +550,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
-    case Pattern.Unit(_) => Iterator.empty
-
-    case Pattern.True(_) => Iterator.empty
-
-    case Pattern.False(_) => Iterator.empty
-
-    case Pattern.Char(_, _) => Iterator.empty
-
-    case Pattern.Float32(_, _) => Iterator.empty
-
-    case Pattern.Float64(_, _) => Iterator.empty
-
-    case Pattern.BigDecimal(_, _) => Iterator.empty
-
-    case Pattern.Int8(_, _) => Iterator.empty
-
-    case Pattern.Int16(_, _) => Iterator.empty
-
-    case Pattern.Int32(_, _) => Iterator.empty
-
-    case Pattern.Int64(_, _) => Iterator.empty
-
-    case Pattern.BigInt(_, _) => Iterator.empty
-
-    case Pattern.Str(_, _) => Iterator.empty
+    case Pattern.Constant(_, _, _) => Iterator.empty
 
     case Pattern.Tag(Ast.CaseSymUse(_, loc), pat, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)

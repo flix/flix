@@ -93,33 +93,7 @@ object CodeHinter {
 
     case Expression.Hole(_, _, _) => Nil
 
-    case Expression.Unit(_) => Nil
-
-    case Expression.Null(_, _) => Nil
-
-    case Expression.True(_) => Nil
-
-    case Expression.False(_) => Nil
-
-    case Expression.Char(_, _) => Nil
-
-    case Expression.Float32(_, _) => Nil
-
-    case Expression.Float64(_, _) => Nil
-
-    case Expression.BigDecimal(_, _) => Nil
-
-    case Expression.Int8(_, _) => Nil
-
-    case Expression.Int16(_, _) => Nil
-
-    case Expression.Int32(_, _) => Nil
-
-    case Expression.Int64(_, _) => Nil
-
-    case Expression.BigInt(_, _) => Nil
-
-    case Expression.Str(_, _) => Nil
+    case Expression.Constant(_, _, _) => Nil
 
     case Expression.Lambda(_, exp, _, _) =>
       checkPurity(exp.pur, exp.loc) ++ visitExp(exp)

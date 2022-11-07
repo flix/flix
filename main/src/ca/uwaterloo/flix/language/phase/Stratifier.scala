@@ -95,33 +95,7 @@ object Stratifier {
     * Returns [[Success]] if the expression is stratified. Otherwise returns [[Failure]] with a [[StratificationError]].
     */
   private def visitExp(exp0: Expression)(implicit g: LabelledGraph, flix: Flix): Validation[Expression, StratificationError] = exp0 match {
-    case Expression.Unit(_) => exp0.toSuccess
-
-    case Expression.Null(_, _) => exp0.toSuccess
-
-    case Expression.True(_) => exp0.toSuccess
-
-    case Expression.False(_) => exp0.toSuccess
-
-    case Expression.Char(_, _) => exp0.toSuccess
-
-    case Expression.Float32(_, _) => exp0.toSuccess
-
-    case Expression.Float64(_, _) => exp0.toSuccess
-
-    case Expression.BigDecimal(_, _) => exp0.toSuccess
-
-    case Expression.Int8(_, _) => exp0.toSuccess
-
-    case Expression.Int16(_, _) => exp0.toSuccess
-
-    case Expression.Int32(_, _) => exp0.toSuccess
-
-    case Expression.Int64(_, _) => exp0.toSuccess
-
-    case Expression.BigInt(_, _) => exp0.toSuccess
-
-    case Expression.Str(_, _) => exp0.toSuccess
+    case Expression.Constant(_, _, _) => exp0.toSuccess
 
     case Expression.Wild(_, _) => exp0.toSuccess
 
@@ -535,33 +509,7 @@ object Stratifier {
     * Returns the labelled graph of the given expression `exp0`.
     */
   private def labelledGraphOfExp(exp0: Expression): LabelledGraph = exp0 match {
-    case Expression.Unit(_) => LabelledGraph.empty
-
-    case Expression.Null(_, _) => LabelledGraph.empty
-
-    case Expression.True(_) => LabelledGraph.empty
-
-    case Expression.False(_) => LabelledGraph.empty
-
-    case Expression.Char(_, _) => LabelledGraph.empty
-
-    case Expression.Float32(_, _) => LabelledGraph.empty
-
-    case Expression.Float64(_, _) => LabelledGraph.empty
-
-    case Expression.BigDecimal(_, _) => LabelledGraph.empty
-
-    case Expression.Int8(_, _) => LabelledGraph.empty
-
-    case Expression.Int16(_, _) => LabelledGraph.empty
-
-    case Expression.Int32(_, _) => LabelledGraph.empty
-
-    case Expression.Int64(_, _) => LabelledGraph.empty
-
-    case Expression.BigInt(_, _) => LabelledGraph.empty
-
-    case Expression.Str(_, _) => LabelledGraph.empty
+    case Expression.Constant(_, _, _) => LabelledGraph.empty
 
     case Expression.Wild(_, _) => LabelledGraph.empty
 
