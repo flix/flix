@@ -861,7 +861,7 @@ object Weeder {
 
       mapN(visitFormalParams(fparams, Presence.Optional), visitExp(exp1, senv), visitExp(exp2, senv)) {
         case (fp, e1, e2) =>
-          val lambda = mkCurried(fp, e1, loc)
+          val lambda = mkCurried(fp, e1, e1.loc)
           WeededAst.Expression.LetRec(ident, mod, lambda, e2, loc)
       }
 
