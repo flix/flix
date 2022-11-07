@@ -181,7 +181,7 @@ namespace Graph {
     ///
     pub def inDegrees(g: m[(t, t)]): Map[t, Int32] with Foldable[m], Boxable[t] = {
         use Option.{getWithDefault, map};
-        let edges = project g into Edge;
+        let edges = inject g into Edge;
         let in = #{
             // Careful use of option type here to make sure the empty set is not
             // the bottom lattice element. that would exclude degrees of zero.
@@ -202,7 +202,7 @@ namespace Graph {
     ///
     pub def outDegrees(g: m[(t, t)]): Map[t, Int32] with Foldable[m], Boxable[t] = {
         use Option.{getWithDefault, map};
-        let edges = project g into Edge;
+        let edges = inject g into Edge;
         let out = #{
             // Careful use of option type here to make sure the empty set is not
             // the bottom lattice element. that would exclude degrees of zero.
