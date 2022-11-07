@@ -557,4 +557,21 @@ class TestSafety extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.UnsafeSupercast](result)
   }
+
+  test("TestSupercast.04") {
+    val input =
+      """
+        |def f(): Unit \ Impure =
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
+        |    let _ =
+        |        if (true)
+        |            supercast(StringBuilder())
+        |        else
+        |            supercast(newStringBuilder());
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.UnsafeSupercast](result)
+  }
 }
