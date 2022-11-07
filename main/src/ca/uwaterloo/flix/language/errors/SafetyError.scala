@@ -170,6 +170,45 @@ object SafetyError {
     override def explain(formatter: Formatter): Option[String] = None
   }
 
+  case class NonJavaTypeSupercast(nonJavaType: Type, other: Type, loc: SourceLocation) extends SafetyError {
+    override def summary: String = "Unsafe supercast"
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> The following supercast tries to cast a non-java to a java type.
+         |
+         |${code(loc, "the supercast occurs here.")}
+         |
+         |Non-java type:    $nonJavaType
+         |Tried casting to: $other
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  case class TypeVariableSupercast(actual: Type, expected: Type, loc: SourceLocation) extends SafetyError {
+    override def summary: String = "Unsafe supercast."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> The following supercast attempts to cast to a type variable.
+         |
+         |${code(loc, "the supercast occurs here.")}
+         |
+         |Actual type:      $actual
+         |Tried casting to: $expected
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      s"""Did you try to supercast two types at the same time?
+         |""".stripMargin
+    })
+  }
+
   /**
     * An error raised to indicate an illegal object derivation. Objects can only be derived from Java interfaces.
     *

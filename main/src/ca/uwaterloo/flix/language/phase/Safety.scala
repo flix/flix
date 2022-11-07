@@ -393,16 +393,38 @@ object Safety {
 
   }
 
+  sealed trait JavaSubTypeResult
+
+  object JavaSubTypeResult {
+
+    case object Castable extends JavaSubTypeResult
+
+    case object NonCastable extends JavaSubTypeResult
+
+    case class NonJavaType(tpe: Type) extends JavaSubTypeResult
+
+    case object TypeVariable extends JavaSubTypeResult
+
+  }
+
   /**
     * Returns true if `tpe1` and `tpe2` are both java types
     * and `tpe1` is a subtype of `tpe2`.
     */
-  private def isJavaSubTypeOf(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = (tpe1.baseType, tpe2.baseType) match {
-    // TODO: Maybe return an enum denoting the different cases: castable, not castable, not java type, type variable (2 supercasts?)
+  private def isJavaSubTypeOf(tpe1: Type, tpe2: Type)(implicit flix: Flix): JavaSubTypeResult = (tpe1.baseType, tpe2.baseType) match {
     case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
-      right.isAssignableFrom(left)
+      if (right.isAssignableFrom(left)) JavaSubTypeResult.Castable else JavaSubTypeResult.NonCastable
 
-    case _ => false
+    case (Type.Cst(TypeConstructor.Native(_), _), _) =>
+      JavaSubTypeResult.NonJavaType(tpe2)
+
+    case (_, Type.Cst(TypeConstructor.Native(_), _)) =>
+      JavaSubTypeResult.NonJavaType(tpe1)
+
+    case (_, Type.Var(_, _)) =>
+      JavaSubTypeResult.TypeVariable
+
+    case _ => JavaSubTypeResult.NonCastable
   }
 
   /**
@@ -423,10 +445,13 @@ object Safety {
   private def checkSupercastSafety(exp: Expression, tpe: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
     val tpe1 = Type.eraseAliases(exp.tpe)
     val tpe2 = Type.eraseAliases(tpe)
-    if (isJavaSubTypeOf(tpe1, tpe2))
-      Nil
-    else
-      UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
+    isJavaSubTypeOf(tpe1, tpe2) match {
+      case JavaSubTypeResult.Castable => Nil
+      case JavaSubTypeResult.NonCastable => UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
+      case JavaSubTypeResult.NonJavaType(t) if t == tpe1 => NonJavaTypeSupercast(exp.tpe, tpe, loc) :: Nil
+      case JavaSubTypeResult.NonJavaType(_) => NonJavaTypeSupercast(tpe, exp.tpe, loc) :: Nil
+      case JavaSubTypeResult.TypeVariable => TypeVariableSupercast(exp.tpe, tpe, loc) :: Nil
+    }
   }
 
   /**
