@@ -327,6 +327,9 @@ object Safety {
 
   }
 
+  /**
+    * Returns a list of errors if the the supercast is invalid.
+    */
   private def checkSupercastSafety(exp0: Expression, exp: Expression, tpe: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
     val tpe1 = Type.eraseAliases(exp.tpe)
     val tpe2 = Type.eraseAliases(tpe)
