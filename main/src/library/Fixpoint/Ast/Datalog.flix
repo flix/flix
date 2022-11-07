@@ -72,12 +72,12 @@ namespace Fixpoint/Ast {
                 let sb = new StringBuilder(r);
                 Map.foreach(ramSym -> rel -> match toDenotation(ramSym) {
                     case Relational => Map.foreach((tuple, _) -> {
-                        let tupleString = Fixpoint/Tuple.toList(tuple) |> List.map(stringify) |> List.join(", ");
+                        let tupleString = Fixpoint/Tuple.toList(tuple) |> List.map(Debug.stringify) |> List.join(", ");
                         StringBuilder.appendLine!("${ramSym}(${tupleString}).", sb)
                     }, rel)
                     case Latticenal(_) => Map.foreach((tuple, lat) -> {
-                        let tupleString = Fixpoint/Tuple.toList(tuple) |> List.map(stringify) |> List.join(", ");
-                        StringBuilder.appendLine!("${ramSym}(${tupleString}; ${stringify(lat)}).", sb)
+                        let tupleString = Fixpoint/Tuple.toList(tuple) |> List.map(Debug.stringify) |> List.join(", ");
+                        StringBuilder.appendLine!("${ramSym}(${tupleString}; %{lat}).", sb)
                     }, rel)
                 }, db);
                 StringBuilder.toString(sb)
