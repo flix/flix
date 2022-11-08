@@ -1615,7 +1615,7 @@ object Lowering {
     */
   def mkLetMatch(exp: Expression, pat: Pattern, body: Expression): Expression = {
     val expLoc = exp.loc.asSynthetic
-    val rule = List(MatchRule(pat, Expression.True(pat.loc.asSynthetic), body))
+    val rule = List(MatchRule(pat, None, body))
     val pur = Type.mkAnd(exp.pur, body.pur, expLoc)
     val eff = Type.mkUnion(exp.eff, body.eff, expLoc)
     Expression.Match(exp, rule, body.tpe, pur, eff, expLoc)
