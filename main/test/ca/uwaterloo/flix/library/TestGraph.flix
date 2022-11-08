@@ -782,6 +782,142 @@ namespace TestGraph {
     }
 
     ////////////////////////////////////////////////////////////////////////////
+    // inDegrees                                                              //
+    ////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def inDegrees01(): Bool = {
+        Graph.inDegrees(graph01()) == Map#{}
+    }
+
+    @test
+    def inDegrees02(): Bool = {
+        Graph.inDegrees(graph02()) == Map#{
+            1 => 0,
+            2 => 1
+        }
+    }
+
+    @test
+    def inDegrees03(): Bool = {
+        Graph.inDegrees(graph03()) == Map#{
+            1 => 0,
+            2 => 1,
+            3 => 0,
+            4 => 1
+        }
+    }
+
+    @test
+    def inDegrees04(): Bool = {
+        Graph.inDegrees(graph04()) == Map#{
+            1 => 0,
+            2 => 1,
+            3 => 1
+        }
+    }
+
+    @test
+    pub def inDegrees05(): Bool = {
+        debug(Graph.inDegrees(graph05())) == Map#{
+            1 => 0,
+            2 => 1,
+            3 => 1,
+            4 => 1
+        }
+    }
+
+    @test
+    def inDegrees06(): Bool = {
+        Graph.inDegrees(graph06()) == Map#{
+            1 => 1,
+            2 => 1,
+            3 => 1,
+            4 => 1
+        }
+    }
+
+    @test
+    def inDegrees07(): Bool = {
+        Graph.inDegrees(graph07()) == Map#{
+            1 => 1,
+            2 => 1,
+            3 => 1,
+            4 => 1,
+            5 => 2,
+            6 => 1
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // outDegrees                                                             //
+    ////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def outDegrees01(): Bool = {
+        Graph.outDegrees(graph01()) == Map#{}
+    }
+
+    @test
+    def outDegrees02(): Bool = {
+        Graph.outDegrees(graph02()) == Map#{
+            1 => 1,
+            2 => 0
+        }
+    }
+
+    @test
+    def outDegrees03(): Bool = {
+        Graph.outDegrees(graph03()) == Map#{
+            1 => 1,
+            2 => 0,
+            3 => 1,
+            4 => 0
+        }
+    }
+
+    @test
+    def outDegrees04(): Bool = {
+        Graph.outDegrees(graph04()) == Map#{
+            1 => 1,
+            2 => 1,
+            3 => 0
+        }
+    }
+
+    @test
+    pub def outDegrees05(): Bool = {
+        debug(Graph.outDegrees(graph05())) == Map#{
+            1 => 1,
+            2 => 1,
+            3 => 1,
+            4 => 0
+        }
+    }
+
+    @test
+    def outDegrees06(): Bool = {
+        Graph.outDegrees(graph06()) == Map#{
+            1 => 1,
+            2 => 1,
+            3 => 1,
+            4 => 1
+        }
+    }
+
+    @test
+    def outDegrees07(): Bool = {
+        Graph.outDegrees(graph07()) == Map#{
+            1 => 1,
+            2 => 2,
+            3 => 1,
+            4 => 1,
+            5 => 1,
+            6 => 1
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
     // toGraphviz                                                             //
     ////////////////////////////////////////////////////////////////////////////
 
@@ -871,5 +1007,4 @@ namespace TestGraph {
         );
         test1 or test2
     }
-
 }
