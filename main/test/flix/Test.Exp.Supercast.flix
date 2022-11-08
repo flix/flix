@@ -32,4 +32,10 @@ namespace Test/Exp/Supercast {
         let sb = newStringBuilder();
         f(supercast(append(sb, "Hello")))
 
+    @test
+    def testSupercast05(): Unit \ Impure =
+        import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
+        let f = (_: ##java.lang.Comparable[StringBuilder]) -> ();
+        f(supercast(newStringBuilder()))
+
 }
