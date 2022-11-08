@@ -95,7 +95,7 @@ object Stratifier {
     * Returns [[Success]] if the expression is stratified. Otherwise returns [[Failure]] with a [[StratificationError]].
     */
   private def visitExp(exp0: Expression)(implicit g: LabelledGraph, flix: Flix): Validation[Expression, StratificationError] = exp0 match {
-    case Expression.Constant(_, _, _) => exp0.toSuccess
+    case Expression.Cst(_, _, _) => exp0.toSuccess
 
     case Expression.Wild(_, _) => exp0.toSuccess
 
@@ -509,7 +509,7 @@ object Stratifier {
     * Returns the labelled graph of the given expression `exp0`.
     */
   private def labelledGraphOfExp(exp0: Expression): LabelledGraph = exp0 match {
-    case Expression.Constant(_, _, _) => LabelledGraph.empty
+    case Expression.Cst(_, _, _) => LabelledGraph.empty
 
     case Expression.Wild(_, _) => LabelledGraph.empty
 

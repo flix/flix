@@ -135,7 +135,7 @@ object EarlyTreeShaker {
     * Returns the function and signature symbols reachable from the given expression `e0`.
     */
   private def visitExp(e0: Expression): Set[ReachableSym] = e0 match {
-    case Expression.Constant(_, _, _) =>
+    case Expression.Cst(_, _, _) =>
       Set.empty
 
     case Expression.Wild(_, _) =>

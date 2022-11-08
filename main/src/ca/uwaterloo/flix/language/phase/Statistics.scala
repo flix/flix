@@ -80,7 +80,7 @@ object Statistics {
     val base = Counter.of(getName(exp0))
 
     val subExprs = exp0 match {
-      case Expression.Constant(_, _, _) => Counter.empty
+      case Expression.Cst(_, _, _) => Counter.empty
       case Expression.Wild(tpe, loc) => Counter.empty
       case Expression.Var(sym, tpe, loc) => Counter.empty
       case Expression.Def(sym, tpe, loc) => Counter.empty

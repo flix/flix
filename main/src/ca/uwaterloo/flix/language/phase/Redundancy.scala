@@ -250,7 +250,7 @@ object Redundancy {
     * Returns the symbols used in the given expression `e0` under the given environment `env0`.
     */
   private def visitExp(e0: Expression, env0: Env, rc: RecursionContext)(implicit flix: Flix): Used = e0 match {
-    case Expression.Constant(_, _, _) => Used.empty
+    case Expression.Cst(_, _, _) => Used.empty
 
     case Expression.Wild(_, _) => Used.empty
 
@@ -792,7 +792,7 @@ object Redundancy {
   private def visitPat(pat0: Pattern): Used = pat0 match {
     case Pattern.Wild(_, _) => Used.empty
     case Pattern.Var(_, _, _) => Used.empty
-    case Pattern.Constant(_, _, _) => Used.empty
+    case Pattern.Cst(_, _, _) => Used.empty
     case Pattern.Tag(Ast.CaseSymUse(sym, _), _, _, _) => Used.of(sym.enumSym, sym)
     case Pattern.Tuple(elms, _, _) => visitPats(elms)
     case Pattern.Array(elms, _, _) => visitPats(elms)
@@ -943,7 +943,7 @@ object Redundancy {
   private def freeVars(p0: Pattern): Set[Symbol.VarSym] = p0 match {
     case Pattern.Wild(_, _) => Set.empty
     case Pattern.Var(sym, _, _) => Set(sym)
-    case Pattern.Constant(_, _, _) => Set.empty
+    case Pattern.Cst(_, _, _) => Set.empty
     case Pattern.Tag(_, pat, _, _) => freeVars(pat)
     case Pattern.Tuple(pats, _, _) => pats.foldLeft(Set.empty[Symbol.VarSym]) {
       case (acc, pat) => acc ++ freeVars(pat)

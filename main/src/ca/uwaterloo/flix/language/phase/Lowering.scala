@@ -259,9 +259,9 @@ object Lowering {
     * Lowers the given expression `exp0`.
     */
   private def visitExp(exp0: Expression)(implicit root: Root, flix: Flix): Expression = exp0 match {
-    case Expression.Constant(cst, tpe, loc) =>
+    case Expression.Cst(cst, tpe, loc) =>
       val t = visitType(tpe)
-      Expression.Constant(cst, t, loc)
+      Expression.Cst(cst, t, loc)
 
     case Expression.Wild(tpe, loc) =>
       val t = visitType(tpe)
@@ -320,12 +320,12 @@ object Lowering {
 
     case Expression.Region(_, loc) =>
       // Introduce a Unit value to represent the Region value.
-      Expression.Constant(Ast.Constant.Unit, Type.Unit, loc)
+      Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
 
     case Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) =>
       // Introduce a Unit value to represent the Region value.
       val mod = Ast.Modifiers.Empty
-      val e1 = Expression.Constant(Ast.Constant.Unit, Type.Unit, loc)
+      val e1 = Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
       val e2 = visitExp(exp)
       Expression.Let(sym, mod, e1, e2, tpe, pur, eff, loc)
 
@@ -749,7 +749,7 @@ object Lowering {
       val t = visitType(tpe)
       Pattern.Var(sym, t, loc)
 
-    case Pattern.Constant(_, _, _) =>
+    case Pattern.Cst(_, _, _) =>
       pat0
 
     case Pattern.Tag(sym, pat, tpe, loc) =>
@@ -1007,8 +1007,8 @@ object Lowering {
         mkBodyTermLit(box(Expression.Var(sym, tpe, loc)))
       }
 
-    case Pattern.Constant(cst, tpe, loc) =>
-      mkBodyTermLit(box(Expression.Constant(cst, tpe, loc)))
+    case Pattern.Cst(cst, tpe, loc) =>
+      mkBodyTermLit(box(Expression.Cst(cst, tpe, loc)))
 
     case Pattern.Tag(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
 
@@ -1051,7 +1051,7 @@ object Lowering {
     * Constructs a `Fixpoint/Ast.BodyTerm.Wild` from the given source location `loc`.
     */
   private def mkBodyTermWild(loc: SourceLocation): Expression = {
-    val innerExp = Expression.Constant(Ast.Constant.Unit, Type.Unit, loc)
+    val innerExp = Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
     mkTag(Enums.BodyTerm, "Wild", innerExp, Types.BodyTerm, loc)
   }
 
@@ -1076,7 +1076,7 @@ object Lowering {
     */
   private def mkDenotation(d: Denotation, tpeOpt: Option[Type], loc: SourceLocation)(implicit root: Root, flix: Flix): Expression = d match {
     case Relational =>
-      val innerExp = Expression.Constant(Ast.Constant.Unit, Type.Unit, loc)
+      val innerExp = Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
       mkTag(Enums.Denotation, "Relational", innerExp, Types.Denotation, loc)
 
     case Latticenal =>
@@ -1095,7 +1095,7 @@ object Lowering {
           val Box: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Ast.box")
           val BoxType: Type = Type.mkPureArrow(unboxedDenotationType, boxedDenotationType, loc)
 
-          val innerApply = Expression.Apply(Expression.Def(Lattice, LatticeType, loc), List(Expression.Constant(Ast.Constant.Unit, Type.Unit, loc)), unboxedDenotationType, Type.Pure, Type.Empty, loc)
+          val innerApply = Expression.Apply(Expression.Def(Lattice, LatticeType, loc), List(Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)), unboxedDenotationType, Type.Pure, Type.Empty, loc)
           Expression.Apply(Expression.Def(Box, BoxType, loc), List(innerApply), boxedDenotationType, Type.Pure, Type.Empty, loc)
       }
   }
@@ -1105,11 +1105,11 @@ object Lowering {
     */
   private def mkPolarity(p: Polarity, loc: SourceLocation): Expression = p match {
     case Polarity.Positive =>
-      val innerExp = Expression.Constant(Ast.Constant.Unit, Type.Unit, loc)
+      val innerExp = Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
       mkTag(Enums.Polarity, "Positive", innerExp, Types.Polarity, loc)
 
     case Polarity.Negative =>
-      val innerExp = Expression.Constant(Ast.Constant.Unit, Type.Unit, loc)
+      val innerExp = Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
       mkTag(Enums.Polarity, "Negative", innerExp, Types.Polarity, loc)
   }
 
@@ -1118,11 +1118,11 @@ object Lowering {
     */
   private def mkFixity(f: Ast.Fixity, loc: SourceLocation): Expression = f match {
     case Fixity.Loose =>
-      val innerExp = Expression.Constant(Ast.Constant.Unit, Type.Unit, loc)
+      val innerExp = Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
       mkTag(Enums.Fixity, "Loose", innerExp, Types.Fixity, loc)
 
     case Fixity.Fixed =>
-      val innerExp = Expression.Constant(Ast.Constant.Unit, Type.Unit, loc)
+      val innerExp = Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
       mkTag(Enums.Fixity, "Fixed", innerExp, Types.Fixity, loc)
   }
 
@@ -1131,8 +1131,8 @@ object Lowering {
     */
   private def mkPredSym(pred: Name.Pred): Expression = pred match {
     case Name.Pred(sym, loc) =>
-      val nameExp = Expression.Constant(Ast.Constant.Str(sym), Type.Str, loc)
-      val idExp = Expression.Constant(Ast.Constant.Int64(0), Type.Int64, loc)
+      val nameExp = Expression.Cst(Ast.Constant.Str(sym), Type.Str, loc)
+      val idExp = Expression.Cst(Ast.Constant.Int64(0), Type.Int64, loc)
       val inner = mkTuple(List(nameExp, idExp), loc)
       mkTag(Enums.PredSym, "PredSym", inner, Types.PredSym, loc)
   }
@@ -1141,7 +1141,7 @@ object Lowering {
     * Constructs a `Fixpoint/Ast.VarSym` from the given variable symbol `sym`.
     */
   private def mkVarSym(sym: Symbol.VarSym): Expression = {
-    val nameExp = Expression.Constant(Ast.Constant.Str(sym.text), Type.Str, sym.loc)
+    val nameExp = Expression.Cst(Ast.Constant.Str(sym.text), Type.Str, sym.loc)
     mkTag(Enums.VarSym, "VarSym", nameExp, Types.VarSym, sym.loc)
   }
 
@@ -1301,8 +1301,8 @@ object Lowering {
     val selectTpe = Type.mkImpureUncurriedArrow(List(adminArray.tpe, Type.Bool), selectRetTpe, loc)
     val select = Expression.Def(Defs.ChannelSelectFrom, selectTpe, loc)
     val blocking = default match {
-      case Some(_) => Expression.Constant(Ast.Constant.Bool(false), Type.Bool, loc)
-      case None => Expression.Constant(Ast.Constant.Bool(true), Type.Bool, loc)
+      case Some(_) => Expression.Cst(Ast.Constant.Bool(false), Type.Bool, loc)
+      case None => Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
     }
     Expression.Apply(select, List(adminArray, blocking), selectRetTpe, Type.Impure, Type.Empty, loc)
   }
@@ -1316,7 +1316,7 @@ object Lowering {
     rs.zip(channels).zipWithIndex map {
       case ((SelectChannelRule(sym, chan, exp), (chSym, _)), i) =>
         val locksSym = mkLetSym("locks", loc)
-        val pat = mkTuplePattern(List(Pattern.Constant(Ast.Constant.Int32(i), Type.Int32, loc), Pattern.Var(locksSym, locksType, loc)), loc)
+        val pat = mkTuplePattern(List(Pattern.Cst(Ast.Constant.Int32(i), Type.Int32, loc), Pattern.Var(locksSym, locksType, loc)), loc)
         val getTpe = Type.eraseTopAliases(chan.tpe) match {
           case Type.Apply(_, t, _) => t
           case _ => throw InternalCompilerException("Unexpected channel type found.")
@@ -1335,7 +1335,7 @@ object Lowering {
   private def mkSelectDefaultCase(default: Option[Expression], t: Type, loc: SourceLocation)(implicit flix: Flix): List[MatchRule] = {
     default match {
       case Some(defaultExp) =>
-        val pat = mkTuplePattern(List(Pattern.Constant(Ast.Constant.Int32(-1), Type.Int32, loc), mkWildPattern(loc)), loc)
+        val pat = mkTuplePattern(List(Pattern.Cst(Ast.Constant.Int32(-1), Type.Int32, loc), mkWildPattern(loc)), loc)
         val defaultMatch = MatchRule(pat, None, defaultExp)
         List(defaultMatch)
       case _ =>
@@ -1408,7 +1408,7 @@ object Lowering {
     val tpe = Type.mkArray(elmType, Type.Pure, loc)
     val pur = Type.Pure
     val eff = Type.Empty
-    val reg = Expression.Constant(Ast.Constant.Unit, Type.Unit, loc)
+    val reg = Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
     Expression.ArrayLit(exps, reg, tpe, pur, eff, loc)
   }
 
@@ -1426,7 +1426,7 @@ object Lowering {
     * Returns a `Nil` expression with type list of `elmType`.
     */
   private def mkNil(elmType: Type, loc: SourceLocation): Expression = {
-    mkTag(Enums.FList, "Nil", Expression.Constant(Ast.Constant.Unit, Type.Unit, loc), Types.mkList(elmType, loc), loc)
+    mkTag(Enums.FList, "Nil", Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), Types.mkList(elmType, loc), loc)
   }
 
   /**
@@ -1510,7 +1510,7 @@ object Lowering {
     chanSymsWithExps.foldRight(spawns: Expression) {
       case ((sym, e), acc) =>
         val loc = e.loc.asSynthetic
-        val chan = mkNewChannel(Expression.Constant(Ast.Constant.Int32(1), Type.Int32, loc), mkChannelTpe(e.tpe, loc), Type.Impure, Type.Empty, loc) // The channel exp `chan 1`
+        val chan = mkNewChannel(Expression.Cst(Ast.Constant.Int32(1), Type.Int32, loc), mkChannelTpe(e.tpe, loc), Type.Impure, Type.Empty, loc) // The channel exp `chan 1`
         Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), chan, acc, acc.tpe, Type.mkAnd(e.pur, acc.pur, loc), Type.mkUnion(e.eff, acc.eff, loc), loc) // The let-binding `let ch = chan 1`
     }
   }
@@ -1656,7 +1656,7 @@ object Lowering {
     * Applies the given substitution `subst` to the given expression `exp0`.
     */
   private def substExp(exp0: Expression, subst: Map[Symbol.VarSym, Symbol.VarSym]): Expression = exp0 match {
-    case Expression.Constant(_, _, _) => exp0
+    case Expression.Cst(_, _, _) => exp0
 
     case Expression.Wild(_, _) => exp0
 

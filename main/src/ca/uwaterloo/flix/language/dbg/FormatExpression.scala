@@ -11,7 +11,7 @@ object FormatExpression {
     * TypedAst.
     */
   def format(e0: TypedAst.Expression): String = e0 match {
-    case TypedAst.Expression.Constant(cst, _, _) => FormatConstant.format(cst)
+    case TypedAst.Expression.Cst(cst, _, _) => FormatConstant.format(cst)
     case TypedAst.Expression.Wild(_, _) => "_"
     case TypedAst.Expression.Var(sym, _, _) => s"Sym($sym)"
     case TypedAst.Expression.Def(sym, _, _) => s"Def($sym)"

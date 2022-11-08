@@ -1874,9 +1874,9 @@ object Typer {
         TypedAst.Expression.Hole(sym, subst0(tpe), loc)
 
       // change null to Unit type
-      case KindedAst.Expression.Cst(Ast.Constant.Null, loc) => TypedAst.Expression.Constant(Ast.Constant.Null, Type.Unit, loc)
+      case KindedAst.Expression.Cst(Ast.Constant.Null, loc) => TypedAst.Expression.Cst(Ast.Constant.Null, Type.Unit, loc)
 
-      case KindedAst.Expression.Cst(cst, loc) => TypedAst.Expression.Constant(cst, constantType(cst), loc)
+      case KindedAst.Expression.Cst(cst, loc) => TypedAst.Expression.Cst(cst, constantType(cst), loc)
 
       case KindedAst.Expression.Apply(exp, exps, tvar, pvar, evar, loc) =>
         val e = visitExp(exp, subst0)
@@ -2114,7 +2114,7 @@ object Typer {
 
       case KindedAst.Expression.Cast(KindedAst.Expression.Cst(Ast.Constant.Null, _), _, _, _, tvar, loc) =>
         val t = subst0(tvar)
-        TypedAst.Expression.Constant(Ast.Constant.Null, t, loc)
+        TypedAst.Expression.Cst(Ast.Constant.Null, t, loc)
 
       case KindedAst.Expression.Cast(exp, declaredType, declaredPur, declaredEff, tvar, loc) =>
         val e = visitExp(exp, subst0)
@@ -2546,7 +2546,7 @@ object Typer {
     def visit(p: KindedAst.Pattern): TypedAst.Pattern = p match {
       case KindedAst.Pattern.Wild(tvar, loc) => TypedAst.Pattern.Wild(subst0(tvar), loc)
       case KindedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(sym, subst0(tvar), loc)
-      case KindedAst.Pattern.Cst(cst, loc) => TypedAst.Pattern.Constant(cst, constantType(cst), loc)
+      case KindedAst.Pattern.Cst(cst, loc) => TypedAst.Pattern.Cst(cst, constantType(cst), loc)
 
       case KindedAst.Pattern.Tag(sym, pat, tvar, loc) => TypedAst.Pattern.Tag(sym, visit(pat), subst0(tvar), loc)
 

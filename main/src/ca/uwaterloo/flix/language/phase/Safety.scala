@@ -61,7 +61,7 @@ object Safety {
   private def visitExp(e0: Expression, renv: RigidityEnv)(implicit flix: Flix): List[CompilationMessage] = {
 
     def visit(exp0: Expression): List[CompilationMessage] = exp0 match {
-      case Expression.Constant(_, _, _) => Nil
+      case Expression.Cst(_, _, _) => Nil
 
       case Expression.Wild(_, _) => Nil
 
@@ -561,7 +561,7 @@ object Safety {
   private def visitPat(term: Pattern, loc: SourceLocation): List[CompilationMessage] = term match {
     case Pattern.Wild(_, _) => List(IllegalNegativelyBoundWildcard(loc))
     case Pattern.Var(_, _, _) => Nil
-    case Pattern.Constant(_, _, _) => Nil
+    case Pattern.Cst(_, _, _) => Nil
     case Pattern.Tag(_, pat, _, _) => visitPat(pat, loc)
     case Pattern.Tuple(elms, _, _) => visitPats(elms, loc)
     case Pattern.Array(elms, _, _) => visitPats(elms, loc)

@@ -50,7 +50,7 @@ object Regions {
     }
 
   private def visitExp(exp0: Expression)(implicit scope: List[Type.Var], flix: Flix): Validation[Unit, CompilationMessage] = exp0 match {
-    case Expression.Constant(_, _, _) => ().toSuccess
+    case Expression.Cst(_, _, _) => ().toSuccess
 
     case Expression.Wild(_, _) => ().toSuccess
 

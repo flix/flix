@@ -155,7 +155,7 @@ object Indexer {
     * Returns a reverse index for the given expression `exp0`.
     */
   private def visitExp(exp0: Expression): Index = exp0 match {
-    case Expression.Constant(_, _, _) =>
+    case Expression.Cst(_, _, _) =>
       Index.occurrenceOf(exp0)
 
     case Expression.Wild(_, _) =>
@@ -422,7 +422,7 @@ object Indexer {
     case Pattern.Wild(_, _) => Index.occurrenceOf(pat0)
     case Pattern.Var(sym, tpe, _) =>
       Index.occurrenceOf(pat0) ++ Index.occurrenceOf(sym, tpe)
-    case Pattern.Constant(_, _, _) => Index.occurrenceOf(pat0)
+    case Pattern.Cst(_, _, _) => Index.occurrenceOf(pat0)
     case Pattern.Tag(Ast.CaseSymUse(sym, loc), pat, _, _) =>
       val parent = Entity.Pattern(pat0)
       Index.occurrenceOf(pat0) ++ visitPat(pat) ++ Index.useOf(sym, loc, parent)

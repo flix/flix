@@ -69,7 +69,7 @@ object TypedAst {
 
   object Expression {
 
-    case class Constant(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
+    case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def pur: Type = Type.Pure
 
       def eff: Type = Type.Empty
@@ -294,7 +294,7 @@ object TypedAst {
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
-    case class Constant(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
+    case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
     case class Tag(sym: Ast.CaseSymUse, pat: TypedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 

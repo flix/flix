@@ -26,7 +26,7 @@ object TypedAstOps {
 
       case Expression.Hole(sym, tpe, loc) => Map(sym -> HoleContext(sym, tpe, env0))
 
-      case Expression.Constant(_, _, _) => Map.empty
+      case Expression.Cst(_, _, _) => Map.empty
 
       case Expression.Lambda(fparam, exp, tpe, loc) =>
         val env1 = Map(fparam.sym -> fparam.tpe)
@@ -326,7 +326,7 @@ object TypedAstOps {
   def binds(pat0: Pattern): Map[Symbol.VarSym, Type] = pat0 match {
     case Pattern.Wild(tpe, loc) => Map.empty
     case Pattern.Var(sym, tpe, loc) => Map(sym -> tpe)
-    case Pattern.Constant(_, _, _) => Map.empty
+    case Pattern.Cst(_, _, _) => Map.empty
     case Pattern.Tag(sym, pat, tpe, loc) => binds(pat)
     case Pattern.Tuple(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
       case (macc, elm) => macc ++ binds(elm)
@@ -351,7 +351,7 @@ object TypedAstOps {
     * Creates a set of all the sigs used in the given `exp`.
     */
   def sigSymsOf(exp: Expression): Set[Symbol.SigSym] = exp match {
-    case Expression.Constant(_, _, _) => Set.empty
+    case Expression.Cst(_, _, _) => Set.empty
     case Expression.Wild(_, _) => Set.empty
     case Expression.Var(_, _, _) => Set.empty
     case Expression.Def(_, _, _) => Set.empty
@@ -453,7 +453,7 @@ object TypedAstOps {
     * Returns the free variables in the given expression `exp0`.
     */
   def freeVars(exp0: Expression): Map[Symbol.VarSym, Type] = exp0 match {
-    case Expression.Constant(_, _, _) => Map.empty
+    case Expression.Cst(_, _, _) => Map.empty
 
     case Expression.Wild(_, _) => Map.empty
 
@@ -702,7 +702,7 @@ object TypedAstOps {
   private def freeVars(pat0: Pattern): Map[Symbol.VarSym, Type] = pat0 match {
     case Pattern.Wild(_, _) => Map.empty
     case Pattern.Var(sym, tpe, _) => Map(sym -> tpe)
-    case Pattern.Constant(_, _, _) => Map.empty
+    case Pattern.Cst(_, _, _) => Map.empty
     case Pattern.Tag(_, pat, _, _) => freeVars(pat)
     case Pattern.Tuple(elms, _, _) =>
       elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {

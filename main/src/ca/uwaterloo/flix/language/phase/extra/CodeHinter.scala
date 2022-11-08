@@ -93,7 +93,7 @@ object CodeHinter {
 
     case Expression.Hole(_, _, _) => Nil
 
-    case Expression.Constant(_, _, _) => Nil
+    case Expression.Cst(_, _, _) => Nil
 
     case Expression.Lambda(_, exp, _, _) =>
       checkPurity(exp.pur, exp.loc) ++ visitExp(exp)

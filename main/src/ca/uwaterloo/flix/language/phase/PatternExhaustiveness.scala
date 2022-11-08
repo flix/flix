@@ -136,7 +136,7 @@ object PatternExhaustiveness {
       case Expression.Def(_, _, _) => Nil
       case Expression.Sig(_, _, _) => Nil
       case Expression.Hole(_, _, _) => Nil
-      case Expression.Constant(_, _, _) => Nil
+      case Expression.Cst(_, _, _) => Nil
       case Expression.Lambda(_, body, _, _) => visitExp(body, root)
       case Expression.Apply(exp, exps, _, _, _, _) => (exp :: exps).flatMap(visitExp(_, root))
       case Expression.Unary(_, exp, _, _, _, _) => visitExp(exp, root)
@@ -402,7 +402,7 @@ object PatternExhaustiveness {
                 // => Tuple. If there are arguments, we add them to the matrix
                 case TypedAst.Pattern.Tuple(elms, _, _) =>
                   (elms ::: pat.tail) :: acc
-                case TypedAst.Pattern.Constant(Ast.Constant.Unit, _, _) =>
+                case TypedAst.Pattern.Cst(Ast.Constant.Unit, _, _) =>
                   pat.tail :: acc
                 case _ =>
                   (exp :: pat.tail) :: acc
@@ -651,22 +651,22 @@ object PatternExhaustiveness {
   private def patToCtor(pattern: TypedAst.Pattern): TyCon = pattern match {
     case Pattern.Wild(_, _) => TyCon.Wild
     case Pattern.Var(_, _, _) => TyCon.Wild
-    case Pattern.Constant(Ast.Constant.Unit, _, _) => TyCon.Unit
-    case Pattern.Constant(Ast.Constant.Bool(true), _, _) => TyCon.True
-    case Pattern.Constant(Ast.Constant.Bool(false), _, _) => TyCon.False
-    case Pattern.Constant(Ast.Constant.Char(_), _, _) => TyCon.Char
-    case Pattern.Constant(Ast.Constant.Float32(_), _, _) => TyCon.Float32
-    case Pattern.Constant(Ast.Constant.Float64(_), _, _) => TyCon.Float64
-    case Pattern.Constant(Ast.Constant.BigDecimal(_), _, _) => TyCon.BigDecimal
-    case Pattern.Constant(Ast.Constant.Int8(_), _, _) => TyCon.Int8
-    case Pattern.Constant(Ast.Constant.Int16(_), _, _) => TyCon.Int16
-    case Pattern.Constant(Ast.Constant.Int32(_), _, _) => TyCon.Int32
-    case Pattern.Constant(Ast.Constant.Int64(_), _, _) => TyCon.Int64
-    case Pattern.Constant(Ast.Constant.BigInt(_), _, _) => TyCon.BigInt
-    case Pattern.Constant(Ast.Constant.Str(_), _, _) => TyCon.Str
+    case Pattern.Cst(Ast.Constant.Unit, _, _) => TyCon.Unit
+    case Pattern.Cst(Ast.Constant.Bool(true), _, _) => TyCon.True
+    case Pattern.Cst(Ast.Constant.Bool(false), _, _) => TyCon.False
+    case Pattern.Cst(Ast.Constant.Char(_), _, _) => TyCon.Char
+    case Pattern.Cst(Ast.Constant.Float32(_), _, _) => TyCon.Float32
+    case Pattern.Cst(Ast.Constant.Float64(_), _, _) => TyCon.Float64
+    case Pattern.Cst(Ast.Constant.BigDecimal(_), _, _) => TyCon.BigDecimal
+    case Pattern.Cst(Ast.Constant.Int8(_), _, _) => TyCon.Int8
+    case Pattern.Cst(Ast.Constant.Int16(_), _, _) => TyCon.Int16
+    case Pattern.Cst(Ast.Constant.Int32(_), _, _) => TyCon.Int32
+    case Pattern.Cst(Ast.Constant.Int64(_), _, _) => TyCon.Int64
+    case Pattern.Cst(Ast.Constant.BigInt(_), _, _) => TyCon.BigInt
+    case Pattern.Cst(Ast.Constant.Str(_), _, _) => TyCon.Str
     case Pattern.Tag(Ast.CaseSymUse(sym, _), pat, tpe, _) => {
       val (args, numArgs) = pat match {
-        case Pattern.Constant(Ast.Constant.Unit, _, _) => (List.empty[TyCon], 0)
+        case Pattern.Cst(Ast.Constant.Unit, _, _) => (List.empty[TyCon], 0)
         case Pattern.Tuple(elms, _, _) => (elms.map(patToCtor), elms.length)
         case a => (List(patToCtor(a)), 1)
       }

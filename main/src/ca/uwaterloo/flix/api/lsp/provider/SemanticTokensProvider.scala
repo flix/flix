@@ -286,7 +286,7 @@ object SemanticTokensProvider {
 
     case Expression.Hole(_, _, _) => Iterator.empty
 
-    case Expression.Constant(_, _, _) => Iterator.empty
+    case Expression.Cst(_, _, _) => Iterator.empty
 
     case Expression.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp)
@@ -550,7 +550,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
-    case Pattern.Constant(_, _, _) => Iterator.empty
+    case Pattern.Cst(_, _, _) => Iterator.empty
 
     case Pattern.Tag(Ast.CaseSymUse(_, loc), pat, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
