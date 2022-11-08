@@ -35,7 +35,7 @@ namespace Test/Exp/Supercast {
     @test
     def testSupercast05(): Unit \ Impure =
         import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
-        let f = (_: ##java.lang.Comparable[StringBuilder]) -> ();
+        let f = (_: ##java.lang.Comparable) -> ();
         f(supercast(newStringBuilder()))
 
 }
