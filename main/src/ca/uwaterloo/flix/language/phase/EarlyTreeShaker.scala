@@ -226,7 +226,7 @@ object EarlyTreeShaker {
       visitExp(exp)
 
     case Expression.Match(exp, rules, _, _, _, _) =>
-      visitExp(exp) ++ visitExps(rules.map(_.exp)) ++ visitExps(rules.map(_.guard))
+      visitExp(exp) ++ visitExps(rules.map(_.exp)) ++ visitExps(rules.flatMap(_.guard))
 
     case Expression.TypeMatch(exp, rules, _, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))

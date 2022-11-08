@@ -164,7 +164,7 @@ object PatternExhaustiveness {
 
       case Expression.Match(exp, rules, _, _, _, _) =>
         val ruleExps = rules.map(_.exp)
-        val guards = rules.map(_.guard)
+        val guards = rules.flatMap(_.guard)
         val expsErrs = (exp :: ruleExps ::: guards).flatMap(visitExp(_, root))
         val rulesErrs = checkRules(exp, rules, root)
         expsErrs ::: rulesErrs

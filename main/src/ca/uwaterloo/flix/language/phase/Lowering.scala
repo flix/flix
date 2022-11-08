@@ -1409,7 +1409,7 @@ object Lowering {
         val get = Expression.Def(Defs.ChannelUnsafeGetAndUnlock, Type.mkImpureUncurriedArrow(List(chan.tpe, locksType), getTpe, loc), loc)
         val getExp = Expression.Apply(get, List(Expression.Var(chSym, chan.tpe, loc), Expression.Var(locksSym, locksType, loc)), getTpe, pur, eff, loc)
         val e = Expression.Let(sym, Ast.Modifiers.Empty, getExp, exp, exp.tpe, pur, eff, loc)
-        MatchRule(pat, Expression.True(loc), e)
+        MatchRule(pat, None, e)
     }
   }
 
@@ -1421,7 +1421,7 @@ object Lowering {
     default match {
       case Some(defaultExp) =>
         val pat = mkTuplePattern(List(Pattern.Int32(-1, loc), mkWildPattern(loc)), loc)
-        val defaultMatch = MatchRule(pat, Expression.True(loc), defaultExp)
+        val defaultMatch = MatchRule(pat, None, defaultExp)
         List(defaultMatch)
       case _ =>
         List()
