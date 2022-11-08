@@ -143,14 +143,13 @@ object BddFormula {
         }
 
         //make x -> x' map and x' -> x map
-        //cannot use a BiMap, since backward map must be mutable
         val maxVar = varSetFull.max
         val noVars = varSetFull.size
         val newVarNames = (maxVar+1 to maxVar+noVars).toList
         val varMapForward = varSetFull.zip(newVarNames).foldLeft(Map.empty[Int, Int]) {
           case (macc, (old_x, new_x)) => macc + (old_x -> new_x)
         }
-        val varMapBackward = varSetFull.zip(newVarNames).foldLeft(mutable.Map.empty[Int, Int]) {
+        var varMapBackward = varSetFull.zip(newVarNames).foldLeft(Map.empty[Int, Int]) {
           case (macc, (old_x, new_x)) => macc + (new_x -> old_x)
         }
         var res = f.getDD()
@@ -185,7 +184,7 @@ object BddFormula {
             }
 
             //removed the primed version of k to avoid problems
-            varMapBackward.remove(k_prime)
+            varMapBackward -= k_prime
 
             //replace any primed occurrences of k with the unprimed version
             if(varSetRes.contains(k_prime)) {
