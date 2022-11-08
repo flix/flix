@@ -726,10 +726,10 @@ object Resolver {
           val rulesVal = traverse(rules) {
             case NamedAst.MatchRule(pat, guard, body) =>
               val pVal = Patterns.resolve(pat, ns0, root)
-              val gVal = visitExp(guard, region)
+              val gVal = traverse(guard)(visitExp(_, region))
               val bVal = visitExp(body, region)
               mapN(pVal, gVal, bVal) {
-                case (p, g, b) => ResolvedAst.MatchRule(p, g, b)
+                case (p, g, b) => ResolvedAst.MatchRule(p, g.headOption, b)
               }
           }
 

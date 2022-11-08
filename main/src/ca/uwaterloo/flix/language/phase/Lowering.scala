@@ -920,7 +920,7 @@ object Lowering {
   private def visitMatchRule(rule0: MatchRule)(implicit root: Root, flix: Flix): MatchRule = rule0 match {
     case MatchRule(pat, guard, exp) =>
       val p = visitPat(pat)
-      val g = visitExp(guard)
+      val g = guard.map(visitExp)
       val e = visitExp(exp)
       MatchRule(p, g, e)
   }

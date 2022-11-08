@@ -161,7 +161,7 @@ object CodeHinter {
 
     case Expression.Match(matchExp, rules, _, _, _, _) =>
       visitExp(matchExp) ++ rules.flatMap {
-        case MatchRule(_, guard, exp) => visitExp(guard) ++ visitExp(exp)
+        case MatchRule(_, guard, exp) => guard.toList.flatMap(visitExp) ::: visitExp(exp)
       }
 
     case Expression.TypeMatch(matchExp, rules, _, _, _, _) =>

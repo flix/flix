@@ -134,7 +134,7 @@ object Safety {
 
       case Expression.Match(exp, rules, _, _, _, _) =>
         visit(exp) :::
-          rules.flatMap { case MatchRule(_, g, e) => visit(g) ::: visit(e) }
+          rules.flatMap { case MatchRule(_, g, e) => g.toList.flatMap(visit) ::: visit(e) }
 
       case Expression.TypeMatch(exp, rules, _, _, _, _) =>
         // check whether the last case in the type match looks like `...: _`

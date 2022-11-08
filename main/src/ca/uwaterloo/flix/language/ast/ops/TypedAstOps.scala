@@ -96,7 +96,7 @@ object TypedAstOps {
         val m = visitExp(matchExp, env0)
         rules.foldLeft(m) {
           case (macc, MatchRule(pat, guard, exp)) =>
-            macc ++ visitExp(guard, env0) ++ visitExp(exp, binds(pat) ++ env0)
+            macc ++ guard.flatMap(visitExp(_, binds(pat) ++ env0) ++ visitExp(exp, binds(pat) ++ env0)
         }
 
       case Expression.TypeMatch(matchExp, rules, _, _, _, _) =>
@@ -579,7 +579,7 @@ object TypedAstOps {
 
     case Expression.Match(exp, rules, _, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, MatchRule(pat, guard, exp)) => acc ++ (freeVars(guard) ++ freeVars(exp)) -- freeVars(pat).keys
+        case (acc, MatchRule(pat, guard, exp)) => acc ++ (guard.flatMap(freeVars) ++ freeVars(exp)) -- freeVars(pat).keys
       }
 
     case Expression.TypeMatch(exp, rules, _, _, _, _) =>

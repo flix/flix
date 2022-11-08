@@ -368,7 +368,7 @@ object ResolvedAst {
 
   case class ChoiceRule(pat: List[ResolvedAst.ChoicePattern], exp: ResolvedAst.Expression)
 
-  case class MatchRule(pat: ResolvedAst.Pattern, guard: ResolvedAst.Expression, exp: ResolvedAst.Expression)
+  case class MatchRule(pat: ResolvedAst.Pattern, guard: Option[ResolvedAst.Expression], exp: ResolvedAst.Expression)
 
   case class MatchTypeRule(sym: Symbol.VarSym, tpe: UnkindedType, exp: ResolvedAst.Expression)
 

@@ -875,15 +875,16 @@ object Typer {
 
       case KindedAst.Expression.Match(exp, rules, loc) =>
         val patterns = rules.map(_.pat)
-        val guards = rules.map(_.guard)
+        val guards = rules.flatMap(_.guard)
         val bodies = rules.map(_.exp)
+        val guardLocs = guards.map(_.loc)
 
         for {
           (constrs, tpe, pur, eff) <- visitExp(exp)
           patternTypes <- inferPatterns(patterns, root)
           patternType <- unifyTypeM(tpe :: patternTypes, loc)
           (guardConstrs, guardTypes, guardPurs, guardEffs) <- traverseM(guards)(visitExp).map(unzip4)
-          guardType <- unifyTypeM(Type.Bool :: guardTypes, loc)
+          guardType <- traverseM(guardTypes.zip(guardLocs)) { case (gTpe, gLoc) => expectTypeM(expected = Type.Bool, actual = gTpe, loc = gLoc)}
           (bodyConstrs, bodyTypes, bodyPurs, bodyEffs) <- traverseM(bodies)(visitExp).map(unzip4)
           resultTyp <- unifyTypeM(bodyTypes, loc)
           resultPur = Type.mkAnd(pur :: guardPurs ::: bodyPurs, loc)
@@ -1979,16 +1980,16 @@ object Typer {
         val rs = rules map {
           case KindedAst.MatchRule(pat, guard, exp) =>
             val p = reassemblePattern(pat, root, subst0)
-            val g = visitExp(guard, subst0)
+            val g = guard.map(visitExp(_, subst0))
             val b = visitExp(exp, subst0)
             TypedAst.MatchRule(p, g, b)
         }
         val tpe = rs.head.exp.tpe
         val pur = rs.foldLeft(e1.pur) {
-          case (acc, TypedAst.MatchRule(_, g, b)) => Type.mkAnd(g.pur, b.pur, acc, loc)
+          case (acc, TypedAst.MatchRule(_, g, b)) => Type.mkAnd(g.map(_.pur).toList ::: List(b.pur, acc), loc)
         }
         val eff = rs.foldLeft(e1.eff) {
-          case (acc, TypedAst.MatchRule(_, g, b)) => Type.mkUnion(List(g.eff, b.eff, acc), loc)
+          case (acc, TypedAst.MatchRule(_, g, b)) => Type.mkUnion(g.map(_.eff).toList ::: List(b.eff, acc), loc)
         }
         TypedAst.Expression.Match(e1, rs, tpe, pur, eff, loc)
 

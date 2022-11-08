@@ -344,7 +344,7 @@ object KindedAst {
 
   case class ChoiceRule(pat: List[KindedAst.ChoicePattern], exp: KindedAst.Expression)
 
-  case class MatchRule(pat: KindedAst.Pattern, guard: KindedAst.Expression, exp: KindedAst.Expression)
+  case class MatchRule(pat: KindedAst.Pattern, guard: Option[KindedAst.Expression], exp: KindedAst.Expression)
 
   case class MatchTypeRule(sym: Symbol.VarSym, tpe: Type, exp: KindedAst.Expression)
 

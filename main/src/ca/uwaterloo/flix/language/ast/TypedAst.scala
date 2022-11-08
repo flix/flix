@@ -540,7 +540,7 @@ object TypedAst {
 
   case class ChoiceRule(pat: List[TypedAst.ChoicePattern], exp: TypedAst.Expression)
 
-  case class MatchRule(pat: TypedAst.Pattern, guard: TypedAst.Expression, exp: TypedAst.Expression)
+  case class MatchRule(pat: TypedAst.Pattern, guard: Option[TypedAst.Expression], exp: TypedAst.Expression)
 
   case class MatchTypeRule(sym: Symbol.VarSym, tpe: Type, exp: TypedAst.Expression)
 

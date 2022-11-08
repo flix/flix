@@ -141,7 +141,7 @@ object Regions {
     case Expression.Match(exp, rules, tpe, _, _, loc) =>
       val matchVal = visitExp(exp)
       val rulesVal = traverse(rules) {
-        case MatchRule(pat, guard, body) => flatMapN(visitExp(guard), visitExp(body)) {
+        case MatchRule(pat, guard, body) => flatMapN(traverse(guard)(visitExp), visitExp(body)) {
           case (g, b) => ().toSuccess
         }
       }

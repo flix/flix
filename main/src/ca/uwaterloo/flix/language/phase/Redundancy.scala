@@ -439,7 +439,7 @@ object Redundancy {
 
           // Visit the pattern, guard and body.
           val usedPat = visitPat(pat)
-          val usedGuard = visitExp(guard, extendedEnv, rc)
+          val usedGuard = guard.map(visitExp(_, extendedEnv, rc)).getOrElse(Used.empty)
           val usedBody = visitExp(body, extendedEnv, rc)
           val usedPatGuardAndBody = usedPat ++ usedGuard ++ usedBody
 
