@@ -1255,7 +1255,7 @@ object Weeder {
 
     case ParsedAst.Expression.ArrayLit(sp1, exps, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
-      mapN(traverseOpt(exps)(visitExp(_, senv)), traverse(exp)(visitExp(_, senv))) {
+      mapN(traverse(exps)(visitExp(_, senv)), traverseOpt(exp)(visitExp(_, senv))) {
         case (es, e) =>
           WeededAst.Expression.ArrayLit(es, e, loc)
       }
