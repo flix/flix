@@ -28,6 +28,7 @@ dependencies {
     implementation files('lib/scala.xml-1.2.0.jar')
     implementation files('lib/scopt_2.13-4.0.1.jar')
     implementation files('lib/shapeless-2.3.3.jar')
+    implementation files('lib/beedeedee.jar')
 }
 
 tasks.withType(ScalaCompile) {
