@@ -1083,6 +1083,16 @@ object ParsedAst {
     case class Par(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * ParYield expression.
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param frags the [[ParYieldFragment]] fragments i.e. `a <- exp`.
+      * @param exp   the yield expression.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class ParYield(sp1: SourcePosition, frags: Seq[ParsedAst.ParYieldFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Lazy Expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -2338,4 +2348,13 @@ object ParsedAst {
 
   }
 
+  /**
+    * A ParYield fragment, i.e. `pattern <- exp`.
+    *
+    * @param sp1 the position of the first character in the fragment.
+    * @param pat the pattern.
+    * @param exp the expression.
+    * @param sp2 the position of the last character in the fragment.
+    */
+  case class ParYieldFragment(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: Expression, sp2: SourcePosition)
 }

@@ -1074,6 +1074,24 @@ object Namer {
         case e => NamedAst.Expression.Par(e, loc)
       }
 
+    case WeededAst.Expression.ParYield(frags, exp, loc) =>
+      // Create a mutable env that will be updated during traverse
+      var finalEnv = env0
+
+      val fragsVal = traverse(frags) {
+        case WeededAst.ParYieldFragment(pat, e, l) =>
+          val (p, env1) = visitPattern(pat, uenv0)
+          finalEnv = finalEnv ++ env1
+          mapN(visitExp(e, env0, uenv0, ienv0, tenv0, ns0, prog0)) {
+            case e1 => NamedAst.ParYieldFragment(p, e1, l)
+          }
+      }
+
+      // Combine everything
+      mapN(fragsVal, visitExp(exp, finalEnv, uenv0, ienv0, tenv0, ns0, prog0)) {
+        case (fs, e) => NamedAst.Expression.ParYield(fs, e, loc)
+      }
+
     case WeededAst.Expression.Lazy(exp, loc) =>
       visitExp(exp, env0, uenv0, ienv0, tenv0, ns0, prog0) map {
         case e => NamedAst.Expression.Lazy(e, loc)
@@ -1605,6 +1623,7 @@ object Namer {
       rulesFreeVars ++ defaultFreeVars
     case WeededAst.Expression.Spawn(exp, _) => freeVars(exp)
     case WeededAst.Expression.Par(exp, _) => freeVars(exp)
+    case WeededAst.Expression.ParYield(frags, exp, _) => frags.flatMap(f => freeVars(f.exp)) ::: freeVars(exp)
     case WeededAst.Expression.Lazy(exp, _) => freeVars(exp)
     case WeededAst.Expression.Force(exp, _) => freeVars(exp)
     case WeededAst.Expression.FixpointConstraintSet(cs, _) => cs.flatMap(freeVarsConstraint)

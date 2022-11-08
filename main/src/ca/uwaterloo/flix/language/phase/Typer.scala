@@ -1644,6 +1644,19 @@ object Typer {
           resultEff <- expectTypeM(expected = Type.Empty, actual = eff, exp.loc)
         } yield (constrs, tpe, resultPur, resultEff)
 
+      case KindedAst.Expression.ParYield(frags, exp, loc) =>
+        val patterns = frags.map(_.pat)
+        val parExps = frags.map(_.exp)
+        val patLocs = frags.map(_.loc)
+        for {
+          (constrs, tpe, pur, eff) <- visitExp(exp)
+          patternTypes <- inferPatterns(patterns, root)
+          (fragConstrs, fragTypes, fragPurs, fragEffs) <- seqM(parExps map visitExp).map(unzip4)
+          _ <- seqM(patternTypes.zip(fragTypes).zip(patLocs).map { case ((patTpe, expTpe), l) => unifyTypeM(List(patTpe, expTpe), l) })
+          _ <- seqM(fragPurs.zip(patLocs) map { case (p, l) => expectTypeM(expected = Type.Pure, actual = p, l) })
+          _ <- seqM(fragEffs.zip(patLocs) map { case (e, l) => expectTypeM(expected = Type.Empty, actual = e, l) })
+        } yield (constrs ++ fragConstrs.flatten, tpe, pur, eff)
+
       case KindedAst.Expression.Lazy(exp, loc) =>
         for {
           (constrs, tpe, pur, eff) <- visitExp(exp)
@@ -2291,6 +2304,23 @@ object Typer {
 
       case KindedAst.Expression.Par(exp, loc) =>
         TypedAst.Expression.Par(visitExp(exp, subst0), loc)
+
+      case KindedAst.Expression.ParYield(frags, exp, loc) =>
+        val e = visitExp(exp, subst0)
+        val fs = frags map {
+          case KindedAst.ParYieldFragment(pat, e0, l0) =>
+            val p = reassemblePattern(pat, root, subst0)
+            val e1 = visitExp(e0, subst0)
+            TypedAst.ParYieldFragment(p, e1, l0)
+        }
+        val tpe = e.tpe
+        val pur = fs.foldLeft(e.pur) {
+          case (acc, TypedAst.ParYieldFragment(_, e1, _)) => Type.mkAnd(acc, e1.pur, loc)
+        }
+        val eff = fs.foldLeft(e.eff) {
+          case (acc, TypedAst.ParYieldFragment(_, e1, _)) => Type.mkUnion(acc, e1.eff, loc)
+        }
+        TypedAst.Expression.ParYield(fs, e, tpe, pur, eff, loc)
 
       case KindedAst.Expression.Lazy(exp, loc) =>
         val e = visitExp(exp, subst0)

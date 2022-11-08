@@ -747,6 +747,20 @@ object Kinder {
     case ResolvedAst.Expression.Par(exp, loc) =>
       mapN(visitExp(exp, kenv0, senv, taenv, henv0, root))(KindedAst.Expression.Par(_, loc))
 
+    case ResolvedAst.Expression.ParYield(frags, exp0, loc) =>
+      val fragsVal = traverse(frags) {
+        case ResolvedAst.ParYieldFragment(pat, exp1, l0) =>
+          val patVal = visitPattern(pat, kenv0, root)
+          val expVal = visitExp(exp1, kenv0, senv, taenv, henv0, root)
+          mapN(patVal, expVal) {
+            case (p, e) => KindedAst.ParYieldFragment(p, e, l0)
+          }
+      }
+
+      mapN(fragsVal, visitExp(exp0, kenv0, senv, taenv, henv0, root)) {
+        case (fs, exp) => KindedAst.Expression.ParYield(fs, exp, loc)
+      }
+
     case ResolvedAst.Expression.Lazy(exp0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       mapN(expVal) {

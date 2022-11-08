@@ -82,6 +82,8 @@ object FormatExpression {
     case TypedAst.Expression.SelectChannel(rules, default, _, _, _, _) => s"SelectChannel(${rules.mkString(", ")}, $default)"
     case TypedAst.Expression.Spawn(exp, _, _, _, _) => s"Spawn($exp)"
     case TypedAst.Expression.Par(exp, _) => s"Par($exp)"
+    case TypedAst.Expression.ParYield(frags, exp, _, _, _, _) => s"ParYield(${frags.mkString(",")}, $exp)"
+
     case TypedAst.Expression.Lazy(exp, _, _) => s"Lazy($exp)"
     case TypedAst.Expression.Force(exp, _, _, _, _) => s"Force($exp)"
     case TypedAst.Expression.FixpointConstraintSet(cs, _, _, _) => s"FixpointConstraintSet($cs})"

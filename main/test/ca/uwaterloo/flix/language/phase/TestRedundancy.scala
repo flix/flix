@@ -1278,4 +1278,56 @@ class TestRedundancy extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.RedundantUpcast](result)
   }
+
+  test("TestParYield.01") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    let g = () -> 1;
+        |    par (g <- 5) yield g
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
+  test("TestParYield.02") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    par (a <- 5, a <- 1) yield a
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
+  test("TestParYield.03") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    let a = 1;
+        |    par (a <- 5) yield a
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
+  test("TestParYield.04") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    par (a <- 5) yield { let a = 4; a }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
+  test("TestParYield.05") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    par (a <- 5) yield 1
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
 }

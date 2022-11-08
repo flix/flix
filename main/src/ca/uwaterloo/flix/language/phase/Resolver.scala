@@ -1165,6 +1165,20 @@ object Resolver {
             e => ResolvedAst.Expression.Par(e, loc)
           }
 
+        case NamedAst.Expression.ParYield(frags, exp, loc) =>
+          val fragsVal = traverse(frags) {
+            case NamedAst.ParYieldFragment(pat, e0, l0) =>
+              val pVal = Patterns.resolve(pat, ns0, root)
+              val e0Val = visitExp(e0, region)
+              mapN(pVal, e0Val) {
+                case (p, e1) => ResolvedAst.ParYieldFragment(p, e1, l0)
+              }
+          }
+
+          mapN(fragsVal, visitExp(exp, region)) {
+            case (fs, e) => ResolvedAst.Expression.ParYield(fs, e, loc)
+          }
+
         case NamedAst.Expression.Lazy(exp, loc) =>
           val eVal = visitExp(exp, region)
           mapN(eVal) {
