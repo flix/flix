@@ -541,6 +541,33 @@ object RedundancyError {
   }
 
   /**
+    * An error raised to indicate that a supercast is redundant.
+    *
+    * @param loc the source location of the upcast.
+    */
+  case class RedundantSupercast(loc: SourceLocation) extends RedundancyError {
+
+    def summary: String = "Redundant supercast. The expression already has the expected type."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Redundant supercast. The expression already has the expected type.
+         |
+         |${code(loc, "redundant supercast.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""If you try to supercast a type that is already the
+         |expected type the supercast is considered redundant.
+         |""".stripMargin
+    })
+
+  }
+
+  /**
     * An error raised to indicate a redundant type constraint.
     *
     * @param entailingTconstr the tconstr that entails the other.
