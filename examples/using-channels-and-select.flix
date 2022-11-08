@@ -28,8 +28,8 @@ def main(): Unit \ IO = {
     spawn meow(s2, 3);
     spawn hiss(s3, 7);
     select {
-        case m <- r1 => m |> println
-        case m <- r2 => m |> println
-        case m <- r3 => m |> println
+        case m <- recv(r1) => m |> println
+        case m <- recv(r2) => m |> println
+        case m <- recv(r3) => m |> println
     }
 }

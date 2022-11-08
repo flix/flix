@@ -253,7 +253,7 @@ object Simplifier {
         val methods = methods0 map visitJvmMethod
         SimplifiedAst.Expression.NewObject(name, clazz, tpe, simplifyPurity(pur), methods, loc)
 
-      case TypedAst.Expression.NewChannel(exp, tpe, pur, eff, loc) =>
+      case TypedAst.Expression.NewChannel(exp, tpe, elmTpe, pur, eff, loc) =>
         throw new InternalCompilerException("Unexpected NewChannel")
 
       case TypedAst.Expression.GetChannel(exp, tpe, pur, eff, loc) =>

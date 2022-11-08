@@ -181,7 +181,7 @@ def debugWithPrefix(prefix: String, x: a): a \ IO =
 @Internal
 pub def escape(s: String): String = {
     import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String \ {} as jReplace;
-    def replace(old: String, new: String, subject: String): String = jReplace(subject, old as ##java.lang.CharSequence, new as ##java.lang.CharSequence);
+    def replace(old: String, new: String, subject: String): String = jReplace(subject, upcast old, upcast new);
     s
         // NB: \\ must come first to avoid clobbering other cases
         |> replace("\\", "\\\\")
@@ -210,7 +210,7 @@ pub def stringify(x: a): String = {
             toString(y)
         case y: BigDecimal =>
             import java.math.BigDecimal.toString(): String \ {};
-            if (isNull(y as ##java.lang.Object)) {
+            if (isNull(upcast y)) {
                 "null"
             } else {
                 toString(y) + "ff"
@@ -229,13 +229,13 @@ pub def stringify(x: a): String = {
             toString(y) + "i64"
         case y: BigInt =>
             import java.math.BigInteger.toString(): String \ {};
-            if (isNull(y as ##java.lang.Object)) {
+            if (isNull(upcast y)) {
                 "null"
             } else {
                 toString(y) + "ii"
             }
         case s: String =>
-            if (isNull(s as ##java.lang.Object)) {
+            if (isNull(upcast s)) {
                 "null"
             } else {
                 "\"" + escape(s) + "\""

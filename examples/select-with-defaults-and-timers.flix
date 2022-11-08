@@ -9,8 +9,8 @@ def slow(x: Int32, s: Sender[Int32]): Unit \ IO =
 /// Returns the default value `1` if `c` is not ready.
 def recvWithDefault(r: Receiver[Int32]): Int32 \ IO =
     select {
-        case x <- r => x
-        case _      => 1
+        case x <- recv(r) => x
+        case _            => 1
     }
 
 /// Reads a value from the channel `c`.
@@ -19,8 +19,8 @@ def recvWithTimeout(c: Receiver[Int32]): Int32 \ IO =
     use Time/Duration.fromSeconds;
     let t = Channel.timeout(fromSeconds(1));
     select {
-        case x <- c => x
-        case _ <- t => 2
+        case x <- recv(c) => x
+        case _ <- recv(t) => 2
     }
 
 /// Creates two channels `c1` and `c2`.

@@ -275,7 +275,7 @@ object CodeHinter {
         case JvmMethod(_, _, exp, _, _, _, _) => visitExp(exp)
       }
 
-    case Expression.NewChannel(exp, _, _, _, _) =>
+    case Expression.NewChannel(exp, _, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.GetChannel(exp, _, _, _, _) =>

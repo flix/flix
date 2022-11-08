@@ -21,10 +21,12 @@ namespace Thread {
     /// Sleeps for the given duration `d`.
     ///
     pub def sleep(d: Duration): Unit \ IO =
-        // TODO: Use more precise sleep strategy
-        // Note: Java expects milliseconds.
-        import static java.lang.Thread.sleep(Int64): Unit \ IO as jsleep;
-        let Duration(ns) = d;
-        jsleep(ns / 1_000_000i64)
+        import static java.lang.Thread.sleep(Int64, Int32): Unit \ IO as jsleep;
+        import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
+        import java.lang.Long.intValue(): Int32 \ {};
+        let Duration(nsTotal) = d;
+        let ms = nsTotal / 1_000_000i64;
+        let ns: Int32 = intValue(valueOf(nsTotal mod 1_000_000i64));
+        jsleep(ms, ns)
 
 }
