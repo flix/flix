@@ -335,9 +335,9 @@ object Resolver {
   def resolveSig(s0: NamedAst.Sig, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Sig, ResolutionError] = s0 match {
     case NamedAst.Sig(sym, spec0, exp0) =>
       val specVal = resolveSpec(spec0, taenv, ns0, root)
-      val expVal = traverse(exp0)(Expressions.resolve(_, taenv, ns0, root))
+      val expVal = traverseOpt(exp0)(Expressions.resolve(_, taenv, ns0, root))
       mapN(specVal, expVal) {
-        case (spec, exp) => ResolvedAst.Sig(sym, spec, exp.headOption)
+        case (spec, exp) => ResolvedAst.Sig(sym, spec, exp)
       }
   }
 
@@ -726,10 +726,10 @@ object Resolver {
           val rulesVal = traverse(rules) {
             case NamedAst.MatchRule(pat, guard, body) =>
               val pVal = Patterns.resolve(pat, ns0, root)
-              val gVal = traverse(guard)(visitExp(_, region))
+              val gVal = traverseOpt(guard)(visitExp(_, region))
               val bVal = visitExp(body, region)
               mapN(pVal, gVal, bVal) {
-                case (p, g, b) => ResolvedAst.MatchRule(p, g.headOption, b)
+                case (p, g, b) => ResolvedAst.MatchRule(p, g, b)
               }
           }
 
@@ -850,7 +850,7 @@ object Resolver {
           }
 
         case NamedAst.Expression.New(qname, exp, loc) =>
-          val erVal = traverse(exp)(visitExp(_, region)).map(_.headOption)
+          val erVal = traverseOpt(exp)(visitExp(_, region))
           mapN(erVal) {
             er =>
               ///
@@ -868,7 +868,7 @@ object Resolver {
 
         case NamedAst.Expression.ArrayLit(exps, exp, loc) =>
           val esVal = traverse(exps)(visitExp(_, region))
-          val erVal = traverse(exp)(visitExp(_, region)).map(_.headOption)
+          val erVal = traverseOpt(exp)(visitExp(_, region))
           mapN(esVal, erVal) {
             case (es, er) =>
               val reg = getExplicitOrImplicitRegion(er, region, loc)
@@ -878,7 +878,7 @@ object Resolver {
         case NamedAst.Expression.ArrayNew(exp1, exp2, exp3, loc) =>
           val e1Val = visitExp(exp1, region)
           val e2Val = visitExp(exp2, region)
-          val erVal = traverse(exp3)(visitExp(_, region)).map(_.headOption)
+          val erVal = traverseOpt(exp3)(visitExp(_, region))
           mapN(e1Val, e2Val, erVal) {
             case (e1, e2, er) =>
               val reg = getExplicitOrImplicitRegion(er, region, loc)
@@ -916,7 +916,7 @@ object Resolver {
 
         case NamedAst.Expression.Ref(exp1, exp2, loc) =>
           val e1Val = visitExp(exp1, region)
-          val e2Val = traverse(exp2)(visitExp(_, region)).map(_.headOption)
+          val e2Val = traverseOpt(exp2)(visitExp(_, region))
           mapN(e1Val, e2Val) {
             case (e1, e2) =>
               val reg = getExplicitOrImplicitRegion(e2, region, loc)
@@ -2081,8 +2081,8 @@ object Resolver {
     */
   private def semiResolvePurityAndEffect(purAndEff0: NamedAst.PurityAndEffect, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[UnkindedType.PurityAndEffect, ResolutionError] = purAndEff0 match {
     case NamedAst.PurityAndEffect(pur0, eff0) =>
-      val purVal = traverse(pur0)(semiResolveType(_, ns0, root)).map(_.headOption)
-      val effVal = traverse(eff0)(effs => traverse(effs)(semiResolveType(_, ns0, root))).map(_.headOption)
+      val purVal = traverseOpt(pur0)(semiResolveType(_, ns0, root))
+      val effVal = traverseOpt(eff0)(effs => traverse(effs)(semiResolveType(_, ns0, root)))
       mapN(purVal, effVal) {
         case (pur, eff) => UnkindedType.PurityAndEffect(pur, eff)
       }
@@ -2093,8 +2093,8 @@ object Resolver {
     */
   private def finishResolvePurityAndEffect(purAndEff0: UnkindedType.PurityAndEffect, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]): Validation[UnkindedType.PurityAndEffect, ResolutionError] = purAndEff0 match {
     case UnkindedType.PurityAndEffect(pur0, eff0) =>
-      val purVal = traverse(pur0)(finishResolveType(_, taenv)).map(_.headOption)
-      val effVal = traverse(eff0)(effs => traverse(effs)(finishResolveType(_, taenv))).map(_.headOption)
+      val purVal = traverseOpt(pur0)(finishResolveType(_, taenv))
+      val effVal = traverseOpt(eff0)(effs => traverse(effs)(finishResolveType(_, taenv)))
       mapN(purVal, effVal) {
         case (pur, eff) => UnkindedType.PurityAndEffect(pur, eff)
       }

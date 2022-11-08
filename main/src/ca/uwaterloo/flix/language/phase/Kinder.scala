@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, traverse}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, traverse, traverseOpt}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
@@ -294,9 +294,9 @@ object Kinder {
           val (kenv, senv) = split(kenv1)
           val henv = None
           val specVal = visitSpec(spec0, List(classTparam.sym), kenv, senv, taenv, root)
-          val expVal = traverse(exp0)(visitExp(_, kenv, senv, taenv, henv, root))
+          val expVal = traverseOpt(exp0)(visitExp(_, kenv, senv, taenv, henv, root))
           mapN(specVal, expVal) {
-            case (spec, exp) => KindedAst.Sig(sym, spec, exp.headOption)
+            case (spec, exp) => KindedAst.Sig(sym, spec, exp)
           }
       }
   }
@@ -597,20 +597,20 @@ object Kinder {
 
     case ResolvedAst.Expression.Ascribe(exp0, expectedType0, expectedEff0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
-      val expectedTypeVal = traverse(expectedType0)(visitType(_, Kind.Star, kenv0, senv, taenv, root))
+      val expectedTypeVal = traverseOpt(expectedType0)(visitType(_, Kind.Star, kenv0, senv, taenv, root))
       val expectedPurAndEffVal = visitOptionalPurityAndEffect(expectedEff0, kenv0, senv, taenv, root)
       mapN(expVal, expectedTypeVal, expectedPurAndEffVal) {
         case (exp, expectedType, (expectedPur, expectedEff)) =>
-          KindedAst.Expression.Ascribe(exp, expectedType.headOption, expectedPur, expectedEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+          KindedAst.Expression.Ascribe(exp, expectedType, expectedPur, expectedEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.Cast(exp0, declaredType0, declaredEff0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
-      val declaredTypeVal = traverse(declaredType0)(visitType(_, Kind.Star, kenv0, senv, taenv, root))
+      val declaredTypeVal = traverseOpt(declaredType0)(visitType(_, Kind.Star, kenv0, senv, taenv, root))
       val declaredPurAndEffVal = visitOptionalPurityAndEffect(declaredEff0, kenv0, senv, taenv, root)
       mapN(expVal, declaredTypeVal, declaredPurAndEffVal) {
         case (exp, declaredType, (declaredPur, declaredEff)) =>
-          KindedAst.Expression.Cast(exp, declaredType.headOption, declaredPur, declaredEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+          KindedAst.Expression.Cast(exp, declaredType, declaredPur, declaredEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.Mask(exp, loc) =>
@@ -733,9 +733,9 @@ object Kinder {
 
     case ResolvedAst.Expression.SelectChannel(rules0, default0, loc) =>
       val rulesVal = traverse(rules0)(visitSelectChannelRule(_, kenv0, senv, taenv, henv0, root))
-      val defaultVal = traverse(default0)(visitExp(_, kenv0, senv, taenv, henv0, root))
+      val defaultVal = traverseOpt(default0)(visitExp(_, kenv0, senv, taenv, henv0, root))
       mapN(rulesVal, defaultVal) {
-        case (rules, default) => KindedAst.Expression.SelectChannel(rules, default.headOption, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+        case (rules, default) => KindedAst.Expression.SelectChannel(rules, default, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.Spawn(exp0, loc) =>
@@ -846,10 +846,10 @@ object Kinder {
   private def visitMatchRule(rule0: ResolvedAst.MatchRule, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.MatchRule, KindError] = rule0 match {
     case ResolvedAst.MatchRule(pat0, guard0, exp0) =>
       val patVal = visitPattern(pat0, kenv, root)
-      val guardVal = traverse(guard0)(visitExp(_, kenv, senv, taenv, henv, root))
+      val guardVal = traverseOpt(guard0)(visitExp(_, kenv, senv, taenv, henv, root))
       val expVal = visitExp(exp0, kenv, senv, taenv, henv, root)
       mapN(patVal, guardVal, expVal) {
-        case (pat, guard, exp) => KindedAst.MatchRule(pat, guard.headOption, exp)
+        case (pat, guard, exp) => KindedAst.MatchRule(pat, guard, exp)
       }
   }
 

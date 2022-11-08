@@ -474,7 +474,7 @@ object Namer {
           // Then visit the parts depending on the parameters
           val env0 = getVarEnv(fparams)
           val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, ienv0, tenv, ns0, prog0))
-          val expVal = traverse(exp0)(visitExp(_, env0, uenv0, ienv0, tenv, ns0, prog0))
+          val expVal = traverseOpt(exp0)(visitExp(_, env0, uenv0, ienv0, tenv, ns0, prog0))
 
           mapN(annVal, expVal) {
             case (as, exp) =>
@@ -485,7 +485,7 @@ object Namer {
 
               val sym = Symbol.mkSigSym(classSym, ident)
               val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, tpe, purAndEff, allTconstrs, loc)
-              NamedAst.Sig(sym, spec, exp.headOption)
+              NamedAst.Sig(sym, spec, exp)
           }
       }
   }
@@ -748,10 +748,10 @@ object Namer {
           // and perform naming on the rule guard and body under the extended environment.
           val (p, env1) = visitPattern(pat, uenv0)
           val extendedEnv = env0 ++ env1
-          val gVal = traverse(guard)(visitExp(_, extendedEnv, uenv0, ienv0, tenv0, ns0, prog0))
+          val gVal = traverseOpt(guard)(visitExp(_, extendedEnv, uenv0, ienv0, tenv0, ns0, prog0))
           val bVal = visitExp(body, extendedEnv, uenv0, ienv0, tenv0, ns0, prog0)
           mapN(gVal, bVal) {
-            case (g, b) => NamedAst.MatchRule(p, g.headOption, b)
+            case (g, b) => NamedAst.MatchRule(p, g, b)
           }
       }
       mapN(expVal, rulesVal) {
@@ -835,17 +835,17 @@ object Namer {
       }
 
     case WeededAst.Expression.New(qname, exp, loc) =>
-      mapN(traverse(exp)(visitExp(_, env0, uenv0, ienv0, tenv0, ns0, prog0)).map(_.headOption)) {
+      mapN(traverseOpt(exp)(visitExp(_, env0, uenv0, ienv0, tenv0, ns0, prog0))) {
         case e => NamedAst.Expression.New(qname, e, loc)
       }
 
     case WeededAst.Expression.ArrayLit(exps, exp, loc) =>
-      mapN(traverse(exps)(visitExp(_, env0, uenv0, ienv0, tenv0, ns0, prog0)), traverse(exp)(visitExp(_, env0, uenv0, ienv0, tenv0, ns0, prog0)).map(_.headOption)) {
+      mapN(traverse(exps)(visitExp(_, env0, uenv0, ienv0, tenv0, ns0, prog0)), traverseOpt(exp)(visitExp(_, env0, uenv0, ienv0, tenv0, ns0, prog0))) {
         case (es, e) => NamedAst.Expression.ArrayLit(es, e, loc)
       }
 
     case WeededAst.Expression.ArrayNew(exp1, exp2, exp3, loc) =>
-      mapN(visitExp(exp1, env0, uenv0, ienv0, tenv0, ns0, prog0), visitExp(exp2, env0, uenv0, ienv0, tenv0, ns0, prog0), traverse(exp3)(visitExp(_, env0, uenv0, ienv0, tenv0, ns0, prog0)).map(_.headOption)) {
+      mapN(visitExp(exp1, env0, uenv0, ienv0, tenv0, ns0, prog0), visitExp(exp2, env0, uenv0, ienv0, tenv0, ns0, prog0), traverseOpt(exp3)(visitExp(_, env0, uenv0, ienv0, tenv0, ns0, prog0))) {
         case (e1, e2, e3) => NamedAst.Expression.ArrayNew(e1, e2, e3, loc)
       }
 
@@ -870,7 +870,7 @@ object Namer {
       }
 
     case WeededAst.Expression.Ref(exp1, exp2, loc) =>
-      mapN(visitExp(exp1, env0, uenv0, ienv0, tenv0, ns0, prog0), traverse(exp2)(visitExp(_, env0, uenv0, ienv0, tenv0, ns0, prog0)).map(_.headOption)) {
+      mapN(visitExp(exp1, env0, uenv0, ienv0, tenv0, ns0, prog0), traverseOpt(exp2)(visitExp(_, env0, uenv0, ienv0, tenv0, ns0, prog0))) {
         case (e1, e2) =>
           NamedAst.Expression.Ref(e1, e2, loc)
       }
@@ -1533,8 +1533,8 @@ object Namer {
     */
   private def visitPurityAndEffect(purAndEff: WeededAst.PurityAndEffect, allowWild: Boolean, uenv: UseEnv, ienv: ImportEnv, tenv: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.PurityAndEffect, NameError] = purAndEff match {
     case WeededAst.PurityAndEffect(pur0, eff0) =>
-      val purVal = traverse(pur0)(visitType(_, allowWild, uenv, ienv, tenv)).map(_.headOption)
-      val effVal = traverse(eff0)(effs => traverse(effs)(visitType(_, allowWild, uenv, ienv, tenv))).map(_.headOption)
+      val purVal = traverseOpt(pur0)(visitType(_, allowWild, uenv, ienv, tenv))
+      val effVal = traverseOpt(eff0)(effs => traverse(effs)(visitType(_, allowWild, uenv, ienv, tenv)))
       mapN(purVal, effVal) {
         case (pur, eff) => NamedAst.PurityAndEffect(pur, eff)
       }
