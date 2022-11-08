@@ -150,7 +150,7 @@ object SafetyError {
     *
     * @param actual   the type of the expression being supercast.
     * @param expected the type being cast to, i.e. the type of the supercast expression itself.
-    * @param loc      the source location of the unsafe supercast.
+    * @param loc      the source location of the supercast.
     */
   case class UnsafeSupercast(actual: Type, expected: Type, loc: SourceLocation) extends SafetyError {
     override def summary: String = "Unsafe supercast."
@@ -170,6 +170,13 @@ object SafetyError {
     override def explain(formatter: Formatter): Option[String] = None
   }
 
+  /**
+    * An error raised to indicate use of supercast on a non java type.
+    *
+    * @param nonJavaType the type that is **not** a java type.
+    * @param other       the other type.
+    * @param loc         the source location of the supercast.
+    */
   case class NonJavaTypeSupercast(nonJavaType: Type, other: Type, loc: SourceLocation) extends SafetyError {
     override def summary: String = "Unsafe supercast"
 
@@ -188,6 +195,15 @@ object SafetyError {
     override def explain(formatter: Formatter): Option[String] = None
   }
 
+  /**
+    * An error raised to indicate use of supercast to a type variable,
+    * i.e. the expected type is not known, possibly caused by
+    * supercasting a type to a type also being supercast.
+    *
+    * @param actual   the type of the expression being supercast.
+    * @param expected the type being cast to, i.e. the type of the supercast expression itself.
+    * @param loc      the source location of the supercast.
+    */
   case class TypeVariableSupercast(actual: Type, expected: Type, loc: SourceLocation) extends SafetyError {
     override def summary: String = "Unsafe supercast."
 
@@ -200,12 +216,12 @@ object SafetyError {
          |
          |Actual type:      $actual
          |Tried casting to: $expected
-         |
-         |Did you try to supercast two types at the same time?
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = Some({
+      "Did you try to supercast two types at the same time?"
+    })
   }
 
   /**
