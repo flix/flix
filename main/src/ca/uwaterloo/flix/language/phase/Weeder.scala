@@ -863,7 +863,7 @@ object Weeder {
 
       mapN(visitFormalParams(fparams, Presence.Optional), visitExp(exp1, senv), visitExp(exp2, senv)) {
         case (fp, e1, e2) =>
-          val lambda = mkCurried(fp, e1, loc)
+          val lambda = mkCurried(fp, e1, e1.loc)
           WeededAst.Expression.LetRec(ident, mod, lambda, e2, loc)
       }
 
@@ -1331,9 +1331,10 @@ object Weeder {
       mapN(visitExp(exp1, senv), visitExp(exp2, senv)) {
         case (e1, e2) =>
           val loc = mkSL(sp1, sp2)
+          val enum = Name.mkQName("List", sp1, sp2)
           val tag = Name.Ident(sp1, "Cons", sp2)
           val exp = WeededAst.Expression.Tuple(List(e1, e2), loc)
-          WeededAst.Expression.Tag(None, tag, Some(exp), loc)
+          WeededAst.Expression.Tag(Some(enum), tag, Some(exp), loc)
       }
 
     case ParsedAst.Expression.FAppend(exp1, sp1, sp2, exp2) =>
@@ -2144,9 +2145,10 @@ object Weeder {
         mapN(visitPattern(pat1), visitPattern(pat2)) {
           case (hd, tl) =>
             val loc = mkSL(sp1, sp2)
+            val enum = Name.mkQName("List", sp1, sp2)
             val tag = Name.Ident(sp1, "Cons", sp2)
             val pat = WeededAst.Pattern.Tuple(List(hd, tl), loc)
-            WeededAst.Pattern.Tag(None, tag, pat, loc)
+            WeededAst.Pattern.Tag(Some(enum), tag, pat, loc)
         }
 
     }

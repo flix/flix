@@ -175,9 +175,90 @@ namespace Graph {
             Set.flatMap(match (a, w, b) -> Set#{(a, w, b), (b, w, a)})
     }
 
+    ///
+    /// Returns the in-degree (how many edges end in a given node)
+    /// of each node in `g`.
+    ///
+    pub def inDegrees(g: m[(t, t)]): Map[t, Int32] with Foldable[m], Boxable[t] = {
+        use Option.{getWithDefault, map};
+        let edges = inject g into Edge;
+        let in = #{
+            // Careful use of option type here to make sure the empty set is not
+            // the bottom lattice element. that would exclude degrees of zero.
+            InSet(n; Some(Set#{})) :- Node(n).
+            InSet(n; Some(Set#{other})) :- Edge(other, n).
+            InDegree(n, s |> map(Set.size) |> getWithDefault(0)) :-
+                fix InSet(n; s).
+        };
+        let res = query edges, in, nodes()
+                  select (n, d)
+                  from InDegree(n, d);
+        List.toMap(res)
+    }
+
+    ///
+    /// Returns the out-degree (how many edges start in a given node)
+    /// of each node in `g`.
+    ///
+    pub def outDegrees(g: m[(t, t)]): Map[t, Int32] with Foldable[m], Boxable[t] = {
+        use Option.{getWithDefault, map};
+        let edges = inject g into Edge;
+        let out = #{
+            // Careful use of option type here to make sure the empty set is not
+            // the bottom lattice element. that would exclude degrees of zero.
+            OutSet(n; Some(Set#{})) :- Node(n).
+            OutSet(n; Some(Set#{other})) :- Edge(n, other).
+            OutDegree(n, s |> map(Set.size) |> getWithDefault(0)) :-
+                fix OutSet(n; s).
+        };
+        let res = query edges, out, nodes()
+                  select (n, d)
+                  from OutDegree(n, d);
+        List.toMap(res)
+    }
+
+    /// Returns a Graphviz (DOT) string of the graph `g`.
+    /// The strings of nodes are put in quotes with existing quotes escaped,
+    /// otherwise DOT identifier validity is up to the caller.
+    ///
+    pub def toGraphviz(g: m[((t, t))]): String with Foldable[m], Boxable[t], ToString[t] = region r {
+        let sb = new StringBuilder(r);
+        def output(s) = StringBuilder.appendLine!(s, sb);
+        output("digraph {");
+        foreach((x, y) <- Foldable.iterator(r, g)) {
+            output("  ${graphvizId(x)} -> ${graphvizId(y)}")
+        };
+        output("}");
+        StringBuilder.toString(sb)
+    }
+
+    ///
+    /// Returns a Graphviz (DOT) string of the graph `g`.
+    /// The strings of nodes are put in quotes with existing quotes escaped,
+    /// otherwise DOT identifier validity is up to the caller.
+    ///
+    pub def toGraphvizWeighted(g: m[((t, Int32, t))]): String with Foldable[m], Boxable[t], ToString[t] = region r {
+        let sb = new StringBuilder(r);
+        def output(s) = StringBuilder.appendLine!(s, sb);
+        output("digraph {");
+        foreach((x, w, y) <- Foldable.iterator(r, g)) {
+            output("  ${graphvizId(x)} -> ${graphvizId(y)} [label = ${w}]")
+        };
+        output("}");
+        StringBuilder.toString(sb)
+    }
+
     // -------------------------------------------------------------------------
     // Private Functions -------------------------------------------------------
     // -------------------------------------------------------------------------
+
+    ///
+    /// Wraps `toString(id)` with double quotes and escapes any existing quotes
+    /// with backslash.
+    ///
+    def graphvizId(id: t): String with ToString[t] = {
+        "\"${String.replace(from = "\"", to = "\\\"", "${id}")}\""
+    }
 
     ///
     /// Returns a Datalog program which computes the reachable nodes when given

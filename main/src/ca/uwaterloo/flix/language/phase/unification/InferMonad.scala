@@ -26,6 +26,11 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 object InferMonad {
 
   /**
+    * A constant for the InferMonad over the empty list.
+    */
+  val PointNil: InferMonad[Nil.type] = point(Nil)
+
+  /**
     * Lifts the given value `x` into the type inference monad.
     */
   def point[A](x: A): InferMonad[A] = InferMonad { case (s, renv) => Ok((s, renv, x)) }
@@ -39,9 +44,21 @@ object InferMonad {
     * Collects the result of each type inference monad in `ts` going left to right.
     */
   def seqM[A](xs: List[InferMonad[A]]): InferMonad[List[A]] = xs match {
-    case Nil => point(Nil)
+    case Nil => PointNil
     case y :: ys => y flatMap {
       case r => seqM(ys) map {
+        case rs => r :: rs
+      }
+    }
+  }
+
+  /**
+    * Applies the function `f` to each element in the list, combining the results.
+    */
+  def traverseM[A, B](xs: List[A])(f: A => InferMonad[B]): InferMonad[List[B]] = xs match {
+    case Nil => PointNil
+    case y :: ys => f(y) flatMap {
+      case r => traverseM(ys)(f) map {
         case rs => r :: rs
       }
     }
@@ -52,7 +69,7 @@ object InferMonad {
 /**
   * A type inference state monad that maintains the current substitution and rigidity environment.
   */
-case class InferMonad[A](run: (Substitution, RigidityEnv) => Result[(Substitution, RigidityEnv, A), TypeError]) {
+case class InferMonad[+A](run: (Substitution, RigidityEnv) => Result[(Substitution, RigidityEnv, A), TypeError]) {
   /**
     * Applies the given function `f` to the value in the monad.
     */

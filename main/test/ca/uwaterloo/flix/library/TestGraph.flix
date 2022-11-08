@@ -780,4 +780,231 @@ namespace TestGraph {
             (7, 8, 13), (13, 8, 7)
         }
     }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // inDegrees                                                              //
+    ////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def inDegrees01(): Bool = {
+        Graph.inDegrees(graph01()) == Map#{}
+    }
+
+    @test
+    def inDegrees02(): Bool = {
+        Graph.inDegrees(graph02()) == Map#{
+            1 => 0,
+            2 => 1
+        }
+    }
+
+    @test
+    def inDegrees03(): Bool = {
+        Graph.inDegrees(graph03()) == Map#{
+            1 => 0,
+            2 => 1,
+            3 => 0,
+            4 => 1
+        }
+    }
+
+    @test
+    def inDegrees04(): Bool = {
+        Graph.inDegrees(graph04()) == Map#{
+            1 => 0,
+            2 => 1,
+            3 => 1
+        }
+    }
+
+    @test
+    pub def inDegrees05(): Bool = {
+        debug(Graph.inDegrees(graph05())) == Map#{
+            1 => 0,
+            2 => 1,
+            3 => 1,
+            4 => 1
+        }
+    }
+
+    @test
+    def inDegrees06(): Bool = {
+        Graph.inDegrees(graph06()) == Map#{
+            1 => 1,
+            2 => 1,
+            3 => 1,
+            4 => 1
+        }
+    }
+
+    @test
+    def inDegrees07(): Bool = {
+        Graph.inDegrees(graph07()) == Map#{
+            1 => 1,
+            2 => 1,
+            3 => 1,
+            4 => 1,
+            5 => 2,
+            6 => 1
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // outDegrees                                                             //
+    ////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def outDegrees01(): Bool = {
+        Graph.outDegrees(graph01()) == Map#{}
+    }
+
+    @test
+    def outDegrees02(): Bool = {
+        Graph.outDegrees(graph02()) == Map#{
+            1 => 1,
+            2 => 0
+        }
+    }
+
+    @test
+    def outDegrees03(): Bool = {
+        Graph.outDegrees(graph03()) == Map#{
+            1 => 1,
+            2 => 0,
+            3 => 1,
+            4 => 0
+        }
+    }
+
+    @test
+    def outDegrees04(): Bool = {
+        Graph.outDegrees(graph04()) == Map#{
+            1 => 1,
+            2 => 1,
+            3 => 0
+        }
+    }
+
+    @test
+    pub def outDegrees05(): Bool = {
+        debug(Graph.outDegrees(graph05())) == Map#{
+            1 => 1,
+            2 => 1,
+            3 => 1,
+            4 => 0
+        }
+    }
+
+    @test
+    def outDegrees06(): Bool = {
+        Graph.outDegrees(graph06()) == Map#{
+            1 => 1,
+            2 => 1,
+            3 => 1,
+            4 => 1
+        }
+    }
+
+    @test
+    def outDegrees07(): Bool = {
+        Graph.outDegrees(graph07()) == Map#{
+            1 => 1,
+            2 => 2,
+            3 => 1,
+            4 => 1,
+            5 => 1,
+            6 => 1
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // toGraphviz                                                             //
+    ////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toGraphviz01(): Bool = {
+        Graph.toGraphviz(graph01()) == String.unlines(
+            "digraph {" ::
+            "}" ::
+            Nil
+        )
+    }
+
+    @test
+    pub def toGraphviz02(): Bool = {
+        let g = Set#{
+            ("node \"A\"", "node \"B\"")
+        };
+        Graph.toGraphviz(g) == String.unlines(
+            "digraph {" ::
+            "  \"node \\\"A\\\"\" -> \"node \\\"B\\\"\"" ::
+            "}" ::
+            Nil
+        )
+    }
+
+    @test
+    def toGraphviz03(): Bool = {
+        let test1 = Graph.toGraphviz(graph03()) == String.unlines(
+            "digraph {" ::
+            "  \"1\" -> \"2\"" ::
+            "  \"3\" -> \"4\"" ::
+            "}" ::
+            Nil
+        );
+        let test2 = Graph.toGraphviz(graph03()) == String.unlines(
+            "digraph {" ::
+            "  \"3\" -> \"4\"" ::
+            "  \"1\" -> \"2\"" ::
+            "}" ::
+            Nil
+        );
+        test1 or test2
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // toGraphvizWeighted                                                     //
+    ////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toGraphvizWeighted01(): Bool = {
+        Graph.toGraphvizWeighted(graphWithDist01()) == String.unlines(
+            "digraph {" ::
+            "}" ::
+            Nil
+        )
+    }
+
+    @test
+    pub def toGraphvizWeighted02(): Bool = {
+        let g = Set#{
+            ("node \"A\"", -42, "node \"B\"")
+        };
+        Graph.toGraphvizWeighted(g) == String.unlines(
+            "digraph {" ::
+            "  \"node \\\"A\\\"\" -> \"node \\\"B\\\"\" [label = -42]" ::
+            "}" ::
+            Nil
+        )
+    }
+
+    @test
+    def toGraphvizWeighted03(): Bool = {
+        let gv = Graph.toGraphvizWeighted(graphWithDist03());
+        let test1 = gv == String.unlines(
+            "digraph {" ::
+            "  \"1\" -> \"2\" [label = 4]" ::
+            "  \"3\" -> \"4\" [label = 7]" ::
+            "}" ::
+            Nil
+        );
+        let test2 = gv == String.unlines(
+            "digraph {" ::
+            "  \"3\" -> \"4\" [label = 7]" ::
+            "  \"1\" -> \"2\" [label = 4]" ::
+            "}" ::
+            Nil
+        );
+        test1 or test2
+    }
 }
