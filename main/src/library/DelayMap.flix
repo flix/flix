@@ -154,17 +154,16 @@ namespace DelayMap {
     ///
     @Experimental @ParallelWhenPure
     pub def count(f: (k, v) -> Bool \ ef, m: DelayMap[k, v]): Int32 \ ef =
-        let f1 = match (k, v) -> f(k, v);
         def c() = foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m);
-        reifyEff(f1) {
-            case Pure(g) =>
+        typematch f {
+            case g: (k, v) -> Bool \ {} =>
                 if (useParallelEvaluation(m))
                     let h = (k, v) -> g((k, force v));
                     let DMap(t) = m;
                     RedBlackTree.parCount(threads() - 1, h, t) as \ {}
                 else
                     c()
-            case _  => c()
+            case _: _  => c()
         }
 
     ///
@@ -198,9 +197,8 @@ namespace DelayMap {
     @Experimental @ParallelWhenPure
     pub def minimumKeyBy(cmp: (k, k) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == LessThan) (kl, vl) else (kr, vr), m);
-        let f = r -> cmp(r.kl, r.kr);
-        reifyEff(f) {
-            case Pure(g) =>
+        typematch cmp {
+            case g: () =>
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
                     let DMap(t) = m;
