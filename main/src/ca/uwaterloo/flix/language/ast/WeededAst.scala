@@ -157,7 +157,7 @@ object WeededAst {
 
     case class Upcast(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Supercast(exp: Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class Supercast(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Without(exp: WeededAst.Expression, eff: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 

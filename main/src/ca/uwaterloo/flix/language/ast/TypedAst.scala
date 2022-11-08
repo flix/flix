@@ -298,7 +298,7 @@ object TypedAst {
       override def eff: Type = exp.eff
     }
 
-    case class Supercast(exp: Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
+    case class Supercast(exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       override def pur: Type = exp.pur
 
       override def eff: Type = exp.eff

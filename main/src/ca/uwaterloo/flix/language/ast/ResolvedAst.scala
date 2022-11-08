@@ -162,7 +162,7 @@ object ResolvedAst {
 
     case class Upcast(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Supercast(exp: Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Supercast(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Without(exp: ResolvedAst.Expression, eff: Ast.EffectSymUse, loc: SourceLocation) extends ResolvedAst.Expression
 
