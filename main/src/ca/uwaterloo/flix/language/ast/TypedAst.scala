@@ -354,6 +354,8 @@ object TypedAst {
       def eff: Type = exp.eff
     }
 
+    case class ParYield(frags: List[TypedAst.ParYieldFragment], exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
     case class Lazy(exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def pur: Type = Type.Pure
 
@@ -551,5 +553,7 @@ object TypedAst {
   case class SelectChannelRule(sym: Symbol.VarSym, chan: TypedAst.Expression, exp: TypedAst.Expression)
 
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
+
+  case class ParYieldFragment(pat: TypedAst.Pattern, exp: TypedAst.Expression, loc: SourceLocation)
 
 }

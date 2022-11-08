@@ -408,6 +408,13 @@ object Indexer {
     case Expression.Par(exp, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
+    case Expression.ParYield(frags, exp, _, _, _, _) =>
+      val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
+      val i1 = traverse(frags) {
+        case ParYieldFragment(p, e, _) => visitPat(p) ++ visitExp(e)
+      }
+      i0 ++ i1
+
     case Expression.Lazy(exp, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 

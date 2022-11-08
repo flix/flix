@@ -176,6 +176,47 @@ namespace Graph {
     }
 
     ///
+    /// Returns the in-degree (how many edges end in a given node)
+    /// of each node in `g`.
+    ///
+    pub def inDegrees(g: m[(t, t)]): Map[t, Int32] with Foldable[m], Boxable[t] = {
+        use Option.{getWithDefault, map};
+        let edges = inject g into Edge;
+        let in = #{
+            // Careful use of option type here to make sure the empty set is not
+            // the bottom lattice element. that would exclude degrees of zero.
+            InSet(n; Some(Set#{})) :- Node(n).
+            InSet(n; Some(Set#{other})) :- Edge(other, n).
+            InDegree(n, s |> map(Set.size) |> getWithDefault(0)) :-
+                fix InSet(n; s).
+        };
+        let res = query edges, in, nodes()
+                  select (n, d)
+                  from InDegree(n, d);
+        List.toMap(res)
+    }
+
+    ///
+    /// Returns the out-degree (how many edges start in a given node)
+    /// of each node in `g`.
+    ///
+    pub def outDegrees(g: m[(t, t)]): Map[t, Int32] with Foldable[m], Boxable[t] = {
+        use Option.{getWithDefault, map};
+        let edges = inject g into Edge;
+        let out = #{
+            // Careful use of option type here to make sure the empty set is not
+            // the bottom lattice element. that would exclude degrees of zero.
+            OutSet(n; Some(Set#{})) :- Node(n).
+            OutSet(n; Some(Set#{other})) :- Edge(n, other).
+            OutDegree(n, s |> map(Set.size) |> getWithDefault(0)) :-
+                fix OutSet(n; s).
+        };
+        let res = query edges, out, nodes()
+                  select (n, d)
+                  from OutDegree(n, d);
+        List.toMap(res)
+    }
+
     /// Returns a Graphviz (DOT) string of the graph `g`.
     /// The strings of nodes are put in quotes with existing quotes escaped,
     /// otherwise DOT identifier validity is up to the caller.

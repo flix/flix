@@ -282,6 +282,9 @@ object Safety {
           case _ => IllegalParExpression(exp, exp.loc) :: Nil
         }
 
+      case Expression.ParYield(frags, exp, _, _, _, _) =>
+        frags.flatMap { case ParYieldFragment(_, e, _) => visit(e) } ::: visit(exp)
+
       case Expression.Lazy(exp, _, _) =>
         visit(exp)
 

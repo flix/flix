@@ -152,6 +152,7 @@ object Statistics {
       case Expression.SelectChannel(rules, default, tpe, pur, eff, loc) => Counter.merge(rules.map(visitSelectChannelRule)) ++ Counter.merge(default.map(visitExp))
       case Expression.Spawn(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Par(exp, loc) => visitExp(exp)
+      case Expression.ParYield(frags, exp, tpe, pur, eff, loc) => Counter.merge(frags.map(f => visitExp(f.exp))) ++ visitExp(exp)
       case Expression.Lazy(exp, tpe, loc) => visitExp(exp)
       case Expression.Force(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => Counter.merge(cs.map(visitConstraint))

@@ -201,6 +201,8 @@ object KindedAst {
 
     case class Par(exp: Expression, loc: SourceLocation) extends KindedAst.Expression
 
+    case class ParYield(frags: List[KindedAst.ParYieldFragment], exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+
     case class Lazy(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
     case class Force(exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
@@ -352,4 +354,7 @@ object KindedAst {
   case class SelectChannelRule(sym: Symbol.VarSym, chan: KindedAst.Expression, exp: KindedAst.Expression)
 
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
+
+  case class ParYieldFragment(pat: KindedAst.Pattern, exp: KindedAst.Expression, loc: SourceLocation)
+
 }

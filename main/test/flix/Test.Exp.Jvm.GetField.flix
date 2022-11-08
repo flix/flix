@@ -65,8 +65,8 @@ namespace Test/Exp/Jvm/GetField {
 
     @test
     def testGetPureField01(): Bool =
-        import new dev.flix.test.TestClass(): _ \ {} as newObject;
-        import get dev.flix.test.TestClass.stringField: _ \ {} as getField;
+        import new dev.flix.test.TestClass(): ##dev.flix.test.TestClass \ {} as newObject;
+        import get dev.flix.test.TestClass.stringField: String \ {} as getField;
         let o = newObject();
         getField(o) == "Hello World"
 

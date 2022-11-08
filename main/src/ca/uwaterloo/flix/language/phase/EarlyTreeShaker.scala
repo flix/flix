@@ -336,6 +336,9 @@ object EarlyTreeShaker {
     case Expression.Par(exp, _) =>
       visitExp(exp)
 
+    case Expression.ParYield(frags, exp, _, _, _, _) =>
+      visitExps(frags.map(_.exp)) ++ visitExp(exp)
+
     case Expression.Lazy(exp, _, _) =>
       visitExp(exp)
 
