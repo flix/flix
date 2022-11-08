@@ -344,7 +344,7 @@ object Safety {
     * the effect set of the expression is a subset of the effect set being cast to.
     *
     */
-  private def isSubTypeOf(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = (tpe1.baseType, tpe2.baseType) match {
+  private def isSubtypeOf(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = (tpe1.baseType, tpe2.baseType) match {
     case (Type.True, Type.Var(_, _)) => true
     case (Type.True, Type.False) => true
     case (Type.Var(_, _), Type.False) => true
@@ -365,7 +365,7 @@ object Safety {
       // purities
       val pur1 = tpe1.arrowPurityType
       val pur2 = tpe2.arrowPurityType
-      val subTypePurity = isSubTypeOf(pur1, pur2, renv)
+      val subTypePurity = isSubtypeOf(pur1, pur2, renv)
 
       // set effects
       // The rule for effect sets is:
@@ -382,13 +382,13 @@ object Safety {
       val args2 = tpe2.arrowArgTypes
       val superTypeArgs = args1.zip(args2).forall {
         case (t1, t2) =>
-          isSubTypeOf(t2, t1, renv)
+          isSubtypeOf(t2, t1, renv)
       }
 
       // check that result is a subtype
       val expectedResTpe = tpe1.arrowResultType
       val actualResTpe = tpe2.arrowResultType
-      val subTypeResult = isSubTypeOf(expectedResTpe, actualResTpe, renv)
+      val subTypeResult = isSubtypeOf(expectedResTpe, actualResTpe, renv)
 
       subTypePurity && isEffSubset && superTypeArgs && subTypeResult
 
@@ -396,17 +396,23 @@ object Safety {
 
   }
 
-  sealed trait JavaSubTypeResult
+  /**
+    * ADT to indicate what the result of checking a java subtype was.
+    */
+  sealed trait JavaSubtypeResult
 
-  object JavaSubTypeResult {
+  object JavaSubtypeResult {
 
-    case object Castable extends JavaSubTypeResult
+    case object Castable extends JavaSubtypeResult
 
-    case object NonCastable extends JavaSubTypeResult
+    case object NonCastable extends JavaSubtypeResult
 
-    case class NonJavaType(tpe: Type) extends JavaSubTypeResult
+    /**
+      * @param tpe the non java type.
+      */
+    case class NonJavaType(tpe: Type) extends JavaSubtypeResult
 
-    case object TypeVariable extends JavaSubTypeResult
+    case object TypeVariable extends JavaSubtypeResult
 
   }
 
@@ -414,20 +420,20 @@ object Safety {
     * Returns true if `tpe1` and `tpe2` are both java types
     * and `tpe1` is a subtype of `tpe2`.
     */
-  private def isJavaSubTypeOf(tpe1: Type, tpe2: Type)(implicit flix: Flix): JavaSubTypeResult = (tpe1.baseType, tpe2.baseType) match {
+  private def isJavaSubtypeOf(tpe1: Type, tpe2: Type)(implicit flix: Flix): JavaSubtypeResult = (tpe1.baseType, tpe2.baseType) match {
     case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
-      if (right.isAssignableFrom(left)) JavaSubTypeResult.Castable else JavaSubTypeResult.NonCastable
+      if (right.isAssignableFrom(left)) JavaSubtypeResult.Castable else JavaSubtypeResult.NonCastable
 
     case (_, Type.Var(_, _)) =>
-      JavaSubTypeResult.TypeVariable
+      JavaSubtypeResult.TypeVariable
 
     case (Type.Cst(TypeConstructor.Native(_), _), _) =>
-      JavaSubTypeResult.NonJavaType(tpe2)
+      JavaSubtypeResult.NonJavaType(tpe2)
 
     case (_, Type.Cst(TypeConstructor.Native(_), _)) =>
-      JavaSubTypeResult.NonJavaType(tpe1)
+      JavaSubtypeResult.NonJavaType(tpe1)
 
-    case _ => JavaSubTypeResult.NonCastable
+    case _ => JavaSubtypeResult.NonCastable
   }
 
   /**
@@ -436,7 +442,7 @@ object Safety {
   private def checkUpcastSafety(exp: Expression, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
     val tpe1 = Type.eraseAliases(exp.tpe)
     val tpe2 = Type.eraseAliases(tpe)
-    if (isSubTypeOf(tpe1, tpe2, renv))
+    if (isSubtypeOf(tpe1, tpe2, renv))
       Nil
     else
       UnsafeUpcast(exp.tpe, tpe, loc) :: Nil
@@ -448,12 +454,12 @@ object Safety {
   private def checkSupercastSafety(exp: Expression, tpe: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
     val tpe1 = Type.eraseAliases(exp.tpe)
     val tpe2 = Type.eraseAliases(tpe)
-    isJavaSubTypeOf(tpe1, tpe2) match {
-      case JavaSubTypeResult.Castable => Nil
-      case JavaSubTypeResult.NonCastable => UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
-      case JavaSubTypeResult.NonJavaType(t) if t == tpe1 => NonJavaTypeSupercast(exp.tpe, tpe, loc) :: Nil
-      case JavaSubTypeResult.NonJavaType(_) => NonJavaTypeSupercast(tpe, exp.tpe, loc) :: Nil
-      case JavaSubTypeResult.TypeVariable => TypeVariableSupercast(exp.tpe, tpe, loc) :: Nil
+    isJavaSubtypeOf(tpe1, tpe2) match {
+      case JavaSubtypeResult.Castable => Nil
+      case JavaSubtypeResult.NonCastable => UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
+      case JavaSubtypeResult.NonJavaType(t) if t == tpe1 => NonJavaTypeSupercast(exp.tpe, tpe, loc) :: Nil
+      case JavaSubtypeResult.NonJavaType(_) => NonJavaTypeSupercast(tpe, exp.tpe, loc) :: Nil
+      case JavaSubtypeResult.TypeVariable => TypeVariableSupercast(exp.tpe, tpe, loc) :: Nil
     }
   }
 
