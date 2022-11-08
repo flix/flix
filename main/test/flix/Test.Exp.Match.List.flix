@@ -1,5 +1,10 @@
 namespace Test/Exp/Match/List {
 
+    // Define an enum with a `Cons` tag to ensure that it's not used in any of the following tests
+    pub enum Foo {
+        case Cons
+    }
+
     @test
     def testMatchList01(): Bool = match Nil {
         case Nil => true

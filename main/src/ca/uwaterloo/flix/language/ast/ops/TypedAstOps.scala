@@ -238,7 +238,7 @@ object TypedAstOps {
             macc ++ visitExp(exp, env0 ++ env1)
         }
 
-      case Expression.NewChannel(exp, _, _, _, _) => visitExp(exp, env0)
+      case Expression.NewChannel(exp, _, _, _, _, _) => visitExp(exp, env0)
 
       case Expression.GetChannel(exp, _, _, _, _) => visitExp(exp, env0)
 
@@ -256,6 +256,15 @@ object TypedAstOps {
       case Expression.Spawn(exp, _, _, _, _) => visitExp(exp, env0)
 
       case Expression.Par(exp, _) => visitExp(exp, env0)
+
+      case Expression.ParYield(frags, exp, _, _, _, _) =>
+        val boundEnv = frags.foldLeft(env0) {
+          case (acc, ParYieldFragment(p, _, _)) =>
+            binds(p) ++ acc
+        }
+        visitExp(exp, boundEnv) ++ frags.flatMap {
+          case ParYieldFragment(_, e, _) => visitExp(e, env0)
+        }
 
       case Expression.Lazy(exp, tpe, loc) => visitExp(exp, env0)
 
@@ -445,12 +454,13 @@ object TypedAstOps {
     case Expression.GetStaticField(_, _, _, _, _) => Set.empty
     case Expression.PutStaticField(_, exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.NewObject(_, _, _, _, _, methods, _) => methods.flatMap(method => sigSymsOf(method.exp)).toSet
-    case Expression.NewChannel(exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.NewChannel(exp, _, _, _, _, _) => sigSymsOf(exp)
     case Expression.GetChannel(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.PutChannel(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.SelectChannel(rules, default, _, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.chan) ++ sigSymsOf(rule.exp)).toSet ++ default.toSet.flatMap(sigSymsOf)
     case Expression.Spawn(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Par(exp, _) => sigSymsOf(exp)
+    case Expression.ParYield(frags, exp, _, _, _, _) => sigSymsOf(exp) ++ frags.flatMap(f => sigSymsOf(f.exp))
     case Expression.Lazy(exp, _, _) => sigSymsOf(exp)
     case Expression.Force(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointConstraintSet(_, _, _, _) => Set.empty
@@ -697,7 +707,7 @@ object TypedAstOps {
         case (acc, JvmMethod(_, fparams, exp, _, _, _, _)) => acc ++ freeVars(exp) -- fparams.map(_.sym)
       }
 
-    case Expression.NewChannel(exp, _, _, _, _) =>
+    case Expression.NewChannel(exp, _, _, _, _, _) =>
       freeVars(exp)
 
     case Expression.GetChannel(exp, _, _, _, _) =>
@@ -717,6 +727,12 @@ object TypedAstOps {
 
     case Expression.Par(exp, _) =>
       freeVars(exp)
+
+    case Expression.ParYield(frags, exp, _, _, _, _) =>
+      val freeFragVars = frags.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, ParYieldFragment(p, e, _)) => acc ++ freeVars(p) ++ freeVars(e)
+      }
+      freeVars(exp) -- freeFragVars.keys
 
     case Expression.Lazy(exp, _, _) =>
       freeVars(exp)

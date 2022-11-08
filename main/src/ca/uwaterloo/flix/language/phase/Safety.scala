@@ -19,6 +19,7 @@ import scala.annotation.tailrec
   * Performs safety and well-formedness checks on:
   *  - Datalog constraints
   *  - Anonymous objects
+  *  - Upcast expressions
   *  - TypeMatch expressions
   */
 object Safety {
@@ -258,7 +259,7 @@ object Safety {
             case JvmMethod(_, _, exp, _, _, _, _) => visit(exp)
           }
 
-      case Expression.NewChannel(exp, _, _, _, _) =>
+      case Expression.NewChannel(exp, _, _, _, _, _) =>
         visit(exp)
 
       case Expression.GetChannel(exp, _, _, _, _) =>
@@ -282,6 +283,9 @@ object Safety {
           case e: Expression.Tuple => visit(e)
           case _ => IllegalParExpression(exp, exp.loc) :: Nil
         }
+
+      case Expression.ParYield(frags, exp, _, _, _, _) =>
+        frags.flatMap { case ParYieldFragment(_, e, _) => visit(e) } ::: visit(exp)
 
       case Expression.Lazy(exp, _, _) =>
         visit(exp)
@@ -349,6 +353,15 @@ object Safety {
 
     case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
       right.isAssignableFrom(left)
+
+    case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+      right.isAssignableFrom(classOf[java.lang.String])
+
+    case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+      right.isAssignableFrom(classOf[java.math.BigInteger])
+
+    case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+      right.isAssignableFrom(classOf[java.math.BigDecimal])
 
     case (Type.Cst(TypeConstructor.Arrow(n1), _), Type.Cst(TypeConstructor.Arrow(n2), _)) if n1 == n2 =>
       // purities

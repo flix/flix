@@ -174,6 +174,21 @@ namespace Test/Exp/Upcast {
                 g;
         ()
 
+    @test
+    def testUpcast17(): Unit =
+        let f = (_: ##java.lang.CharSequence) -> ();
+        f(upcast "hello")
+
+    @test
+    def testUpcast18(): Unit =
+        let f = (_: ##java.lang.Number) -> ();
+        f(upcast 123ii)
+
+    @test
+    def testUpcast19(): Unit =
+        let f = (_: ##java.lang.Number) -> ();
+        f(upcast 1.23ff)
+
     pub eff A
     pub eff B
     pub eff C

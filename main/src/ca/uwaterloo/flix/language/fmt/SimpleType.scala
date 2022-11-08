@@ -71,7 +71,9 @@ object SimpleType {
 
   case object Ref extends SimpleType
 
-  case object Channel extends SimpleType
+  case object Sender extends SimpleType
+
+  case object Receiver extends SimpleType
 
   case object Lazy extends SimpleType
 
@@ -426,7 +428,8 @@ object SimpleType {
             case _ :: _ :: _ => throw new OverAppliedType
           }
         case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(visit))
-        case TypeConstructor.Channel => mkApply(Channel, t.typeArguments.map(visit))
+        case TypeConstructor.Sender => mkApply(Sender, t.typeArguments.map(visit))
+        case TypeConstructor.Receiver => mkApply(Receiver, t.typeArguments.map(visit))
         case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(visit))
         case TypeConstructor.Enum(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.Native(clazz) => Name(clazz.getSimpleName)

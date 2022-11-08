@@ -1165,6 +1165,20 @@ object Resolver {
             e => ResolvedAst.Expression.Par(e, loc)
           }
 
+        case NamedAst.Expression.ParYield(frags, exp, loc) =>
+          val fragsVal = traverse(frags) {
+            case NamedAst.ParYieldFragment(pat, e0, l0) =>
+              val pVal = Patterns.resolve(pat, ns0, root)
+              val e0Val = visitExp(e0, region)
+              mapN(pVal, e0Val) {
+                case (p, e1) => ResolvedAst.ParYieldFragment(p, e1, l0)
+              }
+          }
+
+          mapN(fragsVal, visitExp(exp, region)) {
+            case (fs, e) => ResolvedAst.Expression.ParYield(fs, e, loc)
+          }
+
         case NamedAst.Expression.Lazy(exp, loc) =>
           val eVal = visitExp(exp, region)
           mapN(eVal) {
@@ -1712,17 +1726,18 @@ object Resolver {
       case Some(qname) =>
         // Case 2: The name is qualified.
 
-        // Determine where to search for the enum.
-        val enumsInNS = if (qname.isUnqualified) {
-          // The name is unqualified (e.g. Option.None) so search in the current namespace.
-          root.enums.getOrElse(ns0, Map.empty[String, NamedAst.Enum])
+        def lookupEnumInNs(ns: Name.NName) = root.enums.get(ns) flatMap { _.get(qname.ident.name) }
+
+        val enumOpt = if (qname.isUnqualified) {
+          // The name is unqualified (e.g. Option.None), so first search the current namespace,
+          // if it's not found there, search the root namespace.
+          lookupEnumInNs(ns0).orElse(lookupEnumInNs(Name.RootNS))
         } else {
           // The name is qualified (e.g. Foo/Bar/Baz.Qux) so search in the Foo/Bar/Baz namespace.
-          root.enums.getOrElse(qname.namespace, Map.empty[String, NamedAst.Enum])
+          lookupEnumInNs(qname.namespace)
         }
 
-        // Lookup the enum declaration.
-        enumsInNS.get(qname.ident.name) match {
+        enumOpt match {
           case None =>
             // Case 2.1: The enum does not exist.
             ResolutionError.UndefinedType(qname, ns0, qname.loc).toFailure
@@ -1781,7 +1796,8 @@ object Resolver {
       case "Int64" => UnkindedType.Cst(TypeConstructor.Int64, loc).toSuccess
       case "BigInt" => UnkindedType.Cst(TypeConstructor.BigInt, loc).toSuccess
       case "String" => UnkindedType.Cst(TypeConstructor.Str, loc).toSuccess
-      case "Channel" => UnkindedType.Cst(TypeConstructor.Channel, loc).toSuccess
+      case "Sender" => UnkindedType.Cst(TypeConstructor.Sender, loc).toSuccess
+      case "Receiver" => UnkindedType.Cst(TypeConstructor.Receiver, loc).toSuccess
       case "Lazy" => UnkindedType.Cst(TypeConstructor.Lazy, loc).toSuccess
       case "Array" => UnkindedType.Cst(TypeConstructor.Array, loc).toSuccess
       case "Ref" => UnkindedType.Cst(TypeConstructor.Ref, loc).toSuccess
@@ -2653,7 +2669,9 @@ object Resolver {
 
         case TypeConstructor.Str => Class.forName("java.lang.String").toSuccess
 
-        case TypeConstructor.Channel => Class.forName("java.lang.Object").toSuccess
+        case TypeConstructor.Sender => Class.forName("java.lang.Object").toSuccess
+
+        case TypeConstructor.Receiver => Class.forName("java.lang.Object").toSuccess
 
         case TypeConstructor.Ref => Class.forName("java.lang.Object").toSuccess
 

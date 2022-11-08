@@ -377,9 +377,9 @@ object Stratifier {
         case ms => Expression.NewObject(name, clazz, tpe, pur, eff, ms, loc)
       }
 
-    case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
+    case Expression.NewChannel(exp, tpe, elmTpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.NewChannel(e, tpe, pur, eff, loc)
+        case e => Expression.NewChannel(e, tpe, elmTpe, pur, eff, loc)
       }
 
     case Expression.GetChannel(exp, tpe, pur, eff, loc) =>
@@ -417,6 +417,16 @@ object Stratifier {
 
     case Expression.Par(exp, loc) =>
       mapN(visitExp(exp))(Expression.Par(_, loc))
+
+    case Expression.ParYield(frags, exp, tpe, pur, eff, loc) =>
+      val fragsVal = traverse(frags) {
+        case ParYieldFragment(p, e, l) => mapN(visitExp(e)) {
+          case e1 => ParYieldFragment(p, e1, l)
+        }
+      }
+      mapN(fragsVal, visitExp(exp)) {
+        case (fs, e) => Expression.ParYield(fs, e, tpe, pur, eff, loc)
+      }
 
     case Expression.Lazy(exp, tpe, loc) =>
       mapN(visitExp(exp)) {
@@ -732,7 +742,7 @@ object Stratifier {
     case Expression.NewObject(_, _, _, _, _, _, _) =>
       LabelledGraph.empty
 
-    case Expression.NewChannel(exp, _, _, _, _) =>
+    case Expression.NewChannel(exp, _, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.GetChannel(exp, _, _, _, _) =>
@@ -756,6 +766,11 @@ object Stratifier {
 
     case Expression.Par(exp, _) =>
       labelledGraphOfExp(exp)
+
+    case Expression.ParYield(frags, exp, _, _, _, _) =>
+      frags.foldLeft(labelledGraphOfExp(exp)) {
+        case (acc, ParYieldFragment(_, e, _)) => acc + labelledGraphOfExp(e)
+      }
 
     case Expression.Lazy(exp, _, _) =>
       labelledGraphOfExp(exp)
