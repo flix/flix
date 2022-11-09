@@ -59,7 +59,7 @@ namespace Array {
             if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
             StringBuilder.appendString!("${x}", sb)
         };
-        Array.foreach(f, a);
+        Array.forEach(f, a);
 
         StringBuilder.appendString!("]", sb);
         StringBuilder.toString(sb)
@@ -200,7 +200,7 @@ namespace Array {
     ///
     pub def toMutDeque(r1: Region[r1], a: Array[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1) }  =
         let d = new MutDeque(r1);
-        foreach(x -> MutDeque.pushBack(x, d), a);
+        forEach(x -> MutDeque.pushBack(x, d), a);
         d
 
     ///
@@ -643,7 +643,7 @@ namespace Array {
         else {
             let b = new(r, x, len2);
             let f = { (i, v) -> let j = i + i; b[j] = v };
-            foreachWithIndex(f, a);
+            forEachWithIndex(f, a);
             b
         }
 
@@ -987,7 +987,7 @@ namespace Array {
     /// Returns `true` if `arr` is empty.
     ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def forall(f: a -> Bool \ ef, arr: Array[a, r]): Bool \ { ef, Read(r) } =
+    pub def forAll(f: a -> Bool \ ef, arr: Array[a, r]): Bool \ { ef, Read(r) } =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)
@@ -1529,7 +1529,7 @@ namespace Array {
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreach(f: a -> Unit \ ef, a: Array[a, r]): Unit \ { ef, Read(r) } =
+    pub def forEach(f: a -> Unit \ ef, a: Array[a, r]): Unit \ { ef, Read(r) } =
         let len = length(a);
         def loop(i) = {
             if (i >= len)
@@ -1545,7 +1545,7 @@ namespace Array {
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreachWithIndex(f: (Int32, a) -> Unit \ ef, a: Array[a, r]): Unit \ { ef, Read(r) } =
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, a: Array[a, r]): Unit \ { ef, Read(r) } =
         let len = length(a);
         def loop(i) = {
             if (i >= len)
@@ -1580,7 +1580,7 @@ namespace Array {
             else
                 ()
         };
-        foreachWithIndex(f, a)
+        forEachWithIndex(f, a)
 
     ///
     /// Returns the concatenation of the string representation
@@ -1597,7 +1597,7 @@ namespace Array {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = new StringBuilder(r1);
-        foreach(x -> { append!(f(x), sb); append!(sep, sb) }, a);
+        forEach(x -> { append!(f(x), sb); append!(sep, sb) }, a);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
 

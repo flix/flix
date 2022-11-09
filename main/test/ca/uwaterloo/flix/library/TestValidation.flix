@@ -243,14 +243,14 @@ namespace TestValidation {
     def exists02(): Bool = Validation.exists(x -> x != 123, (Success(123))) == false
 
     /////////////////////////////////////////////////////////////////////////////
-    // forall                                                                  //
+    // forAll                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forall01(): Bool = Validation.exists(x -> x == 123, (Success(123))) == true
+    def forAll01(): Bool = Validation.exists(x -> x == 123, (Success(123))) == true
 
     @test
-    def forall02(): Bool = Validation.exists(x -> x != 123, (Success(123))) == false
+    def forAll02(): Bool = Validation.exists(x -> x != 123, (Success(123))) == false
 
     /////////////////////////////////////////////////////////////////////////////
     // map                                                                     //

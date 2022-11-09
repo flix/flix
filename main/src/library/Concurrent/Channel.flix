@@ -215,7 +215,7 @@ namespace Concurrent/Channel {
         };
 
         // Unlock all the locks
-        List.foreach(unlock, locks);
+        List.forEach(unlock, locks);
 
         value
     }
@@ -334,7 +334,7 @@ namespace Concurrent/Channel {
         // where a channel receives an element while the later channels are
         // searched for elements but before we place the condition on the
         // channels.
-        Array.foreach(lock, sortedLocks);
+        Array.forEach(lock, sortedLocks);
 
         // Lock the select lock. Channels cannot signal the select condition
         // while this lock is held.
@@ -360,12 +360,12 @@ namespace Concurrent/Channel {
                 if (blocking) { // We have to wait for an element
                     // Add our condition to all channels to get notified when a
                     // new element is added.
-                    Array.foreach(addGetter(selectLock, selectCondition), channels);
+                    Array.forEach(addGetter(selectLock, selectCondition), channels);
 
                     // Unlock all channels in sorted order, so other threads
                     // may input elements. The order is not important for
                     // correctness.
-                    Array.foreach(unlock, sortedLocks);
+                    Array.forEach(unlock, sortedLocks);
 
                     // Wait for an element to be added to any of the channels
                     awaitCondition(selectCondition);
@@ -377,7 +377,7 @@ namespace Concurrent/Channel {
                     selectHelper(channels, blocking, sortedLocks, selectLock, selectCondition)
                 } else {
                     (Array.toList(sortedLocks) `List.append` (selectLock :: Nil)) |>
-                        List.foreach(unlock);
+                        List.forEach(unlock);
                     (-1, Nil)
                 }
             }
@@ -405,7 +405,7 @@ namespace Concurrent/Channel {
             unlock(conditionLock)
         };
 
-        MutList.foreach(signalLockConditionPair, waitingGetters);
+        MutList.forEach(signalLockConditionPair, waitingGetters);
 
         // Clear waitingGetters. If a waitingGetter does not receive an
         // element, it will add itself again

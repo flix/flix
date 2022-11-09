@@ -810,11 +810,11 @@ namespace DelayMap {
     /// Applies `f` to every element of `xs`.
     ///
     @Experimental
-    pub def foreach(f: (k, v) -> Unit \ ef, m: DelayMap[k, v]): Unit \ ef =
+    pub def forEach(f: (k, v) -> Unit \ ef, m: DelayMap[k, v]): Unit \ ef =
         let _ = parallelForce(m);
         let DMap(t) = m;
         let f1 = (k, v) -> f(k, force v);
-        RedBlackTree.foreach(f1, t)
+        RedBlackTree.forEach(f1, t)
 
     ///
     /// Returns the sum of all values in `m`.

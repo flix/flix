@@ -61,7 +61,7 @@ instance UnorderedFoldable[Map[k]] {
     pub def foldMap(f: v -> b \ ef, m: Map[k, v]): b \ ef with CommutativeMonoid[b] = Map.foldMap(f, m)
     override pub def isEmpty(m: Map[k, v]): Bool = Map.isEmpty(m)
     override pub def exists(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.exists(_ -> f, m)
-    override pub def forall(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.forall(_ -> f, m)
+    override pub def forAll(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.forAll(_ -> f, m)
 }
 
 instance Traversable[Map[k]] {
@@ -411,7 +411,7 @@ namespace Map {
     /// Returns `true` if and only if all mappings in `m1` occur in `m2`.
     ///
     @Time(size(m1)) @Space(size(m1) * Int32.log2(size(m2)))
-    pub def isSubmapOf(m1: Map[k, v], m2: Map[k, v]): Bool with Order[k], Eq[v] = forall((k, v) -> get(k, m2) == Some(v), m1)
+    pub def isSubmapOf(m1: Map[k, v], m2: Map[k, v]): Bool with Order[k], Eq[v] = forAll((k, v) -> get(k, m2) == Some(v), m1)
 
     ///
     /// Returns `true` if and only if all mappings in `m1` occur in `m2` and `m1 != m2`.
@@ -722,10 +722,10 @@ namespace Map {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
-    pub def forall(f: (k, v) -> Bool \ ef, m: Map[k, v]): Bool \ ef =
+    pub def forAll(f: (k, v) -> Bool \ ef, m: Map[k, v]): Bool \ ef =
         let Map(t) = m;
         let f1 = match (k, v) -> f(k, v);
-        def fa() = RedBlackTree.forall(f, t);
+        def fa() = RedBlackTree.forAll(f, t);
         reifyEff(f1) {
             case Pure(g) =>
                 if (useParallelEvaluation(m))
@@ -883,16 +883,16 @@ namespace Map {
     ///
     pub def toMutDeque(r: Region[r], m: Map[k, v]): MutDeque[(k, v), r] \ Write(r) =
         let d = new MutDeque(r);
-        Map.foreach((k, v) -> MutDeque.pushBack((k, v), d), m);
+        forEach((k, v) -> MutDeque.pushBack((k, v), d), m);
         d
 
     ///
     /// Applies `f` to every element of `xs`.
     ///
     @Time(size(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
-    pub def foreach(f: (k, v) -> Unit \ ef, m: Map[k, v]): Unit \ ef =
+    pub def forEach(f: (k, v) -> Unit \ ef, m: Map[k, v]): Unit \ ef =
         let Map(t) = m;
-        RedBlackTree.foreach(f, t)
+        RedBlackTree.forEach(f, t)
 
     ///
     /// Build a map by applying `f` to the seed value `st`.

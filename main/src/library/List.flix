@@ -95,7 +95,7 @@ instance UnorderedFoldable[List] {
     pub def foldMap(f: a -> b \ ef, l: List[a]): b \ ef with CommutativeMonoid[b] = List.foldMap(f, l)
     override pub def isEmpty(l: List[a]): Bool = List.isEmpty(l)
     override pub def exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.exists(f, l)
-    override pub def forall(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.forall(f, l)
+    override pub def forAll(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.forAll(f, l)
     override pub def memberOf(x: a, l: List[a]): Bool with Eq[a] = List.memberOf(x, l)
 }
 
@@ -750,9 +750,9 @@ namespace List {
     /// Returns `true` if `l` is empty.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def forall(f: a -> Bool \ ef, l: List[a]): Bool \ ef = match l {
+    pub def forAll(f: a -> Bool \ ef, l: List[a]): Bool \ ef = match l {
         case Nil     => true
-        case x :: xs => if (f(x)) forall(f, xs) else false
+        case x :: xs => if (f(x)) forAll(f, xs) else false
     }
 
     ///
@@ -1142,7 +1142,7 @@ namespace List {
     ///
     pub def toMutDeque(r: Region[r], l: List[a]): MutDeque[a, r] \ Write(r) =
         let d = new MutDeque(r);
-        List.foreach(x -> MutDeque.pushBack(x, d), l);
+        forEach(x -> MutDeque.pushBack(x, d), l);
         d
 
     ///
@@ -1182,9 +1182,9 @@ namespace List {
     /// Applies `f` to every element of `l`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def foreach(f: a -> Unit \ ef, l: List[a]): Unit \ ef = match l {
+    pub def forEach(f: a -> Unit \ ef, l: List[a]): Unit \ ef = match l {
         case Nil     => ()
-        case x :: xs => f(x); foreach(f, xs)
+        case x :: xs => f(x); forEach(f, xs)
     }
 
     ///
@@ -1195,7 +1195,7 @@ namespace List {
         case None    => [] @ r
         case Some(x) =>
             let a = [x; length(l)] @ r;
-            foreach(match (b, i) -> a[i] = b, zipWithIndex(l));
+            forEach(match (b, i) -> a[i] = b, zipWithIndex(l));
             a
         }
 

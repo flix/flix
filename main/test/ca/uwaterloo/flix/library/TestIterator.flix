@@ -428,7 +428,7 @@ namespace TestIterator {
     def toMutDeque02(): Bool = region r {
         let iter = List.iterator(r, 1 :: Nil);
         let d = new MutDeque(r);
-        List.foreach(x -> MutDeque.pushBack(x, d), 1 :: Nil);
+        List.forEach(x -> MutDeque.pushBack(x, d), 1 :: Nil);
         Iterator.toMutDeque(r, iter) `MutDeque.sameElements` d
     }
 
@@ -436,7 +436,7 @@ namespace TestIterator {
     def toMutDeque03(): Bool = region r {
         let iter = List.iterator(r, 1 :: 2 :: Nil);
         let d = new MutDeque(r);
-        List.foreach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: Nil);
+        List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: Nil);
         Iterator.toMutDeque(r, iter) `MutDeque.sameElements` d
     }
 
@@ -444,7 +444,7 @@ namespace TestIterator {
     def toMutDeque04(): Bool = region r {
         let iter = List.iterator(r, 1 :: 2 :: 3 :: Nil);
         let d = new MutDeque(r);
-        List.foreach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: 3 :: Nil);
+        List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: 3 :: Nil);
         Iterator.toMutDeque(r, iter) `MutDeque.sameElements` d
     }
 
@@ -617,22 +617,22 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // foreach                                                                 //
+    // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool = region r {
+    def forEach01(): Bool = region r {
         let res = ref 21 @ r;
         Nil |> List.iterator(r) |>
-            Iterator.foreach(x -> res := x);
+            Iterator.forEach(x -> res := x);
         21 == deref res
     }
 
     @test
-    def foreach02(): Bool = region r {
+    def forEach02(): Bool = region r {
         let res = ref 21 @ r;
         (1 :: 2 :: 3 :: Nil) |> List.iterator(r) |>
-            Iterator.foreach(x -> res := x);
+            Iterator.forEach(x -> res := x);
         3 == deref res
     }
 

@@ -61,7 +61,7 @@ instance UnorderedFoldable[MultiMap[k]] {
     pub def foldMap(f: v -> b \ ef, m: MultiMap[k, v]): b \ ef with CommutativeMonoid[b] = MultiMap.foldMap(f, m)
     override pub def isEmpty(m: MultiMap[k, v]): Bool = MultiMap.isEmpty(m)
     override pub def exists(f: v -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef = MultiMap.exists(_ -> f, m)
-    override pub def forall(f: v -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef = MultiMap.forall(_ -> f, m)
+    override pub def forAll(f: v -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef = MultiMap.forAll(_ -> f, m)
 }
 
 instance SemiGroup[MultiMap[k,v]] with Order[k], Order[v] {
@@ -469,10 +469,10 @@ namespace MultiMap {
     ///
     /// Returns `true` if `m` is the empty MultiMap.
     ///
-    pub def forall(f: (k, v) -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef =
+    pub def forAll(f: (k, v) -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef =
         let MultiMap(m1) = m;
-        let outer = (k, vs) -> Set.forall(v -> f(k, v), vs);
-        Map.forall(outer, m1)
+        let outer = (k, vs) -> Set.forAll(v -> f(k, v), vs);
+        Map.forAll(outer, m1)
 
     ///
     /// Returns the union of `m1` and `m2`.
@@ -559,9 +559,9 @@ namespace MultiMap {
     ///
     /// Applies `f` to every `(key, value)` of MultiMap `m`.
     ///
-    pub def foreach(f: (k, v) -> Unit \ ef, m: MultiMap[k, v]): Unit \ ef =
+    pub def forEach(f: (k, v) -> Unit \ ef, m: MultiMap[k, v]): Unit \ ef =
         let MultiMap(m1) = m;
-        Map.foreach((k, s) -> Set.foreach(f(k), s), m1)
+        Map.forEach((k, s) -> Set.forEach(f(k), s), m1)
 
     ///
     /// Returns an iterator over all key-value pairs in `m` i.e. `k => Set#{v_1, ..., v_n}`.

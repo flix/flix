@@ -372,22 +372,22 @@ namespace TestRedBlackTree {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // foreach                                                                 //
+    // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool = region r {
+    def forEach01(): Bool = region r {
         let x = ref 21 @ r;
         let Map(t) = Map#{};
-        RedBlackTree.foreach((k, _) -> x := k, t);
+        RedBlackTree.forEach((k, _) -> x := k, t);
         21 == deref x
     }
 
     @test
-    def foreach02(): Bool = region r {
+    def forEach02(): Bool = region r {
         let x = ref 21 @ r;
         let Map(t) = Map#{1 => "Hello World!"};
-        RedBlackTree.foreach((k, _) -> x := k, t);
+        RedBlackTree.forEach((k, _) -> x := k, t);
         1 == deref x
     }
 

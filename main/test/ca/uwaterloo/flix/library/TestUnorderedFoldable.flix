@@ -115,52 +115,52 @@ namespace TestUnorderedFoldable {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // forall                                                                  //
+    // forAll                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forall01(): Bool =
-        UnorderedFoldable.forall(x -> x rem 8 == 7, Set#{}) == true
+    def forAll01(): Bool =
+        UnorderedFoldable.forAll(x -> x rem 8 == 7, Set#{}) == true
 
     @test
-    def forall02(): Bool =
-        UnorderedFoldable.forall(x -> x rem 8 == 7, Set#{5}) == false
+    def forAll02(): Bool =
+        UnorderedFoldable.forAll(x -> x rem 8 == 7, Set#{5}) == false
 
     @test
-    def forall03(): Bool =
-        UnorderedFoldable.forall(x -> x rem 8 == 7, Set#{7}) == true
+    def forAll03(): Bool =
+        UnorderedFoldable.forAll(x -> x rem 8 == 7, Set#{7}) == true
 
     @test
-    def forall04(): Bool =
-        UnorderedFoldable.forall(x -> x rem 8 == 7, Set#{15}) == true
+    def forAll04(): Bool =
+        UnorderedFoldable.forAll(x -> x rem 8 == 7, Set#{15}) == true
 
     @test
-    def forall05(): Bool =
-        UnorderedFoldable.forall(x -> x rem 8 == 7, Set#{1, 44}) == false
+    def forAll05(): Bool =
+        UnorderedFoldable.forAll(x -> x rem 8 == 7, Set#{1, 44}) == false
 
     @test
-    def forall06(): Bool =
-        UnorderedFoldable.forall(x -> x rem 8 == 7, Set#{11, 71}) == false
+    def forAll06(): Bool =
+        UnorderedFoldable.forAll(x -> x rem 8 == 7, Set#{11, 71}) == false
 
     @test
-    def forall07(): Bool =
-        UnorderedFoldable.forall(x -> x rem 8 == 7, Set#{71, 12}) == false
+    def forAll07(): Bool =
+        UnorderedFoldable.forAll(x -> x rem 8 == 7, Set#{71, 12}) == false
 
     @test
-    def forall08(): Bool =
-        UnorderedFoldable.forall(x -> x rem 8 == 7, Set#{71, 79}) == true
+    def forAll08(): Bool =
+        UnorderedFoldable.forAll(x -> x rem 8 == 7, Set#{71, 79}) == true
 
     @test
-    def forall09(): Bool =
-        UnorderedFoldable.forall(x -> x rem 8 == 7, Set#{7, 15, 23, 84, 111}) == false
+    def forAll09(): Bool =
+        UnorderedFoldable.forAll(x -> x rem 8 == 7, Set#{7, 15, 23, 84, 111}) == false
 
     @test
-    def forall10(): Bool =
-        UnorderedFoldable.forall(x -> x rem 8 == 7, Set#{7, 15, 23, 111, 3}) == false
+    def forAll10(): Bool =
+        UnorderedFoldable.forAll(x -> x rem 8 == 7, Set#{7, 15, 23, 111, 3}) == false
 
     @test
-    def forall11(): Bool =
-        UnorderedFoldable.forall(x -> x rem 8 == 7, Set#{7, 15, 23, 119, 111}) == true
+    def forAll11(): Bool =
+        UnorderedFoldable.forAll(x -> x rem 8 == 7, Set#{7, 15, 23, 119, 111}) == true
 
 
     /////////////////////////////////////////////////////////////////////////////

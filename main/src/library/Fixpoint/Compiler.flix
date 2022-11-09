@@ -39,13 +39,13 @@ namespace Fixpoint {
     def compile(d: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] = match d {
         case Datalog(facts, rules) => region r {
             let stmts = new MutList(r);
-            List.foreach(compileRule(stmts), facts);
+            List.forEach(compileRule(stmts), facts);
             List.foldRight(rule -> match rule {
                 case Constraint(HeadAtom(p, _, _), _) =>
                     let ruleStratum = Map.getWithDefault(p, 0, strat);
                     Map.insertWith(List.append, ruleStratum, rule :: Nil)
             }, Map#{}, rules) |>
-            Map.foreach((_, s) -> compileStratum(stmts, s));
+            Map.forEach((_, s) -> compileStratum(stmts, s));
             RamStmt.Seq(MutList.toList(stmts))
         }
         case _ => bug!("Datalog normalization bug")
@@ -75,25 +75,25 @@ namespace Fixpoint {
             Map.insert(pred, (arity, den))
         }, Map#{}, stratum);
         let loopBody = new MutList(r);
-        List.foreach(compileRule(stmts), stratum);
-        Map.foreach(predSym -> match (arity, den) -> {
+        List.forEach(compileRule(stmts), stratum);
+        Map.forEach(predSym -> match (arity, den) -> {
             let full = RamSym.Full(predSym, arity, den);
             let delta = RamSym.Delta(predSym, arity, den);
             let mergeDelta = RamStmt.Merge(full, delta);
             MutList.push!(mergeDelta, stmts)
         }, idb);
-        Map.foreach(predSym -> match (arity, den) -> {
+        Map.forEach(predSym -> match (arity, den) -> {
             let purge = RamStmt.Purge(RamSym.New(predSym, arity, den));
             MutList.push!(purge, loopBody)
         }, idb);
-        List.foreach(compileRuleIncr(loopBody), stratum);
-        Map.foreach(predSym -> match (arity, den) -> {
+        List.forEach(compileRuleIncr(loopBody), stratum);
+        Map.forEach(predSym -> match (arity, den) -> {
             let new = RamSym.New(predSym, arity, den);
             let full = RamSym.Full(predSym, arity, den);
             let mergeNew = RamStmt.Merge(new, full);
             MutList.push!(mergeNew, loopBody)
         }, idb);
-        Map.foreach(predSym -> match (arity, den) -> {
+        Map.forEach(predSym -> match (arity, den) -> {
             let delta = RamSym.Delta(predSym, arity, den);
             let new = RamSym.New(predSym, arity, den);
             let assign = RamStmt.Assign(delta, new);
@@ -208,9 +208,9 @@ namespace Fixpoint {
             if (enableDebugging()) {
                 let comment = RamStmt.Comment(ToString.toString(rule));
                 MutList.push!(comment, stmts);
-                List.foreach(match (_, rowVar) -> compile(rowVar), positiveAtoms)
+                List.forEach(match (_, rowVar) -> compile(rowVar), positiveAtoms)
             } else {
-                List.foreach(match (_, rowVar) -> compile(rowVar), positiveAtoms)
+                List.forEach(match (_, rowVar) -> compile(rowVar), positiveAtoms)
             }
     }
 

@@ -184,7 +184,7 @@ namespace MutList {
     ///
     /// Returns `true` if the given mutable list `v` is empty.
     ///
-    pub def forall(f: a -> Bool \ ef, v: MutList[a, r]): Bool \ { ef, Read(r) } =
+    pub def forAll(f: a -> Bool \ ef, v: MutList[a, r]): Bool \ { ef, Read(r) } =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -623,7 +623,7 @@ namespace MutList {
     /// Appends `m` to `v` i.e. inserts all elements from `m` into the end of `v`.
     ///
     pub def pushAll!(m: m[a], v: MutList[a, r]): Unit \ { Read(r), Write(r) } with Foldable[m] =
-        Foldable.foreach(x -> MutList.push!(x, v), m)
+        Foldable.forEach(x -> MutList.push!(x, v), m)
 
     ///
     /// Appends `m` to `v` i.e. inserts all elements from `m` into the end of `v`.
@@ -638,7 +638,7 @@ namespace MutList {
         let MutList(a1, l1) = v;
         let r = Scoped.regionOf(v);
         let l = new MutList(r);
-        foreach(e -> if (f(e)) push!(e, l) else (), v);
+        forEach(e -> if (f(e)) push!(e, l) else (), v);
         let MutList(a2, l2) = l;
         a1 := deref a2;
         l1 := deref l2
@@ -749,7 +749,7 @@ namespace MutList {
     ///
     pub def toMutDeque(r1: Region[r1], v: MutList[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1) }  =
         let d = new MutDeque(r1);
-        MutList.foreach(x -> MutDeque.pushBack(x, d), v);
+        forEach(x -> MutDeque.pushBack(x, d), v);
         d
 
     ///
@@ -792,7 +792,7 @@ namespace MutList {
                 StringBuilder.appendString!(sep, sb);
                 StringBuilder.appendString!(f(x), sb)
             };
-        foreachWithIndex(step, v);
+        forEachWithIndex(step, v);
         StringBuilder.toString(sb)
     }
 
@@ -816,7 +816,7 @@ namespace MutList {
     ///
     /// Applies `f` to all the elements in `v`.
     ///
-    pub def foreach(f: a -> Unit \ ef, v: MutList[a, r]): Unit \ { ef, Read(r) } =
+    pub def forEach(f: a -> Unit \ ef, v: MutList[a, r]): Unit \ { ef, Read(r) } =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -833,7 +833,7 @@ namespace MutList {
     ///
     /// Applies `f` to all the elements in `v`.
     ///
-    pub def foreachWithIndex(f: (Int32, a) -> Unit \ ef, v: MutList[a, r]): Unit \ { ef, Read(r) } =
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, v: MutList[a, r]): Unit \ { ef, Read(r) } =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;

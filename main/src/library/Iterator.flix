@@ -187,7 +187,7 @@ namespace Iterator {
     ///
     pub def toArray(r1: Region[r1], iter: Iterator[a, r2]): Array[a, r1] \ { Read(r2), Write(r1) } = region r0 {
         let m = new MutList(r0);
-        foreach(a -> MutList.push!(a, m), iter);
+        forEach(a -> MutList.push!(a, m), iter);
         MutList.toArray(r1, m)
     }
 
@@ -236,7 +236,7 @@ namespace Iterator {
     ///
     pub def toMutDeque(r1: Region[r1], iter: Iterator[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1) }  =
         let d = new MutDeque(r1);
-        foreach(x -> MutDeque.pushBack(x, d), iter);
+        forEach(x -> MutDeque.pushBack(x, d), iter);
         d
 
     ///
@@ -284,9 +284,9 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foreach(f: a -> Unit \ ef, iter: Iterator[a, r]): Unit \ { ef, Read(r) } = match iter {
+    pub def forEach(f: a -> Unit \ ef, iter: Iterator[a, r]): Unit \ { ef, Read(r) } = match iter {
         case Iterator(done, _) if done() => ()
-        case Iterator(_, next)           => f(next()); foreach(f, iter)
+        case Iterator(_, next)           => f(next()); forEach(f, iter)
     }
 
     ///
@@ -789,7 +789,7 @@ namespace Iterator {
                 let sb = new StringBuilder(r);
                 let g = x -> { StringBuilder.append!(sep, sb); StringBuilder.append!(f(x), sb) };
                 StringBuilder.append!(f(next()), sb); // Safe to call next, done was check above.
-                foreach(g, iter);
+                forEach(g, iter);
                 StringBuilder.toString(sb)
             }
 

@@ -1186,37 +1186,37 @@ def exists08(): Bool = List.exists(i -> i > 3, 1 :: -9 :: 3 :: Nil) == false
 def exists09(): Bool = List.exists(i -> i > 3, 1 :: 9 :: 3 :: Nil) == true
 
 /////////////////////////////////////////////////////////////////////////////
-// forall                                                                  //
+// forAll                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def forall01(): Bool = List.forall(i -> i > 3, Nil) == true
+def forAll01(): Bool = List.forAll(i -> i > 3, Nil) == true
 
 @test
-def forall02(): Bool = List.forall(i -> i > 3, 1 :: Nil) == false
+def forAll02(): Bool = List.forAll(i -> i > 3, 1 :: Nil) == false
 
 @test
-def forall03(): Bool = List.forall(i -> i > 3, 5 :: Nil) == true
+def forAll03(): Bool = List.forAll(i -> i > 3, 5 :: Nil) == true
 
 @test
-def forall04(): Bool = List.forall(i -> i > 3, 1 :: 2 :: Nil) == false
+def forAll04(): Bool = List.forAll(i -> i > 3, 1 :: 2 :: Nil) == false
 
 @test
-def forall05(): Bool = List.forall(i -> i > 3, 1 :: 6 :: Nil) == false
+def forAll05(): Bool = List.forAll(i -> i > 3, 1 :: 6 :: Nil) == false
 
 @test
-def forall06(): Bool = List.forall(i -> i > 3, 6 :: 1 :: Nil) == false
+def forAll06(): Bool = List.forAll(i -> i > 3, 6 :: 1 :: Nil) == false
 
 @test
-def forall07(): Bool = List.forall(i -> i > 3, 16 :: 6 :: Nil) == true
+def forAll07(): Bool = List.forAll(i -> i > 3, 16 :: 6 :: Nil) == true
 
 @test
-def forall08(): Bool = List.forall(i -> i > 3, 1 :: -9 :: 3 :: Nil) == false
+def forAll08(): Bool = List.forAll(i -> i > 3, 1 :: -9 :: 3 :: Nil) == false
 
 @test
-def forall09(): Bool = List.forall(i -> i > 3, 1 :: 9 :: 3 :: Nil) == false
+def forAll09(): Bool = List.forAll(i -> i > 3, 1 :: 9 :: 3 :: Nil) == false
 
 @test
-def forall10(): Bool = List.forall(i -> i > 3, 11 :: 9 :: 31 :: Nil) == true
+def forAll10(): Bool = List.forAll(i -> i > 3, 11 :: 9 :: 31 :: Nil) == true
 
 /////////////////////////////////////////////////////////////////////////////
 // filter                                                                  //
@@ -2012,19 +2012,19 @@ def toMapWith05(): Bool =
     List.toMapWith(x -> x + 10, 3 :: 6 :: 1 :: Nil) == Map#{1 => 11, 3 => 13, 6 => 16}
 
 /////////////////////////////////////////////////////////////////////////////
-// foreach                                                                 //
+// forEach                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def foreach01(): Bool \ IO =
+def forEach01(): Bool \ IO =
     let r = ref 21;
-    List.foreach(x -> r := x, Nil);
+    List.forEach(x -> r := x, Nil);
     21 == deref r
 
 @test
-def foreach02(): Bool \ IO =
+def forEach02(): Bool \ IO =
     let r = ref 21;
-    List.foreach(x -> r := x, 1 :: 2 :: 3 :: Nil);
+    List.forEach(x -> r := x, 1 :: 2 :: 3 :: Nil);
     3 == deref r
 
 

@@ -88,7 +88,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns `true` if `t` is empty.
     ///
-    pub def forall(f: a -> Bool \ ef, t: t[a]): Bool \ ef =
+    pub def forAll(f: a -> Bool \ ef, t: t[a]): Bool \ ef =
         Foldable.foldRightWithCont((x, k) -> f(x) and k(), true, t)
 
     ///
@@ -212,7 +212,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     pub def toArray(r: Region[r], t: t[a]): Array[a, r] \ Write(r) = region r2 {
         let l = new MutList(r2);
-        Foldable.foreach(a -> MutList.push!(a, l), t);
+        Foldable.forEach(a -> MutList.push!(a, l), t);
         MutList.toArray(r, l)
     }
 
@@ -243,7 +243,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     pub def toMutDeque(r: Region[r], t: t[a]): MutDeque[a, r] \ Write(r) =
         let d = new MutDeque(r);
-        Foldable.foreach(x -> MutDeque.pushBack(x, d), t);
+        Foldable.forEach(x -> MutDeque.pushBack(x, d), t);
         d
 
     ///
@@ -264,7 +264,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     pub def toMutSet(r: Region[r], t: t[a]): MutSet[a, r] \ Write(r) with Order[a] =
         let s = new MutSet(r);
-        Foldable.foreach(x -> MutSet.add!(x, s), t);
+        Foldable.forEach(x -> MutSet.add!(x, s), t);
         s
 
     ///
@@ -290,7 +290,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     pub def toMutMap(r: Region[r], t: t[(k, v)]): MutMap[k, v, r] \ Write(r) with Order[k] =
         let m = new MutMap(r);
-        Foldable.foreach(x -> let (k, v) = x; MutMap.put!(k, v, m), t);
+        Foldable.forEach(x -> let (k, v) = x; MutMap.put!(k, v, m), t);
         m
 
     ///
@@ -334,7 +334,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Applies `f` to each element in `t`.
     ///
-    pub def foreach(f: a -> Unit \ ef, t: t[a]): Unit \ ef =
+    pub def forEach(f: a -> Unit \ ef, t: t[a]): Unit \ ef =
         Foldable.foldLeft((_, x) -> f(x), (), t)
 
 
@@ -364,12 +364,12 @@ pub class Foldable[t : Type -> Type] {
         s |> Foldable.foldLeft(f1, upcast(x1 -> Applicative.point(x1)), t)
 
     ///
-    /// A monadic version of `foreach`.
+    /// A monadic version of `forEach`.
     ///
     /// Apply `f` to every value in `t`. `f` is applied for its monadic effect,
     /// the answer it produces is discarded.
     ///
-    pub def foreachM(f: a -> m[b] \ ef, t: t[a]): m[Unit] \ ef with Monad[m] =
+    pub def forEachM(f: a -> m[b] \ ef, t: t[a]): m[Unit] \ ef with Monad[m] =
         use Applicative.{point, *>};
         Foldable.foldLeftM((acc, a) -> f(a) *> point(acc), (), t)
 
@@ -388,7 +388,7 @@ pub class Foldable[t : Type -> Type] {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = new StringBuilder(r);
-        t |> Foldable.foreach(x -> { append!(f(x), sb); append!(sep, sb) });
+        t |> Foldable.forEach(x -> { append!(f(x), sb); append!(sep, sb) });
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
 

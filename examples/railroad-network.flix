@@ -83,6 +83,6 @@ def exampleGraph(): Set[(String, String)] =
 def test(): Unit \ IO =
     let rec = safeConnects("bis", exampleGraph());
     println("Safe:");
-    rec.safe |> List.sort |> List.map(Console.green) |> List.foreach(println);
+    rec.safe |> List.sort |> List.map(Console.green) |> List.forEach(println);
     println("Unsafe:");
-    rec.unsafe |> List.sort |> List.map(Console.red) |> List.foreach(println)
+    rec.unsafe |> List.sort |> List.map(Console.red) |> List.forEach(println)

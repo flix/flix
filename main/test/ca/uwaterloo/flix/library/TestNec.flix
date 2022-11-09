@@ -771,23 +771,23 @@ namespace TestNec {
     def exists04(): Bool = Nec.exists(x -> x == 2, necOf2(1, 2)) == true
 
     /////////////////////////////////////////////////////////////////////////////
-    // forall                                                                  //
+    // forAll                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forall01(): Bool = Nec.forall(x -> x == 1, singleton(1)) == true
+    def forAll01(): Bool = Nec.forAll(x -> x == 1, singleton(1)) == true
 
     @test
-    def forall02(): Bool = Nec.forall(x -> x == 2, singleton(1)) == false
+    def forAll02(): Bool = Nec.forAll(x -> x == 2, singleton(1)) == false
 
     @test
-    def forall03(): Bool = Nec.forall(x -> x == 1, necOf2(1, 1)) == true
+    def forAll03(): Bool = Nec.forAll(x -> x == 1, necOf2(1, 1)) == true
 
     @test
-    def forall04(): Bool = Nec.forall(x -> x == 1, necOf2(1, 2)) == false
+    def forAll04(): Bool = Nec.forAll(x -> x == 1, necOf2(1, 2)) == false
 
     @test
-    def forall05(): Bool = Nec.forall(x -> x == 1, necOf2(2, 1)) == false
+    def forAll05(): Bool = Nec.forAll(x -> x == 1, necOf2(2, 1)) == false
 
     /////////////////////////////////////////////////////////////////////////////
     // filter                                                                  //
@@ -1044,19 +1044,19 @@ namespace TestNec {
     def mapAccumRight03(): Bool = Nec.mapAccumRight((acc, x) -> (acc+1, x+acc), 10, necOf3(1, 2, 3)) == (13, necOf3(13, 13, 13))
 
     /////////////////////////////////////////////////////////////////////////////
-    // foreach                                                                 //
+    // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool \ IO =
+    def forEach01(): Bool \ IO =
         let r = ref 21;
-        Nec.foreach(x -> r := x, singleton(1));
+        Nec.forEach(x -> r := x, singleton(1));
         1 == deref r
 
     @test
-    def foreach02(): Bool \ IO =
+    def forEach02(): Bool \ IO =
         let r = ref 21;
-        Nec.foreach(x -> r := x, necOf3(1, 2, 3));
+        Nec.forEach(x -> r := x, necOf3(1, 2, 3));
         3 == deref r
 
     /////////////////////////////////////////////////////////////////////////////
