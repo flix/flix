@@ -34,11 +34,11 @@ namespace Console {
         import java.io.Console.readLine(): String \ IO as consoleReadLine;
         try {
             match console() {
-                case Some(c) =>
+                case Option.Some(c) =>
                     let line = consoleReadLine(c);
                     if (Object.isNull(line)) Err("EOF")
                     else Ok(line)
-                case None => Err("No JVM console")
+                case Option.None => Err("No JVM console")
             }
         } catch {
             case e: ##java.io.IOError =>
