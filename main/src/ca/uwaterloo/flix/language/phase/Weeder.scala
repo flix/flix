@@ -821,7 +821,7 @@ object Weeder {
           WeededAst.Expression.Let(ident, mod, withAscription(value, tpe), body, loc)
         case (pat, value, body, _) =>
           // Full-blown pattern match.
-          val rule = WeededAst.MatchRule(pat, WeededAst.Expression.Cst(Ast.Constant.Bool(true), loc.asSynthetic), body)
+          val rule = WeededAst.MatchRule(pat, None, body)
           WeededAst.Expression.Match(withAscription(value, tpe), List(rule), loc)
       }
 
@@ -848,7 +848,7 @@ object Weeder {
           val lambdaIdent = Name.Ident(sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), sp2)
           val lambdaVar = WeededAst.Expression.VarOrDefOrSig(lambdaIdent, loc)
 
-          val rule = WeededAst.MatchRule(pat, WeededAst.Expression.Cst(Ast.Constant.Bool(true), loc.asSynthetic), body)
+          val rule = WeededAst.MatchRule(pat, None, body)
           val lambdaBody = WeededAst.Expression.Match(withAscription(lambdaVar, tpe), List(rule), loc)
 
           val fparam = WeededAst.FormalParam(lambdaIdent, Ast.Modifiers.Empty, tpe.map(visitType), loc)
@@ -1108,15 +1108,10 @@ object Weeder {
     case ParsedAst.Expression.Match(sp1, exp, rules, sp2) =>
       val loc = mkSL(sp1, sp2)
       val rulesVal = traverse(rules) {
-        case ParsedAst.MatchRule(pat, None, body) =>
-          mapN(visitPattern(pat), visitExp(body, senv)) {
-            // Pattern match without guard.
-            case (p, e) => WeededAst.MatchRule(p, WeededAst.Expression.Cst(Ast.Constant.Bool(true), loc.asSynthetic), e)
+        case ParsedAst.MatchRule(pat, guard, body) =>
+          mapN(visitPattern(pat), traverse(guard)(visitExp(_, senv)), visitExp(body, senv)) {
+            case (p, g, b) => WeededAst.MatchRule(p, g.headOption, b)
           }
-        case ParsedAst.MatchRule(pat, Some(guard), body) => mapN(visitPattern(pat), visitExp(guard, senv), visitExp(body, senv)) {
-          // Pattern match with guard.
-          case (p, g, b) => WeededAst.MatchRule(p, g, b)
-        }
       }
       mapN(visitExp(exp, senv), rulesVal) {
         case (e, rs) => WeededAst.Expression.Match(e, rs, loc)
@@ -1814,7 +1809,7 @@ object Weeder {
 
     // Construct the body of the lambda expression.
     val varOrRef = WeededAst.Expression.VarOrDefOrSig(ident, loc)
-    val rule = WeededAst.MatchRule(p, WeededAst.Expression.Cst(Ast.Constant.Bool(true), loc), e)
+    val rule = WeededAst.MatchRule(p, None, e)
 
     val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, loc)
     val body = WeededAst.Expression.Match(varOrRef, List(rule), loc)

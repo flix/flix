@@ -368,7 +368,7 @@ object Monomorph {
           case MatchRule(pat, guard, body) =>
             val (p, env1) = visitPat(pat)
             val extendedEnv = env0 ++ env1
-            val g = visitExp(guard, extendedEnv)
+            val g = guard.map(visitExp(_, extendedEnv))
             val b = visitExp(body, extendedEnv)
             MatchRule(p, g, b)
         }

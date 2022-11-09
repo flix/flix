@@ -173,7 +173,7 @@ object Statistics {
     * Counts AST nodes in the given rule.
     */
   private def visitMatchRule(rule: MatchRule): Counter = rule match {
-    case MatchRule(pat, guard, exp) => visitExp(guard) ++ visitExp(exp)
+    case MatchRule(pat, guard, exp) => Counter.merge(guard.map(visitExp)) ++ visitExp(exp)
   }
 
   /**

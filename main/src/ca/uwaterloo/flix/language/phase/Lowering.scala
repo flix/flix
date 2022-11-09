@@ -920,7 +920,7 @@ object Lowering {
   private def visitMatchRule(rule0: MatchRule)(implicit root: Root, flix: Flix): MatchRule = rule0 match {
     case MatchRule(pat, guard, exp) =>
       val p = visitPat(pat)
-      val g = visitExp(guard)
+      val g = guard.map(visitExp)
       val e = visitExp(exp)
       MatchRule(p, g, e)
   }
@@ -1409,7 +1409,7 @@ object Lowering {
         val get = Expression.Def(Defs.ChannelUnsafeGetAndUnlock, Type.mkImpureUncurriedArrow(List(chan.tpe, locksType), getTpe, loc), loc)
         val getExp = Expression.Apply(get, List(Expression.Var(chSym, chan.tpe, loc), Expression.Var(locksSym, locksType, loc)), getTpe, pur, eff, loc)
         val e = Expression.Let(sym, Ast.Modifiers.Empty, getExp, exp, exp.tpe, pur, eff, loc)
-        MatchRule(pat, Expression.True(loc), e)
+        MatchRule(pat, None, e)
     }
   }
 
@@ -1421,7 +1421,7 @@ object Lowering {
     default match {
       case Some(defaultExp) =>
         val pat = mkTuplePattern(List(Pattern.Int32(-1, loc), mkWildPattern(loc)), loc)
-        val defaultMatch = MatchRule(pat, Expression.True(loc), defaultExp)
+        val defaultMatch = MatchRule(pat, None, defaultExp)
         List(defaultMatch)
       case _ =>
         List()
@@ -1615,7 +1615,7 @@ object Lowering {
     */
   def mkLetMatch(exp: Expression, pat: Pattern, body: Expression): Expression = {
     val expLoc = exp.loc.asSynthetic
-    val rule = List(MatchRule(pat, Expression.True(pat.loc.asSynthetic), body))
+    val rule = List(MatchRule(pat, None, body))
     val pur = Type.mkAnd(exp.pur, body.pur, expLoc)
     val eff = Type.mkUnion(exp.eff, body.eff, expLoc)
     Expression.Match(exp, rule, body.tpe, pur, eff, expLoc)
