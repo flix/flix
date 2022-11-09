@@ -32,7 +32,7 @@ namespace Test/Exp/Jvm/InvokeStaticMethod {
 
     @test
     def testInvokePureStaticMethod01(): Bool =
-        import static java.lang.String.valueOf(Bool): _ \ {};
+        import static java.lang.String.valueOf(Bool): String \ {};
         valueOf(true) == "true"
 
     @test
@@ -56,8 +56,8 @@ namespace Test/Exp/Jvm/InvokeStaticMethod {
 
     @test
     def testInvokeStaticMethodWithArrayParam(): Bool \ IO =
-        import static java.util.Arrays.fill(Array[##java.lang.Object, _], ##java.lang.Object): Unit \ IO;
+        import static java.util.Arrays.fill(Array[##java.lang.Object, Static], ##java.lang.Object): Unit \ IO;
         let a = ["this", "that"];
-        fill(a as Array[##java.lang.Object, _], "foo" as ##java.lang.Object);
+        fill(a as Array[##java.lang.Object, Static], "foo" as ##java.lang.Object);
         true
 }

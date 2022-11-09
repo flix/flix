@@ -226,7 +226,7 @@ object EarlyTreeShaker {
       visitExp(exp)
 
     case Expression.Match(exp, rules, _, _, _, _) =>
-      visitExp(exp) ++ visitExps(rules.map(_.exp)) ++ visitExps(rules.map(_.guard))
+      visitExp(exp) ++ visitExps(rules.map(_.exp)) ++ visitExps(rules.flatMap(_.guard))
 
     case Expression.TypeMatch(exp, rules, _, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
@@ -332,6 +332,9 @@ object EarlyTreeShaker {
 
     case Expression.Par(exp, _) =>
       visitExp(exp)
+
+    case Expression.ParYield(frags, exp, _, _, _, _) =>
+      visitExps(frags.map(_.exp)) ++ visitExp(exp)
 
     case Expression.Lazy(exp, _, _) =>
       visitExp(exp)

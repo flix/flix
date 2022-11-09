@@ -736,7 +736,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Static | Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
         ReifyType | ReifyPurity | Choose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda |
-        SelectChannel | Spawn | Par | Lazy | Force | Upcast | Mask | Intrinsic | New | ArrayLit | ArrayNew |
+        SelectChannel | Spawn | ParYield | Par | Lazy | Force | Upcast | Mask | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
         Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | FName | Tag | Hole
@@ -899,7 +899,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def TypeMatch: Rule1[ParsedAst.Expression.TypeMatch] = {
       def Rule: Rule1[ParsedAst.MatchTypeRule] = rule {
-          keyword("case") ~ WS ~ Names.Variable ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ atomic("=>") ~ optWS ~ Stm ~> ParsedAst.MatchTypeRule
+        keyword("case") ~ WS ~ Names.Variable ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ atomic("=>") ~ optWS ~ Stm ~> ParsedAst.MatchTypeRule
       }
 
       rule {
@@ -1018,6 +1018,17 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Par: Rule1[ParsedAst.Expression.Par] = rule {
       SP ~ keyword("par") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Par
+    }
+
+    def ParYield: Rule1[ParsedAst.Expression.ParYield] = {
+
+      def Fragment: Rule1[ParsedAst.ParYieldFragment] = rule {
+        SP ~ Pattern ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ SP ~> ParsedAst.ParYieldFragment
+      }
+
+      rule {
+        SP ~ keyword("par") ~ optWS ~ "(" ~ oneOrMore(Fragment).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ParYield
+      }
     }
 
     def Lazy: Rule1[ParsedAst.Expression.Lazy] = rule {

@@ -134,7 +134,7 @@ object Safety {
 
       case Expression.Match(exp, rules, _, _, _, _) =>
         visit(exp) :::
-          rules.flatMap { case MatchRule(_, g, e) => visit(g) ::: visit(e) }
+          rules.flatMap { case MatchRule(_, g, e) => g.toList.flatMap(visit) ::: visit(e) }
 
       case Expression.TypeMatch(exp, rules, _, _, _, _) =>
         // check whether the last case in the type match looks like `...: _`
@@ -283,6 +283,9 @@ object Safety {
           case e: Expression.Tuple => visit(e)
           case _ => IllegalParExpression(exp, exp.loc) :: Nil
         }
+
+      case Expression.ParYield(frags, exp, _, _, _, _) =>
+        frags.flatMap { case ParYieldFragment(_, e, _) => visit(e) } ::: visit(exp)
 
       case Expression.Lazy(exp, _, _) =>
         visit(exp)

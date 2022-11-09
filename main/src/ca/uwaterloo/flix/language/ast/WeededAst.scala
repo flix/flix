@@ -87,33 +87,7 @@ object WeededAst {
 
     case class Use(uses: List[WeededAst.Use], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Unit(loc: SourceLocation) extends WeededAst.Expression
-
-    case class Null(loc: SourceLocation) extends WeededAst.Expression
-
-    case class True(loc: SourceLocation) extends WeededAst.Expression
-
-    case class False(loc: SourceLocation) extends WeededAst.Expression
-
-    case class Char(lit: scala.Char, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Float32(lit: scala.Float, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Float64(lit: scala.Double, loc: SourceLocation) extends WeededAst.Expression
-
-    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Int8(lit: scala.Byte, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Int16(lit: scala.Short, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Int32(lit: scala.Int, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Int64(lit: scala.Long, loc: SourceLocation) extends WeededAst.Expression
-
-    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends WeededAst.Expression
+    case class Cst(cst: Ast.Constant, loc: SourceLocation) extends WeededAst.Expression
 
     case class Apply(exp: WeededAst.Expression, exps: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
@@ -221,6 +195,8 @@ object WeededAst {
 
     case class Par(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
+    case class ParYield(frags: List[WeededAst.ParYieldFragment], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class Lazy(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Force(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
@@ -257,31 +233,7 @@ object WeededAst {
 
     case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Pattern
 
-    case class Unit(loc: SourceLocation) extends WeededAst.Pattern
-
-    case class True(loc: SourceLocation) extends WeededAst.Pattern
-
-    case class False(loc: SourceLocation) extends WeededAst.Pattern
-
-    case class Char(lit: scala.Char, loc: SourceLocation) extends WeededAst.Pattern
-
-    case class Float32(lit: scala.Float, loc: SourceLocation) extends WeededAst.Pattern
-
-    case class Float64(lit: scala.Double, loc: SourceLocation) extends WeededAst.Pattern
-
-    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends WeededAst.Pattern
-
-    case class Int8(lit: scala.Byte, loc: SourceLocation) extends WeededAst.Pattern
-
-    case class Int16(lit: scala.Short, loc: SourceLocation) extends WeededAst.Pattern
-
-    case class Int32(lit: scala.Int, loc: SourceLocation) extends WeededAst.Pattern
-
-    case class Int64(lit: scala.Long, loc: SourceLocation) extends WeededAst.Pattern
-
-    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends WeededAst.Pattern
-
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends WeededAst.Pattern
+    case class Cst(cst: Ast.Constant, loc: SourceLocation) extends WeededAst.Pattern
 
     case class Tag(qname: Option[Name.QName], tag: Name.Ident, pat: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
 
@@ -440,7 +392,7 @@ object WeededAst {
 
   case class Constraint(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation)
 
-  case class MatchRule(pat: WeededAst.Pattern, guard: WeededAst.Expression, exp: WeededAst.Expression)
+  case class MatchRule(pat: WeededAst.Pattern, guard: Option[WeededAst.Expression], exp: WeededAst.Expression)
 
   case class MatchTypeRule(ident: Name.Ident, tpe: WeededAst.Type, exp: WeededAst.Expression)
 
@@ -457,5 +409,7 @@ object WeededAst {
   }
 
   case class PurityAndEffect(pur: Option[Type], eff: Option[List[Type]])
+
+  case class ParYieldFragment(pat: WeededAst.Pattern, exp: WeededAst.Expression, loc: SourceLocation)
 
 }

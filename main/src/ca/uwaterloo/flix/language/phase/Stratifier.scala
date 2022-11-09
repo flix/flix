@@ -189,8 +189,8 @@ object Stratifier {
     case Expression.Match(exp, rules, tpe, pur, eff, loc) =>
       val matchVal = visitExp(exp)
       val rulesVal = traverse(rules) {
-        case MatchRule(pat, guard, body) => mapN(visitExp(guard), visitExp(body)) {
-          case (g, b) => MatchRule(pat, g, b)
+        case MatchRule(pat, guard, body) => mapN(traverse(guard)(visitExp), visitExp(body)) {
+          case (g, b) => MatchRule(pat, g.headOption, b)
         }
       }
       mapN(matchVal, rulesVal) {
@@ -418,6 +418,16 @@ object Stratifier {
     case Expression.Par(exp, loc) =>
       mapN(visitExp(exp))(Expression.Par(_, loc))
 
+    case Expression.ParYield(frags, exp, tpe, pur, eff, loc) =>
+      val fragsVal = traverse(frags) {
+        case ParYieldFragment(p, e, l) => mapN(visitExp(e)) {
+          case e1 => ParYieldFragment(p, e1, l)
+        }
+      }
+      mapN(fragsVal, visitExp(exp)) {
+        case (fs, e) => Expression.ParYield(fs, e, tpe, pur, eff, loc)
+      }
+
     case Expression.Lazy(exp, tpe, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Lazy(e, tpe, loc)
@@ -602,7 +612,7 @@ object Stratifier {
     case Expression.Match(exp, rules, _, _, _, _) =>
       val dg = labelledGraphOfExp(exp)
       rules.foldLeft(dg) {
-        case (acc, MatchRule(_, g, b)) => acc + labelledGraphOfExp(g) + labelledGraphOfExp(b)
+        case (acc, MatchRule(_, g, b)) => acc + g.map(labelledGraphOfExp).getOrElse(LabelledGraph.empty) + labelledGraphOfExp(b)
       }
 
     case Expression.TypeMatch(exp, rules, _, _, _, _) =>
@@ -756,6 +766,11 @@ object Stratifier {
 
     case Expression.Par(exp, _) =>
       labelledGraphOfExp(exp)
+
+    case Expression.ParYield(frags, exp, _, _, _, _) =>
+      frags.foldLeft(labelledGraphOfExp(exp)) {
+        case (acc, ParYieldFragment(_, e, _)) => acc + labelledGraphOfExp(e)
+      }
 
     case Expression.Lazy(exp, _, _) =>
       labelledGraphOfExp(exp)

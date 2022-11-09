@@ -48,7 +48,9 @@ object Lowering {
     lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.union")
     lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.project")
     lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.rename")
+
     def ProjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint.injectInto$arity")
+
     def Facts(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint.facts$arity")
 
     lazy val DebugWithPrefix: Symbol.DefnSym = Symbol.mkDefnSym("debugWithPrefix")
@@ -259,7 +261,7 @@ object Lowering {
   private def visitExp(exp0: Expression)(implicit root: Root, flix: Flix): Expression = exp0 match {
     case Expression.Unit(_) => exp0
 
-    case Expression.Null(tpe, loc) => 
+    case Expression.Null(tpe, loc) =>
       val t = visitType(tpe)
       Expression.Null(t, loc)
 
@@ -642,6 +644,15 @@ object Lowering {
         throw InternalCompilerException(s"Unexpected par expression near ${exp.loc.format}: $exp")
     }
 
+    case Expression.ParYield(frags, exp, tpe, pur, eff, loc) =>
+      val fs = frags.map {
+        case ParYieldFragment(pat, e, loc) => ParYieldFragment(visitPat(pat), visitExp(e), loc)
+      }
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      val e1 = Expression.ParYield(fs, e, t, pur, eff, loc)
+      mkParYield(e1)
+
     case Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
@@ -909,7 +920,7 @@ object Lowering {
   private def visitMatchRule(rule0: MatchRule)(implicit root: Root, flix: Flix): MatchRule = rule0 match {
     case MatchRule(pat, guard, exp) =>
       val p = visitPat(pat)
-      val g = visitExp(guard)
+      val g = guard.map(visitExp)
       val e = visitExp(exp)
       MatchRule(p, g, e)
   }
@@ -1398,7 +1409,7 @@ object Lowering {
         val get = Expression.Def(Defs.ChannelUnsafeGetAndUnlock, Type.mkImpureUncurriedArrow(List(chan.tpe, locksType), getTpe, loc), loc)
         val getExp = Expression.Apply(get, List(Expression.Var(chSym, chan.tpe, loc), Expression.Var(locksSym, locksType, loc)), getTpe, pur, eff, loc)
         val e = Expression.Let(sym, Ast.Modifiers.Empty, getExp, exp, exp.tpe, pur, eff, loc)
-        MatchRule(pat, Expression.True(loc), e)
+        MatchRule(pat, None, e)
     }
   }
 
@@ -1410,7 +1421,7 @@ object Lowering {
     default match {
       case Some(defaultExp) =>
         val pat = mkTuplePattern(List(Pattern.Int32(-1, loc), mkWildPattern(loc)), loc)
-        val defaultMatch = MatchRule(pat, Expression.True(loc), defaultExp)
+        val defaultMatch = MatchRule(pat, None, defaultExp)
         List(defaultMatch)
       case _ =>
         List()
@@ -1589,6 +1600,63 @@ object Lowering {
     }
   }
 
+  /**
+    * Returns a desugared let-match expression, i.e.
+    * {{{
+    *   let pattern = exp;
+    *   body
+    * }}}
+    * is desugared to
+    * {{{
+    *   match exp {
+    *     case pattern => body
+    *   }
+    * }}}
+    */
+  def mkLetMatch(exp: Expression, pat: Pattern, body: Expression): Expression = {
+    val expLoc = exp.loc.asSynthetic
+    val rule = List(MatchRule(pat, None, body))
+    val pur = Type.mkAnd(exp.pur, body.pur, expLoc)
+    val eff = Type.mkUnion(exp.eff, body.eff, expLoc)
+    Expression.Match(exp, rule, body.tpe, pur, eff, expLoc)
+  }
+
+  /**
+    * Returns an expression where the pattern variables used in `exp` are
+    * bound to [[Expression.GetChannel]] expressions,
+    * i.e.
+    * {{{
+    *   let pat1 = <- ch1;
+    *   let pat2 = <- ch2;
+    *   let pat3 = <- ch3;
+    *   ...
+    *   let patn = <- chn;
+    *   exp
+    * }}}
+    */
+  def mkBoundParWaits(patSymExps: List[(Pattern, Symbol.VarSym, Expression)], exp: Expression): Expression =
+    patSymExps.map {
+      case (p, sym, e) =>
+        val loc = e.loc.asSynthetic
+        val chExp = mkChannelExp(sym, e.tpe, loc)
+        (p, mkGetChannel(chExp, e.tpe, Type.Impure, e.eff, loc))
+    }.foldRight(exp) {
+      case ((pat, chan), e) => mkLetMatch(chan, pat, e)
+    }
+
+  /**
+    * Returns a desugared [[Expression.ParYield]] expression.
+    * The parameter `exp` should already have its patterns
+    * and expressions visited by the [[visitPat]] and [[visitExp]] function respectively.
+    */
+  def mkParYield(parYieldExp: Expression.ParYield)(implicit flix: Flix): Expression = {
+    // Generate symbols for each channel.
+    val chanSymsWithPatAndExp = parYieldExp.frags.map { case ParYieldFragment(p, e, l) => (p, mkLetSym("channel", l.asSynthetic), e) }
+    val desugaredYieldExp = mkBoundParWaits(chanSymsWithPatAndExp, parYieldExp.exp)
+    val chanSymsWithExp = chanSymsWithPatAndExp.map { case (_, s, e) => (s, e) }
+    val blockExp = mkParChannels(desugaredYieldExp, chanSymsWithExp)
+    Expression.Cast(blockExp, None, Some(Type.Pure), Some(Type.Empty), parYieldExp.tpe, parYieldExp.pur, parYieldExp.eff, parYieldExp.loc.asSynthetic)
+  }
 
   /**
     * Returns a tuple expression that is evaluated in parallel.
@@ -1938,6 +2006,14 @@ object Lowering {
 
     case Expression.Par(exp, loc) =>
       Expression.Par(substExp(exp, subst), loc)
+
+    case Expression.ParYield(frags, exp, tpe, pur, eff, loc) =>
+      val fs = frags map {
+        case ParYieldFragment(p, e, l) =>
+          ParYieldFragment(p, substExp(e, subst), l)
+      }
+      val e = substExp(exp, subst)
+      Expression.ParYield(fs, e, tpe, pur, eff, loc)
 
     case Expression.Lazy(exp, tpe, loc) =>
       val e = substExp(exp, subst)

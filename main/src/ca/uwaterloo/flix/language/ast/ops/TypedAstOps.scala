@@ -96,7 +96,7 @@ object TypedAstOps {
         val m = visitExp(matchExp, env0)
         rules.foldLeft(m) {
           case (macc, MatchRule(pat, guard, exp)) =>
-            macc ++ visitExp(guard, env0) ++ visitExp(exp, binds(pat) ++ env0)
+            macc ++ guard.map(visitExp(_, binds(pat) ++ env0)).getOrElse(Map.empty) ++ visitExp(exp, binds(pat) ++ env0)
         }
 
       case Expression.TypeMatch(matchExp, rules, _, _, _, _) =>
@@ -257,6 +257,15 @@ object TypedAstOps {
 
       case Expression.Par(exp, _) => visitExp(exp, env0)
 
+      case Expression.ParYield(frags, exp, _, _, _, _) =>
+        val boundEnv = frags.foldLeft(env0) {
+          case (acc, ParYieldFragment(p, _, _)) =>
+            binds(p) ++ acc
+        }
+        visitExp(exp, boundEnv) ++ frags.flatMap {
+          case ParYieldFragment(_, e, _) => visitExp(e, env0)
+        }
+
       case Expression.Lazy(exp, tpe, loc) => visitExp(exp, env0)
 
       case Expression.Force(exp, _, _, _, _) => visitExp(exp, env0)
@@ -410,7 +419,7 @@ object TypedAstOps {
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
     case Expression.Stm(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Discard(exp, _, _, _) => sigSymsOf(exp)
-    case Expression.Match(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ sigSymsOf(rule.guard))
+    case Expression.Match(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ rule.guard.toList.flatMap(sigSymsOf))
     case Expression.TypeMatch(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.Choose(exps, rules, _, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.Tag(_, exp, _, _, _, _) => sigSymsOf(exp)
@@ -451,6 +460,7 @@ object TypedAstOps {
     case Expression.SelectChannel(rules, default, _, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.chan) ++ sigSymsOf(rule.exp)).toSet ++ default.toSet.flatMap(sigSymsOf)
     case Expression.Spawn(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Par(exp, _) => sigSymsOf(exp)
+    case Expression.ParYield(frags, exp, _, _, _, _) => sigSymsOf(exp) ++ frags.flatMap(f => sigSymsOf(f.exp))
     case Expression.Lazy(exp, _, _) => sigSymsOf(exp)
     case Expression.Force(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointConstraintSet(_, _, _, _) => Set.empty
@@ -569,7 +579,7 @@ object TypedAstOps {
 
     case Expression.Match(exp, rules, _, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, MatchRule(pat, guard, exp)) => acc ++ (freeVars(guard) ++ freeVars(exp)) -- freeVars(pat).keys
+        case (acc, MatchRule(pat, guard, exp)) => acc ++ (guard.toList.flatMap(freeVars) ++ freeVars(exp)) -- freeVars(pat).keys
       }
 
     case Expression.TypeMatch(exp, rules, _, _, _, _) =>
@@ -717,6 +727,12 @@ object TypedAstOps {
 
     case Expression.Par(exp, _) =>
       freeVars(exp)
+
+    case Expression.ParYield(frags, exp, _, _, _, _) =>
+      val freeFragVars = frags.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, ParYieldFragment(p, e, _)) => acc ++ freeVars(p) ++ freeVars(e)
+      }
+      freeVars(exp) -- freeFragVars.keys
 
     case Expression.Lazy(exp, _, _) =>
       freeVars(exp)

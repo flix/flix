@@ -337,6 +337,9 @@ object Simplifier {
       case TypedAst.Expression.Par(_, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
+      case TypedAst.Expression.ParYield(_, _, _, _, _, _) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.")
+
       case TypedAst.Expression.Mask(_, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
@@ -526,7 +529,7 @@ object Simplifier {
           val failure = SimplifiedAst.Expression.JumpTo(next, tpe, jumpPurity, loc)
 
           // Return the branch with its label.
-          field -> patternMatchList(List(pat), List(matchVar), guard, success, failure
+          field -> patternMatchList(List(pat), List(matchVar), guard.getOrElse(TypedAst.Expression.True(SourceLocation.Unknown)), success, failure
           )
       }
       // Construct the error branch.

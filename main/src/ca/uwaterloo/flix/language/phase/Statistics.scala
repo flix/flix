@@ -151,6 +151,7 @@ object Statistics {
       case Expression.SelectChannel(rules, default, tpe, pur, eff, loc) => Counter.merge(rules.map(visitSelectChannelRule)) ++ Counter.merge(default.map(visitExp))
       case Expression.Spawn(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Par(exp, loc) => visitExp(exp)
+      case Expression.ParYield(frags, exp, tpe, pur, eff, loc) => Counter.merge(frags.map(f => visitExp(f.exp))) ++ visitExp(exp)
       case Expression.Lazy(exp, tpe, loc) => visitExp(exp)
       case Expression.Force(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => Counter.merge(cs.map(visitConstraint))
@@ -172,7 +173,7 @@ object Statistics {
     * Counts AST nodes in the given rule.
     */
   private def visitMatchRule(rule: MatchRule): Counter = rule match {
-    case MatchRule(pat, guard, exp) => visitExp(guard) ++ visitExp(exp)
+    case MatchRule(pat, guard, exp) => Counter.merge(guard.map(visitExp)) ++ visitExp(exp)
   }
 
   /**

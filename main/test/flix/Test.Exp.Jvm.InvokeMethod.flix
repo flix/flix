@@ -34,7 +34,7 @@ namespace Test/Exp/Jvm/InvokeMethod {
 
     @test
     def testInvokePureMethod01(): Bool =
-        import java.lang.String.toLowerCase(): _ \ {};
+        import java.lang.String.toLowerCase(): String \ {};
         toLowerCase("HELLO WORLD") == "hello world"
 
     @test

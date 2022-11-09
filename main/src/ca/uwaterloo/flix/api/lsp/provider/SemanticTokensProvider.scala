@@ -358,7 +358,7 @@ object SemanticTokensProvider {
       val m = visitExp(matchExp)
       rules.foldLeft(m) {
         case (acc, MatchRule(pat, guard, exp)) =>
-          acc ++ visitPat(pat) ++ visitExp(guard) ++ visitExp(exp)
+          acc ++ visitPat(pat) ++ guard.toList.flatMap(visitExp) ++ visitExp(exp)
       }
 
     case Expression.TypeMatch(matchExp, rules, _, _, _, _) =>
@@ -513,6 +513,13 @@ object SemanticTokensProvider {
     case Expression.Spawn(exp, _, _, _, _) => visitExp(exp)
 
     case Expression.Par(exp, _) => visitExp(exp)
+
+    case Expression.ParYield(frags, exp, _, _, _, _) =>
+      val e0 = visitExp(exp)
+      frags.foldLeft(e0) {
+        case (acc, ParYieldFragment(p, e, _)) =>
+          acc ++ visitPat(p) ++ visitExp(e)
+      }
 
     case Expression.Lazy(exp, _, _) => visitExp(exp)
 

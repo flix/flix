@@ -726,10 +726,10 @@ object Resolver {
           val rulesVal = traverse(rules) {
             case NamedAst.MatchRule(pat, guard, body) =>
               val pVal = Patterns.resolve(pat, ns0, root)
-              val gVal = visitExp(guard, region)
+              val gVal = traverse(guard)(visitExp(_, region))
               val bVal = visitExp(body, region)
               mapN(pVal, gVal, bVal) {
-                case (p, g, b) => ResolvedAst.MatchRule(p, g, b)
+                case (p, g, b) => ResolvedAst.MatchRule(p, g.headOption, b)
               }
           }
 
@@ -1163,6 +1163,20 @@ object Resolver {
         case NamedAst.Expression.Par(exp, loc) =>
           mapN(visitExp(exp, region)) {
             e => ResolvedAst.Expression.Par(e, loc)
+          }
+
+        case NamedAst.Expression.ParYield(frags, exp, loc) =>
+          val fragsVal = traverse(frags) {
+            case NamedAst.ParYieldFragment(pat, e0, l0) =>
+              val pVal = Patterns.resolve(pat, ns0, root)
+              val e0Val = visitExp(e0, region)
+              mapN(pVal, e0Val) {
+                case (p, e1) => ResolvedAst.ParYieldFragment(p, e1, l0)
+              }
+          }
+
+          mapN(fragsVal, visitExp(exp, region)) {
+            case (fs, e) => ResolvedAst.Expression.ParYield(fs, e, loc)
           }
 
         case NamedAst.Expression.Lazy(exp, loc) =>

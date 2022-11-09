@@ -26,13 +26,26 @@ namespace Console {
     ///
     /// Reads a single line from the console.
     ///
-    /// Returns `None` if nothing was entered or if no console is presented.
+    /// Returns `Err` if no console is present, there is an IO error, or EOF is found.
     ///
     /// See also `System/StdIn.readLines`.
     ///
-    pub def readLine(): Option[String] \ IO =
+    pub def readLine(): Result[String, String] \ IO = {
         import java.io.Console.readLine(): String \ IO as consoleReadLine;
-        console() |> Option.map(consoleReadLine)
+        try {
+            match console() {
+                case Option.Some(c) =>
+                    let line = consoleReadLine(c);
+                    if (Object.isNull(line)) Err("EOF")
+                    else Ok(line)
+                case Option.None => Err("No JVM console")
+            }
+        } catch {
+            case e: ##java.io.IOError =>
+                import java.lang.Throwable.getMessage(): String;
+                Err(getMessage(e))
+        }
+    }
 
     ///
     /// Converts `x` to a string and prints it to the console.

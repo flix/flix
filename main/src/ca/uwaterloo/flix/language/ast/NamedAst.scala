@@ -219,6 +219,8 @@ object NamedAst {
 
     case class Par(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
+    case class ParYield(frags: List[NamedAst.ParYieldFragment], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
     case class Lazy(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Force(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
@@ -449,7 +451,7 @@ object NamedAst {
 
   case class ChoiceRule(pat: List[NamedAst.ChoicePattern], exp: NamedAst.Expression)
 
-  case class MatchRule(pat: NamedAst.Pattern, guard: NamedAst.Expression, exp: NamedAst.Expression)
+  case class MatchRule(pat: NamedAst.Pattern, guard: Option[NamedAst.Expression], exp: NamedAst.Expression)
 
   case class MatchTypeRule(sym: Symbol.VarSym, tpe: NamedAst.Type, exp: NamedAst.Expression)
 
@@ -474,4 +476,7 @@ object NamedAst {
   case class TypeConstraint(clazz: Name.QName, tpe: NamedAst.Type, loc: SourceLocation)
 
   case class PurityAndEffect(pur: Option[Type], eff: Option[List[Type]])
+
+  case class ParYieldFragment(pat: Pattern, exp: Expression, loc: SourceLocation)
+
 }
