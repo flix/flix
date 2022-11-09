@@ -451,7 +451,7 @@ object NamedAst {
 
   case class ChoiceRule(pat: List[NamedAst.ChoicePattern], exp: NamedAst.Expression)
 
-  case class MatchRule(pat: NamedAst.Pattern, guard: NamedAst.Expression, exp: NamedAst.Expression)
+  case class MatchRule(pat: NamedAst.Pattern, guard: Option[NamedAst.Expression], exp: NamedAst.Expression)
 
   case class MatchTypeRule(sym: Symbol.VarSym, tpe: NamedAst.Type, exp: NamedAst.Expression)
 

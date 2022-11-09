@@ -128,7 +128,7 @@ object Deriver {
 
       // create a default rule
       // `case _ => false`
-      val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc, text = FallbackText("wild")), loc), KindedAst.Expression.True(loc), KindedAst.Expression.False(loc))
+      val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc, text = FallbackText("wild")), loc), None, KindedAst.Expression.False(loc))
 
       // group the match rules in an expression
       KindedAst.Expression.Match(
@@ -179,8 +179,6 @@ object Deriver {
       val (pat2, varSyms2) = mkPattern(sym, tpe, "y", loc)
       val pat = KindedAst.Pattern.Tuple(List(pat1, pat2), loc)
 
-      val guard = KindedAst.Expression.True(loc)
-
       // call eq on each variable pair
       // `x0 == y0`, `x1 == y1`
       val eqs = varSyms1.zip(varSyms2).map {
@@ -209,7 +207,7 @@ object Deriver {
         }
       }
 
-      KindedAst.MatchRule(pat, guard, exp)
+      KindedAst.MatchRule(pat, None, exp)
   }
 
   /**
@@ -298,7 +296,7 @@ object Deriver {
       // `case _ => compare(indexOf(x), indexOf(y))`
       val defaultMatchRule = KindedAst.MatchRule(
         KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc, text = FallbackText("wild")), loc),
-        KindedAst.Expression.True(loc),
+        None,
         KindedAst.Expression.Apply(
           KindedAst.Expression.Sig(compareSigSym, Type.freshVar(Kind.Star, loc, text = FallbackText("compare")), loc),
           List(
@@ -373,9 +371,8 @@ object Deriver {
   private def mkCompareIndexMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation)(implicit Flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(sym, _, _) =>
       val pat = KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc, text = FallbackText("wild")), loc), Type.freshVar(Kind.Star, loc, text = FallbackText("tag")), loc)
-      val guard = KindedAst.Expression.True(loc)
       val exp = KindedAst.Expression.Int32(index, loc)
-      KindedAst.MatchRule(pat, guard, exp)
+      KindedAst.MatchRule(pat, None, exp)
   }
 
   /**
@@ -393,8 +390,6 @@ object Deriver {
       val (pat1, varSyms1) = mkPattern(sym, tpe, "x", loc)
       val (pat2, varSyms2) = mkPattern(sym, tpe, "y", loc)
       val pat = KindedAst.Pattern.Tuple(List(pat1, pat2), loc)
-
-      val guard = KindedAst.Expression.True(loc)
 
       // Call compare on each variable pair
       // `compare(x0, y0)`, `compare(x1, y1)`
@@ -440,7 +435,7 @@ object Deriver {
         case cmps => cmps.reduceRight(thenCompare)
       }
 
-      KindedAst.MatchRule(pat, guard, exp)
+      KindedAst.MatchRule(pat, None, exp)
   }
 
   /**
@@ -545,8 +540,6 @@ object Deriver {
       // `case C2(x0, x1)`
       val (pat, varSyms) = mkPattern(sym, tpe, "x", loc)
 
-      val guard = KindedAst.Expression.True(loc)
-
       // "C2"
       val tagPart = KindedAst.Expression.Str(sym.name, loc)
 
@@ -578,7 +571,7 @@ object Deriver {
         case exps => concatAll(tagPart :: mkStrExpr("(", loc) :: (exps :+ mkStrExpr(")", loc)), loc)
       }
 
-      KindedAst.MatchRule(pat, guard, exp)
+      KindedAst.MatchRule(pat, None, exp)
   }
 
   /**
@@ -686,8 +679,6 @@ object Deriver {
       // `case C2(x0, x1)`
       val (pat, varSyms) = mkPattern(sym, tpe, "x", loc)
 
-      val guard = KindedAst.Expression.True(loc)
-
       // build a hash code by repeatedly adding elements via the combine function
       // the first hash is the index + 1
       // `3 `combine` hash(x0) `combine` hash(y0)`
@@ -714,7 +705,7 @@ object Deriver {
           )
       }
 
-      KindedAst.MatchRule(pat, guard, exp)
+      KindedAst.MatchRule(pat, None, exp)
   }
 
   /**

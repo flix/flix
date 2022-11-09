@@ -252,7 +252,7 @@ object Indexer {
     case Expression.Match(exp, rules, _, _, _, _) =>
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
       val i1 = traverse(rules) {
-        case MatchRule(pat, guard, exp) => visitPat(pat) ++ visitExp(guard) ++ visitExp(exp)
+        case MatchRule(pat, guard, exp) => visitPat(pat) ++ Index.traverse(guard)(visitExp) ++ visitExp(exp)
       }
       i0 ++ i1
 
