@@ -189,8 +189,8 @@ object Stratifier {
     case Expression.Match(exp, rules, tpe, pur, eff, loc) =>
       val matchVal = visitExp(exp)
       val rulesVal = traverse(rules) {
-        case MatchRule(pat, guard, body) => mapN(traverse(guard)(visitExp), visitExp(body)) {
-          case (g, b) => MatchRule(pat, g.headOption, b)
+        case MatchRule(pat, guard, body) => mapN(traverseOpt(guard)(visitExp), visitExp(body)) {
+          case (g, b) => MatchRule(pat, g, b)
         }
       }
       mapN(matchVal, rulesVal) {

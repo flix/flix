@@ -175,12 +175,12 @@ object Weeder {
       val formalsVal = visitFormalParams(fparams0, Presence.Required)
       val purAndEff = visitPurityAndEffect(purOrEff)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
-      val expVal = Validation.traverse(exp0)(visitExp(_, SyntacticEnv.Top))
+      val expVal = traverseOpt(exp0)(visitExp(_, SyntacticEnv.Top))
 
       mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, tconstrsVal, expVal) {
         case (as, mod, _, _, tparams, fparams, tconstrs, exp) =>
           val tpe = visitType(tpe0)
-          List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, purAndEff, tconstrs, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp, tpe, purAndEff, tconstrs, mkSL(sp1, sp2)))
       }
   }
 
@@ -1109,8 +1109,8 @@ object Weeder {
       val loc = mkSL(sp1, sp2)
       val rulesVal = traverse(rules) {
         case ParsedAst.MatchRule(pat, guard, body) =>
-          mapN(visitPattern(pat), traverse(guard)(visitExp(_, senv)), visitExp(body, senv)) {
-            case (p, g, b) => WeededAst.MatchRule(p, g.headOption, b)
+          mapN(visitPattern(pat), traverseOpt(guard)(visitExp(_, senv)), visitExp(body, senv)) {
+            case (p, g, b) => WeededAst.MatchRule(p, g, b)
           }
       }
       mapN(visitExp(exp, senv), rulesVal) {
@@ -1248,21 +1248,21 @@ object Weeder {
       }
 
     case ParsedAst.Expression.New(sp1, qname, exp, sp2) =>
-      mapN(traverse(exp)(visitExp(_, senv)).map(_.headOption)) {
+      mapN(traverseOpt(exp)(visitExp(_, senv))) {
         case e =>
           WeededAst.Expression.New(qname, e, mkSL(qname.sp1, qname.sp2))
       }
 
     case ParsedAst.Expression.ArrayLit(sp1, exps, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
-      mapN(traverse(exps)(visitExp(_, senv)), traverse(exp)(visitExp(_, senv)).map(_.headOption)) {
+      mapN(traverse(exps)(visitExp(_, senv)), traverseOpt(exp)(visitExp(_, senv))) {
         case (es, e) =>
           WeededAst.Expression.ArrayLit(es, e, loc)
       }
 
     case ParsedAst.Expression.ArrayNew(sp1, exp1, exp2, exp3, sp2) =>
       val loc = mkSL(sp1, sp2)
-      mapN(visitExp(exp1, senv), visitExp(exp2, senv), traverse(exp3)(visitExp(_, senv)).map(_.headOption)) {
+      mapN(visitExp(exp1, senv), visitExp(exp2, senv), traverseOpt(exp3)(visitExp(_, senv))) {
         case (e1, e2, e3) =>
           WeededAst.Expression.ArrayNew(e1, e2, e3, loc)
       }
@@ -1454,7 +1454,7 @@ object Weeder {
     case ParsedAst.Expression.Ref(sp1, exp1, exp2, sp2) =>
       val loc = mkSL(sp1, sp2)
       val exp1Val = visitExp(exp1, senv)
-      val exp2Val = Validation.traverse(exp2)(visitExp(_, senv)).map(_.headOption)
+      val exp2Val = traverseOpt(exp2)(visitExp(_, senv))
       mapN(exp1Val, exp2Val) {
         case (e1, e2) => WeededAst.Expression.Ref(e1, e2, loc)
       }
