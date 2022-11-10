@@ -27,7 +27,7 @@ import com.juliasoft.beedeedee.factories.Factory
 
 object BddFormula {
 
-  val factory: Factory = Factory.mk(1000 * 1000, 100000)
+  var factory: ThreadLocal[Factory] = ThreadLocal.withInitial[Factory](() => Factory.mk(100, 100, 10))
 
   class BddFormula(val dd: BDD) {
     def getDD(): BDD = dd
@@ -48,21 +48,21 @@ object BddFormula {
       * Returns a representation of TRUE.
       */
     override def mkTrue: BddFormula = {
-      new BddFormula(factory.makeOne())
+      new BddFormula(factory.get().makeOne())
     }
 
     /**
       * Returns a representation of FALSE.
       */
     override def mkFalse: BddFormula = {
-      new BddFormula(factory.makeZero())
+      new BddFormula(factory.get().makeZero())
     }
 
     /**
       * Returns a representation of the variable with the given `id`.
       */
     override def mkVar(id: Int): BddFormula = {
-      new BddFormula(factory.makeVar(id))
+      new BddFormula(factory.get().makeVar(id))
     }
 
     /**
@@ -165,7 +165,7 @@ object BddFormula {
             res = res.restrict(var_i, true)
           } else if(substDD.isZero()) {
             res = res.restrict(var_i, false)
-          } else if(!substDD.isEquivalentTo(factory.makeVar(var_i))) {
+          } else if(!substDD.isEquivalentTo(factory.get().makeVar(var_i))) {
             substDD = substDD.replace(varMapForward.asJava.asInstanceOf[java.util.Map[Integer,Integer]])
             res = res.compose(substDD, var_i)
           }
@@ -188,7 +188,7 @@ object BddFormula {
 
             //replace any primed occurrences of k with the unprimed version
             if(varSetRes.contains(k_prime)) {
-              res = res.compose(factory.makeVar(var_k), k_prime)
+              res = res.compose(factory.get().makeVar(var_k), k_prime)
             }
           }
         }
