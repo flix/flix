@@ -2498,6 +2498,8 @@ object Typer {
 
       case KindedAst.Pattern.Cst(Ast.Constant.Str(s), loc) => liftM(Type.Str)
 
+      case KindedAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern")
+
       case KindedAst.Pattern.Tag(symUse, pat, tvar, loc) =>
         // Lookup the enum declaration.
         val decl = root.enums(symUse.sym.enumSym)
@@ -2580,6 +2582,7 @@ object Typer {
       case KindedAst.Pattern.Cst(Ast.Constant.Int64(lit), loc) => TypedAst.Pattern.Int64(lit, loc)
       case KindedAst.Pattern.Cst(Ast.Constant.BigInt(lit), loc) => TypedAst.Pattern.BigInt(lit, loc)
       case KindedAst.Pattern.Cst(Ast.Constant.Str(lit), loc) => TypedAst.Pattern.Str(lit, loc)
+      case KindedAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern")
 
       case KindedAst.Pattern.Tag(sym, pat, tvar, loc) => TypedAst.Pattern.Tag(sym, visit(pat), subst0(tvar), loc)
 
