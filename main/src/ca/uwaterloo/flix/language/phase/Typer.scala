@@ -480,46 +480,43 @@ object Typer {
       case KindedAst.Expression.Hole(_, tvar, _) =>
         liftM(List.empty, tvar, Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Unit(_) =>
+      case KindedAst.Expression.Cst(Ast.Constant.Unit, _) =>
         liftM(List.empty, Type.Unit, Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Null(_) =>
+      case KindedAst.Expression.Cst(Ast.Constant.Null, _) =>
         liftM(List.empty, Type.Null, Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.True(_) =>
+      case KindedAst.Expression.Cst(Ast.Constant.Bool(_), _) =>
         liftM(List.empty, Type.Bool, Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.False(_) =>
-        liftM(List.empty, Type.Bool, Type.Pure, Type.Empty)
-
-      case KindedAst.Expression.Char(_, _) =>
+      case KindedAst.Expression.Cst(Ast.Constant.Char(_), _) =>
         liftM(List.empty, Type.Char, Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Float32(_, _) =>
+      case KindedAst.Expression.Cst(Ast.Constant.Float32(_), _) =>
         liftM(List.empty, Type.Float32, Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Float64(_, _) =>
+      case KindedAst.Expression.Cst(Ast.Constant.Float64(_), _) =>
         liftM(List.empty, Type.Float64, Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.BigDecimal(_, _) =>
+      case KindedAst.Expression.Cst(Ast.Constant.BigDecimal(_), _) =>
         liftM(List.empty, Type.BigDecimal, Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Int8(_, _) =>
+      case KindedAst.Expression.Cst(Ast.Constant.Int8(_), _) =>
         liftM(List.empty, Type.Int8, Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Int16(_, _) =>
+      case KindedAst.Expression.Cst(Ast.Constant.Int16(_), _) =>
         liftM(List.empty, Type.Int16, Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Int32(_, _) =>
+      case KindedAst.Expression.Cst(Ast.Constant.Int32(_), _) =>
         liftM(List.empty, Type.Int32, Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Int64(_, _) =>
+      case KindedAst.Expression.Cst(Ast.Constant.Int64(_), _) =>
         liftM(List.empty, Type.Int64, Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.BigInt(_, _) =>
+      case KindedAst.Expression.Cst(Ast.Constant.BigInt(_), _) =>
         liftM(List.empty, Type.BigInt, Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Str(_, _) =>
+      case KindedAst.Expression.Cst(Ast.Constant.Str(_), _) =>
         liftM(List.empty, Type.Str, Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
@@ -1876,33 +1873,33 @@ object Typer {
       case KindedAst.Expression.Hole(sym, tpe, loc) =>
         TypedAst.Expression.Hole(sym, subst0(tpe), loc)
 
-      case KindedAst.Expression.Unit(loc) => TypedAst.Expression.Unit(loc)
+      case KindedAst.Expression.Cst(Ast.Constant.Unit, loc) => TypedAst.Expression.Unit(loc)
 
-      case KindedAst.Expression.Null(loc) => TypedAst.Expression.Null(Type.Unit, loc)
+      case KindedAst.Expression.Cst(Ast.Constant.Null, loc) => TypedAst.Expression.Null(Type.Unit, loc)
 
-      case KindedAst.Expression.True(loc) => TypedAst.Expression.True(loc)
+      case KindedAst.Expression.Cst(Ast.Constant.Bool(true), loc) => TypedAst.Expression.True(loc)
 
-      case KindedAst.Expression.False(loc) => TypedAst.Expression.False(loc)
+      case KindedAst.Expression.Cst(Ast.Constant.Bool(false), loc) => TypedAst.Expression.False(loc)
 
-      case KindedAst.Expression.Char(lit, loc) => TypedAst.Expression.Char(lit, loc)
+      case KindedAst.Expression.Cst(Ast.Constant.Char(lit), loc) => TypedAst.Expression.Char(lit, loc)
 
-      case KindedAst.Expression.Float32(lit, loc) => TypedAst.Expression.Float32(lit, loc)
+      case KindedAst.Expression.Cst(Ast.Constant.Float32(lit), loc) => TypedAst.Expression.Float32(lit, loc)
 
-      case KindedAst.Expression.Float64(lit, loc) => TypedAst.Expression.Float64(lit, loc)
+      case KindedAst.Expression.Cst(Ast.Constant.Float64(lit), loc) => TypedAst.Expression.Float64(lit, loc)
 
-      case KindedAst.Expression.BigDecimal(lit, loc) => TypedAst.Expression.BigDecimal(lit, loc)
+      case KindedAst.Expression.Cst(Ast.Constant.BigDecimal(lit), loc) => TypedAst.Expression.BigDecimal(lit, loc)
 
-      case KindedAst.Expression.Int8(lit, loc) => TypedAst.Expression.Int8(lit, loc)
+      case KindedAst.Expression.Cst(Ast.Constant.Int8(lit), loc) => TypedAst.Expression.Int8(lit, loc)
 
-      case KindedAst.Expression.Int16(lit, loc) => TypedAst.Expression.Int16(lit, loc)
+      case KindedAst.Expression.Cst(Ast.Constant.Int16(lit), loc) => TypedAst.Expression.Int16(lit, loc)
 
-      case KindedAst.Expression.Int32(lit, loc) => TypedAst.Expression.Int32(lit, loc)
+      case KindedAst.Expression.Cst(Ast.Constant.Int32(lit), loc) => TypedAst.Expression.Int32(lit, loc)
 
-      case KindedAst.Expression.Int64(lit, loc) => TypedAst.Expression.Int64(lit, loc)
+      case KindedAst.Expression.Cst(Ast.Constant.Int64(lit), loc) => TypedAst.Expression.Int64(lit, loc)
 
-      case KindedAst.Expression.BigInt(lit, loc) => TypedAst.Expression.BigInt(lit, loc)
+      case KindedAst.Expression.Cst(Ast.Constant.BigInt(lit), loc) => TypedAst.Expression.BigInt(lit, loc)
 
-      case KindedAst.Expression.Str(lit, loc) => TypedAst.Expression.Str(lit, loc)
+      case KindedAst.Expression.Cst(Ast.Constant.Str(lit), loc) => TypedAst.Expression.Str(lit, loc)
 
       case KindedAst.Expression.Apply(exp, exps, tvar, pvar, evar, loc) =>
         val e = visitExp(exp, subst0)
@@ -2138,7 +2135,7 @@ object Typer {
         val eff = e.eff
         TypedAst.Expression.Ascribe(e, subst0(tvar), pur, eff, loc)
 
-      case KindedAst.Expression.Cast(KindedAst.Expression.Null(_), _, _, _, tvar, loc) =>
+      case KindedAst.Expression.Cast(KindedAst.Expression.Cst(Ast.Constant.Null, _), _, _, _, tvar, loc) =>
         val t = subst0(tvar)
         TypedAst.Expression.Null(t, loc)
 
@@ -2477,31 +2474,29 @@ object Typer {
 
       case KindedAst.Pattern.Var(sym, tvar, loc) => unifyTypeM(sym.tvar, tvar, loc)
 
-      case KindedAst.Pattern.Unit(loc) => liftM(Type.Unit)
+      case KindedAst.Pattern.Cst(Ast.Constant.Unit, loc) => liftM(Type.Unit)
 
-      case KindedAst.Pattern.True(loc) => liftM(Type.Bool)
+      case KindedAst.Pattern.Cst(Ast.Constant.Bool(b), loc) => liftM(Type.Bool)
 
-      case KindedAst.Pattern.False(loc) => liftM(Type.Bool)
+      case KindedAst.Pattern.Cst(Ast.Constant.Char(c), loc) => liftM(Type.Char)
 
-      case KindedAst.Pattern.Char(c, loc) => liftM(Type.Char)
+      case KindedAst.Pattern.Cst(Ast.Constant.Float32(i), loc) => liftM(Type.Float32)
 
-      case KindedAst.Pattern.Float32(i, loc) => liftM(Type.Float32)
+      case KindedAst.Pattern.Cst(Ast.Constant.Float64(i), loc) => liftM(Type.Float64)
 
-      case KindedAst.Pattern.Float64(i, loc) => liftM(Type.Float64)
+      case KindedAst.Pattern.Cst(Ast.Constant.BigDecimal(i), loc) => liftM(Type.BigDecimal)
 
-      case KindedAst.Pattern.BigDecimal(i, loc) => liftM(Type.BigDecimal)
+      case KindedAst.Pattern.Cst(Ast.Constant.Int8(i), loc) => liftM(Type.Int8)
 
-      case KindedAst.Pattern.Int8(i, loc) => liftM(Type.Int8)
+      case KindedAst.Pattern.Cst(Ast.Constant.Int16(i), loc) => liftM(Type.Int16)
 
-      case KindedAst.Pattern.Int16(i, loc) => liftM(Type.Int16)
+      case KindedAst.Pattern.Cst(Ast.Constant.Int32(i), loc) => liftM(Type.Int32)
 
-      case KindedAst.Pattern.Int32(i, loc) => liftM(Type.Int32)
+      case KindedAst.Pattern.Cst(Ast.Constant.Int64(i), loc) => liftM(Type.Int64)
 
-      case KindedAst.Pattern.Int64(i, loc) => liftM(Type.Int64)
+      case KindedAst.Pattern.Cst(Ast.Constant.BigInt(i), loc) => liftM(Type.BigInt)
 
-      case KindedAst.Pattern.BigInt(i, loc) => liftM(Type.BigInt)
-
-      case KindedAst.Pattern.Str(s, loc) => liftM(Type.Str)
+      case KindedAst.Pattern.Cst(Ast.Constant.Str(s), loc) => liftM(Type.Str)
 
       case KindedAst.Pattern.Tag(symUse, pat, tvar, loc) =>
         // Lookup the enum declaration.
@@ -2572,19 +2567,19 @@ object Typer {
     def visit(p: KindedAst.Pattern): TypedAst.Pattern = p match {
       case KindedAst.Pattern.Wild(tvar, loc) => TypedAst.Pattern.Wild(subst0(tvar), loc)
       case KindedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(sym, subst0(tvar), loc)
-      case KindedAst.Pattern.Unit(loc) => TypedAst.Pattern.Unit(loc)
-      case KindedAst.Pattern.True(loc) => TypedAst.Pattern.True(loc)
-      case KindedAst.Pattern.False(loc) => TypedAst.Pattern.False(loc)
-      case KindedAst.Pattern.Char(lit, loc) => TypedAst.Pattern.Char(lit, loc)
-      case KindedAst.Pattern.Float32(lit, loc) => TypedAst.Pattern.Float32(lit, loc)
-      case KindedAst.Pattern.Float64(lit, loc) => TypedAst.Pattern.Float64(lit, loc)
-      case KindedAst.Pattern.BigDecimal(lit, loc) => TypedAst.Pattern.BigDecimal(lit, loc)
-      case KindedAst.Pattern.Int8(lit, loc) => TypedAst.Pattern.Int8(lit, loc)
-      case KindedAst.Pattern.Int16(lit, loc) => TypedAst.Pattern.Int16(lit, loc)
-      case KindedAst.Pattern.Int32(lit, loc) => TypedAst.Pattern.Int32(lit, loc)
-      case KindedAst.Pattern.Int64(lit, loc) => TypedAst.Pattern.Int64(lit, loc)
-      case KindedAst.Pattern.BigInt(lit, loc) => TypedAst.Pattern.BigInt(lit, loc)
-      case KindedAst.Pattern.Str(lit, loc) => TypedAst.Pattern.Str(lit, loc)
+      case KindedAst.Pattern.Cst(Ast.Constant.Unit, loc) => TypedAst.Pattern.Unit(loc)
+      case KindedAst.Pattern.Cst(Ast.Constant.Bool(true), loc) => TypedAst.Pattern.True(loc)
+      case KindedAst.Pattern.Cst(Ast.Constant.Bool(false), loc) => TypedAst.Pattern.False(loc)
+      case KindedAst.Pattern.Cst(Ast.Constant.Char(lit), loc) => TypedAst.Pattern.Char(lit, loc)
+      case KindedAst.Pattern.Cst(Ast.Constant.Float32(lit), loc) => TypedAst.Pattern.Float32(lit, loc)
+      case KindedAst.Pattern.Cst(Ast.Constant.Float64(lit), loc) => TypedAst.Pattern.Float64(lit, loc)
+      case KindedAst.Pattern.Cst(Ast.Constant.BigDecimal(lit), loc) => TypedAst.Pattern.BigDecimal(lit, loc)
+      case KindedAst.Pattern.Cst(Ast.Constant.Int8(lit), loc) => TypedAst.Pattern.Int8(lit, loc)
+      case KindedAst.Pattern.Cst(Ast.Constant.Int16(lit), loc) => TypedAst.Pattern.Int16(lit, loc)
+      case KindedAst.Pattern.Cst(Ast.Constant.Int32(lit), loc) => TypedAst.Pattern.Int32(lit, loc)
+      case KindedAst.Pattern.Cst(Ast.Constant.Int64(lit), loc) => TypedAst.Pattern.Int64(lit, loc)
+      case KindedAst.Pattern.Cst(Ast.Constant.BigInt(lit), loc) => TypedAst.Pattern.BigInt(lit, loc)
+      case KindedAst.Pattern.Cst(Ast.Constant.Str(lit), loc) => TypedAst.Pattern.Str(lit, loc)
 
       case KindedAst.Pattern.Tag(sym, pat, tvar, loc) => TypedAst.Pattern.Tag(sym, visit(pat), subst0(tvar), loc)
 
