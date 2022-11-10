@@ -128,7 +128,7 @@ object Deriver {
 
       // create a default rule
       // `case _ => false`
-      val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc, text = FallbackText("wild")), loc), None, KindedAst.Expression.False(loc))
+      val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc, text = FallbackText("wild")), loc), None, KindedAst.Expression.Cst(Ast.Constant.Bool(false), loc))
 
       // group the match rules in an expression
       KindedAst.Expression.Match(
