@@ -101,7 +101,7 @@ instance Foldable[Option] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, o: Option[a]): b \ ef = Option.foldLeft(f, s, o)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, o: Option[a]): b \ ef = Option.foldRight(f, o, s)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, o: Option[a]): b \ ef = Option.foldRightWithCont(f, o, s)
-    override pub def iterator(r: Region[r], o: Option[a]): Iterator[a, r] \ Write(r) = Option.iterator(r, o)
+    override pub def iterator(reg: Region[r], o: Option[a]): Iterator[a, r] \ Write(r) = Option.iterator(reg, o)
 }
 
 instance UnorderedFoldable[Option] {
@@ -600,15 +600,15 @@ namespace Option {
     ///
     /// Returns an iterator over `o` with 1 element or an empty iterator if `o` is `None`.
     ///
-    pub def iterator(r: Region[r], o: Option[a]): Iterator[a, r] \ Write(r) = match o {
-        case None    => new Iterator(r)
-        case Some(x) => Iterator.singleton(r, x)
+    pub def iterator(reg: Region[r], o: Option[a]): Iterator[a, r] \ Write(r) = match o {
+        case None    => new Iterator(reg)
+        case Some(x) => Iterator.singleton(reg, x)
     }
 
     ///
     /// Returns an iterator over `o` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], o: Option[a]): Iterator[(a, Int32), r] \ Write(r) =
-        iterator(r, o) |> Iterator.zipWithIndex
+    pub def enumerator(reg: Region[r], o: Option[a]): Iterator[(a, Int32), r] \ Write(r) =
+        iterator(reg, o) |> Iterator.zipWithIndex
 
 }

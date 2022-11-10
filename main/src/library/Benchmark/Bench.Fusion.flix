@@ -22,15 +22,15 @@ namespace Bench/Fusion {
     ///
     /// Returns a list of `n` concatenated lists with elements from `1` to `1_000`.
     ///
-    pub def input(r: Region[r], n: Int32): Array[Int32, r] \ Write(r) =
-        Array.range(r, 1, n) |>
-        Array.flatMap(_ -> Array.range(r, 1, 1_000))
+    pub def input(reg: Region[r], n: Int32): Array[Int32, r] \ Write(r) =
+        Array.range(reg, 1, n) |>
+        Array.flatMap(_ -> Array.range(reg, 1, 1_000))
 
     ////////////////////////////////////////////////////////////////////////////
     /// Biboudis Suite                                                       ///
     ////////////////////////////////////////////////////////////////////////////
-    pub def biboudisSuite(n: Int32): List[Benchmark] = region r {
-        let l = input(r, n);
+    pub def biboudisSuite(n: Int32): List[Benchmark] = region reg {
+        let l = input(reg, n);
         // List
         listLength(l) ::
         listFilterLength(l) ::

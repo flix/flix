@@ -65,9 +65,9 @@ namespace String {
     ///
     /// Splits the string `s` around matches of the regular expression `regex`.
     ///
-    pub def split(regex: {regex = String}, s: String): List[String] = region r {
-        import java.lang.String.split(String): Array[String, r] \ Write(r);
-        let _ = r; // This avoids a redundancy error.
+    pub def split(regex: {regex = String}, s: String): List[String] = region reg {
+        import java.lang.String.split(String): Array[String, reg] \ Write(reg);
+        let _ = reg; // This avoids a redundancy error.
         Array.toList(split(s, regex.regex))
     }
 
@@ -115,8 +115,8 @@ namespace String {
     /// Returns the given string `s` as an array of characters.
     ///
     @Time(length(s)) @Space(length(s))
-    pub def toArray(r: Region[r], s: String): Array[Char, r] \ Write(r) =
-        Array.init(r, i -> charAt(i, s), length(s))
+    pub def toArray(reg: Region[r], s: String): Array[Char, r] \ Write(r) =
+        Array.init(reg, i -> charAt(i, s), length(s))
 
     ///
     /// Build a string of length `len` by applying `f` to the successive indices.
@@ -130,8 +130,8 @@ namespace String {
     ///
     /// Assumes that `len > 0`.
     ///
-    def initHelper(f: Int32 -> Char \ ef, len: Int32): String \ ef = region r {
-        let sb = new StringBuilder(r);
+    def initHelper(f: Int32 -> Char \ ef, len: Int32): String \ ef = region reg {
+        let sb = new StringBuilder(reg);
         def loop(i) = {
             if (i >= len)
                 StringBuilder.toString(sb)
@@ -148,8 +148,8 @@ namespace String {
     /// Concatenate a list of strings into a single string.
     ///
     @Time(List.length(xs)) @Space(List.length(xs))
-    pub def flatten(xs: List[String]): String = region r {
-        let sb = new StringBuilder(r);
+    pub def flatten(xs: List[String]): String = region reg {
+        let sb = new StringBuilder(reg);
         List.foreach(x -> StringBuilder.appendString!(x, sb), xs);
         StringBuilder.toString(sb)
     }
@@ -159,9 +159,9 @@ namespace String {
     /// each pair of strings.
     ///
     @Time(length(sep) * List.length(xs)) @Space(length(sep) * List.length(xs))
-    pub def intercalate(sep: String, xs: List[String]): String = region r {
-        let sb = new StringBuilder(r);
-        let arr = List.toArray(r, xs);
+    pub def intercalate(sep: String, xs: List[String]): String = region reg {
+        let sb = new StringBuilder(reg);
+        let arr = List.toArray(reg, xs);
         StringBuilder.intercalate!(sep, arr, sb);
         StringBuilder.toString(sb)
     }
@@ -173,8 +173,8 @@ namespace String {
     @Time(List.length(xs)) @Space(List.length(xs))
     pub def intercalateChar(sep: Char, xs: List[String]): String = match xs {
         case Nil     => ""
-        case x :: rs => region r {
-            let sb = new StringBuilder(r);
+        case x :: rs => region reg {
+            let sb = new StringBuilder(reg);
             StringBuilder.appendString!(x, sb);
             let appendStep = s -> { StringBuilder.append!(sep, sb); StringBuilder.appendString!(s, sb) };
             List.foreach(appendStep, rs);
@@ -270,11 +270,11 @@ namespace String {
     ///
     /// Helper function for `isSubmatch`.
     ///
-    def isSubmatchHelper(pattern: String, s: String): Bool = region r {
-        import static java.util.regex.Pattern.compile(String): ##java.util.regex.Pattern \ Write(r);
-        import java.util.regex.Pattern.matcher(##java.lang.CharSequence): ##java.util.regex.Matcher \ Read(r);
-        import java.util.regex.Matcher.find(Int32): Bool \ Write(r);
-        let _ = r; // This avoids a redundancy error.
+    def isSubmatchHelper(pattern: String, s: String): Bool = region reg {
+        import static java.util.regex.Pattern.compile(String): ##java.util.regex.Pattern \ Write(reg);
+        import java.util.regex.Pattern.matcher(##java.lang.CharSequence): ##java.util.regex.Matcher \ Read(reg);
+        import java.util.regex.Matcher.find(Int32): Bool \ Write(reg);
+        let _ = reg; // This avoids a redundancy error.
         try {
             let p1 = compile(pattern);
             let m1 = matcher(p1, upcast s);
@@ -603,8 +603,8 @@ namespace String {
     ///
     /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
     ///
-    pub def unfold(f: b -> Option[(Char, b)] \ ef, x: b): String \ ef = region r {
-        let sb = new StringBuilder(r);
+    pub def unfold(f: b -> Option[(Char, b)] \ ef, x: b): String \ ef = region reg {
+        let sb = new StringBuilder(reg);
         def loop(a) = {
             let a1 = f(a);
             match a1 {
@@ -626,8 +626,8 @@ namespace String {
     ///
     /// `next` should return `None` to signal the end of building the string.
     ///
-    pub def unfoldWithIter(f: Unit -> Option[Char] \ ef): String \ ef = region r {
-        let sb = new StringBuilder(r);
+    pub def unfoldWithIter(f: Unit -> Option[Char] \ ef): String \ ef = region reg {
+        let sb = new StringBuilder(reg);
         def loop() = {
             match f() {
                 case None    => StringBuilder.toString(sb)
@@ -645,8 +645,8 @@ namespace String {
     ///
     /// This is a version of `unfold` where `f` generates substrings rather than chars.
     ///
-    pub def unfoldString(f: b -> Option[(String, b)] \ ef, x: b) : String \ ef = region r {
-        let sb = new StringBuilder(r);
+    pub def unfoldString(f: b -> Option[(String, b)] \ ef, x: b) : String \ ef = region reg {
+        let sb = new StringBuilder(reg);
         def loop(a) = {
             let a1 = f(a);
             match a1 {
@@ -668,8 +668,8 @@ namespace String {
     ///
     /// `next` should return `None` to signal the end of building the string.
     ///
-    pub def unfoldStringWithIter(f: Unit -> Option[String] \ ef): String \ ef = region r {
-        let sb = new StringBuilder(r);
+    pub def unfoldStringWithIter(f: Unit -> Option[String] \ ef): String \ ef = region reg {
+        let sb = new StringBuilder(reg);
         def loop() = {
             match f() {
                 case None    => StringBuilder.toString(sb)
@@ -844,8 +844,8 @@ namespace String {
     ///
     /// Helper function for `indent`.
     ///
-    def indentHelper(n: Int32, s: String): String = region r {
-        let sb = new StringBuilder(r);
+    def indentHelper(n: Int32, s: String): String = region reg {
+        let sb = new StringBuilder(reg);
         let prefix = repeat(n, " ");
         let step = x -> {
             StringBuilder.appendString!(prefix, sb);
@@ -875,8 +875,8 @@ namespace String {
     ///
     /// Helper function for `stripIndent`.
     ///
-    def stripIndentHelper(n: Int32, s: String): String = region r {
-        let sb = new StringBuilder(r);
+    def stripIndentHelper(n: Int32, s: String): String = region reg {
+        let sb = new StringBuilder(reg);
         let limit = Int32.min(n, length(s));
         def loop(s1, ix) = {
             if (ix >= limit)
@@ -912,8 +912,8 @@ namespace String {
     /// ending the result string with the system dependent line separator.
     ///
     @Time(List.length(a)) @Space(List.length(a))
-    pub def unlines(a: List[String]): String = region r {
-        let sb = new StringBuilder(r);
+    pub def unlines(a: List[String]): String = region reg {
+        let sb = new StringBuilder(reg);
         List.foreach(x -> StringBuilder.appendLine!(x, sb), a);
         StringBuilder.toString(sb)
     }
@@ -935,8 +935,8 @@ namespace String {
     @Time(List.length(l)) @Space(List.length(l))
     pub def unwords(l: List[String]): String = match l {
         case Nil     => ""
-        case x :: xs => region r {
-            let sb = new StringBuilder(r);
+        case x :: xs => region reg {
+            let sb = new StringBuilder(reg);
             StringBuilder.appendString!(x, sb);
             let f = s -> { StringBuilder.append!(' ', sb); StringBuilder.appendString!(s, sb) };
             List.foreach(f, xs);
@@ -1082,11 +1082,11 @@ namespace String {
     /// string `s` into string `t`.
     ///
     @Time(length(s) * length(t)) @Space(length(s) * length(t))
-    pub def levenshteinDistance(s: String, t: String): Int32 = region r {
+    pub def levenshteinDistance(s: String, t: String): Int32 = region reg {
         let m = length(s);
         let n = length(t);
-        let v0 = Array.new(r, 0, n + 1);
-        let v1 = Array.new(r, 0, n + 1);
+        let v0 = Array.new(reg, 0, n + 1);
+        let v1 = Array.new(reg, 0, n + 1);
         forIndex(0, n, i -> v0[i] = i);
         forIndex(0, m - 1, i -> {
             v1[0] = i + 1;
@@ -1273,9 +1273,9 @@ namespace String {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def iterator(r: Region[r], s: String): Iterator[Char, r] \ Write(r) =
+    pub def iterator(reg: Region[r], s: String): Iterator[Char, r] \ Write(r) =
         let len = length(s);
-        let i = ref 0 @ r;
+        let i = ref 0 @ reg;
         let done = () -> deref i >= len;
         let next = () -> {
             let x = charAt(deref i, s);
@@ -1287,7 +1287,7 @@ namespace String {
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], s: String): Iterator[(Char, Int32), r] \ Write(r) =
-        iterator(r, s) |> Iterator.zipWithIndex
+    pub def enumerator(reg: Region[r], s: String): Iterator[(Char, Int32), r] \ Write(r) =
+        iterator(reg, s) |> Iterator.zipWithIndex
 
 }

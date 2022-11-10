@@ -20,7 +20,7 @@
 enum StringBuilder[_: Region](##java.lang.StringBuilder)
 
 instance Newable[StringBuilder] {
-    pub def new(r: Region[r]): StringBuilder[r] \ Write(r) = StringBuilder.new(r)
+    pub def new(reg: Region[r]): StringBuilder[r] \ Write(r) = StringBuilder.new(reg)
 }
 
 instance Scoped[StringBuilder] {
@@ -107,11 +107,11 @@ namespace StringBuilder {
     ///
     /// Returns an iterator over `sb`.
     ///
-    pub def iterator(r1: Region[r1], sb: StringBuilder[r2]): Iterator[Char, r1 and r2] \ { Read(r2), Write(r1) } =
+    pub def iterator(reg1: Region[r1], sb: StringBuilder[r2]): Iterator[Char, r1 and r2] \ { Read(r2), Write(r1) } =
         import java.lang.StringBuilder.charAt(Int32): Char \ Read(r2);
         let StringBuilder(msb) = sb;
         let len = length(sb);
-        let i = ref 0 @ r1;
+        let i = ref 0 @ reg1;
         let done = () -> { deref i >= len } as \ {r1, r2};
         let next = () -> {
             let x = charAt(msb, deref i);

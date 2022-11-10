@@ -54,7 +54,7 @@ instance Foldable[Map[k]] {
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldLeft(f, s, m)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldRight(f, s, m)
     pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldRightWithCont(f, s, m)
-    override pub def iterator(r: Region[r], m: Map[k, v]): Iterator[v, r] \ Write(r) = Map.iteratorValues(r, m)
+    override pub def iterator(reg: Region[r], m: Map[k, v]): Iterator[v, r] \ Write(r) = Map.iteratorValues(reg, m)
 }
 
 instance UnorderedFoldable[Map[k]] {
@@ -111,11 +111,11 @@ namespace Map {
     ///
     /// Returns a string representation of the given map `m`.
     ///
-    pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region r {
-        let sb = new StringBuilder(r);
+    pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region reg {
+        let sb = new StringBuilder(reg);
         StringBuilder.appendString!("Map#{", sb);
-        let first = ref true @ r;
-        foreach ((k, v) <- Map.iterator(r, m)) {
+        let first = ref true @ reg;
+        foreach ((k, v) <- Map.iterator(reg, m)) {
             if (deref first) {
                 first := false;
                 StringBuilder.appendString!("${k} => ${v}", sb)
@@ -843,8 +843,8 @@ namespace Map {
     /// Returns `m` as a mutable set.
     ///
     @Time(1) @Space(1)
-    pub def toMutMap(r: Region[r], m: Map[k, v]): MutMap[k, v, r] \ Write(r) =
-        MutMap(ref m @ r)
+    pub def toMutMap(reg: Region[r], m: Map[k, v]): MutMap[k, v, r] \ Write(r) =
+        MutMap(ref m @ reg)
 
     ///
     /// Returns the map `m` as a list of key-value pairs.
@@ -881,8 +881,8 @@ namespace Map {
     ///
     /// Returns `m` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], m: Map[k, v]): MutDeque[(k, v), r] \ Write(r) =
-        let d = new MutDeque(r);
+    pub def toMutDeque(reg: Region[r], m: Map[k, v]): MutDeque[(k, v), r] \ Write(r) =
+        let d = new MutDeque(reg);
         Map.foreach((k, v) -> MutDeque.pushBack((k, v), d), m);
         d
 
@@ -948,21 +948,21 @@ namespace Map {
     ///
     /// Returns an iterator over all key-value pairs in `m`.
     ///
-    pub def iterator(r: Region[r], m: Map[k, v]): Iterator[(k, v), r] \ Write(r) =
+    pub def iterator(reg: Region[r], m: Map[k, v]): Iterator[(k, v), r] \ Write(r) =
         let Map(t) = m;
-        RedBlackTree.iterator(r, t)
+        RedBlackTree.iterator(reg, t)
 
     ///
     /// Returns an iterator over keys in `m`.
     ///
-    pub def iteratorKeys(r: Region[r], m: Map[k, v]): Iterator[k, r] \ Write(r) =
-        iterator(r, m) |> Iterator.mapL(match (k, _) -> k)
+    pub def iteratorKeys(reg: Region[r], m: Map[k, v]): Iterator[k, r] \ Write(r) =
+        iterator(reg, m) |> Iterator.mapL(match (k, _) -> k)
 
     ///
     /// Returns an iterator over values in `m`.
     ///
-    pub def iteratorValues(r: Region[r], m: Map[k, v]): Iterator[v, r] \ Write(r) =
-        iterator(r, m) |> Iterator.mapL(match (_, v) -> v)
+    pub def iteratorValues(reg: Region[r], m: Map[k, v]): Iterator[v, r] \ Write(r) =
+        iterator(reg, m) |> Iterator.mapL(match (_, v) -> v)
 
     ///
     /// Returns `m` as a `DelayMap`.

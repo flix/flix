@@ -26,7 +26,7 @@ pub enum MutList[a: Type, r: Region] {
 }
 
 instance Newable[MutList[a]] {
-    pub def new(r: Region[r]): MutList[a, r] \ Write(r) = MutList.new(r)
+    pub def new(reg: Region[r]): MutList[a, r] \ Write(r) = MutList.new(reg)
 }
 
 instance Scoped[MutList[a]] {
@@ -48,20 +48,20 @@ namespace MutList {
     ///
     /// Returns a new empty mutable list with a default capacity.
     ///
-    pub def new(r: Region[r]): MutList[a, r] \ Write(r) =
-        MutList(ref ([Reflect.default(); minCapacity()] @ r) @ r, ref 0 @ r)
+    pub def new(reg: Region[r]): MutList[a, r] \ Write(r) =
+        MutList(ref ([Reflect.default(); minCapacity()] @ reg) @ reg, ref 0 @ reg)
 
     ///
     /// Returns a mutable list of all integers between `b` (inclusive) and `e` (exclusive).
     ///
     /// Returns an empty mutable list if `b >= e`.
     ///
-    pub def range(r: Region[r], b: Int32, e: Int32): MutList[Int32, r] \ Write(r) =
+    pub def range(reg: Region[r], b: Int32, e: Int32): MutList[Int32, r] \ Write(r) =
         let minCap = minCapacity();
         let d = e - b;
         let c = Order.max(d, minCap);
         let f = i -> { let x = b + i; if (x < e) x else Reflect.default() };
-        MutList(ref Array.init(r, f, c) @ r, ref d @ r)
+        MutList(ref Array.init(reg, f, c) @ reg, ref d @ reg)
 
     ///
     /// Optionally returns the element at position `i` in the mutable list `v`.
@@ -309,12 +309,12 @@ namespace MutList {
     /// Accumulates the result of applying `f` to `v` going left to right.
     ///
     pub def scanLeft(f: (b, a) -> b \ ef, s: b, v: MutList[a, r]): MutList[b, r] \ { ef, Read(r), Write(r) } =
-        let r = Scoped.regionOf(v);
+        let reg = Scoped.regionOf(v);
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
         let n = l + 1;
-        let b = [s; n] @ r;
+        let b = [s; n] @ reg;
         def loop(i, acc) = {
             if (i >= n)
                 ()
@@ -325,7 +325,7 @@ namespace MutList {
             }
         };
         loop(1, s);
-        MutList(ref b @ r, ref n @ r)
+        MutList(ref b @ reg, ref n @ reg)
 
     ///
     /// Accumulates the result of applying `f` to `v` going right to left.
@@ -335,8 +335,8 @@ namespace MutList {
         let a = deref ra;
         let l = deref rl;
         let n = l + 1;
-        let r = Scoped.regionOf(v);
-        let b = [s; n] @ r;
+        let reg = Scoped.regionOf(v);
+        let b = [s; n] @ reg;
         def loop(i, acc) = {
             if (i < 0)
                 ()
@@ -347,7 +347,7 @@ namespace MutList {
             }
         };
         loop(l - 1, s);
-        MutList(ref b @ r, ref n @ r)
+        MutList(ref b @ reg, ref n @ reg)
 
     ///
     /// Apply `f` to every element in `v`.
@@ -355,15 +355,15 @@ namespace MutList {
     /// The result is a new mutable list.
     ///
     pub def map(f: a -> b \ ef, v: MutList[a, r]): MutList[b, r] \ { ef, Read(r), Write(r) } =
-        let r = Scoped.regionOf(v);
+        let reg = Scoped.regionOf(v);
         if (isEmpty(v))
-            new MutList(r)
+            new MutList(reg)
         else {
             let MutList(ra, rl) = v;
             let a = deref ra;
             let l = deref rl;
             let x = f(a[0]);
-            let b = [x; Array.length(a)] @ r;
+            let b = [x; Array.length(a)] @ reg;
             def loop(i) = {
                 if (i >= l)
                     ()
@@ -373,22 +373,22 @@ namespace MutList {
                 }
             };
             loop(1);
-            MutList(ref b @ r, ref l @ r)
+            MutList(ref b @ reg, ref l @ reg)
         }
 
     ///
     /// Returns the result of applying `f` to every element in `v` along with that element's index.
     ///
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, v: MutList[a, r]): MutList[b, r] \ { ef, Read(r), Write(r) } =
-        let r = Scoped.regionOf(v);
+        let reg = Scoped.regionOf(v);
         if (isEmpty(v))
-            new MutList(r)
+            new MutList(reg)
         else {
             let MutList(ra, rl) = v;
             let a = deref ra;
             let l = deref rl;
             let x = f(0, a[0]);
-            let b = [x; Array.length(a)] @ r;
+            let b = [x; Array.length(a)] @ reg;
             def loop(i) = {
                 if (i >= l)
                     ()
@@ -398,7 +398,7 @@ namespace MutList {
                 }
             };
             loop(1);
-            MutList(ref b @ r, ref l @ r)
+            MutList(ref b @ reg, ref l @ reg)
         }
 
     ///
@@ -537,11 +537,11 @@ namespace MutList {
     pub def copy(v: MutList[a, r]): MutList[a, r] \ { Read(r), Write(r) } =
         let MutList(a, l) = v;
         let len = deref l;
-        let r = Scoped.regionOf(v);
+        let reg = Scoped.regionOf(v);
         if (len > minCapacity())
-            MutList(ref Array.copyOfRange(r, 0, len, deref a) @ r, ref len @ r)
+            MutList(ref Array.copyOfRange(reg, 0, len, deref a) @ reg, ref len @ reg)
         else
-            MutList(ref Array.copyOfRange(r, 0, capacity(v), deref a) @ r, ref len @ r)
+            MutList(ref Array.copyOfRange(reg, 0, capacity(v), deref a) @ reg, ref len @ reg)
 
     ///
     /// Optionally removes and returns the last element in the given mutable list `v`.
@@ -636,8 +636,8 @@ namespace MutList {
     ///
     pub def retain!(f: a -> Bool, v: MutList[a, r]): Unit \ { Read(r), Write(r) } =
         let MutList(a1, l1) = v;
-        let r = Scoped.regionOf(v);
-        let l = new MutList(r);
+        let reg = Scoped.regionOf(v);
+        let l = new MutList(reg);
         foreach(e -> if (f(e)) push!(e, l) else (), v);
         let MutList(a2, l2) = l;
         a1 := deref a2;
@@ -734,9 +734,9 @@ namespace MutList {
     ///
     /// Returns `v` as an array.
     ///
-    pub def toArray(r1: Region[r1], v: MutList[a, r2]): Array[a, r1] \ { Read(r2), Write(r1) } =
+    pub def toArray(reg1: Region[r1], v: MutList[a, r2]): Array[a, r1] \ { Read(r2), Write(r1) } =
         let MutList(a, l) = v;
-        Array.copyOfRange(r1, 0, deref l, deref a)
+        Array.copyOfRange(reg1, 0, deref l, deref a)
 
     ///
     /// Returns the mutable list `xs` as a chain.
@@ -747,8 +747,8 @@ namespace MutList {
     ///
     /// Returns `v` as a MutDeque.
     ///
-    pub def toMutDeque(r1: Region[r1], v: MutList[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1) }  =
-        let d = new MutDeque(r1);
+    pub def toMutDeque(reg1: Region[r1], v: MutList[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1) }  =
+        let d = new MutDeque(reg1);
         MutList.foreach(x -> MutDeque.pushBack(x, d), v);
         d
 
@@ -783,8 +783,8 @@ namespace MutList {
     /// Returns the concatenation of the string representation
     /// of each element in `v` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String \ ef, sep: String, v: MutList[a, r]): String \ { ef, Read(r) } = region r1 {
-        let sb = new StringBuilder(r1);
+    pub def joinWith(f: a -> String \ ef, sep: String, v: MutList[a, r]): String \ { ef, Read(r) } = region reg1 {
+        let sb = new StringBuilder(reg1);
         let step = (i, x) ->
             if (i == 0)
                 StringBuilder.appendString!(f(x), sb)
@@ -802,9 +802,9 @@ namespace MutList {
     /// Modifying `l` while using an iterator has undefined behavior and is dangerous.
     ///
     pub def iterator(l: MutList[a, r]): Iterator[a, r] \ Write(r) =
-        let r = Scoped.regionOf(l);
+        let reg = Scoped.regionOf(l);
         let MutList(a, len) = l;
-        let i = ref 0 @ r;
+        let i = ref 0 @ reg;
         let done = () -> deref i == deref len;
         let next = () -> {
             let x = (deref a)[deref i];
@@ -944,8 +944,8 @@ namespace MutList {
     ///
     /// Shuffles `v` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(r1: Region[r1], rnd: Random.Random, v: MutList[a, r1]): MutList[a, r1] \ { Read(r1), Write(r1), NonDet } = region r2 {
-        toArray(r2, v) !> Array.shuffle(rnd) |> Array.toMutList(r1)
+    pub def shuffle(reg1: Region[r1], rnd: Random.Random, v: MutList[a, r1]): MutList[a, r1] \ { Read(r1), Write(r1), NonDet } = region reg2 {
+        toArray(reg2, v) !> Array.shuffle(rnd) |> Array.toMutList(reg1)
     }
 
 }

@@ -24,7 +24,7 @@ instance Scoped[MutMap[k, v]] {
 }
 
 instance Newable[MutMap[k, v]] {
-    pub def new(r: Region[r]): MutMap[k, v, r] \ Write(r) = MutMap.new(r)
+    pub def new(reg: Region[r]): MutMap[k, v, r] \ Write(r) = MutMap.new(reg)
 }
 
 namespace MutMap {
@@ -32,14 +32,14 @@ namespace MutMap {
     ///
     /// Returns a fresh empty mutable map.
     ///
-    pub def new(r: Region[r]): MutMap[k, v, r] \ Write(r) =
-        MutMap(ref Map.empty() @ r)
+    pub def new(reg: Region[r]): MutMap[k, v, r] \ Write(r) =
+        MutMap(ref Map.empty() @ reg)
 
     ///
     /// Returns the singleton map where key `k` is mapped to value `v`.
     ///
-    pub def singleton(r: Region[r], k: k, v: v): MutMap[k, v, r] \ Write(r) with Order[k] =
-        MutMap(ref Map.singleton(k, v) @ r)
+    pub def singleton(reg: Region[r], k: k, v: v): MutMap[k, v, r] \ Write(r) with Order[k] =
+        MutMap(ref Map.singleton(k, v) @ reg)
 
     ///
     /// Returns `true` if and only if the mutable map `m` contains the key `k`.
@@ -582,24 +582,24 @@ namespace MutMap {
     ///
     pub def iterator(m: MutMap[k, v, r]): Iterator[(k, v), r] \ Write(r) =
         let MutMap(mm) = m;
-        let r = Scoped.regionOf(m);
-        Map.iterator(r, deref mm)
+        let reg = Scoped.regionOf(m);
+        Map.iterator(reg, deref mm)
 
     ///
     /// Returns an iterator over keys in `m`.
     ///
     pub def iteratorKeys(m: MutMap[k, v, r]): Iterator[k, r] \ Write(r) =
         let MutMap(mm) = m;
-        let r = Scoped.regionOf(m);
-        Map.iteratorKeys(r, deref mm)
+        let reg = Scoped.regionOf(m);
+        Map.iteratorKeys(reg, deref mm)
 
     ///
     /// Returns an iterator over values in `m`.
     ///
     pub def iteratorValues(m: MutMap[k, v, r]): Iterator[v, r] \ Write(r) =
         let MutMap(mm) = m;
-        let r = Scoped.regionOf(m);
-        Map.iteratorValues(r, deref mm)
+        let reg = Scoped.regionOf(m);
+        Map.iteratorValues(reg, deref mm)
 
     ///
     /// Extracts a range of key-value pairs from the mutable map `m`.

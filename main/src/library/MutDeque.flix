@@ -32,7 +32,7 @@ pub enum MutDeque[a: Type, r: Region] {
 }
 
 instance Newable[MutDeque[a]] {
-    pub def new(r: Region[r]): MutDeque[a, r] \ Write(r) = MutDeque.new(r)
+    pub def new(reg: Region[r]): MutDeque[a, r] \ Write(r) = MutDeque.new(reg)
 }
 
 instance Scoped[MutDeque[a]] {
@@ -73,8 +73,8 @@ namespace MutDeque {
     ///
     /// Returns an empty MutDeque.
     ///
-    pub def new(r: Region[r]): MutDeque[a, r] \ Write(r) =
-        MutDeque(ref [Reflect.default(); minCapacity()] @ r @ r, ref 0 @ r, ref 0 @ r)
+    pub def new(reg: Region[r]): MutDeque[a, r] \ Write(r) =
+        MutDeque(ref [Reflect.default(); minCapacity()] @ reg @ reg, ref 0 @ reg, ref 0 @ reg)
 
     ///
     /// Returns the number of elements in `d`.
@@ -376,17 +376,17 @@ namespace MutDeque {
     ///
     /// Returns `d` as an array.
     ///
-    pub def toArray(r1: Region[r1], d: MutDeque[a, r2]): Array[a, r1] \ { Read(r2), Write(r1) } =
+    pub def toArray(reg1: Region[r1], d: MutDeque[a, r2]): Array[a, r1] \ { Read(r2), Write(r1) } =
         let MutDeque(a, f, b) = d;
         let len = MutDeque.capacity(d);
         let i = deref f;
         let j = deref b;
         if (i == j)
-            [] @ r1
+            [] @ reg1
         else if (i  < j)
-            Array.copyOfRange(r1, i, j, deref a)
+            Array.copyOfRange(reg1, i, j, deref a)
         else
-            Array.append(Array.copyOfRange(r1, i, len, deref a), Array.copyOfRange(r1, 0, j, deref a))
+            Array.append(Array.copyOfRange(reg1, i, len, deref a), Array.copyOfRange(reg1, 0, j, deref a))
 
     ///
     /// Returns the concatenation of the string representation
@@ -399,10 +399,10 @@ namespace MutDeque {
     /// Returns the concatenation of the string representation
     /// of each element in `d` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String \ ef, sep: String, d: MutDeque[a, r]): String \ { ef, Read(r) } = region r1 {
+    pub def joinWith(f: a -> String \ ef, sep: String, d: MutDeque[a, r]): String \ { ef, Read(r) } = region reg1 {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = new StringBuilder(r1);
+        let sb = new StringBuilder(reg1);
         foreach(x -> { append!(f(x), sb); append!(sep, sb) }, d);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
@@ -413,9 +413,9 @@ namespace MutDeque {
     /// Modifying `d` while using an iterator has undefined behavior and is dangerous.
     ///
     pub def iterator(d: MutDeque[a, r]): Iterator[a, r] \ Write(r) =
-        let r = Scoped.regionOf(d);
+        let reg = Scoped.regionOf(d);
         let MutDeque(a, f, b) = d;
-        let i = ref (deref f) @ r;
+        let i = ref (deref f) @ reg;
         let done = () -> deref i == deref b;
         let next = () -> {
             let x = (deref a)[deref i];
@@ -447,8 +447,8 @@ namespace MutDeque {
     ///
     /// Shuffles a copy of `d` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(r1: Region[r1], rnd: Random.Random, d: MutDeque[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1), NonDet } = region r3 {
-        toArray(r3, d) !> Array.shuffle(rnd) |> Array.toMutDeque(r1)
+    pub def shuffle(reg1: Region[r1], rnd: Random.Random, d: MutDeque[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1), NonDet } = region reg3 {
+        toArray(reg3, d) !> Array.shuffle(rnd) |> Array.toMutDeque(reg1)
     }
 
 }

@@ -20,7 +20,7 @@
 enum MutSet[t: Type, r: Region](Ref[Set[t], r])
 
 instance Newable[MutSet[t]] {
-    pub def new(r: Region[r]): MutSet[t, r] \ { Write(r) } = MutSet.new(r)
+    pub def new(reg: Region[r]): MutSet[t, r] \ { Write(r) } = MutSet.new(reg)
 }
 
 instance Scoped[MutSet[t]] {
@@ -36,14 +36,14 @@ namespace MutSet {
     ///
     /// Returns a fresh empty set.
     ///
-    pub def new(r: Region[r]): MutSet[a, r] \ { Write(r) } =
-        MutSet(ref Set.empty() @ r)
+    pub def new(reg: Region[r]): MutSet[a, r] \ { Write(r) } =
+        MutSet(ref Set.empty() @ reg)
 
     ///
     /// Returns the singleton set containing `x`.
     ///
-    pub def singleton(r: Region[r], x: a): MutSet[a, r] \ Write(r) with Order[a] =
-        MutSet(ref Set.singleton(x) @ r)
+    pub def singleton(reg: Region[r], x: a): MutSet[a, r] \ Write(r) with Order[a] =
+        MutSet(ref Set.singleton(x) @ reg)
 
     ///
     /// Adds the element `x` to the mutable set `s`.
@@ -399,8 +399,8 @@ namespace MutSet {
     ///
     pub def iterator(s: MutSet[a, r]): Iterator[a, r] \ Write(r) =
         let MutSet(ms) = s;
-        let r = Scoped.regionOf(s);
-        Set.iterator(r, deref ms)
+        let reg = Scoped.regionOf(s);
+        Set.iterator(reg, deref ms)
 
     ///
     /// Returns an iterator over `s`.

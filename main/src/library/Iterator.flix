@@ -19,7 +19,7 @@ pub enum Iterator[a: Type, r: Region] {
 }
 
 instance Newable[Iterator[a]] {
-    pub def new(r: Region[r]): Iterator[a, r] \ { Read(r), Write(r) } = Iterator.new(r)
+    pub def new(reg: Region[r]): Iterator[a, r] \ { Read(r), Write(r) } = Iterator.new(reg)
 }
 
 instance Scoped[Iterator[a]] {
@@ -33,14 +33,14 @@ instance Iterable[Iterator] {
 ///
 /// Alias for `Foldable.iterator`.
 ///
-pub def iterator(r: Region[r], t: t[a]): Iterator[a, r] \ Write(r) with Foldable[t] =
-    Foldable.iterator(r, t)
+pub def iterator(reg: Region[r], t: t[a]): Iterator[a, r] \ Write(r) with Foldable[t] =
+    Foldable.iterator(reg, t)
 
 ///
 /// Alias for `Foldable.iterator |> Iterable.enumerator`.
 ///
-pub def enumerator(r: Region[r], t: t[a]): Iterator[(a, Int32), r] \ Write(r) with Foldable[t] =
-    Foldable.iterator(r, t) |> Iterable.enumerator
+pub def enumerator(reg: Region[r], t: t[a]): Iterator[(a, Int32), r] \ Write(r) with Foldable[t] =
+    Foldable.iterator(reg, t) |> Iterable.enumerator
 
 namespace Iterator {
 
@@ -65,8 +65,8 @@ namespace Iterator {
     ///
     /// Returns an iterator containing only a single element, `x`.
     ///
-    pub def singleton(r: Region[r], x: a): Iterator[a, r] \ Write(r) =
-        let d = ref false @ r;
+    pub def singleton(reg: Region[r], x: a): Iterator[a, r] \ Write(r) =
+        let d = ref false @ reg;
         let done = () -> deref d;
         let next = () -> {
             if (done()) {
@@ -106,8 +106,8 @@ namespace Iterator {
     /// Returns an empty iterator if `b >= e`.
     ///
     @Lazy
-    pub def range(r: Region[r], b: Int32, e: Int32): Iterator[Int32, r] \ Write(r) =
-        let i = ref b @ r;
+    pub def range(reg: Region[r], b: Int32, e: Int32): Iterator[Int32, r] \ Write(r) =
+        let i = ref b @ reg;
         let done = () -> deref i >= e;
         let next = () -> {
                 let res = deref i;
@@ -127,8 +127,8 @@ namespace Iterator {
     /// Returns an empty iterator if `n < 0`.
     ///
     @Lazy
-    pub def repeat(r: Region[r], n: Int32, x: a): Iterator[a, r] \ Write(r) =
-        let i = ref 0 @ r;
+    pub def repeat(reg: Region[r], n: Int32, x: a): Iterator[a, r] \ Write(r) =
+        let i = ref 0 @ reg;
         let done = () -> deref i >= n;
         let next = () -> {
               let j = deref i;
@@ -185,10 +185,10 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def toArray(r1: Region[r1], iter: Iterator[a, r2]): Array[a, r1] \ { Read(r2), Write(r1) } = region r0 {
-        let m = new MutList(r0);
+    pub def toArray(reg1: Region[r1], iter: Iterator[a, r2]): Array[a, r1] \ { Read(r2), Write(r1) } = region reg0 {
+        let m = new MutList(reg0);
         foreach(a -> MutList.push!(a, m), iter);
-        MutList.toArray(r1, m)
+        MutList.toArray(reg1, m)
     }
 
     ///
@@ -234,8 +234,8 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def toMutDeque(r1: Region[r1], iter: Iterator[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1) }  =
-        let d = new MutDeque(r1);
+    pub def toMutDeque(reg1: Region[r1], iter: Iterator[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1) }  =
+        let d = new MutDeque(reg1);
         foreach(x -> MutDeque.pushBack(x, d), iter);
         d
 
@@ -527,8 +527,8 @@ namespace Iterator {
     /// If `f` returns `Err(e)`, then the iterator is depleted.
     ///
     @Lazy
-    pub def unfoldWithOk(r: Region[r], f: Unit -> Result[a, b] \ ef): Iterator[a, r and ef] \ Write(r) =
-        let cursor = ref None @ r;
+    pub def unfoldWithOk(reg: Region[r], f: Unit -> Result[a, b] \ ef): Iterator[a, r and ef] \ Write(r) =
+        let cursor = ref None @ reg;
         let done = () -> match deref cursor {
             case None    => match f() {
                 case Err(_) => true
@@ -562,8 +562,8 @@ namespace Iterator {
             iter
         else
             let Iterator(done, next) = iter;
-            discard region r2 {
-                let i = ref (n - 1) @ r2; // Subtract 1 since `forward` consumes 1 element before applying `f`.
+            discard region reg2 {
+                let i = ref (n - 1) @ reg2; // Subtract 1 since `forward` consumes 1 element before applying `f`.
                 let f = _ -> if (deref i <= 0) true else { i := deref i - 1; false };
                 forward(f, done, next)
             };
@@ -581,12 +581,12 @@ namespace Iterator {
     ///
     @Lazy
     pub def takeL(n: Int32, iter: Iterator[a, r]): Iterator[a, r] \ Write(r) =
-        let r = Scoped.regionOf(iter);
+        let reg = Scoped.regionOf(iter);
         if (n < 0)
-            new Iterator(r)
+            new Iterator(reg)
         else
             let Iterator(done, next) = iter;
-            let i = ref 0 @ r;
+            let i = ref 0 @ reg;
             let done1 = () -> done() or (deref i) >= n;
             let next1 = () -> {
                 let x = next();
@@ -703,10 +703,10 @@ namespace Iterator {
     pub def intercalate(iterA: Iterator[a, r1], iterB: Iterator[Iterator[a, r2], r3]): Iterator[a, r1 and r2 and r3] \ Write(r1, r3) =
         let Iterator(doneA, nextA) = iterA;
         let Iterator(doneB, nextB) = iterB;
-        let r1 = Scoped.regionOf(iterA);
-        let xs = ref Nil @ r1;
-        let r3 = Scoped.regionOf(iterB);
-        let isReversed = ref false @ r1;
+        let reg1 = Scoped.regionOf(iterA);
+        let xs = ref Nil @ reg1;
+        let reg3 = Scoped.regionOf(iterB);
+        let isReversed = ref false @ reg1;
         let nextAA = () -> {
             let x = nextA();
             xs := x :: deref xs;
@@ -725,11 +725,11 @@ namespace Iterator {
             else
                 false
         };
-        let cursor = ref None @ r3;
+        let cursor = ref None @ reg3;
         let mkCursor = i -> { // Appends an iterator with the contents of `iterA`. Boolean formula: r1 and formula of i
             if (deref isReversed)
                 // `iterA` has been consumed, so construct a new one from `xs`
-                cursor := Some(append(i, List.iterator(r1, deref xs)))
+                cursor := Some(append(i, List.iterator(reg1, deref xs)))
             else
                 cursor := Some(append(i, Iterator(doneAA, nextAA)))
         };
@@ -738,7 +738,7 @@ namespace Iterator {
                 case None    => true
                 case Some(i) =>
                     if (doneB())
-                        cursor := Some(append(i, new Iterator(r1))) // Has Boolean formula r2 since it is the last iterator of `iterB`.
+                        cursor := Some(append(i, new Iterator(reg1))) // Has Boolean formula r2 since it is the last iterator of `iterB`.
                     else                                                     // Has to be appended with an empty iterator to satisfy formula `r1 and formula of i` in `mkCursor`
                         mkCursor(i);                                         // Same reason for appending with empty iterator below
                     false
@@ -749,7 +749,7 @@ namespace Iterator {
                     case None     => true
                     case Some(i1) =>
                         if (doneB())
-                            cursor := Some(append(i1, new Iterator(r1)))
+                            cursor := Some(append(i1, new Iterator(reg1)))
                         else
                             mkCursor(i1);
                         false
@@ -785,8 +785,8 @@ namespace Iterator {
         if (done())
             ""
         else
-            region r {
-                let sb = new StringBuilder(r);
+            region reg {
+                let sb = new StringBuilder(reg);
                 let g = x -> { StringBuilder.append!(sep, sb); StringBuilder.append!(f(x), sb) };
                 StringBuilder.append!(f(next()), sb); // Safe to call next, done was check above.
                 foreach(g, iter);
@@ -854,9 +854,9 @@ namespace Iterator {
     @Lazy
     pub def dropWhileL(f: a -> Bool, iter: Iterator[a, r]): Iterator[a, r] \ { Read(r), Write(r) } =
         let Iterator(done, next) = iter;
-        let r = Scoped.regionOf(iter);
-        let front = ref None @ r;
-        let forwarded = ref false @ r;
+        let reg = Scoped.regionOf(iter);
+        let front = ref None @ reg;
+        let forwarded = ref false @ reg;
         let done1 = () -> if (deref forwarded) done() else match forward(a -> not f(a), done, next) {
             case None    => true
             case Some(x) =>

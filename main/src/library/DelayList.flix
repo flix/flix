@@ -71,7 +71,7 @@ instance Foldable[DelayList] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRightWithCont(f, s, l)
-    override pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) = DelayList.iterator(r, l)
+    override pub def iterator(reg: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) = DelayList.iterator(reg, l)
 }
 
 instance UnorderedFoldable[DelayList] {
@@ -127,10 +127,10 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toString(l: DelayList[a]): String with ToString[a] = region r {
-        let sb = new StringBuilder(r);
+    pub def toString(l: DelayList[a]): String with ToString[a] = region reg {
+        let sb = new StringBuilder(reg);
         StringBuilder.appendString!("DelayList(", sb);
-        foreach ((x, i) <- enumerator(r, l)) {
+        foreach ((x, i) <- enumerator(reg, l)) {
             if (i == 0)
                 StringBuilder.appendString!("${x}", sb)
             else
@@ -1170,8 +1170,8 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toArray(r: Region[r], l: DelayList[a]): Array[a, r] \ Write(r) =
-        let a = [Reflect.default(); length(l)] @ r;
+    pub def toArray(reg: Region[r], l: DelayList[a]): Array[a, r] \ Write(r) =
+        let a = [Reflect.default(); length(l)] @ reg;
         foreach(match (y, i) -> a[i] = y, zipWithIndex(l));
         a
 
@@ -1181,8 +1181,8 @@ namespace DelayList {
     /// Does not force any elements of the list.
     ///
     @Experimental @Lazy
-    pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) =
-        let cursor = ref l @ r;
+    pub def iterator(reg: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) =
+        let cursor = ref l @ reg;
         let done = () -> match head(deref cursor) {
             case None    => true
             case Some(_) => false
@@ -1198,8 +1198,8 @@ namespace DelayList {
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], l: DelayList[a]): Iterator[(a, Int32), r] \ Write(r) =
-        iterator(r, l) |> Iterator.zipWithIndex
+    pub def enumerator(reg: Region[r], l: DelayList[a]): Iterator[(a, Int32), r] \ Write(r) =
+        iterator(reg, l) |> Iterator.zipWithIndex
 
     ///
     /// Returns `l` as a `List`.
@@ -1222,15 +1222,15 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toMutList(r: Region[r], l: DelayList[a]): MutList[a, r] \ Write(r) = region r2 {
-        Array.toMutList(r, toArray(r2, l)) // `Array.toMutList` respects the invariant of `MutList`.
+    pub def toMutList(reg: Region[r], l: DelayList[a]): MutList[a, r] \ Write(r) = region reg2 {
+        Array.toMutList(reg, toArray(reg2, l)) // `Array.toMutList` respects the invariant of `MutList`.
     }
 
     ///
     /// Returns `l` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], l: DelayList[a]): MutDeque[a, r] \ Write(r) =
-        let d = new MutDeque(r);
+    pub def toMutDeque(reg: Region[r], l: DelayList[a]): MutDeque[a, r] \ Write(r) =
+        let d = new MutDeque(reg);
         DelayList.foreach(x -> MutDeque.pushBack(x, d), l);
         d
 
@@ -1328,8 +1328,8 @@ namespace DelayList {
     ///
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random.Random, l: DelayList[a]): DelayList[a] \ NonDet = region r {
-        toArray(r, l) !> Array.shuffle(rnd) |> Array.toDelayList
+    pub def shuffle(rnd: Random.Random, l: DelayList[a]): DelayList[a] \ NonDet = region reg {
+        toArray(reg, l) !> Array.shuffle(rnd) |> Array.toDelayList
     }
 
 }

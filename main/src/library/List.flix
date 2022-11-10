@@ -88,7 +88,7 @@ instance Foldable[List] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRightWithCont(f, s, l)
-    override pub def iterator(r: Region[r], l: List[a]): Iterator[a, r] \ Write(r) = List.iterator(r, l)
+    override pub def iterator(reg: Region[r], l: List[a]): Iterator[a, r] \ Write(r) = List.iterator(reg, l)
 }
 
 instance UnorderedFoldable[List] {
@@ -124,9 +124,9 @@ namespace List {
     ///
     /// Renders the list `l` to a String.
     ///
-    pub def toString(l: List[a]): String with ToString[a] = region r {
-        let sb = new StringBuilder(r);
-        foreach (x <- iterator(r, l))
+    pub def toString(l: List[a]): String with ToString[a] = region reg {
+        let sb = new StringBuilder(reg);
+        foreach (x <- iterator(reg, l))
             StringBuilder.appendString!("${x} :: ", sb);
         StringBuilder.appendString!("Nil", sb);
         StringBuilder.toString(sb)
@@ -1140,16 +1140,16 @@ namespace List {
     ///
     /// Returns `l` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], l: List[a]): MutDeque[a, r] \ Write(r) =
-        let d = new MutDeque(r);
+    pub def toMutDeque(reg: Region[r], l: List[a]): MutDeque[a, r] \ Write(r) =
+        let d = new MutDeque(reg);
         List.foreach(x -> MutDeque.pushBack(x, d), l);
         d
 
     ///
     /// Returns `l` as a mutable list.
     ///
-    pub def toMutList(r: Region[r], l: List[a]): MutList[a, r] \ Write(r) = region r2 {
-        Array.toMutList(r, toArray(r2, l)) // `Array.toMutList` respects the invariant of `MutList`
+    pub def toMutList(reg: Region[r], l: List[a]): MutList[a, r] \ Write(r) = region reg2 {
+        Array.toMutList(reg, toArray(reg2, l)) // `Array.toMutList` respects the invariant of `MutList`
     }
 
     ///
@@ -1191,10 +1191,10 @@ namespace List {
     /// Returns the list `l` as an array.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def toArray(r: Region[r], l: List[a]): Array[a, r] \ Write(r) = match head(l) {
-        case None    => [] @ r
+    pub def toArray(reg: Region[r], l: List[a]): Array[a, r] \ Write(r) = match head(l) {
+        case None    => [] @ reg
         case Some(x) =>
-            let a = [x; length(l)] @ r;
+            let a = [x; length(l)] @ reg;
             foreach(match (b, i) -> a[i] = b, zipWithIndex(l));
             a
         }
@@ -1226,8 +1226,8 @@ namespace List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(l: List[a]): List[a] with Order[a] = region r {
-        toArray(r, l) !> Array.sort! |> Array.toList
+    pub def sort(l: List[a]): List[a] with Order[a] = region reg {
+        toArray(reg, l) !> Array.sort! |> Array.toList
     }
 
     /// Sort list `l` so that elements are ordered from low to high according to the `Order` instance
@@ -1237,8 +1237,8 @@ namespace List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, l: List[a]): List[a] with Order[b] = region r {
-        toArray(r, l) !> Array.sortBy!(f) |> Array.toList
+    pub def sortBy(f: a -> b, l: List[a]): List[a] with Order[b] = region reg {
+        toArray(reg, l) !> Array.sortBy!(f) |> Array.toList
     }
 
     ///
@@ -1248,8 +1248,8 @@ namespace List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, l: List[a]): List[a] = region r {
-        toArray(r, l) !> Array.sortWith!(cmp) |> Array.toList
+    pub def sortWith(cmp: (a,a) -> Comparison, l: List[a]): List[a] = region reg {
+        toArray(reg, l) !> Array.sortWith!(cmp) |> Array.toList
     }
 
     ///
@@ -1349,8 +1349,8 @@ namespace List {
     ///
     /// Returns an iterator over `l`.
     ///
-    pub def iterator(r: Region[r], l: List[a]): Iterator[a, r] \ Write(r) =
-        let cursor = ref l @ r;
+    pub def iterator(reg: Region[r], l: List[a]): Iterator[a, r] \ Write(r) =
+        let cursor = ref l @ reg;
         let done = () -> match (deref cursor) {
             case Nil => true
             case _   => false
@@ -1366,8 +1366,8 @@ namespace List {
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], l: List[a]): Iterator[(a, Int32), r] \ Write(r) =
-        iterator(r, l) |> Iterator.zipWithIndex
+    pub def enumerator(reg: Region[r], l: List[a]): Iterator[(a, Int32), r] \ Write(r) =
+        iterator(reg, l) |> Iterator.zipWithIndex
 
     ///
     /// Returns the association list `l` as a `DelayMap`.
@@ -1431,8 +1431,8 @@ namespace List {
     ///
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random.Random, l: List[a]): List[a] \ NonDet = region r {
-        toArray(r, l) !> Array.shuffle(rnd) |> Array.toList
+    pub def shuffle(rnd: Random.Random, l: List[a]): List[a] \ NonDet = region reg {
+        toArray(reg, l) !> Array.shuffle(rnd) |> Array.toList
     }
 
 }

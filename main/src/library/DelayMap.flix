@@ -42,8 +42,8 @@ instance Foldable[DelayMap[k]] {
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldLeft(f, s, m)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldRight(f, s, m)
     pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldRightWithCont(f, s, m)
-    override pub def iterator(r: Region[r], m: DelayMap[k, v]): Iterator[v, r] \ Write(r) =
-        DelayMap.iterator(r, m) |> Iterator.mapL(match (_, v) -> v)
+    override pub def iterator(reg: Region[r], m: DelayMap[k, v]): Iterator[v, r] \ Write(r) =
+        DelayMap.iterator(reg, m) |> Iterator.mapL(match (_, v) -> v)
 }
 
 namespace DelayMap {
@@ -52,12 +52,12 @@ namespace DelayMap {
     /// Returns a string representation of the given `DelayMap` `m`.
     ///
     @Experimental
-    pub def toString(m: DelayMap[k, v]): String with ToString[k], ToString[v] = region r {
-        let sb = new StringBuilder(r);
+    pub def toString(m: DelayMap[k, v]): String with ToString[k], ToString[v] = region reg {
+        let sb = new StringBuilder(reg);
         let _ = parallelForce(m);
         let first = ref true;
         StringBuilder.appendString!("DelayMap#{", sb);
-        foreach ((k, v) <- DelayMap.iterator(r, m)) {
+        foreach ((k, v) <- DelayMap.iterator(reg, m)) {
             if (deref first) {
                 first := false;
                 StringBuilder.appendString!("${k} => ${v}", sb)
@@ -773,8 +773,8 @@ namespace DelayMap {
     /// Returns `m` as a mutable set.
     ///
     @Experimental @Parallel
-    pub def toMutMap(r: Region[r], m: DelayMap[k, v]): MutMap[k, v, r] \ Write(r) =
-        MutMap(ref toMap(m) @ r)
+    pub def toMutMap(reg: Region[r], m: DelayMap[k, v]): MutMap[k, v, r] \ Write(r) =
+        MutMap(ref toMap(m) @ reg)
 
     ///
     /// Returns the map `m` as a set of key-value pairs.
@@ -794,17 +794,17 @@ namespace DelayMap {
     /// Returns an iterator over all key-value pairs in `m`.
     ///
     @Experimental
-    pub def iterator(r: Region[r], m: DelayMap[a, b]): Iterator[(a, b), r] \ Write(r) =
+    pub def iterator(reg: Region[r], m: DelayMap[a, b]): Iterator[(a, b), r] \ Write(r) =
         let DMap(t) = m;
-        RedBlackTree.iterator(r, t) |> Iterator.mapL(match (k, v) -> (k, force v))
+        RedBlackTree.iterator(reg, t) |> Iterator.mapL(match (k, v) -> (k, force v))
 
     ///
     /// Returns the map `m` as a MutDeque of key-value pairs.
     ///
     @Experimental
-    pub def toMutDeque(r: Region[r], m: DelayMap[k, v]): MutDeque[(k, v), r] \ Write(r) =
+    pub def toMutDeque(reg: Region[r], m: DelayMap[k, v]): MutDeque[(k, v), r] \ Write(r) =
         let m1 = DelayMap.toMap(m);
-        Map.toMutDeque(r, m1)
+        Map.toMutDeque(reg, m1)
 
     ///
     /// Applies `f` to every element of `xs`.

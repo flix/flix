@@ -64,8 +64,8 @@ namespace RedBlackTree {
         pub def foldLeft(f: (b, v) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = foldLeft((acc, _, v) -> f(acc, v), s, t)
         pub def foldRight(f: (v, b) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = foldRight((_, v, acc) -> f(v, acc), s, t)
         pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = foldRightWithCont((_, v, acc) -> f(v, acc), s, t)
-        override pub def iterator(r: Region[r], t: RedBlackTree[k, v]): Iterator[v, r] \ Write(r) =
-            iterator(r, t) |> Iterator.mapL(match (_, v) -> v)
+        override pub def iterator(reg: Region[r], t: RedBlackTree[k, v]): Iterator[v, r] \ Write(r) =
+            iterator(reg, t) |> Iterator.mapL(match (_, v) -> v)
     }
 
     instance UnorderedFoldable[RedBlackTree[k]] {
@@ -583,8 +583,8 @@ namespace RedBlackTree {
     ///
     /// That is, the result is a list of all pairs `f(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison \ ef1, f: (k, v) -> a \ ef2, t: RedBlackTree[k, v]): List[a] \ { ef1, ef2 } = region r {
-        let buffer = new MutList(r);
+    pub def query(p: k -> Comparison \ ef1, f: (k, v) -> a \ ef2, t: RedBlackTree[k, v]): List[a] \ { ef1, ef2 } = region reg {
+        let buffer = new MutList(reg);
         let g = k -> v -> MutList.push!(f(k, v), buffer);
         queryWith(p, g, t);
         MutList.toList(buffer)
@@ -899,8 +899,8 @@ namespace RedBlackTree {
     ///
     /// Returns the tree `t` as a MutDeque. Elements are ordered from smallest (left) to largest (right).
     ///
-    pub def toMutDeque(r: Region[r], t: RedBlackTree[k, v]): MutDeque[(k, v), r] \ Write(r) =
-        let d = new MutDeque(r);
+    pub def toMutDeque(reg: Region[r], t: RedBlackTree[k, v]): MutDeque[(k, v), r] \ Write(r) =
+        let d = new MutDeque(reg);
         RedBlackTree.foreach((k, v) -> let x = (k, v); MutDeque.pushBack(x, d), t);
         d
 
@@ -1023,10 +1023,10 @@ namespace RedBlackTree {
     /// Returns the concatenation of the string representation of each key-value pair
     /// `k => v` in `t` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: (k, v) -> String \ ef, sep: String, t: RedBlackTree[k, v]): String \ ef = region r {
+    pub def joinWith(f: (k, v) -> String \ ef, sep: String, t: RedBlackTree[k, v]): String \ ef = region reg {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = new StringBuilder(r);
+        let sb = new StringBuilder(reg);
         foreach((k, v) -> { append!(f(k, v), sb); append!(sep, sb) }, t);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
@@ -1068,9 +1068,9 @@ namespace RedBlackTree {
     ///
     /// Returns an iterator over `t`.
     ///
-    pub def iterator(r: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), r] \ Write(r) =
+    pub def iterator(reg: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), r] \ Write(r) =
         let stack1 = leftmost(t, Nil);
-        let state = ref stack1 @ r;
+        let state = ref stack1 @ reg;
         let done = () -> match (deref state) {
             case Nil => true
             case _   => false

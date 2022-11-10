@@ -69,7 +69,7 @@ instance Foldable[Chain] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldLeft(f, s, c)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldRight(f, s, c)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldRightWithCont(f, s, c)
-    override pub def iterator(r: Region[r], c: Chain[a]): Iterator[a, r] \ Write(r) = Chain.iterator(r, c)
+    override pub def iterator(reg: Region[r], c: Chain[a]): Iterator[a, r] \ Write(r) = Chain.iterator(reg, c)
 }
 
 instance UnorderedFoldable[Chain] {
@@ -93,10 +93,10 @@ instance Filterable[Chain] {
 instance Witherable[Chain]
 
 instance ToString[Chain[a]] with ToString[a] {
-    pub def toString(c: Chain[a]): String = region r {
-        let sb = new StringBuilder(r);
+    pub def toString(c: Chain[a]): String = region reg {
+        let sb = new StringBuilder(reg);
         StringBuilder.appendString!("Chain#{", sb);
-        foreach ((x, i) <- enumerator(r, c)) {
+        foreach ((x, i) <- enumerator(reg, c)) {
             if (i < 1)
                 StringBuilder.appendString!("${x}", sb)
             else
@@ -737,16 +737,16 @@ namespace Chain {
     ///
     /// Returns `c` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], c: Chain[a]): MutDeque[a, r] \ Write(r) =
-        let d = new MutDeque(r);
+    pub def toMutDeque(reg: Region[r], c: Chain[a]): MutDeque[a, r] \ Write(r) =
+        let d = new MutDeque(reg);
         Chain.foreach(x -> MutDeque.pushBack(x, d), c);
         d
 
     ///
     /// Returns `c` as a mutable list.
     ///
-    pub def toMutList(r: Region[r], c: Chain[a]): MutList[a, r] \ Write(r) = region r2 {
-        Array.toMutList(r, toArray(r2, c)) // `Array.toMutList` respects the invariant of `MutList`
+    pub def toMutList(reg: Region[r], c: Chain[a]): MutList[a, r] \ Write(r) = region reg2 {
+        Array.toMutList(reg, toArray(reg2, c)) // `Array.toMutList` respects the invariant of `MutList`
     }
 
     ///
@@ -767,10 +767,10 @@ namespace Chain {
     ///
     /// Returns the chain `c` as an array.
     ///
-    pub def toArray(r: Region[r], c: Chain[a]): Array[a, r] \ Write(r) = match head(c) {
-        case None    => [] @ r
+    pub def toArray(reg: Region[r], c: Chain[a]): Array[a, r] \ Write(r) = match head(c) {
+        case None    => [] @ reg
         case Some(x) =>
-            let arr = [x; length(c)] @ r;
+            let arr = [x; length(c)] @ reg;
             foreach(match (b, i) -> arr[i] = b, zipWithIndex(c));
             arr
         }
@@ -778,8 +778,8 @@ namespace Chain {
     ///
     /// Returns an iterator over `c`.
     ///
-    pub def iterator(r: Region[r], c: Chain[a]): Iterator[a, r] \ Write(r) =
-        let cursor = ref viewLeft(c) @ r;
+    pub def iterator(reg: Region[r], c: Chain[a]): Iterator[a, r] \ Write(r) =
+        let cursor = ref viewLeft(c) @ reg;
         let done = () -> match (deref cursor) {
             case NoneLeft    => true
             case SomeLeft(_) => false
@@ -796,8 +796,8 @@ namespace Chain {
     ///
     /// Returns an iterator over `c` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], c: Chain[a]): Iterator[(a, Int32), r] \ Write(r) =
-        iterator(r, c) |> Iterator.zipWithIndex
+    pub def enumerator(reg: Region[r], c: Chain[a]): Iterator[(a, Int32), r] \ Write(r) =
+        iterator(reg, c) |> Iterator.zipWithIndex
 
     ///
     /// Returns the chain `c` as a Nel.
@@ -837,8 +837,8 @@ namespace Chain {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(c: Chain[a]): Chain[a] with Order[a] = region r {
-        toArray(r, c) !> Array.sort! |> Array.toChain
+    pub def sort(c: Chain[a]): Chain[a] with Order[a] = region reg {
+        toArray(reg, c) !> Array.sort! |> Array.toChain
     }
 
     /// Sort chain `c` so that elements are ordered from low to high according to the `Order` instance
@@ -848,8 +848,8 @@ namespace Chain {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, c: Chain[a]): Chain[a] with Order[b] = region r {
-        toArray(r, c) !> Array.sortBy!(f) |> Array.toChain
+    pub def sortBy(f: a -> b, c: Chain[a]): Chain[a] with Order[b] = region reg {
+        toArray(reg, c) !> Array.sortBy!(f) |> Array.toChain
     }
 
     ///
@@ -859,8 +859,8 @@ namespace Chain {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, c: Chain[a]): Chain[a] = region r {
-        toArray(r, c) !> Array.sortWith!(cmp) |> Array.toChain
+    pub def sortWith(cmp: (a,a) -> Comparison, c: Chain[a]): Chain[a] = region reg {
+        toArray(reg, c) !> Array.sortWith!(cmp) |> Array.toChain
     }
 
     ///
@@ -921,8 +921,8 @@ namespace Chain {
     ///
     /// Shuffles `c` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random.Random, c: Chain[a]): Chain[a] \ NonDet = region r {
-        toArray(r, c) !> Array.shuffle(rnd) |> Array.toChain
+    pub def shuffle(rnd: Random.Random, c: Chain[a]): Chain[a] \ NonDet = region reg {
+        toArray(reg, c) !> Array.shuffle(rnd) |> Array.toChain
     }
 
 }

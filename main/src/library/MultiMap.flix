@@ -81,11 +81,11 @@ namespace MultiMap {
     ///
     /// Returns a string representation of `m`.
     ///
-    pub def toString(m: MultiMap[k, v]): String with ToString[k], ToString[v] = region r {
-        let sb = new StringBuilder(r);
+    pub def toString(m: MultiMap[k, v]): String with ToString[k], ToString[v] = region reg {
+        let sb = new StringBuilder(reg);
         let first = ref true;
         StringBuilder.appendString!("MultiMap#{", sb);
-        foreach ((k, v) <- MultiMap.iterator(r, m)) {
+        foreach ((k, v) <- MultiMap.iterator(reg, m)) {
             if (deref first) {
                 first := false;
                 StringBuilder.appendString!("${k} => ${v}", sb)
@@ -550,9 +550,9 @@ namespace MultiMap {
     ///
     /// Returns the MultiMap `m` as a list of singleton key-value pairs in ascending order.
     ///
-    pub def toMutDeque(r: Region[r], m: MultiMap[k, v]): MutDeque[(k, Set[v]), r] \ Write(r) =
+    pub def toMutDeque(reg: Region[r], m: MultiMap[k, v]): MutDeque[(k, Set[v]), r] \ Write(r) =
         let MultiMap(m1) = m;
-        Map.toMutDeque(r, m1)
+        Map.toMutDeque(reg, m1)
 
     // No traversable functions due to Order constraint that's outside the `Traversable` class.
 
@@ -566,8 +566,8 @@ namespace MultiMap {
     ///
     /// Returns an iterator over all key-value pairs in `m` i.e. `k => Set#{v_1, ..., v_n}`.
     ///
-    pub def iterator(r: Region[r], m: MultiMap[k, v]): Iterator[(k, Set[v]), r] \ Write(r) =
+    pub def iterator(reg: Region[r], m: MultiMap[k, v]): Iterator[(k, Set[v]), r] \ Write(r) =
         let MultiMap(m1) = m;
-        Map.iterator(r, m1)
+        Map.iterator(reg, m1)
 
 }

@@ -21,5 +21,5 @@ class Newable[n: Region -> Type] {
     ///
     /// Returns a fresh `n` parameterized by `t` allocated in region `r`.
     ///
-    pub def new[r: Region](r: Region[r]): n[r] \ { Read(r), Write(r) }
+    pub def new[r: Region](reg: Region[r]): n[r] \ { Read(r), Write(r) }
 }
