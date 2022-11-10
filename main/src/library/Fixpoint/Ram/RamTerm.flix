@@ -41,7 +41,7 @@ namespace Fixpoint/Ram {
 
     instance ToString[RamTerm[v]] {
         pub def toString(term: RamTerm[v]): String = match term {
-            case Lit(v) => stringify(v)
+            case Lit(v) => "%{v}"
             case RowLoad(var, index) => "${var}[${index}]"
             case LoadLatVar(var) => "${var}[-1]"
             case Meet(_, lhs, rhs) => "(${lhs} ⊓ ${rhs})"
