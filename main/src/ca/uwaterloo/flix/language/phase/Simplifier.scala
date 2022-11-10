@@ -518,7 +518,7 @@ object Simplifier {
           val failure = SimplifiedAst.Expression.JumpTo(next, tpe, jumpPurity, loc)
 
           // Return the branch with its label.
-          field -> patternMatchList(List(pat), List(matchVar), guard.getOrElse(TypedAst.Expression.True(SourceLocation.Unknown)), success, failure
+          field -> patternMatchList(List(pat), List(matchVar), guard.getOrElse(TypedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, SourceLocation.Unknown)), success, failure
           )
       }
       // Construct the error branch.
