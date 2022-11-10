@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
 import scala.collection.immutable.SortedSet
+import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 import com.juliasoft.beedeedee.bdd.BDD
 import com.juliasoft.beedeedee.factories.Factory
@@ -151,9 +152,7 @@ object BddFormula {
         var varMapBackward = varSetFull.zip(newVarNames).foldLeft(Map.empty[Int, Int]) {
           case (macc, (old_x, new_x)) => macc + (new_x -> old_x)
         }
-
-        //take a copy so f.DD does not get garbage collected
-        var res = f.getDD().copy()
+        var res = f.getDD()
 
         //for each i in the variable set for f, get fn(i), create fn(i)'
         //with primed variables and compose f with fn(i)'
@@ -161,21 +160,14 @@ object BddFormula {
         //if fn(i) = i, do not do anything
         for (var_i <- varSetF) {
           val subst = fn(var_i)
-          val substDD = subst.getDD()
+          var substDD = subst.getDD()
           if(substDD.isOne()) {
-            val resRestrictT = res.restrict(var_i, true)
-            res.free()
-            res = resRestrictT
+            res = res.restrict(var_i, true)
           } else if(substDD.isZero()) {
-            val resRestrictF = res.restrict(var_i, false)
-            res.free()
-            res = resRestrictF
+            res = res.restrict(var_i, false)
           } else if(!substDD.isEquivalentTo(factory.makeVar(var_i))) {
-            val replacedSubst = substDD.replace(varMapForward.asJava.asInstanceOf[java.util.Map[Integer,Integer]])
-            replacedSubst.free()
-            val resCompose = res.compose(substDD, var_i)
-            res.free()
-            res = resCompose
+            substDD = substDD.replace(varMapForward.asJava.asInstanceOf[java.util.Map[Integer,Integer]])
+            res = res.compose(substDD, var_i)
           }
         }
 
@@ -196,18 +188,14 @@ object BddFormula {
 
             //replace any primed occurrences of k with the unprimed version
             if(varSetRes.contains(k_prime)) {
-              val composeDD = factory.makeVar(var_k)
-              composeDD.free()
-              val resCompose = res.compose(composeDD, k_prime)
-              res.free()
-              res = resCompose
+              res = res.compose(factory.makeVar(var_k), k_prime)
             }
           }
         }
 
         //now the backward map only contains the primed variables that
         //do not occur as unprimed so the replacement is safe
-        res.replaceWith(varMapBackward.asJava.asInstanceOf[java.util.Map[Integer,Integer]])
+        res = res.replace(varMapBackward.asJava.asInstanceOf[java.util.Map[Integer,Integer]])
 
         new BddFormula(res)
       }
