@@ -150,6 +150,12 @@ object Unification {
   def liftM(tconstrs: List[Ast.TypeConstraint], tpe: Type, pur: Type, eff: Type): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] =
     InferMonad { case (s, renv) => Ok((s, renv, (tconstrs.map(s.apply), s(tpe), s(pur), s(eff)))) }
 
+  def foo(tpes1: List[Type], tpes2: List[Type], locs: List[SourceLocation])(implicit flix: Flix): InferMonad[Type] = (tpes1, tpes2, locs) match {
+    case (x :: xs, y :: ys, loc :: rs) => expectTypeM(expected = x, actual = y, loc).flatMap(_ => foo(xs, ys, rs))
+    case (Nil, Nil, _) => liftM(Type.Unit)
+    case _ => ???
+  }
+
   /**
     * Unifies the two given types `tpe1` and `tpe2` lifting their unified types and
     * associated substitution into the type inference monad.
@@ -208,12 +214,12 @@ object Unification {
     */
   def expectTypeM(expected: Type, actual: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     def handler(e: TypeError): TypeError = e match {
-      case _: TypeError.MismatchedTypes =>
+      case mt: TypeError.MismatchedTypes =>
         (expected.typeConstructor, actual.typeConstructor) match {
           case (Some(TypeConstructor.Native(left)), Some(TypeConstructor.Native(right))) if left.isAssignableFrom(right) =>
             TypeError.PossibleUpcast(expected, actual, loc)
           case _ =>
-            TypeError.UnexpectedType(expected, actual, loc)
+            TypeError.UnexpectedType(mt.baseType1, mt.baseType2, loc)
         }
       case e => e
     }
