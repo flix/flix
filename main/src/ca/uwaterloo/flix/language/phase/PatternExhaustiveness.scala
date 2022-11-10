@@ -664,7 +664,8 @@ object PatternExhaustiveness {
     case Pattern.Cst(Ast.Constant.Int64(_), _, _) => TyCon.Int64
     case Pattern.Cst(Ast.Constant.BigInt(_), _, _) => TyCon.BigInt
     case Pattern.Cst(Ast.Constant.Str(_), _, _) => TyCon.Str
-    case Pattern.Tag(Ast.CaseSymUse(sym, _), pat, tpe, _) => {
+    case Pattern.Cst(Ast.Constant.Null, _, _) => throw InternalCompilerException("unexpected null pattern")
+    case Pattern.Tag(Ast.CaseSymUse(sym, _), pat, _, _) => {
       val (args, numArgs) = pat match {
         case Pattern.Cst(Ast.Constant.Unit, _, _) => (List.empty[TyCon], 0)
         case Pattern.Tuple(elms, _, _) => (elms.map(patToCtor), elms.length)
