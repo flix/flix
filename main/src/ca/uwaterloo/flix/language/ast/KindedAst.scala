@@ -66,33 +66,7 @@ object KindedAst {
 
     case class Hole(sym: Symbol.HoleSym, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Unit(loc: SourceLocation) extends KindedAst.Expression
-
-    case class Null(loc: SourceLocation) extends KindedAst.Expression
-
-    case class True(loc: SourceLocation) extends KindedAst.Expression
-
-    case class False(loc: SourceLocation) extends KindedAst.Expression
-
-    case class Char(lit: scala.Char, loc: SourceLocation) extends KindedAst.Expression
-
-    case class Float32(lit: scala.Float, loc: SourceLocation) extends KindedAst.Expression
-
-    case class Float64(lit: scala.Double, loc: SourceLocation) extends KindedAst.Expression
-
-    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends KindedAst.Expression
-
-    case class Int8(lit: scala.Byte, loc: SourceLocation) extends KindedAst.Expression
-
-    case class Int16(lit: scala.Short, loc: SourceLocation) extends KindedAst.Expression
-
-    case class Int32(lit: scala.Int, loc: SourceLocation) extends KindedAst.Expression
-
-    case class Int64(lit: scala.Long, loc: SourceLocation) extends KindedAst.Expression
-
-    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends KindedAst.Expression
-
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends KindedAst.Expression
+    case class Cst(cst: Ast.Constant, loc: SourceLocation) extends KindedAst.Expression
 
     case class Apply(exp: KindedAst.Expression, exps: List[KindedAst.Expression], tpe: Type.Var, pur: Type.Var, eff: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
@@ -236,31 +210,7 @@ object KindedAst {
 
     case class Var(sym: Symbol.VarSym, tvar: ast.Type.Var, loc: SourceLocation) extends KindedAst.Pattern
 
-    case class Unit(loc: SourceLocation) extends KindedAst.Pattern
-
-    case class True(loc: SourceLocation) extends KindedAst.Pattern
-
-    case class False(loc: SourceLocation) extends KindedAst.Pattern
-
-    case class Char(lit: scala.Char, loc: SourceLocation) extends KindedAst.Pattern
-
-    case class Float32(lit: scala.Float, loc: SourceLocation) extends KindedAst.Pattern
-
-    case class Float64(lit: scala.Double, loc: SourceLocation) extends KindedAst.Pattern
-
-    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends KindedAst.Pattern
-
-    case class Int8(lit: scala.Byte, loc: SourceLocation) extends KindedAst.Pattern
-
-    case class Int16(lit: scala.Short, loc: SourceLocation) extends KindedAst.Pattern
-
-    case class Int32(lit: scala.Int, loc: SourceLocation) extends KindedAst.Pattern
-
-    case class Int64(lit: scala.Long, loc: SourceLocation) extends KindedAst.Pattern
-
-    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends KindedAst.Pattern
-
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends KindedAst.Pattern
+    case class Cst(cst: Ast.Constant, loc: SourceLocation) extends KindedAst.Pattern
 
     case class Tag(sym: Ast.CaseSymUse, pat: KindedAst.Pattern, tvar: ast.Type.Var, loc: SourceLocation) extends KindedAst.Pattern
 
