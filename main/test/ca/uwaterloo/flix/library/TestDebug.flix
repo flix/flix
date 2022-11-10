@@ -191,23 +191,23 @@ namespace TestDebug {
         s == "(Obj -> Int32, Obj -> Char)"
     }
 
-    // @test
-    // def testNullStringify01(): Bool = {
-    //     let s = stringify(null);
-    //     s == "null"
-    // }
+     @test
+     def testNullStringify01(): Bool = {
+         let s = stringify(null);
+         s == "null"
+     }
 
-    // @test
-    // def testNullStringify02(): Bool = {
-    //     let s = stringify(null as String);
-    //     s == "null"
-    // }
+     @test
+     def testNullStringify02(): Bool = {
+         let s = stringify(null as String);
+         s == "null"
+     }
 
-    // @test
-    // def testNullStringify03(): Bool = {
-    //     let s = stringify(null as BigInt);
-    //     s == "null"
-    // }
+     @test
+     def testNullStringify03(): Bool = {
+         let s = stringify(null as BigInt);
+         s == "null"
+     }
 
     @test
     def testNullStringify04(): Bool = {
