@@ -38,7 +38,6 @@ jobs:
       matrix:
         repo:
           - "magnus-madsen/helloworld"
-          - "mlutze/fcwg"
           - "JonathanStarup/Flix-ANSI-Terminal"
           - "mlutze/flix-json"
     runs-on: ubuntu-latest
