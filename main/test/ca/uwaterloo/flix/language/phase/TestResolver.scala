@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
@@ -1105,7 +1106,7 @@ class TestResolver extends FunSuite with TestUtils {
         |    pub class X[a]
         |    namespace B {
         |        enum Y
-        |        instance X[Y] 
+        |        instance X[Y]
         |    }
         |}
         |""".stripMargin
@@ -1183,5 +1184,15 @@ class TestResolver extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
+  }
+
+  test("TestParYield.01") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    par (_ <- let b = 5; b) yield b
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedName](result)
   }
 }

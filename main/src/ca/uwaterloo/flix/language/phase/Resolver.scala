@@ -335,9 +335,9 @@ object Resolver {
   def resolveSig(s0: NamedAst.Sig, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Sig, ResolutionError] = s0 match {
     case NamedAst.Sig(sym, spec0, exp0) =>
       val specVal = resolveSpec(spec0, taenv, ns0, root)
-      val expVal = traverse(exp0)(Expressions.resolve(_, taenv, ns0, root))
+      val expVal = traverseOpt(exp0)(Expressions.resolve(_, taenv, ns0, root))
       mapN(specVal, expVal) {
-        case (spec, exp) => ResolvedAst.Sig(sym, spec, exp.headOption)
+        case (spec, exp) => ResolvedAst.Sig(sym, spec, exp)
       }
   }
 
@@ -726,7 +726,7 @@ object Resolver {
           val rulesVal = traverse(rules) {
             case NamedAst.MatchRule(pat, guard, body) =>
               val pVal = Patterns.resolve(pat, ns0, root)
-              val gVal = visitExp(guard, region)
+              val gVal = traverseOpt(guard)(visitExp(_, region))
               val bVal = visitExp(body, region)
               mapN(pVal, gVal, bVal) {
                 case (p, g, b) => ResolvedAst.MatchRule(p, g, b)
@@ -850,7 +850,7 @@ object Resolver {
           }
 
         case NamedAst.Expression.New(qname, exp, loc) =>
-          val erVal = traverse(exp)(visitExp(_, region)).map(_.headOption)
+          val erVal = traverseOpt(exp)(visitExp(_, region))
           mapN(erVal) {
             er =>
               ///
@@ -868,7 +868,7 @@ object Resolver {
 
         case NamedAst.Expression.ArrayLit(exps, exp, loc) =>
           val esVal = traverse(exps)(visitExp(_, region))
-          val erVal = traverse(exp)(visitExp(_, region)).map(_.headOption)
+          val erVal = traverseOpt(exp)(visitExp(_, region))
           mapN(esVal, erVal) {
             case (es, er) =>
               val reg = getExplicitOrImplicitRegion(er, region, loc)
@@ -878,7 +878,7 @@ object Resolver {
         case NamedAst.Expression.ArrayNew(exp1, exp2, exp3, loc) =>
           val e1Val = visitExp(exp1, region)
           val e2Val = visitExp(exp2, region)
-          val erVal = traverse(exp3)(visitExp(_, region)).map(_.headOption)
+          val erVal = traverseOpt(exp3)(visitExp(_, region))
           mapN(e1Val, e2Val, erVal) {
             case (e1, e2, er) =>
               val reg = getExplicitOrImplicitRegion(er, region, loc)
@@ -916,7 +916,7 @@ object Resolver {
 
         case NamedAst.Expression.Ref(exp1, exp2, loc) =>
           val e1Val = visitExp(exp1, region)
-          val e2Val = traverse(exp2)(visitExp(_, region)).map(_.headOption)
+          val e2Val = traverseOpt(exp2)(visitExp(_, region))
           mapN(e1Val, e2Val) {
             case (e1, e2) =>
               val reg = getExplicitOrImplicitRegion(e2, region, loc)
@@ -1163,6 +1163,20 @@ object Resolver {
         case NamedAst.Expression.Par(exp, loc) =>
           mapN(visitExp(exp, region)) {
             e => ResolvedAst.Expression.Par(e, loc)
+          }
+
+        case NamedAst.Expression.ParYield(frags, exp, loc) =>
+          val fragsVal = traverse(frags) {
+            case NamedAst.ParYieldFragment(pat, e0, l0) =>
+              val pVal = Patterns.resolve(pat, ns0, root)
+              val e0Val = visitExp(e0, region)
+              mapN(pVal, e0Val) {
+                case (p, e1) => ResolvedAst.ParYieldFragment(p, e1, l0)
+              }
+          }
+
+          mapN(fragsVal, visitExp(exp, region)) {
+            case (fs, e) => ResolvedAst.Expression.ParYield(fs, e, loc)
           }
 
         case NamedAst.Expression.Lazy(exp, loc) =>
@@ -1712,17 +1726,18 @@ object Resolver {
       case Some(qname) =>
         // Case 2: The name is qualified.
 
-        // Determine where to search for the enum.
-        val enumsInNS = if (qname.isUnqualified) {
-          // The name is unqualified (e.g. Option.None) so search in the current namespace.
-          root.enums.getOrElse(ns0, Map.empty[String, NamedAst.Enum])
+        def lookupEnumInNs(ns: Name.NName) = root.enums.get(ns) flatMap { _.get(qname.ident.name) }
+
+        val enumOpt = if (qname.isUnqualified) {
+          // The name is unqualified (e.g. Option.None), so first search the current namespace,
+          // if it's not found there, search the root namespace.
+          lookupEnumInNs(ns0).orElse(lookupEnumInNs(Name.RootNS))
         } else {
           // The name is qualified (e.g. Foo/Bar/Baz.Qux) so search in the Foo/Bar/Baz namespace.
-          root.enums.getOrElse(qname.namespace, Map.empty[String, NamedAst.Enum])
+          lookupEnumInNs(qname.namespace)
         }
 
-        // Lookup the enum declaration.
-        enumsInNS.get(qname.ident.name) match {
+        enumOpt match {
           case None =>
             // Case 2.1: The enum does not exist.
             ResolutionError.UndefinedType(qname, ns0, qname.loc).toFailure
@@ -1781,7 +1796,8 @@ object Resolver {
       case "Int64" => UnkindedType.Cst(TypeConstructor.Int64, loc).toSuccess
       case "BigInt" => UnkindedType.Cst(TypeConstructor.BigInt, loc).toSuccess
       case "String" => UnkindedType.Cst(TypeConstructor.Str, loc).toSuccess
-      case "Channel" => UnkindedType.Cst(TypeConstructor.Channel, loc).toSuccess
+      case "Sender" => UnkindedType.Cst(TypeConstructor.Sender, loc).toSuccess
+      case "Receiver" => UnkindedType.Cst(TypeConstructor.Receiver, loc).toSuccess
       case "Lazy" => UnkindedType.Cst(TypeConstructor.Lazy, loc).toSuccess
       case "Array" => UnkindedType.Cst(TypeConstructor.Array, loc).toSuccess
       case "Ref" => UnkindedType.Cst(TypeConstructor.Ref, loc).toSuccess
@@ -2065,8 +2081,8 @@ object Resolver {
     */
   private def semiResolvePurityAndEffect(purAndEff0: NamedAst.PurityAndEffect, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[UnkindedType.PurityAndEffect, ResolutionError] = purAndEff0 match {
     case NamedAst.PurityAndEffect(pur0, eff0) =>
-      val purVal = traverse(pur0)(semiResolveType(_, ns0, root)).map(_.headOption)
-      val effVal = traverse(eff0)(effs => traverse(effs)(semiResolveType(_, ns0, root))).map(_.headOption)
+      val purVal = traverseOpt(pur0)(semiResolveType(_, ns0, root))
+      val effVal = traverseOpt(eff0)(effs => traverse(effs)(semiResolveType(_, ns0, root)))
       mapN(purVal, effVal) {
         case (pur, eff) => UnkindedType.PurityAndEffect(pur, eff)
       }
@@ -2077,8 +2093,8 @@ object Resolver {
     */
   private def finishResolvePurityAndEffect(purAndEff0: UnkindedType.PurityAndEffect, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]): Validation[UnkindedType.PurityAndEffect, ResolutionError] = purAndEff0 match {
     case UnkindedType.PurityAndEffect(pur0, eff0) =>
-      val purVal = traverse(pur0)(finishResolveType(_, taenv)).map(_.headOption)
-      val effVal = traverse(eff0)(effs => traverse(effs)(finishResolveType(_, taenv))).map(_.headOption)
+      val purVal = traverseOpt(pur0)(finishResolveType(_, taenv))
+      val effVal = traverseOpt(eff0)(effs => traverse(effs)(finishResolveType(_, taenv)))
       mapN(purVal, effVal) {
         case (pur, eff) => UnkindedType.PurityAndEffect(pur, eff)
       }
@@ -2653,7 +2669,9 @@ object Resolver {
 
         case TypeConstructor.Str => Class.forName("java.lang.String").toSuccess
 
-        case TypeConstructor.Channel => Class.forName("java.lang.Object").toSuccess
+        case TypeConstructor.Sender => Class.forName("java.lang.Object").toSuccess
+
+        case TypeConstructor.Receiver => Class.forName("java.lang.Object").toSuccess
 
         case TypeConstructor.Ref => Class.forName("java.lang.Object").toSuccess
 

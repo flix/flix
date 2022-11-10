@@ -141,7 +141,7 @@ object Regions {
     case Expression.Match(exp, rules, tpe, _, _, loc) =>
       val matchVal = visitExp(exp)
       val rulesVal = traverse(rules) {
-        case MatchRule(pat, guard, body) => flatMapN(visitExp(guard), visitExp(body)) {
+        case MatchRule(pat, guard, body) => flatMapN(traverse(guard)(visitExp), visitExp(body)) {
           case (g, b) => ().toSuccess
         }
       }
@@ -329,7 +329,7 @@ object Regions {
         case ms => checkType(tpe, loc)
       }
 
-    case Expression.NewChannel(exp, tpe, _, _, loc) =>
+    case Expression.NewChannel(exp, tpe, _, _, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
@@ -369,6 +369,14 @@ object Regions {
 
     case Expression.Par(exp, loc) =>
       flatMapN(visitExp(exp))(_ => checkType(exp.tpe, loc))
+
+    case Expression.ParYield(frags, exp, tpe, _, _, loc) =>
+      val fragsVal = traverse(frags) {
+        case ParYieldFragment(_, e, _) => visitExp(e)
+      }
+      flatMapN(fragsVal, visitExp(exp)) {
+        case (_, _) => checkType(tpe, loc)
+      }
 
     case Expression.Lazy(exp, tpe, loc) =>
       flatMapN(visitExp(exp)) {

@@ -368,7 +368,7 @@ object Monomorph {
           case MatchRule(pat, guard, body) =>
             val (p, env1) = visitPat(pat)
             val extendedEnv = env0 ++ env1
-            val g = visitExp(guard, extendedEnv)
+            val g = guard.map(visitExp(_, extendedEnv))
             val b = visitExp(body, extendedEnv)
             MatchRule(p, g, b)
         }
@@ -560,9 +560,9 @@ object Monomorph {
         val methods = methods0.map(visitJvmMethod(_, env0))
         Expression.NewObject(name, clazz, subst0(tpe), pur, eff, methods, loc)
 
-      case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
+      case Expression.NewChannel(exp, tpe, elmTpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
-        Expression.NewChannel(e, subst0(tpe), pur, eff, loc)
+        Expression.NewChannel(e, subst0(tpe), subst0(elmTpe), pur, eff, loc)
 
       case Expression.GetChannel(exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
@@ -593,6 +593,9 @@ object Monomorph {
 
       case Expression.Par(_, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
+
+      case Expression.ParYield(_, _, _, _, _, loc) =>
+        throw InternalCompilerException(s"Unexpected expression near: ${loc.format}")
 
       case Expression.Lazy(exp, tpe, loc) =>
         val e = visitExp(exp, env0)

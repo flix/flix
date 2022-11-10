@@ -65,7 +65,6 @@ object JvmOps {
 
     // Compound
     case MonoType.Array(_) => JvmType.Object
-    case MonoType.Channel(_) => JvmType.Object
     case MonoType.Lazy(_) => JvmType.Object
     case MonoType.Ref(_) => getRefClassType(tpe)
     case MonoType.Tuple(_) => getTupleClassType(tpe.asInstanceOf[MonoType.Tuple])
@@ -755,7 +754,6 @@ object JvmOps {
     case MonoType.Str => Type.Str
     case MonoType.Array(elm) => Type.mkArray(hackMonoType2Type(elm), Type.Impure, SourceLocation.Unknown)
     case MonoType.Lazy(tpe) => Type.mkLazy(hackMonoType2Type(tpe), SourceLocation.Unknown)
-    case MonoType.Channel(elm) => Type.mkChannel(hackMonoType2Type(elm), SourceLocation.Unknown)
     case MonoType.Native(clazz) => Type.mkNative(clazz, SourceLocation.Unknown)
     case MonoType.Ref(elm) => Type.mkRef(hackMonoType2Type(elm), Type.False, SourceLocation.Unknown)
     case MonoType.Arrow(targs, tresult) => Type.mkPureCurriedArrow(targs map hackMonoType2Type, hackMonoType2Type(tresult), SourceLocation.Unknown)
@@ -1102,7 +1100,6 @@ object JvmOps {
       case MonoType.Str => Set(tpe)
 
       case MonoType.Array(elm) => nestedTypesOf(elm) + tpe
-      case MonoType.Channel(elm) => nestedTypesOf(elm) + tpe
       case MonoType.Lazy(elm) => nestedTypesOf(elm) + tpe
       case MonoType.Ref(elm) => nestedTypesOf(elm) + tpe
       case MonoType.Tuple(elms) => elms.flatMap(nestedTypesOf).toSet + tpe

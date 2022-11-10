@@ -253,7 +253,7 @@ object Simplifier {
         val methods = methods0 map visitJvmMethod
         SimplifiedAst.Expression.NewObject(name, clazz, tpe, simplifyPurity(pur), methods, loc)
 
-      case TypedAst.Expression.NewChannel(exp, tpe, pur, eff, loc) =>
+      case TypedAst.Expression.NewChannel(exp, tpe, elmTpe, pur, eff, loc) =>
         throw new InternalCompilerException("Unexpected NewChannel")
 
       case TypedAst.Expression.GetChannel(exp, tpe, pur, eff, loc) =>
@@ -335,6 +335,9 @@ object Simplifier {
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
       case TypedAst.Expression.Par(_, _) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.")
+
+      case TypedAst.Expression.ParYield(_, _, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
       case TypedAst.Expression.Mask(_, _, _, _, _) =>
@@ -526,7 +529,7 @@ object Simplifier {
           val failure = SimplifiedAst.Expression.JumpTo(next, tpe, jumpPurity, loc)
 
           // Return the branch with its label.
-          field -> patternMatchList(List(pat), List(matchVar), guard, success, failure
+          field -> patternMatchList(List(pat), List(matchVar), guard.getOrElse(TypedAst.Expression.True(SourceLocation.Unknown)), success, failure
           )
       }
       // Construct the error branch.
