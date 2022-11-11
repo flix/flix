@@ -126,12 +126,12 @@ namespace Result {
         case Ok(v)  => f(v)
         case Err(w) => Err(w)
     }
-    
+
     ///
     /// Returns `v` if `r` is `Ok(v)`. Returns `Err(w)` if `r` is `Err(w)`.
     ///
     pub def flatten(r: Result[Result[t, e], e]): Result[t, e] = match r {
-        case Ok(v) => v
+        case Ok(v)  => v
         case Err(w) => Err(w)
     }
 
