@@ -125,8 +125,23 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Root                                                                    //
   /////////////////////////////////////////////////////////////////////////////
-  def Root: Rule1[ParsedAst.CompilationUnit] = rule {
-    SP ~ UsesOrImports ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.CompilationUnit
+  def Root: Rule1[ParsedAst.CompilationUnit] = {
+    def wrapNamespace(sp1: SourcePosition, d: ParsedAst.Declaration.Namespace, sp2: SourcePosition): ParsedAst.CompilationUnit = {
+      ParsedAst.CompilationUnit(sp1, Seq.empty, Seq(d), sp2)
+    }
+
+    def OnLineNamespace: Rule1[ParsedAst.CompilationUnit] = rule {
+      SP ~ Declarations.NamespaceFloating ~ SP ~ optWS ~ EOI ~>
+        ((sp1: SourcePosition, d: ParsedAst.Declaration.Namespace, sp2: SourcePosition) => wrapNamespace(sp1, d, sp2))
+    }
+
+    def TopLevel: Rule1[ParsedAst.CompilationUnit] = rule {
+      SP ~ UsesOrImports ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.CompilationUnit
+    }
+
+    rule {
+      OnLineNamespace | TopLevel
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -162,6 +177,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Namespace: Rule1[ParsedAst.Declaration.Namespace] = rule {
       optWS ~ SP ~ keyword("namespace") ~ WS ~ Names.Namespace ~ optWS ~ '{' ~ UsesOrImports ~ Decls ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
+    }
+
+    def NamespaceFloating: Rule1[ParsedAst.Declaration.Namespace] = rule {
+      // PureWS avoids consuming doc comments
+      optWS ~ SP ~ keyword("namespace") ~ WS ~ Names.Namespace ~ PureWS ~ UsesOrImports ~ Decls ~ SP ~> ParsedAst.Declaration.Namespace
     }
 
     def Def: Rule1[ParsedAst.Declaration.Def] = rule {
