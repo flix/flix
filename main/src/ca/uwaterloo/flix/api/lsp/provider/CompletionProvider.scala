@@ -919,7 +919,8 @@ object CompletionProvider {
       case regex(ns) => {
         val prefix1 = ns.split('/').toList;
         val prefix2 = ns.split('/').dropRight(1).toList;
-        nsCompletionsAfterPrefix(prefix1) ++ nsCompletionsAfterPrefix(prefix2)
+        val itemNs = ns.split('.')(0).split('/').toList;
+        nsCompletionsAfterPrefix(prefix1) ++ nsCompletionsAfterPrefix(prefix2) ++ getEnumUseCompletions(itemNs)
       }
       case _ => Nil
     }
@@ -956,6 +957,21 @@ object CompletionProvider {
       case (x :: xs, y :: ys) if x == y => getFirstAfterGivenPrefix(xs, ys)
       case _ => None
     }
+  }
+
+  private def getEnumUseCompletions(ns: List[String])(implicit context: Context, root: TypedAst.Root): Iterable[CompletionItem] = {
+    root.enums.filter{case (sym, _) => sym.namespace == ns}
+      .map{
+        case (sym, enm) => {
+          val name = s"${ns.mkString("/")}.${sym.name}"
+          CompletionItem(
+          label = name,
+          sortText = Priority.high(name),
+          textEdit = TextEdit(context.range, name),
+          documentation = None,
+          kind = CompletionItemKind.Enum)
+        }
+      }
   }
 
   /**
