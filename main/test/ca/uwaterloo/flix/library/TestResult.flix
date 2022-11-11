@@ -139,13 +139,22 @@ namespace TestResult {
     // flatten                                                                 //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def flatten01(): Bool = Result.flatten(Ok(Err(42))) == Err(42)
+    def flatten01(): Bool = {
+        let err: Result[Int32, _] = Err(42);
+        Result.flatten(Ok(err)) == Err(42)
+    }
 
     @test
-    def flatten02(): Bool = Result.flatten(Err(42)) == Err(42)
+    def flatten02(): Bool = {
+        let err: Result[Result[String, _], _] = Err(42);
+        Result.flatten(err) == Err(42)
+    }
 
     @test
-    def flatten03(): Bool = Result.flatten(Ok(Ok(42))) == Ok(42)
+    def flatten03(): Bool = {
+        let err: Result[_, Bool] = Ok(Ok(42));
+        Result.flatten(err) == Ok(42)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // count                                                                   //
