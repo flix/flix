@@ -131,6 +131,7 @@ object CompletionProvider {
       getTypeCompletions() ++
       getOpCompletions() ++
       getEffectCompletions() ++
+      getUseCompletions() ++
       getImportCompletions()
   }
 
@@ -901,6 +902,59 @@ object CompletionProvider {
           documentation = Some(t.doc.text),
           insertTextFormat = InsertTextFormat.Snippet,
           kind = CompletionItemKind.Enum)
+    }
+  }
+
+  /**
+    * Gets completions after use keyword
+    */
+  private def getUseCompletions()(implicit context: Context, root: TypedAst.Root): Iterable[CompletionItem] = {
+    if (root == null) {
+      return Nil
+    }
+
+    val regex = raw"\s*use\s+(.*)".r
+
+    context.prefix match {
+      case regex(ns) => {
+        val prefix1 = ns.split('/').toList;
+        val prefix2 = ns.split('/').dropRight(1).toList;
+        nsCompletionsAfterPrefix(prefix1) ++ nsCompletionsAfterPrefix(prefix2)
+      }
+      case _ => Nil
+    }
+  }
+
+  /**
+    * Gets completions for a sub namespace of a prefix namespace
+    * I.e if you have namespace A/B/C/D, then if prefix is A/B it will return a completion for A/B/C
+    */
+  private def nsCompletionsAfterPrefix(prefix: List[String])(implicit context: Context, root: TypedAst.Root): Iterable[CompletionItem] = {
+    val nss = root.defs.keySet.map(_.namespace) ++
+      root.enums.keySet.map(_.namespace) ++
+      root.classes.keySet.map(_.namespace) ++
+      root.typeAliases.keySet.map(_.namespace);
+    
+    nss.flatMap(ns => getFirstAfterGivenPrefix(ns, prefix))
+      .map(nextNs => {
+        val name = prefix.appended(nextNs).mkString("/")
+        CompletionItem(
+          label = name,
+          sortText = Priority.high(name),
+          textEdit = TextEdit(context.range, name),
+          documentation = None,
+          kind = CompletionItemKind.Module)
+      })
+  }
+
+  /**
+    * returns the first namespace after a given prefix if the prefix is a prefix and there is a next
+    */
+  private def getFirstAfterGivenPrefix(ns: List[String], prefix: List[String]): Option[String] = {
+    (ns, prefix) match {
+      case (x :: _, Nil) => Some(x)
+      case (x :: xs, y :: ys) if x == y => getFirstAfterGivenPrefix(xs, ys)
+      case _ => None
     }
   }
 
