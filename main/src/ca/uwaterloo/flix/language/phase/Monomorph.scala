@@ -286,33 +286,7 @@ object Monomorph {
 
       case Expression.Hole(sym, tpe, loc) => Expression.Hole(sym, subst0(tpe), loc)
 
-      case Expression.Unit(loc) => Expression.Unit(loc)
-
-      case Expression.Null(tpe, loc) => Expression.Null(subst0(tpe), loc)
-
-      case Expression.True(loc) => Expression.True(loc)
-
-      case Expression.False(loc) => Expression.False(loc)
-
-      case Expression.Char(lit, loc) => Expression.Char(lit, loc)
-
-      case Expression.Float32(lit, loc) => Expression.Float32(lit, loc)
-
-      case Expression.Float64(lit, loc) => Expression.Float64(lit, loc)
-
-      case Expression.BigDecimal(lit, loc) => Expression.BigDecimal(lit, loc)
-
-      case Expression.Int8(lit, loc) => Expression.Int8(lit, loc)
-
-      case Expression.Int16(lit, loc) => Expression.Int16(lit, loc)
-
-      case Expression.Int32(lit, loc) => Expression.Int32(lit, loc)
-
-      case Expression.Int64(lit, loc) => Expression.Int64(lit, loc)
-
-      case Expression.BigInt(lit, loc) => Expression.BigInt(lit, loc)
-
-      case Expression.Str(lit, loc) => Expression.Str(lit, loc)
+      case Expression.Cst(cst, tpe, loc) => Expression.Cst(cst, subst0(tpe), loc)
 
       case Expression.Lambda(fparam, exp, tpe, loc) =>
         val (p, env1) = specializeFormalParam(fparam, subst0)
@@ -521,11 +495,11 @@ object Monomorph {
 
       case Expression.Do(_, _, _, _, loc) =>
         // Erase down to unit
-        Expression.Unit(loc)
+        Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
 
       case Expression.Resume(_, _, loc) =>
         // Erase down to unit
-        Expression.Unit(loc)
+        Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
 
       case Expression.InvokeConstructor(constructor, args, tpe, pur, eff, loc) =>
         val as = args.map(visitExp(_, env0))
@@ -640,10 +614,7 @@ object Monomorph {
           case other => throw ReifyBoolException(other, loc)
         }
 
-        if (isTrue)
-          Expression.True(loc)
-        else
-          Expression.False(loc)
+        Expression.Cst(Ast.Constant.Bool(isTrue), Type.Bool, loc)
 
       case Expression.ReifyType(t, k, _, _, _, loc) =>
         k match {
@@ -687,19 +658,7 @@ object Monomorph {
         // Generate a fresh variable symbol for the pattern-bound variable.
         val freshSym = Symbol.freshVarSym(sym)
         (Pattern.Var(freshSym, subst0(tpe), loc), Map(sym -> freshSym))
-      case Pattern.Unit(loc) => (Pattern.Unit(loc), Map.empty)
-      case Pattern.True(loc) => (Pattern.True(loc), Map.empty)
-      case Pattern.False(loc) => (Pattern.False(loc), Map.empty)
-      case Pattern.Char(lit, loc) => (Pattern.Char(lit, loc), Map.empty)
-      case Pattern.Float32(lit, loc) => (Pattern.Float32(lit, loc), Map.empty)
-      case Pattern.Float64(lit, loc) => (Pattern.Float64(lit, loc), Map.empty)
-      case Pattern.BigDecimal(lit, loc) => (Pattern.BigDecimal(lit, loc), Map.empty)
-      case Pattern.Int8(lit, loc) => (Pattern.Int8(lit, loc), Map.empty)
-      case Pattern.Int16(lit, loc) => (Pattern.Int16(lit, loc), Map.empty)
-      case Pattern.Int32(lit, loc) => (Pattern.Int32(lit, loc), Map.empty)
-      case Pattern.Int64(lit, loc) => (Pattern.Int64(lit, loc), Map.empty)
-      case Pattern.BigInt(lit, loc) => (Pattern.BigInt(lit, loc), Map.empty)
-      case Pattern.Str(lit, loc) => (Pattern.Str(lit, loc), Map.empty)
+      case Pattern.Cst(cst, tpe, loc) => (Pattern.Cst(cst, tpe, loc), Map.empty)
       case Pattern.Tag(sym, pat, tpe, loc) =>
         val (p, env1) = visitPat(pat)
         (Pattern.Tag(sym, p, subst0(tpe), loc), env1)
@@ -896,15 +855,15 @@ object Monomorph {
       case Some(tc) => tc match {
         case TypeConstructor.True =>
           val caseSym = new Symbol.CaseSym(sym, "ReifiedTrue", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc.asSynthetic), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc.asSynthetic), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.False =>
           val caseSym = new Symbol.CaseSym(sym, "ReifiedFalse", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc.asSynthetic), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc.asSynthetic), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
 
         case _ =>
           val caseSym = new Symbol.CaseSym(sym, "ErasedBool", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc.asSynthetic), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc.asSynthetic), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
       }
     }
   }
@@ -925,51 +884,51 @@ object Monomorph {
       case Some(tc) => tc match {
         case TypeConstructor.Unit =>
           val caseSym = new Symbol.CaseSym(sym, "ReifiedUnit", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Bool =>
           val caseSym = new Symbol.CaseSym(sym, "ReifiedBool", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Char =>
           val caseSym = new Symbol.CaseSym(sym, "ReifiedChar", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Float32 =>
           val caseSym = new Symbol.CaseSym(sym, "ReifiedFloat32", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Float64 =>
           val caseSym = new Symbol.CaseSym(sym, "ReifiedFloat64", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.BigDecimal =>
           val caseSym = new Symbol.CaseSym(sym, "ReifiedBigDecimal", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Int8 =>
           val caseSym = new Symbol.CaseSym(sym, "ReifiedInt8", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Int16 =>
           val caseSym = new Symbol.CaseSym(sym, "ReifiedInt16", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Int32 =>
           val caseSym = new Symbol.CaseSym(sym, "ReifiedInt32", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Int64 =>
           val caseSym = new Symbol.CaseSym(sym, "ReifiedInt64", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.BigInt =>
           val caseSym = new Symbol.CaseSym(sym, "ReifiedBigInt", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Str =>
           val caseSym = new Symbol.CaseSym(sym, "ReifiedString", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
 
         case TypeConstructor.Array =>
           val caseSym = new Symbol.CaseSym(sym, "ReifiedArray", SourceLocation.Unknown)
@@ -979,7 +938,7 @@ object Monomorph {
 
         case _ =>
           val caseSym = new Symbol.CaseSym(sym, "ErasedType", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Unit(loc), resultTpe, resultPur, resultEff, loc)
+          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
 
       }
     }
