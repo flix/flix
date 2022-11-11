@@ -41,7 +41,7 @@ object LiftedAst {
 
   object Expression {
 
-    case class Constant(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+    case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
       def purity: Purity = Pure
     }
 

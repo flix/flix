@@ -60,7 +60,7 @@ object PrettyPrinter {
 
     def fmtExp(exp0: Expression, formatter: Formatter)(implicit flix: Flix): String = {
       def visitExp(e0: Expression): String = e0 match {
-        case Expression.Constant(cst, _, _) => FormatConstant.format(cst)
+        case Expression.Cst(cst, _, _) => FormatConstant.format(cst)
 
         case Expression.Var(sym, tpe, loc) => fmtSym(sym, formatter)
 
@@ -205,7 +205,7 @@ object PrettyPrinter {
         case Expression.Is(sym, exp, _, loc) => visitExp(exp) + " is " + sym.name
 
         case Expression.Tag(sym, exp, tpe, _, loc) => exp match {
-          case Expression.Constant(Ast.Constant.Unit, _, _) => sym.name
+          case Expression.Cst(Ast.Constant.Unit, _, _) => sym.name
           case _ =>
             val sb = new mutable.StringBuilder
             sb.append(sym.name)

@@ -84,7 +84,7 @@ object LambdaLift {
       * Performs closure conversion and lambda lifting on the given expression `exp0`.
       */
     def visitExp(e: SimplifiedAst.Expression): LiftedAst.Expression = e match {
-      case SimplifiedAst.Expression.Constant(cst, tpe, loc) => LiftedAst.Expression.Constant(cst, tpe, loc)
+      case SimplifiedAst.Expression.Cst(cst, tpe, loc) => LiftedAst.Expression.Cst(cst, tpe, loc)
 
       case SimplifiedAst.Expression.Var(sym, tpe, loc) => LiftedAst.Expression.Var(sym, tpe, loc)
 

@@ -50,7 +50,7 @@ object ClosureConv {
     * Performs closure conversion on the given expression `exp0`.
     */
   private def visitExp(exp0: Expression)(implicit flix: Flix): Expression = exp0 match {
-    case Expression.Constant(_, _, _) => exp0
+    case Expression.Cst(_, _, _) => exp0
 
     case Expression.Var(_, _, _) => exp0
 
@@ -314,7 +314,7 @@ object ClosureConv {
     *   - (B) must be sorted to ensure deterministic compilation.
     */
   private def freeVars(exp0: Expression): SortedSet[FreeVar] = exp0 match {
-    case Expression.Constant(_, _, _) => SortedSet.empty
+    case Expression.Cst(_, _, _) => SortedSet.empty
 
     case Expression.Var(sym, tpe, _) => SortedSet(FreeVar(sym, tpe))
 
@@ -459,7 +459,7 @@ object ClosureConv {
   private def applySubst(e0: Expression, subst: Map[Symbol.VarSym, Symbol.VarSym])(implicit flix: Flix): Expression = {
 
     def visitExp(e: Expression): Expression = e match {
-      case Expression.Constant(_, _, _) => e
+      case Expression.Cst(_, _, _) => e
 
       case Expression.Var(sym, tpe, loc) => subst.get(sym) match {
         case None => Expression.Var(sym, tpe, loc)

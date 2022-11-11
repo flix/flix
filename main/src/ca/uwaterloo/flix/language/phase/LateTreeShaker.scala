@@ -93,7 +93,7 @@ object LateTreeShaker {
     * Returns the function symbols reachable from the given expression `e0`.
     */
   private def visitExp(e0: Expression): Set[Symbol.DefnSym] = e0 match {
-    case Expression.Constant(_, _, _) =>
+    case Expression.Cst(_, _, _) =>
       Set.empty
 
     case Expression.Var(_, _, _) =>

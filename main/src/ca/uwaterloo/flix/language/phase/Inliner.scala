@@ -90,7 +90,7 @@ object Inliner {
    * Returns an expression of type Expression
    */
   private def visitExp(exp0: OccurrenceAst.Expression, subst0: Map[Symbol.VarSym, Expression])(implicit root: Root, flix: Flix): LiftedAst.Expression = exp0 match {
-    case OccurrenceAst.Expression.Constant(cst, tpe, loc) => LiftedAst.Expression.Constant(cst, tpe, loc)
+    case OccurrenceAst.Expression.Constant(cst, tpe, loc) => LiftedAst.Expression.Cst(cst, tpe, loc)
 
     case OccurrenceAst.Expression.Var(sym, tpe, loc) =>
       subst0.get(sym) match {
@@ -252,7 +252,7 @@ object Inliner {
       val e = visitExp(exp, subst0)
       val enum0 = root.enums(sym.enumSym)
       if (enum0.cases.size == 1 && e.purity == Pure)
-          LiftedAst.Expression.Constant(Ast.Constant.Bool(true), Type.Bool, loc)
+          LiftedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
       else
         LiftedAst.Expression.Is(sym, e, purity, loc)
 
@@ -506,7 +506,7 @@ object Inliner {
    * A pure and trivial expression can always be inlined even without duplicating work.
    */
   private def isTrivialExp(exp0: LiftedAst.Expression): Boolean = exp0 match {
-    case LiftedAst.Expression.Constant(_, _, _) => true
+    case LiftedAst.Expression.Cst(_, _, _) => true
     case LiftedAst.Expression.Var(_, _, _) => true
     case _ => false
   }
@@ -515,7 +515,7 @@ object Inliner {
    * Substitute variables in `exp0` for new fresh variables in `env0`
    */
   private def substituteExp(exp0: OccurrenceAst.Expression, env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: Root, flix: Flix): LiftedAst.Expression = exp0 match {
-    case OccurrenceAst.Expression.Constant(cst, tpe, loc) => LiftedAst.Expression.Constant(cst, tpe, loc)
+    case OccurrenceAst.Expression.Constant(cst, tpe, loc) => LiftedAst.Expression.Cst(cst, tpe, loc)
 
     case OccurrenceAst.Expression.Var(sym, tpe, loc) => LiftedAst.Expression.Var(env0.getOrElse(sym, sym), tpe, loc)
 
@@ -746,7 +746,7 @@ object Inliner {
    */
   private def unaryFold(sop: SemanticOperator, op: UnaryOperator,  e: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression = {
     (sop, e) match {
-      case (SemanticOperator.BoolOp.Not, LiftedAst.Expression.Constant(Ast.Constant.Bool(b), _, _)) => LiftedAst.Expression.Constant(Ast.Constant.Bool(!b), tpe, loc)
+      case (SemanticOperator.BoolOp.Not, LiftedAst.Expression.Cst(Ast.Constant.Bool(b), _, _)) => LiftedAst.Expression.Cst(Ast.Constant.Bool(!b), tpe, loc)
       case _ => LiftedAst.Expression.Unary(sop, op, e, tpe, purity, loc)
     }
   }
@@ -763,14 +763,14 @@ object Inliner {
    */
   private def binaryFold(sop: SemanticOperator, op: BinaryOperator, e1: LiftedAst.Expression, e2: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression = {
     (sop, e1, e2) match {
-      case (SemanticOperator.BoolOp.And, LiftedAst.Expression.Constant(Ast.Constant.Bool(true), _, _), _) => e2
-      case (SemanticOperator.BoolOp.And, _, LiftedAst.Expression.Constant(Ast.Constant.Bool(true), _, _)) => e1
-      case (SemanticOperator.BoolOp.And, LiftedAst.Expression.Constant(Ast.Constant.Bool(false), _, _), _) => LiftedAst.Expression.Constant(Ast.Constant.Bool(false), Type.Bool, loc)
-      case (SemanticOperator.BoolOp.And, _, LiftedAst.Expression.Constant(Ast.Constant.Bool(false), _, _)) if e1.purity == Pure => LiftedAst.Expression.Constant(Ast.Constant.Bool(false), Type.Bool, loc)
-      case (SemanticOperator.BoolOp.Or, LiftedAst.Expression.Constant(Ast.Constant.Bool(false), _, _), _) => e2
-      case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.Constant(Ast.Constant.Bool(false), _, _)) => e1
-      case (SemanticOperator.BoolOp.Or, LiftedAst.Expression.Constant(Ast.Constant.Bool(true), _, _), _) => LiftedAst.Expression.Constant(Ast.Constant.Bool(true), Type.Bool, loc)
-      case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.Constant(Ast.Constant.Bool(true), _, _)) if e1.purity == Pure => LiftedAst.Expression.Constant(Ast.Constant.Bool(true), Type.Bool, loc)
+      case (SemanticOperator.BoolOp.And, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _), _) => e2
+      case (SemanticOperator.BoolOp.And, _, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _)) => e1
+      case (SemanticOperator.BoolOp.And, LiftedAst.Expression.Cst(Ast.Constant.Bool(false), _, _), _) => LiftedAst.Expression.Cst(Ast.Constant.Bool(false), Type.Bool, loc)
+      case (SemanticOperator.BoolOp.And, _, LiftedAst.Expression.Cst(Ast.Constant.Bool(false), _, _)) if e1.purity == Pure => LiftedAst.Expression.Cst(Ast.Constant.Bool(false), Type.Bool, loc)
+      case (SemanticOperator.BoolOp.Or, LiftedAst.Expression.Cst(Ast.Constant.Bool(false), _, _), _) => e2
+      case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.Cst(Ast.Constant.Bool(false), _, _)) => e1
+      case (SemanticOperator.BoolOp.Or, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _), _) => LiftedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
+      case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _)) if e1.purity == Pure => LiftedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
       case _ => LiftedAst.Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
     }
   }
@@ -784,8 +784,8 @@ object Inliner {
    * if (c1 and c2) e else jump l1)
    */
   private def reduceIfThenElse(outerCond: LiftedAst.Expression, outerThen: LiftedAst.Expression, outerElse: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression = outerCond match {
-    case LiftedAst.Expression.Constant(Ast.Constant.Bool(true), _, _) => outerThen
-    case LiftedAst.Expression.Constant(Ast.Constant.Bool(false), _, _) => outerElse
+    case LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _) => outerThen
+    case LiftedAst.Expression.Cst(Ast.Constant.Bool(false), _, _) => outerElse
     case _ =>
       outerThen match {
         case LiftedAst.Expression.IfThenElse(innerCond, innerThen, innerElse, _, _, _) =>

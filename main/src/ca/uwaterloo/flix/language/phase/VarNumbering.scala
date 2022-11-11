@@ -60,7 +60,7 @@ object VarNumbering {
       * @param i0 the current stack offset.
       */
     def visitExp(e0: Expression, i0: Int): Int = e0 match {
-      case Expression.Constant(_, _, _) => i0
+      case Expression.Cst(_, _, _) => i0
 
       case Expression.Var(_, _, _) => i0
 

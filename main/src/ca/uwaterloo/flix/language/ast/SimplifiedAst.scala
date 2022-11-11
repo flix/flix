@@ -42,7 +42,7 @@ object SimplifiedAst {
 
   object Expression {
 
-    case class Constant(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+    case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
       def purity: Purity = Pure
     }
 
