@@ -65,47 +65,8 @@ object Eraser {
     * Translates the given expression `exp0` to the ErasedAst.
     */
   private def visitExp(exp0: FinalAst.Expression): ErasedAst.Expression = exp0 match {
-    case FinalAst.Expression.Unit(loc) =>
-      ErasedAst.Expression.Unit(loc)
-
-    case FinalAst.Expression.Null(tpe, loc) =>
-      ErasedAst.Expression.Null(tpe, loc)
-
-    case FinalAst.Expression.True(loc) =>
-      ErasedAst.Expression.True(loc)
-
-    case FinalAst.Expression.False(loc) =>
-      ErasedAst.Expression.False(loc)
-
-    case FinalAst.Expression.Char(lit, loc) =>
-      ErasedAst.Expression.Char(lit, loc)
-
-    case FinalAst.Expression.Float32(lit, loc) =>
-      ErasedAst.Expression.Float32(lit, loc)
-
-    case FinalAst.Expression.Float64(lit, loc) =>
-      ErasedAst.Expression.Float64(lit, loc)
-
-    case FinalAst.Expression.BigDecimal(lit, loc) =>
-      ErasedAst.Expression.BigDecimal(lit, loc)
-
-    case FinalAst.Expression.Int8(lit, loc) =>
-      ErasedAst.Expression.Int8(lit, loc)
-
-    case FinalAst.Expression.Int16(lit, loc) =>
-      ErasedAst.Expression.Int16(lit, loc)
-
-    case FinalAst.Expression.Int32(lit, loc) =>
-      ErasedAst.Expression.Int32(lit, loc)
-
-    case FinalAst.Expression.Int64(lit, loc) =>
-      ErasedAst.Expression.Int64(lit, loc)
-
-    case FinalAst.Expression.BigInt(lit, loc) =>
-      ErasedAst.Expression.BigInt(lit, loc)
-
-    case FinalAst.Expression.Str(lit, loc) =>
-      ErasedAst.Expression.Str(lit, loc)
+    case FinalAst.Expression.Cst(cst, tpe, loc) =>
+      ErasedAst.Expression.Cst(cst, tpe, loc)
 
     case FinalAst.Expression.Var(sym, tpe, loc) =>
       ErasedAst.Expression.Var(sym, tpe, loc)
