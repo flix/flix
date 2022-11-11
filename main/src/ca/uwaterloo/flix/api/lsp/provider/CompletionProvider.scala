@@ -1057,7 +1057,7 @@ object CompletionProvider {
   private def getClassSigCompletions(ns: List[String], className: String)(implicit context: Context, root: TypedAst.Root): Iterable[CompletionItem] = {
     root.classes.filter{case (sym, _) => sym.name == className && sym.namespace == ns}
       .flatMap{case (sym, clazz) => clazz.signatures.map{
-        case sig => useCompletion(s"${nsToStringDot(ns)}${sym.name}.${sig.sym.name}", CompletionItemKind.EnumMember)
+        case sig => useCompletion(s"${nsToStringSlash(ns)}${sym.name}.${sig.sym.name}", CompletionItemKind.EnumMember)
       }}
   }
 
@@ -1068,6 +1068,16 @@ object CompletionProvider {
     ns match {
       case Nil => ""
       case _ => s"${ns.mkString("/")}."
+    }
+  }
+
+  /**
+    * Converts a namespace into a /-seperated string with a / at the end unless it is the root namespace
+    */
+  private def nsToStringSlash(ns: List[String]): String = {
+    ns match {
+      case Nil => ""
+      case _ => s"${ns.mkString("/")}/"
     }
   }
 
