@@ -128,6 +128,15 @@ namespace Result {
     }
 
     ///
+    /// Returns `v` if `r` is `Ok(v)`. Returns `Err(w)` if `r` is `Err(w)`.
+    ///
+    @Time(1) @Space(1)
+    pub def flatten(r: Result[Result[t, e], e]): Result[t, e] = match r {
+        case Ok(v)  => v
+        case Err(w) => Err(w)
+    }
+
+    ///
     /// Returns `1` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `0`.
     ///
     @Time(time(f)) @Space(space(f))

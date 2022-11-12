@@ -61,20 +61,7 @@ object Optimizer {
    * A pure and trivial expression can always be inlined even without duplicating work.
    */
   def isTrivialExp(exp0: Expression): Boolean = exp0 match {
-    case Expression.Unit(_) => true
-    case Expression.Null(_, _) => true
-    case Expression.True(_) => true
-    case Expression.False(_) => true
-    case Expression.Char(_, _) => true
-    case Expression.Float32(_, _) => true
-    case Expression.Float64(_, _) => true
-    case Expression.BigDecimal(_, _) => true
-    case Expression.Int8(_, _) => true
-    case Expression.Int16(_, _) => true
-    case Expression.Int32(_, _) => true
-    case Expression.Int64(_, _) => true
-    case Expression.BigInt(_, _) => true
-    case Expression.Str(_, _) => true
+    case Expression.Constant(_, _, _) => true
     case Expression.Var(_, _, _) => true
     case _ => false
   }

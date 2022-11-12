@@ -1471,7 +1471,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     private def RecordFieldType: Rule1[ParsedAst.RecordFieldType] = rule {
-      SP ~ Names.Field ~ optWS ~ ("=" | "::") ~ optWS ~ Type ~ SP ~> ParsedAst.RecordFieldType
+      SP ~ Names.Field ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.RecordFieldType
     }
 
     def Schema: Rule1[ParsedAst.Type] = rule {
