@@ -740,41 +740,41 @@ object Lowering {
     * Lowers the given pattern `pat0`.
     */
   private def visitPat(pat0: TypedAst.Pattern)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Pattern = pat0 match {
-    case Pattern.Wild(tpe, loc) =>
+    case TypedAst.Pattern.Wild(tpe, loc) =>
       val t = visitType(tpe)
-      Pattern.Wild(t, loc)
+      TypedAst.Pattern.Wild(t, loc)
 
-    case Pattern.Var(sym, tpe, loc) =>
+    case TypedAst.Pattern.Var(sym, tpe, loc) =>
       val t = visitType(tpe)
-      Pattern.Var(sym, t, loc)
+      TypedAst.Pattern.Var(sym, t, loc)
 
-    case Pattern.Cst(_, _, _) =>
+    case TypedAst.Pattern.Cst(_, _, _) =>
       pat0
 
-    case Pattern.Tag(sym, pat, tpe, loc) =>
+    case TypedAst.Pattern.Tag(sym, pat, tpe, loc) =>
       val p = visitPat(pat)
       val t = visitType(tpe)
-      Pattern.Tag(sym, p, t, loc)
+      TypedAst.Pattern.Tag(sym, p, t, loc)
 
-    case Pattern.Tuple(elms, tpe, loc) =>
+    case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
       val es = elms.map(visitPat)
       val t = visitType(tpe)
-      Pattern.Tuple(es, t, loc)
+      TypedAst.Pattern.Tuple(es, t, loc)
 
-    case Pattern.Array(elms, tpe, loc) =>
+    case TypedAst.Pattern.Array(elms, tpe, loc) =>
       val es = elms.map(visitPat)
       val t = visitType(tpe)
-      Pattern.Array(es, t, loc)
+      TypedAst.Pattern.Array(es, t, loc)
 
-    case Pattern.ArrayTailSpread(elms, sym, tpe, loc) =>
+    case TypedAst.Pattern.ArrayTailSpread(elms, sym, tpe, loc) =>
       val es = elms.map(visitPat)
       val t = visitType(tpe)
-      Pattern.ArrayTailSpread(es, sym, t, loc)
+      TypedAst.Pattern.ArrayTailSpread(es, sym, t, loc)
 
-    case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) =>
+    case TypedAst.Pattern.ArrayHeadSpread(sym, elms, tpe, loc) =>
       val es = elms.map(visitPat)
       val t = visitType(tpe)
-      Pattern.ArrayHeadSpread(sym, es, t, loc)
+      TypedAst.Pattern.ArrayHeadSpread(sym, es, t, loc)
   }
 
   /**
@@ -922,8 +922,8 @@ object Lowering {
   /**
     * Lowers the given head predicate `p0`.
     */
-  private def visitHeadPred(cparams0: List[TypedAst.ConstraintParam], p0: Predicate.Head)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Expression = p0 match {
-    case Head.Atom(pred, den, terms, _, loc) =>
+  private def visitHeadPred(cparams0: List[TypedAst.ConstraintParam], p0: TypedAst.Predicate.Head)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Expression = p0 match {
+    case TypedAst.Predicate.Head.Atom(pred, den, terms, _, loc) =>
       val predSymExp = mkPredSym(pred)
       val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
       val termsExp = mkList(terms.map(visitHeadTerm(cparams0, _)), Types.HeadTerm, loc)
@@ -934,8 +934,8 @@ object Lowering {
   /**
     * Lowers the given body predicate `p0`.
     */
-  private def visitBodyPred(cparams0: List[ConstraintParam], p0: Predicate.Body)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Expression = p0 match {
-    case Body.Atom(pred, den, polarity, fixity, terms, _, loc) =>
+  private def visitBodyPred(cparams0: List[TypedAst.ConstraintParam], p0: TypedAst.Predicate.Body)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Expression = p0 match {
+    case TypedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, _, loc) =>
       val predSymExp = mkPredSym(pred)
       val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
       val polarityExp = mkPolarity(polarity, loc)
@@ -944,19 +944,19 @@ object Lowering {
       val innerExp = mkTuple(predSymExp :: denotationExp :: polarityExp :: fixityExp :: termsExp :: Nil, loc)
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
-    case Body.Guard(exp0, loc) =>
+    case TypedAst.Predicate.Body.Guard(exp0, loc) =>
       // Compute the universally quantified variables (i.e. the variables not bound by the local scope).
       val quantifiedFreeVars = quantifiedVars(cparams0, exp0)
       mkGuard(quantifiedFreeVars, exp0, loc)
 
-    case Body.Loop(varSyms, exp, loc) =>
+    case TypedAst.Predicate.Body.Loop(varSyms, exp, loc) =>
       ??? // TODO
   }
 
   /**
     * Lowers the given head term `exp0`.
     */
-  private def visitHeadTerm(cparams0: List[ConstraintParam], exp0: TypedAst.Expression)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Expression = {
+  private def visitHeadTerm(cparams0: List[TypedAst.ConstraintParam], exp0: TypedAst.Expression)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Expression = {
     //
     // We need to consider four cases:
     //
@@ -993,11 +993,11 @@ object Lowering {
   /**
     * Lowers the given body term `pat0`.
     */
-  private def visitBodyTerm(cparams0: List[ConstraintParam], pat0: Pattern)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Expression = pat0 match {
-    case Pattern.Wild(_, loc) =>
+  private def visitBodyTerm(cparams0: List[TypedAst.ConstraintParam], pat0: TypedAst.Pattern)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Expression = pat0 match {
+    case TypedAst.Pattern.Wild(_, loc) =>
       mkBodyTermWild(loc)
 
-    case Pattern.Var(sym, tpe, loc) =>
+    case TypedAst.Pattern.Var(sym, tpe, loc) =>
       if (isQuantifiedVar(sym, cparams0)) {
         // Case 1: Quantified variable.
         mkBodyTermVar(sym)
@@ -1006,18 +1006,18 @@ object Lowering {
         mkBodyTermLit(box(TypedAst.Expression.Var(sym, tpe, loc)))
       }
 
-    case Pattern.Cst(cst, tpe, loc) =>
+    case TypedAst.Pattern.Cst(cst, tpe, loc) =>
       mkBodyTermLit(box(TypedAst.Expression.Cst(cst, tpe, loc)))
 
-    case Pattern.Tag(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
+    case TypedAst.Pattern.Tag(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
 
-    case Pattern.Tuple(_, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
+    case TypedAst.Pattern.Tuple(_, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
 
-    case Pattern.Array(_, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
+    case TypedAst.Pattern.Array(_, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
 
-    case Pattern.ArrayTailSpread(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
+    case TypedAst.Pattern.ArrayTailSpread(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
 
-    case Pattern.ArrayHeadSpread(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
+    case TypedAst.Pattern.ArrayHeadSpread(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
   }
 
   /**
@@ -1172,7 +1172,7 @@ object Lowering {
     if (fvs.isEmpty) {
       val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)
       // Construct a lambda that takes the unit argument.
-      val fparam = FormalParam(sym, Ast.Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, loc)
+      val fparam = TypedAst.FormalParam(sym, Ast.Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
       val lambdaExp = TypedAst.Expression.Lambda(fparam, exp, tpe, loc)
       return mkTag(Enums.BodyPredicate, s"Guard0", lambdaExp, Types.BodyPredicate, loc)
@@ -1190,7 +1190,7 @@ object Lowering {
     val lambdaExp = fvs.foldRight(freshExp) {
       case ((oldSym, tpe), acc) =>
         val freshSym = freshVars(oldSym)
-        val fparam = FormalParam(freshSym, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
+        val fparam = TypedAst.FormalParam(freshSym, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
         val lambdaType = Type.mkPureArrow(tpe, acc.tpe, loc)
         TypedAst.Expression.Lambda(fparam, acc, lambdaType, loc)
     }
@@ -1222,7 +1222,7 @@ object Lowering {
     if (fvs.isEmpty) {
       val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)
       // Construct a lambda that takes the unit argument.
-      val fparam = FormalParam(sym, Ast.Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, loc)
+      val fparam = TypedAst.FormalParam(sym, Ast.Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
       val lambdaExp = TypedAst.Expression.Lambda(fparam, exp, tpe, loc)
       return mkTag(Enums.HeadTerm, s"App0", lambdaExp, Types.HeadTerm, loc)
@@ -1240,7 +1240,7 @@ object Lowering {
     val lambdaExp = fvs.foldRight(freshExp) {
       case ((oldSym, tpe), acc) =>
         val freshSym = freshVars(oldSym)
-        val fparam = FormalParam(freshSym, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
+        val fparam = TypedAst.FormalParam(freshSym, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
         val lambdaType = Type.mkPureArrow(tpe, acc.tpe, loc)
         TypedAst.Expression.Lambda(fparam, acc, lambdaType, loc)
     }
@@ -1281,9 +1281,9 @@ object Lowering {
   /**
     * Make the array of MpmcAdmin objects which will be passed to `selectFrom`
     */
-  private def mkChannelAdminArray(rs: List[SelectChannelRule], channels: List[(Symbol.VarSym, TypedAst.Expression)], loc: SourceLocation): TypedAst.Expression = {
+  private def mkChannelAdminArray(rs: List[TypedAst.SelectChannelRule], channels: List[(Symbol.VarSym, TypedAst.Expression)], loc: SourceLocation): TypedAst.Expression = {
     val admins = rs.zip(channels) map {
-      case (SelectChannelRule(_, c, _), (chanSym, _)) =>
+      case (TypedAst.SelectChannelRule(_, c, _), (chanSym, _)) =>
         val admin = TypedAst.Expression.Def(Defs.ChannelMpmcAdmin, Type.mkPureArrow(c.tpe, Types.ChannelMpmcAdmin, loc), loc)
         TypedAst.Expression.Apply(admin, List(TypedAst.Expression.Var(chanSym, c.tpe, loc)), Types.ChannelMpmcAdmin, Type.Pure, Type.Empty, loc)
     }
@@ -1309,13 +1309,13 @@ object Lowering {
   /**
     * Construct a sequence of MatchRules corresponding to the given SelectChannelRules
     */
-  private def mkChannelCases(rs: List[SelectChannelRule], channels: List[(Symbol.VarSym, TypedAst.Expression)], pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): List[MatchRule] = {
+  private def mkChannelCases(rs: List[TypedAst.SelectChannelRule], channels: List[(Symbol.VarSym, TypedAst.Expression)], pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): List[TypedAst.MatchRule] = {
     val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
 
     rs.zip(channels).zipWithIndex map {
-      case ((SelectChannelRule(sym, chan, exp), (chSym, _)), i) =>
+      case ((TypedAst.SelectChannelRule(sym, chan, exp), (chSym, _)), i) =>
         val locksSym = mkLetSym("locks", loc)
-        val pat = mkTuplePattern(List(Pattern.Cst(Ast.Constant.Int32(i), Type.Int32, loc), Pattern.Var(locksSym, locksType, loc)), loc)
+        val pat = mkTuplePattern(List(TypedAst.Pattern.Cst(Ast.Constant.Int32(i), Type.Int32, loc), TypedAst.Pattern.Var(locksSym, locksType, loc)), loc)
         val getTpe = Type.eraseTopAliases(chan.tpe) match {
           case Type.Apply(_, t, _) => t
           case _ => throw InternalCompilerException("Unexpected channel type found.")
@@ -1323,7 +1323,7 @@ object Lowering {
         val get = TypedAst.Expression.Def(Defs.ChannelUnsafeGetAndUnlock, Type.mkImpureUncurriedArrow(List(chan.tpe, locksType), getTpe, loc), loc)
         val getExp = TypedAst.Expression.Apply(get, List(TypedAst.Expression.Var(chSym, chan.tpe, loc), TypedAst.Expression.Var(locksSym, locksType, loc)), getTpe, pur, eff, loc)
         val e = TypedAst.Expression.Let(sym, Ast.Modifiers.Empty, getExp, exp, exp.tpe, pur, eff, loc)
-        MatchRule(pat, None, e)
+        TypedAst.MatchRule(pat, None, e)
     }
   }
 
@@ -1331,11 +1331,11 @@ object Lowering {
     * Construct additional MatchRule to handle the (optional) default case
     * NB: Does not need to unlock because that is handled inside Concurrent/Channel.selectFrom.
     */
-  private def mkSelectDefaultCase(default: Option[TypedAst.Expression], t: Type, loc: SourceLocation)(implicit flix: Flix): List[MatchRule] = {
+  private def mkSelectDefaultCase(default: Option[TypedAst.Expression], t: Type, loc: SourceLocation)(implicit flix: Flix): List[TypedAst.MatchRule] = {
     default match {
       case Some(defaultExp) =>
-        val pat = mkTuplePattern(List(Pattern.Cst(Ast.Constant.Int32(-1), Type.Int32, loc), mkWildPattern(loc)), loc)
-        val defaultMatch = MatchRule(pat, None, defaultExp)
+        val pat = mkTuplePattern(List(TypedAst.Pattern.Cst(Ast.Constant.Int32(-1), Type.Int32, loc), mkWildPattern(loc)), loc)
+        val defaultMatch = TypedAst.MatchRule(pat, None, defaultExp)
         List(defaultMatch)
       case _ =>
         List()
@@ -1527,9 +1527,9 @@ object Lowering {
     *   }
     * }}}
     */
-  def mkLetMatch(exp: TypedAst.Expression, pat: Pattern, body: TypedAst.Expression): TypedAst.Expression = {
+  def mkLetMatch(exp: TypedAst.Expression, pat: TypedAst.Pattern, body: TypedAst.Expression): TypedAst.Expression = {
     val expLoc = exp.loc.asSynthetic
-    val rule = List(MatchRule(pat, None, body))
+    val rule = List(TypedAst.MatchRule(pat, None, body))
     val pur = Type.mkAnd(exp.pur, body.pur, expLoc)
     val eff = Type.mkUnion(exp.eff, body.eff, expLoc)
     TypedAst.Expression.Match(exp, rule, body.tpe, pur, eff, expLoc)
@@ -1548,7 +1548,7 @@ object Lowering {
     *   exp
     * }}}
     */
-  def mkBoundParWaits(patSymExps: List[(Pattern, Symbol.VarSym, TypedAst.Expression)], exp: TypedAst.Expression): TypedAst.Expression =
+  def mkBoundParWaits(patSymExps: List[(TypedAst.Pattern, Symbol.VarSym, TypedAst.Expression)], exp: TypedAst.Expression): TypedAst.Expression =
     patSymExps.map {
       case (p, sym, e) =>
         val loc = e.loc.asSynthetic
@@ -1565,7 +1565,7 @@ object Lowering {
     */
   def mkParYield(parYieldExp: TypedAst.Expression.ParYield)(implicit flix: Flix): TypedAst.Expression = {
     // Generate symbols for each channel.
-    val chanSymsWithPatAndExp = parYieldExp.frags.map { case ParYieldFragment(p, e, l) => (p, mkLetSym("channel", l.asSynthetic), e) }
+    val chanSymsWithPatAndExp = parYieldExp.frags.map { case TypedAst.ParYieldFragment(p, e, l) => (p, mkLetSym("channel", l.asSynthetic), e) }
     val desugaredYieldExp = mkBoundParWaits(chanSymsWithPatAndExp, parYieldExp.exp)
     val chanSymsWithExp = chanSymsWithPatAndExp.map { case (_, s, e) => (s, e) }
     val blockExp = mkParChannels(desugaredYieldExp, chanSymsWithExp)
@@ -1615,17 +1615,17 @@ object Lowering {
   }
 
   /**
-    * Returns a Pattern representing a tuple of patterns.
+    * Returns a TypedAst.Pattern representing a tuple of patterns.
     */
-  def mkTuplePattern(patterns: List[Pattern], loc: SourceLocation): Pattern = {
-    Pattern.Tuple(patterns, Type.mkTuple(patterns.map(_.tpe), loc), loc)
+  def mkTuplePattern(patterns: List[TypedAst.Pattern], loc: SourceLocation): TypedAst.Pattern = {
+    TypedAst.Pattern.Tuple(patterns, Type.mkTuple(patterns.map(_.tpe), loc), loc)
   }
 
   /**
     * Returns a wilcard (match anything) pattern.
     */
-  def mkWildPattern(loc: SourceLocation)(implicit flix: Flix): Pattern = {
-    Pattern.Wild(Type.freshVar(Kind.Star, loc, text = Ast.VarText.FallbackText("wild")), loc)
+  def mkWildPattern(loc: SourceLocation)(implicit flix: Flix): TypedAst.Pattern = {
+    TypedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc, text = Ast.VarText.FallbackText("wild")), loc)
   }
 
   /**
@@ -1730,9 +1730,9 @@ object Lowering {
     case TypedAst.Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
       val es = exps.map(substExp(_, subst))
       val rs = rules map {
-        case ChoiceRule(pat, exp) =>
+        case TypedAst.ChoiceRule(pat, exp) =>
           // TODO: Substitute in patterns?
-          ChoiceRule(pat, substExp(exp, subst))
+          TypedAst.ChoiceRule(pat, substExp(exp, subst))
       }
       TypedAst.Expression.Choose(es, rs, tpe, pur, eff, loc)
 
@@ -1828,10 +1828,10 @@ object Lowering {
     case TypedAst.Expression.TryWith(exp, sym, rules, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
       val rs = rules.map {
-        case HandlerRule(op, fparams, hexp) =>
+        case TypedAst.HandlerRule(op, fparams, hexp) =>
           val fps = fparams.map(substFormalParam(_, subst))
           val he = substExp(hexp, subst)
-          HandlerRule(op, fps, he)
+          TypedAst.HandlerRule(op, fps, he)
       }
       TypedAst.Expression.TryWith(e, sym, rs, tpe, pur, eff, loc)
 
@@ -1897,8 +1897,8 @@ object Lowering {
 
     case TypedAst.Expression.ParYield(frags, exp, tpe, pur, eff, loc) =>
       val fs = frags map {
-        case ParYieldFragment(p, e, l) =>
-          ParYieldFragment(p, substExp(e, subst), l)
+        case TypedAst.ParYieldFragment(p, e, l) =>
+          TypedAst.ParYieldFragment(p, substExp(e, subst), l)
       }
       val e = substExp(exp, subst)
       TypedAst.Expression.ParYield(fs, e, tpe, pur, eff, loc)
