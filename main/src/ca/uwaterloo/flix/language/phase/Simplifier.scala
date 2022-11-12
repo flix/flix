@@ -61,33 +61,7 @@ object Simplifier {
 
       case TypedAst.Expression.Hole(sym, tpe, loc) => SimplifiedAst.Expression.HoleError(sym, tpe, loc)
 
-      case TypedAst.Expression.Cst(Ast.Constant.Unit, _, loc) => SimplifiedAst.Expression.Unit(loc)
-
-      case TypedAst.Expression.Cst(Ast.Constant.Null, tpe, loc) => SimplifiedAst.Expression.Null(tpe, loc)
-
-      case TypedAst.Expression.Cst(Ast.Constant.Bool(true), _, loc) => SimplifiedAst.Expression.True(loc)
-
-      case TypedAst.Expression.Cst(Ast.Constant.Bool(false), _, loc) => SimplifiedAst.Expression.False(loc)
-
-      case TypedAst.Expression.Cst(Ast.Constant.Char(lit), _, loc) => SimplifiedAst.Expression.Char(lit, loc)
-
-      case TypedAst.Expression.Cst(Ast.Constant.Float32(lit), _, loc) => SimplifiedAst.Expression.Float32(lit, loc)
-
-      case TypedAst.Expression.Cst(Ast.Constant.Float64(lit), _, loc) => SimplifiedAst.Expression.Float64(lit, loc)
-
-      case TypedAst.Expression.Cst(Ast.Constant.BigDecimal(lit), _, loc) => SimplifiedAst.Expression.BigDecimal(lit, loc)
-
-      case TypedAst.Expression.Cst(Ast.Constant.Int8(lit), _, loc) => SimplifiedAst.Expression.Int8(lit, loc)
-
-      case TypedAst.Expression.Cst(Ast.Constant.Int16(lit), _, loc) => SimplifiedAst.Expression.Int16(lit, loc)
-
-      case TypedAst.Expression.Cst(Ast.Constant.Int32(lit), _, loc) => SimplifiedAst.Expression.Int32(lit, loc)
-
-      case TypedAst.Expression.Cst(Ast.Constant.Int64(lit), _, loc) => SimplifiedAst.Expression.Int64(lit, loc)
-
-      case TypedAst.Expression.Cst(Ast.Constant.BigInt(lit), _, loc) => SimplifiedAst.Expression.BigInt(lit, loc)
-
-      case TypedAst.Expression.Cst(Ast.Constant.Str(lit), _, loc) => SimplifiedAst.Expression.Str(lit, loc)
+      case TypedAst.Expression.Cst(cst, tpe, loc) => SimplifiedAst.Expression.Cst(cst, tpe, loc)
 
       case TypedAst.Expression.Lambda(fparam, exp, tpe, loc) =>
         val p = visitFormalParam(fparam)
@@ -119,7 +93,7 @@ object Simplifier {
 
       case d@TypedAst.Expression.Discard(exp, pur, eff, loc) =>
         val sym = Symbol.freshVarSym("_", BoundBy.Let, loc)
-        SimplifiedAst.Expression.Let(sym, visitExp(exp), SimplifiedAst.Expression.Unit(loc), d.tpe, simplifyPurity(pur), loc)
+        SimplifiedAst.Expression.Let(sym, visitExp(exp), SimplifiedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), d.tpe, simplifyPurity(pur), loc)
 
       case TypedAst.Expression.Let(sym, mod, e1, e2, tpe, pur, eff, loc) =>
         SimplifiedAst.Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, simplifyPurity(pur), loc)
@@ -367,20 +341,7 @@ object Simplifier {
       * Returns the given pattern `pat0` as an expression.
       */
     def pat2exp(pat0: TypedAst.Pattern): SimplifiedAst.Expression = pat0 match {
-      case TypedAst.Pattern.Cst(Ast.Constant.Unit, _, loc) => SimplifiedAst.Expression.Unit(loc)
-      case TypedAst.Pattern.Cst(Ast.Constant.Bool(true), _, loc) => SimplifiedAst.Expression.True(loc)
-      case TypedAst.Pattern.Cst(Ast.Constant.Bool(false), _, loc) => SimplifiedAst.Expression.False(loc)
-      case TypedAst.Pattern.Cst(Ast.Constant.Char(lit), _, loc) => SimplifiedAst.Expression.Char(lit, loc)
-      case TypedAst.Pattern.Cst(Ast.Constant.Float32(lit), _, loc) => SimplifiedAst.Expression.Float32(lit, loc)
-      case TypedAst.Pattern.Cst(Ast.Constant.Float64(lit), _, loc) => SimplifiedAst.Expression.Float64(lit, loc)
-      case TypedAst.Pattern.Cst(Ast.Constant.BigDecimal(lit), _, loc) => SimplifiedAst.Expression.BigDecimal(lit, loc)
-      case TypedAst.Pattern.Cst(Ast.Constant.Int8(lit), _, loc) => SimplifiedAst.Expression.Int8(lit, loc)
-      case TypedAst.Pattern.Cst(Ast.Constant.Int16(lit), _, loc) => SimplifiedAst.Expression.Int16(lit, loc)
-      case TypedAst.Pattern.Cst(Ast.Constant.Int32(lit), _, loc) => SimplifiedAst.Expression.Int32(lit, loc)
-      case TypedAst.Pattern.Cst(Ast.Constant.Int64(lit), _, loc) => SimplifiedAst.Expression.Int64(lit, loc)
-      case TypedAst.Pattern.Cst(Ast.Constant.BigInt(lit), _, loc) => SimplifiedAst.Expression.BigInt(lit, loc)
-      case TypedAst.Pattern.Cst(Ast.Constant.Str(lit), _, loc) => SimplifiedAst.Expression.Str(lit, loc)
-      case TypedAst.Pattern.Cst(Ast.Constant.Null, _, loc) => throw InternalCompilerException("unexpected null pattern")
+      case TypedAst.Pattern.Cst(cst, tpe, loc) => SimplifiedAst.Expression.Cst(cst, tpe, loc)
       case TypedAst.Pattern.Tag(Ast.CaseSymUse(sym, _), p, tpe, loc) =>
         val e = pat2exp(p)
         SimplifiedAst.Expression.Tag(sym, e, tpe, e.purity, loc)
@@ -409,7 +370,7 @@ object Simplifier {
       (e1.tpe.typeConstructor, e2.tpe.typeConstructor) match {
         case (Some(TypeConstructor.Unit), Some(TypeConstructor.Unit)) =>
           // Unit is always equal to itself.
-          return SimplifiedAst.Expression.True(loc)
+          return SimplifiedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
         case _ => // fallthrough
       }
 
@@ -642,7 +603,7 @@ object Simplifier {
             elms.zip(freshVars).zipWithIndex.foldRight(zero) {
               case (((pat, name), idx), exp) =>
                 val base = SimplifiedAst.Expression.Var(v, tpe, loc)
-                val index = SimplifiedAst.Expression.Int32(idx, loc)
+                val index = SimplifiedAst.Expression.Cst(Ast.Constant.Int32(idx), Type.Int32, loc)
                 val purity = Impure
                 SimplifiedAst.Expression.Let(name,
                   SimplifiedAst.Expression.ArrayLoad(base, index, pat.tpe, loc)
@@ -652,7 +613,7 @@ object Simplifier {
           val actualBase = SimplifiedAst.Expression.Var(v, tpe, loc)
           val purity = actualBase.purity
           val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(actualBase, Type.Int32, purity, loc)
-          val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length, loc)
+          val expectedArrayLengthExp = SimplifiedAst.Expression.Cst(Ast.Constant.Int32(elms.length), Type.Int32, loc)
           val lengthCheck = mkEqual(actualArrayLengthExp, expectedArrayLengthExp, loc)
           val purity1 = combine(lengthCheck.purity, patternCheck.purity, fail.purity)
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, purity1, loc)
@@ -672,7 +633,7 @@ object Simplifier {
           val actualBase = SimplifiedAst.Expression.Var(v, tpe, loc)
           val purity2 = actualBase.purity
           val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(actualBase, Type.Int32, purity2, loc)
-          val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length, loc)
+          val expectedArrayLengthExp = SimplifiedAst.Expression.Cst(Ast.Constant.Int32(elms.length), Type.Int32, loc)
           val patternCheck = {
             val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm" + Flix.Delimiter, BoundBy.Let, loc))
             val inner = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
@@ -690,7 +651,7 @@ object Simplifier {
             elms.zip(freshVars).zipWithIndex.foldRight(zero) {
               case (((pat, name), idx), exp) =>
                 val base = SimplifiedAst.Expression.Var(v, tpe, loc)
-                val index = SimplifiedAst.Expression.Int32(idx, loc)
+                val index = SimplifiedAst.Expression.Cst(Ast.Constant.Int32(idx), Type.Int32, loc)
                 val purity = Impure
                 SimplifiedAst.Expression.Let(name,
                   SimplifiedAst.Expression.ArrayLoad(base, index, pat.tpe, loc)
@@ -717,7 +678,7 @@ object Simplifier {
           val actualBase = SimplifiedAst.Expression.Var(v, tpe, loc)
           val purity1 = actualBase.purity
           val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(actualBase, Type.Int32, purity1, loc)
-          val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length, loc)
+          val expectedArrayLengthExp = SimplifiedAst.Expression.Cst(Ast.Constant.Int32(elms.length), Type.Int32, loc)
           val offset = mkSub(actualArrayLengthExp, expectedArrayLengthExp, loc)
           val patternCheck = {
             val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm" + Flix.Delimiter, BoundBy.Let, loc))
@@ -729,14 +690,14 @@ object Simplifier {
                 SimplifiedAst.Expression.Let(sym,
                   SimplifiedAst.Expression.ArraySlice(
                     SimplifiedAst.Expression.Var(v, tpe, loc),
-                    SimplifiedAst.Expression.Int32(0, loc),
+                    SimplifiedAst.Expression.Cst(Ast.Constant.Int32(0), Type.Int32, loc),
                     expectedArrayLengthExp, tpe, loc),
                   inner, tpe, purity, loc)
             }
             elms.zip(freshVars).zipWithIndex.foldRight(zero) {
               case (((pat, name), idx), exp) =>
                 val base = SimplifiedAst.Expression.Var(v, tpe, loc)
-                val index = mkAdd(SimplifiedAst.Expression.Int32(idx, loc), offset, loc)
+                val index = mkAdd(SimplifiedAst.Expression.Cst(Ast.Constant.Int32(idx), Type.Int32, loc), offset, loc)
                 val purity = Impure
                 SimplifiedAst.Expression.Let(name,
                   SimplifiedAst.Expression.ArrayLoad(base, index, pat.tpe, loc)
@@ -813,7 +774,7 @@ object Simplifier {
       //
       val branches = rules0.foldRight(unmatchedExp: SimplifiedAst.Expression) {
         case (TypedAst.ChoiceRule(pat, body), acc) =>
-          val init = SimplifiedAst.Expression.True(loc): SimplifiedAst.Expression
+          val init = SimplifiedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc): SimplifiedAst.Expression
           val condExp = freshMatchVars.zip(pat).zip(exps).foldRight(init) {
             case (((freshMatchVar, TypedAst.ChoicePattern.Wild(_)), matchExp), acc) => acc
             case (((freshMatchVar, TypedAst.ChoicePattern.Absent(_)), (matchExp, _)), acc) =>
@@ -875,33 +836,7 @@ object Simplifier {
   def substitute(exp0: SimplifiedAst.Expression, m: Map[Symbol.VarSym, Symbol.VarSym]): SimplifiedAst.Expression = {
 
     def visitExp(e: SimplifiedAst.Expression): SimplifiedAst.Expression = e match {
-      case SimplifiedAst.Expression.Unit(_) => e
-
-      case SimplifiedAst.Expression.Null(_, _) => e
-
-      case SimplifiedAst.Expression.True(_) => e
-
-      case SimplifiedAst.Expression.False(_) => e
-
-      case SimplifiedAst.Expression.Char(_, _) => e
-
-      case SimplifiedAst.Expression.Float32(_, _) => e
-
-      case SimplifiedAst.Expression.Float64(_, _) => e
-
-      case SimplifiedAst.Expression.BigDecimal(_, _) => e
-
-      case SimplifiedAst.Expression.Int8(_, _) => e
-
-      case SimplifiedAst.Expression.Int16(_, _) => e
-
-      case SimplifiedAst.Expression.Int32(_, _) => e
-
-      case SimplifiedAst.Expression.Int64(_, _) => e
-
-      case SimplifiedAst.Expression.BigInt(_, _) => e
-
-      case SimplifiedAst.Expression.Str(_, _) => e
+      case SimplifiedAst.Expression.Cst(_, _, _) => e
 
       case SimplifiedAst.Expression.Var(sym, tpe, loc) => m.get(sym) match {
         case None => SimplifiedAst.Expression.Var(sym, tpe, loc)
