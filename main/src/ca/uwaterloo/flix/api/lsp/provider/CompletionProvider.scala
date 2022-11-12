@@ -30,6 +30,7 @@ import java.lang.reflect.Executable
 import java.lang.reflect.Constructor
 import java.lang.reflect.Method
 import ca.uwaterloo.flix.util.collection.MultiMap
+import java.lang.reflect.Field
 
 /**
   * CompletionProvider
@@ -908,7 +909,7 @@ object CompletionProvider {
     * Get completions for java imports.
     */
   private def getImportCompletions()(implicit context: Context, root: TypedAst.Root, javaClasses: MultiMap[List[String], String]): Iterable[CompletionItem] = {
-    if (root == null) Nil else getImportNewCompletions() ++ getImportMethodCompletions() ++ getJavaClassCompletions()
+    if (root == null) Nil else getImportNewCompletions() ++ getImportMethodCompletions() ++ getJavaClassCompletions() ++ getImportFieldCompletions()
   }
 
   /**
@@ -917,17 +918,13 @@ object CompletionProvider {
   private def getImportNewCompletions()(implicit context: Context): Iterable[CompletionItem] = {
     val regex = raw"\s*import\s+new\s+(.*)".r
     context.prefix match {
-      case regex(clazz) => {
-        try {
-          val clazzObject = java.lang.Class.forName(clazz)
+      case regex(clazz) => classFromString(clazz) match {
+        case Some((clazzObject, clazz)) => {
           // Gets the name of the type excluding the package to use as a suggestion for the name of the constructor.
           val className = clazz.split('.').last
           clazzObject.getConstructors().map(constructor => executableCompletion(constructor, clazz, Some(s"new$className")))
         }
-        catch {
-          //If the user did not type a valid class or is not finished typing it we do not show any completion suggestions
-          case _: ClassNotFoundException => Nil
-        }
+        case None => Nil
       }
       case _ => Nil
     }
@@ -951,31 +948,13 @@ object CompletionProvider {
     * Convert methods of a class into completionitems 
     */
   private def methodsCompletion(clazz: String, isStatic: Boolean)(implicit context: Context): Iterable[CompletionItem] = {
-    // So VSCode is supposed to keep the suggestions as long as what we type does not invalidate it.
-    // However, after usually two more characters VSCode will remove the autocompletions, so to make sure
-    // that they stay we must send them again. Therefore we both test if what is currently typed is a class
-    // and if what is before the last period is a class. This looks a little messy but if you nest try-catch 
-    // clauses which would be slightly cleaner it crashes the scala compiler.
-    // We catch on ClassNotFoundException if a complete class name has not been typed (yet) or is incorrectly typed
-    val clazzExcludingMethod = clazz.split('.').dropRight(1).mkString(".")
-    (try {
-      Some((java.lang.Class.forName(clazz), clazz))
-    }
-    catch {
-      case _: ClassNotFoundException => None
-    }).orElse(try {
-        Some((java.lang.Class.forName(clazzExcludingMethod), clazzExcludingMethod))
-      }
-      catch {
-        case _: ClassNotFoundException => None
-      }) match {
-          case Some((clazzObject, clazz)) => clazzObject.getMethods()
-            // Filter if the method is static or not. Java does not have a method for testing whether a method is static,
-            // but it does have one method which returns null for static methods and only static methods so we can abuse that.
-            .filter((method) => (method.getAnnotatedReceiverType() == null) == isStatic)
+    classFromDotSeperatedString(clazz) match {
+      case Some((clazzObject, clazz)) => clazzObject.getMethods()
+            // Filter if the method is static or not.
+            .filter((method) => java.lang.reflect.Modifier.isStatic(method.getModifiers()) == isStatic)
             .map((method) => executableCompletion(method, clazz, None))
-          case None => Nil
-        }
+      case None => Nil
+    }
   }
 
   /**
@@ -1037,6 +1016,78 @@ object CompletionProvider {
       insertTextFormat = InsertTextFormat.PlainText,
       kind = CompletionItemKind.Class)
     })
+  }
+
+  /**
+   * Gets completions for importing fields
+   */
+  private def getImportFieldCompletions()(implicit context: Context): Iterable[CompletionItem] = {
+    val static_get = raw"\s*import\s+static\s+get\s+(.*)".r
+    val static_set = raw"\s*import\s+static\s+set\s+(.*)".r
+    val get = raw"\s*import\s+get\s+(.*)".r
+    val set = raw"\s*import\s+set\s+(.*)".r
+    context.prefix match {
+      case static_get(clazz) => importFieldCompletions(clazz, true, true)
+      case static_set(clazz) => importFieldCompletions(clazz, true, false)
+      case get(clazz) => importFieldCompletions(clazz, false, true)
+      case set(clazz) => importFieldCompletions(clazz, false, false)
+      case _ => Nil
+    }
+  }
+
+  /**
+   * Returns completions for a dot seperated class string
+   */
+  private def importFieldCompletions(clazz: String, isStatic: Boolean, isGet: Boolean)(implicit context: Context): Iterable[CompletionItem] = {
+    classFromDotSeperatedString(clazz) match {
+      case Some((clazzObject, clazz)) => clazzObject.getFields()
+        // Filter if the method is static or not.
+        .filter(field => java.lang.reflect.Modifier.isStatic(field.getModifiers()) == isStatic)
+        .map(field => fieldCompletion(clazz, field, isGet))
+      case None => Nil
+    }
+  }
+
+  /**
+   * Creates a field completion from a Field
+   */
+  private def fieldCompletion(clazz: String, field: Field, isGet: Boolean)(implicit context: Context): CompletionItem = {
+    val ret = if (isGet) convertJavaClassToFlixType(field.getType()) else "Unit"
+    val asSuggestion = if (isGet) s"get${field.getName()}" else s"set${field.getName()}"
+    val label = s"${clazz}.${field.getName()}: $ret"
+    CompletionItem(
+      label = label,
+      sortText = Priority.high(label),
+      textEdit = TextEdit(context.range, s"$label \\ IO as $${0:$asSuggestion};"),
+      documentation = None,
+      insertTextFormat = InsertTextFormat.Snippet,
+      kind = CompletionItemKind.Field
+    )
+  }
+
+  /**
+   * Returns a class object if the string is a class or removing the last "part" makes it a class
+   */
+  private def classFromDotSeperatedString(clazz: String): Option[(Class[_ <: Object], String)] = {
+    // If the last charachter is . then this drops that
+    // I.e if we have java.lang.String. this converts to java.lang.String
+    // while if it does not end with . it is unchanged
+    val clazz1 = clazz.split('.').mkString(".")
+    // If we are typing the method/field to import we drop that
+    val clazz2 = clazz.split('.').dropRight(1).mkString(".")
+    classFromString(clazz1).orElse(classFromString(clazz2))
+  }
+
+  /**
+   * Return a class object if the class exists
+   */
+  private def classFromString(clazz: String): Option[(Class[_ <: Object], String)] = {
+    try {
+      Some((java.lang.Class.forName(clazz), clazz))
+    }
+    catch {
+      case _: ClassNotFoundException => None
+    }
   }
 
   /**
