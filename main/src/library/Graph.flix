@@ -152,7 +152,7 @@ namespace Graph {
     /// Returns the shortest distance from `src` to `dst` in the weighted
     /// directed graph `g`.
     ///
-    pub def distance(src: { src :: t }, dst: { dst :: t }, g: m[(t, Int32, t)]): Option[Int32] with Foldable[m], Boxable[t] =
+    pub def distance(src: { src = t }, dst: { dst = t }, g: m[(t, Int32, t)]): Option[Int32] with Foldable[m], Boxable[t] =
         distancesFrom(src.src, g) |> Map.get(dst.dst)
 
     ///
