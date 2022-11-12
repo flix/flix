@@ -50,33 +50,7 @@ object ClosureConv {
     * Performs closure conversion on the given expression `exp0`.
     */
   private def visitExp(exp0: Expression)(implicit flix: Flix): Expression = exp0 match {
-    case Expression.Unit(_) => exp0
-
-    case Expression.Null(_, _) => exp0
-
-    case Expression.True(_) => exp0
-
-    case Expression.False(_) => exp0
-
-    case Expression.Char(_, _) => exp0
-
-    case Expression.Float32(_, _) => exp0
-
-    case Expression.Float64(_, _) => exp0
-
-    case Expression.BigDecimal(_, _) => exp0
-
-    case Expression.Int8(_, _) => exp0
-
-    case Expression.Int16(_, _) => exp0
-
-    case Expression.Int32(_, _) => exp0
-
-    case Expression.Int64(_, _) => exp0
-
-    case Expression.BigInt(_, _) => exp0
-
-    case Expression.Str(_, _) => exp0
+    case Expression.Cst(_, _, _) => exp0
 
     case Expression.Var(_, _, _) => exp0
 
@@ -340,33 +314,7 @@ object ClosureConv {
     *   - (B) must be sorted to ensure deterministic compilation.
     */
   private def freeVars(exp0: Expression): SortedSet[FreeVar] = exp0 match {
-    case Expression.Unit(_) => SortedSet.empty
-
-    case Expression.Null(_, _) => SortedSet.empty
-
-    case Expression.True(_) => SortedSet.empty
-
-    case Expression.False(_) => SortedSet.empty
-
-    case Expression.Char(_, _) => SortedSet.empty
-
-    case Expression.Float32(_, _) => SortedSet.empty
-
-    case Expression.Float64(_, _) => SortedSet.empty
-
-    case Expression.BigDecimal(_, _) => SortedSet.empty
-
-    case Expression.Int8(_, _) => SortedSet.empty
-
-    case Expression.Int16(_, _) => SortedSet.empty
-
-    case Expression.Int32(_, _) => SortedSet.empty
-
-    case Expression.Int64(_, _) => SortedSet.empty
-
-    case Expression.BigInt(_, _) => SortedSet.empty
-
-    case Expression.Str(_, _) => SortedSet.empty
+    case Expression.Cst(_, _, _) => SortedSet.empty
 
     case Expression.Var(sym, tpe, _) => SortedSet(FreeVar(sym, tpe))
 
@@ -511,33 +459,7 @@ object ClosureConv {
   private def applySubst(e0: Expression, subst: Map[Symbol.VarSym, Symbol.VarSym])(implicit flix: Flix): Expression = {
 
     def visitExp(e: Expression): Expression = e match {
-      case Expression.Unit(_) => e
-
-      case Expression.Null(_, _) => e
-
-      case Expression.True(_) => e
-
-      case Expression.False(_) => e
-
-      case Expression.Char(_, _) => e
-
-      case Expression.Float32(_, _) => e
-
-      case Expression.Float64(_, _) => e
-
-      case Expression.BigDecimal(_, _) => e
-
-      case Expression.Int8(_, _) => e
-
-      case Expression.Int16(_, _) => e
-
-      case Expression.Int32(_, _) => e
-
-      case Expression.Int64(_, _) => e
-
-      case Expression.BigInt(_, _) => e
-
-      case Expression.Str(_, _) => e
+      case Expression.Cst(_, _, _) => e
 
       case Expression.Var(sym, tpe, loc) => subst.get(sym) match {
         case None => Expression.Var(sym, tpe, loc)

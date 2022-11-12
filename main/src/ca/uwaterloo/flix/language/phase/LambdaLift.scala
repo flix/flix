@@ -84,33 +84,7 @@ object LambdaLift {
       * Performs closure conversion and lambda lifting on the given expression `exp0`.
       */
     def visitExp(e: SimplifiedAst.Expression): LiftedAst.Expression = e match {
-      case SimplifiedAst.Expression.Unit(loc) => LiftedAst.Expression.Unit(loc)
-
-      case SimplifiedAst.Expression.Null(tpe, loc) => LiftedAst.Expression.Null(tpe, loc)
-
-      case SimplifiedAst.Expression.True(loc) => LiftedAst.Expression.True(loc)
-
-      case SimplifiedAst.Expression.False(loc) => LiftedAst.Expression.False(loc)
-
-      case SimplifiedAst.Expression.Char(lit, loc) => LiftedAst.Expression.Char(lit, loc)
-
-      case SimplifiedAst.Expression.Float32(lit, loc) => LiftedAst.Expression.Float32(lit, loc)
-
-      case SimplifiedAst.Expression.Float64(lit, loc) => LiftedAst.Expression.Float64(lit, loc)
-
-      case SimplifiedAst.Expression.BigDecimal(lit, loc) => LiftedAst.Expression.BigDecimal(lit, loc)
-
-      case SimplifiedAst.Expression.Int8(lit, loc) => LiftedAst.Expression.Int8(lit, loc)
-
-      case SimplifiedAst.Expression.Int16(lit, loc) => LiftedAst.Expression.Int16(lit, loc)
-
-      case SimplifiedAst.Expression.Int32(lit, loc) => LiftedAst.Expression.Int32(lit, loc)
-
-      case SimplifiedAst.Expression.Int64(lit, loc) => LiftedAst.Expression.Int64(lit, loc)
-
-      case SimplifiedAst.Expression.BigInt(lit, loc) => LiftedAst.Expression.BigInt(lit, loc)
-
-      case SimplifiedAst.Expression.Str(lit, loc) => LiftedAst.Expression.Str(lit, loc)
+      case SimplifiedAst.Expression.Cst(cst, tpe, loc) => LiftedAst.Expression.Cst(cst, tpe, loc)
 
       case SimplifiedAst.Expression.Var(sym, tpe, loc) => LiftedAst.Expression.Var(sym, tpe, loc)
 
