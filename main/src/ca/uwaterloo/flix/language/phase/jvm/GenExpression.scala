@@ -1025,7 +1025,7 @@ object GenExpression {
 
   }
 
-  private def compileConstant(visitor: MethodVisitor, cst: Ast.Constant, tpe: MonoType, loc: SourceLocation)(implicit flix: Flix): Unit = cst match {
+  private def compileConstant(visitor: MethodVisitor, cst: Ast.Constant, tpe: MonoType, loc: SourceLocation)(implicit root: Root, flix: Flix): Unit = cst match {
     case Ast.Constant.Unit =>
       addSourceLine(visitor, loc)
       visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName,
