@@ -150,33 +150,7 @@ object OccurrenceAnalyzer {
    * Performs occurrence analysis on the given expression `exp0`
    */
   private def visitExp(sym0: Symbol.DefnSym, exp0: LiftedAst.Expression): (OccurrenceAst.Expression, OccurInfo) = exp0 match {
-    case Expression.Unit(loc) => (OccurrenceAst.Expression.Unit(loc), OccurInfo.One)
-
-    case Expression.Null(tpe, loc) => (OccurrenceAst.Expression.Null(tpe, loc), OccurInfo.One)
-
-    case Expression.True(loc) => (OccurrenceAst.Expression.True(loc), OccurInfo.One)
-
-    case Expression.False(loc) => (OccurrenceAst.Expression.False(loc), OccurInfo.One)
-
-    case Expression.Char(lit, loc) => (OccurrenceAst.Expression.Char(lit, loc), OccurInfo.One)
-
-    case Expression.Float32(lit, loc) => (OccurrenceAst.Expression.Float32(lit, loc), OccurInfo.One)
-
-    case Expression.Float64(lit, loc) => (OccurrenceAst.Expression.Float64(lit, loc), OccurInfo.One)
-
-    case Expression.BigDecimal(lit, loc) => (OccurrenceAst.Expression.BigDecimal(lit, loc), OccurInfo.One)
-
-    case Expression.Int8(lit, loc) => (OccurrenceAst.Expression.Int8(lit, loc), OccurInfo.One)
-
-    case Expression.Int16(lit, loc) => (OccurrenceAst.Expression.Int16(lit, loc), OccurInfo.One)
-
-    case Expression.Int32(lit, loc) => (OccurrenceAst.Expression.Int32(lit, loc), OccurInfo.One)
-
-    case Expression.Int64(lit, loc) => (OccurrenceAst.Expression.Int64(lit, loc), OccurInfo.One)
-
-    case Expression.BigInt(lit, loc) => (OccurrenceAst.Expression.BigInt(lit, loc), OccurInfo.One)
-
-    case Expression.Str(lit, loc) => (OccurrenceAst.Expression.Str(lit, loc), OccurInfo.One)
+    case Expression.Cst(cst, tpe, loc) => (OccurrenceAst.Expression.Constant(cst, tpe, loc), OccurInfo.One)
 
     case Expression.Var(sym, tpe, loc) => (OccurrenceAst.Expression.Var(sym, tpe, loc), OccurInfo(Map.empty, Map(sym -> Once), 1))
 

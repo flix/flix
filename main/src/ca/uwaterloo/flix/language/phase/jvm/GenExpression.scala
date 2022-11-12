@@ -36,29 +36,29 @@ object GenExpression {
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
     */
   def compileExpression(exp0: Expression, visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): Unit = exp0 match {
-    case Expression.Unit(loc) =>
+    case Expression.Cst(Ast.Constant.Unit, _, loc) =>
       addSourceLine(visitor, loc)
       visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName,
         BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.toDescriptor)
 
-    case Expression.Null(tpe, loc) =>
+    case Expression.Cst(Ast.Constant.Null, tpe, loc) =>
       addSourceLine(visitor, loc)
       visitor.visitInsn(ACONST_NULL)
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-    case Expression.True(loc) =>
+    case Expression.Cst(Ast.Constant.Bool(true), _, loc) =>
       addSourceLine(visitor, loc)
       visitor.visitInsn(ICONST_1)
 
-    case Expression.False(loc) =>
+    case Expression.Cst(Ast.Constant.Bool(false), _, loc) =>
       addSourceLine(visitor, loc)
       visitor.visitInsn(ICONST_0)
 
-    case Expression.Char(c, loc) =>
+    case Expression.Cst(Ast.Constant.Char(c), _, loc) =>
       addSourceLine(visitor, loc)
       compileInt(visitor, c)
 
-    case Expression.Float32(f, loc) =>
+    case Expression.Cst(Ast.Constant.Float32(f), _, loc) =>
       addSourceLine(visitor, loc)
       f match {
         case 0f => visitor.visitInsn(FCONST_0)
@@ -67,7 +67,7 @@ object GenExpression {
         case _ => visitor.visitLdcInsn(f)
       }
 
-    case Expression.Float64(d, loc) =>
+    case Expression.Cst(Ast.Constant.Float64(d), _, loc) =>
       addSourceLine(visitor, loc)
       d match {
         case 0d => visitor.visitInsn(DCONST_0)
@@ -75,7 +75,7 @@ object GenExpression {
         case _ => visitor.visitLdcInsn(d)
       }
 
-    case Expression.BigDecimal(dd, loc) =>
+    case Expression.Cst(Ast.Constant.BigDecimal(dd), _, loc) =>
       addSourceLine(visitor, loc)
       visitor.visitTypeInsn(NEW, BackendObjType.BigDecimal.jvmName.toInternalName)
       visitor.visitInsn(DUP)
@@ -83,23 +83,23 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESPECIAL, BackendObjType.BigDecimal.jvmName.toInternalName, "<init>",
         AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
 
-    case Expression.Int8(b, loc) =>
+    case Expression.Cst(Ast.Constant.Int8(b), _, loc) =>
       addSourceLine(visitor, loc)
       compileInt(visitor, b)
 
-    case Expression.Int16(s, loc) =>
+    case Expression.Cst(Ast.Constant.Int16(s), _, loc) =>
       addSourceLine(visitor, loc)
       compileInt(visitor, s)
 
-    case Expression.Int32(i, loc) =>
+    case Expression.Cst(Ast.Constant.Int32(i), _, loc) =>
       addSourceLine(visitor, loc)
       compileInt(visitor, i)
 
-    case Expression.Int64(l, loc) =>
+    case Expression.Cst(Ast.Constant.Int64(l), _, loc) =>
       addSourceLine(visitor, loc)
       compileInt(visitor, l, isLong = true)
 
-    case Expression.BigInt(ii, loc) =>
+    case Expression.Cst(Ast.Constant.BigInt(ii), _, loc) =>
       addSourceLine(visitor, loc)
       visitor.visitTypeInsn(NEW, BackendObjType.BigInt.jvmName.toInternalName)
       visitor.visitInsn(DUP)
@@ -107,7 +107,7 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESPECIAL, BackendObjType.BigInt.jvmName.toInternalName, "<init>",
         AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
 
-    case Expression.Str(s, loc) =>
+    case Expression.Cst(Ast.Constant.Str(s), _, loc) =>
       addSourceLine(visitor, loc)
       visitor.visitLdcInsn(s)
 
