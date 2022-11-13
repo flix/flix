@@ -93,7 +93,7 @@ instance UnorderedFoldable[Nec] {
     pub def foldMap(f: a -> b \ ef, c: Nec[a]): b \ ef with CommutativeMonoid[b] = Nec.foldMap(f, c)
     override pub def isEmpty(_: Nec[a]): Bool = false
     override pub def exists(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.exists(f, c)
-    override pub def forall(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.forall(f, c)
+    override pub def forAll(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.forAll(f, c)
     override pub def memberOf(x: a, c: Nec[a]): Bool with Eq[a] = Nec.memberOf(x, c)
 }
 
@@ -110,7 +110,7 @@ instance Reducible[Nec] {
     override pub def init(l: Nec[a]): List[a] = Nec.init(l)
     override pub def tail(l: Nec[a]): List[a] = Nec.tail(l)
     override pub def exists(f: a -> Bool \ ef, l: Nec[a]): Bool \ ef = Nec.exists(f, l)
-    override pub def forall(f: a -> Bool \ ef, l: Nec[a]): Bool \ ef = Nec.forall(f, l)
+    override pub def forAll(f: a -> Bool \ ef, l: Nec[a]): Bool \ ef = Nec.forAll(f, l)
     override pub def find(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.find(f, l)
     override pub def findLeft(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.findLeft(f, l)
     override pub def findRight(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.findRight(f, l)
@@ -532,9 +532,9 @@ namespace Nec {
     ///
     /// Returns `true` if `c` is empty.
     ///
-    pub def forall(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = match viewLeft(c) {
+    pub def forAll(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = match viewLeft(c) {
         case OneLeft(x)      => f(x)
-        case SomeLeft(x, rs) => if (not f(x)) false else forall(f, rs)
+        case SomeLeft(x, rs) => if (not f(x)) false else forAll(f, rs)
     }
 
     ///
@@ -730,9 +730,9 @@ namespace Nec {
     ///
     /// Applies `f` to every element of `c`.
     ///
-    pub def foreach(f: a -> Unit \ ef, c: Nec[a]): Unit \ ef = match viewLeft(c) {
+    pub def forEach(f: a -> Unit \ ef, c: Nec[a]): Unit \ ef = match viewLeft(c) {
         case OneLeft(x)      => f(x)
-        case SomeLeft(x, rs) => f(x); foreach(f, rs)
+        case SomeLeft(x, rs) => f(x); forEach(f, rs)
     }
 
     ///
@@ -746,7 +746,7 @@ namespace Nec {
     ///
     pub def toMutDeque(r: Region[r], c: Nec[a]): MutDeque[a, r] \ Write(r)  =
         let d = new MutDeque(r);
-        foreach(x -> MutDeque.pushBack(x, d), c);
+        forEach(x -> MutDeque.pushBack(x, d), c);
         d
 
     ///
@@ -784,7 +784,7 @@ namespace Nec {
     pub def toArray(r: Region[r], c: Nec[a]): Array[a, r] \ Write(r) =
         let x = head(c);
         let arr = [x; length(c)] @ r;
-        foreach(match (b, i) -> arr[i] = b, zipWithIndex(c));
+        forEach(match (b, i) -> arr[i] = b, zipWithIndex(c));
         arr
 
     ///

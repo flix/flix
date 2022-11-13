@@ -91,4 +91,4 @@ def main(): Unit \ IO =
     def pad(s) = ToString.toString(s) |> String.padLeft(15, ' ');
     result |>
         List.map(match (c1, c2) -> "${pad(c1)} <--> ${c2}") |>
-        List.foreach(println)
+        List.forEach(println)

@@ -705,7 +705,7 @@ namespace Fixpoint {
     def factsOf(f: List[v] -> t \ ef, p: PredSym, d: Datalog[v]): List[t] \ ef = match d {
         case Datalog(_, cs) => region r {
             let pFacts = new MutList(r);
-            List.foreach(c -> match c {
+            List.forEach(c -> match c {
                 case Constraint(HeadAtom(headPred, _, terms), Nil) =>
                     if (headPred == p)
                         let vs = List.map(headTermValue, terms);
@@ -727,9 +727,9 @@ namespace Fixpoint {
             };
             Map.queryWith(query, ramSym -> rel -> match toDenotation(ramSym) {
                 case Denotation.Relational =>
-                    Map.foreach((tuple, _) -> MutList.push!(f(Fixpoint/Tuple.toList(tuple)), pFacts), rel)
+                    Map.forEach((tuple, _) -> MutList.push!(f(Fixpoint/Tuple.toList(tuple)), pFacts), rel)
                 case Denotation.Latticenal(_) =>
-                    Map.foreach((tuple, lat) -> {
+                    Map.forEach((tuple, lat) -> {
                         let it = Iterator.range(r, 0, Fixpoint/Tuple.length(tuple) + 1);
                         let vs = it |> Iterator.map(i -> {
                             if (i < Fixpoint/Tuple.length(tuple))

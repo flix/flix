@@ -1726,38 +1726,38 @@ def exists08(): Bool = String.exists(Char.isUpperCase, "a*c") == false
 def exists09(): Bool = String.exists(Char.isUpperCase, "aBc") == true
 
 /////////////////////////////////////////////////////////////////////////////
-// forall                                                                  //
+// forAll                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def forall01(): Bool = String.forall(Char.isUpperCase, "") == true
+def forAll01(): Bool = String.forAll(Char.isUpperCase, "") == true
 
 @test
-def forall02(): Bool = String.forall(Char.isUpperCase, "a") == false
+def forAll02(): Bool = String.forAll(Char.isUpperCase, "a") == false
 
 @test
-def forall03(): Bool = String.forall(Char.isUpperCase, "A") == true
+def forAll03(): Bool = String.forAll(Char.isUpperCase, "A") == true
 
 @test
-def forall04(): Bool = String.forall(Char.isUpperCase, "a") == false
+def forAll04(): Bool = String.forAll(Char.isUpperCase, "a") == false
 
 @test
-def forall05(): Bool = String.forall(Char.isUpperCase, "aB") == false
+def forAll05(): Bool = String.forAll(Char.isUpperCase, "aB") == false
 
 @test
-def forall06(): Bool = String.forall(Char.isUpperCase, "Ab") == false
+def forAll06(): Bool = String.forAll(Char.isUpperCase, "Ab") == false
 
 @test
-def forall07(): Bool = String.forall(Char.isUpperCase, "AB") == true
+def forAll07(): Bool = String.forAll(Char.isUpperCase, "AB") == true
 
 @test
-def forall08(): Bool = String.forall(Char.isUpperCase, "a*b") == false
+def forAll08(): Bool = String.forAll(Char.isUpperCase, "a*b") == false
 
 @test
-def forall09(): Bool = String.forall(Char.isUpperCase, "aBc") == false
+def forAll09(): Bool = String.forAll(Char.isUpperCase, "aBc") == false
 
 @test
-def forall10(): Bool = String.forall(Char.isUpperCase, "ABC") == true
+def forAll10(): Bool = String.forAll(Char.isUpperCase, "ABC") == true
 
 /////////////////////////////////////////////////////////////////////////////
 // isAscii                                                                 //
