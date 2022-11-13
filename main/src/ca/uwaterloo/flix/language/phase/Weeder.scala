@@ -747,10 +747,10 @@ object Weeder {
 
     case ParsedAst.Expression.ForEach(_, frags, exp, _) =>
       //
-      // Rewrites a foreach loop to Iterator.foreach call.
+      // Rewrites a foreach loop to Iterator.forEach call.
       //
 
-      val fqnForEach = "Iterator.foreach"
+      val fqnForEach = "Iterator.forEach"
       val fqnIterator = "Iterable.iterator"
 
       foldRight(frags)(visitExp(exp, senv)) {

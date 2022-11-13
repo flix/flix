@@ -74,7 +74,7 @@ instance UnorderedFoldable[Set] {
     pub def foldMap(f: a -> b \ ef, s: Set[a]): b \ ef with CommutativeMonoid[b] = Set.foldMap(f, s)
     override pub def isEmpty(s: Set[a]): Bool = Set.isEmpty(s)
     override pub def exists(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.exists(f, s)
-    override pub def forall(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.forall(f, s)
+    override pub def forAll(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.forAll(f, s)
 
     @ParallelWhenPure
     override pub def count(f: a -> Bool \ ef, s: Set[a]): Int32 \ ef = Set.count(f, s)
@@ -267,7 +267,7 @@ namespace Set {
     /// Returns true if and only if every element in `s1` appears in `s2`.
     ///
     @Time(size(s1)) @Space(size(s1) * Int32.log2(size(s2)))
-    pub def isSubsetOf(s1: Set[a], s2: Set[a]): Bool with Order[a] = forall(x -> memberOf(x, s2), s1)
+    pub def isSubsetOf(s1: Set[a], s2: Set[a]): Bool with Order[a] = forAll(x -> memberOf(x, s2), s1)
 
     ///
     /// Returns true if and only if every element in `s1` appears in `s2` and `s != s2`.
@@ -443,9 +443,9 @@ namespace Set {
     /// Returns `true` if `s` is the empty set.
     ///
     @Time(time(f) * size(s)) @Space(space(f) * Int32.log2(size(s)))
-    pub def forall(f: a -> Bool \ ef, s: Set[a]): Bool \ ef =
+    pub def forAll(f: a -> Bool \ ef, s: Set[a]): Bool \ ef =
         let Set(t) = s;
-        RedBlackTree.forall((x, _) -> f(x), t)
+        RedBlackTree.forAll((x, _) -> f(x), t)
 
     ///
     /// Returns the union of `s1` and `s2`.
@@ -573,7 +573,7 @@ namespace Set {
     ///
     pub def toMutDeque(r: Region[r], s: Set[a]): MutDeque[a, r] \ Write(r) =
         let d = new MutDeque(r);
-        Set.foreach(x -> MutDeque.pushBack(x, d), s);
+        forEach(x -> MutDeque.pushBack(x, d), s);
         d
 
     ///
@@ -586,9 +586,9 @@ namespace Set {
     /// Applies `f` to every element of `s`.
     ///
     @Time(size(f) * size(s)) @Space(space(f) * Int32.log2(size(s)))
-    pub def foreach(f: a -> Unit \ ef, s: Set[a]): Unit \ ef =
+    pub def forEach(f: a -> Unit \ ef, s: Set[a]): Unit \ ef =
         let Set(t) = s;
-        RedBlackTree.foreach((x, _) -> f(x), t)
+        RedBlackTree.forEach((x, _) -> f(x), t)
 
     ///
     /// Build a set by applying `f` to the seed value `st`.

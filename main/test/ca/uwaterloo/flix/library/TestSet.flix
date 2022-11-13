@@ -725,40 +725,40 @@ def exists10(): Bool = Set.exists(x -> x rem 8 == 7, Set#{11, -1, 31, -14, -2, 8
 def exists11(): Bool = Set.exists(x -> x rem 8 == 7, Set#{11, -1, -14, -2, 84, 111, 38}) == true
 
 /////////////////////////////////////////////////////////////////////////////
-// forall                                                                  //
+// forAll                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def forall01(): Bool = Set.forall(x -> x rem 8 == 7, Set#{}) == true
+def forAll01(): Bool = Set.forAll(x -> x rem 8 == 7, Set#{}) == true
 
 @test
-def forall02(): Bool = Set.forall(x -> x rem 8 == 7, Set#{5}) == false
+def forAll02(): Bool = Set.forAll(x -> x rem 8 == 7, Set#{5}) == false
 
 @test
-def forall03(): Bool = Set.forall(x -> x rem 8 == 7, Set#{7}) == true
+def forAll03(): Bool = Set.forAll(x -> x rem 8 == 7, Set#{7}) == true
 
 @test
-def forall04(): Bool = Set.forall(x -> x rem 8 == 7, Set#{15}) == true
+def forAll04(): Bool = Set.forAll(x -> x rem 8 == 7, Set#{15}) == true
 
 @test
-def forall05(): Bool = Set.forall(x -> x rem 8 == 7, Set#{1, 44}) == false
+def forAll05(): Bool = Set.forAll(x -> x rem 8 == 7, Set#{1, 44}) == false
 
 @test
-def forall06(): Bool = Set.forall(x -> x rem 8 == 7, Set#{11, 71}) == false
+def forAll06(): Bool = Set.forAll(x -> x rem 8 == 7, Set#{11, 71}) == false
 
 @test
-def forall07(): Bool = Set.forall(x -> x rem 8 == 7, Set#{71, 12}) == false
+def forAll07(): Bool = Set.forAll(x -> x rem 8 == 7, Set#{71, 12}) == false
 
 @test
-def forall08(): Bool = Set.forall(x -> x rem 8 == 7, Set#{71, 79}) == true
+def forAll08(): Bool = Set.forAll(x -> x rem 8 == 7, Set#{71, 79}) == true
 
 @test
-def forall09(): Bool = Set.forall(x -> x rem 8 == 7, Set#{7, 15, 23, 84, 111}) == false
+def forAll09(): Bool = Set.forAll(x -> x rem 8 == 7, Set#{7, 15, 23, 84, 111}) == false
 
 @test
-def forall10(): Bool = Set.forall(x -> x rem 8 == 7, Set#{7, 15, 23, 111, 3}) == false
+def forAll10(): Bool = Set.forAll(x -> x rem 8 == 7, Set#{7, 15, 23, 111, 3}) == false
 
 @test
-def forall11(): Bool = Set.forall(x -> x rem 8 == 7, Set#{7, 15, 23, 119, 111}) == true
+def forAll11(): Bool = Set.forAll(x -> x rem 8 == 7, Set#{7, 15, 23, 119, 111}) == true
 
 /////////////////////////////////////////////////////////////////////////////
 // union                                                                   //
@@ -1315,19 +1315,19 @@ def eq18(): Bool = Set#{1, 2, 3} == Set#{3, 1, 2}
 def eq19(): Bool = Set#{1, 2, 3} == Set#{2, 1, 3}
 
 /////////////////////////////////////////////////////////////////////////////
-// foreach                                                                 //
+// forEach                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def foreach01(): Bool \ IO =
+def forEach01(): Bool \ IO =
     let r = ref 21;
-    Set.foreach(x -> r := x, Set#{});
+    Set.forEach(x -> r := x, Set#{});
     21 == deref r
 
 @test
-def foreach02(): Bool \ IO =
+def forEach02(): Bool \ IO =
     let r = ref 21;
-    Set.foreach(x -> r := x, Set#{42});
+    Set.forEach(x -> r := x, Set#{42});
     42 == deref r
 
 /////////////////////////////////////////////////////////////////////////////

@@ -62,7 +62,7 @@ def main(): Unit \ IO =
     let default = 0;
 
     println("x is an array of length ${length} where:");
-    values |> List.map(v -> "  x[${fst(v)}] = ${snd(v)}") |> List.foreach(println);
+    values |> List.map(v -> "  x[${fst(v)}] = ${snd(v)}") |> List.forEach(println);
     println("and every other element is ${default}.");
     println("");
 
@@ -76,4 +76,4 @@ def main(): Unit \ IO =
     println("This is shown as '..., N(i-1), N(i), N(i+1), ...");
     neighbourhood |>
         List.map(match (i, l, c, r) -> "${i}: ..., ${l}, ${c}, ${r}, ...") |>
-        List.foreach(println)
+        List.forEach(println)

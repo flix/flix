@@ -653,7 +653,7 @@ namespace File {
             let javaFile = newFile(f);
             let w = newPrintWriter(javaFile);
 
-            Foldable.foreach(line -> println(w, line), data);
+            Foldable.forEach(line -> println(w, line), data);
             close(w);
 
             if (checkError(w)) {
@@ -725,7 +725,7 @@ namespace File {
             let fileWriter = newFileWriter(javaFile, true);
             let printWriter = newPrintWriter(upcast fileWriter);
 
-            Foldable.foreach(line -> println(printWriter, line), data);
+            Foldable.forEach(line -> println(printWriter, line), data);
             close(printWriter);
 
             if (checkError(printWriter)) {

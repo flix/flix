@@ -1156,57 +1156,57 @@ namespace TestMutDeque {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // foreach                                                                 //
+    // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool = region r {
+    def forEach01(): Bool = region r {
         let d = new MutDeque(r);
         let l = ref Nil @ r;
         let fn = x -> if (x > 0) l := "T" :: deref l else l := "F" :: deref l;
-        MutDeque.foreach(fn, d);
+        MutDeque.forEach(fn, d);
         List.reverse(deref l) |> List.join("") == ""
     }
 
     @test
-    def foreach02(): Bool = region r {
+    def forEach02(): Bool = region r {
         let d = new MutDeque(r);
         MutDeque.pushBack(0, d);
         let l = ref Nil @ r;
         let fn = x -> if (x > 0) l := "T" :: deref l else l := "F" :: deref l;
-        MutDeque.foreach(fn, d);
+        MutDeque.forEach(fn, d);
         List.reverse(deref l) |> List.join("") == "F"
     }
 
     @test
-    def foreach03(): Bool = region r {
+    def forEach03(): Bool = region r {
         let d = new MutDeque(r);
         MutDeque.pushBack(1, d);
         let l = ref Nil @ r;
         let fn = x -> if (x > 0) l := "T" :: deref l else l := "F" :: deref l;
-        MutDeque.foreach(fn, d);
+        MutDeque.forEach(fn, d);
         List.reverse(deref l) |> List.join("") == "T"
     }
 
     @test
-    def foreach04(): Bool = region r {
+    def forEach04(): Bool = region r {
         let d = new MutDeque(r);
         MutDeque.pushBack(0, d);
         MutDeque.pushBack(1, d);
         let l = ref Nil @ r;
         let fn = x -> if (x > 0) l := "T" :: deref l else l := "F" :: deref l;
-        MutDeque.foreach(fn, d);
+        MutDeque.forEach(fn, d);
         List.reverse(deref l) |> List.join("") == "FT"
     }
 
     @test
-    def foreach05(): Bool = region r {
+    def forEach05(): Bool = region r {
         let d = new MutDeque(r);
         MutDeque.pushBack(1, d);
         MutDeque.pushFront(0, d);
         let l = ref Nil @ r;
         let fn = x -> if (x > 0) l := "T" :: deref l else l := "F" :: deref l;
-        MutDeque.foreach(fn, d);
+        MutDeque.forEach(fn, d);
         List.reverse(deref l) |> List.join("") == "FT"
     }
 

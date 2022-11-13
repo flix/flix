@@ -531,9 +531,9 @@ namespace MutMap {
     ///
     /// Returns `true` if `m` is the empty map.
     ///
-    pub def forall(f: (k, v) -> Bool \ ef, m: MutMap[k, v, r]): Bool \ { ef, Read(r) } =
+    pub def forAll(f: (k, v) -> Bool \ ef, m: MutMap[k, v, r]): Bool \ { ef, Read(r) } =
         let MutMap(mm) = m;
-        Map.forall(f, deref mm)
+        Map.forAll(f, deref mm)
 
     ///
     /// Returns a shallow copy of the mutable map `m`.
@@ -573,9 +573,9 @@ namespace MutMap {
     ///
     /// Applies `f` to every element in the mutable map `m`.
     ///
-    pub def foreach(f: (k, v) -> Unit \ ef, m: MutMap[k, v, r]): Unit \ { ef, Read(r) } =
+    pub def forEach(f: (k, v) -> Unit \ ef, m: MutMap[k, v, r]): Unit \ { ef, Read(r) } =
         let MutMap(mm) = m;
-        Map.foreach(f, deref mm)
+        Map.forEach(f, deref mm)
 
     ///
     /// Returns an iterator over all key-value pairs in `m`.

@@ -76,7 +76,7 @@ instance UnorderedFoldable[Chain] {
     pub def foldMap(f: a -> b \ ef, c: Chain[a]): b \ ef with CommutativeMonoid[b] = Chain.foldMap(f, c)
     override pub def isEmpty(c: Chain[a]): Bool = Chain.isEmpty(c)
     override pub def exists(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.exists(f, c)
-    override pub def forall(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.forall(f, c)
+    override pub def forAll(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.forAll(f, c)
     override pub def memberOf(x: a, c: Chain[a]): Bool with Eq[a] = Chain.memberOf(x, c)
 }
 
@@ -464,10 +464,10 @@ namespace Chain {
     ///
     /// Returns `true` if `c` is empty.
     ///
-    pub def forall(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = match viewLeft(c) {
+    pub def forAll(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = match viewLeft(c) {
         case NoneLeft                   => true
         case SomeLeft(x, _) if not f(x) => false
-        case SomeLeft(_, xs)            => forall(f, xs)
+        case SomeLeft(_, xs)            => forAll(f, xs)
     }
 
     ///
@@ -723,9 +723,9 @@ namespace Chain {
     ///
     /// Applies `f` to every element of `c`.
     ///
-    pub def foreach(f: a -> Unit \ ef, c: Chain[a]): Unit \ ef = match viewLeft(c) {
+    pub def forEach(f: a -> Unit \ ef, c: Chain[a]): Unit \ ef = match viewLeft(c) {
         case NoneLeft => ()
-        case SomeLeft(x, xs) => f(x); foreach(f, xs)
+        case SomeLeft(x, xs) => f(x); forEach(f, xs)
     }
 
     ///
@@ -739,7 +739,7 @@ namespace Chain {
     ///
     pub def toMutDeque(r: Region[r], c: Chain[a]): MutDeque[a, r] \ Write(r) =
         let d = new MutDeque(r);
-        Chain.foreach(x -> MutDeque.pushBack(x, d), c);
+        forEach(x -> MutDeque.pushBack(x, d), c);
         d
 
     ///
@@ -771,7 +771,7 @@ namespace Chain {
         case None    => [] @ r
         case Some(x) =>
             let arr = [x; length(c)] @ r;
-            foreach(match (b, i) -> arr[i] = b, zipWithIndex(c));
+            forEach(match (b, i) -> arr[i] = b, zipWithIndex(c));
             arr
         }
 

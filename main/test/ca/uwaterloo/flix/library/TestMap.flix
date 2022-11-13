@@ -1218,28 +1218,28 @@ def exists06(): Bool = Map.exists((k, v) -> k == v, Map#{1 => 2, 2 => 2})
 def exists07(): Bool = Map.exists((k, v) -> k == v, Map#{1 => 1, 2 => 2})
 
 /////////////////////////////////////////////////////////////////////////////
-// forall                                                                  //
+// forAll                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def forall01(): Bool = Map.forall((k, v) -> k == v, Map#{}: Map[Unit, Unit])
+def forAll01(): Bool = Map.forAll((k, v) -> k == v, Map#{}: Map[Unit, Unit])
 
 @test
-def forall02(): Bool = not Map.forall((k, v) -> k == v, Map#{1 => 2})
+def forAll02(): Bool = not Map.forAll((k, v) -> k == v, Map#{1 => 2})
 
 @test
-def forall03(): Bool = Map.forall((k, v) -> k == v, Map#{1 => 1})
+def forAll03(): Bool = Map.forAll((k, v) -> k == v, Map#{1 => 1})
 
 @test
-def forall04(): Bool = not Map.forall((k, v) -> k == v, Map#{1 => 2, 2 => 3})
+def forAll04(): Bool = not Map.forAll((k, v) -> k == v, Map#{1 => 2, 2 => 3})
 
 @test
-def forall05(): Bool = not Map.forall((k, v) -> k == v, Map#{1 => 1, 2 => 3})
+def forAll05(): Bool = not Map.forAll((k, v) -> k == v, Map#{1 => 1, 2 => 3})
 
 @test
-def forall06(): Bool = not Map.forall((k, v) -> k == v, Map#{1 => 2, 2 => 2})
+def forAll06(): Bool = not Map.forAll((k, v) -> k == v, Map#{1 => 2, 2 => 2})
 
 @test
-def forall07(): Bool = Map.forall((k, v) -> k == v, Map#{1 => 1, 2 => 2})
+def forAll07(): Bool = Map.forAll((k, v) -> k == v, Map#{1 => 1, 2 => 2})
 
 /////////////////////////////////////////////////////////////////////////////
 // union                                                                   //
@@ -1899,19 +1899,19 @@ def eq24(): Bool = Map#{1 => 2, 3 => 4, 5 => 6} == Map#{5 => 6, 3 => 4, 1 => 2}
 def eq25(): Bool = Map#{1 => 2, 3 => 4, 5 => 6, 7 => 8, 9 => 10} == Map#{7 => 8, 1 => 2, 3 => 4, 9 => 10, 5 => 6}
 
 /////////////////////////////////////////////////////////////////////////////
-// foreach                                                                 //
+// forEach                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def foreach01(): Bool \ IO =
+def forEach01(): Bool \ IO =
     let r = ref 21;
-    Map.foreach((k, _) -> r := k, Map#{});
+    Map.forEach((k, _) -> r := k, Map#{});
     21 == deref r
 
 @test
-def foreach02(): Bool \ IO =
+def forEach02(): Bool \ IO =
     let r = ref 21;
-    Map.foreach((k, _) -> r := k, Map#{1 => "Hello World!"});
+    Map.forEach((k, _) -> r := k, Map#{1 => "Hello World!"});
     1 == deref r
 
 /////////////////////////////////////////////////////////////////////////////

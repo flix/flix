@@ -62,7 +62,7 @@ def main(): Unit \ IO =
     ///
     let q = ref Nil;
     List.iterator(Static, l) |>
-    Iterator.foreach(match x -> q := x :: deref q);
+    Iterator.forEach(match x -> q := x :: deref q);
 
     ///
     /// This is true in particular for nested
@@ -83,10 +83,10 @@ def main(): Unit \ IO =
     ///
     let v = ref Nil;
     List.iterator(Static, l) |>
-    Iterator.foreach(match a -> {
+    Iterator.forEach(match a -> {
         v := a :: deref v;
         List.iterator(Static, k) |>
-        Iterator.foreach(match b -> v := b :: deref v)
+        Iterator.forEach(match b -> v := b :: deref v)
     });
 
     ///
@@ -110,9 +110,9 @@ def main(): Unit \ IO =
     ///
     let e1 = ref Nil;
     List.iterator(Static, l) |>
-    Iterator.foreach(match a -> {
+    Iterator.forEach(match a -> {
         List.iterator(Static, k) |>
-        Iterator.foreach(match b -> e1 := (a, b) :: deref e1)
+        Iterator.forEach(match b -> e1 := (a, b) :: deref e1)
     });
 
     ///
@@ -164,9 +164,9 @@ def main(): Unit \ IO =
     ///
     let cf = ref Nil;
     List.iterator(Static, l) |>
-    Iterator.foreach(match a -> {
+    Iterator.forEach(match a -> {
         List.iterator(Static, k) |>
-        Iterator.foreach(match b -> {
+        Iterator.forEach(match b -> {
             if (a > 1 and b < 6) cf := (a, b) :: deref cf else ()
         })
     });
