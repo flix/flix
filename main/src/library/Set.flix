@@ -219,7 +219,7 @@ namespace Set {
     pub def minimumBy(cmp: (a, a) -> Comparison \ ef, s: Set[a]): Option[a] \ ef =
         def min() = reduceLeft((x, y) -> if (cmp(x, y) == LessThan) x else y, s);
         typematch cmp {
-            case g: (a, a) -> Comparison \ {} =>
+            case g: (a, a) -> Comparison =>
                 if (useParallelEvaluation(s))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Set(t) = s;
@@ -227,7 +227,8 @@ namespace Set {
                     Option.map(fst, o)
                 else
                     min()
-            case _: _ => min()
+            case _: (a, a) -> Comparison \ ef => min()
+            case _: _ => unreachable!()
         }
 
     ///
@@ -250,7 +251,7 @@ namespace Set {
     pub def maximumBy(cmp: (a, a) -> Comparison \ ef, s: Set[a]): Option[a] \ ef =
         def max() = reduceLeft((x, y) -> if (cmp(x, y) == GreaterThan) x else y, s);
         typematch cmp {
-            case g: (a, a) -> Comparison \ {} =>
+            case g: (a, a) -> Comparison =>
                 if (useParallelEvaluation(s))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Set(t) = s;
@@ -258,7 +259,8 @@ namespace Set {
                     Option.map(fst, o)
                 else
                     max()
-            case _ => max()
+            case g: (a, a) -> Comparison \ ef => max()
+            case _: _ => unreachable!()
         }
 
     ///
@@ -360,14 +362,15 @@ namespace Set {
     @ParallelWhenPure
     pub def count(f: a -> Bool \ ef, s: Set[a]): Int32 \ ef =
         typematch f {
-            case g: a -> Bool \ {} =>
+            case g: a -> Bool =>
                 if (useParallelEvaluation(s))
                     let h = (k, _) -> g(k);
                     let Set(t) = s;
                     RedBlackTree.parCount(threads() - 1, h, t) as \ {}
                 else
                     foldLeft((b, k) -> if (f(k)) b + 1 else b, 0, s)
-            case _: _  => foldLeft((b, k) -> if (f(k)) b + 1 else b, 0, s)
+            case g: a -> Bool \ ef => foldLeft((b, k) -> if (f(k)) b + 1 else b, 0, s)
+            case _: _  => unreachable!()
         }
 
     ///
@@ -386,12 +389,13 @@ namespace Set {
         let Set(t) = s;
         def sw() = RedBlackTree.sumWith((k, _) -> f(k), t);
         typematch f {
-            case g: a -> Int32 \ {} =>
+            case g: a -> Int32 =>
                 if (useParallelEvaluation(s))
                     RedBlackTree.parSumWith(threads() - 1, (k, _) -> g(k), t) as \ {}
                 else
                     sw()
-            case _ => sw()
+            case _: a -> Int32 \ ef => sw()
+            case _: _ => unreachable!()
         }
 
     ///
@@ -410,12 +414,13 @@ namespace Set {
         let Set(t) = s;
         def pw() = RedBlackTree.productWith((k, _) -> f(k), t);
         typematch f {
-            case g: a -> Int32 \ {} =>
+            case g: a -> Int32 =>
                 if (useParallelEvaluation(s))
                     RedBlackTree.parProductWith(threads() - 1, (k, _) -> g(k), t) as \ {}
                 else
                     pw()
-            case _ => pw()
+            case _: a -> Int32 \ ef => pw()
+            case _: _ => pw()
         }
 
     ///
