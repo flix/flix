@@ -222,16 +222,16 @@ namespace Map {
     @ParallelWhenPure
     pub def minimumKeyBy(cmp: (k, k) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == LessThan) (kl, vl) else (kr, vr), m);
-        let f = r -> cmp(r.kl, r.kr);
-        reifyEff(f) {
-            case Pure(g) =>
+        typematch cmp {
+            case g: (k, k) -> Comparison =>
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
                     let Map(t) = m;
                     RedBlackTree.parMinimumBy(threads() - 1, h, t) as \ {}
                 else
                     min()
-            case _ => min()
+            case _: (k, k) -> Comparison \ ef => min()
+            case _: _ => unreachable!()
         }
 
     ///
@@ -253,16 +253,16 @@ namespace Map {
     @ParallelWhenPure
     pub def minimumValueBy(cmp: (v, v) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == LessThan) (kl, vl) else (kr, vr), m);
-        let f = r -> cmp(r.vl, r.vr);
-        reifyEff(f) {
-            case Pure(g) =>
+        typematch cmp {
+            case g: (v, v) -> Comparison =>
                 if (useParallelEvaluation(m))
-                    let h = (_, vl, _, vr) -> g({vl = vl, vr = vr});
+                    let h = (_, vl, _, vr) -> g(vl, vr);
                     let Map(t) = m;
                     RedBlackTree.parMinimumBy(threads() - 1, h, t) as \ {}
                 else
                     min()
-            case _ => min()
+            case _: (v, v) -> Comparison \ ef => min()
+            case _: _ => unreachable!()
         }
 
     ///
@@ -284,16 +284,16 @@ namespace Map {
     @ParallelWhenPure
     pub def maximumKeyBy(cmp: (k, k) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == GreaterThan) (kl, vl) else (kr, vr), m);
-        let f = r -> cmp(r.kl, r.kr);
-        reifyEff(f) {
-            case Pure(g) =>
+        typematch cmp {
+            case g: (k, k) -> Comparison =>
                 if (useParallelEvaluation(m))
-                    let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
+                    let h = (kl, _, kr, _) -> g(kl, kr);
                     let Map(t) = m;
                     RedBlackTree.parMaximumBy(threads() - 1, h, t) as \ {}
                 else
                     max()
-            case _ => max()
+            case g: (k, k) -> Comparison \ ef => max()
+            case _: _ => unreachable!()
         }
 
     ///
@@ -315,16 +315,16 @@ namespace Map {
     @ParallelWhenPure
     pub def maximumValueBy(cmp: (v, v) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == GreaterThan) (kl, vl) else (kr, vr), m);
-        let f = r -> cmp(r.vl, r.vr);
-        reifyEff(f) {
-            case Pure(g) =>
+        typematch cmp {
+            case g: (v, v) -> Comparison =>
                 if (useParallelEvaluation(m))
-                    let h = (_, vl, _, vr) -> g({vl = vl, vr = vr});
+                    let h = (_, vl, _, vr) -> g(vl, vr);
                     let Map(t) = m;
                     RedBlackTree.parMaximumBy(threads() - 1, h, t) as \ {}
                 else
                     max()
-            case _ => max()
+            case _: (v, v) -> Comparison \ ef => max()
+            case _: _ => unreachable!()
         }
 
     ///
@@ -617,16 +617,15 @@ namespace Map {
     @ParallelWhenPure
     pub def count(f: (k, v) -> Bool \ ef, m: Map[k, v]): Int32 \ ef =
         def c() = foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m);
-        let f1 = r -> f(r.k, r.v);
-        reifyEff(f1) {
-            case Pure(g) =>
+        typematch f {
+            case g: (k, v) -> Bool =>
                 if (useParallelEvaluation(m))
-                    let h = (k, v) -> g({k = k, v = v});
                     let Map(t) = m;
-                    RedBlackTree.parCount(threads() - 1, h, t) as \ {}
+                    RedBlackTree.parCount(threads() - 1, g, t) as \ {}
                 else
                     c()
-            case _  => c()
+            case _: (k, v) -> Bool \ ef => c()
+            case _: _ => unreachable!()
         }
 
     ///
@@ -648,16 +647,16 @@ namespace Map {
     ///
     @ParallelWhenPure
     pub def sumWith(f: (k, v) -> Int32 \ ef, m: Map[k, v]): Int32 \ ef =
-        let f1 = match (k, v) -> f(k, v);
         let Map(t) = m;
         def sw() = RedBlackTree.sumWith(f, t);
-        reifyEff(f1) {
-            case Pure(g) =>
+        typematch f {
+            case g: (k, v) -> Int32 =>
                 if (useParallelEvaluation(m))
-                    RedBlackTree.parSumWith(threads() - 1, (k, v) -> g((k, v)), t) as \ {}
+                    RedBlackTree.parSumWith(threads() - 1, g, t) as \ {}
                 else
                     sw()
-            case _ => sw()
+            case _: (k, v) -> Int32 \ ef => sw()
+            case _: _ => unreachable!()
         }
 
     ///
@@ -681,16 +680,16 @@ namespace Map {
     ///
     @ParallelWhenPure
     pub def productWith(f: (k, v) -> Int32 \ ef, m: Map[k, v]): Int32 \ ef =
-        let f1 = match (k, v) -> f(k, v);
         let Map(t) = m;
         def pw() = RedBlackTree.productWith(f, t);
-        reifyEff(f1) {
-            case Pure(g) =>
+        typematch f {
+            case g: (k, v) -> Int32 =>
                 if (useParallelEvaluation(m))
-                    RedBlackTree.parProductWith(threads() - 1, (k, v) -> g((k, v)), t) as \ {}
+                    RedBlackTree.parProductWith(threads() - 1, g, t) as \ {}
                 else
                     pw()
-            case _ => pw()
+            case g: (k, v) -> Int32 \ ef => pw()
+            case _: _ => unreachable!()
         }
 
     ///
@@ -703,15 +702,15 @@ namespace Map {
     @ParallelWhenPure @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
     pub def exists(f: (k, v) -> Bool \ ef, m: Map[k, v]): Bool \ ef =
         let Map(t) = m;
-        let f1 = match (k, v) -> f(k, v);
         def e() = RedBlackTree.exists(f, t);
-        reifyEff(f1) {
-            case Pure(g) =>
+        typematch f {
+            case g: (k, v) -> Bool =>
                 if (useParallelEvaluation(m))
-                    RedBlackTree.parExists(threads() - 1, (k, v) -> g((k, v)), t) as \ {}
+                    RedBlackTree.parExists(threads() - 1, g, t) as \ {}
                 else
                     e()
-            case _ => e()
+            case g: (k, v) -> Bool \ ef => e()
+            case _: _ => unreachable!()
         }
 
     ///
@@ -724,15 +723,15 @@ namespace Map {
     @ParallelWhenPure @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
     pub def forAll(f: (k, v) -> Bool \ ef, m: Map[k, v]): Bool \ ef =
         let Map(t) = m;
-        let f1 = match (k, v) -> f(k, v);
         def fa() = RedBlackTree.forAll(f, t);
-        reifyEff(f1) {
-            case Pure(g) =>
+        typematch f {
+            case g: (k, v) -> Bool =>
                 if (useParallelEvaluation(m))
-                    RedBlackTree.parForall(threads() - 1, (k, v) -> g((k, v)), t) as \ {}
+                    RedBlackTree.parForall(threads() - 1, g, t) as \ {}
                 else
                     fa()
-            case _ => fa()
+            case g: (k, v) -> Bool \ ef => fa()
+            case _: _ => unreachable!()
         }
 
     ///
