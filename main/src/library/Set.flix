@@ -259,7 +259,7 @@ namespace Set {
                     Option.map(fst, o)
                 else
                     max()
-            case g: (a, a) -> Comparison \ ef => max()
+            case _: (a, a) -> Comparison \ ef => max()
             case _: _ => unreachable!()
         }
 
@@ -369,7 +369,7 @@ namespace Set {
                     RedBlackTree.parCount(threads() - 1, h, t) as \ {}
                 else
                     foldLeft((b, k) -> if (f(k)) b + 1 else b, 0, s)
-            case g: a -> Bool \ ef => foldLeft((b, k) -> if (f(k)) b + 1 else b, 0, s)
+            case g: a -> Bool \ ef => foldLeft((b, k) -> if (g(k)) b + 1 else b, 0, s)
             case _: _  => unreachable!()
         }
 

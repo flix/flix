@@ -225,7 +225,7 @@ namespace Map {
         typematch cmp {
             case g: (k, k) -> Comparison =>
                 if (useParallelEvaluation(m))
-                    let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
+                    let h = (kl, _, kr, _) -> g(kl, kr);
                     let Map(t) = m;
                     RedBlackTree.parMinimumBy(threads() - 1, h, t) as \ {}
                 else
@@ -292,7 +292,7 @@ namespace Map {
                     RedBlackTree.parMaximumBy(threads() - 1, h, t) as \ {}
                 else
                     max()
-            case g: (k, k) -> Comparison \ ef => max()
+            case _: (k, k) -> Comparison \ ef => max()
             case _: _ => unreachable!()
         }
 
@@ -688,7 +688,7 @@ namespace Map {
                     RedBlackTree.parProductWith(threads() - 1, g, t) as \ {}
                 else
                     pw()
-            case g: (k, v) -> Int32 \ ef => pw()
+            case _: (k, v) -> Int32 \ ef => pw()
             case _: _ => unreachable!()
         }
 
@@ -709,7 +709,7 @@ namespace Map {
                     RedBlackTree.parExists(threads() - 1, g, t) as \ {}
                 else
                     e()
-            case g: (k, v) -> Bool \ ef => e()
+            case _: (k, v) -> Bool \ ef => e()
             case _: _ => unreachable!()
         }
 
@@ -730,7 +730,7 @@ namespace Map {
                     RedBlackTree.parForall(threads() - 1, g, t) as \ {}
                 else
                     fa()
-            case g: (k, v) -> Bool \ ef => fa()
+            case _: (k, v) -> Bool \ ef => fa()
             case _: _ => unreachable!()
         }
 

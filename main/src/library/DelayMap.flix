@@ -245,7 +245,7 @@ namespace DelayMap {
                 else
                     min()
             case _: (v, v) -> Comparison \ ef => min()
-            case _ => unreachable!()
+            case _: _ => unreachable!()
         }
 
     ///
@@ -284,7 +284,7 @@ namespace DelayMap {
                 else
                     max()
             case _: (k, k) -> Comparison \ ef => max()
-            case _ => unreachable!()
+            case _: _ => unreachable!()
         }
 
     ///
@@ -718,7 +718,6 @@ namespace DelayMap {
     ///
     @Experimental @LazyWhenPure
     pub def updateWithKey(f: (k, v) -> Option[v] \ ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
-        let f1 = (t) -> f(fst(t), snd(t));
         typematch f {
             case g: (k, v) -> Option[v]      => updateWithKeyL(g, k, m)
             case g: (k, v) -> Option[v] \ ef => updateWithKeyE(g, k, m)
