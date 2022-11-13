@@ -1403,7 +1403,7 @@ object Weeder {
         * Returns an expression that applies `debugString` to the result of the given expression `e`.
         */
       def mkApplyDebugString(e: WeededAst.Expression, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
-        val fqn = "stringify"
+        val fqn = "Debug.stringify"
         val loc = mkSL(sp1, sp2).asSynthetic
         mkApplyFqn(fqn, List(e), loc)
       }
@@ -1784,7 +1784,7 @@ object Weeder {
               locPart + srcPart
           }
           val e1 = WeededAst.Expression.Cst(Ast.Constant.Str(prefix), loc)
-          val call = mkApplyFqn("debugWithPrefix", List(e1, e), loc)
+          val call = mkApplyFqn("Debug.debugWithPrefix", List(e1, e), loc)
           WeededAst.Expression.Mask(call, loc)
       }
 

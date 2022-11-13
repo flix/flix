@@ -72,6 +72,6 @@ instance ToString[Boxed] {
         case BoxedInt64(v)     => ToString.toString(v)
         case BoxedFloat32(v)   => ToString.toString(v)
         case BoxedFloat64(v)   => ToString.toString(v)
-        case BoxedObject(v, _) => stringify(v)
+        case BoxedObject(v, _) => Debug.stringify(v)
     }
 }

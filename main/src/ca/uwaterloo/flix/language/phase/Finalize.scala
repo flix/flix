@@ -64,47 +64,9 @@ object Finalize {
   private def visitExp(exp0: LiftedAst.Expression, m: TopLevel)(implicit flix: Flix): FinalAst.Expression = {
 
     def visit(e0: LiftedAst.Expression): FinalAst.Expression = e0 match {
-      case LiftedAst.Expression.Unit(loc) =>
-        FinalAst.Expression.Unit(loc)
-
-      case LiftedAst.Expression.Null(tpe, loc) =>
-        FinalAst.Expression.Null(visitType(tpe), loc)
-
-      case LiftedAst.Expression.True(loc) =>
-        FinalAst.Expression.True(loc)
-
-      case LiftedAst.Expression.False(loc) =>
-        FinalAst.Expression.False(loc)
-
-      case LiftedAst.Expression.Char(lit, loc) =>
-        FinalAst.Expression.Char(lit, loc)
-
-      case LiftedAst.Expression.Float32(lit, loc) =>
-        FinalAst.Expression.Float32(lit, loc)
-
-      case LiftedAst.Expression.Float64(lit, loc) =>
-        FinalAst.Expression.Float64(lit, loc)
-
-      case LiftedAst.Expression.BigDecimal(lit, loc) =>
-        FinalAst.Expression.BigDecimal(lit, loc)
-
-      case LiftedAst.Expression.Int8(lit, loc) =>
-        FinalAst.Expression.Int8(lit, loc)
-
-      case LiftedAst.Expression.Int16(lit, loc) =>
-        FinalAst.Expression.Int16(lit, loc)
-
-      case LiftedAst.Expression.Int32(lit, loc) =>
-        FinalAst.Expression.Int32(lit, loc)
-
-      case LiftedAst.Expression.Int64(lit, loc) =>
-        FinalAst.Expression.Int64(lit, loc)
-
-      case LiftedAst.Expression.BigInt(lit, loc) =>
-        FinalAst.Expression.BigInt(lit, loc)
-
-      case LiftedAst.Expression.Str(lit, loc) =>
-        FinalAst.Expression.Str(lit, loc)
+      case LiftedAst.Expression.Cst(cst, tpe, loc) =>
+        val t = visitType(tpe)
+        FinalAst.Expression.Cst(cst, t, loc)
 
       case LiftedAst.Expression.Var(sym, tpe, loc) =>
         val t = visitType(tpe)

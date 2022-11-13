@@ -60,33 +60,7 @@ object PrettyPrinter {
 
     def fmtExp(exp0: Expression, formatter: Formatter)(implicit flix: Flix): String = {
       def visitExp(e0: Expression): String = e0 match {
-        case Expression.Unit(_) => "Unit"
-
-        case Expression.Null(tpe, _) => "null"
-
-        case Expression.True(_) => "true"
-
-        case Expression.False(_) => "false"
-
-        case Expression.Char(lit, _) => "'" + lit.toString + "'"
-
-        case Expression.Float32(lit, _) => lit.toString + "f32"
-
-        case Expression.Float64(lit, _) => lit.toString + "f32"
-
-        case Expression.BigDecimal(lit, _) => lit.toString() + "ff"
-
-        case Expression.Int8(lit, _) => lit.toString + "i8"
-
-        case Expression.Int16(lit, _) => lit.toString + "i16"
-
-        case Expression.Int32(lit, _) => lit.toString + "i32"
-
-        case Expression.Int64(lit, _) => lit.toString + "i64"
-
-        case Expression.BigInt(lit, _) => lit.toString() + "ii"
-
-        case Expression.Str(lit, _) => "\"" + lit + "\""
+        case Expression.Cst(cst, _, _) => FormatConstant.format(cst)
 
         case Expression.Var(sym, tpe, loc) => fmtSym(sym, formatter)
 
@@ -231,7 +205,7 @@ object PrettyPrinter {
         case Expression.Is(sym, exp, _, loc) => visitExp(exp) + " is " + sym.name
 
         case Expression.Tag(sym, exp, tpe, _, loc) => exp match {
-          case Expression.Unit(_) => sym.name
+          case Expression.Cst(Ast.Constant.Unit, _, _) => sym.name
           case _ =>
             val sb = new mutable.StringBuilder
             sb.append(sym.name)

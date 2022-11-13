@@ -41,59 +41,7 @@ object FinalAst {
 
   object Expression {
 
-    case class Unit(loc: SourceLocation) extends FinalAst.Expression {
-      final val tpe = MonoType.Unit
-    }
-
-    case class Null(tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class True(loc: SourceLocation) extends FinalAst.Expression {
-      final val tpe = MonoType.Bool
-    }
-
-    case class False(loc: SourceLocation) extends FinalAst.Expression {
-      final val tpe = MonoType.Bool
-    }
-
-    case class Char(lit: scala.Char, loc: SourceLocation) extends FinalAst.Expression {
-      final val tpe = MonoType.Char
-    }
-
-    case class Float32(lit: scala.Float, loc: SourceLocation) extends FinalAst.Expression {
-      final val tpe = MonoType.Float32
-    }
-
-    case class Float64(lit: scala.Double, loc: SourceLocation) extends FinalAst.Expression {
-      final val tpe = MonoType.Float64
-    }
-
-    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends FinalAst.Expression {
-      final val tpe = MonoType.BigDecimal
-    }
-
-    case class Int8(lit: scala.Byte, loc: SourceLocation) extends FinalAst.Expression {
-      final val tpe = MonoType.Int8
-    }
-
-    case class Int16(lit: scala.Short, loc: SourceLocation) extends FinalAst.Expression {
-      final val tpe = MonoType.Int16
-    }
-
-    case class Int32(lit: scala.Int, loc: SourceLocation) extends FinalAst.Expression {
-      final val tpe = MonoType.Int32
-    }
-
-    case class Int64(lit: scala.Long, loc: SourceLocation) extends FinalAst.Expression {
-      final val tpe = MonoType.Int64
-    }
-
-    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends FinalAst.Expression {
-      final val tpe = MonoType.BigInt
-    }
-
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends FinalAst.Expression {
-      final val tpe = MonoType.Str
-    }
+    case class Cst(cst: Ast.Constant, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 

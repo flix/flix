@@ -67,33 +67,7 @@ object ResolvedAst {
 
     case class Hole(sym: Symbol.HoleSym, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Unit(loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Null(loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class True(loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class False(loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Char(lit: scala.Char, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Float32(lit: scala.Float, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Float64(lit: scala.Double, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Int8(lit: scala.Byte, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Int16(lit: scala.Short, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Int32(lit: scala.Int, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Int64(lit: scala.Long, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Cst(cst: Ast.Constant, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Apply(exp: ResolvedAst.Expression, exps: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -238,31 +212,7 @@ object ResolvedAst {
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ResolvedAst.Pattern
 
-    case class Unit(loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class True(loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class False(loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class Char(lit: scala.Char, loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class Float32(lit: scala.Float, loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class Float64(lit: scala.Double, loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class Int8(lit: scala.Byte, loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class Int16(lit: scala.Short, loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class Int32(lit: scala.Int, loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class Int64(lit: scala.Long, loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends ResolvedAst.Pattern
+    case class Cst(cst: Ast.Constant, loc: SourceLocation) extends ResolvedAst.Pattern
 
     case class Tag(sym: Ast.CaseSymUse, pat: ResolvedAst.Pattern, loc: SourceLocation) extends ResolvedAst.Pattern
 

@@ -36,80 +36,8 @@ object GenExpression {
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
     */
   def compileExpression(exp0: Expression, visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): Unit = exp0 match {
-    case Expression.Unit(loc) =>
-      addSourceLine(visitor, loc)
-      visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName,
-        BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.toDescriptor)
-
-    case Expression.Null(tpe, loc) =>
-      addSourceLine(visitor, loc)
-      visitor.visitInsn(ACONST_NULL)
-      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
-
-    case Expression.True(loc) =>
-      addSourceLine(visitor, loc)
-      visitor.visitInsn(ICONST_1)
-
-    case Expression.False(loc) =>
-      addSourceLine(visitor, loc)
-      visitor.visitInsn(ICONST_0)
-
-    case Expression.Char(c, loc) =>
-      addSourceLine(visitor, loc)
-      compileInt(visitor, c)
-
-    case Expression.Float32(f, loc) =>
-      addSourceLine(visitor, loc)
-      f match {
-        case 0f => visitor.visitInsn(FCONST_0)
-        case 1f => visitor.visitInsn(FCONST_1)
-        case 2f => visitor.visitInsn(FCONST_2)
-        case _ => visitor.visitLdcInsn(f)
-      }
-
-    case Expression.Float64(d, loc) =>
-      addSourceLine(visitor, loc)
-      d match {
-        case 0d => visitor.visitInsn(DCONST_0)
-        case 1d => visitor.visitInsn(DCONST_1)
-        case _ => visitor.visitLdcInsn(d)
-      }
-
-    case Expression.BigDecimal(dd, loc) =>
-      addSourceLine(visitor, loc)
-      visitor.visitTypeInsn(NEW, BackendObjType.BigDecimal.jvmName.toInternalName)
-      visitor.visitInsn(DUP)
-      visitor.visitLdcInsn(dd.toString)
-      visitor.visitMethodInsn(INVOKESPECIAL, BackendObjType.BigDecimal.jvmName.toInternalName, "<init>",
-        AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
-
-    case Expression.Int8(b, loc) =>
-      addSourceLine(visitor, loc)
-      compileInt(visitor, b)
-
-    case Expression.Int16(s, loc) =>
-      addSourceLine(visitor, loc)
-      compileInt(visitor, s)
-
-    case Expression.Int32(i, loc) =>
-      addSourceLine(visitor, loc)
-      compileInt(visitor, i)
-
-    case Expression.Int64(l, loc) =>
-      addSourceLine(visitor, loc)
-      compileInt(visitor, l, isLong = true)
-
-    case Expression.BigInt(ii, loc) =>
-      addSourceLine(visitor, loc)
-      visitor.visitTypeInsn(NEW, BackendObjType.BigInt.jvmName.toInternalName)
-      visitor.visitInsn(DUP)
-      visitor.visitLdcInsn(ii.toString)
-      visitor.visitMethodInsn(INVOKESPECIAL, BackendObjType.BigInt.jvmName.toInternalName, "<init>",
-        AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
-
-    case Expression.Str(s, loc) =>
-      addSourceLine(visitor, loc)
-      visitor.visitLdcInsn(s)
+    case Expression.Cst(cst, tpe, loc) =>
+      compileConstant(visitor, cst, tpe, loc)
 
     case Expression.Var(sym, tpe, _) =>
       readVar(sym, tpe, visitor)
@@ -1094,6 +1022,84 @@ object GenExpression {
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       visitor.visitTypeInsn(CHECKCAST, "java/lang/Double")
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Double", "doubleValue", "()D", false)
+
+  }
+
+  private def compileConstant(visitor: MethodVisitor, cst: Ast.Constant, tpe: MonoType, loc: SourceLocation)(implicit root: Root, flix: Flix): Unit = cst match {
+    case Ast.Constant.Unit =>
+      addSourceLine(visitor, loc)
+      visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName,
+        BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.toDescriptor)
+
+    case Ast.Constant.Null =>
+      addSourceLine(visitor, loc)
+      visitor.visitInsn(ACONST_NULL)
+      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+
+    case Ast.Constant.Bool(true) =>
+      addSourceLine(visitor, loc)
+      visitor.visitInsn(ICONST_1)
+
+    case Ast.Constant.Bool(false) =>
+      addSourceLine(visitor, loc)
+      visitor.visitInsn(ICONST_0)
+
+    case Ast.Constant.Char(c) =>
+      addSourceLine(visitor, loc)
+      compileInt(visitor, c)
+
+    case Ast.Constant.Float32(f) =>
+      addSourceLine(visitor, loc)
+      f match {
+        case 0f => visitor.visitInsn(FCONST_0)
+        case 1f => visitor.visitInsn(FCONST_1)
+        case 2f => visitor.visitInsn(FCONST_2)
+        case _ => visitor.visitLdcInsn(f)
+      }
+
+    case Ast.Constant.Float64(d) =>
+      addSourceLine(visitor, loc)
+      d match {
+        case 0d => visitor.visitInsn(DCONST_0)
+        case 1d => visitor.visitInsn(DCONST_1)
+        case _ => visitor.visitLdcInsn(d)
+      }
+
+    case Ast.Constant.BigDecimal(dd) =>
+      addSourceLine(visitor, loc)
+      visitor.visitTypeInsn(NEW, BackendObjType.BigDecimal.jvmName.toInternalName)
+      visitor.visitInsn(DUP)
+      visitor.visitLdcInsn(dd.toString)
+      visitor.visitMethodInsn(INVOKESPECIAL, BackendObjType.BigDecimal.jvmName.toInternalName, "<init>",
+        AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
+
+    case Ast.Constant.Int8(b) =>
+      addSourceLine(visitor, loc)
+      compileInt(visitor, b)
+
+    case Ast.Constant.Int16(s) =>
+      addSourceLine(visitor, loc)
+      compileInt(visitor, s)
+
+    case Ast.Constant.Int32(i) =>
+      addSourceLine(visitor, loc)
+      compileInt(visitor, i)
+
+    case Ast.Constant.Int64(l) =>
+      addSourceLine(visitor, loc)
+      compileInt(visitor, l, isLong = true)
+
+    case Ast.Constant.BigInt(ii) =>
+      addSourceLine(visitor, loc)
+      visitor.visitTypeInsn(NEW, BackendObjType.BigInt.jvmName.toInternalName)
+      visitor.visitInsn(DUP)
+      visitor.visitLdcInsn(ii.toString)
+      visitor.visitMethodInsn(INVOKESPECIAL, BackendObjType.BigInt.jvmName.toInternalName, "<init>",
+        AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
+
+    case Ast.Constant.Str(s) =>
+      addSourceLine(visitor, loc)
+      visitor.visitLdcInsn(s)
 
   }
 
