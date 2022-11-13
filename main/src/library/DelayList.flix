@@ -415,8 +415,9 @@ namespace DelayList {
     @Experimental @LazyWhenPure
     pub def map(f: a -> b \ ef, l: DelayList[a]): DelayList[b] \ ef =
         typematch f {
-            case g: a -> b \ {} => mapL(g, l)
-            case _: _           => mapE(f, l)
+            case g: a -> b      => mapL(g, l)
+            case g: a -> b \ ef => mapE(g, l)
+            case _: _           => unreachable!()
         }
 
     ///
@@ -464,8 +465,9 @@ namespace DelayList {
     @Experimental @LazyWhenPure
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, l: DelayList[a]): DelayList[b] \ ef =
         typematch f {
-            case g: (Int32, a) -> b \ {} => mapWithIndexL(g, l)
-            case _                       => mapWithIndexE(f, l)
+            case g: (Int32, a) -> b      => mapWithIndexL(g, l)
+            case g: (Int32, a) -> b \ ef => mapWithIndexE(g, l)
+            case _: _                    => unreachable!()
         }
 
     ///
@@ -512,8 +514,9 @@ namespace DelayList {
     @Experimental @LazyWhenPure
     pub def flatMap(f: a -> DelayList[b] \ ef, l: DelayList[a]): DelayList[b] \ ef =
         typematch f {
-            case g: a -> DelayList[b] \ {} => flatMapL(g, l)
-            case _: _                      => flatMapE(f, l)
+            case g: a -> DelayList[b]      => flatMapL(g, l)
+            case g: a -> DelayList[b] \ ef => flatMapE(g, l)
+            case _: _                      => unreachable!()
         }
 
     ///
@@ -711,8 +714,9 @@ namespace DelayList {
     @Experimental @LazyWhenPure
     pub def filter(f: a -> Bool \ ef, l: DelayList[a]): DelayList[a] \ ef =
         typematch f {
-            case g: a -> Bool \ {} => filterL(g, l)
-            case _: _              => filterE(f, l)
+            case g: a -> Bool      => filterL(g, l)
+            case g: a -> Bool \ ef => filterE(g, l)
+            case _: _              => unreachable!()
         }
 
     ///
@@ -753,8 +757,9 @@ namespace DelayList {
     @Experimental @LazyWhenPure
     pub def filterMap(f: a -> Option[b] \ ef, l: DelayList[a]): DelayList[b] \ ef =
         typematch f {
-            case g: a -> Option[b] \ {} => filterMapL(g, l)
-            case _: _                   => filterMapE(f, l)
+            case g: a -> Option[b]      => filterMapL(g, l)
+            case g: a -> Option[b] \ ef => filterMapE(g, l)
+            case _: _                   => unreachable!()
         }
 
     ///
@@ -920,8 +925,9 @@ namespace DelayList {
     @Experimental @LazyWhenPure
     pub def span(f: a -> Bool \ ef, l: DelayList[a]): (DelayList[a], DelayList[a]) \ ef =
         typematch f {
-            case g: a -> Bool \ {} => spanL(g, l)
-            case _: _              => spanE(f, l)
+            case g: a -> Bool      => spanL(g, l)
+            case g: a -> Bool \ ef => spanE(g, l)
+            case _: _              => unreachable!()
         }
 
     ///
@@ -1003,8 +1009,9 @@ namespace DelayList {
     @Experimental @LazyWhenPure
     pub def dropWhile(f: a -> Bool \ ef, l: DelayList[a]): DelayList[a] \ ef =
         typematch f {
-            case g: a -> Bool \ {} => dropWhileL(g, l)
-            case _: _              => dropWhileE(f, l)
+            case g: a -> Bool      => dropWhileL(g, l)
+            case g: a -> Bool \ ef => dropWhileE(g, l)
+            case _: _              => unreachable!()
         }
 
     ///
@@ -1069,8 +1076,9 @@ namespace DelayList {
     @Experimental @LazyWhenPure
     pub def takeWhile(f: a -> Bool \ ef, l: DelayList[a]): DelayList[a] \ ef =
         typematch f {
-            case g: a -> Bool \ {} => takeWhileL(g, l)
-            case _: _              => takeWhileE(f, l)
+            case g: a -> Bool      => takeWhileL(g, l)
+            case g: a -> Bool \ ef => takeWhileE(g, l)
+            case _: _              => unreachable!()
         }
 
     ///
