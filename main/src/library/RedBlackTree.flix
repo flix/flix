@@ -627,15 +627,14 @@ namespace RedBlackTree {
     ///
     @ParallelWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 \ ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] \ ef =
-        let f1 = (r) -> f(r.k, r.v);
-        reifyEff(f1) {
-            case Pure(g) =>
+        typematch f {
+            case g: (k, v1) -> v2 =>
                 if (useParallelEvaluation(t))
-                    let h = (k, v) -> g({k = k, v = v});
-                    parMapWithKey(threads() - 1, h, t) as \ {}
+                    parMapWithKey(threads() - 1, g, t) as \ {}
                 else
                     seqMapWithKey(f, t)
-            case _  => seqMapWithKey(f, t)
+            case g: (k, v1) -> v2 \ ef => seqMapWithKey(g, t)
+            case _: _ => unreachable!()
         }
 
     ///
