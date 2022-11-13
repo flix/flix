@@ -19,6 +19,15 @@ The work will include reading papers, language design, and implementation
 in a real-world programming language being developed
 at Aarhus University (see flix.dev).
 
+## Sub-Effecting
+
+TBD
+
+Change to declarative system?
+Change to W?
+Simplify types with free variables?
+
+
 ## Tail Recursion Modulo Cons
 
 Tail Recursion Modulo Cons (TRMC) is an important optimization for pure
@@ -46,3 +55,8 @@ The aim of this project is to explore the design space of termination analysis
 for a functional language. The work will include reading papers, language
 design, and implementation in a real-world programming language being developed
 at Aarhus University (see flix.dev).
+
+## Record-Replay
+
+## Capture Control
+
