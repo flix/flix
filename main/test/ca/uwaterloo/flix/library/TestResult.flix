@@ -88,16 +88,16 @@ namespace TestResult {
     def exists03(): Bool = Result.exists(i -> i == 2, Ok(2)) == true
 
     /////////////////////////////////////////////////////////////////////////////
-    // forall                                                                  //
+    // forAll                                                                  //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def forall01(): Bool = Result.forall(i -> i == 2, Err(false)) == true
+    def forAll01(): Bool = Result.forAll(i -> i == 2, Err(false)) == true
 
     @test
-    def forall02(): Bool = Result.forall(i -> i == 2, Ok(1)) == false
+    def forAll02(): Bool = Result.forAll(i -> i == 2, Ok(1)) == false
 
     @test
-    def forall03(): Bool = Result.forall(i -> i == 2, Ok(2)) == true
+    def forAll03(): Bool = Result.forAll(i -> i == 2, Ok(2)) == true
 
     /////////////////////////////////////////////////////////////////////////////
     // map                                                                     //
@@ -479,19 +479,19 @@ namespace TestResult {
     def toOption02(): Bool = Result.toOption(Ok(1)) == Some(1)
 
     /////////////////////////////////////////////////////////////////////////////
-    // foreach                                                                 //
+    // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool \ IO =
+    def forEach01(): Bool \ IO =
         let r = ref 21;
-        Result.foreach(x -> r := x, Ok(42): Result[Int32, Int32]);
+        Result.forEach(x -> r := x, Ok(42): Result[Int32, Int32]);
         42 == deref r
 
     @test
-    def foreach02(): Bool \ IO =
+    def forEach02(): Bool \ IO =
         let r = ref 21;
-        Result.foreach(x -> r := x, Err(42): Result[Int32, Int32]);
+        Result.forEach(x -> r := x, Err(42): Result[Int32, Int32]);
         21 == deref r
 
     /////////////////////////////////////////////////////////////////////////////

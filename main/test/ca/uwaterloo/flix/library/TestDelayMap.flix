@@ -1391,21 +1391,21 @@ namespace TestDelayMap {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // foreach                                                                 //
+    // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool \ IO =
+    def forEach01(): Bool \ IO =
         let r = ref 21;
         Map#{} |> Map.toDelayMap |>
-            DelayMap.foreach((k, _) -> r := k);
+            DelayMap.forEach((k, _) -> r := k);
         21 == deref r
 
     @test
-    def foreach02(): Bool \ IO =
+    def forEach02(): Bool \ IO =
         let r = ref 21;
         Map#{1 => "Hello World!"} |> Map.toDelayMap |>
-            DelayMap.foreach((k, _) -> r := k);
+            DelayMap.forEach((k, _) -> r := k);
         1 == deref r
 
 

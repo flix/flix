@@ -787,38 +787,38 @@ namespace TestChain {
     def exists09(): Bool = Chain.exists(i -> i > 3, List.toChain(1 :: 9 :: 3 :: Nil)) == true
 
     /////////////////////////////////////////////////////////////////////////////
-    // forall                                                                  //
+    // forAll                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forall01(): Bool = Chain.forall(i -> i > 3, Chain.empty()) == true
+    def forAll01(): Bool = Chain.forAll(i -> i > 3, Chain.empty()) == true
 
     @test
-    def forall02(): Bool = Chain.forall(i -> i > 3, Chain.singleton(1)) == false
+    def forAll02(): Bool = Chain.forAll(i -> i > 3, Chain.singleton(1)) == false
 
     @test
-    def forall03(): Bool = Chain.forall(i -> i > 3, Chain.singleton(5)) == true
+    def forAll03(): Bool = Chain.forAll(i -> i > 3, Chain.singleton(5)) == true
 
     @test
-    def forall04(): Bool = Chain.forall(i -> i > 3, List.toChain(1 :: 2 :: Nil)) == false
+    def forAll04(): Bool = Chain.forAll(i -> i > 3, List.toChain(1 :: 2 :: Nil)) == false
 
     @test
-    def forall05(): Bool = Chain.forall(i -> i > 3, List.toChain(1 :: 6 :: Nil)) == false
+    def forAll05(): Bool = Chain.forAll(i -> i > 3, List.toChain(1 :: 6 :: Nil)) == false
 
     @test
-    def forall06(): Bool = Chain.forall(i -> i > 3, List.toChain(6 :: 1 :: Nil)) == false
+    def forAll06(): Bool = Chain.forAll(i -> i > 3, List.toChain(6 :: 1 :: Nil)) == false
 
     @test
-    def forall07(): Bool = Chain.forall(i -> i > 3, List.toChain(16 :: 6 :: Nil)) == true
+    def forAll07(): Bool = Chain.forAll(i -> i > 3, List.toChain(16 :: 6 :: Nil)) == true
 
     @test
-    def forall08(): Bool = Chain.forall(i -> i > 3, List.toChain(1 :: -9 :: 3 :: Nil)) == false
+    def forAll08(): Bool = Chain.forAll(i -> i > 3, List.toChain(1 :: -9 :: 3 :: Nil)) == false
 
     @test
-    def forall09(): Bool = Chain.forall(i -> i > 3, List.toChain(1 :: 9 :: 3 :: Nil)) == false
+    def forAll09(): Bool = Chain.forAll(i -> i > 3, List.toChain(1 :: 9 :: 3 :: Nil)) == false
 
     @test
-    def forall10(): Bool = Chain.forall(i -> i > 3, List.toChain(11 :: 9 :: 31 :: Nil)) == true
+    def forAll10(): Bool = Chain.forAll(i -> i > 3, List.toChain(11 :: 9 :: 31 :: Nil)) == true
 
     /////////////////////////////////////////////////////////////////////////////
     // filter                                                                  //
@@ -1377,19 +1377,19 @@ namespace TestChain {
     def mapAccumRight04(): Bool = Chain.mapAccumRight((s, x) -> (s+1, x+s), 0, List.toChain(1 :: 1 :: 1 :: Nil)) == (3, List.toChain(3 :: 2 :: 1 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
-    // foreach                                                                 //
+    // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool \ IO =
+    def forEach01(): Bool \ IO =
         let r = ref 21;
-        Chain.foreach(x -> r := x, Chain.empty());
+        Chain.forEach(x -> r := x, Chain.empty());
         21 == deref r
 
     @test
-    def foreach02(): Bool \ IO =
+    def forEach02(): Bool \ IO =
         let r = ref 21;
-        Chain.foreach(x -> r := x, List.toChain(1 :: 2 :: 3 :: Nil));
+        Chain.forEach(x -> r := x, List.toChain(1 :: 2 :: 3 :: Nil));
         3 == deref r
 
     /////////////////////////////////////////////////////////////////////////////

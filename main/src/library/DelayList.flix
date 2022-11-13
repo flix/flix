@@ -78,7 +78,7 @@ instance UnorderedFoldable[DelayList] {
     pub def foldMap(f: a -> b \ ef, l: DelayList[a]): b \ ef with CommutativeMonoid[b] = DelayList.foldMap(f, l)
     override pub def isEmpty(l: DelayList[a]): Bool = DelayList.isEmpty(l)
     override pub def exists(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.exists(f, l)
-    override pub def forall(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.forall(f, l)
+    override pub def forAll(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.forAll(f, l)
     override pub def memberOf(x: a, l: DelayList[a]): Bool with Eq[a] = DelayList.memberOf(x, l)
 }
 
@@ -310,11 +310,11 @@ namespace DelayList {
     /// Forces elements in `l` until the first element that does not satisfy the predicate `f` (inclusive).
     ///
     @Experimental
-    pub def forall(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = match l {
+    pub def forAll(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = match l {
         case ENil         => true
-        case ECons(x, xs) => if (f(x)) forall(f,       xs) else false
-        case LCons(x, xs) => if (f(x)) forall(f, force xs) else false
-        case LList(xs)    =>           forall(f, force xs)
+        case ECons(x, xs) => if (f(x)) forAll(f,       xs) else false
+        case LCons(x, xs) => if (f(x)) forAll(f, force xs) else false
+        case LList(xs)    =>           forAll(f, force xs)
     }
 
     ///
@@ -658,11 +658,11 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def foreach(f: a -> Unit \ ef, l: DelayList[a]): Unit \ ef = match l {
+    pub def forEach(f: a -> Unit \ ef, l: DelayList[a]): Unit \ ef = match l {
         case ENil         => ()
-        case ECons(x, xs) => f(x); foreach(f,       xs)
-        case LCons(x, xs) => f(x); foreach(f, force xs)
-        case LList(xs)    =>       foreach(f, force xs)
+        case ECons(x, xs) => f(x); forEach(f,       xs)
+        case LCons(x, xs) => f(x); forEach(f, force xs)
+        case LList(xs)    =>       forEach(f, force xs)
     }
 
     ///
@@ -1172,7 +1172,7 @@ namespace DelayList {
     @Experimental
     pub def toArray(r: Region[r], l: DelayList[a]): Array[a, r] \ Write(r) =
         let a = [Reflect.default(); length(l)] @ r;
-        foreach(match (y, i) -> a[i] = y, zipWithIndex(l));
+        forEach(match (y, i) -> a[i] = y, zipWithIndex(l));
         a
 
     ///
@@ -1231,7 +1231,7 @@ namespace DelayList {
     ///
     pub def toMutDeque(r: Region[r], l: DelayList[a]): MutDeque[a, r] \ Write(r) =
         let d = new MutDeque(r);
-        DelayList.foreach(x -> MutDeque.pushBack(x, d), l);
+        forEach(x -> MutDeque.pushBack(x, d), l);
         d
 
     ///

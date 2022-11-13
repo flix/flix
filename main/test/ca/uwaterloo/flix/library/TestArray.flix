@@ -2836,57 +2836,57 @@ namespace TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // forall                                                                  //
+    // forAll                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forall01(): Bool = region r {
-        Array.forall(i -> i > 3, []: Array[Int32, _]) == true
+    def forAll01(): Bool = region r {
+        Array.forAll(i -> i > 3, []: Array[Int32, _]) == true
     }
 
     @test
-    def forall02(): Bool = region r {
-        Array.forall(i -> i > 3, [1]) == false
+    def forAll02(): Bool = region r {
+        Array.forAll(i -> i > 3, [1]) == false
     }
 
     @test
-    def forall03(): Bool = region r {
-        Array.forall(i -> i > 3, [5]) == true
+    def forAll03(): Bool = region r {
+        Array.forAll(i -> i > 3, [5]) == true
     }
 
     @test
-    def forall04(): Bool = region r {
-        Array.forall(i -> i > 3, [1,2]) == false
+    def forAll04(): Bool = region r {
+        Array.forAll(i -> i > 3, [1,2]) == false
     }
 
     @test
-    def forall05(): Bool = region r {
-        Array.forall(i -> i > 3, [1,6]) == false
+    def forAll05(): Bool = region r {
+        Array.forAll(i -> i > 3, [1,6]) == false
     }
 
     @test
-    def forall06(): Bool = region r {
-        Array.forall(i -> i > 3, [6,1]) == false
+    def forAll06(): Bool = region r {
+        Array.forAll(i -> i > 3, [6,1]) == false
     }
 
     @test
-    def forall07(): Bool = region r {
-        Array.forall(i -> i > 3, [16,6]) == true
+    def forAll07(): Bool = region r {
+        Array.forAll(i -> i > 3, [16,6]) == true
     }
 
     @test
-    def forall08(): Bool = region r {
-        Array.forall(i -> i > 3, [1,-9,3]) == false
+    def forAll08(): Bool = region r {
+        Array.forAll(i -> i > 3, [1,-9,3]) == false
     }
 
     @test
-    def forall09(): Bool = region r {
-        Array.forall(i -> i > 3, [1,9,3]) == false
+    def forAll09(): Bool = region r {
+        Array.forAll(i -> i > 3, [1,9,3]) == false
     }
 
     @test
-    def forall10(): Bool = region r {
-        Array.forall(i -> i > 3, [11,9,31]) == true
+    def forAll10(): Bool = region r {
+        Array.forAll(i -> i > 3, [11,9,31]) == true
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -4573,91 +4573,91 @@ namespace TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // foreach                                                                 //
+    // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool = region r {
+    def forEach01(): Bool = region r {
         let a = []: Array[Int32, _];
         let sb = new StringBuilder(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-        Array.foreach(fn, a);
+        Array.forEach(fn, a);
         StringBuilder.toString(sb) == ""
     }
 
     @test
-    def foreach02(): Bool = region r {
+    def forEach02(): Bool = region r {
         let a = [0];
         let sb = new StringBuilder(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-        Array.foreach(fn, a);
+        Array.forEach(fn, a);
         StringBuilder.toString(sb) == "F"
     }
 
     @test
-    def foreach03(): Bool = region r {
+    def forEach03(): Bool = region r {
         let a = [1];
         let sb = new StringBuilder(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-        Array.foreach(fn, a);
+        Array.forEach(fn, a);
         StringBuilder.toString(sb) == "T"
     }
 
     @test
-    def foreach04(): Bool = region r {
+    def forEach04(): Bool = region r {
         let a = [0,1];
         let sb = new StringBuilder(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-        Array.foreach(fn, a);
+        Array.forEach(fn, a);
         StringBuilder.toString(sb) == "FT"
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // foreachWithIndex                                                        //
+    // forEachWithIndex                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreachWithIndex01(): Bool = region r {
+    def forEachWithIndex01(): Bool = region r {
         let a = []: Array[Float32, _];
         let sb = new StringBuilder(r);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-        Array.foreachWithIndex(fn, a);
+        Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == ""
     }
 
     @test
-    def foreachWithIndex02(): Bool = region r {
+    def forEachWithIndex02(): Bool = region r {
         let a = [0.0];
         let sb = new StringBuilder(r);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-        Array.foreachWithIndex(fn, a);
+        Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "F"
     }
 
     @test
-    def foreachWithIndex03(): Bool = region r {
+    def forEachWithIndex03(): Bool = region r {
         let a = [0.0, 0.1];
         let sb = new StringBuilder(r);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-        Array.foreachWithIndex(fn, a);
+        Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FT"
     }
 
     @test
-    def foreachWithIndex04(): Bool = region r {
+    def forEachWithIndex04(): Bool = region r {
         let a = [0.0, 0.1, 0.2];
         let sb = new StringBuilder(r);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-        Array.foreachWithIndex(fn, a);
+        Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FTT"
     }
 
     @test
-    def foreachWithIndex05(): Bool = region r {
+    def forEachWithIndex05(): Bool = region r {
         let a = [0.0, 0.1, 0.2, 0.3];
         let sb = new StringBuilder(r);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-        Array.foreachWithIndex(fn, a);
+        Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FTTT"
     }
 

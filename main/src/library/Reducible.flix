@@ -166,13 +166,13 @@ pub class Reducible[t: Type -> Type] {
     ///
     /// Returns `true` if and only if all elements in `t` satisfy the predicate `f`.
     ///
-    pub def forall(f: a -> Bool \ ef, t: t[a]): Bool \ ef =
+    pub def forAll(f: a -> Bool \ ef, t: t[a]): Bool \ ef =
         Reducible.foldLeft((acc, a) -> f(a) and acc, true, t)
 
     ///
     /// Applies `f` to each element in `t`.
     ///
-    pub def foreach(f: a -> Unit \ ef, t: t[a]): Unit \ ef =
+    pub def forEach(f: a -> Unit \ ef, t: t[a]): Unit \ ef =
         Reducible.foldLeft((_, a) -> f(a), (), t)
 
     ///

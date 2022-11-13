@@ -117,7 +117,7 @@ namespace BenchmarkSet {
     ///
     @benchmark
     pub def benchmark17(): Bool =
-        Set.forall(x -> x < 24, Set.range(0, 24))
+        Set.forAll(x -> x < 24, Set.range(0, 24))
 
     ///
     /// create two sets of `Int32`, find their intersection and compute the size.
