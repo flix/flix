@@ -35,7 +35,12 @@ namespace Test/Import {
     let sb = newStringBuffer("Hello world");
     let subStr = subSequence(sb, 6, 11) as String;
     Assert.eq(subStr, "world")
-}
+
+  @test
+  def testImport04(): ##java.sql.Time \ IO =
+    import new java.sql.Time(Int64): ##java.sql.Time \ IO as newTime;
+    newTime(1000i64)
+  }
 
 namespace Test/Import {
   // Doesn't cause an error because different scope from above
