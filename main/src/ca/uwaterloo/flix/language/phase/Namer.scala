@@ -50,7 +50,8 @@ object Namer {
       effects = Map.empty,
       ops = Map.empty,
       entryPoint = program.entryPoint,
-      sources = locations
+      sources = locations,
+      names = program.names
     )
 
     // collect all the declarations.
@@ -2043,7 +2044,7 @@ object Namer {
     }
 
     Validation.flatMapN(merge1) {
-      case uenv2 => 
+      case uenv2 =>
         Validation.fold(imports, uenv2) {
           case (uenv3, WeededAst.Import.Import(name, alias, loc1)) =>
             lookupUpperName(alias, ns0, prog0, uenv3) match {
