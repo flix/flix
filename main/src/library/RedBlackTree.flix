@@ -387,7 +387,7 @@ namespace RedBlackTree {
                     if (f(k, v))
                         true
                     else
-                        par (left <- parExists((n - 2) / 2, f, a), // We divide the rest of the threads as follows:
+                        par (left <- parExists((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
                             right <- parExists((n - 2) / 2, f, b)) // We spawn two new threads leaving us with n - 2
                             yield left or right                    // that we distribute over the two spanned threads.
                 case _ => false
@@ -438,7 +438,7 @@ namespace RedBlackTree {
                     if (not f(k, v))
                         false
                     else
-                        par (left <- parForAll((n - 2) / 2, f, a), // We divide the rest of the threads as follows:
+                        par (left <- parForAll((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
                             right <- parForAll((n - 2) / 2, f, b)) // We spawn two new threads leaving us with n - 2
                             yield left and right                   // that we distribute over the two spanned threads.
                 case _ => false
@@ -644,8 +644,8 @@ namespace RedBlackTree {
                 case Leaf                   => Leaf
                 case DoubleBlackLeaf        => DoubleBlackLeaf
                 case Node(c, a, k, v, b)    =>
-                    par (left <- parMapWithKey((n - 2) / 2, f, a), // We divide the rest of the threads as follows:
-                        right <- parMapWithKey((n - 2) / 2, f, b), // We spawn two new threads leaving us with n - 2
+                    par (left <- parMapWithKey((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
+                        right <- parMapWithKey((n - 2) / 2, f, b); // We spawn two new threads leaving us with n - 2
                         this  <- f(k, v))                          // that we distribute over the two spanned threads.
                         yield Node(c, left, k, this, right)
             }
