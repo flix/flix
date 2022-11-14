@@ -763,14 +763,10 @@ object Deriver {
     * yields
     *
     * {{{
-    * instance Immutable[E[a]] with Immutable[a] {
-    *   pub def check(x: E[a]): Bool = x match {
-    *     case C1 => true
-    *     case C2(x) => isImmutable(x)
-    *     case C3(x, y) => isImmutable(x) and isImmutable(y)
-    *   }
-    * }
+    * instance Immutable[E[a]] with Immutable[a]
     * }}}
+    * 
+    * The instance is empty: checks are performed within safety.
     */
   private def mkImmutableInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
