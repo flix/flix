@@ -384,16 +384,12 @@ namespace RedBlackTree {
         else
             match t {
                 case Node(_, a, k, v, b) =>
-                    let (sL, rL) = Channel.buffered(1);
-                    let (sR, rR) = Channel.buffered(1);
                     if (f(k, v))
                         true
                     else {
-                        spawn (Channel.send(parExists((n - 2) / 2, f, a), sL)); // We divide the rest of the threads as follows:
-                        spawn (Channel.send(parExists((n - 2) / 2, f, b), sR)); // We spawn two new threads leaving us with n - 2
-                        let a1 = Channel.recv(rL);                              // that we distribute over the two spanned threads.
-                        let b1 = Channel.recv(rR);
-                        a1 or b1
+                        par (left <- parExists((n - 2) / 2, f, a), // We divide the rest of the threads as follows:
+                            right <- parExists((n - 2) / 2, f, b)) // We spawn two new threads leaving us with n - 2
+                            yield left or right                    // that we distribute over the two spanned threads.
                     }
                 case _ => false
             }
