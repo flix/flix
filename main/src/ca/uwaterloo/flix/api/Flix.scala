@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.net.URI
 import java.nio.charset.Charset
@@ -61,7 +62,7 @@ class Flix {
   private var cachedWeededAst: WeededAst.Root = WeededAst.Root(Map.empty, None)
   private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty)
   private var cachedResolvedAst: ResolvedAst.Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Map.empty)
-  private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty)
+  private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty, MultiMap.empty)
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
