@@ -150,12 +150,6 @@ object Unification {
   def liftM(tconstrs: List[Ast.TypeConstraint], tpe: Type, pur: Type, eff: Type): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] =
     InferMonad { case (s, renv) => Ok((s, renv, (tconstrs.map(s.apply), s(tpe), s(pur), s(eff)))) }
 
-  def foo(tpes1: List[Type], tpes2: List[Type], locs: List[SourceLocation])(implicit flix: Flix): InferMonad[Type] = (tpes1, tpes2, locs) match {
-    case (x :: xs, y :: ys, loc :: rs) => expectTypeM(expected = x, actual = y, loc).flatMap(_ => foo(xs, ys, rs))
-    case (Nil, Nil, _) => liftM(Type.Unit)
-    case _ => ???
-  }
-
   /**
     * Unifies the two given types `tpe1` and `tpe2` lifting their unified types and
     * associated substitution into the type inference monad.
@@ -213,13 +207,14 @@ object Unification {
     * Unifies the `expected` type with the `actual` type.
     */
   def expectTypeM(expected: Type, actual: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+    // Note: The handler should *NOT* use `expected` nor `actual` since they have not had their variables substituted.
     def handler(e: TypeError): TypeError = e match {
-      case mt: TypeError.MismatchedTypes =>
-        (expected.typeConstructor, actual.typeConstructor) match {
+      case TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, _) =>
+        (baseType1.typeConstructor, baseType2.typeConstructor) match {
           case (Some(TypeConstructor.Native(left)), Some(TypeConstructor.Native(right))) if left.isAssignableFrom(right) =>
             TypeError.PossibleUpcast(expected, actual, loc)
           case _ =>
-            TypeError.UnexpectedType(mt.baseType1, mt.baseType2, loc)
+            TypeError.UnexpectedType(baseType1, baseType2, loc)
         }
       case e => e
     }
@@ -295,6 +290,23 @@ object Unification {
   }
 
   /**
+    * Pairwise unifies the types in `tpes1` and `tpes2` with the corresponding source locations `locs`.
+    *
+    * Assumes that `tpes1`, `tpes2`, and `locs` have the same length.
+    */
+  def pairwiseUnifyM(tpes1: List[Type], tpes2: List[Type], locs: List[SourceLocation])(implicit flix: Flix): InferMonad[Type] =
+    (tpes1, tpes2, locs) match {
+      case (Nil, _, _) => liftM(Type.Unit)
+      case (_, Nil, _) => liftM(Type.Unit)
+      case (_, _, Nil) => liftM(Type.Unit)
+      case (x :: xs, y :: ys, loc :: rs) =>
+        for {
+          _ <- expectTypeM(expected = x, actual = y, loc)
+          _ <- pairwiseUnifyM(xs, ys, rs)
+        } yield Type.Unit
+    }
+
+  /**
     * Unifies the two given Boolean formulas `tpe1` and `tpe2`.
     */
   def unifyBoolM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
@@ -338,24 +350,36 @@ object Unification {
   }
 
   /**
-    * Removes the given type variable from the substitution.
+    * Removes the given type variable `tvar` from the substitution.
     *
     * NB: Use with EXTREME CAUTION.
     */
   def unbindVar(tvar: Type.Var): InferMonad[Unit] =
-    InferMonad { case (s, renv) => {
-      Ok((s.unbind(tvar.sym), renv, ()))
+    InferMonad {
+      case (s, renv) => Ok((s.unbind(tvar.sym), renv, ()))
     }
-    }
+
+  /**
+    * Removes the given type variables `tvars` from the substitution.
+    *
+    * NB: Use with EXTREME CAUTION.
+    */
+  def unbindVars(tvars: List[Type.Var]): InferMonad[Unit] = tvars match {
+    case Nil => InferMonad.PointUnit
+    case x :: xs =>
+      for {
+        _ <- unbindVar(x)
+        _ <- unbindVars(xs)
+      } yield ()
+  }
 
   /**
     * Purifies the given effect `eff` in the type inference monad.
     */
   def purifyEffM(tvar: Type.Var, eff: Type): InferMonad[Type] =
-    InferMonad { case (s, renv) => {
+    InferMonad { case (s, renv) =>
       val purifiedEff = purify(tvar, s(eff))
       Ok((s, renv, purifiedEff))
-    }
     }
 
   /**

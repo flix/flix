@@ -573,14 +573,14 @@ object Typer {
         for {
           (constrs1, tpe, pur, eff) <- visitExp(exp)
           (constrs2, tpes, purs, effs) <- traverseM(exps)(visitExp).map(unzip4)
-          //lambdaType <- unifyTypeM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyPur, lambdaBodyEff, lambdaBodyType, loc), loc)
           _ <- unifyTypeM(tpe, Type.mkUncurriedArrowWithEffect(argTypeVars, lambdaBodyPur, lambdaBodyEff, lambdaBodyType, loc), loc)
-          _ <- foo(argTypeVars, tpes, exps.map(_.loc))
+          _ <- pairwiseUnifyM(argTypeVars, tpes, exps.map(_.loc))
           resultTyp <- unifyTypeM(tvar, lambdaBodyType, loc)
           resultPur <- unifyBoolM(pvar, Type.mkAnd(lambdaBodyPur :: pur :: purs, loc), loc)
           resultEff <- unifyTypeM(evar, Type.mkUnion(lambdaBodyEff :: eff :: effs, loc), loc)
           _ <- unbindVar(lambdaBodyType) // NB: Safe to unbind since the variable is not used elsewhere.
           _ <- unbindVar(lambdaBodyPur) // NB: Safe to unbind since the variable is not used elsewhere.
+          _ <- unbindVars(argTypeVars) // NB: Safe to unbind since the variables are not used elsewhere.
         } yield (constrs1 ++ constrs2.flatten, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.Unary(sop, exp, tvar, loc) => sop match {
