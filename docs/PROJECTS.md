@@ -1,32 +1,42 @@
 # Project Proposals
 
-This is a list of projects that are currently open for exploration.
+Here is a list of projects that are currently open for exploration.
 
 If you are interested in working on any of these projects, feel free to reach
 out to us on Gitter. If you are a bachelor or master student at Aarhus
 University you can reach out to Magnus directly. 
 
 ## Code Formatting
-A significant part of compiler design focuses on the parser; the phase that turns
-source code text into abstract syntax trees, but the opposite direction is often
-forgotten: the code formatter that turns abstract syntax trees back into neatly
-formatted source code. Today, programming languages like Go, IDEs like Intellij IDEA,
-and linters all offer support for automatic code re-formatting.
+A significant part of compiler implementation focuses on the parser: the
+compiler phase that turns source code text into abstract syntax trees. However,
+the opposite direction is often forgotten: the code formatter that turns
+abstract syntax trees back into neatly formatted source code text. Today,
+programming languages like Go, IDEs like Intellij IDEA, and linters all come
+with built-in support for code formatting.
 
-The aim of this project is to explore different strategies for code formatters,
-i.e. pretty printers. This turns out to part art and part science.
-The work will include reading papers, language design, and implementation 
-in a real-world programming language being developed
-at Aarhus University (see flix.dev).
+This project aims to explore different strategies for code formatters and
+experiment with the implementation of such formatters. This project is genuinely
+part art and part science.
+
+The project offers the opportunity to read research papers, work on language
+design, and work on a real-world programming language developed at Aarhus
+University and by a community of open-source contributors (see www.flix.dev).
 
 ## Sub-Effecting
 
-TBD
+A type system characterizes the values of an expression, whereas an effect
+system characterizes the computational side effects of an expression.
+Programming languages with subtyping allows a more specific type to be used
+where a less precise type is required (e.g., passing a Student object where a
+Person object is expected). Similarly, sub-effecting allows a function with a
+more specific effect to be passed where a less precise effect is expected.
 
-Change to declarative system?
-Change to W?
-Simplify types with free variables?
+This project aims to explore different strategies for designing and implementing
+sub-effecting in a programming language focusing on type and effect inference.
 
+The project offers the opportunity to read research papers, work on language
+design, and work on a real-world programming language developed at Aarhus
+University and by a community of open-source contributors (see www.flix.dev).
 
 ## Tail Recursion Modulo Cons
 
@@ -36,9 +46,11 @@ filter to as-efficient as if written in impure, imperative programming languages
 
 The project aims to explore topics such as tail calls, tail call elimination,
 and in particular the special form of Tail Recursion Modulo Cons (TRMC).
-The work will include reading papers, language
-design, and implementation in a real-world programming language being developed
-at Aarhus University (see flix.dev).
+
+The project offers the opportunity to read research papers, work on language
+design, and work on a real-world programming language developed at Aarhus
+University and by a community of open-source contributors (see www.flix.dev).
+
 
 ## Termination Analysis
 A common programming mistake is to unintentional write an infinite loop. Most
@@ -52,11 +64,8 @@ termination by verifying that recursion is always on structurally smaller
 elements. 
 
 The aim of this project is to explore the design space of termination analysis
-for a functional language. The work will include reading papers, language
-design, and implementation in a real-world programming language being developed
-at Aarhus University (see flix.dev).
+for a functional language.
 
-## Record-Replay
-
-## Capture Control
-
+The project offers the opportunity to read research papers, work on language
+design, and work on a real-world programming language developed at Aarhus
+University and by a community of open-source contributors (see www.flix.dev). 
