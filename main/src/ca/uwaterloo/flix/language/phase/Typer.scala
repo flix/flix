@@ -32,6 +32,7 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, mapN, traverse}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.ListOps.unzip4
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.io.PrintWriter
 
@@ -52,8 +53,47 @@ object Typer {
     Validation.mapN(classesVal, instancesVal, defsVal, enumsVal, effsVal) {
       case (classes, instances, defs, enums, effs) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
-        TypedAst.Root(classes, instances, sigs, defs, enums, effs, typeAliases, root.entryPoint, root.sources, classEnv)
+        val modules = collectModules(root)
+        val names = MultiMap.empty[List[String], String]
+        TypedAst.Root(modules, classes, instances, sigs, defs, enums, effs, typeAliases, root.entryPoint, root.sources, classEnv, names)
     }
+  }
+
+  /**
+    * Collects the symbols in the given root into a map.
+    */
+  private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, List[Symbol]] = root match {
+    case KindedAst.Root(classes, _, defs, enums, effects, typeAliases, _, _) =>
+      val sigs = classes.values.flatMap { clazz => clazz.sigs.values.map(_.sym) }
+      val ops = effects.values.flatMap{ eff => eff.ops.map(_.sym) }
+
+      val syms = classes.keys ++ defs.keys ++ enums.keys ++ effects.keys ++ typeAliases.keys ++ sigs ++ ops
+
+      val groups = syms.groupBy {
+        case sym: Symbol.DefnSym => new Symbol.ModuleSym(sym.namespace)
+        case sym: Symbol.EnumSym => new Symbol.ModuleSym(sym.namespace)
+        case sym: Symbol.ClassSym => new Symbol.ModuleSym(sym.namespace)
+        case sym: Symbol.TypeAliasSym => new Symbol.ModuleSym(sym.namespace)
+        case sym: Symbol.EffectSym => new Symbol.ModuleSym(sym.namespace)
+
+        case sym: Symbol.SigSym => new Symbol.ModuleSym(sym.clazz.namespace :+ sym.clazz.name)
+        case sym: Symbol.OpSym => new Symbol.ModuleSym(sym.eff.namespace :+ sym.eff.name)
+
+        case sym: Symbol.InstanceSym => throw InternalCompilerException(s"unexpected symbol: $sym")
+        case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym")
+        case sym: Symbol.ModuleSym => throw InternalCompilerException(s"unexpected symbol: $sym")
+        case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol: $sym")
+        case sym: Symbol.TypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym")
+        case sym: Symbol.KindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym")
+        case sym: Symbol.UnkindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym")
+        case sym: Symbol.LabelSym => throw InternalCompilerException(s"unexpected symbol: $sym")
+        case sym: Symbol.HoleSym => throw InternalCompilerException(s"unexpected symbol: $sym")
+      }
+
+      groups.map {
+        case (k, v) => (k, v.toList)
+      }
+
   }
 
   /**
