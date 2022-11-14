@@ -848,7 +848,7 @@ namespace DelayMap {
             case Pure(g) =>
                 if (useParallelEvaluation(m))
                     let h = (k, v) -> g((k, force v));
-                    RedBlackTree.parSumWith(threads() - 1, h, t) as \ {}
+                    RedBlackTree.parSumWith(threads() - 1, h, t)
                 else
                     sw()
             case _ => sw()

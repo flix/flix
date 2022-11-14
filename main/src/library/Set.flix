@@ -390,7 +390,7 @@ namespace Set {
         reifyEff(f) {
             case Pure(g) =>
                 if (useParallelEvaluation(s))
-                    RedBlackTree.parSumWith(threads() - 1, (k, _) -> g(k), t) as \ {}
+                    RedBlackTree.parSumWith(threads() - 1, (k, _) -> g(k), t)
                 else
                     sw()
             case _ => sw()

@@ -654,7 +654,7 @@ namespace Map {
         reifyEff(f1) {
             case Pure(g) =>
                 if (useParallelEvaluation(m))
-                    RedBlackTree.parSumWith(threads() - 1, (k, v) -> g((k, v)), t) as \ {}
+                    RedBlackTree.parSumWith(threads() - 1, (k, v) -> g((k, v)), t)
                 else
                     sw()
             case _ => sw()
