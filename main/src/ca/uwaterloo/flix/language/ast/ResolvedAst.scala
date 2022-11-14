@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -30,7 +31,8 @@ object ResolvedAst {
                   typeAliases: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias],
                   taOrder: List[Symbol.TypeAliasSym],
                   entryPoint: Option[Symbol.DefnSym],
-                  sources: Map[Source, SourceLocation])
+                  sources: Map[Source, SourceLocation],
+                  names: MultiMap[List[String], String])
 
   // TODO use ResolvedAst.Law for laws
   case class Class(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: ResolvedAst.TypeParam, superClasses: List[ResolvedAst.TypeConstraint], sigs: Map[Symbol.SigSym, ResolvedAst.Sig], laws: List[ResolvedAst.Def], loc: SourceLocation)
@@ -193,10 +195,6 @@ object ResolvedAst {
     case class FixpointInject(exp: ResolvedAst.Expression, pred: Name.Pred, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class FixpointProject(pred: Name.Pred, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Reify(t: UnkindedType, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class ReifyType(t: UnkindedType, k: Kind, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class ReifyEff(sym: Symbol.VarSym, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, exp3: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 

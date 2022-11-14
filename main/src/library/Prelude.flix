@@ -11,35 +11,6 @@ pub enum Proxy[_] {
 }
 
 ///
-/// The Reified Flix Bools.
-///
-pub enum ReifiedBool with Eq, Order, ToString {
-    case ErasedBool,
-    case ReifiedTrue,
-    case ReifiedFalse
-}
-
-///
-/// The Reified Flix Types.
-///
-pub enum ReifiedType with Eq, Order, ToString {
-    case ErasedType,
-    case ReifiedUnit,
-    case ReifiedBool,
-    case ReifiedChar,
-    case ReifiedFloat32,
-    case ReifiedFloat64,
-    case ReifiedBigDecimal,
-    case ReifiedInt8,
-    case ReifiedInt16,
-    case ReifiedInt32,
-    case ReifiedInt64,
-    case ReifiedBigInt,
-    case ReifiedString,
-    case ReifiedArray(ReifiedType)
-}
-
-///
 /// The Generic IO Effect.
 ///
 /// The `IO` effect is the most general effect of any
@@ -210,8 +181,8 @@ pub def space(_: a -> Int32): Int32 = 1
 ///
 @Internal
 pub def printUnlessUnit(x: a): Unit \ IO with ToString[a] = {
-    match (reifyType a) {
-        case ReifiedUnit => ()
-        case _ => println(x)
+    typematch x {
+        case _: Unit => ()
+        case _: _ => println(x)
     }
 }

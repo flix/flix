@@ -45,8 +45,8 @@ object Weeder {
     "Read", "RecordRow", "Region", "SchemaRow", "Type", "Write", "^^^", "alias", "case", "catch", "chan",
     "class", "def", "deref", "else", "enum", "false", "fix", "force",
     "if", "import", "inline", "instance", "into", "lat", "law", "lawful", "lazy", "let", "let*", "match",
-    "namespace", "null", "opaque", "override", "pub", "ref", "region", "reify",
-    "reifyBool", "reifyEff", "reifyType", "rel", "sealed", "set", "spawn", "Static", "true",
+    "namespace", "null", "opaque", "override", "pub", "ref", "region",
+    "reifyEff", "reifyType", "rel", "sealed", "set", "spawn", "Static", "true",
     "type", "use", "where", "with", "|||", "~~~", "discard", "object"
   )
 
@@ -69,7 +69,7 @@ object Weeder {
           val m = rs.foldLeft(fresh) {
             case (acc, (k, v)) => acc + (k -> v)
           }
-          WeededAst.Root(m, root.entryPoint)
+          WeededAst.Root(m, root.entryPoint, root.names)
       }
     }
 
@@ -1326,10 +1326,10 @@ object Weeder {
       mapN(visitExp(exp1, senv), visitExp(exp2, senv)) {
         case (e1, e2) =>
           val loc = mkSL(sp1, sp2)
-          val enum0 = Name.mkQName("List", sp1, sp2)
+          val enum = Name.mkQName("List", sp1, sp2)
           val tag = Name.Ident(sp1, "Cons", sp2)
           val exp = WeededAst.Expression.Tuple(List(e1, e2), loc)
-          WeededAst.Expression.Tag(Some(enum0), tag, Some(exp), loc)
+          WeededAst.Expression.Tag(Some(enum), tag, Some(exp), loc)
       }
 
     case ParsedAst.Expression.FAppend(exp1, sp1, sp2, exp2) =>
@@ -1753,18 +1753,6 @@ object Weeder {
           WeededAst.Expression.FixpointProject(pred, queryExp, dbExp, loc)
       }
 
-    case ParsedAst.Expression.Reify(sp1, t0, sp2) =>
-      val t = visitType(t0)
-      WeededAst.Expression.Reify(t, mkSL(sp1, sp2)).toSuccess
-
-    case ParsedAst.Expression.ReifyBool(sp1, t0, sp2) =>
-      val t = visitType(t0)
-      WeededAst.Expression.ReifyType(t, Kind.Bool, mkSL(sp1, sp2)).toSuccess
-
-    case ParsedAst.Expression.ReifyType(sp1, t0, sp2) =>
-      val t = visitType(t0)
-      WeededAst.Expression.ReifyType(t, Kind.Star, mkSL(sp1, sp2)).toSuccess
-
     case ParsedAst.Expression.ReifyPurity(sp1, exp1, ident, exp2, exp3, sp2) =>
       mapN(visitExp(exp1, senv), visitExp(exp2, senv), visitExp(exp3, senv)) {
         case (e1, e2, e3) =>
@@ -2151,10 +2139,10 @@ object Weeder {
         mapN(visitPattern(pat1), visitPattern(pat2)) {
           case (hd, tl) =>
             val loc = mkSL(sp1, sp2)
-            val enum0 = Name.mkQName("List", sp1, sp2)
+            val enum = Name.mkQName("List", sp1, sp2)
             val tag = Name.Ident(sp1, "Cons", sp2)
             val pat = WeededAst.Pattern.Tuple(List(hd, tl), loc)
-            WeededAst.Pattern.Tag(Some(enum0), tag, pat, loc)
+            WeededAst.Pattern.Tag(Some(enum), tag, pat, loc)
         }
 
     }
@@ -3055,9 +3043,6 @@ object Weeder {
     case ParsedAst.Expression.FixpointInjectInto(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, _, _, _, _, _) => sp1
-    case ParsedAst.Expression.Reify(sp1, _, _) => sp1
-    case ParsedAst.Expression.ReifyBool(sp1, _, _) => sp1
-    case ParsedAst.Expression.ReifyType(sp1, _, _) => sp1
     case ParsedAst.Expression.ReifyPurity(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.Debug(sp1, _, _, _) => sp1
   }

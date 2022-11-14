@@ -231,8 +231,6 @@ object PatternExhaustiveness {
       case Expression.FixpointFilter(_, exp, _, _, _, _) => visitExp(exp, root)
       case Expression.FixpointInject(exp, _, _, _, _, _) => visitExp(exp, root)
       case Expression.FixpointProject(_, exp, _, _, _, _) => visitExp(exp, root)
-      case Expression.Reify(_, _, _, _, _) => Nil
-      case Expression.ReifyType(_, _, _, _, _, _) => Nil
       case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) => List(exp1, exp2, exp3).flatMap(visitExp(_, root))
     }
   }

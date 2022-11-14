@@ -19,12 +19,14 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, EliminatedBy, Source}
 import ca.uwaterloo.flix.language.dbg.{FormatExpression, FormatPattern}
 import ca.uwaterloo.flix.language.phase.Lowering
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.lang.reflect.{Constructor, Field, Method}
 
 object TypedAst {
 
-  case class Root(classes: Map[Symbol.ClassSym, TypedAst.Class],
+  case class Root(modules: Map[Symbol.ModuleSym, List[Symbol]],
+                  classes: Map[Symbol.ClassSym, TypedAst.Class],
                   instances: Map[Symbol.ClassSym, List[TypedAst.Instance]],
                   sigs: Map[Symbol.SigSym, TypedAst.Sig],
                   defs: Map[Symbol.DefnSym, TypedAst.Def],
@@ -33,7 +35,8 @@ object TypedAst {
                   typeAliases: Map[Symbol.TypeAliasSym, TypedAst.TypeAlias],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  classEnv: Map[Symbol.ClassSym, Ast.ClassContext])
+                  classEnv: Map[Symbol.ClassSym, Ast.ClassContext],
+                  names: MultiMap[List[String], String])
 
   case class Class(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: TypedAst.TypeParam, superClasses: List[Ast.TypeConstraint], signatures: List[TypedAst.Sig], laws: List[TypedAst.Def], loc: SourceLocation)
 
@@ -271,10 +274,6 @@ object TypedAst {
     case class FixpointInject(exp: TypedAst.Expression, pred: Name.Pred, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class FixpointProject(pred: Name.Pred, exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-
-    case class Reify(t: Type, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-
-    case class ReifyType(t: Type, k: Kind, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class ReifyEff(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
