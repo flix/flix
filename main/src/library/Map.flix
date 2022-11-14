@@ -708,7 +708,7 @@ namespace Map {
         reifyEff(f1) {
             case Pure(g) =>
                 if (useParallelEvaluation(m))
-                    RedBlackTree.parExists(threads() - 1, (k, v) -> g((k, v)), t) as \ {}
+                    RedBlackTree.parExists(threads() - 1, (k, v) -> g((k, v)), t)
                 else
                     e()
             case _ => e()
