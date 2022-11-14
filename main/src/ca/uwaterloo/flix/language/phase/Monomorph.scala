@@ -20,14 +20,12 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.ReificationError
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
-import java.math.BigDecimal
-import java.math.BigInteger
 import scala.collection.mutable
 
 /**
@@ -101,14 +99,6 @@ object Monomorph {
       */
     def nonStrict: Substitution = s
   }
-
-  /**
-    * An exception raised to indicate that a regular type cannot be reified.
-    *
-    * @param tpe the type that cannot be reified.
-    * @param loc the location of the type.
-    */
-  case class ReifyTypeException(tpe: Type, loc: SourceLocation) extends RuntimeException
 
   /**
     * An exception raised to indicate that the Monomorpher encountered an unexpected non-constant Boolean.
@@ -236,7 +226,6 @@ object Monomorph {
         defs = specializedDefns.toMap
       ).toSuccess
     } catch {
-      case ReifyTypeException(tpe, loc) => ReificationError.IllegalReifiedType(tpe, loc).toFailure
       case UnexpectedNonConstBool(tpe, loc) => ReificationError.UnexpectedNonConstBool(tpe, loc).toFailure
     }
   }
@@ -351,14 +340,14 @@ object Monomorph {
         rules.collectFirst {
           case MatchTypeRule(sym, t, body0)
             if Unification.unifiesWith(expTpe, subst0.nonStrict(t), renv) =>
-              // Generate a fresh symbol for the let-bound variable.
-              val freshSym = Symbol.freshVarSym(sym)
-              val env1 = env0 + (sym -> freshSym)
-              val e = visitExp(exp, env0)
-              val body = visitExp(body0, env1)
-              val pur = Type.mkAnd(exp.pur, body0.pur, loc.asSynthetic)
-              val eff = Type.mkUnion(exp.eff, body0.eff, loc.asSynthetic)
-              Expression.Let(freshSym, Modifiers.Empty, e, body, subst0(tpe), pur, eff, loc)
+            // Generate a fresh symbol for the let-bound variable.
+            val freshSym = Symbol.freshVarSym(sym)
+            val env1 = env0 + (sym -> freshSym)
+            val e = visitExp(exp, env0)
+            val body = visitExp(body0, env1)
+            val pur = Type.mkAnd(exp.pur, body0.pur, loc.asSynthetic)
+            val eff = Type.mkUnion(exp.eff, body0.eff, loc.asSynthetic)
+            Expression.Let(freshSym, Modifiers.Empty, e, body, subst0(tpe), pur, eff, loc)
 
         }.getOrElse(throw InternalCompilerException("Unexpected typematch failure."))
 
@@ -597,13 +586,6 @@ object Monomorph {
       case Expression.FixpointProject(_, _, _, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
-      case Expression.ReifyType(t, k, _, _, _, loc) =>
-        k match {
-          case Kind.Bool => reifyBool(subst0(t), loc)
-          case Kind.Star => reifyType(subst0(t), loc)
-          case _ => throw InternalCompilerException(s"Unexpected kind: $k.")
-        }
-
       case Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, _, loc) =>
         // Magic!
         val arrowTpe = subst0(exp1.tpe)
@@ -818,113 +800,6 @@ object Monomorph {
     case ConstraintParam.RuleParam(sym, tpe, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       (ConstraintParam.RuleParam(freshSym, subst0(tpe), loc), Map(sym -> freshSym))
-  }
-
-  /**
-    * Returns an expression that evaluates to a ReifiedBool for the given type `tpe`.
-    */
-  private def reifyBool(tpe: Type, loc: SourceLocation): Expression = {
-    val sym = Symbol.mkEnumSym("ReifiedBool")
-    val resultTpe = Type.mkEnum(sym, Kind.Star, loc)
-    val resultPur = Type.Pure
-    val resultEff = Type.Empty
-
-    tpe.typeConstructor match {
-      case None =>
-        throw ReifyTypeException(tpe, loc)
-
-      case Some(tc) => tc match {
-        case TypeConstructor.True =>
-          val caseSym = new Symbol.CaseSym(sym, "ReifiedTrue", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc.asSynthetic), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
-
-        case TypeConstructor.False =>
-          val caseSym = new Symbol.CaseSym(sym, "ReifiedFalse", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc.asSynthetic), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
-
-        case _ =>
-          val caseSym = new Symbol.CaseSym(sym, "ErasedBool", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc.asSynthetic), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
-      }
-    }
-  }
-
-  /**
-    * Returns an expression that evaluates to a ReifiedType for the given type `tpe`.
-    */
-  private def reifyType(tpe: Type, loc: SourceLocation): Expression = {
-    val sym = Symbol.mkEnumSym("ReifiedType")
-    val resultTpe = Type.mkEnum(sym, Kind.Star, loc)
-    val resultPur = Type.Pure
-    val resultEff = Type.Empty
-
-    def visit(t0: Type): Expression = t0.typeConstructor match {
-      case None =>
-        throw ReifyTypeException(tpe, loc)
-
-      case Some(tc) => tc match {
-        case TypeConstructor.Unit =>
-          val caseSym = new Symbol.CaseSym(sym, "ReifiedUnit", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
-
-        case TypeConstructor.Bool =>
-          val caseSym = new Symbol.CaseSym(sym, "ReifiedBool", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
-
-        case TypeConstructor.Char =>
-          val caseSym = new Symbol.CaseSym(sym, "ReifiedChar", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
-
-        case TypeConstructor.Float32 =>
-          val caseSym = new Symbol.CaseSym(sym, "ReifiedFloat32", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
-
-        case TypeConstructor.Float64 =>
-          val caseSym = new Symbol.CaseSym(sym, "ReifiedFloat64", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
-
-        case TypeConstructor.BigDecimal =>
-          val caseSym = new Symbol.CaseSym(sym, "ReifiedBigDecimal", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
-
-        case TypeConstructor.Int8 =>
-          val caseSym = new Symbol.CaseSym(sym, "ReifiedInt8", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
-
-        case TypeConstructor.Int16 =>
-          val caseSym = new Symbol.CaseSym(sym, "ReifiedInt16", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
-
-        case TypeConstructor.Int32 =>
-          val caseSym = new Symbol.CaseSym(sym, "ReifiedInt32", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
-
-        case TypeConstructor.Int64 =>
-          val caseSym = new Symbol.CaseSym(sym, "ReifiedInt64", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
-
-        case TypeConstructor.BigInt =>
-          val caseSym = new Symbol.CaseSym(sym, "ReifiedBigInt", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
-
-        case TypeConstructor.Str =>
-          val caseSym = new Symbol.CaseSym(sym, "ReifiedString", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
-
-        case TypeConstructor.Array =>
-          val caseSym = new Symbol.CaseSym(sym, "ReifiedArray", SourceLocation.Unknown)
-          val innerTpe = Type.eraseAliases(t0).typeArguments.head
-          val innerExp = visit(innerTpe)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), innerExp, resultTpe, resultPur, resultEff, loc)
-
-        case _ =>
-          val caseSym = new Symbol.CaseSym(sym, "ErasedType", SourceLocation.Unknown)
-          Expression.Tag(Ast.CaseSymUse(caseSym, loc), Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), resultTpe, resultPur, resultEff, loc)
-
-      }
-    }
-
-    visit(tpe)
   }
 
   /**

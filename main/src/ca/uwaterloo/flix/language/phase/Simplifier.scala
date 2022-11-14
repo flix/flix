@@ -299,9 +299,6 @@ object Simplifier {
       case TypedAst.Expression.FixpointProject(_, _, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
-      case TypedAst.Expression.ReifyType(_, _, _, _, _, _) =>
-        throw InternalCompilerException(s"Unexpected expression: $exp0.")
-
       case TypedAst.Expression.ReifyEff(_, _, _, _, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
