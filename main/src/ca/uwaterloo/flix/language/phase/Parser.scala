@@ -46,7 +46,7 @@ object Parser {
           val m = as.foldLeft(fresh) {
             case (acc, (src, u)) => acc + (src -> u)
           }
-          ParsedAst.Root(m, entryPoint)
+          ParsedAst.Root(m, entryPoint, root.names)
       }
     }
 
