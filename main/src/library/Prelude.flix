@@ -210,8 +210,8 @@ pub def space(_: a -> Int32): Int32 = 1
 ///
 @Internal
 pub def printUnlessUnit(x: a): Unit \ IO with ToString[a] = {
-    match (reifyType a) {
-        case ReifiedUnit => ()
-        case _ => println(x)
+    typematch x {
+        case _: Unit => ()
+        case _: _ => println(x)
     }
 }
