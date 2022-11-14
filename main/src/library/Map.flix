@@ -228,7 +228,7 @@ namespace Map {
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
                     let Map(t) = m;
-                    RedBlackTree.parMinimumBy(threads() - 1, h, t) as \ {}
+                    RedBlackTree.parMinimumBy(threads() - 1, h, t)
                 else
                     min()
             case _ => min()
@@ -259,7 +259,7 @@ namespace Map {
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g({vl = vl, vr = vr});
                     let Map(t) = m;
-                    RedBlackTree.parMinimumBy(threads() - 1, h, t) as \ {}
+                    RedBlackTree.parMinimumBy(threads() - 1, h, t)
                 else
                     min()
             case _ => min()
@@ -290,7 +290,7 @@ namespace Map {
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
                     let Map(t) = m;
-                    RedBlackTree.parMaximumBy(threads() - 1, h, t) as \ {}
+                    RedBlackTree.parMaximumBy(threads() - 1, h, t)
                 else
                     max()
             case _ => max()
@@ -321,7 +321,7 @@ namespace Map {
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g({vl = vl, vr = vr});
                     let Map(t) = m;
-                    RedBlackTree.parMaximumBy(threads() - 1, h, t) as \ {}
+                    RedBlackTree.parMaximumBy(threads() - 1, h, t)
                 else
                     max()
             case _ => max()

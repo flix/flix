@@ -204,7 +204,7 @@ namespace DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
                     let DMap(t) = m;
-                    let res = RedBlackTree.parMinimumBy(threads() - 1, h, t) as \ {};
+                    let res = RedBlackTree.parMinimumBy(threads() - 1, h, t);
                     match res {
                         case None       => None
                         case Some(k, v) => Some(k, force v)
@@ -238,7 +238,7 @@ namespace DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g({vl = force vl, vr = force vr});
                     let DMap(t) = m;
-                    let res = RedBlackTree.parMinimumBy(threads() - 1, h, t) as \ {};
+                    let res = RedBlackTree.parMinimumBy(threads() - 1, h, t);
                     match res {
                         case None       => None
                         case Some(k, v) => Some(k, force v)
@@ -277,7 +277,7 @@ namespace DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
                     let DMap(t) = m;
-                    let res = RedBlackTree.parMaximumBy(threads() - 1, h, t) as \ {};
+                    let res = RedBlackTree.parMaximumBy(threads() - 1, h, t);
                     match res {
                         case None       => None
                         case Some(k, v) => Some(k, force v)
@@ -312,7 +312,7 @@ namespace DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g({vl = force vl, vr = force vr});
                     let DMap(t) = m;
-                    let res = RedBlackTree.parMaximumBy(threads() - 1, h, t) as \ {};
+                    let res = RedBlackTree.parMaximumBy(threads() - 1, h, t);
                     match res {
                         case None       => None
                         case Some(k, v) => Some(k, force v)

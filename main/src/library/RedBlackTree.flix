@@ -908,7 +908,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parMinimumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] \ IO =
+    pub def parMinimumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] =
         parLimitBy(n, (kl, vl, kr, vr) -> if (cmp(kl, vl, kr, vr) == LessThan) (kl, vl) else (kr, vr), t)
 
     ///
@@ -920,7 +920,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parMaximumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] \ IO =
+    pub def parMaximumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] =
         parLimitBy(n, (kl, vl, kr, vr) -> if (cmp(kl, vl, kr, vr) == GreaterThan) (kl, vl) else (kr, vr), t)
 
     ///
@@ -934,7 +934,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    def parLimitBy(n: Int32, cmp: (k, v, k, v) -> (k, v), t: RedBlackTree[k, v]): Option[(k, v)] \ IO =
+    def parLimitBy(n: Int32, cmp: (k, v, k, v) -> (k, v), t: RedBlackTree[k, v]): Option[(k, v)] =
         if (n <= 0)
             seqLimitBy(cmp, t)
         else
@@ -942,22 +942,16 @@ namespace RedBlackTree {
                 case Leaf                => None
                 case DoubleBlackLeaf     => None
                 case Node(_, a, k, v, b) =>
-                    let (sL, rL) = Channel.buffered(1);
-                    let (sR, rR) = Channel.buffered(1);
-                    spawn (Channel.send(parLimitBy((n - 2) / 2, cmp, a), sL));
-                    spawn (Channel.send(parLimitBy((n - 2) / 2, cmp, b), sR));
-                    let a1 = Channel.recv(rL);
-                    let res = match a1 {
-                        case None         => (k, v)
-                        case Some(kl, vl) => cmp(kl, vl, k, v)
-                    };
-                    let b1 = Channel.recv(rR);
-                    match b1 {
-                        case None         => Some(res)
-                        case Some(kr, vr) =>
-                            let (ks, vs) = res;
-                            Some(cmp(ks, vs, kr, vr))
-                    }
+                    par (left <- parLimitBy((n - 2) / 2, cmp, a); // We divide the rest of the threads as follows:
+                        right <- parLimitBy((n - 2) / 2, cmp, b)) // We spawn two new threads leaving us with n - 2
+                        yield match (left, right) {               // that we distribute over the two spanned threads.
+                            case (None, None)                 => Some(k, v)
+                            case (None, Some(kr, vr))         => Some(cmp(k, v, kr, vr))
+                            case (Some(kl, vl), None)         => Some(cmp(kl, vl, k, v))
+                            case (Some(kl, vl), Some(kr, vr)) =>
+                                let (km, vm) = cmp(kl, vl, k, v); // Compare "lesser" keys first
+                                Some(cmp(km, vm, kr, vr))
+                        }
             }
 
     ///

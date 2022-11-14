@@ -224,7 +224,7 @@ namespace Set {
                 if (useParallelEvaluation(s))
                     let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
                     let Set(t) = s;
-                    let o = RedBlackTree.parMinimumBy(threads() - 1, h, t) as \ {};
+                    let o = RedBlackTree.parMinimumBy(threads() - 1, h, t);
                     Option.map(fst, o)
                 else
                     min()
@@ -256,7 +256,7 @@ namespace Set {
                 if (useParallelEvaluation(s))
                     let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
                     let Set(t) = s;
-                    let o = RedBlackTree.parMaximumBy(threads() - 1, h, t) as \ {};
+                    let o = RedBlackTree.parMaximumBy(threads() - 1, h, t);
                     Option.map(fst, o)
                 else
                     max()
