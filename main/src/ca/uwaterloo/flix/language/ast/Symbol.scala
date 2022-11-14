@@ -636,7 +636,7 @@ object Symbol {
   /**
     * Module symbol.
     */
-  final class ModuleSym(val ns: List[String], val loc: SourceLocation) extends Symbol {
+  final class ModuleSym(val ns: List[String]) extends Symbol {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
