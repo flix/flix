@@ -9,14 +9,11 @@ import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.{SafetyError, TypeError}
 import ca.uwaterloo.flix.language.errors.SafetyError._
-import ca.uwaterloo.flix.language.phase.unification.Unification
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Unification}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.annotation.tailrec
-import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
-import ca.uwaterloo.flix.language.ast.Ast
 
 /**
   * Performs safety and well-formedness checks on:
