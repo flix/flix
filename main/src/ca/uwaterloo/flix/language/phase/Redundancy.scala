@@ -716,9 +716,6 @@ object Redundancy {
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.Reify(_, _, _, _, _) =>
-      Used.empty
-
     case Expression.ReifyType(_, _, _, _, _, _) =>
       Used.empty
 

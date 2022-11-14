@@ -301,9 +301,6 @@ object CodeHinter {
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Reify(_, _, _, _, _) =>
-      Nil
-
     case Expression.ReifyType(_, _, _, _, _, _) =>
       Nil
 
