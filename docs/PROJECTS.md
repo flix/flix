@@ -40,12 +40,14 @@ University and by a community of open-source contributors (see www.flix.dev).
 
 ## Tail Recursion Modulo Cons
 
-Tail Recursion Modulo Cons (TRMC) is an important optimization for pure
-functional programming languages that allow common functions such as `map` and
-filter to as-efficient as if written in impure, imperative programming languages.
+Tail Recursion Modulo Cons (TRMC) is an essential optimization for functional
+programming languages that enable very efficient compilation of common functions
+such as map and filter. The key idea is the compilation of recursive functions
+into imperative while-loops that operate on mutable data (even though the
+functional program operates on immutable data).
 
-The project aims to explore topics such as tail calls, tail call elimination,
-and in particular the special form of Tail Recursion Modulo Cons (TRMC).
+This project aims to explore different strategies for the implementation of tail
+calls and specifically for Tail Recursion Modulo Cons (TRMC).
 
 The project offers the opportunity to read research papers, work on language
 design, and work on a real-world programming language developed at Aarhus
