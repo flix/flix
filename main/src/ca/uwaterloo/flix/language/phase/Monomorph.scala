@@ -525,26 +525,6 @@ object Monomorph {
       case Expression.Force(exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
         Expression.Force(e, subst0(tpe), pur, eff, loc)
-
-      case Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, _, loc) =>
-        // Magic!
-        val arrowTpe = subst0(exp1.tpe)
-        val isPure = (arrowTpe.arrowPurityType, arrowTpe.arrowEffectType) match {
-          case (Type.Cst(TypeConstructor.True, _), Type.Cst(TypeConstructor.Empty, _)) => true
-          case _ => false
-        }
-
-        if (isPure) {
-          // Generate a fresh symbol for the let-bound variable.
-          val freshSym = Symbol.freshVarSym(sym)
-          val env1 = env0 + (sym -> freshSym)
-
-          val e1 = visitExp(exp1, env0)
-          val e2 = visitExp(exp2, env1)
-          Expression.Let(freshSym, Modifiers.Empty, e1, e2, e2.tpe, e2.pur, e2.eff, loc)
-        } else {
-          visitExp(exp3, env0)
-        }
     }
 
     /**

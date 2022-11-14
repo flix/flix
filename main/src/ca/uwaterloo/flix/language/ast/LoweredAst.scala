@@ -221,8 +221,6 @@ object LoweredAst {
 
     case class Force(exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
-    case class ReifyEff(sym: Symbol.VarSym, exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, exp3: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
-
   }
 
   sealed trait Pattern {
