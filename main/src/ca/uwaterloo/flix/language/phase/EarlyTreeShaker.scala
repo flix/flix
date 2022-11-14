@@ -303,9 +303,6 @@ object EarlyTreeShaker {
     case Expression.Force(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Reify(_, _, _, _, _) =>
-      Set.empty
-
     case Expression.ReifyType(_, _, _, _, _, _) =>
       Set.empty
 

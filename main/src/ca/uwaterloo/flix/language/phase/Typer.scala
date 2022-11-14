@@ -1825,9 +1825,6 @@ object Typer {
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.Reify(t, loc) =>
-        liftM(Nil, Type.Bool, Type.Pure, Type.Empty)
-
       case KindedAst.Expression.ReifyType(t, k, loc) =>
         k match {
           case Kind.Bool =>
@@ -2399,13 +2396,6 @@ object Typer {
         val mergeExp = TypedAst.Expression.FixpointMerge(e1, e2, stf, e1.tpe, pur, eff, loc)
         val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, e1.tpe, pur, eff, loc)
         TypedAst.Expression.FixpointProject(pred, solveExp, tpe, pur, eff, loc)
-
-      case KindedAst.Expression.Reify(t0, loc) =>
-        val t = subst0(t0)
-        val tpe = Type.Bool
-        val pur = Type.Pure
-        val eff = Type.Empty
-        TypedAst.Expression.Reify(t, tpe, pur, eff, loc)
 
       case KindedAst.Expression.ReifyType(t0, k0, loc) =>
         val t = subst0(t0)

@@ -460,9 +460,6 @@ object Stratifier {
         case e => Expression.FixpointProject(pred, e, tpe, pur, eff, loc)
       }
 
-    case Expression.Reify(t, tpe, pur, eff, loc) =>
-      Expression.Reify(t, tpe, pur, eff, loc).toSuccess
-
     case Expression.ReifyType(t, k, tpe, pur, eff, loc) =>
       Expression.ReifyType(t, k, tpe, pur, eff, loc).toSuccess
 
@@ -748,9 +745,6 @@ object Stratifier {
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
-
-    case Expression.Reify(_, _, _, _, _) =>
-      LabelledGraph.empty
 
     case Expression.ReifyType(_, _, _, _, _, _) =>
       LabelledGraph.empty

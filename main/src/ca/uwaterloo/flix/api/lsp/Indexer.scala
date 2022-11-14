@@ -400,9 +400,6 @@ object Indexer {
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.Reify(t, _, _, _, _) =>
-      visitType(t) ++ Index.occurrenceOf(exp0)
-
     case Expression.ReifyType(t, _, _, _, _, _) =>
       visitType(t) ++ Index.occurrenceOf(exp0)
 

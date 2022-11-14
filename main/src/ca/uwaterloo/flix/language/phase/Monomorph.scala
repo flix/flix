@@ -103,14 +103,6 @@ object Monomorph {
   }
 
   /**
-    * An exception raised to indicate that a Boolean type cannot be reified.
-    *
-    * @param tpe the type that cannot be reified.
-    * @param loc the location of the type.
-    */
-  case class ReifyBoolException(tpe: Type, loc: SourceLocation) extends RuntimeException
-
-  /**
     * An exception raised to indicate that a regular type cannot be reified.
     *
     * @param tpe the type that cannot be reified.
@@ -244,7 +236,6 @@ object Monomorph {
         defs = specializedDefns.toMap
       ).toSuccess
     } catch {
-      case ReifyBoolException(tpe, loc) => ReificationError.IllegalReifiedBool(tpe, loc).toFailure
       case ReifyTypeException(tpe, loc) => ReificationError.IllegalReifiedType(tpe, loc).toFailure
       case UnexpectedNonConstBool(tpe, loc) => ReificationError.UnexpectedNonConstBool(tpe, loc).toFailure
     }
@@ -605,16 +596,6 @@ object Monomorph {
 
       case Expression.FixpointProject(_, _, _, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
-      case Expression.Reify(t, _, _, _, loc) =>
-        // Magic!
-        val isTrue = subst0(t) match {
-          case Type.Cst(TypeConstructor.True, _) => true
-          case Type.Cst(TypeConstructor.False, _) => false
-          case other => throw ReifyBoolException(other, loc)
-        }
-
-        Expression.Cst(Ast.Constant.Bool(isTrue), Type.Bool, loc)
 
       case Expression.ReifyType(t, k, _, _, _, loc) =>
         k match {

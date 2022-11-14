@@ -733,7 +733,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      Static | Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
+      Static | Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse |
         ReifyType | ReifyPurity | Choose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda |
         SelectChannel | Spawn | ParYield | Par | Lazy | Force | Upcast | Mask | Intrinsic | New | ArrayLit | ArrayNew |
@@ -770,14 +770,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def IfThenElse: Rule1[ParsedAst.Expression.IfThenElse] = rule {
       SP ~ keyword("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ WS ~ keyword("else") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.IfThenElse
-    }
-
-    def Reify: Rule1[ParsedAst.Expression.Reify] = rule {
-      SP ~ keyword("reify") ~ WS ~ Type ~ SP ~> ParsedAst.Expression.Reify
-    }
-
-    def ReifyBool: Rule1[ParsedAst.Expression.ReifyBool] = rule {
-      SP ~ keyword("reifyBool") ~ WS ~ Type ~ SP ~> ParsedAst.Expression.ReifyBool
     }
 
     def ReifyType: Rule1[ParsedAst.Expression.ReifyType] = rule {
@@ -1027,7 +1019,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ keyword("par") ~ optWS ~ "(" ~ oneOrMore(Fragment).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ParYield
+        SP ~ keyword("par") ~ optWS ~ "(" ~ oneOrMore(Fragment).separatedBy(optWS ~ ";" ~ optWS) ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ParYield
       }
     }
 

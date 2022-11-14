@@ -1605,7 +1605,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """
         | def f(g: Unit -> Unit \ Impure): Unit \ Impure =
-        |     let _ = par (a <- 1, b <- { 1 as \ Impure }) yield (a, b);
+        |     let _ = par (a <- 1; b <- { 1 as \ Impure }) yield (a, b);
         |     g()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
