@@ -248,12 +248,13 @@ namespace TestRedBlackTree {
         m == Map#{2 => 1, 5 => 20, 11 => 2, 8 => 16}
 
     @test
-    def mapWithKey06(): Bool \ IO =
+    def mapWithKey06(): Bool = region r {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
-        let a = new MutList(Static);
-        discard Map.mapWithKey((k, v) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
+        let a = new MutList(r);
+        discard Map.mapWithKey((k, v) -> { let b = new MutList(r); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
         MutList.toList(a) == range
+    }
 
     @test
     def mapWithKey07(): Bool =
