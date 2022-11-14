@@ -792,12 +792,6 @@ object Kinder {
         case (exp1, exp2) => KindedAst.Expression.FixpointProject(pred, exp1, exp2, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
-    case ResolvedAst.Expression.ReifyType(t0, k0, loc) =>
-      val tVal = visitType(t0, k0, kenv0, senv, taenv, root)
-      mapN(tVal) {
-        t => KindedAst.Expression.ReifyType(t, k0, loc)
-      }
-
     case ResolvedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, loc) =>
       val e1Val = visitExp(exp1, kenv0, senv, taenv, henv0, root)
       val e2Val = visitExp(exp2, kenv0, senv, taenv, henv0, root)

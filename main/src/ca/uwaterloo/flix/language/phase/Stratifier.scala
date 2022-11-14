@@ -460,9 +460,6 @@ object Stratifier {
         case e => Expression.FixpointProject(pred, e, tpe, pur, eff, loc)
       }
 
-    case Expression.ReifyType(t, k, tpe, pur, eff, loc) =>
-      Expression.ReifyType(t, k, tpe, pur, eff, loc).toSuccess
-
     case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, pur, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
         case (e1, e2, e3) => Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
@@ -745,9 +742,6 @@ object Stratifier {
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
-
-    case Expression.ReifyType(_, _, _, _, _, _) =>
-      LabelledGraph.empty
 
     case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2) + labelledGraphOfExp(exp3)
