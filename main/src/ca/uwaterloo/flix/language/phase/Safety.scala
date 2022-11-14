@@ -66,8 +66,9 @@ object Safety {
 
     def visitTpe(tpe: Type): List[CompilationMessage] = {
       tpe match {
-        case Type.Cst(_, loc) => checkImmutable(tpe, loc)
-        case Type.Apply(tpe1, tpe2, loc) => println(tpe2)
+        case Type.Cst(_: TypeConstructor.Tuple, _) => Nil
+        case Type.Cst(_: TypeConstructor, loc) => checkImmutable(tpe, loc)
+        case Type.Apply(tpe1, tpe2, loc) => 
           (tpe2 match {
             case _: Type.Cst => checkImmutable(tpe2, loc)
             case _ => Nil

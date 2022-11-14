@@ -402,12 +402,36 @@ class TestTyper extends FunSuite with TestUtils {
   test("MissingImmutable.02") {
     val input =
       """
+        |enum NotImmutable
+        |enum TryImmutable(NotImmutable, NotImmutable) with Immutable
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.MissingInstance](result)
+  }
+
+  test("MissingImmutable.03") {
+    val input =
+      """
         |enum NotImmutable(Int32)
         |enum TryImmutable[a](a) with Immutable
         |
         |def requiresImmutable(x: a): a with Immutable[a] = x
         |
         |def foo(): TryImmutable[NotImmutable] = requiresImmutable(TryImmutable(NotImmutable(42)))
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.MissingInstance](result)
+  }
+
+  test("MissingImmutable.04") {
+    val input =
+      """
+        |enum NotImmutable(Int32)
+        |enum TryImmutable[a, b](a, b) with Immutable
+        |
+        |def requiresImmutable(x: a): a with Immutable[a] = x
+        |
+        |def foo(): TryImmutable[NotImmutable, NotImmutable] = requiresImmutable(TryImmutable(NotImmutable(42), NotImmutable(43)))
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MissingInstance](result)
