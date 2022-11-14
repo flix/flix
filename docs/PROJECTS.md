@@ -7,6 +7,7 @@ out to us on Gitter. If you are a bachelor or master student at Aarhus
 University you can reach out to Magnus directly. 
 
 ## Code Formatting
+
 A significant part of compiler implementation focuses on the parser: the
 compiler phase that turns source code text into abstract syntax trees. However,
 the opposite direction is often forgotten: the code formatter that turns
@@ -22,7 +23,7 @@ The project offers the opportunity to read research papers, work on language
 design, and work on a real-world programming language developed at Aarhus
 University and by a community of open-source contributors (see www.flix.dev).
 
-## Sub-Effecting
+## Sub-Typing and Sub-Effecting
 
 A type system characterizes the values of an expression, whereas an effect
 system characterizes the computational side effects of an expression.
@@ -53,20 +54,17 @@ The project offers the opportunity to read research papers, work on language
 design, and work on a real-world programming language developed at Aarhus
 University and by a community of open-source contributors (see www.flix.dev).
 
-
 ## Termination Analysis
-A common programming mistake is to unintentional write an infinite loop. Most
-contemporary programming languages such as C, C++, C#, Java, Kotlin, Scala, etc.
-do not help programmers avoid such issues. Termination analysis or termination
-checkers describe a wide-range of techniques that can be used to verify that a
-program (or part of a program) always terminates, for any input. These
-techniques range from sophisticated type systems to the use of SMT solvers. In
-the case of functional programming, such termination checkers may try to ensure
-termination by verifying that recursion is always on structurally smaller
-elements. 
 
-The aim of this project is to explore the design space of termination analysis
-for a functional language.
+A common programming mistake is to write an infinite loop. Unfortunately, most
+contemporary programming languages, such as C, C++, C#, Java, Kotlin, and Scala,
+do not help programmers avoid such issues. Termination analysis describes a wide
+range of techniques that can verify that a program (or part of a program) always
+terminates. For example, by checking that recursive calls always operate on
+structurally smaller elements.
+
+This project aims to explore strategies for termination analysis in a 
+functional programming language.
 
 The project offers the opportunity to read research papers, work on language
 design, and work on a real-world programming language developed at Aarhus
