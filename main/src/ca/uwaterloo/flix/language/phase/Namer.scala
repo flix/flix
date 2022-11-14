@@ -50,7 +50,8 @@ object Namer {
       effects = Map.empty,
       ops = Map.empty,
       entryPoint = program.entryPoint,
-      sources = locations
+      sources = locations,
+      names = program.names
     )
 
     // collect all the declarations.
