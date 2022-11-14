@@ -430,9 +430,9 @@ namespace RedBlackTree {
     /// Traverses the tree `t` in parallel.
     ///
     @Parallel
-    pub def parForall(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool \ IO =
+    pub def parForAll(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool \ IO =
         if (n <= 1)
-            seqForall(f, t)
+            seqForAll(f, t)
         else
             match t {
                 case Node(_, a, k, v, b) =>
@@ -441,8 +441,8 @@ namespace RedBlackTree {
                     if (not f(k, v))
                         false
                     else {
-                        spawn (Channel.send(parForall((n - 2) / 2, f, a), sL)); // We divide the rest of the threads as follows:
-                        spawn (Channel.send(parForall((n - 2) / 2, f, b), sR)); // We spawn two new threads leaving us with n - 2
+                        spawn (Channel.send(parForAll((n - 2) / 2, f, a), sL)); // We divide the rest of the threads as follows:
+                        spawn (Channel.send(parForAll((n - 2) / 2, f, b), sR)); // We spawn two new threads leaving us with n - 2
                         let a1 = Channel.recv(rL);                              // that we distribute over the two spanned threads.
                         let b1 = Channel.recv(rR);
                         a1 and b1
@@ -460,8 +460,8 @@ namespace RedBlackTree {
     /// Note that this is equivalent to `exists` but for performance reasons -- to avoid
     /// megamorphic calls -- we use a copy here.
     ///
-    def seqForall(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool = match t {
-        case Node(_, a, k, v, b) => if (f(k, v)) seqForall(f, a) and seqForall(f, b) else false
+    def seqForAll(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool = match t {
+        case Node(_, a, k, v, b) => if (f(k, v)) seqForAll(f, a) and seqForAll(f, b) else false
         case _                   => true
     }
 
