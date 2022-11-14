@@ -622,7 +622,7 @@ namespace RedBlackTree {
             case Pure(g) =>
                 if (useParallelEvaluation(t))
                     let h = (k, v) -> g({k = k, v = v});
-                    parMapWithKey(threads() - 1, h, t) as \ {}
+                    parMapWithKey(threads() - 1, h, t)
                 else
                     seqMapWithKey(f, t)
             case _  => seqMapWithKey(f, t)
@@ -636,7 +636,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    def parMapWithKey(n: Int32, f: (k, v1) -> v2, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] \ IO = {
+    def parMapWithKey(n: Int32, f: (k, v1) -> v2, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] = {
         if (n <= 1)
             parSeqMapWithKey(f, t)
         else
@@ -644,14 +644,10 @@ namespace RedBlackTree {
                 case Leaf                   => Leaf
                 case DoubleBlackLeaf        => DoubleBlackLeaf
                 case Node(c, a, k, v, b)    =>
-                    let (sL, rL) = Channel.buffered(1);
-                    let (sR, rR) = Channel.buffered(1);
-                    spawn (Channel.send(parMapWithKey((n - 2) / 2, f, a), sL)); // We divide the rest of the threads as follows:
-                    spawn (Channel.send(parMapWithKey((n - 2) / 2, f, b), sR)); // We spawn two new threads leaving us with n - 2
-                    let v1 = f(k, v);                                           // that we distribute over the two spanned threads.
-                    let a1 = Channel.recv(rL);
-                    let b1 = Channel.recv(rR);
-                    Node(c, a1, k, v1, b1)
+                    par (left <- parMapWithKey((n - 2) / 2, f, a), // We divide the rest of the threads as follows:
+                        right <- parMapWithKey((n - 2) / 2, f, b), // We spawn two new threads leaving us with n - 2
+                        this  <- f(k, v))                          // that we distribute over the two spanned threads.
+                        yield Node(c, left, k, this, right)
             }
     }
 
