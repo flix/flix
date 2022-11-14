@@ -96,7 +96,7 @@ object Reader {
                   // Case 1: Nonempty path: split prefix and package
                   case (acc1, prefix :+ pkg) => acc1 + (prefix -> pkg)
                   // Case 2: Empty path: skip it
-                  case (acc1, Nil) => acc1
+                  case (acc1, _) => acc1
                 }
             }
         } catch {
