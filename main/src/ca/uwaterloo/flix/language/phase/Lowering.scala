@@ -1925,9 +1925,6 @@ object Lowering {
       val e = substExp(exp, subst)
       LoweredAst.Expression.Force(e, tpe, pur, eff, loc)
 
-    case LoweredAst.Expression.Reify(t, tpe, pur, eff, loc) =>
-      LoweredAst.Expression.Reify(t, tpe, pur, eff, loc)
-
     case LoweredAst.Expression.ReifyType(t, k, tpe, pur, eff, loc) =>
       LoweredAst.Expression.ReifyType(t, k, tpe, pur, eff, loc)
 
