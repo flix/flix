@@ -223,7 +223,7 @@ namespace Map {
     pub def minimumKeyBy(cmp: (k, k) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == LessThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
-            case g: (k, k) -> Comparison =>
+            case g: (k, k) -> Comparison \ {} =>
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Map(t) = m;
@@ -254,7 +254,7 @@ namespace Map {
     pub def minimumValueBy(cmp: (v, v) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == LessThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
-            case g: (v, v) -> Comparison =>
+            case g: (v, v) -> Comparison \ {} =>
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(vl, vr);
                     let Map(t) = m;
@@ -285,7 +285,7 @@ namespace Map {
     pub def maximumKeyBy(cmp: (k, k) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == GreaterThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
-            case g: (k, k) -> Comparison =>
+            case g: (k, k) -> Comparison \ {} =>
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Map(t) = m;
@@ -316,7 +316,7 @@ namespace Map {
     pub def maximumValueBy(cmp: (v, v) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == GreaterThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
-            case g: (v, v) -> Comparison =>
+            case g: (v, v) -> Comparison \ {} =>
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(vl, vr);
                     let Map(t) = m;
@@ -618,7 +618,7 @@ namespace Map {
     pub def count(f: (k, v) -> Bool \ ef, m: Map[k, v]): Int32 \ ef =
         def c() = foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m);
         typematch f {
-            case g: (k, v) -> Bool =>
+            case g: (k, v) -> Bool \ {} =>
                 if (useParallelEvaluation(m))
                     let Map(t) = m;
                     RedBlackTree.parCount(threads() - 1, g, t) as \ {}
@@ -650,7 +650,7 @@ namespace Map {
         let Map(t) = m;
         def sw() = RedBlackTree.sumWith(f, t);
         typematch f {
-            case g: (k, v) -> Int32 =>
+            case g: (k, v) -> Int32 \ {} =>
                 if (useParallelEvaluation(m))
                     RedBlackTree.parSumWith(threads() - 1, g, t) as \ {}
                 else
@@ -683,7 +683,7 @@ namespace Map {
         let Map(t) = m;
         def pw() = RedBlackTree.productWith(f, t);
         typematch f {
-            case g: (k, v) -> Int32 =>
+            case g: (k, v) -> Int32 \ {} =>
                 if (useParallelEvaluation(m))
                     RedBlackTree.parProductWith(threads() - 1, g, t) as \ {}
                 else
@@ -704,7 +704,7 @@ namespace Map {
         let Map(t) = m;
         def e() = RedBlackTree.exists(f, t);
         typematch f {
-            case g: (k, v) -> Bool =>
+            case g: (k, v) -> Bool \ {} =>
                 if (useParallelEvaluation(m))
                     RedBlackTree.parExists(threads() - 1, g, t) as \ {}
                 else
@@ -725,7 +725,7 @@ namespace Map {
         let Map(t) = m;
         def fa() = RedBlackTree.forAll(f, t);
         typematch f {
-            case g: (k, v) -> Bool =>
+            case g: (k, v) -> Bool \ {} =>
                 if (useParallelEvaluation(m))
                     RedBlackTree.parForall(threads() - 1, g, t) as \ {}
                 else

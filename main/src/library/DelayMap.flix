@@ -199,7 +199,7 @@ namespace DelayMap {
     pub def minimumKeyBy(cmp: (k, k) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == LessThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
-            case g: (k, k) -> Comparison =>
+            case g: (k, k) -> Comparison \ {} =>
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let DMap(t) = m;
@@ -233,7 +233,7 @@ namespace DelayMap {
     pub def minimumValueBy(cmp: (v, v) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == LessThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
-            case g: (v, v) -> Comparison =>
+            case g: (v, v) -> Comparison \ {} =>
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(force vl, force vr);
                     let DMap(t) = m;
@@ -272,7 +272,7 @@ namespace DelayMap {
     pub def maximumKeyBy(cmp: (k, k) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == GreaterThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
-            case g: (k, k) -> Comparison =>
+            case g: (k, k) -> Comparison \ {} =>
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let DMap(t) = m;
@@ -307,7 +307,7 @@ namespace DelayMap {
     pub def maximumValueBy(cmp: (v, v) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == GreaterThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
-            case g: (v, v) -> Comparison =>
+            case g: (v, v) -> Comparison \ {} =>
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(force vl, force vr);
                     let DMap(t) = m;
@@ -361,7 +361,7 @@ namespace DelayMap {
     @Experimental @LazyWhenPure
     pub def insertWithKey(f: (k, v, v) -> v \ ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         typematch f {
-            case g: (k, v, v) -> v      => insertWithKeyL(g, k, v, m)
+            case g: (k, v, v) -> v \ {} => insertWithKeyL(g, k, v, m)
             case g: (k, v, v) -> v \ ef => insertWithKeyE(g, k, v, m)
             case _: _                   => unreachable!()
         }
@@ -407,7 +407,7 @@ namespace DelayMap {
     @Experimental @ParallelWhenPure @LazyWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef =
         typematch f {
-            case g: (k, v1) -> v2      => mapWithKeyL(g, m)
+            case g: (k, v1) -> v2 \ {} => mapWithKeyL(g, m)
             case g: (k, v1) -> v2 \ ef => mapWithKeyE(g, m)
             case _: _                  => unreachable!()
         }
@@ -520,7 +520,7 @@ namespace DelayMap {
     @Experimental @LazyWhenPure
     pub def unionWithKey(f: (k, v, v) -> v \ ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         typematch f {
-            case g: (k, v, v) -> v      => unionWithKeyL(g, m1, m2)
+            case g: (k, v, v) -> v \ {} => unionWithKeyL(g, m1, m2)
             case g: (k, v, v) -> v \ ef => unionWithKeyE(g, m1, m2)
             case _: _                   => unreachable!()
         }
@@ -719,7 +719,7 @@ namespace DelayMap {
     @Experimental @LazyWhenPure
     pub def updateWithKey(f: (k, v) -> Option[v] \ ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         typematch f {
-            case g: (k, v) -> Option[v]      => updateWithKeyL(g, k, m)
+            case g: (k, v) -> Option[v] \ {} => updateWithKeyL(g, k, m)
             case g: (k, v) -> Option[v] \ ef => updateWithKeyE(g, k, m)
             case _: _                        => unreachable!()
         }
@@ -844,7 +844,7 @@ namespace DelayMap {
             RedBlackTree.sumWith((k, v) -> f(k, force v), t)
         };
         typematch f {
-            case g: (k, v) -> Int32 =>
+            case g: (k, v) -> Int32 \ {} =>
                 if (useParallelEvaluation(m))
                     let h = (k, v) -> g(k, force v);
                     RedBlackTree.parSumWith(threads() - 1, h, t) as \ {}
@@ -882,7 +882,7 @@ namespace DelayMap {
             RedBlackTree.productWith((k, v) -> f(k, force v), t)
         };
         typematch f {
-            case g: (k, v) -> Int32 =>
+            case g: (k, v) -> Int32 \ {} =>
                 if (useParallelEvaluation(m))
                     let h = (k, v) -> g(k, force v);
                     RedBlackTree.parProductWith(threads() - 1, h, t) as \ {}

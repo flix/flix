@@ -628,7 +628,7 @@ namespace RedBlackTree {
     @ParallelWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 \ ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] \ ef =
         typematch f {
-            case g: (k, v1) -> v2 =>
+            case g: (k, v1) -> v2 \ {} =>
                 if (useParallelEvaluation(t))
                     parMapWithKey(threads() - 1, g, t) as \ {}
                 else
