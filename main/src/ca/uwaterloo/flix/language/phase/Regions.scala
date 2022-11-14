@@ -395,9 +395,6 @@ object Regions {
         case e => checkType(tpe, loc)
       }
 
-    case Expression.Reify(_, tpe, _, _, loc) =>
-      checkType(tpe, loc)
-
     case Expression.ReifyType(_, k, tpe, _, _, loc) =>
       checkType(tpe, loc)
 
