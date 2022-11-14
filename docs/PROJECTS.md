@@ -27,7 +27,7 @@ University and by a community of open-source contributors (see www.flix.dev).
 
 A type system characterizes the values of an expression, whereas an effect
 system characterizes the computational side effects of an expression.
-Programming languages with subtyping allows a more specific type to be used
+Programming languages with subtyping allow a more specific type to be used
 where a less precise type is required (e.g., passing a Student object where a
 Person object is expected). Similarly, sub-effecting allows a function with a
 more specific effect to be passed where a less precise effect is expected.
