@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
-import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.LoweredAst._
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.ReificationError
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
@@ -164,7 +164,7 @@ object Monomorph {
     /*
      * A map used to collect specialized definitions, etc.
      */
-    val specializedDefns: mutable.Map[Symbol.DefnSym, TypedAst.Def] = mutable.Map.empty
+    val specializedDefns: mutable.Map[Symbol.DefnSym, LoweredAst.Def] = mutable.Map.empty
 
     /*
      * Collect all non-parametric function definitions.
@@ -215,7 +215,7 @@ object Monomorph {
 
         // Reassemble the definition.
         // NB: Removes the type parameters as the function is now monomorphic.
-        val specializedDefn = defn.copy(sym = freshSym, spec = defn.spec.copy(fparams = fparams, tparams = Nil), impl = TypedAst.Impl(specializedExp, Scheme(Nil, List.empty, subst(defn.impl.inferredScheme.base))))
+        val specializedDefn = defn.copy(sym = freshSym, spec = defn.spec.copy(fparams = fparams, tparams = Nil), impl = LoweredAst.Impl(specializedExp, Scheme(Nil, List.empty, subst(defn.impl.inferredScheme.base))))
 
         // Save the specialized function.
         specializedDefns.put(freshSym, specializedDefn)
@@ -514,42 +514,9 @@ object Monomorph {
         val methods = methods0.map(visitJvmMethod(_, env0))
         Expression.NewObject(name, clazz, subst0(tpe), pur, eff, methods, loc)
 
-      case Expression.NewChannel(exp, tpe, elmTpe, pur, eff, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.NewChannel(e, subst0(tpe), subst0(elmTpe), pur, eff, loc)
-
-      case Expression.GetChannel(exp, tpe, pur, eff, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.GetChannel(e, subst0(tpe), pur, eff, loc)
-
-      case Expression.PutChannel(exp1, exp2, tpe, pur, eff, loc) =>
-        val e1 = visitExp(exp1, env0)
-        val e2 = visitExp(exp2, env0)
-        Expression.PutChannel(e1, e2, subst0(tpe), pur, eff, loc)
-
-      case Expression.SelectChannel(rules, default, tpe, pur, eff, loc) =>
-        val rs = rules map {
-          case SelectChannelRule(sym, chan, exp) =>
-            val freshSym = Symbol.freshVarSym(sym)
-            val env1 = env0 + (sym -> freshSym)
-            val c = visitExp(chan, env1)
-            val e = visitExp(exp, env1)
-            SelectChannelRule(freshSym, c, e)
-        }
-
-        val d = default.map(visitExp(_, env0))
-
-        Expression.SelectChannel(rs, d, subst0(tpe), pur, eff, loc)
-
       case Expression.Spawn(exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
         Expression.Spawn(e, subst0(tpe), pur, eff, loc)
-
-      case Expression.Par(_, loc) =>
-        throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
-      case Expression.ParYield(_, _, _, _, _, loc) =>
-        throw InternalCompilerException(s"Unexpected expression near: ${loc.format}")
 
       case Expression.Lazy(exp, tpe, loc) =>
         val e = visitExp(exp, env0)
@@ -558,33 +525,6 @@ object Monomorph {
       case Expression.Force(exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0)
         Expression.Force(e, subst0(tpe), pur, eff, loc)
-
-      case Expression.Region(_, loc) =>
-        throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
-      case Expression.Scope(_, _, _, _, _, _, loc) =>
-        throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
-      case Expression.FixpointConstraintSet(_, _, _, loc) =>
-        throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
-      case Expression.FixpointLambda(_, _, _, _, _, _, loc) =>
-        throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
-      case Expression.FixpointMerge(_, _, _, _, _, _, loc) =>
-        throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
-      case Expression.FixpointSolve(_, _, _, _, _, loc) =>
-        throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
-      case Expression.FixpointFilter(_, _, _, _, _, loc) =>
-        throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
-      case Expression.FixpointInject(_, _, _, _, _, loc) =>
-        throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
-      case Expression.FixpointProject(_, _, _, _, _, loc) =>
-        throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
       case Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, _, loc) =>
         // Magic!
@@ -605,9 +545,6 @@ object Monomorph {
         } else {
           visitExp(exp3, env0)
         }
-
-      case Expression.Mask(_, _, _, _, loc) =>
-        throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
     }
 
     /**
@@ -705,8 +642,8 @@ object Monomorph {
   /**
     * Converts a signature with an implementation into the equivalent definition.
     */
-  private def sigToDef(sigSym: Symbol.SigSym, spec: TypedAst.Spec, impl: TypedAst.Impl): TypedAst.Def = {
-    TypedAst.Def(sigSymToDefnSym(sigSym), spec, impl)
+  private def sigToDef(sigSym: Symbol.SigSym, spec: LoweredAst.Spec, impl: LoweredAst.Impl): LoweredAst.Def = {
+    LoweredAst.Def(sigSymToDefnSym(sigSym), spec, impl)
   }
 
   /**
@@ -720,7 +657,7 @@ object Monomorph {
   /**
     * Returns the def symbol corresponding to the specialized def `defn` w.r.t. to the type `tpe`.
     */
-  private def specializeDef(defn: TypedAst.Def, tpe: Type, def2def: Def2Def, defQueue: DefQueue)(implicit flix: Flix): Symbol.DefnSym = {
+  private def specializeDef(defn: LoweredAst.Def, tpe: Type, def2def: Def2Def, defQueue: DefQueue)(implicit flix: Flix): Symbol.DefnSym = {
     // Unify the declared and actual type to obtain the substitution map.
     val subst = infallibleUnify(defn.impl.inferredScheme.base, tpe)
 
