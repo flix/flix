@@ -569,18 +569,18 @@ object Typer {
         val lambdaBodyType = Type.freshVar(Kind.Star, loc, text = FallbackText("result"))
         val lambdaBodyPur = Type.freshVar(Kind.Bool, loc, text = FallbackText("pur"))
         val lambdaBodyEff = Type.freshVar(Kind.Effect, loc, text = FallbackText("eff"))
-        val argTypeVars = exps.map(e => Type.freshVar(Kind.Star, e.loc, text = FallbackText("arg")))
+        val argVars = exps.map(e => Type.freshVar(Kind.Star, e.loc, text = FallbackText("arg")))
         for {
           (constrs1, tpe, pur, eff) <- visitExp(exp)
           (constrs2, tpes, purs, effs) <- traverseM(exps)(visitExp).map(unzip4)
-          _ <- unifyTypeM(tpe, Type.mkUncurriedArrowWithEffect(argTypeVars, lambdaBodyPur, lambdaBodyEff, lambdaBodyType, loc), loc)
-          _ <- pairwiseUnifyM(argTypeVars, tpes, exps.map(_.loc))
+          _ <- unifyTypeM(tpe, Type.mkUncurriedArrowWithEffect(argVars, lambdaBodyPur, lambdaBodyEff, lambdaBodyType, loc), loc)
+          _ <- pairwiseUnifyM(argVars, tpes, exps.map(_.loc))
+          _ <- unbindVars(argVars) // NB: Safe to unbind since the variables are not used elsewhere.
           resultTyp <- unifyTypeM(tvar, lambdaBodyType, loc)
           resultPur <- unifyBoolM(pvar, Type.mkAnd(lambdaBodyPur :: pur :: purs, loc), loc)
           resultEff <- unifyTypeM(evar, Type.mkUnion(lambdaBodyEff :: eff :: effs, loc), loc)
           _ <- unbindVar(lambdaBodyType) // NB: Safe to unbind since the variable is not used elsewhere.
           _ <- unbindVar(lambdaBodyPur) // NB: Safe to unbind since the variable is not used elsewhere.
-          _ <- unbindVars(argTypeVars) // NB: Safe to unbind since the variables are not used elsewhere.
         } yield (constrs1 ++ constrs2.flatten, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.Unary(sop, exp, tvar, loc) => sop match {
