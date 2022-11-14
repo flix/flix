@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2022 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, EliminatedBy, Source}
-import ca.uwaterloo.flix.language.phase.Lowering
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -66,111 +65,7 @@ object LoweredAst {
 
   object Expression {
 
-    case class Unit(loc: SourceLocation) extends LoweredAst.Expression {
-      def tpe: Type = Type.Unit
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class Null(tpe: Type, loc: SourceLocation) extends LoweredAst.Expression {
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class True(loc: SourceLocation) extends LoweredAst.Expression {
-      def tpe: Type = Type.Bool
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class False(loc: SourceLocation) extends LoweredAst.Expression {
-      def tpe: Type = Type.Bool
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class Char(lit: scala.Char, loc: SourceLocation) extends LoweredAst.Expression {
-      def tpe: Type = Type.Char
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class Float32(lit: scala.Float, loc: SourceLocation) extends LoweredAst.Expression {
-      def tpe: Type = Type.Float32
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class Float64(lit: scala.Double, loc: SourceLocation) extends LoweredAst.Expression {
-      def tpe: Type = Type.Float64
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends LoweredAst.Expression {
-      def tpe: Type = Type.BigDecimal
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class Int8(lit: scala.Byte, loc: SourceLocation) extends LoweredAst.Expression {
-      def tpe: Type = Type.Int8
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class Int16(lit: scala.Short, loc: SourceLocation) extends LoweredAst.Expression {
-      def tpe: Type = Type.Int16
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class Int32(lit: scala.Int, loc: SourceLocation) extends LoweredAst.Expression {
-      def tpe: Type = Type.Int32
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class Int64(lit: scala.Long, loc: SourceLocation) extends LoweredAst.Expression {
-      def tpe: Type = Type.Int64
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends LoweredAst.Expression {
-      def tpe: Type = Type.BigInt
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends LoweredAst.Expression {
-      def tpe: Type = Type.Str
-
+    case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends LoweredAst.Expression {
       def pur: Type = Type.Pure
 
       def eff: Type = Type.Empty
@@ -221,14 +116,6 @@ object LoweredAst {
     case class Let(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class LetRec(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
-
-    case class Region(tpe: Type, loc: SourceLocation) extends LoweredAst.Expression {
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class Scope(sym: Symbol.VarSym, regionVar: Type.Var, exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class IfThenElse(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, exp3: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
@@ -286,9 +173,6 @@ object LoweredAst {
 
     case class Cast(exp: LoweredAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], declaredEff: Option[Type], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
-    @EliminatedBy(Lowering.getClass)
-    case class Mask(exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
-
     case class Upcast(exp: LoweredAst.Expression, tpe: Type, loc: SourceLocation) extends LoweredAst.Expression {
       override def pur: Type = exp.pur
 
@@ -327,25 +211,7 @@ object LoweredAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, pur: Type, eff: Type, methods: List[LoweredAst.JvmMethod], loc: SourceLocation) extends LoweredAst.Expression
 
-    case class NewChannel(exp: LoweredAst.Expression, tpe: Type, elmTpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
-
-    case class GetChannel(exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
-
-    case class PutChannel(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
-
-    case class SelectChannel(rules: List[LoweredAst.SelectChannelRule], default: Option[LoweredAst.Expression], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
-
     case class Spawn(exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
-
-    case class Par(exp: LoweredAst.Expression, loc: SourceLocation) extends LoweredAst.Expression {
-      def tpe: Type = exp.tpe
-
-      def pur: Type = exp.pur
-
-      def eff: Type = exp.eff
-    }
-
-    case class ParYield(frags: List[LoweredAst.ParYieldFragment], exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class Lazy(exp: LoweredAst.Expression, tpe: Type, loc: SourceLocation) extends LoweredAst.Expression {
       def pur: Type = Type.Pure
@@ -354,24 +220,6 @@ object LoweredAst {
     }
 
     case class Force(exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
-
-    case class FixpointConstraintSet(cs: List[LoweredAst.Constraint], stf: Ast.Stratification, tpe: Type, loc: SourceLocation) extends LoweredAst.Expression {
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class FixpointLambda(pparams: List[LoweredAst.PredicateParam], exp: LoweredAst.Expression, stf: Ast.Stratification, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
-
-    case class FixpointMerge(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, stf: Ast.Stratification, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
-
-    case class FixpointSolve(exp: LoweredAst.Expression, stf: Ast.Stratification, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
-
-    case class FixpointFilter(pred: Name.Pred, exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
-
-    case class FixpointInject(exp: LoweredAst.Expression, pred: Name.Pred, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
-
-    case class FixpointProject(pred: Name.Pred, exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class ReifyEff(sym: Symbol.VarSym, exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, exp3: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
@@ -389,57 +237,7 @@ object LoweredAst {
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends LoweredAst.Pattern
 
-    case class Unit(loc: SourceLocation) extends LoweredAst.Pattern {
-      def tpe: Type = Type.Unit
-    }
-
-    case class True(loc: SourceLocation) extends LoweredAst.Pattern {
-      def tpe: Type = Type.Bool
-    }
-
-    case class False(loc: SourceLocation) extends LoweredAst.Pattern {
-      def tpe: Type = Type.Bool
-    }
-
-    case class Char(lit: scala.Char, loc: SourceLocation) extends LoweredAst.Pattern {
-      def tpe: Type = Type.Char
-    }
-
-    case class Float32(lit: scala.Float, loc: SourceLocation) extends LoweredAst.Pattern {
-      def tpe: Type = Type.Float32
-    }
-
-    case class Float64(lit: scala.Double, loc: SourceLocation) extends LoweredAst.Pattern {
-      def tpe: Type = Type.Float64
-    }
-
-    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends LoweredAst.Pattern {
-      def tpe: Type = Type.BigDecimal
-    }
-
-    case class Int8(lit: scala.Byte, loc: SourceLocation) extends LoweredAst.Pattern {
-      def tpe: Type = Type.Int8
-    }
-
-    case class Int16(lit: scala.Short, loc: SourceLocation) extends LoweredAst.Pattern {
-      def tpe: Type = Type.Int16
-    }
-
-    case class Int32(lit: scala.Int, loc: SourceLocation) extends LoweredAst.Pattern {
-      def tpe: Type = Type.Int32
-    }
-
-    case class Int64(lit: scala.Long, loc: SourceLocation) extends LoweredAst.Pattern {
-      def tpe: Type = Type.Int64
-    }
-
-    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends LoweredAst.Pattern {
-      def tpe: Type = Type.BigInt
-    }
-
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends LoweredAst.Pattern {
-      def tpe: Type = Type.Str
-    }
+    case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends LoweredAst.Pattern
 
     case class Tag(sym: Ast.CaseSymUse, pat: LoweredAst.Pattern, tpe: Type, loc: SourceLocation) extends LoweredAst.Pattern
 
