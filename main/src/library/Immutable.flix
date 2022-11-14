@@ -17,7 +17,13 @@
 ///
 /// A type class for types that are immutable.
 ///
-pub class Immutable[a]
+pub class Immutable[a] {
+    @Internal
+    pub def check(x: a): Bool = isImmutable(x)
+}
+
+@Internal
+pub def isImmutable(_: b): Bool with Immutable[b] = true
 
 instance Immutable[Unit]
 

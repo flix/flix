@@ -56,12 +56,14 @@ object Deriver {
       lazy val toStringSym = PredefinedClasses.lookupClassSym("ToString", root)
       lazy val boxableSym = PredefinedClasses.lookupClassSym("Boxable", root)
       lazy val hashSym = PredefinedClasses.lookupClassSym("Hash", root)
+      lazy val immutableSym = PredefinedClasses.lookupClassSym("Immutable", root)
       derives.map {
         case Ast.Derivation(sym, loc) if sym == eqSym => mkEqInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == orderSym => mkOrderInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == toStringSym => mkToStringInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == boxableSym => mkBoxableInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == hashSym => mkHashInstance(enum0, loc, root)
+        case Ast.Derivation(sym, loc) if sym == immutableSym => mkImmutableInstance(enum0, loc, root)
         case unknownSym => throw InternalCompilerException(s"Unexpected derivation: $unknownSym")
       }
   }
@@ -745,6 +747,129 @@ object Deriver {
         ns = Name.RootNS,
         loc = loc
       )
+  }
+  
+  /**
+    * Creates an Immutable instance for the given enum.
+    *
+    * {{{
+    * enum E[a] with Immutable {
+    *   case C1
+    *   case C2(a)
+    *   case C3(a, Int32)
+    * }
+    * }}}
+    *
+    * yields
+    *
+    * {{{
+    * instance Immutable[E[a]] with Immutable[a] {
+    *   pub def check(x: E[a]): Bool = x match {
+    *     case C1 => true
+    *     case C2(x) => isImmutable(x)
+    *     case C3(x, y) => isImmutable(x) and isImmutable(y)
+    *   }
+    * }
+    * }}}
+    */
+  private def mkImmutableInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum0 match {
+    case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
+      val immutableClassSym = PredefinedClasses.lookupClassSym("Immutable", root)
+      val immutableInstanceSym = Symbol.freshInstanceSym(immutableClassSym, loc)
+      val checkDefnSym = Symbol.mkDefnSym("Immutable.check")
+
+      val param = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
+      val exp = mkImmutableImpl(enum0, param, loc, root)
+      val spec = mkImmutableSpec(enum0, param, loc, root)
+
+      val defn = KindedAst.Def(checkDefnSym, spec, exp)
+
+      val tconstrs = getTypeConstraintsForTypeParams(tparams, immutableClassSym, loc)
+
+      KindedAst.Instance(
+        doc = Ast.Doc(Nil, loc),
+        ann = Nil,
+        mod = Ast.Modifiers.Empty,
+        sym = immutableInstanceSym,
+        tpe = tpe,
+        tconstrs = tconstrs,
+        defs = List(defn),
+        ns = Name.RootNS,
+        loc = loc
+      )
+  }
+
+  /**
+    * Creates the check implementation for the given enum.
+    */
+  private def mkImmutableImpl(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expression = enum0 match {
+    case KindedAst.Enum(_, _, _, _, _, _, cases, _, _) =>
+      val matchRules = cases.values.map(mkImmutableMatchRule(_, loc, root))
+
+      KindedAst.Expression.Match(
+        KindedAst.Expression.Tuple(List(mkVarExpr(param, loc)), loc),
+        matchRules.toList,
+        loc
+      )
+  }
+
+  /**
+    * Creates the check spec for the given enum.
+    */
+  private def mkImmutableSpec(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum0 match {
+    case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
+      val immutableClassSym = PredefinedClasses.lookupClassSym("Immutable", root)
+      KindedAst.Spec(
+        doc = Ast.Doc(Nil, loc),
+        ann = Nil,
+        mod = Ast.Modifiers(List(Ast.Modifier.Override)),
+        tparams = tparams,
+        fparams = List(
+          KindedAst.FormalParam(param, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
+        ),
+        sc = Scheme(
+          tparams.map(_.sym),
+          List(Ast.TypeConstraint(Ast.TypeConstraint.Head(immutableClassSym, loc), tpe, loc)),
+          Type.mkPureUncurriedArrow(List(tpe), Type.mkBool(loc), loc)
+        ),
+        tpe = Type.mkBool(loc),
+        pur = Type.Cst(TypeConstructor.True, loc),
+        eff = Type.Cst(TypeConstructor.Empty, loc),
+        tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(immutableClassSym, loc), tpe, loc)),
+        loc = loc
+      )
+  }
+
+  /**
+    * Creates an Immutable match rule for the given enum case.
+    */
+  private def mkImmutableMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
+    case KindedAst.Case(sym, tpe, _) =>
+      val isImmutableSym = Symbol.mkDefnSym("isImmutable")
+
+      val (pat0, varSyms) = mkPattern(sym, tpe, "x", loc)
+      val pat = KindedAst.Pattern.Tuple(List(pat0), loc)
+
+      val isImmuts = varSyms.map {
+        case varSym =>
+          KindedAst.Expression.Apply(
+            KindedAst.Expression.Def(isImmutableSym, Type.freshVar(Kind.Star, loc, text = FallbackText("isImmutable")), loc),
+            List(mkVarExpr(varSym, loc)),
+            Type.freshVar(Kind.Star, loc, text = FallbackText("isImmutableType")),
+            Type.freshVar(Kind.Bool, loc, text = FallbackText("isImmutablePur")),
+            Type.freshVar(Kind.Effect, loc, text = FallbackText("isImmutableEff")),
+            loc
+          )
+      }
+
+      val exp = isImmuts match {
+        case Nil => KindedAst.Expression.Cst(Ast.Constant.Bool(true), loc)
+        case head :: tail => tail.foldLeft(head: KindedAst.Expression) {
+          case (acc, isImmut) => KindedAst.Expression.Binary(SemanticOperator.BoolOp.And, acc, isImmut, Type.freshVar(Kind.Star, loc, text = FallbackText("and")), loc)
+        }
+      }
+
+      KindedAst.MatchRule(pat, None, exp)
   }
 
   /**
