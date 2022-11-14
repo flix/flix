@@ -623,7 +623,7 @@ namespace Map {
                 if (useParallelEvaluation(m))
                     let h = (k, v) -> g({k = k, v = v});
                     let Map(t) = m;
-                    RedBlackTree.parCount(threads() - 1, h, t) as \ {}
+                    RedBlackTree.parCount(threads() - 1, h, t)
                 else
                     c()
             case _  => c()

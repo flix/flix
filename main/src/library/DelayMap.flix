@@ -161,7 +161,7 @@ namespace DelayMap {
                 if (useParallelEvaluation(m))
                     let h = (k, v) -> g((k, force v));
                     let DMap(t) = m;
-                    RedBlackTree.parCount(threads() - 1, h, t) as \ {}
+                    RedBlackTree.parCount(threads() - 1, h, t)
                 else
                     c()
             case _  => c()

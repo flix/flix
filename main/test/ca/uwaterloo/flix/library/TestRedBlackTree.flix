@@ -273,12 +273,12 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parCount01(): Bool \ IO =
+    def parCount01(): Bool =
         let Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
         RedBlackTree.parCount(threads() - 1, (k, v) -> k == v, t) == 2000
 
     @test
-    def parCount02(): Bool \ IO =
+    def parCount02(): Bool =
         let Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
         RedBlackTree.parCount(threads() - 1, (k, v) -> k - 1000 == v, t) == 2000
 

@@ -691,7 +691,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parCount(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 \ IO =
+    pub def parCount(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 =
         if (n <= 1)
             seqCount(f, t)
         else
@@ -699,14 +699,10 @@ namespace RedBlackTree {
                 case Leaf                   => 0
                 case DoubleBlackLeaf        => 0
                 case Node(_, a, k, v, b)    =>
-                    let (sL, rL) = Channel.buffered(1);
-                    let (sR, rR) = Channel.buffered(1);
-                    spawn (Channel.send(parCount((n - 2) / 2, f, a), sL)); // We divide the rest of the threads as follows:
-                    spawn (Channel.send(parCount((n - 2) / 2, f, b), sR)); // We spawn two new threads leaving us with n - 2
-                    let v1 = if (f(k, v)) 1 else 0;                        // that we distribute over the two spanned threads.
-                    let a1 = Channel.recv(rL);
-                    let b1 = Channel.recv(rR);
-                    a1 + v1 + b1
+                    par (left <- parCount((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
+                        right <- parCount((n - 2) / 2, f, b); // We spawn two new threads leaving us with n - 2
+                        this  <- if (f(k, v)) 1 else 0)       // that we distribute over the two spanned threads.
+                        yield left + this + right
             }
 
     ///

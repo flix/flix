@@ -366,7 +366,7 @@ namespace Set {
                 if (useParallelEvaluation(s))
                     let h = (k, _) -> g(k);
                     let Set(t) = s;
-                    RedBlackTree.parCount(threads() - 1, h, t) as \ {}
+                    RedBlackTree.parCount(threads() - 1, h, t)
                 else
                     foldLeft((b, k) -> if (f(k)) b + 1 else b, 0, s)
             case _  => foldLeft((b, k) -> if (f(k)) b + 1 else b, 0, s)
