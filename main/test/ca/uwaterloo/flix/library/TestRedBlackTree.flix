@@ -650,13 +650,13 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parProductWith01(): Bool \ IO =
+    def parProductWith01(): Bool =
         let l = List.range(1, 2001);
         let Map(t) = List.zip(l, l) |> List.toMap;
         RedBlackTree.parProductWith(threads() - 1, (k, v) -> k * v, t) == List.product(l) * List.product(l)
 
     @test
-    def parProductWith02(): Bool \ IO =
+    def parProductWith02(): Bool =
         let l1 = List.range(1, 2001);
         let l2 = List.range(-2000, 0);
         let Map(t) = List.zip(l1, l2) |> List.toMap;

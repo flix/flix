@@ -414,7 +414,7 @@ namespace Set {
         reifyEff(f) {
             case Pure(g) =>
                 if (useParallelEvaluation(s))
-                    RedBlackTree.parProductWith(threads() - 1, (k, _) -> g(k), t) as \ {}
+                    RedBlackTree.parProductWith(threads() - 1, (k, _) -> g(k), t)
                 else
                     pw()
             case _ => pw()

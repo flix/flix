@@ -826,7 +826,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parProductWith(n: Int32, f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 \ IO = {
+    pub def parProductWith(n: Int32, f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 = {
         if (n <= 1)
             seqProductWith(f, t)
         else
@@ -834,14 +834,10 @@ namespace RedBlackTree {
                 case Leaf                   => 1
                 case DoubleBlackLeaf        => 1
                 case Node(_, a, k, v, b)    =>
-                    let (sL, rL) = Channel.buffered(1);
-                    let (sR, rR) = Channel.buffered(1);
-                    spawn (Channel.send(parProductWith((n - 2) / 2, f, a), sL)); // We divide the rest of the threads as follows:
-                    spawn (Channel.send(parProductWith((n - 2) / 2, f, b), sR)); // We spawn two new threads leaving us with n - 2
-                    let v1 = f(k, v);                                            // that we distribute over the two spanned threads.
-                    let a1 = Channel.recv(rL);
-                    let b1 = Channel.recv(rR);
-                    a1 * v1 * b1
+                par (left <- parProductWith((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
+                    right <- parProductWith((n - 2) / 2, f, b); // We spawn two new threads leaving us with n - 2
+                    this  <- f(k, v))                           // that we distribute over the two spanned threads.
+                    yield left * this * right
             }
     }
 

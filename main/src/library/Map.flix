@@ -687,7 +687,7 @@ namespace Map {
         reifyEff(f1) {
             case Pure(g) =>
                 if (useParallelEvaluation(m))
-                    RedBlackTree.parProductWith(threads() - 1, (k, v) -> g((k, v)), t) as \ {}
+                    RedBlackTree.parProductWith(threads() - 1, (k, v) -> g((k, v)), t)
                 else
                     pw()
             case _ => pw()
