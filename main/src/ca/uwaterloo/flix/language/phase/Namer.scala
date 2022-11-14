@@ -1577,7 +1577,6 @@ object Namer {
     case WeededAst.Expression.FixpointFilter(_, exp, _) => freeVars(exp)
     case WeededAst.Expression.FixpointInject(exp, _, _) => freeVars(exp)
     case WeededAst.Expression.FixpointProject(_, exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
-    case WeededAst.Expression.ReifyType(_, _, _) => Nil
     case WeededAst.Expression.ReifyEff(ident, exp1, exp2, exp3, _) => filterBoundVars(freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3), List(ident))
   }
 

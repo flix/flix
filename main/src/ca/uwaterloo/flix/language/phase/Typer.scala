@@ -1826,20 +1826,6 @@ object Typer {
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.ReifyType(t, k, loc) =>
-        k match {
-          case Kind.Bool =>
-            val sym = Symbol.mkEnumSym("ReifiedBool")
-            val tpe = Type.mkEnum(sym, Kind.Star, loc)
-            liftM(Nil, tpe, Type.Pure, Type.Empty)
-          case Kind.Star =>
-            val sym = Symbol.mkEnumSym("ReifiedType")
-            val tpe = Type.mkEnum(sym, Kind.Star, loc)
-            liftM(Nil, tpe, Type.Pure, Type.Empty)
-          case _ =>
-            throw InternalCompilerException(s"Unexpected kind: '$k'.")
-        }
-
       case KindedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, loc) =>
         val a = Type.freshVar(Kind.Star, loc, text = FallbackText("arg"))
         val b = Type.freshVar(Kind.Star, loc, text = FallbackText("result"))
@@ -2397,14 +2383,6 @@ object Typer {
         val mergeExp = TypedAst.Expression.FixpointMerge(e1, e2, stf, e1.tpe, pur, eff, loc)
         val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, e1.tpe, pur, eff, loc)
         TypedAst.Expression.FixpointProject(pred, solveExp, tpe, pur, eff, loc)
-
-      case KindedAst.Expression.ReifyType(t0, k0, loc) =>
-        val t = subst0(t0)
-        val sym = Symbol.mkEnumSym("ReifiedType")
-        val tpe = Type.mkEnum(sym, Kind.Star, loc)
-        val pur = Type.Pure
-        val eff = Type.Empty
-        TypedAst.Expression.ReifyType(t, k0, tpe, pur, eff, loc)
 
       case KindedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, loc) =>
         val e1 = visitExp(exp1, subst0)

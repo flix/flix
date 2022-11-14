@@ -373,10 +373,6 @@ object LoweredAst {
 
     case class FixpointProject(pred: Name.Pred, exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
-    case class Reify(t: Type, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
-
-    case class ReifyType(t: Type, k: Kind, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
-
     case class ReifyEff(sym: Symbol.VarSym, exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, exp3: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
   }

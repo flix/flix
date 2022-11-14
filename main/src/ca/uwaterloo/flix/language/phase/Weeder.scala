@@ -3043,7 +3043,6 @@ object Weeder {
     case ParsedAst.Expression.FixpointInjectInto(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, _, _, _, _, _) => sp1
-    case ParsedAst.Expression.ReifyType(sp1, _, _) => sp1
     case ParsedAst.Expression.ReifyPurity(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.Debug(sp1, _, _, _) => sp1
   }

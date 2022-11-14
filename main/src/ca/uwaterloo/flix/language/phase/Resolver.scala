@@ -1210,12 +1210,6 @@ object Resolver {
             case (e1, e2) => ResolvedAst.Expression.FixpointProject(pred, e1, e2, loc)
           }
 
-        case NamedAst.Expression.ReifyType(t0, k, loc) =>
-          val tVal = resolveType(t0, taenv, ns0, root)
-          mapN(tVal) {
-            t => ResolvedAst.Expression.ReifyType(t, k, loc)
-          }
-
         case NamedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, loc) =>
           val e1Val = visitExp(exp1, region)
           val e2Val = visitExp(exp2, region)
