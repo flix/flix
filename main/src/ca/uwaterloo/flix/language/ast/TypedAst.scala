@@ -272,8 +272,6 @@ object TypedAst {
 
     case class FixpointProject(pred: Name.Pred, exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Reify(t: Type, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-
     case class ReifyType(t: Type, k: Kind, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class ReifyEff(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
