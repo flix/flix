@@ -772,10 +772,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ WS ~ keyword("else") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.IfThenElse
     }
 
-    def ReifyType: Rule1[ParsedAst.Expression.ReifyType] = rule {
-      SP ~ keyword("reifyType") ~ WS ~ Type ~ SP ~> ParsedAst.Expression.ReifyType
-    }
-
     def ReifyPurity: Rule1[ParsedAst.Expression.ReifyPurity] = {
       def ThenBranch: Rule2[Name.Ident, ParsedAst.Expression] = rule {
         keyword("case") ~ WS ~ keyword("Pure") ~ "(" ~ Names.Variable ~ ")" ~ WS ~ keyword("=>") ~ WS ~ Expression

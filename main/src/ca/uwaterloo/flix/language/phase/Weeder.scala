@@ -1753,10 +1753,6 @@ object Weeder {
           WeededAst.Expression.FixpointProject(pred, queryExp, dbExp, loc)
       }
 
-    case ParsedAst.Expression.ReifyType(sp1, t0, sp2) =>
-      val t = visitType(t0)
-      WeededAst.Expression.ReifyType(t, Kind.Star, mkSL(sp1, sp2)).toSuccess
-
     case ParsedAst.Expression.ReifyPurity(sp1, exp1, ident, exp2, exp3, sp2) =>
       mapN(visitExp(exp1, senv), visitExp(exp2, senv), visitExp(exp3, senv)) {
         case (e1, e2, e3) =>
