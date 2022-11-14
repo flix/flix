@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.util.collection.MultiMap
+
 object ParsedAst {
 
   /**
@@ -24,7 +26,7 @@ object ParsedAst {
     * @param units      the abstract syntax trees of the parsed compilation units.
     * @param entryPoint the optional entry point.
     */
-  case class Root(units: Map[Ast.Source, ParsedAst.CompilationUnit], entryPoint: Option[Symbol.DefnSym])
+  case class Root(units: Map[Ast.Source, ParsedAst.CompilationUnit], entryPoint: Option[Symbol.DefnSym], names: MultiMap[List[String], String])
 
   /**
     * A compilation unit (i.e. a source file).
