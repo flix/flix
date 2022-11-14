@@ -386,11 +386,10 @@ namespace RedBlackTree {
                 case Node(_, a, k, v, b) =>
                     if (f(k, v))
                         true
-                    else {
+                    else
                         par (left <- parExists((n - 2) / 2, f, a), // We divide the rest of the threads as follows:
                             right <- parExists((n - 2) / 2, f, b)) // We spawn two new threads leaving us with n - 2
                             yield left or right                    // that we distribute over the two spanned threads.
-                    }
                 case _ => false
             }
 
@@ -430,23 +429,18 @@ namespace RedBlackTree {
     /// Traverses the tree `t` in parallel.
     ///
     @Parallel
-    pub def parForAll(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool \ IO =
+    pub def parForAll(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool =
         if (n <= 1)
             seqForAll(f, t)
         else
             match t {
                 case Node(_, a, k, v, b) =>
-                    let (sL, rL) = Channel.buffered(1);
-                    let (sR, rR) = Channel.buffered(1);
                     if (not f(k, v))
                         false
-                    else {
-                        spawn (Channel.send(parForAll((n - 2) / 2, f, a), sL)); // We divide the rest of the threads as follows:
-                        spawn (Channel.send(parForAll((n - 2) / 2, f, b), sR)); // We spawn two new threads leaving us with n - 2
-                        let a1 = Channel.recv(rL);                              // that we distribute over the two spanned threads.
-                        let b1 = Channel.recv(rR);
-                        a1 and b1
-                    }
+                    else
+                        par (left <- parForAll((n - 2) / 2, f, a), // We divide the rest of the threads as follows:
+                            right <- parForAll((n - 2) / 2, f, b)) // We spawn two new threads leaving us with n - 2
+                            yield left and right                   // that we distribute over the two spanned threads.
                 case _ => false
             }
 

@@ -729,7 +729,7 @@ namespace Map {
         reifyEff(f1) {
             case Pure(g) =>
                 if (useParallelEvaluation(m))
-                    RedBlackTree.parForAll(threads() - 1, (k, v) -> g((k, v)), t) as \ {}
+                    RedBlackTree.parForAll(threads() - 1, (k, v) -> g((k, v)), t)
                 else
                     fa()
             case _ => fa()

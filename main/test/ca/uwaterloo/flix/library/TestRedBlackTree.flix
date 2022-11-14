@@ -352,19 +352,19 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parForAll01(): Bool \ IO =
+    def parForAll01(): Bool =
         let l = List.range(1, 2001);
         let Map(t) = List.zip(l, l) |> List.toMap;
         RedBlackTree.parForAll(threads() - 1, (k, v) -> k == v, t)
 
     @test
-    def parForAll02(): Bool \ IO =
+    def parForAll02(): Bool =
         let l = List.range(1, 2001);
         let Map(t) = List.zip(l, l) |> List.toMap;
         not RedBlackTree.parForAll(threads() - 1, (k, _) -> k == 1, t)
 
     @test
-    def parForAll03(): Bool \ IO =
+    def parForAll03(): Bool =
         let l1 = List.range(1, 2001);
         let l2 = List.range(-2000, 0);
         let Map(t) = List.zip(l1, l2) |> List.toMap;
