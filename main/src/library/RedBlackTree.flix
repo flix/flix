@@ -387,9 +387,9 @@ namespace RedBlackTree {
                     if (f(k, v))
                         true
                     else {
-                        par (left <- parExists((n - 2) / 2, f, a), // We divide the rest of the threads as follows:
-                            right <- parExists((n - 2) / 2, f, b)) // We spawn two new threads leaving us with n - 2
-                            yield left or right                    // that we distribute over the two spanned threads.
+                        par (left <- parExists((n - 2) / 2, f, a) as \ {}, // We divide the rest of the threads as follows:
+                            right <- parExists((n - 2) / 2, f, b) as \ {}) // We spawn two new threads leaving us with n - 2
+                            yield left or right                            // that we distribute over the two spanned threads.
                     }
                 case _ => false
             }
