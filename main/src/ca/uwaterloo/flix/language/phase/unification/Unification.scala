@@ -294,16 +294,14 @@ object Unification {
     *
     * Assumes that `tpes1`, `tpes2`, and `locs` have the same length.
     */
-  def pairwiseUnifyM(tpes1: List[Type], tpes2: List[Type], locs: List[SourceLocation])(implicit flix: Flix): InferMonad[Type] =
+  def pairwiseUnifyM(tpes1: List[Type], tpes2: List[Type], locs: List[SourceLocation])(implicit flix: Flix): InferMonad[Unit] =
     (tpes1, tpes2, locs) match {
-      case (Nil, _, _) => liftM(Type.Unit)
-      case (_, Nil, _) => liftM(Type.Unit)
-      case (_, _, Nil) => liftM(Type.Unit)
       case (x :: xs, y :: ys, loc :: rs) =>
         for {
           _ <- expectTypeM(expected = x, actual = y, loc)
           _ <- pairwiseUnifyM(xs, ys, rs)
-        } yield Type.Unit
+        } yield ()
+      case (_, _, _) => InferMonad.PointUnit
     }
 
   /**
