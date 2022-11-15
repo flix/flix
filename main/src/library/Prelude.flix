@@ -11,35 +11,6 @@ pub enum Proxy[_] {
 }
 
 ///
-/// The Reified Flix Bools.
-///
-pub enum ReifiedBool with Eq, Order, ToString {
-    case ErasedBool,
-    case ReifiedTrue,
-    case ReifiedFalse
-}
-
-///
-/// The Reified Flix Types.
-///
-pub enum ReifiedType with Eq, Order, ToString {
-    case ErasedType,
-    case ReifiedUnit,
-    case ReifiedBool,
-    case ReifiedChar,
-    case ReifiedFloat32,
-    case ReifiedFloat64,
-    case ReifiedBigDecimal,
-    case ReifiedInt8,
-    case ReifiedInt16,
-    case ReifiedInt32,
-    case ReifiedInt64,
-    case ReifiedBigInt,
-    case ReifiedString,
-    case ReifiedArray(ReifiedType)
-}
-
-///
 /// The Generic IO Effect.
 ///
 /// The `IO` effect is the most general effect of any
@@ -145,7 +116,7 @@ pub def println(x: a): Unit \ IO with ToString[a] =
 /// WARNING: The debug function is pure hence if the
 /// result is unused it may be removed by the compiler!
 ///
-def debug(x: a): a = debugWithPrefix("", x) as \ {}
+def debug(x: a): a = Debug.debugWithPrefix("", x) as \ {}
 
 ///
 /// Prints the stringified representation of `x`.
@@ -153,7 +124,7 @@ def debug(x: a): a = debugWithPrefix("", x) as \ {}
 /// WARNING: The debug function is pure hence if the
 /// result is unused it may be removed by the compiler!
 ///
-def debug!(x: a): a = debugWithPrefix("", x) as \ {}
+def debug!(x: a): a = Debug.debugWithPrefix("", x) as \ {}
 
 ///
 /// Prints the stringified representation of `x`.
@@ -161,132 +132,7 @@ def debug!(x: a): a = debugWithPrefix("", x) as \ {}
 /// WARNING: The debug function is pure hence if the
 /// result is unused it may be removed by the compiler!
 ///
-def debug!!(x: a): a = debugWithPrefix("", x) as \ {}
-
-///
-/// Prints the stringified representation of `x` with the given `prefix`.
-///
-/// Note: For internal use only. The actual `debug(exp)` expression is parsed and ultimately rewritten to call this function.
-///
-@Internal
-def debugWithPrefix(prefix: String, x: a): a \ IO =
-    import static get java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
-    import java.io.PrintStream.println(String): Unit \ IO;
-    println(getOut(), "${prefix}%{x}");
-    x
-
-///
-/// Escapes the given string per Flix's escaping rules.
-///
-@Internal
-pub def escape(s: String): String = {
-    import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String \ {} as jReplace;
-    def replace(old: String, new: String, subject: String): String = jReplace(subject, upcast old, upcast new);
-    s
-        // NB: \\ must come first to avoid clobbering other cases
-        |> replace("\\", "\\\\")
-        |> replace("\n", "\\n")
-        |> replace("\r", "\\r")
-        |> replace("\"", "\\\"")
-        |> replace("\'", "\\\'")
-        |> replace("\t", "\\t")
-}
-
-///
-/// Returns an automatic string representation of `x`.
-///
-@Internal @Unsafe
-pub def stringify(x: a): String = {
-    import static java.util.Objects.isNull(##java.lang.Object): Bool \ {};
-    typematch x {
-        case _: Unit => "()"
-        case b: Bool =>  if (b) "true" else "false"
-        case c: Char => "\'" + escape("${c: Char}") + "\'"
-        case y: Float32 =>
-            import static java.lang.Float.toString(Float32): String \ {};
-            toString(y) + "f32"
-        case y: Float64 =>
-            import static java.lang.Double.toString(Float64): String \ {};
-            toString(y)
-        case y: BigDecimal =>
-            import java.math.BigDecimal.toString(): String \ {};
-            if (isNull(upcast y)) {
-                "null"
-            } else {
-                toString(y) + "ff"
-            }
-        case y: Int8 =>
-            import static java.lang.Byte.toString(Int8): String \ {};
-            toString(y) + "i8"
-        case y: Int16 =>
-            import static java.lang.Short.toString(Int16): String \ {};
-            toString(y) + "i16"
-        case y: Int32 =>
-            import static java.lang.Integer.toString(Int32): String \ {};
-            toString(y)
-        case y: Int64 =>
-            import static java.lang.Long.toString(Int64): String \ {};
-            toString(y) + "i64"
-        case y: BigInt =>
-            import java.math.BigInteger.toString(): String \ {};
-            if (isNull(upcast y)) {
-                "null"
-            } else {
-                toString(y) + "ii"
-            }
-        case s: String =>
-            if (isNull(upcast s)) {
-                "null"
-            } else {
-                "\"" + escape(s) + "\""
-            }
-        case y: Array[Unit, _] =>
-            import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
-            toString(y as Array[##java.lang.Object, Static]) as \ {}
-        case y: Array[Bool, _] =>
-            import static java.util.Arrays.toString(Array[Bool, Static]): String;
-            toString(y as Array[Bool, Static]) as \ {}
-        case y: Array[Char, _] =>
-            import static java.util.Arrays.toString(Array[Char, Static]): String;
-            toString(y as Array[Char, Static]) as \ {}
-        case y: Array[Float32, _] =>
-            import static java.util.Arrays.toString(Array[Float32, Static]): String;
-            toString(y as Array[Float32, Static]) as \ {}
-        case y: Array[Float64, _] =>
-            import static java.util.Arrays.toString(Array[Float64, Static]): String;
-            toString(y as Array[Float64, Static]) as \ {}
-        case y: Array[BigDecimal, _] =>
-            import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
-            toString(y as Array[##java.lang.Object, Static]) as \ {}
-        case y: Array[Int8, _] =>
-            import static java.util.Arrays.toString(Array[Int8, Static]): String;
-            toString(y as Array[Int8, Static]) as \ {}
-        case y: Array[Int16, _] =>
-            import static java.util.Arrays.toString(Array[Int16, Static]): String;
-            toString(y as Array[Int16, Static]) as \ {}
-        case y: Array[Int32, _] =>
-            import static java.util.Arrays.toString(Array[Int32, Static]): String;
-            toString(y as Array[Int32, Static]) as \ {}
-        case y: Array[Int64, _] =>
-            import static java.util.Arrays.toString(Array[Int64, Static]): String;
-            toString(y as Array[Int64, Static]) as \ {}
-        case y: Array[BigInt, _] =>
-            import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
-            toString(y as Array[##java.lang.Object, Static]) as \ {}
-        case y: Array[String, _] =>
-            import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
-            toString(y as Array[##java.lang.Object, Static]) as \ {}
-        case y: Array[Array[_, _], _] =>
-            import static java.util.Arrays.deepToString(Array[##java.lang.Object, Static]): String;
-            deepToString(y as Array[##java.lang.Object, Static]) as \ {}
-        case y: Array[_, _] =>
-            import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
-            toString(y as Array[##java.lang.Object, Static]) as \ {}
-        case y: _ =>
-            import static java.util.Objects.toString(##java.lang.Object): String;
-            toString(y as ##java.lang.Object) as \ {}
-    }
-}
+def debug!!(x: a): a = Debug.debugWithPrefix("", x) as \ {}
 
 ///
 /// Crashes the current process with the given message `m`.
@@ -335,8 +181,8 @@ pub def space(_: a -> Int32): Int32 = 1
 ///
 @Internal
 pub def printUnlessUnit(x: a): Unit \ IO with ToString[a] = {
-    match (reifyType a) {
-        case ReifiedUnit => ()
-        case _ => println(x)
+    typematch x {
+        case _: Unit => ()
+        case _: _ => println(x)
     }
 }

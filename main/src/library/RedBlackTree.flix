@@ -72,7 +72,7 @@ namespace RedBlackTree {
         pub def foldMap(f: v -> b \ ef, t: RedBlackTree[k, v]): b \ ef with CommutativeMonoid[b] = RedBlackTree.foldMap(_ -> f, t)
         override pub def isEmpty(t: RedBlackTree[k, v]): Bool = RedBlackTree.isEmpty(t)
         override pub def exists(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.exists(_ -> f, t)
-        override pub def forall(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.forall(_ -> f, t)
+        override pub def forAll(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.forAll(_ -> f, t)
     }
 
     instance Traversable[RedBlackTree[k]] {
@@ -419,8 +419,8 @@ namespace RedBlackTree {
     /// Returns `true` if `t` is the empty tree.
     ///
     @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
-    pub def forall(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = match t {
-        case Node(_, a, k, v, b) => if (f(k, v)) forall(f, a) and forall(f, b) else false
+    pub def forAll(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = match t {
+        case Node(_, a, k, v, b) => if (f(k, v)) forAll(f, a) and forAll(f, b) else false
         case _                   => true
     }
 
@@ -473,8 +473,8 @@ namespace RedBlackTree {
     /// Applies `f` to every key-value pair of `t`.
     ///
     @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
-    pub def foreach(f: (k, v) -> Unit \ ef, t: RedBlackTree[k, v]): Unit \ ef = match t {
-        case Node(_, a, k, v, b) => foreach(f, a); f(k, v); foreach(f, b)
+    pub def forEach(f: (k, v) -> Unit \ ef, t: RedBlackTree[k, v]): Unit \ ef = match t {
+        case Node(_, a, k, v, b) => forEach(f, a); f(k, v); forEach(f, b)
         case _                   => ()
     }
 
@@ -627,15 +627,14 @@ namespace RedBlackTree {
     ///
     @ParallelWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 \ ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] \ ef =
-        let f1 = (r) -> f(r.k, r.v);
-        reifyEff(f1) {
-            case Pure(g) =>
+        typematch f {
+            case g: (k, v1) -> v2 \ {} =>
                 if (useParallelEvaluation(t))
-                    let h = (k, v) -> g({k = k, v = v});
-                    parMapWithKey(threads() - 1, h, t) as \ {}
+                    parMapWithKey(threads() - 1, g, t) as \ {}
                 else
                     seqMapWithKey(f, t)
-            case _  => seqMapWithKey(f, t)
+            case g: (k, v1) -> v2 \ ef => seqMapWithKey(g, t)
+            case _: _ => unreachable!()
         }
 
     ///
@@ -901,7 +900,7 @@ namespace RedBlackTree {
     ///
     pub def toMutDeque(r: Region[r], t: RedBlackTree[k, v]): MutDeque[(k, v), r] \ Write(r) =
         let d = new MutDeque(r);
-        RedBlackTree.foreach((k, v) -> let x = (k, v); MutDeque.pushBack(x, d), t);
+        forEach((k, v) -> let x = (k, v); MutDeque.pushBack(x, d), t);
         d
 
     ///
@@ -1027,7 +1026,7 @@ namespace RedBlackTree {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = new StringBuilder(r);
-        foreach((k, v) -> { append!(f(k, v), sb); append!(sep, sb) }, t);
+        forEach((k, v) -> { append!(f(k, v), sb); append!(sep, sb) }, t);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
 

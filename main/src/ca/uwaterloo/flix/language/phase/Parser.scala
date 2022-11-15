@@ -32,10 +32,10 @@ object Parser {
   /**
     * Parses the given source inputs into an abstract syntax tree.
     */
-  def run(root: Map[Source, Unit], entryPoint: Option[Symbol.DefnSym], oldRoot: ParsedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] =
+  def run(root: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], oldRoot: ParsedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] =
     flix.phase("Parser") {
       // Compute the stale and fresh sources.
-      val (stale, fresh) = changeSet.partition(root, oldRoot.units)
+      val (stale, fresh) = changeSet.partition(root.sources, oldRoot.units)
 
       // Parse each stale source in parallel.
       val results = ParOps.parMap(stale.keys)(parseRoot)
@@ -46,7 +46,7 @@ object Parser {
           val m = as.foldLeft(fresh) {
             case (acc, (src, u)) => acc + (src -> u)
           }
-          ParsedAst.Root(m, entryPoint)
+          ParsedAst.Root(m, entryPoint, root.names)
       }
     }
 
@@ -737,10 +737,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      Static | Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
-        ReifyType | ReifyPurity | Choose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
-        RecordOperation | RecordLiteral | Block | RecordSelectLambda | SelectChannel | Spawn |
-        ParYield | Par | Lazy | Force | Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | ArrayNew |
+      Static | Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse |
+        Choose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
+        RecordOperation | RecordLiteral | Block | RecordSelectLambda |
+        SelectChannel | Spawn | ParYield | Par | Lazy | Force | Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
         Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | FName | Tag | Hole
@@ -774,32 +774,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def IfThenElse: Rule1[ParsedAst.Expression.IfThenElse] = rule {
       SP ~ keyword("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ WS ~ keyword("else") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.IfThenElse
-    }
-
-    def Reify: Rule1[ParsedAst.Expression.Reify] = rule {
-      SP ~ keyword("reify") ~ WS ~ Type ~ SP ~> ParsedAst.Expression.Reify
-    }
-
-    def ReifyBool: Rule1[ParsedAst.Expression.ReifyBool] = rule {
-      SP ~ keyword("reifyBool") ~ WS ~ Type ~ SP ~> ParsedAst.Expression.ReifyBool
-    }
-
-    def ReifyType: Rule1[ParsedAst.Expression.ReifyType] = rule {
-      SP ~ keyword("reifyType") ~ WS ~ Type ~ SP ~> ParsedAst.Expression.ReifyType
-    }
-
-    def ReifyPurity: Rule1[ParsedAst.Expression.ReifyPurity] = {
-      def ThenBranch: Rule2[Name.Ident, ParsedAst.Expression] = rule {
-        keyword("case") ~ WS ~ keyword("Pure") ~ "(" ~ Names.Variable ~ ")" ~ WS ~ keyword("=>") ~ WS ~ Expression
-      }
-
-      def ElseBranch: Rule1[ParsedAst.Expression] = rule {
-        keyword("case") ~ WS ~ "_" ~ WS ~ keyword("=>") ~ WS ~ Expression
-      }
-
-      rule {
-        SP ~ keyword("reifyEff") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ "{" ~ optWS ~ ThenBranch ~ WS ~ ElseBranch ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.ReifyPurity
-      }
     }
 
     def LetMatch: Rule1[ParsedAst.Expression.LetMatch] = rule {
@@ -1031,7 +1005,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ keyword("par") ~ optWS ~ "(" ~ oneOrMore(Fragment).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ParYield
+        SP ~ keyword("par") ~ optWS ~ "(" ~ oneOrMore(Fragment).separatedBy(optWS ~ ";" ~ optWS) ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ParYield
       }
     }
 
@@ -1455,7 +1429,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     private def RecordFieldType: Rule1[ParsedAst.RecordFieldType] = rule {
-      SP ~ Names.Field ~ optWS ~ ("=" | "::") ~ optWS ~ Type ~ SP ~> ParsedAst.RecordFieldType
+      SP ~ Names.Field ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.RecordFieldType
     }
 
     def Schema: Rule1[ParsedAst.Type] = rule {

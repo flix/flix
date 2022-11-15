@@ -45,8 +45,8 @@ object Weeder {
     "Read", "RecordRow", "Region", "SchemaRow", "Type", "Write", "^^^", "alias", "case", "catch", "chan",
     "class", "def", "deref", "else", "enum", "false", "fix", "force",
     "if", "import", "inline", "instance", "into", "lat", "law", "lawful", "lazy", "let", "let*", "match",
-    "namespace", "null", "opaque", "override", "pub", "ref", "region", "reify",
-    "reifyBool", "reifyEff", "reifyType", "rel", "sealed", "set", "spawn", "Static", "true",
+    "namespace", "null", "opaque", "override", "pub", "ref", "region",
+    "rel", "sealed", "set", "spawn", "Static", "true",
     "type", "use", "where", "with", "|||", "~~~", "discard", "object"
   )
 
@@ -69,7 +69,7 @@ object Weeder {
           val m = rs.foldLeft(fresh) {
             case (acc, (k, v)) => acc + (k -> v)
           }
-          WeededAst.Root(m, root.entryPoint)
+          WeededAst.Root(m, root.entryPoint, root.names)
       }
     }
 
@@ -175,12 +175,12 @@ object Weeder {
       val formalsVal = visitFormalParams(fparams0, Presence.Required)
       val purAndEff = visitPurityAndEffect(purOrEff)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
-      val expVal = Validation.traverse(exp0)(visitExp(_, SyntacticEnv.Top))
+      val expVal = traverseOpt(exp0)(visitExp(_, SyntacticEnv.Top))
 
       mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, tconstrsVal, expVal) {
         case (as, mod, _, _, tparams, fparams, tconstrs, exp) =>
           val tpe = visitType(tpe0)
-          List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, purAndEff, tconstrs, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp, tpe, purAndEff, tconstrs, mkSL(sp1, sp2)))
       }
   }
 
@@ -747,10 +747,10 @@ object Weeder {
 
     case ParsedAst.Expression.ForEach(_, frags, exp, _) =>
       //
-      // Rewrites a foreach loop to Iterator.foreach call.
+      // Rewrites a foreach loop to Iterator.forEach call.
       //
 
-      val fqnForEach = "Iterator.foreach"
+      val fqnForEach = "Iterator.forEach"
       val fqnIterator = "Iterable.iterator"
 
       foldRight(frags)(visitExp(exp, senv)) {
@@ -821,7 +821,7 @@ object Weeder {
           WeededAst.Expression.Let(ident, mod, withAscription(value, tpe), body, loc)
         case (pat, value, body, _) =>
           // Full-blown pattern match.
-          val rule = WeededAst.MatchRule(pat, WeededAst.Expression.Cst(Ast.Constant.Bool(true), loc.asSynthetic), body)
+          val rule = WeededAst.MatchRule(pat, None, body)
           WeededAst.Expression.Match(withAscription(value, tpe), List(rule), loc)
       }
 
@@ -848,7 +848,7 @@ object Weeder {
           val lambdaIdent = Name.Ident(sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), sp2)
           val lambdaVar = WeededAst.Expression.VarOrDefOrSig(lambdaIdent, loc)
 
-          val rule = WeededAst.MatchRule(pat, WeededAst.Expression.Cst(Ast.Constant.Bool(true), loc.asSynthetic), body)
+          val rule = WeededAst.MatchRule(pat, None, body)
           val lambdaBody = WeededAst.Expression.Match(withAscription(lambdaVar, tpe), List(rule), loc)
 
           val fparam = WeededAst.FormalParam(lambdaIdent, Ast.Modifiers.Empty, tpe.map(visitType), loc)
@@ -1108,15 +1108,10 @@ object Weeder {
     case ParsedAst.Expression.Match(sp1, exp, rules, sp2) =>
       val loc = mkSL(sp1, sp2)
       val rulesVal = traverse(rules) {
-        case ParsedAst.MatchRule(pat, None, body) =>
-          mapN(visitPattern(pat), visitExp(body, senv)) {
-            // Pattern match without guard.
-            case (p, e) => WeededAst.MatchRule(p, WeededAst.Expression.Cst(Ast.Constant.Bool(true), loc.asSynthetic), e)
+        case ParsedAst.MatchRule(pat, guard, body) =>
+          mapN(visitPattern(pat), traverseOpt(guard)(visitExp(_, senv)), visitExp(body, senv)) {
+            case (p, g, b) => WeededAst.MatchRule(p, g, b)
           }
-        case ParsedAst.MatchRule(pat, Some(guard), body) => mapN(visitPattern(pat), visitExp(guard, senv), visitExp(body, senv)) {
-          // Pattern match with guard.
-          case (p, g, b) => WeededAst.MatchRule(p, g, b)
-        }
       }
       mapN(visitExp(exp, senv), rulesVal) {
         case (e, rs) => WeededAst.Expression.Match(e, rs, loc)
@@ -1253,21 +1248,21 @@ object Weeder {
       }
 
     case ParsedAst.Expression.New(sp1, qname, exp, sp2) =>
-      mapN(traverse(exp)(visitExp(_, senv)).map(_.headOption)) {
+      mapN(traverseOpt(exp)(visitExp(_, senv))) {
         case e =>
           WeededAst.Expression.New(qname, e, mkSL(qname.sp1, qname.sp2))
       }
 
     case ParsedAst.Expression.ArrayLit(sp1, exps, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
-      mapN(traverse(exps)(visitExp(_, senv)), traverse(exp)(visitExp(_, senv)).map(_.headOption)) {
+      mapN(traverse(exps)(visitExp(_, senv)), traverseOpt(exp)(visitExp(_, senv))) {
         case (es, e) =>
           WeededAst.Expression.ArrayLit(es, e, loc)
       }
 
     case ParsedAst.Expression.ArrayNew(sp1, exp1, exp2, exp3, sp2) =>
       val loc = mkSL(sp1, sp2)
-      mapN(visitExp(exp1, senv), visitExp(exp2, senv), traverse(exp3)(visitExp(_, senv)).map(_.headOption)) {
+      mapN(visitExp(exp1, senv), visitExp(exp2, senv), traverseOpt(exp3)(visitExp(_, senv))) {
         case (e1, e2, e3) =>
           WeededAst.Expression.ArrayNew(e1, e2, e3, loc)
       }
@@ -1408,7 +1403,7 @@ object Weeder {
         * Returns an expression that applies `debugString` to the result of the given expression `e`.
         */
       def mkApplyDebugString(e: WeededAst.Expression, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
-        val fqn = "stringify"
+        val fqn = "Debug.stringify"
         val loc = mkSL(sp1, sp2).asSynthetic
         mkApplyFqn(fqn, List(e), loc)
       }
@@ -1459,7 +1454,7 @@ object Weeder {
     case ParsedAst.Expression.Ref(sp1, exp1, exp2, sp2) =>
       val loc = mkSL(sp1, sp2)
       val exp1Val = visitExp(exp1, senv)
-      val exp2Val = Validation.traverse(exp2)(visitExp(_, senv)).map(_.headOption)
+      val exp2Val = traverseOpt(exp2)(visitExp(_, senv))
       mapN(exp1Val, exp2Val) {
         case (e1, e2) => WeededAst.Expression.Ref(e1, e2, loc)
       }
@@ -1763,24 +1758,6 @@ object Weeder {
           WeededAst.Expression.FixpointProject(pred, queryExp, dbExp, loc)
       }
 
-    case ParsedAst.Expression.Reify(sp1, t0, sp2) =>
-      val t = visitType(t0)
-      WeededAst.Expression.Reify(t, mkSL(sp1, sp2)).toSuccess
-
-    case ParsedAst.Expression.ReifyBool(sp1, t0, sp2) =>
-      val t = visitType(t0)
-      WeededAst.Expression.ReifyType(t, Kind.Bool, mkSL(sp1, sp2)).toSuccess
-
-    case ParsedAst.Expression.ReifyType(sp1, t0, sp2) =>
-      val t = visitType(t0)
-      WeededAst.Expression.ReifyType(t, Kind.Star, mkSL(sp1, sp2)).toSuccess
-
-    case ParsedAst.Expression.ReifyPurity(sp1, exp1, ident, exp2, exp3, sp2) =>
-      mapN(visitExp(exp1, senv), visitExp(exp2, senv), visitExp(exp3, senv)) {
-        case (e1, e2, e3) =>
-          WeededAst.Expression.ReifyEff(ident, e1, e2, e3, mkSL(sp1, sp2))
-      }
-
     case ParsedAst.Expression.Debug(sp1, kind, exp, sp2) =>
       mapN(visitExp(exp, senv)) {
         case e =>
@@ -1794,7 +1771,7 @@ object Weeder {
               locPart + srcPart
           }
           val e1 = WeededAst.Expression.Cst(Ast.Constant.Str(prefix), loc)
-          val call = mkApplyFqn("debugWithPrefix", List(e1, e), loc)
+          val call = mkApplyFqn("Debug.debugWithPrefix", List(e1, e), loc)
           WeededAst.Expression.Mask(call, loc)
       }
 
@@ -1819,7 +1796,7 @@ object Weeder {
 
     // Construct the body of the lambda expression.
     val varOrRef = WeededAst.Expression.VarOrDefOrSig(ident, loc)
-    val rule = WeededAst.MatchRule(p, WeededAst.Expression.Cst(Ast.Constant.Bool(true), loc), e)
+    val rule = WeededAst.MatchRule(p, None, e)
 
     val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, loc)
     val body = WeededAst.Expression.Match(varOrRef, List(rule), loc)
@@ -3066,10 +3043,6 @@ object Weeder {
     case ParsedAst.Expression.FixpointInjectInto(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, _, _, _, _, _) => sp1
-    case ParsedAst.Expression.Reify(sp1, _, _) => sp1
-    case ParsedAst.Expression.ReifyBool(sp1, _, _) => sp1
-    case ParsedAst.Expression.ReifyType(sp1, _, _) => sp1
-    case ParsedAst.Expression.ReifyPurity(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.Debug(sp1, _, _, _) => sp1
   }
 

@@ -29,7 +29,7 @@ namespace Reachable/Imperative {
             let taskList = new MutDeque(r);
             taskList |> MutDeque.pushFront(origin);
             def whileLoop() = {
-                MutDeque.popFront(taskList) |> Option.foreach(node -> {
+                MutDeque.popFront(taskList) |> Option.forEach(node -> {
                     // this node has now been reached
                     reachable |> MutSet.add!(node);
                     // add all non-reached end points to tasklist

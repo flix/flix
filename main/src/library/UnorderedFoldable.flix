@@ -37,7 +37,7 @@ pub class UnorderedFoldable[t : Type -> Type] {
     /// Returns true if and only if `t` is empty.
     ///
     pub def isEmpty(t: t[a]): Bool =
-        UnorderedFoldable.forall(_ -> false, t)
+        UnorderedFoldable.forAll(_ -> false, t)
 
     ///
     /// Returns `true` if and only if at least one element in `t` satisfies the predicate `f`.
@@ -54,7 +54,7 @@ pub class UnorderedFoldable[t : Type -> Type] {
     ///
     /// Returns `true` if `t` is empty.
     ///
-    pub def forall(f: a -> Bool \ ef, t: t[a]): Bool \ ef =
+    pub def forAll(f: a -> Bool \ ef, t: t[a]): Bool \ ef =
         use SemiGroup.All.All;
         let All(x) = UnorderedFoldable.foldMap(a -> All(f(a)), t);
         x

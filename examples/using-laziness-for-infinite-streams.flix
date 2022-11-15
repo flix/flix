@@ -2,7 +2,7 @@
 def isPrime(p: Int32): Bool =
     DelayList.from(2) |>
     DelayList.take(p - 2) |>
-    DelayList.forall(x -> p rem x != 0)
+    DelayList.forAll(x -> p rem x != 0)
 /// An infinite sequence of prime numbers
 
 def primes(): DelayList[Int32] =

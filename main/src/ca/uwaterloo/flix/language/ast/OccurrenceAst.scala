@@ -42,72 +42,7 @@ object OccurrenceAst {
 
   object Expression {
 
-    case class Unit(loc: SourceLocation) extends OccurrenceAst.Expression {
-      def tpe: Type = Type.Unit
-      def purity: Purity = Pure
-    }
-
-    case class Null(tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Pure
-    }
-
-    case class True(loc: SourceLocation) extends OccurrenceAst.Expression {
-      def tpe: Type = Type.Bool
-      def purity: Purity = Pure
-    }
-
-    case class False(loc: SourceLocation) extends OccurrenceAst.Expression {
-      def tpe: Type = Type.Bool
-      def purity: Purity = Pure
-    }
-
-    case class Char(lit: scala.Char, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def tpe: Type = Type.Char
-      def purity: Purity = Pure
-    }
-
-    case class Float32(lit: scala.Float, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def tpe: Type = Type.Float32
-      def purity: Purity = Pure
-    }
-
-    case class Float64(lit: scala.Double, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def tpe: Type = Type.Float64
-      def purity: Purity = Pure
-    }
-
-    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def tpe: Type = Type.BigDecimal
-      def purity: Purity = Pure
-    }
-
-    case class Int8(lit: scala.Byte, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def tpe: Type = Type.Int8
-      def purity: Purity = Pure
-    }
-
-    case class Int16(lit: scala.Short, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def tpe: Type = Type.Int16
-      def purity: Purity = Pure
-    }
-
-    case class Int32(lit: scala.Int, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def tpe: Type = Type.Int32
-      def purity: Purity = Pure
-    }
-
-    case class Int64(lit: scala.Long, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def tpe: Type = Type.Int64
-      def purity: Purity = Pure
-    }
-
-    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def tpe: Type = Type.BigInt
-      def purity: Purity = Pure
-    }
-
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def tpe: Type = Type.Str
+    case class Constant(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = Pure
     }
 

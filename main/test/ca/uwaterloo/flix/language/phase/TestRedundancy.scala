@@ -1294,7 +1294,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       """
         |def f(): Int32 =
-        |    par (a <- 5, a <- 1) yield a
+        |    par (a <- 5; a <- 1) yield a
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedVar](result)

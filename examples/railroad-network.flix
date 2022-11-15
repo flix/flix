@@ -4,7 +4,7 @@
 /// Given two railroad stations a and b, if they are only connected through some station c,
 /// then they are unsafely connected. Because if c fails there is no way to get from a to b.
 ///
-def safeConnects(src: n, links: f[(n, n)]): {safe :: List[n], unsafe :: List[n]} with Foldable[f], Boxable[n] =
+def safeConnects(src: n, links: f[(n, n)]): {safe = List[n], unsafe = List[n]} with Foldable[f], Boxable[n] =
     let db = inject links into Link;
     let pr = #{
         // Directly linked stations.
@@ -83,6 +83,6 @@ def exampleGraph(): Set[(String, String)] =
 def test(): Unit \ IO =
     let rec = safeConnects("bis", exampleGraph());
     println("Safe:");
-    rec.safe |> List.sort |> List.map(Console.green) |> List.foreach(println);
+    rec.safe |> List.sort |> List.map(Console.green) |> List.forEach(println);
     println("Unsafe:");
-    rec.unsafe |> List.sort |> List.map(Console.red) |> List.foreach(println)
+    rec.unsafe |> List.sort |> List.map(Console.red) |> List.forEach(println)

@@ -81,7 +81,7 @@ instance UnorderedFoldable[Nel] {
     pub def foldMap(f: a -> b \ ef, l: Nel[a]): b \ ef with CommutativeMonoid[b] = Nel.foldMap(f, l)
     override pub def isEmpty(_: Nel[a]): Bool = false
     override pub def exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
-    override pub def forall(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forall(f, l)
+    override pub def forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
     override pub def memberOf(x: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(x, l)
 }
 
@@ -98,7 +98,7 @@ instance Reducible[Nel] {
     override pub def init(l: Nel[a]): List[a] = Nel.init(l)
     override pub def tail(l: Nel[a]): List[a] = Nel.tail(l)
     override pub def exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
-    override pub def forall(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forall(f, l)
+    override pub def forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
     override pub def find(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.find(f, l)
     override pub def findLeft(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.findLeft(f, l)
     override pub def findRight(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.findRight(f, l)
@@ -502,8 +502,8 @@ namespace Nel {
     /// Returns `true` if and only if all elements in `l` satisfy the predicate `f`.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def forall(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = match l {
-        case Nel(x, xs) => if (f(x)) List.forall(f, xs) else false
+    pub def forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = match l {
+        case Nel(x, xs) => if (f(x)) List.forAll(f, xs) else false
     }
 
     ///
@@ -594,15 +594,15 @@ namespace Nel {
     ///
     pub def toMutDeque(r: Region[r], l: Nel[a]): MutDeque[a, r] \ Write(r) =
         let d = new MutDeque(r);
-        foreach(x -> MutDeque.pushBack(x, d), l);
+        forEach(x -> MutDeque.pushBack(x, d), l);
         d
 
     ///
     /// Applies `f` to every element of `l`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def foreach(f: a -> Unit \ ef, l: Nel[a]): Unit \ ef = match l {
-        case Nel(x, xs) => f(x); List.foreach(f, xs)
+    pub def forEach(f: a -> Unit \ ef, l: Nel[a]): Unit \ ef = match l {
+        case Nel(x, xs) => f(x); List.forEach(f, xs)
     }
 
     ///

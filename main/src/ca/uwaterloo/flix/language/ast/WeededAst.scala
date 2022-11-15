@@ -17,10 +17,11 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 object WeededAst {
 
-  case class Root(units: Map[Ast.Source, WeededAst.CompilationUnit], entryPoint: Option[Symbol.DefnSym])
+  case class Root(units: Map[Ast.Source, WeededAst.CompilationUnit], entryPoint: Option[Symbol.DefnSym], names: MultiMap[List[String], String])
 
   case class CompilationUnit(uses: List[WeededAst.Use], imports: List[WeededAst.Import], decls: List[WeededAst.Declaration], loc: SourceLocation)
 
@@ -217,12 +218,6 @@ object WeededAst {
 
     case class FixpointProject(pred: Name.Pred, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Reify(t: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
-
-    case class ReifyType(t: WeededAst.Type, k: Kind, loc: SourceLocation) extends WeededAst.Expression
-
-    case class ReifyEff(ident: Name.Ident, exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
   }
 
   sealed trait Pattern {
@@ -394,7 +389,7 @@ object WeededAst {
 
   case class Constraint(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation)
 
-  case class MatchRule(pat: WeededAst.Pattern, guard: WeededAst.Expression, exp: WeededAst.Expression)
+  case class MatchRule(pat: WeededAst.Pattern, guard: Option[WeededAst.Expression], exp: WeededAst.Expression)
 
   case class MatchTypeRule(ident: Name.Ident, tpe: WeededAst.Type, exp: WeededAst.Expression)
 
