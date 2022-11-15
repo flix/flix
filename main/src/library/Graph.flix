@@ -30,7 +30,7 @@ namespace Graph {
     /// Returns the vertices that are reachable from the `src` in the directed
     /// graph `g`.
     ///
-    pub def reachable(src: t, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] = {
+    pub def reachableFrom(src: t, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
         let res = query edges, reachabilityFromSrc(src)
                   select dst
@@ -42,7 +42,7 @@ namespace Graph {
     /// Returns the vertices that are unreachable from the `src` in the directed
     /// graph `g`.
     ///
-    pub def unreachable(src: t, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] = {
+    pub def unreachableFrom(src: t, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
         let unreachablility = #{
             // If there is a node that is not Reachable from src then it is
@@ -59,8 +59,8 @@ namespace Graph {
     /// Returns `true` if there is a path from `src` to `dst` in the directed
     /// graph `g`.
     ///
-    pub def isConnected(src: {src = t}, dst: {dst = t}, g: m[(t, t)]): Bool with Foldable[m], Boxable[t] =
-        reachable(src.src, g) |> Set.exists(x -> dst.dst == x)
+    pub def reachable(src: {src = t}, dst: {dst = t}, g: m[(t, t)]): Bool with Foldable[m], Boxable[t] =
+        reachableFrom(src.src, g) |> Set.exists(x -> dst.dst == x)
 
     ///
     /// Returns the strongly connected components of the directed graph `g`.
@@ -81,6 +81,35 @@ namespace Graph {
         let res = query edges, nodes(), reachability(), connected, components
                   select x
                   from Components(x);
+        List.toSet(res)
+    }
+
+    ///
+    /// Returns the graph where all endpoints in edges are flipped.
+    ///
+    pub def flipEdges(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Boxable[t] = {
+        let edges = inject g into Edge;
+        let rev = #{
+            RevEdge(y, x) :- Edge(x, y).
+        };
+        let res = query edges, rev
+                  select (x, y)
+                  from RevEdge(x, y);
+        List.toSet(res)
+    }
+
+    ///
+    /// Returns the inverser graph of `g`. For all edge endpoints in `g` the new
+    /// graph contains exactly those edges that are not in `g`.
+    ///
+    pub def invert(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Boxable[t] = {
+        let edges = inject g into Edge;
+        let inverse = #{
+            InvEdge(x, y) :- Node(x), Node(y), not Edge(x, y).
+        };
+        let res = query nodes(), edges, inverse
+                  select (x, y)
+                  from InvEdge(x, y);
         List.toSet(res)
     }
 
@@ -107,6 +136,49 @@ namespace Graph {
     ///
     /// Returns the shortest distance between all pairs of vertices in the
     /// weighted directed graph `g`.
+    ///
+    pub def stableDistances(g: m[(t, Int32, t)]): Option[Map[(t, t), Int32]] with Foldable[m], Boxable[t] = {
+        // based on floyd-warshall
+        def rank(v, s) = s |> Set.partition(v0 -> v0 < v) |> fst |> Set.size;
+        let edges = inject g into Edge;
+        let negCycle = #{
+            Node(x) :- Edge(x, _, _).
+            Node(x) :- Edge(_, _, x).
+            // Collect the nodes to find the rank of each node (the number of
+            // nodes less than)
+            Nodes(;Set#{x}) :- Node(x).
+            NodeCount(Set.size(ns)) :- fix Nodes(;ns).
+            NodeRank(x, rank(x, ns)) :- Node(x), fix Nodes(;ns).
+            Dist(x, x, 0; Down(0)) :- Node(x).
+            Dist(x, y, 0; Down(w)) :- Edge(x, w, y).
+            Dist(x, y, k+1; w) :- Dist(x, y, k; w), NodeCount(c), if k < c.
+            Dist(x, y, k+1; w1 + w2) :- Dist(x, kth, k; w1), Dist(kth, y, k; w2),
+                NodeRank(kth, k), NodeCount(c), if k < c.
+            NegCycle() :- fix Dist(x, x, _; w), if destructDown(w) < 0.
+        };
+        let mapping = #{
+            Mapping((x, y), destructDown(d)) :- fix Dist(x, y, c; d), NodeCount(c).
+        };
+        let sol = solve edges, negCycle, mapping;
+        let cycle = query sol
+                    select ()
+                    from NegCycle();
+        match cycle {
+            case Nil => // no negative cycle
+                let res = query sol
+                          select (p, d)
+                          from Mapping(p, d);
+                Some(List.toMap(res))
+            case _ => // negative cycle
+                None
+        }
+    }
+
+    ///
+    /// Returns the shortest distance between all pairs of vertices in the
+    /// weighted directed graph `g`.
+    ///
+    /// OBS: No negative edges must be present.
     ///
     pub def distances(g: m[(t, Int32, t)]): Map[(t, t), Int32] with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
@@ -173,6 +245,89 @@ namespace Graph {
         g |>
             Foldable.toSet |>
             Set.flatMap(match (a, w, b) -> Set#{(a, w, b), (b, w, a)})
+    }
+
+    ///
+    /// Returns the topologically sorted nodes (all edges go from lower indices
+    /// to higher indices of the list). Cyclic nodes are removed from the result
+    /// and unordered nodes are returned in their own sorting.
+    ///
+    pub def topologicalSort(g: m[(t, t)]): List[t] with Foldable[m], Boxable[t] = region r {
+        // https://github.com/souffle-lang/benchmarks/tree/master/benchmarks/topological_ordering
+        let edges = inject g into Edge;
+        let topSort = #{
+            EdgeSecond(x) :- Edge(_, x).
+            EdgeFirst(x) :- Edge(x, _).
+
+            Before(x, y) :- Edge(x, y).
+            Before(x, y) :- Before(x, z), Edge(z, y).
+
+            After(x, y) :- Edge(y, x).
+            After(x, y) :- After(z, y), Edge(z, x).
+
+            // all "possible" indices
+            Indices(x, 0) :- Node(x), not EdgeSecond(x), EdgeFirst(x).
+            Indices(x, i+1) :- Before(y, x), not Before(x, y),
+                               After(x, y), Indices(y, i).
+
+            // take the topmost index for each (there will be duplicates for
+            // unordered nodes)
+            PreviousIndex(x, i+1) :- Indices(x, i).
+            Index(x, i) :- Indices(x, i), not PreviousIndex(x, i).
+        };
+        let res = query edges, nodes(), topSort select (x, i) from Index(x, i);
+        let ml = new MutList(r);
+        res |>
+            List.sortBy(match (x, i) -> (i, x)) |>
+            List.foreach(match (x, _) -> MutList.push!(x, ml));
+        MutList.toList(ml)
+    }
+
+    pub def degrees(g: m[(t, t)]): Map[t, Int32] with Foldable[m], Boxable[t] = {
+        use Option.{getWithDefault, map};
+        let edges = inject g into Edge;
+        let in = #{
+            // Careful use of option type here to make sure the empty set is not
+            // the bottom lattice element. that would exclude degrees of zero.
+            TouchSet(n; Some(Set#{})) :- Node(n).
+            TouchSet(n; Some(Set#{other})) :- Edge(other, n).
+            TouchSet(n; Some(Set#{other})) :- Edge(n, other).
+            Degree(n, s |> map(Set.size) |> getWithDefault(0)) :-
+                fix TouchSet(n; s).
+        };
+        let res = query edges, in, nodes()
+                  select (n, d)
+                  from Degree(n, d);
+        List.toMap(res)
+    }
+
+    pub def frontiersFrom(src: t, g: m[(t, t)]): Map[Int32, Set[t]] with Foldable[m], Boxable[t] = {
+        let edges = inject g into Edge;
+        let frontiers = #{
+            Dist(src; Down(0)).
+            Dist(y; n + Down(1)) :- Dist(x; n), Edge(x, y).
+
+            // Find the max layer
+            Frontiers(;Set#{n}) :- Dist(_; n).
+            MaxFrontier(Set.size(s)) :- fix Frontiers(;s).
+
+            // Initialize all layers (with non-bot element).
+            Frontier(0; Some(Set#{})) :- MaxFrontier(m), if m > 0.
+            Frontier(n+1; Some(Set#{})) :- Frontier(n; _), MaxFrontier(m), if n < m.
+
+            // Collect the frontiers
+            Frontier(destructDown(n); Some(Set#{x})) :- fix Dist(x; n).
+        };
+        let res = query edges, frontiers
+                  select (n, s)
+                  from Frontier(n; s);
+        let unwrapOption = match (n, s) -> match s {
+            case Some(v) => Some((n, v))
+            case None => None
+        };
+        res |>
+            List.filterMap(unwrapOption) |>
+            List.toMap
     }
 
     ///

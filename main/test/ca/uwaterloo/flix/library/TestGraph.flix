@@ -190,149 +190,149 @@ namespace TestGraph {
 
 
     ////////////////////////////////////////////////////////////////////////////
-    // reachable                                                              //
+    // reachableFrom                                                          //
     ////////////////////////////////////////////////////////////////////////////
 
     @test
     def reachable01(): Bool = {
         let g = graph01();
-        Graph.reachable(1, g) == Set#{1}
+        Graph.reachableFrom(1, g) == Set#{1}
     }
 
     @test
     def reachable02(): Bool = {
         let g = graph02();
-        Graph.reachable(1, g) == Set#{1, 2}
+        Graph.reachableFrom(1, g) == Set#{1, 2}
     }
 
     @test
     def reachable03(): Bool = {
         let g = graph03();
-        Graph.reachable(1, g) == Set#{1, 2}
+        Graph.reachableFrom(1, g) == Set#{1, 2}
     }
 
     @test
     def reachable04(): Bool = {
         let g = graph04();
-        Graph.reachable(1, g) == Set#{1, 2, 3}
+        Graph.reachableFrom(1, g) == Set#{1, 2, 3}
     }
 
     @test
     def reachable05(): Bool = {
         let g = graph05();
-        Graph.reachable(1, g) == Set#{1, 2, 3, 4}
+        Graph.reachableFrom(1, g) == Set#{1, 2, 3, 4}
     }
 
     @test
     def reachable06(): Bool = {
         let g = graph05();
-        Graph.reachable(3, g) == Set#{3, 4}
+        Graph.reachableFrom(3, g) == Set#{3, 4}
     }
 
     @test
     def reachable07(): Bool = {
         let g = graph05();
-        Graph.reachable(5, g) == Set#{5}
+        Graph.reachableFrom(5, g) == Set#{5}
     }
 
 
     ////////////////////////////////////////////////////////////////////////////
-    // unreachable                                                            //
+    // unreachableFrom                                                        //
     ////////////////////////////////////////////////////////////////////////////
 
     @test
     def unreachable01(): Bool = {
         let g = graph01();
-        Graph.unreachable(1, g) == Set#{}
+        Graph.unreachableFrom(1, g) == Set#{}
     }
 
     @test
     def unreachable02(): Bool = {
         let g = graph02();
-        Graph.unreachable(1, g) == Set#{}
+        Graph.unreachableFrom(1, g) == Set#{}
     }
 
     @test
     def unreachable03(): Bool = {
         let g = graph02();
-        Graph.unreachable(2, g) == Set#{1}
+        Graph.unreachableFrom(2, g) == Set#{1}
     }
 
     @test
     def unreachable04(): Bool = {
         let g = graph03();
-        Graph.unreachable(1, g) == Set#{3, 4}
+        Graph.unreachableFrom(1, g) == Set#{3, 4}
     }
 
     @test
     def unreachable05(): Bool = {
         let g = graph04();
-        Graph.unreachable(2, g) == Set#{1}
+        Graph.unreachableFrom(2, g) == Set#{1}
     }
 
     @test
     def unreachable06(): Bool = {
         let g = graph05();
-        Graph.unreachable(3, g) == Set#{1, 2}
+        Graph.unreachableFrom(3, g) == Set#{1, 2}
     }
 
     @test
     def unreachable07(): Bool = {
         let g = graph05();
-        Graph.unreachable(5, g) == Set#{1, 2, 3, 4}
+        Graph.unreachableFrom(5, g) == Set#{1, 2, 3, 4}
     }
 
 
     ////////////////////////////////////////////////////////////////////////////
-    // isConnected                                                            //
+    // reachable                                                              //
     ////////////////////////////////////////////////////////////////////////////
 
     @test
     def isConnected01(): Bool = {
         let g = graph01();
-        Graph.isConnected(src = 1, dst = 2, g) == false
+        Graph.reachable(src = 1, dst = 2, g) == false
     }
 
     @test
     def isConnected02(): Bool = {
         let g = graph02();
-        Graph.isConnected(src = 1, dst = 2, g)
+        Graph.reachable(src = 1, dst = 2, g)
     }
 
     @test
     def isConnected03(): Bool = {
         let g = graph02();
-        Graph.isConnected(src = 2, dst = 1, g) == false
+        Graph.reachable(src = 2, dst = 1, g) == false
     }
 
     @test
     def isConnected04(): Bool = {
         let g = graph03();
-        Graph.isConnected(src = 1, dst = 3, g) == false
+        Graph.reachable(src = 1, dst = 3, g) == false
     }
 
     @test
     def isConnected05(): Bool = {
         let g = graph04();
-        Graph.isConnected(src = 1, dst = 3, g)
+        Graph.reachable(src = 1, dst = 3, g)
     }
 
     @test
     def isConnected06(): Bool = {
         let g = graph05();
-        Graph.isConnected(src = 2, dst = 4, g)
+        Graph.reachable(src = 2, dst = 4, g)
     }
 
     @test
     def isConnected07(): Bool = {
         let g = graph05();
-        Graph.isConnected(src = 4, dst = 1, g) == false
+        Graph.reachable(src = 4, dst = 1, g) == false
     }
 
     @test
     def isConnected08(): Bool = {
         let g = graph05();
-        Graph.isConnected(src = 5, dst = 6, g) == false
+        Graph.reachable(src = 5, dst = 6, g) == false
     }
 
 
