@@ -171,10 +171,10 @@ object SafetyError {
     * An error raised to indicate use of supercast on a non java type.
     *
     * @param nonJavaType the type that is **not** a java type.
-    * @param other       the other type.
+    * @param javaType    the java class.
     * @param loc         the source location of the supercast.
     */
-  case class NonJavaTypeSupercast(nonJavaType: Type, other: Type, loc: SourceLocation) extends SafetyError {
+  case class NonJavaTypeSupercast(nonJavaType: Type, javaType: java.lang.Class[_], loc: SourceLocation) extends SafetyError {
     override def summary: String = "Unsafe supercast"
 
     override def message(formatter: Formatter): String = {
@@ -185,7 +185,7 @@ object SafetyError {
          |${code(loc, "the supercast occurs here.")}
          |
          |Non-Java type:    $nonJavaType
-         |Tried casting to: $other
+         |Tried casting to: ${formatJavaType(javaType)}
          |""".stripMargin
     }
 
