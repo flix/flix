@@ -387,9 +387,10 @@ namespace RedBlackTree {
                     if (f(k, v))
                         true
                     else
-                        par (l <- parExists((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
-                             r <- parExists((n - 2) / 2, f, b)) // We spawn two new threads leaving us with n - 2
-                             yield l or r                       // that we distribute over the two spanned threads.
+                        par (
+                            l <- parExists((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
+                            r <- parExists((n - 2) / 2, f, b)  // We spawn two new threads leaving us with n - 2
+                        ) yield l or r                         // that we distribute over the two spanned threads.
                 case _ => false
             }
 
@@ -438,9 +439,10 @@ namespace RedBlackTree {
                     if (not f(k, v))
                         false
                     else
-                        par (l <- parForAll((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
-                             r <- parForAll((n - 2) / 2, f, b)) // We spawn two new threads leaving us with n - 2
-                             yield l and r                   // that we distribute over the two spanned threads.
+                        par (
+                            l <- parForAll((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
+                            r <- parForAll((n - 2) / 2, f, b)  // We spawn two new threads leaving us with n - 2
+                        ) yield l and r                        // that we distribute over the two spanned threads.
                 case _ => false
             }
 
@@ -643,10 +645,11 @@ namespace RedBlackTree {
                 case Leaf                   => Leaf
                 case DoubleBlackLeaf        => DoubleBlackLeaf
                 case Node(c, a, k, v, b)    =>
-                    par (l  <- parMapWithKey((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
-                         r  <- parMapWithKey((n - 2) / 2, f, b); // We spawn two new threads leaving us with n - 2
-                         v1 <- f(k, v))                          // that we distribute over the two spanned threads.
-                         yield Node(c, l, k, v1, r)
+                    par (
+                        l  <- parMapWithKey((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
+                        r  <- parMapWithKey((n - 2) / 2, f, b); // We spawn two new threads leaving us with n - 2
+                        v1 <- f(k, v)                           // that we distribute over the two spanned threads.
+                    ) yield Node(c, l, k, v1, r)
             }
     }
 
@@ -698,10 +701,11 @@ namespace RedBlackTree {
                 case Leaf                   => 0
                 case DoubleBlackLeaf        => 0
                 case Node(_, a, k, v, b)    =>
-                    par (l  <- parCount((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
-                         r  <- parCount((n - 2) / 2, f, b); // We spawn two new threads leaving us with n - 2
-                         v1 <- if (f(k, v)) 1 else 0)       // that we distribute over the two spanned threads.
-                        yield l + v1 + r
+                    par (
+                        l  <- parCount((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
+                        r  <- parCount((n - 2) / 2, f, b); // We spawn two new threads leaving us with n - 2
+                        v1 <- if (f(k, v)) 1 else 0        // that we distribute over the two spanned threads.
+                    ) yield l + v1 + r
             }
 
     ///
@@ -761,10 +765,11 @@ namespace RedBlackTree {
                 case Leaf                   => 0
                 case DoubleBlackLeaf        => 0
                 case Node(_, a, k, v, b)    =>
-                    par (l  <- parSumWith((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
-                         r  <- parSumWith((n - 2) / 2, f, b); // We spawn two new threads leaving us with n - 2
-                         v1 <- f(k, v))                       // that we distribute over the two spanned threads.
-                         yield l + v1 + r
+                    par (
+                        l  <- parSumWith((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
+                        r  <- parSumWith((n - 2) / 2, f, b); // We spawn two new threads leaving us with n - 2
+                        v1 <- f(k, v)                        // that we distribute over the two spanned threads.
+                    ) yield l + v1 + r
             }
 
     ///
@@ -833,10 +838,11 @@ namespace RedBlackTree {
                 case Leaf                   => 1
                 case DoubleBlackLeaf        => 1
                 case Node(_, a, k, v, b)    =>
-                par (l  <- parProductWith((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
-                     r  <- parProductWith((n - 2) / 2, f, b); // We spawn two new threads leaving us with n - 2
-                     v1 <- f(k, v))                         // that we distribute over the two spanned threads.
-                     yield l * v1 * r
+                par (
+                    l  <- parProductWith((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
+                    r  <- parProductWith((n - 2) / 2, f, b); // We spawn two new threads leaving us with n - 2
+                    v1 <- f(k, v)                            // that we distribute over the two spanned threads.
+                ) yield l * v1 * r
             }
     }
 
@@ -941,16 +947,17 @@ namespace RedBlackTree {
                 case Leaf                => None
                 case DoubleBlackLeaf     => None
                 case Node(_, a, k, v, b) =>
-                    par (l <- parLimitBy((n - 2) / 2, cmp, a); // We divide the rest of the threads as follows:
-                         r <- parLimitBy((n - 2) / 2, cmp, b)) // We spawn two new threads leaving us with n - 2
-                         yield match (l, r) {                  // that we distribute over the two spanned threads.
-                             case (None, None)                 => Some(k, v)
-                             case (None, Some(kr, vr))         => Some(cmp(k, v, kr, vr))
-                             case (Some(kl, vl), None)         => Some(cmp(kl, vl, k, v))
-                             case (Some(kl, vl), Some(kr, vr)) =>
-                                 let (km, vm) = cmp(kl, vl, k, v); // Compare "lesser" keys first
-                                 Some(cmp(km, vm, kr, vr))
-                         }
+                    par (
+                        l <- parLimitBy((n - 2) / 2, cmp, a); // We divide the rest of the threads as follows:
+                        r <- parLimitBy((n - 2) / 2, cmp, b)  // We spawn two new threads leaving us with n - 2
+                    ) yield match (l, r) {                // that we distribute over the two spanned threads.
+                        case (None, None)                 => Some(k, v)
+                        case (None, Some(kr, vr))         => Some(cmp(k, v, kr, vr))
+                        case (Some(kl, vl), None)         => Some(cmp(kl, vl, k, v))
+                        case (Some(kl, vl), Some(kr, vr)) =>
+                            let (km, vm) = cmp(kl, vl, k, v); // Compare "lesser" keys first
+                            Some(cmp(km, vm, kr, vr))
+                    }
             }
 
     ///
