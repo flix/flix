@@ -32,7 +32,6 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, mapN, traverse}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.ListOps.unzip4
-import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.io.PrintWriter
 
@@ -553,8 +552,8 @@ object Typer {
       case KindedAst.Expression.Cst(Ast.Constant.BigInt(_), _) =>
         liftM(List.empty, Type.BigInt, Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Str(_), _) =>
-        liftM(List.empty, Type.Str, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.Str(_), loc) =>
+        liftM(List.empty, Type.mkString(loc), Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
         val argType = fparam.tpe
@@ -569,13 +568,10 @@ object Typer {
         val lambdaBodyType = Type.freshVar(Kind.Star, loc, text = FallbackText("result"))
         val lambdaBodyPur = Type.freshVar(Kind.Bool, loc, text = FallbackText("pur"))
         val lambdaBodyEff = Type.freshVar(Kind.Effect, loc, text = FallbackText("eff"))
-        val argVars = exps.map(e => Type.freshVar(Kind.Star, e.loc, text = FallbackText("arg")))
         for {
           (constrs1, tpe, pur, eff) <- visitExp(exp)
           (constrs2, tpes, purs, effs) <- traverseM(exps)(visitExp).map(unzip4)
-          _ <- unifyTypeM(tpe, Type.mkUncurriedArrowWithEffect(argVars, lambdaBodyPur, lambdaBodyEff, lambdaBodyType, loc), loc)
-          _ <- pairwiseUnifyM(argVars, tpes, exps.map(_.loc))
-          _ <- unbindVars(argVars) // NB: Safe to unbind since the variables are not used elsewhere.
+          _ <- expectTypeM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyPur, lambdaBodyEff, lambdaBodyType, loc), loc)
           resultTyp <- unifyTypeM(tvar, lambdaBodyType, loc)
           resultPur <- unifyBoolM(pvar, Type.mkAnd(lambdaBodyPur :: pur :: purs, loc), loc)
           resultEff <- unifyTypeM(evar, Type.mkUnion(lambdaBodyEff :: eff :: effs, loc), loc)
@@ -1005,7 +1001,7 @@ object Typer {
           /// Otherwise construct a new Choice type with isAbsent and isPresent conditions that depend on each pattern row.
           ///
           for {
-            (isAbsentConds, isPresentConds, innerTypes) <- traverseM(rs.zip(ts))((p => visitRuleBody(p._1, p._2))).map(_.unzip3)
+            (isAbsentConds, isPresentConds, innerTypes) <- traverseM(rs.zip(ts))(p => visitRuleBody(p._1, p._2)).map(_.unzip3)
             isAbsentCond = Type.mkOr(isAbsentConds, loc)
             isPresentCond = Type.mkOr(isPresentConds, loc)
             innerType <- unifyTypeM(innerTypes, loc)
