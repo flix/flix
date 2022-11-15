@@ -214,7 +214,7 @@ object Unification {
           case (Some(TypeConstructor.Native(left)), Some(TypeConstructor.Native(right))) if left.isAssignableFrom(right) =>
             TypeError.PossibleUpcast(expected, actual, loc)
           case _ =>
-            TypeError.UnexpectedType(baseType1, baseType2, loc)
+            TypeError.UnexpectedType(baseType1, baseType2, baseType2.loc)
         }
       case e => e
     }

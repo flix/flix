@@ -55,23 +55,22 @@ object Scheme {
     }
 
     /**
-      * Replaces every variable occurrence in the given type using `freeVars`. Updates the rigidity.
+      * Replaces every variable occurrence in the given type using `freeVars`.
+      *
+      * Replaces all source locations by `loc`.
       */
-    def visitTvar(t: Type.Var): Type.Var = t match {
-      case Type.Var(sym, loc) =>
-        freshVars.get(sym.id) match {
-          case None =>
-            // Determine the rigidity of the free type variable.
-            Type.Var(sym, loc)
-          case Some(tvar) => tvar
-        }
+    def visitType(t: Type): Type = t match {
+      case Type.Var(sym, _) => freshVars.getOrElse(sym.id, t)
+      case Type.Cst(tc, _) => Type.Cst(tc, loc)
+      case Type.Apply(tpe1, tpe2, _) => Type.Apply(visitType(tpe1), visitType(tpe2), loc)
+      case Type.Alias(sym, args, tpe, _) => Type.Alias(sym, args.map(visitType), visitType(tpe), loc)
     }
 
-    val newBase = baseType.map(visitTvar)
+    val newBase = visitType(baseType)
 
     val newConstrs = sc.constraints.map {
       case Ast.TypeConstraint(head, tpe0, loc) =>
-        val tpe = tpe0.map(visitTvar)
+        val tpe = tpe0.map(visitType)
         Ast.TypeConstraint(head, tpe, loc)
     }
 
