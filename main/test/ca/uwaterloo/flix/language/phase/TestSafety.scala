@@ -536,7 +536,7 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.FromNonJavaTypeSupercast](result)
+    expectError[SafetyError.ToNonJavaTypeSupercast](result)
   }
 
   test("TestSupercast.03") {
