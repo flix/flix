@@ -223,7 +223,7 @@ namespace Set {
                 if (useParallelEvaluation(s))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Set(t) = s;
-                    let o = RedBlackTree.parMinimumBy(threads() - 1, h, t) as \ {};
+                    let o = RedBlackTree.parMinimumBy(threads() - 1, h, t);
                     Option.map(fst, o)
                 else
                     min()
@@ -255,7 +255,7 @@ namespace Set {
                 if (useParallelEvaluation(s))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Set(t) = s;
-                    let o = RedBlackTree.parMaximumBy(threads() - 1, h, t) as \ {};
+                    let o = RedBlackTree.parMaximumBy(threads() - 1, h, t);
                     Option.map(fst, o)
                 else
                     max()
@@ -366,7 +366,7 @@ namespace Set {
                 if (useParallelEvaluation(s))
                     let h = (k, _) -> g(k);
                     let Set(t) = s;
-                    RedBlackTree.parCount(threads() - 1, h, t) as \ {}
+                    RedBlackTree.parCount(threads() - 1, h, t)
                 else
                     foldLeft((b, k) -> if (f(k)) b + 1 else b, 0, s)
             case g: a -> Bool \ ef => foldLeft((b, k) -> if (g(k)) b + 1 else b, 0, s)
@@ -391,7 +391,7 @@ namespace Set {
         typematch f {
             case g: a -> Int32 \ {} =>
                 if (useParallelEvaluation(s))
-                    RedBlackTree.parSumWith(threads() - 1, (k, _) -> g(k), t) as \ {}
+                    RedBlackTree.parSumWith(threads() - 1, (k, _) -> g(k), t)
                 else
                     sw()
             case _: a -> Int32 \ ef => sw()
@@ -416,7 +416,7 @@ namespace Set {
         typematch f {
             case g: a -> Int32 \ {} =>
                 if (useParallelEvaluation(s))
-                    RedBlackTree.parProductWith(threads() - 1, (k, _) -> g(k), t) as \ {}
+                    RedBlackTree.parProductWith(threads() - 1, (k, _) -> g(k), t)
                 else
                     pw()
             case _: a -> Int32 \ ef => pw()
