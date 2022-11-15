@@ -394,6 +394,9 @@ object Safety {
     case (_, Type.Var(_, _)) =>
       JavaSubtypeResult.TypeVariable
 
+    case (Type.Var(_, _), _) =>
+      JavaSubtypeResult.TypeVariable
+
     case (Type.Cst(TypeConstructor.Native(clazz), _), _) =>
       JavaSubtypeResult.NonJavaType(tpe2, clazz)
 
