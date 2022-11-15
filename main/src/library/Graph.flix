@@ -331,6 +331,24 @@ namespace Graph {
     }
 
     ///
+    /// Returns pairs `(x, cut, y)` such that `x` cannot reach without using `cut`.
+    ///
+    pub def cutPoints(g: m[(t, t)]): Set[(t, t, t)] with Foldable[m], Boxable[t] = {
+        let edges = inject g into Edge;
+        let cuts = #{
+            CutPoint(x, cut, y) :- Reachable(x, y), Node(cut),
+                                   not Circumvent(x, cut, y).
+            Circumvent(x, cut, y) :- Node(cut), Edge(x, y),
+                                     if x != cut, if y != cut.
+            Circumvent(x, cut, y) :- Circumvent(x, cut, z), Edge(z, y),
+                                     Node(cut), if y != cut.
+        };
+        let res = query edges, nodes(), reachability(), cuts
+                  select (x, cut, y)
+                  from CutPoint(x, cut, y);
+        List.toSet(res)
+
+    ///
     /// Returns the in-degree (how many edges end in a given node)
     /// of each node in `g`.
     ///
