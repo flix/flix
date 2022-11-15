@@ -543,11 +543,12 @@ object RedundancyError {
   /**
     * An error raised to indicate that a supercast is redundant.
     *
+    * @param tpe the type attempted to supercast to.
     * @param loc the source location of the upcast.
     */
-  case class RedundantSupercast(loc: SourceLocation) extends RedundancyError {
+  case class RedundantSupercast(tpe: Type, loc: SourceLocation) extends RedundancyError {
 
-    def summary: String = "Redundant supercast. The expression already has the expected type."
+    def summary: String = s"Redundant supercast. The expression already has the expected type $tpe."
 
     def message(formatter: Formatter): String = {
       import formatter._

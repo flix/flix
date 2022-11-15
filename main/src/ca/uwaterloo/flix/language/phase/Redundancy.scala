@@ -573,7 +573,7 @@ object Redundancy {
 
     case Expression.Supercast(exp, tpe, loc) =>
       if (exp.tpe == tpe)
-        visitExp(exp, env0, rc) + RedundantSupercast(loc)
+        visitExp(exp, env0, rc) + RedundantSupercast(tpe, loc)
       else
         visitExp(exp, env0, rc)
 
