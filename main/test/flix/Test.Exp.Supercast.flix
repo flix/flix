@@ -38,4 +38,19 @@ namespace Test/Exp/Supercast {
         let f = (_: ##java.lang.Comparable) -> ();
         f(supercast(newStringBuilder()))
 
+    @test
+    def testSupercast06(): Unit =
+        let f = (_: ##java.lang.CharSequence) -> ();
+        f(supercast("hello"))
+
+    @test
+    def testSupercast07(): Unit =
+        let f = (_: ##java.lang.Number) -> ();
+        f(supercast(123ii))
+
+    @test
+    def testSupercast08(): Unit =
+        let f = (_: ##java.lang.Number) -> ();
+        f(supercast(1.23ff))
+
 }

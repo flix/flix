@@ -20,6 +20,7 @@ import scala.annotation.tailrec
   *  - Datalog constraints
   *  - Anonymous objects
   *  - Upcast expressions
+  *  - Supercast expressions
   *  - TypeMatch expressions
   */
 object Safety {
@@ -386,13 +387,24 @@ object Safety {
   }
 
   /**
-    * Returns true if `tpe1` and `tpe2` are both java types
+    * Returns true if `tpe1` and `tpe2` are both Java types
     * and `tpe1` is a subtype of `tpe2`.
+    * Note that `tpe1` is also allowed to be a Flix string
+    * or BigInt/BigDecimal while `tpe2` is a supertype of this.
     */
   private def isJavaSubtypeOf(tpe1: Type, tpe2: Type)(implicit flix: Flix): JavaSubtypeResult = (tpe1.baseType, tpe2.baseType) match {
 
     case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
       if (right.isAssignableFrom(left)) JavaSubtypeResult.Castable else JavaSubtypeResult.NonCastable
+
+    case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+      if (right.isAssignableFrom(classOf[java.lang.String])) JavaSubtypeResult.Castable else JavaSubtypeResult.NonCastable
+
+    case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+      if (right.isAssignableFrom(classOf[java.math.BigInteger])) JavaSubtypeResult.Castable else JavaSubtypeResult.NonCastable
+
+    case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+      if (right.isAssignableFrom(classOf[java.math.BigDecimal])) JavaSubtypeResult.Castable else JavaSubtypeResult.NonCastable
 
     case (Type.Var(_, _), _) =>
       JavaSubtypeResult.TypeVariable(tpe1)
