@@ -314,7 +314,7 @@ object Monomorph {
         val env1 = env0 + (sym -> freshSym)
         // mark the region variable as Impure inside the region
         val subst1 = subst + (regionVar.sym -> Type.Impure)
-        Expression.Scope(sym, regionVar, visitExp(exp, env1, subst1), subst(tpe), pur, eff, loc)
+        Expression.Scope(freshSym, regionVar, visitExp(exp, env1, subst1), subst(tpe), pur, eff, loc)
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) =>
         val e1 = visitExp(exp1, env0, subst)
