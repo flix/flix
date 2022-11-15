@@ -347,6 +347,7 @@ namespace Graph {
                   select (x, cut, y)
                   from CutPoint(x, cut, y);
         List.toSet(res)
+    }
 
     ///
     /// Returns the in-degree (how many edges end in a given node)
