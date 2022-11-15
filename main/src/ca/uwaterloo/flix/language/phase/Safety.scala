@@ -287,9 +287,6 @@ object Safety {
 
       case Expression.FixpointProject(_, exp, _, _, _, _) =>
         visit(exp)
-
-      case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
-        visit(exp1) ++ visit(exp2) ++ visit(exp3)
     }
 
     visit(e0)

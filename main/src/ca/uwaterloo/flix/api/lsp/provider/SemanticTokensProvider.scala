@@ -520,11 +520,6 @@ object SemanticTokensProvider {
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       visitExp(exp)
-
-    case Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, _, _) =>
-      val o = getSemanticTokenType(sym, exp1.tpe)
-      val t = SemanticToken(o, Nil, sym.loc)
-      Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
   }
 
   /**

@@ -171,6 +171,9 @@ object EarlyTreeShaker {
     case Expression.LetRec(_, _, exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
+    case Expression.Scope(_, _, exp, _, _, _, _) =>
+      visitExp(exp)
+
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
@@ -278,9 +281,6 @@ object EarlyTreeShaker {
 
     case Expression.Force(exp, _, _, _, _) =>
       visitExp(exp)
-
-    case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
     case Expression.Do(_, exps, _, _, _) =>
       visitExps(exps)

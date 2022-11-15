@@ -734,7 +734,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
       Static | Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse |
-        ReifyPurity | Choose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
+        Choose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda |
         SelectChannel | Spawn | ParYield | Par | Lazy | Force | Upcast | Mask | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
@@ -770,20 +770,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def IfThenElse: Rule1[ParsedAst.Expression.IfThenElse] = rule {
       SP ~ keyword("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ WS ~ keyword("else") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.IfThenElse
-    }
-
-    def ReifyPurity: Rule1[ParsedAst.Expression.ReifyPurity] = {
-      def ThenBranch: Rule2[Name.Ident, ParsedAst.Expression] = rule {
-        keyword("case") ~ WS ~ keyword("Pure") ~ "(" ~ Names.Variable ~ ")" ~ WS ~ keyword("=>") ~ WS ~ Expression
-      }
-
-      def ElseBranch: Rule1[ParsedAst.Expression] = rule {
-        keyword("case") ~ WS ~ "_" ~ WS ~ keyword("=>") ~ WS ~ Expression
-      }
-
-      rule {
-        SP ~ keyword("reifyEff") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ "{" ~ optWS ~ ThenBranch ~ WS ~ ElseBranch ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.ReifyPurity
-      }
     }
 
     def LetMatch: Rule1[ParsedAst.Expression.LetMatch] = rule {
@@ -1015,7 +1001,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ keyword("par") ~ optWS ~ "(" ~ oneOrMore(Fragment).separatedBy(optWS ~ ";" ~ optWS) ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ParYield
+        SP ~ keyword("par") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Fragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ParYield
       }
     }
 

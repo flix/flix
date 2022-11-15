@@ -101,6 +101,9 @@ object Simplifier {
       case LoweredAst.Expression.LetRec(sym, mod, e1, e2, tpe, pur, eff, loc) =>
         SimplifiedAst.Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, simplifyPurity(pur), loc)
 
+      case LoweredAst.Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) =>
+        SimplifiedAst.Expression.Let(sym, SimplifiedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), visitExp(exp), tpe, simplifyPurity(pur), loc)
+
       case LoweredAst.Expression.Match(exp0, rules, tpe, pur, eff, loc) =>
         patternMatchWithLabels(exp0, rules, tpe, loc)
 
@@ -258,9 +261,6 @@ object Simplifier {
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
       case LoweredAst.Expression.Resume(_, _, _) =>
-        throw InternalCompilerException(s"Unexpected expression: $exp0.")
-
-      case LoweredAst.Expression.ReifyEff(_, _, _, _, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
       case LoweredAst.Expression.TypeMatch(_, _, _, _, _, _) =>
