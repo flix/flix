@@ -249,16 +249,19 @@ namespace TestFoldable {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toArray01(): Bool \ IO =
-        Array.sameElements(Foldable.toArray(Static, Nel(1, Nil)), [1])
+    def toArray01(): Bool = region r {
+        Array.sameElements(Foldable.toArray(r, Nel(1, Nil)), [1])
+    }
 
     @test
-    def toArray02(): Bool \ IO =
-        Array.sameElements(Foldable.toArray(Static, Nel(1, 2 :: 3 :: Nil)), [1, 2, 3])
+    def toArray02(): Bool = region r {
+        Array.sameElements(Foldable.toArray(r, Nel(1, 2 :: 3 :: Nil)), [1, 2, 3])
+    }
 
     @test
-    def toArray03(): Bool \ IO =
-        Array.sameElements(Foldable.toArray(Static, Nel(1, 1 :: 2 :: 3 :: Nil)), [1, 1, 2, 3])
+    def toArray03(): Bool = region r {
+        Array.sameElements(Foldable.toArray(r, Nel(1, 1 :: 2 :: 3 :: Nil)), [1, 1, 2, 3])
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
