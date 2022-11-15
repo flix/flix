@@ -379,7 +379,10 @@ object Safety {
       */
     case class NonJavaType(tpe: Type, clazz: java.lang.Class[_]) extends JavaSubtypeResult
 
-    case object TypeVariable extends JavaSubtypeResult
+    /**
+      * @param tpe the type variable.
+      */
+    case class TypeVariable(tpe: Type) extends JavaSubtypeResult
   }
 
   /**
@@ -391,11 +394,11 @@ object Safety {
     case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
       if (right.isAssignableFrom(left)) JavaSubtypeResult.Castable else JavaSubtypeResult.NonCastable
 
-    case (_, Type.Var(_, _)) =>
-      JavaSubtypeResult.TypeVariable
-
     case (Type.Var(_, _), _) =>
-      JavaSubtypeResult.TypeVariable
+      JavaSubtypeResult.TypeVariable(tpe1)
+
+    case (_, Type.Var(_, _)) =>
+      JavaSubtypeResult.TypeVariable(tpe2)
 
     case (Type.Cst(TypeConstructor.Native(clazz), _), _) =>
       JavaSubtypeResult.NonJavaType(tpe2, clazz)
@@ -427,9 +430,10 @@ object Safety {
     isJavaSubtypeOf(tpe1, tpe2) match {
       case JavaSubtypeResult.Castable => Nil
       case JavaSubtypeResult.NonCastable => UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
-      case JavaSubtypeResult.NonJavaType(t, c) if t == tpe1 => NonJavaTypeSupercast(exp.tpe, c, loc) :: Nil
-      case JavaSubtypeResult.NonJavaType(_, c) => NonJavaTypeSupercast(tpe, c, loc) :: Nil
-      case JavaSubtypeResult.TypeVariable => TypeVariableSupercast(exp.tpe, tpe, loc) :: Nil
+      case JavaSubtypeResult.NonJavaType(t, c) if t == tpe1 => FromNonJavaTypeSupercast(exp.tpe, c, loc) :: Nil
+      case JavaSubtypeResult.NonJavaType(_, c) => ToNonJavaTypeSupercast(c, tpe, loc) :: Nil
+      case JavaSubtypeResult.TypeVariable(tvar) if tvar == tpe2 => FromTypeVariableSupercast(exp.tpe, tpe, loc) :: Nil
+      case JavaSubtypeResult.TypeVariable(_) => ToTypeVariableSupercast(tpe, exp.tpe, loc) :: Nil
     }
   }
 

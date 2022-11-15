@@ -519,7 +519,7 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.NonJavaTypeSupercast](result)
+    expectError[SafetyError.FromNonJavaTypeSupercast](result)
   }
 
   test("TestSupercast.02") {
@@ -536,7 +536,7 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.NonJavaTypeSupercast](result)
+    expectError[SafetyError.FromNonJavaTypeSupercast](result)
   }
 
   test("TestSupercast.03") {
@@ -572,7 +572,7 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.TypeVariableSupercast](result)
+    expectError[SafetyError.FromTypeVariableSupercast](result)
   }
 
   test("TestSupercast.05") {
@@ -589,6 +589,6 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.TypeVariableSupercast](result)
+    expectError[SafetyError.FromTypeVariableSupercast](result)
   }
 }
