@@ -516,41 +516,41 @@ object Typer {
       case KindedAst.Expression.Hole(_, tvar, _) =>
         liftM(List.empty, tvar, Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Unit, _) =>
-        liftM(List.empty, Type.Unit, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.Unit, loc) =>
+        liftM(List.empty, Type.mkUnit(loc), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Null, _) =>
-        liftM(List.empty, Type.Null, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.Null, loc) =>
+        liftM(List.empty, Type.mkNull(loc), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Bool(_), _) =>
-        liftM(List.empty, Type.Bool, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.Bool(_), loc) =>
+        liftM(List.empty, Type.mkBool(loc), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Char(_), _) =>
-        liftM(List.empty, Type.Char, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.Char(_), loc) =>
+        liftM(List.empty, Type.mkChar(loc), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Float32(_), _) =>
-        liftM(List.empty, Type.Float32, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.Float32(_), loc) =>
+        liftM(List.empty, Type.mkFloat32(loc), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Float64(_), _) =>
-        liftM(List.empty, Type.Float64, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.Float64(_), loc) =>
+        liftM(List.empty, Type.mkFloat64(loc), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.BigDecimal(_), _) =>
-        liftM(List.empty, Type.BigDecimal, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.BigDecimal(_), loc) =>
+        liftM(List.empty, Type.mkBigDecimal(loc), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Int8(_), _) =>
-        liftM(List.empty, Type.Int8, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.Int8(_), loc) =>
+        liftM(List.empty, Type.mkInt8(loc), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Int16(_), _) =>
-        liftM(List.empty, Type.Int16, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.Int16(_), loc) =>
+        liftM(List.empty, Type.mkInt16(loc), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Int32(_), _) =>
-        liftM(List.empty, Type.Int32, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.Int32(_), loc) =>
+        liftM(List.empty, Type.mkInt32(loc), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Int64(_), _) =>
-        liftM(List.empty, Type.Int64, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.Int64(_), loc) =>
+        liftM(List.empty, Type.mkInt64(loc), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.BigInt(_), _) =>
-        liftM(List.empty, Type.BigInt, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.BigInt(_), loc) =>
+        liftM(List.empty, Type.mkBigInt(loc), Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Cst(Ast.Constant.Str(_), loc) =>
         liftM(List.empty, Type.mkString(loc), Type.Pure, Type.Empty)
