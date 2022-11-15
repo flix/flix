@@ -227,7 +227,7 @@ namespace Map {
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Map(t) = m;
-                    RedBlackTree.parMinimumBy(threads() - 1, h, t) as \ {}
+                    RedBlackTree.parMinimumBy(threads() - 1, h, t)
                 else
                     min()
             case _: (k, k) -> Comparison \ ef => min()
@@ -258,7 +258,7 @@ namespace Map {
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(vl, vr);
                     let Map(t) = m;
-                    RedBlackTree.parMinimumBy(threads() - 1, h, t) as \ {}
+                    RedBlackTree.parMinimumBy(threads() - 1, h, t)
                 else
                     min()
             case _: (v, v) -> Comparison \ ef => min()
@@ -289,7 +289,7 @@ namespace Map {
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Map(t) = m;
-                    RedBlackTree.parMaximumBy(threads() - 1, h, t) as \ {}
+                    RedBlackTree.parMaximumBy(threads() - 1, h, t)
                 else
                     max()
             case _: (k, k) -> Comparison \ ef => max()
@@ -320,7 +320,7 @@ namespace Map {
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(vl, vr);
                     let Map(t) = m;
-                    RedBlackTree.parMaximumBy(threads() - 1, h, t) as \ {}
+                    RedBlackTree.parMaximumBy(threads() - 1, h, t)
                 else
                     max()
             case _: (v, v) -> Comparison \ ef => max()
@@ -621,7 +621,7 @@ namespace Map {
             case g: (k, v) -> Bool \ {} =>
                 if (useParallelEvaluation(m))
                     let Map(t) = m;
-                    RedBlackTree.parCount(threads() - 1, g, t) as \ {}
+                    RedBlackTree.parCount(threads() - 1, g, t)
                 else
                     c()
             case _: (k, v) -> Bool \ ef => c()
@@ -652,7 +652,7 @@ namespace Map {
         typematch f {
             case g: (k, v) -> Int32 \ {} =>
                 if (useParallelEvaluation(m))
-                    RedBlackTree.parSumWith(threads() - 1, g, t) as \ {}
+                    RedBlackTree.parSumWith(threads() - 1, g, t)
                 else
                     sw()
             case _: (k, v) -> Int32 \ ef => sw()
@@ -685,7 +685,7 @@ namespace Map {
         typematch f {
             case g: (k, v) -> Int32 \ {} =>
                 if (useParallelEvaluation(m))
-                    RedBlackTree.parProductWith(threads() - 1, g, t) as \ {}
+                    RedBlackTree.parProductWith(threads() - 1, g, t)
                 else
                     pw()
             case _: (k, v) -> Int32 \ ef => pw()
@@ -706,7 +706,7 @@ namespace Map {
         typematch f {
             case g: (k, v) -> Bool \ {} =>
                 if (useParallelEvaluation(m))
-                    RedBlackTree.parExists(threads() - 1, g, t) as \ {}
+                    RedBlackTree.parExists(threads() - 1, g, t)
                 else
                     e()
             case _: (k, v) -> Bool \ ef => e()
@@ -727,7 +727,7 @@ namespace Map {
         typematch f {
             case g: (k, v) -> Bool \ {} =>
                 if (useParallelEvaluation(m))
-                    RedBlackTree.parForall(threads() - 1, g, t) as \ {}
+                    RedBlackTree.parForAll(threads() - 1, g, t)
                 else
                     fa()
             case _: (k, v) -> Bool \ ef => fa()
