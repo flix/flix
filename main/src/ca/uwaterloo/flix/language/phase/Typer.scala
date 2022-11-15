@@ -1384,6 +1384,9 @@ object Typer {
         } yield (constrs, tvar, pur, eff)
 
       case KindedAst.Expression.Supercast(exp, tvar, _) =>
+        // Ignore the type of exp since we later check substitute
+        // tvar for the type required by exp and check
+        // during Safety that this is actually legal.
         for {
           (constrs, _, pur, eff) <- visitExp(exp)
         } yield (constrs, tvar, pur, eff)
