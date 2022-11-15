@@ -41,7 +41,7 @@ object Scheme {
   /**
     * Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables.
     */
-  def instantiate(sc: Scheme)(implicit flix: Flix): (List[Ast.TypeConstraint], Type) = {
+  def instantiate(sc: Scheme, loc: SourceLocation)(implicit flix: Flix): (List[Ast.TypeConstraint], Type) = {
     // Compute the base type.
     val baseType = sc.base
 
@@ -51,7 +51,7 @@ object Scheme {
     val freshVars = sc.quantifiers.foldLeft(Map.empty[Int, Type.Var]) {
       case (macc, tvar) =>
         // Determine the rigidity of the fresh type variable.
-        macc + (tvar.id -> Type.freshVar(tvar.kind, tvar.loc, tvar.isRegion, Ast.VarText.Absent))
+        macc + (tvar.id -> Type.freshVar(tvar.kind, loc, tvar.isRegion, Ast.VarText.Absent))
     }
 
     /**

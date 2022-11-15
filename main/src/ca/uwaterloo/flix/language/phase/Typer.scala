@@ -498,7 +498,7 @@ object Typer {
 
       case KindedAst.Expression.Def(sym, tvar, loc) =>
         val defn = root.defs(sym)
-        val (tconstrs0, defType) = Scheme.instantiate(defn.spec.sc)
+        val (tconstrs0, defType) = Scheme.instantiate(defn.spec.sc, loc)
         for {
           resultTyp <- unifyTypeM(tvar, defType, loc)
           tconstrs = tconstrs0.map(_.copy(loc = loc))
@@ -507,7 +507,7 @@ object Typer {
       case KindedAst.Expression.Sig(sym, tvar, loc) =>
         // find the declared signature corresponding to this symbol
         val sig = root.classes(sym.clazz).sigs(sym)
-        val (tconstrs0, sigType) = Scheme.instantiate(sig.spec.sc)
+        val (tconstrs0, sigType) = Scheme.instantiate(sig.spec.sc, loc)
         for {
           resultTyp <- unifyTypeM(tvar, sigType, loc)
           tconstrs = tconstrs0.map(_.copy(loc = loc))
@@ -1159,7 +1159,7 @@ object Typer {
           val caze = decl.cases(symUse.sym)
 
           // Instantiate the type scheme of the case.
-          val (_, tagType) = Scheme.instantiate(caze.sc)
+          val (_, tagType) = Scheme.instantiate(caze.sc, loc)
 
           //
           // The tag type is a function from the type of variant to the type of the enum.
@@ -2461,7 +2461,7 @@ object Typer {
         val caze = decl.cases(symUse.sym)
 
         // Instantiate the type scheme of the case.
-        val (_, tagType) = Scheme.instantiate(caze.sc)
+        val (_, tagType) = Scheme.instantiate(caze.sc, loc)
 
         //
         // The tag type is a function from the type of variant to the type of the enum.
