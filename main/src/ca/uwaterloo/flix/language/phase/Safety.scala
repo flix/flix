@@ -2,15 +2,15 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Derivation, Fixity, Polarity, TypeConstraint}
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.errors.{SafetyError, TypeError}
+import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
-import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Unification}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.language.phase.unification.Unification
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.annotation.tailrec
@@ -31,13 +31,9 @@ object Safety {
     //
     // Collect all errors.
     //
-    val defErrors = root.defs.flatMap {
+    val errors = root.defs.flatMap {
       case (_, defn) => visitDef(defn)
     }
-
-    val instanceErrors = visitImmutable(root)
-
-    val errors = defErrors ++ instanceErrors
 
     //
     // Check if any errors were detected.
@@ -46,50 +42,6 @@ object Safety {
       root.toSuccess
     else
       Validation.Failure(errors.to(LazyList))
-  }
-
-  /**
-    * Checks that all types used within an enum that derives `Immutable` are themselves immutable
-    */
-  private def visitImmutable(root: Root)(implicit flix: Flix): List[CompilationMessage] = {
-
-    val immutableClass = new Symbol.ClassSym(Nil, "Immutable", SourceLocation.Unknown)
-
-    def visitEnum(sym: Symbol.EnumSym): List[CompilationMessage] = {
-      root.enums.get(sym) match {
-        case Some(Enum(_, _, _, _, _, _, cases, _, _)) => cases.values.flatMap {
-            case Case(_, tpe, _, _) => visitTpe(tpe)
-          }.toList
-        case _ => throw InternalCompilerException("Unexpected missing enum")
-      }
-    }
-
-    def visitTpe(tpe: Type): List[CompilationMessage] = {
-      tpe match {
-        case Type.Cst(_: TypeConstructor.Tuple, _) => Nil
-        case Type.Cst(_: TypeConstructor, loc) => checkImmutable(tpe, loc)
-        case Type.Apply(tpe1, tpe2, loc) => 
-          (tpe2 match {
-            case _: Type.Cst => checkImmutable(tpe2, loc)
-            case _ => Nil
-          }) ++ visitTpe(tpe1)
-        case _ => Nil
-      }
-    }
-
-    def checkImmutable(tpe: Type, loc: SourceLocation): List[CompilationMessage] = {
-      if (!ClassEnvironment.holds(TypeConstraint(TypeConstraint.Head(immutableClass, SourceLocation.Unknown), tpe, SourceLocation.Unknown), root.classEnv))
-        List(TypeError.MissingInstance(immutableClass, tpe, loc))
-      else
-        Nil
-    }
-      
-    root.instances.getOrElse(immutableClass, Nil) flatMap {
-      case Instance(_, _, _, _, tpe, _, _, _, _) => tpe.baseType match {
-          case Type.Cst(TypeConstructor.Enum(sym, _), _) => visitEnum(sym)
-          case _ => Nil
-        }
-    }
   }
 
   /**
