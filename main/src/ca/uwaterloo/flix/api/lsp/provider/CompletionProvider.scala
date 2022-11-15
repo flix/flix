@@ -836,6 +836,15 @@ object CompletionProvider {
       return Nil
     }
 
+    def getInternalPriority(loc: SourceLocation, ns: List[String]): String => String = {
+      if (loc.source.name == context.uri) 
+        Priority.boost _
+      else if (ns.isEmpty)
+        Priority.normal _
+      else
+        Priority.low _
+    }
+
     // Boost priority if there's a colon immediately before the word the user's typing
     val priorityBoost = raw".*:\s*[^\s]*".r
     val priority = if (priorityBoost matches context.prefix) Priority.boost _ else Priority.low _
@@ -843,8 +852,9 @@ object CompletionProvider {
     val enums = root.enums.map {
       case (_, t) =>
         val name = t.sym.name
+        val internalPriority = getInternalPriority(t.loc, t.sym.namespace)
         CompletionItem(label = s"$name${formatTParams(t.tparams)}",
-          sortText = priority(name),
+          sortText = priority(internalPriority(name)),
           textEdit = TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"),
           documentation = Some(t.doc.text),
           insertTextFormat = InsertTextFormat.Snippet,
@@ -854,8 +864,9 @@ object CompletionProvider {
     val aliases = root.typeAliases.map {
       case (_, t) =>
         val name = t.sym.name
+        val internalPriority = getInternalPriority(t.loc, t.sym.namespace)
         CompletionItem(label = s"$name${formatTParams(t.tparams)}",
-          sortText = priority(name),
+          sortText = priority(internalPriority(name)),
           textEdit = TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"),
           documentation = Some(t.doc.text),
           insertTextFormat = InsertTextFormat.Snippet,
@@ -863,8 +874,9 @@ object CompletionProvider {
     }
 
     val builtinTypes = builtinTypeNames map { name =>
+      val internalPriority = Priority.high _
       CompletionItem(label = name,
-        sortText = priority(name),
+        sortText = priority(internalPriority(name)),
         textEdit = TextEdit(context.range, name),
         kind = CompletionItemKind.Enum)
     }

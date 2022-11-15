@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -30,7 +31,8 @@ object KindedAst {
                   effects: Map[Symbol.EffectSym, KindedAst.Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias],
                   entryPoint: Option[Symbol.DefnSym],
-                  sources: Map[Source, SourceLocation])
+                  sources: Map[Source, SourceLocation],
+                  names: MultiMap[List[String], String])
 
   case class Class(doc: Ast.Doc, ann: List[KindedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: KindedAst.TypeParam, superClasses: List[Ast.TypeConstraint], sigs: Map[Symbol.SigSym, KindedAst.Sig], laws: List[KindedAst.Def], loc: SourceLocation)
 
@@ -191,12 +193,6 @@ object KindedAst {
     case class FixpointInject(exp: KindedAst.Expression, pred: Name.Pred, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class FixpointProject(pred: Name.Pred, exp1: KindedAst.Expression, exp2: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
-
-    case class Reify(t: Type, loc: SourceLocation) extends KindedAst.Expression
-
-    case class ReifyType(t: Type, k: Kind, loc: SourceLocation) extends KindedAst.Expression
-
-    case class ReifyEff(sym: Symbol.VarSym, exp1: KindedAst.Expression, exp2: KindedAst.Expression, exp3: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
   }
 

@@ -93,7 +93,7 @@ object Resolver {
         flatMapN(classesVal, sequence(instancesVal), defsVal, sequence(enumsVal), sequence(effectsVal)) {
           case (classes, instances, defs, enums, effects) =>
             mapN(checkSuperClassDag(classes)) {
-              _ => ResolvedAst.Root(classes, combine(instances), defs, enums.toMap, effects.toMap, taenv, taOrder, root.entryPoint, root.sources)
+              _ => ResolvedAst.Root(classes, combine(instances), defs, enums.toMap, effects.toMap, taenv, taOrder, root.entryPoint, root.sources, root.names)
             }
         }
     }
@@ -1209,26 +1209,6 @@ object Resolver {
           val e2Val = visitExp(exp2, region)
           mapN(e1Val, e2Val) {
             case (e1, e2) => ResolvedAst.Expression.FixpointProject(pred, e1, e2, loc)
-          }
-
-        case NamedAst.Expression.Reify(t0, loc) =>
-          val tVal = resolveType(t0, taenv, ns0, root)
-          mapN(tVal) {
-            t => ResolvedAst.Expression.Reify(t, loc)
-          }
-
-        case NamedAst.Expression.ReifyType(t0, k, loc) =>
-          val tVal = resolveType(t0, taenv, ns0, root)
-          mapN(tVal) {
-            t => ResolvedAst.Expression.ReifyType(t, k, loc)
-          }
-
-        case NamedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, loc) =>
-          val e1Val = visitExp(exp1, region)
-          val e2Val = visitExp(exp2, region)
-          val e3Val = visitExp(exp3, region)
-          mapN(e1Val, e2Val, e3Val) {
-            case (e1, e2, e3) => ResolvedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
           }
       }
 

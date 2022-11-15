@@ -17,10 +17,11 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 object WeededAst {
 
-  case class Root(units: Map[Ast.Source, WeededAst.CompilationUnit], entryPoint: Option[Symbol.DefnSym])
+  case class Root(units: Map[Ast.Source, WeededAst.CompilationUnit], entryPoint: Option[Symbol.DefnSym], names: MultiMap[List[String], String])
 
   case class CompilationUnit(uses: List[WeededAst.Use], imports: List[WeededAst.Import], decls: List[WeededAst.Declaration], loc: SourceLocation)
 
@@ -214,12 +215,6 @@ object WeededAst {
     case class FixpointInject(exp: WeededAst.Expression, pred: Name.Pred, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointProject(pred: Name.Pred, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Reify(t: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
-
-    case class ReifyType(t: WeededAst.Type, k: Kind, loc: SourceLocation) extends WeededAst.Expression
-
-    case class ReifyEff(ident: Name.Ident, exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
   }
 

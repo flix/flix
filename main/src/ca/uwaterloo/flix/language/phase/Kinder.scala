@@ -100,7 +100,7 @@ object Kinder {
 
         mapN(enumsVal, classesVal, defsVal, instancesVal, effectsVal) {
           case (enums, classes, defs, instances, effects) =>
-            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, effects.toMap, taenv, root.entryPoint, root.sources)
+            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, effects.toMap, taenv, root.entryPoint, root.sources, root.names)
         }
     }
 
@@ -791,27 +791,6 @@ object Kinder {
       mapN(exp1Val, exp2Val) {
         case (exp1, exp2) => KindedAst.Expression.FixpointProject(pred, exp1, exp2, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
-
-    case ResolvedAst.Expression.Reify(t0, loc) =>
-      val tVal = visitType(t0, Kind.Bool, kenv0, senv, taenv, root)
-      mapN(tVal) {
-        t => KindedAst.Expression.Reify(t, loc)
-      }
-
-    case ResolvedAst.Expression.ReifyType(t0, k0, loc) =>
-      val tVal = visitType(t0, k0, kenv0, senv, taenv, root)
-      mapN(tVal) {
-        t => KindedAst.Expression.ReifyType(t, k0, loc)
-      }
-
-    case ResolvedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, loc) =>
-      val e1Val = visitExp(exp1, kenv0, senv, taenv, henv0, root)
-      val e2Val = visitExp(exp2, kenv0, senv, taenv, henv0, root)
-      val e3Val = visitExp(exp3, kenv0, senv, taenv, henv0, root)
-      mapN(e1Val, e2Val, e3Val) {
-        case (e1, e2, e3) => KindedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
-      }
-
   }
 
   /**

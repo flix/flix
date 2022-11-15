@@ -32,6 +32,7 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, mapN, traverse}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.ListOps.unzip4
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.io.PrintWriter
 
@@ -52,8 +53,44 @@ object Typer {
     Validation.mapN(classesVal, instancesVal, defsVal, enumsVal, effsVal) {
       case (classes, instances, defs, enums, effs) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
-        TypedAst.Root(classes, instances, sigs, defs, enums, effs, typeAliases, root.entryPoint, root.sources, classEnv)
+        val modules = collectModules(root)
+        TypedAst.Root(modules, classes, instances, sigs, defs, enums, effs, typeAliases, root.entryPoint, root.sources, classEnv, root.names)
     }
+  }
+
+  /**
+    * Collects the symbols in the given root into a map.
+    */
+  private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, List[Symbol]] = root match {
+    case KindedAst.Root(classes, _, defs, enums, effects, typeAliases, _, _, _) =>
+      val sigs = classes.values.flatMap { clazz => clazz.sigs.values.map(_.sym) }
+      val ops = effects.values.flatMap{ eff => eff.ops.map(_.sym) }
+
+      val syms = classes.keys ++ defs.keys ++ enums.keys ++ effects.keys ++ typeAliases.keys ++ sigs ++ ops
+
+      val groups = syms.groupBy {
+        case sym: Symbol.DefnSym => new Symbol.ModuleSym(sym.namespace)
+        case sym: Symbol.EnumSym => new Symbol.ModuleSym(sym.namespace)
+        case sym: Symbol.ClassSym => new Symbol.ModuleSym(sym.namespace)
+        case sym: Symbol.TypeAliasSym => new Symbol.ModuleSym(sym.namespace)
+        case sym: Symbol.EffectSym => new Symbol.ModuleSym(sym.namespace)
+
+        case sym: Symbol.SigSym => new Symbol.ModuleSym(sym.clazz.namespace :+ sym.clazz.name)
+        case sym: Symbol.OpSym => new Symbol.ModuleSym(sym.eff.namespace :+ sym.eff.name)
+
+        case sym: Symbol.InstanceSym => throw InternalCompilerException(s"unexpected symbol: $sym")
+        case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym")
+        case sym: Symbol.ModuleSym => throw InternalCompilerException(s"unexpected symbol: $sym")
+        case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol: $sym")
+        case sym: Symbol.TypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym")
+        case sym: Symbol.LabelSym => throw InternalCompilerException(s"unexpected symbol: $sym")
+        case sym: Symbol.HoleSym => throw InternalCompilerException(s"unexpected symbol: $sym")
+      }
+
+      groups.map {
+        case (k, v) => (k, v.toList)
+      }
+
   }
 
   /**
@@ -1788,41 +1825,6 @@ object Typer {
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.Reify(t, loc) =>
-        liftM(Nil, Type.Bool, Type.Pure, Type.Empty)
-
-      case KindedAst.Expression.ReifyType(t, k, loc) =>
-        k match {
-          case Kind.Bool =>
-            val sym = Symbol.mkEnumSym("ReifiedBool")
-            val tpe = Type.mkEnum(sym, Kind.Star, loc)
-            liftM(Nil, tpe, Type.Pure, Type.Empty)
-          case Kind.Star =>
-            val sym = Symbol.mkEnumSym("ReifiedType")
-            val tpe = Type.mkEnum(sym, Kind.Star, loc)
-            liftM(Nil, tpe, Type.Pure, Type.Empty)
-          case _ =>
-            throw InternalCompilerException(s"Unexpected kind: '$k'.")
-        }
-
-      case KindedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, loc) =>
-        val a = Type.freshVar(Kind.Star, loc, text = FallbackText("arg"))
-        val b = Type.freshVar(Kind.Star, loc, text = FallbackText("result"))
-        val p = Type.freshVar(Kind.Bool, loc, text = FallbackText("pur"))
-        val ef = Type.freshVar(Kind.Effect, loc, text = FallbackText("eff"))
-        val polyLambdaType = Type.mkArrowWithEffect(a, p, ef, b, loc)
-        val pureLambdaType = Type.mkPureArrow(a, b, loc)
-        for {
-          (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
-          (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
-          (constrs3, tpe3, pur3, eff3) <- visitExp(exp3)
-          actualLambdaType <- unifyTypeM(polyLambdaType, tpe1, loc)
-          boundVar <- unifyTypeM(sym.tvar, pureLambdaType, loc)
-          resultTyp <- unifyTypeM(tpe2, tpe3, loc)
-          resultPur = Type.mkAnd(pur1, pur2, pur3, loc)
-          resultEff = Type.mkUnion(List(eff1, eff2, eff3), loc)
-        } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultPur, resultEff)
-
     }
 
     /**
@@ -2362,31 +2364,6 @@ object Typer {
         val mergeExp = TypedAst.Expression.FixpointMerge(e1, e2, stf, e1.tpe, pur, eff, loc)
         val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, e1.tpe, pur, eff, loc)
         TypedAst.Expression.FixpointProject(pred, solveExp, tpe, pur, eff, loc)
-
-      case KindedAst.Expression.Reify(t0, loc) =>
-        val t = subst0(t0)
-        val tpe = Type.Bool
-        val pur = Type.Pure
-        val eff = Type.Empty
-        TypedAst.Expression.Reify(t, tpe, pur, eff, loc)
-
-      case KindedAst.Expression.ReifyType(t0, k0, loc) =>
-        val t = subst0(t0)
-        val sym = Symbol.mkEnumSym("ReifiedType")
-        val tpe = Type.mkEnum(sym, Kind.Star, loc)
-        val pur = Type.Pure
-        val eff = Type.Empty
-        TypedAst.Expression.ReifyType(t, k0, tpe, pur, eff, loc)
-
-      case KindedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, loc) =>
-        val e1 = visitExp(exp1, subst0)
-        val e2 = visitExp(exp2, subst0)
-        val e3 = visitExp(exp3, subst0)
-
-        val tpe = e2.tpe
-        val pur = Type.mkAnd(e1.pur, e2.pur, e3.pur, loc)
-        val eff = Type.mkUnion(List(e1.eff, e2.eff, e3.eff), loc)
-        TypedAst.Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
     }
 
     /**

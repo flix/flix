@@ -50,7 +50,8 @@ object Namer {
       effects = Map.empty,
       ops = Map.empty,
       entryPoint = program.entryPoint,
-      sources = locations
+      sources = locations,
+      names = program.names
     )
 
     // collect all the declarations.
@@ -1109,23 +1110,6 @@ object Namer {
       mapN(visitExp(exp1, env0, uenv0, tenv0, ns0, prog0), visitExp(exp2, env0, uenv0, tenv0, ns0, prog0)) {
         case (e1, e2) => NamedAst.Expression.FixpointProject(pred, e1, e2, loc)
       }
-
-    case WeededAst.Expression.Reify(t0, loc) =>
-      mapN(visitType(t0, allowWild = false, uenv0, tenv0)) {
-        case t => NamedAst.Expression.Reify(t, loc)
-      }
-
-    case WeededAst.Expression.ReifyType(t0, k, loc) =>
-      mapN(visitType(t0, allowWild = false, uenv0, tenv0)) {
-        case t => NamedAst.Expression.ReifyType(t, k, loc)
-      }
-
-    case WeededAst.Expression.ReifyEff(ident, exp1, exp2, exp3, loc) =>
-      val sym = Symbol.freshVarSym(ident, BoundBy.Let)
-      mapN(visitExp(exp1, env0, uenv0, tenv0, ns0, prog0), visitExp(exp2, env0 + (ident.name -> sym), uenv0, tenv0, ns0, prog0), visitExp(exp3, env0, uenv0, tenv0, ns0, prog0)) {
-        case (e1, e2, e3) => NamedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
-      }
-
   }
 
   /**
@@ -1587,9 +1571,6 @@ object Namer {
     case WeededAst.Expression.FixpointFilter(_, exp, _) => freeVars(exp)
     case WeededAst.Expression.FixpointInject(exp, _, _) => freeVars(exp)
     case WeededAst.Expression.FixpointProject(_, exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
-    case WeededAst.Expression.Reify(_, _) => Nil
-    case WeededAst.Expression.ReifyType(_, _, _) => Nil
-    case WeededAst.Expression.ReifyEff(ident, exp1, exp2, exp3, _) => filterBoundVars(freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3), List(ident))
   }
 
   /**
@@ -2043,7 +2024,7 @@ object Namer {
     }
 
     Validation.flatMapN(merge1) {
-      case uenv2 => 
+      case uenv2 =>
         Validation.fold(imports, uenv2) {
           case (uenv3, WeededAst.Import.Import(name, alias, loc1)) =>
             lookupUpperName(alias, ns0, prog0, uenv3) match {

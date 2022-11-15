@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 object NamedAst {
 
@@ -28,7 +29,8 @@ object NamedAst {
                   effects: Map[Name.NName, Map[String, NamedAst.Effect]],
                   ops: Map[Name.NName, Map[String, NamedAst.Op]],
                   entryPoint: Option[Symbol.DefnSym],
-                  sources: Map[Source, SourceLocation])
+                  sources: Map[Source, SourceLocation],
+                  names: MultiMap[List[String], String])
 
   // TODO change laws to NamedAst.Law
   case class Class(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, superClasses: List[NamedAst.TypeConstraint], sigs: List[NamedAst.Sig], laws: List[NamedAst.Def], loc: SourceLocation)
@@ -212,12 +214,6 @@ object NamedAst {
     case class FixpointInject(exp: NamedAst.Expression, pred: Name.Pred, loc: SourceLocation) extends NamedAst.Expression
 
     case class FixpointProject(pred: Name.Pred, exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
-
-    case class Reify(t: NamedAst.Type, loc: SourceLocation) extends NamedAst.Expression
-
-    case class ReifyType(t: NamedAst.Type, k: Kind, loc: SourceLocation) extends NamedAst.Expression
-
-    case class ReifyEff(sym: Symbol.VarSym, exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
   }
 

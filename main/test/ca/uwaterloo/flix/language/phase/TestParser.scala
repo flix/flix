@@ -397,4 +397,30 @@ class TestParser extends FunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
+  test("ParseError.ParYield.01") {
+    val input =
+      """
+        |def f(): Int32 = par () yield 1
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("ParseError.ParYield.02") {
+    val input =
+      """
+        |def f(): Int32 = par a <- 1 yield a
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("ParseError.ParYield.03") {
+    val input =
+      """
+        |def f(): (Int32, Int32) = par (a <- let b = 1; b; c <- 2) yield (a, c)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
 }
