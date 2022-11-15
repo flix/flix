@@ -1209,14 +1209,6 @@ object Resolver {
           mapN(e1Val, e2Val) {
             case (e1, e2) => ResolvedAst.Expression.FixpointProject(pred, e1, e2, loc)
           }
-
-        case NamedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, loc) =>
-          val e1Val = visitExp(exp1, region)
-          val e2Val = visitExp(exp2, region)
-          val e3Val = visitExp(exp3, region)
-          mapN(e1Val, e2Val, e3Val) {
-            case (e1, e2, e3) => ResolvedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
-          }
       }
 
       /**

@@ -194,8 +194,6 @@ object KindedAst {
 
     case class FixpointProject(pred: Name.Pred, exp1: KindedAst.Expression, exp2: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class ReifyEff(sym: Symbol.VarSym, exp1: KindedAst.Expression, exp2: KindedAst.Expression, exp3: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
-
   }
 
   sealed trait Pattern {

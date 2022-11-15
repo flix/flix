@@ -148,7 +148,6 @@ object Statistics {
       case Expression.FixpointFilter(pred, exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.FixpointInject(exp, pred, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.FixpointProject(pred, exp, tpe, pur, eff, loc) => visitExp(exp)
-      case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
     }
 
     base ++ subExprs
