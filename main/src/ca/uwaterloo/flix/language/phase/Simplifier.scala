@@ -102,7 +102,7 @@ object Simplifier {
         SimplifiedAst.Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, simplifyPurity(pur), loc)
 
       case LoweredAst.Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) =>
-        SimplifiedAst.Expression.Cast(visitExp(exp), tpe, simplifyPurity(pur), loc)
+        SimplifiedAst.Expression.Let(sym, visitExp(exp), SimplifiedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), tpe, simplifyPurity(pur), loc)
 
       case LoweredAst.Expression.Match(exp0, rules, tpe, pur, eff, loc) =>
         patternMatchWithLabels(exp0, rules, tpe, loc)
