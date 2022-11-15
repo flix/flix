@@ -279,7 +279,7 @@ namespace Graph {
         let ml = new MutList(r);
         res |>
             List.sortBy(match (x, i) -> (i, x)) |>
-            List.foreach(match (x, _) -> MutList.push!(x, ml));
+            List.forEach(match (x, _) -> MutList.push!(x, ml));
         MutList.toList(ml)
     }
 
