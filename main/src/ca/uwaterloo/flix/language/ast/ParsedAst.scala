@@ -1182,18 +1182,6 @@ object ParsedAst {
     case class FixpointQueryWithSelect(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], selects: Seq[ParsedAst.Expression], from: Seq[ParsedAst.Predicate.Body.Atom], whereExp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * ReifyEff Expression (Will eventually be replaced by other reify expressions).
-      *
-      * @param sp1   the position of the first character in the expression.
-      * @param exp1  the function expression on whose purity to match.
-      * @param ident the name to bind the pure function to.
-      * @param exp2  the then expression.
-      * @param exp3  the else expression.
-      * @param sp2   the position of the last character in the expression.
-      */
-    case class ReifyPurity(sp1: SourcePosition, exp1: ParsedAst.Expression, ident: Name.Ident, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Debug expression.
       *
       * @param sp1  the position of the first character in the expression.

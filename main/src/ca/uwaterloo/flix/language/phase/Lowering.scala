@@ -766,13 +766,6 @@ object Lowering {
       val defExp = LoweredAst.Expression.Def(sym, defTpe, loc)
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
       LoweredAst.Expression.Apply(defExp, argExps, tpe, pur, eff, loc)
-
-    case TypedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, pur, eff, loc) =>
-      val t = visitType(tpe)
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val e3 = visitExp(exp3)
-      LoweredAst.Expression.ReifyEff(sym, e1, e2, e3, t, pur, eff, loc)
   }
 
   /**
@@ -1916,13 +1909,6 @@ object Lowering {
     case LoweredAst.Expression.Force(exp, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
       LoweredAst.Expression.Force(e, tpe, pur, eff, loc)
-
-    case LoweredAst.Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, pur, eff, loc) =>
-      val e1 = substExp(exp1, subst)
-      val e2 = substExp(exp2, subst)
-      val e3 = substExp(exp3, subst)
-      LoweredAst.Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
-
   }
 
   /**

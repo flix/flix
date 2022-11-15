@@ -1825,24 +1825,6 @@ object Typer {
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, loc) =>
-        val a = Type.freshVar(Kind.Star, loc, text = FallbackText("arg"))
-        val b = Type.freshVar(Kind.Star, loc, text = FallbackText("result"))
-        val p = Type.freshVar(Kind.Bool, loc, text = FallbackText("pur"))
-        val ef = Type.freshVar(Kind.Effect, loc, text = FallbackText("eff"))
-        val polyLambdaType = Type.mkArrowWithEffect(a, p, ef, b, loc)
-        val pureLambdaType = Type.mkPureArrow(a, b, loc)
-        for {
-          (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
-          (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
-          (constrs3, tpe3, pur3, eff3) <- visitExp(exp3)
-          actualLambdaType <- unifyTypeM(polyLambdaType, tpe1, loc)
-          boundVar <- unifyTypeM(sym.tvar, pureLambdaType, loc)
-          resultTyp <- unifyTypeM(tpe2, tpe3, loc)
-          resultPur = Type.mkAnd(pur1, pur2, pur3, loc)
-          resultEff = Type.mkUnion(List(eff1, eff2, eff3), loc)
-        } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultPur, resultEff)
-
     }
 
     /**
@@ -2382,16 +2364,6 @@ object Typer {
         val mergeExp = TypedAst.Expression.FixpointMerge(e1, e2, stf, e1.tpe, pur, eff, loc)
         val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, e1.tpe, pur, eff, loc)
         TypedAst.Expression.FixpointProject(pred, solveExp, tpe, pur, eff, loc)
-
-      case KindedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, loc) =>
-        val e1 = visitExp(exp1, subst0)
-        val e2 = visitExp(exp2, subst0)
-        val e3 = visitExp(exp3, subst0)
-
-        val tpe = e2.tpe
-        val pur = Type.mkAnd(e1.pur, e2.pur, e3.pur, loc)
-        val eff = Type.mkUnion(List(e1.eff, e2.eff, e3.eff), loc)
-        TypedAst.Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
     }
 
     /**

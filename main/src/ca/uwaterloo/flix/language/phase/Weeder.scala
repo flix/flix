@@ -46,7 +46,7 @@ object Weeder {
     "class", "def", "deref", "else", "enum", "false", "fix", "force",
     "if", "import", "inline", "instance", "into", "lat", "law", "lawful", "lazy", "let", "let*", "match",
     "namespace", "null", "opaque", "override", "pub", "ref", "region",
-    "reifyEff", "reifyType", "rel", "sealed", "set", "spawn", "Static", "true",
+    "rel", "sealed", "set", "spawn", "Static", "true",
     "type", "use", "where", "with", "|||", "~~~", "discard", "object"
   )
 
@@ -1753,12 +1753,6 @@ object Weeder {
           WeededAst.Expression.FixpointProject(pred, queryExp, dbExp, loc)
       }
 
-    case ParsedAst.Expression.ReifyPurity(sp1, exp1, ident, exp2, exp3, sp2) =>
-      mapN(visitExp(exp1, senv), visitExp(exp2, senv), visitExp(exp3, senv)) {
-        case (e1, e2, e3) =>
-          WeededAst.Expression.ReifyEff(ident, e1, e2, e3, mkSL(sp1, sp2))
-      }
-
     case ParsedAst.Expression.Debug(sp1, kind, exp, sp2) =>
       mapN(visitExp(exp, senv)) {
         case e =>
@@ -3043,7 +3037,6 @@ object Weeder {
     case ParsedAst.Expression.FixpointInjectInto(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, _, _, _, _, _) => sp1
-    case ParsedAst.Expression.ReifyPurity(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.Debug(sp1, _, _, _) => sp1
   }
 

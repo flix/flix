@@ -1110,13 +1110,6 @@ object Namer {
       mapN(visitExp(exp1, env0, uenv0, tenv0, ns0, prog0), visitExp(exp2, env0, uenv0, tenv0, ns0, prog0)) {
         case (e1, e2) => NamedAst.Expression.FixpointProject(pred, e1, e2, loc)
       }
-
-    case WeededAst.Expression.ReifyEff(ident, exp1, exp2, exp3, loc) =>
-      val sym = Symbol.freshVarSym(ident, BoundBy.Let)
-      mapN(visitExp(exp1, env0, uenv0, tenv0, ns0, prog0), visitExp(exp2, env0 + (ident.name -> sym), uenv0, tenv0, ns0, prog0), visitExp(exp3, env0, uenv0, tenv0, ns0, prog0)) {
-        case (e1, e2, e3) => NamedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
-      }
-
   }
 
   /**
@@ -1578,7 +1571,6 @@ object Namer {
     case WeededAst.Expression.FixpointFilter(_, exp, _) => freeVars(exp)
     case WeededAst.Expression.FixpointInject(exp, _, _) => freeVars(exp)
     case WeededAst.Expression.FixpointProject(_, exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
-    case WeededAst.Expression.ReifyEff(ident, exp1, exp2, exp3, _) => filterBoundVars(freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3), List(ident))
   }
 
   /**

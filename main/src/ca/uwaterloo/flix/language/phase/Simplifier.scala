@@ -260,9 +260,6 @@ object Simplifier {
       case LoweredAst.Expression.Resume(_, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
-      case LoweredAst.Expression.ReifyEff(_, _, _, _, _, _, _, _) =>
-        throw InternalCompilerException(s"Unexpected expression: $exp0.")
-
       case LoweredAst.Expression.TypeMatch(_, _, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
     }
