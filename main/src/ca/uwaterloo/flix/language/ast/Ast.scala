@@ -16,8 +16,12 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.fmt.FormatType
+
 import java.nio.file.Path
 import java.util.Objects
+import scala.collection.mutable
 
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
@@ -448,7 +452,15 @@ object Ast {
   /**
     * Represents a label in the labelled graph.
     */
-  case class Label(pred: Name.Pred, den: Denotation, arity: Int, terms: List[Type])
+  case class Label(pred: Name.Pred, den: Denotation, arity: Int, terms: List[Type]) {
+    def graphviz(implicit flix: Flix): String = {
+      val denString = den match {
+        case Denotation.Relational => "rel"
+        case Denotation.Latticenal => "lat"
+      }
+      s"${pred.name}_${denString}_$arity(${terms.map(FormatType.formatType).mkString(", ")})"
+    }
+  }
 
   object LabelledGraph {
     /**
@@ -493,6 +505,27 @@ object Ast {
       LabelledGraph(edges.filter {
         case LabelledEdge(_, _, _, labels, _, _) => labels.forall(include)
       })
+    }
+
+    def graphviz(implicit flix: Flix): String = {
+      val sb = new mutable.StringBuilder
+      def edgeString(head: Name.Pred, polarity: Polarity, fixity: Fixity, labels: Vector[Label], body: Name.Pred): String = {
+        val labelsString = labels.map(_.graphviz).mkString(", ")
+        (polarity, fixity) match {
+          case (Polarity.Negative, _) | (_, Fixity.Fixed) =>
+            s"  ${head.name} -> ${body.name} [style = bold, color = red]"
+          case _ =>
+            s"  ${head.name} -> ${body.name}"// [label = ${"\""}$labelsString${"\""}]"
+        }
+      }
+      sb.append("digraph {\n")
+      edges.map{case LabelledEdge(head, pol, fix, lbls, body, _) =>
+        edgeString(head, pol, fix, lbls, body).replace('%', '\'')
+      }.foreach(s =>
+        sb.append(s"$s\n")
+      )
+      sb.append("}\n")
+      sb.toString()
     }
   }
 

@@ -265,17 +265,12 @@ namespace Graph {
             After(x, y) :- Edge(y, x).
             After(x, y) :- After(z, y), Edge(z, x).
 
-            // all "possible" indices
-            Indices(x, 0) :- Node(x), not EdgeSecond(x), EdgeFirst(x).
-            Indices(x, i+1) :- Before(y, x), not Before(x, y),
+            // All "possible" indices
+            Index(x; 0) :- Node(x), not EdgeSecond(x), EdgeFirst(x).
+            Index(x; i+1) :- Before(y, x), not Before(x, y),
                                After(x, y), Indices(y, i).
-
-            // take the topmost index for each (there will be duplicates for
-            // unordered nodes)
-            PreviousIndex(x, i+1) :- Indices(x, i).
-            Index(x, i) :- Indices(x, i), not PreviousIndex(x, i).
         };
-        let res = query edges, nodes(), topSort select (x, i) from Index(x, i);
+        let res = query edges, nodes(), topSort select (x, i) from Index(x; i);
         let ml = new MutList(r);
         res |>
             List.sortBy(match (x, i) -> (i, x)) |>

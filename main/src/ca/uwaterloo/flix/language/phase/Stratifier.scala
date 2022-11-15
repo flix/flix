@@ -56,6 +56,8 @@ object Stratifier {
       }, _ + _)
     }
 
+    println(g.graphviz)
+
     // Compute the stratification at every datalog expression in the ast.
     val newDefs = flix.subphase("Stratify Defs") {
       val result = ParOps.parMap(root.defs)(kv => visitDef(kv._2)(g, flix).map(d => kv._1 -> d))
