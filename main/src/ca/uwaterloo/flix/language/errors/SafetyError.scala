@@ -1,11 +1,8 @@
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.fmt.Audience
-import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -183,11 +180,11 @@ object SafetyError {
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> The following supercast tries to cast a non-java to a java type.
+         |>> The following supercast tries to cast a non-Java to a Java type.
          |
          |${code(loc, "the supercast occurs here.")}
          |
-         |Non-java type:    $nonJavaType
+         |Non-Java type:    $nonJavaType
          |Tried casting to: $other
          |""".stripMargin
     }
@@ -219,9 +216,17 @@ object SafetyError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
-      "Did you try to supercast two types at the same time?"
-    })
+    override def explain(formatter: Formatter): Option[String] = {
+      import formatter._
+      Some({
+        s"""Did you try to supercast two types at the same time? e.g.
+           |
+           |  if (true) supercast(a) else supercast(b)
+           |
+           |where a and b are Java types
+           |""".stripMargin
+      })
+    }
   }
 
   /**
@@ -305,7 +310,7 @@ object SafetyError {
   /**
     * Format a Java type suitable for method implementation.
     */
-  private def formatJavaType(t: java.lang.Class[_]) = {
+  private def formatJavaType(t: java.lang.Class[_]): String = {
     if (t.isPrimitive || t.isArray)
       Type.getFlixType(t).toString
     else
