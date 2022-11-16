@@ -26,11 +26,6 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 object InferMonad {
 
   /**
-    * A constant for the InferMonad over the the Unit value.
-    */
-  val PointUnit: InferMonad[Unit] = point(())
-
-  /**
     * A constant for the InferMonad over the empty list.
     */
   val PointNil: InferMonad[Nil.type] = point(Nil)

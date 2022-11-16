@@ -290,21 +290,6 @@ object Unification {
   }
 
   /**
-    * Pairwise unifies the types in `tpes1` and `tpes2` with the corresponding source locations `locs`.
-    *
-    * Assumes that `tpes1`, `tpes2`, and `locs` have the same length.
-    */
-  def pairwiseUnifyM(tpes1: List[Type], tpes2: List[Type], locs: List[SourceLocation])(implicit flix: Flix): InferMonad[Unit] =
-    (tpes1, tpes2, locs) match {
-      case (x :: xs, y :: ys, loc :: rs) =>
-        for {
-          _ <- expectTypeM(expected = x, actual = y, loc)
-          _ <- pairwiseUnifyM(xs, ys, rs)
-        } yield ()
-      case (_, _, _) => InferMonad.PointUnit
-    }
-
-  /**
     * Unifies the two given Boolean formulas `tpe1` and `tpe2`.
     */
   def unifyBoolM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
@@ -356,20 +341,6 @@ object Unification {
     InferMonad {
       case (s, renv) => Ok((s.unbind(tvar.sym), renv, ()))
     }
-
-  /**
-    * Removes the given type variables `tvars` from the substitution.
-    *
-    * NB: Use with EXTREME CAUTION.
-    */
-  def unbindVars(tvars: List[Type.Var]): InferMonad[Unit] = tvars match {
-    case Nil => InferMonad.PointUnit
-    case x :: xs =>
-      for {
-        _ <- unbindVar(x)
-        _ <- unbindVars(xs)
-      } yield ()
-  }
 
   /**
     * Purifies the given effect `eff` in the type inference monad.
