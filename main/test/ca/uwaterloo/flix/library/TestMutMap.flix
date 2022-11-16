@@ -93,20 +93,22 @@ namespace TestMutMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def merge01(): Bool \ IO =
-        let m1 = new MutMap(Static): MutMap[Int32, Int32, _];
-        let m2 = new MutMap(Static): MutMap[Int32, Int32, _];
+    def merge01(): Bool = region r {
+        let m1 = new MutMap(r): MutMap[Int32, Int32, _];
+        let m2 = new MutMap(r): MutMap[Int32, Int32, _];
         MutMap.mergeWithKey!((_, v, _) -> v, m1, m2);
         MutMap.isEmpty(m2)
+    }
 
     @test
-    def merge02(): Bool \ IO =
-        let m1 = new MutMap(Static);
-        let m2 = new MutMap(Static);
+    def merge02(): Bool = region r {
+        let m1 = new MutMap(r);
+        let m2 = new MutMap(r);
         MutMap.put!(1, 0, m1);
         MutMap.put!(2, 0, m2);
         MutMap.mergeWithKey!((_, v, _) -> v, m1, m2);
         MutMap.memberOf(1, m2) and MutMap.memberOf(2, m2)
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////

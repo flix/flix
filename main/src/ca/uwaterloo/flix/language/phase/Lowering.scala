@@ -377,11 +377,9 @@ object Lowering {
       LoweredAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
 
     case TypedAst.Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) =>
-      // Introduce a Unit value to represent the Region value.
-      val mod = Ast.Modifiers.Empty
-      val e1 = LoweredAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
-      val e2 = visitExp(exp)
-      LoweredAst.Expression.Let(sym, mod, e1, e2, tpe, pur, eff, loc)
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      LoweredAst.Expression.Scope(sym, regionVar, e, t, pur, eff, loc)
 
     case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -1566,7 +1564,7 @@ object Lowering {
     *   }
     * }}}
     */
-  def mkLetMatch(exp: LoweredAst.Expression, pat: LoweredAst.Pattern, body: LoweredAst.Expression): LoweredAst.Expression = {
+  def mkLetMatch(pat: LoweredAst.Pattern, exp: LoweredAst.Expression, body: LoweredAst.Expression): LoweredAst.Expression = {
     val expLoc = exp.loc.asSynthetic
     val rule = List(LoweredAst.MatchRule(pat, None, body))
     val pur = Type.mkAnd(exp.pur, body.pur, expLoc)
@@ -1594,18 +1592,28 @@ object Lowering {
         val chExp = mkChannelExp(sym, e.tpe, loc)
         (p, mkGetChannel(chExp, e.tpe, Type.Impure, e.eff, loc))
     }.foldRight(exp) {
-      case ((pat, chan), e) => mkLetMatch(chan, pat, e)
+      case ((pat, chan), e) => mkLetMatch(pat, chan, e)
     }
 
   /**
     * Returns a desugared [[TypedAst.Expression.ParYield]] expression.
     */
   def mkParYield(frags: List[LoweredAst.ParYieldFragment], exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): LoweredAst.Expression = {
+    // Only generate channels for n-1 fragments. We use the current thread for the last fragment.
+    val (fs, last :: Nil) = frags.splitAt(frags.length - 1)
+
     // Generate symbols for each channel.
-    val chanSymsWithPatAndExp = frags.map { case LoweredAst.ParYieldFragment(p, e, l) => (p, mkLetSym("channel", l.asSynthetic), e) }
-    val desugaredYieldExp = mkBoundParWaits(chanSymsWithPatAndExp, exp)
+    val chanSymsWithPatAndExp = fs.map { case LoweredAst.ParYieldFragment(p, e, l) => (p, mkLetSym("channel", l.asSynthetic), e) }
+
+    // Make expression that evaluates the last fragment before proceeding to wait for channels.
+    val waitExps = mkBoundParWaits(chanSymsWithPatAndExp, exp)
+    val desugaredYieldExp = mkLetMatch(last.pat, last.exp, waitExps)
+
+    // Generate channels and spawn exps.
     val chanSymsWithExp = chanSymsWithPatAndExp.map { case (_, s, e) => (s, e) }
     val blockExp = mkParChannels(desugaredYieldExp, chanSymsWithExp)
+
+    // Wrap everything in a purity cast,
     LoweredAst.Expression.Cast(blockExp, None, Some(Type.Pure), Some(Type.Empty), tpe, pur, eff, loc.asSynthetic)
   }
 
@@ -1736,6 +1744,11 @@ object Lowering {
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
       LoweredAst.Expression.LetRec(s, mod, e1, e2, tpe, pur, eff, loc)
+
+    case LoweredAst.Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) =>
+      val s = subst.getOrElse(sym, sym)
+      val e = substExp(exp, subst)
+      LoweredAst.Expression.Scope(s, regionVar, e, tpe, pur, eff, loc)
 
     case LoweredAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) =>
       val e1 = substExp(exp1, subst)
