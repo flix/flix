@@ -125,7 +125,6 @@ namespace RedBlackTree {
     ///
     /// Returns the number of nodes in `t`.
     ///
-    @Time(size(t)) @Space(Int32.log2(size(t)))
     pub def size(t: RedBlackTree[k, v]): Int32 =
         def loop(tt, k) = match tt {
             case Node(_, a, _, _, b) => loop(a, ks -> k(loop(b, ys -> ks + ys + 1)))
@@ -136,13 +135,11 @@ namespace RedBlackTree {
     ///
     /// Returns the empty tree.
     ///
-    @Time(1) @Space(1)
     pub def empty(): RedBlackTree[k, v] = Leaf
 
     ///
     /// Returns `true` if and only if `t` is the empty tree.
     ///
-    @Time(1) @Space(1)
     pub def isEmpty(t: RedBlackTree[k, v]): Bool = match t {
         case Leaf => true
         case _    => false
@@ -153,7 +150,6 @@ namespace RedBlackTree {
     ///
     /// Otherwise, updates `t` with `k => v`.
     ///
-    @Time(Int32.log2(size(t))) @Space(Int32.log2(size(t)))
     pub def insert(k: k, v: v, t: RedBlackTree[k, v]): RedBlackTree[k, v] with Order[k] =
         def loop(tt, sk) = match tt {
             case Leaf                  => sk(Node(Red, Leaf, k, v, Leaf))
@@ -171,7 +167,6 @@ namespace RedBlackTree {
     ///
     /// Otherwise, updates `t` with `k => v`.
     ///
-    @Time(time(f) + Int32.log2(size(t))) @Space(space(f) + Int32.log2(size(t)))
     pub def insertWith(f: (k, v, v) -> v \ ef, k: k, v: v, t: RedBlackTree[k, v]): RedBlackTree[k, v] \ ef with Order[k] =
         def loop(tt, sk) = match tt {
             case Leaf                  => sk(Node(Red, Leaf, k, v, Leaf))
@@ -189,7 +184,6 @@ namespace RedBlackTree {
     ///
     /// Otherwise, returns `t`.
     ///
-    @Time(time(f) + Int32.log2(size(t))) @Space(space(f) + Int32.log2(size(t)))
     pub def updateWith(f: (k, v) -> Option[v] \ ef, k: k, t: RedBlackTree[k, v]): RedBlackTree[k, v] \ ef with Order[k] =
         def loop(tt, sk) = match tt {
             case Leaf                  => sk(tt)
@@ -237,7 +231,6 @@ namespace RedBlackTree {
     ///
     /// Otherwise returns `None`.
     ///
-    @Time(Int32.log2(size(t))) @Space(1)
     pub def get(k: k, t: RedBlackTree[k, v]): Option[v] with Order[k] = match t {
         case Node(_, a, k1, v, b) => match k <=> k1 {
             case LessThan    => get(k, a)
@@ -250,7 +243,6 @@ namespace RedBlackTree {
     ///
     /// Returns `true` if and only if `t` contains the key `k`.
     ///
-    @Time(Int32.log2(size(t))) @Space(1)
     pub def memberOf(k: k, t: RedBlackTree[k, v]): Bool with Order[k] = match t {
         case Node(_, a, k1, _, b) => match k <=> k1 {
            case LessThan    => memberOf(k, a)
@@ -263,7 +255,6 @@ namespace RedBlackTree {
     ///
     /// Optionally returns the first key-value pair in `t` that satisfies the predicate `f` when searching from left to right.
     ///
-    @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
     pub def findLeft(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
         def loop(tt, sk) = match tt {
             case Node(_, a, k, v, b) => loop(a, kl -> match kl {
@@ -280,7 +271,6 @@ namespace RedBlackTree {
     ///
     /// Optionally returns the first key-value pair in `t` that satisfies the predicate `f` when searching from right to left.
     ///
-    @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
     pub def findRight(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
         def loop(tt, sk) = match tt {
             case Node(_, a, k, v, b) => loop(b, kr -> match kr {
@@ -362,7 +352,6 @@ namespace RedBlackTree {
     ///
     /// Returns `false` if `t` is the empty tree.
     ///
-    @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
     pub def exists(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = match t {
         case Node(_, a, k, v, b) => if (f(k, v)) true else exists(f, a) or exists(f, b)
         case _                   => false
@@ -414,7 +403,6 @@ namespace RedBlackTree {
     ///
     /// Returns `true` if `t` is the empty tree.
     ///
-    @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
     pub def forAll(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = match t {
         case Node(_, a, k, v, b) => if (f(k, v)) forAll(f, a) and forAll(f, b) else false
         case _                   => true
@@ -464,7 +452,6 @@ namespace RedBlackTree {
     ///
     /// Applies `f` to every key-value pair of `t`.
     ///
-    @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
     pub def forEach(f: (k, v) -> Unit \ ef, t: RedBlackTree[k, v]): Unit \ ef = match t {
         case Node(_, a, k, v, b) => forEach(f, a); f(k, v); forEach(f, b)
         case _                   => ()
@@ -603,7 +590,6 @@ namespace RedBlackTree {
     ///
     /// Returns the black height of `t`.
     ///
-    @Time(Int32.log2(size(t))) @Space(1)
     pub def blackHeight(t: RedBlackTree[k, v]): Int32 =
         def loop(tt, acc) = match tt {
             case Node(Black, a, _, _, _) => loop(a, 1 + acc)

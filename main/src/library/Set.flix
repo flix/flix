@@ -131,7 +131,6 @@ namespace Set {
     ///
     /// Returns the size of `s`.
     ///
-    @Time(size(s)) @Space(1)
     pub def size(s: Set[a]): Int32 =
         let Set(t) = s;
         RedBlackTree.size(t)
@@ -141,13 +140,11 @@ namespace Set {
     ///
     /// `Set#{}` is syntactic sugar for `empty` i.e. `Set#{} == empty()`.
     ///
-    @Time(1) @Space(1)
     pub def empty(): Set[a] = Set(RedBlackTree.empty())
 
     ///
     /// Adds `x` to `s`.
     ///
-    @Time(Int32.log2(size(s))) @Space(Int32.log2(size(s)))
     pub def insert(x: a, s: Set[a]): Set[a] with Order[a] =
         let Set(t) = s;
         Set(RedBlackTree.insert(x, (), t))
@@ -155,7 +152,6 @@ namespace Set {
     ///
     /// Removes `x` from `s`.
     ///
-    @Time(Int32.log2(size(s))) @Space(Int32.log2(size(s)))
     pub def remove(x: a, s: Set[a]): Set[a] with Order[a] =
         let Set(t) = s;
         Set(RedBlackTree.remove(x, t))
@@ -163,7 +159,6 @@ namespace Set {
     ///
     /// Returns true if and only if `s` is the empty set.
     ///
-    @Time(1) @Space(1)
     pub def isEmpty(s: Set[a]): Bool =
         let Set(t) = s;
         RedBlackTree.isEmpty(t)
@@ -173,7 +168,6 @@ namespace Set {
     ///
     /// `Set#{x}` is syntactic sugar for `singleton` i.e. `Set#{x} == singleton(x)`.
     ///
-    @Time(1) @Space(1)
     pub def singleton(x: a): Set[a] with Order[a] = insert(x, empty())
 
     ///
@@ -181,7 +175,6 @@ namespace Set {
     ///
     /// Returns `empty()` if `b >= e`.
     ///
-    @Time(e - b) @Space(e - b)
     pub def range(b: Int32, e: Int32): Set[Int32] =
         def loop(i, s) = {
             if (i >= e)
@@ -194,7 +187,6 @@ namespace Set {
     ///
     /// Returns true if and only if `x` is a member of `s`.
     ///
-    @Time(Int32.log2(size(s))) @Space(1)
     pub def memberOf(x: a, s: Set[a]): Bool with Order[a] =
         let Set(t) = s;
         RedBlackTree.memberOf(x, t)
@@ -266,25 +258,21 @@ namespace Set {
     ///
     /// Returns true if and only if every element in `s1` appears in `s2`.
     ///
-    @Time(size(s1)) @Space(size(s1) * Int32.log2(size(s2)))
     pub def isSubsetOf(s1: Set[a], s2: Set[a]): Bool with Order[a] = forAll(x -> memberOf(x, s2), s1)
 
     ///
     /// Returns true if and only if every element in `s1` appears in `s2` and `s != s2`.
     ///
-    @Time(size(s1)) @Space(size(s1) * Int32.log2(size(s2)))
     pub def isProperSubsetOf(s1: Set[a], s2: Set[a]): Bool with Order[a] = size(s1) != size(s2) and isSubsetOf(s1, s2)
 
     ///
     /// Alias for `findLeft`.
     ///
-    @Time(time(f) * size(s)) @Space(space(f) * Int32.log2(size(s)))
     pub def find(f: a -> Bool \ ef, s: Set[a]): Option[a] \ ef = findLeft(f, s)
 
     ///
     /// Optionally returns the first element of `s` that satisfies the predicate `f` when searching from left to right.
     ///
-    @Time(time(f) * size(s)) @Space(space(f) * Int32.log2(size(s)))
     pub def findLeft(f: a -> Bool \ ef, s: Set[a]): Option[a] \ ef =
         let Set(t) = s;
         RedBlackTree.findLeft((x, _) -> f(x), t) |> Option.map(fst)
@@ -292,7 +280,6 @@ namespace Set {
     ///
     /// Optionally returns the first element of `s` that satisfies the predicate `f` when searching from right to left.
     ///
-    @Time(time(f) * size(s)) @Space(space(f) * Int32.log2(size(s)))
     pub def findRight(f: a -> Bool \ ef, s: Set[a]): Option[a] \ ef =
         let Set(t) = s;
         RedBlackTree.findRight((x, _) -> f(x), t) |> Option.map(fst)
@@ -426,7 +413,6 @@ namespace Set {
     ///
     /// Returns the union of the elements in `s`.
     ///
-    @Time(size(s) * Int32.log2(size(s))) @Space(size(s) * Int32.log2(size(s)))
     pub def flatten(s: Set[Set[a]]): Set[a] with Order[a] =
         foldLeft((acc, x) -> union(acc, x), empty(), s)
 
@@ -435,7 +421,6 @@ namespace Set {
     ///
     /// Returns `false` if `s` is the empty set.
     ///
-    @Time(time(f) * size(s)) @Space(space(f) * Int32.log2(size(s)))
     pub def exists(f: a -> Bool \ ef, s: Set[a]): Bool \ ef =
         let Set(t) = s;
         RedBlackTree.exists((x, _) -> f(x), t)
@@ -445,7 +430,6 @@ namespace Set {
     ///
     /// Returns `true` if `s` is the empty set.
     ///
-    @Time(time(f) * size(s)) @Space(space(f) * Int32.log2(size(s)))
     pub def forAll(f: a -> Bool \ ef, s: Set[a]): Bool \ ef =
         let Set(t) = s;
         RedBlackTree.forAll((x, _) -> f(x), t)
@@ -453,8 +437,6 @@ namespace Set {
     ///
     /// Returns the union of `s1` and `s2`.
     ///
-    @Time(Int32.min(size(s1), size(s2)) * Int32.log2(size(s1) + size(s2)))
-    @Space(Int32.min(size(s1), size(s2)) * Int32.log2(size(s1) + size(s2)))
     pub def union(s1: Set[a], s2: Set[a]): Set[a] with Order[a] =
         use RedBlackTree.{blackHeight, foldLeft, insert};
         let Set(t1) = s1;
@@ -467,28 +449,24 @@ namespace Set {
     ///
     /// Returns the intersection of `s1` and `s2`.
     ///
-    @Time(size(s2) * Int32.log2(size(s1))) @Space(size(s2) * Int32.log2(size(s1)))
     pub def intersection(s1: Set[a], s2: Set[a]): Set[a] with Order[a] =
         foldLeft((acc, x) -> if (memberOf(x, s1)) insert(x, acc) else acc, empty(), s2)
 
     ///
     /// Returns the difference of `s1` and `s2`, i.e. `s1 - s2`.
     ///
-    @Time(size(s1) * Int32.log2(size(s2))) @Space(size(s1) * Int32.log2(size(s2)))
     pub def difference(s1: Set[a], s2: Set[a]): Set[a] with Order[a] =
         foldLeft((acc, x) -> if (not memberOf(x, s2)) insert(x, acc) else acc, empty(), s1)
 
     ///
     /// Returns all subsets of `s`.
     ///
-    @Time(size(s) * (1 <<< size(s))) @Space(size(s) * (1 <<< size(s)))
     pub def subsets(s: Set[a]): Set[Set[a]] with Order[a] =
         foldLeft((acc, x) -> union(map(y -> insert(x, y), acc), acc), insert(empty(), empty()), s)
 
     ///
     /// Returns the set of all elements of `s` that satisfy the predicate `f`.
     ///
-    @Time(time(f) * size(s)) @Space(space(f) * size(s))
     pub def filter(f: a -> Bool \ ef, s: Set[a]): Set[a] \ ef with Order[a] =
         foldLeft((acc, x) -> if (f(x)) insert(x, acc) else acc, empty(), s)
 
@@ -503,7 +481,6 @@ namespace Set {
     ///
     /// Returns the result of applying `f` to every element in `s` and taking the union.
     ///
-    @Time(time(f) * size(s) * Int32.log2(size(s))) @Space(space(f) * size(s) * Int32.log2(size(s)))
     pub def flatMap(f: a -> Set[b] \ ef, s: Set[a]): Set[b] \ ef with Order[b] =
         foldLeft((acc, x) -> union(acc, f(x)), empty(), s)
 
@@ -522,7 +499,6 @@ namespace Set {
     ///
     /// Note: The returned set may be smaller than `s`.
     ///
-    @Time(Int32.log2(size(s))) @Space(Int32.log2(size(s)))
     pub def replace(from: {from = a}, to: {to = a}, s: Set[a]): Set[a] with Order[a] =
         if (memberOf(from.from, s)) insert(to.to, remove(from.from, s)) else s
 
@@ -532,7 +508,6 @@ namespace Set {
     /// `s1` contains all elements of `s` that satisfy the predicate `f`.
     /// `s2` contains all elements of `s` that do not satisfy the predicate `f`.
     ///
-    @Time(size(s) * Int32.log2(size(s))) @Space(size(s) * Int32.log2(size(s)))
     pub def partition(f: a -> Bool \ ef, s: Set[a]): (Set[a], Set[a]) \ ef with Order[a] =
         foldLeft((acc, x) ->
             let (a, b) = acc;
@@ -545,7 +520,6 @@ namespace Set {
     ///
     /// Returns the set `s` as a list.
     ///
-    @Time(size(s)) @Space(size(s))
     pub def toList(s: Set[a]): List[a] =
         foldLeft((acc, x) -> x :: acc, Nil, s)
 
@@ -561,7 +535,6 @@ namespace Set {
     /// If `s` contains multiple mappings with the same key, `toMap` does not
     /// make any guarantees about which mapping will be in the resulting map.
     ///
-    @Time(size(s)) @Space(size(s))
     pub def toMap(s: Set[(a, b)]): Map[a, b] with Order[a] =
         foldRight((x, acc) -> let (k, v) = x; Map.insert(k, v, acc), Map#{}, s)
 
@@ -588,7 +561,6 @@ namespace Set {
     ///
     /// Applies `f` to every element of `s`.
     ///
-    @Time(size(f) * size(s)) @Space(space(f) * Int32.log2(size(s)))
     pub def forEach(f: a -> Unit \ ef, s: Set[a]): Unit \ ef =
         let Set(t) = s;
         RedBlackTree.forEach((x, _) -> f(x), t)

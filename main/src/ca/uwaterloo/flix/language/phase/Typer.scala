@@ -32,7 +32,6 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, mapN, traverse}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.ListOps.unzip4
-import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.io.PrintWriter
 
@@ -499,7 +498,7 @@ object Typer {
 
       case KindedAst.Expression.Def(sym, tvar, loc) =>
         val defn = root.defs(sym)
-        val (tconstrs0, defType) = Scheme.instantiate(defn.spec.sc)
+        val (tconstrs0, defType) = Scheme.instantiate(defn.spec.sc, loc)
         for {
           resultTyp <- unifyTypeM(tvar, defType, loc)
           tconstrs = tconstrs0.map(_.copy(loc = loc))
@@ -508,7 +507,7 @@ object Typer {
       case KindedAst.Expression.Sig(sym, tvar, loc) =>
         // find the declared signature corresponding to this symbol
         val sig = root.classes(sym.clazz).sigs(sym)
-        val (tconstrs0, sigType) = Scheme.instantiate(sig.spec.sc)
+        val (tconstrs0, sigType) = Scheme.instantiate(sig.spec.sc, loc)
         for {
           resultTyp <- unifyTypeM(tvar, sigType, loc)
           tconstrs = tconstrs0.map(_.copy(loc = loc))
@@ -517,44 +516,44 @@ object Typer {
       case KindedAst.Expression.Hole(_, tvar, _) =>
         liftM(List.empty, tvar, Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Unit, _) =>
-        liftM(List.empty, Type.Unit, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.Unit, loc) =>
+        liftM(List.empty, Type.mkUnit(loc), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Null, _) =>
-        liftM(List.empty, Type.Null, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.Null, loc) =>
+        liftM(List.empty, Type.mkNull(loc), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Bool(_), _) =>
-        liftM(List.empty, Type.Bool, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.Bool(_), loc) =>
+        liftM(List.empty, Type.mkBool(loc), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Char(_), _) =>
-        liftM(List.empty, Type.Char, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.Char(_), loc) =>
+        liftM(List.empty, Type.mkChar(loc), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Float32(_), _) =>
-        liftM(List.empty, Type.Float32, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.Float32(_), loc) =>
+        liftM(List.empty, Type.mkFloat32(loc), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Float64(_), _) =>
-        liftM(List.empty, Type.Float64, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.Float64(_), loc) =>
+        liftM(List.empty, Type.mkFloat64(loc), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.BigDecimal(_), _) =>
-        liftM(List.empty, Type.BigDecimal, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.BigDecimal(_), loc) =>
+        liftM(List.empty, Type.mkBigDecimal(loc), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Int8(_), _) =>
-        liftM(List.empty, Type.Int8, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.Int8(_), loc) =>
+        liftM(List.empty, Type.mkInt8(loc), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Int16(_), _) =>
-        liftM(List.empty, Type.Int16, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.Int16(_), loc) =>
+        liftM(List.empty, Type.mkInt16(loc), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Int32(_), _) =>
-        liftM(List.empty, Type.Int32, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.Int32(_), loc) =>
+        liftM(List.empty, Type.mkInt32(loc), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Int64(_), _) =>
-        liftM(List.empty, Type.Int64, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.Int64(_), loc) =>
+        liftM(List.empty, Type.mkInt64(loc), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.BigInt(_), _) =>
-        liftM(List.empty, Type.BigInt, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.BigInt(_), loc) =>
+        liftM(List.empty, Type.mkBigInt(loc), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Str(_), _) =>
-        liftM(List.empty, Type.Str, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Cst(Ast.Constant.Str(_), loc) =>
+        liftM(List.empty, Type.mkString(loc), Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
         val argType = fparam.tpe
@@ -572,7 +571,7 @@ object Typer {
         for {
           (constrs1, tpe, pur, eff) <- visitExp(exp)
           (constrs2, tpes, purs, effs) <- traverseM(exps)(visitExp).map(unzip4)
-          lambdaType <- unifyTypeM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyPur, lambdaBodyEff, lambdaBodyType, loc), loc)
+          _ <- expectTypeM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyPur, lambdaBodyEff, lambdaBodyType, loc), loc)
           resultTyp <- unifyTypeM(tvar, lambdaBodyType, loc)
           resultPur <- unifyBoolM(pvar, Type.mkAnd(lambdaBodyPur :: pur :: purs, loc), loc)
           resultEff <- unifyTypeM(evar, Type.mkUnion(lambdaBodyEff :: eff :: effs, loc), loc)
@@ -1002,7 +1001,7 @@ object Typer {
           /// Otherwise construct a new Choice type with isAbsent and isPresent conditions that depend on each pattern row.
           ///
           for {
-            (isAbsentConds, isPresentConds, innerTypes) <- traverseM(rs.zip(ts))((p => visitRuleBody(p._1, p._2))).map(_.unzip3)
+            (isAbsentConds, isPresentConds, innerTypes) <- traverseM(rs.zip(ts))(p => visitRuleBody(p._1, p._2)).map(_.unzip3)
             isAbsentCond = Type.mkOr(isAbsentConds, loc)
             isPresentCond = Type.mkOr(isPresentConds, loc)
             innerType <- unifyTypeM(innerTypes, loc)
@@ -1160,7 +1159,7 @@ object Typer {
           val caze = decl.cases(symUse.sym)
 
           // Instantiate the type scheme of the case.
-          val (_, tagType) = Scheme.instantiate(caze.sc)
+          val (_, tagType) = Scheme.instantiate(caze.sc, loc)
 
           //
           // The tag type is a function from the type of variant to the type of the enum.
@@ -2462,7 +2461,7 @@ object Typer {
         val caze = decl.cases(symUse.sym)
 
         // Instantiate the type scheme of the case.
-        val (_, tagType) = Scheme.instantiate(caze.sc)
+        val (_, tagType) = Scheme.instantiate(caze.sc, loc)
 
         //
         // The tag type is a function from the type of variant to the type of the enum.

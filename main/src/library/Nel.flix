@@ -134,13 +134,11 @@ namespace Nel {
     ///
     /// Returns a new non-empty list containing the single element `x`.
     ///
-    @Time(1) @Space(1)
     pub def singleton(x: a): Nel[a] = Nel(x, Nil)
 
     ///
     /// Returns the non-empty list `l` prefixed with the new element `x`.
     ///
-    @Time(1) @Space(1)
     pub def cons(x: a, l: Nel[a]): Nel[a] = match l {
         case Nel(y, ys) => Nel(x, y :: ys)
     }
@@ -148,7 +146,6 @@ namespace Nel {
     ///
     /// Returns the first element of `l`.
     ///
-    @Time(1) @Space(1)
     pub def head(l: Nel[a]): a = match l {
         case Nel(x, _) => x
     }
@@ -156,7 +153,6 @@ namespace Nel {
     ///
     /// Returns the last element of `l`.
     ///
-    @Time(length(l)) @Space(1)
     pub def last(l: Nel[a]): a = match l {
         case Nel(x, xs) => Option.getWithDefault(x, List.last(xs))
     }
@@ -164,7 +160,6 @@ namespace Nel {
     ///
     /// Returns all elements in `l` without the last element.
     ///
-    @Time(length(l)) @Space(length(l))
     pub def init(l: Nel[a]): List[a] = match l {
         case Nel(_, Nil) => Nil
         case Nel(x, xs)   => match List.reverse(xs) {
@@ -176,7 +171,6 @@ namespace Nel {
     ///
     /// Returns all elements in `l` without the first element.
     ///
-    @Time(1) @Space(1)
     pub def tail(l: Nel[a]): List[a] = match l {
         case Nel(_, xs) => xs
     }
@@ -184,7 +178,6 @@ namespace Nel {
     ///
     /// Returns the length of `l`.
     ///
-    @Time(length(l)) @Space(1)
     pub def length(l: Nel[a]): Int32 = match l {
         case Nel(_, xs) => 1 + List.length(xs)
     }
@@ -192,7 +185,6 @@ namespace Nel {
     ///
     /// Returns `l2` appended to `l1`.
     ///
-    @Time(length(l1)) @Space(length(l1))
     pub def append(l1: Nel[a], l2: Nel[a]): Nel[a] = match (l1, l2) {
         case (Nel(x, xs), Nel(y, ys)) => Nel(x, xs ::: (y :: ys))
     }
@@ -200,7 +192,6 @@ namespace Nel {
     ///
     /// Returns `true` if and only if `l` contains the element `a`.
     ///
-    @Time(length(l)) @Space(1)
     pub def memberOf(a: a, l: Nel[a]): Bool with Eq[a] = match l {
         case Nel(x, xs) => if (x == a) true else List.memberOf(a, xs)
     }
@@ -232,13 +223,11 @@ namespace Nel {
     ///
     /// Alias for `findLeft`.
     ///
-    @Time(time(f) * length(l)) @Space(space(f))
     pub def find(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = findLeft(f, l)
 
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from left to right.
     ///
-    @Time(time(f) * length(l)) @Space(space(f))
     pub def findLeft(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = match l {
         case Nel(x, xs) => if (f(x)) Some(x) else List.findLeft(f, xs)
     }
@@ -246,7 +235,6 @@ namespace Nel {
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
     ///
-    @Time(time(f) * length(l)) @Space(space(f))
     pub def findRight(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = match l {
         case Nel(x, xs) => match List.findRight(f, xs) {
             case None    => if (f(x)) Some(x) else None
@@ -259,7 +247,6 @@ namespace Nel {
     ///
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
-    @Time(time(f) * length(l)) @Space(space(f) * length(l))
     pub def map(f: a -> b \ ef, l: Nel[a]): Nel[b] \ ef = match l {
         case Nel(x, xs) => Nel(f(x), List.map(f, xs))
     }
@@ -269,7 +256,6 @@ namespace Nel {
     ///
     /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
     ///
-    @Time(time(f) * length(l)) @Space(space(f) * length(l))
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, l: Nel[a]): Nel[b] \ ef =
         let Nel(x, xs) = l;
         match List.mapWithIndex(f, x :: xs) {
@@ -300,7 +286,6 @@ namespace Nel {
     ///
     /// Returns the result of applying `f` to every element in `l` and concatenating the results.
     ///
-    @Time(time(f) * length(l)) @Space(time(f) * length(l))
     pub def flatMap(f: a -> Nel[b] \ ef, l: Nel[a]): Nel[b] \ ef = match l {
         case Nel(x, xs) => match f(x) {
             case Nel(y, ys) => Nel(y, ys ::: List.flatMap(z -> toList(f(z)), xs))
@@ -310,7 +295,6 @@ namespace Nel {
     ///
     /// Returns the reverse of `l`.
     ///
-    @Time(length(l)) @Space(length(l))
     pub def reverse(l: Nel[a]): Nel[a] = match l {
         case Nel(x, xs) => match List.reverse(x :: xs) {
             case y :: ys => Nel(y, ys)
@@ -321,7 +305,6 @@ namespace Nel {
     ///
     /// Returns `l` with every occurrence of `from` replaced by `to`.
     ///
-    @Time(length(l)) @Space(length(l))
     pub def replace(from: {from = a}, to: {to = a}, l: Nel[a]): Nel[a] with Eq[a] =
         map(e -> if (e == from.from) to.to else e, l)
 
@@ -330,7 +313,6 @@ namespace Nel {
     ///
     /// That is, `l` is the first permutation and `reverse(l)` is the last permutation.
     ///
-    @Time(Int32.factorial(length(l))) @Space(Int32.factorial(length(l)))
     pub def permutations(l: Nel[a]): Nel[List[a]] = match l {
         case Nel(x, xs) => match List.permutations(x :: xs) {
             case y :: ys => Nel(y, ys)
@@ -343,7 +325,6 @@ namespace Nel {
     ///
     /// That is, `l` is the first subsequence and `Nil` is the last subsequence.
     ///
-    @Time(length(l) * length(l)) @Space(length(l) * length(l))
     pub def subsequences(l: Nel[a]): Nel[List[a]] = match l {
         case Nel(x, xs) => match List.subsequences(x :: xs) {
             case y :: ys => Nel(y, ys)
@@ -354,7 +335,6 @@ namespace Nel {
     ///
     /// Returns `l` with `a` inserted between every two adjacent elements.
     ///
-    @Time(length(l)) @Space(length(l))
     pub def intersperse(a: a, l: Nel[a]): Nel[a] = match l {
         case Nel(x, Nil)  => Nel(x, Nil)
         case Nel(x, xs)   => Nel(x, a :: List.intersperse(a, xs))
@@ -453,7 +433,6 @@ namespace Nel {
     ///
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
     ///
-    @Time(time(f) * length(l)) @Space(space(f) * length(l))
     pub def count(f: a -> Bool \ ef, l: Nel[a]): Int32 \ ef = match l {
         case Nel(x, xs) => (if (f(x)) 1 else 0) + List.count(f, xs)
     }
@@ -485,7 +464,6 @@ namespace Nel {
     ///
     /// Returns the concatenation of the elements in `l`.
     ///
-    @Time(length(l)) @Space(length(l))
     pub def flatten(l: Nel[Nel[a]]): Nel[a] = match l {
         case Nel(Nel(y, ys), xs) => Nel(y, ys ::: List.flatMap(toList, xs))
     }
@@ -493,7 +471,6 @@ namespace Nel {
     ///
     /// Returns `true` if and only if at least one element in `l` satisfies the predicate `f`.
     ///
-    @Time(time(f) * length(l)) @Space(space(f))
     pub def exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = match l {
         case Nel(x, xs) => if (f(x)) true else List.exists(f, xs)
     }
@@ -501,7 +478,6 @@ namespace Nel {
     ///
     /// Returns `true` if and only if all elements in `l` satisfy the predicate `f`.
     ///
-    @Time(time(f) * length(l)) @Space(space(f))
     pub def forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = match l {
         case Nel(x, xs) => if (f(x)) List.forAll(f, xs) else false
     }
@@ -509,7 +485,6 @@ namespace Nel {
     ///
     /// Returns a list of every element in `l` that satisfies the predicate `f`.
     ///
-    @Time(time(f) * length(l)) @Space(space(f) * length(l))
     pub def filter(f: a -> Bool, l: Nel[a]): List[a] = match l {
         case Nel(x, xs) =>
             if (f(x))
@@ -524,7 +499,6 @@ namespace Nel {
     ///
     /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
     ///
-    @Time(Int32.min(length(l1), length(l2))) @Space(Int32.min(length(l1), length(l2)))
     pub def zip(l1: Nel[a], l2: Nel[b]): Nel[(a,b)] = match (l1, l2) {
         case (Nel(x, xs), Nel(y, ys)) => Nel((x, y), List.zip(xs, ys))
     }
@@ -535,7 +509,6 @@ namespace Nel {
     ///
     /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
     ///
-    @Time(time(f) * Int32.min(length(l1), length(l2))) @Space(space(f) * Int32.min(length(l1), length(l2)))
     pub def zipWith(f: (a, b) -> c \ ef, l1: Nel[a], l2: Nel[b]): Nel[c] \ ef = match (l1, l2) {
         case (Nel(x, xs), Nel(y, ys)) => Nel(f(x, y), List.zipWith(f, xs, ys))
     }
@@ -544,7 +517,6 @@ namespace Nel {
     /// Returns a pair of non-empty lists, the first containing all first components in `l`
     /// and the second containing all second components in `l`.
     ///
-    @Time(length(l)) @Space(length(l))
     pub def unzip(l: Nel[(a, b)]): (Nel[a], Nel[b]) =
         let Nel((a, b), xs) = l;
         let (l1, l2) = List.unzip(xs);
@@ -578,7 +550,6 @@ namespace Nel {
     ///
     /// Returns `l` as a normal list.
     ///
-    @Time(1) @Space(1)
     pub def toList(l: Nel[a]): List[a] = match l {
         case Nel(x, xs) => x :: xs
     }
@@ -600,7 +571,6 @@ namespace Nel {
     ///
     /// Applies `f` to every element of `l`.
     ///
-    @Time(time(f)) @Space(space(f))
     pub def forEach(f: a -> Unit \ ef, l: Nel[a]): Unit \ ef = match l {
         case Nel(x, xs) => f(x); List.forEach(f, xs)
     }
