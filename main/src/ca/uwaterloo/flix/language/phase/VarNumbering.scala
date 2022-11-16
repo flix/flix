@@ -60,33 +60,7 @@ object VarNumbering {
       * @param i0 the current stack offset.
       */
     def visitExp(e0: Expression, i0: Int): Int = e0 match {
-      case Expression.Unit(_) => i0
-
-      case Expression.Null(_, _) => i0
-
-      case Expression.True(_) => i0
-
-      case Expression.False(_) => i0
-
-      case Expression.Char(_, _) => i0
-
-      case Expression.Float32(_, _) => i0
-
-      case Expression.Float64(_, _) => i0
-
-      case Expression.BigDecimal(_, _) => i0
-
-      case Expression.Int8(_, _) => i0
-
-      case Expression.Int16(_, _) => i0
-
-      case Expression.Int32(_, _) => i0
-
-      case Expression.Int64(_, _) => i0
-
-      case Expression.BigInt(_, _) => i0
-
-      case Expression.Str(_, _) => i0
+      case Expression.Cst(_, _, _) => i0
 
       case Expression.Var(_, _, _) => i0
 

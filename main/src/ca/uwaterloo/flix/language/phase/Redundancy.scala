@@ -250,33 +250,7 @@ object Redundancy {
     * Returns the symbols used in the given expression `e0` under the given environment `env0`.
     */
   private def visitExp(e0: Expression, env0: Env, rc: RecursionContext)(implicit flix: Flix): Used = e0 match {
-    case Expression.Unit(_) => Used.empty
-
-    case Expression.Null(_, _) => Used.empty
-
-    case Expression.True(_) => Used.empty
-
-    case Expression.False(_) => Used.empty
-
-    case Expression.Char(_, _) => Used.empty
-
-    case Expression.Float32(_, _) => Used.empty
-
-    case Expression.Float64(_, _) => Used.empty
-
-    case Expression.BigDecimal(_, _) => Used.empty
-
-    case Expression.Int8(_, _) => Used.empty
-
-    case Expression.Int16(_, _) => Used.empty
-
-    case Expression.Int32(_, _) => Used.empty
-
-    case Expression.Int64(_, _) => Used.empty
-
-    case Expression.BigInt(_, _) => Used.empty
-
-    case Expression.Str(_, _) => Used.empty
+    case Expression.Cst(_, _, _) => Used.empty
 
     case Expression.Wild(_, _) => Used.empty
 
@@ -741,15 +715,6 @@ object Redundancy {
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
-
-    case Expression.Reify(_, _, _, _, _) =>
-      Used.empty
-
-    case Expression.ReifyType(_, _, _, _, _, _) =>
-      Used.empty
-
-    case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, _, _, _) =>
-      Used.of(sym) ++ visitExp(exp1, env0, rc) ++ visitExp(exp2, env0, rc) ++ visitExp(exp3, env0, rc)
   }
 
   /**
@@ -818,19 +783,7 @@ object Redundancy {
   private def visitPat(pat0: Pattern): Used = pat0 match {
     case Pattern.Wild(_, _) => Used.empty
     case Pattern.Var(_, _, _) => Used.empty
-    case Pattern.Unit(_) => Used.empty
-    case Pattern.True(_) => Used.empty
-    case Pattern.False(_) => Used.empty
-    case Pattern.Char(_, _) => Used.empty
-    case Pattern.Float32(_, _) => Used.empty
-    case Pattern.Float64(_, _) => Used.empty
-    case Pattern.BigDecimal(_, _) => Used.empty
-    case Pattern.Int8(_, _) => Used.empty
-    case Pattern.Int16(_, _) => Used.empty
-    case Pattern.Int32(_, _) => Used.empty
-    case Pattern.Int64(_, _) => Used.empty
-    case Pattern.BigInt(_, _) => Used.empty
-    case Pattern.Str(_, _) => Used.empty
+    case Pattern.Cst(_, _, _) => Used.empty
     case Pattern.Tag(Ast.CaseSymUse(sym, _), _, _, _) => Used.of(sym.enumSym, sym)
     case Pattern.Tuple(elms, _, _) => visitPats(elms)
     case Pattern.Array(elms, _, _) => visitPats(elms)
@@ -981,19 +934,7 @@ object Redundancy {
   private def freeVars(p0: Pattern): Set[Symbol.VarSym] = p0 match {
     case Pattern.Wild(_, _) => Set.empty
     case Pattern.Var(sym, _, _) => Set(sym)
-    case Pattern.Unit(_) => Set.empty
-    case Pattern.True(_) => Set.empty
-    case Pattern.False(_) => Set.empty
-    case Pattern.Char(_, _) => Set.empty
-    case Pattern.Float32(_, _) => Set.empty
-    case Pattern.Float64(_, _) => Set.empty
-    case Pattern.BigDecimal(_, _) => Set.empty
-    case Pattern.Int8(_, _) => Set.empty
-    case Pattern.Int16(_, _) => Set.empty
-    case Pattern.Int32(_, _) => Set.empty
-    case Pattern.Int64(_, _) => Set.empty
-    case Pattern.BigInt(_, _) => Set.empty
-    case Pattern.Str(_, _) => Set.empty
+    case Pattern.Cst(_, _, _) => Set.empty
     case Pattern.Tag(_, pat, _, _) => freeVars(pat)
     case Pattern.Tuple(pats, _, _) => pats.foldLeft(Set.empty[Symbol.VarSym]) {
       case (acc, pat) => acc ++ freeVars(pat)

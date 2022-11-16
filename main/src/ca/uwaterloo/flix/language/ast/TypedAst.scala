@@ -19,12 +19,14 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, EliminatedBy, Source}
 import ca.uwaterloo.flix.language.dbg.{FormatExpression, FormatPattern}
 import ca.uwaterloo.flix.language.phase.Lowering
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.lang.reflect.{Constructor, Field, Method}
 
 object TypedAst {
 
-  case class Root(classes: Map[Symbol.ClassSym, TypedAst.Class],
+  case class Root(modules: Map[Symbol.ModuleSym, List[Symbol]],
+                  classes: Map[Symbol.ClassSym, TypedAst.Class],
                   instances: Map[Symbol.ClassSym, List[TypedAst.Instance]],
                   sigs: Map[Symbol.SigSym, TypedAst.Sig],
                   defs: Map[Symbol.DefnSym, TypedAst.Def],
@@ -33,7 +35,8 @@ object TypedAst {
                   typeAliases: Map[Symbol.TypeAliasSym, TypedAst.TypeAlias],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  classEnv: Map[Symbol.ClassSym, Ast.ClassContext])
+                  classEnv: Map[Symbol.ClassSym, Ast.ClassContext],
+                  names: MultiMap[List[String], String])
 
   case class Class(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: TypedAst.TypeParam, superClasses: List[Ast.TypeConstraint], signatures: List[TypedAst.Sig], laws: List[TypedAst.Def], loc: SourceLocation)
 
@@ -69,111 +72,7 @@ object TypedAst {
 
   object Expression {
 
-    case class Unit(loc: SourceLocation) extends TypedAst.Expression {
-      def tpe: Type = Type.Unit
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class Null(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class True(loc: SourceLocation) extends TypedAst.Expression {
-      def tpe: Type = Type.Bool
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class False(loc: SourceLocation) extends TypedAst.Expression {
-      def tpe: Type = Type.Bool
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class Char(lit: scala.Char, loc: SourceLocation) extends TypedAst.Expression {
-      def tpe: Type = Type.Char
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class Float32(lit: scala.Float, loc: SourceLocation) extends TypedAst.Expression {
-      def tpe: Type = Type.Float32
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class Float64(lit: scala.Double, loc: SourceLocation) extends TypedAst.Expression {
-      def tpe: Type = Type.Float64
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends TypedAst.Expression {
-      def tpe: Type = Type.BigDecimal
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Expression {
-      def tpe: Type = Type.Int8
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class Int16(lit: scala.Short, loc: SourceLocation) extends TypedAst.Expression {
-      def tpe: Type = Type.Int16
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class Int32(lit: scala.Int, loc: SourceLocation) extends TypedAst.Expression {
-      def tpe: Type = Type.Int32
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class Int64(lit: scala.Long, loc: SourceLocation) extends TypedAst.Expression {
-      def tpe: Type = Type.Int64
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends TypedAst.Expression {
-      def tpe: Type = Type.BigInt
-
-      def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
-    }
-
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends TypedAst.Expression {
-      def tpe: Type = Type.Str
-
+    case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def pur: Type = Type.Pure
 
       def eff: Type = Type.Empty
@@ -376,12 +275,6 @@ object TypedAst {
 
     case class FixpointProject(pred: Name.Pred, exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Reify(t: Type, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-
-    case class ReifyType(t: Type, k: Kind, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-
-    case class ReifyEff(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-
   }
 
   sealed trait Pattern {
@@ -398,57 +291,7 @@ object TypedAst {
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
-    case class Unit(loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.Unit
-    }
-
-    case class True(loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.Bool
-    }
-
-    case class False(loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.Bool
-    }
-
-    case class Char(lit: scala.Char, loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.Char
-    }
-
-    case class Float32(lit: scala.Float, loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.Float32
-    }
-
-    case class Float64(lit: scala.Double, loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.Float64
-    }
-
-    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.BigDecimal
-    }
-
-    case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.Int8
-    }
-
-    case class Int16(lit: scala.Short, loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.Int16
-    }
-
-    case class Int32(lit: scala.Int, loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.Int32
-    }
-
-    case class Int64(lit: scala.Long, loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.Int64
-    }
-
-    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.BigInt
-    }
-
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.Str
-    }
+    case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
     case class Tag(sym: Ast.CaseSymUse, pat: TypedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 

@@ -34,54 +34,6 @@ object ReificationError {
   private implicit val audience: Audience = Audience.External
 
   /**
-    * An error raised to indicate that the Boolean type cannot be reified.
-    *
-    * @param tpe the Boolean type that cannot be reified.
-    * @param loc the location of the Boolean type.
-    */
-  case class IllegalReifiedBool(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends ReificationError {
-    def summary: String = "Type cannot be reified."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unable to reify the non-constant Bool '${red(FormatType.formatType(tpe))}'.
-         |
-         |${code(loc, "unable to reify type.")}
-         |""".stripMargin
-    }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised to indicate that the type cannot be reified.
-    *
-    * @param tpe the type that cannot be reified.
-    * @param loc the location of the type.
-    */
-  case class IllegalReifiedType(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends ReificationError {
-    def summary: String = "Type cannot be reified."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unable to reify the type '${red(FormatType.formatType(tpe))}'.
-         |
-         |${code(loc, "unable to reify type.")}
-         |""".stripMargin
-    }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * An error raised to indicate an internal error in the Monomorpher.
     *
     * @param tpe the problematic Boolean type.

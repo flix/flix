@@ -403,7 +403,7 @@ namespace MutDeque {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = new StringBuilder(r1);
-        foreach(x -> { append!(f(x), sb); append!(sep, sb) }, d);
+        forEach(x -> { append!(f(x), sb); append!(sep, sb) }, d);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
 
@@ -427,7 +427,7 @@ namespace MutDeque {
     ///
     /// Apply the effectful function `f` to all the elements in the MutDeque `d`.
     ///
-    pub def foreach(f: a -> Unit \ ef, d: MutDeque[a, r]): Unit \ { ef, Read(r) } =
+    pub def forEach(f: a -> Unit \ ef, d: MutDeque[a, r]): Unit \ { ef, Read(r) } =
         let MutDeque(a, front, back) = d;
         let c = capacity(d) - 1;
 
@@ -437,7 +437,7 @@ namespace MutDeque {
             } else {
                 match Array.nth(i, deref a) {
                     case Some(x) => f(x)
-                    case None    => bug!("An error occurred in MutDeque.foreach!")
+                    case None    => bug!("An error occurred in MutDeque.forEach!")
                 };
                 loop((i + 1) &&& c)
             }

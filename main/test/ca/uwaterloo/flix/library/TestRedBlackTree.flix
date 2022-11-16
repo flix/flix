@@ -248,12 +248,13 @@ namespace TestRedBlackTree {
         m == Map#{2 => 1, 5 => 20, 11 => 2, 8 => 16}
 
     @test
-    def mapWithKey06(): Bool \ IO =
+    def mapWithKey06(): Bool = region r {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
-        let a = new MutList(Static);
-        discard Map.mapWithKey((k, v) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
+        let a = new MutList(r);
+        discard Map.mapWithKey((k, v) -> { let b = new MutList(r); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
         MutList.toList(a) == range
+    }
 
     @test
     def mapWithKey07(): Bool =
@@ -273,12 +274,12 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parCount01(): Bool \ IO =
+    def parCount01(): Bool =
         let Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
         RedBlackTree.parCount(threads() - 1, (k, v) -> k == v, t) == 2000
 
     @test
-    def parCount02(): Bool \ IO =
+    def parCount02(): Bool =
         let Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
         RedBlackTree.parCount(threads() - 1, (k, v) -> k - 1000 == v, t) == 2000
 
@@ -288,16 +289,34 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parMinimumBy01(): Bool \ IO =
+    def parMinimumBy01(): Bool =
         let range = List.range(0, 2000);
         let Map(t) = List.zip(range, range) |> List.toMap;
         RedBlackTree.parMinimumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some(0, 0)
 
     @test
-    def parMinimumBy02(): Bool \ IO =
+    def parMinimumBy02(): Bool =
         let range = List.range(0, 2000);
         let Map(t) = List.zip(range, List.reverse(range)) |> List.toMap;
         RedBlackTree.parMinimumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some(1999, 0)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // parMaximumBy                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def parMaximumBy01(): Bool =
+        let range = List.range(0, 2000);
+        let Map(t) = List.zip(range, range) |> List.toMap;
+        RedBlackTree.parMaximumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some(1999, 1999)
+
+    @test
+    def parMaximumBy02(): Bool =
+        let range = List.range(0, 2000);
+        let Map(t) = List.zip(range, List.reverse(range)) |> List.toMap;
+        RedBlackTree.parMaximumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some(0, 1999)
+
 
     /////////////////////////////////////////////////////////////////////////////
     // eq                                                                      //
@@ -328,66 +347,66 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parExists01(): Bool \ IO =
+    def parExists01(): Bool =
         let l = List.range(1, 2001);
         let Map(t) = List.zip(l, l) |> List.toMap;
         RedBlackTree.parExists(threads() - 1, (k, v) -> k == 1002 and v == 1002, t)
 
     @test
-    def parExists02(): Bool \ IO =
+    def parExists02(): Bool =
         let l1 = List.range(1, 2001);
         let l2 = List.range(-2000, 0);
         let Map(t) = List.zip(l1, l2) |> List.toMap;
         RedBlackTree.parExists(threads() - 1, (k, v) -> k == 1002 and v == -999, t)
 
     @test
-    def parExists03(): Bool \ IO =
+    def parExists03(): Bool =
         let l = List.range(1, 2001);
         let Map(t) = List.zip(l, l) |> List.toMap;
         not RedBlackTree.parExists(threads() - 1, (k, v) -> k < 0 or v > 3000, t)
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // parForall                                                               //
+    // parForAll                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parForall01(): Bool \ IO =
+    def parForAll01(): Bool =
         let l = List.range(1, 2001);
         let Map(t) = List.zip(l, l) |> List.toMap;
-        RedBlackTree.parForall(threads() - 1, (k, v) -> k == v, t)
+        RedBlackTree.parForAll(threads() - 1, (k, v) -> k == v, t)
 
     @test
-    def parForall02(): Bool \ IO =
+    def parForAll02(): Bool =
         let l = List.range(1, 2001);
         let Map(t) = List.zip(l, l) |> List.toMap;
-        not RedBlackTree.parForall(threads() - 1, (k, _) -> k == 1, t)
+        not RedBlackTree.parForAll(threads() - 1, (k, _) -> k == 1, t)
 
     @test
-    def parForall03(): Bool \ IO =
+    def parForAll03(): Bool =
         let l1 = List.range(1, 2001);
         let l2 = List.range(-2000, 0);
         let Map(t) = List.zip(l1, l2) |> List.toMap;
-        RedBlackTree.parForall(threads() - 1, (k, v) -> k > v, t)
+        RedBlackTree.parForAll(threads() - 1, (k, v) -> k > v, t)
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // foreach                                                                 //
+    // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool = region r {
+    def forEach01(): Bool = region r {
         let x = ref 21 @ r;
         let Map(t) = Map#{};
-        RedBlackTree.foreach((k, _) -> x := k, t);
+        RedBlackTree.forEach((k, _) -> x := k, t);
         21 == deref x
     }
 
     @test
-    def foreach02(): Bool = region r {
+    def forEach02(): Bool = region r {
         let x = ref 21 @ r;
         let Map(t) = Map#{1 => "Hello World!"};
-        RedBlackTree.foreach((k, _) -> x := k, t);
+        RedBlackTree.forEach((k, _) -> x := k, t);
         1 == deref x
     }
 
@@ -533,12 +552,12 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parSumWith01(): Bool \ IO =
+    def parSumWith01(): Bool =
         let Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
         RedBlackTree.parSumWith(threads() - 1, (k, v) -> k + v, t) == 3998000
 
     @test
-    def parSumWith02(): Bool \ IO =
+    def parSumWith02(): Bool =
         let Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
         RedBlackTree.parSumWith(threads() - 1, (k, v) -> k + v, t) == 1998000
 
@@ -650,13 +669,13 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parProductWith01(): Bool \ IO =
+    def parProductWith01(): Bool =
         let l = List.range(1, 2001);
         let Map(t) = List.zip(l, l) |> List.toMap;
         RedBlackTree.parProductWith(threads() - 1, (k, v) -> k * v, t) == List.product(l) * List.product(l)
 
     @test
-    def parProductWith02(): Bool \ IO =
+    def parProductWith02(): Bool =
         let l1 = List.range(1, 2001);
         let l2 = List.range(-2000, 0);
         let Map(t) = List.zip(l1, l2) |> List.toMap;

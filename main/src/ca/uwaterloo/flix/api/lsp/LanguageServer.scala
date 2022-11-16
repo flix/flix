@@ -103,45 +103,6 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   private var currentErrors: List[CompilationMessage] = Nil
 
   /**
-    * The java classes in the jdk classList
-    */
-  private lazy val javaClasses: MultiMap[List[String], String] = sys.env.get("JAVA_HOME") match {
-    case None => MultiMap.empty
-    case Some(home) =>
-      val path = java.nio.file.Paths.get(home, "lib", "classlist")
-      if (Files.exists(path) && Files.isRegularFile(path) && Files.isReadable(path))   
-        try {
-          val fileContents = Files.readString(path)
-          fileContents.linesIterator
-            // Filter the classlist file
-            .drop(5)
-            // Filter out inner classes
-            .filter(clazz => !clazz.contains("$"))
-            // Filter out lambda-invoke/lambda-proxy lines
-            .filter(clazz => !clazz.contains("@"))
-            // Create a multimap from all class path prefixes to the next packages/classes
-            // I.e java.lang.string
-            // [] => {java}
-            // [java] => {lang}
-            // [java, lang] => {String}
-            .foldLeft[MultiMap[List[String], String]](MultiMap.empty){
-              case (acc, clazz) =>
-                val clazzPath = clazz.split('/').toList
-                (0 until clazzPath.length).foldLeft(acc){
-                  case (acc, prefixIdx) =>
-                    acc + (clazzPath.slice(0, prefixIdx) -> clazzPath(prefixIdx))
-                }
-            }
-        }
-        catch {
-          // If any IO error occurs, i.e the file not existing in the users JDK, we return an empty map.
-          case _: IOException => MultiMap.empty
-        }
-      else
-        MultiMap.empty
-  }
-
-  /**
     * Invoked when the server is started.
     */
   override def onStart(): Unit = {
@@ -306,7 +267,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
 
     case Request.Complete(id, uri, pos) =>
-      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root, javaClasses)
+      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root, root.names)
 
     case Request.Highlight(id, uri, pos) =>
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)

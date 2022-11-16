@@ -612,23 +612,23 @@ namespace TestNel {
     def exists04(): Bool = Nel.exists(x -> x == 2, Nel(1, 2 :: Nil)) == true
 
     /////////////////////////////////////////////////////////////////////////////
-    // forall                                                                  //
+    // forAll                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forall01(): Bool = Nel.forall(x -> x == 1, Nel(1, Nil)) == true
+    def forAll01(): Bool = Nel.forAll(x -> x == 1, Nel(1, Nil)) == true
 
     @test
-    def forall02(): Bool = Nel.forall(x -> x == 2, Nel(1, Nil)) == false
+    def forAll02(): Bool = Nel.forAll(x -> x == 2, Nel(1, Nil)) == false
 
     @test
-    def forall03(): Bool = Nel.forall(x -> x == 1, Nel(1, 1 :: Nil)) == true
+    def forAll03(): Bool = Nel.forAll(x -> x == 1, Nel(1, 1 :: Nil)) == true
 
     @test
-    def forall04(): Bool = Nel.forall(x -> x == 1, Nel(1, 2 :: Nil)) == false
+    def forAll04(): Bool = Nel.forAll(x -> x == 1, Nel(1, 2 :: Nil)) == false
 
     @test
-    def forall05(): Bool = Nel.forall(x -> x == 1, Nel(2, 1 :: Nil)) == false
+    def forAll05(): Bool = Nel.forAll(x -> x == 1, Nel(2, 1 :: Nil)) == false
 
     /////////////////////////////////////////////////////////////////////////////
     // filter                                                                  //
@@ -783,19 +783,19 @@ namespace TestNel {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // foreach                                                                 //
+    // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool \ IO =
+    def forEach01(): Bool \ IO =
         let r = ref 21;
-        Nel.foreach(x -> r := x, Nel.singleton(1));
+        Nel.forEach(x -> r := x, Nel.singleton(1));
         1 == deref r
 
     @test
-    def foreach02(): Bool \ IO =
+    def forEach02(): Bool \ IO =
         let r = ref 21;
-        Nel.foreach(x -> r := x, Nel(1, 2 :: 3 :: Nil));
+        Nel.forEach(x -> r := x, Nel(1, 2 :: 3 :: Nil));
         3 == deref r
 
     /////////////////////////////////////////////////////////////////////////////

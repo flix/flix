@@ -56,7 +56,7 @@ namespace MutSet {
     /// Adds all elements in the collection `m` to the mutable set `s`.
     ///
     pub def addAll!(m: m[a], s: MutSet[a, r]): Unit \ { Read(r), Write(r) } with Order[a], Foldable[m] =
-        Foldable.foreach(x -> add!(x, s), m)
+        Foldable.forEach(x -> add!(x, s), m)
 
     ///
     /// Removes all elements from the mutable set `s`.
@@ -332,9 +332,9 @@ namespace MutSet {
     ///
     /// Returns `true` if `s` is the empty set.
     ///
-    pub def forall(f: a -> Bool \ ef, s: MutSet[a, r]): Bool \ { ef, Read(r) } =
+    pub def forAll(f: a -> Bool \ ef, s: MutSet[a, r]): Bool \ { ef, Read(r) } =
         let MutSet(ms) = s;
-        Set.forall(f, deref ms)
+        Set.forAll(f, deref ms)
 
     ///
     /// Returns a shallow copy of the mutable set `s`.
@@ -390,9 +390,9 @@ namespace MutSet {
     ///
     /// Applies `f` to every element of the mutable set `s`.
     ///
-    pub def foreach(f: a -> Unit \ ef, s: MutSet[a, r]): Unit \ { ef, Read(r) } =
+    pub def forEach(f: a -> Unit \ ef, s: MutSet[a, r]): Unit \ { ef, Read(r) } =
         let MutSet(ms) = s;
-        Set.foreach(f, deref ms)
+        Set.forEach(f, deref ms)
 
     ///
     /// Returns an iterator over `s`.

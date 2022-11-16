@@ -155,46 +155,7 @@ object Indexer {
     * Returns a reverse index for the given expression `exp0`.
     */
   private def visitExp(exp0: Expression): Index = exp0 match {
-    case Expression.Unit(_) =>
-      Index.occurrenceOf(exp0)
-
-    case Expression.Null(_, _) =>
-      Index.occurrenceOf(exp0)
-
-    case Expression.True(_) =>
-      Index.occurrenceOf(exp0)
-
-    case Expression.False(_) =>
-      Index.occurrenceOf(exp0)
-
-    case Expression.Char(_, _) =>
-      Index.occurrenceOf(exp0)
-
-    case Expression.Float32(_, _) =>
-      Index.occurrenceOf(exp0)
-
-    case Expression.Float64(_, _) =>
-      Index.occurrenceOf(exp0)
-
-    case Expression.BigDecimal(_, _) =>
-      Index.occurrenceOf(exp0)
-
-    case Expression.Int8(_, _) =>
-      Index.occurrenceOf(exp0)
-
-    case Expression.Int16(_, _) =>
-      Index.occurrenceOf(exp0)
-
-    case Expression.Int32(_, _) =>
-      Index.occurrenceOf(exp0)
-
-    case Expression.Int64(_, _) =>
-      Index.occurrenceOf(exp0)
-
-    case Expression.BigInt(_, _) =>
-      Index.occurrenceOf(exp0)
-
-    case Expression.Str(_, _) =>
+    case Expression.Cst(_, _, _) =>
       Index.occurrenceOf(exp0)
 
     case Expression.Wild(_, _) =>
@@ -438,15 +399,6 @@ object Indexer {
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
-
-    case Expression.Reify(t, _, _, _, _) =>
-      visitType(t) ++ Index.occurrenceOf(exp0)
-
-    case Expression.ReifyType(t, _, _, _, _, _) =>
-      visitType(t) ++ Index.occurrenceOf(exp0)
-
-    case Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(sym, exp1.tpe) ++ Index.occurrenceOf(exp0)
   }
 
   /**
@@ -461,19 +413,7 @@ object Indexer {
     case Pattern.Wild(_, _) => Index.occurrenceOf(pat0)
     case Pattern.Var(sym, tpe, _) =>
       Index.occurrenceOf(pat0) ++ Index.occurrenceOf(sym, tpe)
-    case Pattern.Unit(_) => Index.occurrenceOf(pat0)
-    case Pattern.True(_) => Index.occurrenceOf(pat0)
-    case Pattern.False(_) => Index.occurrenceOf(pat0)
-    case Pattern.Char(_, _) => Index.occurrenceOf(pat0)
-    case Pattern.Float32(_, _) => Index.occurrenceOf(pat0)
-    case Pattern.Float64(_, _) => Index.occurrenceOf(pat0)
-    case Pattern.BigDecimal(_, _) => Index.occurrenceOf(pat0)
-    case Pattern.Int8(_, _) => Index.occurrenceOf(pat0)
-    case Pattern.Int16(_, _) => Index.occurrenceOf(pat0)
-    case Pattern.Int32(_, _) => Index.occurrenceOf(pat0)
-    case Pattern.Int64(_, _) => Index.occurrenceOf(pat0)
-    case Pattern.BigInt(_, _) => Index.occurrenceOf(pat0)
-    case Pattern.Str(_, _) => Index.occurrenceOf(pat0)
+    case Pattern.Cst(_, _, _) => Index.occurrenceOf(pat0)
     case Pattern.Tag(Ast.CaseSymUse(sym, loc), pat, _, _) =>
       val parent = Entity.Pattern(pat0)
       Index.occurrenceOf(pat0) ++ visitPat(pat) ++ Index.useOf(sym, loc, parent)

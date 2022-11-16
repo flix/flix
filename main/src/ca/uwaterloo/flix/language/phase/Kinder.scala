@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, traverse}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, traverse, traverseOpt}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
@@ -100,7 +100,7 @@ object Kinder {
 
         mapN(enumsVal, classesVal, defsVal, instancesVal, effectsVal) {
           case (enums, classes, defs, instances, effects) =>
-            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, effects.toMap, taenv, root.entryPoint, root.sources)
+            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, effects.toMap, taenv, root.entryPoint, root.sources, root.names)
         }
     }
 
@@ -294,9 +294,9 @@ object Kinder {
           val (kenv, senv) = split(kenv1)
           val henv = None
           val specVal = visitSpec(spec0, List(classTparam.sym), kenv, senv, taenv, root)
-          val expVal = traverse(exp0)(visitExp(_, kenv, senv, taenv, henv, root))
+          val expVal = traverseOpt(exp0)(visitExp(_, kenv, senv, taenv, henv, root))
           mapN(specVal, expVal) {
-            case (spec, exp) => KindedAst.Sig(sym, spec, exp.headOption)
+            case (spec, exp) => KindedAst.Sig(sym, spec, exp)
           }
       }
   }
@@ -358,33 +358,7 @@ object Kinder {
 
     case ResolvedAst.Expression.Hole(sym, loc) => KindedAst.Expression.Hole(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
 
-    case ResolvedAst.Expression.Unit(loc) => KindedAst.Expression.Unit(loc).toSuccess
-
-    case ResolvedAst.Expression.Null(loc) => KindedAst.Expression.Null(loc).toSuccess
-
-    case ResolvedAst.Expression.True(loc) => KindedAst.Expression.True(loc).toSuccess
-
-    case ResolvedAst.Expression.False(loc) => KindedAst.Expression.False(loc).toSuccess
-
-    case ResolvedAst.Expression.Char(lit, loc) => KindedAst.Expression.Char(lit, loc).toSuccess
-
-    case ResolvedAst.Expression.Float32(lit, loc) => KindedAst.Expression.Float32(lit, loc).toSuccess
-
-    case ResolvedAst.Expression.Float64(lit, loc) => KindedAst.Expression.Float64(lit, loc).toSuccess
-
-    case ResolvedAst.Expression.BigDecimal(lit, loc) => KindedAst.Expression.BigDecimal(lit, loc).toSuccess
-
-    case ResolvedAst.Expression.Int8(lit, loc) => KindedAst.Expression.Int8(lit, loc).toSuccess
-
-    case ResolvedAst.Expression.Int16(lit, loc) => KindedAst.Expression.Int16(lit, loc).toSuccess
-
-    case ResolvedAst.Expression.Int32(lit, loc) => KindedAst.Expression.Int32(lit, loc).toSuccess
-
-    case ResolvedAst.Expression.Int64(lit, loc) => KindedAst.Expression.Int64(lit, loc).toSuccess
-
-    case ResolvedAst.Expression.BigInt(lit, loc) => KindedAst.Expression.BigInt(lit, loc).toSuccess
-
-    case ResolvedAst.Expression.Str(lit, loc) => KindedAst.Expression.Str(lit, loc).toSuccess
+    case ResolvedAst.Expression.Cst(cst, loc) => KindedAst.Expression.Cst(cst, loc).toSuccess
 
     case ResolvedAst.Expression.Apply(exp0, exps0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
@@ -597,20 +571,20 @@ object Kinder {
 
     case ResolvedAst.Expression.Ascribe(exp0, expectedType0, expectedEff0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
-      val expectedTypeVal = traverse(expectedType0)(visitType(_, Kind.Star, kenv0, senv, taenv, root))
+      val expectedTypeVal = traverseOpt(expectedType0)(visitType(_, Kind.Star, kenv0, senv, taenv, root))
       val expectedPurAndEffVal = visitOptionalPurityAndEffect(expectedEff0, kenv0, senv, taenv, root)
       mapN(expVal, expectedTypeVal, expectedPurAndEffVal) {
         case (exp, expectedType, (expectedPur, expectedEff)) =>
-          KindedAst.Expression.Ascribe(exp, expectedType.headOption, expectedPur, expectedEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+          KindedAst.Expression.Ascribe(exp, expectedType, expectedPur, expectedEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.Cast(exp0, declaredType0, declaredEff0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
-      val declaredTypeVal = traverse(declaredType0)(visitType(_, Kind.Star, kenv0, senv, taenv, root))
+      val declaredTypeVal = traverseOpt(declaredType0)(visitType(_, Kind.Star, kenv0, senv, taenv, root))
       val declaredPurAndEffVal = visitOptionalPurityAndEffect(declaredEff0, kenv0, senv, taenv, root)
       mapN(expVal, declaredTypeVal, declaredPurAndEffVal) {
         case (exp, declaredType, (declaredPur, declaredEff)) =>
-          KindedAst.Expression.Cast(exp, declaredType.headOption, declaredPur, declaredEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+          KindedAst.Expression.Cast(exp, declaredType, declaredPur, declaredEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.Mask(exp, loc) =>
@@ -733,9 +707,9 @@ object Kinder {
 
     case ResolvedAst.Expression.SelectChannel(rules0, default0, loc) =>
       val rulesVal = traverse(rules0)(visitSelectChannelRule(_, kenv0, senv, taenv, henv0, root))
-      val defaultVal = traverse(default0)(visitExp(_, kenv0, senv, taenv, henv0, root))
+      val defaultVal = traverseOpt(default0)(visitExp(_, kenv0, senv, taenv, henv0, root))
       mapN(rulesVal, defaultVal) {
-        case (rules, default) => KindedAst.Expression.SelectChannel(rules, default.headOption, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+        case (rules, default) => KindedAst.Expression.SelectChannel(rules, default, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.Spawn(exp0, loc) =>
@@ -817,27 +791,6 @@ object Kinder {
       mapN(exp1Val, exp2Val) {
         case (exp1, exp2) => KindedAst.Expression.FixpointProject(pred, exp1, exp2, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
-
-    case ResolvedAst.Expression.Reify(t0, loc) =>
-      val tVal = visitType(t0, Kind.Bool, kenv0, senv, taenv, root)
-      mapN(tVal) {
-        t => KindedAst.Expression.Reify(t, loc)
-      }
-
-    case ResolvedAst.Expression.ReifyType(t0, k0, loc) =>
-      val tVal = visitType(t0, k0, kenv0, senv, taenv, root)
-      mapN(tVal) {
-        t => KindedAst.Expression.ReifyType(t, k0, loc)
-      }
-
-    case ResolvedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, loc) =>
-      val e1Val = visitExp(exp1, kenv0, senv, taenv, henv0, root)
-      val e2Val = visitExp(exp2, kenv0, senv, taenv, henv0, root)
-      val e3Val = visitExp(exp3, kenv0, senv, taenv, henv0, root)
-      mapN(e1Val, e2Val, e3Val) {
-        case (e1, e2, e3) => KindedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
-      }
-
   }
 
   /**
@@ -846,10 +799,10 @@ object Kinder {
   private def visitMatchRule(rule0: ResolvedAst.MatchRule, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.MatchRule, KindError] = rule0 match {
     case ResolvedAst.MatchRule(pat0, guard0, exp0) =>
       val patVal = visitPattern(pat0, kenv, root)
-      val guardVal = traverse(guard0)(visitExp(_, kenv, senv, taenv, henv, root))
+      val guardVal = traverseOpt(guard0)(visitExp(_, kenv, senv, taenv, henv, root))
       val expVal = visitExp(exp0, kenv, senv, taenv, henv, root)
       mapN(patVal, guardVal, expVal) {
-        case (pat, guard, exp) => KindedAst.MatchRule(pat, guard.headOption, exp)
+        case (pat, guard, exp) => KindedAst.MatchRule(pat, guard, exp)
       }
   }
 
@@ -923,19 +876,7 @@ object Kinder {
   private def visitPattern(pat00: ResolvedAst.Pattern, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Pattern, KindError] = pat00 match {
     case ResolvedAst.Pattern.Wild(loc) => KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
     case ResolvedAst.Pattern.Var(sym, loc) => KindedAst.Pattern.Var(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
-    case ResolvedAst.Pattern.Unit(loc) => KindedAst.Pattern.Unit(loc).toSuccess
-    case ResolvedAst.Pattern.True(loc) => KindedAst.Pattern.True(loc).toSuccess
-    case ResolvedAst.Pattern.False(loc) => KindedAst.Pattern.False(loc).toSuccess
-    case ResolvedAst.Pattern.Char(lit, loc) => KindedAst.Pattern.Char(lit, loc).toSuccess
-    case ResolvedAst.Pattern.Float32(lit, loc) => KindedAst.Pattern.Float32(lit, loc).toSuccess
-    case ResolvedAst.Pattern.Float64(lit, loc) => KindedAst.Pattern.Float64(lit, loc).toSuccess
-    case ResolvedAst.Pattern.BigDecimal(lit, loc) => KindedAst.Pattern.BigDecimal(lit, loc).toSuccess
-    case ResolvedAst.Pattern.Int8(lit, loc) => KindedAst.Pattern.Int8(lit, loc).toSuccess
-    case ResolvedAst.Pattern.Int16(lit, loc) => KindedAst.Pattern.Int16(lit, loc).toSuccess
-    case ResolvedAst.Pattern.Int32(lit, loc) => KindedAst.Pattern.Int32(lit, loc).toSuccess
-    case ResolvedAst.Pattern.Int64(lit, loc) => KindedAst.Pattern.Int64(lit, loc).toSuccess
-    case ResolvedAst.Pattern.BigInt(lit, loc) => KindedAst.Pattern.BigInt(lit, loc).toSuccess
-    case ResolvedAst.Pattern.Str(lit, loc) => KindedAst.Pattern.Str(lit, loc).toSuccess
+    case ResolvedAst.Pattern.Cst(cst, loc) => KindedAst.Pattern.Cst(cst, loc).toSuccess
     case ResolvedAst.Pattern.Tag(sym, pat0, loc) =>
       val patVal = visitPattern(pat0, kenv, root)
       mapN(patVal) {

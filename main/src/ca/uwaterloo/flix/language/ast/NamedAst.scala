@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 object NamedAst {
 
@@ -28,7 +29,8 @@ object NamedAst {
                   effects: Map[Name.NName, Map[String, NamedAst.Effect]],
                   ops: Map[Name.NName, Map[String, NamedAst.Op]],
                   entryPoint: Option[Symbol.DefnSym],
-                  sources: Map[Source, SourceLocation])
+                  sources: Map[Source, SourceLocation],
+                  names: MultiMap[List[String], String])
 
   // TODO change laws to NamedAst.Law
   case class Class(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, superClasses: List[NamedAst.TypeConstraint], sigs: List[NamedAst.Sig], laws: List[NamedAst.Def], loc: SourceLocation)
@@ -85,33 +87,7 @@ object NamedAst {
 
     case class Use(use: NamedAst.Use, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Unit(loc: SourceLocation) extends NamedAst.Expression
-
-    case class Null(loc: SourceLocation) extends NamedAst.Expression
-
-    case class True(loc: SourceLocation) extends NamedAst.Expression
-
-    case class False(loc: SourceLocation) extends NamedAst.Expression
-
-    case class Char(lit: scala.Char, loc: SourceLocation) extends NamedAst.Expression
-
-    case class Float32(lit: scala.Float, loc: SourceLocation) extends NamedAst.Expression
-
-    case class Float64(lit: scala.Double, loc: SourceLocation) extends NamedAst.Expression
-
-    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends NamedAst.Expression
-
-    case class Int8(lit: scala.Byte, loc: SourceLocation) extends NamedAst.Expression
-
-    case class Int16(lit: scala.Short, loc: SourceLocation) extends NamedAst.Expression
-
-    case class Int32(lit: scala.Int, loc: SourceLocation) extends NamedAst.Expression
-
-    case class Int64(lit: scala.Long, loc: SourceLocation) extends NamedAst.Expression
-
-    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends NamedAst.Expression
-
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends NamedAst.Expression
+    case class Cst(cst: Ast.Constant, loc: SourceLocation) extends NamedAst.Expression
 
     case class Apply(exp: NamedAst.Expression, exps: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
@@ -239,12 +215,6 @@ object NamedAst {
 
     case class FixpointProject(pred: Name.Pred, exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Reify(t: NamedAst.Type, loc: SourceLocation) extends NamedAst.Expression
-
-    case class ReifyType(t: NamedAst.Type, k: Kind, loc: SourceLocation) extends NamedAst.Expression
-
-    case class ReifyEff(sym: Symbol.VarSym, exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
-
   }
 
   sealed trait Pattern {
@@ -257,31 +227,7 @@ object NamedAst {
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NamedAst.Pattern
 
-    case class Unit(loc: SourceLocation) extends NamedAst.Pattern
-
-    case class True(loc: SourceLocation) extends NamedAst.Pattern
-
-    case class False(loc: SourceLocation) extends NamedAst.Pattern
-
-    case class Char(lit: scala.Char, loc: SourceLocation) extends NamedAst.Pattern
-
-    case class Float32(lit: scala.Float, loc: SourceLocation) extends NamedAst.Pattern
-
-    case class Float64(lit: scala.Double, loc: SourceLocation) extends NamedAst.Pattern
-
-    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends NamedAst.Pattern
-
-    case class Int8(lit: scala.Byte, loc: SourceLocation) extends NamedAst.Pattern
-
-    case class Int16(lit: scala.Short, loc: SourceLocation) extends NamedAst.Pattern
-
-    case class Int32(lit: scala.Int, loc: SourceLocation) extends NamedAst.Pattern
-
-    case class Int64(lit: scala.Long, loc: SourceLocation) extends NamedAst.Pattern
-
-    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends NamedAst.Pattern
-
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends NamedAst.Pattern
+    case class Cst(cst: Ast.Constant, loc: SourceLocation) extends NamedAst.Pattern
 
     case class Tag(qname: Option[Name.QName], tag: Name.Ident, pat: NamedAst.Pattern, loc: SourceLocation) extends NamedAst.Pattern
 

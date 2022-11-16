@@ -719,48 +719,53 @@ namespace TestDelayList {
     	DelayList.foldMap(Int32.toString, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == "123"
 
     /////////////////////////////////////////////////////////////////////////////
-    // foreach                                                                 //
+    // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool \ IO =
+    def forEach01(): Bool = region r {
         let l = ENil;
-        let sb = new StringBuilder(Static);
+        let sb = new StringBuilder(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-        DelayList.foreach(fn, l);
+        DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == ""
+    }
 
     @test
-    def foreach02(): Bool \ IO =
+    def forEach02(): Bool = region r {
         let l = LList(lazy ENil);
-        let sb = new StringBuilder(Static);
+        let sb = new StringBuilder(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-        DelayList.foreach(fn, l);
+        DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == ""
+    }
 
     @test
-    def foreach03(): Bool \ IO =
+    def forEach03(): Bool = region r {
         let l = LCons(1, lazy LList(lazy ENil));
-        let sb = new StringBuilder(Static);
+        let sb = new StringBuilder(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-        DelayList.foreach(fn, l);
+        DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "T"
+    }
 
     @test
-    def foreach04(): Bool \ IO =
+    def forEach04(): Bool = region r {
         let l = LCons(-1, lazy LList(lazy ENil));
-        let sb = new StringBuilder(Static);
+        let sb = new StringBuilder(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-        DelayList.foreach(fn, l);
+        DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "F"
+    }
 
     @test
-    def foreach05(): Bool \ IO =
+    def forEach05(): Bool = region r {
         let l = ECons(1, LCons(-1, lazy ENil));
-        let sb = new StringBuilder(Static);
+        let sb = new StringBuilder(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-        DelayList.foreach(fn, l);
+        DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "TF"
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1155,48 +1160,48 @@ namespace TestDelayList {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // forall                                                                  //
+    // forAll                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forall01(): Bool =
-        DelayList.forall(i -> i > 3, ENil) == true
+    def forAll01(): Bool =
+        DelayList.forAll(i -> i > 3, ENil) == true
 
     @test
-    def forall02(): Bool =
-        (1 :: Nil) |> List.toDelayList |> DelayList.forall(i -> i > 3) == false
+    def forAll02(): Bool =
+        (1 :: Nil) |> List.toDelayList |> DelayList.forAll(i -> i > 3) == false
 
     @test
-    def forall03(): Bool =
-        (5 :: Nil) |> List.toDelayList |> DelayList.forall(i -> i > 3) == true
+    def forAll03(): Bool =
+        (5 :: Nil) |> List.toDelayList |> DelayList.forAll(i -> i > 3) == true
 
     @test
-    def forall04(): Bool =
-        (1 :: 2 :: Nil) |> List.toDelayList |> DelayList.forall(i -> i > 3) == false
+    def forAll04(): Bool =
+        (1 :: 2 :: Nil) |> List.toDelayList |> DelayList.forAll(i -> i > 3) == false
 
     @test
-    def forall05(): Bool =
-        (1 :: 6 :: Nil) |> List.toDelayList |> DelayList.forall(i -> i > 3) == false
+    def forAll05(): Bool =
+        (1 :: 6 :: Nil) |> List.toDelayList |> DelayList.forAll(i -> i > 3) == false
 
     @test
-    def forall06(): Bool =
-        (6 :: 1 :: Nil) |> List.toDelayList |> DelayList.forall(i -> i > 3) == false
+    def forAll06(): Bool =
+        (6 :: 1 :: Nil) |> List.toDelayList |> DelayList.forAll(i -> i > 3) == false
 
     @test
-    def forall07(): Bool =
-        (16 :: 6 :: Nil) |> List.toDelayList |> DelayList.forall(i -> i > 3) == true
+    def forAll07(): Bool =
+        (16 :: 6 :: Nil) |> List.toDelayList |> DelayList.forAll(i -> i > 3) == true
 
     @test
-    def forall08(): Bool =
-        (1 :: -9 :: 3 :: Nil) |> List.toDelayList |> DelayList.forall(i -> i > 3) == false
+    def forAll08(): Bool =
+        (1 :: -9 :: 3 :: Nil) |> List.toDelayList |> DelayList.forAll(i -> i > 3) == false
 
     @test
-    def forall09(): Bool =
-        (1 :: 9 :: 3 :: Nil) |> List.toDelayList |> DelayList.forall(i -> i > 3) == false
+    def forAll09(): Bool =
+        (1 :: 9 :: 3 :: Nil) |> List.toDelayList |> DelayList.forAll(i -> i > 3) == false
 
     @test
-    def forall10(): Bool =
-        (11 :: 9 :: 31 :: Nil) |> List.toDelayList |> DelayList.forall(i -> i > 3) == true
+    def forAll10(): Bool =
+        (11 :: 9 :: 31 :: Nil) |> List.toDelayList |> DelayList.forAll(i -> i > 3) == true
 
 
     /////////////////////////////////////////////////////////////////////////////
