@@ -73,17 +73,17 @@ object Resolver {
 
         val defsVal = resolveDefs(root, taenv, oldRoot, changeSet)
 
-        val enumsVal = root.enums.flatMap {
-          case (ns0, enums) => enums.map {
-            case (_, enum) => resolveEnum(enum, taenv, ns0, root) map {
+        val enumsVal = root.classesAndEffectsAndEnums.flatMap {
+          case (ns0, classesAndEffectsAndEnums) => classesAndEffectsAndEnums.collect {
+            case (_, NamedAst.ClassOrEffectOrEnum.Enum(enum)) => resolveEnum(enum, taenv, ns0, root) map {
               case d => d.sym -> d
             }
           }
         }
 
-        val effectsVal = root.classesAndEffects.flatMap {
+        val effectsVal = root.classesAndEffectsAndEnums.flatMap {
           case (ns0, classesAndEffects) => classesAndEffects.collect {
-            case (_, NamedAst.ClassOrEffect.Effect(effect)) => resolveEffect(effect, taenv, ns0, root) map {
+            case (_, NamedAst.ClassOrEffectOrEnum.Effect(effect)) => resolveEffect(effect, taenv, ns0, root) map {
               case e => e.sym -> e
             }
           }
@@ -276,8 +276,8 @@ object Resolver {
   private def resolveClasses(root: NamedAst.Root, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.ClassSym, ResolvedAst.Class], ResolutionError] = {
 
     val rootClasses = for {
-      (ns, classesAndEffects) <- root.classesAndEffects
-      clazz <- classesAndEffects.collect { case (_, NamedAst.ClassOrEffect.Class(c)) => c }
+      (ns, classesAndEffects) <- root.classesAndEffectsAndEnums
+      clazz <- classesAndEffects.collect { case (_, NamedAst.ClassOrEffectOrEnum.Class(c)) => c }
     } yield clazz.sym -> (clazz, ns)
 
     val (staleClasses, freshClasses) = changeSet.partition(rootClasses, oldRoot.classes)
@@ -1504,7 +1504,7 @@ object Resolver {
   def lookupClassForImplementation(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
     val classOpt = tryLookupName(qname, ns0, root.classesAndEffects)
     classOpt match {
-      case Some(NamedAst.ClassOrEffect.Class(clazz)) =>
+      case Some(NamedAst.ClassOrEffectOrEnum.Class(clazz)) =>
         getClassAccessibility(clazz, ns0) match {
           case ClassAccessibility.Accessible => clazz.toSuccess
           case ClassAccessibility.Sealed => ResolutionError.SealedClass(clazz.sym, ns0, qname.loc).toFailure
@@ -1520,7 +1520,7 @@ object Resolver {
   def lookupClass(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
     val classOpt = tryLookupName(qname, ns0, root.classesAndEffects)
     classOpt match {
-      case Some(NamedAst.ClassOrEffect.Class(clazz)) =>
+      case Some(NamedAst.ClassOrEffectOrEnum.Class(clazz)) =>
         getClassAccessibility(clazz, ns0) match {
           case ClassAccessibility.Accessible | ClassAccessibility.Sealed => clazz.toSuccess
           case ClassAccessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
@@ -2102,10 +2102,10 @@ object Resolver {
         case (None, Some(alias), None) =>
           // Case 3: found a type alias
           TypeLookupResult.TypeAlias(alias)
-        case (None, None, Some(NamedAst.ClassOrEffect.Effect(effect))) =>
+        case (None, None, Some(NamedAst.ClassOrEffectOrEnum.Effect(effect))) =>
           // Case 4: found an effect
           TypeLookupResult.Effect(effect)
-        case (None, None, Some(NamedAst.ClassOrEffect.Class(clazz))) =>
+        case (None, None, Some(NamedAst.ClassOrEffectOrEnum.Class(clazz))) =>
           // Case 5: found a class. Treat as not found.
           TypeLookupResult.NotFound
         case _ =>
@@ -2151,7 +2151,7 @@ object Resolver {
     val classOrEffOpt = tryLookupName(qname, ns0, root.classesAndEffects)
 
     classOrEffOpt match {
-      case Some(NamedAst.ClassOrEffect.Effect(eff)) => getEffectIfAccessible(eff, ns0, qname.loc)
+      case Some(NamedAst.ClassOrEffectOrEnum.Effect(eff)) => getEffectIfAccessible(eff, ns0, qname.loc)
       case _ => ResolutionError.UndefinedEffect(qname, ns0, qname.loc).toFailure
     }
   }
