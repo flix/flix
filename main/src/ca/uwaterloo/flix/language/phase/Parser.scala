@@ -877,7 +877,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ keyword("typematch") ~ WS ~ Expression ~ optWS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.TypeMatch
+        SP ~ keyword("typematch") ~ WS ~ Expression ~ optWS ~ optional(keyword("return") ~ optWS ~ Type ~ optWS) ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.TypeMatch
       }
     }
 

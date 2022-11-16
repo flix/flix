@@ -727,8 +727,9 @@ object Namer {
         case (e, rs) => NamedAst.Expression.Match(e, rs, loc)
       }
 
-    case WeededAst.Expression.TypeMatch(exp, rules, loc) =>
+    case WeededAst.Expression.TypeMatch(exp, ret, rules, loc) =>
       val expVal = visitExp(exp, env0, uenv0, tenv0, ns0, prog0)
+      val retVal = traverseOpt(ret)(visitType(_, allowWild = false, uenv0, tenv0))
       val rulesVal = traverse(rules) {
         case WeededAst.MatchTypeRule(ident, tpe, body) =>
           // extend the environment with the variable
@@ -740,8 +741,8 @@ object Namer {
             case (t, b) => NamedAst.MatchTypeRule(sym, t, b)
           }
       }
-      mapN(expVal, rulesVal) {
-        case (e, rs) => NamedAst.Expression.TypeMatch(e, rs, loc)
+      mapN(expVal, retVal, rulesVal) {
+        case (e, r, rs) => NamedAst.Expression.TypeMatch(e, r, rs, loc)
       }
 
     case WeededAst.Expression.Choose(star, exps, rules, loc) =>
@@ -1504,7 +1505,7 @@ object Namer {
     case WeededAst.Expression.Match(exp, rules, _) => freeVars(exp) ++ rules.flatMap {
       case WeededAst.MatchRule(pat, guard, body) => filterBoundVars(guard.toList.flatMap(freeVars) ++ freeVars(body), freeVars(pat))
     }
-    case WeededAst.Expression.TypeMatch(exp, rules, _) => freeVars(exp) ++ rules.flatMap {
+    case WeededAst.Expression.TypeMatch(exp, _, rules, _) => freeVars(exp) ++ rules.flatMap {
       case WeededAst.MatchTypeRule(ident, _, body) => filterBoundVars(freeVars(body), List(ident))
     }
     case WeededAst.Expression.Choose(_, exps, rules, _) => exps.flatMap(freeVars) ++ rules.flatMap {

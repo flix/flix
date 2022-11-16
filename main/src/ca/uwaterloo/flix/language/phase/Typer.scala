@@ -924,7 +924,22 @@ object Typer {
           resultEff = Type.mkUnion(eff :: guardEffs ::: bodyEffs, loc)
         } yield (constrs ++ guardConstrs.flatten ++ bodyConstrs.flatten, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.TypeMatch(exp, rules, loc) =>
+      case KindedAst.Expression.TypeMatch(exp, None, rules, loc) =>
+        val bodies = rules.map(_.exp)
+
+        for {
+          (constrs, tpe, pur, eff) <- visitExp(exp)
+          // rigidify all the type vars in the rules
+          _ <- traverseM(rules.flatMap(rule => rule.tpe.typeVars.toList))(rigidifyM)
+          // unify each rule's variable with its type
+          _ <- traverseM(rules)(rule => unifyTypeM(rule.sym.tvar, rule.tpe, rule.sym.loc))
+          (bodyConstrs, bodyTypes, bodyPurs, bodyEffs) <- traverseM(bodies)(visitExp).map(unzip4)
+          resultTyp <- unifyTypeM(bodyTypes, loc)
+          resultPur = Type.mkAnd(pur :: bodyPurs, loc)
+          resultEff = Type.mkUnion(eff :: bodyEffs, loc)
+        } yield (constrs ++ bodyConstrs.flatten, resultTyp, resultPur, resultEff)
+
+      case KindedAst.Expression.TypeMatch(exp, None, rules, loc) =>
         val bodies = rules.map(_.exp)
 
         for {

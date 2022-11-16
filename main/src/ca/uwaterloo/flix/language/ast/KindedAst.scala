@@ -94,7 +94,7 @@ object KindedAst {
 
     case class Match(exp: KindedAst.Expression, rules: List[KindedAst.MatchRule], loc: SourceLocation) extends KindedAst.Expression
 
-    case class TypeMatch(exp: KindedAst.Expression, rules: List[KindedAst.MatchTypeRule], loc: SourceLocation) extends KindedAst.Expression
+    case class TypeMatch(exp: KindedAst.Expression, ret: Option[Type], rules: List[KindedAst.MatchTypeRule], loc: SourceLocation) extends KindedAst.Expression
 
     case class Choose(star: Boolean, exps: List[KindedAst.Expression], rules: List[KindedAst.ChoiceRule], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 

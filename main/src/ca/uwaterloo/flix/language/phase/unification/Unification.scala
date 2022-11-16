@@ -405,6 +405,12 @@ object Unification {
       case (s, renv) => Ok((s, renv.markRigid(rvar.sym), ()))
     }
 
+  def locallyUnify(tpe1: Type, tpe2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): InferMonad[Unit] = {
+    for {
+      _ <- unifyTypes(tpe1, tpe2, loc)
+    }
+  }
+
   /**
     * Returns true iff `tpe1` unifies with `tpe2`.
     */
