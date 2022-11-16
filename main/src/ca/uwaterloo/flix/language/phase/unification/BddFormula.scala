@@ -37,12 +37,12 @@ object BddFormula {
     /**
       * Returns `true` if `f` represents TRUE.
       */
-    override def isTrue(f: BddFormula): Boolean = f.getDD().isOne()
+    override def isTrue(f: BddFormula): Boolean = f.getDD().isOne
 
     /**
       * Returns `true` if `f` represents FALSE.
       */
-    override def isFalse(f: BddFormula): Boolean = f.getDD().isZero()
+    override def isFalse(f: BddFormula): Boolean = f.getDD().isZero
 
     /**
       * Returns a representation of TRUE.
@@ -121,83 +121,21 @@ object BddFormula {
       * Applies the function `fn` to every variable in `f`.
       */
     override def map(f: BddFormula)(fn: Int => BddFormula): BddFormula = {
-      //if f is true or false, map has no effect
-      if(f.getDD().isOne || f.getDD().isZero) {
-        f
+      new BddFormula(mapAux(f.getDD())(fn))
+    }
+
+    /**
+      * Helper function for map (works on internal BDD)
+      */
+    def mapAux(dd: BDD)(fn: Int => BddFormula): BDD = {
+      if(dd.isOne || dd.isZero) {
+        dd
       } else {
-        /*to avoid problems with overlapping variables in f and the results of fn
-          each variable x in f or a result of fn on a variable from f, must get a
-          fresh name x'. Then for each variable i in f, substitute all variables
-          in fn(i) with their primed versions. Then substitute i for the primed
-          version of fn(i). At the end go through all primed variables in f and
-          replace them with their unprimed versions.
-        */
-
-        //collect all the variables in f and the substitutions for variables in f
-        val varSetF = freeVars(f)
-        var varSetFull = varSetF
-        for(var_i <- varSetF) {
-          val subst_i = fn(var_i)
-          val varSet_i = freeVars(subst_i)
-          varSetFull = varSetFull ++ varSet_i
-        }
-
-        //make x -> x' map and x' -> x map
-        val maxVar = varSetFull.max
-        val noVars = varSetFull.size
-        val newVarNames = (maxVar+1 to maxVar+noVars).toList
-        val varMapForward = varSetFull.zip(newVarNames).foldLeft(Map.empty[Int, Int]) {
-          case (macc, (old_x, new_x)) => macc + (old_x -> new_x)
-        }
-        var varMapBackward = varSetFull.zip(newVarNames).foldLeft(Map.empty[Int, Int]) {
-          case (macc, (old_x, new_x)) => macc + (new_x -> old_x)
-        }
-        var res = f.getDD()
-
-        //for each i in the variable set for f, get fn(i), create fn(i)'
-        //with primed variables and compose f with fn(i)'
-        //if fn(i) is true or false, just restrict f
-        //if fn(i) = i, do not do anything
-        for (var_i <- varSetF) {
-          val subst = fn(var_i)
-          var substDD = subst.getDD()
-          if(substDD.isOne()) {
-            res = res.restrict(var_i, true)
-          } else if(substDD.isZero()) {
-            res = res.restrict(var_i, false)
-          } else if(!substDD.isEquivalentTo(factory.get().makeVar(var_i))) {
-            substDD = substDD.replace(varMapForward.asJava.asInstanceOf[java.util.Map[Integer,Integer]])
-            res = res.compose(substDD, var_i)
-          }
-        }
-
-        //replace all primed xs in the result with their unprimed versions
-        //to avoid problems with the replace operation, handle all variables
-        //that occur both in primed and unprimed versions separately
-        val varSetRes = freeVarsAux(res)
-        for(var_k <- varSetRes) {
-          //check whether k is an unprimed variable
-          if(varMapForward contains var_k) {
-            val k_prime = varMapForward.get(var_k) match  {
-              case Some(k) => k
-              case None => ??? //cannot happen
-            }
-
-            //removed the primed version of k to avoid problems
-            varMapBackward -= k_prime
-
-            //replace any primed occurrences of k with the unprimed version
-            if(varSetRes.contains(k_prime)) {
-              res = res.compose(factory.get().makeVar(var_k), k_prime)
-            }
-          }
-        }
-
-        //now the backward map only contains the primed variables that
-        //do not occur as unprimed so the replacement is safe
-        res = res.replace(varMapBackward.asJava.asInstanceOf[java.util.Map[Integer,Integer]])
-
-        new BddFormula(res)
+        val currentVar = dd.`var`()
+        val substDD = fn(currentVar).getDD()
+        val lowRes = mapAux(dd.low())(fn)
+        val highRes = mapAux(dd.high())(fn)
+        substDD.ite(highRes, lowRes)
       }
     }
 
@@ -236,9 +174,9 @@ object BddFormula {
       */
     private def createTypeFromBDDAux(dd: BDD, tpe: Type, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
       //at the bottom of a true path - return the collected path
-      if(dd.isOne()) return tpe
+      if(dd.isOne) return tpe
       //at the bottom of a false path - throw away this path
-      if(dd.isZero()) return Type.False
+      if(dd.isZero) return Type.False
 
       //not at the bottom yet - get the current variable and
       //find the corresponding type var in the environment
@@ -249,7 +187,7 @@ object BddFormula {
       }
 
       //expand the path so far into low and high paths
-      //(make and AND with the type var in positive or negative form)
+      //(make an AND with the type var in positive or negative form)
       //and call recursively on the low and high branches
       val lowType = Type.mkApply(Type.And, List(tpe, Type.Apply(Type.Not, typeVar, SourceLocation.Unknown)), SourceLocation.Unknown)
       val lowRes = createTypeFromBDDAux(dd.low(), lowType, env)
