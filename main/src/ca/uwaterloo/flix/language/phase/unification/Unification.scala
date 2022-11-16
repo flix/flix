@@ -207,13 +207,14 @@ object Unification {
     * Unifies the `expected` type with the `actual` type.
     */
   def expectTypeM(expected: Type, actual: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+    // Note: The handler should *NOT* use `expected` nor `actual` since they have not had their variables substituted.
     def handler(e: TypeError): TypeError = e match {
-      case _: TypeError.MismatchedTypes =>
-        (expected.typeConstructor, actual.typeConstructor) match {
+      case TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, _) =>
+        (baseType1.typeConstructor, baseType2.typeConstructor) match {
           case (Some(TypeConstructor.Native(left)), Some(TypeConstructor.Native(right))) if left.isAssignableFrom(right) =>
             TypeError.PossibleUpcast(expected, actual, loc)
           case _ =>
-            TypeError.UnexpectedType(expected, actual, loc)
+            TypeError.UnexpectedType(baseType1, baseType2, baseType2.loc)
         }
       case e => e
     }
@@ -332,24 +333,22 @@ object Unification {
   }
 
   /**
-    * Removes the given type variable from the substitution.
+    * Removes the given type variable `tvar` from the substitution.
     *
     * NB: Use with EXTREME CAUTION.
     */
   def unbindVar(tvar: Type.Var): InferMonad[Unit] =
-    InferMonad { case (s, renv) => {
-      Ok((s.unbind(tvar.sym), renv, ()))
-    }
+    InferMonad {
+      case (s, renv) => Ok((s.unbind(tvar.sym), renv, ()))
     }
 
   /**
     * Purifies the given effect `eff` in the type inference monad.
     */
   def purifyEffM(tvar: Type.Var, eff: Type): InferMonad[Type] =
-    InferMonad { case (s, renv) => {
+    InferMonad { case (s, renv) =>
       val purifiedEff = purify(tvar, s(eff))
       Ok((s, renv, purifiedEff))
-    }
     }
 
   /**
