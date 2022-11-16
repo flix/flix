@@ -954,6 +954,32 @@ object Typer {
           resultEff = Type.mkUnion(eff :: bodyEffs, loc)
         } yield (constrs ++ bodyConstrs.flatten, resultTyp, resultPur, resultEff)
 
+      case KindedAst.Expression.TypeMatch(exp, Some(ret), rules, loc) =>
+
+        def visitMatchTypeRule(rule: KindedAst.MatchTypeRule, expTpe: Type): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = {
+          for {
+            _ <- traverseM(expTpe.typeVars.toList)(flexifyM)
+            _ <- unifyTypeM(expTpe, rule.tpe, rule.sym.loc)
+            (tconstrs, tpe, pur, eff) <- visitExp(rule.exp)
+            _ <- expectTypeM(expected = ret, actual = tpe, exp.loc)
+          } yield (tconstrs, tpe, pur, eff)
+        }
+
+        val bodies = rules.map(_.exp)
+
+        for {
+          (constrs, tpe, pur, eff) <- visitExp(exp)
+          // rigidify all the type vars in the rules
+          _ <- traverseM(rules.flatMap(rule => rule.tpe.typeVars.toList))(rigidifyM)
+          // unify each rule's variable with its type
+          _ <- traverseM(rules)(rule => unifyTypeM(rule.sym.tvar, rule.tpe, rule.sym.loc))
+          // locally unify each rule type with the main expression type and check that the body has the return type
+          (bodyConstrs, _, bodyPurs, bodyEffs) <- traverseM(rules)(rule => locally(visitMatchTypeRule(rule, tpe))).map(unzip4)
+          resultTyp = ret
+          resultPur = Type.mkAnd(pur :: bodyPurs, loc)
+          resultEff = Type.mkUnion(eff :: bodyEffs, loc)
+        } yield (constrs ++ bodyConstrs.flatten, resultTyp, resultPur, resultEff)
+
       case KindedAst.Expression.Choose(star, exps0, rules0, tvar, loc) =>
 
         /**
@@ -1983,7 +2009,7 @@ object Typer {
         }
         TypedAst.Expression.Match(e1, rs, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.TypeMatch(matchExp, rules, loc) =>
+      case KindedAst.Expression.TypeMatch(matchExp, ret, rules, loc) =>
         val e1 = visitExp(matchExp, subst0)
         val rs = rules map {
           case KindedAst.MatchTypeRule(sym, tpe0, exp) =>

@@ -65,6 +65,11 @@ case class RigidityEnv(s: SortedSet[Symbol.KindedTypeVarSym]) {
   def markRigid(sym: Symbol.KindedTypeVarSym): RigidityEnv = RigidityEnv(s + sym)
 
   /**
+    * Marks the given `sym` as flexible in this environment.
+    */
+  def markFlexible(sym: Symbol.KindedTypeVarSym): RigidityEnv = RigidityEnv(s - sym)
+
+  /**
     * Merges the two rigidity environments, favoring Rigid in case of conflict.
     */
   def ++(that: RigidityEnv): RigidityEnv = RigidityEnv(this.s ++ that.s)

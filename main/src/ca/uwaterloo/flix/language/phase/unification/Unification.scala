@@ -405,9 +405,23 @@ object Unification {
       case (s, renv) => Ok((s, renv.markRigid(rvar.sym), ()))
     }
 
-  def locallyUnify(tpe1: Type, tpe2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): InferMonad[Unit] = {
-    for {
-      _ <- unifyTypes(tpe1, tpe2, loc)
+  /**
+    * Sets the given variable as flexible in the type inference monad.
+    */
+  def flexifyM(rvar: Type.Var): InferMonad[Unit] = {
+    InferMonad {
+      case (s, renv) => Ok((s, renv.markFlexible(rvar.sym), ()))
+    }
+  }
+
+  /**
+    * Runs the type inference monad locally.
+    */
+  def locally[T](monad: InferMonad[T])(implicit flix: Flix): InferMonad[T] = {
+    InferMonad {
+      case (s, renv) => monad.run(s, renv).map {
+        case (_, _, x) => (s, renv, x)
+      }
     }
   }
 
