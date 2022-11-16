@@ -639,4 +639,38 @@ namespace Test/Exp/ReifyType {
         case _: List[String] => true
         case _: _ => false
     }
+
+    //////////////////////////////////////
+    // Recursive tests                  //
+    //////////////////////////////////////
+
+    def pairTreeSize(x: a): Int32 = typematch x {
+        case pair: (_, _) => 1 + pairTreeSize(fst(pair)) + pairTreeSize(snd(pair))
+        case _: _ => 1
+    }
+
+    @Test
+    def testPairTreeSize01(): Bool = pairTreeSize("hi") == 1
+
+    @Test
+    def testPairTreeSize02(): Bool = pairTreeSize(("hi", "there")) == 3
+
+    @Test
+    def testPairTreeSize03(): Bool = pairTreeSize(("hi", ("there", "pal"))) == 5
+
+    def magicList(n: Int32): List[a] = typematch (Proxy: Proxy[a]) {
+        case _: Proxy[Int32] =>
+            if (n > 0) {
+                (n :: magicList(n - 1)) as List[a]
+            } else {
+                Nil
+            }
+        case _: _ => Nil
+    }
+
+    @Test
+    def testMagicList01(): Bool = magicList(3) == 3 :: 2 :: 1 :: Nil
+
+    @Test
+    def testMagicList02(): Bool = magicList(3) |> List.isEmpty
 }

@@ -19,7 +19,6 @@ namespace String {
     ///
     /// Returns the character at position `i` in the string `s`.
     ///
-    @Time(1) @Space(1)
     pub def charAt(i: Int32, s: String): Char =
         import java.lang.String.charAt(Int32): Char \ {};
         charAt(s, i)
@@ -27,7 +26,6 @@ namespace String {
     ///
     /// Returns the string `s1` followed by the string `s2`.
     ///
-    @Time(length(s1) + length(s2)) @Space(length(s1) + length(s2))
     pub def concat(s1: String, s2: String): String =
         import java.lang.String.concat(String): String \ {};
         (s1 `concat` s2)
@@ -35,7 +33,6 @@ namespace String {
     ///
     /// Returns `true` if the string `s` is the empty string.
     ///
-    @Time(1) @Space(1)
     pub def isEmpty(s: String): Bool =
         import java.lang.String.isEmpty(): Bool \ {};
         isEmpty(s)
@@ -43,7 +40,6 @@ namespace String {
     ///
     /// Returns the length of the string `s`.
     ///
-    @Time(1) @Space(1)
     pub def length(s: String): Int32 =
         import java.lang.String.length(): Int32 \ {};
         length(s)
@@ -74,7 +70,6 @@ namespace String {
     ///
     /// Returns the lower case version of the string `s`.
     ///
-    @Time(length(s)) @Space(length(s))
     pub def toLowerCase(s: String): String =
         import java.lang.String.toLowerCase(): String \ {};
         toLowerCase(s)
@@ -82,7 +77,6 @@ namespace String {
     ///
     /// Returns the upper case version of the string `s`.
     ///
-    @Time(length(s)) @Space(length(s))
     pub def toUpperCase(s: String): String =
         import java.lang.String.toUpperCase(): String \ {};
         toUpperCase(s)
@@ -90,7 +84,6 @@ namespace String {
     ///
     /// Returns the given string `s` as a list of characters.
     ///
-    @Time(length(s)) @Space(length(s))
     pub def toList(s: String): List[Char] = List.map(i -> charAt(i, s), List.range(0, length(s)))
 
     ///
@@ -98,7 +91,6 @@ namespace String {
     ///
     /// Returns a new empty string if there is no characters in `s`.
     ///
-    @Time(length(s)) @Space(length(s))
     pub def trim(s: String): String =
         import java.lang.String.trim(): String \ {};
         trim(s)
@@ -106,7 +98,6 @@ namespace String {
     ///
     /// Get the system line separator.
     ///
-    @Time(1) @Space(1)
     pub def lineSeparator(): String =
         import static java.lang.System.lineSeparator(): String \ {};
         lineSeparator()
@@ -114,14 +105,12 @@ namespace String {
     ///
     /// Returns the given string `s` as an array of characters.
     ///
-    @Time(length(s)) @Space(length(s))
     pub def toArray(r: Region[r], s: String): Array[Char, r] \ Write(r) =
         Array.init(r, i -> charAt(i, s), length(s))
 
     ///
     /// Build a string of length `len` by applying `f` to the successive indices.
     ///
-    @Time(time(f) * len) @Space(space(f) * len)
     pub def init(f: Int32 -> Char \ ef, len: Int32): String \ ef =
         if (len <= 0) "" else initHelper(f, len)
 
@@ -147,7 +136,6 @@ namespace String {
     ///
     /// Concatenate a list of strings into a single string.
     ///
-    @Time(List.length(xs)) @Space(List.length(xs))
     pub def flatten(xs: List[String]): String = region r {
         let sb = new StringBuilder(r);
         List.forEach(x -> StringBuilder.appendString!(x, sb), xs);
@@ -158,7 +146,6 @@ namespace String {
     /// Concatenate a list of strings into a single string, inserting the separator `sep` between
     /// each pair of strings.
     ///
-    @Time(length(sep) * List.length(xs)) @Space(length(sep) * List.length(xs))
     pub def intercalate(sep: String, xs: List[String]): String = region r {
         let sb = new StringBuilder(r);
         let arr = List.toArray(r, xs);
@@ -170,7 +157,6 @@ namespace String {
     /// Concatenate a list of strings into a single string, inserting the separator `sep` between
     /// each pair of strings.
     ///
-    @Time(List.length(xs)) @Space(List.length(xs))
     pub def intercalateChar(sep: Char, xs: List[String]): String = match xs {
         case Nil     => ""
         case x :: rs => region r {
@@ -185,7 +171,6 @@ namespace String {
     ///
     /// Returns the result of applying `f` to every character in `s`.
     ///
-    @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def map(f: Char -> Char \ ef, s: String): String \ ef =
         let len = length(s);
         init(i -> f(charAt(i, s)), len)
@@ -193,7 +178,6 @@ namespace String {
     ///
     /// Returns the result of applying `f` to every character in `s` along with that character's index.
     ///
-    @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def mapWithIndex(f: (Int32, Char) -> Char \ ef, s: String): String \ ef =
         let len = length(s);
         init(i -> f(i, charAt(i, s)), len)
@@ -201,7 +185,6 @@ namespace String {
     ///
     /// Returns the reverse of `s`.
     ///
-    @Time(length(s)) @Space(length(s))
     pub def reverse(s: String) : String =
         let start = length(s) - 1;
         init(i -> charAt(start - i, s), start + 1)
@@ -209,7 +192,6 @@ namespace String {
     ///
     /// Rotate the contents of string `s` by `n` steps to the left.
     ///
-    @Time(length(s)) @Space(length(s))
     pub def rotateLeft(n: Int32, s: String): String =
         if (length(s) < 1)
             ""
@@ -229,7 +211,6 @@ namespace String {
     ///
     /// Rotate the contents of string `s` by `n` steps to the right.
     ///
-    @Time(length(s)) @Space(length(s))
     pub def rotateRight(n: Int32, s: String): String =
         if (length(s) < 1)
             ""
@@ -323,7 +304,6 @@ namespace String {
     ///
     /// Returns `None` if no character in `s` satisfies `f`.
     ///
-    @Time(time(f) * length(s)) @Space(space(f))
     pub def findIndexOfLeft(f: Char -> Bool \ ef, s: String): Option[Int32] \ ef =
         let len = length(s);
         def loop(i) = {
@@ -342,7 +322,6 @@ namespace String {
     ///
     /// If nothing satisfies `f` return None.
     ///
-    @Time(time(f) * length(s)) @Space(space(f))
     pub def findIndexOfRight(f: Char -> Bool, s: String): Option[Int32] =
         def loop(i) = {
             if (i < 0)
@@ -361,7 +340,6 @@ namespace String {
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def findIndices(f: Char -> Bool, s: String): List[Int32] =
         let len = length(s);
         def loop(i, k) = {
@@ -391,7 +369,6 @@ namespace String {
     ///
     /// Alias for `takeLeft`.
     ///
-    @Time(n) @Space(n)
     pub def take(n: Int32, s: String): String = takeLeft(n, s)
 
     ///
@@ -400,7 +377,6 @@ namespace String {
     /// If `n` extends past the end of string `s`, return all the characters
     /// of `s`.
     ///
-    @Time(n) @Space(n)
     pub def takeLeft(n: Int32, s: String): String =
         if (n >= length(s)) s else slice(0, n, s)
 
@@ -410,7 +386,6 @@ namespace String {
     /// If `n` is greater than the length of string `s`, return all the characters
     /// of `s`.
     ///
-    @Time(n) @Space(n)
     pub def takeRight(n: Int32, s: String): String =
         let len = length(s);
         if (n >= len) s else slice(len - n, len, s)
@@ -418,7 +393,6 @@ namespace String {
     ///
     /// Alias for `dropLeft`.
     ///
-    @Time(length(s) - n) @Space(length(s) - n)
     pub def drop(n: Int32, s: String): String = dropLeft(n, s)
 
     ///
@@ -426,7 +400,6 @@ namespace String {
     ///
     /// If `n` extends past the end of string s, return the empty string.
     ///
-    @Time(length(s) - n) @Space(length(s) - n)
     pub def dropLeft(n: Int32, s: String): String =
         if (n <= 0)
             s
@@ -438,7 +411,6 @@ namespace String {
     ///
     /// If `n` is greater than the length of string `s`, return the empty string.
     ///
-    @Time(length(s) - n) @Space(length(s) - n)
     pub def dropRight(n: Int32, s: String): String =
         if (n > 0)
             let len = length(s);
@@ -449,7 +421,6 @@ namespace String {
     ///
     /// Alias for `takeWileLeft`.
     ///
-    @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def takeWhile(f: Char -> Bool, s: String): String = takeWhileLeft(f, s)
 
     ///
@@ -458,7 +429,6 @@ namespace String {
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def takeWhileLeft(f: Char -> Bool, s: String): String =
         match findIndexOfLeft(x -> not (f(x)), s) {
             case None    => s
@@ -471,7 +441,6 @@ namespace String {
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def takeWhileRight(f: Char -> Bool, s: String): String =
         match findIndexOfRight(x -> not (f(x)), s) {
             case None    => s
@@ -481,7 +450,6 @@ namespace String {
     ///
     /// Alias for `dropWhileLeft`.
     ///
-    @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def dropWhile(f: Char -> Bool, s: String): String = dropWhileLeft(f, s)
 
     ///
@@ -490,7 +458,6 @@ namespace String {
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def dropWhileLeft(f: Char -> Bool, s: String): String =
         match findIndexOfLeft(x -> not (f(x)), s) {
             case None    => ""
@@ -503,7 +470,6 @@ namespace String {
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def dropWhileRight(f: Char -> Bool, s: String): String =
         match findIndexOfRight(x -> not (f(x)), s) {
             case None    => ""
@@ -516,7 +482,6 @@ namespace String {
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def dropWhileAround(f: Char -> Bool, s: String): String =
         match (findIndexOfLeft(x -> not (f(x)), s), findIndexOfRight(x -> not (f(x)), s)) {
             case (None, None)       => ""
@@ -532,7 +497,6 @@ namespace String {
     /// If `n` exceeds the length of string `s`, return the whole string
     /// paired with the empty string.
     ///
-    @Time(length(s)) @Space(length(s))
     pub def splitAt(n: Int32, s: String): (String, String) =
         match length(s) {
             case _   if n <= 0  => ("", s)
@@ -687,7 +651,6 @@ namespace String {
     ///
     /// Returns `false` if `a` is empty.
     ///
-    @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def exists(f: Char -> Bool \ ef, s: String): Bool \ ef = match findIndexOfLeft(f, s) {
         case None    => false
         case Some(_) => true
@@ -698,7 +661,6 @@ namespace String {
     ///
     /// Returns `true` if `s` is empty.
     ///
-    @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def forAll(f: Char -> Bool \ ef, s: String): Bool \ ef = match findIndexOfLeft(x -> not (f(x)), s) {
         case None    => true
         case Some(_) => false
@@ -709,7 +671,6 @@ namespace String {
     ///
     /// Returns `true` if `s` is empty.
     ///
-    @Time(length(s)) @Space(length(s))
     pub def isAscii(s: String): Bool =
         forAll(Char.isAscii, s)
 
@@ -718,20 +679,17 @@ namespace String {
     ///
     /// Returns `true` if `s` is empty.
     ///
-    @Time(length(s)) @Space(length(s))
     pub def isWhiteSpace(s: String): Bool =
         forAll(Char.isWhiteSpace, s)
 
     ///
     /// Returns string `s` with all leading space characters removed.
     ///
-    @Time(length(s)) @Space(length(s))
     pub def trimLeft(s: String): String = dropWhileLeft(Char.isWhiteSpace, s)
 
     ///
     /// Returns string `s` with all trailing space characters removed.
     ///
-    @Time(length(s)) @Space(length(s))
     pub def trimRight(s: String): String = dropWhileRight(Char.isWhiteSpace, s)
 
     ///
@@ -739,7 +697,6 @@ namespace String {
     ///
     /// Returns the empty string if `n < 0`.
     ///
-    @Time(length(s) * n) @Space(length(s) * n)
     pub def repeat(n: Int32, s: String): String =
         import java.lang.String.repeat(Int32): String \ {};
         if (n < 0)
@@ -750,7 +707,6 @@ namespace String {
     ///
     /// Pad the string `s` at the left with the supplied char `c` to fit the width `w`.
     ///
-    @Time(w) @Space(w)
     pub def padLeft(w: Int32, c: Char, s: String): String =
         let len = length(s);
         if (len >= w)
@@ -761,7 +717,6 @@ namespace String {
     ///
     /// Pad the string `s` at the right with the supplied char `c` to fit the width `w`.
     ///
-    @Time(w) @Space(w)
     pub def padRight(w: Int32, c: Char, s: String): String =
         let len = length(s);
         if (len >= w)
@@ -802,7 +757,6 @@ namespace String {
     ///
     /// Returns `s` if `i < 0` or `i > length(xs)-1`.
     ///
-    @Time(length(s)) @Space(length(s))
     pub def update(i: Int32, a: Char, s: String): String =
         let f = ix -> if (ix == i) a else charAt(ix, s);
         init(f, length(s))
@@ -814,7 +768,6 @@ namespace String {
     /// If `s` becomes depleted then no further patching is done.
     /// If patching occurs at index `i+j` in `s`, then the element at index `j` in `sub` is used.
     ///
-    @Time(length(s)) @Space(length(s))
     pub def patch(i: Int32, n: Int32, sub: String, s: String): String =
         let sublen = length(sub);
         let f = ix ->
@@ -834,7 +787,6 @@ namespace String {
     ///
     /// If the string `s` is empty, then the empty string is returned.
     ///
-    @Time(length(s) + n) @Space(length(s) + n)
     pub def indent(n: Int32, s: String): String =
         if (n <= 0 or length(s) == 0)
             s
@@ -865,7 +817,6 @@ namespace String {
     ///
     /// If the string `s` is empty, then the empty string is returned.
     ///
-    @Time(length(s) + n) @Space(length(s) + n)
     pub def stripIndent(n: Int32, s: String): String =
         if (n <= 0 or length(s) == 0)
             s
@@ -900,7 +851,6 @@ namespace String {
     /// Newline is recognized as any Unicode linebreak sequence including
     /// Windows (carriage return, line feed) or Unix (line feed).
     ///
-    @Time(length(s)) @Space(length(s))
     pub def lines(s: String): List[String] =
         if (isEmpty(s))
             Nil
@@ -911,7 +861,6 @@ namespace String {
     /// Join the list of strings `a` separating each pair of strings and
     /// ending the result string with the system dependent line separator.
     ///
-    @Time(List.length(a)) @Space(List.length(a))
     pub def unlines(a: List[String]): String = region r {
         let sb = new StringBuilder(r);
         List.forEach(x -> StringBuilder.appendLine!(x, sb), a);
@@ -922,7 +871,6 @@ namespace String {
     /// Split the string `s` into an list of words, dividing on one or more white space characters.
     /// Leading and trailing spaces are trimmed.
     ///
-    @Time(length(s)) @Space(length(s))
     pub def words(s: String): List[String] = match trim(s) {
         case s1 if isEmpty(s1) => Nil
         case s1                => split({regex = "\\s+"}, s1)
@@ -932,7 +880,6 @@ namespace String {
     /// Join the array of strings `l` separating each pair of strings with a
     /// single space character.
     ///
-    @Time(List.length(l)) @Space(List.length(l))
     pub def unwords(l: List[String]): String = match l {
         case Nil     => ""
         case x :: xs => region r {
@@ -997,7 +944,6 @@ namespace String {
     ///
     /// Returns the empty string if `s1` and `s2` do not share a common prefix.
     ///
-    @Time(Int32.min(length(s1), length(s2))) @Space(Int32.min(length(s1), length(s2)))
     pub def commonPrefix(s1: String, s2: String): String =
         let len1 = length(s1);
         let len2 = length(s2);
@@ -1020,7 +966,6 @@ namespace String {
     ///
     /// Returns the empty string if `s1` and `s2` do not share a common suffix.
     ///
-    @Time(Int32.min(length(s1), length(s2))) @Space(Int32.min(length(s1), length(s2)))
     pub def commonSuffix(s1: String, s2: String): String =
             def loop(i, j, acc) = {
                 if (i < 0)
@@ -1048,7 +993,6 @@ namespace String {
     ///
     /// If the length of `s` exceeds `w` and `w < 3" then the empty string is returned.
     ///
-    @Time(length(s)) @Space(length(s))
     pub def abbreviateLeft(w: Int32, s: String): String =
         match length(s) {
             case len if len < w => s
@@ -1067,7 +1011,6 @@ namespace String {
     ///
     /// If the length of `s` exceeds `w` and `w < 3" then the empty string is returned.
     ///
-    @Time(length(s)) @Space(length(s))
     pub def abbreviateRight(w: Int32, s: String): String =
         match length(s) {
             case len if len < w => s
@@ -1081,7 +1024,6 @@ namespace String {
     /// The answer is the number deletions, insertions or substitutions needed to turn
     /// string `s` into string `t`.
     ///
-    @Time(length(s) * length(t)) @Space(length(s) * length(t))
     pub def levenshteinDistance(s: String, t: String): Int32 = region r {
         let m = length(s);
         let n = length(t);
@@ -1122,7 +1064,6 @@ namespace String {
     ///
     /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
     ///
-    @Time(Int32.min(length(a), length(b))) @Space(Int32.min(length(a), length(b)))
     pub def zip(a: String, b: String): List[(Char, Char)] =
         let len = Int32.min(length(a), length(b));
         List.unfold(i -> if (i >= len) None else Some((charAt(i, a), charAt(i, b)), i + 1), 0)
@@ -1133,7 +1074,6 @@ namespace String {
     ///
     /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
     ///
-    @Time(Int32.min(length(a), length(b))) @Space(Int32.min(length(a), length(b)))
     pub def zipWith(f: (Char, Char) -> Char \ ef, a: String, b: String): String \ ef =
         let len = Int32.min(length(a), length(b));
         init(i -> f(charAt(i, a), charAt(i, b)), len)
@@ -1196,7 +1136,6 @@ namespace String {
     ///
     /// `k` should be greater than 0.
     ///
-    @Time(length(s) - k) @Space(length(s) - k)
     pub def toChunks(k: Int32, s: String): List[String] =
         if (k <= 0)
             Nil
