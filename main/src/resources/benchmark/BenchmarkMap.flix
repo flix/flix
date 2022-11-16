@@ -138,7 +138,7 @@ namespace BenchmarkMap {
     ///
     @benchmark
     pub def benchmark20(): Bool =
-        Map.forall((k, v) -> k < 24 and v < 24, range(0, 24))
+        Map.forAll((k, v) -> k < 24 and v < 24, range(0, 24))
 
     ///
     /// create two maps of `Int32 -> Int32`, find their intersection and compute the size.

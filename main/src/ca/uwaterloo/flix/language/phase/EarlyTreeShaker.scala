@@ -19,10 +19,10 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Annotation
-import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.LoweredAst._
+import ca.uwaterloo.flix.language.ast.{LoweredAst, Symbol}
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 /**
   * The Tree Shaking phase removes all unused function definitions.
@@ -87,7 +87,7 @@ object EarlyTreeShaker {
   /**
     * Returns `true` if `defn` is annotated with `@benchmark`
     */
-  private def isBenchmark(defn: TypedAst.Def): Boolean = defn.spec.ann.exists { a =>
+  private def isBenchmark(defn: LoweredAst.Def): Boolean = defn.spec.ann.exists { a =>
     a.name match {
       case Annotation.Benchmark(_) => true
       case _ => false
@@ -97,7 +97,7 @@ object EarlyTreeShaker {
   /**
     * Returns `true` if `defn` is annotated with `@test`
     */
-  private def isTest(defn: TypedAst.Def): Boolean = defn.spec.ann.exists { a =>
+  private def isTest(defn: LoweredAst.Def): Boolean = defn.spec.ann.exists { a =>
     a.name match {
       case Annotation.Test(_) => true
       case _ => false
@@ -135,46 +135,7 @@ object EarlyTreeShaker {
     * Returns the function and signature symbols reachable from the given expression `e0`.
     */
   private def visitExp(e0: Expression): Set[ReachableSym] = e0 match {
-    case Expression.Unit(_) =>
-      Set.empty
-
-    case Expression.Null(_, _) =>
-      Set.empty
-
-    case Expression.True(_) =>
-      Set.empty
-
-    case Expression.False(_) =>
-      Set.empty
-
-    case Expression.Char(_, _) =>
-      Set.empty
-
-    case Expression.Float32(_, _) =>
-      Set.empty
-
-    case Expression.Float64(_, _) =>
-      Set.empty
-
-    case Expression.BigDecimal(_, _) =>
-      Set.empty
-
-    case Expression.Int8(_, _) =>
-      Set.empty
-
-    case Expression.Int16(_, _) =>
-      Set.empty
-
-    case Expression.Int32(_, _) =>
-      Set.empty
-
-    case Expression.Int64(_, _) =>
-      Set.empty
-
-    case Expression.BigInt(_, _) =>
-      Set.empty
-
-    case Expression.Str(_, _) =>
+    case Expression.Cst(_, _, _) =>
       Set.empty
 
     case Expression.Wild(_, _) =>
@@ -209,9 +170,6 @@ object EarlyTreeShaker {
 
     case Expression.LetRec(_, _, exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.Region(_, _) =>
-      Set.empty
 
     case Expression.Scope(_, _, exp, _, _, _, _) =>
       visitExp(exp)
@@ -315,41 +273,14 @@ object EarlyTreeShaker {
     case Expression.NewObject(_, _, _, _, _, methods, _) =>
       visitExps(methods.map(_.exp))
 
-    case Expression.NewChannel(exp, _, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.GetChannel(exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.PutChannel(exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.SelectChannel(rules, default, _, _, _, _) =>
-      visitExps(rules.map(_.chan)) ++ visitExps(rules.map(_.exp)) ++ default.map(visitExp).getOrElse(Set.empty)
-
     case Expression.Spawn(exp, _, _, _, _) =>
       visitExp(exp)
-
-    case Expression.Par(exp, _) =>
-      visitExp(exp)
-
-    case Expression.ParYield(frags, exp, _, _, _, _) =>
-      visitExps(frags.map(_.exp)) ++ visitExp(exp)
 
     case Expression.Lazy(exp, _, _) =>
       visitExp(exp)
 
     case Expression.Force(exp, _, _, _, _) =>
       visitExp(exp)
-
-    case Expression.Reify(_, _, _, _, _) =>
-      Set.empty
-
-    case Expression.ReifyType(_, _, _, _, _, _) =>
-      Set.empty
-
-    case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
     case Expression.Do(_, exps, _, _, _) =>
       visitExps(exps)
@@ -362,31 +293,6 @@ object EarlyTreeShaker {
 
     case Expression.Without(exp, _, _, _, _, _) =>
       visitExp(exp)
-
-    case Expression.Mask(_, _ ,_, _, loc) =>
-      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
-    case Expression.FixpointConstraintSet(_, _, _, loc) =>
-      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
-    case Expression.FixpointLambda(_, _, _, _, _, _, loc) =>
-      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
-    case Expression.FixpointMerge(_, _, _, _, _, _, loc) =>
-      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
-    case Expression.FixpointSolve(_, _, _, _, _, loc) =>
-      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
-    case Expression.FixpointFilter(_, _, _, _, _, loc) =>
-      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
-    case Expression.FixpointInject(_, _, _, _, _, loc) =>
-      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
-    case Expression.FixpointProject(_, _, _, _, _, loc) =>
-      throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-
   }
 
   /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Magnus Madsen
+ * Copyright 2022 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,8 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-trait Locatable extends Sourceable {
+import ca.uwaterloo.flix.util.collection.MultiMap
 
-  /**
-    * Returns the source location of `this`.
-    */
-  def loc: SourceLocation
-
-  /**
-    * Returns the source of `this`.
-    */
-  override def src: Ast.Source = loc.source
-
+case object ReadAst {
+  case class Root(sources: Map[Ast.Source, Unit], names: MultiMap[List[String], String])
 }

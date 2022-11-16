@@ -58,16 +58,16 @@ def exists02(): Bool = Option.exists(i -> i == 2, Some(1)) == false
 def exists03(): Bool = Option.exists(i -> i == 2, Some(2)) == true
 
 /////////////////////////////////////////////////////////////////////////////
-// forall                                                                  //
+// forAll                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def forall01(): Bool = Option.forall(i -> i == 2, None) == true
+def forAll01(): Bool = Option.forAll(i -> i == 2, None) == true
 
 @test
-def forall02(): Bool = Option.forall(i -> i == 2, Some(1)) == false
+def forAll02(): Bool = Option.forAll(i -> i == 2, Some(1)) == false
 
 @test
-def forall03(): Bool = Option.forall(i -> i == 2, Some(2)) == true
+def forAll03(): Bool = Option.forAll(i -> i == 2, Some(2)) == true
 
 /////////////////////////////////////////////////////////////////////////////
 // filter                                                                  //
@@ -530,19 +530,19 @@ def unzip01(): Bool = Option.unzip(None: Option[(Unit, Unit)]) == (None, None)
 def unzip02(): Bool = Option.unzip(Some((1, true))) == (Some(1), Some(true))
 
 /////////////////////////////////////////////////////////////////////////////
-// foreach                                                                 //
+// forEach                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def foreach01(): Bool \ IO =
+def forEach01(): Bool \ IO =
     let r = ref 21;
-    Option.foreach(x -> r := x, None);
+    Option.forEach(x -> r := x, None);
     21 == deref r
 
 @test
-def foreach02(): Bool \ IO =
+def forEach02(): Bool \ IO =
     let r = ref 21;
-    Option.foreach(x -> r := x, Some(42));
+    Option.forEach(x -> r := x, Some(42));
     42 == deref r
 
 /////////////////////////////////////////////////////////////////////////////

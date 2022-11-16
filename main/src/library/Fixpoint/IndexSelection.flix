@@ -15,7 +15,7 @@
  */
 
 namespace Fixpoint {
-    
+
     use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
 
     ///
@@ -162,7 +162,7 @@ namespace Fixpoint {
     ///
     def isExpGround(freeVars: Set[RowVar], exp: BoolExp[v]): Bool = match exp {
         case BoolExp.Empty(_) => true
-        case BoolExp.NotMemberOf(terms, _) => List.forall(isTermGround(freeVars), terms)
+        case BoolExp.NotMemberOf(terms, _) => List.forAll(isTermGround(freeVars), terms)
         case BoolExp.Eq(lhs, rhs) => isTermGround(freeVars, lhs) and isTermGround(freeVars, rhs)
         case BoolExp.Leq(_, lhs, rhs) => isTermGround(freeVars, lhs) and isTermGround(freeVars, rhs)
         case BoolExp.Guard0(_) => true

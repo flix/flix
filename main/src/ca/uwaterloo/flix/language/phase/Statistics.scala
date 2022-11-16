@@ -80,20 +80,7 @@ object Statistics {
     val base = Counter.of(getName(exp0))
 
     val subExprs = exp0 match {
-      case Expression.Unit(loc) => Counter.empty
-      case Expression.Null(tpe, loc) => Counter.empty
-      case Expression.True(loc) => Counter.empty
-      case Expression.False(loc) => Counter.empty
-      case Expression.Char(lit, loc) => Counter.empty
-      case Expression.Float32(lit, loc) => Counter.empty
-      case Expression.Float64(lit, loc) => Counter.empty
-      case Expression.BigDecimal(lit, loc) => Counter.empty
-      case Expression.Int8(lit, loc) => Counter.empty
-      case Expression.Int16(lit, loc) => Counter.empty
-      case Expression.Int32(lit, loc) => Counter.empty
-      case Expression.Int64(lit, loc) => Counter.empty
-      case Expression.BigInt(lit, loc) => Counter.empty
-      case Expression.Str(lit, loc) => Counter.empty
+      case Expression.Cst(_, _, _) => Counter.empty
       case Expression.Wild(tpe, loc) => Counter.empty
       case Expression.Var(sym, tpe, loc) => Counter.empty
       case Expression.Def(sym, tpe, loc) => Counter.empty
@@ -161,9 +148,6 @@ object Statistics {
       case Expression.FixpointFilter(pred, exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.FixpointInject(exp, pred, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.FixpointProject(pred, exp, tpe, pur, eff, loc) => visitExp(exp)
-      case Expression.Reify(t, tpe, pur, eff, loc) => Counter.empty
-      case Expression.ReifyType(t, k, tpe, pur, eff, loc) => Counter.empty
-      case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
     }
 
     base ++ subExprs

@@ -191,23 +191,23 @@ namespace TestFoldable {
         runLogger(Foldable.foldRightM(foldRightStep, 0, xs)) == (5 :: 4 :: 3 :: 2 :: 1 :: Nil, 15)
 
     /////////////////////////////////////////////////////////////////////////////
-    // foreachM                                                                //
+    // forEachM                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreachM01(): Bool =
+    def forEachM01(): Bool =
         let xs: List[Int32] = Nil;
-        runLogger(Foldable.foreachM(tell, xs)) == (Nil, ())
+        runLogger(Foldable.forEachM(tell, xs)) == (Nil, ())
 
     @test
-    def foreachM02(): Bool =
+    def forEachM02(): Bool =
         let xs = 1 :: 2 :: Nil;
-        runLogger(Foldable.foreachM(tell, xs)) == (1 :: 2 :: Nil, ())
+        runLogger(Foldable.forEachM(tell, xs)) == (1 :: 2 :: Nil, ())
 
     @test
-    def foreachM03(): Bool =
+    def forEachM03(): Bool =
         let xs = 1 :: 2 :: 3 :: 4 :: 5 :: Nil;
-        runLogger(Foldable.foreachM(tell, xs)) == (1 :: 2 :: 3 :: 4 :: 5 :: Nil, ())
+        runLogger(Foldable.forEachM(tell, xs)) == (1 :: 2 :: 3 :: 4 :: 5 :: Nil, ())
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -249,16 +249,19 @@ namespace TestFoldable {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toArray01(): Bool \ IO =
-        Array.sameElements(Foldable.toArray(Static, Nel(1, Nil)), [1])
+    def toArray01(): Bool = region r {
+        Array.sameElements(Foldable.toArray(r, Nel(1, Nil)), [1])
+    }
 
     @test
-    def toArray02(): Bool \ IO =
-        Array.sameElements(Foldable.toArray(Static, Nel(1, 2 :: 3 :: Nil)), [1, 2, 3])
+    def toArray02(): Bool = region r {
+        Array.sameElements(Foldable.toArray(r, Nel(1, 2 :: 3 :: Nil)), [1, 2, 3])
+    }
 
     @test
-    def toArray03(): Bool \ IO =
-        Array.sameElements(Foldable.toArray(Static, Nel(1, 1 :: 2 :: 3 :: Nil)), [1, 1, 2, 3])
+    def toArray03(): Bool = region r {
+        Array.sameElements(Foldable.toArray(r, Nel(1, 1 :: 2 :: 3 :: Nil)), [1, 1, 2, 3])
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////

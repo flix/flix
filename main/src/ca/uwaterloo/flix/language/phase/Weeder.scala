@@ -45,8 +45,8 @@ object Weeder {
     "Read", "RecordRow", "Region", "SchemaRow", "Type", "Write", "^^^", "alias", "case", "catch", "chan",
     "class", "def", "deref", "else", "enum", "false", "fix", "force",
     "if", "import", "inline", "instance", "into", "lat", "law", "lawful", "lazy", "let", "let*", "match",
-    "namespace", "null", "opaque", "override", "pub", "ref", "region", "reify",
-    "reifyBool", "reifyEff", "reifyType", "rel", "sealed", "set", "spawn", "Static", "true",
+    "namespace", "null", "opaque", "override", "pub", "ref", "region",
+    "rel", "sealed", "set", "spawn", "Static", "true",
     "type", "use", "where", "with", "|||", "~~~", "discard", "object"
   )
 
@@ -69,7 +69,7 @@ object Weeder {
           val m = rs.foldLeft(fresh) {
             case (acc, (k, v)) => acc + (k -> v)
           }
-          WeededAst.Root(m, root.entryPoint)
+          WeededAst.Root(m, root.entryPoint, root.names)
       }
     }
 
@@ -747,10 +747,10 @@ object Weeder {
 
     case ParsedAst.Expression.ForEach(_, frags, exp, _) =>
       //
-      // Rewrites a foreach loop to Iterator.foreach call.
+      // Rewrites a foreach loop to Iterator.forEach call.
       //
 
-      val fqnForEach = "Iterator.foreach"
+      val fqnForEach = "Iterator.forEach"
       val fqnIterator = "Iterable.iterator"
 
       foldRight(frags)(visitExp(exp, senv)) {
@@ -1403,7 +1403,7 @@ object Weeder {
         * Returns an expression that applies `debugString` to the result of the given expression `e`.
         */
       def mkApplyDebugString(e: WeededAst.Expression, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
-        val fqn = "stringify"
+        val fqn = "Debug.stringify"
         val loc = mkSL(sp1, sp2).asSynthetic
         mkApplyFqn(fqn, List(e), loc)
       }
@@ -1753,24 +1753,6 @@ object Weeder {
           WeededAst.Expression.FixpointProject(pred, queryExp, dbExp, loc)
       }
 
-    case ParsedAst.Expression.Reify(sp1, t0, sp2) =>
-      val t = visitType(t0)
-      WeededAst.Expression.Reify(t, mkSL(sp1, sp2)).toSuccess
-
-    case ParsedAst.Expression.ReifyBool(sp1, t0, sp2) =>
-      val t = visitType(t0)
-      WeededAst.Expression.ReifyType(t, Kind.Bool, mkSL(sp1, sp2)).toSuccess
-
-    case ParsedAst.Expression.ReifyType(sp1, t0, sp2) =>
-      val t = visitType(t0)
-      WeededAst.Expression.ReifyType(t, Kind.Star, mkSL(sp1, sp2)).toSuccess
-
-    case ParsedAst.Expression.ReifyPurity(sp1, exp1, ident, exp2, exp3, sp2) =>
-      mapN(visitExp(exp1, senv), visitExp(exp2, senv), visitExp(exp3, senv)) {
-        case (e1, e2, e3) =>
-          WeededAst.Expression.ReifyEff(ident, e1, e2, e3, mkSL(sp1, sp2))
-      }
-
     case ParsedAst.Expression.Debug(sp1, kind, exp, sp2) =>
       mapN(visitExp(exp, senv)) {
         case e =>
@@ -1784,7 +1766,7 @@ object Weeder {
               locPart + srcPart
           }
           val e1 = WeededAst.Expression.Cst(Ast.Constant.Str(prefix), loc)
-          val call = mkApplyFqn("debugWithPrefix", List(e1, e), loc)
+          val call = mkApplyFqn("Debug.debugWithPrefix", List(e1, e), loc)
           WeededAst.Expression.Mask(call, loc)
       }
 
@@ -3055,10 +3037,6 @@ object Weeder {
     case ParsedAst.Expression.FixpointInjectInto(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, _, _, _, _, _) => sp1
-    case ParsedAst.Expression.Reify(sp1, _, _) => sp1
-    case ParsedAst.Expression.ReifyBool(sp1, _, _) => sp1
-    case ParsedAst.Expression.ReifyType(sp1, _, _) => sp1
-    case ParsedAst.Expression.ReifyPurity(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.Debug(sp1, _, _, _) => sp1
   }
 

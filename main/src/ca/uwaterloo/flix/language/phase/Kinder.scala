@@ -100,7 +100,7 @@ object Kinder {
 
         mapN(enumsVal, classesVal, defsVal, instancesVal, effectsVal) {
           case (enums, classes, defs, instances, effects) =>
-            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, effects.toMap, taenv, root.entryPoint, root.sources)
+            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, effects.toMap, taenv, root.entryPoint, root.sources, root.names)
         }
     }
 
@@ -358,33 +358,7 @@ object Kinder {
 
     case ResolvedAst.Expression.Hole(sym, loc) => KindedAst.Expression.Hole(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
 
-    case ResolvedAst.Expression.Unit(loc) => KindedAst.Expression.Unit(loc).toSuccess
-
-    case ResolvedAst.Expression.Null(loc) => KindedAst.Expression.Null(loc).toSuccess
-
-    case ResolvedAst.Expression.True(loc) => KindedAst.Expression.True(loc).toSuccess
-
-    case ResolvedAst.Expression.False(loc) => KindedAst.Expression.False(loc).toSuccess
-
-    case ResolvedAst.Expression.Char(lit, loc) => KindedAst.Expression.Char(lit, loc).toSuccess
-
-    case ResolvedAst.Expression.Float32(lit, loc) => KindedAst.Expression.Float32(lit, loc).toSuccess
-
-    case ResolvedAst.Expression.Float64(lit, loc) => KindedAst.Expression.Float64(lit, loc).toSuccess
-
-    case ResolvedAst.Expression.BigDecimal(lit, loc) => KindedAst.Expression.BigDecimal(lit, loc).toSuccess
-
-    case ResolvedAst.Expression.Int8(lit, loc) => KindedAst.Expression.Int8(lit, loc).toSuccess
-
-    case ResolvedAst.Expression.Int16(lit, loc) => KindedAst.Expression.Int16(lit, loc).toSuccess
-
-    case ResolvedAst.Expression.Int32(lit, loc) => KindedAst.Expression.Int32(lit, loc).toSuccess
-
-    case ResolvedAst.Expression.Int64(lit, loc) => KindedAst.Expression.Int64(lit, loc).toSuccess
-
-    case ResolvedAst.Expression.BigInt(lit, loc) => KindedAst.Expression.BigInt(lit, loc).toSuccess
-
-    case ResolvedAst.Expression.Str(lit, loc) => KindedAst.Expression.Str(lit, loc).toSuccess
+    case ResolvedAst.Expression.Cst(cst, loc) => KindedAst.Expression.Cst(cst, loc).toSuccess
 
     case ResolvedAst.Expression.Apply(exp0, exps0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
@@ -817,27 +791,6 @@ object Kinder {
       mapN(exp1Val, exp2Val) {
         case (exp1, exp2) => KindedAst.Expression.FixpointProject(pred, exp1, exp2, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
-
-    case ResolvedAst.Expression.Reify(t0, loc) =>
-      val tVal = visitType(t0, Kind.Bool, kenv0, senv, taenv, root)
-      mapN(tVal) {
-        t => KindedAst.Expression.Reify(t, loc)
-      }
-
-    case ResolvedAst.Expression.ReifyType(t0, k0, loc) =>
-      val tVal = visitType(t0, k0, kenv0, senv, taenv, root)
-      mapN(tVal) {
-        t => KindedAst.Expression.ReifyType(t, k0, loc)
-      }
-
-    case ResolvedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, loc) =>
-      val e1Val = visitExp(exp1, kenv0, senv, taenv, henv0, root)
-      val e2Val = visitExp(exp2, kenv0, senv, taenv, henv0, root)
-      val e3Val = visitExp(exp3, kenv0, senv, taenv, henv0, root)
-      mapN(e1Val, e2Val, e3Val) {
-        case (e1, e2, e3) => KindedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
-      }
-
   }
 
   /**
@@ -923,19 +876,7 @@ object Kinder {
   private def visitPattern(pat00: ResolvedAst.Pattern, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Pattern, KindError] = pat00 match {
     case ResolvedAst.Pattern.Wild(loc) => KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
     case ResolvedAst.Pattern.Var(sym, loc) => KindedAst.Pattern.Var(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
-    case ResolvedAst.Pattern.Unit(loc) => KindedAst.Pattern.Unit(loc).toSuccess
-    case ResolvedAst.Pattern.True(loc) => KindedAst.Pattern.True(loc).toSuccess
-    case ResolvedAst.Pattern.False(loc) => KindedAst.Pattern.False(loc).toSuccess
-    case ResolvedAst.Pattern.Char(lit, loc) => KindedAst.Pattern.Char(lit, loc).toSuccess
-    case ResolvedAst.Pattern.Float32(lit, loc) => KindedAst.Pattern.Float32(lit, loc).toSuccess
-    case ResolvedAst.Pattern.Float64(lit, loc) => KindedAst.Pattern.Float64(lit, loc).toSuccess
-    case ResolvedAst.Pattern.BigDecimal(lit, loc) => KindedAst.Pattern.BigDecimal(lit, loc).toSuccess
-    case ResolvedAst.Pattern.Int8(lit, loc) => KindedAst.Pattern.Int8(lit, loc).toSuccess
-    case ResolvedAst.Pattern.Int16(lit, loc) => KindedAst.Pattern.Int16(lit, loc).toSuccess
-    case ResolvedAst.Pattern.Int32(lit, loc) => KindedAst.Pattern.Int32(lit, loc).toSuccess
-    case ResolvedAst.Pattern.Int64(lit, loc) => KindedAst.Pattern.Int64(lit, loc).toSuccess
-    case ResolvedAst.Pattern.BigInt(lit, loc) => KindedAst.Pattern.BigInt(lit, loc).toSuccess
-    case ResolvedAst.Pattern.Str(lit, loc) => KindedAst.Pattern.Str(lit, loc).toSuccess
+    case ResolvedAst.Pattern.Cst(cst, loc) => KindedAst.Pattern.Cst(cst, loc).toSuccess
     case ResolvedAst.Pattern.Tag(sym, pat0, loc) =>
       val patVal = visitPattern(pat0, kenv, root)
       mapN(patVal) {

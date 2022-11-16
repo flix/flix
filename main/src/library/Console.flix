@@ -61,7 +61,7 @@ namespace Console {
     pub def print(x: a): Unit \ IO with ToString[a] =
         import java.io.Console.writer(): ##java.io.PrintWriter \ IO;
         import java.io.PrintWriter.print(String): Unit \ IO as printWriterPrint;
-        console() |> Option.foreach(c -> printWriterPrint(writer(c), ToString.toString(x)))
+        console() |> Option.forEach(c -> printWriterPrint(writer(c), ToString.toString(x)))
 
     ///
     /// Converts `x` to a string and prints it to the console followed by a new line.
@@ -77,7 +77,7 @@ namespace Console {
     pub def printLine(x: a): Unit \ IO with ToString[a] =
         import java.io.Console.writer(): ##java.io.PrintWriter \ IO;
         import java.io.PrintWriter.println(String): Unit \ IO as printWriterPrintln;
-        console() |> Option.foreach(c -> printWriterPrintln(writer(c), ToString.toString(x)))
+        console() |> Option.forEach(c -> printWriterPrintln(writer(c), ToString.toString(x)))
 
     ///
     /// Flushes the console output.
@@ -90,7 +90,7 @@ namespace Console {
     ///
     pub def flush(): Unit \ IO =
         import java.io.Console.flush(): Unit \ IO as consoleFlush;
-        console() |> Option.foreach(consoleFlush)
+        console() |> Option.forEach(consoleFlush)
 
     ///
     /// Returns `s` formatted as bold.

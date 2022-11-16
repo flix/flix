@@ -94,7 +94,7 @@ namespace Result {
     /// Otherwise returns `false`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def forall(f: t -> Bool \ ef, r: Result[t, e]): Bool \ ef = match r {
+    pub def forAll(f: t -> Bool \ ef, r: Result[t, e]): Bool \ ef = match r {
         case Ok(t)  => f(t)
         case Err(_) => true
     }
@@ -124,6 +124,15 @@ namespace Result {
     @Time(time(f)) @Space(space(f))
     pub def flatMap(f: t1 -> Result[t2, e] \ ef, r: Result[t1, e]): Result[t2, e] \ ef = match r {
         case Ok(v)  => f(v)
+        case Err(w) => Err(w)
+    }
+
+    ///
+    /// Returns `v` if `r` is `Ok(v)`. Returns `Err(w)` if `r` is `Err(w)`.
+    ///
+    @Time(1) @Space(1)
+    pub def flatten(r: Result[Result[t, e], e]): Result[t, e] = match r {
+        case Ok(v)  => v
         case Err(w) => Err(w)
     }
 
@@ -330,7 +339,7 @@ namespace Result {
     /// Applies `f` to `v` if `r` is `Ok(v)`. Otherwise does nothing.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def foreach(f: t -> Unit \ ef, r: Result[t, e]): Unit \ ef = match r {
+    pub def forEach(f: t -> Unit \ ef, r: Result[t, e]): Unit \ ef = match r {
         case Ok(v)  => f(v)
         case Err(_) => ()
     }

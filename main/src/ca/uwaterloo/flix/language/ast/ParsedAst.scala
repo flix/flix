@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.util.collection.MultiMap
+
 object ParsedAst {
 
   /**
@@ -24,7 +26,7 @@ object ParsedAst {
     * @param units      the abstract syntax trees of the parsed compilation units.
     * @param entryPoint the optional entry point.
     */
-  case class Root(units: Map[Ast.Source, ParsedAst.CompilationUnit], entryPoint: Option[Symbol.DefnSym])
+  case class Root(units: Map[Ast.Source, ParsedAst.CompilationUnit], entryPoint: Option[Symbol.DefnSym], names: MultiMap[List[String], String])
 
   /**
     * A compilation unit (i.e. a source file).
@@ -1178,45 +1180,6 @@ object ParsedAst {
       * @param sp2      the position of the last character in the expression.
       */
     case class FixpointQueryWithSelect(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], selects: Seq[ParsedAst.Expression], from: Seq[ParsedAst.Predicate.Body.Atom], whereExp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Reify Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param t   the type to reify.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class Reify(sp1: SourcePosition, t: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * ReifyBool Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param t   the type to reify.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class ReifyBool(sp1: SourcePosition, t: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * ReifyType Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param t   the type to reify.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class ReifyType(sp1: SourcePosition, t: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * ReifyEff Expression (Will eventually be replaced by other reify expressions).
-      *
-      * @param sp1   the position of the first character in the expression.
-      * @param exp1  the function expression on whose purity to match.
-      * @param ident the name to bind the pure function to.
-      * @param exp2  the then expression.
-      * @param exp3  the else expression.
-      * @param sp2   the position of the last character in the expression.
-      */
-    case class ReifyPurity(sp1: SourcePosition, exp1: ParsedAst.Expression, ident: Name.Ident, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Debug expression.

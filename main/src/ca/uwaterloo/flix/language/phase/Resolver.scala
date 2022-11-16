@@ -92,7 +92,7 @@ object Resolver {
         flatMapN(classesVal, sequence(instancesVal), defsVal, sequence(enumsVal), sequence(effectsVal)) {
           case (classes, instances, defs, enums, effects) =>
             mapN(checkSuperClassDag(classes)) {
-              _ => ResolvedAst.Root(classes, combine(instances), defs, enums.toMap, effects.toMap, taenv, taOrder, root.entryPoint, root.sources)
+              _ => ResolvedAst.Root(classes, combine(instances), defs, enums.toMap, effects.toMap, taenv, taOrder, root.entryPoint, root.sources, root.names)
             }
         }
     }
@@ -622,33 +622,7 @@ object Resolver {
               flatMapN(lookupEnumByTag(Some(qname), tag, ns0, root))(_ => visitExp(exp, region))
           }
 
-        case NamedAst.Expression.Unit(loc) => ResolvedAst.Expression.Unit(loc).toSuccess
-
-        case NamedAst.Expression.Null(loc) => ResolvedAst.Expression.Null(loc).toSuccess
-
-        case NamedAst.Expression.True(loc) => ResolvedAst.Expression.True(loc).toSuccess
-
-        case NamedAst.Expression.False(loc) => ResolvedAst.Expression.False(loc).toSuccess
-
-        case NamedAst.Expression.Char(lit, loc) => ResolvedAst.Expression.Char(lit, loc).toSuccess
-
-        case NamedAst.Expression.Float32(lit, loc) => ResolvedAst.Expression.Float32(lit, loc).toSuccess
-
-        case NamedAst.Expression.Float64(lit, loc) => ResolvedAst.Expression.Float64(lit, loc).toSuccess
-
-        case NamedAst.Expression.BigDecimal(lit, loc) => ResolvedAst.Expression.BigDecimal(lit, loc).toSuccess
-
-        case NamedAst.Expression.Int8(lit, loc) => ResolvedAst.Expression.Int8(lit, loc).toSuccess
-
-        case NamedAst.Expression.Int16(lit, loc) => ResolvedAst.Expression.Int16(lit, loc).toSuccess
-
-        case NamedAst.Expression.Int32(lit, loc) => ResolvedAst.Expression.Int32(lit, loc).toSuccess
-
-        case NamedAst.Expression.Int64(lit, loc) => ResolvedAst.Expression.Int64(lit, loc).toSuccess
-
-        case NamedAst.Expression.BigInt(lit, loc) => ResolvedAst.Expression.BigInt(lit, loc).toSuccess
-
-        case NamedAst.Expression.Str(lit, loc) => ResolvedAst.Expression.Str(lit, loc).toSuccess
+        case NamedAst.Expression.Cst(cst, loc) => ResolvedAst.Expression.Cst(cst, loc).toSuccess
 
         case app@NamedAst.Expression.Apply(NamedAst.Expression.DefOrSig(qname, env, innerLoc), exps, outerLoc) =>
           flatMapN(lookupDefOrSig(qname, ns0, env, root)) {
@@ -786,7 +760,7 @@ object Resolver {
                 // Check if the tag value has Unit type.
                 if (isUnitType(caze.tpe)) {
                   // Case 1.1: The tag value has Unit type. Construct the Unit expression.
-                  val e = ResolvedAst.Expression.Unit(loc)
+                  val e = ResolvedAst.Expression.Cst(Ast.Constant.Unit, loc)
                   ResolvedAst.Expression.Tag(Ast.CaseSymUse(caze.sym, tag.loc), e, loc)
                 } else {
                   // Case 1.2: The tag has a non-Unit type. Hence the tag is used as a function.
@@ -1235,26 +1209,6 @@ object Resolver {
           mapN(e1Val, e2Val) {
             case (e1, e2) => ResolvedAst.Expression.FixpointProject(pred, e1, e2, loc)
           }
-
-        case NamedAst.Expression.Reify(t0, loc) =>
-          val tVal = resolveType(t0, taenv, ns0, root)
-          mapN(tVal) {
-            t => ResolvedAst.Expression.Reify(t, loc)
-          }
-
-        case NamedAst.Expression.ReifyType(t0, k, loc) =>
-          val tVal = resolveType(t0, taenv, ns0, root)
-          mapN(tVal) {
-            t => ResolvedAst.Expression.ReifyType(t, k, loc)
-          }
-
-        case NamedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, loc) =>
-          val e1Val = visitExp(exp1, region)
-          val e2Val = visitExp(exp2, region)
-          val e3Val = visitExp(exp3, region)
-          mapN(e1Val, e2Val, e3Val) {
-            case (e1, e2, e3) => ResolvedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
-          }
       }
 
       /**
@@ -1288,31 +1242,7 @@ object Resolver {
 
         case NamedAst.Pattern.Var(sym, loc) => ResolvedAst.Pattern.Var(sym, loc).toSuccess
 
-        case NamedAst.Pattern.Unit(loc) => ResolvedAst.Pattern.Unit(loc).toSuccess
-
-        case NamedAst.Pattern.True(loc) => ResolvedAst.Pattern.True(loc).toSuccess
-
-        case NamedAst.Pattern.False(loc) => ResolvedAst.Pattern.False(loc).toSuccess
-
-        case NamedAst.Pattern.Char(lit, loc) => ResolvedAst.Pattern.Char(lit, loc).toSuccess
-
-        case NamedAst.Pattern.Float32(lit, loc) => ResolvedAst.Pattern.Float32(lit, loc).toSuccess
-
-        case NamedAst.Pattern.Float64(lit, loc) => ResolvedAst.Pattern.Float64(lit, loc).toSuccess
-
-        case NamedAst.Pattern.BigDecimal(lit, loc) => ResolvedAst.Pattern.BigDecimal(lit, loc).toSuccess
-
-        case NamedAst.Pattern.Int8(lit, loc) => ResolvedAst.Pattern.Int8(lit, loc).toSuccess
-
-        case NamedAst.Pattern.Int16(lit, loc) => ResolvedAst.Pattern.Int16(lit, loc).toSuccess
-
-        case NamedAst.Pattern.Int32(lit, loc) => ResolvedAst.Pattern.Int32(lit, loc).toSuccess
-
-        case NamedAst.Pattern.Int64(lit, loc) => ResolvedAst.Pattern.Int64(lit, loc).toSuccess
-
-        case NamedAst.Pattern.BigInt(lit, loc) => ResolvedAst.Pattern.BigInt(lit, loc).toSuccess
-
-        case NamedAst.Pattern.Str(lit, loc) => ResolvedAst.Pattern.Str(lit, loc).toSuccess
+        case NamedAst.Pattern.Cst(cst, loc) => ResolvedAst.Pattern.Cst(cst, loc).toSuccess
 
         case NamedAst.Pattern.Tag(enum, tag, pat, loc) =>
           val dVal = lookupEnumByTag(enum, tag, ns0, root)

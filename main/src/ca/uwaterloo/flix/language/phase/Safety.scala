@@ -61,33 +61,7 @@ object Safety {
   private def visitExp(e0: Expression, renv: RigidityEnv)(implicit flix: Flix): List[CompilationMessage] = {
 
     def visit(exp0: Expression): List[CompilationMessage] = exp0 match {
-      case Expression.Unit(_) => Nil
-
-      case Expression.Null(_, _) => Nil
-
-      case Expression.True(_) => Nil
-
-      case Expression.False(_) => Nil
-
-      case Expression.Char(_, _) => Nil
-
-      case Expression.Float32(_, _) => Nil
-
-      case Expression.Float64(_, _) => Nil
-
-      case Expression.BigDecimal(_, _) => Nil
-
-      case Expression.Int8(_, _) => Nil
-
-      case Expression.Int16(_, _) => Nil
-
-      case Expression.Int32(_, _) => Nil
-
-      case Expression.Int64(_, _) => Nil
-
-      case Expression.BigInt(_, _) => Nil
-
-      case Expression.Str(_, _) => Nil
+      case Expression.Cst(_, _, _) => Nil
 
       case Expression.Wild(_, _) => Nil
 
@@ -313,13 +287,6 @@ object Safety {
 
       case Expression.FixpointProject(_, exp, _, _, _, _) =>
         visit(exp)
-
-      case Expression.Reify(_, _, _, _, _) => Nil
-
-      case Expression.ReifyType(_, _, _, _, _, _) => Nil
-
-      case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
-        visit(exp1) ++ visit(exp2) ++ visit(exp3)
     }
 
     visit(e0)
@@ -587,19 +554,7 @@ object Safety {
   private def visitPat(term: Pattern, loc: SourceLocation): List[CompilationMessage] = term match {
     case Pattern.Wild(_, _) => List(IllegalNegativelyBoundWildcard(loc))
     case Pattern.Var(_, _, _) => Nil
-    case Pattern.Unit(_) => Nil
-    case Pattern.True(_) => Nil
-    case Pattern.False(_) => Nil
-    case Pattern.Char(_, _) => Nil
-    case Pattern.Float32(_, _) => Nil
-    case Pattern.Float64(_, _) => Nil
-    case Pattern.BigDecimal(_, _) => Nil
-    case Pattern.Int8(_, _) => Nil
-    case Pattern.Int16(_, _) => Nil
-    case Pattern.Int32(_, _) => Nil
-    case Pattern.Int64(_, _) => Nil
-    case Pattern.BigInt(_, _) => Nil
-    case Pattern.Str(_, _) => Nil
+    case Pattern.Cst(_, _, _) => Nil
     case Pattern.Tag(_, pat, _, _) => visitPat(pat, loc)
     case Pattern.Tuple(elms, _, _) => visitPats(elms, loc)
     case Pattern.Array(elms, _, _) => visitPats(elms, loc)

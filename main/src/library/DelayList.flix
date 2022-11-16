@@ -78,7 +78,7 @@ instance UnorderedFoldable[DelayList] {
     pub def foldMap(f: a -> b \ ef, l: DelayList[a]): b \ ef with CommutativeMonoid[b] = DelayList.foldMap(f, l)
     override pub def isEmpty(l: DelayList[a]): Bool = DelayList.isEmpty(l)
     override pub def exists(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.exists(f, l)
-    override pub def forall(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.forall(f, l)
+    override pub def forAll(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.forAll(f, l)
     override pub def memberOf(x: a, l: DelayList[a]): Bool with Eq[a] = DelayList.memberOf(x, l)
 }
 
@@ -310,11 +310,11 @@ namespace DelayList {
     /// Forces elements in `l` until the first element that does not satisfy the predicate `f` (inclusive).
     ///
     @Experimental
-    pub def forall(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = match l {
+    pub def forAll(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = match l {
         case ENil         => true
-        case ECons(x, xs) => if (f(x)) forall(f,       xs) else false
-        case LCons(x, xs) => if (f(x)) forall(f, force xs) else false
-        case LList(xs)    =>           forall(f, force xs)
+        case ECons(x, xs) => if (f(x)) forAll(f,       xs) else false
+        case LCons(x, xs) => if (f(x)) forAll(f, force xs) else false
+        case LList(xs)    =>           forAll(f, force xs)
     }
 
     ///
@@ -414,9 +414,10 @@ namespace DelayList {
     ///
     @Experimental @LazyWhenPure
     pub def map(f: a -> b \ ef, l: DelayList[a]): DelayList[b] \ ef =
-        reifyEff(f) {
-            case Pure(g) => mapL(g, l)
-            case _       => mapE(f, l)
+        typematch f {
+            case g: a -> b \ {} => mapL(g, l)
+            case g: a -> b \ ef => mapE(g, l)
+            case _: _           => unreachable!()
         }
 
     ///
@@ -463,10 +464,10 @@ namespace DelayList {
     ///
     @Experimental @LazyWhenPure
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, l: DelayList[a]): DelayList[b] \ ef =
-        let f1 = (args) -> f(fst(args), snd(args));
-        reifyEff(f1) {
-            case Pure(g) => mapWithIndexL((i, x) -> g((i, x)), l)
-            case _       => mapWithIndexE(f, l)
+        typematch f {
+            case g: (Int32, a) -> b \ {} => mapWithIndexL(g, l)
+            case g: (Int32, a) -> b \ ef => mapWithIndexE(g, l)
+            case _: _                    => unreachable!()
         }
 
     ///
@@ -512,9 +513,10 @@ namespace DelayList {
     ///
     @Experimental @LazyWhenPure
     pub def flatMap(f: a -> DelayList[b] \ ef, l: DelayList[a]): DelayList[b] \ ef =
-        reifyEff(f) {
-            case Pure(g) => flatMapL(g, l)
-            case _       => flatMapE(f, l)
+        typematch f {
+            case g: a -> DelayList[b] \ {} => flatMapL(g, l)
+            case g: a -> DelayList[b] \ ef => flatMapE(g, l)
+            case _: _                      => unreachable!()
         }
 
     ///
@@ -658,11 +660,11 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def foreach(f: a -> Unit \ ef, l: DelayList[a]): Unit \ ef = match l {
+    pub def forEach(f: a -> Unit \ ef, l: DelayList[a]): Unit \ ef = match l {
         case ENil         => ()
-        case ECons(x, xs) => f(x); foreach(f,       xs)
-        case LCons(x, xs) => f(x); foreach(f, force xs)
-        case LList(xs)    =>       foreach(f, force xs)
+        case ECons(x, xs) => f(x); forEach(f,       xs)
+        case LCons(x, xs) => f(x); forEach(f, force xs)
+        case LList(xs)    =>       forEach(f, force xs)
     }
 
     ///
@@ -711,9 +713,10 @@ namespace DelayList {
     ///
     @Experimental @LazyWhenPure
     pub def filter(f: a -> Bool \ ef, l: DelayList[a]): DelayList[a] \ ef =
-        reifyEff(f) {
-            case Pure(g) => filterL(g, l)
-            case _       => filterE(f, l)
+        typematch f {
+            case g: a -> Bool \ {} => filterL(g, l)
+            case g: a -> Bool \ ef => filterE(g, l)
+            case _: _              => unreachable!()
         }
 
     ///
@@ -753,9 +756,10 @@ namespace DelayList {
     ///
     @Experimental @LazyWhenPure
     pub def filterMap(f: a -> Option[b] \ ef, l: DelayList[a]): DelayList[b] \ ef =
-        reifyEff(f) {
-            case Pure(g) => filterMapL(g, l)
-            case _       => filterMapE(f, l)
+        typematch f {
+            case g: a -> Option[b] \ {} => filterMapL(g, l)
+            case g: a -> Option[b] \ ef => filterMapE(g, l)
+            case _: _                   => unreachable!()
         }
 
     ///
@@ -920,9 +924,10 @@ namespace DelayList {
     ///
     @Experimental @LazyWhenPure
     pub def span(f: a -> Bool \ ef, l: DelayList[a]): (DelayList[a], DelayList[a]) \ ef =
-        reifyEff(f) {
-            case Pure(g) => spanL(g, l)
-            case _       => spanE(f, l)
+        typematch f {
+            case g: a -> Bool \ {} => spanL(g, l)
+            case g: a -> Bool \ ef => spanE(g, l)
+            case _: _              => unreachable!()
         }
 
     ///
@@ -1003,9 +1008,10 @@ namespace DelayList {
     ///
     @Experimental @LazyWhenPure
     pub def dropWhile(f: a -> Bool \ ef, l: DelayList[a]): DelayList[a] \ ef =
-        reifyEff(f) {
-            case Pure(g) => dropWhileL(g, l)
-            case _       => dropWhileE(f, l)
+        typematch f {
+            case g: a -> Bool \ {} => dropWhileL(g, l)
+            case g: a -> Bool \ ef => dropWhileE(g, l)
+            case _: _              => unreachable!()
         }
 
     ///
@@ -1069,9 +1075,10 @@ namespace DelayList {
     ///
     @Experimental @LazyWhenPure
     pub def takeWhile(f: a -> Bool \ ef, l: DelayList[a]): DelayList[a] \ ef =
-        reifyEff(f) {
-            case Pure(g) => takeWhileL(g, l)
-            case _       => takeWhileE(f, l)
+        typematch f {
+            case g: a -> Bool \ {} => takeWhileL(g, l)
+            case g: a -> Bool \ ef => takeWhileE(g, l)
+            case _: _              => unreachable!()
         }
 
     ///
@@ -1172,7 +1179,7 @@ namespace DelayList {
     @Experimental
     pub def toArray(r: Region[r], l: DelayList[a]): Array[a, r] \ Write(r) =
         let a = [Reflect.default(); length(l)] @ r;
-        foreach(match (y, i) -> a[i] = y, zipWithIndex(l));
+        forEach(match (y, i) -> a[i] = y, zipWithIndex(l));
         a
 
     ///
@@ -1231,7 +1238,7 @@ namespace DelayList {
     ///
     pub def toMutDeque(r: Region[r], l: DelayList[a]): MutDeque[a, r] \ Write(r) =
         let d = new MutDeque(r);
-        DelayList.foreach(x -> MutDeque.pushBack(x, d), l);
+        forEach(x -> MutDeque.pushBack(x, d), l);
         d
 
     ///

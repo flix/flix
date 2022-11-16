@@ -50,33 +50,7 @@ object Regions {
     }
 
   private def visitExp(exp0: Expression)(implicit scope: List[Type.Var], flix: Flix): Validation[Unit, CompilationMessage] = exp0 match {
-    case Expression.Unit(_) => ().toSuccess
-
-    case Expression.Null(_, _) => ().toSuccess
-
-    case Expression.True(_) => ().toSuccess
-
-    case Expression.False(_) => ().toSuccess
-
-    case Expression.Char(_, _) => ().toSuccess
-
-    case Expression.Float32(_, _) => ().toSuccess
-
-    case Expression.Float64(_, _) => ().toSuccess
-
-    case Expression.BigDecimal(_, _) => ().toSuccess
-
-    case Expression.Int8(_, _) => ().toSuccess
-
-    case Expression.Int16(_, _) => ().toSuccess
-
-    case Expression.Int32(_, _) => ().toSuccess
-
-    case Expression.Int64(_, _) => ().toSuccess
-
-    case Expression.BigInt(_, _) => ().toSuccess
-
-    case Expression.Str(_, _) => ().toSuccess
+    case Expression.Cst(_, _, _) => ().toSuccess
 
     case Expression.Wild(_, _) => ().toSuccess
 
@@ -419,17 +393,6 @@ object Regions {
     case Expression.FixpointProject(_, exp, tpe, _, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
-      }
-
-    case Expression.Reify(_, tpe, _, _, loc) =>
-      checkType(tpe, loc)
-
-    case Expression.ReifyType(_, k, tpe, _, _, loc) =>
-      checkType(tpe, loc)
-
-    case Expression.ReifyEff(_, exp1, exp2, exp3, tpe, _, _, loc) =>
-      flatMapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
-        case (e1, e2, e3) => checkType(tpe, loc)
       }
   }
 
