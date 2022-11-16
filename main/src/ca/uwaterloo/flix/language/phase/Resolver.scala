@@ -2152,7 +2152,7 @@ object Resolver {
 
     classOrEffOpt match {
       case Some(NamedAst.ClassOrEffect.Effect(eff)) => getEffectIfAccessible(eff, ns0, qname.loc)
-      case None => ResolutionError.UndefinedEffect(qname, ns0, qname.loc).toFailure
+      case _ => ResolutionError.UndefinedEffect(qname, ns0, qname.loc).toFailure
     }
   }
 
