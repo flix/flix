@@ -247,6 +247,21 @@ namespace Graph {
             Set.flatMap(match (a, w, b) -> Set#{(a, w, b), (b, w, a)})
     }
 
+    pub def withinDistanceOf(src: t, limit: Int32, g: m[(t, Int32, t)]): Set[t] with Foldable[m], Boxable[t] = {
+            let edges = inject g into Edge;
+            let dists = #{
+                Dist(src; Down(0)).
+                Dist(y; d + Down(w)) :- Dist(x; d), Edge(x, w, y), if destructDown(d)+w <= limit.
+            };
+            let nodes = #{
+                Node(x) :- fix Dist(x; _).
+            };
+            let res = query edges, dists, nodes
+                      select x
+                      from Node(x);
+            List.toSet(res)
+        }
+
     ///
     /// Returns the topologically sorted nodes (all edges go from lower indices
     /// to higher indices of the list). Cyclic nodes are removed from the result
