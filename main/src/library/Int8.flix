@@ -27,38 +27,32 @@ namespace Int8 {
     ///
     /// Returns the number of bits used to represent an `Int8`.
     ///
-    @Time(1) @Space(1)
     pub def size(): Int32 = 8
 
     ///
     /// Returns the minimum number representable by an `Int8`.
     ///
-    @Time(1) @Space(1)
     pub def minValue(): Int8 = 1i8 <<< (size() - 1)
 
     ///
     /// Returns the maximum number representable by an `Int8`.
     ///
-    @Time(1) @Space(1)
     pub def maxValue(): Int8 = ~~~minValue()
 
     ///
     /// Returns the smaller of `x` and `y`.
     ///
-    @Time(1) @Space(1)
     pub def min(x: Int8, y: Int8): Int8 = if (x <= y) x else y
 
     ///
     /// Returns the larger of `x` and `y`.
     ///
-    @Time(1) @Space(1)
     pub def max(x: Int8, y: Int8): Int8 = if (x >= y) x else y
 
     ///
     /// Returns the absolute value of `x`.
     /// If the absolute value exceeds maxValue(), -1 is returned.
     ///
-    @Time(1) @Space(1)
     pub def abs(x: Int8): Int8 = {
         if      (x >= 0i8)          x
         else if (x == minValue())   -1i8
@@ -69,7 +63,6 @@ namespace Int8 {
     /// Returns the distance between `x` and `y`.
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
-    @Time(1) @Space(1)
     pub def dist(x: Int8, y: Int8): Int8 = {
         if      (x >= 0i8 and y >= 0i8)                  abs(x - y)
         else if (x < 0i8 and y < 0i8)                    abs(x - y)
@@ -82,7 +75,6 @@ namespace Int8 {
     /// Returns 1 if x > y, -1 if x < y, and 0 if x = y.
     /// The sign of x - y.
     ///
-    @Time(1) @Space(1)
     pub def compare(x: Int8, y: Int8): Int32 = {
         if      (x == y)    0
         else if (x < y)     -1
@@ -93,7 +85,6 @@ namespace Int8 {
     /// Returns 1 if x > 0, -1 if x < 0, and 0 if x = 0.
     /// The sign of x.
     ///
-    @Time(1) @Space(1)
     pub def signum(x: Int8): Int32 = compare(x, 0i8)
 
     ///
@@ -101,7 +92,6 @@ namespace Int8 {
     /// Only the rightmost 5 bits of `distance` are considered (ie. `distance rem 32`).
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
-    @Time(1) @Space(1)
     pub def logicalRightShift(dist: {dist = Int32}, x: Int8): Int8 =
         if (x < 0i8 and dist.dist rem 32 != 0)
             ((x >>> 1) &&& maxValue()) >>> (dist.dist - 1)
@@ -112,7 +102,6 @@ namespace Int8 {
     /// Returns the number of one-bits in the two's complement binary
     /// representation of `x`.
     ///
-    @Time(1) @Space(1)
     pub def bitCount(x: Int8): Int32 = {
         if      (x == 0i8)         0
         else if (x rem 2i8 != 0i8) bitCount(logicalRightShift(dist = 1, x)) + 1
@@ -123,7 +112,6 @@ namespace Int8 {
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` right by `distance` bits.
     ///
-    @Time(1) @Space(1)
     pub def rotateRight(dist: {dist = Int32}, x: Int8): Int8 =
         let rem = dist.dist rem size();
         let rot = if (rem >= 0) rem else rem + size();
@@ -133,7 +121,6 @@ namespace Int8 {
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` left by `distance` bits.
     ///
-    @Time(1) @Space(1)
     pub def rotateLeft(dist: {dist = Int32}, x: Int8): Int8 =
         let rem = dist.dist rem size();
         let rot = if (rem >= 0) rem else rem + size();
@@ -143,7 +130,6 @@ namespace Int8 {
     /// Returns the value obtained by reversing the bits in the
     /// two's complement binary representation of `x`.
     ///
-    @Time(1) @Space(1)
     pub def reverse(x: Int8): Int8 = reverseHelper(x, 0, size()-1)
 
     ///
@@ -166,7 +152,6 @@ namespace Int8 {
     /// Possible return values: 0 (rightmost bit) - 7 (leftmost bit)
     ///                         -1 if x = 0
     ///
-    @Time(1) @Space(1)
     pub def highestOneBitPosition(x: Int8): Int32 =
         // Start at bit 7 and scan right
         oneBitPositionHelper(x, size() - 1, -1)
@@ -176,7 +161,6 @@ namespace Int8 {
     /// Possible return values: 0 (rightmost bit) - 7 (leftmost bit)
     ///                         -1 if x = 0
     ///
-    @Time(1) @Space(1)
     pub def lowestOneBitPosition(x: Int8): Int32 =
         // Start at bit 0 and scan left
         oneBitPositionHelper(x, 0, 1)
@@ -199,7 +183,6 @@ namespace Int8 {
     /// of the highest-order/leftmost one-bit in `x`.
     /// Returns 0 if x=0.
     ///
-    @Time(1) @Space(1)
     pub def highestOneBit(x: Int8): Int8 =
         bitPositionToInt8(highestOneBitPosition(x))
 
@@ -208,7 +191,6 @@ namespace Int8 {
     /// of the highest-order/leftmost one-bit in `x`.
     /// Returns 0 if x=0.
     ///
-    @Time(1) @Space(1)
     pub def lowestOneBit(x: Int8): Int8 =
         bitPositionToInt8(lowestOneBitPosition(x))
 
@@ -225,7 +207,6 @@ namespace Int8 {
     /// highest-order/leftmost one-bit in `x`.
     /// Returns 8 if x=0.
     ///
-    @Time(1) @Space(1)
     pub def numberOfLeadingZeros(x: Int8): Int32 =
         if (x == 0i8) size() else size() - 1 - highestOneBitPosition(x)
 
@@ -234,7 +215,6 @@ namespace Int8 {
     /// lowest-order/rightmost one-bit in `x`.
     /// Returns 8 if x=0.
     ///
-    @Time(1) @Space(1)
     pub def numberOfTrailingZeros(x: Int8): Int32 =
         if (x == 0i8) size() else lowestOneBitPosition(x)
 
@@ -243,7 +223,6 @@ namespace Int8 {
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
-    @Time(1) @Space(1)
     pub def getBit(pos: {pos = Int32}, x: Int8): Int32 =
         if ((x >>> pos.pos) rem 2i8 == 0i8) 0 else 1
 
@@ -252,7 +231,6 @@ namespace Int8 {
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
-    @Time(1) @Space(1)
     pub def setBit(pos: {pos = Int32}, x: Int8): Int8 = x ||| (1i8 <<< pos.pos)
 
     ///
@@ -260,7 +238,6 @@ namespace Int8 {
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
-    @Time(1) @Space(1)
     pub def clearBit(pos: {pos = Int32}, x: Int8): Int8 = x &&& ~~~(1i8 <<< pos.pos)
 
     ///
@@ -268,14 +245,12 @@ namespace Int8 {
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
-    @Time(1) @Space(1)
     pub def flipBit(pos: {pos = Int32}, x: Int8): Int8 = x ^^^ (1i8 <<< pos.pos)
 
     ///
     /// Returns the integer binary logarithm of `x`.
     /// If the given value is 0 or negative, 0 is returned.
     ///
-    @Time(1) @Space(1)
     pub def log2(x: Int8): Int8 =
         if (x <= 0i8) {
             0i8
@@ -287,20 +262,17 @@ namespace Int8 {
     ///
     /// Returns the factorial of `x`.
     ///
-    @Time(factorial(x)) @Space(1)
     pub def factorial(x: Int8): Int32 = toInt32(x) |> Int32.factorial
 
     ///
     /// Return a string representation of `x`.
     ///
-    @Time(1) @Space(1)
     pub def toString(x: Int8): String = ToString.toString(x)
 
     ///
     /// Parse the string `s` as an Int8, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
-    @Time(1) @Space(1)
     pub def fromString(s: String): Option[Int8] = try {
         import java.lang.String.strip(): String \ {};
         import static java.lang.Byte.parseByte(String): Int8 \ {};
@@ -314,7 +286,6 @@ namespace Int8 {
     ///
     /// The numeric value of `x` is preserved exactly.
     ///
-    @Time(1) @Space(1)
     pub def toInt16(x: Int8): Int16 =
         import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte \ {};
         import java.lang.Byte.shortValue(): Int16 \ {};
@@ -325,7 +296,6 @@ namespace Int8 {
     ///
     /// The numeric value of `x` is preserved exactly.
     ///
-    @Time(1) @Space(1)
     pub def toInt32(x: Int8): Int32 =
         import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte \ {};
         import java.lang.Byte.intValue(): Int32 \ {};
@@ -336,7 +306,6 @@ namespace Int8 {
     ///
     /// The numeric value of `x` is preserved exactly.
     ///
-    @Time(1) @Space(1)
     pub def toInt64(x: Int8): Int64 =
         import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte \ {};
         import java.lang.Byte.longValue(): Int64 \ {};
@@ -347,7 +316,6 @@ namespace Int8 {
     ///
     /// The numeric value of `x` is preserved exactly.
     ///
-    @Time(1) @Space(1)
     pub def toBigInt(x: Int8): BigInt =
         import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte \ {} as i8ValueOf;
         import java.lang.Byte.longValue(): Int64 \ {};
@@ -359,7 +327,6 @@ namespace Int8 {
     ///
     /// The numeric value of `x` is preserved exactly.
     ///
-    @Time(1) @Space(1)
     pub def toFloat32(x: Int8): Float32 =
         import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte \ {};
         import java.lang.Byte.floatValue(): Float32 \ {};
@@ -370,7 +337,6 @@ namespace Int8 {
     ///
     /// The numeric value of `x` is preserved exactly.
     ///
-    @Time(1) @Space(1)
     pub def toFloat64(x: Int8): Float64 =
         import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte \ {};
         import java.lang.Byte.doubleValue(): Float64 \ {};
@@ -381,7 +347,6 @@ namespace Int8 {
     ///
     /// The numeric value of `x` is preserved exactly.
     ///
-    @Time(1) @Space(1)
     pub def toBigDecimal(x: Int8): BigDecimal =
         import new java.math.BigDecimal(Int32): BigDecimal \ {} as fromInt32;
         Int8.toInt32(x) |> fromInt32

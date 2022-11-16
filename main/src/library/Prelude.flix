@@ -165,18 +165,6 @@ pub def upcast(f: a -> b): a -> b \ ef =
     x -> f(x) as \ ef
 
 ///
-/// Meta-programming facility to express the time complexity of a function `f`.
-///
-@Internal
-pub def time(_: a -> Int32): Int32 = 1
-
-///
-/// Meta-programming facility to express the space complexity of a function `f`.
-///
-@Internal
-pub def space(_: a -> Int32): Int32 = 1
-
-///
 /// Prints the argument unless it is ().
 ///
 @Internal
