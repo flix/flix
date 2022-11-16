@@ -146,21 +146,6 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedTypes](result)
   }
 
-  test("TestMismatchedTypes.05") {
-    // Regression test.
-    // See https://github.com/flix/flix/issues/3634
-    val input =
-    """
-      |enum E[a: Type, ef: Bool](Unit)
-      |def f(g: E[Int32, true]): Bool = ???
-      |def mkE(): E[Int32, true] \ ef = ???
-      |
-      |def g(): Bool = f(mkE)
-      |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedTypes](result)
-  }
-
   test("TestOverApplied.01") {
     val input =
       """
@@ -1069,30 +1054,6 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedBools](result)
   }
 
-  test("Test.MismatchedTypes.Law.01") {
-    val input =
-      """
-        |def f(x: Bool, y: Bool): Bool = ???
-        |
-        |law l: forall (x: Int32, y: Bool) . f(x, y)
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedTypes](result)
-  }
-
-  test("Test.MismatchedTypes.ApplyVar.01") {
-    val input =
-      """
-        |def f[m: Bool -> Type, a: Bool](_: m[a]): m[a] = ???
-        |
-        |enum Box[a](a)
-        |
-        |def g(): Box[Int32] = f(Box(123))
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedTypes](result)
-  }
-
   test("Test.ChooseStar.01") {
     val input =
       """
@@ -1357,6 +1318,45 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.InvalidOpParamCount](result)
+  }
+
+  test("UnexpectedType.01") {
+    // Regression test.
+    // See https://github.com/flix/flix/issues/3634
+    val input =
+    """
+      |enum E[a: Type, ef: Bool](Unit)
+      |def f(g: E[Int32, true]): Bool = ???
+      |def mkE(): E[Int32, true] \ ef = ???
+      |
+      |def g(): Bool = f(mkE)
+      |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UnexpectedType](result)
+  }
+
+  test("Test.UnexpectedType.ApplyVar.01") {
+    val input =
+      """
+        |def f[m: Bool -> Type, a: Bool](_: m[a]): m[a] = ???
+        |
+        |enum Box[a](a)
+        |
+        |def g(): Box[Int32] = f(Box(123))
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UnexpectedType](result)
+  }
+
+  test("Test.UnexpectedType.Law.01") {
+    val input =
+      """
+        |def f(x: Bool, y: Bool): Bool = ???
+        |
+        |law l: forall (x: Int32, y: Bool) . f(x, y)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("Test.UnexpectedType.OpParam.01") {
@@ -1633,7 +1633,7 @@ class TestTyper extends FunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedTypes](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
 }
