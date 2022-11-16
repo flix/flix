@@ -42,4 +42,13 @@ namespace Test/Exp/BigDecimal {
     @test
     def testBigDecimal_14(): BigDecimal = 0.000_000_000_000_000_000_000_000_000_1ff
 
+    @test
+    def testBigDecimal_15(): BigDecimal = 1ff
+
+    @test
+    def testBigDecimal_16(): BigDecimal = 1e23ff
+
+    @test
+    def testBigDecimal_17(): BigDecimal = 1.23e45ff
+
 }

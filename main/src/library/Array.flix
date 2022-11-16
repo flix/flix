@@ -59,7 +59,7 @@ namespace Array {
             if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
             StringBuilder.appendString!("${x}", sb)
         };
-        Array.foreach(f, a);
+        Array.forEach(f, a);
 
         StringBuilder.appendString!("]", sb);
         StringBuilder.toString(sb)
@@ -200,7 +200,7 @@ namespace Array {
     ///
     pub def toMutDeque(r1: Region[r1], a: Array[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1) }  =
         let d = new MutDeque(r1);
-        foreach(x -> MutDeque.pushBack(x, d), a);
+        forEach(x -> MutDeque.pushBack(x, d), a);
         d
 
     ///
@@ -643,7 +643,7 @@ namespace Array {
         else {
             let b = new(r, x, len2);
             let f = { (i, v) -> let j = i + i; b[j] = v };
-            foreachWithIndex(f, a);
+            forEachWithIndex(f, a);
             b
         }
 
@@ -987,7 +987,7 @@ namespace Array {
     /// Returns `true` if `arr` is empty.
     ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def forall(f: a -> Bool \ ef, arr: Array[a, r]): Bool \ { ef, Read(r) } =
+    pub def forAll(f: a -> Bool \ ef, arr: Array[a, r]): Bool \ { ef, Read(r) } =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)
@@ -1529,7 +1529,7 @@ namespace Array {
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreach(f: a -> Unit \ ef, a: Array[a, r]): Unit \ { ef, Read(r) } =
+    pub def forEach(f: a -> Unit \ ef, a: Array[a, r]): Unit \ { ef, Read(r) } =
         let len = length(a);
         def loop(i) = {
             if (i >= len)
@@ -1545,7 +1545,7 @@ namespace Array {
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreachWithIndex(f: (Int32, a) -> Unit \ ef, a: Array[a, r]): Unit \ { ef, Read(r) } =
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, a: Array[a, r]): Unit \ { ef, Read(r) } =
         let len = length(a);
         def loop(i) = {
             if (i >= len)
@@ -1580,7 +1580,7 @@ namespace Array {
             else
                 ()
         };
-        foreachWithIndex(f, a)
+        forEachWithIndex(f, a)
 
     ///
     /// Returns the concatenation of the string representation
@@ -1597,7 +1597,7 @@ namespace Array {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = new StringBuilder(r1);
-        foreach(x -> { append!(f(x), sb); append!(sep, sb) }, a);
+        forEach(x -> { append!(f(x), sb); append!(sep, sb) }, a);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
 
@@ -1739,63 +1739,47 @@ namespace Array {
     /// and include the specified range of `a`.
     ///
     pub def copyOfRange(_: Region[r2], b: Int32, e: Int32, a: Array[a, r1]): Array[a, r2] \ { Read(r1), Write(r2) } =
-        match (reifyType a) {
-            case ErasedType =>
-                let arr = a as Array[##java.lang.Object, r1];
+        typematch a {
+            case arr: Array[Unit, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
-                copy(arr, b, e) as Array[a, r2]
-            case ReifiedUnit =>
-                let arr = a as Array[Unit, r1];
-                import static java.util.Arrays.copyOfRange(Array[Unit, r1], Int32, Int32): Array[Unit, r2] \ { Read(r1), Write(r2) } as copy;
-                copy(arr, b, e) as Array[a, r2]
-            case ReifiedBool =>
-                let arr = a as Array[Bool, r1];
+                copy(arr as Array[##java.lang.Object, r1], b, e) as Array[a, r2]
+            case arr: Array[Bool, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Bool, r1], Int32, Int32): Array[Bool, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
-            case ReifiedChar =>
-                let arr = a as Array[Char, r1];
+            case arr: Array[Char, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Char, r1], Int32, Int32): Array[Char, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
-            case ReifiedFloat32 =>
-                let arr = a as Array[Float32, r1];
+            case arr: Array[Float32, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Float32, r1], Int32, Int32): Array[Float32, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
-            case ReifiedFloat64 =>
-                let arr = a as Array[Float64, r1];
+            case arr: Array[Float64, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Float64, r1], Int32, Int32): Array[Float64, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
-            case ReifiedBigDecimal =>
-                let arr = a as Array[##java.lang.Object, r1];
+            case arr: Array[BigDecimal, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
-                copy(arr, b, e) as Array[a, r2]
-            case ReifiedInt8 =>
-                let arr = a as Array[Int8, r1];
+                copy(arr as Array[##java.lang.Object, r1], b, e) as Array[a, r2]
+            case arr: Array[Int8, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Int8, r1], Int32, Int32): Array[Int8, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
-            case ReifiedInt16 =>
-                let arr = a as Array[Int16, r1];
+            case arr: Array[Int16, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Int16, r1], Int32, Int32): Array[Int16, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
-            case ReifiedInt32 =>
-                let arr = a as Array[Int32, r1];
+            case arr: Array[Int32, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Int32, r1], Int32, Int32): Array[Int32, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
-            case ReifiedInt64 =>
-                let arr = a as Array[Int64, r1];
+            case arr: Array[Int64, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Int64, r1], Int32, Int32): Array[Int64, r2] \ { Read(r1), Write(r2) } as copy;
                 copy(arr, b, e) as Array[a, r2]
-            case ReifiedBigInt =>
-                let arr = a as Array[##java.lang.Object, r1];
+            case arr: Array[BigInt, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
-                copy(arr, b, e) as Array[a, r2]
-            case ReifiedString =>
-                let arr = a as Array[##java.lang.Object, r1];
+                copy(arr as Array[##java.lang.Object, r1], b, e) as Array[a, r2]
+            case arr: Array[String, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
-                copy(arr, b, e) as Array[a, r2]
-            case ReifiedArray(_) =>
-                let arr = a as Array[##java.lang.Object, r1];
+                copy(arr as Array[##java.lang.Object, r1], b, e) as Array[a, r2]
+            case arr: Array[a, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
-                copy(arr, b, e) as Array[a, r2]
+                copy(arr as Array[##java.lang.Object, r1], b, e) as Array[a, r2]
+            case _: _ => unreachable!()
         }
 
     ///

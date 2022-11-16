@@ -93,33 +93,7 @@ object CodeHinter {
 
     case Expression.Hole(_, _, _) => Nil
 
-    case Expression.Unit(_) => Nil
-
-    case Expression.Null(_, _) => Nil
-
-    case Expression.True(_) => Nil
-
-    case Expression.False(_) => Nil
-
-    case Expression.Char(_, _) => Nil
-
-    case Expression.Float32(_, _) => Nil
-
-    case Expression.Float64(_, _) => Nil
-
-    case Expression.BigDecimal(_, _) => Nil
-
-    case Expression.Int8(_, _) => Nil
-
-    case Expression.Int16(_, _) => Nil
-
-    case Expression.Int32(_, _) => Nil
-
-    case Expression.Int64(_, _) => Nil
-
-    case Expression.BigInt(_, _) => Nil
-
-    case Expression.Str(_, _) => Nil
+    case Expression.Cst(_, _, _) => Nil
 
     case Expression.Lambda(_, exp, _, _) =>
       checkPurity(exp.pur, exp.loc) ++ visitExp(exp)
@@ -161,7 +135,7 @@ object CodeHinter {
 
     case Expression.Match(matchExp, rules, _, _, _, _) =>
       visitExp(matchExp) ++ rules.flatMap {
-        case MatchRule(_, guard, exp) => visitExp(guard) ++ visitExp(exp)
+        case MatchRule(_, guard, exp) => guard.toList.flatMap(visitExp) ::: visitExp(exp)
       }
 
     case Expression.TypeMatch(matchExp, rules, _, _, _, _) =>
@@ -275,7 +249,7 @@ object CodeHinter {
         case JvmMethod(_, _, exp, _, _, _, _) => visitExp(exp)
       }
 
-    case Expression.NewChannel(exp, _, _, _, _) =>
+    case Expression.NewChannel(exp, _, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.GetChannel(exp, _, _, _, _) =>
@@ -294,6 +268,11 @@ object CodeHinter {
 
     case Expression.Par(exp, _) =>
       visitExp(exp)
+
+    case Expression.ParYield(frags, exp, _, _, _, _) =>
+      frags.flatMap {
+        case ParYieldFragment(_, e, _) => visitExp(e)
+      } ++ visitExp(exp)
 
     case Expression.Lazy(exp, _, _) =>
       visitExp(exp)
@@ -321,15 +300,6 @@ object CodeHinter {
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       visitExp(exp)
-
-    case Expression.Reify(_, _, _, _, _) =>
-      Nil
-
-    case Expression.ReifyType(_, _, _, _, _, _) =>
-      Nil
-
-    case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
   }
 
   /**

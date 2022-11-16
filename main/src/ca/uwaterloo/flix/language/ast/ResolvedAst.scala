@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -30,7 +31,8 @@ object ResolvedAst {
                   typeAliases: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias],
                   taOrder: List[Symbol.TypeAliasSym],
                   entryPoint: Option[Symbol.DefnSym],
-                  sources: Map[Source, SourceLocation])
+                  sources: Map[Source, SourceLocation],
+                  names: MultiMap[List[String], String])
 
   // TODO use ResolvedAst.Law for laws
   case class Class(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: ResolvedAst.TypeParam, superClasses: List[ResolvedAst.TypeConstraint], sigs: Map[Symbol.SigSym, ResolvedAst.Sig], laws: List[ResolvedAst.Def], loc: SourceLocation)
@@ -67,33 +69,7 @@ object ResolvedAst {
 
     case class Hole(sym: Symbol.HoleSym, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Unit(loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Null(loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class True(loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class False(loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Char(lit: scala.Char, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Float32(lit: scala.Float, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Float64(lit: scala.Double, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Int8(lit: scala.Byte, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Int16(lit: scala.Short, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Int32(lit: scala.Int, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Int64(lit: scala.Long, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Cst(cst: Ast.Constant, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Apply(exp: ResolvedAst.Expression, exps: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -200,6 +176,8 @@ object ResolvedAst {
 
     case class Par(exp: Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class ParYield(frags: List[ResolvedAst.ParYieldFragment], exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Lazy(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Force(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
@@ -218,12 +196,6 @@ object ResolvedAst {
 
     case class FixpointProject(pred: Name.Pred, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Reify(t: UnkindedType, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class ReifyType(t: UnkindedType, k: Kind, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class ReifyEff(sym: Symbol.VarSym, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, exp3: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
-
   }
 
   sealed trait Pattern {
@@ -236,31 +208,7 @@ object ResolvedAst {
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ResolvedAst.Pattern
 
-    case class Unit(loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class True(loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class False(loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class Char(lit: scala.Char, loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class Float32(lit: scala.Float, loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class Float64(lit: scala.Double, loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class BigDecimal(lit: java.math.BigDecimal, loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class Int8(lit: scala.Byte, loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class Int16(lit: scala.Short, loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class Int32(lit: scala.Int, loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class Int64(lit: scala.Long, loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends ResolvedAst.Pattern
+    case class Cst(cst: Ast.Constant, loc: SourceLocation) extends ResolvedAst.Pattern
 
     case class Tag(sym: Ast.CaseSymUse, pat: ResolvedAst.Pattern, loc: SourceLocation) extends ResolvedAst.Pattern
 
@@ -366,7 +314,7 @@ object ResolvedAst {
 
   case class ChoiceRule(pat: List[ResolvedAst.ChoicePattern], exp: ResolvedAst.Expression)
 
-  case class MatchRule(pat: ResolvedAst.Pattern, guard: ResolvedAst.Expression, exp: ResolvedAst.Expression)
+  case class MatchRule(pat: ResolvedAst.Pattern, guard: Option[ResolvedAst.Expression], exp: ResolvedAst.Expression)
 
   case class MatchTypeRule(sym: Symbol.VarSym, tpe: UnkindedType, exp: ResolvedAst.Expression)
 
@@ -385,4 +333,7 @@ object ResolvedAst {
   }
 
   case class TypeConstraint(head: Ast.TypeConstraint.Head, tpe: UnkindedType, loc: SourceLocation)
+
+  case class ParYieldFragment(pat: ResolvedAst.Pattern, exp: Expression, loc: SourceLocation)
+
 }

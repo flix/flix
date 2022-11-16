@@ -150,7 +150,7 @@ namespace String {
     @Time(List.length(xs)) @Space(List.length(xs))
     pub def flatten(xs: List[String]): String = region r {
         let sb = new StringBuilder(r);
-        List.foreach(x -> StringBuilder.appendString!(x, sb), xs);
+        List.forEach(x -> StringBuilder.appendString!(x, sb), xs);
         StringBuilder.toString(sb)
     }
 
@@ -177,7 +177,7 @@ namespace String {
             let sb = new StringBuilder(r);
             StringBuilder.appendString!(x, sb);
             let appendStep = s -> { StringBuilder.append!(sep, sb); StringBuilder.appendString!(s, sb) };
-            List.foreach(appendStep, rs);
+            List.forEach(appendStep, rs);
             StringBuilder.toString(sb)
         }
     }
@@ -276,9 +276,8 @@ namespace String {
         import java.util.regex.Matcher.find(Int32): Bool \ Write(r);
         let _ = r; // This avoids a redundancy error.
         try {
-            let cs1 = s as ##java.lang.CharSequence;
             let p1 = compile(pattern);
-            let m1 = matcher(p1, cs1);
+            let m1 = matcher(p1, upcast s);
             find(m1, 0)
         } catch {
             case _: ##java.util.regex.PatternSyntaxException => false
@@ -700,7 +699,7 @@ namespace String {
     /// Returns `true` if `s` is empty.
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
-    pub def forall(f: Char -> Bool \ ef, s: String): Bool \ ef = match findIndexOfLeft(x -> not (f(x)), s) {
+    pub def forAll(f: Char -> Bool \ ef, s: String): Bool \ ef = match findIndexOfLeft(x -> not (f(x)), s) {
         case None    => true
         case Some(_) => false
     }
@@ -712,7 +711,7 @@ namespace String {
     ///
     @Time(length(s)) @Space(length(s))
     pub def isAscii(s: String): Bool =
-        forall(Char.isAscii, s)
+        forAll(Char.isAscii, s)
 
     ///
     /// Returns `true` if and only if all chars in `s` are white space characters.
@@ -721,7 +720,7 @@ namespace String {
     ///
     @Time(length(s)) @Space(length(s))
     pub def isWhiteSpace(s: String): Bool =
-        forall(Char.isWhiteSpace, s)
+        forAll(Char.isWhiteSpace, s)
 
     ///
     /// Returns string `s` with all leading space characters removed.
@@ -775,9 +774,7 @@ namespace String {
     ///
     pub def replace(from: {from = String}, to: {to = String}, s: String): String =
         import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String \ {};
-        let t = from.from as ##java.lang.CharSequence;
-        let r = to.to as ##java.lang.CharSequence;
-        replace(s, t, r)
+        replace(s, upcast from.from, upcast to.to)
 
     ///
     /// Returns `s` with every match of the character `target` replaced by the character `rep`.
@@ -854,7 +851,7 @@ namespace String {
             StringBuilder.appendString!(prefix, sb);
             StringBuilder.appendLine!(x, sb)
         };
-        List.foreach(step, lines(s));
+        List.forEach(step, lines(s));
         StringBuilder.toString(sb)
     }
 
@@ -893,7 +890,7 @@ namespace String {
             let line = loop(s1, 0);
             StringBuilder.appendLine!(line, sb)
         };
-        List.foreach(step, lines(s));
+        List.forEach(step, lines(s));
         StringBuilder.toString(sb)
     }
 
@@ -917,7 +914,7 @@ namespace String {
     @Time(List.length(a)) @Space(List.length(a))
     pub def unlines(a: List[String]): String = region r {
         let sb = new StringBuilder(r);
-        List.foreach(x -> StringBuilder.appendLine!(x, sb), a);
+        List.forEach(x -> StringBuilder.appendLine!(x, sb), a);
         StringBuilder.toString(sb)
     }
 
@@ -942,7 +939,7 @@ namespace String {
             let sb = new StringBuilder(r);
             StringBuilder.appendString!(x, sb);
             let f = s -> { StringBuilder.append!(' ', sb); StringBuilder.appendString!(s, sb) };
-            List.foreach(f, xs);
+            List.forEach(f, xs);
             StringBuilder.toString(sb)
         }
     }

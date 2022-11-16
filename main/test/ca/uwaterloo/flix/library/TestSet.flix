@@ -499,12 +499,13 @@ def count06(): Bool = Set.count(i -> i > 3, Set#{1, 8}) == 1
 def count07(): Bool = Set.count(i -> i > 3, Set#{7, 6}) == 2
 
 @test
-def count08(): Bool \ IO =
+def count08(): Bool = region r {
     let range = List.range(0, 2000);
     let s = range |> List.toSet;
-    let a = new MutList(Static);
-    discard Set.count(x -> { let b = new MutList(Static); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); true }, s);
+    let a = new MutList(r);
+    discard Set.count(x -> { let b = new MutList(r); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); true }, s);
     MutList.toList(a) == range
+}
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -569,12 +570,13 @@ def count08(): Bool \ IO =
         Set#{10, -10} |> Set.sumWith(x -> x + 1) == 2
 
     @test
-    def sumWith08(): Bool \ IO =
+    def sumWith08(): Bool = region r {
         let range = List.range(0, 2000);
         let m = range |> List.toSet;
-        let a = new MutList(Static);
-        discard Set.sumWith(k -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
+        let a = new MutList(r);
+        discard Set.sumWith(k -> { let b = new MutList(r); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
         MutList.toList(a) == range
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -635,12 +637,13 @@ def count08(): Bool \ IO =
         Set#{10, -10} |> Set.productWith(x -> x + 1) == -99
 
     @test
-    def productWith08(): Bool \ IO =
+    def productWith08(): Bool = region r {
         let range = List.range(0, 2000);
         let m = range |> List.toSet;
-        let a = new MutList(Static);
-        discard Set.productWith(k -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
+        let a = new MutList(r);
+        discard Set.productWith(k -> { let b = new MutList(r); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
         MutList.toList(a) == range
+    }
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -725,40 +728,40 @@ def exists10(): Bool = Set.exists(x -> x rem 8 == 7, Set#{11, -1, 31, -14, -2, 8
 def exists11(): Bool = Set.exists(x -> x rem 8 == 7, Set#{11, -1, -14, -2, 84, 111, 38}) == true
 
 /////////////////////////////////////////////////////////////////////////////
-// forall                                                                  //
+// forAll                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def forall01(): Bool = Set.forall(x -> x rem 8 == 7, Set#{}) == true
+def forAll01(): Bool = Set.forAll(x -> x rem 8 == 7, Set#{}) == true
 
 @test
-def forall02(): Bool = Set.forall(x -> x rem 8 == 7, Set#{5}) == false
+def forAll02(): Bool = Set.forAll(x -> x rem 8 == 7, Set#{5}) == false
 
 @test
-def forall03(): Bool = Set.forall(x -> x rem 8 == 7, Set#{7}) == true
+def forAll03(): Bool = Set.forAll(x -> x rem 8 == 7, Set#{7}) == true
 
 @test
-def forall04(): Bool = Set.forall(x -> x rem 8 == 7, Set#{15}) == true
+def forAll04(): Bool = Set.forAll(x -> x rem 8 == 7, Set#{15}) == true
 
 @test
-def forall05(): Bool = Set.forall(x -> x rem 8 == 7, Set#{1, 44}) == false
+def forAll05(): Bool = Set.forAll(x -> x rem 8 == 7, Set#{1, 44}) == false
 
 @test
-def forall06(): Bool = Set.forall(x -> x rem 8 == 7, Set#{11, 71}) == false
+def forAll06(): Bool = Set.forAll(x -> x rem 8 == 7, Set#{11, 71}) == false
 
 @test
-def forall07(): Bool = Set.forall(x -> x rem 8 == 7, Set#{71, 12}) == false
+def forAll07(): Bool = Set.forAll(x -> x rem 8 == 7, Set#{71, 12}) == false
 
 @test
-def forall08(): Bool = Set.forall(x -> x rem 8 == 7, Set#{71, 79}) == true
+def forAll08(): Bool = Set.forAll(x -> x rem 8 == 7, Set#{71, 79}) == true
 
 @test
-def forall09(): Bool = Set.forall(x -> x rem 8 == 7, Set#{7, 15, 23, 84, 111}) == false
+def forAll09(): Bool = Set.forAll(x -> x rem 8 == 7, Set#{7, 15, 23, 84, 111}) == false
 
 @test
-def forall10(): Bool = Set.forall(x -> x rem 8 == 7, Set#{7, 15, 23, 111, 3}) == false
+def forAll10(): Bool = Set.forAll(x -> x rem 8 == 7, Set#{7, 15, 23, 111, 3}) == false
 
 @test
-def forall11(): Bool = Set.forall(x -> x rem 8 == 7, Set#{7, 15, 23, 119, 111}) == true
+def forAll11(): Bool = Set.forAll(x -> x rem 8 == 7, Set#{7, 15, 23, 119, 111}) == true
 
 /////////////////////////////////////////////////////////////////////////////
 // union                                                                   //
@@ -989,12 +992,13 @@ def map14(): Bool = Set.map(x -> x rem 9, Set#{0, 5, 1, -9, -8}) == Set#{5, 1, 0
 def map15(): Bool = Set.map(x -> x rem 9, Set#{0, 5, 1, 10, 7, 19, 28, 2}) == Set#{0, 5, 7, 1, 2}
 
 @test
-def map16(): Bool \ IO =
+def map16(): Bool = region r {
     let range = List.range(0, 2000);
     let s = List.toSet(range);
-    let a = new MutList(Static);
-    discard Set.map(x -> { let b = new MutList(Static); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); x }, s);
+    let a = new MutList(r);
+    discard Set.map(x -> { let b = new MutList(r); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); x }, s);
     MutList.toList(a) == range
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1315,19 +1319,19 @@ def eq18(): Bool = Set#{1, 2, 3} == Set#{3, 1, 2}
 def eq19(): Bool = Set#{1, 2, 3} == Set#{2, 1, 3}
 
 /////////////////////////////////////////////////////////////////////////////
-// foreach                                                                 //
+// forEach                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def foreach01(): Bool \ IO =
+def forEach01(): Bool \ IO =
     let r = ref 21;
-    Set.foreach(x -> r := x, Set#{});
+    Set.forEach(x -> r := x, Set#{});
     21 == deref r
 
 @test
-def foreach02(): Bool \ IO =
+def forEach02(): Bool \ IO =
     let r = ref 21;
-    Set.foreach(x -> r := x, Set#{42});
+    Set.forEach(x -> r := x, Set#{42});
     42 == deref r
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1516,11 +1520,12 @@ def unfoldWithIter06(): Bool \ IO =
     def minimumBy04(): Bool = Set.minimumBy((x, y) -> x <=> y, Set.range(5, 55)) == Some(5)
 
     @test
-    def minimumBy05(): Bool \ IO =
+    def minimumBy05(): Bool = region r {
         let s = List.range(0, 2000) |> List.toSet;
-        let a = new MutList(Static);
-        discard Set.minimumBy((x, y) -> { let b = new MutList(Static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, s);
+        let a = new MutList(r);
+        discard Set.minimumBy((x, y) -> { let b = new MutList(r); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, s);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////

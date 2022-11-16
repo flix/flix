@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Root
 import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, UnaryOperator, LiftedAst, OccurrenceAst, Purity, SemanticOperator, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, BinaryOperator, LiftedAst, OccurrenceAst, Purity, SemanticOperator, SourceLocation, Symbol, Type, UnaryOperator}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -90,33 +90,7 @@ object Inliner {
    * Returns an expression of type Expression
    */
   private def visitExp(exp0: OccurrenceAst.Expression, subst0: Map[Symbol.VarSym, Expression])(implicit root: Root, flix: Flix): LiftedAst.Expression = exp0 match {
-    case OccurrenceAst.Expression.Unit(loc) => LiftedAst.Expression.Unit(loc)
-
-    case OccurrenceAst.Expression.Null(tpe, loc) => LiftedAst.Expression.Null(tpe, loc)
-
-    case OccurrenceAst.Expression.True(loc) => LiftedAst.Expression.True(loc)
-
-    case OccurrenceAst.Expression.False(loc) => LiftedAst.Expression.False(loc)
-
-    case OccurrenceAst.Expression.Char(lit, loc) => LiftedAst.Expression.Char(lit, loc)
-
-    case OccurrenceAst.Expression.Float32(lit, loc) => LiftedAst.Expression.Float32(lit, loc)
-
-    case OccurrenceAst.Expression.Float64(lit, loc) => LiftedAst.Expression.Float64(lit, loc)
-
-    case OccurrenceAst.Expression.BigDecimal(lit, loc) => LiftedAst.Expression.BigDecimal(lit, loc)
-
-    case OccurrenceAst.Expression.Int8(lit, loc) => LiftedAst.Expression.Int8(lit, loc)
-
-    case OccurrenceAst.Expression.Int16(lit, loc) => LiftedAst.Expression.Int16(lit, loc)
-
-    case OccurrenceAst.Expression.Int32(lit, loc) => LiftedAst.Expression.Int32(lit, loc)
-
-    case OccurrenceAst.Expression.Int64(lit, loc) => LiftedAst.Expression.Int64(lit, loc)
-
-    case OccurrenceAst.Expression.BigInt(lit, loc) => LiftedAst.Expression.BigInt(lit, loc)
-
-    case OccurrenceAst.Expression.Str(lit, loc) => LiftedAst.Expression.Str(lit, loc)
+    case OccurrenceAst.Expression.Constant(cst, tpe, loc) => LiftedAst.Expression.Cst(cst, tpe, loc)
 
     case OccurrenceAst.Expression.Var(sym, tpe, loc) =>
       subst0.get(sym) match {
@@ -278,7 +252,7 @@ object Inliner {
       val e = visitExp(exp, subst0)
       val enum0 = root.enums(sym.enumSym)
       if (enum0.cases.size == 1 && e.purity == Pure)
-          LiftedAst.Expression.True(loc)
+          LiftedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
       else
         LiftedAst.Expression.Is(sym, e, purity, loc)
 
@@ -532,20 +506,7 @@ object Inliner {
    * A pure and trivial expression can always be inlined even without duplicating work.
    */
   private def isTrivialExp(exp0: LiftedAst.Expression): Boolean = exp0 match {
-    case LiftedAst.Expression.Unit(_) => true
-    case LiftedAst.Expression.Null(_, _) => true
-    case LiftedAst.Expression.True(_) => true
-    case LiftedAst.Expression.False(_) => true
-    case LiftedAst.Expression.Char(_, _) => true
-    case LiftedAst.Expression.Float32(_, _) => true
-    case LiftedAst.Expression.Float64(_, _) => true
-    case LiftedAst.Expression.BigDecimal(_, _) => true
-    case LiftedAst.Expression.Int8(_, _) => true
-    case LiftedAst.Expression.Int16(_, _) => true
-    case LiftedAst.Expression.Int32(_, _) => true
-    case LiftedAst.Expression.Int64(_, _) => true
-    case LiftedAst.Expression.BigInt(_, _) => true
-    case LiftedAst.Expression.Str(_, _) => true
+    case LiftedAst.Expression.Cst(_, _, _) => true
     case LiftedAst.Expression.Var(_, _, _) => true
     case _ => false
   }
@@ -554,33 +515,7 @@ object Inliner {
    * Substitute variables in `exp0` for new fresh variables in `env0`
    */
   private def substituteExp(exp0: OccurrenceAst.Expression, env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: Root, flix: Flix): LiftedAst.Expression = exp0 match {
-    case OccurrenceAst.Expression.Unit(loc) => LiftedAst.Expression.Unit(loc)
-
-    case OccurrenceAst.Expression.Null(tpe, loc) => LiftedAst.Expression.Null(tpe, loc)
-
-    case OccurrenceAst.Expression.True(loc) => LiftedAst.Expression.True(loc)
-
-    case OccurrenceAst.Expression.False(loc) => LiftedAst.Expression.False(loc)
-
-    case OccurrenceAst.Expression.Char(lit, loc) => LiftedAst.Expression.Char(lit, loc)
-
-    case OccurrenceAst.Expression.Float32(lit, loc) => LiftedAst.Expression.Float32(lit, loc)
-
-    case OccurrenceAst.Expression.Float64(lit, loc) => LiftedAst.Expression.Float64(lit, loc)
-
-    case OccurrenceAst.Expression.BigDecimal(lit, loc) => LiftedAst.Expression.BigDecimal(lit, loc)
-
-    case OccurrenceAst.Expression.Int8(lit, loc) => LiftedAst.Expression.Int8(lit, loc)
-
-    case OccurrenceAst.Expression.Int16(lit, loc) => LiftedAst.Expression.Int16(lit, loc)
-
-    case OccurrenceAst.Expression.Int32(lit, loc) => LiftedAst.Expression.Int32(lit, loc)
-
-    case OccurrenceAst.Expression.Int64(lit, loc) => LiftedAst.Expression.Int64(lit, loc)
-
-    case OccurrenceAst.Expression.BigInt(lit, loc) => LiftedAst.Expression.BigInt(lit, loc)
-
-    case OccurrenceAst.Expression.Str(lit, loc) => LiftedAst.Expression.Str(lit, loc)
+    case OccurrenceAst.Expression.Constant(cst, tpe, loc) => LiftedAst.Expression.Cst(cst, tpe, loc)
 
     case OccurrenceAst.Expression.Var(sym, tpe, loc) => LiftedAst.Expression.Var(env0.getOrElse(sym, sym), tpe, loc)
 
@@ -811,8 +746,7 @@ object Inliner {
    */
   private def unaryFold(sop: SemanticOperator, op: UnaryOperator,  e: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression = {
     (sop, e) match {
-      case (SemanticOperator.BoolOp.Not, LiftedAst.Expression.False(_)) => LiftedAst.Expression.True(loc)
-      case (SemanticOperator.BoolOp.Not, LiftedAst.Expression.True(_)) => LiftedAst.Expression.False(loc)
+      case (SemanticOperator.BoolOp.Not, LiftedAst.Expression.Cst(Ast.Constant.Bool(b), _, _)) => LiftedAst.Expression.Cst(Ast.Constant.Bool(!b), tpe, loc)
       case _ => LiftedAst.Expression.Unary(sop, op, e, tpe, purity, loc)
     }
   }
@@ -829,14 +763,14 @@ object Inliner {
    */
   private def binaryFold(sop: SemanticOperator, op: BinaryOperator, e1: LiftedAst.Expression, e2: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression = {
     (sop, e1, e2) match {
-      case (SemanticOperator.BoolOp.And, LiftedAst.Expression.True(_), _) => e2
-      case (SemanticOperator.BoolOp.And, _, LiftedAst.Expression.True(_)) => e1
-      case (SemanticOperator.BoolOp.And, LiftedAst.Expression.False(_), _) => LiftedAst.Expression.False(loc)
-      case (SemanticOperator.BoolOp.And, _, LiftedAst.Expression.False(_)) if e1.purity == Pure => LiftedAst.Expression.False(loc)
-      case (SemanticOperator.BoolOp.Or, LiftedAst.Expression.False(_), _) => e2
-      case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.False(_)) => e1
-      case (SemanticOperator.BoolOp.Or, LiftedAst.Expression.True(_), _) => LiftedAst.Expression.True(loc)
-      case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.True(_)) if e1.purity == Pure => LiftedAst.Expression.True(loc)
+      case (SemanticOperator.BoolOp.And, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _), _) => e2
+      case (SemanticOperator.BoolOp.And, _, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _)) => e1
+      case (SemanticOperator.BoolOp.And, LiftedAst.Expression.Cst(Ast.Constant.Bool(false), _, _), _) => LiftedAst.Expression.Cst(Ast.Constant.Bool(false), Type.Bool, loc)
+      case (SemanticOperator.BoolOp.And, _, LiftedAst.Expression.Cst(Ast.Constant.Bool(false), _, _)) if e1.purity == Pure => LiftedAst.Expression.Cst(Ast.Constant.Bool(false), Type.Bool, loc)
+      case (SemanticOperator.BoolOp.Or, LiftedAst.Expression.Cst(Ast.Constant.Bool(false), _, _), _) => e2
+      case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.Cst(Ast.Constant.Bool(false), _, _)) => e1
+      case (SemanticOperator.BoolOp.Or, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _), _) => LiftedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
+      case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _)) if e1.purity == Pure => LiftedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
       case _ => LiftedAst.Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
     }
   }
@@ -850,8 +784,8 @@ object Inliner {
    * if (c1 and c2) e else jump l1)
    */
   private def reduceIfThenElse(outerCond: LiftedAst.Expression, outerThen: LiftedAst.Expression, outerElse: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression = outerCond match {
-    case LiftedAst.Expression.True(_) => outerThen
-    case LiftedAst.Expression.False(_) => outerElse
+    case LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _) => outerThen
+    case LiftedAst.Expression.Cst(Ast.Constant.Bool(false), _, _) => outerElse
     case _ =>
       outerThen match {
         case LiftedAst.Expression.IfThenElse(innerCond, innerThen, innerElse, _, _, _) =>

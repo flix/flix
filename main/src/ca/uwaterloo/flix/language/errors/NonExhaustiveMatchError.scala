@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.util.Formatter
 /**
   * An error raised to indicate a non-exhaustive pattern match expression.
   */
-case class NonExhaustiveMatchError(rules: List[TypedAst.MatchRule], pat: String, loc: SourceLocation) extends CompilationMessage {
+case class NonExhaustiveMatchError(pat: String, loc: SourceLocation) extends CompilationMessage {
   val kind = "Pattern Match"
 
   def summary: String = s"Non-exhaustive match. Missing case: '$pat'."

@@ -47,7 +47,7 @@ namespace Test/Exp/Jvm/InvokeConstructor {
 
     @test
     def testInvokePureConstructor01(): ##java.lang.String =
-        import new java.lang.String(String): _ \ {} as newString;
+        import new java.lang.String(String): ##java.lang.String \ {} as newString;
         newString("Hello World")
 
     @test
@@ -62,6 +62,6 @@ namespace Test/Exp/Jvm/InvokeConstructor {
 
     @test
     def testInvokeConstructorWithArrayParam(): ##java.net.URLClassLoader \ IO =
-        import new java.net.URLClassLoader(Array[##java.net.URL, _]): ##java.net.URLClassLoader \ IO as newClassLoader;
+        import new java.net.URLClassLoader(Array[##java.net.URL, Static]): ##java.net.URLClassLoader \ IO as newClassLoader;
         newClassLoader([])
 }

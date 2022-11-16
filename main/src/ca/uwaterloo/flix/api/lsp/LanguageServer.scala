@@ -42,6 +42,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.zip.ZipInputStream
 import scala.collection.mutable
+import ca.uwaterloo.flix.util.collection.MultiMap
+import scala.util.Using
+import java.io.IOException
+import java.nio.file.Files
 
 /**
   * A Compiler Interface for the Language Server Protocol.
@@ -263,7 +267,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
 
     case Request.Complete(id, uri, pos) =>
-      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root)
+      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root, root.names)
 
     case Request.Highlight(id, uri, pos) =>
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)

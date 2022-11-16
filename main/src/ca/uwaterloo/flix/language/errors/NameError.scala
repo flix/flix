@@ -306,4 +306,27 @@ object NameError {
 
   }
 
+  /**
+    * An error raised to indicate that a wildcard type is used in an illegal position.
+    *
+    * @param ident the name of the wildcard type.
+    * @param loc   the location where the error occurred.
+    */
+  case class IllegalWildType(ident: Name.Ident, loc: SourceLocation) extends NameError {
+    def summary: String = s"Illegal wildcard type: '$ident'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal wildcard type: '$ident'.
+         |
+         |${code(loc, "illegal wildcard type.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      "Wildcard types (types starting with an underscore) are not allowed in this position."
+    })
+  }
+
 }

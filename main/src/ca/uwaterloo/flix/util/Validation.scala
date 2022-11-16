@@ -69,6 +69,11 @@ object Validation {
   final val SuccessNil = Success(Nil)
 
   /**
+    * Represents a successful validation with the empty option.
+    */
+  final val SuccessNone = Success(None)
+
+  /**
     * Represents a success `value`.
     */
   case class Success[T, E](t: T) extends Validation[T, E] {
@@ -108,6 +113,17 @@ object Validation {
     * Traverses `xs` applying the function `f` to each element.
     */
   def traverse[T, S, E](xs: Iterable[T])(f: T => Validation[S, E]): Validation[List[S], E] = fastTraverse(xs)(f)
+
+  /**
+    * Traverses `o` applying the function `f` to the value, if it exists.
+    */
+  def traverseOpt[T, S, E](o: Option[T])(f: T => Validation[S, E]): Validation[Option[S], E] = o match {
+    case None => Validation.SuccessNone
+    case Some(x) => f(x) match {
+      case Success(t) => Success(Some(t))
+      case Failure(errs) => Failure(errs)
+    }
+  }
 
   /**
     * Traverses `xs` applying the function `f` to each element, ignoring non-error results.

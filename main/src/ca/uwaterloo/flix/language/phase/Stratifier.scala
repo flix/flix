@@ -95,33 +95,7 @@ object Stratifier {
     * Returns [[Success]] if the expression is stratified. Otherwise returns [[Failure]] with a [[StratificationError]].
     */
   private def visitExp(exp0: Expression)(implicit g: LabelledGraph, flix: Flix): Validation[Expression, StratificationError] = exp0 match {
-    case Expression.Unit(_) => exp0.toSuccess
-
-    case Expression.Null(_, _) => exp0.toSuccess
-
-    case Expression.True(_) => exp0.toSuccess
-
-    case Expression.False(_) => exp0.toSuccess
-
-    case Expression.Char(_, _) => exp0.toSuccess
-
-    case Expression.Float32(_, _) => exp0.toSuccess
-
-    case Expression.Float64(_, _) => exp0.toSuccess
-
-    case Expression.BigDecimal(_, _) => exp0.toSuccess
-
-    case Expression.Int8(_, _) => exp0.toSuccess
-
-    case Expression.Int16(_, _) => exp0.toSuccess
-
-    case Expression.Int32(_, _) => exp0.toSuccess
-
-    case Expression.Int64(_, _) => exp0.toSuccess
-
-    case Expression.BigInt(_, _) => exp0.toSuccess
-
-    case Expression.Str(_, _) => exp0.toSuccess
+    case Expression.Cst(_, _, _) => exp0.toSuccess
 
     case Expression.Wild(_, _) => exp0.toSuccess
 
@@ -189,7 +163,7 @@ object Stratifier {
     case Expression.Match(exp, rules, tpe, pur, eff, loc) =>
       val matchVal = visitExp(exp)
       val rulesVal = traverse(rules) {
-        case MatchRule(pat, guard, body) => mapN(visitExp(guard), visitExp(body)) {
+        case MatchRule(pat, guard, body) => mapN(traverseOpt(guard)(visitExp), visitExp(body)) {
           case (g, b) => MatchRule(pat, g, b)
         }
       }
@@ -377,9 +351,9 @@ object Stratifier {
         case ms => Expression.NewObject(name, clazz, tpe, pur, eff, ms, loc)
       }
 
-    case Expression.NewChannel(exp, tpe, pur, eff, loc) =>
+    case Expression.NewChannel(exp, tpe, elmTpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.NewChannel(e, tpe, pur, eff, loc)
+        case e => Expression.NewChannel(e, tpe, elmTpe, pur, eff, loc)
       }
 
     case Expression.GetChannel(exp, tpe, pur, eff, loc) =>
@@ -417,6 +391,16 @@ object Stratifier {
 
     case Expression.Par(exp, loc) =>
       mapN(visitExp(exp))(Expression.Par(_, loc))
+
+    case Expression.ParYield(frags, exp, tpe, pur, eff, loc) =>
+      val fragsVal = traverse(frags) {
+        case ParYieldFragment(p, e, l) => mapN(visitExp(e)) {
+          case e1 => ParYieldFragment(p, e1, l)
+        }
+      }
+      mapN(fragsVal, visitExp(exp)) {
+        case (fs, e) => Expression.ParYield(fs, e, tpe, pur, eff, loc)
+      }
 
     case Expression.Lazy(exp, tpe, loc) =>
       mapN(visitExp(exp)) {
@@ -475,17 +459,6 @@ object Stratifier {
       mapN(visitExp(exp)) {
         case e => Expression.FixpointProject(pred, e, tpe, pur, eff, loc)
       }
-
-    case Expression.Reify(t, tpe, pur, eff, loc) =>
-      Expression.Reify(t, tpe, pur, eff, loc).toSuccess
-
-    case Expression.ReifyType(t, k, tpe, pur, eff, loc) =>
-      Expression.ReifyType(t, k, tpe, pur, eff, loc).toSuccess
-
-    case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, pur, eff, loc) =>
-      mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
-        case (e1, e2, e3) => Expression.ReifyEff(sym, e1, e2, e3, tpe, pur, eff, loc)
-      }
   }
 
   private def visitJvmMethod(method: JvmMethod)(implicit g: LabelledGraph, flix: Flix): Validation[JvmMethod, StratificationError] = method match {
@@ -525,33 +498,7 @@ object Stratifier {
     * Returns the labelled graph of the given expression `exp0`.
     */
   private def labelledGraphOfExp(exp0: Expression): LabelledGraph = exp0 match {
-    case Expression.Unit(_) => LabelledGraph.empty
-
-    case Expression.Null(_, _) => LabelledGraph.empty
-
-    case Expression.True(_) => LabelledGraph.empty
-
-    case Expression.False(_) => LabelledGraph.empty
-
-    case Expression.Char(_, _) => LabelledGraph.empty
-
-    case Expression.Float32(_, _) => LabelledGraph.empty
-
-    case Expression.Float64(_, _) => LabelledGraph.empty
-
-    case Expression.BigDecimal(_, _) => LabelledGraph.empty
-
-    case Expression.Int8(_, _) => LabelledGraph.empty
-
-    case Expression.Int16(_, _) => LabelledGraph.empty
-
-    case Expression.Int32(_, _) => LabelledGraph.empty
-
-    case Expression.Int64(_, _) => LabelledGraph.empty
-
-    case Expression.BigInt(_, _) => LabelledGraph.empty
-
-    case Expression.Str(_, _) => LabelledGraph.empty
+    case Expression.Cst(_, _, _) => LabelledGraph.empty
 
     case Expression.Wild(_, _) => LabelledGraph.empty
 
@@ -602,7 +549,7 @@ object Stratifier {
     case Expression.Match(exp, rules, _, _, _, _) =>
       val dg = labelledGraphOfExp(exp)
       rules.foldLeft(dg) {
-        case (acc, MatchRule(_, g, b)) => acc + labelledGraphOfExp(g) + labelledGraphOfExp(b)
+        case (acc, MatchRule(_, g, b)) => acc + g.map(labelledGraphOfExp).getOrElse(LabelledGraph.empty) + labelledGraphOfExp(b)
       }
 
     case Expression.TypeMatch(exp, rules, _, _, _, _) =>
@@ -732,7 +679,7 @@ object Stratifier {
     case Expression.NewObject(_, _, _, _, _, _, _) =>
       LabelledGraph.empty
 
-    case Expression.NewChannel(exp, _, _, _, _) =>
+    case Expression.NewChannel(exp, _, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.GetChannel(exp, _, _, _, _) =>
@@ -756,6 +703,11 @@ object Stratifier {
 
     case Expression.Par(exp, _) =>
       labelledGraphOfExp(exp)
+
+    case Expression.ParYield(frags, exp, _, _, _, _) =>
+      frags.foldLeft(labelledGraphOfExp(exp)) {
+        case (acc, ParYieldFragment(_, e, _)) => acc + labelledGraphOfExp(e)
+      }
 
     case Expression.Lazy(exp, _, _) =>
       labelledGraphOfExp(exp)
@@ -785,15 +737,6 @@ object Stratifier {
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
-
-    case Expression.Reify(_, _, _, _, _) =>
-      LabelledGraph.empty
-
-    case Expression.ReifyType(_, _, _, _, _, _) =>
-      LabelledGraph.empty
-
-    case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2) + labelledGraphOfExp(exp3)
   }
 
   /**

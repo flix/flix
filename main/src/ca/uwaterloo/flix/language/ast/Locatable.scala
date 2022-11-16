@@ -15,11 +15,16 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-trait Locatable {
+trait Locatable extends Sourceable {
 
   /**
     * Returns the source location of `this`.
     */
   def loc: SourceLocation
+
+  /**
+    * Returns the source of `this`.
+    */
+  override def src: Ast.Source = loc.source
 
 }

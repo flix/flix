@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, ParYieldFragment, Pattern}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -136,20 +136,7 @@ object PatternExhaustiveness {
       case Expression.Def(_, _, _) => Nil
       case Expression.Sig(_, _, _) => Nil
       case Expression.Hole(_, _, _) => Nil
-      case Expression.Null(_, _) => Nil
-      case Expression.Unit(_) => Nil
-      case Expression.True(_) => Nil
-      case Expression.False(_) => Nil
-      case Expression.Char(_, _) => Nil
-      case Expression.Float32(_, _) => Nil
-      case Expression.Float64(_, _) => Nil
-      case Expression.BigDecimal(_, _) => Nil
-      case Expression.Int8(_, _) => Nil
-      case Expression.Int16(_, _) => Nil
-      case Expression.Int32(_, _) => Nil
-      case Expression.Int64(_, _) => Nil
-      case Expression.BigInt(_, _) => Nil
-      case Expression.Str(_, _) => Nil
+      case Expression.Cst(_, _, _) => Nil
       case Expression.Lambda(_, body, _, _) => visitExp(body, root)
       case Expression.Apply(exp, exps, _, _, _, _) => (exp :: exps).flatMap(visitExp(_, root))
       case Expression.Unary(_, exp, _, _, _, _) => visitExp(exp, root)
@@ -164,7 +151,7 @@ object PatternExhaustiveness {
 
       case Expression.Match(exp, rules, _, _, _, _) =>
         val ruleExps = rules.map(_.exp)
-        val guards = rules.map(_.guard)
+        val guards = rules.flatMap(_.guard)
         val expsErrs = (exp :: ruleExps ::: guards).flatMap(visitExp(_, root))
         val rulesErrs = checkRules(exp, rules, root)
         expsErrs ::: rulesErrs
@@ -217,7 +204,7 @@ object PatternExhaustiveness {
       case Expression.GetStaticField(_, _, _, _, _) => Nil
       case Expression.PutStaticField(_, exp, _, _, _, _) => visitExp(exp, root)
       case Expression.NewObject(_, _, _, _, _, methods, _) => methods.flatMap(m => visitExp(m.exp, root))
-      case Expression.NewChannel(exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.NewChannel(exp, _, _, _, _, _) => visitExp(exp, root)
       case Expression.GetChannel(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.PutChannel(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
 
@@ -228,6 +215,13 @@ object PatternExhaustiveness {
 
       case Expression.Spawn(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Par(exp, _) => visitExp(exp, root)
+
+      case Expression.ParYield(frags, exp, _, _, _, loc) =>
+        val fragsExps = frags.map(_.exp)
+        val expsErrs = (exp :: fragsExps).flatMap(visitExp(_, root))
+        val fragsErrs = checkFrags(frags, root, loc)
+        expsErrs ::: fragsErrs
+
       case Expression.Lazy(exp, _, _) => visitExp(exp, root)
       case Expression.Force(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.FixpointConstraintSet(cs, _, _, _) => cs.flatMap(visitConstraint(_, root))
@@ -237,9 +231,6 @@ object PatternExhaustiveness {
       case Expression.FixpointFilter(_, exp, _, _, _, _) => visitExp(exp, root)
       case Expression.FixpointInject(exp, _, _, _, _, _) => visitExp(exp, root)
       case Expression.FixpointProject(_, exp, _, _, _, _) => visitExp(exp, root)
-      case Expression.Reify(_, _, _, _, _) => Nil
-      case Expression.ReifyType(_, _, _, _, _, _) => Nil
-      case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) => List(exp1, exp2, exp3).flatMap(visitExp(_, root))
     }
   }
 
@@ -264,6 +255,22 @@ object PatternExhaustiveness {
   }
 
   /**
+    * Check that the given ParYield fragments are exhaustive for their corresponding expressions.
+    *
+    * @param frags The fragments to check
+    * @param root  The root of the tree
+    * @param loc   the source location of the ParYield expression.
+    * @return
+    */
+  private def checkFrags(frags: List[ParYieldFragment], root: TypedAst.Root, loc: SourceLocation): List[NonExhaustiveMatchError] = {
+    // Call findNonMatchingPat for each pattern individually
+    frags.flatMap(f => findNonMatchingPat(List(List(f.pat)), 1, root) match {
+      case Exhaustive => Nil
+      case NonExhaustive(ctors) => NonExhaustiveMatchError(prettyPrintCtor(ctors.head), loc) :: Nil
+    })
+  }
+
+  /**
     * Check that the given rules are exhaustive for the given expression
     *
     * @param root  The root of the tree
@@ -274,7 +281,7 @@ object PatternExhaustiveness {
   private def checkRules(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], root: TypedAst.Root): List[NonExhaustiveMatchError] = {
     findNonMatchingPat(rules.map(r => List(r.pat)), 1, root) match {
       case Exhaustive => Nil
-      case NonExhaustive(ctors) => List(NonExhaustiveMatchError(rules, prettyPrintCtor(ctors.head), exp.loc))
+      case NonExhaustive(ctors) => List(NonExhaustiveMatchError(prettyPrintCtor(ctors.head), exp.loc))
     }
   }
 
@@ -392,7 +399,7 @@ object PatternExhaustiveness {
                 // => Tuple. If there are arguments, we add them to the matrix
                 case TypedAst.Pattern.Tuple(elms, _, _) =>
                   (elms ::: pat.tail) :: acc
-                case TypedAst.Pattern.Unit(_) =>
+                case TypedAst.Pattern.Cst(Ast.Constant.Unit, _, _) =>
                   pat.tail :: acc
                 case _ =>
                   (exp :: pat.tail) :: acc
@@ -581,7 +588,6 @@ object PatternExhaustiveness {
     case Some(TypeConstructor.Arrow(length)) => length
     case Some(TypeConstructor.Array) => 1
     case Some(TypeConstructor.Ref) => 0
-    case Some(TypeConstructor.Channel) => 1
     case Some(TypeConstructor.Lazy) => 1
     case Some(TypeConstructor.Enum(sym, kind)) => 0 // TODO: Correct?
     case Some(TypeConstructor.Native(clazz)) => 0
@@ -642,22 +648,23 @@ object PatternExhaustiveness {
   private def patToCtor(pattern: TypedAst.Pattern): TyCon = pattern match {
     case Pattern.Wild(_, _) => TyCon.Wild
     case Pattern.Var(_, _, _) => TyCon.Wild
-    case Pattern.Unit(_) => TyCon.Unit
-    case Pattern.True(_) => TyCon.True
-    case Pattern.False(_) => TyCon.False
-    case Pattern.Char(_, _) => TyCon.Char
-    case Pattern.Float32(_, _) => TyCon.Float32
-    case Pattern.Float64(_, _) => TyCon.Float64
-    case Pattern.BigDecimal(_, _) => TyCon.BigDecimal
-    case Pattern.Int8(_, _) => TyCon.Int8
-    case Pattern.Int16(_, _) => TyCon.Int16
-    case Pattern.Int32(_, _) => TyCon.Int32
-    case Pattern.Int64(_, _) => TyCon.Int64
-    case Pattern.BigInt(_, _) => TyCon.BigInt
-    case Pattern.Str(_, _) => TyCon.Str
-    case Pattern.Tag(Ast.CaseSymUse(sym, _), pat, tpe, _) => {
+    case Pattern.Cst(Ast.Constant.Unit, _, _) => TyCon.Unit
+    case Pattern.Cst(Ast.Constant.Bool(true), _, _) => TyCon.True
+    case Pattern.Cst(Ast.Constant.Bool(false), _, _) => TyCon.False
+    case Pattern.Cst(Ast.Constant.Char(_), _, _) => TyCon.Char
+    case Pattern.Cst(Ast.Constant.Float32(_), _, _) => TyCon.Float32
+    case Pattern.Cst(Ast.Constant.Float64(_), _, _) => TyCon.Float64
+    case Pattern.Cst(Ast.Constant.BigDecimal(_), _, _) => TyCon.BigDecimal
+    case Pattern.Cst(Ast.Constant.Int8(_), _, _) => TyCon.Int8
+    case Pattern.Cst(Ast.Constant.Int16(_), _, _) => TyCon.Int16
+    case Pattern.Cst(Ast.Constant.Int32(_), _, _) => TyCon.Int32
+    case Pattern.Cst(Ast.Constant.Int64(_), _, _) => TyCon.Int64
+    case Pattern.Cst(Ast.Constant.BigInt(_), _, _) => TyCon.BigInt
+    case Pattern.Cst(Ast.Constant.Str(_), _, _) => TyCon.Str
+    case Pattern.Cst(Ast.Constant.Null, _, _) => throw InternalCompilerException("unexpected null pattern")
+    case Pattern.Tag(Ast.CaseSymUse(sym, _), pat, _, _) => {
       val (args, numArgs) = pat match {
-        case Pattern.Unit(_) => (List.empty[TyCon], 0)
+        case Pattern.Cst(Ast.Constant.Unit, _, _) => (List.empty[TyCon], 0)
         case Pattern.Tuple(elms, _, _) => (elms.map(patToCtor), elms.length)
         case a => (List(patToCtor(a)), 1)
       }

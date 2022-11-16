@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-type alias Sender[t] = Channel[t]
-type alias Receiver[t] = Channel[t]
 
 namespace Channel {
     use Time.Duration
@@ -24,9 +22,8 @@ namespace Channel {
     ///
     pub def buffered(n: Int32): (Sender[t], Receiver[t]) \ IO =
         let m = if (n < 0) 0 else n;
-        let c = $CHANNEL_NEW$(m);
-        (c, c)
-
+        $CHANNEL_NEW$(m)
+        
     ///
     /// Returns a new unbuffered channel (i.e. a channel with zero capacity).
     ///

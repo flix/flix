@@ -80,20 +80,7 @@ object Statistics {
     val base = Counter.of(getName(exp0))
 
     val subExprs = exp0 match {
-      case Expression.Unit(loc) => Counter.empty
-      case Expression.Null(tpe, loc) => Counter.empty
-      case Expression.True(loc) => Counter.empty
-      case Expression.False(loc) => Counter.empty
-      case Expression.Char(lit, loc) => Counter.empty
-      case Expression.Float32(lit, loc) => Counter.empty
-      case Expression.Float64(lit, loc) => Counter.empty
-      case Expression.BigDecimal(lit, loc) => Counter.empty
-      case Expression.Int8(lit, loc) => Counter.empty
-      case Expression.Int16(lit, loc) => Counter.empty
-      case Expression.Int32(lit, loc) => Counter.empty
-      case Expression.Int64(lit, loc) => Counter.empty
-      case Expression.BigInt(lit, loc) => Counter.empty
-      case Expression.Str(lit, loc) => Counter.empty
+      case Expression.Cst(_, _, _) => Counter.empty
       case Expression.Wild(tpe, loc) => Counter.empty
       case Expression.Var(sym, tpe, loc) => Counter.empty
       case Expression.Def(sym, tpe, loc) => Counter.empty
@@ -145,12 +132,13 @@ object Statistics {
       case Expression.GetStaticField(field, tpe, pur, eff, loc) => Counter.empty
       case Expression.PutStaticField(field, exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.NewObject(name, clazz, tpe, pur, eff, methods, loc) => Counter.merge(methods.map(visitJvmMethod))
-      case Expression.NewChannel(exp, tpe, pur, eff, loc) => visitExp(exp)
+      case Expression.NewChannel(exp, tpe, elmTpe, pur, eff, loc) => visitExp(exp)
       case Expression.GetChannel(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.PutChannel(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.SelectChannel(rules, default, tpe, pur, eff, loc) => Counter.merge(rules.map(visitSelectChannelRule)) ++ Counter.merge(default.map(visitExp))
       case Expression.Spawn(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Par(exp, loc) => visitExp(exp)
+      case Expression.ParYield(frags, exp, tpe, pur, eff, loc) => Counter.merge(frags.map(f => visitExp(f.exp))) ++ visitExp(exp)
       case Expression.Lazy(exp, tpe, loc) => visitExp(exp)
       case Expression.Force(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => Counter.merge(cs.map(visitConstraint))
@@ -160,9 +148,6 @@ object Statistics {
       case Expression.FixpointFilter(pred, exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.FixpointInject(exp, pred, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.FixpointProject(pred, exp, tpe, pur, eff, loc) => visitExp(exp)
-      case Expression.Reify(t, tpe, pur, eff, loc) => Counter.empty
-      case Expression.ReifyType(t, k, tpe, pur, eff, loc) => Counter.empty
-      case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
     }
 
     base ++ subExprs
@@ -172,7 +157,7 @@ object Statistics {
     * Counts AST nodes in the given rule.
     */
   private def visitMatchRule(rule: MatchRule): Counter = rule match {
-    case MatchRule(pat, guard, exp) => visitExp(guard) ++ visitExp(exp)
+    case MatchRule(pat, guard, exp) => Counter.merge(guard.map(visitExp)) ++ visitExp(exp)
   }
 
   /**

@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.util.collection.MultiMap
+
 object ParsedAst {
 
   /**
@@ -24,7 +26,7 @@ object ParsedAst {
     * @param units      the abstract syntax trees of the parsed compilation units.
     * @param entryPoint the optional entry point.
     */
-  case class Root(units: Map[Ast.Source, ParsedAst.CompilationUnit], entryPoint: Option[Symbol.DefnSym])
+  case class Root(units: Map[Ast.Source, ParsedAst.CompilationUnit], entryPoint: Option[Symbol.DefnSym], names: MultiMap[List[String], String])
 
   /**
     * A compilation unit (i.e. a source file).
@@ -433,7 +435,7 @@ object ParsedAst {
       * @param after  the digits after the decimal point.
       * @param sp2    the position of the last character in the literal.
       */
-    case class BigDecimal(sp1: SourcePosition, sign: String, before: String, after: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class BigDecimal(sp1: SourcePosition, sign: String, before: String, after: Option[String], power: Option[String], sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Int8 Literal (signed 8-bit integer).
@@ -1083,6 +1085,16 @@ object ParsedAst {
     case class Par(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * ParYield expression.
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param frags the [[ParYieldFragment]] fragments i.e. `a <- exp`.
+      * @param exp   the yield expression.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class ParYield(sp1: SourcePosition, frags: Seq[ParsedAst.ParYieldFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Lazy Expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -1168,45 +1180,6 @@ object ParsedAst {
       * @param sp2      the position of the last character in the expression.
       */
     case class FixpointQueryWithSelect(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], selects: Seq[ParsedAst.Expression], from: Seq[ParsedAst.Predicate.Body.Atom], whereExp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Reify Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param t   the type to reify.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class Reify(sp1: SourcePosition, t: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * ReifyBool Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param t   the type to reify.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class ReifyBool(sp1: SourcePosition, t: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * ReifyType Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param t   the type to reify.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class ReifyType(sp1: SourcePosition, t: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * ReifyEff Expression (Will eventually be replaced by other reify expressions).
-      *
-      * @param sp1   the position of the first character in the expression.
-      * @param exp1  the function expression on whose purity to match.
-      * @param ident the name to bind the pure function to.
-      * @param exp2  the then expression.
-      * @param exp3  the else expression.
-      * @param sp2   the position of the last character in the expression.
-      */
-    case class ReifyPurity(sp1: SourcePosition, exp1: ParsedAst.Expression, ident: Name.Ident, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Debug expression.
@@ -2338,4 +2311,13 @@ object ParsedAst {
 
   }
 
+  /**
+    * A ParYield fragment, i.e. `pattern <- exp`.
+    *
+    * @param sp1 the position of the first character in the fragment.
+    * @param pat the pattern.
+    * @param exp the expression.
+    * @param sp2 the position of the last character in the fragment.
+    */
+  case class ParYieldFragment(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: Expression, sp2: SourcePosition)
 }

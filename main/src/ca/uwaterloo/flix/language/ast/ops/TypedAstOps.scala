@@ -26,33 +26,7 @@ object TypedAstOps {
 
       case Expression.Hole(sym, tpe, loc) => Map(sym -> HoleContext(sym, tpe, env0))
 
-      case Expression.Unit(loc) => Map.empty
-
-      case Expression.Null(tpe, loc) => Map.empty
-
-      case Expression.True(loc) => Map.empty
-
-      case Expression.False(loc) => Map.empty
-
-      case Expression.Char(lit, loc) => Map.empty
-
-      case Expression.Float32(lit, loc) => Map.empty
-
-      case Expression.Float64(lit, loc) => Map.empty
-
-      case Expression.BigDecimal(lit, loc) => Map.empty
-
-      case Expression.Int8(lit, loc) => Map.empty
-
-      case Expression.Int16(lit, loc) => Map.empty
-
-      case Expression.Int32(lit, loc) => Map.empty
-
-      case Expression.Int64(lit, loc) => Map.empty
-
-      case Expression.BigInt(lit, loc) => Map.empty
-
-      case Expression.Str(lit, loc) => Map.empty
+      case Expression.Cst(_, _, _) => Map.empty
 
       case Expression.Lambda(fparam, exp, tpe, loc) =>
         val env1 = Map(fparam.sym -> fparam.tpe)
@@ -96,7 +70,7 @@ object TypedAstOps {
         val m = visitExp(matchExp, env0)
         rules.foldLeft(m) {
           case (macc, MatchRule(pat, guard, exp)) =>
-            macc ++ visitExp(guard, env0) ++ visitExp(exp, binds(pat) ++ env0)
+            macc ++ guard.map(visitExp(_, binds(pat) ++ env0)).getOrElse(Map.empty) ++ visitExp(exp, binds(pat) ++ env0)
         }
 
       case Expression.TypeMatch(matchExp, rules, _, _, _, _) =>
@@ -238,7 +212,7 @@ object TypedAstOps {
             macc ++ visitExp(exp, env0 ++ env1)
         }
 
-      case Expression.NewChannel(exp, _, _, _, _) => visitExp(exp, env0)
+      case Expression.NewChannel(exp, _, _, _, _, _) => visitExp(exp, env0)
 
       case Expression.GetChannel(exp, _, _, _, _) => visitExp(exp, env0)
 
@@ -256,6 +230,15 @@ object TypedAstOps {
       case Expression.Spawn(exp, _, _, _, _) => visitExp(exp, env0)
 
       case Expression.Par(exp, _) => visitExp(exp, env0)
+
+      case Expression.ParYield(frags, exp, _, _, _, _) =>
+        val boundEnv = frags.foldLeft(env0) {
+          case (acc, ParYieldFragment(p, _, _)) =>
+            binds(p) ++ acc
+        }
+        visitExp(exp, boundEnv) ++ frags.flatMap {
+          case ParYieldFragment(_, e, _) => visitExp(e, env0)
+        }
 
       case Expression.Lazy(exp, tpe, loc) => visitExp(exp, env0)
 
@@ -283,16 +266,6 @@ object TypedAstOps {
 
       case Expression.FixpointProject(_, exp, _, _, _, _) =>
         visitExp(exp, env0)
-
-      case Expression.Reify(_, _, _, _, _) =>
-        Map.empty
-
-      case Expression.ReifyType(_, _, _, _, _, _) =>
-        Map.empty
-
-      case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) =>
-        visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0)
-
     }
 
     /**
@@ -343,19 +316,7 @@ object TypedAstOps {
   def binds(pat0: Pattern): Map[Symbol.VarSym, Type] = pat0 match {
     case Pattern.Wild(tpe, loc) => Map.empty
     case Pattern.Var(sym, tpe, loc) => Map(sym -> tpe)
-    case Pattern.Unit(loc) => Map.empty
-    case Pattern.True(loc) => Map.empty
-    case Pattern.False(loc) => Map.empty
-    case Pattern.Char(lit, loc) => Map.empty
-    case Pattern.Float32(lit, loc) => Map.empty
-    case Pattern.Float64(lit, loc) => Map.empty
-    case Pattern.BigDecimal(lit, loc) => Map.empty
-    case Pattern.Int8(lit, loc) => Map.empty
-    case Pattern.Int16(lit, loc) => Map.empty
-    case Pattern.Int32(lit, loc) => Map.empty
-    case Pattern.Int64(lit, loc) => Map.empty
-    case Pattern.BigInt(lit, loc) => Map.empty
-    case Pattern.Str(lit, loc) => Map.empty
+    case Pattern.Cst(_, _, _) => Map.empty
     case Pattern.Tag(sym, pat, tpe, loc) => binds(pat)
     case Pattern.Tuple(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
       case (macc, elm) => macc ++ binds(elm)
@@ -380,20 +341,7 @@ object TypedAstOps {
     * Creates a set of all the sigs used in the given `exp`.
     */
   def sigSymsOf(exp: Expression): Set[Symbol.SigSym] = exp match {
-    case Expression.Unit(_) => Set.empty
-    case Expression.Null(_, _) => Set.empty
-    case Expression.True(_) => Set.empty
-    case Expression.False(_) => Set.empty
-    case Expression.Char(_, _) => Set.empty
-    case Expression.Float32(_, _) => Set.empty
-    case Expression.Float64(_, _) => Set.empty
-    case Expression.BigDecimal(_, _) => Set.empty
-    case Expression.Int8(_, _) => Set.empty
-    case Expression.Int16(_, _) => Set.empty
-    case Expression.Int32(_, _) => Set.empty
-    case Expression.Int64(_, _) => Set.empty
-    case Expression.BigInt(_, _) => Set.empty
-    case Expression.Str(_, _) => Set.empty
+    case Expression.Cst(_, _, _) => Set.empty
     case Expression.Wild(_, _) => Set.empty
     case Expression.Var(_, _, _) => Set.empty
     case Expression.Def(_, _, _) => Set.empty
@@ -410,7 +358,7 @@ object TypedAstOps {
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
     case Expression.Stm(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Discard(exp, _, _, _) => sigSymsOf(exp)
-    case Expression.Match(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ sigSymsOf(rule.guard))
+    case Expression.Match(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ rule.guard.toList.flatMap(sigSymsOf))
     case Expression.TypeMatch(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.Choose(exps, rules, _, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.Tag(_, exp, _, _, _, _) => sigSymsOf(exp)
@@ -445,12 +393,13 @@ object TypedAstOps {
     case Expression.GetStaticField(_, _, _, _, _) => Set.empty
     case Expression.PutStaticField(_, exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.NewObject(_, _, _, _, _, methods, _) => methods.flatMap(method => sigSymsOf(method.exp)).toSet
-    case Expression.NewChannel(exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.NewChannel(exp, _, _, _, _, _) => sigSymsOf(exp)
     case Expression.GetChannel(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.PutChannel(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.SelectChannel(rules, default, _, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.chan) ++ sigSymsOf(rule.exp)).toSet ++ default.toSet.flatMap(sigSymsOf)
     case Expression.Spawn(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Par(exp, _) => sigSymsOf(exp)
+    case Expression.ParYield(frags, exp, _, _, _, _) => sigSymsOf(exp) ++ frags.flatMap(f => sigSymsOf(f.exp))
     case Expression.Lazy(exp, _, _) => sigSymsOf(exp)
     case Expression.Force(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointConstraintSet(_, _, _, _) => Set.empty
@@ -460,9 +409,6 @@ object TypedAstOps {
     case Expression.FixpointFilter(_, exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointInject(exp, _, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointProject(_, exp, _, _, _, _) => sigSymsOf(exp)
-    case Expression.Reify(_, _, _, _, _) => Set.empty
-    case Expression.ReifyType(_, _, _, _, _, _) => Set.empty
-    case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
   }
 
   /**
@@ -494,33 +440,7 @@ object TypedAstOps {
     * Returns the free variables in the given expression `exp0`.
     */
   def freeVars(exp0: Expression): Map[Symbol.VarSym, Type] = exp0 match {
-    case Expression.Unit(_) => Map.empty
-
-    case Expression.Null(_, _) => Map.empty
-
-    case Expression.True(_) => Map.empty
-
-    case Expression.False(_) => Map.empty
-
-    case Expression.Char(_, _) => Map.empty
-
-    case Expression.Float32(_, _) => Map.empty
-
-    case Expression.Float64(_, _) => Map.empty
-
-    case Expression.BigDecimal(_, _) => Map.empty
-
-    case Expression.Int8(_, _) => Map.empty
-
-    case Expression.Int16(_, _) => Map.empty
-
-    case Expression.Int32(_, _) => Map.empty
-
-    case Expression.Int64(_, _) => Map.empty
-
-    case Expression.BigInt(_, _) => Map.empty
-
-    case Expression.Str(_, _) => Map.empty
+    case Expression.Cst(_, _, _) => Map.empty
 
     case Expression.Wild(_, _) => Map.empty
 
@@ -569,7 +489,7 @@ object TypedAstOps {
 
     case Expression.Match(exp, rules, _, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, MatchRule(pat, guard, exp)) => acc ++ (freeVars(guard) ++ freeVars(exp)) -- freeVars(pat).keys
+        case (acc, MatchRule(pat, guard, exp)) => acc ++ (guard.toList.flatMap(freeVars) ++ freeVars(exp)) -- freeVars(pat).keys
       }
 
     case Expression.TypeMatch(exp, rules, _, _, _, _) =>
@@ -697,7 +617,7 @@ object TypedAstOps {
         case (acc, JvmMethod(_, fparams, exp, _, _, _, _)) => acc ++ freeVars(exp) -- fparams.map(_.sym)
       }
 
-    case Expression.NewChannel(exp, _, _, _, _) =>
+    case Expression.NewChannel(exp, _, _, _, _, _) =>
       freeVars(exp)
 
     case Expression.GetChannel(exp, _, _, _, _) =>
@@ -717,6 +637,12 @@ object TypedAstOps {
 
     case Expression.Par(exp, _) =>
       freeVars(exp)
+
+    case Expression.ParYield(frags, exp, _, _, _, _) =>
+      val freeFragVars = frags.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, ParYieldFragment(p, e, _)) => acc ++ freeVars(p) ++ freeVars(e)
+      }
+      freeVars(exp) -- freeFragVars.keys
 
     case Expression.Lazy(exp, _, _) =>
       freeVars(exp)
@@ -746,15 +672,6 @@ object TypedAstOps {
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       freeVars(exp)
-
-    case Expression.Reify(_, _, _, _, _) =>
-      Map.empty
-
-    case Expression.ReifyType(_, _, _, _, _, _) =>
-      Map.empty
-
-    case Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, _, _) =>
-      (freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)) - sym
   }
 
   /**
@@ -763,19 +680,7 @@ object TypedAstOps {
   private def freeVars(pat0: Pattern): Map[Symbol.VarSym, Type] = pat0 match {
     case Pattern.Wild(_, _) => Map.empty
     case Pattern.Var(sym, tpe, _) => Map(sym -> tpe)
-    case Pattern.Unit(_) => Map.empty
-    case Pattern.True(_) => Map.empty
-    case Pattern.False(_) => Map.empty
-    case Pattern.Char(_, _) => Map.empty
-    case Pattern.Float32(_, _) => Map.empty
-    case Pattern.Float64(_, _) => Map.empty
-    case Pattern.BigDecimal(_, _) => Map.empty
-    case Pattern.Int8(_, _) => Map.empty
-    case Pattern.Int16(_, _) => Map.empty
-    case Pattern.Int32(_, _) => Map.empty
-    case Pattern.Int64(_, _) => Map.empty
-    case Pattern.BigInt(_, _) => Map.empty
-    case Pattern.Str(_, _) => Map.empty
+    case Pattern.Cst(_, _, _) => Map.empty
     case Pattern.Tag(_, pat, _, _) => freeVars(pat)
     case Pattern.Tuple(elms, _, _) =>
       elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {

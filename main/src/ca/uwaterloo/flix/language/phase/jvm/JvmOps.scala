@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, MonoType, Name, Rigidity, RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, MonoType, Name, RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.Finalize
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -65,7 +65,6 @@ object JvmOps {
 
     // Compound
     case MonoType.Array(_) => JvmType.Object
-    case MonoType.Channel(_) => JvmType.Object
     case MonoType.Lazy(_) => JvmType.Object
     case MonoType.Ref(_) => getRefClassType(tpe)
     case MonoType.Tuple(_) => getTupleClassType(tpe.asInstanceOf[MonoType.Tuple])
@@ -496,33 +495,7 @@ object JvmOps {
       * Returns the set of closures in the given expression `exp0`.
       */
     def visitExp(exp0: Expression): Set[ClosureInfo] = exp0 match {
-      case Expression.Unit(_) => Set.empty
-
-      case Expression.Null(_, _) => Set.empty
-
-      case Expression.True(_) => Set.empty
-
-      case Expression.False(_) => Set.empty
-
-      case Expression.Char(_, _) => Set.empty
-
-      case Expression.Float32(_, _) => Set.empty
-
-      case Expression.Float64(_, _) => Set.empty
-
-      case Expression.BigDecimal(_, _) => Set.empty
-
-      case Expression.Int8(_, _) => Set.empty
-
-      case Expression.Int16(_, _) => Set.empty
-
-      case Expression.Int32(_, _) => Set.empty
-
-      case Expression.Int64(_, _) => Set.empty
-
-      case Expression.BigInt(_, _) => Set.empty
-
-      case Expression.Str(_, _) => Set.empty
+      case Expression.Cst(_, _, _) => Set.empty
 
       case Expression.Var(_, _, _) => Set.empty
 
@@ -755,7 +728,6 @@ object JvmOps {
     case MonoType.Str => Type.Str
     case MonoType.Array(elm) => Type.mkArray(hackMonoType2Type(elm), Type.Impure, SourceLocation.Unknown)
     case MonoType.Lazy(tpe) => Type.mkLazy(hackMonoType2Type(tpe), SourceLocation.Unknown)
-    case MonoType.Channel(elm) => Type.mkChannel(hackMonoType2Type(elm), SourceLocation.Unknown)
     case MonoType.Native(clazz) => Type.mkNative(clazz, SourceLocation.Unknown)
     case MonoType.Ref(elm) => Type.mkRef(hackMonoType2Type(elm), Type.False, SourceLocation.Unknown)
     case MonoType.Arrow(targs, tresult) => Type.mkPureCurriedArrow(targs map hackMonoType2Type, hackMonoType2Type(tresult), SourceLocation.Unknown)
@@ -873,33 +845,7 @@ object JvmOps {
       * Returns the set of types which occur in the given expression `exp0`.
       */
     def visitExp(exp0: Expression): Set[MonoType] = (exp0 match {
-      case Expression.Unit(_) => Set.empty
-
-      case Expression.Null(_, _) => Set.empty
-
-      case Expression.True(_) => Set.empty
-
-      case Expression.False(_) => Set.empty
-
-      case Expression.Char(_, _) => Set.empty
-
-      case Expression.Float32(_, _) => Set.empty
-
-      case Expression.Float64(_, _) => Set.empty
-
-      case Expression.BigDecimal(_, _) => Set.empty
-
-      case Expression.Int8(_, _) => Set.empty
-
-      case Expression.Int16(_, _) => Set.empty
-
-      case Expression.Int32(_, _) => Set.empty
-
-      case Expression.Int64(_, _) => Set.empty
-
-      case Expression.BigInt(_, _) => Set.empty
-
-      case Expression.Str(_, _) => Set.empty
+      case Expression.Cst(_, _, _) => Set.empty
 
       case Expression.Var(_, _, _) => Set.empty
 
@@ -1017,10 +963,10 @@ object JvmOps {
         methods.foldLeft(Set.empty[MonoType]) {
           case (sacc, JvmMethod(_, fparams, clo, retTpe, _)) =>
             val fs = fparams.foldLeft(Set(retTpe)) {
-                case (acc, FormalParam(_, tpe)) => acc + tpe
-              }
+              case (acc, FormalParam(_, tpe)) => acc + tpe
+            }
             sacc ++ fs ++ visitExp(clo)
-      }
+        }
 
       case Expression.Spawn(exp, _, _) => visitExp(exp)
 
@@ -1102,7 +1048,6 @@ object JvmOps {
       case MonoType.Str => Set(tpe)
 
       case MonoType.Array(elm) => nestedTypesOf(elm) + tpe
-      case MonoType.Channel(elm) => nestedTypesOf(elm) + tpe
       case MonoType.Lazy(elm) => nestedTypesOf(elm) + tpe
       case MonoType.Ref(elm) => nestedTypesOf(elm) + tpe
       case MonoType.Tuple(elms) => elms.flatMap(nestedTypesOf).toSet + tpe
@@ -1140,36 +1085,10 @@ object JvmOps {
     }
 
     /**
-      * Returns the set of anonymouse classes which occur in the given expression `exp0`.
+      * Returns the set of anonymous classes which occur in the given expression `exp0`.
       */
     def visitExp(exp0: Expression): Set[Expression.NewObject] = (exp0 match {
-      case Expression.Unit(_) => Set.empty
-
-      case Expression.Null(_, _) => Set.empty
-
-      case Expression.True(_) => Set.empty
-
-      case Expression.False(_) => Set.empty
-
-      case Expression.Char(_, _) => Set.empty
-
-      case Expression.Float32(_, _) => Set.empty
-
-      case Expression.Float64(_, _) => Set.empty
-
-      case Expression.BigDecimal(_, _) => Set.empty
-
-      case Expression.Int8(_, _) => Set.empty
-
-      case Expression.Int16(_, _) => Set.empty
-
-      case Expression.Int32(_, _) => Set.empty
-
-      case Expression.Int64(_, _) => Set.empty
-
-      case Expression.BigInt(_, _) => Set.empty
-
-      case Expression.Str(_, _) => Set.empty
+      case Expression.Cst(_, _, _) => Set.empty
 
       case Expression.Var(_, _, _) => Set.empty
 

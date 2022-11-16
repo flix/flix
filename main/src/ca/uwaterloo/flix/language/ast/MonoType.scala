@@ -58,8 +58,6 @@ object MonoType {
 
   case class Array(tpe: MonoType) extends MonoType
 
-  case class Channel(tpe: MonoType) extends MonoType
-
   case class Lazy(tpe: MonoType) extends MonoType
 
   case class Ref(tpe: MonoType) extends MonoType

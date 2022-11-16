@@ -72,7 +72,7 @@ namespace RedBlackTree {
         pub def foldMap(f: v -> b \ ef, t: RedBlackTree[k, v]): b \ ef with CommutativeMonoid[b] = RedBlackTree.foldMap(_ -> f, t)
         override pub def isEmpty(t: RedBlackTree[k, v]): Bool = RedBlackTree.isEmpty(t)
         override pub def exists(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.exists(_ -> f, t)
-        override pub def forall(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.forall(_ -> f, t)
+        override pub def forAll(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.forAll(_ -> f, t)
     }
 
     instance Traversable[RedBlackTree[k]] {
@@ -378,23 +378,19 @@ namespace RedBlackTree {
     /// Traverses the tree `t` in parallel.
     ///
     @Parallel
-    pub def parExists(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool \ IO =
+    pub def parExists(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool =
         if (n <= 1)
             seqExists(f, t)
         else
             match t {
                 case Node(_, a, k, v, b) =>
-                    let (sL, rL) = Channel.buffered(1);
-                    let (sR, rR) = Channel.buffered(1);
                     if (f(k, v))
                         true
-                    else {
-                        spawn (Channel.send(parExists((n - 2) / 2, f, a), sL)); // We divide the rest of the threads as follows:
-                        spawn (Channel.send(parExists((n - 2) / 2, f, b), sR)); // We spawn two new threads leaving us with n - 2
-                        let a1 = Channel.recv(rL);                              // that we distribute over the two spanned threads.
-                        let b1 = Channel.recv(rR);
-                        a1 or b1
-                    }
+                    else
+                        par (
+                            l <- parExists((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
+                            r <- parExists((n - 2) / 2, f, b)  // We spawn two new threads leaving us with n - 2
+                        ) yield l or r                         // that we distribute over the two spanned threads.
                 case _ => false
             }
 
@@ -419,8 +415,8 @@ namespace RedBlackTree {
     /// Returns `true` if `t` is the empty tree.
     ///
     @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
-    pub def forall(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = match t {
-        case Node(_, a, k, v, b) => if (f(k, v)) forall(f, a) and forall(f, b) else false
+    pub def forAll(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = match t {
+        case Node(_, a, k, v, b) => if (f(k, v)) forAll(f, a) and forAll(f, b) else false
         case _                   => true
     }
 
@@ -434,23 +430,19 @@ namespace RedBlackTree {
     /// Traverses the tree `t` in parallel.
     ///
     @Parallel
-    pub def parForall(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool \ IO =
+    pub def parForAll(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool =
         if (n <= 1)
-            seqForall(f, t)
+            seqForAll(f, t)
         else
             match t {
                 case Node(_, a, k, v, b) =>
-                    let (sL, rL) = Channel.buffered(1);
-                    let (sR, rR) = Channel.buffered(1);
                     if (not f(k, v))
                         false
-                    else {
-                        spawn (Channel.send(parForall((n - 2) / 2, f, a), sL)); // We divide the rest of the threads as follows:
-                        spawn (Channel.send(parForall((n - 2) / 2, f, b), sR)); // We spawn two new threads leaving us with n - 2
-                        let a1 = Channel.recv(rL);                              // that we distribute over the two spanned threads.
-                        let b1 = Channel.recv(rR);
-                        a1 and b1
-                    }
+                    else
+                        par (
+                            l <- parForAll((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
+                            r <- parForAll((n - 2) / 2, f, b)  // We spawn two new threads leaving us with n - 2
+                        ) yield l and r                        // that we distribute over the two spanned threads.
                 case _ => false
             }
 
@@ -464,8 +456,8 @@ namespace RedBlackTree {
     /// Note that this is equivalent to `exists` but for performance reasons -- to avoid
     /// megamorphic calls -- we use a copy here.
     ///
-    def seqForall(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool = match t {
-        case Node(_, a, k, v, b) => if (f(k, v)) seqForall(f, a) and seqForall(f, b) else false
+    def seqForAll(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool = match t {
+        case Node(_, a, k, v, b) => if (f(k, v)) seqForAll(f, a) and seqForAll(f, b) else false
         case _                   => true
     }
 
@@ -473,8 +465,8 @@ namespace RedBlackTree {
     /// Applies `f` to every key-value pair of `t`.
     ///
     @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
-    pub def foreach(f: (k, v) -> Unit \ ef, t: RedBlackTree[k, v]): Unit \ ef = match t {
-        case Node(_, a, k, v, b) => foreach(f, a); f(k, v); foreach(f, b)
+    pub def forEach(f: (k, v) -> Unit \ ef, t: RedBlackTree[k, v]): Unit \ ef = match t {
+        case Node(_, a, k, v, b) => forEach(f, a); f(k, v); forEach(f, b)
         case _                   => ()
     }
 
@@ -627,15 +619,14 @@ namespace RedBlackTree {
     ///
     @ParallelWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 \ ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] \ ef =
-        let f1 = (r) -> f(r.k, r.v);
-        reifyEff(f1) {
-            case Pure(g) =>
+        typematch f {
+            case g: (k, v1) -> v2 \ {} =>
                 if (useParallelEvaluation(t))
-                    let h = (k, v) -> g({k = k, v = v});
-                    parMapWithKey(threads() - 1, h, t) as \ {}
+                    parMapWithKey(threads() - 1, g, t)
                 else
                     seqMapWithKey(f, t)
-            case _  => seqMapWithKey(f, t)
+            case g: (k, v1) -> v2 \ ef => seqMapWithKey(g, t)
+            case _: _ => unreachable!()
         }
 
     ///
@@ -646,7 +637,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    def parMapWithKey(n: Int32, f: (k, v1) -> v2, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] \ IO = {
+    def parMapWithKey(n: Int32, f: (k, v1) -> v2, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] = {
         if (n <= 1)
             parSeqMapWithKey(f, t)
         else
@@ -654,14 +645,11 @@ namespace RedBlackTree {
                 case Leaf                   => Leaf
                 case DoubleBlackLeaf        => DoubleBlackLeaf
                 case Node(c, a, k, v, b)    =>
-                    let (sL, rL) = Channel.buffered(1);
-                    let (sR, rR) = Channel.buffered(1);
-                    spawn (Channel.send(parMapWithKey((n - 2) / 2, f, a), sL)); // We divide the rest of the threads as follows:
-                    spawn (Channel.send(parMapWithKey((n - 2) / 2, f, b), sR)); // We spawn two new threads leaving us with n - 2
-                    let v1 = f(k, v);                                           // that we distribute over the two spanned threads.
-                    let a1 = Channel.recv(rL);
-                    let b1 = Channel.recv(rR);
-                    Node(c, a1, k, v1, b1)
+                    par (
+                        l  <- parMapWithKey((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
+                        r  <- parMapWithKey((n - 2) / 2, f, b); // We spawn two new threads leaving us with n - 2
+                        v1 <- f(k, v)                           // that we distribute over the two spanned threads.
+                    ) yield Node(c, l, k, v1, r)
             }
     }
 
@@ -705,7 +693,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parCount(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 \ IO =
+    pub def parCount(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 =
         if (n <= 1)
             seqCount(f, t)
         else
@@ -713,14 +701,11 @@ namespace RedBlackTree {
                 case Leaf                   => 0
                 case DoubleBlackLeaf        => 0
                 case Node(_, a, k, v, b)    =>
-                    let (sL, rL) = Channel.buffered(1);
-                    let (sR, rR) = Channel.buffered(1);
-                    spawn (Channel.send(parCount((n - 2) / 2, f, a), sL)); // We divide the rest of the threads as follows:
-                    spawn (Channel.send(parCount((n - 2) / 2, f, b), sR)); // We spawn two new threads leaving us with n - 2
-                    let v1 = if (f(k, v)) 1 else 0;                        // that we distribute over the two spanned threads.
-                    let a1 = Channel.recv(rL);
-                    let b1 = Channel.recv(rR);
-                    a1 + v1 + b1
+                    par (
+                        l  <- parCount((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
+                        r  <- parCount((n - 2) / 2, f, b); // We spawn two new threads leaving us with n - 2
+                        v1 <- if (f(k, v)) 1 else 0        // that we distribute over the two spanned threads.
+                    ) yield l + v1 + r
             }
 
     ///
@@ -772,7 +757,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parSumWith(n: Int32, f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 \ IO =
+    pub def parSumWith(n: Int32, f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 =
         if (n <= 1)
             seqSumWith(f, t)
         else
@@ -780,14 +765,11 @@ namespace RedBlackTree {
                 case Leaf                   => 0
                 case DoubleBlackLeaf        => 0
                 case Node(_, a, k, v, b)    =>
-                    let (sL, rL) = Channel.buffered(1);
-                    let (sR, rR) = Channel.buffered(1);
-                    spawn (Channel.send(parSumWith((n - 2) / 2, f, a), sL)); // We divide the rest of the threads as follows:
-                    spawn (Channel.send(parSumWith((n - 2) / 2, f, b), sR)); // We spawn two new threads leaving us with n - 2
-                    let v1 = f(k, v);                                        // that we distribute over the two spanned threads.
-                    let a1 = Channel.recv(rL);
-                    let b1 = Channel.recv(rR);
-                    a1 + v1 + b1
+                    par (
+                        l  <- parSumWith((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
+                        r  <- parSumWith((n - 2) / 2, f, b); // We spawn two new threads leaving us with n - 2
+                        v1 <- f(k, v)                        // that we distribute over the two spanned threads.
+                    ) yield l + v1 + r
             }
 
     ///
@@ -848,7 +830,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parProductWith(n: Int32, f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 \ IO = {
+    pub def parProductWith(n: Int32, f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 = {
         if (n <= 1)
             seqProductWith(f, t)
         else
@@ -856,14 +838,11 @@ namespace RedBlackTree {
                 case Leaf                   => 1
                 case DoubleBlackLeaf        => 1
                 case Node(_, a, k, v, b)    =>
-                    let (sL, rL) = Channel.buffered(1);
-                    let (sR, rR) = Channel.buffered(1);
-                    spawn (Channel.send(parProductWith((n - 2) / 2, f, a), sL)); // We divide the rest of the threads as follows:
-                    spawn (Channel.send(parProductWith((n - 2) / 2, f, b), sR)); // We spawn two new threads leaving us with n - 2
-                    let v1 = f(k, v);                                            // that we distribute over the two spanned threads.
-                    let a1 = Channel.recv(rL);
-                    let b1 = Channel.recv(rR);
-                    a1 * v1 * b1
+                par (
+                    l  <- parProductWith((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
+                    r  <- parProductWith((n - 2) / 2, f, b); // We spawn two new threads leaving us with n - 2
+                    v1 <- f(k, v)                            // that we distribute over the two spanned threads.
+                ) yield l * v1 * r
             }
     }
 
@@ -901,7 +880,7 @@ namespace RedBlackTree {
     ///
     pub def toMutDeque(r: Region[r], t: RedBlackTree[k, v]): MutDeque[(k, v), r] \ Write(r) =
         let d = new MutDeque(r);
-        RedBlackTree.foreach((k, v) -> let x = (k, v); MutDeque.pushBack(x, d), t);
+        forEach((k, v) -> let x = (k, v); MutDeque.pushBack(x, d), t);
         d
 
     ///
@@ -934,7 +913,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parMinimumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] \ IO =
+    pub def parMinimumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] =
         parLimitBy(n, (kl, vl, kr, vr) -> if (cmp(kl, vl, kr, vr) == LessThan) (kl, vl) else (kr, vr), t)
 
     ///
@@ -946,7 +925,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parMaximumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] \ IO =
+    pub def parMaximumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] =
         parLimitBy(n, (kl, vl, kr, vr) -> if (cmp(kl, vl, kr, vr) == GreaterThan) (kl, vl) else (kr, vr), t)
 
     ///
@@ -960,7 +939,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    def parLimitBy(n: Int32, cmp: (k, v, k, v) -> (k, v), t: RedBlackTree[k, v]): Option[(k, v)] \ IO =
+    def parLimitBy(n: Int32, cmp: (k, v, k, v) -> (k, v), t: RedBlackTree[k, v]): Option[(k, v)] =
         if (n <= 0)
             seqLimitBy(cmp, t)
         else
@@ -968,21 +947,16 @@ namespace RedBlackTree {
                 case Leaf                => None
                 case DoubleBlackLeaf     => None
                 case Node(_, a, k, v, b) =>
-                    let (sL, rL) = Channel.buffered(1);
-                    let (sR, rR) = Channel.buffered(1);
-                    spawn (Channel.send(parLimitBy((n - 2) / 2, cmp, a), sL));
-                    spawn (Channel.send(parLimitBy((n - 2) / 2, cmp, b), sR));
-                    let a1 = Channel.recv(rL);
-                    let res = match a1 {
-                        case None         => (k, v)
-                        case Some(kl, vl) => cmp(kl, vl, k, v)
-                    };
-                    let b1 = Channel.recv(rR);
-                    match b1 {
-                        case None         => Some(res)
-                        case Some(kr, vr) =>
-                            let (ks, vs) = res;
-                            Some(cmp(ks, vs, kr, vr))
+                    par (
+                        l <- parLimitBy((n - 2) / 2, cmp, a); // We divide the rest of the threads as follows:
+                        r <- parLimitBy((n - 2) / 2, cmp, b)  // We spawn two new threads leaving us with n - 2
+                    ) yield match (l, r) {                // that we distribute over the two spanned threads.
+                        case (None, None)                 => Some(k, v)
+                        case (None, Some(kr, vr))         => Some(cmp(k, v, kr, vr))
+                        case (Some(kl, vl), None)         => Some(cmp(kl, vl, k, v))
+                        case (Some(kl, vl), Some(kr, vr)) =>
+                            let (km, vm) = cmp(kl, vl, k, v); // Compare "lesser" keys first
+                            Some(cmp(km, vm, kr, vr))
                     }
             }
 
@@ -1027,7 +1001,7 @@ namespace RedBlackTree {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = new StringBuilder(r);
-        foreach((k, v) -> { append!(f(k, v), sb); append!(sep, sb) }, t);
+        forEach((k, v) -> { append!(f(k, v), sb); append!(sep, sb) }, t);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
 

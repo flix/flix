@@ -46,7 +46,7 @@ namespace Fixpoint {
             case RamStmt.Assign(lhs, rhs) =>
                 MutMap.put!(lhs, MutMap.getWithDefault(rhs, new MutMap(r), db), db)
             case RamStmt.Purge(ramSym) => MutMap.remove!(ramSym, db)
-            case RamStmt.Seq(stmts) => List.foreach(evalStmt(db), stmts)
+            case RamStmt.Seq(stmts) => List.forEach(evalStmt(db), stmts)
             case RamStmt.Until(test, body) =>
                 if (evalBoolExp(db, ([] @ r, [] @ r), test)) {
                     ()
@@ -69,7 +69,7 @@ namespace Fixpoint {
         match op {
             case RelOp.Search(RowVar.Index(i), ramSym, body) =>
                 let (tupleEnv, latEnv) = env;
-                MutMap.foreach(t -> l -> {
+                MutMap.forEach(t -> l -> {
                     tupleEnv[i] = t;
                     latEnv[i] = l;
                     evalOp(db, env, body)
@@ -120,7 +120,7 @@ namespace Fixpoint {
 
     def evalBoolExp(db: Database[v, r1], env: SearchEnv[v, r2], es: List[BoolExp[v]]): Bool \ { Read(r1), Read(r2) } with Order[v] =
         let r1 = Scoped.regionOf(db);
-        List.forall(exp -> match exp {
+        List.forAll(exp -> match exp {
             case BoolExp.Empty(ramSym) =>
                 MutMap.isEmpty(MutMap.getWithDefault(ramSym, new MutMap(r1), db))
             case BoolExp.NotMemberOf(terms, ramSym) =>

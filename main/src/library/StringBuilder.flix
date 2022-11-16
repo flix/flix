@@ -77,19 +77,19 @@ namespace StringBuilder {
     /// Appends each string in the array `a` to the string builder `sb`.
     ///
     pub def appendLines!(a: Array[String, r1], sb: StringBuilder[r2]): Unit \ { Read(r1), Write(r2) } =
-        Array.foreach(x -> appendLine!(x, sb), a)
+        Array.forEach(x -> appendLine!(x, sb), a)
 
     ///
     /// Appends `f(x)` for each x in the foldable collection `t` to the string builder `sb`.
     ///
     pub def appendLinesWith(f: a -> String & ef, t: t[a], sb: StringBuilder[r]): Unit \ { ef, Write(r) } with Foldable[t] =
-        Foldable.foreach(x -> appendLineWith!(f, x, sb), t)
+        Foldable.forEach(x -> appendLineWith!(f, x, sb), t)
 
     ///
     /// Appends `f(x)` for each x in array `a` to the string builder `sb`.
     ///
     pub def appendLinesWith!(f: a -> String \ ef, a: Array[a, r1], sb: StringBuilder[r2]): Unit \ { ef, Read(r1), Write(r2) } =
-        Array.foreach(x -> appendLineWith!(f, x, sb), a)
+        Array.forEach(x -> appendLineWith!(f, x, sb), a)
 
     ///
     /// Append the array of strings `a` separating each pair of string with `sep` to the StringBuilder `sb`.
@@ -102,7 +102,7 @@ namespace StringBuilder {
             } else {
                 appendString!(s, sb)
             };
-       Array.foreachWithIndex(append1!, a)
+       Array.forEachWithIndex(append1!, a)
 
     ///
     /// Returns an iterator over `sb`.

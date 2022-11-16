@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, TypeConstraint}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
@@ -287,33 +286,7 @@ object SemanticTokensProvider {
 
     case Expression.Hole(_, _, _) => Iterator.empty
 
-    case Expression.Unit(_) => Iterator.empty
-
-    case Expression.Null(_, _) => Iterator.empty
-
-    case Expression.True(_) => Iterator.empty
-
-    case Expression.False(_) => Iterator.empty
-
-    case Expression.Char(_, _) => Iterator.empty
-
-    case Expression.Float32(_, _) => Iterator.empty
-
-    case Expression.Float64(_, _) => Iterator.empty
-
-    case Expression.BigDecimal(_, _) => Iterator.empty
-
-    case Expression.Int8(_, _) => Iterator.empty
-
-    case Expression.Int16(_, _) => Iterator.empty
-
-    case Expression.Int32(_, _) => Iterator.empty
-
-    case Expression.Int64(_, _) => Iterator.empty
-
-    case Expression.BigInt(_, _) => Iterator.empty
-
-    case Expression.Str(_, _) => Iterator.empty
+    case Expression.Cst(_, _, _) => Iterator.empty
 
     case Expression.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp)
@@ -358,7 +331,7 @@ object SemanticTokensProvider {
       val m = visitExp(matchExp)
       rules.foldLeft(m) {
         case (acc, MatchRule(pat, guard, exp)) =>
-          acc ++ visitPat(pat) ++ visitExp(guard) ++ visitExp(exp)
+          acc ++ visitPat(pat) ++ guard.toList.flatMap(visitExp) ++ visitExp(exp)
       }
 
     case Expression.TypeMatch(matchExp, rules, _, _, _, _) =>
@@ -495,7 +468,7 @@ object SemanticTokensProvider {
         case (acc, m) => acc ++ visitJvmMethod(m)
       }
 
-    case Expression.NewChannel(exp, _, _, _, _) => visitExp(exp)
+    case Expression.NewChannel(exp, _, _, _, _, _) => visitExp(exp)
 
     case Expression.GetChannel(exp, _, _, _, _) => visitExp(exp)
 
@@ -513,6 +486,13 @@ object SemanticTokensProvider {
     case Expression.Spawn(exp, _, _, _, _) => visitExp(exp)
 
     case Expression.Par(exp, _) => visitExp(exp)
+
+    case Expression.ParYield(frags, exp, _, _, _, _) =>
+      val e0 = visitExp(exp)
+      frags.foldLeft(e0) {
+        case (acc, ParYieldFragment(p, e, _)) =>
+          acc ++ visitPat(p) ++ visitExp(e)
+      }
 
     case Expression.Lazy(exp, _, _) => visitExp(exp)
 
@@ -540,15 +520,6 @@ object SemanticTokensProvider {
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       visitExp(exp)
-
-    case Expression.Reify(_, _, _, _, _) => Iterator.empty
-
-    case Expression.ReifyType(t, _, _, _, _, _) => visitType(t)
-
-    case Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, _, _) =>
-      val o = getSemanticTokenType(sym, exp1.tpe)
-      val t = SemanticToken(o, Nil, sym.loc)
-      Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
   }
 
   /**
@@ -570,31 +541,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
-    case Pattern.Unit(_) => Iterator.empty
-
-    case Pattern.True(_) => Iterator.empty
-
-    case Pattern.False(_) => Iterator.empty
-
-    case Pattern.Char(_, _) => Iterator.empty
-
-    case Pattern.Float32(_, _) => Iterator.empty
-
-    case Pattern.Float64(_, _) => Iterator.empty
-
-    case Pattern.BigDecimal(_, _) => Iterator.empty
-
-    case Pattern.Int8(_, _) => Iterator.empty
-
-    case Pattern.Int16(_, _) => Iterator.empty
-
-    case Pattern.Int32(_, _) => Iterator.empty
-
-    case Pattern.Int64(_, _) => Iterator.empty
-
-    case Pattern.BigInt(_, _) => Iterator.empty
-
-    case Pattern.Str(_, _) => Iterator.empty
+    case Pattern.Cst(_, _, _) => Iterator.empty
 
     case Pattern.Tag(Ast.CaseSymUse(_, loc), pat, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
@@ -656,7 +603,8 @@ object SemanticTokensProvider {
     case TypeConstructor.Int64 => true
     case TypeConstructor.BigInt => true
     case TypeConstructor.Str => true
-    case TypeConstructor.Channel => true
+    case TypeConstructor.Sender => true
+    case TypeConstructor.Receiver => true
     case TypeConstructor.Lazy => true
     case TypeConstructor.Enum(_, _) => true
     case TypeConstructor.Native(_) => true

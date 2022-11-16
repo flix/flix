@@ -50,7 +50,7 @@ class TestRedundancy extends FunSuite with TestUtils {
            |def f(): Int32 \ IO =
            |    let (_, r) = Channel.buffered(1);
            |    select {
-           |        case _x <- r => _x
+           |        case _x <- recv(r) => _x
            |    }
            |
        """.stripMargin
@@ -260,8 +260,8 @@ class TestRedundancy extends FunSuite with TestUtils {
         |    let (s, r) = Channel.buffered(1);
         |    Channel.send(456, s);
         |    select {
-        |        case y <- r => y
-        |        case x <- r => x
+        |        case y <- recv(r) => y
+        |        case x <- recv(r) => x
         |    }
         |
       """.stripMargin
@@ -741,7 +741,7 @@ class TestRedundancy extends FunSuite with TestUtils {
            |def f(): Int32 \ IO =
            |    let (_, r) = Channel.unbuffered();
            |    select {
-           |        case x <- r => 123
+           |        case x <- recv(r) => 123
            |    }
            |
        """.stripMargin
@@ -755,8 +755,8 @@ class TestRedundancy extends FunSuite with TestUtils {
            |def f(): Int32 \ IO =
            |    let (_, r) = Channel.unbuffered();
            |    select {
-           |        case x <- r => x
-           |        case x <- r => 123
+           |        case x <- recv(r) => x
+           |        case x <- recv(r) => 123
            |    }
            |
        """.stripMargin
@@ -1277,5 +1277,57 @@ class TestRedundancy extends FunSuite with TestUtils {
 
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.RedundantUpcast](result)
+  }
+
+  test("TestParYield.01") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    let g = () -> 1;
+        |    par (g <- 5) yield g
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
+  test("TestParYield.02") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    par (a <- 5; a <- 1) yield a
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
+  test("TestParYield.03") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    let a = 1;
+        |    par (a <- 5) yield a
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
+  test("TestParYield.04") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    par (a <- 5) yield { let a = 4; a }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
+  test("TestParYield.05") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    par (a <- 5) yield 1
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedVarSym](result)
   }
 }
