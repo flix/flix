@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.errors.TypeError.MismatchedTypes
+import ca.uwaterloo.flix.language.errors.TypeError.{MismatchedTypes, UnexpectedType}
 import org.scalatest.{BeforeAndAfter, FunSuite}
 
 import java.nio.file.Path
@@ -168,7 +168,7 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |pub def f(x: Int32): Bool = x == 0
          |
          |""".stripMargin)
-    expectError[MismatchedTypes](flix.compile())
+    expectError[UnexpectedType](flix.compile())
   }
 
   test("Incremental.05") {
