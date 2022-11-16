@@ -232,9 +232,8 @@ namespace Graph {
     /// `(b, a)` in `g`, i.e. An undirected graph in directed representation.
     ///
     pub def toUndirected(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Boxable[t] = {
-        g |>
-            Foldable.toSet |>
-            Set.flatMap(match (a, b) -> Set#{(a, b), (b, a)})
+        g |> Foldable.toSet
+          |> Set.flatMap(match (a, b) -> Set#{(a, b), (b, a)})
     }
 
     ///
@@ -242,25 +241,47 @@ namespace Graph {
     /// `(b, w, a)` in `g`, i.e. An undirected graph in directed representation.
     ///
     pub def toUndirectedWeighted(g: m[(t, Int32, t)]): Set[(t, Int32, t)] with Foldable[m], Boxable[t] = {
-        g |>
-            Foldable.toSet |>
-            Set.flatMap(match (a, w, b) -> Set#{(a, w, b), (b, w, a)})
+        g |> Foldable.toSet
+          |> Set.flatMap(match (a, w, b) -> Set#{(a, w, b), (b, w, a)})
     }
 
+    ///
+    /// Returns the nodes that are at most `limit` (inclusive) distance away
+    /// from `src` in `g`.
+    /// Negative `limit` is interpreted as `0`.
+    ///
     pub def withinDistanceOf(src: t, limit: Int32, g: m[(t, Int32, t)]): Set[t] with Foldable[m], Boxable[t] = {
-            let edges = inject g into Edge;
-            let dists = #{
-                Dist(src; Down(0)).
-                Dist(y; d + Down(w)) :- Dist(x; d), Edge(x, w, y), if destructDown(d)+w <= limit.
-            };
-            let nodes = #{
-                Node(x) :- fix Dist(x; _).
-            };
-            let res = query edges, dists, nodes
-                      select x
-                      from Node(x);
-            List.toSet(res)
-        }
+        let edges = inject g into Edge;
+        let nodes = #{
+            Dist(src; Down(0)).
+            Dist(y; d + Down(w)) :- Dist(x; d), Edge(x, w, y),
+                                    if destructDown(d) + w <= limit.
+            Node(x) :- fix Dist(x; _).
+        };
+        let res = query edges, nodes
+                  select x
+                  from Node(x);
+        List.toSet(res)
+    }
+
+    ///
+    /// Returns the nodes that are at most `limit` (inclusive) edges away
+    /// from `src` in `g`.
+    /// Negative `limit` is interpreted as `0`.
+    ///
+    pub def withinEdgesOf(src: t, limit: Int32, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] = {
+        let edges = inject g into Edge;
+        let nodes = #{
+            Dist(src; Down(0)).
+            Dist(y; d + Down(1)) :- Dist(x; d), Edge(x, y),
+                                    if destructDown(d) + 1 <= limit.
+            Node(x) :- fix Dist(x; _).
+        };
+        let res = query edges, nodes
+                  select x
+                  from Node(x);
+        List.toSet(res)
+    }
 
     ///
     /// Returns the topologically sorted nodes (all edges go from lower indices
@@ -293,6 +314,10 @@ namespace Graph {
         MutList.toList(ml)
     }
 
+    ///
+    /// Returns the degree of each node in `g` (the number of times a
+    /// node exists as an endpoint of an edge).
+    ///
     pub def degrees(g: m[(t, t)]): Map[t, Int32] with Foldable[m], Boxable[t] = {
         use Option.{getWithDefault, map};
         let edges = inject g into Edge;
@@ -311,6 +336,10 @@ namespace Graph {
         List.toMap(res)
     }
 
+    ///
+    /// Returns a mapping from distances to the set of nodes which shortest
+    /// path from `src` in `g` is of that length.
+    ///
     pub def frontiersFrom(src: t, g: m[(t, t)]): Map[Int32, Set[t]] with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
         let frontiers = #{
@@ -341,7 +370,8 @@ namespace Graph {
     }
 
     ///
-    /// Returns pairs `(x, cut, y)` such that `x` cannot reach without using `cut`.
+    /// Returns pairs `(x, cut, y)` such that `x` cannot reach without
+    /// using `cut`.
     ///
     pub def cutPoints(g: m[(t, t)]): Set[(t, t, t)] with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
@@ -401,6 +431,7 @@ namespace Graph {
         List.toMap(res)
     }
 
+    ///
     /// Returns a Graphviz (DOT) string of the graph `g`.
     /// The strings of nodes are put in quotes with existing quotes escaped,
     /// otherwise DOT identifier validity is up to the caller.
@@ -432,9 +463,11 @@ namespace Graph {
         StringBuilder.toString(sb)
     }
 
+
     // -------------------------------------------------------------------------
     // Private Functions -------------------------------------------------------
     // -------------------------------------------------------------------------
+
 
     ///
     /// Wraps `toString(id)` with double quotes and escapes any existing quotes
