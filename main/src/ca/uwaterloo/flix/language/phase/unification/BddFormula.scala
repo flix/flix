@@ -22,12 +22,15 @@ import ca.uwaterloo.flix.util.collection.Bimap
 import scala.collection.immutable.SortedSet
 import org.sosy_lab.pjbdd.api.{Builders, DD}
 import org.sosy_lab.pjbdd.util.parser.DotExporter
+
 import java.util.concurrent.locks.ReentrantLock
+import scala.sys.exit
 
 object BddFormula {
 
   val creator = Builders.bddBuilder().build()
   val lock = new ReentrantLock()
+  val exp = new DotExporter
 
   class BddFormula(val dd: DD) {
     def getDD(): DD = dd
@@ -89,8 +92,8 @@ object BddFormula {
     /**
       * Returns a representation of the formula `f1 == f2`.
       */
-    override def mkEq(f1: BddFormula, f2: BddFormula): BddFormula = {
-      new BddFormula(creator.makeXnor(f1.getDD(), f2.getDD()))
+    override def mkXor(f1: BddFormula, f2: BddFormula): BddFormula = {
+      new BddFormula(creator.makeXor(f1.getDD(), f2.getDD()))
     }
 
     /**
@@ -99,6 +102,7 @@ object BddFormula {
     //TODO: Optimize!
     override def freeVars(f: BddFormula): SortedSet[Int] = {
       freeVarsAux(f.getDD())
+
     }
 
     private def freeVarsAux(dd: DD): SortedSet[Int] = {
@@ -114,110 +118,117 @@ object BddFormula {
     /**
       * Applies the function `fn` to every variable in `f`.
       */
-      //TODO: Check correctness
     override def map(f: BddFormula)(fn: Int => BddFormula): BddFormula = {
-      val exporter = new DotExporter()
-        lock.lock()
+      val creator = Builders.bddBuilder().build()
+      val x1 = creator.makeIthVar(1)
+      val x2 = creator.makeIthVar(2)
+      val bot = creator.makeFalse()
+      val ite_pjbdd = creator.makeIte(x1, x2, bot)
+      val ite_formula = creator.makeOr(creator.makeAnd(x1, x2), creator.makeAnd(creator.makeNot(x1), bot))
 
-        val creator = Builders.bddBuilder().build()
+      println("If x1 then x2 else false by formula")
+      println(exp.bddToString(ite_formula))
 
-        val x1 = creator.makeIthVar(1)
-        val notx1 = creator.makeNot(x1)
-        val x2 = creator.makeIthVar(2)
+      println("If x1 then x2 else false by PJBDD")
+      println(exp.bddToString(ite_pjbdd))
 
-        val nand = creator.makeNand(x1,x2)
-        val comp = creator.makeCompose(nand, 1, notx1)
-
-        println("Original f: x1 NAND x2")
-        println(exporter.bddToString(nand))
+      exit(-1)
 
 
-        println("f|1<-x1 using makeCompose")
-        println(exporter.bddToString(comp))
+      //lock.lock()
+      println("f")
+      println(exp.bddToString(f.getDD()))
+      val res = new BddFormula(mapAux(f.getDD())(fn))
+      println("mapped f")
+      println(exp.bddToString(res.getDD()))
+      println()
+      //lock.unlock()
+      res
+    }
 
-        val and1 : DD = creator.makeAnd(creator.makeNot(notx1), creator.restrict(nand, 1, false))
-        val and2 : DD = creator.makeAnd(notx1, creator.restrict(nand, 1, true))
-        val or = creator.makeOr(and1, and2)
+    private def mapAux(dd: DD)(fn: Int => BddFormula): DD = {
+      if (dd.isLeaf()) {
+        dd
+      } else {
+        val currentVar = dd.getVariable()
+        val substDD = fn(currentVar).getDD()
 
-        println("f|1<-x1 using formula")
-        println(exporter.bddToString(or))
+        println(currentVar + " -> ")
+        println(exp.bddToString(substDD))
 
-        System.exit(-1)
-        lock.unlock()
+        val lowRes = mapAux(dd.getLow())(fn)
+        val highRes = mapAux(dd.getHigh())(fn)
+        val res = creator.makeIte(substDD, highRes, lowRes)
 
+        println("result after subst on " + currentVar)
+        println(exp.bddToString(res))
+
+        res
+      }
+    }
+
+    //TODO: Check correctness
+    /*override def map(f: BddFormula)(fn: Int => BddFormula): BddFormula = {
       if(f.getDD().isLeaf()) {
         f
       } else {
         val varSet = freeVars(f)
-        println("freeVars in map: " + varSet.toString())
+        var varSetFull = varSet
+        for(var_i <- varSet) {
+          val varSetF = freeVars(fn(var_i))
+          varSetFull = varSetFull ++ varSetF
+        }
 
         //make x -> x' map
-        val maxVar = varSet.max
-        val noVars = varSet.size
+        val maxVar = varSetFull.max
+        val noVars = varSetFull.size
         val newVarNames = (maxVar+1 to maxVar+noVars).toList
-        println("New names for vars: " + newVarNames.toString())
-        val varMap = varSet.zip(newVarNames).foldLeft(Bimap.empty[Int, Int]) {
+        val varMap = varSetFull.zip(newVarNames).foldLeft(Bimap.empty[Int, Int]) {
           case (macc, (old_x, new_x)) => macc + (old_x -> new_x)
         }
-        println("Bimap: " + varMap.toString())
 
         var res = f.getDD()
-
-        println("Original DD")
-        println(exporter.bddToString(res))
 
         //for each i in varSet create BddFormula' with primed variables
         //and compose f with BddFormula'
         for (var_i <- varSet) {
           val subst = fn(var_i)
           val substVarSet = freeVars(subst)
-
-          println("substVarSet before: " + substVarSet.toString())
           var substDD = subst.getDD()
-          println("SubstDD before")
-          println(exporter.bddToString(substDD))
 
-          //create the substitute BDD with the new names
-          for (var_j <- substVarSet) {
-            val j_prime = varMap.getForward(var_j) match {
-              case Some(j) => j
-              case None => ??? //should never happen
+          if(substDD.equals(creator.makeTrue())) {
+            res = creator.restrict(res, var_i, true)
+          } else if(substDD.equals(creator.makeFalse())) {
+            res = creator.restrict(res, var_i, false)
+          } else if(!substDD.equals(creator.makeIthVar(var_i))) {
+
+            //create the substitute BDD with the new names
+            for (var_j <- substVarSet) {
+              val j_prime = varMap.getForward(var_j) match {
+                case Some(j) => j
+                case None => ??? //should never happen
+              }
+              substDD = creator.makeReplace(substDD, creator.makeIthVar(var_j), creator.makeIthVar(j_prime))
             }
-            substDD = creator.makeReplace(substDD, creator.makeIthVar(var_j), creator.makeIthVar(j_prime))
-          }
-          println("substVarSet after: " + freeVarsAux(substDD).toString())
-          println("SubstDD after")
-          println(exporter.bddToString(substDD))
+            res = creator.makeCompose(res, var_i, substDD)
 
-          res = creator.makeCompose(res, var_i, substDD)
-          println("DD after substitution on " + var_i)
-          println(exporter.bddToString(res))
+          }
         }
 
         val varSetPrime = freeVarsAux(res)
-        println("varSetPrime: " + varSetPrime.toString())
 
         //for each x' map back to x in f
         for (var_i_prime <- varSetPrime) {
-          val old_i = varMap.getBackward(var_i_prime) match {
-            case Some(i) => i
-            case None => ??? //should never happen
+          res = varMap.getBackward(var_i_prime) match {
+            case Some(old_i) => creator.makeReplace(res, creator.makeIthVar(var_i_prime), creator.makeIthVar(old_i))
+            case None => res //if the variable was never replaced
           }
-          res = creator.makeReplace(res, creator.makeIthVar(var_i_prime), creator.makeIthVar(old_i))
-          println("DD after substitution on " + var_i_prime)
-          println(exporter.bddToString(res))
         }
 
-        println("varSetRes before return: " + freeVarsAux(res).toString())
-        println("res before return")
         val resForm = new BddFormula(res)
-        println(exporter.bddToString(res))
-
-        println("")
-        println("")
         resForm
       }
-    }
+    }*/
 
     /**
       * Returns a representation equivalent to `f` (but potentially smaller).

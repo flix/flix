@@ -13,11 +13,6 @@ pub enum List[t] {
 namespace List {
 
     ///
-    /// Alias for `scanLeft`.
-    ///
-    pub def scan(f: (b, a) -> b \ ef, s: b, l: List[a]): List[b] \ ef = scanLeft(f, s, l)
-
-    ///
     /// Accumulates the result of applying `f` to `l` going left to right.
     ///
     /// That is, the result is of the form: `s :: f(s, x1) :: f(f(s, x1), x2)  ...`.
