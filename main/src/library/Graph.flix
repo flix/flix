@@ -99,13 +99,15 @@ namespace Graph {
     }
 
     ///
-    /// Returns the inverser graph of `g`. For all edge endpoints in `g` the new
+    /// Returns the inverse graph of `g`. For all edge endpoints in `g` the new
     /// graph contains exactly those edges that are not in `g`.
+    ///
+    /// No self-edges are returned no matter the input.
     ///
     pub def invert(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
         let inverse = #{
-            InvEdge(x, y) :- Node(x), Node(y), not Edge(x, y).
+            InvEdge(x, y) :- Node(x), Node(y), not Edge(x, y), if x != y.
         };
         let res = query nodes(), edges, inverse
                   select (x, y)
@@ -285,8 +287,10 @@ namespace Graph {
 
     ///
     /// Returns the topologically sorted nodes (all edges go from lower indices
-    /// to higher indices of the list). Cyclic nodes are removed from the result
-    /// and unordered nodes are returned in their own sorting.
+    /// to higher indices of the list). Unordered nodes are consistently
+    /// (not intuitively) ordered.
+    ///
+    /// Should not be used on graphs with cycles.
     ///
     pub def topologicalSort(g: m[(t, t)]): List[t] with Foldable[m], Boxable[t] = region r {
         // https://github.com/souffle-lang/benchmarks/tree/master/benchmarks/topological_ordering
@@ -304,7 +308,7 @@ namespace Graph {
             // All "possible" indices
             Index(x; 0) :- Node(x), not EdgeSecond(x), EdgeFirst(x).
             Index(x; i+1) :- Before(y, x), not Before(x, y),
-                               After(x, y), Indices(y, i).
+                               After(x, y), Index(y; i).
         };
         let res = query edges, nodes(), topSort select (x, i) from Index(x; i);
         let ml = new MutList(r);
@@ -325,8 +329,8 @@ namespace Graph {
             // Careful use of option type here to make sure the empty set is not
             // the bottom lattice element. that would exclude degrees of zero.
             TouchSet(n; Some(Set#{})) :- Node(n).
-            TouchSet(n; Some(Set#{other})) :- Edge(other, n).
-            TouchSet(n; Some(Set#{other})) :- Edge(n, other).
+            TouchSet(n; Some(Set#{(other, n)})) :- Edge(other, n).
+            TouchSet(n; Some(Set#{(n, other)})) :- Edge(n, other).
             Degree(n, s |> map(Set.size) |> getWithDefault(0)) :-
                 fix TouchSet(n; s).
         };
@@ -347,8 +351,8 @@ namespace Graph {
             Dist(y; n + Down(1)) :- Dist(x; n), Edge(x, y).
 
             // Find the max layer
-            Frontiers(;Set#{n}) :- Dist(_; n).
-            MaxFrontier(Set.size(s)) :- fix Frontiers(;s).
+            Frontiers(;Set#{destructDown(n)}) :- fix Dist(_; n).
+            MaxFrontier(Set.maximum(s) |> Option.getWithDefault(0)) :- fix Frontiers(;s).
 
             // Initialize all layers (with non-bot element).
             Frontier(0; Some(Set#{})) :- MaxFrontier(m), if m > 0.
@@ -370,14 +374,24 @@ namespace Graph {
     }
 
     ///
-    /// Returns pairs `(x, cut, y)` such that `x` cannot reach without
-    /// using `cut`.
+    /// Returns pairs `(x, cut, y)` such that `x` cannot reach `y` without
+    /// using `cut` (and `cut` is not `x` or `y`) (and `x` is not `y`).
+    ///
+    /// There will at most be one result for each pair of nodes (which will be
+    /// the maximum node of the respective options).
     ///
     pub def cutPoints(g: m[(t, t)]): Set[(t, t, t)] with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
+        def unpack(opt) = match opt {
+            case Some(v) => v
+            case None => unreachable!()
+        };
         let cuts = #{
-            CutPoint(x, cut, y) :- Reachable(x, y), Node(cut),
-                                   not Circumvent(x, cut, y).
+            CutPoint(x, Set.maximum(cut) |> unpack, y) :-
+                fix CutPointSet(x, y; cut), if not Set.isEmpty(cut).
+            CutPointSet(x, y; Set#{cut}) :- Reachable(x, y), Node(cut),
+                                            not Circumvent(x, cut, y),
+                                            if x != cut, if y != cut, if x != y.
             Circumvent(x, cut, y) :- Node(cut), Edge(x, y),
                                      if x != cut, if y != cut.
             Circumvent(x, cut, y) :- Circumvent(x, cut, z), Edge(z, y),
