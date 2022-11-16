@@ -206,15 +206,6 @@ object Ast {
     }
 
     /**
-      * An annotation that indicates the space complexity of a function definition.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Space(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Space"
-    }
-
-    /**
       * An AST node that represents a `@Test` annotation.
       *
       * A function marked with `test` is evaluated as part of the test framework.
@@ -223,15 +214,6 @@ object Ast {
       */
     case class Test(loc: SourceLocation) extends Annotation {
       override def toString: String = "@Test"
-    }
-
-    /**
-      * An annotation that indicates the time complexity of a function definition.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Time(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Time"
     }
 
     /**

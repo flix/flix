@@ -155,7 +155,6 @@ namespace Option {
     ///
     /// Returns `true` iff `o` is `None`.
     ///
-    @Time(1) @Space(1)
     pub def isEmpty(o: Option[a]): Bool = match o {
         case None    => true
         case Some(_) => false
@@ -164,7 +163,6 @@ namespace Option {
     ///
     /// Returns `v` if `o` is `Some(v).` Otherwise returns `d`.
     ///
-    @Time(1) @Space(1)
     pub def getWithDefault(d: a, o: Option[a]): a = match o {
         case None    => d
         case Some(v) => v
@@ -173,7 +171,6 @@ namespace Option {
     ///
     /// Returns `o` if it is `Some(v)`. Otherwise returns `default`.
     ///
-    @Time(1) @Space(1)
     pub def withDefault(default: {default = Option[a]}, o: Option[a]): Option[a] = match o {
         case None    => default.default
         case Some(_) => o
@@ -182,7 +179,6 @@ namespace Option {
     ///
     /// Returns `Some(to)` if `o` is `Some(from)`. Otherwise returns `o`.
     ///
-    @Time(1) @Space(1)
     pub def replace(from: {from = a}, to: {to = a}, o: Option[a]): Option[a] with Eq[a] = match o {
         case None    => o
         case Some(v) => Some(if (v == from.from) to.to else v)
@@ -191,7 +187,6 @@ namespace Option {
     ///
     /// Returns `true` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `false`.
     ///
-    @Time(time(f)) @Space(space(f))
     pub def exists(f: a -> Bool \ ef, o: Option[a]): Bool \ ef = match o {
         case None    => false
         case Some(v) => f(v)
@@ -202,7 +197,6 @@ namespace Option {
     ///
     /// Otherwise returns `false`.
     ///
-    @Time(time(f)) @Space(space(f))
     pub def forAll(f: a -> Bool \ ef, o: Option[a]): Bool \ ef = match o {
         case None    => true
         case Some(v) => f(v)
@@ -211,7 +205,6 @@ namespace Option {
     ///
     /// Returns `o` if `o` is `Some(v)` and the predicate `f(v)` is true. Otherwise returns `None`.
     ///
-    @Time(time(f)) @Space(space(f))
     pub def filter(f: a -> Bool \ ef, o: Option[a]): Option[a] \ ef = match o {
         case None    => None
         case Some(v) => if (f(v)) o else None
@@ -220,7 +213,6 @@ namespace Option {
     ///
     /// Returns `Some(f(v))` if `o` is `Some(v)`. Otherwise returns `None`.
     ///
-    @Time(time(f)) @Space(space(f))
     pub def map(f: a -> b \ ef, o: Option[a]): Option[b] \ ef = match o {
         case None    => None
         case Some(v) => Some(f(v))
@@ -255,7 +247,6 @@ namespace Option {
     ///
     /// Returns `1` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `0`.
     ///
-    @Time(time(f)) @Space(space(f))
     pub def count(f: a -> Bool \ ef, o: Option[a]): Int32 \ ef = match o {
         case None    => 0
         case Some(v) => if (f(v)) 1 else 0
@@ -290,7 +281,6 @@ namespace Option {
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f)) @Space(space(f))
     pub def find(f: a -> Bool, o: Option[a]): Option[a] = match o {
         case None    => None
         case Some(v) => if (f(v)) o else None
@@ -299,7 +289,6 @@ namespace Option {
     ///
     /// Returns `v` if `o` is `Some(v)`. Otherwise returns `None`.
     ///
-    @Time(1) @Space(1)
     pub def flatten(o: Option[Option[a]]): Option[a] = match o {
         case None    => None
         case Some(v) => v
@@ -345,7 +334,6 @@ namespace Option {
     ///
     /// Returns `Some(v1 :: v2 :: ... :: vn)` if each of `xs_i` is `Some(v_i)`. Otherwise returns `None`.
     ///
-    @Time(List.length(l)) @Space(List.length(l))
     pub def sequence(l: List[Option[a]]): Option[List[a]] =
         def loop(ll, k) = match ll {
             case Nil            => k(Nil)
@@ -422,7 +410,6 @@ namespace Option {
     ///
     /// Returns a one-element list of the value `v` if `o` is `Some(v)`. Otherwise returns the empty list.
     ///
-    @Time(1) @Space(1)
     pub def toList(o: Option[a]): List[a] = match o {
         case None    => Nil
         case Some(v) => v :: Nil
@@ -431,7 +418,6 @@ namespace Option {
     ///
     /// Returns a one-element set of the value `v` if `o` is `Some(v)`. Otherwise returns the empty set.
     ///
-    @Time(1) @Space(1)
     pub def toSet(o: Option[a]): Set[a] with Order[a] = match o {
         case None    => Set.empty()
         case Some(v) => Set.singleton(v)
@@ -440,7 +426,6 @@ namespace Option {
     ///
     /// Returns a singleton map with the mapping `k -> v` if `o` is `Some((k, v))`. Otherwise returns the empty map.
     ///
-    @Time(1) @Space(1)
     pub def toMap(o: Option[(k, v)]): Map[k, v] with Order[k] = match o {
         case None         => Map.empty()
         case Some((k, v)) => Map.singleton(k, v)
@@ -455,7 +440,6 @@ namespace Option {
     ///
     /// Returns the Option value `Ok(v)` if `o` is `Some(v)`. Otherwise returns `Err(e)`.
     ///
-    @Time(1) @Space(1)
     pub def toOk(e: e, o: Option[t]): Result[t, e] = match o {
         case None    => Err(e)
         case Some(a) => Ok(a)
@@ -464,7 +448,6 @@ namespace Option {
     ///
     /// Returns the Option value `Err(e)` if `o` is `Some(e)`. Otherwise returns `Ok(d)`.
     ///
-    @Time(1) @Space(1)
     pub def toErr(d: t, o: Option[e]): Result[t, e] = match o {
         case None    => Ok(d)
         case Some(e) => Err(e)
@@ -473,7 +456,6 @@ namespace Option {
     ///
     /// Returns the Validation value `Success(v)` if `o` is `Some(v)`. Otherwise lifts `e` into Validation's `Failure`.
     ///
-    @Time(1) @Space(1)
     pub def toSuccess(e: e, o: Option[t]): Validation[t, e] = match o {
         case None    => Failure(Nec.singleton(e))
         case Some(a) => Success(a)
@@ -482,7 +464,6 @@ namespace Option {
     ///
     /// Returns `e` into Validation's `Failure` if `o` is `Some(e)`. Otherwise returns `Success(d)`.
     ///
-    @Time(1) @Space(1)
     pub def toFailure(d: t, o: Option[e]): Validation[t, e] = match o {
         case None    => Success(d)
         case Some(e) => Failure(Nec.singleton(e))
@@ -491,7 +472,6 @@ namespace Option {
     ///
     /// Returns `Some((v1, v2))` if `o1` is `Some(v1)` and `o2` is `Some(v2)`. Otherwise returns `None`.
     ///
-    @Time(1) @Space(1)
     pub def zip(o1: Option[a], o2: Option[b]): Option[(a, b)] = match (o1, o2) {
         case (None, _)            => None
         case (_, None)            => None
@@ -501,7 +481,6 @@ namespace Option {
     ///
     /// Returns `(Some(v1), Some(v2))` if `o` is `Some((v1, v2))`. Otherwise returns `(None, None)`.
     ///
-    @Time(1) @Space(1)
     pub def unzip(o: Option[(a, b)]): (Option[a], Option[b]) = match o {
         case None           => (None, None)
         case Some((v1, v2)) => (Some(v1), Some(v2))
@@ -510,7 +489,6 @@ namespace Option {
     ///
     /// Applies `f` to `v` if `o` is `Some(v)`. Otherwise does nothing.
     ///
-    @Time(time(f)) @Space(space(f))
     pub def forEach(f: a -> Unit \ ef, o: Option[a]): Unit \ ef = match o {
         case None    => ()
         case Some(v) => f(v)
@@ -521,7 +499,6 @@ namespace Option {
     ///
     /// Returns `None` if either `o1` or `o2` are `None`.
     ///
-    @Time(time(f)) @Space(space(f))
     pub def lift2(f: (t1, t2) -> u \ ef, o1: Option[t1], o2: Option[t2]): Option[u] \ ef =
         ap(map(f, o1), o2)
 
@@ -530,7 +507,6 @@ namespace Option {
     ///
     /// Returns `None` if any of `o1`, `o2` and `o3` are `None`.
     ///
-    @Time(time(f)) @Space(space(f))
     pub def lift3(f: (t1, t2, t3) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3]): Option[u] \ ef =
         ap(lift2(f, o1, o2), o3)
 
@@ -539,7 +515,6 @@ namespace Option {
     ///
     /// Returns `None` if any of `o1`, `o2`, `o3` and `o4` are `None`.
     ///
-    @Time(time(f)) @Space(space(f))
     pub def lift4(f: (t1, t2, t3, t4) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4]): Option[u] \ ef =
         ap(lift3(f, o1, o2, o3), o4)
 
@@ -548,7 +523,6 @@ namespace Option {
     ///
     /// Returns `None` if any of `o1`, `o2`, ... `o5` are `None`.
     ///
-    @Time(time(f)) @Space(space(f))
     pub def lift5(f: (t1, t2, t3, t4, t5) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5]): Option[u] \ ef =
         ap(lift4(f, o1, o2, o3, o4), o5)
 
@@ -557,7 +531,6 @@ namespace Option {
     ///
     /// Returns `None` if any of `o1`, `o2`, ... `o6` are `None`.
     ///
-    @Time(time(f)) @Space(space(f))
     pub def lift6(f: (t1, t2, t3, t4, t5, t6) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6]): Option[u] \ ef =
         ap(lift5(f, o1, o2, o3, o4, o5), o6)
 
@@ -566,7 +539,6 @@ namespace Option {
     ///
     /// Returns `None` if any of `o1`, `o2`, ... `o7` are `None`.
     ///
-    @Time(time(f)) @Space(space(f))
     pub def lift7(f: (t1, t2, t3, t4, t5, t6, t7) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7]): Option[u] \ ef=
         ap(lift6(f, o1, o2, o3, o4, o5, o6), o7)
 
@@ -575,7 +547,6 @@ namespace Option {
     ///
     /// Returns `None` if any of `o1`, `o2`, ... `o8` are `None`.
     ///
-    @Time(time(f)) @Space(space(f))
     pub def lift8(f: (t1, t2, t3, t4, t5, t6, t7, t8) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7], o8: Option[t8]): Option[u] \ ef =
         ap(lift7(f, o1, o2, o3, o4, o5, o6, o7), o8)
 
@@ -584,7 +555,6 @@ namespace Option {
     ///
     /// Returns `None` if any of `o1`, `o2`, ... `o9` are `None`.
     ///
-    @Time(time(f)) @Space(space(f))
     pub def lift9(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7], o8: Option[t8], o9: Option[t9]): Option[u] \ ef =
         ap(lift8(f, o1, o2, o3, o4, o5, o6, o7, o8), o9)
 
@@ -593,7 +563,6 @@ namespace Option {
     ///
     /// Returns `None` if any of `o1`, `o2`, ... `o10` are `None`.
     ///
-    @Time(time(f)) @Space(space(f))
     pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7], o8: Option[t8], o9: Option[t9], o10: Option[t10]): Option[u] \ ef =
         ap(lift9(f, o1, o2, o3, o4, o5, o6, o7, o8, o9), o10)
 
