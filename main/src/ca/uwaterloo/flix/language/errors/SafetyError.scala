@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -237,7 +237,7 @@ object SafetyError {
          |${code(loc, "the supercast occurs here.")}
          |
          |Type variable:    $tvar
-         |Tried casting to: $to
+         |Tried casting to: ${formatIfJavaType(to)}
          |""".stripMargin
     }
 
@@ -271,7 +271,7 @@ object SafetyError {
          |
          |${code(loc, "the supercast occurs here.")}
          |
-         |Actual type:      $from
+         |Actual type:      ${formatIfJavaType(from)}
          |Tried casting to: $tvar
          |""".stripMargin
     }
@@ -373,6 +373,15 @@ object SafetyError {
       Type.getFlixType(t).toString
     else
       s"##${t.getName}"
+  }
+
+  /**
+    * Returns a formatted Java type if `t` is a Java type.
+    * Returns `t` as a string otherwise.
+    */
+  private def formatIfJavaType(t: Type): String = Type.eraseAliases(t).baseType match {
+    case Type.Cst(TypeConstructor.Native(clazz), _) => formatJavaType(clazz)
+    case _ => t.toString
   }
 
   /**
