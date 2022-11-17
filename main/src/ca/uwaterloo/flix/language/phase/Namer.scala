@@ -882,6 +882,11 @@ object Namer {
         case e => NamedAst.Expression.Upcast(e, loc)
       }
 
+    case WeededAst.Expression.Supercast(exp, loc) =>
+      mapN(visitExp(exp, env0, uenv0, tenv0, ns0, prog0)) {
+        case e => NamedAst.Expression.Supercast(e, loc)
+      }
+
     case WeededAst.Expression.Without(exp, eff, loc) =>
       val expVal = visitExp(exp, env0, uenv0, tenv0, ns0, prog0)
       val f = getClassOrEffect(eff, uenv0)
@@ -1522,6 +1527,7 @@ object Namer {
     case WeededAst.Expression.Cast(exp, _, _, _) => freeVars(exp)
     case WeededAst.Expression.Mask(exp, _) => freeVars(exp)
     case WeededAst.Expression.Upcast(exp, _) => freeVars(exp)
+    case WeededAst.Expression.Supercast(exp, _) => freeVars(exp)
     case WeededAst.Expression.Without(exp, _, _) => freeVars(exp)
     case WeededAst.Expression.Do(_, exps, _) => exps.flatMap(freeVars)
     case WeededAst.Expression.Resume(exp, _) => freeVars(exp)

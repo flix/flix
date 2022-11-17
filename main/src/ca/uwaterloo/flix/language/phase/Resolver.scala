@@ -945,6 +945,11 @@ object Resolver {
             case e => ResolvedAst.Expression.Upcast(e, loc)
           }
 
+        case NamedAst.Expression.Supercast(exp, loc) =>
+          mapN(visitExp(exp, region)) {
+            case e => ResolvedAst.Expression.Supercast(e, loc)
+          }
+
         case NamedAst.Expression.TryCatch(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.CatchRule(sym, className, body) =>

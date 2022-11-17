@@ -204,6 +204,9 @@ object CodeHinter {
     case Expression.Upcast(exp, _, _) =>
       visitExp(exp)
 
+    case Expression.Supercast(exp, _, _) =>
+      visitExp(exp)
+
     case Expression.Without(exp, _, _, _, _, _) =>
       visitExp(exp)
 

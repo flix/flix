@@ -162,6 +162,8 @@ object NamedAst {
 
     case class Upcast(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
+    case class Supercast(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
     case class Without(exp: NamedAst.Expression, eff: Name.QName, loc: SourceLocation) extends NamedAst.Expression
 
     case class TryCatch(exp: NamedAst.Expression, rules: List[NamedAst.CatchRule], loc: SourceLocation) extends NamedAst.Expression
