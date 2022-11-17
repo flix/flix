@@ -42,12 +42,11 @@ object Namer {
 
     // make an empty program to fold over.
     val prog0 = NamedAst.Root(
-      classes = Map.empty,
+      classesAndEffects = Map.empty,
       instances = Map.empty,
       defsAndSigs = Map.empty,
       enums = Map.empty,
       typeAliases = Map.empty,
-      effects = Map.empty,
       ops = Map.empty,
       entryPoint = program.entryPoint,
       sources = locations,
@@ -95,7 +94,7 @@ object Namer {
         // Check if the class already exists.
         val sigNs = Name.extendNName(ns0, ident)
         val defsAndSigs0 = prog0.defsAndSigs.getOrElse(sigNs, Map.empty)
-        val classes0 = prog0.classes.getOrElse(ns0, Map.empty)
+        val classes0 = prog0.classesAndEffects.getOrElse(ns0, Map.empty)
         lookupUpperName(ident, ns0, prog0, uenv0) match {
           case LookupResult.NotDefined =>
             // Case 1: The class does not already exist. Update it.
@@ -112,7 +111,7 @@ object Namer {
                   }
                 }
                 sigsProgVal.map {
-                  prog => prog.copy(classes = prog0.classes + (ns0 -> (classes0 + (ident.name -> clazz))))
+                  prog => prog.copy(classesAndEffects = prog0.classesAndEffects + (ns0 -> (classes0 + (ident.name -> NamedAst.ClassOrEffect.Class(clazz)))))
                 }
             }
 
@@ -184,7 +183,7 @@ object Namer {
         }
 
       case decl@WeededAst.Declaration.Effect(_, _, _, ident, _, _) =>
-        val effs0 = prog0.effects.getOrElse(ns0, Map.empty)
+        val effs0 = prog0.classesAndEffects.getOrElse(ns0, Map.empty)
         val opNs = Name.extendNName(ns0, ident)
         lookupUpperName(ident, ns0, prog0, uenv0) match {
           case LookupResult.NotDefined =>
@@ -201,7 +200,7 @@ object Namer {
                   }
                 }
                 opsProgVal.map {
-                  prog => prog.copy(effects = prog0.effects + (ns0 -> (effs0 + (ident.name -> eff))))
+                  prog => prog.copy(classesAndEffects = prog0.classesAndEffects + (ns0 -> (effs0 + (ident.name -> NamedAst.ClassOrEffect.Effect(eff)))))
                 }
             }
           // Case 2: The name is in use. Error
@@ -247,26 +246,23 @@ object Namer {
     * Looks up the uppercase name in the given namespace and root.
     */
   private def lookupUpperName(ident: Name.Ident, ns0: Name.NName, prog0: NamedAst.Root, uenv0: UseEnv): NameLookupResult = {
-    val classes0 = prog0.classes.getOrElse(ns0, Map.empty)
+    val classesAndEffects0 = prog0.classesAndEffects.getOrElse(ns0, Map.empty)
     val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
     val typeAliases0 = prog0.typeAliases.getOrElse(ns0, Map.empty)
-    val effects0 = prog0.effects.getOrElse(ns0, Map.empty)
     val name = ident.name
-    (classes0.get(name), enums0.get(name), typeAliases0.get(name), effects0.get(name), uenv0.upperNames.get(name), uenv0.imports.get(name)) match {
+    (classesAndEffects0.get(name), enums0.get(name), typeAliases0.get(name), uenv0.upperNames.get(name), uenv0.imports.get(name)) match {
       // Case 1: The name is unused.
-      case (None, None, None, None, None, None) => LookupResult.NotDefined
-      // Case 2: A class with the name already exists.
-      case (Some(clazz), None, None, None, None, None) => LookupResult.AlreadyDefined(clazz.sym.loc)
+      case (None, None, None, None, None) => LookupResult.NotDefined
+      // Case 2: A class or effect with the name already exists.
+      case (Some(classOrEffect), None, None, None, None) => LookupResult.AlreadyDefined(getSymLocation(classOrEffect))
       // Case 3: An enum with the name already exists.
-      case (None, Some(enum), None, None, None, None) => LookupResult.AlreadyDefined(enum.sym.loc)
+      case (None, Some(enum), None, None, None) => LookupResult.AlreadyDefined(enum.sym.loc)
       // Case 4: A type alias with the name already exists.
-      case (None, None, Some(typeAlias), None, None, None) => LookupResult.AlreadyDefined(typeAlias.sym.loc)
-      // Case 5: An effect with the name already exists.
-      case (None, None, None, Some(eff), None, None) => LookupResult.AlreadyDefined(eff.sym.loc)
-      // Case 6: A use with the same name already exists.
-      case (None, None, None, None, Some(use), None) => LookupResult.AlreadyDefined(use.loc)
-      // Case 7: An import with the same name already exists.
-      case (None, None, None, None, None, Some(imp)) => LookupResult.AlreadyDefined(SourceLocation.mk(imp.sp1, imp.sp2))
+      case (None, None, Some(typeAlias), None, None) => LookupResult.AlreadyDefined(typeAlias.sym.loc)
+      // Case 5: A use with the same name already exists.
+      case (None, None, None, Some(use), None) => LookupResult.AlreadyDefined(use.loc)
+      // Case 6: An import with the same name already exists.
+      case (None, None, None, None, Some(imp)) => LookupResult.AlreadyDefined(SourceLocation.mk(imp.sp1, imp.sp2))
       // Impossible.
       case _ => throw InternalCompilerException("Unexpected duplicate name found.")
     }
@@ -1982,6 +1978,13 @@ object Namer {
     case NamedAst.DefOrSig.Sig(s) => s.sym.loc
   }
 
+  /**
+    * Gets the location of the symbol of the given def or sig.
+    */
+  private def getSymLocation(f: NamedAst.ClassOrEffect): SourceLocation = f match {
+    case NamedAst.ClassOrEffect.Class(c) => c.sym.loc
+    case NamedAst.ClassOrEffect.Effect(e) => e.sym.loc
+  }
   /**
     * Creates a flexible unkinded type variable symbol from the given ident.
     */

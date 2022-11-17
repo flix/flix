@@ -81,9 +81,9 @@ object Resolver {
           }
         }
 
-        val effectsVal = root.effects.flatMap {
-          case (ns0, effects) => effects.map {
-            case (_, effect) => resolveEffect(effect, taenv, ns0, root) map {
+        val effectsVal = root.classesAndEffects.flatMap {
+          case (ns0, classesAndEffects) => classesAndEffects.collect {
+            case (_, NamedAst.ClassOrEffect.Effect(effect)) => resolveEffect(effect, taenv, ns0, root) map {
               case e => e.sym -> e
             }
           }
@@ -276,8 +276,8 @@ object Resolver {
   private def resolveClasses(root: NamedAst.Root, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.ClassSym, ResolvedAst.Class], ResolutionError] = {
 
     val rootClasses = for {
-      (ns, classes) <- root.classes
-      (_, clazz) <- classes
+      (ns, classesAndEffects) <- root.classesAndEffects
+      clazz <- classesAndEffects.collect { case (_, NamedAst.ClassOrEffect.Class(c)) => c }
     } yield clazz.sym -> (clazz, ns)
 
     val (staleClasses, freshClasses) = changeSet.partition(rootClasses, oldRoot.classes)
@@ -1507,15 +1507,15 @@ object Resolver {
     * Finds the class with the qualified name `qname` in the namespace `ns0`, for the purposes of implementation.
     */
   def lookupClassForImplementation(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
-    val classOpt = tryLookupName(qname, ns0, root.classes)
+    val classOpt = tryLookupName(qname, ns0, root.classesAndEffects)
     classOpt match {
-      case None => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
-      case Some(clazz) =>
+      case Some(NamedAst.ClassOrEffect.Class(clazz)) =>
         getClassAccessibility(clazz, ns0) match {
           case ClassAccessibility.Accessible => clazz.toSuccess
           case ClassAccessibility.Sealed => ResolutionError.SealedClass(clazz.sym, ns0, qname.loc).toFailure
           case ClassAccessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
         }
+      case _ => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
     }
   }
 
@@ -1523,14 +1523,14 @@ object Resolver {
     * Finds the class with the qualified name `qname` in the namespace `ns0`.
     */
   def lookupClass(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
-    val classOpt = tryLookupName(qname, ns0, root.classes)
+    val classOpt = tryLookupName(qname, ns0, root.classesAndEffects)
     classOpt match {
-      case None => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
-      case Some(clazz) =>
+      case Some(NamedAst.ClassOrEffect.Class(clazz)) =>
         getClassAccessibility(clazz, ns0) match {
           case ClassAccessibility.Accessible | ClassAccessibility.Sealed => clazz.toSuccess
           case ClassAccessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
         }
+      case _ => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
     }
   }
 
@@ -1661,7 +1661,9 @@ object Resolver {
       case Some(qname) =>
         // Case 2: The name is qualified.
 
-        def lookupEnumInNs(ns: Name.NName) = root.enums.get(ns) flatMap { _.get(qname.ident.name) }
+        def lookupEnumInNs(ns: Name.NName) = root.enums.get(ns) flatMap {
+          _.get(qname.ident.name)
+        }
 
         val enumOpt = if (qname.isUnqualified) {
           // The name is unqualified (e.g. Option.None), so first search the current namespace,
@@ -2094,8 +2096,8 @@ object Resolver {
     def lookupIn(ns: Name.NName): TypeLookupResult = {
       val enumsInNamespace = root.enums.getOrElse(ns, Map.empty)
       val aliasesInNamespace = root.typeAliases.getOrElse(ns, Map.empty)
-      val effectsInNamespace = root.effects.getOrElse(ns, Map.empty)
-      (enumsInNamespace.get(qname.ident.name), aliasesInNamespace.get(qname.ident.name), effectsInNamespace.get(qname.ident.name)) match {
+      val classesAndEffectsInNamespace = root.classesAndEffects.getOrElse(ns, Map.empty)
+      (enumsInNamespace.get(qname.ident.name), aliasesInNamespace.get(qname.ident.name), classesAndEffectsInNamespace.get(qname.ident.name)) match {
         case (None, None, None) =>
           // Case 1: name not found
           TypeLookupResult.NotFound
@@ -2105,9 +2107,12 @@ object Resolver {
         case (None, Some(alias), None) =>
           // Case 3: found a type alias
           TypeLookupResult.TypeAlias(alias)
-        case (None, None, Some(effect)) =>
+        case (None, None, Some(NamedAst.ClassOrEffect.Effect(effect))) =>
           // Case 4: found an effect
           TypeLookupResult.Effect(effect)
+        case (None, None, Some(NamedAst.ClassOrEffect.Class(clazz))) =>
+          // Case 5: found a class. Treat as not found.
+          TypeLookupResult.NotFound
         case _ =>
           // Case 5: found multiple matches -- error
           throw InternalCompilerException("Unexpected ambiguity: Duplicate types / classes should have been resolved.")
@@ -2148,11 +2153,11 @@ object Resolver {
     * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
   private def lookupEffect(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Effect, ResolutionError] = {
-    val effOpt = tryLookupName(qname, ns0, root.effects)
+    val classOrEffOpt = tryLookupName(qname, ns0, root.classesAndEffects)
 
-    effOpt match {
-      case None => ResolutionError.UndefinedEffect(qname, ns0, qname.loc).toFailure
-      case Some(eff) => getEffectIfAccessible(eff, ns0, qname.loc)
+    classOrEffOpt match {
+      case Some(NamedAst.ClassOrEffect.Effect(eff)) => getEffectIfAccessible(eff, ns0, qname.loc)
+      case _ => ResolutionError.UndefinedEffect(qname, ns0, qname.loc).toFailure
     }
   }
 
@@ -2665,18 +2670,18 @@ object Resolver {
         }
         flatMapN(targsVal) {
           case Object :: Object :: Nil =>
-            if (returnsUnit) Class.forName("java.util.function.Consumer").toSuccess  else Class.forName("java.util.function.Function").toSuccess
+            if (returnsUnit) Class.forName("java.util.function.Consumer").toSuccess else Class.forName("java.util.function.Function").toSuccess
           case Object :: Boolean :: Nil => Class.forName("java.util.function.Predicate").toSuccess
           case Int :: Object :: Nil =>
-            if (returnsUnit) Class.forName("java.util.function.IntConsumer").toSuccess  else Class.forName("java.util.function.IntFunction").toSuccess
+            if (returnsUnit) Class.forName("java.util.function.IntConsumer").toSuccess else Class.forName("java.util.function.IntFunction").toSuccess
           case Int :: Boolean :: Nil => Class.forName("java.util.function.IntPredicate").toSuccess
           case Int :: Int :: Nil => Class.forName("java.util.function.IntUnaryOperator").toSuccess
           case Long :: Object :: Nil =>
-            if (returnsUnit) Class.forName("java.util.function.LongConsumer").toSuccess  else Class.forName("java.util.function.LongFunction").toSuccess
+            if (returnsUnit) Class.forName("java.util.function.LongConsumer").toSuccess else Class.forName("java.util.function.LongFunction").toSuccess
           case Long :: Boolean :: Nil => Class.forName("java.util.function.LongPredicate").toSuccess
           case Long :: Long :: Nil => Class.forName("java.util.function.LongUnaryOperator").toSuccess
           case Double :: Object :: Nil =>
-            if (returnsUnit) Class.forName("java.util.function.DoubleConsumer").toSuccess  else Class.forName("java.util.function.DoubleFunction").toSuccess
+            if (returnsUnit) Class.forName("java.util.function.DoubleConsumer").toSuccess else Class.forName("java.util.function.DoubleFunction").toSuccess
           case Double :: Boolean :: Nil => Class.forName("java.util.function.DoublePredicate").toSuccess
           case Double :: Double :: Nil => Class.forName("java.util.function.DoubleUnaryOperator").toSuccess
           case _ => ResolutionError.IllegalType(tpe, loc).toFailure
@@ -2699,7 +2704,7 @@ object Resolver {
     }
   }
 
-  private def isBaseTypeUnit(tpe: UnkindedType):  Boolean = {
+  private def isBaseTypeUnit(tpe: UnkindedType): Boolean = {
     val erased = UnkindedType.eraseAliases(tpe)
     val baseType = erased.baseType
     baseType match {
@@ -2712,7 +2717,7 @@ object Resolver {
     }
   }
 
-            /**
+  /**
     * Construct the type alias type constructor for the given symbol `sym` with the given kind `k`.
     */
   def mkUnappliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation): UnkindedType = UnkindedType.UnappliedAlias(sym, loc)

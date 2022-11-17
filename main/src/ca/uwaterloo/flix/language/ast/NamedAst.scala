@@ -21,12 +21,11 @@ import ca.uwaterloo.flix.util.collection.MultiMap
 
 object NamedAst {
 
-  case class Root(classes: Map[Name.NName, Map[String, NamedAst.Class]],
+  case class Root(classesAndEffects: Map[Name.NName, Map[String, NamedAst.ClassOrEffect]],
                   instances: Map[Name.NName, Map[String, List[NamedAst.Instance]]],
                   defsAndSigs: Map[Name.NName, Map[String, NamedAst.DefOrSig]],
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                   typeAliases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
-                  effects: Map[Name.NName, Map[String, NamedAst.Effect]],
                   ops: Map[Name.NName, Map[String, NamedAst.Op]],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
@@ -43,6 +42,12 @@ object NamedAst {
     case class Def(d: NamedAst.Def) extends NamedAst.DefOrSig
 
     case class Sig(s: NamedAst.Sig) extends NamedAst.DefOrSig
+  }
+
+  sealed trait ClassOrEffect
+  object ClassOrEffect {
+    case class Effect(e: NamedAst.Effect) extends NamedAst.ClassOrEffect
+    case class Class(e: NamedAst.Class) extends NamedAst.ClassOrEffect
   }
 
   case class Sig(sym: Symbol.SigSym, spec: NamedAst.Spec, exp: Option[NamedAst.Expression])

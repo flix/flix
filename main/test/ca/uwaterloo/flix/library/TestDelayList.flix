@@ -723,44 +723,49 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forEach01(): Bool \ IO =
+    def forEach01(): Bool = region r {
         let l = ENil;
-        let sb = new StringBuilder(Static);
+        let sb = new StringBuilder(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == ""
+    }
 
     @test
-    def forEach02(): Bool \ IO =
+    def forEach02(): Bool = region r {
         let l = LList(lazy ENil);
-        let sb = new StringBuilder(Static);
+        let sb = new StringBuilder(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == ""
+    }
 
     @test
-    def forEach03(): Bool \ IO =
+    def forEach03(): Bool = region r {
         let l = LCons(1, lazy LList(lazy ENil));
-        let sb = new StringBuilder(Static);
+        let sb = new StringBuilder(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "T"
+    }
 
     @test
-    def forEach04(): Bool \ IO =
+    def forEach04(): Bool = region r {
         let l = LCons(-1, lazy LList(lazy ENil));
-        let sb = new StringBuilder(Static);
+        let sb = new StringBuilder(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "F"
+    }
 
     @test
-    def forEach05(): Bool \ IO =
+    def forEach05(): Bool = region r {
         let l = ECons(1, LCons(-1, lazy ENil));
-        let sb = new StringBuilder(Static);
+        let sb = new StringBuilder(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "TF"
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////

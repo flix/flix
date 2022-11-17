@@ -27,38 +27,32 @@ namespace Int64 {
     ///
     /// Returns the number of bits used to represent an `Int64`.
     ///
-    @Time(1) @Space(1)
     pub def size(): Int32 = 64
 
     ///
     /// Returns the minimum number representable by an `Int64`.
     ///
-    @Time(1) @Space(1)
     pub def minValue(): Int64 = 1i64 <<< (size() - 1)
 
     ///
     /// Returns the maximum number representable by an `Int64`.
     ///
-    @Time(1) @Space(1)
     pub def maxValue(): Int64 = ~~~minValue()
 
     ///
     /// Returns the smaller of `x` and `y`.
     ///
-    @Time(1) @Space(1)
     pub def min(x: Int64, y: Int64): Int64 = if (x <= y) x else y
 
     ///
     /// Returns the larger of `x` and `y`.
     ///
-    @Time(1) @Space(1)
     pub def max(x: Int64, y: Int64): Int64 = if (x >= y) x else y
 
     ///
     /// Returns the absolute value of `x`.
     /// If the absolute value exceeds maxValue(), -1 is returned.
     ///
-    @Time(1) @Space(1)
     pub def abs(x: Int64): Int64 = {
         if      (x >= 0i64)         x
         else if (x == minValue())   -1i64
@@ -69,7 +63,6 @@ namespace Int64 {
     /// Returns the distance between `x` and `y`.
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
-    @Time(1) @Space(1)
     pub def dist(x: Int64, y: Int64): Int64 = {
         if (x >= 0i64 and y >= 0i64)                     abs(x - y)
         else if (x < 0i64 and y < 0i64)                  abs(x - y)
@@ -82,7 +75,6 @@ namespace Int64 {
     /// Returns 1 if x > y, -1 if x < y, and 0 if x = y.
     /// The sign of x - y.
     ///
-    @Time(1) @Space(1)
     pub def compare(x: Int64, y: Int64): Int32 = {
         if (x == y)     0
         else if (x < y) -1
@@ -93,7 +85,6 @@ namespace Int64 {
     /// Returns 1 if x > 0, -1 if x < 0, and 0 if x = 0.
     /// The sign of x.
     ///
-    @Time(1) @Space(1)
     pub def signum(x: Int64): Int32 = compare(x, 0i64)
 
     ///
@@ -101,7 +92,6 @@ namespace Int64 {
     /// Only the rightmost 6 bits of `distance` are considered (ie. `distance rem 64`).
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
-    @Time(1) @Space(1)
     pub def logicalRightShift(dist: {dist = Int32}, x: Int64): Int64 =
         if (x < 0i64 and dist.dist rem size() != 0)
             ((x >>> 1) &&& maxValue()) >>> (dist.dist - 1)
@@ -112,7 +102,6 @@ namespace Int64 {
     /// Returns the number of one-bits in the two's complement binary
     /// representation of `x`.
     ///
-    @Time(1) @Space(1)
     pub def bitCount(x: Int64): Int32 = {
         if      (x == 0i64)          0
         else if (x rem 2i64 != 0i64) bitCount(logicalRightShift(dist = 1, x)) + 1
@@ -130,7 +119,6 @@ namespace Int64 {
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` left by `distance` bits.
     ///
-    @Time(1) @Space(1)
     pub def rotateLeft(dist: {dist = Int32}, x: Int64): Int64 =
         (logicalRightShift(dist = -dist.dist, x)) ||| (x <<< dist.dist)
 
@@ -138,7 +126,6 @@ namespace Int64 {
     /// Returns the value obtained by reversing the bits in the
     /// two's complement binary representation of `x`.
     ///
-    @Time(1) @Space(1)
     pub def reverse(x: Int64): Int64 = reverseHelper(x, 0, size()-1)
 
     ///
@@ -161,7 +148,6 @@ namespace Int64 {
     /// Possible return values: 0 (rightmost bit) - 63 (leftmost bit)
     ///                         -1 if x = 0
     ///
-    @Time(1) @Space(1)
     pub def highestOneBitPosition(x: Int64): Int32 =
         // Start at bit 63 and scan right
         oneBitPositionHelper(x, size() - 1, -1)
@@ -171,7 +157,6 @@ namespace Int64 {
     /// Possible return values: 0 (rightmost bit) - 63 (leftmost bit)
     ///                         -1 if x = 0
     ///
-    @Time(1) @Space(1)
     pub def lowestOneBitPosition(x: Int64): Int32 =
         // Start at bit 0 and scan left
         oneBitPositionHelper(x, 0, 1)
@@ -194,7 +179,6 @@ namespace Int64 {
     /// of the highest-order/leftmost one-bit in `x`.
     /// Returns 0 if x=0.
     ///
-    @Time(1) @Space(1)
     pub def highestOneBit(x: Int64): Int64 =
         bitPositionToInt64(highestOneBitPosition(x))
 
@@ -203,7 +187,6 @@ namespace Int64 {
     /// of the highest-order/leftmost one-bit in `x`.
     /// Returns 0 if x=0.
     ///
-    @Time(1) @Space(1)
     pub def lowestOneBit(x: Int64): Int64 =
         bitPositionToInt64(lowestOneBitPosition(x))
 
@@ -220,7 +203,6 @@ namespace Int64 {
     /// highest-order/leftmost one-bit in `x`.
     /// Returns 64 if x=0.
     ///
-    @Time(1) @Space(1)
     pub def numberOfLeadingZeros(x: Int64): Int32 =
         if (x == 0i64) size() else size() - 1 - highestOneBitPosition(x)
 
@@ -229,7 +211,6 @@ namespace Int64 {
     /// lowest-order/rightmost one-bit in `x`.
     /// Returns 64 if x=0.
     ///
-    @Time(1) @Space(1)
     pub def numberOfTrailingZeros(x: Int64): Int32 =
         if (x == 0i64) size() else lowestOneBitPosition(x)
 
@@ -238,7 +219,6 @@ namespace Int64 {
     /// Considers the 6 rightmost bits of `position` (`position` mod 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit).
     ///
-    @Time(1) @Space(1)
     pub def getBit(pos: {pos = Int32}, x: Int64): Int32 =
         if ((x >>> pos.pos) rem 2i64 == 0i64) 0 else 1
 
@@ -247,7 +227,6 @@ namespace Int64 {
     /// Considers the 6 rightmost bits of `position` (`position` mod 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
-    @Time(1) @Space(1)
     pub def setBit(pos: {pos = Int32}, x: Int64): Int64 = x ||| (1i64 <<< pos.pos)
 
     ///
@@ -255,7 +234,6 @@ namespace Int64 {
     /// Considers the 6 rightmost bits of `position` (`position` mod 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
-    @Time(1) @Space(1)
     pub def clearBit(pos: {pos = Int32}, x: Int64): Int64 = x &&& ~~~(1i64 <<< pos.pos)
 
     ///
@@ -263,14 +241,12 @@ namespace Int64 {
     /// Considers the 6 rightmost bits of `position` (`position` mod 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
-    @Time(1) @Space(1)
     pub def flipBit(pos: {pos = Int32}, x: Int64): Int64 = x ^^^ (1i64 <<< pos.pos)
 
     ///
     /// Returns the integer binary logarithm of `x`.
     /// If the given value is 0 or negative, 0 is returned.
     ///
-    @Time(1) @Space(1)
     pub def log2(x: Int64): Int64 =
         if (x <= 0i64) {
             0i64
@@ -282,7 +258,6 @@ namespace Int64 {
     /// Returns the factorial of `x`.
     /// If the given value is negative, 0 is returned.
     ///
-    @Time(factorial(x)) @Space(1)
     pub def factorial(x: Int64): Int64 =
         if (x < 0i64) {
             0i64
@@ -297,14 +272,12 @@ namespace Int64 {
     ///
     /// Return a string representation of `x`.
     ///
-    @Time(1) @Space(1)
     pub def toString(x: Int64): String = ToString.toString(x)
 
     ///
     /// Parse the string `s` as an Int64, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
-    @Time(1) @Space(1)
     pub def fromString(s: String): Option[Int64] = try {
         import java.lang.String.strip(): String \ {};
         import static java.lang.Long.parseLong(String): Int64 \ {};
@@ -334,7 +307,6 @@ namespace Int64 {
     /// Returns `None` if the numeric value of `x` is outside the range of Int8
     /// (i.e. -128 to 127).
     ///
-    @Time(1) @Space(1)
     pub def tryToInt8(x: Int64): Option[Int8] =
         import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
         import java.lang.Long.byteValue(): Int8 \ {};
@@ -351,7 +323,6 @@ namespace Int64 {
     /// Returns `None` if the numeric value of `x` is outside the range of Int16
     /// (i.e. -32768 to 32767).
     ///
-    @Time(1) @Space(1)
     pub def tryToInt16(x: Int64): Option[Int16] =
         import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
         import java.lang.Long.shortValue(): Int16 \ {};
@@ -368,7 +339,6 @@ namespace Int64 {
     /// Returns `None` if the numeric value of `x` is outside the range of Int32
     /// (i.e. -2147483648 to 2147483647).
     ///
-    @Time(1) @Space(1)
     pub def tryToInt32(x: Int64): Option[Int32] =
         import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
         import java.lang.Long.intValue(): Int32 \ {};
@@ -381,7 +351,6 @@ namespace Int64 {
     ///
     /// The numeric value of `x` is preserved exactly.
     ///
-    @Time(1) @Space(1)
     pub def toBigInt(x: Int64): BigInt =
         import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {} as i64ValueOf;
         import java.lang.Long.longValue(): Int64 \ {};
@@ -393,7 +362,6 @@ namespace Int64 {
     ///
     /// Warning: The numeric value of `x` may lose precision.
     ///
-    @Time(1) @Space(1)
     pub def toFloat32(x: Int64): Float32 =
         import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
         import java.lang.Long.floatValue(): Float32 \ {};
@@ -404,7 +372,6 @@ namespace Int64 {
     ///
     /// Warning: The numeric value of `x` may lose precision.
     ///
-    @Time(1) @Space(1)
     pub def toFloat64(x: Int64): Float64 =
         import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
         import java.lang.Long.doubleValue(): Float64 \ {};
@@ -415,7 +382,6 @@ namespace Int64 {
     ///
     /// Warning: The numeric value of `x` may lose precision.
     ///
-    @Time(1) @Space(1)
     pub def toBigDecimal(x: Int64): BigDecimal =
         import new java.math.BigDecimal(Int64): BigDecimal \ {} as fromInt64;
         fromInt64(x)
@@ -437,7 +403,6 @@ namespace Int64 {
     ///
     /// Returns `x` clamped within the Int8 range `min` to `max`.
     ///
-    @Time(1) @Space(1)
     pub def clampToInt8(min: {min = Int8}, max: {max = Int8}, x: Int64): Int8 =
         import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
         import java.lang.Long.byteValue(): Int8 \ {};
@@ -450,7 +415,6 @@ namespace Int64 {
     ///
     /// Returns `x` clamped within the Int16 range `min` to `max`.
     ///
-    @Time(1) @Space(1)
     pub def clampToInt16(min: {min = Int16}, max: {max = Int16}, x: Int64): Int16 =
         import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
         import java.lang.Long.shortValue(): Int16 \ {};
@@ -464,7 +428,6 @@ namespace Int64 {
     ///
     /// Returns `x` clamped within the Int32 range `min` to `max`.
     ///
-    @Time(1) @Space(1)
     pub def clampToInt32(min: {min = Int32}, max: {max = Int32}, x: Int64): Int32 =
         import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
         import java.lang.Long.intValue(): Int32 \ {};
