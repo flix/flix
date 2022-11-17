@@ -73,17 +73,17 @@ object Resolver {
 
         val defsVal = resolveDefs(root, taenv, oldRoot, changeSet)
 
-        val enumsVal = root.enums.flatMap {
-          case (ns0, enums) => enums.map {
-            case (_, enum) => resolveEnum(enum, taenv, ns0, root) map {
+        val enumsVal = root.classesAndEffectsAndEnums.flatMap {
+          case (ns0, classesAndEffectsAndEnums) => classesAndEffectsAndEnums.collect {
+            case (_, NamedAst.ClassOrEffectOrEnum.Enum(enum)) => resolveEnum(enum, taenv, ns0, root) map {
               case d => d.sym -> d
             }
           }
         }
 
-        val effectsVal = root.classesAndEffects.flatMap {
+        val effectsVal = root.classesAndEffectsAndEnums.flatMap {
           case (ns0, classesAndEffects) => classesAndEffects.collect {
-            case (_, NamedAst.ClassOrEffect.Effect(effect)) => resolveEffect(effect, taenv, ns0, root) map {
+            case (_, NamedAst.ClassOrEffectOrEnum.Effect(effect)) => resolveEffect(effect, taenv, ns0, root) map {
               case e => e.sym -> e
             }
           }
@@ -276,8 +276,8 @@ object Resolver {
   private def resolveClasses(root: NamedAst.Root, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.ClassSym, ResolvedAst.Class], ResolutionError] = {
 
     val rootClasses = for {
-      (ns, classesAndEffects) <- root.classesAndEffects
-      clazz <- classesAndEffects.collect { case (_, NamedAst.ClassOrEffect.Class(c)) => c }
+      (ns, classesAndEffects) <- root.classesAndEffectsAndEnums
+      clazz <- classesAndEffects.collect { case (_, NamedAst.ClassOrEffectOrEnum.Class(c)) => c }
     } yield clazz.sym -> (clazz, ns)
 
     val (staleClasses, freshClasses) = changeSet.partition(rootClasses, oldRoot.classes)
@@ -1502,9 +1502,9 @@ object Resolver {
     * Finds the class with the qualified name `qname` in the namespace `ns0`, for the purposes of implementation.
     */
   def lookupClassForImplementation(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
-    val classOpt = tryLookupName(qname, ns0, root.classesAndEffects)
+    val classOpt = tryLookupName(qname, ns0, root.classesAndEffectsAndEnums)
     classOpt match {
-      case Some(NamedAst.ClassOrEffect.Class(clazz)) =>
+      case Some(NamedAst.ClassOrEffectOrEnum.Class(clazz)) =>
         getClassAccessibility(clazz, ns0) match {
           case ClassAccessibility.Accessible => clazz.toSuccess
           case ClassAccessibility.Sealed => ResolutionError.SealedClass(clazz.sym, ns0, qname.loc).toFailure
@@ -1518,9 +1518,9 @@ object Resolver {
     * Finds the class with the qualified name `qname` in the namespace `ns0`.
     */
   def lookupClass(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
-    val classOpt = tryLookupName(qname, ns0, root.classesAndEffects)
+    val classOpt = tryLookupName(qname, ns0, root.classesAndEffectsAndEnums)
     classOpt match {
-      case Some(NamedAst.ClassOrEffect.Class(clazz)) =>
+      case Some(NamedAst.ClassOrEffectOrEnum.Class(clazz)) =>
         getClassAccessibility(clazz, ns0) match {
           case ClassAccessibility.Accessible | ClassAccessibility.Sealed => clazz.toSuccess
           case ClassAccessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
@@ -1594,12 +1594,13 @@ object Resolver {
 
         // Find all matching enums in the current namespace.
         val namespaceMatches = mutable.Set.empty[NamedAst.Enum]
-        for ((enumName, decl) <- root.enums.getOrElse(ns0, Map.empty[String, NamedAst.Enum])) {
-          for ((enumTag, caze) <- decl.cases) {
-            if (tag.name == enumTag) {
-              namespaceMatches += decl
+        root.classesAndEffectsAndEnums.getOrElse(ns0, Map.empty).collect {
+          case (enumName, NamedAst.ClassOrEffectOrEnum.Enum(decl)) =>
+            for ((enumTag, caze) <- decl.cases) {
+              if (tag.name == enumTag) {
+                namespaceMatches += decl
+              }
             }
-          }
         }
 
         // Case 1.1.1: Exact match found in the namespace.
@@ -1622,14 +1623,13 @@ object Resolver {
 
         // Find all matching enums in the root namespace.
         val globalMatches = mutable.Set.empty[NamedAst.Enum]
-        for (decls <- root.enums.get(Name.RootNS)) {
-          for ((enumName, decl) <- decls) {
+        root.classesAndEffectsAndEnums.getOrElse(Name.RootNS, Map.empty).collect {
+          case (enumName, NamedAst.ClassOrEffectOrEnum.Enum(decl)) =>
             for ((enumTag, caze) <- decl.cases) {
               if (tag.name == enumTag) {
                 globalMatches += decl
               }
             }
-          }
         }
 
         // Case 1.2.1: Exact match found in the root namespace.
@@ -1656,8 +1656,10 @@ object Resolver {
       case Some(qname) =>
         // Case 2: The name is qualified.
 
-        def lookupEnumInNs(ns: Name.NName) = root.enums.get(ns) flatMap {
-          _.get(qname.ident.name)
+        def lookupEnumInNs(ns: Name.NName): Option[NamedAst.Enum] = {
+          root.classesAndEffectsAndEnums.get(ns).flatMap(_.get(qname.ident.name)).collect {
+            case NamedAst.ClassOrEffectOrEnum.Enum(e) => e
+          }
         }
 
         val enumOpt = if (qname.isUnqualified) {
@@ -2089,23 +2091,22 @@ object Resolver {
       * Looks up the type in the given namespace.
       */
     def lookupIn(ns: Name.NName): TypeLookupResult = {
-      val enumsInNamespace = root.enums.getOrElse(ns, Map.empty)
       val aliasesInNamespace = root.typeAliases.getOrElse(ns, Map.empty)
-      val classesAndEffectsInNamespace = root.classesAndEffects.getOrElse(ns, Map.empty)
-      (enumsInNamespace.get(qname.ident.name), aliasesInNamespace.get(qname.ident.name), classesAndEffectsInNamespace.get(qname.ident.name)) match {
-        case (None, None, None) =>
+      val classesAndEffectsAndEnumsInNamespace = root.classesAndEffectsAndEnums.getOrElse(ns, Map.empty)
+      (aliasesInNamespace.get(qname.ident.name), classesAndEffectsAndEnumsInNamespace.get(qname.ident.name)) match {
+        case (None, None) =>
           // Case 1: name not found
           TypeLookupResult.NotFound
-        case (Some(enum), None, None) =>
-          // Case 2: found an enum
-          TypeLookupResult.Enum(enum)
-        case (None, Some(alias), None) =>
+        case (Some(alias), None) =>
           // Case 3: found a type alias
           TypeLookupResult.TypeAlias(alias)
-        case (None, None, Some(NamedAst.ClassOrEffect.Effect(effect))) =>
+        case (None, Some(NamedAst.ClassOrEffectOrEnum.Enum(enum))) =>
+          // Case 3: found an enum
+          TypeLookupResult.Enum(enum)
+        case (None, Some(NamedAst.ClassOrEffectOrEnum.Effect(effect))) =>
           // Case 4: found an effect
           TypeLookupResult.Effect(effect)
-        case (None, None, Some(NamedAst.ClassOrEffect.Class(clazz))) =>
+        case (None, Some(NamedAst.ClassOrEffectOrEnum.Class(clazz))) =>
           // Case 5: found a class. Treat as not found.
           TypeLookupResult.NotFound
         case _ =>
@@ -2148,10 +2149,10 @@ object Resolver {
     * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
   private def lookupEffect(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Effect, ResolutionError] = {
-    val classOrEffOpt = tryLookupName(qname, ns0, root.classesAndEffects)
+    val classOrEffOrEnumOpt = tryLookupName(qname, ns0, root.classesAndEffectsAndEnums)
 
-    classOrEffOpt match {
-      case Some(NamedAst.ClassOrEffect.Effect(eff)) => getEffectIfAccessible(eff, ns0, qname.loc)
+    classOrEffOrEnumOpt match {
+      case Some(NamedAst.ClassOrEffectOrEnum.Effect(eff)) => getEffectIfAccessible(eff, ns0, qname.loc)
       case _ => ResolutionError.UndefinedEffect(qname, ns0, qname.loc).toFailure
     }
   }
