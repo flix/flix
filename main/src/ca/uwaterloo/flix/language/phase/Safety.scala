@@ -20,6 +20,7 @@ import scala.annotation.tailrec
   *  - Datalog constraints
   *  - Anonymous objects
   *  - Upcast expressions
+  *  - Supercast expressions
   *  - TypeMatch expressions
   */
 object Safety {
@@ -179,13 +180,11 @@ object Safety {
         visit(exp)
 
       case Expression.Upcast(exp, tpe, loc) =>
-        val errors =
-          if (isSubTypeOf(Type.eraseAliases(exp.tpe), Type.eraseAliases(tpe), renv)) {
-            List.empty
-          }
-          else {
-            List(UnsafeUpcast(exp, exp0, loc))
-          }
+        val errors = checkUpcastSafety(exp, tpe, renv, loc)
+        visit(exp) ::: errors
+
+      case Expression.Supercast(exp, tpe, loc) =>
+        val errors = checkSupercastSafety(exp, tpe, loc)
         visit(exp) ::: errors
 
       case Expression.Without(exp, _, _, _, _, _) =>
@@ -313,7 +312,7 @@ object Safety {
     * the effect set of the expression is a subset of the effect set being cast to.
     *
     */
-  private def isSubTypeOf(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = (tpe1.baseType, tpe2.baseType) match {
+  private def isSubtypeOf(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = (tpe1.baseType, tpe2.baseType) match {
     case (Type.True, Type.Var(_, _)) => true
     case (Type.True, Type.False) => true
     case (Type.Var(_, _), Type.False) => true
@@ -334,7 +333,7 @@ object Safety {
       // purities
       val pur1 = tpe1.arrowPurityType
       val pur2 = tpe2.arrowPurityType
-      val subTypePurity = isSubTypeOf(pur1, pur2, renv)
+      val subTypePurity = isSubtypeOf(pur1, pur2, renv)
 
       // set effects
       // The rule for effect sets is:
@@ -351,18 +350,101 @@ object Safety {
       val args2 = tpe2.arrowArgTypes
       val superTypeArgs = args1.zip(args2).forall {
         case (t1, t2) =>
-          isSubTypeOf(t2, t1, renv)
+          isSubtypeOf(t2, t1, renv)
       }
 
       // check that result is a subtype
       val expectedResTpe = tpe1.arrowResultType
       val actualResTpe = tpe2.arrowResultType
-      val subTypeResult = isSubTypeOf(expectedResTpe, actualResTpe, renv)
+      val subTypeResult = isSubtypeOf(expectedResTpe, actualResTpe, renv)
 
       subTypePurity && isEffSubset && superTypeArgs && subTypeResult
 
     case _ => tpe1 == tpe2
 
+  }
+
+  /**
+    * ADT to indicate what the result of checking a java subtype was.
+    */
+  private sealed trait JavaSubtypeResult
+
+  private object JavaSubtypeResult {
+    case object Castable extends JavaSubtypeResult
+
+    case object NonCastable extends JavaSubtypeResult
+
+    case class NonJavaTypeLeft(clazz: java.lang.Class[_]) extends JavaSubtypeResult
+
+    case class NonJavaTypeRight(clazz: java.lang.Class[_]) extends JavaSubtypeResult
+
+    case object TypeVariableLeft extends JavaSubtypeResult
+
+    case object TypeVariableRight extends JavaSubtypeResult
+
+  }
+
+  /**
+    * Returns true if `tpe1` and `tpe2` are both Java types
+    * and `tpe1` is a subtype of `tpe2`.
+    * Note that `tpe1` is also allowed to be a Flix string
+    * or BigInt/BigDecimal while `tpe2` is a supertype of this.
+    */
+  private def isJavaSubtypeOf(tpe1: Type, tpe2: Type)(implicit flix: Flix): JavaSubtypeResult = (tpe1.baseType, tpe2.baseType) match {
+
+    case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
+      if (right.isAssignableFrom(left)) JavaSubtypeResult.Castable else JavaSubtypeResult.NonCastable
+
+    case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+      if (right.isAssignableFrom(classOf[java.lang.String])) JavaSubtypeResult.Castable else JavaSubtypeResult.NonCastable
+
+    case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+      if (right.isAssignableFrom(classOf[java.math.BigInteger])) JavaSubtypeResult.Castable else JavaSubtypeResult.NonCastable
+
+    case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+      if (right.isAssignableFrom(classOf[java.math.BigDecimal])) JavaSubtypeResult.Castable else JavaSubtypeResult.NonCastable
+
+    case (Type.Var(_, _), _) =>
+      JavaSubtypeResult.TypeVariableLeft
+
+    case (_, Type.Var(_, _)) =>
+      JavaSubtypeResult.TypeVariableRight
+
+    case (Type.Cst(TypeConstructor.Native(clazz), _), _) =>
+      JavaSubtypeResult.NonJavaTypeRight(clazz)
+
+    case (_, Type.Cst(TypeConstructor.Native(clazz), _)) =>
+      JavaSubtypeResult.NonJavaTypeLeft(clazz)
+
+    case _ => JavaSubtypeResult.NonCastable
+  }
+
+  /**
+    * Returns a list of errors if the the upcast is invalid.
+    */
+  private def checkUpcastSafety(exp: Expression, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
+    val tpe1 = Type.eraseAliases(exp.tpe)
+    val tpe2 = Type.eraseAliases(tpe)
+    if (isSubtypeOf(tpe1, tpe2, renv))
+      Nil
+    else
+      UnsafeUpcast(exp.tpe, tpe, loc) :: Nil
+  }
+
+  /**
+    * Returns a list of errors if the the supercast is invalid.
+    */
+  private def checkSupercastSafety(exp: Expression, tpe: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
+    val tpe1 = Type.eraseAliases(exp.tpe)
+    val tpe2 = Type.eraseAliases(tpe)
+    isJavaSubtypeOf(tpe1, tpe2) match {
+      case JavaSubtypeResult.Castable => Nil
+      case JavaSubtypeResult.NonCastable => UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
+      case JavaSubtypeResult.NonJavaTypeLeft(c) => FromNonJavaTypeSupercast(exp.tpe, c, loc) :: Nil
+      case JavaSubtypeResult.NonJavaTypeRight(c) => ToNonJavaTypeSupercast(c, tpe, loc) :: Nil
+      case JavaSubtypeResult.TypeVariableLeft => FromTypeVariableSupercast(exp.tpe, tpe, loc) :: Nil
+      case JavaSubtypeResult.TypeVariableRight => ToTypeVariableSupercast(exp.tpe, tpe, loc) :: Nil
+    }
   }
 
   /**

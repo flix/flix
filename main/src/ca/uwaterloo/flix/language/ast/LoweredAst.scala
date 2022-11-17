@@ -181,6 +181,12 @@ object LoweredAst {
       override def eff: Type = exp.eff
     }
 
+    case class Supercast(exp: LoweredAst.Expression, tpe: Type, loc: SourceLocation) extends LoweredAst.Expression {
+      override def pur: Type = exp.pur
+
+      override def eff: Type = exp.eff
+    }
+
     case class Without(exp: LoweredAst.Expression, effUse: Ast.EffectSymUse, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class TryCatch(exp: LoweredAst.Expression, rules: List[LoweredAst.CatchRule], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression

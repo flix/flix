@@ -473,7 +473,12 @@ object Monomorph {
         Expression.Cast(e, None, None, None, subst(tpe), pur, eff, loc)
 
       case Expression.Upcast(exp, tpe, loc) =>
-        Expression.Upcast(visitExp(exp, env0, subst), tpe, loc)
+        val e = visitExp(exp, env0, subst)
+        Expression.Upcast(e, tpe, loc)
+
+      case Expression.Supercast(exp, tpe, loc) =>
+        val e = visitExp(exp, env0, subst)
+        Expression.Supercast(e, tpe, loc)
 
       case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
         // Erase the Without
