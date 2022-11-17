@@ -572,7 +572,7 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.FromTypeVariableSupercast](result)
+    expectError[SafetyError.ToTypeVariableSupercast](result)
   }
 
   test("TestSupercast.05") {
@@ -589,6 +589,12 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.FromTypeVariableSupercast](result)
+    expectError[SafetyError.ToTypeVariableSupercast](result)
+  }
+
+  test("TestSupercast.06") {
+    val input = "def f(): ##java.lang.Object = supercast(\"hello\")"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ToTypeVariableSupercast](result)
   }
 }
