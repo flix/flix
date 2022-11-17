@@ -639,4 +639,12 @@ namespace Test/Exp/ReifyType {
         case _: List[String] => true
         case _: _ => false
     }
+    def returnThing(): a = typematch (Proxy: Proxy[a]) return a {
+        case _: Proxy[Int32] => 123
+        case _: Proxy[Char] => 'h'
+        case _: _ => unreachable!()
+    }
+
+    @Test
+    def testReturnThing01(): Bool = returnThing() == 123
 }
