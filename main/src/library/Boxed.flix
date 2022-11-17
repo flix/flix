@@ -32,6 +32,8 @@ pub enum Boxed {
     )
 }
 
+instance Immutable[Boxed]
+
 instance Eq[Boxed] {
     pub def eq(b1: Boxed, b2: Boxed): Bool = match (b1, b2) {
         case (BoxedBool(v1),         BoxedBool(v2))      => v1 == v2

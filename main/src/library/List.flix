@@ -25,6 +25,8 @@ pub enum List[t] {
     case Cons(t, List[t])
 }
 
+instance Immutable[List[t]]
+
 instance Boxable[List[t]] with Boxable[t]
 
 instance ToString[List[a]] with ToString[a] {

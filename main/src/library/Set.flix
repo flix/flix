@@ -25,6 +25,8 @@ pub enum Set[t] {
     case Set(RedBlackTree[t, Unit])
 }
 
+instance Immutable[Set[t]]
+
 instance Boxable[Set[t]] with Boxable[t]
 
 instance Eq[Set[a]] with Eq[a] {

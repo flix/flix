@@ -25,6 +25,8 @@ pub enum Map[k, v] {
     case Map(RedBlackTree[k, v])
 }
 
+instance Immutable[Map[k, v]]
+
 instance Eq[Map[k, v]] with Eq[k], Eq[v] {
     pub def eq(m1: Map[k, v], m2: Map[k, v]): Bool =
         Map.toList(m1) == Map.toList(m2)

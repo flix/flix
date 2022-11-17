@@ -51,6 +51,8 @@ namespace RedBlackTree {
 
     }
 
+    instance Immutable[RedBlackTree[k, v]]
+
     instance Eq[RedBlackTree[k, v]] with Eq[k], Eq[v] {
         pub def eq(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v]): Bool with Eq[v] =
             toList(t1) == toList(t2)

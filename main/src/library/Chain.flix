@@ -29,6 +29,8 @@ pub enum Chain[t] {
     case Chain(Chain[t], Chain[t])
 }
 
+instance Immutable[Chain[t]]
+
 instance Eq[Chain[a]] with Eq[a] {
     pub def eq(c1: Chain[a], c2: Chain[a]): Bool = Chain.equals(c1, c2)
 }

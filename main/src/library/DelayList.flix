@@ -21,6 +21,8 @@ pub enum DelayList[a] {
     case LList(Lazy[DelayList[a]])
 }
 
+instance Immutable[DelayList[a]]
+
 instance Eq[DelayList[a]] with Eq[a] {
     pub def eq(l1: DelayList[a], l2: DelayList[a]): Bool = match (l1, l2) {
         case (ENil, ENil)                 => true

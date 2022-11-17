@@ -21,6 +21,8 @@ pub enum Nel[a] {
     case Nel(a, List[a])
 }
 
+instance Immutable[Nel[a]]
+
 instance Boxable[Nel[a]] with Boxable[a]
 
 instance ToString[Nel[a]] with ToString[a] {

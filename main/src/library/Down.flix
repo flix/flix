@@ -21,6 +21,8 @@ pub enum Down[a] {
     case Down(a)
 }
 
+instance Immutable[Down[a]]
+
 instance Eq[Down[a]] with Eq[a] {
     pub def eq(x: Down[a], y: Down[a]): Bool = match (x, y) {
         case (Down(xx), Down(yy)) => xx `Eq.eq` yy

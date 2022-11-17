@@ -41,7 +41,17 @@ namespace Channel {
     ///
     /// Blocks until the message is enqueued.
     ///
-    pub def send(m: t, s: Sender[t]): Unit \ IO = $CHANNEL_PUT$(s, m)
+    pub def send(m: t, s: Sender[t]): Unit \ IO with Immutable[t] = $CHANNEL_PUT$(s, m)
+
+    ///
+    /// Sends the message `m` on the given channel `s`.
+    ///
+    /// Blocks until the message is enqueued.
+    ///
+    /// Identical to `send` but doesn't require `Immutable`
+    ///
+    @Unsafe
+    pub def unsafeSend(m: t, s: Sender[t]): Unit \ IO = $CHANNEL_PUT$(s, m)
 
     ///
     /// Returns a channel that receives the `Unit` message after duration `d`.

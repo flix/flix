@@ -20,6 +20,8 @@ pub enum DelayMap[k, v] {
     case DMap(RedBlackTree[k, Lazy[v]])
 }
 
+instance Immutable[DelayMap[k, v]]
+
 instance Eq[DelayMap[k, v]] with Eq[k], Eq[v] {
     pub def eq(m1: DelayMap[k, v], m2: DelayMap[k, v]): Bool =
         DelayMap.toList(m1) == DelayMap.toList(m2)

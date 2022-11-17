@@ -27,6 +27,7 @@ pub enum MultiMap[k, v] {
     case MultiMap(Map[k, Set[v]])
 }
 
+instance Immutable[MultiMap[k, v]]
 
 instance Boxable[MultiMap[k, v]] with Boxable[k], Boxable[v]
 
