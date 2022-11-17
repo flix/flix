@@ -374,16 +374,14 @@ object Safety {
 
     case object NonCastable extends JavaSubtypeResult
 
-    /**
-      * @param tpe   the non-Java type.
-      * @param clazz the Java class.
-      */
-    case class NonJavaType(tpe: Type, clazz: java.lang.Class[_]) extends JavaSubtypeResult
+    case class NonJavaTypeLeft(clazz: java.lang.Class[_]) extends JavaSubtypeResult
 
-    /**
-      * @param tpe the type variable.
-      */
-    case class TypeVariable(tpe: Type) extends JavaSubtypeResult
+    case class NonJavaTypeRight(clazz: java.lang.Class[_]) extends JavaSubtypeResult
+
+    case object TypeVariableLeft extends JavaSubtypeResult
+
+    case object TypeVariableRight extends JavaSubtypeResult
+
   }
 
   /**
@@ -407,16 +405,16 @@ object Safety {
       if (right.isAssignableFrom(classOf[java.math.BigDecimal])) JavaSubtypeResult.Castable else JavaSubtypeResult.NonCastable
 
     case (Type.Var(_, _), _) =>
-      JavaSubtypeResult.TypeVariable(tpe1)
+      JavaSubtypeResult.TypeVariableLeft
 
     case (_, Type.Var(_, _)) =>
-      JavaSubtypeResult.TypeVariable(tpe2)
+      JavaSubtypeResult.TypeVariableRight
 
     case (Type.Cst(TypeConstructor.Native(clazz), _), _) =>
-      JavaSubtypeResult.NonJavaType(tpe2, clazz)
+      JavaSubtypeResult.NonJavaTypeRight(clazz)
 
     case (_, Type.Cst(TypeConstructor.Native(clazz), _)) =>
-      JavaSubtypeResult.NonJavaType(tpe1, clazz)
+      JavaSubtypeResult.NonJavaTypeLeft(clazz)
 
     case _ => JavaSubtypeResult.NonCastable
   }
@@ -442,10 +440,10 @@ object Safety {
     isJavaSubtypeOf(tpe1, tpe2) match {
       case JavaSubtypeResult.Castable => Nil
       case JavaSubtypeResult.NonCastable => UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
-      case JavaSubtypeResult.NonJavaType(t, c) if t == tpe1 => FromNonJavaTypeSupercast(exp.tpe, c, loc) :: Nil
-      case JavaSubtypeResult.NonJavaType(_, c) => ToNonJavaTypeSupercast(c, tpe, loc) :: Nil
-      case JavaSubtypeResult.TypeVariable(tvar) if tvar == tpe2 => FromTypeVariableSupercast(exp.tpe, tpe, loc) :: Nil
-      case JavaSubtypeResult.TypeVariable(_) => ToTypeVariableSupercast(tpe, exp.tpe, loc) :: Nil
+      case JavaSubtypeResult.NonJavaTypeLeft(c) => FromNonJavaTypeSupercast(exp.tpe, c, loc) :: Nil
+      case JavaSubtypeResult.NonJavaTypeRight(c) => ToNonJavaTypeSupercast(c, tpe, loc) :: Nil
+      case JavaSubtypeResult.TypeVariableLeft => FromTypeVariableSupercast(exp.tpe, tpe, loc) :: Nil
+      case JavaSubtypeResult.TypeVariableRight => ToTypeVariableSupercast(exp.tpe, tpe, loc) :: Nil
     }
   }
 
