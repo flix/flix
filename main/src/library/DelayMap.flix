@@ -16,11 +16,9 @@
 
 use RedBlackTree.RedBlackTree
 
-pub enum DelayMap[k, v] {
+pub enum DelayMap[k, v] with Immutable {
     case DMap(RedBlackTree[k, Lazy[v]])
 }
-
-instance Immutable[DelayMap[k, v]]
 
 instance Eq[DelayMap[k, v]] with Eq[k], Eq[v] {
     pub def eq(m1: DelayMap[k, v], m2: DelayMap[k, v]): Bool =

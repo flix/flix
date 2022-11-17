@@ -32,7 +32,7 @@ namespace RedBlackTree {
     /// 3. Every path from the root to a leaf contains the same
     /// number of black nodes.
     ///
-    pub enum RedBlackTree[k, v] {
+    pub enum RedBlackTree[k, v] with Immutable {
 
         ///
         /// A black leaf.
@@ -50,8 +50,6 @@ namespace RedBlackTree {
         case Node(Color, RedBlackTree[k, v], k, v, RedBlackTree[k, v])
 
     }
-
-    instance Immutable[RedBlackTree[k, v]]
 
     instance Eq[RedBlackTree[k, v]] with Eq[k], Eq[v] {
         pub def eq(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v]): Bool with Eq[v] =

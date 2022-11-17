@@ -21,11 +21,9 @@ use RedBlackTree.RedBlackTree
 ///
 /// A set is currently represented internally as a red-black tree.
 ///
-pub enum Set[t] {
+pub enum Set[t] with Immutable {
     case Set(RedBlackTree[t, Unit])
 }
-
-instance Immutable[Set[t]]
 
 instance Boxable[Set[t]] with Boxable[t]
 

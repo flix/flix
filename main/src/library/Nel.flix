@@ -17,11 +17,9 @@
 ///
 /// The NonEmptyList type.
 ///
-pub enum Nel[a] {
+pub enum Nel[a] with Immutable {
     case Nel(a, List[a])
 }
-
-instance Immutable[Nel[a]]
 
 instance Boxable[Nel[a]] with Boxable[a]
 

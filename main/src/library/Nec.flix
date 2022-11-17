@@ -23,12 +23,10 @@
 ///
 /// Note - the constructors `NecOne` and `Nec` should not be used directly.
 ///
-pub enum Nec[t] {
+pub enum Nec[t] with Immutable {
     case NecOne(t)
     case Nec(Nec[t], Nec[t])
 }
-
-instance Immutable[Nec[t]]
 
 instance Eq[Nec[a]] with Eq[a] {
     pub def eq(c1: Nec[a], c2: Nec[a]): Bool = Nec.equals(c1, c2)

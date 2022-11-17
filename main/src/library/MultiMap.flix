@@ -23,11 +23,9 @@
 ///
 /// The key and value types must implement the Eq and Order type classes.
 ///
-pub enum MultiMap[k, v] {
+pub enum MultiMap[k, v] with Immutable {
     case MultiMap(Map[k, Set[v]])
 }
-
-instance Immutable[MultiMap[k, v]]
 
 instance Boxable[MultiMap[k, v]] with Boxable[k], Boxable[v]
 

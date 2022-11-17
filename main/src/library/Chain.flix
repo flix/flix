@@ -23,13 +23,11 @@
 ///
 /// Note - the constructors `Empty`, `One` and `Chain` should not be used directly.
 ///
-pub enum Chain[t] {
+pub enum Chain[t] with Immutable {
     case Empty
     case One(t)
     case Chain(Chain[t], Chain[t])
 }
-
-instance Immutable[Chain[t]]
 
 instance Eq[Chain[a]] with Eq[a] {
     pub def eq(c1: Chain[a], c2: Chain[a]): Bool = Chain.equals(c1, c2)

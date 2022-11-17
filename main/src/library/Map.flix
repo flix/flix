@@ -21,11 +21,9 @@ use RedBlackTree.RedBlackTree
 ///
 /// A map is currently represented internally as a red-black tree.
 ///
-pub enum Map[k, v] {
+pub enum Map[k, v] with Immutable {
     case Map(RedBlackTree[k, v])
 }
-
-instance Immutable[Map[k, v]]
 
 instance Eq[Map[k, v]] with Eq[k], Eq[v] {
     pub def eq(m1: Map[k, v], m2: Map[k, v]): Bool =

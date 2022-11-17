@@ -17,11 +17,9 @@
 ///
 /// The `Down` type allows you to reverse the sort order of `a` conveniently.
 ///
-pub enum Down[a] {
+pub enum Down[a] with Immutable {
     case Down(a)
 }
-
-instance Immutable[Down[a]]
 
 instance Eq[Down[a]] with Eq[a] {
     pub def eq(x: Down[a], y: Down[a]): Bool = match (x, y) {

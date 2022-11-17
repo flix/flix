@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-pub enum DelayList[a] {
+pub enum DelayList[a] with Immutable {
     case ENil,
     case ECons(a, DelayList[a]),
     case LCons(a, Lazy[DelayList[a]]),
     case LList(Lazy[DelayList[a]])
 }
-
-instance Immutable[DelayList[a]]
 
 instance Eq[DelayList[a]] with Eq[a] {
     pub def eq(l1: DelayList[a], l2: DelayList[a]): Bool = match (l1, l2) {

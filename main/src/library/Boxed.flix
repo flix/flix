@@ -17,7 +17,7 @@
 ///
 /// Represents a boxed value.
 ///
-pub enum Boxed {
+pub enum Boxed with Immutable {
     case BoxedBool(Bool)
     case BoxedChar(Char)
     case BoxedInt8(Int8)
@@ -31,8 +31,6 @@ pub enum Boxed {
         (##java.lang.Object, ##java.lang.Object) -> Comparison
     )
 }
-
-instance Immutable[Boxed]
 
 instance Eq[Boxed] {
     pub def eq(b1: Boxed, b2: Boxed): Bool = match (b1, b2) {
