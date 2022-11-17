@@ -53,6 +53,12 @@ object DerivationError {
         |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = Some(
+      s"""
+        |An example of a type parameter of kind 'Region':
+        |
+        |enum MyEnum[r: Region] { ... }
+        |""".stripMargin
+    )
   }
 }

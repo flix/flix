@@ -38,14 +38,14 @@ object Deriver {
       enum => getDerivedInstances(enum, root)
     }).map(_.flatten)
 
-    flatMapN(derivedInstances) {
+    derivedInstances.map {
       instances => 
         val newInstances = instances.foldLeft(root.instances) {
           case (acc, inst) =>
             val accInsts = acc.getOrElse(inst.sym.clazz, Nil)
             acc + (inst.sym.clazz -> (inst :: accInsts))
         }
-        root.copy(instances = newInstances).toSuccess
+        root.copy(instances = newInstances)
     }
   }
 
@@ -770,7 +770,7 @@ object Deriver {
     * instance Immutable[E[a]] with Immutable[a]
     * }}}
     * 
-    * The instance is empty: checks are performed within safety.
+    * The instance is empty: we check for immutability by checking for the absence of region kinded type parameters.
     */
   private def mkImmutableInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
