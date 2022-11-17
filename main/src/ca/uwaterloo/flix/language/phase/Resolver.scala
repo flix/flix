@@ -1627,7 +1627,7 @@ object Resolver {
           case (enumName, NamedAst.ClassOrEffectOrEnum.Enum(decl)) =>
             for ((enumTag, caze) <- decl.cases) {
               if (tag.name == enumTag) {
-                namespaceMatches += decl
+                globalMatches += decl
               }
             }
         }
