@@ -563,6 +563,8 @@ object RedundancyError {
     def explain(formatter: Formatter): Option[String] = Some({
       s"""If you try to supercast a value that already has the
          |expected type the supercast is considered redundant.
+         |
+         |Tip: remove the supercast.
          |""".stripMargin
     })
 
