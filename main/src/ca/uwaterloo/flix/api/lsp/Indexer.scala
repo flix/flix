@@ -217,12 +217,13 @@ object Indexer {
       }
       i0 ++ i1
 
-    case Expression.TypeMatch(exp, rules, _, _, _, _) =>
+    case Expression.TypeMatch(exp, ret, rules, _, _, _, _) =>
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
-      val i1 = traverse(rules) {
+      val i1 = traverse(ret)(Index.occurrenceOf)
+      val i2 = traverse(rules) {
         case MatchTypeRule(sym, tpe, exp) => Index.occurrenceOf(sym, tpe) ++ visitExp(exp)
       }
-      i0 ++ i1
+      i0 ++ i1 ++ i2
 
     case Expression.Choose(exps, rules, _, _, _, _) =>
       visitExps(exps) ++ traverse(rules) {

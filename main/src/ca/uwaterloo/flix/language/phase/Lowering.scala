@@ -404,7 +404,7 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Match(e, rs, t, pur, eff, loc)
 
-    case TypedAst.Expression.TypeMatch(exp, rules, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.TypeMatch(exp, _, rules, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitMatchTypeRule)
       val t = visitType(tpe)
