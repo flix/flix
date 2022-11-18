@@ -498,7 +498,7 @@ object Typer {
 
       case KindedAst.Expression.Def(sym, tvar, loc) =>
         val defn = root.defs(sym)
-        val (tconstrs0, defType) = Scheme.instantiate(defn.spec.sc, loc)
+        val (tconstrs0, defType) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
         for {
           resultTyp <- unifyTypeM(tvar, defType, loc)
           tconstrs = tconstrs0.map(_.copy(loc = loc))
@@ -517,43 +517,43 @@ object Typer {
         liftM(List.empty, tvar, Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Cst(Ast.Constant.Unit, loc) =>
-        liftM(List.empty, Type.mkUnit(loc), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkUnit(loc.asSynthetic), Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Cst(Ast.Constant.Null, loc) =>
-        liftM(List.empty, Type.mkNull(loc), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkNull(loc.asSynthetic), Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Cst(Ast.Constant.Bool(_), loc) =>
-        liftM(List.empty, Type.mkBool(loc), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkBool(loc.asSynthetic), Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Cst(Ast.Constant.Char(_), loc) =>
-        liftM(List.empty, Type.mkChar(loc), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkChar(loc.asSynthetic), Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Cst(Ast.Constant.Float32(_), loc) =>
-        liftM(List.empty, Type.mkFloat32(loc), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkFloat32(loc.asSynthetic), Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Cst(Ast.Constant.Float64(_), loc) =>
-        liftM(List.empty, Type.mkFloat64(loc), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkFloat64(loc.asSynthetic), Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Cst(Ast.Constant.BigDecimal(_), loc) =>
-        liftM(List.empty, Type.mkBigDecimal(loc), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkBigDecimal(loc.asSynthetic), Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Cst(Ast.Constant.Int8(_), loc) =>
-        liftM(List.empty, Type.mkInt8(loc), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkInt8(loc.asSynthetic), Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Cst(Ast.Constant.Int16(_), loc) =>
-        liftM(List.empty, Type.mkInt16(loc), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkInt16(loc.asSynthetic), Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Cst(Ast.Constant.Int32(_), loc) =>
-        liftM(List.empty, Type.mkInt32(loc), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkInt32(loc.asSynthetic), Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Cst(Ast.Constant.Int64(_), loc) =>
-        liftM(List.empty, Type.mkInt64(loc), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkInt64(loc.asSynthetic), Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Cst(Ast.Constant.BigInt(_), loc) =>
-        liftM(List.empty, Type.mkBigInt(loc), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkBigInt(loc.asSynthetic), Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Cst(Ast.Constant.Str(_), loc) =>
-        liftM(List.empty, Type.mkString(loc), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkString(loc.asSynthetic), Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
         val argType = fparam.tpe
