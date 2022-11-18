@@ -101,7 +101,6 @@ namespace BigDecimal {
     ///
     /// Returns `x` rounded up to a BigDecimal representing the nearest larger integer value.
     ///
-    @Time(1) @Space(1)
     pub def ceil(x: BigDecimal): BigDecimal =
         import java.math.BigDecimal.setScale(Int32, ##java.math.RoundingMode): BigDecimal \ {};
         import static get java.math.RoundingMode.CEILING: ##java.math.RoundingMode \ {} as getCeiling;
@@ -110,7 +109,6 @@ namespace BigDecimal {
     ///
     /// Returns `x` rounded down to a BigDecimal representing the nearest smaller integer value.
     ///
-    @Time(1) @Space(1)
     pub def floor(x: BigDecimal): BigDecimal =
         import java.math.BigDecimal.setScale(Int32, ##java.math.RoundingMode): BigDecimal \ {};
         import static get java.math.RoundingMode.FLOOR: ##java.math.RoundingMode \ {} as getFloor;
@@ -122,7 +120,6 @@ namespace BigDecimal {
     /// The rounding may be upwards or downwards. If the rounding up and rounding down are equally
     /// close, `x` will be rounded to an even value (i.e. `round(0.5ff64) == 0.0ff64`).
     ///
-    @Time(1) @Space(1)
     pub def round(x: BigDecimal): BigDecimal =
         import java.math.BigDecimal.setScale(Int32, ##java.math.RoundingMode): BigDecimal \ {};
         import static get java.math.RoundingMode.HALF_EVEN: ##java.math.RoundingMode \ {} as getHalfEven;
@@ -137,7 +134,6 @@ namespace BigDecimal {
     /// Returns `None` if the numeric value of `x` is outside the range of Int8
     /// (i.e. -128 to 127).
     ///
-    // @Time(1) @Space(1)
     pub def tryToInt8(x: BigDecimal): Option[Int8] =
         tryToInt32(x) |> Option.flatMap(Int32.tryToInt8)
 
@@ -150,7 +146,6 @@ namespace BigDecimal {
     /// Returns `None` if the numeric value of `x` is outside the range of Int16
     /// (i.e. -32768 to 32767).
     ///
-    @Time(1) @Space(1)
     pub def tryToInt16(x: BigDecimal): Option[Int16] =
         tryToInt32(x) |> Option.flatMap(Int32.tryToInt16)
 
@@ -163,7 +158,6 @@ namespace BigDecimal {
     /// Returns `None` if the numeric value of `x` is outside the range of Int32
     /// (i.e. -2147483648 to 2147483647).
     ///
-    @Time(1) @Space(1)
     pub def tryToInt32(x: BigDecimal): Option[Int32] =
         import java.math.BigDecimal.intValue(): Int32 \ {};
         if (x < Int32.toBigDecimal(Int32.minValue()) or x > Int32.toBigDecimal(Int32.maxValue()))
@@ -180,7 +174,6 @@ namespace BigDecimal {
     /// Returns `None` if the numeric value of `x` is outside the range of Int64
     /// (i.e. -9223372036854775808 to 9223372036854775807).
     ///
-    @Time(1) @Space(1)
     pub def tryToInt64(x: BigDecimal): Option[Int64] =
         import java.math.BigDecimal.longValue(): Int64 \ {};
         if (x < Int64.toBigDecimal(Int64.minValue()) or x > Int64.toBigDecimal(Int64.maxValue()))
@@ -191,7 +184,6 @@ namespace BigDecimal {
     ///
     /// Convert `x` to a `BigInt`.
     ///
-    @Time(1) @Space(1)
     pub def toBigInt(x: BigDecimal): BigInt =
         import java.math.BigDecimal.toBigInteger(): BigInt \ {};
         toBigInteger(x)
@@ -205,7 +197,6 @@ namespace BigDecimal {
     /// Returns `None` if the numeric value of `x` is outside the range of Float32
     /// (i.e. 1.4E-45 to 3.4028235E38).
     ///
-    @Time(1) @Space(1)
     pub def tryToFloat32(x: BigDecimal): Option[Float32] =
         import java.math.BigDecimal.floatValue(): Float32 \ {};
         let d = floatValue(x);
@@ -223,7 +214,6 @@ namespace BigDecimal {
     /// Returns `None` if the numeric value of `x` is outside the range of Float64
     /// (i.e 4.9E-324 to 1.7976931348623157E308).
     ///
-    @Time(1) @Space(1)
     pub def tryToFloat64(x: BigDecimal): Option[Float64] =
         import java.math.BigDecimal.doubleValue(): Float64 \ {};
         let d = doubleValue(x);

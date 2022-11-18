@@ -2272,8 +2272,6 @@ object Weeder {
     case "Lazy" => Ast.Annotation.Lazy(ident.loc).toSuccess
     case "LazyWhenPure" => Ast.Annotation.LazyWhenPure(ident.loc).toSuccess
     case "Skip" => Ast.Annotation.Skip(ident.loc).toSuccess
-    case "Space" => Ast.Annotation.Space(ident.loc).toSuccess
-    case "Time" => Ast.Annotation.Time(ident.loc).toSuccess
     case "Unsafe" => Ast.Annotation.Unsafe(ident.loc).toSuccess
     case name => WeederError.UndefinedAnnotation(name, ident.loc).toFailure
   }
