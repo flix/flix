@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Ok, ToErr, ToOk}
 
-import scala.util.Try
+import scala.collection.mutable
 
 object BoolUnification {
 
@@ -64,11 +64,31 @@ object BoolUnification {
 
     val renv = alg.liftRigidityEnv(renv0, env)
 
+    GlobalCache.lookup(f1, f2, renv) match {
+      case None => // nop
+      case Some(subst) =>
+        return subst.toTypeSubstitution(env).toOk
+    }
+
     booleanUnification(f1, f2, renv) match {
       case None => UnificationError.MismatchedBools(tpe1, tpe2).toErr
-      case Some(subst) => subst.toTypeSubstitution(env).toOk
+      case Some(subst) =>
+        GlobalCache.put(f1, f2, renv, subst)
+        subst.toTypeSubstitution(env).toOk
     }
   }
+
+  class UnificationCache[F] {
+    private val m: java.util.concurrent.ConcurrentHashMap[(F, F, Set[Int]), BoolSubstitution[F]] = new java.util.concurrent.ConcurrentHashMap
+
+    def lookup(f1: F, f2: F, renv: Set[Int]): Option[BoolSubstitution[F]] =
+        Option(m.get((f1, f2, renv)))
+
+    def put(f1: F, f2: F, renv: Set[Int], s: BoolSubstitution[F]): Unit =
+        m.putIfAbsent((f1, f2, renv), s)
+  }
+
+  private val GlobalCache: UnificationCache[BoolFormula] = new UnificationCache()
 
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
