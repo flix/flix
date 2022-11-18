@@ -32,33 +32,4 @@ sealed trait DerivationError extends CompilationMessage {
 object DerivationError {
   implicit val audience = Audience.External
 
-  /**
-    * Unable to derive Immutable error
-    *
-    * @param enum0 the enum for which we're trying to derive Immutable
-    * @param loc   the location where the error occurred.
-    */
-  case class ImmutableError(enum0: KindedAst.Enum, loc: SourceLocation) extends DerivationError {
-    def summary: String = s"Cannot derive Immutable for enum ${enum0}"
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-        |>> Cannot derive 'Immutable' for enum ${red(enum0.sym.toString())}
-        |
-        |Because it takes a type parameter of kind 'Region'.
-        |
-        |${code(loc, "unable to derive Immutable.")}
-        |
-        |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some(
-      s"""
-        |An example of a type parameter of kind 'Region':
-        |
-        |enum MyEnum[r: Region] { ... }
-        |""".stripMargin
-    )
-  }
 }
