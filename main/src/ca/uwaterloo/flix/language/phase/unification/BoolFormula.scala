@@ -230,6 +230,56 @@ object BoolFormula {
 
     override def isFalse(f: BoolFormula): Boolean = f == BoolFormula.False
 
+    override def isVar(f: BoolFormula): Boolean = f match {
+      case Var(_) => true
+      case _ => false
+    }
+
+    override def satisfiable(f: BoolFormula): Boolean = f match {
+      case BoolFormula.True => true
+      case BoolFormula.False => false
+      case _ => {
+        val vars = freeVars(f)
+        val assignments = enumerateAssignments(vars)
+        for (assignment <- assignments) {
+          val is_true = checkAssignment(f, assignment)
+          if (is_true) {
+            return true
+          }
+        }
+        false
+      }
+    }
+
+    def enumerateAssignments(vars: SortedSet[Int]): Set[Map[Int, Boolean]] = {
+      val x = vars.firstKey
+      val newVars = vars - x
+      if(newVars.isEmpty) {
+        return Set(Map(x -> true), Map(x -> false))
+      }
+      val no_x_assignments = enumerateAssignments(newVars)
+      var res : Set[Map[Int, Boolean]] = Set.empty
+      for(assignment <- no_x_assignments) {
+        val x_true = assignment + (x -> true)
+        val x_false = assignment + (x -> false)
+        res += x_true
+        res += x_false
+      }
+      res
+    }
+
+    def checkAssignment(f: BoolFormula, assignment: Map[Int, Boolean]): Boolean = f match {
+      case True => true
+      case False => false
+      case Var(x) => assignment.get(x) match {
+        case None => ??? //should never happen
+        case Some(b) => b
+      }
+      case Not(f1) => !checkAssignment(f1, assignment)
+      case Or(f1, f2) => checkAssignment(f1, assignment) || checkAssignment(f2, assignment)
+      case And(f1, f2) => checkAssignment(f1, assignment) && checkAssignment(f2, assignment)
+    }
+
     @tailrec
     override def mkAnd(alg1: BoolFormula, alg2: BoolFormula): BoolFormula = (alg1, alg2) match {
       // T ∧ x => x

@@ -161,23 +161,8 @@ object BoolUnification {
     } else if (alg.isFalse(f)) {
       false
     } else {
-      alg.satisfiable(f) match {
-        case None => naiveSatisfiable(f)
-        case Some(sat) => sat
-      }
+      alg.satisfiable(f)
     }
   }
 
-  /**
-    * Naively computes if `f` is satisfiable using the SVE algorithm.
-    */
-  private def naiveSatisfiable[F](f: F)(implicit flix: Flix, alg: BoolAlg[F]): Boolean = {
-    val q = alg.mkXor(f, alg.mkTrue)
-    try {
-      successiveVariableElimination(q, alg.freeVars(q).toList)
-      true
-    } catch {
-      case ex: BooleanUnificationException => false
-    }
-  }
 }
