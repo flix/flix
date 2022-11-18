@@ -44,8 +44,7 @@ object Namer {
     val prog0 = NamedAst.Root(
       upperNames = Map.empty,
       instances = Map.empty,
-      defsAndSigs = Map.empty,
-      ops = Map.empty,
+      lowerNames = Map.empty,
       entryPoint = program.entryPoint,
       sources = locations,
       names = program.names
@@ -91,7 +90,7 @@ object Namer {
       case decl@WeededAst.Declaration.Class(_, _, _, ident, _, _, _, _, _) =>
         // Check if the class already exists.
         val sigNs = Name.extendNName(ns0, ident)
-        val defsAndSigs0 = prog0.defsAndSigs.getOrElse(sigNs, Map.empty)
+        val defsAndSigs0 = prog0.lowerNames.getOrElse(sigNs, Map.empty)
         val classesAndEffectsAndEnums0 = prog0.upperNames.getOrElse(ns0, Map.empty)
         lookupUpperName(ident, ns0, prog0, uenv0) match {
           case LookupResult.NotDefined =>
@@ -103,8 +102,8 @@ object Namer {
                 val sigsProgVal = Validation.fold(sigs, prog0) {
                   case (prog, sig) => lookupLowerName(sig.sym.name, sigNs, prog) match {
                     case LookupResult.NotDefined =>
-                      val defsAndSigsInNs = prog.defsAndSigs.getOrElse(sigNs, Map.empty) + (sig.sym.name -> NamedAst.DefOrSig.Sig(sig))
-                      prog.copy(defsAndSigs = prog.defsAndSigs + (sigNs -> defsAndSigsInNs)).toSuccess
+                      val defsAndSigsInNs = prog.lowerNames.getOrElse(sigNs, Map.empty) + (sig.sym.name -> NamedAst.LowerName.Sig(sig))
+                      prog.copy(lowerNames = prog.lowerNames + (sigNs -> defsAndSigsInNs)).toSuccess
                     case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(sig.sym.name, sig.sym.loc, otherLoc)
                   }
                 }
@@ -131,12 +130,12 @@ object Namer {
      */
       case decl@WeededAst.Declaration.Def(_, _, _, ident, _, _, _, _, _, _, _) =>
         // Check if the definition already exists.
-        val defsAndSigs = prog0.defsAndSigs.getOrElse(ns0, Map.empty)
+        val defsAndSigs = prog0.lowerNames.getOrElse(ns0, Map.empty)
         lookupLowerName(ident.name, ns0, prog0) match {
           // Case 1: Not used. Add it to the namespace
           case LookupResult.NotDefined =>
             mapN(visitDef(decl, uenv0, Map.empty, ns0, Nil, prog0)) {
-              defn => prog0.copy(defsAndSigs = prog0.defsAndSigs + (ns0 -> (defsAndSigs + (ident.name -> NamedAst.DefOrSig.Def(defn)))))
+              defn => prog0.copy(lowerNames = prog0.lowerNames + (ns0 -> (defsAndSigs + (ident.name -> NamedAst.LowerName.Def(defn)))))
             }
           case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
         }
@@ -192,8 +191,8 @@ object Namer {
                 val opsProgVal = Validation.fold(ops, prog0) {
                   case (prog, op) => lookupLowerName(op.sym.name, opNs, prog) match {
                     case LookupResult.NotDefined =>
-                      val opsInNs = prog.ops.getOrElse(opNs, Map.empty) + (op.sym.name -> op)
-                      prog.copy(ops = prog.ops + (opNs -> opsInNs)).toSuccess
+                      val lowerNamesInNs = prog.lowerNames.getOrElse(opNs, Map.empty) + (op.sym.name -> NamedAst.LowerName.Op(op))
+                      prog.copy(lowerNames = prog.lowerNames + (opNs -> lowerNamesInNs)).toSuccess
                     case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(op.sym.name, op.sym.loc, otherLoc)
                   }
                 }
@@ -264,15 +263,12 @@ object Namer {
     * Looks up the lowercase name in the given namespace and root.
     */
   private def lookupLowerName(name: String, ns0: Name.NName, prog0: NamedAst.Root): NameLookupResult = {
-    val defsAndSigs0 = prog0.defsAndSigs.getOrElse(ns0, Map.empty)
-    val ops0 = prog0.ops.getOrElse(ns0, Map.empty)
-    (defsAndSigs0.get(name), ops0.get(name)) match {
+    val lowerNames0 = prog0.lowerNames.getOrElse(ns0, Map.empty)
+    lowerNames0.get(name) match {
       // Case 1: The name is unused.
-      case (None, None) => LookupResult.NotDefined
+      case None => LookupResult.NotDefined
       // Case 2: A sig or def with the name already exists.
-      case (Some(defOrSig), None) => LookupResult.AlreadyDefined(getSymLocation(defOrSig))
-      // Case 3: An op with the name already exists.
-      case (None, Some(op)) => LookupResult.AlreadyDefined(op.sym.loc)
+      case Some(lowerName) => LookupResult.AlreadyDefined(getSymLocation(lowerName))
       // Impossible
       case _ => throw InternalCompilerException("Unexpected duplicate name found.")
     }
@@ -1965,9 +1961,10 @@ object Namer {
   /**
     * Gets the location of the symbol of the given def or sig.
     */
-  private def getSymLocation(f: NamedAst.DefOrSig): SourceLocation = f match {
-    case NamedAst.DefOrSig.Def(d) => d.sym.loc
-    case NamedAst.DefOrSig.Sig(s) => s.sym.loc
+  private def getSymLocation(f: NamedAst.LowerName): SourceLocation = f match {
+    case NamedAst.LowerName.Def(d) => d.sym.loc
+    case NamedAst.LowerName.Op(o) => o.sym.loc
+    case NamedAst.LowerName.Sig(s) => s.sym.loc
   }
 
   /**

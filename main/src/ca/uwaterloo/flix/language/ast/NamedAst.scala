@@ -23,8 +23,7 @@ object NamedAst {
 
   case class Root(upperNames: Map[Name.NName, Map[String, NamedAst.UpperName]],
                   instances: Map[Name.NName, Map[String, List[NamedAst.Instance]]],
-                  defsAndSigs: Map[Name.NName, Map[String, NamedAst.DefOrSig]],
-                  ops: Map[Name.NName, Map[String, NamedAst.Op]],
+                  lowerNames: Map[Name.NName, Map[String, NamedAst.LowerName]],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   names: MultiMap[List[String], String])
@@ -34,12 +33,14 @@ object NamedAst {
 
   case class Instance(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, clazz: Name.QName, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Def], loc: SourceLocation)
 
-  sealed trait DefOrSig
+  sealed trait LowerName
 
-  object DefOrSig {
-    case class Def(d: NamedAst.Def) extends NamedAst.DefOrSig
+  object LowerName {
+    case class Def(d: NamedAst.Def) extends NamedAst.LowerName
 
-    case class Sig(s: NamedAst.Sig) extends NamedAst.DefOrSig
+    case class Op(o: NamedAst.Op) extends NamedAst.LowerName
+
+    case class Sig(s: NamedAst.Sig) extends NamedAst.LowerName
   }
 
   sealed trait UpperName
