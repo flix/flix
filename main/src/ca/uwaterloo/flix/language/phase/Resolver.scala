@@ -2143,7 +2143,7 @@ object Resolver {
 
     symOpt match {
       case Some(NamedAst.UpperName.TypeAlias(alias)) => getTypeAliasIfAccessible(alias, ns0, qname.loc)
-      case _ => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
+      case _ => ResolutionError.UndefinedName(qname, ns0, Map.empty, qname.loc).toFailure
     }
   }
 
