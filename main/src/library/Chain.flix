@@ -23,7 +23,7 @@
 ///
 /// Note - the constructors `Empty`, `One` and `Chain` should not be used directly.
 ///
-pub enum Chain[t] {
+pub enum Chain[t] with Immutable {
     case Empty
     case One(t)
     case Chain(Chain[t], Chain[t])
