@@ -21,10 +21,9 @@ import ca.uwaterloo.flix.util.collection.MultiMap
 
 object NamedAst {
 
-  case class Root(classesAndEffectsAndEnums: Map[Name.NName, Map[String, NamedAst.ClassOrEffectOrEnum]],
+  case class Root(upperNames: Map[Name.NName, Map[String, NamedAst.UpperName]],
                   instances: Map[Name.NName, Map[String, List[NamedAst.Instance]]],
                   defsAndSigs: Map[Name.NName, Map[String, NamedAst.DefOrSig]],
-                  typeAliases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
                   ops: Map[Name.NName, Map[String, NamedAst.Op]],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
@@ -43,11 +42,12 @@ object NamedAst {
     case class Sig(s: NamedAst.Sig) extends NamedAst.DefOrSig
   }
 
-  sealed trait ClassOrEffectOrEnum
-  object ClassOrEffectOrEnum {
-    case class Class(c: NamedAst.Class) extends NamedAst.ClassOrEffectOrEnum
-    case class Effect(e: NamedAst.Effect) extends NamedAst.ClassOrEffectOrEnum
-    case class Enum(e: NamedAst.Enum) extends NamedAst.ClassOrEffectOrEnum
+  sealed trait UpperName
+  object UpperName {
+    case class Class(c: NamedAst.Class) extends NamedAst.UpperName
+    case class Effect(e: NamedAst.Effect) extends NamedAst.UpperName
+    case class Enum(e: NamedAst.Enum) extends NamedAst.UpperName
+    case class TypeAlias(a: NamedAst.TypeAlias) extends NamedAst.UpperName
   }
 
   case class Sig(sym: Symbol.SigSym, spec: NamedAst.Spec, exp: Option[NamedAst.Expression])
