@@ -936,6 +936,9 @@ object Typer {
             (tconstrs, tpe, pur, eff) <- visitExp(rule.exp)
             // Locally check that case type is valid
             _ <- locally(for {
+              // NB:
+              // We should only really flexify type variables in the rule type and in the definition's type parameters.
+              // We flexify everything here as an under-approximation.
               _ <- traverseM(expTpe.typeVars.toList)(flexifyM)
               _ <- traverseM(rule.tpe.typeVars.toList)(flexifyM)
               _ <- unifyTypeM(expTpe, rule.tpe, rule.sym.loc)
