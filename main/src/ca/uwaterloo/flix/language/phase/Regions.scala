@@ -236,6 +236,11 @@ object Regions {
         case _ => checkType(tpe, loc)
       }
 
+    case Expression.Supercast(exp, tpe, loc) =>
+      flatMapN(visitExp(exp)) {
+        case _ => checkType(tpe, loc)
+      }
+
     case Expression.Without(exp, _, tpe, _, _, loc) =>
       flatMapN(visitExp(exp)) {
         case _ => checkType(tpe, loc)

@@ -571,6 +571,12 @@ object Redundancy {
       else
         visitExp(exp, env0, rc)
 
+    case Expression.Supercast(exp, tpe, loc) =>
+      if (exp.tpe == tpe)
+        visitExp(exp, env0, rc) + RedundantSupercast(tpe, loc)
+      else
+        visitExp(exp, env0, rc)
+
     case Expression.Without(exp, effUse, _, _, _, _) =>
       Used.of(effUse.sym) ++ visitExp(exp, env0, rc)
 

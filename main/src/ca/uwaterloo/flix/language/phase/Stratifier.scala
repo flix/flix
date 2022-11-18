@@ -282,6 +282,9 @@ object Stratifier {
     case Expression.Upcast(exp, tpe, loc) =>
       mapN(visitExp(exp))(Expression.Upcast(_, tpe, loc))
 
+    case Expression.Supercast(exp, tpe, loc) =>
+      mapN(visitExp(exp))(Expression.Supercast(_, tpe, loc))
+
     case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Without(e, sym, tpe, pur, eff, loc)
@@ -626,6 +629,9 @@ object Stratifier {
       labelledGraphOfExp(exp)
 
     case Expression.Upcast(exp, _, _) =>
+      labelledGraphOfExp(exp)
+
+    case Expression.Supercast(exp, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.Without(exp, _, _, _, _, _) =>

@@ -119,6 +119,7 @@ object Statistics {
       case Expression.Cast(exp, _, _, _, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Mask(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Upcast(exp, _, _) => visitExp(exp)
+      case Expression.Supercast(exp, _, _) => visitExp(exp)
       case Expression.Without(exp, _, _, _, _, _) => visitExp(exp)
       case Expression.TryCatch(exp, rules, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitCatchRule))
       case Expression.TryWith(exp, sym, rules, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitHandlerRule))

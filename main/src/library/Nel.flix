@@ -17,7 +17,7 @@
 ///
 /// The NonEmptyList type.
 ///
-pub enum Nel[a] {
+pub enum Nel[a] with Immutable {
     case Nel(a, List[a])
 }
 

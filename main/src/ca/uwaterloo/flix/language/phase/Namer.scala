@@ -42,11 +42,9 @@ object Namer {
 
     // make an empty program to fold over.
     val prog0 = NamedAst.Root(
-      classesAndEffects = Map.empty,
+      upperNames = Map.empty,
       instances = Map.empty,
       defsAndSigs = Map.empty,
-      enums = Map.empty,
-      typeAliases = Map.empty,
       ops = Map.empty,
       entryPoint = program.entryPoint,
       sources = locations,
@@ -94,7 +92,7 @@ object Namer {
         // Check if the class already exists.
         val sigNs = Name.extendNName(ns0, ident)
         val defsAndSigs0 = prog0.defsAndSigs.getOrElse(sigNs, Map.empty)
-        val classes0 = prog0.classesAndEffects.getOrElse(ns0, Map.empty)
+        val classesAndEffectsAndEnums0 = prog0.upperNames.getOrElse(ns0, Map.empty)
         lookupUpperName(ident, ns0, prog0, uenv0) match {
           case LookupResult.NotDefined =>
             // Case 1: The class does not already exist. Update it.
@@ -111,7 +109,7 @@ object Namer {
                   }
                 }
                 sigsProgVal.map {
-                  prog => prog.copy(classesAndEffects = prog0.classesAndEffects + (ns0 -> (classes0 + (ident.name -> NamedAst.ClassOrEffect.Class(clazz)))))
+                  prog => prog.copy(upperNames = prog0.upperNames + (ns0 -> (classesAndEffectsAndEnums0 + (ident.name -> NamedAst.UpperName.Class(clazz)))))
                 }
             }
 
@@ -152,14 +150,14 @@ object Namer {
      * Enum.
      */
       case enum0@WeededAst.Declaration.Enum(_, _, _, ident, _, _, _, _) =>
-        val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
+        val classesAndEffectsAndEnums0 = prog0.upperNames.getOrElse(ns0, Map.empty)
         lookupUpperName(ident, ns0, prog0, uenv0) match {
           case LookupResult.NotDefined =>
             // Case 1: The enum does not exist in the namespace. Update it.
             visitEnum(enum0, uenv0, ns0, prog0) map {
               enum =>
-                val enums = enums0 + (ident.name -> enum)
-                prog0.copy(enums = prog0.enums + (ns0 -> enums))
+                val enums = classesAndEffectsAndEnums0 + (ident.name -> NamedAst.UpperName.Enum(enum))
+                prog0.copy(upperNames = prog0.upperNames + (ns0 -> enums))
             }
           // Case 2: The name is in use.
           case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
@@ -169,21 +167,21 @@ object Namer {
      * Type Alias.
      */
       case alias0@WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams0, tpe0, loc) =>
-        val typeAliases0 = prog0.typeAliases.getOrElse(ns0, Map.empty)
+        val upperNames0 = prog0.upperNames.getOrElse(ns0, Map.empty)
         lookupUpperName(ident, ns0, prog0, uenv0) match {
           case LookupResult.NotDefined =>
             // Case 1: The type alias does not exist in the namespace. Add it.
             visitTypeAlias(alias0, uenv0, ns0) map {
               alias =>
-                val typeAliases = typeAliases0 + (ident.name -> alias)
-                prog0.copy(typeAliases = prog0.typeAliases + (ns0 -> typeAliases))
+                val typeAliases = upperNames0 + (ident.name -> NamedAst.UpperName.TypeAlias(alias))
+                prog0.copy(upperNames = prog0.upperNames + (ns0 -> typeAliases))
             }
           // Case 2: The name is in use.
           case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
         }
 
       case decl@WeededAst.Declaration.Effect(_, _, _, ident, _, _) =>
-        val effs0 = prog0.classesAndEffects.getOrElse(ns0, Map.empty)
+        val classesAndEffectsAndEnums0 = prog0.upperNames.getOrElse(ns0, Map.empty)
         val opNs = Name.extendNName(ns0, ident)
         lookupUpperName(ident, ns0, prog0, uenv0) match {
           case LookupResult.NotDefined =>
@@ -200,7 +198,7 @@ object Namer {
                   }
                 }
                 opsProgVal.map {
-                  prog => prog.copy(classesAndEffects = prog0.classesAndEffects + (ns0 -> (effs0 + (ident.name -> NamedAst.ClassOrEffect.Effect(eff)))))
+                  prog => prog.copy(upperNames = prog0.upperNames + (ns0 -> (classesAndEffectsAndEnums0 + (ident.name -> NamedAst.UpperName.Effect(eff)))))
                 }
             }
           // Case 2: The name is in use. Error
@@ -246,23 +244,17 @@ object Namer {
     * Looks up the uppercase name in the given namespace and root.
     */
   private def lookupUpperName(ident: Name.Ident, ns0: Name.NName, prog0: NamedAst.Root, uenv0: UseEnv): NameLookupResult = {
-    val classesAndEffects0 = prog0.classesAndEffects.getOrElse(ns0, Map.empty)
-    val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
-    val typeAliases0 = prog0.typeAliases.getOrElse(ns0, Map.empty)
+    val upperNames0 = prog0.upperNames.getOrElse(ns0, Map.empty)
     val name = ident.name
-    (classesAndEffects0.get(name), enums0.get(name), typeAliases0.get(name), uenv0.upperNames.get(name), uenv0.imports.get(name)) match {
+    (upperNames0.get(name), uenv0.upperNames.get(name), uenv0.imports.get(name)) match {
       // Case 1: The name is unused.
-      case (None, None, None, None, None) => LookupResult.NotDefined
-      // Case 2: A class or effect with the name already exists.
-      case (Some(classOrEffect), None, None, None, None) => LookupResult.AlreadyDefined(getSymLocation(classOrEffect))
-      // Case 3: An enum with the name already exists.
-      case (None, Some(enum), None, None, None) => LookupResult.AlreadyDefined(enum.sym.loc)
-      // Case 4: A type alias with the name already exists.
-      case (None, None, Some(typeAlias), None, None) => LookupResult.AlreadyDefined(typeAlias.sym.loc)
-      // Case 5: A use with the same name already exists.
-      case (None, None, None, Some(use), None) => LookupResult.AlreadyDefined(use.loc)
-      // Case 6: An import with the same name already exists.
-      case (None, None, None, None, Some(imp)) => LookupResult.AlreadyDefined(SourceLocation.mk(imp.sp1, imp.sp2))
+      case (None, None, None) => LookupResult.NotDefined
+      // Case 2: An symbol with the name already exists.
+      case (Some(upperName), None, None) => LookupResult.AlreadyDefined(getSymLocation(upperName))
+      // Case 3: A use with the same name already exists.
+      case (None, Some(use), None) => LookupResult.AlreadyDefined(use.loc)
+      // Case 4: An import with the same name already exists.
+      case (None, None, Some(imp)) => LookupResult.AlreadyDefined(SourceLocation.mk(imp.sp1, imp.sp2))
       // Impossible.
       case _ => throw InternalCompilerException("Unexpected duplicate name found.")
     }
@@ -884,6 +876,11 @@ object Namer {
     case WeededAst.Expression.Upcast(exp, loc) =>
       mapN(visitExp(exp, env0, uenv0, tenv0, ns0, prog0)) {
         case e => NamedAst.Expression.Upcast(e, loc)
+      }
+
+    case WeededAst.Expression.Supercast(exp, loc) =>
+      mapN(visitExp(exp, env0, uenv0, tenv0, ns0, prog0)) {
+        case e => NamedAst.Expression.Supercast(e, loc)
       }
 
     case WeededAst.Expression.Without(exp, eff, loc) =>
@@ -1526,6 +1523,7 @@ object Namer {
     case WeededAst.Expression.Cast(exp, _, _, _) => freeVars(exp)
     case WeededAst.Expression.Mask(exp, _) => freeVars(exp)
     case WeededAst.Expression.Upcast(exp, _) => freeVars(exp)
+    case WeededAst.Expression.Supercast(exp, _) => freeVars(exp)
     case WeededAst.Expression.Without(exp, _, _) => freeVars(exp)
     case WeededAst.Expression.Do(_, exps, _) => exps.flatMap(freeVars)
     case WeededAst.Expression.Resume(exp, _) => freeVars(exp)
@@ -1975,9 +1973,11 @@ object Namer {
   /**
     * Gets the location of the symbol of the given def or sig.
     */
-  private def getSymLocation(f: NamedAst.ClassOrEffect): SourceLocation = f match {
-    case NamedAst.ClassOrEffect.Class(c) => c.sym.loc
-    case NamedAst.ClassOrEffect.Effect(e) => e.sym.loc
+  private def getSymLocation(f: NamedAst.UpperName): SourceLocation = f match {
+    case NamedAst.UpperName.Class(c) => c.sym.loc
+    case NamedAst.UpperName.Effect(e) => e.sym.loc
+    case NamedAst.UpperName.Enum(e) => e.sym.loc
+    case NamedAst.UpperName.TypeAlias(a) => a.sym.loc
   }
   /**
     * Creates a flexible unkinded type variable symbol from the given ident.

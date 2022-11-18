@@ -504,4 +504,97 @@ class TestSafety extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.MissingDefaultMatchTypeCase](result)
   }
+
+  test("TestSupercast.01") {
+    val input =
+      """
+        |def f(): Unit \ Impure =
+        |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
+        |    let _ =
+        |        if (true)
+        |            supercast(1 as \ Impure)
+        |        else
+        |            newObject();
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.FromNonJavaTypeSupercast](result)
+  }
+
+  test("TestSupercast.02") {
+    val input =
+      """
+        |def f(): Unit \ Impure =
+        |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
+        |    let _ =
+        |        if (true)
+        |            1 as \ Impure
+        |        else
+        |            supercast(newObject());
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ToNonJavaTypeSupercast](result)
+  }
+
+  test("TestSupercast.03") {
+    val input =
+      """
+        |def f(): Unit \ Impure =
+        |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
+        |    let _ =
+        |        if (true)
+        |            supercast(newObject())
+        |        else
+        |            newStringBuilder();
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.UnsafeSupercast](result)
+  }
+
+  test("TestSupercast.04") {
+    val input =
+      """
+        |def f(): Unit \ Impure =
+        |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
+        |    let _ =
+        |        if (true)
+        |            supercast(newObject())
+        |        else
+        |            supercast(newStringBuilder());
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ToTypeVariableSupercast](result)
+  }
+
+  test("TestSupercast.05") {
+    val input =
+      """
+        |def f(): Unit \ Impure =
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
+        |    let _ =
+        |        if (true)
+        |            supercast(newStringBuilder())
+        |        else
+        |            supercast(newStringBuilder());
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ToTypeVariableSupercast](result)
+  }
+
+  test("TestSupercast.06") {
+    val input = "def f(): ##java.lang.Object = supercast(\"hello\")"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ToTypeVariableSupercast](result)
+  }
 }

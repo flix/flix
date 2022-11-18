@@ -50,6 +50,7 @@ object FormatExpression {
     case TypedAst.Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, eff, _, _) => s"Cast($exp, $declaredType, $declaredPur, $declaredEff, $tpe, $eff)"
     case TypedAst.Expression.Mask(exp, _, _, _, _) => s"Mask($exp)"
     case TypedAst.Expression.Upcast(exp, tpe, loc) => s"Upcast($exp, $tpe, $loc)"
+    case TypedAst.Expression.Supercast(exp, tpe, loc) => s"Supercast($exp, $tpe, $loc)"
     case TypedAst.Expression.Without(exp, sym, _, _, _, _) => s"Without($exp, $sym)"
     case TypedAst.Expression.TryCatch(exp, rules, _, _, _, _) => s"TryCatch($exp, ${rules.mkString(", ")})"
     case TypedAst.Expression.TryWith(exp, sym, rules, _, _, _, _) => s"TryWith($exp, $sym, ${rules.mkString(", ")})"

@@ -21,11 +21,9 @@ import ca.uwaterloo.flix.util.collection.MultiMap
 
 object NamedAst {
 
-  case class Root(classesAndEffects: Map[Name.NName, Map[String, NamedAst.ClassOrEffect]],
+  case class Root(upperNames: Map[Name.NName, Map[String, NamedAst.UpperName]],
                   instances: Map[Name.NName, Map[String, List[NamedAst.Instance]]],
                   defsAndSigs: Map[Name.NName, Map[String, NamedAst.DefOrSig]],
-                  enums: Map[Name.NName, Map[String, NamedAst.Enum]],
-                  typeAliases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
                   ops: Map[Name.NName, Map[String, NamedAst.Op]],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
@@ -44,10 +42,12 @@ object NamedAst {
     case class Sig(s: NamedAst.Sig) extends NamedAst.DefOrSig
   }
 
-  sealed trait ClassOrEffect
-  object ClassOrEffect {
-    case class Effect(e: NamedAst.Effect) extends NamedAst.ClassOrEffect
-    case class Class(e: NamedAst.Class) extends NamedAst.ClassOrEffect
+  sealed trait UpperName
+  object UpperName {
+    case class Class(c: NamedAst.Class) extends NamedAst.UpperName
+    case class Effect(e: NamedAst.Effect) extends NamedAst.UpperName
+    case class Enum(e: NamedAst.Enum) extends NamedAst.UpperName
+    case class TypeAlias(a: NamedAst.TypeAlias) extends NamedAst.UpperName
   }
 
   case class Sig(sym: Symbol.SigSym, spec: NamedAst.Spec, exp: Option[NamedAst.Expression])
@@ -161,6 +161,8 @@ object NamedAst {
     case class Mask(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Upcast(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
+    case class Supercast(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Without(exp: NamedAst.Expression, eff: Name.QName, loc: SourceLocation) extends NamedAst.Expression
 
