@@ -1977,6 +1977,7 @@ object Namer {
     case NamedAst.UpperName.Class(c) => c.sym.loc
     case NamedAst.UpperName.Effect(e) => e.sym.loc
     case NamedAst.UpperName.Enum(e) => e.sym.loc
+    case NamedAst.UpperName.TypeAlias(a) => a.sym.loc
   }
   /**
     * Creates a flexible unkinded type variable symbol from the given ident.
