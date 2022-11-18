@@ -356,6 +356,7 @@ object Resolver {
     def getDef(defOrSig: NamedAst.LowerName): Option[NamedAst.Def] = defOrSig match {
       case NamedAst.LowerName.Def(d) => Some(d)
       case NamedAst.LowerName.Sig(_) => None
+      case NamedAst.LowerName.Op(_) => None
     }
 
     val rootDefs = for {
@@ -608,6 +609,7 @@ object Resolver {
           mapN(lookupDefOrSig(qname, ns0, env, root)) {
             case NamedAst.LowerName.Def(defn) => visitDef(defn, loc)
             case NamedAst.LowerName.Sig(sig) => visitSig(sig, loc)
+            case NamedAst.LowerName.Op(op) => throw InternalCompilerException("unexpected op")
           }
 
         case NamedAst.Expression.Hole(nameOpt, loc) =>
@@ -636,6 +638,7 @@ object Resolver {
           flatMapN(lookupDefOrSig(qname, ns0, env, root)) {
             case NamedAst.LowerName.Def(defn) => visitApplyDef(app, defn, exps, region, innerLoc, outerLoc)
             case NamedAst.LowerName.Sig(sig) => visitApplySig(app, sig, exps, region, innerLoc, outerLoc)
+            case NamedAst.LowerName.Op(_) => throw InternalCompilerException("unexpected op")
           }
 
         case app@NamedAst.Expression.Apply(_, _, _) =>
@@ -1562,6 +1565,7 @@ object Resolver {
         } else {
           ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc).toFailure
         }
+      case Some(NamedAst.LowerName.Op(_)) => ResolutionError.UndefinedName(qname, ns0, env, qname.loc).toFailure
     }
   }
 
