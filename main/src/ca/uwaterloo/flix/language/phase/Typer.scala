@@ -63,7 +63,7 @@ object Typer {
   private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, List[Symbol]] = root match {
     case KindedAst.Root(classes, _, defs, enums, effects, typeAliases, _, _, _) =>
       val sigs = classes.values.flatMap { clazz => clazz.sigs.values.map(_.sym) }
-      val ops = effects.values.flatMap{ eff => eff.ops.map(_.sym) }
+      val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
 
       val syms = classes.keys ++ defs.keys ++ enums.keys ++ effects.keys ++ typeAliases.keys ++ sigs ++ ops
 
@@ -924,38 +924,29 @@ object Typer {
           resultEff = Type.mkUnion(eff :: guardEffs ::: bodyEffs, loc)
         } yield (constrs ++ guardConstrs.flatten ++ bodyConstrs.flatten, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.TypeMatch(exp, None, rules, loc) =>
-        val bodies = rules.map(_.exp)
-
-        for {
-          (constrs, tpe, pur, eff) <- visitExp(exp)
-          // rigidify all the type vars in the rules
-          _ <- traverseM(rules.flatMap(rule => rule.tpe.typeVars.toList))(rigidifyM)
-          // unify each rule's variable with its type
-          _ <- traverseM(rules)(rule => unifyTypeM(rule.sym.tvar, rule.tpe, rule.sym.loc))
-          (bodyConstrs, bodyTypes, bodyPurs, bodyEffs) <- traverseM(bodies)(visitExp).map(unzip4)
-          resultTyp <- unifyTypeM(bodyTypes, loc)
-          resultPur = Type.mkAnd(pur :: bodyPurs, loc)
-          resultEff = Type.mkUnion(eff :: bodyEffs, loc)
-        } yield (constrs ++ bodyConstrs.flatten, resultTyp, resultPur, resultEff)
-
       case KindedAst.Expression.TypeMatch(exp, ret, rules, loc) =>
 
         def visitMatchTypeRule(rule: KindedAst.MatchTypeRule, expTpe: Type): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = {
           for {
-            _ <- traverseM(expTpe.typeVars.toList)(flexifyM)
-            _ <- unifyTypeM(expTpe, rule.tpe, rule.sym.loc)
+            // Mark all rule type vars as rigid.
+            _ <- traverseM(rule.tpe.typeVars.toList)(rigidifyM)
+            // Unify the symbol tvar with the rule type.
+            _ <- unifyTypeM(rule.sym.tvar, rule.tpe, rule.sym.loc)
+            // Visit the body
             (tconstrs, tpe, pur, eff) <- visitExp(rule.exp)
-            _ <- traverseM(ret.toList)(r => expectTypeM(expected = r, actual = tpe, exp.loc))
+            // Locally check that case type is valid
+            _ <- locally(for {
+              _ <- traverseM(expTpe.typeVars.toList)(flexifyM)
+              _ <- traverseM(rule.tpe.typeVars.toList)(flexifyM)
+              _ <- unifyTypeM(expTpe, rule.tpe, rule.sym.loc)
+              _ <- traverseM(ret.toList)(r => expectTypeM(expected = r, actual = tpe, exp.loc))
+            } yield ())
           } yield (tconstrs, tpe, pur, eff)
         }
 
         for {
           (constrs, tpe, pur, eff) <- visitExp(exp)
-          // unify each rule's variable with its type
-          _ <- traverseM(rules)(rule => unifyTypeM(rule.sym.tvar, rule.tpe, rule.sym.loc))
-          // locally unify each rule type with the main expression type and check that the body has the return type
-          (bodyConstrs, tpes, bodyPurs, bodyEffs) <- traverseM(rules)(rule => locally(visitMatchTypeRule(rule, tpe))).map(unzip4)
+          (bodyConstrs, tpes, bodyPurs, bodyEffs) <- traverseM(rules)(rule => visitMatchTypeRule(rule, tpe)).map(unzip4)
           resultTyp <- ret.map(InferMonad.point).getOrElse(unifyTypeM(tpes, loc))
           resultPur = Type.mkAnd(pur :: bodyPurs, loc)
           resultEff = Type.mkUnion(eff :: bodyEffs, loc)

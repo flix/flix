@@ -1636,4 +1636,28 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.UnexpectedType](result)
   }
 
+  test("TestTypeMatch.02") {
+    val input =
+      """
+        |def f(): Unit = typematch 123 {
+        |    case x: String => ???
+        |    case _: _ => ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TestTypeMatch.03") {
+    val input =
+      """
+        |def f(): Unit = typematch 123 return Unit {
+        |    case _: Int32 => 123
+        |    case _: _ => ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UnexpectedType](result)
+  }
+
 }
