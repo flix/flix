@@ -23,8 +23,14 @@ import scala.collection.mutable
   */
 class Histogram[T] {
 
+  /**
+    * An internal map that records the number of occurrences of its keys.
+    */
   private val m: mutable.Map[T, Int] = mutable.Map.empty[T, Int]
 
+  /**
+    * Observe an occurrence. Thread-safe.
+    */
   def observe(x: T): Unit = synchronized {
     m.put(x, m.getOrElse(x, 0) + 1)
   }
