@@ -351,19 +351,27 @@ object Monomorph {
         val renv = expTpe.typeVars.foldLeft(RigidityEnv.empty) {
           case (acc, Type.Var(sym, _)) => acc.markRigid(sym)
         }
-        rules.collectFirst {
-          case MatchTypeRule(sym, t, body0)
-            if Unification.unifiesWith(expTpe, subst.nonStrict(t), renv) =>
-            // Generate a fresh symbol for the let-bound variable.
-            val freshSym = Symbol.freshVarSym(sym)
-            val env1 = env0 + (sym -> freshSym)
-            val e = visitExp(exp, env0, subst)
-            val body = visitExp(body0, env1, subst)
-            val pur = Type.mkAnd(exp.pur, body0.pur, loc.asSynthetic)
-            val eff = Type.mkUnion(exp.eff, body0.eff, loc.asSynthetic)
-            Expression.Let(freshSym, Modifiers.Empty, e, body, subst(tpe), pur, eff, loc)
-
-        }.getOrElse(throw InternalCompilerException("Unexpected typematch failure."))
+        rules.iterator.flatMap {
+          case MatchTypeRule(sym, t, body0) =>
+            // try to unify
+            Unification.unifyTypes(expTpe, subst.nonStrict(t), renv) match {
+              // Case 1: types don't unify; just continue
+              case Result.Err(_) => None
+              // Case 2: types unify; use the substitution in the body
+              case Result.Ok(caseSubst) =>
+                // visit the base expression under the initial environment
+                val e = visitExp(exp, env0, subst)
+                // Generate a fresh symbol for the let-bound variable.
+                val freshSym = Symbol.freshVarSym(sym)
+                val env1 = env0 + (sym -> freshSym)
+                val subst1 = caseSubst @@ subst.nonStrict
+                // visit the body under the extended environment
+                val body = visitExp(body0, env1, StrictSubstitution(subst1))
+                val pur = Type.mkAnd(exp.pur, body0.pur, loc.asSynthetic)
+                val eff = Type.mkUnion(exp.eff, body0.eff, loc.asSynthetic)
+                Some(Expression.Let(freshSym, Modifiers.Empty, e, body, subst1(tpe), pur, eff, loc))
+            }
+        }.next() // We are safe to get next() because the last case will always match
 
       case Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
         val es = exps.map(visitExp(_, env0, subst))

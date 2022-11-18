@@ -135,7 +135,6 @@ namespace List {
     ///
     /// Returns true if and only if `l` is the empty list, i.e. `Nil`.
     ///
-    @Time(1) @Space(1)
     pub def isEmpty(l: List[a]): Bool = match l {
         case Nil => true
         case _   => false
@@ -146,7 +145,6 @@ namespace List {
     ///
     /// Returns `None` if `l` is empty.
     ///
-    @Time(1) @Space(1)
     pub def head(l: List[a]): Option[a] = match l {
         case Nil    => None
         case x :: _ => Some(x)
@@ -157,7 +155,6 @@ namespace List {
     ///
     /// Returns `None` if `l` is empty.
     ///
-    @Time(length(l)) @Space(1)
     pub def last(l: List[a]): Option[a] = match l {
         case Nil      => None
         case x :: Nil => Some(x)
@@ -167,7 +164,6 @@ namespace List {
     ///
     /// Returns the length of `l`.
     ///
-    @Time(length(l)) @Space(1)
     pub def length(l: List[a]): Int32 =
         def loop(ll, acc) = match ll {
             case Nil     => acc
@@ -180,14 +176,12 @@ namespace List {
     ///
     /// The infix operator `:::` is an alias for `append` (`l1 ::: l2 = append(l1, l2)`).
     ///
-    @Time(length(l1)) @Space(length(l1))
     pub def append(l1: List[a], l2: List[a]): List[a] =
         foldRight((x, acc) -> x :: acc, l2, l1)
 
     ///
     /// Returns `true` if and only if `l` contains the element `x`.
     ///
-    @Time(length(l)) @Space(1)
     pub def memberOf(a: a, l: List[a]): Bool with Eq[a] = match l {
         case Nil     => false
         case x :: xs => if (a == x) true else memberOf(a, xs)
@@ -238,13 +232,11 @@ namespace List {
     ///
     /// Alias for `findLeft`.
     ///
-    @Time(time(f) * length(l)) @Space(space(f))
     pub def find(f: a -> Bool \ ef, l: List[a]): Option[a] \ ef = findLeft(f, l)
 
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from left to right.
     ///
-    @Time(time(f) * length(l)) @Space(space(f))
     pub def findLeft(f: a -> Bool \ ef, l: List[a]): Option[a] \ ef = match l {
         case Nil     => None
         case x :: xs => if (f(x)) Some(x) else findLeft(f, xs)
@@ -253,7 +245,6 @@ namespace List {
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
     ///
-    @Time(time(f) * length(l)) @Space(space(f))
     pub def findRight(f: a -> Bool \ ef, l: List[a]): Option[a] \ ef =
         def loop(ll, k) = match ll {
             case Nil     => k()
@@ -266,7 +257,6 @@ namespace List {
     ///
     /// Returns `Nil` if `b >= e`.
     ///
-    @Time(e - b) @Space(e - b)
     pub def range(b: Int32, e: Int32): List[Int32] =
         def loop(i, acc) =
             if (i < b)
@@ -280,7 +270,6 @@ namespace List {
     ///
     /// Returns `Nil` if `n < 0`.
     ///
-    @Time(n) @Space(n)
     pub def repeat(n: Int32, a: a): List[a] =
         def loop(i, acc) =
             if (i >= n)
@@ -385,7 +374,6 @@ namespace List {
     ///
     /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
     ///
-    @Time(time(f) * length(l)) @Space(space(f) * length(l))
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, l: List[a]): List[b] \ ef =
         def loop(ll, i, k) = match ll {
             case Nil     => k(Nil)
@@ -398,7 +386,6 @@ namespace List {
     ///
     /// Returns the result of applying `f` to every element in `l` and concatenating the results.
     ///
-    @Time(time(f) * length(l)) @Space(time(f) * length(l))
     pub def flatMap(f: a -> List[b] \ ef, l: List[a]): List[b] \ ef =
         def loop(ll, acc) = match ll {
             case Nil     => acc
@@ -409,7 +396,6 @@ namespace List {
     ///
     /// Returns the reverse of `l`.
     ///
-    @Time(length(l)) @Space(length(l))
     pub def reverse(l: List[a]): List[a] =
         def loop(ll, acc) = match ll {
             case Nil     => acc
@@ -423,7 +409,6 @@ namespace List {
     /// That is, returns a new list where the first `n mod length(l)` elements in `l`
     /// are the last `n mod length(l)` elements of the new list.
     ///
-    @Time(length(l)) @Space(length(l))
     pub def rotateLeft(n: Int32, l: List[a]): List[a] =
         let len = length(l);
         if (len == 0)
@@ -440,7 +425,6 @@ namespace List {
     /// That is, returns a new list where the last `n mod length(l)` elements in `l`
     /// are the first `n mod length(l)` elements of the new list.
     ///
-    @Time(length(l)) @Space(length(l))
     pub def rotateRight(n: Int32, l: List[a]): List[a] = rotateLeft(-n, l)
 
     ///
@@ -448,7 +432,6 @@ namespace List {
     ///
     /// Returns `l` if `i < 0` or `i > length(l)-1`.
     ///
-    @Time(i) @Space(i)
     pub def update(i: Int32, a: a, l: List[a]): List[a] =
         def loop(ll, j, k) = match (j, ll) {
             case (_, Nil)     => k(Nil)
@@ -460,7 +443,6 @@ namespace List {
     ///
     /// Returns `l` with every occurrence of `from` replaced by `to`.
     ///
-    @Time(length(l)) @Space(length(l))
     pub def replace(from: {from = a}, to: {to = a}, l: List[a]): List[a] with Eq[a] = map(e -> if (e == from.from) to.to else e, l)
 
     ///
@@ -470,7 +452,6 @@ namespace List {
     /// If `l1` becomes depleted then no further patching is done.
     /// If patching occurs at index `i+j` in `l2`, then the element at index `j` in `l1` is used.
     ///
-    @Time(n) @Space(length(l2))
     pub def patch(i: Int32, n: Int32, l1: List[a], l2: List[a]): List[a] =
         def loop(ll1, ll2, c, k) = match (ll1, ll2) {
             case (x :: xs, y :: ys) => {
@@ -488,7 +469,6 @@ namespace List {
     ///
     /// That is, `l` is the first permutation and `reverse(l)` is the last permutation.
     ///
-    @Time(Int32.factorial(length(l))) @Space(Int32.factorial(length(l)))
     pub def permutations(l: List[a]): List[List[a]] = match l {
         case Nil => Nil :: Nil
         case _   => permutationHelper(0, l)
@@ -527,7 +507,6 @@ namespace List {
     ///
     /// That is, `l` is the first subsequence and `Nil` is the last subsequence.
     ///
-    @Time(length(l) * length(l)) @Space(length(l) * length(l))
     pub def subsequences(l: List[a]): List[List[a]] = match l {
         case Nil     => Nil :: Nil
         case x :: xs =>
@@ -549,7 +528,6 @@ namespace List {
     ///
     /// Returns `l` with `x` inserted between every two adjacent elements.
     ///
-    @Time(length(l)) @Space(length(l))
     pub def intersperse(a: a, l: List[a]): List[a] =
         def loop(ll, k) = match ll {
             case x1 :: x2 :: xs => loop(x2 :: xs, ks -> k(x1 :: a :: ks))
@@ -562,7 +540,6 @@ namespace List {
     ///
     /// That is, returns `y1 :: x1 ... xn :: y2 :: ... yn-1 :: x1 :: ... :: xn :: yn :: Nil`.
     ///
-    @Time(length(l2) * length(l1)) @Space(length(l2) * length(l1))
     pub def intercalate(l1: List[a], l2: List[List[a]]): List[a] =
         def loop(ll, k) = match ll {
             case Nil            => k(Nil)
@@ -576,7 +553,6 @@ namespace List {
     ///
     /// Returns `l` if the dimensions of the elements of `l` are mismatched.
     ///
-    @Time(length(l) * length(l)) @Space(length(l) * length(l))
     pub def transpose(l: List[List[a]]): List[List[a]] = match l {
         case Nil    => Nil
         case x :: _ =>
@@ -612,7 +588,6 @@ namespace List {
     ///
     /// Returns `true` if and only if `l1` is a prefix of `l2`.
     ///
-    @Time(length(l1)) @Space(1)
     pub def isPrefixOf(l1: List[a], l2: List[a]): Bool with Eq[a] = match (l1, l2) {
         case (Nil, _)           => true
         case (_, Nil)           => false
@@ -622,7 +597,6 @@ namespace List {
     ///
     /// Returns `true` if and only if `l1` is an infix of `l2`.
     ///
-    @Time(length(l1)) @Space(1)
     pub def isInfixOf(l1: List[a], l2: List[a]): Bool with Eq[a] = match (l1, l2) {
         case (Nil, _)     => true
         case (_, Nil)     => false
@@ -632,7 +606,6 @@ namespace List {
     ///
     /// Returns `true` if and only if `l1` is a suffix of `l2`.
     ///
-    @Time(length(l1)) @Space(Int32.max(length(l1), length(l2)))
     pub def isSuffixOf(l1: List[a], l2: List[a]): Bool with Eq[a] = isPrefixOf(reverse(l1), reverse(l2))
 
     ///
@@ -706,7 +679,6 @@ namespace List {
     ///
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
     ///
-    @Time(time(f) * length(l)) @Space(space(f) * length(l))
     pub def count(f: a -> Bool \ ef, l: List[a]): Int32 \ ef =
         foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, l)
 
@@ -725,7 +697,6 @@ namespace List {
     ///
     /// Returns the concatenation of the elements in `l`.
     ///
-    @Time(length(l)) @Space(length(l))
     pub def flatten(l: List[List[a]]): List[a] =
         def loop(ll, k) = match ll {
             case Nil     => k(Nil)
@@ -738,7 +709,6 @@ namespace List {
     ///
     /// Returns `false` if `l` is empty.
     ///
-    @Time(time(f) * length(l)) @Space(space(f))
     pub def exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = match l {
         case Nil     => false
         case x :: xs => if (f(x)) true else exists(f, xs)
@@ -749,7 +719,6 @@ namespace List {
     ///
     /// Returns `true` if `l` is empty.
     ///
-    @Time(time(f) * length(l)) @Space(space(f))
     pub def forAll(f: a -> Bool \ ef, l: List[a]): Bool \ ef = match l {
         case Nil     => true
         case x :: xs => if (f(x)) forAll(f, xs) else false
@@ -758,7 +727,6 @@ namespace List {
     ///
     /// Returns a list of every element in `l` that satisfies the predicate `f`.
     ///
-    @Time(time(f) * length(l)) @Space(space(f) * length(l))
     pub def filter(f: a -> Bool \ ef, l: List[a]): List[a] \ ef =
         def loop(ll, k) = match ll {
             case Nil     => k(Nil)
@@ -770,7 +738,6 @@ namespace List {
     /// Returns the sublist of `l` without the last element.
     /// Returns `None` if the list `l` is `Nil`.
     ///
-    @Time(length(l)) @Space(length(l))
     pub def init(l: List[a]): Option[List[a]] =
         def loop(ll, k) = match ll {
             case Nil      => None
@@ -785,7 +752,6 @@ namespace List {
     /// That is, an element at index `i` in `l` is part of the returned sublist if and only if `i >= b` and `i < e`.
     /// Note: Indices that are out of bounds in `l` are not considered (i.e. slice(b, e, l) = slice(max(0,b), min(length(l),e), l)).
     ///
-    @Time(e - b) @Space(e - b)
     pub def slice(b: Int32, e: Int32, l: List[a]): List[a] =
         def loop(ll, i, k) = match ll {
             case Nil     => k(Nil)
@@ -805,7 +771,6 @@ namespace List {
     /// `l1` contains all elements of `l` that satisfy the predicate `f`.
     /// `l2` contains all elements of `l` that do not satisfy the predicate `f`.
     ///
-    @Time(time(f) * length(l)) @Space(space(f) * length(l))
     pub def partition(f: a -> Bool \ ef, l: List[a]): (List[a], List[a]) \ ef =
         def loop(ll, k) = match ll {
             case Nil     => k((Nil, Nil))
@@ -825,7 +790,6 @@ namespace List {
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * length(l)) @Space(space(f) * length(l))
     pub def span(f: a -> Bool, l: List[a]): (List[a], List[a]) =
         def loop(ll, k) = match ll {
             case Nil     => k((Nil, Nil))
@@ -843,7 +807,6 @@ namespace List {
     /// Returns `Nil` if `n > length(l)`.
     /// Returns `l` if `n < 0`.
     ///
-    @Time(n) @Space(length(l) - n)
     pub def drop(n: Int32, l: List[a]): List[a] = match l {
         case _ if n <= 0 => l
         case Nil         => Nil
@@ -853,7 +816,6 @@ namespace List {
     ///
     /// Returns `l` without the longest prefix that satisfies the predicate `f`.
     ///
-    @Time(time(f) * length(l)) @Space(space(f))
     pub def dropWhile(f: a -> Bool \ ef, l: List[a]): List[a] \ ef = match l {
         case Nil     => Nil
         case x :: xs => if (f(x)) dropWhile(f, xs) else l
@@ -865,7 +827,6 @@ namespace List {
     /// Returns `l` if `n > length(l)`.
     /// Returns `Nil` if `n < 0`.
     ///
-    @Time(n) @Space(n)
     pub def take(n: Int32, l: List[a]): List[a] =
         def loop(ll, i, k) =
             if (i <= 0)
@@ -880,7 +841,6 @@ namespace List {
     ///
     /// Returns the longest prefix of `l` that satisfies the predicate `f`.
     ///
-    @Time(time(f) * length(l)) @Space(space(f) * length(l))
     pub def takeWhile(f: a -> Bool \ ef, l: List[a]): List[a] \ ef =
         def loop(ll, k) = match ll {
             case Nil     => k(Nil)
@@ -908,7 +868,6 @@ namespace List {
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * length(l)) @Space(space(f) * length(l))
     pub def groupBy(f: (a, a) -> Bool, l: List[a]): List[List[a]] =
         def loop(ll, k) = match ll {
             case Nil     => k(Nil)
@@ -945,7 +904,6 @@ namespace List {
     ///
     /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
     ///
-    @Time(Int32.min(length(l1), length(l2))) @Space(Int32.min(length(l1), length(l2)))
     pub def zip(l1: List[a], l2: List[b]): List[(a, b)] =
         def loop(ll1, ll2, k) = match (ll1, ll2) {
             case (x :: xs, y :: ys) => loop(xs, ys, ks -> k((x, y) :: ks))
@@ -959,7 +917,6 @@ namespace List {
     ///
     /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
     ///
-    @Time(time(f) * Int32.min(length(l1), length(l2))) @Space(space(f) * Int32.min(length(l1), length(l2)))
     pub def zipWith(f: (a, b) -> c \ ef, l1: List[a], l2: List[b]): List[c] \ ef =
         def loop(ll1, ll2, k) = match (ll1, ll2) {
             case (x :: xs, y :: ys) =>
@@ -973,7 +930,6 @@ namespace List {
     /// Returns a list where each element `e` is mapped to `(e, i)` where `i`
     /// is the index of `e`.
     ///
-    @Time(length(l)) @Space(length(l))
     pub def zipWithIndex(l: List[a]): List[(a, Int32)] =
         def loop(ll, i, k) = match ll {
             case Nil       => k(Nil)
@@ -999,7 +955,6 @@ namespace List {
     /// Returns a pair of lists, the first containing all first components in `l`
     /// and the second containing all second components in `l`.
     ///
-    @Time(length(l)) @Space(length(l))
     pub def unzip(l: List[(a, b)]): (List[a], List[b]) =
         def loop(ll, k) = match ll {
             case Nil            => k((Nil, Nil))
@@ -1048,14 +1003,12 @@ namespace List {
     ///
     /// Alias for `foldLeft2`.
     ///
-    @Time(time(f) * Int32.min(length(l1), length(l2))) @Space(space(f) * Int32.min(length(l1), length(l2)))
     pub def fold2(f: (c, a, b) -> c \ ef, c: c, l1: List[a], l2: List[b]): c \ ef = foldLeft2(f, c, l1, l2)
 
     ///
     /// Accumulates the result of applying `f` pairwise to the elements of `l1` and `l2`
     /// starting with the initial value `c` and going from left to right.
     ///
-    @Time(time(f) * Int32.min(length(l1), length(l2))) @Space(space(f) * Int32.min(length(l1), length(l2)))
     pub def foldLeft2(f: (c, a, b) -> c \ ef, c: c, l1: List[a], l2: List[b]): c \ ef = match (l1, l2) {
         case (x :: xs, y :: ys) => foldLeft2(f, f(c, x, y), xs, ys)
         case _                  => c
@@ -1065,7 +1018,6 @@ namespace List {
     /// Accumulates the result of applying `f` pairwise to the elements of `l1` and `l2`
     /// starting with the initial value `c` and going from right to left.
     ///
-    @Time(time(f) * Int32.min(length(l1), length(l2))) @Space(space(f) * Int32.min(length(l1), length(l2)))
     pub def foldRight2(f: (a, b, c) -> c \ ef, c: c, l1: List[a], l2: List[b]): c \ ef =
         def loop(ll1, ll2, k) = match (ll1, ll2) {
             case (x :: xs, y :: ys) => loop(xs, ys, ks -> k(f(x, y, ks)))
@@ -1084,7 +1036,6 @@ namespace List {
     ///
     /// Collects the results of applying the partial function `f` to every element in `l`.
     ///
-    @Time(time(f) * length(l)) @Space(space(f) * length(l))
     pub def filterMap(f: a -> Option[b] \ ef, l: List[a]): List[b] \ ef =
         def loop(ll, k) = match ll {
             case Nil     => k(Nil)
@@ -1100,7 +1051,6 @@ namespace List {
     ///
     /// Returns `None` if every element of `l` is `None`.
     ///
-    @Time(time(f) * length(l)) @Space(space(f))
     pub def findMap(f: a -> Option[b] \ ef, l: List[a]): Option[b] \ ef = match l {
         case Nil     => None
         case x :: xs => match f(x) {
@@ -1155,7 +1105,6 @@ namespace List {
     ///
     /// Returns the list `l` as a set.
     ///
-    @Time(length(l)) @Space(length(l))
     pub def toSet(l: List[a]): Set[a] with Order[a] =
         foldRight((x, acc) -> Set.insert(x, acc), Set.empty(), l)
 
@@ -1165,7 +1114,6 @@ namespace List {
     /// If `l` contains multiple mappings with the same key, `toMap` does not
     /// make any guarantees about which mapping will be in the resulting map.
     ///
-    @Time(length(l)) @Space(length(l))
     pub def toMap(l: List[(a, b)]): Map[a, b] with Order[a] =
         foldRight((x, acc) -> Map.insert(fst(x), snd(x), acc), Map.empty(), l)
 
@@ -1181,7 +1129,6 @@ namespace List {
     ///
     /// Applies `f` to every element of `l`.
     ///
-    @Time(time(f)) @Space(space(f))
     pub def forEach(f: a -> Unit \ ef, l: List[a]): Unit \ ef = match l {
         case Nil     => ()
         case x :: xs => f(x); forEach(f, xs)
@@ -1190,7 +1137,6 @@ namespace List {
     ///
     /// Returns the list `l` as an array.
     ///
-    @Time(length(l)) @Space(length(l))
     pub def toArray(r: Region[r], l: List[a]): Array[a, r] \ Write(r) = match head(l) {
         case None    => [] @ r
         case Some(x) =>
