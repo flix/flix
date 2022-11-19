@@ -74,12 +74,19 @@ object BoolUnification {
 
     println(tpe1 + " = " + tpe2 + " rigid: " + renv0)
 
+    //
+    // Lookup the query to see if it is already in unification cache.
+    //
     UnificationCache.Global.lookup(f1, f2, renv) match {
-      case None => // nop
+      case None => // cache miss: must compute the unification.
       case Some(subst) =>
+        // cache hit: return the found substitution.
         return subst.toTypeSubstitution(env).toOk
     }
 
+    //
+    // Run the expensive Boolean unification algorithm.
+    //
     booleanUnification(f1, f2, renv) match {
       case None => UnificationError.MismatchedBools(tpe1, tpe2).toErr
       case Some(subst) =>
@@ -87,7 +94,6 @@ object BoolUnification {
         subst.toTypeSubstitution(env).toOk
     }
   }
-
 
 
   /**
