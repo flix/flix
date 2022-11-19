@@ -1,0 +1,4 @@
+[package]
+name = "minimal-project"
+version = "0.1.0"
+flix = "0.32.1"
