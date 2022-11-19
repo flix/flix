@@ -40,37 +40,37 @@ object BoolUnification {
     (tpe1, tpe2) match {
       case (Type.Var(x, _), Type.Var(y, _)) =>
         if (renv0.isFlexible(x)) {
-          return Ok(Substitution.singleton(x, tpe2))
+          return Ok(Substitution.singleton(x, tpe2)) // 9000 hits
         }
         if (renv0.isFlexible(y)) {
-          return Ok(Substitution.singleton(y, tpe1))
+          return Ok(Substitution.singleton(y, tpe1)) // 1000 hits
         }
         if (x == y) {
-          return Ok(Substitution.empty)
+          return Ok(Substitution.empty)              // 1000 hits
         }
       // else nop
 
       case (Type.Cst(TypeConstructor.True, _), Type.Cst(TypeConstructor.True, _)) =>
-        return Ok(Substitution.empty)
-
-      case (Type.Cst(TypeConstructor.False, _), Type.Cst(TypeConstructor.False, _)) =>
-        return Ok(Substitution.empty)
+        return Ok(Substitution.empty)                // 6000 hits
 
       case (Type.Var(x, _), Type.Cst(tc, _)) if renv0.isFlexible(x) => tc match {
         case TypeConstructor.True =>
-          return Ok(Substitution.singleton(x, Type.True))
+          return Ok(Substitution.singleton(x, Type.True))  // 9000 hits
         case TypeConstructor.False =>
-          return Ok(Substitution.singleton(x, Type.False))
+          return Ok(Substitution.singleton(x, Type.False)) // 1000 hits
         case _ => // nop
       }
 
       case (Type.Cst(tc, _), Type.Var(y, _)) if renv0.isFlexible(y) => tc match {
         case TypeConstructor.True =>
-          return Ok(Substitution.singleton(y, Type.True))
+          return Ok(Substitution.singleton(y, Type.True))  // 7000 hits
         case TypeConstructor.False =>
-          return Ok(Substitution.singleton(y, Type.False))
+          return Ok(Substitution.singleton(y, Type.False)) //  500 hits
         case _ => // nop
       }
+
+      case (Type.Cst(TypeConstructor.False, _), Type.Cst(TypeConstructor.False, _)) =>
+        return Ok(Substitution.empty)                      //  100 hits
 
       case _ => // nop
     }
