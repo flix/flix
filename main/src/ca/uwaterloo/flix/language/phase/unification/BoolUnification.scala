@@ -37,21 +37,29 @@ object BoolUnification {
 
     tpe1 match {
       case x: Type.Var if renv0.isFlexible(x.sym) =>
-        if (tpe2 eq Type.True)
+        if (tpe2 == Type.True)
           return Ok(Substitution.singleton(x.sym, Type.True))
-        if (tpe2 eq Type.False)
+        if (tpe2 == Type.False)
           return Ok(Substitution.singleton(x.sym, Type.False))
-
+        tpe2 match {
+          case y: Type.Var =>
+            return Ok(Substitution.singleton(x.sym, y))
+          case _ => // nop
+        }
       case _ => // nop
     }
 
     tpe2 match {
       case y: Type.Var if renv0.isFlexible(y.sym) =>
-        if (tpe1 eq Type.True)
+        if (tpe1 == Type.True)
           return Ok(Substitution.singleton(y.sym, Type.True))
-        if (tpe1 eq Type.False)
+        if (tpe1 == Type.False)
           return Ok(Substitution.singleton(y.sym, Type.False))
-
+        tpe1 match {
+          case x: Type.Var =>
+            return Ok(Substitution.singleton(y.sym, x))
+          case _ => // nop
+        }
       case _ => // nop
     }
 
@@ -63,6 +71,8 @@ object BoolUnification {
     val f2 = alg.fromType(tpe2, env)
 
     val renv = alg.liftRigidityEnv(renv0, env)
+
+    //println(tpe1 + " = " + tpe2 + " rigid: " + renv0)
 
     GlobalCache.lookup(f1, f2, renv) match {
       case None => // nop
@@ -82,10 +92,10 @@ object BoolUnification {
     private val m: java.util.concurrent.ConcurrentHashMap[(F, F, Set[Int]), BoolSubstitution[F]] = new java.util.concurrent.ConcurrentHashMap
 
     def lookup(f1: F, f2: F, renv: Set[Int]): Option[BoolSubstitution[F]] =
-        Option(m.get((f1, f2, renv)))
+      Option(m.get((f1, f2, renv)))
 
     def put(f1: F, f2: F, renv: Set[Int], s: BoolSubstitution[F]): Unit =
-        m.putIfAbsent((f1, f2, renv), s)
+      m.putIfAbsent((f1, f2, renv), s)
   }
 
   private val GlobalCache: UnificationCache[BoolFormula] = new UnificationCache()
