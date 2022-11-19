@@ -777,23 +777,19 @@ object Deriver {
       val immutableClassSym = PredefinedClasses.lookupClassSym("Immutable", root)
       val immutableInstanceSym = Symbol.freshInstanceSym(immutableClassSym, loc)
 
-      if (tparams.exists(tparam => tparam.sym.kind == Kind.Bool)) {
-        ImmutableError(enum0, loc).toFailure
-      } else {
-        val tconstrs = getTypeConstraintsForTypeParams(tparams, immutableClassSym, loc)
+      val tconstrs = getTypeConstraintsForTypeParams(tparams, immutableClassSym, loc)
 
-        KindedAst.Instance(
-          doc = Ast.Doc(Nil, loc),
-          ann = Nil,
-          mod = Ast.Modifiers.Empty,
-          sym = immutableInstanceSym,
-          tpe = tpe,
-          tconstrs = tconstrs,
-          defs = Nil,
-          ns = Name.RootNS,
-          loc = loc
-        ).toSuccess
-      }
+      KindedAst.Instance(
+        doc = Ast.Doc(Nil, loc),
+        ann = Nil,
+        mod = Ast.Modifiers.Empty,
+        sym = immutableInstanceSym,
+        tpe = tpe,
+        tconstrs = tconstrs,
+        defs = Nil,
+        ns = Name.RootNS,
+        loc = loc
+      ).toSuccess
   }
 
   /**
