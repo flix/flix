@@ -374,29 +374,29 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MissingEq](result)
   }
 
-  test("MissingImmutable.01") {
+  test("MissingSendable.01") {
     val input =
       """
-        |enum NotImmutable(Int32)
-        |enum TryImmutable[a](a) with Immutable
+        |enum NotSendable(Int32)
+        |enum TrySendable[a](a) with Sendable
         |
-        |def requiresImmutable(x: a): a with Immutable[a] = x
+        |def requiresSendable(x: a): a with Sendable[a] = x
         |
-        |def foo(): TryImmutable[NotImmutable] = requiresImmutable(TryImmutable(NotImmutable(42)))
+        |def foo(): TrySendable[NotSendable] = requiresSendable(TrySendable(NotSendable(42)))
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MissingInstance](result)
   }
 
-  test("MissingImmutable.02") {
+  test("MissingSendable.02") {
     val input =
       """
-        |enum NotImmutable(Int32)
-        |enum TryImmutable[a, b](a, b) with Immutable
+        |enum NotSendable(Int32)
+        |enum TrySendable[a, b](a, b) with Sendable
         |
-        |def requiresImmutable(x: a): a with Immutable[a] = x
+        |def requiresSendable(x: a): a with Sendable[a] = x
         |
-        |def foo(): TryImmutable[NotImmutable, NotImmutable] = requiresImmutable(TryImmutable(NotImmutable(42), NotImmutable(43)))
+        |def foo(): TrySendable[NotSendable, NotSendable] = requiresSendable(TrySendable(NotSendable(42), NotSendable(43)))
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MissingInstance](result)

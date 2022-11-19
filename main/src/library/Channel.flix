@@ -41,14 +41,14 @@ namespace Channel {
     ///
     /// Blocks until the message is enqueued.
     ///
-    pub def send(m: t, s: Sender[t]): Unit \ IO with Immutable[t] = $CHANNEL_PUT$(s, m)
+    pub def send(m: t, s: Sender[t]): Unit \ IO with Sendable[t] = $CHANNEL_PUT$(s, m)
 
     ///
     /// Sends the message `m` on the given channel `s`.
     ///
     /// Blocks until the message is enqueued.
     ///
-    /// Identical to `send` but doesn't require `Immutable`.
+    /// Identical to `send` but doesn't require `Sendable`.
     /// It is up to programmer to ensure that race conditions cannot arise due to concurrent access to `m`.
     ///
     @Unsafe

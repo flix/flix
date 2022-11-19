@@ -60,14 +60,14 @@ object Deriver {
       lazy val toStringSym = PredefinedClasses.lookupClassSym("ToString", root)
       lazy val boxableSym = PredefinedClasses.lookupClassSym("Boxable", root)
       lazy val hashSym = PredefinedClasses.lookupClassSym("Hash", root)
-      lazy val immutableSym = PredefinedClasses.lookupClassSym("Immutable", root)
+      lazy val sendableSym = PredefinedClasses.lookupClassSym("Sendable", root)
       sequence(derives.map {
         case Ast.Derivation(sym, loc) if sym == eqSym => mkEqInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == orderSym => mkOrderInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == toStringSym => mkToStringInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == boxableSym => mkBoxableInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == hashSym => mkHashInstance(enum0, loc, root)
-        case Ast.Derivation(sym, loc) if sym == immutableSym => mkImmutableInstance(enum0, loc, root)
+        case Ast.Derivation(sym, loc) if sym == sendableSym => mkSendableInstance(enum0, loc, root)
         case unknownSym => throw InternalCompilerException(s"Unexpected derivation: $unknownSym")
       })
   }
@@ -754,10 +754,10 @@ object Deriver {
   }
   
   /**
-    * Creates an Immutable instance for the given enum.
+    * Creates an Sendable instance for the given enum.
     *
     * {{{
-    * enum E[a] with Immutable {
+    * enum E[a] with Sendable {
     *   case C1
     *   case C2(a)
     *   case C3(a, Int32)
@@ -767,23 +767,23 @@ object Deriver {
     * yields
     *
     * {{{
-    * instance Immutable[E[a]] with Immutable[a]
+    * instance Sendable[E[a]] with Sendable[a]
     * }}}
     * 
     * The instance is empty: we check for immutability by checking for the absence of region kinded type parameters.
     */
-  private def mkImmutableInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
+  private def mkSendableInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
-      val immutableClassSym = PredefinedClasses.lookupClassSym("Immutable", root)
-      val immutableInstanceSym = Symbol.freshInstanceSym(immutableClassSym, loc)
+      val sendableClassSym = PredefinedClasses.lookupClassSym("Sendable", root)
+      val sendableInstanceSym = Symbol.freshInstanceSym(sendableClassSym, loc)
 
-      val tconstrs = getTypeConstraintsForTypeParams(tparams, immutableClassSym, loc)
+      val tconstrs = getTypeConstraintsForTypeParams(tparams, sendableClassSym, loc)
 
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Nil,
         mod = Ast.Modifiers.Empty,
-        sym = immutableInstanceSym,
+        sym = sendableInstanceSym,
         tpe = tpe,
         tconstrs = tconstrs,
         defs = Nil,
