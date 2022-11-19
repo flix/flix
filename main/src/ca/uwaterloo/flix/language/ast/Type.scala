@@ -277,20 +277,6 @@ object Type {
   val Str: Type = Type.Cst(TypeConstructor.Str, SourceLocation.Unknown)
 
   /**
-    * Represents the Sender type constructor.
-    *
-    * NB: This type has kind: * -> *.
-    */
-  val Sender: Type = Type.Cst(TypeConstructor.Sender, SourceLocation.Unknown)
-
-  /**
-    * Represents the Receiver type constructor.
-    *
-    * NB: This type has kind: * -> *.
-    */
-  val Receiver: Type = Type.Cst(TypeConstructor.Receiver, SourceLocation.Unknown)
-
-  /**
     * Represents the Lazy type constructor.
     *
     * NB: This type has kind: * -> *.
@@ -552,14 +538,16 @@ object Type {
   def mkFalse(loc: SourceLocation): Type = Type.Cst(TypeConstructor.False, loc)
 
   /**
-    * Returns the type `Sender[tpe]` with the given optional source location `loc`.
+    * Returns the type `Sender[tpe, reg]` with the given optional source location `loc`.
     */
-  def mkSender(tpe: Type, loc: SourceLocation): Type = Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe, loc)
+  def mkSender(tpe: Type, reg: Type, loc: SourceLocation): Type = 
+    Apply(Apply(Cst(TypeConstructor.Sender, loc), tpe, loc), reg, loc)
 
   /**
-    * Returns the type `Receiver[tpe]` with the given optional source location `loc`.
+    * Returns the type `Receiver[tpe, reg]` with the given optional source location `loc`.
     */
-  def mkReceiver(tpe: Type, loc: SourceLocation): Type = Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe, loc)
+  def mkReceiver(tpe: Type, reg: Type, loc: SourceLocation): Type =
+    Apply(Apply(Cst(TypeConstructor.Receiver, loc), tpe, loc), reg, loc)
 
   /**
     * Returns the Lazy type with the given source location `loc`.

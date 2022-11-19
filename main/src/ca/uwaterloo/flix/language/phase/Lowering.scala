@@ -841,10 +841,10 @@ object Lowering {
 
       // Special case for Sender[_] and Receiver[_], both of which are rewritten to Concurrent/Channel.Mpmc
       case Type.Cst(TypeConstructor.Sender, loc) =>
-        Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc)
+        Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Bool ->: Kind.Star), loc)
 
       case Type.Cst(TypeConstructor.Receiver, loc) =>
-        Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc)
+        Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Bool ->: Kind.Star), loc)
 
       case Type.Cst(_, _) => tpe0
 
@@ -1512,7 +1512,7 @@ object Lowering {
     * The type of a channel which can transmit variables of type `tpe`
     */
   private def mkChannelTpe(tpe: Type, loc: SourceLocation): Type = {
-    Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), tpe, loc)
+    Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Bool ->: Kind.Star), loc), tpe, loc)
   }
 
   /**

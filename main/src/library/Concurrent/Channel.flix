@@ -63,14 +63,14 @@ namespace Concurrent/Channel {
     /// structure on which select can operate.
     ///
     @Internal
-    pub enum Mpmc[a](
+    pub enum Mpmc[a, r](
         MpmcAdmin, // admin
         MutDeque[a, Static] // elementDeque
     )
 
     /// Returns the `MpmcAdmin` of `c`.
     @Internal
-    pub def mpmcAdmin(c: Mpmc[a]): MpmcAdmin = {
+    pub def mpmcAdmin(c: Mpmc[a, _]): MpmcAdmin = {
         let Mpmc(admin, _) = c;
         admin
     }
@@ -115,7 +115,7 @@ namespace Concurrent/Channel {
     /// receiving is syncronized.
     ///
     @Internal
-    pub def newChannel(bufferSize: Int32): Mpmc[a] \ IO =
+    pub def newChannel(bufferSize: Int32): Mpmc[a, _] \ IO =
         import static dev.flix.runtime.Global.newId(): Int64 \ IO;
         let _bufferCheck = if (bufferSize < 0) bug!("bufferSize < 0") else ();
         let unBuffered = bufferSize == 0;
@@ -141,7 +141,7 @@ namespace Concurrent/Channel {
     /// Implements the expression `c <- e`.
     ///
     @Internal
-    pub def put(e: a, c: Mpmc[a]): Unit \ IO =
+    pub def put(e: a, c: Mpmc[a, _]): Unit \ IO =
         let Mpmc(admin, elementDeque) = c;
         let MpmcAdmin(_, channelLock, unBuffered, _, size, _, waitingPutters) = admin;
         lock(channelLock);
@@ -176,7 +176,7 @@ namespace Concurrent/Channel {
     /// Implements to the expression `<- c`.
     ///
     @Internal
-    pub def get(c: Mpmc[a]): a \ IO =
+    pub def get(c: Mpmc[a, _]): a \ IO =
         let MpmcAdmin(_, channelLock, _, _, _, _, _) = mpmcAdmin(c);
         lock(channelLock);
 
@@ -191,7 +191,7 @@ namespace Concurrent/Channel {
     /// Assumes the channel to be non-empty.
     ///
     @Internal
-    pub def unsafeGetAndUnlock(c: Mpmc[a], locks: List[ReentrantLock]): a \ IO = {
+    pub def unsafeGetAndUnlock(c: Mpmc[a, _], locks: List[ReentrantLock]): a \ IO = {
         let Mpmc(admin, elementDeque) = c;
         let MpmcAdmin(_, channelLock, _, _, size, _, _) = admin;
         lock(channelLock);
@@ -274,7 +274,7 @@ namespace Concurrent/Channel {
     ///
     /// The channel lock is expected to be held.
     ///
-    def getHelper(c: Mpmc[a]): a \ IO =
+    def getHelper(c: Mpmc[a, _]): a \ IO =
         let Mpmc(admin, elementDeque) = c;
         let MpmcAdmin(_, channelLock, _, _, size, waitingGetters, _) = admin;
 
