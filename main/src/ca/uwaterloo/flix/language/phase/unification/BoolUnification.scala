@@ -20,37 +20,57 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Ok, ToErr, ToOk}
 
-import scala.util.Try
-
 object BoolUnification {
 
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
   def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
-    ///
-    /// Perform aggressive matching to optimize for common cases.
-    ///
+    //
+    // Optimize common unification queries.
+    //
+
+    // Case 1: Unification of identical formulas.
     if (tpe1 eq tpe2) {
       return Ok(Substitution.empty)
     }
 
-    tpe1 match {
-      case x: Type.Var if renv0.isFlexible(x.sym) =>
-        if (tpe2 eq Type.True)
-          return Ok(Substitution.singleton(x.sym, Type.True))
-        if (tpe2 eq Type.False)
-          return Ok(Substitution.singleton(x.sym, Type.False))
+    // Case 2: Common unification instances.
+    // Note: Order determined by code coverage.
+    (tpe1, tpe2) match {
+      case (Type.Var(x, _), Type.Var(y, _)) =>
+        if (renv0.isFlexible(x)) {
+          return Ok(Substitution.singleton(x, tpe2))       // 9000 hits
+        }
+        if (renv0.isFlexible(y)) {
+          return Ok(Substitution.singleton(y, tpe1))       // 1000 hits
+        }
+        if (x == y) {
+          return Ok(Substitution.empty)                    // 1000 hits
+        }
+      // else nop
 
-      case _ => // nop
-    }
+      case (Type.Cst(TypeConstructor.True, _), Type.Cst(TypeConstructor.True, _)) =>
+        return Ok(Substitution.empty)                      // 6000 hits
 
-    tpe2 match {
-      case y: Type.Var if renv0.isFlexible(y.sym) =>
-        if (tpe1 eq Type.True)
-          return Ok(Substitution.singleton(y.sym, Type.True))
-        if (tpe1 eq Type.False)
-          return Ok(Substitution.singleton(y.sym, Type.False))
+      case (Type.Var(x, _), Type.Cst(tc, _)) if renv0.isFlexible(x) => tc match {
+        case TypeConstructor.True =>
+          return Ok(Substitution.singleton(x, Type.True))  // 9000 hits
+        case TypeConstructor.False =>
+          return Ok(Substitution.singleton(x, Type.False)) // 1000 hits
+        case _ => // nop
+      }
+
+      case (Type.Cst(tc, _), Type.Var(y, _)) if renv0.isFlexible(y) => tc match {
+        case TypeConstructor.True =>
+          return Ok(Substitution.singleton(y, Type.True))  // 7000 hits
+        case TypeConstructor.False =>
+          return Ok(Substitution.singleton(y, Type.False)) //  500 hits
+        case _ => // nop
+      }
+
+      case (Type.Cst(TypeConstructor.False, _), Type.Cst(TypeConstructor.False, _)) =>
+        return Ok(Substitution.empty)                      //  100 hits
 
       case _ => // nop
     }
@@ -64,11 +84,27 @@ object BoolUnification {
 
     val renv = alg.liftRigidityEnv(renv0, env)
 
+    //
+    // Lookup the query to see if it is already in unification cache.
+    //
+    UnificationCache.Global.lookup(f1, f2, renv) match {
+      case None => // cache miss: must compute the unification.
+      case Some(subst) =>
+        // cache hit: return the found substitution.
+        return subst.toTypeSubstitution(env).toOk
+    }
+
+    //
+    // Run the expensive Boolean unification algorithm.
+    //
     booleanUnification(f1, f2, renv) match {
       case None => UnificationError.MismatchedBools(tpe1, tpe2).toErr
-      case Some(subst) => subst.toTypeSubstitution(env).toOk
+      case Some(subst) =>
+        UnificationCache.Global.put(f1, f2, renv, subst)
+        subst.toTypeSubstitution(env).toOk
     }
   }
+
 
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
