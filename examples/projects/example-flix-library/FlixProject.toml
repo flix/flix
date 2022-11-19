@@ -1,0 +1,16 @@
+[package]
+name = "example-flix-library"
+version = "2.3.4"
+flix = "0.31.0"
+license = "MIT OR Apache-2.0"
+description = """
+An example of a Flix library, distributed as an fpkg
+"""
+homepage = "https://github.com/org-name/example-flix-library"
+
+[package.dependencies]
+mvn."com.example/some-lib" = "1.2.3"
+fpkg."com.example/another-flix-library" = "2.3.4"
+
+[build.dev.dependencies]
+fpkg."com.github.example/debugging-helper" = "3.4.5"
