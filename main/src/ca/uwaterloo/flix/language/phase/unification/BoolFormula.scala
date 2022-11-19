@@ -257,7 +257,6 @@ object BoolFormula {
       case _ => BoolFormula.Not(f)
     }
 
-    @tailrec
     override def mkAnd(f1: BoolFormula, f2: BoolFormula): BoolFormula = (f1, f2) match {
       // T ∧ x => x
       case (BoolFormula.True, _) =>
@@ -348,7 +347,6 @@ object BoolFormula {
         BoolFormula.And(f1, f2)
     }
 
-    @tailrec
     override def mkOr(f1: BoolFormula, f2: BoolFormula): BoolFormula = (f1, f2) match {
       // T ∨ x => T
       case (BoolFormula.True, _) =>
