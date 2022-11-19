@@ -40,18 +40,18 @@ object BoolUnification {
     (tpe1, tpe2) match {
       case (Type.Var(x, _), Type.Var(y, _)) =>
         if (renv0.isFlexible(x)) {
-          return Ok(Substitution.singleton(x, tpe2)) // 9000 hits
+          return Ok(Substitution.singleton(x, tpe2))       // 9000 hits
         }
         if (renv0.isFlexible(y)) {
-          return Ok(Substitution.singleton(y, tpe1)) // 1000 hits
+          return Ok(Substitution.singleton(y, tpe1))       // 1000 hits
         }
         if (x == y) {
-          return Ok(Substitution.empty)              // 1000 hits
+          return Ok(Substitution.empty)                    // 1000 hits
         }
       // else nop
 
       case (Type.Cst(TypeConstructor.True, _), Type.Cst(TypeConstructor.True, _)) =>
-        return Ok(Substitution.empty)                // 6000 hits
+        return Ok(Substitution.empty)                      // 6000 hits
 
       case (Type.Var(x, _), Type.Cst(tc, _)) if renv0.isFlexible(x) => tc match {
         case TypeConstructor.True =>
