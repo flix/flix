@@ -1,1 +1,0 @@
-Enter license information here.
