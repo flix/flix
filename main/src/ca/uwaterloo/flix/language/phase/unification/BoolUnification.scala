@@ -84,8 +84,6 @@ object BoolUnification {
 
     val renv = alg.liftRigidityEnv(renv0, env)
 
-    //println(tpe1 + " = " + tpe2 + " rigid: " + renv0)
-
     //
     // Lookup the query to see if it is already in unification cache.
     //
