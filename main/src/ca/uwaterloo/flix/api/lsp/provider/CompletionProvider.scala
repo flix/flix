@@ -115,25 +115,49 @@ object CompletionProvider {
   }
 
   private def getCompletions()(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
-    //
-    // The order of this list doesn't matter because suggestions are ordered
-    // through sortText
-    //
-    getKeywordCompletions() ++
-      getSnippetCompletions() ++
-      getVarCompletions() ++
-      getDefAndSigCompletions() ++
-      getWithCompletions() ++
-      getCaseCompletions() ++
-      getMatchCompletitions() ++
-      getPredicateCompletions() ++
-      getFieldCompletions() ++
-      getInstanceCompletions() ++
-      getTypeCompletions() ++
-      getOpCompletions() ++
-      getEffectCompletions() ++
-      getUseCompletions() ++
-      getImportCompletions()
+    // If we match one of the we know what type of completion we need
+    val typeRegex = raw".*:\s*[^\s]*".r
+    val effectRegex = raw".*[\\]\s*[^\s]*".r
+    val importRegex = raw"\s*import\s+.*".r
+    val useRegex = raw"\s*use\s+[^\s]*".r
+    val instanceRegex = raw"\s*instance\s+[^s]*".r
+    val caseRegex = raw"(?:|.*\s+)case\s+[^s]*".r
+
+    // if the following are match we do not want any completions
+    val defRegex = raw"\s*def\s+.*".r
+    val enumRegex = raw"\s*enum\s+.*".r
+    val typeAliasRegex = raw"\s*type\s+alias\s+.*".r
+    val classRegex = raw"\s*class\s+.*".r
+    val letRegex = raw"\s*let\s+[^\s]*".r
+    val letStarRegex = raw"\s*let[\*]\s+[^\s]*".r
+    val namespaceRegex = raw"\s*namespace\s+.*".r
+
+    // We check type and effect first because for example follwing def we do not want completions other than type and effect if applicable.
+    context.prefix match {
+      case typeRegex() => getTypeCompletions()
+      case effectRegex() => getEffectCompletions()
+      case defRegex() | enumRegex() | typeAliasRegex() | classRegex() | letRegex() | letStarRegex() | namespaceRegex() => Nil
+      case importRegex() => getImportCompletions()
+      case useRegex() => getUseCompletions()
+      case instanceRegex() => getInstanceCompletions()
+      case caseRegex() => getCaseCompletions()
+        //
+        // The order of this list doesn't matter because suggestions are ordered
+        // through sortText
+        //
+      case _ => getKeywordCompletions() ++
+        getSnippetCompletions() ++
+        getVarCompletions() ++
+        getDefAndSigCompletions() ++
+        getWithCompletions() ++
+        getPredicateCompletions() ++
+        getFieldCompletions() ++
+        getTypeCompletions() ++
+        getOpCompletions() ++
+        getEffectCompletions() ++
+        getMatchCompletitions() ++
+        getCaseCompletions()
+    }
   }
 
   /**
