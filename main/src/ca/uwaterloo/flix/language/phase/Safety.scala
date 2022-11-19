@@ -37,7 +37,7 @@ object Safety {
       case (_, defn) => visitDef(defn)
     }
 
-    val instanceErrors = visitImmutable(root)
+    val instanceErrors = visitSendable(root)
 
     val errors = defErrors ++ instanceErrors
 
@@ -51,16 +51,16 @@ object Safety {
   }
 
   /**
-    * Checks that no type parameters for types that implement `Immutable` of kind `Region`
+    * Checks that no type parameters for types that implement `Sendable` of kind `Region`
     */
-  private def visitImmutable(root: Root)(implicit flix: Flix): List[CompilationMessage] = {
+  private def visitSendable(root: Root)(implicit flix: Flix): List[CompilationMessage] = {
 
-    val immutableClass = new Symbol.ClassSym(Nil, "Immutable", SourceLocation.Unknown)
+    val sendableClass = new Symbol.ClassSym(Nil, "Sendable", SourceLocation.Unknown)
 
-    root.instances.getOrElse(immutableClass, Nil) flatMap {
+    root.instances.getOrElse(sendableClass, Nil) flatMap {
       case Instance(_, _, _, _, tpe, _, _, _, loc) =>
         if (tpe.typeArguments.exists(_.kind == Kind.Bool))
-          List(SafetyError.ImmutableError(tpe, loc))
+          List(SafetyError.SendableError(tpe, loc))
         else
           Nil
     }
