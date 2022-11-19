@@ -353,13 +353,14 @@ object Resolver {
     * Resolves all the definitions in the given root.
     */
   private def resolveDefs(root: NamedAst.Root, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, ResolvedAst.Def], ResolutionError] = {
-    def getDef(defOrSig: NamedAst.DefOrSig): Option[NamedAst.Def] = defOrSig match {
-      case NamedAst.DefOrSig.Def(d) => Some(d)
-      case NamedAst.DefOrSig.Sig(_) => None
+    def getDef(defOrSig: NamedAst.LowerName): Option[NamedAst.Def] = defOrSig match {
+      case NamedAst.LowerName.Def(d) => Some(d)
+      case NamedAst.LowerName.Sig(_) => None
+      case NamedAst.LowerName.Op(_) => None
     }
 
     val rootDefs = for {
-      (ns, defsAndSigs) <- root.defsAndSigs
+      (ns, defsAndSigs) <- root.lowerNames
       (_, defOrSig) <- defsAndSigs
       defn <- getDef(defOrSig)
     } yield defn.sym -> (defn, ns)
@@ -606,8 +607,9 @@ object Resolver {
 
         case NamedAst.Expression.DefOrSig(qname, env, loc) =>
           mapN(lookupDefOrSig(qname, ns0, env, root)) {
-            case NamedAst.DefOrSig.Def(defn) => visitDef(defn, loc)
-            case NamedAst.DefOrSig.Sig(sig) => visitSig(sig, loc)
+            case NamedAst.LowerName.Def(defn) => visitDef(defn, loc)
+            case NamedAst.LowerName.Sig(sig) => visitSig(sig, loc)
+            case NamedAst.LowerName.Op(op) => throw InternalCompilerException("unexpected op")
           }
 
         case NamedAst.Expression.Hole(nameOpt, loc) =>
@@ -634,8 +636,9 @@ object Resolver {
 
         case app@NamedAst.Expression.Apply(NamedAst.Expression.DefOrSig(qname, env, innerLoc), exps, outerLoc) =>
           flatMapN(lookupDefOrSig(qname, ns0, env, root)) {
-            case NamedAst.DefOrSig.Def(defn) => visitApplyDef(app, defn, exps, region, innerLoc, outerLoc)
-            case NamedAst.DefOrSig.Sig(sig) => visitApplySig(app, sig, exps, region, innerLoc, outerLoc)
+            case NamedAst.LowerName.Def(defn) => visitApplyDef(app, defn, exps, region, innerLoc, outerLoc)
+            case NamedAst.LowerName.Sig(sig) => visitApplySig(app, sig, exps, region, innerLoc, outerLoc)
+            case NamedAst.LowerName.Op(_) => throw InternalCompilerException("unexpected op")
           }
 
         case app@NamedAst.Expression.Apply(_, _, _) =>
@@ -1545,23 +1548,24 @@ object Resolver {
   /**
     * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
-  def lookupDefOrSig(qname: Name.QName, ns0: Name.NName, env: Map[String, Symbol.VarSym], root: NamedAst.Root): Validation[NamedAst.DefOrSig, ResolutionError] = {
-    val defOrSigOpt = tryLookupName(qname, ns0, root.defsAndSigs)
+  def lookupDefOrSig(qname: Name.QName, ns0: Name.NName, env: Map[String, Symbol.VarSym], root: NamedAst.Root): Validation[NamedAst.LowerName, ResolutionError] = {
+    val defOrSigOpt = tryLookupName(qname, ns0, root.lowerNames)
 
     defOrSigOpt match {
       case None => ResolutionError.UndefinedName(qname, ns0, env, qname.loc).toFailure
-      case Some(d@NamedAst.DefOrSig.Def(defn)) =>
+      case Some(d@NamedAst.LowerName.Def(defn)) =>
         if (isDefAccessible(defn, ns0)) {
           d.toSuccess
         } else {
           ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc).toFailure
         }
-      case Some(s@NamedAst.DefOrSig.Sig(sig)) =>
+      case Some(s@NamedAst.LowerName.Sig(sig)) =>
         if (isSigAccessible(sig, ns0)) {
           s.toSuccess
         } else {
           ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc).toFailure
         }
+      case Some(NamedAst.LowerName.Op(_)) => ResolutionError.UndefinedName(qname, ns0, env, qname.loc).toFailure
     }
   }
 
@@ -1569,16 +1573,16 @@ object Resolver {
     * Looks up the effect operation with qualified name `qname` in the namespace `ns0`.
     */
   private def lookupOp(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Op, ResolutionError] = {
-    val opOpt = tryLookupName(qname, ns0, root.ops)
+    val opOpt = tryLookupName(qname, ns0, root.lowerNames)
 
     opOpt match {
-      case None => ResolutionError.UndefinedOp(qname, qname.loc).toFailure
-      case Some(op) =>
+      case Some(NamedAst.LowerName.Op(op)) =>
         if (isOpAccessible(op, ns0)) {
           op.toSuccess
         } else {
           ResolutionError.InaccessibleOp(op.sym, ns0, qname.loc).toFailure
         }
+      case _ => ResolutionError.UndefinedOp(qname, qname.loc).toFailure
     }
   }
 
