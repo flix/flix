@@ -512,7 +512,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
         |    let _ =
         |        if (true)
-        |            super_cast (1 as \ Impure);
+        |            super_cast (1 as \ Impure)
         |        else
         |            newObject();
         |    ()
@@ -547,7 +547,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
         |    let _ =
         |        if (true)
-        |            super_cast newObject();
+        |            super_cast newObject()
         |        else
         |            newStringBuilder();
         |    ()
@@ -565,7 +565,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
         |    let _ =
         |        if (true)
-        |            super_cast newObject();
+        |            super_cast newObject()
         |        else
         |            super_cast newStringBuilder();
         |    ()
@@ -582,7 +582,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
         |    let _ =
         |        if (true)
-        |            super_cast newStringBuilder();
+        |            super_cast newStringBuilder()
         |        else
         |            super_cast newStringBuilder();
         |    ()
