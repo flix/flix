@@ -238,26 +238,21 @@ object BoolFormula {
     override def satisfiable(f: BoolFormula): Boolean = f match {
       case BoolFormula.True => true
       case BoolFormula.False => false
-      case _ => {
-        val vars = freeVars(f)
-        val assignments = enumerateAssignments(vars)
-        for (assignment <- assignments) {
-          val is_true = checkAssignment(f, assignment)
-          if (is_true) {
-            return true
-          }
-        }
-        false
-      }
+      case BoolFormula.Var(_) => true
+      case _ =>
+        enumerateAssignments(freeVars(f)).exists(a => checkAssignment(f, a))
     }
 
-    def enumerateAssignments(vars: SortedSet[Int]): Set[Map[Int, Boolean]] = {
+    /**
+      * Enumerates all assignments to the boolean variables in `vars`.
+      */
+    private def enumerateAssignments(vars: SortedSet[Int]): Set[Map[Int, Boolean]] = {
       val x = vars.firstKey
-      val newVars = vars - x
-      if(newVars.isEmpty) {
+      val new_vars = vars - x
+      if(new_vars.isEmpty) {
         return Set(Map(x -> true), Map(x -> false))
       }
-      val no_x_assignments = enumerateAssignments(newVars)
+      val no_x_assignments = enumerateAssignments(new_vars)
       var res : Set[Map[Int, Boolean]] = Set.empty
       for(assignment <- no_x_assignments) {
         val x_true = assignment + (x -> true)
@@ -268,16 +263,16 @@ object BoolFormula {
       res
     }
 
-    def checkAssignment(f: BoolFormula, assignment: Map[Int, Boolean]): Boolean = f match {
+    /**
+      * Checks the truth value of `f` given the assignment `a`.
+      */
+    private def checkAssignment(f: BoolFormula, a: Map[Int, Boolean]): Boolean = f match {
       case True => true
       case False => false
-      case Var(x) => assignment.get(x) match {
-        case None => ??? //should never happen
-        case Some(b) => b
-      }
-      case Not(f1) => !checkAssignment(f1, assignment)
-      case Or(f1, f2) => checkAssignment(f1, assignment) || checkAssignment(f2, assignment)
-      case And(f1, f2) => checkAssignment(f1, assignment) && checkAssignment(f2, assignment)
+      case Var(x) => a(x)
+      case Not(f1) => !checkAssignment(f1, a)
+      case Or(f1, f2) => checkAssignment(f1, a) || checkAssignment(f2, a)
+      case And(f1, f2) => checkAssignment(f1, a) && checkAssignment(f2, a)
     }
 
     @tailrec
