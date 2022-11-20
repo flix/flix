@@ -32,7 +32,7 @@ namespace RedBlackTree {
     /// 3. Every path from the root to a leaf contains the same
     /// number of black nodes.
     ///
-    pub enum RedBlackTree[k, v] with Immutable {
+    pub enum RedBlackTree[k, v] with Sendable {
 
         ///
         /// A black leaf.

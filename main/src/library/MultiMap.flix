@@ -23,7 +23,7 @@
 ///
 /// The key and value types must implement the Eq and Order type classes.
 ///
-pub enum MultiMap[k, v] with Immutable {
+pub enum MultiMap[k, v] with Sendable {
     case MultiMap(Map[k, Set[v]])
 }
 
