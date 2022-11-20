@@ -5,7 +5,7 @@ namespace Test/Exp/Supercast {
         import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
         import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
         if (true)
-            supercast(newStringBuilder())
+            super_cast newStringBuilder()
         else
             newObject()
 
@@ -16,13 +16,13 @@ namespace Test/Exp/Supercast {
         if (true)
             newObject()
         else
-            supercast(newStringBuilder())
+            super_cast newStringBuilder()
 
     @test
     def testSupercast03(): Unit \ Impure =
         import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
         let f = (_: ##java.lang.CharSequence) -> ();
-        f(supercast(newStringBuilder()))
+        f(super_cast newStringBuilder())
 
     @test
     def testSupercast04(): Unit \ Impure =
@@ -30,27 +30,27 @@ namespace Test/Exp/Supercast {
         import java.lang.StringBuilder.append(String): ##java.lang.StringBuilder \ Impure;
         let f = (_: ##java.lang.CharSequence) -> ();
         let sb = newStringBuilder();
-        f(supercast(append(sb, "Hello")))
+        f(super_cast append(sb, "Hello"))
 
     @test
     def testSupercast05(): Unit \ Impure =
         import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
         let f = (_: ##java.lang.Comparable) -> ();
-        f(supercast(newStringBuilder()))
+        f(super_cast newStringBuilder())
 
     @test
     def testSupercast06(): Unit =
         let f = (_: ##java.lang.CharSequence) -> ();
-        f(supercast("hello"))
+        f(super_cast "hello")
 
     @test
     def testSupercast07(): Unit =
         let f = (_: ##java.lang.Number) -> ();
-        f(supercast(123ii))
+        f(super_cast 123ii)
 
     @test
     def testSupercast08(): Unit =
         let f = (_: ##java.lang.Number) -> ();
-        f(supercast(1.23ff))
+        f(super_cast 1.23ff)
 
 }
