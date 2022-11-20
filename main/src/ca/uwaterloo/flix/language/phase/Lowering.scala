@@ -598,7 +598,7 @@ object Lowering {
     case TypedAst.Expression.NewChannel(exp, tpe, elmTpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      val chTpe = mkChannelTpe(elmTpe, Type.False, loc)
+      val chTpe = mkChannelTpe(elmTpe, loc)
       val ch = mkNewChannel(e, chTpe, pur, eff, loc)
       val sym = mkLetSym("ch", loc)
       val tuple = LoweredAst.Expression.Tuple(List(LoweredAst.Expression.Var(sym, chTpe, loc), LoweredAst.Expression.Var(sym, chTpe, loc)), t, pur, eff, loc)
@@ -839,12 +839,14 @@ object Lowering {
         case _ => tpe0
       }
 
-      // Special case for Sender[_] and Receiver[_], both of which are rewritten to Concurrent/Channel.Mpmc
-      case Type.Cst(TypeConstructor.Sender, loc) =>
-        Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Bool ->: Kind.Star), loc)
+      // Special case for Sender[t, _] and Receiver[t, _], both of which are rewritten to Concurrent/Channel.Mpmc[t]
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe, _), _, _) =>
+        val t = visitType(tpe)
+        Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
 
-      case Type.Cst(TypeConstructor.Receiver, loc) =>
-        Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Bool ->: Kind.Star), loc)
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe, _), _, _) =>
+        val t = visitType(tpe)
+        Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
 
       case Type.Cst(_, _) => tpe0
 
@@ -1361,7 +1363,7 @@ object Lowering {
         val locksSym = mkLetSym("locks", loc)
         val pat = mkTuplePattern(List(LoweredAst.Pattern.Cst(Ast.Constant.Int32(i), Type.Int32, loc), LoweredAst.Pattern.Var(locksSym, locksType, loc)), loc)
         val getTpe = Type.eraseTopAliases(chan.tpe) match {
-          case Type.Apply(Type.Apply(_, t, _), _, _) => t
+          case Type.Apply(_, t, _) => t
           case _ => throw InternalCompilerException("Unexpected channel type found.")
         }
         val get = LoweredAst.Expression.Def(Defs.ChannelUnsafeGetAndUnlock, Type.mkImpureUncurriedArrow(List(chan.tpe, locksType), getTpe, loc), loc)
@@ -1511,15 +1513,15 @@ object Lowering {
   /**
     * The type of a channel which can transmit variables of type `tpe`
     */
-  private def mkChannelTpe(tpe: Type, reg: Type, loc: SourceLocation): Type = {
-    Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Bool ->: Kind.Star), loc), tpe, loc), reg, loc)
+  private def mkChannelTpe(tpe: Type, loc: SourceLocation): Type = {
+    Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), tpe, loc)
   }
 
   /**
     * An expression for a channel variable called `sym`
     */
   private def mkChannelExp(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation): LoweredAst.Expression = {
-    LoweredAst.Expression.Var(sym, mkChannelTpe(tpe, Type.False, loc), loc)
+    LoweredAst.Expression.Var(sym, mkChannelTpe(tpe, loc), loc)
   }
 
   /**
@@ -1553,7 +1555,7 @@ object Lowering {
     chanSymsWithExps.foldRight(spawns: LoweredAst.Expression) {
       case ((sym, e), acc) =>
         val loc = e.loc.asSynthetic
-        val chan = mkNewChannel(LoweredAst.Expression.Cst(Ast.Constant.Int32(1), Type.Int32, loc), mkChannelTpe(e.tpe, Type.False, loc), Type.Impure, Type.Empty, loc) // The channel exp `chan 1`
+        val chan = mkNewChannel(LoweredAst.Expression.Cst(Ast.Constant.Int32(1), Type.Int32, loc), mkChannelTpe(e.tpe, loc), Type.Impure, Type.Empty, loc) // The channel exp `chan 1`
         LoweredAst.Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), chan, acc, acc.tpe, Type.mkAnd(e.pur, acc.pur, loc), Type.mkUnion(e.eff, acc.eff, loc), loc) // The let-binding `let ch = chan 1`
     }
   }
