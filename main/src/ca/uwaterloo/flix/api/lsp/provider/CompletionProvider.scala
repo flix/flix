@@ -56,19 +56,28 @@ object CompletionProvider {
     "Unit",
     "Bool",
     "Char",
-    "Float32",
     "Float64",
     "BigDecimal",
-    "Int8",
-    "Int16",
     "Int32",
     "Int64",
     "BigInt",
-    "String",
-    "Array",
-    "Ref",
-    "Channel",
-    "Lazy"
+    "String"
+  )
+
+  // Built-in types with hardcoded low priority
+  val lowPriorityBuiltinTypeNames: List[String] = List(
+    "Int8",
+    "Int16",
+    "Float32"
+  )
+
+  // Built-in types with type parameters
+  val builtinTypeNamesWithTypeParameters: List[(String, List[String])] = List(
+    ("Array", List("a", "r")),
+    ("Ref", List("a", "r")),
+    ("Sender", List("t")),
+    ("Receiver", List("t")),
+    ("Lazy", List("t"))
   )
 
   //
@@ -881,7 +890,26 @@ object CompletionProvider {
         kind = CompletionItemKind.Enum)
     }
 
-    enums ++ aliases ++ builtinTypes
+    val lowPriorityBuiltinTypes = lowPriorityBuiltinTypeNames map { name =>
+      val internalPriority = Priority.low _
+      CompletionItem(label = name,
+        sortText = priority(internalPriority(name)),
+        textEdit = TextEdit(context.range, name),
+        kind = CompletionItemKind.Enum)
+    }
+
+    val builtinTypesWithParams = builtinTypeNamesWithTypeParameters map { case (name, tparams) =>
+      val internalPriority = Priority.boost _
+      val fmtTparams = tparams.zipWithIndex.map{ case (name, idx) => s"$${${idx + 1}:$name}" }.mkString(", ")
+      val finalName = s"$name[${tparams.mkString(", ")}}]"
+      CompletionItem(label = finalName,
+        sortText = priority(internalPriority(name)),
+        textEdit = TextEdit(context.range, s"$name[$fmtTparams]"),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Enum)
+    }
+
+    enums ++ aliases ++ builtinTypes ++ lowPriorityBuiltinTypes ++ builtinTypesWithParams
   }
 
   /**
