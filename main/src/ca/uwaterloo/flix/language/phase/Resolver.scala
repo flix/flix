@@ -40,9 +40,9 @@ object Resolver {
   private val OrderSym = new Symbol.ClassSym(Nil, "Order", SourceLocation.Unknown)
   private val ToStringSym = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
   private val HashSym = new Symbol.ClassSym(Nil, "Hash", SourceLocation.Unknown)
-  private val ImmutableSym = new Symbol.ClassSym(Nil, "Immutable", SourceLocation.Unknown)
+  private val SendableSym = new Symbol.ClassSym(Nil, "Sendable", SourceLocation.Unknown)
 
-  val DerivableSyms: List[Symbol.ClassSym] = List(BoxableSym, EqSym, OrderSym, ToStringSym, HashSym, ImmutableSym)
+  val DerivableSyms: List[Symbol.ClassSym] = List(BoxableSym, EqSym, OrderSym, ToStringSym, HashSym, SendableSym)
 
   /**
     * Java classes for primitives and Object

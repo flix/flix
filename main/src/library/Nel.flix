@@ -17,7 +17,7 @@
 ///
 /// The NonEmptyList type.
 ///
-pub enum Nel[a] with Immutable {
+pub enum Nel[a] with Sendable {
     case Nel(a, List[a])
 }
 

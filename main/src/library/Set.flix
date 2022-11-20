@@ -21,7 +21,7 @@ use RedBlackTree.RedBlackTree
 ///
 /// A set is currently represented internally as a red-black tree.
 ///
-pub enum Set[t] with Immutable {
+pub enum Set[t] with Sendable {
     case Set(RedBlackTree[t, Unit])
 }
 

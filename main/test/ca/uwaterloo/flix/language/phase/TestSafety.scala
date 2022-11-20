@@ -598,21 +598,21 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[SafetyError.ToTypeVariableSupercast](result)
   }
 
-  test("UnableToDeriveImmutable.01") {
+  test("UnableToDeriveSendable.01") {
     val input =
       """
-        |enum Enum1[r: Region](Array[Int32, r]) with Immutable
+        |enum Enum1[r: Region](Array[Int32, r]) with Sendable
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.ImmutableError](result)
+    expectError[SafetyError.SendableError](result)
   }
 
-  test("UnableToDeriveImmutable.02") {
+  test("UnableToDeriveSendable.02") {
     val input =
       """
-        |instance Immutable[Array[a, r]]
+        |instance Sendable[Array[a, r]]
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.ImmutableError](result)
+    expectError[SafetyError.SendableError](result)
   }
 }
