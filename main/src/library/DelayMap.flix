@@ -476,7 +476,7 @@ namespace DelayMap {
         };
         let DMap(t) = m;
         if (useParallelEvaluation(m))
-            parLoop(threads() - 1, t) as \ {}
+            unsafe_cast parLoop(threads() - 1, t): \ {}
         else
             seqLoop(t)
 

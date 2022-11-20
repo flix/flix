@@ -116,7 +116,7 @@ pub def println(x: a): Unit \ IO with ToString[a] =
 /// WARNING: The debug function is pure hence if the
 /// result is unused it may be removed by the compiler!
 ///
-def debug(x: a): a = Debug.debugWithPrefix("", x) as \ {}
+def debug(x: a): a = unsafe_cast Debug.debugWithPrefix("", x): \ {}
 
 ///
 /// Prints the stringified representation of `x`.
@@ -124,7 +124,7 @@ def debug(x: a): a = Debug.debugWithPrefix("", x) as \ {}
 /// WARNING: The debug function is pure hence if the
 /// result is unused it may be removed by the compiler!
 ///
-def debug!(x: a): a = Debug.debugWithPrefix("", x) as \ {}
+def debug!(x: a): a = unsafe_cast Debug.debugWithPrefix("", x): \ {}
 
 ///
 /// Prints the stringified representation of `x`.
@@ -132,12 +132,12 @@ def debug!(x: a): a = Debug.debugWithPrefix("", x) as \ {}
 /// WARNING: The debug function is pure hence if the
 /// result is unused it may be removed by the compiler!
 ///
-def debug!!(x: a): a = Debug.debugWithPrefix("", x) as \ {}
+def debug!!(x: a): a = unsafe_cast Debug.debugWithPrefix("", x): \ {}
 
 ///
 /// Crashes the current process with the given message `m`.
 ///
-pub def bug!(m: String): a = {
+pub def bug!(m: String): a = unsafe_cast {
     import static get java.lang.System.err: ##java.io.PrintStream \ {} as getErr;
     import java.io.PrintStream.println(String): Unit \ IO;
     import java.lang.String.repeat(Int32): ##java.lang.String \ {};
@@ -149,7 +149,7 @@ pub def bug!(m: String): a = {
     prt(repeat("*", 80));
     prt("");
     ?panic
-} as \ {}
+}: \ {}
 
 ///
 /// Asserts that this expression is unreachable. Crashes if not.
@@ -162,7 +162,7 @@ pub def unreachable!(): a = bug!("Reached unreachable expression.")
 /// `upcast` is safe to use anywhere.
 ///
 pub def upcast(f: a -> b): a -> b \ ef =
-    x -> f(x) as \ ef
+    unsafe_cast x -> f(x): \ ef
 
 ///
 /// Prints the argument unless it is ().

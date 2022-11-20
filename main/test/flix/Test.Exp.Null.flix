@@ -4,66 +4,66 @@ namespace Test/Exp/Null {
     def testNull01(): Null = null
 
     @test
-    def testNullUnit01(): Unit = null as Unit
+    def testNullUnit01(): Unit = unsafe_cast null: Unit
 
     @test
-    def testNullString01(): String = null as String
+    def testNullString01(): String = unsafe_cast null: String
 
     @test
-    def testNullArray01(): Array[String, Static] = null as Array[String, Static]
+    def testNullArray01(): Array[String, Static] = unsafe_cast null: Array[String, Static]
 
     @test
-    def testNullChannel01(): Receiver[String] = null as Receiver[String]
+    def testNullChannel01(): Receiver[String] = unsafe_cast null: Receiver[String]
 
     @test
-    def testNullRecord01(): {} = null as {}
+    def testNullRecord01(): {} = unsafe_cast null: {}
 
     @test
-    def testNullRecord02(): {name = String} = null as {name = String}
+    def testNullRecord02(): {name = String} = unsafe_cast null: {name = String}
 
     @test
-    def testNullRecord03(): {name = String} = {name = null as String}
+    def testNullRecord03(): {name = String} = {name = unsafe_cast null: String}
 
     @test
-    def testNullRecord04(): {fstName = String, lstName = String} = null as {fstName = String, lstName = String}
+    def testNullRecord04(): {fstName = String, lstName = String} = unsafe_cast null: {fstName = String, lstName = String}
 
     @test
-    def testNullRecord05(): {fstName = String, lstName = String} = {fstName = null as String, lstName = null as String}
+    def testNullRecord05(): {fstName = String, lstName = String} = {fstName = unsafe_cast null: String, lstName = unsafe_cast null: String}
 
     @test
-    def testNullRef01(): Ref[String, Static] = null as Ref[String, Static]
+    def testNullRef01(): Ref[String, Static] = unsafe_cast null: Ref[String, Static]
 
     @test
-    def testNullTuple01(): (String, String) = null as (String, String)
+    def testNullTuple01(): (String, String) = unsafe_cast null: (String, String)
 
     @test
-    def testNullTuple02(): (String, String) = (null as String, "abc")
+    def testNullTuple02(): (String, String) = (unsafe_cast null: String, "abc")
 
     @test
-    def testNullTuple03(): (String, String) = ("abc", null as String)
+    def testNullTuple03(): (String, String) = ("abc", unsafe_cast null: String)
 
     @test
-    def testNullOption01(): Option[String] = null as Option[String]
+    def testNullOption01(): Option[String] = unsafe_cast null: Option[String]
 
     @test
-    def testNullOption02(): Option[String] = Some(null as String)
+    def testNullOption02(): Option[String] = Some(unsafe_cast null: String)
 
     @test
-    def testNullList01(): List[String] = null as List[String]
+    def testNullList01(): List[String] = unsafe_cast null: List[String]
 
     @test
-    def testNullList02(): List[String] = (null as String) :: Nil
+    def testNullList02(): List[String] = (unsafe_cast null: String) :: Nil
 
     @test
-    def testNullResult01(): Result[String, String] = null as Result[String, String]
+    def testNullResult01(): Result[String, String] = unsafe_cast null: Result[String, String]
 
     @test
-    def testNullResult03(): Result[String, String] = Ok(null as String)
+    def testNullResult03(): Result[String, String] = Ok(unsafe_cast null: String)
 
     @test
-    def testNullResult04(): Result[String, String] = Err(null as String)
+    def testNullResult04(): Result[String, String] = Err(unsafe_cast null: String)
 
     @test
-    def testNullArrow01(): (String -> String) = (_: String) -> null as String
+    def testNullArrow01(): (String -> String) = (_: String) -> unsafe_cast null: String
 
 }
