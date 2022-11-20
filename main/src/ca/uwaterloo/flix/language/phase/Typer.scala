@@ -1601,17 +1601,20 @@ object Typer {
 
 
       case KindedAst.Expression.NewChannel(exp, elmType, loc) =>
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
+
         for {
           (constrs, tpe, _, eff) <- visitExp(exp)
           _ <- expectTypeM(expected = Type.Int32, actual = tpe, exp.loc)
-          resultTyp <- liftM(Type.mkTuple(List(Type.mkSender(elmType, Type.False, loc), Type.mkReceiver(elmType, Type.False, loc)), loc))
+          resultTyp <- liftM(Type.mkTuple(List(Type.mkSender(elmType, regionVar, loc), Type.mkReceiver(elmType, regionVar, loc)), loc))
           resultPur = Type.Impure
           resultEff = eff
         } yield (constrs, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.GetChannel(exp, tvar, loc) =>
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
         val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
-        val channelType = Type.mkReceiver(elmVar, Type.False, loc)
+        val channelType = Type.mkReceiver(elmVar, regionVar, loc)
 
         for {
           (constrs, tpe, _, eff) <- visitExp(exp)
@@ -1622,8 +1625,9 @@ object Typer {
         } yield (constrs, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.PutChannel(exp1, exp2, loc) =>
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
         val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
-        val channelType = Type.mkSender(elmVar, Type.False, loc)
+        val channelType = Type.mkSender(elmVar, regionVar, loc)
 
         for {
           (constrs1, tpe1, _, eff1) <- visitExp(exp1)
