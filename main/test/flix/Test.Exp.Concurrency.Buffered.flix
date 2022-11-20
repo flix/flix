@@ -62,7 +62,7 @@ namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannel11(): Bool \ IO =
-        let (s, r): (Sender[Option[Int32]], Receiver[Option[Int32]]) = Channel.buffered(1);
+        let (s, r): (Sender[Option[Int32], _], Receiver[Option[Int32], _]) = Channel.buffered(1);
         Channel.send(None, s);
         None == Channel.recv(r)
 
@@ -74,13 +74,13 @@ namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannel13(): Bool \ IO =
-        let (s, r): (Sender[Result[Int32, String]], Receiver[Result[Int32, String]]) = Channel.buffered(1);
+        let (s, r): (Sender[Result[Int32, String], _], Receiver[Result[Int32, String], _]) = Channel.buffered(1);
         Channel.send(Ok(123), s);
         Ok(123) == Channel.recv(r)
 
     @test
     def testBufferedChannel14(): Bool \ IO =
-        let (s, r): (Sender[Result[Int32, String]], Receiver[Result[Int32, String]]) = Channel.buffered(1);
+        let (s, r): (Sender[Result[Int32, String], _], Receiver[Result[Int32, String], _]) = Channel.buffered(1);
         Channel.send(Err("Goodbye World!"), s);
         Err("Goodbye World!") == Channel.recv(r)
 
@@ -160,7 +160,7 @@ namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannelWithSpawn11(): Bool \ IO =
-        let (s, r): (Sender[Option[Int32]], Receiver[Option[Int32]]) = Channel.buffered(1);
+        let (s, r): (Sender[Option[Int32], _], Receiver[Option[Int32], _]) = Channel.buffered(1);
         spawn Channel.send(None, s);
         None == Channel.recv(r)
 
@@ -172,13 +172,13 @@ namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannelWithSpawn13(): Bool \ IO =
-        let (s, r): (Sender[Result[Int32, String]], Receiver[Result[Int32, String]]) = Channel.buffered(1);
+        let (s, r): (Sender[Result[Int32, String], _], Receiver[Result[Int32, String], _]) = Channel.buffered(1);
         spawn Channel.send(Ok(123), s);
         Ok(123) == Channel.recv(r)
 
     @test
     def testBufferedChannelWithSpawn14(): Bool \ IO =
-        let (s, r): (Sender[Result[Int32, String]], Receiver[Result[Int32, String]]) = Channel.buffered(1);
+        let (s, r): (Sender[Result[Int32, String], _], Receiver[Result[Int32, String], _]) = Channel.buffered(1);
         spawn Channel.send(Err("Goodbye World!"), s);
         Err("Goodbye World!") == Channel.recv(r)
 

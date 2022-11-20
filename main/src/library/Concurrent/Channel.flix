@@ -63,7 +63,7 @@ namespace Concurrent/Channel {
     /// structure on which select can operate.
     ///
     @Internal
-    pub enum Mpmc[a, r](
+    pub enum Mpmc[a: Type, _: Region](
         MpmcAdmin, // admin
         MutDeque[a, Static] // elementDeque
     )
@@ -115,7 +115,7 @@ namespace Concurrent/Channel {
     /// receiving is syncronized.
     ///
     @Internal
-    pub def newChannel(bufferSize: Int32): Mpmc[a, _] \ IO =
+    pub def newChannel(bufferSize: Int32): Mpmc[a, Static] \ IO =
         import static dev.flix.runtime.Global.newId(): Int64 \ IO;
         let _bufferCheck = if (bufferSize < 0) bug!("bufferSize < 0") else ();
         let unBuffered = bufferSize == 0;
