@@ -20,7 +20,7 @@
 /// repsectively. These pairs, or triples, represent directed edges while
 /// nodes(vertices) are given implicitely.
 ///
-namespace GGraph {
+namespace Graph {
 
     ///
     /// Returns the pairs `(a, b)` where `a` can reach `b` through a number of
