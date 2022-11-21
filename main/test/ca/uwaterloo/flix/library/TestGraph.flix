@@ -441,19 +441,19 @@ namespace TestGraph {
     }
 
     ////////////////////////////////////////////////////////////////////////////
-    // distances                                                              //
+    // boundedDistances                                                       //
     ////////////////////////////////////////////////////////////////////////////
 
     @test
     def distances01(): Bool = {
         let g = graphWithDist01();
-        Graph.distances(g) == Map.empty()
+        Graph.boundedDistances(g) == Map.empty()
     }
 
     @test
     def distances02(): Bool = {
         let g = graphWithDist02();
-        Graph.distances(g) == Map#{
+        Graph.boundedDistances(g) == Map#{
             (1, 1) => 0,
             (2, 2) => 0,
 
@@ -464,7 +464,7 @@ namespace TestGraph {
     @test
     def distances03(): Bool = {
         let g = graphWithDist03();
-        Graph.distances(g) == Map#{
+        Graph.boundedDistances(g) == Map#{
             (1, 1) => 0,
             (2, 2) => 0,
             (3, 3) => 0,
@@ -478,7 +478,7 @@ namespace TestGraph {
     @test
     def distances04(): Bool = {
         let g = graphWithDist04();
-        Graph.distances(g) == Map#{
+        Graph.boundedDistances(g) == Map#{
             (1, 1) => 0,
             (2, 2) => 0,
             (3, 3) => 0,
@@ -496,7 +496,7 @@ namespace TestGraph {
     @test
     def distances05(): Bool = {
         let g = graphWithDist05();
-        Graph.distances(g) == Map#{
+        Graph.boundedDistances(g) == Map#{
             (1, 1) => 0,
             (2, 2) => 0,
             (3, 3) => 0,
@@ -520,7 +520,7 @@ namespace TestGraph {
     @test
     def distances06(): Bool = {
         let g = graphWithDist06();
-        Graph.distances(g) == Map#{
+        Graph.boundedDistances(g) == Map#{
             (1, 1) => 0,
             (2, 2) => 0,
             (3, 3) => 0,
@@ -1134,49 +1134,49 @@ namespace TestGraph {
     }
 
     ////////////////////////////////////////////////////////////////////////////
-    // stableDistances                                                        //
+    // distances                                                              //
     ////////////////////////////////////////////////////////////////////////////
 
     @test
     def stableDistances01(): Bool = {
         let g = graphWithDist01();
-        Graph.stableDistances(g) == Some(Graph.distances(g))
+        Graph.distances(g) == Some(Graph.boundedDistances(g))
     }
 
     @test
     def stableDistances02(): Bool = {
         let g = graphWithDist02();
-        Graph.stableDistances(g) == Some(Graph.distances(g))
+        Graph.distances(g) == Some(Graph.boundedDistances(g))
     }
 
     @test
     def stableDistances03(): Bool = {
         let g = graphWithDist03();
-        Graph.stableDistances(g) == Some(Graph.distances(g))
+        Graph.distances(g) == Some(Graph.boundedDistances(g))
     }
 
     @test
     def stableDistances04(): Bool = {
         let g = graphWithDist04();
-        Graph.stableDistances(g) == Some(Graph.distances(g))
+        Graph.distances(g) == Some(Graph.boundedDistances(g))
     }
 
     @test
     def stableDistances05(): Bool = {
         let g = graphWithDist05();
-        Graph.stableDistances(g) == Some(Graph.distances(g))
+        Graph.distances(g) == Some(Graph.boundedDistances(g))
     }
 
     @test
     def stableDistances06(): Bool = {
         let g = graphWithDist06();
-        Graph.stableDistances(g) == Some(Graph.distances(g))
+        Graph.distances(g) == Some(Graph.boundedDistances(g))
     }
 
     @test
     def stableDistances07(): Bool = {
         let g = Set#{("a", 1, "b"), ("b", 2, "c"), ("c", -4, "a")};
-        Graph.stableDistances(g) == None
+        Graph.distances(g) == None
     }
 
     ////////////////////////////////////////////////////////////////////////////

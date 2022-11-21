@@ -139,7 +139,7 @@ namespace Graph {
     /// Returns the shortest distance between all pairs of vertices in the
     /// weighted directed graph `g`.
     ///
-    pub def stableDistances(g: m[(t, Int32, t)]): Option[Map[(t, t), Int32]] with Foldable[m], Boxable[t] = {
+    pub def distances(g: m[(t, Int32, t)]): Option[Map[(t, t), Int32]] with Foldable[m], Boxable[t] = {
         // based on floyd-warshall
         def rank(v, s) = s |> Set.partition(v0 -> v0 < v) |> fst |> Set.size;
         let edges = inject g into Edge;
@@ -182,7 +182,7 @@ namespace Graph {
     ///
     /// OBS: No negative edges must be present.
     ///
-    pub def distances(g: m[(t, Int32, t)]): Map[(t, t), Int32] with Foldable[m], Boxable[t] = {
+    pub def boundedDistances(g: m[(t, Int32, t)]): Map[(t, t), Int32] with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
         let dists = #{
             // Initialize all node distances to `0`.
