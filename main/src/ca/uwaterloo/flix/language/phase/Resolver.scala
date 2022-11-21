@@ -621,13 +621,35 @@ object Resolver {
           // Lookup the used name to ensure that it exists.
           use match {
             case NamedAst.Use.UseDefOrSig(qname, _, _) =>
-              flatMapN(lookupDefOrSig(qname, ns0, Map.empty, root))(_ => visitExp(exp, region))
+              flatMapN(lookupDefOrSig(qname, ns0, Map.empty, root)) {
+                case DefOrSig.Def(defn) => mapN(visitExp(exp, region)) {
+                  case e => ResolvedAst.Expression.Use(defn.sym, e, loc)
+                }
+                case DefOrSig.Sig(sig) => mapN(visitExp(exp, region)) {
+                  case e => ResolvedAst.Expression.Use(sig.sym, e, loc)
+                }
+              }
 
             case NamedAst.Use.UseTypeOrClass(qname, _, _) =>
-              flatMapN(resolveType(NamedAst.Type.Ambiguous(qname, loc), taenv, ns0, root))(_ => visitExp(exp, region))
+              lookupType(qname, ns0, root) match {
+                case TypeLookupResult.Enum(enum0) => mapN(visitExp(exp, region)) {
+                  case e => ResolvedAst.Expression.Use(enum0.sym, e, loc)
+                }
+                case TypeLookupResult.TypeAlias(typeAlias) => mapN(visitExp(exp, region)) {
+                  case e => ResolvedAst.Expression.Use(typeAlias.sym, e, loc)
+                }
+                case TypeLookupResult.Effect(eff) => mapN(visitExp(exp, region)) {
+                  case e => ResolvedAst.Expression.Use(eff.sym, e, loc)
+                }
+                case TypeLookupResult.NotFound => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
+              }
 
             case NamedAst.Use.UseTag(qname, tag, _, _) =>
-              flatMapN(lookupEnumByTag(Some(qname), tag, ns0, root))(_ => visitExp(exp, region))
+              flatMapN(lookupEnumByTag(Some(qname), tag, ns0, root)) {
+                case enum0 => mapN(visitExp(exp, region)) {
+                  case e => ResolvedAst.Expression.Use(enum0.sym, e, loc)
+                }
+              }
           }
 
         case NamedAst.Expression.Cst(cst, loc) => ResolvedAst.Expression.Cst(cst, loc).toSuccess

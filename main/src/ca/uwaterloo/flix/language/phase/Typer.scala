@@ -516,6 +516,8 @@ object Typer {
       case KindedAst.Expression.Hole(_, tvar, _) =>
         liftM(List.empty, tvar, Type.Pure, Type.Empty)
 
+      case KindedAst.Expression.Use(_, exp, _) => visitExp(exp)
+
       case KindedAst.Expression.Cst(Ast.Constant.Unit, loc) =>
         liftM(List.empty, Type.mkUnit(loc.asSynthetic), Type.Pure, Type.Empty)
 
@@ -1885,6 +1887,9 @@ object Typer {
 
       case KindedAst.Expression.Hole(sym, tpe, loc) =>
         TypedAst.Expression.Hole(sym, subst0(tpe), loc)
+
+      // TODO don't erase
+      case KindedAst.Expression.Use(sym, exp, loc) => visitExp(exp, subst0)
 
       // change null to Unit type
       case KindedAst.Expression.Cst(Ast.Constant.Null, loc) => TypedAst.Expression.Cst(Ast.Constant.Null, Type.Unit, loc)
