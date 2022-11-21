@@ -824,7 +824,7 @@ namespace TestGraph {
 
     @test
     def inDegrees05(): Bool = {
-        debug(Graph.inDegrees(graph05())) == Map#{
+        Graph.inDegrees(graph05()) == Map#{
             1 => 0,
             2 => 1,
             3 => 1,
@@ -892,7 +892,7 @@ namespace TestGraph {
 
     @test
     def outDegrees05(): Bool = {
-        debug(Graph.outDegrees(graph05())) == Map#{
+        Graph.outDegrees(graph05()) == Map#{
             1 => 1,
             2 => 1,
             3 => 1,
