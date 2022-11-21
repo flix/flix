@@ -640,8 +640,10 @@ object Redundancy {
           acc ++ used ++ unusedFParams
       }
 
-    case Expression.NewChannel(exp, _, _, _, _, _) =>
-      visitExp(exp, env0, rc)
+    case Expression.NewChannel(reg, exp, _, _, _, _, _) =>
+      val r = visitExp(reg, env0, rc)
+      val us = visitExp(exp, env0, rc)
+      r ++ us
 
     case Expression.GetChannel(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
