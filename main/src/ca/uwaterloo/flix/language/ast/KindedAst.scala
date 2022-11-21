@@ -164,7 +164,7 @@ object KindedAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[_], methods: List[KindedAst.JvmMethod], loc: SourceLocation) extends KindedAst.Expression
 
-    case class NewChannel(exp: KindedAst.Expression, elmType: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class NewChannel(reg: KindedAst.Expression, exp: KindedAst.Expression, elmType: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class GetChannel(exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 

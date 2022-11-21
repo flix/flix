@@ -1600,14 +1600,18 @@ object Typer {
         } yield (constrs.flatten, resultTyp, resultPur, resultEff)
 
 
-      case KindedAst.Expression.NewChannel(exp, elmType, loc) =>
+      case KindedAst.Expression.NewChannel(reg, exp, elmType, loc) =>
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
+        val regionType = Type.mkRegion(regionVar, loc)
         for {
-          (constrs, tpe, _, eff) <- visitExp(exp)
-          _ <- expectTypeM(expected = Type.Int32, actual = tpe, exp.loc)
-          resultTyp <- liftM(Type.mkTuple(List(Type.mkSender(elmType, Type.False, loc), Type.mkReceiver(elmType, Type.False, loc)), loc))
+          (constrs1, tpe1, _, eff1) <- visitExp(reg)
+          (constrs2, tpe2, _, eff2) <- visitExp(exp)
+          _ <- expectTypeM(expected = regionType, actual = tpe1, exp.loc)
+          _ <- expectTypeM(expected = Type.Int32, actual = tpe2, exp.loc)
+          resultTyp <- liftM(Type.mkTuple(List(Type.mkSender(elmType, regionVar, loc), Type.mkReceiver(elmType, regionVar, loc)), loc))
           resultPur = Type.Impure
-          resultEff = eff
-        } yield (constrs, resultTyp, resultPur, resultEff)
+          resultEff = Type.mkUnion(eff1, eff2, loc)
+        } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.GetChannel(exp, tvar, loc) =>
         val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
@@ -2255,11 +2259,17 @@ object Typer {
         val ms = methods map visitJvmMethod
         TypedAst.Expression.NewObject(name, clazz, tpe, pur, eff, ms, loc)
 
-      case KindedAst.Expression.NewChannel(exp, elmTpe, loc) =>
+      case KindedAst.Expression.NewChannel(reg, exp, elmTpe, loc) =>
+        val r = visitExp(reg, subst0)
         val e = visitExp(exp, subst0)
         val pur = Type.Impure
         val eff = e.eff
-        TypedAst.Expression.NewChannel(e, Type.mkTuple(List(Type.mkSender(elmTpe, Type.False, loc), Type.mkReceiver(elmTpe, Type.False, loc)), loc), elmTpe, pur, eff, loc)
+        r.tpe match {
+          case Type.Apply(_, regVar, _) => 
+            TypedAst.Expression.NewChannel(e, Type.mkTuple(List(Type.mkSender(elmTpe, regVar, loc), Type.mkReceiver(elmTpe, regVar, loc)), loc), elmTpe, pur, eff, loc)
+          case _ => 
+            throw new InternalCompilerException("Unexpected region type")
+        }
 
       case KindedAst.Expression.GetChannel(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
