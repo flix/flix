@@ -147,7 +147,8 @@ namespace Graph {
 
     ///
     /// Returns the shortest distance between all pairs of nodes in the
-    /// weighted directed graph `g`.
+    /// weighted directed graph `g`. Returns `None` if `g` contains a
+    /// negative cycle.
     ///
     pub def distances(g: m[(t, Int32, t)]): Option[Map[(t, t), Int32]] with Foldable[m], Boxable[t] = {
         // Algorithm based on floyd-warshall.
