@@ -20,35 +20,46 @@ namespace Channel {
     ///
     /// Returns a new buffered channel with capacity for `n` elements.
     ///
-    pub def buffered(n: Int32): (Sender[t], Receiver[t]) \ IO =
+    pub def buffered(n: Int32): (Sender[t, Static], Receiver[t, Static]) \ IO =
         let m = if (n < 0) 0 else n;
         $CHANNEL_NEW$(m)
         
     ///
     /// Returns a new unbuffered channel (i.e. a channel with zero capacity).
     ///
-    pub def unbuffered(): (Sender[t], Receiver[t]) \ IO = buffered(0)
+    pub def unbuffered(): (Sender[t, Static], Receiver[t, Static]) \ IO = buffered(0)
 
     ///
     /// Receives a message from the given channel `r`.
     ///
     /// Blocks until a message is dequeued.
     ///
-    pub def recv(r: Receiver[t]): t \ IO = $CHANNEL_GET$(r)
+    pub def recv(receiver: Receiver[t, Static]): t \ IO = $CHANNEL_GET$(receiver)
 
     ///
     /// Sends the message `m` on the given channel `s`.
     ///
     /// Blocks until the message is enqueued.
     ///
-    pub def send(m: t, s: Sender[t]): Unit \ IO = $CHANNEL_PUT$(s, m)
+    pub def send(m: t, sender: Sender[t, Static]): Unit \ IO with Sendable[t] = $CHANNEL_PUT$(sender, m)
+
+    ///
+    /// Sends the message `m` on the given channel `s`.
+    ///
+    /// Blocks until the message is enqueued.
+    ///
+    /// Identical to `send` but doesn't require `Sendable`.
+    /// It is up to programmer to ensure that race conditions cannot arise due to concurrent access to `m`.
+    ///
+    @Unsafe
+    pub def unsafeSend(m: t, sender: Sender[t, Static]): Unit \ IO = $CHANNEL_PUT$(sender, m)
 
     ///
     /// Returns a channel that receives the `Unit` message after duration `d`.
     ///
-    pub def timeout(d: Duration): Receiver[Unit] \ IO =
-        let (s, r) = Channel.unbuffered();
-        spawn { Thread.sleep(d); send((), s) };
-        r
+    pub def timeout(d: Duration): Receiver[Unit, Static] \ IO =
+        let (sender, receiver) = Channel.unbuffered();
+        spawn { Thread.sleep(d); send((), sender) };
+        receiver
 
 }

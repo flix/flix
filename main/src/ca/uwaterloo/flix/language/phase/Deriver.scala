@@ -19,8 +19,10 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOperator, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.errors.DerivationError
+import ca.uwaterloo.flix.language.errors.DerivationError._
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
-import ca.uwaterloo.flix.util.Validation.ToSuccess
+import ca.uwaterloo.flix.util.Validation.{ToSuccess, ToFailure, sequence, traverse, flatMapN}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 /**
@@ -31,24 +33,26 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
   */
 object Deriver {
 
-  def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, Nothing] = flix.phase("Deriver") {
-    val derivedInstances = root.enums.values.flatMap {
+  def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, DerivationError] = flix.phase("Deriver") {
+    val derivedInstances = (traverse(root.enums.values) {
       enum => getDerivedInstances(enum, root)
-    }
+    }).map(_.flatten)
 
-    val newInstances = derivedInstances.foldLeft(root.instances) {
-      case (acc, inst) =>
-        val accInsts = acc.getOrElse(inst.sym.clazz, Nil)
-        acc + (inst.sym.clazz -> (inst :: accInsts))
+    derivedInstances.map {
+      instances => 
+        val newInstances = instances.foldLeft(root.instances) {
+          case (acc, inst) =>
+            val accInsts = acc.getOrElse(inst.sym.clazz, Nil)
+            acc + (inst.sym.clazz -> (inst :: accInsts))
+        }
+        root.copy(instances = newInstances)
     }
-
-    root.copy(instances = newInstances).toSuccess
   }
 
   /**
     * Builds the instances derived from this enum.
     */
-  private def getDerivedInstances(enum0: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): List[KindedAst.Instance] = enum0 match {
+  private def getDerivedInstances(enum0: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): Validation[List[KindedAst.Instance], DerivationError] = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, derives, _, _, _) =>
       // lazy so that in we don't try a lookup if there are no derivations (important for Nix Lib)
       lazy val eqSym = PredefinedClasses.lookupClassSym("Eq", root)
@@ -56,14 +60,16 @@ object Deriver {
       lazy val toStringSym = PredefinedClasses.lookupClassSym("ToString", root)
       lazy val boxableSym = PredefinedClasses.lookupClassSym("Boxable", root)
       lazy val hashSym = PredefinedClasses.lookupClassSym("Hash", root)
-      derives.map {
+      lazy val sendableSym = PredefinedClasses.lookupClassSym("Sendable", root)
+      sequence(derives.map {
         case Ast.Derivation(sym, loc) if sym == eqSym => mkEqInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == orderSym => mkOrderInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == toStringSym => mkToStringInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == boxableSym => mkBoxableInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == hashSym => mkHashInstance(enum0, loc, root)
+        case Ast.Derivation(sym, loc) if sym == sendableSym => mkSendableInstance(enum0, loc, root)
         case unknownSym => throw InternalCompilerException(s"Unexpected derivation: $unknownSym")
-      }
+      })
   }
 
   /**
@@ -90,7 +96,7 @@ object Deriver {
     * }
     * }}}
     */
-  private def mkEqInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum0 match {
+  private def mkEqInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val eqClassSym = PredefinedClasses.lookupClassSym("Eq", root)
       val eqInstanceSym = Symbol.freshInstanceSym(eqClassSym, loc)
@@ -115,7 +121,7 @@ object Deriver {
         defs = List(defn),
         ns = Name.RootNS,
         loc = loc
-      )
+      ).toSuccess
   }
 
   /**
@@ -241,7 +247,7 @@ object Deriver {
     * }
     * }}}
     */
-  private def mkOrderInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum0 match {
+  private def mkOrderInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val orderClassSym = PredefinedClasses.lookupClassSym("Order", root)
       val orderInstanceSym = Symbol.freshInstanceSym(orderClassSym, loc)
@@ -266,7 +272,7 @@ object Deriver {
         defs = List(defn),
         ns = Name.RootNS,
         loc = loc
-      )
+      ).toSuccess
   }
 
   /**
@@ -461,7 +467,7 @@ object Deriver {
     * }
     * }}}
     */
-  private def mkToStringInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum0 match {
+  private def mkToStringInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val toStringClassSym = PredefinedClasses.lookupClassSym("ToString", root)
       val toStringInstanceSym = Symbol.freshInstanceSym(toStringClassSym, loc)
@@ -485,7 +491,7 @@ object Deriver {
         defs = List(defn),
         ns = Name.RootNS,
         loc = loc
-      )
+      ).toSuccess
   }
 
   /**
@@ -597,7 +603,7 @@ object Deriver {
     * }
     * }}}
     */
-  private def mkHashInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum0 match {
+  private def mkHashInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val hashClassSym = PredefinedClasses.lookupClassSym("Hash", root)
       val hashInstanceSym = Symbol.freshInstanceSym(hashClassSym, loc)
@@ -621,7 +627,7 @@ object Deriver {
         defs = List(defn),
         ns = Name.RootNS,
         loc = loc
-      )
+      ).toSuccess
   }
 
   /**
@@ -727,7 +733,7 @@ object Deriver {
     *
     * The instance is empty because the class has default definitions.
     */
-  private def mkBoxableInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum0 match {
+  private def mkBoxableInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val boxableClassSym = PredefinedClasses.lookupClassSym("Boxable", root)
       val boxableInstanceSym = Symbol.freshInstanceSym(boxableClassSym, loc)
@@ -744,7 +750,46 @@ object Deriver {
         defs = Nil,
         ns = Name.RootNS,
         loc = loc
-      )
+      ).toSuccess
+  }
+  
+  /**
+    * Creates an Sendable instance for the given enum.
+    *
+    * {{{
+    * enum E[a] with Sendable {
+    *   case C1
+    *   case C2(a)
+    *   case C3(a, Int32)
+    * }
+    * }}}
+    *
+    * yields
+    *
+    * {{{
+    * instance Sendable[E[a]] with Sendable[a]
+    * }}}
+    * 
+    * The instance is empty: we check for immutability by checking for the absence of region kinded type parameters.
+    */
+  private def mkSendableInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
+    case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
+      val sendableClassSym = PredefinedClasses.lookupClassSym("Sendable", root)
+      val sendableInstanceSym = Symbol.freshInstanceSym(sendableClassSym, loc)
+
+      val tconstrs = getTypeConstraintsForTypeParams(tparams, sendableClassSym, loc)
+
+      KindedAst.Instance(
+        doc = Ast.Doc(Nil, loc),
+        ann = Nil,
+        mod = Ast.Modifiers.Empty,
+        sym = sendableInstanceSym,
+        tpe = tpe,
+        tconstrs = tconstrs,
+        defs = Nil,
+        ns = Name.RootNS,
+        loc = loc
+      ).toSuccess
   }
 
   /**

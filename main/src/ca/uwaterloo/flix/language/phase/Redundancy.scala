@@ -281,6 +281,8 @@ object Redundancy {
 
     case Expression.Hole(sym, _, _) => Used.of(sym)
 
+    case Expression.Use(_, exp, _) =>
+      visitExp(exp, env0, rc) // TODO check for unused syms
 
     case Expression.Lambda(fparam, exp, _, _) =>
       // Extend the environment with the variable symbol.
@@ -568,6 +570,12 @@ object Redundancy {
     case Expression.Upcast(exp, tpe, loc) =>
       if (exp.tpe == tpe)
         visitExp(exp, env0, rc) + RedundantUpcast(loc)
+      else
+        visitExp(exp, env0, rc)
+
+    case Expression.Supercast(exp, tpe, loc) =>
+      if (exp.tpe == tpe)
+        visitExp(exp, env0, rc) + RedundantSupercast(tpe, loc)
       else
         visitExp(exp, env0, rc)
 

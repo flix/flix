@@ -176,6 +176,9 @@ object Indexer {
     case Expression.Hole(_, _, _) =>
       Index.occurrenceOf(exp0)
 
+    case Expression.Use(_, _, _) =>
+      Index.occurrenceOf(exp0) // TODO add use of sym
+
     case Expression.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
@@ -284,11 +287,14 @@ object Indexer {
       val de = declaredEff.map(visitType).getOrElse(Index.empty)
       visitExp(exp) ++ dt ++ dp ++ de ++ Index.occurrenceOf(exp0)
 
+    case Expression.Upcast(exp, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
+
+    case Expression.Supercast(exp, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
+
     case Expression.Mask(exp, _, _, _, _) =>
       visitExp(exp)
-
-    case Expression.Upcast(exp, tpe, _) =>
-      visitExp(exp) ++ visitType(tpe) ++ Index.occurrenceOf(exp0)
 
     case Expression.Without(exp, effUse, _, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(effUse.sym, effUse.loc)

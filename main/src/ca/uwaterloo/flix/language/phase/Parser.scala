@@ -708,6 +708,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("upcast") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Upcast
     }
 
+    def Supercast: Rule1[ParsedAst.Expression] = rule {
+      SP ~ keyword("super_cast") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Supercast
+    }
+
     def Ascribe: Rule1[ParsedAst.Expression] = rule {
       FAppend ~ optional(optWS ~ ":" ~ optWS ~ TypAndPurFragment ~ SP ~> ParsedAst.Expression.Ascribe)
     }
@@ -736,7 +740,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Static | Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse |
         Choose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda |
-        SelectChannel | Spawn | ParYield | Par | Lazy | Force | Upcast | Mask | Intrinsic | New | ArrayLit | ArrayNew |
+        SelectChannel | Spawn | ParYield | Par | Lazy | Force | Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
         Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | FName | Tag | Hole

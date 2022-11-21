@@ -16,7 +16,7 @@
 
 use RedBlackTree.RedBlackTree
 
-pub enum DelayMap[k, v] {
+pub enum DelayMap[k, v] with Sendable {
     case DMap(RedBlackTree[k, Lazy[v]])
 }
 
