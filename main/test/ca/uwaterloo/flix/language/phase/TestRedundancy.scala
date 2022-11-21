@@ -1338,7 +1338,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
         |    let _ =
         |        if (true)
-        |            supercast(newObject())
+        |            super_cast newObject()
         |        else
         |            newObject();
         |    ()
@@ -1357,7 +1357,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |        if (true)
         |            newStringBuilder()
         |        else
-        |            supercast(newStringBuilder());
+        |            super_cast newStringBuilder();
         |    ()
         |""".stripMargin
 
