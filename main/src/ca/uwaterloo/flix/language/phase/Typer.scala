@@ -1601,12 +1601,10 @@ object Typer {
 
 
       case KindedAst.Expression.NewChannel(exp, elmType, loc) =>
-        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
-
         for {
           (constrs, tpe, _, eff) <- visitExp(exp)
           _ <- expectTypeM(expected = Type.Int32, actual = tpe, exp.loc)
-          resultTyp <- liftM(Type.mkTuple(List(Type.mkSender(elmType, regionVar, loc), Type.mkReceiver(elmType, regionVar, loc)), loc))
+          resultTyp <- liftM(Type.mkTuple(List(Type.mkSender(elmType, Type.False, loc), Type.mkReceiver(elmType, Type.False, loc)), loc))
           resultPur = Type.Impure
           resultEff = eff
         } yield (constrs, resultTyp, resultPur, resultEff)
@@ -1641,6 +1639,8 @@ object Typer {
 
       case KindedAst.Expression.SelectChannel(rules, default, tvar, loc) =>
 
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
+
         /**
           * Performs type inference on the given select rule `sr0`.
           */
@@ -1649,7 +1649,7 @@ object Typer {
             case KindedAst.SelectChannelRule(sym, chan, body) => for {
               (chanConstrs, chanType, _, chanEff) <- visitExp(chan)
               (bodyConstrs, bodyType, _, bodyEff) <- visitExp(body)
-              _ <- unifyTypeM(chanType, Type.mkReceiver(sym.tvar, Type.False, sym.loc), sym.loc)
+              _ <- unifyTypeM(chanType, Type.mkReceiver(sym.tvar, regionVar, sym.loc), sym.loc)
               resultCon = chanConstrs ++ bodyConstrs
               resultTyp = bodyType
               resultPur = Type.Impure

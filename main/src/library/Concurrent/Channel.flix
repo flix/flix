@@ -63,7 +63,7 @@ namespace Concurrent/Channel {
     /// structure on which select can operate.
     ///
     @Internal
-    pub enum Mpmc[a: Type](
+    pub enum Mpmc[a](
         MpmcAdmin, // admin
         MutDeque[a, Static] // elementDeque
     )
