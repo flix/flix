@@ -839,12 +839,14 @@ object Lowering {
         case _ => tpe0
       }
 
-      // Special case for Sender[_] and Receiver[_], both of which are rewritten to Concurrent/Channel.Mpmc
-      case Type.Cst(TypeConstructor.Sender, loc) =>
-        Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc)
+      // Special case for Sender[t, _] and Receiver[t, _], both of which are rewritten to Concurrent/Channel.Mpmc[t]
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe, _), _, _) =>
+        val t = visitType(tpe)
+        Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
 
-      case Type.Cst(TypeConstructor.Receiver, loc) =>
-        Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc)
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe, _), _, _) =>
+        val t = visitType(tpe)
+        Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
 
       case Type.Cst(_, _) => tpe0
 

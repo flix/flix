@@ -408,7 +408,7 @@ namespace Test/Exp/Concurrency/Select {
         }
     }
 
-    type alias MyReceiver = Receiver[Int32]
+    type alias MyReceiver = Receiver[Int32, Static]
 
     @test
     def testSelectAliasedChannel(): Bool \ IO = {
