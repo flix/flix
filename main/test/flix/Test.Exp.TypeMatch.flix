@@ -673,4 +673,43 @@ namespace Test/Exp/ReifyType {
 
     @Test
     def testMagicList02(): Bool = magicList(3) |> List.isEmpty
+
+    //////////////////////////////////////
+    // Record and schema tests          //
+    //////////////////////////////////////
+
+    def hasCookie(x: {| _}): Bool = typematch x {
+        case _: {cookie = _ | _} => true
+        case _: _ => false
+    }
+
+    @Test
+    def testCookie01(): Bool = hasCookie({cookie = "woohoo"})
+
+    @Test
+    def testCookie02(): Bool = hasCookie({cookie = 123})
+
+    @Test
+    def testCookie03(): Bool = not hasCookie({})
+
+    @Test
+    def testCookie04(): Bool = not hasCookie({blah = 'h'})
+
+    def isGraphy(x: #{| _}): Bool = typematch x {
+        case _: #{Edge(_, _) | _} => true
+        case _: #{Edge(_, _, _) | _} => true
+        case _: _ => false
+    }
+
+    @Test
+    def testGraphy01(): Bool = isGraphy(#{Edge(1, 2, 3).})
+
+    @Test
+    def testGraphy02(): Bool = isGraphy(#{Edge(1, 2). Node(3).})
+
+    @Test
+    def testGraphy03(): Bool = not isGraphy(#{})
+
+    @Test
+    def testGraphy04(): Bool = not isGraphy(#{Cookie("woohoo").})
 }
