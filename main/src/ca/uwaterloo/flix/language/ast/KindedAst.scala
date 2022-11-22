@@ -30,6 +30,7 @@ object KindedAst {
                   enums: Map[Symbol.EnumSym, KindedAst.Enum],
                   effects: Map[Symbol.EffectSym, KindedAst.Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias],
+                  uses: Map[Symbol.ModuleSym, List[Ast.Use]],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   names: MultiMap[List[String], String])

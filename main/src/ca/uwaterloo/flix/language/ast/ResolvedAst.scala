@@ -29,7 +29,7 @@ object ResolvedAst {
                   enums: Map[Symbol.EnumSym, ResolvedAst.Enum],
                   effects: Map[Symbol.EffectSym, ResolvedAst.Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias],
-                  uses: Map[Symbol.ModuleSym, List[ResolvedAst.Use]],
+                  uses: Map[Symbol.ModuleSym, List[Ast.Use]],
                   taOrder: List[Symbol.TypeAliasSym],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
@@ -53,8 +53,6 @@ object ResolvedAst {
   case class Effect(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[ResolvedAst.Op], loc: SourceLocation)
 
   case class Op(sym: Symbol.OpSym, spec: ResolvedAst.Spec)
-
-  case class Use(sym: Symbol, loc: SourceLocation)
 
   sealed trait Expression {
     def loc: SourceLocation

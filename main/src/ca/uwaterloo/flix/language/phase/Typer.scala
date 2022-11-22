@@ -53,7 +53,7 @@ object Typer {
       case (classes, instances, defs, enums, effs) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
         val modules = collectModules(root)
-        TypedAst.Root(modules, classes, instances, sigs, defs, enums, effs, typeAliases, root.entryPoint, root.sources, classEnv, root.names)
+        TypedAst.Root(modules, classes, instances, sigs, defs, enums, effs, typeAliases, root.uses, root.entryPoint, root.sources, classEnv, root.names)
     }
   }
 
@@ -61,7 +61,7 @@ object Typer {
     * Collects the symbols in the given root into a map.
     */
   private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, List[Symbol]] = root match {
-    case KindedAst.Root(classes, _, defs, enums, effects, typeAliases, _, _, _) =>
+    case KindedAst.Root(classes, _, defs, enums, effects, typeAliases, _, _, _, _) =>
       val sigs = classes.values.flatMap { clazz => clazz.sigs.values.map(_.sym) }
       val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
 

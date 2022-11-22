@@ -2785,24 +2785,24 @@ object Resolver {
   /**
     * Resolves the given Use.
     */
-  private def visitUse(use: NamedAst.Use, ns: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.Use, ResolutionError] = use match {
+  private def visitUse(use: NamedAst.Use, ns: Name.NName, root: NamedAst.Root): Validation[Ast.Use, ResolutionError] = use match {
     case NamedAst.Use.UseDefOrSig(qname, _, loc) => tryLookupName(qname, ns, root.symbols) match {
       case None => ResolutionError.UndefinedName(qname, ns, Map.empty, loc).toFailure
       case Some(value) =>
         val sym = getSym(value)
-        ResolvedAst.Use(sym, loc).toSuccess
+        Ast.Use(sym, loc).toSuccess
     }
     case NamedAst.Use.UseTypeOrClass(qname, _, loc) => tryLookupName(qname, ns, root.symbols) match {
       case None => ResolutionError.UndefinedName(qname, ns, Map.empty, loc).toFailure
       case Some(value) =>
         val sym = getSym(value)
-        ResolvedAst.Use(sym, loc).toSuccess
+        Ast.Use(sym, loc).toSuccess
     }
 
     case NamedAst.Use.UseTag(qname, tag, _, loc) => tryLookupName(qname, ns, root.symbols) match {
       case Some(NamedAst.NamedSymbol.Enum(e)) =>
         e.cases.get(tag.name) match {
-          case Some(NamedAst.Case(sym, _)) => ResolvedAst.Use(sym, loc).toSuccess
+          case Some(NamedAst.Case(sym, _)) => Ast.Use(sym, loc).toSuccess
           case None => ResolutionError.UndefinedTag(tag.name, ns, loc).toFailure
         }
       case _ => ResolutionError.UndefinedName(qname, ns, Map.empty, loc).toFailure
