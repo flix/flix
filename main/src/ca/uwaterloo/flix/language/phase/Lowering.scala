@@ -337,6 +337,9 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Hole(sym, t, loc)
 
+    case TypedAst.Expression.Use(_, exp, _) =>
+      visitExp(exp)
+
     case TypedAst.Expression.Lambda(fparam, exp, tpe, loc) =>
       val p = visitFormalParam(fparam)
       val e = visitExp(exp)
@@ -510,11 +513,18 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Cast(e, dt, declaredPur, declaredEff, t, pur, eff, loc)
 
+    case TypedAst.Expression.Upcast(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      LoweredAst.Expression.Upcast(e, t, loc)
+
+    case TypedAst.Expression.Supercast(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      LoweredAst.Expression.Supercast(e, t, loc)
+
     case TypedAst.Expression.Mask(exp, _, _, _, _) =>
       visitExp(exp)
-
-    case TypedAst.Expression.Upcast(exp, tpe, loc) =>
-      LoweredAst.Expression.Upcast(visitExp(exp), visitType(tpe), loc)
 
     case TypedAst.Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
@@ -832,12 +842,14 @@ object Lowering {
         case _ => tpe0
       }
 
-      // Special case for Sender[_] and Receiver[_], both of which are rewritten to Concurrent/Channel.Mpmc
-      case Type.Cst(TypeConstructor.Sender, loc) =>
-        Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc)
+      // Special case for Sender[t, _] and Receiver[t, _], both of which are rewritten to Concurrent/Channel.Mpmc[t]
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe, _), _, _) =>
+        val t = visitType(tpe)
+        Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
 
-      case Type.Cst(TypeConstructor.Receiver, loc) =>
-        Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc)
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe, _), _, _) =>
+        val t = visitType(tpe)
+        Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
 
       case Type.Cst(_, _) => tpe0
 
@@ -1855,7 +1867,12 @@ object Lowering {
       LoweredAst.Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
 
     case LoweredAst.Expression.Upcast(exp, tpe, loc) =>
-      LoweredAst.Expression.Upcast(substExp(exp, subst), tpe, loc)
+      val e = substExp(exp, subst)
+      LoweredAst.Expression.Upcast(e, tpe, loc)
+
+    case LoweredAst.Expression.Supercast(exp, tpe, loc) =>
+      val e = substExp(exp, subst)
+      LoweredAst.Expression.Supercast(e, tpe, loc)
 
     case LoweredAst.Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)

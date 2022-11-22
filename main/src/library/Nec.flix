@@ -23,7 +23,7 @@
 ///
 /// Note - the constructors `NecOne` and `Nec` should not be used directly.
 ///
-pub enum Nec[t] {
+pub enum Nec[t] with Sendable {
     case NecOne(t)
     case Nec(Nec[t], Nec[t])
 }

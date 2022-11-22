@@ -1,93 +1,93 @@
 namespace Test/Exp/Concurrency/NewChannel {
 
     @test
-    def testNewChannel01(): (Sender[Unit], Receiver[Unit]) \ IO = Channel.unbuffered()
+    def testNewChannel01(): (Sender[Unit, Static], Receiver[Unit, Static]) \ IO = Channel.unbuffered()
 
     @test
-    def testNewChannel02(): (Sender[Unit], Receiver[Unit]) \ IO = Channel.buffered(1)
+    def testNewChannel02(): (Sender[Unit, Static], Receiver[Unit, Static]) \ IO = Channel.buffered(1)
 
     @test
-    def testNewChannel03(): (Sender[Bool], Receiver[Bool]) \ IO = Channel.unbuffered()
+    def testNewChannel03(): (Sender[Bool, Static], Receiver[Bool, Static]) \ IO = Channel.unbuffered()
 
     @test
-    def testNewChannel04(): (Sender[Bool], Receiver[Bool]) \ IO = Channel.buffered(1)
+    def testNewChannel04(): (Sender[Bool, Static], Receiver[Bool, Static]) \ IO = Channel.buffered(1)
 
     @test
-    def testNewChannel05(): (Sender[Char], Receiver[Char]) \ IO = Channel.unbuffered()
+    def testNewChannel05(): (Sender[Char, Static], Receiver[Char, Static]) \ IO = Channel.unbuffered()
 
     @test
-    def testNewChannel06(): (Sender[Char], Receiver[Char]) \ IO = Channel.buffered(1)
+    def testNewChannel06(): (Sender[Char, Static], Receiver[Char, Static]) \ IO = Channel.buffered(1)
 
     @test
-    def testNewChannel07(): (Sender[Float32], Receiver[Float32]) \ IO = Channel.unbuffered()
+    def testNewChannel07(): (Sender[Float32, Static], Receiver[Float32, Static]) \ IO = Channel.unbuffered()
 
     @test
-    def testNewChannel08(): (Sender[Float32], Receiver[Float32]) \ IO = Channel.buffered(1)
+    def testNewChannel08(): (Sender[Float32, Static], Receiver[Float32, Static]) \ IO = Channel.buffered(1)
 
     @test
-    def testNewChannel09(): (Sender[Float64], Receiver[Float64]) \ IO = Channel.unbuffered()
+    def testNewChannel09(): (Sender[Float64, Static], Receiver[Float64, Static]) \ IO = Channel.unbuffered()
 
     @test
-    def testNewChannel10(): (Sender[Float64], Receiver[Float64]) \ IO = Channel.buffered(1)
+    def testNewChannel10(): (Sender[Float64, Static], Receiver[Float64, Static]) \ IO = Channel.buffered(1)
 
     @test
-    def testNewChannel11(): (Sender[Int8], Receiver[Int8]) \ IO = Channel.unbuffered()
+    def testNewChannel11(): (Sender[Int8, Static], Receiver[Int8, Static]) \ IO = Channel.unbuffered()
 
     @test
-    def testNewChannel12(): (Sender[Int8], Receiver[Int8]) \ IO = Channel.buffered(1)
+    def testNewChannel12(): (Sender[Int8, Static], Receiver[Int8, Static]) \ IO = Channel.buffered(1)
 
     @test
-    def testNewChannel13(): (Sender[Int16], Receiver[Int16]) \ IO = Channel.unbuffered()
+    def testNewChannel13(): (Sender[Int16, Static], Receiver[Int16, Static]) \ IO = Channel.unbuffered()
 
     @test
-    def testNewChannel14(): (Sender[Int16], Receiver[Int16]) \ IO = Channel.buffered(1)
+    def testNewChannel14(): (Sender[Int16, Static], Receiver[Int16, Static]) \ IO = Channel.buffered(1)
 
     @test
-    def testNewChannel15(): (Sender[Int32], Receiver[Int32]) \ IO = Channel.unbuffered()
+    def testNewChannel15(): (Sender[Int32, Static], Receiver[Int32, Static]) \ IO = Channel.unbuffered()
 
     @test
-    def testNewChannel16(): (Sender[Int32], Receiver[Int32]) \ IO = Channel.buffered(1)
+    def testNewChannel16(): (Sender[Int32, Static], Receiver[Int32, Static]) \ IO = Channel.buffered(1)
 
     @test
-    def testNewChannel17(): (Sender[Int64], Receiver[Int64]) \ IO = Channel.unbuffered()
+    def testNewChannel17(): (Sender[Int64, Static], Receiver[Int64, Static]) \ IO = Channel.unbuffered()
 
     @test
-    def testNewChannel18(): (Sender[Int64], Receiver[Int64]) \ IO = Channel.buffered(1)
+    def testNewChannel18(): (Sender[Int64, Static], Receiver[Int64, Static]) \ IO = Channel.buffered(1)
 
     @test
-    def testNewChannel19(): (Sender[BigInt], Receiver[BigInt]) \ IO = Channel.unbuffered()
+    def testNewChannel19(): (Sender[BigInt, Static], Receiver[BigInt, Static]) \ IO = Channel.unbuffered()
 
     @test
-    def testNewChannel20(): (Sender[BigInt], Receiver[BigInt]) \ IO = Channel.buffered(1)
+    def testNewChannel20(): (Sender[BigInt, Static], Receiver[BigInt, Static]) \ IO = Channel.buffered(1)
 
     @test
-    def testNewChannel21(): (Sender[String], Receiver[String]) \ IO = Channel.unbuffered()
+    def testNewChannel21(): (Sender[String, Static], Receiver[String, Static]) \ IO = Channel.unbuffered()
 
     @test
-    def testNewChannel22(): (Sender[String], Receiver[String]) \ IO = Channel.buffered(1)
+    def testNewChannel22(): (Sender[String, Static], Receiver[String, Static]) \ IO = Channel.buffered(1)
 
     @test
-    def testNewChannel23(): (Sender[Option[Int32]], Receiver[Option[Int32]]) \ IO = Channel.unbuffered()
+    def testNewChannel23(): (Sender[Option[Int32], Static], Receiver[Option[Int32], Static]) \ IO = Channel.unbuffered()
 
     @test
-    def testNewChannel24(): (Sender[Option[Int32]], Receiver[Option[Int32]]) \ IO = Channel.buffered(1)
+    def testNewChannel24(): (Sender[Option[Int32], Static], Receiver[Option[Int32], Static]) \ IO = Channel.buffered(1)
 
     @test
-    def testNewChannel25(): (Sender[Result[Int32, String]], Receiver[Result[Int32, String]]) \ IO = Channel.unbuffered()
+    def testNewChannel25(): (Sender[Result[Int32, String], Static], Receiver[Result[Int32, String], Static]) \ IO = Channel.unbuffered()
 
     @test
-    def testNewChannel26(): (Sender[Result[Int32, String]], Receiver[Result[Int32, String]]) \ IO = Channel.buffered(1)
+    def testNewChannel26(): (Sender[Result[Int32, String], Static], Receiver[Result[Int32, String], Static]) \ IO = Channel.buffered(1)
 
     @test
-    def testNewChannel27(): (Sender[(Sender[Int32], Receiver[Int32])], Receiver[(Sender[Int32], Receiver[Int32])]) \ IO = Channel.unbuffered()
+    def testNewChannel27(): (Sender[(Sender[Int32, Static], Receiver[Int32, Static]), Static], Receiver[(Sender[Int32, Static], Receiver[Int32, Static]), Static]) \ IO = Channel.unbuffered()
 
     @test
-    def testNewChannel28(): (Sender[(Sender[Int32], Receiver[Int32])], Receiver[(Sender[Int32], Receiver[Int32])]) \ IO = Channel.buffered(1)
+    def testNewChannel28(): (Sender[(Sender[Int32, Static], Receiver[Int32, Static]), Static], Receiver[(Sender[Int32, Static], Receiver[Int32, Static]), Static]) \ IO = Channel.buffered(1)
 
     @test
-    def testNewChannel29(): (Sender[(Sender[String], Receiver[String])], Receiver[(Sender[String], Receiver[String])]) \ IO = Channel.unbuffered()
+    def testNewChannel29(): (Sender[(Sender[String, Static], Receiver[String, Static]), Static], Receiver[(Sender[String, Static], Receiver[String, Static]), Static]) \ IO = Channel.unbuffered()
 
     @test
-    def testNewChannel30(): (Sender[(Sender[String], Receiver[String])], Receiver[(Sender[String], Receiver[String])]) \ IO = Channel.buffered(1)
+    def testNewChannel30(): (Sender[(Sender[String, Static], Receiver[String, Static]), Static], Receiver[(Sender[String, Static], Receiver[String, Static]), Static]) \ IO = Channel.buffered(1)
 
 }

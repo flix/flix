@@ -86,6 +86,7 @@ object Statistics {
       case Expression.Def(sym, tpe, loc) => Counter.empty
       case Expression.Sig(sym, tpe, loc) => Counter.empty
       case Expression.Hole(sym, tpe, loc) => Counter.empty
+      case Expression.Use(_, exp, _) => visitExp(exp)
       case Expression.Lambda(fparam, exp, tpe, loc) => visitExp(exp)
       case Expression.Apply(exp, exps, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(exps.map(visitExp))
       case Expression.Unary(sop, exp, tpe, pur, eff, loc) => visitExp(exp)
@@ -119,6 +120,7 @@ object Statistics {
       case Expression.Cast(exp, _, _, _, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Mask(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Upcast(exp, _, _) => visitExp(exp)
+      case Expression.Supercast(exp, _, _) => visitExp(exp)
       case Expression.Without(exp, _, _, _, _, _) => visitExp(exp)
       case Expression.TryCatch(exp, rules, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitCatchRule))
       case Expression.TryWith(exp, sym, rules, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitHandlerRule))

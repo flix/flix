@@ -286,6 +286,8 @@ object SemanticTokensProvider {
 
     case Expression.Hole(_, _, _) => Iterator.empty
 
+    case Expression.Use(_, _, _) => Iterator.empty // TODO add token for sym
+
     case Expression.Cst(_, _, _) => Iterator.empty
 
     case Expression.Lambda(fparam, exp, _, _) =>
@@ -400,11 +402,14 @@ object SemanticTokensProvider {
     case Expression.Cast(exp, _, _, _, tpe, _, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 
-    case Expression.Mask(exp, _, _, _, _) =>
+    case Expression.Upcast(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.Upcast(exp, tpe, _) =>
-      visitExp(exp) ++ visitType(tpe)
+    case Expression.Supercast(exp, _, _) =>
+      visitExp(exp)
+
+    case Expression.Mask(exp, _, _, _, _) =>
+      visitExp(exp)
 
     case Expression.Without(exp, eff, _, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, eff.loc)

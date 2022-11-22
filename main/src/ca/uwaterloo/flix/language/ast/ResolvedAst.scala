@@ -69,6 +69,8 @@ object ResolvedAst {
 
     case class Hole(sym: Symbol.HoleSym, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class Use(sym: Symbol, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Apply(exp: ResolvedAst.Expression, exps: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
@@ -137,6 +139,8 @@ object ResolvedAst {
     case class Mask(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Upcast(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class Supercast(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Without(exp: ResolvedAst.Expression, eff: Ast.EffectSymUse, loc: SourceLocation) extends ResolvedAst.Expression
 
