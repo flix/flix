@@ -1239,7 +1239,7 @@ namespace TestGraph {
 
     @test
     def withinEdgesOf02(): Bool = {
-        Graph.withinEdgesOf(1, -42, graph02()) == Set#{1}
+        Graph.withinEdgesOf(1, -42, graph02()) == Set#{}
     }
 
     @test
