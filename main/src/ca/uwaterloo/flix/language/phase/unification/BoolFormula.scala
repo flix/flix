@@ -240,27 +240,26 @@ object BoolFormula {
       case BoolFormula.False => false
       case BoolFormula.Var(_) => true
       case _ =>
-        enumerateAssignments(freeVars(f)).exists(a => checkAssignment(f, a))
+        enumerateAssignmentsLazy(freeVars(f)).exists(a => checkAssignment(f, a))
     }
 
     /**
-      * Enumerates all assignments to the boolean variables in `vars`.
+      * Enumerates all assignments to the boolean variables in `vars` in a lazy manner.
       */
-    private def enumerateAssignments(vars: SortedSet[Int]): Set[Map[Int, Boolean]] = {
-      val x = vars.firstKey
-      val new_vars = vars - x
-      if(new_vars.isEmpty) {
-        return Set(Map(x -> true), Map(x -> false))
-      }
-      val no_x_assignments = enumerateAssignments(new_vars)
-      var res : Set[Map[Int, Boolean]] = Set.empty
-      for(assignment <- no_x_assignments) {
-        val x_true = assignment + (x -> true)
-        val x_false = assignment + (x -> false)
-        res += x_true
-        res += x_false
-      }
-      res
+    private def enumerateAssignmentsLazy(vars: SortedSet[Int]): LazyList[Map[Int, Boolean]] = {
+      LazyList.from(0)
+              .map(n => padBinaryStringToLength(n.toBinaryString, vars.size)
+                         .toCharArray
+                         .zip(vars)
+                         .foldLeft(Map.empty[Int,Boolean])((m,ci) => m ++ Map(ci._2 -> (ci._1 == '1'))))
+              .take(scala.math.pow(2,vars.size).toInt)
+    }
+
+    /**
+      * Adds the prefix "0" until the string `s` has length `n`
+      */
+    private def padBinaryStringToLength(s: String, n: Int): String = {
+      "0" * (n - s.length) + s
     }
 
     /**

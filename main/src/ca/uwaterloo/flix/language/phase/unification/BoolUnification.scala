@@ -20,8 +20,6 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Ok, ToErr, ToOk}
 
-import scala.util.Try
-
 object BoolUnification {
 
   /**
