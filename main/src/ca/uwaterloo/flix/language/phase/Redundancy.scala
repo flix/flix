@@ -204,7 +204,7 @@ object Redundancy {
   private def checkUnusedTypeParamsEnums()(implicit root: Root): Used = {
     root.enums.foldLeft(Used.empty) {
       case (acc, (_, decl)) =>
-        val usedTypeVars = decl.cases.foldLeft(Set.empty[Symbol.TypeVarSym]) {
+        val usedTypeVars = decl.cases.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
           case (sacc, (_, Case(_, tpe, _, _))) => sacc ++ tpe.typeVars.map(_.sym)
         }
         val unusedTypeParams = decl.tparams.filter(tparam => !usedTypeVars.contains(tparam.sym) && !tparam.name.name.startsWith("_"))

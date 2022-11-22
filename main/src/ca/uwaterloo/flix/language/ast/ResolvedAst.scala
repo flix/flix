@@ -29,6 +29,7 @@ object ResolvedAst {
                   enums: Map[Symbol.EnumSym, ResolvedAst.Enum],
                   effects: Map[Symbol.EffectSym, ResolvedAst.Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias],
+                  uses: Map[Symbol.ModuleSym, List[Ast.Use]],
                   taOrder: List[Symbol.TypeAliasSym],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],

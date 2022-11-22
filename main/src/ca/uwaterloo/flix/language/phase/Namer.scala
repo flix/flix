@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
-import ca.uwaterloo.flix.language.ast.WeededAst.ChoicePattern
+import ca.uwaterloo.flix.language.ast.WeededAst.{ChoicePattern, Use}
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation._
@@ -44,6 +44,7 @@ object Namer {
     val prog0 = NamedAst.Root(
       symbols = Map.empty,
       instances = Map.empty,
+      uses = Map.empty,
       entryPoint = program.entryPoint,
       sources = locations,
       names = program.names
@@ -74,16 +75,25 @@ object Namer {
       /*
        * Namespace.
        */
-      case WeededAst.Declaration.Namespace(ns, uses, imports, decls, loc) =>
+      case WeededAst.Declaration.Namespace(ns, uses0, imports, decls, loc) =>
         // Note: Opening a new namespace clears all current imports and uses.
         // Hence we pass empty import and use environments.
-        flatMapN(mergeUseEnvs(uses, imports, ns0, UseEnv.empty, prog0)) {
+        val withDecls = flatMapN(mergeUseEnvs(uses0, imports, ns0, UseEnv.empty, prog0)) {
           case uenv1 =>
             Validation.fold(decls, prog0) {
               case (pacc, decl) =>
                 val namespace = Name.NName(ns.sp1, ns0.idents ::: ns.idents, ns.sp2)
                 visitDecl(decl, namespace, uenv1, pacc)
             }
+        }
+        // add the uses to the root afterward
+        mapN(withDecls) {
+          case root =>
+            val uses = uses0.map(visitUse)
+            root.copy(uses = root.uses.updatedWith(ns) {
+              case None => Some(uses)
+              case Some(u) => Some(uses ::: u)
+            })
         }
 
       case decl@WeededAst.Declaration.Class(_, _, _, ident, _, _, _, _, _) =>
@@ -1959,6 +1969,14 @@ object Namer {
     Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(ident.name), isRegion = false, ident.loc)
   }
 
+  /**
+    * Performs naming on the given `use`.
+    */
+  private def visitUse(use: WeededAst.Use): NamedAst.Use = use match {
+    case WeededAst.Use.UseLower(qname, alias, loc) => NamedAst.Use.UseDefOrSig(qname, alias, loc)
+    case WeededAst.Use.UseUpper(qname, alias, loc) => NamedAst.Use.UseTypeOrClass(qname, alias, loc)
+    case WeededAst.Use.UseTag(qname, tag, alias, loc) => NamedAst.Use.UseTag(qname, tag, alias, loc)
+  }
 
   /**
     * Merges the given `uses` into the given use environment `uenv0`.
