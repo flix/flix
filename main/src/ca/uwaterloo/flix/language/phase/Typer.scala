@@ -2273,7 +2273,7 @@ object Typer {
         val eff = e2.eff
         e1.tpe match {
           case Type.Apply(_, regVar, _) => 
-            TypedAst.Expression.NewChannel(r, e, Type.mkTuple(List(Type.mkSender(elmTpe, regVar, loc), Type.mkReceiver(elmTpe, regVar, loc)), loc), elmTpe, pur, eff, loc)
+            TypedAst.Expression.NewChannel(e1, e2, Type.mkTuple(List(Type.mkSender(elmTpe, regVar, loc), Type.mkReceiver(elmTpe, regVar, loc)), loc), elmTpe, pur, eff, loc)
           case _ => 
             throw new InternalCompilerException("Unexpected region type")
         }
