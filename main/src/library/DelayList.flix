@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-pub enum DelayList[a] {
+pub enum DelayList[a] with Sendable {
     case ENil,
     case ECons(a, DelayList[a]),
     case LCons(a, Lazy[DelayList[a]]),

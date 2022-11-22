@@ -17,7 +17,7 @@
 ///
 /// The Validation type.
 ///
-pub enum Validation[t, e] with Eq, Order, ToString {
+pub enum Validation[t, e] with Eq, Order, ToString, Sendable {
     case Success(t),
     case Failure(Nec[e])
 }

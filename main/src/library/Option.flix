@@ -21,7 +21,7 @@
 /// The constructor `None` represents an absent value,
 /// whereas the constructor `Some(v)` represents the value `v`.
 ///
-pub enum Option[t] with Eq, Order, ToString {
+pub enum Option[t] with Eq, Order, ToString, Sendable {
     case None,
     case Some(t)
 }

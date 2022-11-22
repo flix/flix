@@ -62,6 +62,8 @@ object Regions {
 
     case Expression.Hole(_, _, _) => ().toSuccess
 
+    case Expression.Use(_, exp, loc) => visitExp(exp)
+
     case Expression.Lambda(_, exp, tpe, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
@@ -232,6 +234,11 @@ object Regions {
       }
 
     case Expression.Upcast(exp, tpe, loc) =>
+      flatMapN(visitExp(exp)) {
+        case _ => checkType(tpe, loc)
+      }
+
+    case Expression.Supercast(exp, tpe, loc) =>
       flatMapN(visitExp(exp)) {
         case _ => checkType(tpe, loc)
       }

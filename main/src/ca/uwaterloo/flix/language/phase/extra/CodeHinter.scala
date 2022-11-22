@@ -93,6 +93,8 @@ object CodeHinter {
 
     case Expression.Hole(_, _, _) => Nil
 
+    case Expression.Use(_, exp, _) => visitExp(exp)
+
     case Expression.Cst(_, _, _) => Nil
 
     case Expression.Lambda(_, exp, _, _) =>
@@ -202,6 +204,9 @@ object CodeHinter {
       visitExp(exp)
 
     case Expression.Upcast(exp, _, _) =>
+      visitExp(exp)
+
+    case Expression.Supercast(exp, _, _) =>
       visitExp(exp)
 
     case Expression.Without(exp, _, _, _, _, _) =>
