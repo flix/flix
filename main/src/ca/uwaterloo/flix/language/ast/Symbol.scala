@@ -295,7 +295,7 @@ object Symbol {
       case _ => false
     }
 
-    override def hashCode: Int = id
+    override val hashCode: Int = id
 
     /**
       * Returns a string representation of the symbol.
@@ -307,6 +307,15 @@ object Symbol {
         case VarText.FallbackText(s) => s
       }
       string + Flix.Delimiter + id
+    }
+
+    /**
+      * Returns true if this symbol is a wildcard.
+      */
+    def isWild: Boolean = text match {
+      case VarText.Absent => false
+      case VarText.SourceText(s) => s.startsWith("_")
+      case VarText.FallbackText(_) => false
     }
   }
 
@@ -327,7 +336,7 @@ object Symbol {
       case _ => false
     }
 
-    override def hashCode: Int = id
+    override val hashCode: Int = id
 
     /**
       * Returns a string representation of the symbol.
