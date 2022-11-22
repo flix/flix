@@ -13,7 +13,7 @@ namespace Test/Exp/Null {
     def testNullArray01(): Array[String, Static] = unsafe_cast null: Array[String, Static]
 
     @test
-    def testNullChannel01(): Receiver[String] = unsafe_cast null: Receiver[String]
+    def testNullChannel01(): Receiver[String, Static] = unsafe_cast null: Receiver[String, Static]
 
     @test
     def testNullRecord01(): {} = unsafe_cast null: {}

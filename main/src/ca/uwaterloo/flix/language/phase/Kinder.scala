@@ -358,6 +358,12 @@ object Kinder {
 
     case ResolvedAst.Expression.Hole(sym, loc) => KindedAst.Expression.Hole(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
 
+    case ResolvedAst.Expression.Use(sym, exp0, loc) =>
+      val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
+      mapN(expVal) {
+        case exp => KindedAst.Expression.Use(sym, exp, loc)
+      }
+
     case ResolvedAst.Expression.Cst(cst, loc) => KindedAst.Expression.Cst(cst, loc).toSuccess
 
     case ResolvedAst.Expression.Apply(exp0, exps0, loc) =>

@@ -171,9 +171,9 @@ object TypeConstructor {
   @EliminatedBy(Lowering.getClass)
   case object Sender extends TypeConstructor {
     /**
-      * The shape of a sender is Sender[t].
+      * The shape of a sender is Sender[t, r].
       */
-    def kind: Kind = Kind.Star ->: Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Bool ->: Kind.Star
   }
 
   /**
@@ -182,9 +182,9 @@ object TypeConstructor {
   @EliminatedBy(Lowering.getClass)
   case object Receiver extends TypeConstructor {
     /**
-      * The shape of a sender is Receiver[t].
+      * The shape of a sender is Receiver[t, r].
       */
-    def kind: Kind = Kind.Star ->: Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Bool ->: Kind.Star
   }
 
   /**

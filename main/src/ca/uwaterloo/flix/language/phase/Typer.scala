@@ -63,7 +63,7 @@ object Typer {
   private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, List[Symbol]] = root match {
     case KindedAst.Root(classes, _, defs, enums, effects, typeAliases, _, _, _) =>
       val sigs = classes.values.flatMap { clazz => clazz.sigs.values.map(_.sym) }
-      val ops = effects.values.flatMap{ eff => eff.ops.map(_.sym) }
+      val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
 
       val syms = classes.keys ++ defs.keys ++ enums.keys ++ effects.keys ++ typeAliases.keys ++ sigs ++ ops
 
@@ -515,6 +515,8 @@ object Typer {
 
       case KindedAst.Expression.Hole(_, tvar, _) =>
         liftM(List.empty, tvar, Type.Pure, Type.Empty)
+
+      case KindedAst.Expression.Use(_, exp, _) => visitExp(exp)
 
       case KindedAst.Expression.Cst(Ast.Constant.Unit, loc) =>
         liftM(List.empty, Type.mkUnit(loc.asSynthetic), Type.Pure, Type.Empty)
@@ -1604,14 +1606,15 @@ object Typer {
         for {
           (constrs, tpe, _, eff) <- visitExp(exp)
           _ <- expectTypeM(expected = Type.Int32, actual = tpe, exp.loc)
-          resultTyp <- liftM(Type.mkTuple(List(Type.mkSender(elmType, loc), Type.mkReceiver(elmType, loc)), loc))
+          resultTyp <- liftM(Type.mkTuple(List(Type.mkSender(elmType, Type.False, loc), Type.mkReceiver(elmType, Type.False, loc)), loc))
           resultPur = Type.Impure
           resultEff = eff
         } yield (constrs, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.GetChannel(exp, tvar, loc) =>
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
         val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
-        val channelType = Type.mkReceiver(elmVar, loc)
+        val channelType = Type.mkReceiver(elmVar, regionVar, loc)
 
         for {
           (constrs, tpe, _, eff) <- visitExp(exp)
@@ -1622,8 +1625,9 @@ object Typer {
         } yield (constrs, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.PutChannel(exp1, exp2, loc) =>
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
         val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
-        val channelType = Type.mkSender(elmVar, loc)
+        val channelType = Type.mkSender(elmVar, regionVar, loc)
 
         for {
           (constrs1, tpe1, _, eff1) <- visitExp(exp1)
@@ -1637,6 +1641,8 @@ object Typer {
 
       case KindedAst.Expression.SelectChannel(rules, default, tvar, loc) =>
 
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
+
         /**
           * Performs type inference on the given select rule `sr0`.
           */
@@ -1645,7 +1651,7 @@ object Typer {
             case KindedAst.SelectChannelRule(sym, chan, body) => for {
               (chanConstrs, chanType, _, chanEff) <- visitExp(chan)
               (bodyConstrs, bodyType, _, bodyEff) <- visitExp(body)
-              _ <- unifyTypeM(chanType, Type.mkReceiver(sym.tvar, sym.loc), sym.loc)
+              _ <- unifyTypeM(chanType, Type.mkReceiver(sym.tvar, regionVar, sym.loc), sym.loc)
               resultCon = chanConstrs ++ bodyConstrs
               resultTyp = bodyType
               resultPur = Type.Impure
@@ -1881,6 +1887,10 @@ object Typer {
 
       case KindedAst.Expression.Hole(sym, tpe, loc) =>
         TypedAst.Expression.Hole(sym, subst0(tpe), loc)
+
+      case KindedAst.Expression.Use(sym, exp, loc) =>
+        val e = visitExp(exp, subst0)
+        TypedAst.Expression.Use(sym, e, loc)
 
       // change null to Unit type
       case KindedAst.Expression.Cst(Ast.Constant.Null, loc) => TypedAst.Expression.Cst(Ast.Constant.Null, Type.Unit, loc)
@@ -2255,7 +2265,7 @@ object Typer {
         val e = visitExp(exp, subst0)
         val pur = Type.Impure
         val eff = e.eff
-        TypedAst.Expression.NewChannel(e, Type.mkTuple(List(Type.mkSender(elmTpe, loc), Type.mkReceiver(elmTpe, loc)), loc), elmTpe, pur, eff, loc)
+        TypedAst.Expression.NewChannel(e, Type.mkTuple(List(Type.mkSender(elmTpe, Type.False, loc), Type.mkReceiver(elmTpe, Type.False, loc)), loc), elmTpe, pur, eff, loc)
 
       case KindedAst.Expression.GetChannel(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
