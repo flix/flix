@@ -2800,12 +2800,12 @@ object Resolver {
     }
 
     case NamedAst.Use.UseTag(qname, tag, _, loc) => tryLookupName(qname, ns, root.symbols) match {
-      case None => ResolutionError.UndefinedName(qname, ns, Map.empty, loc).toFailure
       case Some(NamedAst.NamedSymbol.Enum(e)) =>
         e.cases.get(tag.name) match {
           case Some(NamedAst.Case(sym, _)) => ResolvedAst.Use(sym, loc).toSuccess
           case None => ResolutionError.UndefinedTag(tag.name, ns, loc).toFailure
         }
+      case _ => ResolutionError.UndefinedName(qname, ns, Map.empty, loc).toFailure
     }
   }
 
