@@ -143,7 +143,12 @@ namespace TestGraph {
             " │3│    │6├─←───┘  " ::
             " └─┘    └─┘        " ::
             Nil;
-        Set#{(1, 2, 2), (1, 5, 4), (2, 10, 3), (4, 7, 2), (4, 2, 5), (4, 4, 6), (5, 1, 6)}
+        Set#{
+            (1, 2, 2), (1, 5, 4),
+            (2, 10, 3), (4, 7, 2),
+            (4, 2, 5), (4, 4, 6),
+            (5, 1, 6)
+        }
 
 
     ////////////////////////////////////////////////////////////////////////////
@@ -190,149 +195,149 @@ namespace TestGraph {
 
 
     ////////////////////////////////////////////////////////////////////////////
-    // reachable                                                              //
+    // reachableFrom                                                          //
     ////////////////////////////////////////////////////////////////////////////
 
     @test
     def reachable01(): Bool = {
         let g = graph01();
-        Graph.reachable(1, g) == Set#{1}
+        Graph.reachableFrom(1, g) == Set#{1}
     }
 
     @test
     def reachable02(): Bool = {
         let g = graph02();
-        Graph.reachable(1, g) == Set#{1, 2}
+        Graph.reachableFrom(1, g) == Set#{1, 2}
     }
 
     @test
     def reachable03(): Bool = {
         let g = graph03();
-        Graph.reachable(1, g) == Set#{1, 2}
+        Graph.reachableFrom(1, g) == Set#{1, 2}
     }
 
     @test
     def reachable04(): Bool = {
         let g = graph04();
-        Graph.reachable(1, g) == Set#{1, 2, 3}
+        Graph.reachableFrom(1, g) == Set#{1, 2, 3}
     }
 
     @test
     def reachable05(): Bool = {
         let g = graph05();
-        Graph.reachable(1, g) == Set#{1, 2, 3, 4}
+        Graph.reachableFrom(1, g) == Set#{1, 2, 3, 4}
     }
 
     @test
     def reachable06(): Bool = {
         let g = graph05();
-        Graph.reachable(3, g) == Set#{3, 4}
+        Graph.reachableFrom(3, g) == Set#{3, 4}
     }
 
     @test
     def reachable07(): Bool = {
         let g = graph05();
-        Graph.reachable(5, g) == Set#{5}
+        Graph.reachableFrom(5, g) == Set#{5}
     }
 
 
     ////////////////////////////////////////////////////////////////////////////
-    // unreachable                                                            //
+    // unreachableFrom                                                        //
     ////////////////////////////////////////////////////////////////////////////
 
     @test
     def unreachable01(): Bool = {
         let g = graph01();
-        Graph.unreachable(1, g) == Set#{}
+        Graph.unreachableFrom(1, g) == Set#{}
     }
 
     @test
     def unreachable02(): Bool = {
         let g = graph02();
-        Graph.unreachable(1, g) == Set#{}
+        Graph.unreachableFrom(1, g) == Set#{}
     }
 
     @test
     def unreachable03(): Bool = {
         let g = graph02();
-        Graph.unreachable(2, g) == Set#{1}
+        Graph.unreachableFrom(2, g) == Set#{1}
     }
 
     @test
     def unreachable04(): Bool = {
         let g = graph03();
-        Graph.unreachable(1, g) == Set#{3, 4}
+        Graph.unreachableFrom(1, g) == Set#{3, 4}
     }
 
     @test
     def unreachable05(): Bool = {
         let g = graph04();
-        Graph.unreachable(2, g) == Set#{1}
+        Graph.unreachableFrom(2, g) == Set#{1}
     }
 
     @test
     def unreachable06(): Bool = {
         let g = graph05();
-        Graph.unreachable(3, g) == Set#{1, 2}
+        Graph.unreachableFrom(3, g) == Set#{1, 2}
     }
 
     @test
     def unreachable07(): Bool = {
         let g = graph05();
-        Graph.unreachable(5, g) == Set#{1, 2, 3, 4}
+        Graph.unreachableFrom(5, g) == Set#{1, 2, 3, 4}
     }
 
 
     ////////////////////////////////////////////////////////////////////////////
-    // isConnected                                                            //
+    // reachable                                                              //
     ////////////////////////////////////////////////////////////////////////////
 
     @test
     def isConnected01(): Bool = {
         let g = graph01();
-        Graph.isConnected(src = 1, dst = 2, g) == false
+        Graph.reachable(src = 1, dst = 2, g) == false
     }
 
     @test
     def isConnected02(): Bool = {
         let g = graph02();
-        Graph.isConnected(src = 1, dst = 2, g)
+        Graph.reachable(src = 1, dst = 2, g)
     }
 
     @test
     def isConnected03(): Bool = {
         let g = graph02();
-        Graph.isConnected(src = 2, dst = 1, g) == false
+        Graph.reachable(src = 2, dst = 1, g) == false
     }
 
     @test
     def isConnected04(): Bool = {
         let g = graph03();
-        Graph.isConnected(src = 1, dst = 3, g) == false
+        Graph.reachable(src = 1, dst = 3, g) == false
     }
 
     @test
     def isConnected05(): Bool = {
         let g = graph04();
-        Graph.isConnected(src = 1, dst = 3, g)
+        Graph.reachable(src = 1, dst = 3, g)
     }
 
     @test
     def isConnected06(): Bool = {
         let g = graph05();
-        Graph.isConnected(src = 2, dst = 4, g)
+        Graph.reachable(src = 2, dst = 4, g)
     }
 
     @test
     def isConnected07(): Bool = {
         let g = graph05();
-        Graph.isConnected(src = 4, dst = 1, g) == false
+        Graph.reachable(src = 4, dst = 1, g) == false
     }
 
     @test
     def isConnected08(): Bool = {
         let g = graph05();
-        Graph.isConnected(src = 5, dst = 6, g) == false
+        Graph.reachable(src = 5, dst = 6, g) == false
     }
 
 
@@ -436,19 +441,19 @@ namespace TestGraph {
     }
 
     ////////////////////////////////////////////////////////////////////////////
-    // distances                                                              //
+    // boundedDistances                                                       //
     ////////////////////////////////////////////////////////////////////////////
 
     @test
     def distances01(): Bool = {
         let g = graphWithDist01();
-        Graph.distances(g) == Map.empty()
+        Graph.boundedDistances(g) == Map.empty()
     }
 
     @test
     def distances02(): Bool = {
         let g = graphWithDist02();
-        Graph.distances(g) == Map#{
+        Graph.boundedDistances(g) == Map#{
             (1, 1) => 0,
             (2, 2) => 0,
 
@@ -459,7 +464,7 @@ namespace TestGraph {
     @test
     def distances03(): Bool = {
         let g = graphWithDist03();
-        Graph.distances(g) == Map#{
+        Graph.boundedDistances(g) == Map#{
             (1, 1) => 0,
             (2, 2) => 0,
             (3, 3) => 0,
@@ -473,7 +478,7 @@ namespace TestGraph {
     @test
     def distances04(): Bool = {
         let g = graphWithDist04();
-        Graph.distances(g) == Map#{
+        Graph.boundedDistances(g) == Map#{
             (1, 1) => 0,
             (2, 2) => 0,
             (3, 3) => 0,
@@ -491,7 +496,7 @@ namespace TestGraph {
     @test
     def distances05(): Bool = {
         let g = graphWithDist05();
-        Graph.distances(g) == Map#{
+        Graph.boundedDistances(g) == Map#{
             (1, 1) => 0,
             (2, 2) => 0,
             (3, 3) => 0,
@@ -515,7 +520,7 @@ namespace TestGraph {
     @test
     def distances06(): Bool = {
         let g = graphWithDist06();
-        Graph.distances(g) == Map#{
+        Graph.boundedDistances(g) == Map#{
             (1, 1) => 0,
             (2, 2) => 0,
             (3, 3) => 0,
@@ -659,37 +664,37 @@ namespace TestGraph {
 
     @test
     def toUndirected01(): Bool = {
-        let g = graph01() |> Set.toList |> Graph.toUndirected;
+        let g = graph01() |> Graph.toUndirected;
         g == Set#{}
     }
 
     @test
     def toUndirected02(): Bool = {
-        let g = graph02() |> Set.toList |> Graph.toUndirected;
+        let g = graph02() |> Graph.toUndirected;
         g == Set#{(1, 2), (2, 1)}
     }
 
     @test
     def toUndirected03(): Bool = {
-        let g = graph03() |> Set.toList |> Graph.toUndirected;
+        let g = graph03() |> Graph.toUndirected;
         g == Set#{(1, 2), (2, 1), (3, 4), (4, 3)}
     }
 
     @test
     def toUndirected04(): Bool = {
-        let g = graph04() |> Set.toList |> Graph.toUndirected;
+        let g = graph04() |> Graph.toUndirected;
         g == Set#{(1, 2), (2, 1), (2, 3), (3, 2)}
     }
 
     @test
     def toUndirected05(): Bool = {
-        let g = graph05() |> Set.toList |> Graph.toUndirected;
+        let g = graph05() |> Graph.toUndirected;
         g == Set#{(1, 2), (2, 1), (2, 3), (3, 2), (3, 4), (4, 3)}
     }
 
     @test
     def toUndirected06(): Bool = {
-        let g = graph06() |> Set.toList |> Graph.toUndirected;
+        let g = graph06() |> Graph.toUndirected;
         g == Set#{
             (1, 2), (2, 1),
             (2, 3), (3, 2),
@@ -700,7 +705,7 @@ namespace TestGraph {
 
     @test
     def toUndirected07(): Bool = {
-        let g = graph07() |> Set.toList |> Graph.toUndirected;
+        let g = graph07() |> Graph.toUndirected;
         g == Set#{
             (1, 2), (2, 1),
             (1, 4), (4, 1),
@@ -717,19 +722,19 @@ namespace TestGraph {
 
     @test
     def toUndirectedWeighted01(): Bool = {
-        let g = graphWithDist01() |> Set.toList |> Graph.toUndirectedWeighted;
+        let g = graphWithDist01() |> Graph.toUndirectedWeighted;
         g == Set#{}
     }
 
     @test
     def toUndirectedWeighted02(): Bool = {
-        let g = graphWithDist02() |> Set.toList |> Graph.toUndirectedWeighted;
+        let g = graphWithDist02() |> Graph.toUndirectedWeighted;
         g == Set#{(1, 4, 2), (2, 4, 1)}
     }
 
     @test
     def toUndirectedWeighted03(): Bool = {
-        let g = graphWithDist03() |> Set.toList |> Graph.toUndirectedWeighted;
+        let g = graphWithDist03() |> Graph.toUndirectedWeighted;
         g == Set#{
             (1, 4, 2), (2, 4, 1),
             (3, 7, 4), (4, 7, 3)
@@ -738,7 +743,7 @@ namespace TestGraph {
 
     @test
     def toUndirectedWeighted04(): Bool = {
-        let g = graphWithDist04() |> Set.toList |> Graph.toUndirectedWeighted;
+        let g = graphWithDist04() |> Graph.toUndirectedWeighted;
         g == Set#{
             (1, 4, 2), (2, 4, 1),
             (2, 5, 3), (3, 5, 2),
@@ -748,7 +753,7 @@ namespace TestGraph {
 
     @test
     def toUndirectedWeighted05(): Bool = {
-        let g = graphWithDist05() |> Set.toList |> Graph.toUndirectedWeighted;
+        let g = graphWithDist05() |> Graph.toUndirectedWeighted;
         g == Set#{
             (1, 4, 2), (2, 4, 1),
             (1, 5, 4), (4, 5, 1),
@@ -759,7 +764,7 @@ namespace TestGraph {
 
     @test
     def toUndirectedWeighted06(): Bool = {
-        let g = graphWithDist06() |> Set.toList |> Graph.toUndirectedWeighted;
+        let g = graphWithDist06() |> Graph.toUndirectedWeighted;
         g == Set#{
             (1, 2, 2), (2, 2, 1),
             (1, 5, 4), (4, 5, 1),
@@ -774,7 +779,7 @@ namespace TestGraph {
     @test
     def toUndirectedWeighted07(): Bool = {
         let g0 = Set#{(7, 9, 13), (13, 8, 7)};
-        let g = g0 |> Set.toList |> Graph.toUndirectedWeighted;
+        let g = g0 |> Graph.toUndirectedWeighted;
         g == Set#{
             (7, 9, 13), (13, 9, 7),
             (7, 8, 13), (13, 8, 7)
@@ -818,8 +823,8 @@ namespace TestGraph {
     }
 
     @test
-    pub def inDegrees05(): Bool = {
-        debug(Graph.inDegrees(graph05())) == Map#{
+    def inDegrees05(): Bool = {
+        Graph.inDegrees(graph05()) == Map#{
             1 => 0,
             2 => 1,
             3 => 1,
@@ -886,8 +891,8 @@ namespace TestGraph {
     }
 
     @test
-    pub def outDegrees05(): Bool = {
-        debug(Graph.outDegrees(graph05())) == Map#{
+    def outDegrees05(): Bool = {
+        Graph.outDegrees(graph05()) == Map#{
             1 => 1,
             2 => 1,
             3 => 1,
@@ -931,7 +936,7 @@ namespace TestGraph {
     }
 
     @test
-    pub def toGraphviz02(): Bool = {
+    def toGraphviz02(): Bool = {
         let g = Set#{
             ("node \"A\"", "node \"B\"")
         };
@@ -976,7 +981,7 @@ namespace TestGraph {
     }
 
     @test
-    pub def toGraphvizWeighted02(): Bool = {
+    def toGraphvizWeighted02(): Bool = {
         let g = Set#{
             ("node \"A\"", -42, "node \"B\"")
         };
@@ -1007,4 +1012,460 @@ namespace TestGraph {
         );
         test1 or test2
     }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // flipEdges                                                              //
+    ////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def flipEdges01(): Bool = {
+        Graph.flipEdges(graph01()) == Set#{}
+    }
+
+    @test
+    def flipEdges02(): Bool = {
+        Graph.flipEdges(graph02()) == Set#{(2, 1)}
+    }
+
+    @test
+    def flipEdges03(): Bool = {
+        Graph.flipEdges(graph03()) == Set#{(2, 1), (4, 3)}
+    }
+
+    @test
+    def flipEdges04(): Bool = {
+        Graph.flipEdges(graph04()) == Set#{(2, 1), (3, 2)}
+    }
+
+    @test
+    def flipEdges05(): Bool = {
+        Graph.flipEdges(graph05()) == Set#{(2, 1), (3, 2), (4, 3)}
+    }
+
+    @test
+    def flipEdges06(): Bool = {
+        Graph.flipEdges(graph06()) == Set#{(2, 1), (3, 2), (4, 3), (1, 4)}
+    }
+
+    @test
+    def flipEdges07(): Bool = {
+        Graph.flipEdges(graph07()) == Set#{
+            (2, 1), (3, 2), (4, 3), (1, 4), (5, 2), (6, 5), (5, 6)
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // invert                                                                 //
+    ////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def invert01(): Bool = {
+        Graph.invert(graph01()) == Set#{}
+    }
+
+    @test
+    def invert02(): Bool = {
+        Graph.invert(graph02()) == Set#{(2, 1)}
+    }
+
+    @test
+    def invert03(): Bool = {
+        Graph.invert(graph03()) == Set#{
+            (1, 3), (1, 4),
+            (2, 1), (2, 3), (2, 4),
+            (3, 1), (3, 2),
+            (4, 1), (4, 2), (4, 3)
+        }
+    }
+
+    @test
+    def invert04(): Bool = {
+        Graph.invert(graph04()) == Set#{
+            (1, 3),
+            (2, 1),
+            (3, 1), (3, 2)
+        }
+    }
+
+    @test
+    def invert05(): Bool = {
+        Graph.invert(graph05()) == Set#{
+            (1, 3), (1, 4),
+            (2, 1), (2, 4),
+            (3, 1), (3, 2),
+            (4, 1), (4, 2), (4, 3)
+        }
+    }
+
+    @test
+    def invert06(): Bool = {
+        Graph.invert(graph06()) == Set#{
+            (1, 3), (1, 4),
+            (2, 1), (2, 4),
+            (3, 1), (3, 2),
+            (4, 2), (4, 3)
+        }
+    }
+
+    @test
+    def invert07(): Bool = {
+        Graph.invert(graph07()) == Set#{
+            (1, 3), (1, 4), (1, 5), (1, 6),
+            (2, 1), (2, 4), (2, 6),
+            (3, 1), (3, 2), (3, 5), (3, 6),
+            (4, 2), (4, 3), (4, 5), (4, 6),
+            (5, 1), (5, 2), (5, 3), (5, 4),
+            (6, 1), (6, 2), (6, 3), (6, 4)
+        }
+    }
+
+    @test
+    def invert08(): Bool = {
+        Graph.invert(Set#{(1, 1)}) == Set#{}
+    }
+
+    @test
+    def invert09(): Bool = {
+        Graph.invert(Set#{(1, 1), (2, 3)}) == Set#{
+            (1, 2), (1, 3),
+            (2, 1),
+            (3, 1), (3, 2)
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // distances                                                              //
+    ////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def stableDistances01(): Bool = {
+        let g = graphWithDist01();
+        Graph.distances(g) == Some(Graph.boundedDistances(g))
+    }
+
+    @test
+    def stableDistances02(): Bool = {
+        let g = graphWithDist02();
+        Graph.distances(g) == Some(Graph.boundedDistances(g))
+    }
+
+    @test
+    def stableDistances03(): Bool = {
+        let g = graphWithDist03();
+        Graph.distances(g) == Some(Graph.boundedDistances(g))
+    }
+
+    @test
+    def stableDistances04(): Bool = {
+        let g = graphWithDist04();
+        Graph.distances(g) == Some(Graph.boundedDistances(g))
+    }
+
+    @test
+    def stableDistances05(): Bool = {
+        let g = graphWithDist05();
+        Graph.distances(g) == Some(Graph.boundedDistances(g))
+    }
+
+    @test
+    def stableDistances06(): Bool = {
+        let g = graphWithDist06();
+        Graph.distances(g) == Some(Graph.boundedDistances(g))
+    }
+
+    @test
+    def stableDistances07(): Bool = {
+        let g = Set#{("a", 1, "b"), ("b", 2, "c"), ("c", -4, "a")};
+        Graph.distances(g) == None
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // withinDistanceOf                                                       //
+    ////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def withinDistanceOf01(): Bool = {
+        Graph.withinDistanceOf(42, 999, graphWithDist01()) == Set#{42}
+    }
+
+    @test
+    def withinDistanceOf02(): Bool = {
+        Graph.withinDistanceOf(1, -42, graphWithDist02()) == Set#{}
+    }
+
+    @test
+    def withinDistanceOf03(): Bool = {
+        Graph.withinDistanceOf(1, 3, graphWithDist02()) == Set#{1}
+    }
+
+    @test
+    def withinDistanceOf04(): Bool = {
+        Graph.withinDistanceOf(1, 4, graphWithDist02()) == Set#{1, 2}
+    }
+
+    @test
+    def withinDistanceOf05(): Bool = {
+        Graph.withinDistanceOf(1, 99, graphWithDist02()) == Set#{1, 2}
+    }
+
+    @test
+    def withinDistanceOf06(): Bool = {
+        Graph.withinDistanceOf(3, 7, graphWithDist03()) == Set#{3, 4}
+    }
+
+    @test
+    def withinDistanceOf07(): Bool = {
+        Graph.withinDistanceOf(1, 11, graphWithDist04()) == Set#{1, 2, 3}
+    }
+
+    @test
+    def withinDistanceOf08(): Bool = {
+        Graph.withinDistanceOf(2, 7, graphWithDist05()) == Set#{2, 3, 4}
+    }
+
+    @test
+    def withinDistanceOf09(): Bool = {
+        Graph.withinDistanceOf(4, 3, graphWithDist06()) == Set#{4, 5, 6}
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // withinEdgesOf                                                          //
+    ////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def withinEdgesOf01(): Bool = {
+        Graph.withinEdgesOf(42, 999, graph01()) == Set#{42}
+    }
+
+    @test
+    def withinEdgesOf02(): Bool = {
+        Graph.withinEdgesOf(1, -42, graph02()) == Set#{}
+    }
+
+    @test
+    def withinEdgesOf03(): Bool = {
+        Graph.withinEdgesOf(1, 1, graph02()) == Set#{1, 2}
+    }
+
+    @test
+    def withinEdgesOf04(): Bool = {
+        Graph.withinEdgesOf(1, 4, graph02()) == Set#{1, 2}
+    }
+
+    @test
+    def withinEdgesOf05(): Bool = {
+        Graph.withinEdgesOf(3, 1, graph03()) == Set#{3, 4}
+    }
+
+    @test
+    def withinEdgesOf06(): Bool = {
+        Graph.withinEdgesOf(1, 2, graph04()) == Set#{1, 2, 3}
+    }
+
+    @test
+    def withinEdgesOf07(): Bool = {
+        Graph.withinEdgesOf(1, 2, graph05()) == Set#{1, 2, 3}
+    }
+
+    @test
+    def withinEdgesOf08(): Bool = {
+        Graph.withinEdgesOf(4, 1, graph06()) == Set#{1, 4}
+    }
+
+    @test
+    def withinEdgesOf09(): Bool = {
+        Graph.withinEdgesOf(1, 2, graph07()) == Set#{1, 2, 3, 5}
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // topologicalSort                                                        //
+    ////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def topologicalSort01(): Bool = {
+        Graph.topologicalSort(graph01()) == Nil
+    }
+
+    @test
+    def topologicalSort02(): Bool = {
+        Graph.topologicalSort(graph02()) == 1 :: 2 :: Nil
+    }
+
+    @test
+    def topologicalSort03(): Bool = {
+        Graph.topologicalSort(graph03()) == 1 :: 3 :: 2 :: 4 :: Nil
+    }
+
+    @test
+    def topologicalSort04(): Bool = {
+        Graph.topologicalSort(graph04()) == 1 :: 2 :: 3 :: Nil
+    }
+
+    @test
+    def topologicalSort05(): Bool = {
+        Graph.topologicalSort(graph05()) == 1 :: 2 :: 3 :: 4 :: Nil
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // degrees                                                                //
+    ////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def degrees01(): Bool = {
+        Graph.degrees(graph01()) == Map#{}
+    }
+
+    @test
+    def degrees02(): Bool = {
+        Graph.degrees(graph02()) == Map#{1 => 1, 2 => 1}
+    }
+
+    @test
+    def degrees03(): Bool = {
+        Graph.degrees(graph03()) == Map#{1 => 1, 2 => 1, 3 => 1, 4 => 1}
+    }
+
+    @test
+    def degrees04(): Bool = {
+        Graph.degrees(graph04()) == Map#{1 => 1, 2 => 2, 3 => 1}
+    }
+
+    @test
+    def degrees05(): Bool = {
+        Graph.degrees(graph05()) == Map#{1 => 1, 2 => 2, 3 => 2, 4 => 1}
+    }
+
+    @test
+    def degrees06(): Bool = {
+        Graph.degrees(graph06()) == Map#{1 => 2, 2 => 2, 3 => 2, 4 => 2}
+    }
+
+    @test
+    def degrees07(): Bool = {
+        Graph.degrees(graph07()) == Map#{
+            1 => 2, 2 => 3, 3 => 2,
+            4 => 2, 5 => 3, 6 => 2
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // frontiersFrom                                                          //
+    ////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def frontiersFrom01(): Bool = {
+        Graph.frontiersFrom(42, graph01()) == Map#{0 => Set#{42}}
+    }
+
+    @test
+    def frontiersFrom02(): Bool = {
+        Graph.frontiersFrom(1, graph02()) == Map#{0 => Set#{1}, 1 => Set#{2}}
+    }
+
+    @test
+    def frontiersFrom03(): Bool = {
+        Graph.frontiersFrom(3, graph03()) == Map#{
+            0 => Set#{3},
+            1 => Set#{4}
+        }
+    }
+
+    @test
+    def frontiersFrom04(): Bool = {
+        Graph.frontiersFrom(1, graph04()) == Map#{
+            0 => Set#{1},
+            1 => Set#{2},
+            2 => Set#{3}
+        }
+    }
+
+    @test
+    def frontiersFrom05(): Bool = {
+        Graph.frontiersFrom(2, graph05()) == Map#{
+            0 => Set#{2},
+            1 => Set#{3},
+            2 => Set#{4}
+        }
+    }
+
+    @test
+    def frontiersFrom06(): Bool = {
+        Graph.frontiersFrom(3, graph06()) == Map#{
+            0 => Set#{3},
+            1 => Set#{4},
+            2 => Set#{1},
+            3 => Set#{2}
+        }
+    }
+
+    @test
+    def frontiersFrom07(): Bool = {
+        Graph.frontiersFrom(4, graph07()) == Map#{
+            0 => Set#{4},
+            1 => Set#{1},
+            2 => Set#{2},
+            3 => Set#{3, 5},
+            4 => Set#{6}
+        }
+    }
+
+    @test
+    def frontiersFrom08(): Bool = {
+        Graph.frontiersFrom(5, graph07()) == Map#{
+            0 => Set#{5},
+            1 => Set#{6}
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // cutPoints                                                              //
+    ////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def cutPoints01(): Bool = {
+        Graph.cutPoints(graph01()) == Set#{}
+    }
+
+    @test
+    def cutPoints02(): Bool = {
+        Graph.cutPoints(graph02()) == Set#{}
+    }
+
+    @test
+    def cutPoints03(): Bool = {
+        Graph.cutPoints(graph03()) == Set#{}
+    }
+
+    @test
+    def cutPoints04(): Bool = {
+        Graph.cutPoints(graph04()) == Set#{(1, 2, 3)}
+    }
+
+    @test
+    def cutPoints05(): Bool = {
+        Graph.cutPoints(graph05()) == Set#{
+            (1, 2, 3), (1, 3, 4), (2, 3, 4)
+        }
+    }
+
+    @test
+    def cutPoints06(): Bool = {
+        Graph.cutPoints(graph06()) == Set#{
+            (1, 2, 3), (1, 3, 4),
+            (2, 3, 4), (2, 4, 1),
+            (3, 4, 1), (3, 4, 2),
+            (4, 1, 2), (4, 2, 3)
+        }
+    }
+
+    @test
+    def cutPoints07(): Bool = {
+        Graph.cutPoints(graph07()) == Set#{
+            (1, 2, 3), (1, 3, 4), (1, 2, 5), (1, 5, 6),
+            (2, 3, 4), (2, 4, 1), (2, 5, 6),
+            (3, 4, 1), (3, 4, 2), (3, 4, 5), (3, 5, 6),
+            (4, 1, 2), (4, 2, 3), (4, 2, 5), (4, 5, 6)
+        }
+    }
+
 }
